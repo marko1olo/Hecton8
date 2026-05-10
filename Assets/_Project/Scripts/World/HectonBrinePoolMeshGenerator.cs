@@ -20,12 +20,12 @@ namespace Hecton8.World
         private const uint DuplicateHazardWarningHash = 0x414E4244u;
         private const uint BrineGeneratorContextHash = 0x414E4252u;
         private const int MaxGeneratedBrinePools = 32;
-        private const string BrineToxicityLayerName = "BrineToxicity";
         private const string GeneratedBrinePoolsRootName = "Generated Brine Pools";
         private const string BrinePoolObjectName = "BrinePool";
         private const float BrineSurfaceNormalTile = 64f;
         private const int BrineSurfaceSegmentCount = 32;
-        private static readonly int BrineToxicityLayer = LayerMask.NameToLayer(BrineToxicityLayerName);
+        private const float BrineSurfaceStepCos = 0.98078528f;
+        private const float BrineSurfaceStepSin = 0.19509032f;
 
         [Header("Rendering")]
         [Tooltip("Material assigned to generated flat brine pool surfaces.")]
@@ -435,17 +435,19 @@ namespace Hecton8.World
             vertices[0] = Vector3.zero;
             uvs[0] = new Vector2(BrineSurfaceNormalTile * 0.5f, BrineSurfaceNormalTile * 0.5f);
             normals[0] = Vector3.up;
+            float x = 0.5f;
+            float z = 0f;
             for (int i = 0; i < BrineSurfaceSegmentCount; i++)
             {
-                float angle = (i / (float)BrineSurfaceSegmentCount) * math.PI * 2f;
-                float x = math.cos(angle) * 0.5f;
-                float z = math.sin(angle) * 0.5f;
                 int vertexIndex = i + 1;
                 vertices[vertexIndex] = new Vector3(x, 0f, z);
                 uvs[vertexIndex] = new Vector2(
                     (x + 0.5f) * BrineSurfaceNormalTile,
                     (z + 0.5f) * BrineSurfaceNormalTile);
                 normals[vertexIndex] = Vector3.up;
+                float nextX = (x * BrineSurfaceStepCos) - (z * BrineSurfaceStepSin);
+                z = (x * BrineSurfaceStepSin) + (z * BrineSurfaceStepCos);
+                x = nextX;
             }
 
             for (int i = 0; i < BrineSurfaceSegmentCount; i++)
@@ -519,7 +521,7 @@ namespace Hecton8.World
 
         private static int ResolveBrinePhysicsLayer()
         {
-            return BrineToxicityLayer >= 0 ? BrineToxicityLayer : HectonLayerMasks.BrineToxicity;
+            return HectonLayerMasks.BrineToxicity;
         }
 
         private struct ActiveBrinePool

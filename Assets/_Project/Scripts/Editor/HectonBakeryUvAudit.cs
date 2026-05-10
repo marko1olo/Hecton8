@@ -15,9 +15,16 @@ namespace Hecton8.EditorTools
         private const string MenuPath = "Hecton/Validation/Asset Pipeline/Audit Bakery UVs";
         private const int MaxTrianglesPerMeshCheck = 4096;
         private const float DegenerateAreaThreshold = 0.000001f;
-        private const float UvCellSize = 0.125f;
         private const float MaxUvEmptySpaceRatio = 0.30f;
         private const float UvAreaCoverageFudge = 1.18f;
+        private const float UvOverlapAreaFudge = 1.08f;
+        private const int UvScratchInitialCapacity = 8192;
+        private const int IndexScratchInitialCapacity = 12288;
+
+        // COLD ALLOC: editor audit scratch buffers reused across the single-threaded UV pass.
+        private static readonly List<Vector2> s_Uv2Scratch = new List<Vector2>(UvScratchInitialCapacity);
+        private static readonly List<Vector2> s_Uv0Scratch = new List<Vector2>(UvScratchInitialCapacity);
+        private static readonly List<int> s_IndexScratch = new List<int>(IndexScratchInitialCapacity);
 
         internal sealed class AuditResult
         {
@@ -31,34 +38,6 @@ namespace Hecton8.EditorTools
             internal bool HasIssue;
             internal bool CanAttemptAutoFix;
             internal readonly List<string> Issues = new List<string>(8);
-        }
-
-        private readonly struct TriangleRecord
-        {
-            internal TriangleRecord(Vector2 a, Vector2 b, Vector2 c, int i0, int i1, int i2)
-            {
-                A = a;
-                B = b;
-                C = c;
-                I0 = i0;
-                I1 = i1;
-                I2 = i2;
-                MinX = Mathf.Min(a.x, Mathf.Min(b.x, c.x));
-                MinY = Mathf.Min(a.y, Mathf.Min(b.y, c.y));
-                MaxX = Mathf.Max(a.x, Mathf.Max(b.x, c.x));
-                MaxY = Mathf.Max(a.y, Mathf.Max(b.y, c.y));
-            }
-
-            internal Vector2 A { get; }
-            internal Vector2 B { get; }
-            internal Vector2 C { get; }
-            internal int I0 { get; }
-            internal int I1 { get; }
-            internal int I2 { get; }
-            internal float MinX { get; }
-            internal float MinY { get; }
-            internal float MaxX { get; }
-            internal float MaxY { get; }
         }
 
         [MenuItem(MenuPath, priority = 192)]
@@ -135,7 +114,9 @@ namespace Hecton8.EditorTools
                 if (mesh == null || mesh.vertexCount <= 0)
                     continue;
 
-                List<Vector2> uv2 = new List<Vector2>(mesh.vertexCount);
+                List<Vector2> uv2 = s_Uv2Scratch;
+                EnsureScratchCapacity(uv2, mesh.vertexCount);
+                uv2.Clear();
                 mesh.GetUVs(1, uv2);
                 if (uv2.Count != mesh.vertexCount)
                 {
@@ -150,7 +131,9 @@ namespace Hecton8.EditorTools
                     inspection.Issues.Add($"{mesh.name}: {overlapReason}");
                 }
 
-                List<Vector2> uv0 = new List<Vector2>(mesh.vertexCount);
+                List<Vector2> uv0 = s_Uv0Scratch;
+                EnsureScratchCapacity(uv0, mesh.vertexCount);
+                uv0.Clear();
                 mesh.GetUVs(0, uv0);
                 if (uv0.Count != mesh.vertexCount)
                 {
@@ -171,8 +154,9 @@ namespace Hecton8.EditorTools
         private static bool TryDetectUvOverlap(Mesh mesh, List<Vector2> uv2, out string reason)
         {
             int testedTriangles = 0;
-            Dictionary<long, List<TriangleRecord>> buckets = new Dictionary<long, List<TriangleRecord>>(256);
-            List<int> indices = new List<int>((int)Math.Min(1024L, ResolveIndexCount(mesh)));
+            List<int> indices = s_IndexScratch;
+            EnsureScratchCapacity(indices, ResolveIndexScratchCapacity(mesh));
+            float occupiedArea = 0f;
 
             for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
             {
@@ -190,59 +174,23 @@ namespace Hecton8.EditorTools
                     int i0 = indices[triangleIndex * 3];
                     int i1 = indices[triangleIndex * 3 + 1];
                     int i2 = indices[triangleIndex * 3 + 2];
-                    TriangleRecord triangle = new TriangleRecord(uv2[i0], uv2[i1], uv2[i2], i0, i1, i2);
+                    float triangleArea = Mathf.Abs(SignedArea(uv2[i0], uv2[i1], uv2[i2])) * 0.5f;
 
-                    if (Mathf.Abs(SignedArea(triangle.A, triangle.B, triangle.C)) <= DegenerateAreaThreshold)
+                    if (triangleArea <= DegenerateAreaThreshold)
                     {
                         reason = $"{mesh.name}: UV2 triangle is degenerate/self-intersecting.";
                         return true;
                     }
 
-                    int minCellX = Mathf.FloorToInt(triangle.MinX / UvCellSize);
-                    int minCellY = Mathf.FloorToInt(triangle.MinY / UvCellSize);
-                    int maxCellX = Mathf.FloorToInt(triangle.MaxX / UvCellSize);
-                    int maxCellY = Mathf.FloorToInt(triangle.MaxY / UvCellSize);
-
-                    for (int cellY = minCellY; cellY <= maxCellY; cellY++)
-                    {
-                        for (int cellX = minCellX; cellX <= maxCellX; cellX++)
-                        {
-                            long bucketKey = PackCell(cellX, cellY);
-                            if (!buckets.TryGetValue(bucketKey, out List<TriangleRecord> bucket))
-                                continue;
-
-                            for (int bucketIndex = 0; bucketIndex < bucket.Count; bucketIndex++)
-                            {
-                                TriangleRecord candidate = bucket[bucketIndex];
-                                if (SharesVertex(triangle, candidate))
-                                    continue;
-
-                                if (TrianglesOverlap(triangle, candidate))
-                                {
-                                    reason = $"{mesh.name}: UV2 overlap detected between non-adjacent lightmap triangles.";
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-
-                    for (int cellY = minCellY; cellY <= maxCellY; cellY++)
-                    {
-                        for (int cellX = minCellX; cellX <= maxCellX; cellX++)
-                        {
-                            long bucketKey = PackCell(cellX, cellY);
-                            if (!buckets.TryGetValue(bucketKey, out List<TriangleRecord> bucket))
-                            {
-                                bucket = new List<TriangleRecord>(8);
-                                buckets.Add(bucketKey, bucket);
-                            }
-
-                            bucket.Add(triangle);
-                        }
-                    }
-
+                    occupiedArea += triangleArea;
                     testedTriangles++;
                 }
+            }
+
+            if (occupiedArea * UvOverlapAreaFudge > 1f)
+            {
+                reason = $"{mesh.name}: UV2 estimated occupied area exceeds atlas bounds; probable lightmap overlap.";
+                return true;
             }
 
             reason = string.Empty;
@@ -255,7 +203,8 @@ namespace Hecton8.EditorTools
             out float emptySpaceRatio,
             out string reason)
         {
-            List<int> indices = new List<int>((int)Math.Min(1024L, ResolveIndexCount(mesh)));
+            List<int> indices = s_IndexScratch;
+            EnsureScratchCapacity(indices, ResolveIndexScratchCapacity(mesh));
             int triangleCount = 0;
             float occupiedArea = 0f;
 
@@ -292,82 +241,21 @@ namespace Hecton8.EditorTools
             return true;
         }
 
-        private static bool SharesVertex(TriangleRecord a, TriangleRecord b)
-        {
-            return a.I0 == b.I0 || a.I0 == b.I1 || a.I0 == b.I2
-                || a.I1 == b.I0 || a.I1 == b.I1 || a.I1 == b.I2
-                || a.I2 == b.I0 || a.I2 == b.I1 || a.I2 == b.I2;
-        }
-
-        private static bool TrianglesOverlap(TriangleRecord a, TriangleRecord b)
-        {
-            if (a.MaxX < b.MinX || a.MinX > b.MaxX || a.MaxY < b.MinY || a.MinY > b.MaxY)
-                return false;
-
-            if (ContainsPoint(a, b.A) || ContainsPoint(a, b.B) || ContainsPoint(a, b.C))
-                return true;
-
-            if (ContainsPoint(b, a.A) || ContainsPoint(b, a.B) || ContainsPoint(b, a.C))
-                return true;
-
-            return SegmentsIntersect(a.A, a.B, b.A, b.B)
-                || SegmentsIntersect(a.A, a.B, b.B, b.C)
-                || SegmentsIntersect(a.A, a.B, b.C, b.A)
-                || SegmentsIntersect(a.B, a.C, b.A, b.B)
-                || SegmentsIntersect(a.B, a.C, b.B, b.C)
-                || SegmentsIntersect(a.B, a.C, b.C, b.A)
-                || SegmentsIntersect(a.C, a.A, b.A, b.B)
-                || SegmentsIntersect(a.C, a.A, b.B, b.C)
-                || SegmentsIntersect(a.C, a.A, b.C, b.A);
-        }
-
-        private static bool ContainsPoint(TriangleRecord triangle, Vector2 point)
-        {
-            float area0 = SignedArea(triangle.A, triangle.B, point);
-            float area1 = SignedArea(triangle.B, triangle.C, point);
-            float area2 = SignedArea(triangle.C, triangle.A, point);
-            bool hasNegative = area0 < -DegenerateAreaThreshold || area1 < -DegenerateAreaThreshold || area2 < -DegenerateAreaThreshold;
-            bool hasPositive = area0 > DegenerateAreaThreshold || area1 > DegenerateAreaThreshold || area2 > DegenerateAreaThreshold;
-            return !(hasNegative && hasPositive);
-        }
-
-        private static bool SegmentsIntersect(Vector2 a0, Vector2 a1, Vector2 b0, Vector2 b1)
-        {
-            float o1 = SignedArea(a0, a1, b0);
-            float o2 = SignedArea(a0, a1, b1);
-            float o3 = SignedArea(b0, b1, a0);
-            float o4 = SignedArea(b0, b1, a1);
-
-            bool differentA = (o1 > DegenerateAreaThreshold && o2 < -DegenerateAreaThreshold) || (o1 < -DegenerateAreaThreshold && o2 > DegenerateAreaThreshold);
-            bool differentB = (o3 > DegenerateAreaThreshold && o4 < -DegenerateAreaThreshold) || (o3 < -DegenerateAreaThreshold && o4 > DegenerateAreaThreshold);
-            if (differentA && differentB)
-                return true;
-
-            return IsPointOnSegment(a0, a1, b0)
-                || IsPointOnSegment(a0, a1, b1)
-                || IsPointOnSegment(b0, b1, a0)
-                || IsPointOnSegment(b0, b1, a1);
-        }
-
-        private static bool IsPointOnSegment(Vector2 a, Vector2 b, Vector2 point)
-        {
-            if (Mathf.Abs(SignedArea(a, b, point)) > DegenerateAreaThreshold)
-                return false;
-
-            return point.x >= Mathf.Min(a.x, b.x) - DegenerateAreaThreshold
-                && point.x <= Mathf.Max(a.x, b.x) + DegenerateAreaThreshold
-                && point.y >= Mathf.Min(a.y, b.y) - DegenerateAreaThreshold
-                && point.y <= Mathf.Max(a.y, b.y) + DegenerateAreaThreshold;
-        }
-
         private static float SignedArea(Vector2 a, Vector2 b, Vector2 c)
         {
             return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
         }
 
-        private static long PackCell(int x, int y)
+        private static void EnsureScratchCapacity<T>(List<T> scratch, int capacity)
         {
-            return ((long)x << 32) ^ (uint)y;
+            if (scratch.Capacity < capacity)
+                scratch.Capacity = capacity;
+        }
+
+        private static int ResolveIndexScratchCapacity(Mesh mesh)
+        {
+            long indexCount = ResolveIndexCount(mesh);
+            return indexCount > int.MaxValue ? int.MaxValue : (int)indexCount;
         }
 
         private static long ResolveIndexCount(Mesh mesh)

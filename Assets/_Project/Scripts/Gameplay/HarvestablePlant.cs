@@ -22,6 +22,7 @@ using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
+using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -53,6 +54,8 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class HarvestablePlant : MonoBehaviour, ICuttable, ITickable, IUpdatable
     {
+        private const float OneOver127 = 1f / 127f;
+
         // ══════════════════════════════════════════════════════════
         //  SHADER PROPERTY IDs — cached once, zero GC
         // ══════════════════════════════════════════════════════════
@@ -128,6 +131,7 @@ namespace Hecton8.Gameplay
         private float[] _regrowTimers;
         private bool _isRegistered;
         private bool _poolMissingLogged;
+        private uint _lootScatterSeed;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -157,6 +161,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _transform = transform;
+            _lootScatterSeed = MixLootHash(2166136261u, (uint)EntityId.ToULong(gameObject.GetEntityId()));
 
             // Initialize regrow timers
             _regrowTimers = new float[segments.Length];
@@ -290,7 +295,7 @@ namespace Hecton8.Gameplay
             }
 
             // Spawn loot
-            SpawnLoot(segment, hitPoint);
+            SpawnLoot(segment, index, hitPoint);
 
             // Start regrow timer
             _regrowTimers[index] = regrowTime;
@@ -302,13 +307,11 @@ namespace Hecton8.Gameplay
             OnSegmentHarvested?.Invoke(index);
         }
 
-        private void SpawnLoot(PlantSegment segment, Vector3 hitPoint)
+        private void SpawnLoot(PlantSegment segment, int segmentIndex, Vector3 hitPoint)
         {
             if (segment.lootPrefab == null) return;
 
-            // Random scatter
-            Vector2 offset2D = Random.insideUnitCircle * lootScatterRadius;
-            Vector3 spawnPos = hitPoint + new Vector3(offset2D.x, 0.1f, offset2D.y);
+            ResolveDeterministicLootPose(segment, segmentIndex, hitPoint, out Vector3 spawnPos, out Quaternion spawnRotation);
 
             ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
@@ -324,7 +327,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            GameObject loot = pool.Spawn(segment.lootPrefab, spawnPos, Random.rotation);
+            GameObject loot = pool.Spawn(segment.lootPrefab, spawnPos, spawnRotation);
             if (loot == null) return;
 
             // Apply upward force
@@ -332,6 +335,67 @@ namespace Hecton8.Gameplay
             {
                 PhysicsForceRouter.QueueForce(rb, Vector3.up * lootUpwardForce, ForceMode.Impulse);
             }
+        }
+
+        private void ResolveDeterministicLootPose(
+            PlantSegment segment,
+            int segmentIndex,
+            Vector3 hitPoint,
+            out Vector3 spawnPosition,
+            out Quaternion spawnRotation)
+        {
+            Vector3 anchor = segment.meshRenderer != null ? segment.meshRenderer.transform.position : hitPoint;
+            AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchor);
+
+            uint hash = _lootScatterSeed;
+            hash = MixLootHash(hash, (uint)segmentIndex);
+            hash = MixLootHash(hash, (uint)anchorAup.GridX);
+            hash = MixLootHash(hash, (uint)((ulong)anchorAup.GridX >> 32));
+            hash = MixLootHash(hash, (uint)anchorAup.GridY);
+            hash = MixLootHash(hash, (uint)((ulong)anchorAup.GridY >> 32));
+            hash = MixLootHash(hash, (uint)anchorAup.GridZ);
+            hash = MixLootHash(hash, (uint)((ulong)anchorAup.GridZ >> 32));
+            hash = FinalizeLootHash(hash);
+
+            float offsetX = SignedUnitFromByte((byte)hash) * lootScatterRadius;
+            float offsetZ = SignedUnitFromByte((byte)(hash >> 8)) * lootScatterRadius;
+            spawnPosition = hitPoint + new Vector3(offsetX, 0.1f, offsetZ);
+            spawnRotation = CardinalYRotation((hash >> 16) & 3u);
+        }
+
+        private static float SignedUnitFromByte(byte value)
+        {
+            return (((int)value & 0xFF) - 127) * OneOver127;
+        }
+
+        private static Quaternion CardinalYRotation(uint value)
+        {
+            switch (value & 3u)
+            {
+                case 1u:
+                    return new Quaternion(0f, 0.70710677f, 0f, 0.70710677f);
+                case 2u:
+                    return new Quaternion(0f, 1f, 0f, 0f);
+                case 3u:
+                    return new Quaternion(0f, -0.70710677f, 0f, 0.70710677f);
+                default:
+                    return Quaternion.identity;
+            }
+        }
+
+        private static uint MixLootHash(uint hash, uint value)
+        {
+            return (hash ^ value) * 16777619u;
+        }
+
+        private static uint FinalizeLootHash(uint hash)
+        {
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return hash;
         }
 
         private void RegrowSegment(int index)

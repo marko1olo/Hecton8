@@ -24,6 +24,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Items;
     using Hecton8.Tools;
     using Hecton8.UI;
+    using System;
     using System.Collections.Generic;
     using Unity.Mathematics;
     using UnityEngine;
@@ -237,7 +238,7 @@ namespace Hecton8.Gameplay
         private float _headlightGlitchPhase;
         private Vector3 _lastPublishedVolumetricVelocity;
         private bool _hasLastPublishedVolumetricVelocity;
-        // COLD ALLOC: List<IDamageSignalReceiver>[1] — handheld transport damage listeners (player trauma dispatcher) — owner: MantaScooter
+        // COLD ALLOC: List<IDamageSignalReceiver>[1] - handheld transport damage listeners (player trauma dispatcher) - owner: MantaScooter
         private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(1);
 
         private const int MaxHeadlights = 2;
@@ -387,6 +388,7 @@ namespace Hecton8.Gameplay
 
             // Setup motor audio
             TryGetComponent(out _motorAudioSource);
+            TryAssignMotorMixerRoute();
         }
 
         private void OnEnable()
@@ -394,6 +396,7 @@ namespace Hecton8.Gameplay
             LocalizationEvents.RegisterLanguageListener(this);
             RefreshMantaLocalizationCache();
             RegisterHeadlightShadowBudget();
+            TryAssignMotorMixerRoute();
         }
 
         private void OnDisable()
@@ -693,12 +696,22 @@ namespace Hecton8.Gameplay
             // Start motor sound
             if (_motorAudioSource != null && motorLoopClip != null && !_motorAudioSource.isPlaying)
             {
+                TryAssignMotorMixerRoute();
                 _motorAudioSource.clip = motorLoopClip;
                 _motorAudioSource.volume = motorVolume;
                 _motorAudioSource.Play();
             }
 
             UpdatePowerIndicator();
+        }
+
+        private void TryAssignMotorMixerRoute()
+        {
+            if (_motorAudioSource == null || _motorAudioSource.outputAudioMixerGroup != null)
+                return;
+
+            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+                _motorAudioSource.outputAudioMixerGroup = spatialAudioManager.SfxGroup;
         }
 
         private void DeactivateScooter()
@@ -1970,7 +1983,60 @@ namespace Hecton8.Gameplay
                 cache = new string[101]; // COLD ALLOC: string[101] - localized battery summary lookup table - owner: MantaScooter
 
             for (int percent = 0; percent <= 100; percent++)
-                cache[percent] = string.Format(format, percent);
+                cache[percent] = CreatePercentSummary(format, percent);
+        }
+
+        private static string CreatePercentSummary(string format, int percent)
+        {
+            if (string.IsNullOrEmpty(format))
+                return string.Empty;
+
+            int tokenIndex = format.IndexOf("{0}", System.StringComparison.Ordinal);
+            if (tokenIndex < 0)
+                return format;
+
+            int clampedPercent = math.clamp(percent, 0, 100);
+            int digitCount = CountUnsignedDigits(clampedPercent);
+            return string.Create(format.Length - 3 + digitCount, (format, clampedPercent, tokenIndex), static (buffer, state) =>
+            {
+                state.format.AsSpan(0, state.tokenIndex).CopyTo(buffer);
+                int cursor = state.tokenIndex;
+                cursor += WriteUnsignedInt(buffer, cursor, state.clampedPercent);
+                state.format.AsSpan(state.tokenIndex + 3).CopyTo(buffer.Slice(cursor));
+            });
+        }
+
+        private static int CountUnsignedDigits(int value)
+        {
+            int digits = 1;
+            int remaining = math.max(0, value);
+            while (remaining >= 10)
+            {
+                remaining /= 10;
+                digits++;
+            }
+
+            return digits;
+        }
+
+        private static int WriteUnsignedInt(System.Span<char> buffer, int startIndex, int value)
+        {
+            if (value <= 0)
+            {
+                buffer[startIndex] = '0';
+                return 1;
+            }
+
+            int digitCount = CountUnsignedDigits(value);
+            int writeIndex = startIndex + digitCount - 1;
+            int currentValue = value;
+            while (currentValue > 0)
+            {
+                buffer[writeIndex--] = (char)('0' + (currentValue % 10));
+                currentValue /= 10;
+            }
+
+            return digitCount;
         }
 
         private static string ResolveMantaLocalizedLabel(string key, string fallback)

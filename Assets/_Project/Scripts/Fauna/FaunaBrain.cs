@@ -204,11 +204,15 @@ namespace Hecton8.AI
         private int _faunaSpatialHandle;
         private CreatureUtilityBrain _utilityBrain;
         private ProceduralLeviathanSpineIK _proceduralLeviathanSpineIk;
+        private FaunaSimplifiedRagdollHandoff _simplifiedRagdollHandoff;
         private ScannableTarget _scannableTarget;
         private PredatorPackRole _currentPackRole;
         private bool _flankingManeuverDetected;
         
         private static readonly int _FaunaBiolumDimShaderId = Shader.PropertyToID("_FaunaBiolumDim");
+        private static readonly int _FaunaCamouflageTintShaderId = Shader.PropertyToID("_FaunaCamouflageTint");
+        private static readonly int _FaunaCamouflageParamsShaderId = Shader.PropertyToID("_FaunaCamouflageParams");
+        private static readonly int _FaunaCamouflageStrengthShaderId = Shader.PropertyToID("_FaunaCamouflageStrength");
         private static readonly int _DeathDitherFadeShaderId = Shader.PropertyToID("_DeathDitherFade");
         private static readonly int _CorpseBloatAgeShaderId = Shader.PropertyToID("_CorpseBloatAge01");
         private static readonly int _CorpseBloatStartTimeShaderId = Shader.PropertyToID("_CorpseBloatStartTime");
@@ -357,6 +361,22 @@ namespace Hecton8.AI
         private const byte FaunaPresentationCorpseBloatMask = 4;
         private const byte FaunaPresentationCorpseBloatTimerMask = 8;
         private const byte FaunaPresentationCorpseBloatDurationMask = 16;
+        private const byte FaunaPresentationCamouflageTintMask = 32;
+        private const byte FaunaPresentationCamouflageParamsMask = 64;
+        private const byte FaunaPresentationCamouflageStrengthMask = 128;
+        private const float FaunaCamouflageStrength = 0.55f;
+        private const float FaunaCamouflageDepthStartMeters = 35f;
+        private const float FaunaCamouflageDepthEndMeters = 260f;
+        private const float FaunaCamouflageDepthInvRange =
+            1f / (FaunaCamouflageDepthEndMeters - FaunaCamouflageDepthStartMeters);
+        private const float FaunaCamouflageAmbientResponse = 1.35f;
+        private const float FaunaCamouflageAmbientFloor = 0.18f;
+        private static readonly Color FaunaCamouflageTint = new Color(0.18f, 0.28f, 0.30f, 1f);
+        private static readonly Vector4 FaunaCamouflageParams = new Vector4(
+            FaunaCamouflageDepthStartMeters,
+            FaunaCamouflageDepthInvRange,
+            FaunaCamouflageAmbientResponse,
+            FaunaCamouflageAmbientFloor);
         private const float BiolumFlashBangBlindDurationSeconds = 0.35f;
         private const float BiolumFlashBangShaderRadiusMeters = 42f;
         private const float LeviathanBreachHeightDeltaMeters = 50f;
@@ -407,7 +427,7 @@ namespace Hecton8.AI
         private readonly List<Material> _faunaPresentationMaterialScratch = new List<Material>(4);
         // COLD ALLOC: List<Material>[4] - original fauna materials restored before destroying runtime material instances - owner: FaunaBrain
         private readonly List<Material> _faunaPresentationOriginalMaterials = new List<Material>(4);
-        // COLD ALLOC: List<Material>[4] - owned runtime material instances for shader-side biolum dim and corpse dither - owner: FaunaBrain
+        // COLD ALLOC: List<Material>[4] - owned runtime material instances for shader-side fauna presentation state - owner: FaunaBrain
         private readonly List<Material> _faunaPresentationRuntimeMaterials = new List<Material>(4);
         // COLD ALLOC: List<byte>[4] - cached shader property support masks for fauna runtime materials - owner: FaunaBrain
         private readonly List<byte> _faunaPresentationRuntimeMaterialMasks = new List<byte>(4);
@@ -601,6 +621,7 @@ namespace Hecton8.AI
             TryGetComponent(out _animator);
             CacheLogicalLodComponents();
             TryGetComponent(out _proceduralLeviathanSpineIk);
+            TryGetComponent(out _simplifiedRagdollHandoff);
             TryGetComponent(out _scannableTarget);
             ResolveFoveatedBindings();
             _tickStaggerShift = ResolveDeterministicTickStaggerShift();
@@ -3480,6 +3501,12 @@ namespace Hecton8.AI
                 byte propertyMask = 0;
                 if (sourceMaterial.HasProperty(_FaunaBiolumDimShaderId))
                     propertyMask |= FaunaPresentationBiolumMask;
+                if (sourceMaterial.HasProperty(_FaunaCamouflageTintShaderId))
+                    propertyMask |= FaunaPresentationCamouflageTintMask;
+                if (sourceMaterial.HasProperty(_FaunaCamouflageParamsShaderId))
+                    propertyMask |= FaunaPresentationCamouflageParamsMask;
+                if (sourceMaterial.HasProperty(_FaunaCamouflageStrengthShaderId))
+                    propertyMask |= FaunaPresentationCamouflageStrengthMask;
                 if (sourceMaterial.HasProperty(_DeathDitherFadeShaderId))
                     propertyMask |= FaunaPresentationDeathDitherMask;
                 if (sourceMaterial.HasProperty(_CorpseBloatAgeShaderId))
@@ -3495,6 +3522,12 @@ namespace Hecton8.AI
                 runtimeMaterial.hideFlags = HideFlags.DontSave;
                 if ((propertyMask & FaunaPresentationBiolumMask) != 0)
                     runtimeMaterial.SetFloat(_FaunaBiolumDimShaderId, 1f);
+                if ((propertyMask & FaunaPresentationCamouflageTintMask) != 0)
+                    runtimeMaterial.SetColor(_FaunaCamouflageTintShaderId, FaunaCamouflageTint);
+                if ((propertyMask & FaunaPresentationCamouflageParamsMask) != 0)
+                    runtimeMaterial.SetVector(_FaunaCamouflageParamsShaderId, FaunaCamouflageParams);
+                if ((propertyMask & FaunaPresentationCamouflageStrengthMask) != 0)
+                    runtimeMaterial.SetFloat(_FaunaCamouflageStrengthShaderId, FaunaCamouflageStrength);
                 if ((propertyMask & FaunaPresentationDeathDitherMask) != 0)
                     runtimeMaterial.SetFloat(_DeathDitherFadeShaderId, 0f);
                 if ((propertyMask & FaunaPresentationCorpseBloatMask) != 0)
@@ -4962,6 +4995,7 @@ namespace Hecton8.AI
                 _animator.enabled = false;
 
             CaptureBaseRigidbodyPresentationState();
+            ApplySimplifiedRagdollHandoff();
             _deathSpiralActive = true;
             _deathSpiralStartTime = _cognitionTimeSeconds;
             _deathDitherFade01 = 0f;
@@ -5000,6 +5034,21 @@ namespace Hecton8.AI
             float magnitude01 = ((phase >> 8) & 255u) * 0.00392156863f;
             float magnitude = math.lerp(DeathSpiralTorqueMin, DeathSpiralTorqueMax, magnitude01);
             return axis * magnitude;
+        }
+
+        private void ApplySimplifiedRagdollHandoff()
+        {
+            if (_simplifiedRagdollHandoff == null)
+                TryGetComponent(out _simplifiedRagdollHandoff);
+
+            if (_simplifiedRagdollHandoff == null)
+                return;
+
+            Vector3 lastVertexVelocity = _rb != null ? _rb.linearVelocity : Vector3.zero;
+            if (lastVertexVelocity.sqrMagnitude <= 0.0001f)
+                lastVertexVelocity = ResolveSelfLogicForward() * math.max(0f, _steeringEngine.maxSpeed);
+
+            _simplifiedRagdollHandoff.BeginHandoff(_renderer, lastVertexVelocity);
         }
 
         private void ApplyDeathSpiralFixedStep(float fdt)

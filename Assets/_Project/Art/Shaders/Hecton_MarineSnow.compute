@@ -2,6 +2,7 @@
 #pragma kernel ClearVisibleParticles
 #pragma kernel ClearSonarGlow
 #pragma kernel AccumulateSonarGlow
+#pragma kernel ClearFogDensity
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -32,6 +33,7 @@ SamplerState sampler_HectonCaveVoxelSdfTex;
 Texture2D<float> _CameraDepthTexture;
 SamplerState sampler_CameraDepthTexture;
 RWTexture2D<int> _HectonMarineSnowSonarGlowResult;
+RWTexture2D<int> _HectonMarineSnowFogDensityResult;
 
 struct MarineSnowFrameData
 {
@@ -84,6 +86,8 @@ float _SonarWaveFront;
 float _SonarRevealExpireTime;
 float4 _HectonMarineSnowSonarGlowTexelSize;
 float4 _HectonMarineSnowSonarGlowParams;
+float4 _HectonMarineSnowFogDensityTexelSize;
+float4 _HectonMarineSnowFogDensityParams;
 
 #define THREAD_GROUP_SIZE 64
 #define TAU 6.2831853
@@ -201,8 +205,9 @@ float2 SampleFlowFieldXZ(float3 positionWS)
         return float2(0.0, 0.0);
 
     float halfExtent = (resolution - 1) * cellSize * 0.5;
+    float invCellSize = rcp(cellSize);
     float2 centerXZ = _MarineSnowFlowFieldCenterCellSize.xz;
-    float2 gridPosition = ((positionWS.xz - centerXZ) + halfExtent.xx) / cellSize;
+    float2 gridPosition = ((positionWS.xz - centerXZ) + halfExtent.xx) * invCellSize;
     float2 minCoord = float2(0.0, 0.0);
     float2 maxCoord = float2(resolution - 1, resolution - 1);
     gridPosition = clamp(gridPosition, minCoord, maxCoord);
@@ -251,12 +256,14 @@ float3 SampleAbyssalFlowField(float3 positionWS)
 
     float horizontalCellSize = max(_AbyssalFlowSpacing.x, 0.001);
     float verticalCellSize = max(_AbyssalFlowSpacing.y, 0.001);
+    float invHorizontalCellSize = rcp(horizontalCellSize);
+    float invVerticalCellSize = rcp(verticalCellSize);
     int3 halfExtent = int3(resolutionX >> 1, resolutionY >> 1, resolutionZ >> 1);
     float3 localPosition = positionWS - _AbyssalFlowCenter.xyz;
     int3 coord = int3(
-        (int)floor(localPosition.x / horizontalCellSize + (float)halfExtent.x + 0.5),
-        (int)floor(localPosition.y / verticalCellSize + (float)halfExtent.y + 0.5),
-        (int)floor(localPosition.z / horizontalCellSize + (float)halfExtent.z + 0.5));
+        (int)floor(localPosition.x * invHorizontalCellSize + (float)halfExtent.x + 0.5),
+        (int)floor(localPosition.y * invVerticalCellSize + (float)halfExtent.y + 0.5),
+        (int)floor(localPosition.z * invHorizontalCellSize + (float)halfExtent.z + 0.5));
 
     if (coord.x < 0 || coord.y < 0 || coord.z < 0 || coord.x >= resolutionX || coord.y >= resolutionY || coord.z >= resolutionZ)
         return 0.0.xxx;
@@ -284,7 +291,8 @@ bool TryResolveScreenUv(float3 positionWS, out float2 uv)
         return false;
     }
 
-    uv = clipPosition.xy / clipPosition.w;
+    float invClipW = rcp(clipPosition.w);
+    uv = clipPosition.xy * invClipW;
     uv = uv * 0.5 + 0.5;
     return all(uv >= 0.0.xx) && all(uv <= 1.0.xx);
 }
@@ -321,44 +329,59 @@ float EvaluateSonarReactiveGlow(float3 positionWS)
     float sonarWaveSpeed = max(_SonarRevealWaveParams.y, 0.01);
     float sonarFadeDuration = max(_SonarRevealWaveParams.z, 0.05);
     float sonarPulseIntensity = saturate(_SonarRevealWaveParams.w);
-    float arrivalTime = _SonarRevealWaveParams.x + distanceToOrigin / sonarWaveSpeed;
+    float invSonarWaveSpeed = rcp(sonarWaveSpeed);
+    float invSonarFadeDuration = rcp(sonarFadeDuration);
+    float arrivalTime = _SonarRevealWaveParams.x + distanceToOrigin * invSonarWaveSpeed;
     float timeSinceArrival = _Time.y - arrivalTime;
-    float decay = 1.0 - saturate(max(timeSinceArrival, 0.0) / sonarFadeDuration);
+    float decay = 1.0 - saturate(max(timeSinceArrival, 0.0) * invSonarFadeDuration);
     float waveRadius = max(0.0, _SonarWaveFront);
     float waveBandWidth = lerp(6.0, 2.0, sonarPulseIntensity);
-    float waveBand = 1.0 - saturate(abs(distanceToOrigin - waveRadius) / max(waveBandWidth, 0.25));
+    float waveBand = 1.0 - saturate(abs(distanceToOrigin - waveRadius) * rcp(max(waveBandWidth, 0.25)));
     float active = step(_Time.y, _SonarRevealExpireTime);
     return active * max(decay, waveBand * sonarPulseIntensity) * sonarPulseIntensity;
 }
 
-void AccumulateSonarGlowAtUv(float2 uv, float intensity, float size)
+bool ShouldRunQuarterRate(uint particleIndex)
+{
+    return (((particleIndex + (uint)_MarineSnowMetaParams.z) & 3u) == 0u);
+}
+
+void AccumulateSonarGlowAtUv(float2 uv, float intensity, float size, uint particleIndex)
 {
     int width = (int)max(_HectonMarineSnowSonarGlowTexelSize.z, 0.0);
     int height = (int)max(_HectonMarineSnowSonarGlowTexelSize.w, 0.0);
-    if (width <= 0 || height <= 0 || intensity <= 0.0)
+    if (width <= 0 || height <= 0 || intensity <= 0.0 || !ShouldRunQuarterRate(particleIndex))
         return;
 
-    int2 centerPixel = int2(saturate(uv) * float2(width - 1, height - 1) + 0.5);
+    int2 pixel = int2(saturate(uv) * float2(width - 1, height - 1) + 0.5);
     float splatScale = max(_HectonMarineSnowSonarGlowParams.x, 0.0);
     float encodedScale = max(_HectonMarineSnowSonarGlowParams.z, 1.0);
     float sizeInfluence = saturate(size * max(_HectonMarineSnowSonarGlowParams.w, 1.0) * 96.0);
+    float encoded = saturate(intensity * splatScale * lerp(0.65, 1.0, sizeInfluence)) * encodedScale * 4.0;
+    if (encoded <= 0.0)
+        return;
 
-    [unroll]
-    for (int offsetY = -1; offsetY <= 1; offsetY++)
-    {
-        [unroll]
-        for (int offsetX = -1; offsetX <= 1; offsetX++)
-        {
-            int2 pixel = clamp(centerPixel + int2(offsetX, offsetY), int2(0, 0), int2(width - 1, height - 1));
-            float offsetSq = (float)(offsetX * offsetX + offsetY * offsetY);
-            float distanceWeight = offsetSq < 0.5 ? 1.0 : (offsetSq < 1.5 ? 0.5 : 0.292893);
-            float encoded = saturate(intensity * splatScale * lerp(0.45, 1.0, sizeInfluence) * distanceWeight) * encodedScale;
-            if (encoded <= 0.0)
-                continue;
+    InterlockedAdd(_HectonMarineSnowSonarGlowResult[pixel], (int)(encoded + 0.5));
+}
 
-            InterlockedAdd(_HectonMarineSnowSonarGlowResult[pixel], (int)(encoded + 0.5));
-        }
-    }
+void AccumulateFogDensityAtUv(float2 uv, float size, uint particleIndex)
+{
+    if (_HectonMarineSnowFogDensityParams.w <= 0.5 || !ShouldRunQuarterRate(particleIndex))
+        return;
+
+    int width = (int)max(_HectonMarineSnowFogDensityTexelSize.z, 0.0);
+    int height = (int)max(_HectonMarineSnowFogDensityTexelSize.w, 0.0);
+    if (width <= 0 || height <= 0)
+        return;
+
+    int2 pixel = int2(saturate(uv) * float2(width - 1, height - 1) + 0.5);
+    float encodedScale = max(_HectonMarineSnowFogDensityParams.y, 1.0);
+    float sizeInfluence = saturate(size * max(_HectonMarineSnowFogDensityParams.z, 1.0));
+    float encoded = lerp(0.18, 1.0, sizeInfluence) * encodedScale * 4.0;
+    if (encoded <= 0.0)
+        return;
+
+    InterlockedAdd(_HectonMarineSnowFogDensityResult[pixel], (int)(encoded + 0.5));
 }
 
 bool ResolveDepthCollision(float3 currentPositionWS, float3 nextPositionWS, out float sceneEyeDepth)
@@ -436,7 +459,7 @@ float3 ApplyPropwashSandForce(float3 positionWS, float3 velocityWS, float dt)
     if (distanceSq >= radiusSq)
         return velocityWS;
 
-    float attenuation = saturate(1.0 - distanceSq / max(radiusSq, EPSILON));
+    float attenuation = saturate(1.0 - distanceSq * rcp(max(radiusSq, EPSILON)));
     float2 outward2 = FastNormalize2Approx(lateralDelta.xz);
     float3 outward = float3(outward2.x, 0.0, outward2.y);
     float radialGain = max(_MarineSnowPropwashParams.y, 0.0);
@@ -453,7 +476,7 @@ float SampleCaveSignedDistance(float3 positionWS)
 
     float3 halfExtents = max(_HectonCaveVoxelHalfExtents.xyz, float3(0.001, 0.001, 0.001));
     float3 localPosition = mul(_HectonCaveVoxelWorldToLocal, float4(positionWS, 1.0)).xyz;
-    float3 sampleUv = localPosition / (halfExtents * 2.0) + 0.5;
+    float3 sampleUv = localPosition * rcp(halfExtents * 2.0) + 0.5;
     if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
         return _HectonCaveVoxelHalfExtents.w;
 
@@ -477,11 +500,14 @@ bool ResolveSdfBubbleCollision(inout Particle particle, float3 nextPosition)
     return true;
 }
 
-bool IsParticleVisibleForDraw(float3 positionWS, float radiusWS)
+bool TryResolveVisibleParticleScreenUv(float3 positionWS, float radiusWS, out float2 screenUv)
 {
     float4 clipPosition = mul(_MarineSnowViewProjection, float4(positionWS, 1.0));
     if (!isfinite(clipPosition.w) || clipPosition.w <= EPSILON)
+    {
+        screenUv = 0.0.xx;
         return false;
+    }
 
     float clipPadding = max(radiusWS * 2.5, 0.025) * clipPosition.w;
     bool insideXY =
@@ -490,13 +516,25 @@ bool IsParticleVisibleForDraw(float3 positionWS, float radiusWS)
         clipPosition.y >= -clipPosition.w - clipPadding &&
         clipPosition.y <= clipPosition.w + clipPadding;
     bool insideZ = clipPosition.z >= -clipPadding && clipPosition.z <= clipPosition.w + clipPadding;
-    return insideXY && insideZ;
+    if (!insideXY || !insideZ)
+    {
+        screenUv = 0.0.xx;
+        return false;
+    }
+
+    float invClipW = rcp(clipPosition.w);
+    screenUv = clipPosition.xy * invClipW;
+    screenUv = screenUv * 0.5 + 0.5;
+    return true;
 }
 
 void AppendVisibleParticle(uint particleIndex, Particle particle)
 {
-    if (!IsParticleVisibleForDraw(particle.Pos, particle.Size))
+    float2 screenUv;
+    if (!TryResolveVisibleParticleScreenUv(particle.Pos, particle.Size, screenUv))
         return;
+
+    AccumulateFogDensityAtUv(screenUv, particle.Size, particleIndex);
 
     uint visibleIndex;
     _MarineSnowIndirectArgs.InterlockedAdd(4, 1u, visibleIndex);
@@ -592,6 +630,17 @@ void ClearSonarGlow(uint3 dispatchThreadID : SV_DispatchThreadID)
     _HectonMarineSnowSonarGlowResult[int2(dispatchThreadID.xy)] = 0;
 }
 
+[numthreads(8, 8, 1)]
+void ClearFogDensity(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    int width = (int)max(_HectonMarineSnowFogDensityTexelSize.z, 0.0);
+    int height = (int)max(_HectonMarineSnowFogDensityTexelSize.w, 0.0);
+    if (dispatchThreadID.x >= (uint)width || dispatchThreadID.y >= (uint)height)
+        return;
+
+    _HectonMarineSnowFogDensityResult[int2(dispatchThreadID.xy)] = 0;
+}
+
 [numthreads(1, 1, 1)]
 void ClearVisibleParticles(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
@@ -622,7 +671,7 @@ void AccumulateSonarGlow(uint3 dispatchThreadID : SV_DispatchThreadID)
     if (!TryResolveScreenUv(particle.Pos, screenUv))
         return;
 
-    AccumulateSonarGlowAtUv(screenUv, sonarGlow, particle.Size);
+    AccumulateSonarGlowAtUv(screenUv, sonarGlow, particle.Size, particleIndex);
 }
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
@@ -701,7 +750,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
         if (dragMultiplier > 0.7)
         {
-            float turbulenceScale = saturate((dragMultiplier - 0.7) / 0.3);
+            float turbulenceScale = saturate((dragMultiplier - 0.7) * 3.3333333);
             particle.Vel += ResolveTurbulence(particle.Pos, simulationTime) * (turbulenceScale * _MarineSnowFlowParams.z * max(turbulenceModifier, 0.001));
         }
     }
@@ -711,13 +760,13 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float phase = particle.Pad.x * TAU;
         float wobbleFrequency = 2.1 + particle.Size * 8.0;
         float wobbleMagnitude = 0.12 * particle.Size * wobbleScale;
-        float wobbleAttenuation = 1.0 - saturate(ApproxLength3(synchronizedFlow) / 2.5);
+        float wobbleAttenuation = 1.0 - saturate(ApproxLength3(synchronizedFlow) * 0.4);
         float2 lateralOscillation = float2(
             FastTriangleSigned(simulationTime * wobbleFrequency + particle.Pos.y * 1.7 + phase),
             FastTriangleSigned(simulationTime * wobbleFrequency * 0.83 + particle.Pos.y * 1.3 + phase + 2.6707963)) * wobbleMagnitude;
         particle.Vel.xz += lateralOscillation * (dt * 12.0 * wobbleAttenuation);
         particle.Vel.y += max(0.0, buoyancyModifier) * 9.81 * dt;
-        particle.Size = clamp(particle.Size * (1.0 - saturate(ResolveEyeDepth(particle.Pos) / 400.0) * 0.015 * dt), 0.005, 0.12);
+        particle.Size = clamp(particle.Size * (1.0 - saturate(ResolveEyeDepth(particle.Pos) * 0.0025) * 0.015 * dt), 0.005, 0.12);
         particle.Vel.y = min(particle.Vel.y, 0.35 + particle.Size * 1.2);
     }
     else if (isDebris)

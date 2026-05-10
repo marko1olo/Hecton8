@@ -1,15 +1,15 @@
-// ============================================================================
-// HECTON-8 — RockDataBakerWindow.cs
-// Editor Window: eksport soketov iz stseny v ScriptableObject,
-// podgotovka kamney dlya Mesh Baker.
+// ----------------------------------------------------------------------------
+// HECTON-8 - RockDataBakerWindow.cs
+// Editor window for exporting scene socket data to a ScriptableObject and
+// preparing rock prefabs for Mesh Baker.
 //
-// Dva rezhima:
-//   1. Extract & Save — snimaet dannye soketov, sohranyaet v .asset
-//   2. Prepare for Mesh Baker — deaktiviruet sokety pered zapekaniem
+// Modes:
+//   1. Extract & Save - capture socket data and save it to a .asset.
+//   2. Prepare for Mesh Baker - disable sockets before baking.
 //
-// Rabotaet s vydelennym obektom v Hierarchy (koren gruppy kamney).
-// Ischet vse dochernie HectonSocketHelper i snimaet ih lokalnye koordinaty.
-// ============================================================================
+// Operates on the selected Hierarchy object, treating it as the rock-group root.
+// Scans child HectonSocketHelper components and stores their local coordinates.
+// ----------------------------------------------------------------------------
 
 #if UNITY_EDITOR
 
@@ -24,16 +24,16 @@ namespace Hecton8.Building.Editor
 {
     public sealed class RockDataBakerWindow : EditorWindow
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  CONSTANTS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private const string SAVE_FOLDER = "Assets/_Project/Data/RockSockets";
         private const string SOCKET_PREFIX = "SOCKET_";
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private GameObject _selectedRoot;
         private RockAttachmentData _lastExportedAsset;
@@ -47,9 +47,9 @@ namespace Hecton8.Building.Editor
         private int _previewSide;
         private int _previewUnder;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  MENU ITEM
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         [MenuItem("Hecton/Building/Rock Data Baker", false, 100)]
         public static void ShowWindow()
@@ -59,20 +59,20 @@ namespace Hecton8.Building.Editor
             window.minSize = new Vector2(350f, 400f);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  GUI
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void OnGUI()
         {
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
 
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField("═══ ROCK DATA BAKER ═══",
+            EditorGUILayout.LabelField("ROCK DATA BAKER",
                 EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
 
-            // ── Selection ──
+            // Selection
             EditorGUILayout.LabelField("Step 0: Select root group in Hierarchy",
                 EditorStyles.miniLabel);
 
@@ -89,7 +89,7 @@ namespace Hecton8.Building.Editor
             }
 
             // Auto-fill from selection
-            if (GUILayout.Button("← Use Current Selection"))
+            if (GUILayout.Button("Use Current Selection"))
             {
                 if (Selection.activeGameObject != null)
                 {
@@ -100,7 +100,7 @@ namespace Hecton8.Building.Editor
 
             EditorGUILayout.Space(10);
 
-            // ── Preview ──
+            // Preview
             if (_selectedRoot != null)
             {
                 EditorGUILayout.LabelField("Preview", EditorStyles.boldLabel);
@@ -119,7 +119,7 @@ namespace Hecton8.Building.Editor
 
                 EditorGUILayout.Space(15);
 
-                // ── Button 1: Extract & Save ──
+                // Button 1: Extract & Save
                 EditorGUILayout.LabelField("Step 1: Export socket data to asset",
                     EditorStyles.miniLabel);
 
@@ -132,7 +132,7 @@ namespace Hecton8.Building.Editor
 
                 EditorGUILayout.Space(10);
 
-                // ── Button 2: Prepare for Mesh Baker ──
+                // Button 2: Prepare for Mesh Baker
                 EditorGUILayout.LabelField("Step 2: Deactivate sockets before baking",
                     EditorStyles.miniLabel);
 
@@ -145,11 +145,11 @@ namespace Hecton8.Building.Editor
 
                 EditorGUILayout.Space(10);
 
-                // ── Button 3: Restore sockets ──
+                // Button 3: Restore sockets
                 EditorGUILayout.LabelField("Restore deactivated sockets",
                     EditorStyles.miniLabel);
 
-                if (GUILayout.Button("↩ Restore Sockets"))
+                if (GUILayout.Button("Restore Sockets"))
                 {
                     RestoreSockets();
                 }
@@ -162,14 +162,14 @@ namespace Hecton8.Building.Editor
                     MessageType.Info);
             }
 
-            // ── Status message ──
+            // Status message
             if (!string.IsNullOrEmpty(_statusMessage))
             {
                 EditorGUILayout.Space(10);
                 EditorGUILayout.HelpBox(_statusMessage, _statusType);
             }
 
-            // ── Last exported asset ──
+            // Last exported asset
             if (_lastExportedAsset != null)
             {
                 EditorGUILayout.Space(5);
@@ -182,9 +182,9 @@ namespace Hecton8.Building.Editor
             EditorGUILayout.EndScrollView();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PREVIEW
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void RefreshPreview()
         {
@@ -210,9 +210,9 @@ namespace Hecton8.Building.Editor
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  EXTRACT & SAVE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void ExtractAndSave()
         {
@@ -304,9 +304,9 @@ namespace Hecton8.Building.Editor
             EditorGUIUtility.PingObject(data);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PREPARE FOR MESH BAKER
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void PrepareForMeshBaker()
         {
@@ -345,9 +345,9 @@ namespace Hecton8.Building.Editor
                 MessageType.Info);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  RESTORE SOCKETS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void RestoreSockets()
         {
@@ -379,13 +379,13 @@ namespace Hecton8.Building.Editor
             RefreshPreview();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  UTILITY
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
-        /// Chitaet tip soketa iz HectonSocketHelper cherez SerializedObject.
-        /// Nuzhen potomu chto socketType — private [SerializeField].
+        /// Reads the socket type from HectonSocketHelper through SerializedObject.
+        /// Required because socketType is a private [SerializeField].
         /// </summary>
         private static HectonSocketHelper.SocketType GetSocketType(HectonSocketHelper helper)
         {

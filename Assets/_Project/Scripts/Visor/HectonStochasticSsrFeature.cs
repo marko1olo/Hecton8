@@ -13,7 +13,7 @@ using UnityEditor;
 namespace Hecton8.Visor
 {
     /// <summary>
-    /// Opt-in reflection sheen cheat. It uses one color tap plus depth/normal masks; no ray marching.
+    /// Opt-in reflection sheen cheat. It writes a half-res R8 mask, then composites one cheap color offset.
     /// </summary>
     public sealed class HectonStochasticSsrFeature : ScriptableRendererFeature
     {
@@ -55,9 +55,17 @@ namespace Hecton8.Visor
 
         private sealed class ReflectionSheenPass : ScriptableRenderPass
         {
-            private sealed class PassData
+            private sealed class MaskPassData
             {
                 internal TextureHandle Source;
+                internal TextureHandle Mask;
+                internal Material Material;
+            }
+
+            private sealed class CompositePassData
+            {
+                internal TextureHandle Source;
+                internal TextureHandle Mask;
                 internal TextureHandle Destination;
                 internal Material Material;
             }
@@ -82,14 +90,12 @@ namespace Hecton8.Visor
                 _settings = settings;
                 _material = material;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingTransparents;
-                ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Normal | ScriptableRenderPassInput.Color);
+                ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
-
                 if (!Application.isPlaying || _settings == null || _material == null || _settings.intensity <= 0.0001f)
                     return;
 
@@ -103,43 +109,77 @@ namespace Hecton8.Visor
 
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
                 TextureHandle depthTexture = resourceData.cameraDepthTexture;
-                TextureHandle normalsTexture = resourceData.cameraNormalsTexture;
-                if (!sourceTexture.IsValid() || !depthTexture.IsValid() || !normalsTexture.IsValid())
+                if (!sourceTexture.IsValid() || !depthTexture.IsValid())
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
+                UpdateMaterialParameters(_material, _settings, sourceDesc.width, sourceDesc.height);
+
+                TextureDesc maskDesc = new TextureDesc(sourceDesc);
+                maskDesc.name = "_HectonStochasticSsrMask";
+                maskDesc.width = math.max(1, sourceDesc.width >> 1);
+                maskDesc.height = math.max(1, sourceDesc.height >> 1);
+                maskDesc.clearBuffer = true;
+                maskDesc.clearColor = Color.black;
+                maskDesc.depthBufferBits = DepthBits.None;
+                maskDesc.msaaSamples = MSAASamples.None;
+                maskDesc.colorFormat = GraphicsFormat.R8_UNorm;
+                maskDesc.filterMode = FilterMode.Bilinear;
+                maskDesc.useMipMap = false;
+                maskDesc.autoGenerateMips = false;
+
                 TextureDesc destinationDesc = new TextureDesc(sourceDesc);
                 destinationDesc.name = "_HectonReflectionSheenComposite";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
                 destinationDesc.msaaSamples = MSAASamples.None;
-                destinationDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
                 destinationDesc.useMipMap = false;
                 destinationDesc.autoGenerateMips = false;
 
+                TextureHandle maskTexture = renderGraph.CreateTexture(maskDesc);
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
-                UpdateMaterialParameters(_material, _settings, sourceDesc.width, sourceDesc.height);
 
-                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Reflection Sheen", out PassData passData, _profilingSampler))
+                using (var builder = renderGraph.AddUnsafePass<MaskPassData>("Hecton Reflection Sheen Mask R8 Half", out MaskPassData passData, _profilingSampler))
                 {
                     passData.Source = sourceTexture;
-                    passData.Destination = destinationTexture;
+                    passData.Mask = maskTexture;
                     passData.Material = _material;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
-                    builder.UseTexture(normalsTexture, AccessFlags.Read);
-                    builder.UseTexture(destinationTexture, AccessFlags.Write);
+                    builder.UseTexture(maskTexture, AccessFlags.Write);
+                    builder.SetGlobalTextureAfterPass(maskTexture, ShaderConstants.MaskTextureId);
                     builder.AllowGlobalStateModification(true);
 
-                    builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc(static (MaskPassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
                         const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
 
-                        cmd.SetGlobalFloat(ShaderConstants.ActiveId, 1f);
-                        Blitter.BlitCameraTexture(cmd, data.Source, data.Destination, LoadAction, StoreAction, data.Material, 0);
+                        Blitter.BlitCameraTexture(cmd, data.Source, data.Mask, LoadAction, StoreAction, data.Material, 0);
+                    });
+                }
+
+                using (var builder = renderGraph.AddUnsafePass<CompositePassData>("Hecton Reflection Sheen Composite", out CompositePassData passData, _profilingSampler))
+                {
+                    passData.Source = sourceTexture;
+                    passData.Mask = maskTexture;
+                    passData.Destination = destinationTexture;
+                    passData.Material = _material;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                    builder.UseTexture(maskTexture, AccessFlags.Read);
+                    builder.UseTexture(destinationTexture, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (CompositePassData data, UnsafeGraphContext context) =>
+                    {
+                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
+                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
+
+                        Blitter.BlitCameraTexture(cmd, data.Source, data.Destination, LoadAction, StoreAction, data.Material, 1);
                     });
                 }
 
@@ -189,7 +229,7 @@ namespace Hecton8.Visor
             internal static readonly int InputSizeId = Shader.PropertyToID("_HectonSsrInputSize");
             internal static readonly int ParamsAId = Shader.PropertyToID("_HectonSsrParamsA");
             internal static readonly int ParamsBId = Shader.PropertyToID("_HectonSsrParamsB");
-            internal static readonly int ActiveId = Shader.PropertyToID("_HectonStochasticSSRActive");
+            internal static readonly int MaskTextureId = Shader.PropertyToID("_HectonSsrMaskTex");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -214,22 +254,13 @@ namespace Hecton8.Visor
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             if (!Application.isPlaying)
-            {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
                 return;
-            }
 
             if (settings == null || _pass == null || _material == null || settings.intensity <= 0.0001f)
-            {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
                 return;
-            }
 
             if (IsUnsupportedCameraType(renderingData.cameraData.cameraType))
-            {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
                 return;
-            }
 
             _pass.Setup(settings, _material);
             renderer.EnqueuePass(_pass);

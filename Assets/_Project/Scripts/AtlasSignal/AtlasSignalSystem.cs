@@ -1,24 +1,24 @@
 // ============================================================================
-// HECTON-8 — AtlasSignalSystem.cs
-// Sistema pulsa signala Atlas-6.
+// HECTON-8 - AtlasSignalSystem.cs
+// Atlas-6 signal pulse system.
 //
-// LOR (lor3 Blok Z):
-//   Sluh sredi skavendzherov: "Na Gektone-8 est signal, kotoryy povtoryaetsya
-//   kazhdye 11:23". Ritm 11:23 — vremya perebora vseh variantov "spaseniya kolonii".
-//   Chem blizhe k yadru — tem yasnee "soderzhanie" signala:
-//   ne slova, a emotsionalnyy pattern: otchayanie, nadezhda, bezumie.
+// LORE (Block Z):
+//   Scavenger rumor: "There is a signal on Hecton-8 that repeats every 11:23."
+//   The 11:23 rhythm reads as the machine iterating every colony rescue branch.
+//   The closer the player gets to the core, the clearer the signal content becomes:
+//   not words, but emotional payload: despair, hope, and collapse.
 //
-// MEHANIKA:
-//   • Puls kazhdye 683 sekundy (11 min 23 sek).
-//   • Sila signala = 1 - (dist / maxSignalRange).
-//   • Skaner poluchaet usable bearing only after late identity-stage lock.
-//   • Quest handoff idet cherez discovery-chain, a ne cherez ranniy raw detect.
-//   • Integriruetsya s HectonDirectorAI (narrative beat).
+// MECHANICS:
+//   - Pulse every 683 seconds.
+//   - Signal strength = 1 - (dist / maxSignalRange).
+//   - Scanner receives usable bearing only after late identity-stage lock.
+//   - Quest handoff goes through discovery-chain, not early raw detection.
+//   - Integrates with HectonDirectorAI narrative beat.
 //
 // ZERO GC:
-//   • ISlowTickable — timer without per-frame polling.
-//   • Nikakih new/LINQ v hot path.
-//   • Shader.SetGlobalFloat dlya vizualnogo otklika biolyuminestsentsii.
+//   - ISlowTickable - timer without per-frame polling.
+//   - No new/LINQ in the hot path.
+//   - Shader.SetGlobalFloat publishes bioluminescent response strength.
 // ============================================================================
 
 using Conditional = System.Diagnostics.ConditionalAttribute;
@@ -42,24 +42,24 @@ namespace Hecton8.AtlasSignal
     [DefaultExecutionOrder(-120)]
     public sealed class AtlasSignalSystem : MonoBehaviour, ISaveable, ISlowTickable
     {
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        [Header("── Signal Parameters ──────────────────────")]
-        [Tooltip("Period pulsa v sekundah (683 = 11 min 23 sek).")]
+        [Header("-- Signal Parameters ----------------------")]
+        [Tooltip("Pulse period in seconds. 683 equals 11 minutes 23 seconds.")]
         [SerializeField] private float pulsePeriodSeconds = 683f;
 
-        [Tooltip("Maksimalnaya dalnost obnaruzheniya signala (metry).")]
+        [Tooltip("Maximum signal detection range in meters.")]
         [SerializeField] private float maxSignalRange = 8000f;
 
-        [Tooltip("Pozitsiya yadra Atlas-6 v mirovyh koordinatah.")]
+        [Tooltip("Atlas-6 core position in world coordinates.")]
         [SerializeField] private Vector3 atlasCorePosWorld = new Vector3(0f, -5000f, 0f);
 
-        [Tooltip("Minimalnaya sila signala dlya obnaruzheniya skanerom.")]
+        [Tooltip("Minimum signal strength required for scanner detection.")]
         [SerializeField, Range(0f, 1f)] private float detectionThreshold = 0.05f;
 
-        [Header("── Late Manifestation ─────────────────────")]
+        [Header("-- Late Manifestation ---------------------")]
         [Tooltip("Atlas stays dormant until the first-hour spine has already handed the player to deeper route/module play.")]
         [SerializeField] private FirstHourMilestone minimumMilestoneToManifest = FirstHourMilestone.FirstModule;
 
@@ -78,8 +78,8 @@ namespace Hecton8.AtlasSignal
         [Tooltip("Depth where the carrier becomes stable enough for a true late-game lock on the source.")]
         [SerializeField] private float revealStage4Depth = 2600f;
 
-        [Header("── Shader Integration ────────────────────")]
-        [Tooltip("Publikovat silu signala v sheyder dlya biolyuminestsentnogo otklika.")]
+        [Header("-- Shader Integration --------------------")]
+        [Tooltip("Publish signal strength to the shader for bioluminescent response.")]
         [SerializeField] private bool publishToShader = true;
 
         [Header("Encrypted Log Unlocks")]
@@ -87,13 +87,13 @@ namespace Hecton8.AtlasSignal
         [SerializeField] private string stage3EncryptedLogId = "atlas6_terminal_sector3";
         [SerializeField] private string stage4EncryptedLogId = "biologist_samples";
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  SERVICE AUTHORITY
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private HectonPlayerMovement _playerMovement;
         private AbsoluteUniversePosition _atlasCoreAup;
@@ -145,14 +145,14 @@ namespace Hecton8.AtlasSignal
         private static readonly int _ShaderSignalStrength =
             Shader.PropertyToID("_AtlasSignalStrength");
 
-        // Throttle log — static field, ne v hot path
+        // Throttle log - static field outside the hot path.
         private static float _nextSignalLogTime;
 
         private const float StrengthEpsilon = 0.01f;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC PROPERTIES
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public float CurrentStrength => _currentStrength;
         public int CurrentStrengthBand => _currentStrengthBand;
@@ -165,8 +165,8 @@ namespace Hecton8.AtlasSignal
         public int CurrentRevealStage => _maxRevealStageUnlocked;
 
         /// <summary>
-        /// Napravlenie k yadru Atlas-6 ot tekuschey pozitsii igroka.
-        /// Ispolzuetsya skanerom dlya navigatsii.
+        /// Direction from the current player position to the Atlas-6 core.
+        /// Used by the scanner for navigation.
         /// </summary>
         public Vector3 DirectionToCore
         {
@@ -180,16 +180,16 @@ namespace Hecton8.AtlasSignal
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISaveable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public int SavePriority => 8;
         public int LoadPriority => 8;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void OnEnable()
         {
@@ -219,9 +219,9 @@ namespace Hecton8.AtlasSignal
 
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISlowTickable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void SlowTick()
         {
@@ -318,9 +318,9 @@ namespace Hecton8.AtlasSignal
                 Shader.SetGlobalFloat(_ShaderSignalStrength, 0f);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Vyzyvaetsya kogda igrok dostigaet yadra i rasshifrovyvaet signal.
@@ -347,9 +347,9 @@ namespace Hecton8.AtlasSignal
             LogSignalDecoded();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void ResolvePlayer()
         {
@@ -713,9 +713,9 @@ namespace Hecton8.AtlasSignal
                 (float)elapsedMilliseconds);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISaveable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void PopulateSaveData(SaveData data)
         {

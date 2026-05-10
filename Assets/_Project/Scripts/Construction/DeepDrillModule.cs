@@ -7,6 +7,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -21,6 +22,7 @@ namespace Hecton8.Construction
     public sealed class DeepDrillModule : MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent, IBuildPlacementRule
     {
         private const float SlowTickDeltaTime = 0.5f;
+        private const float OneOver24Bit = 1f / 16777216f;
         private const string DefaultPlacementBlockedReason = "SEABED FOOTING REQUIRED";
         private const string DefaultSlopeBlockedReason = "SEABED TOO STEEP";
         private static readonly int _placementProbeToolId = Animator.StringToHash("deep_drill_placement_probe");
@@ -109,6 +111,7 @@ namespace Hecton8.Construction
         private int _bufferedUnits;
         private int _completedCycleCount;
         private ulong _placementRayRequesterId;
+        private ulong _deterministicEntityId;
 
         internal static int ActiveModuleCount => s_ActiveModules.Count;
         internal bool IsOperating => _isOperating;
@@ -126,6 +129,7 @@ namespace Hecton8.Construction
         private void Awake()
         {
             _powerNode = GetComponent<PowerNode>();
+            _deterministicEntityId = EntityId.ToULong(gameObject.GetEntityId());
         }
 
         private void OnEnable()
@@ -414,7 +418,7 @@ namespace Hecton8.Construction
             if (totalWeight <= 0f)
                 return item != null && amount > 0;
 
-            float pick = Random.value * totalWeight;
+            float pick = BuildDeterministicExtractionPick(totalWeight);
             for (int i = 0; i < extractionTable.Length; i++)
             {
                 DrillYieldEntry entry = extractionTable[i];
@@ -432,6 +436,36 @@ namespace Hecton8.Construction
             }
 
             return item != null && amount > 0;
+        }
+
+        private float BuildDeterministicExtractionPick(float totalWeight)
+        {
+            uint hash = 2166136261u;
+            ulong entityId = _deterministicEntityId != 0UL ? _deterministicEntityId : EntityId.ToULong(gameObject.GetEntityId());
+            hash = FoldExtractionHash(hash, (uint)entityId);
+            hash = FoldExtractionHash(hash, (uint)(entityId >> 32));
+            hash = FoldExtractionHash(hash, (uint)_completedCycleCount);
+
+            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            hash = FoldExtractionHash(hash, (uint)position.GridX);
+            hash = FoldExtractionHash(hash, (uint)((ulong)position.GridX >> 32));
+            hash = FoldExtractionHash(hash, (uint)position.GridY);
+            hash = FoldExtractionHash(hash, (uint)((ulong)position.GridY >> 32));
+            hash = FoldExtractionHash(hash, (uint)position.GridZ);
+            hash = FoldExtractionHash(hash, (uint)((ulong)position.GridZ >> 32));
+
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+
+            return ((hash & 0x00FFFFFFu) * OneOver24Bit) * totalWeight;
+        }
+
+        private static uint FoldExtractionHash(uint hash, uint value)
+        {
+            return (hash ^ value) * 16777619u;
         }
 
         private void NotifyGridBalanceChanged()

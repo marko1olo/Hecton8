@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -7,17 +8,18 @@ using Unity.Profiling;
 namespace Hecton8.World
 {
     /// <summary>
-    /// Burst quantization helpers for compressing chunk-local float3 offsets into 3-byte signed integer payloads.
+    /// Burst quantization helpers for compressing chunk-local float3 offsets into 6-byte millimeter payloads.
     /// </summary>
     internal static class ChunkLocalOffsetQuantization
     {
-        internal struct SByte3
+        [StructLayout(LayoutKind.Sequential, Pack = 2, Size = 6)]
+        internal struct Short3
         {
-            public sbyte X;
-            public sbyte Y;
-            public sbyte Z;
+            public short X;
+            public short Y;
+            public short Z;
 
-            public SByte3(sbyte x, sbyte y, sbyte z)
+            public Short3(short x, short y, short z)
             {
                 X = x;
                 Y = y;
@@ -28,13 +30,14 @@ namespace Hecton8.World
         internal struct QuantizationParams
         {
             public float3 ChunkCenterLocal;
-            public float3 DecodeStep;
             public float3 EncodeScale;
+            public float3 DecodeStep;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 2, Size = 6)]
         internal struct QuantizedLocalOffset
         {
-            public SByte3 Packed;
+            public Short3 Packed;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -47,10 +50,10 @@ namespace Hecton8.World
             public void Execute(int index)
             {
                 float3 relative = SourceOffsets[index] - Parameters.ChunkCenterLocal;
-                float3 quantized = math.clamp(math.round(relative * Parameters.EncodeScale), -127f, 127f);
+                float3 quantized = math.clamp(math.round(relative * Parameters.EncodeScale), short.MinValue, short.MaxValue);
                 QuantizedOffsets[index] = new QuantizedLocalOffset
                 {
-                    Packed = new SByte3((sbyte)quantized.x, (sbyte)quantized.y, (sbyte)quantized.z)
+                    Packed = new Short3((short)quantized.x, (short)quantized.y, (short)quantized.z)
                 };
             }
         }
@@ -64,27 +67,26 @@ namespace Hecton8.World
 
             public void Execute(int index)
             {
-                SByte3 packed = QuantizedOffsets[index].Packed;
+                Short3 packed = QuantizedOffsets[index].Packed;
                 float3 decoded = new float3(packed.X, packed.Y, packed.Z) * Parameters.DecodeStep;
                 DecodedOffsets[index] = Parameters.ChunkCenterLocal + decoded;
             }
         }
 
-        private const float QuantizationMaxMagnitude = 127f;
-        private const float MinimumAxisExtent = 0.003937008f;
+        private const float MillimetersPerMeter = 1000f;
+        private const float MetersPerMillimeter = 0.001f;
 
         private static readonly ProfilerMarker _quantizeScheduleProfilerMarker = new ProfilerMarker("H8.World.ChunkOffset.Quantize.Schedule");
         private static readonly ProfilerMarker _dequantizeScheduleProfilerMarker = new ProfilerMarker("H8.World.ChunkOffset.Dequantize.Schedule");
 
         public static QuantizationParams BuildParams(float3 chunkCenterLocal, float3 maxAbsOffsetFromCenter)
         {
-            float3 safeExtent = math.max(math.abs(maxAbsOffsetFromCenter), MinimumAxisExtent);
-            float3 decodeStep = safeExtent / QuantizationMaxMagnitude;
+            _ = maxAbsOffsetFromCenter;
             return new QuantizationParams
             {
                 ChunkCenterLocal = chunkCenterLocal,
-                DecodeStep = decodeStep,
-                EncodeScale = 1f / decodeStep
+                EncodeScale = new float3(MillimetersPerMeter),
+                DecodeStep = new float3(MetersPerMillimeter)
             };
         }
 

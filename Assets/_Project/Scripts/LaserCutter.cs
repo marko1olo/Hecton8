@@ -1,15 +1,15 @@
 // ============================================================================
-// HECTON-8 — LaserCutter.cs  v2.2
-// Lazernyy rezak — PlayerTool s termicheskim menedzhmentom.
+// HECTON-8 - LaserCutter.cs v2.2
+// Laser cutter - PlayerTool with thermal management.
 //
 // v2.2 CHANGES (ZERO-GC REFACTOR):
 //   [ZERO-GC] Diagnosis system entirely refactored to use FixedCharBuffer.
-//     • Eliminated managed formatting in diagnosis and operational summaries.
-//     • Removed legacy CutterDiagnosis fields (headline/summary) in favor of persistent buffers.
-//     • Consolidated state management and removed clobbered field declarations.
+//     - Eliminated managed formatting in diagnosis and operational summaries.
+//     - Removed legacy CutterDiagnosis fields (headline/summary) in favor of persistent buffers.
+//     - Consolidated state management and removed clobbered field declarations.
 //
 //   [OPT] Player inventory resolve moved out of hot loop (EnsurePlayerInventory)
-//     to ONE-TIME initialization in Awake().
+//     to one-time initialization in Awake().
 //
 // ============================================================================
 
@@ -17,6 +17,7 @@ namespace Hecton8.Gameplay
 {
     using System;
     using System.Runtime.InteropServices;
+    using Hecton8.Audio;
     using Hecton8.Bootstrap;
     using Hecton8.Building;
     using Hecton8.Construction;
@@ -453,6 +454,11 @@ namespace Hecton8.Gameplay
         private const float LowPowerOutputScale = 0.35f;
         private const float CutHitSphereRadiusMeters = 0.5f;
         private const int CutHitBufferCapacity = 8;
+        private const float InvTau = 0.15915494f;
+        private const float LaserJitterSecondaryScale = 1.37f;
+        private const float LaserJitterSecondaryOffset = 2.1f;
+        private const float QuaternionHalfSqrtTwo = 0.70710678f;
+        private const float ShaderFloatPublishEpsilon = 0.0001f;
         private static int _WaterLayer = int.MinValue;
         private static int _TransparentFxLayer = int.MinValue;
         private static int _BaseModuleLayer = int.MinValue;
@@ -469,6 +475,12 @@ namespace Hecton8.Gameplay
         }
 
         private static readonly int _LaserHitHeatId = Shader.PropertyToID("_LaserHitHeat");
+        private static readonly Quaternion _SparkRotationForward = Quaternion.identity;
+        private static readonly Quaternion _SparkRotationBack = new Quaternion(0f, 1f, 0f, 0f);
+        private static readonly Quaternion _SparkRotationRight = new Quaternion(0f, QuaternionHalfSqrtTwo, 0f, QuaternionHalfSqrtTwo);
+        private static readonly Quaternion _SparkRotationLeft = new Quaternion(0f, -QuaternionHalfSqrtTwo, 0f, QuaternionHalfSqrtTwo);
+        private static readonly Quaternion _SparkRotationUp = new Quaternion(-QuaternionHalfSqrtTwo, 0f, 0f, QuaternionHalfSqrtTwo);
+        private static readonly Quaternion _SparkRotationDown = new Quaternion(QuaternionHalfSqrtTwo, 0f, 0f, QuaternionHalfSqrtTwo);
 
         // ══════════════════════════════════════════════════════════
         //  EVENTS
@@ -597,6 +609,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>Last published heat value (for event throttling).</summary>
         private float _lastPublishedHeat;
+        private float _lastPublishedLaserHitHeat = float.NaN;
         private bool _lastPublishedBeamActive;
 
         /// <summary>Has the error clip been played this lockout cycle.
@@ -670,7 +683,7 @@ namespace Hecton8.Gameplay
         {
             profile.MaxRange = Mathf.Max(0.1f, maxRange);
             profile.PowerScalar = Mathf.Max(0.1f, damagePerSecond);
-            profile.HeatGenerationRate = 1f / math.max(overheatTime, 0.1f);
+            profile.HeatGenerationRate = math.rcp(math.max(overheatTime, 0.1f));
             profile.CooldownRate = Mathf.Max(0f, cooldownRate);
             profile.RecoilImpulse = Mathf.Max(0f, recoilImpulseBase);
         }
@@ -711,12 +724,13 @@ namespace Hecton8.Gameplay
             CacheToolId();
             CacheRaycastRequesterId();
             SetVisualsActive(false);
-            
+            TryAssignCutAudioMixerRoute();
             EnsurePlayerBindings();
         }
 
         private void OnEnable()
         {
+            TryAssignCutAudioMixerRoute();
             if (Application.isPlaying)
                 LaserCutterEvents.RegisterSource(this, ResolveEventCutterId(), ResolveEventTransform());
         }
@@ -746,9 +760,19 @@ namespace Hecton8.Gameplay
                 _BaseModuleLayer = Hecton8.Core.HectonLayerMasks.BaseModule;
         }
 
+        private void TryAssignCutAudioMixerRoute()
+        {
+            if (cutAudio == null || cutAudio.outputAudioMixerGroup != null)
+                return;
+
+            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+                cutAudio.outputAudioMixerGroup = spatialAudioManager.SfxGroup;
+        }
+
         public override void OnSpawn()
         {
             base.OnSpawn();
+            TryAssignCutAudioMixerRoute();
             LaserCutterEvents.RegisterSource(this, ResolveEventCutterId(), ResolveEventTransform());
             CacheToolId();
             CacheRaycastRequesterId();
@@ -809,7 +833,7 @@ namespace Hecton8.Gameplay
             _isFiring = true;
             PublishBeamState(true);
 
-            _heatLevel += deltaTime / math.max(overheatTime, 0.1f);
+            _heatLevel += deltaTime * math.rcp(math.max(overheatTime, 0.1f));
 
             if (_heatLevel >= 1f)
             {
@@ -950,7 +974,7 @@ namespace Hecton8.Gameplay
 
             if (_cachedDeconstructModule != null)
             {
-                float progress = Mathf.Clamp01(_deconstructProgress / math.max(0.01f, deconstructThreshold));
+                float progress = math.saturate(_deconstructProgress * math.rcp(math.max(0.01f, deconstructThreshold)));
                 buffer.Append(ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_RECOVERY_PREFIX, "LASER CUTTER // RECOVERY "));
                 buffer.AppendInt((int)(progress * 100f));
                 buffer.Append("%");
@@ -1064,7 +1088,12 @@ namespace Hecton8.Gameplay
         private void SyncHeatOutputs()
         {
             SyncModularHeat(_heatLevel);
-            Shader.SetGlobalFloat(_LaserHitHeatId, _heatLevel);
+            if (!math.isfinite(_lastPublishedLaserHitHeat) ||
+                math.abs(_heatLevel - _lastPublishedLaserHitHeat) > ShaderFloatPublishEpsilon)
+            {
+                Shader.SetGlobalFloat(_LaserHitHeatId, _heatLevel);
+                _lastPublishedLaserHitHeat = _heatLevel;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1107,7 +1136,7 @@ namespace Hecton8.Gameplay
 
             Vector3 absoluteOrigin = ResolveAbsoluteUniversePoint(_cachedTransform.position);
             Vector3 absoluteHitPoint = ResolveAbsoluteUniversePoint(_hitInfo.point);
-            float normalizedPower = ResolveNormalizedPower((runtimePower / math.max(damagePerSecond, 0.0001f)) * powerScale, heatMultiplier);
+            float normalizedPower = ResolveNormalizedPower((runtimePower * math.rcp(math.max(damagePerSecond, 0.0001f))) * powerScale, heatMultiplier);
             if (normalizedPower < MinEffectiveBeamPower)
             {
                 SetFlag(LowPowerState);
@@ -1180,7 +1209,7 @@ namespace Hecton8.Gameplay
             else
                 direction *= math.rsqrt(directionSqrMagnitude);
 
-            float normalizedPower = ResolveNormalizedPower((runtimePower / math.max(damagePerSecond, 0.0001f)) * powerScale, heatMultiplier);
+            float normalizedPower = ResolveNormalizedPower((runtimePower * math.rcp(math.max(damagePerSecond, 0.0001f))) * powerScale, heatMultiplier);
             if (normalizedPower < MinEffectiveBeamPower)
                 return;
 
@@ -1257,8 +1286,8 @@ namespace Hecton8.Gameplay
 
                 if (Time.time >= _nextProgressFeedbackAt)
                 {
-                    int tensionPercent = (int)math.round(tension01 * 100f);
-                    int pullPercent = (int)math.round(pull01 * 100f);
+                    int tensionPercent = FastRoundPercent(tension01);
+                    int pullPercent = FastRoundPercent(pull01);
                     ShowRecoveryPullBackFeedback(tensionPercent, pullPercent);
                     _nextProgressFeedbackAt = Time.time + 0.6f;
                 }
@@ -1275,7 +1304,7 @@ namespace Hecton8.Gameplay
 
             if (Time.time >= _nextProgressFeedbackAt)
             {
-                float progress01 = math.saturate(_deconstructProgress / math.max(deconstructThreshold, 0.01f));
+                float progress01 = math.saturate(_deconstructProgress * math.rcp(math.max(deconstructThreshold, 0.01f)));
                 ShowRecoveryProgressFeedback(progress01);
                 _nextProgressFeedbackAt = Time.time + 0.6f;
             }
@@ -1548,8 +1577,8 @@ namespace Hecton8.Gameplay
                 if (jitterAmp > 0.0001f)
                 {
                     float t = Time.time * jitterFrequency;
-                    float jx = math.sin(t) * jitterAmp;
-                    float jy = math.sin(t * 1.37f + 2.1f) * jitterAmp * 0.7f;
+                    float jx = FastTriangleSigned(t * InvTau) * jitterAmp;
+                    float jy = FastTriangleSigned((t * LaserJitterSecondaryScale + LaserJitterSecondaryOffset) * InvTau) * jitterAmp * 0.7f;
                     localHitPoint.x += jx;
                     localHitPoint.y += jy;
                 }
@@ -1570,7 +1599,7 @@ namespace Hecton8.Gameplay
             {
                 Transform sparksTransform = sparksVFX.transform;
                 sparksTransform.position = _hitInfo.point;
-                sparksTransform.rotation = Quaternion.LookRotation(_hitInfo.normal);
+                sparksTransform.rotation = ResolveDominantAxisRotation(_hitInfo.normal);
 
                 if (_sparksEmissionCached)
                 {
@@ -1588,12 +1617,39 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private static float FastTriangleSigned(float phase)
+        {
+            float triangle01 = 1f - math.abs(math.frac(phase + 0.25f) * 2f - 1f);
+            return triangle01 * 2f - 1f;
+        }
+
+        private static int FastRoundPercent(float value01)
+        {
+            return (int)(math.saturate(value01) * RecoveryProgressMaxPercent + 0.5f);
+        }
+
+        private static Quaternion ResolveDominantAxisRotation(Vector3 normal)
+        {
+            float absX = math.abs(normal.x);
+            float absY = math.abs(normal.y);
+            float absZ = math.abs(normal.z);
+
+            if (absY >= absX && absY >= absZ)
+                return normal.y >= 0f ? _SparkRotationUp : _SparkRotationDown;
+
+            if (absX >= absZ)
+                return normal.x >= 0f ? _SparkRotationRight : _SparkRotationLeft;
+
+            return normal.z >= 0f ? _SparkRotationForward : _SparkRotationBack;
+        }
+
         private void UpdateAudioState(bool shouldPlay)
         {
             if (cutAudio == null) return;
 
             if (shouldPlay)
             {
+                TryAssignCutAudioMixerRoute();
                 if (!cutAudio.isPlaying)
                     cutAudio.Play();
 
@@ -1648,6 +1704,7 @@ namespace Hecton8.Gameplay
             _lockoutTimer = 0f;
             _lockoutSoundPlayed = false;
             _lastPublishedHeat = -1f;
+            _lastPublishedLaserHitHeat = float.NaN;
             _secondaryLatched = false;
             SyncHeatOutputs();
             ResetDeconstructState();
@@ -1957,7 +2014,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveNormalizedPower(float powerScale, float heatMultiplier)
         {
-            float normalizedPower = powerScale * (heatMultiplier / math.max(1f + heatDamageBonus, 0.0001f));
+            float normalizedPower = powerScale * (heatMultiplier * math.rcp(math.max(1f + heatDamageBonus, 0.0001f)));
             return math.saturate(normalizedPower);
         }
 

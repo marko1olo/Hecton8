@@ -1726,7 +1726,7 @@ public struct VoxelMCCountJob : IJobParallelFor
 [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelDensityQuantizeJob : IJobParallelFor
 {
-    public float densityDecodeScale;
+    public float densityDecodeInvScale;
 
     [ReadOnly] public NativeArray<float> density;
     [WriteOnly] public NativeArray<sbyte> quantizedDensity;
@@ -1734,8 +1734,7 @@ public struct VoxelDensityQuantizeJob : IJobParallelFor
     public void Execute(int index)
     {
         float source = density[index];
-        float invScale = 1f / math.max(densityDecodeScale, 0.0001f);
-        float scaled = math.clamp(source * invScale, -127f, 127f);
+        float scaled = math.clamp(source * densityDecodeInvScale, -127f, 127f);
         int quantized = scaled >= 0f ? (int)(scaled + 0.5f) : (int)(scaled - 0.5f);
         if (quantized == 0 && math.abs(source) > 0.00001f)
             quantized = source < 0f ? -1 : 1;
@@ -2042,8 +2041,10 @@ public unsafe struct VoxelWeldJob : IJob
 public struct VoxelNormalJob : IJobParallelFor
 {
     public int ptsX, ptsY, ptsZ;
+    public int densityStrideY;
+    public int densityStrideZ;
     public float3 volumeOrigin;
-    public float voxelStep;
+    public float invVoxelStep;
     public float densityDecodeScale;
     [ReadOnly] public NativeArray<sbyte> densityField;
     [ReadOnly] public NativeArray<float3> positions;
@@ -2054,7 +2055,6 @@ public struct VoxelNormalJob : IJobParallelFor
     public void Execute(int idx)
     {
         float3 wp = positions[idx];
-        float invVoxelStep = 1f / math.max(voxelStep, 0.0001f);
         float3 sample = (wp - volumeOrigin) * invVoxelStep;
         int x = (int)math.clamp(sample.x + 0.5f, 0f, ptsX - 1f);
         int y = (int)math.clamp(sample.y + 0.5f, 0f, ptsY - 1f);
@@ -2089,20 +2089,19 @@ public struct VoxelNormalJob : IJobParallelFor
 
     float3 SampleGridNodeGradient(NativeArray<sbyte> field, int x, int y, int z)
     {
-        float center = ReadDensity(field, x, y, z);
+        int centerIndex = x + y * densityStrideY + z * densityStrideZ;
+        float center = ReadDensity(field, centerIndex);
 
         return new float3(
-            x < ptsX - 1 ? ReadDensity(field, x + 1, y, z) - center : center - ReadDensity(field, math.max(0, x - 1), y, z),
-            y < ptsY - 1 ? ReadDensity(field, x, y + 1, z) - center : center - ReadDensity(field, x, math.max(0, y - 1), z),
-            z < ptsZ - 1 ? ReadDensity(field, x, y, z + 1) - center : center - ReadDensity(field, x, y, math.max(0, z - 1)));
+            x < ptsX - 1 ? ReadDensity(field, centerIndex + 1) - center : center - ReadDensity(field, centerIndex - math.select(0, 1, x > 0)),
+            y < ptsY - 1 ? ReadDensity(field, centerIndex + densityStrideY) - center : center - ReadDensity(field, centerIndex - math.select(0, densityStrideY, y > 0)),
+            z < ptsZ - 1 ? ReadDensity(field, centerIndex + densityStrideZ) - center : center - ReadDensity(field, centerIndex - math.select(0, densityStrideZ, z > 0)));
     }
 
-    float ReadDensity(NativeArray<sbyte> field, int x, int y, int z)
+    float ReadDensity(NativeArray<sbyte> field, int index)
     {
-        return field[GridIndex(x, y, z)] * densityDecodeScale;
+        return field[index] * densityDecodeScale;
     }
-
-    int GridIndex(int x, int y, int z) => x + y * ptsX + z * ptsX * ptsY;
 }
 
 [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -2708,7 +2707,33 @@ public class HectonVoxelEngine : MonoBehaviour
     const float ChthonicPillarMinimumTectonicBoundaryMask = 0.55f;
     const int ChthonicPillarColliderSegments = 24;
     // COLD ALLOC: float2[24] - smooth chthonic pillar collider unit circle LUT - owner: HectonVoxelEngine
-    private static readonly float2[] _chthonicPillarColliderUnitCircle = BuildChthonicPillarColliderUnitCircle();
+    private static readonly float2[] _chthonicPillarColliderUnitCircle =
+    {
+        new float2(1f, 0f),
+        new float2(0.9659258f, 0.258819f),
+        new float2(0.8660254f, 0.5f),
+        new float2(0.7071068f, 0.7071068f),
+        new float2(0.5f, 0.8660254f),
+        new float2(0.258819f, 0.9659258f),
+        new float2(0f, 1f),
+        new float2(-0.258819f, 0.9659258f),
+        new float2(-0.5f, 0.8660254f),
+        new float2(-0.7071068f, 0.7071068f),
+        new float2(-0.8660254f, 0.5f),
+        new float2(-0.9659258f, 0.258819f),
+        new float2(-1f, 0f),
+        new float2(-0.9659258f, -0.258819f),
+        new float2(-0.8660254f, -0.5f),
+        new float2(-0.7071068f, -0.7071068f),
+        new float2(-0.5f, -0.8660254f),
+        new float2(-0.258819f, -0.9659258f),
+        new float2(0f, -1f),
+        new float2(0.258819f, -0.9659258f),
+        new float2(0.5f, -0.8660254f),
+        new float2(0.7071068f, -0.7071068f),
+        new float2(0.8660254f, -0.5f),
+        new float2(0.9659258f, -0.258819f)
+    };
     const float CliffOverhangSlopeThreshold = 1.7320508f;
     const float CliffOverhangLateralAmplitudeMeters = 1.25f;
     const float CliffOverhangNoiseFrequency = 0.075f;
@@ -5584,9 +5609,10 @@ public class HectonVoxelEngine : MonoBehaviour
         densityHandle = chunkContentHandle;
         NativeArray<sbyte> quantizedDensityField = data.ScratchLease.QuantizedDensityField;
         float densityDecodeScale = ResolveDensityDecodeScale(data.VoxelStep);
+        float densityDecodeInvScale = 1f / math.max(densityDecodeScale, 0.0001f);
         JobHandle quantizeDensityHandle = new VoxelDensityQuantizeJob
         {
-            densityDecodeScale = densityDecodeScale,
+            densityDecodeInvScale = densityDecodeInvScale,
             density = densityField,
             quantizedDensity = quantizedDensityField
         }.Schedule(data.TotalPts, JOB_BATCH, densityHandle);
@@ -5830,8 +5856,10 @@ public class HectonVoxelEngine : MonoBehaviour
             ptsX = data.PtsX,
             ptsY = data.PtsY,
             ptsZ = data.PtsZ,
+            densityStrideY = data.PtsX,
+            densityStrideZ = data.PtsX * data.PtsY,
             volumeOrigin = data.VolumeOrigin,
-            voxelStep = data.VoxelStep,
+            invVoxelStep = 1f / math.max(data.VoxelStep, 0.0001f),
             densityDecodeScale = densityDecodeScale,
             densityField = quantizedDensityField,
             positions = data.WeldedPositions,
@@ -6152,18 +6180,6 @@ public class HectonVoxelEngine : MonoBehaviour
         NativeMemorySentinel.UnregisterNativeArray(array);
         array.Dispose(default);
         array = default;
-    }
-
-    private static float2[] BuildChthonicPillarColliderUnitCircle()
-    {
-        float2[] table = new float2[ChthonicPillarColliderSegments];
-        for (int segment = 0; segment < ChthonicPillarColliderSegments; segment++)
-        {
-            float angle = (math.PI * 2f * segment) / ChthonicPillarColliderSegments;
-            table[segment] = new float2(math.cos(angle), math.sin(angle));
-        }
-
-        return table;
     }
 
     void BuildSpatialPartitions(VoxelPipelineData data)

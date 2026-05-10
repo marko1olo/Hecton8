@@ -45,6 +45,7 @@ namespace Hecton8.SaveSystem
         private const int MaxRegisteredSaveables = 256;
         private const int MaxSaveSlotNameLength = 48;
         private const int SaveSlotScratchCapacity = 8;
+        private const int MaxSaveLoadCandidateCount = 9;
         private const string InvalidSlotNameReason = "Invalid save slot name.";
         private const string InvalidSlotFileStem = "slot_invalid";
         private static readonly long CompressionThrottleBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 100L);
@@ -96,6 +97,10 @@ namespace Hecton8.SaveSystem
         private readonly ISaveable[] _saveables = new ISaveable[MaxRegisteredSaveables];
         // COLD ALLOC: List<IndexedSectorEntryInfo>[128] — reusable indexed-save directory probe scratch — owner: SaveManager
         private readonly List<SaveBinaryStorage.IndexedSectorEntryInfo> _indexedSectorDirectoryScratch = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(128);
+        // COLD ALLOC: List<SaveSlotInfo>[8] - instance-owned metadata projection scratch - owner: SaveManager
+        private readonly List<SaveSlotInfo> _saveSlotInfoScratch = new List<SaveSlotInfo>(SaveSlotScratchCapacity);
+        // COLD ALLOC: SaveLoadCandidate[9] - instance-owned load fallback chain scratch - owner: SaveManager
+        private readonly SaveLoadCandidate[] _loadCandidateScratch = new SaveLoadCandidate[MaxSaveLoadCandidateCount];
         private int _saveableCount;
         private bool _registryDirty;
         private bool _saveableCapacityWarningLogged;
@@ -105,6 +110,15 @@ namespace Hecton8.SaveSystem
 
         private static readonly IComparer<ISaveable> SavePriorityComparer = new SavePriorityComparerImpl();
         private static readonly IComparer<ISaveable> LoadPriorityComparer = new LoadPriorityComparerImpl();
+        private static readonly Comparison<SaveSlotInfo> SaveSlotTimestampDescendingComparison = CompareSaveSlotTimestampDescending;
+        // COLD ALLOC: object[1] - serializes static repair/audit save-slot scratch - owner: SaveManager
+        private static readonly object SaveSlotInfoScratchSync = new object();
+        // COLD ALLOC: List<SaveSlotInfo>[8] - static repair/audit slot enumeration scratch - owner: SaveManager
+        private static readonly List<SaveSlotInfo> SaveSlotInfoScratch = new List<SaveSlotInfo>(SaveSlotScratchCapacity);
+        // COLD ALLOC: object[1] - serializes static repair/audit candidate scratch - owner: SaveManager
+        private static readonly object SaveLoadCandidateScratchSync = new object();
+        // COLD ALLOC: SaveLoadCandidate[9] - static repair/audit load fallback scratch - owner: SaveManager
+        private static readonly SaveLoadCandidate[] SaveLoadCandidateScratch = new SaveLoadCandidate[MaxSaveLoadCandidateCount];
         private static string s_persistentDataPathRoot;
 
         private sealed class SavePriorityComparerImpl : IComparer<ISaveable>
@@ -121,6 +135,13 @@ namespace Hecton8.SaveSystem
             {
                 return CompareLoadPriority(x, y);
             }
+        }
+
+        private static int CompareSaveSlotTimestampDescending(SaveSlotInfo a, SaveSlotInfo b)
+        {
+            long left = a != null && a.Metadata != null ? a.Metadata.Timestamp : a != null ? a.LastWriteTicksUtc : 0L;
+            long right = b != null && b.Metadata != null ? b.Metadata.Timestamp : b != null ? b.LastWriteTicksUtc : 0L;
+            return right.CompareTo(left);
         }
 
         private NativeArray<byte> _savePayloadBuffer;
@@ -766,6 +787,8 @@ namespace Hecton8.SaveSystem
                 if (divergenceSnapshotTimer.ElapsedTicks > PreCompressionYieldBudgetTicks)
                     await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
 
+                await Awaitable.MainThreadAsync();
+                SaveContextFrameData frameData = SaveContextFrameData.CaptureMainThread();
                 SaveEvents.RaiseMappedWriteStarted(slotName);
                 await Awaitable.BackgroundThreadAsync();
 
@@ -791,7 +814,6 @@ namespace Hecton8.SaveSystem
 
                 long compressionPipelineElapsedTicks = Stopwatch.GetTimestamp() - compressionPipelineStartTicks;
                 await Awaitable.MainThreadAsync();
-                SaveContextFrameData frameData = SaveContextFrameData.CaptureMainThread();
                 RegisterCompressionPipelineElapsed(compressionPipelineElapsedTicks, in frameData);
                 StageIntegrityPayload(_savePayloadBuffer, rawPayloadLength, payloadHash64, slotName);
                 int backupRetention = GetBackupRetentionCount(slotName);
@@ -1149,6 +1171,8 @@ namespace Hecton8.SaveSystem
             ReportLoadPipelineStage(LoadingPipelineStage.PagingSectors, 0.08f);
             var totalTimer = Stopwatch.StartNew();
             NativeArray<byte> loadedVoxelDeltaSnapshot = default;
+            SaveLoadCandidate[] candidates = _loadCandidateScratch;
+            int candidateCount = 0;
 
             try
             {
@@ -1162,14 +1186,14 @@ namespace Hecton8.SaveSystem
                 SaveMetadata loadedMetadata = null;
                 SaveLoadCandidate loadedCandidate = default;
                 Exception lastError = null;
-                List<SaveLoadCandidate> candidates = BuildLoadCandidates(slotName);
+                candidateCount = BuildLoadCandidates(slotName, candidates);
                 bool usedLegacyFormat = false;
                 ulong loadedPayloadHash64 = 0UL;
                 int loadedPayloadLength = 0;
                 bool criticalBackupPromotedForLoad = false;
                 int criticalBackupGenerationForLoad = 0;
 
-                for (int i = 0; i < candidates.Count; i++)
+                for (int i = 0; i < candidateCount; i++)
                 {
                     if (TryLoadCandidate(
                         slotName,
@@ -1415,6 +1439,8 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
+                ClearLoadCandidates(candidates, candidateCount);
+
                 if (loadedVoxelDeltaSnapshot.IsCreated)
                     DisposeNativeArray(ref loadedVoxelDeltaSnapshot);
 
@@ -1456,12 +1482,20 @@ namespace Hecton8.SaveSystem
                 return;
 
             results.Clear();
-            List<SaveSlotInfo> infos = new List<SaveSlotInfo>(SaveSlotScratchCapacity);
-            GetAvailableSaveSlotInfos(infos);
-            for (int i = 0; i < infos.Count; i++)
+            List<SaveSlotInfo> infos = _saveSlotInfoScratch;
+            infos.Clear();
+            try
             {
-                if (infos[i].Metadata != null)
-                    results.Add(infos[i].Metadata);
+                GetAvailableSaveSlotInfos(infos);
+                for (int i = 0; i < infos.Count; i++)
+                {
+                    if (infos[i].Metadata != null)
+                        results.Add(infos[i].Metadata);
+                }
+            }
+            finally
+            {
+                infos.Clear();
             }
         }
 
@@ -1497,13 +1531,22 @@ namespace Hecton8.SaveSystem
 
             results.Clear();
 
-            List<SaveSlotInfo> slots = new List<SaveSlotInfo>(SaveSlotScratchCapacity);
-            CollectAvailableSaveSlotInfos(slots);
-            for (int i = 0; i < slots.Count; i++)
+            lock (SaveSlotInfoScratchSync)
             {
-                if (TryRepairSaveSlotInternal(slots[i].slotName, out SaveSlotRepairResult result))
+                List<SaveSlotInfo> slots = SaveSlotInfoScratch;
+                slots.Clear();
+                try
                 {
-                    results.Add(result);
+                    CollectAvailableSaveSlotInfos(slots);
+                    for (int i = 0; i < slots.Count; i++)
+                    {
+                        if (TryRepairSaveSlotInternal(slots[i].slotName, out SaveSlotRepairResult result))
+                            results.Add(result);
+                    }
+                }
+                finally
+                {
+                    slots.Clear();
                 }
             }
         }
@@ -1525,12 +1568,23 @@ namespace Hecton8.SaveSystem
 
             results.Clear();
 
-            List<SaveSlotInfo> slots = new List<SaveSlotInfo>(SaveSlotScratchCapacity);
-            CollectAvailableSaveSlotInfos(slots);
-            for (int i = 0; i < slots.Count; i++)
+            lock (SaveSlotInfoScratchSync)
             {
-                if (TryAuditSaveSlotInternal(slots[i].slotName, out SaveSlotAuditResult result))
-                    results.Add(result);
+                List<SaveSlotInfo> slots = SaveSlotInfoScratch;
+                slots.Clear();
+                try
+                {
+                    CollectAvailableSaveSlotInfos(slots);
+                    for (int i = 0; i < slots.Count; i++)
+                    {
+                        if (TryAuditSaveSlotInternal(slots[i].slotName, out SaveSlotAuditResult result))
+                            results.Add(result);
+                    }
+                }
+                finally
+                {
+                    slots.Clear();
+                }
             }
         }
 
@@ -1546,28 +1600,38 @@ namespace Hecton8.SaveSystem
                 return;
 
             string[] files = Directory.GetFiles(persistentPath);
-            HashSet<string> slotNames = new HashSet<string>(files.Length, StringComparer.OrdinalIgnoreCase);
+            int slotNameCount = 0;
             for (int i = 0; i < files.Length; i++)
             {
                 string fileName = Path.GetFileName(files[i]);
-                if (TryExtractSlotName(fileName, out string slotName))
-                    slotNames.Add(slotName);
+                if (TryExtractSlotName(fileName, out string slotName) &&
+                    !ContainsSlotName(files, slotNameCount, slotName))
+                {
+                    files[slotNameCount++] = slotName;
+                }
             }
 
             SaveManager manager = GlobalRegistry.SaveRuntime;
-            foreach (string slotName in slotNames)
+            for (int i = 0; i < slotNameCount; i++)
             {
+                string slotName = files[i];
                 SaveSlotInfo info = manager != null ? manager.BuildSaveSlotInfo(slotName) : BuildSaveSlotInfoStatic(slotName);
                 if (info != null && info.HasAnySaveData)
                     results.Add(info);
             }
 
-            results.Sort((a, b) =>
+            results.Sort(SaveSlotTimestampDescendingComparison);
+        }
+
+        private static bool ContainsSlotName(string[] slotNames, int count, string slotName)
+        {
+            for (int i = 0; i < count; i++)
             {
-                long left = a != null && a.Metadata != null ? a.Metadata.Timestamp : a.LastWriteTicksUtc;
-                long right = b != null && b.Metadata != null ? b.Metadata.Timestamp : b.LastWriteTicksUtc;
-                return right.CompareTo(left);
-            });
+                if (string.Equals(slotNames[i], slotName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
         }
         
         public void DeleteSave(string slotName)
@@ -1636,20 +1700,17 @@ namespace Hecton8.SaveSystem
 
         public static string[] GetAllKnownArtifactPaths(string slotName)
         {
-            List<string> paths = new List<string>(12)
-            {
-                GetPrimarySaveFilePath(slotName),
-                GetTempSaveFilePath(slotName),
-                SaveSlotMaintenanceRecord.GetPath(slotName)
-            };
-
             int maxGeneration = GetMaxBackupGenerationCount();
+            string[] paths = new string[3 + maxGeneration];
+            paths[0] = GetPrimarySaveFilePath(slotName);
+            paths[1] = GetTempSaveFilePath(slotName);
+            paths[2] = SaveSlotMaintenanceRecord.GetPath(slotName);
             for (int generation = 1; generation <= maxGeneration; generation++)
             {
-                paths.Add(GetBackupSaveFilePath(slotName, generation));
+                paths[2 + generation] = GetBackupSaveFilePath(slotName, generation);
             }
 
-            return paths.ToArray();
+            return paths;
         }
 
         private static void RotateBackupChain(string primaryPath, Func<int, string> backupPathFactory, int retentionCount)
@@ -1825,14 +1886,17 @@ namespace Hecton8.SaveSystem
             return TryResolveSafeSlotName(slotName, out slotName);
         }
 
-        private static List<SaveLoadCandidate> BuildLoadCandidates(string slotName)
+        private static int BuildLoadCandidates(string slotName, SaveLoadCandidate[] candidates)
         {
+            if (candidates == null || candidates.Length <= 0)
+                return 0;
+
             int backupRetention = GetBackupRetentionCountStatic(slotName);
-            List<SaveLoadCandidate> candidates = new List<SaveLoadCandidate>(backupRetention + 1);
+            int candidateCount = 0;
 
             string primarySavePath = GetPrimarySaveFilePath(slotName);
             if (FileExists(primarySavePath))
-                candidates.Add(new SaveLoadCandidate(primarySavePath, false, 0));
+                candidates[candidateCount++] = new SaveLoadCandidate(primarySavePath, false, 0);
 
             for (int generation = 1; generation <= backupRetention; generation++)
             {
@@ -1840,10 +1904,20 @@ namespace Hecton8.SaveSystem
                 if (!FileExists(backupSavePath))
                     continue;
 
-                candidates.Add(new SaveLoadCandidate(backupSavePath, true, generation));
+                if (candidateCount >= candidates.Length)
+                    break;
+
+                candidates[candidateCount++] = new SaveLoadCandidate(backupSavePath, true, generation);
             }
 
-            return candidates;
+            return candidateCount;
+        }
+
+        private static void ClearLoadCandidates(SaveLoadCandidate[] candidates, int candidateCount)
+        {
+            int safeCount = math.min(candidateCount, candidates != null ? candidates.Length : 0);
+            for (int i = 0; i < safeCount; i++)
+                candidates[i] = default;
         }
 
         private static bool TryRepairSaveSlotInternal(string slotName, out SaveSlotRepairResult result)
@@ -1878,7 +1952,6 @@ namespace Hecton8.SaveSystem
 
             result.IntegrityBefore = beforeInfo.IntegrityState;
 
-            List<SaveLoadCandidate> candidates = BuildLoadCandidates(slotName);
             SaveData repairedData = null;
             QuestSaveHeader packedQuestHeader = default;
             uint[] packedQuestStateWords = null;
@@ -1890,37 +1963,51 @@ namespace Hecton8.SaveSystem
             bool usedLegacyFormat = false;
             string errorMessage = string.Empty;
 
-            for (int i = 0; i < candidates.Count; i++)
+            SaveLoadCandidate[] candidates = SaveLoadCandidateScratch;
+            int candidateCount = 0;
+            lock (SaveLoadCandidateScratchSync)
             {
-                if (TryLoadCandidate(
-                    slotName,
-                    candidates[i],
-                    out SaveData candidateData,
-                    out QuestSaveHeader candidateQuestHeader,
-                    out uint[] candidatePackedQuestStateWords,
-                    out PersistentWorldDeltaRecord[] candidateWorldItems,
-                    out EcosystemSectorSaveRecord[] candidateEcosystemSectorStates,
-                    out NativeArray<byte> candidateVoxelDeltaSnapshot,
-                    out SaveMetadata candidateMetadata,
-                    out _,
-                    out _,
-                    out bool candidateUsedLegacyFormat,
-                    out _,
-                    out string candidateError))
+                try
                 {
-                    repairedData = candidateData;
-                    packedQuestHeader = candidateQuestHeader;
-                    packedQuestStateWords = candidatePackedQuestStateWords;
-                    persistentWorldItems = candidateWorldItems;
-                    ecosystemSectorStates = candidateEcosystemSectorStates;
-                    voxelDeltaSnapshot = candidateVoxelDeltaSnapshot;
-                    metadataSource = candidateMetadata ?? beforeInfo.Metadata;
-                    selectedCandidate = candidates[i];
-                    usedLegacyFormat = candidateUsedLegacyFormat;
-                    break;
-                }
+                    candidateCount = BuildLoadCandidates(slotName, candidates);
+                    for (int i = 0; i < candidateCount; i++)
+                    {
+                        SaveLoadCandidate candidate = candidates[i];
+                        if (TryLoadCandidate(
+                            slotName,
+                            candidate,
+                            out SaveData candidateData,
+                            out QuestSaveHeader candidateQuestHeader,
+                            out uint[] candidatePackedQuestStateWords,
+                            out PersistentWorldDeltaRecord[] candidateWorldItems,
+                            out EcosystemSectorSaveRecord[] candidateEcosystemSectorStates,
+                            out NativeArray<byte> candidateVoxelDeltaSnapshot,
+                            out SaveMetadata candidateMetadata,
+                            out _,
+                            out _,
+                            out bool candidateUsedLegacyFormat,
+                            out _,
+                            out string candidateError))
+                        {
+                            repairedData = candidateData;
+                            packedQuestHeader = candidateQuestHeader;
+                            packedQuestStateWords = candidatePackedQuestStateWords;
+                            persistentWorldItems = candidateWorldItems;
+                            ecosystemSectorStates = candidateEcosystemSectorStates;
+                            voxelDeltaSnapshot = candidateVoxelDeltaSnapshot;
+                            metadataSource = candidateMetadata ?? beforeInfo.Metadata;
+                            selectedCandidate = candidate;
+                            usedLegacyFormat = candidateUsedLegacyFormat;
+                            break;
+                        }
 
-                errorMessage = candidateError;
+                        errorMessage = candidateError;
+                    }
+                }
+                finally
+                {
+                    ClearLoadCandidates(candidates, candidateCount);
+                }
             }
 
             if (repairedData == null)
@@ -2005,60 +2092,72 @@ namespace Hecton8.SaveSystem
             result.Success = true;
             result.IntegrityState = info.IntegrityState;
 
-            List<SaveLoadCandidate> candidates = BuildLoadCandidates(slotName);
             SaveLoadCandidate selectedCandidate = default;
             SaveData selectedData = null;
             bool selectedLegacyFormat = false;
             bool hasSelectedCandidate = false;
 
-            for (int i = 0; i < candidates.Count; i++)
+            SaveLoadCandidate[] candidates = SaveLoadCandidateScratch;
+            int candidateCount = 0;
+            lock (SaveLoadCandidateScratchSync)
             {
-                SaveLoadCandidate candidate = candidates[i];
-                bool isBackup = candidate.IsBackup;
-
-                if (isBackup)
-                    result.HasBackupCandidate = true;
-                else
-                    result.HasPrimaryCandidate = true;
-
-                if (TryLoadCandidate(
-                    slotName,
-                    candidate,
-                    out SaveData candidateData,
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    out NativeArray<byte> candidateVoxelDeltaSnapshot,
-                    out SaveMetadata _,
-                    out _,
-                    out _,
-                    out bool candidateLegacyFormat,
-                    out _,
-                    out string candidateError))
+                try
                 {
-                    if (isBackup)
-                        result.BackupReadable = true;
-                    else
-                        result.PrimaryReadable = true;
-
-                    if (!hasSelectedCandidate)
+                    candidateCount = BuildLoadCandidates(slotName, candidates);
+                    for (int i = 0; i < candidateCount; i++)
                     {
-                        hasSelectedCandidate = true;
-                        selectedCandidate = candidate;
-                        selectedData = candidateData;
-                        selectedLegacyFormat = candidateLegacyFormat;
-                    }
+                        SaveLoadCandidate candidate = candidates[i];
+                        bool isBackup = candidate.IsBackup;
 
-                    if (candidateVoxelDeltaSnapshot.IsCreated)
-                        DisposeNativeArray(ref candidateVoxelDeltaSnapshot);
+                        if (isBackup)
+                            result.HasBackupCandidate = true;
+                        else
+                            result.HasPrimaryCandidate = true;
+
+                        if (TryLoadCandidate(
+                            slotName,
+                            candidate,
+                            out SaveData candidateData,
+                            out _,
+                            out _,
+                            out _,
+                            out _,
+                            out NativeArray<byte> candidateVoxelDeltaSnapshot,
+                            out SaveMetadata _,
+                            out _,
+                            out _,
+                            out bool candidateLegacyFormat,
+                            out _,
+                            out string candidateError))
+                        {
+                            if (isBackup)
+                                result.BackupReadable = true;
+                            else
+                                result.PrimaryReadable = true;
+
+                            if (!hasSelectedCandidate)
+                            {
+                                hasSelectedCandidate = true;
+                                selectedCandidate = candidate;
+                                selectedData = candidateData;
+                                selectedLegacyFormat = candidateLegacyFormat;
+                            }
+
+                            if (candidateVoxelDeltaSnapshot.IsCreated)
+                                DisposeNativeArray(ref candidateVoxelDeltaSnapshot);
+                        }
+                        else
+                        {
+                            if (isBackup)
+                                result.BackupError = candidateError;
+                            else
+                                result.PrimaryError = candidateError;
+                        }
+                    }
                 }
-                else
+                finally
                 {
-                    if (isBackup)
-                        result.BackupError = candidateError;
-                    else
-                        result.PrimaryError = candidateError;
+                    ClearLoadCandidates(candidates, candidateCount);
                 }
             }
 

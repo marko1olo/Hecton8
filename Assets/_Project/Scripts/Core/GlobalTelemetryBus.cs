@@ -71,6 +71,7 @@ namespace Hecton8.Core
         private const string ExportTimestampFormat = "yyyyMMdd_HHmmss_fffffff";
         private const string TelemetryFileNamePrefix = "telemetry_";
         private const int ExportTimestampCharCount = 23;
+        private const float BytesToMegabytes = 1f / (1024f * 1024f);
 
         private static NativeRingBuffer<TelemetryEvent> _ringBuffer;
         private static NativeArray<TelemetryEvent> _snapshotBuffer;
@@ -349,7 +350,7 @@ namespace Hecton8.Core
         /// <param name="estimatedBytes">Current estimated payload in bytes.</param>
         public static void PublishVRAMWarningEvent(long estimatedBytes)
         {
-            float estimatedMegabytes = estimatedBytes * (1f / (1024f * 1024f));
+            float estimatedMegabytes = estimatedBytes * BytesToMegabytes;
             Publish(TelemetryEventType.VRAMWarning, 0u, 0u, estimatedMegabytes, default);
         }
 
@@ -424,7 +425,7 @@ namespace Hecton8.Core
         public static void PublishModCriticalMemoryEviction(uint modHash, long trackedHeapBytes, long quotaBytes)
         {
             uint context = unchecked((uint)math.min(uint.MaxValue, math.max(0L, quotaBytes)));
-            float scalar = math.max(0f, trackedHeapBytes / (1024f * 1024f));
+            float scalar = math.max(0f, trackedHeapBytes * BytesToMegabytes);
             Publish(TelemetryEventType.ModCriticalMemoryEviction, modHash, context, scalar, default);
         }
 
@@ -502,31 +503,13 @@ namespace Hecton8.Core
         public static long NativeCopyMegabyteCount => Interlocked.Read(ref _nativeCopyByteCount) >> 20;
 
         /// <summary>
-        /// Attempts a crash-path synchronous export of the global telemetry ring.
-        /// Returns false when a background MMF write already owns the export scratch state.
+        /// Compatibility shim for legacy crash handlers. Caller-thread MMF flush is forbidden;
+        /// this only queues the background emergency flush path.
         /// </summary>
         public static bool TryEmergencyFlushSynchronous()
         {
-            if (!Application.isPlaying)
-                return false;
-
-            EnsureInitialized();
-            if (Interlocked.CompareExchange(ref _exportInFlight, 1, 0) != 0)
-                return false;
-
-            try
-            {
-                return TryEmergencyFlushLocked();
-            }
-            finally
-            {
-                _snapshotInProgress = false;
-                _snapshotStartIndex = 0;
-                _snapshotTotalCount = 0;
-                _snapshotCopiedCount = 0;
-                ClearPendingExportState();
-                Interlocked.Exchange(ref _exportInFlight, 0);
-            }
+            RequestEmergencyFlushAsync();
+            return false;
         }
 
         /// <summary>

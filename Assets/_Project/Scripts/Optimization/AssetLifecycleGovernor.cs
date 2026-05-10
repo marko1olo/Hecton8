@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
+using Object = UnityEngine.Object;
 using Stopwatch = System.Diagnostics.Stopwatch;
 #if UNITY_ADDRESSABLES_EXIST
 using UnityEngine.AddressableAssets;
@@ -65,6 +67,9 @@ namespace Hecton8.Optimization
 #if UNITY_ADDRESSABLES_EXIST
         private AsyncOperationHandle<bool> _hardReaperCleanBundleCacheHandle;
         private System.Action<AsyncOperationHandle<bool>> _hardReaperCleanBundleCacheCompletedCallback;
+        private uint _lastAddressableDependencyGroupHash;
+        private int _lastAddressableDependencyOrder;
+        private int _addressableDependencyGroupLoadCount;
 #endif
 
         // COLD ALLOC: Dictionary<uint, AssetRecord>[512] - global asset residency registry - owner: AssetLifecycleGovernor
@@ -83,6 +88,9 @@ namespace Hecton8.Optimization
         internal long NativeHeapEstimateBytes => (long)(TrackedResidentBytes * NativeHeapOverheadFactor);
         internal int PendingReleaseCount => _pendingRelease.Count;
         internal Material CheckerboardMaterial => _checkerboardMaterial;
+#if UNITY_ADDRESSABLES_EXIST
+        internal int AddressableDependencyGroupLoadCount => _addressableDependencyGroupLoadCount;
+#endif
 
         private void Awake()
         {
@@ -293,6 +301,19 @@ namespace Hecton8.Optimization
             record.LastAccessFrame = _frameSequence;
             TryApplyShaderFallback(ref record, asset);
             _registry[key] = record;
+        }
+
+        internal void MarkAddressableDependencyGroupLoaded(
+            uint groupHash,
+            int dependencyOrder,
+            AsyncOperationHandle handle)
+        {
+            if (groupHash == 0u || !handle.IsValid() || handle.Status != AsyncOperationStatus.Succeeded)
+                return;
+
+            _lastAddressableDependencyGroupHash = groupHash;
+            _lastAddressableDependencyOrder = dependencyOrder;
+            _addressableDependencyGroupLoadCount++;
         }
 #endif
 
@@ -898,8 +919,8 @@ namespace Hecton8.Optimization
             if (_checkerboardMaterial == null)
                 return false;
 
-            uint materialHash = unchecked((uint)material.GetInstanceID());
-            uint shaderHash = shader != null ? unchecked((uint)shader.GetInstanceID()) : 0u;
+            uint materialHash = unchecked((uint)EntityId.ToULong(material.GetEntityId()));
+            uint shaderHash = shader != null ? unchecked((uint)EntityId.ToULong(shader.GetEntityId())) : 0u;
             if (record.OwnsAssetInstance && !ReferenceEquals(material, _checkerboardMaterial))
                 Destroy(material);
 
@@ -1068,6 +1089,12 @@ namespace Hecton8.Optimization
 
         private static uint CreateKey(string assetGuid, string address, byte biomeId, byte lodLevel)
         {
+            if (!string.IsNullOrEmpty(assetGuid) &&
+                PreInitAssetIdMap.TryResolve(assetGuid.AsSpan(), out uint assetId))
+            {
+                return PreInitAssetIdMap.MixAssetVariant(assetId, biomeId, lodLevel);
+            }
+
             string identity = !string.IsNullOrEmpty(assetGuid) ? assetGuid : address;
             if (string.IsNullOrEmpty(identity))
                 identity = "UNRESOLVED_ASSET";

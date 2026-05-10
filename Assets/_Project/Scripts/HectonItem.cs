@@ -488,7 +488,7 @@ namespace Hecton8.Items
             if (torqueAxis.sqrMagnitude <= 0.0001f)
                 torqueAxis = Vector3.right;
 
-            Vector3 torque = torqueAxis.normalized * OverflowScatterTorqueImpulse;
+            Vector3 torque = ResolveDominantPlanarDirection(torqueAxis) * OverflowScatterTorqueImpulse;
             if (IsFiniteVector(torque))
                 PhysicsForceRouter.QueueTorque(_rb, torque, ForceMode.Impulse);
         }
@@ -500,15 +500,25 @@ namespace Hecton8.Items
                 Vector3 scatterDirection = transform.position - interactor.position;
                 scatterDirection.y = 0f;
                 if (scatterDirection.sqrMagnitude > 0.0001f)
-                    return scatterDirection.normalized;
+                    return ResolveDominantPlanarDirection(scatterDirection);
 
                 Vector3 fallbackForward = -interactor.forward;
                 fallbackForward.y = 0f;
                 if (fallbackForward.sqrMagnitude > 0.0001f)
-                    return fallbackForward.normalized;
+                    return ResolveDominantPlanarDirection(fallbackForward);
             }
 
             return Vector3.forward;
+        }
+
+        private static Vector3 ResolveDominantPlanarDirection(Vector3 value)
+        {
+            float absX = value.x < 0f ? -value.x : value.x;
+            float absZ = value.z < 0f ? -value.z : value.z;
+            if (absX >= absZ)
+                return value.x >= 0f ? Vector3.right : Vector3.left;
+
+            return value.z >= 0f ? Vector3.forward : Vector3.back;
         }
 
         private static bool IsFiniteVector(Vector3 value)

@@ -1,5 +1,6 @@
 using System.Collections;
 using Hecton8.Core;
+using Hecton8.Dev;
 using Hecton8.Physics;
 using Hecton8.World;
 using NUnit.Framework;
@@ -11,8 +12,6 @@ namespace Hecton8.Tests.PlayMode
 {
     public sealed class InquisitionNanBombPlayModeTests
     {
-        private const string NonFiniteForceLog = "[PhysicsApplySystem] Non-finite force packet detected. Zeroing vector.";
-        private const string NonFiniteTorqueLog = "[PhysicsApplySystem] Non-finite torque packet detected. Zeroing vector.";
         private const string NonFinitePointOffsetLog = "[PhysicsApplySystem] Non-finite point-offset packet detected. Zeroing offset.";
 
         [UnityTest]
@@ -26,19 +25,16 @@ namespace Hecton8.Tests.PlayMode
             Rigidbody body = bodyObject.AddComponent<Rigidbody>();
             body.useGravity = false;
 
-            LogAssert.Expect(LogType.Error, NonFiniteForceLog);
             bool nanForceAccepted = PhysicsForceRouter.QueueForce(
                 body,
                 new Vector3(float.NaN, 1f, 0f),
                 ForceMode.Acceleration);
 
-            LogAssert.Expect(LogType.Error, NonFiniteTorqueLog);
             bool infinityTorqueAccepted = PhysicsForceRouter.QueueTorque(
                 body,
                 new Vector3(0f, float.PositiveInfinity, 0f),
                 ForceMode.Acceleration);
 
-            LogAssert.Expect(LogType.Error, NonFiniteForceLog);
             bool infinityForceAtPointAccepted = PhysicsForceRouter.QueueForceAtPosition(
                 body,
                 new Vector3(0f, 0f, float.PositiveInfinity),
@@ -67,6 +63,60 @@ namespace Hecton8.Tests.PlayMode
             Object.Destroy(bodyObject);
             if (previousPhysics == null && physicsObject != null)
                 Object.Destroy(physicsObject);
+            yield return null;
+        }
+
+        [Test]
+        public void MathGuardApi_RejectsScalarAndVectorNaN()
+        {
+            Assert.IsFalse(MathGuard.TryAcceptFinite(float.NaN, out float finiteScalar), "MathGuard accepted scalar NaN.");
+            Assert.AreEqual(0f, finiteScalar);
+            Assert.IsFalse(
+                MathGuard.TryAcceptFinite(new Vector3(0f, float.NaN, 0f), out Vector3 finiteVector),
+                "MathGuard accepted vector NaN.");
+            Assert.AreEqual(Vector3.zero, finiteVector);
+        }
+
+        [UnityTest]
+        public IEnumerator BotMovementAxes_NaNBomb_DoesNotTeleportPlayerBody()
+        {
+            GameObject bodyObject = new GameObject("nan-bomb-bot-player-body");
+            Rigidbody body = bodyObject.AddComponent<Rigidbody>();
+            body.useGravity = false;
+            body.mass = 90f;
+            BotController bot = bodyObject.AddComponent<BotController>();
+            bot.SetTargetDistanceMeters(1000f);
+
+            Vector2[] toxicCommands =
+            {
+                new Vector2(float.NaN, 0f),
+                new Vector2(0f, float.NaN),
+                new Vector2(float.NaN, float.NaN)
+            };
+
+            for (int i = 0; i < toxicCommands.Length; i++)
+            {
+                body.position = Vector3.zero;
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+                bot.SetMoveCommand(toxicCommands[i].x, toxicCommands[i].y);
+                bot.StartExpedition();
+                Vector3 startPosition = body.position;
+                for (int frame = 0; frame < 4; frame++)
+                {
+                    bot.Tick(1f / 60f);
+                    yield return null;
+                }
+
+                AssertFinite(body.position, "Bot body position");
+                Assert.LessOrEqual(
+                    (body.position - startPosition).sqrMagnitude,
+                    0.000001f,
+                    "Bot NaN movement axis teleported player body at command index " + i);
+                bot.StopExpedition();
+            }
+
+            Object.Destroy(bodyObject);
             yield return null;
         }
 

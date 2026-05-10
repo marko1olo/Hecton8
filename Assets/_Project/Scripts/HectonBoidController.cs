@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 â€” HectonBoidController.cs
 // GPU-based Boid System Controller.
 //
@@ -611,8 +611,7 @@ namespace Hecton8.AI.GPU
 
             for (int i = 0; i < boidCount; i++)
             {
-                // Spawn in sphere around boundsCenter
-                Vector3 randomPos = boundsCenter + Random.insideUnitSphere * spawnRadius;
+                Vector3 randomPos = boundsCenter + ResolveDeterministicScatterVector(i, boundsCenter, 0xB01D5EEDu) * spawnRadius;
 
                 // Clamp Y: full box depth down, 2m below water surface up
                 randomPos.y = Mathf.Clamp(
@@ -620,11 +619,11 @@ namespace Hecton8.AI.GPU
                     boundsCenter.y - boundsSize.y,
                     waterSurfaceY - 2f);
 
-                Vector3 randomVel = Random.insideUnitSphere * (minSpeed + maxSpeed) * 0.5f;
+                Vector3 randomVel = ResolveDeterministicScatterVector(i, boundsCenter, 0xB01D7101u) * ((minSpeed + maxSpeed) * 0.5f);
 
                 // Ensure minimum speed
                 if (randomVel.sqrMagnitude < minSpeed * minSpeed)
-                    randomVel = Random.onUnitSphere * minSpeed;
+                    randomVel = ResolveDeterministicCardinalAxis(i, 0xB01D7101u) * minSpeed;
 
                 initialData[i] = new BoidData
                 {
@@ -975,6 +974,56 @@ namespace Hecton8.AI.GPU
             return _mainCamera != null;
         }
 
+        private static Vector3 ResolveDeterministicScatterVector(int index, Vector3 center, uint salt)
+        {
+            uint state = BuildDeterministicBoidSeed(index, center, salt);
+            float x = NextSignedUnit(ref state);
+            float y = NextSignedUnit(ref state);
+            float z = NextSignedUnit(ref state);
+            Vector3 value = new Vector3(x, y, z) * 0.57735026f;
+            return value.sqrMagnitude > 0.015625f ? value : ResolveDeterministicCardinalAxis(index, salt);
+        }
+
+        private static Vector3 ResolveDeterministicCardinalAxis(int index, uint salt)
+        {
+            switch ((index + (int)(salt & 7u)) & 7)
+            {
+                case 0: return Vector3.right;
+                case 1: return Vector3.left;
+                case 2: return Vector3.up;
+                case 3: return Vector3.down;
+                case 4: return Vector3.forward;
+                case 5: return Vector3.back;
+                case 6: return new Vector3(0.70710677f, 0f, 0.70710677f);
+                default: return new Vector3(-0.70710677f, 0f, 0.70710677f);
+            }
+        }
+
+        private static uint BuildDeterministicBoidSeed(int index, Vector3 center, uint salt)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = (hash ^ salt) * 16777619u;
+                hash = (hash ^ (uint)index) * 16777619u;
+                hash = (hash ^ QuantizeSeedComponent(center.x)) * 16777619u;
+                hash = (hash ^ QuantizeSeedComponent(center.y)) * 16777619u;
+                hash = (hash ^ QuantizeSeedComponent(center.z)) * 16777619u;
+                return hash != 0u ? hash : 1u;
+            }
+        }
+
+        private static uint QuantizeSeedComponent(float value)
+        {
+            return unchecked((uint)Mathf.RoundToInt(value * 100f));
+        }
+
+        private static float NextSignedUnit(ref uint state)
+        {
+            state = unchecked((state * 1664525u) + 1013904223u);
+            return ((state >> 8) * (1f / 8388607.5f)) - 1f;
+        }
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC API
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1017,7 +1066,7 @@ namespace Hecton8.AI.GPU
             BoidData[] resetData = new BoidData[boidCount];
             for (int i = 0; i < boidCount; i++)
             {
-                Vector3 pos = center + Random.insideUnitSphere * spawnRadius;
+                Vector3 pos = center + ResolveDeterministicScatterVector(i, center, 0xB01D2E57u) * spawnRadius;
 
                 // Clamp Y: full box depth down, 2m below water surface up
                 pos.y = Mathf.Clamp(
@@ -1028,7 +1077,7 @@ namespace Hecton8.AI.GPU
                 resetData[i] = new BoidData
                 {
                     position = pos,
-                    velocity = Random.insideUnitSphere * minSpeed,
+                    velocity = ResolveDeterministicScatterVector(i, center, 0xB01D5A7Eu) * minSpeed,
                     pad0     = 0f,
                     pad1     = 0f
                 };

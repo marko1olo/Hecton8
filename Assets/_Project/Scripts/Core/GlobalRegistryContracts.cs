@@ -2005,6 +2005,11 @@ namespace Hecton8.Core
         /// Sector-authored prey camouflage bias applied to spawned swarm agents.
         /// </summary>
         public float CamouflageIndex;
+
+        /// <summary>
+        /// True when the containing sector carries active apex pressure.
+        /// </summary>
+        public bool ApexInSector;
     }
 
     /// <summary>
@@ -2029,6 +2034,11 @@ namespace Hecton8.Core
         /// <param name="sample">Resolved predator/prey population sample for the containing sector.</param>
         /// <returns>True when the sector sample is available.</returns>
         bool TryGetSectorPopulation(Vector3 worldPosition, out EcosystemSectorPopulationSample sample);
+
+        /// <summary>
+        /// Resolves the deterministic apex-presence flag for the sector containing the supplied world position.
+        /// </summary>
+        bool IsApexInSector(Vector3 worldPosition);
 
         /// <summary>
         /// Registers prey consumption inside the containing sector so the next cold-tick solve includes the loss.

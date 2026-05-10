@@ -61,22 +61,37 @@ namespace Hecton8.Physics
         public float3 PositionWS;
         public float3 DirectionWS;
         public float Strength;
-        public float Radius;
+        public float RadiusSq;
+        public float InvRadiusSq;
         public float ConeCos;
         public int Active;
         public float Padding0;
-        public float Padding1;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct WhirlpoolFlow
     {
         public float3 CenterWS;
-        public float Radius;
+        public float RadiusSq;
+        public float InvRadiusSq;
         public float TangentialStrength;
         public float CentripetalStrength;
         public float VerticalPull;
         public int Active;
+        public float Padding0;
+        public float Padding1;
+        public float Padding2;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FluidViscosityRegion
+    {
+        public float3 CenterWS;
+        public float InvRadiusSq;
+        public float ViscosityMultiplier;
+        public int Active;
+        public float Padding0;
+        public float Padding1;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -133,8 +148,12 @@ namespace Hecton8.Physics
         private const int MaxCavitationBurstEvents = 8;
         public const int MaxAnalyticalThrusterCount = 4;
         public const int MaxAnalyticalWhirlpoolCount = 2;
+        public const int MaxDynamicViscosityRegionCount = 4;
+        private const int ViscosityGradientLutSize = 16;
         private const int FluidImpactEventQueueCapacity = 64;
         private const int CavitationShockwaveHitCapacity = 64;
+        private const int GpuThreadGroupSize = 64;
+        private const int GpuThreadGroupShift = 6;
         private const float AbyssalBiolumeSurgeHoldSeconds = 4f;
         private const float GiantWakeDirectionEpsilonSq = 0.0001f;
         private const string NonFiniteBuoyancyForceLog = "[HectonFluidEngine] Non-finite buoyancy force output detected. Zeroing packet.";
@@ -170,6 +189,8 @@ namespace Hecton8.Physics
             public Vector3 Direction;
             public float Intensity01;
             public float Radius;
+            public float RadiusSq;
+            public float InvRadiusSq;
             public float Acceleration;
             public int SourceBodyInstanceId;
         }
@@ -277,6 +298,7 @@ namespace Hecton8.Physics
         [SerializeField, Min(0.01f)] private float haloclineBoundaryDepthMeters = 200f;
         [SerializeField, Min(1f)] private float deepLayerDensityMultiplier = 1.5f;
         [SerializeField] private float haloclineShearForcePerKg = 4f;
+        [SerializeField] private bool enableDynamicViscosityRegions = true;
 
         [Header("-- Giant's Wake -----------------------")]
         [Tooltip("Adds a subtle abyssal current bias from the parent gas giant sky direction.")]
@@ -576,12 +598,15 @@ namespace Hecton8.Physics
             float3 axisDirection = DominantAxisOrDefault(rawDirection, new float3(0f, 0f, 1f));
             float clampedConeDegrees = math.clamp(coneDegrees, 1f, 89f);
             float cone01 = clampedConeDegrees * 0.011111111f;
+            float safeRadius = math.max(0.01f, radius);
+            float radiusSq = safeRadius * safeRadius;
             _thrusterFlowBuffer[slot] = new ActiveThrusterFlow
             {
                 PositionWS = new float3(position.x, position.y, position.z),
                 DirectionWS = axisDirection,
                 Strength = math.max(0f, strength),
-                Radius = math.max(0.01f, radius),
+                RadiusSq = radiusSq,
+                InvRadiusSq = math.rcp(radiusSq),
                 ConeCos = 1f - cone01 * cone01,
                 Active = 1
             };
@@ -620,10 +645,13 @@ namespace Hecton8.Physics
                 return false;
             }
 
+            float safeRadius = math.max(0.01f, radius);
+            float radiusSq = safeRadius * safeRadius;
             _whirlpoolFlowBuffer[slot] = new WhirlpoolFlow
             {
                 CenterWS = new float3(center.x, center.y, center.z),
-                Radius = math.max(0.01f, radius),
+                RadiusSq = radiusSq,
+                InvRadiusSq = math.rcp(radiusSq),
                 TangentialStrength = tangentialStrength,
                 CentripetalStrength = centripetalStrength,
                 VerticalPull = math.max(0f, verticalPull),
@@ -646,6 +674,50 @@ namespace Hecton8.Physics
         {
             for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
                 _whirlpoolFlowBuffer[i] = default;
+            OnCurrentSettingsChanged();
+        }
+
+        public bool TrySetViscosityRegion(
+            int slot,
+            Vector3 center,
+            float radius,
+            float viscosityMultiplier)
+        {
+            if ((uint)slot >= MaxDynamicViscosityRegionCount ||
+                !IsFiniteVector(center) ||
+                radius <= 0f ||
+                !math.isfinite(viscosityMultiplier) ||
+                viscosityMultiplier <= 0f)
+            {
+                return false;
+            }
+
+            float safeRadius = math.max(0.01f, radius);
+            float radiusSq = safeRadius * safeRadius;
+            _viscosityRegionBuffer[slot] = new FluidViscosityRegion
+            {
+                CenterWS = new float3(center.x, center.y, center.z),
+                InvRadiusSq = math.rcp(radiusSq),
+                ViscosityMultiplier = math.clamp(viscosityMultiplier, 0.05f, 8f),
+                Active = 1
+            };
+            OnCurrentSettingsChanged();
+            return true;
+        }
+
+        public void ClearViscosityRegion(int slot)
+        {
+            if ((uint)slot >= MaxDynamicViscosityRegionCount)
+                return;
+
+            _viscosityRegionBuffer[slot] = default;
+            OnCurrentSettingsChanged();
+        }
+
+        public void ClearViscosityRegions()
+        {
+            for (int i = 0; i < MaxDynamicViscosityRegionCount; i++)
+                _viscosityRegionBuffer[i] = default;
             OnCurrentSettingsChanged();
         }
 
@@ -720,8 +792,11 @@ namespace Hecton8.Physics
         private NativeArray<GpuHeatSourceData> _gpuAbyssalHeatSourceUpload;
         private NativeArray<ActiveThrusterFlow> _activeThrusterFlows;
         private NativeArray<WhirlpoolFlow> _activeWhirlpools;
+        private NativeArray<FluidViscosityRegion> _activeViscosityRegions;
+        private NativeArray<float> _viscosityGradientLut;
         private int _activeThrusterFlowCount;
         private int _activeWhirlpoolFlowCount;
+        private int _activeViscosityRegionCount;
         private NativeQueue<FluidImpactEvent> _fluidImpactEvents;
         private int _fluidImpactQueuedCount;
         // COLD ALLOC: Rigidbody[capacity] — schedule-time rigidbody snapshot for deferred force application — owner: HectonFluidEngine
@@ -740,6 +815,8 @@ namespace Hecton8.Physics
         private readonly ActiveThrusterFlow[] _thrusterFlowBuffer = new ActiveThrusterFlow[MaxAnalyticalThrusterCount];
         // COLD ALLOC: WhirlpoolFlow[2] — fixed analytical whirlpool inputs — owner: HectonFluidEngine
         private readonly WhirlpoolFlow[] _whirlpoolFlowBuffer = new WhirlpoolFlow[MaxAnalyticalWhirlpoolCount];
+        // COLD ALLOC: FluidViscosityRegion[4] - fixed cinematic viscosity region inputs - owner: HectonFluidEngine
+        private readonly FluidViscosityRegion[] _viscosityRegionBuffer = new FluidViscosityRegion[MaxDynamicViscosityRegionCount];
 
         /// <summary>Tekuschaya emkost NativeArrays (vsegda >= count obektov).</summary>
         private int _nativeCapacity;
@@ -1137,8 +1214,11 @@ namespace Hecton8.Physics
                 gpuBuoyancyForcesY = _gpuBuoyancyForcesY,
                 activeThrusters = _activeThrusterFlows,
                 activeWhirlpools = _activeWhirlpools,
+                activeViscosityRegions = _activeViscosityRegions,
+                viscosityGradientLut = _viscosityGradientLut,
                 activeThrusterCount = _activeThrusterFlowCount,
                 activeWhirlpoolCount = _activeWhirlpoolFlowCount,
+                activeViscosityRegionCount = _activeViscosityRegionCount,
                 impactEvents = _impactEventScratch,
                 impactEventFlags = _impactEventFlags,
                 resultForces     = _resultForces,
@@ -1180,6 +1260,7 @@ namespace Hecton8.Physics
                 haloclineBoundaryDepthMeters = haloclineBoundaryDepthMeters,
                 deepLayerDensityMultiplier = deepLayerDensityMultiplier,
                 haloclineShearForcePerKg = haloclineShearForcePerKg,
+                enableDynamicViscosityRegions = enableDynamicViscosityRegions ? (byte)1 : (byte)0,
                 useGpuBuoyancyForce = useGpuBuoyancy ? (byte)1 : (byte)0
             };
 
@@ -1468,13 +1549,17 @@ namespace Hecton8.Physics
             }
 
             Vector3 safeDirection = DominantAxisOrDefault(direction, Vector3.back);
+            float safeRadius = math.max(0.01f, radius);
+            float radiusSq = safeRadius * safeRadius;
 
             _cavitationBurstQueue[_cavitationBurstCount++] = new CavitationBurstEvent
             {
                 Position = position,
                 Direction = safeDirection,
                 Intensity01 = math.saturate(intensity01),
-                Radius = math.max(0.01f, radius),
+                Radius = safeRadius,
+                RadiusSq = radiusSq,
+                InvRadiusSq = math.rcp(radiusSq),
                 Acceleration = math.max(0f, acceleration),
                 SourceBodyInstanceId = sourceBodyInstanceId
             };
@@ -1558,12 +1643,11 @@ namespace Hecton8.Physics
                 Vector3 radialDirection = radialDistanceSq > 0.000001f
                     ? DominantAxisOrDefault(radial, burstEvent.Direction)
                     : burstEvent.Direction;
-                radialDirection = Vector3.Lerp(radialDirection, burstEvent.Direction, 0.2f);
+                radialDirection += burstEvent.Direction * 0.25f;
                 radialDirection.y += cavitationShockwaveVerticalLift;
                 radialDirection = DominantAxisOrDefault(radialDirection, Vector3.up);
 
-                float radiusSq = math.max(0.0001f, burstEvent.Radius * burstEvent.Radius);
-                float distance01 = math.saturate(1f - radialDistanceSq / radiusSq);
+                float distance01 = math.saturate(1f - radialDistanceSq * burstEvent.InvRadiusSq);
                 distance01 *= distance01;
                 if (distance01 <= 0.0001f)
                     continue;
@@ -1658,6 +1742,11 @@ namespace Hecton8.Physics
                                  NativeArrayOptions.ClearMemory);
             _activeWhirlpools = new NativeArray<WhirlpoolFlow>(MaxAnalyticalWhirlpoolCount, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
+            _activeViscosityRegions = new NativeArray<FluidViscosityRegion>(MaxDynamicViscosityRegionCount, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory);
+            _viscosityGradientLut = new NativeArray<float>(ViscosityGradientLutSize, Allocator.Persistent,
+                                 NativeArrayOptions.UninitializedMemory);
+            InitializeViscosityGradientLut();
             _fluidImpactEvents = new NativeQueue<FluidImpactEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FluidImpactEvent>[64] — deferred water impact acoustic lane — owner: HectonFluidEngine
             PrewarmQueue(ref _fluidImpactEvents, FluidImpactEventQueueCapacity);
             RegisterNativeMemorySentinel();
@@ -1692,10 +1781,13 @@ namespace Hecton8.Physics
             DisposeNativeArray(ref _gpuAbyssalHeatSourceUpload, dependency);
             DisposeNativeArray(ref _activeThrusterFlows, dependency);
             DisposeNativeArray(ref _activeWhirlpools, dependency);
+            DisposeNativeArray(ref _activeViscosityRegions, dependency);
+            DisposeNativeArray(ref _viscosityGradientLut, dependency);
             DisposeNativeQueue(ref _fluidImpactEvents, dependency, nameof(_fluidImpactEvents));
             _fluidImpactQueuedCount = 0;
             _activeThrusterFlowCount = 0;
             _activeWhirlpoolFlowCount = 0;
+            _activeViscosityRegionCount = 0;
             _scheduledBodies = null;
             _scheduledBuoyancyHandle = default;
             _scheduledBuoyancyJobActive = false;
@@ -1728,6 +1820,8 @@ namespace Hecton8.Physics
             NativeMemorySentinel.RegisterNativeArray(_gpuAbyssalHeatSourceUpload, NativeMemoryOwner, nameof(_gpuAbyssalHeatSourceUpload), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_activeThrusterFlows, NativeMemoryOwner, nameof(_activeThrusterFlows), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_activeWhirlpools, NativeMemoryOwner, nameof(_activeWhirlpools), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_activeViscosityRegions, NativeMemoryOwner, nameof(_activeViscosityRegions), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_viscosityGradientLut, NativeMemoryOwner, nameof(_viscosityGradientLut), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeQueue(
                 _fluidImpactEvents,
                 FluidImpactEventQueueCapacity,
@@ -1780,16 +1874,29 @@ namespace Hecton8.Physics
             }
         }
 
+        private void InitializeViscosityGradientLut()
+        {
+            if (!_viscosityGradientLut.IsCreated || _viscosityGradientLut.Length <= 0)
+                return;
+
+            int lastIndex = _viscosityGradientLut.Length - 1;
+            for (int i = 0; i < _viscosityGradientLut.Length; i++)
+            {
+                float x = lastIndex > 0 ? i * math.rcp((float)lastIndex) : 1f;
+                _viscosityGradientLut[i] = x * x * (3f - 2f * x);
+            }
+        }
+
         private void CopyAnalyticalFlowInputsToNative()
         {
-            if (!_activeThrusterFlows.IsCreated || !_activeWhirlpools.IsCreated)
+            if (!_activeThrusterFlows.IsCreated || !_activeWhirlpools.IsCreated || !_activeViscosityRegions.IsCreated)
                 return;
 
             int thrusterWriteIndex = 0;
             for (int i = 0; i < MaxAnalyticalThrusterCount; i++)
             {
                 ActiveThrusterFlow thruster = _thrusterFlowBuffer[i];
-                if (thruster.Active == 0 || thruster.Strength <= 0f || thruster.Radius <= 0f)
+                if (thruster.Active == 0 || thruster.Strength <= 0f || thruster.RadiusSq <= 0f || thruster.InvRadiusSq <= 0f)
                     continue;
 
                 _activeThrusterFlows[thrusterWriteIndex++] = thruster;
@@ -1804,7 +1911,7 @@ namespace Hecton8.Physics
             for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
             {
                 WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
-                if (whirlpool.Active == 0 || whirlpool.Radius <= 0f)
+                if (whirlpool.Active == 0 || whirlpool.RadiusSq <= 0f || whirlpool.InvRadiusSq <= 0f)
                     continue;
 
                 _activeWhirlpools[whirlpoolWriteIndex++] = whirlpool;
@@ -1814,6 +1921,21 @@ namespace Hecton8.Physics
                 _activeWhirlpools[i] = default;
 
             _activeWhirlpoolFlowCount = whirlpoolWriteIndex;
+
+            int viscosityWriteIndex = 0;
+            for (int i = 0; i < MaxDynamicViscosityRegionCount; i++)
+            {
+                FluidViscosityRegion viscosityRegion = _viscosityRegionBuffer[i];
+                if (viscosityRegion.Active == 0 || viscosityRegion.InvRadiusSq <= 0f || viscosityRegion.ViscosityMultiplier <= 0f)
+                    continue;
+
+                _activeViscosityRegions[viscosityWriteIndex++] = viscosityRegion;
+            }
+
+            for (int i = viscosityWriteIndex; i < MaxDynamicViscosityRegionCount; i++)
+                _activeViscosityRegions[i] = default;
+
+            _activeViscosityRegionCount = viscosityWriteIndex;
         }
 
         private static bool IsFiniteVector(Vector3 value)
@@ -2076,7 +2198,7 @@ namespace Hecton8.Physics
             GraphicsBufferUploadUtility.UploadNativeArray(_gpuAbyssalHeatSourceBuffer, _gpuAbyssalHeatSourceUpload, MaxAbyssalHeatSourceCount);
 
             int nodeCount = GetAbyssalFlowNodeCount();
-            int groupCount = math.max(1, (nodeCount + 63) / 64);
+            int groupCount = math.max(1, (nodeCount + GpuThreadGroupSize - 1) >> GpuThreadGroupShift);
 
             abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalResetKernel, _AbyssalAggregateMaskId, _gpuAbyssalAggregateBuffer);
             abyssalFlowFieldCompute.Dispatch(_gpuAbyssalResetKernel, 1, 1, 1);
@@ -2170,9 +2292,10 @@ namespace Hecton8.Physics
                     continue;
                 }
 
+                float heatNormalizationRcp = math.rcp(math.max(0.1f, abyssalHeatIntensityNormalization));
                 float intensity = math.saturate(math.max(
-                    sample.Heat01 / math.max(0.1f, abyssalHeatIntensityNormalization),
-                    sample.FlowVelocityWS.y / 8f));
+                    sample.Heat01 * heatNormalizationRcp,
+                    sample.FlowVelocityWS.y * 0.125f));
                 if (intensity <= 0.0001f)
                     continue;
 
@@ -2231,7 +2354,7 @@ namespace Hecton8.Physics
             float depthBelowSurface = math.max(0f, waterLevel - sampleY);
             float fadeStart = math.max(0f, giantWakeDepthFadeStart);
             float fadeRange = math.max(0.001f, giantWakeDepthFadeRange);
-            float depthFade = math.saturate((depthBelowSurface - fadeStart) / fadeRange);
+            float depthFade = math.saturate((depthBelowSurface - fadeStart) * math.rcp(fadeRange));
             return wakeCurrent * depthFade;
         }
 
@@ -2360,7 +2483,7 @@ namespace Hecton8.Physics
             SetGpuWave(gpuBuoyancyCompute, _GpuBuoyancyWave1AId, _GpuBuoyancyWave1BId, weatherSnapshot.Wave1);
             SetGpuWave(gpuBuoyancyCompute, _GpuBuoyancyWave2AId, _GpuBuoyancyWave2BId, weatherSnapshot.Wave2);
 
-            int groupCount = math.max(1, (count + 63) / 64);
+            int groupCount = math.max(1, (count + GpuThreadGroupSize - 1) >> GpuThreadGroupShift);
             gpuBuoyancyCompute.Dispatch(_gpuBuoyancyKernel, groupCount, 1, 1);
             _gpuReadbackRequests[slot] = AsyncGPUReadback.Request(_gpuBuoyancyResultBuffer);
             _gpuReadbackCounts[slot] = count;
@@ -2654,8 +2777,11 @@ namespace Hecton8.Physics
         [ReadOnly] public NativeArray<float>          gpuBuoyancyForcesY;
         [ReadOnly] public NativeArray<ActiveThrusterFlow> activeThrusters;
         [ReadOnly] public NativeArray<WhirlpoolFlow> activeWhirlpools;
+        [ReadOnly] public NativeArray<FluidViscosityRegion> activeViscosityRegions;
+        [ReadOnly] public NativeArray<float> viscosityGradientLut;
         public int activeThrusterCount;
         public int activeWhirlpoolCount;
+        public int activeViscosityRegionCount;
         [WriteOnly] public NativeArray<FluidImpactEvent> impactEvents;
         [WriteOnly] public NativeArray<int> impactEventFlags;
 
@@ -2694,6 +2820,7 @@ namespace Hecton8.Physics
         public float  haloclineBoundaryDepthMeters;
         public float  deepLayerDensityMultiplier;
         public float  haloclineShearForcePerKg;
+        public byte   enableDynamicViscosityRegions;
         public byte   useGpuBuoyancyForce;
 
         public void Execute(int i)
@@ -2760,7 +2887,7 @@ namespace Hecton8.Physics
             // ── Koeffitsient pogruzheniya (0..1) ──
             float subRatio = p.simplifiedSubmersion != 0
                 ? (depthBelowSurface > 0f ? 1f : 0f)
-                : math.saturate(depthBelowSurface / p.height);
+                : math.saturate(depthBelowSurface * math.rcp(math.max(p.height, 0.0001f)));
             float resolvedWaterDensity = p.useLocalFluidDensityOverride != 0
                 ? math.max(0.01f, p.localFluidDensity)
                 : waterDensity;
@@ -2769,7 +2896,7 @@ namespace Hecton8.Physics
             {
                 float safeHaloclineDepth = math.max(0.01f, haloclineBoundaryDepthMeters);
                 denseLayer01 = depthBelowSurface >= safeHaloclineDepth ? 1f : 0f;
-                resolvedWaterDensity *= math.lerp(1f, math.max(1f, deepLayerDensityMultiplier), denseLayer01);
+                resolvedWaterDensity *= 1f + (math.max(1f, deepLayerDensityMultiplier) - 1f) * denseLayer01;
             }
 
 
@@ -2801,8 +2928,8 @@ namespace Hecton8.Physics
             standardCurrent += weatherCurrentDirection * math.max(0f, weatherCurrentScale) * math.max(0f, weatherBlend);
             float3 sampledCurrent = baseCurrentForce + p.localCurrent;
             float giantWakeDepth01 = math.saturate(
-                (depthBelowSurface - math.max(0f, giantWakeDepthFadeStart)) /
-                math.max(0.001f, giantWakeDepthFadeRange));
+                (depthBelowSurface - math.max(0f, giantWakeDepthFadeStart)) *
+                math.rcp(math.max(0.001f, giantWakeDepthFadeRange)));
             float3 resolvedGiantWakeCurrent = giantWakeCurrent * giantWakeDepth01;
             sampledCurrent += resolvedGiantWakeCurrent;
 
@@ -2822,7 +2949,7 @@ namespace Hecton8.Physics
             bool haloclineActive = (weatherStateMask & (uint)Hecton8.Core.WeatherState.HaloclineActive) != 0u;
             if (stormActive)
             {
-                float surfaceLayer01 = 1f - math.saturate(depthBelowSurface / math.max(SurfaceStormLayerDepthMeters, 0.0001f));
+                float surfaceLayer01 = 1f - math.saturate(depthBelowSurface * math.rcp(math.max(SurfaceStormLayerDepthMeters, 0.0001f)));
                 float stormBlend = math.max(0f, weatherBlend);
                 float stormBiasScale = weatherCurrentScale * math.max(0.35f, stormBlend);
                 sampledCurrent.xz += weatherCurrentDirection.xz * stormBiasScale;
@@ -2841,9 +2968,11 @@ namespace Hecton8.Physics
 
             if (thermoclineActive || haloclineActive)
             {
-                float thermoclineBand01 = 1f - math.saturate(math.abs(depthBelowSurface - ThermoclineDepthMeters) / math.max(ThermoclineHalfBandMeters, 0.0001f));
+                float thermoclineBand01 = 1f - math.saturate(
+                    math.abs(depthBelowSurface - ThermoclineDepthMeters) *
+                    math.rcp(math.max(ThermoclineHalfBandMeters, 0.0001f)));
                 if (thermoclineBand01 > 0.0001f)
-                    sampledCurrent.y = math.lerp(sampledCurrent.y, sampledCurrent.y * ThermoclineVerticalAttenuation, thermoclineBand01);
+                    sampledCurrent.y *= 1f + (ThermoclineVerticalAttenuation - 1f) * thermoclineBand01;
             }
 
             if (enableAnalyticalFlowField != 0)
@@ -2867,16 +2996,27 @@ namespace Hecton8.Physics
             }
 
             float3 currentF = sampledCurrent * (subRatio * p.mass * p.currentResponse);
+            float viscosityMultiplier = 1f;
+            if (enableDynamicViscosityRegions != 0 && activeViscosityRegionCount > 0)
+            {
+                viscosityMultiplier = HectonAnalyticalFlowField.SampleViscosityMultiplier(
+                    pos,
+                    activeViscosityRegions,
+                    activeViscosityRegionCount,
+                    viscosityGradientLut);
+            }
+
             float3 relativeVelocity = vel - sampledCurrent;
             float relativeSpeedSq = math.lengthsq(relativeVelocity);
             if (relativeSpeedSq > 0.000001f && maxQuadraticDragForcePerKg > 0f)
             {
                 float relativeSpeed = FastMagnitudeApprox(relativeVelocity);
                 float dragScalar = math.max(0f, viscousDrag) *
+                                   viscosityMultiplier *
                                    resolvedWaterDensity *
                                    math.max(0.01f, p.volume) *
                                    subRatio;
-                dragForce = -relativeVelocity * (relativeSpeed * dragScalar);
+                dragForce = -relativeVelocity * (math.max(1f, relativeSpeed) * dragScalar);
                 dragForce = ClampVectorMagnitude(
                     dragForce,
                     math.max(0f, maxQuadraticDragForcePerKg) * math.max(0.01f, p.mass));
@@ -2897,7 +3037,9 @@ namespace Hecton8.Physics
             //  ITOG
             // ══════════════════════════════════════════════
 
-            float surfaceBand = math.saturate(1f - math.abs(depthBelowSurface - p.height) / math.max(0.25f, p.height * 1.5f));
+            float surfaceBand = math.saturate(
+                1f - math.abs(depthBelowSurface - p.height) *
+                math.rcp(math.max(0.25f, p.height * 1.5f)));
             float3 tiltAxis = math.cross(up, new float3(0f, 1f, 0f));
             float3 stabilityTorque = tiltAxis * (p.surfaceStability * buoyancyMagnitude * surfaceBand * 0.12f);
             float3 angularDragTorque = -angularVel * (angularDragCoeff * math.max(0.1f, p.angularDragMultiplier) * subRatio * math.max(1f, p.mass * 0.35f));
@@ -2905,7 +3047,7 @@ namespace Hecton8.Physics
             float3 gyroscopicAxis = math.cross(up, flowAxis);
             float currentSpeed = FastMagnitudeApprox(sampledCurrent);
             float volumeLever = CinematicVolumeLever(p.volume);
-            float lightTumbleBias = math.saturate(1f / math.max(0.25f, p.mass));
+            float lightTumbleBias = math.saturate(math.rcp(math.max(0.25f, p.mass)));
             float massStabilizer = math.rcp(math.max(1f, p.mass));
             float3 gyroscopicFlowTorque = gyroscopicAxis *
                                           (currentSpeed * volumeLever * lightTumbleBias * massStabilizer *
@@ -2977,7 +3119,7 @@ namespace Hecton8.Physics
             if (magnitude <= safeMaxMagnitude || magnitude <= 0.000001f)
                 return value;
 
-            return value * (safeMaxMagnitude / magnitude);
+            return value * (safeMaxMagnitude * math.rcp(magnitude));
         }
 
         private static float3 ResolveFiniteFloat3OrZero(float3 value)
@@ -3041,7 +3183,7 @@ namespace Hecton8.Physics
                 return float3.zero;
 
             float2 direction = DominantAxisOrDefault(wave.DirectionXZ, new float2(1f, 0f));
-            float waveNumber = TwoPi / math.max(0.01f, wave.Wavelength);
+            float waveNumber = TwoPi * math.rcp(math.max(0.01f, wave.Wavelength));
             float phaseVelocity = (CinematicPhaseSpeedBase + wave.Wavelength * CinematicPhaseSpeedPerMeter) *
                                   math.max(0.01f, wave.SpeedMultiplier);
             float phase = waveNumber * math.dot(direction, worldXZ) - phaseVelocity * waveNumber * timeSeconds + wave.PhaseOffset;
@@ -3135,7 +3277,7 @@ namespace Hecton8.Physics
             bool stormActive = (weatherStateMask & (uint)Hecton8.Core.WeatherState.Storm) != 0u;
             if (stormActive)
             {
-                float surfaceLayer01 = 1f - math.saturate(depthBelowSurface / math.max(SurfaceStormLayerDepthMeters, 0.0001f));
+                float surfaceLayer01 = 1f - math.saturate(depthBelowSurface * math.rcp(math.max(SurfaceStormLayerDepthMeters, 0.0001f)));
                 float stormBlend = math.max(0f, weatherBlend);
                 float stormBiasScale = weatherCurrentScale * math.max(0.35f, stormBlend);
                 flow.xz += weatherCurrentDirection.xz * stormBiasScale;
@@ -3179,15 +3321,47 @@ namespace Hecton8.Physics
             return ResolveFiniteFloat3OrZero(new float3(nx, ny, nz) * strength);
         }
 
+        public static float SampleViscosityMultiplier(
+            float3 worldPos,
+            NativeArray<FluidViscosityRegion> regions,
+            int regionCount,
+            NativeArray<float> gradientLut)
+        {
+            int regionLimit = math.min(math.max(0, regionCount), regions.Length);
+            int lutLastIndex = gradientLut.Length - 1;
+            if (regionLimit <= 0 || lutLastIndex <= 0)
+                return 1f;
+
+            float multiplier = 1f;
+            for (int i = 0; i < regionLimit; i++)
+            {
+                FluidViscosityRegion region = regions[i];
+                if (region.Active == 0 || region.InvRadiusSq <= 0f || region.ViscosityMultiplier <= 0f)
+                    continue;
+
+                float distanceSq = math.lengthsq(worldPos - region.CenterWS);
+                float normalizedDistanceSq = distanceSq * region.InvRadiusSq;
+                if (normalizedDistanceSq > 1f)
+                    continue;
+
+                float influence01 = math.saturate(1f - normalizedDistanceSq);
+                int lutIndex = math.clamp((int)(influence01 * lutLastIndex), 0, lutLastIndex);
+                float gradient = math.saturate(gradientLut[lutIndex]);
+                multiplier += (math.clamp(region.ViscosityMultiplier, 0.05f, 8f) - 1f) * gradient;
+            }
+
+            return math.clamp(multiplier, 0.05f, 8f);
+        }
+
         public static void ApplyThrusterFlow(ref float3 flow, float3 samplePosition, ActiveThrusterFlow thruster)
         {
-            if (thruster.Active == 0 || thruster.Strength <= 0f || thruster.Radius <= 0f)
+            if (thruster.Active == 0 || thruster.Strength <= 0f || thruster.RadiusSq <= 0f || thruster.InvRadiusSq <= 0f)
                 return;
 
             float3 toSample = samplePosition - thruster.PositionWS;
             float distanceSq = math.lengthsq(toSample);
-            float radiusSq = thruster.Radius * thruster.Radius;
-            if (distanceSq <= 0.000001f || distanceSq > radiusSq)
+            float normalizedDistanceSq = distanceSq * thruster.InvRadiusSq;
+            if (distanceSq <= 0.000001f || normalizedDistanceSq > 1f)
                 return;
 
             float3 exhaustDirection = -DominantAxisOrDefault(thruster.DirectionWS, new float3(0f, 0f, 1f));
@@ -3201,26 +3375,25 @@ namespace Hecton8.Physics
             if (axialSq < coneThresholdSq)
                 return;
 
-            float distanceFalloff = math.saturate(1f - distanceSq / math.max(radiusSq, 0.000001f));
-            float coneFalloff = math.saturate((axialSq - coneThresholdSq) / math.max(0.001f, distanceSq * (1f - coneCosSq)));
-            flow += exhaustDirection * (thruster.Strength * distanceFalloff * distanceFalloff * coneFalloff);
+            float distanceFalloff = math.saturate(1f - normalizedDistanceSq);
+            flow += exhaustDirection * (thruster.Strength * distanceFalloff * distanceFalloff);
         }
 
         public static void ApplyWhirlpoolFlow(ref float3 flow, float3 samplePosition, WhirlpoolFlow whirlpool)
         {
-            if (whirlpool.Active == 0 || whirlpool.Radius <= 0f)
+            if (whirlpool.Active == 0 || whirlpool.RadiusSq <= 0f || whirlpool.InvRadiusSq <= 0f)
                 return;
 
             float3 toCenter = whirlpool.CenterWS - samplePosition;
             toCenter.y = 0f;
             float distanceSq = math.lengthsq(toCenter);
-            float radiusSq = whirlpool.Radius * whirlpool.Radius;
-            if (distanceSq <= 0.000001f || distanceSq > radiusSq)
+            float normalizedDistanceSq = distanceSq * whirlpool.InvRadiusSq;
+            if (distanceSq <= 0.000001f || normalizedDistanceSq > 1f)
                 return;
 
             float3 inward = DominantAxisOrDefault(toCenter, new float3(1f, 0f, 0f));
             float3 tangent = new float3(inward.z, 0f, -inward.x);
-            float falloff = math.saturate(1f - distanceSq / math.max(radiusSq, 0.000001f));
+            float falloff = math.saturate(1f - normalizedDistanceSq);
             flow += tangent * (whirlpool.TangentialStrength * falloff);
             flow += inward * (whirlpool.CentripetalStrength * falloff);
             flow.y -= whirlpool.VerticalPull * falloff;
@@ -3266,11 +3439,12 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct InteriorFloodBfsJob : IJob
+    public struct InteriorFloodBfsJob : IJobParallelFor
     {
         public const uint FloodSeedFlag = 1u;
+        private const int MaxFloodNodesPerFrame = 5;
         private const int DefaultSeedScanBudget = 32;
-        private const int DefaultNodeVisitBudget = 32;
+        private const int DefaultNodeVisitBudget = MaxFloodNodesPerFrame;
         private const int DefaultEdgeVisitBudget = 64;
 
         public NativeArray<InteriorFloodNode> Nodes;
@@ -3288,15 +3462,18 @@ namespace Hecton8.Physics
         public int ResultSampleStride;
         public int ResultSamplePhase;
 
-        public void Execute()
+        public void Execute(int jobIndex)
         {
+            if (jobIndex != 0)
+                return;
+
             int nodeCount = math.min(Nodes.Length, math.min(Queue.Length, Visited.Length));
             if (nodeCount <= 0)
                 return;
 
             int visitStamp = math.max(1, VisitStamp);
             int seedBudget = ResolveBudget(MaxSeedScanCount, DefaultSeedScanBudget, nodeCount);
-            int nodeVisitBudget = ResolveBudget(MaxNodeVisits, DefaultNodeVisitBudget, nodeCount);
+            int nodeVisitBudget = math.min(MaxFloodNodesPerFrame, ResolveBudget(MaxNodeVisits, DefaultNodeVisitBudget, nodeCount));
             int edgeVisitBudget = math.max(1, MaxEdgeVisits > 0 ? MaxEdgeVisits : DefaultEdgeVisitBudget);
             int seedStart = PositiveModulo(SeedScanStart, nodeCount);
             int head = 0;
@@ -3371,8 +3548,10 @@ namespace Hecton8.Physics
             int floodedCount = 0;
             int sampleStride = math.clamp(ResultSampleStride > 0 ? ResultSampleStride : 1, 1, nodeCount);
             int samplePhase = PositiveModulo(ResultSamplePhase, sampleStride);
-            for (int i = samplePhase; i < nodeCount; i += sampleStride)
+            int resultSamples = 0;
+            for (int i = samplePhase; i < nodeCount && resultSamples < MaxFloodNodesPerFrame; i += sampleStride)
             {
+                resultSamples++;
                 InteriorFloodNode node = Nodes[i];
                 float liters = math.max(0f, node.CurrentLiters);
                 if (liters <= 0.001f)

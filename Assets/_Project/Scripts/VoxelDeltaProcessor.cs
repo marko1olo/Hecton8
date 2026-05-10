@@ -3353,21 +3353,39 @@ namespace Hecton8.Caves
             public int PayloadByteLength;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 8, Size = 8)]
         private readonly struct ChunkAddress : IEquatable<ChunkAddress>
         {
-            public readonly int3 ChunkCoord;
-            private readonly int _voxelSizeBits;
-            public float VoxelSize => math.asfloat(_voxelSizeBits);
+            private const int CoordBits = 19;
+            private const int CoordMask = (1 << CoordBits) - 1;
+            private const int CoordOffset = 1 << (CoordBits - 1);
+            private const int YShift = CoordBits;
+            private const int ZShift = CoordBits * 2;
+            private const int VoxelShift = CoordBits * 3;
+            private const int VoxelMask = 0x7F;
+            private const float VoxelUnitMeters = 0.25f;
+            private const float VoxelPackScale = 1f / VoxelUnitMeters;
+
+            private readonly ulong _packedKey;
+
+            public int3 ChunkCoord => new int3(
+                DecodeCoord(_packedKey),
+                DecodeCoord(_packedKey >> YShift),
+                DecodeCoord(_packedKey >> ZShift));
+
+            public float VoxelSize => ((float)DecodeVoxelUnits(_packedKey >> VoxelShift)) * VoxelUnitMeters;
 
             public ChunkAddress(int3 chunkCoord, float voxelSize)
             {
-                ChunkCoord = chunkCoord;
-                _voxelSizeBits = math.asint(voxelSize);
+                _packedKey = PackCoord(chunkCoord.x)
+                    | (PackCoord(chunkCoord.y) << YShift)
+                    | (PackCoord(chunkCoord.z) << ZShift)
+                    | ((ulong)(uint)(PackVoxelUnits(voxelSize) - 1) << VoxelShift);
             }
 
             public bool Equals(ChunkAddress other)
             {
-                return ChunkCoord.Equals(other.ChunkCoord) && _voxelSizeBits == other._voxelSizeBits;
+                return _packedKey == other._packedKey;
             }
 
             public override bool Equals(object obj)
@@ -3377,7 +3395,29 @@ namespace Hecton8.Caves
 
             public override int GetHashCode()
             {
-                return unchecked((ChunkCoord.GetHashCode() * 397) ^ _voxelSizeBits);
+                return unchecked((int)_packedKey ^ (int)(_packedKey >> 32));
+            }
+
+            private static ulong PackCoord(int value)
+            {
+                return ((ulong)(uint)(value + CoordOffset)) & CoordMask;
+            }
+
+            private static int DecodeCoord(ulong value)
+            {
+                return (int)(value & CoordMask) - CoordOffset;
+            }
+
+            private static int PackVoxelUnits(float voxelSize)
+            {
+                float scaled = math.max(voxelSize, MinRuntimeVoxelSize) * VoxelPackScale;
+                int units = scaled >= 0f ? (int)(scaled + 0.5f) : (int)(scaled - 0.5f);
+                return math.clamp(units, 1, VoxelMask + 1);
+            }
+
+            private static int DecodeVoxelUnits(ulong value)
+            {
+                return (int)(value & VoxelMask) + 1;
             }
         }
 

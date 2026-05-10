@@ -134,7 +134,8 @@ Shader "Hecton8/VFX/MarineSnow"
                 float3 cameraUp = _MarineSnowCameraUp_Density.xyz;
                 float maxDistance = max(_MarineSnowRenderParams.z, 0.25);
                 float3 cameraDelta = particle.Pos - _MarineSnowCameraPosition_Time.xyz;
-                float distanceFade = saturate(1.0 - dot(cameraDelta, cameraDelta) / (maxDistance * maxDistance));
+                float invMaxDistanceSq = rcp(maxDistance * maxDistance);
+                float distanceFade = saturate(1.0 - dot(cameraDelta, cameraDelta) * invMaxDistanceSq);
                 float isBubble = ((particle.Flags & 1u) != 0u) ? 1.0 : 0.0;
                 float size = particle.Size * lerp(0.65, 1.0, distanceFade) * lerp(1.0, 1.65, isBubble);
                 float stretchScale = max(1.0, _MarineSnowCameraVelocity_Stretch.w);

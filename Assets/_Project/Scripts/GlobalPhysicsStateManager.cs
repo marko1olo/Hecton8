@@ -342,6 +342,7 @@ namespace Hecton8.Physics
         private const float AddedMassFullySubmergedInertiaTensorMultiplier = 1f + AddedMassInertiaTensorScale;
         private const float AddedMassSubmersionEpsilon = 0.0001f;
         private const float PhysicsFixedStepSeconds = 0.02f;
+        private const float InverseTwoPi = 0.15915494309189535f;
         private const float OriginShiftContinuousCcdSpeedMetersPerSecond = 20f;
         private const float OriginShiftContinuousCcdSpeedMetersPerSecondSq =
             OriginShiftContinuousCcdSpeedMetersPerSecond * OriginShiftContinuousCcdSpeedMetersPerSecond;
@@ -363,9 +364,9 @@ namespace Hecton8.Physics
         private readonly PhysicsConnection[] _connections = new PhysicsConnection[MaxTrackedConnections];
         // COLD ALLOC: Dictionary<ulong,int>[512 initial] â€” rigidbody entity-id to tracked-index map for O(1) lookups during origin shifts â€” owner: GlobalPhysicsStateManager
         private readonly Dictionary<ulong, int> _trackedBodyIndexByEntityId = new Dictionary<ulong, int>(MaxTrackedBodies);
-        // COLD ALLOC: List<GameObject>[128] - scene-load root scratch for rigidbody registry bootstrap without scene-wide array allocation - owner: GlobalPhysicsStateManager
+        // COLD ALLOC: List<GameObject>[128] — scene-load root scratch for rigidbody registry bootstrap without scene-wide array allocation — owner: GlobalPhysicsStateManager
         private readonly List<GameObject> _sceneRootScratch = new List<GameObject>(SceneRootScanCapacity);
-        // COLD ALLOC: List<Rigidbody>[512] - scene-load rigidbody scratch for registry bootstrap without scene-wide array allocation - owner: GlobalPhysicsStateManager
+        // COLD ALLOC: List<Rigidbody>[512] — scene-load rigidbody scratch for registry bootstrap without scene-wide array allocation — owner: GlobalPhysicsStateManager
         private readonly List<Rigidbody> _sceneRigidbodyScratch = new List<Rigidbody>(SceneRigidbodyScanCapacity);
 
         private NativeArray<float3> _lastValidPositions;
@@ -430,7 +431,7 @@ namespace Hecton8.Physics
             float resolvedWaterLevelY = baseWaterLevelY;
             if (tidesEnabled && safeAmplitude > 0f)
             {
-                float combinedWave = math.sin(timeSeconds) + math.sin(timeSeconds * 0.5f);
+                float combinedWave = ResolveSignedTriangleWave(timeSeconds) + ResolveSignedTriangleWave(timeSeconds * 0.5f);
                 resolvedWaterLevelY += combinedWave * safeAmplitude;
             }
 
@@ -440,6 +441,14 @@ namespace Hecton8.Physics
             _cachedWaterLevelTidesEnabled = tidesEnabled;
             _cachedCurrentWaterLevelY = resolvedWaterLevelY;
             return resolvedWaterLevelY;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveSignedTriangleWave(float radians)
+        {
+            float phase = (radians * InverseTwoPi) - 0.25f;
+            phase -= math.floor(phase);
+            return (2f * math.abs((2f * phase) - 1f)) - 1f;
         }
 
         internal static void RegisterTrackedBody(Rigidbody body)

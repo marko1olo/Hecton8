@@ -13,7 +13,9 @@ namespace Hecton8.EditorTools
     internal sealed class VRAMDictator : IPreprocessBuildWithReport
     {
         private const string ArtRoot = "Assets/_Project/Art";
+        private const string WorldScenePath = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
         private const string MenuPath = "Hecton/Validation/Asset Pipeline/Run VRAM Dictator";
+        private const long WorldSceneTextureBudgetBytes = 900L * 1024L * 1024L;
         private const int MaxReportRows = 96;
 
         public int callbackOrder => -2048;
@@ -121,6 +123,10 @@ namespace Hecton8.EditorTools
                 }
             }
 
+            SceneTextureBudgetResult worldBudget = ScanWorldSceneTextureBudget();
+            if (worldBudget.TotalEstimatedBytes > WorldSceneTextureBudgetBytes)
+                blockingCount++;
+
             string message = BuildMessage(
                 scanned,
                 blockingCount,
@@ -129,9 +135,59 @@ namespace Hecton8.EditorTools
                 nonBc7Count,
                 normalNotBc5Count,
                 runtimeFormatViolationCount,
+                worldBudget,
                 blockingRows.ToString(),
                 auditRows.ToString());
             return new DictatorResult(scanned, blockingCount, message);
+        }
+
+        private static SceneTextureBudgetResult ScanWorldSceneTextureBudget()
+        {
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(WorldScenePath) == null)
+                return new SceneTextureBudgetResult(0, 0L, WorldScenePath + " missing.");
+
+            string[] dependencies = AssetDatabase.GetDependencies(WorldScenePath, true);
+            long totalBytes = 0L;
+            int textureCount = 0;
+            StringBuilder rows = new StringBuilder(8192); // COLD ALLOC: StringBuilder[8192] - editor/build-only scene VRAM rows - owner: VRAMDictator
+            int rowsWritten = 0;
+
+            for (int i = 0; i < dependencies.Length; i++)
+            {
+                string assetPath = dependencies[i];
+                TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+                if (importer == null)
+                    continue;
+
+                importer.GetSourceTextureWidthAndHeight(out int width, out int height);
+                if (width <= 0 || height <= 0)
+                    continue;
+
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+                string formatLabel = texture != null
+                    ? texture.format.ToString()
+                    : ResolveFormatLabel(importer, importer.GetPlatformTextureSettings("Standalone"));
+                long estimatedBytes = EstimateImportedTextureStorageBytes(width, height, formatLabel, importer.mipmapEnabled);
+                totalBytes += estimatedBytes;
+                textureCount++;
+
+                if (rowsWritten < MaxReportRows)
+                {
+                    rows.Append(assetPath)
+                        .Append(" | ")
+                        .Append(width)
+                        .Append('x')
+                        .Append(height)
+                        .Append(" | ")
+                        .Append(formatLabel)
+                        .Append(" | estimatedCompressedMB=")
+                        .Append((estimatedBytes / (1024f * 1024f)).ToString("F2", System.Globalization.CultureInfo.InvariantCulture))
+                        .AppendLine();
+                    rowsWritten++;
+                }
+            }
+
+            return new SceneTextureBudgetResult(textureCount, totalBytes, rows.ToString());
         }
 
         private static string ResolveFormatLabel(TextureImporter importer, TextureImporterPlatformSettings platformSettings)
@@ -210,6 +266,7 @@ namespace Hecton8.EditorTools
             int nonBc7Count,
             int normalNotBc5Count,
             int runtimeFormatViolationCount,
+            SceneTextureBudgetResult worldBudget,
             string blockingRows,
             string auditRows)
         {
@@ -229,12 +286,24 @@ namespace Hecton8.EditorTools
                 .Append(" runtimeFormatNotBC7BC5=")
                 .Append(runtimeFormatViolationCount)
                 .AppendLine(".");
+            message.Append("[VRAMDictator] 02_HECTON_WORLD referenced textures: count=")
+                .Append(worldBudget.TextureCount)
+                .Append(" estimatedCompressedMB=")
+                .Append((worldBudget.TotalEstimatedBytes / (1024f * 1024f)).ToString("F2", System.Globalization.CultureInfo.InvariantCulture))
+                .Append(" budgetMB=900.00")
+                .AppendLine(".");
 
             if (blockingCount > 0)
             {
                 message.Append("BUILD BLOCKED. Non-atlas textures must obey Hero<=2048 and Scatter<=512 import caps; RGB/RGBA imports must not be uncompressed; albedo/mask runtime format must be BC7 and normal runtime format must be BC5.")
                     .AppendLine()
                     .Append(blockingRows);
+                if (worldBudget.TotalEstimatedBytes > WorldSceneTextureBudgetBytes)
+                {
+                    message.Append("02_HECTON_WORLD texture budget exceeded. No high-quality exception is permitted.")
+                        .AppendLine()
+                        .Append(worldBudget.ReportRows);
+                }
             }
             else
             {
@@ -251,6 +320,90 @@ namespace Hecton8.EditorTools
             return message.ToString();
         }
 
+        private static long EstimateImportedTextureStorageBytes(int width, int height, string formatLabel, bool mipmaps)
+        {
+            long totalBytes = 0L;
+            int mipWidth = width;
+            int mipHeight = height;
+            for (;;)
+            {
+                totalBytes += EstimateImportedTextureLevelBytes(mipWidth, mipHeight, formatLabel);
+                if (!mipmaps || (mipWidth <= 1 && mipHeight <= 1))
+                    break;
+
+                mipWidth = mipWidth > 1 ? mipWidth >> 1 : 1;
+                mipHeight = mipHeight > 1 ? mipHeight >> 1 : 1;
+            }
+
+            return totalBytes;
+        }
+
+        private static long EstimateImportedTextureLevelBytes(int width, int height, string formatLabel)
+        {
+            string safeFormat = string.IsNullOrEmpty(formatLabel) ? string.Empty : formatLabel;
+            if (TryResolveBlockCompressedBytes(safeFormat, out int blockBytes))
+            {
+                long blockWidth = (width + 3L) >> 2;
+                long blockHeight = (height + 3L) >> 2;
+                if (blockWidth < 1L)
+                    blockWidth = 1L;
+                if (blockHeight < 1L)
+                    blockHeight = 1L;
+
+                return blockWidth * blockHeight * blockBytes;
+            }
+
+            int bytesPerPixel = ResolveBytesPerPixel(safeFormat);
+            return (long)width * height * bytesPerPixel;
+        }
+
+        private static bool TryResolveBlockCompressedBytes(string formatLabel, out int blockBytes)
+        {
+            if (formatLabel.Contains("BC1") || formatLabel.Contains("DXT1") || formatLabel.Contains("ETC_RGB4") || formatLabel.Contains("EAC_R"))
+            {
+                blockBytes = 8;
+                return true;
+            }
+
+            if (formatLabel.Contains("BC") ||
+                formatLabel.Contains("DXT5") ||
+                formatLabel.Contains("ETC2") ||
+                formatLabel.Contains("EAC_RG") ||
+                formatLabel.Contains("ASTC"))
+            {
+                blockBytes = 16;
+                return true;
+            }
+
+            blockBytes = 0;
+            return false;
+        }
+
+        private static int ResolveBytesPerPixel(string formatLabel)
+        {
+            if (formatLabel.Contains("RGBAFloat"))
+                return 16;
+
+            if (formatLabel.Contains("RGBAHalf") || formatLabel.Contains("R16G16B16A16"))
+                return 8;
+
+            if (formatLabel.Contains("RGBA32") ||
+                formatLabel.Contains("ARGB32") ||
+                formatLabel.Contains("BGRA32") ||
+                formatLabel.Contains("R8G8B8A8"))
+            {
+                return 4;
+            }
+
+            if (formatLabel.Contains("RGB24"))
+                return 3;
+
+            if (formatLabel.Contains("R16") || formatLabel.Contains("RG16"))
+                return 2;
+
+            return 1;
+        }
+
         internal readonly struct DictatorResult
         {
             public int ScannedTextureCount { get; }
@@ -262,6 +415,20 @@ namespace Hecton8.EditorTools
                 ScannedTextureCount = scannedTextureCount;
                 BlockingViolationCount = blockingViolationCount;
                 BuildFailureMessage = buildFailureMessage;
+            }
+        }
+
+        private readonly struct SceneTextureBudgetResult
+        {
+            public int TextureCount { get; }
+            public long TotalEstimatedBytes { get; }
+            public string ReportRows { get; }
+
+            public SceneTextureBudgetResult(int textureCount, long totalEstimatedBytes, string reportRows)
+            {
+                TextureCount = textureCount;
+                TotalEstimatedBytes = totalEstimatedBytes;
+                ReportRows = reportRows;
             }
         }
     }

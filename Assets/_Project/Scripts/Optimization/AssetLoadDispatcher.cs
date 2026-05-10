@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using Hecton8.Core;
 using Unity.Collections;
 using UnityEngine;
+#if UNITY_ADDRESSABLES_EXIST
+using UnityEngine.ResourceManagement.AsyncOperations;
+#endif
 
 namespace Hecton8.Optimization
 {
@@ -53,6 +56,11 @@ namespace Hecton8.Optimization
         private NativeParallelHashMap<uint, byte> _addressableGroupMap;
         private bool _mipGateInitialized;
         private bool _uiMipBiasGateActive;
+#if UNITY_ADDRESSABLES_EXIST
+        private uint _lastAddressableDependencyGroupHash;
+        private int _lastAddressableDependencyOrder;
+        private int _addressableDependencyGroupReadyCount;
+#endif
 
         internal static bool IsUiMipBiasGateActive
         {
@@ -87,6 +95,22 @@ namespace Hecton8.Optimization
 
             dispatcher.RegisterAddressableGroupInternal(assetKey, group);
         }
+
+#if UNITY_ADDRESSABLES_EXIST
+        internal void MarkAddressableDependencyGroupReady(
+            uint groupHash,
+            int dependencyOrder,
+            AsyncOperationHandle handle)
+        {
+            if (groupHash == 0u || !handle.IsValid() || handle.Status != AsyncOperationStatus.Succeeded)
+                return;
+
+            RegisterAddressableGroupInternal(groupHash, AddressableAssetGroupKind.Unknown);
+            _lastAddressableDependencyGroupHash = groupHash;
+            _lastAddressableDependencyOrder = dependencyOrder;
+            _addressableDependencyGroupReadyCount++;
+        }
+#endif
 
         private void Awake()
         {

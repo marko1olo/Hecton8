@@ -1,20 +1,20 @@
 // ============================================================================
-// HECTON-8 — BuoyancyObject.cs
-// Marker plavuchesti. Veshaetsya na lyuboy GameObject s Rigidbody.
+// HECTON-8 - BuoyancyObject.cs
+// Buoyancy marker. Attach to any GameObject with a Rigidbody.
 //
-// Pri OnEnable registriruetsya v HectonFluidEngine.
-// Pri OnDisable — otpisyvaetsya.
+// OnEnable registers with HectonFluidEngine.
+// OnDisable unregisters from HectonFluidEngine.
 //
-// Rigidbody keshiruetsya v Awake — zero GetComponent v rantayme.
-// Nikakogo Update — vse sily primenyaet HectonFluidEngine cherez Job.
+// Rigidbody is cached in Awake: zero GetComponent in runtime flow.
+// No Update: HectonFluidEngine applies forces through the job path.
 //
-// FIZIChESKIE PARAMETRY:
-//   density — plotnost obekta (kg/m³).
-//             Voda = 1000. Esli density < waterDensity → obekt vsplyvaet.
-//   volume  — obem obekta (m³). Opredelyaet silu Arhimeda.
-//   height  — vysota obekta (m). Dlya rascheta chastichnogo pogruzheniya.
+// PHYSICAL PARAMETERS:
+//   density - object density (kg/m3).
+//             Water = 1000. If density < waterDensity, the object floats.
+//   volume  - object volume (m3). Controls buoyant force.
+//   height  - object height (m). Used for partial-submersion estimates.
 //
-// SUHIE ZONY + GROUND CHECK:
+// DRY ZONES + GROUND CHECK:
 //   IsInAir returns true when EITHER:
 //     1. _dryZoneRefCount > 0 (inside unflooded base module), OR
 //     2. _isGrounded == true (standing on terrain/island)
@@ -62,63 +62,63 @@ namespace Hecton8.Physics
 #endif
         [SerializeField] private BuoyancyProfile profile;
         [SerializeField] private bool autoApplyProfile = true;
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
 
-        [Header("── Physical Properties ───────────────────────")]
-        [Tooltip("Plotnost obekta (kg/m³). " +
-                 "Voda ≈ 1000, Derevo ≈ 600, Zhelezo ≈ 7800, Titan ≈ 4500")]
+        [Header("-- Physical Properties --")]
+        [Tooltip("Object density (kg/m3). " +
+                 "Water ~ 1000, wood ~ 600, iron ~ 7800, titanium ~ 4500")]
 #if UNITY_EDITOR
         [MinValue(0.01d)]
         [ValidateInput(nameof(IsFinitePositive), "Density must be finite and greater than zero.")]
 #endif
         [SerializeField] private float density = 500f;
 
-        [Tooltip("Obem obekta (m³). Opredelyaet vytalkivayuschuyu silu. " +
-                 "Kub 10sm = 0.001 m³")]
+        [Tooltip("Object volume (m3). Controls buoyant force. " +
+                 "A 10 cm cube is 0.001 m3.")]
 #if UNITY_EDITOR
         [MinValue(0.0001d)]
         [ValidateInput(nameof(IsFinitePositive), "Volume must be finite and greater than zero.")]
 #endif
         [SerializeField] private float volume = 0.01f;
 
-        [Tooltip("Vysota obekta (m). Dlya rascheta chastichnogo pogruzheniya. " +
-                 "0 = schitat polnostyu pogruzhennym")]
+        [Tooltip("Object height (m). Used for partial-submersion estimates. " +
+                 "0 means treat as fully submerged.")]
 #if UNITY_EDITOR
         [MinValue(0.01d)]
         [ValidateInput(nameof(IsFinitePositive), "Height must be finite and greater than zero.")]
 #endif
         [SerializeField] private float height = 0.3f;
 
-        [Tooltip("Naskolko silno obekt reagiruet na techenie. " +
-                 "1 = standartno, 0 = ignoriruet potok, >1 = legkiy/parusnyy obekt.")]
+        [Tooltip("How strongly the object reacts to current. " +
+                 "1 = standard, 0 = ignores flow, >1 = light or sail-like object.")]
 #if UNITY_EDITOR
         [MinValue(0d)]
         [ValidateInput(nameof(IsFiniteNonNegative), "Current Response must be finite and non-negative.")]
 #endif
         [SerializeField] private float currentResponse = 1f;
 
-        [Tooltip("Stabiliziruyuschiy moment u poverhnosti. " +
-                 "Pomogaet obektu krasivo vyravnivatsya i ne boltatsya kak musornyy bag.")]
+        [Tooltip("Stabilizing torque near the surface. " +
+                 "Helps the object settle instead of tumbling.")]
 #if UNITY_EDITOR
         [MinValue(0d)]
         [ValidateInput(nameof(IsFiniteNonNegative), "Surface Stability must be finite and non-negative.")]
 #endif
         [SerializeField] private float surfaceStability = 0.75f;
 
-        [Tooltip("Naskolko vazhen obekt dlya high-fidelity simulyatsii na rasstoyanii. " +
-                 "1 = standart, >1 = dolshe ostaetsya v high LOD, <1 = ranshe uproschaetsya.")]
+        [Tooltip("Distance LOD importance for high-fidelity simulation. " +
+                 "1 = standard, >1 stays high LOD longer, <1 simplifies sooner.")]
 #if UNITY_EDITOR
         [MinValue(0.1d)]
         [ValidateInput(nameof(IsFinitePositive), "LOD Bias must be finite and greater than zero.")]
 #endif
         [SerializeField] private float lodBias = 1f;
 
-        [Tooltip("Esli vyklyucheno — obekt vsegda schitaetsya v polnom kachestve, bez distance LOD.")]
+        [Tooltip("When disabled, the object always runs full quality with no distance LOD.")]
         [SerializeField] private bool allowDistanceLod = true;
 
-        [Header("── Ground Detection ─────────────────────────")]
+        [Header("-- Ground Detection --")]
         [Tooltip("How often to perform ground check (in fixed frames). " +
                  "1 = every frame, 3 = every 3rd frame. Higher = better perf, slower response.")]
         [SerializeField, Range(1, 10)]
@@ -136,9 +136,9 @@ namespace Hecton8.Physics
                  "MUST exclude Water layer to avoid false positives.")]
         [SerializeField] private LayerMask groundLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
         //  CACHED
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
 
         private Rigidbody _rb;
         private Collider _collider;
@@ -147,34 +147,34 @@ namespace Hecton8.Physics
         private float _runtimeAngularDragMultiplier = 1f;
         private bool _runtimeLocalFluidDensityOverrideActive;
 
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
         //  DRY ZONE STATE
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
 
         /// <summary>
-        /// Schetchik vlozhennosti «suhih zon».
-        /// Obekt mozhet nahoditsya v perekryvayuschihsya modulyah odnovremenno.
+        /// Nested dry-zone reference count.
+        /// The object can be inside overlapping modules at the same time.
         ///
-        /// Inkrement: BaseModule pri vhode v nezatoplennyy trigger.
-        /// Dekrement: BaseModule pri vyhode ili zatoplenii.
+        /// Increment: BaseModule entry into an unflooded trigger.
+        /// Decrement: BaseModule exit or flooding.
         /// </summary>
         private int _dryZoneRefCount;
 
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
         //  GROUND STATE
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
 
         /// <summary>
         /// True when raycast detects solid ground below the object.
         /// Updated every groundCheckInterval fixed frames.
-        /// Causes IsInAir to return true → disabling buoyancy on islands.
+        /// Causes IsInAir to return true, disabling buoyancy on islands.
         /// </summary>
         private bool _isGrounded;
         private bool _externallySuppressed;
 
         /// <summary>
         /// Fixed-frame counter for staggered ground checks.
-        /// Incremented in FixedUpdate (lightweight — just a counter).
+        /// Incremented in FixedTick (lightweight: just a counter).
         /// </summary>
         private int _frameCounter;
 
@@ -192,32 +192,32 @@ namespace Hecton8.Physics
         private bool _registeredToFixedTick;
         private readonly RaycastHit[] _groundHitBuffer = new RaycastHit[1]; // COLD ALLOC: single-hit ground probe buffer.
 
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
 
-        /// <summary>Plotnost obekta (kg/m³).</summary>
+        /// <summary>Object density (kg/m3).</summary>
         public float Density => density;
 
-        /// <summary>Obem (m³).</summary>
+        /// <summary>Volume (m3).</summary>
         public float Volume => volume;
 
-        /// <summary>Vysota (m).</summary>
+        /// <summary>Height (m).</summary>
         public float Height => height;
 
-        /// <summary>Mnozhitel reaktsii na techenie.</summary>
+        /// <summary>Current response multiplier.</summary>
         public float CurrentResponse => currentResponse;
 
-        /// <summary>Stabiliziruyuschiy moment u poverhnosti.</summary>
+        /// <summary>Stabilizing torque near the surface.</summary>
         public float SurfaceStability => surfaceStability;
 
-        /// <summary>Smeschenie prioriteta LOD.</summary>
+        /// <summary>LOD priority offset.</summary>
         public float LodBias => lodBias;
 
-        /// <summary>Razreshen li distance-based LOD dlya etogo obekta.</summary>
+        /// <summary>Whether distance-based LOD is allowed for this object.</summary>
         public bool AllowDistanceLod => allowDistanceLod;
 
-        /// <summary>Keshirovannyy Rigidbody. Garantirovanno ne-null (RequireComponent).</summary>
+        /// <summary>Cached Rigidbody. Guaranteed non-null by RequireComponent.</summary>
         public Rigidbody Body => _rb;
 
         /// <summary>
@@ -233,12 +233,12 @@ namespace Hecton8.Physics
         public bool IsInDryZone => _dryZoneRefCount > 0;
 
         /// <summary>
-        /// Obekt nahoditsya «v vozduhe» — either inside an unflooded base module
+        /// Object is out of water: either inside an unflooded base module
         /// OR standing on solid ground (island/terrain).
         ///
-        /// When true, HectonFluidEngine obnulyaet vse vodnye sily.
+        /// When true, HectonFluidEngine zeros all water forces.
         ///
-        /// Priority: dryZone OR grounded → IsInAir = true.
+        /// Priority: dryZone OR grounded -> IsInAir = true.
         /// This prevents buoyancy from pushing objects up through islands.
         /// </summary>
         public bool IsInAir => _dryZoneRefCount > 0 || _isGrounded;
@@ -322,8 +322,8 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Vyzyvaetsya BaseModule pri vhode obekta v suhuyu zonu.
-        /// Uvelichivaet ref-count. Thread-safe ne trebuetsya (main thread only).
+        /// Called by BaseModule when the object enters a dry zone.
+        /// Increments the ref-count. Thread safety is not required: main thread only.
         /// </summary>
         public void EnterDryZone()
         {
@@ -331,9 +331,9 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Vyzyvaetsya BaseModule pri vyhode obekta iz suhoy zony
-        /// ili pri zatoplenii modulya.
-        /// Umenshaet ref-count. Clamp k 0 dlya zaschity ot nekorrektnyh vyzovov.
+        /// Called by BaseModule when the object exits a dry zone
+        /// or when the module floods.
+        /// Decrements the ref-count and clamps to 0 against bad calls.
         /// </summary>
         public void ExitDryZone()
         {
@@ -394,9 +394,9 @@ namespace Hecton8.Physics
                 ApplyProfile();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
 
         private void Awake()
         {
@@ -428,7 +428,7 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
-            // Sbrasyvaem ref-count — obekt bolshe ne v zone
+            // Reset dry-zone state when the object leaves runtime tracking.
             _dryZoneRefCount = 0;
             _isGrounded = false;
 
@@ -444,9 +444,9 @@ namespace Hecton8.Physics
             TryUnregisterFromFixedTick();
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  FIXED TICK — Ground Check Only (staggered)
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
+        //  FIXED TICK - Ground Check Only (staggered)
+        // ------------------------------------------------------------
 
         /// <summary>
         /// Lightweight fixed tick: only increments a counter and performs
@@ -530,9 +530,9 @@ namespace Hecton8.Physics
             _groundHit = _isGrounded ? _groundHitBuffer[0] : default;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
         //  EDITOR
-        // ══════════════════════════════════════════════════════════
+        // ------------------------------------------------------------
 
 #if UNITY_EDITOR
         private static bool IsFinitePositive(float value)
@@ -586,7 +586,7 @@ namespace Hecton8.Physics
 
             bool submerged = transform.position.y < waterY;
 
-            // Zelenyy = v suhoy zone/grounded, siniy = pod vodoy, zheltyy = nad vodoy
+            // Green = dry zone/grounded, blue = underwater, yellow = above water.
             if (IsInAir)
                 Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
             else if (submerged)

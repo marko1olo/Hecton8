@@ -4579,7 +4579,7 @@ namespace Hecton8.World
         private static ulong PackFaunaVitals(float health, float hunger01)
         {
             uint packedHealth = math.asuint(math.max(0f, health));
-            uint packedHunger = math.asuint(math.saturate(hunger01));
+            uint packedHunger = (uint)math.clamp((int)(math.saturate(hunger01) * 255f + 0.5f), 0, 255);
             return ((ulong)packedHealth << 32) | packedHunger;
         }
 
@@ -4595,7 +4595,9 @@ namespace Hecton8.World
             uint packedHealth = (uint)(packedVitals >> 32);
             uint packedHunger = (uint)(packedVitals & 0xFFFFFFFFUL);
             health = math.max(0f, math.asfloat(packedHealth));
-            hunger01 = math.saturate(math.asfloat(packedHunger));
+            hunger01 = (packedHunger & 0xFFFFFF00u) == 0u
+                ? packedHunger * (1f / 255f)
+                : math.saturate(math.asfloat(packedHunger));
             if (!math.isfinite(health))
                 health = 0f;
             if (!math.isfinite(hunger01))

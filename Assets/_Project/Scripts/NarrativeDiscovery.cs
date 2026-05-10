@@ -1,6 +1,6 @@
 // ============================================================================
-// HECTON-8 — NarrativeDiscovery.cs
-// Komponent dlya lornyh obektov (chernye yaschiki, KPK, oblomki).
+// HECTON-8 - NarrativeDiscovery.cs
+// Interaction component for lore objects, black boxes, PDAs, and wreckage.
 // ============================================================================
 
 using Hecton.Localization;
@@ -25,22 +25,22 @@ namespace Hecton8.Interaction
         private const string DefaultArchiveVerbRu = "Otkryt arhiv";
         private const string DefaultArchiveVerbEn = "Open Archive";
 
-        [Header("── Discovery ─────────────────────────────────")]
-        [Tooltip("Unikalnyy ID otkrytiya (dlya sohraneniya i triggerov)")]
+        [Header("Discovery")]
+        [Tooltip("Unique discovery ID for saves and triggers.")]
         [SerializeField] private string discoveryId;
 
-        [Tooltip("Tekst podskazki: 'Zabrat KPK', 'Izuchit bortovoy samopisets'")]
+        [Tooltip("Interaction prompt text, such as 'Take PDA' or 'Study black box'.")]
         [SerializeField] private string interactVerb = DefaultStudyVerbRu;
 
-        [Tooltip("Nazvanie obekta (dlya loga)")]
+        [Tooltip("Object name used in the discovery log.")]
         [SerializeField] private string displayName = "Obekt";
         [SerializeField] private LocalizedTextReference localizedDisplayName;
 
-        [Header("── Audio Log (optsionalno) ───────────────────")]
-        [Tooltip("Esli naznachen — vosproizvodit audiodnevnik pri vzaimodeystvii.")]
+        [Header("Audio Log")]
+        [Tooltip("Optional audio log played on interaction.")]
         [SerializeField] private AudioLogData linkedAudioLog;
 
-        [Header("── Settings ──────────────────────────────────")]
+        [Header("Settings")]
         [SerializeField] private bool disableAfterDiscovery = true;
         [SerializeField] private GameObject highlightObject;
 

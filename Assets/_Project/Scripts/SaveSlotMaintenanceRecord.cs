@@ -39,19 +39,12 @@ namespace Hecton8.SaveSystem
 
         internal byte PackStateFlags()
         {
-            byte flags = 0;
-            if (LastAuditReadable)
-                flags |= LastAuditReadableFlag;
-            if (LastAuditRecommendedRepair)
-                flags |= LastAuditRecommendedRepairFlag;
-            if (LastLoadUsedBackup)
-                flags |= LastLoadUsedBackupFlag;
-            if (LastLoadUsedLegacyCompression)
-                flags |= LastLoadUsedLegacyCompressionFlag;
-            if (LastLoadSelfRepaired)
-                flags |= LastLoadSelfRepairedFlag;
-
-            return flags;
+            return (byte)(
+                (LastAuditReadable ? LastAuditReadableFlag : 0) |
+                (LastAuditRecommendedRepair ? LastAuditRecommendedRepairFlag : 0) |
+                (LastLoadUsedBackup ? LastLoadUsedBackupFlag : 0) |
+                (LastLoadUsedLegacyCompression ? LastLoadUsedLegacyCompressionFlag : 0) |
+                (LastLoadSelfRepaired ? LastLoadSelfRepairedFlag : 0));
         }
 
         internal void ApplyStateFlags(byte flags)

@@ -29,6 +29,9 @@ Shader "Hidden/Hecton8/NoirDepthFog"
         CBUFFER_END
 
         TEXTURE2D_X(_BlitTexture);
+        Texture2D<int> _HectonMarineSnowFogDensityTex;
+        float4 _HectonMarineSnowFogDensityTexelSize;
+        float4 _HectonMarineSnowFogDensityParams;
 
         struct Attributes
         {
@@ -67,6 +70,24 @@ Shader "Hidden/Hecton8/NoirDepthFog"
             return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
         }
 
+        float SampleMarineSnowFogDensity(float2 screenUV)
+        {
+            if (_HectonMarineSnowFogDensityParams.w <= 0.5 ||
+                _HectonMarineSnowFogDensityParams.x <= 0.0001 ||
+                _HectonMarineSnowFogDensityTexelSize.z < 1.0 ||
+                _HectonMarineSnowFogDensityTexelSize.w < 1.0)
+            {
+                return 0.0;
+            }
+
+            int2 pixel = int2(
+                saturate(screenUV.x) * (_HectonMarineSnowFogDensityTexelSize.z - 1.0) + 0.5,
+                saturate(screenUV.y) * (_HectonMarineSnowFogDensityTexelSize.w - 1.0) + 0.5);
+            int rawDensity = _HectonMarineSnowFogDensityTex.Load(int3(pixel, 0)).r;
+            float decodedDensity = saturate(rawDensity * rcp(max(_HectonMarineSnowFogDensityParams.y, 1.0)));
+            return saturate(decodedDensity * _HectonMarineSnowFogDensityParams.x);
+        }
+
         half4 Frag(Varyings input) : SV_Target
         {
             half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
@@ -86,6 +107,7 @@ Shader "Hidden/Hecton8/NoirDepthFog"
             half filmRamp = depthSq * (3.0h - 2.0h * depth01);
             half densityGain = saturate((half)_HectonNoirDepthFogParamsA.x * 96.0h);
             half fogFactor = saturate(filmRamp * lerp(0.42h, 1.16h, densityGain));
+            fogFactor = saturate(fogFactor + (half)SampleMarineSnowFogDensity(input.screenUV));
 
             half dither = (half)(ResolveInterleavedNoise(input.screenUV) - 0.5) * saturate((half)_HectonNoirDepthFogParamsB.w) * 0.0039215686h;
             fogFactor = saturate(fogFactor + dither);

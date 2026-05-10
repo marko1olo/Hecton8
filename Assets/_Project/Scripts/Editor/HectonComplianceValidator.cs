@@ -39,6 +39,18 @@ namespace Hecton8.Editor
             "GPUInstancer",
             "VolumetricLightBeam"
         };
+        private static readonly string[] ForbiddenRuntimeThirdPartyTokens =
+        {
+            "using Crest",
+            "global::Crest",
+            "Crest.",
+            "using MapMagic",
+            "global::MapMagic",
+            "MapMagic.",
+            "using Steamworks",
+            "Steamworks.",
+            "SteamAPI."
+        };
 
         private static DeferredValidationRun s_deferredRun;
 
@@ -105,6 +117,7 @@ namespace Hecton8.Editor
             ValidateGameplayLinqUsage(report);
             ValidateUnsafeMemCpyUsage(report);
             ValidateCoreAsmdefAcl(report);
+            ValidateRuntimeThirdPartyBoundaries(report);
             FailIfRequired(report, throwOnFailure, reportToConsole);
         }
 
@@ -166,12 +179,63 @@ namespace Hecton8.Editor
                     return StepUnsafeMemCpyValidation(run);
                 case DeferredValidationPhase.CoreAsmdef:
                     ValidateCoreAsmdefAcl(run.Report);
-                    run.Phase = DeferredValidationPhase.Complete;
+                    run.Phase = DeferredValidationPhase.ThirdPartyRuntimeBoundary;
                     return true;
+                case DeferredValidationPhase.ThirdPartyRuntimeBoundary:
+                    return StepThirdPartyRuntimeBoundaryValidation(run);
+                case DeferredValidationPhase.Complete:
+                    run.IsComplete = true;
+                    return false;
                 default:
                     run.IsComplete = true;
                     return false;
             }
+        }
+
+        private static bool StepThirdPartyRuntimeBoundaryValidation(DeferredValidationRun run)
+        {
+            if (run.RuntimeScriptPaths == null)
+                run.RuntimeScriptPaths = GetRuntimeScriptPaths();
+
+            while (run.PathIndex < run.RuntimeScriptPaths.Length)
+            {
+                if (run.CurrentLines == null)
+                {
+                    run.CurrentPath = run.RuntimeScriptPaths[run.PathIndex];
+                    if (!ShouldScanForThirdPartyBoundary(run.CurrentPath))
+                    {
+                        run.PathIndex++;
+                        continue;
+                    }
+
+                    run.CurrentLines = ReadAllLinesSafe(run.CurrentPath);
+                    run.LineIndex = 0;
+                }
+
+                if (run.LineIndex >= run.CurrentLines.Length)
+                {
+                    run.CurrentLines = null;
+                    run.PathIndex++;
+                    continue;
+                }
+
+                int lineIndex = run.LineIndex++;
+                string codeLine = StripLineComment(run.CurrentLines[lineIndex]);
+                if (!ContainsForbiddenRuntimeThirdPartyToken(codeLine, out string token))
+                    return true;
+
+                run.ThirdPartyRuntimeBoundaryViolationCount++;
+                run.Report.Add(
+                    "ACL001",
+                    run.CurrentPath,
+                    lineIndex + 1,
+                    "Runtime code outside Plugins must not reference third-party token '" + token + "'. Extract an interface and move the concrete adapter into Hecton8.Plugins.");
+                return true;
+            }
+
+            SessionState.SetInt("HectonComplianceValidator.ThirdPartyRuntimeBoundaryViolations", run.ThirdPartyRuntimeBoundaryViolationCount);
+            run.Phase = DeferredValidationPhase.Complete;
+            return true;
         }
 
         private static bool StepBurstValidation(DeferredValidationRun run)
@@ -492,6 +556,35 @@ namespace Hecton8.Editor
             SessionState.SetInt("HectonComplianceValidator.CoreAsmdefViolations", violationCount);
         }
 
+        private static void ValidateRuntimeThirdPartyBoundaries(ComplianceReport report)
+        {
+            int violationCount = 0;
+            string[] paths = GetRuntimeScriptPaths();
+            for (int pathIndex = 0; pathIndex < paths.Length; pathIndex++)
+            {
+                string path = paths[pathIndex];
+                if (!ShouldScanForThirdPartyBoundary(path))
+                    continue;
+
+                string[] lines = ReadAllLinesSafe(path);
+                for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+                {
+                    string codeLine = StripLineComment(lines[lineIndex]);
+                    if (!ContainsForbiddenRuntimeThirdPartyToken(codeLine, out string token))
+                        continue;
+
+                    violationCount++;
+                    report.Add(
+                        "ACL001",
+                        path,
+                        lineIndex + 1,
+                        "Runtime code outside Plugins must not reference third-party token '" + token + "'. Extract an interface and move the concrete adapter into Hecton8.Plugins.");
+                }
+            }
+
+            SessionState.SetInt("HectonComplianceValidator.ThirdPartyRuntimeBoundaryViolations", violationCount);
+        }
+
         private static void FailIfRequired(ComplianceReport report, bool throwOnFailure, bool reportToConsole)
         {
             SessionState.SetInt("HectonComplianceValidator.TotalViolations", report.Count);
@@ -574,6 +667,27 @@ namespace Hecton8.Editor
             string normalized = path.Replace('\\', '/');
             return normalized.StartsWith(SourceRoot + "/", StringComparison.Ordinal) &&
                    normalized.IndexOf("/Editor/", StringComparison.Ordinal) < 0;
+        }
+
+        private static bool ShouldScanForThirdPartyBoundary(string path)
+        {
+            string normalized = path.Replace('\\', '/');
+            return normalized.StartsWith(SourceRoot + "/", StringComparison.Ordinal) &&
+                   normalized.IndexOf("/Plugins/", StringComparison.Ordinal) < 0 &&
+                   normalized.IndexOf("/Editor/", StringComparison.Ordinal) < 0;
+        }
+
+        private static bool ContainsForbiddenRuntimeThirdPartyToken(string codeLine, out string token)
+        {
+            for (int tokenIndex = 0; tokenIndex < ForbiddenRuntimeThirdPartyTokens.Length; tokenIndex++)
+            {
+                token = ForbiddenRuntimeThirdPartyTokens[tokenIndex];
+                if (codeLine.IndexOf(token, StringComparison.Ordinal) >= 0)
+                    return true;
+            }
+
+            token = string.Empty;
+            return false;
         }
 
         private static bool IsUnsafeGuardPath(string path)
@@ -814,6 +928,7 @@ namespace Hecton8.Editor
             GameplayLinq,
             UnsafeMemCpy,
             CoreAsmdef,
+            ThirdPartyRuntimeBoundary,
             Complete
         }
 
@@ -834,6 +949,7 @@ namespace Hecton8.Editor
             public int LayerMaskViolationCount;
             public int GameplayLinqViolationCount;
             public int UnsafeMemCpyViolationCount;
+            public int ThirdPartyRuntimeBoundaryViolationCount;
             public bool IsComplete;
         }
     }

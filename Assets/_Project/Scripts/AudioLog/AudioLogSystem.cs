@@ -1,21 +1,21 @@
 // ============================================================================
-// HECTON-8 — AudioLogSystem.cs
-// Singleton-menedzher audiodnevnikov kolonii.
+// HECTON-8 - AudioLogSystem.cs
+// Runtime service for colony audio logs.
 //
-// ROL:
-//   • Hranit reestr vseh obnaruzhennyh logov (ISaveable).
-//   • Upravlyaet vosproizvedeniem cherez SpatialAudioManager.
-//   • Publikuet sobytiya dlya PDA-arhiva i HUD-subtitrov.
-//   • Integriruetsya s NarrativeEvents (discovery → log unlock).
+// ROLE:
+//   - Stores discovered log state through ISaveable.
+//   - Routes playback through SpatialAudioManager.
+//   - Publishes events for PDA archive and HUD subtitles.
+//   - Integrates NarrativeEvents discovery into log unlock state.
 //
 // ZERO GC:
-//   • HashSet<uint> dlya O(1) proverki obnaruzhennyh logov.
-//   • ISlowTickable dlya proverki zaversheniya vosproizvedeniya.
-//   • Nikakih new/LINQ/string concat v hot path.
+//   - HashSet<uint> gives O(1) discovered-log checks.
+//   - ISlowTickable polls playback completion outside hot tick.
+//   - No new, LINQ, or string concatenation in hot paths.
 //
-// SOHRANENIE:
-//   • LoadPriority 6 — posle NarrativeDirector (5).
-//   • Sohranyaet spisok obnaruzhennyh logId v SaveData.
+// SAVE:
+//   - LoadPriority 6 after NarrativeDirector (5).
+//   - Persists discovered log IDs into SaveData.
 // ============================================================================
 
 using System;
@@ -44,27 +44,21 @@ namespace Hecton8.Narrative
     [DefaultExecutionOrder(-140)]
     public sealed class AudioLogSystem : MonoBehaviour, ISaveable, ISlowTickable
     {
-        // ══════════════════════════════════════════════════════════
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
 
-        [Header("── Settings ────────────────────────────────")]
-        [Tooltip("Gromkost vosproizvedeniya audiodnevnikov.")]
+        [Header("Settings")]
+        [Tooltip("Audio log playback volume.")]
         [SerializeField, Range(0f, 1f)] private float playbackVolume = 0.85f;
 
-        [Tooltip("Maksimalnoe kolichestvo sohranyaemyh logId.")]
+        [Tooltip("Maximum number of saved audio log IDs.")]
         [SerializeField] private int maxSavedLogs = 256;
 
         [Tooltip("Authored audio log catalog used by narrative systems that unlock logs without a pickup object.")]
         [SerializeField] private AudioLogData[] allLogs = Array.Empty<AudioLogData>();
 
-        // ══════════════════════════════════════════════════════════
         //  SERVICE AUTHORITY
-        // ══════════════════════════════════════════════════════════
 
-        // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
 
         private const int PlaybackQueueCapacity = 16;
         private const int EncryptedFragmentStateCapacity = 32;
@@ -113,16 +107,12 @@ namespace Hecton8.Narrative
         private bool _resolvedLogCatalogFullTelemetryArmed = true;
         private bool _encryptedVoiceRouteMissingTelemetryArmed = true;
 
-        // ══════════════════════════════════════════════════════════
         //  ISaveable
-        // ══════════════════════════════════════════════════════════
 
         public int SavePriority => 6;
         public int LoadPriority => 6;
 
-        // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
-        // ══════════════════════════════════════════════════════════
 
         public bool IsPlaying => _isPlaying;
         public bool IsNarrativeQueueBlocked => _isPlaying || _atmosphericWarningActive;
@@ -130,9 +120,7 @@ namespace Hecton8.Narrative
         public int DiscoveredCount => _discoveredLogHashes.Count;
         public bool CurrentPlaybackBitCrushed => _currentPlaybackBitCrushed;
 
-        // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
 
         private void Awake()
         {
@@ -183,9 +171,7 @@ namespace Hecton8.Narrative
             DisposeEncryptedFragmentState();
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  ISlowTickable — proverka zaversheniya vosproizvedeniya
-        // ══════════════════════════════════════════════════════════
+        //  ISlowTickable playback completion polling.
 
         public void SlowTick()
         {
@@ -199,7 +185,7 @@ namespace Hecton8.Narrative
             if (_playbackTimer > 0f)
                 return;
 
-            // Vosproizvedenie zaversheno
+            // Playback completed.
             AudioLogData completedLog = _currentLog;
             uint completedHash = _currentLogHash;
             _isPlaying = false;
@@ -214,12 +200,10 @@ namespace Hecton8.Narrative
             TryStartNextQueuedLog();
         }
 
-        // ══════════════════════════════════════════════════════════
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Obnaruzhit log (bez vosproizvedeniya). Vyzyvaetsya iz AudioLogPickup.
+        /// Marks a log as discovered without starting playback.
         /// </summary>
         public void DiscoverLog(AudioLogData data)
         {
@@ -239,7 +223,7 @@ namespace Hecton8.Narrative
             if (notificationHash != 0u)
                 NotificationEvents.PushRegisteredInfo(notificationHash);
 
-            // Takzhe registriruem v NarrativeDirector
+            // Also register the discovery with narrative systems.
             NarrativeEvents.RaiseDiscoveryMade(discoveredHash);
             NarrativeEvents.RaiseAudioLogFound(discoveredHash);
 
@@ -247,14 +231,14 @@ namespace Hecton8.Narrative
         }
 
         /// <summary>
-        /// Vosproizvesti audiodnevnik. Esli uzhe igraet — ostanavlivaet predyduschiy.
+        /// Plays an audio log or queues it when another log is already active.
         /// </summary>
         public void PlayLog(AudioLogData data)
         {
             if (data == null || !TryResolveLogHash(data, out uint logHash))
                 return;
 
-            // Obnaruzhivaem esli esche ne obnaruzhen
+            // Mark undiscovered logs before playback.
             if (data.IsFragmentedEncrypted && !IsEncryptedLogFullyRecovered(logHash))
             {
                 if (GetRecoveredEncryptedBits(logHash) != 0u)
@@ -270,7 +254,7 @@ namespace Hecton8.Narrative
                 return;
             }
 
-            // Vosproizvodim cherez SpatialAudioManager
+            // Route playback through SpatialAudioManager.
             PlayLogByHash(logHash, data);
         }
 
@@ -468,7 +452,7 @@ namespace Hecton8.Narrative
         }
 
         /// <summary>
-        /// Proverit, obnaruzhen li log.
+        /// Checks whether a log has been discovered.
         /// </summary>
         public bool IsDiscovered(string logId)
         {
@@ -481,17 +465,15 @@ namespace Hecton8.Narrative
         }
 
         /// <summary>
-        /// Poluchit vse obnaruzhennye logId (dlya PDA arhiva).
-        /// Vozvraschaet enumerator bez allokatsii.
+        /// Returns all discovered log hashes for PDA archive consumers.
+        /// The returned enumerator does not allocate.
         /// </summary>
         public HashSet<uint>.Enumerator GetDiscoveredHashEnumerator()
         {
             return _discoveredLogHashes.GetEnumerator();
         }
 
-        // ══════════════════════════════════════════════════════════
         //  PRIVATE
-        // ══════════════════════════════════════════════════════════
 
         private void BuildLogLookup()
         {
@@ -1050,9 +1032,7 @@ namespace Hecton8.Narrative
 #endif
         }
 
-        // ══════════════════════════════════════════════════════════
         //  ISaveable
-        // ══════════════════════════════════════════════════════════
 
         public void PopulateSaveData(SaveData data)
         {

@@ -17,19 +17,23 @@ Texture2D<float> _HectonScatterHeightTexture;
 Texture3D<float> _HectonCaveVoxelSdfTex;
 SamplerState sampler_HectonCaveVoxelSdfTex;
 
-int _HectonScatterHeightResolution;
+int _HectonScatterHeightMaxPixel;
+float _HectonScatterHeightResolutionMinusOne;
+float _HectonScatterHeightTexelSize;
 float3 _HectonScatterTerrainPosition;
 float3 _HectonScatterTerrainSize;
+float2 _HectonScatterTerrainSizeInvXZ;
 float4 _HectonScatterFieldRect;
 int _HectonScatterGridResolution;
+int _HectonScatterCandidateCount;
 float _HectonScatterCellSize;
 int _HectonScatterSeed;
 float4 _HectonScatterScaleRange;
-float _HectonScatterMinNormalY;
+float _HectonScatterMinNormalYSq;
 float3 _HectonScatterCameraPosition;
 float3 _HectonScatterCameraForward;
-float _HectonScatterMaxDistance;
-float _HectonScatterPeripheralDistance;
+float _HectonScatterMaxDistanceSq;
+float _HectonScatterPeripheralDistanceSq;
 float _HectonScatterPeripheralDot;
 float4 _HectonScatterFrustumPlanes[HECTON_SCATTER_FRUSTUM_PLANES];
 float4 _HectonCaveVoxelHalfExtents;
@@ -60,10 +64,9 @@ float2 Hash02(uint value)
 float SampleHeight01(float2 uv)
 {
     uv = saturate(uv);
-    float resolutionMinusOne = max((float)_HectonScatterHeightResolution - 1.0, 1.0);
-    float2 sampleCoord = uv * resolutionMinusOne;
+    float2 sampleCoord = uv * _HectonScatterHeightResolutionMinusOne;
     int2 pixelMin = (int2)floor(sampleCoord);
-    int2 pixelMax = min(pixelMin + 1, int2(_HectonScatterHeightResolution - 1, _HectonScatterHeightResolution - 1));
+    int2 pixelMax = min(pixelMin + 1, int2(_HectonScatterHeightMaxPixel, _HectonScatterHeightMaxPixel));
     float2 fracPart = frac(sampleCoord);
 
     float h00 = _HectonScatterHeightTexture.Load(int3(pixelMin, 0));
@@ -78,7 +81,7 @@ float SampleHeight01(float2 uv)
 
 float3 SampleTerrainNormal(float2 uv)
 {
-    float texel = rcp(max((float)_HectonScatterHeightResolution - 1.0, 1.0));
+    float texel = _HectonScatterHeightTexelSize;
     float2 offsetX = float2(texel, 0.0);
     float2 offsetZ = float2(0.0, texel);
 
@@ -92,14 +95,13 @@ float3 SampleTerrainNormal(float2 uv)
     return cross(tangentZ, tangentX);
 }
 
-bool PassesNormalYThresholdSq(float3 normalWS, float threshold)
+bool PassesNormalYThresholdSq(float3 normalWS, float thresholdSq)
 {
     float normalLenSq = dot(normalWS, normalWS);
     if (!isfinite(normalLenSq) || normalLenSq <= 0.00000001)
         return false;
 
-    float safeThreshold = saturate(threshold);
-    return normalWS.y >= 0.0 && normalWS.y * normalWS.y >= safeThreshold * safeThreshold * normalLenSq;
+    return normalWS.y >= 0.0 && normalWS.y * normalWS.y >= thresholdSq * normalLenSq;
 }
 
 bool PassesDotThresholdSq(float dotValue, float threshold, float lengthProductSq)
@@ -146,8 +148,8 @@ float SampleCaveSignedDistance(float3 positionWS)
 void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
     uint instanceIndex = dispatchThreadId.x;
-    uint gridResolution = (uint)max(_HectonScatterGridResolution, 1);
-    uint totalCount = gridResolution * gridResolution;
+    uint gridResolution = (uint)_HectonScatterGridResolution;
+    uint totalCount = (uint)_HectonScatterCandidateCount;
     if (instanceIndex >= totalCount)
         return;
 
@@ -157,47 +159,31 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     uint baseHash = instanceIndex ^ (uint)_HectonScatterSeed;
     float2 jitter = Hash02(baseHash);
     float2 worldXZ = _HectonScatterFieldRect.xy + (float2(cellX, cellZ) + jitter) * _HectonScatterCellSize;
-    float2 terrainUv = float2(
-        (worldXZ.x - _HectonScatterTerrainPosition.x) / max(_HectonScatterTerrainSize.x, 0.001),
-        (worldXZ.y - _HectonScatterTerrainPosition.z) / max(_HectonScatterTerrainSize.z, 0.001));
+    float2 terrainUv = (worldXZ - float2(_HectonScatterTerrainPosition.x, _HectonScatterTerrainPosition.z)) *
+        _HectonScatterTerrainSizeInvXZ;
 
     if (any(terrainUv < 0.0) || any(terrainUv > 1.0))
         return;
 
     float height01 = SampleHeight01(terrainUv);
-    float3 normalWS = SampleTerrainNormal(terrainUv);
-    if (!PassesNormalYThresholdSq(normalWS, _HectonScatterMinNormalY))
-        return;
-
-    float scale = lerp(_HectonScatterScaleRange.x, _HectonScatterScaleRange.y, Hash01(baseHash ^ 0x9f6abc1du));
-    float rotation = (float)(HashUint(baseHash ^ 0x42bead31u) & 7u);
     float3 positionWS = float3(
         worldXZ.x,
         _HectonScatterTerrainPosition.y + height01 * _HectonScatterTerrainSize.y,
         worldXZ.y);
 
-    ScatterInstanceGpuData instanceData;
-    instanceData.PositionScale = float4(positionWS, scale);
-    instanceData.NormalRotation = float4(normalWS, rotation);
-    _HectonScatterInstances[instanceIndex] = instanceData;
-
     float3 toCamera = positionWS - _HectonScatterCameraPosition;
     float distanceToCameraSq = dot(toCamera, toCamera);
-    float maxDistance = max(_HectonScatterMaxDistance, 0.0);
-    float maxDistanceSq = maxDistance * maxDistance;
-    if (distanceToCameraSq > maxDistanceSq || distanceToCameraSq <= 0.00000001)
+    if (distanceToCameraSq > _HectonScatterMaxDistanceSq || distanceToCameraSq <= 0.00000001)
         return;
 
-    float peripheralDistance = max(_HectonScatterPeripheralDistance, 0.0);
-    float peripheralDistanceSq = peripheralDistance * peripheralDistance;
-    float cameraForwardLenSq = dot(_HectonScatterCameraForward, _HectonScatterCameraForward);
     float dotForward = dot(toCamera, _HectonScatterCameraForward);
-    if (distanceToCameraSq > peripheralDistanceSq &&
-        !PassesDotThresholdSq(dotForward, _HectonScatterPeripheralDot, distanceToCameraSq * cameraForwardLenSq))
+    if (distanceToCameraSq > _HectonScatterPeripheralDistanceSq &&
+        !PassesDotThresholdSq(dotForward, _HectonScatterPeripheralDot, distanceToCameraSq))
     {
         return;
     }
 
+    float scale = lerp(_HectonScatterScaleRange.x, _HectonScatterScaleRange.y, Hash01(baseHash ^ 0x9f6abc1du));
     float radius = max(scale, 0.15);
     if (!IsSphereVisibleInFrustum(positionWS, radius))
         return;
@@ -205,5 +191,14 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     if (SampleCaveSignedDistance(positionWS) <= 0.0)
         return;
 
+    float3 normalWS = SampleTerrainNormal(terrainUv);
+    if (!PassesNormalYThresholdSq(normalWS, _HectonScatterMinNormalYSq))
+        return;
+
+    float rotation = (float)(HashUint(baseHash ^ 0x42bead31u) & 7u);
+    ScatterInstanceGpuData instanceData;
+    instanceData.PositionScale = float4(positionWS, scale);
+    instanceData.NormalRotation = float4(normalWS, rotation);
+    _HectonScatterInstances[instanceIndex] = instanceData;
     _HectonVisibleScatterIndices.Append(instanceIndex);
 }

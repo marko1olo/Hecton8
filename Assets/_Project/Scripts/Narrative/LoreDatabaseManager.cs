@@ -240,15 +240,11 @@ namespace Hecton8.Narrative
 
         private void Awake()
         {
-            BuildLookupIfNeeded();
-            EnsureUnlockStorage();
         }
 
         private void OnEnable()
         {
             TryRegisterService();
-            BuildLookupIfNeeded();
-            EnsureUnlockStorage();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
             AudioLogEvents.Register(this);

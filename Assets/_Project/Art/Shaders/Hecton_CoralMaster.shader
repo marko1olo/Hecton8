@@ -282,7 +282,7 @@ Shader "Hecton8/Flora/CoralMaster"
                 #endif
 
                 half3 baseTex = SampleFloraDominantAxis(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), samplePositionWS, baseNormalWS).rgb;
-                // NOTE: baseNormalWS already declared at L229 — no redeclaration.
+                // NOTE: baseNormalWS already declared at L229 - no redeclaration.
                 half3 triplanarNormalWS = SampleFloraDominantAxisNormal(
                         TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap),
                         samplePositionWS,
@@ -374,7 +374,7 @@ Shader "Hecton8/Flora/CoralMaster"
             ENDHLSL
         }
 
-        // ── ShadowCaster Pass ────────────────────────────────────
+        // ShadowCaster Pass
         Pass
         {
             Name "ShadowCaster"
@@ -446,7 +446,7 @@ Shader "Hecton8/Flora/CoralMaster"
             ENDHLSL
         }
 
-        // ── DepthOnly Pass ───────────────────────────────────────
+        // DepthOnly Pass
         Pass
         {
             Name "DepthOnly"

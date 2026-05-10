@@ -260,9 +260,9 @@ namespace Hecton8.World
         [Tooltip("Minimum rock mask that blocks a vegetation sample.")]
         private float rockMaskThreshold = 0.5f;
 
-        [SerializeField, Range(0f, 1f)]
-        [Tooltip("Minimum allowed terrain normal Y for ground-anchored vegetation.")]
-        private float minimumNormalY = 0.7f;
+        [SerializeField, Range(OrganicKelpMaxSlopeNormalY, 1f)]
+        [Tooltip("Minimum allowed terrain normal Y for ground-anchored vegetation. Runtime never drops below the 30-degree slope gate.")]
+        private float minimumNormalY = OrganicKelpMaxSlopeNormalY;
 
         [SerializeField, Min(0f)]
         [Tooltip("Offset along the sampled terrain normal for anchored vegetation.")]
@@ -1763,6 +1763,7 @@ namespace Hecton8.World
             nativePoolGuardMb = math.max(MinimumNativePoolBudgetMb, nativePoolGuardMb);
             vegetationAudioProbeRadius = math.max(0.5f, vegetationAudioProbeRadius);
             surfacePoolShare = math.clamp(surfacePoolShare, 0.5f, 0.9f);
+            minimumNormalY = math.max(math.saturate(minimumNormalY), OrganicKelpMaxSlopeNormalY);
             kelpMinHeight = math.clamp(kelpMinHeight, waterLevel - OrganicKelpMaxDepthBelowSurfaceMeters, waterLevel);
             grassStepMeters = math.clamp(grassStepMeters, 1f, 2f);
             grassFarStepMeters = math.clamp(grassFarStepMeters, 4f, 5f);
@@ -3035,8 +3036,9 @@ namespace Hecton8.World
                 return false;
             }
 
-            float gradientX = (heightPosX - heightNegX) / (resolvedSampleDistance * 2f);
-            float gradientZ = (heightPosZ - heightNegZ) / (resolvedSampleDistance * 2f);
+            float inverseSampleDiameter = 1f / (resolvedSampleDistance * 2f);
+            float gradientX = (heightPosX - heightNegX) * inverseSampleDiameter;
+            float gradientZ = (heightPosZ - heightNegZ) * inverseSampleDiameter;
             float normalLengthSq = 1f + (gradientX * gradientX) + (gradientZ * gradientZ);
             float safeMinimumNormalY = math.saturate(minimumNormalY);
             float minimumNormalYSq = safeMinimumNormalY * safeMinimumNormalY;

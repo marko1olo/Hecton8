@@ -28,7 +28,7 @@ namespace Hecton8.SaveSystem
             if (HasExpectedCapacity(words))
                 return;
 
-            // COLD ALLOC: long[WordCount] — packed discovered biome persistence — owner: BiomeDiscoveryBitMask
+            // COLD ALLOC: long[WordCount] - packed discovered biome persistence - owner: BiomeDiscoveryBitMask
             words = new long[WordCount];
         }
 

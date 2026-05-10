@@ -354,7 +354,7 @@ namespace Hecton8.Scavenging
                 Mathf.Max(signal.Source.Power, signal.PowerDelivered),
                 ResolveYieldSampleDeltaSeconds(),
                 runtimeHitPoint,
-                hitNormal.sqrMagnitude > 0.0001f ? hitNormal.normalized : ResolveFallbackNormal(runtimeHitPoint),
+                hitNormal.sqrMagnitude > 0.0001f ? ResolveDominantAxis(hitNormal) : ResolveFallbackNormal(runtimeHitPoint),
                 allowIncrementalYield: true,
                 allowImpactDebris: true);
 
@@ -470,21 +470,22 @@ namespace Hecton8.Scavenging
             }
 
             Vector3 origin = _cachedTransform.position;
+            uint state = BuildDeterministicScatterSeed(0xD1B54A32u);
             for (int i = 0; i < lootCount; i++)
             {
-                Vector3 offset = UnityEngine.Random.insideUnitSphere * scatterRadius;
+                Vector3 offset = NextScatterVector(ref state) * scatterRadius;
                 Vector3 spawnPosition = origin + offset;
-                Quaternion spawnRotation = UnityEngine.Random.rotation;
+                Quaternion spawnRotation = NextCardinalRotation(ref state);
                 GameObject loot = pool.Spawn(lootPrefab, spawnPosition, spawnRotation);
                 if (loot == null)
                     continue;
 
                 if (loot.TryGetComponent(out Rigidbody rigidbody))
                 {
-                    Vector3 force = UnityEngine.Random.insideUnitSphere * scatterForce;
+                    Vector3 force = NextScatterVector(ref state) * scatterForce;
                     force.y = Mathf.Abs(force.y) + upwardBias;
                     PhysicsForceRouter.QueueForce(rigidbody, force, ForceMode.Impulse);
-                    PhysicsForceRouter.QueueTorque(rigidbody, UnityEngine.Random.insideUnitSphere * (scatterForce * 0.5f), ForceMode.Impulse);
+                    PhysicsForceRouter.QueueTorque(rigidbody, NextScatterVector(ref state) * (scatterForce * 0.5f), ForceMode.Impulse);
                 }
 
                 if (lootLifetime > 0f)
@@ -793,7 +794,7 @@ namespace Hecton8.Scavenging
             if (registry == null || itemData == null)
                 return false;
 
-            Vector3 outwardNormal = hitNormal.sqrMagnitude > 0.0001f ? hitNormal.normalized : ResolveFallbackNormal(hitPoint);
+            Vector3 outwardNormal = hitNormal.sqrMagnitude > 0.0001f ? ResolveDominantAxis(hitNormal) : ResolveFallbackNormal(hitPoint);
             Vector3 tangent = ResolveTangent(outwardNormal, seed);
             Vector3 spawnPosition = hitPoint + (outwardNormal * 0.12f) + (tangent * 0.05f);
             Vector3 impulse = (outwardNormal * 0.8f) + (tangent * 0.25f);
@@ -816,12 +817,12 @@ namespace Hecton8.Scavenging
             uint state = unchecked((uint)_persistentTombstoneId) ^ ((uint)(_yieldDropCount + 1) * 0x85EBCA6Bu);
             int debrisCount = MinimumImpactDebrisCount + (int)Mathf.Floor(Next01(ref state) * (MaximumImpactDebrisCount - MinimumImpactDebrisCount + 1));
             debrisCount = Mathf.Clamp(debrisCount, MinimumImpactDebrisCount, MaximumImpactDebrisCount);
-            Vector3 outwardNormal = hitNormal.sqrMagnitude > 0.0001f ? hitNormal.normalized : ResolveFallbackNormal(hitPoint);
+            Vector3 outwardNormal = hitNormal.sqrMagnitude > 0.0001f ? ResolveDominantAxis(hitNormal) : ResolveFallbackNormal(hitPoint);
             float impulseScale = Mathf.Clamp(toolPower, 0.4f, 3.5f);
 
             for (int i = 0; i < debrisCount; i++)
             {
-                Quaternion rotation = UnityEngine.Random.rotation;
+                Quaternion rotation = NextCardinalRotation(ref state);
                 Vector3 tangent = ResolveTangent(outwardNormal, state ^ (uint)i);
                 Vector3 spawnPosition = hitPoint + (outwardNormal * 0.08f) + (tangent * (0.04f + (0.03f * Next01(ref state))));
                 GameObject debris = pool.Spawn(s_runtimeDebrisPrefab, spawnPosition, rotation);
@@ -1019,15 +1020,27 @@ namespace Hecton8.Scavenging
 
         private static Vector3 ResolveTangent(Vector3 normal, uint seed)
         {
-            Vector3 basis = Mathf.Abs(normal.y) < 0.9f ? Vector3.up : Vector3.right;
-            Vector3 tangent = Vector3.Cross(normal, basis);
-            if (tangent.sqrMagnitude <= 0.000001f)
-                tangent = Vector3.Cross(normal, Vector3.forward);
-
-            tangent = tangent.sqrMagnitude > 0.000001f ? tangent.normalized : Vector3.right;
-            Vector3 bitangent = Vector3.Cross(normal, tangent).normalized;
-            float angleRadians = Next01(ref seed) * Mathf.PI * 2f;
-            return ((tangent * Mathf.Cos(angleRadians)) + (bitangent * Mathf.Sin(angleRadians))).normalized;
+            Vector3 tangent = ResolveDominantTangent(normal);
+            Vector3 bitangent = Vector3.Cross(normal, tangent);
+            switch ((seed >> 13) & 7u)
+            {
+                case 0u:
+                    return tangent;
+                case 1u:
+                    return -tangent;
+                case 2u:
+                    return bitangent;
+                case 3u:
+                    return -bitangent;
+                case 4u:
+                    return (tangent + bitangent) * 0.70710678f;
+                case 5u:
+                    return (tangent - bitangent) * 0.70710678f;
+                case 6u:
+                    return (-tangent + bitangent) * 0.70710678f;
+                default:
+                    return (-tangent - bitangent) * 0.70710678f;
+            }
         }
 
         private static float Next01(ref uint state)
@@ -1036,6 +1049,68 @@ namespace Hecton8.Scavenging
             state ^= state >> 17;
             state ^= state << 5;
             return (state & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private uint BuildDeterministicScatterSeed(uint salt)
+        {
+            uint hash = unchecked((uint)_persistentTombstoneId) ^ salt;
+            hash ^= (uint)((ulong)_persistentTombstoneId >> 32);
+            hash ^= (uint)(_yieldDropCount + 1) * 0x9E3779B9u;
+            ulong ownerEntityId = _cachedTransform != null
+                ? EntityId.ToULong(_cachedTransform.GetEntityId())
+                : EntityId.ToULong(GetEntityId());
+            hash ^= unchecked((uint)ownerEntityId);
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return hash != 0u ? hash : 0xA341316Cu;
+        }
+
+        private static Vector3 NextScatterVector(ref uint state)
+        {
+            return new Vector3(
+                (Next01(ref state) * 2f) - 1f,
+                (Next01(ref state) * 2f) - 1f,
+                (Next01(ref state) * 2f) - 1f);
+        }
+
+        private static Quaternion NextCardinalRotation(ref uint state)
+        {
+            uint lane = (uint)(Next01(ref state) * 8f) & 7u;
+            switch (lane)
+            {
+                case 0u:
+                    return Quaternion.identity;
+                case 1u:
+                    return new Quaternion(0f, 0.70710678f, 0f, 0.70710678f);
+                case 2u:
+                    return new Quaternion(0f, 1f, 0f, 0f);
+                case 3u:
+                    return new Quaternion(0f, -0.70710678f, 0f, 0.70710678f);
+                case 4u:
+                    return new Quaternion(0.38268343f, 0f, 0f, 0.9238795f);
+                case 5u:
+                    return new Quaternion(-0.38268343f, 0f, 0f, 0.9238795f);
+                case 6u:
+                    return new Quaternion(0f, 0f, 0.38268343f, 0.9238795f);
+                default:
+                    return new Quaternion(0f, 0f, -0.38268343f, 0.9238795f);
+            }
+        }
+
+        private static Vector3 ResolveDominantTangent(Vector3 normal)
+        {
+            float ax = Mathf.Abs(normal.x);
+            float ay = Mathf.Abs(normal.y);
+            float az = Mathf.Abs(normal.z);
+            if (ay >= ax && ay >= az)
+                return normal.y >= 0f ? Vector3.right : Vector3.left;
+            if (ax >= az)
+                return normal.x >= 0f ? Vector3.forward : Vector3.back;
+
+            return normal.z >= 0f ? Vector3.right : Vector3.left;
         }
 
         private void RegisterSpatialHandle()
@@ -1080,7 +1155,20 @@ namespace Hecton8.Scavenging
             if (normal.sqrMagnitude <= 0.000001f)
                 return _cachedTransform != null ? _cachedTransform.up : Vector3.up;
 
-            return normal.normalized;
+            return ResolveDominantAxis(normal);
+        }
+
+        private static Vector3 ResolveDominantAxis(Vector3 value)
+        {
+            float ax = Mathf.Abs(value.x);
+            float ay = Mathf.Abs(value.y);
+            float az = Mathf.Abs(value.z);
+            if (ay >= ax && ay >= az)
+                return value.y >= 0f ? Vector3.up : Vector3.down;
+            if (ax >= az)
+                return value.x >= 0f ? Vector3.right : Vector3.left;
+
+            return value.z >= 0f ? Vector3.forward : Vector3.back;
         }
 
         private void UpdateMeltProperties(Vector3 worldHitPoint)

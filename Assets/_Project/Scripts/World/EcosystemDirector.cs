@@ -36,6 +36,8 @@ namespace Hecton8.World
         private const float DefaultSlowTickIntervalSeconds = 0.5f;
         private const float DefaultFloraGrazingSearchRadiusMeters = 2.75f;
         private const float SectorEdgeLengthMeters = 1000f;
+        private const float InvSectorEdgeLengthMeters = 1f / SectorEdgeLengthMeters;
+        private const float InvStableSectorRandomMask = 1f / 16777215f;
         private const float DefaultLeviathanSectorSpawnChance = 0.15f;
         private const int DefaultGrazerPopulationPerSector = 10;
         private const int DefaultLeviathanPopulationPerSector = 1;
@@ -73,8 +75,6 @@ namespace Hecton8.World
         private const float FloraPredatorAupQueryRadiusMeters = 700f;
         private const float FloraPredatorStealthRadiusMeters = 15f;
         private const float FloraPredatorStealthDimStrength = 0.82f;
-        private const float GlobalOceanPanicRadiusMeters = 100f;
-        private const float GlobalOceanPanicRadiusMetersSqr = GlobalOceanPanicRadiusMeters * GlobalOceanPanicRadiusMeters;
         private const string NativeMemoryOwner = nameof(EcosystemDirector);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private static readonly string[] ThermalSpawnTokens = { "lava", "thermal", "brine", "heat", "volcanic", "smoker" };
@@ -92,6 +92,7 @@ namespace Hecton8.World
         private static readonly int _PredatorAUPCountId = Shader.PropertyToID("_PredatorAUPCount");
         private static readonly int _PredatorAUPParamsId = Shader.PropertyToID("_PredatorAUPParams");
         private static readonly int _GlobalOceanPanicId = Shader.PropertyToID("_GlobalOceanPanic");
+        private static readonly int _ApexInSectorId = Shader.PropertyToID("_ApexInSector");
         private static readonly int _GlobalOceanPanicColorId = Shader.PropertyToID("_GlobalOceanPanicColor");
         private static readonly int _BiolumFlashBangAUPId = Shader.PropertyToID("_BiolumFlashBangAUP");
         private static readonly int _BiolumFlashBangParamsId = Shader.PropertyToID("_BiolumFlashBangParams");
@@ -113,6 +114,7 @@ namespace Hecton8.World
             public int PreyPopulationRounded;
             public int PredatorPopulationRounded;
             public int BiomeId;
+            public byte ApexInSector;
         }
 
         private struct HeadlessEntitySoA
@@ -335,6 +337,7 @@ namespace Hecton8.World
                 state.AlgaeBloom01 = bloom01;
                 state.PreyPopulationRounded = preyPopulation;
                 state.PredatorPopulationRounded = predatorPopulation;
+                state.ApexInSector = predatorPopulation > 0 ? (byte)1 : (byte)0;
                 BackStates[index] = state;
                 PreyBackCounts[index] = preyPopulation;
                 PredatorBackCounts[index] = predatorPopulation;
@@ -560,6 +563,7 @@ namespace Hecton8.World
         private int _hostilityTier;
         private bool _floraPredatorAupSaturationTelemetryIssued;
         private float _lastPublishedGlobalOceanPanic01 = -1f;
+        private byte _lastPublishedApexInSector = byte.MaxValue;
         private int _lastPublishedFloraPredatorAupCount = -1;
         private bool _floraPredatorAupGlobalsDirty = true;
         private int _nextHibernationPopulationSyncIndex;
@@ -1259,7 +1263,8 @@ namespace Hecton8.World
                     AlgaeBloom01 = 0f,
                     PreyPopulationRounded = preyPopulation,
                     PredatorPopulationRounded = predatorPopulation,
-                    BiomeId = biomeId
+                    BiomeId = biomeId,
+                    ApexInSector = predatorPopulation > 0 ? (byte)1 : (byte)0
                 };
 
                 _sectorFrontStates[sectorIndex] = restoredState;
@@ -1348,7 +1353,7 @@ namespace Hecton8.World
             else
             {
                 PublishFloraPredatorAupGlobals(0);
-                PublishGlobalOceanPanic(0f);
+                PublishApexPresenceFake(false);
             }
 
             _coldTickAccumulator += DefaultSlowTickIntervalSeconds;
@@ -1414,7 +1419,24 @@ namespace Hecton8.World
             sample.Fitness = state.Fitness;
             sample.SpeedMultiplier = state.SpeedMultiplier;
             sample.CamouflageIndex = state.CamouflageIndex;
+            sample.ApexInSector = IsApexInSectorState(in state);
             return true;
+        }
+
+        /// <summary>
+        /// Returns the sector-level apex presence flag used by presentation and audio fakes.
+        /// </summary>
+        public bool IsApexInSector(Vector3 worldPosition)
+        {
+            if (!IsInitialized || HasPendingSimulationJob())
+                return false;
+
+            int2 sectorCoord = QuantizeSector(worldPosition);
+            if (!_sectorIndexByKey.TryGetValue(PackSectorKey(sectorCoord), out int slotIndex) || slotIndex < 0 || slotIndex >= _activeSectorCount)
+                return false;
+
+            SectorPopulationState state = _sectorFrontStates[slotIndex];
+            return IsApexInSectorState(in state);
         }
 
         /// <summary>
@@ -1473,6 +1495,7 @@ namespace Hecton8.World
             SectorPopulationState state = _sectorFrontStates[slotIndex];
             state.PredatorPopulationRounded = math.max(0, state.PredatorPopulationRounded - 1);
             state.PredatorPopulation = state.PredatorPopulationRounded;
+            state.ApexInSector = state.PredatorPopulationRounded > 0 ? (byte)1 : (byte)0;
             int preyBloom = math.max(1, maxPreyPopulation / 5);
             state.PreyPopulationRounded = math.min(maxPreyPopulation, state.PreyPopulationRounded + preyBloom);
             state.PreyPopulation = state.PreyPopulationRounded;
@@ -1844,6 +1867,7 @@ namespace Hecton8.World
             _floraPredatorAupGlobalsDirty = true;
             PublishFloraPredatorAupGlobals(0);
             Shader.SetGlobalColor(_GlobalOceanPanicColorId, new Color(1f, 0.05f, 0.035f, 1f));
+            Shader.SetGlobalFloat(_ApexInSectorId, 0f);
             PublishGlobalOceanPanic(0f);
             _activeSectorCount = 0;
             _scheduledApexTerritoryOverlapCount = 0;
@@ -1924,7 +1948,7 @@ namespace Hecton8.World
             Shader.SetGlobalInt(_PredatorAUPCountId, 0);
             _lastPublishedFloraPredatorAupCount = 0;
             _floraPredatorAupGlobalsDirty = true;
-            PublishGlobalOceanPanic(0f);
+            PublishApexPresenceFake(false);
 
             _sectorFrontStates = default;
             _sectorBackStates = default;
@@ -2384,19 +2408,12 @@ namespace Hecton8.World
                 SpatialTargetKind.Bioform,
                 _floraPredatorAupHits);
             int uploadCount = 0;
-            float panic01 = 0f;
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
                 SpatialQueryHit hit = _floraPredatorAupHits[hitIndex];
                 FaunaBrain brain = hit.Owner as FaunaBrain;
                 if (brain == null || brain.IsDead || !brain.IsApexPredatorRuntime)
                     continue;
-
-                if (hit.DistanceSqr < GlobalOceanPanicRadiusMetersSqr)
-                {
-                    float distanceSq01 = math.saturate(hit.DistanceSqr / GlobalOceanPanicRadiusMetersSqr);
-                    panic01 = math.max(panic01, 1f - distanceSq01);
-                }
 
                 if (uploadCount < FloraPredatorAupBufferCapacity)
                 {
@@ -2427,7 +2444,7 @@ namespace Hecton8.World
             }
 
             PublishFloraPredatorAupGlobals(uploadCount);
-            PublishGlobalOceanPanic(panic01);
+            PublishApexPresenceFake(IsApexInSector(queryOrigin));
         }
 
         private void PublishFloraPredatorAupGlobals(int uploadCount)
@@ -2455,6 +2472,18 @@ namespace Hecton8.World
 
             _lastPublishedGlobalOceanPanic01 = resolvedPanic01;
             Shader.SetGlobalFloat(_GlobalOceanPanicId, resolvedPanic01);
+        }
+
+        private void PublishApexPresenceFake(bool apexInSector)
+        {
+            byte flag = apexInSector ? (byte)1 : (byte)0;
+            if (_lastPublishedApexInSector != flag)
+            {
+                _lastPublishedApexInSector = flag;
+                Shader.SetGlobalFloat(_ApexInSectorId, flag);
+            }
+
+            PublishGlobalOceanPanic(flag);
         }
 
         private static bool TryResolvePlayerRuntimePosition(out Vector3 playerPosition)
@@ -2583,6 +2612,7 @@ namespace Hecton8.World
             state.PreyPopulationRounded = preyPopulation;
             state.PredatorPopulationRounded = predatorPopulation;
             state.BiomeId = biomeId;
+            state.ApexInSector = predatorPopulation > 0 ? (byte)1 : (byte)0;
             return state;
         }
 
@@ -2687,7 +2717,7 @@ namespace Hecton8.World
         private static float StableSectorRandom01(int2 sectorCoord, int biomeId)
         {
             uint mix = MixSectorBits(sectorCoord.x, sectorCoord.y) ^ (uint)biomeId;
-            return (mix & 0x00FFFFFFu) * (1f / 16777215f);
+            return (mix & 0x00FFFFFFu) * InvStableSectorRandomMask;
         }
 
         private static uint MixSectorBits(int sectorX, int sectorZ)
@@ -2697,6 +2727,11 @@ namespace Hecton8.World
                 uint mix = ((uint)sectorX * 73856093u) ^ ((uint)sectorZ * 19349663u);
                 return mix;
             }
+        }
+
+        private static bool IsApexInSectorState(in SectorPopulationState state)
+        {
+            return state.ApexInSector != 0;
         }
 
         private static int2 QuantizeSector(Vector3 worldPosition)
@@ -2709,8 +2744,8 @@ namespace Hecton8.World
         {
             double3 absolutePosition = position.ToAbsoluteDouble3();
             return new int2(
-                (int)math.floor(absolutePosition.x / SectorEdgeLengthMeters),
-                (int)math.floor(absolutePosition.z / SectorEdgeLengthMeters));
+                (int)math.floor(absolutePosition.x * InvSectorEdgeLengthMeters),
+                (int)math.floor(absolutePosition.z * InvSectorEdgeLengthMeters));
         }
 
         private static double ResolveRuntimeAupDistanceSq(in AbsoluteUniversePosition originAup, Vector3 runtimePosition)
@@ -2741,10 +2776,10 @@ namespace Hecton8.World
         private static int ResolveBiomeIdForSector(int2 sectorCoord)
         {
             uint mix = MixSectorBits(sectorCoord.x, sectorCoord.y);
-            uint bucket = mix % 10u;
-            if (bucket < 2u)
+            uint bucket = mix & 0x0Fu;
+            if (bucket < 3u)
                 return 1;
-            if (bucket < 5u)
+            if (bucket < 8u)
                 return 2;
 
             return 0;

@@ -3063,13 +3063,10 @@ namespace Hecton8.Physics
         /// <returns>True when the request was accepted.</returns>
         public static bool QueueForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true)
         {
-            if (!IsFiniteVector(force))
-            {
-                PhysicsApplySystem rejectSystem = PhysicsApplySystem.EnsureRuntimeInstance();
-                return rejectSystem != null && rejectSystem.QueueForce(body, force, mode, wake);
-            }
+            if (!MathGuard.TryAcceptFinite(force, out Vector3 acceptedForce))
+                return false;
 
-            Vector3 safeForce = ClampUpwardAcceleration(force, mode);
+            Vector3 safeForce = ClampUpwardAcceleration(acceptedForce, mode);
             if (TryRouteToPlayerMotor(body, safeForce, mode))
                 return true;
 
@@ -3082,13 +3079,10 @@ namespace Hecton8.Physics
         /// </summary>
         public static bool QueueAmbientForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true)
         {
-            if (!IsFiniteVector(force))
-            {
-                PhysicsApplySystem rejectSystem = PhysicsApplySystem.EnsureRuntimeInstance();
-                return rejectSystem != null && rejectSystem.QueueForce(body, force, mode, ForcePacketPriority.Ambient, wake, ForcePacketFlags.None);
-            }
+            if (!MathGuard.TryAcceptFinite(force, out Vector3 acceptedForce))
+                return false;
 
-            Vector3 safeForce = ClampUpwardAcceleration(force, mode);
+            Vector3 safeForce = ClampUpwardAcceleration(acceptedForce, mode);
             ForcePacketFlags extraFlags = ResolveBiomeBuoyancyFlags(safeForce, mode);
             Vector3 routeForce = PhysicsApplySystem.ApplyActiveBiomeBuoyancyGravityMultiplier(safeForce, mode, extraFlags);
             if (TryRouteToPlayerMotor(body, routeForce, mode))
@@ -3109,18 +3103,16 @@ namespace Hecton8.Physics
         /// <returns>True when the request was accepted.</returns>
         public static bool QueueForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true)
         {
-            if (!IsFiniteVector(force))
-            {
-                PhysicsApplySystem rejectSystem = PhysicsApplySystem.EnsureRuntimeInstance();
-                return rejectSystem != null && rejectSystem.QueueForceAtPosition(body, force, worldPosition, mode, wake);
-            }
+            if (!MathGuard.TryAcceptFinite(force, out Vector3 acceptedForce) ||
+                !MathGuard.TryAcceptFinite(worldPosition, out Vector3 acceptedWorldPosition))
+                return false;
 
-            Vector3 safeForce = ClampUpwardAcceleration(force, mode);
-            if (TryRouteToPlayerMotorAtPosition(body, safeForce, worldPosition))
+            Vector3 safeForce = ClampUpwardAcceleration(acceptedForce, mode);
+            if (TryRouteToPlayerMotorAtPosition(body, safeForce, acceptedWorldPosition))
                 return true;
 
             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
-            return system != null && system.QueueForceAtPosition(body, safeForce, worldPosition, mode, wake);
+            return system != null && system.QueueForceAtPosition(body, safeForce, acceptedWorldPosition, mode, wake);
         }
 
         /// <summary>
@@ -3128,20 +3120,18 @@ namespace Hecton8.Physics
         /// </summary>
         public static bool QueueAmbientForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true)
         {
-            if (!IsFiniteVector(force))
-            {
-                PhysicsApplySystem rejectSystem = PhysicsApplySystem.EnsureRuntimeInstance();
-                return rejectSystem != null && rejectSystem.QueueForceAtPosition(body, force, worldPosition, mode, ForcePacketPriority.Ambient, wake, ForcePacketFlags.None);
-            }
+            if (!MathGuard.TryAcceptFinite(force, out Vector3 acceptedForce) ||
+                !MathGuard.TryAcceptFinite(worldPosition, out Vector3 acceptedWorldPosition))
+                return false;
 
-            Vector3 safeForce = ClampUpwardAcceleration(force, mode);
+            Vector3 safeForce = ClampUpwardAcceleration(acceptedForce, mode);
             ForcePacketFlags extraFlags = ResolveBiomeBuoyancyFlags(safeForce, mode);
             Vector3 routeForce = PhysicsApplySystem.ApplyActiveBiomeBuoyancyGravityMultiplier(safeForce, mode, extraFlags);
-            if (TryRouteToPlayerMotorAtPosition(body, routeForce, worldPosition))
+            if (TryRouteToPlayerMotorAtPosition(body, routeForce, acceptedWorldPosition))
                 return true;
 
             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
-            return system != null && system.QueueForceAtPosition(body, safeForce, worldPosition, mode, ForcePacketPriority.Ambient, wake, extraFlags);
+            return system != null && system.QueueForceAtPosition(body, safeForce, acceptedWorldPosition, mode, ForcePacketPriority.Ambient, wake, extraFlags);
         }
 
         /// <summary>
@@ -3181,8 +3171,11 @@ namespace Hecton8.Physics
         /// <returns>True when the request was accepted.</returns>
         public static bool QueueTorque(Rigidbody body, Vector3 torque, ForceMode mode, bool wake = true)
         {
+            if (!MathGuard.TryAcceptFinite(torque, out Vector3 acceptedTorque))
+                return false;
+
             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
-            return system != null && system.QueueTorque(body, torque, mode, wake);
+            return system != null && system.QueueTorque(body, acceptedTorque, mode, wake);
         }
 
         /// <summary>
@@ -3190,8 +3183,11 @@ namespace Hecton8.Physics
         /// </summary>
         public static bool QueueAmbientTorque(Rigidbody body, Vector3 torque, ForceMode mode, bool wake = true)
         {
+            if (!MathGuard.TryAcceptFinite(torque, out Vector3 acceptedTorque))
+                return false;
+
             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
-            return system != null && system.QueueTorque(body, torque, mode, ForcePacketPriority.Ambient, wake);
+            return system != null && system.QueueTorque(body, acceptedTorque, mode, ForcePacketPriority.Ambient, wake);
         }
 
         private static bool TryRouteToPlayerMotor(Rigidbody body, Vector3 force, ForceMode mode)

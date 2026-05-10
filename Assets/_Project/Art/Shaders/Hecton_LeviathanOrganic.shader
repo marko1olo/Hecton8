@@ -16,6 +16,9 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         _OcclusionStrength("Occlusion Strength", Range(0, 1)) = 1.0
         _EmissionStrength("Emission Strength", Range(0, 8)) = 1.0
         _FaunaBiolumDim("Fauna Biolum Dim", Range(0, 1)) = 1.0
+        [HDR] _FaunaCamouflageTint("Fauna Camouflage Tint", Color) = (0.18, 0.28, 0.30, 1)
+        _FaunaCamouflageParams("Fauna Camouflage Params", Vector) = (35, 0.00444444, 1.35, 0.18)
+        _FaunaCamouflageStrength("Fauna Camouflage Strength", Range(0, 1)) = 0.55
         _DeathDitherFade("Death Dither Fade", Range(0, 1)) = 0.0
         _CorpseBloatAge01("Corpse Bloat Age 01", Range(0, 1)) = 0.0
         _CorpseBloatStartTime("Corpse Bloat Start Time", Float) = -1.0
@@ -72,12 +75,15 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float4 _WoundColor;
             float4 _WoundBurnColor;
             float4 _WetnessVelocityWS;
+            float4 _FaunaCamouflageTint;
+            float4 _FaunaCamouflageParams;
             float _NormalScale;
             float _Metallic;
             float _Smoothness;
             float _OcclusionStrength;
             float _EmissionStrength;
             float _FaunaBiolumDim;
+            float _FaunaCamouflageStrength;
             float _DeathDitherFade;
             float _CorpseBloatAge01;
             float _CorpseBloatStartTime;
@@ -185,7 +191,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float tailWave = CheapSignedWave(_Time.y * _TailSwaySpeed + worldPos.y * _TailSwayPhase + worldPos.x * 13.37);
             positionOS.x += tailWave * _TailSwayStrength * tailMask;
 
-            float timedBloat01 = saturate((_Time.y - _CorpseBloatStartTime) / max(_CorpseBloatDuration, 0.001)) * step(0.0, _CorpseBloatStartTime);
+            float timedBloat01 = saturate((_Time.y - _CorpseBloatStartTime) * rcp(max(_CorpseBloatDuration, 0.001))) * step(0.0, _CorpseBloatStartTime);
             float bloat01 = max(saturate(_CorpseBloatAge01), timedBloat01);
             positionOS += normalOS * (bloat01 * bloat01 * _CorpseBloatStrength);
             return positionOS;
@@ -219,8 +225,10 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
                     continue;
 
                 float coreRadius = max(woundRadius * 0.45, 0.001);
-                half woundContribution = saturate(1.0h - (half)(woundDistanceSq / woundRadiusSq));
-                half coreContribution = saturate(1.0h - (half)(woundDistanceSq / (coreRadius * coreRadius)));
+                float invWoundRadiusSq = rcp(woundRadiusSq);
+                float invCoreRadiusSq = rcp(coreRadius * coreRadius);
+                half woundContribution = saturate(1.0h - (half)(woundDistanceSq * invWoundRadiusSq));
+                half coreContribution = saturate(1.0h - (half)(woundDistanceSq * invCoreRadiusSq));
                 woundMask = max(woundMask, woundContribution * woundContribution);
                 burnMask = max(burnMask, coreContribution * coreContribution);
             }
@@ -235,7 +243,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             hash ^= hash >> 16;
             hash *= 2246822519u;
             hash ^= hash >> 13;
-            return (half)((hash & 255u) * (1.0 / 255.0));
+            return (half)((hash & 255u) * 0.00392156863);
         }
 
         float EvaluateLeviathanSonarBand(float4 pulse, float4 parameters, float3 positionWS)
@@ -252,7 +260,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
                 return 0.0;
 
             float radius = age * speed;
-            float lifeMask = 1.0 - saturate((radius - maxRadius) / bandWidth);
+            float lifeMask = 1.0 - saturate((radius - maxRadius) * rcp(bandWidth));
             if (lifeMask <= 0.0001)
                 return 0.0;
 
@@ -268,7 +276,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
 
             float radiusSq = radius * radius;
             float bandSq = max((outerBandRadius * outerBandRadius) - (innerBandRadius * innerBandRadius), 0.001);
-            float band = saturate(1.0 - abs(distanceToPulseSq - radiusSq) / bandSq);
+            float band = saturate(1.0 - abs(distanceToPulseSq - radiusSq) * rcp(bandSq));
             band = band * band * (3.0 - 2.0 * band);
             float cinematicFalloff = rcp(1.0 + distanceToPulseSq * 0.000016);
             return band * lifeMask * active * cinematicFalloff;
@@ -288,6 +296,17 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float hideDistanceSq = _HectonSonarNoirHideDistance * _HectonSonarNoirHideDistance;
             float farNoirMask = hideEnabled * step(hideDistanceSq, dot(cameraDelta, cameraDelta));
             clip(lerp(1.0, sonarReveal - 0.012, farNoirMask));
+        }
+
+        half3 ApplyFaunaCamouflage(half3 albedo, float3 positionWS, half3 ambient)
+        {
+            float waterDepth = max(0.0, _HectonNoirFogStratification.x - positionWS.y);
+            float depth01 = saturate((waterDepth - _FaunaCamouflageParams.x) * _FaunaCamouflageParams.y);
+            half ambientLuma = dot(ambient, half3(0.2126h, 0.7152h, 0.0722h));
+            half dark01 = saturate(1.0h - max(ambientLuma - (half)_FaunaCamouflageParams.w, 0.0h) * (half)_FaunaCamouflageParams.z);
+            half camouflage01 = saturate((half)_FaunaCamouflageStrength * (half)depth01 * dark01);
+            half3 tintColor = half3(_FaunaCamouflageTint.r, _FaunaCamouflageTint.g, _FaunaCamouflageTint.b);
+            return albedo * lerp(half3(1.0h, 1.0h, 1.0h), tintColor, camouflage01);
         }
 
         Varyings Vert(Attributes input)
@@ -326,6 +345,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half3 normalWS = NormalizeApprox3D(TransformTangentToWorld(tangentNormal, tangentToWorld));
             float wetnessVelocityMagnitudeSq = dot(_WetnessVelocityWS.xyz, _WetnessVelocityWS.xyz);
             normalWS = ApplyWetnessNormalWobble(normalWS, input.positionWS, wetnessVelocityMagnitudeSq);
+            half3 ambientSh = SampleSH(normalWS);
+            surface.rgb = ApplyFaunaCamouflage(surface.rgb, input.positionWS, ambientSh);
 
             HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, (half)_Metallic, (half)_OcclusionStrength, (half)_Smoothness);
             half metallic = decodedMask.metallic;
@@ -344,7 +365,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half3 woundColor = lerp(_WoundColor.rgb, _WoundBurnColor.rgb, woundBurnMask);
             surface.rgb = lerp(surface.rgb, woundColor, woundMask);
 
-            half3 color = SampleSH(normalWS) * surface.rgb * ambientOcclusion * caveAmbientFactor;
+            half3 color = ambientSh * surface.rgb * ambientOcclusion * caveAmbientFactor;
             float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
             Light mainLight = GetMainLight(shadowCoord);
             half3 lightDir = HectonCoreLitSafeNormalize(mainLight.direction);

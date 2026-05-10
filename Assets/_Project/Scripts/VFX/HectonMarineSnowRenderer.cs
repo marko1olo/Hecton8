@@ -19,6 +19,7 @@ namespace Hecton8.Environment
     {
         private const float BiolumeSurgeDurationSeconds = 4f;
         private const int ThreadGroupSize = 64;
+        private const int ThreadGroupShift = 6;
         private const int MaxMarineSnowParticleCapacity = 32768;
         private const int ParticleStride = 64;
         private const int FrameConstantsStride = 112;
@@ -28,6 +29,9 @@ namespace Hecton8.Environment
         private const float ActiveDensityEpsilon = 0.0001f;
         private const float ShaderVectorPublishEpsilon = 0.0001f;
         private const float ExternalGpuBindingColdTickSeconds = 0.1f;
+        private const float FogDensityEncodedScale = 65535f;
+        private const float FogDensityParticleSizeGain = 128f;
+        private const float Hash24ToFloat01 = 0.000000059604648328104858f;
         private static readonly Vector4 DepthCollisionParams = new Vector4(15f, 0.25f, 0.5f, 0f);
         private static readonly Vector4 DefaultFlowSynchronyParams = new Vector4(1f, 0.26f, 0f, 0f);
         private static readonly Vector4 DisabledTerrainHeightScale = new Vector4(0f, 0f, 0f, 0f);
@@ -115,6 +119,10 @@ namespace Hecton8.Environment
             internal static readonly int SonarGlowResultId = Shader.PropertyToID("_HectonMarineSnowSonarGlowResult");
             internal static readonly int SonarGlowTexelSizeId = Shader.PropertyToID("_HectonMarineSnowSonarGlowTexelSize");
             internal static readonly int SonarGlowParamsId = Shader.PropertyToID("_HectonMarineSnowSonarGlowParams");
+            internal static readonly int FogDensityTextureId = Shader.PropertyToID("_HectonMarineSnowFogDensityTex");
+            internal static readonly int FogDensityResultId = Shader.PropertyToID("_HectonMarineSnowFogDensityResult");
+            internal static readonly int FogDensityTexelSizeId = Shader.PropertyToID("_HectonMarineSnowFogDensityTexelSize");
+            internal static readonly int FogDensityParamsId = Shader.PropertyToID("_HectonMarineSnowFogDensityParams");
             internal static readonly int SonarRevealExpireTimeId = Shader.PropertyToID("_SonarRevealExpireTime");
         }
 
@@ -200,6 +208,12 @@ namespace Hecton8.Environment
         [Tooltip("Final underwater composite strength for sonar-reactive plankton glow.")]
         [SerializeField, Range(0f, 4f)] private float sonarGlowCompositeStrength = 1.15f;
 
+        [Header("Fog Injection")]
+        [Tooltip("Low-resolution noir fog density contributed by visible marine-snow particles.")]
+        [SerializeField, Range(0f, 0.5f)] private float fogDensityInjectionStrength = 0.10f;
+        [Tooltip("Render scale for the marine-snow fog density buffer.")]
+        [SerializeField, Range(0.1f, 0.5f)] private float fogDensityRenderScale = 0.25f;
+
         private readonly FrameConstantsData[] _frameConstantsUpload = new FrameConstantsData[1]; // COLD ALLOC: FrameConstantsData[1] â€” reusable per-frame constant-buffer upload cache â€” owner: HectonMarineSnowRenderer
 
         private ParticleGpuData[] _bootstrapParticles;
@@ -219,6 +233,7 @@ namespace Hecton8.Environment
         private int _clearVisibleKernel = -1;
         private int _sonarGlowClearKernel = -1;
         private int _sonarGlowAccumulateKernel = -1;
+        private int _fogDensityClearKernel = -1;
         private int _frameParity;
         private int _flowFieldResolution;
         private float _flowFieldCellSize;
@@ -244,9 +259,18 @@ namespace Hecton8.Environment
         private RenderTexture _sonarGlowTexture;
         private int _sonarGlowWidth;
         private int _sonarGlowHeight;
+        private RenderTexture _fogDensityTexture;
+        private int _fogDensityWidth;
+        private int _fogDensityHeight;
+        private int _fogDensityClearGroupsX;
+        private int _fogDensityClearGroupsY;
+        private Vector4 _fogDensityTexelSize;
         private Vector4 _lastPublishedSonarGlowTexelSize;
         private Vector4 _lastPublishedSonarGlowParams;
         private Texture _lastPublishedSonarGlowTexture;
+        private Vector4 _lastPublishedFogDensityTexelSize;
+        private Vector4 _lastPublishedFogDensityParams;
+        private Texture _lastPublishedFogDensityTexture;
         private Texture _boundCameraDepthTexture;
         private Texture _boundTerrainHeightTexture;
         private Texture _boundCaveSdfTexture;
@@ -270,6 +294,8 @@ namespace Hecton8.Environment
         private GraphicsBuffer _boundSonarGlowParticlesWriteBuffer;
         private Texture _boundSonarGlowClearTexture;
         private Texture _boundSonarGlowAccumulateTexture;
+        private Texture _boundFogDensityClearTexture;
+        private Texture _boundFogDensitySimulationTexture;
         private Vector4 _boundEmissionParams = InvalidVector;
         private Vector4 _boundBubbleParams = InvalidVector;
         private Vector4 _boundFlowSynchronyParams = InvalidVector;
@@ -278,6 +304,8 @@ namespace Hecton8.Environment
         private Vector4 _boundDepthCollisionParams = InvalidVector;
         private Vector4 _boundSonarGlowTexelSize = InvalidVector;
         private Vector4 _boundSonarGlowParams = InvalidVector;
+        private Vector4 _boundFogDensityTexelSize = InvalidVector;
+        private Vector4 _boundFogDensityParams = InvalidVector;
         private Matrix4x4 _boundViewProjection = InvalidMatrix;
         private Matrix4x4 _boundViewMatrix = InvalidMatrix;
         private Matrix4x4 _boundCaveVoxelWorldToLocal = IdentityMatrix;
@@ -285,6 +313,7 @@ namespace Hecton8.Environment
         private float _externalGpuBindingColdTickTimer;
         private bool _externalGpuBindingsDirty = true;
         private bool _sonarGlowGlobalsDirty = true;
+        private bool _fogDensityGlobalsDirty = true;
         [SerializeField] private int _debugActiveParticleCount;
         [SerializeField] private float _debugAdaptiveRenderScale = 1f;
         [SerializeField] private float _debugAdaptiveBudgetScale = 1f;
@@ -409,6 +438,7 @@ namespace Hecton8.Environment
                 _activeParticleCount = 0;
                 _debugActiveParticleCount = 0;
                 PublishSonarGlowGlobals(Vector4.zero, Vector4.zero, null);
+                PublishFogDensityGlobals(Vector4.zero, Vector4.zero, null);
                 return;
             }
 
@@ -421,6 +451,7 @@ namespace Hecton8.Environment
             if (_activeParticleCount <= 0)
             {
                 PublishSonarGlowGlobals(Vector4.zero, Vector4.zero, null);
+                PublishFogDensityGlobals(Vector4.zero, Vector4.zero, null);
                 return;
             }
 
@@ -429,6 +460,7 @@ namespace Hecton8.Environment
             UpdateFrameConstants(math.max(0f, dt), effectiveDensityScale);
             RefreshExternalGpuBindings(dt);
             DispatchVisibleClear();
+            DispatchFogDensityClear();
             DispatchSimulation();
             DispatchSonarGlow();
             RenderMarineSnow();
@@ -515,9 +547,10 @@ namespace Hecton8.Environment
 
             _sonarGlowClearKernel = marineSnowCompute.FindKernel("ClearSonarGlow");
             _sonarGlowAccumulateKernel = marineSnowCompute.FindKernel("AccumulateSonarGlow");
-            if (_sonarGlowClearKernel < 0 || _sonarGlowAccumulateKernel < 0)
+            _fogDensityClearKernel = marineSnowCompute.FindKernel("ClearFogDensity");
+            if (_sonarGlowClearKernel < 0 || _sonarGlowAccumulateKernel < 0 || _fogDensityClearKernel < 0)
             {
-                LogMissingSonarGlowKernels();
+                LogMissingAuxiliaryKernels();
                 enabled = false;
                 return;
             }
@@ -543,6 +576,7 @@ namespace Hecton8.Environment
             EnsureEmptyCaveSdfTexture();
             EnsureQuadMesh();
             EnsureSonarGlowTexture();
+            EnsureFogDensityTexture();
             _buffersReady = true;
             ResetGpuBindingCaches();
             _staticBindingsDirty = true;
@@ -566,10 +600,10 @@ namespace Hecton8.Environment
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-        private static void LogMissingSonarGlowKernels()
+        private static void LogMissingAuxiliaryKernels()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("HectonMarineSnowRenderer: sonar glow kernels not found. Disabling compute marine snow.");
+            Debug.LogError("HectonMarineSnowRenderer: auxiliary compute kernels not found. Disabling compute marine snow.");
 #endif
         }
 
@@ -589,13 +623,13 @@ namespace Hecton8.Environment
                 float seed3 = HashToFloat01((uint)index, 0x510E527Fu);
                 float2 lateralSeed = new float2(seed0 * 2f - 1f, seed1 * 2f - 1f);
                 float lateralMajorAxis = math.max(math.abs(lateralSeed.x), math.abs(lateralSeed.y));
-                float2 lateralDirection = lateralMajorAxis > 0.0001f ? lateralSeed / lateralMajorAxis : new float2(1f, 0f);
-                float radius = math.lerp(respawnMinRadius, respawnMaxRadius, seed1);
-                float height = math.lerp(minVertical, maxVertical, seed2);
+                float2 lateralDirection = lateralMajorAxis > 0.0001f ? lateralSeed * math.rcp(lateralMajorAxis) : new float2(1f, 0f);
+                float radius = respawnMinRadius + (respawnMaxRadius - respawnMinRadius) * seed1;
+                float height = minVertical + (maxVertical - minVertical) * seed2;
                 Vector3 position = cameraPosition + new Vector3(lateralDirection.x, 0f, lateralDirection.y) * radius;
                 position.y = cameraPosition.y + height;
-                float baseSpeed = math.lerp(descentMinSpeed, descentMaxSpeed, seed3);
-                float size = math.lerp(particleSizeMin, particleSizeMax, HashToFloat01((uint)index, 0x9B05688Cu));
+                float baseSpeed = descentMinSpeed + (descentMaxSpeed - descentMinSpeed) * seed3;
+                float size = particleSizeMin + (particleSizeMax - particleSizeMin) * HashToFloat01((uint)index, 0x9B05688Cu);
 
                 _bootstrapParticles[index] = new ParticleGpuData
                 {
@@ -804,7 +838,7 @@ namespace Hecton8.Environment
             GraphicsBufferUploadUtility.UploadArray(_frameConstantsBuffer, _frameConstantsUpload, 1);
             VFXEmissionProfile.FluidSettings emissionSettings = ResolveEmissionSettings();
             float biolumeSurgeBlend = ResolveBiolumeSurgeBlend();
-            float surgeTurbulenceScale = math.lerp(1f, biolumeSurgeTurbulenceMultiplier, biolumeSurgeBlend);
+            float surgeTurbulenceScale = 1f + (biolumeSurgeTurbulenceMultiplier - 1f) * biolumeSurgeBlend;
             Vector4 emissionParams = new Vector4(
                 emissionSettings.buoyancyModifier,
                 emissionSettings.turbulenceScale * surgeTurbulenceScale,
@@ -823,14 +857,17 @@ namespace Hecton8.Environment
                 if (depthTexture != null)
                     SetKernelTextureIfChanged(_kernelIndex, ShaderIds.CameraDepthTextureId, depthTexture, ref _boundCameraDepthTexture);
 
-                Matrix4x4 viewProjection = GL.GetGPUProjectionMatrix(_targetCameraComponent.projectionMatrix, false) * _targetCameraComponent.worldToCameraMatrix;
+                int pixelWidth = _targetCameraComponent.pixelWidth;
+                int pixelHeight = _targetCameraComponent.pixelHeight;
+                Matrix4x4 worldToCameraMatrix = _targetCameraComponent.worldToCameraMatrix;
+                Matrix4x4 viewProjection = GL.GetGPUProjectionMatrix(_targetCameraComponent.projectionMatrix, false) * worldToCameraMatrix;
                 Vector4 depthTextureTexelSize = new Vector4(
-                    _targetCameraComponent.pixelWidth > 0 ? 1f / _targetCameraComponent.pixelWidth : 0f,
-                    _targetCameraComponent.pixelHeight > 0 ? 1f / _targetCameraComponent.pixelHeight : 0f,
-                    _targetCameraComponent.pixelWidth,
-                    _targetCameraComponent.pixelHeight);
+                    pixelWidth > 0 ? math.rcp((float)pixelWidth) : 0f,
+                    pixelHeight > 0 ? math.rcp((float)pixelHeight) : 0f,
+                    pixelWidth,
+                    pixelHeight);
                 SetComputeMatrixHotIfChanged(ShaderIds.ViewProjectionId, viewProjection, ref _boundViewProjection);
-                SetComputeMatrixHotIfChanged(ShaderIds.ViewMatrixId, _targetCameraComponent.worldToCameraMatrix, ref _boundViewMatrix);
+                SetComputeMatrixHotIfChanged(ShaderIds.ViewMatrixId, worldToCameraMatrix, ref _boundViewMatrix);
                 SetComputeVectorHotIfChanged(ShaderIds.ZBufferParamsId, Shader.GetGlobalVector(ShaderIds.GlobalZBufferParamsId), ref _boundZBufferParams);
                 SetComputeVectorHotIfChanged(ShaderIds.DepthTextureTexelSizeId, depthTextureTexelSize, ref _boundDepthTextureTexelSize);
             }
@@ -838,8 +875,8 @@ namespace Hecton8.Environment
 
         private void RefreshExternalGpuBindings(float dt)
         {
-            SetComputeVectorIfChanged(ShaderIds.SubmarineWashSphereId, Shader.GetGlobalVector(ShaderIds.SubmarineWashSphereId), ref _boundSubmarineWashSphere);
-            SetComputeVectorIfChanged(ShaderIds.SubmarineWashVelocityId, Shader.GetGlobalVector(ShaderIds.SubmarineWashVelocityId), ref _boundSubmarineWashVelocity);
+            SetComputeVectorHotIfChanged(ShaderIds.SubmarineWashSphereId, Shader.GetGlobalVector(ShaderIds.SubmarineWashSphereId), ref _boundSubmarineWashSphere);
+            SetComputeVectorHotIfChanged(ShaderIds.SubmarineWashVelocityId, Shader.GetGlobalVector(ShaderIds.SubmarineWashVelocityId), ref _boundSubmarineWashVelocity);
 
             _externalGpuBindingColdTickTimer -= math.max(0f, dt);
             if (!_externalGpuBindingsDirty && _externalGpuBindingColdTickTimer > 0f)
@@ -934,8 +971,8 @@ namespace Hecton8.Environment
                 heightRect = new Vector4(
                     heightPayload.TerrainPosition.x,
                     heightPayload.TerrainPosition.z,
-                    1f / heightPayload.TerrainSize.x,
-                    1f / heightPayload.TerrainSize.z);
+                    math.rcp(heightPayload.TerrainSize.x),
+                    math.rcp(heightPayload.TerrainSize.z));
                 heightScale = new Vector4(
                     heightPayload.TerrainPosition.y,
                     heightPayload.TerrainSize.y,
@@ -961,11 +998,39 @@ namespace Hecton8.Environment
             marineSnowCompute.Dispatch(_clearVisibleKernel, 1, 1, 1);
         }
 
+        private void DispatchFogDensityClear()
+        {
+            if (!IsFogDensityInjectionActive() || _fogDensityClearKernel < 0)
+            {
+                SetComputeVectorHotIfChanged(ShaderIds.FogDensityParamsId, Vector4.zero, ref _boundFogDensityParams);
+                PublishFogDensityGlobals(Vector4.zero, Vector4.zero, null);
+                return;
+            }
+
+            EnsureFogDensityTexture();
+            if (_fogDensityTexture == null)
+            {
+                SetComputeVectorHotIfChanged(ShaderIds.FogDensityParamsId, Vector4.zero, ref _boundFogDensityParams);
+                PublishFogDensityGlobals(Vector4.zero, Vector4.zero, null);
+                return;
+            }
+
+            Vector4 fogDensityTexelSize = ResolveFogDensityTexelSize();
+            Vector4 fogDensityParams = ResolveFogDensityParams();
+            SetComputeVectorHotIfChanged(ShaderIds.FogDensityTexelSizeId, fogDensityTexelSize, ref _boundFogDensityTexelSize);
+            SetComputeVectorHotIfChanged(ShaderIds.FogDensityParamsId, fogDensityParams, ref _boundFogDensityParams);
+            SetKernelTextureIfChanged(_fogDensityClearKernel, ShaderIds.FogDensityResultId, _fogDensityTexture, ref _boundFogDensityClearTexture);
+            SetKernelTextureIfChanged(_kernelIndex, ShaderIds.FogDensityResultId, _fogDensityTexture, ref _boundFogDensitySimulationTexture);
+            PublishFogDensityGlobals(fogDensityTexelSize, fogDensityParams, _fogDensityTexture);
+
+            marineSnowCompute.Dispatch(_fogDensityClearKernel, _fogDensityClearGroupsX, _fogDensityClearGroupsY, 1);
+        }
+
         private Vector3 ResolveCameraVelocity(Vector3 cameraPosition, float dt)
         {
             Vector3 velocity = Vector3.zero;
             if (_hasLastCameraPositionWS && dt > 0.0001f)
-                velocity = (cameraPosition - _lastCameraPositionWS) * (1f / dt);
+                velocity = (cameraPosition - _lastCameraPositionWS) * math.rcp(dt);
 
             _lastCameraPositionWS = cameraPosition;
             _hasLastCameraPositionWS = true;
@@ -982,13 +1047,13 @@ namespace Hecton8.Environment
                 float startVelocity = fullVelocity * 0.72f;
                 float fullVelocitySq = fullVelocity * fullVelocity;
                 float startVelocitySq = startVelocity * startVelocity;
-                float speed01 = math.saturate((speedSq - startVelocitySq) / math.max(0.01f, fullVelocitySq - startVelocitySq));
+                float speed01 = math.saturate((speedSq - startVelocitySq) * math.rcp(math.max(0.01f, fullVelocitySq - startVelocitySq)));
                 targetIntensity = speed01 * speed01 * (3f - 2f * speed01);
             }
 
             float blendT = FastDecayBlend(math.max(0.1f, speedLineResponseSharpness), math.max(0f, dt));
-            _speedLineIntensity = math.lerp(_speedLineIntensity, targetIntensity, blendT);
-            return math.lerp(1f, math.max(1f, speedLineMaxStretch), _speedLineIntensity);
+            _speedLineIntensity += (targetIntensity - _speedLineIntensity) * blendT;
+            return 1f + (math.max(1f, speedLineMaxStretch) - 1f) * _speedLineIntensity;
         }
 
         private static float FastDecayBlend(float speed, float deltaTime)
@@ -997,7 +1062,7 @@ namespace Hecton8.Environment
             if (x >= 3.5f)
                 return 1f;
 
-            return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
+            return math.saturate((12f * x) * math.rcp(12f + (6f * x) + (x * x)));
         }
 
         private static Vector4 ResolveFlowSynchronyParams()
@@ -1020,7 +1085,7 @@ namespace Hecton8.Environment
             SetKernelBufferIfChanged(_kernelIndex, ShaderIds.VisibleParticleIndicesId, _visibleParticleIndexBuffer, ref _boundSimulationVisibleParticleIndexBuffer);
             SetKernelBufferIfChanged(_kernelIndex, ShaderIds.IndirectArgsId, _indirectArgsBuffer, ref _boundSimulationIndirectArgsBuffer);
 
-            int groupCount = (_activeParticleCount + ThreadGroupSize - 1) / ThreadGroupSize;
+            int groupCount = (_activeParticleCount + ThreadGroupSize - 1) >> ThreadGroupShift;
             marineSnowCompute.Dispatch(_kernelIndex, groupCount, 1, 1);
 
             SetMaterialBufferIfChanged(ShaderIds.ParticlesRenderId, writeBuffer, ref _boundMaterialParticlesBuffer);
@@ -1056,11 +1121,11 @@ namespace Hecton8.Environment
                 _frameParity == 0 ? _particleBufferB : _particleBufferA,
                 ref _boundSonarGlowParticlesWriteBuffer);
 
-            int clearGroupsX = (_sonarGlowWidth + 7) / 8;
-            int clearGroupsY = (_sonarGlowHeight + 7) / 8;
+            int clearGroupsX = (_sonarGlowWidth + 7) >> 3;
+            int clearGroupsY = (_sonarGlowHeight + 7) >> 3;
             marineSnowCompute.Dispatch(_sonarGlowClearKernel, clearGroupsX, clearGroupsY, 1);
 
-            int particleGroups = (_activeParticleCount + ThreadGroupSize - 1) / ThreadGroupSize;
+            int particleGroups = (_activeParticleCount + ThreadGroupSize - 1) >> ThreadGroupShift;
             marineSnowCompute.Dispatch(_sonarGlowAccumulateKernel, particleGroups, 1, 1);
         }
 
@@ -1076,11 +1141,18 @@ namespace Hecton8.Environment
             return Time.time <= Shader.GetGlobalFloat(ShaderIds.SonarRevealExpireTimeId);
         }
 
+        private bool IsFogDensityInjectionActive()
+        {
+            return _activeParticleCount > 0 &&
+                   _underwaterActive &&
+                   fogDensityInjectionStrength > 0f;
+        }
+
         private Vector4 ResolveSonarGlowTexelSize()
         {
             Vector4 texelSize;
-            texelSize.x = 1f / math.max(1, _sonarGlowWidth);
-            texelSize.y = 1f / math.max(1, _sonarGlowHeight);
+            texelSize.x = math.rcp((float)math.max(1, _sonarGlowWidth));
+            texelSize.y = math.rcp((float)math.max(1, _sonarGlowHeight));
             texelSize.z = _sonarGlowWidth;
             texelSize.w = _sonarGlowHeight;
             return texelSize;
@@ -1092,6 +1164,21 @@ namespace Hecton8.Environment
             parameters.x = math.max(0f, sonarGlowIntensity);
             parameters.y = math.max(0f, sonarGlowCompositeStrength);
             parameters.z = 65535f;
+            parameters.w = 1f;
+            return parameters;
+        }
+
+        private Vector4 ResolveFogDensityTexelSize()
+        {
+            return _fogDensityTexelSize;
+        }
+
+        private Vector4 ResolveFogDensityParams()
+        {
+            Vector4 parameters;
+            parameters.x = math.max(0f, fogDensityInjectionStrength);
+            parameters.y = FogDensityEncodedScale;
+            parameters.z = FogDensityParticleSizeGain;
             parameters.w = 1f;
             return parameters;
         }
@@ -1123,6 +1210,35 @@ namespace Hecton8.Environment
             }
 
             _sonarGlowGlobalsDirty = false;
+        }
+
+        private void PublishFogDensityGlobals(Vector4 texelSize, Vector4 parameters, Texture texture)
+        {
+            if (_fogDensityGlobalsDirty ||
+                !NearlyEqual(_lastPublishedFogDensityTexelSize, texelSize, ShaderVectorPublishEpsilon))
+            {
+                Shader.SetGlobalVector(ShaderIds.FogDensityTexelSizeId, texelSize);
+                _lastPublishedFogDensityTexelSize = texelSize;
+            }
+
+            if (_fogDensityGlobalsDirty ||
+                !NearlyEqual(_lastPublishedFogDensityParams, parameters, ShaderVectorPublishEpsilon))
+            {
+                Shader.SetGlobalVector(ShaderIds.FogDensityParamsId, parameters);
+                _lastPublishedFogDensityParams = parameters;
+            }
+
+            if (texture != null && (_fogDensityGlobalsDirty || _lastPublishedFogDensityTexture != texture))
+            {
+                Shader.SetGlobalTexture(ShaderIds.FogDensityTextureId, texture);
+                _lastPublishedFogDensityTexture = texture;
+            }
+            else if (texture == null)
+            {
+                _lastPublishedFogDensityTexture = null;
+            }
+
+            _fogDensityGlobalsDirty = false;
         }
 
         private void EnsureEmptyCaveSdfTexture()
@@ -1307,6 +1423,66 @@ namespace Hecton8.Environment
             _boundSonarGlowTexelSize = InvalidVector;
         }
 
+        private void EnsureFogDensityTexture()
+        {
+            if (_targetCameraComponent == null)
+                return;
+
+            float renderScale = math.clamp(fogDensityRenderScale, 0.1f, 0.5f);
+            int targetWidth = math.max(8, (int)(_targetCameraComponent.pixelWidth * renderScale + 0.999f));
+            int targetHeight = math.max(8, (int)(_targetCameraComponent.pixelHeight * renderScale + 0.999f));
+            if (_fogDensityTexture != null && _fogDensityWidth == targetWidth && _fogDensityHeight == targetHeight)
+                return;
+
+            ReleaseFogDensityTexture();
+
+            // COLD ALLOC: RenderTexture[fogDensityWidth*fogDensityHeight] - persistent low-resolution marine-snow fog-density buffer - owner: HectonMarineSnowRenderer
+            _fogDensityTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RInt, RenderTextureReadWrite.Linear)
+            {
+                name = "HectonMarineSnowFogDensity",
+                enableRandomWrite = true,
+                useMipMap = false,
+                autoGenerateMips = false,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Point
+            };
+            _fogDensityTexture.Create();
+            _fogDensityWidth = targetWidth;
+            _fogDensityHeight = targetHeight;
+            _fogDensityClearGroupsX = (targetWidth + 7) >> 3;
+            _fogDensityClearGroupsY = (targetHeight + 7) >> 3;
+            _fogDensityTexelSize = new Vector4(
+                math.rcp((float)targetWidth),
+                math.rcp((float)targetHeight),
+                targetWidth,
+                targetHeight);
+            _fogDensityGlobalsDirty = true;
+            _boundFogDensityClearTexture = null;
+            _boundFogDensitySimulationTexture = null;
+            _boundFogDensityTexelSize = InvalidVector;
+            _boundFogDensityParams = InvalidVector;
+        }
+
+        private void ReleaseFogDensityTexture()
+        {
+            if (_fogDensityTexture == null)
+                return;
+
+            _fogDensityTexture.Release();
+            Destroy(_fogDensityTexture);
+            _fogDensityTexture = null;
+            _fogDensityWidth = 0;
+            _fogDensityHeight = 0;
+            _fogDensityClearGroupsX = 0;
+            _fogDensityClearGroupsY = 0;
+            _fogDensityTexelSize = Vector4.zero;
+            _fogDensityGlobalsDirty = true;
+            _boundFogDensityClearTexture = null;
+            _boundFogDensitySimulationTexture = null;
+            _boundFogDensityTexelSize = InvalidVector;
+            _boundFogDensityParams = InvalidVector;
+        }
+
         private void RenderMarineSnow()
         {
             if (_targetCameraComponent == null ||
@@ -1348,12 +1524,15 @@ namespace Hecton8.Environment
             ReleaseEmptyCaveSdfTexture();
             ReleaseQuadMesh();
             ReleaseSonarGlowTexture();
+            ReleaseFogDensityTexture();
             PublishSonarGlowGlobals(Vector4.zero, Vector4.zero, null);
+            PublishFogDensityGlobals(Vector4.zero, Vector4.zero, null);
             _buffersReady = false;
             _kernelIndex = -1;
             _clearVisibleKernel = -1;
             _sonarGlowClearKernel = -1;
             _sonarGlowAccumulateKernel = -1;
+            _fogDensityClearKernel = -1;
             ResetGpuBindingCaches();
             _externalGpuBindingsDirty = true;
             _bootstrapParticles = null;
@@ -1376,6 +1555,8 @@ namespace Hecton8.Environment
             _boundSonarGlowParticlesWriteBuffer = null;
             _boundSonarGlowClearTexture = null;
             _boundSonarGlowAccumulateTexture = null;
+            _boundFogDensityClearTexture = null;
+            _boundFogDensitySimulationTexture = null;
             _boundAbyssalGridResolution = Vector4.zero;
             _boundAbyssalFlowCenter = Vector4.zero;
             _boundAbyssalFlowSpacing = Vector4.zero;
@@ -1393,6 +1574,8 @@ namespace Hecton8.Environment
             _boundDepthCollisionParams = InvalidVector;
             _boundSonarGlowTexelSize = InvalidVector;
             _boundSonarGlowParams = InvalidVector;
+            _boundFogDensityTexelSize = InvalidVector;
+            _boundFogDensityParams = InvalidVector;
             _boundViewProjection = InvalidMatrix;
             _boundViewMatrix = InvalidMatrix;
             _boundCaveVoxelWorldToLocal = IdentityMatrix;
@@ -1436,7 +1619,7 @@ namespace Hecton8.Environment
             value ^= value >> 15;
             value *= 0x31848BABu;
             value ^= value >> 14;
-            return (value & 0x00FFFFFFu) * (1f / 16777215f);
+            return (value & 0x00FFFFFFu) * Hash24ToFloat01;
         }
 
         private int ResolveActiveParticleCount(float effectiveDensityScale)
@@ -1472,8 +1655,8 @@ namespace Hecton8.Environment
             }
 
             _debugAdaptiveVramPressureState = pressureState;
-            budgetScale *= math.lerp(0.35f, 1f, densityScale);
-            budgetScale *= math.lerp(1f, biolumeSurgeParticleMultiplier, ResolveBiolumeSurgeBlend());
+            budgetScale *= 0.35f + 0.65f * densityScale;
+            budgetScale *= 1f + (biolumeSurgeParticleMultiplier - 1f) * ResolveBiolumeSurgeBlend();
             budgetScale *= math.min(1.12f, 1f + _bubbleTrailMovement01 * 0.08f + _bubbleTrailExhale01 * 0.06f);
             _debugAdaptiveBudgetScale = budgetScale;
 
@@ -1484,7 +1667,7 @@ namespace Hecton8.Environment
 
         private float ResolveBiolumeSurgeBlend()
         {
-            return math.saturate(_biolumeSurgeTimer / BiolumeSurgeDurationSeconds);
+            return math.saturate(_biolumeSurgeTimer * math.rcp(BiolumeSurgeDurationSeconds));
         }
 
         private int ResolveConfiguredCapacity()

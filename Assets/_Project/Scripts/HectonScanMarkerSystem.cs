@@ -20,6 +20,7 @@ namespace Hecton8.Gameplay
         private const int MaxMarkers = 64;
         private const float FadeDurationSeconds = 1f;
         private const float ProjectionPaddingMeters = 0.05f;
+        private const float DegreesToHalfRadians = 0.00872664626f;
         private const long MarkerAupAxisClampCells = 1000000L;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -284,8 +285,8 @@ namespace Hecton8.Gameplay
                 float finalViewportY = centeredY;
                 if (clamped)
                 {
-                    float tx = safeHalfWidth / math.max(math.abs(centeredX), 0.0001f);
-                    float ty = safeHalfHeight / math.max(math.abs(centeredY), 0.0001f);
+                    float tx = safeHalfWidth * math.rcp(math.max(math.abs(centeredX), 0.0001f));
+                    float ty = safeHalfHeight * math.rcp(math.max(math.abs(centeredY), 0.0001f));
                     float clampScale = math.min(tx, ty);
                     finalViewportX *= clampScale;
                     finalViewportY *= clampScale;
@@ -295,7 +296,7 @@ namespace Hecton8.Gameplay
                 float viewportY = finalViewportY + 0.5f;
                 Vector3 markerWorldPosition = hudCamera.ViewportToWorldPoint(new Vector3(viewportX, viewportY, projectionDistance));
                 float distance = EstimateAupDistance(in marker.aup, in playerAup);
-                float sizePixels = markerBaseSizePixels / math.max(distance * 0.1f, 0.5f);
+                float sizePixels = markerBaseSizePixels * math.rcp(math.max(distance * 0.1f, 0.5f));
                 sizePixels = math.clamp(sizePixels, markerMinSizePixels, markerMaxSizePixels);
                 if (marker.timer < FadeDurationSeconds)
                     sizePixels *= math.saturate(marker.timer / FadeDurationSeconds);
@@ -326,15 +327,17 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float frustumHeight = 2f * ApproximateTanPositive(math.radians(fieldOfView) * 0.5f) * projectionDistance;
+            float frustumHeight = 2f * ApproximateTanPositive(fieldOfView * DegreesToHalfRadians) * projectionDistance;
+            float invPixelWidth = math.rcp(pixelWidth);
+            float invPixelHeight = math.rcp(pixelHeight);
             _cachedProjectionDistance = projectionDistance;
             _cachedFieldOfView = fieldOfView;
             _cachedEdgeMarginPixels = edgeMargin;
             _cachedPixelWidth = pixelWidth;
             _cachedPixelHeight = pixelHeight;
-            _cachedWorldPerPixel = frustumHeight / pixelHeight;
-            _cachedSafeHalfWidth = math.max(0.001f, 0.5f - (edgeMargin / pixelWidth));
-            _cachedSafeHalfHeight = math.max(0.001f, 0.5f - (edgeMargin / pixelHeight));
+            _cachedWorldPerPixel = frustumHeight * invPixelHeight;
+            _cachedSafeHalfWidth = math.max(0.001f, 0.5f - (edgeMargin * invPixelWidth));
+            _cachedSafeHalfHeight = math.max(0.001f, 0.5f - (edgeMargin * invPixelHeight));
         }
 
         private void EnsureHudCamera()
@@ -360,7 +363,9 @@ namespace Hecton8.Gameplay
         {
             float x = math.clamp(radians, 0f, 1.4f);
             float x2 = x * x;
-            return x * ((15f - x2) / math.max(0.0001f, 15f - (6f * x2)));
+            float numerator = 15f - x2;
+            float denominator = math.max(0.0001f, 15f - (6f * x2));
+            return x * numerator * math.rcp(denominator);
         }
 
         private void EnsurePlayerTransform()

@@ -16,7 +16,7 @@ namespace Hecton8.Construction
         private const float MinimumFloraExclusionRadiusMeters = 1f;
         private const float FloraExclusionRadiusPaddingMeters = 1.25f;
 
-        [Header("── Primitive Sources ──────────────────")]
+        [Header("Primitive Sources")]
         [Tooltip("Box colliders that represent the module shell for voxel-nav carving.")]
         [SerializeField] private BoxCollider[] obstacleBoxes = Array.Empty<BoxCollider>();
 
@@ -105,7 +105,9 @@ namespace Hecton8.Construction
             }
 
             Vector3 extents = combinedBounds.extents;
-            float planarRadius = Mathf.Sqrt((extents.x * extents.x) + (extents.z * extents.z));
+            float maxExtent = extents.x >= extents.z ? extents.x : extents.z;
+            float minExtent = extents.x >= extents.z ? extents.z : extents.x;
+            float planarRadius = maxExtent + (minExtent * 0.5f);
             horizontalRadius = Mathf.Max(MinimumFloraExclusionRadiusMeters, planarRadius + FloraExclusionRadiusPaddingMeters);
             worldCenter = combinedBounds.center;
             return true;

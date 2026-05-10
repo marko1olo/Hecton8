@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.MemoryMappedFiles;
+using System.Text;
 using Hecton8.Core;
 using UnityEngine;
 
@@ -22,12 +24,17 @@ namespace Hecton8.Input
         private const int TypeFloat = 2;
         private const int TypeString = 3;
         private const int TypeBool = 4;
+        private const int FileMagic = 0x46433848; // H8CF, little endian.
+        private const int FileHeaderBytes = 12;
+        private const int MaxOptionsPayloadBytes = 64 * 1024;
+        private static readonly Encoding OptionsEncoding = new UTF8Encoding(false);
 
         private readonly Dictionary<string, OptionRecord> _records =
             new Dictionary<string, OptionRecord>(64); // COLD ALLOC: Dictionary<string, OptionRecord>[64] - user options key/value cache - owner: UserOptionsPersistence
-        private readonly OptionsFile _optionsFile = new OptionsFile(); // COLD ALLOC: OptionsFile[1] - reusable JSON wrapper for options.h8cfg - owner: UserOptionsPersistence
+        private readonly OptionsFile _optionsFile = new OptionsFile(); // COLD ALLOC: OptionsFile[1] - reusable MMF payload wrapper for options.h8cfg - owner: UserOptionsPersistence
 
         private OptionRecord[] _writeRecords = Array.Empty<OptionRecord>();
+        private readonly byte[] _payloadBuffer = new byte[MaxOptionsPayloadBytes]; // COLD ALLOC: byte[64K] - fixed options.h8cfg MMF payload buffer - owner: UserOptionsPersistence
         private string _optionsPath;
         private string _optionsDirectory;
         private bool _loaded;
@@ -322,9 +329,8 @@ namespace Hecton8.Input
             _optionsFile.Version = FileVersion;
             _optionsFile.Records = _writeRecords;
 
-            string json = JsonUtility.ToJson(_optionsFile, false);
             string tempPath = path + ".tmp";
-            File.WriteAllText(tempPath, json);
+            WriteMemoryMappedOptionsFile(tempPath, JsonUtility.ToJson(_optionsFile, false));
 
             if (File.Exists(path))
                 File.Delete(path);
@@ -355,19 +361,10 @@ namespace Hecton8.Input
 
             try
             {
-                string json = File.ReadAllText(path);
-                OptionsFile file = JsonUtility.FromJson<OptionsFile>(json);
-                if (file?.Records != null)
-                {
-                    for (int i = 0; i < file.Records.Length; i++)
-                    {
-                        OptionRecord record = file.Records[i];
-                        if (string.IsNullOrWhiteSpace(record.Key))
-                            continue;
+                if (!TryReadMemoryMappedOptionsFile(path, out string json))
+                    json = ReadLegacyTextOptionsFile(path);
 
-                        _records[record.Key] = record;
-                    }
-                }
+                ApplyOptionsJson(json);
             }
             catch (Exception exception)
             {
@@ -377,6 +374,102 @@ namespace Hecton8.Input
             }
 
             _loaded = true;
+        }
+
+        private void WriteMemoryMappedOptionsFile(string path, string json)
+        {
+            int payloadLength = OptionsEncoding.GetByteCount(json);
+            ValidatePayloadCapacity(payloadLength);
+            long fileLength = FileHeaderBytes + payloadLength;
+            if (payloadLength > 0)
+                OptionsEncoding.GetBytes(json, 0, json.Length, _payloadBuffer, 0);
+
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+            {
+                stream.SetLength(fileLength);
+                using (MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
+                           stream,
+                           null,
+                           fileLength,
+                           MemoryMappedFileAccess.ReadWrite,
+                           HandleInheritability.None,
+                           leaveOpen: true))
+                using (MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(0L, fileLength, MemoryMappedFileAccess.Write))
+                {
+                    accessor.Write(0L, FileMagic);
+                    accessor.Write(4L, FileVersion);
+                    accessor.Write(8L, payloadLength);
+                    if (payloadLength > 0)
+                        accessor.WriteArray(FileHeaderBytes, _payloadBuffer, 0, payloadLength);
+                }
+            }
+        }
+
+        private bool TryReadMemoryMappedOptionsFile(string path, out string json)
+        {
+            json = string.Empty;
+            FileInfo fileInfo = new FileInfo(path);
+            if (!fileInfo.Exists || fileInfo.Length < FileHeaderBytes)
+                return false;
+
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
+                       stream,
+                       null,
+                       0L,
+                       MemoryMappedFileAccess.Read,
+                       HandleInheritability.None,
+                       leaveOpen: false))
+            using (MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(0L, fileInfo.Length, MemoryMappedFileAccess.Read))
+            {
+                int magic = accessor.ReadInt32(0L);
+                if (magic != FileMagic)
+                    return false;
+
+                int payloadLength = accessor.ReadInt32(8L);
+                if (payloadLength < 0 || payloadLength > fileInfo.Length - FileHeaderBytes)
+                    return false;
+
+                ValidatePayloadCapacity(payloadLength);
+                if (payloadLength > 0)
+                    accessor.ReadArray(FileHeaderBytes, _payloadBuffer, 0, payloadLength);
+
+                json = OptionsEncoding.GetString(_payloadBuffer, 0, payloadLength);
+                return true;
+            }
+        }
+
+        private static void ValidatePayloadCapacity(int payloadLength)
+        {
+            if (payloadLength <= MaxOptionsPayloadBytes)
+                return;
+
+            throw new InvalidDataException("options.h8cfg payload exceeds fixed runtime buffer.");
+        }
+
+        private static string ReadLegacyTextOptionsFile(string path)
+        {
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (StreamReader reader = new StreamReader(stream, OptionsEncoding, detectEncodingFromByteOrderMarks: true))
+            {
+                return reader.ReadToEnd();
+            }
+        }
+
+        private void ApplyOptionsJson(string json)
+        {
+            OptionsFile file = JsonUtility.FromJson<OptionsFile>(json);
+            if (file?.Records == null)
+                return;
+
+            for (int i = 0; i < file.Records.Length; i++)
+            {
+                OptionRecord record = file.Records[i];
+                if (string.IsNullOrWhiteSpace(record.Key))
+                    continue;
+
+                _records[record.Key] = record;
+            }
         }
 
         private bool TryGetRecord(string key, out OptionRecord record)

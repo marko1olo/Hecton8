@@ -57,7 +57,7 @@ float3 ComputeWaveDisplacement(float2 worldXZ, float4 waveA, float4 waveB, float
         return 0.0.xxx;
 
     float2 direction = DominantAxisOrDefault(waveA.xy, float2(1.0, 0.0));
-    float waveNumber = TwoPi / max(0.01, wavelength);
+    float waveNumber = TwoPi * rcp(max(0.01, wavelength));
     float phaseVelocity = (CinematicPhaseSpeedBase + wavelength * CinematicPhaseSpeedPerMeter) * max(0.01, waveB.z);
     float phase = waveNumber * dot(direction, worldXZ) - phaseVelocity * waveNumber * timeSeconds + waveB.y;
     float sinPhase = FastTriangleSigned(phase);
@@ -129,7 +129,7 @@ void EvaluateBuoyancy(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     float submersion = objectData.SimplifiedSubmersion > 0.5
         ? 1.0
-        : saturate(depthBelowSurface / max(objectData.Height, 0.01));
+        : saturate(depthBelowSurface * rcp(max(objectData.Height, 0.01)));
     float buoyancyForceY = _GpuBuoyancyWaterParams.y * (objectData.Volume * submersion) * _GpuBuoyancyWaterParams.z;
     _GpuBuoyancyResults[instanceIndex] = float4(waveOffset, buoyancyForceY, 0.0, 0.0);
 }

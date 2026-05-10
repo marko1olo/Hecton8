@@ -23,6 +23,7 @@ using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -286,7 +287,7 @@ namespace Hecton8.Gameplay
             if (_installedUpgrades.Count <= 0 || chance01 <= 0f)
                 return false;
 
-            float chance = Mathf.Clamp01(chance01);
+            float chance = math.saturate(chance01);
             uint breakRoll = ComputeBreakRoll();
             if (HashToUnit01(breakRoll) > chance)
                 return false;
@@ -392,25 +393,33 @@ namespace Hecton8.Gameplay
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogUpgradeInstalled(string upgradeId, int tier)
         {
-            Debug.Log($"[SuitUpgrade] Installed: {upgradeId} (tier {tier})");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[SuitUpgrade] Installed: " + upgradeId + " (tier " + tier + ")");
+#endif
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogBlueprintUnlocked(string discoveryId, string displayName)
         {
-            Debug.Log($"[SuitUpgrade] Blueprint unlocked: {discoveryId} → {displayName}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[SuitUpgrade] Blueprint unlocked: " + discoveryId + " -> " + displayName);
+#endif
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogUpgradeBroken(string upgradeId)
         {
-            Debug.Log($"[SuitUpgrade] Broken: {upgradeId}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[SuitUpgrade] Broken: " + upgradeId);
+#endif
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogUpgradeRepaired(string upgradeId)
         {
-            Debug.Log($"[SuitUpgrade] Repaired: {upgradeId}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[SuitUpgrade] Repaired: " + upgradeId);
+#endif
         }
 
         private uint ComputeBreakRoll()
@@ -526,14 +535,17 @@ namespace Hecton8.Gameplay
             data.suitUnlockedBlueprintIds.Clear();
             data.suitBrokenUpgradeIds.Clear();
 
-            foreach (string id in _installedUpgrades)
-                data.suitInstalledUpgradeIds.Add(id);
+            HashSet<string>.Enumerator installedEnumerator = _installedUpgrades.GetEnumerator();
+            while (installedEnumerator.MoveNext())
+                data.suitInstalledUpgradeIds.Add(installedEnumerator.Current);
 
-            foreach (string id in _unlockedBlueprints)
-                data.suitUnlockedBlueprintIds.Add(id);
+            HashSet<string>.Enumerator blueprintEnumerator = _unlockedBlueprints.GetEnumerator();
+            while (blueprintEnumerator.MoveNext())
+                data.suitUnlockedBlueprintIds.Add(blueprintEnumerator.Current);
 
-            foreach (string id in _brokenUpgrades)
-                data.suitBrokenUpgradeIds.Add(id);
+            HashSet<string>.Enumerator brokenEnumerator = _brokenUpgrades.GetEnumerator();
+            while (brokenEnumerator.MoveNext())
+                data.suitBrokenUpgradeIds.Add(brokenEnumerator.Current);
         }
 
         public void LoadFromSaveData(SaveData data)
@@ -545,16 +557,34 @@ namespace Hecton8.Gameplay
             if (data == null) return;
 
             if (data.suitInstalledUpgradeIds != null)
-                foreach (string id in data.suitInstalledUpgradeIds)
-                    if (!string.IsNullOrEmpty(id)) _installedUpgrades.Add(id);
+            {
+                for (int i = 0, count = data.suitInstalledUpgradeIds.Count; i < count; i++)
+                {
+                    string id = data.suitInstalledUpgradeIds[i];
+                    if (!string.IsNullOrEmpty(id))
+                        _installedUpgrades.Add(id);
+                }
+            }
 
             if (data.suitUnlockedBlueprintIds != null)
-                foreach (string id in data.suitUnlockedBlueprintIds)
-                    if (!string.IsNullOrEmpty(id)) _unlockedBlueprints.Add(id);
+            {
+                for (int i = 0, count = data.suitUnlockedBlueprintIds.Count; i < count; i++)
+                {
+                    string id = data.suitUnlockedBlueprintIds[i];
+                    if (!string.IsNullOrEmpty(id))
+                        _unlockedBlueprints.Add(id);
+                }
+            }
 
             if (data.suitBrokenUpgradeIds != null)
-                foreach (string id in data.suitBrokenUpgradeIds)
-                    if (!string.IsNullOrEmpty(id) && _installedUpgrades.Contains(id)) _brokenUpgrades.Add(id);
+            {
+                for (int i = 0, count = data.suitBrokenUpgradeIds.Count; i < count; i++)
+                {
+                    string id = data.suitBrokenUpgradeIds[i];
+                    if (!string.IsNullOrEmpty(id) && _installedUpgrades.Contains(id))
+                        _brokenUpgrades.Add(id);
+                }
+            }
 
             RebuildRuntimeStats();
         }

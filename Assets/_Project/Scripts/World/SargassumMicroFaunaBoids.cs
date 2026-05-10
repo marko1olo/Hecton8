@@ -1227,6 +1227,10 @@ namespace Hecton8.World
         private float _debugEcosystemCamouflageIndex;
 
         [SerializeField]
+        [Tooltip("True when the ecosystem sector is running the apex-presence presentation fake.")]
+        private bool _debugApexInSector;
+
+        [SerializeField]
         [Tooltip("Active pneumatocyst grazing anchor count uploaded to the GPU.")]
         private int _debugGrazingAnchorCount;
 
@@ -1445,6 +1449,7 @@ namespace Hecton8.World
         private float _ecosystemFitness;
         private float _ecosystemSpeedMultiplier = 1f;
         private float _ecosystemCamouflageIndex;
+        private bool _ecosystemApexInSector;
         private int _reportedLatchedDroneCount;
         private Vector3 _reportedParasiteCenterOfMassLS;
         private Vector3 _reportedParasiteHarvesterPullWS;
@@ -2257,6 +2262,8 @@ namespace Hecton8.World
                 _ecosystemFitness = 0f;
                 _ecosystemSpeedMultiplier = 1f;
                 _ecosystemCamouflageIndex = 0f;
+                _ecosystemApexInSector = false;
+                _debugApexInSector = false;
                 return false;
             }
 
@@ -2265,14 +2272,19 @@ namespace Hecton8.World
                 _ecosystemFitness = 0f;
                 _ecosystemSpeedMultiplier = 1f;
                 _ecosystemCamouflageIndex = 0f;
+                _ecosystemApexInSector = false;
+                _debugApexInSector = false;
                 return false;
             }
 
-            ecosystemPopulationCount = math.max(0, sample.PreyPopulation);
+            _ecosystemApexInSector = sample.ApexInSector;
+            ecosystemPopulationCount = math.max(0, sample.ApexInSector ? sample.PreyPopulation >> 2 : sample.PreyPopulation);
             _ecosystemFitness = math.saturate(sample.Fitness);
-            _ecosystemSpeedMultiplier = math.max(0.25f, sample.SpeedMultiplier);
-            _ecosystemCamouflageIndex = math.saturate(sample.CamouflageIndex);
+            _ecosystemSpeedMultiplier = math.max(0.25f, sample.SpeedMultiplier) * (sample.ApexInSector ? 1.25f : 1f);
+            _ecosystemCamouflageIndex = math.saturate(sample.CamouflageIndex + (sample.ApexInSector ? 0.35f : 0f));
             _debugEcosystemFitness = _ecosystemFitness;
+            _debugEcosystemCamouflageIndex = _ecosystemCamouflageIndex;
+            _debugApexInSector = _ecosystemApexInSector;
             return true;
         }
 

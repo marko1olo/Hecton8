@@ -23,6 +23,9 @@ namespace Hecton8.Tools
         private const float OverchargeExplosionHeatThreshold = 1.5f;
         private const float OverchargeExplosionPlayerDamage = 45f;
         private const float OverchargeHeatGrowthInputMax = 2.25f;
+        private const float InvTau = 0.15915494f;
+        private const float WirelessBrownoutPulseCycles = 18f * InvTau;
+        private const float ToolBrownoutPulseCycles = 8f * InvTau;
 
         // COLD ALLOC: PlayerTool[16] — managed owner mirror for native tool slots — owner: ModularEquipmentEngine
         private readonly PlayerTool[] _toolOwners = new PlayerTool[MaxTrackedTools];
@@ -620,7 +623,7 @@ namespace Hecton8.Tools
             if ((_toolStates[slotIndex].UpgradeBitmask & (uint)ToolUpgradeBits.WirelessCharging) == 0u)
                 return false;
 
-            float pulse = 0.35f + (0.65f * math.abs(math.sin(_brownoutPulseTime * 18f)));
+            float pulse = 0.35f + (0.65f * math.abs(FastTriangleSigned(_brownoutPulseTime * WirelessBrownoutPulseCycles)));
             flickerScalar = pulse;
             return true;
         }
@@ -634,8 +637,14 @@ namespace Hecton8.Tools
             if (slotIndex < 0 || slotIndex >= MaxTrackedTools || !_slotUsed[slotIndex])
                 return false;
 
-            flickerScalar = math.saturate(0.5f + (0.5f * math.sin(Time.time * 8f)));
+            flickerScalar = math.saturate(0.5f + (0.5f * FastTriangleSigned(_brownoutPulseTime * ToolBrownoutPulseCycles)));
             return true;
+        }
+
+        private static float FastTriangleSigned(float phase)
+        {
+            float triangle01 = 1f - math.abs(math.frac(phase + 0.25f) * 2f - 1f);
+            return triangle01 * 2f - 1f;
         }
 
         private void TryUnregisterService()

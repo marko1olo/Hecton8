@@ -168,6 +168,7 @@ namespace Hecton8.Visor
                 TextureHandle particlesTexture = renderGraph.CreateTexture(particlesDesc);
                 TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
                 UpdateCompositeMaterial(_compositeMaterial, math.saturate(_settings.compositeStrength));
+                SetGlobalActive(1f);
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<DrawPassData>(
                            "Hecton Half-Res Particles Draw",
@@ -211,8 +212,6 @@ namespace Hecton8.Visor
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
                         const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
 
-                        cmd.SetGlobalFloat(ShaderConstants.ActiveId, 1f);
-                        MarkGlobalActive(1f);
                         Blitter.BlitCameraTexture(cmd, data.Source, data.Destination, LoadAction, StoreAction, data.Material, 0);
                     });
                 }
@@ -301,11 +300,6 @@ namespace Hecton8.Visor
                 return;
 
             Shader.SetGlobalFloat(ShaderConstants.ActiveId, value);
-            _lastPublishedActive = value;
-        }
-
-        private static void MarkGlobalActive(float value)
-        {
             _lastPublishedActive = value;
         }
 

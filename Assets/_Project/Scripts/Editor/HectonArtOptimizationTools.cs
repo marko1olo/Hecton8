@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -490,7 +491,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static void CopyTextureToAtlasCell(string sourcePath, int targetX, int targetY, NativeArray<Color32> atlasPixels)
+        private static unsafe void CopyTextureToAtlasCell(string sourcePath, int targetX, int targetY, NativeArray<Color32> atlasPixels)
         {
             Texture2D source = null;
             Texture2D readable = null;
@@ -502,13 +503,7 @@ namespace Hecton8.EditorTools
 
                 readable = CaptureReadableTexture(source, AtlasCellSize, AtlasCellSize);
                 NativeArray<Color32> sourcePixels = readable.GetRawTextureData<Color32>();
-                for (int y = 0; y < AtlasCellSize; y++)
-                {
-                    int sourceRow = y * AtlasCellSize;
-                    int targetRow = (targetY + y) * AtlasSize + targetX;
-                    for (int x = 0; x < AtlasCellSize; x++)
-                        atlasPixels[targetRow + x] = sourcePixels[sourceRow + x];
-                }
+                CopyAtlasCellRowsUnsafe(sourcePixels, atlasPixels, targetX, targetY);
             }
             finally
             {
@@ -516,6 +511,27 @@ namespace Hecton8.EditorTools
                     UnityEngine.Object.DestroyImmediate(readable);
                 if (source != null)
                     Resources.UnloadAsset(source);
+            }
+        }
+
+        private static unsafe void CopyAtlasCellRowsUnsafe(
+            NativeArray<Color32> sourcePixels,
+            NativeArray<Color32> atlasPixels,
+            int targetX,
+            int targetY)
+        {
+            const int PixelBytes = 4;
+            byte* sourceBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(sourcePixels);
+            byte* atlasBase = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(atlasPixels);
+            long rowBytes = AtlasCellSize * PixelBytes;
+            int sourceStrideBytes = AtlasCellSize * PixelBytes;
+            int atlasStrideBytes = AtlasSize * PixelBytes;
+
+            for (int y = 0; y < AtlasCellSize; y++)
+            {
+                byte* sourceRow = sourceBase + y * sourceStrideBytes;
+                byte* targetRow = atlasBase + ((targetY + y) * atlasStrideBytes) + targetX * PixelBytes;
+                UnsafeUtility.MemCpy(targetRow, sourceRow, rowBytes);
             }
         }
 

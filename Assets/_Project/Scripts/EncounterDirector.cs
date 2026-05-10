@@ -707,14 +707,54 @@ namespace Hecton8.Systems.AI
 
         private void PrecomputeCandidateDirections()
         {
-            float goldenRatio = 1.6180339887f;
             for (int i = 0; i < HighCandidateCount; i++)
+                _candidateDirections[i] = ResolveCinematicCandidateDirection(i);
+        }
+
+        private static float3 ResolveCinematicCandidateDirection(int index)
+        {
+            int layer = (index >> 3) & 3;
+            float y;
+            float horizontal;
+            switch (layer)
             {
-                float sample = i + 0.5f;
-                float y = 1f - (2f * sample / HighCandidateCount);
-                float radius = math.sqrt(math.max(0f, 1f - y * y));
-                float theta = 2f * math.PI * sample / goldenRatio;
-                _candidateDirections[i] = NormalizeSafe(new float3(math.cos(theta) * radius, y, math.sin(theta) * radius), new float3(0f, 0f, 1f));
+                case 0:
+                    y = -0.6f;
+                    horizontal = 0.8f;
+                    break;
+                case 1:
+                    y = -0.2f;
+                    horizontal = 0.9797959f;
+                    break;
+                case 2:
+                    y = 0.2f;
+                    horizontal = 0.9797959f;
+                    break;
+                default:
+                    y = 0.6f;
+                    horizontal = 0.8f;
+                    break;
+            }
+
+            float diagonal = horizontal * 0.70710678f;
+            switch ((index + (layer << 1)) & 7)
+            {
+                case 0:
+                    return new float3(0f, y, horizontal);
+                case 1:
+                    return new float3(diagonal, y, diagonal);
+                case 2:
+                    return new float3(horizontal, y, 0f);
+                case 3:
+                    return new float3(diagonal, y, -diagonal);
+                case 4:
+                    return new float3(0f, y, -horizontal);
+                case 5:
+                    return new float3(-diagonal, y, -diagonal);
+                case 6:
+                    return new float3(-horizontal, y, 0f);
+                default:
+                    return new float3(-diagonal, y, diagonal);
             }
         }
 
@@ -879,6 +919,8 @@ namespace Hecton8.Systems.AI
         private const float MinSpawnRadius = 50f;
         private const float MaxSpawnRadius = 150f;
         private const float DespawnKeepDistanceSq = 25f * 25f;
+        private const float ThreatStressRadiusSq = 50f * 50f;
+        private const float InvThreatStressRadiusSq = 1f / ThreatStressRadiusSq;
         private const float SafeIdleStressDecayPerTick = 0.06f;
         private const float SelectionEpsilon = 0.0001f;
         private const int HunterSquadOverrideMinSimultaneous = 3;
@@ -977,7 +1019,7 @@ namespace Hecton8.Systems.AI
             }
 
             float proximityStress = nearestThreatDistanceSq < float.MaxValue
-                ? math.saturate(1f - math.sqrt(nearestThreatDistanceSq) / 50f)
+                ? math.saturate(1f - nearestThreatDistanceSq * InvThreatStressRadiusSq)
                 : 0f;
             float depthStress = math.saturate(PlayerPosition.w / 4000f) * 0.4f;
             float velocityStress = math.saturate(PlayerVelocity.w / 12f) * 0.15f;
@@ -1522,18 +1564,35 @@ namespace Hecton8.Systems.AI
 
         private static float ResolvePhaseIntensity(EncounterPhase phase, float timer, float duration)
         {
-            float normalizedTime = duration > 0.0001f ? math.saturate(timer / duration) : 0f;
+            float normalizedTime = duration > 0.0001f ? math.saturate(timer * math.rcp(duration)) : 0f;
             switch (phase)
             {
                 case EncounterPhase.BuildUp:
-                    return math.pow(math.sin((math.PI * 0.5f) * normalizedTime), 1.5f);
+                    return Smooth01(normalizedTime) * normalizedTime;
                 case EncounterPhase.Peak:
-                    return 1f - 0.1f * math.sin((2f * math.PI) * normalizedTime);
+                    return 1f - 0.1f * TriangleSigned(normalizedTime);
                 case EncounterPhase.Decay:
-                    return math.pow(math.cos((math.PI * 0.5f) * normalizedTime), 0.7f);
+                    return 1f - Smooth01(normalizedTime);
                 default:
-                    return 0.05f + 0.05f * math.sin(math.PI * normalizedTime);
+                    return 0.05f + 0.05f * Triangle01(normalizedTime);
             }
+        }
+
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
+        }
+
+        private static float Triangle01(float value)
+        {
+            float t = math.frac(value);
+            return 1f - math.abs((t * 2f) - 1f);
+        }
+
+        private static float TriangleSigned(float value)
+        {
+            return (Triangle01(value) * 2f) - 1f;
         }
 
         private static void InsertBestCandidate(

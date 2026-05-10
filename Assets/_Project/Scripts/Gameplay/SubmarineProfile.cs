@@ -8,7 +8,7 @@ namespace Hecton8.Gameplay
     [CreateAssetMenu(fileName = "SubmarineProfile_", menuName = "Hecton8/Gameplay/Submarine Profile")]
     public sealed class SubmarineProfile : ScriptableObject
     {
-        [Header("── Hull Baseline ─────────────────")]
+        [Header("Hull Baseline")]
         [Tooltip("Baseline rigidbody mass in kilograms applied to the submarine hull.")]
         [SerializeField, Min(1f)] private float baseMass = 1200f;
 

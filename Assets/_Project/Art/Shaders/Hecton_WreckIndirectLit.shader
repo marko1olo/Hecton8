@@ -4,7 +4,6 @@ Shader "Hecton8/World/WreckIndirectLit"
     {
         _BaseMap("Base Map", 2D) = "white" {}
         _MaskMap("Packed Mask (R Metallic G AO B Smoothness A Emission)", 2D) = "white" {}
-        [NoScaleOffset] _HectonMicroNormalTex("Micro Normal 128", 2D) = "bump" {}
         _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         [HDR] _EmissionColor("Emission Color", Color) = (0, 0, 0, 0)
         _Metallic("Metallic Scale", Range(0, 1)) = 0.0
@@ -12,9 +11,6 @@ Shader "Hecton8/World/WreckIndirectLit"
         _OcclusionStrength("Occlusion Strength", Range(0, 1)) = 1.0
         _EnvironmentalWear("Environmental Wear", Range(0, 1)) = 0.0
         _RustSaltColor("Rust/Salt Wear Color", Color) = (0.62, 0.35, 0.16, 1)
-        _MicroNormalStrength("Micro Normal Strength", Range(0, 1)) = 0.28
-        _MicroNormalTiling("Micro Normal Tiling", Range(4, 128)) = 48
-        _StochasticTilingStrength("Stochastic Tiling Strength", Range(0, 1)) = 0.65
         _StormRainDripAmplitude("Storm Rain Drip Amplitude", Range(0, 0.025)) = 0.004
         _StormRainDripTiling("Storm Rain Drip Tiling", Range(0.5, 16)) = 5
         _StormRainDripSpeed("Storm Rain Drip Speed", Range(0, 8)) = 1.8
@@ -66,9 +62,6 @@ Shader "Hecton8/World/WreckIndirectLit"
             float _Smoothness;
             float _OcclusionStrength;
             float _EnvironmentalWear;
-            float _MicroNormalStrength;
-            float _MicroNormalTiling;
-            float _StochasticTilingStrength;
             float _StormRainDripAmplitude;
             float _StormRainDripTiling;
             float _StormRainDripSpeed;
@@ -93,10 +86,9 @@ Shader "Hecton8/World/WreckIndirectLit"
             float4 positionCS : SV_POSITION;
             float3 positionWS : TEXCOORD0;
             float3 normalWS : TEXCOORD1;
-            float3 viewDirWS : TEXCOORD2;
-            float2 uv : TEXCOORD3;
-            half fogFactor : TEXCOORD4;
-            half age01 : TEXCOORD5;
+            float2 uv : TEXCOORD2;
+            half fogFactor : TEXCOORD3;
+            half age01 : TEXCOORD4;
             UNITY_VERTEX_OUTPUT_STEREO
         };
 
@@ -114,6 +106,14 @@ Shader "Hecton8/World/WreckIndirectLit"
         {
             float lenSq = dot(value, value);
             return lenSq > 0.0001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
+        }
+
+        half3 ResolveWreckNormalCheap(float3 value)
+        {
+            half3 normal = (half3)value;
+            half3 absNormal = abs(normal);
+            half invDominantAxis = rcp(max(max(absNormal.x, absNormal.y), max(absNormal.z, 0.0001h)));
+            return normal * invDominantAxis;
         }
 
         float3 TransformWreckNormal(float4x4 instanceMatrix, float3 normalOS)
@@ -137,7 +137,6 @@ Shader "Hecton8/World/WreckIndirectLit"
             output.positionWS = HectonCoreLitApplyStormRainDripVertexRipple(output.positionWS, output.normalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
             output.positionCS = TransformWorldToHClip(output.positionWS);
             output.positionCS = HectonCoreLitApplyClipSpaceDepthBias(output.positionCS, _DepthBias, 1.0);
-            output.viewDirWS = GetWorldSpaceViewDir(output.positionWS);
             output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
             output.age01 = ResolveWreckAge(instanceID);
@@ -146,18 +145,17 @@ Shader "Hecton8/World/WreckIndirectLit"
 
         half4 SampleWreckSurface(float2 uv)
         {
-            return HectonCoreLitSampleStochastic2D(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), uv, uv * 0.031, (half)_StochasticTilingStrength) * _BaseColor;
+            return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
         }
 
         half4 SamplePackedMask(float2 uv)
         {
-            return HectonCoreLitSampleStochastic2D(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), uv, uv * 0.031, (half)_StochasticTilingStrength);
+            return SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, uv);
         }
 
         half3 EvaluateWreckLighting(
             float3 positionWS,
             half3 normalWS,
-            half3 viewDirWS,
             half3 albedo,
             half metallic,
             half smoothness,
@@ -169,21 +167,14 @@ Shader "Hecton8/World/WreckIndirectLit"
 
             float4 shadowCoord = TransformWorldToShadowCoord(positionWS);
             Light mainLight = GetMainLight(shadowCoord);
-            half3 lightDir = SafeNormalize3(mainLight.direction);
+            half3 lightDir = (half3)mainLight.direction;
             half nDotL = saturate(dot(normalWS, lightDir));
-            half specular = 0.0h;
             half specularEnergy = smoothness * specularStrength;
-            if (nDotL > 0.0001h && specularEnergy > 0.0001h)
-            {
-                half3 halfDir = SafeNormalize3(lightDir + viewDirWS);
-                half ndh = saturate(dot(normalWS, halfDir));
-                half ndh2 = ndh * ndh;
-                half ndh4 = ndh2 * ndh2;
-                half ndh8 = ndh4 * ndh4;
-                half broadSpecular = ndh4;
-                half tightSpecular = ndh8 * ndh8;
-                specular = (broadSpecular + (tightSpecular - broadSpecular) * smoothness) * specularEnergy;
-            }
+            half nl2 = nDotL * nDotL;
+            half broadSpecular = nl2 * nl2;
+            half tightSpecular = broadSpecular * broadSpecular;
+            half specularMask = step(0.0001h, nDotL * specularEnergy);
+            half specular = (broadSpecular + (tightSpecular - broadSpecular) * smoothness) * specularEnergy * specularMask;
             half contactShadow = (half)HectonCoreLitEvaluateMainLightContactShadowFromDirection(positionWS, normalWS, mainLight.direction);
             color += (albedo * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainLight.shadowAttenuation * contactShadow);
 
@@ -206,9 +197,7 @@ Shader "Hecton8/World/WreckIndirectLit"
             half smoothness = decodedMask.smoothness;
             half emissionMask = decodedMask.emissionMask;
 
-            half3 normalWS = SafeNormalize3(input.normalWS);
-            normalWS = HectonCoreLitApplyTripleDetailMicroNormals(input.positionWS, normalWS, (half)_MicroNormalStrength, (half)_MicroNormalTiling, 2.0h);
-            half3 viewDirWS = SafeNormalize3(input.viewDirWS);
+            half3 normalWS = ResolveWreckNormalCheap(input.normalWS);
             half3 albedo = surface.rgb;
             HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
             half edgeWearMask = saturate((1.0h - ambientOcclusion) * 0.7h + (1.0h - smoothness) * 0.35h);
@@ -229,7 +218,6 @@ Shader "Hecton8/World/WreckIndirectLit"
             half3 litColor = EvaluateWreckLighting(
                 input.positionWS,
                 normalWS,
-                viewDirWS,
                 albedo,
                 metallic,
                 smoothness,

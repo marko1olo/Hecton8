@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — ToolEffectEvents.cs
+// HECTON-8 - ToolEffectEvents.cs
 // Zero-GC gameplay event bus for tool-driven effect signals.
 // ============================================================================
 

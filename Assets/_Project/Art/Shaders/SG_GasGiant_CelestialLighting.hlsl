@@ -1,21 +1,21 @@
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // SG_GasGiant_CelestialLighting.hlsl
-// Custom Lighting Function dlya Shader Graph gazovogo giganta
-// Podklyuchaetsya cherez Custom Function Node
-// ─────────────────────────────────────────────────────────────────
+// Shader Graph custom lighting for gas giants.
+// Connected through a Custom Function node.
+// -----------------------------------------------------------------
 
 #ifndef SG_GAS_GIANT_CELESTIAL_LIGHTING_INCLUDED
 #define SG_GAS_GIANT_CELESTIAL_LIGHTING_INCLUDED
 
-// ═══════════════════════════════════════════════════════
+// -------------------------------------------------------
 // MAIN CUSTOM LIGHTING
-// ═══════════════════════════════════════════════════════
-// Vhod: Normal (World), SunDir, Albedo, BacklitIntensity, Phase
-// Vyhod: FinalColor
+// -------------------------------------------------------
+// Input: world normal, sun direction, albedo, backlight intensity, phase.
+// Output: final color.
 
 void GasGiantLighting_float(
     float3 WorldNormal,
-    float3 SunDirection,       // _SunDirection global
+    float3 SunDirection,
     float3 Albedo,
     float  BacklitIntensity,
     float3 ViewDirection,
@@ -24,62 +24,55 @@ void GasGiantLighting_float(
     out float  FresnelGlow
 )
 {
-    // Normalizatsiya
+    // Normalize inputs for lighting.
     float3 N = normalize(WorldNormal);
-    float3 L = normalize(-SunDirection); // napravlenie K solntsu
+    float3 L = normalize(-SunDirection);
     float3 V = normalize(ViewDirection);
 
-    // ─── 1. BAZOVOE OSVESchENIE S MYaGKIM TERMINATOROM ───
+    // Base lighting with soft terminator.
     float NdotL = dot(N, L);
 
-    // Myagkiy terminator: rasshiryaem perehodnuyu zonu
-    // Vmesto clamp(NdotL, 0, 1) ispolzuem sigmoidu
-    float terminatorWidth = 0.15; // shirina perehodnoy zony
+    // Widen the transition zone instead of clamping NdotL.
+    float terminatorWidth = 0.15;
     float softNdotL = saturate((NdotL + terminatorWidth) / (2.0 * terminatorWidth + 0.001));
 
-    // Smoothstep dlya esche bolee myagkogo perehoda
+    // Smoothstep softens the terminator further.
     softNdotL = smoothstep(0.0, 1.0, softNdotL);
 
-    // ─── 2. RELEEVSKOE RASSEYaNIE NA TERMINATORE ───
-    // Oranzhevyy obodok na granitse dnya i nochi
-    // Aktiven tolko v uzkoy zone terminatora
+    // Rayleigh-like orange rim on the day/night boundary.
     float terminatorZone = 1.0 - abs(NdotL) / (terminatorWidth * 2.0 + 0.001);
     terminatorZone = saturate(terminatorZone);
-    terminatorZone = terminatorZone * terminatorZone; // kvadratichnyy falloff
+    terminatorZone = terminatorZone * terminatorZone;
 
-    // Tsvet Releevskogo rasseyaniya (teplyy oranzhevyy → krasnyy na zakate)
     float3 rayleighColor = float3(1.0, 0.5, 0.15);
     float3 rayleighContribution = rayleighColor * terminatorZone * 0.4;
 
     TerminatorMask = terminatorZone;
 
-    // ─── 3. BACKLIT (Podsvetka tenevoy storony) ───
-    // Tenevaya storona ne chernaya — podsvechena rasseyannym zvezdnym fonom
-    float shadowSide = saturate(-NdotL); // 1 na polnostyu tenevoy storone
-    float3 backlitColor = float3(0.03, 0.04, 0.08); // holodnyy sinevatyy
+    // Lift the shadow side with scattered stellar background instead of pure black.
+    float shadowSide = saturate(-NdotL);
+    float3 backlitColor = float3(0.03, 0.04, 0.08);
     float3 backlit = backlitColor * shadowSide * BacklitIntensity;
 
-    // ─── 4. FRESNEL GLOW (Kontrovoy svet) ───
+    // Tight Fresnel rim glow.
     float fresnel = 1.0 - saturate(dot(N, V));
-    fresnel = pow(fresnel, 3.0); // uzkiy obodok
+    fresnel = fresnel * fresnel * fresnel;
 
-    // Fresnel glow aktiven tolko pri kontrovom svete
-    float backlit_facing = saturate(dot(-V, L)); // kamera smotrit protiv solntsa
+    // Fresnel glow is active mainly in backlight.
+    float backlit_facing = saturate(dot(-V, L));
     FresnelGlow = fresnel * backlit_facing;
 
-    // ─── 5. FINALNAYa KOMPOZITsIYa ───
     float3 daylight = Albedo * softNdotL;
     float3 terminator = rayleighContribution * Albedo;
-    float3 rim = float3(0.6, 0.7, 1.0) * FresnelGlow * 0.5; // golubovatyy rim
+    float3 rim = float3(0.6, 0.7, 1.0) * FresnelGlow * 0.5;
 
     FinalColor = daylight + terminator + backlit + rim;
 }
 
-
-// ═══════════════════════════════════════════════════════
+// -------------------------------------------------------
 // DIFFERENTIAL ROTATION HELPER
-// ═══════════════════════════════════════════════════════
-// Rasschityvaet UV offset na osnove shiroty i vremeni
+// -------------------------------------------------------
+// Computes UV offset from latitude and time.
 
 void DifferentialRotation_float(
     float2 UV,
@@ -89,35 +82,32 @@ void DifferentialRotation_float(
     out float2 RotatedUV
 )
 {
-    // Maska shiroty: UV.y = 0 (polyus) → 1 (ekvator) → 0 (polyus)
-    // Dlya sfery: y=0.5 eto ekvator
-    float latitude = abs(UV.y - 0.5) * 2.0; // 0 na ekvatore, 1 na polyusah
+    // Latitude mask: 0 at equator, 1 at poles.
+    float latitude = abs(UV.y - 0.5) * 2.0;
     float latitudeMask = 1.0 - latitude;
 
-    // Skorost vrascheniya: ekvator bystree, polyusa medlennee
+    // Equator rotates faster than poles.
     float speed = lerp(EquatorialSpeed * PolarMultiplier, EquatorialSpeed, latitudeMask);
 
-    // Dobavlyaem nelineynost dlya realistichnosti (kak u Yupitera)
-    // cos²(latitude) priblizhenie
-    float cosLat = latitudeMask; // uzhe ~cos(lat)
+    // Cheap cos-squared latitude approximation.
+    float cosLat = latitudeMask;
     speed *= cosLat;
 
     RotatedUV = float2(UV.x + Time * speed, UV.y);
 }
 
-
-// ═══════════════════════════════════════════════════════
-// ATMOSPHERE FRESNEL (Mnogosloynyy)
-// ═══════════════════════════════════════════════════════
+// -------------------------------------------------------
+// MULTI-LAYER ATMOSPHERE FRESNEL
+// -------------------------------------------------------
 
 void AtmosphereFresnel_float(
     float3 WorldNormal,
     float3 ViewDirection,
     float3 SunDirection,
-    float3 AtmosphereColorInner,  // osnovnoy tsvet atmosfery
-    float3 AtmosphereColorOuter,  // vneshniy obodok
-    float  InnerPower,            // ~2.0
-    float  OuterPower,            // ~5.0
+    float3 AtmosphereColorInner,
+    float3 AtmosphereColorOuter,
+    float  InnerPower,
+    float  OuterPower,
     out float3 AtmosphereColor,
     out float  AtmosphereAlpha
 )
@@ -129,13 +119,13 @@ void AtmosphereFresnel_float(
     float NdotV = saturate(dot(N, V));
     float fresnel = 1.0 - NdotV;
 
-    // Dva sloya Fresnel
+    // Two Fresnel layers.
     float innerFresnel = pow(fresnel, InnerPower);
     float outerFresnel = pow(fresnel, OuterPower);
 
-    // Kontrovaya vspyshka: vneshniy sloy yarche pri backlit
+    // Backlight flash: outer layer brightens when backlit.
     float backFacing = saturate(dot(-V, L));
-    float backlitBoost = 1.0 + backFacing * 3.0; // do 4x pri kontrovom
+    float backlitBoost = 1.0 + backFacing * 3.0;
 
     float3 inner = AtmosphereColorInner * innerFresnel;
     float3 outer = AtmosphereColorOuter * outerFresnel * backlitBoost;

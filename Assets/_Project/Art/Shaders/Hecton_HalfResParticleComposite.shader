@@ -50,23 +50,22 @@ Shader "Hidden/Hecton8/HalfResParticleComposite"
             return output;
         }
 
-        float HectonSampleSceneEyeDepth(float2 uv)
+        float HectonSampleSceneRawDepth(float2 uv)
         {
-            float rawDepth = SampleSceneDepth(uv);
-            return LinearEyeDepth(rawDepth, _ZBufferParams);
+            return SampleSceneDepth(uv);
         }
 
-        float HectonResolveDepthEdgeFade(float centerDepth)
+        float HectonResolveDepthEdgeFade(float centerRawDepth)
         {
-            float edge = abs(ddx(centerDepth)) + abs(ddy(centerDepth));
-            return saturate(1.0 - edge * 18.0);
+            float edge = abs(ddx(centerRawDepth)) + abs(ddy(centerRawDepth));
+            return saturate(1.0 - edge * 192.0);
         }
 
         half4 HectonSampleParticlesDepthFake(float2 uv)
         {
             half4 particles = SAMPLE_TEXTURE2D_X(_HectonHalfResParticlesTex, sampler_LinearClamp, uv);
-            float centerDepth = HectonSampleSceneEyeDepth(uv);
-            half edgeFade = (half)lerp(0.45, 1.0, HectonResolveDepthEdgeFade(centerDepth));
+            float centerRawDepth = HectonSampleSceneRawDepth(uv);
+            half edgeFade = (half)lerp(0.45, 1.0, HectonResolveDepthEdgeFade(centerRawDepth));
             particles.a *= edgeFade;
             return particles;
         }

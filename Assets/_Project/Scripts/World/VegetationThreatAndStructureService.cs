@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Environment;

@@ -162,6 +162,32 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryAcceptFinite(float value, out float finite)
+        {
+            if (!math.isfinite(value))
+            {
+                finite = 0f;
+                return false;
+            }
+
+            finite = value;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryAcceptFinite(Vector3 value, out Vector3 finite)
+        {
+            if (!IsFinite(value))
+            {
+                finite = Vector3.zero;
+                return false;
+            }
+
+            finite = value;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsFinite(in AbsoluteUniversePosition value)
         {
             return math.isfinite(value.LocalX) &&

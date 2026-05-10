@@ -12,6 +12,11 @@ namespace Hecton8.Gameplay
         private const float FlickerBase = 0.8f;
         private const float FlickerAmplitude = 0.15f;
         private const float FlickerCyclesPerSecond = 0.5570423f;
+        private const ulong BeaconIdFnvOffset = 1469598103934665603UL;
+        private const ulong BeaconIdFnvPrime = 1099511628211UL;
+        private const int BeaconIdPrefixLength = 7;
+        private const int BeaconIdHexLength = 16;
+        private const int BeaconIdLength = BeaconIdPrefixLength + BeaconIdHexLength;
 
         private static Shader s_fallbackBeaconShader;
 
@@ -63,7 +68,10 @@ namespace Hecton8.Gameplay
 
         public void Configure(string beaconId, string label, GameObject sourcePrefab, Color color, float range)
         {
-            BeaconId = string.IsNullOrWhiteSpace(beaconId) ? System.Guid.NewGuid().ToString("N") : beaconId;
+            RefreshCachedAup();
+            BeaconId = string.IsNullOrWhiteSpace(beaconId)
+                ? CreateDeterministicBeaconId(in _cachedAup, unchecked((int)EntityId.ToULong(GetEntityId())))
+                : beaconId;
             Label = string.IsNullOrWhiteSpace(label)
                 ? ResolveLocalized(LocalizationKeys.BEACON_PREFIX, "BEACON")
                 : CachedToUpperInvariant(label.Trim());
@@ -71,7 +79,6 @@ namespace Hecton8.Gameplay
             LightRange = Mathf.Max(0.5f, range);
             _sourcePrefab = _isFallbackRuntime ? null : sourcePrefab;
             _flickerTime = 0f;
-            RefreshCachedAup();
             if (_light == null)
                 TryGetComponent(out _light);
             if (_light != null)
@@ -161,7 +168,7 @@ namespace Hecton8.Gameplay
             if (shader == null)
                 return null;
 
-            // COLD ALLOC: Material[1] — per fallback beacon color instance with BeaconRuntime ownership — owner: BeaconRuntime
+            // COLD ALLOC: Material[1] - per fallback beacon color instance with BeaconRuntime ownership - owner: BeaconRuntime
             Material material = new Material(shader)
             {
                 name = "MAT_Runtime_BeaconFallback",
@@ -215,11 +222,50 @@ namespace Hecton8.Gameplay
             return s_fallbackBeaconShader;
         }
 
+        private static string CreateDeterministicBeaconId(in AbsoluteUniversePosition aup, int instanceId)
+        {
+            ulong hash = HashBeaconIdentity(in aup, instanceId);
+            return string.Create(BeaconIdLength, hash, static (buffer, value) =>
+            {
+                buffer[0] = 'B';
+                buffer[1] = 'E';
+                buffer[2] = 'A';
+                buffer[3] = 'C';
+                buffer[4] = 'O';
+                buffer[5] = 'N';
+                buffer[6] = '-';
+                for (int i = 0; i < BeaconIdHexLength; i++)
+                {
+                    int nibble = (int)((value >> ((BeaconIdHexLength - 1 - i) * 4)) & 0xFUL);
+                    buffer[BeaconIdPrefixLength + i] = (char)(nibble < 10 ? '0' + nibble : 'A' + (nibble - 10));
+                }
+            });
+        }
+
+        private static ulong HashBeaconIdentity(in AbsoluteUniversePosition aup, int instanceId)
+        {
+            ulong hash = BeaconIdFnvOffset;
+            hash = MixBeaconIdHash(hash, (ulong)aup.GridX);
+            hash = MixBeaconIdHash(hash, (ulong)aup.GridY);
+            hash = MixBeaconIdHash(hash, (ulong)aup.GridZ);
+            hash = MixBeaconIdHash(hash, (uint)(int)((aup.LocalX * 10f) + 0.5f));
+            hash = MixBeaconIdHash(hash, (uint)(int)((aup.LocalY * 10f) + 0.5f));
+            hash = MixBeaconIdHash(hash, (uint)(int)((aup.LocalZ * 10f) + 0.5f));
+            hash = MixBeaconIdHash(hash, (uint)instanceId);
+            return hash;
+        }
+
+        private static ulong MixBeaconIdHash(ulong hash, ulong value)
+        {
+            hash ^= value;
+            return hash * BeaconIdFnvPrime;
+        }
 
 
-        // ══════════════════════════════════════════════════════════
+
+        // ----------------------------------------------------------
         //  ZERO-GC STRING CACHING
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private static string ResolveLocalized(string key, string fallback)
         {
@@ -229,25 +275,24 @@ namespace Hecton8.Gameplay
                 : fallback;
         }
 
-        private static readonly string[] _cachedUpperStrings = new string[16]; // COLD ALLOC: string[16] — upper-case label cache slots — owner: BeaconRuntime
+        private static readonly string[] _cachedUpperStrings = new string[16]; // COLD ALLOC: string[16] - upper-case label cache slots - owner: BeaconRuntime
 
         /// <summary>
-        /// Keshirovannyy ToUpperInvariant dlya izbezhaniya povtornyh allokatsiy strok.
-        /// Hranit do 16 poslednih preobrazovaniy dlya povtornogo ispolzovaniya.
+        /// Cached ToUpperInvariant path to avoid repeated string allocations.
+        /// Stores up to 16 recent conversions for reuse.
         /// </summary>
         private static string CachedToUpperInvariant(string input)
         {
             if (string.IsNullOrEmpty(input))
                 return input;
 
-            // Prostoy hash dlya keshirovaniya (ne kriptograficheskiy)
-            int hash = input.GetHashCode() & 0xF; // Maska dlya indeksa 0-15
+            // Simple cache hash; not cryptographic.
+            int hash = input.GetHashCode() & 0xF;
 
             string cached = _cachedUpperStrings[hash];
             if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
                 return cached;
 
-            // Sozdaem novuyu stroku i keshiruem
             string upper = input.ToUpperInvariant();
             _cachedUpperStrings[hash] = upper;
             return upper;

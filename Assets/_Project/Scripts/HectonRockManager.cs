@@ -309,9 +309,11 @@ namespace Hecton8.World
 
         public void UnregisterChunk(Vector2Int chunkCoord)
         {
-            foreach (var kvp in _chunkData)
+            Dictionary<int, Dictionary<Vector2Int, Matrix4x4[]>>.Enumerator layerEnumerator = _chunkData.GetEnumerator();
+            while (layerEnumerator.MoveNext())
             {
-                if (kvp.Value.Remove(chunkCoord))
+                Dictionary<Vector2Int, Matrix4x4[]> chunkData = layerEnumerator.Current.Value;
+                if (chunkData != null && chunkData.Remove(chunkCoord))
                     _isDirty = true;
             }
 
@@ -488,9 +490,11 @@ namespace Hecton8.World
                 return;
 
             _layerCapacityOverflowLogged = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning(
                 $"[HectonRockManager] Rock layer aggregation exceeded capacity. layerId={layerId} requested={requestedCount} capacity={capacity}. Excess instances were dropped for this rebuild.",
                 this);
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
@@ -500,9 +504,11 @@ namespace Hecton8.World
                 return;
 
             _proximityCapacityOverflowLogged = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning(
                 $"[HectonRockManager] Proximity aggregation exceeded capacity. requested={requestedCount} capacity={capacity}. Excess collider points were dropped for this rebuild.",
                 this);
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
@@ -512,9 +518,11 @@ namespace Hecton8.World
                 return;
 
             _missingLayerBufferLogged = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning(
                 $"[HectonRockManager] Missing aggregation buffer for layerId={layerId}. Layer rebuild skipped.",
                 this);
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -523,12 +531,20 @@ namespace Hecton8.World
             int totalChunks = 0;
             int totalInstances = 0;
 
-            foreach (var layerKvp in _chunkData)
+            Dictionary<int, Dictionary<Vector2Int, Matrix4x4[]>>.Enumerator layerEnumerator = _chunkData.GetEnumerator();
+            while (layerEnumerator.MoveNext())
             {
-                totalChunks += layerKvp.Value.Count;
-                foreach (var chunkKvp in layerKvp.Value)
+                Dictionary<Vector2Int, Matrix4x4[]> chunkData = layerEnumerator.Current.Value;
+                if (chunkData == null)
+                    continue;
+
+                totalChunks += chunkData.Count;
+                Dictionary<Vector2Int, Matrix4x4[]>.Enumerator chunkEnumerator = chunkData.GetEnumerator();
+                while (chunkEnumerator.MoveNext())
                 {
-                    totalInstances += chunkKvp.Value.Length;
+                    Matrix4x4[] matrices = chunkEnumerator.Current.Value;
+                    if (matrices != null)
+                        totalInstances += matrices.Length;
                 }
             }
 

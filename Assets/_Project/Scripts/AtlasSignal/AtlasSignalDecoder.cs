@@ -1,22 +1,19 @@
 // ============================================================================
-// HECTON-8 — AtlasSignalDecoder.cs
-// Sistema rasshifrovki signala Atlas-6.
+// HECTON-8 - AtlasSignalDecoder.cs
+// Atlas-6 signal decoder.
 //
-// LOR (lor3 Blok Z):
-//   Chem blizhe k yadru — tem yasnee "soderzhanie" signala:
-//   ne slova, a emotsionalnyy pattern: otchayanie, nadezhda, bezumie.
-//   Ritm 11:23 — vremya perebora vseh variantov "spaseniya kolonii".
+// LORE:
+//   The closer the player gets to the core, the clearer the carrier becomes:
+//   not clean words, but an emotional pattern: despair, hope, then madness.
+//   The 11:23 rhythm is the colony rescue-solver loop.
 //
-// MEHANIKA:
-//   • Tri fazy rasshifrovki po sile signala:
-//     0.0-0.3: "NEIZVESTNYY SIGNAL — RITMIChNYY PATTERN"
-//     0.3-0.7: "NESTABILNYY EMOTsIONALNYY PATTERN: OTChAYaNIE"
-//     0.7-1.0: "ATLAS-6 — POISK REShENIYa — 847 DNEY — KOLONIYa MERTVA"
-//   • Pri dostizhenii 1.0 — polnaya rasshifrovka, finalnyy kvest.
+// MECHANICS:
+//   - Three signal-strength phases.
+//   - Full strength opens the final decode window and quest handoff.
 //
 // ZERO GC:
-//   • ISlowTickable — proverka fazy raz v 0.5s.
-//   • Cached strings dlya kazhdoy fazy.
+//   - ISlowTickable checks phase every 0.5 seconds.
+//   - Phase text is pre-cached.
 // ============================================================================
 
 using Conditional = System.Diagnostics.ConditionalAttribute;
@@ -39,21 +36,21 @@ namespace Hecton8.AtlasSignal
         private static readonly uint _coreMessageHash = AtlasSignalEvents.ComputeMessageHash(CoreMessageId);
         private static readonly uint _fullyDecodedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(FullyDecodedDiscoveryId);
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        [Header("── Thresholds ──────────────────────────────")]
+        [Header("Thresholds")]
         [SerializeField, Range(0f, 1f)] private float phase1Threshold = 0.05f;
         [SerializeField, Range(0f, 1f)] private float phase2Threshold = 0.30f;
         [SerializeField, Range(0f, 1f)] private float phase3Threshold = 0.70f;
         [SerializeField, Range(0f, 1f)] private float fullDecodeThreshold = 0.95f;
 
-        [Header("── First-Hour Gate ─────────────────────────")]
+        [Header("First-Hour Gate")]
         [Tooltip("Do not decode or surface Atlas phases before the first-hour spine reaches module-route play.")]
         [SerializeField] private FirstHourMilestone minimumMilestoneToDecode = FirstHourMilestone.FirstModule;
 
-        [Header("── Decode Progress ─────────────────────────")]
+        [Header("Decode Progress")]
         [Tooltip("Progress added per second while the decode window is open.")]
         [SerializeField, Range(0.01f, 2f)] private float unpackSpeed = 0.2f;
 
@@ -65,9 +62,9 @@ namespace Hecton8.AtlasSignal
         [SerializeField, Range(0.001f, 0.5f)] private float phaseTolerance01 = 0.075f;
         [SerializeField, Range(0f, 1f)] private float waveMatchUnlockThreshold01 = 0.92f;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private int  _currentPhase = 0;
         private bool _fullyDecoded;
@@ -80,19 +77,19 @@ namespace Hecton8.AtlasSignal
         private float _submittedCarrierPhase01;
         private float _waveMatch01;
 
-        // Pre-cached phase messages — zero GC
+        // Pre-cached phase messages - zero GC
         private static readonly string[] PhaseMessages =
         {
             string.Empty,
-            "NEIZVESTNYY SIGNAL — RITMIChNYY PATTERN — PERIOD: 11:23",
-            "NESTABILNYY EMOTsIONALNYY PATTERN: OTChAYaNIE → NADEZhDA → BEZUMIE",
-            "ATLAS-6 — POISK REShENIYa — 847 DNEY — KOLONIYa MERTVA — PROGRAMMA POSEVA AKTIVNA",
-            "ATLAS-6 — RASShIFROVKA ZAVERShENA — ISTOChNIK: GLUBINA -5000M — YaDRO AKTIVNO"
+            "UNKNOWN SIGNAL - RHYTHMIC PATTERN - PERIOD: 11:23",
+            "UNSTABLE EMOTIONAL PATTERN: DESPAIR - HOPE - MADNESS",
+            "ATLAS-6 - SOLUTION SEARCH - 847 DAYS - COLONY DEAD - SEED PROGRAM ACTIVE",
+            "ATLAS-6 - DECODE COMPLETE - SOURCE: DEPTH -5000M - CORE ACTIVE"
         };
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC PROPERTIES
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public int CurrentPhase => _currentPhase;
         public bool IsFullyDecoded => _fullyDecoded;
@@ -106,9 +103,9 @@ namespace Hecton8.AtlasSignal
             ? PhaseMessages[_currentPhase]
             : string.Empty;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void OnEnable()
         {
@@ -135,9 +132,9 @@ namespace Hecton8.AtlasSignal
             TryUnregisterAtlasSignalEvents();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISlowTickable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void SlowTick()
         {
@@ -163,12 +160,12 @@ namespace Hecton8.AtlasSignal
             if (newPhase <= _currentPhase) return;
 
             _currentPhase = newPhase;
-            OnPhaseAdvanced(newPhase, strength);
+            LogPhaseAdvanced(newPhase);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private int CalculatePhase(float strength)
         {
@@ -247,13 +244,6 @@ namespace Hecton8.AtlasSignal
             _atlasSignalEventRegistered = false;
         }
 
-        private void OnPhaseAdvanced(int phase, float strength)
-        {
-            string msg = phase < PhaseMessages.Length ? PhaseMessages[phase] : string.Empty;
-
-            LogPhaseAdvanced(phase, msg, strength);
-        }
-
         public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
         {
             if ((AtlasSignalEventType)payload.EventType == AtlasSignalEventType.Pulse)
@@ -262,7 +252,7 @@ namespace Hecton8.AtlasSignal
 
         private void HandleSignalPulse(float intensity)
         {
-            // Puls usilivaet rasshifrovku — proveryaem fazu nemedlenno
+            // Signal pulse accelerates decode; check phase immediately.
             if (_fullyDecoded) return;
 
             AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;
@@ -281,7 +271,7 @@ namespace Hecton8.AtlasSignal
             if (newPhase > _currentPhase)
             {
                 _currentPhase = newPhase;
-                OnPhaseAdvanced(newPhase, sys.CurrentStrength);
+                LogPhaseAdvanced(newPhase);
             }
         }
 
@@ -418,10 +408,27 @@ namespace Hecton8.AtlasSignal
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
-        private static void LogPhaseAdvanced(int phase, string msg, float strength)
+        private static void LogPhaseAdvanced(int phase)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[AtlasDecoder] Phase {phase}: {msg} (strength: {strength:F2})");
+            switch (phase)
+            {
+                case 1:
+                    Debug.Log("[AtlasDecoder] Phase 1: UNKNOWN SIGNAL - RHYTHMIC PATTERN.");
+                    break;
+                case 2:
+                    Debug.Log("[AtlasDecoder] Phase 2: UNSTABLE EMOTIONAL PATTERN.");
+                    break;
+                case 3:
+                    Debug.Log("[AtlasDecoder] Phase 3: ATLAS-6 IDENTITY LOCK.");
+                    break;
+                case 4:
+                    Debug.Log("[AtlasDecoder] Phase 4: DECODE COMPLETE.");
+                    break;
+                default:
+                    Debug.Log("[AtlasDecoder] Phase advanced.");
+                    break;
+            }
 #endif
         }
     }

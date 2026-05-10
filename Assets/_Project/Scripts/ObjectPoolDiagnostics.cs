@@ -21,7 +21,7 @@
 //
 //   // Query current stats
 //   var stats = ObjectPoolDiagnostics.GetPoolStats("RobotDronePrefab");
-//   Debug.Log($"Peak concurrent: {stats.peakConcurrentCount}");
+//   Debug.Log(stats.peakConcurrentCount);
 //
 //   // Get comprehensive report
 //   string report = ObjectPoolDiagnostics.GenerateReport();
@@ -115,10 +115,10 @@ namespace Hecton8.Core
         public float UtilizationPercent =>
             poolCapacity > 0 ? (currentActiveCount / (float)poolCapacity) * 100f : 0f;
 
-        public override string ToString() => 
-            $"[Pool] Active={currentActiveCount}/{poolCapacity} " +
-            $"(Peak={peakConcurrentCount}) Spawns={totalSpawns} " + 
-            $"Utilization={UtilizationPercent:F1}% Memory={estimatedMemoryMB:F2} MB";
+        public override string ToString()
+        {
+            return "[PoolStatSnapshot]";
+        }
     }
 
     /// <summary>
@@ -376,10 +376,11 @@ namespace Hecton8.Core
 
             _lastDiagnosticsFrame = Time.frameCount;
 
-            foreach (var kvp in _poolMetrics)
+            Dictionary<string, PoolMetrics>.Enumerator metricsEnumerator = _poolMetrics.GetEnumerator();
+            while (metricsEnumerator.MoveNext())
             {
-                string poolName = kvp.Key;
-                PoolMetrics metrics = kvp.Value;
+                string poolName = metricsEnumerator.Current.Key;
+                PoolMetrics metrics = metricsEnumerator.Current.Value;
 
                 int capacity = getPoolCapacity(poolName, 0);
                 int currentActive = metrics.totalSpawns - metrics.totalDespawns;
@@ -431,32 +432,51 @@ namespace Hecton8.Core
                 var sb = scope.Value;
                 sb.AppendLine("═════════════════════════════════════════════════════════");
                 sb.AppendLine("OBJECT POOL DIAGNOSTICS REPORT");
-                sb.AppendLine($"Frame: {Time.frameCount} | Time: {Time.realtimeSinceStartup:F2}s");
+                sb.Append("Frame: ");
+                sb.Append(Time.frameCount);
+                sb.Append(" | Time: ");
+                sb.Append(Time.realtimeSinceStartup);
+                sb.AppendLine("s");
                 sb.AppendLine("═════════════════════════════════════════════════════════");
 
                 int totalPoolsActive = 0;
                 int totalActiveObjects = 0;
                 int totalSpawned = 0;
 
-                foreach (var kvp in _poolMetrics)
+                Dictionary<string, PoolMetrics>.Enumerator metricsEnumerator = _poolMetrics.GetEnumerator();
+                while (metricsEnumerator.MoveNext())
                 {
-                    string poolName = kvp.Key;
-                    PoolMetrics metrics = kvp.Value;
+                    string poolName = metricsEnumerator.Current.Key;
+                    PoolMetrics metrics = metricsEnumerator.Current.Value;
 
                     int currentActive = metrics.totalSpawns - metrics.totalDespawns;
                     totalPoolsActive++;
                     totalActiveObjects += currentActive;
                     totalSpawned += metrics.totalSpawns;
 
-                    sb.Append($"\n  Pool: {poolName}\n");
-                    sb.Append($"    Active: {currentActive} | Peak: {metrics.peakConcurrentCount}\n");
-                    sb.Append($"    Total Spawns: {metrics.totalSpawns} | Despawns: {metrics.totalDespawns}\n");
+                    sb.Append("\n  Pool: ");
+                    sb.Append(poolName);
+                    sb.Append('\n');
+                    sb.Append("    Active: ");
+                    sb.Append(currentActive);
+                    sb.Append(" | Peak: ");
+                    sb.Append(metrics.peakConcurrentCount);
+                    sb.Append('\n');
+                    sb.Append("    Total Spawns: ");
+                    sb.Append(metrics.totalSpawns);
+                    sb.Append(" | Despawns: ");
+                    sb.Append(metrics.totalDespawns);
+                    sb.Append('\n');
                 }
 
                 sb.AppendLine("\n═════════════════════════════════════════════════════════");
-                sb.Append($"Total Pools: {totalPoolsActive} | ");
-                sb.Append($"Active Objects: {totalActiveObjects} | ");
-                sb.Append($"Total Spawned: {totalSpawned}\n");
+                sb.Append("Total Pools: ");
+                sb.Append(totalPoolsActive);
+                sb.Append(" | Active Objects: ");
+                sb.Append(totalActiveObjects);
+                sb.Append(" | Total Spawned: ");
+                sb.Append(totalSpawned);
+                sb.Append('\n');
 
                 return sb.ToString();
             }

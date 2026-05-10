@@ -45,6 +45,7 @@ namespace Hecton8.World
         [SerializeField] private bool _debugApplied;
 #pragma warning restore CS0414
 
+        // COLD ALLOC: List<WorldInterestAnchor>[24] - slow-tick world-interest anchor scratch - owner: WorldInterestDirector
         private readonly List<WorldInterestAnchor> _anchors = new List<WorldInterestAnchor>(24);
         private HectonPlayerMovement _playerMovement;
         private bool _registeredToTickManager;

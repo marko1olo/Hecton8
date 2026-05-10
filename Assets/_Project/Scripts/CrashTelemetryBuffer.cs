@@ -27,10 +27,9 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9500)] // Runs after GameTickManager singleton bootstrap and before most gameplay systems.
     public sealed class CrashTelemetryBuffer : MonoBehaviour, ITickable, IUpdatable, IFixedTickable
     {
-        private const int TelemetryRetentionSeconds = 60;
-        private const int TelemetryTargetFramesPerSecond = 60;
-        private const int RingCapacity = TelemetryRetentionSeconds * TelemetryTargetFramesPerSecond;
-        private const int ExportSnapshotEntries = RingCapacity;
+        private const int RingCapacity = 1024;
+        private const int RingCapacityMask = RingCapacity - 1;
+        private const int ExportSnapshotEntries = 1000;
         private const int ExportCooldownFrames = 30;
         private const int TelemetryEntrySizeBytes = 64;
         private const int CrashExportHeaderSizeBytes = 16;
@@ -50,6 +49,8 @@ namespace Hecton8.Core
         private const float CriticalFrameTimeSeconds = 0.033f;
         private const float MaximumTrackedWorldMagnitude = 1000000f;
         private const float MaximumReservedMemoryMb = 4096f;
+        private const float BytesToMegabytes = 1f / (1024f * 1024f);
+        private const float NanosecondsToMilliseconds = 1f / 1000000f;
         private const uint LiveTelemetryMagic = 0x4D4C4554u; // "TELM"
         private const uint LiveTelemetryVersion = 1u;
         private const ulong BootstrapSafeHaltDumpMagic = 0x544C484554435048ul; // "HPCTEHLT" little-endian sentinel.
@@ -65,7 +66,7 @@ namespace Hecton8.Core
         private const int BlackBoxExportFailureCounterMax = 1024;
         private const int BlackBoxExportDroppedCounterMax = 1024;
         private const int BlackBoxExportSuppressedCounterMax = 1024;
-        private const long PersistentMemoryBudgetBytes = 786432L;
+        private const long PersistentMemoryBudgetBytes = 262144L;
         private const string MemoryBudgetOwnerName = "CrashTelemetryBuffer";
         private static readonly string[] _FrameTimeCandidates =
         {
@@ -478,7 +479,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Records an out-of-memory precursor event and forces a synchronous crash-telemetry snapshot.
+        /// Records an out-of-memory precursor event and queues a crash-telemetry snapshot.
         /// </summary>
         public static void ReportCriticalMemoryPressure(long reservedBytes, long physicalBytes, double usageRatio)
         {
@@ -493,7 +494,7 @@ namespace Hecton8.Core
             instance.TryExportSnapshot(
                 ExportReason.CriticalMemoryPressure,
                 flags,
-                writeSynchronously: true);
+                bypassCooldown: true);
         }
 
         /// <summary>
@@ -516,7 +517,7 @@ namespace Hecton8.Core
             instance.TryExportSnapshot(
                 ExportReason.RuntimeMemorySpike,
                 flags,
-                writeSynchronously: false);
+                bypassCooldown: false);
         }
 
         /// <summary>
@@ -618,7 +619,7 @@ namespace Hecton8.Core
             instance.TryExportSnapshot(
                 ExportReason.CriticalPerformanceSpike,
                 flags,
-                writeSynchronously: false);
+                bypassCooldown: false);
         }
 
         /// <summary>
@@ -637,7 +638,7 @@ namespace Hecton8.Core
             instance.TryExportSnapshot(
                 ExportReason.LatencyCrime,
                 flags,
-                writeSynchronously: false);
+                bypassCooldown: false);
         }
 
         /// <summary>
@@ -656,7 +657,7 @@ namespace Hecton8.Core
             instance.TryExportSnapshot(
                 ExportReason.NativeFragmentationRisk,
                 flags,
-                writeSynchronously: false);
+                bypassCooldown: false);
         }
 
         /// <summary>
@@ -675,7 +676,7 @@ namespace Hecton8.Core
             instance.TryExportSnapshot(
                 ExportReason.StaleBufferCrime,
                 flags,
-                writeSynchronously: false);
+                bypassCooldown: false);
         }
 
         /// <summary>
@@ -694,7 +695,7 @@ namespace Hecton8.Core
             instance.TryExportSnapshot(
                 ExportReason.NativeTransientLeak,
                 flags,
-                writeSynchronously: false);
+                bypassCooldown: false);
         }
 
         public static void ReportAudioOverflowDropWarning(int overflowDropCount, int bufferedFrames, int writableFrames)
@@ -741,7 +742,7 @@ namespace Hecton8.Core
             instance.TryExportSnapshot(
                 ExportReason.BootstrapSafeHalt,
                 (uint)ErrorBits.BootstrapSafeHalt,
-                writeSynchronously: true);
+                bypassCooldown: true);
             instance.WriteBootstrapSafeHaltMmfDump(
                 activeStep,
                 longestStep,
@@ -775,7 +776,7 @@ namespace Hecton8.Core
             instance.TryExportSnapshot(
                 ExportReason.RuntimeWatchdogStall,
                 (uint)ErrorBits.RuntimeWatchdogStall,
-                writeSynchronously: true);
+                bypassCooldown: true);
         }
 
         /// <summary>
@@ -832,7 +833,7 @@ namespace Hecton8.Core
             long startCursor = writeCursor - committedEntries;
             for (int i = 0; i < committedEntries; i++)
             {
-                int ringIndex = (int)((startCursor + i) % RingCapacity);
+                int ringIndex = (int)(startCursor + i) & RingCapacityMask;
                 TelemetryEntry entry = _ringBuffer[ringIndex];
                 destination.Add(new EditorSnapshotEntry(
                     entry.FrameIndex,
@@ -902,7 +903,7 @@ namespace Hecton8.Core
         {
             uint stickyErrorFlags = unchecked((uint)Volatile.Read(ref _stickyErrorFlags));
             if (stickyErrorFlags != 0u)
-                TryExportSnapshot(ExportReason.ApplicationQuit, stickyErrorFlags, writeSynchronously: true);
+                TryExportSnapshot(ExportReason.ApplicationQuit, stickyErrorFlags, bypassCooldown: true);
 
             DisposeBuffers();
         }
@@ -925,7 +926,7 @@ namespace Hecton8.Core
 
                 FrameTimingManager.CaptureFrameTimings();
                 float gpuFrameTime = SampleGpuFrameTimeMs();
-                float reservedMemoryMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+                float reservedMemoryMb = SampleReservedMemoryMegabytes();
                 float3 playerAup = SamplePlayerPosition(out bool hasPlayer);
                 uint systemMask = SampleSystemMask();
                 uint activeChunkCount = SampleActiveChunkCount();
@@ -1019,10 +1020,8 @@ namespace Hecton8.Core
                     if (exportableErrorFlags == 0u)
                         return;
 
-                    bool forceSynchronousExport =
-                        (exportableErrorFlags & (uint)ErrorBits.NanPhysics) != 0u;
                     ExportReason exportReason = SelectExportReason(exportableErrorFlags);
-                    TryExportSnapshot(exportReason, errorFlags, writeSynchronously: forceSynchronousExport);
+                    TryExportSnapshot(exportReason, errorFlags, bypassCooldown: false);
                 }
             }
         }
@@ -1062,11 +1061,15 @@ namespace Hecton8.Core
             _ = fdt;
         }
 
+        private static float SampleReservedMemoryMegabytes()
+        {
+            return Profiler.GetTotalReservedMemoryLong() * BytesToMegabytes;
+        }
+
         private int ReserveTelemetryWriteIndex()
         {
             long cursor = Interlocked.Increment(ref _writeCursor) - 1L;
-            int writeIndex = (int)(cursor % RingCapacity);
-            return writeIndex < 0 ? writeIndex + RingCapacity : writeIndex;
+            return (int)cursor & RingCapacityMask;
         }
 
         private void WriteBootstrapPhaseDuration(BootstrapStepToken step, double elapsedMilliseconds, bool isPerfWarning)
@@ -1081,7 +1084,7 @@ namespace Hecton8.Core
             entry.DeltaTime = 0f;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = (float)elapsedMilliseconds;
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = float3.zero;
             entry.ActiveChunkCount = SampleActiveChunkCount();
             entry.ErrorFlags = isPerfWarning ? (uint)ErrorBits.BootPerfWarning : 0u;
@@ -1115,7 +1118,7 @@ namespace Hecton8.Core
             entry.DeltaTime = 0f;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = 0f;
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = shift3;
             entry.ActiveChunkCount = SampleActiveChunkCount();
             entry.ErrorFlags = 0u;
@@ -1139,7 +1142,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = (float)Time.unscaledTimeAsDouble;
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = unchecked((uint)math.max(0, entityCount));
             entry.ErrorFlags = (uint)ErrorBits.BusCongestionWarning;
@@ -1149,7 +1152,7 @@ namespace Hecton8.Core
             entry.SubsystemHeatPacked = unchecked((uint)math.max(0, pendingCount));
             entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
             _ringBuffer[writeIndex] = entry;
-            TryExportSnapshot(ExportReason.BusCongestionWarning, (uint)ErrorBits.BusCongestionWarning, writeSynchronously: false);
+            TryExportSnapshot(ExportReason.BusCongestionWarning, (uint)ErrorBits.BusCongestionWarning, bypassCooldown: false);
         }
 
         private void WriteKineticAnomalyTelemetry(Vector3 runtimePosition, Vector3 deltaVelocity, float accelerationMetersPerSecondSq)
@@ -1168,7 +1171,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = math.max(0f, accelerationMetersPerSecondSq);
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = absolutePosition;
             entry.ActiveChunkCount = SampleActiveChunkCount();
             entry.ErrorFlags = (uint)ErrorBits.KineticAnomaly;
@@ -1204,7 +1207,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = 0f;
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = recoveredAup;
             entry.ActiveChunkCount = SampleActiveChunkCount();
             entry.ErrorFlags = (uint)ErrorBits.NanPhysics;
@@ -1230,7 +1233,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = (float)Time.unscaledTimeAsDouble;
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = SampleActiveChunkCount();
             entry.ErrorFlags = (uint)ErrorBits.LateFrameLoadShedding;
@@ -1256,7 +1259,7 @@ namespace Hecton8.Core
             entry.GpuFrameTime = elapsedMilliseconds > float.MaxValue
                 ? float.MaxValue
                 : (float)math.max(0d, elapsedMilliseconds);
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = SampleActiveChunkCount();
             entry.ErrorFlags = (uint)ErrorBits.CriticalPerformanceSpike;
@@ -1281,7 +1284,7 @@ namespace Hecton8.Core
             latencyMs = SanitizeMilliseconds(latencyMs);
             entry.LatencyMs = latencyMs;
             entry.GpuFrameTime = ReadMilliseconds(_frameTimeRecorder);
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = unchecked((uint)math.max(0, pendingContinuationCount));
             entry.ErrorFlags = (uint)ErrorBits.LatencyCrime;
@@ -1305,7 +1308,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = 0f;
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = unchecked((uint)math.max(0, reallocationCount));
             entry.ErrorFlags = (uint)ErrorBits.NativeFragmentationRisk;
@@ -1329,7 +1332,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = 0f;
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = unchecked((uint)math.max(0, retentionFrames));
             entry.ErrorFlags = (uint)ErrorBits.StaleBufferCrime;
@@ -1353,7 +1356,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = 0f;
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = unchecked((uint)math.max(0, retentionFrames));
             entry.ErrorFlags = (uint)ErrorBits.NativeTransientLeak;
@@ -1377,7 +1380,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = 0f;
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = unchecked((uint)math.max(0, failureCount));
             entry.ErrorFlags = (uint)ErrorBits.BlackBoxExportFault;
@@ -1401,7 +1404,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = 0f;
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = unchecked((uint)math.max(0, droppedCount));
             entry.ErrorFlags = (uint)ErrorBits.BlackBoxExportDropped;
@@ -1425,7 +1428,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = 0f;
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = unchecked((uint)math.max(0, suppressedCount));
             entry.ErrorFlags = (uint)ErrorBits.BlackBoxExportSuppressed;
@@ -1449,7 +1452,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = (float)Time.unscaledTimeAsDouble;
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = unchecked((uint)math.max(0, bufferedFrames));
             entry.ErrorFlags = (uint)ErrorBits.AudioOverflowDropWarning;
@@ -1478,7 +1481,7 @@ namespace Hecton8.Core
             entry.DeltaTime = (float)math.max(0d, bootElapsedSeconds);
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = (float)math.max(0d, activeStepElapsedMilliseconds);
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = new float3((int)activeStep, (int)longestStep, (float)math.max(0d, LongestStepMillisecondsSafe()));
             entry.ActiveChunkCount = SampleActiveChunkCount();
             entry.ErrorFlags = (uint)ErrorBits.BootstrapSafeHalt;
@@ -1598,7 +1601,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = (float)Time.unscaledTimeAsDouble;
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = SampleActiveChunkCount();
             entry.ErrorFlags = (uint)ErrorBits.RuntimeWatchdogStall;
@@ -1621,7 +1624,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = usageRatio > float.MaxValue ? float.MaxValue : (float)usageRatio;
-            entry.MemoryUsedMb = reservedBytes * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = reservedBytes * BytesToMegabytes;
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = SampleActiveChunkCount();
             entry.ErrorFlags = (uint)ErrorBits.CriticalMemoryPressure;
@@ -1647,8 +1650,8 @@ namespace Hecton8.Core
             entry.SystemMask = (uint)SystemBits.Memory;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
-            entry.GpuFrameTime = deltaBytes * (1f / (1024f * 1024f));
-            entry.MemoryUsedMb = currentBytes * (1f / (1024f * 1024f));
+            entry.GpuFrameTime = deltaBytes * BytesToMegabytes;
+            entry.MemoryUsedMb = currentBytes * BytesToMegabytes;
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = SampleActiveChunkCount();
             entry.ErrorFlags = (uint)ErrorBits.RuntimeMemorySpike;
@@ -1672,7 +1675,7 @@ namespace Hecton8.Core
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = math.max(0f, correctionMeters);
-            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = ToAbsoluteUniversePosition(runtimePosition);
             entry.ActiveChunkCount = SampleActiveChunkCount();
             entry.ErrorFlags = (uint)ErrorBits.AupJitterCorrection;
@@ -1742,7 +1745,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            // COLD ALLOC: NativeArray<TelemetryEntry>[3600] - lockless telemetry ring buffer - owner: CrashTelemetryBuffer
+            // COLD ALLOC: NativeArray<TelemetryEntry>[1024] - lockless telemetry ring buffer - owner: CrashTelemetryBuffer
             _ringBuffer = new NativeArray<TelemetryEntry>(RingCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(
                 _ringBuffer,
@@ -1750,7 +1753,7 @@ namespace Hecton8.Core
                 nameof(_ringBuffer),
                 NativeAllocationLifetime.Session);
 
-            // COLD ALLOC: NativeArray<TelemetryEntry>[3600] - pre-crash binary export snapshot staging buffer - owner: CrashTelemetryBuffer
+            // COLD ALLOC: NativeArray<TelemetryEntry>[1000] - pre-crash binary export snapshot staging buffer - owner: CrashTelemetryBuffer
             _exportSnapshot = new NativeArray<TelemetryEntry>(ExportSnapshotEntries, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(
                 _exportSnapshot,
@@ -1758,7 +1761,7 @@ namespace Hecton8.Core
                 nameof(_exportSnapshot),
                 NativeAllocationLifetime.Session);
 
-            // COLD ALLOC: NativeArray<byte>[230416] - binary export scratch for 16B header + 3600 x 64B entries - owner: CrashTelemetryBuffer
+            // COLD ALLOC: NativeArray<byte>[64016] - binary export scratch for 16B header + 1000 x 64B entries - owner: CrashTelemetryBuffer
             _exportScratch = new NativeArray<byte>(ExportScratchSizeBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(
                 _exportScratch,
@@ -1934,7 +1937,9 @@ namespace Hecton8.Core
                 return;
             }
 
-            WritePreparedExportToDisk();
+            RecordBlackBoxExportDropped();
+            ClearPendingExportState();
+            Volatile.Write(ref _exportState, ExportStateIdle);
         }
 
         private void RecordBlackBoxExportFailure()
@@ -2238,7 +2243,7 @@ namespace Hecton8.Core
 
             OrStickyErrorFlags(faultFlags);
             Interlocked.Exchange(ref _threadedFaultFlags, 0);
-            TryExportSnapshot(exportReason, faultFlags, writeSynchronously: false);
+            TryExportSnapshot(exportReason, faultFlags, bypassCooldown: false);
         }
 
         private void HandleLogMessageReceivedThreaded(string condition, string stackTrace, LogType type)
@@ -2590,7 +2595,7 @@ namespace Hecton8.Core
             }
         }
 
-        private void TryExportSnapshot(ExportReason exportReason, uint exportFlags, bool writeSynchronously)
+        private void TryExportSnapshot(ExportReason exportReason, uint exportFlags, bool bypassCooldown)
         {
             if (!_ringBuffer.IsCreated)
                 return;
@@ -2608,8 +2613,8 @@ namespace Hecton8.Core
             try
             {
                 int currentFrame = Time.frameCount;
-                bool bypassCooldown = (exportFlags & ExportCooldownBypassMask) != 0u;
-                if (!writeSynchronously && !bypassCooldown && currentFrame - _lastExportFrame < ExportCooldownFrames)
+                bool shouldBypassCooldown = bypassCooldown || (exportFlags & ExportCooldownBypassMask) != 0u;
+                if (!shouldBypassCooldown && currentFrame - _lastExportFrame < ExportCooldownFrames)
                 {
                     RecordBlackBoxExportSuppressed();
                     return;
@@ -2623,22 +2628,6 @@ namespace Hecton8.Core
 
                     Volatile.Write(ref _pendingExportSnapshotCount, snapshotCount);
                     Volatile.Write(ref _pendingExportFrame, currentFrame);
-
-                    if (writeSynchronously)
-                    {
-                        int synchronousExportBytes = BuildExportScratch(snapshotCount);
-                        Volatile.Write(ref _pendingExportBytes, synchronousExportBytes);
-                        if (synchronousExportBytes <= 0)
-                        {
-                            ClearPendingExportState();
-                            return;
-                        }
-
-                        GlobalTelemetryBus.TryEmergencyFlushSynchronous();
-                        WritePreparedExportToDisk();
-
-                        return;
-                    }
 
                     Volatile.Write(ref _pendingExportBytes, 0);
                     exportQueued = QueueBackgroundExport();
@@ -2664,7 +2653,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            bool exportCompleted = false;
+            bool exportQueued = false;
             try
             {
                 int snapshotCount = SnapshotRecentEntries(ExportReason.AppDomainUnhandledException);
@@ -2673,20 +2662,16 @@ namespace Hecton8.Core
 
                 Volatile.Write(ref _pendingExportSnapshotCount, snapshotCount);
                 Volatile.Write(ref _pendingExportFrame, GetCrashSafeExportFrame());
-                int exportBytes = BuildExportScratch(snapshotCount);
-                Volatile.Write(ref _pendingExportBytes, exportBytes);
-                if (exportBytes <= 0)
-                    return;
-
-                GlobalTelemetryBus.TryEmergencyFlushSynchronous();
-                exportCompleted = WritePreparedExportToDisk();
+                Volatile.Write(ref _pendingExportBytes, 0);
+                GlobalTelemetryBus.RequestEmergencyFlushAsync();
+                exportQueued = QueueBackgroundExport();
             }
             catch (Exception)
             {
             }
             finally
             {
-                if (!exportCompleted)
+                if (!exportQueued)
                 {
                     ClearPendingExportState();
                     Volatile.Write(ref _exportState, ExportStateIdle);
@@ -2708,9 +2693,7 @@ namespace Hecton8.Core
 
             int entryCount = (int)availableEntries;
             long startCursor = writeCursor - skipNewestEntry - availableEntries;
-            int sourceStart = (int)(startCursor % RingCapacity);
-            if (sourceStart < 0)
-                sourceStart += RingCapacity;
+            int sourceStart = (int)startCursor & RingCapacityMask;
 
             unsafe
             {
@@ -2914,7 +2897,7 @@ namespace Hecton8.Core
                 return 0f;
 
             if (recorder.UnitType == ProfilerMarkerDataUnit.TimeNanoseconds)
-                return (float)(recorder.LastValue / 1000000.0d);
+                return recorder.LastValue * NanosecondsToMilliseconds;
 
             return (float)recorder.LastValue;
         }

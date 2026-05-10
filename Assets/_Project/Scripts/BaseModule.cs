@@ -1,19 +1,19 @@
 // ============================================================================
-// HECTON-8 — BaseModule.cs
-// Bazovyy kontroller modulya podvodnoy bazy.
+// HECTON-8 - BaseModule.cs
+// Base controller for underwater base modules.
 //
-// OTVETSTVENNOSTI:
-//   1. Hranit tselostnost modulya (integrity) v rantayme.
-//   2. Upravlyaet zatopleniem (flood) i osusheniem (drain).
-//   3. Realizuet IPowerComponent dlya bazovogo energopotrebleniya.
-//   4. Realizuet IPoolable dlya sovmestimosti s ObjectPoolManager.
-//   5. Realizuet ISlowTickable dlya tsentralizovannogo tika cherez GameTickManager.
+// RESPONSIBILITIES:
+//   1. Stores module integrity at runtime.
+//   2. Controls flooding and draining.
+//   3. Implements IPowerComponent for base power consumption.
+//   4. Implements IPoolable for ObjectPoolManager compatibility.
+//   5. Implements ISlowTickable for centralized slow ticking.
 //   6. Realizuet ICuttable dlya sovmestimosti s LaserCutter (→ ApplyDamage).
 //   7. Upravlyaet Interior Zone (Suhaya Zona) — podavlyaet vodnuyu fiziku
 //      dlya obektov vnutri nezatoplennogo modulya.
 //   8. Dekonstruktsiya (Deconstruct) — vozvrat resursov i unichtozhenie modulya.
 //
-// DEKONSTRUKTsIYa:
+// DECONSTRUCTION:
 //   • Deconstruct(PlayerInventory) vyzyvaetsya iz LaserCutter pri zavershenii
 //     progressa razbora (rezhim R+LKM).
 //   • Resursy vozvraschayutsya s koeffitsientom REFUND_RATIO (80% po umolchaniyu).
@@ -21,7 +21,7 @@
 //     cherez ObjectPoolManager.
 //   • Posle razdachi resursov vyzyvaetsya ConstructionManager.DestroyModule().
 //
-// SUHIE ZONY (Interior Zone):
+// INTERIOR DRY ZONE:
 //   • BoxCollider (Trigger) na dochernem obekte ili etom zhe GO ohvatyvaet
 //     vnutrennee prostranstvo modulya.
 //   • OnTriggerEnter: esli modul ne zatoplen → BuoyancyObject.EnterDryZone()
@@ -30,18 +30,18 @@
 //   • Keshirovanie cherez Dictionary<ulong, BuoyancyObject> po EntityId —
 //     zero GetComponent v OnTriggerStay (Stay ne ispolzuetsya vovse).
 //
-// SOHRANENIE:
-//   Modul NE sohranyaet sebya samostoyatelno.
-//   ConstructionManager chitaet publichnye svoystva CurrentIntegrity / IsFlooded
-//   pri serializatsii bazy i zapisyvaet ih obratno pri zagruzke.
+// SAVE:
+//   Module state is not self-serialized.
+//   ConstructionManager reads CurrentIntegrity / IsFlooded during base save and
+//   writes them back during load.
 //
-// SOSTOYaNIYa:
+// STATES:
 //   • Healthy      : currentIntegrity == maxIntegrity, not flooded
 //   • Damaged      : currentIntegrity < maxIntegrity, leak VFX active
 //   • Breached     : currentIntegrity <= 0 → flooded = true
 //   • Draining     : flooded && hasPower && integrity == maxIntegrity
 //
-// ENERGOSISTEMA:
+// POWER:
 //   • Bazovoe potreblenie beretsya iz BuildableData.powerRating.
 //   • Esli pitaniya net — pompy ne rabotayut, osveschenie gasnet, remont stoit.
 //   • Esli pitanie est i modul tsel — voda otkachivaetsya.
@@ -272,19 +272,19 @@ namespace Hecton8.Gameplay
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Integrity ─────────────────────────────────")]
-        [Tooltip("Maksimalnaya tselostnost modulya.")]
+        [Header("Integrity")]
+        [Tooltip("Maximum module integrity.")]
         [SerializeField] private float maxIntegrity = 100f;
 
-        [Tooltip("Tekuschaya tselostnost modulya na starte.")]
+        [Tooltip("Starting module integrity.")]
         [SerializeField] private float currentIntegrity = 100f;
         [Tooltip("Optional immutable template that owns abandoned-module integrity authoring and VFX socket coordinates.")]
         [SerializeField] private BaseModuleTemplate moduleTemplate;
 
-        [Tooltip("Modul zatoplen na starte? Obychno false.")]
+        [Tooltip("Whether the module starts flooded. Usually false.")]
         [SerializeField] private bool isFlooded;
 
-        [Header("── Anchor / Unmoored Physics ──────────────────")]
+        [Header("Anchor / Unmoored Physics")]
         [Tooltip("Explicit authoring fallback for modules that must count as seafloor anchors in habitat traversal.")]
         [SerializeField] private bool isStructuralAnchor;
 
@@ -399,12 +399,12 @@ namespace Hecton8.Gameplay
         [Tooltip("How long each slow-tick gravity request remains authoritative on the player controller.")]
         [SerializeField, Min(0.1f)] private float localGravityHoldSeconds = DefaultLocalGravityHoldSeconds;
 
-        [Header("── Flood / Drain ─────────────────────────────")]
-        [Tooltip("Skolko sekund trebuetsya na polnuyu otkachku vody.")]
+        [Header("Flood / Drain")]
+        [Tooltip("Seconds required to fully drain the module.")]
         [SerializeField] private float drainDuration = 8f;
         [SerializeField] private float floodPumpEnergyCost = 65f;
 
-        [Tooltip("Skorost passivnogo vosstanovleniya tselostnosti (edinits/sek). 0 = otklyucheno.")]
+        [Tooltip("Passive integrity recovery rate in units per second. Zero disables it.")]
         [SerializeField] private float passiveRecoveryRate = 0f;
 
         [Tooltip("Skorost passivnoy degradatsii tselostnosti (edinits/sek). " +
@@ -414,8 +414,8 @@ namespace Hecton8.Gameplay
         [Tooltip("Mnozhitel degradatsii na glubine > 500m (davlenie na korpus).")]
         [SerializeField, UnityEngine.Range(1f, 5f)] private float depthDegradationMultiplier = 2f;
 
-        [Header("── Cascade Failures ──────────────────────────────")]
-        [Tooltip("Tekuschiy kaskadnyy otkaz modulya. None = shtatno, ostalnye trebuyut servisnogo vosstanovleniya.")]
+        [Header("Cascade Failures")]
+        [Tooltip("Current cascade failure. None means nominal; all other modes require service recovery.")]
         [SerializeField] private BaseModuleFailureMode failureMode;
         [Tooltip("Permanent integrity lost after each cascade failure.")]
         [SerializeField] private float repairWearPerCascade = 12f;
@@ -458,7 +458,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Szhigaemaya pozharom energiya kostyuma igroka vnutri modulya.")]
         [SerializeField] private float fireSuitEnergyDrainRate = 6f;
 
-        [Header("── Interior Zone (Dry Zone) ──────────────────")]
+        [Header("Interior Zone (Dry Zone)")]
         [Tooltip("BoxCollider (Trigger), ohvatyvayuschiy vnutrennee prostranstvo modulya. " +
                  "Obekty s BuoyancyObject vnutri etogo triggera ne ispytyvayut vodnyh sil, " +
                  "poka modul ne zatoplen. Naznach vruchnuyu ili sozday avtomaticheski.")]
@@ -492,13 +492,13 @@ namespace Hecton8.Gameplay
         [Tooltip("Toxicity hazard radius used by overgrown parasite spore rooms.")]
         private float parasiteSporeHazardRadius = 3.2f;
 
-        [Header("── Deconstruction ────────────────────────────")]
+        [Header("Deconstruction")]
         [Tooltip("Prefab mirovogo predmeta (HectonItem) dlya spavna resursov, " +
                  "kotorye ne pomestilis v inventar. " +
                  "Dolzhen imet HectonItem + BuoyancyObject + Rigidbody.")]
         [SerializeField] private GameObject worldItemPrefab;
 
-        [Header("── Visual References ─────────────────────────")]
+        [Header("Visual References")]
         [Tooltip("Obekt vody vnutri modulya. Aktiven, kogda modul zatoplen.")]
         [SerializeField] private GameObject waterVolume;
 
@@ -536,7 +536,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Optional camera/probe transform used to enable flooded screen-space distortion only while below the water plane.")]
         [SerializeField] private Transform floodDistortionProbe;
 
-        [Header("── Audio (optional) ──────────────────────────")]
+        [Header("Audio (optional)")]
         [SerializeField] private AudioSource audioSource;
         [SerializeField] private AudioClip leakLoop;
         [SerializeField] private AudioClip floodClip;
@@ -549,7 +549,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(0.01f)] private float oxygenScrubberHumPoweredPitch = 1f;
         [SerializeField, Min(0.01f)] private float oxygenScrubberHumFailPitch = 0.2f;
         [SerializeField, Min(0.1f)] private float oxygenScrubberHumFailFadeSeconds = 3f;
-        [Header("── Life Support ──────────────────────────────")]
+        [Header("Life Support")]
         [Tooltip("Oxygen refill rate (units per second) when player is inside,\n" +
                  "module is powered, and not flooded.\n" +
                  "15 = full O2 tank (~100 units) refilled in ~7 seconds.")]
@@ -578,7 +578,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float co2GenerationRate = 5f;
         [Tooltip("CO2 threshold beyond which power alone can no longer restore breathable reserve.")]
         [SerializeField] private float co2CriticalThreshold = 75f;
-        [Header("── Power Fallback ────────────────────────────")]
+        [Header("Power Fallback")]
         [Tooltip("Fallback power draw, esli BuildableData / ModuleMarker otsutstvuyut.")]
         [SerializeField] private float fallbackPowerRating = -10f;
 
@@ -586,7 +586,7 @@ namespace Hecton8.Gameplay
         [Range(0, 100)]
         [SerializeField] private int powerPriority = 50;
 
-        [Header("── Diagnostics ───────────────────────────────")]
+        [Header("Diagnostics")]
         [SerializeField] private bool _debugHasPower = true;
         [SerializeField] private bool _debugIsDraining;
         [SerializeField] private float _debugDrainProgress;

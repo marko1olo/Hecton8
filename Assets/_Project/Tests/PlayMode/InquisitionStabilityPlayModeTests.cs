@@ -349,22 +349,32 @@ namespace Hecton8.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator PhysicsDeterminism_FallingObjects_TimeScale1And4RestWithinAupTolerance()
+        public IEnumerator PhysicsDeterminism_FallingObjects_LocalDispatchBatch1And4RestWithinAupTolerance()
         {
-            Vector3[] slow = SimulateFallingObjectsAtTimeScale(1f, "determinism_timescale_1");
+            Vector3[] singleStep = SimulateFallingObjectsWithLocalDispatchBatch(1, "determinism_batch_1");
             yield return null;
-            Vector3[] fast = SimulateFallingObjectsAtTimeScale(4f, "determinism_timescale_4");
+            Vector3[] batched = SimulateFallingObjectsWithLocalDispatchBatch(4, "determinism_batch_4");
             yield return null;
 
-            Assert.AreEqual(slow.Length, fast.Length);
-            for (int i = 0; i < slow.Length; i++)
+            Assert.AreEqual(singleStep.Length, batched.Length);
+            for (int i = 0; i < singleStep.Length; i++)
             {
-                float deltaSq = (slow[i] - fast[i]).sqrMagnitude;
+                float deltaSq = (singleStep[i] - batched[i]).sqrMagnitude;
                 Assert.LessOrEqual(
                     deltaSq,
                     PhysicsRestToleranceMetersSq,
                     "Physics determinism drift exceeded 0.1m at object " + i.ToString(CultureInfo.InvariantCulture));
             }
+        }
+
+        [Test]
+        public void BotExpeditionSampleStride_IsExactlyOneCacheLine()
+        {
+            Assert.AreEqual(
+                BotController.ExpeditionSampleStrideBytes,
+                BotController.ResolvedExpeditionSampleStrideBytes,
+                "Bot expedition telemetry sample stride changed.");
+            Assert.AreEqual(64, BotController.ResolvedExpeditionSampleStrideBytes);
         }
 
         [Test]
@@ -533,16 +543,20 @@ namespace Hecton8.Tests.PlayMode
             return path;
         }
 
-        private static Vector3[] SimulateFallingObjectsAtTimeScale(float timeScale, string sceneName)
+        private static Vector3[] SimulateFallingObjectsWithLocalDispatchBatch(int fixedStepsPerDispatch, string sceneName)
         {
             const float fixedDeltaTime = 0.02f;
             const int simulationSteps = 250;
 
-            int fixedStepsPerDispatch = ResolveFixedStepBatchSize(timeScale);
-            return SimulateFallingObjects(fixedDeltaTime, simulationSteps, fixedStepsPerDispatch, sceneName);
+            int safeFixedStepsPerDispatch = SanitizeFixedStepsPerDispatch(fixedStepsPerDispatch);
+            return SimulateFallingObjectsInLocalPhysicsScene(
+                fixedDeltaTime,
+                simulationSteps,
+                safeFixedStepsPerDispatch,
+                sceneName);
         }
 
-        private static Vector3[] SimulateFallingObjects(float fixedDeltaTime, int steps, int fixedStepsPerDispatch, string sceneName)
+        private static Vector3[] SimulateFallingObjectsInLocalPhysicsScene(float fixedDeltaTime, int steps, int fixedStepsPerDispatch, string sceneName)
         {
             Scene scene = SceneManager.CreateScene(
                 sceneName,
@@ -575,21 +589,12 @@ namespace Hecton8.Tests.PlayMode
                 objects[i] = cube;
             }
 
-            UnityEngine.SimulationMode previousMode = UnityEngine.Physics.simulationMode;
-            UnityEngine.Physics.simulationMode = UnityEngine.SimulationMode.Script;
-            try
+            int step = 0;
+            while (step < steps)
             {
-                int step = 0;
-                while (step < steps)
-                {
-                    int endStep = math.min(step + fixedStepsPerDispatch, steps);
-                    for (; step < endStep; step++)
-                        physicsScene.Simulate(fixedDeltaTime);
-                }
-            }
-            finally
-            {
-                UnityEngine.Physics.simulationMode = previousMode;
+                int endStep = math.min(step + fixedStepsPerDispatch, steps);
+                for (; step < endStep; step++)
+                    physicsScene.Simulate(fixedDeltaTime);
             }
 
             Vector3[] results = new Vector3[AupBodyCount];
@@ -600,12 +605,12 @@ namespace Hecton8.Tests.PlayMode
             return results;
         }
 
-        private static int ResolveFixedStepBatchSize(float requestedTimeScale)
+        private static int SanitizeFixedStepsPerDispatch(int requestedSteps)
         {
-            if (!math.isfinite(requestedTimeScale) || requestedTimeScale <= 1f)
+            if (requestedSteps <= 1)
                 return 1;
 
-            return requestedTimeScale >= 4f ? 4 : 2;
+            return requestedSteps >= 4 ? 4 : requestedSteps;
         }
 
         private static int Index(int x, int y, int z, int sizeX, int sizeY)

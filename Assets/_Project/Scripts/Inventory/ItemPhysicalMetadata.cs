@@ -55,6 +55,7 @@ namespace Hecton8.Inventory
         public const ushort Rusted = 1 << 9;
         public const ushort CraftingLocked = 1 << 10;
         public const ushort Flammable = 1 << 11;
+        public const ushort Broken = 1 << 12;
     }
 
     /// <summary>

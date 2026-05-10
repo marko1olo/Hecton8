@@ -20,7 +20,6 @@ Shader "Hidden/Hecton8/StochasticSSR"
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
-        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareNormalsTexture.hlsl"
 
         CBUFFER_START(UnityPerMaterial)
             float4 _HectonSsrInputSize; // xy=input pixels, zw=input texel size
@@ -29,6 +28,7 @@ Shader "Hidden/Hecton8/StochasticSSR"
         CBUFFER_END
 
         TEXTURE2D_X(_BlitTexture);
+        TEXTURE2D_X(_HectonSsrMaskTex);
 
         struct Attributes
         {
@@ -67,16 +67,11 @@ Shader "Hidden/Hecton8/StochasticSSR"
             return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
         }
 
-        half4 FragComposite(Varyings input) : SV_Target
+        half4 FragMask(Varyings input) : SV_Target
         {
-            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
             float rawDepth = SampleSceneDepth(input.screenUV);
             if (ResolveRawDepthValidity(rawDepth) <= 0.5)
-                return sourceColor;
-
-            half3 normalWS = (half3)SampleSceneNormals(input.screenUV);
-            half horizonMask = saturate(1.0h - abs(normalWS.y));
-            horizonMask *= horizonMask;
+                return half4(0.0h, 0.0h, 0.0h, 1.0h);
 
             float linearEyeDepth = LinearEyeDepth(rawDepth, _ZBufferParams);
             half depthMask = (half)saturate(1.0 - linearEyeDepth * rcp(max(_HectonSsrParamsA.y, 1.0)));
@@ -86,17 +81,36 @@ Shader "Hidden/Hecton8/StochasticSSR"
 
             half noise = (half)ResolveInterleavedNoise(input.screenUV);
             half noiseMask = lerp(1.0h, lerp(0.72h, 1.0h, noise), saturate((half)_HectonSsrParamsB.x));
+            half screenSheenMask = (half)saturate((input.screenUV.y - 0.36) * 1.85);
+            half reflectionWeight = saturate((half)_HectonSsrParamsA.z * screenSheenMask * depthMask * edgeMask * noiseMask);
+            return half4(reflectionWeight, reflectionWeight, reflectionWeight, 1.0h);
+        }
 
-            float2 normalOffset = float2(normalWS.x, normalWS.z);
-            float2 jitterOffset = float2(noise - 0.5h, 0.5h - noise) * 0.25h;
-            float2 reflectionUV = saturate(input.screenUV + (normalOffset + jitterOffset) * (_HectonSsrParamsA.x * _HectonSsrInputSize.zw));
+        half4 FragComposite(Varyings input) : SV_Target
+        {
+            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
+            half reflectionWeight = SAMPLE_TEXTURE2D_X(_HectonSsrMaskTex, sampler_LinearClamp, input.screenUV).r;
+            if (reflectionWeight <= 0.0001h)
+                return sourceColor;
+
+            half staticSeed = reflectionWeight - 0.5h;
+            float2 staticOffset = float2(staticSeed, -staticSeed) * 0.25h;
+            float2 reflectionUV = saturate(input.screenUV + (float2(0.0, -1.0) + staticOffset) * (_HectonSsrParamsA.x * _HectonSsrInputSize.zw));
             half3 reflectedColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, reflectionUV).rgb;
 
-            half reflectionWeight = saturate((half)_HectonSsrParamsA.z * horizonMask * depthMask * edgeMask * noiseMask);
             sourceColor.rgb = lerp(sourceColor.rgb, reflectedColor, reflectionWeight);
             return sourceColor;
         }
         ENDHLSL
+
+        Pass
+        {
+            Name "Mask"
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment FragMask
+            ENDHLSL
+        }
 
         Pass
         {

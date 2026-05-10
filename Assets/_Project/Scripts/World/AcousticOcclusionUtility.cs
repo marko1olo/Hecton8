@@ -552,25 +552,25 @@ namespace Hecton8.World
             ref int occludingHitCount)
         {
             Vector3 segment = listenerPosition - sourcePosition;
-            float segmentLength = ApproximateMagnitude3D((float3)segment);
-            if (segmentLength < FloraScatteringMinimumSegmentMeters)
+            if (math.lengthsq((float3)segment) < FloraScatteringMinimumSegmentMeters * FloraScatteringMinimumSegmentMeters)
                 return;
 
             HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (vegetationBridge == null)
                 return;
 
-            Vector3 direction = segment / segmentLength;
             int floraIntersections = 0;
+            float sampleTStep = math.rcp((float)(FloraScatteringSampleCount + 1));
+            float scatteringRangeInv = math.rcp(math.max(0.0001f, 1f - FloraScatteringDensityThreshold));
             for (int sampleIndex = 1; sampleIndex <= FloraScatteringSampleCount; sampleIndex++)
             {
-                float sampleT = sampleIndex / (float)(FloraScatteringSampleCount + 1);
-                Vector3 samplePosition = sourcePosition + direction * (segmentLength * sampleT);
+                float sampleT = sampleIndex * sampleTStep;
+                Vector3 samplePosition = sourcePosition + segment * sampleT;
                 float density = math.saturate(vegetationBridge.SampleBiomassDensityImmediate(samplePosition, KelpDensityTypeMask));
                 if (density <= FloraScatteringDensityThreshold)
                     continue;
 
-                float scattering01 = math.saturate((density - FloraScatteringDensityThreshold) / math.max(0.0001f, 1f - FloraScatteringDensityThreshold));
+                float scattering01 = math.saturate((density - FloraScatteringDensityThreshold) * scatteringRangeInv);
                 transmission01 *= math.lerp(0.9f, 0.6f, scattering01);
                 lowPassCutoffHz = math.lerp(lowPassCutoffHz, FloraScatteringLowPassFloorHertz, scattering01 * 0.72f);
                 floraIntersections++;

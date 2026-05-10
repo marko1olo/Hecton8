@@ -37,6 +37,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private int maxRecentEntries = 10;
         [SerializeField] private bool verboseLogging;
 
+        private const string VerboseOperationRecordedMessage = "[FieldOps] Operation recorded.";
         private readonly List<FieldOperationRecord> _recent = new List<FieldOperationRecord>(12);
         private bool _runtimeRegistered;
         private bool _saveRegistered;
@@ -278,7 +279,7 @@ namespace Hecton8.Gameplay
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (verboseLogging)
-                Debug.Log($"[FieldOps] {record.source} | {record.severity} | {record.title} | {record.summary}");
+                Debug.Log(VerboseOperationRecordedMessage);
 #endif
 
             LogChanged?.Invoke();

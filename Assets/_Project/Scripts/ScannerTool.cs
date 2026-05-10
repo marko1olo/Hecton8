@@ -499,6 +499,7 @@ namespace Hecton8.Gameplay
         private FixedCharBuffer _scanHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — scanner result HUD staging buffer — owner: ScannerTool
         private FixedCharBuffer _scanLogTitleBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] — scanner operation log title staging buffer — owner: ScannerTool
         private FixedCharBuffer _scanLogSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — scanner operation log summary staging buffer — owner: ScannerTool
+        private const float DegreesToRadians = 0.01745329252f;
         private string _cachedOperationalSummaryString = string.Empty;
         private string _cachedOperationalDirectiveString = string.Empty;
         private int _summaryStringCacheBucket = int.MinValue;
@@ -2471,10 +2472,19 @@ namespace Hecton8.Gameplay
                 return _cachedFocusedConeTanSq;
             }
 
-            float coneTan = math.tan(math.radians(clampedConeAngle));
+            float coneTan = ApproximateTanPositive(clampedConeAngle * DegreesToRadians);
             _cachedFocusedConeAngleDegrees = clampedConeAngle;
             _cachedFocusedConeTanSq = coneTan * coneTan;
             return _cachedFocusedConeTanSq;
+        }
+
+        private static float ApproximateTanPositive(float radians)
+        {
+            float x = math.clamp(radians, 0f, 1.4f);
+            float x2 = x * x;
+            float numerator = 15f - x2;
+            float denominator = math.max(0.0001f, 15f - (6f * x2));
+            return x * numerator * math.rcp(denominator);
         }
 
         private static void ResolveScientificSpatialComponents(

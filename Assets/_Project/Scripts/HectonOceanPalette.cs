@@ -1,14 +1,14 @@
 // ============================================================================
-// HECTON-8 — HectonOceanPalette.cs
-// ScriptableObject: kollektsiya biomnyh profiley podvodnoy sredy.
+// HECTON-8 - HectonOceanPalette.cs
+// ScriptableObject containing underwater biome visual profiles.
 //
-// Massiv profiley indeksirovan po MapMagic splat layer index.
-// Element [0] = pervyy vyhod Biomes Set nody MapMagic.
+// Profile array index matches the MapMagic splat layer index.
+// Element [0] maps to the first Biomes Set output.
 //
-// HectonUnderwaterVisuals poluchaet biomeIndex cherez MapMagicBiomeEvents.
-// i vybiraet tselevoy profil iz etogo massiva.
+// HectonUnderwaterVisuals receives biomeIndex through MapMagicBiomeEvents and
+// selects the target profile from this array.
 //
-// LORNYY PORYaDOK:
+// Lore order:
 //   [0] = Shallow Grave     [3] = The Drop
 //   [1] = Golden Zone       [4] = Abyssal Plain
 //   [2] = Industrial Shelf  [5] = The Wound
@@ -24,16 +24,16 @@ namespace Hecton8.Environment
         order = 101)]
     public sealed class HectonOceanPalette : ScriptableObject
     {
-        [Header("═══ BIOME PROFILES ═══")]
-        [Tooltip("Massiv biomnyh profiley.\n" +
-                 "Indeks = MapMagic splat layer index.\n" +
-                 "[0] = Shallow Grave, [1] = Golden Zone, i t.d.")]
+        [Header("Biome Profiles")]
+        [Tooltip("Underwater biome profiles.\n" +
+                 "Index = MapMagic splat layer index.\n" +
+                 "[0] = Shallow Grave, [1] = Golden Zone, etc.")]
         [SerializeField]
         private HectonBiomeProfile[] biomeProfiles;
 
-        [Header("═══ SURFACE DEFAULTS ═══")]
-        [Tooltip("Profil dlya poverhnosti (nad vodoy).\n" +
-                 "Sbrasyvaet vse podvodnye effekty k dnevnym znacheniyam.")]
+        [Header("Surface Defaults")]
+        [Tooltip("Above-water fallback profile.\n" +
+                 "Resets underwater effects to daylight values.")]
         [SerializeField]
         private HectonBiomeProfile surfaceProfile;
 
@@ -65,19 +65,22 @@ namespace Hecton8.Environment
                 error = "Biome profiles array is empty.";
                 return false;
             }
+
             for (int i = 0; i < biomeProfiles.Length; i++)
             {
                 if (biomeProfiles[i] == null)
                 {
-                    error = $"Biome profile at index [{i}] is null.";
+                    error = "Biome profile slot is null.";
                     return false;
                 }
             }
+
             if (surfaceProfile == null)
             {
                 error = "Surface profile is not assigned.";
                 return false;
             }
+
             error = null;
             return true;
         }

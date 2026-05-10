@@ -49,11 +49,11 @@ namespace Hecton8.Gameplay
         [SerializeField] private string defaultLabelPrefix = "BEACON";
         [SerializeField] private bool verboseLogging;
 
-        [Header("── Prefabs ───────────────────────────────────")]
+        [Header("Prefabs")]
         [Tooltip("Prefab for becons spawned from save data or as fallback. Should have BeaconRuntime component.")]
         [SerializeField] private GameObject beaconPrefab;
 
-        private readonly List<BeaconRuntime> _activeBeacons = new List<BeaconRuntime>(32); // COLD ALLOC: List<BeaconRuntime>[32] — active beacon runtime registry — owner: BeaconNetworkSystem
+        private readonly List<BeaconRuntime> _activeBeacons = new List<BeaconRuntime>(32); // COLD ALLOC: List<BeaconRuntime>[32] - active beacon runtime registry - owner: BeaconNetworkSystem
         private int _nextSequence = 1;
         private bool _serviceRegistered;
 
@@ -301,7 +301,7 @@ namespace Hecton8.Gameplay
                 if (string.IsNullOrWhiteSpace(entry.label))
                     continue;
 
-                // ── Zero-GC Spawn from Pool ──
+                // Zero-GC spawn from pool.
                 BeaconRuntime runtime = SpawnRuntimeBeacon(
                     beaconPrefab, 
                     entry.GetPosition(),
@@ -372,8 +372,10 @@ namespace Hecton8.Gameplay
                 }
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (verboseLogging)
-                LogBeaconDeployed(label, position);
+                LogBeaconDeployed();
+#endif
 
             NetworkChanged?.Invoke();
             return true;
@@ -381,10 +383,10 @@ namespace Hecton8.Gameplay
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-        private static void LogBeaconDeployed(string label, Vector3 position)
+        private static void LogBeaconDeployed()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[BeaconNetwork] Deployed {label} at {position}");
+            Debug.Log("[BeaconNetwork] Beacon deployed.");
 #endif
         }
 
@@ -509,7 +511,7 @@ namespace Hecton8.Gameplay
                 {
                     instance.TryGetComponent(out BeaconRuntime pooled);
                     if (pooled == null)
-                        pooled = instance.AddComponent<BeaconRuntime>(); // COLD ALLOC: BeaconRuntime[1] — prefab missing runtime component fallback — owner: BeaconNetworkSystem
+                        pooled = instance.AddComponent<BeaconRuntime>(); // COLD ALLOC: BeaconRuntime[1] - prefab missing runtime component fallback - owner: BeaconNetworkSystem
                     return pooled;
                 }
             }
@@ -524,10 +526,10 @@ namespace Hecton8.Gameplay
             float lightRange,
             Vector3 fallbackScale)
         {
-            GameObject beaconRoot = new GameObject("Beacon_Runtime"); // COLD ALLOC: GameObject[1] — fallback beacon root when prefab/pool is unavailable — owner: BeaconNetworkSystem
+            GameObject beaconRoot = new GameObject("Beacon_Runtime"); // COLD ALLOC: GameObject[1] - fallback beacon root when prefab/pool is unavailable - owner: BeaconNetworkSystem
             beaconRoot.transform.SetPositionAndRotation(position, rotation);
 
-            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube); // COLD ALLOC: GameObject[1] — fallback beacon body primitive when prefab/pool is unavailable — owner: BeaconNetworkSystem
+            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube); // COLD ALLOC: GameObject[1] - fallback beacon body primitive when prefab/pool is unavailable - owner: BeaconNetworkSystem
             body.name = "BeaconBody";
             body.transform.SetParent(beaconRoot.transform, false);
             body.transform.localScale = fallbackScale;
@@ -545,13 +547,13 @@ namespace Hecton8.Gameplay
                 renderer.sharedMaterial = fallbackMaterial;
             }
 
-            Light lightComp = beaconRoot.AddComponent<Light>(); // COLD ALLOC: Light[1] — fallback beacon point light when prefab/pool is unavailable — owner: BeaconNetworkSystem
+            Light lightComp = beaconRoot.AddComponent<Light>(); // COLD ALLOC: Light[1] - fallback beacon point light when prefab/pool is unavailable - owner: BeaconNetworkSystem
             lightComp.type = LightType.Point;
             lightComp.range = lightRange;
             lightComp.intensity = 1.6f;
             lightComp.color = color;
 
-            BeaconRuntime runtime = beaconRoot.AddComponent<BeaconRuntime>(); // COLD ALLOC: BeaconRuntime[1] — fallback beacon runtime when prefab/pool is unavailable — owner: BeaconNetworkSystem
+            BeaconRuntime runtime = beaconRoot.AddComponent<BeaconRuntime>(); // COLD ALLOC: BeaconRuntime[1] - fallback beacon runtime when prefab/pool is unavailable - owner: BeaconNetworkSystem
             runtime.SetOwnedFallbackMaterial(fallbackMaterial);
             return runtime;
         }
@@ -613,7 +615,7 @@ namespace Hecton8.Gameplay
             string prefix = string.IsNullOrWhiteSpace(defaultLabelPrefix)
                 ? ResolveLocalized(LocalizationKeys.BEACON_PREFIX, "BEACON")
                 : CachedToUpperInvariant(defaultLabelPrefix.Trim());
-            string label = $"{prefix}-{_nextSequence:00}";
+            string label = CreateBeaconLabel(prefix, _nextSequence);
             _nextSequence++;
             return label;
         }
@@ -626,32 +628,77 @@ namespace Hecton8.Gameplay
                 : fallback;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  ZERO-GC STRING CACHING
-        // ══════════════════════════════════════════════════════════
+        // ZERO-GC STRING CACHING
 
-        private static readonly string[] _cachedUpperStrings = new string[16]; // COLD ALLOC: string[16] — upper-case label cache slots — owner: BeaconNetworkSystem
+        private static readonly string[] _cachedUpperStrings = new string[16]; // COLD ALLOC: string[16] - upper-case label cache slots - owner: BeaconNetworkSystem
 
         /// <summary>
-        /// Keshirovannyy ToUpperInvariant dlya izbezhaniya povtornyh allokatsiy strok.
-        /// Hranit do 16 poslednih preobrazovaniy dlya povtornogo ispolzovaniya.
+        /// Caches uppercase label variants to avoid repeated string allocations.
+        /// Keeps the last 16 transformed labels for reuse.
         /// </summary>
         private static string CachedToUpperInvariant(string input)
         {
             if (string.IsNullOrEmpty(input))
                 return input;
 
-            // Prostoy hash dlya keshirovaniya (ne kriptograficheskiy)
-            int hash = input.GetHashCode() & 0xF; // Maska dlya indeksa 0-15
+            int hash = input.GetHashCode() & 0xF;
 
             string cached = _cachedUpperStrings[hash];
             if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
                 return cached;
 
-            // Sozdaem novuyu stroku i keshiruem
             string upper = input.ToUpperInvariant();
             _cachedUpperStrings[hash] = upper;
             return upper;
+        }
+
+        private readonly struct BeaconLabelState
+        {
+            public readonly string Prefix;
+            public readonly int Sequence;
+
+            public BeaconLabelState(string prefix, int sequence)
+            {
+                Prefix = prefix;
+                Sequence = sequence;
+            }
+        }
+
+        private static string CreateBeaconLabel(string prefix, int sequence)
+        {
+            int safeSequence = math.max(0, sequence);
+            int digitCount = safeSequence < 100 ? 2 : CountDecimalDigits(safeSequence);
+            int prefixLength = prefix != null ? prefix.Length : 0;
+            return string.Create(prefixLength + 1 + digitCount, new BeaconLabelState(prefix, safeSequence), static (buffer, state) =>
+            {
+                string statePrefix = state.Prefix;
+                int statePrefixLength = statePrefix != null ? statePrefix.Length : 0;
+                for (int i = 0; i < statePrefixLength; i++)
+                    buffer[i] = statePrefix[i];
+
+                buffer[statePrefixLength] = '-';
+                int write = buffer.Length - 1;
+                int remaining = state.Sequence;
+                do
+                {
+                    buffer[write--] = (char)('0' + remaining % 10);
+                    remaining /= 10;
+                }
+                while (write > statePrefixLength);
+            });
+        }
+
+        private static int CountDecimalDigits(int value)
+        {
+            int digits = 1;
+            int remaining = math.max(0, value);
+            while (remaining >= 10)
+            {
+                remaining /= 10;
+                digits++;
+            }
+
+            return digits;
         }
     }
 }

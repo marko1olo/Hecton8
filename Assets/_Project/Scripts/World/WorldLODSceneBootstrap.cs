@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — WorldLODSceneBootstrap.cs
+// HECTON-8 - WorldLODSceneBootstrap.cs
 // Scene-level integration bridge for LODSystemManager.
 // Registers authored LODGroup components present in the active scene.
 // ============================================================================
@@ -18,7 +18,7 @@ namespace Hecton8.World
     [RequireComponent(typeof(LODSystemManager))]
     public sealed class WorldLODSceneBootstrap : MonoBehaviour
     {
-        [Header("── Scene Registration ──────────────────")]
+        [Header("Scene Registration")]
         [SerializeField, Tooltip("Register scene LODGroups automatically on Start.")]
         private bool _autoRegisterOnStart = true;
 
@@ -33,11 +33,11 @@ namespace Hecton8.World
         private string _authoringScenePath;
         private string _authoringSceneName;
 
-        // COLD ALLOC: List<LODGroup>[256] — tracked scene registrations for clean unregister — owner: WorldLODSceneBootstrap
+        // COLD ALLOC: List<LODGroup>[256] - tracked scene registrations for clean unregister - owner: WorldLODSceneBootstrap
         private readonly List<LODGroup> _trackedLODGroups = new List<LODGroup>(256);
-        // COLD ALLOC: List<GameObject>[128] — root-object scan buffer for target scene traversal — owner: WorldLODSceneBootstrap
+        // COLD ALLOC: List<GameObject>[128] - root-object scan buffer for target scene traversal - owner: WorldLODSceneBootstrap
         private readonly List<GameObject> _sceneRootBuffer = new List<GameObject>(128);
-        // COLD ALLOC: List<LODGroup>[512] — reusable scene scan buffer to avoid global FindObjects allocations — owner: WorldLODSceneBootstrap
+        // COLD ALLOC: List<LODGroup>[512] - reusable scene scan buffer to avoid global FindObjects allocations - owner: WorldLODSceneBootstrap
         private readonly List<LODGroup> _sceneLODGroupBuffer = new List<LODGroup>(512);
 
         /// <summary>

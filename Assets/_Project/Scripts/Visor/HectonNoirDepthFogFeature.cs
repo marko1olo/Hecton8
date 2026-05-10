@@ -92,8 +92,6 @@ namespace Hecton8.Visor
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
-
                 if (!Application.isPlaying || _settings == null || _material == null)
                     return;
 
@@ -132,7 +130,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(destinationTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
                     {
@@ -140,7 +137,6 @@ namespace Hecton8.Visor
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
                         const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
 
-                        cmd.SetGlobalFloat(ShaderConstants.ActiveId, 1f);
                         Blitter.BlitCameraTexture(cmd, data.Source, data.Destination, LoadAction, StoreAction, data.Material, 0);
                     });
                 }
@@ -199,7 +195,6 @@ namespace Hecton8.Visor
             internal static readonly int AbyssColorId = Shader.PropertyToID("_HectonNoirDepthFogAbyssColor");
             internal static readonly int ParamsAId = Shader.PropertyToID("_HectonNoirDepthFogParamsA");
             internal static readonly int ParamsBId = Shader.PropertyToID("_HectonNoirDepthFogParamsB");
-            internal static readonly int ActiveId = Shader.PropertyToID("_HectonNoirDepthFogActive");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -224,22 +219,13 @@ namespace Hecton8.Visor
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             if (!Application.isPlaying)
-            {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
                 return;
-            }
 
             if (settings == null || _pass == null || _material == null)
-            {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
                 return;
-            }
 
             if (IsUnsupportedCameraType(renderingData.cameraData.cameraType))
-            {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
                 return;
-            }
 
             _pass.Setup(settings, _material);
             renderer.EnqueuePass(_pass);

@@ -45,8 +45,13 @@ namespace Hecton8.EditorValidation
                 for (int typeIndex = 0; typeIndex < types.Length; typeIndex++)
                 {
                     Type type = types[typeIndex];
-                    if (type == null || type.TypeInitializer == null || !ImplementsSystemContract(type))
+                    if (type == null ||
+                        type.TypeInitializer == null ||
+                        HasBeforeFieldInit(type) ||
+                        !ImplementsSystemContract(type))
+                    {
                         continue;
+                    }
 
                     failures ??= new StringBuilder(512);
                     failures.Append(type.FullName).Append('\n');
@@ -75,6 +80,11 @@ namespace Hecton8.EditorValidation
             }
 
             return false;
+        }
+
+        private static bool HasBeforeFieldInit(Type type)
+        {
+            return (type.Attributes & TypeAttributes.BeforeFieldInit) != 0;
         }
     }
 }

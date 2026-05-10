@@ -35,9 +35,9 @@ namespace Hecton8.Editor
         };
 
         private const string ReimportGuardPrefix = "HectonAudioPostprocessor.ReimportGuard.";
-        private const float ShortSfxThresholdSeconds = 0.5f;
         private const int TargetSampleRateHertz = 22050;
         private const int TargetMusicSampleRateHertz = 44100;
+        private const float ShortSfxThresholdSeconds = 0.5f;
         private const float TargetVorbisQuality = 0.7f;
 
         [MenuItem("Hecton/Validation/Asset Pipeline/Reimport Managed SFX", priority = 183)]
@@ -277,16 +277,11 @@ namespace Hecton8.Editor
                 changed = true;
             }
 
-            if (clipLengthSeconds >= 0f)
+            AudioClipLoadType targetLoadType = ResolveSfxLoadType(clipLengthSeconds);
+            if (sampleSettings.loadType != targetLoadType)
             {
-                AudioClipLoadType desiredLoadType = clipLengthSeconds < ShortSfxThresholdSeconds
-                    ? AudioClipLoadType.DecompressOnLoad
-                    : AudioClipLoadType.CompressedInMemory;
-                if (sampleSettings.loadType != desiredLoadType)
-                {
-                    sampleSettings.loadType = desiredLoadType;
-                    changed = true;
-                }
+                sampleSettings.loadType = targetLoadType;
+                changed = true;
             }
 
             if (changed)
@@ -345,10 +340,25 @@ namespace Hecton8.Editor
                 return false;
 
             AudioImporterSampleSettings sampleSettings = importer.defaultSampleSettings;
+            AudioClipLoadType targetLoadType = ResolveSfxLoadType(ResolveClipLengthSeconds(importer));
             return importer.forceToMono &&
                    sampleSettings.compressionFormat == AudioCompressionFormat.ADPCM &&
+                   sampleSettings.loadType == targetLoadType &&
                    sampleSettings.sampleRateSetting == AudioSampleRateSetting.OverrideSampleRate &&
                    sampleSettings.sampleRateOverride == TargetSampleRateHertz;
+        }
+
+        private static AudioClipLoadType ResolveSfxLoadType(float clipLengthSeconds)
+        {
+            return clipLengthSeconds >= 0f && clipLengthSeconds < ShortSfxThresholdSeconds
+                ? AudioClipLoadType.DecompressOnLoad
+                : AudioClipLoadType.CompressedInMemory;
+        }
+
+        private static float ResolveClipLengthSeconds(AudioImporter importer)
+        {
+            AudioClip clip = importer != null ? AssetDatabase.LoadAssetAtPath<AudioClip>(importer.assetPath) : null;
+            return clip != null ? clip.length : -1f;
         }
 
         private static bool ImporterMatchesManagedAmbientPolicy(AudioImporter importer)

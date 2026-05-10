@@ -1,5 +1,5 @@
 // SG_SkyboxBlend.shader
-// Sheyder skayboksa s blendom mezhdu dnevnym i nochnym kubmapom + zvezdy
+// Skybox shader blending between day and night cubemaps with stars.
 
 Shader "Hecton/SkyboxBlend"
 {
@@ -68,7 +68,7 @@ Shader "Hecton/SkyboxBlend"
             Varyings vert(Attributes input)
             {
                 Varyings output;
-                // Skybox: pozitsiya bez translyatsii
+                // Skybox position without translation.
                 float3 posWS = TransformObjectToWorld(input.positionOS.xyz);
                 output.positionCS = TransformWorldToHClip(posWS);
                 output.texcoord = input.positionOS.xyz;
@@ -95,26 +95,24 @@ Shader "Hecton/SkyboxBlend"
 
             float4 frag(Varyings input) : SV_Target
             {
-                float3 dir = normalize(input.texcoord);
+                float3 dir = input.texcoord;
 
                 float4 dayColor = SAMPLE_TEXTURECUBE(_DayCubemap, sampler_DayCubemap, dir);
                 float4 nightColor = SAMPLE_TEXTURECUBE(_NightCubemap, sampler_NightCubemap, dir);
 
-                // Tintiruem
+                // Apply material tint.
                 dayColor.rgb *= _DayTint.rgb;
                 nightColor.rgb *= _NightTint.rgb;
 
-                // Zvezdy v nochnom kubmape masshtabiruyutsya _StarIntensity
-                // Predpolagaem chto nochnoy kubmap soderzhit zvezdy v rgb
+                // The night cubemap already carries star RGB.
                 nightColor.rgb *= _StarIntensity;
 
-                // Blend
                 float blend = saturate(_Blend);
-                blend = blend * blend * (3.0 - 2.0 * blend); // smoothstep
+                blend *= blend;
 
                 float3 finalColor = lerp(dayColor.rgb, nightColor.rgb, blend);
 
-                // Dobavlyaem minimalnyy ambient k nochi chtoby ne bylo pitch black
+                // Keep the night side above absolute black.
                 float3 nightAmbient = float3(0.005, 0.005, 0.012) * blend;
                 finalColor += nightAmbient;
                 finalColor = ApplyFreezeFrameDither(finalColor, input.positionCS.xy);

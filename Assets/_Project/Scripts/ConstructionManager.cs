@@ -1,25 +1,24 @@
 // ============================================================================
-// HECTON-8 â€” ConstructionManager.cs
-// ÐœÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð¿Ð¾ÑÑ‚Ñ€Ð¾ÐµÐ½Ð½Ñ‹Ñ… Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ Ð±Ð°Ð·Ñ‹.
+// HECTON-8 - ConstructionManager.cs
+// Runtime owner for placed base modules.
 //
-// GlobalRegistry service, ISaveable (Priority 90 â€” Ð¿Ð¾ÑÐ»ÐµÐ´Ð½Ð¸Ð¹ Ð¿Ñ€Ð¸ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐµ).
+// GlobalRegistry service, ISaveable priority 90.
 //
-// Ð’ÐµÐ´Ñ‘Ñ‚ Ñ€ÐµÐµÑÑ‚Ñ€ Ð²ÑÐµÑ… Ð¿Ð¾ÑÑ‚Ñ€Ð¾ÐµÐ½Ð½Ñ‹Ñ… Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹. ÐŸÑ€Ð¸ ÑÐ¾Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¸Ð¸ Ð·Ð°Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÑ‚
-// ID + Ñ‚Ñ€Ð°Ð½ÑÑ„Ð¾Ñ€Ð¼ + Ð´Ð¸Ð½Ð°Ð¼Ð¸Ñ‡ÐµÑÐºÐ¾Ðµ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ (integrity, isFlooded)
-// ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ Ð¼Ð¾Ð´ÑƒÐ»Ñ. ÐŸÑ€Ð¸ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐµ â€” ÑƒÐ´Ð°Ð»ÑÐµÑ‚ ÑÑ‚Ð°Ñ€Ñ‹Ðµ Ñ‡ÐµÑ€ÐµÐ· Ð¿ÑƒÐ» Ð¸
-// ÑÐ¿Ð°Ð²Ð½Ð¸Ñ‚ Ð½Ð¾Ð²Ñ‹Ðµ Ð¸Ð· ÑÐµÐ¹Ð²Ð° Ñ Ð²Ð¾ÑÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸ÐµÐ¼ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ñ.
+// Owns the registry of built modules. Save writes prefab ID, transform, and
+// dynamic module state. Load removes old modules through the pool and respawns
+// saved modules with restored state.
 //
-// ZERO GC Ð² Ñ€Ð°Ð½Ñ‚Ð°Ð¹Ð¼Ðµ:
-//   â€¢ Register/Unregister: O(1) Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ°, no LINQ.
-//   â€¢ List<GameObject> pre-allocated Ñ Ð·Ð°Ð¿Ð°ÑÐ¾Ð¼.
-//   â€¢ Swap-remove Ð´Ð»Ñ O(1) ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ñ.
-//   â€¢ PopulateSaveData: for-Ñ†Ð¸ÐºÐ»Ñ‹, TryGetComponent.
+// Runtime zero-GC contract:
+// - Register/Unregister: O(1) duplicate check, no LINQ.
+// - List<GameObject> is preallocated with explicit capacity.
+// - Swap-remove handles O(1) removal.
+// - PopulateSaveData uses for-loops and TryGetComponent.
 //
-// Ð˜ÐÐ¢Ð•Ð“Ð ÐÐ¦Ð˜Ð¯:
-//   â€¢ PlayerBuilder Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ RegisterModule() Ð¿Ð¾ÑÐ»Ðµ Ñ€Ð°Ð·Ð¼ÐµÑ‰ÐµÐ½Ð¸Ñ.
-//   â€¢ ClearAllModules() Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð² LoadFromSaveData Ð¿ÐµÑ€ÐµÐ´ Ñ€ÐµÑÐ¿Ð°Ð²Ð½Ð¾Ð¼.
-//   â€¢ ObjectPoolManager Ð´Ð»Ñ Spawn/Despawn Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹.
-//   â€¢ BaseModule: integrity Ð¸ isFlooded ÑÐ¾Ñ…Ñ€Ð°Ð½ÑÑŽÑ‚ÑÑ/Ð²Ð¾ÑÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÑŽÑ‚ÑÑ Ð·Ð´ÐµÑÑŒ.
+// Integration:
+// - PlayerBuilder calls RegisterModule() after successful placement.
+// - LoadFromSaveData calls ClearAllModules() before respawn.
+// - ObjectPoolManager owns Spawn/Despawn for modules.
+// - BaseModule integrity and flood state are persisted here.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -48,49 +47,39 @@ namespace Hecton8.Construction
         {
             ActiveRuntimeInstance = null;
         }
+        // SERVICE STATE
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  SERVICE STATE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // INSPECTOR
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  INSPECTOR
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-        [Header("â”€â”€ Catalog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
-        [Tooltip("ÐšÐ°Ñ‚Ð°Ð»Ð¾Ð³ Ð²ÑÐµÑ… ÑÑ‚Ñ€Ð¾Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ñ… Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹. " +
-                 "ÐÑƒÐ¶ÐµÐ½ Ð´Ð»Ñ Ð¿Ð¾Ð¸ÑÐºÐ° Ð¿Ñ€ÐµÑ„Ð°Ð±Ð¾Ð² Ð¿Ð¾ ID Ð¿Ñ€Ð¸ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐµ.")]
+        [Header("Catalog")]
+        [Tooltip("Catalog of buildable base modules. Used to resolve prefabs by ID during load.")]
         [SerializeField] private ModuleCatalog catalog;
 
-        [Header("â”€â”€ Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
-        [Tooltip("ÐÐ°Ñ‡Ð°Ð»ÑŒÐ½Ð°Ñ Ñ‘Ð¼ÐºÐ¾ÑÑ‚ÑŒ ÑÐ¿Ð¸ÑÐºÐ° Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹. " +
-                 "Ð£Ð²ÐµÐ»Ð¸Ñ‡ÑŒ Ð´Ð»Ñ Ð±Ð¾Ð»ÑŒÑˆÐ¸Ñ… Ð±Ð°Ð·.")]
+        [Header("Settings")]
+        [Tooltip("Initial capacity for the placed-module registry. Increase for larger bases.")]
         [SerializeField] private int initialCapacity = 64;
 
         [Header("Ambient Accidents")]
-        [Tooltip("Ð Ð°Ð·Ñ€ÐµÑˆÐ°ÐµÑ‚ Ñ€ÐµÐ´ÐºÐ¸Ðµ ÑÐµÑ€Ð²Ð¸ÑÐ½Ñ‹Ðµ Ð°Ð²Ð°Ñ€Ð¸Ð¸ Ð½Ð° ÑƒÐ¶Ðµ Ñ€Ð°Ð·Ð¼ÐµÑ‰Ñ‘Ð½Ð½Ñ‹Ñ… Ð¼Ð¾Ð´ÑƒÐ»ÑÑ… Ð±Ð°Ð·Ñ‹.")]
+        [Tooltip("Allows rare cold-path service accidents on already placed base modules.")]
         [SerializeField] private bool enableAmbientAccidents = true;
-        [Tooltip("Ð˜Ð½Ñ‚ÐµÑ€Ð²Ð°Ð» Ð¼ÐµÐ¶Ð´Ñƒ cold-path Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ°Ð¼Ð¸ Ð½Ð° ÑÐ»ÑƒÑ‡Ð°Ð¹Ð½ÑƒÑŽ ÑÐµÑ€Ð²Ð¸ÑÐ½ÑƒÑŽ Ð°Ð²Ð°Ñ€Ð¸ÑŽ.")]
+        [Tooltip("Interval between cold-path checks for ambient service accidents.")]
         [SerializeField] private float ambientAccidentCheckInterval = 90f;
-        [Tooltip("Ð‘Ð°Ð·Ð¾Ð²Ñ‹Ð¹ ÑˆÐ°Ð½Ñ Ð°Ð²Ð°Ñ€Ð¸Ð¸ Ð½Ð° Ð¾Ð´Ð½Ñƒ cold-path Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÑƒ. Ð¤Ð¸Ð½Ð°Ð»ÑŒÐ½Ñ‹Ð¹ ÑˆÐ°Ð½Ñ ÑƒÐ¼Ð½Ð¾Ð¶Ð°ÐµÑ‚ÑÑ Ð½Ð° risk score ÐºÐ°Ð½Ð´Ð¸Ð´Ð°Ñ‚Ð°.")]
+        [Tooltip("Base accident chance per cold-path check. Final chance is multiplied by candidate risk score.")]
         [SerializeField, Range(0f, 1f)] private float ambientAccidentBaseChance = 0.25f;
-        [Tooltip("ÐœÐ¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ñ‹Ð¹ risk score, Ð¿Ñ€Ð¸ ÐºÐ¾Ñ‚Ð¾Ñ€Ð¾Ð¼ Ð¼Ð¾Ð´ÑƒÐ»ÑŒ ÑÑ‡Ð¸Ñ‚Ð°ÐµÑ‚ÑÑ Ð°Ð²Ð°Ñ€Ð¸Ð¹Ð½Ñ‹Ð¼ ÐºÐ°Ð½Ð´Ð¸Ð´Ð°Ñ‚Ð¾Ð¼.")]
+        [Tooltip("Minimum risk score required for a module to qualify as an accident candidate.")]
         [SerializeField, Range(0f, 1f)] private float ambientAccidentMinRisk = 0.2f;
-        [Tooltip("ÐŸÐ¾Ñ€Ð¾Ð³ integrity, Ð½Ð¸Ð¶Ðµ ÐºÐ¾Ñ‚Ð¾Ñ€Ð¾Ð³Ð¾ Ð¼Ð¾Ð´ÑƒÐ»ÑŒ ÑÑ‡Ð¸Ñ‚Ð°ÐµÑ‚ÑÑ Ð¸Ð·Ð½Ð¾ÑˆÐµÐ½Ð½Ñ‹Ð¼ Ð´Ð»Ñ accident scheduler.")]
+        [Tooltip("Integrity threshold below which a module is considered worn for the accident scheduler.")]
         [SerializeField, Range(0f, 1f)] private float ambientAccidentIntegrityThreshold = 0.8f;
 
-        [Header("â”€â”€ Diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("Diagnostics")]
         [SerializeField] private int _debugModuleCount;
         [Tooltip("Runtime timer until the next ambient accident evaluation.")]
         [SerializeField] private float _debugAmbientAccidentTimer;
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  REGISTRY
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // REGISTRY
 
         /// <summary>
-        /// Ð ÐµÐµÑÑ‚Ñ€ Ð²ÑÐµÑ… Ð¿Ð¾ÑÑ‚Ñ€Ð¾ÐµÐ½Ð½Ñ‹Ñ… Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹.
-        /// Pre-allocated. Swap-remove Ð´Ð»Ñ O(1) ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ñ.
+        /// Registry of all placed modules. Preallocated and swap-removed for O(1) removal.
         /// </summary>
         private List<GameObject> _spawnedModules;
         private List<BaseModule> _spawnedBaseModules;
@@ -106,27 +95,22 @@ namespace Hecton8.Construction
         private float _ambientAccidentTimer;
         private int _ambientAccidentCursor;
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  CONSTANTS â€” DEFAULT MODULE STATE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // CONSTANTS - DEFAULT MODULE STATE
 
         /// <summary>
-        /// Ð”ÐµÑ„Ð¾Ð»Ñ‚Ð½Ð°Ñ Ñ†ÐµÐ»Ð¾ÑÑ‚Ð½Ð¾ÑÑ‚ÑŒ Ð´Ð»Ñ Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ Ð±ÐµÐ· BaseModule (Ð¾Ð¿Ð¾Ñ€Ñ‹ Ð¸ Ñ‚.Ð¿.)
-        /// Ð¸ Ð´Ð»Ñ Ð¼Ð¸Ð³Ñ€Ð°Ñ†Ð¸Ð¸ ÑÑ‚Ð°Ñ€Ñ‹Ñ… ÑÐµÐ¹Ð²Ð¾Ð² (v1 â†’ v2).
+        /// Default integrity for modules without BaseModule and for old save migration.
         /// </summary>
         private const float DefaultIntegrity = 100f;
 
-        /// <summary>Ð”ÐµÑ„Ð¾Ð»Ñ‚Ð½Ð¾Ðµ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ Ð·Ð°Ñ‚Ð¾Ð¿Ð»ÐµÐ½Ð¸Ñ.</summary>
+        /// <summary>Default flood state.</summary>
         private const bool  DefaultIsFlooded = false;
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  PUBLIC API â€” QUERIES
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // PUBLIC API - QUERIES
 
-        /// <summary>ÐšÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð¿Ð¾ÑÑ‚Ñ€Ð¾ÐµÐ½Ð½Ñ‹Ñ… Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹.</summary>
+        /// <summary>Number of placed modules.</summary>
         public int ModuleCount => _spawnedModules != null ? _spawnedModules.Count : 0;
 
-        /// <summary>Read-only Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº ÑÐ¿Ð¸ÑÐºÑƒ Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ (Ð´Ð»Ñ UI, minimap).</summary>
+        /// <summary>Read-only access to placed modules for UI and minimap consumers.</summary>
         public IReadOnlyList<GameObject> SpawnedModules => _spawnedModules;
 
         /// <summary>Cached BaseModule count for hot-path gameplay systems that must not scan components.</summary>
@@ -140,7 +124,7 @@ namespace Hecton8.Construction
                 : null;
         }
 
-        /// <summary>Read-only Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³Ñƒ Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ Ð´Ð»Ñ build tools/UI.</summary>
+        /// <summary>Read-only access to the module catalog for build tools and UI.</summary>
         public ModuleCatalog Catalog => catalog;
 
         /// <summary>
@@ -302,29 +286,21 @@ namespace Hecton8.Construction
             TryTriggerAmbientAccident();
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  PUBLIC API â€” REGISTER / UNREGISTER
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // PUBLIC API: REGISTER / UNREGISTER
 
         /// <summary>
-        /// Ð ÐµÐ³Ð¸ÑÑ‚Ñ€Ð¸Ñ€ÑƒÐµÑ‚ Ð¿Ð¾ÑÑ‚Ñ€Ð¾ÐµÐ½Ð½Ñ‹Ð¹ Ð¼Ð¾Ð´ÑƒÐ»ÑŒ Ð² Ñ€ÐµÐµÑÑ‚Ñ€Ðµ.
-        ///
-        /// Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ:
-        ///   â€¢ PlayerBuilder.TryPlaceModule() Ð¿Ð¾ÑÐ»Ðµ ÑƒÑÐ¿ÐµÑˆÐ½Ð¾Ð³Ð¾ Ñ€Ð°Ð·Ð¼ÐµÑ‰ÐµÐ½Ð¸Ñ
-        ///   â€¢ LoadFromSaveData() Ð¿Ñ€Ð¸ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐµ
-        ///
-        /// ÐÐ²Ñ‚Ð¾Ð¼Ð°Ñ‚Ð¸Ñ‡ÐµÑÐºÐ¸ Ð´Ð¾Ð±Ð°Ð²Ð»ÑÐµÑ‚ ModuleMarker, ÐµÑÐ»Ð¸ Ð¾Ñ‚ÑÑƒÑ‚ÑÑ‚Ð²ÑƒÐµÑ‚.
-        /// Ð”ÑƒÐ±Ð»Ð¸ÐºÐ°Ñ‚Ñ‹ Ð¸Ð³Ð½Ð¾Ñ€Ð¸Ñ€ÑƒÑŽÑ‚ÑÑ (ReferenceEquals Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ°).
+        /// Registers a placed module in the runtime construction registry.
+        /// Adds module state to the cached registry and ignores duplicate references.
         /// </summary>
-        /// <param name="module">GameObject Ñ„Ð¸Ð½Ð°Ð»ÑŒÐ½Ð¾Ð³Ð¾ Ð¼Ð¾Ð´ÑƒÐ»Ñ.</param>
+        /// <param name="module">Placed module GameObject.</param>
         public void RegisterModule(GameObject module)
         {
             if (module == null) return;
 
-            // â”€â”€ ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ° Ð´ÑƒÐ±Ð»Ð¸ÐºÐ°Ñ‚Ð¾Ð² â”€â”€
+            // Guard: duplicate module reference.
             if (ContainsRef(module)) return;
 
-            // â”€â”€ Ð”Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ Ð² Ñ€ÐµÐµÑÑ‚Ñ€ â”€â”€
+            // Add to runtime registry.
             _spawnedModules.Add(module);
             if (module.TryGetComponent(out BaseModule baseModule) && !ContainsBaseModuleRef(baseModule))
                 _spawnedBaseModules.Add(baseModule);
@@ -337,24 +313,24 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
-        /// Ð ÐµÐ³Ð¸ÑÑ‚Ñ€Ð¸Ñ€ÑƒÐµÑ‚ Ð¼Ð¾Ð´ÑƒÐ»ÑŒ Ñ Ð¿Ñ€Ð¸Ð²ÑÐ·ÐºÐ¾Ð¹ Ðº BuildableData.
-        /// ÐÐ²Ñ‚Ð¾Ð¼Ð°Ñ‚Ð¸Ñ‡ÐµÑÐºÐ¸ Ð½Ð°ÑÑ‚Ñ€Ð°Ð¸Ð²Ð°ÐµÑ‚ ModuleMarker.
+        /// Registers a module and binds it to BuildableData.
+        /// Automatically configures ModuleMarker.
         ///
-        /// ÐŸÑ€ÐµÐ´Ð¿Ð¾Ñ‡Ñ‚Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ð¹ Ð¼ÐµÑ‚Ð¾Ð´: Ð³Ð°Ñ€Ð°Ð½Ñ‚Ð¸Ñ€ÑƒÐµÑ‚ Ð½Ð°Ð»Ð¸Ñ‡Ð¸Ðµ Ð¼Ð°Ñ€ÐºÐµÑ€Ð°.
+        /// Preferred method: guarantees the marker exists.
         /// </summary>
-        /// <param name="module">GameObject Ñ„Ð¸Ð½Ð°Ð»ÑŒÐ½Ð¾Ð³Ð¾ Ð¼Ð¾Ð´ÑƒÐ»Ñ.</param>
-        /// <param name="data">BuildableData Ð´Ð»Ñ Ð¿Ñ€Ð¸Ð²ÑÐ·ÐºÐ¸.</param>
+        /// <param name="module">Final module GameObject.</param>
+        /// <param name="data">BuildableData used for binding.</param>
         public void RegisterModule(GameObject module, BuildableData data)
         {
             if (module == null) return;
 
-            // â”€â”€ Ð“Ð°Ñ€Ð°Ð½Ñ‚Ð¸Ñ€ÑƒÐµÐ¼ Ð½Ð°Ð»Ð¸Ñ‡Ð¸Ðµ ModuleMarker â”€â”€
+            // Ensure ModuleMarker exists.
             if (!module.TryGetComponent(out ModuleMarker marker))
             {
                 marker = module.AddComponent<ModuleMarker>();
             }
 
-            // â”€â”€ Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€ÑƒÐµÐ¼ Ð¼Ð°Ñ€ÐºÐµÑ€, ÐµÑÐ»Ð¸ data Ð¿Ñ€ÐµÐ´Ð¾ÑÑ‚Ð°Ð²Ð»ÐµÐ½Ð° â”€â”€
+            // Initialize marker when build data is present.
             if (data != null)
                 marker.Initialize(data);
 
@@ -1171,10 +1147,52 @@ namespace Hecton8.Construction
                 return;
 
             float accidentChance = Mathf.Clamp01(ambientAccidentBaseChance * bestRisk);
-            if (UnityEngine.Random.value > accidentChance)
+            if (!PassDeterministicAmbientAccidentChance(candidate, accidentChance))
                 return;
 
             TriggerAmbientAccident(candidate, bestRisk);
+        }
+
+        private bool PassDeterministicAmbientAccidentChance(BaseModule candidate, float chance01)
+        {
+            if (chance01 <= 0f)
+                return false;
+            if (chance01 >= 1f)
+                return true;
+
+            uint roll = BuildAmbientAccidentRoll(candidate);
+            uint threshold24 = (uint)(chance01 * 0x00FFFFFFu);
+            return (roll & 0x00FFFFFFu) <= threshold24;
+        }
+
+        private uint BuildAmbientAccidentRoll(BaseModule candidate)
+        {
+            uint hash = 2166136261u;
+            hash = FoldAmbientAccidentHash(hash, (uint)ResolveModuleHashId(candidate));
+            hash = FoldAmbientAccidentHash(hash, (uint)_ambientAccidentCursor);
+
+            if (candidate != null)
+            {
+                AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(candidate.transform.position);
+                hash = FoldAmbientAccidentHash(hash, (uint)position.GridX);
+                hash = FoldAmbientAccidentHash(hash, (uint)((ulong)position.GridX >> 32));
+                hash = FoldAmbientAccidentHash(hash, (uint)position.GridY);
+                hash = FoldAmbientAccidentHash(hash, (uint)((ulong)position.GridY >> 32));
+                hash = FoldAmbientAccidentHash(hash, (uint)position.GridZ);
+                hash = FoldAmbientAccidentHash(hash, (uint)((ulong)position.GridZ >> 32));
+            }
+
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return hash;
+        }
+
+        private static uint FoldAmbientAccidentHash(uint hash, uint value)
+        {
+            return (hash ^ value) * 16777619u;
         }
 
         private bool TryEvaluateAmbientAccidentRisk(BaseModule module, out float risk)

@@ -1,3 +1,5 @@
+using System;
+using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -83,6 +85,12 @@ namespace Hecton8.UI
             _slotMask = availableMask & ~(1u << slotIndex);
             lease = new Lease(slotIndex, s_slots[slotIndex]);
             return true;
+        }
+
+        public static bool TryAcquireArenaSpan(int minimumCapacity, out Span<char> span)
+        {
+            int safeCapacity = math.clamp(minimumCapacity, 1, SlotLength);
+            return HectonArenaAllocator.TryAllocateCharSpan(safeCapacity, out span);
         }
 
         public static void Release(in Lease lease)

@@ -38,7 +38,7 @@ namespace Hecton8.Physics
             if (relativeSpeedSq <= 0.000001f)
                 return result;
 
-            float relativeSpeed = math.sqrt(relativeSpeedSq);
+            float relativeSpeed = ResolveApproxMagnitude(relativeSpeedSq);
             float kineticEnergy = 0.5f * safeMass * relativeSpeedSq;
             if (!(kineticEnergy > hullYieldThresholdJoules))
             {
@@ -49,7 +49,7 @@ namespace Hecton8.Physics
 
             float closingSpeed = math.max(0f, -math.dot(relativeVelocity, safeNormal));
             float safeContactCount = math.max(1, contactCount);
-            float maxImpulse = (safeMass * closingSpeed) / safeContactCount;
+            float maxImpulse = (safeMass * closingSpeed) * math.rcp(safeContactCount);
             float severity01 = math.saturate((kineticEnergy - hullYieldThresholdJoules) / math.max(hullYieldThresholdJoules, 1f));
             byte integrityDelta = (byte)math.clamp((int)math.round(math.lerp(24f, 255f, severity01)), 1, 255);
 
@@ -84,7 +84,7 @@ namespace Hecton8.Physics
             float reducedMassKilograms,
             float overDampingMultiplier)
         {
-            float criticalDamping = 2f * math.sqrt(math.max(0f, springStiffness) * math.max(0f, reducedMassKilograms));
+            float criticalDamping = 2f * ResolveApproxMagnitude(math.max(0f, springStiffness) * math.max(0f, reducedMassKilograms));
             return criticalDamping * math.max(1f, overDampingMultiplier);
         }
 
@@ -232,6 +232,15 @@ namespace Hecton8.Physics
                 return fallback;
 
             return value * math.rsqrt(magnitudeSq);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveApproxMagnitude(float magnitudeSq)
+        {
+            if (magnitudeSq <= 0f || !math.isfinite(magnitudeSq))
+                return 0f;
+
+            return magnitudeSq * math.rsqrt(magnitudeSq);
         }
     }
 }

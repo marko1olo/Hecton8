@@ -7,6 +7,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldInterestAnchor : MonoBehaviour
     {
+        // COLD ALLOC: List<WorldInterestAnchor>[24] - active world-interest anchor registry - owner: WorldInterestAnchor
         private static readonly List<WorldInterestAnchor> _ActiveAnchors = new List<WorldInterestAnchor>(24);
 
         public enum InterestKind
@@ -123,8 +124,8 @@ namespace Hecton8.World
                 return 0f;
             }
 
-            float distance = math.sqrt((float)distanceSq);
-            float t = math.saturate((falloff - distance) / math.max(0.0001f, falloff - fullRadius));
+            double falloffBandSq = math.max(0.0001f, falloffRadiusSq - fullRadiusSq);
+            float t = math.saturate((float)((falloffRadiusSq - distanceSq) / falloffBandSq));
             _debugLastInfluence = t;
             return t;
         }

@@ -351,17 +351,20 @@ namespace Hecton8.Gameplay
             if (math.lengthsq(poleVector) <= MinimumLengthSq)
                 return;
 
-            float3 poleDirection = SafeNormalize(poleVector, new float3(0.0f, 1.0f, 0.0f));
+            float poleLengthSq = math.lengthsq(poleVector);
+            float3 poleDirection = poleVector * math.rsqrt(math.max(poleLengthSq, MinimumLengthSq));
             for (int i = 1; i < boneCount - 1; i++)
             {
                 int currentIndex = scratchStartIndex + i;
                 float3 jointOffset = scratchPositions[currentIndex] - rootPosition;
+                float jointAxisOffset = math.dot(jointOffset, axis);
                 float3 projectedJoint = jointOffset - (axis * math.dot(jointOffset, axis));
-                if (math.lengthsq(projectedJoint) <= MinimumLengthSq)
+                float projectedLengthSq = math.lengthsq(projectedJoint);
+                if (projectedLengthSq <= MinimumLengthSq)
                     continue;
 
-                quaternion poleRotation = FromToRotation(projectedJoint, poleDirection);
-                scratchPositions[currentIndex] = rootPosition + math.rotate(poleRotation, jointOffset);
+                float projectedRadius = projectedLengthSq * math.rsqrt(math.max(projectedLengthSq, MinimumLengthSq));
+                scratchPositions[currentIndex] = rootPosition + (axis * jointAxisOffset) + (poleDirection * projectedRadius);
             }
 
             scratchPositions[scratchStartIndex] = rootPosition;

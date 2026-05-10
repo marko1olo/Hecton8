@@ -114,6 +114,7 @@ namespace Hecton8.Audio
             _audioSource.volume = 0f;
             _audioSource.pitch = idlePitch;
             _audioSource.priority = 200;
+            TryAssignMixerRoute();
 
             if (playerMovement != null)
             {
@@ -136,6 +137,7 @@ namespace Hecton8.Audio
             if (playerTransportCoordinator == null)
                 _transportCoordinatorLookupAttempted = false;
             TryCacheTransportCoordinatorOnce();
+            TryAssignMixerRoute();
 
             if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
             {
@@ -373,6 +375,15 @@ namespace Hecton8.Audio
                 return;
 
             gameObject.TryGetComponent(out playerTransportCoordinator);
+        }
+
+        private void TryAssignMixerRoute()
+        {
+            if (_audioSource == null || _audioSource.outputAudioMixerGroup != null)
+                return;
+
+            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+                _audioSource.outputAudioMixerGroup = spatialAudioManager.SfxGroup;
         }
 
         private void TryRegister()

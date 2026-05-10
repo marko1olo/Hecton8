@@ -3180,7 +3180,7 @@ namespace Hecton8.Audio
         private static float ResolveStereoPan(in AbsoluteUniversePosition sourceAup, in AbsoluteUniversePosition listenerAup, float3 listenerRight)
         {
             float3 listenerWorldDelta = ResolveAupDelta(in listenerAup, in sourceAup);
-            float lateralPan = math.dot(listenerWorldDelta, listenerRight) / math.max(0.01f, StereoPanDistanceNormalizationMeters);
+            float lateralPan = math.dot(listenerWorldDelta, listenerRight) * math.rcp(math.max(0.01f, StereoPanDistanceNormalizationMeters));
             return math.clamp(lateralPan, -1f, 1f);
         }
 
@@ -3710,7 +3710,7 @@ namespace Hecton8.Audio
                 float duckTimeSeconds = targetDuck01 > _threatBusDuck01
                     ? ThreatBusDuckAttackSeconds
                     : ThreatBusDuckReleaseSeconds;
-                float duckBlend = FastDecayBlend(1f / math.max(duckTimeSeconds, 0.0001f), deltaTime);
+                float duckBlend = FastDecayBlend(math.rcp(math.max(duckTimeSeconds, 0.0001f)), deltaTime);
                 _threatBusDuck01 = math.lerp(_threatBusDuck01, targetDuck01, duckBlend);
             }
 
@@ -4483,9 +4483,9 @@ namespace Hecton8.Audio
                 if (_previousRelativeVelocities != null && sourceIndex < _previousRelativeVelocities.Length)
                     _previousRelativeVelocities[sourceIndex] = clampedRelativeVelocity;
 
-                float smoothingDurationSeconds = ManualDopplerSmoothingSamples / ManualDopplerSampleRateHertz;
+                float smoothingDurationSeconds = ManualDopplerSmoothingSamples * math.rcp(ManualDopplerSampleRateHertz);
                 float followT = velocityDelta > ManualDopplerVelocityJumpThresholdMetersPerSecond
-                    ? math.saturate(math.max(deltaTime, 0f) / math.max(smoothingDurationSeconds, 0.0001f))
+                    ? math.saturate(math.max(deltaTime, 0f) * math.rcp(math.max(smoothingDurationSeconds, 0.0001f)))
                     : FastDecayBlend(ManualDopplerFollowSharpness, deltaTime);
                 float smoothedRatio = math.lerp(_smoothedDopplerRatios[sourceIndex], targetRatio, followT);
                 _smoothedDopplerRatios[sourceIndex] = smoothedRatio;

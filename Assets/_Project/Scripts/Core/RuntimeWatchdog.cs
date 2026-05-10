@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton.Localization;
@@ -76,8 +77,10 @@ namespace Hecton8.Core
         private const float GcSteadyStateWarmupSeconds = 5f;
         private const float MmfHealthCheckIntervalSeconds = 60f;
         private const float MmfHealthRetryDelaySeconds = 5f;
+        private const float BytesToMegabytes = 1f / (1024f * 1024f);
         private const long BaseMmfBloatThresholdBytes = 50L * 1024L * 1024L;
         private const long RuntimeMemorySpikeThresholdBytes = 50L * 1024L * 1024L;
+        private const long DefaultRuntimeMemorySafeBoundBytes = 3L * 1024L * 1024L * 1024L;
         private const int MemorySpikeSampleIntervalFrames = 10;
         private const int MemorySubsystemBreachCooldownFrames = 300;
         private const long InvalidMmfSectorHash = long.MinValue;
@@ -101,6 +104,8 @@ namespace Hecton8.Core
         private static readonly uint _nativeLeakReapedHash = unchecked((uint)LocHash.Compute("NATIVE_LEAK_REAPED"));
         private static readonly uint _nativeLeakLabelHash = unchecked((uint)LocHash.Compute("NATIVE_LEAK_LABEL"));
         private static readonly uint _nanSentinelRecoveryHash = unchecked((uint)LocHash.Compute("NAN_SENTINEL_RECOVERY"));
+        private static readonly double _stopwatchTickToMilliseconds = 1000.0d / Stopwatch.Frequency;
+        private static readonly double _millisecondsToStopwatchTicks = Stopwatch.Frequency / 1000.0d;
         private static readonly long _baseFaunaArteryBudgetTicks = MillisecondsToStopwatchTicks(BaseFaunaArteryBudgetMs);
         private static readonly long _xrFaunaArteryBudgetTicks = Math.Max(1L, _baseFaunaArteryBudgetTicks >> 1);
 
@@ -167,6 +172,7 @@ namespace Hecton8.Core
         private long _lastMmfBytes = -1L;
         private long _lastMmfSectorHash = InvalidMmfSectorHash;
         private long _lastTotalAllocatedMemoryBytes;
+        private long _runtimeMemorySpikeThresholdBytes = RuntimeMemorySpikeThresholdBytes;
 
         public static int ActiveTargetFPS => HectonXRRuntimeState.IsXRActive ? VrTargetFPS : TargetFPS;
         public ServiceHeartbeatState HeartbeatState => _registeredUpdatable ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.Booting;
@@ -248,7 +254,7 @@ namespace Hecton8.Core
             if (elapsedTicks <= ResolveFaunaArteryBudgetTicks())
                 return;
 
-            float elapsedMilliseconds = (float)(elapsedTicks * 1000.0d / Stopwatch.Frequency);
+            float elapsedMilliseconds = (float)(elapsedTicks * _stopwatchTickToMilliseconds);
             ForceFaunaEmergencyColdTick(elapsedMilliseconds);
         }
 
@@ -303,7 +309,7 @@ namespace Hecton8.Core
 
         internal static void ReportNativeLeakReaped(uint ownerHash, uint labelHash, long bytes)
         {
-            float megabytes = bytes <= 0L ? 0f : math.min(float.MaxValue, bytes / (1024f * 1024f));
+            float megabytes = bytes <= 0L ? 0f : math.min(float.MaxValue, bytes * BytesToMegabytes);
             PublishPerformanceWarningNoThrow(_nativeLeakReapedHash, ownerHash, megabytes);
             if (labelHash != 0u)
                 PublishPerformanceWarningNoThrow(_nativeLeakLabelHash, labelHash, megabytes);
@@ -483,6 +489,8 @@ namespace Hecton8.Core
 
         private void ResetMemorySpikeTracker()
         {
+            CacheRuntimeMemorySafeBoundBytes();
+            _runtimeMemorySpikeThresholdBytes = ResolveScaledByteThreshold(RuntimeMemorySpikeThresholdBytes);
             _lastTotalAllocatedMemoryBytes = Profiler.GetTotalAllocatedMemoryLong();
             _lastMemorySpikeFrame = -1;
             _lastMemoryBreachFrame = -1;
@@ -497,7 +505,7 @@ namespace Hecton8.Core
             _nextMemorySpikeSampleFrame = frame + MemorySpikeSampleIntervalFrames;
             long currentBytes = Profiler.GetTotalAllocatedMemoryLong();
             long previousBytes = _lastTotalAllocatedMemoryBytes;
-            long safeBoundBytes = ResolveRuntimeMemorySafeBoundBytes();
+            long safeBoundBytes = ResolveCachedRuntimeMemorySafeBoundBytes();
             if (currentBytes > safeBoundBytes)
             {
                 long earlyDeltaBytes = currentBytes > previousBytes && previousBytes > 0L ? currentBytes - previousBytes : 0L;
@@ -513,7 +521,7 @@ namespace Hecton8.Core
 
             long deltaBytes = currentBytes - previousBytes;
             _lastTotalAllocatedMemoryBytes = currentBytes;
-            if (deltaBytes <= ResolveScaledByteThreshold(RuntimeMemorySpikeThresholdBytes))
+            if (deltaBytes <= _runtimeMemorySpikeThresholdBytes)
                 return;
 
             if (_lastMemorySpikeFrame == frame)
@@ -523,7 +531,7 @@ namespace Hecton8.Core
             uint spikeHash = ResolveMemorySpikeFingerprint(previousBytes, currentBytes, deltaBytes, frame);
             GlobalTelemetryBus.RequestEmergencyFlushAsync();
             CrashTelemetryBuffer.ReportRuntimeMemorySpike(previousBytes, currentBytes, deltaBytes, spikeHash);
-            float deltaMegabytes = deltaBytes * (1f / (1024f * 1024f));
+            float deltaMegabytes = deltaBytes * BytesToMegabytes;
             PublishPerformanceWarningNoThrow(_runtimeMemorySpikeHash, spikeHash, deltaMegabytes);
         }
 
@@ -540,28 +548,37 @@ namespace Hecton8.Core
             PublishPerformanceWarningNoThrow(
                 _memorySubsystemBreachHash,
                 contextHash,
-                currentBytes * (1f / (1024f * 1024f)));
+                currentBytes * BytesToMegabytes);
         }
 
-        private static long ResolveRuntimeMemorySafeBoundBytes()
+        private static void CacheRuntimeMemorySafeBoundBytes()
         {
-            long cachedBoundBytes = _runtimeMemorySafeBoundBytes;
+            long cachedBoundBytes = Volatile.Read(ref _runtimeMemorySafeBoundBytes);
             if (cachedBoundBytes > 0L)
-                return cachedBoundBytes;
+                return;
 
             long systemMemoryMegabytes = SystemInfo.systemMemorySize;
             if (systemMemoryMegabytes <= 0L)
             {
-                _runtimeMemorySafeBoundBytes = 3L * 1024L * 1024L * 1024L;
-                return _runtimeMemorySafeBoundBytes;
+                Volatile.Write(ref _runtimeMemorySafeBoundBytes, DefaultRuntimeMemorySafeBoundBytes);
+                return;
             }
 
             long systemMemoryBytes = systemMemoryMegabytes * 1024L * 1024L;
             long safeBoundBytes = (long)(systemMemoryBytes * 0.75d);
-            _runtimeMemorySafeBoundBytes = Math.Max(ResolveScaledByteThreshold(RuntimeMemorySpikeThresholdBytes), safeBoundBytes);
-            return _runtimeMemorySafeBoundBytes;
+            Volatile.Write(
+                ref _runtimeMemorySafeBoundBytes,
+                Math.Max(ResolveScaledByteThreshold(RuntimeMemorySpikeThresholdBytes), safeBoundBytes));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static long ResolveCachedRuntimeMemorySafeBoundBytes()
+        {
+            long cachedBoundBytes = Volatile.Read(ref _runtimeMemorySafeBoundBytes);
+            return cachedBoundBytes > 0L ? cachedBoundBytes : DefaultRuntimeMemorySafeBoundBytes;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint ResolveMemorySpikeFingerprint(long previousBytes, long currentBytes, long deltaBytes, int frame)
         {
             unchecked
@@ -577,6 +594,7 @@ namespace Hecton8.Core
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint MixHash(uint hash, uint value)
         {
             unchecked
@@ -691,7 +709,7 @@ namespace Hecton8.Core
 
         private static long MillisecondsToStopwatchTicks(float milliseconds)
         {
-            return Math.Max(1L, (long)(milliseconds * Stopwatch.Frequency / 1000f));
+            return Math.Max(1L, (long)(milliseconds * _millisecondsToStopwatchTicks));
         }
 
         private void EnforceHudHeartbeat(double now, int frame)
@@ -936,7 +954,7 @@ namespace Hecton8.Core
                 PublishPerformanceWarningNoThrow(
                     _mmfBloatAlarmHash,
                     _watchdogContextHash,
-                    math.min(float.MaxValue, deltaBytes / (1024f * 1024f)));
+                    math.min(float.MaxValue, deltaBytes * BytesToMegabytes));
             }
 
             _lastMmfBytes = bytes;

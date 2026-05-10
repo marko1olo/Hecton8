@@ -320,7 +320,7 @@ namespace Hecton8.Dev
                     ptsY = 3,
                     ptsZ = 3,
                     volumeOrigin = float3.zero,
-                    voxelStep = 1f,
+                    invVoxelStep = 1f,
                     densityDecodeScale = 1f,
                     densityField = density,
                     positions = positions,

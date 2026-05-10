@@ -1,5 +1,5 @@
 // File: Scripts/Visor/VisorOpaqueTextureEnsurer.cs
-// Ubezhdaemsya chto Opaque Texture vklyuchena (nuzhna dlya refraktsii)
+// Ensures Opaque Texture is enabled for visor refraction.
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -37,8 +37,8 @@ namespace NASAPunk.Visor
             {
                 Debug.LogWarning(
                     "[SuitVisor] Opaque Texture is disabled in URP Asset. " +
-                    "Refraction won't work. Enable it in URP Settings → " +
-                    "General → Opaque Texture.");
+                    "Refraction won't work. Enable it in URP Settings -> " +
+                    "General -> Opaque Texture.");
             }
         }
     }

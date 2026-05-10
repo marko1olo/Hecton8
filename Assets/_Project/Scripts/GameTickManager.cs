@@ -299,6 +299,7 @@ namespace Hecton8.Core
         public void Tick(float deltaTime)
         {
             EnsureInitialized();
+            HectonArenaAllocator.Reset();
 
             float dt = deltaTime;
             float slowTickDt = dt;
@@ -367,6 +368,11 @@ namespace Hecton8.Core
         public void FixedTick(float fixedDeltaTime)
         {
             EnsureInitialized();
+#if UNITY_EDITOR
+            FixedUpdateHeapLockGuard.Begin();
+            try
+            {
+#endif
 
             float fdt = fixedDeltaTime;
 
@@ -399,6 +405,13 @@ namespace Hecton8.Core
 
 #if UNITY_EDITOR
             _debugFixedCount = _fixedTickables.Count;
+#endif
+#if UNITY_EDITOR
+            }
+            finally
+            {
+                FixedUpdateHeapLockGuard.End();
+            }
 #endif
         }
 
@@ -963,5 +976,73 @@ namespace Hecton8.Core
                 }
             }
         }
+
+#if UNITY_EDITOR
+        private static class FixedUpdateHeapLockGuard
+        {
+            private const string EditorPrefsKey = "Hecton8.FixedUpdateHeapLock.Enabled";
+            private const string EnvironmentKey = "HECTON_HEAP_LOCK_GUARD";
+
+            private static bool _stateResolved;
+            private static bool _enabled;
+            private static long _allocatedBytesAtBegin;
+            private static int _depth;
+
+            private static bool IsEnabled
+            {
+                get
+                {
+                    if (_stateResolved)
+                        return _enabled;
+
+                    _enabled =
+                        UnityEditor.EditorPrefs.GetBool(EditorPrefsKey, false) ||
+                        string.Equals(
+                            System.Environment.GetEnvironmentVariable(EnvironmentKey),
+                            "1",
+                            StringComparison.Ordinal);
+                    _stateResolved = true;
+                    return _enabled;
+                }
+            }
+
+            [UnityEditor.MenuItem("Tools/Hecton8/Compliance/Enable FixedUpdate Heap Lock")]
+            private static void Enable()
+            {
+                UnityEditor.EditorPrefs.SetBool(EditorPrefsKey, true);
+                _enabled = true;
+                _stateResolved = true;
+            }
+
+            [UnityEditor.MenuItem("Tools/Hecton8/Compliance/Disable FixedUpdate Heap Lock")]
+            private static void Disable()
+            {
+                UnityEditor.EditorPrefs.SetBool(EditorPrefsKey, false);
+                _enabled = false;
+                _stateResolved = true;
+                _depth = 0;
+            }
+
+            internal static void Begin()
+            {
+                if (!IsEnabled)
+                    return;
+
+                if (_depth++ == 0)
+                    _allocatedBytesAtBegin = GC.GetAllocatedBytesForCurrentThread();
+            }
+
+            internal static void End()
+            {
+                if (!IsEnabled || _depth <= 0)
+                    return;
+
+                long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - _allocatedBytesAtBegin;
+                _depth--;
+                if (_depth == 0 && allocatedBytes > 0L)
+                    throw new InvalidOperationException("[FixedUpdateHeapLockGuard] Fatal Error: managed GC allocation detected during FixedUpdate. bytes=" + allocatedBytes);
+            }
+        }
+#endif
     }
 }

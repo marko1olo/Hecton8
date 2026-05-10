@@ -34,7 +34,11 @@ namespace Hecton8.Inventory
         internal const ushort DegradedItemStateMask = ItemRuntimeStateFlags.Degraded;
         private const ushort RustedItemStateMask = ItemRuntimeStateFlags.Rusted;
         private const ushort FlammableItemStateMask = ItemRuntimeStateFlags.Flammable;
+        private const ushort BrokenItemStateMask = ItemRuntimeStateFlags.Broken;
+        private const ushort DurabilityDecayEligibleMask = BiologicalItemStateMask | RustedItemStateMask | RadioactiveItemStateMask;
         private const ushort DefaultQualityMilli = 1000;
+        internal const ushort DegradedQualityMilliThreshold = 250;
+        private const byte DegradedDurabilityThreshold = DegradedQualityMilliThreshold / 10;
         private const float SlowTickIntervalSeconds = 0.5f;
         private const float OrganicDecayPerSecond = 0.00045f;
         private const float SubmergedOrganicDecayPerSecond = 0.00075f;
@@ -58,7 +62,6 @@ namespace Hecton8.Inventory
         private const int InventoryShadowBufferBytes = 16 * 1024;
         private const uint Fnv1a32Offset = 2166136261u;
         private const uint Fnv1a32Prime = 16777619u;
-        internal const ushort DegradedQualityMilliThreshold = 250;
         private const byte ItemGeneticsSupportedFlagsMask = (byte)(
             ItemGeneticFlags.Glow |
             ItemGeneticFlags.Toxic |
@@ -538,6 +541,7 @@ namespace Hecton8.Inventory
         private bool _inventoryShadowValid;
         private bool _hasCommittedInventoryShadowHash;
         private bool _durabilitySnapshotDirty = true;
+        private byte _coldDurabilityTickPhase;
 
         public float TotalWeight { get; private set; }
         public float TotalMassKg { get; private set; }
@@ -821,6 +825,8 @@ namespace Hecton8.Inventory
                 _itemStateFlags[anchorIndex] = 0;
                 _itemGenetics[anchorIndex] = 0;
                 _qualityMilli[anchorIndex] = 0;
+                if (_durabilities.IsCreated && (uint)anchorIndex < (uint)_durabilities.Length)
+                    _durabilities[anchorIndex] = 0;
                 _lastUpdateUnixSeconds[anchorIndex] = 0;
                 ClearAnchorPhysicalMetadata(anchorIndex);
             }
@@ -992,6 +998,7 @@ namespace Hecton8.Inventory
             using (_slowTickProfilerMarker.Auto())
             {
                 ApplyInventoryEnvironmentalDegradation();
+                ApplyInventoryColdDurabilityDecay();
                 ApplyInventoryRadioactiveHalfLife();
                 ApplyInventoryReactiveChemistry();
                 ApplyInventoryDepthPressureCrush();
@@ -1166,6 +1173,8 @@ namespace Hecton8.Inventory
                     _itemStateFlags[anchorIndex] = 0;
                     _itemGenetics[anchorIndex] = 0;
                     _qualityMilli[anchorIndex] = 0;
+                    if (_durabilities.IsCreated && (uint)anchorIndex < (uint)_durabilities.Length)
+                        _durabilities[anchorIndex] = 0;
                     _lastUpdateUnixSeconds[anchorIndex] = 0;
                     ClearAnchorPhysicalMetadata(anchorIndex);
                 }
@@ -1248,6 +1257,8 @@ namespace Hecton8.Inventory
                     _itemStateFlags[anchorIndex] = 0;
                     _itemGenetics[anchorIndex] = 0;
                     _qualityMilli[anchorIndex] = 0;
+                    if (_durabilities.IsCreated && (uint)anchorIndex < (uint)_durabilities.Length)
+                        _durabilities[anchorIndex] = 0;
                     _lastUpdateUnixSeconds[anchorIndex] = 0;
                     ClearAnchorPhysicalMetadata(anchorIndex);
                 }
@@ -1633,6 +1644,7 @@ namespace Hecton8.Inventory
                     _itemStateFlags[anchorIndex] = placement.stateFlags;
                     _itemGenetics[anchorIndex] = SanitizeItemGeneticsFlags(placement.geneticsMask);
                     _qualityMilli[anchorIndex] = placement.qualityMilli;
+                    _durabilities[anchorIndex] = (byte)math.clamp((placement.qualityMilli + 5) / 10, 0, 100);
                     _lastUpdateUnixSeconds[anchorIndex] = placement.lastUpdateUnixSeconds;
                     SyncAnchorPhysicalMetadata(anchorIndex, placement.itemHashId);
                     TotalWeight += placement.weight * placement.stackCount;
@@ -1710,6 +1722,7 @@ namespace Hecton8.Inventory
                 SwapAnchorState(_itemStateFlags, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_itemGenetics, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_qualityMilli, sourceAnchorIndex, destinationAnchorIndex);
+                SwapAnchorState(_durabilities, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_lastUpdateUnixSeconds, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_anchorUnitMassKg, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_anchorUnitVolumeM3, sourceAnchorIndex, destinationAnchorIndex);
@@ -1723,6 +1736,7 @@ namespace Hecton8.Inventory
             MoveAnchorStateValue(_itemStateFlags, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_itemGenetics, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_qualityMilli, sourceAnchorIndex, destinationAnchorIndex);
+            MoveAnchorStateValue(_durabilities, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_lastUpdateUnixSeconds, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_anchorUnitMassKg, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_anchorUnitVolumeM3, sourceAnchorIndex, destinationAnchorIndex);
@@ -2167,6 +2181,8 @@ namespace Hecton8.Inventory
                     _itemGenetics[anchorIndex] = SanitizeItemGeneticsFlags(placement.geneticsMask);
                 if (_qualityMilli.IsCreated)
                     _qualityMilli[anchorIndex] = placement.qualityMilli;
+                if (_durabilities.IsCreated)
+                    _durabilities[anchorIndex] = (byte)math.clamp((placement.qualityMilli + 5) / 10, 0, 100);
                 if (_lastUpdateUnixSeconds.IsCreated)
                     _lastUpdateUnixSeconds[anchorIndex] = placement.lastUpdateUnixSeconds;
                 SyncAnchorPhysicalMetadata(anchorIndex, placement.itemHashId);
@@ -2377,7 +2393,8 @@ namespace Hecton8.Inventory
                 survival.SetWeight(TotalMassKg);
 
             float carryCapacityKg = ResolveCarryCapacityKilograms();
-            CachedInventoryLoad01 = math.saturate(TotalMassKg / carryCapacityKg);
+            float inverseCarryCapacityKg = math.rcp(carryCapacityKg);
+            CachedInventoryLoad01 = math.saturate(TotalMassKg * inverseCarryCapacityKg);
             CachedMaxSwimSpeedMultiplier = math.lerp(1f, InventoryLoadMinimumMovementMultiplier, CachedInventoryLoad01);
             HectonPlayerMovement movement = TryResolveMovementLoadSink();
             if (movement != null)
@@ -2522,6 +2539,60 @@ namespace Hecton8.Inventory
                 _lastUpdateUnixSeconds[anchorIndex] = nowTimestamp;
 
             return changed;
+        }
+
+        private void ApplyInventoryColdDurabilityDecay()
+        {
+            _coldDurabilityTickPhase ^= 1;
+            if (_coldDurabilityTickPhase != 0 ||
+                _grid == null ||
+                !_stackCounts.IsCreated ||
+                !_itemStateFlags.IsCreated ||
+                !_anchorStateFlags.IsCreated ||
+                !_qualityMilli.IsCreated ||
+                !_durabilities.IsCreated)
+            {
+                return;
+            }
+
+            if (_durabilitySnapshotDirty)
+                SyncDurabilityBytesFromQuality();
+
+            int slotCount = math.min(
+                math.min(math.min(_stackCounts.Length, _itemStateFlags.Length), _anchorStateFlags.Length),
+                math.min(_qualityMilli.Length, _durabilities.Length));
+            bool changed = false;
+            for (int anchorIndex = 0; anchorIndex < slotCount; anchorIndex++)
+            {
+                if (_stackCounts[anchorIndex] == 0 || !_grid.HasAnchor(anchorIndex))
+                    continue;
+
+                ushort flags = _itemStateFlags[anchorIndex];
+                if ((flags & DurabilityDecayEligibleMask) == 0)
+                    continue;
+
+                if ((_anchorStateFlags[anchorIndex] & CraftingLockedMask) != 0)
+                    continue;
+
+                byte durability = _durabilities[anchorIndex];
+                if (durability == 0)
+                    continue;
+
+                byte nextDurability = (byte)(durability - 1);
+                _durabilities[anchorIndex] = nextDurability;
+                _qualityMilli[anchorIndex] = (ushort)(nextDurability * 10);
+                if (nextDurability < DegradedDurabilityThreshold)
+                    flags |= DegradedItemStateMask;
+
+                if (nextDurability == 0)
+                    flags |= (ushort)(BrokenItemStateMask | DegradedItemStateMask);
+
+                _itemStateFlags[anchorIndex] = flags;
+                changed = true;
+            }
+
+            if (changed)
+                NotifyInventoryChanged(massDirty: false);
         }
 
         private void ApplyInventoryRadioactiveHalfLife()
@@ -3013,6 +3084,8 @@ namespace Hecton8.Inventory
                 _itemStateFlags[anchorIndex] = 0;
                 _itemGenetics[anchorIndex] = 0;
                 _qualityMilli[anchorIndex] = 0;
+                if (_durabilities.IsCreated && (uint)anchorIndex < (uint)_durabilities.Length)
+                    _durabilities[anchorIndex] = 0;
                 _lastUpdateUnixSeconds[anchorIndex] = 0;
                 ClearAnchorPhysicalMetadata(anchorIndex);
                 TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * stackCount);
@@ -3061,6 +3134,8 @@ namespace Hecton8.Inventory
             _itemStateFlags[anchorIndex] = 0;
             _itemGenetics[anchorIndex] = 0;
             _qualityMilli[anchorIndex] = 0;
+            if (_durabilities.IsCreated && (uint)anchorIndex < (uint)_durabilities.Length)
+                _durabilities[anchorIndex] = 0;
             _lastUpdateUnixSeconds[anchorIndex] = 0;
             if (_thermalRunawayByAnchor.IsCreated && (uint)anchorIndex < (uint)_thermalRunawayByAnchor.Length)
                 _thermalRunawayByAnchor[anchorIndex] = 0f;

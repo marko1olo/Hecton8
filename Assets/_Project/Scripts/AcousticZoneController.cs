@@ -1,43 +1,39 @@
 // ============================================================================
-// HECTON-8 — AcousticZoneController.cs
-// Upravlenie akusticheskimi zonami: plavnyy perehod audio mezhdu
-// otkrytym okeanom i suhimi zonami vnutri moduley bazy.
+// HECTON-8 - AcousticZoneController.cs
+// Manages acoustic-zone transitions between open water and dry base interiors.
 //
-// ARHITEKTURA:
-//   • Singlton, ITickable — proverka sostoyaniya igroka kazhdyy kadr.
-//   • Edge detection: perehod zapuskaetsya TOLKO pri smene sostoyaniya
-//     (voda → susha ili susha → voda). Odin bool-comparison per frame.
-//   • AudioMixerSnapshot.TransitionTo — plavnyy krossfeyd presetov.
-//   • SpatialAudioManager — vosproizvedenie perehodnyh zvukov (drain/fill).
+// ARCHITECTURE:
+//   - Singleton, ITickable: checks player zone state each tick.
+//   - Edge detection: transitions only when wet/dry state changes.
+//   - AudioMixerSnapshot.TransitionTo: smooth preset crossfade.
+//   - SpatialAudioManager: transition sounds for drain/fill cues.
 //
-// STOLP 1 — TEHNOLOGIChESKIY UYuT:
-//   Vnutri bazy: tishina, gul generatorov, shagi po metallu.
-//   Snaruzhi: davyaschiy nizkochastotnyy gul, bulkane, eho glubiny.
-//   Kontrast sozdaetsya cherez AudioMixer Snapshots:
-//     UnderwaterSnapshot: Low-Pass Filter (LPF) na Master,
-//       Reverb (Large Hall), priglushennye vysokie chastoty.
-//     BaseInteriorSnapshot: LPF snyat, Reverb (Small Room / Metallic),
-//       chistye srednie chastoty, legkiy mehanicheskiy gul.
+// PILLAR 1 - TECHNICAL COMFORT:
+//   Inside base: silence, generator hum, metal footsteps.
+//   Outside: low-frequency pressure, bubbling, depth echo.
+//   Contrast is authored through AudioMixer snapshots:
+//     UnderwaterSnapshot: master low-pass, large reverb, muted highs.
+//     BaseInteriorSnapshot: clear mids, small metallic reverb, machine hum.
 //
-// INTEGRATsIYa:
-//   • Chitaet BuoyancyObject.IsInAir cherez keshirovannuyu ssylku.
-//   • BuoyancyObject.IsInAir = true → igrok vnutri suhogo modulya.
-//   • BuoyancyObject.IsInAir = false → igrok v vode.
-//   • Lenivyy resolve igroka cherez GameBootstrapper (odin raz).
+// INTEGRATION:
+//   - Reads BuoyancyObject.IsInAir through a cached reference.
+//   - IsInAir = true: player is inside a dry module.
+//   - IsInAir = false: player is in water.
+//   - Lazily resolves the player through GameBootstrapper.
 //
 // TRANSITION FLOW:
 //   FixedTick: BuoyancyObject.IsInAir changes
-//     → Tick: AcousticZoneController detects edge
-//       → snapshot.TransitionTo(transitionDuration)
-//       → SpatialAudioManager.PlayStatic2D(transitionClip)
-//       → Optional: event OnAcousticZoneChanged(isInterior)
+//     -> Tick: AcousticZoneController detects edge
+//       -> snapshot.TransitionTo(transitionDuration)
+//       -> SpatialAudioManager.PlayStatic2D(transitionClip)
+//       -> Optional: event OnAcousticZoneChanged(isInterior)
 //
 // ZERO GC:
-//   • Tick: odin bool comparison + edge detection. Zero alloc.
-//   • TransitionTo: Unity internal, no managed alloc.
-//   • PlayStatic2D: pul 2D-golosov SpatialAudioManager.
-//   • Lenivyy resolve igroka cherez GameBootstrapper.
-//   • Net Update, net korutin, net LINQ.
+//   - Tick: one bool comparison plus edge detection. Zero allocation.
+//   - TransitionTo: Unity internal path.
+//   - PlayStatic2D: SpatialAudioManager 2D voice pool.
+//   - Lazy player resolve through GameBootstrapper.
+//   - No Update, coroutines, or LINQ.
 //
 // CPU COST:
 //   ~0.0001ms per Tick (one bool read + comparison).

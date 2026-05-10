@@ -46,14 +46,18 @@ namespace Hecton8.UI
         private static readonly Vector2[] s_threatChevronMeshUvs = new Vector2[8];
         // COLD ALLOC: int[12] — threat chevron mesh index scratch — owner: SuitHUDV4CanvasOverlay
         private static readonly int[] s_threatChevronMeshTriangles = new int[12];
-        private static readonly Quaternion s_threatChevronRoll0 = Quaternion.identity;
-        private static readonly Quaternion s_threatChevronRoll45 = Quaternion.Euler(0f, 0f, 45f);
-        private static readonly Quaternion s_threatChevronRoll90 = Quaternion.Euler(0f, 0f, 90f);
-        private static readonly Quaternion s_threatChevronRoll135 = Quaternion.Euler(0f, 0f, 135f);
-        private static readonly Quaternion s_threatChevronRoll180 = Quaternion.Euler(0f, 0f, 180f);
-        private static readonly Quaternion s_threatChevronRollNegative45 = Quaternion.Euler(0f, 0f, -45f);
-        private static readonly Quaternion s_threatChevronRollNegative90 = Quaternion.Euler(0f, 0f, -90f);
-        private static readonly Quaternion s_threatChevronRollNegative135 = Quaternion.Euler(0f, 0f, -135f);
+        private const int ThreatChevronRollRight = 0;
+        private const int ThreatChevronRollUp = 1;
+        private const int ThreatChevronRollLeft = 2;
+        private const int ThreatChevronRollDown = 3;
+        // COLD ALLOC: Quaternion[4] — threat chevron cardinal roll LUT — owner: SuitHUDV4CanvasOverlay
+        private static readonly Quaternion[] s_threatChevronRollByDominantAxis =
+        {
+            Quaternion.identity,
+            Quaternion.Euler(0f, 0f, 90f),
+            Quaternion.Euler(0f, 0f, 180f),
+            Quaternion.Euler(0f, 0f, -90f)
+        };
         private const string PrimaryHudCanvasName = "Suit_HUD_Canvas";
         private const string DefaultSuitLabel = "EXPEDITION SUIT";
         private const string DefaultTemperatureLabel = "TEMP";
@@ -82,6 +86,7 @@ namespace Hecton8.UI
         private const string DefaultCriticalLabel = "CRITICAL";
         private const string DepthNumberToken = "{N0:F0}";
         private const string FixedTenthsNumberToken = "{N0:F1}";
+        private const float DegreesToHalfRadians = 0.00872664626f;
         private const int SlowCadenceFrameModulo = 30;
         private const int MediumCadenceFrameModulo = 6;
         private const int StaticCanvasSortingOrder = 10;
@@ -1280,10 +1285,11 @@ namespace Hecton8.UI
             float planeDistance = projectionCamera != null
                 ? ResolveProjectionPlaneDistance()
                 : math.max(previewCamera.nearClipPlane + ProjectionNearClipSafetyPaddingMeters, ProjectionNearClipSafetyPaddingMeters);
-            float halfFovRadians = math.max(0.001f, previewCamera.fieldOfView * Mathf.Deg2Rad * 0.5f);
+            float halfFovRadians = math.max(0.001f, previewCamera.fieldOfView * DegreesToHalfRadians);
             float frustumHalfHeight = ApproximateTanPositive(halfFovRadians) * planeDistance;
             float frustumHalfWidth = frustumHalfHeight * math.max(0.0001f, previewCamera.aspect);
-            float worldScale = math.max(0.000001f, (frustumHalfHeight * 2f) / referenceResolution.y);
+            float invReferenceHeight = math.rcp(referenceResolution.y);
+            float worldScale = math.max(0.000001f, frustumHalfHeight * 2f * invReferenceHeight);
 
             Transform cameraTransform = previewCamera.transform;
             Vector3 planeCenter = cameraTransform.position + cameraTransform.forward * planeDistance;
@@ -1391,7 +1397,8 @@ namespace Hecton8.UI
             bool refreshMediumCadence = cadenceFrame % MediumCadenceFrameModulo == 0;
             bool refreshSlowCadence = cadenceFrame % SlowCadenceFrameModulo == 0;
             RefreshAcousticRadarPayload();
-            _threatChevronPulseTime += math.max(0f, deltaTime);
+            if (_threatChevronActiveMask != 0u)
+                _threatChevronPulseTime += math.max(0f, deltaTime);
             RefreshVisuals(deltaTime, refreshMediumCadence, refreshSlowCadence);
             PublishHudSolveWarningIfNeeded(hudSolveStartTimestamp);
             RuntimeWatchdog.MarkHudCanvasUpdated(targetCanvas);
@@ -1949,11 +1956,13 @@ namespace Hecton8.UI
                 return DiegeticHudWorldScale;
 
             float safeDistance = ResolveProjectionPlaneDistance();
-            float halfFovRadians = math.max(0.001f, targetCamera.fieldOfView * Mathf.Deg2Rad * 0.5f);
+            float halfFovRadians = math.max(0.001f, targetCamera.fieldOfView * DegreesToHalfRadians);
             float frustumHalfHeight = ApproximateTanPositive(halfFovRadians) * safeDistance;
             float frustumHalfWidth = frustumHalfHeight * math.max(0.0001f, targetCamera.aspect);
-            float scaleX = (frustumHalfWidth * 2f) / referenceResolution.x;
-            float scaleY = (frustumHalfHeight * 2f) / referenceResolution.y;
+            float invReferenceWidth = math.rcp(referenceResolution.x);
+            float invReferenceHeight = math.rcp(referenceResolution.y);
+            float scaleX = frustumHalfWidth * 2f * invReferenceWidth;
+            float scaleY = frustumHalfHeight * 2f * invReferenceHeight;
             return math.max(0.000001f, math.min(scaleX, scaleY));
         }
 
@@ -2738,10 +2747,11 @@ namespace Hecton8.UI
 
             Transform cameraTransform = projectionCamera.transform;
             float projectionDistance = ResolveProjectionPlaneDistance() + ThreatChevronPlaneBiasMeters;
-            float halfFovRadians = math.max(0.001f, projectionCamera.fieldOfView * Mathf.Deg2Rad * 0.5f);
+            float halfFovRadians = math.max(0.001f, projectionCamera.fieldOfView * DegreesToHalfRadians);
             float frustumHalfHeight = ApproximateTanPositive(halfFovRadians) * projectionDistance;
             float frustumHalfWidth = frustumHalfHeight * math.max(0.0001f, projectionCamera.aspect);
-            float worldPerPixel = (frustumHalfHeight * 2f) / math.max(1f, projectionCamera.pixelHeight);
+                float invPixelHeight = math.rcp(math.max(1f, projectionCamera.pixelHeight));
+            float worldPerPixel = frustumHalfHeight * 2f * invPixelHeight;
             float insetWorld = math.max(0f, threatChevronEdgeInsetPixels) * worldPerPixel;
             float safeHalfWidth = math.max(worldPerPixel, frustumHalfWidth - insetWorld);
             float safeHalfHeight = math.max(worldPerPixel, frustumHalfHeight - insetWorld);
@@ -2807,7 +2817,7 @@ namespace Hecton8.UI
             if (math.abs(localThreatPosition.x) <= 0.0001f && math.abs(localThreatPosition.y) <= 0.0001f)
                 return false;
 
-            float projectionScale = projectionDistance / math.max(0.001f, localThreatPosition.z);
+            float projectionScale = projectionDistance * math.rcp(math.max(0.001f, localThreatPosition.z));
             Vector2 projectedPlanePosition = new Vector2(localThreatPosition.x * projectionScale, localThreatPosition.y * projectionScale);
             Vector2 clampedPlanePosition = ClampToThreatBounds(projectedPlanePosition, safeHalfWidth, safeHalfHeight);
             float2 direction2DF3 = new float2(clampedPlanePosition.x, clampedPlanePosition.y);
@@ -2824,14 +2834,16 @@ namespace Hecton8.UI
             float threatDirectionLengthSq = math.lengthsq(threatRelative);
             float forwardComponent = behind ? 0f : math.max(0f, localThreatPosition.z);
             float forwardDot01 = threatDirectionLengthSq > 0.000001f
-                ? math.saturate((forwardComponent * forwardComponent) / threatDirectionLengthSq)
+                ? math.saturate((forwardComponent * forwardComponent) * math.rcp(threatDirectionLengthSq))
                 : 1f;
             Quaternion worldRotation = cameraTransform.rotation * ResolveApproxThreatChevronRoll(clampedPlanePosition);
             float behindFade = behind ? 0.35f : 1f;
             float threatFade = FastInverseLerp01(threatChevronThreshold, 1f, threatState.Threat01);
+            float invSafeHalfWidth = math.rcp(math.max(0.0001f, safeHalfWidth));
+            float invSafeHalfHeight = math.rcp(math.max(0.0001f, safeHalfHeight));
             float edgeDistance01 = math.saturate(math.max(
-                math.abs(clampedPlanePosition.x) / math.max(0.0001f, safeHalfWidth),
-                math.abs(clampedPlanePosition.y) / math.max(0.0001f, safeHalfHeight)));
+                math.abs(clampedPlanePosition.x) * invSafeHalfWidth,
+                math.abs(clampedPlanePosition.y) * invSafeHalfHeight));
             float edgeFade = math.lerp(0.72f, 1f, edgeDistance01);
             float threatScale = math.lerp(0.72f, 1.15f, math.saturate(threatState.Threat01)) * behindFade;
             float rotationScaleBias = 1f + (1f - forwardDot01) * 0.04f;
@@ -2849,18 +2861,14 @@ namespace Hecton8.UI
             float absX = math.abs(direction.x);
             float absY = math.abs(direction.y);
             if (absX <= 0.000001f && absY <= 0.000001f)
-                return s_threatChevronRoll0;
+                return s_threatChevronRollByDominantAxis[ThreatChevronRollRight];
 
-            if (absX > absY * 2.41421356f)
-                return direction.x >= 0f ? s_threatChevronRoll0 : s_threatChevronRoll180;
-
-            if (absY > absX * 2.41421356f)
-                return direction.y >= 0f ? s_threatChevronRoll90 : s_threatChevronRollNegative90;
-
-            if (direction.x >= 0f)
-                return direction.y >= 0f ? s_threatChevronRoll45 : s_threatChevronRollNegative45;
-
-            return direction.y >= 0f ? s_threatChevronRoll135 : s_threatChevronRollNegative135;
+            bool horizontal = absX >= absY;
+            float signedAxis = math.select(direction.y, direction.x, horizontal);
+            int horizontalBit = math.select(0, 1, horizontal);
+            int negativeBit = math.select(0, 1, signedAxis < 0f);
+            int rollIndex = (horizontalBit ^ 1) | (negativeBit << 1);
+            return s_threatChevronRollByDominantAxis[rollIndex];
         }
 
         private void ApplyAcousticRadarVisuals(Color primary, Color warning, float corruptionIntensity)
@@ -2982,8 +2990,8 @@ namespace Hecton8.UI
                 return projectedPlanePosition;
             }
 
-            float tx = safeHalfWidth / math.max(0.0001f, math.abs(projectedPlanePosition.x));
-            float ty = safeHalfHeight / math.max(0.0001f, math.abs(projectedPlanePosition.y));
+            float tx = safeHalfWidth * math.rcp(math.max(0.0001f, math.abs(projectedPlanePosition.x)));
+            float ty = safeHalfHeight * math.rcp(math.max(0.0001f, math.abs(projectedPlanePosition.y)));
             return projectedPlanePosition * math.min(tx, ty);
         }
 
@@ -5070,7 +5078,9 @@ namespace Hecton8.UI
         private static float ApproximateOneMinusExpNeg(float x)
         {
             x = math.max(0f, x);
-            return math.saturate((x * (6f + x)) / (6f + (4f * x) + (x * x)));
+            float numerator = x * (6f + x);
+            float denominator = 6f + (4f * x) + (x * x);
+            return math.saturate(numerator * math.rcp(denominator));
         }
 
         private static float MoveTowardsFast(float current, float target, float maxDelta)
@@ -5091,7 +5101,7 @@ namespace Hecton8.UI
             if (math.abs(range) <= 0.00001f)
                 return 0f;
 
-            return math.saturate((value - from) / range);
+            return math.saturate((value - from) * math.rcp(range));
         }
 
         private static float EvaluateCheapPulse01(float phaseRadians)
@@ -5112,7 +5122,9 @@ namespace Hecton8.UI
         {
             float x = math.clamp(radians, 0f, 1.4f);
             float x2 = x * x;
-            return x * ((15f - x2) / math.max(0.0001f, 15f - 6f * x2));
+            float numerator = 15f - x2;
+            float denominator = math.max(0.0001f, 15f - 6f * x2);
+            return x * numerator * math.rcp(denominator);
         }
 
         private static int CeilPositiveToInt(float value)
@@ -5322,8 +5334,20 @@ namespace Hecton8.UI
 
             try
             {
-                if (!TryBuildScannerStatusBuffer(snapshot, lease.Buffer, out int length, out int version))
-                    return false;
+                int length;
+                int version;
+                if (CharBufferPool.TryAcquireArenaSpan(CharBufferPool.RequiredVrTextCapacity, out Span<char> arenaSpan))
+                {
+                    if (!TryBuildScannerStatusBuffer(snapshot, arenaSpan, out length, out version))
+                        return false;
+
+                    arenaSpan.Slice(0, length).CopyTo(lease.Buffer.AsSpan(0, length));
+                }
+                else
+                {
+                    if (!TryBuildScannerStatusBuffer(snapshot, lease.Buffer, out length, out version))
+                        return false;
+                }
 
                 SetDisplayBufferIfChanged(
                     _statusLabel,
@@ -5348,13 +5372,13 @@ namespace Hecton8.UI
 
         private static bool TryBuildScannerStatusBuffer(
             ScannerTool.ScientificScanSnapshot snapshot,
-            char[] buffer,
+            Span<char> buffer,
             out int length,
             out int version)
         {
             length = 0;
             version = 0;
-            if (buffer == null || buffer.Length == 0)
+            if (buffer.Length == 0)
                 return false;
 
             int cursor = 0;
@@ -5408,7 +5432,7 @@ namespace Hecton8.UI
 
         private static int AppendScientificMaterial(
             ScannerTool.ScientificMaterialClass materialClass,
-            char[] buffer,
+            Span<char> buffer,
             int cursor)
         {
             switch (materialClass)
@@ -5439,7 +5463,7 @@ namespace Hecton8.UI
 
         private static int AppendScientificTarget(
             ScannerTool.ScientificScanSnapshot snapshot,
-            char[] buffer,
+            Span<char> buffer,
             int cursor)
         {
             if (snapshot.HasFaunaContact)
@@ -5450,39 +5474,39 @@ namespace Hecton8.UI
                 : AppendLiteral("WATER", buffer, cursor);
         }
 
-        private static int AppendLiteral(string value, char[] buffer, int cursor)
+        private static int AppendLiteral(string value, Span<char> buffer, int cursor)
         {
-            if (string.IsNullOrEmpty(value) || buffer == null || cursor >= buffer.Length)
+            if (string.IsNullOrEmpty(value) || cursor >= buffer.Length)
                 return cursor;
 
             ReadOnlySpan<char> span = value.AsSpan();
             int writable = math.min(span.Length, buffer.Length - cursor);
-            span.Slice(0, writable).CopyTo(buffer.AsSpan(cursor, writable));
+            span.Slice(0, writable).CopyTo(buffer.Slice(cursor, writable));
             return cursor + writable;
         }
 
-        private static int AppendChars(char[] value, char[] buffer, int cursor)
+        private static int AppendChars(char[] value, Span<char> buffer, int cursor)
         {
-            if (value == null || value.Length == 0 || buffer == null || cursor >= buffer.Length)
+            if (value == null || value.Length == 0 || cursor >= buffer.Length)
                 return cursor;
 
             int writable = math.min(value.Length, buffer.Length - cursor);
-            Array.Copy(value, 0, buffer, cursor, writable);
+            value.AsSpan(0, writable).CopyTo(buffer.Slice(cursor, writable));
             return cursor + writable;
         }
 
-        private static int AppendInt(int value, char[] buffer, int cursor)
+        private static int AppendInt(int value, Span<char> buffer, int cursor)
         {
-            if (buffer == null || cursor >= buffer.Length)
+            if (cursor >= buffer.Length)
                 return cursor;
 
-            if (!value.TryFormat(buffer.AsSpan(cursor), out int written))
+            if (!value.TryFormat(buffer.Slice(cursor), out int written))
                 return cursor;
 
             return cursor + written;
         }
 
-        private static int AppendSignedInt(int value, char[] buffer, int cursor)
+        private static int AppendSignedInt(int value, Span<char> buffer, int cursor)
         {
             if (value >= 0)
                 cursor = AppendLiteral("+", buffer, cursor);
@@ -6804,8 +6828,8 @@ namespace Hecton8.UI
 
         private float ComputeScale(int screenWidth, int screenHeight)
         {
-            float scaleX = screenWidth / math.max(1f, referenceResolution.x);
-            float scaleY = screenHeight / math.max(1f, referenceResolution.y);
+            float scaleX = screenWidth * math.rcp(math.max(1f, referenceResolution.x));
+            float scaleY = screenHeight * math.rcp(math.max(1f, referenceResolution.y));
             float blendedScale = math.lerp(scaleX, scaleY, matchWidthOrHeight);
             return math.clamp(blendedScale, minimumScale, maximumScale);
         }

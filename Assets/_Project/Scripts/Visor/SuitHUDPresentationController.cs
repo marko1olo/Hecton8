@@ -17,6 +17,7 @@ namespace NASAPunk.Visor
     public sealed class SuitHUDPresentationController : MonoBehaviour, ITickable, IUpdatable
     {
         private const float AutoResolveRetryInterval = 1f;
+        private const float DegreesToHalfRadians = 0.00872664626f;
         private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
         private static readonly List<SuitHUDScreenCompositor> s_compositorResolveBuffer = new List<SuitHUDScreenCompositor>(2);
 
@@ -544,7 +545,7 @@ namespace NASAPunk.Visor
             if (distance <= fitCamera.nearClipPlane + 0.01f)
                 return;
 
-            float height = 2f * distance * ApproximateTanPositive(fitCamera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+            float height = 2f * distance * ApproximateTanPositive(fitCamera.fieldOfView * DegreesToHalfRadians);
             float width = height * fitCamera.aspect;
             float fill = Mathf.Max(0.01f, diegeticProjectionViewportFill);
             Vector3 targetScale = new Vector3(width * fill, height * fill, surface.localScale.z);
@@ -825,7 +826,9 @@ namespace NASAPunk.Visor
         {
             float x = Mathf.Clamp(radians, 0f, 1.4f);
             float x2 = x * x;
-            return x * ((15f - x2) / Mathf.Max(0.0001f, 15f - 6f * x2));
+            float numerator = 15f - x2;
+            float denominator = Mathf.Max(0.0001f, 15f - 6f * x2);
+            return x * numerator * Unity.Mathematics.math.rcp(denominator);
         }
 
         private static string ResolvePresentationModeLabel(PresentationMode mode)

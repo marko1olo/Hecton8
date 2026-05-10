@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 using UnityEngine;
 
@@ -107,23 +108,15 @@ namespace Hecton8.EditorTools
             return outputPath;
         }
 
-        private static void CopySourceRedToPackedChannel(Texture source, int width, int height, NativeArray<Color32> packedPixels, int channel)
+        private static unsafe void CopySourceRedToPackedChannel(Texture source, int width, int height, NativeArray<Color32> packedPixels, int channel)
         {
             Texture2D readable = null;
             try
             {
                 readable = CaptureReadableTexture(source, width, height);
                 NativeArray<Color32> sourcePixels = readable.GetRawTextureData<Color32>();
-                int pixelCount = packedPixels.Length;
-
-                if (channel == 0)
-                    CopyRedToR(sourcePixels, packedPixels, pixelCount);
-                else if (channel == 1)
-                    CopyRedToG(sourcePixels, packedPixels, pixelCount);
-                else if (channel == 2)
-                    CopyRedToB(sourcePixels, packedPixels, pixelCount);
-                else
-                    CopyRedToA(sourcePixels, packedPixels, pixelCount);
+                int pixelCount = Mathf.Min(sourcePixels.Length, packedPixels.Length);
+                CopyRedToPackedChannelUnsafe(sourcePixels, packedPixels, pixelCount, channel);
             }
             finally
             {
@@ -157,44 +150,18 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static void CopyRedToR(NativeArray<Color32> sourcePixels, NativeArray<Color32> packedPixels, int pixelCount)
+        private static unsafe void CopyRedToPackedChannelUnsafe(
+            NativeArray<Color32> sourcePixels,
+            NativeArray<Color32> packedPixels,
+            int pixelCount,
+            int channel)
         {
-            for (int i = 0; i < pixelCount; i++)
-            {
-                Color32 pixel = packedPixels[i];
-                pixel.r = sourcePixels[i].r;
-                packedPixels[i] = pixel;
-            }
-        }
+            byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(sourcePixels);
+            byte* packed = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(packedPixels);
+            int targetChannel = channel & 3;
 
-        private static void CopyRedToG(NativeArray<Color32> sourcePixels, NativeArray<Color32> packedPixels, int pixelCount)
-        {
             for (int i = 0; i < pixelCount; i++)
-            {
-                Color32 pixel = packedPixels[i];
-                pixel.g = sourcePixels[i].r;
-                packedPixels[i] = pixel;
-            }
-        }
-
-        private static void CopyRedToB(NativeArray<Color32> sourcePixels, NativeArray<Color32> packedPixels, int pixelCount)
-        {
-            for (int i = 0; i < pixelCount; i++)
-            {
-                Color32 pixel = packedPixels[i];
-                pixel.b = sourcePixels[i].r;
-                packedPixels[i] = pixel;
-            }
-        }
-
-        private static void CopyRedToA(NativeArray<Color32> sourcePixels, NativeArray<Color32> packedPixels, int pixelCount)
-        {
-            for (int i = 0; i < pixelCount; i++)
-            {
-                Color32 pixel = packedPixels[i];
-                pixel.a = sourcePixels[i].r;
-                packedPixels[i] = pixel;
-            }
+                packed[(i * 4) + targetChannel] = source[i * 4];
         }
 
         private static int ResolvePackDimension(int a, int b, int c, int d)

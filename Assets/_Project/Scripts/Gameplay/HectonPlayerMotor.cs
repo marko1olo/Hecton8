@@ -55,6 +55,8 @@ namespace Hecton8.Gameplay
         private const float ScheduledFootstepProbeMinSupportNormalYSq = ScheduledFootstepProbeMinSupportNormalY * ScheduledFootstepProbeMinSupportNormalY;
         private const float KinematicRepairTargetMinDistance = 0.05f;
         private const float DenormalVelocityFlushThresholdMetersPerSecond = 0.001f;
+        private const float DenormalVelocityFlushThresholdMetersPerSecondSq =
+            DenormalVelocityFlushThresholdMetersPerSecond * DenormalVelocityFlushThresholdMetersPerSecond;
         private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
         private const float WakeSiltEmissionSpeedThresholdMetersPerSecond = 4.5f;
         private const float WakeSiltEmissionCooldownSeconds = 0.35f;
@@ -699,7 +701,7 @@ namespace Hecton8.Gameplay
         {
             float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
             float speedSq = math.lengthsq(velocity3);
-            if (speedSq < DenormalVelocityFlushThresholdMetersPerSecond * DenormalVelocityFlushThresholdMetersPerSecond)
+            if (speedSq < DenormalVelocityFlushThresholdMetersPerSecondSq)
                 return Vector3.zero;
 
             float speed = ApproximateSpeedMagnitude(velocity3);
@@ -722,7 +724,7 @@ namespace Hecton8.Gameplay
             Vector3 safeVelocity = SafeVelocity(velocity);
             float3 velocity3 = new float3(safeVelocity.x, safeVelocity.y, safeVelocity.z);
             float speedSq = math.lengthsq(velocity3);
-            if (speedSq < DenormalVelocityFlushThresholdMetersPerSecond * DenormalVelocityFlushThresholdMetersPerSecond)
+            if (speedSq < DenormalVelocityFlushThresholdMetersPerSecondSq)
                 return Vector3.zero;
 
             float speed = ApproximateSpeedMagnitude(velocity3);

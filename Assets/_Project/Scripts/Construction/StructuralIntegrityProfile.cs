@@ -40,7 +40,7 @@ namespace Hecton8.Construction
             public int RuptureDecalAtlasIndex => ruptureDecalAtlasIndex;
         }
 
-        [Header("── Material Variants ──────────────────")]
+        [Header("Material Variants")]
         [Tooltip("Per-material structural thresholds and rupture decal atlas entries.")]
         [SerializeField] private VariantIntegrity[] variants =
         {

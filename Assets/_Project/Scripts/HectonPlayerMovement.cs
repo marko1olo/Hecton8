@@ -82,8 +82,8 @@ namespace Hecton8.Gameplay
         private const int DegreeSinCosLutMask = DegreeSinCosLutSize - 1;
         private const float DegreeSinCosLutScale = DegreeSinCosLutSize / 360f;
         private const float InvTwoPi = 0.15915494309189535f;
-        private static readonly float[] _degreeSinLut = new float[DegreeSinCosLutSize]; // COLD ALLOC: float[1024] - hot-path degree sine LUT - owner: HectonPlayerMovement
-        private static readonly float[] _degreeCosLut = new float[DegreeSinCosLutSize]; // COLD ALLOC: float[1024] - hot-path degree cosine LUT - owner: HectonPlayerMovement
+        private static readonly float[] _degreeSinLut = new float[DegreeSinCosLutSize]; // COLD ALLOC: float[1024] — hot-path degree sine LUT — owner: HectonPlayerMovement
+        private static readonly float[] _degreeCosLut = new float[DegreeSinCosLutSize]; // COLD ALLOC: float[1024] — hot-path degree cosine LUT — owner: HectonPlayerMovement
         private static bool _degreeSinCosLutInitialized;
         private const float LocalGravityOverrideBlendSeconds = 1f;
         private const float VrComfortGravityTransitionSeconds = 1f;
@@ -1132,12 +1132,12 @@ namespace Hecton8.Gameplay
         private float _dynamicStormIntensity;
         private bool _crestSamplingSucceeded;
         private bool _crestFlowSamplingSucceeded;
-        private readonly Vector3[] _crestQueryPoints = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] Ã¢â‚¬â€ batched Crest body-query points (center/head/feet/left/right) Ã¢â‚¬â€ owner: HectonPlayerMovement
-        private readonly float[] _crestQueryHeights = new float[CrestBodySampleCount]; // COLD ALLOC: float[5] Ã¢â‚¬â€ batched Crest sampled water heights Ã¢â‚¬â€ owner: HectonPlayerMovement
-        private readonly Vector3[] _crestQueryNormals = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] Ã¢â‚¬â€ batched Crest sampled normals Ã¢â‚¬â€ owner: HectonPlayerMovement
-        private readonly Vector3[] _crestQueryVelocities = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] Ã¢â‚¬â€ batched Crest sampled water velocities Ã¢â‚¬â€ owner: HectonPlayerMovement
-        private readonly Vector3[] _crestQueryDisplacements = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] Ã¢â‚¬â€ batched Crest sampled displacements Ã¢â‚¬â€ owner: HectonPlayerMovement
-        private readonly Vector3[] _crestQueryFlows = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] Ã¢â‚¬â€ batched Crest flow samples Ã¢â‚¬â€ owner: HectonPlayerMovement
+        private readonly Vector3[] _crestQueryPoints = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] — batched Crest body-query points (center/head/feet/left/right) — owner: HectonPlayerMovement
+        private readonly float[] _crestQueryHeights = new float[CrestBodySampleCount]; // COLD ALLOC: float[5] — batched Crest sampled water heights — owner: HectonPlayerMovement
+        private readonly Vector3[] _crestQueryNormals = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] — batched Crest sampled normals — owner: HectonPlayerMovement
+        private readonly Vector3[] _crestQueryVelocities = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] — batched Crest sampled water velocities — owner: HectonPlayerMovement
+        private readonly Vector3[] _crestQueryDisplacements = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] — batched Crest sampled displacements — owner: HectonPlayerMovement
+        private readonly Vector3[] _crestQueryFlows = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] — batched Crest flow samples — owner: HectonPlayerMovement
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  CAMERA JUICE
@@ -7150,13 +7150,14 @@ namespace Hecton8.Gameplay
                 return;
 
             float3 axis3 = new float3(ladderForward.x, 0f, ladderForward.z);
-            if (!math.all(math.isfinite(axis3)) || math.lengthsq(axis3) <= 0.000001f)
+            float axisSqr = math.lengthsq(axis3);
+            if (!math.all(math.isfinite(axis3)) || axisSqr <= 0.000001f)
             {
                 Vector3 bodyForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
                 axis3 = new float3(bodyForward.x, 0f, bodyForward.z);
+                axisSqr = math.lengthsq(axis3);
             }
 
-            float axisSqr = math.lengthsq(axis3);
             if (!math.isfinite(axisSqr) || axisSqr <= 0.000001f)
                 return;
 

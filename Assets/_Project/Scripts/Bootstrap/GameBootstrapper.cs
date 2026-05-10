@@ -296,7 +296,7 @@ namespace Hecton8.Bootstrap
         private bool _sceneActivationRunInProgress;
         private bool _sceneActivationRequested;
         private bool _sceneActivationStarted;
-        private int _sceneActivationSceneHandle = -1;
+        private ulong _sceneActivationSceneHandle = ulong.MaxValue;
         private bool _isLoadingSave;
         private WorldProceduralScatterDirector _worldProceduralScatterDirector;
         private Task _backgroundDomainHandshakeTask;
@@ -859,6 +859,7 @@ namespace Hecton8.Bootstrap
             Hecton8.Power.PowerGridTelemetryEvents.ResetStaticState();
             LogisticsPipeTransportScheduler.Shutdown();
             WorldSpatialHashGrid.ClearRuntimeState();
+            PreInitAssetIdMap.Shutdown();
             NativeArenaAllocator.Shutdown();
             GlobalRegistry.DisposeServiceReboundQueuesForShutdown();
         }
@@ -917,9 +918,10 @@ namespace Hecton8.Bootstrap
         {
             _sceneActivationRequested = true;
             Scene activeScene = SceneManager.GetActiveScene();
-            if (_sceneActivationSceneHandle != activeScene.handle)
+            ulong activeSceneHandle = activeScene.handle.GetRawData();
+            if (_sceneActivationSceneHandle != activeSceneHandle)
             {
-                _sceneActivationSceneHandle = activeScene.handle;
+                _sceneActivationSceneHandle = activeSceneHandle;
                 _sceneActivationStarted = false;
                 _debugSceneActivationCompleted = false;
             }
@@ -1128,6 +1130,7 @@ namespace Hecton8.Bootstrap
             {
                 _preWarmAssetsReady = false;
                 NativeArenaAllocator.Initialize();
+                PreInitAssetIdMap.Initialize();
                 GlobalTelemetryBus.Initialize();
                 if (!_headlessBootMode)
                 {
@@ -1627,10 +1630,44 @@ namespace Hecton8.Bootstrap
                     return false;
                 }
 
+                PublishAddressableDependencyGroupLoaded(i, group.labelString, handle);
                 Addressables.Release(handle);
             }
 
             return true;
+        }
+
+        private static void PublishAddressableDependencyGroupLoaded(
+            int dependencyIndex,
+            string label,
+            AsyncOperationHandle handle)
+        {
+            uint groupHash = ComputeAddressableGroupHash(label);
+            AssetLifecycleGovernor lifecycleGovernor = GlobalRegistry.AssetLifecycle;
+            if (lifecycleGovernor != null)
+                lifecycleGovernor.MarkAddressableDependencyGroupLoaded(groupHash, dependencyIndex, handle);
+
+            AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
+            if (dispatcher != null)
+                dispatcher.MarkAddressableDependencyGroupReady(groupHash, dependencyIndex, handle);
+        }
+
+        private static uint ComputeAddressableGroupHash(string label)
+        {
+            if (string.IsNullOrEmpty(label))
+                return 0u;
+
+            unchecked
+            {
+                uint hash = 2166136261u;
+                for (int i = 0; i < label.Length; i++)
+                {
+                    hash ^= label[i];
+                    hash *= 16777619u;
+                }
+
+                return hash != 0u ? hash : 1u;
+            }
         }
 #endif
 
@@ -1743,7 +1780,7 @@ namespace Hecton8.Bootstrap
                 long serviceStartTimestamp = Stopwatch.GetTimestamp();
                 try
                 {
-                    if (!InitializeBootstrapDependencyNode(node))
+                    if (!TryInitializeBootstrapDependencyNodeWithFallback(node))
                     {
                         LogBootstrapDependencyFailure(phase, node);
                         return false;
@@ -1935,6 +1972,49 @@ namespace Hecton8.Bootstrap
                 default:
                     return BootstrapPhase.Fatal;
             }
+        }
+
+        private static bool TryInitializeBootstrapDependencyNodeWithFallback(BootstrapDependencyNode node)
+        {
+            try
+            {
+                return InitializeBootstrapDependencyNode(node);
+            }
+            catch (Exception exception)
+            {
+                if (TryRegisterStableFallbackForBootstrapNode(node, exception))
+                    return true;
+
+                RuntimeDiagnosticsTrace.EnsureSession("bootstrap_blackbox");
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "bootstrap.service.init.exception",
+                    ResolveBootstrapDependencyNodeName(node));
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError(
+                    "[GameBootstrapper] Bootstrap dependency exception. node=" +
+                    ResolveBootstrapDependencyNodeName(node) +
+                    " error=" +
+                    exception.Message);
+#endif
+                return false;
+            }
+        }
+
+        private static bool TryRegisterStableFallbackForBootstrapNode(
+            BootstrapDependencyNode node,
+            Exception exception)
+        {
+            if (node == BootstrapDependencyNode.SpatialAudioManager)
+                return TryRegisterNoOpAudioFallback(exception != null ? exception.Message : "SpatialAudioManager init exception");
+
+            GlobalRegistryServiceSlot slot = ResolveRegistrySlotForBootstrapNode(node);
+            if (GlobalRegistry.TryReplaceBootstrapServiceWithStableProxy(slot))
+            {
+                LogOptionalBootstrapWarning("Injected stable bootstrap proxy for " + ResolveBootstrapDependencyNodeName(node));
+                return true;
+            }
+
+            return false;
         }
 
         private static bool InitializeBootstrapDependencyNode(BootstrapDependencyNode node)
@@ -2584,11 +2664,17 @@ namespace Hecton8.Bootstrap
 
         private static bool TryRegisterNoOpAudioFallback(string reason)
         {
-            if (GlobalRegistry.Audio != null)
+            if (ReferenceEquals(GlobalRegistry.Audio, NoOpAudioService.Shared))
                 return true;
 
-            GlobalRegistry.RegisterAudioService(NoOpAudioService.Shared);
-            LogOptionalBootstrapWarning($"Injected NoOp audio service. Reason: {reason}");
+            if (GlobalRegistry.Audio == null)
+                GlobalRegistry.RegisterAudioService(NoOpAudioService.Shared);
+            else
+                GlobalRegistry.ReplaceAudioServiceForBootstrap(NoOpAudioService.Shared);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogOptionalBootstrapWarning("Injected NoOp audio service. Reason: " + reason);
+#endif
             return GlobalRegistry.Audio != null;
         }
 

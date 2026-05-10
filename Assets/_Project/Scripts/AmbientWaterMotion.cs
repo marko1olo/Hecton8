@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — AmbientWaterMotion.cs
+// HECTON-8 - AmbientWaterMotion.cs
 // Cheap visual-only bob/sway for decorative props. No Rigidbody required.
 // Updated by AmbientWaterMotionManager with distance LOD.
 // ============================================================================

@@ -5341,6 +5341,31 @@ namespace Hecton8.Core
             return null;
         }
 
+        internal static bool TryReplaceBootstrapServiceWithStableProxy(GlobalRegistryServiceSlot serviceSlot)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Input:
+                    ReplaceService(ref _input, _noOpInputService, GlobalRegistryServiceSlot.Input);
+                    return true;
+
+                case GlobalRegistryServiceSlot.VRSomaticProvider:
+                    ReplaceService(ref _vrSomaticProvider, _noOpVRSomaticProvider, GlobalRegistryServiceSlot.VRSomaticProvider);
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        internal static void ReplaceAudioServiceForBootstrap(IAudioService instance)
+        {
+            if (instance == null)
+                return;
+
+            ReplaceService(ref _audio, instance, GlobalRegistryServiceSlot.Audio);
+        }
+
         internal static object ResolveRegisteredServiceForHeartbeat(GlobalRegistryServiceSlot serviceSlot)
         {
             return ResolveRegisteredServiceObject(serviceSlot);

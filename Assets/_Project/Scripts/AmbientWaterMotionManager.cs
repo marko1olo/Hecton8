@@ -1,9 +1,9 @@
 // ============================================================================
-// HECTON-8 — AmbientWaterMotionManager.cs
+// HECTON-8 - AmbientWaterMotionManager.cs
 // Centralized visual bob/sway updater. One tick for many decorative props.
 //
 // v1.1 OPTIMIZATIONS:
-//   [FIX] TryResolveObserver: dobavlen _observerResolveCooldown — ne dergaem
+//   [FIX] TryResolveObserver: throttles player resolve until observer exists.
 //         GameBootstrapper/player resolve kazhdyy kadr esli observer esche ne gotov.
 //   [FIX] Register: zamena Contains (O(n)) na HashSet dlya O(1) deduplikatsii.
 //   [FIX] ApplyMotion: keshiruem worldPos iz CachedTransform.position odin raz,
@@ -65,6 +65,9 @@ namespace Hecton8.Physics
         private float _mediumDistanceSqr;
         private float _farDistanceSqr;
         private float _cullDistanceSqr;
+        private int _mediumFrameMask;
+        private int _farFrameMask;
+        private int _cullFrameMask;
         private bool _tickRegistered;
         private bool _serviceRegistered;
         private Vector3 _biomeCurrentVector;
@@ -245,18 +248,18 @@ namespace Hecton8.Physics
             if (distanceSq <= (double)mediumSq * biasSq)
             {
                 _debugMediumCount++;
-                return ((_frameCounter + index) % math.max(1, mediumDivisor)) == 0;
+                return ((_frameCounter + index) & _mediumFrameMask) == 0;
             }
 
             if (distanceSq <= (double)farSq * biasSq)
             {
                 _debugFarCount++;
-                return ((_frameCounter + index) % math.max(1, farDivisor)) == 0;
+                return ((_frameCounter + index) & _farFrameMask) == 0;
             }
 
             _debugCulledCount++;
             return distanceSq <= (double)cullSq * biasSq
-                && ((_frameCounter + index) % math.max(1, cullDivisor)) == 0;
+                && ((_frameCounter + index) & _cullFrameMask) == 0;
         }
 
         private void ApplyMotion(AmbientWaterMotion motion, Vector3 worldPos)
@@ -419,6 +422,25 @@ namespace Hecton8.Physics
             _mediumDistanceSqr = mediumDistance * mediumDistance;
             _farDistanceSqr = farDistance * farDistance;
             _cullDistanceSqr = cullDistance * cullDistance;
+            _mediumFrameMask = NormalizeCadenceDivisor(mediumDivisor) - 1;
+            _farFrameMask = NormalizeCadenceDivisor(farDivisor) - 1;
+            _cullFrameMask = NormalizeCadenceDivisor(cullDivisor) - 1;
+        }
+
+        private static int NormalizeCadenceDivisor(int divisor)
+        {
+            if (divisor <= 1)
+                return 1;
+            if (divisor <= 2)
+                return 2;
+            if (divisor <= 4)
+                return 4;
+            if (divisor <= 8)
+                return 8;
+            if (divisor <= 16)
+                return 16;
+
+            return 32;
         }
 
         private void TryRegister()

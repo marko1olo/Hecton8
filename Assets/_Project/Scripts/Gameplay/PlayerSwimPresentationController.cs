@@ -16,6 +16,7 @@ namespace Hecton8.Gameplay
     {
         private const float Pi = 3.14159265359f;
         private const float TwoPi = 6.28318530718f;
+        private const float InvTwoPi = 0.15915494f;
         private const float HalfPi = 1.57079632679f;
         private const float DegreesToRadians = 0.01745329252f;
         private const float UtilitySuitMassThreshold = 120f;
@@ -36,6 +37,7 @@ namespace Hecton8.Gameplay
         private static readonly int _WaveDescentTuckHash = Animator.StringToHash("WaveDescentTuck");
         private static readonly int _WaveLeanWeightHash = Animator.StringToHash("WaveLeanWeight");
         private static readonly int _ImmersionDepthHash = Animator.StringToHash("ImmersionDepth");
+        private static readonly int _BreathingPhaseShaderId = Shader.PropertyToID("_BreathingPhase");
 
         private static readonly string[] s_modeLabels =
         {
@@ -654,6 +656,7 @@ namespace Hecton8.Gameplay
         private float _previousCameraYaw;
         private int _lastDrivenFrame = -1;
         private int _nextReferenceResolveFrame = -1;
+        private int _lastBreathingPhaseShaderByte = int.MinValue;
         private bool _hasInitializedActiveBlend;
         private bool _cameraYawInitialized;
         private bool _poseStateInitialized;
@@ -789,11 +792,15 @@ namespace Hecton8.Gameplay
                 swimAnimator.SetFloat(_ImmersionDepthHash, 0f);
             }
 
+            Shader.SetGlobalFloat(_BreathingPhaseShaderId, 0f);
+            _lastBreathingPhaseShaderByte = int.MinValue;
             TryUnregister();
         }
 
         private void OnDestroy()
         {
+            Shader.SetGlobalFloat(_BreathingPhaseShaderId, 0f);
+            _lastBreathingPhaseShaderByte = int.MinValue;
             TryUnregister();
         }
 
@@ -1320,6 +1327,18 @@ namespace Hecton8.Gameplay
             swimAnimator.SetFloat(_ImmersionDepthHash, _immersionDepthCurrent);
         }
 
+        private void PublishBreathingPhase(float phase)
+        {
+            float clamped = math.clamp(phase, -1f, 1f);
+            float roundingOffset = math.select(-0.5f, 0.5f, clamped >= 0f);
+            int quantized = (int)(clamped * 127f + roundingOffset);
+            if (quantized == _lastBreathingPhaseShaderByte)
+                return;
+
+            _lastBreathingPhaseShaderByte = quantized;
+            Shader.SetGlobalFloat(_BreathingPhaseShaderId, quantized * 0.00787401575f);
+        }
+
         private void ApplyRootPose(
             SwimPresentationProfile profile,
             Vector3 velocity,
@@ -1356,6 +1375,9 @@ namespace Hecton8.Gameplay
             float toolFramingWeight = _equippedToolBlendCurrent;
             float surfaceIdleWeight = ResolveSurfaceIdleWeight();
             float surfaceBreathSin = ApproximateSinCycle01(_idleTimer * surfaceBreathFrequency);
+            float breathingPhase01 = math.frac(_idleTimer * math.max(surfaceBreathFrequency, 0.0001f));
+            float breathingPulse = ((math.abs(breathingPhase01 * 2f - 1f) * 2f) - 1f) * presentationWeight;
+            PublishBreathingPhase(breathingPulse);
             float surfaceWaveCycle = _idleTimer * surfaceWaveBobFrequency;
             float surfaceWaveSin = ApproximateSinCycle01(surfaceWaveCycle + 0.1193662f);
             float surfaceWaveCos = ApproximateCosCycle01(surfaceWaveCycle * 0.82f);
@@ -2871,7 +2893,7 @@ namespace Hecton8.Gameplay
 
         private static void ApproximateSinCosFullNoTrig(float radians, out float sin, out float cos)
         {
-            float x = radians - (TwoPi * math.round(radians / TwoPi));
+            float x = radians - (TwoPi * FastNearestInt(radians * InvTwoPi));
             float cosSign = 1f;
             if (x > HalfPi)
             {
@@ -2887,6 +2909,11 @@ namespace Hecton8.Gameplay
             float x2 = x * x;
             sin = x * (1f - (x2 * (0.16666667f - (x2 * 0.008333333f))));
             cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
+        }
+
+        private static int FastNearestInt(float value)
+        {
+            return (int)(value + math.select(-0.5f, 0.5f, value >= 0f));
         }
 
         private static float4 MulQuaternionNoSqrt(float4 lhs, float4 rhs)

@@ -26,8 +26,11 @@ namespace Hecton8.Dev
         private const float MaxRuntimeSeconds = 1800f;
         private const float MinimumAllowedFps = 45f;
         private const float MaxLowFpsSeconds = 10f;
+        private const float BytesToMegabytes = 1f / (1024f * 1024f);
         private const int MaxAllowedLodChangesPerFrame = 50;
         private const int MaxExpeditionSamples = 1802;
+        private const int CsvNumberBufferLength = 32;
+        public const int ExpeditionSampleStrideBytes = 64;
         private const string CsvFileName = "bot_expedition.csv";
         private const string FailureNone = "NONE";
         private const string FailureLowFps = "FPS_UNDER_45_FOR_10S";
@@ -37,7 +40,7 @@ namespace Hecton8.Dev
         // COLD ALLOC: WaitCallback[1] — background CSV flush entry point — owner: BotController
         private static readonly WaitCallback _csvFlushCallback = ExecuteCsvFlush;
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Size = ExpeditionSampleStrideBytes)]
         private struct ExpeditionSample
         {
             public float ElapsedSeconds;
@@ -72,6 +75,8 @@ namespace Hecton8.Dev
 
         // COLD ALLOC: ExpeditionSample[1802] — 1Hz QA expedition telemetry buffer — owner: BotController
         private readonly ExpeditionSample[] _samples = new ExpeditionSample[MaxExpeditionSamples];
+        // COLD ALLOC: char[32] — background CSV numeric formatting scratch — owner: BotController
+        private readonly char[] _csvNumberBuffer = new char[CsvNumberBufferLength];
 
         private Transform _cachedTransform;
         private Rigidbody _playerBody;
@@ -125,6 +130,11 @@ namespace Hecton8.Dev
         /// </summary>
         public string CsvPath { get; private set; }
 
+        /// <summary>
+        /// Runtime-resolved telemetry sample stride for cache-line guard tests.
+        /// </summary>
+        public static int ResolvedExpeditionSampleStrideBytes => Marshal.SizeOf<ExpeditionSample>();
+
         private void Awake()
         {
             _cachedTransform = transform;
@@ -149,7 +159,7 @@ namespace Hecton8.Dev
         }
 
         /// <summary>
-        /// Updates the simulated WASD command. Inputs are clamped to the keyboard axis range.
+        /// Updates the simulated WASD command. Inputs are branch-sanitized to the keyboard axis range.
         /// </summary>
         public void SetMoveCommand(float horizontal, float vertical)
         {
@@ -280,13 +290,21 @@ namespace Hecton8.Dev
             Vector3 position = _playerBody.position;
             ref ExpeditionSample sample = ref _samples[_sampleCount];
             sample.ElapsedSeconds = _elapsedSeconds;
-            sample.EstimatedDistanceMeters = ApproximateMagnitude(position - _startPosition);
+            sample.EstimatedDistanceMeters = DominantAxisDistance(position, _startPosition);
             sample.Fps = sampleSeconds > 0.0001f ? sampleFrames / sampleSeconds : 0f;
-            sample.MonoUsedMb = Profiler.GetMonoUsedSizeLong() * (1f / (1024f * 1024f));
-            sample.TotalAllocatedMb = Profiler.GetTotalAllocatedMemoryLong() * (1f / (1024f * 1024f));
-            sample.TotalReservedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
-            sample.GraphicsDriverAllocatedMb = Math.Max(0L, Profiler.GetAllocatedMemoryForGraphicsDriver()) * (1f / (1024f * 1024f));
-            sample.GcThreadAllocatedBytes = ClampLongToInt(Math.Max(0L, GC.GetAllocatedBytesForCurrentThread() - _startThreadAllocatedBytes));
+            sample.MonoUsedMb = Profiler.GetMonoUsedSizeLong() * BytesToMegabytes;
+            sample.TotalAllocatedMb = Profiler.GetTotalAllocatedMemoryLong() * BytesToMegabytes;
+            sample.TotalReservedMb = Profiler.GetTotalReservedMemoryLong() * BytesToMegabytes;
+            long graphicsDriverBytes = Profiler.GetAllocatedMemoryForGraphicsDriver();
+            if (graphicsDriverBytes < 0L)
+                graphicsDriverBytes = 0L;
+
+            long threadAllocatedBytes = GC.GetAllocatedBytesForCurrentThread() - _startThreadAllocatedBytes;
+            if (threadAllocatedBytes < 0L)
+                threadAllocatedBytes = 0L;
+
+            sample.GraphicsDriverAllocatedMb = graphicsDriverBytes * BytesToMegabytes;
+            sample.GcThreadAllocatedBytes = ClampLongToInt(threadAllocatedBytes);
             sample.GcGen0 = GC.CollectionCount(0) - _startGen0;
             sample.GcGen1 = GC.CollectionCount(1) - _startGen1;
             sample.GcGen2 = GC.CollectionCount(2) - _startGen2;
@@ -340,8 +358,8 @@ namespace Hecton8.Dev
 
         private void ResolveDriveCommand()
         {
-            float absX = Mathf.Abs(_wasdCommand.x);
-            float absY = Mathf.Abs(_wasdCommand.y);
+            float absX = Abs(_wasdCommand.x);
+            float absY = Abs(_wasdCommand.y);
             if (absX <= 0.000001f && absY <= 0.000001f)
             {
                 _driveDirection = Vector3.zero;
@@ -361,12 +379,14 @@ namespace Hecton8.Dev
 
             if (absY >= absX)
             {
-                _driveDirection = _wasdCommand.y >= 0f ? cachedTransform.forward : -cachedTransform.forward;
+                Vector3 forward = DominantAxisOrFallback(cachedTransform.forward, Vector3.forward);
+                _driveDirection = _wasdCommand.y >= 0f ? forward : -forward;
                 _driveScale = absY;
             }
             else
             {
-                _driveDirection = _wasdCommand.x >= 0f ? cachedTransform.right : -cachedTransform.right;
+                Vector3 right = DominantAxisOrFallback(cachedTransform.right, Vector3.right);
+                _driveDirection = _wasdCommand.x >= 0f ? right : -right;
                 _driveScale = absX;
             }
 
@@ -412,41 +432,43 @@ namespace Hecton8.Dev
                 if (string.IsNullOrEmpty(CsvPath))
                     CsvPath = Path.Combine(directory, CsvFileName);
 
+                char[] numberBuffer = _csvNumberBuffer;
                 using (StreamWriter writer = new StreamWriter(CsvPath, append: false))
                 {
                     writer.WriteLine(CsvHeader);
                     for (int i = 0; i < _sampleCount; i++)
                     {
                         ExpeditionSample sample = _samples[i];
-                        writer.Write(sample.ElapsedSeconds.ToString("F3", CultureInfo.InvariantCulture));
+                        WriteFloatCsv(writer, sample.ElapsedSeconds, "F3", numberBuffer);
                         writer.Write(',');
-                        writer.Write(sample.EstimatedDistanceMeters.ToString("F3", CultureInfo.InvariantCulture));
+                        WriteFloatCsv(writer, sample.EstimatedDistanceMeters, "F3", numberBuffer);
                         writer.Write(',');
-                        writer.Write(sample.Fps.ToString("F2", CultureInfo.InvariantCulture));
+                        WriteFloatCsv(writer, sample.Fps, "F2", numberBuffer);
                         writer.Write(',');
-                        writer.Write(sample.MonoUsedMb.ToString("F2", CultureInfo.InvariantCulture));
+                        WriteFloatCsv(writer, sample.MonoUsedMb, "F2", numberBuffer);
                         writer.Write(',');
-                        writer.Write(sample.TotalAllocatedMb.ToString("F2", CultureInfo.InvariantCulture));
+                        WriteFloatCsv(writer, sample.TotalAllocatedMb, "F2", numberBuffer);
                         writer.Write(',');
-                        writer.Write(sample.TotalReservedMb.ToString("F2", CultureInfo.InvariantCulture));
+                        WriteFloatCsv(writer, sample.TotalReservedMb, "F2", numberBuffer);
                         writer.Write(',');
-                        writer.Write(sample.GraphicsDriverAllocatedMb.ToString("F2", CultureInfo.InvariantCulture));
+                        WriteFloatCsv(writer, sample.GraphicsDriverAllocatedMb, "F2", numberBuffer);
                         writer.Write(',');
-                        writer.Write(sample.GcThreadAllocatedBytes.ToString(CultureInfo.InvariantCulture));
+                        WriteIntCsv(writer, sample.GcThreadAllocatedBytes, numberBuffer);
                         writer.Write(',');
-                        writer.Write(sample.GcGen0.ToString(CultureInfo.InvariantCulture));
+                        WriteIntCsv(writer, sample.GcGen0, numberBuffer);
                         writer.Write(',');
-                        writer.Write(sample.GcGen1.ToString(CultureInfo.InvariantCulture));
+                        WriteIntCsv(writer, sample.GcGen1, numberBuffer);
                         writer.Write(',');
-                        writer.Write(sample.GcGen2.ToString(CultureInfo.InvariantCulture));
+                        WriteIntCsv(writer, sample.GcGen2, numberBuffer);
                         writer.Write(',');
-                        writer.Write(sample.LodChangesFrame.ToString(CultureInfo.InvariantCulture));
+                        WriteIntCsv(writer, sample.LodChangesFrame, numberBuffer);
                         writer.Write(',');
-                        writer.Write(sample.PositionX.ToString("F3", CultureInfo.InvariantCulture));
+                        WriteFloatCsv(writer, sample.PositionX, "F3", numberBuffer);
                         writer.Write(',');
-                        writer.Write(sample.PositionY.ToString("F3", CultureInfo.InvariantCulture));
+                        WriteFloatCsv(writer, sample.PositionY, "F3", numberBuffer);
                         writer.Write(',');
-                        writer.WriteLine(sample.PositionZ.ToString("F3", CultureInfo.InvariantCulture));
+                        WriteFloatCsv(writer, sample.PositionZ, "F3", numberBuffer);
+                        writer.WriteLine();
                     }
                 }
 
@@ -463,8 +485,10 @@ namespace Hecton8.Dev
 
         private static float DistanceSq(Vector3 a, Vector3 b)
         {
-            Vector3 delta = a - b;
-            return delta.sqrMagnitude;
+            float deltaX = a.x - b.x;
+            float deltaY = a.y - b.y;
+            float deltaZ = a.z - b.z;
+            return (deltaX * deltaX) + (deltaY * deltaY) + (deltaZ * deltaZ);
         }
 
         private float ResolveTargetDistanceMetersSq()
@@ -505,15 +529,69 @@ namespace Hecton8.Dev
             return value;
         }
 
-        private static float ApproximateMagnitude(Vector3 value)
+        private static float DominantAxisDistance(Vector3 value, Vector3 origin)
         {
-            float absX = Mathf.Abs(value.x);
-            float absY = Mathf.Abs(value.y);
-            float absZ = Mathf.Abs(value.z);
-            float max = Mathf.Max(absX, Mathf.Max(absY, absZ));
-            float min = Mathf.Min(absX, Mathf.Min(absY, absZ));
-            float mid = absX + absY + absZ - max - min;
-            return max + (mid * 0.375f) + (min * 0.125f);
+            float deltaX = value.x - origin.x;
+            float deltaY = value.y - origin.y;
+            float deltaZ = value.z - origin.z;
+            if (!float.IsFinite(deltaX) || !float.IsFinite(deltaY) || !float.IsFinite(deltaZ))
+                return 0f;
+
+            float absX = Abs(deltaX);
+            float absY = Abs(deltaY);
+            float absZ = Abs(deltaZ);
+            float max = absX >= absY ? absX : absY;
+            return max >= absZ ? max : absZ;
+        }
+
+        private static void WriteFloatCsv(StreamWriter writer, float value, string format, char[] buffer)
+        {
+            if (!float.IsFinite(value))
+            {
+                writer.Write('0');
+                return;
+            }
+
+            if (value.TryFormat(buffer.AsSpan(), out int charsWritten, format.AsSpan(), CultureInfo.InvariantCulture))
+            {
+                writer.Write(buffer, 0, charsWritten);
+                return;
+            }
+
+            writer.Write('0');
+        }
+
+        private static void WriteIntCsv(StreamWriter writer, int value, char[] buffer)
+        {
+            if (value.TryFormat(buffer.AsSpan(), out int charsWritten, ReadOnlySpan<char>.Empty, CultureInfo.InvariantCulture))
+            {
+                writer.Write(buffer, 0, charsWritten);
+                return;
+            }
+
+            writer.Write('0');
+        }
+
+        private static Vector3 DominantAxisOrFallback(Vector3 value, Vector3 fallback)
+        {
+            if (!float.IsFinite(value.x) || !float.IsFinite(value.y) || !float.IsFinite(value.z))
+                return fallback;
+
+            float absX = Abs(value.x);
+            float absY = Abs(value.y);
+            float absZ = Abs(value.z);
+            if (absX >= absY && absX >= absZ)
+                return value.x >= 0f ? Vector3.right : Vector3.left;
+
+            if (absY >= absZ)
+                return value.y >= 0f ? Vector3.up : Vector3.down;
+
+            return value.z >= 0f ? Vector3.forward : Vector3.back;
+        }
+
+        private static float Abs(float value)
+        {
+            return value < 0f ? -value : value;
         }
     }
 }

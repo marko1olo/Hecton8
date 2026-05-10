@@ -344,7 +344,7 @@ namespace Hecton8.AI
 
         private void Awake()
         {
-            int instanceId = GetInstanceID();
+            int instanceId = unchecked((int)EntityId.ToULong(GetEntityId()));
             _distantIkFrameOffset = (int)((uint)instanceId & DistantIkCadenceFrameMask);
             _faunaBrain = GetComponent<FaunaBrain>();
             if (_rigidbody == null)

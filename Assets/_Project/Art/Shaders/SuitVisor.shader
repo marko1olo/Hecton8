@@ -79,6 +79,9 @@ Shader "NASAPunk/SuitVisor"
         _EnvReflStrength ("Environment Reflection", Range(0, 1)) = 0.15
         _Smoothness ("Smoothness", Range(0, 1)) = 0.95
         _Metallic ("Metallic", Range(0, 1)) = 0.0
+
+        [Header(Exosuit Breathing)]
+        _BreathingChestAmplitude ("Breathing Chest Amplitude", Range(0, 0.04)) = 0
     }
 
     SubShader
@@ -184,6 +187,7 @@ Shader "NASAPunk/SuitVisor"
                 float  _EnvReflStrength;
                 float  _Smoothness;
                 float  _Metallic;
+                float  _BreathingChestAmplitude;
             CBUFFER_END
 
             TEXTURE2D(_HUD_RenderTexture); SAMPLER(sampler_HUD_RenderTexture);
@@ -203,6 +207,7 @@ Shader "NASAPunk/SuitVisor"
             float4 _HectonVrComfortMotion;
             float4 _HectonXRFoveatedParams;
             float4 _HectonXRFoveatedCenterRadius;
+            float _BreathingPhase;
             TEXTURE2D(_CameraOpaqueTexture); SAMPLER(sampler_CameraOpaqueTexture);
             float4 _SonarRevealOriginWS;
             float4 _SonarRevealWaveParams;
@@ -221,6 +226,7 @@ Shader "NASAPunk/SuitVisor"
                 float3 normalOS   : NORMAL;
                 float4 tangentOS  : TANGENT;
                 float2 uv         : TEXCOORD0;
+                float4 color      : COLOR;
             };
 
             struct Varyings
@@ -263,6 +269,24 @@ Shader "NASAPunk/SuitVisor"
             float3 NormalizeApprox3D(float3 value)
             {
                 return value * rcp(max(0.0001, ApproximateMagnitude3D(value)));
+            }
+
+            float3 DominantAxisNormalOS(float3 normalOS)
+            {
+                float3 axisAbs = abs(normalOS);
+                float useX = step(axisAbs.y, axisAbs.x) * step(axisAbs.z, axisAbs.x);
+                float useY = (1.0 - useX) * step(axisAbs.z, axisAbs.y);
+                float useZ = 1.0 - useX - useY;
+                float3 axisSign = step(0.0, normalOS) * 2.0 - 1.0;
+                return axisSign * float3(useX, useY, useZ);
+            }
+
+            float2 DominantAxis2D(float2 value)
+            {
+                float2 axisAbs = abs(value);
+                float useX = step(axisAbs.y, axisAbs.x);
+                float2 axisSign = step(0.0, value) * 2.0 - 1.0;
+                return axisSign * float2(useX, 1.0 - useX);
             }
 
             float FastPowerCurve01(float value, float exponent)
@@ -485,7 +509,7 @@ Shader "NASAPunk/SuitVisor"
 
                 float2 crackGradient = float2(crackDx, crackDy);
                 float gradientMagnitude = saturate(ApproximateMagnitude2D(crackGradient) * 12.0);
-                float2 crackNormal = NormalizeApprox2D(crackGradient + float2(0.0001, 0.0001));
+                float2 crackNormal = DominantAxis2D(crackGradient);
                 float2 eyeParallax = (uv - 0.5) * (0.45 + gradientMagnitude);
                 float shardDepth = crackMask * active * _PressureCrackParallaxDepth;
                 parallaxOffset = (crackNormal * _PressureCrackNormalStrength * gradientMagnitude + eyeParallax) * shardDepth;
@@ -616,6 +640,8 @@ Shader "NASAPunk/SuitVisor"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
                 float3 safePositionOS = all(isfinite(IN.positionOS.xyz)) ? IN.positionOS.xyz : float3(0.0, 0.0, 0.0);
+                float chestBreathMask = saturate(IN.color.r);
+                safePositionOS += DominantAxisNormalOS(IN.normalOS) * (_BreathingPhase * _BreathingChestAmplitude * chestBreathMask);
                 VertexPositionInputs posInputs = GetVertexPositionInputs(safePositionOS);
                 VertexNormalInputs nrmInputs = GetVertexNormalInputs(IN.normalOS, IN.tangentOS);
 
@@ -627,7 +653,7 @@ Shader "NASAPunk/SuitVisor"
                 OUT.uv = IN.uv;
                 OUT.screenPos = ComputeScreenPos(posInputs.positionCS);
                 OUT.fogCoord = ComputeFogFactor(posInputs.positionCS.z);
-                OUT.viewDirWS = GetWorldSpaceNormalizeViewDir(posInputs.positionWS);
+                OUT.viewDirWS = NormalizeApprox3D(GetWorldSpaceViewDir(posInputs.positionWS));
                 OUT.positionOS = safePositionOS;
 
                 float3 cameraForwardWS = _VisorCameraForwardWS.xyz;
