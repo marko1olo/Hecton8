@@ -72,6 +72,20 @@ namespace Hecton8.Modding
                 return HectonEventBus.SubscribeNative(handler, subscriberId);
             }
 
+            public static HectonEventSubscription OnPlayerSpawned(
+                HectonUnmanagedEventHandler<ModPlayerSpawnedEvent> handler,
+                string subscriberId = null)
+            {
+                return HectonEventBus.Subscribe(handler, subscriberId);
+            }
+
+            public static HectonEventSubscription OnBiomeChanged(
+                HectonUnmanagedEventHandler<ModBiomeChangedEvent> handler,
+                string subscriberId = null)
+            {
+                return HectonEventBus.Subscribe(handler, subscriberId);
+            }
+
             /// <summary>
             /// Removes a previously created event subscription.
             /// This is a convenience wrapper around <see cref="IDisposable.Dispose"/>.
@@ -596,7 +610,7 @@ namespace Hecton8.Modding
             /// <summary>
             /// True after the active gameplay scene finished bootstrap and published a live player object.
             /// </summary>
-            public static bool IsGameReady => SceneBootstrap.IsGameReady;
+            public static bool IsGameReady => GameBootstrapper.IsGameReady;
 
             /// <summary>
             /// Resolves the live player GameObject published by bootstrap.
@@ -627,7 +641,7 @@ namespace Hecton8.Modding
             /// <returns>True when a player object is currently published.</returns>
             public static bool TryGetPlayerEntityHash(out uint playerHash)
             {
-                GameObject playerObject = SceneBootstrap.CurrentPlayerObject;
+                GameObject playerObject = GameBootstrapper.CurrentPlayerObject;
                 playerHash = playerObject != null
                     ? unchecked((uint)EntityId.ToULong(playerObject.GetEntityId()))
                     : 0u;

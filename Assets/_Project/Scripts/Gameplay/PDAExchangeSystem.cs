@@ -344,12 +344,12 @@ namespace Hecton8.Gameplay
             NotifyInfo(RelayConfirmedMessage);
             ExchangeStateChanged?.Invoke();
 
-            // Уведомляем Atlas6DirectiveSystem — бартер = рост доверия
+            // Uvedomlyaem Atlas6DirectiveSystem — barter = rost doveriya
             Atlas6DirectiveSystem directive = Hecton8.Core.GlobalRegistry.Atlas6Directive;
             if (directive != null)
                 directive.RegisterBarterTransaction();
 
-            // Публикуем событие для QuestManager (OnItemCollected уже обрабатывается)
+            // Publikuem sobytie dlya QuestManager (OnItemCollected uzhe obrabatyvaetsya)
             Atlas6Events.RaiseBarterAccepted(_executionStateCount);
 
             return true;

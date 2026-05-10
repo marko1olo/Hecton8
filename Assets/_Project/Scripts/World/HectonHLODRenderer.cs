@@ -77,6 +77,8 @@ namespace Hecton8.World
         private Mesh _registeredMesh;
         private Material _registeredMaterial;
         private GraphicsBuffer _registeredBatchBuffer;
+        private Bounds _registeredDrawBounds;
+        private bool _registeredDrawBoundsValid;
 
         private void Awake()
         {
@@ -128,7 +130,7 @@ namespace Hecton8.World
             Shader.SetGlobalBuffer(InstanceFadeId, _fadeBuffer);
             SyncBatchRegistration(activeMesh, activeMaterial);
             SyncBatchBuffer(_matrixBuffer);
-            _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
+            SetBatchGlobalBoundsIfChanged(ResolveDrawBounds());
         }
 
         /// <summary>
@@ -189,7 +191,7 @@ namespace Hecton8.World
             _drawBounds = drawBounds;
 
             if (_batchRendererGroup != null)
-                _batchRendererGroup.SetGlobalBounds(_drawBounds);
+                SetBatchGlobalBoundsIfChanged(_drawBounds);
         }
 
         /// <summary>
@@ -235,7 +237,8 @@ namespace Hecton8.World
                 NativeMemorySentinel.RegisterNativeArray(_batchMetadata, nameof(HectonHLODRenderer), nameof(_batchMetadata), NativeAllocationLifetime.Session);
                 _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for HLOD renderer - owner: HectonHLODRenderer
                 _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
-                _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
+                _registeredDrawBoundsValid = false;
+                SetBatchGlobalBoundsIfChanged(ResolveDrawBounds());
             }
         }
 
@@ -273,6 +276,23 @@ namespace Hecton8.World
 
             _batchRendererGroup.SetBatchBuffer(_batchId, matrixBuffer.bufferHandle);
             _registeredBatchBuffer = matrixBuffer;
+        }
+
+        private void SetBatchGlobalBoundsIfChanged(Bounds bounds)
+        {
+            if (_batchRendererGroup == null)
+                return;
+
+            if (_registeredDrawBoundsValid &&
+                _registeredDrawBounds.center == bounds.center &&
+                _registeredDrawBounds.size == bounds.size)
+            {
+                return;
+            }
+
+            _batchRendererGroup.SetGlobalBounds(bounds);
+            _registeredDrawBounds = bounds;
+            _registeredDrawBoundsValid = true;
         }
 
         private void EnsureOwnedUploadCapacity(int instanceCount)
@@ -353,6 +373,7 @@ namespace Hecton8.World
                 _registeredMesh = null;
                 _registeredMaterial = null;
                 _registeredBatchBuffer = null;
+                _registeredDrawBoundsValid = false;
             }
 
             if (_batchHandleBuffer != null)

@@ -1,24 +1,24 @@
 // ============================================================================
 // HECTON-8 — AtlasSignalSystem.cs
-// Система пульса сигнала Атлас-6.
+// Sistema pulsa signala Atlas-6.
 //
-// ЛОР (лор3 Блок З):
-//   Слух среди скавенджеров: "На Гектоне-8 есть сигнал, который повторяется
-//   каждые 11:23". Ритм 11:23 — время перебора всех вариантов "спасения колонии".
-//   Чем ближе к ядру — тем яснее "содержание" сигнала:
-//   не слова, а эмоциональный паттерн: отчаяние, надежда, безумие.
+// LOR (lor3 Blok Z):
+//   Sluh sredi skavendzherov: "Na Gektone-8 est signal, kotoryy povtoryaetsya
+//   kazhdye 11:23". Ritm 11:23 — vremya perebora vseh variantov "spaseniya kolonii".
+//   Chem blizhe k yadru — tem yasnee "soderzhanie" signala:
+//   ne slova, a emotsionalnyy pattern: otchayanie, nadezhda, bezumie.
 //
-// МЕХАНИКА:
-//   • Пульс каждые 683 секунды (11 мин 23 сек).
-//   • Сила сигнала = 1 - (dist / maxSignalRange).
-//   • Сканер получает usable bearing only after late identity-stage lock.
-//   • Quest handoff идёт через discovery-chain, а не через ранний raw detect.
-//   • Интегрируется с HectonDirectorAI (narrative beat).
+// MEHANIKA:
+//   • Puls kazhdye 683 sekundy (11 min 23 sek).
+//   • Sila signala = 1 - (dist / maxSignalRange).
+//   • Skaner poluchaet usable bearing only after late identity-stage lock.
+//   • Quest handoff idet cherez discovery-chain, a ne cherez ranniy raw detect.
+//   • Integriruetsya s HectonDirectorAI (narrative beat).
 //
 // ZERO GC:
 //   • ISlowTickable — timer without per-frame polling.
-//   • Никаких new/LINQ в hot path.
-//   • Shader.SetGlobalFloat для визуального отклика биолюминесценции.
+//   • Nikakih new/LINQ v hot path.
+//   • Shader.SetGlobalFloat dlya vizualnogo otklika biolyuminestsentsii.
 // ============================================================================
 
 using Conditional = System.Diagnostics.ConditionalAttribute;
@@ -47,16 +47,16 @@ namespace Hecton8.AtlasSignal
         // ══════════════════════════════════════════════════════════
 
         [Header("── Signal Parameters ──────────────────────")]
-        [Tooltip("Период пульса в секундах (683 = 11 мин 23 сек).")]
+        [Tooltip("Period pulsa v sekundah (683 = 11 min 23 sek).")]
         [SerializeField] private float pulsePeriodSeconds = 683f;
 
-        [Tooltip("Максимальная дальность обнаружения сигнала (метры).")]
+        [Tooltip("Maksimalnaya dalnost obnaruzheniya signala (metry).")]
         [SerializeField] private float maxSignalRange = 8000f;
 
-        [Tooltip("Позиция ядра Атлас-6 в мировых координатах.")]
+        [Tooltip("Pozitsiya yadra Atlas-6 v mirovyh koordinatah.")]
         [SerializeField] private Vector3 atlasCorePosWorld = new Vector3(0f, -5000f, 0f);
 
-        [Tooltip("Минимальная сила сигнала для обнаружения сканером.")]
+        [Tooltip("Minimalnaya sila signala dlya obnaruzheniya skanerom.")]
         [SerializeField, Range(0f, 1f)] private float detectionThreshold = 0.05f;
 
         [Header("── Late Manifestation ─────────────────────")]
@@ -79,7 +79,7 @@ namespace Hecton8.AtlasSignal
         [SerializeField] private float revealStage4Depth = 2600f;
 
         [Header("── Shader Integration ────────────────────")]
-        [Tooltip("Публиковать силу сигнала в шейдер для биолюминесцентного отклика.")]
+        [Tooltip("Publikovat silu signala v sheyder dlya biolyuminestsentnogo otklika.")]
         [SerializeField] private bool publishToShader = true;
 
         [Header("Encrypted Log Unlocks")]
@@ -145,7 +145,7 @@ namespace Hecton8.AtlasSignal
         private static readonly int _ShaderSignalStrength =
             Shader.PropertyToID("_AtlasSignalStrength");
 
-        // Throttle log — static field, не в hot path
+        // Throttle log — static field, ne v hot path
         private static float _nextSignalLogTime;
 
         private const float StrengthEpsilon = 0.01f;
@@ -165,8 +165,8 @@ namespace Hecton8.AtlasSignal
         public int CurrentRevealStage => _maxRevealStageUnlocked;
 
         /// <summary>
-        /// Направление к ядру Атлас-6 от текущей позиции игрока.
-        /// Используется сканером для навигации.
+        /// Napravlenie k yadru Atlas-6 ot tekuschey pozitsii igroka.
+        /// Ispolzuetsya skanerom dlya navigatsii.
         /// </summary>
         public Vector3 DirectionToCore
         {
@@ -258,14 +258,14 @@ namespace Hecton8.AtlasSignal
                 SignalStrengthSystem.StrengthToBand(newStrength),
                 math.clamp(_maxRevealStageUnlocked, 0, FullDecodeRevealStage));
 
-            // Публикуем изменение силы
+            // Publikuem izmenenie sily
             if (math.abs(newStrength - _lastPublishedStrength) > StrengthEpsilon)
             {
                 _currentStrength = newStrength;
                 _lastPublishedStrength = newStrength;
                 AtlasSignalEvents.RaiseStrengthChanged(newStrength);
 
-                // Первое обнаружение
+                // Pervoe obnaruzhenie
                 if (!_signalEverDetected &&
                     newStrength >= detectionThreshold &&
                     _maxRevealStageUnlocked >= FormalDetectionRevealStage)
@@ -275,7 +275,7 @@ namespace Hecton8.AtlasSignal
                     LogSignalFirstDetected();
                 }
 
-                // Шейдер
+                // Sheyder
                 if (publishToShader)
                     Shader.SetGlobalFloat(_ShaderSignalStrength, newStrength);
             }
@@ -285,7 +285,7 @@ namespace Hecton8.AtlasSignal
 
             TryEnsureIdentityDiscoveryPublished();
 
-            // Пульс
+            // Puls
             if (_maxRevealStageUnlocked <= 0)
                 return;
 
@@ -323,7 +323,7 @@ namespace Hecton8.AtlasSignal
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Вызывается когда игрок достигает ядра и расшифровывает сигнал.
+        /// Vyzyvaetsya kogda igrok dostigaet yadra i rasshifrovyvaet signal.
         /// </summary>
         public void DecodeSignal(string messageId)
         {
@@ -806,7 +806,14 @@ namespace Hecton8.AtlasSignal
             if (lengthSq <= 0.000001d)
                 return Vector3.down;
 
-            double invLength = math.rsqrt(lengthSq);
+            double ax = math.abs(delta.x);
+            double ay = math.abs(delta.y);
+            double az = math.abs(delta.z);
+            double maxAxis = math.max(ax, math.max(ay, az));
+            double minAxis = math.min(ax, math.min(ay, az));
+            double midAxis = ax + ay + az - maxAxis - minAxis;
+            double approximateLength = maxAxis + (midAxis * 0.5d) + (minAxis * 0.25d);
+            double invLength = 1d / math.max(approximateLength, 0.000001d);
             return new Vector3(
                 (float)(delta.x * invLength),
                 (float)(delta.y * invLength),

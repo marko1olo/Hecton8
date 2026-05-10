@@ -1,20 +1,20 @@
 // ============================================================================
 // HECTON-8 — BuoyancyObject.cs
-// Маркер плавучести. Вешается на любой GameObject с Rigidbody.
+// Marker plavuchesti. Veshaetsya na lyuboy GameObject s Rigidbody.
 //
-// При OnEnable регистрируется в HectonFluidEngine.
-// При OnDisable — отписывается.
+// Pri OnEnable registriruetsya v HectonFluidEngine.
+// Pri OnDisable — otpisyvaetsya.
 //
-// Rigidbody кэшируется в Awake — zero GetComponent в рантайме.
-// Никакого Update — все силы применяет HectonFluidEngine через Job.
+// Rigidbody keshiruetsya v Awake — zero GetComponent v rantayme.
+// Nikakogo Update — vse sily primenyaet HectonFluidEngine cherez Job.
 //
-// ФИЗИЧЕСКИЕ ПАРАМЕТРЫ:
-//   density — плотность объекта (кг/м³).
-//             Вода = 1000. Если density < waterDensity → объект всплывает.
-//   volume  — объём объекта (м³). Определяет силу Архимеда.
-//   height  — высота объекта (м). Для расчёта частичного погружения.
+// FIZIChESKIE PARAMETRY:
+//   density — plotnost obekta (kg/m³).
+//             Voda = 1000. Esli density < waterDensity → obekt vsplyvaet.
+//   volume  — obem obekta (m³). Opredelyaet silu Arhimeda.
+//   height  — vysota obekta (m). Dlya rascheta chastichnogo pogruzheniya.
 //
-// СУХИЕ ЗОНЫ + GROUND CHECK:
+// SUHIE ZONY + GROUND CHECK:
 //   IsInAir returns true when EITHER:
 //     1. _dryZoneRefCount > 0 (inside unflooded base module), OR
 //     2. _isGrounded == true (standing on terrain/island)
@@ -66,55 +66,55 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
         [Header("── Physical Properties ───────────────────────")]
-        [Tooltip("Плотность объекта (кг/м³). " +
-                 "Вода ≈ 1000, Дерево ≈ 600, Железо ≈ 7800, Титан ≈ 4500")]
+        [Tooltip("Plotnost obekta (kg/m³). " +
+                 "Voda ≈ 1000, Derevo ≈ 600, Zhelezo ≈ 7800, Titan ≈ 4500")]
 #if UNITY_EDITOR
         [MinValue(0.01d)]
         [ValidateInput(nameof(IsFinitePositive), "Density must be finite and greater than zero.")]
 #endif
         [SerializeField] private float density = 500f;
 
-        [Tooltip("Объём объекта (м³). Определяет выталкивающую силу. " +
-                 "Куб 10см = 0.001 м³")]
+        [Tooltip("Obem obekta (m³). Opredelyaet vytalkivayuschuyu silu. " +
+                 "Kub 10sm = 0.001 m³")]
 #if UNITY_EDITOR
         [MinValue(0.0001d)]
         [ValidateInput(nameof(IsFinitePositive), "Volume must be finite and greater than zero.")]
 #endif
         [SerializeField] private float volume = 0.01f;
 
-        [Tooltip("Высота объекта (м). Для расчёта частичного погружения. " +
-                 "0 = считать полностью погружённым")]
+        [Tooltip("Vysota obekta (m). Dlya rascheta chastichnogo pogruzheniya. " +
+                 "0 = schitat polnostyu pogruzhennym")]
 #if UNITY_EDITOR
         [MinValue(0.01d)]
         [ValidateInput(nameof(IsFinitePositive), "Height must be finite and greater than zero.")]
 #endif
         [SerializeField] private float height = 0.3f;
 
-        [Tooltip("Насколько сильно объект реагирует на течение. " +
-                 "1 = стандартно, 0 = игнорирует поток, >1 = лёгкий/парусный объект.")]
+        [Tooltip("Naskolko silno obekt reagiruet na techenie. " +
+                 "1 = standartno, 0 = ignoriruet potok, >1 = legkiy/parusnyy obekt.")]
 #if UNITY_EDITOR
         [MinValue(0d)]
         [ValidateInput(nameof(IsFiniteNonNegative), "Current Response must be finite and non-negative.")]
 #endif
         [SerializeField] private float currentResponse = 1f;
 
-        [Tooltip("Стабилизирующий момент у поверхности. " +
-                 "Помогает объекту красиво выравниваться и не болтаться как мусорный баг.")]
+        [Tooltip("Stabiliziruyuschiy moment u poverhnosti. " +
+                 "Pomogaet obektu krasivo vyravnivatsya i ne boltatsya kak musornyy bag.")]
 #if UNITY_EDITOR
         [MinValue(0d)]
         [ValidateInput(nameof(IsFiniteNonNegative), "Surface Stability must be finite and non-negative.")]
 #endif
         [SerializeField] private float surfaceStability = 0.75f;
 
-        [Tooltip("Насколько важен объект для high-fidelity симуляции на расстоянии. " +
-                 "1 = стандарт, >1 = дольше остаётся в high LOD, <1 = раньше упрощается.")]
+        [Tooltip("Naskolko vazhen obekt dlya high-fidelity simulyatsii na rasstoyanii. " +
+                 "1 = standart, >1 = dolshe ostaetsya v high LOD, <1 = ranshe uproschaetsya.")]
 #if UNITY_EDITOR
         [MinValue(0.1d)]
         [ValidateInput(nameof(IsFinitePositive), "LOD Bias must be finite and greater than zero.")]
 #endif
         [SerializeField] private float lodBias = 1f;
 
-        [Tooltip("Если выключено — объект всегда считается в полном качестве, без distance LOD.")]
+        [Tooltip("Esli vyklyucheno — obekt vsegda schitaetsya v polnom kachestve, bez distance LOD.")]
         [SerializeField] private bool allowDistanceLod = true;
 
         [Header("── Ground Detection ─────────────────────────")]
@@ -151,11 +151,11 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Счётчик вложенности «сухих зон».
-        /// Объект может находиться в перекрывающихся модулях одновременно.
+        /// Schetchik vlozhennosti «suhih zon».
+        /// Obekt mozhet nahoditsya v perekryvayuschihsya modulyah odnovremenno.
         ///
-        /// Инкремент: BaseModule при входе в незатопленный триггер.
-        /// Декремент: BaseModule при выходе или затоплении.
+        /// Inkrement: BaseModule pri vhode v nezatoplennyy trigger.
+        /// Dekrement: BaseModule pri vyhode ili zatoplenii.
         /// </summary>
         private int _dryZoneRefCount;
 
@@ -195,28 +195,28 @@ namespace Hecton8.Physics
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Плотность объекта (кг/м³).</summary>
+        /// <summary>Plotnost obekta (kg/m³).</summary>
         public float Density => density;
 
-        /// <summary>Объём (м³).</summary>
+        /// <summary>Obem (m³).</summary>
         public float Volume => volume;
 
-        /// <summary>Высота (м).</summary>
+        /// <summary>Vysota (m).</summary>
         public float Height => height;
 
-        /// <summary>Множитель реакции на течение.</summary>
+        /// <summary>Mnozhitel reaktsii na techenie.</summary>
         public float CurrentResponse => currentResponse;
 
-        /// <summary>Стабилизирующий момент у поверхности.</summary>
+        /// <summary>Stabiliziruyuschiy moment u poverhnosti.</summary>
         public float SurfaceStability => surfaceStability;
 
-        /// <summary>Смещение приоритета LOD.</summary>
+        /// <summary>Smeschenie prioriteta LOD.</summary>
         public float LodBias => lodBias;
 
-        /// <summary>Разрешён ли distance-based LOD для этого объекта.</summary>
+        /// <summary>Razreshen li distance-based LOD dlya etogo obekta.</summary>
         public bool AllowDistanceLod => allowDistanceLod;
 
-        /// <summary>Кэшированный Rigidbody. Гарантированно не-null (RequireComponent).</summary>
+        /// <summary>Keshirovannyy Rigidbody. Garantirovanno ne-null (RequireComponent).</summary>
         public Rigidbody Body => _rb;
 
         /// <summary>
@@ -232,10 +232,10 @@ namespace Hecton8.Physics
         public bool IsInDryZone => _dryZoneRefCount > 0;
 
         /// <summary>
-        /// Объект находится «в воздухе» — either inside an unflooded base module
+        /// Obekt nahoditsya «v vozduhe» — either inside an unflooded base module
         /// OR standing on solid ground (island/terrain).
         ///
-        /// When true, HectonFluidEngine обнуляет все водные силы.
+        /// When true, HectonFluidEngine obnulyaet vse vodnye sily.
         ///
         /// Priority: dryZone OR grounded → IsInAir = true.
         /// This prevents buoyancy from pushing objects up through islands.
@@ -315,8 +315,8 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Вызывается BaseModule при входе объекта в сухую зону.
-        /// Увеличивает ref-count. Thread-safe не требуется (main thread only).
+        /// Vyzyvaetsya BaseModule pri vhode obekta v suhuyu zonu.
+        /// Uvelichivaet ref-count. Thread-safe ne trebuetsya (main thread only).
         /// </summary>
         public void EnterDryZone()
         {
@@ -324,9 +324,9 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Вызывается BaseModule при выходе объекта из сухой зоны
-        /// или при затоплении модуля.
-        /// Уменьшает ref-count. Clamp к 0 для защиты от некорректных вызовов.
+        /// Vyzyvaetsya BaseModule pri vyhode obekta iz suhoy zony
+        /// ili pri zatoplenii modulya.
+        /// Umenshaet ref-count. Clamp k 0 dlya zaschity ot nekorrektnyh vyzovov.
         /// </summary>
         public void ExitDryZone()
         {
@@ -421,7 +421,7 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
-            // Сбрасываем ref-count — объект больше не в зоне
+            // Sbrasyvaem ref-count — obekt bolshe ne v zone
             _dryZoneRefCount = 0;
             _isGrounded = false;
 
@@ -579,7 +579,7 @@ namespace Hecton8.Physics
 
             bool submerged = transform.position.y < waterY;
 
-            // Зелёный = в сухой зоне/grounded, синий = под водой, жёлтый = над водой
+            // Zelenyy = v suhoy zone/grounded, siniy = pod vodoy, zheltyy = nad vodoy
             if (IsInAir)
                 Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
             else if (submerged)

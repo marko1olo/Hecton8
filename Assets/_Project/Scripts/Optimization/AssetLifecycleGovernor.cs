@@ -36,6 +36,7 @@ namespace Hecton8.Optimization
         private static readonly uint _ColdTickOverBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.ColdTickOverBudget"));
         private static readonly uint _DoubleReleaseWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.DoubleRelease"));
         private static readonly uint _HardReaperSweepWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.HardReaperSweep"));
+        private static readonly uint _ShaderFallbackWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.ShaderFallback"));
         private static readonly float[] _retryBackoffSeconds = { 5f, 15f, 60f };
 
         [Header("Asset Registry")]
@@ -185,6 +186,7 @@ namespace Hecton8.Optimization
                     record.OwnsAssetInstance = ownsAssetInstance;
                     record.NextRetryTime = 0f;
                     record.RetryCount = 0;
+                    TryApplyShaderFallback(ref record, asset);
                 }
 
                 _registry[key] = record;
@@ -217,6 +219,7 @@ namespace Hecton8.Optimization
                 AbsoluteUniversePosition = Vector3.zero
             };
 
+            TryApplyShaderFallback(ref created, asset);
             _registry[key] = created;
             TrackedResidentBytes += created.SizeBytes;
 
@@ -247,6 +250,7 @@ namespace Hecton8.Optimization
             record.NextRetryTime = 0f;
             record.RetryCount = 0;
             record.LastAccessFrame = _frameSequence;
+            TryApplyShaderFallback(ref record, asset);
             _registry[key] = record;
         }
 
@@ -287,6 +291,7 @@ namespace Hecton8.Optimization
             record.NextRetryTime = 0f;
             record.RetryCount = 0;
             record.LastAccessFrame = _frameSequence;
+            TryApplyShaderFallback(ref record, asset);
             _registry[key] = record;
         }
 #endif
@@ -877,6 +882,34 @@ namespace Hecton8.Optimization
                 return;
 
             targetRenderer.sharedMaterial = _checkerboardMaterial;
+        }
+
+        private bool TryApplyShaderFallback(ref AssetRecord record, Object asset)
+        {
+            Material material = asset as Material;
+            if (material == null)
+                return false;
+
+            Shader shader = material.shader;
+            if (shader != null && shader.isSupported)
+                return false;
+
+            EnsureFallbackAssets();
+            if (_checkerboardMaterial == null)
+                return false;
+
+            uint materialHash = unchecked((uint)material.GetInstanceID());
+            uint shaderHash = shader != null ? unchecked((uint)shader.GetInstanceID()) : 0u;
+            if (record.OwnsAssetInstance && !ReferenceEquals(material, _checkerboardMaterial))
+                Destroy(material);
+
+            record.Asset = _checkerboardMaterial;
+            record.IsFallback = true;
+            record.OwnsAssetInstance = false;
+            ApplyFallbackMaterial(record.Owner);
+            GlobalTelemetryBus.PublishShaderFallback(materialHash, shaderHash, 1f);
+            GlobalTelemetryBus.PublishPerformanceWarning(_ShaderFallbackWarningHash, materialHash, 1f);
+            return true;
         }
 
         private void InsertEvictionCandidate(uint key)

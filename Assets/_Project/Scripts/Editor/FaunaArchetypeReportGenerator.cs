@@ -75,16 +75,16 @@ namespace Hecton8.AI.Editor
             var sb = new StringBuilder(4096);
             sb.AppendLine("# AI Fauna Archetype Report");
             sb.AppendLine();
-            sb.AppendLine("## Сводка");
+            sb.AppendLine("## Svodka");
             sb.AppendLine();
-            sb.AppendLine($"- Датасетов биомов: `{datasetCount}`");
-            sb.AppendLine($"- Всего записей фауны: `{totalEntries}`");
-            sb.AppendLine($"- С профилем вида: `{coveredEntries}`");
-            sb.AppendLine($"- Без профиля вида: `{totalEntries - coveredEntries}`");
-            sb.AppendLine($"- Готовых профилей вида в проекте: `{archetypeAssetCount}`");
-            sb.AppendLine($"- Из них без префаба: `{archetypeWithoutPrefabCount}`");
+            sb.AppendLine($"- Datasetov biomov: `{datasetCount}`");
+            sb.AppendLine($"- Vsego zapisey fauny: `{totalEntries}`");
+            sb.AppendLine($"- S profilem vida: `{coveredEntries}`");
+            sb.AppendLine($"- Bez profilya vida: `{totalEntries - coveredEntries}`");
+            sb.AppendLine($"- Gotovyh profiley vida v proekte: `{archetypeAssetCount}`");
+            sb.AppendLine($"- Iz nih bez prefaba: `{archetypeWithoutPrefabCount}`");
             sb.AppendLine();
-            sb.AppendLine("## По ролям");
+            sb.AppendLine("## Po rolyam");
             sb.AppendLine();
 
             foreach (CreatureRoleType role in System.Enum.GetValues(typeof(CreatureRoleType)))
@@ -94,7 +94,7 @@ namespace Hecton8.AI.Editor
             }
 
             sb.AppendLine();
-            sb.AppendLine("## По типу движения");
+            sb.AppendLine("## Po tipu dvizheniya");
             sb.AppendLine();
 
             foreach (CreatureLocomotionType locomotion in System.Enum.GetValues(typeof(CreatureLocomotionType)))
@@ -104,12 +104,12 @@ namespace Hecton8.AI.Editor
             }
 
             sb.AppendLine();
-            sb.AppendLine("## Дыры");
+            sb.AppendLine("## Dyry");
             sb.AppendLine();
 
             if (missing.Count == 0)
             {
-                sb.AppendLine("- Все записи фауны уже привязаны к профилям вида.");
+                sb.AppendLine("- Vse zapisi fauny uzhe privyazany k profilyam vida.");
             }
             else
             {

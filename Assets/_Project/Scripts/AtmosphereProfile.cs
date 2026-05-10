@@ -1,15 +1,15 @@
 // ══════════════════════════════════════════════════════════════════
 // AtmosphereProfile.cs
-// Data-Driven профиль атмосферы (ScriptableObject)
+// Data-Driven profil atmosfery (ScriptableObject)
 // Assets → Create → Hecton → Atmosphere Profile
 // ══════════════════════════════════════════════════════════════════
 
 using UnityEngine;
 
 /// <summary>
-/// Профиль атмосферы для конкретного состояния среды.
-/// Хранит все визуальные параметры: туман, освещение, экспозицию неба.
-/// Создайте 4 профиля (Day, Night, Underwater, Eclipse) и назначьте в менеджер.
+/// Profil atmosfery dlya konkretnogo sostoyaniya sredy.
+/// Hranit vse vizualnye parametry: tuman, osveschenie, ekspozitsiyu neba.
+/// Sozdayte 4 profilya (Day, Night, Underwater, Eclipse) i naznachte v menedzher.
 /// </summary>
 [CreateAssetMenu(
     fileName  = "New AtmosphereProfile",
@@ -17,11 +17,11 @@ using UnityEngine;
     order     = 100)]
 public class AtmosphereProfile : ScriptableObject
 {
-    [Header("══ Туман ══")]
-    [Tooltip("Цвет тумана")]
+    [Header("══ Tuman ══")]
+    [Tooltip("Tsvet tumana")]
     public Color fogColor = new Color(0.75f, 0.78f, 0.85f, 1f);
 
-    [Tooltip("Плотность тумана (exponential squared)")]
+    [Tooltip("Plotnost tumana (exponential squared)")]
     [Range(0f, 0.15f)]
     public float fogDensity = 0.008f;
 
@@ -29,16 +29,16 @@ public class AtmosphereProfile : ScriptableObject
     [Range(5f, 200f)]
     public float fogAttenuationDistanceMeters = 100f;
 
-    [Header("══ Небо ══")]
-    [Tooltip("Экспозиция неба — яркость скайбокса / HDRI (передаётся в URP Volume)")]
+    [Header("══ Nebo ══")]
+    [Tooltip("Ekspozitsiya neba — yarkost skayboksa / HDRI (peredaetsya v URP Volume)")]
     [Range(0f, 10f)]
     public float skyExposure = 1.2f;
 
-    [Header("══ Освещение ══")]
-    [Tooltip("Цвет окружающего (ambient) света сцены")]
+    [Header("══ Osveschenie ══")]
+    [Tooltip("Tsvet okruzhayuschego (ambient) sveta stseny")]
     public Color ambientColor = new Color(0.45f, 0.45f, 0.55f, 1f);
 
-    [Tooltip("Интенсивность Directional Light (солнца)")]
+    [Tooltip("Intensivnost Directional Light (solntsa)")]
     [Range(0f, 10f)]
     public float sunIntensity = 1.5f;
 

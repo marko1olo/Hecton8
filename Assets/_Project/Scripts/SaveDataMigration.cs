@@ -8,10 +8,10 @@ using UnityEngine;
 namespace Hecton8.SaveSystem
 {
     /// <summary>
-    /// Приводит старые или частично пустые сейвы к текущему формату.
-    /// Делает только безопасные правки: дозаполняет недостающие поля,
-    /// нормализует счётчики и выставляет дефолты там, где старый сейв
-    /// физически не мог хранить нужные данные.
+    /// Privodit starye ili chastichno pustye seyvy k tekuschemu formatu.
+    /// Delaet tolko bezopasnye pravki: dozapolnyaet nedostayuschie polya,
+    /// normalizuet schetchiki i vystavlyaet defolty tam, gde staryy seyv
+    /// fizicheski ne mog hranit nuzhnye dannye.
     /// </summary>
     public static class SaveDataMigration
     {

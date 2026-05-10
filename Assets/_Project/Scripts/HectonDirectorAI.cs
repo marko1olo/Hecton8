@@ -354,6 +354,7 @@ namespace Hecton8.Systems.AI
         public float3 Origin;
         public float3 Target;
         public int LayerMask;
+        public int Padding;
     }
 
     internal static class PredatorSpatialHashMath
@@ -482,13 +483,13 @@ namespace Hecton8.Systems.AI
         private readonly SpatialQueryHit[] _acousticPingPredatorContacts = new SpatialQueryHit[AcousticPingPredatorContactCapacity];
         // COLD ALLOC: SpatialQueryHit[64] - director predator spatial hash contact mirror - owner: HectonDirectorAI
         private readonly SpatialQueryHit[] _predatorSpatialContacts = new SpatialQueryHit[PredatorSpatialHashContactCapacity];
-        // COLD ALLOC: FaunaBrain[10] - managed owner mirror for completed predator LOS rays - owner: HectonDirectorAI
+        // COLD ALLOC: FaunaBrain[1] - managed owner mirror for completed predator LOS rays - owner: HectonDirectorAI
         private readonly FaunaBrain[] _predatorSightBrains = new FaunaBrain[PredatorSightMaxRaysPerFrame];
-        // COLD ALLOC: Vector3[10] - player-position mirror for completed predator LOS rays - owner: HectonDirectorAI
+        // COLD ALLOC: Vector3[1] - player-position mirror for completed predator LOS rays - owner: HectonDirectorAI
         private readonly Vector3[] _predatorSightPlayerPositions = new Vector3[PredatorSightMaxRaysPerFrame];
-        // COLD ALLOC: Vector3[10] - player-velocity mirror for dead-reckoned predator LOS guidance - owner: HectonDirectorAI
+        // COLD ALLOC: Vector3[1] - player-velocity mirror for dead-reckoned predator LOS guidance - owner: HectonDirectorAI
         private readonly Vector3[] _predatorSightPlayerVelocities = new Vector3[PredatorSightMaxRaysPerFrame];
-        // COLD ALLOC: Vector3[10] - player-forward mirror for completed predator LOS rays - owner: HectonDirectorAI
+        // COLD ALLOC: Vector3[1] - player-forward mirror for completed predator LOS rays - owner: HectonDirectorAI
         private readonly Vector3[] _predatorSightPlayerForwards = new Vector3[PredatorSightMaxRaysPerFrame];
         private NativeArray<PredatorSightRaycastInput> _predatorSightInputs;
         private NativeArray<RaycastCommand> _predatorSightCommands;
@@ -509,7 +510,7 @@ namespace Hecton8.Systems.AI
         private const float PredatorAcousticDeafenedDurationSeconds = 8f;
         private const float PredatorAcousticDeafeningImpulseEnergyJoules = 6400f;
         private const int AcousticPingPredatorContactCapacity = 64;
-        private const int PredatorSightMaxRaysPerFrame = 10;
+        private const int PredatorSightMaxRaysPerFrame = 1;
         private const int PredatorSpatialHashContactCapacity = 64;
         private const float PredatorSpatialHashCellSizeMeters = 50f;
         private const float PredatorSpatialHashActiveChunkRadiusMeters = 500f;
@@ -518,7 +519,10 @@ namespace Hecton8.Systems.AI
             PredatorDeadZoneCullDistanceMeters * PredatorDeadZoneCullDistanceMeters;
         private const float PredatorSightScanRadiusMeters = 220f;
         private const float PredatorSightProbeOffsetMeters = 0.75f;
-        private const float PredatorSightIntervalSeconds = 0.1f;
+        private const float PredatorSightIntervalSeconds = 0.5f;
+        private const float PredatorSightConeDotThreshold = 0.28f;
+        private const float PredatorSightConeDotThresholdSqr =
+            PredatorSightConeDotThreshold * PredatorSightConeDotThreshold;
         private const float PredatorSightImmediateRevealRadiusMeters = 18f;
         private const double PredatorSightImmediateRevealRadiusMetersSqr =
             PredatorSightImmediateRevealRadiusMeters * PredatorSightImmediateRevealRadiusMeters;
@@ -1076,6 +1080,19 @@ namespace Hecton8.Systems.AI
             if (predatorDistanceSqr > (double)PredatorSightScanRadiusMeters * PredatorSightScanRadiusMeters)
                 return;
 
+            Vector3 predatorProbe = contact.Position + Vector3.up * PredatorSightProbeOffsetMeters;
+            Vector3 toPlayer = playerProbe - predatorProbe;
+            float distanceSqr = toPlayer.sqrMagnitude;
+            if (distanceSqr <= 0.25f)
+                return;
+
+            Vector3 predatorForward = contact.Transform != null ? contact.Transform.forward : Vector3.forward;
+            if (!IsInsidePredatorSightCone(predatorForward, toPlayer, distanceSqr))
+            {
+                brain.ApplyDirectorLineOfSight(false, playerPosition, safePlayerForward, playerVelocity);
+                return;
+            }
+
             if (predatorDistanceSqr <= PredatorSightImmediateRevealRadiusMetersSqr)
             {
                 brain.ApplyDirectorLineOfSight(true, playerPosition, safePlayerForward, playerVelocity);
@@ -1088,12 +1105,6 @@ namespace Hecton8.Systems.AI
                 return;
             }
 
-            Vector3 predatorProbe = contact.Position + Vector3.up * PredatorSightProbeOffsetMeters;
-            Vector3 toPlayer = playerProbe - predatorProbe;
-            float distanceSqr = toPlayer.sqrMagnitude;
-            if (distanceSqr <= 0.25f)
-                return;
-
             _predatorSightInputs[requestCount] = new PredatorSightRaycastInput
                 {
                     Origin = (float3)predatorProbe,
@@ -1105,6 +1116,18 @@ namespace Hecton8.Systems.AI
             _predatorSightPlayerVelocities[requestCount] = playerVelocity;
             _predatorSightPlayerForwards[requestCount] = safePlayerForward;
             requestCount++;
+        }
+
+        private static bool IsInsidePredatorSightCone(Vector3 predatorForward, Vector3 toPlayer, float distanceSqr)
+        {
+            float3 forward = (float3)predatorForward;
+            float forwardLengthSq = math.lengthsq(forward);
+            if (forwardLengthSq <= 0.0001f || distanceSqr <= 0.0001f)
+                return true;
+
+            float forwardDot = math.dot(forward, (float3)toPlayer);
+            return forwardDot > 0f &&
+                   (forwardDot * forwardDot) >= PredatorSightConeDotThresholdSqr * forwardLengthSq * distanceSqr;
         }
 
         private void SchedulePredatorSpatialHashRefresh(in AbsoluteUniversePosition playerAup)
@@ -1216,9 +1239,9 @@ namespace Hecton8.Systems.AI
                     continue;
 
                 RaycastHit hit = _predatorSightHits[i];
-                bool blocked = hit.collider != null;
+                bool hasLineOfSight = hit.collider != null;
                 brain.ApplyDirectorLineOfSight(
-                    !blocked,
+                    hasLineOfSight,
                     _predatorSightPlayerPositions[i],
                     _predatorSightPlayerForwards[i],
                     _predatorSightPlayerVelocities[i]);
@@ -1249,9 +1272,9 @@ namespace Hecton8.Systems.AI
             if (_predatorSightInputs.IsCreated)
                 return;
 
-            _predatorSightInputs = new NativeArray<PredatorSightRaycastInput>(PredatorSightMaxRaysPerFrame, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PredatorSightRaycastInput>[10] - director predator sight build inputs - owner: HectonDirectorAI
-            _predatorSightCommands = new NativeArray<RaycastCommand>(PredatorSightMaxRaysPerFrame, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[10] - scheduled director predator sight commands - owner: HectonDirectorAI
-            _predatorSightHits = new NativeArray<RaycastHit>(PredatorSightMaxRaysPerFrame, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[10] - scheduled director predator sight results - owner: HectonDirectorAI
+            _predatorSightInputs = new NativeArray<PredatorSightRaycastInput>(PredatorSightMaxRaysPerFrame, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PredatorSightRaycastInput>[1] - director predator sight build inputs - owner: HectonDirectorAI
+            _predatorSightCommands = new NativeArray<RaycastCommand>(PredatorSightMaxRaysPerFrame, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] - scheduled director predator sight commands - owner: HectonDirectorAI
+            _predatorSightHits = new NativeArray<RaycastHit>(PredatorSightMaxRaysPerFrame, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1] - scheduled director predator sight results - owner: HectonDirectorAI
             if (!_predatorSightBuffersRegistered)
             {
                 NativeMemorySentinel.RegisterNativeArray(_predatorSightInputs, nameof(HectonDirectorAI), nameof(_predatorSightInputs), NativeAllocationLifetime.Scene);

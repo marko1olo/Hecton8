@@ -524,6 +524,9 @@ namespace Hecton8.World
                 return;
 
             double3 pillarBaseAup = new double3(record.AupX, record.AupY, record.AupZ);
+            if (!math.all(math.isfinite(pillarBaseAup)))
+                return;
+
             float boundsRadius = RadiusMeters + EdgeWarpMeters + VoxelSizeMeters;
             if (!PillarAabbIntersectsChunk(pillarBaseAup, boundsRadius, HeightMeters, ChunkMinAup, ChunkMaxAup))
                 return;
@@ -591,6 +594,13 @@ namespace Hecton8.World
             double3 chunkMinAup,
             double3 chunkMaxAup)
         {
+            if (!math.all(math.isfinite(pillarBaseAup)) ||
+                !math.all(math.isfinite(chunkMinAup)) ||
+                !math.all(math.isfinite(chunkMaxAup)))
+            {
+                return false;
+            }
+
             double radius = math.max(0.001d, (double)radiusMeters);
             double height = math.max(0.001d, (double)heightMeters);
             double3 pillarMin = new double3(

@@ -79,7 +79,7 @@ namespace Hecton8.UI
         //  PRIVATE STATE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ðµ ÑÑ‚Ñ€Ð¾ÐºÐ¸ Ð´Ð»Ñ AudioLogCategory enum (Ð¸Ð·Ð±ÐµÐ³Ð°ÐµÑ‚ Enum.ToString() Ð´Ð°Ð¶Ðµ Ð² COLD path)</summary>
+        /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ðµ ÑÑ‚Ñ€Ð¾ÐºÐ¸ Ð´Ð»Ñ AudioLogCategory enum (Ð±ÐµÐ· enum string conversion Ð´Ð°Ð¶Ðµ Ð² COLD path)</summary>
 
         // UI roots
         private RectTransform _root;

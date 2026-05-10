@@ -80,7 +80,7 @@ namespace Hecton8.World
         /// <summary>
         /// Current player transform from bootstrap.
         /// </summary>
-        public Transform PlayerTransform => SceneBootstrap.CurrentPlayerTransform;
+        public Transform PlayerTransform => GameBootstrapper.CurrentPlayerTransform;
 
         /// <summary>
         /// Save order for world-state persistence.

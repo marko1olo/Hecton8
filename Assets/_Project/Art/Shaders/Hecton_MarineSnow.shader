@@ -10,14 +10,14 @@ Shader "Hecton8/VFX/MarineSnow"
     {
         Tags
         {
-            "Queue" = "Transparent"
-            "RenderType" = "Transparent"
+            "Queue" = "AlphaTest"
+            "RenderType" = "TransparentCutout"
             "RenderPipeline" = "UniversalPipeline"
             "IgnoreProjector" = "True"
         }
 
-        Blend SrcAlpha OneMinusSrcAlpha
-        ZWrite Off
+        ZWrite On
+        AlphaToMask On
         Cull Off
 
         Pass
@@ -47,6 +47,7 @@ Shader "Hecton8/VFX/MarineSnow"
             };
 
             StructuredBuffer<Particle> _MarineSnowParticles;
+            StructuredBuffer<uint> _MarineSnowVisibleParticleIndices;
 
             struct MarineSnowFrameData
             {
@@ -97,6 +98,23 @@ Shader "Hecton8/VFX/MarineSnow"
                 return float2(1.0, -1.0);
             }
 
+            float ApproxLength2(float2 value)
+            {
+                float2 absValue = abs(value);
+                float major = max(absValue.x, absValue.y);
+                float minor = min(absValue.x, absValue.y);
+                return major + minor * 0.375;
+            }
+
+            float2 FastNormalize2Approx(float2 value)
+            {
+                float approxLength = ApproxLength2(value);
+                if (!isfinite(approxLength) || approxLength <= 0.0001)
+                    return float2(0.0, 1.0);
+
+                return value * rcp(approxLength);
+            }
+
             Varyings vert(Attributes input)
             {
                 Varyings output;
@@ -107,7 +125,8 @@ Shader "Hecton8/VFX/MarineSnow"
             #if UNITY_ANY_INSTANCING_ENABLED
                 instanceID = unity_InstanceID;
             #endif
-                Particle particle = _MarineSnowParticles[instanceID];
+                uint particleIndex = _MarineSnowVisibleParticleIndices[instanceID];
+                Particle particle = _MarineSnowParticles[particleIndex];
                 float active = step(0.5, _MarineSnowMetaParams.w);
                 float densityScale = saturate(_MarineSnowCameraUp_Density.w);
                 float2 corner = ResolveQuadCorner(input.vertexID);
@@ -122,8 +141,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 float2 screenMotion = float2(
                     dot(-_MarineSnowCameraVelocity_Stretch.xyz, cameraRight),
                     dot(-_MarineSnowCameraVelocity_Stretch.xyz, cameraUp));
-                float motionMagnitudeSq = dot(screenMotion, screenMotion);
-                float2 stretchAxis = motionMagnitudeSq > 0.0001 ? screenMotion * rsqrt(motionMagnitudeSq) : float2(0.0, 1.0);
+                float2 stretchAxis = FastNormalize2Approx(screenMotion);
                 float2 crossAxis = float2(-stretchAxis.y, stretchAxis.x);
                 float2 stretchedCorner =
                     stretchAxis * (dot(corner, stretchAxis) * stretchScale) +
@@ -145,6 +163,11 @@ Shader "Hecton8/VFX/MarineSnow"
                 return lerp(radial, radial4, saturate((softness - 1.0) * 0.3333));
             }
 
+            float MarineSnowDither01(float2 pixel)
+            {
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             half4 frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
@@ -152,8 +175,8 @@ Shader "Hecton8/VFX/MarineSnow"
                 float2 centered = input.uv * 2.0 - 1.0;
                 float radial = saturate(1.0 - dot(centered, centered));
                 float alpha = FastRadialSoftness(radial, _MarineSnowRenderParams.y) * input.color.a;
-                clip(alpha - 0.0005);
-                return half4(input.color.rgb, alpha);
+                float coverage = step(MarineSnowDither01(input.positionCS.xy), saturate(alpha));
+                return half4(input.color.rgb, coverage);
             }
             ENDHLSL
         }

@@ -33,10 +33,13 @@ namespace Hecton8.UI
         private const float FadeSharpness = 5.2f;
         private const float HiddenAlphaCutoff = 0.01f;
         private const int DumpPayloadCharCapacity = 16384;
+        private const int DumpLineStringCharCapacity = 128;
         private const string OverlayName = "PDADeathMemoryDumpOverlay";
         private const string DefaultFinalLine = "LOCALIZATION MODULE... DESTROYED.";
 
         private static readonly char[] s_emptyDumpChars = new char[1];
+        [System.ThreadStatic]
+        private static char[] s_dumpLineStringBuffer;
         private static readonly Color BackgroundColor = new Color(0f, 0f, 0f, 0.96f);
         private static readonly Color DumpTextColor = new Color(0.72f, 1f, 0.82f, 0.96f);
         // COLD ALLOC: string[12] — death-dump module token table — owner: PDADeathMemoryDump
@@ -248,7 +251,7 @@ namespace Hecton8.UI
                 _dumpBuilder.Append(DumpOperations[(i * 5 + 3) % DumpOperations.Length]);
                 _dumpBuilder.Append(" -> ");
                 _dumpBuilder.Append(DumpStates[(i * 7 + 1) % DumpStates.Length]);
-                _dumpLineLibrary[i] = _dumpBuilder.ToString();
+                _dumpLineLibrary[i] = CreateStringFromBuilder(_dumpBuilder);
             }
 
             _dumpBuilder.Clear();
@@ -274,6 +277,25 @@ namespace Hecton8.UI
             builder.Append(value);
             builder.Append(suffix);
             builder.Append(" -> COMPROMISED");
+        }
+
+        private static string CreateStringFromBuilder(StringBuilder builder)
+        {
+            if (builder == null || builder.Length <= 0)
+                return string.Empty;
+
+            char[] buffer = GetDumpLineStringBuffer();
+            int length = math.min(builder.Length, buffer.Length);
+            builder.CopyTo(0, buffer, 0, length);
+            return new string(buffer, 0, length);
+        }
+
+        private static char[] GetDumpLineStringBuffer()
+        {
+            if (s_dumpLineStringBuffer == null)
+                s_dumpLineStringBuffer = new char[DumpLineStringCharCapacity]; // COLD ALLOC: char[128] — thread-local death-dump line string staging buffer — owner: PDADeathMemoryDump
+
+            return s_dumpLineStringBuffer;
         }
 
         private static void AppendHex(StringBuilder builder, uint value)

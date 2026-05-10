@@ -75,7 +75,7 @@ Folder:
 
 ### Usable with caveats
 
-- `soft plume noise - какой то серый ну норм.png`
+- `soft plume noise - kakoy to seryy nu norm.png`
   - Usable as a first-pass grayscale plume breakup/noise field.
   - Needs controlled import and likely channel packing later.
   - Good enough for leak/silt/plume modulation if kept subtle.

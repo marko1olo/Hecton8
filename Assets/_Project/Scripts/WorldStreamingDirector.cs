@@ -381,7 +381,7 @@ namespace Hecton8.World
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugDepth = depth;
-            _debugSpeed = Mathf.Sqrt(Mathf.Max(0f, _smoothedSpeedSq));
+            _debugSpeed = math.sqrt(math.max(0f, _smoothedSpeedSq));
             _debugDepthZone = GetDepthZoneLabel(depthZone);
             _debugMotionMode = GetMotionModeLabel(motionMode);
 #endif
@@ -551,18 +551,22 @@ namespace Hecton8.World
 
         private void ResolveReferences()
         {
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null &&
+                runtimeContext.IsBound)
+            {
+                if (playerTransform == null)
+                    playerTransform = runtimeContext.PlayerTransform;
+
+                if (_playerMovement == null)
+                    _playerMovement = runtimeContext.PlayerMovement;
+
+                if (playerRigidbody == null)
+                    playerRigidbody = runtimeContext.PlayerRigidbody;
+            }
+
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-
-            if (_playerMovement == null && playerTransform != null)
-                playerTransform.TryGetComponent(out _playerMovement);
-
-            if (playerRigidbody == null &&
-                playerTransform != null &&
-                playerTransform.TryGetComponent(out Rigidbody resolvedRigidbody))
-            {
-                playerRigidbody = resolvedRigidbody;
-            }
 
             if (mapMagicBridge == null)
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);

@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Power
@@ -52,7 +54,9 @@ namespace Hecton8.Power
         private Vector3 _lastPosition;
         private int _lastVisualPointCount = -1;
         private int _lastTopologyRevision = -1;
+        // COLD ALLOC: List<long>[8] - submitted relay cable link ids retained between SlowTick refreshes - owner: PowerRelayNode
         private readonly List<long> _submittedLinkIds = new List<long>(8);
+        // COLD ALLOC: List<long>[8] - scratch relay cable link ids for zero-GC diffing during SlowTick - owner: PowerRelayNode
         private readonly List<long> _scratchLinkIds = new List<long>(8);
 
         /// <summary>Dynamic passive drain authored by this relay.</summary>
@@ -168,6 +172,7 @@ namespace Hecton8.Power
 
             _lastPosition = relayPosition;
             _lastTopologyRevision = topologyRevision;
+            AbsoluteUniversePosition relayAup = AbsoluteUniversePosition.FromRuntimePosition(relayPosition);
             float totalHalfCableLength = 0f;
             int relayNeighborCount = 0;
 
@@ -177,7 +182,7 @@ namespace Hecton8.Power
                 if (neighbor == null)
                     continue;
 
-                totalHalfCableLength += (relayPosition - neighbor.transform.position).magnitude * 0.5f;
+                totalHalfCableLength += ResolveAupCableLengthApproxMeters(in relayAup, neighbor.transform) * 0.5f;
 
                 if (neighbor.TryGetComponent(out PowerRelayNode relayNeighbor) && relayNeighbor != null)
                     relayNeighborCount++;
@@ -290,6 +295,22 @@ namespace Hecton8.Power
             }
 
             return false;
+        }
+
+        private static float ResolveAupCableLengthApproxMeters(in AbsoluteUniversePosition sourceAup, Transform destinationTransform)
+        {
+            if (destinationTransform == null)
+                return 0f;
+
+            AbsoluteUniversePosition destinationAup = AbsoluteUniversePosition.FromRuntimePosition(destinationTransform.position);
+            double3 source = sourceAup.ToAbsoluteDouble3();
+            double3 destination = destinationAup.ToAbsoluteDouble3();
+            double3 delta = math.abs(destination - source);
+            double maxAxis = math.max(delta.x, math.max(delta.y, delta.z));
+            double minAxis = math.min(delta.x, math.min(delta.y, delta.z));
+            double midAxis = delta.x + delta.y + delta.z - maxAxis - minAxis;
+            double approximateLength = maxAxis + (midAxis * 0.5d) + (minAxis * 0.25d);
+            return (float)math.min(approximateLength, (double)float.MaxValue);
         }
     }
 }

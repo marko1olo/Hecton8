@@ -451,7 +451,7 @@ namespace Hecton8.Meta
 
         private bool ResolveOwnersCold()
         {
-            GameObject playerObject = SceneBootstrap.CurrentPlayerObject;
+            GameObject playerObject = GameBootstrapper.CurrentPlayerObject;
             if (_survivalSystem == null && playerObject != null)
                 playerObject.TryGetComponent(out _survivalSystem);
 

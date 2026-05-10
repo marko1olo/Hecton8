@@ -5,10 +5,10 @@ Status: ARCHIVED
 
 # HECTON-8 — Perf / QA / Release Workstream
 
-Дата: 2026-04-13  
-Статус: PENDING VERIFICATION
+Data: 2026-04-13  
+Status: PENDING VERIFICATION
 
-## Что закрывает этот фронт
+## Chto zakryvaet etot front
 
 - Performance truth
 - Memory truth
@@ -16,12 +16,12 @@ Status: ARCHIVED
 - Build cadence
 - Release hardening
 
-## Почему это нельзя откладывать
+## Pochemu eto nelzya otkladyvat
 
-На текущем объёме проекта ручная память команды уже не держит всю систему.  
-13 тестов для такого проекта означают слабую страховку от регрессий.
+Na tekuschem obeme proekta ruchnaya pamyat komandy uzhe ne derzhit vsyu sistemu.  
+13 testov dlya takogo proekta oznachayut slabuyu strahovku ot regressiy.
 
-## Основные задачи
+## Osnovnye zadachi
 
 ### Front A. Perf truth on target hardware
 
@@ -34,9 +34,9 @@ Status: ARCHIVED
 
 ### Front B. Regression discipline
 
-- Зафиксировать обязательные before/after замеры.
-- Нельзя принимать perf-fix без чисел.
-- Нельзя считать исправление закрытым без повтора сценария.
+- Zafiksirovat obyazatelnye before/after zamery.
+- Nelzya prinimat perf-fix bez chisel.
+- Nelzya schitat ispravlenie zakrytym bez povtora stsenariya.
 
 ### Front C. Critical flow test coverage
 
@@ -48,9 +48,9 @@ Status: ARCHIVED
 
 ### Front D. Build validation
 
-- Регулярные production builds.
-- Прогон smoke checklist.
-- Логирование нерешённых build blockers.
+- Regulyarnye production builds.
+- Progon smoke checklist.
+- Logirovanie nereshennyh build blockers.
 
 ### Front E. Memory / render triage
 
@@ -68,32 +68,32 @@ Status: ARCHIVED
 
 ## Do-Not-Touch Scope
 
-- Не расширять gameplay scope.
-- Не превращать perf work в новый feature work.
-- Не переписывать системы без измерения.
+- Ne rasshiryat gameplay scope.
+- Ne prevraschat perf work v novyy feature work.
+- Ne perepisyvat sistemy bez izmereniya.
 
-## Как дробить по агентам
+## Kak drobit po agentam
 
-Агент 1:
+Agent 1:
 - perf numbers / profiling routines
-- Задача: собрать truth baseline.
+- Zadacha: sobrat truth baseline.
 
-Агент 2:
+Agent 2:
 - critical flow tests
-- Задача: поднять минимальную страховку от регрессий.
+- Zadacha: podnyat minimalnuyu strahovku ot regressiy.
 
-Агент 3:
+Agent 3:
 - build smoke and issue ledger
-- Задача: превратить сборки в регулярный контроль, а не случайное событие.
+- Zadacha: prevratit sborki v regulyarnyy kontrol, a ne sluchaynoe sobytie.
 
 ## Expected Result
 
-- Появляются реальные цифры.
-- Регрессии начинают ловиться раньше.
-- Финальная доводка перестаёт идти вслепую.
+- Poyavlyayutsya realnye tsifry.
+- Regressii nachinayut lovitsya ranshe.
+- Finalnaya dovodka perestaet idti vslepuyu.
 
 ## Exit Criteria
 
-- Есть baseline по perf/memory.
-- Есть smoke suite по critical path.
-- Build blockers фиксируются регулярно, а не от случая к случаю.
+- Est baseline po perf/memory.
+- Est smoke suite po critical path.
+- Build blockers fiksiruyutsya regulyarno, a ne ot sluchaya k sluchayu.

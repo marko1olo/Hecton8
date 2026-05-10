@@ -15,18 +15,18 @@ Status: DEPRECATED
 **MonoBehaviour Count:** 42 (Initial) → **42** (2026-04-28) → **42** (Current)  
 **Status:** ❌ **0% PROGRESS** — NO DECOMPOSITION
 
-### 🚨 КРИТИЧЕСКИЙ СТАТУС
+### 🚨 KRITIChESKIY STATUS
 
-**42 компонента на root-объекте Player — это архитектурная катастрофа.**
+**42 komponenta na root-obekte Player — eto arhitekturnaya katastrofa.**
 
-Согласно мандату `OPT_Zero_GC_Policy_AllocFree_Mandate.txt` и принципам DOD (Data-Oriented Design):
-- **Target:** ≤25 компонентов на root
-- **Фактически:** 42 компонента (168% от лимита)
-- **Декомпозиция:** 0%
+Soglasno mandatu `OPT_Zero_GC_Policy_AllocFree_Mandate.txt` i printsipam DOD (Data-Oriented Design):
+- **Target:** ≤25 komponentov na root
+- **Fakticheski:** 42 komponenta (168% ot limita)
+- **Dekompozitsiya:** 0%
 
-### Найдено через статический анализ скриптов:
+### Naydeno cherez staticheskiy analiz skriptov:
 
-| Компонент (скрипт) | Файл | Система |
+| Komponent (skript) | Fayl | Sistema |
 |-------------------|------|---------|
 | `PlayerRuntimeContextService` | `Core/PlayerRuntimeContextService.cs` | Core/Context |
 | `PlayerSensoryManager` | `Core/PlayerSensoryManager.cs` | Core/Sensory |
@@ -51,18 +51,18 @@ Status: DEPRECATED
 | `PlayerStressVFX` | `Visor/PlayerStressVFX.cs` | VFX/Visor |
 | `PlayerAchievementRegistry` | `Progression/PlayerAchievementRegistry.cs` | Progression |
 | `PlayerExplorationTracker` | `PDA/PlayerExplorationTracker.cs` | Progression |
-| `HectonSurvivalSystem` | (не найден, требуется проверка) | Survival |
-| `HectonPlayerMovement` | (не найден, требуется проверка) | Movement |
+| `HectonSurvivalSystem` | (ne nayden, trebuetsya proverka) | Survival |
+| `HectonPlayerMovement` | (ne nayden, trebuetsya proverka) | Movement |
 | `PlayerBuilder` | `PlayerBuilder.cs` | Construction |
-| `SuitHUDPresentationController` | (из UI_HUD_V4_PROGRESS.md) | UI/HUD |
-| `HectonUnderwaterVisuals` | (из Docs/) | VFX/Underwater |
-| `PlayerFlashlight` + VLB | (из Docs/) | VFX/Flashlight |
-| `Swim_ViewmodelRoot` | (из Docs/) | Swim/Viewmodel |
-| `Swim_*` attachment transforms | 14+ трансформов | Swim/Rig |
-| `HUD_Render_Camera` | (из Docs/) | UI/Camera |
-| `Main Camera` | (из Docs/) | Camera |
-| `Suit_Visor` | (из Docs/) | Visor |
-| ... и ещё ~10 компонентов | | |
+| `SuitHUDPresentationController` | (iz UI_HUD_V4_PROGRESS.md) | UI/HUD |
+| `HectonUnderwaterVisuals` | (iz Docs/) | VFX/Underwater |
+| `PlayerFlashlight` + VLB | (iz Docs/) | VFX/Flashlight |
+| `Swim_ViewmodelRoot` | (iz Docs/) | Swim/Viewmodel |
+| `Swim_*` attachment transforms | 14+ transformov | Swim/Rig |
+| `HUD_Render_Camera` | (iz Docs/) | UI/Camera |
+| `Main Camera` | (iz Docs/) | Camera |
+| `Suit_Visor` | (iz Docs/) | Visor |
+| ... i esche ~10 komponentov | | |
 
 ### Component Breakdown (Inferred from Script References)
 

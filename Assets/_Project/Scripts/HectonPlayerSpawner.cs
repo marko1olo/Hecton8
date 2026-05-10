@@ -1,42 +1,42 @@
 // ============================================================================
 // HECTON-8 — HectonPlayerSpawner.cs (v3.1)
 //
-// Безопасный асинхронный спавнер игрока для процедурно генерируемого мира
-// (MapMagic 2). Unity 6 Awaitable API — Zero-GC в асинхронных циклах.
+// Bezopasnyy asinhronnyy spavner igroka dlya protsedurno generiruemogo mira
+// (MapMagic 2). Unity 6 Awaitable API — Zero-GC v asinhronnyh tsiklah.
 //
-// КРИТИЧЕСКИЙ ФИКС v3.1:
-//   • [BUG] В v3.0 Фаза 2: если Raycast не находит террейн в точке спирали,
-//     цикл делает `continue` без инкремента spiralIndex. Точка проверяется
-//     бесконечно, если чанк MapMagic никогда не сгенерируется (за пределами
-//     карты, ошибка генерации, OOM). Результат: вечный экран загрузки.
+// KRITIChESKIY FIKS v3.1:
+//   • [BUG] V v3.0 Faza 2: esli Raycast ne nahodit terreyn v tochke spirali,
+//     tsikl delaet `continue` bez inkrementa spiralIndex. Tochka proveryaetsya
+//     beskonechno, esli chank MapMagic nikogda ne sgeneriruetsya (za predelami
+//     karty, oshibka generatsii, OOM). Rezultat: vechnyy ekran zagruzki.
 //
-//   • [FIX] Добавлен per-point retry counter (maxRetriesPerPoint).
-//     Каждая точка спирали получает ограниченное количество попыток.
-//     При исчерпании — точка пропускается (spiralIndex++).
-//     Дедлок математически невозможен.
+//   • [FIX] Dobavlen per-point retry counter (maxRetriesPerPoint).
+//     Kazhdaya tochka spirali poluchaet ogranichennoe kolichestvo popytok.
+//     Pri ischerpanii — tochka propuskaetsya (spiralIndex++).
+//     Dedlok matematicheski nevozmozhen.
 //
-//   • [FIX] Добавлен глобальный таймаут операции (globalTimeoutSec).
-//     Time.realtimeSinceStartup проверяется на каждой итерации.
-//     При превышении — немедленный fallback спавн.
-//     Защита от ВСЕХ возможных зависаний, включая edge cases.
+//   • [FIX] Dobavlen globalnyy taymaut operatsii (globalTimeoutSec).
+//     Time.realtimeSinceStartup proveryaetsya na kazhdoy iteratsii.
+//     Pri prevyshenii — nemedlennyy fallback spavn.
+//     Zaschita ot VSEH vozmozhnyh zavisaniy, vklyuchaya edge cases.
 //
-//   • [FIX] Фаза 3 получила тот же глобальный таймаут.
-//     Хотя в v3.0 Фаза 3 не имела `continue`-бага, глобальный
-//     таймаут защищает от медленных nearshore-поисков на огромных картах.
+//   • [FIX] Faza 3 poluchila tot zhe globalnyy taymaut.
+//     Hotya v v3.0 Faza 3 ne imela `continue`-baga, globalnyy
+//     taymaut zaschischaet ot medlennyh nearshore-poiskov na ogromnyh kartah.
 //
-// СОХРАНЕНО БЕЗ ИЗМЕНЕНИЙ:
-//   • Архимедова спираль, fallback, nearshore search
-//   • Zero-GC Raycast: предаллоцированные _rayOrigin, _hitInfo
-//   • Rigidbody телепорт: isKinematic, interpolation, velocity reset
+// SOHRANENO BEZ IZMENENIY:
+//   • Arhimedova spiral, fallback, nearshore search
+//   • Zero-GC Raycast: predallotsirovannye _rayOrigin, _hitInfo
+//   • Rigidbody teleport: isKinematic, interpolation, velocity reset
 //   • Unity 6 Awaitable API (zero-GC awaiter)
 //
-// АЛГОРИТМ:
-//   Фаза 1 — Ожидание генерации террейна в центре карты (таймаут: maxWaitTime).
-//   Фаза 2 — Поиск мелководья по Архимедовой спирали (per-point retries + global timeout).
-//   Фаза 3 — Fallback: поиск суши → nearshore мелководье (global timeout).
-//   Фаза 4 — Аварийный спавн на уровне воды в центре (гарантированно достигается).
+// ALGORITM:
+//   Faza 1 — Ozhidanie generatsii terreyna v tsentre karty (taymaut: maxWaitTime).
+//   Faza 2 — Poisk melkovodya po Arhimedovoy spirali (per-point retries + global timeout).
+//   Faza 3 — Fallback: poisk sushi → nearshore melkovode (global timeout).
+//   Faza 4 — Avariynyy spavn na urovne vody v tsentre (garantirovanno dostigaetsya).
 //
-// ЦЕЛЕВОЕ ЖЕЛЕЗО: NVIDIA GeForce MX350.
+// TsELEVOE ZhELEZO: NVIDIA GeForce MX350.
 // ============================================================================
 
 using System;
@@ -47,13 +47,13 @@ using Hecton8.Gameplay;
 using UnityEngine;
 
 /// <summary>
-/// Безопасный асинхронный спавнер игрока для процедурно генерируемого мира.
+/// Bezopasnyy asinhronnyy spavner igroka dlya protsedurno generiruemogo mira.
 /// <para>
-/// Ищет точку на поверхности воды вблизи суши, где глубина не слишком большая.
-/// Игрок появляется НА воде (Y = WaterLevel) рядом с берегом.
+/// Ischet tochku na poverhnosti vody vblizi sushi, gde glubina ne slishkom bolshaya.
+/// Igrok poyavlyaetsya NA vode (Y = WaterLevel) ryadom s beregom.
 /// </para>
 /// <para>
-/// <b>Использование из SceneBootstrap:</b>
+/// <b>Ispolzovanie iz GameBootstrapper:</b>
 /// <code>
 /// var spawner = sceneBootstrap.PlayerSpawner;
 /// await spawner.SpawnPlayerAsync(ct);
@@ -67,7 +67,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     [Header("=== Player ===")]
-    [Tooltip("Ссылка на Rigidbody игрока (задаётся через Inspector)")]
+    [Tooltip("Ssylka na Rigidbody igroka (zadaetsya cherez Inspector)")]
     [SerializeField] private Rigidbody playerRigidbody;
 
     // ══════════════════════════════════════════════════════════════
@@ -75,10 +75,10 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     [Header("=== Water Settings ===")]
-    [Tooltip("Уровень моря (Water Level) — высота Y поверхности воды")]
+    [Tooltip("Uroven morya (Water Level) — vysota Y poverhnosti vody")]
     [SerializeField] private float waterLevel = 4900f;
 
-    [Tooltip("Минимальная допустимая высота дна под водой (защита от слишком глубоких мест)")]
+    [Tooltip("Minimalnaya dopustimaya vysota dna pod vodoy (zaschita ot slishkom glubokih mest)")]
     [SerializeField] private float minSeaFloorHeight = 4800f;
 
     // ══════════════════════════════════════════════════════════════
@@ -86,10 +86,10 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     [Header("=== Raycast Settings ===")]
-    [Tooltip("Высота, с которой пускается луч вниз для поиска земли")]
+    [Tooltip("Vysota, s kotoroy puskaetsya luch vniz dlya poiska zemli")]
     [SerializeField] private float raycastOriginHeight = 10000f;
 
-    [Tooltip("Слой(и) террейна для Raycast")]
+    [Tooltip("Sloy(i) terreyna dlya Raycast")]
     [SerializeField] private LayerMask terrainLayerMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
     // ══════════════════════════════════════════════════════════════
@@ -97,22 +97,22 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     [Header("=== Spawn Search Settings ===")]
-    [Tooltip("Начальная точка поиска по X,Z")]
+    [Tooltip("Nachalnaya tochka poiska po X,Z")]
     [SerializeField] private Vector2 searchOrigin = Vector2.zero;
 
-    [Tooltip("Шаг спирали в метрах (расстояние между витками)")]
+    [Tooltip("Shag spirali v metrah (rasstoyanie mezhdu vitkami)")]
     [SerializeField] private float spiralStep = 75f;
 
-    [Tooltip("Максимальное количество точек спирали для проверки")]
+    [Tooltip("Maksimalnoe kolichestvo tochek spirali dlya proverki")]
     [SerializeField] private int maxSpiralPoints = 500;
 
-    [Tooltip("Смещение игрока над поверхностью воды / землёй")]
+    [Tooltip("Smeschenie igroka nad poverhnostyu vody / zemley")]
     [SerializeField] private float spawnHeightOffset = 2f;
 
-    [Tooltip("Задержка между попытками Raycast (ожидание генерации MapMagic), секунды")]
+    [Tooltip("Zaderzhka mezhdu popytkami Raycast (ozhidanie generatsii MapMagic), sekundy")]
     [SerializeField] private float retryDelay = 0.5f;
 
-    [Tooltip("Максимальное время ожидания генерации террейна в Фазе 1 (секунды)")]
+    [Tooltip("Maksimalnoe vremya ozhidaniya generatsii terreyna v Faze 1 (sekundy)")]
     [SerializeField] private float maxWaitTime = 60f;
 
     // ══════════════════════════════════════════════════════════════
@@ -120,15 +120,15 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     [Header("=== Deadlock Protection (v3.1) ===")]
-    [Tooltip("Максимальное количество повторных попыток Raycast для одной точки спирали.\n" +
-             "Если террейн не появился за maxRetriesPerPoint × retryDelay секунд — " +
-             "точка пропускается.\n" +
-             "10 попыток × 0.5с = 5 секунд максимум на точку.")]
+    [Tooltip("Maksimalnoe kolichestvo povtornyh popytok Raycast dlya odnoy tochki spirali.\n" +
+             "Esli terreyn ne poyavilsya za maxRetriesPerPoint × retryDelay sekund — " +
+             "tochka propuskaetsya.\n" +
+             "10 popytok × 0.5s = 5 sekund maksimum na tochku.")]
     [SerializeField] private int maxRetriesPerPoint = 10;
 
-    [Tooltip("Глобальный таймаут всей операции SpawnPlayerAsync (секунды).\n" +
-             "Включает все фазы. При превышении — аварийный спавн.\n" +
-             "Защита от ВСЕХ возможных зависаний.")]
+    [Tooltip("Globalnyy taymaut vsey operatsii SpawnPlayerAsync (sekundy).\n" +
+             "Vklyuchaet vse fazy. Pri prevyshenii — avariynyy spavn.\n" +
+             "Zaschita ot VSEH vozmozhnyh zavisaniy.")]
     [SerializeField] private float globalTimeoutSec = 120f;
 
     // ══════════════════════════════════════════════════════════════
@@ -136,28 +136,28 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Предаллоцированная точка начала луча Raycast.
-    /// Переиспользуется во всех вызовах Physics.Raycast
-    /// без создания новых Vector3.
+    /// Predallotsirovannaya tochka nachala lucha Raycast.
+    /// Pereispolzuetsya vo vseh vyzovah Physics.Raycast
+    /// bez sozdaniya novyh Vector3.
     /// </summary>
     private Vector3 _rayOrigin;
 
     /// <summary>
-    /// Предаллоцированная позиция спавна.
-    /// Заполняется при нахождении валидной точки.
+    /// Predallotsirovannaya pozitsiya spavna.
+    /// Zapolnyaetsya pri nahozhdenii validnoy tochki.
     /// </summary>
     private Vector3 _spawnPosition;
 
     /// <summary>
-    /// Предаллоцированная структура результата Raycast.
-    /// Unity перезаписывает поля при каждом вызове Physics.Raycast.
+    /// Predallotsirovannaya struktura rezultata Raycast.
+    /// Unity perezapisyvaet polya pri kazhdom vyzove Physics.Raycast.
     /// </summary>
     private RaycastHit _hitInfo;
     private readonly RaycastHit[] _groundHits = new RaycastHit[1]; // COLD ALLOC: spawner needs only the nearest terrain hit per probe.
 
     /// <summary>
-    /// Время начала операции SpawnPlayerAsync (realtimeSinceStartup).
-    /// Используется для проверки глобального таймаута.
+    /// Vremya nachala operatsii SpawnPlayerAsync (realtimeSinceStartup).
+    /// Ispolzuetsya dlya proverki globalnogo taymauta.
     /// </summary>
     private float _operationStartTime;
     private HectonPlayerMovement _playerMovement;
@@ -170,20 +170,20 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Результат проверки конкретной точки карты.
+    /// Rezultat proverki konkretnoy tochki karty.
     /// </summary>
     private enum SpawnSearchResult
     {
-        /// <summary>Террейн не обнаружен (чанк ещё не сгенерирован).</summary>
+        /// <summary>Terreyn ne obnaruzhen (chank esche ne sgenerirovan).</summary>
         NoTerrain,
 
-        /// <summary>Слишком глубоко (дно ниже <see cref="minSeaFloorHeight"/>).</summary>
+        /// <summary>Slishkom gluboko (dno nizhe <see cref="minSeaFloorHeight"/>).</summary>
         DeepWater,
 
-        /// <summary>Суша (земля выше уровня моря).</summary>
+        /// <summary>Susha (zemlya vyshe urovnya morya).</summary>
         AboveWater,
 
-        /// <summary>Мелкая вода вблизи суши — идеально для спавна.</summary>
+        /// <summary>Melkaya voda vblizi sushi — idealno dlya spavna.</summary>
         ValidShallowWater
     }
 
@@ -192,7 +192,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Валидация ссылок с автоматическим поиском игрока в сцене.
+    /// Validatsiya ssylok s avtomaticheskim poiskom igroka v stsene.
     /// </summary>
     private void Awake()
     {
@@ -201,14 +201,14 @@ public class HectonPlayerSpawner : MonoBehaviour
             playerRigidbody = playerContext.PlayerRigidbody;
         if (_playerMovement == null && playerContext != null)
             _playerMovement = playerContext.PlayerMovement;
-        // ── Попытка автоматического поиска, если Inspector-ссылка не задана ──
+        // ── Popytka avtomaticheskogo poiska, esli Inspector-ssylka ne zadana ──
         if (playerRigidbody == null)
         {
             Debug.Log(
-                "[HectonPlayerSpawner] Rigidbody не назначен в Inspector. " +
-                "Пытаюсь получить current player через SceneBootstrap...");
+                "[HectonPlayerSpawner] Rigidbody ne naznachen v Inspector. " +
+                "Pytayus poluchit current player cherez GameBootstrapper...");
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransformRoot) &&
                 playerTransformRoot != null)
             {
                 playerTransformRoot.TryGetComponent(out playerRigidbody);
@@ -220,20 +220,20 @@ public class HectonPlayerSpawner : MonoBehaviour
                 if (playerRigidbody != null)
                 {
                     Debug.Log(
-                        $"[HectonPlayerSpawner] Rigidbody найден автоматически " +
-                        $"через SceneBootstrap на объекте \"{playerRigidbody.gameObject.name}\".");
+                        $"[HectonPlayerSpawner] Rigidbody nayden avtomaticheski " +
+                        $"cherez GameBootstrapper na obekte \"{playerRigidbody.gameObject.name}\".");
                 }
                 else
                 {
                     Debug.LogWarning(
                         $"[HectonPlayerSpawner] Current player \"{playerTransformRoot.name}\" " +
-                        "найден через SceneBootstrap, но Rigidbody не обнаружен ни на root, ни в дочерних объектах.");
+                        "nayden cherez GameBootstrapper, no Rigidbody ne obnaruzhen ni na root, ni v dochernih obektah.");
                 }
             }
             else
             {
                 Debug.LogWarning(
-                    "[HectonPlayerSpawner] SceneBootstrap не предоставил current player.");
+                    "[HectonPlayerSpawner] GameBootstrapper ne predostavil current player.");
             }
         }
         else if (_playerMovement == null)
@@ -241,13 +241,13 @@ public class HectonPlayerSpawner : MonoBehaviour
             playerRigidbody.TryGetComponent(out _playerMovement);
         }
 
-        // ── Финальная проверка после всех попыток поиска ──
+        // ── Finalnaya proverka posle vseh popytok poiska ──
         if (playerRigidbody == null)
         {
             Debug.LogError(
-                "[HectonPlayerSpawner] Rigidbody игрока не найден! " +
-                "Ни Inspector-ссылка, ни поиск по тегу \"Player\" не дали результата. " +
-                "Спавн невозможен.",
+                "[HectonPlayerSpawner] Rigidbody igroka ne nayden! " +
+                "Ni Inspector-ssylka, ni poisk po tegu \"Player\" ne dali rezultata. " +
+                "Spavn nevozmozhen.",
                 this);
             enabled = false;
         }
@@ -258,29 +258,29 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Асинхронный поиск безопасной точки спавна и телепортация игрока.
+    /// Asinhronnyy poisk bezopasnoy tochki spavna i teleportatsiya igroka.
     ///
-    /// v3.1: Защита от дедлока:
-    ///   • Per-point retry limit (maxRetriesPerPoint) — каждая точка спирали
-    ///     может быть проверена не более N раз. При исчерпании — пропускается.
-    ///   • Глобальный таймаут (globalTimeoutSec) — если вся операция
-    ///     превышает лимит — немедленный fallback спавн.
-    ///   • Бесконечный цикл на одной точке МАТЕМАТИЧЕСКИ НЕВОЗМОЖЕН:
-    ///     retryCount инкрементируется при каждой неудаче, spiralIndex++
-    ///     гарантированно вызывается при retryCount >= maxRetriesPerPoint.
+    /// v3.1: Zaschita ot dedloka:
+    ///   • Per-point retry limit (maxRetriesPerPoint) — kazhdaya tochka spirali
+    ///     mozhet byt proverena ne bolee N raz. Pri ischerpanii — propuskaetsya.
+    ///   • Globalnyy taymaut (globalTimeoutSec) — esli vsya operatsiya
+    ///     prevyshaet limit — nemedlennyy fallback spavn.
+    ///   • Beskonechnyy tsikl na odnoy tochke MATEMATIChESKI NEVOZMOZhEN:
+    ///     retryCount inkrementiruetsya pri kazhdoy neudache, spiralIndex++
+    ///     garantirovanno vyzyvaetsya pri retryCount >= maxRetriesPerPoint.
     /// </summary>
     public async Awaitable SpawnPlayerAsync(CancellationToken ct)
     {
-        Debug.Log("[HectonPlayerSpawner] Начинаю поиск безопасной точки спавна...");
+        Debug.Log("[HectonPlayerSpawner] Nachinayu poisk bezopasnoy tochki spavna...");
 
-        // ── Засекаем глобальный таймер (v3.1) ──
+        // ── Zasekaem globalnyy taymer (v3.1) ──
         _operationStartTime = Time.realtimeSinceStartup;
 
-        // ── Подготовка Rigidbody к телепорту ──
+        // ── Podgotovka Rigidbody k teleportu ──
         PrepareRigidbodyForTeleport();
 
         // ══════════════════════════════════════════════════════════
-        //  ФАЗА 1: Ожидание генерации террейна в центре карты
+        //  FAZA 1: Ozhidanie generatsii terreyna v tsentre karty
         // ══════════════════════════════════════════════════════════
 
         bool terrainReady = false;
@@ -292,12 +292,12 @@ public class HectonPlayerSpawner : MonoBehaviour
         {
             ct.ThrowIfCancellationRequested();
 
-            // ── Глобальный таймаут (v3.1) ──
+            // ── Globalnyy taymaut (v3.1) ──
             if (IsGlobalTimeoutExceeded())
             {
                 Debug.LogError(
-                    $"[HectonPlayerSpawner] Глобальный таймаут ({globalTimeoutSec}с) " +
-                    "в Фазе 1. Аварийный спавн.");
+                    $"[HectonPlayerSpawner] Globalnyy taymaut ({globalTimeoutSec}s) " +
+                    "v Faze 1. Avariynyy spavn.");
                 ForceFallbackSpawn();
                 return;
             }
@@ -306,8 +306,8 @@ public class HectonPlayerSpawner : MonoBehaviour
             {
                 terrainReady = true;
                 Debug.Log(
-                    $"[HectonPlayerSpawner] Террейн обнаружен в центре карты. " +
-                    $"Высота: {_hitInfo.point.y:F1}");
+                    $"[HectonPlayerSpawner] Terreyn obnaruzhen v tsentre karty. " +
+                    $"Vysota: {_hitInfo.point.y:F1}");
             }
             else
             {
@@ -316,29 +316,29 @@ public class HectonPlayerSpawner : MonoBehaviour
                 if (waitTimer >= maxWaitTime)
                 {
                     Debug.LogError(
-                        $"[HectonPlayerSpawner] Таймаут ({maxWaitTime}с): " +
-                        "террейн не сгенерирован. Спавню на уровне воды в центре.");
+                        $"[HectonPlayerSpawner] Taymaut ({maxWaitTime}s): " +
+                        "terreyn ne sgenerirovan. Spavnyu na urovne vody v tsentre.");
                     ForceFallbackSpawn();
                     return;
                 }
 
                 Debug.Log(
-                    $"[HectonPlayerSpawner] Террейн ещё не готов, жду... " +
-                    $"({waitTimer:F1}с)");
+                    $"[HectonPlayerSpawner] Terreyn esche ne gotov, zhdu... " +
+                    $"({waitTimer:F1}s)");
                 await Awaitable.WaitForSecondsAsync(retryDelay, cancellationToken: ct);
             }
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ФАЗА 2: Поиск мелководья по Архимедовой спирали
+        //  FAZA 2: Poisk melkovodya po Arhimedovoy spirali
         //
         //  v3.1 FIX: Per-point retry counter.
         //
-        //  БЫЛО (v3.0, ДЕДЛОК):
+        //  BYLO (v3.0, DEDLOK):
         //    if (!Raycast) { await delay; continue; }
-        //    // continue пропускает spiralIndex++ → вечный цикл.
+        //    // continue propuskaet spiralIndex++ → vechnyy tsikl.
         //
-        //  СТАЛО (v3.1, БЕЗОПАСНО):
+        //  STALO (v3.1, BEZOPASNO):
         //    if (!Raycast) {
         //        retryCount++;
         //        if (retryCount >= maxRetriesPerPoint) {
@@ -353,12 +353,12 @@ public class HectonPlayerSpawner : MonoBehaviour
         //    → evaluate point
         //    → AdvanceSpiral()
         //
-        //  Максимальное время на одну точку:
-        //    maxRetriesPerPoint × retryDelay = 10 × 0.5 = 5 секунд.
-        //  После этого — гарантированный переход к следующей точке.
+        //  Maksimalnoe vremya na odnu tochku:
+        //    maxRetriesPerPoint × retryDelay = 10 × 0.5 = 5 sekund.
+        //  Posle etogo — garantirovannyy perehod k sleduyuschey tochke.
         // ══════════════════════════════════════════════════════════
 
-        // Сначала проверяем центральную точку
+        // Snachala proveryaem tsentralnuyu tochku
         SpawnSearchResult centerResult = EvaluatePoint(searchOrigin.x, searchOrigin.y);
 
         if (centerResult == SpawnSearchResult.ValidShallowWater)
@@ -367,7 +367,7 @@ public class HectonPlayerSpawner : MonoBehaviour
             return;
         }
 
-        // ── Инициализация спирали ──
+        // ── Initsializatsiya spirali ──
         int spiralIndex = 0;
         float angleStep = 45f;
         float currentAngle = 0f;
@@ -380,17 +380,17 @@ public class HectonPlayerSpawner : MonoBehaviour
         {
             ct.ThrowIfCancellationRequested();
 
-            // ── Глобальный таймаут (v3.1) ──
+            // ── Globalnyy taymaut (v3.1) ──
             if (IsGlobalTimeoutExceeded())
             {
                 Debug.LogError(
-                    $"[HectonPlayerSpawner] Глобальный таймаут ({globalTimeoutSec}с) " +
-                    $"в Фазе 2 на точке {spiralIndex}/{maxSpiralPoints}. Аварийный спавн.");
+                    $"[HectonPlayerSpawner] Globalnyy taymaut ({globalTimeoutSec}s) " +
+                    $"v Faze 2 na tochke {spiralIndex}/{maxSpiralPoints}. Avariynyy spavn.");
                 ForceFallbackSpawn();
                 return;
             }
 
-            // Вычисляем X, Z по спирали
+            // Vychislyaem X, Z po spirali
             float rad = currentAngle * Mathf.Deg2Rad;
             float testX = searchOrigin.x + Mathf.Cos(rad) * currentRadius;
             float testZ = searchOrigin.y + Mathf.Sin(rad) * currentRadius;
@@ -399,7 +399,7 @@ public class HectonPlayerSpawner : MonoBehaviour
 
             if (TryRaycastGround(out _hitInfo))
             {
-                // ── Raycast успешен — сбрасываем счётчик попыток ──
+                // ── Raycast uspeshen — sbrasyvaem schetchik popytok ──
                 retryCount = 0;
 
                 SpawnSearchResult result = EvaluatePointFromHit(testX, testZ);
@@ -410,33 +410,33 @@ public class HectonPlayerSpawner : MonoBehaviour
                     return;
                 }
 
-                // Точка не подходит (суша/глубоко) — переходим к следующей
+                // Tochka ne podhodit (susha/gluboko) — perehodim k sleduyuschey
             }
             else
             {
-                // ── Террейн не найден — per-point retry (v3.1) ──
+                // ── Terreyn ne nayden — per-point retry (v3.1) ──
                 retryCount++;
 
                 if (retryCount < maxRetriesPerPoint)
                 {
-                    // Ещё есть попытки — ждём и повторяем ТУ ЖЕ точку
+                    // Esche est popytki — zhdem i povtoryaem TU ZhE tochku
                     await Awaitable.WaitForSecondsAsync(retryDelay, cancellationToken: ct);
-                    continue; // НЕ инкрементируем spiralIndex — повторяем точку
+                    continue; // NE inkrementiruem spiralIndex — povtoryaem tochku
                 }
 
-                // ── Попытки исчерпаны — пропускаем точку (v3.1) ──
-                // spiralIndex++ произойдёт ниже через AdvanceSpiral.
+                // ── Popytki ischerpany — propuskaem tochku (v3.1) ──
+                // spiralIndex++ proizoydet nizhe cherez AdvanceSpiral.
                 retryCount = 0;
 
                 Debug.Log(
-                    $"[HectonPlayerSpawner] Точка спирали #{spiralIndex} " +
-                    $"({testX:F0}, {testZ:F0}): террейн не сгенерирован " +
-                    $"после {maxRetriesPerPoint} попыток. Пропускаю.");
+                    $"[HectonPlayerSpawner] Tochka spirali #{spiralIndex} " +
+                    $"({testX:F0}, {testZ:F0}): terreyn ne sgenerirovan " +
+                    $"posle {maxRetriesPerPoint} popytok. Propuskayu.");
             }
 
-            // ── Переходим к следующей точке спирали ──
-            // Этот код ГАРАНТИРОВАННО выполняется при каждом проходе,
-            // кроме случая continue выше (который имеет лимит retryCount).
+            // ── Perehodim k sleduyuschey tochke spirali ──
+            // Etot kod GARANTIROVANNO vypolnyaetsya pri kazhdom prohode,
+            // krome sluchaya continue vyshe (kotoryy imeet limit retryCount).
             spiralIndex++;
             pointInRing++;
             currentAngle += angleStep;
@@ -453,7 +453,7 @@ public class HectonPlayerSpawner : MonoBehaviour
                 currentAngle = 0f;
             }
 
-            // Каждые 16 точек — отдаём кадр Unity (плавный loading screen)
+            // Kazhdye 16 tochek — otdaem kadr Unity (plavnyy loading screen)
             if ((spiralIndex & 15) == 0)
             {
                 await AwaitableDebtMonitor.NextFrameAsync(ct);
@@ -461,19 +461,19 @@ public class HectonPlayerSpawner : MonoBehaviour
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ФАЗА 3: Fallback — поиск суши → nearshore мелководье
+        //  FAZA 3: Fallback — poisk sushi → nearshore melkovode
         //
-        //  v3.1: Добавлен глобальный таймаут. Фаза 3 в v3.0
-        //  не имела continue-бага, но nearshore search (8 направлений
-        //  × 20 шагов = 160 рейкастов на точку) может быть медленным
-        //  на огромных картах. Глобальный таймаут защищает от этого.
+        //  v3.1: Dobavlen globalnyy taymaut. Faza 3 v v3.0
+        //  ne imela continue-baga, no nearshore search (8 napravleniy
+        //  × 20 shagov = 160 reykastov na tochku) mozhet byt medlennym
+        //  na ogromnyh kartah. Globalnyy taymaut zaschischaet ot etogo.
         // ══════════════════════════════════════════════════════════
 
         Debug.LogWarning(
-            "[HectonPlayerSpawner] Мелкая вода вблизи суши не найдена " +
-            "после полного обхода спирали. Ищу любую сушу...");
+            "[HectonPlayerSpawner] Melkaya voda vblizi sushi ne naydena " +
+            "posle polnogo obhoda spirali. Ischu lyubuyu sushu...");
 
-        // Сброс параметров спирали для второго прохода
+        // Sbros parametrov spirali dlya vtorogo prohoda
         currentAngle = 0f;
         currentRadius = spiralStep;
         pointsPerRing = 8;
@@ -485,12 +485,12 @@ public class HectonPlayerSpawner : MonoBehaviour
         {
             ct.ThrowIfCancellationRequested();
 
-            // ── Глобальный таймаут (v3.1) ──
+            // ── Globalnyy taymaut (v3.1) ──
             if (IsGlobalTimeoutExceeded())
             {
                 Debug.LogError(
-                    $"[HectonPlayerSpawner] Глобальный таймаут ({globalTimeoutSec}с) " +
-                    $"в Фазе 3 на точке {spiralIndex}/{maxSpiralPoints}. Аварийный спавн.");
+                    $"[HectonPlayerSpawner] Globalnyy taymaut ({globalTimeoutSec}s) " +
+                    $"v Faze 3 na tochke {spiralIndex}/{maxSpiralPoints}. Avariynyy spavn.");
                 ForceFallbackSpawn();
                 return;
             }
@@ -505,7 +505,7 @@ public class HectonPlayerSpawner : MonoBehaviour
             {
                 float groundY = _hitInfo.point.y;
 
-                // Нашли сушу — ищем ближайшую точку мелководья
+                // Nashli sushu — ischem blizhayshuyu tochku melkovodya
                 if (groundY > waterLevel)
                 {
                     bool foundNearshore = TryFindNearshorePoint(testX, testZ);
@@ -516,10 +516,10 @@ public class HectonPlayerSpawner : MonoBehaviour
                     }
                 }
             }
-            // v3.1: Фаза 3 НЕ ждёт генерации террейна — просто пропускает.
-            // Если террейна нет — переходим к следующей точке немедленно.
+            // v3.1: Faza 3 NE zhdet generatsii terreyna — prosto propuskaet.
+            // Esli terreyna net — perehodim k sleduyuschey tochke nemedlenno.
 
-            // ── Всегда продвигаем спираль (нет continue → нет дедлока) ──
+            // ── Vsegda prodvigaem spiral (net continue → net dedloka) ──
             spiralIndex++;
             pointInRing++;
             currentAngle += angleStep;
@@ -535,7 +535,7 @@ public class HectonPlayerSpawner : MonoBehaviour
                 currentAngle = 0f;
             }
 
-            // Каждые 16 точек — yield для плавности
+            // Kazhdye 16 tochek — yield dlya plavnosti
             if ((spiralIndex & 15) == 0)
             {
                 await AwaitableDebtMonitor.NextFrameAsync(ct);
@@ -543,12 +543,12 @@ public class HectonPlayerSpawner : MonoBehaviour
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ФАЗА 4: Абсолютный fallback
+        //  FAZA 4: Absolyutnyy fallback
         // ══════════════════════════════════════════════════════════
 
         Debug.LogWarning(
-            "[HectonPlayerSpawner] Ни суша, ни мелководье не найдены. " +
-            "Спавню на уровне воды в центре.");
+            "[HectonPlayerSpawner] Ni susha, ni melkovode ne naydeny. " +
+            "Spavnyu na urovne vody v tsentre.");
         ForceFallbackSpawn();
     }
 
@@ -557,11 +557,11 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Проверяет, превышен ли глобальный таймаут операции.
-    /// Использует Time.realtimeSinceStartup — не зависит от Time.timeScale.
+    /// Proveryaet, prevyshen li globalnyy taymaut operatsii.
+    /// Ispolzuet Time.realtimeSinceStartup — ne zavisit ot Time.timeScale.
     /// Zero GC: float comparison.
     /// </summary>
-    /// <returns>true если операция выполняется дольше globalTimeoutSec.</returns>
+    /// <returns>true esli operatsiya vypolnyaetsya dolshe globalTimeoutSec.</returns>
     private bool IsGlobalTimeoutExceeded()
     {
         return (Time.realtimeSinceStartup - _operationStartTime) >= globalTimeoutSec;
@@ -572,9 +572,9 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Оценивает точку карты, пуская Raycast вниз.
-    /// При нахождении валидного мелководья заполняет _spawnPosition.
-    /// Zero-GC: предаллоцированные _rayOrigin и _hitInfo.
+    /// Otsenivaet tochku karty, puskaya Raycast vniz.
+    /// Pri nahozhdenii validnogo melkovodya zapolnyaet _spawnPosition.
+    /// Zero-GC: predallotsirovannye _rayOrigin i _hitInfo.
     /// </summary>
     private bool TryRaycastGround(out RaycastHit hit)
     {
@@ -608,26 +608,26 @@ public class HectonPlayerSpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// Оценивает точку на основе уже заполненного _hitInfo.
-    /// Вызывается после успешного Raycast.
+    /// Otsenivaet tochku na osnove uzhe zapolnennogo _hitInfo.
+    /// Vyzyvaetsya posle uspeshnogo Raycast.
     /// </summary>
     private SpawnSearchResult EvaluatePointFromHit(float x, float z)
     {
         float groundY = _hitInfo.point.y;
 
-        // Суша — земля выше уровня воды
+        // Susha — zemlya vyshe urovnya vody
         if (groundY >= waterLevel)
         {
             return SpawnSearchResult.AboveWater;
         }
 
-        // Слишком глубоко — дно ниже порога
+        // Slishkom gluboko — dno nizhe poroga
         if (groundY < minSeaFloorHeight)
         {
             return SpawnSearchResult.DeepWater;
         }
 
-        // Мелкая вода — идеальная точка, игрок появляется НА поверхности
+        // Melkaya voda — idealnaya tochka, igrok poyavlyaetsya NA poverhnosti
         _spawnPosition.Set(x, waterLevel + spawnHeightOffset, z);
         return SpawnSearchResult.ValidShallowWater;
     }
@@ -637,9 +637,9 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Из точки суши пытается найти ближайшую точку мелководья,
-    /// двигаясь от суши в 8 направлениях с шагом 10 метров (до 200м).
-    /// При успехе — заполняет _spawnPosition.
+    /// Iz tochki sushi pytaetsya nayti blizhayshuyu tochku melkovodya,
+    /// dvigayas ot sushi v 8 napravleniyah s shagom 10 metrov (do 200m).
+    /// Pri uspehe — zapolnyaet _spawnPosition.
     /// </summary>
     private bool TryFindNearshorePoint(float landX, float landZ)
     {
@@ -674,7 +674,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Подготавливает Rigidbody к безопасному телепорту.
+    /// Podgotavlivaet Rigidbody k bezopasnomu teleportu.
     /// </summary>
     private void PrepareRigidbodyForTeleport()
     {
@@ -690,8 +690,8 @@ public class HectonPlayerSpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// Телепортирует игрока в указанную позицию.
-    /// Безопасный порядок операций для Rigidbody.
+    /// Teleportiruet igroka v ukazannuyu pozitsiyu.
+    /// Bezopasnyy poryadok operatsiy dlya Rigidbody.
     /// </summary>
     private void TeleportPlayer(Vector3 position)
     {
@@ -721,12 +721,12 @@ public class HectonPlayerSpawner : MonoBehaviour
         float elapsed = Time.realtimeSinceStartup - _operationStartTime;
 
         Debug.Log(
-            $"[HectonPlayerSpawner] ✅ Игрок успешно заспавнен!\n" +
-            $"   Координаты: ({position.x:F1}, {position.y:F1}, {position.z:F1})\n" +
-            $"   Уровень моря: {waterLevel:F1}\n" +
-            $"   Высота дна под игроком: {_hitInfo.point.y:F1}\n" +
-            $"   Глубина воды: {waterLevel - _hitInfo.point.y:F1}м\n" +
-            $"   Время поиска: {elapsed:F1}с");
+            $"[HectonPlayerSpawner] ✅ Igrok uspeshno zaspavnen!\n" +
+            $"   Koordinaty: ({position.x:F1}, {position.y:F1}, {position.z:F1})\n" +
+            $"   Uroven morya: {waterLevel:F1}\n" +
+            $"   Vysota dna pod igrokom: {_hitInfo.point.y:F1}\n" +
+            $"   Glubina vody: {waterLevel - _hitInfo.point.y:F1}m\n" +
+            $"   Vremya poiska: {elapsed:F1}s");
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -734,8 +734,8 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Аварийный спавн на уровне воды в центре карты.
-    /// Гарантированно завершает операцию без дедлока.
+    /// Avariynyy spavn na urovne vody v tsentre karty.
+    /// Garantirovanno zavershaet operatsiyu bez dedloka.
     /// </summary>
     private bool TryResolveTeleportVelocityFrame(
         Vector3 currentPosition,
@@ -778,9 +778,9 @@ public class HectonPlayerSpawner : MonoBehaviour
         float elapsed = Time.realtimeSinceStartup - _operationStartTime;
 
         Debug.LogWarning(
-            $"[HectonPlayerSpawner] ⚠️ Аварийный спавн на " +
+            $"[HectonPlayerSpawner] ⚠️ Avariynyy spavn na " +
             $"({_spawnPosition.x:F1}, {_spawnPosition.y:F1}, {_spawnPosition.z:F1})\n" +
-            $"   Время до fallback: {elapsed:F1}с");
+            $"   Vremya do fallback: {elapsed:F1}s");
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -789,27 +789,27 @@ public class HectonPlayerSpawner : MonoBehaviour
 
 #if UNITY_EDITOR
     /// <summary>
-    /// Визуализация в редакторе: точка поиска, уровень моря,
-    /// минимальная глубина и луч Raycast.
+    /// Vizualizatsiya v redaktore: tochka poiska, uroven morya,
+    /// minimalnaya glubina i luch Raycast.
     /// </summary>
     private void OnDrawGizmosSelected()
     {
-        // Точка начала поиска
+        // Tochka nachala poiska
         Gizmos.color = Color.cyan;
         Vector3 origin = new Vector3(searchOrigin.x, waterLevel, searchOrigin.y);
         Gizmos.DrawWireSphere(origin, 5f);
 
-        // Плоскость уровня моря
+        // Ploskost urovnya morya
         Gizmos.color = new Color(0f, 0.5f, 1f, 0.15f);
         Gizmos.DrawCube(origin, new Vector3(500f, 0.1f, 500f));
 
-        // Уровень минимальной глубины
+        // Uroven minimalnoy glubiny
         Gizmos.color = new Color(1f, 0f, 0f, 0.1f);
         Vector3 minDepthOrigin = new Vector3(
             searchOrigin.x, minSeaFloorHeight, searchOrigin.y);
         Gizmos.DrawCube(minDepthOrigin, new Vector3(500f, 0.1f, 500f));
 
-        // Луч Raycast
+        // Luch Raycast
         Gizmos.color = Color.yellow;
         Vector3 rayStart = new Vector3(
             searchOrigin.x, raycastOriginHeight, searchOrigin.y);

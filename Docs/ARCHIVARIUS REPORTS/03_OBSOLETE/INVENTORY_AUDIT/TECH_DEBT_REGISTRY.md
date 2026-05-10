@@ -110,6 +110,6 @@ Third-party packages (`Packages/`, `Assets/_ThirdParty/`) are noted for context 
 
 ### NOTES
 - `HectonNetworkManager.cs` is 100% stub — every public method body is a TODO. Recommend either implementing or removing before production.
-- No `// КОСТЫЛЬ` or `// ВРЕМЕННО` markers found in first-party scripts (only in archived docs).
+- No `// KOSTYL` or `// VREMENNO` markers found in first-party scripts (only in archived docs).
 - Third-party debt (Crest, Shader Graph, Shapes, etc.) is extensive but out of scope for Hecton-8 team action.
 - **Unity 6 LTS Compatibility:** First-party code has 5 instances of deprecated `FindFirstObjectByType` — should migrate to `FindAnyObjectByType` (Unity 6 API).

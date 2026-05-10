@@ -55,10 +55,10 @@ namespace Hecton8.Core
         private const ulong BootstrapSafeHaltDumpMagic = 0x544C484554435048ul; // "HPCTEHLT" little-endian sentinel.
         private const ulong BinaryMagic = 0x00384E4F54434548ul; // "HECTON8\0" in little-endian byte order.
         private const string ExportFilePrefix = "crash_";
-        private const string ExportFileExtension = ".hbin";
+        private const string ExportFileExtension = ".h8dump";
         private const string ExportTimestampFormat = "yyyyMMdd_HHmmss_fff";
         private const string LiveTelemetryFileName = "runtime_telemetry.bin";
-        private const string CrashTelemetryFileName = "BLACKBOX_CRASH.bin";
+        private const string CrashTelemetryFileName = "BLACKBOX_CRASH.h8dump";
         private const string BlackBoxExportThreadName = "H8.BlackBoxExport";
         private const int BlackBoxExportThreadJoinMilliseconds = 250;
         private const int ProfilerRecorderHandleScratchCapacity = 256;
@@ -124,6 +124,7 @@ namespace Hecton8.Core
             NativeTransientLeak = 1u << 26,
             BlackBoxExportDropped = 1u << 27,
             BlackBoxExportSuppressed = 1u << 28,
+            RuntimeMemorySpike = 1u << 29,
         }
 
         [Flags]
@@ -170,6 +171,7 @@ namespace Hecton8.Core
             NativeTransientLeak = 22u,
             BlackBoxExportDropped = 23u,
             BlackBoxExportSuppressed = 24u,
+            RuntimeMemorySpike = 25u,
         }
 
         private const uint ExportInternalFaultMask =
@@ -181,6 +183,7 @@ namespace Hecton8.Core
             (uint)ErrorBits.NanPhysics |
             (uint)ErrorBits.CriticalPerformanceSpike |
             (uint)ErrorBits.CriticalMemoryPressure |
+            (uint)ErrorBits.RuntimeMemorySpike |
             (uint)ErrorBits.RuntimeWatchdogStall |
             (uint)ErrorBits.BootstrapSafeHalt;
 
@@ -491,6 +494,29 @@ namespace Hecton8.Core
                 ExportReason.CriticalMemoryPressure,
                 flags,
                 writeSynchronously: true);
+        }
+
+        /// <summary>
+        /// Records a single-frame runtime allocation spike and exports a black-box snapshot.
+        /// </summary>
+        public static void ReportRuntimeMemorySpike(
+            long previousBytes,
+            long currentBytes,
+            long deltaBytes,
+            uint contextHash)
+        {
+            uint flags = (uint)ErrorBits.RuntimeMemorySpike;
+            OrRuntimeFaultFlags(unchecked((int)flags));
+
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteRuntimeMemorySpikeTelemetry(previousBytes, currentBytes, deltaBytes, contextHash);
+            instance.TryExportSnapshot(
+                ExportReason.RuntimeMemorySpike,
+                flags,
+                writeSynchronously: false);
         }
 
         /// <summary>
@@ -1013,6 +1039,8 @@ namespace Hecton8.Core
                 return ExportReason.StaleBufferCrime;
             if ((errorFlags & (uint)ErrorBits.NativeTransientLeak) != 0u)
                 return ExportReason.NativeTransientLeak;
+            if ((errorFlags & (uint)ErrorBits.RuntimeMemorySpike) != 0u)
+                return ExportReason.RuntimeMemorySpike;
             if ((errorFlags & (uint)ErrorBits.CriticalMemoryPressure) != 0u)
                 return ExportReason.CriticalMemoryPressure;
             if ((errorFlags & (uint)ErrorBits.RuntimeWatchdogStall) != 0u)
@@ -1545,13 +1573,13 @@ namespace Hecton8.Core
             catch (UnauthorizedAccessException exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                H8Debug.LogException(exception);
 #endif
             }
             catch (IOException exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                H8Debug.LogException(exception);
 #endif
             }
             catch (Exception)
@@ -1601,6 +1629,33 @@ namespace Hecton8.Core
             entry.AupShiftSequence = HectonFloatingOrigin.LastShiftEvent.Sequence;
             entry.AiStatePacked = PackBytesToMegabytes(reservedBytes);
             entry.SubsystemHeatPacked = PackBytesToMegabytes(physicalBytes);
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, HectonFloatingOrigin.LastShiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+        }
+
+        private void WriteRuntimeMemorySpikeTelemetry(
+            long previousBytes,
+            long currentBytes,
+            long deltaBytes,
+            uint contextHash)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = ReserveTelemetryWriteIndex();
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Memory;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
+            entry.GpuFrameTime = deltaBytes * (1f / (1024f * 1024f));
+            entry.MemoryUsedMb = currentBytes * (1f / (1024f * 1024f));
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = (uint)ErrorBits.RuntimeMemorySpike;
+            entry.ExportReason = (uint)ExportReason.RuntimeMemorySpike;
+            entry.AupShiftSequence = HectonFloatingOrigin.LastShiftEvent.Sequence;
+            entry.AiStatePacked = PackBytesToMegabytes(previousBytes);
+            entry.SubsystemHeatPacked = contextHash;
             entry.LastOriginShiftFrame = unchecked((uint)math.max(0, HectonFloatingOrigin.LastShiftEvent.Frame));
             _ringBuffer[writeIndex] = entry;
         }
@@ -1682,7 +1737,7 @@ namespace Hecton8.Core
             {
                 enabled = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("CrashTelemetryBuffer requires fixed-size blittable crash export structs.");
+                H8Debug.LogError("CrashTelemetryBuffer requires fixed-size blittable crash export structs.");
 #endif
                 return;
             }
@@ -2024,7 +2079,7 @@ namespace Hecton8.Core
                 return;
 
             _playerResolveCooldown = PlayerResolveCooldownSeconds;
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
                 _playerTransform = playerTransform;
                 if (_survivalSystem == null && _playerTransform != null)
@@ -2191,6 +2246,7 @@ namespace Hecton8.Core
             if (type == LogType.Exception)
             {
                 OrThreadedFaultFlags((int)ErrorBits.ExceptionLogged);
+                GlobalTelemetryBus.RequestEmergencyFlushAsync();
             }
             else if (type == LogType.Error || type == LogType.Assert)
             {
@@ -2342,7 +2398,7 @@ namespace Hecton8.Core
                     _liveTelemetryPath = null;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogException(exception);
+                    H8Debug.LogException(exception);
 #endif
                 }
             }
@@ -2392,7 +2448,7 @@ namespace Hecton8.Core
                 _crashTelemetryPath = null;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                H8Debug.LogException(exception);
 #endif
             }
         }
@@ -2516,13 +2572,13 @@ namespace Hecton8.Core
             catch (UnauthorizedAccessException exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                H8Debug.LogException(exception);
 #endif
             }
             catch (IOException exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                H8Debug.LogException(exception);
 #endif
             }
             catch (Exception)
@@ -2812,13 +2868,13 @@ namespace Hecton8.Core
             catch (UnauthorizedAccessException exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                H8Debug.LogException(exception);
 #endif
             }
             catch (IOException exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                H8Debug.LogException(exception);
 #endif
             }
             catch (Exception)
@@ -2892,7 +2948,7 @@ namespace Hecton8.Core
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                H8Debug.LogException(exception);
 #endif
             }
         }

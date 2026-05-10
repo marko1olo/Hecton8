@@ -190,7 +190,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
             TEXTURE2D(_MainCloudTex);       SAMPLER(sampler_MainCloudTex);
             TEXTURE2D(_StarTwinkleLUT);     SAMPLER(sampler_StarTwinkleLUT);
-            TEXTURE2D(_HectonCausticsTextureA); SAMPLER(sampler_HectonCausticsTextureA);
             TEXTURECUBE(_BakedStarCubemap); SAMPLER(sampler_BakedStarCubemap);
 
             CBUFFER_START(UnityPerMaterial)
@@ -293,7 +292,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             float4 _HectonSkyOccluders[8];
             float4 _MeteorShowerParams;     // x=intensity, y=seed, z=synced flash, w=event age
             float4 _MeteorShowerDirection;  // xy=sky UV travel direction, z=streak length, w=streak width
-            float4 _HectonCausticsTextureParams;
             float _HectonFreezeFrameDither;
             float _GamePaused;
 
@@ -412,11 +410,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 noiseUv.x += animationTime * (float)_AuroraSpeed;
                 noiseUv.y += animationTime * (float)_AuroraSpeed * 0.37;
 
-                float causticNoise = SAMPLE_TEXTURE2D(_HectonCausticsTextureA, sampler_HectonCausticsTextureA, frac(noiseUv * 0.071)).r;
-                float useCausticNoise = step(0.5, _HectonCausticsTextureParams.x);
-                float n0 = lerp(HectonSkyValueNoise(noiseUv), causticNoise, useCausticNoise);
-                float n1 = lerp(HectonSkyValueNoise(noiseUv * 2.13 + 17.3), SAMPLE_TEXTURE2D(_HectonCausticsTextureA, sampler_HectonCausticsTextureA, frac(noiseUv * 0.151 + 0.37)).r, useCausticNoise) * 0.5;
-                float n2 = lerp(HectonSkyValueNoise(noiseUv * 4.07 + 41.7), SAMPLE_TEXTURE2D(_HectonCausticsTextureA, sampler_HectonCausticsTextureA, frac(noiseUv * 0.293 + 0.71)).r, useCausticNoise) * 0.25;
+                float n0 = HectonSkyValueNoise(noiseUv);
+                float n1 = HectonSkyValueNoise(noiseUv * 2.13 + 17.3) * 0.5;
+                float n2 = HectonSkyValueNoise(noiseUv * 4.07 + 41.7) * 0.25;
                 float noise = saturate((n0 + n1 + n2) * (1.0 / 1.75));
                 float curtainPhase = uv.x * 18.0 + noise * 3.0 + animationTime * (float)_AuroraSpeed * 5.0;
                 half curtain = pow(

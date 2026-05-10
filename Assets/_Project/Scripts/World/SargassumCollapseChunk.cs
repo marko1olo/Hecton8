@@ -332,7 +332,6 @@ namespace Hecton8.World
             if (impactSpeedSq < snagImpactSpeedThresholdSq)
                 return;
 
-            float impactSpeed = math.sqrt(impactSpeedSq);
             int collisionLayerMask = 1 << collision.collider.gameObject.layer;
             if ((snagLayers.value & collisionLayerMask) == 0)
                 return;
@@ -340,7 +339,7 @@ namespace Hecton8.World
             ContactPoint contact = collision.GetContact(0);
             bool useVoxelRockSpring = collision.collider.CompareTag("VoxelRock");
             TryConfigureSnag(contact.point, contact.normal, collision.rigidbody, useVoxelRockSpring);
-            if (ShouldStopSiltTrail(contact.normal, impactSpeed))
+            if (ShouldStopSiltTrail(contact.normal, impactSpeedSq))
                 StopSiltTrailEmission(clearParticles: false);
 
             if (_cascadeImpactConsumed)
@@ -348,7 +347,7 @@ namespace Hecton8.World
 
             SargassumGlobalDragManager dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
             if (dragManager != null)
-                dragManager.RegisterCollapseChunkImpact(contact.point, contact.normal, impactSpeed, _fragmentDepth + 1);
+                dragManager.RegisterCollapseChunkImpact(contact.point, contact.normal, impactSpeedSq, _fragmentDepth + 1);
 
             _cascadeImpactConsumed = true;
         }
@@ -559,9 +558,13 @@ namespace Hecton8.World
             if (distanceSq <= 0.00000001f)
                 return;
 
-            float distance = math.sqrt(distanceSq);
+            float maxDistance = math.max(0f, snagMaxDistance);
+            float maxDistanceSq = maxDistance * maxDistance;
+            if (distanceSq <= maxDistanceSq)
+                return;
+
             Vector3 directionAwayFromAnchor = separation * math.rsqrt(distanceSq);
-            float extension = distance - snagMaxDistance;
+            float extension = FastMagnitudeApprox(separation) - maxDistance;
             if (extension <= 0f)
                 return;
 
@@ -609,9 +612,9 @@ namespace Hecton8.World
                 siltTrail.Play(true);
         }
 
-        private bool ShouldStopSiltTrail(Vector3 contactNormalWS, float impactSpeed)
+        private bool ShouldStopSiltTrail(Vector3 contactNormalWS, float impactSpeedSq)
         {
-            if (impactSpeed <= 0.0001f)
+            if (impactSpeedSq <= 0.00000001f)
                 return false;
 
             if (_hasSnag)
@@ -809,6 +812,17 @@ namespace Hecton8.World
             return sqrMagnitude > 0.000001f
                 ? value * math.rsqrt(sqrMagnitude)
                 : fallback;
+        }
+
+        private static float FastMagnitudeApprox(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (mid * 0.41421356f) + (min * 0.29289322f);
         }
 
         private static float LerpClamped(float from, float to, float t)

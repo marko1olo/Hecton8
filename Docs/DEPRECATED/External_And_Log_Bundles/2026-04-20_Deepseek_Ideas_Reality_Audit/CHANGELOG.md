@@ -925,9 +925,9 @@ Status: `PENDING VERIFICATION`
 
 What was wrong:
 
-- `SaveSlotHoverPreview` обещал enlarged thumbnail + metadata, но реально показывал только thumbnail
-- save/load UX в этом месте уже имел готовый backend (`SaveManager.TryGetSaveSlotInfo`), но preview owner его не использовал
-- это оставляло slot hover panel визуально бедной и не давало игроку быстро увидеть timestamp / playtime / scene / integrity state
+- `SaveSlotHoverPreview` obeschal enlarged thumbnail + metadata, no realno pokazyval tolko thumbnail
+- save/load UX v etom meste uzhe imel gotovyy backend (`SaveManager.TryGetSaveSlotInfo`), no preview owner ego ne ispolzoval
+- eto ostavlyalo slot hover panel vizualno bednoy i ne davalo igroku bystro uvidet timestamp / playtime / scene / integrity state
 
 What I changed:
 

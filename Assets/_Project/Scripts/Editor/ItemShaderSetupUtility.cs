@@ -1,13 +1,13 @@
 // ============================================================================
 // HECTON-8 — ItemShaderSetupUtility.cs
-// Editor-утилита для массовой настройки шейдера предметов.
+// Editor-utilita dlya massovoy nastroyki sheydera predmetov.
 //
-// ОТВЕТСТВЕННОСТИ:
-//   1. Находит все префабы с ItemData.
-//   2. Применяет Hecton_Item_Highlight шейдер к материалам.
-//   3. Добавляет ItemHighlight.cs компонент.
+// OTVETSTVENNOSTI:
+//   1. Nahodit vse prefaby s ItemData.
+//   2. Primenyaet Hecton_Item_Highlight sheyder k materialam.
+//   3. Dobavlyaet ItemHighlight.cs komponent.
 //
-// ИСПОЛЬЗОВАНИЕ:
+// ISPOLZOVANIE:
 //   Tools → Hecton → Setup Item Shaders
 // ============================================================================
 
@@ -37,7 +37,7 @@ namespace Hecton8.Editor
 
             if (highlightShader == null)
             {
-                // Пробуем найти по имени
+                // Probuem nayti po imeni
                 highlightShader = Shader.Find(HighlightShaderName);
             }
 
@@ -52,7 +52,7 @@ namespace Hecton8.Editor
                 return;
             }
 
-            // Находим все префабы с ItemData
+            // Nahodim vse prefaby s ItemData
             string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Project" });
             int processedCount = 0;
             int modifiedCount = 0;
@@ -65,7 +65,7 @@ namespace Hecton8.Editor
 
                 if (prefab == null) continue;
 
-                // Проверяем наличие ItemData (на префабе или в дочерних объектах)
+                // Proveryaem nalichie ItemData (na prefabe ili v dochernih obektah)
                 ItemData itemData = prefab.GetComponent<ItemData>();
                 if (itemData == null)
                     itemData = prefab.GetComponentInChildren<ItemData>();
@@ -74,10 +74,10 @@ namespace Hecton8.Editor
 
                 processedCount++;
 
-                // Проверяем, нужно ли модифицировать
+                // Proveryaem, nuzhno li modifitsirovat
                 bool wasModified = false;
 
-                // ── 1. Применяем шейдер к материалам ──
+                // ── 1. Primenyaem sheyder k materialam ──
                 Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
                 for (int r = 0; r < renderers.Length; r++)
                 {
@@ -92,16 +92,16 @@ namespace Hecton8.Editor
                         Material mat = materials[m];
                         if (mat == null) continue;
 
-                        // Пропускаем уже настроенные материалы
+                        // Propuskaem uzhe nastroennye materialy
                         if (mat.shader == highlightShader) continue;
 
-                        // Применяем шейдер
+                        // Primenyaem sheyder
                         mat.shader = highlightShader;
                         wasModified = true;
                     }
                 }
 
-                // ── 2. Добавляем ItemHighlight компонент ──
+                // ── 2. Dobavlyaem ItemHighlight komponent ──
                 ItemHighlight highlight = prefab.GetComponent<ItemHighlight>();
                 if (highlight == null)
                 {
@@ -117,11 +117,11 @@ namespace Hecton8.Editor
                 }
             }
 
-            // Сохраняем изменения
+            // Sohranyaem izmeneniya
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            // Логируем результат
+            // Logiruem rezultat
             Debug.Log($"[ItemShaderSetupUtility] Processed: {processedCount}, Modified: {modifiedCount}");
 
             if (modifiedCount > 0)
@@ -172,7 +172,7 @@ namespace Hecton8.Editor
 
                 bool wasModified = false;
 
-                // ── 1. Применяем шейдер к материалам ──
+                // ── 1. Primenyaem sheyder k materialam ──
                 Renderer[] renderers = obj.GetComponentsInChildren<Renderer>(true);
                 for (int r = 0; r < renderers.Length; r++)
                 {
@@ -194,7 +194,7 @@ namespace Hecton8.Editor
                     }
                 }
 
-                // ── 2. Добавляем ItemHighlight компонент ──
+                // ── 2. Dobavlyaem ItemHighlight komponent ──
                 ItemHighlight highlight = obj.GetComponent<ItemHighlight>();
                 if (highlight == null)
                 {
@@ -248,7 +248,7 @@ namespace Hecton8.Editor
                 bool hasCorrectShader = true;
                 bool hasHighlightComponent = prefab.GetComponent<ItemHighlight>() != null;
 
-                // Проверяем материалы
+                // Proveryaem materialy
                 Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
                 for (int r = 0; r < renderers.Length && hasCorrectShader; r++)
                 {

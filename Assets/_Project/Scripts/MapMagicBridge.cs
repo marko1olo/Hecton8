@@ -1,28 +1,28 @@
 // ============================================================================
 // HECTON-8 — MapMagicBridge.cs
-// Информационный слой между игровыми системами и MapMagic 2.1.18.
+// Informatsionnyy sloy mezhdu igrovymi sistemami i MapMagic 2.1.18.
 //
 // ═══════════════════════════════════════════════════════════════
 // v3.1 — BULLETPROOF BIOME FALLBACK
 // ═══════════════════════════════════════════════════════════════
 //
-// ИЗМЕНЕНИЯ v3.1:
-//   [FIX] TryGetBiomeIndex: добавлены дополнительные safety checks:
-//     • terrainData.alphamapTextureCount проверяется ДО обращения к
-//       alphamapTextures (предотвращает IndexOutOfRange на пустых terrain).
-//     • Если alphamapLayers == 0 → biomeIndex = 0, return false.
-//     • Если все текстуры null → biomeIndex = 0, return false.
-//     • Если mapMagicObject == null → biomeIndex = 0, return false.
-//     Во ВСЕХ случаях biomeIndex гарантированно = 0 (не мусор).
+// IZMENENIYa v3.1:
+//   [FIX] TryGetBiomeIndex: dobavleny dopolnitelnye safety checks:
+//     • terrainData.alphamapTextureCount proveryaetsya DO obrascheniya k
+//       alphamapTextures (predotvraschaet IndexOutOfRange na pustyh terrain).
+//     • Esli alphamapLayers == 0 → biomeIndex = 0, return false.
+//     • Esli vse tekstury null → biomeIndex = 0, return false.
+//     • Esli mapMagicObject == null → biomeIndex = 0, return false.
+//     Vo VSEH sluchayah biomeIndex garantirovanno = 0 (ne musor).
 //
-//   [FIX] DetectAndPublishBiome: если TryGetBiomeIndex возвращает false,
-//     биом фиксируется на 0. Если _lastBiomeID == -1 (первый вызов),
-//     MapMagicBiomeEvents.RaiseBiomeChanged(0) вызывается принудительно, чтобы подписчики
-//     (UnderwaterVisuals, AtmosphereManager) получили начальное значение.
-//     Без этого при отсутствии биомов подписчики НИКОГДА не получают
-//     событие → UnderwaterVisuals не инициализирует профиль → крэш/артефакты.
+//   [FIX] DetectAndPublishBiome: esli TryGetBiomeIndex vozvraschaet false,
+//     biom fiksiruetsya na 0. Esli _lastBiomeID == -1 (pervyy vyzov),
+//     MapMagicBiomeEvents.RaiseBiomeChanged(0) vyzyvaetsya prinuditelno, chtoby podpischiki
+//     (UnderwaterVisuals, AtmosphereManager) poluchili nachalnoe znachenie.
+//     Bez etogo pri otsutstvii biomov podpischiki NIKOGDA ne poluchayut
+//     sobytie → UnderwaterVisuals ne initsializiruet profil → kresh/artefakty.
 //
-// ПРЕДЫДУЩИЕ ВЕРСИИ (сохранены):
+// PREDYDUSchIE VERSII (sohraneny):
 //   v3.0: Zero-GC biome detection via alphamapTextures.
 //   v2.0: Biome Event System, ISlowTickable, OnBiomeChanged event.
 //   v1.0: Height queries, terrain lookup.
@@ -223,7 +223,7 @@ namespace Hecton8.Core
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class MapMagicBridge : MonoBehaviour, ISlowTickable
+    public sealed class MapMagicBridge : MonoBehaviour, ISlowTickable, ITerrainProvider
     {
         private const float SceneBindingRefreshInterval = 1f;
         private const int MainTerrainBaseMapResolutionBudget = 512;
@@ -251,6 +251,38 @@ namespace Hecton8.Core
         //  RUNTIME AUTHORITY
         // ══════════════════════════════════════════════════════════
 
+        /// <summary>
+        /// Read-only alias to the active R16 terrain height cache owned by HectonMapMagicVegetationBridge.
+        /// Consumers must retain CacheRevision and re-query after terrain streaming or origin shifts.
+        /// </summary>
+        public readonly struct QuantizedHeightmapPayload
+        {
+            public QuantizedHeightmapPayload(
+                NativeArray<ushort> heightSamples,
+                Vector3 terrainPosition,
+                Vector3 terrainSize,
+                int heightmapResolution,
+                int cacheRevision)
+            {
+                HeightSamples = heightSamples;
+                TerrainPosition = terrainPosition;
+                TerrainSize = terrainSize;
+                HeightmapResolution = heightmapResolution;
+                CacheRevision = cacheRevision;
+            }
+
+            public NativeArray<ushort> HeightSamples { get; }
+            public Vector3 TerrainPosition { get; }
+            public Vector3 TerrainSize { get; }
+            public int HeightmapResolution { get; }
+            public int CacheRevision { get; }
+
+            public bool IsValid =>
+                HeightSamples.IsCreated &&
+                HeightmapResolution > 1 &&
+                HeightSamples.Length >= HeightmapResolution * HeightmapResolution;
+        }
+
         public static MapMagicBridge Instance
         {
             get
@@ -271,24 +303,24 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         [Header("── MapMagic Reference ────────────────────────")]
-        [Tooltip("Ссылка на MapMagicObject в сцене. " +
-                 "Если не назначена — найдётся автоматически.")]
+        [Tooltip("Ssylka na MapMagicObject v stsene. " +
+                 "Esli ne naznachena — naydetsya avtomaticheski.")]
         [SerializeField] private MapMagic.Core.MapMagicObject mapMagicObject;
 
         [Header("── Water Settings ────────────────────────────")]
-        [Tooltip("Уровень поверхности воды (мировая Y-координата). " +
-                 "Используется для определения 'под водой'.")]
+        [Tooltip("Uroven poverhnosti vody (mirovaya Y-koordinata). " +
+                 "Ispolzuetsya dlya opredeleniya 'pod vodoy'.")]
         [SerializeField] private float waterSurfaceLevel = 0f;
 
         [Header("── Player Reference ──────────────────────────")]
-        [Tooltip("Transform игрока для биом-детекции в SlowTick.\n" +
-                 "Если не назначен — ищется по тегу 'Player' при старте.")]
+        [Tooltip("Transform igroka dlya biom-detektsii v SlowTick.\n" +
+                 "Esli ne naznachen — ischetsya po tegu 'Player' pri starte.")]
         [SerializeField] private Transform playerTransform;
 
         [Header("── Biome Detection ───────────────────────────")]
-        [Tooltip("Максимальное количество биомов в Biomes Set MapMagic.\n" +
-                 "Определяет лимит поиска доминирующего слоя.\n" +
-                 "Должно совпадать с количеством выходов Biomes Set ноды.")]
+        [Tooltip("Maksimalnoe kolichestvo biomov v Biomes Set MapMagic.\n" +
+                 "Opredelyaet limit poiska dominiruyuschego sloya.\n" +
+                 "Dolzhno sovpadat s kolichestvom vyhodov Biomes Set nody.")]
         [SerializeField] private int maxBiomeCount = 8;
 
         [Header("Sandbox Generation")]
@@ -392,10 +424,10 @@ namespace Hecton8.Core
         //  PUBLIC PROPERTIES
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Уровень поверхности воды (Y).</summary>
+        /// <summary>Uroven poverhnosti vody (Y).</summary>
         public float WaterSurfaceLevel => waterSurfaceLevel;
 
-        /// <summary>MapMagic найден и доступен.</summary>
+        /// <summary>MapMagic nayden i dostupen.</summary>
         public bool IsAvailable => mapMagicObject != null;
         public MapMagicObject RuntimeMapMagicObject => mapMagicObject;
         public bool SandboxProceduralTerrainOnly => sandboxProceduralTerrainOnly;
@@ -433,7 +465,7 @@ namespace Hecton8.Core
             ApplyTerrainDataMemoryBudgetToCachedTerrains();
             RepairRuntimeTerrainResolutionMismatchIfNeeded();
 
-            // ── Поиск игрока ──
+            // ── Poisk igroka ──
             if (playerTransform == null)
             {
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
@@ -492,6 +524,7 @@ namespace Hecton8.Core
             }
 
             GlobalRegistry.RegisterMapMagicRuntime(this);
+            GlobalRegistry.RegisterTerrainProvider(this);
             _registeredMapMagicRuntime = ReferenceEquals(GlobalRegistry.MapMagic, this);
         }
 
@@ -502,6 +535,9 @@ namespace Hecton8.Core
 
             if (ReferenceEquals(GlobalRegistry.MapMagic, this))
                 GlobalRegistry.UnregisterMapMagicRuntime(this);
+
+            if (ReferenceEquals(GlobalRegistry.Terrain, this))
+                GlobalRegistry.UnregisterTerrainProvider(this);
 
             _registeredMapMagicRuntime = false;
         }
@@ -752,7 +788,7 @@ namespace Hecton8.Core
             if (direction.sqrMagnitude < 0.0001f)
                 direction = new Vector2(0.42f, 0.63f);
 
-            return direction.normalized;
+            return ResolveOctantDirectionXZ(direction.x, direction.y);
         }
 
         private void ReleaseDistantTerrainShadowMask()
@@ -849,7 +885,7 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Возвращает высоту террейна (дна) в мировых координатах.
+        /// Vozvraschaet vysotu terreyna (dna) v mirovyh koordinatah.
         /// ZERO GC: SampleHeight returns float (struct).
         /// </summary>
         public bool TryGetHeight(float x, float z, out float height)
@@ -909,7 +945,7 @@ namespace Hecton8.Core
                             Vector3 worldNormal = terrain.transform.TransformDirection(localNormal);
                             if (worldNormal.sqrMagnitude > 0.0001f)
                             {
-                                normal = worldNormal.normalized;
+                                normal = NormalizeFastOrDefault(worldNormal, Vector3.up);
                                 return true;
                             }
                         }
@@ -946,8 +982,31 @@ namespace Hecton8.Core
             if (sampledNormal.sqrMagnitude <= 0.0001f)
                 return false;
 
-            normal = sampledNormal.normalized;
+            normal = NormalizeFastOrDefault(sampledNormal, Vector3.up);
             return true;
+        }
+
+        private static Vector2 ResolveOctantDirectionXZ(float x, float y)
+        {
+            float absX = math.abs(x);
+            float absY = math.abs(y);
+            if (absX <= 0.000001f && absY <= 0.000001f)
+                return new Vector2(0.70710677f, 0.70710677f);
+
+            float signX = x < 0f ? -1f : 1f;
+            float signY = y < 0f ? -1f : 1f;
+            float minor = math.min(absX, absY);
+            float major = math.max(absX, absY);
+            if (minor * 2f >= major)
+                return new Vector2(signX * 0.70710677f, signY * 0.70710677f);
+
+            return absX >= absY ? new Vector2(signX, 0f) : new Vector2(0f, signY);
+        }
+
+        private static Vector3 NormalizeFastOrDefault(Vector3 value, Vector3 fallback)
+        {
+            float lengthSq = value.x * value.x + value.y * value.y + value.z * value.z;
+            return lengthSq > 0.0001f ? value * math.rsqrt(lengthSq) : fallback;
         }
 
         /// <summary>
@@ -964,6 +1023,50 @@ namespace Hecton8.Core
         {
             Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
             return TryGetNormal(runtimePosition.x, runtimePosition.z, sampleDistance, out normal);
+        }
+
+        public bool TryGetActiveQuantizedHeightmapPayload(out QuantizedHeightmapPayload payload)
+        {
+            payload = default;
+            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge == null ||
+                !vegetationBridge.TryGetActiveHeightSamplePayload(out HectonMapMagicVegetationBridge.TerrainHeightSamplePayload sourcePayload))
+            {
+                return false;
+            }
+
+            payload = new QuantizedHeightmapPayload(
+                sourcePayload.HeightSamples,
+                sourcePayload.TerrainPosition,
+                sourcePayload.TerrainSize,
+                sourcePayload.HeightmapResolution,
+                sourcePayload.CacheRevision);
+            return payload.IsValid;
+        }
+
+        public bool TryGetQuantizedHeightmapPayload(float x, float z, out QuantizedHeightmapPayload payload)
+        {
+            payload = default;
+            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge == null ||
+                !vegetationBridge.TryGetHeightSamplePayload(x, z, out HectonMapMagicVegetationBridge.TerrainHeightSamplePayload sourcePayload))
+            {
+                return false;
+            }
+
+            payload = new QuantizedHeightmapPayload(
+                sourcePayload.HeightSamples,
+                sourcePayload.TerrainPosition,
+                sourcePayload.TerrainSize,
+                sourcePayload.HeightmapResolution,
+                sourcePayload.CacheRevision);
+            return payload.IsValid;
+        }
+
+        public bool TryGetQuantizedHeightmapPayloadAUP(Vector3 absoluteUniversePosition, out QuantizedHeightmapPayload payload)
+        {
+            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
+            return TryGetQuantizedHeightmapPayload(runtimePosition.x, runtimePosition.z, out payload);
         }
 
         public bool TryGetTerrainSplatColorAUP(Vector3 absoluteUniversePosition, out Color color, out float confidence)
@@ -1040,7 +1143,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Быстрая версия без out. Возвращает 0 при ошибке.
+        /// Bystraya versiya bez out. Vozvraschaet 0 pri oshibke.
         /// </summary>
         public float GetHeight(float x, float z)
         {
@@ -1098,7 +1201,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Проверяет, находится ли точка под водой.
+        /// Proveryaet, nahoditsya li tochka pod vodoy.
         /// </summary>
         public bool IsUnderwater(float x, float y, float z)
         {
@@ -1106,7 +1209,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Комбинированная проверка для спавн-систем.
+        /// Kombinirovannaya proverka dlya spavn-sistem.
         /// </summary>
         public bool IsValidSpawnPoint(
             float x, float y, float z, out float bottomHeight)
@@ -1122,7 +1225,7 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Возвращает индекс доминирующего биома в мировых координатах.
+        /// Vozvraschaet indeks dominiruyuschego bioma v mirovyh koordinatah.
         ///
         /// v3.1 SAFETY CHANGES:
         ///   1. biomeIndex is ALWAYS set to 0 before any checks.
@@ -1730,7 +1833,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Быстрая версия без out. Возвращает 0 при ошибке.
+        /// Bystraya versiya bez out. Vozvraschaet 0 pri oshibke.
         /// </summary>
         public int GetBiomeIndex(float x, float z)
         {
@@ -2397,9 +2500,9 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Находит Terrain, покрывающий мировые координаты (x, z).
+        /// Nahodit Terrain, pokryvayuschiy mirovye koordinaty (x, z).
         ///
-        /// Стратегия:
+        /// Strategiya:
         ///   1. Reuse the last resolved MapMagic TerrainTile.
         ///   2. Scan the cached MapMagic TerrainTile array refreshed outside the hot path.
         ///
@@ -2883,7 +2986,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Проверяет, попадает ли точка (x, z) в bounds террейна.
+        /// Proveryaet, popadaet li tochka (x, z) v bounds terreyna.
         /// </summary>
         private static bool IsPointInTerrain(
             Terrain terrain, float x, float z)

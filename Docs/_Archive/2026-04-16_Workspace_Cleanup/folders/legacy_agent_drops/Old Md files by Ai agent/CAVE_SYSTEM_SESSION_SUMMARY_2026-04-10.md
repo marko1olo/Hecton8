@@ -13,13 +13,13 @@ Status: ARCHIVED
 
 ## EXECUTIVE SUMMARY
 
-**Полная интеграция cave discovery pipeline в мировой генератор.** 
+**Polnaya integratsiya cave discovery pipeline v mirovoy generator.** 
 
-Система позволяет игроку:
-1. Обнаруживать пещеры по визуальним маркерам (entrance lights + particles)
-2. Понимать опасність пещеры по кольору світла (тепле = безпечне, синє = небезпечне)
-3. Дослідити їх з візуальною різноманітністю (структури, біолюмінесценція, фауна)
-4. Збирати ресурси й виживати в нових екосистемах
+Sistema pozvolyaet igroku:
+1. Obnaruzhivat peschery po vizualnim markeram (entrance lights + particles)
+2. Ponimat opasn_st peschery po koloru sv_tla (teple = bezpechne, sin_ = nebezpechne)
+3. Dosl_diti _h z v_zualnoyu r_znoman_tn_styu (strukturi, b_olyum_nestsents_ya, fauna)
+4. Zbirati resursi y vizhivati v novih ekosistemah
 
 **ALL SYSTEMS SHIPPING READY.** Verification complete, zero compilation errors.
 

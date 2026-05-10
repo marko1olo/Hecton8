@@ -146,7 +146,34 @@ namespace Hecton8.Caves
         {
             float lengthSq = math.lengthsq(value);
             return lengthSq > 0.000001f
-                ? value * math.rsqrt(lengthSq)
+                ? value / math.max(ApproxMagnitude(value), 0.0001f)
+                : fallback;
+        }
+
+        private static float ApproxMagnitude(float3 value)
+        {
+            float3 axis = math.abs(value);
+            float maxAxis = math.cmax(axis);
+            float minAxis = math.cmin(axis);
+            float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
+            return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
+        }
+
+        private static float ApproxMagnitude(Vector3 value)
+        {
+            float ax = Mathf.Abs(value.x);
+            float ay = Mathf.Abs(value.y);
+            float az = Mathf.Abs(value.z);
+            float maxAxis = Mathf.Max(ax, Mathf.Max(ay, az));
+            float minAxis = Mathf.Min(ax, Mathf.Min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
+        }
+
+        private static Vector3 NormalizeApprox(Vector3 value, Vector3 fallback)
+        {
+            return value.sqrMagnitude > 0.000001f
+                ? value / Mathf.Max(ApproxMagnitude(value), 0.0001f)
                 : fallback;
         }
 
@@ -409,6 +436,35 @@ namespace Hecton8.Caves
             return false;
         }
 
+        public static float GetSDFDensity(float3 aupPosition)
+        {
+            return GetSDFDensity(aupPosition, out float density) ? density : 0f;
+        }
+
+        public static bool GetSDFDensity(float3 aupPosition, out float density)
+        {
+            density = 0f;
+            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(new Vector3(
+                aupPosition.x,
+                aupPosition.y,
+                aupPosition.z));
+
+            for (int i = s_activePublishedVolumes.Count - 1; i >= 0; i--)
+            {
+                HectonVoxelVolume candidate = s_activePublishedVolumes[i];
+                if (candidate == null || !candidate._runtimeDataReady)
+                {
+                    s_activePublishedVolumes.RemoveAt(i);
+                    continue;
+                }
+
+                if (candidate.TrySampleDensity(runtimePosition, out density))
+                    return true;
+            }
+
+            return false;
+        }
+
         private static void RegisterPublishedVolume(HectonVoxelVolume volume)
         {
             if (volume == null)
@@ -506,10 +562,7 @@ namespace Hecton8.Caves
                 return false;
             }
 
-            float runtimeDirectionLengthSq = runtimeDirection.sqrMagnitude;
-            Vector3 direction = runtimeDirectionLengthSq > 0.0001f
-                ? runtimeDirection * math.rsqrt(runtimeDirectionLengthSq)
-                : Vector3.forward;
+            Vector3 direction = NormalizeApprox(runtimeDirection, Vector3.forward);
             float step = Mathf.Max(0.05f, stepMeters);
             float previousDensity = 0f;
             bool hasPrevious = false;
@@ -526,12 +579,10 @@ namespace Hecton8.Caves
                     float denom = Mathf.Max(0.0001f, density - previousDensity);
                     float t = hasPrevious ? Mathf.Clamp01(-previousDensity / denom) : 0f;
                     Vector3 resolvedPoint = previousPosition + (position - previousPosition) * t;
-                    Vector3 normal = Vector3.up;
-                    TrySampleSurfaceNormal(resolvedPoint, step, out normal);
                     hit = new VoxelSdfRaycastHit
                     {
                         Point = resolvedPoint,
-                        Normal = normal,
+                        Normal = -direction,
                         Distance = Mathf.Max(0f, distance - step + step * t),
                         Density = density,
                         Hit = 1
@@ -579,7 +630,7 @@ namespace Hecton8.Caves
             if (gradient.sqrMagnitude <= 0.000001f)
                 return false;
 
-            surfaceNormal = -gradient * math.rsqrt(gradient.sqrMagnitude);
+            surfaceNormal = -NormalizeApprox(gradient, Vector3.up);
             return true;
         }
 
@@ -1274,10 +1325,8 @@ namespace Hecton8.Caves
             for (int i = 0; i < totalPointCount; i++)
             {
                 float normalized = Mathf.Clamp(smoothDensityField[i] * inverseRange, -1f, 1f);
-                _publishedSonarSdf[i] = (byte)Mathf.Clamp(
-                    Mathf.RoundToInt((normalized * 0.5f + 0.5f) * 255f),
-                    0,
-                    255);
+                float encoded = (normalized * 0.5f + 0.5f) * 255f;
+                _publishedSonarSdf[i] = (byte)Mathf.Clamp((int)(encoded + 0.5f), 0, 255);
             }
 
             _publishedSonarVersion++;
@@ -1674,15 +1723,14 @@ namespace Hecton8.Caves
                 return false;
 
             Transform cachedTransform = transform;
-            float invLineLength = math.rsqrt(lineLengthSq);
-            float lineLength = lineLengthSq * invLineLength;
-            Vector3 forward = line * invLineLength;
+            float lineLength = ApproxMagnitude(line);
+            Vector3 forward = line / Mathf.Max(lineLength, 0.0001f);
             Vector3 right = Vector3.Cross(Vector3.up, forward);
             float rightLengthSq = right.sqrMagnitude;
             if (rightLengthSq <= 0.0001f)
                 right = Vector3.right;
             else
-                right *= math.rsqrt(rightLengthSq);
+                right = NormalizeApprox(right, Vector3.right);
 
             float clampedDepth = Mathf.Max(_voxelSize, trenchDepth);
             float clampedSlope = Mathf.Max(0.05f, trenchSlope);
@@ -1794,7 +1842,7 @@ namespace Hecton8.Caves
             if (localDirection.sqrMagnitude < 0.0001f)
                 return false;
 
-            localDirection *= math.rsqrt(localDirection.sqrMagnitude);
+            localDirection = NormalizeApprox(localDirection, Vector3.forward);
 
             Vector3 localStart = cachedTransform.InverseTransformPoint(runtimeHitPoint) + localDirection * (_voxelSize * 0.55f);
             if (!localBounds.Contains(localStart))
@@ -1917,7 +1965,7 @@ namespace Hecton8.Caves
             if (localDirection.sqrMagnitude < 0.0001f)
                 return false;
 
-            localDirection *= math.rsqrt(localDirection.sqrMagnitude);
+            localDirection = NormalizeApprox(localDirection, Vector3.forward);
 
             Vector3 localStart = cachedTransform.InverseTransformPoint(runtimeHitPoint) + localDirection * (_voxelSize * 0.55f);
             if (!localBounds.Contains(localStart))
@@ -2023,10 +2071,7 @@ namespace Hecton8.Caves
             if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localBounds))
                 return false;
 
-            float directionLengthSq = absoluteDirection.sqrMagnitude;
-            Vector3 direction = directionLengthSq > 0.0001f
-                ? absoluteDirection * math.rsqrt(directionLengthSq)
-                : Vector3.down;
+            Vector3 direction = NormalizeApprox(absoluteDirection, Vector3.down);
             float resolvedLength = Mathf.Max(_voxelSize * 2f, lengthMeters);
             float resolvedRadius = Mathf.Max(_voxelSize * 0.75f, radiusMeters);
             float resolvedStrength = Mathf.Max(_voxelSize, resolvedRadius * 0.55f);
@@ -2036,9 +2081,9 @@ namespace Hecton8.Caves
             Vector3 tangentA = Vector3.Cross(direction, Vector3.up);
             if (tangentA.sqrMagnitude <= 0.0001f)
                 tangentA = Vector3.Cross(direction, Vector3.right);
-            tangentA *= math.rsqrt(tangentA.sqrMagnitude);
+            tangentA = NormalizeApprox(tangentA, Vector3.right);
             Vector3 tangentB = Vector3.Cross(direction, tangentA);
-            tangentB *= math.rsqrt(tangentB.sqrMagnitude);
+            tangentB = NormalizeApprox(tangentB, Vector3.forward);
 
             bool modified = false;
             Transform cachedTransform = transform;
@@ -2517,8 +2562,8 @@ namespace Hecton8.Caves
 
         private static Vector3 ResolveCollapseTrenchDirection(Vector3 absoluteCenter)
         {
-            uint seedA = unchecked((uint)Mathf.RoundToInt(absoluteCenter.x * 0.25f));
-            uint seedB = unchecked((uint)Mathf.RoundToInt(absoluteCenter.z * 0.25f));
+            uint seedA = unchecked((uint)CastBiasInt(absoluteCenter.x * 0.25f));
+            uint seedB = unchecked((uint)CastBiasInt(absoluteCenter.z * 0.25f));
             uint state = seedA * 747796405u + seedB * 2891336453u + 0xB87F321Du;
             state ^= state >> 16;
             state *= 2246822519u;
@@ -2528,6 +2573,11 @@ namespace Hecton8.Caves
 
             float2 direction = ResolveSeismicScatterDirection((int)(state & 7u));
             return new Vector3(direction.x, 0f, direction.y);
+        }
+
+        private static int CastBiasInt(float value)
+        {
+            return value >= 0f ? (int)(value + 0.5f) : (int)(value - 0.5f);
         }
 
         private void ApplyCollapseImpulse(Vector3 runtimeCenter, Vector3 halfExtents, float impulseRadius, float impulseMagnitude)
@@ -2578,7 +2628,7 @@ namespace Hecton8.Caves
                 float3 impulseDirection;
                 if (distanceSq > 0.0001f)
                 {
-                    float invDistance = math.rsqrt(distanceSq);
+                    float invDistance = 1f / math.max(ApproxMagnitude(inward), 0.0001f);
                     impulseDirection = new float3(inward.x * invDistance, inward.y * invDistance, inward.z * invDistance);
                 }
                 else
@@ -2591,7 +2641,7 @@ namespace Hecton8.Caves
                 if (impulseDirectionLengthSq <= 0.0001f)
                     impulseDirection = new float3(0f, -1f, 0f);
                 else
-                    impulseDirection *= math.rsqrt(impulseDirectionLengthSq);
+                    impulseDirection /= math.max(ApproxMagnitude(impulseDirection), 0.0001f);
 
                 float distance01 = 1f - math.saturate(distanceSq / safeRadiusSq);
                 float resolvedImpulse = impulseMagnitude * distance01 * distance01;

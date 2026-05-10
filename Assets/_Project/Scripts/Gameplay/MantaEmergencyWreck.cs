@@ -157,7 +157,7 @@ namespace Hecton8.Gameplay
                 }
 
                 _playerResolveCooldown = PlayerResolveRetrySeconds;
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform resolvedTransform) && resolvedTransform != null)
+                if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform resolvedTransform) && resolvedTransform != null)
                 {
                     _playerTransform = resolvedTransform;
                     playerTransform = resolvedTransform;
@@ -532,7 +532,7 @@ namespace Hecton8.Gameplay
             if (!_emergencyActive ||
                 !IsValidResidencySlot(_residencySlotIndex) ||
                 _residencyPrefabSource == null ||
-                !SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
+                !GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
                 playerTransform == null)
             {
                 return false;

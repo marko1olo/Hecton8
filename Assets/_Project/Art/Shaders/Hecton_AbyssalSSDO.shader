@@ -35,15 +35,11 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
             float _HectonAbyssalSsdoCompositeStrength;
             int _HectonAbyssalSsdoSampleCount;
             float4 _HectonAbyssalSsdoAmbientDirection;
-            float _HectonAbyssalSsdoHasBlueNoise;
         CBUFFER_END
 
         TEXTURE2D_X(_BlitTexture);
         TEXTURE2D_X(_HectonAbyssalSSDOTex);
-        TEXTURE2D(_BlueNoiseTex);
-        SAMPLER(sampler_BlueNoiseTex);
         float4 _BlitTexture_TexelSize;
-        float4 _BlueNoiseTex_TexelSize;
 
         struct Attributes
         {
@@ -82,19 +78,6 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
         {
             float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
             return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
-        }
-
-        float ResolveBlueNoise(float2 screenUV)
-        {
-            float fallback = ResolveInterleavedNoise(screenUV);
-            float useBlueNoise = step(0.5, _HectonAbyssalSsdoHasBlueNoise) * step(0.0001, _BlueNoiseTex_TexelSize.z);
-            if (useBlueNoise <= 0.5)
-                return fallback;
-
-            float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
-            float2 blueNoiseUV = frac(pixel / 64.0);
-            float sampled = SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r;
-            return lerp(fallback, sampled, useBlueNoise);
         }
 
         float2 Rotate2D(float2 value, float s, float c)
@@ -151,7 +134,7 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
             float radiusMeters = max(_HectonAbyssalSsdoRadiusMeters, 0.05);
             float pixelRadius = _HectonAbyssalSsdoProjectionScale * SafeRcp(max(linearEyeDepth, 0.1));
             float2 uvRadius = pixelRadius * _HectonAbyssalSsdoInputSize.zw;
-            float angle = ResolveBlueNoise(screenUV) * 6.2831853;
+            float angle = ResolveInterleavedNoise(screenUV) * 6.2831853;
             float3 ambientDirectionWS = SafeNormalize3(_HectonAbyssalSsdoAmbientDirection.xyz);
 
             static const float2 kKernel[6] =

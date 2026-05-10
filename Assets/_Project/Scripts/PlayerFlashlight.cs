@@ -1,32 +1,32 @@
 // ============================================================================
 // HECTON-8 — PlayerFlashlight.cs  v2.0 ENTERPRISE
-// Фонарь скафандра. Назначить на Player root.
-// Назначить flashlightLight — дочерний SpotLight на камере.
-// Клавиша F (или из ControlScheme).
+// Fonar skafandra. Naznachit na Player root.
+// Naznachit flashlightLight — docherniy SpotLight na kamere.
+// Klavisha F (ili iz ControlScheme).
 //
 // v2.0 ENTERPRISE ADDITIONS:
-//   [ADD] FlashlightEvents — глобальная шина событий (OnToggled, OnBatteryDepleted)
+//   [ADD] FlashlightEvents — globalnaya shina sobytiy (OnToggled, OnBatteryDepleted)
 //   [ADD] Audio feedback — toggle on/off sounds, low battery warning beep
-//   [ADD] Battery drain system — интеграция с HectonSurvivalSystem
-//   [ADD] Heat buildup — длительное использование → flickering → auto-shutdown
-//   [ADD] Cooldown period — после overheat нельзя включить X секунд
-//   [ADD] Flickering effect — случайные провалы интенсивности при low battery/heat
-//   [ADD] Volumetric light beam — опциональная интеграция с VolumetricLightBeam
+//   [ADD] Battery drain system — integratsiya s HectonSurvivalSystem
+//   [ADD] Heat buildup — dlitelnoe ispolzovanie → flickering → auto-shutdown
+//   [ADD] Cooldown period — posle overheat nelzya vklyuchit X sekund
+//   [ADD] Flickering effect — sluchaynye provaly intensivnosti pri low battery/heat
+//   [ADD] Volumetric light beam — optsionalnaya integratsiya s VolumetricLightBeam
 //   [ADD] Diagnostics — _debugIsOn, _debugBattery, _debugHeat, _debugFlicker
 //   [ADD] Null-safety — graceful degradation, auto-resolve references
 //
 // ZERO GC:
-//   • Все события — делегаты без boxing
+//   • Vse sobytiya — delegaty bez boxing
 //   • Flickering — pre-seeded Random state, no allocations
 //   • Audio — cached clips, no string lookups
 //   • Math.Lerp/Exp — struct operations, zero GC
 //
-// АРХИТЕКТУРА:
-//   • Battery drain — опционально через HectonSurvivalSystem.DrainEnergy()
-//   • Heat buildup — накапливается при включенном фонаре, остывает при выключенном
+// ARHITEKTURA:
+//   • Battery drain — optsionalno cherez HectonSurvivalSystem.DrainEnergy()
+//   • Heat buildup — nakaplivaetsya pri vklyuchennom fonare, ostyvaet pri vyklyuchennom
 //   • Flickering — triggered by low battery OR high heat
-//   • Overheat shutdown — автовыключение + cooldown period
-//   • VolumetricLightBeam — опциональная интеграция для sci-fi beam effect
+//   • Overheat shutdown — avtovyklyuchenie + cooldown period
+//   • VolumetricLightBeam — optsionalnaya integratsiya dlya sci-fi beam effect
 // ============================================================================
 
 using Hecton8.Audio;
@@ -46,8 +46,8 @@ using UnityEngine;
 namespace Hecton8.Gameplay
 {
     /// <summary>
-    /// Глобальная шина событий фонаря. Zero GC, thread-safe.
-    /// Подписчики: HUD, аудио, аналитика.
+    /// Globalnaya shina sobytiy fonarya. Zero GC, thread-safe.
+    /// Podpischiki: HUD, audio, analitika.
     /// </summary>
     public enum FlashlightEventType : byte
     {
@@ -351,10 +351,10 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── References ──────────────────────────────")]
-        [Tooltip("SpotLight на камере (дочерний объект).")]
+        [Tooltip("SpotLight na kamere (docherniy obekt).")]
         [SerializeField] private Light flashlightLight;
 
-        [Tooltip("HectonSurvivalSystem для battery drain. Опционально.")]
+        [Tooltip("HectonSurvivalSystem dlya battery drain. Optsionalno.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
         private IBatteryTool _externalBatteryTool;
 
@@ -363,13 +363,13 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Settings ────────────────────────────────")]
-        [Tooltip("Включён ли фонарь при старте.")]
+        [Tooltip("Vklyuchen li fonar pri starte.")]
         [SerializeField] private bool onByDefault = false;
 
-        [Tooltip("Базовая интенсивность фонаря.")]
+        [Tooltip("Bazovaya intensivnost fonarya.")]
         [SerializeField, Range(0f, 10f)] private float baseIntensity = 3f;
 
-        [Tooltip("Скорость плавного включения/выключения.")]
+        [Tooltip("Skorost plavnogo vklyucheniya/vyklyucheniya.")]
         [SerializeField, Range(1f, 20f)] private float transitionSpeed = 8f;
         [SerializeField] private BeamMode defaultBeamMode = BeamMode.Standard;
 
@@ -378,13 +378,13 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Battery ─────────────────────────────────")]
-        [Tooltip("Включить battery drain. Фонарь потребляет энергию.")]
+        [Tooltip("Vklyuchit battery drain. Fonar potreblyaet energiyu.")]
         [SerializeField] private bool enableBatteryDrain = true;
 
-        [Tooltip("Энергия/сек при включенном фонаре. 0.2 = 5 сек на 1%.")]
+        [Tooltip("Energiya/sek pri vklyuchennom fonare. 0.2 = 5 sek na 1%.")]
         [SerializeField, Range(0f, 2f)] private float batteryDrainRate = 0.2f;
 
-        [Tooltip("Критический уровень энергии (%). Ниже — flickering + auto-shutdown.")]
+        [Tooltip("Kriticheskiy uroven energii (%). Nizhe — flickering + auto-shutdown.")]
         [SerializeField, Range(0f, 20f)] private float lowBatteryThreshold = 10f;
 
         // ══════════════════════════════════════════════════════════
@@ -392,19 +392,19 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Heat Buildup ────────────────────────────")]
-        [Tooltip("Включить heat buildup. Длительное использование → overheat.")]
+        [Tooltip("Vklyuchit heat buildup. Dlitelnoe ispolzovanie → overheat.")]
         [SerializeField] private bool enableHeatBuildup = true;
 
-        [Tooltip("Секунд непрерывной работы до overheat. 120 = 2 минуты.")]
+        [Tooltip("Sekund nepreryvnoy raboty do overheat. 120 = 2 minuty.")]
         [SerializeField, Range(30f, 300f)] private float overheatTime = 120f;
 
-        [Tooltip("Скорость остывания (heat units/sec). 0.5 = полное остывание за ~4 мин.")]
+        [Tooltip("Skorost ostyvaniya (heat units/sec). 0.5 = polnoe ostyvanie za ~4 min.")]
         [SerializeField, Range(0.1f, 2f)] private float cooldownRate = 0.5f;
 
-        [Tooltip("Heat level для начала flickering (0-1). 0.7 = при 70% нагрева.")]
+        [Tooltip("Heat level dlya nachala flickering (0-1). 0.7 = pri 70% nagreva.")]
         [SerializeField, Range(0.5f, 0.95f)] private float flickerHeatThreshold = 0.7f;
 
-        [Tooltip("Cooldown period после overheat (секунды). Нельзя включить фонарь.")]
+        [Tooltip("Cooldown period posle overheat (sekundy). Nelzya vklyuchit fonar.")]
         [SerializeField, Range(5f, 30f)] private float overheatCooldownPeriod = 10f;
 
         // ══════════════════════════════════════════════════════════
@@ -412,10 +412,10 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Flickering ──────────────────────────────")]
-        [Tooltip("Минимальная интенсивность при flicker (% от base). 0.3 = 30%.")]
+        [Tooltip("Minimalnaya intensivnost pri flicker (% ot base). 0.3 = 30%.")]
         [SerializeField, Range(0.1f, 0.8f)] private float flickerMinIntensity = 0.3f;
 
-        [Tooltip("Частота flicker (Hz). 8-12 = быстрое мерцание.")]
+        [Tooltip("Chastota flicker (Hz). 8-12 = bystroe mertsanie.")]
         [SerializeField, Range(1f, 20f)] private float flickerFrequency = 10f;
 
         // ══════════════════════════════════════════════════════════
@@ -423,19 +423,19 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Audio ───────────────────────────────────")]
-        [Tooltip("Звук включения фонаря (mechanical click).")]
+        [Tooltip("Zvuk vklyucheniya fonarya (mechanical click).")]
         [SerializeField] private AudioClip toggleOnSound;
 
-        [Tooltip("Звук выключения фонаря (mechanical click).")]
+        [Tooltip("Zvuk vyklyucheniya fonarya (mechanical click).")]
         [SerializeField] private AudioClip toggleOffSound;
 
-        [Tooltip("Звук low battery warning (beep).")]
+        [Tooltip("Zvuk low battery warning (beep).")]
         [SerializeField] private AudioClip lowBatterySound;
 
-        [Tooltip("Звук overheat shutdown (electrical buzz).")]
+        [Tooltip("Zvuk overheat shutdown (electrical buzz).")]
         [SerializeField] private AudioClip overheatSound;
 
-        [Tooltip("Громкость звуков фонаря.")]
+        [Tooltip("Gromkost zvukov fonarya.")]
         [SerializeField, Range(0f, 1f)] private float audioVolume = 0.5f;
 
         [Header("— Volumetric Beam —")]
@@ -646,8 +646,8 @@ namespace Hecton8.Gameplay
             if (_playerMovement == null || flashlightLight == null || volumetricBeam == null)
                 ResolveReferences();
 
-            // Блокируем логику в меню (хотя InputManager должен отключать Player map, 
-            // мы всё равно обрабатываем переходы и батарею)
+            // Blokiruem logiku v menyu (hotya InputManager dolzhen otklyuchat Player map, 
+            // my vse ravno obrabatyvaem perehody i batareyu)
             bool isMenuOpen = IsGameplayInputBlockedByMenu();
 
             // ── Overheat cooldown ──
@@ -973,7 +973,7 @@ namespace Hecton8.Gameplay
             ResolveFlashlightLight();
             ResolveVolumetricBeam();
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
                 if (_playerMovement == null)
                     playerTransform.TryGetComponent(out _playerMovement);
@@ -1123,7 +1123,7 @@ namespace Hecton8.Gameplay
 
             _nextCameraResolveTime = currentTime + CameraResolveCooldown;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
                 Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
                 if (playerCamera != null)
@@ -1294,8 +1294,8 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Кэшированная ссылка на типизированный VolumetricLightBeamHD/SD.
-        /// Резолвится один раз при первом вызове. Null если тип не поддерживается.
+        /// Keshirovannaya ssylka na tipizirovannyy VolumetricLightBeamHD/SD.
+        /// Rezolvitsya odin raz pri pervom vyzove. Null esli tip ne podderzhivaetsya.
         /// </summary>
         private VolumetricLightBeamHD _vlbHD;
         private bool _vlbResolved;
@@ -1305,14 +1305,14 @@ namespace Hecton8.Gameplay
         private float _cachedBeamJitter = -1f;
 
         /// <summary>
-        /// Обновляет интенсивность volumetric beam без рефлексии.
+        /// Obnovlyaet intensivnost volumetric beam bez refleksii.
         /// 
-        /// VLB уже является прямой зависимостью (using VLB; + сериализованное поле).
-        /// Рефлексия через PropertyInfo.SetValue вызывала boxing float→object
-        /// каждый кадр при transition/flickering. 
+        /// VLB uzhe yavlyaetsya pryamoy zavisimostyu (using VLB; + serializovannoe pole).
+        /// Refleksiya cherez PropertyInfo.SetValue vyzyvala boxing float→object
+        /// kazhdyy kadr pri transition/flickering. 
         ///
-        /// Прямой каст к VolumetricLightBeamHD — zero GC, zero boxing.
-        /// Если VLB использует SD версию, добавить аналогичную ветку.
+        /// Pryamoy kast k VolumetricLightBeamHD — zero GC, zero boxing.
+        /// Esli VLB ispolzuet SD versiyu, dobavit analogichnuyu vetku.
         /// </summary>
         private void UpdateVolumetricBeam(float intensity)
         {

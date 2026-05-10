@@ -1,20 +1,20 @@
 // ============================================================================
 // HECTON-8 — SuitUpgradeManager.cs
-// Менеджер апгрейдов скафандра.
+// Menedzher apgreydov skafandra.
 //
-// ЛОР (лор1): Прогрессия глубины через апгрейды корпуса.
-//   Tier 0 → Tier 1: первый крафт в игре (расширенный O2 резервуар).
-//   Tier 4: финальный — до -5000м, O2 45 мин.
+// LOR (lor1): Progressiya glubiny cherez apgreydy korpusa.
+//   Tier 0 → Tier 1: pervyy kraft v igre (rasshirennyy O2 rezervuar).
+//   Tier 4: finalnyy — do -5000m, O2 45 min.
 //
-// АРХИТЕКТУРА:
-//   • Применяет апгрейды через HectonSurvivalSystem.OverrideStats().
-//   • Runtime-копия SurvivalStats — не мутирует оригинальный SO.
-//   • ISaveable: сохраняет список установленных upgradeId.
-//   • Слушает NarrativeEvents.OnDiscoveryMade для разблокировки чертежей.
+// ARHITEKTURA:
+//   • Primenyaet apgreydy cherez HectonSurvivalSystem.OverrideStats().
+//   • Runtime-kopiya SurvivalStats — ne mutiruet originalnyy SO.
+//   • ISaveable: sohranyaet spisok ustanovlennyh upgradeId.
+//   • Slushaet NarrativeEvents.OnDiscoveryMade dlya razblokirovki chertezhey.
 //
 // ZERO GC:
-//   • HashSet<string> для O(1) проверки установленных апгрейдов.
-//   • Никаких new/LINQ в hot path.
+//   • HashSet<string> dlya O(1) proverki ustanovlennyh apgreydov.
+//   • Nikakih new/LINQ v hot path.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -39,14 +39,14 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── References ──────────────────────────────")]
-        [Tooltip("Базовые параметры скафандра (Tier 0).")]
+        [Tooltip("Bazovye parametry skafandra (Tier 0).")]
         [SerializeField] private SurvivalStats baseStats;
 
-        [Tooltip("Система выживания игрока.")]
+        [Tooltip("Sistema vyzhivaniya igroka.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
 
         [Header("── Upgrades ────────────────────────────────")]
-        [Tooltip("Все апгрейды в игре. Порядок не важен — сортируются по tier.")]
+        [Tooltip("Vse apgreydy v igre. Poryadok ne vazhen — sortiruyutsya po tier.")]
         [SerializeField] private SuitUpgradeData[] allUpgrades = new SuitUpgradeData[0];
 
         // ══════════════════════════════════════════════════════════
@@ -66,6 +66,7 @@ namespace Hecton8.Gameplay
 
         // Runtime stats — clone of baseStats with deltas applied
         private SurvivalStats _runtimeStats;
+        private uint _breakOrdinal;
         private bool _serviceRegistered;
 
         // ══════════════════════════════════════════════════════════
@@ -81,7 +82,7 @@ namespace Hecton8.Gameplay
 
         public int InstalledCount => _installedUpgrades.Count;
 
-        /// <summary>Текущий максимальный тир установленных апгрейдов корпуса.</summary>
+        /// <summary>Tekuschiy maksimalnyy tir ustanovlennyh apgreydov korpusa.</summary>
         public int CurrentHullTier
         {
             get
@@ -237,7 +238,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Проверить, можно ли установить апгрейд (чертёж разблокирован).
+        /// Proverit, mozhno li ustanovit apgreyd (chertezh razblokirovan).
         /// </summary>
         public bool CanInstall(SuitUpgradeData upgrade)
         {
@@ -251,7 +252,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Установить апгрейд. Применяет дельты к runtime stats.
+        /// Ustanovit apgreyd. Primenyaet delty k runtime stats.
         /// </summary>
         public bool InstallUpgrade(SuitUpgradeData upgrade)
         {
@@ -285,7 +286,9 @@ namespace Hecton8.Gameplay
             if (_installedUpgrades.Count <= 0 || chance01 <= 0f)
                 return false;
 
-            if (Random.value > Mathf.Clamp01(chance01))
+            float chance = Mathf.Clamp01(chance01);
+            uint breakRoll = ComputeBreakRoll();
+            if (HashToUnit01(breakRoll) > chance)
                 return false;
 
             int eligibleCount = 0;
@@ -304,7 +307,7 @@ namespace Hecton8.Gameplay
             if (eligibleCount <= 0)
                 return false;
 
-            int targetIndex = Random.Range(0, eligibleCount);
+            int targetIndex = (int)(MixHash(breakRoll ^ 0xBADC0DEu) % (uint)eligibleCount);
             for (int i = 0; i < allUpgrades.Length; i++)
             {
                 SuitUpgradeData upgrade = allUpgrades[i];
@@ -363,7 +366,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // Проверяем — является ли это чертежом апгрейда
+            // Proveryaem — yavlyaetsya li eto chertezhom apgreyda
             for (int i = 0; i < allUpgrades.Length; i++)
             {
                 SuitUpgradeData u = allUpgrades[i];
@@ -410,15 +413,54 @@ namespace Hecton8.Gameplay
             Debug.Log($"[SuitUpgrade] Repaired: {upgradeId}");
         }
 
+        private uint ComputeBreakRoll()
+        {
+            uint hash = 0x53554954u ^ (_breakOrdinal++ * 0x9E3779B9u);
+            if (allUpgrades == null)
+                return MixHash(hash);
+
+            for (int i = 0; i < allUpgrades.Length; i++)
+            {
+                SuitUpgradeData upgrade = allUpgrades[i];
+                if (upgrade == null ||
+                    string.IsNullOrEmpty(upgrade.upgradeId) ||
+                    !_installedUpgrades.Contains(upgrade.upgradeId) ||
+                    _brokenUpgrades.Contains(upgrade.upgradeId))
+                {
+                    continue;
+                }
+
+                hash ^= unchecked((uint)LocHash.Compute(upgrade.upgradeId));
+                hash = MixHash(hash);
+            }
+
+            return MixHash(hash);
+        }
+
+        private static float HashToUnit01(uint value)
+        {
+            return (MixHash(value) & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private static uint MixHash(uint value)
+        {
+            value ^= value >> 16;
+            value *= 0x7FEB352Du;
+            value ^= value >> 15;
+            value *= 0x846CA68Bu;
+            value ^= value >> 16;
+            return value;
+        }
+
         /// <summary>
-        /// Пересчитывает runtime stats из baseStats + все установленные апгрейды.
-        /// Вызывается при установке апгрейда и при загрузке.
+        /// Pereschityvaet runtime stats iz baseStats + vse ustanovlennye apgreydy.
+        /// Vyzyvaetsya pri ustanovke apgreyda i pri zagruzke.
         /// </summary>
         private void RebuildRuntimeStats()
         {
             if (_runtimeStats == null || baseStats == null || allUpgrades == null) return;
 
-            // Накапливаем дельты
+            // Nakaplivaem delty
             float dOxygen    = 0f;
             float dEnergy    = 0f;
             float dDepth     = 0f;
@@ -441,12 +483,12 @@ namespace Hecton8.Gameplay
                 dRad       += u.deltaRadiationThreshold;
             }
 
-            // Применяем через OverrideStats — нужен новый SO с изменёнными значениями
-            // SurvivalStats immutable — используем Instantiate + reflection-free подход
-            // через отдельный RuntimeSurvivalStats helper
+            // Primenyaem cherez OverrideStats — nuzhen novyy SO s izmenennymi znacheniyami
+            // SurvivalStats immutable — ispolzuem Instantiate + reflection-free podhod
+            // cherez otdelnyy RuntimeSurvivalStats helper
             ApplyDeltasToRuntimeStats(dOxygen, dEnergy, dDepth, dIntegrity, dMinTemp, dMaxTemp, dRad);
 
-            // Применяем к системе выживания
+            // Primenyaem k sisteme vyzhivaniya
             if (survivalSystem != null)
                 survivalSystem.OverrideStats(_runtimeStats);
         }
@@ -455,16 +497,16 @@ namespace Hecton8.Gameplay
             float dOxygen, float dEnergy, float dDepth, float dIntegrity,
             float dMinTemp, float dMaxTemp, float dRad)
         {
-            // SurvivalStats — immutable SO с private setters.
-            // Используем RuntimeSurvivalStats — mutable wrapper.
-            // Если _runtimeStats уже RuntimeSurvivalStats — обновляем напрямую.
+            // SurvivalStats — immutable SO s private setters.
+            // Ispolzuem RuntimeSurvivalStats — mutable wrapper.
+            // Esli _runtimeStats uzhe RuntimeSurvivalStats — obnovlyaem napryamuyu.
             if (_runtimeStats is RuntimeSurvivalStats rts)
             {
                 rts.ApplyDeltas(baseStats, dOxygen, dEnergy, dDepth, dIntegrity, dMinTemp, dMaxTemp, dRad);
             }
             else
             {
-                // Первый раз — создаём RuntimeSurvivalStats
+                // Pervyy raz — sozdaem RuntimeSurvivalStats
                 RuntimeSurvivalStats newRts = ScriptableObject.CreateInstance<RuntimeSurvivalStats>();
                 newRts.ApplyDeltas(baseStats, dOxygen, dEnergy, dDepth, dIntegrity, dMinTemp, dMaxTemp, dRad);
                 if (_runtimeStats != null) Destroy(_runtimeStats);

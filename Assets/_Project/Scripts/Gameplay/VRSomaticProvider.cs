@@ -215,6 +215,7 @@ namespace Hecton8.Gameplay
             if (!TryResolveActiveHmd(out Transform activeHmd))
             {
                 ApplyInactiveState(safeDeltaTime);
+                RefreshLateFrameRegistration();
                 return;
             }
 
@@ -222,6 +223,7 @@ namespace Hecton8.Gameplay
             if (!IsFiniteVector(headPosition) || !TrySanitizeQuaternion(headRotation, out headRotation))
             {
                 ApplyInactiveState(safeDeltaTime);
+                RefreshLateFrameRegistration();
                 return;
             }
 
@@ -243,7 +245,10 @@ namespace Hecton8.Gameplay
         public void LateFrameTick()
         {
             if ((_stateFlags & StateHeadCollisionScheduled) == 0u)
+            {
+                RefreshLateFrameRegistration();
                 return;
+            }
 
             if (!DispatcherJobSwap.TryComplete(ref _headCollisionHandle, false))
             {
@@ -257,11 +262,13 @@ namespace Hecton8.Gameplay
             {
                 FadeNearFieldCollisionToZero(_lastTickDeltaTime);
                 PublishShaderState();
+                RefreshLateFrameRegistration();
                 return;
             }
 
             ConsumeHeadCollisionSamples();
             PublishShaderState();
+            RefreshLateFrameRegistration();
         }
 
         private void Awake()
@@ -350,7 +357,7 @@ namespace Hecton8.Gameplay
             EnsureNativeBuffers();
             TryRegisterService();
             TryRegisterUpdate();
-            TryRegisterLateFrame();
+            RefreshLateFrameRegistration();
         }
 
         private void TryRegisterService()
@@ -405,6 +412,23 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
             _stateFlags &= ~StateRegisteredLateFrame;
+        }
+
+        private void RefreshLateFrameRegistration()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (ShouldKeepLateFrameRegistered())
+                TryRegisterLateFrame();
+            else
+                TryUnregisterLateFrame();
+        }
+
+        private bool ShouldKeepLateFrameRegistered()
+        {
+            return (_stateFlags & StateHeadCollisionScheduled) != 0u ||
+                   (_snapshot.IsActive && CanRunHeadCollisionQuery());
         }
 
         private bool HasRuntimeRegistrationOrActiveSnapshot()
@@ -474,7 +498,7 @@ namespace Hecton8.Gameplay
             }
 
             if (math.abs(lengthSq - 1f) > QuaternionUnitLengthSqEpsilon)
-                q *= math.rsqrt(math.max(lengthSq, 0.000001f));
+                q *= ApproximateInverseLengthNoSqrt(lengthSq);
 
             sanitized = new Quaternion(q.x, q.y, q.z, q.w);
             return true;
@@ -795,6 +819,7 @@ namespace Hecton8.Gameplay
                 buildHandle);
             _headCollisionHandle = processJob.Schedule(HeadCollisionCommandCount, 1, castHandle);
             _stateFlags |= StateHeadCollisionScheduled;
+            TryRegisterLateFrame();
         }
 
         private void RefreshNearFieldCollisionQueryAvailability(float deltaTime)

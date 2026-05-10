@@ -5,38 +5,38 @@ Status: ARCHIVED
 
 # Procedural World Fill Enterprise Plan
 
-## Цель
-- Построить не “ещё один scatter”, а масштабируемую систему наполнения подводного мира.
-- MapMagic отвечает за поля и маски.
-- Наш runtime/authoring слой отвечает за осмысленные семейства контента, pockets, landmarks, ruins, cave entries и creature spawn anchors.
+## Tsel
+- Postroit ne “esche odin scatter”, a masshtabiruemuyu sistemu napolneniya podvodnogo mira.
+- MapMagic otvechaet za polya i maski.
+- Nash runtime/authoring sloy otvechaet za osmyslennye semeystva kontenta, pockets, landmarks, ruins, cave entries i creature spawn anchors.
 
-## Главный принцип
-- Не спавнить конкретный prefab напрямую как часть дизайна мира.
-- Спавнить через цепочку:
+## Glavnyy printsip
+- Ne spavnit konkretnyy prefab napryamuyu kak chast dizayna mira.
+- Spavnit cherez tsepochku:
 - `Biome / heatmap / zone -> family rule -> family profile -> variant prefab`
 
-Это нужно, чтобы потом:
-- у одной категории было много разных видов
-- не переписывать код при добавлении новых ассетов
-- иметь proxy-слой сейчас и финальные модели потом
+Eto nuzhno, chtoby potom:
+- u odnoy kategorii bylo mnogo raznyh vidov
+- ne perepisyvat kod pri dobavlenii novyh assetov
+- imet proxy-sloy seychas i finalnye modeli potom
 
-## Что делает MapMagic
+## Chto delaet MapMagic
 - height / depth / slope
 - biome masks
 - density / heatmap fields
 - terrain distortion
-- raw nature scatter там, где он массовый и тупой
+- raw nature scatter tam, gde on massovyy i tupoy
 
-## Что делают наши скрипты
-- выбор осмысленного семейства контента
-- pockets риска/награды
+## Chto delayut nashi skripty
+- vybor osmyslennogo semeystva kontenta
+- pockets riska/nagrady
 - landmarks
 - abandoned modules / ruins
 - cave entry markers
 - creature spawn anchors
 - service / power traces
 
-## Первая волна family-групп
+## Pervaya volna family-grupp
 
 ### Rocks
 - `Rock Small Floor`
@@ -79,10 +79,10 @@ Status: ARCHIVED
 - `Route Power`
 - `Service Scar`
 
-## Почему это enterprise, а не времянка
-- Каждая family живёт как `WorldPrefabFamilyProfile`
-- Есть отдельные `WorldProceduralPlacementRule`
-- У family уже есть:
+## Pochemu eto enterprise, a ne vremyanka
+- Kazhdaya family zhivet kak `WorldPrefabFamilyProfile`
+- Est otdelnye `WorldProceduralPlacementRule`
+- U family uzhe est:
 - domain
 - placement mode
 - fidelity
@@ -93,37 +93,37 @@ Status: ARCHIVED
 - proxy color
 - variants
 
-Это позволяет:
-- сначала работать proxy-кубами и простыми prefab’ами
-- потом подменять их финальными моделями без смены архитектуры
+Eto pozvolyaet:
+- snachala rabotat proxy-kubami i prostymi prefab’ami
+- potom podmenyat ih finalnymi modelyami bez smeny arhitektury
 
-## Что создаётся в коде прямо сейчас
-- Расширен [WorldPrefabFamilyProfile.cs](C:/hades/Hecton8/Assets/_Project/Scripts/WorldPrefabFamilyProfile.cs)
-- Добавлен [WorldProceduralPlacementRule.cs](C:/hades/Hecton8/Assets/_Project/Scripts/WorldProceduralPlacementRule.cs)
-- Добавлен authoring tool [WorldProceduralProxyAuthoring.cs](C:/hades/Hecton8/Assets/_Project/Scripts/Editor/WorldProceduralProxyAuthoring.cs)
-- Добавлен proxy scene builder [WorldProceduralProxySceneBuilder.cs](C:/hades/Hecton8/Assets/_Project/Scripts/Editor/WorldProceduralProxySceneBuilder.cs)
-- Добавлен instance metadata component [WorldProceduralProxyInstance.cs](C:/hades/Hecton8/Assets/_Project/Scripts/WorldProceduralProxyInstance.cs)
+## Chto sozdaetsya v kode pryamo seychas
+- Rasshiren [WorldPrefabFamilyProfile.cs](C:/hades/Hecton8/Assets/_Project/Scripts/WorldPrefabFamilyProfile.cs)
+- Dobavlen [WorldProceduralPlacementRule.cs](C:/hades/Hecton8/Assets/_Project/Scripts/WorldProceduralPlacementRule.cs)
+- Dobavlen authoring tool [WorldProceduralProxyAuthoring.cs](C:/hades/Hecton8/Assets/_Project/Scripts/Editor/WorldProceduralProxyAuthoring.cs)
+- Dobavlen proxy scene builder [WorldProceduralProxySceneBuilder.cs](C:/hades/Hecton8/Assets/_Project/Scripts/Editor/WorldProceduralProxySceneBuilder.cs)
+- Dobavlen instance metadata component [WorldProceduralProxyInstance.cs](C:/hades/Hecton8/Assets/_Project/Scripts/WorldProceduralProxyInstance.cs)
 
-## Что делает authoring tool
-Меню:
+## Chto delaet authoring tool
+Menyu:
 - `Hecton/Authoring/Build Procedural Fill Foundations`
 
-Он создаёт:
-- family assets в `Assets/_Project/Data/World/ProceduralFamilies`
-- placement rule assets в `Assets/_Project/Data/World/ProceduralPlacementRules`
+On sozdaet:
+- family assets v `Assets/_Project/Data/World/ProceduralFamilies`
+- placement rule assets v `Assets/_Project/Data/World/ProceduralPlacementRules`
 
-Это не финальный scatter runtime.
-Это первый production-фундамент для:
+Eto ne finalnyy scatter runtime.
+Eto pervyy production-fundament dlya:
 - MapMagic integration
 - proxy placement
-- будущих variant prefabs
+- buduschih variant prefabs
 
-## Что уже умеет foundation
-- Создавать family assets
-- Создавать placement rule assets
-- Создавать proxy materials и proxy prefabs под family
-- Строить proxy scene root из существующих `WorldContentSocket`
-- Помечать каждую proxy-instance метаданными:
+## Chto uzhe umeet foundation
+- Sozdavat family assets
+- Sozdavat placement rule assets
+- Sozdavat proxy materials i proxy prefabs pod family
+- Stroit proxy scene root iz suschestvuyuschih `WorldContentSocket`
+- Pomechat kazhduyu proxy-instance metadannymi:
 - family
 - rule
 - zone
@@ -131,13 +131,13 @@ Status: ARCHIVED
 - fidelity
 - variant
 
-## Что уже поднято в runtime
-- Добавлен `WorldProceduralFillDirector` в `Assets/_Project/Scripts/WorldProceduralFillDirector.cs`
-- Он живет в `[MANAGERS]` рядом с `WorldZoneDirector`, `WorldContentDirector`, `WorldPopulationDirector` и `BiomeMatrixDirector`
-- Он в рантайме решает цепочку:
+## Chto uzhe podnyato v runtime
+- Dobavlen `WorldProceduralFillDirector` v `Assets/_Project/Scripts/WorldProceduralFillDirector.cs`
+- On zhivet v `[MANAGERS]` ryadom s `WorldZoneDirector`, `WorldContentDirector`, `WorldPopulationDirector` i `BiomeMatrixDirector`
+- On v rantayme reshaet tsepochku:
 - `zone + biome + socket -> procedural rule -> family -> variant`
-- Он кладет resolved procedural diagnostics прямо в `WorldContentSocket`
-- `WorldContentDirector` теперь показывает nearest procedural read:
+- On kladet resolved procedural diagnostics pryamo v `WorldContentSocket`
+- `WorldContentDirector` teper pokazyvaet nearest procedural read:
 - rule
 - family
 - variant
@@ -146,55 +146,55 @@ Status: ARCHIVED
 - intent
 - reason
 
-## Что уже проверено в Unity
-- `Hecton/Authoring/Build Procedural Fill Foundations` проходит без ошибок в консоли
-- `Hecton/Authoring/Rebuild World Runtime Stack` проходит без ошибок в консоли
-- `Hecton/Authoring/Rebuild Procedural Proxy Scene` проходит без ошибок в консоли
-- `Hecton/Validation/Validate MapMagic World Stack` проходит без ошибок и warning в консоли
-- В сцене реально существует `__PROCEDURAL_PROXY_WORLD`
-- В сцене реально существует `[MANAGERS]` с `WorldProceduralFillDirector`
-- Найдено `157` scene objects с `WorldProceduralProxyInstance`
-- Сцена сохранена: `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+## Chto uzhe provereno v Unity
+- `Hecton/Authoring/Build Procedural Fill Foundations` prohodit bez oshibok v konsoli
+- `Hecton/Authoring/Rebuild World Runtime Stack` prohodit bez oshibok v konsoli
+- `Hecton/Authoring/Rebuild Procedural Proxy Scene` prohodit bez oshibok v konsoli
+- `Hecton/Validation/Validate MapMagic World Stack` prohodit bez oshibok i warning v konsoli
+- V stsene realno suschestvuet `__PROCEDURAL_PROXY_WORLD`
+- V stsene realno suschestvuet `[MANAGERS]` s `WorldProceduralFillDirector`
+- Naydeno `157` scene objects s `WorldProceduralProxyInstance`
+- Stsena sohranena: `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
 
-## Что уже поднято следующим шагом
-- Добавлен `WorldProceduralFieldSampler` в `Assets/_Project/Scripts/WorldProceduralFieldSampler.cs`
-- Добавлен `WorldProceduralScatterDirector` в `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`
-- Добавлен editor menu builder `Hecton/Authoring/Rebuild Procedural Scatter Preview`
-- Новый scatter-слой больше не зависит от `WorldContentSocket` как единственного источника мира
-- Теперь chain такой:
+## Chto uzhe podnyato sleduyuschim shagom
+- Dobavlen `WorldProceduralFieldSampler` v `Assets/_Project/Scripts/WorldProceduralFieldSampler.cs`
+- Dobavlen `WorldProceduralScatterDirector` v `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`
+- Dobavlen editor menu builder `Hecton/Authoring/Rebuild Procedural Scatter Preview`
+- Novyy scatter-sloy bolshe ne zavisit ot `WorldContentSocket` kak edinstvennogo istochnika mira
+- Teper chain takoy:
 - `field sample (height/depth/slope/zone/biome) -> procedural rule -> family -> variant -> proxy instance`
 
-## Что это значит простыми словами
-- Раньше прокси-мир строился только вокруг заранее размеченных точек
-- Теперь появился второй слой, который сам смотрит на местность вокруг игрока
-- И уже от этого может ставить:
-- кораллы
-- келп
-- камни
-- руины
-- опасные pockets
-- и другие family-группы
+## Chto eto znachit prostymi slovami
+- Ranshe proksi-mir stroilsya tolko vokrug zaranee razmechennyh tochek
+- Teper poyavilsya vtoroy sloy, kotoryy sam smotrit na mestnost vokrug igroka
+- I uzhe ot etogo mozhet stavit:
+- korally
+- kelp
+- kamni
+- ruiny
+- opasnye pockets
+- i drugie family-gruppy
 
-## Честный статус scatter preview
-- В этой сцене `MapMagicBridge` не всегда отдаёт живую высоту terrain в editor-preview режиме
-- Поэтому в `WorldProceduralFieldSampler` добавлен честный fallback:
-- сначала попытка взять высоту из MapMagic
-- потом лучом по коллайдерам сцены
-- и только потом синтетическое preview-дно под водой
-- Это не финальный runtime-режим мира
-- Это авторский режим превью, чтобы система уже была полезной до полного wiring MapMagic-полей
+## Chestnyy status scatter preview
+- V etoy stsene `MapMagicBridge` ne vsegda otdaet zhivuyu vysotu terrain v editor-preview rezhime
+- Poetomu v `WorldProceduralFieldSampler` dobavlen chestnyy fallback:
+- snachala popytka vzyat vysotu iz MapMagic
+- potom luchom po kollayderam stseny
+- i tolko potom sinteticheskoe preview-dno pod vodoy
+- Eto ne finalnyy runtime-rezhim mira
+- Eto avtorskiy rezhim prevyu, chtoby sistema uzhe byla poleznoy do polnogo wiring MapMagic-poley
 
-## Что уже проверено в Unity по scatter
-- `Hecton/Authoring/Rebuild Procedural Scatter Preview` проходит без ошибок в консоли
-- В сцене реально существует `__PROCEDURAL_SCATTER_WORLD`
-- После rebuild preview в сцене реально появились новые `WorldProceduralProxyInstance`
-- Один из проверенных примеров:
+## Chto uzhe provereno v Unity po scatter
+- `Hecton/Authoring/Rebuild Procedural Scatter Preview` prohodit bez oshibok v konsoli
+- V stsene realno suschestvuet `__PROCEDURAL_SCATTER_WORLD`
+- Posle rebuild preview v stsene realno poyavilis novye `WorldProceduralProxyInstance`
+- Odin iz proverennyh primerov:
 - family = `family.coral.branching`
 - rule = `rule.coral.reef`
 - source = `FieldScatter`
 - heatmap = `coral_density`
 
-## Правильный порядок внедрения
+## Pravilnyy poryadok vnedreniya
 
 ### Stage 1
 - rocks
@@ -216,18 +216,18 @@ Status: ARCHIVED
 - megastructures
 - deeper biome-specific silhouettes
 
-## Что не делаем
-- не кодим placement отдельно под каждый prefab
-- не заставляем MapMagic решать весь gameplay-дизайн
-- не тащим мир в рельсовые маршруты
-- не делаем giant content pass без базового природного слоя
+## Chto ne delaem
+- ne kodim placement otdelno pod kazhdyy prefab
+- ne zastavlyaem MapMagic reshat ves gameplay-dizayn
+- ne taschim mir v relsovye marshruty
+- ne delaem giant content pass bez bazovogo prirodnogo sloya
 
-## Следующий продуктовый шаг
-- Поднять first usable proxy pass:
+## Sleduyuschiy produktovyy shag
+- Podnyat first usable proxy pass:
 - family assets
 - placement rules
 - proxy prefabs
-- и потом уже связать это с biome/zone/heatmap логикой
+- i potom uzhe svyazat eto s biome/zone/heatmap logikoy
 
 ## Status Update 2026-03-31
 - Stage 1 procedural fill is now running as a layered proxy world, not a flat single-pool scatter.
@@ -266,53 +266,53 @@ Status: ARCHIVED
 
 ## Status Update 2026-03-31 J
 
-### Что переведено в data-driven слой
-- Добавлен `WorldProceduralPatternProfile`:
-- каждый из `9` типов воды теперь живёт как отдельный asset с бюджетами, квотами и целями по слоям
-- Добавлен `WorldProceduralPatternCatalog`:
-- scatter теперь берёт balance-правду из каталога, а не из большого hardcoded switch
-- `WorldProceduralProxyAuthoring` теперь создаёт и обновляет:
+### Chto perevedeno v data-driven sloy
+- Dobavlen `WorldProceduralPatternProfile`:
+- kazhdyy iz `9` tipov vody teper zhivet kak otdelnyy asset s byudzhetami, kvotami i tselyami po sloyam
+- Dobavlen `WorldProceduralPatternCatalog`:
+- scatter teper beret balance-pravdu iz kataloga, a ne iz bolshogo hardcoded switch
+- `WorldProceduralProxyAuthoring` teper sozdaet i obnovlyaet:
 - `9` pattern profiles
-- общий pattern catalog
-- `WorldRuntimeBootstrapAuthoring` автоматически подцепляет catalog в runtime stack
-- `MapMagicWorldValidator` теперь валидирует:
-- есть ли catalog
-- задан ли fallback profile
-- все ли `9` water patterns реально покрыты asset-профилями
+- obschiy pattern catalog
+- `WorldRuntimeBootstrapAuthoring` avtomaticheski podtseplyaet catalog v runtime stack
+- `MapMagicWorldValidator` teper validiruet:
+- est li catalog
+- zadan li fallback profile
+- vse li `9` water patterns realno pokryty asset-profilyami
 
-### Что это даёт простыми словами
-- тип воды теперь настраивается как контент
-- можно крутить бюджеты, mix и spawn не переписывая scatter-логику
-- отчёт по всем водам стал главным источником правды
-- это нормальная база под `108` биомов, а не ещё одна временная настройка в коде
+### Chto eto daet prostymi slovami
+- tip vody teper nastraivaetsya kak kontent
+- mozhno krutit byudzhety, mix i spawn ne perepisyvaya scatter-logiku
+- otchet po vsem vodam stal glavnym istochnikom pravdy
+- eto normalnaya baza pod `108` biomov, a ne esche odna vremennaya nastroyka v kode
 
-### Проверено в Unity
+### Provereno v Unity
 - `Build Procedural Fill Foundations`: passed
 - `Rebuild World Runtime Stack`: passed
 - `Generate Procedural Water Pattern Report`: passed
 - `Validate MapMagic World Stack`: passed
 - console: `0 errors / 0 warnings`
-- forced override после проверки выключен
-- рабочая сцена снова в normal mode:
+- forced override posle proverki vyklyuchen
+- rabochaya stsena snova v normal mode:
 - `Sediment Drift + Synthetic:Resources + SedimentResources`
 
-### Итог по 9 водам
-- все `9` water patterns сейчас дают `PASS` в `PROCEDURAL_WATER_PATTERN_REPORT.md`
-- мягкие воды больше не проседают:
+### Itog po 9 vodam
+- vse `9` water patterns seychas dayut `PASS` v `PROCEDURAL_WATER_PATTERN_REPORT.md`
+- myagkie vody bolshe ne prosedayut:
 - `FertileShallows`: `ground 107 | cluster 12 | structure 4 | spawn 8`
 - `ReefNavigation`: `ground 170 | cluster 8 | structure 6 | spawn 6`
-- reference-вода держится стабильно:
+- reference-voda derzhitsya stabilno:
 - `SedimentResources`: `ground 40 | cluster 18 | structure 9 | spawn 8`
 
-### Честный смысл
-- верхний sandbox-layer по воде уже не хрупкий прототип
-- это рабочая enterprise-схема:
-- `9` читаемых характеров воды
-- data-driven профили
-- единый отчёт
-- валидируемый runtime wiring
-- следующая большая работа уже не в самих water-pattern profiles
-- а в более глубокой привязке этих `9` характеров к `108` биомам и к реальным content families мира
+### Chestnyy smysl
+- verhniy sandbox-layer po vode uzhe ne hrupkiy prototip
+- eto rabochaya enterprise-shema:
+- `9` chitaemyh harakterov vody
+- data-driven profili
+- edinyy otchet
+- validiruemyy runtime wiring
+- sleduyuschaya bolshaya rabota uzhe ne v samih water-pattern profiles
+- a v bolee glubokoy privyazke etih `9` harakterov k `108` biomam i k realnym content families mira
 - clusters and pockets
 - large structures
 - creature spawn anchors

@@ -76,7 +76,8 @@ Shader "Hidden/Hecton8/VRBrownout"
 
             float ResolveEyeStableNoiseSeed()
             {
-                return fmod(floor(_Time.y * 60.0), 3.0);
+                float frame = floor(_Time.y * 60.0);
+                return frame - (floor(frame * 0.33333334) * 3.0);
             }
 
             half4 Frag(Varyings input) : SV_Target

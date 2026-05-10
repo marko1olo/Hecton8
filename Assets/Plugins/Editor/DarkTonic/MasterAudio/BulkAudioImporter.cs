@@ -826,7 +826,7 @@ namespace DarkTonic.MasterAudio.EditorScripts
 
             importer.forceToMono = info.ForceMono;
             importer.loadInBackground = info.LoadBG;
-            // importer.preloadAudioData = info.Preload; ЗАКОМЕНТИРОВАНО ПОКА ЧТО, ПОТОМУ ЧТО ПРЕДЗАГРУЗКА НЕ РАБОТАЕТ ПРАВИЛЬНО В UNITY 
+            // importer.preloadAudioData = info.Preload; ZAKOMENTIROVANO POKA ChTO, POTOMU ChTO PREDZAGRUZKA NE RABOTAET PRAVILNO V UNITY 
             settings.loadType = info.LoadType;
             settings.compressionFormat = info.CompressionFormat;
             if (settings.compressionFormat == AudioCompressionFormat.Vorbis)

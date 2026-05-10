@@ -200,8 +200,8 @@ Mandates followed:
 
 - `Assets/_Project/Scripts/Editor/HectonFBXPostprocessor.cs` still honored the `HECTON_POSTPROCESS_TANGENTS` escape hatch inside `Assets/ScifiFacility`, which forced the two known crash FBXs into `tangentImportMode: None` even though Bakery needs stable normals/tangents before `ftModelPostProcessor.OnPostprocessModel`.
 - `Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx.meta` and `wall_01_6x3_door_b.fbx.meta` still serialized `tangentImportMode: 2` with `userData: HECTON_POSTPROCESS_TANGENTS`. The internal zero-vertex planes (`Plane.481`, `Plane.492`, `Plane.498`) were the reason that escape hatch existed.
-- `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Скала2.prefab` serialized a null `LOD0` renderer in its root `LODGroup`.
-- `Assets/_Project/Scenes/XXX_SANDBOX.unity` compensated by overriding `ENV_ Скала2` LOD0 to use `ENV_ Болдер 2`'s stripped `LOD0` renderer, which is the direct source of the duplicate-LODGroup registration conflict.
+- `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Skala2.prefab` serialized a null `LOD0` renderer in its root `LODGroup`.
+- `Assets/_Project/Scenes/XXX_SANDBOX.unity` compensated by overriding `ENV_ Skala2` LOD0 to use `ENV_ Bolder 2`'s stripped `LOD0` renderer, which is the direct source of the duplicate-LODGroup registration conflict.
 - `Assets/Feel/MMTools/Tools/MMShaders/MMRipple.shader` still fell back to the removed built-in `Particle/AlphaBlended` shader.
 - `Assets/_Project/Editor/HectonRenderPipelineValidator.cs` was menu-only, so it was not auto-running after reload to keep URP/Crest depth enforcement alive when the editor transport dropped.
 
@@ -211,8 +211,8 @@ Mandates followed:
 - Patched the two known ScifiFacility offender metas immediately:
   - `wall_01_6x3_door.fbx.meta`: `tangentImportMode: 3`, cleared `userData`
   - `wall_01_6x3_door_b.fbx.meta`: `tangentImportMode: 3`, cleared `userData`
-- Fixed `ENV_ Скала2.prefab` so the root `LODGroup` now owns its own `LOD0` renderer instead of a null slot.
-- Removed the bad cross-prefab scene override from `XXX_SANDBOX.unity`; `ENV_ Скала2` no longer steals `ENV_ Болдер 2`'s `LOD0` renderer.
+- Fixed `ENV_ Skala2.prefab` so the root `LODGroup` now owns its own `LOD0` renderer instead of a null slot.
+- Removed the bad cross-prefab scene override from `XXX_SANDBOX.unity`; `ENV_ Skala2` no longer steals `ENV_ Bolder 2`'s `LOD0` renderer.
 - Added `Assets/_Project/Editor/HectonLodGroupConflictResolver.cs` to repair the named rock prefabs and loaded scene instances if renderer ownership drifts again.
 - Changed `MMRipple.shader` fallback to `Universal Render Pipeline/Particles/Unlit`.
 - Restored auto-execution in `HectonRenderPipelineValidator.cs` via `InitializeOnLoad`, `EditorApplication.projectChanged`, and `EditorSceneManager.sceneOpened`, and narrowed its hard warnings to depth-mutation patterns rather than simple depth reads.
@@ -236,8 +236,8 @@ Mandates followed:
 
 - Source evidence:
   - `AGENT_06_TECHART_LOG.md` identified `wall_01_6x3_door*.fbx` as the exact files forced into postprocess tangents because of zero-vertex planes.
-  - `ENV_ Скала2.prefab` root `LODGroup` now points `LOD0` to its own `MeshRenderer`.
-  - `XXX_SANDBOX.unity` no longer contains the `m_LODs.Array.data[0].renderers.Array.data[0].renderer` override for `ENV_ Скала2`.
+  - `ENV_ Skala2.prefab` root `LODGroup` now points `LOD0` to its own `MeshRenderer`.
+  - `XXX_SANDBOX.unity` no longer contains the `m_LODs.Array.data[0].renderers.Array.data[0].renderer` override for `ENV_ Skala2`.
   - `MMRipple.shader` no longer references `Particle/AlphaBlended`.
 - Live Unity proof:
   - `PENDING VERIFICATION`. MCP transport remains unstable and no post-import Bakery / water runtime capture was available in this pass.

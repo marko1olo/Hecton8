@@ -18,6 +18,7 @@ namespace Hecton8.Dev
     [AddComponentMenu("Hecton8/Dev/UI Runtime Smoke Tester")]
     public sealed class UIRuntimeSmokeTester : MonoBehaviour
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         [Header("References")]
         [SerializeField] private PlayerPDA playerPDA;
         [SerializeField] private PauseMenuController pauseMenu;
@@ -409,5 +410,6 @@ namespace Hecton8.Dev
 
             return null;
         }
+#endif
     }
 }

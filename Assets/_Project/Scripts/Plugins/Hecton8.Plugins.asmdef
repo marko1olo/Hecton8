@@ -1,0 +1,22 @@
+{
+    "name": "Hecton8.Plugins",
+    "rootNamespace": "Hecton8.Plugins",
+    "references": [
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Core",
+        "Den.Tools",
+        "MapMagic",
+        "Crest",
+        "WaveHarmonic.Crest",
+        "WaveHarmonic.Crest.Shared"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

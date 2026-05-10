@@ -1,7 +1,7 @@
-﻿{
+{
     "generatedDate":  "2026-05-09",
-    "generatedLocalTime":  "2026-05-09 16:47:49 +04:00",
-    "status":  "PENDING FINAL UNITY PROOF (R168 DOTNET BUILD PASSED / UNITY MCP BLOCKED / TIMESTAMP GATE CONTAMINATED)",
+    "generatedLocalTime":  "2026-05-09 19:39:00 +04:00",
+    "status":  "PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)",
     "currentAuthorityReport":  "Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md",
     "unityMcpConsoleState":  {
                                  "result":  "BLOCKED",
@@ -23,18 +23,18 @@
                                     "rendererFeatures":  "BLOCKED: prior MCP readback not accepted as current proof"
                                 },
     "buildState":  {
-                       "command":  "dotnet build .\\Hecton8.Core.csproj --no-restore -m:1 -p:UseSharedCompilation=false -p:BuildInParallel=false -nr:false",
-                       "artifact":  "CodexArtifacts/2026-05-09_R168_CORE_SERIAL_NORESTORE_BUILD.log",
+                       "command":  "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false",
+                       "artifact":  "CodexArtifacts/2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log",
                        "result":  "SUCCEEDED",
                        "warnings":  0,
                        "errors":  0,
                        "firstPartyWarningLines":  0,
-                       "coveredCurrentSource":  false,
-                       "coverageNote":  "R168 dotnet build succeeded after repeated live-churn compile gates, stale clean snapshots, transient Input/Core boundary regressions, BLACKBOX export callback/thread drift, emergency-relay helper drift, PlayerSwim obstacle-probe drift, R154 invalidation by an in-build PersistentWorldRegistry.cs write, post-R155 InputManager.cs write, R160 timestamp invalidation, R161 Input assembly GlobalRegistry regression, post-R163 PhysicsApplySystem.cs / NativeMemorySentinel.cs writes, post-R165 guarded diagnostic-log preprocessor edits in LocalizationManager.cs and HectonBiolumManager.cs, and the HectonBiolumZone.cs development-build diagnostics guard pass. Later Assets/_Project C# writes were observed after the R168 artifact end timestamp, so this is compile evidence, not frozen-source coverage. Unity Console/Play Mode/profiler/GCMonitor/player-build proof remains absent.",
+                       "firstPartyErrorLines":  0,
+                       "coveredCurrentSource":  true,
+                       "coverageNote":  "R186 dotnet build succeeded after R171-R185 live-churn invalidations and compile-surface repairs. R186 summary is Build succeeded, 0 Warning(s), 0 Error(s), DOTNET_EXIT_CODE=0, CS_WRITES_AFTER_START=0, CS_WRITES_AFTER_END=0. This is current local dotnet compile coverage for the sampled filesystem state. Unity Console/Play Mode/profiler/GCMonitor/player-build proof remains absent.",
                        "blockers":  [
                                         "PENDING_FINAL_UNITY_PROOF: Unity MCP/Console proof unavailable in this session",
-                                        "UNITY_RUNTIME_PROOF_ABSENT: no Play Mode/profiler/GCMonitor/player-build evidence captured",
-                                        "TIMESTAMP_GATE_CONTAMINATED: C# writes were observed after the R168 build end timestamp"
+                                        "UNITY_RUNTIME_PROOF_ABSENT: no Play Mode/profiler/GCMonitor/player-build evidence captured"
                                     ]
                    },
     "activeMarkdownCount":  231,
@@ -48,31 +48,28 @@
                        "missingStatus":  0
                    },
     "sourceCounts":  {
-                         "projectCsFiles":  1255,
-                         "projectPhysicalLines":  743328,
-                         "scriptsCsFiles":  1214,
-                         "scriptsPhysicalLines":  728007,
-                         "directScripts":  337,
+                         "projectCsFiles":  1292,
+                         "projectPhysicalLines":  759122,
+                         "scriptsCsFiles":  1248,
+                         "scriptsPhysicalLines":  742892,
+                         "directScripts":  342,
                          "lineCountMethod":  "System.IO.StreamReader.ReadLine",
-                         "globalRegistryContractInterfaces":  38
+                         "globalRegistryContractInterfaces":  40
                      },
-    "sourceCountsSnapshotTime":  "2026-05-09 16:47:49 +04:00",
-    "sourceCountsVolatility":  "R168_COMPILE_PASSED_BUT_TIMESTAMP_GATE_CONTAMINATED: Assets/_Project C# writes were observed after the latest Core build artifact end timestamp; counts remain orientation and not runtime proof.",
-    "postBuildSourceWritesObservedCount":  9,
-    "postBuildSourceWritesObservedLowerBound":  9,
-    "postBuildLatestSourceWrite":  "2026-05-09 16:55:55 +04:00",
-    "postBuildLatestSourceWritePath":  "Assets/_Project/Scripts/ObjectPoolDiagnostics.cs",
-    "postBuildSourceWritesObservedMode":  "OBSERVED_AFTER_R168_ARTIFACT_END_TIMESTAMP",
+    "sourceCountsSnapshotTime":  "2026-05-09 19:39:00 +04:00",
+    "sourceCountsVolatility":  "R186_COMPILE_PASSED_WITH_TIMESTAMP_GATE: 0 Assets/_Project C# writes were observed after build start/end; counts remain orientation and not runtime proof.",
+    "postBuildSourceWritesObservedCount":  0,
+    "postBuildSourceWritesObservedLowerBound":  0,
+    "postBuildLatestSourceWrite":  null,
+    "postBuildLatestSourceWritePath":  null,
+    "postBuildSourceWritesObservedMode":  "OBSERVED_AFTER_R186_ARTIFACT_END_TIMESTAMP",
     "postBuildSourceWritesObserved":  [
-                                          "Assets/_Project/Scripts/UI/UIScreenShake.cs",
-                                          "Assets/_Project/Scripts/WorldCaveDirector.cs",
-                                          "Assets/_Project/Scripts/UI/BeaconHUDElement.cs",
-                                          "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
-                                          "Assets/_Project/Scripts/Gameplay/VehicleMotor.cs",
-                                          "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
-                                          "Assets/_Project/Scripts/Core/UIStateStore.cs",
-                                          "Assets/_Project/Scripts/FieldLoadoutAdvisor.cs",
-                                          "Assets/_Project/Scripts/ObjectPoolDiagnostics.cs"
+                                      ],
+    "inBuildSourceWritesObservedCount":  0,
+    "inBuildSourceWritesObservedLowerBound":  0,
+    "inBuildLatestSourceWrite":  null,
+    "inBuildLatestSourceWritePath":  null,
+    "inBuildSourceWritesObserved":  [
                                       ],
     "entries":  [
                     {
@@ -702,9 +699,9 @@
                     {
                         "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md",
                         "date":  "2026-05-09",
-                        "status":  "PENDING FINAL UNITY PROOF (R168 DOTNET BUILD PASSED / UNITY MCP BLOCKED / TIMESTAMP GATE CONTAMINATED)",
+                        "status":  "PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)",
                         "title":  "PROJECT ATLAS",
-                        "bytes":  32899,
+                        "bytes":  32632,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -1196,7 +1193,7 @@
                         "requiresRuntimeProof":  true
                     },
                     {
-                        "path":  "Docs/Legacy_Backlog/Полный_список_недоработок_и_план_разработки_—_Project_Submerge_(HECTON-8) - ЧИТАТЬ, рядом создать документ - что и как испарвляем, дианмично обновлять.md",
+                        "path":  "Docs/Legacy_Backlog/Polnyy_spisok_nedorabotok_i_plan_razrabotki_—_Project_Submerge_(HECTON-8) - ChITAT, ryadom sozdat dokument - chto i kak isparvlyaem, dianmichno obnovlyat.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
                         "title":  "ÐŸÐ¾Ð»Ð½Ñ‹Ð¹ ÑÐ¿Ð¸ÑÐ¾Ðº Ð½ÐµÐ´Ð¾Ñ€Ð°Ð±Ð¾Ñ‚Ð¾Ðº Ð¸ Ð¿Ð»Ð°Ð½ Ñ€Ð°Ð·Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ¸ â€” Project Submerge (HECTON-8)",
@@ -1204,7 +1201,7 @@
                         "requiresRuntimeProof":  true
                     },
                     {
-                        "path":  "Docs/Legacy_Backlog/Что_и_как_исправляем_—_живой_план.md",
+                        "path":  "Docs/Legacy_Backlog/Chto_i_kak_ispravlyaem_—_zhivoy_plan.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
                         "title":  "Ð§Ñ‚Ð¾ Ð¸ ÐºÐ°Ðº Ð¸ÑÐ¿Ñ€Ð°Ð²Ð»ÑÐµÐ¼ â€” Ð¶Ð¸Ð²Ð¾Ð¹ Ð¿Ð»Ð°Ð½",
@@ -1686,9 +1683,9 @@
                     {
                         "path":  "Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md",
                         "date":  "2026-05-09",
-                        "status":  "PENDING FINAL UNITY PROOF (R168 DOTNET BUILD PASSED / UNITY MCP BLOCKED / TIMESTAMP GATE CONTAMINATED)",
+                        "status":  "PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)",
                         "title":  "2026-05-08 Documentation Continuation Sync",
-                        "bytes":  34770,
+                        "bytes":  35239,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -1782,9 +1779,9 @@
                     {
                         "path":  "Docs/Reports/README.md",
                         "date":  "2026-05-09",
-                        "status":  "PENDING FINAL UNITY PROOF (R168 DOTNET BUILD PASSED / UNITY MCP BLOCKED / TIMESTAMP GATE CONTAMINATED)",
+                        "status":  "PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)",
                         "title":  "Reports",
-                        "bytes":  27657,
+                        "bytes":  27249,
                         "requiresRuntimeProof":  true
                     },
                     {

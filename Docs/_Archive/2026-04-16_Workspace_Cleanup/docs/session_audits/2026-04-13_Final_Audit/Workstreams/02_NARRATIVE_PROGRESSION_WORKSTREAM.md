@@ -5,10 +5,10 @@ Status: ARCHIVED
 
 # HECTON-8 — Narrative / Progression Workstream
 
-Дата: 2026-04-13  
-Статус: PENDING VERIFICATION
+Data: 2026-04-13  
+Status: PENDING VERIFICATION
 
-## Что закрывает этот фронт
+## Chto zakryvaet etot front
 
 - Quest content
 - Audio logs
@@ -17,10 +17,10 @@ Status: ARCHIVED
 - First-hour progression
 - Live lore system integration
 
-## Почему это критично
+## Pochemu eto kritichno
 
-Сейчас здесь главный разрыв между "много кода" и "есть игра".  
-Code owners существуют. Production content по ключевым data roots почти пустой.
+Seychas zdes glavnyy razryv mezhdu "mnogo koda" i "est igra".  
+Code owners suschestvuyut. Production content po klyuchevym data roots pochti pustoy.
 
 ## Owner files
 
@@ -54,96 +54,96 @@ Code owners существуют. Production content по ключевым data 
 - `Assets/_Project/Data/Lore/AudioLogs`
 - `Assets/_Project/Data/Lore/SuitUpgrades`
 
-Факт:
+Fakt:
 
-- `Quests` пусто.
-- `AudioLogs` пусто.
-- `SuitUpgrades` пусто.
+- `Quests` pusto.
+- `AudioLogs` pusto.
+- `SuitUpgrades` pusto.
 
-## Основные задачи
+## Osnovnye zadachi
 
 ### Front A. Narrative data authoring
 
-- Заполнить discovery IDs и narrative links.
-- Привязать registries к реальным depth beats.
-- Зафиксировать story spine первого часа.
+- Zapolnit discovery IDs i narrative links.
+- Privyazat registries k realnym depth beats.
+- Zafiksirovat story spine pervogo chasa.
 
 ### Front B. Quest system fill-in
 
-- Создать реальные quest assets.
-- Определить trigger sources.
-- Проверить активацию квестов от существующих world/narrative events.
+- Sozdat realnye quest assets.
+- Opredelit trigger sources.
+- Proverit aktivatsiyu kvestov ot suschestvuyuschih world/narrative events.
 
 ### Front C. Audio log fill-in
 
-- Создать audio log assets.
-- Привязать pickup flow.
-- Проверить discovery и PDA display.
+- Sozdat audio log assets.
+- Privyazat pickup flow.
+- Proverit discovery i PDA display.
 
 ### Front D. Suit progression
 
-- Создать assets улучшений.
-- Привязать unlock conditions.
-- Проверить визуальную подачу через HUD.
+- Sozdat assets uluchsheniy.
+- Privyazat unlock conditions.
+- Proverit vizualnuyu podachu cherez HUD.
 
 ### Front E. Scene/bootstrap integration
 
-- Проверить живое наличие `LoreSystems` в `02_HECTON_WORLD`.
-- Гарантировать, что корневой lore owner реально поднимается в production path.
-- Проверить, что системы не существуют только на бумаге.
+- Proverit zhivoe nalichie `LoreSystems` v `02_HECTON_WORLD`.
+- Garantirovat, chto kornevoy lore owner realno podnimaetsya v production path.
+- Proverit, chto sistemy ne suschestvuyut tolko na bumage.
 
 ## Do-Not-Touch Scope
 
-- Не лезть в menu/pause UI.
-- Не трогать save/load shell.
-- Не переписывать world streaming/scatter.
-- Не смешивать content authoring с performance work.
+- Ne lezt v menu/pause UI.
+- Ne trogat save/load shell.
+- Ne perepisyvat world streaming/scatter.
+- Ne smeshivat content authoring s performance work.
 
-## Как дробить по агентам
+## Kak drobit po agentam
 
-Агент 1:
+Agent 1:
 - `HectonNarrativeDirector.cs`
 - `NarrativeDiscovery.cs`
 - `NarrativeEvents.cs`
 - `Registries`, `DepthZones`
-- Задача: narrative spine и discovery layer.
+- Zadacha: narrative spine i discovery layer.
 
-Агент 2:
+Agent 2:
 - `QuestManager.cs`
 - `QuestData.cs`
 - `QuestEvents.cs`
 - `Data/Lore/Quests`
-- Задача: quest content и activation.
+- Zadacha: quest content i activation.
 
-Агент 3:
+Agent 3:
 - `AudioLogSystem.cs`
 - `AudioLogData.cs`
 - `AudioLogPickup.cs`
 - `PDADataLogTab.cs`
 - `Data/Lore/AudioLogs`
-- Задача: audio logs и PDA flow.
+- Zadacha: audio logs i PDA flow.
 
-Агент 4:
+Agent 4:
 - `SuitUpgradeManager.cs`
 - `SuitUpgradeData.cs`
 - `SuitHUDProfile.cs`
 - `SuitHUDPresentationController.cs`
 - `Data/Lore/SuitUpgrades`
-- Задача: suit progression.
+- Zadacha: suit progression.
 
-Агент 5:
+Agent 5:
 - `HectonLoreSystemsRoot.cs`
 - scene wiring / validation tooling
-- Задача: live bootstrap integration.
+- Zadacha: live bootstrap integration.
 
 ## Expected Result
 
-- Narrative/progression перестаёт быть пустым каркасом.
-- Первый час игры получает реальный content spine.
-- Quest/log/upgrade блоки существуют не только в коде.
+- Narrative/progression perestaet byt pustym karkasom.
+- Pervyy chas igry poluchaet realnyy content spine.
+- Quest/log/upgrade bloki suschestvuyut ne tolko v kode.
 
 ## Exit Criteria
 
-- Data roots больше не пустые.
-- В production world path реально живут lore systems.
-- Игрок может пройти хотя бы один связный narrative/progression маршрут.
+- Data roots bolshe ne pustye.
+- V production world path realno zhivut lore systems.
+- Igrok mozhet proyti hotya by odin svyaznyy narrative/progression marshrut.

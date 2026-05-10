@@ -792,7 +792,7 @@ namespace Hecton8.UI
 
             _nextPlayerTransformResolveFrame = frame + PlayerTransformResolveIntervalFrames;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform scenePlayerTransform))
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform scenePlayerTransform))
             {
                 AssignPlayerTransform(scenePlayerTransform);
                 ResolveSurvivalSystemForCachedPlayer();
@@ -1001,7 +1001,7 @@ namespace Hecton8.UI
             mesh.SetVertices(vertices);
             mesh.uv = uvs;
             mesh.SetTriangles(triangles, 0);
-            mesh.UploadMeshData(false);
+            mesh.UploadMeshData(true);
             return mesh;
         }
 

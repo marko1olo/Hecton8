@@ -5,196 +5,196 @@ Status: ARCHIVED
 
 # World Chunk Streaming Enterprise Plan
 
-## Главная цель
+## Glavnaya tsel
 
-Сделать **одну взрослую чанковую архитектуру для всего мира**, а не отдельные костыли:
+Sdelat **odnu vzrosluyu chankovuyu arhitekturu dlya vsego mira**, a ne otdelnye kostyli:
 
-- LOD рельефа и больших кусков мира
-- флора
-- обломки
-- ресурсы
-- фауна
-- постройки игрока
-- крупные угрозы
+- LOD relefa i bolshih kuskov mira
+- flora
+- oblomki
+- resursy
+- fauna
+- postroyki igroka
+- krupnye ugrozy
 
-Простыми словами:
-- мир `15 x 15 км` нельзя держать одной и той же логикой “всё рядом с игроком”
-- у каждого слоя мира должен быть свой режим жизни
-- но все они должны жить **по одной общей сетке и одним общим правилам**
+Prostymi slovami:
+- mir `15 x 15 km` nelzya derzhat odnoy i toy zhe logikoy “vse ryadom s igrokom”
+- u kazhdogo sloya mira dolzhen byt svoy rezhim zhizni
+- no vse oni dolzhny zhit **po odnoy obschey setke i odnim obschim pravilam**
 
-## Что есть сейчас по факту
+## Chto est seychas po faktu
 
-У нас уже есть хорошие куски:
+U nas uzhe est horoshie kuski:
 
 - `WorldStreamingDirector`
-  - уже умеет подстраивать стриминг по глубине и скорости
+  - uzhe umeet podstraivat striming po glubine i skorosti
 - `WorldSliceDirector`
-  - уже умеет включать и ослаблять интересные точки мира
+  - uzhe umeet vklyuchat i oslablyat interesnye tochki mira
 - `ScatterBudgetController`
-  - уже управляет бюджетами ресурсов и коллайдеров
+  - uzhe upravlyaet byudzhetami resursov i kollayderov
 - `ScavengePopulator`
-  - уже реально живёт по чанкам
+  - uzhe realno zhivet po chankam
 - `HectonRockManager`
-  - уже держит камни по чанкам
+  - uzhe derzhit kamni po chankam
 - `FaunaDirector`
-  - пока ещё только кольцо вокруг игрока, не полноценные чанки
+  - poka esche tolko koltso vokrug igroka, ne polnotsennye chanki
 
-Простыми словами:
-- фундамент уже есть
-- но сейчас это ещё не одна взрослая система
-- это набор сильных, но частично разрозненных кусков
+Prostymi slovami:
+- fundament uzhe est
+- no seychas eto esche ne odna vzroslaya sistema
+- eto nabor silnyh, no chastichno razroznennyh kuskov
 
-## Какая архитектура нужна
+## Kakaya arhitektura nuzhna
 
-### 1. Одна общая сетка мира
+### 1. Odna obschaya setka mira
 
-Стартовая общая сетка:
+Startovaya obschaya setka:
 
-- размер чанка: `192 x 192 м`
-- внутренняя клетка чанка: `64 x 64 м`
-- размер большой зоны для крупных угроз: `768 м`
+- razmer chanka: `192 x 192 m`
+- vnutrennyaya kletka chanka: `64 x 64 m`
+- razmer bolshoy zony dlya krupnyh ugroz: `768 m`
 
-Зачем:
-- ресурсы, флора, обломки, постройки и существа должны говорить на одном пространственном языке
-- иначе у нас каждый слой будет жить в своём мире
+Zachem:
+- resursy, flora, oblomki, postroyki i suschestva dolzhny govorit na odnom prostranstvennom yazyke
+- inache u nas kazhdyy sloy budet zhit v svoem mire
 
-### 2. Не один режим стриминга, а 4 кольца мира
+### 2. Ne odin rezhim striminga, a 4 koltsa mira
 
-#### Ближняя полная симуляция
-- около `0-180 м`
-- тут живут:
-  - полный AI
-  - коллайдеры
-  - интерактивные ресурсы
-  - ближайшие постройки
-  - плотная флора
+#### Blizhnyaya polnaya simulyatsiya
+- okolo `0-180 m`
+- tut zhivut:
+  - polnyy AI
+  - kollaydery
+  - interaktivnye resursy
+  - blizhayshie postroyki
+  - plotnaya flora
 
-#### Средняя симуляция
-- около `180-420 м`
-- тут живут:
-  - упрощённые существа
-  - упрощённые интерактивные объекты
-  - облегчённые обновления построек
+#### Srednyaya simulyatsiya
+- okolo `180-420 m`
+- tut zhivut:
+  - uproschennye suschestva
+  - uproschennye interaktivnye obekty
+  - oblegchennye obnovleniya postroek
 
-#### Дальняя видимая зона
-- около `420-900 м`
-- тут живут:
+#### Dalnyaya vidimaya zona
+- okolo `420-900 m`
+- tut zhivut:
   - LOD
-  - визуальные прокси
-  - дальние косяки
-  - силуэты
-  - дальние крупные ориентиры
+  - vizualnye proksi
+  - dalnie kosyaki
+  - siluety
+  - dalnie krupnye orientiry
 
-#### Дальняя зона данных
-- около `900-1800 м`
-- тут мир живёт только как данные:
-  - что в чанке вообще есть
-  - насколько он живой
-  - насколько он опасный
-  - был ли он изменён игроком
+#### Dalnyaya zona dannyh
+- okolo `900-1800 m`
+- tut mir zhivet tolko kak dannye:
+  - chto v chanke voobsche est
+  - naskolko on zhivoy
+  - naskolko on opasnyy
+  - byl li on izmenen igrokom
 
-### 3. У каждого слоя мира своя стоимость
+### 3. U kazhdogo sloya mira svoya stoimost
 
-#### Рельеф и большие куски мира
-- самый важный визуальный слой
-- должен грузиться раньше всего
+#### Relef i bolshie kuski mira
+- samyy vazhnyy vizualnyy sloy
+- dolzhen gruzitsya ranshe vsego
 
-#### Флора
-- может быть массовой
-- должна иметь дальние и ближние режимы
+#### Flora
+- mozhet byt massovoy
+- dolzhna imet dalnie i blizhnie rezhimy
 
-#### Обломки
-- часть может жить как инстансы
-- часть как интерактивные точки
+#### Oblomki
+- chast mozhet zhit kak instansy
+- chast kak interaktivnye tochki
 
-#### Ресурсы
-- обязаны быть чанковыми
-- обязаны уважать сохранения
+#### Resursy
+- obyazany byt chankovymi
+- obyazany uvazhat sohraneniya
 
-#### Фауна
-- массовая жизнь не должна быть вся на полном AI
+#### Fauna
+- massovaya zhizn ne dolzhna byt vsya na polnom AI
 
-#### Постройки
-- должны жить по чанкам тоже
-- но не терять сохранённое состояние
+#### Postroyki
+- dolzhny zhit po chankam tozhe
+- no ne teryat sohranennoe sostoyanie
 
-#### Крупные угрозы
-- не по маленьким чанкам
-- а по большим зонам
+#### Krupnye ugrozy
+- ne po malenkim chankam
+- a po bolshim zonam
 
-## Что уже заложено кодом в этом блоке
+## Chto uzhe zalozheno kodom v etom bloke
 
-Я добавил общую основу:
+Ya dobavil obschuyu osnovu:
 
 - [WorldStreamingLayer.cs](C:/hades/Hecton8/Assets/_Project/Scripts/WorldStreamingLayer.cs)
 - [WorldChunkCoordinate.cs](C:/hades/Hecton8/Assets/_Project/Scripts/WorldChunkCoordinate.cs)
 - [WorldChunkStreamingProfile.cs](C:/hades/Hecton8/Assets/_Project/Scripts/WorldChunkStreamingProfile.cs)
 - [WorldChunkStreamingAuthoring.cs](C:/hades/Hecton8/Assets/_Project/Scripts/Editor/WorldChunkStreamingAuthoring.cs)
 
-Что это даёт:
-- единый список слоёв стриминга мира
-- единый перевод мировых координат в чанк
-- единый asset-профиль размеров и колец стриминга
-- editor-меню для сборки профиля
+Chto eto daet:
+- edinyy spisok sloev striminga mira
+- edinyy perevod mirovyh koordinat v chank
+- edinyy asset-profil razmerov i kolets striminga
+- editor-menyu dlya sborki profilya
 
-## Ближайший правильный порядок работ
+## Blizhayshiy pravilnyy poryadok rabot
 
-### Этап 1. Зафиксировать общий профиль мира
+### Etap 1. Zafiksirovat obschiy profil mira
 
-Собрать asset:
+Sobrat asset:
 - `WorldChunkStreamingProfile`
 
-И сделать его источником правды для:
+I sdelat ego istochnikom pravdy dlya:
 - `WorldStreamingDirector`
 - `ScatterBudgetController`
-- следующих чанковых систем
+- sleduyuschih chankovyh sistem
 
-### Этап 2. Перевести фауну на реальные чанки
+### Etap 2. Perevesti faunu na realnye chanki
 
-Не “кольцо вокруг игрока”, а:
-- активные чанки
-- уровни симуляции
-- большие зоны крупных угроз
+Ne “koltso vokrug igroka”, a:
+- aktivnye chanki
+- urovni simulyatsii
+- bolshie zony krupnyh ugroz
 
-### Этап 3. Перевести ресурсы и интерактивные точки в общую координатную схему
+### Etap 3. Perevesti resursy i interaktivnye tochki v obschuyu koordinatnuyu shemu
 
-Не ломая текущий `ScavengePopulator`, а выровнять его с общей сеткой мира.
+Ne lomaya tekuschiy `ScavengePopulator`, a vyrovnyat ego s obschey setkoy mira.
 
-### Этап 4. Перевести флору и обломки на ту же схему
+### Etap 4. Perevesti floru i oblomki na tu zhe shemu
 
-Чтобы:
-- дальняя визуальная масса жила дёшево
-- ближний слой был интерактивнее
+Chtoby:
+- dalnyaya vizualnaya massa zhila deshevo
+- blizhniy sloy byl interaktivnee
 
-### Этап 5. Подтянуть постройки игрока
+### Etap 5. Podtyanut postroyki igroka
 
-Постройки должны:
-- нормально сохраняться
-- подгружаться чанками
-- не пытаться жить как “всегда активный весь мир”
+Postroyki dolzhny:
+- normalno sohranyatsya
+- podgruzhatsya chankami
+- ne pytatsya zhit kak “vsegda aktivnyy ves mir”
 
-## Честный вывод
+## Chestnyy vyvod
 
-### Чего нельзя делать
+### Chego nelzya delat
 
-Нельзя делать:
-- отдельные чанки только для фауны
-- отдельные чанки только для ресурсов
-- отдельные радиусы только для построек
+Nelzya delat:
+- otdelnye chanki tolko dlya fauny
+- otdelnye chanki tolko dlya resursov
+- otdelnye radiusy tolko dlya postroek
 
-Это даст:
-- кашу
-- рассинхрон
-- тяжёлую поддержку
+Eto dast:
+- kashu
+- rassinhron
+- tyazheluyu podderzhku
 
-### Что надо делать
+### Chto nado delat
 
-Надо делать:
-- один общий язык мира
-- одна сетка
-- один профиль
-- разные режимы для разных слоёв
+Nado delat:
+- odin obschiy yazyk mira
+- odna setka
+- odin profil
+- raznye rezhimy dlya raznyh sloev
 
-Простыми словами:
-- мир должен быть не просто большим
-- а большим **системно**
+Prostymi slovami:
+- mir dolzhen byt ne prosto bolshim
+- a bolshim **sistemno**

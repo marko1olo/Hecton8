@@ -5,10 +5,10 @@ Status: ARCHIVED
 
 # HECTON-8 — Shell / UI Workstream
 
-Дата: 2026-04-13  
-Статус: PENDING VERIFICATION
+Data: 2026-04-13  
+Status: PENDING VERIFICATION
 
-## Что закрывает этот фронт
+## Chto zakryvaet etot front
 
 - Main Menu
 - Pause Menu
@@ -17,10 +17,10 @@ Status: ARCHIVED
 - Option persistence
 - Save/load UX
 
-## Почему это один из главных фронтов
+## Pochemu eto odin iz glavnyh frontov
 
-Сейчас shell существует, но выглядит как production foundation, а не как законченный пользовательский слой.  
-Отдельного owner'а для общего persistence настроек не видно. Есть только фрагменты.
+Seychas shell suschestvuet, no vyglyadit kak production foundation, a ne kak zakonchennyy polzovatelskiy sloy.  
+Otdelnogo owner'a dlya obschego persistence nastroek ne vidno. Est tolko fragmenty.
 
 ## Owner files
 
@@ -35,85 +35,85 @@ Status: ARCHIVED
 - `Assets/_Project/Scripts/Input/InputManager.cs`
 - `Assets/_Project/Scripts/LocalizationManager.cs`
 
-## Основные задачи
+## Osnovnye zadachi
 
 ### Front A. Main menu flow
 
-- Добить `MainMenuController`.
-- Убрать пустые или тупиковые состояния.
-- Довести load/new game flow до одного понятного сценария.
-- Проверить возвраты, cancel-paths, фокус и default selection.
+- Dobit `MainMenuController`.
+- Ubrat pustye ili tupikovye sostoyaniya.
+- Dovesti load/new game flow do odnogo ponyatnogo stsenariya.
+- Proverit vozvraty, cancel-paths, fokus i default selection.
 
 ### Front B. Pause shell
 
-- Довести `PauseMenuController` и `PauseMenuHost`.
-- Проверить секции `Main / Saves / Help / Settings`.
-- Исправить default focus и возврат из секций.
-- Проверить path `pause -> save/load -> return`.
+- Dovesti `PauseMenuController` i `PauseMenuHost`.
+- Proverit sektsii `Main / Saves / Help / Settings`.
+- Ispravit default focus i vozvrat iz sektsiy.
+- Proverit path `pause -> save/load -> return`.
 
 ### Front C. Rebinding UX
 
-- Добить `PauseControlsPanel`.
-- Добить `PDAControlsRebindUI`.
-- Проверить reset/save/apply/cancel.
-- Проверить, что строки rebinding не разваливаются при пустых или missing bindings.
+- Dobit `PauseControlsPanel`.
+- Dobit `PDAControlsRebindUI`.
+- Proverit reset/save/apply/cancel.
+- Proverit, chto stroki rebinding ne razvalivayutsya pri pustyh ili missing bindings.
 
 ### Front D. Options persistence
 
-- Вынести отдельного owner'а для настроек, если его реально нет.
-- Сохранение не только input overrides, но и user options.
-- Зафиксировать contract: какие настройки живут, где хранятся, кто их читает.
+- Vynesti otdelnogo owner'a dlya nastroek, esli ego realno net.
+- Sohranenie ne tolko input overrides, no i user options.
+- Zafiksirovat contract: kakie nastroyki zhivut, gde hranyatsya, kto ih chitaet.
 
 ### Front E. Save/load user trust
 
-- Проверить сообщения об ошибках.
-- Проверить поведение при битом сейве или пустом слоте.
-- Проверить согласованность с `SaveManager`.
+- Proverit soobscheniya ob oshibkah.
+- Proverit povedenie pri bitom seyve ili pustom slote.
+- Proverit soglasovannost s `SaveManager`.
 
 ## Do-Not-Touch Scope
 
-- Не лезть в narrative systems.
-- Не лезть в world bootstrap.
-- Не править progression data.
-- Не менять save backend contract без отдельного анализа зависимостей.
+- Ne lezt v narrative systems.
+- Ne lezt v world bootstrap.
+- Ne pravit progression data.
+- Ne menyat save backend contract bez otdelnogo analiza zavisimostey.
 
-## Как дробить по агентам
+## Kak drobit po agentam
 
-Агент 1:
+Agent 1:
 - `MainMenuController.cs`
 - `SaveSlotUI.cs`
-- Задача: menu flow и save/load UX.
+- Zadacha: menu flow i save/load UX.
 
-Агент 2:
+Agent 2:
 - `PauseMenuController.cs`
 - `PauseMenuHost.cs`
-- Задача: pause shell и section flow.
+- Zadacha: pause shell i section flow.
 
-Агент 3:
+Agent 3:
 - `PauseControlsPanel.cs`
-- Задача: rebinding UI в pause.
+- Zadacha: rebinding UI v pause.
 
-Агент 4:
+Agent 4:
 - `PDAControlsRebindUI.cs`
-- Задача: rebinding UI в PDA.
+- Zadacha: rebinding UI v PDA.
 
-Агент 5:
-- новый owner под option persistence
-- минимальные точки входа в existing UI
-- Задача: общий persistence слой настроек.
+Agent 5:
+- novyy owner pod option persistence
+- minimalnye tochki vhoda v existing UI
+- Zadacha: obschiy persistence sloy nastroek.
 
 ## Expected Result
 
-- Main menu не ведёт в тупики.
-- Pause стабилен.
-- Rebinding не выглядит как полузаглушка.
-- Настройки реально сохраняются.
-- Пользовательский shell перестаёт быть weak point.
+- Main menu ne vedet v tupiki.
+- Pause stabilen.
+- Rebinding ne vyglyadit kak poluzaglushka.
+- Nastroyki realno sohranyayutsya.
+- Polzovatelskiy shell perestaet byt weak point.
 
 ## Exit Criteria
 
-- Нет пустых panel states.
-- Все back/cancel paths закрыты.
-- Input overrides сохраняются и грузятся.
-- Есть единый owner настроек.
-- Проверен базовый сценарий: main menu -> world -> pause -> settings -> save/load -> return.
+- Net pustyh panel states.
+- Vse back/cancel paths zakryty.
+- Input overrides sohranyayutsya i gruzyatsya.
+- Est edinyy owner nastroek.
+- Proveren bazovyy stsenariy: main menu -> world -> pause -> settings -> save/load -> return.

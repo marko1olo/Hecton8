@@ -7,7 +7,6 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 public class HectonPhysicsSkinGenerator : EditorWindow
 {
@@ -50,6 +49,23 @@ public class HectonPhysicsSkinGenerator : EditorWindow
 
     // Scroll
     private Vector2 scrollPos;
+
+    // COLD ALLOC: List<Vector3>[65536] - editor mesh source vertex extraction scratch - owner: HectonPhysicsSkinGenerator
+    private readonly List<Vector3> _sourceVertices = new List<Vector3>(65536);
+    // COLD ALLOC: List<int>[196608] - editor mesh source triangle extraction scratch - owner: HectonPhysicsSkinGenerator
+    private readonly List<int> _sourceTriangles = new List<int>(196608);
+    // COLD ALLOC: List<int>[196608] - editor mesh submesh triangle extraction scratch - owner: HectonPhysicsSkinGenerator
+    private readonly List<int> _sourceSubmeshTriangles = new List<int>(196608);
+    // COLD ALLOC: List<Vector3>[65536] - editor chunk vertex scratch - owner: HectonPhysicsSkinGenerator
+    private readonly List<Vector3> _chunkVertices = new List<Vector3>(65536);
+    // COLD ALLOC: List<int>[196608] - editor chunk triangle scratch - owner: HectonPhysicsSkinGenerator
+    private readonly List<int> _chunkTriangles = new List<int>(196608);
+    // COLD ALLOC: List<GameObject>[256] - editor batch selection scratch - owner: HectonPhysicsSkinGenerator
+    private readonly List<GameObject> _batchObjects = new List<GameObject>(256);
+    // COLD ALLOC: List<Vector3>[65536] - editor scene preview vertex extraction scratch - owner: HectonPhysicsSkinGenerator
+    private readonly List<Vector3> _previewVertices = new List<Vector3>(65536);
+    // COLD ALLOC: List<int>[196608] - editor scene preview triangle extraction scratch - owner: HectonPhysicsSkinGenerator
+    private readonly List<int> _previewTriangles = new List<int>(196608);
 
     [MenuItem("Hecton/Physics Skin Generator")]
     public static void ShowWindow()
@@ -378,7 +394,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         {
             MeshFilter mf = go.GetComponent<MeshFilter>();
             string info = mf != null && mf.sharedMesh != null
-                ? $"{mf.sharedMesh.triangles.Length / 3} tris"
+                ? $"{CountMeshTriangles(mf.sharedMesh)} tris"
                 : "no mesh";
             EditorGUILayout.LabelField($"• {go.name} ({info})");
         }
@@ -407,17 +423,16 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         if (mf == null) return;
 
         Mesh sourceMesh = mf.sharedMesh;
-        Vector3[] srcVerts = sourceMesh.vertices;
-        int[] srcTris = sourceMesh.triangles;
-        sourceTriCount = srcTris.Length / 3;
-        sourceVertCount = srcVerts.Length;
+        ExtractMeshData(sourceMesh, _sourceVertices, _sourceTriangles);
+        sourceTriCount = _sourceTriangles.Count / 3;
+        sourceVertCount = _sourceVertices.Count;
 
         // Run pipeline
-        PipelineResult result = RunPipeline(srcVerts, srcTris, gridPrecision);
+        PipelineResult result = RunPipeline(_sourceVertices, _sourceTriangles, gridPrecision);
 
-        if (result.tris.Length < 3)
+        if (result.tris.Count < 3)
         {
-            SetStatus($"Result: {result.tris.Length / 3} tris. Lower Grid Precision!", MessageType.Error);
+            SetStatus($"Result: {result.tris.Count / 3} tris. Lower Grid Precision!", MessageType.Error);
             return;
         }
 
@@ -434,7 +449,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         ApplyToScene(target, resultMesh);
 
         // Stats
-        generatedTriCount = result.tris.Length / 3;
+        generatedTriCount = result.tris.Count / 3;
         generatedVertCount = result.verts.Count;
         previewMesh = resultMesh;
         previewTarget = target;
@@ -458,10 +473,9 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         if (mf == null) return;
 
         Mesh sourceMesh = mf.sharedMesh;
-        Vector3[] srcVerts = sourceMesh.vertices;
-        int[] srcTris = sourceMesh.triangles;
-        sourceTriCount = srcTris.Length / 3;
-        sourceVertCount = srcVerts.Length;
+        ExtractMeshData(sourceMesh, _sourceVertices, _sourceTriangles);
+        sourceTriCount = _sourceTriangles.Count / 3;
+        sourceVertCount = _sourceVertices.Count;
 
         // Calculate bounds
         Bounds bounds = sourceMesh.bounds;
@@ -513,33 +527,32 @@ public class HectonPhysicsSkinGenerator : EditorWindow
                     expandedBounds.Expand(pad);
 
                     // Collect triangles overlapping this chunk
-                    List<Vector3> chunkVerts = new List<Vector3>();
-                    List<int> chunkTris = new List<int>();
+                    _chunkVertices.Clear();
+                    _chunkTriangles.Clear();
                     Dictionary<int, int> vertRemap = new Dictionary<int, int>();
 
-                    for (int i = 0; i < srcTris.Length; i += 3)
+                    for (int i = 0; i < _sourceTriangles.Count; i += 3)
                     {
-                        int i0 = srcTris[i], i1 = srcTris[i + 1], i2 = srcTris[i + 2];
-                        Vector3 v0 = srcVerts[i0], v1 = srcVerts[i1], v2 = srcVerts[i2];
+                        int i0 = _sourceTriangles[i], i1 = _sourceTriangles[i + 1], i2 = _sourceTriangles[i + 2];
+                        Vector3 v0 = _sourceVertices[i0], v1 = _sourceVertices[i1], v2 = _sourceVertices[i2];
 
                         // Triangle overlaps chunk if any vertex is inside expanded bounds
                         if (expandedBounds.Contains(v0) ||
                             expandedBounds.Contains(v1) ||
                             expandedBounds.Contains(v2))
                         {
-                            chunkTris.Add(RemapVert(i0, srcVerts, chunkVerts, vertRemap));
-                            chunkTris.Add(RemapVert(i1, srcVerts, chunkVerts, vertRemap));
-                            chunkTris.Add(RemapVert(i2, srcVerts, chunkVerts, vertRemap));
+                            _chunkTriangles.Add(RemapVert(i0, _sourceVertices, _chunkVertices, vertRemap));
+                            _chunkTriangles.Add(RemapVert(i1, _sourceVertices, _chunkVertices, vertRemap));
+                            _chunkTriangles.Add(RemapVert(i2, _sourceVertices, _chunkVertices, vertRemap));
                         }
                     }
 
-                    if (chunkTris.Count < 3) continue;
+                    if (_chunkTriangles.Count < 3) continue;
 
                     // Run pipeline on chunk
-                    PipelineResult result = RunPipeline(
-                        chunkVerts.ToArray(), chunkTris.ToArray(), gridPrecision);
+                    PipelineResult result = RunPipeline(_chunkVertices, _chunkTriangles, gridPrecision);
 
-                    if (result.tris.Length < 3) continue;
+                    if (result.tris.Count < 3) continue;
 
                     // Clip output verts to actual chunk bounds (not expanded)
                     // to avoid overlap between chunks — we keep all since weld handles borders
@@ -566,7 +579,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
                                      | MeshColliderCookingOptions.WeldColocatedVertices;
                     mc.sharedMesh = chunkMesh;
 
-                    totalGenTris += result.tris.Length / 3;
+                    totalGenTris += result.tris.Count / 3;
                     totalGenVerts += result.verts.Count;
                     chunkCount++;
                 }
@@ -588,7 +601,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         SceneView.RepaintAll();
     }
 
-    private static int RemapVert(int srcIdx, Vector3[] srcVerts,
+    private static int RemapVert(int srcIdx, List<Vector3> srcVerts,
         List<Vector3> outVerts, Dictionary<int, int> remap)
     {
         if (remap.TryGetValue(srcIdx, out int mapped))
@@ -608,17 +621,16 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         if (mf == null) return;
 
         Mesh sourceMesh = mf.sharedMesh;
-        Vector3[] srcVerts = sourceMesh.vertices;
-        int[] srcTris = sourceMesh.triangles;
-        sourceTriCount = srcTris.Length / 3;
-        sourceVertCount = srcVerts.Length;
+        ExtractMeshData(sourceMesh, _sourceVertices, _sourceTriangles);
+        sourceTriCount = _sourceTriangles.Count / 3;
+        sourceVertCount = _sourceVertices.Count;
 
-        PipelineResult result = RunPipeline(srcVerts, srcTris, gridPrecision);
+        PipelineResult result = RunPipeline(_sourceVertices, _sourceTriangles, gridPrecision);
 
-        generatedTriCount = result.tris.Length / 3;
+        generatedTriCount = result.tris.Count / 3;
         generatedVertCount = result.verts.Count;
 
-        if (result.tris.Length >= 3)
+        if (result.tris.Count >= 3)
         {
             previewMesh = BuildMesh(result, "preview_temp");
             previewTarget = targetObject;
@@ -638,13 +650,22 @@ public class HectonPhysicsSkinGenerator : EditorWindow
     // ═══════════════════════════════════════════════════════════════════
     private void BatchGenerate()
     {
-        var objects = Selection.gameObjects
-            .Where(go => go.GetComponent<MeshFilter>() != null)
-            .Where(go => go.GetComponent<MeshFilter>().sharedMesh != null)
-            .Where(go => go.GetComponent<MeshFilter>().sharedMesh.isReadable)
-            .ToArray();
+        _batchObjects.Clear();
+        GameObject[] selection = Selection.gameObjects;
+        for (int i = 0; i < selection.Length; i++)
+        {
+            GameObject go = selection[i];
+            if (go == null)
+                continue;
 
-        if (objects.Length == 0)
+            MeshFilter filter = go.GetComponent<MeshFilter>();
+            if (filter == null || filter.sharedMesh == null || !filter.sharedMesh.isReadable)
+                continue;
+
+            _batchObjects.Add(go);
+        }
+
+        if (_batchObjects.Count == 0)
         {
             SetStatus("No valid meshes in selection.", MessageType.Error);
             return;
@@ -656,26 +677,26 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         int successCount = 0;
         int failCount = 0;
 
-        for (int i = 0; i < objects.Length; i++)
+        for (int i = 0; i < _batchObjects.Count; i++)
         {
             EditorUtility.DisplayProgressBar("Batch Generating...",
-                $"Processing {objects[i].name} ({i + 1}/{objects.Length})",
-                (float)i / objects.Length);
+                $"Processing {_batchObjects[i].name} ({i + 1}/{_batchObjects.Count})",
+                (float)i / _batchObjects.Count);
 
             try
             {
-                targetObject = objects[i];
+                targetObject = _batchObjects[i];
                 UpdateSourceStats();
 
                 if (autoGridFromBounds)
                     gridPrecision = EstimateGridPrecision(targetTriCount);
 
-                GenerateSingle(objects[i]);
+                GenerateSingle(_batchObjects[i]);
                 successCount++;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"[HectonSkin] Failed on {objects[i].name}: {e.Message}");
+                Debug.LogError($"[HectonSkin] Failed on {_batchObjects[i].name}: {e.Message}");
                 failCount++;
             }
         }
@@ -692,17 +713,17 @@ public class HectonPhysicsSkinGenerator : EditorWindow
     private struct PipelineResult
     {
         public List<Vector3> verts;
-        public int[] tris;
+        public List<int> tris;
     }
 
-    private PipelineResult RunPipeline(Vector3[] srcVerts, int[] srcTris, float cellSize)
+    private PipelineResult RunPipeline(List<Vector3> srcVerts, List<int> srcTris, float cellSize)
     {
         float invCell = 1f / cellSize;
 
         // ── 1. Voxelize ──
         Dictionary<Vector3Int, List<int>> voxelMap = new Dictionary<Vector3Int, List<int>>();
 
-        for (int i = 0; i < srcVerts.Length; i++)
+        for (int i = 0; i < srcVerts.Count; i++)
         {
             Vector3Int key = ToVoxel(srcVerts[i], invCell);
             if (!voxelMap.ContainsKey(key))
@@ -721,15 +742,15 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         }
 
         // ── 3. Vertex → voxel lookup ──
-        Vector3Int[] vertToVoxel = new Vector3Int[srcVerts.Length];
-        for (int i = 0; i < srcVerts.Length; i++)
+        Vector3Int[] vertToVoxel = new Vector3Int[srcVerts.Count];
+        for (int i = 0; i < srcVerts.Count; i++)
             vertToVoxel[i] = ToVoxel(srcVerts[i], invCell);
 
         // ── 4. Shell extraction: only tris spanning 3 different voxels ──
         HashSet<TriKey> uniqueTris = new HashSet<TriKey>();
         List<Vector3Int> shellVoxels = new List<Vector3Int>();
 
-        for (int i = 0; i < srcTris.Length; i += 3)
+        for (int i = 0; i < srcTris.Count; i += 3)
         {
             Vector3Int vA = vertToVoxel[srcTris[i]];
             Vector3Int vB = vertToVoxel[srcTris[i + 1]];
@@ -761,9 +782,9 @@ public class HectonPhysicsSkinGenerator : EditorWindow
             }
         }
 
-        int[] outTris = new int[shellVoxels.Count];
+        List<int> outTris = new List<int>(shellVoxels.Count);
         for (int i = 0; i < shellVoxels.Count; i++)
-            outTris[i] = voxelToIdx[shellVoxels[i]];
+            outTris.Add(voxelToIdx[shellVoxels[i]]);
 
         // ── 6. Weld vertices ──
         WeldVertices(ref outVerts, ref outTris, weldThreshold);
@@ -833,7 +854,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         }
     }
 
-    private static void WeldVertices(ref List<Vector3> verts, ref int[] tris, float threshold)
+    private static void WeldVertices(ref List<Vector3> verts, ref List<int> tris, float threshold)
     {
         float threshSq = threshold * threshold;
         int n = verts.Count;
@@ -859,16 +880,16 @@ public class HectonPhysicsSkinGenerator : EditorWindow
             remap[i] = root;
         }
 
-        for (int i = 0; i < tris.Length; i++)
+        for (int i = 0; i < tris.Count; i++)
             tris[i] = remap[tris[i]];
     }
 
-    private static void RemoveDegenerateTris(ref List<Vector3> verts, ref int[] tris, float minArea)
+    private static void RemoveDegenerateTris(ref List<Vector3> verts, ref List<int> tris, float minArea)
     {
-        List<int> clean = new List<int>(tris.Length);
+        List<int> clean = new List<int>(tris.Count);
         float minAreaSq4 = minArea * minArea * 4f;
 
-        for (int i = 0; i < tris.Length; i += 3)
+        for (int i = 0; i < tris.Count; i += 3)
         {
             int a = tris[i], b = tris[i + 1], c = tris[i + 2];
             if (a == b || b == c || a == c) continue;
@@ -880,10 +901,11 @@ public class HectonPhysicsSkinGenerator : EditorWindow
             clean.Add(b);
             clean.Add(c);
         }
-        tris = clean.ToArray();
+        tris.Clear();
+        tris.AddRange(clean);
     }
 
-    private static void RemoveUnusedVertices(ref List<Vector3> verts, ref int[] tris)
+    private static void RemoveUnusedVertices(ref List<Vector3> verts, ref List<int> tris)
     {
         bool[] used = new bool[verts.Count];
         foreach (int t in tris) used[t] = true;
@@ -900,7 +922,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
             }
         }
 
-        for (int i = 0; i < tris.Length; i++)
+        for (int i = 0; i < tris.Count; i++)
             tris[i] = remap[tris[i]];
 
         verts = compacted;
@@ -1061,9 +1083,37 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         MeshFilter mf = targetObject.GetComponent<MeshFilter>();
         if (mf == null || mf.sharedMesh == null) return;
 
-        sourceTriCount = mf.sharedMesh.triangles.Length / 3;
+        sourceTriCount = CountMeshTriangles(mf.sharedMesh);
         sourceVertCount = mf.sharedMesh.vertexCount;
         sourceBoundsSize = mf.sharedMesh.bounds.size;
+    }
+
+    private void ExtractMeshData(Mesh mesh, List<Vector3> vertices, List<int> triangles)
+    {
+        vertices.Clear();
+        triangles.Clear();
+        if (mesh == null)
+            return;
+
+        mesh.GetVertices(vertices);
+        for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+        {
+            _sourceSubmeshTriangles.Clear();
+            mesh.GetTriangles(_sourceSubmeshTriangles, subMeshIndex, true);
+            triangles.AddRange(_sourceSubmeshTriangles);
+        }
+    }
+
+    private static int CountMeshTriangles(Mesh mesh)
+    {
+        if (mesh == null)
+            return 0;
+
+        long indexCount = 0L;
+        for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+            indexCount += mesh.GetIndexCount(subMeshIndex);
+
+        return (int)global::System.Math.Min(indexCount / 3L, int.MaxValue);
     }
 
     private void RemoveExisting(GameObject target)
@@ -1137,14 +1187,16 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         Handles.matrix = previewTarget.transform.localToWorldMatrix;
         Handles.color = wireColor;
 
-        Vector3[] verts = previewMesh.vertices;
-        int[] tris = previewMesh.triangles;
+        _previewVertices.Clear();
+        _previewTriangles.Clear();
+        previewMesh.GetVertices(_previewVertices);
+        previewMesh.GetTriangles(_previewTriangles, 0, true);
 
-        for (int i = 0; i < tris.Length; i += 3)
+        for (int i = 0; i < _previewTriangles.Count; i += 3)
         {
-            Vector3 a = verts[tris[i]];
-            Vector3 b = verts[tris[i + 1]];
-            Vector3 c = verts[tris[i + 2]];
+            Vector3 a = _previewVertices[_previewTriangles[i]];
+            Vector3 b = _previewVertices[_previewTriangles[i + 1]];
+            Vector3 c = _previewVertices[_previewTriangles[i + 2]];
 
             Handles.DrawLine(a, b);
             Handles.DrawLine(b, c);
@@ -1153,7 +1205,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
 
         // Draw vert count at center
         Handles.Label(previewMesh.bounds.center,
-            $"  {tris.Length / 3} tris",
+            $"  {_previewTriangles.Count / 3} tris",
             EditorStyles.whiteBoldLabel);
     }
 }

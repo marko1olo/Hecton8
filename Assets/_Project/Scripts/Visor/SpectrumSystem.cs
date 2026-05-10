@@ -1,21 +1,21 @@
 // ============================================================================
 // HECTON-8 — SpectrumSystem.cs
-// Система режимов визора Hecton-OS: SPECTRUM вкладка.
+// Sistema rezhimov vizora Hecton-OS: SPECTRUM vkladka.
 //
-// ЛОР (лор2 Раздел 9):
-//   SPECTRUM: Управление визором
-//   • Тепловизор — тепловые сигнатуры существ и оборудования
-//   • Сонар — движение в радиусе 100м (не показывает что — только что есть)
-//   • Эхолот — биомеханические сигнатуры (Атлас-6 дроны)
+// LOR (lor2 Razdel 9):
+//   SPECTRUM: Upravlenie vizorom
+//   • Teplovizor — teplovye signatury suschestv i oborudovaniya
+//   • Sonar — dvizhenie v radiuse 100m (ne pokazyvaet chto — tolko chto est)
+//   • Eholot — biomehanicheskie signatury (Atlas-6 drony)
 //
-// АРХИТЕКТУРА:
-//   • Singleton. Переключает режимы через Shader.SetGlobalInt.
-//   • Интегрируется с VisorHUDController через GlitchPulse при смене.
-//   • Публикует события для HUD и пост-процессинга.
-//   • ITickable — обновляет сонар-пульс.
+// ARHITEKTURA:
+//   • Singleton. Pereklyuchaet rezhimy cherez Shader.SetGlobalInt.
+//   • Integriruetsya s VisorHUDController cherez GlitchPulse pri smene.
+//   • Publikuet sobytiya dlya HUD i post-protsessinga.
+//   • ITickable — obnovlyaet sonar-puls.
 //
 // ZERO GC:
-//   • Никаких new/LINQ в Tick.
+//   • Nikakih new/LINQ v Tick.
 //   • Cached shader property IDs.
 // ============================================================================
 
@@ -39,10 +39,10 @@ namespace Hecton8.Visor
 {
     public enum SpectrumMode
     {
-        Normal      = 0,   // Обычный режим
-        Thermal     = 1,   // Тепловизор
-        Sonar       = 2,   // Сонар (движение)
-        Echolocation = 3   // Эхолот (биомеханические сигнатуры)
+        Normal      = 0,   // Obychnyy rezhim
+        Thermal     = 1,   // Teplovizor
+        Sonar       = 2,   // Sonar (dvizhenie)
+        Echolocation = 3   // Eholot (biomehanicheskie signatury)
     }
 
     /// <summary>
@@ -59,8 +59,41 @@ namespace Hecton8.Visor
 
         /// <summary>Build a new active-sonar return payload with an authored audio material.</summary>
         public AcousticEchoEvent(Vector3 worldPosition, float distanceMeters, float returnStrength, float resonance, byte audioMaterialId)
+            : this(
+                worldPosition,
+                AbsoluteUniversePosition.FromRuntimePosition(worldPosition),
+                true,
+                distanceMeters,
+                returnStrength,
+                resonance,
+                audioMaterialId)
+        {
+        }
+
+        /// <summary>Build a new active-sonar return payload with a pre-resolved AUP origin.</summary>
+        public AcousticEchoEvent(Vector3 worldPosition, in AbsoluteUniversePosition worldAup, float distanceMeters, float returnStrength, float resonance)
+            : this(worldPosition, worldAup, true, distanceMeters, returnStrength, resonance, 0)
+        {
+        }
+
+        /// <summary>Build a new active-sonar return payload with a pre-resolved AUP origin and audio material.</summary>
+        public AcousticEchoEvent(Vector3 worldPosition, in AbsoluteUniversePosition worldAup, float distanceMeters, float returnStrength, float resonance, byte audioMaterialId)
+            : this(worldPosition, worldAup, true, distanceMeters, returnStrength, resonance, audioMaterialId)
+        {
+        }
+
+        private AcousticEchoEvent(
+            Vector3 worldPosition,
+            AbsoluteUniversePosition worldAup,
+            bool hasWorldAup,
+            float distanceMeters,
+            float returnStrength,
+            float resonance,
+            byte audioMaterialId)
         {
             WorldPosition = worldPosition;
+            WorldAup = worldAup;
+            _hasWorldAup = hasWorldAup ? (byte)1 : (byte)0;
             DistanceMeters = distanceMeters;
             ReturnStrength = returnStrength;
             Resonance = resonance;
@@ -69,6 +102,10 @@ namespace Hecton8.Visor
 
         /// <summary>World-space origin of the reflected return.</summary>
         public Vector3 WorldPosition { get; }
+        /// <summary>Absolute origin of the reflected return, stable across floating-origin shifts.</summary>
+        public AbsoluteUniversePosition WorldAup { get; }
+        /// <summary>True when the payload carries a stable absolute origin.</summary>
+        public bool HasWorldAup => _hasWorldAup != 0;
         /// <summary>One-way listener-to-target distance in authored meters.</summary>
         public float DistanceMeters { get; }
         /// <summary>Normalized return energy emitted by the struck resource node.</summary>
@@ -77,6 +114,16 @@ namespace Hecton8.Visor
         public float Resonance { get; }
         /// <summary>Material route for sonar echo pitch, decay, and low-pass coloration.</summary>
         public byte AudioMaterialId { get; }
+
+        private readonly byte _hasWorldAup;
+
+        /// <summary>Returns the stable absolute echo origin, falling back only for legacy payloads.</summary>
+        public AbsoluteUniversePosition ResolveWorldAup()
+        {
+            return HasWorldAup
+                ? WorldAup
+                : AbsoluteUniversePosition.FromRuntimePosition(WorldPosition);
+        }
     }
 
     /// <summary>
@@ -140,19 +187,19 @@ namespace Hecton8.Visor
         private const int SonarSnapshotListenerCapacity = 8;
         private const int AcousticEchoListenerCapacity = 8;
 
-        // COLD ALLOC: RegistryBucket<ISpectrumModeEventListener>[8] - deferred spectrum mode listeners - owner: SpectrumEvents
+        // COLD ALLOC: RegistryBucket<ISpectrumModeEventListener>[8] — deferred spectrum mode listeners — owner: SpectrumEvents
         private static readonly RegistryBucket<ISpectrumModeEventListener> _modeListeners =
             new RegistryBucket<ISpectrumModeEventListener>(ModeListenerCapacity);
-        // COLD ALLOC: RegistryBucket<ISonarPulseEventListener>[8] - deferred sonar pulse listeners - owner: SpectrumEvents
+        // COLD ALLOC: RegistryBucket<ISonarPulseEventListener>[8] — deferred sonar pulse listeners — owner: SpectrumEvents
         private static readonly RegistryBucket<ISonarPulseEventListener> _sonarPulseListeners =
             new RegistryBucket<ISonarPulseEventListener>(SonarPulseListenerCapacity);
-        // COLD ALLOC: RegistryBucket<ISonarPingEventListener>[24] - deferred active sonar ping listeners - owner: SpectrumEvents
+        // COLD ALLOC: RegistryBucket<ISonarPingEventListener>[24] — deferred active sonar ping listeners — owner: SpectrumEvents
         private static readonly RegistryBucket<ISonarPingEventListener> _sonarPingListeners =
             new RegistryBucket<ISonarPingEventListener>(SonarPingListenerCapacity);
-        // COLD ALLOC: RegistryBucket<ISonarSnapshotEventListener>[8] - deferred sonar snapshot listeners - owner: SpectrumEvents
+        // COLD ALLOC: RegistryBucket<ISonarSnapshotEventListener>[8] — deferred sonar snapshot listeners — owner: SpectrumEvents
         private static readonly RegistryBucket<ISonarSnapshotEventListener> _sonarSnapshotListeners =
             new RegistryBucket<ISonarSnapshotEventListener>(SonarSnapshotListenerCapacity);
-        // COLD ALLOC: RegistryBucket<IAcousticEchoEventListener>[8] - deferred acoustic echo listeners - owner: SpectrumEvents
+        // COLD ALLOC: RegistryBucket<IAcousticEchoEventListener>[8] — deferred acoustic echo listeners — owner: SpectrumEvents
         private static readonly RegistryBucket<IAcousticEchoEventListener> _acousticEchoListeners =
             new RegistryBucket<IAcousticEchoEventListener>(AcousticEchoListenerCapacity);
 
@@ -196,9 +243,9 @@ namespace Hecton8.Visor
             LastSonarPulseRadiusMeters = 0f;
         }
 
-        /// <summary>Режим визора изменился.</summary>
+        /// <summary>Rezhim vizora izmenilsya.</summary>
 
-        /// <summary>Сонар-пульс. float: радиус обнаружения.</summary>
+        /// <summary>Sonar-puls. float: radius obnaruzheniya.</summary>
         /// <summary>Controller-authored active sonar ping. Float = normalized pulse intensity 0-1.</summary>
 
         /// <summary>Most recent emitted sonar pulse radius in authored meters.</summary>
@@ -505,7 +552,7 @@ namespace Hecton8.Visor
         {
             if (!_pendingModeChanged.IsCreated)
             {
-                _pendingModeChanged = new NativeQueue<SpectrumMode>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SpectrumMode>[8] - deferred spectrum mode lane - owner: SpectrumEvents
+                _pendingModeChanged = new NativeQueue<SpectrumMode>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SpectrumMode>[8] — deferred spectrum mode lane — owner: SpectrumEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingModeChanged,
                     PendingModeChangedCapacity,
@@ -516,7 +563,7 @@ namespace Hecton8.Visor
             }
             if (!_nextFrameModeChanged.IsCreated)
             {
-                _nextFrameModeChanged = new NativeQueue<SpectrumMode>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SpectrumMode>[8] - next-frame spectrum mode lane - owner: SpectrumEvents
+                _nextFrameModeChanged = new NativeQueue<SpectrumMode>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SpectrumMode>[8] — next-frame spectrum mode lane — owner: SpectrumEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameModeChanged,
                     PendingModeChangedCapacity,
@@ -527,7 +574,7 @@ namespace Hecton8.Visor
             }
             if (!_pendingSonarPulses.IsCreated)
             {
-                _pendingSonarPulses = new NativeQueue<float>(Allocator.Persistent); // COLD ALLOC: NativeQueue<float>[8] - deferred sonar pulse lane - owner: SpectrumEvents
+                _pendingSonarPulses = new NativeQueue<float>(Allocator.Persistent); // COLD ALLOC: NativeQueue<float>[8] — deferred sonar pulse lane — owner: SpectrumEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingSonarPulses,
                     PendingSonarPulseCapacity,
@@ -538,7 +585,7 @@ namespace Hecton8.Visor
             }
             if (!_nextFrameSonarPulses.IsCreated)
             {
-                _nextFrameSonarPulses = new NativeQueue<float>(Allocator.Persistent); // COLD ALLOC: NativeQueue<float>[8] - next-frame sonar pulse lane - owner: SpectrumEvents
+                _nextFrameSonarPulses = new NativeQueue<float>(Allocator.Persistent); // COLD ALLOC: NativeQueue<float>[8] — next-frame sonar pulse lane — owner: SpectrumEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameSonarPulses,
                     PendingSonarPulseCapacity,
@@ -549,7 +596,7 @@ namespace Hecton8.Visor
             }
             if (!_pendingSonarPings.IsCreated)
             {
-                _pendingSonarPings = new NativeQueue<float>(Allocator.Persistent); // COLD ALLOC: NativeQueue<float>[24] - deferred active sonar ping lane - owner: SpectrumEvents
+                _pendingSonarPings = new NativeQueue<float>(Allocator.Persistent); // COLD ALLOC: NativeQueue<float>[24] — deferred active sonar ping lane — owner: SpectrumEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingSonarPings,
                     PendingSonarPingCapacity,
@@ -560,7 +607,7 @@ namespace Hecton8.Visor
             }
             if (!_nextFrameSonarPings.IsCreated)
             {
-                _nextFrameSonarPings = new NativeQueue<float>(Allocator.Persistent); // COLD ALLOC: NativeQueue<float>[24] - next-frame active sonar ping lane - owner: SpectrumEvents
+                _nextFrameSonarPings = new NativeQueue<float>(Allocator.Persistent); // COLD ALLOC: NativeQueue<float>[24] — next-frame active sonar ping lane — owner: SpectrumEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameSonarPings,
                     PendingSonarPingCapacity,
@@ -571,7 +618,7 @@ namespace Hecton8.Visor
             }
             if (!_pendingSonarSnapshots.IsCreated)
             {
-                _pendingSonarSnapshots = new NativeQueue<SpatialSonarSnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SpatialSonarSnapshot>[8] - deferred sonar snapshot lane - owner: SpectrumEvents
+                _pendingSonarSnapshots = new NativeQueue<SpatialSonarSnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SpatialSonarSnapshot>[8] — deferred sonar snapshot lane — owner: SpectrumEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingSonarSnapshots,
                     PendingSonarSnapshotCapacity,
@@ -582,7 +629,7 @@ namespace Hecton8.Visor
             }
             if (!_nextFrameSonarSnapshots.IsCreated)
             {
-                _nextFrameSonarSnapshots = new NativeQueue<SpatialSonarSnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SpatialSonarSnapshot>[8] - next-frame sonar snapshot lane - owner: SpectrumEvents
+                _nextFrameSonarSnapshots = new NativeQueue<SpatialSonarSnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SpatialSonarSnapshot>[8] — next-frame sonar snapshot lane — owner: SpectrumEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameSonarSnapshots,
                     PendingSonarSnapshotCapacity,
@@ -593,7 +640,7 @@ namespace Hecton8.Visor
             }
             if (!_pendingAcousticEchoes.IsCreated)
             {
-                _pendingAcousticEchoes = new NativeQueue<AcousticEchoEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticEchoEvent>[8] - deferred acoustic echo lane - owner: SpectrumEvents
+                _pendingAcousticEchoes = new NativeQueue<AcousticEchoEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticEchoEvent>[8] — deferred acoustic echo lane — owner: SpectrumEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingAcousticEchoes,
                     PendingAcousticEchoCapacity,
@@ -604,7 +651,7 @@ namespace Hecton8.Visor
             }
             if (!_nextFrameAcousticEchoes.IsCreated)
             {
-                _nextFrameAcousticEchoes = new NativeQueue<AcousticEchoEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticEchoEvent>[8] - next-frame acoustic echo lane - owner: SpectrumEvents
+                _nextFrameAcousticEchoes = new NativeQueue<AcousticEchoEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticEchoEvent>[8] — next-frame acoustic echo lane — owner: SpectrumEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameAcousticEchoes,
                     PendingAcousticEchoCapacity,
@@ -1144,19 +1191,19 @@ namespace Hecton8.Visor
         // ══════════════════════════════════════════════════════════
 
         [Header("── Settings ────────────────────────────────")]
-        [Tooltip("Радиус сонара (метры).")]
+        [Tooltip("Radius sonara (metry).")]
         [SerializeField] private float sonarRadius = 100f;
 
-        [Tooltip("Интервал сонар-пульса (сек).")]
+        [Tooltip("Interval sonar-pulsa (sek).")]
         [SerializeField] private float sonarPulseInterval = 3f;
 
-        [Tooltip("Энергия за переключение режима.")]
+        [Tooltip("Energiya za pereklyuchenie rezhima.")]
         [SerializeField] private float modeSwitchEnergyCost = 2f;
 
-        [Tooltip("Энергия, сжигаемая каждым активным sonar pulse.")]
+        [Tooltip("Energiya, szhigaemaya kazhdym aktivnym sonar pulse.")]
         [SerializeField] private float sonarPulseEnergyCost = 6f;
 
-        [Tooltip("Интенсивность шумовой сигнатуры, публикуемой sonar pulse для окружающей фауны.")]
+        [Tooltip("Intensivnost shumovoy signatury, publikuemoy sonar pulse dlya okruzhayuschey fauny.")]
         [SerializeField, Range(0f, 1f)] private float sonarNoiseSignature01 = 1f;
 
 
@@ -1222,7 +1269,7 @@ namespace Hecton8.Visor
         [SerializeField, Range(1f, 128f)] private float aupDiscoveryCellSizeMeters = 16f;
 
         [Header("── References ──────────────────────────────")]
-        [Tooltip("Система выживания для drain энергии.")]
+        [Tooltip("Sistema vyzhivaniya dlya drain energii.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
 
         [Tooltip("Optional cartographer bridge used to bias sonar contacts toward organic returns when vegetation owns the space.")]
@@ -1359,20 +1406,20 @@ namespace Hecton8.Visor
         private static readonly int _ShaderSonarActive =
             Shader.PropertyToID("_SonarActive");
         private static readonly System.Collections.Generic.List<VisorHUDController> s_glitchControllers =
-            new System.Collections.Generic.List<VisorHUDController>(4); // COLD ALLOC: List<VisorHUDController>[4] - shared glitch pulse controller buffer - owner: SpectrumSystem
-        // COLD ALLOC: float[32] â€” passive hydrophone radar energy grid â€” owner: SpectrumSystem
+            new System.Collections.Generic.List<VisorHUDController>(4); // COLD ALLOC: List<VisorHUDController>[4] — shared glitch pulse controller buffer — owner: SpectrumSystem
+        // COLD ALLOC: float[32] — passive hydrophone radar energy grid — owner: SpectrumSystem
         private readonly float[] _passiveRadarGrid = new float[PassiveRadarSectorCount];
-        // COLD ALLOC: float[30] â€” passive hydrophone auto-gain history â€” owner: SpectrumSystem
+        // COLD ALLOC: float[30] — passive hydrophone auto-gain history — owner: SpectrumSystem
         private readonly float[] _passiveRadarPeakHistory = new float[PassiveRadarAutoGainHistoryLength];
-        // COLD ALLOC: Vector4[8] â€” passive hydrophone shader row payload â€” owner: SpectrumSystem
+        // COLD ALLOC: Vector4[8] — passive hydrophone shader row payload — owner: SpectrumSystem
         private static readonly Vector4[] s_passiveRadarRows = new Vector4[PassiveRadarAzimuthSectorCount];
-        // COLD ALLOC: ActiveEmitterSample[32] â€” active world emitter buffer for passive hydrophone scan â€” owner: SpectrumSystem
+        // COLD ALLOC: ActiveEmitterSample[32] — active world emitter buffer for passive hydrophone scan — owner: SpectrumSystem
         private static readonly SpatialAudioManager.ActiveEmitterSample[] s_passiveRadarEmitterBuffer = new SpatialAudioManager.ActiveEmitterSample[32];
-        // COLD ALLOC: AbsoluteUniversePosition[8] - nearest emitter AUP shortlist, one conversion during selection instead of projection - owner: SpectrumSystem
+        // COLD ALLOC: AbsoluteUniversePosition[8] — nearest emitter AUP shortlist, one conversion during selection instead of projection — owner: SpectrumSystem
         private static readonly AbsoluteUniversePosition[] s_passiveRadarNearestAups = new AbsoluteUniversePosition[PassiveRadarSourceBudget];
-        // COLD ALLOC: float[8] - nearest emitter amplitude shortlist for passive hydrophone scan - owner: SpectrumSystem
+        // COLD ALLOC: float[8] — nearest emitter amplitude shortlist for passive hydrophone scan — owner: SpectrumSystem
         private static readonly float[] s_passiveRadarNearestAmplitudes = new float[PassiveRadarSourceBudget];
-        // COLD ALLOC: float[8] â€” nearest emitter distance cache for passive hydrophone scan â€” owner: SpectrumSystem
+        // COLD ALLOC: float[8] — nearest emitter distance cache for passive hydrophone scan — owner: SpectrumSystem
         private static readonly double[] s_passiveRadarNearestDistanceSqr = new double[PassiveRadarSourceBudget];
 
         // ══════════════════════════════════════════════════════════
@@ -1451,7 +1498,7 @@ namespace Hecton8.Visor
                 _registered = false;
             }
 
-            // Сбрасываем в Normal при отключении
+            // Sbrasyvaem v Normal pri otklyuchenii
             Shader.SetGlobalInt(_ShaderSpectrumMode, 0);
             _lastPublishedSpectrumMode = 0;
             SonarGridOverlay.ClearGlobals();
@@ -1541,14 +1588,14 @@ namespace Hecton8.Visor
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Переключить режим визора.</summary>
+        /// <summary>Pereklyuchit rezhim vizora.</summary>
         public void SetMode(SpectrumMode mode)
         {
             if (mode == _currentMode) return;
 
             ResolveSurvivalSystem();
 
-            // Drain энергии
+            // Drain energii
             if (survivalSystem != null && modeSwitchEnergyCost > 0f)
                 survivalSystem.DrainEnergy(modeSwitchEnergyCost);
 
@@ -1561,7 +1608,7 @@ namespace Hecton8.Visor
             ApplyShaderMode();
             SpectrumEvents.RaiseModeChanged(mode);
 
-            // Glitch pulse на визоре
+            // Glitch pulse na vizore
             VisorHUDController.CopyActiveControllersTo(s_glitchControllers);
             for (int i = 0; i < s_glitchControllers.Count; i++)
                 s_glitchControllers[i]?.GlitchPulse(0.2f);
@@ -1569,7 +1616,7 @@ namespace Hecton8.Visor
             NotificationEvents.PushInfo(ResolveLocalizedModeNotification(mode));
         }
 
-        /// <summary>Циклическое переключение режимов.</summary>
+        /// <summary>Tsiklicheskoe pereklyuchenie rezhimov.</summary>
         public void CycleMode()
         {
             int next = ((int)_currentMode + 1) % 4;
@@ -1757,7 +1804,8 @@ namespace Hecton8.Visor
                 _activeSonarEchoExpireTime,
                 echoStartTime + (echoRadius * math.rcp(speed)) + sonarRevealFadeDuration);
 
-            MarkAupDiscoveryCell(echoEvent.WorldPosition, echoEvent.ReturnStrength);
+            AbsoluteUniversePosition echoAup = echoEvent.ResolveWorldAup();
+            MarkAupDiscoveryCell(in echoAup, echoEvent.ReturnStrength);
         }
 
         private void HandleAcousticImpulse(in AcousticImpulseEvent impulseEvent)
@@ -1950,7 +1998,7 @@ namespace Hecton8.Visor
             _aupDiscoveryGrid = new NativeArray<uint>(
                 cellCount,
                 Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[AUP discovery grid] - persistent sonar map bits - owner: SpectrumSystem
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[AUP discovery grid] — persistent sonar map bits — owner: SpectrumSystem
             NativeMemorySentinel.RegisterNativeArray(
                 _aupDiscoveryGrid,
                 nameof(SpectrumSystem),
@@ -1971,12 +2019,11 @@ namespace Hecton8.Visor
             _aupDiscoveryCellSizeRuntime = 0f;
         }
 
-        private void MarkAupDiscoveryCell(Vector3 runtimePosition, float strength01)
+        private void MarkAupDiscoveryCell(in AbsoluteUniversePosition aup, float strength01)
         {
             if (!_aupDiscoveryGrid.IsCreated || _aupDiscoveryGridWidthRuntime <= 0 || _aupDiscoveryGridHeightRuntime <= 0)
                 return;
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             double3 absolute = aup.ToAbsoluteDouble3();
             double invCellSize = 1.0 / math.max(1.0, (double)_aupDiscoveryCellSizeRuntime);
             long cellX = (long)math.floor(absolute.x * invCellSize);
@@ -2055,7 +2102,7 @@ namespace Hecton8.Visor
             if (survivalSystem != null)
                 return true;
 
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
+            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
                 playerTransform == null)
             {
                 return false;
@@ -2069,7 +2116,7 @@ namespace Hecton8.Visor
             if (_playerTransform != null)
                 return true;
 
-            return SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform) && _playerTransform != null;
+            return GameBootstrapper.TryGetCurrentPlayerTransform(out _playerTransform) && _playerTransform != null;
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)

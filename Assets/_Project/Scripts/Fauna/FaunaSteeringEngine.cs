@@ -53,7 +53,7 @@ namespace Hecton8.AI
             currentDirection = self.forward;
             _smoothedSteerDirection = ResolveDominantAxisDirection(currentDirection, Vector3.forward);
             velocity = rb != null ? rb.linearVelocity : Vector3.zero;
-            currentSpeed = ApproximateMagnitude(velocity);
+            currentSpeed = ResolveSpeedBucket(velocity.sqrMagnitude);
         }
 
         /// <summary>
@@ -114,11 +114,11 @@ namespace Hecton8.AI
             if (_smoothedSteerDirection.sqrMagnitude > 0.01f)
             {
                 Vector3 desiredVelocity = ResolveDominantAxisDirection(_smoothedSteerDirection, steeringTarget) * speedTarget;
-                currentVelocity = MoveTowardsApprox(currentVelocity, desiredVelocity, maxVelocityDelta);
+                currentVelocity = MoveTowardsAxis(currentVelocity, desiredVelocity, maxVelocityDelta);
             }
             else
             {
-                currentVelocity = MoveTowardsApprox(currentVelocity, Vector3.zero, maxVelocityDelta);
+                currentVelocity = MoveTowardsAxis(currentVelocity, Vector3.zero, maxVelocityDelta);
             }
 
             if (!IsFinite(currentVelocity))
@@ -126,7 +126,7 @@ namespace Hecton8.AI
 
             _body.linearVelocity = currentVelocity;
             velocity = currentVelocity;
-            currentSpeed = ApproximateMagnitude(currentVelocity);
+            currentSpeed = ResolveSpeedBucket(currentVelocity.sqrMagnitude);
 
             // 3. DIRECTION & ROTATION
             Vector3 facingDirection = currentVelocity.sqrMagnitude > 0.01f
@@ -207,25 +207,26 @@ namespace Hecton8.AI
             return direction.z < 0f ? Vector3.back : Vector3.forward;
         }
 
-        private static float ApproximateMagnitude(Vector3 value)
+        private static float ResolveSpeedBucket(float velocitySqr)
         {
-            float ax = math.abs(value.x);
-            float ay = math.abs(value.y);
-            float az = math.abs(value.z);
-            float max = math.max(ax, math.max(ay, az));
-            float min = math.min(ax, math.min(ay, az));
-            float mid = ax + ay + az - max - min;
-            return max + mid * 0.375f + min * 0.125f;
+            if (velocitySqr >= 100f)
+                return 10f;
+            if (velocitySqr >= 25f)
+                return 5f;
+            if (velocitySqr >= 4f)
+                return 2f;
+            return velocitySqr > 0.0001f ? 1f : 0f;
         }
 
-        private static Vector3 MoveTowardsApprox(Vector3 current, Vector3 target, float maxDelta)
+        private static Vector3 MoveTowardsAxis(Vector3 current, Vector3 target, float maxDelta)
         {
             Vector3 delta = target - current;
-            float distance = ApproximateMagnitude(delta);
-            if (distance <= maxDelta || distance <= 0.0001f)
+            float distanceSq = delta.sqrMagnitude;
+            float maxDeltaSq = maxDelta * maxDelta;
+            if (distanceSq <= maxDeltaSq || distanceSq <= 0.0001f)
                 return target;
 
-            return current + delta * (maxDelta / distance);
+            return current + ResolveDominantAxisDirection(delta, Vector3.zero) * maxDelta;
         }
 
         private static Quaternion ResolveDominantAxisRotation(Vector3 axis)
@@ -276,7 +277,7 @@ namespace Hecton8.AI
             if (lengthSq <= 0.000001f || !float.IsFinite(lengthSq))
                 return _ForwardRotation;
 
-            float invLength = math.rsqrt(lengthSq);
+            float invLength = math.rcp(math.max(0.0001f, 0.5f + (lengthSq * 0.5f)));
             value.x *= invLength;
             value.y *= invLength;
             value.z *= invLength;

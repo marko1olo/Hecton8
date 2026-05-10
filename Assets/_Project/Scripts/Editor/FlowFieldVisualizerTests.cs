@@ -1,8 +1,8 @@
 // ============================================================================
 // HECTON-8 — FlowFieldVisualizerTests.cs
-// Unit tests для FlowFieldVisualizer.
+// Unit tests dlya FlowFieldVisualizer.
 //
-// Тестирует корректность визуализации, валидации и производительности.
+// Testiruet korrektnost vizualizatsii, validatsii i proizvoditelnosti.
 // ============================================================================
 
 #if UNITY_EDITOR && HECTON8_ENABLE_EDITMODE_TESTS
@@ -165,12 +165,16 @@ public class FlowFieldVisualizerTests
     }
 
     [Test]
-    public void Singleton_ReturnsInstance()
+    public void Visualizer_DoesNotExposeStaticInstance()
     {
-        var instance1 = FlowFieldVisualizer.Instance;
-        var instance2 = FlowFieldVisualizer.Instance;
+        const System.Reflection.BindingFlags staticFlags =
+            System.Reflection.BindingFlags.Static |
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.NonPublic;
 
-        Assert.AreSame(instance1, instance2);
+        Assert.IsNotNull(_visualizer);
+        Assert.IsNull(typeof(FlowFieldVisualizer).GetProperty("Instance", staticFlags));
+        Assert.IsNull(typeof(FlowFieldVisualizer).GetField("_instance", staticFlags));
     }
 
     [Test]

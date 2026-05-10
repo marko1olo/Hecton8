@@ -104,10 +104,8 @@ namespace Hecton8.World
                 }
             }
 
-            float nearestDistance = math.sqrt(nearestDistanceSqr);
-            float secondDistance = math.sqrt(secondDistanceSqr);
             variation = Hash01(nearestSeed ^ HectonVegetationConstants.PrimaryVariationSalt);
-            return math.max(0f, (secondDistance - nearestDistance) * cellSize * 0.5f);
+            return math.max(0f, (secondDistanceSqr - nearestDistanceSqr) * cellSize * 0.25f);
         }
 
         public static float SampleValueNoise(float x, float z, uint salt)

@@ -15,9 +15,15 @@ public sealed class HectonSurvivalSystemEditTests
     {
         MethodInfo method = GetPrivateStaticMethod(
             typeof(HectonSurvivalSystem),
-            "ResolveMultiplicativeOxygenDrain");
+            "ResolveMultiplicativeOxygenDrain",
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float));
 
-        object result = method.Invoke(null, new object[] { 1.5f, 1.2f, 1.1f, 1.5f, 1.05f });
+        object result = method.Invoke(null, new object[] { 1.5f, 1.2f, 1.1f, 1.5f, 1.05f, 1f });
 
         Assert.That((float)result, Is.EqualTo(3.1185f).Within(0.0001f));
     }
@@ -27,7 +33,11 @@ public sealed class HectonSurvivalSystemEditTests
     {
         MethodInfo method = GetPrivateStaticMethod(
             typeof(HectonSurvivalSystem),
-            "ResolveExponentialTemperatureStep");
+            "ResolveExponentialTemperatureStep",
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float));
 
         const float environmentTemperature = -25f;
         const float startingInternalTemperature = 20f;
@@ -86,28 +96,27 @@ public sealed class HectonSurvivalSystemEditTests
     {
         TextAsset runtimeAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(SurvivalDatabaseRuntimePath);
         Assert.IsNotNull(runtimeAsset, "Runtime survival database asset must exist.");
-        Type recordType = typeof(HectonSurvivalSystem).Assembly.GetType("Hecton8.Gameplay.SurvivalDatabaseItemRecord");
-        Assert.IsNotNull(recordType, "Expected runtime flat-record type to exist.");
-
         MethodInfo method = GetPrivateStaticMethod(
             typeof(HectonSurvivalSystem),
             "TryParseSurvivalDatabase",
             typeof(string),
-            recordType.MakeArrayType().MakeByRefType());
+            typeof(SurvivalDatabaseItemParameters[]).MakeByRefType(),
+            typeof(System.Collections.Generic.Dictionary<string, int>).MakeByRefType());
 
-        object[] args = { runtimeAsset.text, null };
+        object[] args = { runtimeAsset.text, null, null };
         object result = method.Invoke(null, args);
 
         Assert.That((bool)result, Is.True);
-        Array rows = args[1] as Array;
+        SurvivalDatabaseItemParameters[] rows = args[1] as SurvivalDatabaseItemParameters[];
         Assert.IsNotNull(rows);
         Assert.That(rows.Length, Is.EqualTo(220));
+        Assert.IsNotNull(args[2]);
 
-        object firstRow = rows.GetValue(0);
-        Assert.That((uint)GetFieldValue(firstRow, "StableHash"), Is.EqualTo(0x59F4F85Fu));
-        Assert.That((float)GetFieldValue(firstRow, "MassKilograms"), Is.EqualTo(2.40f).Within(0.0001f));
-        Assert.That((float)GetFieldValue(firstRow, "VolumeLiters"), Is.EqualTo(1.00f).Within(0.0001f));
-        Assert.That((int)GetFieldValue(firstRow, "BaseDurability"), Is.EqualTo(36));
+        SurvivalDatabaseItemParameters firstRow = rows[0];
+        Assert.That(firstRow.StableHash, Is.EqualTo(0x59F4F85Fu));
+        Assert.That(firstRow.MassKilograms, Is.EqualTo(2.40f).Within(0.0001f));
+        Assert.That(firstRow.VolumeLiters, Is.EqualTo(1.00f).Within(0.0001f));
+        Assert.That(firstRow.BaseDurability, Is.EqualTo(36));
     }
 
     private static MethodInfo GetPrivateStaticMethod(Type ownerType, string methodName, params Type[] parameterTypes)

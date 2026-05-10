@@ -7,9 +7,9 @@ public class HectonWaterGrid : EditorWindow
     [MenuItem("Hecton/Generate Water Mesh")]
     static void Init()
     {
-        // Настройки сетки
-        int size = 200; // Количество клеток (200x200 = 40k вершин)
-        float cellSize = 10f; // Размер одной клетки в метрах
+        // Nastroyki setki
+        int size = 200; // Kolichestvo kletok (200x200 = 40k vershin)
+        float cellSize = 10f; // Razmer odnoy kletki v metrah
 
         Mesh mesh = new Mesh();
         mesh.name = "HighPolyWater";
@@ -45,18 +45,18 @@ public class HectonWaterGrid : EditorWindow
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 
-        // Сохраняем как ассет
+        // Sohranyaem kak asset
         string path = "Assets/HectonWaterMesh.asset";
         AssetDatabase.CreateAsset(mesh, path);
         AssetDatabase.SaveAssets();
         
-        // Создаем объект на сцене
+        // Sozdaem obekt na stsene
         GameObject go = new GameObject("Hecton Ocean");
         go.AddComponent<MeshFilter>().sharedMesh = mesh;
         go.AddComponent<MeshRenderer>();
         Selection.activeGameObject = go;
         
-        Debug.Log("Вода готова: " + path);
+        Debug.Log("Voda gotova: " + path);
     }
 }
 #endif

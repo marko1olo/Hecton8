@@ -13,7 +13,7 @@ namespace Hecton8.Gameplay
             if (currentDepth <= slowdownStart || dragIncreaseMax <= 0f)
                 return 0f;
 
-            float depthT = math.saturate((currentDepth - slowdownStart) / math.max(slowdownEnd - slowdownStart, 0.01f));
+            float depthT = math.saturate((currentDepth - slowdownStart) * math.rcp(math.max(slowdownEnd - slowdownStart, 0.01f)));
             return depthT * dragIncreaseMax;
         }
 
@@ -22,11 +22,11 @@ namespace Hecton8.Gameplay
             if (currentDepth <= slowdownStart || slowdownMax <= 0f)
                 return 1f;
 
-            float slowT = math.saturate((currentDepth - slowdownStart) / math.max(slowdownEnd - slowdownStart, 0.01f));
+            float slowT = math.saturate((currentDepth - slowdownStart) * math.rcp(math.max(slowdownEnd - slowdownStart, 0.01f)));
             return 1f - (slowT * slowdownMax);
         }
 
-        public static Vector3 ApplyAnalyticalDrag(Vector3 velocity, float dragCoefficient, float bodyMass, float fixedDeltaTime)
+        public static Vector3 ApplyAnalyticalDrag(Vector3 velocity, float dragCoefficient, float fixedDeltaTime)
         {
             return HectonPlayerMotor.AnalyticalQuadraticDrag(velocity, dragCoefficient, fixedDeltaTime);
         }
@@ -39,7 +39,6 @@ namespace Hecton8.Gameplay
         public static Vector3 ApplyAnalyticalDrag(
             Vector3 velocity,
             float dragCoefficient,
-            float bodyMass,
             float fixedDeltaTime,
             Vector3 forward,
             float crossSectionalAreaScale)

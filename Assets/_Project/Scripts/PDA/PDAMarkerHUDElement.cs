@@ -30,10 +30,13 @@ namespace Hecton8.PDA
             public uint cachedTitleHash;
             public int cachedDistanceMeters;
             public MarkerIconType cachedIconType;
+            public int cachedPixelX;
+            public int cachedPixelY;
             public byte cachedCanvasAlpha;
             public byte cachedColorAlpha;
             public bool cachedVisible;
             public bool hasCanvasState;
+            public bool hasPositionState;
             public char[] titleBuffer;
             public char[] distanceBuffer;
         }
@@ -282,11 +285,7 @@ namespace Hecton8.PDA
 
             float clampedX = math.clamp(screenPoint.x, screenMargin, screenWidth - screenMargin);
             float clampedY = math.clamp(screenPoint.y, screenMargin, screenHeight - screenMargin);
-            Vector3 iconPosition = display.rectTransform.position;
-            iconPosition.x = clampedX;
-            iconPosition.y = clampedY;
-            iconPosition.z = 0f;
-            display.rectTransform.position = iconPosition;
+            ApplyDisplayPosition(display, clampedX, clampedY);
 
             float alpha = 1f;
             if (distanceSq > fadeStartDistanceSq)
@@ -391,10 +390,36 @@ namespace Hecton8.PDA
             display.cachedVisible = visible;
             display.cachedCanvasAlpha = alphaByte;
             display.canvasGroup.alpha = visible ? DecodeAlpha(alphaByte) : 0f;
+            if (!visible)
+                display.hasPositionState = false;
             if (display.canvasGroup.blocksRaycasts)
                 display.canvasGroup.blocksRaycasts = false;
             if (display.canvasGroup.interactable)
                 display.canvasGroup.interactable = false;
+        }
+
+        private static void ApplyDisplayPosition(MarkerIconDisplay display, float x, float y)
+        {
+            if (display == null || display.rectTransform == null)
+                return;
+
+            int pixelX = (int)math.round(x);
+            int pixelY = (int)math.round(y);
+            if (display.hasPositionState &&
+                display.cachedPixelX == pixelX &&
+                display.cachedPixelY == pixelY)
+            {
+                return;
+            }
+
+            display.hasPositionState = true;
+            display.cachedPixelX = pixelX;
+            display.cachedPixelY = pixelY;
+            Vector3 iconPosition = display.rectTransform.position;
+            iconPosition.x = pixelX;
+            iconPosition.y = pixelY;
+            iconPosition.z = 0f;
+            display.rectTransform.position = iconPosition;
         }
 
         private static void ApplyMarkerColor(MarkerIconDisplay display, MarkerIconType iconType, byte alphaByte)

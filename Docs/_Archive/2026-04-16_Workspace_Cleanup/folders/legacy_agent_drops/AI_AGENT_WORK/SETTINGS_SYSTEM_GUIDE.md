@@ -372,7 +372,7 @@ public const string SETTINGS_MY_SETTING = "settings.my_setting";
 
 // Russian
 {
-  "settings.my_setting": "Моя Настройка"
+  "settings.my_setting": "Moya Nastroyka"
 }
 ```
 

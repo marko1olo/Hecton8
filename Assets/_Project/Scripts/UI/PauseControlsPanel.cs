@@ -98,8 +98,7 @@ namespace Hecton8.UI
         private static readonly Color AccentSelected = new Color(0.46f, 0.98f, 0.94f, 0.96f);
         private static readonly Color BindingBgSelected = new Color(0.1f, 0.24f, 0.28f, 0.86f);
         
-        // COLD ALLOC: StringBuilder[256] — modal conflict message builder for ModalWindow string API — owner: PauseControlsPanel
-        private readonly System.Text.StringBuilder _modalMessageBuilder = new System.Text.StringBuilder(256);
+        private readonly char[] _modalMessageBuffer = new char[256]; // COLD ALLOC: char[256] — modal conflict message staging buffer — owner: PauseControlsPanel
         private readonly char[] _statusBuffer = new char[256]; // COLD ALLOC: char[256] — status message staging buffer — owner: PauseControlsPanel
         private readonly char[] _bindingDisplayBuffer = new char[64]; // COLD ALLOC: char[64] — binding display text buffer — owner: PauseControlsPanel
         
@@ -478,61 +477,51 @@ namespace Hecton8.UI
         /// Displays modal window with conflict warning and confirm/cancel options.
         /// ModalWindow currently requires a managed string payload; status output stays char-buffered.
         /// SAFETY: Validates ModalWindow availability before showing dialog.
-        /// EXCEPTION-SAFE: StringBuilder cleared at method start to prevent stale data.
+        /// EXCEPTION-SAFE: Modal buffer length is rebuilt at method start to prevent stale data.
         /// </summary>
         private void HandleConflictDetected(string actionName, string conflictingAction, string newBinding, Action onConfirm, Action onCancel)
         {
             if (!IsActive) return;
 
-            // SAFETY: Clear modal builder at method start (exception-safe pattern).
-            _modalMessageBuilder.Clear();
+            // ModalWindow currently requires a managed string payload.
+            int messageLength = 0;
+            messageLength = AppendToBuffer(_modalMessageBuffer, messageLength, "The binding '");
+            messageLength = AppendToBuffer(_modalMessageBuffer, messageLength, newBinding);
+            messageLength = AppendToBuffer(_modalMessageBuffer, messageLength, "' is already assigned to '");
+            messageLength = AppendToBuffer(_modalMessageBuffer, messageLength, conflictingAction);
+            messageLength = AppendToBuffer(_modalMessageBuffer, messageLength, "'.\n\nDo you want to reassign it to '");
+            messageLength = AppendToBuffer(_modalMessageBuffer, messageLength, actionName);
+            messageLength = AppendToBuffer(_modalMessageBuffer, messageLength, "'?");
+            string message = new string(_modalMessageBuffer, 0, messageLength);
 
+            // SAFETY: Check if ModalWindow is available (may not exist in all scenes)
             try
             {
-                // ModalWindow currently requires a managed string payload.
-                _modalMessageBuilder.Append("The binding '");
-                _modalMessageBuilder.Append(newBinding);
-                _modalMessageBuilder.Append("' is already assigned to '");
-                _modalMessageBuilder.Append(conflictingAction);
-                _modalMessageBuilder.Append("'.\n\nDo you want to reassign it to '");
-                _modalMessageBuilder.Append(actionName);
-                _modalMessageBuilder.Append("'?");
-                string message = _modalMessageBuilder.ToString();
-
-                // SAFETY: Check if ModalWindow is available (may not exist in all scenes)
-                try
-                {
-                    Hecton.UI.MainMenu.ModalWindow.Show(
-                        StatusConflictTitle,
-                        message,
-                        onConfirm,  // User confirms - complete rebind
-                        onCancel    // User cancels - revert rebind
-                    );
-                }
-                catch (System.Exception ex)
-                {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning($"[PauseControlsPanel] ModalWindow unavailable: {ex.Message}. Auto-canceling conflict.");
-#endif
-                    // Fallback: auto-cancel if modal unavailable
-                    SetStatus("CONFLICT: Cannot show dialog - ModalWindow unavailable", StatusColorConflict, StatusBgConflict);
-                    onCancel?.Invoke();
-                    return;
-                }
-
-                int statusLength = 0;
-                statusLength = AppendToBuffer(_statusBuffer, statusLength, StatusConflictPrefix);
-                statusLength = AppendToBuffer(_statusBuffer, statusLength, newBinding);
-                statusLength = AppendToBuffer(_statusBuffer, statusLength, StatusConflictMiddle);
-                statusLength = AppendToBuffer(_statusBuffer, statusLength, conflictingAction);
-                
-                SetStatus(_statusBuffer, statusLength, StatusColorConflict, StatusBgConflict);
+                Hecton.UI.MainMenu.ModalWindow.Show(
+                    StatusConflictTitle,
+                    message,
+                    onConfirm,  // User confirms - complete rebind
+                    onCancel    // User cancels - revert rebind
+                );
             }
-            finally
+            catch (System.Exception ex)
             {
-                // SAFETY: Always clear modal builder on exit (prevents stale data)
-                _modalMessageBuilder.Clear();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[PauseControlsPanel] ModalWindow unavailable: {ex.Message}. Auto-canceling conflict.");
+#endif
+                // Fallback: auto-cancel if modal unavailable
+                SetStatus("CONFLICT: Cannot show dialog - ModalWindow unavailable", StatusColorConflict, StatusBgConflict);
+                onCancel?.Invoke();
+                return;
             }
+
+            int statusLength = 0;
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, StatusConflictPrefix);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, newBinding);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, StatusConflictMiddle);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, conflictingAction);
+
+            SetStatus(_statusBuffer, statusLength, StatusColorConflict, StatusBgConflict);
         }
 
         /// <summary>
@@ -1179,7 +1168,7 @@ namespace Hecton8.UI
                     continue;
 
                 string name = candidate.name;
-                if (name.IndexOf("текст", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                if (name.IndexOf("tekst", StringComparison.OrdinalIgnoreCase) >= 0 ||
                     name.IndexOf("text", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     return candidate;
@@ -1195,7 +1184,7 @@ namespace Hecton8.UI
                 return false;
 
             string name = font.name;
-            return name.IndexOf("циф", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            return name.IndexOf("tsif", StringComparison.OrdinalIgnoreCase) >= 0 ||
                    name.IndexOf("digit", StringComparison.OrdinalIgnoreCase) >= 0 ||
                    name.IndexOf("number", StringComparison.OrdinalIgnoreCase) >= 0;
         }

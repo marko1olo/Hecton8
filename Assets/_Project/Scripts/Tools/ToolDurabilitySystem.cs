@@ -97,6 +97,7 @@ namespace Hecton8.Tools
         private bool _registeredLateFrame;
         private bool _saveRegistered;
         private bool _serviceRegistered;
+        private bool _managedMirrorDirty;
 
         public event Action<string, float, float> OnDurabilityChanged;
         public event Action<string> OnToolBroken;
@@ -228,7 +229,6 @@ namespace Hecton8.Tools
             TryRegisterService();
             TryRegisterSlowTick();
             TryRegisterUpdate();
-            TryRegisterLateFrame();
             TryRegisterSaveService();
         }
 
@@ -237,7 +237,6 @@ namespace Hecton8.Tools
             TryRegisterService();
             TryRegisterSlowTick();
             TryRegisterUpdate();
-            TryRegisterLateFrame();
             TryRegisterSaveService();
         }
 
@@ -273,6 +272,8 @@ namespace Hecton8.Tools
 
             _scheduledDecayHandle = decayJob.Schedule(MaxTrackedTools, 8);
             _decayScheduled = true;
+            _managedMirrorDirty = true;
+            TryRegisterLateFrame();
         }
 
         public void LateFrameTick()
@@ -280,6 +281,7 @@ namespace Hecton8.Tools
             if (!_decayScheduled)
             {
                 DrainQueuedDurabilityCommands();
+                TryUnregisterLateFrameIfIdle();
                 return;
             }
 
@@ -287,9 +289,11 @@ namespace Hecton8.Tools
                 return;
 
             _decayScheduled = false;
+            _managedMirrorDirty = true;
             SyncManagedMirrorsFromNative();
             FlushBreakdownEvents();
             DrainQueuedDurabilityCommands();
+            TryUnregisterLateFrameIfIdle();
         }
 
         public void SlowTick()
@@ -671,7 +675,7 @@ namespace Hecton8.Tools
         {
             if (_playerRoot == null)
             {
-                if (!SceneBootstrap.TryGetCurrentPlayerTransform(out _playerRoot) || _playerRoot == null)
+                if (!GameBootstrapper.TryGetCurrentPlayerTransform(out _playerRoot) || _playerRoot == null)
                     return false;
             }
 
@@ -954,7 +958,7 @@ namespace Hecton8.Tools
 
         private void SyncManagedMirrorsFromNative()
         {
-            if (!_itemStates.IsCreated)
+            if (!_managedMirrorDirty || !_itemStates.IsCreated)
                 return;
 
             for (int i = 0; i < MaxTrackedTools; i++)
@@ -980,6 +984,8 @@ namespace Hecton8.Tools
                 if (math.abs(previousDurability - currentDurability) > 0.0001f || previousBroken != broken)
                     OnDurabilityChanged?.Invoke(toolId, currentDurability, maxDurability);
             }
+
+            _managedMirrorDirty = false;
         }
 
         private void FlushBreakdownEvents()
@@ -1012,6 +1018,7 @@ namespace Hecton8.Tools
             if (!_decayScheduled)
             {
                 DrainQueuedDurabilityCommands();
+                TryUnregisterLateFrameIfIdle();
                 return true;
             }
 
@@ -1019,16 +1026,21 @@ namespace Hecton8.Tools
                 return false;
 
             _decayScheduled = false;
+            _managedMirrorDirty = true;
             SyncManagedMirrorsFromNative();
             FlushBreakdownEvents();
             DrainQueuedDurabilityCommands();
+            TryUnregisterLateFrameIfIdle();
             return true;
         }
 
         private void QueueDurabilityCommand(DurabilityCommandKind kind, string toolID, float amount, float maxDurability, uint itemHashId = 0u)
         {
             if (TryMergeQueuedDurabilityCommand(kind, toolID, amount, maxDurability, itemHashId))
+            {
+                TryRegisterLateFrame();
                 return;
+            }
 
             PendingDurabilityCommand command = CreatePendingDurabilityCommand(kind, toolID, amount, maxDurability, itemHashId);
             if (_queuedDurabilityCommandCount >= MaxQueuedDurabilityCommands)
@@ -1040,10 +1052,12 @@ namespace Hecton8.Tools
                 }
 
                 TryReplaceQueuedDurabilityCommand(in command);
+                TryRegisterLateFrame();
                 return;
             }
 
             _queuedDurabilityCommands[_queuedDurabilityCommandCount++] = command;
+            TryRegisterLateFrame();
         }
 
         private static PendingDurabilityCommand CreatePendingDurabilityCommand(
@@ -1293,6 +1307,14 @@ namespace Hecton8.Tools
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
             _registeredLateFrame = false;
+        }
+
+        private void TryUnregisterLateFrameIfIdle()
+        {
+            if (_decayScheduled || _queuedDurabilityCommandCount > 0)
+                return;
+
+            TryUnregisterLateFrame();
         }
 
         private void TryRegisterSaveService()

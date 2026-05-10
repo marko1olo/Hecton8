@@ -25,7 +25,7 @@ namespace Hecton8.Core
         private const string MainMenuSceneName = "01_MAIN_MENU";
         private const string WorldSceneName = "02_HECTON_WORLD";
         private const string TransitionOverlayRootName = "[SceneRuntimeService_TransitionOverlay]";
-        private const string TransitionDitherShaderName = "Hecton8/UI/BlueNoiseDitherDissolve";
+        private const string TransitionDitherShaderName = "Hecton8/UI/IGNDitherDissolve";
         private const float MainMenuCameraPanDurationSeconds = 2f;
         private const float MainMenuCameraPanDepth = 9f;
         private const float MainMenuCameraPanPitchDegrees = 16f;
@@ -46,7 +46,6 @@ namespace Hecton8.Core
         private const uint TransitionTelemetryContextHash = 0x53434E45u; // SCNE
         private static readonly int _TransitionDitherProgressId = Shader.PropertyToID("_DitherProgress");
         private static readonly int _TransitionDitherColorId = Shader.PropertyToID("_Color");
-        private static readonly int _TransitionBlueNoiseTextureId = Shader.PropertyToID("_BlueNoiseTex");
         private static readonly int _HectonFreezeFrameDitherId = Shader.PropertyToID("_HectonFreezeFrameDither");
         private static readonly int _GamePausedId = Shader.PropertyToID("_GamePaused");
         private static readonly Color _TransitionAbyssColor = new Color(0.002f, 0.004f, 0.009f, 1f);
@@ -107,7 +106,6 @@ namespace Hecton8.Core
         private CanvasGroup _configuredCinematicMenuGroup;
         private CanvasGroup _cinematicMenuGroup;
         private RectTransform _cinematicMenuRect;
-        private Texture _configuredBlueNoiseTexture;
         private Vector3 _cinematicCameraStartPosition;
         private Vector3 _cinematicCameraTargetPosition;
         private Vector3 _cinematicCameraTargetDelta;
@@ -150,15 +148,14 @@ namespace Hecton8.Core
             operation.allowSceneActivation = true;
         }
 
-        internal void ConfigureMainMenuCinematic(Camera menuCamera, Texture blueNoiseTexture)
+        internal void ConfigureMainMenuCinematic(Camera menuCamera)
         {
-            ConfigureMainMenuCinematic(menuCamera, blueNoiseTexture, null);
+            ConfigureMainMenuCinematic(menuCamera, null);
         }
 
-        internal void ConfigureMainMenuCinematic(Camera menuCamera, Texture blueNoiseTexture, CanvasGroup menuGroup)
+        internal void ConfigureMainMenuCinematic(Camera menuCamera, CanvasGroup menuGroup)
         {
             _configuredCinematicCamera = menuCamera;
-            _configuredBlueNoiseTexture = blueNoiseTexture;
             _configuredCinematicMenuGroup = menuGroup;
         }
 
@@ -585,7 +582,6 @@ namespace Hecton8.Core
             _configuredCinematicMenuGroup = null;
             _cinematicMenuGroup = null;
             _cinematicMenuRect = null;
-            _configuredBlueNoiseTexture = null;
 
             if (_transitionOverlayRoot != null)
                 Destroy(_transitionOverlayRoot);
@@ -690,11 +686,9 @@ namespace Hecton8.Core
             Shader ditherShader = Shader.Find(TransitionDitherShaderName);
             if (ditherShader != null)
             {
-                _transitionDitherMaterial = new Material(ditherShader); // COLD ALLOC: Material[1] - blue-noise scene dissolve material - owner: SceneRuntimeService
+                _transitionDitherMaterial = new Material(ditherShader); // COLD ALLOC: Material[1] - IGN scene dissolve material - owner: SceneRuntimeService
                 _transitionDitherMaterial.SetColor(_TransitionDitherColorId, _TransitionAbyssColor);
                 _transitionDitherMaterial.SetFloat(_TransitionDitherProgressId, 1f);
-                if (_configuredBlueNoiseTexture != null)
-                    _transitionDitherMaterial.SetTexture(_TransitionBlueNoiseTextureId, _configuredBlueNoiseTexture);
                 image.material = _transitionDitherMaterial;
             }
 

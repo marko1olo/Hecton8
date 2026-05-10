@@ -288,7 +288,7 @@ namespace Hecton8.World
             float thresholdScale = ResolveThresholdScale();
             float thresholdScaleSqr = thresholdScale * thresholdScale;
             AbsoluteUniversePosition cameraAup = ResolveViewerAup();
-            int batchCount = Mathf.Min(_activeImpostors.Count, MaxHotPathImpostorsPerTick);
+            int batchCount = math.min(_activeImpostors.Count, MaxHotPathImpostorsPerTick);
             for (int processed = 0; processed < batchCount && _activeImpostors.Count > 0; processed++)
             {
                 if (_impostorTickCursor >= _activeImpostors.Count)
@@ -459,7 +459,7 @@ namespace Hecton8.World
             }
 
             if (_mainCamera == null &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 playerTransform.TryGetComponent(out _mainCamera);
@@ -485,9 +485,13 @@ namespace Hecton8.World
             if (originalObject == null)
                 return;
 
+            Transform originalTransform = instance.OriginalTransform != null
+                ? instance.OriginalTransform
+                : originalObject.transform;
+            Vector3 originalPosition = originalTransform.position;
             GameObject billboard = pool.Spawn(
                 _billboardPrefab,
-                instance.OriginalTransform.position,
+                originalPosition,
                 Quaternion.identity);
             if (billboard == null)
                 return;
@@ -509,7 +513,7 @@ namespace Hecton8.World
             instance.IsActive = true;
             _impostorBillboards[instance.ImpostorID] = billboard;
             AbsoluteUniversePosition cameraAup = ResolveViewerAup();
-            UpdateBillboardTransform(ref instance, instance.OriginalTransform.position, in cameraAup);
+            UpdateBillboardTransform(ref instance, originalPosition, in cameraAup);
             ApplyOriginalObjectVisibility(ref instance, false);
         }
 

@@ -50,11 +50,15 @@ namespace Hecton8.Editor
                     "MaxVisibleSparkInstances = 4",
                     "while (activeMask != 0u && activeCount < MaxVisibleSparkInstances)",
                     "math.tzcnt(activeMask)",
+                    "int selectedCount = 0;",
+                    "while (selectedCount < toggleCount && attempts < MaxShortCircuitBits * 4)",
+                    "selectedCount++;",
                     "Graphics.DrawMeshInstanced") &&
                 ContainsAll(
                     damageSystem,
                     "float phase01 = math.frac(_sparkPhase + bitIndex * 0.618f);",
                     "float triangle01 = 1f - math.abs((phase01 * 2f) - 1f);") &&
+                SourceIndex(damageSystem, "math.countbits((uint)toggleMask)") == int.MaxValue &&
                 SourceIndex(damageSystem, "math." + "sin") == int.MaxValue;
 
             bool sparkAnchorCachePass =
@@ -138,6 +142,26 @@ namespace Hecton8.Editor
                     "private void WriteLootLine") &&
                 CountOccurrences(prologueController, "HectonScanRenderRegistry.TryFindNearestLootSphereAup") == 1 &&
                 SourceIndex(prologueController, "playerTransform" + ".position") == int.MaxValue;
+
+            bool biosLootInvalidationPass =
+                ContainsAll(
+                    prologueController,
+                    "private void InvalidateBiosLootCache()",
+                    "_biosLootCacheFrameCounter = 0u;",
+                    "_cachedHasLootSphereAup = false;",
+                    "_cachedLootSphereAup = default;",
+                    "_cachedObserverMovement = null;") &&
+                ContainsOrdered(
+                    prologueController,
+                    "public void InvalidateColdReferenceCache()",
+                    "_seatStrapLatches.Clear();",
+                    "InvalidateBiosLootCache();") &&
+                ContainsOrdered(
+                    prologueController,
+                    "public void BeginCrashSequence(uint seed, float severity01)",
+                    "_biosRefreshTimer = 0f;",
+                    "InvalidateBiosLootCache();",
+                    "if (_smoke01 > _resolvedVentedSmokeThreshold01)");
 
             bool crashResetPass =
                 ContainsAll(
@@ -298,8 +322,11 @@ namespace Hecton8.Editor
                     extinguisherNozzle,
                     "FoamFlowRefreshFrameMask = 0x3u",
                     "_cachedFoamFlowDirection",
+                    "private Transform _resolvedNozzleForwardReference;",
                     "RefreshCachedFoamFlowDirectionFrame();",
                     "(_foamFlowRefreshFrameCounter++ & FoamFlowRefreshFrameMask) != 0u",
+                    "Transform nozzle = _resolvedNozzleForwardReference;",
+                    "private void EnsureSelfTransform()",
                     "targetController.ApplyExtinguisherFoamCachedFlow(foamDelta, _cachedFoamFlowDirection)") &&
                 ContainsAll(
                     prologueController,
@@ -308,6 +335,7 @@ namespace Hecton8.Editor
                     "FoamFlowTrustedMinimumLengthSq",
                     "FoamFlowTrustedMaximumLengthSq",
                     "private void ApplyFoamDelta(float delta)") &&
+                SourceIndex(extinguisherNozzle, "Transform nozzle = nozzleForwardReference != null ? nozzleForwardReference : transform;") == int.MaxValue &&
                 SourceIndex(extinguisherNozzle, "float2 flowDirection = ResolveFoamFlowDirection();") == int.MaxValue &&
                 SourceIndex(extinguisherNozzle, "new Vector2(flowDirection.x, flowDirection.y)") == int.MaxValue;
 
@@ -360,6 +388,18 @@ namespace Hecton8.Editor
                     "private bool _batteryVisualActive;",
                     "if (_batteryVisualStateCached && _batteryVisualActive == hasBattery)",
                     "_batteryVisualStateCached = false;") &&
+                ContainsOrdered(
+                    batteryCompartment,
+                    "private void OnEnable()",
+                    "CacheDoorAxis();",
+                    "_batteryVisualStateCached = false;",
+                    "ApplyDoorVisual();") &&
+                ContainsOrdered(
+                    batteryCompartment,
+                    "private void OnDisable()",
+                    "AbortBatterySnap();",
+                    "_batteryVisualStateCached = false;",
+                    "TryUnregisterTick();") &&
                 CountOccurrences(batteryCompartment, "gameObject.SetActive(hasBattery)") == 1;
 
             bool seatAupPass =
@@ -369,8 +409,10 @@ namespace Hecton8.Editor
                     "_playerMovement.CurrentAup",
                     "currentAup.ToRuntimeFloat3()",
                     "float distanceSq = delta.sqrMagnitude;",
-                    "math.rsqrt(distanceSq)") &&
+                    "ApproximateMagnitudeNoSqrt(delta)",
+                    "math.rcp(math.max(ApproximateMagnitudeNoSqrt(delta), 0.000001f))") &&
                 SourceIndex(strapCoordinator, "Vector3." + "Distance") == int.MaxValue &&
+                SourceIndex(strapCoordinator, "math.rsqrt(distanceSq)") == int.MaxValue &&
                 SourceIndex(strapCoordinator, "_playerTransform") == int.MaxValue &&
                 SourceIndex(strapCoordinator, "FromRuntimePosition(currentPosition)") == int.MaxValue;
 
@@ -393,7 +435,27 @@ namespace Hecton8.Editor
                 SourceIndex(strapCoordinator, "TryResolveSeatPosition") == int.MaxValue &&
                 SourceIndex(strapCoordinator, "targetPosition = seatAnchor.position;") == int.MaxValue &&
                 SourceIndex(strapCoordinator, "if (!TryCacheSeatLockPose() ||") == int.MaxValue &&
+                SourceIndex(strapCoordinator, "if (!TryCacheSeatLockPose())") >
+                SourceIndex(strapCoordinator, "private void EngageSeatLock()") &&
                 SourceIndex(strapCoordinator, "_seatLockRuntimePosition") == int.MaxValue;
+
+            bool seatPlayerCacheInvalidationPass =
+                ContainsAll(
+                    strapCoordinator,
+                    "private void InvalidatePlayerCache()",
+                    "_playerMotor = null;",
+                    "_playerMovement = null;") &&
+                ContainsOrdered(
+                    strapCoordinator,
+                    "private void OnDisable()",
+                    "ReleaseSeatLock();",
+                    "InvalidatePlayerCache();",
+                    "TryUnregisterFixedTick();") &&
+                ContainsOrdered(
+                    strapCoordinator,
+                    "public void ResetLatchState()",
+                    "_rightIkAnchor = null;",
+                    "InvalidatePlayerCache();");
 
             bool seatCoordinatorScalarCachePass =
                 ContainsAll(
@@ -551,6 +613,7 @@ namespace Hecton8.Editor
                         damagePublicEventScalarCachePass &&
                         biosZeroGcPass &&
                         biosLootCachePass &&
+                        biosLootInvalidationPass &&
                         crashResetPass &&
                         manualVentingPass &&
                         controllerScalarCachePass &&
@@ -572,6 +635,7 @@ namespace Hecton8.Editor
                         batteryVisualCachePass &&
                         seatAupPass &&
                         seatLockPoseCachePass &&
+                        seatPlayerCacheInvalidationPass &&
                         seatCoordinatorScalarCachePass &&
                         strapLatchVisualCachePass &&
                         strapLatchScalarCachePass &&
@@ -594,6 +658,7 @@ namespace Hecton8.Editor
                 damagePublicEventScalarCachePass,
                 biosZeroGcPass,
                 biosLootCachePass,
+                biosLootInvalidationPass,
                 crashResetPass,
                 manualVentingPass,
                 controllerScalarCachePass,
@@ -615,6 +680,7 @@ namespace Hecton8.Editor
                 batteryVisualCachePass,
                 seatAupPass,
                 seatLockPoseCachePass,
+                seatPlayerCacheInvalidationPass,
                 seatCoordinatorScalarCachePass,
                 strapLatchVisualCachePass,
                 strapLatchScalarCachePass,
@@ -637,7 +703,7 @@ namespace Hecton8.Editor
 
         private static string ReadProjectFile(string projectRelativePath)
         {
-            string path = Path.Combine(Environment.CurrentDirectory, projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
+            string path = Path.Combine(System.Environment.CurrentDirectory, projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
             return File.Exists(path) ? File.ReadAllText(path) : string.Empty;
         }
 
@@ -715,6 +781,7 @@ namespace Hecton8.Editor
             bool damagePublicEventScalarCachePass,
             bool biosZeroGcPass,
             bool biosLootCachePass,
+            bool biosLootInvalidationPass,
             bool crashResetPass,
             bool manualVentingPass,
             bool controllerScalarCachePass,
@@ -736,6 +803,7 @@ namespace Hecton8.Editor
             bool batteryVisualCachePass,
             bool seatAupPass,
             bool seatLockPoseCachePass,
+            bool seatPlayerCacheInvalidationPass,
             bool seatCoordinatorScalarCachePass,
             bool strapLatchVisualCachePass,
             bool strapLatchScalarCachePass,
@@ -748,7 +816,7 @@ namespace Hecton8.Editor
             bool hapticFrequencyCapPass,
             bool lifecycleScalarRefreshPass)
         {
-            string path = Path.Combine(Environment.CurrentDirectory, ArtifactRelativePath.Replace('/', Path.DirectorySeparatorChar));
+            string path = Path.Combine(System.Environment.CurrentDirectory, ArtifactRelativePath.Replace('/', Path.DirectorySeparatorChar));
             string directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
@@ -764,6 +832,7 @@ namespace Hecton8.Editor
             AppendJsonBool(builder, "damagePublicEventScalarCachePass", damagePublicEventScalarCachePass, true);
             AppendJsonBool(builder, "biosZeroGcPass", biosZeroGcPass, true);
             AppendJsonBool(builder, "biosLootCachePass", biosLootCachePass, true);
+            AppendJsonBool(builder, "biosLootInvalidationPass", biosLootInvalidationPass, true);
             AppendJsonBool(builder, "crashResetPass", crashResetPass, true);
             AppendJsonBool(builder, "manualVentingPass", manualVentingPass, true);
             AppendJsonBool(builder, "controllerScalarCachePass", controllerScalarCachePass, true);
@@ -785,6 +854,7 @@ namespace Hecton8.Editor
             AppendJsonBool(builder, "batteryVisualCachePass", batteryVisualCachePass, true);
             AppendJsonBool(builder, "seatAupPass", seatAupPass, true);
             AppendJsonBool(builder, "seatLockPoseCachePass", seatLockPoseCachePass, true);
+            AppendJsonBool(builder, "seatPlayerCacheInvalidationPass", seatPlayerCacheInvalidationPass, true);
             AppendJsonBool(builder, "seatCoordinatorScalarCachePass", seatCoordinatorScalarCachePass, true);
             AppendJsonBool(builder, "strapLatchVisualCachePass", strapLatchVisualCachePass, true);
             AppendJsonBool(builder, "strapLatchScalarCachePass", strapLatchScalarCachePass, true);

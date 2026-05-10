@@ -23,7 +23,7 @@ The archive contains documentation removed from active root or active `Docs` bec
 
 - feature migration pack: `implementation_plan.md`, `task.md`, `walkthrough.md`
 - findings/reporting: `MY_FINDINGS.md`, `review_issues.md`, `RUNTIME_PROBLEM_REPORT_AND_FILES.txt`, `SUMMARY_OF_WORK_COMPLETED.md`, `oshibka-delete.txt`
-- prompt/chat payload: `_AI_RULES.md`, `README (2).md`, `CLAUDE_KELP_SHADER_MASTER_PROMPT.md`, `ПРОМПТ 8 МАРТА УТРО.txt`, `ДАМП ХУЙНИ ИЗ ЧАТА НОВОСТИ ЮНИТИ.txt`
+- prompt/chat payload: `_AI_RULES.md`, `README (2).md`, `CLAUDE_KELP_SHADER_MASTER_PROMPT.md`, `PROMPT 8 MARTA UTRO.txt`, `DAMP HUYNI IZ ChATA NOVOSTI YuNITI.txt`
 - shell completion summaries: `01_MAIN_MENU_PRODUCTION_READINESS.md`, `SETTINGS_IMPLEMENTATION_SUMMARY.md`
 - stale procedural snapshots and transfer ledgers
 - old flora session docs
@@ -55,10 +55,10 @@ The following former root references were also normalized into active `Docs`:
 - `Docs/AI_Fauna/AI_FAUNA_WORLD_INTEGRATION_REPORT.md`
 - `Docs/Legacy_World_Reference/TERRAIN_108_BIOMES_VISION.md`
 - `Docs/Legacy_World_Reference/terrain_description.txt`
-- `Docs/Legacy_Backlog/беклог.txt`
-- `Docs/Legacy_Backlog/спецификации.txt`
-- `Docs/Legacy_Backlog/Полный_список_недоработок_и_план_разработки_—_Project_Submerge_(HECTON-8) - ЧИТАТЬ, рядом создать документ - что и как испарвляем, дианмично обновлять.md`
-- `Docs/Legacy_Backlog/Что_и_как_исправляем_—_живой_план.md`
+- `Docs/Legacy_Backlog/beklog.txt`
+- `Docs/Legacy_Backlog/spetsifikatsii.txt`
+- `Docs/Legacy_Backlog/Polnyy_spisok_nedorabotok_i_plan_razrabotki_—_Project_Submerge_(HECTON-8) - ChITAT, ryadom sozdat dokument - chto i kak isparvlyaem, dianmichno obnovlyat.md`
+- `Docs/Legacy_Backlog/Chto_i_kak_ispravlyaem_—_zhivoy_plan.md`
 
 ## Cleanup Notes
 

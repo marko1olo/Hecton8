@@ -690,14 +690,14 @@ public struct VoxelDensityJob : IJobParallelFor
 
     float3 ResolveEntranceDirection(CaveEntrance entrance)
     {
-        float3 direction = math.normalizesafe(entrance.inwardDirection, new float3(0f, -1f, 0f));
+        float3 direction = NormalizeFastOrDefault(entrance.inwardDirection, new float3(0f, -1f, 0f));
         float normalBlend = math.saturate(entrance.terrainNormalBlend);
         if (normalBlend <= 0f)
             return direction;
 
-        float3 terrainNormal = math.normalizesafe(entrance.terrainNormal, new float3(0f, 1f, 0f));
-        float3 terrainInward = math.normalizesafe(-terrainNormal, direction);
-        return math.normalizesafe(math.lerp(direction, terrainInward, normalBlend * 0.55f), direction);
+        float3 terrainNormal = NormalizeFastOrDefault(entrance.terrainNormal, new float3(0f, 1f, 0f));
+        float3 terrainInward = NormalizeFastOrDefault(-terrainNormal, direction);
+        return NormalizeFastOrDefault(math.lerp(direction, terrainInward, normalBlend * 0.55f), direction);
     }
 
 
@@ -895,6 +895,24 @@ public struct VoxelDensityJob : IJobParallelFor
         return math.select(0f, 0.5f * (estimate + safe / math.max(estimate, 0.000000000001f)), x > 0f);
     }
 
+    static float3 NormalizeFastOrDefault(float3 value, float3 fallback)
+    {
+        float lengthSq = math.lengthsq(value);
+        return lengthSq > 0.0001f ? value / math.max(LengthApprox(value), 0.0001f) : fallback;
+    }
+
+    static float SineEnvelopeCheat01(float t)
+    {
+        float x = math.saturate(t);
+        return x * (1f - x) * 4f;
+    }
+
+    static float TriangleWave01(float t)
+    {
+        float x = math.frac(t);
+        return 1f - math.abs(x * 2f - 1f);
+    }
+
     void EvaluateRoom(float3 warpedPos, float3 absoluteOriginalPos, CaveNode node, out float smoothDist, out float finalDist)
     {
         smoothDist = 0f;
@@ -983,9 +1001,8 @@ public struct VoxelDensityJob : IJobParallelFor
         if (axisLengthSq < 0.0001f)
             return SDSphere(evalPos, tunnel.pointA, math.max(tunnel.radiusA, tunnel.radiusB));
 
-        float invAxisLength = math.rsqrt(axisLengthSq);
-        float axisLength = axisLengthSq * invAxisLength;
-        float3 tangent = axis * invAxisLength;
+        float axisLength = LengthApprox(axis);
+        float3 tangent = axis / math.max(axisLength, 0.0001f);
         float lateralAmplitude = math.max(tunnel.warpAmount, math.max(tunnel.heightScale, tunnel.widthScale) * 0.35f);
         float3 controlA = tunnel.pointA + tangent * (axisLength * 0.28f)
             + ComputeTunnelCurveOffset(tunnel.pointA, tunnel.pointB, tangent, 0.25f, lateralAmplitude, 901u);
@@ -1137,14 +1154,14 @@ public struct VoxelDensityJob : IJobParallelFor
     float3 ComputeTunnelCurveOffset(float3 pointA, float3 pointB, float3 tangent, float t, float amplitude, uint seedOffset)
     {
         float3 upHint = math.abs(tangent.y) > 0.8f ? new float3(1f, 0f, 0f) : new float3(0f, 1f, 0f);
-        float3 right = math.normalizesafe(math.cross(upHint, tangent), new float3(1f, 0f, 0f));
-        float3 up = math.normalizesafe(math.cross(tangent, right), new float3(0f, 1f, 0f));
+        float3 right = NormalizeFastOrDefault(math.cross(upHint, tangent), new float3(1f, 0f, 0f));
+        float3 up = NormalizeFastOrDefault(math.cross(tangent, right), new float3(0f, 1f, 0f));
         float3 absolutePointA = pointA + absoluteNoiseOffset;
         float3 absolutePointB = pointB + absoluteNoiseOffset;
         float3 noisePoint = (absolutePointA + absolutePointB) * 0.03125f + new float3(t * 3.1f, t * 5.7f, t * 7.9f);
         float lateralNoise = Fractal3DFast(noisePoint + new float3(13.1f, 1.7f, 0.3f), 2, caveParams.seed + seedOffset);
         float verticalNoise = Fractal3DFast(noisePoint + new float3(2.9f, 11.3f, 4.1f), 2, caveParams.seed + seedOffset + 101u);
-        float envelope = math.sin(t * math.PI);
+        float envelope = SineEnvelopeCheat01(t);
         return (right * lateralNoise + up * verticalNoise * 0.75f) * (amplitude * envelope);
     }
 
@@ -1284,7 +1301,7 @@ public struct VoxelDensityJob : IJobParallelFor
     /// <summary>Signed distance to sphere.</summary>
     static float SDSphere(float3 p, float3 center, float radius)
     {
-        return math.length(p - center) - radius;
+        return LengthApprox(p - center) - radius;
     }
 
     /// <summary>Signed distance to axis-aligned ellipsoid (fast approximation).</summary>
@@ -1292,7 +1309,7 @@ public struct VoxelDensityJob : IJobParallelFor
     {
         // Scale space so ellipsoid becomes unit sphere
         float3 scaled = (p - center) / math.max(radii, 0.001f);
-        float lenScaled = math.length(scaled);
+        float lenScaled = LengthApprox(scaled);
 
         if (lenScaled < 0.0001f)
             return -math.cmin(radii); // Deep inside
@@ -1308,8 +1325,8 @@ public struct VoxelDensityJob : IJobParallelFor
         float3 safeRadii = math.max(radii, new float3(0.001f));
         float3 invRadii = 1f / safeRadii;
         float3 invRadiiSq = invRadii / safeRadii;
-        float k0 = math.length(q * invRadii);
-        float k1 = math.length(q * invRadiiSq);
+        float k0 = LengthApprox(q * invRadii);
+        float k1 = LengthApprox(q * invRadiiSq);
         return (k0 - 1f) * k0 / math.max(k1, 0.0001f);
     }
 
@@ -1319,11 +1336,11 @@ public struct VoxelDensityJob : IJobParallelFor
     {
         float3 q = p - center;
         float2 d = new float2(
-            math.length(q.xz) - radius,
+            LengthApprox(q.xz) - radius,
             math.abs(q.y) - halfHeight);
 
         return math.min(math.max(d.x, d.y), 0f)
-             + math.length(math.max(d, 0f))
+             + LengthApprox(math.max(d, 0f))
              - math.max(roundness, 0.01f);
     }
 
@@ -1331,7 +1348,7 @@ public struct VoxelDensityJob : IJobParallelFor
     static float SDBox(float3 p, float3 center, float3 halfExtents)
     {
         float3 q = math.abs(p - center) - halfExtents;
-        return math.length(math.max(q, 0f)) + math.min(math.cmax(q), 0f);
+        return LengthApprox(math.max(q, 0f)) + math.min(math.cmax(q), 0f);
     }
 
     /// <summary>Signed distance to conic capsule (different radii at each end).</summary>
@@ -1343,11 +1360,11 @@ public struct VoxelDensityJob : IJobParallelFor
         float baba = math.dot(ba, ba);
 
         if (baba < 0.0001f)
-            return math.length(pa) - radiusA; // Degenerate: a ≈ b → sphere
+            return LengthApprox(pa) - radiusA; // Degenerate: a ≈ b → sphere
 
         float h = math.saturate(math.dot(pa, ba) / baba);
         float radius = math.lerp(radiusA, radiusB, h);
-        return math.length(pa - ba * h) - radius;
+        return LengthApprox(pa - ba * h) - radius;
     }
 
     /// <summary>Signed distance to capsule with elliptic cross-section.
@@ -1360,20 +1377,20 @@ public struct VoxelDensityJob : IJobParallelFor
         float baba = math.dot(ba, ba);
 
         if (baba < 0.0001f)
-            return math.length(pa) - radius;
+            return LengthApprox(pa) - radius;
 
         float h = math.saturate(math.dot(pa, ba) / baba);
         float3 closest = pa - ba * h;
 
         // Build local coordinate frame perpendicular to tunnel direction
-        float3 forward = ba * math.rsqrt(baba); // Normalized direction
+        float3 forward = NormalizeApproxOr(ba, new float3(0f, 0f, 1f));
         float3 up = new float3(0, 1, 0);
 
         // Handle near-vertical tunnels
         if (math.abs(math.dot(forward, up)) > 0.99f)
             up = new float3(1, 0, 0);
 
-        float3 right = math.normalizesafe(math.cross(forward, up));
+        float3 right = NormalizeApproxOr(math.cross(forward, up), new float3(1f, 0f, 0f));
         up = math.cross(right, forward);
 
         // Project onto local axes and scale
@@ -1385,12 +1402,37 @@ public struct VoxelDensityJob : IJobParallelFor
         float safeHeight = math.max(heightScale, 0.01f);
         float2 scaled = new float2(projRight / safeWidth, projUp / safeHeight);
 
-        return math.length(scaled) - radius;
+        return LengthApprox(scaled) - radius;
     }
 
     // ════════════════════════════════════════════════════════════════════════
     //  CSG OPERATIONS — Smooth blending
     // ════════════════════════════════════════════════════════════════════════
+
+    static float LengthApprox(float3 value)
+    {
+        float3 axis = math.abs(value);
+        float maxAxis = math.cmax(axis);
+        float minAxis = math.cmin(axis);
+        float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
+        return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
+    }
+
+    static float LengthApprox(float2 value)
+    {
+        float2 axis = math.abs(value);
+        float maxAxis = math.max(axis.x, axis.y);
+        float minAxis = math.min(axis.x, axis.y);
+        return maxAxis + minAxis * 0.375f;
+    }
+
+    static float3 NormalizeApproxOr(float3 value, float3 fallback)
+    {
+        if (math.lengthsq(value) <= 0.0001f)
+            return fallback;
+
+        return value / math.max(LengthApprox(value), 0.0001f);
+    }
 
     /// <summary>Polynomial smooth minimum (cubic). Merges shapes organically.</summary>
     static float SmoothMin(float a, float b, float k)
@@ -1514,7 +1556,7 @@ public struct VoxelDensityJob : IJobParallelFor
     {
         float scaled = y * frequency;
         float fractional = math.frac(scaled);
-        float wave = math.abs(math.sin(fractional * math.PI));
+        float wave = TriangleWave01(fractional);
         float terrace = wave * wave * (3f - 2f * wave);
         float sharper = terrace * terrace * (3f - 2f * terrace);
         terrace = math.lerp(terrace, sharper, math.saturate((sharpness - 1f) * 0.5f));
@@ -1626,8 +1668,9 @@ public struct VoxelMCCountJob : IJobParallelFor
 {
     public int cellsX, cellsY, cellsZ;
     public int ptsX, ptsY, ptsZ;
+    public float densityDecodeScale;
 
-    [ReadOnly] public NativeArray<float> density;
+    [ReadOnly] public NativeArray<sbyte> density;
     [ReadOnly] public NativeArray<int> edgeTable;
     [ReadOnly] public NativeArray<int> triTable;
     [WriteOnly] public NativeArray<int> cellVertexCounts;
@@ -1677,7 +1720,28 @@ public struct VoxelMCCountJob : IJobParallelFor
     }
 
     int GI(int ix, int iy, int iz) => ix + iy * ptsX + iz * ptsX * ptsY;
-    float D(int ix, int iy, int iz) => density[GI(ix, iy, iz)];
+    float D(int ix, int iy, int iz) => density[GI(ix, iy, iz)] * densityDecodeScale;
+}
+
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+public struct VoxelDensityQuantizeJob : IJobParallelFor
+{
+    public float densityDecodeScale;
+
+    [ReadOnly] public NativeArray<float> density;
+    [WriteOnly] public NativeArray<sbyte> quantizedDensity;
+
+    public void Execute(int index)
+    {
+        float source = density[index];
+        float invScale = 1f / math.max(densityDecodeScale, 0.0001f);
+        float scaled = math.clamp(source * invScale, -127f, 127f);
+        int quantized = scaled >= 0f ? (int)(scaled + 0.5f) : (int)(scaled - 0.5f);
+        if (quantized == 0 && math.abs(source) > 0.00001f)
+            quantized = source < 0f ? -1 : 1;
+
+        quantizedDensity[index] = (sbyte)quantized;
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1690,8 +1754,9 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
     public int ptsX, ptsY, ptsZ;
     public float3 volumeOrigin;
     public float voxelStep;
+    public float densityDecodeScale;
 
-    [ReadOnly] public NativeArray<float> density;
+    [ReadOnly] public NativeArray<sbyte> density;
     [ReadOnly] public NativeArray<int> edgeTable;
     [ReadOnly] public NativeArray<int> triTable;
     [ReadOnly] public NativeArray<int> cellVertexOffsets;
@@ -1805,7 +1870,7 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
     }
 
     int GI(int ix,int iy,int iz) => ix+iy*ptsX+iz*ptsX*ptsY;
-    float D(int ix,int iy,int iz) => density[GI(ix,iy,iz)];
+    float D(int ix,int iy,int iz) => density[GI(ix,iy,iz)] * densityDecodeScale;
     float3 P(int ix,int iy,int iz) => volumeOrigin+new float3(ix,iy,iz)*voxelStep;
 
     static float3 Lerp(float3 pA,float3 pB,float dA,float dB)
@@ -1971,7 +2036,7 @@ public unsafe struct VoxelWeldJob : IJob
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-//  JOB 3: Normals from SDF central-difference gradient
+//  JOB 3: Cheap SDF normals and cinematic curvature masks
 // ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelNormalJob : IJobParallelFor
@@ -1979,8 +2044,8 @@ public struct VoxelNormalJob : IJobParallelFor
     public int ptsX, ptsY, ptsZ;
     public float3 volumeOrigin;
     public float voxelStep;
-    [ReadOnly] public NativeArray<float> densityField;
-    [ReadOnly] public NativeArray<float> smoothDensityField;
+    public float densityDecodeScale;
+    [ReadOnly] public NativeArray<sbyte> densityField;
     [ReadOnly] public NativeArray<float3> positions;
     [WriteOnly] public NativeArray<float3> normals;
     [WriteOnly] public NativeArray<float> curvatureValues;
@@ -1989,121 +2054,55 @@ public struct VoxelNormalJob : IJobParallelFor
     public void Execute(int idx)
     {
         float3 wp = positions[idx];
-        float epsilon = math.max(voxelStep * 0.5f, 0.05f);
-        float3 offsetX = new float3(epsilon, 0f, 0f);
-        float3 offsetY = new float3(0f, epsilon, 0f);
-        float3 offsetZ = new float3(0f, 0f, epsilon);
-
-        float3 gradient = SampleInterpolatedCentralDifferenceGradient(densityField, wp);
-        float3 normal = math.normalizesafe(-gradient, new float3(0f, 1f, 0f));
+        float invVoxelStep = 1f / math.max(voxelStep, 0.0001f);
+        float3 sample = (wp - volumeOrigin) * invVoxelStep;
+        int x = (int)math.clamp(sample.x + 0.5f, 0f, ptsX - 1f);
+        int y = (int)math.clamp(sample.y + 0.5f, 0f, ptsY - 1f);
+        int z = (int)math.clamp(sample.z + 0.5f, 0f, ptsZ - 1f);
+        float3 gradient = SampleGridNodeGradient(densityField, x, y, z);
+        float3 normal = FastNormalizeOrUp(-gradient);
         normals[idx] = normal;
 
-        float invEpsilonSq = 1f / math.max(epsilon * epsilon, 0.0001f);
-        float centerDensity = SampleField(smoothDensityField, wp);
-        float smoothPosX = SampleField(smoothDensityField, wp + offsetX);
-        float smoothNegX = SampleField(smoothDensityField, wp - offsetX);
-        float smoothPosY = SampleField(smoothDensityField, wp + offsetY);
-        float smoothNegY = SampleField(smoothDensityField, wp - offsetY);
-        float smoothPosZ = SampleField(smoothDensityField, wp + offsetZ);
-        float smoothNegZ = SampleField(smoothDensityField, wp - offsetZ);
-        float laplacian =
-            (smoothPosX + smoothNegX - (2f * centerDensity)) +
-            (smoothPosY + smoothNegY - (2f * centerDensity)) +
-            (smoothPosZ + smoothNegZ - (2f * centerDensity));
-
-        float signedCurvature = (laplacian * invEpsilonSq) * epsilon;
-        float curvature01 = math.saturate(0.5f + signedCurvature * 0.35f);
+        float horizontalMask = math.saturate((math.abs(normal.x) + math.abs(normal.z)) * 0.5f);
+        float ceilingMask = math.saturate(-normal.y);
+        float curvature01 = math.saturate(0.45f + horizontalMask * 0.18f - ceilingMask * 0.22f);
         curvatureValues[idx] = curvature01;
 
-        ambientOcclusionValues[idx] = 1f;
+        float cavityMask = math.saturate((0.5f - curvature01) * 2f);
+        float overheadMask = math.saturate(0.5f - normal.y * 0.5f);
+        ambientOcclusionValues[idx] = math.saturate(1f - cavityMask * 0.42f - overheadMask * 0.18f);
     }
 
-    float3 SampleInterpolatedCentralDifferenceGradient(NativeArray<float> field, float3 worldPosition)
+    static float3 FastNormalizeOrUp(float3 value)
     {
-        float sampleX = math.clamp((worldPosition.x - volumeOrigin.x) / voxelStep, 0f, ptsX - 1.001f);
-        float sampleY = math.clamp((worldPosition.y - volumeOrigin.y) / voxelStep, 0f, ptsY - 1.001f);
-        float sampleZ = math.clamp((worldPosition.z - volumeOrigin.z) / voxelStep, 0f, ptsZ - 1.001f);
+        float lenSq = math.lengthsq(value);
+        if (lenSq <= 0.0001f)
+            return new float3(0f, 1f, 0f);
 
-        int x0 = (int)math.floor(sampleX);
-        int y0 = (int)math.floor(sampleY);
-        int z0 = (int)math.floor(sampleZ);
-        int x1 = math.min(x0 + 1, ptsX - 1);
-        int y1 = math.min(y0 + 1, ptsY - 1);
-        int z1 = math.min(z0 + 1, ptsZ - 1);
-
-        float tx = sampleX - x0;
-        float ty = sampleY - y0;
-        float tz = sampleZ - z0;
-
-        float3 g000 = SampleGridNodeGradient(field, x0, y0, z0);
-        float3 g100 = SampleGridNodeGradient(field, x1, y0, z0);
-        float3 g010 = SampleGridNodeGradient(field, x0, y1, z0);
-        float3 g110 = SampleGridNodeGradient(field, x1, y1, z0);
-        float3 g001 = SampleGridNodeGradient(field, x0, y0, z1);
-        float3 g101 = SampleGridNodeGradient(field, x1, y0, z1);
-        float3 g011 = SampleGridNodeGradient(field, x0, y1, z1);
-        float3 g111 = SampleGridNodeGradient(field, x1, y1, z1);
-
-        float3 g00 = math.lerp(g000, g100, tx);
-        float3 g10 = math.lerp(g010, g110, tx);
-        float3 g01 = math.lerp(g001, g101, tx);
-        float3 g11 = math.lerp(g011, g111, tx);
-        float3 g0 = math.lerp(g00, g10, ty);
-        float3 g1 = math.lerp(g01, g11, ty);
-        return math.lerp(g0, g1, tz);
+        float3 axis = math.abs(value);
+        float maxAxis = math.cmax(axis);
+        float minAxis = math.cmin(axis);
+        float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
+        float invLen = 1f / math.max(maxAxis + midAxis * 0.375f + minAxis * 0.25f, 0.0001f);
+        return value * invLen;
     }
 
-    float3 SampleGridNodeGradient(NativeArray<float> field, int x, int y, int z)
+    float3 SampleGridNodeGradient(NativeArray<sbyte> field, int x, int y, int z)
     {
-        int xPrev = math.max(0, x - 1);
-        int xNext = math.min(ptsX - 1, x + 1);
-        int yPrev = math.max(0, y - 1);
-        int yNext = math.min(ptsY - 1, y + 1);
-        int zPrev = math.max(0, z - 1);
-        int zNext = math.min(ptsZ - 1, z + 1);
+        float center = ReadDensity(field, x, y, z);
 
         return new float3(
-            field[GridIndex(xNext, y, z)] - field[GridIndex(xPrev, y, z)],
-            field[GridIndex(x, yNext, z)] - field[GridIndex(x, yPrev, z)],
-            field[GridIndex(x, y, zNext)] - field[GridIndex(x, y, zPrev)]);
+            x < ptsX - 1 ? ReadDensity(field, x + 1, y, z) - center : center - ReadDensity(field, math.max(0, x - 1), y, z),
+            y < ptsY - 1 ? ReadDensity(field, x, y + 1, z) - center : center - ReadDensity(field, x, math.max(0, y - 1), z),
+            z < ptsZ - 1 ? ReadDensity(field, x, y, z + 1) - center : center - ReadDensity(field, x, y, math.max(0, z - 1)));
     }
 
-    float SampleField(NativeArray<float> field, float3 worldPosition)
+    float ReadDensity(NativeArray<sbyte> field, int x, int y, int z)
     {
-        float sampleX = math.clamp((worldPosition.x - volumeOrigin.x) / voxelStep, 0f, ptsX - 1.001f);
-        float sampleY = math.clamp((worldPosition.y - volumeOrigin.y) / voxelStep, 0f, ptsY - 1.001f);
-        float sampleZ = math.clamp((worldPosition.z - volumeOrigin.z) / voxelStep, 0f, ptsZ - 1.001f);
-
-        int x0 = (int)math.floor(sampleX);
-        int y0 = (int)math.floor(sampleY);
-        int z0 = (int)math.floor(sampleZ);
-        int x1 = math.min(x0 + 1, ptsX - 1);
-        int y1 = math.min(y0 + 1, ptsY - 1);
-        int z1 = math.min(z0 + 1, ptsZ - 1);
-
-        float tx = sampleX - x0;
-        float ty = sampleY - y0;
-        float tz = sampleZ - z0;
-
-        float c000 = field[GridIndex(x0, y0, z0)];
-        float c100 = field[GridIndex(x1, y0, z0)];
-        float c010 = field[GridIndex(x0, y1, z0)];
-        float c110 = field[GridIndex(x1, y1, z0)];
-        float c001 = field[GridIndex(x0, y0, z1)];
-        float c101 = field[GridIndex(x1, y0, z1)];
-        float c011 = field[GridIndex(x0, y1, z1)];
-        float c111 = field[GridIndex(x1, y1, z1)];
-
-        float c00 = math.lerp(c000, c100, tx);
-        float c10 = math.lerp(c010, c110, tx);
-        float c01 = math.lerp(c001, c101, tx);
-        float c11 = math.lerp(c011, c111, tx);
-        float c0 = math.lerp(c00, c10, ty);
-        float c1 = math.lerp(c01, c11, ty);
-        return math.lerp(c0, c1, tz);
+        return field[GridIndex(x, y, z)] * densityDecodeScale;
     }
 
-int GridIndex(int x, int y, int z) => x + y * ptsX + z * ptsX * ptsY;
+    int GridIndex(int x, int y, int z) => x + y * ptsX + z * ptsX * ptsY;
 }
 
 [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -2194,9 +2193,9 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
             return;
 
         float3 terrainNormal = SampleTerrainNormal(absoluteWorldXZ);
-        float3 voxelNormal = math.normalizesafe(normals[idx], new float3(0f, 1f, 0f));
+        float3 voxelNormal = NormalizeFastOrDefault(normals[idx], new float3(0f, 1f, 0f));
         float blendToTerrain = VoxelSeamDirector.ComputeBoundaryBlend01(boundaryDistance, seamTransitionBand);
-        normals[idx] = BlendNormalsSlerp(voxelNormal, terrainNormal, blendToTerrain);
+        normals[idx] = BlendNormalsNlerp(voxelNormal, terrainNormal, blendToTerrain);
     }
 
     float SampleTerrainHeight(float2 absoluteWorldXZ)
@@ -2240,7 +2239,7 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
         float3 normal11 = ResolveTerrainGridNormal(x1, z1);
         float3 normalX0 = math.lerp(normal00, normal10, fx);
         float3 normalX1 = math.lerp(normal01, normal11, fx);
-        return math.normalizesafe(math.lerp(normalX0, normalX1, fz), new float3(0f, 1f, 0f));
+        return NormalizeFastOrDefault(math.lerp(normalX0, normalX1, fz), new float3(0f, 1f, 0f));
     }
 
     float3 ResolveTerrainGridNormal(int x, int z)
@@ -2259,24 +2258,28 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
         float stepZ = math.max((zNext - zPrev) * voxelStep, voxelStep);
         float3 tangentX = new float3(stepX, heightRight - heightLeft, 0f);
         float3 tangentZ = new float3(0f, heightForward - heightBack, stepZ);
-        return math.normalizesafe(math.cross(tangentZ, tangentX), new float3(0f, 1f, 0f));
+        return NormalizeFastOrDefault(math.cross(tangentZ, tangentX), new float3(0f, 1f, 0f));
     }
 
-    static float3 BlendNormalsSlerp(float3 startNormal, float3 endNormal, float t)
+    static float3 BlendNormalsNlerp(float3 startNormal, float3 endNormal, float t)
     {
         float blend = math.saturate(t);
-        float dot = math.clamp(math.dot(startNormal, endNormal), -1f, 1f);
-        if (math.abs(dot) > 0.9999f)
-            return math.normalizesafe(math.lerp(startNormal, endNormal, blend), startNormal);
+        return NormalizeFastOrDefault(math.lerp(startNormal, endNormal, blend), startNormal);
+    }
 
-        float theta = math.acos(dot);
-        float sinTheta = math.sin(theta);
-        if (sinTheta <= 0.0001f)
-            return math.normalizesafe(math.lerp(startNormal, endNormal, blend), startNormal);
+    static float3 NormalizeFastOrDefault(float3 value, float3 fallback)
+    {
+        float lengthSq = math.lengthsq(value);
+        return lengthSq > 0.0001f ? value / math.max(LengthApprox(value), 0.0001f) : fallback;
+    }
 
-        float startWeight = math.sin((1f - blend) * theta) / sinTheta;
-        float endWeight = math.sin(blend * theta) / sinTheta;
-        return math.normalizesafe(startNormal * startWeight + endNormal * endWeight, startNormal);
+    static float LengthApprox(float3 value)
+    {
+        float3 axis = math.abs(value);
+        float maxAxis = math.cmax(axis);
+        float minAxis = math.cmin(axis);
+        float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
+        return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
     }
 }
 
@@ -2350,6 +2353,7 @@ public struct VoxelColorJob : IJobParallelFor
     [ReadOnly] public NativeArray<float3> normals;
     [ReadOnly] public NativeArray<float> terrainHeights;
     [ReadOnly] public NativeArray<float> curvatureValues;
+    [ReadOnly] public NativeArray<float> ambientOcclusionValues;
     [ReadOnly] public NativeArray<float> biomeValues;
     [ReadOnly] public NativeArray<CaveEntrance> caveEntrances;
 
@@ -2362,7 +2366,10 @@ public struct VoxelColorJob : IJobParallelFor
 
         float safeHalfExtent = math.max(volumeHalfExtent, 1f);
         float distFromCenterSq01 = math.saturate(math.lengthsq(p - volumeCenter) / (safeHalfExtent * safeHalfExtent));
-        float caveCenterAo = math.saturate(0.52f + distFromCenterSq01 * 0.48f);
+        float localizedAo = ambientOcclusionValues.IsCreated && idx < ambientOcclusionValues.Length
+            ? math.saturate(ambientOcclusionValues[idx])
+            : 1f;
+        float caveCenterAo = math.saturate(0.52f + distFromCenterSq01 * 0.48f) * localizedAo;
 
         float terrainSkirt = 0f;
         if (terrainHeights.IsCreated && ptsX > 1 && ptsZ > 1)
@@ -2958,6 +2965,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<float> DensityField;
         public NativeArray<float> SmoothDensityField;
         public NativeArray<float> OverhangDensityField;
+        public NativeArray<sbyte> QuantizedDensityField;
         public NativeArray<AnomalyFeatureRecord> AnomalyFeatureRecords;
         public NativeArray<byte> AnomalyFissureMask;
         public NativeArray<AnomalyFeatureRecord> SelectedPillarFeature;
@@ -2973,6 +2981,7 @@ public class HectonVoxelEngine : MonoBehaviour
             HectonVoxelEngine.DisposeTrackedNativeArray(ref DensityField);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref SmoothDensityField);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref OverhangDensityField);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref QuantizedDensityField);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref AnomalyFeatureRecords);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref AnomalyFissureMask);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref SelectedPillarFeature);
@@ -2993,6 +3002,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<float> DensityField;
         public NativeArray<float> SmoothDensityField;
         public NativeArray<float> OverhangDensityField;
+        public NativeArray<sbyte> QuantizedDensityField;
         public NativeArray<AnomalyFeatureRecord> AnomalyFeatureRecords;
         public NativeArray<byte> AnomalyFissureMask;
         public NativeArray<AnomalyFeatureRecord> SelectedPillarFeature;
@@ -3010,6 +3020,7 @@ public class HectonVoxelEngine : MonoBehaviour
             NativeArray<float> densityField,
             NativeArray<float> smoothDensityField,
             NativeArray<float> overhangDensityField,
+            NativeArray<sbyte> quantizedDensityField,
             NativeArray<AnomalyFeatureRecord> anomalyFeatureRecords,
             NativeArray<byte> anomalyFissureMask,
             NativeArray<AnomalyFeatureRecord> selectedPillarFeature,
@@ -3024,6 +3035,7 @@ public class HectonVoxelEngine : MonoBehaviour
             DensityField = densityField;
             SmoothDensityField = smoothDensityField;
             OverhangDensityField = overhangDensityField;
+            QuantizedDensityField = quantizedDensityField;
             AnomalyFeatureRecords = anomalyFeatureRecords;
             AnomalyFissureMask = anomalyFissureMask;
             SelectedPillarFeature = selectedPillarFeature;
@@ -4190,7 +4202,7 @@ public class HectonVoxelEngine : MonoBehaviour
         float lookaheadSq = math.lengthsq(lookaheadOffset);
         float maxDistanceSq = PredictiveVoxelProxyMaxDistanceMeters * PredictiveVoxelProxyMaxDistanceMeters;
         if (lookaheadSq > maxDistanceSq)
-            lookaheadOffset *= PredictiveVoxelProxyMaxDistanceMeters * math.rsqrt(math.max(lookaheadSq, 0.0001f));
+            lookaheadOffset *= PredictiveVoxelProxyMaxDistanceMeters / math.max(LengthApprox(lookaheadOffset), 0.0001f);
 
         Vector3 origin = targetBody.worldCenterOfMass;
         Vector3 predicted = origin + new Vector3(lookaheadOffset.x, lookaheadOffset.y, lookaheadOffset.z);
@@ -5025,7 +5037,7 @@ public class HectonVoxelEngine : MonoBehaviour
             return true;
         }
 
-        if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+        if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
             playerTransform != null &&
             playerTransform.TryGetComponent(out HectonPlayerMovement scenePlayerMovement))
         {
@@ -5321,9 +5333,9 @@ public class HectonVoxelEngine : MonoBehaviour
         if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext playerContext))
             return true;
 
-        float3 cameraForward = math.normalizesafe(
+        float3 cameraForward = NormalizeFastOrDefault(
             playerContext.LookState.AimForward,
-            math.normalizesafe(playerContext.MovementState.CameraForward, playerContext.MovementState.Forward));
+            NormalizeFastOrDefault(playerContext.MovementState.CameraForward, playerContext.MovementState.Forward));
         if (math.lengthsq(cameraForward) <= 0.0001f)
             return true;
 
@@ -5334,8 +5346,23 @@ public class HectonVoxelEngine : MonoBehaviour
         if (cameraToChunkSq <= 0.0001f)
             return true;
 
-        float facingDot = math.dot(cameraToChunk, cameraForward) * math.rsqrt(cameraToChunkSq);
+        float facingDot = math.dot(cameraToChunk, cameraForward) / math.max(LengthApprox(cameraToChunk), 0.0001f);
         return facingDot > OverhangCameraCullDotThreshold;
+    }
+
+    static float3 NormalizeFastOrDefault(float3 value, float3 fallback)
+    {
+        float lengthSq = math.lengthsq(value);
+        return lengthSq > 0.0001f ? value / math.max(LengthApprox(value), 0.0001f) : fallback;
+    }
+
+    static float LengthApprox(float3 value)
+    {
+        float3 axis = math.abs(value);
+        float maxAxis = math.cmax(axis);
+        float minAxis = math.cmin(axis);
+        float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
+        return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
     }
 
     async Awaitable<bool> ExecuteVoxelPipelineAsync(VoxelPipelineData data, CancellationToken ct)
@@ -5555,6 +5582,15 @@ public class HectonVoxelEngine : MonoBehaviour
         }
 
         densityHandle = chunkContentHandle;
+        NativeArray<sbyte> quantizedDensityField = data.ScratchLease.QuantizedDensityField;
+        float densityDecodeScale = ResolveDensityDecodeScale(data.VoxelStep);
+        JobHandle quantizeDensityHandle = new VoxelDensityQuantizeJob
+        {
+            densityDecodeScale = densityDecodeScale,
+            density = densityField,
+            quantizedDensity = quantizedDensityField
+        }.Schedule(data.TotalPts, JOB_BATCH, densityHandle);
+
         if (data.SourceVolume != null &&
             VoxelDynamicNavGridRuntime.TryPrepareBuild(
                 data.SourceVolume,
@@ -5618,11 +5654,12 @@ public class HectonVoxelEngine : MonoBehaviour
             ptsX = data.PtsX,
             ptsY = data.PtsY,
             ptsZ = data.PtsZ,
-            density = densityField,
+            densityDecodeScale = densityDecodeScale,
+            density = quantizedDensityField,
             edgeTable = MCTables.EdgeTable,
             triTable = MCTables.TriTable,
             cellVertexCounts = cellVertexCounts
-        }.Schedule(data.TotalCells, JOB_BATCH, densityHandle);
+        }.Schedule(data.TotalCells, JOB_BATCH, quantizeDensityHandle);
 
         JobHandle firstPhaseHandle = navGridScheduled
             ? JobHandle.CombineDependencies(mcCountHandle, navGridHandle)
@@ -5702,7 +5739,8 @@ public class HectonVoxelEngine : MonoBehaviour
             ptsZ = data.PtsZ,
             volumeOrigin = data.VolumeOrigin,
             voxelStep = data.VoxelStep,
-            density = densityField,
+            densityDecodeScale = densityDecodeScale,
+            density = quantizedDensityField,
             edgeTable = MCTables.EdgeTable,
             triTable = MCTables.TriTable,
             cellVertexOffsets = cellVertexOffsets,
@@ -5794,8 +5832,8 @@ public class HectonVoxelEngine : MonoBehaviour
             ptsZ = data.PtsZ,
             volumeOrigin = data.VolumeOrigin,
             voxelStep = data.VoxelStep,
-            densityField = densityField,
-            smoothDensityField = smoothDensityField,
+            densityDecodeScale = densityDecodeScale,
+            densityField = quantizedDensityField,
             positions = data.WeldedPositions,
             normals = data.Normals,
             curvatureValues = data.CurvatureValues,
@@ -5844,6 +5882,7 @@ public class HectonVoxelEngine : MonoBehaviour
             normals = data.Normals,
             terrainHeights = terrainHeights,
             curvatureValues = data.CurvatureValues,
+            ambientOcclusionValues = data.AmbientOcclusionValues,
             biomeValues = data.BiomeValues,
             caveEntrances = data.Entrances,
             colors = data.Colors,
@@ -5969,6 +6008,7 @@ public class HectonVoxelEngine : MonoBehaviour
                     slot.DensityField,
                     slot.SmoothDensityField,
                     slot.OverhangDensityField,
+                    slot.QuantizedDensityField,
                     slot.AnomalyFeatureRecords,
                     slot.AnomalyFissureMask,
                     slot.SelectedPillarFeature,
@@ -6059,12 +6099,18 @@ public class HectonVoxelEngine : MonoBehaviour
         EnsureNativeArrayCapacity(ref slot.DensityField, totalPointCount, nameof(VoxelStreamingScratchSlot.DensityField));
         EnsureNativeArrayCapacity(ref slot.SmoothDensityField, totalPointCount, nameof(VoxelStreamingScratchSlot.SmoothDensityField));
         EnsureNativeArrayCapacity(ref slot.OverhangDensityField, totalPointCount, nameof(VoxelStreamingScratchSlot.OverhangDensityField));
+        EnsureNativeArrayCapacity(ref slot.QuantizedDensityField, totalPointCount, nameof(VoxelStreamingScratchSlot.QuantizedDensityField));
         EnsureNativeArrayCapacity(ref slot.AnomalyFeatureRecords, heightCount, nameof(VoxelStreamingScratchSlot.AnomalyFeatureRecords));
         EnsureNativeArrayCapacity(ref slot.AnomalyFissureMask, heightCount, nameof(VoxelStreamingScratchSlot.AnomalyFissureMask));
         EnsureNativeArrayCapacity(ref slot.SelectedPillarFeature, 1, nameof(VoxelStreamingScratchSlot.SelectedPillarFeature), true);
         EnsureNativeArrayCapacity(ref slot.ChunkContentFlags, 1, nameof(VoxelStreamingScratchSlot.ChunkContentFlags), true);
         EnsureNativeArrayCapacity(ref slot.CellVertexCounts, totalCellCount, nameof(VoxelStreamingScratchSlot.CellVertexCounts));
         EnsureNativeArrayCapacity(ref slot.CellVertexOffsets, totalCellCount, nameof(VoxelStreamingScratchSlot.CellVertexOffsets));
+    }
+
+    static float ResolveDensityDecodeScale(float voxelStep)
+    {
+        return math.max(voxelStep * 0.125f, 0.005f);
     }
 
     static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredLength, string label, bool clear = false)

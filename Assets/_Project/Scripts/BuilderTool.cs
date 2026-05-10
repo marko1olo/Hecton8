@@ -1,24 +1,24 @@
 // ============================================================================
 // HECTON-8 — BuilderTool.cs
-// Визуальный мост между PlayerToolManager и PlayerBuilder.
+// Vizualnyy most mezhdu PlayerToolManager i PlayerBuilder.
 //
-// ОТВЕТСТВЕННОСТИ:
-//   1. Visual Bridge: делегирует OnEquip/OnUnequip/UsePrimary/UseSecondary/
-//      ToolTick в PlayerBuilder (логический контроллер строительства).
-//   2. Auto-Binding: при спавне из пула находит Player root по тегу,
-//      извлекает и кэширует PlayerInventory, PlayerBuilder, Camera.
-//   3. NASA-Punk Sway: модель инструмента плавно отстаёт от поворота
-//      камеры, создавая ощущение веса и инерции.
-//   4. LCD Screen: отображает имя активного BuildableData на MeshRenderer
-//      через MaterialPropertyBlock (zero GC per-frame).
+// OTVETSTVENNOSTI:
+//   1. Visual Bridge: delegiruet OnEquip/OnUnequip/UsePrimary/UseSecondary/
+//      ToolTick v PlayerBuilder (logicheskiy kontroller stroitelstva).
+//   2. Auto-Binding: pri spavne iz pula nahodit Player root po tegu,
+//      izvlekaet i keshiruet PlayerInventory, PlayerBuilder, Camera.
+//   3. NASA-Punk Sway: model instrumenta plavno otstaet ot povorota
+//      kamery, sozdavaya oschuschenie vesa i inertsii.
+//   4. LCD Screen: otobrazhaet imya aktivnogo BuildableData na MeshRenderer
+//      cherez MaterialPropertyBlock (zero GC per-frame).
 //
-// НЕ СОДЕРЖИТ строительной логики — только визуал и делегация.
+// NE SODERZhIT stroitelnoy logiki — tolko vizual i delegatsiya.
 //
-// ZERO GC В РАНТАЙМЕ:
-//   • Никаких строковых аллокаций в ToolTick.
+// ZERO GC V RANTAYME:
+//   • Nikakih strokovyh allokatsiy v ToolTick.
 //   • MaterialPropertyBlock — pre-allocated, reused.
 //   • Unity.Mathematics quaternion.slerp — struct math, zero boxing.
-//   • Player lookup — SceneBootstrap cached player transform, no scene search.
+//   • Player lookup — GameBootstrapper cached player transform, no scene search.
 //
 // LIFECYCLE:
 //   ObjectPoolManager.Spawn() → OnSpawn() → [PlayerToolManager] → OnEquip()
@@ -42,34 +42,34 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Sway Settings (NASA-Punk) ─────────────────")]
-        [Tooltip("Скорость, с которой модель догоняет камеру. " +
-                 "Меньше = больше инерции, тяжелее ощущение.")]
+        [Tooltip("Skorost, s kotoroy model dogonyaet kameru. " +
+                 "Menshe = bolshe inertsii, tyazhelee oschuschenie.")]
         [SerializeField] private float swaySpeed = 8f;
 
-        [Tooltip("Максимальное отклонение sway от камеры (градусы). " +
-                 "Ограничивает визуальный лаг при быстрых поворотах.")]
+        [Tooltip("Maksimalnoe otklonenie sway ot kamery (gradusy). " +
+                 "Ogranichivaet vizualnyy lag pri bystryh povorotah.")]
         [SerializeField] private float swayMaxAngle = 12f;
 
         [Header("── LCD Screen ────────────────────────────────")]
-        [Tooltip("MeshRenderer маленького LCD-экрана на модели инструмента. " +
-                 "Если null — экран не обновляется (нет аллокаций, нет ошибок).")]
+        [Tooltip("MeshRenderer malenkogo LCD-ekrana na modeli instrumenta. " +
+                 "Esli null — ekran ne obnovlyaetsya (net allokatsiy, net oshibok).")]
         public MeshRenderer screenRenderer;
 
-        [Tooltip("Индекс материала на screenRenderer для LCD-экрана. " +
-                 "Обычно 0, если экран — отдельный submesh.")]
+        [Tooltip("Indeks materiala na screenRenderer dlya LCD-ekrana. " +
+                 "Obychno 0, esli ekran — otdelnyy submesh.")]
         [SerializeField] private int screenMaterialIndex;
 
         // ══════════════════════════════════════════════════════════
         //  CACHED SCENE REFERENCES (auto-bound in OnSpawn)
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Логический контроллер строительства на Player root.</summary>
+        /// <summary>Logicheskiy kontroller stroitelstva na Player root.</summary>
         private PlayerBuilder  _playerBuilder;
 
-        /// <summary>Инвентарь игрока (для будущих расширений — проверка ресурсов в UI).</summary>
+        /// <summary>Inventar igroka (dlya buduschih rasshireniy — proverka resursov v UI).</summary>
         private PlayerInventory _playerInventory;
 
-        /// <summary>Кэшированный Transform основной камеры.</summary>
+        /// <summary>Keshirovannyy Transform osnovnoy kamery.</summary>
         private Transform _cameraTransform;
 
         // ══════════════════════════════════════════════════════════
@@ -77,17 +77,17 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Текущий поворот sway модели.
+        /// Tekuschiy povorot sway modeli.
         /// Unity.Mathematics quaternion — struct, zero GC.
-        /// Инициализируется при OnEquip из текущего поворота камеры.
+        /// Initsializiruetsya pri OnEquip iz tekuschego povorota kamery.
         /// </summary>
         private quaternion _swayRotation;
         private float _cachedSwayLimitAngle = -1f;
         private float _cachedSwayLimitSinSq;
 
         /// <summary>
-        /// Transform корня модели инструмента (this.transform).
-        /// Кэшируется для избежания повторных вызовов get_transform().
+        /// Transform kornya modeli instrumenta (this.transform).
+        /// Keshiruetsya dlya izbezhaniya povtornyh vyzovov get_transform().
         /// </summary>
         private Transform _selfTransform;
 
@@ -96,16 +96,16 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Pre-allocated MaterialPropertyBlock. Reused каждый кадр.
-        /// Zero GC при SetTexture/SetColor/SetFloat.
+        /// Pre-allocated MaterialPropertyBlock. Reused kazhdyy kadr.
+        /// Zero GC pri SetTexture/SetColor/SetFloat.
         /// </summary>
         private MaterialPropertyBlock _screenPropBlock;
 
         /// <summary>
-        /// Shader property ID для текста на экране.
-        /// Кэшируется через Shader.PropertyToID — вызывается один раз.
-        /// Используется с _ScreenText (Vector4, кодирующий ASCII/индекс).
-        /// Альтернатива: _MainTex для текстурного атласа шрифтов.
+        /// Shader property ID dlya teksta na ekrane.
+        /// Keshiruetsya cherez Shader.PropertyToID — vyzyvaetsya odin raz.
+        /// Ispolzuetsya s _ScreenText (Vector4, kodiruyuschiy ASCII/indeks).
+        /// Alternativa: _MainTex dlya teksturnogo atlasa shriftov.
         /// </summary>
         private static readonly int PropScreenColor = Shader.PropertyToID("_EmissionColor");
         private static readonly Color ScreenOfflineColor = new Color(0.6f, 0.1f, 0.1f, 1f);
@@ -115,14 +115,14 @@ namespace Hecton8.Gameplay
         private static readonly Color ScreenBlockedColor = new Color(1f, 0.28f, 0.22f, 1f);
 
         /// <summary>
-        /// Последний отображённый buildable. Для skip-проверки —
-        /// не обновляем экран, если модуль не изменился.
+        /// Posledniy otobrazhennyy buildable. Dlya skip-proverki —
+        /// ne obnovlyaem ekran, esli modul ne izmenilsya.
         /// </summary>
         private BuildableData _lastDisplayedBuildable;
         private PlayerBuilder.BuildReadiness _lastReadinessState;
         private FixedCharBuffer _legacyOperationalBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - builder tool legacy string bridge - owner: BuilderTool
 
-        /// <summary>Флаг успешной привязки к сцене.</summary>
+        /// <summary>Flag uspeshnoy privyazki k stsene.</summary>
         private bool _bound;
 
         // ══════════════════════════════════════════════════════════
@@ -130,14 +130,14 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Вызывается ObjectPoolManager при извлечении из пула.
+        /// Vyzyvaetsya ObjectPoolManager pri izvlechenii iz pula.
         ///
-        /// КРИТИЧЕСКАЯ ТОЧКА AUTO-BINDING:
-        /// Инструмент спавнится в HandAnchor из пула — у него нет
-        /// Inspector-ссылок на объекты сцены. Находим Player root
-        /// по тегу и извлекаем нужные компоненты.
+        /// KRITIChESKAYa TOChKA AUTO-BINDING:
+        /// Instrument spavnitsya v HandAnchor iz pula — u nego net
+        /// Inspector-ssylok na obekty stseny. Nahodim Player root
+        /// po tegu i izvlekaem nuzhnye komponenty.
         ///
-        /// Аллокации: SceneBootstrap cached lookup; no scene search in OnSpawn.
+        /// Allokatsii: GameBootstrapper cached lookup; no scene search in OnSpawn.
         /// </summary>
         private void Awake()
         {
@@ -153,12 +153,12 @@ namespace Hecton8.Gameplay
             _selfTransform = transform;
             _bound         = false;
 
-            // ── Auto-Binding: найти Player root ──
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            // ── Auto-Binding: nayti Player root ──
+            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(
-                    "[BuilderTool] OnSpawn: Player transform could not be resolved via SceneBootstrap. " +
+                    "[BuilderTool] OnSpawn: Player transform could not be resolved via GameBootstrapper. " +
                     "Builder tool will not function.");
 #endif
                 return;
@@ -166,8 +166,8 @@ namespace Hecton8.Gameplay
 
             GameObject playerRoot = playerTransform.gameObject;
 
-            // ── Извлечение компонентов с Player root ──
-            // GetComponent на конкретном GameObject — zero GC (TryGetComponent).
+            // ── Izvlechenie komponentov s Player root ──
+            // GetComponent na konkretnom GameObject — zero GC (TryGetComponent).
 
             if (!playerRoot.TryGetComponent(out _playerBuilder))
             {
@@ -185,10 +185,10 @@ namespace Hecton8.Gameplay
                     "[BuilderTool] OnSpawn: PlayerInventory not found on Player root. " +
                     "Resource display will be unavailable.");
 #endif
-                // Не критично — продолжаем без инвентаря
+                // Ne kritichno — prodolzhaem bez inventarya
             }
 
-            // ── Кэш Main Camera Transform ──
+            // ── Kesh Main Camera Transform ──
             Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
             if (playerCamera != null)
             {
@@ -208,8 +208,8 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Вызывается ObjectPoolManager при возврате в пул.
-        /// Очищает все кэшированные ссылки на сцену.
+        /// Vyzyvaetsya ObjectPoolManager pri vozvrate v pul.
+        /// Ochischaet vse keshirovannye ssylki na stsenu.
         /// </summary>
         public override void OnDespawn()
         {
@@ -226,12 +226,12 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
-        //  TOOL LIFECYCLE — делегация в PlayerBuilder
+        //  TOOL LIFECYCLE — delegatsiya v PlayerBuilder
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Вход в режим строительства.
-        /// Активирует ghost через PlayerBuilder и инициализирует sway.
+        /// Vhod v rezhim stroitelstva.
+        /// Aktiviruet ghost cherez PlayerBuilder i initsializiruet sway.
         /// </summary>
         public override void OnEquip()
         {
@@ -239,10 +239,10 @@ namespace Hecton8.Gameplay
 
             if (!_bound) return;
 
-            // ── Делегация: активировать призрак постройки ──
+            // ── Delegatsiya: aktivirovat prizrak postroyki ──
             _playerBuilder.OnEquip();
 
-            // ── Инициализация sway из текущего поворота камеры ──
+            // ── Initsializatsiya sway iz tekuschego povorota kamery ──
             if (_cameraTransform != null)
             {
                 _swayRotation = _cameraTransform.rotation;
@@ -252,13 +252,13 @@ namespace Hecton8.Gameplay
                 _swayRotation = quaternion.identity;
             }
 
-            // ── Обновить LCD экран с текущим модулем ──
+            // ── Obnovit LCD ekran s tekuschim modulem ──
             UpdateScreen();
         }
 
         /// <summary>
-        /// Выход из режима строительства.
-        /// Деактивирует ghost через PlayerBuilder.
+        /// Vyhod iz rezhima stroitelstva.
+        /// Deaktiviruet ghost cherez PlayerBuilder.
         /// </summary>
         public override void OnUnequip()
         {
@@ -274,8 +274,8 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Основное действие (ЛКМ): размещение модуля.
-        /// Делегирует в PlayerBuilder.UsePrimary().
+        /// Osnovnoe deystvie (LKM): razmeschenie modulya.
+        /// Delegiruet v PlayerBuilder.UsePrimary().
         /// </summary>
         public override void UsePrimary(float deltaTime)
         {
@@ -285,8 +285,8 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Альтернативное действие (ПКМ): вращение призрака.
-        /// Делегирует в PlayerBuilder.UseSecondary().
+        /// Alternativnoe deystvie (PKM): vraschenie prizraka.
+        /// Delegiruet v PlayerBuilder.UseSecondary().
         /// </summary>
         public override void UseSecondary(float deltaTime)
         {
@@ -296,12 +296,12 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Вызывается каждый кадр через PlayerToolManager.
+        /// Vyzyvaetsya kazhdyy kadr cherez PlayerToolManager.
         ///
-        /// Выполняет:
-        ///   1. Делегацию ToolTick в PlayerBuilder (обновление ghost позиции).
-        ///   2. Sway-эффект модели инструмента (NASA-punk inertia).
-        ///   3. Обновление LCD-экрана (только при смене модуля).
+        /// Vypolnyaet:
+        ///   1. Delegatsiyu ToolTick v PlayerBuilder (obnovlenie ghost pozitsii).
+        ///   2. Sway-effekt modeli instrumenta (NASA-punk inertia).
+        ///   3. Obnovlenie LCD-ekrana (tolko pri smene modulya).
         ///
         /// ZERO GC: Unity.Mathematics struct math, no string ops,
         /// MaterialPropertyBlock reuse.
@@ -310,13 +310,13 @@ namespace Hecton8.Gameplay
         {
             if (!_bound) return;
 
-            // ── 1. Делегация логики строительства ──
+            // ── 1. Delegatsiya logiki stroitelstva ──
             _playerBuilder.ToolTick(deltaTime);
 
-            // ── 2. Sway-эффект ──
+            // ── 2. Sway-effekt ──
             ApplySway(deltaTime);
 
-            // ── 3. LCD-экран (skip если модуль не изменился) ──
+            // ── 3. LCD-ekran (skip esli modul ne izmenilsya) ──
             BuildableData current = _playerBuilder.ActiveBuildable;
             PlayerBuilder.BuildReadiness readiness = _playerBuilder.ActiveBuildReadiness;
             bool brownoutActive = TryGetToolBrownoutFlicker(out _);
@@ -331,19 +331,19 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Модель инструмента плавно отстаёт от поворота камеры.
+        /// Model instrumenta plavno otstaet ot povorota kamery.
         ///
-        /// Алгоритм:
-        ///   1. Целевой поворот = камера (quaternion).
-        ///   2. Sway-поворот интерполируется к цели через slerp
-        ///      с экспоненциальным сглаживанием (frame-rate independent).
-        ///   3. Дельта между sway и камерой ограничивается swayMaxAngle.
-        ///   4. Модель поворачивается на sway-поворот.
+        /// Algoritm:
+        ///   1. Tselevoy povorot = kamera (quaternion).
+        ///   2. Sway-povorot interpoliruetsya k tseli cherez slerp
+        ///      s eksponentsialnym sglazhivaniem (frame-rate independent).
+        ///   3. Delta mezhdu sway i kameroy ogranichivaetsya swayMaxAngle.
+        ///   4. Model povorachivaetsya na sway-povorot.
         ///
         /// Unity.Mathematics quaternion — struct, zero GC, SIMD-friendly.
         ///
-        /// Визуальный результат: при быстром повороте мыши инструмент
-        /// «запаздывает», создавая ощущение массы (NASA-punk aesthetic).
+        /// Vizualnyy rezultat: pri bystrom povorote myshi instrument
+        /// «zapazdyvaet», sozdavaya oschuschenie massy (NASA-punk aesthetic).
         /// </summary>
         public override string GetOperationalSummary()
         {
@@ -398,12 +398,12 @@ namespace Hecton8.Gameplay
         {
             if (_cameraTransform == null || _selfTransform == null) return;
 
-            // ── Целевой поворот камеры ──
+            // ── Tselevoy povorot kamery ──
             quaternion cameraRot = _cameraTransform.rotation;
 
             // ── Frame-rate independent exponential slerp ──
-            // t = 1 - exp(-speed * dt) обеспечивает одинаковую
-            // визуальную скорость при 30, 60 и 144 fps.
+            // t = 1 - exp(-speed * dt) obespechivaet odinakovuyu
+            // vizualnuyu skorost pri 30, 60 i 144 fps.
             float t = ResolveDecayBlend(swaySpeed, dt);
 
             _swayRotation = math.slerp(_swayRotation, cameraRot, t);
@@ -420,7 +420,7 @@ namespace Hecton8.Gameplay
                 _swayRotation = math.nlerp(_swayRotation, cameraRot, clampT);
             }
 
-            // ── Применяем к модели ──
+            // ── Primenyaem k modeli ──
             _selfTransform.rotation = _swayRotation;
         }
 
@@ -429,18 +429,18 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Обновляет LCD-экран на модели инструмента.
+        /// Obnovlyaet LCD-ekran na modeli instrumenta.
         ///
-        /// Текущая реализация: меняет emission color на основе
-        /// наличия/отсутствия активного модуля.
+        /// Tekuschaya realizatsiya: menyaet emission color na osnove
+        /// nalichiya/otsutstviya aktivnogo modulya.
         ///
-        /// Будущее расширение: текстурный атлас шрифтов для
-        /// отображения имени модуля (RenderTexture → material).
+        /// Buduschee rasshirenie: teksturnyy atlas shriftov dlya
+        /// otobrazheniya imeni modulya (RenderTexture → material).
         ///
         /// ZERO GC: MaterialPropertyBlock — pre-allocated, reused.
-        /// SetPropertyBlock не аллоцирует.
+        /// SetPropertyBlock ne allotsiruet.
         ///
-        /// Вызывается ТОЛЬКО при смене активного модуля (не per-frame).
+        /// Vyzyvaetsya TOLKO pri smene aktivnogo modulya (ne per-frame).
         /// </summary>
         public void UpdateScreen()
         {
@@ -456,7 +456,7 @@ namespace Hecton8.Gameplay
 
             _lastDisplayedBuildable = buildable;
 
-            // ── Получаем текущий property block (merge с существующими) ──
+            // ── Poluchaem tekuschiy property block (merge s suschestvuyuschimi) ──
             screenRenderer.GetPropertyBlock(_screenPropBlock, screenMaterialIndex);
 
             Color screenColor = ScreenOfflineColor;

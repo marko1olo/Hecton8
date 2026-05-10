@@ -163,9 +163,9 @@ float HectonCoreLitHologramFlickerGate(float4 positionCS, float3 absolutePositio
     float2 pixel = floor(positionCS.xy);
     float2 worldCell = floor(absolutePosition.xz * 7.0 + absolutePosition.y * 0.31);
     float spatialPhase = dot(pixel + worldCell, float2(12.9898, 78.233));
-    float blueNoiseLike = HectonCoreLitHash12(pixel + worldCell);
+    float ignLike = HectonCoreLitHash12(pixel + worldCell);
     float temporal = HectonCoreLitTemporalSinFlicker01(timeSeconds, speed, spatialPhase);
-    return min(blueNoiseLike, temporal) - cutoff;
+    return min(ignLike, temporal) - cutoff;
 }
 
 float2 HectonCoreLitResolveFragmentScreenUV(float4 positionCS)
@@ -424,6 +424,46 @@ HectonPackedMaskV1 HectonCoreLitDecodePackedMaskV1(
     decoded.smoothness = saturate(packedMask.b * smoothnessScale);
     decoded.emissionMask = saturate(packedMask.a);
     return decoded;
+}
+
+HectonPackedMaskV1 HectonCoreLitDecodeStrictPropMask(
+    half4 packedMask,
+    half metallicScale,
+    half occlusionStrength,
+    half smoothnessScale)
+{
+    return HectonCoreLitDecodePackedMaskV1(packedMask, metallicScale, occlusionStrength, smoothnessScale);
+}
+
+half HectonCoreLitResolveDitheredFadeNoise(float4 positionCS)
+{
+    float safeW = max(abs(positionCS.w), 0.0001);
+    float2 screenUV = positionCS.xy * rcp(safeW) * 0.5 + 0.5;
+    float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
+    return (half)HectonCoreLitInterleavedGradientNoise(pixel);
+}
+
+void HectonCoreLitClipDitheredTransparencyFade(half fadeAmount, float4 positionCS)
+{
+    half noiseValue = HectonCoreLitResolveDitheredFadeNoise(positionCS);
+    clip(noiseValue - saturate(fadeAmount));
+}
+
+half HectonCoreLitEvaluateWrapDiffuse(float3 normalWS, float3 lightDirWS)
+{
+    const half wrap = 0.5h;
+    return (half)(max(0.0, dot(normalWS, lightDirWS) + wrap) / (1.0h + wrap));
+}
+
+half3 HectonCoreLitEvaluateCheapBacklightSss(
+    float3 normalWS,
+    float3 lightDirWS,
+    half3 fleshColor,
+    half strength)
+{
+    half wrapDiffuse = HectonCoreLitEvaluateWrapDiffuse(normalWS, lightDirWS);
+    half backLight = saturate(1.0h - wrapDiffuse);
+    return fleshColor * backLight * saturate(strength);
 }
 
 half4 HectonCoreLitSampleStochastic2D(TEXTURE2D_PARAM(sourceTexture, sourceSampler), float2 uv, float2 seed, half strength)
@@ -789,6 +829,24 @@ float HectonCoreLitEvaluateCausticsUpMask(float3 normalWS)
     return HectonCoreLitEvaluateCausticsUpMaskFromUnitNormal(HectonCoreLitSafeNormalize(normalWS));
 }
 
+half3 HectonCoreLitSampleUnderwaterCausticsTexture(
+    TEXTURE2D_PARAM(causticsTexture, causticsSampler),
+    float3 positionWS,
+    half3 causticTint,
+    half intensity,
+    half worldScale,
+    float2 scrollVelocity,
+    half depthMeters)
+{
+    float2 uv = positionWS.xz * max((float)worldScale, 0.0001) + scrollVelocity * _Time.y;
+    half stripeA = (half)(1.0 - abs(frac(dot(uv, float2(0.73, 0.41))) * 2.0 - 1.0));
+    half stripeB = (half)(1.0 - abs(frac(dot(uv, float2(-0.31, 0.91)) + 0.37) * 2.0 - 1.0));
+    half caustic = saturate(stripeA * stripeB * 2.0h - 0.28h);
+    caustic *= caustic;
+    half depthFade = saturate(1.0h - max(depthMeters, 0.0h) * rcp(50.0h));
+    return causticTint * caustic * saturate(intensity) * depthFade;
+}
+
 half3 HectonCoreLitEvaluateGiantAbyssLightFromUnitNormal(float3 normalizedNormalWS)
 {
     float3 aegirDirection = HectonCoreLitSafeNormalize(_AegirDirection.xyz);
@@ -1023,21 +1081,9 @@ half HectonCoreLitEvaluateOrganicSssScalar(
     if (resolvedScale <= 0.0001h)
         return 0.0h;
 
-    float3 normalizedView = HectonCoreLitSafeNormalize(viewDirWS);
-    float3 normalizedLight = HectonCoreLitSafeNormalize(lightDirWS);
-    half resolvedDistortion = abs(distortion);
-    float3 distortedLight = normalizedLight;
-    if (resolvedDistortion > 0.0001h)
-    {
-        float3 normalizedNormal = HectonCoreLitSafeNormalize(normalWS);
-        distortedLight = HectonCoreLitSafeNormalize(normalizedLight + normalizedNormal * distortion);
-    }
-
-    float distortedBacklight = saturate(dot(normalizedView, -distortedLight));
-    if (distortedBacklight <= 0.0001)
-        return 0.0h;
-
-    return (half)(HectonCoreLitFastPower01(distortedBacklight, max((float)power, 0.001)) * resolvedScale);
+    const half wrap = 0.5h;
+    float diffuse = max(0.0, dot(normalWS, lightDirWS) + wrap) / (1.0h + wrap);
+    return (half)(diffuse * resolvedScale);
 }
 
 half3 HectonCoreLitEvaluateOrganicSss(

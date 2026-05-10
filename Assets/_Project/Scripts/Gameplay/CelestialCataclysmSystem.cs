@@ -287,7 +287,7 @@ namespace Hecton8.Gameplay
 
         private Vector3 ResolvePlayerPosition()
         {
-            return SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null
+            return GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null
                 ? playerTransform.position
                 : transform.position;
         }

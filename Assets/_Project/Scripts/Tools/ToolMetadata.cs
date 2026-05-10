@@ -1,26 +1,26 @@
 // ============================================================================
 // HECTON-8 — ToolMetadata.cs  v1.0 ENTERPRISE
-// Расширенные метаданные инструментов: durability, upgrades, stats.
-// ScriptableObject — назначается на ItemData инструмента.
+// Rasshirennye metadannye instrumentov: durability, upgrades, stats.
+// ScriptableObject — naznachaetsya na ItemData instrumenta.
 //
 // v1.0 ENTERPRISE FEATURES:
-//   [ADD] Durability system — износ инструмента при использовании
-//   [ADD] Upgrade slots — до 3 слотов для модулей улучшения
-//   [ADD] Tool stats — эффективность, скорость, энергопотребление
-//   [ADD] Repair cost — стоимость ремонта в ресурсах
-//   [ADD] Tool tier — уровень инструмента (Basic/Advanced/Master)
-//   [ADD] Localization keys — для названий и описаний
+//   [ADD] Durability system — iznos instrumenta pri ispolzovanii
+//   [ADD] Upgrade slots — do 3 slotov dlya moduley uluchsheniya
+//   [ADD] Tool stats — effektivnost, skorost, energopotreblenie
+//   [ADD] Repair cost — stoimost remonta v resursah
+//   [ADD] Tool tier — uroven instrumenta (Basic/Advanced/Master)
+//   [ADD] Localization keys — dlya nazvaniy i opisaniy
 //
 // ZERO GC:
-//   • Все данные — value types или cached references
+//   • Vse dannye — value types ili cached references
 //   • Upgrade slots — fixed array (max 3)
 //   • Stats — struct-based calculations
 //
-// АРХИТЕКТУРА:
-//   • Один ToolMetadata на один ItemData
-//   • Читается PlayerTool при OnEquip()
-//   • Обновляется через ToolDurabilitySystem
-//   • Отображается в HUD и PDA
+// ARHITEKTURA:
+//   • Odin ToolMetadata na odin ItemData
+//   • Chitaetsya PlayerTool pri OnEquip()
+//   • Obnovlyaetsya cherez ToolDurabilitySystem
+//   • Otobrazhaetsya v HUD i PDA
 // ============================================================================
 
 using UnityEngine;
@@ -36,13 +36,13 @@ namespace Hecton8.Tools
         // ══════════════════════════════════════════════════════════
 
         [Header("── Identity ────────────────────────────────")]
-        [Tooltip("Уникальный ID инструмента (для сохранений).")]
+        [Tooltip("Unikalnyy ID instrumenta (dlya sohraneniy).")]
         public string toolID = "tool_laser_cutter";
 
-        [Tooltip("Уровень инструмента (Basic/Advanced/Master).")]
+        [Tooltip("Uroven instrumenta (Basic/Advanced/Master).")]
         public ToolTier tier = ToolTier.Basic;
 
-        [Tooltip("Категория инструмента (для фильтрации в PDA).")]
+        [Tooltip("Kategoriya instrumenta (dlya filtratsii v PDA).")]
         public ToolCategory category = ToolCategory.Utility;
 
         // ══════════════════════════════════════════════════════════
@@ -50,19 +50,19 @@ namespace Hecton8.Tools
         // ══════════════════════════════════════════════════════════
 
         [Header("── Durability ──────────────────────────────")]
-        [Tooltip("Максимальная прочность инструмента.")]
+        [Tooltip("Maksimalnaya prochnost instrumenta.")]
         [Range(100f, 10000f)]
         public float maxDurability = 1000f;
 
-        [Tooltip("Износ за секунду использования (Primary action).")]
+        [Tooltip("Iznos za sekundu ispolzovaniya (Primary action).")]
         [Range(0.1f, 50f)]
         public float durabilityDrainRate = 1f;
 
-        [Tooltip("Износ за секунду использования (Secondary action).")]
+        [Tooltip("Iznos za sekundu ispolzovaniya (Secondary action).")]
         [Range(0.1f, 50f)]
         public float durabilityDrainRateSecondary = 0.5f;
 
-        [Tooltip("Критический уровень прочности (%). Ниже — warning.")]
+        [Tooltip("Kriticheskiy uroven prochnosti (%). Nizhe — warning.")]
         [Range(0f, 50f)]
         public float criticalDurabilityThreshold = 20f;
 
@@ -71,15 +71,15 @@ namespace Hecton8.Tools
         // ══════════════════════════════════════════════════════════
 
         [Header("── Stats ───────────────────────────────────")]
-        [Tooltip("Эффективность инструмента (1.0 = 100%).")]
+        [Tooltip("Effektivnost instrumenta (1.0 = 100%).")]
         [Range(0.5f, 2f)]
         public float efficiency = 1f;
 
-        [Tooltip("Скорость работы инструмента (1.0 = 100%).")]
+        [Tooltip("Skorost raboty instrumenta (1.0 = 100%).")]
         [Range(0.5f, 2f)]
         public float speed = 1f;
 
-        [Tooltip("Энергопотребление за секунду использования.")]
+        [Tooltip("Energopotreblenie za sekundu ispolzovaniya.")]
         [Range(0f, 10f)]
         public float energyConsumptionRate = 1f;
 
@@ -88,11 +88,11 @@ namespace Hecton8.Tools
         // ══════════════════════════════════════════════════════════
 
         [Header("── Upgrades ────────────────────────────────")]
-        [Tooltip("Максимальное количество слотов для улучшений.")]
+        [Tooltip("Maksimalnoe kolichestvo slotov dlya uluchsheniy.")]
         [Range(0, 3)]
         public int maxUpgradeSlots = 2;
 
-        [Tooltip("Текущие установленные улучшения (max 3).")]
+        [Tooltip("Tekuschie ustanovlennye uluchsheniya (max 3).")]
         public ToolUpgradeData[] installedUpgrades = new ToolUpgradeData[3];
 
         [Tooltip("Authored modular loadout consumed by the NativeArray-backed equipment runtime.")]
@@ -115,11 +115,11 @@ namespace Hecton8.Tools
         // ══════════════════════════════════════════════════════════
 
         [Header("── Repair ──────────────────────────────────")]
-        [Tooltip("Стоимость полного ремонта (в единицах ресурса).")]
+        [Tooltip("Stoimost polnogo remonta (v edinitsah resursa).")]
         [Range(1, 100)]
         public int repairCostFull = 10;
 
-        [Tooltip("ID ресурса для ремонта (например, 'titanium').")]
+        [Tooltip("ID resursa dlya remonta (naprimer, 'titanium').")]
         public string repairResourceID = "titanium";
 
         // ══════════════════════════════════════════════════════════
@@ -127,10 +127,10 @@ namespace Hecton8.Tools
         // ══════════════════════════════════════════════════════════
 
         [Header("── Localization ────────────────────────────")]
-        [Tooltip("Ключ локализации для названия инструмента.")]
+        [Tooltip("Klyuch lokalizatsii dlya nazvaniya instrumenta.")]
         public string nameLocKey = "TOOL_LASER_CUTTER_NAME";
 
-        [Tooltip("Ключ локализации для описания инструмента.")]
+        [Tooltip("Klyuch lokalizatsii dlya opisaniya instrumenta.")]
         public string descriptionLocKey = "TOOL_LASER_CUTTER_DESC";
 
         // ══════════════════════════════════════════════════════════
@@ -138,7 +138,7 @@ namespace Hecton8.Tools
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Возвращает итоговую эффективность с учётом улучшений.
+        /// Vozvraschaet itogovuyu effektivnost s uchetom uluchsheniy.
         /// Zero GC — struct-based calculation.
         /// </summary>
         public float GetTotalEfficiency()
@@ -156,7 +156,7 @@ namespace Hecton8.Tools
         }
 
         /// <summary>
-        /// Возвращает итоговую скорость с учётом улучшений.
+        /// Vozvraschaet itogovuyu skorost s uchetom uluchsheniy.
         /// </summary>
         public float GetTotalSpeed()
         {
@@ -173,7 +173,7 @@ namespace Hecton8.Tools
         }
 
         /// <summary>
-        /// Возвращает итоговое энергопотребление с учётом улучшений.
+        /// Vozvraschaet itogovoe energopotreblenie s uchetom uluchsheniy.
         /// </summary>
         public float GetTotalEnergyConsumption()
         {
@@ -186,11 +186,11 @@ namespace Hecton8.Tools
                     total += upgrade.energyConsumptionModifier;
             }
 
-            return Mathf.Max(0.1f, total); // минимум 0.1
+            return Mathf.Max(0.1f, total); // minimum 0.1
         }
 
         /// <summary>
-        /// Проверяет, есть ли свободный слот для улучшения.
+        /// Proveryaet, est li svobodnyy slot dlya uluchsheniya.
         /// </summary>
         public bool HasFreeUpgradeSlot()
         {
@@ -204,8 +204,8 @@ namespace Hecton8.Tools
         }
 
         /// <summary>
-        /// Устанавливает улучшение в первый свободный слот.
-        /// Возвращает true если успешно.
+        /// Ustanavlivaet uluchshenie v pervyy svobodnyy slot.
+        /// Vozvraschaet true esli uspeshno.
         /// </summary>
         public bool InstallUpgrade(ToolUpgradeData upgrade)
         {
@@ -220,11 +220,11 @@ namespace Hecton8.Tools
                 }
             }
 
-            return false; // нет свободных слотов
+            return false; // net svobodnyh slotov
         }
 
         /// <summary>
-        /// Удаляет улучшение из слота.
+        /// Udalyaet uluchshenie iz slota.
         /// </summary>
         public bool RemoveUpgrade(int slotIndex)
         {

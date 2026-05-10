@@ -78,7 +78,10 @@ namespace Hecton8.Audio.Editor
 
             if (spatial.Length > 0)
             {
-                AssertContains(spatial, "TryTraceVoxelDensityOcclusion", "Delayed world events apply voxel density occlusion", builder, ref failureCount);
+                AssertContains(spatial, "TryResolveCinematicZoneMismatch", "Delayed world events apply deterministic zone muffle", builder, ref failureCount);
+                AssertContains(spatial, "CinematicZoneMuffleTransmission = 0.25118864f", "Cinematic zone muffle applies -12 dB transmission", builder, ref failureCount);
+                AssertContains(spatial, "CinematicZoneMuffleCutoffHertz = 800f", "Cinematic zone muffle applies 800 Hz LPF", builder, ref failureCount);
+                AssertContains(spatial, "IsInsideActiveBaseInteriorAup", "Base interior muffle uses deterministic AUP bounds", builder, ref failureCount);
                 AssertContains(spatial, "PlayAtPointWithLowPass", "Delayed events route resolved low-pass cutoff into source filter", builder, ref failureCount);
                 AssertContains(spatial, "ThermalShimmerMaximumPitchRatio", "Thermal plume shimmer pitch modulation exists", builder, ref failureCount);
                 AssertContains(spatial, "RefreshListenerCaveState", "Listener cave state refresh exists", builder, ref failureCount);
@@ -96,10 +99,9 @@ namespace Hecton8.Audio.Editor
 
             if (occlusion.Length > 0)
             {
-                AssertContains(occlusion, "internal struct AcousticVoxelOcclusionResult", "Voxel occlusion payload exists", builder, ref failureCount);
-                AssertContains(occlusion, "TryTraceVoxelDensityOcclusion", "Voxel density trace API exists", builder, ref failureCount);
-                AssertContains(occlusion, "OpenLowPassCutoffHertz / (1f +", "Accumulated density drives heavy low-pass cutoff", builder, ref failureCount);
-                AssertContains(occlusion, "VoxelDensityHardLowPassCutoffHertz = 300f", "Solid SDF occlusion applies 300 Hz LPF floor", builder, ref failureCount);
+                AssertNotContains(occlusion, "Acoustic" + "CinematicOcclusionResult", "Stale cinematic voxel occlusion payload is absent", builder, ref failureCount);
+                AssertNotContains(occlusion, "TryResolve" + "CinematicVoxelOcclusion", "Stale cinematic voxel occlusion API is absent", builder, ref failureCount);
+                AssertNotContains(occlusion, "RaycastNonAlloc", "Acoustic occlusion utility has no synchronous physics query", builder, ref failureCount);
             }
 
             if (renderer.Length > 0)
@@ -131,7 +133,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "SonarGhostEchoTapCount = 3", "Sonar ghost echo is a three-tap synthetic echo", builder, ref failureCount);
                 AssertNotContains(handleSonarPingSent, "Raycast", "Sonar ghost echo trigger has no raycast", builder, ref failureCount);
                 AssertContains(renderSonarBlock, "tap.LeftPanDeltaGain", "Sonar ghost echoes use hash-derived stereo panning deltas", builder, ref failureCount);
-                AssertContains(renderer, "BinauralMaximumMicroDelaySeconds = 0.0007f", "Fake ITD micro-delay caps at 0.7 ms", builder, ref failureCount);
+                AssertContains(renderer, "BinauralMaximumMicroDelaySeconds = 0.0006f", "Fake ITD micro-delay caps at 0.6 ms", builder, ref failureCount);
                 AssertContains(renderer, "math.abs(rightDot) * maxDelaySamples", "Fake ITD derives delay from head-right dot", builder, ref failureCount);
                 AssertContains(renderer, "HullGroanLoopPitchMinimum = 0.8f", "Hull authored loop pitch minimum is 0.8", builder, ref failureCount);
                 AssertContains(renderer, "HullGroanLoopPitchMaximum = 1.2f", "Hull authored loop pitch maximum is 1.2", builder, ref failureCount);
@@ -152,7 +154,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "return 1.1f;", "Metal impact clang multiplier is boosted", builder, ref failureCount);
                 AssertContains(renderer, "return 0.4f;", "Rock/default impact clang multiplier remains dull", builder, ref failureCount);
                 AssertNotContains(onAudioFilterRead, "RenderLeviathanGranularRoarSample", "Leviathan synth is not in OnAudioFilterRead", builder, ref failureCount);
-                AssertNotContains(onAudioFilterRead, "TryTraceVoxelDensityOcclusion", "Voxel trace is not in OnAudioFilterRead", builder, ref failureCount);
+                AssertNotContains(onAudioFilterRead, "TryResolveCinematicZoneMismatch", "Cinematic zone muffle is not in OnAudioFilterRead", builder, ref failureCount);
                 AssertNotContains(onAudioFilterRead, "new ", "OnAudioFilterRead has no explicit allocation", builder, ref failureCount);
             }
 

@@ -1,53 +1,58 @@
 // ============================================================================
-// HECTON-8 — ITickable.cs
-// Интерфейсы-контракты для централизованной системы обновления.
+// HECTON-8 - ITickable.cs
+// Interface contracts for the centralized runtime update system.
 //
-// Любой скрипт, реализующий один или несколько интерфейсов, обязан:
-//   1. В OnEnable()  → GlobalRegistry registration
-//   2. В OnDisable() → matching GlobalRegistry unregistration
-//   3. НИКОГДА не объявлять собственный Update/FixedUpdate/LateUpdate.
+// Any script implementing one or more tick interfaces must:
+//   1. Register with GlobalRegistry in OnEnable().
+//   2. Unregister from GlobalRegistry in OnDisable().
+//   3. Never declare its own Update, FixedUpdate, or LateUpdate loop.
 //
-// GameTickManager вызывает методы централизованно — один Update
-// на весь проект вместо сотен вызовов через Unity Message System.
+// SystemDispatcher owns the Unity message loop and pumps registered systems
+// through deterministic lanes instead of scattered Unity message callbacks.
 // ============================================================================
 
 namespace Hecton8.Core
 {
     /// <summary>
-    /// Каждый кадр. Замена Update().
-    /// Используй для: ввода, движения, анимации, UI-логики.
+    /// Per-frame tick lane. Replacement for Update().
+    /// Use for input, movement, animation, and UI logic.
     /// </summary>
     public interface ITickable : IUpdatable
     {
-        /// <param name="deltaTime">Time.deltaTime — передаётся напрямую,
-        /// без лишнего обращения к Time API.</param>
+        /// <param name="deltaTime">Frame delta supplied by the dispatcher. Do not read Time.deltaTime inside implementations.</param>
         new void Tick(float deltaTime);
     }
 
     /// <summary>
-    /// Фиксированный шаг физики. Замена FixedUpdate().
-    /// Используй для: Rigidbody-движения, физических проверок.
+    /// Fixed-step tick lane. Replacement for FixedUpdate().
+    /// Use for Rigidbody motion and synchronous physics checks.
     /// </summary>
     public interface IFixedTickable
     {
-        /// <param name="fixedDeltaTime">Time.fixedDeltaTime — передаётся
-        /// напрямую для удобства.</param>
+        /// <param name="fixedDeltaTime">Fixed delta supplied by the dispatcher. Do not read Time.fixedDeltaTime inside implementations.</param>
         void FixedTick(float fixedDeltaTime);
     }
 
     /// <summary>
-    /// Медленный тик (по умолчанию 2 раза в секунду).
-    /// Используй для: жизнеобеспечения базы, AI-решений, авто-сохранения,
-    /// любых тяжёлых вычислений, которые не нужны каждый кадр.
+    /// Slow tick lane, normally about twice per second.
+    /// Use for base life support, AI decisions, autosave hints, and work not needed every frame.
     /// </summary>
     public interface ISlowTickable
     {
         /// <summary>
-        /// Вызывается с фиксированной периодичностью
-        /// (настраивается в GameTickManager.slowTickInterval).
-        /// DeltaTime не передаётся — используй интервал напрямую
-        /// или Time.time, если нужна дельта.
+        /// Called on the configured slow cadence. Delta time is intentionally not passed.
         /// </summary>
         void SlowTick();
+    }
+
+    /// <summary>
+    /// Cold maintenance tick for audits, low-frequency telemetry, and memory hygiene.
+    /// </summary>
+    public interface IFrostTickable
+    {
+        /// <summary>
+        /// Called by SystemDispatcher on the fixed 300-frame maintenance cadence.
+        /// </summary>
+        void FrostTick();
     }
 }

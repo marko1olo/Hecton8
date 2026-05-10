@@ -1,98 +1,98 @@
 // ============================================================================
 // HECTON-8 — IPowerComponent.cs
-// Контракт для любого компонента энергосистемы базы.
+// Kontrakt dlya lyubogo komponenta energosistemy bazy.
 //
-// Реализуется компонентами на модулях базы:
-//   • PowerNode        — базовое потребление модуля (из BuildableData)
-//   • Fabricator       — дополнительное потребление при крафте
-//   • LifeSupport      — потребление системы жизнеобеспечения (будущее)
-//   • SolarPanel       — генерация (положительный PowerRating)
-//   • ThermalReactor   — генерация (будущее)
+// Realizuetsya komponentami na modulyah bazy:
+//   • PowerNode        — bazovoe potreblenie modulya (iz BuildableData)
+//   • Fabricator       — dopolnitelnoe potreblenie pri krafte
+//   • LifeSupport      — potreblenie sistemy zhizneobespecheniya (buduschee)
+//   • SolarPanel       — generatsiya (polozhitelnyy PowerRating)
+//   • ThermalReactor   — generatsiya (buduschee)
 //
-// PowerGrid собирает все IPowerComponent из всех PowerNode в сети.
-// UpdateBalance() суммирует PowerRating и управляет отключением.
+// PowerGrid sobiraet vse IPowerComponent iz vseh PowerNode v seti.
+// UpdateBalance() summiruet PowerRating i upravlyaet otklyucheniem.
 //
-// СОГЛАШЕНИЯ:
-//   PowerRating > 0   → генератор (вырабатывает энергию, Вт).
-//   PowerRating < 0   → потребитель (потребляет энергию, Вт).
-//   PowerRating == 0  → пассивный (коридоры, стены без электроники).
+// SOGLAShENIYa:
+//   PowerRating > 0   → generator (vyrabatyvaet energiyu, Vt).
+//   PowerRating < 0   → potrebitel (potreblyaet energiyu, Vt).
+//   PowerRating == 0  → passivnyy (koridory, steny bez elektroniki).
 //
 //   PowerPriority:
-//     0   = критический (жизнеобеспечение) — отключается ПОСЛЕДНИМ.
-//     50  = обычный (фабрикаторы, освещение).
-//     100 = роскошь (декор, аквариумы) — отключается ПЕРВЫМ.
+//     0   = kriticheskiy (zhizneobespechenie) — otklyuchaetsya POSLEDNIM.
+//     50  = obychnyy (fabrikatory, osveschenie).
+//     100 = roskosh (dekor, akvariumy) — otklyuchaetsya PERVYM.
 //
-//   Генераторы (PowerRating > 0) НИКОГДА не отключаются.
-//   OnPowerStatusChanged вызывается ТОЛЬКО для потребителей.
+//   Generatory (PowerRating > 0) NIKOGDA ne otklyuchayutsya.
+//   OnPowerStatusChanged vyzyvaetsya TOLKO dlya potrebiteley.
 //
 // ZERO GC:
-//   Все свойства возвращают value types (float, int, bool).
-//   OnPowerStatusChanged — вызов метода, no boxing.
+//   Vse svoystva vozvraschayut value types (float, int, bool).
+//   OnPowerStatusChanged — vyzov metoda, no boxing.
 // ============================================================================
 
 namespace Hecton8.Power
 {
     /// <summary>
-    /// Интерфейс энергокомпонента базы.
-    /// Любой компонент на модуле базы может реализовать этот
-    /// интерфейс для участия в энергетическом балансе сети.
+    /// Interfeys energokomponenta bazy.
+    /// Lyuboy komponent na module bazy mozhet realizovat etot
+    /// interfeys dlya uchastiya v energeticheskom balanse seti.
     /// </summary>
     public interface IPowerComponent
     {
         /// <summary>
-        /// Энергетический рейтинг компонента (Ватты).
+        /// Energeticheskiy reyting komponenta (Vatty).
         ///
-        /// Положительный = генерация (солнечная панель: +200).
-        /// Отрицательный = потребление (фабрикатор при крафте: -100).
-        /// Ноль = пассивный (не влияет на баланс).
+        /// Polozhitelnyy = generatsiya (solnechnaya panel: +200).
+        /// Otritsatelnyy = potreblenie (fabrikator pri krafte: -100).
+        /// Nol = passivnyy (ne vliyaet na balans).
         ///
-        /// Может меняться динамически:
-        ///   • Fabricator: 0 в idle, -100 при крафте.
-        ///   • SolarPanel: +200 днём, +50 ночью.
+        /// Mozhet menyatsya dinamicheski:
+        ///   • Fabricator: 0 v idle, -100 pri krafte.
+        ///   • SolarPanel: +200 dnem, +50 nochyu.
         ///
-        /// Вызывается PowerGrid.UpdateBalance() каждый SlowTick.
+        /// Vyzyvaetsya PowerGrid.UpdateBalance() kazhdyy SlowTick.
         /// </summary>
         float PowerRating { get; }
 
         /// <summary>
-        /// Приоритет отключения при дефиците энергии.
+        /// Prioritet otklyucheniya pri defitsite energii.
         ///
-        /// 0   = критический (жизнеобеспечение) — отключить ПОСЛЕДНИМ.
-        /// 50  = обычный (стандартные модули).
-        /// 100 = роскошь (декоративные) — отключить ПЕРВЫМ.
+        /// 0   = kriticheskiy (zhizneobespechenie) — otklyuchit POSLEDNIM.
+        /// 50  = obychnyy (standartnye moduli).
+        /// 100 = roskosh (dekorativnye) — otklyuchit PERVYM.
         ///
-        /// При дефиците потребители сортируются по приоритету DESC:
-        /// высокий приоритет (100) отключается первым.
-        /// Генераторы (PowerRating > 0) игнорируют этот параметр.
+        /// Pri defitsite potrebiteli sortiruyutsya po prioritetu DESC:
+        /// vysokiy prioritet (100) otklyuchaetsya pervym.
+        /// Generatory (PowerRating > 0) ignoriruyut etot parametr.
         /// </summary>
         int PowerPriority { get; }
 
         /// <summary>
-        /// Текущее состояние питания (кэшированное).
+        /// Tekuschee sostoyanie pitaniya (keshirovannoe).
         ///
-        /// true = энергия подаётся, компонент работает.
-        /// false = энергия отключена, компонент в режиме ожидания.
+        /// true = energiya podaetsya, komponent rabotaet.
+        /// false = energiya otklyuchena, komponent v rezhime ozhidaniya.
         ///
-        /// Устанавливается через OnPowerStatusChanged.
-        /// Начальное значение: true (до первого UpdateBalance).
+        /// Ustanavlivaetsya cherez OnPowerStatusChanged.
+        /// Nachalnoe znachenie: true (do pervogo UpdateBalance).
         /// </summary>
         bool HasPower { get; }
 
         /// <summary>
-        /// Уведомление об изменении статуса питания.
+        /// Uvedomlenie ob izmenenii statusa pitaniya.
         ///
-        /// Вызывается PowerGrid.UpdateBalance() при ИЗМЕНЕНИИ состояния:
-        ///   • true → false: энергия потеряна, компонент должен приостановить работу.
-        ///   • false → true: энергия восстановлена, компонент может возобновить.
+        /// Vyzyvaetsya PowerGrid.UpdateBalance() pri IZMENENII sostoyaniya:
+        ///   • true → false: energiya poteryana, komponent dolzhen priostanovit rabotu.
+        ///   • false → true: energiya vosstanovlena, komponent mozhet vozobnovit.
         ///
-        /// НЕ вызывается каждый тик — только при переходе.
+        /// NE vyzyvaetsya kazhdyy tik — tolko pri perehode.
         ///
-        /// Реализация должна:
-        ///   1. Кэшировать значение hasPower.
-        ///   2. Приостановить/возобновить свою логику.
-        ///   3. Обновить визуал (выключить свет, остановить анимацию).
+        /// Realizatsiya dolzhna:
+        ///   1. Keshirovat znachenie hasPower.
+        ///   2. Priostanovit/vozobnovit svoyu logiku.
+        ///   3. Obnovit vizual (vyklyuchit svet, ostanovit animatsiyu).
         /// </summary>
-        /// <param name="hasPower">true = питание есть, false = нет.</param>
+        /// <param name="hasPower">true = pitanie est, false = net.</param>
         void OnPowerStatusChanged(bool hasPower);
     }
 }

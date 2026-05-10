@@ -1,37 +1,37 @@
 // ============================================================================
 // HECTON-8 — GameTickManager.cs
-// Единственный MonoBehaviour с Update/FixedUpdate в проекте.
+// Edinstvennyy MonoBehaviour s Update/FixedUpdate v proekte.
 //
-// ВСЕ игровые системы регистрируются здесь через интерфейсы ITickable,
-// IFixedTickable, ISlowTickable. Менеджер вызывает их централизованно.
+// VSE igrovye sistemy registriruyutsya zdes cherez interfeysy ITickable,
+// IFixedTickable, ISlowTickable. Menedzher vyzyvaet ih tsentralizovanno.
 //
-// ПРЕИМУЩЕСТВА ПЕРЕД NATIVE Update():
+// PREIMUSchESTVA PERED NATIVE Update():
 // ┌────────────────────────────┬──────────────────────────────────┐
 // │ Unity Native               │ GameTickManager                   │
 // ├────────────────────────────┼──────────────────────────────────┤
-// │ Reflection-based dispatch  │ Прямой вызов через интерфейс     │
+// │ Reflection-based dispatch  │ Pryamoy vyzov cherez interfeys     │
 // │ ~500 ns per call overhead  │ ~5 ns per call                   │
-// │ Нет контроля порядка       │ Порядок регистрации              │
-// │ Нет возможности паузить    │ bool _isPaused — один флаг       │
-// │ GC от SendMessage в Editor │ Zero GC                          │
+// │ Net kontrolya poryadka       │ Poryadok registratsii              │
+// │ Net vozmozhnosti pauzit    │ bool _isPaused — odin flag       │
+// │ GC ot SendMessage v Editor │ Zero GC                          │
 // └────────────────────────────┴──────────────────────────────────┘
 //
-// БЕЗОПАСНОСТЬ ИТЕРАЦИИ:
-//   Register/Unregister во время Tick? → Buffered.
-//   Изменения применяются после завершения текущей итерации.
-//   Никаких InvalidOperationException, никаких пропусков.
+// BEZOPASNOST ITERATsII:
+//   Register/Unregister vo vremya Tick? → Buffered.
+//   Izmeneniya primenyayutsya posle zaversheniya tekuschey iteratsii.
+//   Nikakih InvalidOperationException, nikakih propuskov.
 //
 // HARDENING (Auto-Cleanup):
-//   Уничтоженные MonoBehaviour ("fake null") автоматически удаляются
-//   из списков во время итерации. Паттерн-матчинг `is UnityEngine.Object`
-//   для reference type — zero boxing, zero GC.
+//   Unichtozhennye MonoBehaviour ("fake null") avtomaticheski udalyayutsya
+//   iz spiskov vo vremya iteratsii. Pattern-matching `is UnityEngine.Object`
+//   dlya reference type — zero boxing, zero GC.
 //
 // ZERO GC:
-//   • Нет foreach (используется for с индексом).
-//   • Нет LINQ.
-//   • Нет аллокаций в горячих путях.
-//   • WaitForSeconds для SlowTick кэширован один раз.
-//   • Swap-remove вместо List.Remove (без сдвига массива).
+//   • Net foreach (ispolzuetsya for s indeksom).
+//   • Net LINQ.
+//   • Net allokatsiy v goryachih putyah.
+//   • WaitForSeconds dlya SlowTick keshirovan odin raz.
+//   • Swap-remove vmesto List.Remove (bez sdviga massiva).
 // ============================================================================
 
 using System;
@@ -44,7 +44,7 @@ using UnityEngine;
 namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(-10000)] // Тикает РАНЬШЕ всех
+    [DefaultExecutionOrder(-10000)] // Tikaet RANShE vseh
     public sealed class GameTickManager : MonoBehaviour, IUpdatable, IFixedTickable, IServiceHeartbeat, IServiceShutdown
     {
         // ══════════════════════════════════════════════════════════
@@ -112,8 +112,8 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         [Header("── Slow Tick ─────────────────────────────────")]
-        [Tooltip("Интервал между SlowTick вызовами (секунды). " +
-                 "0.5 = 2 раза в секунду.")]
+        [Tooltip("Interval mezhdu SlowTick vyzovami (sekundy). " +
+                 "0.5 = 2 raza v sekundu.")]
         [SerializeField] private float slowTickInterval = 0.5f;
 
         [Header("── Diagnostics (Read Only) ───────────────────")]
@@ -131,7 +131,7 @@ namespace Hecton8.Core
         [SerializeField] private string _debugLastSlowTickReport = "None";
 
         // ══════════════════════════════════════════════════════════
-        //  TICK LISTS — буферизованные коллекции
+        //  TICK LISTS — buferizovannye kollektsii
         // ══════════════════════════════════════════════════════════
 
         private TickList<ITickable>      _tickables;
@@ -293,7 +293,7 @@ namespace Hecton8.Core
         }
 
         // ══════════════════════════════════════════════════════════
-        //  UPDATE — единственный в проекте
+        //  UPDATE — edinstvennyy v proekte
         // ══════════════════════════════════════════════════════════
 
         public void Tick(float deltaTime)
@@ -329,7 +329,7 @@ namespace Hecton8.Core
                     continue;
                 }
 
-                // ── Auto-Cleanup: "fake null" (уничтоженный MonoBehaviour) ──
+                // ── Auto-Cleanup: "fake null" (unichtozhennyy MonoBehaviour) ──
                 if (item is UnityEngine.Object obj && obj == null)
                 {
                     _tickables.Remove(item);
@@ -361,7 +361,7 @@ namespace Hecton8.Core
         }
 
         // ══════════════════════════════════════════════════════════
-        //  FIXED UPDATE — единственный в проекте
+        //  FIXED UPDATE — edinstvennyy v proekte
         // ══════════════════════════════════════════════════════════
 
         public void FixedTick(float fixedDeltaTime)
@@ -385,7 +385,7 @@ namespace Hecton8.Core
                     continue;
                 }
 
-                // ── Auto-Cleanup: "fake null" (уничтоженный MonoBehaviour) ──
+                // ── Auto-Cleanup: "fake null" (unichtozhennyy MonoBehaviour) ──
                 if (item is UnityEngine.Object obj && obj == null)
                 {
                     _fixedTickables.Remove(item);
@@ -403,7 +403,7 @@ namespace Hecton8.Core
         }
 
         // ══════════════════════════════════════════════════════════
-        //  SLOW TICK — accumulator-driven loop (2 раза в секунду по дефолту)
+        //  SLOW TICK — accumulator-driven loop (2 raza v sekundu po defoltu)
         // ══════════════════════════════════════════════════════════
 
         private void ResetSlowTickState()
@@ -483,12 +483,12 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Вечная корутина. WaitForSeconds кэширован — zero GC per yield.
+        /// Vechnaya korutina. WaitForSeconds keshirovan — zero GC per yield.
         /// </summary>
         #if false
         private object SlowTickRoutineDisabled()
         {
-            // Первый yield — чтобы все системы успели зарегистрироваться
+            // Pervyy yield — chtoby vse sistemy uspeli zaregistrirovatsya
             return null;
 
             while (true)
@@ -513,7 +513,7 @@ namespace Hecton8.Core
                         continue;
                     }
 
-                    // ── Auto-Cleanup: "fake null" (уничтоженный MonoBehaviour) ──
+                    // ── Auto-Cleanup: "fake null" (unichtozhennyy MonoBehaviour) ──
                     if (item is UnityEngine.Object obj && obj == null)
                     {
                         _slowTickables.Remove(item);
@@ -611,42 +611,42 @@ namespace Hecton8.Core
         //  PUBLIC API — TYPED REGISTRATION
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Регистрирует ITickable (каждый кадр).</summary>
+        /// <summary>Registriruet ITickable (kazhdyy kadr).</summary>
         public void Register(ITickable tickable)
         {
             EnsureInitialized();
             if (tickable != null) _tickables.Add(tickable);
         }
 
-        /// <summary>Снимает ITickable с обновления.</summary>
+        /// <summary>Snimaet ITickable s obnovleniya.</summary>
         public void Unregister(ITickable tickable)
         {
             EnsureInitialized();
             if (tickable != null) _tickables.Remove(tickable);
         }
 
-        /// <summary>Регистрирует IFixedTickable (физический шаг).</summary>
+        /// <summary>Registriruet IFixedTickable (fizicheskiy shag).</summary>
         public void Register(IFixedTickable tickable)
         {
             EnsureInitialized();
             if (tickable != null) _fixedTickables.Add(tickable);
         }
 
-        /// <summary>Снимает IFixedTickable с обновления.</summary>
+        /// <summary>Snimaet IFixedTickable s obnovleniya.</summary>
         public void Unregister(IFixedTickable tickable)
         {
             EnsureInitialized();
             if (tickable != null) _fixedTickables.Remove(tickable);
         }
 
-        /// <summary>Регистрирует ISlowTickable (медленный тик).</summary>
+        /// <summary>Registriruet ISlowTickable (medlennyy tik).</summary>
         public void Register(ISlowTickable tickable)
         {
             EnsureInitialized();
             if (tickable != null) _slowTickables.Add(tickable);
         }
 
-        /// <summary>Снимает ISlowTickable с обновления.</summary>
+        /// <summary>Snimaet ISlowTickable s obnovleniya.</summary>
         public void Unregister(ISlowTickable tickable)
         {
             EnsureInitialized();
@@ -658,11 +658,11 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Авто-регистрация: объект проверяется на все интерфейсы.
-        /// Удобно для классов, реализующих несколько интерфейсов:
+        /// Avto-registratsiya: obekt proveryaetsya na vse interfeysy.
+        /// Udobno dlya klassov, realizuyuschih neskolko interfeysov:
         ///   Registry-backed systems use explicit GlobalRegistry lane registration.
         ///
-        /// Паттерн-матчинг `is` для reference types — zero GC.
+        /// Pattern-matching `is` dlya reference types — zero GC.
         /// </summary>
         public void RegisterAll(object target)
         {
@@ -680,7 +680,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Авто-отписка: снимает объект со всех списков.
+        /// Avto-otpiska: snimaet obekt so vseh spiskov.
         /// </summary>
         public void UnregisterAll(object target)
         {
@@ -701,35 +701,35 @@ namespace Hecton8.Core
         //  DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Кол-во зарегистрированных ITickable.</summary>
+        /// <summary>Kol-vo zaregistrirovannyh ITickable.</summary>
         public int TickableCount      => _tickables?.Count ?? 0;
 
-        /// <summary>Кол-во зарегистрированных IFixedTickable.</summary>
+        /// <summary>Kol-vo zaregistrirovannyh IFixedTickable.</summary>
         public int FixedTickableCount => _fixedTickables?.Count ?? 0;
 
-        /// <summary>Кол-во зарегистрированных ISlowTickable.</summary>
+        /// <summary>Kol-vo zaregistrirovannyh ISlowTickable.</summary>
         public int SlowTickableCount  => _slowTickables?.Count ?? 0;
 
         // ══════════════════════════════════════════════════════════
-        //  TickList<T> — БУФЕРИЗОВАННАЯ КОЛЛЕКЦИЯ (nested class)
+        //  TickList<T> — BUFERIZOVANNAYa KOLLEKTsIYa (nested class)
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Обёртка над List&lt;T&gt; с буферизацией Add/Remove.
+        /// Obertka nad List&lt;T&gt; s buferizatsiey Add/Remove.
         ///
-        /// ПРОБЛЕМА: если вызвать List.Add или List.Remove во время
-        /// итерации по тому же списку — InvalidOperationException
-        /// или пропуск/двойная обработка элементов.
+        /// PROBLEMA: esli vyzvat List.Add ili List.Remove vo vremya
+        /// iteratsii po tomu zhe spisku — InvalidOperationException
+        /// ili propusk/dvoynaya obrabotka elementov.
         ///
-        /// РЕШЕНИЕ: во время итерации все изменения складываются
-        /// в буферы _toAdd / _toRemove. После завершения итерации
-        /// (EndIteration) буферы применяются к основному списку.
+        /// REShENIE: vo vremya iteratsii vse izmeneniya skladyvayutsya
+        /// v bufery _toAdd / _toRemove. Posle zaversheniya iteratsii
+        /// (EndIteration) bufery primenyayutsya k osnovnomu spisku.
         ///
         /// ZERO GC:
-        ///   • Никаких foreach — только for с индексом.
-        ///   • ReferenceEquals вместо EqualityComparer (без boxing).
-        ///   • Swap-remove: O(1) удаление без сдвига массива.
-        ///   • Списки переиспользуются — Clear() не аллоцирует.
+        ///   • Nikakih foreach — tolko for s indeksom.
+        ///   • ReferenceEquals vmesto EqualityComparer (bez boxing).
+        ///   • Swap-remove: O(1) udalenie bez sdviga massiva.
+        ///   • Spiski pereispolzuyutsya — Clear() ne allotsiruet.
         /// </summary>
         private void EnsureInitialized()
         {
@@ -748,14 +748,14 @@ namespace Hecton8.Core
 
         private sealed class TickList<T> where T : class
         {
-            // ── Основной список ──
+            // ── Osnovnoy spisok ──
             private readonly List<T> _items;
 
-            // ── Буферы отложенных операций ──
+            // ── Bufery otlozhennyh operatsiy ──
             private readonly List<T> _toAdd;
             private readonly List<T> _toRemove;
 
-            // ── Флаг: сейчас идёт итерация ──
+            // ── Flag: seychas idet iteratsiya ──
             private bool _isIterating;
 
             // ─────────────────────────────────────────────────────
@@ -774,12 +774,12 @@ namespace Hecton8.Core
             // ─────────────────────────────────────────────────────
 
             /// <summary>
-            /// Прямой доступ к внутреннему списку для for-цикла.
-            /// ТОЛЬКО ДЛЯ ЧТЕНИЯ во время итерации!
+            /// Pryamoy dostup k vnutrennemu spisku dlya for-tsikla.
+            /// TOLKO DLYa ChTENIYa vo vremya iteratsii!
             /// </summary>
             public List<T> Items => _items;
 
-            /// <summary>Текущее кол-во элементов.</summary>
+            /// <summary>Tekuschee kol-vo elementov.</summary>
             public int Count => _items.Count;
 
             public void Clear()
@@ -791,26 +791,26 @@ namespace Hecton8.Core
             }
 
             // ─────────────────────────────────────────────────────
-            //  ADD / REMOVE — с буферизацией
+            //  ADD / REMOVE — s buferizatsiey
             // ─────────────────────────────────────────────────────
 
             /// <summary>
-            /// Добавляет элемент. Если итерация — в буфер.
-            /// Дубликаты игнорируются (проверка ReferenceEquals).
+            /// Dobavlyaet element. Esli iteratsiya — v bufer.
+            /// Dublikaty ignoriruyutsya (proverka ReferenceEquals).
             /// </summary>
             public void Add(T item)
             {
                 if (_isIterating)
                 {
-                    // Проверка: может, он уже в буфере удаления?
-                    // Если да — отменяем удаление вместо двойного добавления.
+                    // Proverka: mozhet, on uzhe v bufere udaleniya?
+                    // Esli da — otmenyaem udalenie vmesto dvoynogo dobavleniya.
                     if (ContainsRef(_toRemove, item))
                     {
                         RemoveRef(_toRemove, item);
                         return;
                     }
 
-                    // Не добавляем дважды
+                    // Ne dobavlyaem dvazhdy
                     if (!ContainsRef(_items, item) && !ContainsRef(_toAdd, item))
                         _toAdd.Add(item);
                 }
@@ -822,14 +822,14 @@ namespace Hecton8.Core
             }
 
             /// <summary>
-            /// Удаляет элемент. Если итерация — в буфер.
-            /// Безопасно при отсутствии элемента (no-op).
+            /// Udalyaet element. Esli iteratsiya — v bufer.
+            /// Bezopasno pri otsutstvii elementa (no-op).
             /// </summary>
             public void Remove(T item)
             {
                 if (_isIterating)
                 {
-                    // Может, он ещё не добавлен (в буфере добавления)?
+                    // Mozhet, on esche ne dobavlen (v bufere dobavleniya)?
                     if (ContainsRef(_toAdd, item))
                     {
                         RemoveRef(_toAdd, item);
@@ -850,7 +850,7 @@ namespace Hecton8.Core
             // ─────────────────────────────────────────────────────
 
             /// <summary>
-            /// Вызови ПЕРЕД for-циклом. Активирует буферизацию.
+            /// Vyzovi PERED for-tsiklom. Aktiviruet buferizatsiyu.
             /// </summary>
             public void BeginIteration()
             {
@@ -858,7 +858,7 @@ namespace Hecton8.Core
             }
 
             /// <summary>
-            /// Вызови ПОСЛЕ for-цикла. Применяет буферы.
+            /// Vyzovi POSLE for-tsikla. Primenyaet bufery.
             /// </summary>
             public void EndIteration()
             {
@@ -871,13 +871,13 @@ namespace Hecton8.Core
             // ─────────────────────────────────────────────────────
 
             /// <summary>
-            /// Применяет все отложенные добавления и удаления.
-            /// Порядок: сначала удаления, потом добавления.
-            /// Clear() на List не аллоцирует — обнуляет Count, буфер остаётся.
+            /// Primenyaet vse otlozhennye dobavleniya i udaleniya.
+            /// Poryadok: snachala udaleniya, potom dobavleniya.
+            /// Clear() na List ne allotsiruet — obnulyaet Count, bufer ostaetsya.
             /// </summary>
             private void FlushPending()
             {
-                // ── Удаления ──
+                // ── Udaleniya ──
                 int removeCount = _toRemove.Count;
                 if (removeCount > 0)
                 {
@@ -887,7 +887,7 @@ namespace Hecton8.Core
                     _toRemove.Clear();
                 }
 
-                // ── Добавления ──
+                // ── Dobavleniya ──
                 int addCount = _toAdd.Count;
                 if (addCount > 0)
                 {
@@ -907,9 +907,9 @@ namespace Hecton8.Core
             // ─────────────────────────────────────────────────────
 
             /// <summary>
-            /// Проверка наличия по ссылке. Без EqualityComparer,
-            /// без boxing, без аллокаций. O(n) — но списки маленькие,
-            /// и вызывается только при Register/Unregister (редко).
+            /// Proverka nalichiya po ssylke. Bez EqualityComparer,
+            /// bez boxing, bez allokatsiy. O(n) — no spiski malenkie,
+            /// i vyzyvaetsya tolko pri Register/Unregister (redko).
             /// </summary>
             private static bool ContainsRef(List<T> list, T item)
             {
@@ -923,9 +923,9 @@ namespace Hecton8.Core
             }
 
             /// <summary>
-            /// Удаление по ссылке из небуферизованного списка.
-            /// Используется для чистки буферов _toAdd / _toRemove.
-            /// Обычный Remove (не swap) — сохраняет порядок буфера.
+            /// Udalenie po ssylke iz nebuferizovannogo spiska.
+            /// Ispolzuetsya dlya chistki buferov _toAdd / _toRemove.
+            /// Obychnyy Remove (ne swap) — sohranyaet poryadok bufera.
             /// </summary>
             private static void RemoveRef(List<T> list, T item)
             {
@@ -941,12 +941,12 @@ namespace Hecton8.Core
             }
 
             /// <summary>
-            /// Swap-Remove: меняет элемент с последним, удаляет последний.
-            /// O(1) удаление вместо O(n) сдвига.
+            /// Swap-Remove: menyaet element s poslednim, udalyaet posledniy.
+            /// O(1) udalenie vmesto O(n) sdviga.
             ///
-            /// ⚠ НЕ сохраняет порядок элементов.
-            ///   Для систем тиков порядок обычно не критичен.
-            ///   Если порядок важен — замените на list.RemoveAt(i).
+            /// ⚠ NE sohranyaet poryadok elementov.
+            ///   Dlya sistem tikov poryadok obychno ne kritichen.
+            ///   Esli poryadok vazhen — zamenite na list.RemoveAt(i).
             /// </summary>
             private static void SwapRemove(List<T> list, T item)
             {
@@ -956,8 +956,8 @@ namespace Hecton8.Core
                     if (ReferenceEquals(list[i], item))
                     {
                         int last = count - 1;
-                        list[i] = list[last];  // Swap (no-op если i == last)
-                        list.RemoveAt(last);   // O(1) — последний элемент
+                        list[i] = list[last];  // Swap (no-op esli i == last)
+                        list.RemoveAt(last);   // O(1) — posledniy element
                         return;
                     }
                 }

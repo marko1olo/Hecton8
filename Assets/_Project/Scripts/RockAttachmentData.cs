@@ -1,10 +1,10 @@
 // ============================================================================
 // HECTON-8 — RockAttachmentData.cs
-// ScriptableObject: сохранённые позиции сокетов для одного камня/группы.
+// ScriptableObject: sohranennye pozitsii soketov dlya odnogo kamnya/gruppy.
 //
-// Хранит локальные координаты и типы точек крепления.
-// Создаётся автоматически через RockDataBakerWindow.
-// Используется в рантайме для процедурного размещения флоры/наростов.
+// Hranit lokalnye koordinaty i tipy tochek krepleniya.
+// Sozdaetsya avtomaticheski cherez RockDataBakerWindow.
+// Ispolzuetsya v rantayme dlya protsedurnogo razmescheniya flory/narostov.
 // ============================================================================
 
 using System;
@@ -27,17 +27,17 @@ namespace Hecton8.Building
         [Serializable]
         public struct SocketData
         {
-            [Tooltip("Позиция сокета относительно корня группы камней.")]
+            [Tooltip("Pozitsiya soketa otnositelno kornya gruppy kamney.")]
             public float3 localPos;
 
-            [Tooltip("Поворот сокета относительно корня группы камней.")]
+            [Tooltip("Povorot soketa otnositelno kornya gruppy kamney.")]
             public quaternion localRot;
 
-            [Tooltip("Тип сокета: Top, Side, Under.")]
+            [Tooltip("Tip soketa: Top, Side, Under.")]
             public HectonSocketHelper.SocketType type;
 
             /// <summary>
-            /// Конвертирует в мировые координаты относительно указанного Transform.
+            /// Konvertiruet v mirovye koordinaty otnositelno ukazannogo Transform.
             /// Zero GC — struct math only.
             /// </summary>
             public void ToWorld(Transform root, out Vector3 worldPos, out Quaternion worldRot)
@@ -52,25 +52,25 @@ namespace Hecton8.Building
         // ══════════════════════════════════════════════════════════
 
         [Header("═══ SOCKET POINTS ═══")]
-        [Tooltip("Все точки крепления на этом камне.\n" +
-                 "Автоматически заполняется через Rock Data Baker Window.")]
+        [Tooltip("Vse tochki krepleniya na etom kamne.\n" +
+                 "Avtomaticheski zapolnyaetsya cherez Rock Data Baker Window.")]
         public List<SocketData> sockets = new List<SocketData>();
 
         [Header("═══ METADATA ═══")]
-        [Tooltip("Имя исходной группы камней при экспорте.")]
+        [Tooltip("Imya ishodnoy gruppy kamney pri eksporte.")]
         public string sourceGroupName;
 
-        [Tooltip("Дата последнего экспорта.")]
+        [Tooltip("Data poslednego eksporta.")]
         public string exportTimestamp;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Количество сокетов.</summary>
+        /// <summary>Kolichestvo soketov.</summary>
         public int Count => sockets.Count;
 
-        /// <summary>Количество сокетов указанного типа.</summary>
+        /// <summary>Kolichestvo soketov ukazannogo tipa.</summary>
         public int CountByType(HectonSocketHelper.SocketType type)
         {
             int count = 0;

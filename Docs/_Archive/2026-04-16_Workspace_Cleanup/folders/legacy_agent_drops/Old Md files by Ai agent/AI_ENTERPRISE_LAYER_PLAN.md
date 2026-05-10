@@ -5,686 +5,686 @@ Status: ARCHIVED
 
 # AI Enterprise Layer Plan
 
-## Зачем это нужно
+## Zachem eto nuzhno
 
-Нужен не просто `FSM-скелет`, а полноценный рабочий слой поведения существ для финальной игры.
+Nuzhen ne prosto `FSM-skelet`, a polnotsennyy rabochiy sloy povedeniya suschestv dlya finalnoy igry.
 
-Простыми словами:
+Prostymi slovami:
 
-- мелкая мирная рыба не должна думать как левиафан
-- стайная рыба не должна жить на `GameObject`-логике по одной штуке
-- тяжёлый хищник не должен быть просто “та же рыба, но злее”
-- дрон-торговец не должен быть притворяющейся рыбой
+- melkaya mirnaya ryba ne dolzhna dumat kak leviafan
+- staynaya ryba ne dolzhna zhit na `GameObject`-logike po odnoy shtuke
+- tyazhelyy hischnik ne dolzhen byt prosto “ta zhe ryba, no zlee”
+- dron-torgovets ne dolzhen byt pritvoryayuscheysya ryboy
 
-Нужна единая система, где:
+Nuzhna edinaya sistema, gde:
 
-- каждый вид существа имеет свой профиль
-- разные типы существ используют правильный способ движения
-- AI слушает шум, свет, урон, биом, директора напряжения
-- всё это не убивает производительность
+- kazhdyy vid suschestva imeet svoy profil
+- raznye tipy suschestv ispolzuyut pravilnyy sposob dvizheniya
+- AI slushaet shum, svet, uron, biom, direktora napryazheniya
+- vse eto ne ubivaet proizvoditelnost
 
 ---
 
-## Главный принцип
+## Glavnyy printsip
 
-Не все существа используют один и тот же мозг.
+Ne vse suschestva ispolzuyut odin i tot zhe mozg.
 
-Правильное разделение такое:
+Pravilnoe razdelenie takoe:
 
-### 1. Обычная мирная и одиночная фауна
+### 1. Obychnaya mirnaya i odinochnaya fauna
 
-Использует:
+Ispolzuet:
 
 - `HectonBaseAI`
 - steering
-- обход препятствий
-- реакции на игрока
+- obhod prepyatstviy
+- reaktsii na igroka
 
-Подходит для:
+Podhodit dlya:
 
-- мирных рыб
-- осторожных рыб
-- одиночных мелких хищников
-- падальщиков
+- mirnyh ryb
+- ostorozhnyh ryb
+- odinochnyh melkih hischnikov
+- padalschikov
 
-### 2. Стаи рыб
+### 2. Stai ryb
 
-Используют:
+Ispolzuyut:
 
 - `HectonBoidController`
 - `BoidSimulation.compute`
 - `BoidFishInstanced.shader`
 
-Подходит для:
+Podhodit dlya:
 
-- мелкой массовой рыбы
-- косяков
-- фоновой живности
+- melkoy massovoy ryby
+- kosyakov
+- fonovoy zhivnosti
 
-Важно:
+Vazhno:
 
-- стаи не должны жить как сотни отдельных `HectonBaseAI`
-- это нужно считать на GPU
+- stai ne dolzhny zhit kak sotni otdelnyh `HectonBaseAI`
+- eto nuzhno schitat na GPU
 
-### 3. Крупные особые существа
+### 3. Krupnye osobye suschestva
 
-Используют:
+Ispolzuyut:
 
 - `Candice AI`
-- при необходимости `A* Pathfinding`
-- отдельные режимы поведения
+- pri neobhodimosti `A* Pathfinding`
+- otdelnye rezhimy povedeniya
 
-Подходит для:
+Podhodit dlya:
 
-- левиафанов
-- тяжёлых охотников
-- дронов
-- сюжетных или редких существ
+- leviafanov
+- tyazhelyh ohotnikov
+- dronov
+- syuzhetnyh ili redkih suschestv
 
-Важно:
+Vazhno:
 
-- `A*` не нужен всем рыбам
-- `A*` нужен тем, кто реально ходит по дну, патрулирует маршруты или живёт по сложным точкам
-
----
-
-## Какие типы существ должны быть в игре
-
-### Мирные одиночные
-
-- `Мирный 01`
-- `Мирный 02`
-- `Мирный 03`
-- `Собиратель 01`
-- `Собиратель 02`
-
-### Мирные стайные
-
-- `Стайная 01`
-- `Стайная 02`
-- `Стайная 03`
-- `Стайная 04`
-
-### Осторожные и территориальные
-
-- `Территориальный 01`
-- `Территориальный 02`
-- `Гнездовой 01`
-- `Гнездовой 02`
-
-### Хищники
-
-- `Хищник 01`
-- `Хищник 02`
-- `Хищник 03`
-- `Засадный 01`
-- `Стайный хищник 01`
-
-### Крупные угрозы
-
-- `Левиафан 01`
-- `Левиафан 02`
-- `Левиафан 03`
-
-### Технические NPC
-
-- `Дрон-курьер 01`
-- `Дрон-ремонтник 01`
-- `Дрон-торговец 01`
-
-Это рабочие имена.
-Позже можно заменить на настоящие названия мира, но система должна уже сейчас уметь держать такие классы поведения.
+- `A*` ne nuzhen vsem rybam
+- `A*` nuzhen tem, kto realno hodit po dnu, patruliruet marshruty ili zhivet po slozhnym tochkam
 
 ---
 
-## Из каких слоёв состоит полноценный AI
+## Kakie tipy suschestv dolzhny byt v igre
 
-## 1. Профиль вида существа
+### Mirnye odinochnye
 
-Источник правды:
+- `Mirnyy 01`
+- `Mirnyy 02`
+- `Mirnyy 03`
+- `Sobiratel 01`
+- `Sobiratel 02`
+
+### Mirnye staynye
+
+- `Staynaya 01`
+- `Staynaya 02`
+- `Staynaya 03`
+- `Staynaya 04`
+
+### Ostorozhnye i territorialnye
+
+- `Territorialnyy 01`
+- `Territorialnyy 02`
+- `Gnezdovoy 01`
+- `Gnezdovoy 02`
+
+### Hischniki
+
+- `Hischnik 01`
+- `Hischnik 02`
+- `Hischnik 03`
+- `Zasadnyy 01`
+- `Staynyy hischnik 01`
+
+### Krupnye ugrozy
+
+- `Leviafan 01`
+- `Leviafan 02`
+- `Leviafan 03`
+
+### Tehnicheskie NPC
+
+- `Dron-kurer 01`
+- `Dron-remontnik 01`
+- `Dron-torgovets 01`
+
+Eto rabochie imena.
+Pozzhe mozhno zamenit na nastoyaschie nazvaniya mira, no sistema dolzhna uzhe seychas umet derzhat takie klassy povedeniya.
+
+---
+
+## Iz kakih sloev sostoit polnotsennyy AI
+
+## 1. Profil vida suschestva
+
+Istochnik pravdy:
 
 - `CreatureArchetypeData`
 
-Он хранит:
+On hranit:
 
-- кто это
-- мирный он или хищный
-- одиночный он или стайный
-- на чём он двигается
-- как далеко замечает игрока
-- как реагирует на шум
-- как реагирует на свет
-- сколько таких существ можно держать
+- kto eto
+- mirnyy on ili hischnyy
+- odinochnyy on ili staynyy
+- na chem on dvigaetsya
+- kak daleko zamechaet igroka
+- kak reagiruet na shum
+- kak reagiruet na svet
+- skolko takih suschestv mozhno derzhat
 
-Это уже начало сделано.
+Eto uzhe nachalo sdelano.
 
-## 2. Данные биома
+## 2. Dannye bioma
 
-Источник:
+Istochnik:
 
 - `FaunaBiomeData`
 
-Он должен говорить:
+On dolzhen govorit:
 
-- какие виды существ вообще могут жить в этом месте
-- с каким весом они спавнятся
-- сколько их можно держать
+- kakie vidy suschestv voobsche mogut zhit v etom meste
+- s kakim vesom oni spavnyatsya
+- skolko ih mozhno derzhat
 
-Теперь это должно опираться не только на префаб, но и на профиль вида.
+Teper eto dolzhno opiratsya ne tolko na prefab, no i na profil vida.
 
-## 3. Базовое восприятие
+## 3. Bazovoe vospriyatie
 
-Обязательно:
+Obyazatelno:
 
-- расстояние до игрока
-- шум игрока
-- свет игрока
-- получение урона
+- rasstoyanie do igroka
+- shum igroka
+- svet igroka
+- poluchenie urona
 
-Следом нужно добавить:
+Sledom nuzhno dobavit:
 
-- память о последнем шуме
-- память о последнем свете
-- территорию
-- гнездо
-- интерес к добыче или падали
+- pamyat o poslednem shume
+- pamyat o poslednem svete
+- territoriyu
+- gnezdo
+- interes k dobyche ili padali
 
-## 4. Режимы поведения
+## 4. Rezhimy povedeniya
 
-Нужны отдельные игровые режимы:
+Nuzhny otdelnye igrovye rezhimy:
 
-- спокойное плавание
-- блуждание
-- интерес
-- испуг
-- бегство
-- охота
-- преследование
-- атака
-- возврат в территорию
-- патруль
-- обслуживание точки
-- торговое ожидание
+- spokoynoe plavanie
+- bluzhdanie
+- interes
+- ispug
+- begstvo
+- ohota
+- presledovanie
+- ataka
+- vozvrat v territoriyu
+- patrul
+- obsluzhivanie tochki
+- torgovoe ozhidanie
 
-Важно:
+Vazhno:
 
-- это не просто новые названия состояний
-- это разные игровые правила перехода
+- eto ne prosto novye nazvaniya sostoyaniy
+- eto raznye igrovye pravila perehoda
 
-## 5. Директор мира
+## 5. Direktor mira
 
-Источник:
+Istochnik:
 
 - `FaunaDirector`
 - `HectonDirectorAI`
 
-Он должен управлять:
+On dolzhen upravlyat:
 
-- сколько сейчас живности в мире
-- где мир спокойный
-- где мир напряжённый
-- где усилить хищников
-- где усилить мирную жизнь
+- skolko seychas zhivnosti v mire
+- gde mir spokoynyy
+- gde mir napryazhennyy
+- gde usilit hischnikov
+- gde usilit mirnuyu zhizn
 
-## 6. Особые системы
+## 6. Osobye sistemy
 
-Отдельно нужно связать:
+Otdelno nuzhno svyazat:
 
-- `GPU Boids` для стай
-- `Candice AI` для сложных акторов
-- `A*` для дронов и некоторых крупных существ
-
----
-
-## Правильная модель поведения по классам
-
-### Мирная одиночная рыба
-
-Чувствуется так:
-
-- плавает спокойно
-- иногда меняет курс
-- пугается шума и света
-- убегает
-- возвращается в спокойный режим
-
-### Стайная рыба
-
-Чувствуется так:
-
-- живёт косяком
-- держится плотностью
-- рассыпается при угрозе
-- собирается назад
-
-### Территориальное существо
-
-Чувствуется так:
-
-- не обязательно охотится первым
-- но не любит вторжение
-- защищает место
-- может прогонять игрока
-
-### Хищник
-
-Чувствуется так:
-
-- слушает шум
-- замечает свет
-- может интересоваться игроком
-- не всегда нападает мгновенно
-- сначала может сопровождать, оценивать, заходить сбоку
-
-### Левиафан
-
-Чувствуется так:
-
-- его слышно заранее
-- его видно издалека
-- у него есть территория
-- он не мельтешит как обычная рыба
-- его действия редкие, тяжёлые и запоминающиеся
-
-### Дрон
-
-Чувствуется так:
-
-- не живое существо, а системный актор мира
-- имеет маршрут, задачу, сервисную точку или торговую роль
-- может быть нейтральным, полезным или опасным
+- `GPU Boids` dlya stay
+- `Candice AI` dlya slozhnyh aktorov
+- `A*` dlya dronov i nekotoryh krupnyh suschestv
 
 ---
 
-## Что уже есть
+## Pravilnaya model povedeniya po klassam
 
-Готово:
+### Mirnaya odinochnaya ryba
 
-- `HectonBaseAI` как базовый мозг
-- `FaunaDirector` как спавн и контроль количества
-- `HectonDirectorAI` как общий директор напряжения
+Chuvstvuetsya tak:
+
+- plavaet spokoyno
+- inogda menyaet kurs
+- pugaetsya shuma i sveta
+- ubegaet
+- vozvraschaetsya v spokoynyy rezhim
+
+### Staynaya ryba
+
+Chuvstvuetsya tak:
+
+- zhivet kosyakom
+- derzhitsya plotnostyu
+- rassypaetsya pri ugroze
+- sobiraetsya nazad
+
+### Territorialnoe suschestvo
+
+Chuvstvuetsya tak:
+
+- ne obyazatelno ohotitsya pervym
+- no ne lyubit vtorzhenie
+- zaschischaet mesto
+- mozhet progonyat igroka
+
+### Hischnik
+
+Chuvstvuetsya tak:
+
+- slushaet shum
+- zamechaet svet
+- mozhet interesovatsya igrokom
+- ne vsegda napadaet mgnovenno
+- snachala mozhet soprovozhdat, otsenivat, zahodit sboku
+
+### Leviafan
+
+Chuvstvuetsya tak:
+
+- ego slyshno zaranee
+- ego vidno izdaleka
+- u nego est territoriya
+- on ne melteshit kak obychnaya ryba
+- ego deystviya redkie, tyazhelye i zapominayuschiesya
+
+### Dron
+
+Chuvstvuetsya tak:
+
+- ne zhivoe suschestvo, a sistemnyy aktor mira
+- imeet marshrut, zadachu, servisnuyu tochku ili torgovuyu rol
+- mozhet byt neytralnym, poleznym ili opasnym
+
+---
+
+## Chto uzhe est
+
+Gotovo:
+
+- `HectonBaseAI` kak bazovyy mozg
+- `FaunaDirector` kak spavn i kontrol kolichestva
+- `HectonDirectorAI` kak obschiy direktor napryazheniya
 - `NoiseSystem`
 - `LightDetectionSystem`
-- `CreatureArchetypeData` как профиль вида
+- `CreatureArchetypeData` kak profil vida
 
 ---
 
-## Что делаем дальше по очереди
+## Chto delaem dalshe po ocheredi
 
-## Этап 1. Довести профиль вида до живого использования
+## Etap 1. Dovesti profil vida do zhivogo ispolzovaniya
 
-Сделать:
+Sdelat:
 
-- `FaunaBiomeData` работает через профиль вида
-- `FaunaDirector` при спавне применяет профиль к существу
-- `HectonBaseAI` принимает профиль и перестраивает свои значения
+- `FaunaBiomeData` rabotaet cherez profil vida
+- `FaunaDirector` pri spavne primenyaet profil k suschestvu
+- `HectonBaseAI` prinimaet profil i perestraivaet svoi znacheniya
 
-Цель:
+Tsel:
 
-- разные существа перестают быть копиями с разными префабами
+- raznye suschestva perestayut byt kopiyami s raznymi prefabami
 
-Что уже сделано сейчас:
+Chto uzhe sdelano seychas:
 
-- появился `CreatureArchetypeData` как паспорт вида
-- `FaunaBiomeData` уже умеет брать префаб, вес и лимиты из паспорта вида
-- `FaunaDirector` уже применяет паспорт вида при спавне
-- `HectonBaseAI` уже умеет перестраивать себя под мирного, территориального, хищника, левиафана или дрона
-- в `HectonBaseAI` уже появился промежуточный режим `Investigate`
-- в паспорте вида уже появились настройки домашней зоны
-- территориальное существо уже может возвращаться к своей точке спавна, а не просто теряться в мире
-- территориальное существо уже защищает именно свою зону, а не весь биом целиком
+- poyavilsya `CreatureArchetypeData` kak pasport vida
+- `FaunaBiomeData` uzhe umeet brat prefab, ves i limity iz pasporta vida
+- `FaunaDirector` uzhe primenyaet pasport vida pri spavne
+- `HectonBaseAI` uzhe umeet perestraivat sebya pod mirnogo, territorialnogo, hischnika, leviafana ili drona
+- v `HectonBaseAI` uzhe poyavilsya promezhutochnyy rezhim `Investigate`
+- v pasporte vida uzhe poyavilis nastroyki domashney zony
+- territorialnoe suschestvo uzhe mozhet vozvraschatsya k svoey tochke spavna, a ne prosto teryatsya v mire
+- territorialnoe suschestvo uzhe zaschischaet imenno svoyu zonu, a ne ves biom tselikom
 
-Простыми словами:
+Prostymi slovami:
 
-- существо теперь может не только сразу напасть или убежать
-- оно может сначала проверить, что именно услышало или увидело
-- это первый шаг к более живому поведению без резкого прыжка сразу в сложные деревья поведения
+- suschestvo teper mozhet ne tolko srazu napast ili ubezhat
+- ono mozhet snachala proverit, chto imenno uslyshalo ili uvidelo
+- eto pervyy shag k bolee zhivomu povedeniyu bez rezkogo pryzhka srazu v slozhnye derevya povedeniya
 
-## Этап 2. Развести классы существ по реальному поведению
+## Etap 2. Razvesti klassy suschestv po realnomu povedeniyu
 
-Сделать:
+Sdelat:
 
-- мирный
-- территориальный
-- охотник
-- левиафан
-- дрон
+- mirnyy
+- territorialnyy
+- ohotnik
+- leviafan
+- dron
 
-Цель:
+Tsel:
 
-- один базовый AI получает разные игровые режимы, а не просто другие цифры
+- odin bazovyy AI poluchaet raznye igrovye rezhimy, a ne prosto drugie tsifry
 
-## Этап 3. Вынести стаи на GPU
+## Etap 3. Vynesti stai na GPU
 
-Сделать:
+Sdelat:
 
-- живая сцена для `HectonBoidController`
-- привязка стай к биомам
-- переключение между одиночной и стайной фауной
+- zhivaya stsena dlya `HectonBoidController`
+- privyazka stay k biomam
+- pereklyuchenie mezhdu odinochnoy i staynoy faunoy
 
-Цель:
+Tsel:
 
-- много рыбы без убийства CPU
+- mnogo ryby bez ubiystva CPU
 
-## Этап 4. Подключить Candice и A* правильно
+## Etap 4. Podklyuchit Candice i A* pravilno
 
-Сделать:
+Sdelat:
 
-- Candice не для всех подряд, а только для сложных существ
-- `A*` только для:
-  - дронов
-  - некоторых тяжёлых наземно-донных акторов
-  - возможно отдельных крупных существ
+- Candice ne dlya vseh podryad, a tolko dlya slozhnyh suschestv
+- `A*` tolko dlya:
+  - dronov
+  - nekotoryh tyazhelyh nazemno-donnyh aktorov
+  - vozmozhno otdelnyh krupnyh suschestv
 
-Цель:
+Tsel:
 
-- сложный AI там, где он нужен
-- без бессмысленного pathfinding у обычной рыбы
+- slozhnyy AI tam, gde on nuzhen
+- bez bessmyslennogo pathfinding u obychnoy ryby
 
-## Этап 5. Сделать настоящие игровые реакции
+## Etap 5. Sdelat nastoyaschie igrovye reaktsii
 
-Сделать:
+Sdelat:
 
-- реакция на шум
-- реакция на свет
-- реакция на урон
-- реакция на территорию
-- реакция на численность поблизости
-- реакция на фазу директора
+- reaktsiya na shum
+- reaktsiya na svet
+- reaktsiya na uron
+- reaktsiya na territoriyu
+- reaktsiya na chislennost poblizosti
+- reaktsiya na fazu direktora
 
-Цель:
+Tsel:
 
-- поведение становится живым, а не просто “увидел игрока по радиусу”
+- povedenie stanovitsya zhivym, a ne prosto “uvidel igroka po radiusu”
 
-## Этап 6. Довести уникальные роли
+## Etap 6. Dovesti unikalnye roli
 
-Сделать:
+Sdelat:
 
-- левиафаны
-- дроны barter
-- сервисные дроны
-- крупные угрозы биомов
-
----
-
-## Правила оптимизации
-
-Нельзя:
-
-- делать всех рыб отдельными дорогими AI
-- тащить pathfinding на всю фауну
-- держать кучу тяжёлых проверок каждый кадр на всех существах
-
-Нужно:
-
-- стаи считать на GPU
-- одиночных считать через текущий `FSM`
-- восприятие делать дёшево
-- спящих существ держать спящими
-- тяжёлых существ одновременно держать мало
+- leviafany
+- drony barter
+- servisnye drony
+- krupnye ugrozy biomov
 
 ---
 
-## Что считаем успехом
+## Pravila optimizatsii
 
-AI слой считается по-настоящему рабочим, когда:
+Nelzya:
 
-- мирная рыба ведёт себя как мирная рыба
-- хищник пугает не только уроном, но и поведением
-- стаи реально живут косяками
-- левиафан ощущается как событие мира
-- дрон ощущается как часть экосистемы и инфраструктуры
-- всё это не убивает производительность
+- delat vseh ryb otdelnymi dorogimi AI
+- taschit pathfinding na vsyu faunu
+- derzhat kuchu tyazhelyh proverok kazhdyy kadr na vseh suschestvah
 
----
+Nuzhno:
 
-## Текущий статус
-
-Сейчас реально в работе:
-
-- этап 1
-- начало этапа 2
-
-То есть:
-
-- уже появился профиль вида существа
-- уже есть шум и свет
-- сейчас доводим связку:
-  - `профиль вида`
-  - `спавн`
-  - `базовый AI`
-
-После этого можно честно переходить к отдельным режимам:
-
-- мирный
-- территориальный
-- охотник
-- левиафан
-- дрон
+- stai schitat na GPU
+- odinochnyh schitat cherez tekuschiy `FSM`
+- vospriyatie delat deshevo
+- spyaschih suschestv derzhat spyaschimi
+- tyazhelyh suschestv odnovremenno derzhat malo
 
 ---
 
-## Прогресс 2026-03-31 — Предупреждение и подкрадывание
+## Chto schitaem uspehom
 
-### Что сделано
+AI sloy schitaetsya po-nastoyaschemu rabochim, kogda:
 
-- В базовый AI добавлены два новых живых режима:
+- mirnaya ryba vedet sebya kak mirnaya ryba
+- hischnik pugaet ne tolko uronom, no i povedeniem
+- stai realno zhivut kosyakami
+- leviafan oschuschaetsya kak sobytie mira
+- dron oschuschaetsya kak chast ekosistemy i infrastruktury
+- vse eto ne ubivaet proizvoditelnost
+
+---
+
+## Tekuschiy status
+
+Seychas realno v rabote:
+
+- etap 1
+- nachalo etapa 2
+
+To est:
+
+- uzhe poyavilsya profil vida suschestva
+- uzhe est shum i svet
+- seychas dovodim svyazku:
+  - `profil vida`
+  - `spavn`
+  - `bazovyy AI`
+
+Posle etogo mozhno chestno perehodit k otdelnym rezhimam:
+
+- mirnyy
+- territorialnyy
+- ohotnik
+- leviafan
+- dron
+
+---
+
+## Progress 2026-03-31 — Preduprezhdenie i podkradyvanie
+
+### Chto sdelano
+
+- V bazovyy AI dobavleny dva novyh zhivyh rezhima:
   - `Threaten`
   - `Stalk`
-- `Threaten` нужен для территориальных существ.
-- `Stalk` нужен для охотников и будущих левиафанов.
-- В профиль вида добавлены отдельные настройки:
-  - сколько длится предупреждение
-  - на какой дистанции существо давит на игрока
-  - сколько длится скрытное ведение цели
-  - на какой дистанции хищник держит игрока перед атакой
+- `Threaten` nuzhen dlya territorialnyh suschestv.
+- `Stalk` nuzhen dlya ohotnikov i buduschih leviafanov.
+- V profil vida dobavleny otdelnye nastroyki:
+  - skolko dlitsya preduprezhdenie
+  - na kakoy distantsii suschestvo davit na igroka
+  - skolko dlitsya skrytnoe vedenie tseli
+  - na kakoy distantsii hischnik derzhit igroka pered atakoy
 
-### Что это значит простыми словами
+### Chto eto znachit prostymi slovami
 
-- Территориальное существо теперь не обязано сразу кусать.
-- Оно может сначала показать:
-  - это моя зона
-  - отойди
-- Хищник теперь не обязан сразу лететь в лоб.
-- Он может сначала:
-  - вести игрока
-  - держаться сбоку
-  - накапливать давление
+- Territorialnoe suschestvo teper ne obyazano srazu kusat.
+- Ono mozhet snachala pokazat:
+  - eto moya zona
+  - otoydi
+- Hischnik teper ne obyazan srazu letet v lob.
+- On mozhet snachala:
+  - vesti igroka
+  - derzhatsya sboku
+  - nakaplivat davlenie
 
-### Что это даёт игре
+### Chto eto daet igre
 
-- AI перестаёт быть картонным.
-- У существ появляется читаемое поведение до атаки.
-- Игрок начинает чувствовать:
-  - предупреждение
-  - давление
-  - охоту
-- Это гораздо ближе к хорошей подводной песочнице, чем мгновенный переход из спокойствия в укус.
-
----
-
-## Прогресс 2026-03-31 — Помощь соседей и защита гнезда
-
-### Что сделано
-
-- Добавлена защита гнезда вокруг точки спавна.
-- Добавлен зов помощи соседей.
-- Это настраивается прямо в профиле вида:
-  - защищает ли вид гнездо
-  - радиус защиты гнезда
-  - зовёт ли соседей
-  - радиус зова
-  - задержка между зовами
-  - сколько соседей максимум приходит
-  - зовутся ли только существа того же вида
-
-### Что это значит простыми словами
-
-- Если игрок лезет в кладку или близко к гнезду, существо теперь может защищать не только себя, но и место.
-- Если существо реально встревожено, оно может поднять рядом своих.
-- Мир начинает работать как локальная экосистема, а не как набор одиночных болванок.
-
-### Что это даёт игре
-
-- Появляются участки, куда неприятно просто так влезать.
-- Игрок может случайно разозлить не одного защитника, а маленькую локальную группу.
-- Это делает рифы, проходы и кладки более запоминающимися и живыми.
+- AI perestaet byt kartonnym.
+- U suschestv poyavlyaetsya chitaemoe povedenie do ataki.
+- Igrok nachinaet chuvstvovat:
+  - preduprezhdenie
+  - davlenie
+  - ohotu
+- Eto gorazdo blizhe k horoshey podvodnoy pesochnitse, chem mgnovennyy perehod iz spokoystviya v ukus.
 
 ---
 
-## Прогресс 2026-03-31 — Совместная охота хищников
+## Progress 2026-03-31 — Pomosch sosedey i zaschita gnezda
 
-### Что сделано
+### Chto sdelano
 
-- Добавлены настройки групповой охоты в профиль вида.
-- Хищники теперь могут подключаться к охоте не как копии лидера, а как разные участники группы.
-- Во время скрытного преследования группа может расходиться вокруг игрока по разным позициям.
+- Dobavlena zaschita gnezda vokrug tochki spavna.
+- Dobavlen zov pomoschi sosedey.
+- Eto nastraivaetsya pryamo v profile vida:
+  - zaschischaet li vid gnezdo
+  - radius zaschity gnezda
+  - zovet li sosedey
+  - radius zova
+  - zaderzhka mezhdu zovami
+  - skolko sosedey maksimum prihodit
+  - zovutsya li tolko suschestva togo zhe vida
 
-### Что это значит простыми словами
+### Chto eto znachit prostymi slovami
 
-- один хищник держит игрока спереди
-- второй заходит слева
-- третий держится чуть дальше и ждёт удобный момент для входа
+- Esli igrok lezet v kladku ili blizko k gnezdu, suschestvo teper mozhet zaschischat ne tolko sebya, no i mesto.
+- Esli suschestvo realno vstrevozheno, ono mozhet podnyat ryadom svoih.
+- Mir nachinaet rabotat kak lokalnaya ekosistema, a ne kak nabor odinochnyh bolvanok.
 
-### Что это даёт игре
+### Chto eto daet igre
 
-- встреча с группой хищников перестаёт быть тупым навалом в одну точку
-- игроку сложнее просто кайтить всех по прямой
-- охота становится хитрее и ближе к хорошему подводному survival-ощущению
-
----
-
-## Прогресс 2026-03-31 — Большое давление левиафанов
-
-### Что сделано
-
-- Добавлено отдельное состояние большого давления для крупных угроз.
-- Левиафан теперь может сначала держать круг вокруг игрока, а не сразу срываться в обычную атаку.
-- Инструменты игрока умеют это распознавать.
-
-### Что это значит простыми словами
-
-- крупное существо показывает себя
-- ломает чувство безопасности
-- держит дистанцию давления
-- и только потом входит в жёсткий контакт
-
-### Что это даёт игре
-
-- левиафан ощущается событием мира
-- встреча с ним становится драматичнее и понятнее
-- это уже не просто большая агрессивная рыба
+- Poyavlyayutsya uchastki, kuda nepriyatno prosto tak vlezat.
+- Igrok mozhet sluchayno razozlit ne odnogo zaschitnika, a malenkuyu lokalnuyu gruppu.
+- Eto delaet rify, prohody i kladki bolee zapominayuschimisya i zhivymi.
 
 ---
 
-## Прогресс 2026-03-31 — Разные сценарии встречи у крупных угроз
+## Progress 2026-03-31 — Sovmestnaya ohota hischnikov
 
-### Что сделано
+### Chto sdelano
 
-- крупным угрозам добавлены разные сценарии встречи
-- сейчас есть:
-  - круг давления
-  - резкая засада
-  - сторож прохода
+- Dobavleny nastroyki gruppovoy ohoty v profil vida.
+- Hischniki teper mogut podklyuchatsya k ohote ne kak kopii lidera, a kak raznye uchastniki gruppy.
+- Vo vremya skrytnogo presledovaniya gruppa mozhet rashoditsya vokrug igroka po raznym pozitsiyam.
 
-### Что это значит простыми словами
+### Chto eto znachit prostymi slovami
 
-- один левиафан пугает кругом и силой присутствия
-- другой старается поймать на резком сближении
-- третий держит важный проход и давит именно как хозяин маршрута
+- odin hischnik derzhit igroka speredi
+- vtoroy zahodit sleva
+- tretiy derzhitsya chut dalshe i zhdet udobnyy moment dlya vhoda
 
-### Что это даёт игре
+### Chto eto daet igre
 
-- крупные существа перестают быть одинаковыми
-- игрок начинает запоминать не просто модель, а тип встречи
-- разные глубины и маршруты получают разный характер угрозы
+- vstrecha s gruppoy hischnikov perestaet byt tupym navalom v odnu tochku
+- igroku slozhnee prosto kaytit vseh po pryamoy
+- ohota stanovitsya hitree i blizhe k horoshemu podvodnomu survival-oschuscheniyu
 
 ---
 
-## Прогресс 2026-03-31 — Ложные заходы у крупных хищников
+## Progress 2026-03-31 — Bolshoe davlenie leviafanov
 
-### Что сделано
+### Chto sdelano
 
-- добавлен отдельный ложный заход перед настоящим контактом
-- большой хищник теперь может:
-  - резко сократить дистанцию
-  - сорвать игроку ритм
-  - не ударить сразу
-  - уйти в сторону и повторить давление
-- это подключено:
-  - к паспорту вида
-  - к базовому AI
-  - к анализатору
-  - к ножу
-  - к стан-пистолету
+- Dobavleno otdelnoe sostoyanie bolshogo davleniya dlya krupnyh ugroz.
+- Leviafan teper mozhet snachala derzhat krug vokrug igroka, a ne srazu sryvatsya v obychnuyu ataku.
+- Instrumenty igroka umeyut eto raspoznavat.
 
-### Что это значит простыми словами
+### Chto eto znachit prostymi slovami
 
-- игрок больше не может читать крупную угрозу по схеме "или ничего, или укус"
-- теперь есть промежуточный страшный момент
-- существо может пугать не только уроном, но и тем, что делает вид, будто уже пошло в атаку
+- krupnoe suschestvo pokazyvaet sebya
+- lomaet chuvstvo bezopasnosti
+- derzhit distantsiyu davleniya
+- i tolko potom vhodit v zhestkiy kontakt
 
-### Что это даёт игре
+### Chto eto daet igre
 
-- встречи становятся нервнее и живее
-- крупные хищники чувствуют себя умнее и хитрее
-- у игрока появляется важный навык:
-  - не тратить защитный инструмент слишком рано
-  - не влетать в ответ на ложный заход
+- leviafan oschuschaetsya sobytiem mira
+- vstrecha s nim stanovitsya dramatichnee i ponyatnee
+- eto uzhe ne prosto bolshaya agressivnaya ryba
 
 ---
 
-## Прогресс 2026-03-31 — Реальный реестр хищников и левиафанов
+## Progress 2026-03-31 — Raznye stsenarii vstrechi u krupnyh ugroz
 
-### Что сделано
+### Chto sdelano
 
-- добавлен отдельный authoring для набора видов
-- теперь можно одной командой пересоздать реальные профили:
-  - территориальных защитников
-  - разных хищников
-  - разных левиафанов
-- у каждого профиля теперь есть:
-  - роль
-  - скорость
-  - урон
-  - ложный заход / стая / сторож прохода там, где это нужно
-  - подсказка, к каким семействам фауны и биомам его сажать
-- добавлены документы:
+- krupnym ugrozam dobavleny raznye stsenarii vstrechi
+- seychas est:
+  - krug davleniya
+  - rezkaya zasada
+  - storozh prohoda
+
+### Chto eto znachit prostymi slovami
+
+- odin leviafan pugaet krugom i siloy prisutstviya
+- drugoy staraetsya poymat na rezkom sblizhenii
+- tretiy derzhit vazhnyy prohod i davit imenno kak hozyain marshruta
+
+### Chto eto daet igre
+
+- krupnye suschestva perestayut byt odinakovymi
+- igrok nachinaet zapominat ne prosto model, a tip vstrechi
+- raznye glubiny i marshruty poluchayut raznyy harakter ugrozy
+
+---
+
+## Progress 2026-03-31 — Lozhnye zahody u krupnyh hischnikov
+
+### Chto sdelano
+
+- dobavlen otdelnyy lozhnyy zahod pered nastoyaschim kontaktom
+- bolshoy hischnik teper mozhet:
+  - rezko sokratit distantsiyu
+  - sorvat igroku ritm
+  - ne udarit srazu
+  - uyti v storonu i povtorit davlenie
+- eto podklyucheno:
+  - k pasportu vida
+  - k bazovomu AI
+  - k analizatoru
+  - k nozhu
+  - k stan-pistoletu
+
+### Chto eto znachit prostymi slovami
+
+- igrok bolshe ne mozhet chitat krupnuyu ugrozu po sheme "ili nichego, ili ukus"
+- teper est promezhutochnyy strashnyy moment
+- suschestvo mozhet pugat ne tolko uronom, no i tem, chto delaet vid, budto uzhe poshlo v ataku
+
+### Chto eto daet igre
+
+- vstrechi stanovyatsya nervnee i zhivee
+- krupnye hischniki chuvstvuyut sebya umnee i hitree
+- u igroka poyavlyaetsya vazhnyy navyk:
+  - ne tratit zaschitnyy instrument slishkom rano
+  - ne vletat v otvet na lozhnyy zahod
+
+---
+
+## Progress 2026-03-31 — Realnyy reestr hischnikov i leviafanov
+
+### Chto sdelano
+
+- dobavlen otdelnyy authoring dlya nabora vidov
+- teper mozhno odnoy komandoy peresozdat realnye profili:
+  - territorialnyh zaschitnikov
+  - raznyh hischnikov
+  - raznyh leviafanov
+- u kazhdogo profilya teper est:
+  - rol
+  - skorost
+  - uron
+  - lozhnyy zahod / staya / storozh prohoda tam, gde eto nuzhno
+  - podskazka, k kakim semeystvam fauny i biomam ego sazhat
+- dobavleny dokumenty:
   - `AI_CREATURE_ROSTER_ENTERPRISE.md`
   - `AI_CREATURE_ROSTER_REPORT.md`
 
-### Что это значит простыми словами
+### Chto eto znachit prostymi slovami
 
-- у нас теперь не один общий "хищник" и не один общий "левиафан"
-- у нас есть парк конкретных видов с разными сценариями встречи
-- это уже можно цеплять к префабам и к будущим наборам фауны без ручной каши
+- u nas teper ne odin obschiy "hischnik" i ne odin obschiy "leviafan"
+- u nas est park konkretnyh vidov s raznymi stsenariyami vstrechi
+- eto uzhe mozhno tseplyat k prefabam i k buduschim naboram fauny bez ruchnoy kashi
 
-### Что это даёт игре
+### Chto eto daet igre
 
-- разные воды и разные биомы смогут получать разные типы угроз
-- игрок начнёт запоминать не только модель существа, но и его стиль встречи
+- raznye vody i raznye biomy smogut poluchat raznye tipy ugroz
+- igrok nachnet zapominat ne tolko model suschestva, no i ego stil vstrechi
 
 ---
 
-## Прогресс 2026-03-31 — AI фауна посажена в мир как система
+## Progress 2026-03-31 — AI fauna posazhena v mir kak sistema
 
-### Что сделано
+### Chto sdelano
 
-- добавлена мирная жизнь, чтобы биомы были не только про угрозы
-- сделан authoring временных прокси-префабов для всех классов фауны
-- виды теперь автоматически получают временное тело, если финального префаба ещё нет
-- сделан автосборщик наборов фауны по биомам
-- добавлен отчёт `AI_FAUNA_WORLD_INTEGRATION_REPORT.md`
+- dobavlena mirnaya zhizn, chtoby biomy byli ne tolko pro ugrozy
+- sdelan authoring vremennyh proksi-prefabov dlya vseh klassov fauny
+- vidy teper avtomaticheski poluchayut vremennoe telo, esli finalnogo prefaba esche net
+- sdelan avtosborschik naborov fauny po biomam
+- dobavlen otchet `AI_FAUNA_WORLD_INTEGRATION_REPORT.md`
 
-### Что это значит простыми словами
+### Chto eto znachit prostymi slovami
 
-- AI уже можно честно сажать в мир, а не держать только в коде
-- даже без финальных моделей можно проверять плотность жизни, угрозы и редкость левиафанов
-- каждый биом теперь можно автоматически наполнить жизнью по своему характеру
+- AI uzhe mozhno chestno sazhat v mir, a ne derzhat tolko v kode
+- dazhe bez finalnyh modeley mozhno proveryat plotnost zhizni, ugrozy i redkost leviafanov
+- kazhdyy biom teper mozhno avtomaticheski napolnit zhiznyu po svoemu harakteru
 
-### Что это даёт игре
+### Chto eto daet igre
 
-- мир перестаёт быть пустым там, где AI уже написан
-- спокойные воды не становятся ареной
-- тяжёлые воды не остаются мёртвыми
-- левиафаны остаются редкой большой встречей, а не обычным фоном
+- mir perestaet byt pustym tam, gde AI uzhe napisan
+- spokoynye vody ne stanovyatsya arenoy
+- tyazhelye vody ne ostayutsya mertvymi
+- leviafany ostayutsya redkoy bolshoy vstrechey, a ne obychnym fonom

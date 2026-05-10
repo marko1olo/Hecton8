@@ -4,6 +4,7 @@
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace Hecton8.Biolum
 {
@@ -39,8 +40,10 @@ namespace Hecton8.Biolum
         // PRIVATE STATE
         // ─────────────────────────────────────────────────────────────────────────────
 
-        private Vector3[] _clusterCenters;   // COLD ALLOC: cluster positions
-        private int[] _lightsPerCluster;     // COLD ALLOC: how many lights per cluster
+        // COLD ALLOC: Vector3[_maxLights] - floor biolum cluster centers - owner: FloorBiolumZone
+        private Vector3[] _clusterCenters;
+        // COLD ALLOC: int[_maxLights] - floor biolum lights per cluster - owner: FloorBiolumZone
+        private int[] _lightsPerCluster;
         private float _pulsePhase = 0f;
 
         // Floor color palettes
@@ -58,8 +61,8 @@ namespace Hecton8.Biolum
         protected override void Awake()
         {
             base.Awake();
-            _clusterCenters = new Vector3[_maxLights]; // COLD ALLOC
-            _lightsPerCluster = new int[_maxLights];   // COLD ALLOC
+            _clusterCenters = new Vector3[_maxLights]; // COLD ALLOC: Vector3[_maxLights] - floor biolum cluster centers - owner: FloorBiolumZone
+            _lightsPerCluster = new int[_maxLights]; // COLD ALLOC: int[_maxLights] - floor biolum lights per cluster - owner: FloorBiolumZone
             GenerateClusterCenters();
         }
 
@@ -95,10 +98,10 @@ namespace Hecton8.Biolum
         {
             return _clusterType switch
             {
-                FloorClusterType.Coral => Color.Lerp(_coralRed, _coralOrange, Mathf.Sin(_pulsePhase) * 0.5f + 0.5f),
+                FloorClusterType.Coral => Color.Lerp(_coralRed, _coralOrange, Cheap01Wave(_pulsePhase)),
                 FloorClusterType.Fungi => _fungiGreen,
-                FloorClusterType.Vent => Color.Lerp(_ventRed, _ventOrange, Mathf.Sin(_pulsePhase) * 0.5f + 0.5f),
-                FloorClusterType.Garden => Color.Lerp(_gardenCyan, _fungiGreen, Mathf.Sin(_pulsePhase * 0.5f) * 0.5f + 0.5f),
+                FloorClusterType.Vent => Color.Lerp(_ventRed, _ventOrange, Cheap01Wave(_pulsePhase)),
+                FloorClusterType.Garden => Color.Lerp(_gardenCyan, _fungiGreen, Cheap01Wave(_pulsePhase * 0.5f)),
                 _ => Color.white
             };
         }
@@ -110,7 +113,7 @@ namespace Hecton8.Biolum
         protected override float GetBiolumIntensity()
         {
             float baseIntensity = _intensityMultiplier * 1.2f; // Floor clusters are bright
-            float pulse = Mathf.Lerp(1f - _pulseIntensity, 1f + _pulseIntensity, Mathf.Sin(_pulsePhase) * 0.5f + 0.5f);
+            float pulse = math.lerp(1f - _pulseIntensity, 1f + _pulseIntensity, Cheap01Wave(_pulsePhase));
             return ScaleIntensityByMood(baseIntensity) * pulse;
         }
 
@@ -163,17 +166,17 @@ namespace Hecton8.Biolum
                 for (int light = 0; light < lightsInCluster && _activeLightCount < _maxLights; light++)
                 {
                     // Scatter lights within cluster
-                    Vector3 scatter = Random.insideUnitSphere * (_clusterSize * 0.3f);
+                    Vector3 scatter = DeterministicScatter(cluster, light, _clusterSize * 0.3f);
                     Vector3 lightPos = clusterCenter + scatter;
 
                     // Slight color variation within cluster
-                    Color variedColor = Color.Lerp(baseColor, GetClusterVariantColor(), Random.value * 0.2f);
+                    Color variedColor = Color.Lerp(baseColor, GetClusterVariantColor(), Hash01(cluster * 37 + light * 13 + 5) * 0.2f);
 
                     GetOrCreateLight(
                         lightPos,
                         variedColor,
                         baseRange,
-                        baseIntensity * (0.8f + Random.value * 0.4f)
+                        baseIntensity * (0.8f + Hash01(cluster * 43 + light * 17 + 11) * 0.4f)
                     );
                 }
             }
@@ -187,6 +190,7 @@ namespace Hecton8.Biolum
             Color baseColor = GetBiolumColor();
             float baseIntensity = GetBiolumIntensity();
             float baseRange = GetBiolumRange();
+            float time = Time.time;
 
             for (int i = 0; i < _activeLightCount; i++)
             {
@@ -194,7 +198,7 @@ namespace Hecton8.Biolum
                 if (light == null) continue;
 
                 // Slight position drift (organic movement)
-                float drift = Mathf.PerlinNoise(Time.time * 0.2f + i, i) - 0.5f;
+                float drift = CheapSignedWave((time * 0.2f) + Hash01((i * 23) + 7));
                 int clusterIdx = i / 3; // Rough cluster assignment
                 if (clusterIdx < _clusterCount)
                 {
@@ -230,6 +234,36 @@ namespace Hecton8.Biolum
         // ─────────────────────────────────────────────────────────────────────────────
         // EDITOR
         // ─────────────────────────────────────────────────────────────────────────────
+
+        private static Vector3 DeterministicScatter(int clusterIndex, int lightIndex, float radius)
+        {
+            int seed = clusterIndex * 131 + lightIndex * 47 + 17;
+            return new Vector3(
+                ((Hash01(seed) * 2f) - 1f) * radius,
+                ((Hash01(seed + 19) * 2f) - 1f) * radius * 0.35f,
+                ((Hash01(seed + 41) * 2f) - 1f) * radius);
+        }
+
+        private static float Hash01(int seed)
+        {
+            uint state = unchecked((uint)seed * 747796405u);
+            state = unchecked((state ^ (state >> 16)) * 2246822519u);
+            state = unchecked((state ^ (state >> 13)) * 3266489917u);
+            state ^= state >> 16;
+            return (state & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private static float CheapSignedWave(float phase)
+        {
+            float wrapped = math.frac(phase);
+            float triangle = wrapped < 0.5f ? wrapped * 2f : (1f - wrapped) * 2f;
+            return triangle - 0.5f;
+        }
+
+        private static float Cheap01Wave(float phase)
+        {
+            return CheapSignedWave(phase) + 0.5f;
+        }
 
         #if UNITY_EDITOR
         protected override void OnDrawGizmosSelected()

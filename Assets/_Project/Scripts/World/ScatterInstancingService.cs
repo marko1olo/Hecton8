@@ -243,10 +243,7 @@ namespace Hecton8.World
                 if (!IsFinite(position))
                     continue;
 
-                float scaleX = new Vector3(matrix.m00, matrix.m10, matrix.m20).magnitude;
-                float scaleY = new Vector3(matrix.m01, matrix.m11, matrix.m21).magnitude;
-                float scaleZ = new Vector3(matrix.m02, matrix.m12, matrix.m22).magnitude;
-                float radius = Mathf.Max(2f, Mathf.Max(scaleX, Mathf.Max(scaleY, scaleZ)) * 4f);
+                float radius = ResolveConservativeInstanceRadius(matrix);
                 Bounds instanceBounds = new Bounds(position, Vector3.one * radius);
                 if (!hasAggregateBounds)
                 {
@@ -257,6 +254,16 @@ namespace Hecton8.World
 
                 aggregateBounds.Encapsulate(instanceBounds);
             }
+        }
+
+        private static float ResolveConservativeInstanceRadius(Matrix4x4 matrix)
+        {
+            float xAxis = Mathf.Max(Mathf.Max(Mathf.Abs(matrix.m00), Mathf.Abs(matrix.m10)), Mathf.Abs(matrix.m20));
+            float yAxis = Mathf.Max(Mathf.Max(Mathf.Abs(matrix.m01), Mathf.Abs(matrix.m11)), Mathf.Abs(matrix.m21));
+            float zAxis = Mathf.Max(Mathf.Max(Mathf.Abs(matrix.m02), Mathf.Abs(matrix.m12)), Mathf.Abs(matrix.m22));
+            float maxAxisComponent = Mathf.Max(Mathf.Max(xAxis, yAxis), zAxis);
+
+            return Mathf.Max(2f, maxAxisComponent * 7f);
         }
 
         private static bool IsFinite(Vector3 value)

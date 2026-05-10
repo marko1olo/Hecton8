@@ -137,6 +137,7 @@ Shader "Hecton8/Flora/CoralMaster"
             half _HectonOceanBiolumStrength;
             half4 _HectonFloorBiolumColor;
             half _HectonFloorBiolumStrength;
+            float _GlobalBiolumPhase;
 
             struct Attributes
             {
@@ -235,6 +236,11 @@ Shader "Hecton8/Flora/CoralMaster"
                 return saturate(dot(derivative, half3(0.5h, 0.5h, 0.5h)) * _CurvatureWetnessStrength);
             }
 
+            half CoralTrianglePulse01(float phase01)
+            {
+                return (half)(1.0 - abs(frac(phase01) * 2.0 - 1.0));
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -298,15 +304,12 @@ Shader "Hecton8/Flora/CoralMaster"
                 Light mainLight = GetMainLight();
                 half3 lightDir = (half3)HectonCoreLitSafeNormalize(mainLight.direction);
                 half NdotL = saturate(dot(normalWS, lightDir));
-                half wrapDiffuse = saturate(dot(normalWS, lightDir) * 0.5h + 0.5h);
-                half backLight = saturate(dot(-normalWS, lightDir));
+                half wrapDiffuse = max(0.0h, dot(normalWS, lightDir) + 0.5h) / 1.5h;
                 half rim = (half)HectonCoreLitFastPower01(1.0h - saturate(dot(normalWS, viewDirWS)), _RimPower);
 
                 half floorZoneInfluence = saturate(_HectonFloorBiolumStrength);
                 half oceanZoneInfluence = saturate(_HectonOceanBiolumStrength * 0.35h);
                 half zoneBiolumStrength = saturate(floorZoneInfluence + oceanZoneInfluence);
-                half3 zoneBiolumColor = lerp(_BiolumColor.rgb, _HectonFloorBiolumColor.rgb, floorZoneInfluence);
-                zoneBiolumColor = lerp(zoneBiolumColor, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
                 half3 volumeBiolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(samplePositionWS);
 
                 half curvatureWetness = ComputeCurvatureWetness(normalWS);
@@ -316,9 +319,6 @@ Shader "Hecton8/Flora/CoralMaster"
                 half glossNoise = lerp(1.0h, maskSample.g, _SpecularNoiseStrength);
                 half roughness = saturate(lerp(0.7h, 0.2h, wetness));
                 half causticMask = saturate(0.68h + detailSample * _CausticStrength + maskSample.a * 0.18h);
-                half pulsePhase = _Time.y * _BiolumPulseFrequency + samplePositionWS.x * 0.07h + samplePositionWS.z * 0.05h + detailSample * 2.4h;
-                half pulse = 1.0h + ((half)HectonCoreLitTrianglePulse01(pulsePhase) * 2.0h - 1.0h) * _BiolumPulseAmplitude;
-                half biolumMask = saturate((cavity * 0.42h + maskSample.a * 0.28h + maskSample.b * 0.24h + detailSample * 0.18h) * _BiolumMaskStrength);
 
                 half3 accent = lerp(_BaseColor.rgb, _AccentColor.rgb, saturate(maskSample.r + tintMask * 0.48h));
                 half3 moistureTint = lerp(half3(1.0h, 1.0h, 1.0h), _AccentColor.rgb, wetness * 0.48h);
@@ -331,7 +331,7 @@ Shader "Hecton8/Flora/CoralMaster"
                 half3 diffuse = albedo * (ambient + mainLight.color * wrapDiffuse);
                 diffuse *= (1.0h - cavity * _CavityStrength * 0.5h);
 
-                half3 subsurface = _SubsurfaceColor.rgb * (backLight * _SubsurfaceStrength * thickness * causticMask);
+                half3 subsurface = _SubsurfaceColor.rgb * (wrapDiffuse * _SubsurfaceStrength * causticMask);
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
                 
                 // PBR Specular
@@ -345,9 +345,25 @@ Shader "Hecton8/Flora/CoralMaster"
                 half slimeNdotH = FastCoralSpecularPower01(NdotH, lerp(128.0h, 256.0h, 1.0h - slimeRoughness));
                 half3 slimeSpecular = slimeNdotH * wetness * 0.45h * mainLight.color;
 
-                half3 biolum = zoneBiolumColor * (_BiolumStrength * (1.0h + zoneBiolumStrength * 0.76h) * biolumMask * pulse);
-                biolum *= HectonCoreLitResolveFlashlightPhotophobia(samplePositionWS);
-                biolum += volumeBiolum * (0.5h + thickness * 0.5h);
+                half3 biolum = volumeBiolum * (0.5h + thickness * 0.5h);
+                [branch]
+                if (_BiolumStrength > 0.0001h)
+                {
+                    float spatialPhaseScale = max((float)_BiolumPulseFrequency, 0.001);
+                    float pulsePhase = frac(_GlobalBiolumPhase + (samplePositionWS.x * 0.011 + samplePositionWS.z * 0.008 + detailSample * 0.38) * spatialPhaseScale);
+                    half pulse = 1.0h + (CoralTrianglePulse01(pulsePhase) * 2.0h - 1.0h) * _BiolumPulseAmplitude;
+                    half biolumMask = saturate((cavity * 0.42h + maskSample.a * 0.28h + maskSample.b * 0.24h + detailSample * 0.18h) * _BiolumMaskStrength);
+                    half authoredBiolumEnergy = _BiolumStrength * (1.0h + zoneBiolumStrength * 0.76h) * biolumMask * pulse;
+                    [branch]
+                    if (authoredBiolumEnergy > 0.0001h)
+                    {
+                        half3 zoneBiolumColor = lerp(_BiolumColor.rgb, _HectonFloorBiolumColor.rgb, floorZoneInfluence);
+                        zoneBiolumColor = lerp(zoneBiolumColor, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
+                        half3 authoredBiolum = zoneBiolumColor * authoredBiolumEnergy;
+                        authoredBiolum *= HectonCoreLitResolveFlashlightPhotophobia(samplePositionWS);
+                        biolum += authoredBiolum;
+                    }
+                }
                 half fresnel = (half)HectonCoreLitFastPower01(1.0h - saturate(dot(normalWS, viewDirWS)), _FresnelPower) * _FresnelStrength;
 
                 half3 color = diffuse + subsurface + rimLighting + specular + slimeSpecular + biolum;

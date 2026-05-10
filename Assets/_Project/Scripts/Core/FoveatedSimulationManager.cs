@@ -1129,7 +1129,7 @@ namespace Hecton8.Core
 
             _cameraResolveRetryTimer = CameraResolveRetryInterval;
             _viewCamera = null;
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (!playerTransform.TryGetComponent(out _viewCamera))
@@ -1162,7 +1162,7 @@ namespace Hecton8.Core
             _listenerTransform = _cameraTransform;
             _listenerRigidbody = null;
 
-            GameObject playerObject = SceneBootstrap.CurrentPlayerObject;
+            GameObject playerObject = GameBootstrapper.CurrentPlayerObject;
             if (playerObject != null)
                 playerObject.TryGetComponent(out _listenerRigidbody);
 

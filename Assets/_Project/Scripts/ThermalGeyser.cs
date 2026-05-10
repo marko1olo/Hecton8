@@ -283,8 +283,8 @@ namespace Hecton8.Caves
                     lateral = Vector3.right;
                 lateral.Normalize();
 
-                Vector3 spawnPosition = origin + (Vector3.up * 0.25f) + (lateral * Mathf.Lerp(0.15f, 0.6f, Next01(ref state)));
-                Vector3 impulse = (Vector3.up * Mathf.Lerp(0.85f, 1.25f, Next01(ref state)) * mineralEjectionImpulse) +
+                Vector3 spawnPosition = origin + (Vector3.up * 0.25f) + (lateral * math.lerp(0.15f, 0.6f, Next01(ref state)));
+                Vector3 impulse = (Vector3.up * math.lerp(0.85f, 1.25f, Next01(ref state)) * mineralEjectionImpulse) +
                                   (lateral * (mineralEjectionImpulse * 0.25f));
                 registry.TryRegisterDroppedItem(ejectedMineralItem, 1, spawnPosition, impulse);
             }
@@ -298,16 +298,29 @@ namespace Hecton8.Caves
 
         private void ResolvePlayerContext()
         {
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null &&
+                runtimeContext.IsBound)
+            {
+                _playerTransform = runtimeContext.PlayerTransform != null ? runtimeContext.PlayerTransform : playerTransformOverride;
+                _playerRigidbody = runtimeContext.PlayerRigidbody;
+                _playerMovement = runtimeContext.PlayerMovement;
+                return;
+            }
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.IsInitialized)
+            {
+                _playerTransform = playerContext.PlayerTransform != null ? playerContext.PlayerTransform : playerTransformOverride;
+                _playerRigidbody = playerContext.PlayerRigidbody;
+                _playerMovement = playerContext.PlayerMovement;
+                return;
+            }
+
             Transform runtimePlayer = BootstrapState.CurrentPlayerTransform;
             _playerTransform = runtimePlayer != null ? runtimePlayer : playerTransformOverride;
             if (_playerTransform == null)
                 return;
-
-            if (_playerRigidbody == null || _playerRigidbody.transform != _playerTransform)
-                _playerTransform.TryGetComponent(out _playerRigidbody);
-
-            if (_playerMovement == null || _playerMovement.transform != _playerTransform)
-                _playerTransform.TryGetComponent(out _playerMovement);
         }
 
         private void ConfigureCurrentVolume(bool isErupting)

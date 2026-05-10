@@ -1,16 +1,16 @@
 // ============================================================================
 // HECTON-8 — DirectorMissionBridge.cs
-// Мост между HectonDirectorAI и MissionManager.
+// Most mezhdu HectonDirectorAI i MissionManager.
 //
-// РОЛЬ:
-//   • Слушает DirectorAIEvents mission trigger lane.
-//   • При получении события — активирует случайную доступную миссию.
-//   • Слушает DirectorAIEvents rare discovery lane.
-//   • При получении — регистрирует discovery через NarrativeEvents.
+// ROL:
+//   • Slushaet DirectorAIEvents mission trigger lane.
+//   • Pri poluchenii sobytiya — aktiviruet sluchaynuyu dostupnuyu missiyu.
+//   • Slushaet DirectorAIEvents rare discovery lane.
+//   • Pri poluchenii — registriruet discovery cherez NarrativeEvents.
 //
-// АРХИТЕКТУРА:
-//   • Не ITickable — только event subscriptions.
-//   • Назначить на тот же GameObject что и HectonDirectorAI.
+// ARHITEKTURA:
+//   • Ne ITickable — tolko event subscriptions.
+//   • Naznachit na tot zhe GameObject chto i HectonDirectorAI.
 // ============================================================================
 
 using Hecton8.Core;
@@ -24,10 +24,10 @@ namespace Hecton8.Gameplay
     public sealed class DirectorMissionBridge : MonoBehaviour, IDirectorAIEventListener
     {
         [Header("── Mission IDs ─────────────────────────────")]
-        [Tooltip("ID миссий которые Director может активировать случайно.")]
+        [Tooltip("ID missiy kotorye Director mozhet aktivirovat sluchayno.")]
         [SerializeField] private string[] directorMissionIds = new string[0];
 
-        [Tooltip("ID discovery для rare discovery события.")]
+        [Tooltip("ID discovery dlya rare discovery sobytiya.")]
         [SerializeField] private string rareDiscoveryId = "director_rare_discovery";
 
         [Header("── Early-Game Gate ─────────────────────────")]
@@ -103,7 +103,7 @@ namespace Hecton8.Gameplay
             MissionManager mm = GlobalRegistry.Missions;
             if (mm == null) return;
 
-            // Циклически активируем миссии
+            // Tsiklicheski aktiviruem missii
             for (int i = 0; i < directorMissionIds.Length; i++)
             {
                 int idx = (_lastMissionIndex + i) % directorMissionIds.Length;

@@ -1,43 +1,43 @@
 // ============================================================================
 // HECTON-8 — PowerNode.cs
-// Компонент энергоподключения на каждом модуле базы.
+// Komponent energopodklyucheniya na kazhdom module bazy.
 //
-// ОТВЕТСТВЕННОСТИ:
-//   1. При спавне — чтение базового потребления из BuildableData.
-//   2. При спавне — поиск соседних PowerNode (OverlapSphereNonAlloc).
-//   3. Создание/вступление в PowerGrid (или объединение сетей).
-//   4. Сбор всех IPowerComponent на своём GameObject.
-//   5. При деспавне — выход из PowerGrid (с проверкой связности).
-//   6. Реализация IPowerComponent для базового потребления модуля.
+// OTVETSTVENNOSTI:
+//   1. Pri spavne — chtenie bazovogo potrebleniya iz BuildableData.
+//   2. Pri spavne — poisk sosednih PowerNode (OverlapSphereNonAlloc).
+//   3. Sozdanie/vstuplenie v PowerGrid (ili obedinenie setey).
+//   4. Sbor vseh IPowerComponent na svoem GameObject.
+//   5. Pri despavne — vyhod iz PowerGrid (s proverkoy svyaznosti).
+//   6. Realizatsiya IPowerComponent dlya bazovogo potrebleniya modulya.
 //
-// БАЗОВОЕ ПОТРЕБЛЕНИЕ (Data-Driven):
-//   PowerNode сам реализует IPowerComponent.
-//   При OnSpawn() читает BuildableData через ModuleMarker:
-//     BuildableData.powerRating → PowerRating (положит. или отрицат.)
+// BAZOVOE POTREBLENIE (Data-Driven):
+//   PowerNode sam realizuet IPowerComponent.
+//   Pri OnSpawn() chitaet BuildableData cherez ModuleMarker:
+//     BuildableData.powerRating → PowerRating (polozhit. ili otritsat.)
 //     BuildableData.powerPriority → PowerPriority
 //
-//   Это БАЗОВОЕ потребление модуля (стены, освещение, вентиляция).
-//   Дополнительные потребители (Fabricator, LifeSupport) добавляют
-//   свои IPowerComponent поверх базового.
+//   Eto BAZOVOE potreblenie modulya (steny, osveschenie, ventilyatsiya).
+//   Dopolnitelnye potrebiteli (Fabricator, LifeSupport) dobavlyayut
+//   svoi IPowerComponent poverh bazovogo.
 //
-// АРХИТЕКТУРА:
-//   • IPoolable — корректная работа с ObjectPoolManager.
-//   • IPowerComponent — базовое потребление из BuildableData.
-//   • OverlapSphereNonAlloc — zero GC поиск соседей.
-//   • _components — кэш всех IPowerComponent на этом объекте.
-//   • _neighbors — кэш соседних PowerNode (прямые связи).
+// ARHITEKTURA:
+//   • IPoolable — korrektnaya rabota s ObjectPoolManager.
+//   • IPowerComponent — bazovoe potreblenie iz BuildableData.
+//   • OverlapSphereNonAlloc — zero GC poisk sosedey.
+//   • _components — kesh vseh IPowerComponent na etom obekte.
+//   • _neighbors — kesh sosednih PowerNode (pryamye svyazi).
 //
 // ZERO GC:
-//   • Static Collider[] буфер для OverlapSphere — одна аллокация.
-//   • List<IPowerComponent> заполняется GetComponents — zero GC.
+//   • Static Collider[] bufer dlya OverlapSphere — odna allokatsiya.
+//   • List<IPowerComponent> zapolnyaetsya GetComponents — zero GC.
 //   • List<PowerNode> _neighbors — pre-allocated.
-//   • ReferenceEquals для проверки дубликатов — zero GC.
+//   • ReferenceEquals dlya proverki dublikatov — zero GC.
 //
-// НАСТРОЙКА ПРЕФАБА:
-//   1. Повесить PowerNode на finalPrefab модуля базы.
-//   2. Установить connectionRadius (чуть больше snap-сетки).
-//   3. ModuleMarker должен быть настроен с BuildableData.
-//   4. BuildableData должна содержать powerRating и powerPriority.
+// NASTROYKA PREFABA:
+//   1. Povesit PowerNode na finalPrefab modulya bazy.
+//   2. Ustanovit connectionRadius (chut bolshe snap-setki).
+//   3. ModuleMarker dolzhen byt nastroen s BuildableData.
+//   4. BuildableData dolzhna soderzhat powerRating i powerPriority.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -56,20 +56,20 @@ namespace Hecton8.Power
         // ══════════════════════════════════════════════════════════
 
         [Header("── Connection ────────────────────────────────")]
-        [Tooltip("Радиус поиска соседних модулей (метры). " +
-                 "Должен быть чуть больше размера snap-сетки. " +
-                 "Рекомендация: размер модуля × 1.1")]
+        [Tooltip("Radius poiska sosednih moduley (metry). " +
+                 "Dolzhen byt chut bolshe razmera snap-setki. " +
+                 "Rekomendatsiya: razmer modulya × 1.1")]
         [SerializeField] private float connectionRadius = 5f;
 
-        [Tooltip("Слои, на которых ищутся соседние PowerNode.")]
+        [Tooltip("Sloi, na kotoryh ischutsya sosednie PowerNode.")]
         [SerializeField] private LayerMask connectionMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
-        [Header("── Fallback (если нет ModuleMarker) ──────────")]
-        [Tooltip("Базовое потребление если ModuleMarker отсутствует. " +
-                 "Отрицательное = потребляет, положительное = генерирует.")]
+        [Header("── Fallback (esli net ModuleMarker) ──────────")]
+        [Tooltip("Bazovoe potreblenie esli ModuleMarker otsutstvuet. " +
+                 "Otritsatelnoe = potreblyaet, polozhitelnoe = generiruet.")]
         [SerializeField] private float fallbackPowerRating;
 
-        [Tooltip("Приоритет отключения если ModuleMarker отсутствует.")]
+        [Tooltip("Prioritet otklyucheniya esli ModuleMarker otsutstvuet.")]
         [Range(0, 100)]
         [SerializeField] private int fallbackPowerPriority = 50;
 
@@ -77,29 +77,29 @@ namespace Hecton8.Power
         //  RUNTIME STATE
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Сеть, к которой принадлежит этот узел.</summary>
+        /// <summary>Set, k kotoroy prinadlezhit etot uzel.</summary>
         private PowerGrid _grid;
 
         /// <summary>
-        /// Кэш всех IPowerComponent на этом GameObject.
-        /// Включает сам PowerNode (он тоже IPowerComponent).
-        /// Заполняется при OnSpawn через GetComponents.
+        /// Kesh vseh IPowerComponent na etom GameObject.
+        /// Vklyuchaet sam PowerNode (on tozhe IPowerComponent).
+        /// Zapolnyaetsya pri OnSpawn cherez GetComponents.
         /// </summary>
         private List<IPowerComponent> _components;
 
         /// <summary>
-        /// Соседние PowerNode (прямые физические связи).
-        /// Используется для BFS при проверке связности.
+        /// Sosednie PowerNode (pryamye fizicheskie svyazi).
+        /// Ispolzuetsya dlya BFS pri proverke svyaznosti.
         /// </summary>
         private List<PowerNode> _neighbors;
 
-        /// <summary>Базовое потребление из BuildableData.</summary>
+        /// <summary>Bazovoe potreblenie iz BuildableData.</summary>
         private float _basePowerRating;
 
-        /// <summary>Приоритет из BuildableData.</summary>
+        /// <summary>Prioritet iz BuildableData.</summary>
         private int _basePowerPriority;
 
-        /// <summary>Текущее состояние питания.</summary>
+        /// <summary>Tekuschee sostoyanie pitaniya.</summary>
         private bool _hasPower = true;
         private int _topologyRevision;
         private int _graphScratchIndex = -1;
@@ -108,9 +108,9 @@ namespace Hecton8.Power
         private bool _isShortCircuited;
 
         /// <summary>
-        /// Статический буфер для OverlapSphereNonAlloc.
-        /// 32 коллайдера — достаточно для любого модуля.
-        /// Shared: только один PowerNode спавнится за кадр.
+        /// Staticheskiy bufer dlya OverlapSphereNonAlloc.
+        /// 32 kollaydera — dostatochno dlya lyubogo modulya.
+        /// Shared: tolko odin PowerNode spavnitsya za kadr.
         /// </summary>
         private static readonly Collider[] OverlapBuffer = new Collider[32];
 
@@ -118,19 +118,19 @@ namespace Hecton8.Power
         //  PUBLIC ACCESSORS
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Сеть этого узла. null если не подключён.</summary>
+        /// <summary>Set etogo uzla. null esli ne podklyuchen.</summary>
         public PowerGrid Grid => _grid;
 
         /// <summary>
-        /// Все IPowerComponent на этом модуле.
-        /// Используется PowerGrid.UpdateBalance() для подсчёта.
-        /// Read-only рекомендуется.
+        /// Vse IPowerComponent na etom module.
+        /// Ispolzuetsya PowerGrid.UpdateBalance() dlya podscheta.
+        /// Read-only rekomenduetsya.
         /// </summary>
         public List<IPowerComponent> Components => _components;
 
         /// <summary>
-        /// Прямые соседи (подключённые физически).
-        /// Используется PowerGridManager.CheckAndSplitGrid() для BFS.
+        /// Pryamye sosedi (podklyuchennye fizicheski).
+        /// Ispolzuetsya PowerGridManager.CheckAndSplitGrid() dlya BFS.
         /// </summary>
         public List<PowerNode> Neighbors => _neighbors;
         internal int TopologyRevision => _topologyRevision;
@@ -150,8 +150,8 @@ namespace Hecton8.Power
         internal bool IsShortCircuited => _isShortCircuited;
 
         /// <summary>
-        /// Устанавливает ссылку на сеть.
-        /// Вызывается PowerGrid при Add/Remove/Merge.
+        /// Ustanavlivaet ssylku na set.
+        /// Vyzyvaetsya PowerGrid pri Add/Remove/Merge.
         /// </summary>
         public void SetGrid(PowerGrid grid)
         {
@@ -177,42 +177,42 @@ namespace Hecton8.Power
         }
 
         // ══════════════════════════════════════════════════════════
-        //  IPowerComponent — БАЗОВОЕ ПОТРЕБЛЕНИЕ МОДУЛЯ
+        //  IPowerComponent — BAZOVOE POTREBLENIE MODULYa
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Базовое энергопотребление модуля (из BuildableData).
+        /// Bazovoe energopotreblenie modulya (iz BuildableData).
         ///
-        /// Это потребление самого модуля (корпус, освещение, вентиляция).
-        /// Дополнительные потребители (Fabricator и т.д.) имеют
-        /// свои IPowerComponent с отдельным PowerRating.
+        /// Eto potreblenie samogo modulya (korpus, osveschenie, ventilyatsiya).
+        /// Dopolnitelnye potrebiteli (Fabricator i t.d.) imeyut
+        /// svoi IPowerComponent s otdelnym PowerRating.
         ///
-        /// Примеры:
-        ///   • Коридор: 0 (пассивный, только проводит энергию)
-        ///   • Жилая комната: -30 (базовое освещение)
-        ///   • Солнечная панель: +200 (генерация)
-        ///   • Реактор: +500 (генерация)
+        /// Primery:
+        ///   • Koridor: 0 (passivnyy, tolko provodit energiyu)
+        ///   • Zhilaya komnata: -30 (bazovoe osveschenie)
+        ///   • Solnechnaya panel: +200 (generatsiya)
+        ///   • Reaktor: +500 (generatsiya)
         /// </summary>
         public float PowerRating => _basePowerRating;
 
-        /// <summary>Приоритет отключения базового потребления.</summary>
+        /// <summary>Prioritet otklyucheniya bazovogo potrebleniya.</summary>
         public int PowerPriority => _basePowerPriority;
 
-        /// <summary>Текущее состояние питания (кэшированное).</summary>
+        /// <summary>Tekuschee sostoyanie pitaniya (keshirovannoe).</summary>
         public bool HasPower => _hasPower;
 
         /// <summary>
-        /// Уведомление об изменении питания.
-        /// Для базового потребления (PowerNode) — просто кэшируем.
-        /// Компоненты (Fabricator и т.д.) получают свои уведомления
-        /// через свой IPowerComponent.OnPowerStatusChanged.
+        /// Uvedomlenie ob izmenenii pitaniya.
+        /// Dlya bazovogo potrebleniya (PowerNode) — prosto keshiruem.
+        /// Komponenty (Fabricator i t.d.) poluchayut svoi uvedomleniya
+        /// cherez svoy IPowerComponent.OnPowerStatusChanged.
         /// </summary>
         public void OnPowerStatusChanged(bool hasPower)
         {
             _hasPower = hasPower;
 
-            // Будущее: отключение/включение базового освещения,
-            // вентиляции, звуков модуля
+            // Buduschee: otklyuchenie/vklyuchenie bazovogo osvescheniya,
+            // ventilyatsii, zvukov modulya
         }
 
         // ══════════════════════════════════════════════════════════
@@ -226,26 +226,26 @@ namespace Hecton8.Power
         }
 
         // ══════════════════════════════════════════════════════════
-        //  IPoolable — ЖИЗНЕННЫЙ ЦИКЛ ПУЛА
+        //  IPoolable — ZhIZNENNYY TsIKL PULA
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Вызывается ObjectPoolManager после SetActive(true).
+        /// Vyzyvaetsya ObjectPoolManager posle SetActive(true).
         ///
-        /// Порядок:
-        ///   1. Читаем BuildableData через ModuleMarker.
-        ///   2. Собираем все IPowerComponent на объекте.
-        ///   3. Ищем соседние PowerNode.
-        ///   4. Подключаемся к сети (или создаём новую).
+        /// Poryadok:
+        ///   1. Chitaem BuildableData cherez ModuleMarker.
+        ///   2. Sobiraem vse IPowerComponent na obekte.
+        ///   3. Ischem sosednie PowerNode.
+        ///   4. Podklyuchaemsya k seti (ili sozdaem novuyu).
         /// </summary>
         public void OnSpawn()
         {
             _hasPower = true;
 
-            // ── 1. Читаем данные из BuildableData ──
+            // ── 1. Chitaem dannye iz BuildableData ──
             ReadBuildableData();
 
-            // ── 2. Собираем IPowerComponent ──
+            // ── 2. Sobiraem IPowerComponent ──
             if (_components == null)
                 _components = new List<IPowerComponent>(4);
             else
@@ -253,7 +253,7 @@ namespace Hecton8.Power
 
             GetComponents(_components); // zero GC, fills list
 
-            // ── 3. Ищем соседей и подключаемся к сети ──
+            // ── 3. Ischem sosedey i podklyuchaemsya k seti ──
             if (_neighbors == null)
                 _neighbors = new List<PowerNode>(6);
             else
@@ -263,13 +263,13 @@ namespace Hecton8.Power
         }
 
         /// <summary>
-        /// Вызывается ObjectPoolManager перед SetActive(false).
+        /// Vyzyvaetsya ObjectPoolManager pered SetActive(false).
         ///
-        /// Порядок:
-        ///   1. Отключаемся от сети.
-        ///   2. Убираем себя из списков соседей.
-        ///   3. Проверяем связность оставшейся сети.
-        ///   4. Очищаем кэши.
+        /// Poryadok:
+        ///   1. Otklyuchaemsya ot seti.
+        ///   2. Ubiraem sebya iz spiskov sosedey.
+        ///   3. Proveryaem svyaznost ostavsheysya seti.
+        ///   4. Ochischaem keshi.
         /// </summary>
         public void OnDespawn()
         {
@@ -291,14 +291,14 @@ namespace Hecton8.Power
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Читает powerRating и powerPriority из BuildableData
-        /// через ModuleMarker на этом объекте.
+        /// Chitaet powerRating i powerPriority iz BuildableData
+        /// cherez ModuleMarker na etom obekte.
         ///
-        /// Если ModuleMarker отсутствует — используются fallback значения
-        /// из Inspector.
+        /// Esli ModuleMarker otsutstvuet — ispolzuyutsya fallback znacheniya
+        /// iz Inspector.
         ///
-        /// Примечание: Требует что ModuleMarker имеет публичное свойство
-        /// Data типа BuildableData. Если его нет — добавьте:
+        /// Primechanie: Trebuet chto ModuleMarker imeet publichnoe svoystvo
+        /// Data tipa BuildableData. Esli ego net — dobavte:
         ///   public BuildableData Data => _buildableData;
         /// </summary>
         private void ReadBuildableData()
@@ -322,17 +322,17 @@ namespace Hecton8.Power
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Ищет соседние PowerNode через OverlapSphereNonAlloc.
-        /// Подключается к существующей сети или создаёт новую.
-        /// При обнаружении соседей из разных сетей — объединяет.
+        /// Ischet sosednie PowerNode cherez OverlapSphereNonAlloc.
+        /// Podklyuchaetsya k suschestvuyuschey seti ili sozdaet novuyu.
+        /// Pri obnaruzhenii sosedey iz raznyh setey — obedinyaet.
         ///
         /// ZERO GC: static Collider[] buffer, TryGetComponent,
-        /// ReferenceEquals для проверки дубликатов.
+        /// ReferenceEquals dlya proverki dublikatov.
         ///
-        /// СЦЕНАРИЙ ОБЪЕДИНЕНИЯ:
-        ///   Игрок ставит коридор между двумя независимыми комнатами.
-        ///   Коридор находит соседей из GridA и GridB.
-        ///   → MergeGrids(GridA, GridB) → одна общая сеть.
+        /// STsENARIY OBEDINENIYa:
+        ///   Igrok stavit koridor mezhdu dvumya nezavisimymi komnatami.
+        ///   Koridor nahodit sosedey iz GridA i GridB.
+        ///   → MergeGrids(GridA, GridB) → odna obschaya set.
         /// </summary>
         private void FindAndConnectNeighbors()
         {
@@ -355,7 +355,7 @@ namespace Hecton8.Power
                 if (!col.TryGetComponent(out PowerNode neighbor)) continue;
                 if (ReferenceEquals(neighbor, this)) continue;
 
-                // ── Регистрируем как соседа (двусторонняя связь) ──
+                // ── Registriruem kak soseda (dvustoronnyaya svyaz) ──
                 if (!ContainsRef(_neighbors, neighbor))
                 {
                     _neighbors.Add(neighbor);
@@ -368,33 +368,33 @@ namespace Hecton8.Power
                     neighbor._topologyRevision++;
                 }
 
-                // ── Сетевая логика ──
+                // ── Setevaya logika ──
                 if (neighbor._grid != null)
                 {
                     if (targetGrid == null)
                     {
-                        // Первый найденный сосед с сетью → присоединяемся
+                        // Pervyy naydennyy sosed s setyu → prisoedinyaemsya
                         targetGrid = neighbor._grid;
                     }
                     else if (!ReferenceEquals(targetGrid, neighbor._grid))
                     {
-                        // Сосед из ДРУГОЙ сети → объединяем!
+                        // Sosed iz DRUGOY seti → obedinyaem!
                         targetGrid = PowerGridManager.MergeGrids(
                             targetGrid, neighbor._grid);
                     }
                 }
             }
 
-            // ── Подключение к сети ──
+            // ── Podklyuchenie k seti ──
             if (targetGrid != null)
             {
-                // Присоединяемся к найденной сети
+                // Prisoedinyaemsya k naydennoy seti
                 targetGrid.AddNode(this);
                 _grid = targetGrid;
             }
             else
             {
-                // Нет соседей с сетью → создаём свою
+                // Net sosedey s setyu → sozdaem svoyu
                 _grid = PowerGridManager.CreateGrid(this);
             }
 
@@ -403,9 +403,9 @@ namespace Hecton8.Power
         }
 
         /// <summary>
-        /// Отключается от текущей сети.
-        /// Проверяет связность оставшихся узлов.
-        /// Если сеть распалась — разделяет.
+        /// Otklyuchaetsya ot tekuschey seti.
+        /// Proveryaet svyaznost ostavshihsya uzlov.
+        /// Esli set raspalas — razdelyaet.
         /// </summary>
         private void DisconnectFromGrid()
         {
@@ -414,25 +414,25 @@ namespace Hecton8.Power
             PowerGrid oldGrid = _grid;
             oldGrid.RemoveNode(this);
 
-            // ── Проверка связности ──
+            // ── Proverka svyaznosti ──
             if (oldGrid.NodeCount > 1)
             {
-                // Сеть могла распасться — проверяем BFS
+                // Set mogla raspastsya — proveryaem BFS
                 PowerGridManager.CheckAndSplitGrid(oldGrid);
             }
             else if (oldGrid.NodeCount == 0)
             {
-                // Сеть пуста — удаляем
+                // Set pusta — udalyaem
                 PowerGridManager.DestroyGrid(oldGrid);
             }
-            // Если NodeCount == 1 — сеть из одного узла, связна по определению
+            // Esli NodeCount == 1 — set iz odnogo uzla, svyazna po opredeleniyu
 
             _grid = null;
         }
 
         /// <summary>
-        /// Убирает себя из списков соседей всех подключённых узлов.
-        /// Вызывается при деспавне.
+        /// Ubiraet sebya iz spiskov sosedey vseh podklyuchennyh uzlov.
+        /// Vyzyvaetsya pri despavne.
         /// </summary>
         private void RemoveSelfFromNeighbors()
         {
@@ -456,8 +456,8 @@ namespace Hecton8.Power
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Проверка наличия по ссылке. Zero GC.
-        /// O(n) — но списки соседей обычно 1-6 элементов.
+        /// Proverka nalichiya po ssylke. Zero GC.
+        /// O(n) — no spiski sosedey obychno 1-6 elementov.
         /// </summary>
         private static bool ContainsRef<T>(List<T> list, T item) where T : class
         {
@@ -471,7 +471,7 @@ namespace Hecton8.Power
         }
 
         /// <summary>
-        /// Удаление по ссылке. Обычный RemoveAt (не swap — сохраняем порядок).
+        /// Udalenie po ssylke. Obychnyy RemoveAt (ne swap — sohranyaem poryadok).
         /// </summary>
         private static bool RemoveRef<T>(List<T> list, T item) where T : class
         {
@@ -506,13 +506,13 @@ namespace Hecton8.Power
 
         private void OnDrawGizmosSelected()
         {
-            // ── Радиус подключения ──
+            // ── Radius podklyucheniya ──
             Gizmos.color = new Color(1f, 0.8f, 0f, 0.12f);
             Gizmos.DrawWireSphere(transform.position, connectionRadius);
 
             if (!Application.isPlaying) return;
 
-            // ── Связи с соседями ──
+            // ── Svyazi s sosedyami ──
             if (_neighbors != null)
             {
                 int count = _neighbors.Count;
@@ -521,7 +521,7 @@ namespace Hecton8.Power
                     PowerNode neighbor = _neighbors[i];
                     if (neighbor == null) continue;
 
-                    // Цвет зависит от состояния питания
+                    // Tsvet zavisit ot sostoyaniya pitaniya
                     Gizmos.color = (_hasPower && neighbor._hasPower)
                         ? Color.green
                         : Color.red;
@@ -530,7 +530,7 @@ namespace Hecton8.Power
                 }
             }
 
-            // ── Информация о сети ──
+            // ── Informatsiya o seti ──
             if (_grid != null)
             {
                 string info = $"Grid #{_grid.Id}\n" +

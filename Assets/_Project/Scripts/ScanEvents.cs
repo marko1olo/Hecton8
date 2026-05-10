@@ -89,6 +89,8 @@ namespace Hecton8.Gameplay
         private const double WreckSignalDebounceSeconds = 5.0d;
         private const byte ListenerMutationRegister = 1;
         private const byte ListenerMutationUnregister = 2;
+        private const uint ScanEventOverflowWarningHash = 0x534E514Fu; // SNQO
+        private const uint ScanEventOverflowContextHash = 0x534E5143u; // SNQC
         private const uint ScanListenerOverflowWarningHash = 0x534E564Cu; // SNVL
         private const uint ScanListenerMutationContextHash = 0x534E4D54u; // SNMT
         private const uint ScanListenerExceptionWarningHash = 0x534E5645u; // SNVE
@@ -115,6 +117,7 @@ namespace Hecton8.Gameplay
         private static int _droppedEventCount;
         private static int _droppedDeferredListenerMutationCount;
         private static int _listenerExceptionCount;
+        private static int _lastEventOverflowTelemetryFrame = -1;
         private static int _lastListenerOverflowTelemetryFrame = -1;
         private static int _lastListenerExceptionTelemetryFrame = -1;
         private static double _nextWreckSignalTime;
@@ -157,6 +160,7 @@ namespace Hecton8.Gameplay
             _droppedEventCount = 0;
             _droppedDeferredListenerMutationCount = 0;
             _listenerExceptionCount = 0;
+            _lastEventOverflowTelemetryFrame = -1;
             _lastListenerOverflowTelemetryFrame = -1;
             _lastListenerExceptionTelemetryFrame = -1;
             _nextWreckSignalTime = 0.0d;
@@ -360,6 +364,20 @@ namespace Hecton8.Gameplay
 #endif
         }
 
+        private static void ReportEventQueueOverflow()
+        {
+            IncrementCounterSaturated(ref _droppedEventCount);
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastEventOverflowTelemetryFrame == frame)
+                return;
+
+            _lastEventOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ScanEventOverflowWarningHash,
+                ScanEventOverflowContextHash,
+                math.max(1, _droppedEventCount));
+        }
+
         private static void ReportListenerMutationOverflow()
         {
             IncrementCounterSaturated(ref _droppedDeferredListenerMutationCount);
@@ -541,7 +559,7 @@ namespace Hecton8.Gameplay
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
-                IncrementCounterSaturated(ref _droppedEventCount);
+                ReportEventQueueOverflow();
                 return false;
             }
 

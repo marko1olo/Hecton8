@@ -527,7 +527,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&
                 currentPlayerTransform != null)
             {
                 _playerTransform = currentPlayerTransform;
@@ -2249,8 +2249,8 @@ namespace Hecton8.Atmosphere
 
         private void TryAssignEditorSceneReferences()
         {
-            if (playerMovement == null && SceneBootstrap.CurrentPlayerTransform != null)
-                SceneBootstrap.CurrentPlayerTransform.TryGetComponent(out playerMovement);
+            if (playerMovement == null && GameBootstrapper.CurrentPlayerTransform != null)
+                GameBootstrapper.CurrentPlayerTransform.TryGetComponent(out playerMovement);
 
             if (underwaterVisuals == null)
                 TryGetComponent(out underwaterVisuals);

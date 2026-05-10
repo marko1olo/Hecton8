@@ -72,7 +72,6 @@ namespace Hecton8.UI
             public byte Priority;
         }
 
-        private static HectonSubmarineOsDisplay s_instance;
 
         private readonly PendingEntry[] _pendingEntries = new PendingEntry[PendingEntryCapacity]; // COLD ALLOC: PendingEntry[12] — submarine OS log typing queue — owner: HectonSubmarineOsDisplay
         private readonly int[] _historyLineLengths = new int[HistoryLineCount]; // COLD ALLOC: int[16] — committed log line lengths — owner: HectonSubmarineOsDisplay
@@ -109,17 +108,8 @@ namespace Hecton8.UI
         private SubmarineEmergencyLevel _renderedEmergencyLevel = (SubmarineEmergencyLevel)InvalidCachedStatus;
         private HectonSubmarineOsSnapshot _snapshot;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            s_instance = null;
-        }
-
         internal static HectonSubmarineOsDisplay EnsureRuntimeInstance()
         {
-            if (s_instance != null)
-                return s_instance;
-
             Canvas targetCanvas = ResolveTargetCanvas();
             if (targetCanvas == null)
                 return null;
@@ -127,7 +117,6 @@ namespace Hecton8.UI
             if (!targetCanvas.gameObject.TryGetComponent(out HectonSubmarineOsDisplay display))
                 display = targetCanvas.gameObject.AddComponent<HectonSubmarineOsDisplay>(); // COLD ALLOC: HectonSubmarineOsDisplay[1] — HUD-owned submarine OS overlay — owner: HectonSubmarineOsDisplay
 
-            s_instance = display;
             return display;
         }
 
@@ -143,7 +132,6 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            s_instance = this;
             EnsureUiBuilt(allowCreate: true);
             HectonSubmarineOsEvents.Unregister(this);
             HectonSubmarineOsEvents.Register(this);
@@ -164,16 +152,12 @@ namespace Hecton8.UI
         {
             HectonSubmarineOsEvents.Unregister(this);
             TryUnregister();
-            if (ReferenceEquals(s_instance, this))
-                s_instance = null;
         }
 
         private void OnDestroy()
         {
             HectonSubmarineOsEvents.Unregister(this);
             TryUnregister();
-            if (ReferenceEquals(s_instance, this))
-                s_instance = null;
         }
 
         /// <inheritdoc />

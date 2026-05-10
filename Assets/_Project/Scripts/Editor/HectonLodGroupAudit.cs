@@ -12,9 +12,10 @@ namespace Hecton8.EditorTools
     internal static class HectonLodGroupAudit
     {
         private const string MenuPath = "Hecton/Validation/Asset Pipeline/Audit LOD Groups";
+        private const string ArtRoot = "Assets/_Project/Art";
         private const string ScifiFacilityRoot = "Assets/ScifiFacility";
         private const string PrefabRoot = "Assets/_Project/Prefabs";
-        private const int TriangleThreshold = 10000;
+        private const int TriangleThreshold = 2000;
         private const int MaxConsoleEntries = 48;
 
         internal sealed class AuditResult
@@ -40,6 +41,8 @@ namespace Hecton8.EditorTools
         internal static AuditResult RunAudit()
         {
             AuditResult result = new AuditResult();
+            ScanAssetSet(result, AssetDatabase.FindAssets("t:Model", new[] { ArtRoot }));
+            ScanAssetSet(result, AssetDatabase.FindAssets("t:Prefab", new[] { ArtRoot }));
             ScanAssetSet(result, AssetDatabase.FindAssets("t:Model", new[] { ScifiFacilityRoot }));
             ScanAssetSet(result, AssetDatabase.FindAssets("t:Prefab", new[] { PrefabRoot }));
             return result;

@@ -46,8 +46,7 @@ Shader "NASAPunk/SuitVisor"
 
         [Header(Frost)]
         _ScreenFrostStrength ("Screen Frost Strength", Range(0, 1)) = 0
-        _FrostBlueNoiseDither ("Frost Blue Noise Dither", Range(0, 1)) = 0.35
-        _BlueNoiseTex ("Blue Noise", 2D) = "gray" {}
+        _FrostBlueNoiseDither ("Frost IGN Dither", Range(0, 1)) = 0.35
 
         [Header(Projection Failure)]
         _HudCloseOcclusionDistance ("HUD Close Occlusion Distance", Range(0.01, 0.5)) = 0.18
@@ -192,8 +191,6 @@ Shader "NASAPunk/SuitVisor"
             TEXTURE2D(_FingerprintTex); SAMPLER(sampler_FingerprintTex);
             TEXTURE2D(_WaterRunoffNormalTex); SAMPLER(sampler_WaterRunoffNormalTex);
             TEXTURE2D(_WaterDropletMaskTex); SAMPLER(sampler_WaterDropletMaskTex);
-            TEXTURE2D(_BlueNoiseTex); SAMPLER(sampler_BlueNoiseTex);
-            float4 _BlueNoiseTex_TexelSize;
             float4 _HectonHudFogPerturbation;
             float4 _HectonSuitHealthGlitch;
             float _PlayerStress01;
@@ -383,28 +380,12 @@ Shader "NASAPunk/SuitVisor"
             float ResolveFrostBlueNoise(float2 uv, float timeValue)
             {
                 float2 pixel = floor(uv * _ScreenParams.xy);
-                float fallback = Hash21(pixel + floor(timeValue * 19.0));
-                float hasBlueNoise = step(0.0001, _BlueNoiseTex_TexelSize.z) * step(0.0001, _BlueNoiseTex_TexelSize.w);
-                [branch]
-                if (hasBlueNoise <= 0.5)
-                    return fallback;
-
-                float2 temporalR2 = frac(float2(0.754877666, 0.569840291) * floor(timeValue * 12.0));
-                float2 blueNoiseUV = frac(pixel * _BlueNoiseTex_TexelSize.xy + temporalR2);
-                return SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r;
+                return Hash21(pixel + floor(timeValue * 19.0));
             }
 
             float ResolveLensBlueNoise(float2 uv, float2 tileScale, float timeValue)
             {
-                float hasBlueNoise = step(0.0001, _BlueNoiseTex_TexelSize.z) * step(0.0001, _BlueNoiseTex_TexelSize.w);
-                float fallback = Hash21(floor(uv * tileScale * 256.0) + floor(timeValue * 13.0));
-                [branch]
-                if (hasBlueNoise <= 0.5)
-                    return fallback;
-
-                float2 temporalR2 = frac(float2(0.754877666, 0.569840291) * floor(timeValue * 8.0));
-                float2 noiseUV = frac(uv * tileScale + temporalR2);
-                return SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, noiseUV).r;
+                return Hash21(floor(uv * tileScale * 256.0) + floor(timeValue * 13.0));
             }
 
             void ComputeBlueNoiseLensGrime(float2 uv, float timeValue, out float dustMask, out float moistureMask)

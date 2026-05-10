@@ -62,6 +62,8 @@ namespace Hecton8.Gameplay
         private float _resolvedHapticFrequencyHz;
         private uint _foamFlowRefreshFrameCounter;
         private uint _coldReferenceSearchMask;
+        private Transform _cachedTransform;
+        private Transform _resolvedNozzleForwardReference;
 
         /// <summary>
         /// True while the nozzle is actively feeding foam into the visor shader fake.
@@ -142,6 +144,7 @@ namespace Hecton8.Gameplay
         public void InvalidateColdReferenceCache()
         {
             _coldReferenceSearchMask = 0u;
+            _resolvedNozzleForwardReference = null;
         }
 
         /// <inheritdoc />
@@ -193,6 +196,7 @@ namespace Hecton8.Gameplay
 
         private void ResolveColdReferences()
         {
+            EnsureSelfTransform();
             if ((_coldReferenceSearchMask & ColdReferenceSearchAll) == ColdReferenceSearchAll)
                 return;
 
@@ -206,14 +210,18 @@ namespace Hecton8.Gameplay
             if ((_coldReferenceSearchMask & ColdReferenceForwardReference) == 0u)
             {
                 if (nozzleForwardReference == null)
-                    nozzleForwardReference = transform;
+                    nozzleForwardReference = _cachedTransform;
+                _resolvedNozzleForwardReference = nozzleForwardReference != null ? nozzleForwardReference : _cachedTransform;
                 _coldReferenceSearchMask |= ColdReferenceForwardReference;
             }
         }
 
         private float2 ResolveFoamFlowDirection()
         {
-            Transform nozzle = nozzleForwardReference != null ? nozzleForwardReference : transform;
+            Transform nozzle = _resolvedNozzleForwardReference;
+            if (nozzle == null)
+                return new float2(0f, 1f);
+
             Vector3 forward = nozzle.forward;
             Transform reference = _playerReferenceTransform;
             if (reference != null)
@@ -225,6 +233,12 @@ namespace Hecton8.Gameplay
                 return new float2(0f, 1f);
 
             return direction * math.rsqrt(lengthSq);
+        }
+
+        private void EnsureSelfTransform()
+        {
+            if (_cachedTransform == null)
+                _cachedTransform = transform;
         }
 
         private static Transform ResolvePlayerReferenceTransform()

@@ -380,15 +380,7 @@ namespace Hecton8.World
             slopeSampleDistanceMeters = math.max(0.5f, slopeSampleDistanceMeters);
             sectorEdgeMarginMeters = math.clamp(sectorEdgeMarginMeters, 0f, sectorSizeMeters * 0.25f);
             voxelSolidThreshold = math.clamp(voxelSolidThreshold, 0.001f, 1f);
-            brinePoolRadiusMinMeters = math.max(4f, brinePoolRadiusMinMeters);
-            brinePoolRadiusMaxMeters = math.max(brinePoolRadiusMinMeters, brinePoolRadiusMaxMeters);
-            brinePoolThicknessMinMeters = math.max(1f, brinePoolThicknessMinMeters);
-            brinePoolThicknessMaxMeters = math.max(brinePoolThicknessMinMeters, brinePoolThicknessMaxMeters);
-            brinePoolMinimumDepthMeters = math.max(1000f, brinePoolMinimumDepthMeters);
-            brinePoolMinimumLipMeters = math.max(0.5f, brinePoolMinimumLipMeters);
-            brinePoolToxicityIntensity = math.saturate(brinePoolToxicityIntensity);
-            brinePoolHazardVisorBias = math.max(0f, brinePoolHazardVisorBias);
-            brinePoolFluidDensityKgPerCubicMeter = math.max(1025f, brinePoolFluidDensityKgPerCubicMeter);
+            SanitizeBrinePoolSettings();
             tectonicUpwellingRespawnRate = math.clamp(tectonicUpwellingRespawnRate, 0f, 0.25f);
             magmaVentLifetimeSeconds = math.max(1f, magmaVentLifetimeSeconds);
             meteorImpactIntervalSeconds = math.clamp(meteorImpactIntervalSeconds, 60f, 1800f);
@@ -657,9 +649,15 @@ namespace Hecton8.World
             float pillarHeightMeters,
             uint pillarId)
         {
-            float safeRadius = math.max(1f, pillarRadiusMeters);
-            float safeHeight = math.max(1f, pillarHeightMeters);
+            if (!IsFiniteAup(in pillarBaseAup))
+                return 0;
+
+            float safeRadius = ResolveFiniteAtLeast(pillarRadiusMeters, 1f, 1f);
+            float safeHeight = ResolveFiniteAtLeast(pillarHeightMeters, 1f, 1f);
             double3 baseAbsolute = pillarBaseAup.ToAbsoluteDouble3();
+            if (!math.all(math.isfinite(baseAbsolute)))
+                return 0;
+
             uint state = Mix(0x43504854u, pillarId);
             float angleA = Next01(ref state) * math.PI * 2f;
             float angleB = angleA + (math.PI * 0.73f);
@@ -694,6 +692,9 @@ namespace Hecton8.World
             float pillarHeightMeters,
             uint pillarId)
         {
+            if (!math.all(math.isfinite(pillarBaseAup)))
+                return 0;
+
             AbsoluteUniversePosition position = AbsoluteUniversePosition.FromAbsolutePosition(pillarBaseAup);
             return TryBindChthonicPillarResourcesAtAup(position, pillarRadiusMeters, pillarHeightMeters, pillarId);
         }
@@ -904,7 +905,7 @@ namespace Hecton8.World
 
             double3 playerAbsolute = playerAup.ToAbsoluteDouble3();
             float angleRadians = Next01(ref state) * math.PI * 2f;
-            float radialDistance = math.sqrt(Next01(ref state)) * math.max(1f, meteorImpactSearchRadiusMeters);
+            float radialDistance = ResolveCinematicRadialDistance(ref state, math.max(1f, meteorImpactSearchRadiusMeters));
             double absoluteX = playerAbsolute.x + (math.cos(angleRadians) * radialDistance);
             double absoluteZ = playerAbsolute.z + (math.sin(angleRadians) * radialDistance);
             Vector3 runtimeProbe = AbsoluteToRuntime(absoluteX, playerAbsolute.y, absoluteZ);
@@ -1220,7 +1221,7 @@ namespace Hecton8.World
                     return false;
 
                 float angleRadians = Next01(ref state) * math.PI * 2f;
-                float radialDistance = math.sqrt(Next01(ref state)) * math.max(1f, brinePool.RadiusMeters * 0.82f);
+                float radialDistance = ResolveCinematicRadialDistance(ref state, math.max(1f, brinePool.RadiusMeters * 0.82f));
                 float sampleX = brinePool.Center.x + (math.cos(angleRadians) * radialDistance);
                 float sampleZ = brinePool.Center.z + (math.sin(angleRadians) * radialDistance);
                 if (!mapMagicBridge.TryGetHeight(sampleX, sampleZ, out seabedHeight))
@@ -1512,8 +1513,14 @@ namespace Hecton8.World
                     if (template == null || template.StableHashId != carbonTemplateHashId)
                         continue;
 
-                    Vector3 runtimePosition = node.transform.position;
-                    float depthMeters = math.max(0f, waterSurface - runtimePosition.y);
+                    if (!node.TryGetPersistentAup(out AbsoluteUniversePosition nodeAup))
+                        continue;
+
+                    double3 nodeAbsolute = nodeAup.ToAbsoluteDouble3();
+                    if (!math.all(math.isfinite(nodeAbsolute)))
+                        continue;
+
+                    float depthMeters = math.max(0f, waterSurface - (float)nodeAbsolute.y);
                     _metamorphismInputs[writeIndex] = new PressureMetamorphismInput
                     {
                         DepthMeters = depthMeters,
@@ -1563,8 +1570,8 @@ namespace Hecton8.World
                 node.SetPressureMetamorphismProgressSeconds(0f);
                 node.ApplyRuntimeTemplate(diamondTemplate, _ghostCubeMesh, _ghostMaterial);
                 node.RefreshRuntimeSpatialRegistration();
-                if (registry != null)
-                    registry.TryRegisterResourceNodeMetamorphosis(node.PersistentTombstoneId, node.transform.position);
+                if (registry != null && node.TryGetPersistentAup(out AbsoluteUniversePosition nodeAup))
+                    registry.TryRegisterResourceNodeMetamorphosis(node.PersistentTombstoneId, in nodeAup);
                 _debugMetamorphosedNodeCount++;
             }
 
@@ -1832,7 +1839,7 @@ namespace Hecton8.World
         internal bool TrySampleBrineFluidDensity(Vector3 runtimePosition, out float fluidDensityKgPerCubicMeter)
         {
             fluidDensityKgPerCubicMeter = 0f;
-            if (_residentSectors == null || _residentSectors.Count == 0)
+            if (_residentSectors == null || _residentSectors.Count == 0 || !IsFiniteRuntimePosition(runtimePosition))
                 return false;
 
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
@@ -1921,10 +1928,16 @@ namespace Hecton8.World
             double absoluteX = (sector.x * (double)sectorSizeMeters) + ResolveSectorOffsetMeters(ref state);
             double absoluteZ = (sector.y * (double)sectorSizeMeters) + ResolveSectorOffsetMeters(ref state);
             Vector3 runtimeProbe = AbsoluteToRuntime(absoluteX, 0d, absoluteZ);
-            if (!mapMagicBridge.TryGetHeight(runtimeProbe.x, runtimeProbe.z, out float bowlFloorHeight))
+            if (!mapMagicBridge.TryGetHeight(runtimeProbe.x, runtimeProbe.z, out float bowlFloorHeight) ||
+                !math.isfinite(bowlFloorHeight))
+            {
                 return brinePool;
+            }
 
             float waterSurface = mapMagicBridge.WaterSurfaceLevel;
+            if (!math.isfinite(waterSurface))
+                return brinePool;
+
             float depthMeters = math.max(0f, waterSurface - bowlFloorHeight);
             if (depthMeters < brinePoolMinimumDepthMeters)
                 return brinePool;
@@ -1939,8 +1952,11 @@ namespace Hecton8.World
                 float angle = sampleIndex * (math.PI * 0.5f);
                 float sampleX = runtimeProbe.x + (math.cos(angle) * rimSampleRadius);
                 float sampleZ = runtimeProbe.z + (math.sin(angle) * rimSampleRadius);
-                if (!mapMagicBridge.TryGetHeight(sampleX, sampleZ, out float rimHeight))
+                if (!mapMagicBridge.TryGetHeight(sampleX, sampleZ, out float rimHeight) ||
+                    !math.isfinite(rimHeight))
+                {
                     return default;
+                }
 
                 rimMinHeight = math.min(rimMinHeight, rimHeight);
             }
@@ -1952,7 +1968,7 @@ namespace Hecton8.World
             float surfaceHeight = math.min(
                 math.min(waterSurface - 0.25f, bowlFloorHeight + thicknessMeters),
                 maximumContainedSurfaceHeight);
-            if (surfaceHeight <= bowlFloorHeight + 0.1f)
+            if (!math.isfinite(surfaceHeight) || surfaceHeight <= bowlFloorHeight + 0.1f)
                 return brinePool;
 
             brinePool.IsValid = true;
@@ -1971,7 +1987,7 @@ namespace Hecton8.World
             if (state == null)
                 return;
 
-            if (!state.BrinePool.IsValid)
+            if (!IsValidBrinePoolState(in state.BrinePool))
             {
                 UnregisterBrineHazard(ref state.BrinePool);
                 return;
@@ -1982,7 +1998,21 @@ namespace Hecton8.World
                 return;
 
             int zoneId = ResolveBrineHazardZoneId(state.BrinePool.StableSeed);
-            float radius = math.max(state.BrinePool.RadiusMeters, (state.BrinePool.SurfaceHeight - state.BrinePool.BottomHeight) * 0.75f);
+            float depthMeters = state.BrinePool.SurfaceHeight - state.BrinePool.BottomHeight;
+            float radius = math.max(state.BrinePool.RadiusMeters, depthMeters * 0.75f);
+            Vector3 brineSurfaceCenter = new Vector3(
+                state.BrinePool.Center.x,
+                state.BrinePool.SurfaceHeight,
+                state.BrinePool.Center.z);
+            HectonBrineToxicMudGrid.RegisterCell(
+                zoneId,
+                brineSurfaceCenter,
+                state.BrinePool.RadiusMeters * 2f,
+                state.BrinePool.RadiusMeters * 2f,
+                depthMeters);
+            if (!HectonBrineToxicMudGrid.IsRegisteredCell(zoneId))
+                return;
+
             if (!hazardManager.RegisterZone(
                     zoneId,
                     state.BrinePool.Center,
@@ -1991,6 +2021,7 @@ namespace Hecton8.World
                     HazardType.Toxicity,
                     brinePoolHazardVisorBias))
             {
+                HectonBrineToxicMudGrid.UnregisterCell(zoneId);
                 return;
             }
 
@@ -2006,6 +2037,7 @@ namespace Hecton8.World
             HazardZoneManager manager = Hecton8.Core.GlobalRegistry.HazardZones;
             if (manager != null)
                 manager.UnregisterZone(brinePool.HazardZoneId);
+            HectonBrineToxicMudGrid.UnregisterCell(brinePool.HazardZoneId);
 
             brinePool.HazardRegistered = false;
             brinePool.HazardZoneId = 0;
@@ -2049,9 +2081,25 @@ namespace Hecton8.World
             return false;
         }
 
+        private static bool IsValidBrinePoolState(in BrinePoolState brinePool)
+        {
+            return brinePool.IsValid &&
+                   IsFiniteRuntimePosition(brinePool.Center) &&
+                   math.isfinite(brinePool.RadiusMeters) &&
+                   math.isfinite(brinePool.BottomHeight) &&
+                   math.isfinite(brinePool.SurfaceHeight) &&
+                   math.isfinite(brinePool.ToxicityIntensity) &&
+                   math.isfinite(brinePool.FluidDensityKgPerCubicMeter) &&
+                   brinePool.RadiusMeters > 0f &&
+                   brinePool.SurfaceHeight > brinePool.BottomHeight &&
+                   brinePool.ToxicityIntensity > 0f &&
+                   brinePool.FluidDensityKgPerCubicMeter > 0f;
+        }
+
         private bool IsInsideBrinePool(in BrinePoolState brinePool, Vector3 runtimePosition)
         {
-            if (!brinePool.IsValid ||
+            if (!IsValidBrinePoolState(in brinePool) ||
+                !IsFiniteRuntimePosition(runtimePosition) ||
                 runtimePosition.y < brinePool.BottomHeight ||
                 runtimePosition.y > brinePool.SurfaceHeight)
             {
@@ -2062,6 +2110,47 @@ namespace Hecton8.World
             float deltaZ = runtimePosition.z - brinePool.Center.z;
             float radius = math.max(0.01f, brinePool.RadiusMeters);
             return ((deltaX * deltaX) + (deltaZ * deltaZ)) <= (radius * radius);
+        }
+
+        private static bool IsFiniteRuntimePosition(Vector3 position)
+        {
+            return math.isfinite(position.x) &&
+                   math.isfinite(position.y) &&
+                   math.isfinite(position.z);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
+        }
+
+        private void SanitizeBrinePoolSettings()
+        {
+            brinePoolRadiusMinMeters = ResolveFiniteAtLeast(brinePoolRadiusMinMeters, DefaultBrinePoolRadiusMinMeters, 4f);
+            brinePoolRadiusMaxMeters = ResolveFiniteAtLeast(brinePoolRadiusMaxMeters, DefaultBrinePoolRadiusMaxMeters, brinePoolRadiusMinMeters);
+            brinePoolThicknessMinMeters = ResolveFiniteAtLeast(brinePoolThicknessMinMeters, DefaultBrinePoolThicknessMinMeters, 1f);
+            brinePoolThicknessMaxMeters = ResolveFiniteAtLeast(brinePoolThicknessMaxMeters, DefaultBrinePoolThicknessMaxMeters, brinePoolThicknessMinMeters);
+            brinePoolMinimumDepthMeters = ResolveFiniteAtLeast(brinePoolMinimumDepthMeters, DefaultBrinePoolMinimumDepthMeters, 1000f);
+            brinePoolMinimumLipMeters = ResolveFiniteAtLeast(brinePoolMinimumLipMeters, DefaultBrinePoolMinimumLipMeters, 0.5f);
+            brinePoolToxicityIntensity = ResolveFiniteSaturate(brinePoolToxicityIntensity, DefaultBrinePoolToxicityIntensity);
+            brinePoolHazardVisorBias = ResolveFiniteAtLeast(brinePoolHazardVisorBias, DefaultBrinePoolHazardVisorBias, 0f);
+            brinePoolFluidDensityKgPerCubicMeter = ResolveFiniteAtLeast(
+                brinePoolFluidDensityKgPerCubicMeter,
+                DefaultBrinePoolFluidDensityKgPerCubicMeter,
+                1025f);
+        }
+
+        private static float ResolveFiniteAtLeast(float value, float fallback, float minimum)
+        {
+            float safeFallback = math.isfinite(fallback) ? fallback : minimum;
+            return math.isfinite(value) ? math.max(minimum, value) : math.max(minimum, safeFallback);
+        }
+
+        private static float ResolveFiniteSaturate(float value, float fallback)
+        {
+            return math.isfinite(value) ? math.saturate(value) : math.saturate(fallback);
         }
 
         private void TryApplyEmbeddedVein(ResourceNode node, ResourceNodeTemplate template, in SpawnRequest request)
@@ -2262,12 +2351,12 @@ namespace Hecton8.World
 
         private static Quaternion ResolveSurfaceRotation(Vector3 surfaceNormal, float yawDegrees)
         {
-            Vector3 up = surfaceNormal.sqrMagnitude > 0.000001f ? surfaceNormal.normalized : Vector3.up;
-            float yawRadians = yawDegrees * Mathf.Deg2Rad;
-            Vector3 authoredForward = new Vector3(math.sin(yawRadians), 0f, math.cos(yawRadians));
-            Vector3 tangentForward = Vector3.ProjectOnPlane(authoredForward, up);
+            Vector3 up = ResolveUnitVector(surfaceNormal, Vector3.up);
+            float2 yawDirection = ResolveOctantDirection(QuantizeYawDegreesToOctant(yawDegrees));
+            Vector3 authoredForward = new Vector3(yawDirection.x, 0f, yawDirection.y);
+            Vector3 tangentForward = authoredForward - (up * Vector3.Dot(authoredForward, up));
             if (tangentForward.sqrMagnitude <= 0.000001f)
-                tangentForward = Vector3.ProjectOnPlane(Vector3.forward, up);
+                tangentForward = Vector3.forward - (up * Vector3.Dot(Vector3.forward, up));
 
             if (tangentForward.sqrMagnitude <= 0.000001f)
                 tangentForward = Vector3.Cross(up, Vector3.right);
@@ -2275,17 +2364,50 @@ namespace Hecton8.World
             if (tangentForward.sqrMagnitude <= 0.000001f)
                 tangentForward = Vector3.forward;
 
-            return Quaternion.LookRotation(tangentForward.normalized, up);
+            return Quaternion.LookRotation(tangentForward, up);
+        }
+
+        private static Vector3 ResolveUnitVector(Vector3 vector, Vector3 fallback)
+        {
+            float lengthSq = vector.sqrMagnitude;
+            if (lengthSq <= 0.000001f)
+                return fallback;
+
+            float invLength = math.rsqrt(lengthSq);
+            return new Vector3(vector.x * invLength, vector.y * invLength, vector.z * invLength);
+        }
+
+        private static int QuantizeYawDegreesToOctant(float yawDegrees)
+        {
+            float wrapped = yawDegrees - (math.floor(yawDegrees / 360f) * 360f);
+            return (int)math.floor((wrapped + 22.5f) * 0.0222222228f) & 7;
+        }
+
+        private static float2 ResolveOctantDirection(int sector)
+        {
+            switch (sector & 7)
+            {
+                case 0:
+                    return new float2(1f, 0f);
+                case 1:
+                    return new float2(0.70710677f, 0.70710677f);
+                case 2:
+                    return new float2(0f, 1f);
+                case 3:
+                    return new float2(-0.70710677f, 0.70710677f);
+                case 4:
+                    return new float2(-1f, 0f);
+                case 5:
+                    return new float2(-0.70710677f, -0.70710677f);
+                case 6:
+                    return new float2(0f, -1f);
+                default:
+                    return new float2(0.70710677f, -0.70710677f);
+            }
         }
 
         private float ResolveSlope(Vector3 runtimePosition)
         {
-            if (vegetationBridge != null &&
-                vegetationBridge.TrySampleTerrainSlopeDegrees(runtimePosition, slopeSampleDistanceMeters, out float vegetationSlope))
-            {
-                return vegetationSlope;
-            }
-
             float probe = math.max(0.5f, slopeSampleDistanceMeters);
             if (!mapMagicBridge.TryGetHeight(runtimePosition.x + probe, runtimePosition.z, out float heightPosX) ||
                 !mapMagicBridge.TryGetHeight(runtimePosition.x - probe, runtimePosition.z, out float heightNegX) ||
@@ -2297,8 +2419,23 @@ namespace Hecton8.World
 
             float gradientX = (heightPosX - heightNegX) / (probe * 2f);
             float gradientZ = (heightPosZ - heightNegZ) / (probe * 2f);
-            float gradientMagnitude = math.sqrt((gradientX * gradientX) + (gradientZ * gradientZ));
+            float gradientMagnitude = FastMagnitudeApprox(new float2(gradientX, gradientZ));
             return math.degrees(math.atan(gradientMagnitude));
+        }
+
+        private static float ResolveCinematicRadialDistance(ref uint state, float maxRadius)
+        {
+            float t = Next01(ref state);
+            return math.max(0f, maxRadius) * t;
+        }
+
+        private static float FastMagnitudeApprox(float2 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float max = math.max(ax, ay);
+            float min = math.min(ax, ay);
+            return max + (min * 0.41421356f);
         }
 
         private int2 QuantizeSector(in AbsoluteUniversePosition position)
@@ -2486,15 +2623,7 @@ namespace Hecton8.World
             slopeSampleDistanceMeters = math.max(0.5f, slopeSampleDistanceMeters);
             voxelSolidThreshold = math.clamp(voxelSolidThreshold, 0.001f, 1f);
             sectorEdgeMarginMeters = math.max(0f, sectorEdgeMarginMeters);
-            brinePoolRadiusMinMeters = math.max(4f, brinePoolRadiusMinMeters);
-            brinePoolRadiusMaxMeters = math.max(brinePoolRadiusMinMeters, brinePoolRadiusMaxMeters);
-            brinePoolThicknessMinMeters = math.max(1f, brinePoolThicknessMinMeters);
-            brinePoolThicknessMaxMeters = math.max(brinePoolThicknessMinMeters, brinePoolThicknessMaxMeters);
-            brinePoolMinimumDepthMeters = math.max(1000f, brinePoolMinimumDepthMeters);
-            brinePoolMinimumLipMeters = math.max(0.5f, brinePoolMinimumLipMeters);
-            brinePoolToxicityIntensity = math.saturate(brinePoolToxicityIntensity);
-            brinePoolHazardVisorBias = math.max(0f, brinePoolHazardVisorBias);
-            brinePoolFluidDensityKgPerCubicMeter = math.max(1025f, brinePoolFluidDensityKgPerCubicMeter);
+            SanitizeBrinePoolSettings();
             tectonicUpwellingRespawnRate = math.clamp(tectonicUpwellingRespawnRate, 0f, 0.25f);
             magmaVentLifetimeSeconds = math.max(1f, magmaVentLifetimeSeconds);
             meteorImpactIntervalSeconds = math.clamp(meteorImpactIntervalSeconds, 60f, 1800f);

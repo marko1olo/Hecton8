@@ -1270,22 +1270,22 @@ namespace Hecton8.Gameplay
         private static readonly string[] _cachedUpperStrings = new string[16];
 
         /// <summary>
-        /// Кэшированный ToUpperInvariant для избежания повторных аллокаций строк.
-        /// Хранит до 16 последних преобразований для повторного использования.
+        /// Keshirovannyy ToUpperInvariant dlya izbezhaniya povtornyh allokatsiy strok.
+        /// Hranit do 16 poslednih preobrazovaniy dlya povtornogo ispolzovaniya.
         /// </summary>
         private static string CachedToUpperInvariant(string input)
         {
             if (string.IsNullOrEmpty(input))
                 return input;
 
-            // Простой hash для кэширования (не криптографический)
-            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
+            // Prostoy hash dlya keshirovaniya (ne kriptograficheskiy)
+            int hash = input.GetHashCode() & 0xF; // Maska dlya indeksa 0-15
 
             string cached = _cachedUpperStrings[hash];
             if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
                 return cached;
 
-            // Создаем новую строку и кэшируем
+            // Sozdaem novuyu stroku i keshiruem
             string upper = input.ToUpperInvariant();
             _cachedUpperStrings[hash] = upper;
             return upper;

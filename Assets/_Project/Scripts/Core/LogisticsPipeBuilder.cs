@@ -93,7 +93,7 @@ namespace Hecton8.Core
         internal static void ResolveControlPoints(in SplineDescriptor descriptor, out float3 p0, out float3 p1, out float3 p2, out float3 p3)
         {
             float3 chord = descriptor.End - descriptor.Start;
-            float distance = math.length(chord);
+            float distance = FastMagnitudeApprox(chord);
             float3 chordDirection = SafeNormalize(chord, new float3(0f, 0f, 1f));
             float3 startForward = SafeNormalize(descriptor.StartForward, chordDirection);
             float3 endForward = SafeNormalize(descriptor.EndForward, -chordDirection);
@@ -168,8 +168,8 @@ namespace Hecton8.Core
                 return;
             }
 
-            float axisLength = math.sqrt(axisLengthSq);
-            float3 axis = rotationAxis / axisLength;
+            float axisLength = math.min(1f, FastMagnitudeApprox(rotationAxis));
+            float3 axis = rotationAxis * math.rsqrt(axisLengthSq);
             normal = RotateAroundAxis(previousNormal, axis, tangentDot, axisLength);
             binormal = RotateAroundAxis(previousBinormal, axis, tangentDot, axisLength);
             normal = SafeNormalize(normal - currentTangent * math.dot(normal, currentTangent), previousNormal);
@@ -189,6 +189,15 @@ namespace Hecton8.Core
                 return fallback;
 
             return value * math.rsqrt(lengthSq);
+        }
+
+        private static float FastMagnitudeApprox(float3 value)
+        {
+            float3 abs = math.abs(value);
+            float max = math.max(abs.x, math.max(abs.y, abs.z));
+            float min = math.min(abs.x, math.min(abs.y, abs.z));
+            float mid = abs.x + abs.y + abs.z - max - min;
+            return max + (mid * 0.41421356f) + (min * 0.29289322f);
         }
 
         private static float3 RotateAroundAxis(float3 vector, float3 axis, float cosTheta, float sinTheta)

@@ -2,7 +2,7 @@
 // HECTON-8 - BootstrapState.cs
 // Canonical bootstrap read-model for runtime consumers.
 //
-// SceneBootstrap remains the owner and publisher. Runtime systems read this
+// GameBootstrapper remains the owner and publisher. Runtime systems read this
 // state to avoid depending on the full bootstrap owner when they only need
 // lifecycle/player facts.
 // ============================================================================
@@ -22,7 +22,7 @@ namespace Hecton8.Core
         public static bool IsGameReady { get; private set; }
 
         /// <summary>
-        /// A live SceneBootstrap instance currently owns scene startup.
+        /// A live GameBootstrapper instance currently owns scene startup.
         /// </summary>
         public static bool HasActiveInstance { get; private set; }
 
@@ -40,7 +40,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Publishes whether bootstrap currently owns runtime startup.
         /// </summary>
-        /// <param name="hasActiveInstance">True while a SceneBootstrap instance is active.</param>
+        /// <param name="hasActiveInstance">True while GameBootstrapper owns scene activation.</param>
         public static void PublishBootstrapPresence(bool hasActiveInstance)
         {
             HasActiveInstance = hasActiveInstance;

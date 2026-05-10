@@ -4,6 +4,7 @@
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace Hecton8.Biolum
 {
@@ -37,8 +38,10 @@ namespace Hecton8.Biolum
         // PRIVATE STATE
         // ─────────────────────────────────────────────────────────────────────────────
 
-        private Vector3[] _lightPositions; // COLD ALLOC: positions for scattered lights
-        private Color[] _lightColors;      // COLD ALLOC: colors for each light
+        // COLD ALLOC: Vector3[_maxLights] - scattered ocean biolum light offsets - owner: OceanBiolumZone
+        private Vector3[] _lightPositions;
+        // COLD ALLOC: Color[_maxLights] - cached scattered ocean biolum light colors - owner: OceanBiolumZone
+        private Color[] _lightColors;
 
         // Ocean color palette
         private Color _surfaceBlue = new Color(0.3f, 0.7f, 1f);     // Surface: bright blue
@@ -54,8 +57,8 @@ namespace Hecton8.Biolum
         protected override void Awake()
         {
             base.Awake();
-            _lightPositions = new Vector3[_maxLights]; // COLD ALLOC
-            _lightColors = new Color[_maxLights];      // COLD ALLOC
+            _lightPositions = new Vector3[_maxLights]; // COLD ALLOC: Vector3[_maxLights] - scattered ocean biolum light offsets - owner: OceanBiolumZone
+            _lightColors = new Color[_maxLights]; // COLD ALLOC: Color[_maxLights] - cached scattered ocean biolum light colors - owner: OceanBiolumZone
             GenerateLightPositions();
         }
 
@@ -112,7 +115,7 @@ namespace Hecton8.Biolum
         protected override float GetBiolumIntensity()
         {
             float baseIntensity = _intensityMultiplier * 0.7f; // Ocean lights are dimmer
-            float depthScale = Mathf.Lerp(1.2f, 0.6f, _depthRatio); // Deeper = dimmer
+            float depthScale = math.lerp(1.2f, 0.6f, math.saturate(_depthRatio)); // Deeper = dimmer
             return ScaleIntensityByMood(baseIntensity) * depthScale;
         }
 
@@ -123,7 +126,7 @@ namespace Hecton8.Biolum
         protected override float GetBiolumRange()
         {
             float baseRange = _rangeMultiplier * 0.8f;
-            float depthScale = Mathf.Lerp(1f, 0.5f, _depthRatio); // Deeper = shorter range (water absorption)
+            float depthScale = math.lerp(1f, 0.5f, math.saturate(_depthRatio)); // Deeper = shorter range (water absorption)
             return ScaleRangeByHazard(baseRange) * depthScale;
         }
 
@@ -140,12 +143,12 @@ namespace Hecton8.Biolum
             for (int i = 0; i < _lightCount; i++)
             {
                 float angle = (i / (float)_lightCount) * 360f;
-                float distance = _scatterRadius * (0.5f + 0.5f * Random.value);
-                float height = Random.Range(-_scatterRadius * 0.5f, _scatterRadius * 0.5f);
+                float distance = _scatterRadius * (0.5f + 0.5f * Hash01(i * 37 + 3));
+                float height = math.lerp(-_scatterRadius * 0.5f, _scatterRadius * 0.5f, Hash01(i * 41 + 7));
 
                 if (_useNoiseVariation)
                 {
-                    float noise = Mathf.PerlinNoise(transform.position.x * 0.1f + i, Time.time * 0.01f);
+                    float noise = Hash01((i * 67) + 23);
                     distance *= (0.8f + noise * 0.4f);
                     height *= (0.8f + noise * 0.4f);
                 }
@@ -174,15 +177,15 @@ namespace Hecton8.Biolum
                 Vector3 position = transform.position + _lightPositions[i];
 
                 // Vary color slightly (natural variance)
-                Color variedColor = Color.Lerp(baseColor, _biolumGreen, Random.value * 0.2f);
+                Color variedColor = Color.Lerp(baseColor, _biolumGreen, Hash01(i * 43 + 11) * 0.2f);
                 if (_depthRatio > 0.66f) // Abyss can have purple tints
-                    variedColor = Color.Lerp(variedColor, _biolumPurple, Random.value * 0.3f);
+                    variedColor = Color.Lerp(variedColor, _biolumPurple, Hash01(i * 47 + 13) * 0.3f);
 
                 GetOrCreateLight(
                     position,
                     variedColor,
-                    baseRange * (0.7f + Random.value * 0.5f), // Vary range
-                    baseIntensity * (0.6f + Random.value * 0.7f)  // Vary intensity
+                    baseRange * (0.7f + Hash01(i * 53 + 17) * 0.5f), // Vary range
+                    baseIntensity * (0.6f + Hash01(i * 59 + 19) * 0.7f)  // Vary intensity
                 );
             }
         }
@@ -195,6 +198,7 @@ namespace Hecton8.Biolum
             Color baseColor = GetBiolumColor();
             float baseIntensity = GetBiolumIntensity();
             float baseRange = GetBiolumRange();
+            float time = Time.time;
 
             for (int i = 0; i < _activeLightCount; i++)
             {
@@ -204,22 +208,38 @@ namespace Hecton8.Biolum
                 // Update position with slight drift (organic motion)
                 if (_useNoiseVariation)
                 {
-                    float noiseX = Mathf.PerlinNoise(Time.time * 0.2f + i, 0f) - 0.5f;
-                    float noiseY = Mathf.PerlinNoise(Time.time * 0.15f, i) - 0.5f;
-                    float noiseZ = Mathf.PerlinNoise(Time.time * 0.1f + i * 2, Time.time * 0.1f) - 0.5f;
+                    float noiseX = CheapSignedWave((time * 0.2f) + Hash01((i * 71) + 29));
+                    float noiseY = CheapSignedWave((time * 0.15f) + Hash01((i * 73) + 31));
+                    float noiseZ = CheapSignedWave((time * 0.1f) + Hash01((i * 79) + 37));
                     Vector3 drift = new Vector3(noiseX, noiseY, noiseZ) * 0.5f;
                     light.transform.position = transform.position + _lightPositions[i] + drift;
                 }
 
                 // Update properties
-                Color variedColor = Color.Lerp(baseColor, _biolumGreen, Mathf.Sin(Time.time * 0.5f + i) * 0.15f);
+                Color variedColor = Color.Lerp(baseColor, _biolumGreen, (CheapSignedWave((time * 0.5f) + Hash01((i * 83) + 41)) + 0.5f) * 0.15f);
                 UpdateLight(
                     light,
                     variedColor,
-                    baseRange * (0.8f + Mathf.Sin(Time.time * 0.3f + i) * 0.2f),
-                    baseIntensity * (0.8f + Mathf.Cos(Time.time * 0.4f + i) * 0.2f)
+                    baseRange * (0.8f + CheapSignedWave((time * 0.3f) + Hash01((i * 89) + 43)) * 0.4f),
+                    baseIntensity * (0.8f + CheapSignedWave((time * 0.4f) + Hash01((i * 97) + 47)) * 0.4f)
                 );
             }
+        }
+
+        private static float Hash01(int seed)
+        {
+            uint state = unchecked((uint)seed * 747796405u);
+            state = unchecked((state ^ (state >> 16)) * 2246822519u);
+            state = unchecked((state ^ (state >> 13)) * 3266489917u);
+            state ^= state >> 16;
+            return (state & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private static float CheapSignedWave(float phase)
+        {
+            float wrapped = math.frac(phase);
+            float triangle = wrapped < 0.5f ? wrapped * 2f : (1f - wrapped) * 2f;
+            return triangle - 0.5f;
         }
 
         // ─────────────────────────────────────────────────────────────────────────────

@@ -179,8 +179,8 @@ namespace Hecton8.World
 
         internal float GetFlatDistance(in AbsoluteUniversePosition playerPosition)
         {
-            double flatDistanceSq = GetFlatDistanceSquaredInternal(in playerPosition);
-            return flatDistanceSq > 0d ? (float)System.Math.Sqrt(flatDistanceSq) : 0f;
+            GetFlatDelta(in playerPosition, out double deltaX, out double deltaZ);
+            return FastPlanarDistance(deltaX, deltaZ);
         }
 
         internal float GetFlatDistanceSquared(in AbsoluteUniversePosition playerPosition)
@@ -197,10 +197,10 @@ namespace Hecton8.World
 
         internal float EvaluateActivationWeight(in AbsoluteUniversePosition playerPosition)
         {
-            float distance = GetFlatDistance(in playerPosition);
+            float distanceSq = GetFlatDistanceSquared(in playerPosition);
             float noisyRadius = activationRadius * EvaluateNoiseRadiusMultiplier(in playerPosition);
             float blend = Mathf.Max(4f, edgeBlendDistance);
-            return EvaluateRadiusWeightFromDistance(distance, noisyRadius, blend);
+            return EvaluateRadiusWeightFromDistanceSq(distanceSq, noisyRadius, blend);
         }
 
         public float EvaluateHoldWeight(Vector3 playerPosition)
@@ -211,10 +211,10 @@ namespace Hecton8.World
 
         internal float EvaluateHoldWeight(in AbsoluteUniversePosition playerPosition)
         {
-            float distance = GetFlatDistance(in playerPosition);
+            float distanceSq = GetFlatDistanceSquared(in playerPosition);
             float noisyRadius = holdRadius * EvaluateNoiseRadiusMultiplier(in playerPosition);
             float blend = Mathf.Max(4f, edgeBlendDistance);
-            return EvaluateRadiusWeightFromDistance(distance, noisyRadius, blend);
+            return EvaluateRadiusWeightFromDistanceSq(distanceSq, noisyRadius, blend);
         }
 
         public void EvaluatePlayerState(
@@ -229,16 +229,15 @@ namespace Hecton8.World
             delta.y = 0f;
 
             flatDistanceSqr = delta.sqrMagnitude;
-            float distance = Mathf.Sqrt(flatDistanceSqr);
             float blend = Mathf.Max(4f, edgeBlendDistance);
             float noiseRadiusMultiplier = EvaluateNoiseRadiusMultiplier(playerPosition);
 
-            activationWeight = EvaluateRadiusWeightFromDistance(distance, activationRadius * noiseRadiusMultiplier, blend);
-            holdWeight = EvaluateRadiusWeightFromDistance(distance, holdRadius * noiseRadiusMultiplier, blend);
+            activationWeight = EvaluateRadiusWeightFromDistanceSq(flatDistanceSqr, activationRadius * noiseRadiusMultiplier, blend);
+            holdWeight = EvaluateRadiusWeightFromDistanceSq(flatDistanceSqr, holdRadius * noiseRadiusMultiplier, blend);
             insideActivation = activationWeight > 0.01f;
             insideHold = holdWeight > 0.01f;
 
-            _debugLastDistance = distance;
+            _debugLastDistance = FastPlanarDistance(delta.x, delta.z);
             _debugActivationWeight = activationWeight;
             _debugHoldWeight = holdWeight;
             _debugInsideActivation = insideActivation;
@@ -247,23 +246,25 @@ namespace Hecton8.World
 
         private float EvaluateRadiusWeight(Vector3 playerPosition, float radius)
         {
-            float distance = GetFlatDistance(playerPosition);
+            float distanceSq = GetFlatDistanceSquared(playerPosition);
             float noisyRadius = radius * EvaluateNoiseRadiusMultiplier(playerPosition);
             float blend = Mathf.Max(4f, edgeBlendDistance);
-            return EvaluateRadiusWeightFromDistance(distance, noisyRadius, blend);
+            return EvaluateRadiusWeightFromDistanceSq(distanceSq, noisyRadius, blend);
         }
 
-        private static float EvaluateRadiusWeightFromDistance(float distance, float noisyRadius, float blend)
+        private static float EvaluateRadiusWeightFromDistanceSq(float distanceSq, float noisyRadius, float blend)
         {
             float innerRadius = Mathf.Max(0f, noisyRadius - blend);
+            float innerRadiusSq = innerRadius * innerRadius;
+            float noisyRadiusSq = Mathf.Max(innerRadiusSq + 0.0001f, noisyRadius * noisyRadius);
 
-            if (distance <= innerRadius)
+            if (distanceSq <= innerRadiusSq)
                 return 1f;
 
-            if (distance >= noisyRadius)
+            if (distanceSq >= noisyRadiusSq)
                 return 0f;
 
-            return 1f - Mathf.InverseLerp(innerRadius, noisyRadius, distance);
+            return 1f - Mathf.Clamp01((distanceSq - innerRadiusSq) / (noisyRadiusSq - innerRadiusSq));
         }
 
         private float EvaluateNoiseRadiusMultiplier(Vector3 playerPosition)
@@ -284,12 +285,36 @@ namespace Hecton8.World
 
         private double GetFlatDistanceSquaredInternal(in AbsoluteUniversePosition playerPosition)
         {
+            GetFlatDelta(in playerPosition, out double deltaX, out double deltaZ);
+            return (deltaX * deltaX) + (deltaZ * deltaZ);
+        }
+
+        private void GetFlatDelta(in AbsoluteUniversePosition playerPosition, out double deltaX, out double deltaZ)
+        {
             AbsoluteUniversePosition anchorPosition = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
             double3 anchorAbsolute = anchorPosition.ToAbsoluteDouble3();
             double3 playerAbsolute = playerPosition.ToAbsoluteDouble3();
-            double deltaX = anchorAbsolute.x - playerAbsolute.x;
-            double deltaZ = anchorAbsolute.z - playerAbsolute.z;
-            return (deltaX * deltaX) + (deltaZ * deltaZ);
+            deltaX = anchorAbsolute.x - playerAbsolute.x;
+            deltaZ = anchorAbsolute.z - playerAbsolute.z;
+        }
+
+        private static float FastPlanarDistance(double x, double z)
+        {
+            double ax = System.Math.Abs(x);
+            double az = System.Math.Abs(z);
+            double max = System.Math.Max(ax, az);
+            double min = System.Math.Min(ax, az);
+            double estimate = max + (min * 0.4142135623730951d);
+            return estimate > float.MaxValue ? float.MaxValue : (float)estimate;
+        }
+
+        private static float FastPlanarDistance(float x, float z)
+        {
+            float ax = Mathf.Abs(x);
+            float az = Mathf.Abs(z);
+            float max = Mathf.Max(ax, az);
+            float min = Mathf.Min(ax, az);
+            return max + (min * 0.41421356f);
         }
 
         private static void RegisterActiveAnchor(WorldZoneAnchor anchor)

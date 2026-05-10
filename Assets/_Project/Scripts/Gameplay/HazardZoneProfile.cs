@@ -43,7 +43,7 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            visorGlitchBias = Mathf.Clamp(visorGlitchBias, 0f, 2f);
+            visorGlitchBias = ClampFinite(visorGlitchBias, 1f, 0f, 2f);
             if (intensityCurve == null || intensityCurve.length == 0)
                 intensityCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
 
@@ -77,7 +77,7 @@ namespace Hecton8.Gameplay
                 float sample = intensityCurve != null && intensityCurve.length > 0
                     ? intensityCurve.Evaluate(normalizedDistance)
                     : ResolveDefaultIntensitySample(normalizedDistance);
-                bakedIntensityLut[i] = Mathf.Clamp01(sample);
+                bakedIntensityLut[i] = Clamp01Finite(sample, ResolveDefaultIntensitySample(normalizedDistance));
             }
         }
 
@@ -92,15 +92,25 @@ namespace Hecton8.Gameplay
                 float normalizedDistance = sampleCount > 1
                     ? i / (float)(sampleCount - 1)
                     : 0f;
-                target[i] = ResolveDefaultIntensitySample(normalizedDistance);
+                target[i] = Clamp01Finite(ResolveDefaultIntensitySample(normalizedDistance), 0f);
             }
         }
 
         private static float ResolveDefaultIntensitySample(float normalizedDistance)
         {
-            float safeDistance = Mathf.Clamp01(normalizedDistance);
+            float safeDistance = Clamp01Finite(normalizedDistance, 0f);
             float attenuation = 1f - (safeDistance * safeDistance);
             return attenuation > 0f ? attenuation * attenuation : 0f;
+        }
+
+        private static float Clamp01Finite(float value, float fallback)
+        {
+            return float.IsFinite(value) ? Mathf.Clamp01(value) : Mathf.Clamp01(fallback);
+        }
+
+        private static float ClampFinite(float value, float fallback, float minimum, float maximum)
+        {
+            return float.IsFinite(value) ? Mathf.Clamp(value, minimum, maximum) : Mathf.Clamp(fallback, minimum, maximum);
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
@@ -174,32 +175,32 @@ namespace Hecton8.Visor
                 SetMaterialFloatIfChanged(
                     material,
                     ShaderConstants.BrownoutIntensityId,
-                    math.saturate(runtimeState.BrownoutIntensity),
+                    HectonVRBrownoutFeature.Sanitize01(runtimeState.BrownoutIntensity),
                     ref _lastBrownoutIntensity);
                 SetMaterialFloatIfChanged(
                     material,
                     ShaderConstants.WorldFocusBlurId,
-                    math.saturate(runtimeState.WorldFocusBlur),
+                    HectonVRBrownoutFeature.Sanitize01(runtimeState.WorldFocusBlur),
                     ref _lastWorldFocusBlur);
                 SetMaterialFloatIfChanged(
                     material,
                     ShaderConstants.NearCollisionIntensityId,
-                    math.saturate(runtimeState.NearCollisionIntensity),
+                    HectonVRBrownoutFeature.Sanitize01(runtimeState.NearCollisionIntensity),
                     ref _lastNearCollisionIntensity);
                 SetMaterialFloatIfChanged(
                     material,
                     ShaderConstants.WorldBlurTexelRadiusId,
-                    math.max(0f, settings.worldBlurTexelRadius),
+                    HectonVRBrownoutFeature.SanitizeRange(settings.worldBlurTexelRadius, 0f, 3f),
                     ref _lastWorldBlurTexelRadius);
                 SetMaterialFloatIfChanged(
                     material,
                     ShaderConstants.ScanlineStrengthId,
-                    math.saturate(settings.scanlineStrength),
+                    HectonVRBrownoutFeature.Sanitize01(settings.scanlineStrength),
                     ref _lastScanlineStrength);
                 SetMaterialFloatIfChanged(
                     material,
                     ShaderConstants.DitherStrengthId,
-                    math.saturate(settings.ditherStrength),
+                    HectonVRBrownoutFeature.Sanitize01(settings.ditherStrength),
                     ref _lastDitherStrength);
                 _materialDirty = false;
             }
@@ -300,14 +301,26 @@ namespace Hecton8.Visor
             if (playerCamera != null && !ReferenceEquals(renderCamera, playerCamera))
                 return false;
 
-            float brownoutIntensity = math.saturate(Shader.GetGlobalFloat(ShaderConstants.BrownoutIntensityId));
-            float worldFocusBlur = math.saturate(Shader.GetGlobalFloat(ShaderConstants.WorldFocusBlurId));
-            float nearCollisionIntensity = math.saturate(Shader.GetGlobalFloat(ShaderConstants.NearCollisionIntensityId));
+            float brownoutIntensity = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.BrownoutIntensityId));
+            float worldFocusBlur = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.WorldFocusBlurId));
+            float nearCollisionIntensity = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.NearCollisionIntensityId));
             if (brownoutIntensity <= 0.001f && worldFocusBlur <= 0.001f && nearCollisionIntensity <= 0.001f)
                 return false;
 
             runtimeState = new RuntimeState(brownoutIntensity, worldFocusBlur, nearCollisionIntensity);
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Sanitize01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeRange(float value, float minimum, float maximum)
+        {
+            return math.isfinite(value) ? math.clamp(value, minimum, maximum) : minimum;
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

@@ -35,6 +35,7 @@ namespace Hecton8.World
         private const int BrgMetadataPlaceholderCount = 1;
         private const int MaxVegetationVisibilityPasses = 3;
         private const int MaxVegetationDrawCommands = 7;
+        private const float LodTransitionRangeMeters = 2f;
         private const string GpuIndirectKeyword = "HECTON_GPU_INDIRECT";
         private const byte VisibilityMaskNear = 1 << 0;
         private const byte VisibilityMaskFar = 1 << 1;
@@ -96,6 +97,7 @@ namespace Hecton8.World
         private static readonly int _VisibleIndicesLod0Id = Shader.PropertyToID("_HectonVisibleInstanceIndicesLOD0");
         private static readonly int _VisibleIndicesLod1Id = Shader.PropertyToID("_HectonVisibleInstanceIndicesLOD1");
         private static readonly int _VisibleIndicesShadowId = Shader.PropertyToID("_HectonVisibleInstanceIndicesShadow");
+        private static readonly int _FarLodAppendEnabledId = Shader.PropertyToID("_HectonFarLodAppendEnabled");
         private static readonly int _IndirectArgsBufferId = Shader.PropertyToID("_HectonIndirectArgsBuffer");
         private static readonly int _IndirectIndexCountPerInstanceId = Shader.PropertyToID("_HectonIndirectIndexCountPerInstance");
         private static readonly int _IndirectStartIndexId = Shader.PropertyToID("_HectonIndirectStartIndex");
@@ -231,8 +233,16 @@ namespace Hecton8.World
         private float _farLodDistance = 150f;
 
         [SerializeField, Range(0.5f, 20f)]
-        [Tooltip("Cross-fade range around the near/far band thresholds.")]
-        private float _lodTransitionRange = 6f;
+        [Tooltip("Cross-fade range around the near/far band thresholds. Runtime is locked to the 2m flora dither mandate.")]
+        private float _lodTransitionRange = LodTransitionRangeMeters;
+
+        [SerializeField, Range(1, 8)]
+        [Tooltip("Far LOD GPU culling cadence. 4 means distant vegetation visibility refreshes at 15Hz on a 60Hz frame budget.")]
+        private int _farCullingFrameStride = 4;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Far LOD cadence only engages when the far vegetation band extends beyond this distance in meters.")]
+        private float _farCullingCadenceDistance = 50f;
 
         [Header("GPU Occlusion")]
         [SerializeField]
@@ -361,6 +371,8 @@ namespace Hecton8.World
         private int _gpuVisibleIndexCapacity;
         private int _floraSnapFlagCapacity;
         private bool _floraSnapFlagBufferRequiresClear;
+        private int _gpuCullingFrameIndex;
+        private bool _hasFarCullingSnapshot;
         private RenderTexture _depthPyramidTexture;
         private int _depthPyramidWidth;
         private int _depthPyramidHeight;
@@ -795,7 +807,9 @@ namespace Hecton8.World
         {
             _nearLodDistance = Mathf.Max(1f, _nearLodDistance);
             _farLodDistance = Mathf.Max(_nearLodDistance, _farLodDistance);
-            _lodTransitionRange = Mathf.Max(0.5f, _lodTransitionRange);
+            _lodTransitionRange = LodTransitionRangeMeters;
+            _farCullingFrameStride = Mathf.Clamp(_farCullingFrameStride, 1, 8);
+            _farCullingCadenceDistance = Mathf.Max(0f, _farCullingCadenceDistance);
             TryAutoAssignAssets();
             if (_cullingCompute != null)
             {
@@ -1090,6 +1104,7 @@ namespace Hecton8.World
             _instanceCount = clampedCount;
             _legacyDataDirty = true;
             _floraSnapFlagBufferRequiresClear = true;
+            _hasFarCullingSnapshot = false;
         }
 
         /// <summary>
@@ -1139,7 +1154,9 @@ namespace Hecton8.World
             }
 
             CreateAuxiliaryMaterials();
-            Mesh farMesh = _farLodDistance > _nearLodDistance ? ResolveImpostorRenderMesh() : null;
+            Mesh farMesh = FrameTimeWatchdog.IsDistantFloraRenderingEnabled && _farLodDistance > _nearLodDistance
+                ? ResolveImpostorRenderMesh()
+                : null;
             Vector3 rendererPosition = transform.position;
             Bounds drawBounds = ResolveDrawBounds(rendererPosition);
             if (TryRenderGpuIndirect(cullCamera, nearMesh, farMesh, cullCameraPosition, cullCameraForward, drawBounds))
@@ -1243,7 +1260,9 @@ namespace Hecton8.World
             if (_nearBrgMaterial == null)
                 return false;
 
-            Mesh farMesh = _farLodDistance > _nearLodDistance ? ResolveImpostorRenderMesh() : null;
+            Mesh farMesh = FrameTimeWatchdog.IsDistantFloraRenderingEnabled && _farLodDistance > _nearLodDistance
+                ? ResolveImpostorRenderMesh()
+                : null;
             if (farMesh != null)
                 EnsureBrgMaterialClone(ref _farBrgMaterial, sourceMaterial, "__HectonVegetationFarBrgMaterial");
             else
@@ -1434,6 +1453,7 @@ namespace Hecton8.World
             GeometryUtility.CalculateFrustumPlanes(cullCamera, _frustumPlaneCache);
             if (!GeometryUtility.TestPlanesAABB(_frustumPlaneCache, drawBounds))
                 return true;
+            PopulateFrustumPlaneUpload();
 
             if (_instanceCount <= 0)
                 return true;
@@ -1510,46 +1530,59 @@ namespace Hecton8.World
                 _visibleIndicesLod0Buffer == null ||
                 _indirectArgsLod0Buffer == null ||
                 _instanceCount <= 0)
-            return;
-
-            PopulateFrustumPlaneUpload(cullCamera);
-            Vector4 globalFloatingOffset = ResolveVegetationFloatingOffset();
-            Matrix4x4 viewProjection = GL.GetGPUProjectionMatrix(cullCamera.projectionMatrix, false) * cullCamera.worldToCameraMatrix;
-            Matrix4x4 viewMatrix = cullCamera.worldToCameraMatrix;
-
-            _visibleIndicesLod0Buffer.SetCounterValue(0u);
-            _visibleIndicesLod1Buffer?.SetCounterValue(0u);
-            _visibleIndicesShadowBuffer?.SetCounterValue(0u);
-
-            Mesh nearMesh = ResolveNearRenderMesh();
-            Mesh farMesh = _farLodDistance > _nearLodDistance ? ResolveImpostorRenderMesh() : null;
-            if (!ClearIndirectArgsBuffer(_indirectArgsLod0Buffer, nearMesh) ||
-                !ClearIndirectArgsBuffer(_indirectArgsLod1Buffer, farMesh != null ? farMesh : nearMesh) ||
-                !ClearIndirectArgsBuffer(_indirectArgsShadowBuffer, nearMesh))
             {
                 return;
             }
 
-            GraphicsFence indirectArgsClearFence = Graphics.CreateGraphicsFence(
-                GraphicsFenceType.AsyncQueueSynchronisation,
-                SynchronisationStageFlags.ComputeProcessing);
-            Graphics.WaitOnAsyncGraphicsFence(indirectArgsClearFence);
+            Vector4 globalFloatingOffset = ResolveVegetationFloatingOffset();
+            Matrix4x4 viewProjection = GL.GetGPUProjectionMatrix(cullCamera.projectionMatrix, false) * cullCamera.worldToCameraMatrix;
+            Matrix4x4 viewMatrix = cullCamera.worldToCameraMatrix;
+
+            Mesh nearMesh = ResolveNearRenderMesh();
+            Mesh farMesh = FrameTimeWatchdog.IsDistantFloraRenderingEnabled && _farLodDistance > _nearLodDistance
+                ? ResolveImpostorRenderMesh()
+                : null;
+            float brgLodDistanceScalar = VRAMPressureMonitor.BrgLodDistanceScalar;
+            float brgNearLodDistance = Mathf.Max(0.01f, _nearLodDistance * brgLodDistanceScalar);
+            float brgFarLodDistance = Mathf.Max(brgNearLodDistance, _farLodDistance * brgLodDistanceScalar);
+            float brgLodTransitionRange = Mathf.Max(0.01f, _lodTransitionRange * brgLodDistanceScalar);
+            bool hasFarLod = farMesh != null && _visibleIndicesLod1Buffer != null && _indirectArgsLod1Buffer != null;
+            bool farCadenceEligible = hasFarLod &&
+                                      _farCullingFrameStride > 1 &&
+                                      brgFarLodDistance > _farCullingCadenceDistance;
+            bool updateFarLodThisFrame = hasFarLod &&
+                                         (!_hasFarCullingSnapshot ||
+                                          !farCadenceEligible ||
+                                          (_gpuCullingFrameIndex % _farCullingFrameStride) == 0);
+            _gpuCullingFrameIndex = (_gpuCullingFrameIndex + 1) & 0x3fffffff;
+            if (!hasFarLod)
+                _hasFarCullingSnapshot = false;
+
+            _visibleIndicesLod0Buffer.SetCounterValue(0u);
+            if (updateFarLodThisFrame)
+                _visibleIndicesLod1Buffer.SetCounterValue(0u);
+            _visibleIndicesShadowBuffer?.SetCounterValue(0u);
+
+            if (!ClearIndirectArgsBuffer(_indirectArgsLod0Buffer, nearMesh) ||
+                (hasFarLod && updateFarLodThisFrame && !ClearIndirectArgsBuffer(_indirectArgsLod1Buffer, farMesh)) ||
+                (!hasFarLod && _indirectArgsLod1Buffer != null && !ClearIndirectArgsBuffer(_indirectArgsLod1Buffer, nearMesh)) ||
+                !ClearIndirectArgsBuffer(_indirectArgsShadowBuffer, nearMesh))
+            {
+                return;
+            }
 
             _cullingCompute.SetBuffer(_cullFloraKernel, _SourceMatricesId, _instanceMatrixBuffer);
             _cullingCompute.SetBuffer(_cullFloraKernel, _SourceDataId, activeInstanceDataBuffer);
             _cullingCompute.SetBuffer(_cullFloraKernel, _VisibleIndicesLod0Id, _visibleIndicesLod0Buffer);
             if (_visibleIndicesLod1Buffer != null)
                 _cullingCompute.SetBuffer(_cullFloraKernel, _VisibleIndicesLod1Id, _visibleIndicesLod1Buffer);
+            _cullingCompute.SetInt(_FarLodAppendEnabledId, updateFarLodThisFrame ? 1 : 0);
             _cullingCompute.SetInt(_SourceInstanceCountId, _instanceCount);
             _cullingCompute.SetMatrix(_ViewProjectionId, viewProjection);
             _cullingCompute.SetMatrix(_ViewMatrixId, viewMatrix);
             _cullingCompute.SetVector(_CameraPositionId, cameraPosition);
             _cullingCompute.SetVector(_CameraForwardId, cameraForward);
             _cullingCompute.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
-            float brgLodDistanceScalar = VRAMPressureMonitor.BrgLodDistanceScalar;
-            float brgNearLodDistance = Mathf.Max(0.01f, _nearLodDistance * brgLodDistanceScalar);
-            float brgFarLodDistance = Mathf.Max(brgNearLodDistance, _farLodDistance * brgLodDistanceScalar);
-            float brgLodTransitionRange = Mathf.Max(0.01f, _lodTransitionRange * brgLodDistanceScalar);
             _cullingCompute.SetFloat(_LodNearDistanceId, brgNearLodDistance);
             _cullingCompute.SetFloat(_LodFarDistanceId, brgFarLodDistance);
             _cullingCompute.SetFloat(_LodTransitionRangeId, brgLodTransitionRange);
@@ -1611,8 +1644,11 @@ namespace Hecton8.World
             }
 
             GraphicsBuffer.CopyCount(_visibleIndicesLod0Buffer, _indirectArgsLod0Buffer, sizeof(uint));
-            if (_visibleIndicesLod1Buffer != null && _indirectArgsLod1Buffer != null)
+            if (updateFarLodThisFrame && _visibleIndicesLod1Buffer != null && _indirectArgsLod1Buffer != null)
+            {
                 GraphicsBuffer.CopyCount(_visibleIndicesLod1Buffer, _indirectArgsLod1Buffer, sizeof(uint));
+                _hasFarCullingSnapshot = true;
+            }
             if (_visibleIndicesShadowBuffer != null && _indirectArgsShadowBuffer != null)
                 GraphicsBuffer.CopyCount(_visibleIndicesShadowBuffer, _indirectArgsShadowBuffer, sizeof(uint));
         }
@@ -1773,6 +1809,7 @@ namespace Hecton8.World
                 _visibleIndicesLod1Buffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, requiredCapacity, VisibleIndexStride); // COLD ALLOC: GraphicsBuffer[visibleCapacity] - far vegetation visible-instance append buffer - owner: HectonIndirectVegetationRenderer
                 _visibleIndicesShadowBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, requiredCapacity, VisibleIndexStride); // COLD ALLOC: GraphicsBuffer[visibleCapacity] - shadow vegetation visible-instance append buffer - owner: HectonIndirectVegetationRenderer
                 _gpuVisibleIndexCapacity = requiredCapacity;
+                _hasFarCullingSnapshot = false;
             }
 
             EnsureIndirectArgsBuffer(ref _indirectArgsLod0Buffer);
@@ -1836,12 +1873,11 @@ namespace Hecton8.World
             return true;
         }
 
-        private void PopulateFrustumPlaneUpload(Camera cullCamera)
+        private void PopulateFrustumPlaneUpload()
         {
             if (_frustumPlaneCache == null || _frustumPlaneVectors == null)
                 return;
 
-            GeometryUtility.CalculateFrustumPlanes(cullCamera, _frustumPlaneCache);
             for (int planeIndex = 0; planeIndex < FrustumPlaneCount; planeIndex++)
             {
                 Plane plane = _frustumPlaneCache[planeIndex];
@@ -1860,6 +1896,8 @@ namespace Hecton8.World
             ReleaseGraphicsBuffer(ref _indirectArgsShadowBuffer);
             ReleaseDepthPyramidTexture();
             _gpuVisibleIndexCapacity = 0;
+            _gpuCullingFrameIndex = 0;
+            _hasFarCullingSnapshot = false;
             _depthPyramidWidth = 0;
             _depthPyramidHeight = 0;
             _depthPyramidMipCount = 0;
@@ -2220,7 +2258,9 @@ namespace Hecton8.World
             IntPtr userContext)
         {
             Mesh nearMesh = ResolveNearRenderMesh();
-            Mesh farMesh = _farLodDistance > _nearLodDistance ? ResolveImpostorRenderMesh() : null;
+            Mesh farMesh = FrameTimeWatchdog.IsDistantFloraRenderingEnabled && _farLodDistance > _nearLodDistance
+                ? ResolveImpostorRenderMesh()
+                : null;
             bool useFarPass = farMesh != null && !_farBatchMeshId.Equals(default) && !_farBatchMaterialId.Equals(default);
             bool useDepthPass = _enableDepthPrepass && _depthNearBrgMaterial != null && !_depthNearBatchMaterialId.Equals(default);
             bool useShadowPass = _enableShadowCasterDraw && _shadowBrgMaterial != null && !_shadowBatchMaterialId.Equals(default) && HasMainDirectionalShadowLight();
@@ -2348,6 +2388,7 @@ namespace Hecton8.World
                     useShadowPass,
                     useMotionPass,
                     useMotionFarPass);
+                FrameTimeWatchdog.ReportBatchRendererGroupBatchCount(drawCommandCapacity);
                 BatchCullingOutputDrawCommands output = HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(
                     visibleInstanceCapacity,
                     drawCommandCapacity,
@@ -2563,6 +2604,7 @@ namespace Hecton8.World
             output.visibleInstanceCount = visibleInstanceCount;
             output.drawCommandCount = commandIndex;
             output.drawRangeCount = commandIndex;
+            FrameTimeWatchdog.ReportBatchRendererGroupBatchCount(commandIndex);
             HectonBatchRendererGroupUtility.WriteDirectDrawOutput(cullingOutput, output);
         }
 

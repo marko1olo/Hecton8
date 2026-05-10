@@ -183,6 +183,11 @@ namespace Hecton8.World
             EnsureNativeCapacity(ref cache, requiredCount);
         }
 
+        private static void EnsureAupNativeCapacity(ref NativeArray<AbsoluteUniversePosition> cache, int requiredCount)
+        {
+            EnsureNativeCapacity(ref cache, requiredCount);
+        }
+
         private static void EnsureDensityChunkRecordCapacity(ref NativeArray<VegetationDensityChunkRecord> cache, int requiredCount)
         {
             EnsureNativeCapacity(ref cache, requiredCount);

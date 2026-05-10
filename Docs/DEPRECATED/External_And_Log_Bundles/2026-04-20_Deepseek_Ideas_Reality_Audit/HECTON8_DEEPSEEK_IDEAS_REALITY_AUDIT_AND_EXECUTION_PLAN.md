@@ -142,7 +142,7 @@ Date: `2026-04-20`
 
 ## Purpose
 
-This document converts `Docs/DEPRECATED/External_And_Log_Bundles/много идей от дипсика/идеи дипсика.txt` from a raw idea dump into an evidence-based execution plan.
+This document converts `Docs/DEPRECATED/External_And_Log_Bundles/mnogo idey ot dipsika/idei dipsika.txt` from a raw idea dump into an evidence-based execution plan.
 
 This file does not replace repository authority.
 
@@ -174,7 +174,7 @@ Reviewed sources and live repo state:
 - `Docs/SYSTEMS_CONTRACTS.md`
 - `MASTER_RELEASE_WORK_PLAN.md`
 - `Docs/2026-04-19_Gemini_Reality_Audit/HECTON8_GEMINI_REALITY_AUDIT_AND_EXECUTION_PLAN.md`
-- `Docs/DEPRECATED/External_And_Log_Bundles/много идей от дипсика/идеи дипсика.txt`
+- `Docs/DEPRECATED/External_And_Log_Bundles/mnogo idey ot dipsika/idei dipsika.txt`
 - first-party scripts under `Assets/_Project/Scripts`
 - current worktree state via `git status`
 
@@ -780,8 +780,8 @@ Status remains `PENDING VERIFICATION`.
 
 - unrelated user edits already exist:
   - `Assets/_Project/Scripts/World/FloraInteractionManager.cs`
-  - `Docs/DEPRECATED/External_And_Log_Bundles/САРГАСОВЫ ШТУКИ/САРГАСОВЫ ВОДОРОСЛИ.txt`
-- `Docs/DEPRECATED/External_And_Log_Bundles/много идей от дипсика/` is deprecated reference material
+  - `Docs/DEPRECATED/External_And_Log_Bundles/SARGASOVY ShTUKI/SARGASOVY VODOROSLI.txt`
+- `Docs/DEPRECATED/External_And_Log_Bundles/mnogo idey ot dipsika/` is deprecated reference material
 - this pass must not rewrite or normalize unrelated user files
 
 ---

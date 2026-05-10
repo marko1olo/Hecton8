@@ -70,6 +70,8 @@ namespace Hecton8.Gameplay
         private Transform _transform;
         private float _releaseTimer;
         private float _nextReleaseTime;
+        private uint _releaseSeed;
+        private uint _releaseOrdinal;
         private bool _isRegistered;
         private bool _poolMissingLogged;
 
@@ -80,6 +82,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _transform = transform;
+            _releaseSeed = MixHash(unchecked((uint)EntityId.ToULong(GetEntityId())) ^ 0x4F58504Cu);
 
             // Use self as spawn point if not assigned
             if (spawnPoint == null)
@@ -163,9 +166,28 @@ namespace Hecton8.Gameplay
 
         private void CalculateNextReleaseTime()
         {
-            // Base interval + random variation
-            _nextReleaseTime = releaseInterval + Random.Range(-releaseVariation, releaseVariation);
+            float authoredVariation = Mathf.Max(0f, releaseVariation);
+            float signedPhase = authoredVariation > 0f
+                ? (HashToUnit01(_releaseSeed + (_releaseOrdinal++ * 0x9E3779B9u)) * 2f) - 1f
+                : 0f;
+
+            _nextReleaseTime = releaseInterval + (signedPhase * authoredVariation);
             _nextReleaseTime = Mathf.Max(0.5f, _nextReleaseTime); // Minimum 0.5s
+        }
+
+        private static float HashToUnit01(uint value)
+        {
+            return (MixHash(value) & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private static uint MixHash(uint value)
+        {
+            value ^= value >> 16;
+            value *= 0x7FEB352Du;
+            value ^= value >> 15;
+            value *= 0x846CA68Bu;
+            value ^= value >> 16;
+            return value;
         }
 
         // ══════════════════════════════════════════════════════════

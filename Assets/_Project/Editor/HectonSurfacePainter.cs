@@ -579,7 +579,7 @@ public sealed class HectonSurfacePainter : EditorWindow
         if (attempts <= 0)
             return;
 
-        // Шаг 1: стартуем с jitter-grid как с начального приближения
+        // Shag 1: startuem s jitter-grid kak s nachalnogo priblizheniya
         GenerateGridJitterSamples2D(results, radius, attempts, Mathf.Lerp(0.2f, 1f, jitter));
 
         if (results.Count <= 1 || relaxationPasses <= 0)
@@ -587,8 +587,8 @@ public sealed class HectonSurfacePainter : EditorWindow
 
         float radiusSqr = radius * radius;
 
-        // Шаг 2: несколько очень дешёвых итераций "расслабления"
-        // чтобы точки чуть разошлись и были менее кластерными.
+        // Shag 2: neskolko ochen deshevyh iteratsiy "rasslableniya"
+        // chtoby tochki chut razoshlis i byli menee klasternymi.
         for (int pass = 0; pass < relaxationPasses; pass++)
         {
             for (int i = 0; i < results.Count; i++)
@@ -623,7 +623,7 @@ public sealed class HectonSurfacePainter : EditorWindow
 
                 a += push;
 
-                // Край круга
+                // Kray kruga
                 if (a.sqrMagnitude > radiusSqr)
                     a = a.normalized * radius * Random.Range(0.92f, 1f);
 
@@ -631,7 +631,7 @@ public sealed class HectonSurfacePainter : EditorWindow
             }
         }
 
-        // Шаг 3: лёгкий финальный джиттер, чтобы сетка не читалась
+        // Shag 3: legkiy finalnyy dzhitter, chtoby setka ne chitalas
         float finalJitter = radius * 0.05f * jitter;
         for (int i = 0; i < results.Count; i++)
         {

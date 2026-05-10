@@ -129,6 +129,8 @@ namespace Hecton8.Scavenging
         private bool _registeredToWorldStateRegistry;
         private int _spatialHandle;
         private ulong _persistentTombstoneId;
+        private AbsoluteUniversePosition _persistentAup;
+        private bool _hasPersistentAup;
         private HectonVoxelEngine _cachedVoxelEngine;
         private float _lastYieldSampleTimeSeconds;
         private float _pressureMetamorphismProgressSeconds;
@@ -235,6 +237,8 @@ namespace Hecton8.Scavenging
             UnregisterWorldStateRegistry();
             ResetState();
             _persistentTombstoneId = 0UL;
+            _persistentAup = default;
+            _hasPersistentAup = false;
             if (autoGenerateId)
                 uniqueId = null;
         }
@@ -283,6 +287,15 @@ namespace Hecton8.Scavenging
         public void SetPressureMetamorphismProgressSeconds(float progressSeconds)
         {
             _pressureMetamorphismProgressSeconds = Mathf.Max(0f, progressSeconds);
+        }
+
+        /// <summary>
+        /// Returns the static AUP identity captured when this node entered the runtime resource graph.
+        /// </summary>
+        internal bool TryGetPersistentAup(out AbsoluteUniversePosition position)
+        {
+            position = _persistentAup;
+            return _hasPersistentAup;
         }
 
         /// <summary>
@@ -385,10 +398,21 @@ namespace Hecton8.Scavenging
 
         private void ResolvePersistentIdentity()
         {
-            _persistentTombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(_cachedTransform.position);
+            _persistentAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform.position);
+            _hasPersistentAup = IsFiniteAup(in _persistentAup);
+            _persistentTombstoneId = _hasPersistentAup
+                ? PersistentWorldRegistry.ComputeResourceNodeTombstoneId(in _persistentAup)
+                : 0UL;
 
             if (autoGenerateId)
                 uniqueId = PersistentWorldRegistry.FormatResourceNodeTombstoneId(_persistentTombstoneId);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
         }
 
         private bool ShouldSuppressSpawn()

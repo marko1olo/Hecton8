@@ -62,8 +62,11 @@ namespace Hecton8.World
         public void Execute(int index)
         {
             Bounds[index] = default;
+            if (Width <= 0 || Height <= 0)
+                return;
+
             AnomalyBasinRecord record = BasinRecords[index];
-            if (record.Valid == 0)
+            if (!IsValidRecordHeader(record, Width, Height))
                 return;
 
             int minX = Width;
@@ -92,7 +95,7 @@ namespace Hecton8.World
                 }
             }
 
-            if (maskedCount <= 0)
+            if (maskedCount <= 0 || maskedCount != record.CellCount)
                 return;
 
             Bounds[index] = new AnomalyBrinePoolBounds
@@ -106,6 +109,23 @@ namespace Hecton8.World
                 LipHeight = record.LipHeight,
                 Valid = 1
             };
+        }
+
+        private static bool IsValidRecordHeader(AnomalyBasinRecord record, int width, int height)
+        {
+            if (record.Valid == 0 || record.BasinId <= 0 || record.CellCount <= 0)
+                return false;
+            if (!math.isfinite(record.DeepestHeight) || !math.isfinite(record.LipHeight) || record.LipHeight <= record.DeepestHeight)
+                return false;
+            if (record.MinX < 0 || record.MinZ < 0 || record.MaxX >= width || record.MaxZ >= height)
+                return false;
+            if (record.MinX > record.MaxX || record.MinZ > record.MaxZ)
+                return false;
+
+            int boundsWidth = record.MaxX - record.MinX + 1;
+            int boundsHeight = record.MaxZ - record.MinZ + 1;
+            long boundsCells = (long)boundsWidth * boundsHeight;
+            return record.CellCount <= boundsCells;
         }
     }
 }

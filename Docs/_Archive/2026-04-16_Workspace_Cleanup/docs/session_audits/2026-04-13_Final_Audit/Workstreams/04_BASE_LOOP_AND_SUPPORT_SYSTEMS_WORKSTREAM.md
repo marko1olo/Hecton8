@@ -5,76 +5,76 @@ Status: ARCHIVED
 
 # HECTON-8 — Base Loop / Support Systems Workstream
 
-Дата: 2026-04-13  
-Статус: PENDING VERIFICATION
+Data: 2026-04-13  
+Status: PENDING VERIFICATION
 
-## Что закрывает этот фронт
+## Chto zakryvaet etot front
 
 - Return loop
 - Base value
 - Crafting / storage / power / oxygen support
 - Support systems that make survival loop matter
 
-## Почему это важно
+## Pochemu eto vazhno
 
-Если база, фабрикация и support systems существуют только как набор отдельных механик, игра не склеивается в устойчивый цикл.
+Esli baza, fabrikatsiya i support systems suschestvuyut tolko kak nabor otdelnyh mehanik, igra ne skleivaetsya v ustoychivyy tsikl.
 
-## Основные задачи
+## Osnovnye zadachi
 
 ### Front A. Return value
 
-- Зафиксировать, зачем игрок возвращается на базу.
-- Сделать базу местом recovery, planning, crafting и progression.
+- Zafiksirovat, zachem igrok vozvraschaetsya na bazu.
+- Sdelat bazu mestom recovery, planning, crafting i progression.
 
 ### Front B. Oxygen / refill / safety loop
 
-- Проверить oxygen refill path.
-- Проверить safe recovery route.
-- Проверить failure feedback.
+- Proverit oxygen refill path.
+- Proverit safe recovery route.
+- Proverit failure feedback.
 
 ### Front C. Crafting / storage / power cohesion
 
-- Связать крафт, storage, repair, power и upgrades в один понятный цикл.
-- Убрать состояния, где системы формально есть, но player value не дают.
+- Svyazat kraft, storage, repair, power i upgrades v odin ponyatnyy tsikl.
+- Ubrat sostoyaniya, gde sistemy formalno est, no player value ne dayut.
 
 ### Front D. Save / world state continuity
 
-- Проверить, что support loop переживает save/load.
-- Проверить reload после mid-loop progress.
+- Proverit, chto support loop perezhivaet save/load.
+- Proverit reload posle mid-loop progress.
 
 ## Candidate owners
 
 - `Assets/_Project/Scripts/SaveManager.cs`
-- Player survival / inventory / builder / fabrication owners в `Assets/_Project/Scripts/Gameplay`
-- base/support owners в `Assets/_Project/Scripts/Building`, `Crafting`, `Power`, `Inventory`
+- Player survival / inventory / builder / fabrication owners v `Assets/_Project/Scripts/Gameplay`
+- base/support owners v `Assets/_Project/Scripts/Building`, `Crafting`, `Power`, `Inventory`
 
 ## Do-Not-Touch Scope
 
-- Не лезть в shell/UI кроме точек вызова.
-- Не авторить narrative content здесь.
-- Не смешивать с heavy perf work.
+- Ne lezt v shell/UI krome tochek vyzova.
+- Ne avtorit narrative content zdes.
+- Ne smeshivat s heavy perf work.
 
-## Как дробить по агентам
+## Kak drobit po agentam
 
-Агент 1:
+Agent 1:
 - oxygen / survival / refill path
-- Задача: survival support loop.
+- Zadacha: survival support loop.
 
-Агент 2:
+Agent 2:
 - crafting / storage / inventory owners
-- Задача: return value и support cohesion.
+- Zadacha: return value i support cohesion.
 
-Агент 3:
-- save continuity по support systems
-- Задача: проверка сохранения и восстановления цикла.
+Agent 3:
+- save continuity po support systems
+- Zadacha: proverka sohraneniya i vosstanovleniya tsikla.
 
 ## Expected Result
 
-- У игрока появляется ясная причина возвращаться.
-- База перестаёт быть декоративной системой.
-- Support loop склеивается с progression.
+- U igroka poyavlyaetsya yasnaya prichina vozvraschatsya.
+- Baza perestaet byt dekorativnoy sistemoy.
+- Support loop skleivaetsya s progression.
 
 ## Exit Criteria
 
-- Есть рабочий цикл: explore -> gather -> return -> recover/craft/upgrade -> go deeper.
-- Нет критических разрывов после save/load.
+- Est rabochiy tsikl: explore -> gather -> return -> recover/craft/upgrade -> go deeper.
+- Net kriticheskih razryvov posle save/load.

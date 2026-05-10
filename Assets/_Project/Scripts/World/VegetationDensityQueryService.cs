@@ -85,6 +85,7 @@ namespace Hecton8.World
 
             EnsureVector3Capacity(ref _abyssalAnchorPositions, anchorCount);
             EnsureVector3NativeCapacity(ref _nativeMemory.AbyssalAnchorPositionsNative, anchorCount);
+            EnsureAupNativeCapacity(ref _nativeMemory.AbyssalAnchorAupPositionsNative, anchorCount);
             int writeIndex = 0;
             for (int i = 0; i < _selectedChunkCount; i++)
             {
@@ -98,6 +99,7 @@ namespace Hecton8.World
                     (int)VegetationSemanticType.DeadZoneMassiveStructure,
                     _abyssalAnchorPositions,
                     _nativeMemory.AbyssalAnchorPositionsNative,
+                    _nativeMemory.AbyssalAnchorAupPositionsNative,
                     _totalUniverseOffset,
                     ref writeIndex);
             }

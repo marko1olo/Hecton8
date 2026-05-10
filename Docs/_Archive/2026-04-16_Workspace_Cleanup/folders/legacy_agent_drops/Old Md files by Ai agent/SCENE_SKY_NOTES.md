@@ -20,45 +20,45 @@ Status: ARCHIVED
   - one direct cause of black `Game` sky in edit mode is removed
   - remaining issue is specifically the custom cloud/sky layer in `Scene View`, not the dome position itself
 
-Проблема:
-- В `Game` кастомное небо и облака видны
-- В `Scene View` долгое время были видны только солнце/газовый гигант или серо-чёрный фон
+Problema:
+- V `Game` kastomnoe nebo i oblaka vidny
+- V `Scene View` dolgoe vremya byli vidny tolko solntse/gazovyy gigant ili sero-chernyy fon
 
-## Что уже выяснено
+## Chto uzhe vyyasneno
 
-- `Sky_System/Sphere` существует и активна
-- `RenderSettings.skybox` указывает на проектный `Mat_HectonSky`
-- [HectonUnderwaterVisuals.cs](C:/hades/Hecton8/Assets/_Project/Scripts/HectonUnderwaterVisuals.cs) в editor режиме подписывается на `EditorApplication.update`
-- В editor режиме этот скрипт раньше использовал `SceneView.lastActiveSceneView.camera` как `playerCamera`
-- Из-за этого `Scene View` почти всегда считался под водой, потому что камера редактора была ниже `waterLevel = 4900`
+- `Sky_System/Sphere` suschestvuet i aktivna
+- `RenderSettings.skybox` ukazyvaet na proektnyy `Mat_HectonSky`
+- [HectonUnderwaterVisuals.cs](C:/hades/Hecton8/Assets/_Project/Scripts/HectonUnderwaterVisuals.cs) v editor rezhime podpisyvaetsya na `EditorApplication.update`
+- V editor rezhime etot skript ranshe ispolzoval `SceneView.lastActiveSceneView.camera` kak `playerCamera`
+- Iz-za etogo `Scene View` pochti vsegda schitalsya pod vodoy, potomu chto kamera redaktora byla nizhe `waterLevel = 4900`
 
-## Что уже исправлено
+## Chto uzhe ispravleno
 
-- В `ResolveEditorCamera()` теперь:
-  - для расчёта состояния среды сначала берётся `Camera.main`
-  - `SceneView` остаётся только render-target камерой редактора
-- Добавлен [SceneViewSkyboxEnforcer.cs](C:/hades/Hecton8/Assets/_Project/Scripts/Editor/SceneViewSkyboxEnforcer.cs)
-  - включает `showSkybox`
-  - включает `showClouds`
-  - включает `showImageEffects`
-  - включает `showFog`
-  - включает `sceneLighting`
-  - ставит `SceneView.camera.clearFlags = Skybox`
+- V `ResolveEditorCamera()` teper:
+  - dlya rascheta sostoyaniya sredy snachala beretsya `Camera.main`
+  - `SceneView` ostaetsya tolko render-target kameroy redaktora
+- Dobavlen [SceneViewSkyboxEnforcer.cs](C:/hades/Hecton8/Assets/_Project/Scripts/Editor/SceneViewSkyboxEnforcer.cs)
+  - vklyuchaet `showSkybox`
+  - vklyuchaet `showClouds`
+  - vklyuchaet `showImageEffects`
+  - vklyuchaet `showFog`
+  - vklyuchaet `sceneLighting`
+  - stavit `SceneView.camera.clearFlags = Skybox`
 
-## Остаточный дефект
+## Ostatochnyy defekt
 
-- После этих правок `Scene View` уже не в полностью сломанном состоянии
-- Но облака/кастомный sky всё ещё не совпадают с `Game`
-- Значит остаток бага находится не в полном отсутствии skybox, а в editor-preview состоянии sky pipeline
+- Posle etih pravok `Scene View` uzhe ne v polnostyu slomannom sostoyanii
+- No oblaka/kastomnyy sky vse esche ne sovpadayut s `Game`
+- Znachit ostatok baga nahoditsya ne v polnom otsutstvii skybox, a v editor-preview sostoyanii sky pipeline
 
-## Следующие точки проверки
+## Sleduyuschie tochki proverki
 
-- live-поля `HectonUnderwaterVisuals` в editor:
+- live-polya `HectonUnderwaterVisuals` v editor:
   - `CurrentDepth`
   - `IsUnderwater`
   - `playerCamera`
   - `mainCamera`
-- live-поля `HectonAtmosphereManager`:
+- live-polya `HectonAtmosphereManager`:
   - `TimeOfDay`
   - `CurrentSkyExposure`
   - `CurrentSunIntensity`

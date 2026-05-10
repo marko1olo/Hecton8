@@ -1,26 +1,26 @@
 // ============================================================================
 // HECTON-8 — HazardType.cs
-// Типы локальных угроз окружающей среды.
+// Tipy lokalnyh ugroz okruzhayuschey sredy.
 // ============================================================================
 
 namespace Hecton8.Gameplay
 {
     /// <summary>
-    /// Перечисление типов опасных зон.
-    /// Используется HectonHazardManager для фильтрации и расчета воздействия.
+    /// Perechislenie tipov opasnyh zon.
+    /// Ispolzuetsya HectonHazardManager dlya filtratsii i rascheta vozdeystviya.
     /// </summary>
     public enum HazardType
     {
-        /// <summary>Радиационное излучение (влияет на целостность и вызывает помехи HUD).</summary>
+        /// <summary>Radiatsionnoe izluchenie (vliyaet na tselostnost i vyzyvaet pomehi HUD).</summary>
         Radiation,
 
-        /// <summary>Экстремально высокая температура (термальные источники, лава).</summary>
+        /// <summary>Ekstremalno vysokaya temperatura (termalnye istochniki, lava).</summary>
         Heat,
 
-        /// <summary>Токсичные газы или химическое загрязнение.</summary>
+        /// <summary>Toksichnye gazy ili himicheskoe zagryaznenie.</summary>
         Toxicity,
 
-        /// <summary>Биологическая угроза (споры, патогены).</summary>
+        /// <summary>Biologicheskaya ugroza (spory, patogeny).</summary>
         Biohazard
     }
 }

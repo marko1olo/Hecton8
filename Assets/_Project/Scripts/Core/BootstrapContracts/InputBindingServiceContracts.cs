@@ -31,6 +31,13 @@ namespace Hecton8.Core
         /// True only when the service is safe for the next bootstrap layer to consume.
         /// </summary>
         bool IsServiceReady { get; }
+
+        /// <summary>
+        /// Monotonic liveness counter sampled by the runtime watchdog registry guard.
+        /// Implementers with a real tick lane should override this; the default prevents legacy ready
+        /// services from false-positive alarms until they publish service-owned counters.
+        /// </summary>
+        int TickCount => Environment.TickCount;
     }
 
     /// <summary>

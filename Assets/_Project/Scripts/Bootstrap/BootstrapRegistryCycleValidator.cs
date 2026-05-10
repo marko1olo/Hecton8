@@ -118,6 +118,9 @@ namespace Hecton8.Bootstrap
         private static readonly int[] _inDegreeScratch = new int[_startupNodes.Length];
         // COLD ALLOC: int[startup node count] - startup graph Kahn queue scratch - owner: BootstrapRegistryCycleValidator
         private static readonly int[] _queueScratch = new int[_startupNodes.Length];
+        // COLD ALLOC: long[11] - startup edge-pair duplicate bitset for O(E) graph validation - owner: BootstrapRegistryCycleValidator
+        private static readonly long[] _edgePairSeenScratch =
+            new long[((_startupNodes.Length * _startupNodes.Length) + 63) >> 6];
         // COLD ALLOC: int[256] - byte-sized service-slot to node-index lookup - owner: BootstrapRegistryCycleValidator
         private static readonly int[] _nodeIndexScratch = new int[256];
 
@@ -189,6 +192,7 @@ namespace Hecton8.Bootstrap
             executionOrderCount = 0;
             Array.Clear(_inDegreeScratch, 0, nodeCount);
             Array.Clear(_queueScratch, 0, nodeCount);
+            Array.Clear(_edgePairSeenScratch, 0, ((nodeCount * nodeCount) + 63) >> 6);
             for (int i = 0; i < _nodeIndexScratch.Length; i++)
                 _nodeIndexScratch[i] = -1;
 
@@ -206,12 +210,12 @@ namespace Hecton8.Bootstrap
 
             for (int edgeIndex = 0; edgeIndex < edges.Length; edgeIndex++)
             {
-                if (!IsValidEdge(edges, edgeIndex))
-                    return false;
-
                 int sourceIndex = ResolveNodeIndex(edges[edgeIndex].Source);
                 int dependencyIndex = ResolveNodeIndex(edges[edgeIndex].Dependency);
                 if (sourceIndex < 0 || dependencyIndex < 0)
+                    return false;
+
+                if (!TryMarkEdgePair(sourceIndex, dependencyIndex, nodeCount))
                     return false;
 
                 _inDegreeScratch[sourceIndex]++;
@@ -248,19 +252,19 @@ namespace Hecton8.Bootstrap
             return false;
         }
 
-        private static bool IsValidEdge(BootstrapRegistryDependencyEdge[] edges, int edgeIndex)
+        private static bool TryMarkEdgePair(int sourceIndex, int dependencyIndex, int nodeCount)
         {
-            BootstrapRegistryDependencyEdge edge = edges[edgeIndex];
-            if (edge.Source == edge.Dependency)
+            if (sourceIndex == dependencyIndex)
                 return false;
 
-            for (int previousIndex = 0; previousIndex < edgeIndex; previousIndex++)
-            {
-                BootstrapRegistryDependencyEdge previous = edges[previousIndex];
-                if (previous.Source == edge.Source && previous.Dependency == edge.Dependency)
-                    return false;
-            }
+            int edgePairIndex = (sourceIndex * nodeCount) + dependencyIndex;
+            int wordIndex = edgePairIndex >> 6;
+            long bit = 1L << (edgePairIndex & 63);
+            long word = _edgePairSeenScratch[wordIndex];
+            if ((word & bit) != 0L)
+                return false;
 
+            _edgePairSeenScratch[wordIndex] = word | bit;
             return true;
         }
 

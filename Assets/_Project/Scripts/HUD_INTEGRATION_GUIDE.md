@@ -1,100 +1,100 @@
 # HUD Integration Guide — v4.0 ENTERPRISE
 
-## Обзор
+## Obzor
 
-HUD система состоит из двух компонентов:
-- **HectonSuitHUD** (v3.0) — базовый HUD с life support, environment, module status
-- **HectonSuitHUDExtensions** (v4.0 ENTERPRISE) — расширения: flashlight, PDA, notifications
+HUD sistema sostoit iz dvuh komponentov:
+- **HectonSuitHUD** (v3.0) — bazovyy HUD s life support, environment, module status
+- **HectonSuitHUDExtensions** (v4.0 ENTERPRISE) — rasshireniya: flashlight, PDA, notifications
 
-## Быстрая установка
+## Bystraya ustanovka
 
 ### 1. HUD Camera Setup
 
-На GameObject с HUD Camera должны быть оба компонента:
+Na GameObject s HUD Camera dolzhny byt oba komponenta:
 
 ```
 HUD Camera (GameObject)
 ├── Camera
 ├── HectonSuitHUD (v3.0)
-└── HectonSuitHUDExtensions (v4.0) ← НОВЫЙ
+└── HectonSuitHUDExtensions (v4.0) ← NOVYY
 ```
 
 ### 2. HectonSuitHUDExtensions — Inspector Setup
 
 **References:**
-- `hudCamera` → назначить Camera компонент
-- `hudFont` → назначить TMP_FontAsset (тот же что в HectonSuitHUD)
-- `flashlight` → назначить PlayerFlashlight на Player root (или оставить null для auto-resolve)
+- `hudCamera` → naznachit Camera komponent
+- `hudFont` → naznachit TMP_FontAsset (tot zhe chto v HectonSuitHUD)
+- `flashlight` → naznachit PlayerFlashlight na Player root (ili ostavit null dlya auto-resolve)
 
-**Colors:** (опционально, есть дефолты)
-- `normalColor` — основной цвет HUD (cyan)
-- `warningColor` — предупреждения (yellow)
-- `criticalColor` — критические события (orange/red)
-- `flashlightOnColor` — цвет иконки фонаря когда включен
-- `pdaActiveColor` — цвет иконки PDA когда открыт
+**Colors:** (optsionalno, est defolty)
+- `normalColor` — osnovnoy tsvet HUD (cyan)
+- `warningColor` — preduprezhdeniya (yellow)
+- `criticalColor` — kriticheskie sobytiya (orange/red)
+- `flashlightOnColor` — tsvet ikonki fonarya kogda vklyuchen
+- `pdaActiveColor` — tsvet ikonki PDA kogda otkryt
 
-**Layout:** (опционально)
-- `lineThickness`, `fontSize`, etc. — настройки отрисовки
+**Layout:** (optsionalno)
+- `lineThickness`, `fontSize`, etc. — nastroyki otrisovki
 
 **Notifications:**
-- `notificationDuration` — длительность уведомления (default: 3s)
-- `notificationFadeSpeed` — скорость fade in/out (default: 4)
+- `notificationDuration` — dlitelnost uvedomleniya (default: 3s)
+- `notificationFadeSpeed` — skorost fade in/out (default: 4)
 
 ### 3. HectonSurvivalSystem — Upgrade to v5.0
 
-Убедитесь что `HectonSurvivalSystem` на Player root имеет:
-- `EnergyPercent` property (добавлено в v5.0)
-- `DrainEnergy(int)` method (добавлено в v5.0)
+Ubedites chto `HectonSurvivalSystem` na Player root imeet:
+- `EnergyPercent` property (dobavleno v v5.0)
+- `DrainEnergy(int)` method (dobavleno v v5.0)
 
-Эти методы используются PlayerFlashlight и PlayerPDA для battery drain.
+Eti metody ispolzuyutsya PlayerFlashlight i PlayerPDA dlya battery drain.
 
-## Функциональность
+## Funktsionalnost
 
 ### Flashlight Status Indicator
 
-**Расположение:** Equipment Panel (top-right)
+**Raspolozhenie:** Equipment Panel (top-right)
 
-**Отображает:**
-- Иконка: ◉ (on) / ○ (off)
-- Heat bar (когда включен и heat > 0)
-- Overheat warning (красный текст)
-- Flickering animation (при low battery или high heat)
+**Otobrazhaet:**
+- Ikonka: ◉ (on) / ○ (off)
+- Heat bar (kogda vklyuchen i heat > 0)
+- Overheat warning (krasnyy tekst)
+- Flickering animation (pri low battery ili high heat)
 
-**События:**
-- `IFlashlightEventListener.OnFlashlightEvent(FlashlightEventType.Toggled)` → обновляет иконку
-- `IFlashlightEventListener.OnFlashlightEvent(FlashlightEventType.Overheat)` → показывает notification + warning
-- `IFlashlightEventListener.OnFlashlightEvent(FlashlightEventType.FlickerStart)` → анимация мерцания
+**Sobytiya:**
+- `IFlashlightEventListener.OnFlashlightEvent(FlashlightEventType.Toggled)` → obnovlyaet ikonku
+- `IFlashlightEventListener.OnFlashlightEvent(FlashlightEventType.Overheat)` → pokazyvaet notification + warning
+- `IFlashlightEventListener.OnFlashlightEvent(FlashlightEventType.FlickerStart)` → animatsiya mertsaniya
 - `IFlashlightEventListener.OnFlashlightEvent(FlashlightEventType.BatteryDepleted)` → notification
 
 ### PDA Status Indicator
 
-**Расположение:** Equipment Panel (top-right, под flashlight)
+**Raspolozhenie:** Equipment Panel (top-right, pod flashlight)
 
-**Отображает:**
-- Иконка: ▣ (active) / □ (inactive)
+**Otobrazhaet:**
+- Ikonka: ▣ (active) / □ (inactive)
 - Label: "PDA [ACTIVE]" / "PDA"
 
-**События:**
-- `IPDAEventListener.OnPDAEvent(PDAEventType.Opened)` → активирует индикатор
-- `IPDAEventListener.OnPDAEvent(PDAEventType.Closed)` → деактивирует индикатор
-- `IPDAEventListener.OnPDAEvent(PDAEventType.LowBatteryShutdown)` → показывает notification
+**Sobytiya:**
+- `IPDAEventListener.OnPDAEvent(PDAEventType.Opened)` → aktiviruet indikator
+- `IPDAEventListener.OnPDAEvent(PDAEventType.Closed)` → deaktiviruet indikator
+- `IPDAEventListener.OnPDAEvent(PDAEventType.LowBatteryShutdown)` → pokazyvaet notification
 
 ### Notification System
 
-**Расположение:** Top-center (под временем)
+**Raspolozhenie:** Top-center (pod vremenem)
 
-**Типы уведомлений:**
+**Tipy uvedomleniy:**
 - `FLASHLIGHT OVERHEAT` (critical, red)
 - `FLASHLIGHT LOW BATTERY` (warning, yellow)
 - `PDA LOW BATTERY` (warning, yellow)
 - `BATTERY DEPLETED` (critical, red)
 
-**Поведение:**
+**Povedenie:**
 - Fade in: 0.3s
 - Full opacity: duration - 0.8s
 - Fade out: 0.5s
-- Max 5 notifications одновременно
-- Duplicate notifications обновляют duration (не создают новые)
+- Max 5 notifications odnovremenno
+- Duplicate notifications obnovlyayut duration (ne sozdayut novye)
 
 ## Zero GC Design
 
@@ -111,27 +111,27 @@ HUD Camera (GameObject)
 ## Diagnostics
 
 **Inspector fields (read-only):**
-- `_debugFlashlightOn` — текущее состояние фонаря
-- `_debugFlashlightHeat` — уровень нагрева (0-1)
-- `_debugPDAOpen` — PDA открыт/закрыт
-- `_debugNotificationCount` — количество активных уведомлений
+- `_debugFlashlightOn` — tekuschee sostoyanie fonarya
+- `_debugFlashlightHeat` — uroven nagreva (0-1)
+- `_debugPDAOpen` — PDA otkryt/zakryt
+- `_debugNotificationCount` — kolichestvo aktivnyh uvedomleniy
 
 ## Troubleshooting
 
-**Проблема:** Notifications не появляются
-- Проверьте что `hudCamera` назначен
-- Проверьте что `hudFont` назначен
-- Проверьте что flashlight listener зарегистрирован через `FlashlightEvents.Register`, а PDAEvents вызываются
+**Problema:** Notifications ne poyavlyayutsya
+- Proverte chto `hudCamera` naznachen
+- Proverte chto `hudFont` naznachen
+- Proverte chto flashlight listener zaregistrirovan cherez `FlashlightEvents.Register`, a PDAEvents vyzyvayutsya
 
-**Проблема:** Flashlight indicator не обновляется
-- Проверьте что `flashlight` назначен (или auto-resolve работает)
-- Проверьте что PlayerFlashlight.IsOn property доступен
-- Проверьте что `FlashlightEventType.Toggled` доходит до `IFlashlightEventListener.OnFlashlightEvent`
+**Problema:** Flashlight indicator ne obnovlyaetsya
+- Proverte chto `flashlight` naznachen (ili auto-resolve rabotaet)
+- Proverte chto PlayerFlashlight.IsOn property dostupen
+- Proverte chto `FlashlightEventType.Toggled` dohodit do `IFlashlightEventListener.OnFlashlightEvent`
 
-**Проблема:** Battery drain не работает
-- Проверьте что HectonSurvivalSystem.DrainEnergy(int) метод существует
-- Проверьте что survivalSystem назначен в PlayerFlashlight/PlayerPDA
-- Проверьте что enableBatteryDrain = true в инспекторе
+**Problema:** Battery drain ne rabotaet
+- Proverte chto HectonSurvivalSystem.DrainEnergy(int) metod suschestvuet
+- Proverte chto survivalSystem naznachen v PlayerFlashlight/PlayerPDA
+- Proverte chto enableBatteryDrain = true v inspektore
 
 ## Performance
 
@@ -140,7 +140,7 @@ HUD Camera (GameObject)
 **Memory:** ~2KB (pre-allocated notification queue)
 **GC:** 0 allocations per frame
 
-## Совместимость
+## Sovmestimost
 
 - Unity 2021.3+
 - URP (Universal Render Pipeline)

@@ -223,6 +223,26 @@ namespace Hecton8.World
                    voxelCellSize.z > 0f;
         }
 
+        internal bool TryGetPublishedGpuSdfPayload(
+            out Texture3D sdfTexture,
+            out Matrix4x4 worldToLocal,
+            out Vector4 halfExtentsAndRange)
+        {
+            sdfTexture = _voxelDensityTexture;
+            worldToLocal = _publishedWorldToLocal;
+            halfExtentsAndRange = new Vector4(
+                _publishedHalfExtents.x,
+                _publishedHalfExtents.y,
+                _publishedHalfExtents.z,
+                _publishedSdfRange);
+            return _hasValidPublishedVolume &&
+                   sdfTexture != null &&
+                   halfExtentsAndRange.x > 0f &&
+                   halfExtentsAndRange.y > 0f &&
+                   halfExtentsAndRange.z > 0f &&
+                   halfExtentsAndRange.w > 0f;
+        }
+
         private void TryRegister()
         {
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -503,7 +523,7 @@ namespace Hecton8.World
                     : 1f;
                 float signedDistance01 = occupied ? -unsignedDistance01 : unsignedDistance01;
                 float encoded = Mathf.Clamp01(signedDistance01 * 0.5f + 0.5f);
-                _sdfVolume[voxelIndex] = (byte)Mathf.RoundToInt(encoded * 255f);
+                _sdfVolume[voxelIndex] = (byte)(encoded * 255f + 0.5f);
             }
         }
 

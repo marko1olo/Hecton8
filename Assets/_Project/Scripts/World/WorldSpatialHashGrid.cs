@@ -376,6 +376,11 @@ namespace Hecton8.World
             return Register(scannable, scannable != null ? scannable.transform : null, SpatialTargetKind.Scannable, FieldTargetRole.Generic, 0);
         }
 
+        public static int RegisterScannable(ScannableFragment fragment)
+        {
+            return Register(fragment, fragment != null ? fragment.transform : null, SpatialTargetKind.Scannable, FieldTargetRole.Generic, 0);
+        }
+
         public static int RegisterModule(ModuleMarker marker)
         {
             FieldTargetRole role = marker != null ? marker.SpatialRole : FieldTargetRole.Generic;

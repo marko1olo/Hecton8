@@ -1,12 +1,12 @@
 // ============================================================================
 // HECTON-8 — ModuleCatalog.cs
-// Каталог всех строительных модулей.
+// Katalog vseh stroitelnyh moduley.
 //
-// ScriptableObject — заполняется в редакторе.
-// Используется ConstructionManager при загрузке:
+// ScriptableObject — zapolnyaetsya v redaktore.
+// Ispolzuetsya ConstructionManager pri zagruzke:
 //   saved prefabId → catalog.FindPrefabById() → GameObject prefab
 //
-// Аналогичен ItemCatalog, но для BuildableData / модулей базы.
+// Analogichen ItemCatalog, no dlya BuildableData / moduley bazy.
 // ============================================================================
 
 using System;
@@ -27,15 +27,15 @@ namespace Hecton8.Construction
         // ══════════════════════════════════════════════════════════
 
         [Header("All buildable modules in the project")]
-        [Tooltip("Перетащи сюда все BuildableData ассеты")]
+        [Tooltip("Peretaschi syuda vse BuildableData assety")]
         [SerializeField] private List<BuildableData> allModules = new List<BuildableData>();
 
         // ══════════════════════════════════════════════════════════
-        //  LOOKUP — O(1) поиск
+        //  LOOKUP — O(1) poisk
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// stable ID / legacy asset name → BuildableData. Строится один раз в OnEnable.
+        /// stable ID / legacy asset name → BuildableData. Stroitsya odin raz v OnEnable.
         /// </summary>
         private Dictionary<string, BuildableData> _lookup;
         private Dictionary<int, BuildableData> _hashLookup;
@@ -72,11 +72,11 @@ namespace Hecton8.Construction
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Ищет BuildableData по строковому ID.
-        /// Поддерживает authored stable ID и legacy asset name.
+        /// Ischet BuildableData po strokovomu ID.
+        /// Podderzhivaet authored stable ID i legacy asset name.
         /// </summary>
-        /// <param name="prefabId">ID модуля из сохранения.</param>
-        /// <returns>BuildableData или null.</returns>
+        /// <param name="prefabId">ID modulya iz sohraneniya.</param>
+        /// <returns>BuildableData ili null.</returns>
         public BuildableData FindDataById(string prefabId)
         {
             if (string.IsNullOrEmpty(prefabId)) return null;
@@ -106,11 +106,11 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
-        /// Ищет finalPrefab по строковому ID.
-        /// Удобный shortcut для ConstructionManager.LoadFromSaveData.
+        /// Ischet finalPrefab po strokovomu ID.
+        /// Udobnyy shortcut dlya ConstructionManager.LoadFromSaveData.
         /// </summary>
-        /// <param name="prefabId">ID модуля из сохранения.</param>
-        /// <returns>GameObject finalPrefab или null.</returns>
+        /// <param name="prefabId">ID modulya iz sohraneniya.</param>
+        /// <returns>GameObject finalPrefab ili null.</returns>
         public GameObject FindPrefabById(string prefabId)
         {
             BuildableData data = FindDataById(prefabId);
@@ -129,7 +129,7 @@ namespace Hecton8.Construction
             return result;
         }
 
-        /// <summary>Количество зарегистрированных модулей.</summary>
+        /// <summary>Kolichestvo zaregistrirovannyh moduley.</summary>
         public int Count
         {
             get
@@ -160,7 +160,7 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
-        /// Read-only доступ к массиву модулей для runtime-циклов и UI.
+        /// Read-only dostup k massivu moduley dlya runtime-tsiklov i UI.
         /// </summary>
         public IReadOnlyList<BuildableData> Modules
         {
@@ -252,7 +252,7 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
-        /// Возвращает модуль по индексу или null, если индекс некорректен.
+        /// Vozvraschaet modul po indeksu ili null, esli indeks nekorrekten.
         /// </summary>
         public BuildableData GetAt(int index)
         {
@@ -296,7 +296,7 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
-        /// Возвращает индекс BuildableData в каталоге или -1, если его нет.
+        /// Vozvraschaet indeks BuildableData v kataloge ili -1, esli ego net.
         /// </summary>
         public int IndexOf(BuildableData data)
         {

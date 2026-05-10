@@ -744,7 +744,7 @@ Star "AE Aqr A/HIP 101991"
 
 //RS Oph;spanish wiki and the article:
 //Spectroscopic Orbits and spectral variations of RS OPHIUCHI
-//Authors: E. Brandi, C. Quiroga, O.E. Ferrer, J. Miko lajewska, L.G.Garcнa
+//Authors: E. Brandi, C. Quiroga, O.E. Ferrer, J. Miko lajewska, L.G.Garcna
 //nova?
 
 Star "RS Oph A/HD 162214"

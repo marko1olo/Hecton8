@@ -212,7 +212,7 @@ namespace Hecton8.AI
                 localExtents.x * math.abs(lossyScale.x),
                 localExtents.y * math.abs(lossyScale.y),
                 localExtents.z * math.abs(lossyScale.z));
-            float ownerRadius = ApproximateMagnitude(scaledExtents) + math.max(0.1f, ownerSpherePadding);
+            float ownerRadius = ResolveOwnerSphereRadiusCheat(scaledExtents) + math.max(0.1f, ownerSpherePadding);
             Vector3 ownerCenterWS = ownerTransform.TransformPoint(_localBounds.center);
             Shader.SetGlobalVector(WoundOwnerSphereId, new Vector4(ownerCenterWS.x, ownerCenterWS.y, ownerCenterWS.z, ownerRadius));
         }
@@ -225,15 +225,10 @@ namespace Hecton8.AI
             return _cachedTransform;
         }
 
-        private static float ApproximateMagnitude(Vector3 value)
+        private static float ResolveOwnerSphereRadiusCheat(Vector3 value)
         {
-            float ax = math.abs(value.x);
-            float ay = math.abs(value.y);
-            float az = math.abs(value.z);
-            float max = math.max(ax, math.max(ay, az));
-            float min = math.min(ax, math.min(ay, az));
-            float mid = ax + ay + az - max - min;
-            return max + (mid * 0.375f) + (min * 0.125f);
+            float maxAxis = math.max(math.abs(value.x), math.max(math.abs(value.y), math.abs(value.z)));
+            return maxAxis * 1.75f;
         }
 
         private static void ClearShaderGlobals()

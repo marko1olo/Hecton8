@@ -9,9 +9,9 @@ Verification: `PENDING VERIFICATION`
 
 ## Source Files
 
-- Coral raw: `работа с кораллами.md`
+- Coral raw: `rabota s korallami.md`
 - Coral optimized: `Coralli.md`
-- Seaweed raw: `работа с водорослями.md`
+- Seaweed raw: `rabota s vodoroslyami.md`
 - Seaweed optimized: `Vodorosli.md`
 
 Detailed ledgers:

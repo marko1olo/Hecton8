@@ -1,82 +1,82 @@
-Вот твой финальный архитектурный манифест мира. Копируй это и вставляй в свой GDD вместо старого раздела "Terrain Structure: Двухслойная геологическая модель".
+Vot tvoy finalnyy arhitekturnyy manifest mira. Kopiruy eto i vstavlyay v svoy GDD vmesto starogo razdela "Terrain Structure: Dvuhsloynaya geologicheskaya model".
 
-Я вычистил весь старый бред про "равномерные горы" и "вертикальные стены". Теперь это документ Enterprise-уровня. Здесь прописана геология, которая не просто красиво звучит, но и идеально ложится на технические ограничения Unity и твоей MX350.
+Ya vychistil ves staryy bred pro "ravnomernye gory" i "vertikalnye steny". Teper eto dokument Enterprise-urovnya. Zdes propisana geologiya, kotoraya ne prosto krasivo zvuchit, no i idealno lozhitsya na tehnicheskie ogranicheniya Unity i tvoey MX350.
 
-Заруби на носу: любое отклонение от этого текста при сборке карты — это расстрел проекта.
+Zarubi na nosu: lyuboe otklonenie ot etogo teksta pri sborke karty — eto rasstrel proekta.
 
-БЛОК 1: TERRAIN STRUCTURE & WORLD ARCHITECTURE (v3.0 - Asymmetric Divide)
-1.1. ГЛОБАЛЬНАЯ КОНЦЕПЦИЯ И АСИММЕТРИЯ
+BLOK 1: TERRAIN STRUCTURE & WORLD ARCHITECTURE (v3.0 - Asymmetric Divide)
+1.1. GLOBALNAYa KONTsEPTsIYa I ASIMMETRIYa
 
-Мир Submerge — это не классическая "подводная гора" и не скучная труба. Это Асимметричный Континентальный Разлом (Asymmetric Continental Divide).
-Ключевое правило лора, диктующее геометрию: Затоплению всего 50 лет. Великий Прилив произошел стремительно (месяцы/годы). Это значит, что водная эрозия на глубинах от 0 до 1000 метров отсутствует. Игрок исследует идеально сохранившуюся, изрезанную сушу, на которую просто вылили 2.5 километра воды.
+Mir Submerge — eto ne klassicheskaya "podvodnaya gora" i ne skuchnaya truba. Eto Asimmetrichnyy Kontinentalnyy Razlom (Asymmetric Continental Divide).
+Klyuchevoe pravilo lora, diktuyuschee geometriyu: Zatopleniyu vsego 50 let. Velikiy Priliv proizoshel stremitelno (mesyatsy/gody). Eto znachit, chto vodnaya eroziya na glubinah ot 0 do 1000 metrov otsutstvuet. Igrok issleduet idealno sohranivshuyusya, izrezannuyu sushu, na kotoruyu prosto vylili 2.5 kilometra vody.
 
-Макро-география карты (15x15 км):
+Makro-geografiya karty (15x15 km):
 
-Ось Север-Юг (The Sinking Curve): Центральная горная гряда. В "Центре" она плавно пробивает поверхность океана, образуя скалистые острова. Чем дальше на Север или Юг, тем сильнее вся гряда уходит под воду, плавно погружаясь в темноту.
+Os Sever-Yug (The Sinking Curve): Tsentralnaya gornaya gryada. V "Tsentre" ona plavno probivaet poverhnost okeana, obrazuya skalistye ostrova. Chem dalshe na Sever ili Yug, tem silnee vsya gryada uhodit pod vodu, plavno pogruzhayas v temnotu.
 
-Западный Вектор (Континентальный Шельф): Уникальное, хаотичное, долгое путешествие вниз. Пологий, но экстремально изрезанный спуск. Это бывшая обитаемая суша. Здесь чередуются широкие плато, каньоны и русла высохших рек.
+Zapadnyy Vektor (Kontinentalnyy Shelf): Unikalnoe, haotichnoe, dolgoe puteshestvie vniz. Pologiy, no ekstremalno izrezannyy spusk. Eto byvshaya obitaemaya susha. Zdes chereduyutsya shirokie plato, kanony i rusla vysohshih rek.
 
-Восточный Вектор (Осыпной Сброс): Более быстрое падение в Бездну. Никаких плоских отвесных стен (как в Subnautica). Это колоссальный геологический оползень — хаотичное нагромождение гигантских каменных блоков, уходящее во тьму на 5000 метров.
+Vostochnyy Vektor (Osypnoy Sbros): Bolee bystroe padenie v Bezdnu. Nikakih ploskih otvesnyh sten (kak v Subnautica). Eto kolossalnyy geologicheskiy opolzen — haotichnoe nagromozhdenie gigantskih kamennyh blokov, uhodyaschee vo tmu na 5000 metrov.
 
-Длина и ширина активной карты 15*15 км
-"горная грда" где спавн 0 0 0, находится смещенной к востоку. Условно - гряда разделяет 15 км на - 12 км на запад, 3 км на восток. соответственно уклон усредненный на западе около порядка 20 градусов, на востоке порядка 60 градусов.
-от бездны до верхушек островов - 5200 метров. соответственно средний уклон на западе около порядка 20 градусов, на востоке порядка 60 градусов.
+Dlina i shirina aktivnoy karty 15*15 km
+"gornaya grda" gde spavn 0 0 0, nahoditsya smeschennoy k vostoku. Uslovno - gryada razdelyaet 15 km na - 12 km na zapad, 3 km na vostok. sootvetstvenno uklon usrednennyy na zapade okolo poryadka 20 gradusov, na vostoke poryadka 60 gradusov.
+ot bezdny do verhushek ostrovov - 5200 metrov. sootvetstvenno sredniy uklon na zapade okolo poryadka 20 gradusov, na vostoke poryadka 60 gradusov.
 
-1.2. СЛОЙ 1: ЗАТОПЛЕННАЯ СУША (0м – -1000м)
+1.2. SLOY 1: ZATOPLENNAYa SUShA (0m – -1000m)
 
-Это основная геймплейная зона начала и середины игры, бывший большой остров. Геология полностью земного (сухопутного) типа.
+Eto osnovnaya geympleynaya zona nachala i serediny igry, byvshiy bolshoy ostrov. Geologiya polnostyu zemnogo (suhoputnogo) tipa.
 
-Зона 1.1: Острова и Мелководье (+200м до -50м)
+Zona 1.1: Ostrova i Melkovode (+200m do -50m)
 
-Геология: Вершины северного хребта. Единственная суша в игре.
+Geologiya: Vershiny severnogo hrebta. Edinstvennaya susha v igre.
 
-Геймплей: Зона стартового спавна. Капсула игрока гарантированно падает в воду в радиусе 100 метров от одного из этих островов (реализуется через Global Pre-pass карты при долгой загрузке игры).
+Geympley: Zona startovogo spavna. Kapsula igroka garantirovanno padaet v vodu v radiuse 100 metrov ot odnogo iz etih ostrovov (realizuetsya cherez Global Pre-pass karty pri dolgoy zagruzke igry).
 
-Зона 1.2: "Золотая Зона" (0м до -400м - Западный Склон)
-Солнечный свет пробивает толщу воды максимум до 300-400 метров. Ниже начинается сумеречная зона. Эта область — концентрат визуального контраста.
+Zona 1.2: "Zolotaya Zona" (0m do -400m - Zapadnyy Sklon)
+Solnechnyy svet probivaet tolschu vody maksimum do 300-400 metrov. Nizhe nachinaetsya sumerechnaya zona. Eta oblast — kontsentrat vizualnogo kontrasta.
 
-Хаотичный Рельеф: Здесь нет единого паттерна. Жесткие, глубокие "Альпийские фьорды" хаотично чередуются с широкими, пологими полками (аналог коралловых рифов).
+Haotichnyy Relef: Zdes net edinogo patterna. Zhestkie, glubokie "Alpiyskie fordy" haotichno chereduyutsya s shirokimi, pologimi polkami (analog korallovyh rifov).
 
-Биота (50 лет мутаций): Из-за обилия света зона агрессивно заросла кремниевой органикой. Базы и скалы покрыты плотным слоем биомассы. Технически это реализуется гибридно: умные URP-шейдеры красят поверхности баз (Emission/Color Overlay) с нулевой нагрузкой на CPU, а GPU Instancer точечно раскидывает 3D-модели крупных наростов и щупалец по углам крыш, чтобы не убить 2GB VRAM.
+Biota (50 let mutatsiy): Iz-za obiliya sveta zona agressivno zarosla kremnievoy organikoy. Bazy i skaly pokryty plotnym sloem biomassy. Tehnicheski eto realizuetsya gibridno: umnye URP-sheydery krasyat poverhnosti baz (Emission/Color Overlay) s nulevoy nagruzkoy na CPU, a GPU Instancer tochechno raskidyvaet 3D-modeli krupnyh narostov i schupalets po uglam krysh, chtoby ne ubit 2GB VRAM.
 
-Зона 1.3: Древние Речные Русла (Западный Склон)
-За миллионы лет до потопа с центрального хребта на Запад стекали гигантские реки.
+Zona 1.3: Drevnie Rechnye Rusla (Zapadnyy Sklon)
+Za milliony let do potopa s tsentralnogo hrebta na Zapad stekali gigantskie reki.
 
-Геометрия: Широкие (100-200м) и глубокие (50-100м) траншеи, извивающиеся по склону с Востока на Запад.
+Geometriya: Shirokie (100-200m) i glubokie (50-100m) transhei, izvivayuschiesya po sklonu s Vostoka na Zapad.
 
-Геймплей: Это естественные, защищенные "хайвеи" для батискафа. Спуск по ним безопаснее, но на дне русел скапливается тяжелый мусор и хищники-засадники. Внутри этих каньонов — сумерки даже на малых глубинах из-за нависающих стен.
+Geympley: Eto estestvennye, zaschischennye "hayvei" dlya batiskafa. Spusk po nim bezopasnee, no na dne rusel skaplivaetsya tyazhelyy musor i hischniki-zasadniki. Vnutri etih kanonov — sumerki dazhe na malyh glubinah iz-za navisayuschih sten.
 
-Зона 1.4: Руины "Посева" и Сплайновые Дороги
-ИИ "Атласа" строил колонию на суше до потопа.
+Zona 1.4: Ruiny "Poseva" i Splaynovye Dorogi
+II "Atlasa" stroil koloniyu na sushe do potopa.
 
-Архитектура: Базы (размером с 3-9 этажные дома) разбросаны по естественному, бугристому рельефу. Никаких идеальных бульдозерных площадок. Модули встроены в скалы, стоят на сваях или кривых плато.
+Arhitektura: Bazy (razmerom s 3-9 etazhnye doma) razbrosany po estestvennomu, bugristomu relefu. Nikakih idealnyh buldozernyh ploschadok. Moduli vstroeny v skaly, stoyat na svayah ili krivyh plato.
 
-Локальные Дороги: Базы внутри одного чанка (района) соединены разрушенными дорогами. Технически это физическое проминание террейна (Spline Flattening) и спавн асфальтового мусора поверх. Дороги тянутся только локально, не пересекая всю карту (ради экономии ОЗУ).
+Lokalnye Dorogi: Bazy vnutri odnogo chanka (rayona) soedineny razrushennymi dorogami. Tehnicheski eto fizicheskoe prominanie terreyna (Spline Flattening) i spavn asfaltovogo musora poverh. Dorogi tyanutsya tolko lokalno, ne peresekaya vsyu kartu (radi ekonomii OZU).
 
-1.3. ГРАНИЦА: ВЕЛИКИЙ ОПОЛЗЕНЬ (-1000м до -1200м)
+1.3. GRANITsA: VELIKIY OPOLZEN (-1000m do -1200m)
 
-Геология: Шов мира. Бывший берег древнего океана, который обрушился под собственным весом. Спуск здесь  крутой, но не вертикальный. Это "лестница" из колоссальных каменных глыб, трещин и провалов.
+Geologiya: Shov mira. Byvshiy bereg drevnego okeana, kotoryy obrushilsya pod sobstvennym vesom. Spusk zdes  krutoy, no ne vertikalnyy. Eto "lestnitsa" iz kolossalnyh kamennyh glyb, treschin i provalov.
 
-Текстурирование (MX350 Rule): Чтобы избежать растяжения текстур на почти вертикальных уступах оползня, мы КАТЕГОРИЧЕСКИ запрещаем тотальный Triplanar Mapping (убивает шейдеры). Вместо этого MapMagic генерирует на крутых склонах (Slope > 60°) массивные 3D-модели скал (Rock Prefabs). Мы нагружаем дешевую геометрию, спасая дорогие пиксельные конвейеры.
+Teksturirovanie (MX350 Rule): Chtoby izbezhat rastyazheniya tekstur na pochti vertikalnyh ustupah opolznya, my KATEGORIChESKI zapreschaem totalnyy Triplanar Mapping (ubivaet sheydery). Vmesto etogo MapMagic generiruet na krutyh sklonah (Slope > 60°) massivnye 3D-modeli skal (Rock Prefabs). My nagruzhaem deshevuyu geometriyu, spasaya dorogie pikselnye konveyery.
 
-1.4. СЛОЙ 2: СТАРОЕ МОРЕ (-1200м до -7000м)
-Дно, существовавшее до Великого Прилива. Это не затопленная суша, а древняя морская экосистема с историей в миллионы лет. Толстые слои осадков, сглаженный рельеф и чуждая, энергоэффективная жизнь.
-Зона 2.1: Верхняя бездна (-1200м до -2500м)
-Геология: Бывший континентальный шельф старого моря. Толстый слой органического ила. Рельеф сглаженный, "тестообразный", без острых граней. Местами выступают древние погребенные рифы и подводные холмы.
-Биосфера: Устоявшаяся глубоководная кремниевая жизнь. Медленные, долгоживущие формы. Прикрепленные фильтраторы, редкая биолюминесценция. Руин колонии здесь НЕТ.
-Зона 2.2: Глубокое дно (-2500м до -4000м)
-Геология: Абиссальная равнина. Плоское, монотонное дно, сформированное осадконакоплением. Главные ориентиры — Гайоты (плосковершинные подводные вулканы) и одиночные валуны.
-Биосфера: Экстремально скудная "пустыня". Жизнь сосредоточена только вокруг редких "оазисов" (останки гигантских существ). Зона тотального одиночества и давления.
-ЗДЕСЬ НАХОДИТСЯ ГЕЙМПЛЕЙНЫЙ СМЫСЛ ИГРЫ - 
-Зона 2.3: Разломы и Термальные поля (-4000м до -5000м)
-Геология: Рифтовые зоны, разорванные приливным стрессом газового гиганта. Активная тектоника: грабены, трещины, гидротермальные источники ("чёрные курильщики"), подушечные лавы.
-Биосфера (Кульминация глубины): Парадокс Бездны — самое глубокое и самое живое место. Богатейшая хемосинтетическая экосистема (бактериальные маты, термальные черви, крупные хищники). Освещается инфракрасным и химическим свечением раскаленных пород. Максимальная опасность среды (температура, токсины, давление) и ценнейшие ресурсы.
-1.5. УНИКАЛЬНЫЕ ТЕХНИЧЕСКИЕ ИНТЕГРАЦИИ
-Граница Игрового Мира (The Falloff Void):
-Механика Ограничения: Карта не имеет невидимых стен, но мы обязаны беречь CPU. Как только игрок отплывает на 7.5 км от центра (выходит за пределы зоны 15x15 км), срабатывает глобальная математическая маска затухания.
-Исполнение: Любой рельеф (горы, каньоны) плавно "сплющивается" в идеально плоскую, бесконечную черную пустыню на максимальной глубине (6-7 км). Спавн любых объектов (камней, фауны, руин) аппаратно умножается на 0. Игрок может плыть в пустоту, пока не умрет от нехватки энергии или Левиафана, но процессор не тратит ни такта на расчет этого пространства.
-Интеграция Воксельных Пещер (The Wound):
-Реализация: Глобальный террейн — это 2.5D Heightmap. Чтобы сделать настоящие пещеры, используется гибридный подход. MapMagic создает в рельефе глубокую "воронку" или каньон. В центр воронки асинхронно спавнится полноценный Воксельный Меш (Voxel Cave), который физически пристыковывается к краям террейна. Это обеспечивает органичный переход без просадок FPS.
-Рассольные Озера (Brine Pools):
-Механика: Тяжелая, токсичная жидкость, скапливающаяся во впадинах Старого Моря.
-Оптимизация: Это исключительно декоративный Fog Plane с триггером урона (Acid/Pressure Damage) и пост-процессингом. Батискаф не испытывает "двойной плавучести" при погружении в рассол, чтобы избежать краша и перегрузки физического движка (PhysX).
+1.4. SLOY 2: STAROE MORE (-1200m do -7000m)
+Dno, suschestvovavshee do Velikogo Priliva. Eto ne zatoplennaya susha, a drevnyaya morskaya ekosistema s istoriey v milliony let. Tolstye sloi osadkov, sglazhennyy relef i chuzhdaya, energoeffektivnaya zhizn.
+Zona 2.1: Verhnyaya bezdna (-1200m do -2500m)
+Geologiya: Byvshiy kontinentalnyy shelf starogo morya. Tolstyy sloy organicheskogo ila. Relef sglazhennyy, "testoobraznyy", bez ostryh graney. Mestami vystupayut drevnie pogrebennye rify i podvodnye holmy.
+Biosfera: Ustoyavshayasya glubokovodnaya kremnievaya zhizn. Medlennye, dolgozhivuschie formy. Prikreplennye filtratory, redkaya biolyuminestsentsiya. Ruin kolonii zdes NET.
+Zona 2.2: Glubokoe dno (-2500m do -4000m)
+Geologiya: Abissalnaya ravnina. Ploskoe, monotonnoe dno, sformirovannoe osadkonakopleniem. Glavnye orientiry — Gayoty (ploskovershinnye podvodnye vulkany) i odinochnye valuny.
+Biosfera: Ekstremalno skudnaya "pustynya". Zhizn sosredotochena tolko vokrug redkih "oazisov" (ostanki gigantskih suschestv). Zona totalnogo odinochestva i davleniya.
+ZDES NAHODITSYa GEYMPLEYNYY SMYSL IGRY - 
+Zona 2.3: Razlomy i Termalnye polya (-4000m do -5000m)
+Geologiya: Riftovye zony, razorvannye prilivnym stressom gazovogo giganta. Aktivnaya tektonika: grabeny, treschiny, gidrotermalnye istochniki ("chernye kurilschiki"), podushechnye lavy.
+Biosfera (Kulminatsiya glubiny): Paradoks Bezdny — samoe glubokoe i samoe zhivoe mesto. Bogateyshaya hemosinteticheskaya ekosistema (bakterialnye maty, termalnye chervi, krupnye hischniki). Osveschaetsya infrakrasnym i himicheskim svecheniem raskalennyh porod. Maksimalnaya opasnost sredy (temperatura, toksiny, davlenie) i tsenneyshie resursy.
+1.5. UNIKALNYE TEHNIChESKIE INTEGRATsII
+Granitsa Igrovogo Mira (The Falloff Void):
+Mehanika Ogranicheniya: Karta ne imeet nevidimyh sten, no my obyazany berech CPU. Kak tolko igrok otplyvaet na 7.5 km ot tsentra (vyhodit za predely zony 15x15 km), srabatyvaet globalnaya matematicheskaya maska zatuhaniya.
+Ispolnenie: Lyuboy relef (gory, kanony) plavno "splyuschivaetsya" v idealno ploskuyu, beskonechnuyu chernuyu pustynyu na maksimalnoy glubine (6-7 km). Spavn lyubyh obektov (kamney, fauny, ruin) apparatno umnozhaetsya na 0. Igrok mozhet plyt v pustotu, poka ne umret ot nehvatki energii ili Leviafana, no protsessor ne tratit ni takta na raschet etogo prostranstva.
+Integratsiya Vokselnyh Pescher (The Wound):
+Realizatsiya: Globalnyy terreyn — eto 2.5D Heightmap. Chtoby sdelat nastoyaschie peschery, ispolzuetsya gibridnyy podhod. MapMagic sozdaet v relefe glubokuyu "voronku" ili kanon. V tsentr voronki asinhronno spavnitsya polnotsennyy Vokselnyy Mesh (Voxel Cave), kotoryy fizicheski pristykovyvaetsya k krayam terreyna. Eto obespechivaet organichnyy perehod bez prosadok FPS.
+Rassolnye Ozera (Brine Pools):
+Mehanika: Tyazhelaya, toksichnaya zhidkost, skaplivayuschayasya vo vpadinah Starogo Morya.
+Optimizatsiya: Eto isklyuchitelno dekorativnyy Fog Plane s triggerom urona (Acid/Pressure Damage) i post-protsessingom. Batiskaf ne ispytyvaet "dvoynoy plavuchesti" pri pogruzhenii v rassol, chtoby izbezhat krasha i peregruzki fizicheskogo dvizhka (PhysX).

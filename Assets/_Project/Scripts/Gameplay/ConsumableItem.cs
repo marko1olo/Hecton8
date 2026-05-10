@@ -175,7 +175,7 @@ namespace Hecton8.Gameplay
             if (s_cachedSurvivalSystem != null)
                 return s_cachedSurvivalSystem;
 
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 return null;
 
             s_cachedSurvivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();

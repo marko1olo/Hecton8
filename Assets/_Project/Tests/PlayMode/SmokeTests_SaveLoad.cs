@@ -2,6 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using System.Collections;
+using System.Text.RegularExpressions;
 using Hecton8.SaveSystem;
 
 namespace Hecton8.Tests.PlayMode
@@ -13,6 +14,12 @@ namespace Hecton8.Tests.PlayMode
     public class SmokeTests_SaveLoad
     {
         private const string TestSlot = "test_slot_smoke";
+        private static readonly Regex SaveCompletedLog = new Regex(
+            @"^\[SaveManager\] Saved 'test_slot_smoke' \(XXH3-64: [0-9A-F]+\) in [0-9]+ms$",
+            RegexOptions.CultureInvariant);
+
+        private SaveManager _ownedSaveManager;
+        private GameObject _ownedSaveRoot;
 
         [UnityTearDown]
         public IEnumerator TearDown()
@@ -24,6 +31,13 @@ namespace Hecton8.Tests.PlayMode
                 saveManager.DeleteSave(TestSlot);
             }
 
+            if (_ownedSaveRoot != null)
+            {
+                Object.Destroy(_ownedSaveRoot);
+                _ownedSaveRoot = null;
+                _ownedSaveManager = null;
+            }
+
             yield return null;
         }
 
@@ -32,10 +46,11 @@ namespace Hecton8.Tests.PlayMode
         {
             yield return null;
 
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            SaveManager saveManager = ResolveSaveManager();
             Assert.IsNotNull(saveManager, "Hecton8.Core.GlobalRegistry.SaveRuntime should not be null");
 
             // Attempt save
+            ExpectSaveCompletedLog();
             yield return saveManager.SaveGameAsync(TestSlot);
 
             // Check result
@@ -56,10 +71,11 @@ namespace Hecton8.Tests.PlayMode
         {
             yield return null;
 
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            SaveManager saveManager = ResolveSaveManager();
             Assert.IsNotNull(saveManager, "Hecton8.Core.GlobalRegistry.SaveRuntime should not be null");
 
             // Save first
+            ExpectSaveCompletedLog();
             yield return saveManager.SaveGameAsync(TestSlot);
             Assert.IsTrue(saveManager.LastOperationSucceeded, "Save should succeed before load test");
 
@@ -84,10 +100,11 @@ namespace Hecton8.Tests.PlayMode
         {
             yield return null;
 
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            SaveManager saveManager = ResolveSaveManager();
             Assert.IsNotNull(saveManager, "Hecton8.Core.GlobalRegistry.SaveRuntime should not be null");
 
             // Save first
+            ExpectSaveCompletedLog();
             yield return saveManager.SaveGameAsync(TestSlot);
             Assert.IsTrue(saveManager.LastOperationSucceeded, "Save should succeed before metadata query");
 
@@ -106,10 +123,11 @@ namespace Hecton8.Tests.PlayMode
         {
             yield return null;
 
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            SaveManager saveManager = ResolveSaveManager();
             Assert.IsNotNull(saveManager, "Hecton8.Core.GlobalRegistry.SaveRuntime should not be null");
 
             // Save first
+            ExpectSaveCompletedLog();
             yield return saveManager.SaveGameAsync(TestSlot);
             Assert.IsTrue(saveManager.LastOperationSucceeded, "Save should succeed before delete test");
             Assert.IsTrue(saveManager.SaveExists(TestSlot), "Save should exist before delete");
@@ -128,7 +146,7 @@ namespace Hecton8.Tests.PlayMode
         {
             yield return null;
 
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            SaveManager saveManager = ResolveSaveManager();
             Assert.IsNotNull(saveManager, "Hecton8.Core.GlobalRegistry.SaveRuntime should not be null");
 
             // Ensure test slot doesn't exist
@@ -138,6 +156,7 @@ namespace Hecton8.Tests.PlayMode
             }
 
             // Attempt to load non-existent save
+            LogAssert.Expect(LogType.Warning, "[SaveManager] No primary or backup save found for 'test_slot_smoke'.");
             yield return saveManager.LoadGameAsync(TestSlot);
 
             // Should fail gracefully without crashing
@@ -145,6 +164,23 @@ namespace Hecton8.Tests.PlayMode
             Assert.IsNotEmpty(saveManager.LastOperationError, "Should have error message");
 
             LogAssert.NoUnexpectedReceived();
+        }
+
+        private SaveManager ResolveSaveManager()
+        {
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            if (saveManager != null)
+                return saveManager;
+
+            _ownedSaveRoot = new GameObject("[SmokeTests_SaveManager]");
+            _ownedSaveManager = _ownedSaveRoot.AddComponent<SaveManager>();
+            _ownedSaveManager.InitializeService();
+            return _ownedSaveManager;
+        }
+
+        private static void ExpectSaveCompletedLog()
+        {
+            LogAssert.Expect(LogType.Log, SaveCompletedLog);
         }
     }
 }

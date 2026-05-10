@@ -127,9 +127,9 @@ public static class HectonMeshSaver
         Mesh meshCopy = Object.Instantiate(sourceMesh);
         meshCopy.name = newMeshName;
 
-        // Дополнительная страховка: гарантируем отвязку данных.
-        // В большинстве случаев Instantiate уже достаточно,
-        // но этот вызов полезен для редакторского пайплайна.
+        // Dopolnitelnaya strahovka: garantiruem otvyazku dannyh.
+        // V bolshinstve sluchaev Instantiate uzhe dostatochno,
+        // no etot vyzov polezen dlya redaktorskogo payplayna.
         meshCopy.hideFlags = HideFlags.None;
 
         return meshCopy;

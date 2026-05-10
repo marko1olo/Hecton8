@@ -292,7 +292,6 @@ namespace Hecton8.Dev
         private bool ValidateVertexAmbientOcclusion()
         {
             NativeArray<float> density = default;
-            NativeArray<float> smoothDensity = default;
             NativeArray<float3> positions = default;
             NativeArray<float3> normals = default;
             NativeArray<float> curvature = default;
@@ -300,7 +299,6 @@ namespace Hecton8.Dev
             try
             {
                 density = new NativeArray<float>(27, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                smoothDensity = new NativeArray<float>(27, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 positions = new NativeArray<float3>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 normals = new NativeArray<float3>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 curvature = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -313,7 +311,6 @@ namespace Hecton8.Dev
                 {
                     float value = x - 1f;
                     density[index] = value;
-                    smoothDensity[index] = value;
                 }
 
                 positions[0] = new float3(1f, 1f, 1f);
@@ -325,7 +322,6 @@ namespace Hecton8.Dev
                     volumeOrigin = float3.zero,
                     voxelStep = 1f,
                     densityField = density,
-                    smoothDensityField = smoothDensity,
                     positions = positions,
                     normals = normals,
                     curvatureValues = curvature,
@@ -348,8 +344,6 @@ namespace Hecton8.Dev
             {
                 if (density.IsCreated)
                     density.Dispose();
-                if (smoothDensity.IsCreated)
-                    smoothDensity.Dispose();
                 if (positions.IsCreated)
                     positions.Dispose();
                 if (normals.IsCreated)

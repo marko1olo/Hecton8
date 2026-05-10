@@ -50,9 +50,6 @@ namespace Hecton8.Visor
             [Tooltip("Hidden fullscreen shader used for occlusion, bilateral blur, and composite.")]
             public Shader shader = null;
 
-            [Tooltip("Optional blue-noise texture used to rotate the 4-tap kernel.")]
-            public Texture2D blueNoiseTexture = null;
-
             [Tooltip("Where the SSDO composite is injected. Before transparents keeps water and visor overlays untouched.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingTransparents;
 
@@ -102,7 +99,6 @@ namespace Hecton8.Visor
                 internal Vector4 InputSize;
                 internal Vector4 OutputSize;
                 internal Vector4 AmbientDirection;
-                internal Texture2D BlueNoiseTexture;
                 internal float PassMode;
                 internal float RadiusMeters;
                 internal float Intensity;
@@ -111,7 +107,6 @@ namespace Hecton8.Visor
                 internal float BlurDepthThreshold;
                 internal float CompositeStrength;
                 internal float ProjectionScale;
-                internal float HasBlueNoiseTexture;
                 internal int SampleCount;
                 internal bool Applied;
             }
@@ -393,8 +388,6 @@ namespace Hecton8.Visor
                 float compositeStrength = math.saturate(settings.compositeStrength);
                 float safeProjectionScale = math.max(0.01f, projectionScale);
                 int sampleCount = math.clamp(settings.sampleCount, 4, 6);
-                Texture2D blueNoiseTexture = settings.blueNoiseTexture;
-                float hasBlueNoiseTexture = blueNoiseTexture != null ? 1f : 0f;
 
                 SetMaterialFloatIfChanged(material, ShaderConstants.PassModeId, passMode, ref cache.PassMode, materialDirty);
                 SetMaterialVectorIfChanged(material, ShaderConstants.InputSizeId, inputSize, ref cache.InputSize, materialDirty);
@@ -428,18 +421,6 @@ namespace Hecton8.Visor
                     ambientDirectionVector,
                     ref cache.AmbientDirection,
                     materialDirty);
-                SetMaterialFloatIfChanged(
-                    material,
-                    ShaderConstants.HasBlueNoiseTextureId,
-                    hasBlueNoiseTexture,
-                    ref cache.HasBlueNoiseTexture,
-                    materialDirty);
-                SetMaterialTextureIfChanged(
-                    material,
-                    ShaderConstants.BlueNoiseTextureId,
-                    blueNoiseTexture,
-                    ref cache.BlueNoiseTexture,
-                    materialDirty);
             }
 
             private static void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue, bool materialDirty)
@@ -469,15 +450,6 @@ namespace Hecton8.Visor
                 cachedValue = value;
             }
 
-            private static void SetMaterialTextureIfChanged(Material material, int shaderId, Texture2D value, ref Texture2D cachedValue, bool materialDirty)
-            {
-                if (!materialDirty && ReferenceEquals(cachedValue, value))
-                    return;
-
-                material.SetTexture(shaderId, value);
-                cachedValue = value;
-            }
-
             private static float Vector4DistanceSq(Vector4 a, Vector4 b)
             {
                 float x = a.x - b.x;
@@ -502,8 +474,6 @@ namespace Hecton8.Visor
             internal static readonly int CompositeStrengthId = Shader.PropertyToID("_HectonAbyssalSsdoCompositeStrength");
             internal static readonly int SampleCountId = Shader.PropertyToID("_HectonAbyssalSsdoSampleCount");
             internal static readonly int AmbientDirectionId = Shader.PropertyToID("_HectonAbyssalSsdoAmbientDirection");
-            internal static readonly int BlueNoiseTextureId = Shader.PropertyToID("_BlueNoiseTex");
-            internal static readonly int HasBlueNoiseTextureId = Shader.PropertyToID("_HectonAbyssalSsdoHasBlueNoise");
             internal static readonly int DepthTextureId = Shader.PropertyToID("_HectonAbyssalSsdoDepth");
             internal static readonly int NormalsTextureId = Shader.PropertyToID("_HectonAbyssalSsdoNormals");
             internal static readonly int SsdoTextureId = Shader.PropertyToID("_HectonAbyssalSSDOTex");

@@ -1,10 +1,10 @@
 // ============================================================================
 // HECTON-8 — NarrativeDiscoveryAutoFillEditor.cs
-// Editor утилита: автозаполнение NarrativeDiscovery из ColonistLoreRegistry.
+// Editor utilita: avtozapolnenie NarrativeDiscovery iz ColonistLoreRegistry.
 //
-// Использование:
-//   Выбрать NarrativeDiscovery в инспекторе →
-//   Нажать [Auto-Fill from Lore Registry]
+// Ispolzovanie:
+//   Vybrat NarrativeDiscovery v inspektore →
+//   Nazhat [Auto-Fill from Lore Registry]
 // ============================================================================
 
 #if UNITY_EDITOR
@@ -32,13 +32,13 @@ namespace Hecton8.Editor
 
             if (_registry == null)
             {
-                EditorGUILayout.HelpBox("Назначьте ColonistLoreRegistry для автозаполнения.", MessageType.Info);
+                EditorGUILayout.HelpBox("Naznachte ColonistLoreRegistry dlya avtozapolneniya.", MessageType.Info);
                 return;
             }
 
             NarrativeDiscovery discovery = (NarrativeDiscovery)target;
 
-            // Читаем discoveryId через SerializedProperty
+            // Chitaem discoveryId cherez SerializedProperty
             SerializedProperty idProp = serializedObject.FindProperty("discoveryId");
             if (idProp == null) return;
 
@@ -47,9 +47,9 @@ namespace Hecton8.Editor
             if (_registry.TryGetEntry(currentId, out LoreEntry entry))
             {
                 EditorGUILayout.HelpBox(
-                    $"Найдена запись: {entry.displayName}\n" +
-                    $"Тип: {entry.objectType}\n" +
-                    $"Локация: {entry.locationHint}",
+                    $"Naydena zapis: {entry.displayName}\n" +
+                    $"Tip: {entry.objectType}\n" +
+                    $"Lokatsiya: {entry.locationHint}",
                     MessageType.Info);
 
                 GUI.backgroundColor = new Color(0.4f, 0.8f, 0.5f);
@@ -62,7 +62,7 @@ namespace Hecton8.Editor
             else if (!string.IsNullOrEmpty(currentId))
             {
                 EditorGUILayout.HelpBox(
-                    $"ID '{currentId}' не найден в реестре.",
+                    $"ID '{currentId}' ne nayden v reestre.",
                     MessageType.Warning);
             }
         }
@@ -85,13 +85,13 @@ namespace Hecton8.Editor
             {
                 verbProp.stringValue = entry.objectType switch
                 {
-                    LoreObjectType.DataPad      => "Изучить КПК",
-                    LoreObjectType.AudioLog     => "Воспроизвести запись",
-                    LoreObjectType.Blueprint    => "Изучить чертёж",
-                    LoreObjectType.PersonalItem => "Осмотреть предмет",
-                    LoreObjectType.Terminal     => "Открыть терминал",
-                    LoreObjectType.Wreckage     => "Осмотреть обломки",
-                    _                           => "Изучить"
+                    LoreObjectType.DataPad      => "Izuchit KPK",
+                    LoreObjectType.AudioLog     => "Vosproizvesti zapis",
+                    LoreObjectType.Blueprint    => "Izuchit chertezh",
+                    LoreObjectType.PersonalItem => "Osmotret predmet",
+                    LoreObjectType.Terminal     => "Otkryt terminal",
+                    LoreObjectType.Wreckage     => "Osmotret oblomki",
+                    _                           => "Izuchit"
                 };
             }
 

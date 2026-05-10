@@ -53,7 +53,8 @@ namespace Hecton8.Core
     {
         FrameTimeSpike = 0,
         GCAllocExceeded = 1,
-        JobQueueBacklog = 2
+        JobQueueBacklog = 2,
+        SystemDegradation = 3
     }
 
     /// <summary>
@@ -251,6 +252,20 @@ namespace Hecton8.Core
                 ThresholdValue = thresholdCount,
                 FrameCount = frameCount,
                 EventType = (ushort)PerformanceEventType.JobQueueBacklog,
+                Reserved = 0
+            });
+        }
+
+        internal static void RaiseSystemDegradation(float frameTimeMs, float thresholdMs, int frameCount)
+        {
+            Enqueue(new PerformanceEventPayload
+            {
+                CurrentRawValue = (long)(frameTimeMs * 1000f),
+                ThresholdRawValue = (long)(thresholdMs * 1000f),
+                CurrentValue = frameTimeMs,
+                ThresholdValue = thresholdMs,
+                FrameCount = frameCount,
+                EventType = (ushort)PerformanceEventType.SystemDegradation,
                 Reserved = 0
             });
         }

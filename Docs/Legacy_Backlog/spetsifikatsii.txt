@@ -1,0 +1,122 @@
+ProximityColliderSystem.cs
+Polnostyu gotovaya k prodakshenu sistema, integrirovannaya v arhitekturu HECTON-8.
+
+Arhitekturnyy obzor
+text
+
+┌─────────────────────────────────────────────────────────────────┐
+│                    ProximityColliderSystem                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  GPU Instancer renderit 10,000 kamney (bez fiziki)              │
+│                          │                                      │
+│              ┌───────────▼───────────┐                          │
+│              │  NativeArray<float3>  │  ← pozitsii vseh kamney   │
+│              │  (persistent alloc)   │                          │
+│              └───────────┬───────────┘                          │
+│                          │                                      │
+│              ┌───────────▼───────────┐                          │
+│              │  IJobParallelFor      │  ← Burst-compiled        │
+│              │  DistanceCalcJob      │  ← worker threads        │
+│              │  (sq distance check)  │                          │
+│              └───────────┬───────────┘                          │
+│                          │                                      │
+│              ┌───────────▼───────────┐                          │
+│              │  NativeArray<byte>    │  ← rezultat:            │
+│              │  (status per point)   │    0=daleko, 1=blizko    │
+│              └───────────┬───────────┘                          │
+│                          │                                      │
+│         Main Thread (Tick):                                     │
+│              ┌───────────▼───────────┐                          │
+│              │  Diff: was far→near?  │──→ ObjectPoolManager     │
+│              │        was near→far?  │     .Spawn() / .Despawn()│
+│              └───────────────────────┘                          │
+│                                                                 │
+│  Gisterezis: Spawn @ 40m, Despawn @ 45m                        │
+│  (predotvraschaet mertsanie kollayderov na granitse)               │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+Kak integrirovat
+1. Sozday prefab kollaydera
+text
+
+[Hierarchy]
+  └── RockCollider (Prefab)
+        ├── BoxCollider (razmer pod kamni, naprimer 0.5×0.5×0.5)
+        └── (optsionalno) Layer = "Obstacle"
+Na prefabe ne nuzhen MeshRenderer, MeshFilter, Rigidbody. Tolko BoxCollider (ili SphereCollider). Maksimalno legkovesnyy.
+
+2. Progrey pul v ObjectPoolManager
+text
+
+ObjectPoolManager (Inspector):
+  Warmup Presets:
+    [0] Prefab: RockCollider    Count: 200
+200 kollayderov — eto maksimum, kotoryy mozhet byt aktiven odnovremenno v radiuse 40m. Dlya plotnyh skopleniy uvelich do 300-500.
+
+3. Nastroy ProximityColliderSystem
+text
+
+ProximityColliderSystem (Inspector):
+  Player Transform:     [Player]
+  Collider Prefab:      [RockCollider]
+  Activate Radius:      40
+  Deactivate Radius:    45
+  Max Operations/Tick:  64
+4. Initsializiruy pozitsii iz generatora mira
+csharp
+
+// V tvoem WorldGenerator ili GPUInstancerManager:
+public class RockGenerator : MonoBehaviour
+{
+    [SerializeField] private ProximityColliderSystem proximitySystem;
+    
+    private void Start()
+    {
+        // Generiruem pozitsii kamney (oni zhe idut v GPU Instancer)
+        Vector3[] rockPositions = GenerateRockPositions(10000);
+        
+        // Peredaem GPU Instancer...
+        gpuInstancer.SetPositions(rockPositions);
+        
+        // ...i sisteme kollayderov
+        proximitySystem.Initialize(rockPositions);
+    }
+}
+Analiz proizvoditelnosti
+text
+
+┌──────────────────────────┬─────────────────────┬──────────────┐
+│ Operatsiya                 │ Gde vypolnyaetsya     │ Stoimost    │
+├──────────────────────────┼─────────────────────┼──────────────┤
+│ DistanceCalcJob          │ Worker Threads      │ ~0.1ms       │
+│ (10K tochek, Burst)       │ (ne blokiruet Main) │ (4 threads)  │
+├──────────────────────────┼─────────────────────┼──────────────┤
+│ ProcessJobResults        │ Main Thread         │ ~0.05ms      │
+│ (for-loop, 10K byte cmp) │                     │              │
+├──────────────────────────┼─────────────────────┼──────────────┤
+│ Spawn/Despawn (max 64)   │ Main Thread         │ ~0.3ms       │
+│ (SetParent, SetActive)   │                     │ (worst case) │
+├──────────────────────────┼─────────────────────┼──────────────┤
+│ GC Allocations per Tick  │ —                   │ 0 bytes      │
+├──────────────────────────┼─────────────────────┼──────────────┤
+│ Memory (10K points)      │ Persistent          │ ~220 KB      │
+└──────────────────────────┴─────────────────────┴──────────────┘
+Klyuchevye resheniya
+TempJob dlya _prevStatusNative: allotsiruetsya kazhdyy kadr, no eto NativeArray — ne GC heap. Allokator TempJob pereispolzuet memory pool vnutri Unity. Alternativa — derzhat persistent, no togda nuzhen dopolnitelnyy Dispose tracking
+
+maxOperationsPerTick = 64: pri teleportatsii igroka na 500m mozhet potrebovatsya 200+ Spawn i 200+ Despawn. Bez limita — spayk 5-10ms. S limitom — rastyanetsya na 6-7 kadrov, nezametno dlya igroka
+
+Gisterezis 40/45m: bez nego kollaydery na rasstoyanii rovno 40m budut kazhdyy kadr Spawn→Despawn→Spawn→Despawn. S gisterezisom — odin Spawn, stabilnost do 45m
+
+
+
+
+
+
+
+
+
+
+
+

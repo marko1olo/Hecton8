@@ -1,8 +1,8 @@
 // ============================================================================
 // HECTON-8 — PDAInventoryFilterButton.cs
-// Кнопка фильтра инвентаря в PDA.
-// Управляет визуальным состоянием и фильтрацией предметов.
-// NOTE: Создан как заглушка для восстановления компиляции после рефакторинга.
+// Knopka filtra inventarya v PDA.
+// Upravlyaet vizualnym sostoyaniem i filtratsiey predmetov.
+// NOTE: Sozdan kak zaglushka dlya vosstanovleniya kompilyatsii posle refaktoringa.
 // ============================================================================
 
 using TMPro;
@@ -13,8 +13,8 @@ using UnityEngine.UI;
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Кнопка фильтра инвентаря в PDA.
-    /// Отображает состояние (активная/неактивная) и применяет фильтр при нажатии.
+    /// Knopka filtra inventarya v PDA.
+    /// Otobrazhaet sostoyanie (aktivnaya/neaktivnaya) i primenyaet filtr pri nazhatii.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Inventory Filter Button")]
@@ -41,12 +41,12 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Фильтр, который применяет эта кнопка.
+        /// Filtr, kotoryy primenyaet eta knopka.
         /// </summary>
         internal InventoryViewFilter Filter => _filter;
 
         /// <summary>
-        /// Активен ли фильтр.
+        /// Aktiven li filtr.
         /// </summary>
         public bool IsActive => _isActive;
 
@@ -55,16 +55,16 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Инициализирует кнопку фильтра.
+        /// Initsializiruet knopku filtra.
         /// </summary>
-        /// <param name="inventoryTab">Ссылка на вкладку инвентаря.</param>
-        /// <param name="filter">Фильтр, который применяет кнопка.</param>
-        /// <param name="background">Изображение фона кнопки.</param>
-        /// <param name="label">Текст метки.</param>
-        /// <param name="bgActive">Цвет фона в активном состоянии.</param>
-        /// <param name="bgInactive">Цвет фона в неактивном состоянии.</param>
-        /// <param name="textActive">Цвет текста в активном состоянии.</param>
-        /// <param name="textInactive">Цвет текста в неактивном состоянии.</param>
+        /// <param name="inventoryTab">Ssylka na vkladku inventarya.</param>
+        /// <param name="filter">Filtr, kotoryy primenyaet knopka.</param>
+        /// <param name="background">Izobrazhenie fona knopki.</param>
+        /// <param name="label">Tekst metki.</param>
+        /// <param name="bgActive">Tsvet fona v aktivnom sostoyanii.</param>
+        /// <param name="bgInactive">Tsvet fona v neaktivnom sostoyanii.</param>
+        /// <param name="textActive">Tsvet teksta v aktivnom sostoyanii.</param>
+        /// <param name="textInactive">Tsvet teksta v neaktivnom sostoyanii.</param>
         internal void Init(
             PDAInventoryTab inventoryTab,
             InventoryViewFilter filter,
@@ -86,9 +86,9 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Устанавливает активное состояние фильтра.
+        /// Ustanavlivaet aktivnoe sostoyanie filtra.
         /// </summary>
-        /// <param name="active">True если фильтр активен.</param>
+        /// <param name="active">True esli filtr aktiven.</param>
         public void SetActive(bool active)
         {
             _isActive = active;

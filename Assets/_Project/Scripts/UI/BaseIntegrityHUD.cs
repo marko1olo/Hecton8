@@ -70,11 +70,11 @@ namespace Hecton8.UI
         private const uint BaseIntegrityListenerExceptionWarningHash = 0x42494558u; // BIEX
         private const uint BaseIntegrityListenerContextHash = 0x42494C53u; // BILS
 
-        // COLD ALLOC: RegistryBucket<IBaseIntegrityEventListener>[8] - base integrity listeners drained by SystemDispatcher LateUpdate - owner: BaseIntegrityEvents
+        // COLD ALLOC: RegistryBucket<IBaseIntegrityEventListener>[8] — base integrity listeners drained by SystemDispatcher LateUpdate — owner: BaseIntegrityEvents
         private static readonly RegistryBucket<IBaseIntegrityEventListener> _listeners = new RegistryBucket<IBaseIntegrityEventListener>(ListenerCapacity);
-        // COLD ALLOC: IBaseIntegrityEventListener[8] - listener additions deferred while dispatching base integrity events - owner: BaseIntegrityEvents
+        // COLD ALLOC: IBaseIntegrityEventListener[8] — listener additions deferred while dispatching base integrity events — owner: BaseIntegrityEvents
         private static readonly IBaseIntegrityEventListener[] _deferredRegisterListeners = new IBaseIntegrityEventListener[ListenerCapacity];
-        // COLD ALLOC: IBaseIntegrityEventListener[8] - listener removals deferred while dispatching base integrity events - owner: BaseIntegrityEvents
+        // COLD ALLOC: IBaseIntegrityEventListener[8] — listener removals deferred while dispatching base integrity events — owner: BaseIntegrityEvents
         private static readonly IBaseIntegrityEventListener[] _deferredUnregisterListeners = new IBaseIntegrityEventListener[ListenerCapacity];
         private static NativeQueue<BaseIntegrityEventPayload> _pendingEvents;
         private static NativeQueue<BaseIntegrityEventPayload> _nextFrameEvents;
@@ -297,7 +297,7 @@ namespace Hecton8.UI
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<BaseIntegrityEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] - deferred base integrity lane flushed by SystemDispatcher LateUpdate - owner: BaseIntegrityEvents
+                _pendingEvents = new NativeQueue<BaseIntegrityEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] — deferred base integrity lane flushed by SystemDispatcher LateUpdate — owner: BaseIntegrityEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -309,7 +309,7 @@ namespace Hecton8.UI
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<BaseIntegrityEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] - next-frame base integrity lane prevents same-frame reentrant dispatch - owner: BaseIntegrityEvents
+                _nextFrameEvents = new NativeQueue<BaseIntegrityEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] — next-frame base integrity lane prevents same-frame reentrant dispatch — owner: BaseIntegrityEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -611,7 +611,7 @@ namespace Hecton8.UI
         private readonly uint[] _warningNotificationHashes = new uint[PercentMessageCacheSize];
         // COLD ALLOC: uint[101] — cached air-critical notification hashes by rounded percent — owner: BaseIntegrityHUD
         private readonly uint[] _airCriticalNotificationHashes = new uint[PercentMessageCacheSize];
-        // COLD ALLOC: char[512] - percent notification formatter scratch; avoids string.Format parser/boxing on warning cache misses - owner: BaseIntegrityHUD
+        // COLD ALLOC: char[512] — percent notification formatter scratch; avoids composite-format parser/boxing on warning cache misses — owner: BaseIntegrityHUD
         private readonly char[] _percentMessageBuffer = new char[512];
         private uint _dangerFormatHash;
         private uint _criticalFormatHash;
@@ -822,7 +822,7 @@ namespace Hecton8.UI
             if (_playerTransform != null)
                 return true;
 
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
+            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
                 playerTransform == null)
             {
                 return false;

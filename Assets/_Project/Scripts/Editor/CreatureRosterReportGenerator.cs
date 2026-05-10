@@ -28,19 +28,19 @@ namespace Hecton8.AI.Editor
             var sb = new StringBuilder(16384);
             sb.AppendLine("# AI Creature Roster Report");
             sb.AppendLine();
-            sb.AppendLine("## Сводка");
+            sb.AppendLine("## Svodka");
             sb.AppendLine();
-            sb.AppendLine($"- Всего профилей видов: `{all.Count}`");
-            sb.AppendLine($"- Мирной жизни: `{CountByRole(all, CreatureRoleType.Ambient)}`");
-            sb.AppendLine($"- Территориальных: `{CountByRole(all, CreatureRoleType.Territorial)}`");
-            sb.AppendLine($"- Хищников: `{CountByRole(all, CreatureRoleType.Hunter)}`");
-            sb.AppendLine($"- Левиафанов: `{CountByRole(all, CreatureRoleType.Leviathan)}`");
+            sb.AppendLine($"- Vsego profiley vidov: `{all.Count}`");
+            sb.AppendLine($"- Mirnoy zhizni: `{CountByRole(all, CreatureRoleType.Ambient)}`");
+            sb.AppendLine($"- Territorialnyh: `{CountByRole(all, CreatureRoleType.Territorial)}`");
+            sb.AppendLine($"- Hischnikov: `{CountByRole(all, CreatureRoleType.Hunter)}`");
+            sb.AppendLine($"- Leviafanov: `{CountByRole(all, CreatureRoleType.Leviathan)}`");
             sb.AppendLine();
 
-            AppendRoleSection(sb, all, CreatureRoleType.Ambient, "Мирная жизнь");
-            AppendRoleSection(sb, all, CreatureRoleType.Territorial, "Территориальные");
-            AppendRoleSection(sb, all, CreatureRoleType.Hunter, "Хищники");
-            AppendRoleSection(sb, all, CreatureRoleType.Leviathan, "Левиафаны");
+            AppendRoleSection(sb, all, CreatureRoleType.Ambient, "Mirnaya zhizn");
+            AppendRoleSection(sb, all, CreatureRoleType.Territorial, "Territorialnye");
+            AppendRoleSection(sb, all, CreatureRoleType.Hunter, "Hischniki");
+            AppendRoleSection(sb, all, CreatureRoleType.Leviathan, "Leviafany");
             AppendFaunaFamilySuggestions(sb, all);
 
             File.WriteAllText(ReportPath, sb.ToString(), Encoding.UTF8);
@@ -73,14 +73,14 @@ namespace Hecton8.AI.Editor
                 sb.AppendLine($"### {asset.displayName}");
                 sb.AppendLine();
                 sb.AppendLine($"- `ID`: `{asset.creatureId}`");
-                sb.AppendLine($"- `Задача`: {asset.gameplayPurpose}");
-                sb.AppendLine($"- `Движение`: `{asset.locomotionType}`");
-                sb.AppendLine($"- `Скорость`: `{asset.cruiseSpeed:0.0} / {asset.burstSpeed:0.0}`");
-                sb.AppendLine($"- `Живучесть`: `{asset.maxHealth:0}`");
-                sb.AppendLine($"- `Атака`: `{asset.attackDamage:0}`");
-                sb.AppendLine($"- `Особое`: {BuildSpecialLine(asset)}");
-                sb.AppendLine($"- `Семейства фауны`: {Join(asset.recommendedFaunaFamilyIds)}");
-                sb.AppendLine($"- `Биомы`: {Join(asset.recommendedBiomeFamilyIds)}");
+                sb.AppendLine($"- `Zadacha`: {asset.gameplayPurpose}");
+                sb.AppendLine($"- `Dvizhenie`: `{asset.locomotionType}`");
+                sb.AppendLine($"- `Skorost`: `{asset.cruiseSpeed:0.0} / {asset.burstSpeed:0.0}`");
+                sb.AppendLine($"- `Zhivuchest`: `{asset.maxHealth:0}`");
+                sb.AppendLine($"- `Ataka`: `{asset.attackDamage:0}`");
+                sb.AppendLine($"- `Osoboe`: {BuildSpecialLine(asset)}");
+                sb.AppendLine($"- `Semeystva fauny`: {Join(asset.recommendedFaunaFamilyIds)}");
+                sb.AppendLine($"- `Biomy`: {Join(asset.recommendedBiomeFamilyIds)}");
                 sb.AppendLine();
             }
         }
@@ -104,7 +104,7 @@ namespace Hecton8.AI.Editor
                 "fauna.family.void_apex"
             };
 
-            sb.AppendLine("## Куда кого сажать");
+            sb.AppendLine("## Kuda kogo sazhat");
             sb.AppendLine();
 
             for (int i = 0; i < faunaFamilyIds.Length; i++)
@@ -125,7 +125,7 @@ namespace Hecton8.AI.Editor
                 }
 
                 if (!foundAny)
-                    sb.AppendLine("- Пока никто не предложен.");
+                    sb.AppendLine("- Poka nikto ne predlozhen.");
 
                 sb.AppendLine();
             }
@@ -150,25 +150,25 @@ namespace Hecton8.AI.Editor
             var tags = new List<string>(6);
 
             if (asset.defendNest)
-                tags.Add("защита гнезда");
+                tags.Add("zaschita gnezda");
             if (asset.callNearbyAllies)
-                tags.Add("зовёт соседей");
+                tags.Add("zovet sosedey");
             if (asset.usePackHunt)
-                tags.Add("стайная охота");
+                tags.Add("staynaya ohota");
             if (asset.useFeintRush)
-                tags.Add("ложный заход");
+                tags.Add("lozhnyy zahod");
             if (asset.useLeviathanPresence)
-                tags.Add($"сценарий {asset.leviathanEncounterType}");
+                tags.Add($"stsenariy {asset.leviathanEncounterType}");
             if (asset.useCandiceBehaviorTree)
-                tags.Add("готов под Candice");
+                tags.Add("gotov pod Candice");
 
-            return tags.Count == 0 ? "без спецрежима" : string.Join(", ", tags);
+            return tags.Count == 0 ? "bez spetsrezhima" : string.Join(", ", tags);
         }
 
         private static string Join(string[] values)
         {
             if (values == null || values.Length == 0)
-                return "не задано";
+                return "ne zadano";
 
             return string.Join(", ", values);
         }

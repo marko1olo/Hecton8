@@ -88,6 +88,38 @@ namespace Hecton8.Physics
             PrimaryBodyId = primaryBodyId;
             SecondaryBodyId = secondaryBodyId;
             Point = point;
+            _pointAup = AbsoluteUniversePosition.FromRuntimePosition(point);
+            _hasPointAup = 1;
+            Normal = normal;
+            Force = force;
+            Intensity = intensity;
+            MassVelocity = massVelocity;
+            WeightClass = weightClass;
+            PrimaryAudioMaterialId = primaryAudioMaterialId;
+            SecondaryAudioMaterialId = secondaryAudioMaterialId;
+        }
+
+        /// <summary>
+        /// Creates a queued gameplay physics-impact payload with authoritative AUP already resolved.
+        /// </summary>
+        public PhysicsImpactSignal(
+            ulong primaryBodyId,
+            ulong secondaryBodyId,
+            Vector3 point,
+            in AbsoluteUniversePosition pointAup,
+            Vector3 normal,
+            float force,
+            float intensity,
+            float massVelocity,
+            PhysicsImpactWeightClass weightClass,
+            byte primaryAudioMaterialId,
+            byte secondaryAudioMaterialId)
+        {
+            PrimaryBodyId = primaryBodyId;
+            SecondaryBodyId = secondaryBodyId;
+            Point = point;
+            _pointAup = pointAup;
+            _hasPointAup = 1;
             Normal = normal;
             Force = force;
             Intensity = intensity;
@@ -105,6 +137,18 @@ namespace Hecton8.Physics
 
         /// <summary>Resolved world-space impact point.</summary>
         public Vector3 Point { get; }
+
+        /// <summary>True when the impact point already carries floating-origin-safe AUP.</summary>
+        public bool HasPointAup => _hasPointAup != 0;
+
+        /// <summary>Resolved floating-origin-safe impact point.</summary>
+        public AbsoluteUniversePosition PointAup => ResolvePointAup();
+
+        /// <summary>Returns the impact point as AUP, falling back only for default/legacy payloads.</summary>
+        public AbsoluteUniversePosition ResolvePointAup()
+        {
+            return _hasPointAup != 0 ? _pointAup : AbsoluteUniversePosition.FromRuntimePosition(Point);
+        }
 
         /// <summary>Resolved world-space impact normal.</summary>
         public Vector3 Normal { get; }
@@ -129,6 +173,9 @@ namespace Hecton8.Physics
 
         /// <summary>True when the event falls into the heavy feedback bucket.</summary>
         public bool IsHeavy => WeightClass == PhysicsImpactWeightClass.Heavy;
+
+        private readonly AbsoluteUniversePosition _pointAup;
+        private readonly byte _hasPointAup;
     }
 
     /// <summary>
@@ -266,6 +313,7 @@ namespace Hecton8.Physics
             public float Intensity;
             public float MassVelocity;
             public float3 Point;
+            public AbsoluteUniversePosition PointAup;
             public float3 Normal;
             public PhysicsImpactWeightClass WeightClass;
             public byte PrimaryAudioMaterialId;
@@ -301,7 +349,7 @@ namespace Hecton8.Physics
         private const float AupJitterThresholdMeters = 0.05f;
         private const float AupJitterThresholdMetersSq = AupJitterThresholdMeters * AupJitterThresholdMeters;
         private const int AupJitterSentinelFrameInterval = 60;
-        private const int SafeTeleportSpeculativeFixedTickHold = 1;
+        private const int SafeTeleportSpeculativeFixedTickHold = 3;
         private const double FarKinematicSleepDistanceSq = FarKinematicSleepDistanceMeters * FarKinematicSleepDistanceMeters;
         private const double ColliderLodCompoundToSimpleDistanceSq = ColliderLodCompoundToSimpleDistanceMeters * ColliderLodCompoundToSimpleDistanceMeters;
         private const double ColliderLodSimpleToCompoundDistanceSq = ColliderLodSimpleToCompoundDistanceMeters * ColliderLodSimpleToCompoundDistanceMeters;
@@ -440,6 +488,14 @@ namespace Hecton8.Physics
                 return;
 
             manager.ArmSafeTeleportSpeculativeCcdForSafeTeleportInternal();
+        }
+
+        internal static void ArmSpeculativeCcdForImpulse(Rigidbody body)
+        {
+            if (body == null || !TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
+                return;
+
+            manager.ArmSafeTeleportSpeculativeCcd(body);
         }
 
         internal static void UnregisterTrackedBody(Rigidbody body)
@@ -1225,6 +1281,7 @@ namespace Hecton8.Physics
                 normal3 = new float3(0f, 1f, 0f);
             else
                 normal3 *= math.rsqrt(normalSq);
+            AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(point3.x, point3.y, point3.z));
             PhysicsImpactWeightClass weightClass = ResolveImpactWeightClass(impactIntensity);
 
             _impactQueue.Enqueue(new PhysicsImpactEventData
@@ -1235,6 +1292,7 @@ namespace Hecton8.Physics
                 Intensity = impactIntensity,
                 MassVelocity = massVelocity,
                 Point = point3,
+                PointAup = pointAup,
                 Normal = normal3,
                 WeightClass = weightClass,
                 PrimaryAudioMaterialId = ResolveImpactAudioMaterialId(primaryBody),
@@ -1279,6 +1337,7 @@ namespace Hecton8.Physics
                 normal3 = new float3(0f, 1f, 0f);
             else
                 normal3 *= math.rsqrt(normalSq);
+            AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(point3.x, point3.y, point3.z));
 
             float impactIntensity = ResolveImpactIntensityFromForce(impactForce);
             if (!(impactIntensity > 0f))
@@ -1292,6 +1351,7 @@ namespace Hecton8.Physics
                 Intensity = impactIntensity,
                 MassVelocity = massVelocity,
                 Point = point3,
+                PointAup = pointAup,
                 Normal = normal3,
                 WeightClass = ResolveImpactWeightClass(impactIntensity),
                 PrimaryAudioMaterialId = ResolveImpactAudioMaterialId(primaryBody),
@@ -1317,11 +1377,14 @@ namespace Hecton8.Physics
 
                 _queuedImpactCount--;
                 processedCount++;
+                Vector3 impactPoint = new Vector3(impactEvent.Point.x, impactEvent.Point.y, impactEvent.Point.z);
+                Vector3 impactNormal = new Vector3(impactEvent.Normal.x, impactEvent.Normal.y, impactEvent.Normal.z);
                 PhysicsEvents.RaiseImpact(new PhysicsImpactSignal(
                     impactEvent.PrimaryBodyId,
                     impactEvent.SecondaryBodyId,
-                    new Vector3(impactEvent.Point.x, impactEvent.Point.y, impactEvent.Point.z),
-                    new Vector3(impactEvent.Normal.x, impactEvent.Normal.y, impactEvent.Normal.z),
+                    impactPoint,
+                    in impactEvent.PointAup,
+                    impactNormal,
                     impactEvent.Force,
                     impactEvent.Intensity,
                     impactEvent.MassVelocity,

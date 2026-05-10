@@ -16,7 +16,7 @@ namespace Hecton8.Modding
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7900)]
-    public sealed class ModWorldPersistenceManager : MonoBehaviour, ISaveable, ISaveEventListener, ISceneBootstrapEventListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class ModWorldPersistenceManager : MonoBehaviour, ISaveable, ISaveEventListener, IGameBootstrapperEventListener, IServiceHeartbeat, IServiceShutdown
     {
         private const string SaveKey = "hecton.internal.mod_world_spawns";
 
@@ -71,7 +71,7 @@ namespace Hecton8.Modding
                 return;
 
             SceneManager.sceneLoaded += HandleSceneLoaded;
-            SceneBootstrap.Register(this);
+            GameBootstrapper.Register(this);
             SaveEvents.Register(this);
             InitializeService();
         }
@@ -79,7 +79,7 @@ namespace Hecton8.Modding
         private void OnDisable()
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
-            SceneBootstrap.Unregister(this);
+            GameBootstrapper.Unregister(this);
             SaveEvents.Unregister(this);
             UnregisterFromSaveManager();
             if (_serviceRegistered && !_serviceShuttingDown)
@@ -115,7 +115,7 @@ namespace Hecton8.Modding
 
             _serviceShuttingDown = true;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
-            SceneBootstrap.Unregister(this);
+            GameBootstrapper.Unregister(this);
             SaveEvents.Unregister(this);
             UnregisterFromSaveManager();
             _records.Clear();
@@ -296,9 +296,9 @@ namespace Hecton8.Modding
             _restorePending = _records.Count > 0;
         }
 
-        public void OnSceneBootstrapEvent(in SceneBootstrapEventPayload payload)
+        public void OnGameBootstrapperEvent(in GameBootstrapperEventPayload payload)
         {
-            if ((SceneBootstrapEventType)payload.EventType == SceneBootstrapEventType.GameReady)
+            if ((GameBootstrapperEventType)payload.EventType == GameBootstrapperEventType.GameReady)
                 HandleGameReady();
         }
 

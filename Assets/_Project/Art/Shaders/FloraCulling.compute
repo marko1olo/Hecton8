@@ -47,6 +47,7 @@ float _HectonPeripheralCullDistance;
 float4 _HectonZBufferParams;
 float _HectonOcclusionDepthBias;
 uint _HectonOcclusionEnabled;
+uint _HectonFarLodAppendEnabled;
 uint _HectonDarknessCullEnabled;
 int _HectonScooterHeadlightCount;
 float4 _HectonScooterHeadlightPositionsWS[HECTON_MAX_SCOOTER_HEADLIGHTS];
@@ -92,6 +93,11 @@ float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
     return IsFiniteFloat4(transformed) ? transformed.xyz : 0.0.xxx;
 }
 
+float3 ResolveInstanceOrigin(float4x4 matrixValue)
+{
+    return float3(matrixValue._m03, matrixValue._m13, matrixValue._m23);
+}
+
 float3 ResolveShiftedWorldPosition(float3 positionWS)
 {
     return positionWS + _GlobalFloatingOffset.xyz;
@@ -117,13 +123,14 @@ void ResolveInstanceShape(float instanceType, float heightScale, float widthScal
     instanceWidth = lerp(0.75, 1.35, saturate(widthScale));
 }
 
-bool IsSphereVisibleInFrustum(float3 centerWS, float radius)
+bool IsSphereVisibleInFrustumSq(float3 centerWS, float radiusSq)
 {
     [unroll]
     for (int planeIndex = 0; planeIndex < HECTON_FRUSTUM_PLANES; planeIndex++)
     {
         float4 plane = _HectonFrustumPlanes[planeIndex];
-        if (dot(plane.xyz, centerWS) + plane.w < -radius)
+        float signedDistance = dot(plane.xyz, centerWS) + plane.w;
+        if (signedDistance < 0.0 && signedDistance * signedDistance > radiusSq)
             return false;
     }
 
@@ -321,12 +328,7 @@ bool IsVisibleInAnyShadowCascade(float3 rootWS, float3 centerWS, float3 topWS, f
     return false;
 }
 
-float SafeRcp(float value)
-{
-    return IsFiniteScalar(value) && value > 0.00001 ? rcp(value) : 0.0;
-}
-
-float3 SafeNormalize3(float3 value)
+float3 ResolveUnitVectorForCone(float3 value)
 {
     float lenSq = dot(value, value);
     return IsFiniteScalar(lenSq) && lenSq > 0.00001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
@@ -360,12 +362,13 @@ bool IsVisibleInDarkness(float3 samplePositionWS)
             continue;
 
         float3 toSampleWS = samplePositionWS - lightPositionWS;
-        float sampleDistance = length(toSampleWS);
-        if (!IsFiniteScalar(sampleDistance) || sampleDistance <= 0.0001 || sampleDistance >= lightRange)
+        float sampleDistanceSq = dot(toSampleWS, toSampleWS);
+        float lightRangeSq = lightRange * lightRange;
+        if (!IsFiniteScalar(sampleDistanceSq) || sampleDistanceSq <= 0.00000001 || sampleDistanceSq >= lightRangeSq)
             continue;
 
-        float3 sampleDirectionWS = toSampleWS * SafeRcp(sampleDistance);
-        float3 lightDirectionWS = SafeNormalize3(_HectonScooterHeadlightDirectionsWS[headlightIndex].xyz);
+        float3 sampleDirectionWS = toSampleWS * rsqrt(sampleDistanceSq);
+        float3 lightDirectionWS = ResolveUnitVectorForCone(_HectonScooterHeadlightDirectionsWS[headlightIndex].xyz);
         float coneAttenuation = ResolveSpotConeAttenuation(
             dot(lightDirectionWS, sampleDirectionWS),
             _HectonScooterHeadlightDirectionsWS[headlightIndex].w,
@@ -373,7 +376,8 @@ bool IsVisibleInDarkness(float3 samplePositionWS)
         if (!IsFiniteScalar(coneAttenuation) || coneAttenuation <= 0.0001)
             continue;
 
-        float rangeAttenuation = saturate(1.0 - sampleDistance * _HectonScooterHeadlightConeData[headlightIndex].z);
+        float invRange = _HectonScooterHeadlightConeData[headlightIndex].z;
+        float rangeAttenuation = saturate(1.0 - sampleDistanceSq * invRange * invRange);
         rangeAttenuation *= rangeAttenuation;
         float intensity = _HectonScooterHeadlightColors[headlightIndex].w * _HectonScooterHeadlightConeData[headlightIndex].y;
         if (coneAttenuation * rangeAttenuation * intensity >= 0.02)
@@ -381,6 +385,18 @@ bool IsVisibleInDarkness(float3 samplePositionWS)
     }
 
     return false;
+}
+
+bool PassesDotThresholdSq(float dotValue, float threshold, float lengthProductSq)
+{
+    if (!IsFiniteScalar(dotValue) || !IsFiniteScalar(threshold) || !IsFiniteScalar(lengthProductSq) || lengthProductSq <= 0.00000001)
+        return true;
+
+    float thresholdSq = threshold * threshold;
+    float dotSq = dotValue * dotValue;
+    return threshold >= 0.0
+        ? dotValue >= 0.0 && dotSq >= thresholdSq * lengthProductSq
+        : dotValue >= 0.0 || dotSq <= thresholdSq * lengthProductSq;
 }
 
 bool IsVisibleInPeripheralCone(float3 samplePositionWS)
@@ -394,9 +410,9 @@ bool IsVisibleInPeripheralCone(float3 samplePositionWS)
     if (!IsFiniteScalar(distanceSq) || distanceSq <= peripheralDistance * peripheralDistance)
         return true;
 
-    float3 sampleDirectionWS = SafeNormalize3(toSampleWS);
-    float3 cameraForwardWS = SafeNormalize3(_HectonCameraForward);
-    return dot(sampleDirectionWS, cameraForwardWS) >= _HectonPeripheralCullDot;
+    float cameraForwardLenSq = dot(_HectonCameraForward, _HectonCameraForward);
+    float dotForward = dot(toSampleWS, _HectonCameraForward);
+    return PassesDotThresholdSq(dotForward, _HectonPeripheralCullDot, distanceSq * cameraForwardLenSq);
 }
 
 [numthreads(1, 1, 1)]
@@ -417,42 +433,8 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
 
     float4x4 instanceMatrix = _HectonSourceInstanceMatrices[instanceIndex];
-    HectonVegetationInstanceGpuData instanceData = _HectonSourceVegetationInstanceData[instanceIndex];
-    float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
-
-    float instanceHeight;
-    float instanceWidth;
-    ResolveInstanceShape(instanceType, instanceData.HeightScale, instanceData.WidthScale, instanceHeight, instanceWidth);
-
-    float3 originWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0)));
-    float3 centerWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight * 0.5, 0.0)));
-    float3 topWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight, 0.0)));
-    float3 sideAWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(instanceWidth, instanceHeight * 0.5, 0.0)));
-    float3 sideBWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(-instanceWidth, instanceHeight * 0.5, 0.0)));
-    if (!IsFiniteFloat3(originWS) ||
-        !IsFiniteFloat3(centerWS) ||
-        !IsFiniteFloat3(topWS) ||
-        !IsFiniteFloat3(sideAWS) ||
-        !IsFiniteFloat3(sideBWS))
-    {
-        return;
-    }
-
-    float radius = max(
-        distance(centerWS, originWS),
-        max(
-            distance(centerWS, topWS),
-            max(distance(centerWS, sideAWS), distance(centerWS, sideBWS))));
-    if (!IsSphereVisibleInFrustum(centerWS, max(0.25, radius)))
-        return;
-
-    float4 clipRoot = mul(_HectonViewProjection, float4(originWS, 1.0));
-    float4 clipCenter = mul(_HectonViewProjection, float4(centerWS, 1.0));
-    float4 clipTop = mul(_HectonViewProjection, float4(topWS, 1.0));
-    float4 clipSideA = mul(_HectonViewProjection, float4(sideAWS, 1.0));
-    float4 clipSideB = mul(_HectonViewProjection, float4(sideBWS, 1.0));
-
-    if (!IsVisibleInFrustum(clipRoot, clipCenter, clipTop, clipSideA, clipSideB))
+    float3 originWS = ResolveShiftedWorldPosition(ResolveInstanceOrigin(instanceMatrix));
+    if (!IsFiniteFloat3(originWS))
         return;
 
     float3 cameraDelta = originWS - _HectonCameraPosition;
@@ -470,7 +452,48 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     float lod1MinDistanceSq = lod1MinDistance * lod1MinDistance;
     float lod1MaxDistanceSq = lod1MaxDistance * lod1MaxDistance;
 
+    if (_HectonFarLodAppendEnabled == 0 && distanceSq > lod0MaxDistanceSq)
+        return;
+
     if (distanceSq > lod1MaxDistanceSq)
+        return;
+
+    HectonVegetationInstanceGpuData instanceData = _HectonSourceVegetationInstanceData[instanceIndex];
+    float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
+
+    float instanceHeight;
+    float instanceWidth;
+    ResolveInstanceShape(instanceType, instanceData.HeightScale, instanceData.WidthScale, instanceHeight, instanceWidth);
+
+    float3 centerWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight * 0.5, 0.0)));
+    float3 topWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight, 0.0)));
+    float3 sideAWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(instanceWidth, instanceHeight * 0.5, 0.0)));
+    float3 sideBWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(-instanceWidth, instanceHeight * 0.5, 0.0)));
+    if (!IsFiniteFloat3(centerWS) ||
+        !IsFiniteFloat3(topWS) ||
+        !IsFiniteFloat3(sideAWS) ||
+        !IsFiniteFloat3(sideBWS))
+    {
+        return;
+    }
+
+    float radiusSq = max(
+        dot(centerWS - originWS, centerWS - originWS),
+        max(
+            dot(centerWS - topWS, centerWS - topWS),
+            max(
+                dot(centerWS - sideAWS, centerWS - sideAWS),
+                dot(centerWS - sideBWS, centerWS - sideBWS))));
+    if (!IsSphereVisibleInFrustumSq(centerWS, max(0.0625, radiusSq)))
+        return;
+
+    float4 clipRoot = mul(_HectonViewProjection, float4(originWS, 1.0));
+    float4 clipCenter = mul(_HectonViewProjection, float4(centerWS, 1.0));
+    float4 clipTop = mul(_HectonViewProjection, float4(topWS, 1.0));
+    float4 clipSideA = mul(_HectonViewProjection, float4(sideAWS, 1.0));
+    float4 clipSideB = mul(_HectonViewProjection, float4(sideBWS, 1.0));
+
+    if (!IsVisibleInFrustum(clipRoot, clipCenter, clipTop, clipSideA, clipSideB))
         return;
 
     if (IsOccludedByDepth(originWS, centerWS, topWS, sideAWS, sideBWS, clipRoot, clipCenter, clipTop, clipSideA, clipSideB))
@@ -485,7 +508,7 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     if (distanceSq <= lod0MaxDistanceSq)
         _HectonVisibleInstanceIndicesLOD0.Append(instanceIndex);
 
-    if (distanceSq >= lod1MinDistanceSq && distanceSq <= lod1MaxDistanceSq)
+    if (_HectonFarLodAppendEnabled != 0 && distanceSq >= lod1MinDistanceSq && distanceSq <= lod1MaxDistanceSq)
         _HectonVisibleInstanceIndicesLOD1.Append(instanceIndex);
 }
 
@@ -504,7 +527,7 @@ void CullFloraShadowInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     float instanceWidth;
     ResolveInstanceShape(instanceType, instanceData.HeightScale, instanceData.WidthScale, instanceHeight, instanceWidth);
 
-    float3 rootWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0)));
+    float3 rootWS = ResolveShiftedWorldPosition(ResolveInstanceOrigin(instanceMatrix));
     float3 centerWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight * 0.5, 0.0)));
     float3 topWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight, 0.0)));
     float3 sideAWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(instanceWidth, instanceHeight * 0.5, 0.0)));
@@ -518,12 +541,14 @@ void CullFloraShadowInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
     }
 
-    float radius = max(
-        distance(centerWS, rootWS),
+    float radiusSq = max(
+        dot(centerWS - rootWS, centerWS - rootWS),
         max(
-            distance(centerWS, topWS),
-            max(distance(centerWS, sideAWS), distance(centerWS, sideBWS))));
-    if (!IsSphereVisibleInFrustum(centerWS, max(0.25, radius)))
+            dot(centerWS - topWS, centerWS - topWS),
+            max(
+                dot(centerWS - sideAWS, centerWS - sideAWS),
+                dot(centerWS - sideBWS, centerWS - sideBWS))));
+    if (!IsSphereVisibleInFrustumSq(centerWS, max(0.0625, radiusSq)))
         return;
 
     if (!IsVisibleInAnyShadowCascade(rootWS, centerWS, topWS, sideAWS, sideBWS))

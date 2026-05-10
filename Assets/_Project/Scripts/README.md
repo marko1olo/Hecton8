@@ -1,12 +1,12 @@
 # Hecton8 Scripts Architecture
 
-Этот документ описывает основные компоненты и менеджеры директории `_Project/Scripts`. Проект базируется на архитектуре синглтонов (Singletone Pattern) для глобальных менеджеров, каждый из которых управляет определенной подсистемой.
+Etot dokument opisyvaet osnovnye komponenty i menedzhery direktorii `_Project/Scripts`. Proekt baziruetsya na arhitekture singltonov (Singletone Pattern) dlya globalnyh menedzherov, kazhdyy iz kotoryh upravlyaet opredelennoy podsistemoy.
 
 ## Architecture Diagram
 
 ```mermaid
 graph TD
-    subgraph Core Systems [Базовые Системы]
+    subgraph Core Systems [Bazovye Sistemy]
         GTM[GameTickManager]
         SM[SaveManager]
         LM[LocalizationManager]
@@ -14,7 +14,7 @@ graph TD
         WSM[WorldStateManager]
     end
 
-    subgraph Environment & World [Окружение и Мир]
+    subgraph Environment & World [Okruzhenie i Mir]
         HAM[HectonAtmosphereManager]
         HFE[HectonFluidEngine]
         HRM[HectonRockManager]
@@ -23,7 +23,7 @@ graph TD
         SAM[SpatialAudioManager]
     end
 
-    subgraph Gameplay & Mechanics [Геймплей и Механики]
+    subgraph Gameplay & Mechanics [Geympley i Mehaniki]
         CM[ConstructionManager]
         PGM[PowerGridManager]
         SP[ScavengePopulator]
@@ -36,26 +36,26 @@ graph TD
     CM --> |Base Modules| PGM
 ```
 
-## Singletons (Глобальные менеджеры)
+## Singletons (Globalnye menedzhery)
 
-Ниже представлен список всех синглтонов и их зон ответственности:
+Nizhe predstavlen spisok vseh singltonov i ih zon otvetstvennosti:
 
-### Базовые системы (Core Systems)
-- **GameTickManager**: Глобальный таймер и обработчик тиков (обновлений). Вызывает интерфейсы `ITickable` вместо использования тяжелого Unity Update в каждом скрипте.
-- **SaveManager**: Управление сохранениями (сериализация/десериализация данных игры, загрузка SaveData).
-- **LocalizationManager**: Загрузка ресурсов локализации (JSON-файлов) и смена текущего языка (English/Russian).
-- **ObjectPoolManager**: Управление пулами объектов (префабов), предотвращает аллокацию и уничтожение объектов (GC) заново.
-- **WorldStateManager**: Отслеживает глобальные состояния мира (события, флаги, глобальное время).
+### Bazovye sistemy (Core Systems)
+- **GameTickManager**: Globalnyy taymer i obrabotchik tikov (obnovleniy). Vyzyvaet interfeysy `ITickable` vmesto ispolzovaniya tyazhelogo Unity Update v kazhdom skripte.
+- **SaveManager**: Upravlenie sohraneniyami (serializatsiya/deserializatsiya dannyh igry, zagruzka SaveData).
+- **LocalizationManager**: Zagruzka resursov lokalizatsii (JSON-faylov) i smena tekuschego yazyka (English/Russian).
+- **ObjectPoolManager**: Upravlenie pulami obektov (prefabov), predotvraschaet allokatsiyu i unichtozhenie obektov (GC) zanovo.
+- **WorldStateManager**: Otslezhivaet globalnye sostoyaniya mira (sobytiya, flagi, globalnoe vremya).
 
-### Окружение и Мир (Environment & World)
-- **HectonAtmosphereManager**: Управление небом, планетами, освещением, временем суток и профилями атмосферы (NASA-Punk стиль).
-- **HectonFluidEngine**: Симуляция водных массивов, вычисление плавучести для `BuoyancyObject` и течений на базе `CurrentManager`.
-- **HectonRockManager**: Процедурный менеджер скал и пещер. Генерирует и управляет мешами.
-- **MapMagicBridge**: Служит мостом между геймплеем и плагином MapMagic (управляет батчингом террейна).
-- **AcousticZoneController**: Управление звуковыми зонами (реверберация при входе в базы, пещеры или под воду).
-- **SpatialAudioManager**: Окружающее аудио, эмбиент саундскейпы и управление позиционном звуком.
+### Okruzhenie i Mir (Environment & World)
+- **HectonAtmosphereManager**: Upravlenie nebom, planetami, osvescheniem, vremenem sutok i profilyami atmosfery (NASA-Punk stil).
+- **HectonFluidEngine**: Simulyatsiya vodnyh massivov, vychislenie plavuchesti dlya `BuoyancyObject` i techeniy na baze `CurrentManager`.
+- **HectonRockManager**: Protsedurnyy menedzher skal i pescher. Generiruet i upravlyaet meshami.
+- **MapMagicBridge**: Sluzhit mostom mezhdu geympleem i plaginom MapMagic (upravlyaet batchingom terreyna).
+- **AcousticZoneController**: Upravlenie zvukovymi zonami (reverberatsiya pri vhode v bazy, peschery ili pod vodu).
+- **SpatialAudioManager**: Okruzhayuschee audio, embient saundskeypy i upravlenie pozitsionnom zvukom.
 
-### Геймплей и Механики (Gameplay & Mechanics)
-- **ConstructionManager**: Менеджер строительства модулей базы, сборки (через Fabricator) и размещения (через BuilderTool).
-- **PowerGridManager**: Глобальная маршрутизация энергии базы. Объединяет `PowerNode` по графу для распределения электричества.
-- **ScavengePopulator**: Спавнит собираемые ресурсы, обломки и фрагменты технологий на поверхности и под водой (Procedural Scattering).
+### Geympley i Mehaniki (Gameplay & Mechanics)
+- **ConstructionManager**: Menedzher stroitelstva moduley bazy, sborki (cherez Fabricator) i razmescheniya (cherez BuilderTool).
+- **PowerGridManager**: Globalnaya marshrutizatsiya energii bazy. Obedinyaet `PowerNode` po grafu dlya raspredeleniya elektrichestva.
+- **ScavengePopulator**: Spavnit sobiraemye resursy, oblomki i fragmenty tehnologiy na poverhnosti i pod vodoy (Procedural Scattering).

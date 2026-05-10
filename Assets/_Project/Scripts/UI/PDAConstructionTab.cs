@@ -200,7 +200,7 @@ namespace Hecton8.UI
                 playerPDA = playerContext.PlayerPDA;
 
             if ((!playerBuilder || !playerInventory || !toolManager || !playerPDA) &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (playerBuilder == null)

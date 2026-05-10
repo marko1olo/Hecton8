@@ -26,6 +26,7 @@ using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Narrative;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
@@ -151,6 +152,7 @@ namespace Hecton8.Gameplay
         private bool _isScanning;
         private bool _scanRenderRegistered;
         private uint _scanRenderAddedFlags;
+        private int _spatialHandle;
         private byte _appliedLoreStagesMask;
         private float _scanPulsePhase;
 
@@ -230,12 +232,36 @@ namespace Hecton8.Gameplay
             LocalizationEvents.RegisterLanguageListener(this);
             RebuildLocalizedTextCache();
             ResetState();
+            RegisterSpatialContact();
         }
 
         private void OnDisable()
         {
+            UnregisterSpatialContact();
             UnregisterScanRenderProxy();
             LocalizationEvents.UnregisterLanguageListener(this);
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterSpatialContact();
+        }
+
+        private void RegisterSpatialContact()
+        {
+            if (_spatialHandle != 0)
+                return;
+
+            _spatialHandle = WorldSpatialHashGrid.RegisterScannable(this);
+        }
+
+        private void UnregisterSpatialContact()
+        {
+            if (_spatialHandle == 0)
+                return;
+
+            WorldSpatialHashGrid.Unregister(_spatialHandle);
+            _spatialHandle = 0;
         }
 
         // ══════════════════════════════════════════════════════════

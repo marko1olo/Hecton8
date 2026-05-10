@@ -27,6 +27,7 @@ namespace Hecton8.UI
         private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
         private static SubnauticaSystemsDebugUI s_activeRuntimeInstance;
         private static bool s_isBootstrappingRuntimeOverlay;
+        [ThreadStatic] private static char[] s_runtimeSnapshotNumberBuffer;
 
         internal static SubnauticaSystemsDebugUI ActiveRuntimeInstance => s_activeRuntimeInstance;
 
@@ -1159,10 +1160,10 @@ namespace Hecton8.UI
             if (!GameBootstrapper.AreAllSystemsReady())
                 return PendingLabel;
 
-            if (SceneBootstrap.IsGameReady)
+            if (GameBootstrapper.IsGameReady)
                 return "WORLD READY";
 
-            if (SceneBootstrap.HasActiveInstance)
+            if (GameBootstrapper.HasActiveInstance)
                 return "WORLD PRIME";
 
             return ReadyLabel;
@@ -1208,15 +1209,15 @@ namespace Hecton8.UI
                 "[SubnauticaSystemsDebugUI] runtime-snapshot " +
                 "scene=" + activeScene.name +
                 " ticks=" + debugTickCounts +
-                " renderScale=" + scaler.CurrentRenderScale.ToString("0.00") +
+                " renderScale=" + FormatSnapshotNumber(scaler.CurrentRenderScale, "0.00") +
                 " pressure=" + pressureLabel +
                 " faunaBiome=" + faunaBiome +
                 " faunaBias=" + faunaBias +
                 " faunaCaps=" +
-                fauna.DebugEffectiveSpawnsPerTick.ToString("0") + "/" +
-                fauna.DebugEffectiveBiomeMaxCount.ToString("0") + "/" +
-                fauna.DebugEffectiveGlobalMaxCount.ToString("0") +
-                " tension=" + music.CurrentTension01.ToString("0.00") +
+                FormatSnapshotNumber(fauna.DebugEffectiveSpawnsPerTick, "0") + "/" +
+                FormatSnapshotNumber(fauna.DebugEffectiveBiomeMaxCount, "0") + "/" +
+                FormatSnapshotNumber(fauna.DebugEffectiveGlobalMaxCount, "0") +
+                " tension=" + FormatSnapshotNumber(music.CurrentTension01, "0.00") +
                 " musicProfile=" + (music.ActiveResolvedProfile != null ? music.ActiveResolvedProfile.name : MissingLabel) +
                 " soundscape=" + ResolveSoundscapeLabel(soundscape.CurrentTier) +
                 " underwater=LIVE HUD" +
@@ -1224,6 +1225,21 @@ namespace Hecton8.UI
                 " stress=" + (enableStressTest ? EnabledLabel : DisabledLabel),
                 this);
 #endif
+        }
+
+        private static string FormatSnapshotNumber(float value, string format)
+        {
+            char[] buffer = s_runtimeSnapshotNumberBuffer;
+            if (buffer == null || buffer.Length < 32)
+            {
+                buffer = new char[32]; // COLD ALLOC: char[32] — runtime snapshot numeric staging buffer — owner: SubnauticaSystemsDebugUI
+                s_runtimeSnapshotNumberBuffer = buffer;
+            }
+
+            if (!ZeroGCFormatter.TryWriteFloat(value, format.AsSpan(), buffer.AsSpan(), out int length))
+                length = 0;
+
+            return new string(buffer, 0, length);
         }
 
         private bool IsSnapshotRuntimeReady(

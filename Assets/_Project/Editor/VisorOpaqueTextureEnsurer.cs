@@ -1,5 +1,5 @@
 // File: Scripts/Visor/VisorOpaqueTextureEnsurer.cs
-// Убеждаемся что Opaque Texture включена (нужна для рефракции)
+// Ubezhdaemsya chto Opaque Texture vklyuchena (nuzhna dlya refraktsii)
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 

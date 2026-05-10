@@ -37,14 +37,20 @@ namespace Hecton8.Gameplay
         private const float MinVectorMagnitudeSq = 0.000001f;
         private const int MaxSlideSweepIterations = 2;
         private const int ScheduledLocomotionSweepCommandIndex = 0;
-        private const int ScheduledFootstepProbeCommandIndex = 1;
-        private const int ScheduledSweepCommandCount = 2;
+        private const int ScheduledGroundProbeCommandIndex = 1;
+        private const int ScheduledWallProbeCommandIndex = ScheduledLocomotionSweepCommandIndex;
+        private const int ScheduledCeilingProbeCommandIndex = 2;
+        private const int ScheduledFootstepProbeCommandIndex = ScheduledGroundProbeCommandIndex;
+        private const int ScheduledLadderProbeCommandIndex = 3;
+        private const int ScheduledSweepCommandCount = 4;
         private const int ScheduledSweepMaxHitsPerCommand = 8;
         private const int ScheduledSweepMaxHits = ScheduledSweepCommandCount * ScheduledSweepMaxHitsPerCommand;
         private const int KinematicRepairTargetCommandCount = 1;
         private const int KinematicRepairTargetResultCount = 1;
         private const int KinematicRepairTargetMinCommandsPerJob = 1;
         private const float ScheduledFootstepProbeDistance = 0.9f;
+        private const float ScheduledCeilingProbeDistance = 0.85f;
+        private const float ScheduledLadderProbeDistance = 0.75f;
         private const float ScheduledFootstepProbeMinSupportNormalY = 0.12f;
         private const float ScheduledFootstepProbeMinSupportNormalYSq = ScheduledFootstepProbeMinSupportNormalY * ScheduledFootstepProbeMinSupportNormalY;
         private const float KinematicRepairTargetMinDistance = 0.05f;
@@ -52,6 +58,7 @@ namespace Hecton8.Gameplay
         private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
         private const float WakeSiltEmissionSpeedThresholdMetersPerSecond = 4.5f;
         private const float WakeSiltEmissionCooldownSeconds = 0.35f;
+        private const float HydrodynamicAddedMassAccelerationScale = 0.45f;
         private const float WallSlideTelemetryMaxNormalY = 0.75f;
         private const float VoxelProxySlideDistanceRetain = 0.92f;
         private const float VoxelProxySlideVelocityRetain = 0.65f;
@@ -98,6 +105,13 @@ namespace Hecton8.Gameplay
         private int _lastBatchedFootstepPhysicsFrame = -1;
         private uint _lastBatchedFootstepShiftSequence;
         private uint _lastBatchedFootstepBodyBindEpoch;
+        private RaycastHit _lastBatchedLadderHit;
+        private int _lastBatchedLadderPhysicsFrame = -1;
+        private uint _lastBatchedLadderShiftSequence;
+        private uint _lastBatchedLadderBodyBindEpoch;
+        private int _lastBatchedProbePhysicsFrame = -1;
+        private uint _lastBatchedProbeShiftSequence;
+        private uint _lastBatchedProbeBodyBindEpoch;
         private bool _kinematicRepairTargetProbePending;
         private bool _kinematicRepairSnapReady;
         private uint _bodyBindEpoch;
@@ -222,6 +236,82 @@ namespace Hecton8.Gameplay
             return true;
         }
 
+        /// <summary>Returns the latest ladder trigger hit produced by the locomotion capsulecast batch.</summary>
+        public bool TryGetRecentBatchedLadderHit(int maxPhysicsFrameAge, out RaycastHit hit)
+        {
+            hit = default;
+            if (HectonFloatingOrigin.IsShiftInProgress)
+                return false;
+
+            if (_lastBatchedLadderShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
+                return false;
+
+            if (_lastBatchedLadderBodyBindEpoch != _bodyBindEpoch)
+                return false;
+
+            if (_lastBatchedLadderPhysicsFrame < 0)
+                return false;
+
+            int age = PhysicsFrame.Current - _lastBatchedLadderPhysicsFrame;
+            if (age < 0 || age > math.max(0, maxPhysicsFrameAge))
+                return false;
+
+            if (GetHitColliderInstanceId(in _lastBatchedLadderHit) == 0)
+                return false;
+
+            if (_lastBatchedLadderHit.collider == null)
+                return false;
+
+            hit = _lastBatchedLadderHit;
+            return true;
+        }
+
+        /// <summary>Returns the nearest cached hit from the last completed ground, wall, or ceiling probe lane.</summary>
+        public bool TryGetRecentBatchedProbeHit(
+            int maxPhysicsFrameAge,
+            Vector3 origin,
+            float radius,
+            Vector3 direction,
+            float distance,
+            int selfColliderInstanceId,
+            out RaycastHit hit)
+        {
+            hit = default;
+            if (_scheduledSweepPending ||
+                !_nativeState.ScheduledSweepResults.IsCreated ||
+                HectonFloatingOrigin.IsShiftInProgress)
+            {
+                return false;
+            }
+
+            if (_lastBatchedProbeShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
+                return false;
+
+            if (_lastBatchedProbeBodyBindEpoch != _bodyBindEpoch)
+                return false;
+
+            if (_lastBatchedProbePhysicsFrame < 0)
+                return false;
+
+            int age = PhysicsFrame.Current - _lastBatchedProbePhysicsFrame;
+            if (age < 0 || age > math.max(0, maxPhysicsFrameAge))
+                return false;
+
+            if (distance <= 0f || !math.isfinite(distance) || !IsFiniteNonZero(direction))
+                return false;
+
+            Vector3 safeDirection = SafeNormal(direction, Vector3.down);
+            int commandIndex = ResolveScheduledProbeCommandIndex(safeDirection);
+            return TryFindNearestScheduledProbeHit(
+                commandIndex,
+                origin,
+                math.max(0.01f, radius),
+                safeDirection,
+                distance,
+                selfColliderInstanceId,
+                out hit);
+        }
+
         /// <summary>Consumes the most recent hand IK repair snap resolved by the Burst raycast lane.</summary>
         public bool TryConsumeKinematicRepairSnap(out KinematicRepairSnapPoint snapPoint)
         {
@@ -284,7 +374,6 @@ namespace Hecton8.Gameplay
                 ResetBodyBoundCachedResults();
             }
 
-            ResetHydrodynamicAddedMassState();
         }
 
         /// <summary>Binds the inventory source accepted by encumbrance events.</summary>
@@ -309,7 +398,6 @@ namespace Hecton8.Gameplay
             TryUnregisterMotorService();
             ResetWallSlideContactState();
             DisposeScheduledSweepState();
-            ResetHydrodynamicAddedMassState();
         }
 
         private void OnDestroy()
@@ -320,7 +408,6 @@ namespace Hecton8.Gameplay
             TryUnregisterMotorService();
             ResetWallSlideContactState();
             DisposeScheduledSweepState();
-            ResetHydrodynamicAddedMassState();
         }
 
         /// <summary>Updates grounded state mirror for external systems.</summary>
@@ -600,7 +687,7 @@ namespace Hecton8.Gameplay
 
             float safeDt = math.max(dt, 0.0001f);
             float3 denominator = 1f + math.max(drag3, 0f) * speedMag * safeDt;
-            float3 result = velocity3 / math.max(denominator, new float3(0.001f));
+            float3 result = velocity3 * math.rcp(math.max(denominator, new float3(0.001f)));
             return SafeVelocity(new Vector3(result.x, result.y, result.z), velocity);
         }
 
@@ -618,7 +705,7 @@ namespace Hecton8.Gameplay
             float speed = ApproximateSpeedMagnitude(velocity3);
             float safeDt = math.max(dt, 0.0001f);
             float denominator = 1f + math.max(0f, dragCoefficient) * speed * safeDt;
-            float3 result = velocity3 / math.max(denominator, 0.001f);
+            float3 result = velocity3 * math.rcp(math.max(denominator, 0.001f));
             return SafeVelocity(new Vector3(result.x, result.y, result.z), velocity);
         }
 
@@ -639,16 +726,14 @@ namespace Hecton8.Gameplay
                 return Vector3.zero;
 
             float speed = ApproximateSpeedMagnitude(velocity3);
-            float3 velocityDirection = velocity3 * math.rsqrt(speedSq);
-            Vector3 safeForwardVector = SafeNormal(forward, Vector3.forward);
-            float3 safeForward = new float3(safeForwardVector.x, safeForwardVector.y, safeForwardVector.z);
-            float forwardExposure = math.max(0.2f, math.abs(math.dot(velocityDirection, safeForward)));
-            float lateralExposure = math.max(0.2f, 1f - forwardExposure);
-            float directionalCrossSection = math.max(forwardExposure, lateralExposure * 2.75f);
+            float3 velocityDirection = velocity3 * math.rcp(math.max(speed, DenormalVelocityFlushThresholdMetersPerSecond));
+            float3 safeForward = ResolveDominantPlanarAxis(forward, Vector3.forward);
+            float drag = math.max(0.2f, math.abs(math.dot(velocityDirection, safeForward)));
+            float directionalCrossSection = math.lerp(2.75f, 1f, math.saturate(drag));
             float areaScale = math.max(0.01f, crossSectionalAreaScale) * directionalCrossSection;
             float safeDt = math.max(dt, 0.0001f);
             float denominator = 1f + math.max(0f, dragCoefficient) * areaScale * speed * safeDt;
-            float3 result = velocity3 / math.max(denominator, 0.001f);
+            float3 result = velocity3 * math.rcp(math.max(denominator, 0.001f));
             return SafeVelocity(new Vector3(result.x, result.y, result.z), velocity);
         }
 
@@ -657,7 +742,6 @@ namespace Hecton8.Gameplay
         {
             _isGrounded = false;
             ResetWallSlideContactState();
-            ResetHydrodynamicAddedMassState();
             if (_scheduledSweepPending)
                 DispatcherJobSwap.TryComplete(ref _nativeState.ScheduledSweepHandle, forceComplete: true);
             if (_kinematicRepairTargetProbePending)
@@ -675,6 +759,13 @@ namespace Hecton8.Gameplay
             _lastBatchedFootstepPhysicsFrame = -1;
             _lastBatchedFootstepShiftSequence = _scheduledSweepShiftSequence;
             _lastBatchedFootstepBodyBindEpoch = _bodyBindEpoch;
+            _lastBatchedLadderHit = default;
+            _lastBatchedLadderPhysicsFrame = -1;
+            _lastBatchedLadderShiftSequence = _scheduledSweepShiftSequence;
+            _lastBatchedLadderBodyBindEpoch = _bodyBindEpoch;
+            _lastBatchedProbePhysicsFrame = -1;
+            _lastBatchedProbeShiftSequence = _scheduledSweepShiftSequence;
+            _lastBatchedProbeBodyBindEpoch = _bodyBindEpoch;
             _kinematicRepairTargetProbePending = false;
             _kinematicRepairSnapReady = false;
             _kinematicRepairTargetBodyBindEpoch = _bodyBindEpoch;
@@ -685,17 +776,22 @@ namespace Hecton8.Gameplay
             _kinematicRepairSnapPoint = default;
         }
 
-        /// <summary>
-        /// Returns current velocity. Added-mass presentation history is intentionally purged.
-        /// </summary>
-        public Vector3 ResolveHydrodynamicAddedMassVelocity(Vector3 actualVelocity, float submersionFactor)
+        /// <summary>Applies added-mass scalar only to acceleration; deceleration remains force / mass.</summary>
+        public static Vector3 ResolveHydrodynamicAddedMassForce(Vector3 force, Vector3 velocity)
         {
-            return SafeVelocity(actualVelocity);
-        }
+            Vector3 safeForce = SafeVelocity(force);
+            if (safeForce.sqrMagnitude <= MinVectorMagnitudeSq)
+                return safeForce;
 
-        /// <summary>Legacy compatibility hook. Velocity history is purged, so this is intentionally a no-op.</summary>
-        public void ResetHydrodynamicAddedMassState()
-        {
+            Vector3 safeVelocity = SafeVelocity(velocity);
+            float velocitySq = safeVelocity.sqrMagnitude;
+            bool accelerating = velocitySq <= MinVectorMagnitudeSq ||
+                math.dot((float3)safeForce, (float3)safeVelocity) > 0f;
+            if (!accelerating)
+                return safeForce;
+
+            float forceScale = math.rcp(1f + HydrodynamicAddedMassAccelerationScale);
+            return SafeVelocity(safeForce * forceScale, safeForce);
         }
 
         private void ResetBodyBoundCachedResults()
@@ -705,6 +801,13 @@ namespace Hecton8.Gameplay
             _lastBatchedFootstepPhysicsFrame = -1;
             _lastBatchedFootstepShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             _lastBatchedFootstepBodyBindEpoch = _bodyBindEpoch;
+            _lastBatchedLadderHit = default;
+            _lastBatchedLadderPhysicsFrame = -1;
+            _lastBatchedLadderShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            _lastBatchedLadderBodyBindEpoch = _bodyBindEpoch;
+            _lastBatchedProbePhysicsFrame = -1;
+            _lastBatchedProbeShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            _lastBatchedProbeBodyBindEpoch = _bodyBindEpoch;
             _scheduledSweepResultReady = false;
             _scheduledSweepWasBlocked = false;
             _scheduledSweepBlockingHit = default;
@@ -785,6 +888,28 @@ namespace Hecton8.Gameplay
                 Vector3.down,
                 sweepQuery,
                 math.max(ScheduledFootstepProbeDistance, safeSkinWidth + 0.05f));
+
+            _nativeState.ScheduledSweepCommands[ScheduledCeilingProbeCommandIndex] = new CapsulecastCommand(
+                capsulePoint1,
+                capsulePoint2,
+                safeRadius,
+                Vector3.up,
+                sweepQuery,
+                math.max(ScheduledCeilingProbeDistance, safeSkinWidth + safeRadius));
+
+            QueryParameters ladderQuery = new QueryParameters(
+                HectonLayerMasks.InteractableLayerMask |
+                HectonLayerMasks.BaseModuleLayerMask |
+                HectonLayerMasks.TriggerZoneLayerMask,
+                false,
+                QueryTriggerInteraction.Collide);
+            _nativeState.ScheduledSweepCommands[ScheduledLadderProbeCommandIndex] = new CapsulecastCommand(
+                capsulePoint1,
+                capsulePoint2,
+                safeRadius,
+                ResolveScheduledLadderProbeDirection(safeDirection),
+                ladderQuery,
+                math.max(ScheduledLadderProbeDistance, safeSkinWidth + safeRadius));
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             long scheduleBudgetStart = BeginSweepBudgetSample();
@@ -1047,8 +1172,7 @@ namespace Hecton8.Gameplay
 
         internal static Vector3 SafeVelocity(Vector3 velocity, Vector3 fallback = default)
         {
-            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
-            return math.all(math.isfinite(velocity3)) ? velocity : fallback;
+            return MathGuard.SanitizeFinite(velocity, fallback);
         }
 
         private static float ApproximateSpeedMagnitude(float3 velocity)
@@ -1213,6 +1337,9 @@ namespace Hecton8.Gameplay
             _scheduledSweepBlockedSpeed = 0f;
             _lastBatchedFootstepHit = default;
             _lastBatchedFootstepPhysicsFrame = -1;
+            _lastBatchedProbePhysicsFrame = -1;
+            _lastBatchedProbeShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            _lastBatchedProbeBodyBindEpoch = _bodyBindEpoch;
             _kinematicRepairTargetProbePending = false;
             _kinematicRepairSnapReady = false;
             _kinematicRepairTargetProbe = default;
@@ -1298,6 +1425,10 @@ namespace Hecton8.Gameplay
             _scheduledSweepResolvedPosition = _body != null ? _body.position : _scheduledSweepState.StartPosition;
 
             ConsumeScheduledFootstepProbe();
+            ConsumeScheduledLadderProbe();
+            _lastBatchedProbePhysicsFrame = PhysicsFrame.Current;
+            _lastBatchedProbeShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            _lastBatchedProbeBodyBindEpoch = _bodyBindEpoch;
 
             float nearestDistance = float.MaxValue;
             int nearestIndex = -1;
@@ -1438,6 +1569,128 @@ namespace Hecton8.Gameplay
             _lastBatchedFootstepBodyBindEpoch = _bodyBindEpoch;
         }
 
+        private void ConsumeScheduledLadderProbe()
+        {
+            _lastBatchedLadderHit = default;
+            _lastBatchedLadderPhysicsFrame = -1;
+            _lastBatchedLadderShiftSequence = _scheduledSweepShiftSequence;
+            _lastBatchedLadderBodyBindEpoch = _scheduledSweepBodyBindEpoch;
+
+            float nearestDistance = float.MaxValue;
+            int nearestIndex = -1;
+            int startIndex = ScheduledLadderProbeCommandIndex * ScheduledSweepMaxHitsPerCommand;
+            int endIndex = startIndex + ScheduledSweepMaxHitsPerCommand;
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                RaycastHit hit = _nativeState.ScheduledSweepResults[i];
+                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
+                    continue;
+
+                if (!math.isfinite(hit.distance) || hit.distance < 0f)
+                    continue;
+
+                if (!IsValidLadderHit(in hit))
+                    continue;
+
+                if (hit.distance < nearestDistance)
+                {
+                    nearestDistance = hit.distance;
+                    nearestIndex = i;
+                }
+            }
+
+            if (nearestIndex < 0)
+                return;
+
+            _lastBatchedLadderHit = _nativeState.ScheduledSweepResults[nearestIndex];
+            _lastBatchedLadderPhysicsFrame = PhysicsFrame.Current;
+            _lastBatchedLadderShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            _lastBatchedLadderBodyBindEpoch = _bodyBindEpoch;
+        }
+
+        private static int ResolveScheduledProbeCommandIndex(Vector3 direction)
+        {
+            if (direction.y <= -0.7f)
+                return ScheduledGroundProbeCommandIndex;
+
+            return direction.y >= 0.7f
+                ? ScheduledCeilingProbeCommandIndex
+                : ScheduledWallProbeCommandIndex;
+        }
+
+        private bool TryFindNearestScheduledProbeHit(
+            int commandIndex,
+            Vector3 origin,
+            float radius,
+            Vector3 direction,
+            float distance,
+            int selfColliderInstanceId,
+            out RaycastHit hit)
+        {
+            hit = default;
+            if (commandIndex < 0 ||
+                commandIndex >= ScheduledSweepCommandCount ||
+                !_nativeState.ScheduledSweepResults.IsCreated)
+            {
+                return false;
+            }
+
+            float3 origin3 = new float3(origin.x, origin.y, origin.z);
+            if (!math.all(math.isfinite(origin3)))
+                return false;
+
+            Vector3 safeDirection = direction;
+            float3 direction3 = new float3(safeDirection.x, safeDirection.y, safeDirection.z);
+
+            float safeDistance = math.max(0f, distance);
+            float distanceSlack = math.max(_scheduledSweepState.SkinWidth + 0.05f, 0.05f);
+            float lateralLimit = math.max(radius + _scheduledSweepState.CapsuleRadius + 0.25f, 0.25f);
+            float lateralLimitSq = lateralLimit * lateralLimit;
+            int ignoredColliderId = selfColliderInstanceId != 0 ? selfColliderInstanceId : _scheduledSweepState.SelfColliderInstanceId;
+            float nearestDistance = float.MaxValue;
+            int nearestIndex = -1;
+            int startIndex = commandIndex * ScheduledSweepMaxHitsPerCommand;
+            int endIndex = startIndex + ScheduledSweepMaxHitsPerCommand;
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                RaycastHit candidate = _nativeState.ScheduledSweepResults[i];
+                int hitColliderInstanceId = GetHitColliderInstanceId(in candidate);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == ignoredColliderId)
+                    continue;
+
+                if (!math.isfinite(candidate.distance) || candidate.distance < 0f)
+                    continue;
+
+                Vector3 fallbackPoint = origin + (safeDirection * candidate.distance);
+                Vector3 point = SafeVelocity(candidate.point, fallbackPoint);
+                Vector3 delta = point - origin;
+                float3 delta3 = new float3(delta.x, delta.y, delta.z);
+                if (!math.all(math.isfinite(delta3)))
+                    continue;
+
+                float along = math.dot(delta3, direction3);
+                if (along < -distanceSlack || along > safeDistance + distanceSlack)
+                    continue;
+
+                float3 lateral = delta3 - (direction3 * along);
+                if (math.lengthsq(lateral) > lateralLimitSq)
+                    continue;
+
+                if (along < nearestDistance)
+                {
+                    nearestDistance = along;
+                    nearestIndex = i;
+                }
+            }
+
+            if (nearestIndex < 0)
+                return false;
+
+            hit = _nativeState.ScheduledSweepResults[nearestIndex];
+            return true;
+        }
+
         private void DiscardScheduledSweepResults()
         {
             _scheduledSweepPending = false;
@@ -1450,6 +1703,13 @@ namespace Hecton8.Gameplay
             _lastBatchedFootstepPhysicsFrame = -1;
             _lastBatchedFootstepShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             _lastBatchedFootstepBodyBindEpoch = _bodyBindEpoch;
+            _lastBatchedLadderHit = default;
+            _lastBatchedLadderPhysicsFrame = -1;
+            _lastBatchedLadderShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            _lastBatchedLadderBodyBindEpoch = _bodyBindEpoch;
+            _lastBatchedProbePhysicsFrame = -1;
+            _lastBatchedProbeShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            _lastBatchedProbeBodyBindEpoch = _bodyBindEpoch;
             _nativeState.ScheduledSweepHandle = default;
         }
 
@@ -1467,6 +1727,56 @@ namespace Hecton8.Gameplay
                 return false;
 
             return (normal.y * normal.y) >= ScheduledFootstepProbeMinSupportNormalYSq * normalSq;
+        }
+
+        private static bool IsValidLadderHit(in RaycastHit hit)
+        {
+            if (!math.isfinite(hit.distance) || hit.distance < 0f)
+                return false;
+
+            Collider hitCollider = hit.collider;
+            if (hitCollider == null)
+                return false;
+
+            return hitCollider.TryGetComponent(out ClimbableLadder _);
+        }
+
+        private Vector3 ResolveScheduledLadderProbeDirection(Vector3 movementDirection)
+        {
+            Vector3 dominantDirection = ResolveDominantPlanarDirection(movementDirection, Vector3.zero);
+            if (dominantDirection.sqrMagnitude > MinVectorMagnitudeSq)
+                return dominantDirection;
+
+            if (_body != null)
+            {
+                dominantDirection = ResolveDominantPlanarDirection(_body.transform.forward, Vector3.forward);
+                if (dominantDirection.sqrMagnitude > MinVectorMagnitudeSq)
+                    return dominantDirection;
+            }
+
+            return Vector3.forward;
+        }
+
+        private static Vector3 ResolveDominantPlanarDirection(Vector3 direction, Vector3 fallback)
+        {
+            if (!math.isfinite(direction.x) || !math.isfinite(direction.z))
+                return fallback;
+
+            float absX = math.abs(direction.x);
+            float absZ = math.abs(direction.z);
+            if (absX <= MinVectorMagnitudeSq && absZ <= MinVectorMagnitudeSq)
+                return fallback;
+
+            if (absX > absZ)
+                return direction.x >= 0f ? Vector3.right : Vector3.left;
+
+            return direction.z >= 0f ? Vector3.forward : Vector3.back;
+        }
+
+        private static float3 ResolveDominantPlanarAxis(Vector3 direction, Vector3 fallback)
+        {
+            Vector3 dominant = ResolveDominantPlanarDirection(direction, fallback);
+            return new float3(dominant.x, dominant.y, dominant.z);
         }
 
         private void CompleteKinematicRepairTargetProbeInLateFrameSwapWindow()

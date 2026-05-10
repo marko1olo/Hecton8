@@ -611,16 +611,6 @@ namespace Hecton8.AtlasSignal
     {
         private const double OneThird = 1d / 3d;
 
-        public delegate void SolveTriangulatedStrengthDelegate(
-            AbsoluteUniversePosition playerAup,
-            AbsoluteUniversePosition point0,
-            AbsoluteUniversePosition point1,
-            AbsoluteUniversePosition point2,
-            float maxRangeMeters,
-            float baseErrorNoise01,
-            float errorNoiseMultiplier,
-            out SignalBeaconSolveResult result);
-
         public delegate float EvaluateSineWaveMatchDelegate(
             float targetFrequencyHz,
             float targetPhase01,
@@ -630,9 +620,6 @@ namespace Hecton8.AtlasSignal
             float phaseTolerance01);
 
         public delegate uint MergeRecoveredBitsDelegate(uint recoveredBits, uint fragmentBitMask);
-
-        private static readonly FunctionPointer<SolveTriangulatedStrengthDelegate> _solveTriangulatedStrength =
-            BurstCompiler.CompileFunctionPointer<SolveTriangulatedStrengthDelegate>(SolveTriangulatedStrengthBurst);
 
         private static readonly FunctionPointer<EvaluateSineWaveMatchDelegate> _evaluateSineWaveMatch =
             BurstCompiler.CompileFunctionPointer<EvaluateSineWaveMatchDelegate>(EvaluateSineWaveMatchBurst);
@@ -646,28 +633,6 @@ namespace Hecton8.AtlasSignal
             in AbsoluteUniversePosition point0,
             in AbsoluteUniversePosition point1,
             in AbsoluteUniversePosition point2,
-            float maxRangeMeters,
-            float baseErrorNoise01,
-            float errorNoiseMultiplier,
-            out SignalBeaconSolveResult result)
-        {
-            _solveTriangulatedStrength.Invoke(
-                playerAup,
-                point0,
-                point1,
-                point2,
-                maxRangeMeters,
-                baseErrorNoise01,
-                errorNoiseMultiplier,
-                out result);
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private static void SolveTriangulatedStrengthBurst(
-            AbsoluteUniversePosition playerAup,
-            AbsoluteUniversePosition point0,
-            AbsoluteUniversePosition point1,
-            AbsoluteUniversePosition point2,
             float maxRangeMeters,
             float baseErrorNoise01,
             float errorNoiseMultiplier,

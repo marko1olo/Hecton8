@@ -29,7 +29,7 @@ namespace Hecton8.Audio.Editor
         }
 
         /// <summary>
-        /// Runs source-level assertions for SPSC, callback purity, Hermite wrapping, fake cave reverb, and critical psychoacoustic kernels.
+        /// Runs source-level assertions for SPSC, callback purity, cheap sonar echo sampling, fake cave reverb, and critical psychoacoustic kernels.
         /// </summary>
         public static bool Run(out string report)
         {
@@ -54,8 +54,9 @@ namespace Hecton8.Audio.Editor
                 string renderBubbleBlock = ExtractMethodBody(renderer, "private void RenderBubbleBlock(");
                 string renderTinnitusSample = ExtractMethodBody(renderer, "private static float RenderTinnitusSample(");
                 string renderHullStressBlock = ExtractMethodBody(renderer, "private void RenderHullStressBlock(");
+                string renderThrusterBlock = ExtractMethodBody(renderer, "private void RenderThrusterBlock(");
                 string renderSonarBlock = ExtractMethodBody(renderer, "private void RenderSonarBlock(int frameCount, long blockStartFrame, double invSampleRate)");
-                string hermiteSampleRing = ExtractMethodBody(renderer, "private static float HermiteSampleRing(NativeArray<float> buffer, double cursor, int mask)");
+                string linearSampleRing = ExtractMethodBody(renderer, "private static float LinearSampleRing(NativeArray<float> buffer, float cursor, int mask)");
                 string disposeBuffers = ExtractMethodBody(renderer, "private void DisposeBuffers(bool disposeSabineReverbDelay)");
                 string onDisable = ExtractMethodBody(renderer, "private void OnDisable()");
                 string onDestroy = ExtractMethodBody(renderer, "private void OnDestroy()");
@@ -85,11 +86,18 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "CriticalSidechainAttackSeconds = 0.05f", "Critical sidechain attack is 0.05 s", builder, ref failureCount);
                 AssertContains(renderer, "CriticalSidechainReleaseSeconds = 0.3f", "Critical sidechain release is 0.3 s", builder, ref failureCount);
                 AssertContains(renderer, "ResolveCriticalSidechainDuckingGain", "Producer-side sidechain compressor exists", builder, ref failureCount);
+                AssertContains(renderThrusterBlock, "float blockBandPassCenter = math.lerp(200f, 1200f, blockThrottle)", "Thruster band-pass center is resolved once per block", builder, ref failureCount);
+                AssertContains(renderThrusterBlock, "int bladeDelaySamples = math.clamp(", "Thruster blade comb delay is resolved once per block", builder, ref failureCount);
+                AssertOccurrenceCount(renderThrusterBlock, "ComputeBandPassCoefficients(", 1, "Thruster block computes band-pass coefficients once", builder, ref failureCount);
+                AssertNotContains(renderThrusterBlock, "math.round(_sampleRate / math.max(1f, bladePassHz))", "Thruster render loop has no per-sample blade delay rounding", builder, ref failureCount);
 
-                AssertContains(hermiteSampleRing, "WrapRingCursor(cursor, capacity)", "Hermite read pointer is explicitly wrapped", builder, ref failureCount);
-                AssertContains(hermiteSampleRing, "HermiteFractionMaximum", "Hermite fractional phase is clamped", builder, ref failureCount);
-                AssertContains(hermiteSampleRing, "buffer[(baseIndex - 1) & mask]", "Hermite xm1 tap uses bitwise mask", builder, ref failureCount);
-                AssertContains(hermiteSampleRing, "buffer[(baseIndex + 2) & mask]", "Hermite x2 tap uses bitwise mask", builder, ref failureCount);
+                AssertContains(renderSonarBlock, "LinearSampleRing(_sonarEchoDelay", "Sonar echo uses cheap linear delay sampling", builder, ref failureCount);
+                AssertContains(renderer, "public int DelaySamples;", "Sonar tap payload stores precomputed delay samples", builder, ref failureCount);
+                AssertContains(renderSonarBlock, "int echoDelaySamples = tap.DelaySamples;", "Sonar render loop reads precomputed delay samples", builder, ref failureCount);
+                AssertNotContains(renderSonarBlock, "math.round(tap.DelaySeconds", "Sonar render loop does not round delay per sample", builder, ref failureCount);
+                AssertContains(linearSampleRing, "float x0 = buffer[baseIndex & mask]", "Linear sonar sampler reads current tap with bitwise mask", builder, ref failureCount);
+                AssertContains(linearSampleRing, "float x1 = buffer[(baseIndex + 1) & mask]", "Linear sonar sampler reads next tap with bitwise mask", builder, ref failureCount);
+                AssertContains(linearSampleRing, "return math.lerp(x0, x1, t)", "Linear sonar sampler blends with one lerp", builder, ref failureCount);
                 AssertContains(renderer, "SonarEchoMaximumDopplerRatio = 4f", "Sonar Doppler supports >3.0 guarded ratio", builder, ref failureCount);
                 AssertContains(renderer, "SonarGhostEchoTapCount = 3", "Synthetic sonar ghost echo count is fixed at three taps", builder, ref failureCount);
                 AssertNotContains(handleSonarPingSent, "Raycast", "Sonar ghost echo generation has no raycast call", builder, ref failureCount);
@@ -119,7 +127,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderTinnitusSample, "ApproximateOneMinusExpNegPositive(TinnitusPlayerStressExponentialSharpness * playerStress)", "O2 tinnitus gain uses Padé exponential approximation", builder, ref failureCount);
                 AssertContains(renderer, "120f - (60f * clamped) + (12f * x2) - x3", "Padé exp(-x) numerator is present", builder, ref failureCount);
 
-                AssertContains(renderer, "BinauralMaximumMicroDelaySeconds = 0.0007f", "Binaural fake ITD caps micro-delay at 0.7 ms", builder, ref failureCount);
+                AssertContains(renderer, "BinauralMaximumMicroDelaySeconds = 0.0006f", "Binaural fake ITD caps micro-delay at 0.6 ms", builder, ref failureCount);
                 AssertContains(renderer, "math.abs(rightDot) * maxDelaySamples", "Renderer derives fake ITD delay from head-right dot", builder, ref failureCount);
 
                 AssertContains(renderer, "_sabineReverbDelay = new NativeArray<float>(SabineReverbDelayCapacity, Allocator.AudioKernel", "Sabine delay cache is persistent native audio memory", builder, ref failureCount);
@@ -173,8 +181,9 @@ namespace Hecton8.Audio.Editor
 
             if (occlusion.Length > 0)
             {
-                AssertContains(occlusion, "VoxelDensityHardLowPassCutoffHertz = 300f", "Solid voxel occlusion resolves to 300 Hz LPF floor", builder, ref failureCount);
-                AssertContains(occlusion, "ResolveVoxelDensityLowPassCutoff(normalizedDensity)", "Voxel density path drives source-specific LPF cutoff", builder, ref failureCount);
+                AssertContains(occlusion, "VoxelTerrainOcclusionTransmission01 = 0.25118864f", "Cinematic voxel occlusion resolves to -12 dB transmission", builder, ref failureCount);
+                AssertContains(occlusion, "VoxelTerrainOcclusionLowPassHertz = 800f", "Cinematic voxel occlusion resolves to 800 Hz LPF", builder, ref failureCount);
+                AssertNotContains(occlusion, "RaycastNonAlloc", "Cinematic voxel occlusion has no synchronous physics query", builder, ref failureCount);
             }
 
             builder.Append("STATUS: ");

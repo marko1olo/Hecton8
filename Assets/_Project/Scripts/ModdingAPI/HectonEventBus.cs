@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Crafting;
 using Hecton8.Interaction;
-using Unity.Mathematics;
 using UnityEngine;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
@@ -60,32 +59,6 @@ namespace Hecton8.Modding
             CancelReason = reason ?? string.Empty;
         }
     }
-
-    /// <summary>
-    /// Native first-party event streams exposed to mods as immutable byte payloads.
-    /// </summary>
-    public enum HectonNativeEventKind : byte
-    {
-        Interaction = 0,
-        Crafting = 1
-    }
-
-    /// <summary>
-    /// Managed mod callback for read-only native event payload copies.
-    /// The span is valid only for the callback duration and cannot expose native container ownership.
-    /// </summary>
-    /// <param name="eventKind">Native event lane that produced the payload.</param>
-    /// <param name="payload">Blittable payload bytes copied from the internal native queue.</param>
-    public delegate void HectonNativeEventHandler(HectonNativeEventKind eventKind, ReadOnlySpan<byte> payload);
-
-    /// <summary>
-    /// Managed callback for mod-facing unmanaged payload events.
-    /// Payloads are passed by readonly reference and cannot contain managed references.
-    /// </summary>
-    /// <typeparam name="TPayload">Unmanaged event payload type.</typeparam>
-    /// <param name="payload">Blittable event payload.</param>
-    public delegate void HectonUnmanagedEventHandler<TPayload>(in TPayload payload)
-        where TPayload : unmanaged;
 
     /// <summary>
     /// Disposable subscription token returned by <see cref="HectonEventBus.Subscribe{TEvent}(Action{TEvent},string)"/>.

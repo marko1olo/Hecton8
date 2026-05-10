@@ -1,59 +1,59 @@
 // ============================================================================
 // HECTON-8 — ScavengePopulator.cs  (Refactored — Direct API Mode)
-// Система заселения мира ресурсными узлами (ResourceNode).
+// Sistema zaseleniya mira resursnymi uzlami (ResourceNode).
 //
-// ОТВЕТСТВЕННОСТИ:
-//   1. Приём данных генерации от HectonScatterOutput (Custom MapMagic Node).
-//   2. Спавн ResourceNode через ObjectPoolManager (zero-allocation pool).
-//   3. Генерация детерминированных Unique ID для системы сохранений.
-//   4. Проверка WorldStateManager — пропуск уже собранных узлов.
-//   5. Time-sliced спавн — без фризов при загрузке чанка (500+ узлов).
-//   6. Culling: деспавн узлов при выгрузке чанка.
-//   7. Реестр активных узлов по чанкам (ActiveNodesPerChunk).
-//   8. Подсветка ближайшего ресурса по запросу Директора
+// OTVETSTVENNOSTI:
+//   1. Priem dannyh generatsii ot HectonScatterOutput (Custom MapMagic Node).
+//   2. Spavn ResourceNode cherez ObjectPoolManager (zero-allocation pool).
+//   3. Generatsiya determinirovannyh Unique ID dlya sistemy sohraneniy.
+//   4. Proverka WorldStateManager — propusk uzhe sobrannyh uzlov.
+//   5. Time-sliced spavn — bez frizov pri zagruzke chanka (500+ uzlov).
+//   6. Culling: despavn uzlov pri vygruzke chanka.
+//   7. Reestr aktivnyh uzlov po chankam (ActiveNodesPerChunk).
+//   8. Podsvetka blizhayshego resursa po zaprosu Direktora
 //      (HighlightNearbyResource).
 //
-// АРХИТЕКТУРА (v2 — Direct API):
+// ARHITEKTURA (v2 — Direct API):
 //   • Registry service — custom MapMagic node resolves via GlobalRegistry.ScavengePopulator.
-//   • ISlowTickable — для time-sliced спавна (не блокирует основной поток).
-//   • HectonScatterOutput → RegisterSpawnPoint() — прямые вызовы, zero GC.
-//   • ObjectPoolManager — спавн/деспавн всех ResourceNode.
-//   • WorldStateManager — проверка depleted состояния.
+//   • ISlowTickable — dlya time-sliced spavna (ne blokiruet osnovnoy potok).
+//   • HectonScatterOutput → RegisterSpawnPoint() — pryamye vyzovy, zero GC.
+//   • ObjectPoolManager — spavn/despavn vseh ResourceNode.
+//   • WorldStateManager — proverka depleted sostoyaniya.
 //   • Deterministic ID: hash(chunkCoord, localIndex) → StringBuilder → string.
 //
-// ЧТО УДАЛЕНО (v1 → v2):
-//   ✗ MapMagicObject ссылка и поле.
+// ChTO UDALENO (v1 → v2):
+//   ✗ MapMagicObject ssylka i pole.
 //   ✗ SubscribeMapMagicEvents / UnsubscribeMapMagicEvents.
-//   ✗ HandleTileApplied — больше не перехватываем событие.
-//   ✗ ExtractScatterData — больше не читаем TerrainData.treeInstances.
-//   ✗ RegisterSpawnPoints(Vector3[], Quaternion[]) — массивные перегрузки.
-//   Всё заменено единым RegisterSpawnPoint(pos, rot, scale, coord, idx).
+//   ✗ HandleTileApplied — bolshe ne perehvatyvaem sobytie.
+//   ✗ ExtractScatterData — bolshe ne chitaem TerrainData.treeInstances.
+//   ✗ RegisterSpawnPoints(Vector3[], Quaternion[]) — massivnye peregruzki.
+//   Vse zameneno edinym RegisterSpawnPoint(pos, rot, scale, coord, idx).
 //
 // DOUBLE DESPAWN PROTECTION (v2.1):
-//   DespawnChunk проверяет activeInHierarchy перед возвратом в пул.
-//   Если объект уже неактивен — значит он был уничтожен игроком
-//   и уже возвращён в пул самим ResourceNode. Повторный Despawn пропускается.
+//   DespawnChunk proveryaet activeInHierarchy pered vozvratom v pul.
+//   Esli obekt uzhe neaktiven — znachit on byl unichtozhen igrokom
+//   i uzhe vozvraschen v pul samim ResourceNode. Povtornyy Despawn propuskaetsya.
 //
 // HIGHLIGHT (HighlightNearbyResource):
-//   • Ищет ближайший ActiveNode по sqrMagnitude во всех загруженных чанках.
-//   • Итерация: foreach по Dictionary (KeyValuePair), for по List<ActiveNode>.
-//   • Без LINQ. Без аллокаций (struct math only).
-//   • Активирует InteractionHighlighter на найденном узле.
-//   • Fallback: Debug.Log если компонент подсветки не найден.
+//   • Ischet blizhayshiy ActiveNode po sqrMagnitude vo vseh zagruzhennyh chankah.
+//   • Iteratsiya: foreach po Dictionary (KeyValuePair), for po List<ActiveNode>.
+//   • Bez LINQ. Bez allokatsiy (struct math only).
+//   • Aktiviruet InteractionHighlighter na naydennom uzle.
+//   • Fallback: Debug.Log esli komponent podsvetki ne nayden.
 //
 // ZERO GC:
-//   • StringBuilder кэширован — одна аллокация навсегда.
+//   • StringBuilder keshirovan — odna allokatsiya navsegda.
 //   • SpawnRequest — struct (stack allocated).
 //   • Queue<SpawnRequest> — pre-allocated, Enqueue/Dequeue = 0 GC.
-//   • Dictionary<Vector2Int, ChunkData> — аллокация при первом чанке.
+//   • Dictionary<Vector2Int, ChunkData> — allokatsiya pri pervom chanke.
 //   • List<ActiveNode> — pre-allocated per chunk.
-//   • Никаких Find, LINQ, foreach в горячих путях.
+//   • Nikakih Find, LINQ, foreach v goryachih putyah.
 //
 // TIME-SLICING:
-//   Спавн распределён по нескольким SlowTick-ам:
-//     • maxSpawnsPerTick = 20 (настраиваемо).
-//     • 500 узлов = 25 тиков × 0.5с = ~12.5 секунд полной загрузки.
-//     • Но игрок видит узлы появляющимися от ближних к дальним.
+//   Spavn raspredelen po neskolkim SlowTick-am:
+//     • maxSpawnsPerTick = 20 (nastraivaemo).
+//     • 500 uzlov = 25 tikov × 0.5s = ~12.5 sekund polnoy zagruzki.
+//     • No igrok vidit uzly poyavlyayuschimisya ot blizhnih k dalnim.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -75,15 +75,15 @@ namespace Hecton8.Core
         //  REGISTRY SERVICE
         // ══════════════════════════════════════════════════════════
 
-        /// Глобальный доступ. Используется из HectonScatterOutput
-        /// для регистрации спавн-точек без промежуточных аллокаций.
+        /// Globalnyy dostup. Ispolzuetsya iz HectonScatterOutput
+        /// dlya registratsii spavn-tochek bez promezhutochnyh allokatsiy.
         // ══════════════════════════════════════════════════════════
         //  DATA STRUCTURES — all structs for zero GC
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Запрос на спавн узла. Struct — zero GC при Enqueue/Dequeue.
-        /// Хранит всё необходимое для отложенного спавна.
+        /// Zapros na spavn uzla. Struct — zero GC pri Enqueue/Dequeue.
+        /// Hranit vse neobhodimoe dlya otlozhennogo spavna.
         /// </summary>
         private struct SpawnRequest
         {
@@ -113,7 +113,7 @@ namespace Hecton8.Core
             public GameObject[] resourcePrefabs;
         }
         /// <summary>
-        /// Запись об активном узле. Struct — zero GC в List.
+        /// Zapis ob aktivnom uzle. Struct — zero GC v List.
         /// </summary>
         private struct ActiveNode
         {
@@ -123,9 +123,9 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Данные чанка: координаты + список активных узлов.
-        /// Class (reference type) т.к. хранится в Dictionary value
-        /// и содержит List (reference type).
+        /// Dannye chanka: koordinaty + spisok aktivnyh uzlov.
+        /// Class (reference type) t.k. hranitsya v Dictionary value
+        /// i soderzhit List (reference type).
         /// </summary>
         private sealed class ChunkData
         {
@@ -146,35 +146,35 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         [Header("── Loot Tables ───────────────────────────────")]
-        [Tooltip("Таблицы ресурсов по контексту спавна.\n" +
-                 "Surface = поверхность дна (трубы, титан).\n" +
-                 "CaveShallow = неглубокие пещеры (кварц, грибы).\n" +
-                 "CaveDeep = глубокие пещеры (уран, кристаллы).\n" +
-                 "Если контекст не найден — используется первая таблица.")]
+        [Tooltip("Tablitsy resursov po kontekstu spavna.\n" +
+                 "Surface = poverhnost dna (truby, titan).\n" +
+                 "CaveShallow = neglubokie peschery (kvarts, griby).\n" +
+                 "CaveDeep = glubokie peschery (uran, kristally).\n" +
+                 "Esli kontekst ne nayden — ispolzuetsya pervaya tablitsa.")]
         [SerializeField] private LootTableEntry[] lootTables;
 
         [Header("── Spawn Settings ────────────────────────────")]
-        [Tooltip("Общий профиль чанкового мира. Если задан, ресурсы берут из него размер чанка и дальность жизни.")]
+        [Tooltip("Obschiy profil chankovogo mira. Esli zadan, resursy berut iz nego razmer chanka i dalnost zhizni.")]
         [SerializeField] private WorldChunkStreamingProfile chunkStreamingProfile;
 
-        [Tooltip("Размер тайла MapMagic (метры). " +
-                 "Должен совпадать с MapMagic Tile Size. " +
-                 "Используется для координатной конвертации.")]
+        [Tooltip("Razmer tayla MapMagic (metry). " +
+                 "Dolzhen sovpadat s MapMagic Tile Size. " +
+                 "Ispolzuetsya dlya koordinatnoy konvertatsii.")]
         [SerializeField] private float tileSize = 512f;
 
-        [Tooltip("Максимальное количество спавнов за один SlowTick. " +
-                 "500 узлов / 20 per tick / 0.5s interval = ~12.5s full load.")]
+        [Tooltip("Maksimalnoe kolichestvo spavnov za odin SlowTick. " +
+                 "500 uzlov / 20 per tick / 0.5s interval = ~12.5s full load.")]
         [SerializeField] private int maxSpawnsPerTick = 20;
 
-        [Tooltip("Расстояние от игрока, после которого чанк выгружается.")]
+        [Tooltip("Rasstoyanie ot igroka, posle kotorogo chank vygruzhaetsya.")]
         [SerializeField] private float unloadDistance = 300f;
 
-        [Tooltip("Радиус от игрока для приоритетной загрузки (зарезервировано).")]
+        [Tooltip("Radius ot igroka dlya prioritetnoy zagruzki (zarezervirovano).")]
         [SerializeField] private float priorityLoadRadius = 150f;
 
         [Header("── ID Generation ─────────────────────────────")]
-        [Tooltip("Префикс для уникальных ID узлов. " +
-                 "Формат: \"{prefix}_{chunkX}_{chunkZ}_{localIndex}\"")]
+        [Tooltip("Prefiks dlya unikalnyh ID uzlov. " +
+                 "Format: \"{prefix}_{chunkX}_{chunkZ}_{localIndex}\"")]
         [SerializeField] private string idPrefix = "rn";
 
         [Header("── Diagnostics ───────────────────────────────")]
@@ -193,29 +193,29 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Реестр активных чанков.
+        /// Reestr aktivnyh chankov.
         /// Key = chunk coordinate (Vector2Int = tile grid position).
-        /// Value = ChunkData (список активных узлов).
+        /// Value = ChunkData (spisok aktivnyh uzlov).
         /// </summary>
         private Dictionary<Vector2Int, ChunkData> _chunks;
 
         /// <summary>
-        /// Очередь отложенных спавнов (time-slicing).
+        /// Ochered otlozhennyh spavnov (time-slicing).
         /// Pre-allocated. Enqueue/Dequeue — zero GC.
         /// </summary>
         private Queue<SpawnRequest> _spawnQueue;
 
         /// <summary>
-        /// Кэшированный StringBuilder для генерации unique ID.
-        /// Одна аллокация навсегда. Clear() + Append() — zero GC.
-        /// .ToString() аллоцирует string — но только при спавне.
+        /// Keshirovannyy StringBuilder dlya generatsii unique ID.
+        /// Odna allokatsiya navsegda. Clear() + Append() — zero GC.
+        /// .ToString() allotsiruet string — no tolko pri spavne.
         /// </summary>
         private StringBuilder _idBuilder;
 
-        /// <summary>Кэшированный Transform игрока.</summary>
+        /// <summary>Keshirovannyy Transform igroka.</summary>
         private Transform _playerTransform;
 
-        /// <summary>Квадрат unloadDistance — для sqrMagnitude сравнений.</summary>
+        /// <summary>Kvadrat unloadDistance — dlya sqrMagnitude sravneniy.</summary>
         private float _unloadDistanceSqr;
         private float _runtimeTileSize = 512f;
         private float _runtimeUnloadDistance = 300f;
@@ -223,12 +223,12 @@ namespace Hecton8.Core
         private float _runtimePriorityLoadRadius = 150f;
         private int _runtimeMaxSpawnsPerTick = 20;
 
-        /// <summary>Счётчик пропущенных depleted узлов (диагностика).</summary>
+        /// <summary>Schetchik propuschennyh depleted uzlov (diagnostika).</summary>
         private int _skippedDepletedCount;
 
         /// <summary>
-        /// Кэшированный список координат чанков для деспавна.
-        /// Переиспользуется каждый SlowTick — предотвращает
+        /// Keshirovannyy spisok koordinat chankov dlya despavna.
+        /// Pereispolzuetsya kazhdyy SlowTick — predotvraschaet
         /// Dictionary modification during iteration.
         /// </summary>
         private List<Vector2Int> _chunksToUnload;
@@ -350,23 +350,23 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Регистрирует одну точку спавна ресурсного узла.
+        /// Registriruet odnu tochku spavna resursnogo uzla.
         ///
-        /// Вызывается из HectonScatterOutput.ApplyData.Apply()
-        /// на главном потоке. Данные ставятся в очередь для
-        /// time-sliced спавна через ProcessSpawnQueue().
+        /// Vyzyvaetsya iz HectonScatterOutput.ApplyData.Apply()
+        /// na glavnom potoke. Dannye stavyatsya v ochered dlya
+        /// time-sliced spavna cherez ProcessSpawnQueue().
         ///
         /// ZERO GC: SpawnRequest — struct, Enqueue — zero GC.
-        /// Единственная аллокация — ChunkData при первом чанке.
+        /// Edinstvennaya allokatsiya — ChunkData pri pervom chanke.
         /// </summary>
-        /// <param name="position">Мировая позиция спавна.</param>
-        /// <param name="rotation">Поворот (обычно только Y-axis).</param>
-        /// <param name="scale">Масштаб из scatter-данных.</param>
-        /// <param name="chunkCoord">Координата чанка (tile grid).</param>
-        /// <param name="localIndex">Индекс внутри чанка (для детерминированного ID).</param>
+        /// <param name="position">Mirovaya pozitsiya spavna.</param>
+        /// <param name="rotation">Povorot (obychno tolko Y-axis).</param>
+        /// <param name="scale">Masshtab iz scatter-dannyh.</param>
+        /// <param name="chunkCoord">Koordinata chanka (tile grid).</param>
+        /// <param name="localIndex">Indeks vnutri chanka (dlya determinirovannogo ID).</param>
         /// <param name="context">
-        /// Контекст спавна для выбора таблицы ресурсов.
-        /// По умолчанию Surface для обратной совместимости с существующим scatter-пайплайном.
+        /// Kontekst spavna dlya vybora tablitsy resursov.
+        /// Po umolchaniyu Surface dlya obratnoy sovmestimosti s suschestvuyuschim scatter-payplaynom.
         /// </param>
         public void RegisterSpawnPoint(
             Vector3      position,
@@ -393,15 +393,15 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Подготавливает чанк к перезагрузке.
-        /// Если чанк уже содержит узлы — деспавнит их.
+        /// Podgotavlivaet chank k perezagruzke.
+        /// Esli chank uzhe soderzhit uzly — despavnit ih.
         ///
-        /// Вызывается из HectonScatterOutput ПЕРЕД серией
-        /// RegisterSpawnPoint() вызовов для данного чанка.
-        /// Это обрабатывает случай re-generate в MapMagic.
+        /// Vyzyvaetsya iz HectonScatterOutput PERED seriey
+        /// RegisterSpawnPoint() vyzovov dlya dannogo chanka.
+        /// Eto obrabatyvaet sluchay re-generate v MapMagic.
         /// </summary>
-        /// <param name="chunkCoord">Координата чанка.</param>
-        /// <param name="expectedCount">Ожидаемое количество узлов (для pre-alloc).</param>
+        /// <param name="chunkCoord">Koordinata chanka.</param>
+        /// <param name="expectedCount">Ozhidaemoe kolichestvo uzlov (dlya pre-alloc).</param>
         public void PrepareChunkForReload(Vector2Int chunkCoord, int expectedCount)
         {
             if (_chunks.TryGetValue(chunkCoord, out ChunkData existing))
@@ -412,8 +412,8 @@ namespace Hecton8.Core
                 }
             }
 
-            // Удаляем pending spawns для этого чанка из очереди
-            // (edge case: если предыдущая генерация ещё не была обработана)
+            // Udalyaem pending spawns dlya etogo chanka iz ocheredi
+            // (edge case: esli predyduschaya generatsiya esche ne byla obrabotana)
             PurgePendingForChunk(chunkCoord);
 
             GetOrCreateChunk(chunkCoord, expectedCount);
@@ -424,15 +424,15 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Вызывается GameTickManager каждые ~0.5 секунды.
+        /// Vyzyvaetsya GameTickManager kazhdye ~0.5 sekundy.
         ///
-        /// Порядок:
-        ///   1. Обработка очереди спавна (time-sliced).
-        ///   2. Culling далёких чанков.
+        /// Poryadok:
+        ///   1. Obrabotka ocheredi spavna (time-sliced).
+        ///   2. Culling dalekih chankov.
         ///
-        /// ZERO GC в горячем пути (Dequeue, struct math).
-        /// StringBuilder.ToString() аллоцирует string — но только
-        /// при фактическом спавне (не per-frame).
+        /// ZERO GC v goryachem puti (Dequeue, struct math).
+        /// StringBuilder.ToString() allotsiruet string — no tolko
+        /// pri fakticheskom spavne (ne per-frame).
         /// </summary>
         public void SlowTick()
         {
@@ -450,15 +450,15 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Обрабатывает до maxSpawnsPerTick запросов из очереди.
+        /// Obrabatyvaet do maxSpawnsPerTick zaprosov iz ocheredi.
         ///
-        /// Для каждого запроса:
-        ///   1. Генерирует deterministic unique ID.
-        ///   2. Проверяет WorldStateManager.IsNodeDepleted.
-        ///   3. Если жив — спавнит через ObjectPoolManager.
-        ///   4. Применяет scale из scatter-данных.
-        ///   5. Настраивает ResourceNode.uniqueId.
-        ///   6. Регистрирует в ChunkData.activeNodes.
+        /// Dlya kazhdogo zaprosa:
+        ///   1. Generiruet deterministic unique ID.
+        ///   2. Proveryaet WorldStateManager.IsNodeDepleted.
+        ///   3. Esli zhiv — spavnit cherez ObjectPoolManager.
+        ///   4. Primenyaet scale iz scatter-dannyh.
+        ///   5. Nastraivaet ResourceNode.uniqueId.
+        ///   6. Registriruet v ChunkData.activeNodes.
         /// </summary>
         private void ProcessSpawnQueue()
         {
@@ -522,8 +522,8 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Настраивает компонент ResourceNode на заспавненном объекте.
-        /// Устанавливает uniqueId через публичный метод SetUniqueId().
+        /// Nastraivaet komponent ResourceNode na zaspavnennom obekte.
+        /// Ustanavlivaet uniqueId cherez publichnyy metod SetUniqueId().
         /// </summary>
         private static void ConfigureResourceNode(GameObject instance, string uniqueId)
         {
@@ -538,11 +538,11 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Проверяет все загруженные чанки. Если центр чанка
-        /// дальше unloadDistance от игрока — деспавнит все узлы чанка.
+        /// Proveryaet vse zagruzhennye chanki. Esli tsentr chanka
+        /// dalshe unloadDistance ot igroka — despavnit vse uzly chanka.
         ///
-        /// Использует кэшированный _chunksToUnload для сбора ключей
-        /// перед модификацией Dictionary.
+        /// Ispolzuet keshirovannyy _chunksToUnload dlya sbora klyuchey
+        /// pered modifikatsiey Dictionary.
         ///
         /// ZERO GC: Vector2Int — struct. sqrMagnitude — no sqrt.
         /// </summary>
@@ -590,7 +590,7 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Получает или создаёт ChunkData для указанных координат.
+        /// Poluchaet ili sozdaet ChunkData dlya ukazannyh koordinat.
         /// </summary>
         private ChunkData GetOrCreateChunk(Vector2Int coord, int expectedNodeCount)
         {
@@ -607,16 +607,16 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Деспавнит все узлы чанка. Возвращает объекты в пул.
-        /// Сбрасывает масштаб перед возвратом.
-        /// Помечает чанк как выгруженный (isLoaded = false).
+        /// Despavnit vse uzly chanka. Vozvraschaet obekty v pul.
+        /// Sbrasyvaet masshtab pered vozvratom.
+        /// Pomechaet chank kak vygruzhennyy (isLoaded = false).
         ///
         /// DOUBLE DESPAWN PROTECTION:
-        ///   Объект возвращается в пул ТОЛЬКО если он ещё активен
-        ///   в иерархии (activeInHierarchy == true).
-        ///   Если объект уже неактивен — значит он был уничтожен
-        ///   игроком (ResourceNode.TakeDamage → pool.Despawn),
-        ///   и повторный Despawn вызовет ошибку / повреждение пула.
+        ///   Obekt vozvraschaetsya v pul TOLKO esli on esche aktiven
+        ///   v ierarhii (activeInHierarchy == true).
+        ///   Esli obekt uzhe neaktiven — znachit on byl unichtozhen
+        ///   igrokom (ResourceNode.TakeDamage → pool.Despawn),
+        ///   i povtornyy Despawn vyzovet oshibku / povrezhdenie pula.
         /// </summary>
         private void DespawnChunk(Vector2Int coord)
         {
@@ -634,13 +634,13 @@ namespace Hecton8.Core
 
                 if (node.gameObject != null)
                 {
-                    // Защита от Double Despawn:
-                    // Если объект уже выключен, значит он уже в пуле
-                    // (уничтожен игроком через ResourceNode → pool.Despawn).
-                    // Повторный Despawn пропускается.
+                    // Zaschita ot Double Despawn:
+                    // Esli obekt uzhe vyklyuchen, znachit on uzhe v pule
+                    // (unichtozhen igrokom cherez ResourceNode → pool.Despawn).
+                    // Povtornyy Despawn propuskaetsya.
                     if (node.gameObject.activeInHierarchy)
                     {
-                        // Сбрасываем масштаб перед возвратом в пул
+                        // Sbrasyvaem masshtab pered vozvratom v pul
                         node.gameObject.transform.localScale = Vector3.one;
 
                         if (pool != null)
@@ -660,7 +660,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Деспавнит ВСЕ чанки. Вызывается при OnDisable / смене сцены.
+        /// Despavnit VSE chanki. Vyzyvaetsya pri OnDisable / smene stseny.
         /// </summary>
         private void DespawnAllChunks()
         {
@@ -687,14 +687,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Удаляет из очереди спавна все pending-запросы для указанного чанка.
+        /// Udalyaet iz ocheredi spavna vse pending-zaprosy dlya ukazannogo chanka.
         /// 
-        /// Используется при re-generate (MapMagic пересоздаёт тайл):
-        /// старые pending-запросы должны быть отменены, иначе они
-        /// заспавнятся поверх новых данных.
+        /// Ispolzuetsya pri re-generate (MapMagic peresozdaet tayl):
+        /// starye pending-zaprosy dolzhny byt otmeneny, inache oni
+        /// zaspavnyatsya poverh novyh dannyh.
         ///
-        /// GC NOTE: Создаёт временную очередь при наличии pending items.
-        /// Вызывается редко (только при re-generate), поэтому допустимо.
+        /// GC NOTE: Sozdaet vremennuyu ochered pri nalichii pending items.
+        /// Vyzyvaetsya redko (tolko pri re-generate), poetomu dopustimo.
         /// </summary>
         private void PurgePendingForChunk(Vector2Int chunkCoord)
         {
@@ -723,17 +723,17 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Генерирует детерминированный Unique ID для ResourceNode.
+        /// Generiruet determinirovannyy Unique ID dlya ResourceNode.
         ///
-        /// Формат: "{prefix}_{chunkX}_{chunkZ}_{localIndex}"
-        /// Пример: "rn_3_-2_47"
+        /// Format: "{prefix}_{chunkX}_{chunkZ}_{localIndex}"
+        /// Primer: "rn_3_-2_47"
         ///
-        /// ДЕТЕРМИНИЗМ: при одинаковых chunkCoord + localIndex
-        /// всегда генерируется одинаковый ID. Гарантирует корректное
-        /// восстановление depleted-состояния после save/load.
+        /// DETERMINIZM: pri odinakovyh chunkCoord + localIndex
+        /// vsegda generiruetsya odinakovyy ID. Garantiruet korrektnoe
+        /// vosstanovlenie depleted-sostoyaniya posle save/load.
         ///
-        /// GC: StringBuilder.ToString() аллоцирует string (~40 bytes).
-        /// Вызывается ТОЛЬКО при спавне (не per-frame).
+        /// GC: StringBuilder.ToString() allotsiruet string (~40 bytes).
+        /// Vyzyvaetsya TOLKO pri spavne (ne per-frame).
         /// </summary>
         private string GenerateUniqueId(Vector2Int chunkCoord, int localIndex)
         {
@@ -754,7 +754,7 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Конвертирует мировую позицию в координату чанка (grid position).
+        /// Konvertiruet mirovuyu pozitsiyu v koordinatu chanka (grid position).
         /// Deterministic: floor division.
         /// </summary>
         private Vector2Int WorldToChunkCoord(Vector3 worldPos)
@@ -765,7 +765,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Конвертирует координату чанка в центр чанка (world XZ).
+        /// Konvertiruet koordinatu chanka v tsentr chanka (world XZ).
         /// </summary>
         private Vector2 ChunkCoordToWorldCenter(Vector2Int coord)
         {
@@ -837,7 +837,7 @@ namespace Hecton8.Core
         //  PUBLIC API — QUERIES & CONTROL
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Количество загруженных чанков с активными узлами.</summary>
+        /// <summary>Kolichestvo zagruzhennyh chankov s aktivnymi uzlami.</summary>
         public int ActiveChunkCount
         {
             get
@@ -854,7 +854,7 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Общее количество активных узлов во всех чанках.</summary>
+        /// <summary>Obschee kolichestvo aktivnyh uzlov vo vseh chankah.</summary>
         public int TotalActiveNodes
         {
             get
@@ -870,7 +870,7 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Количество запросов в очереди спавна.</summary>
+        /// <summary>Kolichestvo zaprosov v ocheredi spavna.</summary>
         public int PendingSpawnCount => _spawnQueue.Count;
 
         public float UnloadDistance => _runtimeUnloadDistance;
@@ -886,8 +886,8 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Принудительная перезагрузка чанка.
-        /// Деспавнит все узлы и помечает для повторного заполнения.
+        /// Prinuditelnaya perezagruzka chanka.
+        /// Despavnit vse uzly i pomechaet dlya povtornogo zapolneniya.
         /// </summary>
         public void ReloadChunk(Vector2Int coord)
         {
@@ -895,8 +895,8 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Принудительная выгрузка ВСЕХ чанков.
-        /// Используется при телепорте, смене зоны.
+        /// Prinuditelnaya vygruzka VSEH chankov.
+        /// Ispolzuetsya pri teleporte, smene zony.
         /// </summary>
         public void UnloadAll()
         {
@@ -908,27 +908,27 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Находит и подсвечивает ближайший ресурсный узел к указанной
-        /// мировой позиции. Вызывается HectonDirectorAI при RareDiscovery.
+        /// Nahodit i podsvechivaet blizhayshiy resursnyy uzel k ukazannoy
+        /// mirovoy pozitsii. Vyzyvaetsya HectonDirectorAI pri RareDiscovery.
         ///
-        /// Алгоритм:
-        ///   1. Итерация по всем записям Dictionary _chunks через foreach
-        ///      (KeyValuePair — struct enumerator для Dictionary, допустимо).
-        ///   2. Для каждого загруженного чанка — for-цикл по List&lt;ActiveNode&gt;.
-        ///   3. sqrMagnitude сравнение — без sqrt.
-        ///   4. Запоминаем узел с минимальным sqrMagnitude.
-        ///   5. Если узел найден — TryGetComponent&lt;InteractionHighlighter&gt;
-        ///      для включения подсветки.
-        ///   6. Fallback: Debug.Log если визуальная система не готова.
+        /// Algoritm:
+        ///   1. Iteratsiya po vsem zapisyam Dictionary _chunks cherez foreach
+        ///      (KeyValuePair — struct enumerator dlya Dictionary, dopustimo).
+        ///   2. Dlya kazhdogo zagruzhennogo chanka — for-tsikl po List&lt;ActiveNode&gt;.
+        ///   3. sqrMagnitude sravnenie — bez sqrt.
+        ///   4. Zapominaem uzel s minimalnym sqrMagnitude.
+        ///   5. Esli uzel nayden — TryGetComponent&lt;InteractionHighlighter&gt;
+        ///      dlya vklyucheniya podsvetki.
+        ///   6. Fallback: Debug.Log esli vizualnaya sistema ne gotova.
         ///
         /// ZERO GC: struct math, no LINQ, no allocations.
-        /// foreach по Dictionary допускается здесь, так как метод вызывается
-        /// редко (раз в 30+ секунд по решению Директора), а не per-frame.
+        /// foreach po Dictionary dopuskaetsya zdes, tak kak metod vyzyvaetsya
+        /// redko (raz v 30+ sekund po resheniyu Direktora), a ne per-frame.
         /// </summary>
-        /// <param name="worldHint">Мировая позиция подсказки (центр поиска).</param>
+        /// <param name="worldHint">Mirovaya pozitsiya podskazki (tsentr poiska).</param>
         public void HighlightNearbyResource(Vector3 worldHint)
         {
-            // ── Поиск ближайшего активного узла ──
+            // ── Poisk blizhayshego aktivnogo uzla ──
             float bestDistSqr       = float.MaxValue;
             GameObject bestNodeGO   = null;
             string bestNodeId       = null;
@@ -939,7 +939,7 @@ namespace Hecton8.Core
                 KeyValuePair<Vector2Int, ChunkData> kvp = enumerator.Current;
                 ChunkData chunk = kvp.Value;
 
-                // Пропускаем выгруженные чанки
+                // Propuskaem vygruzhennye chanki
                 if (!chunk.isLoaded)
                     continue;
 
@@ -950,7 +950,7 @@ namespace Hecton8.Core
                 {
                     ActiveNode node = nodes[i];
 
-                    // Пропускаем уничтоженные/деактивированные узлы
+                    // Propuskaem unichtozhennye/deaktivirovannye uzly
                     if (node.gameObject == null)
                         continue;
                     if (!node.gameObject.activeInHierarchy)
@@ -958,7 +958,7 @@ namespace Hecton8.Core
                     if (node.transform == null)
                         continue;
 
-                    // ── sqrMagnitude — без sqrt ──
+                    // ── sqrMagnitude — bez sqrt ──
                     Vector3 diff = node.transform.position - worldHint;
                     float distSqr = diff.sqrMagnitude;
 
@@ -971,7 +971,7 @@ namespace Hecton8.Core
                 }
             }
 
-            // ── Результат поиска ──
+            // ── Rezultat poiska ──
             if (bestNodeGO == null)
             {
 #if UNITY_EDITOR
@@ -981,14 +981,14 @@ namespace Hecton8.Core
                 return;
             }
 
-            // ── Включение подсветки ──
+            // ── Vklyuchenie podsvetki ──
             if (bestNodeGO.TryGetComponent(out InteractionHighlighter highlighter))
             {
                 highlighter.SetHighlight(true);
             }
             else
             {
-                // Визуальная система подсветки не до конца готова — логируем
+                // Vizualnaya sistema podsvetki ne do kontsa gotova — logiruem
                 Debug.Log(
                     "[ScavengePopulator] Resource Highlighted: " +
                     (bestNodeId ?? "unknown") +

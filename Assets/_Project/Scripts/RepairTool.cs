@@ -1,27 +1,27 @@
 // ============================================================================
 // HECTON-8 — RepairTool.cs
-// Ремонтный инструмент игрока.
+// Remontnyy instrument igroka.
 //
-// НАСЛЕДОВАНИЕ:
+// NASLEDOVANIE:
 //   PlayerTool → RepairTool
 //
-// ЛОГИКА:
+// LOGIKA:
 //   • UsePrimary(dt):
-//       1. Пускает Raycast вперёд.
-//       2. Если попал в BaseModule — вызывает Repair(repairSpeed * dt).
-//       3. Включает визуал сварки / искры / Bloom-friendly light.
+//       1. Puskaet Raycast vpered.
+//       2. Esli popal v BaseModule — vyzyvaet Repair(repairSpeed * dt).
+//       3. Vklyuchaet vizual svarki / iskry / Bloom-friendly light.
 //   • ToolTick(dt):
-//       Отключает визуал, если в кадре инструмент не использовался.
+//       Otklyuchaet vizual, esli v kadre instrument ne ispolzovalsya.
 //
-// ВИЗУАЛ:
-//   • sparksVFX         — искры.
-//   • repairLine        — LineRenderer луча/дуги.
-//   • weldLight         — яркий point light для Bloom в шлеме.
+// VIZUAL:
+//   • sparksVFX         — iskry.
+//   • repairLine        — LineRenderer lucha/dugi.
+//   • weldLight         — yarkiy point light dlya Bloom v shleme.
 //
 // ZERO GC:
 //   • RaycastHit — struct.
 //   • TryGetComponent — zero GC.
-//   • Нет Update().
+//   • Net Update().
 // ============================================================================
 
 using System;
@@ -71,13 +71,13 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Repair Settings ───────────────────────────")]
-        [Tooltip("Максимальная дальность ремонта.")]
+        [Tooltip("Maksimalnaya dalnost remonta.")]
         [SerializeField] private float repairRange = 4f;
 
-        [Tooltip("Скорость ремонта (единиц целостности в секунду).")]
+        [Tooltip("Skorost remonta (edinits tselostnosti v sekundu).")]
         [SerializeField] private float repairSpeed = 20f;
 
-        [Tooltip("Слои, по которым работает ремонтный луч.")]
+        [Tooltip("Sloi, po kotorym rabotaet remontnyy luch.")]
         [SerializeField] private LayerMask repairMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Header("── Visuals ───────────────────────────────────")]

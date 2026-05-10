@@ -9,6 +9,7 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.Serialization;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -47,9 +48,6 @@ namespace Hecton8.Visor
             [Tooltip("GPU histogram compute shader used to resolve weighted EV and temporal exposure smoothing.")]
             public ComputeShader autoExposureComputeShader = null;
 
-            [Tooltip("Optional blue-noise texture used to jitter screen-space radial taps. Leave null to fall back to procedural noise.")]
-            public Texture2D blueNoiseTexture = null;
-
             [Tooltip("Where the volumetric shaft pass is injected into URP. Before transparents keeps Crest water and camera-space UI on top of the shaft composite.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingTransparents;
 
@@ -68,8 +66,9 @@ namespace Hecton8.Visor
             [Tooltip("Base water density used for light accumulation.")]
             [Range(0f, 4f)] public float density = 1.05f;
 
-            [Tooltip("Amount of blue-noise jitter applied to the screen-space radial taps.")]
-            [Range(0f, 1f)] public float blueNoiseJitter = 0.85f;
+            [Tooltip("Amount of deterministic IGN jitter applied to the screen-space radial taps.")]
+            [FormerlySerializedAs("blueNoiseJitter")]
+            [Range(0f, 1f)] public float ignJitter = 0.85f;
 
             [Tooltip("Edge-preserving bilateral depth falloff used during blur and upsample.")]
             [Range(0.1f, 128f)] public float bilateralDepthSigma = 24f;
@@ -229,6 +228,14 @@ namespace Hecton8.Visor
             private ComputeShader _autoExposureComputeShader;
             private GraphicsBuffer _histogramBuffer;
             private GraphicsBuffer _exposureStateBuffer;
+            private GraphicsBuffer _lastExposureStateBuffer;
+            private Material _lastExposureStateMaterial;
+            private MaterialUploadCache _raymarchMaterialCache;
+            private MaterialUploadCache _blurHorizontalMaterialCache;
+            private MaterialUploadCache _blurVerticalMaterialCache;
+            private MaterialUploadCache _compositeMaterialCache;
+            private Vector4 _lastContactShadowGlobals = Vector4.positiveInfinity;
+            private bool _hasContactShadowGlobals;
             private int _clearHistogramKernel = -1;
             private int _buildHistogramKernel = -1;
             private int _resolveExposureKernel = -1;
@@ -272,6 +279,14 @@ namespace Hecton8.Visor
                 _exposureStateBuffer?.Release();
                 _histogramBuffer = null;
                 _exposureStateBuffer = null;
+                _lastExposureStateBuffer = null;
+                _lastExposureStateMaterial = null;
+                _raymarchMaterialCache = default;
+                _blurHorizontalMaterialCache = default;
+                _blurVerticalMaterialCache = default;
+                _compositeMaterialCache = default;
+                _hasContactShadowGlobals = false;
+                _lastContactShadowGlobals = Vector4.positiveInfinity;
                 _clearHistogramKernel = -1;
                 _buildHistogramKernel = -1;
                 _resolveExposureKernel = -1;
@@ -433,12 +448,11 @@ namespace Hecton8.Visor
                 }
 
                 MaterialParameterState materialParameters = MaterialParameterState.Resolve(_settings, exposureAvailable);
-                Texture2D blueNoiseTexture = _settings.blueNoiseTexture;
-                ApplyContactShadowGlobals(in materialParameters);
-                UpdateMaterialParameters(_raymarchMaterial, in materialParameters, blueNoiseTexture, 0f);
-                UpdateMaterialParameters(_blurHorizontalMaterial, in materialParameters, blueNoiseTexture, 1f);
-                UpdateMaterialParameters(_blurVerticalMaterial, in materialParameters, blueNoiseTexture, 2f);
-                UpdateMaterialParameters(_compositeMaterial, in materialParameters, blueNoiseTexture, 3f);
+                ApplyContactShadowGlobalsIfChanged(in materialParameters);
+                UpdateMaterialParameters(_raymarchMaterial, ref _raymarchMaterialCache, in materialParameters, 0f);
+                UpdateMaterialParameters(_blurHorizontalMaterial, ref _blurHorizontalMaterialCache, in materialParameters, 1f);
+                UpdateMaterialParameters(_blurVerticalMaterial, ref _blurVerticalMaterialCache, in materialParameters, 2f);
+                UpdateMaterialParameters(_compositeMaterial, ref _compositeMaterialCache, in materialParameters, 3f);
 
                 using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Underwater Noir Half-Res Contact Depth", out var passData, _profilingSampler))
                 {
@@ -595,8 +609,15 @@ namespace Hecton8.Visor
                     _exposureStateBuffer.UnlockBufferAfterWrite<Vector4>(1);
                 }
 
-                if (_compositeMaterial != null && _exposureStateBuffer != null)
+                if (_compositeMaterial != null &&
+                    _exposureStateBuffer != null &&
+                    (!ReferenceEquals(_lastExposureStateMaterial, _compositeMaterial) ||
+                     !ReferenceEquals(_lastExposureStateBuffer, _exposureStateBuffer)))
+                {
                     _compositeMaterial.SetBuffer(ShaderConstants.ExposureStateBufferId, _exposureStateBuffer);
+                    _lastExposureStateMaterial = _compositeMaterial;
+                    _lastExposureStateBuffer = _exposureStateBuffer;
+                }
             }
 
             private void TryInitializeAutoExposureKernels()
@@ -651,6 +672,8 @@ namespace Hecton8.Visor
                 _exposureStateBuffer?.Release();
                 _histogramBuffer = null;
                 _exposureStateBuffer = null;
+                _lastExposureStateBuffer = null;
+                _lastExposureStateMaterial = null;
             }
 
             private static Vector4 ResolveInputSize(int width, int height)
@@ -665,18 +688,25 @@ namespace Hecton8.Visor
 
             private static void UpdateMaterialParameters(
                 Material material,
+                ref MaterialUploadCache cache,
                 in MaterialParameterState parameters,
-                Texture2D blueNoiseTexture,
                 float passMode)
             {
+                if (cache.HasState &&
+                    ReferenceEquals(cache.Material, material) &&
+                    cache.PassMode == passMode &&
+                    MaterialParametersEqual(in cache.Parameters, in parameters))
+                {
+                    return;
+                }
+
                 material.SetFloat(ShaderConstants.PassModeId, passMode);
-                material.SetFloat(ShaderConstants.FrameCountId, Time.frameCount);
                 material.SetFloat(ShaderConstants.RenderScaleId, parameters.RenderScale);
                 material.SetFloat(ShaderConstants.RaymarchStepsId, 0f);
                 material.SetFloat(ShaderConstants.MaxRayDistanceId, parameters.MaxRayDistance);
                 material.SetFloat(ShaderConstants.ScatteringAnisotropyId, parameters.ScatteringAnisotropy);
                 material.SetFloat(ShaderConstants.DensityId, parameters.Density);
-                material.SetFloat(ShaderConstants.BlueNoiseJitterId, parameters.BlueNoiseJitter);
+                material.SetFloat(ShaderConstants.IgnJitterId, parameters.IgnJitter);
                 material.SetFloat(ShaderConstants.BilateralDepthSigmaId, parameters.BilateralDepthSigma);
                 material.SetFloat(ShaderConstants.ShaftIntensityId, parameters.ShaftIntensity);
                 material.SetFloat(ShaderConstants.BiolumPatternScaleId, parameters.BiolumPatternScale);
@@ -706,16 +736,70 @@ namespace Hecton8.Visor
                 material.SetFloat(ShaderConstants.ThermalHazeIntensityId, parameters.ThermalHazeIntensity);
                 material.SetFloat(ShaderConstants.ThermalHazeScaleId, parameters.ThermalHazeScale);
                 material.SetFloat(ShaderConstants.HasExposureStateId, parameters.HasExposureState);
-                material.SetFloat(ShaderConstants.HasBlueNoiseTextureId, parameters.HasBlueNoiseTexture);
-                material.SetTexture(ShaderConstants.BlueNoiseTextureId, blueNoiseTexture);
+
+                cache.Material = material;
+                cache.PassMode = passMode;
+                cache.Parameters = parameters;
+                cache.HasState = true;
             }
 
-            private static void ApplyContactShadowGlobals(in MaterialParameterState parameters)
+            private void ApplyContactShadowGlobalsIfChanged(in MaterialParameterState parameters)
             {
+                Vector4 globals = new Vector4(
+                    parameters.ContactShadowStrength,
+                    parameters.ContactShadowSteps,
+                    parameters.ContactShadowBias,
+                    parameters.ContactShadowMaxDistance);
+
+                if (_hasContactShadowGlobals && _lastContactShadowGlobals == globals)
+                    return;
+
                 Shader.SetGlobalFloat(ShaderConstants.ContactShadowStrengthId, parameters.ContactShadowStrength);
                 Shader.SetGlobalFloat(ShaderConstants.ContactShadowStepsId, parameters.ContactShadowSteps);
                 Shader.SetGlobalFloat(ShaderConstants.ContactShadowBiasId, parameters.ContactShadowBias);
                 Shader.SetGlobalFloat(ShaderConstants.ContactShadowMaxDistanceId, parameters.ContactShadowMaxDistance);
+                _lastContactShadowGlobals = globals;
+                _hasContactShadowGlobals = true;
+            }
+
+            private static bool MaterialParametersEqual(
+                in MaterialParameterState left,
+                in MaterialParameterState right)
+            {
+                return left.RenderScale == right.RenderScale &&
+                       left.MaxRayDistance == right.MaxRayDistance &&
+                       left.ScatteringAnisotropy == right.ScatteringAnisotropy &&
+                       left.Density == right.Density &&
+                       left.IgnJitter == right.IgnJitter &&
+                       left.BilateralDepthSigma == right.BilateralDepthSigma &&
+                       left.ShaftIntensity == right.ShaftIntensity &&
+                       left.BiolumPatternScale == right.BiolumPatternScale &&
+                       left.BiolumProjectionStrength == right.BiolumProjectionStrength &&
+                       left.SiltStrength == right.SiltStrength &&
+                       left.SiltNoiseScale == right.SiltNoiseScale &&
+                       left.SiltFloorBoost == right.SiltFloorBoost &&
+                       left.SiltDriftSpeed == right.SiltDriftSpeed &&
+                       left.ContactShadowStrength == right.ContactShadowStrength &&
+                       left.ContactShadowSteps == right.ContactShadowSteps &&
+                       left.ContactShadowBias == right.ContactShadowBias &&
+                       left.ContactShadowMaxDistance == right.ContactShadowMaxDistance &&
+                       left.FlashlightShadowSteps == right.FlashlightShadowSteps &&
+                       left.FlashlightShadowSoftness == right.FlashlightShadowSoftness &&
+                       left.FlashlightShadowMinStep == right.FlashlightShadowMinStep &&
+                       left.FlashlightShadowBias == right.FlashlightShadowBias &&
+                       left.FlashlightShadowFloor == right.FlashlightShadowFloor &&
+                       left.NoirPower == right.NoirPower &&
+                       left.NoirFogDensity == right.NoirFogDensity &&
+                       left.NoirLiftColor == right.NoirLiftColor &&
+                       left.LensGhostIntensity == right.LensGhostIntensity &&
+                       left.LensGhostScale == right.LensGhostScale &&
+                       left.LensChromaticAberration == right.LensChromaticAberration &&
+                       left.LensEdgeWeight == right.LensEdgeWeight &&
+                       left.LensDirtIntensity == right.LensDirtIntensity &&
+                       left.CondensationIntensity == right.CondensationIntensity &&
+                       left.ThermalHazeIntensity == right.ThermalHazeIntensity &&
+                       left.ThermalHazeScale == right.ThermalHazeScale &&
+                       left.HasExposureState == right.HasExposureState;
             }
 
             private static float ResolveThermalHazeIntensity(float configuredIntensity)
@@ -761,6 +845,14 @@ namespace Hecton8.Visor
                 return configured;
             }
 
+            private struct MaterialUploadCache
+            {
+                internal Material Material;
+                internal MaterialParameterState Parameters;
+                internal float PassMode;
+                internal bool HasState;
+            }
+
             [StructLayout(LayoutKind.Sequential)]
             private struct MaterialParameterState
             {
@@ -768,7 +860,7 @@ namespace Hecton8.Visor
                 internal float MaxRayDistance;
                 internal float ScatteringAnisotropy;
                 internal float Density;
-                internal float BlueNoiseJitter;
+                internal float IgnJitter;
                 internal float BilateralDepthSigma;
                 internal float ShaftIntensity;
                 internal float BiolumPatternScale;
@@ -798,7 +890,6 @@ namespace Hecton8.Visor
                 internal float ThermalHazeIntensity;
                 internal float ThermalHazeScale;
                 internal float HasExposureState;
-                internal float HasBlueNoiseTexture;
 
                 internal static MaterialParameterState Resolve(FeatureSettings settings, bool exposureAvailable)
                 {
@@ -807,7 +898,7 @@ namespace Hecton8.Visor
                     state.MaxRayDistance = math.max(1f, settings.maxRayDistance);
                     state.ScatteringAnisotropy = math.clamp(settings.scatteringAnisotropy, 0f, 0.95f);
                     state.Density = math.max(0f, settings.density);
-                    state.BlueNoiseJitter = math.saturate(settings.blueNoiseJitter);
+                    state.IgnJitter = math.saturate(settings.ignJitter);
                     state.BilateralDepthSigma = math.max(0.01f, settings.bilateralDepthSigma);
                     state.ShaftIntensity = math.max(0f, settings.shaftIntensity);
                     state.BiolumPatternScale = math.max(0.001f, settings.biolumPatternScale);
@@ -837,7 +928,6 @@ namespace Hecton8.Visor
                     state.ThermalHazeIntensity = ResolveThermalHazeIntensity(settings.thermalHazeIntensity);
                     state.ThermalHazeScale = math.max(0.001f, settings.thermalHazeScale);
                     state.HasExposureState = exposureAvailable ? 1f : 0f;
-                    state.HasBlueNoiseTexture = settings.blueNoiseTexture != null ? 1f : 0f;
                     return state;
                 }
             }
@@ -862,7 +952,7 @@ namespace Hecton8.Visor
             internal static readonly int MaxRayDistanceId = Shader.PropertyToID("_HectonShaftMaxRayDistance");
             internal static readonly int ScatteringAnisotropyId = Shader.PropertyToID("_HectonShaftScatteringAnisotropy");
             internal static readonly int DensityId = Shader.PropertyToID("_HectonShaftDensity");
-            internal static readonly int BlueNoiseJitterId = Shader.PropertyToID("_HectonShaftBlueNoiseJitter");
+            internal static readonly int IgnJitterId = Shader.PropertyToID("_HectonShaftIgnJitter");
             internal static readonly int BilateralDepthSigmaId = Shader.PropertyToID("_HectonShaftBilateralDepthSigma");
             internal static readonly int ShaftIntensityId = Shader.PropertyToID("_HectonShaftIntensity");
             internal static readonly int BiolumPatternScaleId = Shader.PropertyToID("_HectonBiolumPatternScale");
@@ -891,9 +981,6 @@ namespace Hecton8.Visor
             internal static readonly int CondensationIntensityId = Shader.PropertyToID("_HectonCondensationIntensity");
             internal static readonly int ThermalHazeIntensityId = Shader.PropertyToID("_HectonThermalHazeIntensity");
             internal static readonly int ThermalHazeScaleId = Shader.PropertyToID("_HectonThermalHazeScale");
-            internal static readonly int FrameCountId = Shader.PropertyToID("_HectonFrameCount");
-            internal static readonly int BlueNoiseTextureId = Shader.PropertyToID("_BlueNoiseTex");
-            internal static readonly int HasBlueNoiseTextureId = Shader.PropertyToID("_HectonHasBlueNoiseTex");
             internal static readonly int HasExposureStateId = Shader.PropertyToID("_HectonHasExposureState");
             internal static readonly int ShaftTextureId = Shader.PropertyToID("_HectonShaftsTexture");
             internal static readonly int HalfResDepthTextureId = Shader.PropertyToID("_HectonHalfResDepthTexture");

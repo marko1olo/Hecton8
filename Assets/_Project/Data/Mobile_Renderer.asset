@@ -62,14 +62,13 @@ MonoBehaviour:
   settings:
     shader: {fileID: 4800000, guid: df2f9fd24e26ee54f919bd0a51806232, type: 3}
     autoExposureComputeShader: {fileID: 7200000, guid: d94720f8af074719a93b576740cb35e1, type: 3}
-    blueNoiseTexture: {fileID: 0}
     injectionPoint: 450
     renderScale: 0.5
     raymarchSteps: 8
     maxRayDistance: 56
     scatteringAnisotropy: 0.68
     density: 1.05
-    blueNoiseJitter: 0.85
+    ignJitter: 0.85
     bilateralDepthSigma: 24
     shaftIntensity: 1.3
     biolumPatternScale: 0.14
@@ -172,7 +171,6 @@ MonoBehaviour:
   m_Active: 1
   settings:
     shader: {fileID: 4800000, guid: 1273a37900a6855419fdc57dc70275cd, type: 3}
-    blueNoiseTexture: {fileID: 0}
     injectionPoint: 450
     renderScale: 0.5
     radiusMeters: 1.5

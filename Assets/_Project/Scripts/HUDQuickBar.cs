@@ -1,7 +1,7 @@
 // ============================================================================
 // HECTON-8 — HUDQuickBar.cs
-// Компактная полоска быстрого доступа (4 tool slots) на HUD.
-// Sibling к HUD_V4_CanvasRoot на Suit_HUD_Canvas.
+// Kompaktnaya poloska bystrogo dostupa (4 tool slots) na HUD.
+// Sibling k HUD_V4_CanvasRoot na Suit_HUD_Canvas.
 // ============================================================================
 
 using Hecton8.Bootstrap;
@@ -195,10 +195,16 @@ namespace Hecton8.UI
 
             if (toolManager == null)
             {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                    playerTransform != null)
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null && playerContext.ToolManager != null)
                 {
-                    toolManager = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null) ? Hecton8.Core.GlobalRegistry.Player.ToolManager : playerTransform.GetComponent<PlayerToolManager>());
+                    toolManager = playerContext.ToolManager;
+                }
+                else if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                         playerTransform != null &&
+                         playerTransform.TryGetComponent(out PlayerToolManager resolvedToolManager))
+                {
+                    toolManager = resolvedToolManager;
                 }
             }
             if (font == null)

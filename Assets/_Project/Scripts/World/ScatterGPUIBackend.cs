@@ -18,6 +18,8 @@ namespace Hecton8.World
         private GraphicsBuffer _instanceBuffer;
         private GraphicsBuffer _argsBuffer;
         private int _instanceCapacity;
+        private Mesh _argsUploadMesh;
+        private int _argsUploadInstanceCount = -1;
 
         public GraphicsBuffer InstanceBuffer => _instanceBuffer;
 
@@ -82,12 +84,17 @@ namespace Hecton8.World
             if (_argsBuffer == null)
                 return false;
 
-            _argsUpload[0].indexCountPerInstance = mesh.GetIndexCount(0);
-            _argsUpload[0].instanceCount = (uint)instanceCount;
-            _argsUpload[0].startIndex = mesh.GetIndexStart(0);
-            _argsUpload[0].baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0));
-            _argsUpload[0].startInstance = 0u;
-            _argsBuffer.SetData(_argsUpload);
+            if (_argsUploadMesh != mesh || _argsUploadInstanceCount != instanceCount)
+            {
+                _argsUpload[0].indexCountPerInstance = mesh.GetIndexCount(0);
+                _argsUpload[0].instanceCount = (uint)instanceCount;
+                _argsUpload[0].startIndex = mesh.GetIndexStart(0);
+                _argsUpload[0].baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0));
+                _argsUpload[0].startInstance = 0u;
+                GraphicsBufferUploadUtility.UploadArray(_argsBuffer, _argsUpload, 1);
+                _argsUploadMesh = mesh;
+                _argsUploadInstanceCount = instanceCount;
+            }
 
             RenderParams renderParams = new RenderParams(material)
             {
@@ -106,6 +113,8 @@ namespace Hecton8.World
             ReleaseBuffer(ref _instanceBuffer);
             ReleaseBuffer(ref _argsBuffer);
             _instanceCapacity = 0;
+            _argsUploadMesh = null;
+            _argsUploadInstanceCount = -1;
         }
 
         private void EnsureArgsBuffer()
@@ -115,6 +124,7 @@ namespace Hecton8.World
 
             _argsBuffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 1,
                 GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - scatter indirect draw args - owner: ScatterGPUIBackend
         }

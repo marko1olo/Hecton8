@@ -41,7 +41,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float _HectonShaftMaxRayDistance;
             float _HectonShaftScatteringAnisotropy;
             float _HectonShaftDensity;
-            float _HectonShaftBlueNoiseJitter;
+            float _HectonShaftIgnJitter;
             float _HectonShaftBilateralDepthSigma;
             float _HectonShaftIntensity;
             float _HectonBiolumPatternScale;
@@ -71,8 +71,6 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float _HectonThermalHazeIntensity;
             float _HectonThermalHazeScale;
             float _HectonHasExposureState;
-            float _HectonHasBlueNoiseTex;
-            float _HectonFrameCount;
         CBUFFER_END
 
         StructuredBuffer<float4> _HectonNoirExposureState;
@@ -97,7 +95,6 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         float4 _GlobalDriftOffset;
         float4 _HectonXRFoveatedParams;
         float4 _BlitTexture_TexelSize;
-        float4 _BlueNoiseTex_TexelSize;
         float4 _HectonShaftsTexture_TexelSize;
         float4 _HectonHalfResDepthTexture_TexelSize;
         float _EclipseOcclusion;
@@ -120,8 +117,6 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         float _SonarActive;
 
         TEXTURE2D_X(_BlitTexture);
-        TEXTURE2D(_BlueNoiseTex);
-        SAMPLER(sampler_BlueNoiseTex);
         TEXTURE2D(_HectonShallowWaterFieldRT);
         SAMPLER(sampler_HectonShallowWaterFieldRT);
         TEXTURE2D_X(_HectonShaftsTexture);
@@ -258,27 +253,9 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return _Time.y * HectonShaftAnimationWeight();
         }
 
-        float ResolveTemporalFrameIndex()
+        float ResolveInterleavedGradientNoise(float2 screenUV)
         {
-            return max(_HectonFrameCount * HectonShaftAnimationWeight(), floor(HectonShaftAnimationTime() * 60.0));
-        }
-
-        float2 ResolveTemporalR2Offset()
-        {
-            const float2 r2Sequence = float2(0.7548776662466927, 0.5698402909980532);
-            return frac(ResolveTemporalFrameIndex() * r2Sequence);
-        }
-
-        float2 ResolveBlueNoiseTexelScale()
-        {
-            float useImportedTexelScale = step(0.0001, _BlueNoiseTex_TexelSize.z) * step(0.0001, _BlueNoiseTex_TexelSize.w);
-            return lerp(float2(1.0 / 64.0, 1.0 / 64.0), _BlueNoiseTex_TexelSize.xy, useImportedTexelScale);
-        }
-
-        float ResolveInterleavedNoise(float2 screenUV)
-        {
-            float2 temporalOffset = ResolveTemporalR2Offset() * _ScaledScreenParams.xy;
-            float2 pixel = floor(screenUV * _ScaledScreenParams.xy + temporalOffset);
+            float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
             return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
         }
 
@@ -301,18 +278,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
         }
 
-        float ResolveBlueNoise(float2 screenUV)
-        {
-            float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
-            float2 temporalOffset = ResolveTemporalR2Offset();
-            float2 blueNoiseUV = frac(pixel * ResolveBlueNoiseTexelScale() + temporalOffset);
-            float sampled = _HectonHasBlueNoiseTex > 0.5 ? SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r : 0.0;
-            float fallback = ResolveInterleavedNoise(screenUV);
-            float useBlueNoise = step(0.5, _HectonHasBlueNoiseTex) * step(0.0001, _BlueNoiseTex_TexelSize.z);
-            return lerp(fallback, sampled, useBlueNoise);
-        }
-
-        half3 ApplyResolveBlueNoiseDither(half3 color, float noise)
+        half3 ApplyResolveIgnDither(half3 color, float noise)
         {
             float dither = (noise - 0.5) * (1.0 / 255.0);
             return max(color + (half)dither.xxx, 0.0h);
@@ -651,7 +617,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float2 radial = screenUV - originUV;
             float radialDistanceSq = dot(radial, radial);
             float radialFalloff = saturate(1.0 - radialDistanceSq * 1.65);
-            float jitter = (ResolveBlueNoise(screenUV) - 0.5) * _HectonShaftBlueNoiseJitter * 0.12;
+            float jitter = (ResolveInterleavedGradientNoise(screenUV) - 0.5) * _HectonShaftIgnJitter * 0.12;
 
             if (radialFalloff <= HECTON_SHAFT_CHEAP_FALLOFF_THRESHOLD ||
                 drive <= HECTON_SHAFT_CHEAP_DRIVE_THRESHOLD ||
@@ -1152,9 +1118,9 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             finalColor = max(finalColor, noirMinimum);
             finalColor = ApplyAbyssalSensorEdgePulse(screenUV, finalColor, noirMinimum);
             finalColor = min(finalColor, half3(64.0h, 64.0h, 64.0h));
-            float resolveNoise = ResolveBlueNoise(screenUV);
+            float resolveNoise = ResolveInterleavedGradientNoise(screenUV);
             finalColor = ApplyFreezeFrameDither(finalColor, input.positionCS, resolveNoise);
-            finalColor = ApplyResolveBlueNoiseDither(finalColor, resolveNoise);
+            finalColor = ApplyResolveIgnDither(finalColor, resolveNoise);
             return half4(finalColor, sourceColor.a);
         }
 

@@ -1115,6 +1115,7 @@ namespace Hecton8.Physics
         private const int MaxQueuedPackets = 64;
         private const int MaxForcePacketsAppliedPerFixedTick = 64;
         private const int MaxQueuedSubmarineImpactSignals = 32;
+        private const int SharedRaycastCacheCapacity = 256;
         private const int MaxActiveDepressurizationVortices = 8;
         private const int MaxActiveImpactProxyLights = 4;
         private const int DepressurizationVortexContactCapacity = 32;
@@ -1197,6 +1198,8 @@ namespace Hecton8.Physics
         private NativeQueue<ForcePacket> _frontPacketQueue;
         private NativeQueue<ForcePacket> _backPacketQueue;
         private NativeQueue<DeferredSubmarineImpactSignal> _submarineImpactSignals;
+        private NativeArray<RaycastCommand> _sharedRaycastCommands;
+        private NativeArray<RaycastHit> _sharedRaycastHits;
         private int _submarineImpactSignalCount;
 
         private int _frontCount;
@@ -1281,6 +1284,28 @@ namespace Hecton8.Physics
                 return false;
 
             writer = system._backPacketQueue.AsParallelWriter();
+            return true;
+        }
+
+        public static bool TryGetSharedRaycastCache(
+            out NativeArray<RaycastCommand> commands,
+            out NativeArray<RaycastHit> hits)
+        {
+            commands = default;
+            hits = default;
+            if (!Application.isPlaying)
+                return false;
+
+            PhysicsApplySystem system = EnsureRuntimeInstance();
+            if (system == null)
+                return false;
+
+            system.EnsureSharedCollisionCache();
+            if (!system._sharedRaycastCommands.IsCreated || !system._sharedRaycastHits.IsCreated)
+                return false;
+
+            commands = system._sharedRaycastCommands;
+            hits = system._sharedRaycastHits;
             return true;
         }
 
@@ -1401,7 +1426,10 @@ namespace Hecton8.Physics
 
             float3 worldPosition3 = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
             if (!math.all(math.isfinite(worldPosition3)))
+            {
+                ReportNonFinitePacket(NonFinitePointOffsetLog);
                 return false;
+            }
 
             GlobalPhysicsStateManager.RegisterTrackedBody(body);
             int rigidbodyIndex = ResolveBodyIndex(body);
@@ -1691,6 +1719,7 @@ namespace Hecton8.Physics
             EnsureForcePacketQueues();
             EnsureValidationBuffers();
             EnsureSubmarineImpactSignalQueue();
+            EnsureSharedCollisionCache();
         }
 
         private void EnsureSubmarineImpactSignalQueue()
@@ -1743,6 +1772,7 @@ namespace Hecton8.Physics
             ClearQueuedPackets();
             DisposeValidationBuffers();
             DisposeForcePacketQueues();
+            DisposeSharedCollisionCache();
             ClearTransientImpactProxyLights();
 
             if (_submarineImpactSignals.IsCreated)
@@ -2507,6 +2537,34 @@ namespace Hecton8.Physics
             }
         }
 
+        private void EnsureSharedCollisionCache()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (!_sharedRaycastCommands.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<RaycastCommand>[256] - shared AI/kinematics raycast command cache - owner: PhysicsApplySystem
+                _sharedRaycastCommands = new NativeArray<RaycastCommand>(SharedRaycastCacheCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _sharedRaycastCommands,
+                    nameof(PhysicsApplySystem),
+                    nameof(_sharedRaycastCommands),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_sharedRaycastHits.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<RaycastHit>[256] - shared AI/kinematics raycast hit cache - owner: PhysicsApplySystem
+                _sharedRaycastHits = new NativeArray<RaycastHit>(SharedRaycastCacheCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _sharedRaycastHits,
+                    nameof(PhysicsApplySystem),
+                    nameof(_sharedRaycastHits),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
         private void EnsureSubmarineModifiableContacts()
         {
             ISubmarineRuntimeContext submarineContext = GlobalRegistry.Submarine;
@@ -2905,8 +2963,7 @@ namespace Hecton8.Physics
 
         private static bool TrySanitizeVector(Vector3 value, string errorMessage, out Vector3 sanitized)
         {
-            float3 value3 = new float3(value.x, value.y, value.z);
-            if (math.any(math.isnan(value3)) || math.any(math.isinf(value3)) || !math.all(math.isfinite(value3)))
+            if (!MathGuard.IsFinite(value))
             {
                 ReportNonFinitePacket(errorMessage);
                 sanitized = Vector3.zero;
@@ -2956,6 +3013,23 @@ namespace Hecton8.Physics
 
             _packetValidationHandle = dependency;
             _packetValidationScheduled = false;
+        }
+
+        private void DisposeSharedCollisionCache()
+        {
+            if (_sharedRaycastCommands.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_sharedRaycastCommands);
+                _sharedRaycastCommands.Dispose();
+                _sharedRaycastCommands = default;
+            }
+
+            if (_sharedRaycastHits.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_sharedRaycastHits);
+                _sharedRaycastHits.Dispose();
+                _sharedRaycastHits = default;
+            }
         }
 
         private void DisposeForcePacketQueues()
@@ -3024,6 +3098,12 @@ namespace Hecton8.Physics
         /// <returns>True when the request was accepted.</returns>
         public static bool QueueForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true)
         {
+            if (!IsFiniteVector(force))
+            {
+                PhysicsApplySystem rejectSystem = PhysicsApplySystem.EnsureRuntimeInstance();
+                return rejectSystem != null && rejectSystem.QueueForce(body, force, mode, wake);
+            }
+
             Vector3 safeForce = ClampUpwardAcceleration(force, mode);
             if (TryRouteToPlayerMotor(body, safeForce, mode))
                 return true;
@@ -3037,6 +3117,12 @@ namespace Hecton8.Physics
         /// </summary>
         public static bool QueueAmbientForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true)
         {
+            if (!IsFiniteVector(force))
+            {
+                PhysicsApplySystem rejectSystem = PhysicsApplySystem.EnsureRuntimeInstance();
+                return rejectSystem != null && rejectSystem.QueueForce(body, force, mode, ForcePacketPriority.Ambient, wake, ForcePacketFlags.None);
+            }
+
             Vector3 safeForce = ClampUpwardAcceleration(force, mode);
             ForcePacketFlags extraFlags = ResolveBiomeBuoyancyFlags(safeForce, mode);
             Vector3 routeForce = PhysicsApplySystem.ApplyActiveBiomeBuoyancyGravityMultiplier(safeForce, mode, extraFlags);
@@ -3058,6 +3144,12 @@ namespace Hecton8.Physics
         /// <returns>True when the request was accepted.</returns>
         public static bool QueueForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true)
         {
+            if (!IsFiniteVector(force))
+            {
+                PhysicsApplySystem rejectSystem = PhysicsApplySystem.EnsureRuntimeInstance();
+                return rejectSystem != null && rejectSystem.QueueForceAtPosition(body, force, worldPosition, mode, wake);
+            }
+
             Vector3 safeForce = ClampUpwardAcceleration(force, mode);
             if (TryRouteToPlayerMotorAtPosition(body, safeForce, worldPosition))
                 return true;
@@ -3071,6 +3163,12 @@ namespace Hecton8.Physics
         /// </summary>
         public static bool QueueAmbientForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true)
         {
+            if (!IsFiniteVector(force))
+            {
+                PhysicsApplySystem rejectSystem = PhysicsApplySystem.EnsureRuntimeInstance();
+                return rejectSystem != null && rejectSystem.QueueForceAtPosition(body, force, worldPosition, mode, ForcePacketPriority.Ambient, wake, ForcePacketFlags.None);
+            }
+
             Vector3 safeForce = ClampUpwardAcceleration(force, mode);
             ForcePacketFlags extraFlags = ResolveBiomeBuoyancyFlags(safeForce, mode);
             Vector3 routeForce = PhysicsApplySystem.ApplyActiveBiomeBuoyancyGravityMultiplier(safeForce, mode, extraFlags);
@@ -3213,7 +3311,8 @@ namespace Hecton8.Physics
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (body == null ||
                 playerContext == null ||
-                !ReferenceEquals(body, playerContext.PlayerRigidbody))
+                !ReferenceEquals(body, playerContext.PlayerRigidbody) ||
+                !IsFiniteVector(worldPosition))
             {
                 return false;
             }

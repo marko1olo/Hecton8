@@ -1,15 +1,15 @@
 // ============================================================================
 // HECTON-8 — PDASpectrumTab.cs
-// Вкладка PDA: SPECTRUM — управление режимами визора.
+// Vkladka PDA: SPECTRUM — upravlenie rezhimami vizora.
 //
-// ЛОР (лор2 Раздел 9):
-//   SPECTRUM: Тепловизор, Сонар, Эхолот.
-//   Интерфейс: векторные элементы, моноширинные шрифты, HDR-цвета.
+// LOR (lor2 Razdel 9):
+//   SPECTRUM: Teplovizor, Sonar, Eholot.
+//   Interfeys: vektornye elementy, monoshirinnye shrifty, HDR-tsveta.
 //
-// АРХИТЕКТУРА:
-//   • Процедурный UI — 4 кнопки режимов + статус текущего.
-//   • Слушает SpectrumEvents для обновления активной кнопки.
-//   • Показывает статус сонара (последний пульс, радиус).
+// ARHITEKTURA:
+//   • Protsedurnyy UI — 4 knopki rezhimov + status tekuschego.
+//   • Slushaet SpectrumEvents dlya obnovleniya aktivnoy knopki.
+//   • Pokazyvaet status sonara (posledniy puls, radius).
 // ============================================================================
 
 using Hecton8.Environment;
@@ -41,7 +41,7 @@ namespace Hecton8.UI
         [SerializeField] private Color colorDim      = new Color(0.45f, 0.50f, 0.45f, 1f);
 
         [Header("── Font ─────────────────────────────────────")]
-        [Tooltip("Шрифт с кириллицей. Если null — используется TMP default.")]
+        [Tooltip("Shrift s kirillitsey. Esli null — ispolzuetsya TMP default.")]
         [SerializeField] private TMPro.TMP_FontAsset _labelFont;
 
         // ══════════════════════════════════════════════════════════
@@ -70,26 +70,26 @@ namespace Hecton8.UI
 
         private static readonly string[] ModeNames =
         {
-            "НОРМАЛЬНЫЙ",
-            "ТЕПЛОВИЗОР",
-            "СОНАР",
-            "ЭХОЛОТ"
+            "NORMALNYY",
+            "TEPLOVIZOR",
+            "SONAR",
+            "EHOLOT"
         };
 
         private static readonly string[] ModeDescriptions =
         {
-            "Стандартный режим визора. Без модификаций.",
-            "Тепловые сигнатуры существ и оборудования.\nОбнаружение через стены и туман.",
-            "Движение в радиусе 100м.\nНе показывает что — только что есть.\nПульс каждые 3 секунды.",
-            "Биомеханические сигнатуры.\nОбнаружение дронов Атлас-6.\nТребует апгрейда сенсоров."
+            "Standartnyy rezhim vizora. Bez modifikatsiy.",
+            "Teplovye signatury suschestv i oborudovaniya.\nObnaruzhenie cherez steny i tuman.",
+            "Dvizhenie v radiuse 100m.\nNe pokazyvaet chto — tolko chto est.\nPuls kazhdye 3 sekundy.",
+            "Biomehanicheskie signatury.\nObnaruzhenie dronov Atlas-6.\nTrebuet apgreyda sensorov."
         };
 
         private static readonly string[] ActiveModeLabels =
         {
-            "АКТИВНЫЙ РЕЖИМ: НОРМАЛЬНЫЙ",
-            "АКТИВНЫЙ РЕЖИМ: ТЕПЛОВИЗОР",
-            "АКТИВНЫЙ РЕЖИМ: СОНАР",
-            "АКТИВНЫЙ РЕЖИМ: ЭХОЛОТ"
+            "AKTIVNYY REZhIM: NORMALNYY",
+            "AKTIVNYY REZhIM: TEPLOVIZOR",
+            "AKTIVNYY REZhIM: SONAR",
+            "AKTIVNYY REZhIM: EHOLOT"
         };
 
         private static readonly string[] ModeButtonObjectNames =
@@ -100,7 +100,7 @@ namespace Hecton8.UI
             "ModeBtn_3"
         };
 
-        private const string SonarActiveStatus = "СОНАР АКТИВЕН — РАДИУС: 100М";
+        private const string SonarActiveStatus = "SONAR AKTIVEN — RADIUS: 100M";
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -218,7 +218,7 @@ namespace Hecton8.UI
             hBg.color = new Color(0.04f, 0.08f, 0.06f, 1f);
 
             TextMeshProUGUI title = CreateText("Title", header, 13f, colorAccent, TextAlignmentOptions.MidlineLeft);
-            title.SetText("SPECTRUM — УПРАВЛЕНИЕ ВИЗОРОМ");
+            title.SetText("SPECTRUM — UPRAVLENIE VIZOROM");
             title.fontStyle = FontStyles.Bold;
             Anchor(title.rectTransform, new Vector2(0, 0), new Vector2(1, 1),
                 new Vector2(12, 0), new Vector2(-12, 0));
@@ -333,7 +333,7 @@ namespace Hecton8.UI
             SpectrumSystem sys = GlobalRegistry.Spectrum;
             SpectrumMode active = sys != null ? sys.CurrentMode : SpectrumMode.Normal;
 
-            // Обновляем кнопки
+            // Obnovlyaem knopki
             for (int i = 0; i < _modeButtons.Length; i++)
             {
                 ModeButton mb = _modeButtons[i];
@@ -343,7 +343,7 @@ namespace Hecton8.UI
                     mb.ModeLabel.color = mb.Mode == active ? colorAccent : colorText;
             }
 
-            // Обновляем статус
+            // Obnovlyaem status
             int idx = (int)active;
             SetLabelText(_currentModeLabel, ActiveModeLabels[idx]);
             RefreshStatusLabel(idx);

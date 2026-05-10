@@ -79,7 +79,7 @@ namespace Hecton8.EditorTools
             builder.AppendLine($"- Packed-mask integrity violations: `{materialResult.PackedMaskViolations.Count}`");
             builder.AppendLine($"- Bakery UV auto-fixes: `{bakeryResult.AutoFixedModels.Count}`");
             builder.AppendLine($"- Bakery UV manual review items: `{bakeryResult.ManualReviewModels.Count}`");
-            builder.AppendLine($"- LODGroup violations (>10k tris without LOD): `{lodResult.Violations.Count}`");
+            builder.AppendLine($"- LODGroup violations (>2k tris without LOD): `{lodResult.Violations.Count}`");
             builder.AppendLine($"- Broken asset quarantine candidates: `{quarantinePreview.CandidateCount}`");
             builder.AppendLine();
             builder.AppendLine("## FBX Reimported");
@@ -113,7 +113,7 @@ namespace Hecton8.EditorTools
             builder.AppendLine();
             builder.AppendLine("## LOD Group Violations");
             builder.AppendLine();
-            AppendList(builder, lodResult.Violations, "No >10k triangle assets were found without an LODGroup in the scanned roots.");
+            AppendList(builder, lodResult.Violations, "No >2k triangle assets were found without an LODGroup in the scanned roots.");
             AppendList(builder, lodResult.BrokenAssets, "No broken prefab/model assets were detected by the LOD audit.");
             builder.AppendLine();
             builder.AppendLine("## Shader Variant Policy");

@@ -1,22 +1,36 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Input
 {
     /// <summary>
-    /// Central storage owner for user options backed by <see cref="PlayerPrefs"/>.
+    /// Central storage owner for user options backed by persistentDataPath/options.h8cfg.
     /// Keeps option persistence out of UI shells and scene controllers.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-30995)]
     public sealed class UserOptionsPersistence : MonoBehaviour, IServiceHeartbeat, IServiceShutdown
     {
-        /// <summary>
-        /// Saved language key used by localization.
-        /// Kept here so option storage has a single owner.
-        /// </summary>
         public const string LanguageKey = "Hecton_Language";
+        public const string FileName = "options.h8cfg";
 
+        private const int FileVersion = 1;
+        private const int TypeInt = 1;
+        private const int TypeFloat = 2;
+        private const int TypeString = 3;
+        private const int TypeBool = 4;
+
+        private readonly Dictionary<string, OptionRecord> _records =
+            new Dictionary<string, OptionRecord>(64); // COLD ALLOC: Dictionary<string, OptionRecord>[64] - user options key/value cache - owner: UserOptionsPersistence
+        private readonly OptionsFile _optionsFile = new OptionsFile(); // COLD ALLOC: OptionsFile[1] - reusable JSON wrapper for options.h8cfg - owner: UserOptionsPersistence
+
+        private OptionRecord[] _writeRecords = Array.Empty<OptionRecord>();
+        private string _optionsPath;
+        private string _optionsDirectory;
+        private bool _loaded;
         private bool _serviceRegistered;
         private bool _serviceShuttingDown;
         private bool _serviceShutdownComplete;
@@ -30,8 +44,12 @@ namespace Hecton8.Input
 
         public bool IsServiceReady => _serviceRegistered && !_serviceShuttingDown;
 
+        public string OptionsPath => ResolveOptionsPath();
+
         private void Awake()
         {
+            LoadFromDisk();
+
             BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.UserOptionsRuntime, out UserOptionsPersistence registered);
             if (registered != null && registered != this)
             {
@@ -65,7 +83,6 @@ namespace Hecton8.Input
 
             _serviceShuttingDown = true;
             UnregisterService();
-
             Save();
             _serviceShutdownComplete = true;
         }
@@ -101,23 +118,39 @@ namespace Hecton8.Input
 
         public bool HasKey(string key)
         {
-            return !string.IsNullOrWhiteSpace(key) && PlayerPrefs.HasKey(key);
+            EnsureLoaded();
+            return !string.IsNullOrWhiteSpace(key) && _records.ContainsKey(key);
         }
 
         public int GetInt(string key, int defaultValue = 0)
         {
-            if (string.IsNullOrWhiteSpace(key))
+            if (!TryGetRecord(key, out OptionRecord record))
                 return defaultValue;
 
-            return PlayerPrefs.GetInt(key, defaultValue);
+            if (record.Type == TypeInt)
+                return record.IntValue;
+
+            if (record.Type == TypeBool)
+                return record.BoolValue ? 1 : 0;
+
+            return defaultValue;
         }
 
         public bool TryGetInt(string key, out int value)
         {
-            if (HasKey(key))
+            if (TryGetRecord(key, out OptionRecord record))
             {
-                value = PlayerPrefs.GetInt(key, 0);
-                return true;
+                if (record.Type == TypeInt)
+                {
+                    value = record.IntValue;
+                    return true;
+                }
+
+                if (record.Type == TypeBool)
+                {
+                    value = record.BoolValue ? 1 : 0;
+                    return true;
+                }
             }
 
             value = default;
@@ -129,23 +162,44 @@ namespace Hecton8.Input
             if (string.IsNullOrWhiteSpace(key))
                 return;
 
-            PlayerPrefs.SetInt(key, value);
+            EnsureLoaded();
+            _records[key] = new OptionRecord
+            {
+                Key = key,
+                Type = TypeInt,
+                IntValue = value
+            };
         }
 
         public float GetFloat(string key, float defaultValue = 0f)
         {
-            if (string.IsNullOrWhiteSpace(key))
+            if (!TryGetRecord(key, out OptionRecord record))
                 return defaultValue;
 
-            return PlayerPrefs.GetFloat(key, defaultValue);
+            if (record.Type == TypeFloat)
+                return record.FloatValue;
+
+            if (record.Type == TypeInt)
+                return record.IntValue;
+
+            return defaultValue;
         }
 
         public bool TryGetFloat(string key, out float value)
         {
-            if (HasKey(key))
+            if (TryGetRecord(key, out OptionRecord record))
             {
-                value = PlayerPrefs.GetFloat(key, 0f);
-                return true;
+                if (record.Type == TypeFloat)
+                {
+                    value = record.FloatValue;
+                    return true;
+                }
+
+                if (record.Type == TypeInt)
+                {
+                    value = record.IntValue;
+                    return true;
+                }
             }
 
             value = default;
@@ -157,22 +211,28 @@ namespace Hecton8.Input
             if (string.IsNullOrWhiteSpace(key))
                 return;
 
-            PlayerPrefs.SetFloat(key, value);
+            EnsureLoaded();
+            _records[key] = new OptionRecord
+            {
+                Key = key,
+                Type = TypeFloat,
+                FloatValue = value
+            };
         }
 
         public string GetString(string key, string defaultValue = "")
         {
-            if (string.IsNullOrWhiteSpace(key))
+            if (!TryGetRecord(key, out OptionRecord record) || record.Type != TypeString)
                 return defaultValue ?? string.Empty;
 
-            return PlayerPrefs.GetString(key, defaultValue ?? string.Empty);
+            return record.StringValue ?? string.Empty;
         }
 
         public bool TryGetString(string key, out string value)
         {
-            if (HasKey(key))
+            if (TryGetRecord(key, out OptionRecord record) && record.Type == TypeString)
             {
-                value = PlayerPrefs.GetString(key, string.Empty);
+                value = record.StringValue ?? string.Empty;
                 return true;
             }
 
@@ -185,20 +245,38 @@ namespace Hecton8.Input
             if (string.IsNullOrWhiteSpace(key))
                 return;
 
-            PlayerPrefs.SetString(key, value ?? string.Empty);
+            EnsureLoaded();
+            _records[key] = new OptionRecord
+            {
+                Key = key,
+                Type = TypeString,
+                StringValue = value ?? string.Empty
+            };
         }
 
         public bool GetBool(string key, bool defaultValue = false)
         {
-            return GetInt(key, defaultValue ? 1 : 0) != 0;
+            if (!TryGetBool(key, out bool value))
+                return defaultValue;
+
+            return value;
         }
 
         public bool TryGetBool(string key, out bool value)
         {
-            if (TryGetInt(key, out int stored))
+            if (TryGetRecord(key, out OptionRecord record))
             {
-                value = stored != 0;
-                return true;
+                if (record.Type == TypeBool)
+                {
+                    value = record.BoolValue;
+                    return true;
+                }
+
+                if (record.Type == TypeInt)
+                {
+                    value = record.IntValue != 0;
+                    return true;
+                }
             }
 
             value = default;
@@ -207,7 +285,16 @@ namespace Hecton8.Input
 
         public void SetBool(string key, bool value)
         {
-            SetInt(key, value ? 1 : 0);
+            if (string.IsNullOrWhiteSpace(key))
+                return;
+
+            EnsureLoaded();
+            _records[key] = new OptionRecord
+            {
+                Key = key,
+                Type = TypeBool,
+                BoolValue = value
+            };
         }
 
         public void DeleteKey(string key)
@@ -215,13 +302,120 @@ namespace Hecton8.Input
             if (string.IsNullOrWhiteSpace(key))
                 return;
 
-            if (PlayerPrefs.HasKey(key))
-                PlayerPrefs.DeleteKey(key);
+            EnsureLoaded();
+            _records.Remove(key);
         }
 
         public void Save()
         {
-            PlayerPrefs.Save();
+            EnsureLoaded();
+
+            string path = ResolveOptionsPath();
+            if (!string.IsNullOrEmpty(_optionsDirectory))
+                Directory.CreateDirectory(_optionsDirectory);
+
+            int recordCount = _records.Count;
+            if (_writeRecords.Length != recordCount)
+                _writeRecords = new OptionRecord[recordCount]; // COLD ALLOC: OptionRecord[count] - resized only when option key count changes - owner: UserOptionsPersistence
+
+            _records.Values.CopyTo(_writeRecords, 0);
+            _optionsFile.Version = FileVersion;
+            _optionsFile.Records = _writeRecords;
+
+            string json = JsonUtility.ToJson(_optionsFile, false);
+            string tempPath = path + ".tmp";
+            File.WriteAllText(tempPath, json);
+
+            if (File.Exists(path))
+                File.Delete(path);
+
+            File.Move(tempPath, path);
+        }
+
+        private void EnsureLoaded()
+        {
+            if (_loaded)
+                return;
+
+            LoadFromDisk();
+        }
+
+        private void LoadFromDisk()
+        {
+            if (_loaded)
+                return;
+
+            _records.Clear();
+            string path = ResolveOptionsPath();
+            if (!File.Exists(path))
+            {
+                _loaded = true;
+                return;
+            }
+
+            try
+            {
+                string json = File.ReadAllText(path);
+                OptionsFile file = JsonUtility.FromJson<OptionsFile>(json);
+                if (file?.Records != null)
+                {
+                    for (int i = 0; i < file.Records.Length; i++)
+                    {
+                        OptionRecord record = file.Records[i];
+                        if (string.IsNullOrWhiteSpace(record.Key))
+                            continue;
+
+                        _records[record.Key] = record;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg: " + exception.Message);
+#endif
+            }
+
+            _loaded = true;
+        }
+
+        private bool TryGetRecord(string key, out OptionRecord record)
+        {
+            EnsureLoaded();
+
+            if (!string.IsNullOrWhiteSpace(key) && _records.TryGetValue(key, out record))
+                return true;
+
+            record = default;
+            return false;
+        }
+
+        private string ResolveOptionsPath()
+        {
+            if (!string.IsNullOrEmpty(_optionsPath))
+                return _optionsPath;
+
+            _optionsDirectory = Application.persistentDataPath;
+            _optionsPath = Path.Combine(_optionsDirectory, FileName);
+            return _optionsPath;
+        }
+
+        [Serializable]
+        private sealed class OptionsFile
+        {
+            public int Version;
+            public OptionRecord[] Records = Array.Empty<OptionRecord>();
+        }
+
+        [Serializable]
+        private struct OptionRecord
+        {
+            public string Key;
+            public int Type;
+            public int IntValue;
+            public float FloatValue;
+            public string StringValue;
+            public bool BoolValue;
         }
     }
 }

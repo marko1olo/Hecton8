@@ -44,6 +44,11 @@ namespace Hecton8.World
         private const float ChemicalTransientLifetimeSeconds = 12f;
         private const float DefaultDefoliantDeadZoneRadiusMeters = 30f;
         private const float BreadcrumbMergeDistanceMeters = 8f;
+        private const int ScentGridAxis = 64;
+        private const int ScentGridCellCount = ScentGridAxis * ScentGridAxis;
+        private const float ScentGridCellSizeMeters = 50f;
+        private const float ScentGridDissipateIntervalSeconds = 1f;
+        private const int ScentGridHalfAxis = ScentGridAxis / 2;
 
         private static ChemicalInfluenceGrid _activeRuntimeInstance;
 
@@ -57,16 +62,22 @@ namespace Hecton8.World
         [Header("Diagnostics")]
         [SerializeField] private int _debugBreadcrumbCount;
         [SerializeField] private int _debugPendingWriteCount;
+        [SerializeField] private int _debugScentGridActiveCellCount;
         [SerializeField] private Vector3 _debugLastBreadcrumbPosition;
 
         // COLD ALLOC: Vector4[64] - permanent defoliant dead-zone registry in absolute-universe space - owner: ChemicalInfluenceGrid
         private readonly Vector4[] _defoliantDeadZones = new Vector4[MaxDefoliantDeadZones];
 
         private NativeArray<ChemicalBreadcrumbWaypoint> _breadcrumbs;
+        private NativeArray<byte> _scentGrid;
         private bool _registeredSlowTick;
         private bool _runtimeInitialized;
         private int _breadcrumbCount;
         private int _breadcrumbWriteCursor;
+        private int2 _scentGridOriginCell;
+        private bool _scentGridHasOrigin;
+        private int _publishedFrameId = -1;
+        private float _nextScentGridDissipateTime;
         private int _defoliantDeadZoneCount;
         private Transform _cachedPlayerTransform;
         private HectonSurvivalSystem _cachedPlayerSurvival;
@@ -151,6 +162,13 @@ namespace Hecton8.World
                 out normalizedChannels);
         }
 
+        internal static bool TrySampleScentGrid01(Vector3 worldPosition, out float scent01)
+        {
+            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            instance.PublishFrame(Time.frameCount);
+            return instance.TrySampleScentGrid01Internal(worldPosition, out scent01);
+        }
+
         internal static bool TryFindNearestScentWaypoint(
             Vector3 worldPosition,
             ChemicalChannel channel,
@@ -171,7 +189,9 @@ namespace Hecton8.World
         internal static void QueueBloodScent(Vector3 worldPosition, float intensity = 1f)
         {
             float clampedIntensity = math.max(0f, intensity);
-            EnsureRuntimeInstance().DropBreadcrumb(worldPosition, new float4(clampedIntensity, 0f, 0f, 0f), ChemicalChannel.Blood);
+            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            instance.DropBreadcrumb(worldPosition, new float4(clampedIntensity, 0f, 0f, 0f), ChemicalChannel.Blood);
+            instance.WriteScentGridCell(worldPosition, clampedIntensity);
             RegisterChemicalTransient(worldPosition, clampedIntensity);
         }
 
@@ -275,6 +295,7 @@ namespace Hecton8.World
         {
             InitializeRuntime();
             PublishFrame(Time.frameCount);
+            TryDissipateScentGrid(Time.time);
             CollectPersistentRuntimeEmissions();
             PruneExpiredBreadcrumbs(Time.time);
             RefreshRuntimePositions();
@@ -324,6 +345,12 @@ namespace Hecton8.World
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ChemicalBreadcrumbWaypoint>[<=64] - AUP scent breadcrumb ring with hard SlowTick loop cap - owner: ChemicalInfluenceGrid
             NativeMemorySentinel.RegisterNativeArray(_breadcrumbs, NativeMemoryOwner, nameof(_breadcrumbs), NativeMemoryLifetime);
+            _scentGrid = new NativeArray<byte>(
+                ScentGridCellCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[4096] - 50m low-res blood scent grid - owner: ChemicalInfluenceGrid
+            NativeMemorySentinel.RegisterNativeArray(_scentGrid, NativeMemoryOwner, nameof(_scentGrid), NativeMemoryLifetime);
+            _nextScentGridDissipateTime = Time.time + ScentGridDissipateIntervalSeconds;
         }
 
         private void PublishFrame(int frameId)
@@ -331,7 +358,10 @@ namespace Hecton8.World
             InitializeRuntime();
             if (_activeRuntimeInstance != this)
                 return;
+            if (_publishedFrameId == frameId)
+                return;
 
+            _publishedFrameId = frameId;
             PruneExpiredBreadcrumbs(Time.time);
             RefreshRuntimePositions();
         }
@@ -420,6 +450,131 @@ namespace Hecton8.World
 
             _breadcrumbWriteCursor = (_breadcrumbWriteCursor + 1) % _breadcrumbs.Length;
             _debugLastBreadcrumbPosition = worldPosition;
+        }
+
+        private void WriteScentGridCell(Vector3 worldPosition, float intensity)
+        {
+            InitializeRuntime();
+            if (!_scentGrid.IsCreated || intensity <= 0f)
+                return;
+
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition);
+            int2 cell = ResolveScentGridCell(absolutePosition);
+            EnsureScentGridContainsCell(cell);
+            if (!TryResolveScentGridIndex(cell, out int index))
+                return;
+
+            int writeValue = math.clamp((int)math.round(math.saturate(intensity) * byte.MaxValue), 1, byte.MaxValue);
+            _scentGrid[index] = (byte)math.min(byte.MaxValue, _scentGrid[index] + writeValue);
+        }
+
+        private void TryDissipateScentGrid(float now)
+        {
+            if (now < _nextScentGridDissipateTime)
+                return;
+
+            _nextScentGridDissipateTime = now + ScentGridDissipateIntervalSeconds;
+            DissipateScentGrid();
+        }
+
+        private void DissipateScentGrid()
+        {
+            if (!_scentGrid.IsCreated)
+                return;
+
+            int activeCells = 0;
+            for (int i = 0; i < _scentGrid.Length; i++)
+            {
+                byte value = _scentGrid[i];
+                if (value == 0)
+                    continue;
+
+                value--;
+                _scentGrid[i] = value;
+                if (value > 0)
+                    activeCells++;
+            }
+
+            _debugScentGridActiveCellCount = activeCells;
+        }
+
+        private bool TrySampleScentGrid01Internal(Vector3 worldPosition, out float scent01)
+        {
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition);
+            return TrySampleScentGrid01AbsoluteInternal(absolutePosition, out scent01);
+        }
+
+        private bool TrySampleScentGrid01AbsoluteInternal(Vector3 absolutePosition, out float scent01)
+        {
+            scent01 = 0f;
+            if (!_scentGrid.IsCreated || !_scentGridHasOrigin)
+                return false;
+
+            int2 cell = ResolveScentGridCell(absolutePosition);
+            if (!TryResolveScentGridIndex(cell, out int index))
+                return false;
+
+            byte value = _scentGrid[index];
+            if (value == 0)
+                return false;
+
+            scent01 = value * (1f / byte.MaxValue);
+            return true;
+        }
+
+        private void EnsureScentGridContainsCell(int2 cell)
+        {
+            if (!_scentGridHasOrigin)
+            {
+                _scentGridOriginCell = cell - new int2(ScentGridHalfAxis, ScentGridHalfAxis);
+                _scentGridHasOrigin = true;
+                return;
+            }
+
+            int2 local = cell - _scentGridOriginCell;
+            if (local.x >= 0 && local.y >= 0 && local.x < ScentGridAxis && local.y < ScentGridAxis)
+                return;
+
+            RecenterScentGrid(cell - new int2(ScentGridHalfAxis, ScentGridHalfAxis));
+        }
+
+        private void RecenterScentGrid(int2 newOriginCell)
+        {
+            if (!_scentGrid.IsCreated)
+                return;
+
+            for (int i = 0; i < _scentGrid.Length; i++)
+                _scentGrid[i] = 0;
+
+            _scentGridOriginCell = newOriginCell;
+            _scentGridHasOrigin = true;
+        }
+
+        private bool TryResolveScentGridIndex(int2 cell, out int index)
+        {
+            if (!_scentGridHasOrigin)
+            {
+                index = -1;
+                return false;
+            }
+
+            int2 local = cell - _scentGridOriginCell;
+            if (local.x < 0 || local.y < 0 || local.x >= ScentGridAxis || local.y >= ScentGridAxis)
+            {
+                index = -1;
+                return false;
+            }
+
+            index = local.x + local.y * ScentGridAxis;
+            return true;
+        }
+
+        private static int2 ResolveScentGridCell(Vector3 absolutePosition)
+        {
+            float inverseCellSize = 1f / ScentGridCellSizeMeters;
+            return new int2(
+                (int)math.floor(absolutePosition.x * inverseCellSize),
+                (int)math.floor(absolutePosition.z * inverseCellSize));
         }
 
         private int FindMergeCandidate(float3 absolutePosition, ChemicalChannel primaryChannel, float now)
@@ -562,11 +717,17 @@ namespace Hecton8.World
                     if (distanceSq > radius * radius)
                         continue;
 
-                    float distance01 = math.saturate(math.sqrt(distanceSq) / radius);
-                    float falloff = SmoothStep01(1f - distance01);
+                    float distanceSq01 = math.saturate(distanceSq / (radius * radius));
+                    float falloff = SmoothStep01(1f - distanceSq01);
                     accumulated += waypoint.Channels * falloff;
                     hasSample = true;
                 }
+            }
+
+            if (TrySampleScentGrid01AbsoluteInternal(absolutePosition, out float scentGrid01))
+            {
+                accumulated.x = math.max(accumulated.x, scentGrid01 * maximumChannelIntensity);
+                hasSample = true;
             }
 
             if (!hasSample && !insideDeadZone)
@@ -620,8 +781,8 @@ namespace Hecton8.World
                 if (distanceSq > radius * radius || distanceSq >= bestDistanceSq)
                     continue;
 
-                float distance01 = math.saturate(math.sqrt(distanceSq) / radius);
-                bestIntensity = math.saturate(channelSignal * SmoothStep01(1f - distance01) / math.max(0.1f, maximumChannelIntensity));
+                float distanceSq01 = math.saturate(distanceSq / (radius * radius));
+                bestIntensity = math.saturate(channelSignal * SmoothStep01(1f - distanceSq01) / math.max(0.1f, maximumChannelIntensity));
                 bestDistanceSq = distanceSq;
                 nearestWaypoint = waypoint;
                 found = true;
@@ -630,7 +791,7 @@ namespace Hecton8.World
             if (!found)
                 return false;
 
-            distanceMeters = math.sqrt(bestDistanceSq);
+            distanceMeters = bestDistanceSq > 0f ? bestDistanceSq * math.rsqrt(bestDistanceSq) : 0f;
             intensity01 = bestIntensity;
             return true;
         }
@@ -703,8 +864,20 @@ namespace Hecton8.World
                 _breadcrumbs = default;
             }
 
+            if (_scentGrid.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_scentGrid);
+                _scentGrid.Dispose();
+                _scentGrid = default;
+            }
+
             _breadcrumbCount = 0;
             _breadcrumbWriteCursor = 0;
+            _scentGridOriginCell = int2.zero;
+            _scentGridHasOrigin = false;
+            _publishedFrameId = -1;
+            _nextScentGridDissipateTime = 0f;
+            _debugScentGridActiveCellCount = 0;
             _runtimeInitialized = false;
             _cachedPlayerTransform = null;
             _cachedPlayerSurvival = null;

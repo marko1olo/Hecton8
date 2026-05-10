@@ -11,6 +11,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Dev/Scan Runtime Smoke Tester")]
     public sealed class ScanRuntimeSmokeTester : MonoBehaviour
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         [Header("References")]
         [SerializeField] private PlayerToolManager toolManager;
         [SerializeField] private ScanLogSystem scanLogSystem;
@@ -270,5 +271,6 @@ namespace Hecton8.Gameplay
 
             return null;
         }
+#endif
     }
 }

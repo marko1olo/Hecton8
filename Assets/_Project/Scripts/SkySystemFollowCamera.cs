@@ -210,7 +210,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
                 return _cachedResolvedCamera;
             }
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 CachePlayerMovement(playerTransform);
@@ -323,7 +323,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
                 return;
         }
 
-        if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+        if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             CachePlayerMovement(playerTransform);
     }
 

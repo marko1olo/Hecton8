@@ -177,7 +177,7 @@ namespace Hecton8.UI
 
             _mainCameraResolveRetryTimer = MainCameraResolveRetryInterval;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (playerTransform.TryGetComponent(out Camera playerOwnedCamera))

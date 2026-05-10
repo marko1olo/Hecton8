@@ -39,19 +39,21 @@ namespace Hecton8.Interaction
 
         private void Awake()
         {
-            EnsureAllocated();
-            WriteAuthoredOffsets();
+            if (HectonXRRuntimeState.IsXRActive)
+                EnsureAllocated();
         }
 
         private void OnEnable()
         {
-            EnsureAllocated();
-            WriteAuthoredOffsets();
+            if (_allocated || HectonXRRuntimeState.IsXRActive)
+            {
+                EnsureAllocated();
+                WriteAuthoredOffsets();
+            }
         }
 
         private void OnDisable()
         {
-            DisposeGripOffsets();
         }
 
         private void OnDestroy()

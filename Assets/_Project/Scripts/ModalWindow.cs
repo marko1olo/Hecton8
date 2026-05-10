@@ -9,23 +9,15 @@ namespace Hecton.UI.MainMenu
 {
     /// <summary>
     /// Universal modal popup with confirm/cancel actions.
-    /// Singleton within scene, static access via Show().
+    /// Scene-owned registry service, static access via Show().
     /// Button labels auto-update on language change.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ModalWindow : MonoBehaviour, ILocalizationLanguageChangedListener
+    public sealed class ModalWindow : MonoBehaviour, ILocalizationLanguageChangedListener, Hecton8.Core.IModalWindowService
     {
         // ──────────────────────────────────────────────
         // SINGLETON
         // ──────────────────────────────────────────────
-        private static ModalWindow _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
         // ──────────────────────────────────────────────
         // INSPECTOR
         // ──────────────────────────────────────────────
@@ -157,6 +149,7 @@ namespace Hecton.UI.MainMenu
         private void OnDisable()
         {
             LocalizationEvents.UnregisterLanguageListener(this);
+            ReleaseServiceIfOwner();
         }
 
         private void OnDestroy()
@@ -167,10 +160,7 @@ namespace Hecton.UI.MainMenu
             if (btnCancel != null)
                 btnCancel.onClick.RemoveListener(_cancelClickAction);
 
-            if (_instance == this)
-            {
-                _instance = null;
-            }
+            ReleaseServiceIfOwner();
         }
 
         // ══════════════════════════════════════════════
@@ -223,19 +213,10 @@ namespace Hecton.UI.MainMenu
             Action onConfirm,
             Action onCancel = null)
         {
-            if (!EnsureInstanceAvailable())
-            {
-#if UNITY_EDITOR
-                Debug.LogError(
-                    "[ModalWindow] No ModalWindow instance found in scene! " +
-                    "Add ModalWindow component to your Canvas."
-                );
-#endif
+            if (!TryResolveService(out Hecton8.Core.IModalWindowService service))
                 return;
-            }
 
-            _instance.EnsureRuntimeBindings(hideAfterBinding: false);
-            _instance.ShowInternal(title, message, onConfirm, onCancel, null, null);
+            service.ShowModal(title, message, onConfirm, onCancel, null, null);
         }
 
         /// <summary>
@@ -256,19 +237,10 @@ namespace Hecton.UI.MainMenu
             string confirmLabel,
             string cancelLabel)
         {
-            if (!EnsureInstanceAvailable())
-            {
-#if UNITY_EDITOR
-                Debug.LogError(
-                    "[ModalWindow] No ModalWindow instance found in scene! " +
-                    "Add ModalWindow component to your Canvas."
-                );
-#endif
+            if (!TryResolveService(out Hecton8.Core.IModalWindowService service))
                 return;
-            }
 
-            _instance.EnsureRuntimeBindings(hideAfterBinding: false);
-            _instance.ShowInternal(title, message, onConfirm, onCancel, confirmLabel, cancelLabel);
+            service.ShowModal(title, message, onConfirm, onCancel, confirmLabel, cancelLabel);
         }
 
         /// <summary>
@@ -276,9 +248,9 @@ namespace Hecton.UI.MainMenu
         /// </summary>
         public static void Close()
         {
-            if (_instance != null)
+            if (Hecton8.Core.GlobalRegistry.TryGet(out Hecton8.Core.IModalWindowService service))
             {
-                _instance.Hide();
+                service.CloseModal();
             }
         }
 
@@ -286,24 +258,60 @@ namespace Hecton.UI.MainMenu
         // INTERNAL
         // ══════════════════════════════════════════════
 
-        private static bool EnsureInstanceAvailable()
+        private static bool TryResolveService(out Hecton8.Core.IModalWindowService service)
         {
-            return _instance != null;
+            if (Hecton8.Core.GlobalRegistry.TryGet(out service))
+                return true;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError(
+                "[ModalWindow] No ModalWindow instance found in scene! " +
+                "Add ModalWindow component to your Canvas."
+            );
+#endif
+            return false;
         }
 
         private bool TryClaimInstance()
         {
-            if (_instance != null && _instance != this)
+            if (Hecton8.Core.GlobalRegistry.TryGet(out Hecton8.Core.IModalWindowService existing) &&
+                !ReferenceEquals(existing, this))
             {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[ModalWindow] Duplicate detected. Destroying extra instance.");
 #endif
                 Destroy(gameObject);
                 return false;
             }
 
-            _instance = this;
+            Hecton8.Core.GlobalRegistry.RegisterModalWindowService(this);
             return true;
+        }
+
+        private void ReleaseServiceIfOwner()
+        {
+            if (Hecton8.Core.GlobalRegistry.TryGet(out Hecton8.Core.IModalWindowService existing) &&
+                ReferenceEquals(existing, this))
+            {
+                Hecton8.Core.GlobalRegistry.UnregisterModalWindowService(this);
+            }
+        }
+
+        void Hecton8.Core.IModalWindowService.ShowModal(
+            string title,
+            string message,
+            Action onConfirm,
+            Action onCancel,
+            string confirmLabel,
+            string cancelLabel)
+        {
+            EnsureRuntimeBindings(hideAfterBinding: false);
+            ShowInternal(title, message, onConfirm, onCancel, confirmLabel, cancelLabel);
+        }
+
+        void Hecton8.Core.IModalWindowService.CloseModal()
+        {
+            Hide();
         }
 
         private void EnsureRuntimeBindings(bool hideAfterBinding)
@@ -358,21 +366,8 @@ namespace Hecton.UI.MainMenu
             _cachedOnConfirm = onConfirm;
             _cachedOnCancel  = onCancel;
 
-            // Use custom labels if provided, otherwise refresh with localized defaults
-            if (!string.IsNullOrEmpty(customConfirmLabel) && confirmButtonLabel != null)
-            {
-                confirmButtonLabel.SetText(customConfirmLabel);
-            }
-            else if (!string.IsNullOrEmpty(customCancelLabel) && cancelButtonLabel != null)
-            {
-                cancelButtonLabel.SetText(customCancelLabel);
-            }
-            else
-            {
-                RefreshButtonLabels();
-            }
+            RefreshButtonLabels();
 
-            // Apply custom labels if provided
             if (!string.IsNullOrEmpty(customConfirmLabel) && confirmButtonLabel != null)
                 confirmButtonLabel.SetText(customConfirmLabel);
 

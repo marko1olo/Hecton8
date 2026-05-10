@@ -422,7 +422,13 @@ namespace Hecton8.Power
                 return;
 
             if (!_isDirty && _hasEvaluatedAtLeastOnce && !_hasBatteryBanks)
+            {
+                JobHandle cachedEvaluationHandle = _logisticsGraph.ScheduleEvaluation();
+                _logisticsGraph.ScheduleNodeStatePublish(cachedEvaluationHandle);
+                _slowTickEvaluationPending = true;
+                _slowTickEvaluationPhase = SlowTickEvaluationPhase.FinalEvaluation;
                 return;
+            }
 
             ResetBatteryDispatchPlans();
             if (!BuildGraphSnapshot())

@@ -1,25 +1,25 @@
 // ============================================================================
 // HECTON-8 — PlayerToolManager.cs
-// Контроллер переключения инструментов в руках игрока.
+// Kontroller pereklyucheniya instrumentov v rukah igroka.
 //
-// Ответственности:
-//   1. Слушает ввод (кнопки 1-4) через ITickable.Tick().
-//   2. Проверяет наличие инструмента в PlayerInventory.
-//   3. Спавнит/деспавнит инструменты через ObjectPoolManager.
-//   4. Управляет плавной анимацией смены (lower → raise).
-//   5. Делегирует UsePrimary/UseSecondary текущему инструменту.
+// Otvetstvennosti:
+//   1. Slushaet vvod (knopki 1-4) cherez ITickable.Tick().
+//   2. Proveryaet nalichie instrumenta v PlayerInventory.
+//   3. Spavnit/despavnit instrumenty cherez ObjectPoolManager.
+//   4. Upravlyaet plavnoy animatsiey smeny (lower → raise).
+//   5. Delegiruet UsePrimary/UseSecondary tekuschemu instrumentu.
 //
 // ZERO GC:
-//   • Кэшированные KeyCode[] — нет аллокаций при проверке ввода.
-//   • Spawn/Despawn через пул — никаких Instantiate/Destroy.
-//   • Никаких строковых операций в горячих путях.
-//   • math.lerp для анимации — zero GC.
+//   • Keshirovannye KeyCode[] — net allokatsiy pri proverke vvoda.
+//   • Spawn/Despawn cherez pul — nikakih Instantiate/Destroy.
+//   • Nikakih strokovyh operatsiy v goryachih putyah.
+//   • math.lerp dlya animatsii — zero GC.
 //
-// ЗАВИСИМОСТИ:
-//   • GameTickManager (регистрация ITickable)
-//   • ObjectPoolManager (спавн/деспавн инструментов)
-//   • PlayerInventory (проверка наличия инструмента)
-//   • PlayerTool (базовый класс инструментов)
+// ZAVISIMOSTI:
+//   • GameTickManager (registratsiya ITickable)
+//   • ObjectPoolManager (spavn/despavn instrumentov)
+//   • PlayerInventory (proverka nalichiya instrumenta)
+//   • PlayerTool (bazovyy klass instrumentov)
 // ============================================================================
 
 namespace Hecton8.Gameplay
@@ -50,21 +50,21 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── References ────────────────────────────────")]
-        [Tooltip("Transform точки крепления инструмента (дочерний объект камеры).")]
+        [Tooltip("Transform tochki krepleniya instrumenta (docherniy obekt kamery).")]
         [SerializeField] private Transform handAnchor;
 
-        [Tooltip("Ссылка на инвентарь игрока для проверки наличия инструментов.")]
+        [Tooltip("Ssylka na inventar igroka dlya proverki nalichiya instrumentov.")]
         [SerializeField] private PlayerInventory playerInventory;
         [Tooltip("Optional coordinator used to suppress handheld tools while mounted transport owns the player.")]
         [SerializeField] private PlayerTransportCoordinator playerTransportCoordinator;
 
-        [Header("── Tool Prefabs (слоты 1-4) ──────────────────")]
-        [Tooltip("Префабы инструментов, привязанные к кнопкам 1-4. " +
-                 "Пустые слоты — оставить null.")]
+        [Header("── Tool Prefabs (sloty 1-4) ──────────────────")]
+        [Tooltip("Prefaby instrumentov, privyazannye k knopkam 1-4. " +
+                 "Pustye sloty — ostavit null.")]
         [SerializeField] private GameObject[] toolPrefabs = new GameObject[4];
 
         [Header("── Known Tool Prefabs ────────────────────────")]
-        [Tooltip("Полный реестр held-tool prefab'ов для PDA / quick-slot assignment.")]
+        [Tooltip("Polnyy reestr held-tool prefab'ov dlya PDA / quick-slot assignment.")]
         [SerializeField] private GameObject[] knownToolPrefabs = new GameObject[12];
 
         [Header("â”€â”€ Pool Warmup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
@@ -76,11 +76,11 @@ namespace Hecton8.Gameplay
         [SerializeField] private int constructionGhostWarmupCount = 1;
 
         [Header("── Swap Animation ────────────────────────────")]
-        [Tooltip("Скорость анимации смены инструмента (lerp factor per second). " +
-                 "Больше = быстрее.")]
+        [Tooltip("Skorost animatsii smeny instrumenta (lerp factor per second). " +
+                 "Bolshe = bystree.")]
         [SerializeField] private float swapSpeed = 8f;
 
-        [Tooltip("Смещение инструмента вниз при анимации смены (локальные координаты).")]
+        [Tooltip("Smeschenie instrumenta vniz pri animatsii smeny (lokalnye koordinaty).")]
         [SerializeField] private Vector3 lowerOffset = new Vector3(0f, -0.5f, 0f);
 
         [Header("── Diagnostics ───────────────────────────────")]
@@ -94,35 +94,35 @@ namespace Hecton8.Gameplay
         //  RUNTIME STATE
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Текущий активный экземпляр инструмента (из пула).</summary>
+        /// <summary>Tekuschiy aktivnyy ekzemplyar instrumenta (iz pula).</summary>
         private GameObject _currentInstance;
 
-        /// <summary>Компонент PlayerTool на текущем экземпляре.</summary>
+        /// <summary>Komponent PlayerTool na tekuschem ekzemplyare.</summary>
         private PlayerTool _currentTool;
         // COLD ALLOC: char[512] — zero-GC active tool HUD summary staging buffer — owner: PlayerToolManager
         private FixedCharBuffer _toolSummaryBuffer = new FixedCharBuffer(512);
         // COLD ALLOC: char[512] - zero-GC active tool HUD directive staging buffer - owner: PlayerToolManager
         private FixedCharBuffer _toolDirectiveBuffer = new FixedCharBuffer(512);
 
-        /// <summary>Индекс текущего активного слота (-1 = ничего).</summary>
+        /// <summary>Indeks tekuschego aktivnogo slota (-1 = nichego).</summary>
         private int _currentSlotIndex = -1;
 
-        /// <summary>Индекс слота, на который переключаемся (-1 = нет запроса).</summary>
+        /// <summary>Indeks slota, na kotoryy pereklyuchaemsya (-1 = net zaprosa).</summary>
         private int _pendingSlotIndex = -1;
 
-        /// <summary>Текущее состояние конечного автомата смены инструмента.</summary>
+        /// <summary>Tekuschee sostoyanie konechnogo avtomata smeny instrumenta.</summary>
         private SwapState _swapState = SwapState.Idle;
 
-        /// <summary>Прогресс анимации [0..1]. 0 = начало, 1 = завершено.</summary>
+        /// <summary>Progress animatsii [0..1]. 0 = nachalo, 1 = zaversheno.</summary>
         private float _swapProgress;
 
         /// <summary>
-        /// Начальная локальная позиция handAnchor.
-        /// Запоминаем при Awake — это «нормальное» положение инструмента.
+        /// Nachalnaya lokalnaya pozitsiya handAnchor.
+        /// Zapominaem pri Awake — eto «normalnoe» polozhenie instrumenta.
         /// </summary>
         private Vector3 _anchorRestPosition;
 
-        /// <summary>Целевая позиция при опускании (rest + offset).</summary>
+        /// <summary>Tselevaya pozitsiya pri opuskanii (rest + offset).</summary>
         private Vector3 _anchorLoweredPosition;
         private IInputService _subscribedInputManager;
         private readonly string[] _slotNameCache = new string[4];
@@ -159,23 +159,23 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Конечный автомат анимации смены инструмента.
+        /// Konechnyy avtomat animatsii smeny instrumenta.
         /// 
         /// Idle → Lowering → Raising → Idle
         ///
-        /// Lowering: инструмент плавно уходит вниз. По завершении —
-        ///           деспавн старого, спавн нового.
-        /// Raising:  новый инструмент плавно поднимается в рабочую позицию.
+        /// Lowering: instrument plavno uhodit vniz. Po zavershenii —
+        ///           despavn starogo, spavn novogo.
+        /// Raising:  novyy instrument plavno podnimaetsya v rabochuyu pozitsiyu.
         /// </summary>
         private enum SwapState
         {
-            /// <summary>Инструмент на месте, анимация не идёт.</summary>
+            /// <summary>Instrument na meste, animatsiya ne idet.</summary>
             Idle,
 
-            /// <summary>Опускаем текущий инструмент вниз перед сменой.</summary>
+            /// <summary>Opuskaem tekuschiy instrument vniz pered smenoy.</summary>
             Lowering,
 
-            /// <summary>Поднимаем новый инструмент вверх после спавна.</summary>
+            /// <summary>Podnimaem novyy instrument vverh posle spavna.</summary>
             Raising
         }
 
@@ -232,7 +232,7 @@ namespace Hecton8.Gameplay
             if (playerInventory != null)
                 playerInventory.InventoryChanged -= HandleInventoryChanged;
 
-            // Деспавним текущий инструмент при отключении менеджера
+            // Despavnim tekuschiy instrument pri otklyuchenii menedzhera
             DespawnCurrentTool();
         }
 
@@ -288,12 +288,12 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ITickable — MAIN LOOP (вызывается каждый кадр)
+        //  ITickable — MAIN LOOP (vyzyvaetsya kazhdyy kadr)
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Главный цикл менеджера инструментов.
-        /// Порядок: Input → SwapAnimation → ToolTick → UseInput.
+        /// Glavnyy tsikl menedzhera instrumentov.
+        /// Poryadok: Input → SwapAnimation → ToolTick → UseInput.
         /// </summary>
         public void Tick(float deltaTime)
         {
@@ -315,13 +315,13 @@ namespace Hecton8.Gameplay
 
             bool handheldToolsBlocked = IsHandheldToolUsageBlocked();
             bool batterySiphonLockout = IsBatterySiphonLockoutActive;
-            // ── 1. Обработка ввода переключения слотов ──
+            // ── 1. Obrabotka vvoda pereklyucheniya slotov ──
             if (!handheldToolsBlocked && !batterySiphonLockout)
                 ProcessSlotInput();
             else if (handheldToolsBlocked && _currentTool != null && _swapState == SwapState.Idle && _pendingSlotIndex < 0)
                 Holster();
 
-            // ── 2. Анимация смены инструмента ──
+            // ── 2. Animatsiya smeny instrumenta ──
             ProcessSwapAnimation(deltaTime);
 
             if (IsBatterySiphonLockoutActive)
@@ -345,10 +345,10 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // ── 3. Если инструмент активен и анимация завершена — обновляем ──
+            // ── 3. Esli instrument aktiven i animatsiya zavershena — obnovlyaem ──
             if (_currentTool != null && _swapState == SwapState.Idle)
             {
-                // ── Tick инструмента (idle-анимация, покачивание) ──
+                // ── Tick instrumenta (idle-animatsiya, pokachivanie) ──
                 if (TryBeginBatterySiphonLockoutIfNeeded())
                 {
                     PublishRuntimeContextState();
@@ -390,10 +390,10 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Программное переключение на слот по индексу (0-3).
-        /// Можно вызвать из других систем (например, при потере инструмента).
+        /// Programmnoe pereklyuchenie na slot po indeksu (0-3).
+        /// Mozhno vyzvat iz drugih sistem (naprimer, pri potere instrumenta).
         /// </summary>
-        /// <param name="slotIndex">Индекс слота (0-based). -1 = убрать инструмент.</param>
+        /// <param name="slotIndex">Indeks slota (0-based). -1 = ubrat instrument.</param>
         public void SwitchToSlot(int slotIndex)
         {
             if (_externallyDockedTool != null)
@@ -409,8 +409,8 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Принудительно убирает текущий инструмент из рук.
-        /// Запускает анимацию опускания, после чего деспавнит.
+        /// Prinuditelno ubiraet tekuschiy instrument iz ruk.
+        /// Zapuskaet animatsiyu opuskaniya, posle chego despavnit.
         /// </summary>
         public void Holster()
         {
@@ -420,7 +420,7 @@ namespace Hecton8.Gameplay
             RequestSwap(-1);
         }
 
-        /// <summary>Текущий активный инструмент (может быть null).</summary>
+        /// <summary>Tekuschiy aktivnyy instrument (mozhet byt null).</summary>
         public PlayerTool CurrentTool => _currentTool;
 
         public bool TryBeginExternalToolDock(PlayerTool tool)
@@ -526,10 +526,10 @@ namespace Hecton8.Gameplay
         /// <summary>Optional transport feel contract of the current tool.</summary>
         internal PlayerTransportFeelContract CurrentToolTransportFeelContract => _currentTool != null ? _currentTool.TransportFeelContract : null;
 
-        /// <summary>Индекс текущего слота (-1 = нет инструмента).</summary>
+        /// <summary>Indeks tekuschego slota (-1 = net instrumenta).</summary>
         public int CurrentSlotIndex => _currentSlotIndex;
 
-        /// <summary>Идёт ли сейчас анимация смены инструмента.</summary>
+        /// <summary>Idet li seychas animatsiya smeny instrumenta.</summary>
         public bool IsSwapping => _swapState != SwapState.Idle;
 
         public bool IsBatterySiphonLockoutActive => _batterySiphonRemainingSeconds > 0f;
@@ -1100,9 +1100,9 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Запрашивает смену инструмента.
-        /// Если текущий инструмент есть — начинает анимацию опускания.
-        /// Если нет — сразу спавнит новый (анимация подъёма).
+        /// Zaprashivaet smenu instrumenta.
+        /// Esli tekuschiy instrument est — nachinaet animatsiyu opuskaniya.
+        /// Esli net — srazu spavnit novyy (animatsiya podema).
         /// </summary>
         private void RequestSwap(int newSlotIndex)
         {
@@ -1111,11 +1111,11 @@ namespace Hecton8.Gameplay
 
             LogToolDebug("RequestSwap");
 
-            // Уже на этом слоте и не holster
+            // Uzhe na etom slote i ne holster
             if (newSlotIndex == _currentSlotIndex)
                 return;
 
-            // Проверяем наличие в инвентаре (только для валидных слотов)
+            // Proveryaem nalichie v inventare (tolko dlya validnyh slotov)
             if (newSlotIndex >= 0)
             {
                 GameObject prefab = toolPrefabs[newSlotIndex];
@@ -1128,7 +1128,7 @@ namespace Hecton8.Gameplay
                     return;
                 }
 
-                // Проверяем ItemData на префабе
+                // Proveryaem ItemData na prefabe
                 if (!HasToolInInventory(prefab))
                 {
                     LogToolDebug("RequestSwap abort: slot missing in inventory");
@@ -1141,7 +1141,7 @@ namespace Hecton8.Gameplay
 
             _pendingSlotIndex = newSlotIndex;
 
-            // Если есть текущий инструмент — опускаем сначала
+            // Esli est tekuschiy instrument — opuskaem snachala
             if (_currentTool != null)
             {
                 LogToolDebug("RequestSwap lowering current tool");
@@ -1150,24 +1150,24 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                // Нет текущего — сразу спавним
+                // Net tekuschego — srazu spavnim
                 LogToolDebug("RequestSwap performing immediate swap");
                 PerformSwap();
             }
         }
 
         /// <summary>
-        /// Выполняет фактическую смену: деспавн старого → спавн нового.
-        /// Вызывается после завершения анимации опускания (или сразу,
-        /// если инструмента не было).
+        /// Vypolnyaet fakticheskuyu smenu: despavn starogo → spavn novogo.
+        /// Vyzyvaetsya posle zaversheniya animatsii opuskaniya (ili srazu,
+        /// esli instrumenta ne bylo).
         /// </summary>
         private void PerformSwap()
         {
             LogToolDebug("PerformSwap begin");
-            // ── Деспавн текущего ──
+            // ── Despavn tekuschego ──
             DespawnCurrentTool();
 
-            // ── Спавн нового ──
+            // ── Spavn novogo ──
             if (_pendingSlotIndex >= 0 && _pendingSlotIndex < toolPrefabs.Length)
             {
                 GameObject prefab = toolPrefabs[_pendingSlotIndex];
@@ -1184,20 +1184,20 @@ namespace Hecton8.Gameplay
             LogToolDebug("PerformSwap assigned current slot");
             ActiveSlotChanged?.Invoke(_currentSlotIndex);
 
-            // Если спавнили новый — запускаем анимацию подъёма
+            // Esli spavnili novyy — zapuskaem animatsiyu podema
             if (_currentTool != null)
             {
                 LogToolDebug("PerformSwap raising current tool");
                 _swapState    = SwapState.Raising;
                 _swapProgress = 0f;
 
-                // Начинаем из нижней позиции
+                // Nachinaem iz nizhney pozitsii
                 if (handAnchor != null)
                     handAnchor.localPosition = _anchorLoweredPosition;
             }
             else
             {
-                // Holster — возвращаем anchor в нормальную позицию
+                // Holster — vozvraschaem anchor v normalnuyu pozitsiyu
                 LogToolDebug("PerformSwap completed with no current tool");
                 _swapState = SwapState.Idle;
                 if (handAnchor != null)
@@ -1210,8 +1210,8 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Обрабатывает анимацию смены инструмента (state machine).
-        /// Использует math.lerp — zero GC, frame-independent.
+        /// Obrabatyvaet animatsiyu smeny instrumenta (state machine).
+        /// Ispolzuet math.lerp — zero GC, frame-independent.
         /// </summary>
         private void ProcessSwapAnimation(float deltaTime)
         {
@@ -1220,7 +1220,7 @@ namespace Hecton8.Gameplay
 
             if (handAnchor == null)
             {
-                // Нет anchor — пропускаем анимацию, выполняем мгновенно
+                // Net anchor — propuskaem animatsiyu, vypolnyaem mgnovenno
                 if (_swapState == SwapState.Lowering)
                     PerformSwap();
                 else
@@ -1228,7 +1228,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // Продвигаем прогресс
+            // Prodvigaem progress
             _swapProgress += deltaTime * swapSpeed;
 
             // Clamp
@@ -1277,7 +1277,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Спавнит инструмент из пула и настраивает его.
+        /// Spavnit instrument iz pula i nastraivaet ego.
         /// </summary>
         private void SpawnNewTool(GameObject prefab, int slotIndex)
         {
@@ -1293,7 +1293,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // Спавним через пул в позицию anchor
+            // Spavnim cherez pul v pozitsiyu anchor
             _currentInstance = pool.Spawn(
                 prefab,
                 handAnchor.position,
@@ -1308,14 +1308,14 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // Привязываем к anchor
+            // Privyazyvaem k anchor
             _currentInstance.transform.SetParent(handAnchor, false);
             _currentInstance.transform.localPosition = Vector3.zero;
             _currentInstance.transform.localRotation = Quaternion.identity;
             if (_currentInstance.TryGetComponent(out PhysicalToolGripOffsets gripOffsets))
                 gripOffsets.TryApplyGripOffset(_currentInstance.transform, PhysicalHandSide.Right);
 
-            // Получаем компонент PlayerTool
+            // Poluchaem komponent PlayerTool
             if (_currentInstance.TryGetComponent(out PlayerTool tool))
             {
                 _currentTool = tool;
@@ -1334,8 +1334,8 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Деспавнит текущий инструмент (возврат в пул).
-        /// Безопасно вызывать при отсутствии инструмента.
+        /// Despavnit tekuschiy instrument (vozvrat v pul).
+        /// Bezopasno vyzyvat pri otsutstvii instrumenta.
         /// </summary>
         private void DespawnCurrentTool()
         {
@@ -1354,7 +1354,7 @@ namespace Hecton8.Gameplay
 
             if (_currentInstance != null)
             {
-                // Отцепляем от anchor перед деспавном
+                // Ottseplyaem ot anchor pered despavnom
                 _currentInstance.transform.SetParent(null, false);
 
                 ObjectPoolManager pool = GlobalRegistry.ObjectPool;
@@ -1376,11 +1376,11 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Проверяет наличие инструмента в инвентаре игрока.
-        /// Сканирует InventoryGrid на предмет совпадения ItemData.
+        /// Proveryaet nalichie instrumenta v inventare igroka.
+        /// Skaniruet InventoryGrid na predmet sovpadeniya ItemData.
         ///
-        /// Время: O(cols × rows) в worst case, но вызывается только
-        /// при нажатии кнопки (не каждый кадр).
+        /// Vremya: O(cols × rows) v worst case, no vyzyvaetsya tolko
+        /// pri nazhatii knopki (ne kazhdyy kadr).
         /// </summary>
         // Timed battery siphon; no SOA inventory mutation until the lockout completes.
         private bool TryBeginBatterySiphonLockoutIfNeeded()
@@ -1552,7 +1552,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            // Получаем ItemData с префаба
+            // Poluchaem ItemData s prefaba
             if (!toolPrefab.TryGetComponent(out PlayerTool prefabTool))
                 return false;
 
@@ -1560,7 +1560,7 @@ namespace Hecton8.Gameplay
             if (targetData == null)
                 return false;
 
-            // Сканируем инвентарь
+            // Skaniruem inventar
             InventoryGrid grid = playerInventory.Grid;
             if (grid == null)
                 return false;
@@ -1574,7 +1574,7 @@ namespace Hecton8.Gameplay
                 {
                     int cellHashId = playerInventory.GetItemHashAt(x, y);
 
-                    // Сравниваем по ссылке — ScriptableObjects уникальны
+                    // Sravnivaem po ssylke — ScriptableObjects unikalny
                     if (cellHashId == Hecton.Localization.LocHash.Compute(targetData.PersistentId))
                         return true;
                 }

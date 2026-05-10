@@ -1,25 +1,25 @@
 // ============================================================================
 // HECTON-8 — FirstHourDirector.cs
-// Режиссура первого часа игры.
+// Rezhissura pervogo chasa igry.
 //
-// ЛОР (лор1 — Психологический arc первых двух часов):
-//   Минута 0-5:    Дезориентация → Ориентация
-//   Минута 5-15:   Любопытство без страха (мелководье безопасно)
-//   Минута 15-25:  Первая тревога (рука из-под обломка, гул снизу)
-//   Минута 25-40:  Компетентность (первый крафт)
-//   Минута 40-50:  Удар по уверенности (ТЕНЬ — большая, быстрая, слева)
-//   Минута 50-70:  Осторожность (игрок двигается иначе)
-//   Минута 70-90:  Маленькая победа (нашёл модуль)
-//   Минута 90-120: Предвкушение (гул приближается)
+// LOR (lor1 — Psihologicheskiy arc pervyh dvuh chasov):
+//   Minuta 0-5:    Dezorientatsiya → Orientatsiya
+//   Minuta 5-15:   Lyubopytstvo bez straha (melkovode bezopasno)
+//   Minuta 15-25:  Pervaya trevoga (ruka iz-pod oblomka, gul snizu)
+//   Minuta 25-40:  Kompetentnost (pervyy kraft)
+//   Minuta 40-50:  Udar po uverennosti (TEN — bolshaya, bystraya, sleva)
+//   Minuta 50-70:  Ostorozhnost (igrok dvigaetsya inache)
+//   Minuta 70-90:  Malenkaya pobeda (nashel modul)
+//   Minuta 90-120: Predvkushenie (gul priblizhaetsya)
 //
-// МЕХАНИКА:
-//   • Отслеживает время сессии и прогресс.
-//   • Публикует события для Director AI и нарративных систем.
-//   • Одноразовые события (не повторяются после первого раза).
-//   • ISaveable: сохраняет прогресс первого часа.
+// MEHANIKA:
+//   • Otslezhivaet vremya sessii i progress.
+//   • Publikuet sobytiya dlya Director AI i narrativnyh sistem.
+//   • Odnorazovye sobytiya (ne povtoryayutsya posle pervogo raza).
+//   • ISaveable: sohranyaet progress pervogo chasa.
 //
 // ZERO GC:
-//   • Битовая маска для отслеживания выполненных событий.
+//   • Bitovaya maska dlya otslezhivaniya vypolnennyh sobytiy.
 //   • ISlowTickable.
 // ============================================================================
 
@@ -47,12 +47,12 @@ namespace Hecton8.Gameplay
 {
     public enum FirstHourMilestone
     {
-        Orientation     = 0,   // Мин 0-5: ориентация
-        FirstAnxiety    = 1,   // Мин 15-25: первая тревога (гул)
-        FirstCraft      = 2,   // Мин 25-40: первый крафт
-        TheShadow       = 3,   // Мин 40-50: ТЕНЬ
-        FirstModule     = 4,   // Мин 70-90: первый модуль колонии
-        HumCloser       = 5    // Мин 90-120: гул приближается
+        Orientation     = 0,   // Min 0-5: orientatsiya
+        FirstAnxiety    = 1,   // Min 15-25: pervaya trevoga (gul)
+        FirstCraft      = 2,   // Min 25-40: pervyy kraft
+        TheShadow       = 3,   // Min 40-50: TEN
+        FirstModule     = 4,   // Min 70-90: pervyy modul kolonii
+        HumCloser       = 5    // Min 90-120: gul priblizhaetsya
     }
 
     public static class FirstHourEvents
@@ -610,12 +610,12 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Timing (seconds) ────────────────────────")]
-        [SerializeField] private float orientationTime   = 300f;   // 5 мин
-        [SerializeField] private float shadowTime        = 2400f;  // 40 мин
-        [SerializeField] private float firstModuleTime   = 4200f;  // 70 мин
+        [SerializeField] private float orientationTime   = 300f;   // 5 min
+        [SerializeField] private float shadowTime        = 2400f;  // 40 min
+        [SerializeField] private float firstModuleTime   = 4200f;  // 70 min
 
         [Header("── Shadow Trigger ──────────────────────────")]
-        [Tooltip("Минимальная глубина для появления тени (метры).")]
+        [Tooltip("Minimalnaya glubina dlya poyavleniya teni (metry).")]
         [SerializeField] private float shadowMinDepth = 30f;
 
         [Header("── Early Goal Hooks ─────────────────────────")]
@@ -657,7 +657,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         private float _sessionTime;
-        private int   _completedMilestones; // битовая маска
+        private int   _completedMilestones; // bitovaya maska
         private bool  _registered;
         private bool  _serviceRegistered;
         private bool  _firstModuleHintIssued;
@@ -874,7 +874,7 @@ namespace Hecton8.Gameplay
                 FirstHourMilestone.FirstAnxiety,
                 ShouldTriggerFirstAnxiety(atlasRevealStage));
 
-            // Тень — только если игрок под водой на нужной глубине
+            // Ten — tolko esli igrok pod vodoy na nuzhnoy glubine
             CheckMilestone(FirstHourMilestone.TheShadow,
                 _sessionTime >= shadowTime && depth >= shadowMinDepth);
 
@@ -928,8 +928,8 @@ namespace Hecton8.Gameplay
                     break;
 
                 case FirstHourMilestone.TheShadow:
-                    // ТЕНЬ — большая, быстрая, слева
-                    // Director AI получает narrative bonus (снижение tension после страха)
+                    // TEN — bolshaya, bystraya, sleva
+                    // Director AI poluchaet narrative bonus (snizhenie tension posle straha)
                     NarrativeEvents.RaiseDiscoveryMade(_shadowEventDiscoveryHash);
                     break;
 
@@ -1051,7 +1051,7 @@ namespace Hecton8.Gameplay
             if (_survivalSystem != null)
                 return true;
 
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
+            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
                 playerTransform == null)
             {
                 return false;
@@ -1726,7 +1726,7 @@ namespace Hecton8.Gameplay
         {
             inventory = null;
 
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
+            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
                 playerTransform == null)
             {
                 return false;

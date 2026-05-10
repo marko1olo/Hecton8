@@ -1,7 +1,7 @@
 ﻿# Reports
 
 Date: 2026-05-09
-Status: PENDING FINAL UNITY PROOF (R168 DOTNET BUILD PASSED / UNITY MCP BLOCKED / TIMESTAMP GATE CONTAMINATED)
+Status: PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)
 
 Purpose: canonical drop zone for new reports, audits, and validation writeups that are still active.
 
@@ -62,11 +62,11 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 - `AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
 - `DOOMSDAY_FLAW_REPORT.md`
 
-`2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` is the current documentation synchronization boundary with a 2026-05-09 R168 addendum.
-It supersedes conflicting May 7/May 8 source-count and build-blocker statements. Current counters are `Assets/_Project/**/*.cs` `1255`, `Assets/_Project/Scripts/**/*.cs` `1214`, project physical lines `743328`, script physical lines `728007`, and `GlobalRegistryContracts.cs` direct public interfaces `38`. Latest full Core dependency build is `CodexArtifacts/2026-05-09_R168_CORE_SERIAL_NORESTORE_BUILD.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`; it supersedes R129-R167 after later source churn, stale clean snapshots, transient live-write compile blockers, the R154 in-build `PersistentWorldRegistry.cs` write, the post-R155 `InputManager.cs` write, R160 timestamp invalidation, R161 Input assembly `GlobalRegistry` regression, post-R163 `PhysicsApplySystem.cs` / `NativeMemorySentinel.cs` writes, post-R165 guarded diagnostic-log preprocessor edits in `LocalizationManager.cs` and `HectonBiolumManager.cs`, and the R167/R168 biolum diagnostics guard pass. R168 does not prove a stable current-source snapshot: `.cs` writes were observed after the R168 artifact end timestamp in `UIScreenShake.cs`, `WorldCaveDirector.cs`, and later `BeaconHUDElement.cs`. This is local `dotnet` compile evidence only, not MCP proof, Unity Console proof, Play Mode, profiler, GCMonitor, player-build, source-freeze proof, or memory-retention proof.
+`2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` is the current documentation synchronization boundary with a 2026-05-09 R186 addendum.
+It supersedes conflicting May 7/May 8 source-count and build-blocker statements. Current counters are `Assets/_Project/**/*.cs` `1292`, `Assets/_Project/Scripts/**/*.cs` `1248`, project physical lines `759122`, script physical lines `742892`, and `GlobalRegistryContracts.cs` direct public interfaces `40`. Latest full Core dependency build is `CodexArtifacts/2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, `CS_WRITES_AFTER_END=0`. It supersedes R171-R185 after repeated live C# writes, R179 transient compile break exposure, R181 invalid root-only dependency mode, R184 `IAudioService` contract drift, and R185 `PredatorCognitionDomain` static/instance vortex-steering drift. This is local `dotnet` compile evidence only, not MCP proof, Unity Console proof, Play Mode, profiler, GCMonitor, player-build, runtime zero-GC, frame-time, scene-wiring, or memory-retention proof.
 
 `2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json` is the current machine-readable active documentation manifest.
-It lists active markdown files with parsed `Date`, `Status`, title, byte-size, and `requiresRuntimeProof` fields. Its source counts are orientation only and its build state is `R168` compile-only evidence with timestamp-gate contamination recorded.
+It lists active markdown files with parsed `Date`, `Status`, title, byte-size, and `requiresRuntimeProof` fields. Its source counts are orientation only and its build state is `R186` compile-only evidence with no C# source writes after build start/end.
 
 `2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md` is the previous main documentation synchronization boundary.
 It supersedes conflicting May 7 numeric counters after the final inquisition runtime patch and build-master recheck. It records `Docs/**/*.md` `443`, active markdown `230`, direct `Docs/Reports/*.md` `67`, active markdown header debt `0`, `Assets/_Project/**/*.cs` `1233`, `Assets/_Project/Scripts/**/*.cs` `1192`, project physical lines last observed `683064`, script physical lines last observed `667771`, and `GlobalRegistryContracts.cs` direct public interfaces `39`. It also records that source line counts were moving during the pass. Latest build-master `dotnet build Hecton8.Core.csproj --no-restore` failed with `2 Error(s)` in `HectonVoxelEngine.cs` due missing `GlobalRegistry.PlayerRigidbody` and `GlobalRegistry.PlayerMovement`; earlier same-day successful Core logs are historical only.

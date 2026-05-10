@@ -39,6 +39,24 @@ namespace Hecton8.UI
         private static readonly int FaceDilateId = Shader.PropertyToID("_FaceDilate");
         private static readonly int GlyphUvRectId = Shader.PropertyToID("_GlyphUvRect");
         private static readonly int GlyphTintId = Shader.PropertyToID("_GlyphTint");
+        // COLD ALLOC: Vector3[4] — shared tooltip quad vertices; prevents per-instance mesh build arrays — owner: DiegeticTooltipSystem
+        private static readonly Vector3[] s_quadVertices =
+        {
+            new Vector3(-0.5f, -0.5f, 0f),
+            new Vector3(-0.5f, 0.5f, 0f),
+            new Vector3(0.5f, 0.5f, 0f),
+            new Vector3(0.5f, -0.5f, 0f)
+        };
+        // COLD ALLOC: Vector2[4] — shared tooltip quad UVs; prevents per-instance mesh build arrays — owner: DiegeticTooltipSystem
+        private static readonly Vector2[] s_quadUvs =
+        {
+            new Vector2(0f, 0f),
+            new Vector2(0f, 1f),
+            new Vector2(1f, 1f),
+            new Vector2(1f, 0f)
+        };
+        // COLD ALLOC: int[6] — shared tooltip quad indices; prevents per-instance mesh build arrays — owner: DiegeticTooltipSystem
+        private static readonly int[] s_quadIndices = { 0, 1, 2, 0, 2, 3 };
 
         [Header("References")]
         [SerializeField, Tooltip("Optional explicit readable SDF font used for diegetic tooltip glyphs.")]
@@ -725,7 +743,7 @@ namespace Hecton8.UI
                 return interactionCamera;
             }
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 interactionCamera = playerTransform.GetComponentInChildren<Camera>();
@@ -790,21 +808,9 @@ namespace Hecton8.UI
                 hideFlags = HideFlags.DontSave
             };
 
-            mesh.SetVertices(new[]
-            {
-                new Vector3(-0.5f, -0.5f, 0f),
-                new Vector3(-0.5f, 0.5f, 0f),
-                new Vector3(0.5f, 0.5f, 0f),
-                new Vector3(0.5f, -0.5f, 0f)
-            });
-            mesh.SetUVs(0, new[]
-            {
-                new Vector2(0f, 0f),
-                new Vector2(0f, 1f),
-                new Vector2(1f, 1f),
-                new Vector2(1f, 0f)
-            });
-            mesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0, true);
+            mesh.SetVertices(s_quadVertices);
+            mesh.SetUVs(0, s_quadUvs);
+            mesh.SetTriangles(s_quadIndices, 0, true);
             mesh.RecalculateBounds();
             return mesh;
         }

@@ -1743,7 +1743,7 @@ namespace Hecton8.VFX
                     _mainCamera = playerContext.PlayerCamera;
 
                 if (_mainCamera == null &&
-                    SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                    GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                     playerTransform != null)
                 {
                     playerTransform.TryGetComponent(out _mainCamera);
@@ -1793,7 +1793,7 @@ namespace Hecton8.VFX
         private void TryResolveGameplayDependencies()
         {
             Transform playerRoot = null;
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&
                 currentPlayerTransform != null)
             {
                 playerRoot = currentPlayerTransform;

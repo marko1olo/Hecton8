@@ -34,6 +34,11 @@ namespace Hecton8.AI
         private const float ToolNoiseRadiusMultiplier = 1.35f;
         private const float PlayerAwarenessMemorySeconds = 0.75f;
         private const float PlayerNoiseFreshSeconds = 0.5f;
+        private const float PredatorAcousticSightRadiusMeters = 50f;
+        private const float PredatorAcousticSightRadiusMetersSqr =
+            PredatorAcousticSightRadiusMeters * PredatorAcousticSightRadiusMeters;
+        private const float PredatorAcousticSightThreshold01 = 0.12f;
+        private const float PredatorMovementNoiseReferenceSpeedSqr = 72.25f;
         private const int ForwardObstacleRayIndex = 0;
         private const int LeftObstacleRayIndex = 1;
         private const int RightObstacleRayIndex = 2;
@@ -409,9 +414,15 @@ namespace Hecton8.AI
                 float toPlayerLengthSq = math.lengthsq(toPlayer);
                 if (toPlayerLengthSq > 0.0001f && visionConeAngle < 359f)
                 {
-                    float3 playerDirection = toPlayer * math.rsqrt(toPlayerLengthSq);
+                    float3 selfForward = (float3)_cachedSelfForward;
+                    float forwardDot = math.dot(selfForward, toPlayer);
+                    float forwardDotSq = forwardDot * forwardDot;
                     float coneDotThreshold = ResolveVisionConeDotThreshold(visionConeAngle);
-                    withinVisionCone = math.dot((float3)_cachedSelfForward, playerDirection) >= coneDotThreshold;
+                    float coneDotThresholdSq = coneDotThreshold * coneDotThreshold;
+                    float coneComparisonSq = coneDotThresholdSq * math.lengthsq(selfForward) * toPlayerLengthSq;
+                    withinVisionCone = coneDotThreshold >= 0f
+                        ? forwardDot >= 0f && forwardDotSq >= coneComparisonSq
+                        : forwardDot >= 0f || forwardDotSq <= coneComparisonSq;
                 }
             }
 
@@ -483,12 +494,14 @@ namespace Hecton8.AI
             _lastReportedPlayerNoise = playerNoise;
             _hasReportedPlayerNoise = true;
             _lastReportedPlayerTimeSeconds = _authoredTimeSeconds;
-            hasNoisePlayerContact = true;
-            RememberPlayerPosition(playerNoise.Position);
             AbsoluteUniversePosition playerNoiseAup = playerNoise.PositionAup;
             distSqrToPlayer = (float)math.min(
                 AbsoluteUniversePosition.DistanceSq(in playerNoiseAup, in _cachedSelfAup),
                 float.MaxValue);
+            bool audible = IsAudiblePredatorNoise(playerNoise, distSqrToPlayer);
+            hasNoisePlayerContact = audible;
+            if (audible)
+                RememberPlayerPosition(playerNoise.Position);
         }
 
         private bool HasFreshReportedPlayerNoise()
@@ -497,6 +510,9 @@ namespace Hecton8.AI
                 return false;
 
             if (_authoredTimeSeconds - _lastReportedPlayerTimeSeconds > PlayerNoiseFreshSeconds)
+                return false;
+
+            if (!IsAudiblePredatorNoise(_lastReportedPlayerNoise, distSqrToPlayer))
                 return false;
 
             if (reactToPlayerLight && _lastReportedPlayerNoise.FlashlightOn)
@@ -512,6 +528,24 @@ namespace Hecton8.AI
                 return true;
 
             return _lastReportedPlayerNoise.MovementSpeedSqr >= 1.0f;
+        }
+
+        private static bool IsAudiblePredatorNoise(NoiseSystem.PlayerNoiseSignal signal, float distanceSqr)
+        {
+            if (distanceSqr > PredatorAcousticSightRadiusMetersSqr)
+                return false;
+
+            return ResolvePlayerNoise01(signal) >= PredatorAcousticSightThreshold01;
+        }
+
+        private static float ResolvePlayerNoise01(NoiseSystem.PlayerNoiseSignal signal)
+        {
+            float movement01 = math.saturate(math.max(0f, signal.MovementSpeedSqr) / PredatorMovementNoiseReferenceSpeedSqr);
+            float tool01 = math.saturate(signal.ToolUseNoise01);
+            float transport01 = math.saturate(signal.TransportBoost01 * math.max(1f, signal.TransportSignature));
+            float flashlight01 = signal.FlashlightOn ? 0.2f : 0f;
+            float sonar01 = signal.IsActiveSonarPing ? tool01 * math.max(0.25f, signal.AcousticTransmission01) : 0f;
+            return math.saturate(math.max(math.max(movement01, tool01), math.max(transport01, math.max(flashlight01, sonar01))));
         }
 
         public bool TryGetPerceivedPlayerPosition(out Vector3 playerPosition)
@@ -628,7 +662,7 @@ namespace Hecton8.AI
         {
             Vector3 safeVelocity = IsFinite(velocity) ? velocity : Vector3.zero;
             float safeDeltaTime = math.isfinite(dt) ? math.max(dt, 0f) : _foveatedTickIntervalSeconds;
-            float length = math.clamp(avoidanceRange + ApproximateMagnitude(safeVelocity) * lookAheadFactor, avoidanceRange, maxRayLength);
+            float length = ResolveObstacleProbeLength(safeVelocity.sqrMagnitude);
             Vector3 forwardDirection = safeVelocity.sqrMagnitude > 0.0001f
                 ? ResolveDominantAxisDirection(safeVelocity, _cachedSelfForward)
                 : _cachedSelfForward;
@@ -1075,15 +1109,19 @@ namespace Hecton8.AI
             return direction.z < 0f ? Vector3.back : Vector3.forward;
         }
 
-        private static float ApproximateMagnitude(Vector3 value)
+        private float ResolveObstacleProbeLength(float velocitySqr)
         {
-            float ax = math.abs(value.x);
-            float ay = math.abs(value.y);
-            float az = math.abs(value.z);
-            float max = math.max(ax, math.max(ay, az));
-            float min = math.min(ax, math.min(ay, az));
-            float mid = ax + ay + az - max - min;
-            return max + mid * 0.375f + min * 0.125f;
+            float lookAheadUnits = velocitySqr >= 100f
+                ? 10f
+                : velocitySqr >= 25f
+                    ? 5f
+                    : velocitySqr >= 4f
+                        ? 2f
+                        : 0f;
+            float minimumLength = math.max(0f, avoidanceRange);
+            float maximumLength = math.max(minimumLength, maxRayLength);
+            float desiredLength = minimumLength + (lookAheadUnits * math.max(0f, lookAheadFactor));
+            return math.min(maximumLength, math.max(minimumLength, desiredLength));
         }
 
         private static bool IsFinite(Vector3 value)

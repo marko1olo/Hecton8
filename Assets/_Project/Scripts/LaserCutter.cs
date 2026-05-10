@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — LaserCutter.cs  v2.2
-// Лазерный резак — PlayerTool с термическим менеджментом.
+// Lazernyy rezak — PlayerTool s termicheskim menedzhmentom.
 //
 // v2.2 CHANGES (ZERO-GC REFACTOR):
 //   [ZERO-GC] Diagnosis system entirely refactored to use FixedCharBuffer.
@@ -1411,7 +1411,7 @@ namespace Hecton8.Gameplay
             if (!gameObject.scene.isLoaded)
                 return;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
                 _cachedPlayerTransform = playerTransform;
                 if (_cachedInventory == null)

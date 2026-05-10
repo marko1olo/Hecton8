@@ -18,11 +18,11 @@ namespace Hecton8.Gameplay
     {
         public ElectrolysisAcousticEvent(Vector3 position, float dumpedPowerWatts, float oxygenUnits, float threatStrength, float radiusMeters)
         {
-            Position = position;
-            DumpedPowerWatts = dumpedPowerWatts;
-            OxygenUnits = oxygenUnits;
-            ThreatStrength = threatStrength;
-            RadiusMeters = radiusMeters;
+            Position = IsFiniteVector(position) ? position : Vector3.zero;
+            DumpedPowerWatts = FiniteNonNegativeOrZero(dumpedPowerWatts);
+            OxygenUnits = FiniteNonNegativeOrZero(oxygenUnits);
+            ThreatStrength = FiniteNonNegativeOrZero(threatStrength);
+            RadiusMeters = FiniteAtLeast(radiusMeters, 1f);
         }
 
         public Vector3 Position { get; }
@@ -30,6 +30,23 @@ namespace Hecton8.Gameplay
         public float OxygenUnits { get; }
         public float ThreatStrength { get; }
         public float RadiusMeters { get; }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private static float FiniteNonNegativeOrZero(float value)
+        {
+            return math.isfinite(value) && value > 0f ? value : 0f;
+        }
+
+        private static float FiniteAtLeast(float value, float minimum)
+        {
+            return math.isfinite(value) ? math.max(minimum, value) : minimum;
+        }
     }
 
     /// <summary>

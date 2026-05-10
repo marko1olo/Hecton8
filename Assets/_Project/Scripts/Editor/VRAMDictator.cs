@@ -14,7 +14,6 @@ namespace Hecton8.EditorTools
     {
         private const string ArtRoot = "Assets/_Project/Art";
         private const string MenuPath = "Hecton/Validation/Asset Pipeline/Run VRAM Dictator";
-        private const int MaxNonAtlasDimension = 1024;
         private const int MaxReportRows = 96;
 
         public int callbackOrder => -2048;
@@ -47,6 +46,7 @@ namespace Hecton8.EditorTools
             int blockingCount = 0;
             int nonBc7Count = 0;
             int normalNotBc5Count = 0;
+            int runtimeFormatViolationCount = 0;
             int uncompressedCount = 0;
             int oversizedNonAtlasCount = 0;
             int blockingRowsWritten = 0;
@@ -66,12 +66,16 @@ namespace Hecton8.EditorTools
                 importer.GetSourceTextureWidthAndHeight(out int width, out int height);
                 TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
                 string formatLabel = ResolveFormatLabel(importer, standalone);
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+                string runtimeFormatLabel = texture != null ? texture.format.ToString() : "unloaded";
                 bool normalMap = IsNormalMap(assetPath, importer);
                 bool atlas = IsAtlasTexturePath(assetPath);
-                bool oversizedNonAtlas = (width > MaxNonAtlasDimension || height > MaxNonAtlasDimension) && !atlas;
+                int expectedMaxSize = HectonTextureImportDictator.ResolveMaxTextureSize(assetPath);
+                bool oversizedNonAtlas = (width > expectedMaxSize || height > expectedMaxSize) && !atlas;
                 bool uncompressedRgba = IsUncompressedRgba(formatLabel, importer);
                 bool nonBc7 = !normalMap && !formatLabel.Contains("BC7");
                 bool normalNotBc5 = normalMap && !formatLabel.Contains("BC5");
+                bool runtimeFormatViolation = texture != null && !IsExpectedRuntimeFormat(texture.format, normalMap);
 
                 if (oversizedNonAtlas)
                     oversizedNonAtlasCount++;
@@ -81,17 +85,25 @@ namespace Hecton8.EditorTools
                     nonBc7Count++;
                 if (normalNotBc5)
                     normalNotBc5Count++;
+                if (runtimeFormatViolation)
+                    runtimeFormatViolationCount++;
 
-                if (oversizedNonAtlas || uncompressedRgba)
+                if (oversizedNonAtlas || uncompressedRgba || nonBc7 || normalNotBc5 || runtimeFormatViolation)
                 {
                     blockingCount++;
                     if (blockingRowsWritten < MaxReportRows)
                     {
-                        AppendTextureRow(blockingRows, assetPath, width, height, formatLabel, normalMap, atlas);
+                        AppendTextureRow(blockingRows, assetPath, width, height, formatLabel, runtimeFormatLabel, normalMap, atlas);
                         if (oversizedNonAtlas)
                             blockingRows.Append(" | oversizedNonAtlas");
                         if (uncompressedRgba)
                             blockingRows.Append(" | uncompressedRGBA");
+                        if (nonBc7)
+                            blockingRows.Append(" | nonBC7");
+                        if (normalNotBc5)
+                            blockingRows.Append(" | normalNotBC5");
+                        if (runtimeFormatViolation)
+                            blockingRows.Append(" | runtimeFormatNotBC7BC5");
                         blockingRows.AppendLine();
                         blockingRowsWritten++;
                     }
@@ -99,7 +111,7 @@ namespace Hecton8.EditorTools
 
                 if ((nonBc7 || normalNotBc5) && auditRowsWritten < MaxReportRows)
                 {
-                    AppendTextureRow(auditRows, assetPath, width, height, formatLabel, normalMap, atlas);
+                    AppendTextureRow(auditRows, assetPath, width, height, formatLabel, runtimeFormatLabel, normalMap, atlas);
                     if (nonBc7)
                         auditRows.Append(" | nonBC7");
                     if (normalNotBc5)
@@ -116,6 +128,7 @@ namespace Hecton8.EditorTools
                 uncompressedCount,
                 nonBc7Count,
                 normalNotBc5Count,
+                runtimeFormatViolationCount,
                 blockingRows.ToString(),
                 auditRows.ToString());
             return new DictatorResult(scanned, blockingCount, message);
@@ -161,12 +174,18 @@ namespace Hecton8.EditorTools
                    formatLabel.Contains("R16G16B16A16");
         }
 
+        private static bool IsExpectedRuntimeFormat(TextureFormat format, bool normalMap)
+        {
+            return normalMap ? format == TextureFormat.BC5 : format == TextureFormat.BC7;
+        }
+
         private static void AppendTextureRow(
             StringBuilder builder,
             string assetPath,
             int width,
             int height,
             string formatLabel,
+            string runtimeFormatLabel,
             bool normalMap,
             bool atlas)
         {
@@ -177,6 +196,8 @@ namespace Hecton8.EditorTools
                 .Append(height)
                 .Append(" | ")
                 .Append(formatLabel)
+                .Append(" | texture.format=")
+                .Append(runtimeFormatLabel)
                 .Append(normalMap ? " | normal" : " | color-mask")
                 .Append(atlas ? " | atlas" : " | non-atlas");
         }
@@ -188,6 +209,7 @@ namespace Hecton8.EditorTools
             int uncompressedCount,
             int nonBc7Count,
             int normalNotBc5Count,
+            int runtimeFormatViolationCount,
             string blockingRows,
             string auditRows)
         {
@@ -204,11 +226,13 @@ namespace Hecton8.EditorTools
                 .Append(nonBc7Count)
                 .Append(" normalNotBC5(audit)=")
                 .Append(normalNotBc5Count)
+                .Append(" runtimeFormatNotBC7BC5=")
+                .Append(runtimeFormatViolationCount)
                 .AppendLine(".");
 
             if (blockingCount > 0)
             {
-                message.Append("BUILD BLOCKED. Non-atlas textures must be <= 1024 px per side and RGB/RGBA imports must not be uncompressed.")
+                message.Append("BUILD BLOCKED. Non-atlas textures must obey Hero<=2048 and Scatter<=512 import caps; RGB/RGBA imports must not be uncompressed; albedo/mask runtime format must be BC7 and normal runtime format must be BC5.")
                     .AppendLine()
                     .Append(blockingRows);
             }

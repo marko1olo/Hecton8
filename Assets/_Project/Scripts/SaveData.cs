@@ -1,21 +1,21 @@
 // ============================================================================
 // HECTON-8 — SaveData.cs
-// Главный контейнер сохранения. Паттерн DTO (Data Transfer Object).
+// Glavnyy konteyner sohraneniya. Pattern DTO (Data Transfer Object).
 //
-// ВСЕ данные сохранения — здесь. Один объект → одна сериализация.
+// VSE dannye sohraneniya — zdes. Odin obekt → odna serializatsiya.
 // Native binary save codecs serialize this class field-by-field.
 //
-// ДИЗАЙН-РЕШЕНИЯ:
-//   • [Serializable] struct для вложенных DTO — минимум heap-аллокаций.
-//   • Примитивные типы вместо Vector3/Quaternion — binary compatibility
-//     и портируемость (JSON, binary, XML).
-//   • string ID вместо int InstanceID — стабильность между сессиями.
-//   • Версионирование: поле version для миграции данных.
-//   • Pre-allocated массивы вместо List — контроль размера.
+// DIZAYN-REShENIYa:
+//   • [Serializable] struct dlya vlozhennyh DTO — minimum heap-allokatsiy.
+//   • Primitivnye tipy vmesto Vector3/Quaternion — binary compatibility
+//     i portiruemost (JSON, binary, XML).
+//   • string ID vmesto int InstanceID — stabilnost mezhdu sessiyami.
+//   • Versionirovanie: pole version dlya migratsii dannyh.
+//   • Pre-allocated massivy vmesto List — kontrol razmera.
 //
-// РАСШИРЕНИЕ:
-//   Добавляй новые DTO как поля SaveData. Старые сейвы получат
-//   дефолтные значения для новых полей обрабатываются миграцией и дефолтными инициализаторами.
+// RASShIRENIE:
+//   Dobavlyay novye DTO kak polya SaveData. Starye seyvy poluchat
+//   defoltnye znacheniya dlya novyh poley obrabatyvayutsya migratsiey i defoltnymi initsializatorami.
 // ============================================================================
 
 using System;
@@ -28,24 +28,24 @@ using UnityEngine;
 namespace Hecton8.SaveSystem
 {
     /// <summary>
-    /// Корневой контейнер всех данных сохранения.
-    /// Один экземпляр = одна полная копия игрового состояния.
+    /// Kornevoy konteyner vseh dannyh sohraneniya.
+    /// Odin ekzemplyar = odna polnaya kopiya igrovogo sostoyaniya.
     /// </summary>
     [Serializable]
     public sealed class SaveData
     {
         // ─────────────────────── Metadata ────────────────────────
 
-        /// <summary>Версия формата. Инкрементируется при изменении структуры DTO.</summary>
+        /// <summary>Versiya formata. Inkrementiruetsya pri izmenenii struktury DTO.</summary>
         public int version = CurrentVersion;
 
-        /// <summary>Временная метка сохранения (ISO 8601).</summary>
+        /// <summary>Vremennaya metka sohraneniya (ISO 8601).</summary>
         public string timestamp;
 
-        /// <summary>Общее время игры в секундах.</summary>
+        /// <summary>Obschee vremya igry v sekundah.</summary>
         public double totalPlayTime;
 
-        /// <summary>Текущая версия формата. Используется для миграции.</summary>
+        /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
         public const int CurrentVersion = 61; // v61: Encrypted audio-log partial recovery persists hash/bitmask pairs.
 
         // ─────────────────────── DTO Sections ────────────────────
@@ -76,10 +76,10 @@ namespace Hecton8.SaveSystem
         public VoxelDeltaPersistenceDTO voxelDeltaPersistence;
         public ExternalScavengerSiteDTO[] externalScavengerSites;
 
-        /// <summary>Прочность инструментов (toolID → durability). v2.0 ENTERPRISE</summary>
+        /// <summary>Prochnost instrumentov (toolID → durability). v2.0 ENTERPRISE</summary>
         public Dictionary<string, float> toolDurabilityMap = new Dictionary<string, float>();
 
-        /// <summary>Сломанные инструменты (toolID → broken). v2.0 ENTERPRISE</summary>
+        /// <summary>Slomannye instrumenty (toolID → broken). v2.0 ENTERPRISE</summary>
         public Dictionary<string, bool> toolBrokenMap = new Dictionary<string, bool>();
 
         /// <summary>Legacy set of discovered biome IDs kept only for backward-compatible migration reads.</summary>
@@ -88,19 +88,19 @@ namespace Hecton8.SaveSystem
         /// <summary>Packed discovery words for all 108 biomes. Two 64-bit words cover the current matrix.</summary>
         public long[] discoveredBiomeBitWords;
 
-        /// <summary>Последний подтвержденный открытый биом для PDA и HUD.</summary>
+        /// <summary>Posledniy podtverzhdennyy otkrytyy biom dlya PDA i HUD.</summary>
         public int lastDiscoveredBiomeId = -1;
 
-        /// <summary>Количество narrative-discovery записей, сохраненных в narrativeDiscoveryIds.</summary>
+        /// <summary>Kolichestvo narrative-discovery zapisey, sohranennyh v narrativeDiscoveryIds.</summary>
         public int narrativeDiscoveryCount;
 
-        /// <summary>Стабильные narrative-discovery ID для поздних триггеров и повторного входа в сцену.</summary>
+        /// <summary>Stabilnye narrative-discovery ID dlya pozdnih triggerov i povtornogo vhoda v stsenu.</summary>
         public string[] narrativeDiscoveryIds;
 
-        /// <summary>Максимальный достигнутый narrative depth-tier.</summary>
+        /// <summary>Maksimalnyy dostignutyy narrative depth-tier.</summary>
         public int narrativeDepthTier;
 
-        /// <summary>Список ID обнаруженных аудиодневников. v4.0 LORE</summary>
+        /// <summary>Spisok ID obnaruzhennyh audiodnevnikov. v4.0 LORE</summary>
         public List<string> audioLogDiscoveredIds = new List<string>();
 
         /// <summary>Number of partial encrypted audio-log recovery records persisted in the fixed hash arrays. v61 LORE.</summary>
@@ -115,73 +115,73 @@ namespace Hecton8.SaveSystem
         /// <summary>Packed industrial-lore discovery words for the fixed 50-record archive bank.</summary>
         public long[] industrialLoreUnlockWords;
 
-        /// <summary>Активные квесты. v4.0 QUEST</summary>
+        /// <summary>Aktivnye kvesty. v4.0 QUEST</summary>
         public List<string> questActiveIds = new List<string>();
 
-        /// <summary>Завершённые квесты. v4.0 QUEST</summary>
+        /// <summary>Zavershennye kvesty. v4.0 QUEST</summary>
         public List<string> questCompletedIds = new List<string>();
 
-        /// <summary>Сигнал Атлас-6 когда-либо обнаружен. v4.0 ATLAS</summary>
+        /// <summary>Signal Atlas-6 kogda-libo obnaruzhen. v4.0 ATLAS</summary>
         public bool atlasSignalDetected;
 
-        /// <summary>Таймер пульса сигнала (для сохранения ритма). v4.0 ATLAS</summary>
+        /// <summary>Taymer pulsa signala (dlya sohraneniya ritma). v4.0 ATLAS</summary>
         public float atlasSignalPulseTimer;
 
-        /// <summary>Максимальная раскрытая стадия позднего Atlas-manifestation. v4.10 ATLAS</summary>
+        /// <summary>Maksimalnaya raskrytaya stadiya pozdnego Atlas-manifestation. v4.10 ATLAS</summary>
         public int atlasSignalRevealStage;
 
-        /// <summary>Установленные апгрейды скафандра. v4.1 UPGRADES</summary>
+        /// <summary>Ustanovlennye apgreydy skafandra. v4.1 UPGRADES</summary>
         public List<string> suitInstalledUpgradeIds = new List<string>();
 
-        /// <summary>Разблокированные чертежи апгрейдов. v4.1 UPGRADES</summary>
+        /// <summary>Razblokirovannye chertezhi apgreydov. v4.1 UPGRADES</summary>
         public List<string> suitUnlockedBlueprintIds = new List<string>();
 
-        /// <summary>Сломанные, но установленные апгрейды скафандра. v33 WIPEOUT</summary>
+        /// <summary>Slomannye, no ustanovlennye apgreydy skafandra. v33 WIPEOUT</summary>
         public List<string> suitBrokenUpgradeIds = new List<string>();
 
         /// <summary>ÐÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¹ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑŒ ÑÐ°Ð¼Ð¾Ð²Ñ‹Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ Ð¸Ð³Ñ€Ð¾ÐºÐ°. v4.9 EXPRESSION</summary>
         public string playerExpressionProfileId = string.Empty;
 
-        /// <summary>Статус игрока с точки зрения Атлас-6. v4.2 ATLAS6</summary>
+        /// <summary>Status igroka s tochki zreniya Atlas-6. v4.2 ATLAS6</summary>
         public int atlas6PlayerStatus;
 
-        /// <summary>Количество бартер-транзакций с Атлас-6. v4.2 ATLAS6</summary>
+        /// <summary>Kolichestvo barter-tranzaktsiy s Atlas-6. v4.2 ATLAS6</summary>
         public int atlas6BarterCount;
 
-        /// <summary>Конфликт директив был активирован. v4.2 ATLAS6</summary>
+        /// <summary>Konflikt direktiv byl aktivirovan. v4.2 ATLAS6</summary>
         public bool atlas6DirectiveConflictTriggered;
 
-        /// <summary>Полученные корпоративные приказы. v4.3 CORP</summary>
+        /// <summary>Poluchennye korporativnye prikazy. v4.3 CORP</summary>
         public List<string> corporateReceivedOrderIds = new List<string>();
 
-        /// <summary>Ожидающие приказы (ID). v4.3 CORP</summary>
+        /// <summary>Ozhidayuschie prikazy (ID). v4.3 CORP</summary>
         public List<string> corporatePendingOrderIds = new List<string>();
 
-        /// <summary>Таймеры ожидающих приказов (секунды). v4.3 CORP</summary>
+        /// <summary>Taymery ozhidayuschih prikazov (sekundy). v4.3 CORP</summary>
         public List<float> corporatePendingOrderTimers = new List<float>();
 
-        /// <summary>Время сессии первого часа (секунды). v4.4 FIRSTHOUR</summary>
+        /// <summary>Vremya sessii pervogo chasa (sekundy). v4.4 FIRSTHOUR</summary>
         public float firstHourSessionTime;
 
-        /// <summary>Битовая маска выполненных milestone первого часа. v4.4 FIRSTHOUR</summary>
+        /// <summary>Bitovaya maska vypolnennyh milestone pervogo chasa. v4.4 FIRSTHOUR</summary>
         public int firstHourMilestones;
 
-        /// <summary>Битовая маска уже выданных first-hour guidance/reminder states. v4.11 FIRSTHOUR</summary>
+        /// <summary>Bitovaya maska uzhe vydannyh first-hour guidance/reminder states. v4.11 FIRSTHOUR</summary>
         public int firstHourGuidanceFlags;
 
-        /// <summary>Выбранная концовка. v4.5 ENDING</summary>
+        /// <summary>Vybrannaya kontsovka. v4.5 ENDING</summary>
         public int endingChoice;
 
-        /// <summary>Концовка завершена. v4.5 ENDING</summary>
+        /// <summary>Kontsovka zavershena. v4.5 ENDING</summary>
         public bool endingComplete;
 
-        /// <summary>Условие концовки выполнено (игрок у ядра). v4.5 ENDING</summary>
+        /// <summary>Uslovie kontsovki vypolneno (igrok u yadra). v4.5 ENDING</summary>
         public bool endingConditionMet;
 
-        /// <summary>Активные миссии (MissionManager). v4.6 MISSIONS</summary>
+        /// <summary>Aktivnye missii (MissionManager). v4.6 MISSIONS</summary>
         public List<string> missionActiveIds = new List<string>();
 
-        /// <summary>Завершённые миссии (MissionManager). v4.6 MISSIONS</summary>
+        /// <summary>Zavershennye missii (MissionManager). v4.6 MISSIONS</summary>
         public List<string> missionCompletedIds = new List<string>();
 
         /// <summary>LOD quality preset (0=Low, 1=Medium, 2=High). v4.7 LOD</summary>
@@ -194,7 +194,7 @@ namespace Hecton8.SaveSystem
         public Dictionary<string, string> CustomModData = new Dictionary<string, string>();
 
         // ═════════════════════════════════════════════════════════
-        //  Factory — создание нового SaveData с метаданными
+        //  Factory — sozdanie novogo SaveData s metadannymi
         // ═════════════════════════════════════════════════════════
 
         public static SaveData CreateNew(float playTime)
@@ -281,7 +281,7 @@ namespace Hecton8.SaveSystem
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  PlayerStatsDTO — состояние скафандра и позиция игрока
+    //  PlayerStatsDTO — sostoyanie skafandra i pozitsiya igroka
     // ══════════════════════════════════════════════════════════════════
 
     [Serializable]

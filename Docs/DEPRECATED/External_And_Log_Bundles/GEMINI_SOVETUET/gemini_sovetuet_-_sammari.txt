@@ -1,0 +1,648 @@
+HECTON-8 — POLNAYa TEHNIChESKAYa DOKUMENTATsIYa DLYa KODER-AGENTA
+Versiya: svodnaya. Istochnik: analiz chatov, dampov, rynochnyh dannyh.
+Tsel: implementatsiya, a ne teoriya.
+
+===================================================================
+RAZDEL 1. ARHITEKTURA I STRUKTURA PROEKTA
+===================================================================
+
+FEATURE-BASED STRUKTURA PAPOK (obyazatelnyy perehod)
+Prekratit svalivat vse v Scripts/Gameplay/ i Scripts/UI/.
+Kazhdaya novaya ficha zhivet v svoey izolirovannoy papke.
+Primer struktury:
+Assets/_Project/Features/Tools/LaserCutter/ — skripty + prefaby + materialy
+Assets/_Project/Features/Transport/MantaScooter/ — skripty + prefaby + materialy
+Assets/_Project/Features/Base/OxygenStation/ — skripty + prefaby + materialy
+Eto pozvolyaet nahodit vse zavisimosti fichi za sekundy.
+
+ASSEMBLY DEFINITIONS (asmdef) — KRITIChNO DLYa ITERATsII
+Nemedlenno razbit proekt na nezavisimye sborki:
+Hecton.Core.Runtime
+Hecton.Gameplay.Runtime
+Hecton.UI.Runtime
+Hecton.WorldGen.Runtime
+Hecton.Editor
+Zaprescheno pisat novyy kod do sozdaniya etoy struktury. Bez asmdef lyuboe izmenenie odnogo fayla vyzyvaet peresborku vsego proekta. Posle razbivki kompilyatsiya uskoritsya v 5-10 raz.
+
+IDISPOSABLE — ULTIMATUM
+Kazhdyy C#-klass, kotoryy ne yavlyaetsya MonoBehaviour i podpisyvaetsya na sobytiya (Action, UnityEvent, staticheskie shiny) — obyazan realizovyvat IDisposable.
+V metode Dispose() obyazatelno: otpisatsya ot vseh sobytiy, obnulit massivy i bufery.
+Vyzyvat Dispose() pri vyhode v menyu i pri vygruzke chanka.
+Obekty dlya audita: HectonBiolumManager, AcousticZoneController, PowerGrid, InventoryLogic, vse sistemy v Hecton8.Core i Hecton8.Power.
+Utechki pamyati v openvorlde — eto smert proekta.
+
+PRINTsIP SINGLE RESPONSIBILITY
+Zaprescheno sozdavat God Objects i Manager-klassy na 3000+ strok.
+Razdelyat logiku: mozg (chto delat) otdelno ot ispolnitelya (kak delat).
+Primenenie: FaunaBrain — tolko FSM i vybor sostoyaniya. SteeringEngine — tolko fizika dvizheniya k tseli.
+
+SCRIPTABLEOBJECT-BASED EVENTS (vmesto singltonov)
+Nachat perevodit svyaz mezhdu sistemami na ScriptableObject-based Architecture.
+Sobytiya dolzhny zhit v assetah, a ne v kode.
+Inventar ne dolzhen znat o HectonSurvivalSystem napryamuyu.
+Sozdat interfeys IConsumableProvider. Kogda igrok sedaet predmet, inventar vyzyvaet provider.Apply(item). Eto pozvolit otklyuchat sistemu vyzhivaniya (naprimer, v kreativnom rezhime) bez perepisyvaniya inventarya.
+
+INTERFEYS-KONTRAKTY (Decoupling)
+Nikakih pryamyh ssylok mezhdu sistemami — tolko cherez interfeysy.
+Nikakih GetComponent vnutri Update() ili lyubogo Tick-metoda. Eto mgnovennyy vozvrat zadachi na dorabotku.
+
+FIELD: SERIALIZEFIELD — STANDART DLYa DATA-KLASSOV
+Ispolzovat konstruktsiyu [field: SerializeField] dlya avtosvoystv.
+Primenyat dlya vseh Data-klassov i klassov statov (naprimer, SuitData).
+Sokraschaet obem koda, pole vidno v inspektore, dostupno dlya chteniya izvne, no nedostupno dlya zapisi iz koda.
+
+CUSTOM EDITOR DLYa SLOZhNYH SISTEM
+Koder-agent dolzhen pisat Custom Editor dlya kazhdoy slozhnoy sistemy (naprimer, BiomeMatrixDirector).
+Nastroyka biomov — cherez polzunki v inspektore, a ne cherez kod.
+
+KOMMENTARIY HOW TO ADD NEW CONTENT
+Kazhdaya novaya sistema obyazana soderzhat blok:
+// HOW TO ADD NEW CONTENT
+// Primer: kak dobavit novyy tip ryby v 2 klika.
+Bez etogo bloka sistema schitaetsya nezadokumentirovannoy.
+
+===================================================================
+RAZDEL 2. UPRAVLENIE PAMYaTYu I SERIALIZATsIYa
+===================================================================
+
+ZAPRET NA DINAMIChESKIE KOLLEKTsII V HOT PATH
+List.Add / List.Remove vyzyvayut fragmentatsiyu pamyati i GC.
+V FaunaDirector, PowerGrid i drugih sistemah s chastymi obnovleniyami — pereyti na NativeArray ili fiksirovannye massivy s ruchnym upravleniem indeksami.
+Vmesto udaleniya elementa iz spiska — pomechat element kak isActive = false.
+Primer: dlya stay ryb vydelit fiksirovannyy bufer MaxFishCount = 500.
+
+INT-TO-STRING CACHE — ZAPRET NA .TOSTRING() V UI
+Napisat staticheskiy klass HectonStringCache, kotoryy pri starte generiruet massiv strok dlya chisel ot -1000 do 5000.
+Polnostyu zaprescheno vyzyvat .ToString() v UI dlya otobrazheniya glubiny, kisloroda, koordinat, chisla resursov.
+Ispolzovat tolko HectonStringCache.Get(value).
+Zapreschena konkatenatsiya strok v UI. Tolko StringBuilder ili predzagotovlennye massivy strok.
+
+STRING CACHE DLYa UI ChISEL
+StringBuilder ili kesh strok — dlya vseh chislovyh znacheniy na HUD.
+
+DETERMINISTIC GUID DLYa RESURSOV MIRA
+Unity InstanceID menyaetsya pri kazhdom zapuske. Seyvy lomayutsya.
+Kazhdomu obektu (kamen, resurs), kotoryy spavnit WorldProceduralScatterDirector, prisvaivat StableHash64, vychislennyy iz mirovyh koordinat: Hash64(x, y, z, seed).
+Eto pozvolyaet korrektno sohranyat sostoyanie ("etot kusok medi sobran") dlya beskonechnogo protsedurnogo mira.
+
+BITARRAY DLYa SOSTOYaNIYa RESURSOV
+Ne hranit ogromnye spiski obektov v seyve.
+Dlya 100 000 kamney i resursov ispolzovat BitArray: kazhdomu obektu v chanke sootvetstvuet 1 bit (0 = tsel, 1 = sobran).
+Seyv tselogo bioma budet vesit neskolko kilobayt vmesto megabaytov.
+
+DELTA-SAVING (SOHRANENIE TOLKO IZMENENIY)
+Ne sohranyat ves mir tselikom.
+Sohranyat tolko "gryaznye" chanki — te, gde igrok chto-to podobral ili postroil.
+Sokraschaet vremya sohraneniya s sekund do millisekund.
+
+ATOMARNAYa ZAPIS SEYVA (ZASchITA OT KRAShA)
+Pri zapisi sohraneniya: snachala pisat vo vremennyy fayl save.tmp, proveryat tselostnost cherez CRC32 ili MD5, tolko potom pereimenovyvat v save.sav.
+Eto zaschischaet igroka ot poteri seyva pri kreshe vo vremya zapisi.
+
+COMMAND BUFFER DLYa SOHRANENIYa (THREAD SAFETY)
+Sistemy ne pishut v fayl napryamuyu. Oni pomeschayut komandu v ochered: SaveQueue.Enqueue(new SaveTask(data)).
+Otdelnyy potok zabiraet zadachi i pishet na disk asinhronno.
+Eto ustranyaet frizy pri sohranenii v otkrytom mire.
+
+SCHEMA VERSIONING (MIGRATsII SEYVOV)
+Igra v zhanre OWSC zhivet godami. Struktura dannyh budet menyatsya.
+Kazhdoe izmenenie struktury dannyh (naprimer, dobavili stat "Radiatsiya") obyazano imet klass-migrator, kotoryy perevodit staryy seyv v novyy format.
+Vnedrit v SaveManager sistemu versiy i migratsiy.
+
+BINARY FORMAT DLYa BOLShIH DANNYH
+JSON slishkom tyazhel dlya sohraneniya pozitsiy 100 000 obektov.
+Ispolzovat Easy Save 3 v binarnom rezhime dlya sohraneniya mirovogo sostoyaniya.
+JSON ostavit tolko dlya metadannyh seyva (imya personazha, skrinshot, vremya).
+
+CANCELLATIONTOKEN — OBYaZATELEN
+Vse asinhronnye zadachi (zagruzka chankov, generatsiya meshey) obyazany prinimat CancellationToken.
+Bez etogo vozmozhen krash pri vyhode iz igry, kogda zadacha pytaetsya obratitsya k uzhe vygruzhennym obektam.
+
+STRESS-TEST AUTO-RUNNER
+Napisat skript, kotoryy v rezhime Time.timeScale = 100 zastavlyaet igroka avtomaticheski letat po miru, sobirat i vybrasyvat tysyachi predmetov.
+Tsel: ubeditsya, chto pamyat ne "puhnet" cherez 10 igrovyh sutok takogo progona.
+Stabilnost pamyati — eto marketingovyy instrument. Igrok v OWSC provodit sotni chasov. Nakoplennyy GC-musor cherez 20 chasov ubivaet otzyvy.
+
+===================================================================
+RAZDEL 3. FIZIKA I DVIZhENIE
+===================================================================
+
+VELOCITY-BASED MOVEMENT (OTKAZ OT ADDFORCE)
+AddForce nepredskazuem dlya tochnogo upravleniya.
+Dlya igroka i skutera ispolzovat: rigidbody.linearVelocity = Vector3.SmoothDamp(currentVelocity, targetInput * maxSpeed, ref smoothRef, smoothTime).
+Effekt: skuter plavno razgonyaetsya i imeet dlinnyy tormoznoy put. Igrok chuvstvuet, chto tolkaet massu vody.
+
+VYaZKOST VODY ChEREZ SMOOTHDAMP (NE ChEREZ DRAG)
+Standartnyy Drag v Rigidbody rabotaet slishkom grubo i odinakovo po vsem osyam.
+Vyazkost realizovyvat matematicheski: currentVelocity = Vector3.Lerp(currentVelocity, targetInput * maxSpeed, deltaTime * waterResistance).
+Pri rezkom povorote igroka dolzhno nemnogo "zanosit" po inertsii.
+
+INPUT SMOOTHING
+Vvod Unity (novaya Input System) mozhet byt rezkim (0 ili 1).
+Napisat InputProcessor, kotoryy delaet Mathf.SmoothDamp dlya vseh osey upravleniya (skuter, plavanie).
+Nakaplivat "volyu igroka" v techenie 0.05s. Upravlenie ostaetsya ostrym, no voda soprotivlyaetsya.
+
+RAYCAST-PODVESKA (HOVERING) DLYa TRANSPORTA I ShAGOHODOV
+Skuter Manta i CrabWalker ne dolzhny kasatsya dna kollayderom.
+Realizatsiya: iz 4 uglov obekta bit luchi vniz. Sila po formule:
+F = Stiffness * (TargetDistance - HitDistance) - Damping * RelativeVelocity
+Rezultat: transport plavno "oblizyvaet" korally i kamni, ne zastrevaet v kolliziyah. Shagohod adaptiruetsya k relefu avtomaticheski.
+
+COLLISION DETECTION
+Dlya vseh bystrodvizhuschihsya obektov (torpedy, skuter, bystrye hischniki) vystavit Collision Detection -> Continuous Speculative.
+Zaprescheno ispolzovat Continuous Dynamic dlya massovki (slishkom dorogo dlya CPU).
+Zaprescheno Discrete dlya lyubyh snaryadov.
+
+COLLISION LAYER MATRIX — REVIZIYa
+Provesti polnuyu reviziyu matritsy sloev kolliziy.
+Fauna ne dolzhna stalkivatsya s Debris.
+Loot ne dolzhen stalkivatsya s Flora.
+Flora (vodorosli) polnostyu izoliruetsya: kollizii tolko s Raycast igroka, ni s chem bolshe.
+Rezultat: snizhenie nagruzki na PhysX na 30%, tak kak tysyachi kustov perestayut "proveryat" stolknoveniya drug s drugom.
+
+PHYSX CLEANUP — OBLOMKI (LOOTCHUNK)
+Pri razrushenii HarvestableOutcrop spavnyatsya kuski s Rigidbody.
+Obyazatelno napisat komponent-taymer: cherez 4 sekundy posle spavna vyzyvat Rigidbody.isKinematic = true i Collider.enabled = false.
+Ostavlyat tolko Trigger dlya podbora predmeta.
+Okean ne dolzhen obschityvat fiziku valyayuschegosya musora.
+
+BUOYANCY EDGE CASE — DEMPING U POVERHNOSTI
+Fizika Unity RB pri rezkom vyhode iz vody "vyplevyvaet" obekty s neadekvatnoy siloy.
+V HectonFluidEngine vnedrit Damping Zone: verhnie 0.5 metra u poverhnosti. Sila vytalkivaniya dolzhna plavno zatuhat do nulya, a ne obryvatsya rezko.
+
+PROCEDURAL FOOT IK DLYa KRUPNYH SUSchESTV
+Ispolzovat paket Animation Rigging.
+Dlya kazhdoy lapy donnogo suschestva (krab, shagohod) puskat Raycast iz kolena vniz.
+Esli tochka kontakta vyshe/nizhe taza — noga izgibaetsya protsedurno.
+Lapy adaptiruyutsya k proizvolnomu relefu kamney bez ruchnoy animatsii.
+
+PROCEDURAL LANDING DIP
+Kogda igrok kasaetsya dna, kamera sovershaet protsedurnyy "nyrok" vniz i plavno vozvraschaetsya.
+Realizovyvat ne cherez animatsiyu, a cherez impuls v CameraJuiceProcessor.
+Sozdaet oschuschenie tyazhesti skafandra.
+
+CAMERA STABILIZER
+Napisat skript CameraStabilizer, kotoryy plavno gasit mikro-vibratsii fizicheskogo dvizhka (Rigidbody jitter).
+Primenyat interpolyatsiyu pozitsii kamery, a ne zhestkuyu privyazku k obektu.
+
+EXPRESSIVE PHYSICS — VYRAZITELNYE STOLKNOVENIYa
+Esli igrok vrezaetsya v stenu na skutere na maksimalnoy skorosti, kamera dolzhna sovershat "pyanyy" otskok s zavalom gorizonta, a ne prosto drozhat.
+Realizovyvat cherez CameraJuiceProcessor s peredachey vektora i sily udara.
+Takie "Fail Moments" — kontent dlya sotssetey, kotoryy generiruet vishlisty.
+
+RIGIDBODY-IGROK — NE TROGAT
+Perehod na CharacterController dlya osnovnogo igroka zapreschen na tekuschem etape. Perepisyvat yadro HectonPlayerMovement s plavuchestyu, inertsiey vody i integratsiey Crest Ocean — eto poterya neskolkih nedel. Sovety po CC primenyat tolko dlya novyh mehanik (naprimer, hodba vnutri bazy na sushe).
+
+===================================================================
+RAZDEL 4. SISTEMA ISKUSSTVENNOGO INTELLEKTA
+===================================================================
+
+DVUHUROVNEVYY II (BRAIN + MOTOR)
+FaunaBrain (vysokiy uroven) — tolko FSM, vybiraet sostoyanie, tikaet raz v 0.5s (SlowTick).
+SteeringEngine (nizkiy uroven) — tolko fizika dvizheniya, plavno interpoliruet povorot k tseli kazhdyy kadr.
+Esli II-raschet zaderzhivaetsya, ryba prodolzhaet plavno plyt po inertsii — vizualnyy sloy ne zavisit ot logicheskogo.
+
+TIME SLICING DLYa OVERLAPSPHERENONA LLOC
+Do perehoda na Octree: zhestko raznesti OverlapSphereNonAlloc u monstrov po vremeni.
+Monstry ne skaniruyut sferu v odin kadr.
+Ispolzovat: if (Time.frameCount % updateInterval == GetInstanceID() % updateInterval) — eto "razmazyvaet" nagruzku po SlowTick ravnomerno mezhdu vsemi suschestvami.
+
+SPATIAL HASHING DLYa POISKA TsELEY
+Fizicheskiy OverlapSphere — zapreschen dlya massovogo poiska.
+Ispolzovat NativeParallelHashMap (paket Collections) dlya hraneniya pozitsiy ryb v prostranstvennoy setke.
+Poisk blizhayshego soseda ili igroka — tolko po sosednim yacheykam hesh-tablitsy.
+Rezultat: sotni ryb, nulevaya nagruzka na Main Thread.
+
+RAYCAST BATCHING DLYa "ZRENIYa" II
+Ne puskat Raycast iz Update kazhdogo suschestva.
+Ispolzovat RaycastCommand.ScheduleBatch.
+Raz v 0.2s sistema sobiraet vse zaprosy "zreniya" ot vseh suschestv i otpravlyaet odnim paketom v Job System.
+100 hischnikov proveryayut vidimost igroka za 0.01 ms.
+
+FRUSTUM CULLING DLYa ZRENIYa II
+Zamenit chistyy OverlapSphere na kombinatsiyu: Distance-check + Dot Product (ugol vzglyada).
+II "vidit" tolko to, chto nahoditsya v konuse pered nim (naprimer, 120 gradusov).
+Esli igrok strogo szadi — suschestvo ne vidit ego, poka igrok ne nachnet shumet.
+
+GLOBAL NOISE BUS (ShUMOVAYa ShINA)
+Sozdat staticheskiy klass NoiseManager.
+Kogda igrok ispolzuet lazernyy rezak, skuter ili vzryvaet chto-libo, on vyzyvaet: NoiseManager.EmitNoise(position, strength).
+Suschestva ne skaniruyut igroka. Oni podpisyvayutsya na NoiseManager i reagiruyut na sobytiya.
+Eto snimaet nagruzku so vseh suschestv odnovremenno — vmesto 500 sfer-skanerov rabotaet 1 tsentralnyy menedzher.
+
+RVO — LOKALNOE OTTALKIVANIE DLYa STAY
+NavMesh pod vodoy ne rabotaet.
+Dlya stay: kazhdaya ryba vychislyaet vektor ottalkivaniya ot 3-5 blizhayshih sosedey (iz Spatial Hash) i dobavlyaet ego k napravleniyu dvizheniya.
+Eto O(N) matematika v SteeringEngine — rabotaet bystree lyuboy fiziki.
+
+IJOBPARALLELFOR DLYa MENEDZhEROV
+V ishodnike yavno napisano: PowerGrid.UpdateBalance i analogichnye raschety vynesti v IJobParallelFor. V moem chekliste etogo net otdelnym punktom. Eto ne prosto optimizatsiya — eto smena paradigmy dlya tyazhelyh sistem.
+
+
+SEEDED RANDOM DLYa INDIVIDUALNOSTI
+Ispolzovat Unity.Mathematics.Random s sidom ot GetInstanceID().
+Kazhdaya ryba poluchaet svoyu unikalnuyu amplitudu i chastotu sinusoidy dvizheniya hvosta.
+Staya ne vyglyadit kak klony.
+
+HORDE MANAGEMENT (DIRECTOR AI)
+Napisat HectonDirectorAI.ForceSpawnHorde(position, type).
+Pri spavne hischnikov strogo proveryat: obekt dolzhen poyavlyatsya vne polya zreniya igroka.
+Ispolzovat GeometryUtility.TestPlanesAABB dlya proverki nahozhdeniya tochki spavna za predelami frustum kamery.
+
+EKOSISTEMA S POSLEDSTVIYaMI
+Esli igrok unichtozhaet vsyu melkuyu faunu v radiuse kilometra, k baze dolzhen priplyt golodnyy hischnik krupnee.
+Realizovyvat cherez FaunaDirector, kotoryy otslezhivaet populyatsiyu po biomam.
+
+VERTIKALNAYa MIGRATsIYa (TsIKL DNYa I NOChI)
+Nochyu krupnye glubokovodnye suschestva podnimayutsya k poverhnosti, dnem uhodyat vo tmu.
+Realizovyvat cherez izmenenie tselevyh Y-koordinat dlya FSM sostoyaniya Roam v zavisimosti ot igrovogo vremeni.
+Sozdaet oschuschenie zhivogo okeana s predskazuemoy, no opasnoy dinamikoy.
+
+===================================================================
+RAZDEL 5. RENDERING I OPTIMIZATsIYa
+===================================================================
+
+OTKAZ OT TOTALNOGO STATIC
+Zaprescheno vystavlyat galochku Static na protsedurno generiruemyh obektah.
+Static Batching dubliruet meshi v RAM. 100 000 kamney = 16 GB RAM. Igra ne zapustitsya.
+Ispolzovat SRP Batcher (vklyuchit v URP Asset) — on ne dubliruet meshi, tolko bystro pereklyuchaet dannye materialov.
+Proverit vse prefaby v _Project/Prefabs/Nature. Flagi Lightmap Static i Occluder Static dolzhny byt vyklyucheny na vseh protsedurno spavnimyh obektah.
+
+TEXTURE PACKING — ZhESTKIY STANDART (ZAKREPIT V PROCEDURAL_ASSET_PIPELINE.MD)
+Upakovka masok v odin RGBA-kanal:
+R = Metallic
+G = Ambient Occlusion
+B = Detail / Height
+A = Smoothness (Gloss)
+4 tekstury prevraschayutsya v 1. VRAM skazhet spasibo.
+Perepisat vse protsedurnye generatory materialov i validatory pod etot standart.
+Napisat Editor-skript, kotoryy avtomaticheski beret 4 tekstury (AO, Roughness, Metal, Height) i skleivaet ih v odnu TexturePackerTool.
+Perepisat sheydery skal i flory pod chtenie etogo formata.
+
+DITHERED TRANSPARENCY — ZAPRET NA ALPHA BLENDING
+Alpha Blending vyzyvaet Overdraw. Na MX350 eto smert proizvoditelnosti.
+Perevesti VSE sheydery vodorosley, tumana, LOD-perehodov na Dithered Alpha Clipping.
+Noda Dither v Shader Graph. Rezhim materiala — Opaque + Alpha Clip.
+Polnostyu zaprescheny Transparent-sheydery na flore.
+Vnedrit pattern Dither v Hecton_AlienSky_Master, Hecton_KelpMaster i dlya vseh LOD-perehodov.
+Ustranit Mat_LeakPlume i analogichnye tyazhelye poluprozrachnye partikl-materialy.
+
+DEPTH PRIMING (URP)
+V nastroykah Forward Renderer vklyuchit Depth Priming Mode -> Forced.
+Pod vodoy mnogo sloev (voda, tuman, vodorosli) — odin piksel risuetsya 5-6 raz.
+Depth Pre-Pass snachala risuet tolko glubinu, zatem — tolko vidimye pikseli.
+Ozhidaemyy prirost: +15-20% FPS.
+
+SHADER LOD — DOBAVIT V PROCEDURAL_ASSET_PIPELINE.MD
+Obyazatelnyy razdel: Shader LOD.
+Na rasstoyanii 100m+ sheyder obyazan otklyuchat tyazhelye vychisleniya (SSS, slozhnye otrazheniya, anizotropiyu).
+LOD2 i LOD3 assety: Cast Shadows = Off. Eto obyazatelnoe trebovanie, fiksirovat v dokumentatsii.
+
+SHADER KEYWORDS — OGRANIChENIE
+multi_compile s bolee chem 4 keywords daet eksponentsialnyy rost variantov sheydera i frizy pri pervom poyavlenii obekta.
+Proverit Hecton_KelpMaster i SG_Rock_Triplanar.
+Zamenit lishnie keywords na static branch (if s [branch] v HLSL) ili na MaterialPropertyBlock.
+
+TRIPLANAR MAPPING DLYa PESchER
+Vokselnye peschery i protsedurnye skaly nevozmozhno razvernut v UV.
+Ves mesh pescher i skal obyazan ispolzovat World-Space Triplanar mapping.
+Tekstura nakladyvaetsya avtomaticheski po mirovym koordinatam, bez shvov.
+
+HEIGHT-BASED TEXTURE BLENDING
+Standartnoe smeshivanie tekstur terreyna — "gryaznyy gradient".
+V sheydere landshafta realizovat smeshivanie po karte vysot tekstury (Height Blend).
+Rezultat: pesok "zasypaetsya" v treschiny kamnya, a ne plavno peretekaet v nego.
+Realizm bez uvelicheniya razresheniya tekstur.
+
+SCREEN SPACE CAVITY / SSAO
+Dobavit v URP-payplayn SSAO ili kastomnyy sheyder Cavity, zatemnyayuschiy uglubleniya.
+Kamni i korally vyglyadyat giperdetalizirovanno bez dobavleniya poligonov.
+
+ANISOTROPY DLYa METALLA
+V sheyder vizora i moduley bazy dobavit anizotropnye bliki.
+Effekt: "rastyanutyy" blik sozdaet oschuschenie dorogogo vlazhnogo metalla.
+
+DETAIL MAPS (MIKRO-DETALIZATsIYa)
+V sheyder bazy i shlema dobavit podderzhku Detail Maps (vtoroy sloy melkih tekstur tsarapin, pyli).
+Detail Map taylitsya v 10 raz chasche osnovnoy tekstury.
+Vblizi baza vyglyadit giperdetalizirovanno pri teksture osnovy 512x512.
+
+VERTEX ANIMATION DLYa MASSOVKI RYB
+Zaprescheno ispolzovat Animator ili kosti dlya melkoy fauny (plankton, meduzy, melkie ryby).
+Tolko Shader Graph / HLSL: izgib tela cherez sin(_Time.y * speed + WorldPos.x * frequency).
+Kazhdaya ryba beret svoyu fazu sinusoidy iz seeded random po ObjectPosition.
+Rezultat: 1000 ryb = 1 Draw Call, 0% nagruzki na CPU.
+
+PROP WASH EFFECT (REAKTsIYa FLORY NA IGROKA)
+V HectonUnderwaterVisuals translirovat pozitsiyu i skorost igroka v globalnye peremennye sheydera: _PlayerPos, _PlayerVelocity.
+V sheyderah Kelp i Coral dobavit Vertex Offset v storonu ot _PlayerPos, masshtabirovannyy skorostyu.
+Rezultat: vodorosli prigibayutsya pri proplyvanii mimo. 0% nagruzki na CPU, 100% k oschuscheniyu zhivogo mira.
+
+CAUSTICS — DEShEVYY SPOSOB
+Ne ispolzovat Projectors.
+V sheyder terreyna (SG_Rock_Triplanar) dobavit additivnuyu masku s animirovannoy teksturoy kaustiki, privyazannoy k mirovym koordinatam po osi Y.
+Solnechnye bliki na dne — besplatny po proizvoditelnosti.
+
+FAKE VOLUMETRIC RAYS
+Ne ispolzovat chestnyy volyumetrik svet.
+Ispolzovat meshi-konusy s sheyderom, kotoryy plavno zatuhaet po Depth Buffer i Fresnel.
+Sheyder obyazan ispolzovat Soft Depth Blending — ne risovat poverh igroka i obektov.
+
+FAKE REFLECTIONS (SSR FALLBACK)
+Chestnye otrazheniya vody ubivayut FPS.
+Ispolzovat Reflection Probes s razresheniem 128px i silnym blyurom v sheydere.
+Igroku pod vodoy vazhno "chuvstvo sveta", a ne chetkoe zerkalo.
+
+CAMERA-SPACE PARTICLES (MORSKOY SNEG)
+Ne delat globalnuyu sistemu chastits na ves mir.
+Navesit sistemu chastits ("morskoy sneg", pyl, plankton) neposredstvenno na MainCamera.
+Chastitsy spavnyatsya tolko v konuse vidimosti igroka.
+Rezultat: effekt vezde, fizicheski schitaetsya 200 chastits vmesto 20 000.
+
+STENCIL BUFFER DLYa SKANERA RESURSOV
+Dlya tselevyh resursov (med, titan) dobavit vtoroy Pass v sheyder, pishuschiy v Stencil Buffer.
+Skaner igroka aktiviruet Post-Processing sloy, kotoryy risuet kontur obekta, esli tot pomechen v Stencil.
+Resurs za kustom ili skaloy daet vidimyy kontur.
+
+NATIVE SVG DLYa IKONOK (Unity 6.3+)
+Ikonki inventarya, resursov i UI-elementy perevodit v nativnyy SVG-format.
+Tekstury ikonok v 4K sedayut 200-400 MB VRAM. Vektor sedaet 2-3 MB.
+Dlya novyh ikonok inventarya ispolzovat vektor ili zhestkie teksturnye atlasy.
+
+RUNTIME ATLAS PACKING DLYa MELKOGO LUTA
+Napisat sistemu avto-atlasinga dlya ikonok inventarya i melkih resursov (med, titan, oblomki).
+50 vidov resursov — odin teksturnyy atlas, odin instansirovannyy material, odin Draw Call.
+
+BUILD STRIPPING
+Ispolzovat com.unity.web.stripping-tool pered sborkoy demki.
+Vyrezat neispolzuemye moduli: Physics 2D, staryy UI, WebGL-spetsifichnye komponenty.
+Tsel: razmer bilda menee 500 MB.
+
+===================================================================
+RAZDEL 6. UI/UX I OBRATNAYa SVYaZ
+===================================================================
+
+RAZDELENIE CANVAS NA STATIChESKIY I DINAMIChESKIY
+Staticheskiy Canvas (ramki, fon HUD) — peresborka ne proishodit nikogda.
+Dinamicheskiy Canvas (HP, kislorod, glubina) — otdelnyy Canvas, peresobiraetsya tolko pri izmenenii dannyh.
+Esli oni v odnom Canvas — pri obnovlenii tsifry glubiny pererisovyvaetsya ves interfeys.
+
+HIT FLASH PRI DOBYChE (LASERCUT HIT RESPONSE)
+Integrirovat v LaserCutter i HarvestableOutcrop:
+1. Belaya vspyshka materiala tseli cherez MaterialPropertyBlock._EmissionColor (ne menyat material, tolko svoystvo).
+2. Otletayuschie iskry (usilit suschestvuyuschie, uvelichit impuls).
+3. Legkiy impuls v CameraJuiceProcessor pri uspeshnom raskalyvanii.
+Dobycha seychas "suhaya". Eto ispravlyaet problemu.
+
+GLOBAL FEEDBACK MANAGER (HITSTOP)
+Napisat GlobalFeedbackManager so sleduyuschimi metodami:
+HitStop(float duration) — zamorozka Time.timeScale na 0.02-0.05s.
+CameraImpulse(Vector3 direction, float strength) — rezkiy tolchok cherez CameraJuiceProcessor.
+ChromaticAberrationPunch(float intensity, float duration) — kratkovremennaya vspyshka iskazheniya tsveta cherez Post-Processing.
+Vyzyvat pri: dobyche rudy, udare monstra, vzryve, kriticheskom sobytii.
+Eto delaet geympley "sochnym" na video i generiruet kontent dlya sotssetey.
+
+RAGDOLL PRI SMERTI OT KRUPNOGO SUSchESTVA
+Esli igroka bet leviafan — ne pokazyvat statichnyy Game Over.
+Vklyuchat regdoll igroka, fizicheski shvyryat telo po techeniyam.
+Eto kontent dlya TikTok i viralnyy material.
+
+CINEMATIC INTRO HANDSHAKE
+Pri zapuske novoy igry: kamera plavno "vletaet" v shlem igroka cherez Cinemachine.
+HUD vklyuchaetsya poetapno so zvukom zagruzki sistem skafandra.
+Pervye 10 sekund igry prodayut kachestvo produkta do nachala geympleya.
+
+RENDER TEXTURE DLYa MONITOROV BAZY
+Dlya ekranov vnutri bazy ispolzovat Render Texture.
+Vyglyadit dorogo, ne lomaet pogruzhenie. Uzhe est VisorHUDController — primenit tot zhe podhod dlya bazovyh terminalov.
+
+PHOTO MODE / SKRINShOT BEZ HUD
+Napisat sistemu zahvata "chistogo" kadra odnoy knopkoy (bez UI).
+Igroki OWSC — glavnye marketologi igry cherez skrinshoty v Steam i sotssetyah.
+
+IN-GAME BUG REPORTER
+Knopka F8: delaet skrinshot, sobiraet tekuschie logi, otpravlyaet v Discord/Trello (webhook).
+Na etape Next Fest eto kritichno. Igroki ne pishut gnevnye otzyvy, esli chuvstvuyut, chto ih slushayut.
+
+TELEMETRY (ANONIMNAYa ANALITIKA)
+Napisat prostuyu sistemu logov, pishuschuyu v lokalnyy tekstovyy fayl:
+DeathPosition, DeathReason, CurrentDepth, TimePlayed.
+Na etape demki: pozvolyaet uvidet, chto 90% igrokov umirayut v pervoy peschere, i ispravit eto do publikatsii.
+
+SCREENS I ASO
+Pri podgotovke materialov dlya Steam ubirat ves HUD so skrinshotov.
+Nikakih knopok vyhoda na promo-materialah.
+Ostavlyat tolko immersivnyy vid ot pervogo litsa.
+
+===================================================================
+RAZDEL 7. AUDIO
+===================================================================
+
+LOW-PASS FILTER PO GLUBINE
+Svyazat AudioMixer s SurvivalSystem.Depth.
+Chem glubzhe igrok, tem nizhe Cutoff Frequency na master-shine.
+Zvuki stanovyatsya gluhimi i davyaschimi. Effekt davleniya vody bez edinoy animatsii.
+
+OCCLUSION ChEREZ RAYCAST
+V SpatialAudioManager: puskat Raycast ot kamery do istochnika zvuka.
+Esli luch zablokirovan geometriey — veshat na AudioSource LowPassFilter.
+Igrok slyshit monstra za stenoy peschery priglushenno. Pri vyhode monstra iz-za steny — zvuk rezko otkryvaetsya.
+
+ADAPTIVE SOUND POOLING
+Ne ispolzovat PlayClipAtPoint.
+Sozdat komponent SoundEmitter s pulom istochnikov.
+Esli v radiuse 50m spavnitsya 20 odinakovyh ryb — proigryvat zvuk tolko 3-4 blizhayshim.
+Predotvraschaet "belyy shum" iz sotni odnovremennyh zvukov.
+
+ADAPTIVE SAMPLE RATE
+Vse fonovye zvuki (gul vody, puzyrki, fonovaya atmosfera) importirovat s Sample Rate = 22050 Hz.
+Na slabom zheleze eto razgruzhaet shinu pamyati. Pod vodoy igrok ne uslyshit raznitsy iz-za Low-Pass filtrov.
+
+===================================================================
+RAZDEL 8. GEYMDIZAYN I CORE LOOP
+===================================================================
+
+OSTANOVKA GORIZONTALNOGO MASShTABIROVANIYa — PRIKAZ
+Zaprescheno dobavlyat novye sistemy, novye instrumenty, novye tipy pescher, uslozhnyat matritsu biomov.
+Tekuschee sostoyanie: u nas 108 biomov, generatory flory, slozhnyy II. Igrat nevozmozhno.
+My stroim "dvizhok", a ne "igru".
+
+VERTICAL SLICE
+Sformirovat odin rabochiy uchastok: SedimentResources s perehodom v RiftHazard.
+Polnyy mikro-tsikl:
+Igrok spavnitsya -> Zapas O2 padaet -> Nahodit kusok truby -> Rezhet lazerom -> Poluchaet titan -> Plyvet k fabrikatoru -> Kraftit uluchshennyy ballon -> Plyvet glubzhe -> Nahodit pervuyu audiozapis s lorom.
+Tolko kogda etot 15-minutnyy tsikl igraetsya fizicheski priyatno i bez zapinok — prodolzhaem generirovat mir.
+Ne refaktorit menedzhery. Sobrat iz gotovyh kuskov (Inventory, Fabricator, SurvivalSystem, LaserCutter) edinuyu nepreryvnuyu stsenu.
+
+PRAVILO 30 SEKUND (POI PLACEMENT)
+Igrok kazhdye 30 sekund dolzhen videt chto-to interesnoe.
+V WorldProceduralScatterDirector dobavit proverku plotnosti: esli v radiuse 100m net ni odnogo interesnogo obekta (ruiny, redkiy resurs, peschera, arka, oblomki, svetyaschiysya korall) — sistema prinuditelno spavnit POI.
+Igrok vsegda dolzhen videt sleduyuschuyu tsel v predelah tumana (vidimost 60-100m).
+
+MYaGKIY ONBORDING (PERVYE 15 MINUT)
+Esli igrok umiraet ot nehvatki kisloroda v pervye 5 minut — on delaet refand.
+Pervye 15 minut: kisloroda v izbytke ili baza ochen blizko.
+Dat igroku "vlyubitsya" v vizual i atmosferu do nachala nastoyaschego davleniya mehanik vyzhivaniya.
+
+DEMO-MARShRUT (15 MINUT IMPACT)
+Struktura demki:
+Nachalo: polomka korablya, melkovode, sbor pervyh resursov.
+Kulminatsiya: spusk vo tmu, vklyuchenie fonarya, vstrecha s gigantskim biomehanicheskim siluetom, kotoryy prosto proplyvaet mimo — pokazyvaem masshtab.
+Konets: obryv na samom interesnom momente.
+Napisat komponent DemoLimiter, obryvayuschiy igru v nuzhnoy tochke.
+
+THE HOOK — GLAVNYY KOZYR DLYa TREYLERA
+HectonDirectorAI i Atlas-6 — eto unikalnyy prodayuschiy element (analog rezhissera Left 4 Dead).
+Igrok dolzhen fizicheski chuvstvovat: okean zhivoy i nablyudaet za nim, drony Atlasa zanyaty svoimi delami nezavisimo ot igroka.
+Vsyu razrabotku blizhayshego mesyatsa podchinit etomu oschuscheniyu. Eto kozyr dlya treylera, kotoryy zatsepit algoritmy Steam.
+
+SUBMARINA KAK "TYSYaChELETNIY SOKOL"
+Igrok 80% vremeni dolzhen provodit vnutri, a ne snaruzhi.
+Razdelit submarinu na otseki s nezavisimoy logikoy.
+Sistema proboin: voda fizicheski zapolnyaet otsek, menyaet massu i plavuchest korablya.
+Davlenie i glubina vliyayut na skorost raboty mehanizmov, gromkost skripa korpusa.
+Saspens: glubina 2 km, korpus treschit, voda pribyvaet, nuzhno zavarit proboinu do dostizheniya kriticheskogo davleniya.
+
+SISTEMA ELEKTRIKI I ZhIZNEOBESPEChENIYa
+Truby dlya kisloroda, kabeli dlya energii, filtry dlya vody — fizicheskaya infrastruktura bazy.
+Realizovyvat prosche, chem v Stationeers, no s realnymi posledstviyami: zabityy filtr = udushe.
+Eto uvelichivaet srednee vremya sessii v 10 raz.
+
+ILLYuZIYa VYBORA VMESTO 100 KONTsOVOK
+Ne delat 100 vetvey syuzheta. Sdelat odnu prorabotannuyu kontsovku, v kotoroy uchityvayutsya 3-4 klyuchevyh resheniya igroka (naprimer, sudba II Atlas-6).
+
+SHOW, DON'T TELL
+Ne pisat tekst "zdes opasno".
+Brosit pustoy batiskaf so sledami kogtey.
+Vesti igroka svetom i geometriey, a ne ukazatelyami.
+
+PRINTsIP 80/20
+20% mehanik (plavanie, dobycha, kraft) dayut 80% geympleya.
+Vylizyvat ih. Ne tratit vremya na kastomizatsiyu krovatey i dekorativnye mehaniki.
+
+===================================================================
+RAZDEL 9. RYNOK I PROIZVODSTVO
+===================================================================
+
+ZhANROVAYa STATISTIKA
+Open World Survival Craft — elitnyy zhanr: 20.8% igr stanovyatsya hitami (samyy vysokiy pokazatel).
+Risk: razrabotka zanimaet 2.8-4+ goda. Bez vertikalnyh srezov motivatsiya i dengi zakanchivayutsya ranshe.
+Kachestvo koda — gigienicheskiy minimum. Prodaet igru marketingovaya upakovka: vayb, viralnost, unikalnost.
+Primer: R.E.P.O zarabotala 58 mln ne iz-za idealnogo koda, a iz-za sotsialnoy mehaniki.
+
+STEAM NEXT FEST
+Eto vopros zhizni i smerti dlya proekta.
+Zadacha: podgotovit 15-minutnoe demo s obryvom na kulminatsii.
+Napisat sistemu DemoLimiter.
+
+UNIKALNYY HUK PROEKTA
+NASA-Punk + Deep Sea Noir + Psihologiya davleniya + II-antagonist.
+HectonDirectorAI (rezhisser napryazheniya) + Atlas-6 (bezumnyy stroitelnyy II) — eto to, chego net v Subnautica.
+Eto material dlya treylera. Prioritet razrabotki.
+
+KOOPERATIV KAK KONKURENTNOE PREIMUSchESTVO
+Subnautica zakryla kooperativ. Igroki desyatiletiyami prosyat ego.
+Tselevaya model: 2-4 igroka na odnoy submarine s razdelennymi rolyami.
+Odin rulit, vtoroy chinit proboiny, tretiy otstrelivaetsya, chetvertyy skaniruet dno.
+Eto generiruet "druzhbomagiyu" — milliony prosmotrov v TikTok, kotorye prinosyat vishlisty.
+
+II-INSTRUMENTY KAK ASSISTENT, A NE YaDRO
+Ispolzovat II dlya napisaniya Editor-instrumentov, vspomogatelnyh skriptov, validatorov.
+Yadro geympleya — pisat samostoyatelno s ponimaniem arhitektury.
+
+===================================================================
+RAZDEL 10. SVODNYY ChEKLIST ZADACh (PRIORITET: VYSOKIY)
+===================================================================
+
+ARHITEKTURA
+[ ] Sozdat strukturu Assembly Definitions (Hecton.Core, Hecton.Gameplay, Hecton.UI, Hecton.WorldGen, Hecton.Editor)
+[ ] Provesti Feature-based reorganizatsiyu papok (Features/LaserCutter/, Features/MantaScooter/, i t.d.)
+[ ] Audit i vnedrenie IDisposable vo vse ne-MonoBehaviour klassy s podpiskami
+[ ] Vnedrit [field: SerializeField] standart dlya Data-klassov
+[ ] Sozdat interfeys IConsumableProvider, razvyazat Inventory ot SurvivalSystem
+[ ] Dobavit blok // HOW TO ADD NEW CONTENT v kazhduyu sistemu
+
+OPTIMIZATsIYa PAMYaTI I DANNYH
+[ ] Napisat HectonStringCache (kesh strok ot -1000 do 5000)
+[ ] Perevesti kollektsii FaunaDirector i PowerGrid na NativeArray s fiksirovannym razmerom
+[ ] Napisat Editor-skript TexturePackerTool (skleyka 4 tekstur v RGBA)
+[ ] Zafiksirovat standart Texture Packing R(Metal)G(AO)B(Detail)A(Smooth) v PROCEDURAL_ASSET_PIPELINE.md
+[ ] Realizovat Deterministic StableHash64 dlya vseh spavnimyh resursov
+[ ] Vnedrit BitArray dlya hraneniya sostoyaniya resursov v seyve
+[ ] Realizovat atomarnuyu zapis seyva (save.tmp -> CRC32 -> save.sav)
+[ ] Realizovat Command Buffer dlya asinhronnoy zapisi na disk
+[ ] Dobavit sistemu versiy i migratsiy v SaveManager
+[ ] Dobavit CancellationToken vo vse asinhronnye zadachi
+
+FIZIKA
+[ ] Perepisat dvizhenie igroka i skutera na SmoothDamp linearVelocity
+[ ] Napisat InputProcessor (SmoothDamp po osyam vvoda)
+[ ] Napisat sistemu Raycast-podveski (4 lucha) dlya Manta i CrabWalker
+[ ] Napisat LootChunk komponent: isKinematic = true cherez 4 sekundy posle spavna
+[ ] Provesti reviziyu Collision Layer Matrix (otklyuchit Fauna/Debris, Flora/vse)
+[ ] Dobavit Damping Zone u poverhnosti vody v HectonFluidEngine
+[ ] Vnedrit Procedural Foot IK (Animation Rigging) dlya donnyh suschestv
+[ ] Dobavit Procedural Landing Dip v CameraJuiceProcessor
+[ ] Napisat CameraStabilizer dlya gasheniya Rigidbody jitter
+[ ] Proverit i ustanovit Continuous Speculative na vseh snaryadah i transporte
+
+RENDERING
+[ ] Proverit vse protsedurnye prefaby — snyat flagi Lightmap Static i Occluder Static
+[ ] Vklyuchit SRP Batcher v URP Asset
+[ ] Vklyuchit Depth Priming Mode -> Forced v Forward Renderer
+[ ] Perevesti vse sheydery flory i tumana na Dithered Alpha Clipping
+[ ] Udalit Mat_LeakPlume i vse prozrachnye partikl-materialy
+[ ] Napisat sheyder ryb na chistom Vertex Animation (sin po WorldPos)
+[ ] Dobavit Prop Wash Effect v sheydery Kelp i Coral (_PlayerPos, _PlayerVelocity)
+[ ] Dobavit Caustics v SG_Rock_Triplanar (additivnaya maska po WorldSpace Y)
+[ ] Dobavit Detail Maps v sheyder vizora i bazovyh moduley
+[ ] Dobavit anizotropnye bliki v sheyder vlazhnogo metalla
+[ ] Realizovat Fake Volumetric Rays (konusy s Soft Depth Blending)
+[ ] Dobavit Shader LOD razdel v PROCEDURAL_ASSET_PIPELINE.md
+[ ] Provesti audit Shader Keywords v KelpMaster i Rock_Triplanar
+[ ] Napisat Runtime Atlas Packing dlya ikonok inventarya
+[ ] Perevesti UI-ikonki na SVG ili zhestkie atlasy
+[ ] Dobavit SSAO ili Cavity v URP payplayn
+[ ] Navesit Camera-Space Particles dlya morskogo snega
+[ ] Realizovat Stencil Buffer Pass dlya resursov + kontur v Post-Processing
+
+II
+[ ] Razdelit FaunaBrain (FSM, SlowTick 0.5s) i SteeringEngine (Tick)
+[ ] Vnedrit Time Slicing cherez GetInstanceID() % frames dlya OverlapSphere
+[ ] Realizovat Spatial Hashing (NativeParallelHashMap) dlya poiska sosedey
+[ ] Realizovat RaycastCommand.ScheduleBatch dlya "zreniya" suschestv
+[ ] Dobavit Frustum Culling (Dot Product) v FaunaSensorSuite
+[ ] Napisat staticheskiy klass NoiseManager (shumovaya shina)
+[ ] Dobavit Seeded Random (ot InstanceID) v SteeringEngine kazhdoy ryby
+[ ] Napisat HectonDirectorAI.ForceSpawnHorde s proverkoy GeometryUtility
+[ ] Realizovat ekosistemnyy schetchik populyatsii po biomam dlya reaktsii na ohotu igroka
+[ ] Realizovat vertikalnuyu migratsiyu fauny (tsikl den/noch po Y-tseli FSM)
+
+UI/UX I OBRATNAYa SVYaZ
+[ ] Razdelit HUD na staticheskiy i dinamicheskiy Canvas
+[ ] Integrirovat Hit Flash (MaterialPropertyBlock._EmissionColor) v LaserCutter
+[ ] Napisat GlobalFeedbackManager (HitStop, CameraImpulse, ChromaticAberrationPunch)
+[ ] Dobavit Ragdoll-perehod pri smerti ot krupnogo suschestva
+[ ] Realizovat Cinematic Intro Handshake (vlet kamery v shlem + poetapnyy HUD)
+[ ] Napisat Photo Mode (chistyy kadr bez HUD po knopke)
+[ ] Napisat In-Game Bug Reporter (F8 -> skrinshot + log -> Discord webhook)
+[ ] Napisat sistemu Telemetry (DeathPos, DeathReason, Depth -> lokalnyy fayl)
+[ ] Napisat DemoLimiter dlya demo-versii
+
+AUDIO
+[ ] Svyazat AudioMixer Cutoff s SurvivalSystem.Depth
+[ ] Realizovat Occlusion cherez Raycast (LowPassFilter pri blokirovke zvuka)
+[ ] Napisat SoundEmitter s pulom (limit 3-4 odnovremennyh zvuka na tip istochnika v radiuse)
+[ ] Proverit Sample Rate vseh fonovyh zvukov -> ustanovit 22050 Hz
+
+GEYMPLEY I PROIZVODSTVO
+[ ] Ostanovit dobavlenie novyh sistem. Zafiksirovat v zadachah.
+[ ] Sobrat Vertical Slice stsenu (SedimentResources -> RiftHazard, polnyy mikro-tsikl)
+[ ] Nastroit WorldProceduralScatterDirector: POI kazhdye 100m, vidimost sleduyuschey tseli 60-100m
+[ ] Nastroit onbording: pervye 15 minut kislorod v izbytke
+[ ] Napisat marshrut demo-versii: polomka -> melkovode -> dobycha -> spusk -> siluet
+[ ] Napisat Stress-Test Auto-Runner (Time.timeScale = 100, avtomaticheskiy obhod mira)
+[ ] Sproektirovat sistemu otsekov submariny s fizikoy proboin i zapolneniya vodoy
+[ ] Sproektirovat sistemu truboprovodov zhizneobespecheniya (O2, energiya, filtry)
+[ ] Dobavit Schema Versioning (razdel v PROCEDURAL_ASSET_PIPELINE.md)
+[ ] Podklyuchit com.unity.web.stripping-tool i dobitsya bilda < 500 MB

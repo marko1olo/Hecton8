@@ -10,13 +10,14 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Hecton Player Camera Rig")]
-    public sealed class HectonPlayerCameraRig : MonoBehaviour, ITickable, IUpdatable, IOriginShiftListener
+    public sealed class HectonPlayerCameraRig : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IOriginShiftListener
     {
         private const float MinimumBlendSharpness = 0.01f;
         private const float MinimumBlendDeltaTime = 0.0001f;
         private const float MinimumCameraFov = 1f;
         private const float MaximumCameraFov = 179f;
         private const float QuaternionUnitLengthSqEpsilon = 0.015625f;
+        private const float MaximumLateFrameKccOffsetMeters = 0.05f;
 
         [Header("References")]
         [SerializeField, Tooltip("Camera transform driven by the rig.")]
@@ -29,6 +30,7 @@ namespace Hecton8.Gameplay
         private Transform trackingSpaceRoot;
 
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
         private bool _hasPendingState;
         private HectonCameraState _pendingState;
@@ -100,6 +102,19 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void Tick(float dt)
         {
+            TryRegister();
+            if (_registeredLateFrame)
+                return;
+
+            if (!_hasPendingState || cameraTransform == null)
+                return;
+
+            ApplyCameraState(_pendingState);
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
             if (!_hasPendingState || cameraTransform == null)
                 return;
 
@@ -117,6 +132,8 @@ namespace Hecton8.Gameplay
             ApplyPendingAupAnchor();
             Quaternion targetRotation = SanitizeQuaternion(state.TargetRotation, _lastAppliedWorldRotation);
             Vector3 targetLocalPosition = SanitizeVector3(state.TargetLocalPosition, _lastAppliedLocalPosition);
+            if (!state.ApplyTransformDirectly)
+                targetLocalPosition += ResolveLateFrameKccLocalOffset(in state);
             float safeDeltaTime = math.isfinite(state.DeltaTime) ? math.max(0f, state.DeltaTime) : 0f;
             float targetFieldOfView = SanitizeFieldOfView(
                 state.TargetFieldOfView,
@@ -162,6 +179,24 @@ namespace Hecton8.Gameplay
             _lastAppliedLocalPosition = cameraTransform.localPosition;
             _lastAppliedWorldRotation = cameraTransform.rotation;
             _hasLastAppliedTrackingState = true;
+        }
+
+        private Vector3 ResolveLateFrameKccLocalOffset(in HectonCameraState state)
+        {
+            float fixedDeltaTime = math.max(MinimumBlendDeltaTime, state.FixedDeltaTime);
+            float alpha = math.saturate((Time.time - Time.fixedTime) / fixedDeltaTime);
+            float remainingDeltaTime = (1f - alpha) * fixedDeltaTime;
+            if (remainingDeltaTime <= 0.0001f)
+                return Vector3.zero;
+
+            Vector3 velocity = SanitizeVector3(state.KccLinearVelocity, Vector3.zero);
+            Vector3 worldOffset = velocity * remainingDeltaTime;
+            worldOffset.x = math.clamp(worldOffset.x, -MaximumLateFrameKccOffsetMeters, MaximumLateFrameKccOffsetMeters);
+            worldOffset.y = math.clamp(worldOffset.y, -MaximumLateFrameKccOffsetMeters, MaximumLateFrameKccOffsetMeters);
+            worldOffset.z = math.clamp(worldOffset.z, -MaximumLateFrameKccOffsetMeters, MaximumLateFrameKccOffsetMeters);
+
+            Transform parent = cameraTransform != null ? cameraTransform.parent : null;
+            return parent != null ? parent.InverseTransformVector(worldOffset) : worldOffset;
         }
 
         private static float ResolvePresentationBlendT(float sharpness, float deltaTime)
@@ -240,13 +275,16 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
             if (!_registeredOriginShiftListener)
             {
                 HectonFloatingOrigin.RegisterListener(this);
@@ -262,11 +300,17 @@ namespace Hecton8.Gameplay
                 _registeredOriginShiftListener = false;
             }
 
-            if (!_registered)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registered = false;
+            }
         }
     }
 }

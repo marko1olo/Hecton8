@@ -105,7 +105,7 @@ namespace Hecton8.AI.Editor
                 CreateTerritorial(
                     "nursery_shellguard",
                     "Nursery Shellguard",
-                    "Защитник кладок и безопасных карманов.",
+                    "Zaschitnik kladok i bezopasnyh karmanov.",
                     62f,
                     16f,
                     12f,
@@ -113,11 +113,11 @@ namespace Hecton8.AI.Editor
                     true,
                     new[] { "fauna.family.reef_ambush", "fauna.family.littoral_passive" },
                     new[] { "biome.family.fossil_reef", "biome.family.littoral_karst" },
-                    "Локальный защитник гнезда. Сначала давит, потом срывается."),
+                    "Lokalnyy zaschitnik gnezda. Snachala davit, potom sryvaetsya."),
                 CreateTerritorial(
                     "archway_sentinel",
                     "Archway Sentinel",
-                    "Сторож арок, стен и узких проходов.",
+                    "Storozh arok, sten i uzkih prohodov.",
                     78f,
                     18f,
                     14f,
@@ -125,12 +125,12 @@ namespace Hecton8.AI.Editor
                     false,
                     new[] { "fauna.family.escarpment_watchers", "fauna.family.ridge_hunters" },
                     new[] { "biome.family.granite_escarpment", "biome.family.rift_spine" },
-                    "Держит маршрут и выталкивает игрока с прохода."),
+                    "Derzhit marshrut i vytalkivaet igroka s prohoda."),
 
                 CreateHunter(
                     "pocket_ambusher",
                     "Pocket Ambusher",
-                    "Короткая засада из опасных карманов.",
+                    "Korotkaya zasada iz opasnyh karmanov.",
                     70f,
                     22f,
                     4.2f,
@@ -139,11 +139,11 @@ namespace Hecton8.AI.Editor
                     true,
                     new[] { "fauna.family.reef_ambush", "fauna.family.sediment_scavengers" },
                     new[] { "biome.family.fossil_reef", "biome.family.sediment_drift" },
-                    "Сидит в укрытии и наказывает жадный заход в карман."),
+                    "Sidit v ukrytii i nakazyvaet zhadnyy zahod v karman."),
                 CreateHunter(
                     "needle_hunter",
                     "Needle Hunter",
-                    "Быстрый режущий хищник яркой воды.",
+                    "Bystryy rezhuschiy hischnik yarkoy vody.",
                     54f,
                     18f,
                     5.6f,
@@ -152,11 +152,11 @@ namespace Hecton8.AI.Editor
                     true,
                     new[] { "fauna.family.crystal_skittish", "fauna.family.reef_ambush" },
                     new[] { "biome.family.crystal_growth", "biome.family.littoral_karst" },
-                    "Резко входит и резко выходит. Ломает комфорт скоростью."),
+                    "Rezko vhodit i rezko vyhodit. Lomaet komfort skorostyu."),
                 CreateHunter(
                     "ridge_pack_cutter",
                     "Ridge Pack Cutter",
-                    "Стайный хищник гребней и стен.",
+                    "Staynyy hischnik grebney i sten.",
                     82f,
                     21f,
                     5.1f,
@@ -165,11 +165,11 @@ namespace Hecton8.AI.Editor
                     false,
                     new[] { "fauna.family.ridge_hunters", "fauna.family.escarpment_watchers" },
                     new[] { "biome.family.granite_escarpment", "biome.family.rift_spine" },
-                    "Один держит фронт, другие режут с флангов."),
+                    "Odin derzhit front, drugie rezhut s flangov."),
                 CreateHunter(
                     "brine_stalker",
                     "Brine Stalker",
-                    "Тягучий охотник токсичной и сервисной воды.",
+                    "Tyaguchiy ohotnik toksichnoy i servisnoy vody.",
                     96f,
                     24f,
                     4.8f,
@@ -178,11 +178,11 @@ namespace Hecton8.AI.Editor
                     true,
                     new[] { "fauna.family.chemical_specialists", "fauna.family.thermal_hostile" },
                     new[] { "biome.family.chemosynthetic_brine", "biome.family.tectonic_spine" },
-                    "Любит тяжёлую воду, шрамы сервиса и горячие карманы."),
+                    "Lyubit tyazheluyu vodu, shramy servisa i goryachie karmany."),
                 CreateHunter(
                     "armor_breaker",
                     "Armor Breaker",
-                    "Тяжёлый металлический охотник поздней глубины.",
+                    "Tyazhelyy metallicheskiy ohotnik pozdney glubiny.",
                     130f,
                     30f,
                     4.2f,
@@ -191,11 +191,11 @@ namespace Hecton8.AI.Editor
                     false,
                     new[] { "fauna.family.metal_predators", "fauna.family.hadal_apex" },
                     new[] { "biome.family.metallic_hadal", "biome.family.rift_void" },
-                    "Не самый быстрый, но очень опасен на близкой дистанции."),
+                    "Ne samyy bystryy, no ochen opasen na blizkoy distantsii."),
                 CreateHunter(
                     "heat_lurker",
                     "Heat Lurker",
-                    "Горячий засадный хищник вулканических губ.",
+                    "Goryachiy zasadnyy hischnik vulkanicheskih gub.",
                     88f,
                     23f,
                     4.7f,
@@ -204,11 +204,11 @@ namespace Hecton8.AI.Editor
                     true,
                     new[] { "fauna.family.thermal_hostile", "fauna.family.rift_stalkers" },
                     new[] { "biome.family.volcanic_glass", "biome.family.volcanic_hadal" },
-                    "Работает у горячих выбросов и резких узких маршрутов."),
+                    "Rabotaet u goryachih vybrosov i rezkih uzkih marshrutov."),
                 CreateHunter(
                     "shadow_interceptor",
                     "Shadow Interceptor",
-                    "Редкий перехватчик пустоты.",
+                    "Redkiy perehvatchik pustoty.",
                     92f,
                     25f,
                     5f,
@@ -217,11 +217,11 @@ namespace Hecton8.AI.Editor
                     true,
                     new[] { "fauna.family.abyssal_sparse", "fauna.family.void_apex" },
                     new[] { "biome.family.abyssal_silt", "biome.family.rift_void" },
-                    "Строит страх ожиданием и длинным перехватом."),
+                    "Stroit strah ozhidaniem i dlinnym perehvatom."),
                 CreateHunter(
                     "silt_flatmaw",
                     "Silt Flatmaw",
-                    "Осадочный засадник для ресурсной воды.",
+                    "Osadochnyy zasadnik dlya resursnoy vody.",
                     74f,
                     19f,
                     3.9f,
@@ -230,12 +230,12 @@ namespace Hecton8.AI.Editor
                     false,
                     new[] { "fauna.family.sediment_scavengers", "fauna.family.ridge_hunters" },
                     new[] { "biome.family.sediment_drift", "biome.family.granite_escarpment" },
-                    "Ждёт добычу у дна и карает жадный сбор ресурсов."),
+                    "Zhdet dobychu u dna i karaet zhadnyy sbor resursov."),
 
                 CreateLeviathan(
                     "halo_crown",
                     "Halo Crown Leviathan",
-                    "Круговой левиафан давления.",
+                    "Krugovoy leviafan davleniya.",
                     LeviathanEncounterType.PresenceCircle,
                     950f,
                     80f,
@@ -244,11 +244,11 @@ namespace Hecton8.AI.Editor
                     false,
                     new[] { "fauna.family.hadal_apex", "fauna.family.void_apex" },
                     new[] { "biome.family.rift_void", "biome.family.abyssal_silt" },
-                    "Ломает безопасность кругом и поздним входом."),
+                    "Lomaet bezopasnost krugom i pozdnim vhodom."),
                 CreateLeviathan(
                     "gate_warden",
                     "Gate Warden Leviathan",
-                    "Сторож глубокого прохода.",
+                    "Storozh glubokogo prohoda.",
                     LeviathanEncounterType.SentinelPressure,
                     1100f,
                     95f,
@@ -257,11 +257,11 @@ namespace Hecton8.AI.Editor
                     false,
                     new[] { "fauna.family.hadal_apex", "fauna.family.rift_stalkers" },
                     new[] { "biome.family.rift_spine", "biome.family.volcanic_hadal", "biome.family.metallic_hadal" },
-                    "Держит маршрут и выдавливает игрока из узкого места."),
+                    "Derzhit marshrut i vydavlivaet igroka iz uzkogo mesta."),
                 CreateLeviathan(
                     "rift_lancer",
                     "Rift Lancer Leviathan",
-                    "Рифтовый левиафан резкого рывка.",
+                    "Riftovyy leviafan rezkogo ryvka.",
                     LeviathanEncounterType.AmbushBurst,
                     920f,
                     88f,
@@ -270,11 +270,11 @@ namespace Hecton8.AI.Editor
                     true,
                     new[] { "fauna.family.rift_stalkers", "fauna.family.void_apex" },
                     new[] { "biome.family.rift_void", "biome.family.rift_spine" },
-                    "Пугает ложным заходом и ловит на резком сближении."),
+                    "Pugaet lozhnym zahodom i lovit na rezkom sblizhenii."),
                 CreateLeviathan(
                     "black_choir",
                     "Black Choir Leviathan",
-                    "Левиафан позднего ужаса.",
+                    "Leviafan pozdnego uzhasa.",
                     LeviathanEncounterType.PresenceCircle,
                     1250f,
                     90f,
@@ -283,11 +283,11 @@ namespace Hecton8.AI.Editor
                     false,
                     new[] { "fauna.family.void_apex", "fauna.family.hadal_apex" },
                     new[] { "biome.family.rift_void", "biome.family.abyssal_silt" },
-                    "Строит страх ожиданием, звуком и поздним контактом."),
+                    "Stroit strah ozhidaniem, zvukom i pozdnim kontaktom."),
                 CreateLeviathan(
                     "furnace_maw",
                     "Furnace Maw Leviathan",
-                    "Вулканический сторож горячих шахт.",
+                    "Vulkanicheskiy storozh goryachih shaht.",
                     LeviathanEncounterType.SentinelPressure,
                     1080f,
                     98f,
@@ -296,11 +296,11 @@ namespace Hecton8.AI.Editor
                     true,
                     new[] { "fauna.family.thermal_hostile", "fauna.family.hadal_apex" },
                     new[] { "biome.family.volcanic_glass", "biome.family.volcanic_hadal" },
-                    "Жмёт на маршруте и добавляет ложные проходы перед реальной атакой."),
+                    "Zhmet na marshrute i dobavlyaet lozhnye prohody pered realnoy atakoy."),
                 CreateLeviathan(
                     "void_ribbon",
                     "Void Ribbon Leviathan",
-                    "Быстрый перехватчик пустоты.",
+                    "Bystryy perehvatchik pustoty.",
                     LeviathanEncounterType.AmbushBurst,
                     980f,
                     92f,
@@ -309,7 +309,7 @@ namespace Hecton8.AI.Editor
                     true,
                     new[] { "fauna.family.void_apex", "fauna.family.abyssal_sparse" },
                     new[] { "biome.family.abyssal_silt", "biome.family.rift_void" },
-                    "Длинный тёмный перехватчик для открытой глубины.")
+                    "Dlinnyy temnyy perehvatchik dlya otkrytoy glubiny.")
             };
         }
 
@@ -414,12 +414,12 @@ namespace Hecton8.AI.Editor
         {
             switch (shortId)
             {
-                case "shore_skimmer": return "Мелкая стайная жизнь спокойной воды.";
-                case "kelp_raylet": return "Мирная широкая жизнь ярких зарослей и рифов.";
-                case "silt_drifter": return "Донный мирный сборщик осадочной воды.";
-                case "wall_glider": return "Мирная жизнь стен, уступов и гребней.";
-                case "brine_siphoner": return "Странная мирная жизнь химических карманов и вентов.";
-                case "lantern_sifter": return "Редкая мирная жизнь открытой глубины.";
+                case "shore_skimmer": return "Melkaya staynaya zhizn spokoynoy vody.";
+                case "kelp_raylet": return "Mirnaya shirokaya zhizn yarkih zarosley i rifov.";
+                case "silt_drifter": return "Donnyy mirnyy sborschik osadochnoy vody.";
+                case "wall_glider": return "Mirnaya zhizn sten, ustupov i grebney.";
+                case "brine_siphoner": return "Strannaya mirnaya zhizn himicheskih karmanov i ventov.";
+                case "lantern_sifter": return "Redkaya mirnaya zhizn otkrytoy glubiny.";
                 default: return fallback;
             }
         }
@@ -428,12 +428,12 @@ namespace Hecton8.AI.Editor
         {
             switch (shortId)
             {
-                case "shore_skimmer": return "Даёт живой фон у поверхности и в спокойных арках.";
-                case "kelp_raylet": return "Даёт мягкую крупную жизнь там, где мир должен казаться богатым, а не боевым.";
-                case "silt_drifter": return "Делает ресурсную воду живой, но не агрессивной.";
-                case "wall_glider": return "Делает маршруты вдоль стен живыми и читаемыми.";
-                case "brine_siphoner": return "Нужен, чтобы токсичная и сервисная вода не была мёртвой.";
-                case "lantern_sifter": return "Даёт ощущение редкой жизни даже в поздней пустоте.";
+                case "shore_skimmer": return "Daet zhivoy fon u poverhnosti i v spokoynyh arkah.";
+                case "kelp_raylet": return "Daet myagkuyu krupnuyu zhizn tam, gde mir dolzhen kazatsya bogatym, a ne boevym.";
+                case "silt_drifter": return "Delaet resursnuyu vodu zhivoy, no ne agressivnoy.";
+                case "wall_glider": return "Delaet marshruty vdol sten zhivymi i chitaemymi.";
+                case "brine_siphoner": return "Nuzhen, chtoby toksichnaya i servisnaya voda ne byla mertvoy.";
+                case "lantern_sifter": return "Daet oschuschenie redkoy zhizni dazhe v pozdney pustote.";
                 default: return fallback;
             }
         }
@@ -620,7 +620,7 @@ namespace Hecton8.AI.Editor
                 feintBreakDistance = feint ? 7f : 0f,
                 feintCooldown = feint ? 6.6f : 0f,
                 useCandiceBehaviorTree = true,
-                behaviorTreeHint = "Крупная режиссируемая угроза. Давление, ложные входы и поздний контакт.",
+                behaviorTreeHint = "Krupnaya rezhissiruemaya ugroza. Davlenie, lozhnye vhody i pozdniy kontakt.",
                 maxAliveGlobal = 2,
                 maxAlivePerBiome = 1,
                 spawnWeight = 1,
@@ -716,17 +716,17 @@ namespace Hecton8.AI.Editor
             var sb = new StringBuilder(12288);
             sb.AppendLine("# AI Creature Roster Enterprise");
             sb.AppendLine();
-            sb.AppendLine("## Что это");
+            sb.AppendLine("## Chto eto");
             sb.AppendLine();
-            sb.AppendLine("- Это набор реальных профилей видов.");
-            sb.AppendLine("- Их можно подвешивать к префабам и потом раскидывать по биомам.");
-            sb.AppendLine("- Основной упор здесь: много разных хищников и левиафанов.");
+            sb.AppendLine("- Eto nabor realnyh profiley vidov.");
+            sb.AppendLine("- Ih mozhno podveshivat k prefabam i potom raskidyvat po biomam.");
+            sb.AppendLine("- Osnovnoy upor zdes: mnogo raznyh hischnikov i leviafanov.");
             sb.AppendLine();
 
-            AppendSection(sb, "Мирная жизнь", definitions, CreatureRoleType.Ambient);
-            AppendSection(sb, "Территориальные", definitions, CreatureRoleType.Territorial);
-            AppendSection(sb, "Хищники", definitions, CreatureRoleType.Hunter);
-            AppendSection(sb, "Левиафаны", definitions, CreatureRoleType.Leviathan);
+            AppendSection(sb, "Mirnaya zhizn", definitions, CreatureRoleType.Ambient);
+            AppendSection(sb, "Territorialnye", definitions, CreatureRoleType.Territorial);
+            AppendSection(sb, "Hischniki", definitions, CreatureRoleType.Hunter);
+            AppendSection(sb, "Leviafany", definitions, CreatureRoleType.Leviathan);
 
             File.WriteAllText(RosterDocPath, sb.ToString(), Encoding.UTF8);
         }
@@ -744,10 +744,10 @@ namespace Hecton8.AI.Editor
                 sb.AppendLine($"### {definition.displayName}");
                 sb.AppendLine();
                 sb.AppendLine($"- `ID`: `{definition.creatureId}`");
-                sb.AppendLine($"- `Зачем нужен`: {definition.gameplayPurpose}");
-                sb.AppendLine($"- `Суть`: {definition.biomeNotes}");
-                sb.AppendLine($"- `Подходит для`: {string.Join(", ", definition.recommendedFaunaFamilyIds)}");
-                sb.AppendLine($"- `Биомы`: {string.Join(", ", definition.recommendedBiomeFamilyIds)}");
+                sb.AppendLine($"- `Zachem nuzhen`: {definition.gameplayPurpose}");
+                sb.AppendLine($"- `Sut`: {definition.biomeNotes}");
+                sb.AppendLine($"- `Podhodit dlya`: {string.Join(", ", definition.recommendedFaunaFamilyIds)}");
+                sb.AppendLine($"- `Biomy`: {string.Join(", ", definition.recommendedBiomeFamilyIds)}");
                 sb.AppendLine();
             }
         }

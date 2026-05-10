@@ -38,6 +38,7 @@ namespace Hecton8.UI
         private bool _isFadingIn;
         private bool _isFadingOut;
         private string[] _tips;
+        private uint _tipRandomState;
         private readonly char[] _tipBuffer = new char[TipBufferCapacity]; // COLD ALLOC: char[256] — loading tip TMP staging buffer — owner: LoadingTipsDisplay
 
         private static readonly string[] TipKeys = // COLD ALLOC: localization keys for loading tips — owner: LoadingTipsDisplay
@@ -80,6 +81,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            _tipRandomState = MixSeed(unchecked((uint)EntityId.ToULong(GetEntityId())));
             LoadTips();
             if (tipCanvasGroup != null)
                 tipCanvasGroup.alpha = 0f;
@@ -116,7 +118,7 @@ namespace Hecton8.UI
                 return;
 
             _isActive = true;
-            _currentTipIndex = randomOrder ? UnityEngine.Random.Range(0, _tips.Length) : 0;
+            _currentTipIndex = randomOrder ? NextTipIndex(_tips.Length) : 0;
             _tipTimer = 0f;
             _fadeTimer = 0f;
             _isFadingIn = true;
@@ -243,12 +245,12 @@ namespace Hecton8.UI
 
             if (randomOrder)
             {
-                int newIndex = UnityEngine.Random.Range(0, _tips.Length);
+                int newIndex = NextTipIndex(_tips.Length);
                 if (_tips.Length > 1)
                 {
                     int rerollWatchdog = _tips.Length << 1;
                     while (newIndex == _currentTipIndex && rerollWatchdog-- > 0)
-                        newIndex = UnityEngine.Random.Range(0, _tips.Length);
+                        newIndex = NextTipIndex(_tips.Length);
 
                     if (newIndex == _currentTipIndex)
                         newIndex = (_currentTipIndex + 1) % _tips.Length;
@@ -310,6 +312,36 @@ namespace Hecton8.UI
         {
             float safeDuration = math.max(0.0001f, fadeDuration);
             return math.saturate(_fadeTimer / safeDuration);
+        }
+
+        private int NextTipIndex(int length)
+        {
+            if (length <= 1)
+                return 0;
+
+            uint state = _tipRandomState;
+            if (state == 0u)
+                state = 0xA341316Cu;
+
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            _tipRandomState = state != 0u ? state : 0x9E3779B9u;
+            return (int)(_tipRandomState % (uint)length);
+        }
+
+        private static uint MixSeed(uint seed)
+        {
+            unchecked
+            {
+                seed ^= 0x9E3779B9u;
+                seed ^= seed >> 16;
+                seed *= 0x7FEB352Du;
+                seed ^= seed >> 15;
+                seed *= 0x846CA68Bu;
+                seed ^= seed >> 16;
+                return seed != 0u ? seed : 0xA341316Cu;
+            }
         }
 
         private void TryUnregister()

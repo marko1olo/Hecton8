@@ -269,12 +269,13 @@ namespace Hecton8.UI
         [SerializeField, Range(0.05f, 2f), Tooltip("Seconds between sonar-source refreshes while the PDA tab remains open.")]
         private float sourceRefreshInterval = 0.2f;
 
-        private readonly Vector4[] _threatPings = new Vector4[MaxThreatPings]; // COLD ALLOC: Vector4[8] - PDA sonar-map threat ping upload cache - owner: PDAMapTab
-        private readonly uint[] _pendingMarkerHashes = new uint[MarkerUpdateQueueCapacity]; // COLD ALLOC: uint[128] - time-sliced PDA marker update queue - owner: PDAMapTab
-        private readonly RectTransform[] _markerVisualRoots = new RectTransform[MaxMarkerVisuals]; // COLD ALLOC: RectTransform[64] - prebuilt PDA map marker visual pool - owner: PDAMapTab
-        private readonly CanvasGroup[] _markerVisualGroups = new CanvasGroup[MaxMarkerVisuals]; // COLD ALLOC: CanvasGroup[64] - marker visibility controls without SetActive - owner: PDAMapTab
-        private readonly Image[] _markerVisualImages = new Image[MaxMarkerVisuals]; // COLD ALLOC: Image[64] - marker icon tint targets - owner: PDAMapTab
-        private readonly uint[] _markerHashByVisualSlot = new uint[MaxMarkerVisuals]; // COLD ALLOC: uint[64] - marker hash to visual slot ownership - owner: PDAMapTab
+        private readonly Vector4[] _threatPings = new Vector4[MaxThreatPings]; // COLD ALLOC: Vector4[8] — PDA sonar-map threat ping upload cache — owner: PDAMapTab
+        private readonly uint[] _pendingMarkerHashes = new uint[MarkerUpdateQueueCapacity]; // COLD ALLOC: uint[128] — time-sliced PDA marker update queue — owner: PDAMapTab
+        private readonly RectTransform[] _markerVisualRoots = new RectTransform[MaxMarkerVisuals]; // COLD ALLOC: RectTransform[64] — prebuilt PDA map marker visual pool — owner: PDAMapTab
+        private readonly CanvasGroup[] _markerVisualGroups = new CanvasGroup[MaxMarkerVisuals]; // COLD ALLOC: CanvasGroup[64] — marker visibility controls without SetActive — owner: PDAMapTab
+        private readonly Image[] _markerVisualImages = new Image[MaxMarkerVisuals]; // COLD ALLOC: Image[64] — marker icon tint targets — owner: PDAMapTab
+        private readonly uint[] _markerHashByVisualSlot = new uint[MaxMarkerVisuals]; // COLD ALLOC: uint[64] — marker hash to visual slot ownership — owner: PDAMapTab
+        private readonly PDAMarkerSnapshot[] _markerUpdateSnapshots = new PDAMarkerSnapshot[MaxMarkerVisuals]; // COLD ALLOC: PDAMarkerSnapshot[64] — bulk marker-dirty expansion scratch — owner: PDAMapTab
         private bool _registered;
         private bool _registeredLateFrame;
         private bool _pdaEventsRegistered;
@@ -294,6 +295,7 @@ namespace Hecton8.UI
         private NativeArray<float> _emptyAcousticDensity;
         private NativeArray<SonarPointCloudPoint> _pointCloudPoints;
         private JobHandle _cartographyJobHandle;
+        private JobHandle _nativeDisposeHandle;
         private bool _cartographyJobScheduled;
         private bool _pointCloudUploadPending;
         private int _pointCloudVertexCount;
@@ -302,7 +304,7 @@ namespace Hecton8.UI
         private Material _runtimeMapMaterial;
         private HectonVoxelVolume _activeVolume;
         private CharBufferPool.Lease _statusBufferLease;
-        private readonly Vector3[] _mapWorldCorners = new Vector3[4]; // COLD ALLOC: Vector3[4] - PDA map point-cloud basis corners - owner: PDAMapTab
+        private readonly Vector3[] _mapWorldCorners = new Vector3[4]; // COLD ALLOC: Vector3[4] — PDA map point-cloud basis corners — owner: PDAMapTab
         private RectTransform _markerOverlayRoot;
         private int _appliedThreatPingCount = -1;
         private bool _threatPingsDirty = true;
@@ -366,6 +368,7 @@ namespace Hecton8.UI
         /// </summary>
         public void LateFrameTick()
         {
+            FinalizeNativeDisposeHandle();
             CompleteCartographyJobIfNeeded(applyTexture: true);
             RenderPointCloud();
             ProcessPendingMarkerUpdates(MaxMarkerUiUpdatesPerLateFrame);
@@ -377,7 +380,10 @@ namespace Hecton8.UI
             if ((PDAEventType)payload.EventType != PDAEventType.MarkerChanged)
                 return;
 
-            EnqueueMarkerUpdate(payload.MarkerHashID);
+            if (payload.MarkerHashID != 0u)
+                EnqueueMarkerUpdate(payload.MarkerHashID);
+            else
+                EnqueueAllMarkerUpdates();
         }
 
         private void RegisterToTickManager()
@@ -454,9 +460,9 @@ namespace Hecton8.UI
                 frame.color = new Color(0.02f, 0.09f, 0.12f, 0.76f);
                 frame.raycastTarget = false;
 
-                GameObject imageOwner = new GameObject("MapImage", typeof(RectTransform));
+                GameObject imageOwner = new GameObject("MapImage", typeof(RectTransform)); // COLD ALLOC: GameObject[1] — PDA map RawImage owner — owner: PDAMapTab
                 imageOwner.layer = gameObject.layer;
-                RectTransform imageRect = imageOwner.GetComponent<RectTransform>();
+                imageOwner.TryGetComponent(out RectTransform imageRect);
                 imageRect.SetParent(mapRect, false);
                 imageRect.anchorMin = new Vector2(0f, 0f);
                 imageRect.anchorMax = new Vector2(1f, 1f);
@@ -473,9 +479,9 @@ namespace Hecton8.UI
 
             if (statusLabel == null)
             {
-                GameObject statusOwner = new GameObject("MapStatus", typeof(RectTransform));
+                GameObject statusOwner = new GameObject("MapStatus", typeof(RectTransform)); // COLD ALLOC: GameObject[1] — PDA map status TMP owner — owner: PDAMapTab
                 statusOwner.layer = gameObject.layer;
-                RectTransform statusRect = statusOwner.GetComponent<RectTransform>();
+                statusOwner.TryGetComponent(out RectTransform statusRect);
                 statusRect.SetParent(root, false);
                 statusRect.anchorMin = new Vector2(0f, 0f);
                 statusRect.anchorMax = new Vector2(1f, 0f);
@@ -515,7 +521,7 @@ namespace Hecton8.UI
                     _runtimeMapMaterial = new Material(sonarMapShader)
                     {
                         name = "Runtime_PDASonarMap"
-                    }; // COLD ALLOC: Material[1] - diegetic PDA sonar-map raymarch material - owner: PDAMapTab
+                    }; // COLD ALLOC: Material[1] — diegetic PDA sonar-map raymarch material — owner: PDAMapTab
                     _runtimeMapMaterial.SetColor("_MapTint", mapTint);
                     _runtimeMapMaterial.SetColor("_EdgeTint", edgeTint);
                     _runtimeMapMaterial.SetColor("_ThreatTint", threatTint);
@@ -528,9 +534,9 @@ namespace Hecton8.UI
 
         private static RectTransform CreateRect(string name, RectTransform parent)
         {
-            GameObject owner = new GameObject(name, typeof(RectTransform));
+            GameObject owner = new GameObject(name, typeof(RectTransform)); // COLD ALLOC: GameObject[1] — PDA map child RectTransform owner — owner: PDAMapTab
             owner.layer = parent.gameObject.layer;
-            RectTransform rect = owner.GetComponent<RectTransform>();
+            owner.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             return rect;
         }
@@ -784,7 +790,7 @@ namespace Hecton8.UI
                     wrapMode = TextureWrapMode.Clamp,
                     filterMode = FilterMode.Point,
                     anisoLevel = 0
-                }; // COLD ALLOC: Texture2D[128x128 RGBA32] - headless PDA cartography output - owner: PDAMapTab
+                }; // COLD ALLOC: Texture2D[128x128 RGBA32] — headless PDA cartography output — owner: PDAMapTab
             }
 
             if (!_cartographyPixels.IsCreated)
@@ -792,7 +798,7 @@ namespace Hecton8.UI
                 _cartographyPixels = new NativeArray<Color32>(
                     CartographyTextureSize * CartographyTextureSize,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<Color32>[16384] - headless PDA cartography pixel buffer - owner: PDAMapTab
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<Color32>[16384] — headless PDA cartography pixel buffer — owner: PDAMapTab
                 NativeMemorySentinel.RegisterNativeArray(
                     _cartographyPixels,
                     nameof(PDAMapTab),
@@ -805,7 +811,7 @@ namespace Hecton8.UI
                 _emptyExplorationWords = new NativeArray<ulong>(
                     1,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ulong>[1] - created empty exploration-mask fallback for PDA cartography jobs - owner: PDAMapTab
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ulong>[1] — created empty exploration-mask fallback for PDA cartography jobs — owner: PDAMapTab
                 NativeMemorySentinel.RegisterNativeArray(
                     _emptyExplorationWords,
                     nameof(PDAMapTab),
@@ -818,7 +824,7 @@ namespace Hecton8.UI
                 _emptyAcousticDensity = new NativeArray<float>(
                     1,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - created empty acoustic-density fallback for PDA cartography jobs - owner: PDAMapTab
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] — created empty acoustic-density fallback for PDA cartography jobs — owner: PDAMapTab
                 NativeMemorySentinel.RegisterNativeArray(
                     _emptyAcousticDensity,
                     nameof(PDAMapTab),
@@ -834,7 +840,7 @@ namespace Hecton8.UI
                 _pointCloudPoints = new NativeArray<SonarPointCloudPoint>(
                     PointCloudCapacity,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarPointCloudPoint>[1728] - PDA sonar point-cloud upload payload - owner: PDAMapTab
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarPointCloudPoint>[1728] — PDA sonar point-cloud upload payload — owner: PDAMapTab
                 NativeMemorySentinel.RegisterNativeArray(
                     _pointCloudPoints,
                     nameof(PDAMapTab),
@@ -847,7 +853,7 @@ namespace Hecton8.UI
                 _pointCloudBuffer = new GraphicsBuffer(
                     GraphicsBuffer.Target.Structured,
                     PointCloudCapacity,
-                    SonarPointStrideBytes); // COLD ALLOC: GraphicsBuffer[1728 x 32B] - GPU-resident PDA sonar point cloud - owner: PDAMapTab
+                    SonarPointStrideBytes); // COLD ALLOC: GraphicsBuffer[1728 x 32B] — GPU-resident PDA sonar point cloud — owner: PDAMapTab
             }
 
             if (_pointCloudMaterial != null)
@@ -866,7 +872,7 @@ namespace Hecton8.UI
             _pointCloudMaterial = new Material(sonarPointCloudShader)
             {
                 name = "Runtime_PDASonarPointCloud"
-            }; // COLD ALLOC: Material[1] - GPU-resident PDA sonar point-cloud draw material - owner: PDAMapTab
+            }; // COLD ALLOC: Material[1] — GPU-resident PDA sonar point-cloud draw material — owner: PDAMapTab
             _pointCloudMaterial.SetBuffer(SonarPointsId, _pointCloudBuffer);
         }
 
@@ -875,7 +881,7 @@ namespace Hecton8.UI
             if (!_cartographyJobScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _cartographyJobHandle, !applyTexture))
+            if (!DispatcherJobSwap.TryFinalizeCompleted(ref _cartographyJobHandle))
                 return;
 
             _cartographyJobScheduled = false;
@@ -977,6 +983,16 @@ namespace Hecton8.UI
             if (markerHashId == 0u)
                 return;
 
+            for (int i = 0; i < _pendingMarkerCount; i++)
+            {
+                int index = _pendingMarkerReadIndex + i;
+                if (index >= MarkerUpdateQueueCapacity)
+                    index -= MarkerUpdateQueueCapacity;
+
+                if (_pendingMarkerHashes[index] == markerHashId)
+                    return;
+            }
+
             if (_pendingMarkerCount >= MarkerUpdateQueueCapacity)
             {
                 _pendingMarkerReadIndex++;
@@ -991,6 +1007,33 @@ namespace Hecton8.UI
                 _pendingMarkerWriteIndex = 0;
 
             _pendingMarkerCount++;
+        }
+
+        private void EnqueueAllMarkerUpdates()
+        {
+            PDAMarkerRegistry markerRegistry = GlobalRegistry.PDAMarkers;
+            if (markerRegistry == null)
+            {
+                ClearPendingMarkerUpdates();
+                ClearMarkerVisualSlots();
+                return;
+            }
+
+            int markerCount = markerRegistry.CopyMarkers(_markerUpdateSnapshots, hudOnly: false);
+            if (markerCount <= 0)
+            {
+                ClearPendingMarkerUpdates();
+                ClearMarkerVisualSlots();
+                return;
+            }
+
+            ClearPendingMarkerUpdates();
+            for (int i = 0; i < markerCount; i++)
+            {
+                uint markerHashId = _markerUpdateSnapshots[i].MarkerHashID;
+                _markerUpdateSnapshots[i] = default;
+                EnqueueMarkerUpdate(markerHashId);
+            }
         }
 
         private bool TryDequeueMarkerUpdate(out uint markerHashId)
@@ -1221,7 +1264,7 @@ namespace Hecton8.UI
                 wrapMode = TextureWrapMode.Clamp,
                 filterMode = FilterMode.Bilinear,
                 anisoLevel = 0
-            }; // COLD ALLOC: Texture3D[1] - PDA sonar-map SDF volume texture - owner: PDAMapTab
+            }; // COLD ALLOC: Texture3D[1] — PDA sonar-map SDF volume texture — owner: PDAMapTab
         }
 
         private void RefreshThreatPings()
@@ -1635,6 +1678,13 @@ namespace Hecton8.UI
 
         private void ReleaseResources()
         {
+            FinalizeNativeDisposeHandle();
+            JobHandle disposeDependency = _cartographyJobScheduled ? _cartographyJobHandle : default;
+            _cartographyJobScheduled = false;
+            _cartographyJobHandle = default;
+            _pointCloudUploadPending = false;
+            _pointCloudVertexCount = 0;
+
             if (_sdfTexture != null)
             {
                 Destroy(_sdfTexture);
@@ -1647,33 +1697,11 @@ namespace Hecton8.UI
                 _cartographyTexture = null;
             }
 
-            if (_cartographyPixels.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_cartographyPixels);
-                _cartographyPixels.Dispose();
-                _cartographyPixels = default;
-            }
-
-            if (_emptyExplorationWords.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_emptyExplorationWords);
-                _emptyExplorationWords.Dispose();
-                _emptyExplorationWords = default;
-            }
-
-            if (_emptyAcousticDensity.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_emptyAcousticDensity);
-                _emptyAcousticDensity.Dispose();
-                _emptyAcousticDensity = default;
-            }
-
-            if (_pointCloudPoints.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_pointCloudPoints);
-                _pointCloudPoints.Dispose();
-                _pointCloudPoints = default;
-            }
+            disposeDependency = DisposeNativeArray(ref _cartographyPixels, disposeDependency);
+            disposeDependency = DisposeNativeArray(ref _emptyExplorationWords, disposeDependency);
+            disposeDependency = DisposeNativeArray(ref _emptyAcousticDensity, disposeDependency);
+            disposeDependency = DisposeNativeArray(ref _pointCloudPoints, disposeDependency);
+            _nativeDisposeHandle = JobHandle.CombineDependencies(_nativeDisposeHandle, disposeDependency);
 
             if (_pointCloudBuffer != null)
             {
@@ -1693,8 +1721,23 @@ namespace Hecton8.UI
                 _runtimeMapMaterial = null;
             }
 
-            _pointCloudUploadPending = false;
-            _pointCloudVertexCount = 0;
+        }
+
+        private static JobHandle DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return dependency;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            JobHandle disposeHandle = array.Dispose(dependency);
+            array = default;
+            return disposeHandle;
+        }
+
+        private void FinalizeNativeDisposeHandle()
+        {
+            DispatcherJobSwap.TryFinalizeCompleted(ref _nativeDisposeHandle);
         }
     }
 }

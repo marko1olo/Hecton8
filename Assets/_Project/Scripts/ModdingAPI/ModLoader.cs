@@ -11,11 +11,11 @@ namespace Hecton8.Modding
 {
     internal static class ModLoader
     {
-        private sealed class BootstrapEventListener : ISceneBootstrapEventListener
+        private sealed class BootstrapEventListener : IGameBootstrapperEventListener
         {
-            public void OnSceneBootstrapEvent(in SceneBootstrapEventPayload payload)
+            public void OnGameBootstrapperEvent(in GameBootstrapperEventPayload payload)
             {
-                if ((SceneBootstrapEventType)payload.EventType == SceneBootstrapEventType.GameReady)
+                if ((GameBootstrapperEventType)payload.EventType == GameBootstrapperEventType.GameReady)
                     HandleGameReady();
             }
         }
@@ -132,7 +132,7 @@ namespace Hecton8.Modding
             HectonEventBus.InstallNativeQueueBindings();
             ModCommandDispatcher.Initialize();
             ModResourceRegistry.Initialize();
-            SceneBootstrap.Register(_bootstrapEventListener);
+            GameBootstrapper.Register(_bootstrapEventListener);
             Application.quitting += HandleApplicationQuitting;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             _hooksInstalled = true;
@@ -145,7 +145,7 @@ namespace Hecton8.Modding
 
             SaveEvents.Unregister(_saveEventListener);
             HectonEventBus.UninstallNativeQueueBindings();
-            SceneBootstrap.Unregister(_bootstrapEventListener);
+            GameBootstrapper.Unregister(_bootstrapEventListener);
             Application.quitting -= HandleApplicationQuitting;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             ModCommandDispatcher.Shutdown();
@@ -669,7 +669,7 @@ namespace Hecton8.Modding
             ModBuildableRegistry.FlushPendingRegistrations();
             ModRecipeRegistry.FlushPendingRegistrations();
 
-            GameObject playerObject = SceneBootstrap.CurrentPlayerObject;
+            GameObject playerObject = GameBootstrapper.CurrentPlayerObject;
             if (playerObject != null)
             {
                 Transform playerTransform = playerObject.transform;

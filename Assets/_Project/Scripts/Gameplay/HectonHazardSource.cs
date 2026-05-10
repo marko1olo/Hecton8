@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — HectonHazardSource.cs  v1.0
-// Компонент локального источника опасности.
+// Komponent lokalnogo istochnika opasnosti.
 // ============================================================================
 
 using Hecton8.Core;
@@ -9,8 +9,8 @@ using UnityEngine;
 namespace Hecton8.Gameplay
 {
     /// <summary>
-    /// Излучатель опасности (радиация, тепло).
-    /// Прикрепляется к префабам (гейзеры, обломки реакторов).
+    /// Izluchatel opasnosti (radiatsiya, teplo).
+    /// Prikreplyaetsya k prefabam (geyzery, oblomki reaktorov).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HectonHazardSource : MonoBehaviour, ITickable, IUpdatable
@@ -20,23 +20,23 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════════════
 
         [Header("── Hazard Settings ───────────────────────────")]
-        [Tooltip("Тип излучаемой опасности.")]
+        [Tooltip("Tip izluchaemoy opasnosti.")]
         [SerializeField] private HazardType _type = HazardType.Radiation;
         [Tooltip("Optional authored profile for hazard metadata and visor corruption bias.")]
         [SerializeField] private HazardZoneProfile _profile;
 
-        [Tooltip("Базовая интенсивность в центре (0-100+).")]
+        [Tooltip("Bazovaya intensivnost v tsentre (0-100+).")]
         [SerializeField] private float _intensity = 50f;
 
-        [Tooltip("Радиус воздействия (метры).")]
+        [Tooltip("Radius vozdeystviya (metry).")]
         [SerializeField] private float _radius = 15f;
 
         [Header("── Performance ───────────────────────────────")]
-        [Tooltip("Если true, положение источника считается фиксированным. " +
-                 "Экономит CPU на обновлении позиции в менеджере.")]
+        [Tooltip("Esli true, polozhenie istochnika schitaetsya fiksirovannym. " +
+                 "Ekonomit CPU na obnovlenii pozitsii v menedzhere.")]
         [SerializeField] private bool _isStatic = true;
 
-        [Tooltip("Интервал обновления позиции для динамических источников (секунды).")]
+        [Tooltip("Interval obnovleniya pozitsii dlya dinamicheskih istochnikov (sekundy).")]
         [SerializeField, Range(0.1f, 2f)] private float _updateInterval = 0.5f;
 
         // ══════════════════════════════════════════════════════════════════

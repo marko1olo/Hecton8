@@ -1,20 +1,20 @@
 // ============================================================================
 // HECTON-8 — PDAAtlasSignalTab.cs
-// Вкладка PDA: ATLAS SIGNAL — мониторинг сигнала Атлас-6.
+// Vkladka PDA: ATLAS SIGNAL — monitoring signala Atlas-6.
 //
-// ЛОР (лор3 Блок З):
-//   Сигнал повторяется каждые 11:23 (683 сек).
-//   Чем ближе к ядру — тем яснее содержание.
-//   Фазы: 0=нет сигнала, 1=ритм, 2=эмоции, 3=содержание, 4=полная расшифровка.
+// LOR (lor3 Blok Z):
+//   Signal povtoryaetsya kazhdye 11:23 (683 sek).
+//   Chem blizhe k yadru — tem yasnee soderzhanie.
+//   Fazy: 0=net signala, 1=ritm, 2=emotsii, 3=soderzhanie, 4=polnaya rasshifrovka.
 //
-// АРХИТЕКТУРА:
-//   • Процедурный UI — сила сигнала, фаза декодирования, направление.
-//   • ITickable — обновление таймера до следующего пульса.
-//   • Слушает AtlasSignalEvents.
+// ARHITEKTURA:
+//   • Protsedurnyy UI — sila signala, faza dekodirovaniya, napravlenie.
+//   • ITickable — obnovlenie taymera do sleduyuschego pulsa.
+//   • Slushaet AtlasSignalEvents.
 //
 // ZERO GC:
 //   • Pre-cached strings.
-//   • Dirty-flag обновление.
+//   • Dirty-flag obnovlenie.
 // ============================================================================
 
 using System;
@@ -54,7 +54,7 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         [Header("── Font ─────────────────────────────────────")]
-        [Tooltip("Шрифт с кириллицей. Если null — используется TMP default.")]
+        [Tooltip("Shrift s kirillitsey. Esli null — ispolzuetsya TMP default.")]
         [SerializeField] private TMPro.TMP_FontAsset _labelFont;
 
         [Header("── Colors ───────────────────────────────────")]
@@ -121,20 +121,20 @@ namespace Hecton8.UI
         // Pre-cached strings — zero GC
         private static readonly string[] PhaseNames =
         {
-            "НЕТ СИГНАЛА",
-            "РИТМИЧНЫЙ ПАТТЕРН",
-            "ЭМОЦИОНАЛЬНЫЙ ПАТТЕРН",
-            "СОДЕРЖАНИЕ СИГНАЛА",
-            "РАСШИФРОВКА ЗАВЕРШЕНА"
+            "NET SIGNALA",
+            "RITMIChNYY PATTERN",
+            "EMOTsIONALNYY PATTERN",
+            "SODERZhANIE SIGNALA",
+            "RASShIFROVKA ZAVERShENA"
         };
 
         private static readonly string[] PhaseShortNames =
         {
             "—",
-            "РИТМ",
-            "ЭМОЦИИ",
-            "СОДЕРЖАНИЕ",
-            "ГОТОВО"
+            "RITM",
+            "EMOTsII",
+            "SODERZhANIE",
+            "GOTOVO"
         };
 
         private static readonly string[] PhaseIndicatorNames =
@@ -148,33 +148,33 @@ namespace Hecton8.UI
 
         private static readonly string[] MessageTexts =
         {
-            "СИГНАЛ НЕ ОБНАРУЖЕН\n\nПриблизьтесь к источнику\nили используйте сканер.",
-            "НЕИЗВЕСТНЫЙ СИГНАЛ\n\nРитмичный паттерн.\nПериод: 11:23\n\nИсточник неизвестен.",
-            "НЕСТАБИЛЬНЫЙ ПАТТЕРН\n\nЭмоциональный отпечаток:\nОтчаяние → Надежда → Безумие\n\nИсточник ещё не удерживается.",
-            "АТЛАС-6 — ПОИСК РЕШЕНИЯ\n\n847 дней. Колония мертва.\nПрограмма посева активна.\n\nСигнал содержит... что-то.",
-            "АТЛАС-6 — РАСШИФРОВКА ЗАВЕРШЕНА\n\nИсточник: глубина -5000м\nЯдро активно. Программа посева активна.\n\n847 дней поиска решения. Колония мертва."
+            "SIGNAL NE OBNARUZhEN\n\nPribliztes k istochniku\nili ispolzuyte skaner.",
+            "NEIZVESTNYY SIGNAL\n\nRitmichnyy pattern.\nPeriod: 11:23\n\nIstochnik neizvesten.",
+            "NESTABILNYY PATTERN\n\nEmotsionalnyy otpechatok:\nOtchayanie → Nadezhda → Bezumie\n\nIstochnik esche ne uderzhivaetsya.",
+            "ATLAS-6 — POISK REShENIYa\n\n847 dney. Koloniya mertva.\nProgramma poseva aktivna.\n\nSignal soderzhit... chto-to.",
+            "ATLAS-6 — RASShIFROVKA ZAVERShENA\n\nIstochnik: glubina -5000m\nYadro aktivno. Programma poseva aktivna.\n\n847 dney poiska resheniya. Koloniya mertva."
         };
 
         private static readonly string[] DirectionDistancePrefixes =
         {
-            "НАПРАВЛЕНИЕ: ВВЕРХ  |  РАССТОЯНИЕ: ",
-            "НАПРАВЛЕНИЕ: ВНИЗ  |  РАССТОЯНИЕ: ",
-            "НАПРАВЛЕНИЕ: СЕВЕР  |  РАССТОЯНИЕ: ",
-            "НАПРАВЛЕНИЕ: СЕВЕРО-ВОСТОК  |  РАССТОЯНИЕ: ",
-            "НАПРАВЛЕНИЕ: ВОСТОК  |  РАССТОЯНИЕ: ",
-            "НАПРАВЛЕНИЕ: ЮГО-ВОСТОК  |  РАССТОЯНИЕ: ",
-            "НАПРАВЛЕНИЕ: ЮГ  |  РАССТОЯНИЕ: ",
-            "НАПРАВЛЕНИЕ: ЮГО-ЗАПАД  |  РАССТОЯНИЕ: ",
-            "НАПРАВЛЕНИЕ: ЗАПАД  |  РАССТОЯНИЕ: ",
-            "НАПРАВЛЕНИЕ: СЕВЕРО-ЗАПАД  |  РАССТОЯНИЕ: "
+            "NAPRAVLENIE: VVERH  |  RASSTOYaNIE: ",
+            "NAPRAVLENIE: VNIZ  |  RASSTOYaNIE: ",
+            "NAPRAVLENIE: SEVER  |  RASSTOYaNIE: ",
+            "NAPRAVLENIE: SEVERO-VOSTOK  |  RASSTOYaNIE: ",
+            "NAPRAVLENIE: VOSTOK  |  RASSTOYaNIE: ",
+            "NAPRAVLENIE: YuGO-VOSTOK  |  RASSTOYaNIE: ",
+            "NAPRAVLENIE: YuG  |  RASSTOYaNIE: ",
+            "NAPRAVLENIE: YuGO-ZAPAD  |  RASSTOYaNIE: ",
+            "NAPRAVLENIE: ZAPAD  |  RASSTOYaNIE: ",
+            "NAPRAVLENIE: SEVERO-ZAPAD  |  RASSTOYaNIE: "
         };
 
-        private const string StrengthNoiseLabel = "ШУМ";
-        private const string StrengthPatternLabel = "ПАТТЕРН";
-        private const string BackgroundNoiseMessage = "ФОНОВЫЙ ШУМ\n\nСтабильной телеметрии нет.\nСеть не держит решение направления.\n\nПродолжайте маршрут и сбор.";
-        private const string DirectionUnavailableLabel = "НАПРАВЛЕНИЕ: —";
-        private const string DirectionDataErrorLabel = "НАПРАВЛЕНИЕ: ОШИБКА ДАННЫХ";
-        private const string DirectionUnstableLabel = "НАПРАВЛЕНИЕ: ПЕЛЕНГ ЕЩЁ НЕ УДЕРЖИВАЕТСЯ";
+        private const string StrengthNoiseLabel = "ShUM";
+        private const string StrengthPatternLabel = "PATTERN";
+        private const string BackgroundNoiseMessage = "FONOVYY ShUM\n\nStabilnoy telemetrii net.\nSet ne derzhit reshenie napravleniya.\n\nProdolzhayte marshrut i sbor.";
+        private const string DirectionUnavailableLabel = "NAPRAVLENIE: —";
+        private const string DirectionDataErrorLabel = "NAPRAVLENIE: OShIBKA DANNYH";
+        private const string DirectionUnstableLabel = "NAPRAVLENIE: PELENG ESchE NE UDERZhIVAETSYa";
         private const string SignalBeaconContactMessage = "AUP SIGNAL CONTACT\n\nTriangulated carrier strength is active.\nUse sonar breadcrumbs to locate the source.";
         private const string SignalBeaconStaticMessage = "AUP SIGNAL CONTACT\n\nCave interference is corrupting the carrier.\nStatic shader gain is elevated.";
 
@@ -348,7 +348,7 @@ namespace Hecton8.UI
             hBg.color = new Color(0.04f, 0.08f, 0.06f, 1f);
 
             _titleLabel = CreateText("Title", header, 13f, colorAccent, TextAlignmentOptions.MidlineLeft);
-            SetLabelText(_titleLabel, "ATLAS SIGNAL — МОНИТОРИНГ");
+            SetLabelText(_titleLabel, "ATLAS SIGNAL — MONITORING");
             _titleLabel.fontStyle = FontStyles.Bold;
             Anchor(_titleLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 1),
                 new Vector2(12, 0), new Vector2(-12, 0));
@@ -362,7 +362,7 @@ namespace Hecton8.UI
                 new Vector2(0, -48), new Vector2(0, -8));
 
             _strengthLabel = CreateText("Label", section, 10f, colorDim, TextAlignmentOptions.TopLeft);
-            SetLabelText(_strengthLabel, "СИЛА СИГНАЛА");
+            SetLabelText(_strengthLabel, "SILA SIGNALA");
             Anchor(_strengthLabel.rectTransform, new Vector2(0, 1), new Vector2(1, 1),
                 new Vector2(12, -8), new Vector2(0, 0));
 
@@ -394,7 +394,7 @@ namespace Hecton8.UI
                 new Vector2(0, 0), new Vector2(0, 0));
 
             _phaseLabel = CreateText("Label", section, 10f, colorDim, TextAlignmentOptions.TopLeft);
-            SetLabelText(_phaseLabel, "ФАЗА ДЕКОДИРОВАНИЯ");
+            SetLabelText(_phaseLabel, "FAZA DEKODIROVANIYa");
             Anchor(_phaseLabel.rectTransform, new Vector2(0, 1), new Vector2(1, 1),
                 new Vector2(12, -8), new Vector2(0, 0));
 
@@ -471,7 +471,7 @@ namespace Hecton8.UI
                 new Vector2(0, 0), new Vector2(-12, 0));
 
             TextMeshProUGUI label = CreateText("Label", section, 9f, colorDim, TextAlignmentOptions.MidlineLeft);
-            SetLabelText(label, "СЛЕДУЮЩИЙ ПУЛЬС:");
+            SetLabelText(label, "SLEDUYuSchIY PULS:");
             Anchor(label.rectTransform, new Vector2(0, 0), new Vector2(0.5f, 1),
                 new Vector2(12, 0), new Vector2(0, 0));
         }
@@ -685,7 +685,7 @@ namespace Hecton8.UI
             int directionLength = 0;
             directionLength = Append(_directionBuffer, directionLength, DirectionDistancePrefixes[directionIndex]);
             directionLength = AppendInt(_directionBuffer, directionLength, distanceMeters);
-            directionLength = Append(_directionBuffer, directionLength, 'М');
+            directionLength = Append(_directionBuffer, directionLength, 'M');
             SetBufferText(_directionLabel, _directionBuffer, directionLength);
             SetLabelColor(_directionLabel, colorAccent);
         }

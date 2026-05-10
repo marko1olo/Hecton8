@@ -9,7 +9,7 @@ Verification: `PENDING VERIFICATION`
 
 ## Source Of Truth
 
-- Raw source: `работа с водорослями.md`
+- Raw source: `rabota s vodoroslyami.md`
 - Optimized source: `Vodorosli.md`
 - Transfer rule: optimized doc is primary wording, raw doc is used only as completeness cross-check
 

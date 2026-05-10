@@ -160,7 +160,7 @@ namespace Hecton8.Dev
         private void AutoResolveSceneReferences()
         {
             if ((!playerInventory || !toolManager) &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (playerInventory == null)

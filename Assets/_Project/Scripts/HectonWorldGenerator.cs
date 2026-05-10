@@ -551,7 +551,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-    struct HectonPhysicsBakeJob : IJob
+    struct TerrainColliderBakeJob : IJob
     {
         public EntityId MeshEntityId;
 
@@ -1783,7 +1783,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     static JobHandle ScheduleAsyncPhysicsBake(Mesh mesh)
     {
-        return new HectonPhysicsBakeJob
+        return new TerrainColliderBakeJob
         {
             MeshEntityId = mesh.GetEntityId()
         }.Schedule();
@@ -2354,22 +2354,22 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     /// v2.1 FIX: Voxel child objects are now destroyed through
     /// voxelEngine.DespawnVolume() instead of direct SafeDestroy().
     ///
-    /// БЫЛО (v2.0, УТЕЧКА):
+    /// BYLO (v2.0, UTEChKA):
     ///   SafeDestroy(child.gameObject)
     ///   → HectonVoxelEngine._activeVolumes[i] becomes null
     ///   → null accumulates infinitely
     ///   → O(n) degradation in DespawnVolume/ClearAll
     ///
-    /// СТАЛО (v2.1, КОРРЕКТНО):
+    /// STALO (v2.1, KORREKTNO):
     ///   voxelEngine.DespawnVolume(child.gameObject)
     ///   → removes from _activeVolumes
     ///   → cleans mesh + collider
     ///   → returns to pool or destroys
     ///   → zero null references
     ///
-    /// FALLBACK: если voxelEngine == null (уничтожен раньше,
-    /// смена сцены), используется прямой SafeDestroy (как в v2.0).
-    /// Это безопасно — _activeVolumes тоже уничтожен вместе с engine.
+    /// FALLBACK: esli voxelEngine == null (unichtozhen ranshe,
+    /// smena stseny), ispolzuetsya pryamoy SafeDestroy (kak v v2.0).
+    /// Eto bezopasno — _activeVolumes tozhe unichtozhen vmeste s engine.
     /// </summary>
     void DestroyChunk(HectonChunkData cd, bool allowDeferredRetirement = true)
     {
@@ -2400,7 +2400,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         if (cd == null)
             return;
 
-        // ── Destroy child voxel volumes (v2.1: через DespawnVolume) ──
+        // ── Destroy child voxel volumes (v2.1: cherez DespawnVolume) ──
         if (voxelEngine != null)
         {
             double safeChunkSize = math.max(1d, (double)chunkSize);
@@ -2423,17 +2423,17 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                     childName.StartsWith("Voxel_Cave_") ||
                     childName.StartsWith("Voxel_Rift_"))
                 {
-                    // v2.1: Делегируем очистку VoxelEngine.
-                    // DespawnVolume удаляет из _activeVolumes,
-                    // чистит mesh/collider, возвращает в пул.
+                    // v2.1: Delegiruem ochistku VoxelEngine.
+                    // DespawnVolume udalyaet iz _activeVolumes,
+                    // chistit mesh/collider, vozvraschaet v pul.
                     if (voxelEngine != null)
                     {
                         voxelEngine.DespawnVolume(child.gameObject);
                     }
                     else
                     {
-                        // Fallback: engine уже уничтожен (смена сцены).
-                        // Ручная очистка как в v2.0.
+                        // Fallback: engine uzhe unichtozhen (smena stseny).
+                        // Ruchnaya ochistka kak v v2.0.
                         var mf = child.GetComponent<MeshFilter>();
                         if (mf != null && mf.sharedMesh != null)
                         {

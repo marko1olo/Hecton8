@@ -2,11 +2,11 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Editor-скрипт для быстрого спавна обломков (debris) в сцене.
-/// Создаёт 50 стандартных кубиков в случайных позициях,
-/// имитируя обломки на дне или в толще воды.
+/// Editor-skript dlya bystrogo spavna oblomkov (debris) v stsene.
+/// Sozdaet 50 standartnyh kubikov v sluchaynyh pozitsiyah,
+/// imitiruya oblomki na dne ili v tolsche vody.
 ///
-/// Использование: верхнее меню -> Tools -> Spawn Debris
+/// Ispolzovanie: verhnee menyu -> Tools -> Spawn Debris
 /// </summary>
 public class ObjectSpawner : Editor
 {
@@ -48,6 +48,6 @@ public class ObjectSpawner : Editor
             Undo.RegisterCreatedObjectUndo(cube, "Spawn Debris");
         }
 
-        Debug.Log($"[ObjectSpawner] Создано {DebrisCount} обломков в радиусе {SpawnRadius}м (Y: {MinY}…{MaxY}). Родитель: \"{ContainerName}\"");
+        Debug.Log($"[ObjectSpawner] Sozdano {DebrisCount} oblomkov v radiuse {SpawnRadius}m (Y: {MinY}…{MaxY}). Roditel: \"{ContainerName}\"");
     }
 }

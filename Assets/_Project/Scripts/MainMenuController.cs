@@ -65,9 +65,6 @@ namespace Hecton.UI.MainMenu
         [SerializeField, Tooltip("Scene-authored main-menu camera panned during the menu-to-world transition.")]
         private Camera mainMenuCamera;
 
-        [SerializeField, Tooltip("Scene-authored R8 blue-noise texture used by the menu-to-world dither dissolve.")]
-        private Texture2D transitionBlueNoiseTexture;
-
         [Header("=== CONFIG ===")]
         [SerializeField] private float fadeDuration = 0.2f;
         [SerializeField] private string targetSceneName = "02_HECTON_WORLD";
@@ -844,7 +841,7 @@ namespace Hecton.UI.MainMenu
             }
 
             if (runtimeSceneService != null)
-                runtimeSceneService.ConfigureMainMenuCinematic(mainMenuCamera, transitionBlueNoiseTexture, cinematicPanel);
+                runtimeSceneService.ConfigureMainMenuCinematic(mainMenuCamera, cinematicPanel);
 
             sceneService.LoadScene(targetSceneName);
         }

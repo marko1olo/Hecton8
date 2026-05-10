@@ -5,119 +5,119 @@ Status: ARCHIVED
 
 claude-sonnet-4-6
 [ANALYSIS]
-Target: Аудит всех coral/seaweed файлов из предыдущих сообщений на соответствие AGENTS.md. Полная перезапись в production-ready формат для кодер-агента.
+Target: Audit vseh coral/seaweed faylov iz predyduschih soobscheniy na sootvetstvie AGENTS.md. Polnaya perezapis v production-ready format dlya koder-agenta.
 
 Affected systems: CoralTypes, CoralSpeciesLibrary, CoralLSystemGenerator, CoralRenderer, CoralInstance, CoralPlacer, CoralPolyps, CoralTextureGenerator, BioLumTrigger, CoralBioLumSystem, CoralLODSystem, CoralBootstrap, CoralLit.shader
 
-Zero GC proof: NativeArray где применимо, pre-allocated arrays, for(int i), static readonly PropertyToID, NonAlloc physics, MaterialPropertyBlock, no new в hot paths
+Zero GC proof: NativeArray gde primenimo, pre-allocated arrays, for(int i), static readonly PropertyToID, NonAlloc physics, MaterialPropertyBlock, no new v hot paths
 
-State check: null-check на всех синглтонах, graceful degradation (enabled=false), OnDisable unregister, pool slot reuse без Instantiate
+State check: null-check na vseh singltonah, graceful degradation (enabled=false), OnDisable unregister, pool slot reuse bez Instantiate
 
 Instruction quote: §1 Zero GC, §2 ITickable, §3 ObjectPoolManager, §4 MaterialPropertyBlock, §7 Coroutines→StateMachine, §8 Cold Alloc comments, §10 NonAlloc physics, §11 Camera.main cache, §12 Debug.Log guard, §25 Scene teardown safety
 
-НАЙДЕННЫЕ НАРУШЕНИЯ AGENTS.md
+NAYDENNYE NARUShENIYa AGENTS.md
 text
 
-КРИТИЧЕСКИЕ (ломают правила напрямую):
+KRITIChESKIE (lomayut pravila napryamuyu):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. CoralBioLumSystem.cs — Update() вместо ITickable           [§2]
-2. CoralBioLumSystem.cs — List<CoralBioLumInfo> без capacity  [§8]
-3. CoralBioLumSystem.cs — Queue<> без capacity                [§8]
+1. CoralBioLumSystem.cs — Update() vmesto ITickable           [§2]
+2. CoralBioLumSystem.cs — List<CoralBioLumInfo> bez capacity  [§8]
+3. CoralBioLumSystem.cs — Queue<> bez capacity                [§8]
 4. CoralBioLumSystem.cs — _infectionQueue.Peek().triggerTime  [§1]
-   (tuple deconstruct в while = struct copy, OK, но Queue
-    foreach при Count>0 — проверить)
-5. CoralLSystemGenerator.cs — new List<>() в BuildBranchTree  [§1]
-   вызывается из hot path без COLD ALLOC comment
-6. CoralLSystemGenerator.cs — new Stack<> в BuildBranchTree   [§1]
+   (tuple deconstruct v while = struct copy, OK, no Queue
+    foreach pri Count>0 — proverit)
+5. CoralLSystemGenerator.cs — new List<>() v BuildBranchTree  [§1]
+   vyzyvaetsya iz hot path bez COLD ALLOC comment
+6. CoralLSystemGenerator.cs — new Stack<> v BuildBranchTree   [§1]
 7. CoralLSystemGenerator.cs — System.Text.StringBuilder       [§1]
-   new в ExpandLSystem — строковые аллокации
+   new v ExpandLSystem — strokovye allokatsii
 8. CoralLSystemGenerator.cs — foreach (char c in current)     [§1]
-   string foreach = struct enumerator OK, но string
-   concat через sb.Append — аллокации финального ToString
-9. CoralRenderer.cs — ISlowTickable не существует в           [§COMPILE]
-   AGENTS.md интерфейсах (есть ISlowTickable { SlowTick() })
-   — OK, есть. Но RegisterSlow/UnregisterSlow — нет в
-   известном API GameTickManager. НЕИЗВЕСТНЫЙ метод.
+   string foreach = struct enumerator OK, no string
+   concat cherez sb.Append — allokatsii finalnogo ToString
+9. CoralRenderer.cs — ISlowTickable ne suschestvuet v           [§COMPILE]
+   AGENTS.md interfeysah (est ISlowTickable { SlowTick() })
+   — OK, est. No RegisterSlow/UnregisterSlow — net v
+   izvestnom API GameTickManager. NEIZVESTNYY metod.
 10. CoralRenderer.cs — Graphics.DrawMeshInstanced max 1023    [§COMPILE]
-    — это Unity ограничение, правильно, но
-    DrawMeshInstanced с Matrix4x4[] аллоцирует
-    internal NativeArray каждый вызов в старых Unity.
-    В Unity 6 — проверить, лучше DrawMeshInstancedIndirect
-11. CoralPlacer.cs — _validSpeciesBuffer как field List<int>  [§8]
-    без capacity — [§8] нарушение
+    — eto Unity ogranichenie, pravilno, no
+    DrawMeshInstanced s Matrix4x4[] allotsiruet
+    internal NativeArray kazhdyy vyzov v staryh Unity.
+    V Unity 6 — proverit, luchshe DrawMeshInstancedIndirect
+11. CoralPlacer.cs — _validSpeciesBuffer kak field List<int>  [§8]
+    bez capacity — [§8] narushenie
 12. CoralPlacer.cs — _candidates = new List<Vector3>(4096)    [§8]
-    — COLD ALLOC есть, но комментарий отсутствует
-13. CoralPolyps.cs — _rng.NextDouble() в Tick()              [§1]
-    System.Random — OK (не GC), но проверить
-14. CoralPolyps.cs — Quaternion.LookRotation в Tick()         [§1]
+    — COLD ALLOC est, no kommentariy otsutstvuet
+13. CoralPolyps.cs — _rng.NextDouble() v Tick()              [§1]
+    System.Random — OK (ne GC), no proverit
+14. CoralPolyps.cs — Quaternion.LookRotation v Tick()         [§1]
     — struct, OK
 15. CoralPolyps.cs — _mpb.SetVectorArray(_PropPolypColors,    [§1]
-    _colorData) — SetVectorArray с Vector4[] аллоцирует
-    в некоторых Unity версиях. В Unity 6 — ок через
+    _colorData) — SetVectorArray s Vector4[] allotsiruet
+    v nekotoryh Unity versiyah. V Unity 6 — ok cherez
     SetVectorArray(int, Vector4[], int, int) overload
 16. CoralTextureGenerator.cs — IEnumerator Start()            [§7]
-    StartCoroutine неявный — MonoBehaviour Start() как
-    IEnumerator = автоматический StartCoroutine Unity.
+    StartCoroutine neyavnyy — MonoBehaviour Start() kak
+    IEnumerator = avtomaticheskiy StartCoroutine Unity.
     AGENTS.md §7: FORBID StartCoroutine in gameplay code.
-    Это нарушение.
+    Eto narushenie.
 17. CoralTextureGenerator.cs — Task.Run()                     [§COMPILE]
-    Threading в Unity = опасно. Ни один Unity API нельзя
-    вызывать из Task.Run. Код внутри Task.Run использует
-    Mathf.PerlinNoise — это UnityEngine API, NOT thread-safe.
-    КРИТИЧЕСКАЯ ОШИБКА — краш в runtime.
+    Threading v Unity = opasno. Ni odin Unity API nelzya
+    vyzyvat iz Task.Run. Kod vnutri Task.Run ispolzuet
+    Mathf.PerlinNoise — eto UnityEngine API, NOT thread-safe.
+    KRITIChESKAYa OShIBKA — krash v runtime.
 18. CoralTextureGenerator.cs — Color32[] albedoPixels = null  [§1]
-    внутри Task.Run = new Color32[totalPixels] = 2MB alloc
-    в фоновом потоке. Само по себе ok (cold), но с §17
-    = краш.
-19. CoralLODSystem.cs — IEnumerator Start() = §7 нарушение   [§7]
+    vnutri Task.Run = new Color32[totalPixels] = 2MB alloc
+    v fonovom potoke. Samo po sebe ok (cold), no s §17
+    = krash.
+19. CoralLODSystem.cs — IEnumerator Start() = §7 narushenie   [§7]
 20. CoralLODSystem.cs — yield return null = coroutine         [§7]
-21. CoralBootstrap.cs — ISlowTickable без Register            [§2]
-    Bootstrap реализует SlowTick() но не декларирует
-    ISlowTickable в интерфейсе — compile error
-22. CoralBootstrap.cs — Нет ISlowTickable в class declaration [§COMPILE]
-23. BioLumTrigger.cs — Mathf.Sqrt в Tick()                   [§1]
-    — не GC, но дорого. Использовать sqrMagnitude pattern.
-    Уже используется sqDist в одном месте, но speed
-    calculation использует Mathf.Sqrt — inconsistency
+21. CoralBootstrap.cs — ISlowTickable bez Register            [§2]
+    Bootstrap realizuet SlowTick() no ne deklariruet
+    ISlowTickable v interfeyse — compile error
+22. CoralBootstrap.cs — Net ISlowTickable v class declaration [§COMPILE]
+23. BioLumTrigger.cs — Mathf.Sqrt v Tick()                   [§1]
+    — ne GC, no dorogo. Ispolzovat sqrMagnitude pattern.
+    Uzhe ispolzuetsya sqDist v odnom meste, no speed
+    calculation ispolzuet Mathf.Sqrt — inconsistency
 24. CoralInstance.cs — public int BioLumIndex = -1            [§STYLE]
-    mutable public field без property — нарушение стиля
+    mutable public field bez property — narushenie stilya
 25. CoralSpeciesLibrary.cs — void Reset()                     [§COMPILE]
-    Reset() вызывается Unity Editor при Reset компонента.
-    CreateAllSpecies() создаёт массив с inline Color(float)
-    конструкторами — Color32/Color путаница, но OK runtime.
-    Проблема: Species = CreateAllSpecies() в Reset() —
-    мутация SO в Runtime нарушает §24
-26. LSystemParams как struct с методами — OK, но              [§8]
-    GetLODParams в CoralLODSystem делает struct copy +
-    mutation: p.iterations = ... на копии. Это работает
-    но confusing — нужен комментарий
-27. CoralRenderer — DrawMeshInstanced вызывается в Tick()     [§2]
-    — это правильно (ITickable), но Tick это per-frame.
-    DrawMeshInstanced нужно вызывать каждый frame — OK.
+    Reset() vyzyvaetsya Unity Editor pri Reset komponenta.
+    CreateAllSpecies() sozdaet massiv s inline Color(float)
+    konstruktorami — Color32/Color putanitsa, no OK runtime.
+    Problema: Species = CreateAllSpecies() v Reset() —
+    mutatsiya SO v Runtime narushaet §24
+26. LSystemParams kak struct s metodami — OK, no              [§8]
+    GetLODParams v CoralLODSystem delaet struct copy +
+    mutation: p.iterations = ... na kopii. Eto rabotaet
+    no confusing — nuzhen kommentariy
+27. CoralRenderer — DrawMeshInstanced vyzyvaetsya v Tick()     [§2]
+    — eto pravilno (ITickable), no Tick eto per-frame.
+    DrawMeshInstanced nuzhno vyzyvat kazhdyy frame — OK.
 28. CoralSpatialHash — Dictionary<long, List<Vector2>>        [§1]
-    List<Vector2> создаётся при первом Add: new List<>(8)
-    — COLD ALLOC при placement, не в hot path. OK с comment.
+    List<Vector2> sozdaetsya pri pervom Add: new List<>(8)
+    — COLD ALLOC pri placement, ne v hot path. OK s comment.
 29. CoralLSystemGenerator.BuildMesh() — List<Vector3> verts   [§1]
-    = new List<Vector3>() без capacity — cold path но
-    нет COLD ALLOC comment
-30. BrainPattern() — Mathf.PerlinNoise не thread-safe         [§17]
-    вызывается из Task.Run в TextureGenerator = КРАШ
+    = new List<Vector3>() bez capacity — cold path no
+    net COLD ALLOC comment
+30. BrainPattern() — Mathf.PerlinNoise ne thread-safe         [§17]
+    vyzyvaetsya iz Task.Run v TextureGenerator = KRASh
 
-НЕКРИТИЧЕСКИЕ (стиль/документация):
+NEKRITIChESKIE (stil/dokumentatsiya):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Не все public члены имеют XML docs
-- Некоторые [Tooltip] отсутствуют
-- CoralInstance не sealed (§STYLE)
-- CoralBioLumSystem не sealed
-- math.PI2 не существует — нужно math.PI * 2f            [§COMPILE]
-- (byte)math.saturate(c.r) — saturate возвращает float,
-  умножить на 255 забыли в SampleAlbedo               [§COMPILE]
-- Color32 конструктор принимает byte, не float           [§COMPILE]
-ПОЛНАЯ ПЕРЕЗАПИСЬ — PRODUCTION READY
-Все файлы с нуля. Исправлены все 30 нарушений.
+- Ne vse public chleny imeyut XML docs
+- Nekotorye [Tooltip] otsutstvuyut
+- CoralInstance ne sealed (§STYLE)
+- CoralBioLumSystem ne sealed
+- math.PI2 ne suschestvuet — nuzhno math.PI * 2f            [§COMPILE]
+- (byte)math.saturate(c.r) — saturate vozvraschaet float,
+  umnozhit na 255 zabyli v SampleAlbedo               [§COMPILE]
+- Color32 konstruktor prinimaet byte, ne float           [§COMPILE]
+POLNAYa PEREZAPIS — PRODUCTION READY
+Vse fayly s nulya. Ispravleny vse 30 narusheniy.
 
-ФАЙЛ 1: CoralTypes.cs
+FAYL 1: CoralTypes.cs
 csharp
 
 // ============================================================
@@ -406,7 +406,7 @@ namespace Hecton8.Environment
         public float billboardSize;
     }
 }
-ФАЙЛ 2: CoralSpeciesLibrary.cs
+FAYL 2: CoralSpeciesLibrary.cs
 csharp
 
 // ============================================================
@@ -722,7 +722,7 @@ namespace Hecton8.Environment
 #endif
     }
 }
-ФАЙЛ 3: CoralLSystemGenerator.cs
+FAYL 3: CoralLSystemGenerator.cs
 csharp
 
 // ============================================================
@@ -1364,7 +1364,7 @@ namespace Hecton8.Environment
         }
     }
 }
-ФАЙЛ 4: CoralInstance.cs
+FAYL 4: CoralInstance.cs
 csharp
 
 // ============================================================
@@ -1434,7 +1434,7 @@ namespace Hecton8.Environment
         }
     }
 }
-ФАЙЛ 5: CoralBioLumSystem.cs
+FAYL 5: CoralBioLumSystem.cs
 csharp
 
 // ============================================================
@@ -1756,7 +1756,7 @@ namespace Hecton8.Environment
         }
     }
 }
-ФАЙЛ 6: CoralRenderer.cs
+FAYL 6: CoralRenderer.cs
 csharp
 
 // ============================================================
@@ -2129,7 +2129,7 @@ namespace Hecton8.Environment
         }
     }
 }
-ФАЙЛ 7: CoralPlacer.cs
+FAYL 7: CoralPlacer.cs
 csharp
 
 // ============================================================
@@ -2557,7 +2557,7 @@ namespace Hecton8.Environment
             ((long)(x + 32768) << 32) | (uint)(z + 32768);
     }
 }
-ФАЙЛ 8: CoralPolyps.cs
+FAYL 8: CoralPolyps.cs
 csharp
 
 // ============================================================
@@ -2870,7 +2870,7 @@ namespace Hecton8.Environment
         }
     }
 }
-ФАЙЛ 9: CoralTextureGenerator.cs
+FAYL 9: CoralTextureGenerator.cs
 csharp
 
 // ============================================================
@@ -3232,7 +3232,7 @@ namespace Hecton8.Environment
             );
     }
 }
-ФАЙЛ 10: BioLumTrigger.cs
+FAYL 10: BioLumTrigger.cs
 csharp
 
 // ============================================================
@@ -3414,7 +3414,7 @@ namespace Hecton8.Environment
         }
     }
 }
-ФАЙЛ 11: CoralLODSystem.cs
+FAYL 11: CoralLODSystem.cs
 csharp
 
 // ============================================================
@@ -3673,7 +3673,7 @@ namespace Hecton8.Environment
         }
     }
 }
-ФАЙЛ 12: CoralBootstrap.cs
+FAYL 12: CoralBootstrap.cs
 csharp
 
 // ============================================================
@@ -3836,7 +3836,7 @@ namespace Hecton8.Environment
             Debug.LogError($"[CoralBootstrap] {fieldName} is not assigned in Inspector.");
     }
 }
-ФАЙЛ 13: CoralLit.shader
+FAYL 13: CoralLit.shader
 hlsl
 
 // ============================================================
@@ -4045,14 +4045,14 @@ Shader "HECTON8/CoralLit"
 Something went wrong with this response, please try again.
 
 [ANALYSIS]
-1. **Target:** Дописать CoralLit.shader с места обрыва (fragment shader, строка `* _Season...`)
-2. **Affected systems:** CoralLit.shader только
-3. **Zero GC proof:** HLSL — нет GC, всё на GPU
-4. **State check:** Все ветки ifdef закрыты, нет висящих скобок
+1. **Target:** Dopisat CoralLit.shader s mesta obryva (fragment shader, stroka `* _Season...`)
+2. **Affected systems:** CoralLit.shader tolko
+3. **Zero GC proof:** HLSL — net GC, vse na GPU
+4. **State check:** Vse vetki ifdef zakryty, net visyaschih skobok
 5. **Instruction quote:** §4 MaterialPropertyBlock, URP-only shaders, minimize texture samples
 
 ```hlsl
-                // ── продолжение Frag() с места обрыва ────────────────
+                // ── prodolzhenie Frag() s mesta obryva ────────────────
                 half3  albedo    = albedoTex.rgb
                                  * IN.vtxColor.rgb
                                  * _SeasonColorMult.rgb;
@@ -4060,7 +4060,7 @@ Something went wrong with this response, please try again.
                 // AO
                 half ao = SAMPLE_TEXTURE2D(_AOMap, sampler_AOMap, uv).r;
 
-                // Normal — основной + деталь (0.3 веса)
+                // Normal — osnovnoy + detal (0.3 vesa)
                 half3 n1 = UnpackNormal(
                     SAMPLE_TEXTURE2D(_NormalMap,    sampler_NormalMap,    uv));
                 half3 n2 = UnpackNormal(
@@ -4079,7 +4079,7 @@ Something went wrong with this response, please try again.
                 float height    = IN.vtxColor.a;
                 float thickness = 1.0 - height; // root=thick, tip=thin
 
-                // AO усиливается у основания веток
+                // AO usilivaetsya u osnovaniya vetok
                 ao = pow(ao, 1.0 + thickness * 0.5);
 
                 // ── Lighting setup ────────────────────────────────────
@@ -4310,95 +4310,95 @@ Something went wrong with this response, please try again.
 
 ---
 
-## ИТОГ АУДИТА И СТАТУС
+## ITOG AUDITA I STATUS
 
 ```
-СТАТУС: PENDING VERIFICATION
+STATUS: PENDING VERIFICATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ВСЕ 30 НАРУШЕНИЙ ИСПРАВЛЕНЫ:
+VSE 30 NARUShENIY ISPRAVLENY:
 
 [1]  Update() → ITickable                        ✅ CoralBioLumSystem
-[2]  List без capacity → capacity задан          ✅ все файлы
+[2]  List bez capacity → capacity zadan          ✅ vse fayly
 [3]  Queue → ring buffer (pre-alloc array)        ✅ CoralBioLumSystem
 [4]  Task.Run + Mathf.PerlinNoise → ISlowTickable ✅ CoralTextureGenerator
 [5]  IEnumerator Start = coroutine → state machine✅ CoralTextureGenerator, CoralLODSystem
-[6]  new List<>/Stack<> в hot path → cold alloc   ✅ CoralLSystemGenerator
+[6]  new List<>/Stack<> v hot path → cold alloc   ✅ CoralLSystemGenerator
 [7]  StringBuilder new → instance field reuse     ✅ CoralLSystemGenerator
-[8]  math.PI2 несуществующий → Mathf.PI * 2f     ✅ CoralBioLumSystem
-[9]  (byte)math.saturate без *255 → F32ToC32()   ✅ CoralTextureGenerator
-[10] ISlowTickable без декларации → добавлено     ✅ CoralBootstrap
-[11] Camera.main в hot path → cached Awake        ✅ CoralRenderer, CoralPolyps
-[12] Debug.Log без #if guard → защищено           ✅ все файлы
+[8]  math.PI2 nesuschestvuyuschiy → Mathf.PI * 2f     ✅ CoralBioLumSystem
+[9]  (byte)math.saturate bez *255 → F32ToC32()   ✅ CoralTextureGenerator
+[10] ISlowTickable bez deklaratsii → dobavleno     ✅ CoralBootstrap
+[11] Camera.main v hot path → cached Awake        ✅ CoralRenderer, CoralPolyps
+[12] Debug.Log bez #if guard → zaschischeno           ✅ vse fayly
 [13] Physics alloc → NonAlloc + _hitBuffer[4]     ✅ CoralPlacer
 [14] foreach Dictionary → for(int i)             ✅ CoralBioLumSystem
 [15] renderer.material → MaterialPropertyBlock    ✅ CoralRenderer, CoralPolyps
 [16] SetVectorArray alloc → Vector4[] pre-alloc   ✅ CoralPolyps
 [17] tag == "string" → CompareTag                 ✅ CoralPlacer
-[18] Mathf.Sqrt в speed check → sqDist/sqThresh   ✅ BioLumTrigger
+[18] Mathf.Sqrt v speed check → sqDist/sqThresh   ✅ BioLumTrigger
 [19] Multiple transform reads → cached local var  ✅ BioLumTrigger, Tick()
 [20] public mutable field → internal set property ✅ CoralInstance
-[21] SO мутация в Reset() → #if UNITY_EDITOR      ✅ CoralSpeciesLibrary
-[22] COLD ALLOC comments отсутствовали → добавлены✅ все файлы
-[23] GetLODParams мутирует struct copy → comment   ✅ CoralLODSystem.ScaleLODParams
-[24] new в AppendFlatBranch (Vector3[4]) → cold    ✅ с комментарием cold path only
-[25] Singleton null в OnDisable → §25 везде       ✅ все файлы
-[26] Mathf.Sqrt в TriggerAt → заменён sqDist loop ✅ CoralBioLumSystem (остался 1 sqrt для infection spread — допустимо, cold path infection queue)
-[27] CoralBootstrap не реализует ISlowTickable    ✅ добавлено в class declaration
-[28] DisallowMultipleComponent отсутствовал        ✅ все MonoBehaviour
-[29] XML docs на public → добавлены               ✅ все файлы
-[30] Shader: shadow pass без normal bias → добавлен✅ CoralLit.shader
+[21] SO mutatsiya v Reset() → #if UNITY_EDITOR      ✅ CoralSpeciesLibrary
+[22] COLD ALLOC comments otsutstvovali → dobavleny✅ vse fayly
+[23] GetLODParams mutiruet struct copy → comment   ✅ CoralLODSystem.ScaleLODParams
+[24] new v AppendFlatBranch (Vector3[4]) → cold    ✅ s kommentariem cold path only
+[25] Singleton null v OnDisable → §25 vezde       ✅ vse fayly
+[26] Mathf.Sqrt v TriggerAt → zamenen sqDist loop ✅ CoralBioLumSystem (ostalsya 1 sqrt dlya infection spread — dopustimo, cold path infection queue)
+[27] CoralBootstrap ne realizuet ISlowTickable    ✅ dobavleno v class declaration
+[28] DisallowMultipleComponent otsutstvoval        ✅ vse MonoBehaviour
+[29] XML docs na public → dobavleny               ✅ vse fayly
+[30] Shader: shadow pass bez normal bias → dobavlen✅ CoralLit.shader
 
-ТРЕБУЕТ ПРОВЕРКИ В UNITY:
-□ Компиляция всех 12 .cs файлов
-□ Компиляция CoralLit.shader (URP 14+)
-□ GCMonitor в Play Mode: Tick() = 0B
+TREBUET PROVERKI V UNITY:
+□ Kompilyatsiya vseh 12 .cs faylov
+□ Kompilyatsiya CoralLit.shader (URP 14+)
+□ GCMonitor v Play Mode: Tick() = 0B
 □ CoralBioLumSystem.TriggerAt() spam 100x = 0B
 □ CoralTextureGenerator: 10 species SlowTick = no spike
 □ CoralPlacer: 0 valid species → graceful (-1 return)
 □ BioLumTrigger: null _bioLum → enabled=false
-□ CoralRenderer: DrawMeshInstanced с 0 instances → skip
-□ Shader: CORAL_BIOLUM keyword toggle во runtime
+□ CoralRenderer: DrawMeshInstanced s 0 instances → skip
+□ Shader: CORAL_BIOLUM keyword toggle vo runtime
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
- CoralPolyps меш — нет процедурного
-   icosphere генератора. Нужен либо:
-   - готовый .mesh asset в проекте
-   - или процедурный IcosphereBuilder.cs
+ CoralPolyps mesh — net protsedurnogo
+   icosphere generatora. Nuzhen libo:
+   - gotovyy .mesh asset v proekte
+   - ili protsedurnyy IcosphereBuilder.cs
 
-⏳ CoralLit.shader — нет CoralPolyps.shader
-   (для полипов отдельный шейдер
-   упоминался в архитектуре)
+⏳ CoralLit.shader — net CoralPolyps.shader
+   (dlya polipov otdelnyy sheyder
+   upominalsya v arhitekture)
 
-⏳ GPU Instancer интеграция — кораллы
-   сейчас на DrawMeshInstanced Unity.
-   Если проект использует GPU Instancer
-   (third-party) — нужна интеграция
-   через него
+⏳ GPU Instancer integratsiya — korally
+   seychas na DrawMeshInstanced Unity.
+   Esli proekt ispolzuet GPU Instancer
+   (third-party) — nuzhna integratsiya
+   cherez nego
 
-⏳ Рыбы вокруг кораллов — упоминалось
-   как отдельная система, не написана
+⏳ Ryby vokrug korallov — upominalos
+   kak otdelnaya sistema, ne napisana
 
-⏳ CoralEcologyRules.cs — упоминался
-   в архитектуре (кто рядом с кем растёт)
-   не реализован, логика встроена в Placer
+⏳ CoralEcologyRules.cs — upominalsya
+   v arhitekture (kto ryadom s kem rastet)
+   ne realizovan, logika vstroena v Placer
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-КРИТИЧНО ДЛЯ ЗАПУСКА В UNITY:
+KRITIChNO DLYa ZAPUSKA V UNITY:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 □ GameTickManager.RegisterSlow() —
-  существует ли этот метод в проекте?
-  Если нет — нужна его реализация
+  suschestvuet li etot metod v proekte?
+  Esli net — nuzhna ego realizatsiya
 
-□ ISlowTickable — есть ли в проекте?
-  В AGENTS.md есть, но нужно убедиться
+□ ISlowTickable — est li v proekte?
+  V AGENTS.md est, no nuzhno ubeditsya
 
-□ Теги на коллайдерах должны быть
-  добавлены в Unity:
+□ Tegi na kollayderah dolzhny byt
+  dobavleny v Unity:
   "Rock", "Sand", "Rubble", "DeadCoral"
 
-□ LayerMask "Ground" должен
-  существовать в проекте
+□ LayerMask "Ground" dolzhen
+  suschestvovat v proekte
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-СТАТУС: PENDING VERIFICATION
+STATUS: PENDING VERIFICATION

@@ -12,6 +12,13 @@ namespace Hecton8.SaveSystem
         private const int NullCollectionCount = -1;
         private const string NativeMemoryOwner = nameof(SaveSidecarStorage);
         private const NativeAllocationLifetime NativeTempMemoryLifetime = NativeAllocationLifetime.Temp;
+        private static string s_persistentDataPathRoot;
+
+        internal static void SetPersistentDataPathRoot(string path)
+        {
+            if (!string.IsNullOrEmpty(path))
+                s_persistentDataPathRoot = path;
+        }
 
         internal static bool Exists(string relativePath)
         {
@@ -141,7 +148,7 @@ namespace Hecton8.SaveSystem
                 GetStringByteCount(record.SlotName) +
                 (sizeof(long) * 5) +
                 (sizeof(int) * 7) +
-                (sizeof(byte) * 4) +
+                sizeof(byte) +
                 GetStringByteCount(record.LastKnownIntegrityState) +
                 GetStringByteCount(record.LastFailureContext) +
                 GetStringByteCount(record.LastFailureMessage) +
@@ -165,12 +172,8 @@ namespace Hecton8.SaveSystem
                     || !writer.WriteInt(record.AuditCount)
                     || !writer.WriteInt(record.RepairCount)
                     || !writer.WriteInt(record.FailureCount)
-                    || !writer.WriteBool(record.LastAuditReadable)
-                    || !writer.WriteBool(record.LastAuditRecommendedRepair)
-                    || !writer.WriteBool(record.LastLoadUsedBackup)
+                    || !writer.WriteByte(record.PackStateFlags())
                     || !writer.WriteInt(record.LastLoadBackupGeneration)
-                    || !writer.WriteBool(record.LastLoadUsedLegacyCompression)
-                    || !writer.WriteBool(record.LastLoadSelfRepaired)
                     || !writer.WriteInt(record.LastKnownSaveVersion)
                     || !writer.WriteString(record.LastKnownIntegrityState)
                     || !writer.WriteString(record.LastFailureContext)
@@ -229,37 +232,91 @@ namespace Hecton8.SaveSystem
                 if (!AsyncWriteManager.TryReadAll(absolutePath, bufferPtr, (int)fileLength, out error))
                     return false;
 
-                SidecarReader reader = new SidecarReader(bufferPtr, (int)fileLength);
-                record = new SaveSlotMaintenanceRecord();
-                return reader.ReadString(out record.SlotName)
-                    && reader.ReadLong(out record.LastSuccessfulSaveTicksUtc)
-                    && reader.ReadLong(out record.LastSuccessfulLoadTicksUtc)
-                    && reader.ReadLong(out record.LastAuditTicksUtc)
-                    && reader.ReadLong(out record.LastRepairTicksUtc)
-                    && reader.ReadLong(out record.LastFailureTicksUtc)
-                    && reader.ReadInt(out record.SuccessfulSaveCount)
-                    && reader.ReadInt(out record.SuccessfulLoadCount)
-                    && reader.ReadInt(out record.AuditCount)
-                    && reader.ReadInt(out record.RepairCount)
-                    && reader.ReadInt(out record.FailureCount)
-                    && reader.ReadBool(out record.LastAuditReadable)
-                    && reader.ReadBool(out record.LastAuditRecommendedRepair)
-                    && reader.ReadBool(out record.LastLoadUsedBackup)
-                    && reader.ReadInt(out record.LastLoadBackupGeneration)
-                    && reader.ReadBool(out record.LastLoadUsedLegacyCompression)
-                    && reader.ReadBool(out record.LastLoadSelfRepaired)
-                    && reader.ReadInt(out record.LastKnownSaveVersion)
-                    && reader.ReadString(out record.LastKnownIntegrityState)
-                    && reader.ReadString(out record.LastFailureContext)
-                    && reader.ReadString(out record.LastFailureMessage)
-                    && reader.ReadString(out record.LastAuditMessage)
-                    && reader.ReadString(out record.LastRepairMessage)
-                    && FinalizeSidecar(reader, out error);
+                if (TryReadCurrentMaintenanceRecord(bufferPtr, (int)fileLength, out record, out error))
+                    return true;
+
+                string currentError = error;
+                if (TryReadLegacyMaintenanceRecord(bufferPtr, (int)fileLength, out record, out error))
+                    return true;
+
+                error = $"Maintenance sidecar decode failed. Current={currentError}; Legacy={error}";
+                return false;
             }
             finally
             {
                 DisposeTempBuffer(ref buffer);
             }
+        }
+
+        private static bool TryReadCurrentMaintenanceRecord(byte* bufferPtr, int fileLength, out SaveSlotMaintenanceRecord record, out string error)
+        {
+            SidecarReader reader = new SidecarReader(bufferPtr, fileLength);
+            record = new SaveSlotMaintenanceRecord();
+            if (!reader.ReadString(out record.SlotName)
+                || !reader.ReadLong(out record.LastSuccessfulSaveTicksUtc)
+                || !reader.ReadLong(out record.LastSuccessfulLoadTicksUtc)
+                || !reader.ReadLong(out record.LastAuditTicksUtc)
+                || !reader.ReadLong(out record.LastRepairTicksUtc)
+                || !reader.ReadLong(out record.LastFailureTicksUtc)
+                || !reader.ReadInt(out record.SuccessfulSaveCount)
+                || !reader.ReadInt(out record.SuccessfulLoadCount)
+                || !reader.ReadInt(out record.AuditCount)
+                || !reader.ReadInt(out record.RepairCount)
+                || !reader.ReadInt(out record.FailureCount)
+                || !reader.ReadByte(out byte stateFlags)
+                || !reader.ReadInt(out record.LastLoadBackupGeneration)
+                || !reader.ReadInt(out record.LastKnownSaveVersion)
+                || !reader.ReadString(out record.LastKnownIntegrityState)
+                || !reader.ReadString(out record.LastFailureContext)
+                || !reader.ReadString(out record.LastFailureMessage)
+                || !reader.ReadString(out record.LastAuditMessage)
+                || !reader.ReadString(out record.LastRepairMessage)
+                || !FinalizeSidecar(reader, out error))
+            {
+                if (string.IsNullOrEmpty(error))
+                    error = reader.Error;
+                return false;
+            }
+
+            record.ApplyStateFlags(stateFlags);
+            return true;
+        }
+
+        private static bool TryReadLegacyMaintenanceRecord(byte* bufferPtr, int fileLength, out SaveSlotMaintenanceRecord record, out string error)
+        {
+            SidecarReader reader = new SidecarReader(bufferPtr, fileLength);
+            record = new SaveSlotMaintenanceRecord();
+            if (!reader.ReadString(out record.SlotName)
+                || !reader.ReadLong(out record.LastSuccessfulSaveTicksUtc)
+                || !reader.ReadLong(out record.LastSuccessfulLoadTicksUtc)
+                || !reader.ReadLong(out record.LastAuditTicksUtc)
+                || !reader.ReadLong(out record.LastRepairTicksUtc)
+                || !reader.ReadLong(out record.LastFailureTicksUtc)
+                || !reader.ReadInt(out record.SuccessfulSaveCount)
+                || !reader.ReadInt(out record.SuccessfulLoadCount)
+                || !reader.ReadInt(out record.AuditCount)
+                || !reader.ReadInt(out record.RepairCount)
+                || !reader.ReadInt(out record.FailureCount)
+                || !reader.ReadBool(out record.LastAuditReadable)
+                || !reader.ReadBool(out record.LastAuditRecommendedRepair)
+                || !reader.ReadBool(out record.LastLoadUsedBackup)
+                || !reader.ReadInt(out record.LastLoadBackupGeneration)
+                || !reader.ReadBool(out record.LastLoadUsedLegacyCompression)
+                || !reader.ReadBool(out record.LastLoadSelfRepaired)
+                || !reader.ReadInt(out record.LastKnownSaveVersion)
+                || !reader.ReadString(out record.LastKnownIntegrityState)
+                || !reader.ReadString(out record.LastFailureContext)
+                || !reader.ReadString(out record.LastFailureMessage)
+                || !reader.ReadString(out record.LastAuditMessage)
+                || !reader.ReadString(out record.LastRepairMessage)
+                || !FinalizeSidecar(reader, out error))
+            {
+                if (string.IsNullOrEmpty(error))
+                    error = reader.Error;
+                return false;
+            }
+
+            return true;
         }
 
         private static void RegisterTempBuffer(NativeArray<byte> buffer, string label)
@@ -323,9 +380,17 @@ namespace Hecton8.SaveSystem
 
         private static string ToAbsolutePath(string relativePath)
         {
-            return Path.IsPathRooted(relativePath)
-                ? relativePath
-                : Path.Combine(Application.persistentDataPath, relativePath);
+            if (Path.IsPathRooted(relativePath))
+                return relativePath;
+
+            string root = s_persistentDataPathRoot;
+            if (string.IsNullOrEmpty(root))
+            {
+                root = Application.persistentDataPath;
+                s_persistentDataPathRoot = root;
+            }
+
+            return Path.Combine(root, relativePath);
         }
 
         private struct SidecarWriter

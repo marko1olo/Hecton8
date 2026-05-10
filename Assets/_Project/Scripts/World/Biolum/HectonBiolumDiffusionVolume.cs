@@ -225,7 +225,7 @@ namespace Hecton8.Biolum
 
         private void ResolveDependencies()
         {
-            if (_playerTransform == null && SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            if (_playerTransform == null && GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 _playerTransform = playerTransform;
 
             if (_biolumManager == null)

@@ -95,6 +95,7 @@ namespace Hecton8.UI
         private readonly char[] _progressFallbackBuffer = new char[4];
         private int _currentStatusLength = -1;
         private LoadingPipelineStage _currentPipelineStage = LoadingPipelineStage.Idle;
+        private uint _tipRandomState;
 
         private CanvasGroup _canvasGroup;
 
@@ -109,6 +110,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            _tipRandomState = MixSeed(unchecked((uint)EntityId.ToULong(GetEntityId())));
             _canvasGroup = GetComponent<CanvasGroup>();
             if (_canvasGroup == null)
             {
@@ -423,7 +425,37 @@ namespace Hecton8.UI
             if (_loadingTips == null || _loadingTips.Length == 0)
                 return "Loading...";
 
-            return _loadingTips[UnityEngine.Random.Range(0, _loadingTips.Length)];
+            return _loadingTips[NextTipIndex(_loadingTips.Length)];
+        }
+
+        private int NextTipIndex(int length)
+        {
+            if (length <= 1)
+                return 0;
+
+            uint state = _tipRandomState;
+            if (state == 0u)
+                state = 0xA341316Cu;
+
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            _tipRandomState = state != 0u ? state : 0x9E3779B9u;
+            return (int)(_tipRandomState % (uint)length);
+        }
+
+        private static uint MixSeed(uint seed)
+        {
+            unchecked
+            {
+                seed ^= 0x9E3779B9u;
+                seed ^= seed >> 16;
+                seed *= 0x7FEB352Du;
+                seed ^= seed >> 15;
+                seed *= 0x846CA68Bu;
+                seed ^= seed >> 16;
+                return seed != 0u ? seed : 0xA341316Cu;
+            }
         }
 
         private void UpdateFadeIn(float unscaledDeltaTime)

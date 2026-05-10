@@ -1,0 +1,31 @@
+nizhe ISKOBYuChITELN OOBRASchETs ARHITEKTURY I PRAVILNOG OPROMPTA!!!!!!!!!!!!!!!!
+
+
+[TASK]: Surgical Reconstruction of Player Kinematics & Floating Origin Stability.
+
+[PHASE 0: CONTEXT INGESTION]:
+1. Navigate to C:\hades\Hecton8\.agents-skills\. Load all Physics and Coordinate mandates.
+2. Navigate to C:\hades\Hecton8\Docs\naydennye problemy - otchety audita\. 
+3. READ EVERY LINE of: 
+   - "sammari po problemam.txt"
+   - "hekton pleer muvment.txt"
+Confirm ingestion by explaining why caching absolute World Space Vector3s is a "Kinetic Bomb."
+
+[EXHAUSTIVE WORKBLOCKS]:
+1. [ELIMINATION PHASE - THE KINETIC BOMB]: Eradicate [PHYS-01], [PHYS-02], [PHYS-03]. You must implement an IOriginShiftSubscriber pattern in HectonPlayerMovement.cs. All cached world-space vectors MUST be offset when the origin shifts.
+2. [ELIMINATION PHASE - THUNKING]: Eradicate [PHYS-04], [PHYS-05]. Inside GroundCheck and TryApplyStepAssist, replace .collider.attachedRigidbody checks with cached colliderInstanceID comparisons to stop C++ to C# marshalling overhead.
+3.[ELIMINATION PHASE - HIERARCHY STALLS]: Eradicate [PHYS-09] and [PHYS-13]. Stop querying lossyScale and localToWorldMatrix inside fixed loops. Cache them at the start of the tick.
+4.[IMPLEMENTATION PHASE]: Fix the MovePosition race condition ([PHYS-19]). Ensure local state variables are synced instantly if MovePosition is called, so depth logic doesn't use stale data.
+
+[THE PURITY PROTOCOL]:
+- ZERO calls to GetHashCode() for seeding physics (Determinism Kill).
+- Combine overlapping SphereCast calls into a single batched sweep.
+
+[THE CRUCIBLE AUDIT REPORT v5.0] (MANDATORY RESPONSE FORMAT):
+1. MANDATES USED: List files read.
+2. SINS LIQUIDATED: Table showing [Sin ID] | [Old Pattern] | [New Optimized Code].
+3. INTERFACE CHANGES: List public signatures modified.
+4. GC PROOF: Prove Zero-GC in FixedTick.
+5. PURITY LOG: Explicitly confirm: "0 ERRORS, 0 WARNINGS, 60 FPS TARGET SECURED."
+
+[FINAL COMMAND]: HectonPlayerMovement is the heart of the game. If you fail to rebase the Floating Origin coordinates, the physics engine will explode. Do it flawlessly.

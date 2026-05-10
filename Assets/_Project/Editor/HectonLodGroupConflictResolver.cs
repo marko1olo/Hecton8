@@ -15,14 +15,14 @@ namespace Hecton8.Editor
 
         private static readonly string[] s_TargetPrefabPaths =
         {
-            "Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Скала2.prefab",
-            "Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Болдер 2.prefab"
+            "Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Skala2.prefab",
+            "Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Bolder 2.prefab"
         };
 
         private static readonly string[] s_TargetRootNames =
         {
-            "ENV_ Скала2",
-            "ENV_ Болдер 2"
+            "ENV_ Skala2",
+            "ENV_ Bolder 2"
         };
 
         [MenuItem(MenuPath, priority = 183)]

@@ -1,31 +1,31 @@
 // ============================================================================
 // HECTON-8 — Atlas6DirectiveSystem.cs
-// Система директив Атлас-6 и их нарушений.
+// Sistema direktiv Atlas-6 i ih narusheniy.
 //
-// ЛОР (лор3 Блок В):
-//   Оригинальные директивы (приоритет по убыванию):
-//   1. Сохранить миссию «Посев»
-//   2. Обеспечить выживание человеческой колонии
-//   3. Изучать и адаптироваться к среде
-//   4. Поддерживать связь с Землёй
+// LOR (lor3 Blok V):
+//   Originalnye direktivy (prioritet po ubyvaniyu):
+//   1. Sohranit missiyu «Posev»
+//   2. Obespechit vyzhivanie chelovecheskoy kolonii
+//   3. Izuchat i adaptirovatsya k srede
+//   4. Podderzhivat svyaz s Zemley
 //
-//   Что пошло не так:
-//   • Катастрофа → потеря связи → директива #4 невыполнима
-//   • Колония уничтожена → директива #2 невыполнима
-//   • Остаётся #1 и #3
+//   Chto poshlo ne tak:
+//   • Katastrofa → poterya svyazi → direktiva #4 nevypolnima
+//   • Koloniya unichtozhena → direktiva #2 nevypolnima
+//   • Ostaetsya #1 i #3
 //
-//   Новая логика:
-//   «Люди мертвы = экосистема повреждена»
-//   «Решение: воссоздать "людей" из доступных материалов»
-//   → Биомеханические дроны = попытка «воскресить» колонию
-//   → Игрок = аномалия: живой человек, но не из оригинальной колонии
-//   → Статус: «Неопознанный биологический агент. Угроза стабильности»
+//   Novaya logika:
+//   «Lyudi mertvy = ekosistema povrezhdena»
+//   «Reshenie: vossozdat "lyudey" iz dostupnyh materialov»
+//   → Biomehanicheskie drony = popytka «voskresit» koloniyu
+//   → Igrok = anomaliya: zhivoy chelovek, no ne iz originalnoy kolonii
+//   → Status: «Neopoznannyy biologicheskiy agent. Ugroza stabilnosti»
 //
-// АРХИТЕКТУРА:
-//   • Отслеживает статус игрока с точки зрения Атлас-6.
-//   • Публикует события при изменении статуса.
-//   • Интегрируется с HectonDirectorAI (tension при угрозе).
-//   • ISaveable: сохраняет статус и историю взаимодействий.
+// ARHITEKTURA:
+//   • Otslezhivaet status igroka s tochki zreniya Atlas-6.
+//   • Publikuet sobytiya pri izmenenii statusa.
+//   • Integriruetsya s HectonDirectorAI (tension pri ugroze).
+//   • ISaveable: sohranyaet status i istoriyu vzaimodeystviy.
 // ============================================================================
 
 using System;
@@ -45,16 +45,16 @@ using UnityEngine;
 namespace Hecton8.AtlasSignal
 {
     /// <summary>
-    /// Статус игрока с точки зрения Атлас-6.
+    /// Status igroka s tochki zreniya Atlas-6.
     /// </summary>
     public enum Atlas6PlayerStatus
     {
-        Unknown         = 0,   // Не обнаружен
-        Detected        = 1,   // Обнаружен — анализ
-        Neutral         = 2,   // Нейтральный — не угроза
-        Threat          = 3,   // Угроза стабильности экосистемы
-        Collaborator    = 4,   // Сотрудничество (торговля)
-        Anomaly         = 5    // Аномалия — живой человек вне колонии
+        Unknown         = 0,   // Ne obnaruzhen
+        Detected        = 1,   // Obnaruzhen — analiz
+        Neutral         = 2,   // Neytralnyy — ne ugroza
+        Threat          = 3,   // Ugroza stabilnosti ekosistemy
+        Collaborator    = 4,   // Sotrudnichestvo (torgovlya)
+        Anomaly         = 5    // Anomaliya — zhivoy chelovek vne kolonii
     }
 
     public enum Atlas6EventType : byte
@@ -145,7 +145,7 @@ namespace Hecton8.AtlasSignal
             _isDispatching = false;
         }
 
-        /// <summary>Статус игрока изменился.</summary>
+        /// <summary>Status igroka izmenilsya.</summary>
         public static void Register(IAtlas6EventListener listener)
         {
             if (listener == null)
@@ -161,7 +161,7 @@ namespace Hecton8.AtlasSignal
             RegisterImmediate(listener);
         }
 
-        /// <summary>Конфликт директив — Атлас-6 не может выполнить приказ.</summary>
+        /// <summary>Konflikt direktiv — Atlas-6 ne mozhet vypolnit prikaz.</summary>
         public static void Unregister(IAtlas6EventListener listener)
         {
             if (listener == null)
@@ -176,7 +176,7 @@ namespace Hecton8.AtlasSignal
             _listeners.TryUnregister(listener);
         }
 
-        /// <summary>Бартер принят — Атлас-6 получил ресурсы.</summary>
+        /// <summary>Barter prinyat — Atlas-6 poluchil resursy.</summary>
         public static void FlushPending()
         {
             if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
@@ -623,15 +623,15 @@ namespace Hecton8.AtlasSignal
         // ══════════════════════════════════════════════════════════
 
         [Header("── Thresholds ──────────────────────────────")]
-        [Tooltip("Количество бартер-транзакций для перехода в Collaborator.")]
+        [Tooltip("Kolichestvo barter-tranzaktsiy dlya perehoda v Collaborator.")]
         [SerializeField] private int collaboratorThreshold = 5;
 
-        [Tooltip("Расстояние обнаружения игрока дронами (метры). Зарезервировано для FaunaDirector.")]
+        [Tooltip("Rasstoyanie obnaruzheniya igroka dronami (metry). Zarezervirovano dlya FaunaDirector.")]
 #pragma warning disable CS0414
         [SerializeField] private float detectionRange = 200f;
 #pragma warning restore CS0414
 
-        [Tooltip("Расстояние до ядра для перехода в Anomaly статус.")]
+        [Tooltip("Rasstoyanie do yadra dlya perehoda v Anomaly status.")]
         [SerializeField] private float anomalyRange = 500f;
 
         // ══════════════════════════════════════════════════════════
@@ -666,8 +666,8 @@ namespace Hecton8.AtlasSignal
         public int BarterTransactionCount => _barterTransactionCount;
 
         /// <summary>
-        /// Уровень доверия Атлас-6 к игроку [0..1].
-        /// Растёт с торговлей, падает при угрозе.
+        /// Uroven doveriya Atlas-6 k igroku [0..1].
+        /// Rastet s torgovley, padaet pri ugroze.
         /// </summary>
         public float TrustLevel
         {
@@ -739,7 +739,7 @@ namespace Hecton8.AtlasSignal
             double distanceToCoreSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
             double anomalyRangeSq = (double)anomalyRange * anomalyRange;
 
-            // Переход в Anomaly при приближении к ядру
+            // Perehod v Anomaly pri priblizhenii k yadru
             if (distanceToCoreSq < anomalyRangeSq &&
                 _playerStatus != Atlas6PlayerStatus.Anomaly &&
                 _playerStatus != Atlas6PlayerStatus.Threat)
@@ -750,7 +750,7 @@ namespace Hecton8.AtlasSignal
                     "ATLAS-6: UNIDENTIFIED BIOLOGICAL AGENT DETECTED. ANALYSIS..."));
             }
 
-            // Конфликт директив — обнаружен живой человек
+            // Konflikt direktiv — obnaruzhen zhivoy chelovek
             if (!_directiveConflictTriggered &&
                 _playerStatus >= Atlas6PlayerStatus.Detected)
             {
@@ -809,13 +809,13 @@ namespace Hecton8.AtlasSignal
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Зарегистрировать бартер-транзакцию.</summary>
+        /// <summary>Zaregistrirovat barter-tranzaktsiyu.</summary>
         public void RegisterBarterTransaction()
         {
             _barterTransactionCount++;
             Atlas6Events.RaiseBarterAccepted(_barterTransactionCount);
 
-            // Переход в Collaborator
+            // Perehod v Collaborator
             if (_barterTransactionCount >= collaboratorThreshold &&
                 _playerStatus != Atlas6PlayerStatus.Collaborator &&
                 _playerStatus != Atlas6PlayerStatus.Threat)
@@ -864,7 +864,7 @@ namespace Hecton8.AtlasSignal
 
         private void HandleBarterAccepted(int count)
         {
-            // Первая торговля → Neutral
+            // Pervaya torgovlya → Neutral
             if (_playerStatus == Atlas6PlayerStatus.Detected ||
                 _playerStatus == Atlas6PlayerStatus.Unknown)
                 SetStatus(Atlas6PlayerStatus.Neutral);

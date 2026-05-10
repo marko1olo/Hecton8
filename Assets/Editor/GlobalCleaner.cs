@@ -5,11 +5,11 @@ using System.Collections.Generic;
 
 public class GlobalCleaner : EditorWindow
 {
-    [MenuItem("VibeCoder/🧹 ГЕНЕРАЛЬНАЯ УБОРКА (Все файлы)")]
+    [MenuItem("VibeCoder/🧹 GENERALNAYa UBORKA (Vse fayly)")]
     public static void CleanAll()
     {
-        // Настраиваем, куда что летит
-        // Ключ - папка, Значение - список расширений
+        // Nastraivaem, kuda chto letit
+        // Klyuch - papka, Znachenie - spisok rasshireniy
         var rules = new Dictionary<string, List<string>>
         {
             { "_Project/Art/Sprites", new List<string> { ".png", ".jpg", ".jpeg", ".tga", ".psd", ".bmp" } },
@@ -20,7 +20,7 @@ public class GlobalCleaner : EditorWindow
             { "_Project/Prefabs", new List<string> { ".prefab" } },
             { "_Project/Scripts", new List<string> { ".cs", ".shader", ".cginc" } },
             { "_Project/Scenes", new List<string> { ".unity" } },
-            { "_Project/Data", new List<string> { ".json", ".xml", ".txt", ".asset" } } // ScriptableObjects часто .asset
+            { "_Project/Data", new List<string> { ".json", ".xml", ".txt", ".asset" } } // ScriptableObjects chasto .asset
         };
 
         int moveCount = 0;
@@ -30,7 +30,7 @@ public class GlobalCleaner : EditorWindow
         {
             string path = file.Replace("\\", "/");
 
-            // Игнорим системные папки, плагины и то, что уже лежит правильно
+            // Ignorim sistemnye papki, plaginy i to, chto uzhe lezhit pravilno
             if (path.Contains("/Editor/") || 
                 path.Contains("/Plugins/") || 
                 path.Contains("/Packages/") || 
@@ -47,7 +47,7 @@ public class GlobalCleaner : EditorWindow
                 {
                     string targetDir = Path.Combine("Assets", rule.Key);
                     
-                    // Создаем папку, если нет
+                    // Sozdaem papku, esli net
                     if (!Directory.Exists(targetDir)) 
                     {
                         Directory.CreateDirectory(targetDir);
@@ -56,7 +56,7 @@ public class GlobalCleaner : EditorWindow
 
                     string newPath = Path.Combine(targetDir, fileName).Replace("\\", "/");
                     
-                    // Самое важное: двигаем через AssetDatabase, чтобы не сломать ссылки в игре!
+                    // Samoe vazhnoe: dvigaem cherez AssetDatabase, chtoby ne slomat ssylki v igre!
                     string error = AssetDatabase.MoveAsset(path, newPath);
                     
                     if (string.IsNullOrEmpty(error))
@@ -65,14 +65,14 @@ public class GlobalCleaner : EditorWindow
                     }
                     else
                     {
-                        Debug.LogError($"Не смог переместить {fileName}: {error}");
+                        Debug.LogError($"Ne smog peremestit {fileName}: {error}");
                     }
-                    break; // Файл нашли, переходим к следующему
+                    break; // Fayl nashli, perehodim k sleduyuschemu
                 }
             }
         }
 
-        AssetDatabase.Refresh(); // Обновляем Unity, чтобы она увидела изменения
-        Debug.Log($"[VibeCoder] Уборка завершена! Перемещено файлов: {moveCount}. Структура создана в Assets/_Project");
+        AssetDatabase.Refresh(); // Obnovlyaem Unity, chtoby ona uvidela izmeneniya
+        Debug.Log($"[VibeCoder] Uborka zavershena! Peremescheno faylov: {moveCount}. Struktura sozdana v Assets/_Project");
     }
 }

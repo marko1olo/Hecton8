@@ -24,7 +24,7 @@ namespace Hecton8.World
         private const float SeedSinkVelocityMetersPerSecond = 0.06f;
         private const float SeedFlowScale = 0.72f;
         private const float SeedSlopeSampleDistance = 1.25f;
-        private const float MaximumSeedSlopeDegrees = 30f;
+        private const float MinimumSeedNormalY = 0.8660254f;
         private const int SeedsPerSargassumCluster = 3;
         private const float CanopyShadowRadiusMeters = 6f;
         private const float CanopyVerticalMinMeters = 1.25f;
@@ -1107,8 +1107,8 @@ namespace Hecton8.World
             if (vegetationBridge.TryGetCachedTerrainHeight(landingPosition.x, landingPosition.z, out float terrainHeight))
                 landingPosition.y = terrainHeight + 0.08f;
 
-            if (!vegetationBridge.TrySampleTerrainSlopeDegrees(landingPosition, SeedSlopeSampleDistance, out float slopeDegrees) ||
-                slopeDegrees > MaximumSeedSlopeDegrees)
+            if (!vegetationBridge.TrySampleTerrainNormalY(landingPosition, SeedSlopeSampleDistance, out float normalY) ||
+                normalY < MinimumSeedNormalY)
             {
                 return false;
             }

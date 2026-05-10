@@ -320,7 +320,7 @@ namespace Hecton8.Environment.Seasonal
         };
     }
 }
-Файл: Assets/_Project/Scripts/Environment/Seaweed/SeaweedAnimCurveSystem.cs
+Fayl: Assets/_Project/Scripts/Environment/Seaweed/SeaweedAnimCurveSystem.cs
 csharp
 
 // ============================================================
@@ -709,7 +709,7 @@ namespace Hecton8.Environment
             Mathf.PerlinNoise(x * 127.1f, x * 311.7f);
     }
 }
-Файл: Assets/_Project/Scripts/Environment/Seaweed/Rendering/SeaweedRenderer.cs
+Fayl: Assets/_Project/Scripts/Environment/Seaweed/Rendering/SeaweedRenderer.cs
 csharp
 
 // ============================================================
@@ -1068,7 +1068,7 @@ namespace Hecton8.Environment.Rendering
         }
     }
 }
-Файл: Assets/_Project/Scripts/Environment/Seaweed/Rendering/SeaweedGPUCuller.cs
+Fayl: Assets/_Project/Scripts/Environment/Seaweed/Rendering/SeaweedGPUCuller.cs
 csharp
 
 // ============================================================
@@ -1359,7 +1359,7 @@ namespace Hecton8.Environment.Rendering
         }
     }
 }
-Файл: Assets/_Project/Scripts/Environment/Seaweed/Physics/SeaweedPhysicsManager.cs
+Fayl: Assets/_Project/Scripts/Environment/Seaweed/Physics/SeaweedPhysicsManager.cs
 csharp
 
 // ============================================================
@@ -1737,7 +1737,7 @@ namespace Hecton8.Environment.Physics
         }
     }
 }
-Файл: Assets/_Project/Scripts/Environment/Seaweed/SeaweedInteraction.cs
+Fayl: Assets/_Project/Scripts/Environment/Seaweed/SeaweedInteraction.cs
 csharp
 
 // ============================================================
@@ -1856,7 +1856,7 @@ namespace Hecton8.Environment
         }
     }
 }
-Файл: Assets/_Project/Scripts/Environment/Seaweed/SeaweedBootstrap.cs
+Fayl: Assets/_Project/Scripts/Environment/Seaweed/SeaweedBootstrap.cs
 csharp
 
 // ============================================================
@@ -2065,7 +2065,7 @@ namespace Hecton8.Environment
 #endif
     }
 }
-Файл: Assets/_Project/Scripts/Environment/Seaweed/SeaweedMeshGenerator.cs
+Fayl: Assets/_Project/Scripts/Environment/Seaweed/SeaweedMeshGenerator.cs
 csharp
 
 // ============================================================
@@ -2244,16 +2244,16 @@ namespace Hecton8.Environment
 Something went wrong with this response, please tr
 
 [ANALYSIS]
-**Target:** Продолжение с места обрыва — SeaweedMeshGenerator.cs публичный API (GetIndexCountsPerLOD и далее), затем оставшиеся файлы.
+**Target:** Prodolzhenie s mesta obryva — SeaweedMeshGenerator.cs publichnyy API (GetIndexCountsPerLOD i dalee), zatem ostavshiesya fayly.
 **Affected systems:** SeaweedMeshGenerator, SeaweedTextureGenerator, SeaweedPlacer, SeaweedMeshCache, SeaweedPhysicsBinding, SeaAnemone, MarineInvertebrateRenderer, CoralFishSchool
-**Zero GC proof:** NativeArray для Burst Jobs, pre-allocated List<> cleared per use, no LINQ, no lambda in hot paths, cached Shader.PropertyToID
-**State check:** null-check library в Start, graceful disable
+**Zero GC proof:** NativeArray dlya Burst Jobs, pre-allocated List<> cleared per use, no LINQ, no lambda in hot paths, cached Shader.PropertyToID
+**State check:** null-check library v Start, graceful disable
 **Instruction quote:** AGENTS.md §1 Zero GC, §2 ITickable, §4 MPB, §8 Cold Alloc
 
 ---
 
 ```csharp
-        // Продолжение SeaweedMeshGenerator.cs — GetIndexCountsPerLOD и далее
+        // Prodolzhenie SeaweedMeshGenerator.cs — GetIndexCountsPerLOD i dalee
 
         /// <summary>
         /// Returns triangle index counts per LOD level.
@@ -3066,7 +3066,7 @@ Something went wrong with this response, please tr
 
 ---
 
-Следующий файл:
+Sleduyuschiy fayl:
 
 ```csharp
 // ============================================================
@@ -5147,12 +5147,12 @@ namespace Hecton8.AI
 
 ---
 
-**СТАТУС: PENDING VERIFICATION.**
+**STATUS: PENDING VERIFICATION.**
 
-Все файлы написаны. Итого система содержит:
+Vse fayly napisany. Itogo sistema soderzhit:
 
 ```
-ШЕЙДЕРЫ:
+ShEYDERY:
   SeaweedCommon.hlsl
   SeaweedLit.shader
   SeaweedCulling.compute
@@ -5167,7 +5167,7 @@ C# GENERATION:
   SeaweedMeshCache.cs
   SeaweedTextureGenerator.cs
 
-C# MONOBEHAVIOURS (все ITickable):
+C# MONOBEHAVIOURS (vse ITickable):
   SeaweedCurrentZone.cs
   SeaweedSeasonSystem.cs
   SeaweedAnimCurveSystem.cs

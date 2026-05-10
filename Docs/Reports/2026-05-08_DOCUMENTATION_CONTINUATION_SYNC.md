@@ -1,7 +1,7 @@
 ﻿# 2026-05-08 Documentation Continuation Sync
 Date: 2026-05-09
-Status: PENDING FINAL UNITY PROOF (R168 DOTNET BUILD PASSED / UNITY MCP BLOCKED / TIMESTAMP GATE CONTAMINATED)
-Scope: broad documentation authority refresh after local midnight source churn and R31-R168 compile gates
+Status: PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)
+Scope: broad documentation authority refresh after local midnight source churn and R31-R186 compile gates
 
 Mandates followed:
 
@@ -17,12 +17,12 @@ Mandates followed:
 
 ## Current Truth Boundary
 
-This report is the latest documentation synchronization layer as of local workspace time `2026-05-09 16:47 +04:00`.
+This report is the latest documentation synchronization layer as of local workspace time `2026-05-09 19:39 +04:00`.
 
 It supersedes May 7 source-count and build-blocker statements where they conflict.
 It does not certify Play Mode, profiler, GCMonitor, scene/prefab wiring, player build, or memory retention.
 
-R168 is the latest completed local compile gate captured by this pass. `CodexArtifacts/2026-05-09_R168_CORE_SERIAL_NORESTORE_BUILD.log` ended with `DOTNET_EXIT_CODE=0`, `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`. R168 supersedes R129-R167 after later source churn, repeated failed live-churn gates, stale clean snapshots, transient Input/Core boundary regressions, BLACKBOX export callback/thread drift, missing relay listener helpers, the R154 in-build `PersistentWorldRegistry.cs` write, the post-R155 `InputManager.cs` write, R160 timestamp invalidation, R161 Input assembly `GlobalRegistry` regression, post-R163 `PhysicsApplySystem.cs` / `NativeMemorySentinel.cs` writes, post-R165 guarded diagnostic-log preprocessor edits in `LocalizationManager.cs` and `HectonBiolumManager.cs`, and the R167/R168 `HectonBiolumZone.cs` development-build diagnostics guard pass. R168 did not get a clean source-freeze gate: `.cs` writes were observed after the R168 artifact end timestamp in `UIScreenShake.cs`, `WorldCaveDirector.cs`, and later `BeaconHUDElement.cs`. This is not Unity Console, Play Mode, profiler, GCMonitor, player-build, source-freeze proof, scene wiring, runtime zero-GC, frame-time, or memory-retention proof.
+R186 is the latest completed local compile gate captured by this pass. `CodexArtifacts/2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log` ended with `DOTNET_EXIT_CODE=0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`. R186 supersedes R171-R185 after R171/R174/R175/R177/R182/R183 source-write invalidation, R179 transient current-source compile blockers, R181 invalid root-only dependency mode, R184 `IAudioService` contract drift, and R185 `PredatorCognitionDomain` static/instance vortex-steering drift. This is not Unity Console, Play Mode, profiler, GCMonitor, player-build, scene wiring, runtime zero-GC, frame-time, or memory-retention proof.
 
 ## Filesystem Snapshot
 
@@ -56,19 +56,19 @@ Latest completed `System.IO.StreamReader.ReadLine()` source-count pass during th
 
 | Surface | C# files | Physical lines |
 |---|---:|---:|
-| `Assets/_Project` | `1255` | `743328` |
-| `Assets/_Project/Scripts` | `1214` | `728007` |
+| `Assets/_Project` | `1292` | `759122` |
+| `Assets/_Project/Scripts` | `1248` | `742892` |
 
 Additional orientation data:
 
-- direct scripts under `Assets/_Project/Scripts`: `337`
-- `GlobalRegistryContracts.cs` direct public interfaces: `38`
+- direct scripts under `Assets/_Project/Scripts`: `342`
+- `GlobalRegistryContracts.cs` direct public interfaces: `40`
 - latest authoritative line-count method: `System.IO.StreamReader.ReadLine()` over every matched `.cs` file
 
 May 7 comparison against `2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`:
 
 - previous main refresh: `1233` project C# files, `1192` script C# files, `683064` project physical lines, `667771` script physical lines, `39` direct public registry interfaces
-- current manifest delta: `+22` project C# files, `+22` script C# files, `+60264` project physical lines, `+60236` script physical lines, `-1` direct public registry interface
+- current manifest delta: `+59` project C# files, `+56` script C# files, `+76058` project physical lines, `+75121` script physical lines, `+1` direct public registry interface
 
 Earlier observed source writes during this pass included:
 
@@ -78,7 +78,7 @@ Earlier observed source writes during this pass included:
 - `Assets/_Project/Scripts/World/HectonAnomalySdfJobs.cs`
 - documentation authority files under `Docs/Reports/` and `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/`
 
-Line counts are orientation data. At the R168 scan boundary, later `Assets/_Project/**/*.cs` writes were observed after the build artifact end timestamp. Treat this as an active-churn source snapshot, not a frozen-source proof.
+Line counts are orientation data. At the R186 validation boundary, no `Assets/_Project/**/*.cs` writes were observed after the build start or end timestamp; treat this as current local `dotnet` compile evidence, not Unity/runtime proof.
 
 ## MCP Boundary
 
@@ -101,28 +101,27 @@ Build-master hallucination check on 2026-05-08 supersedes any MCP-clean status c
 
 Latest completed full Core dependency build after the current autonomous compile gate:
 
-- command: `dotnet build ./Hecton8.Core.csproj --no-restore -m:1 -p:UseSharedCompilation=false -p:BuildInParallel=false -nr:false`
-- artifact: `CodexArtifacts/2026-05-09_R168_CORE_SERIAL_NORESTORE_BUILD.log`
+- command: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false`
+- artifact: `CodexArtifacts/2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log`
 - result: `Build succeeded`
 - summary: `0 Warning(s)`, `0 Error(s)`
-- first-party warning lines: `0`
-- first-party compile errors: `0` in the R168 log
+- timestamp gate: `CS_WRITES_AFTER_START=0`, `CS_WRITES_AFTER_END=0`
+- first-party compile errors: `0` in the R186 log
 
 Warning boundary:
 
-- latest serial `dotnet build ./Hecton8.Core.csproj --no-restore -m:1 -p:UseSharedCompilation=false -p:BuildInParallel=false -nr:false` succeeded in R168 with `0` warnings and `0` errors. This is compile-only evidence, not runtime allocation/frame-time proof.
+- latest serial `dotnet build ./Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:UseSharedCompilation=false` succeeded in R186 with `0` warnings and `0` errors. This is compile-only evidence, not runtime allocation/frame-time proof.
 
-The previous MCP-clean note is no longer accepted as current proof. Treat R168 as the latest local `dotnet` evidence only, not Play Mode, Unity Console, profiler, player-build, source-freeze, or runtime proof.
+The previous MCP-clean note is no longer accepted as current proof. Treat R186 as the latest local `dotnet` evidence only, not Play Mode, Unity Console, profiler, player-build, or runtime proof.
 
-Post-build source churn check after `CodexArtifacts/2026-05-09_R168_CORE_SERIAL_NORESTORE_BUILD.log`:
+Post-build source churn check after `CodexArtifacts/2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log`:
 
-- R168 artifact start/end timestamps: `2026-05-09 16:45:47 +04:00` / `2026-05-09 16:46:46 +04:00`
-- later `Assets/_Project/**/*.cs` writes after artifact start: `3` at immediate gate sample
-- later `Assets/_Project/**/*.cs` writes after artifact end: `2` at immediate gate sample
-- latest sampled post-R168 C# write during validation: `Assets/_Project/Scripts/ObjectPoolDiagnostics.cs` at `2026-05-09 16:55:55 +04:00`; additional writes may continue after this report because the workspace is actively changing
-- current-source `dotnet` compile gate is passed for the R168 compile input, but a clean frozen-source timestamp gate is not passed; Unity proof is still absent
+- R186 artifact start/end timestamps: `2026-05-09 19:39:29 +04:00` / `2026-05-09 19:39:36 +04:00`
+- later `Assets/_Project/**/*.cs` writes after artifact start: `0`
+- later `Assets/_Project/**/*.cs` writes after artifact end: `0`
+- current-source local `dotnet` compile gate is proven for the sampled filesystem state; Unity proof is still absent
 
-R130-R168 compile-surface repairs and blockers captured by this continuation:
+R130-R186 compile-surface repairs and blockers captured by this continuation:
 
 - R130/R132/R136/R138/R141/R151/R154/R155/R160: clean `0 Warning(s)` / `0 Error(s)` snapshots that were invalidated by later source writes, in-build source writes, or timestamp proof failure.
 - R133-R144: live-churn blockers included `HUDQuickBar` tool-manager subscription drift, `NoiseSystem` property-by-`in` misuse, `CrashTelemetryBuffer` missing callbacks/thread state, `UITooltip` unsupported `AsSpan`, `SpatialAudioManager` AUP helper/signature drift, `InputManager` invalid Input-to-Core `GlobalRegistry` references, `PlayerActionController` missing progress helper, `OxygenBubble` drift helper churn, and `SoundscapeSystem` stale native-memory overflow API calls.
@@ -130,7 +129,8 @@ R130-R168 compile-surface repairs and blockers captured by this continuation:
 - R152-R153: stale live-write snapshots reproduced missing BLACKBOX export thread and Input `GlobalRegistry` regressions; current source no longer contains those compile blockers.
 - R156-R162: R155 was invalidated by a later `InputManager.cs` write; R158 exposed missing local `_instance`; R160 passed but was invalidated by `ScannerTool.cs` and `FakeRadarBlipController.cs` writes during the build plus `InputManager.cs` after the build; R161 exposed reintroduced `GlobalRegistry` references in the Input assembly; R162 targeted Input build passed after local ownership repair.
 - R163-R164: R163 passed cleanly but was invalidated by later `PhysicsApplySystem.cs` and `NativeMemorySentinel.cs` writes; R164 stable control build passed with `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, and `0` `.cs` writes after build start/end at that snapshot.
-- R165-R168: R165 passed cleanly but was superseded by post-build guarded diagnostic-log preprocessor edits in `LocalizationManager.cs` and `HectonBiolumManager.cs`; R166 passed with `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, and `0` `.cs` writes after build start/end. R167 passed after the `HectonBiolumZone.cs` development-build diagnostics guard pass but was invalidated by parallel post-build C# writes. R168 passed with `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, but the timestamp gate remained contaminated by later C# writes outside the patch scope.
+- R165-R178: R165 passed cleanly but was superseded by post-build guarded diagnostic-log preprocessor edits in `LocalizationManager.cs` and `HectonBiolumManager.cs`; R166 passed with `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, and `0` `.cs` writes after build start/end. R167/R168 were invalidated by source-write contamination. R169 reproduced current-source `CaveBioRootsGenerator.cs` missing-field/helper blockers after external churn. R170 ended with `DOTNET_EXIT_CODE=-1`, no build summary, and no compiler error lines. R171 passed but remained timestamp-contaminated by in-build and post-build C# writes. R173 exposed a transient `RandomEventSystem.cs` missing `TryResolvePlayerMeteorFrame` compile blocker while that file was being rewritten. R174 passed but had two C# writes after build start. R175 passed but had five C# writes after build start and retained two obsolete `GetInstanceID()` warnings. R176 passed cleanly but was invalidated by a later `HabitatIntegrityManager.cs` write. R177 passed with five `HectonFluidEngine.cs` CS0414 warnings and two in-build writes. R178 passed with `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`.
+- R179-R186: R179 failed on a stale live-write snapshot containing missing `ZeroGCFormatter`, `HectonAnalyticalFlowField`, `HectonGerstnerWater`, and partial `BuoyancyJob` fields. Current source already contained some of those fixes, so no false ownership was claimed. R180 aborted with `DOTNET_EXIT_CODE=-1` while `SteamManager.cs` was written. R181 root-only `--no-dependencies` mode was rejected as invalid for this Unity dependency graph. R182 passed but had duplicate `CrestBridge.cs`/`IOceanKinematics.cs` includes plus source-write contamination. R183 passed with `0 Warning(s)`/`0 Error(s)` but was invalidated by a new `Dev/BotController.cs`. R184 exposed `IAudioService.QueueAudioEvent(in AudioEvent)` drift in `SpatialAudioManager`/`NoOpAudioService`. R185 exposed `PredatorCognitionDomain` static/instance vortex-steering drift and `BotController` obsolete lookup warning. R186 passed with `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`.
 
 R53-R129 compile-surface repairs and blockers captured by this continuation:
 
@@ -364,8 +364,8 @@ Memory: no scenes, prefabs, textures, Addressables groups, native containers, re
 
 Cadence: this continuation did not add new waits, coroutines, or gameplay-loop awaits. No bootstrap, scene transition, asset loading, physics, UI, or rendering cadence was intentionally changed by this report.
 
-Correctness: active documentation now points at the current 2026-05-09 local evidence boundary and records that source churn invalidated May 7/May 8 source-count/build-blocker statements plus R129-R167 snapshots. The latest compile gate is `2026-05-09_R168_CORE_SERIAL_NORESTORE_BUILD.log`, which passed after the R154 in-build source-write invalidation, the post-R155 input write, R160 timestamp invalidation, R161 Input assembly regression, post-R163 source writes, post-R165 guarded diagnostic-log preprocessor edits, and the `HectonBiolumZone.cs` development-build diagnostics guard pass. A clean frozen-source timestamp gate is not claimed because later `.cs` writes were observed after the R168 artifact end timestamp. Unity console and Play Mode proof remain absent.
+Correctness: active documentation now points at the current 2026-05-09 local evidence boundary and records that source churn invalidated May 7/May 8 source-count/build-blocker statements plus R129-R185 snapshots. The latest completed compile gate is `2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log`, which passed with `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`. Unity console and Play Mode proof remain absent.
 
-Status: PENDING FINAL UNITY PROOF (R168 DOTNET BUILD PASSED / UNITY MCP BLOCKED / TIMESTAMP GATE CONTAMINATED)
+Status: PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)
 
 

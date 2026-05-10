@@ -73,21 +73,33 @@ namespace Hecton8.World
             {
                 Width = math.max(1, Width),
                 Height = math.max(1, Height),
-                CellSizeMeters = math.max(0.001f, CellSizeMeters),
-                OriginAup = OriginAup,
-                MinimumPillarProminenceMeters = math.max(0f, MinimumPillarProminenceMeters),
+                CellSizeMeters = ResolvePositiveFinite(CellSizeMeters, 0.001f),
+                OriginAup = math.all(math.isfinite(OriginAup)) ? OriginAup : double3.zero,
+                MinimumPillarProminenceMeters = ResolveNonNegativeFinite(MinimumPillarProminenceMeters, 0f),
                 MinimumPillarRidgeArms = math.clamp(MinimumPillarRidgeArms <= 0 ? 3 : MinimumPillarRidgeArms, 3, 8),
-                MinimumFissureDepthMeters = math.max(0f, MinimumFissureDepthMeters),
-                EqualHeightEpsilon = math.max(0.000001f, EqualHeightEpsilon),
+                MinimumFissureDepthMeters = ResolveNonNegativeFinite(MinimumFissureDepthMeters, 0f),
+                EqualHeightEpsilon = ResolvePositiveFinite(EqualHeightEpsilon, 0.000001f),
                 FissureInfluencePacked = FissureInfluencePacked,
                 RequireTectonicBoundary = RequireTectonicBoundary != 0 ? (byte)1 : (byte)0,
-                TectonicBoundaryFrequency = math.max(0.0001f, TectonicBoundaryFrequency),
+                TectonicBoundaryFrequency = ResolvePositiveFinite(TectonicBoundaryFrequency, 0.0001f),
                 TectonicBoundarySeed = TectonicBoundarySeed,
-                MinimumTectonicBoundaryMask = math.clamp(
-                    MinimumTectonicBoundaryMask <= 0f ? 0.55f : MinimumTectonicBoundaryMask,
-                    0f,
-                    1f)
+                MinimumTectonicBoundaryMask = ResolveUnitIntervalOrDefault(MinimumTectonicBoundaryMask, 0.55f)
             };
+        }
+
+        private static float ResolvePositiveFinite(float value, float fallback)
+        {
+            return math.isfinite(value) && value > 0f ? value : fallback;
+        }
+
+        private static float ResolveNonNegativeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) && value >= 0f ? value : fallback;
+        }
+
+        private static float ResolveUnitIntervalOrDefault(float value, float fallback)
+        {
+            return math.isfinite(value) && value > 0f ? math.clamp(value, 0f, 1f) : fallback;
         }
     }
 
@@ -407,6 +419,12 @@ namespace Hecton8.World
                 AnomalyFeatureRecord record = FeatureRecords[i];
                 if (record.Valid == 0 || record.Kind != (byte)AnomalyFeatureKind.ChthonicPillar)
                     continue;
+
+                if (!math.isfinite(record.Strength01) ||
+                    !math.all(math.isfinite(new double3(record.AupX, record.AupY, record.AupZ))))
+                {
+                    continue;
+                }
 
                 if (record.Strength01 <= bestStrength)
                     continue;

@@ -9,7 +9,7 @@ public class HectonPrefabTools
     {
         string folderPath = "Assets/_Project/Prefabs";
         
-        // Создаем папку, если её нет
+        // Sozdaem papku, esli ee net
         if (!Directory.Exists(folderPath))
             Directory.CreateDirectory(folderPath);
 
@@ -17,7 +17,7 @@ public class HectonPrefabTools
 
         if (selectedObjects.Length == 0)
         {
-            Debug.LogWarning("Ничего не выбрано в Hierarchy!");
+            Debug.LogWarning("Nichego ne vybrano v Hierarchy!");
             return;
         }
 
@@ -25,9 +25,9 @@ public class HectonPrefabTools
         {
             string localPath = folderPath + "/" + obj.name + ".prefab";
             
-            // Если такой префаб уже есть — перезаписываем
+            // Esli takoy prefab uzhe est — perezapisyvaem
             PrefabUtility.SaveAsPrefabAssetAndConnect(obj, localPath, InteractionMode.UserAction);
-            Debug.Log($"[Hecton] Объект {obj.name} успешно превращен в префаб: {localPath}");
+            Debug.Log($"[Hecton] Obekt {obj.name} uspeshno prevraschen v prefab: {localPath}");
         }
         
         AssetDatabase.SaveAssets();

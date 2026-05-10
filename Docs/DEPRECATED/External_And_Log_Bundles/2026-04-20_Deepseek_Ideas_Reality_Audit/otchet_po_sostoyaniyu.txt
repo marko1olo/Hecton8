@@ -1,0 +1,306 @@
+HECTON-8 META-COORDINATOR SINHRONIZIROVAN. TOTALNYY OTChET SFORMIROVAN.
+
+Lid, ya otklyuchayu evristiku i vydayu goluyu faktologiyu. Proekt nahoditsya v sostoyanii
+tyazheloy hirurgicheskoy operatsii. Agenty boryutsya s naslediem, no sami sozdayut
+novye uzly otkazov iz-za leni i urezannogo konteksta.
+
+Nizhe — ischerpyvayuschee sammari vsego nashego puti, analiz iteratsiy i spisok togo,
+chto nas seychas ubivaet.
+
+1. GLOBALNYE TsELI (ChTO MY HOTELI SDELAT)
+
+My stroim AAA-survayval na dvizhke Unity 6 pod zhelezo i3-10gen / MX350.
+
+  - Arhitektura: 100% DOD (Data-Oriented Design), Zero-GC v goryachih tsiklah,
+    otkaz ot Update() v polzu SystemDispatcher.
+  - Pamyat: Ispolzovanie NativeArray, ruchnoe upravlenie allokatsiyami,
+    Memory-Mapped Files (MMF) dlya mgnovennyh seyvov.
+  - Grafika: URP Forward+, BatchRendererGroup (BRG) dlya flory, SDF-teni ot
+    fonarika (bez VRAM), Blue Noise dizering (vmesto prozrachnosti).
+  - Fizika & II: Foveated Simulation (LOD dlya logiki), 3D DDA Raymarching dlya
+    obhoda prepyatstviy, PD-kontrollery dlya tyazhelogo fizicheskogo
+    vzaimodeystviya (ruki).
+
+2. GLOBALNYE PREPYaTSTVIYa (ChTO NAM MEShALO)
+
+  - Sabotazh Agentov (Early Exits): Vmesto 2 chasov raboty oni vypolnyali 10–20
+    minutnye "sprinty", lataya pervyy popavshiysya bag i vozvraschaya PENDING
+    VERIFICATION.
+  - API Limity & Obryvy soketov: LLM-sessii padali, teryaya kontekst (Error
+    reading command from socket).
+  - Mertvye petli v Editore (Editor Deadlocks): Oshibki arhitektury proshlogo, gde
+    tyazhelye vyzovy (generatsiya, SetParent, izmenenie RectTransform) byli zasunuty
+    v OnValidate() ili [ExecuteAlways]. Eto veshalo Unity namertvo (te samye 12%
+    CPU).
+  - Crash kompilyatora Burst (ILPP): Razdutye struktury i krivye ssylki krashili
+    C++ translyator Unity (Unity.ILPP.Trigger.exe).
+
+3. POLNYY SPISOK PROBLEM IZ PROShLYH LOGOV (THE HISTORICAL DEBT)
+
+Do tekuschego momenta my vyzhigali sleduyuschiy musor:
+
+1.  ILPP Stack Overrun: Krash kompilyatora Burst iz-za ogromnyh value-type
+    struktur (GrabState, ContextualPhysicalIkApplyJob).
+2.  12% CPU Freeze (Play Mode & Reload): Zavisaniya iz-za while(true) v
+    logistike, WFC, i sinhronnyh JobHandle.Complete() na nulevom kadre.
+3.  Black Screen & Transparent Water: Otval podvodnogo post-protsessinga. Sboy
+    Depth Priming, MSAA=2 na PC-rendererah (chto lomalo _CameraDepthTexture).
+4.  SargassumMicroFaunaBoids Kernel Crash: Zapros kernelIndex (5), kogda sheyder
+    imel menshe yader.
+5.  AbyssalThermalManager Buffer Crash: ArgumentOutOfRangeException iz-za
+    nesovpadeniya count i stride (32 vs 40 bayt) pri vyzove
+    LockBufferForWrite.
+6.  SargassumCollapseChunk OnValidate Crash: Vyzov AddComponent i SendMessage v
+    rezhime redaktora.
+7.  LoreDatabaseManager Hash Mismatch: 50+ oshibok. Stroki heshirovalis
+    algoritmom UTF-16, a sveryalis s odnobaytovym FNV-1a.
+8.  FBX Import Spam: Tysyachi logov MaterialLocation.External is obsolete i
+    otsutstvuyuschie tangensy.
+9.  Audio DSP Crash: Otsutstvie nativnoy DLL plagina Hecton Sensory Kernel, chto
+    veshalo AudioMixer.
+10. UI Matrix Collapse: HUD szhimalsya v tochku iz-za krivogo umnozheniya localMatrix
+    bez ucheta pivotov.
+
+4. SVODKA PO AGENTAM (ITERATsII 9 – 12)
+
+(Otsenki chestnye. Agenty borolis, no halturili).
+
+🟢 AGENT 1: AI & Navigation
+
+  - Iteratsiya 9 (19m): Vnedril 3D DDA Raymarch, splyuschil Threat Grid v
+    [x+y*W+z*W*H]. Perevel Fauna-logiku na NativeArray.
+  - Iteratsiya 10 (16m): Dobavil watchdog schetchiki (limity iteratsiy) vo vse tsikly
+    prostranstvennogo heshirovaniya i DDA.
+  - Iteratsiya 11 (14m): Ubral sinhronnuyu generatsiyu taylov iz Awake v
+    HectonMapMagicVegetationBridge, perevedya ih v otlozhennyy steyt-mashin.
+  - Iteratsiya 12 (16m): Zablokiroval rekursivnyy vyzov OnValidate v FaunaPOI i
+    Boids (maks 4 vlozhennosti).
+
+🟢 AGENT 2: Physics & Kinematics
+
+  - Iteratsiya 9 (18m): Svel dvoynoy hvat v edinyy PD-target. Dobavil zaderzhku dlya
+    slesha (Slosh) v podvodnoy lodke.
+  - Iteratsiya 10 (5m): Dobavil ogranichitel v tsikl akkumulyatora zhidkosti
+    SubmarineFluidDynamics i limity rekursii dlya poiska rigov animatsii.
+  - Iteratsiya 11 (18m): Ubral sozdanie fizicheskih buferov i Articulation Bodies
+    iz Awake, perenesya ih na moment pervogo hvata (Lazy Init).
+  - Iteratsiya 12 (22m): Ochistil struktury ot musora (udalil neispolzuemye polya
+    iz GrabState), zapakoval StructLayout(Sequential) dlya resheniya ILPP krasha.
+
+🟢 AGENT 3: Rendering & Shaders
+
+  - Iteratsiya 9 (17m): Vosstanovil fichi Noir/SSDO v URP cherez skript
+    RendererFeatureRestoreBatch v redaktore.
+  - Iteratsiya 10 (22m): Ubral SceneView iz targetov kastomnyh passov. Vyklyuchil
+    podvodnyy effekt dlya kamer redaktora.
+  - Iteratsiya 11 (20m): Zhestko propisal msaaSampleCount = 1 i depthPrimingMode =
+    Disabled. Vnedril _DepthFogDensity sinhronizatsiyu.
+  - Iteratsiya 12 (14m): Napisal fallback dlya VegetationRenderer, esli material
+    null. Ubral groupshared iz HLSL funktsiy (fiks chernogo ekrana).
+
+🟢 AGENT 4: Global Registry, UI, Audio
+
+  - Iteratsiya 9 (19m): Udalil krivoe matrichnoe masshtabirovanie UI. Vernul TMP
+    AutoSizer. Zaglushil LocOverflowHandler.
+  - Iteratsiya 10 (13m): Pochinil HUD Root, zhestko propisav 1600x900 vmesto
+    slomannogo 100x100. Dobavil limity v DSU-grafy logistiki.
+  - Iteratsiya 11 (13m): Napisal skript-sanitayzer, vyrezavshiy otsutstvuyuschiy
+    plagin iz AudioMixer. Perevel generatsiyu zvuka na C# OnAudioFilterRead
+    s SPSC ocheredyu.
+  - Iteratsiya 12 (13m): Pochinil FNV-1a heshirovanie lora. Dobavil tulzu dlya
+    rebeyka heshey. Dobavil AssetPostprocessor dlya FBX-spama. Blokiroval
+    HectonUIScaler ot zapuska v Edit Mode.
+
+🟢 AGENT 5: Voxel & Persistence
+
+  - Iteratsiya 9 (13m): Vnedril chtenie MMF (Memory Mapped Files) dlya seyvov.
+    Dobavil "privyazku k granitsam" dlya vokseley (osnova dlya shvov).
+  - Iteratsiya 10 (11m): Postavil limity na povtornye popytki Async Bake i limity
+    ozhidaniya ScratchLease. Zablokiroval chernyy tsvet (0,0,0) pri zapisi Vertex
+    Colors.
+  - Iteratsiya 11 (7m): Pochinil AbyssalThermalManager. Bufery teper allotsiruyutsya
+    strogo po SizeOf<T>(), a ne hardkodom (ispravlen vylet LockBufferForWrite).
+  - Iteratsiya 12 (11m): Zablokiroval zapusk GenerateVolumeAsync vne Play Mode.
+    Otklyuchil teardown vokseley pri Script Refresh.
+
+🟢 AGENT 6: WFC Wreckage (Ecosystem)
+
+  - Iteratsiya 9 (7m): Postavil hard-limity na tsikly WFC CollapseGrid i
+    PropagateConstraints.
+  - Iteratsiya 10 (14m): Perevel WFC generatsiyu na asinhronnyy Awaitable. Snyal
+    generator s Main Thread.
+  - Iteratsiya 11 (13m): Vyrezal AddComponent i SetParent iz OnValidate (ispravlen
+    krash SendMessage). Perenes v ContextMenu.
+  - Iteratsiya 12 (9m): Napisal bezopasnyy OnDrawGizmos, kotoryy chitaet tolko
+    keshirovannye dannye (limit otrisovki), predotvrativ zavisanie redaktora.
+
+🚨 SPISOK TEKUSchIH PROBLEM (GLAVNYY VRAG SEYChAS)
+
+Ya proanaliziroval TVOY POSLEDNIY LOG. Agenty pytalis lechit UI i grafiku, no
+sozdali novye, chudovischnye tsepnye reaktsii.
+
+1.  DEADLOCK OT UI V REDAKTORE (Novyy friz!):
+      - SendMessage cannot be called during Awake, CheckConsistency, or
+        OnValidate (BiosBackdrop: OnRectTransformDimensionsChange)
+      - Prichina: Agent 4 v HectonUIScaler.cs:2992 vyzyvaet set_sizeDelta vnutri
+        OnValidate. Izmenenie razmera roditelya zastavlyaet Unity pereschityvat
+        razmery vseh detey (TopVeil, BottomVeil, HUD_V4_CanvasRoot), chto
+        vyzyvaet shkval SendMessage vnutri redaktora. Eto veshaet Unity
+        namertvo (tvoi 12% CPU).
+2.  D3D11 BUFFER LOCK CRASH (Fizicheskiy vylet):
+      - Multiple uploads in flight for buffer... Falling back to slow path.
+      - Prichina: AbyssalThermalManager.cs:1017. Metod LockBufferForWrite
+        vyzyvaetsya, poka GPU esche chitaet bufer s proshlogo kadra. V URP
+        nelzya pisat v odin bufer kazhdyy kadr cherez Lock, nuzhna Dvoynaya
+        buferizatsiya (Double Buffering). Eto krashit render termalnyh zon.
+3.  SHADER _Time0 ERROR:
+      - undeclared identifier '_Time0' at kernel CSMain at
+        SargassumMicroFaunaBoids.compute(141)
+      - Prichina: V Unity 6 net _Time0. Nuzhno ispolzovat _Time.y (esli
+        peredaetsya iz skripta) ili lokalnyy taymer. Iz-za etogo sheyder
+        boidov ne kompiliruetsya, lomaya vsyu simulyatsiyu fauny.
+4.  POTERYa LORA (Runtime lore recovery host not found):
+      - Prichina: HectonLoreSystemsRoot.cs:391. Zagruzchik ischet na stsene --- WORLD
+        ---/Resource_FieldSources dlya inektsii lora, no takogo obekta net.
+        Ierarhiya stseny izmenilas.
+5.  PROZRAChNAYa VODA I SERYY TERREYN (Vizualnaya degradatsiya):
+      - Prichina vody: Nesmotrya na vklyuchenie DepthTexture, sam material Crest
+        libo ne perekompilirovalsya, libo sheyder vody vse esche vyrezan iz
+        RenderObjects ocheredi.
+      - Prichina terreyna: Oshibka nesovmestimosti emptyLightingData. Stsena ne
+        zapechena, a my trebuem ot nee GI (Global Illumination). Plyus,
+        BaseMapShader ne nayden dlya TerrainPreviewHDRP (ostatki HDRP musora v
+        URP proekte).
+
+🛡 REShENIE
+
+Proshlye agenty rabotali "po verham". V Iteratsii 14 ya zastavlyayu ih pisat dvoynuyu
+buferizatsiyu, unichtozhat OnValidate vyzovy v UI i ispravlyat HLSL oshibki
+napryamuyu. Prompty seychas budut gotovy v sleduyuschem soobschenii (iz-za
+limita dliny).
+HECTON-8 META-COORDINATOR SINHRONIZIROVAN. PROTOKOL ANALIZA AKTIVIROVAN.
+
+Lid, nizhe predstavlena polnaya preparirovannaya svodka sostoyaniya proekta. Ya sobral
+vse grehi iz poslednih logov (Editor.log, Unity Console, Crash Dumps) i razlozhil
+ih po polochkam. Prompty ne pishu — tolko suhie fakty i arhitekturnaya otsenka.
+
+I. STATUS-REPORT: GDE MY NAHODIMSYa
+
+My nahodimsya v faze «stabilizatsii posle rezni». My vykorchevali staroe
+OOP-nasledie, no na stykah novyh DOD-sistem voznikli kaskadnye oshibki.
+
+  - Chto sdelano: Bazovyy 0-GC HUD, nativnyy C++ audio-most (SPSC), WFC-generator
+    (karkas), fizika na Acceleration/PD, registratsiya cherez GlobalRegistry.
+  - Chto meshaet: Hronicheskaya len agentov (Early Exits), API-taymauty (OpenAI), i
+    arhitekturnyy sabotazh v OnValidate, kotoryy veshaet redaktor.
+
+II. ANALIZ RABOTY AGENTOV PO ITERATsIYaM
+
+ITERATsIYa 9: «Pervaya krov»
+
+  - Ag 1 (AI): Popytka vnedrit DDA. Slabaya integratsiya s vokselyami.
+  - Ag 2 (Physics): Rebeyz Origin Shift. Rabota na 4/10 — keshirovanie ispravleno
+    ne vezde.
+  - Ag 3 (Render): Vosstanovlenie Noir/SSDO. Sdelal «zaglushki» vmesto realnoy
+    otladki prohodov.
+  - Ag 4 (Registry): Nachalo migratsii. Udachno, no medlenno.
+  - Ag 5 (Data): Vnedrenie MMF. Tehnicheski ok, no slomal sovmestimost s
+    instrumentami.
+
+ITERATsIYa 10: «Limity i petli»
+
+  - Ag 1-5: Massovo vnedryali watchdog schetchiki. Obschaya rabota — «imitatsiya
+    bezopasnosti». Vmesto fiksa logiki prosto postavili break, chtoby ne
+    vislo.
+
+ITERATsIYa 11: «Initsializatsiya i audio»
+
+  - Ag 5 (Data): Nashel dedlok v SceneBootstrap (lane blocking). Eto edinstvennaya
+    sereznaya pobeda.
+  - Ag 6 (Audio): Napisal C++ plagin. Vysokiy uroven, no ostavil bitye ssylki v
+    Mixer.
+  - Ag 2 (Physics): Ogranichil rekursiyu v rigah.
+
+ITERATsIYa 12: «Zachistka Editor-time»
+
+  - Ag 4 (Registry): Dobil GameTickManager. Chistota reestra — 90%.
+  - Ag 6 (UI): Popytka pochinit skeyling matritsami provalilas (HUD v kuche).
+
+III. TOTALNYY REESTR OShIBOK I VARNINGOV (ISTORIChESKIY DEBET)
+
+Nizhe spisok vseh zafiksirovannyh problem s opisaniem ih vliyaniya na proekt:
+
+| Tip        | Oshibka / Stroka iz loga                                        | Opisanie i Posledstviya                                                                                            |
+| :--------- | :------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
+| **FATAL**  | `Unity.ILPP.Trigger.exe - System Error`                        | Krash Burst-kompilyatora. Vyzvan rekursivnymi strukturami ili ogromnymi value-type obektami na steke.              |
+| **CRASH**  | `ArgumentOutOfRangeException: Bad indices/count`               | `AbyssalThermalManager.cs:1024`. Popytka zalochit bufer nevernogo razmera. Preryvaet initsializatsiyu stseny.         |
+| **CRASH**  | `IndexOutOfRangeException: Invalid kernelIndex (5)`            | `SargassumMicroFaunaBoids.cs:1436`. Obraschenie k nesuschestvuyuschemu yadru sheydera. Lomaet simulyatsiyu ryb.               |
+| **FREEZE** | `SendMessage cannot be called during Awake/OnValidate`         | `SargassumCollapseChunk.cs:738`. Nezakonnaya mutatsiya ierarhii v `OnValidate`. Veshaet Main Thread pri refreshe.      |
+| **ERROR**  | `Shader error: undeclared identifier '_Time0'`                 | `SargassumMicroFaunaBoids.compute(141)`. Ispolzovanie ustarevshih peremennyh vremeni Unity. Sheyder ne kompilitsya. |
+| **ERROR**  | `s_evWeighted: local variables cannot be declared groupshared` | `Hecton_NoirAutoExposure.compute(49)`. Oshibka sintaksisa HLSL. Prichina chernogo ekrana.                            |
+| **ERROR**  | `Spec hash mismatch for 'industrial_shift_board_a'`            | `LoreDatabaseManager.cs`. Polomka svyazi UI i dannyh iz-za smeny algoritma heshirovaniya.                            |
+| **WARN**   | `MaterialLocation.External is obsolete`                        | Massovyy (1000+) spam pri importe FBX. Zamedlyaet rabotu redaktora i zabivaet logi.                                |
+| **WARN**   | `Inconsistent line endings in shader include`                  | Raznye formaty (Mac/Win). Vyzyvaet nevernye nomera strok v otchetah ob oshibkah sheyderov.                           |
+| **WARN**   | `Self-intersecting polygon in Mesh 'Cylinder.076'`             | Krivaya geometriya v assetah `ScifiFacility`. Mozhet vyzyvat artefakty teney i fiziki.                              |
+| **WARN**   | `Bakery: 257 pixels overlap in UV`                             | Perekrytie UV-razvertki. Privodit k chernym pyatnam pri zapekanii sveta.                                            |
+| **WARN**   | `Lighting data asset incompatible`                             | Ustarevshie dannye osvescheniya. Ves staticheskiy svet na stsene (GI) otklyuchen dvizhkom.                                |
+
+IV. TRENAZhERNYY ZAL: PREPARATsIYa POSLEDNEGO LOGA (APRIL 25)
+
+Eto samyy glubokiy analiz «Monstr-Loga», razdelennyy po podsistemam:
+
+1. Sektor: Kompilyatsiya i ILPP (Smert na vzlete)
+
+  - Problema: ILPP-Configuration ne generiruet vyvod. Tandra trebuet
+    dopolnitelnyh progonov.
+  - Detali: Vidno, chto Hecton8.Core.dll prohodit post-protsessing Burst (EILPP)
+    za 460ms. Eto slishkom dolgo dlya takogo obema.
+  - Sled: zzzUnity.Burst.CodeGen.BurstILPostProcessor — osnovnoy potrebitel
+    vremeni. Kto-to peregruzil dzhoby ogromnymi strukturami.
+
+2. Sektor: Animatsiya i Rigi (Smert v Awake)
+
+  - Problema: Object.GetInstanceID() is obsolete.
+  - Fayl: SargassumMicroFaunaBoids.cs(3190,37).
+  - Detali: Agent ispolzuet ustarevshiy API vnutri goryachego tsikla initsializatsii.
+    Nuzhno perehodit na GetEntityId.
+
+3. Sektor: Narrativ i Lor (Hash Collision)
+
+  - Problema: Spec hash mismatch (desyatki strok).
+  - Fayl: LoreDatabaseManager.cs:105.
+  - Detali: Konstruktor LoreSeed vychislyaet hesh v rantayme, kotoryy ne sovpadaet
+    s tem, chto zahardkozheno v LoreDatabaseManager.cs:157. Rezultat: Lor ne
+    podgruzhaetsya, UI pust, tekst ne otobrazhaetsya.
+
+4. Sektor: UI i Layout (SendMessage Hell)
+
+  - Problema: SendMessage cannot be called during Awake... (BiosBackdrop:
+    OnRectTransformDimensionsChange).
+  - Fayl: SuitHUDV4CanvasOverlay.cs:2992.
+  - Detali: Metod EnsureContentRoot v HectonUIScaler menyaet sizeDelta u
+    RectTransform. Eto triggerit tsepochku obnovleniy v Unity, kotoraya pytaetsya
+    poslat soobschenie OnRectTransformDimensionsChange. No tak kak eto vyzvano
+    iz OnValidate, Unity blokiruet potok. Eto glavnaya prichina 12% friza.
+
+5. Sektor: Okruzhenie i Lor-hosty (Broken References)
+
+  - Problema: Runtime lore recovery host not found: --- WORLD
+    ---/Resource_FieldSources.
+  - Fayl: HectonLoreSystemsRoot.cs:391.
+  - Detali: Kod pytaetsya dinamicheski nayti roditelskie obekty na stsene dlya
+    rasstanovki predmetov. Obektov net. Sistema vosstanovleniya (Recovery)
+    rabotaet vholostuyu i spamit vorningi.
+
+6. Sektor: Grafika i Sheydery (Syntax Death)
+
+  - Problema: expecting TVAL_ID or TVAL_VARREF at line 87.
+  - Detali: V odnom iz sheyderov dopuschena sintaksicheskaya oshibka (lishniy simvol
+    ili propuschennaya skobka). Iz-za etogo sheyder ne kompiliruetsya, i obekt
+    renderitsya rozovym ili chernym.
+
+7. Sektor: Import Assetov (Workflow Noise)
+
+  - Problema: MaterialLocation.External is obsolete.
+  - Detali: Sotni FBX modeley iz ScifiFacility nastroeny na vneshniy poisk
+    materialov. Eto legasi-put Unity. Nuzhno pereklyuchit v In Prefab.

@@ -260,7 +260,7 @@ namespace Hecton8.SaveSystem
                 return true;
             }
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 _cachedCaptureCamera = GlobalRegistry.Player != null && GlobalRegistry.Player.PlayerCamera != null

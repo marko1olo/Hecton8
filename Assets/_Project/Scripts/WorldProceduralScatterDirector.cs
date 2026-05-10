@@ -21,7 +21,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4036)]
-    public sealed partial class WorldProceduralScatterDirector : MonoBehaviour, ITickable, ISlowTickable, IUpdatable, ILateFrameTickable, ISceneBootstrapEventListener, IWorldGenService, IOriginShiftListener
+    public sealed partial class WorldProceduralScatterDirector : MonoBehaviour, ITickable, ISlowTickable, IUpdatable, ILateFrameTickable, IGameBootstrapperEventListener, IWorldGenService, IOriginShiftListener
     {
         private const float StartupScatterStabilizationDelaySeconds = 2f;
         private const int MaxRegisteredScatterDirectors = 4;
@@ -289,17 +289,17 @@ namespace Hecton8.World
         [SerializeField] private bool enableFloraGpuiCpuFrustumCulling = true;
         [SerializeField, Min(0f)] private float floraGpuiFrustumPaddingMeters = 24f;
         [SerializeField] private float missingPlacementGraceSeconds = 8f;
-        [SerializeField] private bool waitForSceneBootstrap = true;
+        [SerializeField] private bool waitForGameBootstrapper = true;
         [SerializeField, Tooltip("Caps bootstrap prime scatter radius so pre-activation warmup does not block on the full runtime sampling window.")]
         private int bootstrapPrimeRadiusCells = 3;
         [SerializeField] private float scatterRefreshDistanceThreshold = 8f;
         [SerializeField] private bool enableForcedScatterRefresh = false;
         [SerializeField] private float scatterForcedRefreshInterval = 0f;
         [SerializeField] private bool spreadInitialScatterWarmupAcrossTicks = true;
-        [Tooltip("Максимум объектов, которые scatter разрешает догреть в пуле за один startup rebuild.")]
+        [Tooltip("Maksimum obektov, kotorye scatter razreshaet dogret v pule za odin startup rebuild.")]
         #pragma warning disable CS0414
         [SerializeField] private int maxPoolWarmupPerRebuild = 10;
-        [Tooltip("Ограничение startup warmup для одного prefab за один rebuild, чтобы не было резких аллокаций пачками.")]
+        [Tooltip("Ogranichenie startup warmup dlya odnogo prefab za odin rebuild, chtoby ne bylo rezkih allokatsiy pachkami.")]
         [SerializeField] private int maxPoolWarmupPerPrefabPerRebuild = 4;
         [SerializeField] private int maxInitialScatterCreatesPerRebuild = 24;
         [Tooltip("Legacy runtime warmup tuning. Runtime warmup disabled by zero-instantiate policy.")]
@@ -316,11 +316,11 @@ namespace Hecton8.World
         [SerializeField, Range(0.25f, 3f)] private float rockSmallFloorFinalRadiusScale = 1.9f;
         [SerializeField, Range(0.25f, 3f)] private float rockClusterMediumFinalRadiusScale = 1.65f;
         [SerializeField, Range(0.25f, 3f)] private float rockArchLargeFinalRadiusScale = 1.25f;
-        [Tooltip("Какую долю near-радиуса разрешено тратить на proxy generated geology до перехода в final variant.")]
+        [Tooltip("Kakuyu dolyu near-radiusa razresheno tratit na proxy generated geology do perehoda v final variant.")]
         [SerializeField, Range(0f, 1f)] private float proxyGeneratedGeologyNearRadiusScale = 0.45f;
         [SerializeField] private bool enableScatterRebuildProfiling = true;
         [SerializeField] private float scatterRebuildSpikeThresholdMs = 40f;
-        [Tooltip("Включает подробную строковую диагностику sampling/rebuild. Держи выключенной в обычном runtime, чтобы не тратить CPU на hot path.")]
+        [Tooltip("Vklyuchaet podrobnuyu strokovuyu diagnostiku sampling/rebuild. Derzhi vyklyuchennoy v obychnom runtime, chtoby ne tratit CPU na hot path.")]
         [SerializeField] private bool enableScatterDetailedDiagnostics = false;
 
         [Header("Biome Volume Overrides")]
@@ -1158,16 +1158,16 @@ namespace Hecton8.World
             if (_bootstrapRuntimeState.AllowPrimePass)
                 return false;
 
-            if (!Application.isPlaying || !waitForSceneBootstrap || BootstrapState.IsGameReady)
+            if (!Application.isPlaying || !waitForGameBootstrapper || BootstrapState.IsGameReady)
                 return false;
 
             if (_bootstrapRuntimeState.Failed)
                 return false;
 
-            return ResolveSceneBootstrapPresence();
+            return ResolveGameBootstrapperPresence();
         }
 
-        private void HandleSceneBootstrapReady()
+        private void HandleGameBootstrapperReady()
         {
             _bootstrapRuntimeState.PresenceResolved = true;
             _bootstrapRuntimeState.Present = true;
@@ -1188,28 +1188,28 @@ namespace Hecton8.World
                 RebuildScatterPreview();
         }
 
-        public void OnSceneBootstrapEvent(in SceneBootstrapEventPayload payload)
+        public void OnGameBootstrapperEvent(in GameBootstrapperEventPayload payload)
         {
-            SceneBootstrapEventType eventType = (SceneBootstrapEventType)payload.EventType;
-            if (eventType == SceneBootstrapEventType.GameReady)
+            GameBootstrapperEventType eventType = (GameBootstrapperEventType)payload.EventType;
+            if (eventType == GameBootstrapperEventType.GameReady)
             {
-                HandleSceneBootstrapReady();
+                HandleGameBootstrapperReady();
                 return;
             }
 
-            if (eventType != SceneBootstrapEventType.BootstrapFailed)
+            if (eventType != GameBootstrapperEventType.BootstrapFailed)
                 return;
 
-            if (payload.ErrorHash != 0u && SceneBootstrap.TryResolveBootstrapFailureReason(payload.ErrorHash, out string reason))
+            if (payload.ErrorHash != 0u && GameBootstrapper.TryResolveBootstrapFailureReason(payload.ErrorHash, out string reason))
             {
-                HandleSceneBootstrapFailed(reason);
+                HandleGameBootstrapperFailed(reason);
                 return;
             }
 
-            HandleSceneBootstrapFailed(string.Empty);
+            HandleGameBootstrapperFailed(string.Empty);
         }
 
-        private void HandleSceneBootstrapFailed(string reason)
+        private void HandleGameBootstrapperFailed(string reason)
         {
             _bootstrapRuntimeState.PresenceResolved = true;
             _bootstrapRuntimeState.Present = true;
@@ -1240,7 +1240,7 @@ namespace Hecton8.World
                 RebuildScatterPreview();
         }
 
-        private bool ResolveSceneBootstrapPresence()
+        private bool ResolveGameBootstrapperPresence()
         {
             if (BootstrapState.HasActiveInstance)
             {
@@ -1252,7 +1252,7 @@ namespace Hecton8.World
             if (_bootstrapRuntimeState.PresenceResolved)
                 return _bootstrapRuntimeState.Present;
 
-            SceneBootstrap bootstrap = SceneBootstrap.ActiveInstance;
+            GameBootstrapper bootstrap = GameBootstrapper.ActiveInstance;
             _bootstrapRuntimeState.PresenceResolved = true;
             _bootstrapRuntimeState.Present = bootstrap != null
                 && bootstrap.isActiveAndEnabled
@@ -1957,7 +1957,7 @@ namespace Hecton8.World
             if (_lifecycleRuntimeState.SubscribedToBootstrap)
                 return;
 
-            SceneBootstrap.Register(this);
+            GameBootstrapper.Register(this);
             _lifecycleRuntimeState.SubscribedToBootstrap = true;
         }
 
@@ -1966,7 +1966,7 @@ namespace Hecton8.World
             if (!_lifecycleRuntimeState.SubscribedToBootstrap)
                 return;
 
-            SceneBootstrap.Unregister(this);
+            GameBootstrapper.Unregister(this);
             _lifecycleRuntimeState.SubscribedToBootstrap = false;
         }
 

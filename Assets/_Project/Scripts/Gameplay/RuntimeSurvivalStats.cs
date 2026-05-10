@@ -1,15 +1,15 @@
 // ============================================================================
 // HECTON-8 — RuntimeSurvivalStats.cs
-// Mutable runtime wrapper над SurvivalStats для системы апгрейдов.
+// Mutable runtime wrapper nad SurvivalStats dlya sistemy apgreydov.
 //
 // SurvivalStats — immutable SO (private setters).
-// RuntimeSurvivalStats — ScriptableObject с публичными setters,
-// создаётся через ScriptableObject.CreateInstance<>() в SuitUpgradeManager.
+// RuntimeSurvivalStats — ScriptableObject s publichnymi setters,
+// sozdaetsya cherez ScriptableObject.CreateInstance<>() v SuitUpgradeManager.
 //
-// АРХИТЕКТУРА:
-//   • Наследует SurvivalStats — совместим с HectonSurvivalSystem.OverrideStats().
-//   • ApplyDeltas() пересчитывает все параметры из base + дельты.
-//   • Не сохраняется на диск — пересоздаётся при загрузке.
+// ARHITEKTURA:
+//   • Nasleduet SurvivalStats — sovmestim s HectonSurvivalSystem.OverrideStats().
+//   • ApplyDeltas() pereschityvaet vse parametry iz base + delty.
+//   • Ne sohranyaetsya na disk — peresozdaetsya pri zagruzke.
 // ============================================================================
 
 using UnityEngine;
@@ -17,12 +17,12 @@ using UnityEngine;
 namespace Hecton8.Gameplay
 {
     /// <summary>
-    /// Mutable runtime версия SurvivalStats для применения апгрейдов.
-    /// Создаётся через ScriptableObject.CreateInstance — не является ассетом.
+    /// Mutable runtime versiya SurvivalStats dlya primeneniya apgreydov.
+    /// Sozdaetsya cherez ScriptableObject.CreateInstance — ne yavlyaetsya assetom.
     /// </summary>
     public sealed class RuntimeSurvivalStats : SurvivalStats
     {
-        // Mutable overrides — теневые поля поверх базовых
+        // Mutable overrides — tenevye polya poverh bazovyh
         private float _maxOxygen;
         private float _maxEnergy;
         private float _maxIntegrity;
@@ -43,7 +43,7 @@ namespace Hecton8.Gameplay
         public override float RadiationThreshold  => _initialized ? _radiationThreshold  : base.RadiationThreshold;
 
         /// <summary>
-        /// Применяет дельты апгрейдов поверх базовых параметров.
+        /// Primenyaet delty apgreydov poverh bazovyh parametrov.
         /// </summary>
         public void ApplyDeltas(
             SurvivalStats baseStats,

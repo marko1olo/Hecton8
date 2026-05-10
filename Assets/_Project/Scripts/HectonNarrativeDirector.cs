@@ -46,8 +46,8 @@ namespace Hecton8.Gameplay
         private bool _registeredNarrativeRuntime;
         private bool _registeredSlowTick;
 
-        // Флаг: Director запросил редкую находку в текущем тике
-        // Читается в диагностике и будущей системе спавна
+        // Flag: Director zaprosil redkuyu nahodku v tekuschem tike
+        // Chitaetsya v diagnostike i buduschey sisteme spavna
 #pragma warning disable CS0414
         private bool _rareDiscoveryRequested;
 #pragma warning restore CS0414
@@ -379,7 +379,7 @@ namespace Hecton8.Gameplay
             if (_playerTransform != null)
                 return true;
 
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
+            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
                 playerTransform == null)
             {
                 return false;

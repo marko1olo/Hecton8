@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Rendering;
 
 using System.Collections;
@@ -1100,7 +1100,7 @@ namespace LlockhamIndustries.Decals
         }
         private bool VRCamera(Camera Source)
         {
-            return false; // VR вырезан техдиром для совместимости с Unity 6
+            return false; // VR vyrezan tehdirom dlya sovmestimosti s Unity 6
         }
 
         private void UpdateRenderingMethod(Camera Camera, DynamicDecals System)

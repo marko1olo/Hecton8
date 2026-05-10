@@ -1,6 +1,6 @@
 // ============================================================================
 // Hecton8 — HectonDevToolsMenu.cs
-// Статические пункты меню для разработки (редактор, не рантайм билда).
+// Staticheskie punkty menyu dlya razrabotki (redaktor, ne rantaym bilda).
 // ============================================================================
 
 using System;
@@ -18,7 +18,7 @@ using UnityEngine.SceneManagement;
 namespace Hecton8.Editor
 {
     /// <summary>
-    /// Общие dev-утилиты: пути, PlayerPrefs, сцена, диагностика сборки.
+    /// Obschie dev-utility: puti, PlayerPrefs, stsena, diagnostika sborki.
     /// </summary>
     public static class HectonDevToolsMenu
     {
@@ -92,10 +92,10 @@ namespace Hecton8.Editor
         {
             if (!EditorUtility.DisplayDialog(
                     "Hecton Dev",
-                    "Удалить все PlayerPrefs для этого пользователя и редактора Unity?\n\n" +
-                    "Откатить нельзя.",
-                    "Очистить",
-                    "Отмена"))
+                    "Udalit vse PlayerPrefs dlya etogo polzovatelya i redaktora Unity?\n\n" +
+                    "Otkatit nelzya.",
+                    "Ochistit",
+                    "Otmena"))
             {
                 return;
             }
@@ -327,11 +327,11 @@ namespace Hecton8.Editor
             sb.Append("SpatialAudioManager count: ").AppendLine(sams.Length.ToString());
             if (sams.Length > 1)
             {
-                Debug.LogWarning("[Hecton Dev] Несколько SpatialAudioManager — допустимо только при смене сцен; проверь DontDestroyOnLoad.");
+                Debug.LogWarning("[Hecton Dev] Neskolko SpatialAudioManager — dopustimo tolko pri smene stsen; prover DontDestroyOnLoad.");
             }
             else if (sams.Length == 0)
             {
-                Debug.LogWarning("[Hecton Dev] SpatialAudioManager не найден в загруженных сценах (может быть ок в чистом sandbox).");
+                Debug.LogWarning("[Hecton Dev] SpatialAudioManager ne nayden v zagruzhennyh stsenah (mozhet byt ok v chistom sandbox).");
             }
 
             int missingTotal = LogMissingScriptsInLoadedScenes();
@@ -883,7 +883,7 @@ namespace Hecton8.Editor
             return host.AddComponent<ToolRuntimeSmokeTester>();
         }
 
-        /// <summary>Предупреждения с ping объектов; возвращает число missing *components*.</summary>
+        /// <summary>Preduprezhdeniya s ping obektov; vozvraschaet chislo missing *components*.</summary>
         private static int LogMissingScriptsInLoadedScenes()
         {
             GameObject[] gos = UnityEngine.Object.FindObjectsByType<GameObject>(

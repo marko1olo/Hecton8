@@ -98,6 +98,7 @@ namespace Hecton8.Interaction
             RefreshBatteryToolCache();
             CacheScalarConfig();
             CacheDoorAxis();
+            _batteryVisualStateCached = false;
             ApplyDoorVisual();
             ApplyBatteryVisual();
         }
@@ -105,6 +106,7 @@ namespace Hecton8.Interaction
         private void OnDisable()
         {
             AbortBatterySnap();
+            _batteryVisualStateCached = false;
             TryUnregisterTick();
         }
 

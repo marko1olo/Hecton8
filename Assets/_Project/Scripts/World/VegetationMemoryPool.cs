@@ -125,6 +125,7 @@ namespace Hecton8.World
             public NativeParallelMultiHashMap<int, int> ThreatSamplingChunkHashFrontNative;
             public NativeParallelMultiHashMap<int, int> ThreatSamplingChunkHashBackNative;
             public NativeArray<Vector3> AbyssalAnchorPositionsNative;
+            public NativeArray<AbsoluteUniversePosition> AbyssalAnchorAupPositionsNative;
             public NativeArray<Vector3> AbyssalNavNodeSnapshotNative;
             public NativeArray<Vector3> AbyssalNavConduitVectorsSnapshotNative;
             public NativeArray<float> AbyssalNavConduitStrengthSnapshotNative;
@@ -201,6 +202,7 @@ namespace Hecton8.World
                 DisposeNativeParallelMultiHashMap(ref ThreatSamplingChunkHashFrontNative, dependency, nameof(ThreatSamplingChunkHashFrontNative));
                 DisposeNativeParallelMultiHashMap(ref ThreatSamplingChunkHashBackNative, dependency, nameof(ThreatSamplingChunkHashBackNative));
                 DisposeNativeArray(ref AbyssalAnchorPositionsNative, dependency);
+                DisposeNativeArray(ref AbyssalAnchorAupPositionsNative, dependency);
                 DisposeNativeArray(ref AbyssalNavNodeSnapshotNative, dependency);
                 DisposeNativeArray(ref AbyssalNavConduitVectorsSnapshotNative, dependency);
                 DisposeNativeArray(ref AbyssalNavConduitStrengthSnapshotNative, dependency);

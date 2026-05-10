@@ -1,23 +1,23 @@
 // ══════════════════════════════════════════════════════════════════
 // EnvironmentState.cs
-// Перечисление состояний окружающей среды экзолуны Гектон
+// Perechislenie sostoyaniy okruzhayuschey sredy ekzoluny Gekton
 // ══════════════════════════════════════════════════════════════════
 
 /// <summary>
-/// Состояния атмосферы мира.
-/// Используется HectonAtmosphereManager и всеми подписчиками OnStateChanged.
+/// Sostoyaniya atmosfery mira.
+/// Ispolzuetsya HectonAtmosphereManager i vsemi podpischikami OnStateChanged.
 /// </summary>
 public enum EnvironmentState
 {
-    /// <summary>Дневная поверхность — стандартное освещение.</summary>
+    /// <summary>Dnevnaya poverhnost — standartnoe osveschenie.</summary>
     SURFACE_DAY,
 
-    /// <summary>Ночная поверхность — солнце ниже горизонта.</summary>
+    /// <summary>Nochnaya poverhnost — solntse nizhe gorizonta.</summary>
     SURFACE_NIGHT,
 
-    /// <summary>Под водой — камера игрока ниже уровня воды.</summary>
+    /// <summary>Pod vodoy — kamera igroka nizhe urovnya vody.</summary>
     UNDERWATER,
 
-    /// <summary>Великое Затмение — редкое космическое событие.</summary>
+    /// <summary>Velikoe Zatmenie — redkoe kosmicheskoe sobytie.</summary>
     ECLIPSE
 }

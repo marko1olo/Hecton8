@@ -1,4 +1,4 @@
-﻿# AGENT 06 TechArt Log
+# AGENT 06 TechArt Log
 Date: 2026-05-04
 
 
@@ -309,11 +309,11 @@ Mandates followed:
 - Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_connector_d.fbx
 - Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_door.fbx
 - Assets/_Project/Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.fbx
-- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Forest_Rock_Shelf_wgpqfjl_Mid.fbx
-- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx
-- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Nordic_Beach_Rock_Formation_vd4iecjva_Low.fbx
-- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Nordic_Beach_Rock_uknoehp_Mid.fbx
-- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Rock_4.fbx
+- Assets/_Project/Art/Models/Rocks/Rock 4 - UNIVERSALNYY VYBOR/UNIVERSALNYY VYBOR (TEKSTURY)/Forest_Rock_Shelf_wgpqfjl_Mid.fbx
+- Assets/_Project/Art/Models/Rocks/Rock 4 - UNIVERSALNYY VYBOR/UNIVERSALNYY VYBOR (TEKSTURY)/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx
+- Assets/_Project/Art/Models/Rocks/Rock 4 - UNIVERSALNYY VYBOR/UNIVERSALNYY VYBOR (TEKSTURY)/Nordic_Beach_Rock_Formation_vd4iecjva_Low.fbx
+- Assets/_Project/Art/Models/Rocks/Rock 4 - UNIVERSALNYY VYBOR/UNIVERSALNYY VYBOR (TEKSTURY)/Nordic_Beach_Rock_uknoehp_Mid.fbx
+- Assets/_Project/Art/Models/Rocks/Rock 4 - UNIVERSALNYY VYBOR/UNIVERSALNYY VYBOR (TEKSTURY)/Rock_4.fbx
 - Assets/_Project/Art/Models/Rocks/Rock 5/orig/River_Rock_FBX.fbx
 - Assets/_Project/Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx
 - Assets/_Project/Art/Models/Rocks/Rock 7/SAMMPLE.fbx
@@ -365,31 +365,31 @@ Mandates followed:
 
 ## Broken References
 
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Арка 1 стонхенж.prefab: ENV_ Арка 1 стонхенж/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Болдер 2.prefab: ENV_ Болдер 2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Кам с кучк 3-3-1.5 .prefab: ENV_ Кам с кучк 3-3-1.5 /PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Камень баз 4-4-2 м.prefab: ENV_ Камень баз 4-4-2 м/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Камень баз 6-4-4м.prefab: ENV_ Камень баз 6-4-4м/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Кучка 3 5-5-2.prefab: ENV_ Кучка 3 5-5-2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Кучка 4  5-5.prefab: ENV_ Кучка 4  5-5/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Кучка 5   5-5-2.prefab: ENV_ Кучка 5   5-5-2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Огром скала.prefab: ENV_ Огром скала/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Огроменная скала.prefab: ENV_ Огроменная скала/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Скала2.prefab: ENV_ Скала2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ арка1.prefab: ENV_ арка1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ арка2.prefab: ENV_ арка2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ болдер 1.prefab: ENV_ болдер 1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ большая горизонтальная.prefab: ENV_ большая горизонтальная/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ донная куча.prefab: ENV_ донная куча/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ круговая.prefab: ENV_ круговая/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ куча 3 болд.prefab: ENV_ куча 3 болд/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ куча1.prefab: ENV_ куча1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ куча2.prefab: ENV_ куча2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ кучка мелка 1.prefab: ENV_ кучка мелка 1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ пиллар2.prefab: ENV_ пиллар2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ скала большая.prefab: ENV_ скала большая/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ПИЛЛАР1.prefab: ENV_ПИЛЛАР1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_блин плоск 5 на 5 .prefab: ENV_блин плоск 5 на 5 /PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Arka 1 stonhenzh.prefab: ENV_ Arka 1 stonhenzh/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Bolder 2.prefab: ENV_ Bolder 2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Kam s kuchk 3-3-1.5 .prefab: ENV_ Kam s kuchk 3-3-1.5 /PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Kamen baz 4-4-2 m.prefab: ENV_ Kamen baz 4-4-2 m/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Kamen baz 6-4-4m.prefab: ENV_ Kamen baz 6-4-4m/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Kuchka 3 5-5-2.prefab: ENV_ Kuchka 3 5-5-2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Kuchka 4  5-5.prefab: ENV_ Kuchka 4  5-5/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Kuchka 5   5-5-2.prefab: ENV_ Kuchka 5   5-5-2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Ogrom skala.prefab: ENV_ Ogrom skala/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Ogromennaya skala.prefab: ENV_ Ogromennaya skala/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Skala2.prefab: ENV_ Skala2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ arka1.prefab: ENV_ arka1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ arka2.prefab: ENV_ arka2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ bolder 1.prefab: ENV_ bolder 1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ bolshaya gorizontalnaya.prefab: ENV_ bolshaya gorizontalnaya/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ donnaya kucha.prefab: ENV_ donnaya kucha/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ krugovaya.prefab: ENV_ krugovaya/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ kucha 3 bold.prefab: ENV_ kucha 3 bold/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ kucha1.prefab: ENV_ kucha1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ kucha2.prefab: ENV_ kucha2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ kuchka melka 1.prefab: ENV_ kuchka melka 1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ pillar2.prefab: ENV_ pillar2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ skala bolshaya.prefab: ENV_ skala bolshaya/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_PILLAR1.prefab: ENV_PILLAR1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_blin plosk 5 na 5 .prefab: ENV_blin plosk 5 na 5 /PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
 - Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab: Suit_HUD_Canvas: missing script components=1.
 - Assets/_Project/Prefabs/VoxelChunk.prefab: VoxelChunk: MeshFilter missing sharedMesh.
 - Assets/_Project/Prefabs/VoxelChunk.prefab: VoxelChunk: Renderer 'VoxelChunk' has null shared material slot 0.
@@ -442,31 +442,31 @@ Mandates followed:
 - Assets/_Project/Scenes/03_HECTON_WORLD_CREST5.unity: VoxelChunk: MeshFilter missing sharedMesh.
 - Assets/_Project/Scenes/03_HECTON_WORLD_CREST5.unity: VoxelChunk: Renderer 'VoxelChunk' has null shared material slot 0.
 - Assets/_Project/Scenes/03_HECTON_WORLD_CREST5.unity: SiltTrail: Renderer 'SiltTrail' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ПИЛЛАР1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ кучка мелка 1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ скала большая/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ пиллар2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ куча2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ куча1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ арка1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ донная куча/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ куча 3 болд/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_блин плоск 5 на 5 /PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ арка2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Болдер 1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Болдер 2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Скала2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ круговая/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ большая горизонтальная/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Огром скала/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Огроменная скала/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Кучка 3 5-5-2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Кучка 4  5-5/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Арка 1 стонхенж/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Кучка 5   5-5-2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Камень баз 6-4-4м/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Кам с кучк 3-3-1.5 /PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
-- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Камень баз 4-4-2 м/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_PILLAR1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ kuchka melka 1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ skala bolshaya/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ pillar2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ kucha2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ kucha1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ arka1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ donnaya kucha/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ kucha 3 bold/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_blin plosk 5 na 5 /PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ arka2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Bolder 1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Bolder 2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Skala2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ krugovaya/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ bolshaya gorizontalnaya/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Ogrom skala/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Ogromennaya skala/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Kuchka 3 5-5-2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Kuchka 4  5-5/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Arka 1 stonhenzh/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Kuchka 5   5-5-2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Kamen baz 6-4-4m/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Kam s kuchk 3-3-1.5 /PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Kamen baz 4-4-2 m/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
 - Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Cameras ---------------------------------------/Main Camera: missing script components=2.
 - Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Cameras ---------------------------------------/CM vcam1: missing script components=2.
 - Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Cameras ---------------------------------------/CM vcam1/cm: missing script components=3.
@@ -1284,11 +1284,11 @@ Mandates followed:
 - Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_door.fbx: Plane.547: Plane.547: UV2 triangle is degenerate/self-intersecting.
 - Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_door.fbx: Plane.549: Plane.549: UV2 triangle is degenerate/self-intersecting.
 - Assets/_Project/Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.fbx: Mesh_0: Mesh_0: UV2 triangle is degenerate/self-intersecting.
-- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Forest_Rock_Shelf_wgpqfjl_Mid.fbx: wgpqfjl_LOD0_TIER2_000: wgpqfjl_LOD0_TIER2_000: UV2 overlap detected between non-adjacent lightmap triangles.
-- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx: vimrfjsaw_LOD0_TIER2_000: vimrfjsaw_LOD0_TIER2_000: UV2 overlap detected between non-adjacent lightmap triangles.
-- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Nordic_Beach_Rock_Formation_vd4iecjva_Low.fbx: vd4iecjva_LOD0_TIER3_000: vd4iecjva_LOD0_TIER3_000: UV2 overlap detected between non-adjacent lightmap triangles.
-- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Nordic_Beach_Rock_uknoehp_Mid.fbx: uknoehp_LOD0_TIER2_000: uknoehp_LOD0_TIER2_000: UV2 overlap detected between non-adjacent lightmap triangles.
-- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Rock_4.fbx: Rock_4: Rock_4: UV2 triangle is degenerate/self-intersecting.
+- Assets/_Project/Art/Models/Rocks/Rock 4 - UNIVERSALNYY VYBOR/UNIVERSALNYY VYBOR (TEKSTURY)/Forest_Rock_Shelf_wgpqfjl_Mid.fbx: wgpqfjl_LOD0_TIER2_000: wgpqfjl_LOD0_TIER2_000: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/Art/Models/Rocks/Rock 4 - UNIVERSALNYY VYBOR/UNIVERSALNYY VYBOR (TEKSTURY)/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx: vimrfjsaw_LOD0_TIER2_000: vimrfjsaw_LOD0_TIER2_000: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/Art/Models/Rocks/Rock 4 - UNIVERSALNYY VYBOR/UNIVERSALNYY VYBOR (TEKSTURY)/Nordic_Beach_Rock_Formation_vd4iecjva_Low.fbx: vd4iecjva_LOD0_TIER3_000: vd4iecjva_LOD0_TIER3_000: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/Art/Models/Rocks/Rock 4 - UNIVERSALNYY VYBOR/UNIVERSALNYY VYBOR (TEKSTURY)/Nordic_Beach_Rock_uknoehp_Mid.fbx: uknoehp_LOD0_TIER2_000: uknoehp_LOD0_TIER2_000: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/Art/Models/Rocks/Rock 4 - UNIVERSALNYY VYBOR/UNIVERSALNYY VYBOR (TEKSTURY)/Rock_4.fbx: Rock_4: Rock_4: UV2 triangle is degenerate/self-intersecting.
 - Assets/_Project/Art/Models/Rocks/Rock 5/orig/River_Rock_FBX.fbx: RiverRock: RiverRock: UV2 overlap detected between non-adjacent lightmap triangles.
 - Assets/_Project/Art/Models/Rocks/Rock 5/orig/River_Rock_FBX.fbx: RiverRock1: RiverRock1: UV2 overlap detected between non-adjacent lightmap triangles.
 - Assets/_Project/Art/Models/Rocks/Rock 5/orig/River_Rock_FBX.fbx: RiverRock2: RiverRock2: UV2 overlap detected between non-adjacent lightmap triangles.

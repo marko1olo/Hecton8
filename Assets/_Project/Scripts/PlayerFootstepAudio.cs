@@ -32,7 +32,7 @@
 //      - Each entry can have BOTH fields set (matched independently).
 //   3. Assign audio clips to each entry.
 //   4. Set defaultFootstepClips as fallback.
-//   5. На сцене должен быть SpatialAudioManager (Bootstrap) — шаги идут в его 3D-пул.
+//   5. Na stsene dolzhen byt SpatialAudioManager (Bootstrap) — shagi idut v ego 3D-pul.
 //
 // INSPECTOR EXAMPLE:
 //   Element 0: biomeIndex=0, tag="",          clips=[sand_01..04]  ← MapMagic sand biome

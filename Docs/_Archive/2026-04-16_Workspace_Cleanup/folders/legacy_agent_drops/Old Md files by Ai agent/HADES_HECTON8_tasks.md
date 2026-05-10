@@ -3,180 +3,180 @@ Status: ARCHIVED
 
 **WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
 
-# План задач C/HADES/HECTON8 (рабочий каталог `C:\hades\Hecton8`)
+# Plan zadach C/HADES/HECTON8 (rabochiy katalog `C:\hades\Hecton8`)
 
-> Это основной трек задач для проекта Submerge (HECTON-8) на базе текущего репозитория. 
-> Любое изменение задач должно фиксироваться в issue/PR как «done» после проверки на работоспособность.
+> Eto osnovnoy trek zadach dlya proekta Submerge (HECTON-8) na baze tekuschego repozitoriya. 
+> Lyuboe izmenenie zadach dolzhno fiksirovatsya v issue/PR kak «done» posle proverki na rabotosposobnost.
 
-## 1. Стратегия и цели проекта
+## 1. Strategiya i tseli proekta
 
-- Сформировать замысел ключевого визуального стиля: Deep Sea Noir + научно-техническая тематика + атмосфера затонувшей базы.
-- Обеспечить модульную сборку: графика + эффекты + сценарий + UI + оптимизация памяти на уровне 2ГБ VRAM.
-- Основная связка middleware:
-  - Crest (вода),
-  - MapMagic (генерация ландшафта),
-  - MicroSplat (орбазинг),
-  - VLB (волны/дым),
+- Sformirovat zamysel klyuchevogo vizualnogo stilya: Deep Sea Noir + nauchno-tehnicheskaya tematika + atmosfera zatonuvshey bazy.
+- Obespechit modulnuyu sborku: grafika + effekty + stsenariy + UI + optimizatsiya pamyati na urovne 2GB VRAM.
+- Osnovnaya svyazka middleware:
+  - Crest (voda),
+  - MapMagic (generatsiya landshafta),
+  - MicroSplat (orbazing),
+  - VLB (volny/dym),
   - GPU Instancer,
   - Odin Inspector,
   - Easy Save.
-- Уделить внимание стабильности: тесты эскапирования высоты, логика слежения за трансформами, контроллер камеры, корректное отключение объектов при стриминге World (Storm-breaker).
+- Udelit vnimanie stabilnosti: testy eskapirovaniya vysoty, logika slezheniya za transformami, kontroller kamery, korrektnoe otklyuchenie obektov pri striminge World (Storm-breaker).
 
-## 2. Ближайшие итерации (минимальный MVP)
+## 2. Blizhayshie iteratsii (minimalnyy MVP)
 
-- Фаза 1: Визуальный сет Deep Sea Noir.
-  - Финализировать цветовой набор, освещение, весенние профили постпроцесса, fog/volumetric.
-  - Прототипировать главный мир: морское дно, руины, точечные источники света, скрипты переходов.
+- Faza 1: Vizualnyy set Deep Sea Noir.
+  - Finalizirovat tsvetovoy nabor, osveschenie, vesennie profili postprotsessa, fog/volumetric.
+  - Prototipirovat glavnyy mir: morskoe dno, ruiny, tochechnye istochniki sveta, skripty perehodov.
 
-- Фаза 2: Игровая механика, база и интерфейсы.
-  - Реализовать систему управления персонажем + PDA + инвентарь.
-  - Добавить интерактивность объектов, сбор ресурсов, крафт ремесла.
+- Faza 2: Igrovaya mehanika, baza i interfeysy.
+  - Realizovat sistemu upravleniya personazhem + PDA + inventar.
+  - Dobavit interaktivnost obektov, sbor resursov, kraft remesla.
 
-- Фаза 3: Процедурная генерация уровня.
-  - Задать сетку abyss/nodes, алгоритмы заполнения, повторы.
+- Faza 3: Protsedurnaya generatsiya urovnya.
+  - Zadat setku abyss/nodes, algoritmy zapolneniya, povtory.
 
-- Фаза 4: Производительность.
-  - Низкополигонная LOD-ферма, кастомный culling, упрощённая геометрия для дальнего вида.
+- Faza 4: Proizvoditelnost.
+  - Nizkopoligonnaya LOD-ferma, kastomnyy culling, uproschennaya geometriya dlya dalnego vida.
 
-- Фаза 5: Подготовка релиза и требования.
-  - Требования: 30 FPS на MX350, не более 2GB VRAM, приемлемые нагруженные сцены.
+- Faza 5: Podgotovka reliza i trebovaniya.
+  - Trebovaniya: 30 FPS na MX350, ne bolee 2GB VRAM, priemlemye nagruzhennye stseny.
 
-## 3. Техническая поддержка и качество
+## 3. Tehnicheskaya podderzhka i kachestvo
 
-- Оптимизация VRAM, URP Volumetric, с учётом low/medium/high.
-- Автоматические проверки состояния ассетов (Crest/MapMagic). Сделать workflow asset health check через PR.
-- Отслеживать порядок вызовов Update/FixedUpdate/LateUpdate и проблемы GC.
+- Optimizatsiya VRAM, URP Volumetric, s uchetom low/medium/high.
+- Avtomaticheskie proverki sostoyaniya assetov (Crest/MapMagic). Sdelat workflow asset health check cherez PR.
+- Otslezhivat poryadok vyzovov Update/FixedUpdate/LateUpdate i problemy GC.
 
-## 3.1. Четвёртый столп из README (2)
-- Уточнить точные target hardware constraints:
-  - Texture max 2048x2048 для стен/ландшафта, 1024x1024/512x512 для пропсов.
-  - Не более 2 GB VRAM.
-  - Никакой tesellation, только Normal/Parallax.
-  - Zero-GC в Update/FixedUpdate/LateUpdate.
-  - Без LINQ/FindObjectOfType/GetComponent в горячих циклах.
+## 3.1. Chetvertyy stolp iz README (2)
+- Utochnit tochnye target hardware constraints:
+  - Texture max 2048x2048 dlya sten/landshafta, 1024x1024/512x512 dlya propsov.
+  - Ne bolee 2 GB VRAM.
+  - Nikakoy tesellation, tolko Normal/Parallax.
+  - Zero-GC v Update/FixedUpdate/LateUpdate.
+  - Bez LINQ/FindObjectOfType/GetComponent v goryachih tsiklah.
 
-## 3.2. Core Pillars (из README)
-- Технологический уют, мегалофобия, тяжелый инжиниринг, мародерство.
-- Проверить, что каждая задача соответствует этим принципам.
+## 3.2. Core Pillars (iz README)
+- Tehnologicheskiy uyut, megalofobiya, tyazhelyy inzhiniring, maroderstvo.
+- Proverit, chto kazhdaya zadacha sootvetstvuet etim printsipam.
 
-## 4. Управление задачами status-driven
+## 4. Upravlenie zadachami status-driven
 
-- [ ] Развивать ядро feature:
-  - Плавное наплывание (Aegir phases)
+- [ ] Razvivat yadro feature:
+  - Plavnoe naplyvanie (Aegir phases)
   - Tidal lock drift
-  - Вес ресурсов/энергия
-  - Аддитивный стриминг мира
-  - Система бартерного PDA
-  - Процедурная сеть abyss nodes
+  - Ves resursov/energiya
+  - Additivnyy striming mira
+  - Sistema barternogo PDA
+  - Protsedurnaya set abyss nodes
 
-- [ ] Технический долг:
-  - Автоматический генератор TODO в `task.md`.
-  - Проверка CurrentVolume transform и корректного применения.
+- [ ] Tehnicheskiy dolg:
+  - Avtomaticheskiy generator TODO v `task.md`.
+  - Proverka CurrentVolume transform i korrektnogo primeneniya.
 
-## 5. Процесс в работе
+## 5. Protsess v rabote
 
-1. Каждый таск оформляется в issue и разбивается на подзадачи, задачи выполняются по очереди.
-2. Команда кодеров соблюдает стандарты, ведёт комментарии и коды состояния.
-3. Закрытие задачи по критерию: на MX350 30 FPS при 2GB VRAM, отсутствие багов, документирование.
+1. Kazhdyy task oformlyaetsya v issue i razbivaetsya na podzadachi, zadachi vypolnyayutsya po ocheredi.
+2. Komanda koderov soblyudaet standarty, vedet kommentarii i kody sostoyaniya.
+3. Zakrytie zadachi po kriteriyu: na MX350 30 FPS pri 2GB VRAM, otsutstvie bagov, dokumentirovanie.
 
 ---
 
-## 6. Сравнение с README (2).md и недостатки
+## 6. Sravnenie s README (2).md i nedostatki
 
-- README содержит детальный манифест, цели по CPU/GPU (MX350), архитектурные стандарты и структуру директорий, которые в основном НЕ отражены в старом файле задач. Надо добавить:
-  - строжайшие гайдлайны по папкам `Assets/Plugins`, `Assets/_Project`, `Assets/Scenes`, `Assets/Scripts`.
-  - правила работы с Additive Scene Loading (00_BOOTSTRAP, 01_MAIN_MENU, 02_HECTON_WORLD, XX_SANDBOX).
-  - Prefab-centric workflow (запрет на правку сцены, использование Prefab Mode/Variants).
-  - data-driven настройки (SO вместо хардкода) и Git протоколы (LFS, .gitignore, консоль ошибок).
-- README даёт структуру Asset Stack (Crest, MapMagic, MicroSplat, VLB, Odin, Easy Save, Candice, Feel). Нужно в тасках отдельно проверить эти интеграции:
-  - очистка демо-контента
-  - фиксы (ForceIncludeInstancing, Sirenix PDB)
-  - отключение тяжёлых модулей (Tessellation/Parallax в MicroSplat, лишние VLB устаревшие методы).
+- README soderzhit detalnyy manifest, tseli po CPU/GPU (MX350), arhitekturnye standarty i strukturu direktoriy, kotorye v osnovnom NE otrazheny v starom fayle zadach. Nado dobavit:
+  - strozhayshie gaydlayny po papkam `Assets/Plugins`, `Assets/_Project`, `Assets/Scenes`, `Assets/Scripts`.
+  - pravila raboty s Additive Scene Loading (00_BOOTSTRAP, 01_MAIN_MENU, 02_HECTON_WORLD, XX_SANDBOX).
+  - Prefab-centric workflow (zapret na pravku stseny, ispolzovanie Prefab Mode/Variants).
+  - data-driven nastroyki (SO vmesto hardkoda) i Git protokoly (LFS, .gitignore, konsol oshibok).
+- README daet strukturu Asset Stack (Crest, MapMagic, MicroSplat, VLB, Odin, Easy Save, Candice, Feel). Nuzhno v taskah otdelno proverit eti integratsii:
+  - ochistka demo-kontenta
+  - fiksy (ForceIncludeInstancing, Sirenix PDB)
+  - otklyuchenie tyazhelyh moduley (Tessellation/Parallax v MicroSplat, lishnie VLB ustarevshie metody).
 
-> Это фикс: `HADES_HECTON8_tasks.md` теперь синхронизирован с ключевыми пунктами из `README (2).md`. Проверить и дополнить остальные темы на следующем спринте.
+> Eto fiks: `HADES_HECTON8_tasks.md` teper sinhronizirovan s klyuchevymi punktami iz `README (2).md`. Proverit i dopolnit ostalnye temy na sleduyuschem sprinte.
 
-## 7. Концепт геймплея (полный набор идей)
+## 7. Kontsept geympleya (polnyy nabor idey)
 
 ### 7.1. Core Gameplay Loop
-- [ ] Исследование: зона 15x15 км, секции: The Spine, Drowned Factories, Abyssal Face, The Wound.
-- [ ] Сбор ресурсов: лом, руда, органика, биолуминисценция.
-- [ ] Обслуживание оборудования: тюнинг батискафа/систем; сжигание энергии (PDA, фонари, насосы).
-- [ ] Выживание: управление кислородом, давлением, температурой, радиацией.
-- [ ] Крафт и апгрейд: инструменты, броня, модули базы.
-- [ ] Полная система ресурсов и крафта:
-  - полный список сырья, биоматериалов, химии и промежуточных компонентов
-  - data-driven `ItemData` для всех ключевых ресурсов
-  - полноценные рецепты: сырьё -> компонент -> инструмент/апгрейд/модуль
-  - реальные world-sources: лом, рудные узлы, биосбор, sealed caches
-  - отказ от простого copper-only economy
-  - опора на [RESOURCE_CRAFTING_FOUNDATION.md](C:/hades/Hecton8/RESOURCE_CRAFTING_FOUNDATION.md)
-- [ ] Прогресс: сбора данных, восстановления ИИ, захвата новых зон.
-- [ ] Риск: хищники, разгерметизация, MCU (взрывы), коллапсы.
+- [ ] Issledovanie: zona 15x15 km, sektsii: The Spine, Drowned Factories, Abyssal Face, The Wound.
+- [ ] Sbor resursov: lom, ruda, organika, bioluministsentsiya.
+- [ ] Obsluzhivanie oborudovaniya: tyuning batiskafa/sistem; szhiganie energii (PDA, fonari, nasosy).
+- [ ] Vyzhivanie: upravlenie kislorodom, davleniem, temperaturoy, radiatsiey.
+- [ ] Kraft i apgreyd: instrumenty, bronya, moduli bazy.
+- [ ] Polnaya sistema resursov i krafta:
+  - polnyy spisok syrya, biomaterialov, himii i promezhutochnyh komponentov
+  - data-driven `ItemData` dlya vseh klyuchevyh resursov
+  - polnotsennye retsepty: syre -> komponent -> instrument/apgreyd/modul
+  - realnye world-sources: lom, rudnye uzly, biosbor, sealed caches
+  - otkaz ot prostogo copper-only economy
+  - opora na [RESOURCE_CRAFTING_FOUNDATION.md](C:/hades/Hecton8/RESOURCE_CRAFTING_FOUNDATION.md)
+- [ ] Progress: sbora dannyh, vosstanovleniya II, zahvata novyh zon.
+- [ ] Risk: hischniki, razgermetizatsiya, MCU (vzryvy), kollapsy.
 
-### 7.2. Физика и управление (из README)
-- [ ] Реализовать плавучую механику для батискафа + buoyancy (Crest + собственный код). 
-- [ ] Обработка входа: WASD, прыжки, акселерация; с учётом инерции воды.
-- [ ] Реакция на давление: параметры DepthExposure (0..1), модификаторы урона/шансов поломки.
+### 7.2. Fizika i upravlenie (iz README)
+- [ ] Realizovat plavuchuyu mehaniku dlya batiskafa + buoyancy (Crest + sobstvennyy kod). 
+- [ ] Obrabotka vhoda: WASD, pryzhki, akseleratsiya; s uchetom inertsii vody.
+- [ ] Reaktsiya na davlenie: parametry DepthExposure (0..1), modifikatory urona/shansov polomki.
 
-### 7.3. Интерфейс и PDA (Hecton-OS)
-- [ ] HUD/AR стиль: моноширинный шрифт, жесткие рамки, статические глитчи.
-- [ ] Батарея/О2/Гидравлика/Температура -> визуальные кластеры.
-- [ ] Exchange/barter system внутри PDA.
+### 7.3. Interfeys i PDA (Hecton-OS)
+- [ ] HUD/AR stil: monoshirinnyy shrift, zhestkie ramki, staticheskie glitchi.
+- [ ] Batareya/O2/Gidravlika/Temperatura -> vizualnye klastery.
+- [ ] Exchange/barter system vnutri PDA.
 
-### 7.4. Базы и стриминг мира
-- [ ] Additive Scene Loading: полноценный Bootstrapping.
-- [ ] Стриминг чанков: лоды, culling, отключение компонентов вне зоны видимости.
-- [ ] Система площадок для постройки: ресурсы, враги, защита.
+### 7.4. Bazy i striming mira
+- [ ] Additive Scene Loading: polnotsennyy Bootstrapping.
+- [ ] Striming chankov: lody, culling, otklyuchenie komponentov vne zony vidimosti.
+- [ ] Sistema ploschadok dlya postroyki: resursy, vragi, zaschita.
 
-### 7.5. Нейроагаенты и AI
-- [ ] Интеграция Candice AI, поведение дронов и мутантов.
-- [ ] Логика счастья/агрессии: реакция на шум, освещение.
-- [ ] Возможность терраформирования в зоне ошибок.
+### 7.5. Neyroagaenty i AI
+- [ ] Integratsiya Candice AI, povedenie dronov i mutantov.
+- [ ] Logika schastya/agressii: reaktsiya na shum, osveschenie.
+- [ ] Vozmozhnost terraformirovaniya v zone oshibok.
 
-### 7.6. Критически важные несделанные элементы
-- [ ] Всех из README 0.1-0.3 пока надо формализовать в задачах, разбить на subtask.
-- [ ] Не прописаны check-листы по Asset-стеку, включая урезку демо и конфиг в старых плагинах.
-- [ ] Нет отдельного модуля для сцены Sandbox, он нужен для изоляции и тестов.
-- [ ] Текущий файл пока не имеет связки с .kiro/specs/hecton8-enterprise-roadmap/tasks.md на детальном уровне (требуются ссылки/перенос).
-- [ ] Профайл-метрики (FPS, GC, drawcalls) не заведены как достижимая цель в тасках.
+### 7.6. Kriticheski vazhnye nesdelannye elementy
+- [ ] Vseh iz README 0.1-0.3 poka nado formalizovat v zadachah, razbit na subtask.
+- [ ] Ne propisany check-listy po Asset-steku, vklyuchaya urezku demo i konfig v staryh plaginah.
+- [ ] Net otdelnogo modulya dlya stseny Sandbox, on nuzhen dlya izolyatsii i testov.
+- [ ] Tekuschiy fayl poka ne imeet svyazki s .kiro/specs/hecton8-enterprise-roadmap/tasks.md na detalnom urovne (trebuyutsya ssylki/perenos).
+- [ ] Profayl-metriki (FPS, GC, drawcalls) ne zavedeny kak dostizhimaya tsel v taskah.
 
-### 7.7. Полный roadmap реализации (что реализовать)
-- [ ] Инициализационный стек
-  - [ ] Bootstrap + глобальные менеджеры GameManager, SaveSystem, AudioMixer, InputManager.
+### 7.7. Polnyy roadmap realizatsii (chto realizovat)
+- [ ] Initsializatsionnyy stek
+  - [ ] Bootstrap + globalnye menedzhery GameManager, SaveSystem, AudioMixer, InputManager.
   - [ ] Additive Scene Loading: 00_BOOTSTRAP, 01_MAIN_MENU, 02_HECTON_WORLD, XX_SANDBOX.
-  - [ ] Scene streaming: активная загрузка/выгрузка зон, чекпоинты.
+  - [ ] Scene streaming: aktivnaya zagruzka/vygruzka zon, chekpointy.
 
 - [ ] Core engine
   - [ ] Input System (Player + UI) + InputManager singleton + zero-GC callbacks.
-  - [ ] Movement System: Rigidbody / CharacterController + вода/инерция.
-  - [ ] PDA/UI System: баг-репорт, inventory, barter, система задач.
-  - [ ] Survival System: O2, температура, давление, радиация, статусы.
+  - [ ] Movement System: Rigidbody / CharacterController + voda/inertsiya.
+  - [ ] PDA/UI System: bag-report, inventory, barter, sistema zadach.
+  - [ ] Survival System: O2, temperatura, davlenie, radiatsiya, statusy.
 
 - [ ] World generation
   - [ ] MapMagic integration + chunk streaming, biome masks.
   - [ ] Crest ocean/underwater renderer + buoyancy/wave intersection.
-  - [ ] MicroSplat terrain shader + tris, LOD, без tessellation.
+  - [ ] MicroSplat terrain shader + tris, LOD, bez tessellation.
 
 - [ ] AI & entities
-  - [ ] Candice behavior trees для мутантов, дронов, NPC.
-  - [ ] State machine для охраны, кражи, бегства.
+  - [ ] Candice behavior trees dlya mutantov, dronov, NPC.
+  - [ ] State machine dlya ohrany, krazhi, begstva.
   - [ ] Pooling enemy/spawner system + navigation mesh updates.
 
 - [ ] Interaction & loot
-  - [ ] Сбор лута: удар, резка, физика добычи.
-  - [ ] Крафт и апгрейды: рецепты, материалы, UI.
-  - [ ] Weight/encumbrance и связь с энергозатратами.
+  - [ ] Sbor luta: udar, rezka, fizika dobychi.
+  - [ ] Kraft i apgreydy: retsepty, materialy, UI.
+  - [ ] Weight/encumbrance i svyaz s energozatratami.
 
 - [ ] Performance & tech
   - [ ] VRAM budget checks, texture atlas + compression.
   - [ ] URP renderer features: VLB, volumetric fog, shadow quality toggles.
   - [ ] Profiling benchmarks: FPS, memory, GC, draw calls.
-  - [ ] Job System + Burst для сложных расчётов (шум, AI, физические сетки).
+  - [ ] Job System + Burst dlya slozhnyh raschetov (shum, AI, fizicheskie setki).
 
 - [ ] Tools & workflow
   - [ ] Prefab workflow (variants, nested prefabs, no scene edits).
-  - [ ] Git/LFS rules, CI pipeline на компиляцию + утилиты.
-  - [ ] Документация: architecture, coding standards, profiling reports.
+  - [ ] Git/LFS rules, CI pipeline na kompilyatsiyu + utility.
+  - [ ] Dokumentatsiya: architecture, coding standards, profiling reports.
 
-> По каждому пункту создаем отдельный issue, вешаем на спринт, закрываем по проверке на MX350.
+> Po kazhdomu punktu sozdaem otdelnyy issue, veshaem na sprint, zakryvaem po proverke na MX350.
 

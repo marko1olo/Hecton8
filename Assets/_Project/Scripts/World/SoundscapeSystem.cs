@@ -1,21 +1,21 @@
 // ============================================================================
 // HECTON-8 — SoundscapeSystem.cs
-// Система звуковых слоёв по глубине.
+// Sistema zvukovyh sloev po glubine.
 //
-// ЛОР (лор1 — Звуковой дизайн, детальная карта):
-//   ПОВЕРХНОСТЬ:    волны, ветер, гравитационный гул Аэгира
-//   0-150м:         "пение" воды, рыбы, металлические стоны модулей
-//   150-500м:       тишина нарастает, скрип скафандра
-//   500-1000м:      только скафандр и дыхание, биолюм щелчки
-//   1000-2000м:     механический скрип, постоянный гул давления
-//   2000-4000м:     субзвук давления, вибрация контроллера
-//   4000-5000м:     термальные потоки, трескотня минеральных башен
+// LOR (lor1 — Zvukovoy dizayn, detalnaya karta):
+//   POVERHNOST:    volny, veter, gravitatsionnyy gul Aegira
+//   0-150m:         "penie" vody, ryby, metallicheskie stony moduley
+//   150-500m:       tishina narastaet, skrip skafandra
+//   500-1000m:      tolko skafandr i dyhanie, biolyum schelchki
+//   1000-2000m:     mehanicheskiy skrip, postoyannyy gul davleniya
+//   2000-4000m:     subzvuk davleniya, vibratsiya kontrollera
+//   4000-5000m:     termalnye potoki, treskotnya mineralnyh bashen
 //
-// АРХИТЕКТУРА:
-//   • Публикует _SoundscapeDepthTier в шейдеры.
-//   • Публикует события для AudioManager (смена эмбиента).
-//   • ISlowTickable — обновление тира раз в 0.5с.
-//   • Интегрируется с DepthZoneDirector.
+// ARHITEKTURA:
+//   • Publikuet _SoundscapeDepthTier v sheydery.
+//   • Publikuet sobytiya dlya AudioManager (smena embienta).
+//   • ISlowTickable — obnovlenie tira raz v 0.5s.
+//   • Integriruetsya s DepthZoneDirector.
 // ============================================================================
 
 using System;
@@ -31,13 +31,13 @@ namespace Hecton8.World
 {
     public enum SoundscapeTier
     {
-        Surface     = 0,   // Поверхность
-        Shallow     = 1,   // 0-150м
-        Twilight    = 2,   // 150-500м
-        Darkness    = 3,   // 500-1000м
-        Abyss       = 4,   // 1000-2000м
-        DeepAbyss   = 5,   // 2000-4000м
-        Thermal     = 6    // 4000-5000м
+        Surface     = 0,   // Poverhnost
+        Shallow     = 1,   // 0-150m
+        Twilight    = 2,   // 150-500m
+        Darkness    = 3,   // 500-1000m
+        Abyss       = 4,   // 1000-2000m
+        DeepAbyss   = 5,   // 2000-4000m
+        Thermal     = 6    // 4000-5000m
     }
 
     /// <summary>
@@ -115,7 +115,7 @@ namespace Hecton8.World
             Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterListeners.Length);
         }
 
-        /// <summary>Звуковой тир изменился. (oldTier, newTier)</summary>
+        /// <summary>Zvukovoy tir izmenilsya. (oldTier, newTier)</summary>
         public static void Register(ISoundscapeEventListener listener)
         {
             if (listener == null)

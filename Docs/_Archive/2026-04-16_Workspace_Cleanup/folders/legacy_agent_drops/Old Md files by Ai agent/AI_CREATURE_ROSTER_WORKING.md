@@ -3,84 +3,84 @@ Status: ARCHIVED
 
 **WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
 
-# Рабочий список существ
+# Rabochiy spisok suschestv
 
-Это не финальные красивые названия мира.
+Eto ne finalnye krasivye nazvaniya mira.
 
-Это рабочий список, чтобы:
+Eto rabochiy spisok, chtoby:
 
-- понимать, какие классы существ у нас вообще есть
-- не путать мирных, хищников, левиафанов и дронов
-- дальше заводить под них нормальные профили вида и поведение
+- ponimat, kakie klassy suschestv u nas voobsche est
+- ne putat mirnyh, hischnikov, leviafanov i dronov
+- dalshe zavodit pod nih normalnye profili vida i povedenie
 
-## Мирные одиночные
+## Mirnye odinochnye
 
-- `Мирный 01`
-  - маленькая спокойная рыба
-  - пугается шума и света
-- `Мирный 02`
-  - средняя любопытная рыба
-  - может подплыть проверить, потом уйти
-- `Мирный 03`
-  - донный собиратель
-  - держится около укрытий и дна
+- `Mirnyy 01`
+  - malenkaya spokoynaya ryba
+  - pugaetsya shuma i sveta
+- `Mirnyy 02`
+  - srednyaya lyubopytnaya ryba
+  - mozhet podplyt proverit, potom uyti
+- `Mirnyy 03`
+  - donnyy sobiratel
+  - derzhitsya okolo ukrytiy i dna
 
-## Мирные стайные
+## Mirnye staynye
 
-- `Стайная 01`
-  - мелкий косяк для фона
-- `Стайная 02`
-  - более плотная рыба рифов
-- `Стайная 03`
-  - глубоководная редкая стая
-- `Стайная 04`
-  - быстрая рассыпающаяся стая
+- `Staynaya 01`
+  - melkiy kosyak dlya fona
+- `Staynaya 02`
+  - bolee plotnaya ryba rifov
+- `Staynaya 03`
+  - glubokovodnaya redkaya staya
+- `Staynaya 04`
+  - bystraya rassypayuschayasya staya
 
-## Осторожные и территориальные
+## Ostorozhnye i territorialnye
 
-- `Территориальный 01`
-  - охраняет кусок рифа или гнездо
-- `Территориальный 02`
-  - сильнее давит игрока, но не охотится по всему биому
-- `Гнездовой 01`
-  - защищает кладку
-- `Гнездовой 02`
-  - живёт рядом с опасными карманами и укрытиями
+- `Territorialnyy 01`
+  - ohranyaet kusok rifa ili gnezdo
+- `Territorialnyy 02`
+  - silnee davit igroka, no ne ohotitsya po vsemu biomu
+- `Gnezdovoy 01`
+  - zaschischaet kladku
+- `Gnezdovoy 02`
+  - zhivet ryadom s opasnymi karmanami i ukrytiyami
 
-## Хищники
+## Hischniki
 
-- `Хищник 01`
-  - обычный охотник средней угрозы
-- `Хищник 02`
-  - быстрый преследователь
-- `Хищник 03`
-  - тяжёлый хищник ближней воды
-- `Засадный 01`
-  - сидит у дна или в укрытии
-- `Стайный хищник 01`
-  - работает группой, но не как левиафан
+- `Hischnik 01`
+  - obychnyy ohotnik sredney ugrozy
+- `Hischnik 02`
+  - bystryy presledovatel
+- `Hischnik 03`
+  - tyazhelyy hischnik blizhney vody
+- `Zasadnyy 01`
+  - sidit u dna ili v ukrytii
+- `Staynyy hischnik 01`
+  - rabotaet gruppoy, no ne kak leviafan
 
-## Крупные угрозы
+## Krupnye ugrozy
 
-- `Левиафан 01`
-  - дальний силуэт и давление присутствием
-- `Левиафан 02`
-  - охрана глубокого маршрута
-- `Левиафан 03`
-  - редкая особая угроза поздней глубины
+- `Leviafan 01`
+  - dalniy siluet i davlenie prisutstviem
+- `Leviafan 02`
+  - ohrana glubokogo marshruta
+- `Leviafan 03`
+  - redkaya osobaya ugroza pozdney glubiny
 
-## Дроны и системные акторы
+## Drony i sistemnye aktory
 
-- `Дрон-курьер 01`
-  - маршрутный дрон
-- `Дрон-ремонтник 01`
-  - обслуживает точку или узел
-- `Дрон-торговец 01`
-  - база под barter и нейтральное взаимодействие
+- `Dron-kurer 01`
+  - marshrutnyy dron
+- `Dron-remontnik 01`
+  - obsluzhivaet tochku ili uzel
+- `Dron-torgovets 01`
+  - baza pod barter i neytralnoe vzaimodeystvie
 
-## Как это использовать дальше
+## Kak eto ispolzovat dalshe
 
-- каждому пункту нужен свой `CreatureArchetypeData`
-- потом под него вешается конкретный префаб
-- потом он добавляется в `FaunaBiomeData`
-- и только после этого добивается реальным поведением в сцене
+- kazhdomu punktu nuzhen svoy `CreatureArchetypeData`
+- potom pod nego veshaetsya konkretnyy prefab
+- potom on dobavlyaetsya v `FaunaBiomeData`
+- i tolko posle etogo dobivaetsya realnym povedeniem v stsene

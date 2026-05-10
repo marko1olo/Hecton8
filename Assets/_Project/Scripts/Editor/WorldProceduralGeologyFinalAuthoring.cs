@@ -1,16 +1,16 @@
 // ============================================================================
 // HECTON-8 — WorldProceduralGeologyFinalAuthoring.cs
-// Editor authoring: генерирует production prefabs для всей основной геологии.
+// Editor authoring: generiruet production prefabs dlya vsey osnovnoy geologii.
 //
-// НОВЫЙ ПУТЬ (v2):
-//   Вместо ручного kitbash из Forest_Rock_Shelf / Nordic_Beach_Rock —
-//   вызывает WorldGenerativeGeologyMeshBuilder, сохраняет mesh assets,
-//   собирает prefab с LODGroup и трипланарным материалом.
+// NOVYY PUT (v2):
+//   Vmesto ruchnogo kitbash iz Forest_Rock_Shelf / Nordic_Beach_Rock —
+//   vyzyvaet WorldGenerativeGeologyMeshBuilder, sohranyaet mesh assets,
+//   sobiraet prefab s LODGroup i triplanarnym materialom.
 //
-// СТАРЫЕ PREFAB PATHS НЕ МЕНЯЮТСЯ — family assets продолжают ссылаться
-// на те же пути, но внутри теперь реальная процедурная геометрия.
+// STARYE PREFAB PATHS NE MENYaYuTSYa — family assets prodolzhayut ssylatsya
+// na te zhe puti, no vnutri teper realnaya protsedurnaya geometriya.
 //
-// Меню: Hecton/Authoring/Rebuild Procedural Geology Finals
+// Menyu: Hecton/Authoring/Rebuild Procedural Geology Finals
 // ============================================================================
 #if UNITY_EDITOR
 using System.Collections.Generic;
@@ -28,7 +28,7 @@ namespace Hecton8.EditorTools
         private const string RockMaterialName   = "mat_Rock_Shared";
         private static readonly string[] RockMaterialSearchFolders = { "Assets/_Project/Art/Models/Rocks" };
 
-        // ── Меню ─────────────────────────────────────────────────
+        // ── Menyu ─────────────────────────────────────────────────
 
         [MenuItem("Hecton/Authoring/Rebuild Procedural Geology Finals", priority = 179)]
         public static void RebuildGeologyFinals()
@@ -51,7 +51,7 @@ namespace Hecton8.EditorTools
 
             int built = 0;
 
-            // ── 10 вариантов мелких камней ────────────────────────
+            // ── 10 variantov melkih kamney ────────────────────────
             for (int i = 0; i < 10; i++)
             {
                 string prefabPath = $"{FinalPrefabFolder}/PFB_Geo_RockFloor_{i:D2}.prefab";
@@ -63,7 +63,7 @@ namespace Hecton8.EditorTools
                     built++;
             }
 
-            // ── 8 вариантов средних кластеров ─────────────────────
+            // ── 8 variantov srednih klasterov ─────────────────────
             for (int i = 0; i < 10; i++)
             {
                 string prefabPath = $"{FinalPrefabFolder}/PFB_Geo_RockCluster_{i:D2}.prefab";
@@ -75,7 +75,7 @@ namespace Hecton8.EditorTools
                     built++;
             }
 
-            // ── 6 вариантов shelf / cliff ─────────────────────────
+            // ── 6 variantov shelf / cliff ─────────────────────────
             for (int i = 0; i < 8; i++)
             {
                 string prefabPath = $"{FinalPrefabFolder}/PFB_Geo_RockShelf_{i:D2}.prefab";
@@ -87,7 +87,7 @@ namespace Hecton8.EditorTools
                     built++;
             }
 
-            // ── 6 вариантов больших арок ──────────────────────────
+            // ── 6 variantov bolshih arok ──────────────────────────
             for (int i = 0; i < 6; i++)
             {
                 string prefabPath = $"{FinalPrefabFolder}/PFB_Geo_RockArch_{i:D2}.prefab";
@@ -99,7 +99,7 @@ namespace Hecton8.EditorTools
                     built++;
             }
 
-            // ── Обратная совместимость: старый путь арки ──────────
+            // ── Obratnaya sovmestimost: staryy put arki ──────────
             {
                 string legacyPath = $"{FinalPrefabFolder}/PFB_Geo_RockArch_Large.prefab";
                 string meshFolder = $"{MeshOutputFolder}/RockArchLarge";
@@ -108,7 +108,7 @@ namespace Hecton8.EditorTools
                     new Vector3(18f, 8f, 10f));
             }
 
-            // ── 5 вариантов cave entrances ────────────────────────
+            // ── 5 variantov cave entrances ────────────────────────
             for (int i = 0; i < 6; i++)
             {
                 string prefabPath = $"{FinalPrefabFolder}/PFB_Geo_CaveEntrance_{i:D2}.prefab";
@@ -120,7 +120,7 @@ namespace Hecton8.EditorTools
                     built++;
             }
 
-            // ── Обратная совместимость: старый путь cave entrance ─
+            // ── Obratnaya sovmestimost: staryy put cave entrance ─
             {
                 string legacyPath = $"{FinalPrefabFolder}/PFB_Geo_Cave_Entrance.prefab";
                 string meshFolder = $"{MeshOutputFolder}/CaveEntrance";
@@ -129,7 +129,7 @@ namespace Hecton8.EditorTools
                     new Vector3(17f, 9f, 14f));
             }
 
-            // ── 5 вариантов landmark spires ───────────────────────
+            // ── 5 variantov landmark spires ───────────────────────
             for (int i = 0; i < 6; i++)
             {
                 string prefabPath = $"{FinalPrefabFolder}/PFB_Geo_LandmarkSpire_{i:D2}.prefab";
@@ -141,7 +141,7 @@ namespace Hecton8.EditorTools
                     built++;
             }
 
-            // ── Обратная совместимость: старый путь spire ─────────
+            // ── Obratnaya sovmestimost: staryy put spire ─────────
             {
                 string legacyPath = $"{FinalPrefabFolder}/PFB_Geo_Landmark_Spire.prefab";
                 string meshFolder = $"{MeshOutputFolder}/LandmarkSpire";
@@ -179,7 +179,7 @@ namespace Hecton8.EditorTools
             Material mat,
             Vector3 colliderSize)
         {
-            // 1. Генерируем mesh bundle
+            // 1. Generiruem mesh bundle
             GeologyMeshBundle bundle = WorldGenerativeGeologyMeshBuilder.Build(archetype, seed, scale);
             if (bundle == null || bundle.Lod0 == null)
             {
@@ -187,17 +187,17 @@ namespace Hecton8.EditorTools
                 return false;
             }
 
-            // 2. Сохраняем mesh assets
+            // 2. Sohranyaem mesh assets
             bundle.Lod0     = SaveMesh(bundle.Lod0,     $"{meshFolder}/{meshBaseName}_LOD0.asset");
             bundle.Lod1     = SaveMesh(bundle.Lod1,     $"{meshFolder}/{meshBaseName}_LOD1.asset");
             bundle.Lod2     = SaveMesh(bundle.Lod2,     $"{meshFolder}/{meshBaseName}_LOD2.asset");
             bundle.Collider = SaveMesh(bundle.Collider, $"{meshFolder}/{meshBaseName}_COL.asset");
 
-            // 3. Собираем prefab
+            // 3. Sobiraem prefab
             GameObject root = new GameObject(Path.GetFileNameWithoutExtension(prefabPath));
             try
             {
-                // BoxCollider — упрощённый, не из LOD0
+                // BoxCollider — uproschennyy, ne iz LOD0
                 if (archetype == GeologyArchetype.RockFloor || archetype == GeologyArchetype.RockCluster)
                 {
                     BoxCollider col = root.AddComponent<BoxCollider>();
@@ -224,7 +224,7 @@ namespace Hecton8.EditorTools
                 lodGroup.SetLODs(lods);
                 lodGroup.RecalculateBounds();
 
-                // Сохраняем prefab
+                // Sohranyaem prefab
                 GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
                 return saved != null;
             }
@@ -260,7 +260,7 @@ namespace Hecton8.EditorTools
             Mesh existing = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
             if (existing != null)
             {
-                // Обновляем существующий ассет
+                // Obnovlyaem suschestvuyuschiy asset
                 existing.Clear();
                 List<Vector3> vertices = new List<Vector3>(mesh.vertexCount);
                 List<int> triangles = new List<int>((int)mesh.GetIndexCount(0));

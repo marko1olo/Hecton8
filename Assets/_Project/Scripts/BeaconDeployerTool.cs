@@ -484,7 +484,8 @@ namespace Hecton8.Gameplay
                 return false;
 
             int count = Hecton8.Core.GlobalRegistry.BeaconNetwork.CopySnapshots(_beaconBuffer);
-            float bestSqr = float.MaxValue;
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            double bestDistanceSq = double.MaxValue;
             bool found = false;
 
             for (int i = 0; i < count; i++)
@@ -496,10 +497,11 @@ namespace Hecton8.Gameplay
                     continue;
                 }
 
-                float sqr = (candidate.Position - origin).sqrMagnitude;
-                if (sqr < bestSqr)
+                AbsoluteUniversePosition candidateAup = candidate.PositionAup;
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in candidateAup, in originAup);
+                if (distanceSq < bestDistanceSq)
                 {
-                    bestSqr = sqr;
+                    bestDistanceSq = distanceSq;
                     snapshot = candidate;
                     found = true;
                 }
@@ -508,7 +510,7 @@ namespace Hecton8.Gameplay
             if (!found)
                 return false;
 
-            distance = ApproximateDistance(bestSqr);
+            distance = ApproximateDistance(bestDistanceSq);
             return true;
         }
 
@@ -741,9 +743,19 @@ namespace Hecton8.Gameplay
 
         private static float ApproximateDistance(float distanceSq)
         {
-            return distanceSq > 0f && float.IsFinite(distanceSq)
-                ? distanceSq * math.rsqrt(distanceSq)
-                : 0f;
+            return ApproximateDistance((double)distanceSq);
+        }
+
+        private static float ApproximateDistance(double distanceSq)
+        {
+            if (distanceSq <= 0d || double.IsNaN(distanceSq) || double.IsInfinity(distanceSq))
+                return 0f;
+
+            if (distanceSq >= float.MaxValue)
+                return float.MaxValue;
+
+            float distanceSqFloat = (float)distanceSq;
+            return distanceSqFloat * math.rsqrt(distanceSqFloat);
         }
 
         private static string CreateLegacyString(in FixedCharBuffer buffer)

@@ -1,0 +1,73 @@
+Ya raspisyvayu tebe realistichnyy, globalnyy plan na blizhayshie 3 mesyatsa. Nasha tsel — sobrat Vertical Slice (Vertikalnyy srez). Eto 10-15 minut idealnogo, vylizannogo geympleya, kotoryy pokazyvaet vsyu sut igry. Esli Vertikalnyy srez igraetsya skuchno — proekt mozhno vybrasyvat.
+Delim rabotu na fazy (Sprinty). Raspechatay eto i poves nad monitorom.
+FAZA 1: FUNDAMENT I VZAIMODEYSTVIE (Nedelya 1-2)
+Zdes net grafona, my rabotaem s belymi kubami (Greyboxing). Stroim skelet.
+Programmist №1 (Sistemschik):
+Sistema Inventarya i Predmetov: Tolko na ScriptableObjects. Igrok dolzhen imet vozmozhnost podnyat obekt, polozhit v slot, vybrosit iz slota.
+Universalnyy Interaktor: Tot samyy IInteractable. Skript-reykast iz tsentra kamery: navel na kub -> poyavilas nadpis "Podobrat" -> nazhal E -> kub ischez, poyavilsya v inventare.
+Programmist №2 (Fizik/Mehanik):
+Menedzher Vyzhivaniya: Tri poloski: Oxygen (Kislorod), Energy (Teplo/Zaryad), Pressure (Davlenie). Kislorod taet vsegda. Teplo taet v vode. Davlenie ubivaet, esli nyrnut nizhe dopustimoy glubiny.
+Zony bezopasnosti: Skript SafeZone. Zashel v vozdushnyy karman — kislorod vosstanavlivaetsya. Podoshel k obogrevatelyu — vosstanavlivaetsya teplo.
+Ty (Vibe-Coder / Lid):
+Sobiraesh chernovoy UI (Interfeys) v Unity. Poloski HP, setka inventarya. II pishet tebe skripty dlya privyazki UI k dannym programmistov.
+Ischesh na torrentah chernovye zvuki (bulkane, shagi, kliki interfeysa) i prikruchivaesh ih. Bez zvuka kodit fiziku — eto izvraschenie.
+FAZA 2: VTOROE TELO I GENERATsIYa (Nedelya 3-4)
+Igrok bolshe ne golyy. Poyavlyaetsya tehnika i mir obretaet masshtab.
+Programmist №1 (Sistemschik):
+Chunk Spawner (Striming mira): Glavnaya zadacha proekta. MX350 ne vytyanet vsyu kartu. Nam nuzhen skript, kotoryy zagruzhaet kuski (chanki) dna i zdaniy tolko v radiuse 300 metrov ot igroka, a vse, chto szadi — vygruzhaet iz pamyati.
+Programmist №2 (Fizik/Mehanik):
+Kontroller Batiskafa ("Krab"): Sozdanie otdelnogo transportnogo sredstva.
+Sistema Peresadki: Nazhal knopku vozle batiskafa -> Igrok (kapsula) otklyuchaetsya, kamera i upravlenie perehodyat k batiskafu. Batiskaf medlennyy, inertnyy, kislorod vnutri ne tratitsya, no zhretsya batareya.
+Ty (Vibe-Coder / Lid) + Dizaynery:
+Oformlenie pervogo "Modulya Kolonii". Dizayner sobiraet iz skachannyh assetov (truby, steny, lyuki) odnu krasivuyu komnatu.
+Ty nastraivaesh svet vnutri etoy komnaty. Delaesh vodu mutnoy snaruzhi, no chtoby svet iz illyuminatorov probival tuman (ispolzuem Bloom i Spot Lights).
+FAZA 3: SBORKA I TsIKL (Mesyats 2)
+Zamykaem Core Gameplay Loop. Igrok dolzhen ponyat, zachem on zdes.
+Vsya komanda:
+Vnedrenie Instrumenta (Lazernyy rezak): Igrok podplyvaet k zapertoy dveri (ili kusku metalloloma), zazhimaet LKM -> letyat iskry (Particle System), tratitsya energiya -> cherez 3 sekundy obekt razrushaetsya/otkryvaetsya, vypadaet lut.
+Chertezhi (Smysl igry): Igrok nahodit kusok "Dannyh Seyatelya". Eto otkryvaet retsept krafta: naprimer, "Uluchshennyy ballon" ili "Uluchshennyy obogrevatel".
+Stantsiya krafta: Obekt na startovom melkovode, kuda my skidyvaem resursy i poluchaem apgreyd.
+FAZA 4: VERTIKALNYY SREZ (Konets 2-go / Nachalo 3-go mesyatsa)
+Den Iks. Vy sobiraete bild (ekzeshnik) i daete poigrat nezavisimym lyudyam.
+Chto dolzhno byt v bilde:
+Igrok spavnitsya na melkovode u svoey kapsuly.
+On vidit v bezdne na glubine 300m migayuschiy avariynyy mayak.
+On nyryaet. Po puti sledit za kislorodom i holodom.
+Doplyvaet do zatoplennogo modulya kolonii. Vzlamyvaet dver lazerom.
+Zaplyvaet vnutr (v vozdushnyy karman). Nahodit "Batareyu Batiskafa" i redkiy kusok titana.
+V panike, na poslednih sekundah kisloroda, vsplyvaet obratno.
+Vstavlyaet batareyu v slomannyy Batiskaf na melkovode — batiskaf ozhivaet (zagorayutsya fary). Konets demki.
+ChTO PROISHODIT POSLE?
+Esli v etot 15-minutnyy kusok igrat interesno, esli fizika vody kayfovaya, a v module kolonii bylo zhutko i neuyutno — BINGO. Vy naschupali zoloto.
+Dalshe nachinaetsya tupaya, monotonnaya rutina (Production):
+Dizaynery klipayut desyatki novyh komnat i kuskov shelfa iz moduley.
+Kodery dobavlyayut novyh vragov (dronov), novye instrumenty (kryuk-koshku, torpedy).
+Ty (kak Lid) nastraivaesh balans: skolko titana nuzhno na apgreyd, kak bystro konchaetsya kislorod, na kakoy glubine spavnitsya lut.
+Realnost: Do kontsa Fazy 3 igra budet vyglyadet kak kusok govna s bagami. Ty budesh provalivatsya skvoz dno, inventar budet stirat predmety, a batiskaf uletat v kosmos. Eto normalno. Ne panikuy i ne menyay dvizhok/setting na polputi.
+
+
+
+
+HARDKORNYE GEYMPLEYNYE MEHANIKI (Inzhiniring i Vyzhivanie)
+Sdelaem tak, chtoby igrok chuvstvoval sebya inzhenerom, a ne prosto dayverom.
+Fizicheskaya Prokladka Kabeley (Grid Management):
+V drugih igrah ty stavish solnechnuyu panel, i baza magicheski poluchaet energiyu. V HECTON-8 ty dolzhen brat buhtu tyazhelogo, tolstogo kabelya i fizicheski tyanut ego ot reaktora k kislorodnomu nasosu, osvescheniyu i dveryam.
+Problema: Kabel lezhit na dne. Skala mozhet obvalitsya i perebit ego. Mestnyy krab mozhet ego peregryzt. Baza obestochivaetsya, ty v panike ischesh mesto obryva s izolentoy i payalnikom v zubah.
+Glubinnoe Opyanenie (Azotnoe otravlenie / Kessonka):
+Na glubinah nizhe 1000m obychnyy szhatyy vozduh stanovitsya toksichnym. Esli dyshat im dolgo — u igroka nachinayutsya sluhovye i vizualnye gallyutsinatsii (feykovye kontakty na radare, lozhnye zvuki proboiny, UI interfeysa nachinaet «plyt»).
+Progressiya: Dlya spuska na -3000m i -5000m nuzhno kraftit spetsialnye gazovye smesi (Gelioks, Trimiks), dobyvaya redkie gazy iz gidrotermalnyh istochnikov.
+Ruchnoe Shlyuzovanie (Airlock Tension):
+Vhod i vyhod iz bazy/podlodki — eto ne mgnovennaya animatsiya. Ty zahodish v tesnyy shlyuz. Nazhimaesh knopku. Nachinaetsya otkachka vody i vyravnivanie davleniya (zanimaet 10-15 sekund).
+Saspens: V etot moment ty zapert. A esli za toboy gnalsya mutant, i on seychas betsya mordoy v steklo shlyuza? U tebya est knopka «Avariynyy sbros» (Emergency Override), kotoraya vpuskaet tebya mgnovenno, no zataplivaet sosedniy otsek bazy, portya elektroniku. Vybor za toboy.
+Toksichnye Othody Krafta (Sludge Disposal):
+Proizvodstvo slozhnyh splavov i izotopov na stanke generiruet toksichnye othody (zhidkiy shlak). Baki na baze zapolnyayutsya.
+Esli ty prosto nazhmesh «Slit za bort», vokrug tvoey bazy obrazuetsya yadovitoe oblako. Ono razest obshivku ili privlechet mutantov-padalschikov. Othody nuzhno gruzit v konteynery i otvozit na svalku (ili sbrasyvat v glubokie tektonicheskie razlomy).
+Simulyatsiya Predohraniteley i Kalibrovka:
+Radiatsiya i EMI-ataki Leviafanov ne prosto «snimayut HP» podlodke. Oni vybivayut sistemy. U tebya pogas svet? Nuzhno lezt v schitok (pryamo vo vremya plavaniya) i fizicheski perestavlyat predohranitel ot menee vazhnoy sistemy (naprimer, ot kofevarki ili vnutrennego osvescheniya) v slot sonara, chtoby hot kak-to doplyt do doma.
+Rezyume dlya dizayn-dokumenta:
+Vnedrenie etih mehanik zakreplyaet USP №3 ("Tyazhelyy Inzhiniring") i USP №4 ("Tehnologicheskiy uyut"). Kogda snaruzhi -5000 metrov, absolyutnaya tma, a vokrug bazy plavayut tvari, maskiruyuschiesya pod tvoi zhe drony... tot moment, kogda ty nakonets-to zakryvaesh tyazheluyu dver shlyuza, slyshish shipenie kisloroda i schelchok vklyuchivshegosya teplogo zheltogo sveta — eto budet vyzyvat neveroyatnyy katarsis u igroka.
+
+
+
+
+

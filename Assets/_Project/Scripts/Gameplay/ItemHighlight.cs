@@ -222,7 +222,7 @@ namespace Hecton8.Gameplay
         {
             if (_playerTransform != null) return;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform player))
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform player))
             {
                 _playerTransform = player;
             }

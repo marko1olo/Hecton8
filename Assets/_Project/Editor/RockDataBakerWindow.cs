@@ -1,14 +1,14 @@
 // ============================================================================
 // HECTON-8 — RockDataBakerWindow.cs
-// Editor Window: экспорт сокетов из сцены в ScriptableObject,
-// подготовка камней для Mesh Baker.
+// Editor Window: eksport soketov iz stseny v ScriptableObject,
+// podgotovka kamney dlya Mesh Baker.
 //
-// Два режима:
-//   1. Extract & Save — снимает данные сокетов, сохраняет в .asset
-//   2. Prepare for Mesh Baker — деактивирует сокеты перед запеканием
+// Dva rezhima:
+//   1. Extract & Save — snimaet dannye soketov, sohranyaet v .asset
+//   2. Prepare for Mesh Baker — deaktiviruet sokety pered zapekaniem
 //
-// Работает с выделенным объектом в Hierarchy (корень группы камней).
-// Ищет все дочерние HectonSocketHelper и снимает их локальные координаты.
+// Rabotaet s vydelennym obektom v Hierarchy (koren gruppy kamney).
+// Ischet vse dochernie HectonSocketHelper i snimaet ih lokalnye koordinaty.
 // ============================================================================
 
 #if UNITY_EDITOR
@@ -384,8 +384,8 @@ namespace Hecton8.Building.Editor
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Читает тип сокета из HectonSocketHelper через SerializedObject.
-        /// Нужен потому что socketType — private [SerializeField].
+        /// Chitaet tip soketa iz HectonSocketHelper cherez SerializedObject.
+        /// Nuzhen potomu chto socketType — private [SerializeField].
         /// </summary>
         private static HectonSocketHelper.SocketType GetSocketType(HectonSocketHelper helper)
         {

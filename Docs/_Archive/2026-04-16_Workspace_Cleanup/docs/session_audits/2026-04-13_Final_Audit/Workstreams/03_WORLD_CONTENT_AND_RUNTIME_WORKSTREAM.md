@@ -5,30 +5,30 @@ Status: ARCHIVED
 
 # HECTON-8 — World Content / Runtime Workstream
 
-Дата: 2026-04-13  
-Статус: PENDING VERIFICATION
+Data: 2026-04-13  
+Status: PENDING VERIFICATION
 
-## Что закрывает этот фронт
+## Chto zakryvaet etot front
 
 - Production world scene truth
-- Cleanup временных сущностей
+- Cleanup vremennyh suschnostey
 - World density
 - Caves / ruins / ecology
 - Runtime world ownership
 
-## Почему это критично
+## Pochemu eto kritichno
 
-Сейчас production-сцена несёт следы активной мастерской: temp, trial, staging, smoke.  
-Пока это не зачищено, любая оценка готовности мира загрязнена.
+Seychas production-stsena neset sledy aktivnoy masterskoy: temp, trial, staging, smoke.  
+Poka eto ne zachischeno, lyubaya otsenka gotovnosti mira zagryaznena.
 
 ## Live facts from current world scene
 
-- Есть `Fabrication_Trial`.
-- Есть `Tool_Staging`.
-- Есть `__TEMP_DENSE_KELP_PREVIEW`.
-- Есть `__PROCEDURAL_PROXY_WORLD`.
-- Есть `__PROCEDURAL_SCATTER_WORLD`.
-- На Player видны smoke-test компоненты.
+- Est `Fabrication_Trial`.
+- Est `Tool_Staging`.
+- Est `__TEMP_DENSE_KELP_PREVIEW`.
+- Est `__PROCEDURAL_PROXY_WORLD`.
+- Est `__PROCEDURAL_SCATTER_WORLD`.
+- Na Player vidny smoke-test komponenty.
 
 ## Owner files and systems
 
@@ -46,22 +46,22 @@ Status: ARCHIVED
 - `Assets/_Project/Scripts/World/WorldCaveDirector.cs`
 - `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
 
-## Основные задачи
+## Osnovnye zadachi
 
 ### Front A. Production scene cleanup
 
-- Отделить debug/trial/staging от shipping path.
-- Убрать мусор из live scene или сделать его debug-only.
-- Зафиксировать truth hierarchy.
+- Otdelit debug/trial/staging ot shipping path.
+- Ubrat musor iz live scene ili sdelat ego debug-only.
+- Zafiksirovat truth hierarchy.
 
 ### Front B. World truth matrix
 
-- Отметить для каждого крупного subsystem:
+- Otmetit dlya kazhdogo krupnogo subsystem:
   - code exists
   - scene-wired
   - content-backed
   - runtime-verified
-- Не путать наличие manager'а с готовностью мира.
+- Ne putat nalichie manager'a s gotovnostyu mira.
 
 ### Front C. World density
 
@@ -69,11 +69,11 @@ Status: ARCHIVED
 - Mid-depth identity.
 - Deep-zone identity.
 - Ruins / colony remnants / industrial remains.
-- Small set pieces между hero-точками.
+- Small set pieces mezhdu hero-tochkami.
 
 ### Front D. Caves / geology gameplay
 
-- Не только генерация, но и маршрут.
+- Ne tolko generatsiya, no i marshrut.
 - Reward placement.
 - Landmark readability.
 - Shortcut logic.
@@ -81,47 +81,47 @@ Status: ARCHIVED
 
 ### Front E. Procedural pipeline sanity
 
-- Проверить, где procedural stack помогает миру, а где просто наращивает массу.
-- Зафиксировать семейства, где нужны authored finals, а где достаточно runtime variation.
+- Proverit, gde procedural stack pomogaet miru, a gde prosto naraschivaet massu.
+- Zafiksirovat semeystva, gde nuzhny authored finals, a gde dostatochno runtime variation.
 
 ## Do-Not-Touch Scope
 
-- Не трогать shell/menu/pause.
-- Не трогать quest/audio log data.
-- Не править save/load backend.
-- Не устраивать большой архитектурный рефактор world stack без отдельного решения.
+- Ne trogat shell/menu/pause.
+- Ne trogat quest/audio log data.
+- Ne pravit save/load backend.
+- Ne ustraivat bolshoy arhitekturnyy refaktor world stack bez otdelnogo resheniya.
 
-## Как дробить по агентам
+## Kak drobit po agentam
 
-Агент 1:
+Agent 1:
 - `02_HECTON_WORLD.unity`
 - `SceneBootstrap.cs`
 - world bootstrap owners
-- Задача: cleanup production path и truth hierarchy.
+- Zadacha: cleanup production path i truth hierarchy.
 
-Агент 2:
+Agent 2:
 - `WorldContentDirector.cs`
 - `WorldPopulationDirector.cs`
 - `BiomeMatrixDirector.cs`
-- Задача: world density и биомное наполнение.
+- Zadacha: world density i biomnoe napolnenie.
 
-Агент 3:
+Agent 3:
 - `WorldCaveDirector.cs`
 - geology integration owners
-- Задача: caves/geology payoff.
+- Zadacha: caves/geology payoff.
 
-Агент 4:
+Agent 4:
 - procedural fill/scatter owners
-- Задача: sanity-check procedural contribution и content ownership.
+- Zadacha: sanity-check procedural contribution i content ownership.
 
 ## Expected Result
 
-- Production world перестаёт выглядеть как мастерская.
-- Мир становится чище и плотнее.
-- Появляется реальное разделение между debug path и shipping path.
+- Production world perestaet vyglyadet kak masterskaya.
+- Mir stanovitsya chische i plotnee.
+- Poyavlyaetsya realnoe razdelenie mezhdu debug path i shipping path.
 
 ## Exit Criteria
 
-- Нет temp/trial/staging мусора в live route.
-- По крупным world-системам есть truth matrix.
-- Есть подтверждённые маршруты caves/ruins/ecology, а не только слой генерации.
+- Net temp/trial/staging musora v live route.
+- Po krupnym world-sistemam est truth matrix.
+- Est podtverzhdennye marshruty caves/ruins/ecology, a ne tolko sloy generatsii.

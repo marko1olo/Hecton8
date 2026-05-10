@@ -466,7 +466,7 @@ namespace Hecton8.UI
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
-            mesh.UploadMeshData(false);
+            mesh.UploadMeshData(true);
             return mesh;
         }
 

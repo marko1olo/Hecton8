@@ -1,8 +1,8 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using Hecton8.SaveSystem;
 using Hecton.Localization;
@@ -33,10 +33,18 @@ namespace Hecton8.Core
         PerformanceWarning = 13,
         BootstrapDuration = 14,
         CatastrophicCascadePrevented = 15,
-        CriticalGcSpike = 16
+        CriticalGcSpike = 16,
+        PerformanceSpike = 17,
+        MathGuardInvalidNumber = 18,
+        VRAMWarning = 19,
+        InputLagWarning = 20,
+        SystemDegradation = 21,
+        DrawCallEstimate = 22,
+        ShaderFallback = 23,
+        RegistryHeartbeatStale = 24
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct TelemetryEvent
     {
         public uint FrameIndex;
@@ -49,43 +57,49 @@ namespace Hecton8.Core
 
     public static class GlobalTelemetryBus
     {
+        private const int RetainedFrameCount = 1000;
         private const int Capacity = 1024;
+        private const int CapacityMask = Capacity - 1;
         private const int BinaryHeaderSizeBytes = 16;
         private const int Version = 1;
         private const uint BinaryMagic = 0x4D4C4554u; // "TELM"
+        private const uint InputLagWarningHash = 0x494C4147u; // "ILAG"
         private const float DrainIntervalSeconds = 60f;
         private const int SnapshotCopyBudgetPerLateFrame = 128;
         private const string ExportFolderName = "Telemetry";
-        private const string BinaryExtension = ".tbin";
-        private const string JsonExtension = ".json";
+        private const string BinaryExtension = ".h8dump";
         private const string ExportTimestampFormat = "yyyyMMdd_HHmmss_fffffff";
+        private const string TelemetryFileNamePrefix = "telemetry_";
+        private const int ExportTimestampCharCount = 23;
 
-        private static NativeArray<TelemetryEvent> _ringBuffer;
+        private static NativeRingBuffer<TelemetryEvent> _ringBuffer;
         private static NativeArray<TelemetryEvent> _snapshotBuffer;
-        private static byte[] _exportBytes;
-        private static int _writeCursor;
+        private static NativeArray<byte> _exportScratch;
+        private static long _writeCursor;
         private static float _nextDrainTimeSeconds = DrainIntervalSeconds;
         private static int _exportInFlight;
         private static int _mmfWriteInProgress;
+        private static int _mainThreadId = Thread.CurrentThread.ManagedThreadId;
         private static int _pendingEventCount;
         private static int _pendingByteCount;
         private static string _pendingBinaryPath;
-        private static string _pendingJsonPath;
         private static string _pendingTelemetryDirectory;
         private static long _pendingGeneratedUtcTicks;
         private static bool _snapshotInProgress;
-        private static int _snapshotStartIndex;
+        private static long _snapshotStartIndex;
         private static int _snapshotTotalCount;
         private static int _snapshotCopiedCount;
         private static long _nativeCopyByteCount;
         private static int _nativeCopyOperationCount;
-        // COLD ALLOC: object[1] - first-use native telemetry buffer initialization gate - owner: GlobalTelemetryBus
+        // COLD ALLOC: object[1] — first-use native telemetry buffer initialization gate — owner: GlobalTelemetryBus
         private static readonly object _initGate = new object();
 
         private static class ManagedExportCallbacks
         {
-            // COLD ALLOC: WaitCallback[1] - managed background telemetry export entry point - owner: GlobalTelemetryBus
+            // COLD ALLOC: WaitCallback[1] — managed background telemetry export entry point — owner: GlobalTelemetryBus
             internal static readonly WaitCallback BackgroundExportCallback = ExecuteBackgroundExport;
+            // COLD ALLOC: WaitCallback[1] — crash-thread raw telemetry dump entry point — owner: GlobalTelemetryBus
+            internal static readonly WaitCallback BackgroundEmergencyFlushCallback = ExecuteBackgroundEmergencyFlush;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -114,10 +128,11 @@ namespace Hecton8.Core
                     Volatile.Read(ref _mmfWriteInProgress) != 0 ||
                     (Volatile.Read(ref _exportInFlight) != 0 && !snapshotCopyInProgress);
                 JobHandle noDependency = default;
-                DisposeNativeArray(ref _ringBuffer, noDependency);
+                DisposeRingBuffer(ref _ringBuffer);
                 DisposeNativeArray(ref _snapshotBuffer, noDependency);
 
                 _writeCursor = 0;
+                _mainThreadId = Thread.CurrentThread.ManagedThreadId;
                 _nextDrainTimeSeconds = DrainIntervalSeconds;
                 _snapshotInProgress = false;
                 _snapshotStartIndex = 0;
@@ -126,7 +141,7 @@ namespace Hecton8.Core
 
                 if (!writerOwnsExportState)
                 {
-                    _exportBytes = null;
+                    DisposeNativeArray(ref _exportScratch, noDependency);
                     _exportInFlight = 0;
                     _mmfWriteInProgress = 0;
                     ClearPendingExportState(clearDirectory: true);
@@ -145,6 +160,16 @@ namespace Hecton8.Core
             NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose(dependency);
             array = default;
+        }
+
+        private static void DisposeRingBuffer(ref NativeRingBuffer<TelemetryEvent> buffer)
+        {
+            if (!buffer.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(buffer.RawArray);
+            buffer.Dispose();
+            buffer = default;
         }
 
         public static void PublishPlayerDeath(Vector3 worldPosition)
@@ -300,6 +325,76 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Publishes a frame-time watchdog spike using precomputed subsystem hashes only.
+        /// </summary>
+        /// <param name="subsystemHash">Subsystem hash with the highest reported cost this frame.</param>
+        /// <param name="frameTimeMilliseconds">Observed frame duration in milliseconds.</param>
+        public static void PublishPerformanceSpike(uint subsystemHash, float frameTimeMilliseconds)
+        {
+            Publish(TelemetryEventType.PerformanceSpike, subsystemHash, 0u, frameTimeMilliseconds, default);
+        }
+
+        /// <summary>
+        /// Publishes a Burst math invalid-number guard event.
+        /// </summary>
+        /// <param name="errorCode">Caller-owned deterministic error code.</param>
+        public static void PublishMathGuardInvalidNumber(int errorCode)
+        {
+            Publish(TelemetryEventType.MathGuardInvalidNumber, unchecked((uint)errorCode), 0u, 1f, default);
+        }
+
+        /// <summary>
+        /// Publishes an estimated VRAM budget warning.
+        /// </summary>
+        /// <param name="estimatedBytes">Current estimated payload in bytes.</param>
+        public static void PublishVRAMWarningEvent(long estimatedBytes)
+        {
+            float estimatedMegabytes = estimatedBytes * (1f / (1024f * 1024f));
+            Publish(TelemetryEventType.VRAMWarning, 0u, 0u, estimatedMegabytes, default);
+        }
+
+        /// <summary>
+        /// Publishes an input-to-render latency warning.
+        /// </summary>
+        /// <param name="latencyMilliseconds">Observed completed latency in milliseconds.</param>
+        public static void PublishInputLagWarning(float latencyMilliseconds)
+        {
+            Publish(TelemetryEventType.InputLagWarning, InputLagWarningHash, 0u, latencyMilliseconds, default);
+        }
+
+        /// <summary>
+        /// Publishes a sustained frame-time degradation action using numeric payloads only.
+        /// </summary>
+        public static void PublishSystemDegradation(uint reasonHash, uint actionMask, float frameTimeMilliseconds)
+        {
+            Publish(TelemetryEventType.SystemDegradation, reasonHash, actionMask, frameTimeMilliseconds, default);
+        }
+
+        /// <summary>
+        /// Publishes an approximate BRG-backed draw-call count reported by render managers.
+        /// </summary>
+        public static void PublishApproximateDrawCallCount(int batchCount)
+        {
+            Publish(TelemetryEventType.DrawCallEstimate, unchecked((uint)math.max(0, batchCount)), 0u, batchCount, default);
+        }
+
+        /// <summary>
+        /// Publishes a shader fallback swap without material names or paths.
+        /// </summary>
+        public static void PublishShaderFallback(uint materialHash, uint shaderHash, float count)
+        {
+            Publish(TelemetryEventType.ShaderFallback, materialHash, shaderHash, math.max(1f, count), default);
+        }
+
+        /// <summary>
+        /// Publishes a stale registry heartbeat by numeric service slot only.
+        /// </summary>
+        public static void PublishRegistryHeartbeatStale(uint serviceSlot, uint tickCount)
+        {
+            Publish(TelemetryEventType.RegistryHeartbeatStale, serviceSlot, tickCount, 1f, default);
+        }
+
+        /// <summary>
         /// Publishes a BaseEvents cascade breaker trip using numeric IslandID/event hashes only.
         /// </summary>
         public static void PublishCatastrophicCascadePrevented(uint islandId, uint eventHash, int droppedCount)
@@ -421,16 +516,7 @@ namespace Hecton8.Core
 
             try
             {
-                int writeCursor = Volatile.Read(ref _writeCursor);
-                int totalWritten = math.min(writeCursor, Capacity);
-                if (totalWritten <= 0)
-                    return false;
-
-                CopySnapshotUnbounded(writeCursor - totalWritten, totalWritten);
-                if (!PrepareExportState(totalWritten, DateTime.UtcNow.Ticks))
-                    return false;
-
-                return WritePreparedExportToMmf();
+                return TryEmergencyFlushLocked();
             }
             finally
             {
@@ -443,6 +529,76 @@ namespace Hecton8.Core
             }
         }
 
+        /// <summary>
+        /// Queues a raw full-ring crash dump from a non-main-thread log callback.
+        /// </summary>
+        public static void RequestEmergencyFlushAsync()
+        {
+            if (!_ringBuffer.IsCreated ||
+                !_snapshotBuffer.IsCreated ||
+                !_exportScratch.IsCreated ||
+                string.IsNullOrEmpty(_pendingTelemetryDirectory))
+            {
+                return;
+            }
+
+            if (Interlocked.CompareExchange(ref _exportInFlight, 1, 0) != 0)
+                return;
+
+            if (!ThreadPool.UnsafeQueueUserWorkItem(ManagedExportCallbacks.BackgroundEmergencyFlushCallback, null))
+                Interlocked.Exchange(ref _exportInFlight, 0);
+        }
+
+        /// <summary>
+        /// Attempts a background-thread raw full-ring dump without touching Unity path APIs.
+        /// </summary>
+        public static bool TryEmergencyFlushFromBackground()
+        {
+            if (!_ringBuffer.IsCreated ||
+                !_snapshotBuffer.IsCreated ||
+                !_exportScratch.IsCreated ||
+                string.IsNullOrEmpty(_pendingTelemetryDirectory))
+            {
+                return false;
+            }
+
+            if (Interlocked.CompareExchange(ref _exportInFlight, 1, 0) != 0)
+                return false;
+
+            try
+            {
+                return TryEmergencyFlushLocked();
+            }
+            finally
+            {
+                _snapshotInProgress = false;
+                _snapshotStartIndex = 0;
+                _snapshotTotalCount = 0;
+                _snapshotCopiedCount = 0;
+                ClearPendingExportState();
+                Interlocked.Exchange(ref _exportInFlight, 0);
+            }
+        }
+
+        private static bool TryEmergencyFlushLocked()
+        {
+            if (!_ringBuffer.IsCreated || !_snapshotBuffer.IsCreated)
+                return false;
+
+            long writeCursor = Volatile.Read(ref _writeCursor);
+            int totalWritten = writeCursor >= RetainedFrameCount
+                ? RetainedFrameCount
+                : (int)(writeCursor > 0L ? writeCursor : 0L);
+            if (totalWritten <= 0)
+                return false;
+
+            CopySnapshotUnbounded(writeCursor - totalWritten, totalWritten);
+            if (!PrepareExportState(totalWritten, DateTime.UtcNow.Ticks))
+                return false;
+
+            return WritePreparedExportToMmf();
+        }
+
         private static void Publish(
             TelemetryEventType eventType,
             uint subjectHash,
@@ -450,32 +606,38 @@ namespace Hecton8.Core
             float scalarValue,
             Vector3 worldPosition)
         {
-            if (!Application.isPlaying)
-                return;
-
-            EnsureInitialized();
-
-            int writeIndex = Interlocked.Increment(ref _writeCursor) - 1;
-            int slot = writeIndex % Capacity;
-            if (slot < 0)
-                slot += Capacity;
-
-            _ringBuffer[slot] = new TelemetryEvent
+            bool isMainThread = Thread.CurrentThread.ManagedThreadId == _mainThreadId;
+            if (isMainThread)
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                if (!Application.isPlaying)
+                    return;
+
+                EnsureInitialized();
+            }
+            else if (!_ringBuffer.IsCreated)
+            {
+                return;
+            }
+
+            TelemetryEvent telemetryEvent = new TelemetryEvent
+            {
+                FrameIndex = isMainThread ? unchecked((uint)Time.frameCount) : 0u,
                 EventType = (uint)eventType,
                 SubjectHash = subjectHash,
                 ContextHash = contextHash,
                 ScalarValue = scalarValue,
                 WorldPosition = new float3(worldPosition.x, worldPosition.y, worldPosition.z)
             };
+
+            _ringBuffer.Write(in telemetryEvent);
+            Volatile.Write(ref _writeCursor, _ringBuffer.TotalWrites);
         }
 
         private static void EnsureInitialized()
         {
             if (_ringBuffer.IsCreated &&
                 _snapshotBuffer.IsCreated &&
-                _exportBytes != null &&
+                _exportScratch.IsCreated &&
                 !string.IsNullOrEmpty(_pendingTelemetryDirectory))
             {
                 return;
@@ -485,9 +647,9 @@ namespace Hecton8.Core
             {
                 if (!_ringBuffer.IsCreated)
                 {
-                    _ringBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] - global telemetry ring buffer - owner: GlobalTelemetryBus
+                    _ringBuffer = new NativeRingBuffer<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<TelemetryEvent>[1024] — power-of-two black-box ring retaining the last 1000 telemetry frames — owner: GlobalTelemetryBus
                     NativeMemorySentinel.RegisterNativeArray(
-                        _ringBuffer,
+                        _ringBuffer.RawArray,
                         nameof(GlobalTelemetryBus),
                         nameof(_ringBuffer),
                         NativeAllocationLifetime.Session);
@@ -499,7 +661,7 @@ namespace Hecton8.Core
                     _snapshotStartIndex = 0;
                     _snapshotTotalCount = 0;
                     _snapshotCopiedCount = 0;
-                    _snapshotBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] - telemetry export snapshot staging buffer - owner: GlobalTelemetryBus
+                    _snapshotBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] — telemetry export snapshot staging buffer — owner: GlobalTelemetryBus
                     NativeMemorySentinel.RegisterNativeArray(
                         _snapshotBuffer,
                         nameof(GlobalTelemetryBus),
@@ -507,8 +669,17 @@ namespace Hecton8.Core
                         NativeAllocationLifetime.Session);
                 }
 
-                if (_exportBytes == null)
-                    _exportBytes = new byte[(Capacity * UnsafeUtility.SizeOf<TelemetryEvent>()) + BinaryHeaderSizeBytes]; // COLD ALLOC: byte[] telemetry export scratch - owner: GlobalTelemetryBus
+                if (!_exportScratch.IsCreated)
+                {
+                    int exportScratchBytes = (Capacity * UnsafeUtility.SizeOf<TelemetryEvent>()) + BinaryHeaderSizeBytes;
+                    _exportScratch = new NativeArray<byte>(exportScratchBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[32784] — unmanaged binary telemetry export scratch — owner: GlobalTelemetryBus
+                    NativeMemorySentinel.RegisterNativeArray(
+                        _exportScratch,
+                        nameof(GlobalTelemetryBus),
+                        nameof(_exportScratch),
+                        NativeAllocationLifetime.Session);
+                }
+
                 if (string.IsNullOrEmpty(_pendingTelemetryDirectory))
                     _pendingTelemetryDirectory = Path.Combine(Application.persistentDataPath, ExportFolderName);
             }
@@ -526,8 +697,10 @@ namespace Hecton8.Core
             if (Interlocked.CompareExchange(ref _exportInFlight, 1, 0) != 0)
                 return;
 
-            int writeCursor = Volatile.Read(ref _writeCursor);
-            int totalWritten = math.min(writeCursor, Capacity);
+            long writeCursor = Volatile.Read(ref _writeCursor);
+            int totalWritten = writeCursor >= RetainedFrameCount
+                ? RetainedFrameCount
+                : (int)(writeCursor > 0L ? writeCursor : 0L);
             if (totalWritten <= 0)
             {
                 Interlocked.Exchange(ref _exportInFlight, 0);
@@ -555,10 +728,7 @@ namespace Hecton8.Core
             int copyCount = math.min(remaining, SnapshotCopyBudgetPerLateFrame);
             for (int i = 0; i < copyCount; i++)
             {
-                int ringIndex = (_snapshotStartIndex + _snapshotCopiedCount + i) % Capacity;
-                if (ringIndex < 0)
-                    ringIndex += Capacity;
-
+                int ringIndex = (int)(_snapshotStartIndex + _snapshotCopiedCount + i) & CapacityMask;
                 _snapshotBuffer[_snapshotCopiedCount + i] = _ringBuffer[ringIndex];
             }
 
@@ -569,14 +739,11 @@ namespace Hecton8.Core
             CompleteSnapshotCopy();
         }
 
-        private static void CopySnapshotUnbounded(int startIndex, int totalCount)
+        private static void CopySnapshotUnbounded(long startIndex, int totalCount)
         {
             for (int i = 0; i < totalCount; i++)
             {
-                int ringIndex = (startIndex + i) % Capacity;
-                if (ringIndex < 0)
-                    ringIndex += Capacity;
-
+                int ringIndex = (int)(startIndex + i) & CapacityMask;
                 _snapshotBuffer[i] = _ringBuffer[ringIndex];
             }
         }
@@ -619,7 +786,7 @@ namespace Hecton8.Core
 
         private static bool PrepareExportState(int eventCount, long generatedUtcTicks)
         {
-            if (eventCount <= 0 || _exportBytes == null || !_snapshotBuffer.IsCreated)
+            if (eventCount <= 0 || !_exportScratch.IsCreated || !_snapshotBuffer.IsCreated)
                 return false;
 
             int eventSizeBytes = UnsafeUtility.SizeOf<TelemetryEvent>();
@@ -627,20 +794,18 @@ namespace Hecton8.Core
 
             unsafe
             {
-                fixed (byte* exportBytesPtr = _exportBytes)
+                byte* exportBytesPtr = (byte*)_exportScratch.GetUnsafePtr();
+                byte* payloadPtr = exportBytesPtr + BinaryHeaderSizeBytes;
+                int copyBytes = eventCount * eventSizeBytes;
+                int destinationBytes = _exportScratch.Length - BinaryHeaderSizeBytes;
+                if (!UnsafeMemoryCopyGuard.TryMemCpy(
+                        payloadPtr,
+                        destinationBytes,
+                        _snapshotBuffer.GetUnsafeReadOnlyPtr(),
+                        copyBytes))
                 {
-                    byte* payloadPtr = exportBytesPtr + BinaryHeaderSizeBytes;
-                    int copyBytes = eventCount * eventSizeBytes;
-                    int destinationBytes = _exportBytes.Length - BinaryHeaderSizeBytes;
-                    if (!UnsafeMemoryCopyGuard.TryMemCpy(
-                            payloadPtr,
-                            destinationBytes,
-                            _snapshotBuffer.GetUnsafeReadOnlyPtr(),
-                            copyBytes))
-                    {
-                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(GlobalTelemetryBus));
-                        return false;
-                    }
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(GlobalTelemetryBus));
+                    return false;
                 }
             }
 
@@ -654,14 +819,12 @@ namespace Hecton8.Core
         {
             unsafe
             {
-                fixed (byte* exportBytesPtr = _exportBytes)
-                {
-                    uint* header = (uint*)exportBytesPtr;
-                    header[0] = BinaryMagic;
-                    header[1] = Version;
-                    header[2] = (uint)eventCount;
-                    header[3] = (uint)eventSizeBytes;
-                }
+                byte* exportBytesPtr = (byte*)_exportScratch.GetUnsafePtr();
+                uint* header = (uint*)exportBytesPtr;
+                header[0] = BinaryMagic;
+                header[1] = Version;
+                header[2] = (uint)eventCount;
+                header[3] = (uint)eventSizeBytes;
             }
         }
 
@@ -678,6 +841,23 @@ namespace Hecton8.Core
             }
         }
 
+        private static void ExecuteBackgroundEmergencyFlush(object state)
+        {
+            try
+            {
+                TryEmergencyFlushLocked();
+            }
+            finally
+            {
+                _snapshotInProgress = false;
+                _snapshotStartIndex = 0;
+                _snapshotTotalCount = 0;
+                _snapshotCopiedCount = 0;
+                ClearPendingExportState();
+                Interlocked.Exchange(ref _exportInFlight, 0);
+            }
+        }
+
         private static bool WritePreparedExportToMmf()
         {
             if (Interlocked.CompareExchange(ref _mmfWriteInProgress, 1, 0) != 0)
@@ -686,17 +866,16 @@ namespace Hecton8.Core
             try
             {
                 string telemetryDirectory = _pendingTelemetryDirectory;
-                byte[] exportBytes = _exportBytes;
                 if (string.IsNullOrEmpty(telemetryDirectory))
                     return false;
-                if (exportBytes == null)
+                if (!_exportScratch.IsCreated)
                     return false;
 
                 int pendingByteCount = _pendingByteCount;
                 int pendingEventCount = _pendingEventCount;
                 if (pendingEventCount <= 0 ||
                     pendingByteCount <= BinaryHeaderSizeBytes ||
-                    pendingByteCount > exportBytes.Length)
+                    pendingByteCount > _exportScratch.Length)
                 {
                     return false;
                 }
@@ -706,9 +885,7 @@ namespace Hecton8.Core
                     ? new DateTime(_pendingGeneratedUtcTicks, DateTimeKind.Utc)
                     : DateTime.UtcNow;
 
-                string timestamp = generatedUtc.ToString(ExportTimestampFormat);
-                _pendingBinaryPath = Path.Combine(telemetryDirectory, $"telemetry_{timestamp}{BinaryExtension}");
-                _pendingJsonPath = Path.Combine(telemetryDirectory, $"telemetry_{timestamp}{JsonExtension}");
+                _pendingBinaryPath = BuildTelemetryBinaryPath(telemetryDirectory, generatedUtc);
 
                 if (!string.IsNullOrEmpty(_pendingBinaryPath))
                 {
@@ -719,30 +896,36 @@ namespace Hecton8.Core
                                pendingByteCount,
                                MemoryMappedFileAccess.ReadWrite))
                     {
-                        using (MemoryMappedViewStream mappedStream = mappedFile.CreateViewStream(
+                        using (MemoryMappedViewAccessor mappedView = mappedFile.CreateViewAccessor(
                                    0L,
                                    pendingByteCount,
                                    MemoryMappedFileAccess.Write))
                         {
-                            mappedStream.Write(exportBytes, 0, pendingByteCount);
-                            mappedStream.Flush();
+                            unsafe
+                            {
+                                byte* destination = null;
+                                mappedView.SafeMemoryMappedViewHandle.AcquirePointer(ref destination);
+                                try
+                                {
+                                    if (!UnsafeMemoryCopyGuard.TryMemCpy(
+                                            destination,
+                                            pendingByteCount,
+                                            _exportScratch.GetUnsafeReadOnlyPtr(),
+                                            pendingByteCount))
+                                    {
+                                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(GlobalTelemetryBus));
+                                        return false;
+                                    }
+                                }
+                                finally
+                                {
+                                    mappedView.SafeMemoryMappedViewHandle.ReleasePointer();
+                                }
+                            }
+
+                            mappedView.Flush();
                         }
                     }
-                }
-
-                if (!string.IsNullOrEmpty(_pendingJsonPath))
-                {
-                    StringBuilder builder = new StringBuilder(192);
-                    builder.Append("{\"version\":");
-                    builder.Append(Version);
-                    builder.Append(",\"eventCount\":");
-                    builder.Append(pendingEventCount);
-                    builder.Append(",\"binaryFile\":\"");
-                    builder.Append(Path.GetFileName(_pendingBinaryPath));
-                    builder.Append("\",\"generatedUtc\":\"");
-                    builder.Append(generatedUtc.ToString("O"));
-                    builder.Append("\"}");
-                    File.WriteAllText(_pendingJsonPath, builder.ToString(), Encoding.UTF8);
                 }
 
                 return true;
@@ -770,10 +953,46 @@ namespace Hecton8.Core
             _pendingEventCount = 0;
             _pendingByteCount = 0;
             _pendingBinaryPath = null;
-            _pendingJsonPath = null;
             if (clearDirectory)
                 _pendingTelemetryDirectory = null;
             _pendingGeneratedUtcTicks = 0L;
+        }
+
+        private static string BuildTelemetryBinaryPath(string telemetryDirectory, DateTime generatedUtc)
+        {
+            int directoryLength = telemetryDirectory.Length;
+            bool needsSeparator =
+                directoryLength > 0 &&
+                telemetryDirectory[directoryLength - 1] != Path.DirectorySeparatorChar &&
+                telemetryDirectory[directoryLength - 1] != Path.AltDirectorySeparatorChar;
+            int pathLength =
+                directoryLength +
+                (needsSeparator ? 1 : 0) +
+                TelemetryFileNamePrefix.Length +
+                ExportTimestampCharCount +
+                BinaryExtension.Length;
+
+            return string.Create(
+                pathLength,
+                (Directory: telemetryDirectory, Timestamp: generatedUtc, NeedsSeparator: needsSeparator),
+                static (span, state) =>
+                {
+                    int cursor = 0;
+                    state.Directory.AsSpan().CopyTo(span);
+                    cursor += state.Directory.Length;
+                    if (state.NeedsSeparator)
+                        span[cursor++] = Path.DirectorySeparatorChar;
+
+                    TelemetryFileNamePrefix.AsSpan().CopyTo(span.Slice(cursor));
+                    cursor += TelemetryFileNamePrefix.Length;
+
+                    Span<char> timestampSpan = span.Slice(cursor, ExportTimestampCharCount);
+                    if (!state.Timestamp.TryFormat(timestampSpan, out int _, ExportTimestampFormat.AsSpan(), CultureInfo.InvariantCulture))
+                        timestampSpan.Fill('0');
+                    cursor += ExportTimestampCharCount;
+
+                    BinaryExtension.AsSpan().CopyTo(span.Slice(cursor));
+                });
         }
     }
 }

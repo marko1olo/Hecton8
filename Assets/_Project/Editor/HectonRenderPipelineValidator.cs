@@ -25,6 +25,8 @@ namespace Hecton8.Editor
         private const string ValidateMenuPath = "Hecton/Validation/Graphics/Run Render Pipeline Validator";
         private const string RepairMenuPath = "Hecton/Validation/Graphics/Repair Render Pipeline Assets";
         private const string LogPrefix = "[HectonRenderPipelineValidator]";
+        private const float MaxMx350ShadowDistanceMeters = 30f;
+        private const int Mx350ShadowCascadeCount = 2;
         private const string WorldScenePath = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
         private const string BlendedSkyboxMaterialPath = "Assets/_Project/Art/Materials/Mat_HectonSky.mat";
         private const string DaySkyboxMaterialPath = "Assets/_Project/Art/Skyboxes/Mat_Skybox_Day.mat";
@@ -70,6 +72,9 @@ namespace Hecton8.Editor
         };
         private const string VolumetricFeatureTypeName = "Hecton8.Visor.HectonScooterVolumetricShaftsFeature";
         private const string SsdoFeatureTypeName = "Hecton8.Visor.HectonAbyssalSsdoFeature";
+        private const string NoirDepthFogFeatureTypeName = "Hecton8.Visor.HectonNoirDepthFogFeature";
+        private const string StochasticSsrFeatureTypeName = "Hecton8.Visor.HectonStochasticSsrFeature";
+        private const string HalfResParticlesFeatureTypeName = "Hecton8.Visor.HectonHalfResParticlesFeature";
         private const string VisorFluidFeatureTypeName = "Hecton8.Visor.HectonVisorFluidDistortionFeature";
         private const string AtmosphereSootFeatureTypeName = "Hecton8.Visor.HectonAtmosphereSootFeature";
         private const string AtmosphereSootShaderAssetPath = "Assets/_Project/Art/Shaders/Hidden_Hecton_AtmosphereSootOverlay.shader";
@@ -224,6 +229,18 @@ namespace Hecton8.Editor
                 changed = true;
             }
 
+            if (urpAsset.shadowDistance > MaxMx350ShadowDistanceMeters)
+            {
+                urpAsset.shadowDistance = MaxMx350ShadowDistanceMeters;
+                changed = true;
+            }
+
+            if (urpAsset.shadowCascadeCount != Mx350ShadowCascadeCount)
+            {
+                urpAsset.shadowCascadeCount = Mx350ShadowCascadeCount;
+                changed = true;
+            }
+
             if (urpAsset.opaqueDownsampling != Downsampling.None)
             {
                 Debug.LogWarning(
@@ -303,13 +320,18 @@ namespace Hecton8.Editor
             bool rendererChanged = false;
             rendererChanged |= RestoreSerializedRendererFeatures(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonAbyssalSsdoFeature>(rendererData);
+            rendererChanged |= EnsureRequiredRendererFeature<HectonNoirDepthFogFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonScooterVolumetricShaftsFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonVisorFluidDistortionFeature>(rendererData);
+            rendererChanged |= EnsureRequiredRendererFeature<HectonHalfResParticlesFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonAtmosphereSootFeature>(rendererData);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, SsdoFeatureTypeName, RenderPassEvent.BeforeRenderingTransparents);
+            rendererChanged |= EnsureRequiredFeatureState(rendererData, NoirDepthFogFeatureTypeName, RenderPassEvent.BeforeRenderingTransparents);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, VolumetricFeatureTypeName, RenderPassEvent.BeforeRenderingTransparents);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, VisorFluidFeatureTypeName, RenderPassEvent.BeforeRenderingPostProcessing);
+            rendererChanged |= EnsureRequiredFeatureState(rendererData, HalfResParticlesFeatureTypeName, RenderPassEvent.BeforeRenderingPostProcessing);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, AtmosphereSootFeatureTypeName, RenderPassEvent.BeforeRenderingPostProcessing);
+            rendererChanged |= EnsureHalfResolutionParticleLayerIsolation(rendererData);
             if (!rendererChanged)
                 return false;
 
@@ -522,11 +544,14 @@ namespace Hecton8.Editor
             string featureTypeName = feature.GetType().FullName;
             RenderPassEvent expectedInjectionPoint;
             if (string.Equals(featureTypeName, VolumetricFeatureTypeName, StringComparison.Ordinal) ||
-                string.Equals(featureTypeName, SsdoFeatureTypeName, StringComparison.Ordinal))
+                string.Equals(featureTypeName, SsdoFeatureTypeName, StringComparison.Ordinal) ||
+                string.Equals(featureTypeName, StochasticSsrFeatureTypeName, StringComparison.Ordinal) ||
+                string.Equals(featureTypeName, NoirDepthFogFeatureTypeName, StringComparison.Ordinal))
             {
                 expectedInjectionPoint = RenderPassEvent.BeforeRenderingTransparents;
             }
             else if (string.Equals(featureTypeName, VisorFluidFeatureTypeName, StringComparison.Ordinal) ||
+                     string.Equals(featureTypeName, HalfResParticlesFeatureTypeName, StringComparison.Ordinal) ||
                      string.Equals(featureTypeName, AtmosphereSootFeatureTypeName, StringComparison.Ordinal))
             {
                 expectedInjectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
@@ -544,6 +569,17 @@ namespace Hecton8.Editor
                 $"({featureTypeName}) is serialized at '{injectionPoint}'. " +
                 $"Expected '{expectedInjectionPoint}' so the managed visor/noir stack stays in the validated URP order.");
             return 1;
+        }
+
+        private static bool EnsureHalfResolutionParticleLayerIsolation(UniversalRendererData rendererData)
+        {
+            int sanitizedLayerMask = HectonLayerMasks.SanitizeAuthoringLayerMask(rendererData.transparentLayerMask.value);
+            int targetLayerMask = sanitizedLayerMask & ~HectonLayerMasks.TransparentFxLayerMask;
+            if (rendererData.transparentLayerMask.value == targetLayerMask)
+                return false;
+
+            rendererData.transparentLayerMask = targetLayerMask;
+            return true;
         }
 
         private static int ValidateCrestScene()

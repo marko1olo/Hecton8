@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
@@ -17,37 +18,8 @@ namespace Hecton8.EditorTools
     internal sealed class HectonShaderVariantStripper : IPreprocessShaders, IPreprocessBuildWithReport
     {
         private const string MenuPath = "Hecton/Validation/Asset Pipeline/Log Shader Variant Strip Policy";
+        private const string WorldSceneName = "02_HECTON_WORLD";
         private static readonly string[] UrpAssetRoots = { "Assets/_Project/Data" };
-        private static readonly HashSet<string> MixedLightingKeywords = new HashSet<string>
-        {
-            "DIRLIGHTMAP_COMBINED",
-            "DYNAMICLIGHTMAP_ON",
-            "LIGHTMAP_SHADOW_MIXING",
-            "SHADOWS_SHADOWMASK"
-        };
-        private static readonly HashSet<string> MainLightShadowKeywords = new HashSet<string>
-        {
-            "_MAIN_LIGHT_SHADOWS",
-            "_MAIN_LIGHT_SHADOWS_CASCADE",
-            "_MAIN_LIGHT_SHADOWS_SCREEN"
-        };
-        private static readonly HashSet<string> AdditionalLightKeywords = new HashSet<string>
-        {
-            "_ADDITIONAL_LIGHTS",
-            "_ADDITIONAL_LIGHTS_VERTEX"
-        };
-        private static readonly HashSet<string> AdditionalLightShadowKeywords = new HashSet<string>
-        {
-            "_ADDITIONAL_LIGHT_SHADOWS"
-        };
-        private static readonly HashSet<string> SoftShadowKeywords = new HashSet<string>
-        {
-            "_SHADOWS_SOFT",
-            "_SHADOWS_SOFT_LOW",
-            "_SHADOWS_SOFT_MEDIUM",
-            "_SHADOWS_SOFT_HIGH"
-        };
-
         private static VariantStripPolicy s_CachedPolicy;
         private static bool s_HasCachedPolicy;
         private static int s_StrippedVariantCount;
@@ -76,20 +48,19 @@ namespace Hecton8.EditorTools
             if (!policy.HasAnyStrips)
                 return;
 
-            List<int> indicesToRemove = new List<int>(data.Count);
-            for (int variantIndex = 0; variantIndex < data.Count; variantIndex++)
+            int remainingCount = data.Count;
+            int stripCount = 0;
+            for (int variantIndex = data.Count - 1; variantIndex >= 0; variantIndex--)
             {
-                if (ShouldStripVariant(data[variantIndex], policy))
-                    indicesToRemove.Add(variantIndex);
+                if (remainingCount > 1 && ShouldStripVariant(data[variantIndex], policy))
+                {
+                    data.RemoveAt(variantIndex);
+                    remainingCount--;
+                    stripCount++;
+                }
             }
 
-            if (indicesToRemove.Count <= 0 || indicesToRemove.Count >= data.Count)
-                return;
-
-            for (int removeIndex = indicesToRemove.Count - 1; removeIndex >= 0; removeIndex--)
-                data.RemoveAt(indicesToRemove[removeIndex]);
-
-            s_StrippedVariantCount += indicesToRemove.Count;
+            s_StrippedVariantCount += stripCount;
         }
 
         internal static string BuildCurrentPolicySummary()
@@ -97,6 +68,8 @@ namespace Hecton8.EditorTools
             VariantStripPolicy policy = GetOrBuildPolicy();
             StringBuilder builder = new StringBuilder(512);
             builder.Append("[HectonShaderVariantStripper] URPAssets=").Append(policy.AssetCount)
+                .Append(", BuildMaterialAssets=").Append(policy.MaterialAssetCount)
+                .Append(", BuildMaterialKeywords=").Append(policy.UsedMaterialKeywords.Count)
                 .Append(", StripMainLightShadows=").Append(Bool01(policy.StripMainLightShadows))
                 .Append(", StripAdditionalLights=").Append(Bool01(policy.StripAdditionalLights))
                 .Append(", StripAdditionalLightShadows=").Append(Bool01(policy.StripAdditionalLightShadows))
@@ -117,6 +90,8 @@ namespace Hecton8.EditorTools
             bool supportsAdditionalLightShadows = false;
             bool supportsSoftShadows = false;
             bool supportsMixedLighting = false;
+            HashSet<string> usedMaterialKeywords = new HashSet<string>(StringComparer.Ordinal);
+            int materialAssetCount = CollectWorldSceneMaterialKeywords(usedMaterialKeywords, out string materialEvidence);
 
             string[] guids = AssetDatabase.FindAssets("t:UniversalRenderPipelineAsset", UrpAssetRoots);
             List<string> assetPaths = new List<string>(guids.Length);
@@ -162,7 +137,9 @@ namespace Hecton8.EditorTools
                 stripAdditionalLightShadows: !supportsAdditionalLightShadows,
                 stripSoftShadows: !supportsSoftShadows,
                 stripMixedLighting: !supportsMixedLighting,
-                evidence.ToString());
+                materialAssetCount: materialAssetCount,
+                usedMaterialKeywords: usedMaterialKeywords,
+                evidence: evidence.Append(" | materialScope=").Append(materialEvidence).ToString());
             s_HasCachedPolicy = true;
             return s_CachedPolicy;
         }
@@ -173,17 +150,187 @@ namespace Hecton8.EditorTools
             for (int i = 0; i < keywords.Length; i++)
             {
                 string keywordName = keywords[i].name;
-                if ((policy.StripMainLightShadows && MainLightShadowKeywords.Contains(keywordName))
-                    || (policy.StripAdditionalLights && AdditionalLightKeywords.Contains(keywordName))
-                    || (policy.StripAdditionalLightShadows && AdditionalLightShadowKeywords.Contains(keywordName))
-                    || (policy.StripSoftShadows && SoftShadowKeywords.Contains(keywordName))
-                    || (policy.StripMixedLighting && MixedLightingKeywords.Contains(keywordName)))
+                if ((policy.StripMainLightShadows && IsMainLightShadowKeyword(keywordName))
+                    || (policy.StripAdditionalLights && IsAdditionalLightKeyword(keywordName))
+                    || (policy.StripAdditionalLightShadows && IsAdditionalLightShadowKeyword(keywordName))
+                    || (policy.StripSoftShadows && IsSoftShadowKeyword(keywordName))
+                    || (policy.StripMixedLighting && IsMixedLightingKeyword(keywordName)))
+                {
+                    return true;
+                }
+
+                if (policy.HasMaterialKeywordPolicy &&
+                    IsMaterialOwnedKeyword(keywordName) &&
+                    !policy.UsedMaterialKeywords.Contains(keywordName))
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private static int CollectWorldSceneMaterialKeywords(HashSet<string> usedKeywords, out string evidence)
+        {
+            evidence = string.Empty;
+            if (usedKeywords == null)
+                return 0;
+
+            string worldScenePath = ResolveWorldScenePath();
+            if (string.IsNullOrEmpty(worldScenePath))
+            {
+                evidence = "02_HECTON_WORLD scene not found; material-keyword stripping disabled";
+                return 0;
+            }
+
+            HashSet<string> materialPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            string[] dependencies = AssetDatabase.GetDependencies(worldScenePath, true);
+            for (int dependencyIndex = 0; dependencyIndex < dependencies.Length; dependencyIndex++)
+            {
+                string dependencyPath = dependencies[dependencyIndex];
+                if (dependencyPath.EndsWith(".mat", StringComparison.OrdinalIgnoreCase))
+                    materialPaths.Add(dependencyPath);
+            }
+
+            HashSet<string>.Enumerator materialPathEnumerator = materialPaths.GetEnumerator();
+            while (materialPathEnumerator.MoveNext())
+            {
+                string materialPath = materialPathEnumerator.Current;
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+                if (material == null)
+                    continue;
+
+                LocalKeyword[] enabledKeywords = material.enabledKeywords;
+                for (int keywordIndex = 0; keywordIndex < enabledKeywords.Length; keywordIndex++)
+                {
+                    string keyword = enabledKeywords[keywordIndex].name;
+                    if (!string.IsNullOrEmpty(keyword))
+                        usedKeywords.Add(keyword);
+                }
+            }
+
+            evidence = worldScenePath + " materials=" + materialPaths.Count;
+            return materialPaths.Count;
+        }
+
+        private static string ResolveWorldScenePath()
+        {
+            EditorBuildSettingsScene[] scenes = EditorBuildSettings.scenes;
+            for (int sceneIndex = 0; sceneIndex < scenes.Length; sceneIndex++)
+            {
+                EditorBuildSettingsScene scene = scenes[sceneIndex];
+                if (scene == null || string.IsNullOrEmpty(scene.path))
+                    continue;
+
+                if (scene.path.EndsWith("/" + WorldSceneName + ".unity", StringComparison.OrdinalIgnoreCase))
+                    return scene.path;
+            }
+
+            string[] guids = AssetDatabase.FindAssets(WorldSceneName + " t:Scene");
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (path.EndsWith("/" + WorldSceneName + ".unity", StringComparison.OrdinalIgnoreCase))
+                    return path;
+            }
+
+            return string.Empty;
+        }
+
+        private static bool IsMaterialOwnedKeyword(string keywordName)
+        {
+            if (string.IsNullOrEmpty(keywordName))
+                return false;
+
+            if (IsMixedLightingKeyword(keywordName) ||
+                IsMainLightShadowKeyword(keywordName) ||
+                IsAdditionalLightKeyword(keywordName) ||
+                IsAdditionalLightShadowKeyword(keywordName) ||
+                IsSoftShadowKeyword(keywordName))
+            {
+                return false;
+            }
+
+            if (keywordName.StartsWith("UNITY_", StringComparison.Ordinal) ||
+                keywordName.StartsWith("STEREO_", StringComparison.Ordinal) ||
+                keywordName.StartsWith("INSTANCING_", StringComparison.Ordinal) ||
+                keywordName.StartsWith("LIGHTMAP", StringComparison.Ordinal) ||
+                keywordName.StartsWith("DIRLIGHTMAP", StringComparison.Ordinal) ||
+                keywordName.StartsWith("DYNAMICLIGHTMAP", StringComparison.Ordinal) ||
+                keywordName.StartsWith("SHADOWS_", StringComparison.Ordinal) ||
+                keywordName.StartsWith("FOG_", StringComparison.Ordinal) ||
+                keywordName.StartsWith("_MAIN_LIGHT", StringComparison.Ordinal) ||
+                keywordName.StartsWith("_ADDITIONAL_LIGHT", StringComparison.Ordinal) ||
+                keywordName.StartsWith("_SCREEN_SPACE", StringComparison.Ordinal) ||
+                keywordName.StartsWith("_DBUFFER", StringComparison.Ordinal) ||
+                keywordName.StartsWith("_GBUFFER", StringComparison.Ordinal) ||
+                string.Equals(keywordName, "PROCEDURAL_INSTANCING_ON", StringComparison.Ordinal) ||
+                string.Equals(keywordName, "DOTS_INSTANCING_ON", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            return keywordName.StartsWith("_", StringComparison.Ordinal) ||
+                   keywordName.Contains("QUALITY") ||
+                   keywordName.Contains("HECTON");
+        }
+
+        private static bool IsMixedLightingKeyword(string keywordName)
+        {
+            switch (keywordName)
+            {
+                case "DIRLIGHTMAP_COMBINED":
+                case "DYNAMICLIGHTMAP_ON":
+                case "LIGHTMAP_SHADOW_MIXING":
+                case "SHADOWS_SHADOWMASK":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsMainLightShadowKeyword(string keywordName)
+        {
+            switch (keywordName)
+            {
+                case "_MAIN_LIGHT_SHADOWS":
+                case "_MAIN_LIGHT_SHADOWS_CASCADE":
+                case "_MAIN_LIGHT_SHADOWS_SCREEN":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsAdditionalLightKeyword(string keywordName)
+        {
+            switch (keywordName)
+            {
+                case "_ADDITIONAL_LIGHTS":
+                case "_ADDITIONAL_LIGHTS_VERTEX":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsAdditionalLightShadowKeyword(string keywordName)
+        {
+            return string.Equals(keywordName, "_ADDITIONAL_LIGHT_SHADOWS", StringComparison.Ordinal);
+        }
+
+        private static bool IsSoftShadowKeyword(string keywordName)
+        {
+            switch (keywordName)
+            {
+                case "_SHADOWS_SOFT":
+                case "_SHADOWS_SOFT_LOW":
+                case "_SHADOWS_SOFT_MEDIUM":
+                case "_SHADOWS_SOFT_HIGH":
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static int Bool01(bool value)
@@ -230,6 +377,8 @@ namespace Hecton8.EditorTools
                 bool stripAdditionalLightShadows,
                 bool stripSoftShadows,
                 bool stripMixedLighting,
+                int materialAssetCount,
+                HashSet<string> usedMaterialKeywords,
                 string evidence)
             {
                 AssetCount = assetCount;
@@ -238,22 +387,28 @@ namespace Hecton8.EditorTools
                 StripAdditionalLightShadows = stripAdditionalLightShadows;
                 StripSoftShadows = stripSoftShadows;
                 StripMixedLighting = stripMixedLighting;
+                MaterialAssetCount = materialAssetCount;
+                UsedMaterialKeywords = usedMaterialKeywords ?? new HashSet<string>(StringComparer.Ordinal);
                 Evidence = evidence ?? string.Empty;
             }
 
             internal int AssetCount { get; }
+            internal int MaterialAssetCount { get; }
             internal bool StripMainLightShadows { get; }
             internal bool StripAdditionalLights { get; }
             internal bool StripAdditionalLightShadows { get; }
             internal bool StripSoftShadows { get; }
             internal bool StripMixedLighting { get; }
+            internal HashSet<string> UsedMaterialKeywords { get; }
+            internal bool HasMaterialKeywordPolicy => UsedMaterialKeywords.Count > 0;
             internal string Evidence { get; }
             internal bool HasAnyStrips =>
                 StripMainLightShadows
                 || StripAdditionalLights
                 || StripAdditionalLightShadows
                 || StripSoftShadows
-                || StripMixedLighting;
+                || StripMixedLighting
+                || HasMaterialKeywordPolicy;
         }
     }
 }

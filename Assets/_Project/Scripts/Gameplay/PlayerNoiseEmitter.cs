@@ -112,7 +112,8 @@ namespace Hecton8.Gameplay
             Vector3 playerPosition;
             if (TryResolvePlayerAup(out playerAup))
             {
-                playerPosition = playerAup.ToRuntimeFloat3();
+                float3 runtimePosition = playerAup.ToRuntimeFloat3();
+                playerPosition = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             }
             else
             {

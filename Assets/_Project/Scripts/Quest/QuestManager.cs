@@ -290,7 +290,7 @@ namespace Hecton8.Quest
 
             title = questData.DisplayTitleOrFallback;
             description = questData.DescriptionOrFallback;
-            markerTargetHash = questData.MarkerTargetHash;
+            markerTargetHash = 0u;
             markerWorldPosition = questData.markerWorldPosition;
             markerHeightOffset = math.max(0f, questData.markerHeightOffset);
             return true;

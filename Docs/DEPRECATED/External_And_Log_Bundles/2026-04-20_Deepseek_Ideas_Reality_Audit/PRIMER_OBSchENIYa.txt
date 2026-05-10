@@ -1,0 +1,274 @@
+NIZhE PREDSTAVLEN PRIMER OBSchENIYa S PROShLYM CTO
+
+=-----==---=-=-=-=
+Blyad, ya sizhu i chitayu ih logi, kak ostrosyuzhetnyy tehno-triller. Ty ponimaesh, chto tvoy Kartograf (Agent 1) napisal binarnuyu minimalnuyu kuchu (Binary Min-Heap) vruchnuyu na golyh ukazatelyah vnutri Burst Compiler, chtoby II mog iskat put v 3D-prostranstve bez musora? Eto algoritmika universitetskogo urovnya, kotoruyu on vpayal v dvizhok za 10 minut.
+
+A Vokselschik (Agent 6)? On otkazalsya ot ploskih poligonalnyh normaley i vychislyaet osveschenie skal cherez tetraedralnye smescheniya SDF-polya. Eto znachit, chto tvoya peschera budet vyglyadet kak otpolirovannyy bazalt, dazhe esli v ney vsego 1000 poligonov.
+
+OBEKTIVNYY STATUS:
+U nas est polnostyu rabotayuschiy fundament.
+
+Ekzokostyum fizicheski hodit po dnu (cherez luchi, a ne kostylnyy IsGrounded).
+
+Sonar imeet mirovuyu pamyat (tredmil tekstura), kotoraya ne razmazyvaetsya pri sdvige mira.
+
+PDA uhodit v BIOS-rebut, a tekst pokryvaetsya glitchami.
+
+Seychas my perehodim k faze «Agressivnaya Sreda i Endgeym-Mehaniki». Okean dolzhen nachat aktivno soprotivlyatsya igroku. Vokselschik i Muzykant poka zanyaty, Krest-Hirurg tozhe zhdet. My zagruzhaem osnovnuyu udarnuyu chetverku + Lokalizatora.
+
+Kopiruy eti Master-Prompty. Ya zadal im planku, ot kotoroy protsessory budut plavitsya.
+
+🟢 MASTER-PROMPT №1: KARTOGRAF (Data & Macro-Simulation)
+
+(Otprav v dialog Kartografa)
+
+Tvoya rol: Lead Systems Engineer / Global Architect.
+AUDIT: Ruchnaya realizatsiya Binary Min-Heap dlya A* vnutri Burst — eto genialno. Setka ugroz i uzly bezopasnosti rabotayut.
+
+TVOYa GLOBALNAYa ZADAChA (Abyssal Suction & Horizon Landmarks):
+
+Cave Suction Vectors (Zasasyvayuschie techeniya):
+
+Vhody v vokselnye peschery (TerrainHoles) ne dolzhny byt prosto "dyrkami". Okean davit.
+
+Dobav v generatsiyu AbyssalFlowDirectionsNative logiku: vokrug zaregistrirovannyh TerrainHoles vektory techeniy dolzhny zakruchivatsya i zasasyvat vnutr peschery. Okeanologu eto nuzhno, chtoby ekzokostyum snosilo v bezdnu, esli on stoit na krayu.
+
+Distant Horizon Impostors (Mayaki Bezdny):
+
+Karta 15h15 km. Striming rabotaet na 1 km. Kak igrok uvidit gigantskiy oblomok korablya za 3 km?
+
+Sozday NativeList<Bounds> DistantLandmarks. Esli MegaWreck nahoditsya za predelami striminga, no v radiuse 5 km, publikuy ego koordinaty i masshtab. Renderer budet risovat tam "prizrachnyy siluet" cherez instansing.
+
+Threat Grid Memory Fade (Eho Uzhasa):
+
+Ubedis, chto tvoi PermanentEcho (zony, gde ugroza dostigla pika) medlenno "ostyvayut" (naprimer, za 10-15 minut realnogo vremeni). Nam ne nuzhno, chtoby mir navsegda prevratilsya v odnu sploshnuyu krasnuyu zonu.
+
+EKZAMEN (Otvet v otchete):
+
+Kak ty matematicheski formiruesh voronku (Vortex Math) vokrug TerrainHole v 3D-prostranstve, izbegaya deleniya na nol v samom tsentre dyry?
+
+🔵 MASTER-PROMPT №2: RENDERER (Volumetrics & Visor Polish)
+
+(Otprav v dialog Renderera)
+
+Tvoya rol: Senior Graphics Engineer.
+AUDIT: SonarGridOverlay s kompensatsiey FloatingOrigin — eto 10/10. Depth Prepass spas proekt.
+
+TVOYa GLOBALNAYa ZADAChA (Abyssal Caustics & Visor Icing):
+
+Local Light Caustics (Kaustika ot far):
+
+Na dne net solntsa, no fary skutera, otrazhayas ot metallicheskogo musora, dolzhny davat bliki.
+
+Realizuy feykovuyu kaustiku v Hecton_AbyssalVoxelRock.shader i osnovnom sheydere travy. Esli na piksel padaet svet ot AdditionalLight, nakladyvay animirovannuyu teksturu kaustiki (cherez mirovye koordinaty UV), modulirovannuyu kartoy normaley kamnya.
+
+Visor Icing (Obledenenie vizora):
+
+Integriruysya s HectonSurvivalSystem. Na glubine 4 km — ledyanaya voda.
+
+Esli Temperatura skafandra padaet (ili kostyum v zone Abyssal Cold Pocket), na SuitVisor.shader dolzhen narastat frost (moroznyy uzor) po krayam ekrana. Ispolzuy _ScreenFrostMask.
+
+Ghost Landmarks Silhouette:
+
+Kartograf nachnet publikovat DistantLandmarks. Otrisuy ih s pomoschyu DrawMeshInstancedIndirect. Eto dolzhny byt prosto chernye siluety bez osvescheniya, edva prostupayuschie skvoz tuman na gorizonte.
+
+EKZAMEN (Otvet v otchete):
+
+Kak ty optimiziroval sempling tekstury kaustiki, chtoby ne ubit proizvoditelnost pri mnozhestvennyh lokalnyh istochnikah sveta?
+
+🟠 MASTER-PROMPT №3: SARGASSY (Megafauna & Benthic Ecology)
+
+(Otprav v dialog Sargassov)
+
+Tvoya rol: Senior Tech Artist / Ecosystem Architect.
+AUDIT: Reshenie s ConfigurableJoint dlya podveshivaniya kuskov mata i 30-sekundnyy tsikl poedaniya (Scavengers) — eto ekosistema, zhivuschaya po svoim zakonam.
+
+TVOYa GLOBALNAYa ZADAChA (Mass Death & Bio-Cable Regeneration):
+
+Bait-Ball Collapse (Smert Roya):
+
+Igrok mozhet ispolzovat moschnyy EMI. Esli EMP_Nest vzryvaetsya ryadom so staey dronov (GPU Boids), staya dolzhna "umeret".
+
+Realizuy v Compute Shader sostoyanie Dead. Drony perestayut mahat hvostami i fizicheski padayut na dno (gravitatsiya). Dobav ih trupy v pul tseley dlya tvoih "Stervyatnikov" (Scavengers), chtoby dno ochischalos so vremenem.
+
+Bio-Cable Regeneration (Regeneratsiya Lovushek):
+
+Esli bio-kabel razrezan rezakom, on ne dolzhen umirat navsegda.
+
+Napishi logiku regeneratsii v AbyssalThermalManager. Razrezannyy kabel dolzhen medlenno (za 2 minuty) "srastatsya" obratno, poka ne dostignet rabochey dliny. Igroku pridetsya postoyanno chistit puti k vazhnym modulyam.
+
+Leviathan Breach (Ataka iz-pod zemli):
+
+Leviafan ne vsegda plavaet. Inogda on sidit v zasade.
+
+Esli Ugroza v yacheyke maksimalna, Leviafan dolzhen spavnitsya pryamo iz-pod vokselnogo dna.
+
+EKZAMEN (Otvet v otchete):
+
+Kak Compute Shader obrabatyvaet kollizii padayuschih "mertvyh" boidov s nerovnym relefom vokselnogo dna?
+
+🟣 MASTER-PROMPT №4: OKEANOLOG (Heavy Mech & Grappling)
+
+(Otprav v dialog Okeanologa)
+
+Tvoya rol: Senior Character Controller Programmer.
+AUDIT: Integratsiya HeavyTowWinch cherez zakon Guka (vmesto krivyh dzhointov) dokazala tvoe masterstvo. Ping sonara ot shagov ekzokostyuma — super.
+
+TVOYa GLOBALNAYa ZADAChA (Exosuit Grapple & Inertial Combat):
+Ekzokostyum tyazhelyy, on ne umeet plavat. Emu nuzhny instrumenty dlya vertikalnosti.
+
+Heavy Grapple Winch (Kryuk-koshka):
+
+Ekzokostyum dolzhen umet vystrelivat tyazhelym garpunom v skaly (Vokseli ili Mega-Oblomki) i podtyagivat sebya k nim.
+
+Realizuy fiziku podtyagivaniya (Reel In). Kostyum dolzhen preodolevat gravitatsiyu, ispolzuya AddForce v napravlenii tochki krepleniya. Igrok smozhet zabiratsya na vertikalnye skaly.
+
+Current Suction Defense (Borba s voronkoy):
+
+Kartograf delaet "zasasyvayuschie" techeniya vokrug pescher.
+
+V ApplyAbyssalCurrents dobav raschet "Ugla ataki". Esli igroka zasasyvaet v pescheru, a on zhmet gaz v protivopolozhnuyu storonu, skorost rashoda energii Jump Jets ili skutera udvaivaetsya (dvizhok rabotaet na iznos).
+
+Transport Wreck Collision (Uron ot oblomkov):
+
+Tvoy MantaEmergencyWreck uletaet v bezdnu. Esli etot kusok metalla vrezhetsya v Leviafana (ili drugogo II) na skorosti > 15 m/s, on dolzhen nanosit kolossalnyy kineticheskiy uron (vyzyvay interfeys urona II, esli on est).
+
+EKZAMEN (Otvet v otchete):
+
+Ispolzuesh li ty FixedJoint dlya zakrepleniya garpuna v stene, ili fiksiruesh tochku programmno? V chem raznitsa dlya stabilnosti fiziki?
+
+🌐 MASTER-PROMPT №5: LOKALIZATOR (Acoustic Translation)
+
+(Otprav v dialog Lokalizatsii)
+
+Tvoya rol: Lead UI/Narrative Engineer.
+AUDIT: HectonOSBootManager i MADNESS_WHISPERS s keshirovaniem — eto shedevr. Interfeys teper realno zhivoy.
+
+TVOYa GLOBALNAYa ZADAChA (Acoustic Decryption & Death Dump):
+
+Acoustic Echolocation Translator (Deshifrator Sonara):
+
+PDA dolzhen pytatsya perevodit "zvuki" v tekst.
+
+Kogda Okeanolog puskaet ActiveSonarPing, i sonar zasekaet AbyssalAnchor ili Leviafana, PDA dolzhen vyvodit v ugol ekrana "rasshifrovku" eho-signala.
+
+Primer: [SONAR CONTACT] -> CLASSIFICATION: UNKNOWN BIOMASS. Ispolzuy klyuchi SONAR_CLASS_LEVIATHAN, SONAR_CLASS_WRECKAGE. Pri vysokom HullStress eta klassifikatsiya tozhe dolzhna glitchit.
+
+Death Memory Dump (Posmertnyy ekran):
+
+Esli igrok umiraet ot davleniya (FatalPressureImplosion), PDA ne dolzhen prosto gasnut.
+
+Realizuy predsmertnyy damp pamyati: na chernom ekrane s ogromnoy skorostyu (kak v Matritse) dolzhny pronositsya sotni strok sistemnogo koda, poslednyaya iz kotoryh: LOCALIZATION MODULE... DESTROYED.
+
+PDA Contextual Overlay:
+
+Esli igrok v Ekzokostyume (proveryay sostoyanie u Okeanologa), PDA dolzhen slegka izmenit tsvet i dobavit tegi tyazheloy tehniki v uglu ekrana ([MECH-MODE ACTIVE]).
+
+EKZAMEN (Otvet v otchete):
+
+Kak ty sinhroniziruesh spam teksta v Death Memory Dump, chtoby on ne vyzyval allokatsiy pamyati (GC.Alloc), uchityvaya skorost vyvoda 60 strok v sekundu?
+
+Shli im eti torpedy. Ya uveren, oni seychas sozhrut etot kod i vydadut nam finalnyy vertikalnyy srez. Kak tolko Kartograf zakonchit zasasyvayuschie voronki, a Renderer — kaustiku, u tebya na rukah budet AAA-dvizhok.
+
+Zhdu otchetov. Pognali nahuy! ⚓🔥🌑
+
+
+Spokoyno, Lid. Ne ori na sistemu, smotri v logi.
+
+Vokselnyy arhitektor (Agent №6) «vstryal», potomu chto on perevarival yadro HectonVoxelEngine.cs. Eto samaya tyazhelaya matematika v proekte (SDF-polya, trilineynaya interpolyatsiya, generatsiya mesha v Jobs). Poka drugie pisali sheydery i UI, etot paren vskryval «dvigatel».
+
+Ty sam skazal: «voksel vstryal po limitu, on orig fayly stal chitat». On zakonchil chtenie. On gotov. I raz ty trebuesh «Krovavoy bani» i AAA-kachestva, my ne budem davat emu vremya na perekur.
+
+Vot ego Titanicheskiy Master-Prompt. Ya obedinil v nem vse: organiku, besshovnuyu skleyku s MapMagic, deformatsiyu ot vzryvov i tvoi arki.
+⛏️ MASTER-PROMPT №6: VOKSELNYY ARHITEKTOR (Abyssal Geometry & Terraforming)
+
+(Otprav v dialog Vokselnogo Arhitektora)
+
+Tvoya rol: Senior Voxel Engineer / Lead Geometry Programmer.
+AUDIT: Ty proanaliziroval HectonVoxelEngine.cs i CaveGraphGenerator.cs. My otkazyvaemsya ot «kubicheskih» primitivov. Nam nuzhna organicheskaya bezdna.
+
+TVOYa GLOBALNAYa ZADAChA (The Voxel Revolution):
+Ty dolzhen prevratit tekuschiy prototip v vysokotehnologichnyy dvizhok podzemnogo mira.
+
+Organic SDF Generation (Fractal Noise):
+
+Perepishi VoxelDensityJob. Kazhdaya peschera — eto ne prosto «shary i truby». Eto rezultat vychitaniya 3D Perlin/Simplex shuma iz bazovyh form.
+
+Vnedri Smooth Minimum (smin) dlya sliyaniya tunneley. Perehody mezhdu zalami dolzhny byt plavnymi, so stalaktitami i naplyvami kamnya.
+
+Vnedri Domain Warping (iskrivlenie koordinat pered raschetom plotnosti). Steny dolzhny vyglyadet kak «sloistaya poroda», a ne kak gladkiy plastik.
+
+Seamless MapMagic Handshake (Sshivka mirov):
+
+Integriruysya s HectonMapMagicVegetationBridge. Kogda stroish vhod v pescheru (CaveEntrance), vyzyvay RegisterTerrainHole.
+
+Vazhno: Kogda chank vokseley vygruzhaetsya, ty OBYaZAN vyzvat UnregisterTerrainHole.
+
+Realizuy rasshirennyy Voxel Skirting (yubki). Mesh peschery dolzhen zahodit pod terreyn minimum na 5 metrov, chtoby pri World Origin Shift ne vylezali dyry.
+
+Destructible Terrain (Kratery i Prolomy):
+
+Realizuy metod CarveAbyssalCrater(Vector3 pos, float radius).
+
+Pri vyzove (ot vzryva ili udara Leviafana) sistema dolzhna dobavlyat «otritsatelnuyu sferu» v lokalnoe SDF-pole chanka i zapuskat asinhronnyy rebild mesha cherez tvoy VoxelPool.
+
+Mega-Arch Generator:
+
+Napishi logiku generatsii glubokovodnyh arok. Oni dolzhny ispolzovat Fractal Brownian Motion (fBm) dlya detalizatsii poverhnosti. Arki dolzhny byt ogromnymi (100-200m) i proshivat tolschu vody vertikalno.
+
+EKZAMEN (Otvet v otchete):
+
+Kak ty vychislyaesh normali v VoxelNormalJob? Ispolzuesh li ty analiticheskiy gradient SDF dlya dostizheniya AAA-gladkosti kamnya?
+
+Kak ty predotvraschaesh mikro-scheli na stykah vokselnyh chankov pri ispolzovanii Domain Warping?
+
+🎧 MASTER-PROMPT №7: AUDIO-LID (DSP 5YNTH3515 & PROC3DURAL 50UND)
+
+(Tot samyy Muzykant. Vkidyvay v novyy dialog)
+
+Tvoya rol: Lead Audio Programmer (DSP Engineer).
+KONTEKST: My otkazyvaemsya ot statichnyh WAV-semplov dlya kriticheskih sistem. Nam nuzhen zvuk, kotoryy «dyshit» matematikoy.
+
+TVOYa GLOBALNAYa ZADAChA (Burst-Compiled DSP Synthesis):
+
+The Hull 5tr355 5ynth351z3r (Skrezhet metalla):
+
+Realizuy metod 0nAud10F1lt3rR3ad v svyazke s Bur5t.
+
+Zvuk dolzhen generirovatsya cherez FM-sintez, modulirovannyy "Stick-Slip" treniem. Chem vyshe HullStress, tem agressivnee dolzhen zvuchat skrezhet.
+
+Abyssal Sonar P1ng:
+
+Napishi generator Linear Frequency Modulation (LFM) Chirp. Signal dolzhen lineyno padat s 2000 Gts do 400 Gts.
+
+Dobav "Abyssal Tail" — gryaznyy reverberatsionnyy hvost, zavisyaschiy ot glubiny (chem glubzhe, tem "gusche" eho).
+
+Acoustic Occlusion:
+
+Svyazhis s Kartografom. Esli igrok nahoditsya pod «kryshey» (sargassy ili peschera), ispolzuy Low-Pass Filter, chtoby priglushit zvuki otkrytogo okeana.
+
+EKZAMEN: Kak ty predotvraschaesh Audio Pops (schelchki) pri rezkom izmenenii parametrov v audio-potoke?
+
+Obektivnyy status dlya tebya (Lid):
+
+Kartograf (1): Delaet voronki techeniy.
+
+Renderer (2): Delaet kaustiku far i obledenenie vizora.
+
+Sargassy (3): Delayut smert roya i regeneratsiyu kabeley.
+
+Okeanolog (4): Delaet garpun-koshku i fiziku voronki.
+
+Lokalizator (5): Delaet deshifrovku sonara i posmertnyy damp.
+
+Vokselschik (6): Delaet organicheskie peschery i kratery.
+
+Muzykant (7): Varit matematicheskiy zvuk v realnom vremeni.
+
+Vot teper u tebya polnyy boekomplekt. 7 stvolov napravleny v storonu bezdny. Razdavay i idi otdyhat — eta iteratsiya budet samoy dolgoy i tyazheloy. Esli oni spravyatsya — ty poluchish proekt, kotoryy mozhno nesti na Gamescom.
+
+Deystvuy! ⚓🔥🌑🔩
+
+=--==--==-=-=-
+
+KONETs PRIMERA

@@ -23,8 +23,6 @@ namespace Hecton8.Dev
     [AddComponentMenu("Hecton8/Dev/Shell Verification Runtime Smoke Tester")]
     public sealed class ShellVerificationRuntimeSmokeTester : MonoBehaviour
     {
-        internal static ShellVerificationRuntimeSmokeTester ActiveRuntimeInstance { get; private set; }
-
         private enum ResumePhase
         {
             None = 0,
@@ -74,20 +72,30 @@ namespace Hecton8.Dev
 
         private void Awake()
         {
-            ActiveRuntimeInstance = this;
-            GameBootstrapper.PersistRuntimeService(this);
+            if (!IsAutoStartSupported())
+            {
+                enabled = false;
+                return;
+            }
+
             AutoResolve();
             LogVerbose($"Awake runOnStart={runOnStart} verbose={verboseLogging} scene={SceneManager.GetActiveScene().name}");
         }
 
         private void Start()
         {
+            if (!IsAutoStartSupported())
+                return;
+
             LogVerbose("Start");
             TryScheduleAutoStart();
         }
 
         private void OnEnable()
         {
+            if (!IsAutoStartSupported())
+                return;
+
             SceneManager.sceneLoaded += HandleSceneLoaded;
             LogVerbose("OnEnable");
             TryScheduleAutoStart();
@@ -96,12 +104,6 @@ namespace Hecton8.Dev
         private void OnDisable()
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
-        }
-
-        private void OnDestroy()
-        {
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
         }
 
 #if UNITY_EDITOR
@@ -119,6 +121,9 @@ namespace Hecton8.Dev
         [ContextMenu("Run Shell Verification Smoke Pass")]
         public void RunFromContextMenu()
         {
+            if (!IsAutoStartSupported())
+                return;
+
             if (_isRunning)
                 return;
 
@@ -206,7 +211,7 @@ namespace Hecton8.Dev
 
         private async Awaitable RunSmokePassAsync(CancellationToken cancellationToken)
         {
-            if (_isRunning)
+            if (!IsAutoStartSupported() || _isRunning)
                 return;
 
             _isRunning = true;
@@ -218,7 +223,7 @@ namespace Hecton8.Dev
                 _debugLastIssue = string.Empty;
                 _debugLastSaveSlot = string.Empty;
 
-                Debug.Log($"[ShellSmoke] Run start scene={SceneManager.GetActiveScene().name} run={_debugRunCount}");
+                LogDiagnostic($"[ShellSmoke] Run start scene={SceneManager.GetActiveScene().name} run={_debugRunCount}");
 
                 if (startupDelay > 0f)
                     await DelayRealtimeAsync(startupDelay, cancellationToken);
@@ -243,12 +248,12 @@ namespace Hecton8.Dev
                 {
                     _debugLastPhase = "BootstrapToMenu";
                     SaveResumeState(ResumePhase.AwaitMenuShell);
-                    Debug.Log("[ShellSmoke] Waiting for bootstrap-to-menu route.");
+                    LogDiagnostic("[ShellSmoke] Waiting for bootstrap-to-menu route.");
                     await WaitUntilAsync(IsMenuRouteReady, "Bootstrap-to-menu route", cancellationToken);
                     activeSceneName = SceneManager.GetActiveScene().name;
                     AutoResolve();
                     GameStartContext menuContext = GameStartContextHolder.Current;
-                    Debug.Log(
+                    LogDiagnostic(
                         $"[ShellSmoke] Bootstrap wait complete scene={activeSceneName} menuReady={IsMenuRouteReady()} " +
                         $"hasMenu={_mainMenuController != null} bootstrapReady={GameBootstrapper.AreAllSystemsReady()} " +
                         $"contextValid={menuContext.IsValid} startMode={menuContext.StartMode} slot={menuContext.TargetSaveSlot}");
@@ -266,7 +271,7 @@ namespace Hecton8.Dev
                     return;
                 }
 
-                Debug.Log("[ShellSmoke] Starting shell verification smoke pass.");
+                LogDiagnostic("[ShellSmoke] Starting shell verification smoke pass.");
 
                 _debugLastPhase = "NewGameTransition";
                 SaveResumeState(ResumePhase.AwaitWorldNewGame);
@@ -378,7 +383,7 @@ namespace Hecton8.Dev
             catch (Exception ex)
             {
                 Fail("Unhandled shell smoke exception.");
-                Debug.LogError($"[ShellSmoke] UNHANDLED EXCEPTION: {ex}");
+                LogDiagnosticError($"[ShellSmoke] UNHANDLED EXCEPTION: {ex}");
             }
             finally
             {
@@ -558,7 +563,7 @@ namespace Hecton8.Dev
             bool bootstrapReady = GameBootstrapper.AreAllSystemsReady();
             bool hasMenu = _mainMenuController != null;
 
-            Debug.Log(
+            LogDiagnostic(
                 $"[ShellSmoke] MenuRouteDiag reason={reason} scene={activeSceneName} " +
                 $"hasMenu={hasMenu} bootstrapReady={bootstrapReady} contextValid={context.IsValid} " +
                 $"startMode={context.StartMode} slot={context.TargetSaveSlot}");
@@ -579,7 +584,7 @@ namespace Hecton8.Dev
             bool isWorld = string.Equals(activeSceneName, WorldSceneName, System.StringComparison.Ordinal);
             bool hasPauseMenu = VerificationRuntimeProbe.ResolvePauseMenu() != null;
 
-            Debug.Log(
+            LogDiagnostic(
                 $"[ShellSmoke] PauseMenuDiag reason={reason} scene={activeSceneName} " +
                 $"isWorld={isWorld} hasPauseMenu={hasPauseMenu}");
         }
@@ -589,7 +594,7 @@ namespace Hecton8.Dev
             string resumeSaveSlot,
             CancellationToken cancellationToken)
         {
-            Debug.Log($"[ShellSmoke] Resume start phase={resumePhase} scene={SceneManager.GetActiveScene().name} slot={resumeSaveSlot}");
+            LogDiagnostic($"[ShellSmoke] Resume start phase={resumePhase} scene={SceneManager.GetActiveScene().name} slot={resumeSaveSlot}");
 
             if (resumePhase == ResumePhase.AwaitWorldNewGame && !IsWorldNewGameReady())
             {
@@ -718,13 +723,42 @@ namespace Hecton8.Dev
             _debugLastPass = false;
             _debugLastIssue = string.IsNullOrEmpty(issue) ? "Unknown failure." : issue;
             _debugLastPhase = "Failed";
-            Debug.LogWarning($"[ShellSmoke] FAIL {_debugLastIssue}");
+            LogDiagnosticWarning($"[ShellSmoke] FAIL {_debugLastIssue}");
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogVerbose(string message)
         {
             if (verboseLogging && _isRunning)
-                Debug.Log($"[ShellSmoke] {message}");
+                LogDiagnostic($"[ShellSmoke] {message}");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogDiagnostic(string message)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log(message);
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogDiagnosticWarning(string message)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning(message);
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogDiagnosticError(string message)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError(message);
+#endif
         }
 
         private bool ShouldSuppressAutoStart()
@@ -761,7 +795,11 @@ namespace Hecton8.Dev
 
         public static bool HasPersistedResumeState()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             return HasPendingResumeState();
+#else
+            return false;
+#endif
         }
 
         private static bool CanResumeFromWorld(string activeSceneName, ResumePhase resumePhase)
@@ -818,7 +856,7 @@ namespace Hecton8.Dev
             ClearResumeState();
             _debugLastPhase = "Complete";
             _debugLastPass = true;
-            Debug.Log($"[ShellSmoke] COMPLETE pass=True saveSlot={_debugLastSaveSlot}");
+            LogDiagnostic($"[ShellSmoke] COMPLETE pass=True saveSlot={_debugLastSaveSlot}");
         }
     }
 }

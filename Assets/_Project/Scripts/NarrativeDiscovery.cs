@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — NarrativeDiscovery.cs
-// Компонент для лорных объектов (чёрные ящики, КПК, обломки).
+// Komponent dlya lornyh obektov (chernye yaschiki, KPK, oblomki).
 // ============================================================================
 
 using Hecton.Localization;
@@ -16,28 +16,28 @@ namespace Hecton8.Interaction
     [DisallowMultipleComponent]
     public sealed class NarrativeDiscovery : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
     {
-        private const string DefaultStudyVerbRu = "Изучить";
+        private const string DefaultStudyVerbRu = "Izuchit";
         private const string DefaultStudyVerbEn = "Study";
-        private const string DefaultPlaybackVerbRu = "Воспроизвести запись";
+        private const string DefaultPlaybackVerbRu = "Vosproizvesti zapis";
         private const string DefaultPlaybackVerbEn = "Play Log";
-        private const string DefaultTextVerbRu = "Открыть запись";
+        private const string DefaultTextVerbRu = "Otkryt zapis";
         private const string DefaultTextVerbEn = "Open Log";
-        private const string DefaultArchiveVerbRu = "Открыть архив";
+        private const string DefaultArchiveVerbRu = "Otkryt arhiv";
         private const string DefaultArchiveVerbEn = "Open Archive";
 
         [Header("── Discovery ─────────────────────────────────")]
-        [Tooltip("Уникальный ID открытия (для сохранения и триггеров)")]
+        [Tooltip("Unikalnyy ID otkrytiya (dlya sohraneniya i triggerov)")]
         [SerializeField] private string discoveryId;
 
-        [Tooltip("Текст подсказки: 'Забрать КПК', 'Изучить бортовой самописец'")]
+        [Tooltip("Tekst podskazki: 'Zabrat KPK', 'Izuchit bortovoy samopisets'")]
         [SerializeField] private string interactVerb = DefaultStudyVerbRu;
 
-        [Tooltip("Название объекта (для лога)")]
-        [SerializeField] private string displayName = "Объект";
+        [Tooltip("Nazvanie obekta (dlya loga)")]
+        [SerializeField] private string displayName = "Obekt";
         [SerializeField] private LocalizedTextReference localizedDisplayName;
 
-        [Header("── Audio Log (опционально) ───────────────────")]
-        [Tooltip("Если назначен — воспроизводит аудиодневник при взаимодействии.")]
+        [Header("── Audio Log (optsionalno) ───────────────────")]
+        [Tooltip("Esli naznachen — vosproizvodit audiodnevnik pri vzaimodeystvii.")]
         [SerializeField] private AudioLogData linkedAudioLog;
 
         [Header("── Settings ──────────────────────────────────")]

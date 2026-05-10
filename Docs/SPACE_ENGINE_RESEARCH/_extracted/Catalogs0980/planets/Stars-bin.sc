@@ -1959,7 +1959,7 @@ Star "W UMa B"
 //65 UMa;SIMBAD
 
 //Unique sextuple system: 65 UMa
-//Authors: P. Zasche, R. Uhlґa?r, M. ?Slechta, M. Wolf, P. Harmanec, J.A. Nemravovґa, and D. Kor?cґakovґa
+//Authors: P. Zasche, R. Uhl_a?r, M. ?Slechta, M. Wolf, P. Harmanec, J.A. Nemravov_a, and D. Kor?c_akov_a
 //Astronomy & Astrophysics manuscript 4 July, 2012
 
 Barycenter "65 UMa (ABC)"
@@ -25825,7 +25825,7 @@ Star "BD+36 3317 B"
 	{
 		Period          0.011779
 		SemiMajorAxis   0.043138	//for a typical mass of a A5V and period 
-		Inclination     90			//near 90є
+		Inclination     90			//near 90_
 		ArgOfPericenter 180
 		MeanAnomaly     0
 	}

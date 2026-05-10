@@ -1,4 +1,6 @@
 using System;
+using System.Runtime.InteropServices;
+using Unity.Mathematics;
 
 namespace Hecton8.SaveSystem
 {
@@ -72,12 +74,32 @@ namespace Hecton8.SaveSystem
         }
     }
 
+    public enum VoxelCarvingOperationKind : byte
+    {
+        Subtract = 0,
+        Add = 1
+    }
+
+    [Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 24)]
+    public struct VoxelCarvingOperationDTO
+    {
+        public float3 localPosition;
+        public float radius;
+        public VoxelCarvingOperationKind operation;
+        public byte materialId;
+        public ushort flags;
+        public uint sequence;
+    }
+
     [Serializable]
     public struct VoxelDeltaPersistenceDTO
     {
         public int chunkCount;
         public int totalCellCount;
         public VoxelDeltaChunkDTO[] chunks;
+        public int carvingOperationCount;
+        public VoxelCarvingOperationDTO[] carvingOperations;
 
         public static VoxelDeltaPersistenceDTO CreateDefault()
         {
@@ -85,7 +107,9 @@ namespace Hecton8.SaveSystem
             {
                 chunkCount = 0,
                 totalCellCount = 0,
-                chunks = Array.Empty<VoxelDeltaChunkDTO>()
+                chunks = Array.Empty<VoxelDeltaChunkDTO>(),
+                carvingOperationCount = 0,
+                carvingOperations = Array.Empty<VoxelCarvingOperationDTO>()
             };
         }
 
@@ -96,8 +120,12 @@ namespace Hecton8.SaveSystem
                 if (chunks == null)
                     chunks = Array.Empty<VoxelDeltaChunkDTO>();
 
+                if (carvingOperations == null)
+                    carvingOperations = Array.Empty<VoxelCarvingOperationDTO>();
+
                 chunkCount = 0;
                 totalCellCount = 0;
+                carvingOperationCount = 0;
                 return;
             }
 
@@ -106,6 +134,9 @@ namespace Hecton8.SaveSystem
                 // COLD ALLOC: VoxelDeltaChunkDTO[requiredChunkCount] - voxel delta persistence chunk registry - owner: VoxelDeltaPersistenceDTO
                 chunks = new VoxelDeltaChunkDTO[requiredChunkCount];
             }
+
+            if (carvingOperations == null)
+                carvingOperations = Array.Empty<VoxelCarvingOperationDTO>();
         }
     }
 #pragma warning restore CS0649

@@ -6,7 +6,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9916)]
-    internal sealed class VRSomaticRuntimeBootstrap : MonoBehaviour, ISlowTickable, ISceneBootstrapEventListener
+    internal sealed class VRSomaticRuntimeBootstrap : MonoBehaviour, ISlowTickable, IGameBootstrapperEventListener
     {
         private const string RuntimeOwnerName = "[VRSomaticRuntimeBootstrap]";
         private const string PdaSocketName = "VR_SomaticSocket_PDA";
@@ -138,12 +138,12 @@ namespace Hecton8.Gameplay
                 TryUnregisterSlowTick();
         }
 
-        public void OnSceneBootstrapEvent(in SceneBootstrapEventPayload payload)
+        public void OnGameBootstrapperEvent(in GameBootstrapperEventPayload payload)
         {
             if (!Application.isPlaying)
                 return;
 
-            if ((SceneBootstrapEventType)payload.EventType != SceneBootstrapEventType.GameReady)
+            if ((GameBootstrapperEventType)payload.EventType != GameBootstrapperEventType.GameReady)
                 return;
 
             if (!HectonXRRuntimeState.IsXRActive)
@@ -175,7 +175,7 @@ namespace Hecton8.Gameplay
             if (_registeredBootstrap)
                 return;
 
-            SceneBootstrap.Register(this);
+            GameBootstrapper.Register(this);
             _registeredBootstrap = true;
         }
 
@@ -184,7 +184,7 @@ namespace Hecton8.Gameplay
             if (!_registeredBootstrap)
                 return;
 
-            SceneBootstrap.Unregister(this);
+            GameBootstrapper.Unregister(this);
             _registeredBootstrap = false;
         }
 
@@ -247,11 +247,11 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            playerObject = SceneBootstrap.CurrentPlayerObject;
+            playerObject = GameBootstrapper.CurrentPlayerObject;
             if (playerObject != null)
                 return true;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
                 playerObject = playerTransform.gameObject;
                 return true;
@@ -295,10 +295,10 @@ namespace Hecton8.Gameplay
             // COLD LOOKUP: only OnEnable/GameReady pass true; SlowTick fallback never scans hierarchy.
             if (allowHierarchyLookup)
             {
-                Transform socketTransform = playerTransform.Find(socketName);
-                if (socketTransform != null)
+                Transform existingSocketTransform = playerTransform.Find(socketName);
+                if (existingSocketTransform != null)
                 {
-                    cachedSocket = socketTransform;
+                    cachedSocket = existingSocketTransform;
                     createdSocket = false;
                     return cachedSocket;
                 }

@@ -1,17 +1,17 @@
 // ============================================================================
 // HECTON-8 — HectonBiolumController.cs
-// Управление глобальной биолюминесценцией.
+// Upravlenie globalnoy biolyuminestsentsiey.
 //
-// ЛОР:
-//   • Биолюминесценция усиливается во время затмения (лор1).
-//   • Реагирует на пульс сигнала Атлас-6 (лор3 Блок З).
-//   • На глубине 500м+ — постоянная биолюминесценция (лор2).
-//   • Кристаллические деревья светятся от давления (лор2 Раздел 7).
+// LOR:
+//   • Biolyuminestsentsiya usilivaetsya vo vremya zatmeniya (lor1).
+//   • Reagiruet na puls signala Atlas-6 (lor3 Blok Z).
+//   • Na glubine 500m+ — postoyannaya biolyuminestsentsiya (lor2).
+//   • Kristallicheskie derevya svetyatsya ot davleniya (lor2 Razdel 7).
 //
-// АРХИТЕКТУРА:
-//   • Публикует _BiolumIntensity, _BiolumPulseTime в глобальные шейдеры.
-//   • ISlowTickable — плавное изменение интенсивности.
-//   • Слушает EclipseGameplayEvents и AtlasSignalEvents.
+// ARHITEKTURA:
+//   • Publikuet _BiolumIntensity, _BiolumPulseTime v globalnye sheydery.
+//   • ISlowTickable — plavnoe izmenenie intensivnosti.
+//   • Slushaet EclipseGameplayEvents i AtlasSignalEvents.
 // ============================================================================
 
 using Hecton8.AtlasSignal;
@@ -32,32 +32,32 @@ namespace Hecton8.World
         // ══════════════════════════════════════════════════════════
 
         [Header("── Base Intensity ──────────────────────────")]
-        [Tooltip("Базовая интенсивность биолюминесценции.")]
+        [Tooltip("Bazovaya intensivnost biolyuminestsentsii.")]
         [SerializeField, Range(0f, 1f)] private float baseIntensity = 0.15f;
 
-        [Tooltip("Интенсивность на глубине > 500м.")]
+        [Tooltip("Intensivnost na glubine > 500m.")]
         [SerializeField, Range(0f, 1f)] private float deepIntensity = 0.45f;
 
-        [Tooltip("Глубина перехода к deep intensity (метры).")]
+        [Tooltip("Glubina perehoda k deep intensity (metry).")]
         [SerializeField] private float deepTransitionDepth = 500f;
 
         [Header("── Eclipse Boost ────────────────────────────")]
-        [Tooltip("Множитель во время затмения.")]
+        [Tooltip("Mnozhitel vo vremya zatmeniya.")]
         [SerializeField, Range(1f, 5f)] private float eclipseMultiplier = 2f;
         [SerializeField, Min(0.01f)] private float eclipseMultiplierSmoothRate = 1.25f;
 
         [Header("── Signal Pulse ────────────────────────────")]
-        [Tooltip("Дополнительная интенсивность при пульсе сигнала Атлас-6.")]
+        [Tooltip("Dopolnitelnaya intensivnost pri pulse signala Atlas-6.")]
         [SerializeField, Range(0f, 0.5f)] private float signalPulseBoost = 0.2f;
 
-        [Tooltip("Скорость затухания пульса.")]
+        [Tooltip("Skorost zatuhaniya pulsa.")]
         [SerializeField] private float pulseDecayRate = 0.5f;
 
         [Header("── Sonar Communication ────────────────────")]
-        [Tooltip("Дополнительная интенсивность отклика биолюма на активный sonar pulse игрока.")]
+        [Tooltip("Dopolnitelnaya intensivnost otklika biolyuma na aktivnyy sonar pulse igroka.")]
         [SerializeField, Range(0f, 0.35f)] private float sonarPulseBoost = 0.12f;
 
-        [Tooltip("Нормализующий радиус sonar pulse для расчета биолюминесцентного отклика.")]
+        [Tooltip("Normalizuyuschiy radius sonar pulse dlya rascheta biolyuminestsentnogo otklika.")]
         [SerializeField] private float sonarReferenceRadius = 100f;
 
         [Header("── References ──────────────────────────────")]
@@ -177,7 +177,7 @@ namespace Hecton8.World
 
             const float dt = 0.5f;
 
-            // Вычисляем целевую интенсивность
+            // Vychislyaem tselevuyu intensivnost
             float depth = survivalSystem != null ? survivalSystem.Depth : 0f;
             float transitionDepth = deepTransitionDepth > 1f ? deepTransitionDepth : 1f;
             float depthFactor = depth >= transitionDepth ? 1f : depth / transitionDepth;
@@ -195,7 +195,7 @@ namespace Hecton8.World
 
             _targetIntensity = target;
 
-            // Плавное изменение + pulse burst
+            // Plavnoe izmenenie + pulse burst
             _currentIntensity = MoveTowardsFast(_currentIntensity, _targetIntensity, 0.05f * dt / 0.5f);
 
             if (_atlasPulseBurst > 0f)

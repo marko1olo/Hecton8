@@ -1,20 +1,20 @@
 // ============================================================================
 // HECTON-8 — FlowFieldVisualizer.cs
-// Визуализатор векторного поля течений в редакторе.
+// Vizualizator vektornogo polya techeniy v redaktore.
 //
-// Рисует стрелки/линии, показывающие направление и силу течений
-// в заданной области. Полезно для настройки CurrentVolume и глобальных течений.
+// Risuet strelki/linii, pokazyvayuschie napravlenie i silu techeniy
+// v zadannoy oblasti. Polezno dlya nastroyki CurrentVolume i globalnyh techeniy.
 //
-// АРХИТЕКТУРА:
-//   - Singleton для лёгкого доступа из меню
-//   - Gizmos для рендеринга (OnDrawGizmosSelected)
-//   - Sampling в grid'е для производительности
-//   - Цветовая кодировка силы течения
+// ARHITEKTURA:
+//   - Singleton dlya legkogo dostupa iz menyu
+//   - Gizmos dlya renderinga (OnDrawGizmosSelected)
+//   - Sampling v grid'e dlya proizvoditelnosti
+//   - Tsvetovaya kodirovka sily techeniya
 //
-// ПРОИЗВОДИТЕЛЬНОСТЬ:
-//   - Grid sampling: O(gridSize²) вместо O(continuous)
-//   - Только в Selected Gizmos (не всегда рисуется)
-//   - Burst-compatible sampling через CurrentManager
+// PROIZVODITELNOST:
+//   - Grid sampling: O(gridSize²) vmesto O(continuous)
+//   - Tolko v Selected Gizmos (ne vsegda risuetsya)
+//   - Burst-compatible sampling cherez CurrentManager
 // ============================================================================
 
 using System.Text;
@@ -31,19 +31,19 @@ using Hecton8.World;
 
 namespace Hecton8.Physics
 {
-    /// <summary>Стили визуализации стрелок течения</summary>
+    /// <summary>Stili vizualizatsii strelok techeniya</summary>
     public enum ArrowStyle
     {
-        /// <summary>Простые стрелки с наконечниками</summary>
+        /// <summary>Prostye strelki s nakonechnikami</summary>
         Arrows = 0,
 
-        /// <summary>Линии без наконечников (быстрее)</summary>
+        /// <summary>Linii bez nakonechnikov (bystree)</summary>
         Lines = 1,
 
-        /// <summary>Конусы (более заметные)</summary>
+        /// <summary>Konusy (bolee zametnye)</summary>
         Cones = 2,
 
-        /// <summary>Цветные точки (минимальная производительность)</summary>
+        /// <summary>Tsvetnye tochki (minimalnaya proizvoditelnost)</summary>
         Dots = 3
     }
 
@@ -62,138 +62,138 @@ namespace Hecton8.Physics
         private const int ForceLabelBuilderCapacity = 32;
 
         [Header("── Profile ───────────────────────────────────")]
-        [Tooltip("Профиль настроек (опционально). Автоматически применяет настройки при выборе.")]
+        [Tooltip("Profil nastroek (optsionalno). Avtomaticheski primenyaet nastroyki pri vybore.")]
         [SerializeField] private FlowFieldProfile profile;
 
         [Header("── Grid Settings ─────────────────────────────")]
-        [Tooltip("Размер области визуализации (метры)")]
+        [Tooltip("Razmer oblasti vizualizatsii (metry)")]
         [SerializeField] private Vector2 areaSize = new Vector2(50f, 50f);
 
-        [Tooltip("Разрешение grid'а (количество стрелок по X и Z)")]
+        [Tooltip("Razreshenie grid'a (kolichestvo strelok po X i Z)")]
         [SerializeField] private Vector2Int gridResolution = new Vector2Int(20, 20);
 
-        [Tooltip("Высота сэмплинга над поверхностью воды (Y-offset)")]
+        [Tooltip("Vysota semplinga nad poverhnostyu vody (Y-offset)")]
         [SerializeField] private float sampleHeight = 0.5f;
 
         [Header("── Arrow Settings ────────────────────────────")]
-        [Tooltip("Длина стрелок (метры). Автоматически масштабируется по силе.")]
+        [Tooltip("Dlina strelok (metry). Avtomaticheski masshtabiruetsya po sile.")]
         [SerializeField] private float arrowLength = 2f;
 
-        [Tooltip("Толщина линий стрелок")]
+        [Tooltip("Tolschina liniy strelok")]
         [SerializeField] private float arrowThickness = 0.05f;
 
-        [Tooltip("Масштаб силы для цветовой кодировки (0 = синий, max = красный)")]
+        [Tooltip("Masshtab sily dlya tsvetovoy kodirovki (0 = siniy, max = krasnyy)")]
         [SerializeField] private float maxForceScale = 5f;
 
         [Header("── Performance ──────────────────────────────")]
-        [Tooltip("Максимальное разрешение grid'а для предотвращения зависаний")]
+        [Tooltip("Maksimalnoe razreshenie grid'a dlya predotvrascheniya zavisaniy")]
         [SerializeField, Range(5, 100)] private int maxGridResolution = 50;
 
-        [Tooltip("Порог для асинхронного расчёта (клеток)")]
+        [Tooltip("Porog dlya asinhronnogo rascheta (kletok)")]
         [SerializeField] private int asyncThreshold = 1000;
 
-        [Tooltip("Таймаут асинхронного расчёта (сек)")]
+        [Tooltip("Taymaut asinhronnogo rascheta (sek)")]
         [SerializeField, Range(0.1f, 10f)] private float asyncTimeout = 2f;
 
-        [Tooltip("Использовать Burst для расчётов (быстрее, но требует компиляции)")]
+        [Tooltip("Ispolzovat Burst dlya raschetov (bystree, no trebuet kompilyatsii)")]
         [SerializeField] private bool useBurstSampling = true;
 
-        [Tooltip("Использовать Job System для параллельного сэмплинга")]
+        [Tooltip("Ispolzovat Job System dlya parallelnogo semplinga")]
         [SerializeField] private bool useJobSystem = true;
 
         [Header("── Advanced Visualization ──────────────────")]
-        [Tooltip("HDR цвета для лучшей видимости")]
+        [Tooltip("HDR tsveta dlya luchshey vidimosti")]
         [SerializeField] private bool useHDRColors = true;
 
-        [Tooltip("Плавная анимация в editor (для preview)")]
+        [Tooltip("Plavnaya animatsiya v editor (dlya preview)")]
         [SerializeField] private bool animateInEditor = false;
 
-        [Tooltip("Скорость анимации (для preview)")]
+        [Tooltip("Skorost animatsii (dlya preview)")]
         [SerializeField, Range(0.1f, 5f)] private float animationSpeed = 1f;
 
-        [Tooltip("Использовать particle effects для сильных течений")]
+        [Tooltip("Ispolzovat particle effects dlya silnyh techeniy")]
         [SerializeField] private bool useParticleEffects = false;
 
-        [Tooltip("Particle system prefab для эффектов")]
+        [Tooltip("Particle system prefab dlya effektov")]
         [SerializeField] private GameObject particlePrefab;
 
         [Header("── Current Sources ─────────────────────────")]
-        [Tooltip("Визуализировать глобальное phantom течение из HectonFluidEngine")]
+        [Tooltip("Vizualizirovat globalnoe phantom techenie iz HectonFluidEngine")]
         [SerializeField] private bool showGlobalCurrent = true;
 
-        [Tooltip("Визуализировать локальные CurrentVolume объекты")]
+        [Tooltip("Vizualizirovat lokalnye CurrentVolume obekty")]
         [SerializeField] private bool showLocalCurrents = true;
 
-        [Tooltip("Ограничить только выбранными CurrentVolume (из списка ниже)")]
+        [Tooltip("Ogranichit tolko vybrannymi CurrentVolume (iz spiska nizhe)")]
         [SerializeField] private bool onlySelectedVolumes = false;
 
-        [Tooltip("Список выбранных CurrentVolume для визуализации")]
+        [Tooltip("Spisok vybrannyh CurrentVolume dlya vizualizatsii")]
         [SerializeField] private List<CurrentVolume> selectedVolumes = new List<CurrentVolume>(SelectedVolumeCapacity); // COLD ALLOC: List<CurrentVolume>[32] — selected current-volume preview filter — owner: FlowFieldVisualizer
 
         [Header("── Visualization ────────────────────────────")]
-        [Tooltip("Стиль визуализации стрелок")]
+        [Tooltip("Stil vizualizatsii strelok")]
         [SerializeField] private ArrowStyle arrowStyle = ArrowStyle.Arrows;
 
-        [Tooltip("Показывать числовые значения силы")]
+        [Tooltip("Pokazyvat chislovye znacheniya sily")]
         [SerializeField] private bool showForceLabels = false;
 
         [Header("── LOD / Culling ───────────────────────────")]
-        [Tooltip("Использовать LOD по расстоянию")]
+        [Tooltip("Ispolzovat LOD po rasstoyaniyu")]
         [SerializeField] private bool useLod = true;
 
-        [Tooltip("Минимальная дистанция для отображения (м)")]
+        [Tooltip("Minimalnaya distantsiya dlya otobrazheniya (m)")]
         [SerializeField] private float lodMinDistance = 0f;
 
-        [Tooltip("Максимальная дистанция для отображения (м)")]
+        [Tooltip("Maksimalnaya distantsiya dlya otobrazheniya (m)")]
         [SerializeField] private float lodMaxDistance = 120f;
 
-        [Tooltip("Уголное порог (dot) для просмотра/направления")]
+        [Tooltip("Ugolnoe porog (dot) dlya prosmotra/napravleniya")]
         [SerializeField, Range(-1f, 1f)] private float lodDotThreshold = -0.3f;
 
-        [Tooltip("Размер шрифта для лейблов")]
+        [Tooltip("Razmer shrifta dlya leyblov")]
         [SerializeField, Range(8, 24)] private int labelFontSize = 12;
 
-        [Tooltip("Показывать только значимые течения (выше порога)")]
+        [Tooltip("Pokazyvat tolko znachimye techeniya (vyshe poroga)")]
         [SerializeField] private bool cullWeakFlows = true;
 
-        [Tooltip("Минимальная сила для отображения (м/с)")]
+        [Tooltip("Minimalnaya sila dlya otobrazheniya (m/s)")]
         [SerializeField, Range(0.01f, 1f)] private float minFlowStrength = 0.1f;
 
         [Header("── Debug / Diagnostics ────────────────────")]
-        [Tooltip("Показывать панель диагностики (в сцене)")]
+        [Tooltip("Pokazyvat panel diagnostiki (v stsene)")]
         [SerializeField] private bool showDebugInfo = true;
 
-        [Tooltip("Показывать детализацию времени расчёта")]
+        [Tooltip("Pokazyvat detalizatsiyu vremeni rascheta")]
         [SerializeField] private bool showPerformanceStats = true;
 
         // ══════════════════════════════════════════════════════════
         //  CACHED DATA
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Кэшированные позиции grid'а для сэмплинга</summary>
+        /// <summary>Keshirovannye pozitsii grid'a dlya semplinga</summary>
         private Vector3[] _samplePositions;
 
-        /// <summary>Кэшированные векторы течений для каждого grid-точки</summary>
+        /// <summary>Keshirovannye vektory techeniy dlya kazhdogo grid-tochki</summary>
         private Vector3[] _flowVectors;
 
-        /// <summary>Кэшированные величины течений для оптимизации</summary>
+        /// <summary>Keshirovannye velichiny techeniy dlya optimizatsii</summary>
         private float[] _flowMagnitudes;
 
-        /// <summary>Нужно ли пересчитать кэш (при изменении настроек)</summary>
+        /// <summary>Nuzhno li pereschitat kesh (pri izmenenii nastroek)</summary>
         private bool _needsRecalculation = true;
 
-        /// <summary>Идёт ли асинхронный расчёт</summary>
+        /// <summary>Idet li asinhronnyy raschet</summary>
         private bool _isCalculatingAsync = false;
 
-        /// <summary>Время начала асинхронного расчёта</summary>
+        /// <summary>Vremya nachala asinhronnogo rascheta</summary>
         private float _asyncStartTime;
 
-        /// <summary>Profiler marker для Recalculate</summary>
+        /// <summary>Profiler marker dlya Recalculate</summary>
         private static readonly ProfilerMarker RecalculateMarker
             = new ProfilerMarker("FlowFieldVisualizer.Recalculate");
         private HectonFluidEngine _subscribedFluidEngine;
 
-        /// <summary>Object pool для particle effects (editor-only)</summary>
+        /// <summary>Object pool dlya particle effects (editor-only)</summary>
         private class ParticlePool
         {
             private readonly System.Func<ParticleSystem> _createFunc;
@@ -236,18 +236,18 @@ namespace Hecton8.Physics
             }
         }
 
-        /// <summary>Пул для particle systems</summary>
+        /// <summary>Pul dlya particle systems</summary>
         private ParticlePool _particlePool;
 
-        /// <summary>Активные particle systems с временем жизни</summary>
+        /// <summary>Aktivnye particle systems s vremenem zhizni</summary>
         private readonly List<(ParticleSystem particle, float expireTime)> _activeParticles = new List<(ParticleSystem, float)>(ParticlePreviewCapacity); // COLD ALLOC: List<(ParticleSystem,float)>[32] — editor current-flow particle preview pool lease tracking — owner: FlowFieldVisualizer
 
         private static readonly StringBuilder _forceLabelBuilder = new StringBuilder(ForceLabelBuilderCapacity); // COLD ALLOC: StringBuilder[32] — editor force-label scratch buffer — owner: FlowFieldVisualizer
 
-        /// <summary>Кэшированный GUIStyle для лейблов (меньше GC в OnDrawGizmos).</summary>
+        /// <summary>Keshirovannyy GUIStyle dlya leyblov (menshe GC v OnDrawGizmos).</summary>
         private GUIStyle _cachedLabelStyle;
 
-        /// <summary>Кэш активной камеры сцены для избежания повторного resolve.</summary>
+        /// <summary>Kesh aktivnoy kamery stseny dlya izbezhaniya povtornogo resolve.</summary>
         private Camera _cachedMainCamera;
 
         private JobHandle _calculationJobHandle;
@@ -275,14 +275,14 @@ namespace Hecton8.Physics
             public float PhaseOffset;
         }
 
-        /// <summary>Последнее время рассчета (секунды)</summary>
+        /// <summary>Poslednee vremya rasscheta (sekundy)</summary>
         private float _lastCalculationTime = 0f;
 
-        /// <summary>Последнее количество точек</summary>
+        /// <summary>Poslednee kolichestvo tochek</summary>
         private int _lastPointCount = 0;
 
         // ══════════════════════════════════════════════════════════
-        //  PUBLIC PROPERTIES (для доступа из профилей и кода)
+        //  PUBLIC PROPERTIES (dlya dostupa iz profiley i koda)
         // ══════════════════════════════════════════════════════════
 
         public FlowFieldProfile Profile
@@ -568,7 +568,7 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Основная функция визуализации. Вызывается Unity в OnDrawGizmosSelected.
+        /// Osnovnaya funktsiya vizualizatsii. Vyzyvaetsya Unity v OnDrawGizmosSelected.
         /// </summary>
         public void DrawFlowField()
         {
@@ -583,11 +583,11 @@ namespace Hecton8.Physics
             if (_samplePositions == null || _flowVectors == null || _isCalculatingAsync)
                 return;
 
-            // Анимационный фактор для preview
+            // Animatsionnyy faktor dlya preview
             float animationFactor = animateInEditor ?
                 math.sin(Time.realtimeSinceStartup * animationSpeed) * 0.5f + 0.5f : 1f;
 
-            // Рисуем стрелки для каждой точки grid'а
+            // Risuem strelki dlya kazhdoy tochki grid'a
             UpdateActiveParticles();
 
             GetVisualizationCameraPose(out Vector3 camPos, out Vector3 camForward);
@@ -612,11 +612,11 @@ namespace Hecton8.Physics
                         continue;
                 }
 
-                // Фильтрация слабых течений
+                // Filtratsiya slabyh techeniy
                 if (cullWeakFlows && magnitude < minFlowStrength)
                     continue;
 
-                // Анимированная сила для preview
+                // Animirovannaya sila dlya preview
                 float animatedMagnitude = animateInEditor ?
                     magnitude * (0.5f + animationFactor * 0.5f) : magnitude;
 
@@ -629,7 +629,7 @@ namespace Hecton8.Physics
             }
         }
 
-        /// <summary>Обновляет ссылки на кешированные компоненты, используемые для визуализации.</summary>
+        /// <summary>Obnovlyaet ssylki na keshirovannye komponenty, ispolzuemye dlya vizualizatsii.</summary>
         private void EnsureSampleBuffers(int totalPoints)
         {
             if (_samplePositions == null || _samplePositions.Length != totalPoints ||
@@ -688,7 +688,7 @@ namespace Hecton8.Physics
                 _cachedMainCamera = currentCamera;
         }
 
-        /// <summary>Рисует текущие статистики работы в сцене</summary>
+        /// <summary>Risuet tekuschie statistiki raboty v stsene</summary>
         private void DrawDebugPanel()
         {
 #if UNITY_EDITOR
@@ -717,7 +717,7 @@ namespace Hecton8.Physics
 #endif
         }
 
-        /// <summary>Обновляет срок жизни временных particle effects</summary>
+        /// <summary>Obnovlyaet srok zhizni vremennyh particle effects</summary>
         private void UpdateActiveParticles()
         {
             float now = Time.realtimeSinceStartup;
@@ -735,7 +735,7 @@ namespace Hecton8.Physics
             }
         }
 
-        /// <summary>Освобождает все активные particle effects при отключении инструмента.</summary>
+        /// <summary>Osvobozhdaet vse aktivnye particle effects pri otklyuchenii instrumenta.</summary>
         private void ClearActiveParticles()
         {
             for (int i = 0; i < _activeParticles.Count; i++)
@@ -761,17 +761,17 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Пересчитывает flow field для текущих настроек.
-        /// Создаёт grid точек и сэмплит течения в каждой.
+        /// Pereschityvaet flow field dlya tekuschih nastroek.
+        /// Sozdaet grid tochek i semplit techeniya v kazhdoy.
         /// </summary>
         private void RecalculateFlowField()
         {
-            // Валидация настроек
+            // Validatsiya nastroek
             ValidateSettings();
 
             int totalPoints = gridResolution.x * gridResolution.y;
 
-            // Защита от слишком больших grid'ов
+            // Zaschita ot slishkom bolshih grid'ov
             if (totalPoints > maxGridResolution * maxGridResolution)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -782,7 +782,7 @@ namespace Hecton8.Physics
                 totalPoints = gridResolution.x * gridResolution.y;
             }
 
-            // Проверка на разумные размеры
+            // Proverka na razumnye razmery
             if (totalPoints <= 0)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -793,7 +793,7 @@ namespace Hecton8.Physics
 
             EnsureSampleBuffers(totalPoints);
 
-            // Асинхронный расчёт для больших grid'ов
+            // Asinhronnyy raschet dlya bolshih grid'ov
             if (totalPoints > asyncThreshold && !_isCalculatingAsync)
             {
                 if (useBurstSampling || useJobSystem)
@@ -803,11 +803,11 @@ namespace Hecton8.Physics
                 }
             }
 
-            // Синхронный расчёт для небольших grid'ов
+            // Sinhronnyy raschet dlya nebolshih grid'ov
             PerformCalculation(totalPoints);
         }
 
-        /// <summary>Запускает job-пересчёт для больших grid'ов</summary>
+        /// <summary>Zapuskaet job-pereschet dlya bolshih grid'ov</summary>
         private void StartAsyncCalculation(int totalPoints)
         {
             if (_isCalculationJobRunning || HectonFloatingOrigin.IsShiftInProgress)
@@ -860,7 +860,7 @@ namespace Hecton8.Physics
 #endif
         }
 
-        /// <summary>Проверяет и завершает job расчёта</summary>
+        /// <summary>Proveryaet i zavershaet job rascheta</summary>
         private void PumpAsyncJob()
         {
             if (!_isCalculationJobRunning)
@@ -918,7 +918,7 @@ namespace Hecton8.Physics
 #endif
         }
 
-        /// <summary>Выполняет фактический расчёт течений</summary>
+        /// <summary>Vypolnyaet fakticheskiy raschet techeniy</summary>
         private void PerformCalculation(int totalPoints)
         {
             if (HectonFloatingOrigin.IsShiftInProgress)
@@ -1124,10 +1124,10 @@ namespace Hecton8.Physics
             return volumeData;
         }
 
-        /// <summary>Валидирует настройки перед использованием</summary>
+        /// <summary>Validiruet nastroyki pered ispolzovaniem</summary>
         private void ValidateSettings()
         {
-            // Проверка selected volumes
+            // Proverka selected volumes
             if (onlySelectedVolumes && selectedVolumes != null)
             {
                 for (int i = selectedVolumes.Count - 1; i >= 0; i--)
@@ -1144,7 +1144,7 @@ namespace Hecton8.Physics
 #endif
             }
 
-            // Коррекция недопустимых значений
+            // Korrektsiya nedopustimyh znacheniy
             gridResolution.x = Mathf.Clamp(gridResolution.x, 2, maxGridResolution);
             gridResolution.y = Mathf.Clamp(gridResolution.y, 2, maxGridResolution);
             areaSize.x = Mathf.Max(1f, areaSize.x);
@@ -1155,7 +1155,7 @@ namespace Hecton8.Physics
             maxForceScale = Mathf.Max(0.1f, maxForceScale);
             minFlowStrength = Mathf.Max(0.01f, minFlowStrength);
 
-            // Кэшируем стиль текста для лейблов, чтобы не аллоцировать GUIStyle на каждом кадре
+            // Keshiruem stil teksta dlya leyblov, chtoby ne allotsirovat GUIStyle na kazhdom kadre
             if (_cachedLabelStyle == null)
             {
                 _cachedLabelStyle = new GUIStyle();
@@ -1242,14 +1242,14 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Сэмплит вектор течения в мировой точке.
-        /// Комбинирует глобальное phantom течение + локальные CurrentVolume.
+        /// Semplit vektor techeniya v mirovoy tochke.
+        /// Kombiniruet globalnoe phantom techenie + lokalnye CurrentVolume.
         /// </summary>
         private Vector3 SampleCurrentAt(Vector3 worldPos)
         {
             Vector3 totalFlow = Vector3.zero;
 
-            // Глобальное phantom течение
+            // Globalnoe phantom techenie
             HectonFluidEngine engine = GlobalRegistry.Fluid;
             if (showGlobalCurrent && engine != null)
             {
@@ -1257,7 +1257,7 @@ namespace Hecton8.Physics
 
                 float3 sampledFlow = CurrentManager.SampleCurrent(
                     pos,
-                    Time.realtimeSinceStartup, // Используем realtime для preview
+                    Time.realtimeSinceStartup, // Ispolzuem realtime dlya preview
                     engine.CurrentNoiseScale,
                     engine.CurrentTimeScale,
                     engine.PhantomCurrentStrength,
@@ -1266,12 +1266,12 @@ namespace Hecton8.Physics
                 totalFlow += new Vector3(sampledFlow.x, sampledFlow.y, sampledFlow.z);
             }
 
-            // Локальные CurrentVolume
+            // Lokalnye CurrentVolume
             if (showLocalCurrents)
             {
                 if (onlySelectedVolumes)
                 {
-                    // Только выбранные volumes
+                    // Tolko vybrannye volumes
                     for (int i = 0; i < selectedVolumes.Count; i++)
                     {
                         CurrentVolume volume = selectedVolumes[i];
@@ -1281,7 +1281,7 @@ namespace Hecton8.Physics
                 }
                 else
                 {
-                    // Все активные volumes
+                    // Vse aktivnye volumes
                     totalFlow += CurrentVolume.SampleAt(worldPos);
                 }
             }
@@ -1290,25 +1290,25 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Рисует стрелку течения в заданной позиции.
-        /// Поддерживает разные стили визуализации.
+        /// Risuet strelku techeniya v zadannoy pozitsii.
+        /// Podderzhivaet raznye stili vizualizatsii.
         /// </summary>
         private void DrawFlowArrow(Vector3 position, Vector3 flow, float magnitude)
         {
-            // Фильтрация слабых течений
+            // Filtratsiya slabyh techeniy
             if (cullWeakFlows && magnitude < minFlowStrength)
                 return;
 
-            // Цветовая кодировка силы с поддержкой HDR
+            // Tsvetovaya kodirovka sily s podderzhkoy HDR
             float t = math.saturate(magnitude / math.max(maxForceScale, 0.0001f));
             Color color = useHDRColors
                 ? BlendColorUnclamped(Color.blue * 2f, Color.red * 3f, t)
                 : BlendColorUnclamped(Color.blue, Color.red, t);
             Gizmos.color = color;
 
-            // Направление и длина стрелки
+            // Napravlenie i dlina strelki
             Vector3 direction = NormalizeVectorRsqrt(flow, Vector3.forward);
-            float length = arrowLength * math.lerp(0.1f, 1f, t); // Минимальная длина для видимости
+            float length = arrowLength * math.lerp(0.1f, 1f, t); // Minimalnaya dlina dlya vidimosti
 
             switch (arrowStyle)
             {
@@ -1326,26 +1326,26 @@ namespace Hecton8.Physics
                     break;
             }
 
-            // Particle effects для сильных течений
+            // Particle effects dlya silnyh techeniy
             if (useParticleEffects && particlePrefab != null && magnitude > maxForceScale * 0.7f)
             {
                 SpawnParticleEffect(position, flow, magnitude);
             }
 
-            // Лейблы силы (опционально)
+            // Leybly sily (optsionalno)
             if (showForceLabels && magnitude >= minFlowStrength)
             {
                 DrawForceLabel(position + direction * length * 0.5f, magnitude);
             }
         }
 
-        /// <summary>Рисует классическую стрелку с наконечником</summary>
+        /// <summary>Risuet klassicheskuyu strelku s nakonechnikom</summary>
         private void DrawArrow(Vector3 position, Vector3 direction, float length)
         {
-            // Ствол стрелки
+            // Stvol strelki
             Gizmos.DrawLine(position, position + direction * length);
 
-            // Наконечник стрелки
+            // Nakonechnik strelki
             Vector3 arrowTip = position + direction * length;
             Vector3 rightUnit = NormalizeVectorRsqrt(Vector3.Cross(direction, Vector3.up), Vector3.zero);
             if (rightUnit.sqrMagnitude <= 0.0001f)
@@ -1360,20 +1360,20 @@ namespace Hecton8.Physics
             Gizmos.DrawLine(arrowTip + back + right, arrowTip + back + left);
         }
 
-        /// <summary>Рисует конус (более заметный)</summary>
+        /// <summary>Risuet konus (bolee zametnyy)</summary>
         private void DrawCone(Vector3 position, Vector3 direction, float length)
         {
             Vector3 tip = position + direction * length;
             float radius = arrowThickness * 2f;
 
-            // Простой конус через Gizmos.DrawLine (Unity не имеет Gizmos.DrawCone)
+            // Prostoy konus cherez Gizmos.DrawLine (Unity ne imeet Gizmos.DrawCone)
             Vector3 up = NormalizeVectorRsqrt(Vector3.Cross(direction, Vector3.right), Vector3.zero);
             if (up.sqrMagnitude <= 0.0001f)
                 up = NormalizeVectorRsqrt(Vector3.Cross(direction, Vector3.forward), Vector3.up);
 
             Vector3 right = NormalizeVectorRsqrt(Vector3.Cross(direction, up), Vector3.right);
 
-            // Основание конуса
+            // Osnovanie konusa
             Vector3 baseCenter = position + direction * length * 0.7f;
             Gizmos.DrawLine(tip, baseCenter + up * radius);
             Gizmos.DrawLine(tip, baseCenter - up * radius);
@@ -1381,14 +1381,14 @@ namespace Hecton8.Physics
             Gizmos.DrawLine(tip, baseCenter - right * radius);
         }
 
-        /// <summary>Рисует цветную точку</summary>
+        /// <summary>Risuet tsvetnuyu tochku</summary>
         private void DrawDot(Vector3 position, float magnitude)
         {
             float size = math.lerp(0.05f, 0.2f, math.saturate(magnitude / math.max(maxForceScale, 0.0001f)));
             Gizmos.DrawSphere(position, size);
         }
 
-        /// <summary>Рисует лейбл с силой течения</summary>
+        /// <summary>Risuet leybl s siloy techeniya</summary>
         private void DrawForceLabel(Vector3 position, float magnitude)
         {
 #if UNITY_EDITOR
@@ -1404,7 +1404,7 @@ namespace Hecton8.Physics
 #endif
         }
 
-        /// <summary>Создаёт particle effect для сильных течений</summary>
+        /// <summary>Sozdaet particle effect dlya silnyh techeniy</summary>
         private void SpawnParticleEffect(Vector3 position, Vector3 flow, float magnitude)
         {
 #if UNITY_EDITOR
@@ -1452,7 +1452,7 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            // Подписываемся на изменения настроек течений
+            // Podpisyvaemsya na izmeneniya nastroek techeniy
             _subscribedFluidEngine = GlobalRegistry.Fluid;
             if (_subscribedFluidEngine != null)
             {
@@ -1462,7 +1462,7 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
-            // Отписываемся от событий
+            // Otpisyvaemsya ot sobytiy
             if (_subscribedFluidEngine != null)
             {
                 _subscribedFluidEngine.OnCurrentSettingsChangedEvent -= OnCurrentSettingsChanged;
@@ -1480,11 +1480,11 @@ namespace Hecton8.Physics
             UnityEditor.EditorApplication.update -= PumpAsyncJob;
 #endif
 
-            // Полностью освобождаем preview-ресурсы, чтобы не оставлять hidden editor objects.
+            // Polnostyu osvobozhdaem preview-resursy, chtoby ne ostavlyat hidden editor objects.
             DisposeParticlePreviewPool();
         }
 
-        /// <summary>Обработчик изменения настроек течений в HectonFluidEngine.</summary>
+        /// <summary>Obrabotchik izmeneniya nastroek techeniy v HectonFluidEngine.</summary>
         private void OnCurrentSettingsChanged()
         {
             if (showGlobalCurrent)
@@ -1500,11 +1500,11 @@ namespace Hecton8.Physics
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            // Применяем профиль, если он изменился
+            // Primenyaem profil, esli on izmenilsya
             if (profile != null)
                 profile.ApplyTo(this);
 
-            // Валидация и коррекция настроек
+            // Validatsiya i korrektsiya nastroek
             ValidateSettings();
 
             _needsRecalculation = true;

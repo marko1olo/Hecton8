@@ -161,10 +161,11 @@ namespace Hecton8.World
             float segmentBlend = math.saturate((float)projected);
 
             float transitionLength = math.max(0.001f, TransitionLengthMeters);
-            float segmentLength = (float)math.sqrt(lengthSq);
-            if (segmentLength > transitionLength)
+            float segmentLengthSq = (float)math.min(lengthSq, (double)float.MaxValue);
+            float transitionLengthSq = transitionLength * transitionLength;
+            if (segmentLengthSq > transitionLengthSq)
             {
-                float halfWindow = math.saturate(transitionLength / segmentLength) * 0.5f;
+                float halfWindow = math.saturate(transitionLengthSq / segmentLengthSq) * 0.5f;
                 float lower = math.max(0f, 0.5f - halfWindow);
                 float upper = math.min(1f, 0.5f + halfWindow);
                 segmentBlend = math.saturate((segmentBlend - lower) / math.max(0.001f, upper - lower));

@@ -44,6 +44,8 @@ namespace Hecton8.Debugging
         public bool CircuitBreakerPassed;
         public bool CircuitBreakerOverflowPassed;
         public double ElapsedMilliseconds;
+        public double AverageElapsedMilliseconds;
+        public double WorstElapsedMilliseconds;
         public int SentinelBefore;
         public int SentinelAfter;
         public int SentinelDelta;
@@ -61,7 +63,7 @@ namespace Hecton8.Debugging
         private const int ShaderPayloadCapacity = 64;
         private const int TimedSampleCount = 8;
         private const int IslandIdBase = 4096;
-        private const double BudgetMilliseconds = 1.5d;
+        private const double BudgetMilliseconds = 0.1d;
         private const int CircuitBreakerIslandId = 7;
         private const int CircuitBreakerProbeCount = 20;
         private const int CircuitBreakerBudget = 16;
@@ -120,6 +122,8 @@ namespace Hecton8.Debugging
             int sentinelAfter = sentinelBefore;
             HabitatDirtyRegionResult finalDirtyResult = default;
             double bestMilliseconds = double.MaxValue;
+            double totalMilliseconds = 0d;
+            double worstMilliseconds = 0d;
 
             try
             {
@@ -197,14 +201,19 @@ namespace Hecton8.Debugging
                         moduleWaterLevels);
                     // COLD SYNC JOB: timing probe resolves at smoke-test boundary only.
                     DispatcherJobSwap.TryComplete(ref timedHandle, forceComplete: true);
-                    UploadShaderPayload(moduleWaterLevels);
                     long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
                     double elapsedMs = elapsedTicks * 1000.0d / Stopwatch.Frequency;
+                    totalMilliseconds += elapsedMs;
+                    if (elapsedMs > worstMilliseconds)
+                        worstMilliseconds = elapsedMs;
+
                     if (elapsedMs < bestMilliseconds)
                     {
                         bestMilliseconds = elapsedMs;
                         finalDirtyResult = dirtyResult[0];
                     }
+
+                    UploadShaderPayload(moduleWaterLevels);
                 }
             }
             finally
@@ -248,7 +257,7 @@ namespace Hecton8.Debugging
                 sentinelDelta == 0 &&
                 circuitBreakerPassed &&
                 circuitBreakerOverflowPassed &&
-                bestMilliseconds <= BudgetMilliseconds;
+                worstMilliseconds <= BudgetMilliseconds;
 
             return new HabitatStressSmokeReport
             {
@@ -273,6 +282,8 @@ namespace Hecton8.Debugging
                 CircuitBreakerPassed = circuitBreakerPassed,
                 CircuitBreakerOverflowPassed = circuitBreakerOverflowPassed,
                 ElapsedMilliseconds = bestMilliseconds,
+                AverageElapsedMilliseconds = TimedSampleCount > 0 ? totalMilliseconds / TimedSampleCount : 0d,
+                WorstElapsedMilliseconds = worstMilliseconds,
                 SentinelBefore = sentinelBefore,
                 SentinelAfter = sentinelAfter,
                 SentinelDelta = sentinelDelta
@@ -543,6 +554,13 @@ namespace Hecton8.Debugging
             builder.Append("  \"circuitBreakerOverflowPassed\":").Append(report.CircuitBreakerOverflowPassed ? "true" : "false").Append(",\n");
             AppendJsonFixed(ref report, builder);
             builder.Append(",\n");
+            builder.Append("  \"averageElapsedMilliseconds\":");
+            AppendFixed4(builder, report.AverageElapsedMilliseconds);
+            builder.Append(",\n");
+            builder.Append("  \"worstElapsedMilliseconds\":");
+            AppendFixed4(builder, report.WorstElapsedMilliseconds);
+            builder.Append(",\n");
+            builder.Append("  \"timedSampleCount\":").Append(TimedSampleCount).Append(",\n");
             builder.Append("  \"budgetMilliseconds\":");
             AppendFixed1(builder, BudgetMilliseconds);
             builder.Append(",\n");

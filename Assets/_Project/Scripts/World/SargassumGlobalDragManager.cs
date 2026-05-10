@@ -2430,11 +2430,12 @@ namespace Hecton8.World
             _disruptionZones[zoneIndex] = zone;
         }
 
-        internal void RegisterCollapseChunkImpact(Vector3 impactPointWS, Vector3 impactNormalWS, float impactSpeed, int fragmentDepth)
+        internal void RegisterCollapseChunkImpact(Vector3 impactPointWS, Vector3 impactNormalWS, float impactSpeedSq, int fragmentDepth)
         {
+            float thresholdSq = collapseCascadeImpactThreshold * collapseCascadeImpactThreshold;
             if (collapseChunkPrefab == null ||
                 fragmentDepth > collapseCascadeMaxDepth ||
-                impactSpeed < collapseCascadeImpactThreshold)
+                impactSpeedSq < thresholdSq)
             {
                 return;
             }
@@ -2443,7 +2444,7 @@ namespace Hecton8.World
             if (poolManager == null)
                 return;
 
-            float severity01 = Mathf.Clamp01((impactSpeed - collapseCascadeImpactThreshold) / Mathf.Max(collapseCascadeImpactThreshold, 0.001f));
+            float severity01 = Mathf.Clamp01((impactSpeedSq - thresholdSq) / Mathf.Max(thresholdSq, 0.001f));
             Vector3 sampleSpaceImpact = impactPointWS - _globalDriftOffset;
             float radiusScale = FastPositivePowInt(collapseCascadeScaleMultiplier, Mathf.Max(0, fragmentDepth));
             RegisterOrReinforceDisruptionZone(

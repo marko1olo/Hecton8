@@ -1,51 +1,51 @@
 // ============================================================================
 // HECTON-8 — IPoolable.cs
-// Контракт для любого объекта, проходящего через Object Pool.
+// Kontrakt dlya lyubogo obekta, prohodyaschego cherez Object Pool.
 //
-// Реализуется MonoBehaviour-компонентами на пулируемых префабах.
-// Менеджер вызывает эти методы автоматически через TryGetComponent.
+// Realizuetsya MonoBehaviour-komponentami na puliruemyh prefabah.
+// Menedzher vyzyvaet eti metody avtomaticheski cherez TryGetComponent.
 //
-// ВАЖНО: Реализация OnDespawn() ОБЯЗАНА сбрасывать ВСЁ внутреннее
-// состояние объекта к «новорождённому». Если этого не сделать,
-// при следующем Spawn объект может нести «память» предыдущей жизни.
+// VAZhNO: Realizatsiya OnDespawn() OBYaZANA sbrasyvat VSE vnutrennee
+// sostoyanie obekta k «novorozhdennomu». Esli etogo ne sdelat,
+// pri sleduyuschem Spawn obekt mozhet nesti «pamyat» predyduschey zhizni.
 // ============================================================================
 
 namespace Hecton8.Core
 {
     /// <summary>
-    /// Интерфейс пулируемого объекта.
-    /// Любой компонент на пулируемом префабе может реализовать этот
-    /// интерфейс для получения уведомлений о жизненном цикле пула.
+    /// Interfeys puliruemogo obekta.
+    /// Lyuboy komponent na puliruemom prefabe mozhet realizovat etot
+    /// interfeys dlya polucheniya uvedomleniy o zhiznennom tsikle pula.
     /// </summary>
     public interface IPoolable
     {
         /// <summary>
-        /// Вызывается при извлечении объекта из пула (активация).
-        /// Аналог Awake/Start, но для переиспользуемого объекта.
+        /// Vyzyvaetsya pri izvlechenii obekta iz pula (aktivatsiya).
+        /// Analog Awake/Start, no dlya pereispolzuemogo obekta.
         ///
-        /// Используй для:
-        ///   • Запуска VFX / AudioSource
-        ///   • Инициализации начальных значений (HP, таймеры)
-        ///   • Включения компонентов (Collider, Renderer)
-        ///   • Запуска корутин
+        /// Ispolzuy dlya:
+        ///   • Zapuska VFX / AudioSource
+        ///   • Initsializatsii nachalnyh znacheniy (HP, taymery)
+        ///   • Vklyucheniya komponentov (Collider, Renderer)
+        ///   • Zapuska korutin
         ///
-        /// Вызывается ПОСЛЕ SetActive(true) и установки позиции/поворота.
+        /// Vyzyvaetsya POSLE SetActive(true) i ustanovki pozitsii/povorota.
         /// </summary>
         void OnSpawn();
 
         /// <summary>
-        /// Вызывается при возврате объекта в пул (деактивация).
-        /// Аналог OnDestroy, но объект НЕ уничтожается — сбрасывается.
+        /// Vyzyvaetsya pri vozvrate obekta v pul (deaktivatsiya).
+        /// Analog OnDestroy, no obekt NE unichtozhaetsya — sbrasyvaetsya.
         ///
-        /// Используй для:
-        ///   • Обнуления Rigidbody.velocity / angularVelocity
-        ///   • Остановки корутин (StopAllCoroutines)
-        ///   • Остановки ParticleSystem / AudioSource
-        ///   • Сброса HP, таймеров, флагов
-        ///   • Отписки от событий (если подписывался в OnSpawn)
-        ///   • Сброса parent (если менялся при жизни)
+        /// Ispolzuy dlya:
+        ///   • Obnuleniya Rigidbody.velocity / angularVelocity
+        ///   • Ostanovki korutin (StopAllCoroutines)
+        ///   • Ostanovki ParticleSystem / AudioSource
+        ///   • Sbrosa HP, taymerov, flagov
+        ///   • Otpiski ot sobytiy (esli podpisyvalsya v OnSpawn)
+        ///   • Sbrosa parent (esli menyalsya pri zhizni)
         ///
-        /// Вызывается ПЕРЕД SetActive(false).
+        /// Vyzyvaetsya PERED SetActive(false).
         /// </summary>
         void OnDespawn();
     }

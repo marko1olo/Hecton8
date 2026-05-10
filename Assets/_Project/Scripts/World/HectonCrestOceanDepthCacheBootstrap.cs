@@ -4,6 +4,7 @@ using Hecton8.Celestial;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using System.Diagnostics;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -490,7 +491,7 @@ namespace Hecton8.World
 
         private static Camera ResolveRuntimeMainCamera()
         {
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null &&
                 playerTransform.TryGetComponent(out Camera playerOwnedCamera) &&
                 IsRuntimeMainCamera(playerOwnedCamera))
@@ -591,9 +592,11 @@ namespace Hecton8.World
                 return;
 
             _loggedMissingResolvedTerrains = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             UnityEngine.Debug.LogError(
                 "[HectonCrestOceanDepthCacheBootstrap] MapMagicBridge resolved no terrain tiles. Crest depth-cache bootstrap requires registry-owned MapMagic terrain coverage.",
                 this);
+#endif
         }
 
         private float ResolveWaterLevel()
@@ -633,7 +636,7 @@ namespace Hecton8.World
             if (directionMagnitudeSqr <= 0.0001f)
                 return 0f;
 
-            Vector3 normalizedAegirDirection = aegirDirection / Mathf.Sqrt(directionMagnitudeSqr);
+            Vector3 normalizedAegirDirection = aegirDirection * math.rsqrt(directionMagnitudeSqr);
             float verticalDot = Mathf.Clamp(Vector3.Dot(normalizedAegirDirection, Vector3.up), -1f, 1f);
             float offset = verticalDot * Mathf.Max(0f, tidalHeightCacheAmplitudeMeters);
             _debugTidalAegirDirection = normalizedAegirDirection;

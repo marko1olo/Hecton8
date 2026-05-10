@@ -15,7 +15,7 @@ namespace Hecton8.Meta
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6340)]
     [AddComponentMenu("Hecton8/Meta/Meta Buff Injector")]
-    public sealed class MetaBuffInjector : MonoBehaviour, ISceneBootstrapEventListener
+    public sealed class MetaBuffInjector : MonoBehaviour, IGameBootstrapperEventListener
     {
         private const string StarterStructuralMetalId = "Data_TitaniumScrap";
         private const string StarterElectronicsMetalId = "Data_Copper";
@@ -29,12 +29,12 @@ namespace Hecton8.Meta
 
         private void OnEnable()
         {
-            SceneBootstrap.Register(this);
+            GameBootstrapper.Register(this);
         }
 
         private void OnDisable()
         {
-            SceneBootstrap.Unregister(this);
+            GameBootstrapper.Unregister(this);
             _survivalSystem = null;
             _playerMovement = null;
             _inventory = null;
@@ -42,9 +42,9 @@ namespace Hecton8.Meta
             _starterResourcesApplied = false;
         }
 
-        public void OnSceneBootstrapEvent(in SceneBootstrapEventPayload payload)
+        public void OnGameBootstrapperEvent(in GameBootstrapperEventPayload payload)
         {
-            if ((SceneBootstrapEventType)payload.EventType == SceneBootstrapEventType.GameReady)
+            if ((GameBootstrapperEventType)payload.EventType == GameBootstrapperEventType.GameReady)
                 HandleGameReady();
         }
 
@@ -89,7 +89,7 @@ namespace Hecton8.Meta
 
         private bool ResolveOwners()
         {
-            GameObject playerObject = SceneBootstrap.CurrentPlayerObject;
+            GameObject playerObject = GameBootstrapper.CurrentPlayerObject;
             if (playerObject == null)
                 return false;
 

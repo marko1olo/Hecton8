@@ -1,9 +1,9 @@
 // ============================================================================
 // HECTON-8 - HectonDiscoveryManager.cs
-// Отслеживает открытые биомы и сохраняет последнее корректно подтвержденное
-// открытие для PDA и других систем прогрессии.
+// Otslezhivaet otkrytye biomy i sohranyaet poslednee korrektno podtverzhdennoe
+// otkrytie dlya PDA i drugih sistem progressii.
 //
-// ВЕРСИЯ: production pass с восстановлением latest biome и кэшированием HUD
+// VERSIYa: production pass s vosstanovleniem latest biome i keshirovaniem HUD
 // ============================================================================
 
 using System;
@@ -20,7 +20,7 @@ using UnityEngine;
 namespace Hecton8.Gameplay
 {
     /// <summary>
-    /// Централизованный реестр открытых игроком биомов.
+    /// Tsentralizovannyy reestr otkrytyh igrokom biomov.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Hecton Discovery Manager")]
@@ -39,7 +39,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── References ──────────────────────────────")]
-        [Tooltip("Реестр всех 108 биомов для именования и PDA-представления.")]
+        [Tooltip("Reestr vseh 108 biomov dlya imenovaniya i PDA-predstavleniya.")]
         [SerializeField] private HectonBiomeRegistry _registry;
 
         // ══════════════════════════════════════════════════════════
@@ -59,12 +59,12 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Последний корректно подтвержденный ID открытого биома.
+        /// Posledniy korrektno podtverzhdennyy ID otkrytogo bioma.
         /// </summary>
         public int LastDiscoveredId { get; private set; } = InvalidBiomeId;
 
         /// <summary>
-        /// Количество открытых биомов.
+        /// Kolichestvo otkrytyh biomov.
         /// </summary>
         public int TotalDiscovered => _discoveredBiomeIds.Count;
 
@@ -79,7 +79,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Вызывается один раз при первом открытии нового биома.
+        /// Vyzyvaetsya odin raz pri pervom otkrytii novogo bioma.
         /// </summary>
         public event Action<int> OnBiomeDiscovered;
 
@@ -113,9 +113,9 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Помечает биом как открытый, если игрок зашел в него впервые.
+        /// Pomechaet biom kak otkrytyy, esli igrok zashel v nego vpervye.
         /// </summary>
-        /// <param name="biomeId">Идентификатор биома из матрицы 1..108.</param>
+        /// <param name="biomeId">Identifikator bioma iz matritsy 1..108.</param>
         public void DiscoverBiome(int biomeId)
         {
             if (!IsValidBiomeId(biomeId))
@@ -136,7 +136,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Проверяет, открыт ли указанный биом.
+        /// Proveryaet, otkryt li ukazannyy biom.
         /// </summary>
         public bool IsDiscovered(int biomeId)
         {
@@ -144,7 +144,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Возвращает отображаемое имя биома.
+        /// Vozvraschaet otobrazhaemoe imya bioma.
         /// </summary>
         public string GetBiomeName(int id)
         {
@@ -162,7 +162,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Возвращает данные биома из реестра.
+        /// Vozvraschaet dannye bioma iz reestra.
         /// </summary>
         public HectonBiomeRegistry.BiomeEntry GetBiomeData(int id)
         {

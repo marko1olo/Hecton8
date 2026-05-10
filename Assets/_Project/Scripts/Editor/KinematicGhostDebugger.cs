@@ -83,7 +83,7 @@ namespace Hecton8.Editor.DebugTools
 
         private void OnGUI()
         {
-            EditorGUILayout.LabelField("Play Mode only. Player reference resolves from SceneBootstrap.");
+            EditorGUILayout.LabelField("Play Mode only. Player reference resolves from GameBootstrapper.");
             sampleInterval = EditorGUILayout.Slider(_SampleIntervalLabel, sampleInterval, 0.01f, 0.25f);
             ghostSize = EditorGUILayout.Slider(_GhostSizeLabel, ghostSize, 0.1f, 2f);
             drawTrails = EditorGUILayout.Toggle(_DrawTrailsLabel, drawTrails);
@@ -146,7 +146,7 @@ namespace Hecton8.Editor.DebugTools
         private void RefreshTargets()
         {
             Transform previousPlatformTransform = _platformTransform;
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform resolvedPlayer))
+            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform resolvedPlayer))
             {
                 _playerTransform = null;
                 _transportCoordinator = null;

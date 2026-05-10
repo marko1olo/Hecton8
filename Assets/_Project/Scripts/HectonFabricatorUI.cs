@@ -70,6 +70,17 @@ namespace Hecton8.UI
         private static readonly int HologramSwayFrequencyId = Shader.PropertyToID("_HologramSwayFrequency");
         private static readonly int HologramPulseAmplitudeId = Shader.PropertyToID("_HologramPulseAmplitude");
         private static readonly int HologramPulseFrequencyId = Shader.PropertyToID("_HologramPulseFrequency");
+        // COLD ALLOC: Vector3[4] - shared fabricator hologram billboard vertices - owner: HectonFabricatorUI
+        private static readonly Vector3[] s_billboardQuadVertices =
+        {
+            new Vector3(-0.5f, -0.5f, 0f),
+            new Vector3(0.5f, -0.5f, 0f),
+            new Vector3(0.5f, 0.5f, 0f),
+            new Vector3(-0.5f, 0.5f, 0f)
+        };
+
+        // COLD ALLOC: int[6] - shared fabricator hologram billboard indices - owner: HectonFabricatorUI
+        private static readonly int[] s_billboardQuadTriangles = { 0, 2, 1, 0, 3, 2 };
 
         [Header("References")]
         [SerializeField] private Camera hudCamera;
@@ -188,6 +199,8 @@ namespace Hecton8.UI
         private Vector3 _recipeListUp;
         private Vector3 _recipeListForward;
         private Vector3 _recipeListInverseScale = Vector3.one;
+        private Quaternion _recipeListAppliedRotation = Quaternion.identity;
+        private float _recipeListAppliedScale = -1f;
         private float _failurePanelShakeRemainingSeconds;
         private float _failurePanelShakeElapsedSeconds;
         private int _nextPerformanceWarningFrame;
@@ -1148,7 +1161,7 @@ namespace Hecton8.UI
 
             if (allowFallbackLookup &&
                 playerInventory == null &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 playerTransform.TryGetComponent(out playerInventory);
@@ -1301,6 +1314,7 @@ namespace Hecton8.UI
             if (!visible)
             {
                 _recipeListPoseValid = false;
+                _recipeListAppliedScale = -1f;
                 for (int i = 0; i < MaxVisibleRecipeEntries; i++)
                     SetRecipeEntryVisible(in _recipeEntries[i], false);
             }
@@ -1320,8 +1334,16 @@ namespace Hecton8.UI
                                    anchor.up * recipeListHeight +
                                    anchor.forward * recipeListForwardOffset;
             rootPosition += ResolveFailurePanelShakeOffset(anchor);
-            _recipeListRoot.position = rootPosition;
-            _recipeListRoot.localScale = Vector3.one * recipeEntryScale;
+            bool poseWasValid = _recipeListPoseValid;
+            if (!poseWasValid || (_recipeListRuntimePosition - rootPosition).sqrMagnitude > 0.0000001f)
+                _recipeListRoot.position = rootPosition;
+
+            if (!poseWasValid || math.abs(_recipeListAppliedScale - recipeEntryScale) > 0.000001f)
+            {
+                _recipeListRoot.localScale = Vector3.one * recipeEntryScale;
+                _recipeListAppliedScale = recipeEntryScale;
+            }
+
             _recipeListRuntimePosition = rootPosition;
 
             if (hudCamera != null)
@@ -1331,7 +1353,12 @@ namespace Hecton8.UI
                 if (facingSqrMagnitude > 0.0001f)
                 {
                     facing *= math.rsqrt(facingSqrMagnitude);
-                    _recipeListRoot.rotation = Quaternion.LookRotation(facing, Vector3.up);
+                    Quaternion targetRotation = Quaternion.LookRotation(facing, Vector3.up);
+                    if (!poseWasValid || math.abs(Quaternion.Dot(_recipeListAppliedRotation, targetRotation)) < 0.999999f)
+                    {
+                        _recipeListRoot.rotation = targetRotation;
+                        _recipeListAppliedRotation = targetRotation;
+                    }
                 }
             }
 
@@ -1685,22 +1712,8 @@ namespace Hecton8.UI
                 name = "FabricatorHologramBillboard"
             };
 
-            Vector3[] vertices =
-            {
-                new Vector3(-0.5f, -0.5f, 0f),
-                new Vector3( 0.5f, -0.5f, 0f),
-                new Vector3( 0.5f,  0.5f, 0f),
-                new Vector3(-0.5f,  0.5f, 0f)
-            };
-
-            int[] triangles =
-            {
-                0, 2, 1,
-                0, 3, 2
-            };
-
-            mesh.SetVertices(vertices);
-            mesh.SetTriangles(triangles, 0);
+            mesh.SetVertices(s_billboardQuadVertices);
+            mesh.SetTriangles(s_billboardQuadTriangles, 0);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             mesh.UploadMeshData(false);

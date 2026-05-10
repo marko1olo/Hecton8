@@ -61,8 +61,8 @@ namespace Hecton8.UI
         private readonly char[] _summaryCharBuffer = new char[1024];
         private readonly System.Collections.Generic.Dictionary<ulong, PlayerTool> _prefabToolCache = new System.Collections.Generic.Dictionary<ulong, PlayerTool>(32); // COLD ALLOC: Dictionary<ulong, PlayerTool>(32) — caches prefab PlayerTool owners for repeated loadout refreshes — owner: PDALoadoutTab
 
-        /// <summary>Кэшированные строки для ToUpperInvariant (избегает повторных аллокаций)</summary>
-        /// <summary>Кэшированные строки для ItemCategory enum (избегает Enum.ToString() в hot path)</summary>
+        /// <summary>Keshirovannye stroki dlya ToUpperInvariant (izbegaet povtornyh allokatsiy)</summary>
+        /// <summary>Keshirovannye stroki dlya ItemCategory enum (bez enum string conversion v hot path)</summary>
         private static readonly string[] _cachedCategoryStrings = new string[]
         {
             "MISCELLANEOUS", // ItemCategory.Miscellaneous = 0
@@ -185,7 +185,7 @@ namespace Hecton8.UI
                 playerPDA = playerContext.PlayerPDA;
 
             if ((!playerInventory || !toolManager || !playerPDA) &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (playerInventory == null)

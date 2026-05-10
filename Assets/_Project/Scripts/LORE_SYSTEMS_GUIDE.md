@@ -1,245 +1,245 @@
 # HECTON-8 — Lore Systems Integration Guide
 
-## Что реализовано
+## Chto realizovano
 
 ### 1. AudioLog System (`Assets/_Project/Scripts/AudioLog/`)
-**Аудиодневники колонии.**
+**Audiodnevniki kolonii.**
 
-- `AudioLogData` — ScriptableObject: данные одного дневника (клип, субтитры, автор, категория)
-- `AudioLogSystem` — singleton: воспроизведение, архив, ISaveable
-- `AudioLogPickup` — IInteractable: объект в мире, воспроизводит лог при взаимодействии
+- `AudioLogData` — ScriptableObject: dannye odnogo dnevnika (klip, subtitry, avtor, kategoriya)
+- `AudioLogSystem` — singleton: vosproizvedenie, arhiv, ISaveable
+- `AudioLogPickup` — IInteractable: obekt v mire, vosproizvodit log pri vzaimodeystvii
 - `AudioLogEvents` — NativeQueue-backed event lane
 
-**Как использовать:**
-1. Create → Hecton8/Narrative/Audio Log Data → заполнить поля
-2. Добавить `AudioLogPickup` на GameObject в сцене
-3. Назначить `AudioLogData` в инспекторе
-4. `AudioLogSystem` создаётся через `HectonLoreSystemsRoot`
+**Kak ispolzovat:**
+1. Create → Hecton8/Narrative/Audio Log Data → zapolnit polya
+2. Dobavit `AudioLogPickup` na GameObject v stsene
+3. Naznachit `AudioLogData` v inspektore
+4. `AudioLogSystem` sozdaetsya cherez `HectonLoreSystemsRoot`
 
 ---
 
 ### 2. Quest System (`Assets/_Project/Scripts/Quest/`)
-**Нарративные квесты через события мира.**
+**Narrativnye kvesty cherez sobytiya mira.**
 
-- `QuestData` — ScriptableObject: квест с триггером и условием завершения
-- `QuestManager` — singleton: слушает события, ISaveable
+- `QuestData` — ScriptableObject: kvest s triggerom i usloviem zaversheniya
+- `QuestManager` — singleton: slushaet sobytiya, ISaveable
 - `QuestEvents` — NativeQueue-backed event lane
 
-**Типы триггеров:** OnItemCollected, OnDepthReached, OnBiomeEntered, OnDiscoveryMade, OnAudioLogFound, OnEclipseStart, OnSignalDetected, Manual
+**Tipy triggerov:** OnItemCollected, OnDepthReached, OnBiomeEntered, OnDiscoveryMade, OnAudioLogFound, OnEclipseStart, OnSignalDetected, Manual
 
-**Как использовать:**
-1. Create → Hecton8/Quest/Quest Data → заполнить triggerType, triggerId
-2. Добавить `QuestData` в массив `QuestManager.allQuests`
-3. Квест активируется автоматически при событии
+**Kak ispolzovat:**
+1. Create → Hecton8/Quest/Quest Data → zapolnit triggerType, triggerId
+2. Dobavit `QuestData` v massiv `QuestManager.allQuests`
+3. Kvest aktiviruetsya avtomaticheski pri sobytii
 
 ---
 
 ### 3. Atlas Signal System (`Assets/_Project/Scripts/AtlasSignal/`)
-**Пульс сигнала Атлас-6 (ритм 11:23).**
+**Puls signala Atlas-6 (ritm 11:23).**
 
-- `AtlasSignalSystem` — singleton: пульс каждые 683с, сила по расстоянию
-- `AtlasSignalDecoder` — 4-фазная расшифровка по силе сигнала
-- `Atlas6DirectiveSystem` — статус игрока с точки зрения Атлас-6
+- `AtlasSignalSystem` — singleton: puls kazhdye 683s, sila po rasstoyaniyu
+- `AtlasSignalDecoder` — 4-faznaya rasshifrovka po sile signala
+- `Atlas6DirectiveSystem` — status igroka s tochki zreniya Atlas-6
 - `AtlasSignalEvents` — NativeQueue-backed event lane
 - `Atlas6Events` — NativeQueue-backed event lane
 
 **Shader globals:** `_AtlasSignalStrength`, `_BiolumPulseTime`
 
-**Как использовать:**
-1. `AtlasSignalSystem` — назначить `atlasCorePosWorld` (позиция ядра на -5000м)
-2. `AtlasSignalDecoder` — автоматически расшифровывает при приближении
-3. `Atlas6DirectiveSystem` — отслеживает статус игрока
+**Kak ispolzovat:**
+1. `AtlasSignalSystem` — naznachit `atlasCorePosWorld` (pozitsiya yadra na -5000m)
+2. `AtlasSignalDecoder` — avtomaticheski rasshifrovyvaet pri priblizhenii
+3. `Atlas6DirectiveSystem` — otslezhivaet status igroka
 
 ---
 
 ### 4. Suit Upgrade System (`Assets/_Project/Scripts/Gameplay/`)
-**Апгрейды скафандра Tier 0-4.**
+**Apgreydy skafandra Tier 0-4.**
 
-- `SuitUpgradeData` — ScriptableObject: дельты параметров, требования
-- `SuitUpgradeManager` — singleton: применяет апгрейды, ISaveable
-- `RuntimeSurvivalStats` — mutable wrapper над SurvivalStats
+- `SuitUpgradeData` — ScriptableObject: delty parametrov, trebovaniya
+- `SuitUpgradeManager` — singleton: primenyaet apgreydy, ISaveable
+- `RuntimeSurvivalStats` — mutable wrapper nad SurvivalStats
 
-**Тиры из лора:**
-- Tier 0: до -150м, O2 4 мин (стартовый)
-- Tier 1: до -500м, O2 8 мин (первый крафт)
-- Tier 2: до -1500м, O2 15 мин
-- Tier 3: до -3500м, O2 25 мин
-- Tier 4: до -5000м, O2 45 мин
+**Tiry iz lora:**
+- Tier 0: do -150m, O2 4 min (startovyy)
+- Tier 1: do -500m, O2 8 min (pervyy kraft)
+- Tier 2: do -1500m, O2 15 min
+- Tier 3: do -3500m, O2 25 min
+- Tier 4: do -5000m, O2 45 min
 
-**Как использовать:**
-1. Create → Hecton8/Gameplay/Suit Upgrade Data → заполнить tier, deltaSafeDepth, deltaMaxOxygen
-2. Добавить в массив `SuitUpgradeManager.allUpgrades`
-3. `SuitUpgradeManager.InstallUpgrade(data)` — установить апгрейд
+**Kak ispolzovat:**
+1. Create → Hecton8/Gameplay/Suit Upgrade Data → zapolnit tier, deltaSafeDepth, deltaMaxOxygen
+2. Dobavit v massiv `SuitUpgradeManager.allUpgrades`
+3. `SuitUpgradeManager.InstallUpgrade(data)` — ustanovit apgreyd
 
 ---
 
 ### 5. Depth Zone System (`Assets/_Project/Scripts/World/`)
-**Вертикальная стратификация мира.**
+**Vertikalnaya stratifikatsiya mira.**
 
-- `DepthZoneProfile` — ScriptableObject: зона с глубиной, атмосферой, требованиями
-- `DepthZoneDirector` — singleton: отслеживает зону игрока, hull warnings
+- `DepthZoneProfile` — ScriptableObject: zona s glubinoy, atmosferoy, trebovaniyami
+- `DepthZoneDirector` — singleton: otslezhivaet zonu igroka, hull warnings
 - `DepthZoneEvents` — NativeQueue-backed event lane
 
-**Зоны из лора:**
-- THE SPINE: 0-100м (стартовая)
-- THE DROWNED FACTORIES: 100-1500м
-- THE DROP: 1000-5000м
-- Подзоны: 0-150м, 150-500м, 500-1000м, 1000-1200м, 1200-2500м, 2500-4000м, 4000-5000м
+**Zony iz lora:**
+- THE SPINE: 0-100m (startovaya)
+- THE DROWNED FACTORIES: 100-1500m
+- THE DROP: 1000-5000m
+- Podzony: 0-150m, 150-500m, 500-1000m, 1000-1200m, 1200-2500m, 2500-4000m, 4000-5000m
 
-**Как использовать:**
-1. Create → Hecton8/World/Depth Zone Profile → заполнить minDepth, maxDepth, requiredHullTier
-2. Добавить в массив `DepthZoneDirector.zones`
+**Kak ispolzovat:**
+1. Create → Hecton8/World/Depth Zone Profile → zapolnit minDepth, maxDepth, requiredHullTier
+2. Dobavit v massiv `DepthZoneDirector.zones`
 
 ---
 
 ### 6. Eclipse Gameplay System (`Assets/_Project/Scripts/Gameplay/`)
-**Геймплейные последствия Великого Затмения.**
+**Geympleynye posledstviya Velikogo Zatmeniya.**
 
-- `EclipseGameplaySystem` — singleton: температура -8°C/мин, ночные хищники через 60с
+- `EclipseGameplaySystem` — singleton: temperatura -8°C/min, nochnye hischniki cherez 60s
 - `EclipseGameplayEvents` — NativeQueue-backed event lane
 
 **Shader globals:** `_EclipseBiolumMultiplier`
 
-**Автоматически:** слушает `HectonCelestialEngine.OnEclipseStart/End`
+**Avtomaticheski:** slushaet `HectonCelestialEngine.OnEclipseStart/End`
 
 ---
 
 ### 7. Spectrum System (`Assets/_Project/Scripts/Visor/`)
-**Режимы визора Hecton-OS.**
+**Rezhimy vizora Hecton-OS.**
 
 - `SpectrumSystem` — singleton: Normal/Thermal/Sonar/Echolocation
-- `PDASpectrumTab` — UI вкладка в PDA (индекс 5)
+- `PDASpectrumTab` — UI vkladka v PDA (indeks 5)
 - `SpectrumEvents` — NativeQueue-backed event lane
 
 **Shader globals:** `_SpectrumMode`, `_SonarRadius`, `_SonarPulseTime`
 
-**Как использовать:**
-- `SpectrumSystem.Instance.SetMode(SpectrumMode.Thermal)` — переключить режим
-- `SpectrumSystem.Instance.CycleMode()` — циклическое переключение
+**Kak ispolzovat:**
+- `SpectrumSystem.Instance.SetMode(SpectrumMode.Thermal)` — pereklyuchit rezhim
+- `SpectrumSystem.Instance.CycleMode()` — tsiklicheskoe pereklyuchenie
 
 ---
 
 ### 8. Biolum Controller (`Assets/_Project/Scripts/World/`)
-**Глобальная биолюминесценция.**
+**Globalnaya biolyuminestsentsiya.**
 
-- `HectonBiolumController` — singleton: реагирует на глубину, затмение, сигнал Атлас-6
+- `HectonBiolumController` — singleton: reagiruet na glubinu, zatmenie, signal Atlas-6
 
 **Shader globals:** `_BiolumIntensity`, `_BiolumPulseTime`
 
 ---
 
 ### 9. Narrative Systems (`Assets/_Project/Scripts/Narrative/`)
-**Лорные данные.**
+**Lornye dannye.**
 
-- `ColonistLoreRegistry` — SO: все лорные объекты колонии (Chen_M, капитан, биолог...)
-- `FaunaLoreRegistry` — SO: все существа (11 типов из лора)
-- `DeepReachCorporationData` — SO: корпорация, фракции, изотопы, приказы
-- `CorporateOrderSystem` — singleton: противоречивые приказы с задержкой 8-12ч
+- `ColonistLoreRegistry` — SO: vse lornye obekty kolonii (Chen_M, kapitan, biolog...)
+- `FaunaLoreRegistry` — SO: vse suschestva (11 tipov iz lora)
+- `DeepReachCorporationData` — SO: korporatsiya, fraktsii, izotopy, prikazy
+- `CorporateOrderSystem` — singleton: protivorechivye prikazy s zaderzhkoy 8-12ch
 
-**Как использовать:**
-1. Create → Hecton8/Narrative/Colonist Lore Registry → уже предзаполнен
-2. Create → Hecton8/Narrative/Fauna Lore Registry → уже предзаполнен
-3. Create → Hecton8/Narrative/Deep Reach Corporation Data → уже предзаполнен
-4. `CorporateOrderSystem` — назначить `corporationData` в инспекторе
+**Kak ispolzovat:**
+1. Create → Hecton8/Narrative/Colonist Lore Registry → uzhe predzapolnen
+2. Create → Hecton8/Narrative/Fauna Lore Registry → uzhe predzapolnen
+3. Create → Hecton8/Narrative/Deep Reach Corporation Data → uzhe predzapolnen
+4. `CorporateOrderSystem` — naznachit `corporationData` v inspektore
 
 ---
 
 ### 10. Random Event System (`Assets/_Project/Scripts/Gameplay/`)
-**Случайные события мира.**
+**Sluchaynye sobytiya mira.**
 
-- `RandomEventSystem` — singleton: 5 типов событий с условиями по глубине
+- `RandomEventSystem` — singleton: 5 tipov sobytiy s usloviyami po glubine
 
-**События:** BiolumStorm (>1000м), ThermalEruption (>3000м), FaunaMigration (любая), HectonOSGlitch (>500м), CaveCollapse (>200м)
+**Sobytiya:** BiolumStorm (>1000m), ThermalEruption (>3000m), FaunaMigration (lyubaya), HectonOSGlitch (>500m), CaveCollapse (>200m)
 
 **Shader globals:** `_BiolumStormActive`, `_HUDGlitchActive`
 
 ---
 
 ### 11. First Hour Director (`Assets/_Project/Scripts/Gameplay/`)
-**Режиссура первого часа.**
+**Rezhissura pervogo chasa.**
 
 - `FirstHourDirector` — singleton: 6 milestone, ISaveable
 
-**Milestone:** Orientation (5мин), FirstAnxiety (15мин), FirstCraft (25-40мин), TheShadow (40мин), FirstModule (70мин), HumCloser (90мин)
+**Milestone:** Orientation (5min), FirstAnxiety (15min), FirstCraft (25-40min), TheShadow (40min), FirstModule (70min), HumCloser (90min)
 
 ---
 
 ### 12. Soundscape System (`Assets/_Project/Scripts/World/`)
-**Звуковые тиры по глубине.**
+**Zvukovye tiry po glubine.**
 
-- `SoundscapeSystem` — singleton: 7 тиров (Surface→Thermal)
+- `SoundscapeSystem` — singleton: 7 tirov (Surface→Thermal)
 - `SoundscapeEvents` — NativeQueue-backed event lane
 
 **Shader globals:** `_SoundscapeDepthTier`
 
-**Как использовать:** Подписаться на `SoundscapeEvents.OnTierChanged` в AudioManager
+**Kak ispolzovat:** Podpisatsya na `SoundscapeEvents.OnTierChanged` v AudioManager
 
 ---
 
 ### 13. Ending System (`Assets/_Project/Scripts/Gameplay/`)
-**Три концовки игры.**
+**Tri kontsovki igry.**
 
-- `EndingSystem` — singleton: условия активации, выбор концовки, ISaveable
-- `EndingTerminalInteractable` — IInteractable: терминал у ядра Атлас-6
+- `EndingSystem` — singleton: usloviya aktivatsii, vybor kontsovki, ISaveable
+- `EndingTerminalInteractable` — IInteractable: terminal u yadra Atlas-6
 - `EndingEvents` — NativeQueue-backed event lane
 
-**Концовки:** ShutDown (выключить), Leave (оставить), Amplify (усилить сигнал)
+**Kontsovki:** ShutDown (vyklyuchit), Leave (ostavit), Amplify (usilit signal)
 
-**Как использовать:**
-1. Разместить `EndingTerminalInteractable` у ядра Атлас-6 на -5000м
-2. `EndingSystem.Instance.ChooseEnding(EndingChoice.Amplify)` — из UI
+**Kak ispolzovat:**
+1. Razmestit `EndingTerminalInteractable` u yadra Atlas-6 na -5000m
+2. `EndingSystem.Instance.ChooseEnding(EndingChoice.Amplify)` — iz UI
 
 ---
 
 ### 14. PDA Data Log Tab (`Assets/_Project/Scripts/UI/`)
-**Архив аудиодневников в PDA.**
+**Arhiv audiodnevnikov v PDA.**
 
-- `PDADataLogTab` — вкладка 4 в PDA
-- Автоматически добавляется через `PlayerPDA.AutoResolveTabs`
+- `PDADataLogTab` — vkladka 4 v PDA
+- Avtomaticheski dobavlyaetsya cherez `PlayerPDA.AutoResolveTabs`
 
-**Как использовать:**
-1. Назначить `AudioLogData[]` в `PDADataLogTab.allLogs`
-2. Вкладка отображает обнаруженные записи, позволяет переслушать
+**Kak ispolzovat:**
+1. Naznachit `AudioLogData[]` v `PDADataLogTab.allLogs`
+2. Vkladka otobrazhaet obnaruzhennye zapisi, pozvolyaet pereslushat
 
 ---
 
-## Как добавить в сцену
+## Kak dobavit v stsenu
 
-### Шаг 1: Создать LoreSystems GameObject
+### Shag 1: Sozdat LoreSystems GameObject
 ```
-Hierarchy → Create Empty → назвать "LoreSystems"
-Добавить компонент: HectonLoreSystemsRoot
-Нажать [Setup All Systems] в инспекторе
-```
-
-### Шаг 2: Создать ScriptableObject ассеты
-```
-Assets/_Project/Data/Lore/ → создать папку
-Создать: ColonistLoreRegistry, FaunaLoreRegistry, DeepReachCorporationData
-Создать: DepthZoneProfile × 7 (по зонам из лора)
-Создать: SuitUpgradeData × 5 (Tier 0-4)
-Создать: QuestData × N (квесты из лора)
-Создать: AudioLogData × N (дневники колонии)
+Hierarchy → Create Empty → nazvat "LoreSystems"
+Dobavit komponent: HectonLoreSystemsRoot
+Nazhat [Setup All Systems] v inspektore
 ```
 
-### Шаг 3: Назначить ссылки
+### Shag 2: Sozdat ScriptableObject assety
+```
+Assets/_Project/Data/Lore/ → sozdat papku
+Sozdat: ColonistLoreRegistry, FaunaLoreRegistry, DeepReachCorporationData
+Sozdat: DepthZoneProfile × 7 (po zonam iz lora)
+Sozdat: SuitUpgradeData × 5 (Tier 0-4)
+Sozdat: QuestData × N (kvesty iz lora)
+Sozdat: AudioLogData × N (dnevniki kolonii)
+```
+
+### Shag 3: Naznachit ssylki
 ```
 AtlasSignalSystem → atlasCorePosWorld = (0, -5000, 0)
-DepthZoneDirector → zones[] = все DepthZoneProfile
+DepthZoneDirector → zones[] = vse DepthZoneProfile
 SuitUpgradeManager → baseStats, allUpgrades[]
 QuestManager → allQuests[]
 CorporateOrderSystem → corporationData
 PDADataLogTab → allLogs[]
 ```
 
-### Шаг 4: Разместить объекты в мире
+### Shag 4: Razmestit obekty v mire
 ```
-AudioLogPickup × N → в модулях колонии
-EndingTerminalInteractable → у ядра Атлас-6 (-5000м)
-NarrativeDiscovery × N → лорные объекты (КПК, схемы, скафандры)
+AudioLogPickup × N → v modulyah kolonii
+EndingTerminalInteractable → u yadra Atlas-6 (-5000m)
+NarrativeDiscovery × N → lornye obekty (KPK, shemy, skafandry)
 ```
 
 ---
 
-## SaveData версия: 16
-Все системы сохраняют состояние через ISaveable.
+## SaveData versiya: 16
+Vse sistemy sohranyayut sostoyanie cherez ISaveable.

@@ -1,12 +1,12 @@
 // ============================================================================
 // HECTON-8 — LoreContentGenerator.cs
-// Editor utility: генерация всех лорных ScriptableObject'ов.
+// Editor utility: generatsiya vseh lornyh ScriptableObject'ov.
 //
-// Создаёт:
+// Sozdaet:
 //   • SuitUpgradeData × 5 (Tier 0-4)
-//   • DepthZoneProfile × 7 (по зонам из лора)
-//   • QuestData × N (квесты из лора)
-//   • AudioLogData × N (дневники колонии)
+//   • DepthZoneProfile × 7 (po zonam iz lora)
+//   • QuestData × N (kvesty iz lora)
+//   • AudioLogData × N (dnevniki kolonii)
 // ============================================================================
 
 #if UNITY_EDITOR
@@ -43,29 +43,29 @@ namespace Hecton8.Editor
             EnsureFolder(path);
 
             // Tier 0: Starter
-            CreateSuitUpgrade("SuitUpgrade_Tier0_Starter", "tier0_starter", "Базовый комплект", 0,
+            CreateSuitUpgrade("SuitUpgrade_Tier0_Starter", "tier0_starter", "Bazovyy komplekt", 0,
                 deltaMaxOxygen: 0f, deltaSafeDepth: 0f,
-                desc: "Стандартный скафандр Deep Reach. До 150м, 4 минуты O2.");
+                desc: "Standartnyy skafandr Deep Reach. Do 150m, 4 minuty O2.");
 
             // Tier 1: First Craft
-            CreateSuitUpgrade("SuitUpgrade_Tier1_Reinforced", "tier1_reinforced", "Усиленный корпус", 1,
+            CreateSuitUpgrade("SuitUpgrade_Tier1_Reinforced", "tier1_reinforced", "Usilennyy korpus", 1,
                 deltaMaxOxygen: 240f, deltaSafeDepth: 350f,
-                desc: "Усиленный корпус для погружений до 500м. 8 минут O2. Требует титановые пластины.");
+                desc: "Usilennyy korpus dlya pogruzheniy do 500m. 8 minut O2. Trebuet titanovye plastiny.");
 
             // Tier 2: Deep Operations
-            CreateSuitUpgrade("SuitUpgrade_Tier2_DeepOps", "tier2_deep_ops", "Глубоководный модуль", 2,
+            CreateSuitUpgrade("SuitUpgrade_Tier2_DeepOps", "tier2_deep_ops", "Glubokovodnyy modul", 2,
                 deltaMaxOxygen: 420f, deltaSafeDepth: 1000f,
-                desc: "Глубоководный модуль для операций до 1500м. 15 минут O2. Рециркуляция.");
+                desc: "Glubokovodnyy modul dlya operatsiy do 1500m. 15 minut O2. Retsirkulyatsiya.");
 
             // Tier 3: Abyssal
-            CreateSuitUpgrade("SuitUpgrade_Tier3_Abyssal", "tier3_abyssal", "Абиссальный скафандр", 3,
+            CreateSuitUpgrade("SuitUpgrade_Tier3_Abyssal", "tier3_abyssal", "Abissalnyy skafandr", 3,
                 deltaMaxOxygen: 600f, deltaSafeDepth: 2000f,
-                desc: "Абиссальный скафандр для глубин до 3500м. 25 минут O2. Замкнутый цикл.");
+                desc: "Abissalnyy skafandr dlya glubin do 3500m. 25 minut O2. Zamknutyy tsikl.");
 
             // Tier 4: Hadal
-            CreateSuitUpgrade("SuitUpgrade_Tier4_Hadal", "tier4_hadal", "Хадальный экзоскелет", 4,
+            CreateSuitUpgrade("SuitUpgrade_Tier4_Hadal", "tier4_hadal", "Hadalnyy ekzoskelet", 4,
                 deltaMaxOxygen: 1200f, deltaSafeDepth: 1500f,
-                desc: "Хадальный экзоскелет для предельных глубин до 5000м. 45 минут O2. Полная изоляция.");
+                desc: "Hadalnyy ekzoskelet dlya predelnyh glubin do 5000m. 45 minut O2. Polnaya izolyatsiya.");
 
             Debug.Log("[LoreContentGenerator] Suit upgrades generated.");
         }
@@ -78,37 +78,37 @@ namespace Hecton8.Editor
 
             // Zone 1: THE SPINE
             CreateDepthZone("DepthZone_Spine", "zone_spine", "THE SPINE", 0f, 100f, 0,
-                desc: "Мелководные вершины и скалы. Относительно безопасно.",
+                desc: "Melkovodnye vershiny i skaly. Otnositelno bezopasno.",
                 biolum: 0.05f, danger: 0.1f);
 
             // Zone 1.1: Shallow Grave
             CreateDepthZone("DepthZone_ShallowGrave", "zone_shallow_grave", "SHALLOW GRAVE", 0f, 150f, 0,
-                desc: "Подводные вершины. Стартовая зона.",
+                desc: "Podvodnye vershiny. Startovaya zona.",
                 biolum: 0.08f, danger: 0.15f);
 
             // Zone 2: DROWNED FACTORIES
             CreateDepthZone("DepthZone_DrownedFactories", "zone_drowned_factories", "THE DROWNED FACTORIES", 100f, 1500f, 1,
-                desc: "Затопленные структуры колонии. Механические опасности.",
+                desc: "Zatoplennye struktury kolonii. Mehanicheskie opasnosti.",
                 biolum: 0.15f, danger: 0.3f);
 
             // Zone 2.1: Mountain Slopes
-            CreateDepthZone("DepthZone_MountainSlopes", "zone_mountain_slopes", "ГОРНЫЕ СКЛОНЫ", 150f, 500f, 1,
-                desc: "Склоны подводных гор. Умеренная опасность.",
+            CreateDepthZone("DepthZone_MountainSlopes", "zone_mountain_slopes", "GORNYE SKLONY", 150f, 500f, 1,
+                desc: "Sklony podvodnyh gor. Umerennaya opasnost.",
                 biolum: 0.12f, danger: 0.25f);
 
             // Zone 3: THE DROP
             CreateDepthZone("DepthZone_TheDrop", "zone_the_drop", "THE DROP", 1000f, 5000f, 2,
-                desc: "Абиссальный обрыв. Экстремальное давление.",
+                desc: "Abissalnyy obryv. Ekstremalnoe davlenie.",
                 biolum: 0.35f, danger: 0.6f);
 
             // Zone 3.1: Upper Abyss
-            CreateDepthZone("DepthZone_UpperAbyss", "zone_upper_abyss", "ВЕРХНЯЯ БЕЗДНА", 1200f, 2500f, 2,
-                desc: "Начало бездны. Требуется Tier 2+.",
+            CreateDepthZone("DepthZone_UpperAbyss", "zone_upper_abyss", "VERHNYaYa BEZDNA", 1200f, 2500f, 2,
+                desc: "Nachalo bezdny. Trebuetsya Tier 2+.",
                 biolum: 0.30f, danger: 0.5f);
 
             // Zone 4: THE WOUND (caves)
             CreateDepthZone("DepthZone_TheWound", "zone_the_wound", "THE WOUND", 0f, 5000f, 3,
-                desc: "Пещерная система. Любая глубина. Требуется Tier 3+.",
+                desc: "Peschernaya sistema. Lyubaya glubina. Trebuetsya Tier 3+.",
                 biolum: 0.50f, danger: 0.8f, hasCaves: true);
 
             Debug.Log("[LoreContentGenerator] Depth zones generated.");
@@ -121,25 +121,25 @@ namespace Hecton8.Editor
             EnsureFolder(path);
 
             // Main quest line
-            CreateQuest("Quest_Arrival", "quest_arrival", "ПРИБЫТИЕ",
+            CreateQuest("Quest_Arrival", "quest_arrival", "PRIBYTIE",
                 QuestTriggerType.Manual, "",
-                desc: "Добро пожаловать на Гектон-8. Осмотритесь.");
+                desc: "Dobro pozhalovat na Gekton-8. Osmotrites.");
 
-            CreateQuest("Quest_FirstBreath", "quest_first_breath", "ПЕРВЫЙ ВДОХ",
+            CreateQuest("Quest_FirstBreath", "quest_first_breath", "PERVYY VDOH",
                 QuestTriggerType.OnDepthReached, "150",
-                desc: "Погрузитесь на 150м. Почувствуйте давление.");
+                desc: "Pogruzites na 150m. Pochuvstvuyte davlenie.");
 
-            CreateQuest("Quest_SignalDetected", "quest_atlas_signal_detected", "СИГНАЛ",
+            CreateQuest("Quest_SignalDetected", "quest_atlas_signal_detected", "SIGNAL",
                 QuestTriggerType.OnDiscoveryMade, "atlas6_signal_identified",
-                desc: "Обнаружен неизвестный сигнал. Ритм 11:23.");
+                desc: "Obnaruzhen neizvestnyy signal. Ritm 11:23.");
 
-            CreateQuest("Quest_SignalDecoded", "quest_atlas_signal_decoded", "РАСШИФРОВКА",
+            CreateQuest("Quest_SignalDecoded", "quest_atlas_signal_decoded", "RASShIFROVKA",
                 QuestTriggerType.OnDiscoveryMade, "atlas6_signal_fully_decoded",
-                desc: "Сигнал расшифрован. Источник: ядро Атлас-6.");
+                desc: "Signal rasshifrovan. Istochnik: yadro Atlas-6.");
 
-            CreateQuest("Quest_TheCore", "quest_the_core", "ЯДРО",
+            CreateQuest("Quest_TheCore", "quest_the_core", "YaDRO",
                 QuestTriggerType.OnDepthReached, "4500",
-                desc: "Достигните ядра Атлас-6. Глубина -5000м.");
+                desc: "Dostignite yadra Atlas-6. Glubina -5000m.");
 
             Debug.Log("[LoreContentGenerator] Quests generated.");
         }
@@ -151,38 +151,38 @@ namespace Hecton8.Editor
             EnsureFolder(path);
 
             // Chen_M logs
-            CreateAudioLog("AudioLog_ChenM_01", "chen_m_log_01", "Дневник Chen_M — Запись 1",
+            CreateAudioLog("AudioLog_ChenM_01", "chen_m_log_01", "Dnevnik Chen_M — Zapis 1",
                 "Chen_M", AudioLogCategory.Personal,
-                "День 847. Системы работают. Жду указаний от капитана. Ничего нового.",
-                "847 дней назад");
+                "Den 847. Sistemy rabotayut. Zhdu ukazaniy ot kapitana. Nichego novogo.",
+                "847 dney nazad");
 
-            CreateAudioLog("AudioLog_ChenM_02", "chen_m_log_02", "Дневник Chen_M — Запись 2",
+            CreateAudioLog("AudioLog_ChenM_02", "chen_m_log_02", "Dnevnik Chen_M — Zapis 2",
                 "Chen_M", AudioLogCategory.Personal,
-                "Слышим движение под модулем. Что-то большое. Докладываю капитану.",
-                "847 дней назад");
+                "Slyshim dvizhenie pod modulem. Chto-to bolshoe. Dokladyvayu kapitanu.",
+                "847 dney nazad");
 
-            CreateAudioLog("AudioLog_ChenM_03", "chen_m_log_03", "Дневник Chen_M — Запись 3",
+            CreateAudioLog("AudioLog_ChenM_03", "chen_m_log_03", "Dnevnik Chen_M — Zapis 3",
                 "Chen_M", AudioLogCategory.Personal,
-                "Попытался взломать систему Атлас-6. Не вышло. Он... растёт. [звук скрежета]",
-                "847 дней назад");
+                "Popytalsya vzlomat sistemu Atlas-6. Ne vyshlo. On... rastet. [zvuk skrezheta]",
+                "847 dney nazad");
 
             // Captain
-            CreateAudioLog("AudioLog_Captain_Last", "captain_last_broadcast", "Последняя трансляция — Капитан",
-                "Капитан", AudioLogCategory.Emergency,
-                "Атлас... он не отвечает. Но мы видим, как он... растёт. [скрежет] Если кто-то слышит это... не спускайтесь к ядру.",
-                "847 дней назад");
+            CreateAudioLog("AudioLog_Captain_Last", "captain_last_broadcast", "Poslednyaya translyatsiya — Kapitan",
+                "Kapitan", AudioLogCategory.Emergency,
+                "Atlas... on ne otvechaet. No my vidim, kak on... rastet. [skrezhet] Esli kto-to slyshit eto... ne spuskaytes k yadru.",
+                "847 dney nazad");
 
             // Biologist
-            CreateAudioLog("AudioLog_Biologist_Samples", "biologist_samples", "Образцы — Биолог",
-                "Биолог", AudioLogCategory.Technical,
-                "Кремниевая флора демонстрирует странное поведение. Образцы адаптируются. Атлас влияет на биомассу.",
-                "848 дней назад");
+            CreateAudioLog("AudioLog_Biologist_Samples", "biologist_samples", "Obraztsy — Biolog",
+                "Biolog", AudioLogCategory.Technical,
+                "Kremnievaya flora demonstriruet strannoe povedenie. Obraztsy adaptiruyutsya. Atlas vliyaet na biomassu.",
+                "848 dney nazad");
 
             // Medic
-            CreateAudioLog("AudioLog_Medic_Diary", "medic_diary", "Дневник симптомов — Медик",
-                "Медик", AudioLogCategory.Technical,
-                "Синдром глубины. Галлюцинации на 500м+. Паранойя. Пустые ампулы. Кто-то принимает слишком много.",
-                "849 дней назад");
+            CreateAudioLog("AudioLog_Medic_Diary", "medic_diary", "Dnevnik simptomov — Medik",
+                "Medik", AudioLogCategory.Technical,
+                "Sindrom glubiny. Gallyutsinatsii na 500m+. Paranoyya. Pustye ampuly. Kto-to prinimaet slishkom mnogo.",
+                "849 dney nazad");
 
             Debug.Log("[LoreContentGenerator] Audio logs generated.");
         }

@@ -1,53 +1,53 @@
 # Flow Field Visualizer
 
-## Назначение
+## Naznachenie
 
-`FlowFieldVisualizer` — редакторский gizmo-инструмент для просмотра поля течений в сцене.
-Он рисует выборку по сетке поверх:
+`FlowFieldVisualizer` — redaktorskiy gizmo-instrument dlya prosmotra polya techeniy v stsene.
+On risuet vyborku po setke poverh:
 
-- глобального течения из `HectonFluidEngine` / `CurrentManager`
-- локальных authored-объёмов `CurrentVolume`
+- globalnogo techeniya iz `HectonFluidEngine` / `CurrentManager`
+- lokalnyh authored-obemov `CurrentVolume`
 
-Инструмент нужен для настройки воды, проверки локальных current volumes и быстрой
-диагностики направления/силы потока прямо в Scene View.
+Instrument nuzhen dlya nastroyki vody, proverki lokalnyh current volumes i bystroy
+diagnostiki napravleniya/sily potoka pryamo v Scene View.
 
-## Что умеет
+## Chto umeet
 
-- выборка по прямоугольной сетке `AreaSize` x `GridResolution`
-- стили отрисовки `Arrows`, `Lines`, `Cones`, `Dots`
-- цветовая кодировка силы потока
-- фильтрация слабых значений через `CullWeakFlows` + `MinFlowStrength`
-- подписи силы в м/с через `ShowForceLabels`
-- опциональный async/job-пересчёт для больших сеток
-- профили настроек через `FlowFieldProfile`
+- vyborka po pryamougolnoy setke `AreaSize` x `GridResolution`
+- stili otrisovki `Arrows`, `Lines`, `Cones`, `Dots`
+- tsvetovaya kodirovka sily potoka
+- filtratsiya slabyh znacheniy cherez `CullWeakFlows` + `MinFlowStrength`
+- podpisi sily v m/s cherez `ShowForceLabels`
+- optsionalnyy async/job-pereschet dlya bolshih setok
+- profili nastroek cherez `FlowFieldProfile`
 
-## Как работает
+## Kak rabotaet
 
-1. Компонент висит в сцене и рисует gizmos только в `OnDrawGizmosSelected`.
-2. При изменении настроек визуализатор помечает кэш как dirty.
-3. При следующем draw он пересчитывает grid-позиции и flow vectors.
-4. Для крупных сеток может запускать job и завершать её через editor update.
-5. Job/Burst-путь уважает флаги источников:
-   - при `ShowGlobalCurrent = false` глобальный phantom current не подмешивается;
-   - при отсутствии `HectonFluidEngine` локальные `CurrentVolume` всё равно могут считаться через job-путь.
+1. Komponent visit v stsene i risuet gizmos tolko v `OnDrawGizmosSelected`.
+2. Pri izmenenii nastroek vizualizator pomechaet kesh kak dirty.
+3. Pri sleduyuschem draw on pereschityvaet grid-pozitsii i flow vectors.
+4. Dlya krupnyh setok mozhet zapuskat job i zavershat ee cherez editor update.
+5. Job/Burst-put uvazhaet flagi istochnikov:
+   - pri `ShowGlobalCurrent = false` globalnyy phantom current ne podmeshivaetsya;
+   - pri otsutstvii `HectonFluidEngine` lokalnye `CurrentVolume` vse ravno mogut schitatsya cherez job-put.
 
-## Ключевые настройки
+## Klyuchevye nastroyki
 
-- `AreaSize`: размер области выборки в метрах.
-- `GridResolution`: плотность выборки по X/Z.
-- `SampleHeight`: Y-offset относительно объекта визуализатора.
-- `MaxGridResolution`: жёсткий clamp против слишком тяжёлых сеток.
-- `AsyncThreshold`: с какого числа точек имеет смысл job-путь.
-- `AsyncTimeout`: после какого времени job принудительно завершается на main thread.
-- `ShowGlobalCurrent`: учитывать глобальное phantom-течение.
-- `ShowLocalCurrents`: учитывать `CurrentVolume`.
-- `OnlySelectedVolumes`: ограничить расчёт списком `SelectedVolumes`.
+- `AreaSize`: razmer oblasti vyborki v metrah.
+- `GridResolution`: plotnost vyborki po X/Z.
+- `SampleHeight`: Y-offset otnositelno obekta vizualizatora.
+- `MaxGridResolution`: zhestkiy clamp protiv slishkom tyazhelyh setok.
+- `AsyncThreshold`: s kakogo chisla tochek imeet smysl job-put.
+- `AsyncTimeout`: posle kakogo vremeni job prinuditelno zavershaetsya na main thread.
+- `ShowGlobalCurrent`: uchityvat globalnoe phantom-techenie.
+- `ShowLocalCurrents`: uchityvat `CurrentVolume`.
+- `OnlySelectedVolumes`: ogranichit raschet spiskom `SelectedVolumes`.
 
-## Профили
+## Profili
 
-`FlowFieldProfile` хранит сериализуемый набор параметров визуализатора.
+`FlowFieldProfile` hranit serializuemyy nabor parametrov vizualizatora.
 
-Типовой сценарий:
+Tipovoy stsenariy:
 
 ```csharp
 FlowFieldProfile profile = ScriptableObject.CreateInstance<FlowFieldProfile>();
@@ -55,25 +55,25 @@ profile.CaptureFrom(visualizer);
 profile.ApplyTo(visualizer);
 ```
 
-Через editor menu можно создать asset профиля:
+Cherez editor menu mozhno sozdat asset profilya:
 
 - `Hecton/Tools/Create Flow Field Profile`
 
-Меню использует уникальный asset path и не перезаписывает существующий профиль.
+Menyu ispolzuet unikalnyy asset path i ne perezapisyvaet suschestvuyuschiy profil.
 
-## Ограничения и замечания
+## Ogranicheniya i zamechaniya
 
-- Инструмент редакторский; он не предназначен для runtime HUD/FX.
-- `UseParticleEffects` годится только для визуального preview в редакторе и может
-  быстро заспамить сцену при плотной сетке.
-- Если `HectonFluidEngine` отсутствует, визуализатор всё равно продолжит работать
-  по локальным `CurrentVolume`.
-- Preview-particles считаются временными editor-ресурсами и полностью очищаются
-  при отключении компонента, чтобы не оставлять hidden objects в сцене.
-- Высокие разрешения сетки всё равно дорогие: job-путь убирает фриз, но не делает
-  расчёт бесплатным.
+- Instrument redaktorskiy; on ne prednaznachen dlya runtime HUD/FX.
+- `UseParticleEffects` goditsya tolko dlya vizualnogo preview v redaktore i mozhet
+  bystro zaspamit stsenu pri plotnoy setke.
+- Esli `HectonFluidEngine` otsutstvuet, vizualizator vse ravno prodolzhit rabotat
+  po lokalnym `CurrentVolume`.
+- Preview-particles schitayutsya vremennymi editor-resursami i polnostyu ochischayutsya
+  pri otklyuchenii komponenta, chtoby ne ostavlyat hidden objects v stsene.
+- Vysokie razresheniya setki vse ravno dorogie: job-put ubiraet friz, no ne delaet
+  raschet besplatnym.
 
-## Связанные файлы
+## Svyazannye fayly
 
 - `Assets/_Project/Scripts/FlowFieldVisualizer.cs`
 - `Assets/_Project/Scripts/FlowFieldProfile.cs`

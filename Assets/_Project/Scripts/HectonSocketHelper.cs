@@ -44,20 +44,20 @@ namespace Hecton8.Building
         }
 
         [Header("═══ SOCKET CONFIG ═══")]
-        [Tooltip("Тип сокета. Определяет цвет гизмо.\n" +
-                 "Top = зелёный, Side = жёлтый, Under = красный.")]
+        [Tooltip("Tip soketa. Opredelyaet tsvet gizmo.\n" +
+                 "Top = zelenyy, Side = zheltyy, Under = krasnyy.")]
         [SerializeField] private SocketType socketType = SocketType.Side;
 
-        [Tooltip("Длина визуальной стрелки в метрах.")]
+        [Tooltip("Dlina vizualnoy strelki v metrah.")]
         [SerializeField] private float arrowLength = 0.5f;
 
-        [Tooltip("Радиус сферы на конце стрелки.")]
+        [Tooltip("Radius sfery na kontse strelki.")]
         [SerializeField] private float tipRadius = 0.05f;
 
-        [Tooltip("Максимальная дистанция рейкаста для Snap to Surface.")]
+        [Tooltip("Maksimalnaya distantsiya reykasta dlya Snap to Surface.")]
         [SerializeField] private float snapRayDistance = 2f;
 
-        [Tooltip("Layer mask для рейкаста при Snap to Surface.")]
+        [Tooltip("Layer mask dlya reykasta pri Snap to Surface.")]
         [SerializeField] private LayerMask snapLayerMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
 #if UNITY_EDITOR
@@ -87,11 +87,11 @@ namespace Hecton8.Building
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Пускает луч из позиции сокета в направлении -forward.
-        /// Если попадает в меш — перемещает сокет на точку удара
-        /// и разворачивает forward по нормали поверхности.
+        /// Puskaet luch iz pozitsii soketa v napravlenii -forward.
+        /// Esli popadaet v mesh — peremeschaet soket na tochku udara
+        /// i razvorachivaet forward po normali poverhnosti.
         ///
-        /// Использование: ПКМ на компоненте → Snap to Surface.
+        /// Ispolzovanie: PKM na komponente → Snap to Surface.
         /// </summary>
         [ContextMenu("Snap to Surface")]
         private void SnapToSurface()
@@ -162,7 +162,7 @@ namespace Hecton8.Building
             Handles.zTest = CompareFunction.LessEqual;
 
             // ── LOD 2: Far (> 20m) ────────────────────────────────
-            // Только основная линия
+            // Tolko osnovnaya liniya
             Handles.color = socketColor;
             Handles.DrawLine(pos, tipPos, 2f);
 
@@ -173,7 +173,7 @@ namespace Hecton8.Building
             }
 
             // ── LOD 1: Mid (10m..20m) ─────────────────────────────
-            // Линия + cone + sphere, но без текста
+            // Liniya + cone + sphere, no bez teksta
             float coneSize = Mathf.Max(arrowLength * 0.18f, tipRadius * 2f);
             Quaternion coneRotation = Quaternion.LookRotation(forward);
 
@@ -190,7 +190,7 @@ namespace Hecton8.Building
             }
 
             // ── LOD 0: Near (<= 10m) ──────────────────────────────
-            // Полный набор, включая текст
+            // Polnyy nabor, vklyuchaya tekst
             Handles.color = socketColor;
             Handles.Label(tipPos + Vector3.up * 0.1f, socketType.ToString(), GetLabelStyle(socketColor));
 

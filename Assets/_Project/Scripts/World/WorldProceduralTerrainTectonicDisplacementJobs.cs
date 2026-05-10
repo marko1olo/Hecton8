@@ -97,7 +97,7 @@ namespace Hecton8.World
                     int2 cell = baseCell + new int2(dx, dz);
                     float2 feature = new float2(cell.x, cell.y) + Hash2(cell.x, cell.y, seed);
                     float2 delta = sample - feature;
-                    float distance = math.sqrt(math.lengthsq(delta));
+                    float distance = FastMagnitudeApprox(delta);
                     if (distance < first)
                     {
                         third = second;
@@ -122,6 +122,15 @@ namespace Hecton8.World
                 F2 = second,
                 F3 = third
             };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastMagnitudeApprox(float2 value)
+        {
+            float2 abs = math.abs(value);
+            float max = math.max(abs.x, abs.y);
+            float min = math.min(abs.x, abs.y);
+            return max + (min * 0.41421356f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

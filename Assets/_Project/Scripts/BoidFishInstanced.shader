@@ -1,34 +1,34 @@
 // ============================================================================
 // HECTON-8 — BoidFishInstanced.shader
-// URP Unlit GPU-Instanced shader для стайных рыб.
+// URP Unlit GPU-Instanced shader dlya staynyh ryb.
 //
-// АРХИТЕКТУРА:
-//   • StructuredBuffer<BoidData> — позиции/скорости из Compute Shader.
-//   • SV_InstanceID — индексация в буфере (один draw call → 5000 рыб).
-//   • Vertex displacement — процедурная анимация хвоста (sin wave).
-//   • LookRotation — вращение модели по направлению скорости.
+// ARHITEKTURA:
+//   • StructuredBuffer<BoidData> — pozitsii/skorosti iz Compute Shader.
+//   • SV_InstanceID — indeksatsiya v bufere (odin draw call → 5000 ryb).
+//   • Vertex displacement — protsedurnaya animatsiya hvosta (sin wave).
+//   • LookRotation — vraschenie modeli po napravleniyu skorosti.
 //   • Zero overhead: no shadows, no fog, no lightmap, no GI.
 //
-// МОДЕЛЬ РЫБЫ (СОГЛАШЕНИЕ):
-//   • Рыба смотрит по +Z (forward).
-//   • Хвост по -Z, голова по +Z.
-//   • X = horizontal axis (влево-вправо).
-//   • Y = vertical axis (вверх-вниз).
-//   • Pivot (origin) — в районе центра тела или головы.
-//   • Хвостовые вершины имеют ОТРИЦАТЕЛЬНЫЙ Z (local).
+// MODEL RYBY (SOGLAShENIE):
+//   • Ryba smotrit po +Z (forward).
+//   • Hvost po -Z, golova po +Z.
+//   • X = horizontal axis (vlevo-vpravo).
+//   • Y = vertical axis (vverh-vniz).
+//   • Pivot (origin) — v rayone tsentra tela ili golovy.
+//   • Hvostovye vershiny imeyut OTRITsATELNYY Z (local).
 //
-// TAIL WAG (процедурная анимация):
+// TAIL WAG (protsedurnaya animatsiya):
 //   displacement = cheapWave(time × freq + instanceID × phaseOffset)
 //                  x amplitude x cheap tail polynomial
 //   
-//   localZ < 0 = хвост → максимальное смещение
-//   localZ ≈ 0 = центр → минимальное
-//   localZ > 0 = голова → нулевое (clamped)
+//   localZ < 0 = hvost → maksimalnoe smeschenie
+//   localZ ≈ 0 = tsentr → minimalnoe
+//   localZ > 0 = golova → nulevoe (clamped)
 //
-//   Displacement применяется к LOCAL X (горизонтальное виляние).
-//   Это создаёт естественное S-образное движение тела рыбы.
+//   Displacement primenyaetsya k LOCAL X (gorizontalnoe vilyanie).
+//   Eto sozdaet estestvennoe S-obraznoe dvizhenie tela ryby.
 //
-// PERFORMANCE на MX350:
+// PERFORMANCE na MX350:
 //   2000 fish × 200 tris = 400K tris, 1 draw call.
 //   Vertex shader: ~10 ALU ops per vertex (sin + matrix + scale).
 //   Fragment shader: ~3 ALU ops (texture sample + tint).
@@ -64,7 +64,17 @@ Shader "Hecton8/BoidFishInstanced"
         _VatPositionScale ("VAT Position Scale", Float) = 1
         _VatNormalBlend ("VAT Normal Blend", Range(0, 1)) = 1
         _VatSpeedReference ("VAT Speed Reference", Float) = 6
+        _Phase ("VAT Phase", Range(0, 1)) = 0
         _FinStretchStrength ("Fin Stretch Strength", Range(0, 0.35)) = 0.16
+
+        [Header(Hit Reaction)]
+        _HitFlashStartTime ("Hit Flash Start Time", Float) = -1000
+        _HitFlashDuration ("Hit Flash Duration", Float) = 0.1
+        _HitFlashIntensity ("Hit Flash Intensity", Range(0, 1)) = 0
+        _HitFlashRadius ("Hit Flash Radius", Float) = 0
+        _HitFlashBloat ("Hit Flash Bloat", Range(0, 0.12)) = 0.035
+        _HitFlashOriginWS ("Hit Flash Origin WS", Vector) = (0, 0, 0, 0)
+        _HitFlashColor ("Hit Flash Color", Color) = (1, 0.08, 0.04, 1)
         
         [Header(Color Variation)]
         _ColorVariance ("Color Hue Variance", Float) = 0.05
@@ -97,9 +107,9 @@ Shader "Hecton8/BoidFishInstanced"
             "UniversalMaterialType" = "Unlit"
         }
 
-        // ── Один pass, без теней, без depth prepass ──
-        // ShadowCaster и DepthOnly passes НАМЕРЕННО ОТСУТСТВУЮТ.
-        // 5000 рыб × shadow pass = убийство для MX350.
+        // ── Odin pass, bez teney, bez depth prepass ──
+        // ShadowCaster i DepthOnly passes NAMERENNO OTSUTSTVUYuT.
+        // 5000 ryb × shadow pass = ubiystvo dlya MX350.
 
         Pass
         {
@@ -115,7 +125,7 @@ Shader "Hecton8/BoidFishInstanced"
             #pragma vertex vert
             #pragma fragment frag
 
-            // ── Минимальные фичи ──
+            // ── Minimalnye fichi ──
             #pragma target 4.5  // Required for StructuredBuffer
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
@@ -167,7 +177,16 @@ Shader "Hecton8/BoidFishInstanced"
                 float  _VatPositionScale;
                 float  _VatNormalBlend;
                 float  _VatSpeedReference;
+                float  _Phase;
                 float  _FinStretchStrength;
+
+                float  _HitFlashStartTime;
+                float  _HitFlashDuration;
+                float  _HitFlashIntensity;
+                float  _HitFlashRadius;
+                float  _HitFlashBloat;
+                float4 _HitFlashOriginWS;
+                float4 _HitFlashColor;
                 
                 // Color variation
                 float  _ColorVariance;
@@ -203,12 +222,6 @@ Shader "Hecton8/BoidFishInstanced"
             SAMPLER(sampler_VatPositionTex);
             TEXTURE2D(_VatNormalTex);
             SAMPLER(sampler_VatNormalTex);
-            TEXTURE2D(_HectonCausticsTextureA);
-            SAMPLER(sampler_HectonCausticsTextureA);
-            TEXTURE2D(_BlueNoiseTex);
-            SAMPLER(sampler_BlueNoiseTex);
-            float4 _HectonCausticsTextureParams;
-            float4 _BlueNoiseTex_TexelSize;
 
             #define BOID_FLAG_CONSUMED 8u
             #define BOID_FLAG_MUTATION_AGGRESSIVE 16u
@@ -239,6 +252,7 @@ Shader "Hecton8/BoidFishInstanced"
                 float  colorBlend : TEXCOORD2;   // belly/back blend factor
                 float  instanceRand : TEXCOORD3; // per-instance random [0..1]
                 float  aggressiveMask : TEXCOORD4;
+                float  hitFlash : TEXCOORD5;
             };
 
             // ══════════════════════════════════════════════════════
@@ -341,12 +355,6 @@ Shader "Hecton8/BoidFishInstanced"
 
             float ResolveBiolumSpotNoise(float2 uv)
             {
-                if (_HectonCausticsTextureParams.x > 0.5)
-                {
-                    float2 tiledUv = frac(uv);
-                    return SAMPLE_TEXTURE2D(_HectonCausticsTextureA, sampler_HectonCausticsTextureA, tiledUv).r;
-                }
-
                 return HashTile2(uv);
             }
 
@@ -356,17 +364,9 @@ Shader "Hecton8/BoidFishInstanced"
                 return HashToUnit01(hash);
             }
 
-            float ResolveBlueNoiseDither(float4 positionCS)
+            float ResolveIgnDither(float4 positionCS)
             {
                 uint2 pixelCoord = (uint2)positionCS.xy;
-                if (_BlueNoiseTex_TexelSize.z > 0.0001 && _BlueNoiseTex_TexelSize.w > 0.0001)
-                {
-                    float2 pixel = (float2)pixelCoord;
-                    float2 temporalOffset = frac(_Time.y * float2(0.75487766, 0.56984029));
-                    float2 blueNoiseUv = frac(pixel * _BlueNoiseTex_TexelSize.xy + temporalOffset);
-                    return SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUv).r;
-                }
-
                 return ResolveInterleavedDither(pixelCoord);
             }
 
@@ -387,6 +387,17 @@ Shader "Hecton8/BoidFishInstanced"
                 float3 encodedNormal = SAMPLE_TEXTURE2D_LOD(_VatNormalTex, sampler_VatNormalTex, uv, 0).xyz * 2.0 - 1.0;
                 float encodedLengthSq = dot(encodedNormal, encodedNormal);
                 return lerp(fallbackNormalOS, encodedNormal, normalBlend * step(0.0001, encodedLengthSq));
+            }
+
+            float ResolveHitFlash01(float3 boidPositionWS)
+            {
+                float duration = max(_HitFlashDuration, 0.0001);
+                float time01 = saturate(1.0 - ((_Time.y - _HitFlashStartTime) * rcp(duration)));
+                float flash01 = smoothstep(0.0, 1.0, time01);
+                float radiusMask = step(0.0001, _HitFlashRadius);
+                float3 toHit = boidPositionWS - _HitFlashOriginWS.xyz;
+                float radial01 = saturate(1.0 - dot(toHit, toHit) * _HitFlashOriginWS.w);
+                return saturate(_HitFlashIntensity * flash01 * lerp(1.0, radial01, radiusMask));
             }
 
             // ══════════════════════════════════════════════════════
@@ -430,6 +441,7 @@ Shader "Hecton8/BoidFishInstanced"
                 uint instanceHash = HashUInt(instanceID);
                 float instRand = HashToUnit01(instanceHash);
                 output.instanceRand = instRand;
+                output.hitFlash = 0.0;
                 float lodKeep = saturate(_LodDitherKeep01);
                 float lodVisibleMask = step(max(HashToUnit01(instanceHash ^ 0x5f356495u), 0.000001), lodKeep);
                 if (aliveMask * lodVisibleMask < 0.5)
@@ -469,7 +481,7 @@ Shader "Hecton8/BoidFishInstanced"
                     float invFrameCount = rcp(safeFrameCount);
                     float vertexU = (vertexID + 0.5) * rcp(max(_VatVertexCount, 1.0));
                     float vatMotionSpeed = max(_VatPlaybackSpeed, 0.0) * vatSpeed01 * aggressiveSpeedScale;
-                    float vatPhase = frac((_Time.y * vatMotionSpeed) + (float(instanceID) * max(_VatInstancePhaseScale, 0.0)) + aupPhase * 0.15915494);
+                    float vatPhase = frac(_Phase + (_Time.y * vatMotionSpeed) + (float(instanceID) * max(_VatInstancePhaseScale, 0.0)) + aupPhase * 0.15915494);
                     float vatFrame = vatPhase * safeFrameCount;
                     float vatFrameFloor = floor(vatFrame);
                     float vatFrameCeil = vatFrameFloor + 1.0;
@@ -525,6 +537,8 @@ Shader "Hecton8/BoidFishInstanced"
                 float finMask = saturate(input.color.r) * geometricFinMask;
                 float finStretch = ((HashToUnit01(instanceHash ^ 0x6c8e9cf5u) - 0.5) * 2.0) * _FinStretchStrength * finMask;
                 localPos += localNormal * finStretch;
+                float hitFlash01 = ResolveHitFlash01(boidPos);
+                localPos += localNormal * (_HitFlashBloat * hitFlash01);
 
                 // ══════════════════════════════════════════════════
                 //  4. SCALE
@@ -554,6 +568,7 @@ Shader "Hecton8/BoidFishInstanced"
                 output.normalWS   = worldNrm;
                 output.uv         = TRANSFORM_TEX(input.uv, _BaseMap);
                 output.aggressiveMask = aggressiveMask;
+                output.hitFlash = hitFlash01;
 
                 // Belly blend: vertices below local Y center → belly color
                 output.colorBlend = saturate(-input.positionOS.y - _BellyBlend);
@@ -596,6 +611,7 @@ Shader "Hecton8/BoidFishInstanced"
 
                 // ── Final ──
                 half3 color = finalColor * texColor.rgb * lighting;
+                color = lerp(color, _HitFlashColor.rgb, saturate((half)input.hitFlash));
 
                 // ── Depth-based fade (underwater atmosphere) ──
                 // Fish far from camera get slightly bluer (scatter simulation)
@@ -641,7 +657,7 @@ Shader "Hecton8/BoidFishInstanced"
                 half lodKeep = saturate((half)_LodDitherKeep01);
                 if (lodKeep < 0.999h)
                 {
-                    half lodDither = (half)ResolveBlueNoiseDither(input.positionCS);
+                    half lodDither = (half)ResolveIgnDither(input.positionCS);
                     half lodNoiseAmp = lodKeep * (1.0h - lodKeep);
                     color *= saturate(lodKeep + (lodDither - 0.5h) * lodNoiseAmp);
                 }

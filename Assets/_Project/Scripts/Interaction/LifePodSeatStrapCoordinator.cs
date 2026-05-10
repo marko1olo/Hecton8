@@ -145,6 +145,7 @@ namespace Hecton8.Interaction
         private void OnDisable()
         {
             ReleaseSeatLock();
+            InvalidatePlayerCache();
             TryUnregisterFixedTick();
         }
 
@@ -208,6 +209,7 @@ namespace Hecton8.Interaction
             _rightLatched = false;
             _leftIkAnchor = null;
             _rightIkAnchor = null;
+            InvalidatePlayerCache();
         }
 
         /// <summary>
@@ -313,6 +315,12 @@ namespace Hecton8.Interaction
             _playerMotor = motor;
             _playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             return _playerMovement != null;
+        }
+
+        private void InvalidatePlayerCache()
+        {
+            _playerMotor = null;
+            _playerMovement = null;
         }
 
         private bool TryResolveCurrentPlayerAup(out AbsoluteUniversePosition currentAup, out Vector3 runtimePosition)

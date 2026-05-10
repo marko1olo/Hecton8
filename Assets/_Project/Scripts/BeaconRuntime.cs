@@ -1,5 +1,6 @@
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -21,8 +22,10 @@ namespace Hecton8.Gameplay
         }
 
         private GameObject _sourcePrefab;
+        private Transform _cachedTransform;
         private Light _light;
         private Material _ownedFallbackMaterial;
+        private AbsoluteUniversePosition _cachedAup;
         private float _baseIntensity;
         private float _flickerTime;
         private bool _registeredToTickManager;
@@ -32,16 +35,21 @@ namespace Hecton8.Gameplay
         public string Label { get; private set; }
         public Color BeaconColor { get; private set; }
         public float LightRange { get; private set; }
+        public AbsoluteUniversePosition PositionAup => _cachedAup;
+        public Vector3 RuntimePosition => ResolveRuntimePosition();
 
         private void Awake()
         {
+            CacheTransform();
             TryGetComponent(out _light);
             if (_light != null)
                 _baseIntensity = _light.intensity <= 0f ? 1.6f : _light.intensity;
+            RefreshCachedAup();
         }
 
         private void OnEnable()
         {
+            CacheTransform();
             RegisterToTickManager();
         }
 
@@ -63,6 +71,7 @@ namespace Hecton8.Gameplay
             LightRange = Mathf.Max(0.5f, range);
             _sourcePrefab = _isFallbackRuntime ? null : sourcePrefab;
             _flickerTime = 0f;
+            RefreshCachedAup();
             if (_light == null)
                 TryGetComponent(out _light);
             if (_light != null)
@@ -71,6 +80,23 @@ namespace Hecton8.Gameplay
                 _light.range = LightRange;
                 _baseIntensity = _light.intensity <= 0f ? 1.6f : _light.intensity;
             }
+        }
+
+        private void CacheTransform()
+        {
+            if (_cachedTransform == null)
+                _cachedTransform = transform;
+        }
+
+        private Vector3 ResolveRuntimePosition()
+        {
+            CacheTransform();
+            return _cachedTransform.position;
+        }
+
+        private void RefreshCachedAup()
+        {
+            _cachedAup = AbsoluteUniversePosition.FromRuntimePosition(ResolveRuntimePosition());
         }
 
         public void Tick(float deltaTime)
@@ -206,22 +232,22 @@ namespace Hecton8.Gameplay
         private static readonly string[] _cachedUpperStrings = new string[16]; // COLD ALLOC: string[16] — upper-case label cache slots — owner: BeaconRuntime
 
         /// <summary>
-        /// Кэшированный ToUpperInvariant для избежания повторных аллокаций строк.
-        /// Хранит до 16 последних преобразований для повторного использования.
+        /// Keshirovannyy ToUpperInvariant dlya izbezhaniya povtornyh allokatsiy strok.
+        /// Hranit do 16 poslednih preobrazovaniy dlya povtornogo ispolzovaniya.
         /// </summary>
         private static string CachedToUpperInvariant(string input)
         {
             if (string.IsNullOrEmpty(input))
                 return input;
 
-            // Простой hash для кэширования (не криптографический)
-            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
+            // Prostoy hash dlya keshirovaniya (ne kriptograficheskiy)
+            int hash = input.GetHashCode() & 0xF; // Maska dlya indeksa 0-15
 
             string cached = _cachedUpperStrings[hash];
             if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
                 return cached;
 
-            // Создаем новую строку и кэшируем
+            // Sozdaem novuyu stroku i keshiruem
             string upper = input.ToUpperInvariant();
             _cachedUpperStrings[hash] = upper;
             return upper;

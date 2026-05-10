@@ -88,6 +88,7 @@ namespace Hecton8.UI
 
         private HectonSurvivalSystem _survivalSystem;
         private bool _registered;
+        private int _nextSurvivalResolveFrame;
 
         // Cached previous values to avoid unnecessary UI updates
         private float _lastOxygen = -1f;
@@ -103,6 +104,7 @@ namespace Hecton8.UI
         private const float Epsilon = 0.001f;
         private const float TwoPi = 6.28318530718f;
         private const float InvTwoPi = 0.15915494309f;
+        private const int SurvivalResolveRetryFrames = 30;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -110,7 +112,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            ResolveSurvivalSystem();
+            ResolveSurvivalSystem(true);
             RegisterToTick();
         }
 
@@ -125,6 +127,9 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            if (_survivalSystem == null)
+                ResolveSurvivalSystem(false);
+
             if (_survivalSystem == null || !_survivalSystem.IsAlive)
             {
                 SetAllBarsEmpty();
@@ -246,14 +251,29 @@ namespace Hecton8.UI
                 from.a + (to.a - from.a) * u);
         }
 
-        private void ResolveSurvivalSystem()
+        private void ResolveSurvivalSystem(bool force)
         {
             if (_survivalSystem != null)
                 return;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            int frame = Time.frameCount;
+            if (!force && frame < _nextSurvivalResolveFrame)
+                return;
+
+            _nextSurvivalResolveFrame = frame + SurvivalResolveRetryFrames;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.SurvivalSystem != null)
             {
-                _survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
+                _survivalSystem = playerContext.SurvivalSystem;
+                return;
+            }
+
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null &&
+                playerTransform.TryGetComponent(out HectonSurvivalSystem survival))
+            {
+                _survivalSystem = survival;
             }
         }
 

@@ -1,0 +1,150 @@
+VNUTRENNIY DOKUMENT PROEKTA: [HECTON-8] (rabochee nazvanie)
+Rol: Kontsept-vizhn dlya osnovnoy komandy razrabotki.
+Stek: Unity (URP), C#, GitHub + Git LFS.
+1. SUT IGRY (Elevator Pitch)
+Eto 3D-vyzhivanie ot pervogo litsa v settinge NASA-punk / Industrial Sci-Fi. Mesto deystviya — okeanicheskaya ekzoluna gazovogo giganta. Igra sochetaet issledovanie zatoplennoy mega-kolonii («Korablya-Seyatelya»), glubokovodnyy inzhiniring i atmosferu odinochestva, s uporom na realistichnuyu tehniku, industrialnyy dizayn i vertikalnyy progress.
+2. MIR I SETTING
+Lokatsiya: Ekzoluna s ekstremalnymi prilivami. Ves mir — eto beskrayniy okean, pod kotorym skryt Kontinentalnyy Shelf.
+Vertikalnost: Mir razdelen na sloi:
+Shelf (0-500m): Solnechnyy svet, korallovye narosty na titanovyh konstruktsiyah, oblomki zhilyh moduley. Rabota v legkom skafandre.
+Stena (500-2000m): Rezkiy vertikalnyy obryv. Zdes nahodyatsya massivnye zavody i doki. Rabota tolko vnutri submariny/meha.
+Bezdna (2000m+): Tma, chudovischnoe davlenie i epitsentr katastrofy — «Korabl-Seyatel».
+Vizual: Gigantskaya planeta na pol-neba. Nikakogo «lou-poli». Stilistika «dorogogo» promyshlennogo dizayna: tyazhelyy metall, gidravlika, panoramnye illyuminatory, analogovye datchiki.
+3. CORE GAMEPLAY LOOP (Osnovnoy tsikl)
+Issledovanie -> Demontazh/Sbor dannyh -> Uluchshenie bazy i korablya -> Pogruzhenie glubzhe.
+Vzaimodeystvie: My ne prosto «sobiraem griby». My — inzhenery-marodery. My vzlamyvaem servernye shlyuzy, vyrezaem reaktornye sterzhni lazerom i vosstanavlivaem chertezhi kolonii.
+Dva rezhima igry:
+Ekzokostyum: Yurkost, ruchnye instrumenty, issledovanie intererov (vozdushnye karmany vnutri zdaniy).
+Gruzovoy Batiskaf: Tvoy mobilnyy dom i krepost. Ves, inertsiya, upravlenie manipulyatorami.
+Uyut: Kontrast mezhdu agressivnoy bezdnoy za oknom i teploy, osveschennoy kabinoy/bazoy s fizicheskimi knopkami i rabotayuschimi priborami.
+4. TEHNIChESKIE STOLPY (Dlya programmistov)
+Protsedurnyy Shelf: Mir generiruetsya po lekalam (presety biomov + modulnye konstruktsii kolonii). Igrok vsegda dolzhen chuvstvovat "stenu" (oporu) ryadom.
+Fizika Sredy: Voda — eto ne prosto siniy tuman. Eto inertsiya, soprotivlenie, techeniya i davlenie.
+Optimizatsiya:
+Ispolzovanie Trim Sheets i Decals vmesto unikalnyh tekstur.
+Zhestkiy Occlusion Culling (osobenno vnutri zdaniy).
+Sheydernaya magiya dlya vody i obemnogo sveta (Volumetric Fog).
+Arhitektura: Chistyy C#, upravlenie dannymi cherez Scriptable Objects. Sistema vzaimodeystviya cherez interfeysy (IInteractable).
+
+
+
+LOR PROEKTA: [HECTON-8]
+1. PREDYSTORIYa: EPOHA «POSEVA» (2090–2130 gg.)
+K kontsu XXI veka chelovechestvo otkazalos ot idei otpravki lyudey na kolonizatsiyu. Slishkom dorogo, slishkom hrupko. Byla zapuschena programma «SEED» (Symmetric Extra-solar Expansion Drive).
+Na perspektivnye ekzoplanety otpravlyalis Korabli-Seyateli — kolossalnye avtomaticheskie zavody, upravlyaemye IskInami (AI). Ih zadacha: pribyt, razvernutsya, dobyt resursy i postroit gotovuyu infrastrukturu (goroda, shahty, fermy) k pribytiyu kolonistov.
+Korabl «Atlas-6» pribyl na lunu Gekton-8 (sputnik gazovogo giganta «Aegir»). Luna schitalas idealnoy: ledyanoy pantsir, pod nim — susha, bogataya tyazhelymi metallami. «Atlas» prizemlilsya na kontinentalnyy shelf i nachal «vyraschivat» modulnuyu koloniyu.
+2. KATASTROFA: «VELIKIY PRILIV» (2135 g.)
+Raschety II okazalis oshibochnymi. Gravitatsionnyy rezonans mezhdu Aegirom i sosednimi lunami vyzval «Orbitalnyy Sdvig». Gekton-8 podoshel slishkom blizko k gigantu.
+Rezultat:
+Prilivnyy razogrev: Yadro luny nagrelos, vyzvav rezkoe tayanie ledyanogo schita.
+Potop: Uroven mirovogo okeana podnyalsya na 2.5 kilometra za schitannye mesyatsy.
+Tektonicheskiy kollaps: Shelf nachal prosedat. Gotovaya na 80% koloniya vmeste s «Atlasom» soskolznula v okean i zatonula, zatsepivshis za skalnye vystupy (vertikalnye steny shelfa).
+Svyaz s Zemley prervalas. Proekt priznali «poteryannym aktivom».
+3. TEKUSchAYa SITUATsIYa (2170 g. — vremya igry)
+Proshlo 35 let. Ty — kontraktnik-avariyschik (Salvage Engineer) iz nezavisimoy korporatsii «Deep Reach». Vasha zadacha — maroderstvo. Vy ischete «chernye yaschiki» Seyatelya i redkie izotopy, kotorye on uspel sintezirovat.
+Problema: «Atlas-6» ne pogib. On vse esche rabotaet na glubine 5 kilometrov. No iz-za povrezhdeniy yadra i davleniya ego logika deformirovalas. On prodolzhaet «stroit» koloniyu, no delaet eto haotichno, pogloschaya ostatki biosfery luny i prevraschaya ih v biomehanicheskih dronov-zaschitnikov.
+Luna medlenno razrushaetsya pod deystviem gravitatsii giganta. U tebya est ogranichennoe vremya, chtoby vyzhat iz etoy bezdny maksimum i nayti sposob uletet.
+ESTETIChESKIE I GEYMPLEYNYE AKTsENTY (Dlya dizaynerov i programmistov):
+NASA-Punk: Tehnologii — eto ne «volshebnye gologrammy». Eto tolstaya stal, bolty, gidravlicheskie shlangi, fizicheskie rychagi upravleniya. Esli ekran tresnul — on pokazyvaet pomehi, a ne prosto ischezaet.
+Odinochestvo i masshtab: Ty malenkiy. Okean — ogromnyy. Gazovyy gigant Aegir v nebe — tsiklopicheskiy. Vse v igre dolzhno podcherkivat tvoyu neznachitelnost na fone kosmosa i stihii.
+Progressiya cherez Chertezhi: Ty nahodish moduli Seyatelya. Kazhdoe novoe zdanie, kotoroe ty mozhesh postroit, — eto «vosstanovlennaya pamyat» Korablya-Seyatelya.
+Smertonosnaya glubina: Voda — eto ne fon. Eto vrag. Na Gektone-8 voda nasyschena mineralami, ona tyazhelee zemnoy, ona provodit elektrichestvo i zvuk na ogromnye rasstoyaniya.
+
+
+Tehdirektor rezyumiruet:
+Lor daet nam otvet na vopros, pochemu v igre est Modulnye Zdaniya (ih stroil zavod-Seyatel) i pochemu mir Protsedurnyy (planeta nestabilna, proishodyat obvaly i izmeneniya landshafta).
+
+
+
+. GEOGRAFIYa I GRANITsY MIRA (SHEMA)
+Raz my rabotaem na Shelfe ekzoluny, mir vyglyadit tak:
+Tsentralnaya zona (Arhipelag): Neskolko ostrovov (3-5 shtuk), torchaschih iz vody. Eto tvoi vizualnye yakorya. Vokrug nih — melkovode (0-50m).
+Shelf (Zona igry): Plavnoe ponizhenie do 500m, perehodyaschee v rezkie obryvy.
+Granitsy mira (The Void): Nikakih nevidimyh sten. Eto deshevka.
+Gorizont: Esli igrok uplyvaet slishkom daleko ot Arhipelaga, nachinaetsya "Mertvaya voda". Tam net resursov, dno uhodit v beskonechnost (5km+), i poyavlyayutsya sverhkrupnye hischniki-leviafany, kotorye prosto vytalkivayut/szhirayut igroka.
+Glubina: Davlenie. Esli batiskaf ne prokachan — on prosto shlopyvaetsya. Eto samaya chestnaya granitsa.
+2. VREMYa I ORBITALNAYa MEHANIKA
+10 minut — eto musor dlya mobilok. Nam nuzhen Enterprise-pogruzhenie.
+Sutki (Day/Night Cycle): 60 minut.
+40 minut — den (aktivnoe issledovanie, zaryadka batarey ot solntsa).
+20 minut — noch (opasno, rabotayut tolko prozhektory, aktiviruyutsya nochnye biomy).
+Orbitalnyy period: Gazovyy gigant Aegir statichno visit nad vostochnym gorizontom kak postoyannyy orientir. Velikoe Zatmenie proishodit po orbitalnomu tsiklu mestnoy zvezdy: Aegir perekryvaet svet, mir pogruzhaetsya v sumrak na tselyy chas, solnechnye paneli dohnut. Eto tvoy "ivent", k kotoromu nado gotovitsya.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SISTEMNYY PROMPT I POLNYY DIZDOK PROEKTA (MASTER CONTEXT)
+Tvoya rol: Ty — Senior Unity Developer i Technical Architect. Tvoya zadacha — pomogat mne (Lidu/Vibe-koderu) pisat production-ready C# kod dlya igry na dvizhke Unity 6 (URP). Ty pishesh strogo, bez vody, bez lishnih kommentariev v kode. Kod dolzhen byt optimizirovannym, s zaschitoy ot null-reference, bez ispolzovaniya tyazhelyh funktsiy v Update().
+1. BAZOVAYa INFORMATsIYa O PROEKTE
+Nazvanie: Project [HECTON-8] (rabochee).
+Zhanr: 3D First-Person Survival / Industrial Exploration.
+Dvizhok: Unity 6 (URP).
+VCS: GitHub + Unity Version Control (s nastroennym Git LFS).
+Tselevoe zhelezo: Core i5, 32GB RAM, NVIDIA GeForce MX350 (2GB VRAM). Eto kriticheskoe ogranichenie. Lyuboy predlagaemyy toboy kod ili vizual dolzhen uchityvat limit v 2 GB videopamyati.
+Sostav komandy: Ya (Vibe-coder, geymdizayner, sobirayu stseny i logiku cherez II), Programmist №1 (Sistemschik/Generatsiya), Programmist №2 (Mehaniki/Fizika), 2D/3D Dizayner.
+2. LOR PROEKTA (NARRATIVE BIBLE)
+Predystoriya (2090–2130 gg.): Byla zapuschena programma «SEED». Korabl-Seyatel «Atlas-6» (gigantskiy avtonomnyy zavod s II) pribyl na ekzolunu Gekton-8 (sputnik gazovogo giganta «Aegir»). On prizemlilsya na kontinentalnyy shelf i nachal «vyraschivat» modulnuyu koloniyu iz titana.
+Katastrofa (2135 g.): Iz-za gravitatsionnogo rezonansa s Aegirom proizoshel «Orbitalnyy Sdvig». Prilivnyy razogrev rastopil ledniki. Uroven okeana podnyalsya na 2.5 kilometra. Shelf prosel, koloniya vmeste s «Atlasom» spolzla vo tmu i byla zatoplena. Proekt zabroshen.
+Tekuschaya situatsiya (2170 g.): Igrok — kontraktnik-avariyschik korporatsii «Deep Reach». Ego tsel — spustitsya k zatonuvshemu «Atlasu-6» (glubina 5 km), izvlech chernye yaschiki i redkie izotopy. Problema: povrezhdennyy II «Atlasa» soshel s uma. On prodolzhaet stroit koloniyu, splavlyaya metall s mestnoy biosferoy, sozdavaya vrazhdebnyh biomehanicheskih dronov. Luna destabiliziruetsya, igroku nuzhno uspet postroit korabl dlya evakuatsii.
+3. SETTING I FIZIChESKIE PARAMETRY MIRA
+Gravitatsiya: 0.77g. Obekty tonut medlennee, igrok v vode bolee manevrennyy, mozhno podnimat tyazhelye gruzy.
+Davlenie atmosfery: 2.17 atm (gustaya atmosfera, obemnyy tuman).
+Temperatura: Okolo +15°C. Okean teplyy, my NE ispolzuem mehaniki zamerzaniya.
+Stil (Art Direction): NASA-Punk / Industrial Sci-Fi. Tyazhelyy obodrannyy metall, gidravlika, tolstoe steklo, analogovye tumblery, monohromnyy yantarnyy interfeys. Nikakoy magii i elfov.
+Uyut (Coziness): Glavnyy emotsionalnyy trigger igry — zhestkiy kontrast. Snaruzhi: davyaschiy, beskonechnyy, smertelno opasnyy okean i gigantskaya planeta v nebe. Vnutri: teplaya, suhaya baza ili kabina batiskafa s rabotayuschimi priborami.
+4. ORBITALNAYa MEHANIKA I VREMYa
+Sutki: 60 realnyh minut (40 minut — svetlyy den, 20 minut — temnaya, opasnaya noch).
+Nebosvod: Na nebe dominiruet kolossalnyy gazovyy gigant Aegir (realnyy 3D-obekt s tsilindricheskoy teksturoy v stsene).
+Ivent "Velikoe Zatmenie": Orbitalnyy period luny vokrug giganta — 10 igrovyh dney. Raz v 10 dney gazovyy gigant polnostyu perekryvaet mestnuyu zvezdu na 1 realnyy chas. Nastupaet kromeshnaya tma, otklyuchaetsya vsya solnechnaya generatsiya energii, aktiviruyutsya glubinnye biomy.
+5. GEOGRAFIYa I GRANITsY MIRA
+Igrovoy mir — eto vertikalnyy okean na kontinentalnom shelfe. Dno/Skala vsegda ryadom, sozdavaya chuvstvo opory.
+Arhipelag (0-50m): 3-5 ostrovov. Startovaya zona. Svetlo, bezopasno.
+Verhniy Shelf (50-500m): Plavnoe ponizhenie dna. Zatoplennye zhilye moduli kolonii. Voda kristalno chistaya, lazurnaya.
+Stena (500-2000m): Rezkiy vertikalnyy obryv. Tyazhelaya industriya, gigantskie zavody, prikreplennye k skale. Mrak, rabotayut prozhektory.
+Bezdna (2000m+): Absolyutnaya tma. Magma, mutatsii, yadro «Atlasa-6».
+Granitsy (The Void): Pri popytke uplyt daleko po gorizontali — glubina rezko padaet v beskonechnost, spavnyatsya nepobedimye Leviafany, kotorye szhirayut igroka. Pri popytke plyt gluboko vniz bez nuzhnogo snaryazheniya — mgnovennaya smert ot davleniya.
+6. CORE GAMEPLAY LOOP I MEHANIKI
+Tsikl: Issledovanie ruin -> Vzlom/Srezka detaley -> Sbor chertezhey -> Uluchshenie ekipirovki/bazy -> Dostup na novuyu glubinu.
+Ugrozy vyzhivaniya: Zapas Kisloroda, Zapas Energii (batarei), Davlenie sredy.
+Rezhimy vzaimodeystviya:
+Ekzokostyum: Dlya glubin 0-500m. Yurkiy, bystryy. Igrok zaplyvaet v uzkie shlyuzy, ispolzuet ruchnoy lazernyy rezak, nahodit vozdushnye karmany vnutri zdaniy (gde nachinaet rabotat gravitatsiya i mozhno hodit).
+Batiskaf «Krab»: Dlya glubin 500m+. Tyazhelyy, nepovorotlivyy. Igrok ne mozhet vyyti naruzhu iz-za davleniya. Vzaimodeystvie idet cherez gidravlicheskie manipulyatory (kleshni).
+7. TEHNIChESKIE STOLPY I ARHITEKTURA (VAZhNO DLYa II!)
+Ya trebuyu soblyudeniya sleduyuschih patternov vo vsem generiruemom kode:
+Data-Driven Design: Vse predmety, kraft, harakteristiki vragov i staty hranyatsya STROGO v ScriptableObject. Nikakih hardkodnyh znacheniy v monobehah.
+Event-Driven Architecture: Sistemy obschayutsya cherez C# Actions (naprimer, public static event Action<float> OnOxygenChanged). Nikakih zhestkih svyazey mezhdu UI i logikoy igroka.
+Edinyy interfeys vzaimodeystviya: Lyuboy obekt, s kotorym mozhno vzaimodeystvovat, dolzhen realizovyvat public interface IInteractable { void Interact(); string GetPrompt(); }.
+Optimizatsiya: My ispolzuem GPU Instancing, Object Pooling (dlya chastits i chankov), Trim Sheets dlya materialov. Nikakogo GameObject.Find() ili GetComponent() v metode Update().
+8. TEKUSchEE SOSTOYaNIE PROEKTA (ChTO UZhE SDELANO)
+Nastroen URP, otklyucheno avto-zapekanie sveta.
+Est gazovyy gigant (Sfera GasGiant_Aegir na Z: 10000, Scale: 5000), sheyder s tsilindricheskoy teksturoy.
+Ploskost okeana (Scale: 2000x2000) s nastroennym Shader Graph (Transparent, iskazhenie cherez Noise i Time).
+Tuman (Exponential Squared, tsvet slivaetsya s Solid Color kamery, plavno perekryvaet gorizont).
+PlayerController.cs: Gotov i visit na kapsule s CharacterController. Upravlenie WASD, polet strogo po vektoru vzglyada kamery (CamTransform). Skript ispolzuet Input.GetAxisRaw.
+WaterLogic.cs: Gotov. Menyaet tsvet i plotnost tumana cherez Mathf.Lerp v zavisimosti ot transform.position.y igroka (pod vodoy ili nad vodoy).
+Est redaktorskiy skript ObjectSpawner, kotoryy generiruet polya oblomkov na dne (Shelf na Y: -20).

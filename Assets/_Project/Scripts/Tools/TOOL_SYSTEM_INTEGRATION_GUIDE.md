@@ -1,16 +1,16 @@
 # Tool System Integration Guide — v2.0 ENTERPRISE
 
-## Обзор
+## Obzor
 
-Tool System — это комплексная enterprise-уровень система управления инструментами с:
-- **Durability system** — износ и ремонт инструментов
-- **Upgrade system** — модули улучшения (до 3 слотов)
+Tool System — eto kompleksnaya enterprise-uroven sistema upravleniya instrumentami s:
+- **Durability system** — iznos i remont instrumentov
+- **Upgrade system** — moduli uluchsheniya (do 3 slotov)
 - **Stat modifiers** — efficiency, speed, energy consumption
-- **HUD integration** — детальная панель в HUD
-- **Save/Load** — автоматическое сохранение состояния
+- **HUD integration** — detalnaya panel v HUD
+- **Save/Load** — avtomaticheskoe sohranenie sostoyaniya
 - **Event-driven** — zero polling, reactive updates
 
-## Архитектура
+## Arhitektura
 
 ```
 ToolMetadata (ScriptableObject)
@@ -22,58 +22,58 @@ ToolDurabilitySystem (Singleton)
 ToolHUDPanel (world-space TMP / instanced marker path)
 ```
 
-## Быстрая установка
+## Bystraya ustanovka
 
-### 1. Создание ToolMetadata
+### 1. Sozdanie ToolMetadata
 
 ```
 Assets → Create → Hecton8 → Tools → Tool Metadata
 ```
 
-**Настройка:**
-- `toolID` — уникальный ID (например, "tool_laser_cutter")
+**Nastroyka:**
+- `toolID` — unikalnyy ID (naprimer, "tool_laser_cutter")
 - `tier` — Basic/Advanced/Master
 - `category` — Utility/Construction/Combat/Survival/Science
-- `maxDurability` — максимальная прочность (1000-10000)
-- `durabilityDrainRate` — износ/сек при Primary action (1-50)
-- `durabilityDrainRateSecondary` — износ/сек при Secondary action (0.5-25)
-- `criticalDurabilityThreshold` — критический уровень в % (10-30)
-- `efficiency` — базовая эффективность (0.5-2.0)
-- `speed` — базовая скорость (0.5-2.0)
-- `energyConsumptionRate` — энергия/сек (0-10)
-- `maxUpgradeSlots` — количество слотов для улучшений (0-3)
-- `repairCostFull` — стоимость полного ремонта (1-100)
-- `repairResourceID` — ID ресурса для ремонта (например, "titanium")
+- `maxDurability` — maksimalnaya prochnost (1000-10000)
+- `durabilityDrainRate` — iznos/sek pri Primary action (1-50)
+- `durabilityDrainRateSecondary` — iznos/sek pri Secondary action (0.5-25)
+- `criticalDurabilityThreshold` — kriticheskiy uroven v % (10-30)
+- `efficiency` — bazovaya effektivnost (0.5-2.0)
+- `speed` — bazovaya skorost (0.5-2.0)
+- `energyConsumptionRate` — energiya/sek (0-10)
+- `maxUpgradeSlots` — kolichestvo slotov dlya uluchsheniy (0-3)
+- `repairCostFull` — stoimost polnogo remonta (1-100)
+- `repairResourceID` — ID resursa dlya remonta (naprimer, "titanium")
 
-### 2. Создание ToolUpgradeData (опционально)
+### 2. Sozdanie ToolUpgradeData (optsionalno)
 
 ```
 Assets → Create → Hecton8 → Tools → Tool Upgrade
 ```
 
-**Настройка:**
-- `upgradeID` — уникальный ID (например, "upgrade_efficiency_mk1")
-- `requiredTier` — минимальный tier инструмента
-- `compatibleCategories` — категории инструментов
-- `efficiencyBonus` — бонус к эффективности (+0.2 = +20%)
-- `speedBonus` — бонус к скорости (+0.1 = +10%)
-- `energyConsumptionModifier` — модификатор энергопотребления (-0.2 = -20%)
-- `durabilityDrainMultiplier` — множитель износа (0.8 = -20% износа)
-- `repairCostReduction` — снижение стоимости ремонта (%)
-- `craftingCost` — стоимость создания (1-50)
-- `craftingResourceID` — ID ресурса для создания
+**Nastroyka:**
+- `upgradeID` — unikalnyy ID (naprimer, "upgrade_efficiency_mk1")
+- `requiredTier` — minimalnyy tier instrumenta
+- `compatibleCategories` — kategorii instrumentov
+- `efficiencyBonus` — bonus k effektivnosti (+0.2 = +20%)
+- `speedBonus` — bonus k skorosti (+0.1 = +10%)
+- `energyConsumptionModifier` — modifikator energopotrebleniya (-0.2 = -20%)
+- `durabilityDrainMultiplier` — mnozhitel iznosa (0.8 = -20% iznosa)
+- `repairCostReduction` — snizhenie stoimosti remonta (%)
+- `craftingCost` — stoimost sozdaniya (1-50)
+- `craftingResourceID` — ID resursa dlya sozdaniya
 
-### 3. Настройка PlayerTool
+### 3. Nastroyka PlayerTool
 
-На префабе инструмента (например, LaserCutter):
+Na prefabe instrumenta (naprimer, LaserCutter):
 
 **Inspector:**
-- `_toolData` → назначить ItemData инструмента
-- `_toolMetadata` → назначить созданный ToolMetadata
-- `enableDurabilityDrain` → true (включить износ)
-- `enableEnergyConsumption` → true (включить энергопотребление)
+- `_toolData` → naznachit ItemData instrumenta
+- `_toolMetadata` → naznachit sozdannyy ToolMetadata
+- `enableDurabilityDrain` → true (vklyuchit iznos)
+- `enableEnergyConsumption` → true (vklyuchit energopotreblenie)
 
-### 4. Добавление ToolDurabilitySystem на сцену
+### 4. Dobavlenie ToolDurabilitySystem na stsenu
 
 ```
 GameObject → Create Empty → Add Component → Tool Durability System
@@ -81,65 +81,65 @@ GameObject → Create Empty → Add Component → Tool Durability System
 
 **Inspector:**
 - `enableDurabilityDrain` → true
-- `globalDurabilityMultiplier` → 1.0 (глобальный множитель износа)
-- `autoBreakOnZero` → true (автоматически ломать при durability=0)
+- `globalDurabilityMultiplier` → 1.0 (globalnyy mnozhitel iznosa)
+- `autoBreakOnZero` → true (avtomaticheski lomat pri durability=0)
 
-**Singleton:** Система автоматически регистрируется как Instance.
+**Singleton:** Sistema avtomaticheski registriruetsya kak Instance.
 
-### 5. Добавление ToolHUDPanel на HUD Camera
+### 5. Dobavlenie ToolHUDPanel na HUD Camera
 
 ```
 HUD Camera → Add Component → Tool HUD Panel
 ```
 
 **Inspector:**
-- `hudCamera` → назначить Camera компонент
-- `hudFont` → назначить TMP_FontAsset (тот же что в HectonSuitHUD)
-- `toolManager` → назначить PlayerToolManager на Player root (или оставить null для auto-resolve)
+- `hudCamera` → naznachit Camera komponent
+- `hudFont` → naznachit TMP_FontAsset (tot zhe chto v HectonSuitHUD)
+- `toolManager` → naznachit PlayerToolManager na Player root (ili ostavit null dlya auto-resolve)
 
-**Colors:** (опционально, есть дефолты)
-- `normalColor`, `warningColor`, `criticalColor` — цвета состояний
-- `durabilityGoodColor` — цвет шкалы при хорошей прочности
-- `upgradeSlotColor` — цвет слотов улучшений
+**Colors:** (optsionalno, est defolty)
+- `normalColor`, `warningColor`, `criticalColor` — tsveta sostoyaniy
+- `durabilityGoodColor` — tsvet shkaly pri horoshey prochnosti
+- `upgradeSlotColor` — tsvet slotov uluchsheniy
 
-## Использование в коде
+## Ispolzovanie v kode
 
-### PlayerTool наследники
+### PlayerTool nasledniki
 
 ```csharp
 public class MyCustomTool : PlayerTool
 {
     public override void UsePrimary(float deltaTime)
     {
-        // v2.0 ENTERPRISE: base.UsePrimary() автоматически:
-        // - Проверяет IsBroken
-        // - Применяет износ (durabilityDrainRate)
-        // - Применяет энергопотребление
-        // - Вызывает OnToolUsed event
-        // - Проверяет low durability warning
+        // v2.0 ENTERPRISE: base.UsePrimary() avtomaticheski:
+        // - Proveryaet IsBroken
+        // - Primenyaet iznos (durabilityDrainRate)
+        // - Primenyaet energopotreblenie
+        // - Vyzyvaet OnToolUsed event
+        // - Proveryaet low durability warning
         base.UsePrimary(deltaTime);
 
-        // Ваша логика инструмента
-        float efficiency = GetEfficiency(); // учитывает upgrades
-        float speed = GetSpeed();           // учитывает upgrades
+        // Vasha logika instrumenta
+        float efficiency = GetEfficiency(); // uchityvaet upgrades
+        float speed = GetSpeed();           // uchityvaet upgrades
         
-        // Применяем stat modifiers
+        // Primenyaem stat modifiers
         float damage = baseDamage * efficiency;
         float animSpeed = baseAnimSpeed * speed;
         
-        // ... остальная логика
+        // ... ostalnaya logika
     }
 
     protected override void OnToolBrokenWhileUsing()
     {
-        // Кастомная реакция на попытку использования сломанного инструмента
+        // Kastomnaya reaktsiya na popytku ispolzovaniya slomannogo instrumenta
         PlayBrokenSound();
         ShowBrokenVFX();
     }
 }
 ```
 
-### Подписка на события
+### Podpiska na sobytiya
 
 ```csharp
 // PlayerTool events
@@ -177,21 +177,21 @@ ToolDurabilitySystem.Instance.OnToolRepaired += (toolID, newDurability) =>
 };
 ```
 
-### Ремонт инструмента
+### Remont instrumenta
 
 ```csharp
-// Полный ремонт
+// Polnyy remont
 ToolDurabilitySystem.Instance.RepairToolFull(toolID, maxDurability);
 
-// Частичный ремонт
+// Chastichnyy remont
 ToolDurabilitySystem.Instance.RepairTool(toolID, repairAmount, maxDurability);
 
-// Проверка стоимости ремонта
+// Proverka stoimosti remonta
 ToolMetadata metadata = tool.Metadata;
 int cost = metadata.repairCostFull;
 string resourceID = metadata.repairResourceID;
 
-// Проверка наличия ресурсов
+// Proverka nalichiya resursov
 if (inventory.HasResource(resourceID, cost))
 {
     inventory.RemoveResource(resourceID, cost);
@@ -199,44 +199,44 @@ if (inventory.HasResource(resourceID, cost))
 }
 ```
 
-### Установка улучшений
+### Ustanovka uluchsheniy
 
 ```csharp
 ToolMetadata metadata = tool.Metadata;
 ToolUpgradeData upgrade = myUpgradeAsset;
 
-// Проверка совместимости
+// Proverka sovmestimosti
 if (!upgrade.IsCompatibleWith(metadata))
 {
     Debug.Log("Upgrade is not compatible with this tool!");
     return;
 }
 
-// Проверка свободных слотов
+// Proverka svobodnyh slotov
 if (!metadata.HasFreeUpgradeSlot())
 {
     Debug.Log("No free upgrade slots!");
     return;
 }
 
-// Установка улучшения
+// Ustanovka uluchsheniya
 if (metadata.InstallUpgrade(upgrade))
 {
     Debug.Log("Upgrade installed successfully!");
     
-    // Обновлённые статы доступны сразу
+    // Obnovlennye staty dostupny srazu
     float newEfficiency = metadata.GetTotalEfficiency();
     float newSpeed = metadata.GetTotalSpeed();
 }
 
-// Удаление улучшения
+// Udalenie uluchsheniya
 if (metadata.RemoveUpgrade(slotIndex))
 {
     Debug.Log("Upgrade removed!");
 }
 ```
 
-### Получение информации о инструменте
+### Poluchenie informatsii o instrumente
 
 ```csharp
 PlayerTool tool = toolManager.CurrentTool;
@@ -246,7 +246,7 @@ float current = tool.CurrentDurability;
 float normalized = tool.DurabilityNormalized; // 0-1
 bool broken = tool.IsBroken;
 
-// Stats (с учётом upgrades)
+// Stats (s uchetom upgrades)
 float efficiency = tool.GetEfficiency();
 float speed = tool.GetSpeed();
 float energy = tool.GetEnergyConsumption();
@@ -260,12 +260,12 @@ int upgradeSlots = metadata.maxUpgradeSlots;
 
 ## Save/Load
 
-**Автоматическое сохранение:**
-- ToolDurabilitySystem реализует ISaveable (priority 20)
-- Сохраняет durability и broken maps в SaveData
-- Загружается автоматически при LoadFromSaveData()
+**Avtomaticheskoe sohranenie:**
+- ToolDurabilitySystem realizuet ISaveable (priority 20)
+- Sohranyaet durability i broken maps v SaveData
+- Zagruzhaetsya avtomaticheski pri LoadFromSaveData()
 
-**Формат:**
+**Format:**
 ```csharp
 SaveData.toolDurabilityMap["tool_laser_cutter"] = 750.5f;
 SaveData.toolBrokenMap["tool_laser_cutter"] = false;
@@ -273,22 +273,22 @@ SaveData.toolBrokenMap["tool_laser_cutter"] = false;
 
 ## HUD Integration
 
-**ToolHUDPanel автоматически отображает:**
+**ToolHUDPanel avtomaticheski otobrazhaet:**
 - Tool name + tier badge (BASIC/ADVANCED/MASTER)
-- Durability bar с цветовой индикацией:
-  - Зелёный (good) — > 50%
-  - Жёлтый (warning) — 20-50%
-  - Красный (critical) — < 20%
-  - Красный мигающий (broken) — 0%
+- Durability bar s tsvetovoy indikatsiey:
+  - Zelenyy (good) — > 50%
+  - Zheltyy (warning) — 20-50%
+  - Krasnyy (critical) — < 20%
+  - Krasnyy migayuschiy (broken) — 0%
 - Real-time stats (efficiency, speed, energy)
-- Upgrade slots (до 3 слотов с иконками)
-- Warning overlay при critical/broken
+- Upgrade slots (do 3 slotov s ikonkami)
+- Warning overlay pri critical/broken
 
-**Layout:** нижний левый угол, 280x160px, над life support panel
+**Layout:** nizhniy levyy ugol, 280x160px, nad life support panel
 
 **Animations:**
-- Fade in/out при смене инструмента (5s)
-- Pulse effect при critical/broken (1.2s period)
+- Fade in/out pri smene instrumenta (5s)
+- Pulse effect pri critical/broken (1.2s period)
 
 ## Performance
 
@@ -301,7 +301,7 @@ SaveData.toolBrokenMap["tool_laser_cutter"] = false;
 - Memory: ~1KB (string cache)
 - CPU: ~0.15ms per frame (immediate mode rendering)
 - GC: 0 allocations per frame
-- Draw calls: +1 (только когда панель видна)
+- Draw calls: +1 (tolko kogda panel vidna)
 
 **PlayerTool:**
 - Memory: ~0.5KB per instance
@@ -310,41 +310,41 @@ SaveData.toolBrokenMap["tool_laser_cutter"] = false;
 
 ## Troubleshooting
 
-**Проблема:** Износ не работает
-- Проверьте что ToolDurabilitySystem добавлен на сцену
-- Проверьте что enableDurabilityDrain = true в PlayerTool
-- Проверьте что _toolMetadata назначен в инспекторе
-- Проверьте что toolID не пустой в ToolMetadata
+**Problema:** Iznos ne rabotaet
+- Proverte chto ToolDurabilitySystem dobavlen na stsenu
+- Proverte chto enableDurabilityDrain = true v PlayerTool
+- Proverte chto _toolMetadata naznachen v inspektore
+- Proverte chto toolID ne pustoy v ToolMetadata
 
-**Проблема:** HUD панель не появляется
-- Проверьте что ToolHUDPanel добавлен на HUD Camera
-- Проверьте что hudCamera и hudFont назначены
-- Проверьте что toolManager назначен (или auto-resolve работает)
-- Проверьте что _toolMetadata назначен на PlayerTool
+**Problema:** HUD panel ne poyavlyaetsya
+- Proverte chto ToolHUDPanel dobavlen na HUD Camera
+- Proverte chto hudCamera i hudFont naznacheny
+- Proverte chto toolManager naznachen (ili auto-resolve rabotaet)
+- Proverte chto _toolMetadata naznachen na PlayerTool
 
-**Проблема:** Upgrades не применяются
-- Проверьте что upgrade установлен через InstallUpgrade()
-- Проверьте совместимость через IsCompatibleWith()
-- Проверьте что GetTotalEfficiency/Speed/Energy вызываются в коде
+**Problema:** Upgrades ne primenyayutsya
+- Proverte chto upgrade ustanovlen cherez InstallUpgrade()
+- Proverte sovmestimost cherez IsCompatibleWith()
+- Proverte chto GetTotalEfficiency/Speed/Energy vyzyvayutsya v kode
 
-**Проблема:** Save/Load не работает
-- Проверьте что SaveManager.Instance существует
-- Проверьте что ToolDurabilitySystem.OnEnable() вызывается
-- Проверьте что SaveData.version = 2 (или выше)
+**Problema:** Save/Load ne rabotaet
+- Proverte chto SaveManager.Instance suschestvuet
+- Proverte chto ToolDurabilitySystem.OnEnable() vyzyvaetsya
+- Proverte chto SaveData.version = 2 (ili vyshe)
 
 ## Best Practices
 
-1. **Всегда назначайте ToolMetadata** на PlayerTool префабы
-2. **Используйте GetEfficiency/Speed** в наследниках для stat modifiers
-3. **Подписывайтесь на события** для reactive UI updates
-4. **Проверяйте IsBroken** перед критическими операциями
-5. **Используйте tier system** для progression (Basic → Advanced → Master)
-6. **Pre-allocate upgrade slots** в ToolMetadata (maxUpgradeSlots)
-7. **Тестируйте save/load** после изменений в SaveData
+1. **Vsegda naznachayte ToolMetadata** na PlayerTool prefaby
+2. **Ispolzuyte GetEfficiency/Speed** v naslednikah dlya stat modifiers
+3. **Podpisyvaytes na sobytiya** dlya reactive UI updates
+4. **Proveryayte IsBroken** pered kriticheskimi operatsiyami
+5. **Ispolzuyte tier system** dlya progression (Basic → Advanced → Master)
+6. **Pre-allocate upgrade slots** v ToolMetadata (maxUpgradeSlots)
+7. **Testiruyte save/load** posle izmeneniy v SaveData
 
-## Примеры использования
+## Primery ispolzovaniya
 
-### Laser Cutter с износом
+### Laser Cutter s iznosom
 
 ```csharp
 public class LaserCutter : PlayerTool
@@ -354,15 +354,15 @@ public class LaserCutter : PlayerTool
     
     public override void UsePrimary(float deltaTime)
     {
-        base.UsePrimary(deltaTime); // автоматический износ + энергопотребление
+        base.UsePrimary(deltaTime); // avtomaticheskiy iznos + energopotreblenie
         
-        if (IsBroken) return; // уже обработано в base
+        if (IsBroken) return; // uzhe obrabotano v base
         
-        // Применяем stat modifiers
+        // Primenyaem stat modifiers
         float damage = baseDamage * GetEfficiency();
         float beamSpeed = 1f * GetSpeed();
         
-        // Стреляем лазером
+        // Strelyaem lazerom
         FireLaser(damage, beamSpeed);
         
         // VFX
@@ -372,7 +372,7 @@ public class LaserCutter : PlayerTool
     
     protected override void OnToolBrokenWhileUsing()
     {
-        // Кастомная реакция
+        // Kastomnaya reaktsiya
         laserVFX.Stop();
         PlaySound(brokenSound);
         ShowMessage("Laser Cutter is broken! Repair required.");
@@ -380,7 +380,7 @@ public class LaserCutter : PlayerTool
 }
 ```
 
-### Scanner с upgrades
+### Scanner s upgrades
 
 ```csharp
 public class Scanner : PlayerTool
@@ -394,7 +394,7 @@ public class Scanner : PlayerTool
         
         if (IsBroken) return;
         
-        // Upgrades увеличивают range и speed
+        // Upgrades uvelichivayut range i speed
         float scanRange = baseScanRange * GetEfficiency();
         float scanSpeed = baseScanSpeed * GetSpeed();
         
@@ -416,4 +416,4 @@ public class Scanner : PlayerTool
 
 ## Support
 
-Для вопросов и багрепортов см. README2.md и BACKLOG.txt
+Dlya voprosov i bagreportov sm. README2.md i BACKLOG.txt

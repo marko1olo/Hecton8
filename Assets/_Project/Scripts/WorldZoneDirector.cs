@@ -868,11 +868,11 @@ namespace Hecton8.World
                 return familyLogic;
 
             if (biome.rareResourceBias >= 4)
-                return "Редкие, дорогие заходы за сильной находкой.";
+                return "Redkie, dorogie zahody za silnoy nahodkoy.";
             if (biome.commonResourceBias >= 4 || biome.loosePickupBias >= 4)
-                return "Короткие понятные круги с частой окупаемостью.";
+                return "Korotkie ponyatnye krugi s chastoy okupaemostyu.";
 
-            return "Смешанный цикл: мелкая добыча, потом более редкая ценность.";
+            return "Smeshannyy tsikl: melkaya dobycha, potom bolee redkaya tsennost.";
         }
 
         private string BuildRouteRhythm(HectonBiomeMatrixProfile biome, HectonBiomeFamilyProfile biomeFamily)
@@ -890,7 +890,7 @@ namespace Hecton8.World
             if (biomeFamily != null && biomeFamily.landmarkPlanProfile != null)
                 return biomeFamily.landmarkPlanProfile.routeUse;
 
-            return "Маршрут держится на самых читаемых формах рельефа.";
+            return "Marshrut derzhitsya na samyh chitaemyh formah relefa.";
         }
 
         private string BuildSafePocketRhythm(HectonBiomeMatrixProfile biome, HectonBiomeFamilyProfile biomeFamily)
@@ -907,7 +907,7 @@ namespace Hecton8.World
             if (biomeFamily != null && biomeFamily.landmarkPlanProfile != null)
                 return biomeFamily.landmarkPlanProfile.safePocketUse;
 
-            return "Передышка ищется в складках рельефа и за большими формами.";
+            return "Peredyshka ischetsya v skladkah relefa i za bolshimi formami.";
         }
 
         private static int BlendBias(int primary, int secondary, float blendFactor)
@@ -932,7 +932,7 @@ namespace Hecton8.World
             if (primary == secondary)
                 return primary;
 
-            return $"{primary} | Подмешивается: {secondary}";
+            return $"{primary} | Podmeshivaetsya: {secondary}";
         }
 
         private static string BuildBlendedDescriptor(string primary, string secondary, float blendFactor)

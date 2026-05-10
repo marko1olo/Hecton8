@@ -31,7 +31,6 @@ namespace Hecton8.AI
             _archetype = archetype;
             ApplyFaunaDataTemplate(archetype != null && archetype.faunaDataTemplate != null ? archetype.faunaDataTemplate : _faunaDataTemplate);
             _utilityBrain.BindProfile(_speciesProfile, _archetype, _faunaDataTemplate);
-            _runtimeRandom = CreateDeterministicRandom();
             if (archetype == null)
                 return;
 
@@ -457,6 +456,11 @@ namespace Hecton8.AI
     public struct CreatureUtilityBrain
     {
         private const float MetabolicTickIntervalSeconds = 5f;
+        private const float PredatorAcousticSightRadiusMeters = 50f;
+        private const float PredatorAcousticSightRadiusMetersSqr =
+            PredatorAcousticSightRadiusMeters * PredatorAcousticSightRadiusMeters;
+        private const float PredatorAcousticSightThreshold01 = 0.12f;
+        private const float PlayerNoiseReferenceSpeedSqr = 72.25f;
 
         private CreatureArchetypeData _archetype;
         private FaunaSpeciesProfile _speciesProfile;
@@ -610,16 +614,19 @@ namespace Hecton8.AI
             bool hasNoisePlayerAup = false;
             if (NoiseSystem.TryGetPlayerSignal(out NoiseSystem.PlayerNoiseSignal playerNoise))
             {
-                hasNoisePlayerTarget = true;
                 noisePlayerPosition = playerNoise.Position;
                 noisePlayerAup = playerNoise.PositionAup;
                 hasNoisePlayerAup = true;
-                float movement01 = math.saturate(math.max(0f, playerNoise.MovementSpeedSqr) / (8.5f * 8.5f));
+                float movement01 = math.saturate(math.max(0f, playerNoise.MovementSpeedSqr) / PlayerNoiseReferenceSpeedSqr);
                 float tool01 = math.saturate(playerNoise.ToolUseNoise01);
                 float transport01 = math.saturate(playerNoise.TransportBoost01 * math.max(1f, playerNoise.TransportSignature));
                 float flashlight01 = playerNoise.FlashlightOn ? 0.2f : 0f;
                 acousticPingStrength01 = math.saturate(math.max(movement01, math.max(tool01, transport01)) + flashlight01);
                 acousticTransmission01 = math.saturate(playerNoise.AcousticTransmission01);
+                float acousticDistanceSq = math.lengthsq((float3)(playerNoise.Position - context.SelfPosition));
+                hasNoisePlayerTarget = UsesPredatorRole &&
+                                       acousticPingStrength01 >= PredatorAcousticSightThreshold01 &&
+                                       acousticDistanceSq <= PredatorAcousticSightRadiusMetersSqr;
             }
 
             Vector3 resolvedPlayerPosition = context.HasPlayerTarget ? context.PlayerPosition : noisePlayerPosition;

@@ -7,6 +7,7 @@
 using UnityEngine;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.World;
 using System.Collections.Generic;
 
 namespace Hecton8.Biolum
@@ -67,6 +68,7 @@ namespace Hecton8.Biolum
     public abstract class HectonBiolumZone : MonoBehaviour, ITickable, IUpdatable
     {
         private const int MaxTrackedActiveZones = 512;
+        private const float AupRefreshDistanceSqr = 0.0004f;
         // COLD ALLOC: List<HectonBiolumZone>[512] - active zone registry replacing scene-wide reflection search fallback - owner: HectonBiolumZone
         private static readonly List<HectonBiolumZone> s_ActiveZones = new List<HectonBiolumZone>(MaxTrackedActiveZones);
 
@@ -93,6 +95,9 @@ namespace Hecton8.Biolum
         protected int _activeLightCount = 0;
         protected bool _isRegistered = false;
         protected int _lastUpdateFrame = -1;
+        private AbsoluteUniversePosition _cachedZoneAup;
+        private Vector3 _cachedZoneRuntimePosition;
+        private bool _cachedZoneAupValid;
 
         internal static List<HectonBiolumZone> ActiveZones => s_ActiveZones;
 
@@ -115,6 +120,7 @@ namespace Hecton8.Biolum
         protected virtual void Awake()
         {
             _cachedTransform = transform;
+            RefreshCachedAup();
             _activeLights = new Light[_maxLights]; // COLD ALLOC: Light[_maxLights] â€” pooled biolum light references â€” owner: HectonBiolumZone
             PrewarmLightPool();
         }
@@ -247,6 +253,23 @@ namespace Hecton8.Biolum
         }
 
         /// <summary>
+        /// Returns cached AUP for long-range biolum queries. Static zones pay conversion only after movement.
+        /// </summary>
+        public AbsoluteUniversePosition GetZoneAup()
+        {
+            Vector3 runtimePosition = GetZonePosition();
+            if (!_cachedZoneAupValid ||
+                (runtimePosition - _cachedZoneRuntimePosition).sqrMagnitude > AupRefreshDistanceSqr)
+            {
+                _cachedZoneRuntimePosition = runtimePosition;
+                _cachedZoneAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+                _cachedZoneAupValid = true;
+            }
+
+            return _cachedZoneAup;
+        }
+
+        /// <summary>
         /// Ensure the zone is registered into the central tick loop even if startup order was late.
         /// Safe to call multiple times: GameTickManager ignores duplicate registrations.
         /// </summary>
@@ -296,7 +319,7 @@ namespace Hecton8.Biolum
             _activeLightCount++;
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (_debugLogSpawn) Debug.Log($"[Biolum] {_zoneKey} light {_activeLightCount - 1}");
+            if (_debugLogSpawn) Debug.Log("[Biolum] light spawned", this);
             #endif
 
             return light;
@@ -335,7 +358,7 @@ namespace Hecton8.Biolum
                 }
 
                 // COLD ALLOC: pooled Light GameObject slot â€” prewarmed biolum light owner â€” owner: HectonBiolumZone
-                GameObject lightObject = new GameObject($"BiolumLight_{i}");
+                GameObject lightObject = new GameObject("BiolumLight");
                 lightObject.transform.SetParent(_cachedTransform, false);
                 lightObject.SetActive(false);
 
@@ -373,6 +396,13 @@ namespace Hecton8.Biolum
 
         protected Color GetHazardTint() => Color.Lerp(Color.white, Color.red, _hazardLevel * 0.3f);
 
+        private void RefreshCachedAup()
+        {
+            _cachedZoneRuntimePosition = GetZonePosition();
+            _cachedZoneAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedZoneRuntimePosition);
+            _cachedZoneAupValid = true;
+        }
+
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // PRIVATE HELPERS: LOD System
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -385,15 +415,16 @@ namespace Hecton8.Biolum
             if (_lodDistanceScale >= 1.0f) return false;
 
             HectonBiolumManager manager = GlobalRegistry.BiolumManager;
-            Vector3 camPos = manager != null
-                ? manager.GetCameraPosition()
-                : Vector3.zero;
+            AbsoluteUniversePosition cameraAup = manager != null
+                ? manager.GetCameraAup()
+                : AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);
+            AbsoluteUniversePosition zoneAup = GetZoneAup();
 
             float lodThreshold = 5f + (500f - 5f) * Mathf.Clamp01(_lodDistanceScale);
-            float lodThresholdSq = lodThreshold * lodThreshold;
+            double lodThresholdSq = (double)lodThreshold * lodThreshold;
 
             // Skip 2 out of 3 frames if beyond threshold
-            return (_cachedTransform.position - camPos).sqrMagnitude > lodThresholdSq && (Time.frameCount % 3) != 0;
+            return AbsoluteUniversePosition.DistanceSq(in zoneAup, in cameraAup) > lodThresholdSq && (Time.frameCount % 3) != 0;
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

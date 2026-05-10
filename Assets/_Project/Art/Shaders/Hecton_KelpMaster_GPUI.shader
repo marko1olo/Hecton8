@@ -291,13 +291,18 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 #if defined(_QUALITY_MX350)
                 swayAmplitude *= 0.72h;
                 #endif
-                float3 positionWS_Interact = GetVertexPositionInputs(positionOS).positionWS;
-                float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
-                float washRadius = max(_HectonPropWashPosition.w, 0.0001);
-                float washDistSq = dot(washDir, washDir);
-                float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
-                float3 washDirection = washDir * rsqrt(max(washDistSq, 0.0001));
-                positionOS.xyz += washDirection * (washStrength * _HectonPropWashForce * _PropWashDisplacement * heightMask);
+                half propWashAmount = _HectonPropWashForce * _PropWashDisplacement * heightMask;
+                [branch]
+                if (abs(propWashAmount) > 0.0001h && _HectonPropWashPosition.w > 0.0001h)
+                {
+                    float3 positionWS_Interact = GetVertexPositionInputs(positionOS).positionWS;
+                    float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
+                    float washRadius = _HectonPropWashPosition.w;
+                    float washDistSq = dot(washDir, washDir);
+                    float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
+                    float3 washDirection = washDir * rsqrt(max(washDistSq, 0.0001));
+                    positionOS.xyz += washDirection * (washStrength * propWashAmount);
+                }
 
                 positionOS.xz += input.normalOS.xz * (swayWave * swayAmplitude * heightMask);
 
@@ -374,16 +379,9 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 half glossNoise = lerp(1.0h, maskSample.g, _SpecularNoiseStrength);
                 half glossMask = saturate(glossNoise + wetness * 0.28h + midribMask * _MidribGlossBoost - edgeMask * (_EdgeWearDarkening * 0.22h));
                 half roughness = saturate(lerp(0.7h, 0.2h, wetness));
-                half fieldPhase = _Time.y * _BiolumPulseFrequency + samplePositionWS.x * 0.08h + samplePositionWS.z * 0.05h + input.uv.y * 3.1h;
-                half pulse = 1.0h + ((half)HectonCoreLitTrianglePulse01(fieldPhase) * 2.0h - 1.0h) * _BiolumPulseAmplitude;
-                half currentWave = (half)HectonCoreLitTrianglePulse01(_Time.y * (_BiolumPulseFrequency * 0.72h) + samplePositionWS.x * 0.04h - samplePositionWS.z * 0.06h);
-                half biolumMask = saturate((edgeMask * 0.38h + thicknessMask * 0.34h + maskSample.b * 0.32h + detailSample * 0.18h) * _BiolumMaskStrength);
-                half biolumField = lerp(1.0h, currentWave, saturate(_BiolumCurrentResponse));
                 half oceanZoneInfluence = saturate(_HectonOceanBiolumStrength);
                 half floorZoneInfluence = saturate(_HectonFloorBiolumStrength * 0.45h);
                 half zoneBiolumStrength = saturate(oceanZoneInfluence + floorZoneInfluence);
-                half3 zoneBiolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
-                zoneBiolumColor = lerp(zoneBiolumColor, _HectonFloorBiolumColor.rgb, floorZoneInfluence);
                 half3 volumeBiolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(samplePositionWS);
 
                 half3 gradient = lerp(_BaseColor.rgb, _TipColor.rgb, heightMask);
@@ -407,9 +405,26 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 half3 transmission = _TransmissionColor.rgb * (backLight * _TransmissionStrength * thicknessMask * causticMask);
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
                 half specular = FastKelpSpecularPower01(saturate(dot((half3)HectonCoreLitSafeNormalize(lightDir + viewDirWS), normalWS)), lerp(12.0h, 48.0h, 1.0h - roughness)) * (1.0h - roughness) * 0.18h * glossMask;
-                half3 biolum = zoneBiolumColor * (_BiolumStrength * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask * pulse * biolumField);
-                biolum *= HectonCoreLitResolveFlashlightPhotophobia(samplePositionWS);
-                biolum += volumeBiolum * (0.45h + thicknessMask * 0.55h);
+                half3 biolum = volumeBiolum * (0.45h + thicknessMask * 0.55h);
+                [branch]
+                if (_BiolumStrength > 0.0001h)
+                {
+                    half fieldPhase = _Time.y * _BiolumPulseFrequency + samplePositionWS.x * 0.08h + samplePositionWS.z * 0.05h + input.uv.y * 3.1h;
+                    half pulse = 1.0h + ((half)HectonCoreLitTrianglePulse01(fieldPhase) * 2.0h - 1.0h) * _BiolumPulseAmplitude;
+                    half currentWave = (half)HectonCoreLitTrianglePulse01(_Time.y * (_BiolumPulseFrequency * 0.72h) + samplePositionWS.x * 0.04h - samplePositionWS.z * 0.06h);
+                    half biolumMask = saturate((edgeMask * 0.38h + thicknessMask * 0.34h + maskSample.b * 0.32h + detailSample * 0.18h) * _BiolumMaskStrength);
+                    half biolumField = lerp(1.0h, currentWave, saturate(_BiolumCurrentResponse));
+                    half authoredBiolumEnergy = _BiolumStrength * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask * pulse * biolumField;
+                    [branch]
+                    if (authoredBiolumEnergy > 0.0001h)
+                    {
+                        half3 zoneBiolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
+                        zoneBiolumColor = lerp(zoneBiolumColor, _HectonFloorBiolumColor.rgb, floorZoneInfluence);
+                        half3 authoredBiolum = zoneBiolumColor * authoredBiolumEnergy;
+                        authoredBiolum *= HectonCoreLitResolveFlashlightPhotophobia(samplePositionWS);
+                        biolum += authoredBiolum;
+                    }
+                }
                 half fresnel = FastKelpPower01(1.0h - saturate(dot(normalWS, viewDirWS)), _FresnelPower) * _FresnelStrength;
 
                 half3 color = diffuse + transmission + rimLighting + specular + biolum + sssLighting;
@@ -541,13 +556,18 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 half swayWave = primaryWave + secondaryWave;
 
                 // Prop wash interaction.
-                float3 positionWS_Interact = TransformObjectToWorld(positionOS);
-                float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
-                float washRadius = max(_HectonPropWashPosition.w, 0.0001);
-                float washDistSq = dot(washDir, washDir);
-                float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
-                float3 washDirection = washDir * rsqrt(max(washDistSq, 0.0001));
-                positionOS.xyz += washDirection * (washStrength * _HectonPropWashForce * _PropWashDisplacement * heightMask);
+                half propWashAmount = _HectonPropWashForce * _PropWashDisplacement * heightMask;
+                [branch]
+                if (abs(propWashAmount) > 0.0001h && _HectonPropWashPosition.w > 0.0001h)
+                {
+                    float3 positionWS_Interact = TransformObjectToWorld(positionOS);
+                    float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
+                    float washRadius = _HectonPropWashPosition.w;
+                    float washDistSq = dot(washDir, washDir);
+                    float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
+                    float3 washDirection = washDir * rsqrt(max(washDistSq, 0.0001));
+                    positionOS.xyz += washDirection * (washStrength * propWashAmount);
+                }
                 positionOS.xz += input.normalOS.xz * (swayWave * _SwayAmplitude * heightMask);
 
                 float3 positionWS = TransformObjectToWorld(positionOS);
@@ -690,13 +710,18 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 half secondaryWave = FastKelpTriangleSigned(_Time.y * (_SwaySpeed * 0.43h) + swayPhase * 1.5h + positionOS.y * (_SwayFrequency * 1.7h)) * 0.3h;
                 half swayWave = primaryWave + secondaryWave;
 
-                float3 positionWS_Interact = TransformObjectToWorld(positionOS);
-                float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
-                float washRadius = max(_HectonPropWashPosition.w, 0.0001);
-                float washDistSq = dot(washDir, washDir);
-                float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
-                float3 washDirection = washDir * rsqrt(max(washDistSq, 0.0001));
-                positionOS.xyz += washDirection * (washStrength * _HectonPropWashForce * _PropWashDisplacement * heightMask);
+                half propWashAmount = _HectonPropWashForce * _PropWashDisplacement * heightMask;
+                [branch]
+                if (abs(propWashAmount) > 0.0001h && _HectonPropWashPosition.w > 0.0001h)
+                {
+                    float3 positionWS_Interact = TransformObjectToWorld(positionOS);
+                    float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
+                    float washRadius = _HectonPropWashPosition.w;
+                    float washDistSq = dot(washDir, washDir);
+                    float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
+                    float3 washDirection = washDir * rsqrt(max(washDistSq, 0.0001));
+                    positionOS.xyz += washDirection * (washStrength * propWashAmount);
+                }
                 positionOS.xz += input.normalOS.xz * (swayWave * _SwayAmplitude * heightMask);
 
                 output.positionCS = TransformObjectToHClip(positionOS);

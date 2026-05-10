@@ -19,8 +19,8 @@ It is not a claim that every pasted inference from the external summary is alrea
 
 Original sources used in this pass:
 
-- `C:\Users\danat\Documents\part1_лог юнити.txt`
-- `C:\Users\danat\Documents\part2_лог юнити.txt`
+- `C:\Users\danat\Documents\part1_log yuniti.txt`
+- `C:\Users\danat\Documents\part2_log yuniti.txt`
 
 Confirmed from those files:
 
@@ -140,7 +140,7 @@ The repo already contains prior captured `[WorldScatterProfiler]` spikes and reb
 
 ### 8. The original startup logs confirm the exact startup warning set
 
-Confirmed from `part1_лог юнити.txt`:
+Confirmed from `part1_log yuniti.txt`:
 
 - line `19`: `[CameraJuiceSystem] DepthOfField override not found in Volume profile.`
 - line `23`: runtime lore recovery warning from `HectonLoreSystemsRoot`
@@ -162,7 +162,7 @@ This means the audio snapshot problem is not hypothetical and not limited to one
 
 ### 9. The original logs confirm the exact scatter timing progression
 
-Confirmed from `part1_лог юнити.txt`:
+Confirmed from `part1_log yuniti.txt`:
 
 - line `78`: `rebuild=45840.10ms` `wait=45489.56ms` `reason=None`
 - line `487`: `GameTickManager first-slow-tick registered=39`
@@ -172,7 +172,7 @@ Confirmed from `part1_лог юнити.txt`:
 - line `1394`: `rebuild=262.91ms` `wait=258.66ms` `reason=pending-complete`
 - line `2621`: `rebuild=742.41ms` `wait=736.97ms` `reason=startup-settle`
 
-Confirmed from `part2_лог юнити.txt`:
+Confirmed from `part2_log yuniti.txt`:
 
 - line `4742`: `rebuild=510.49ms` `wait=504.88ms` `reason=cell-changed`
 
@@ -391,7 +391,7 @@ Status:
 - code change started
 - runtime confirmation still absent
 
-### 2.1. New log delta from `C:\Users\danat\Documents\новые логи.txt`
+### 2.1. New log delta from `C:\Users\danat\Documents\novye logi.txt`
 
 Confirmed from the new raw log:
 
@@ -522,7 +522,7 @@ WARNING: Regression risk in additive-scene suppression if multiple gameplay scen
 
 Fresh evidence now being acted on directly:
 
-- user-provided `C:\Users\danat\Documents\новые логи.txt` confirms the compile blocker:
+- user-provided `C:\Users\danat\Documents\novye logi.txt` confirms the compile blocker:
   - `PDADataLogTab.cs(356,33): error CS0103: The name 'GetLocalizedCategoryLabel' does not exist`
 - the same log confirms the catastrophic startup scatter path is still alive:
   - `rebuild=30037.07ms`
@@ -581,7 +581,7 @@ This is a real logic correction, not a cosmetic guard. It removes one confirmed 
 
 ## 4. New evidence: the `Starter_ReefField` temp leak may be MCP/editor-induced, not gameplay-induced
 
-New raw log context from `C:\Users\danat\Documents\part1_лог юнити.txt`:
+New raw log context from `C:\Users\danat\Documents\part1_log yuniti.txt`:
 
 - immediately before the first visible `Starter_ReefField` temp-allocation dump, the log contains an MCPForUnity editor stack:
   - `MCPForUnity.Editor.Tools.BatchExecute/<HandleCommand>d__3:MoveNext`

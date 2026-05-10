@@ -101,6 +101,7 @@ namespace Hecton8.UI
             public bool Occluded;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct WaypointSlot
         {
             public RectTransform Root;
@@ -111,9 +112,21 @@ namespace Hecton8.UI
             public Image Outline;
             public TextMeshProUGUI Label;
             public string CachedLabel;
+            public int CachedAnchoredX;
+            public int CachedAnchoredY;
+            public int CachedRotationDegrees;
+            public byte CachedAlphaByte;
             public bool CachedEdgeState;
+            public bool CachedFillEnabled;
+            public bool CachedOutlineEnabled;
+            public bool HasTransformState;
+            public bool HasAlphaState;
+            public bool HasImageState;
+            public Color CachedFillColor;
+            public Color CachedOutlineColor;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct WaypointProjectionFrame
         {
             public AbsoluteUniversePosition CameraAup;
@@ -326,7 +339,7 @@ namespace Hecton8.UI
                 else if (allowHierarchySearch && TryGetComponent(out Camera localCamera))
                     _viewCamera = localCamera;
                 else if (allowHierarchySearch &&
-                         SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                         GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                          playerTransform != null)
                 {
                     if (playerContext != null && playerContext.PlayerCamera != null)
@@ -337,7 +350,7 @@ namespace Hecton8.UI
             }
 
             if (_playerTransform == null)
-                SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
+                GameBootstrapper.TryGetCurrentPlayerTransform(out _playerTransform);
         }
 
         private bool EnsureUiBuilt(bool allowCreate)
@@ -386,7 +399,7 @@ namespace Hecton8.UI
             if (relayTarget != null && relayTarget.isActiveAndEnabled && count < _runtimeWaypoints.Length)
             {
                 RuntimeWaypoint waypoint = _runtimeWaypoints[count];
-                waypoint.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(relayTarget.transform.position);
+                waypoint.PositionAup = relayTarget.RelayAup;
                 waypoint.Label = DefaultRelayLabel;
                 waypoint.Color = RelayColor;
                 waypoint.Active = true;
@@ -495,10 +508,7 @@ namespace Hecton8.UI
                 if (slot.Root == null || slot.Group == null || slot.Fill == null || slot.Outline == null || slot.Label == null)
                     continue;
 
-                slot.Root.anchoredPosition = anchoredPosition;
-                slot.Root.localRotation = clampedToEdge
-                    ? Quaternion.Euler(0f, 0f, ResolveApproxEdgeRotationDegrees(clampDirection))
-                    : Quaternion.identity;
+                ApplySlotTransform(ref slot, anchoredPosition, clampedToEdge, clampDirection);
 
                 if (slot.CachedEdgeState != clampedToEdge)
                 {
@@ -511,13 +521,10 @@ namespace Hecton8.UI
                     ? visibility01 * OccludedAlpha
                     : visibility01 * (clampedToEdge ? EdgeAlpha : VisibleAlpha);
 
-                slot.Group.alpha = alpha;
-                slot.Fill.enabled = !useOutlineOnly;
-                slot.Outline.enabled = true;
-                slot.Fill.color = waypoint.Color;
                 Color outlineColor = waypoint.Color;
                 outlineColor.a = 0.22f;
-                slot.Outline.color = useOutlineOnly ? OccludedColor : outlineColor;
+                ApplySlotAlpha(ref slot, alpha);
+                ApplySlotImageState(ref slot, !useOutlineOnly, true, waypoint.Color, useOutlineOnly ? OccludedColor : outlineColor);
 
                 if (!string.Equals(slot.CachedLabel, waypoint.Label, StringComparison.Ordinal))
                 {
@@ -809,6 +816,11 @@ namespace Hecton8.UI
 
             if (slot.Group.alpha > HiddenAlpha)
                 slot.Group.alpha = HiddenAlpha;
+            slot.HasAlphaState = true;
+            slot.CachedAlphaByte = 0;
+            slot.HasTransformState = false;
+            slot.HasImageState = false;
+            _slots[index] = slot;
         }
 
         private void RegisterToTickManager()
@@ -938,7 +950,11 @@ namespace Hecton8.UI
                 Outline = outline,
                 Label = label,
                 CachedLabel = string.Empty,
-                CachedEdgeState = false
+                CachedEdgeState = false,
+                CachedFillEnabled = true,
+                CachedOutlineEnabled = true,
+                CachedFillColor = RelayColor,
+                CachedOutlineColor = OccludedColor
             };
         }
 
@@ -1034,6 +1050,91 @@ namespace Hecton8.UI
                     ? new Vector2(EdgeOutlineWidth, EdgeOutlineHeight)
                     : new Vector2(OutlineSize, OutlineSize);
             }
+        }
+
+        private static void ApplySlotTransform(ref WaypointSlot slot, Vector2 anchoredPosition, bool clampedToEdge, Vector2 clampDirection)
+        {
+            if (slot.Root == null)
+                return;
+
+            int pixelX = (int)math.round(anchoredPosition.x);
+            int pixelY = (int)math.round(anchoredPosition.y);
+            int rotationDegrees = clampedToEdge ? (int)ResolveApproxEdgeRotationDegrees(clampDirection) : 0;
+            if (slot.HasTransformState &&
+                slot.CachedAnchoredX == pixelX &&
+                slot.CachedAnchoredY == pixelY &&
+                slot.CachedRotationDegrees == rotationDegrees)
+            {
+                return;
+            }
+
+            slot.HasTransformState = true;
+            slot.CachedAnchoredX = pixelX;
+            slot.CachedAnchoredY = pixelY;
+            slot.CachedRotationDegrees = rotationDegrees;
+            slot.Root.anchoredPosition = new Vector2(pixelX, pixelY);
+            slot.Root.localRotation = rotationDegrees != 0
+                ? Quaternion.Euler(0f, 0f, rotationDegrees)
+                : Quaternion.identity;
+        }
+
+        private static void ApplySlotAlpha(ref WaypointSlot slot, float alpha)
+        {
+            if (slot.Group == null)
+                return;
+
+            byte alphaByte = QuantizeAlphaByte(alpha);
+            if (slot.HasAlphaState && slot.CachedAlphaByte == alphaByte)
+                return;
+
+            slot.HasAlphaState = true;
+            slot.CachedAlphaByte = alphaByte;
+            slot.Group.alpha = alphaByte * (1f / 255f);
+        }
+
+        private static void ApplySlotImageState(
+            ref WaypointSlot slot,
+            bool fillEnabled,
+            bool outlineEnabled,
+            Color fillColor,
+            Color outlineColor)
+        {
+            if (slot.Fill == null || slot.Outline == null)
+                return;
+
+            if (slot.HasImageState &&
+                slot.CachedFillEnabled == fillEnabled &&
+                slot.CachedOutlineEnabled == outlineEnabled &&
+                ColorsMatch(slot.CachedFillColor, fillColor) &&
+                ColorsMatch(slot.CachedOutlineColor, outlineColor))
+            {
+                return;
+            }
+
+            slot.HasImageState = true;
+            slot.CachedFillEnabled = fillEnabled;
+            slot.CachedOutlineEnabled = outlineEnabled;
+            slot.CachedFillColor = fillColor;
+            slot.CachedOutlineColor = outlineColor;
+            if (slot.Fill.enabled != fillEnabled)
+                slot.Fill.enabled = fillEnabled;
+            if (slot.Outline.enabled != outlineEnabled)
+                slot.Outline.enabled = outlineEnabled;
+            if (!ColorsMatch(slot.Fill.color, fillColor))
+                slot.Fill.color = fillColor;
+            if (!ColorsMatch(slot.Outline.color, outlineColor))
+                slot.Outline.color = outlineColor;
+        }
+
+        private static byte QuantizeAlphaByte(float alpha)
+        {
+            int alphaInt = (int)math.round(math.saturate(alpha) * 255f);
+            return (byte)math.clamp(alphaInt, 0, 255);
+        }
+
+        private static bool ColorsMatch(Color lhs, Color rhs)
+        {
+            return lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
         }
 
         private static float ResolveHudPlaneDistance(float3 cameraForward, Vector3 cameraPosition, RectTransform canvasRect)

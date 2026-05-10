@@ -87,22 +87,6 @@ namespace Hecton8.World
         }
     }
 
-    internal struct AcousticVoxelOcclusionResult
-    {
-        public float AccumulatedDensity;
-        public float Transmission01;
-        public float LowPassCutoffHz;
-        public int SampledVoxelCount;
-
-        public AcousticVoxelOcclusionResult(float accumulatedDensity, float transmission01, float lowPassCutoffHz, int sampledVoxelCount)
-        {
-            AccumulatedDensity = accumulatedDensity;
-            Transmission01 = transmission01;
-            LowPassCutoffHz = lowPassCutoffHz;
-            SampledVoxelCount = sampledVoxelCount;
-        }
-    }
-
     internal enum AcousticReverbPresetKind : byte
     {
         OpenWater = 0,
@@ -159,11 +143,6 @@ namespace Hecton8.World
         private const float FloraScatteringDensityThreshold = 0.08f;
         private const float FloraScatteringTransmissionFloor = 0.18f;
         private const float FloraScatteringLowPassFloorHertz = 220f;
-        private const float VoxelDensityTransmissionScale = 1.65f;
-        private const float VoxelDensityLowPassScale = 7.5f;
-        private const float VoxelDensityHeavyOcclusionThreshold01 = 0.78f;
-        private const float VoxelDensityHeavyLowPassStartHertz = 650f;
-        private const float VoxelDensityHardLowPassCutoffHertz = 300f;
 
         private static int PlayerLayer = -1;
         private static int TriggerZoneLayer = -1;
@@ -457,33 +436,6 @@ namespace Hecton8.World
             return true;
         }
 
-        public static bool TryTraceVoxelDensityOcclusion(
-            Vector3 sourcePosition,
-            Vector3 listenerPosition,
-            out AcousticVoxelOcclusionResult result)
-        {
-            result = new AcousticVoxelOcclusionResult(0f, 1f, OpenLowPassCutoffHertz, 0);
-
-            if (HectonCaveVoxelLightingVolume.ActiveRuntimeInstance == null)
-                return false;
-
-            float distanceMeters = ResolveAupDistanceMeters(sourcePosition, listenerPosition);
-            if (distanceMeters <= MinimumPathDistanceMeters)
-                return false;
-
-            float normalizedDensity = ResolveDistanceShadow01(distanceMeters);
-            float transmission01 = math.clamp(
-                FastTransmissionDecay(normalizedDensity * VoxelDensityTransmissionScale),
-                0.02f,
-                1f);
-            result = new AcousticVoxelOcclusionResult(
-                normalizedDensity,
-                transmission01,
-                ResolveVoxelDensityLowPassCutoff(normalizedDensity),
-                normalizedDensity > 0.01f ? 1 : 0);
-            return normalizedDensity > 0.01f;
-        }
-
         private static Vector3 NormalizeForwardDirection(Vector3 direction, float lengthSq)
         {
             float invLength = math.rsqrt(math.max(lengthSq, MinimumPathDistanceMeters * MinimumPathDistanceMeters));
@@ -699,26 +651,6 @@ namespace Hecton8.World
                    math.abs(cached.ProbeDistance - current.ProbeDistance) <= 0.01f &&
                    math.lengthsq((float3)(cached.OriginPosition - current.OriginPosition)) <= ForwardEchoReuseDistanceSqr &&
                    math.dot((float3)cached.ForwardDirection, (float3)current.ForwardDirection) >= ForwardEchoDirectionReuseDot;
-        }
-
-        private static float ResolveVoxelDensityLowPassCutoff(float density01)
-        {
-            float density = math.saturate(density01);
-            if (density >= VoxelDensityHeavyOcclusionThreshold01)
-            {
-                float hardOcclusionT = math.saturate(
-                    (density - VoxelDensityHeavyOcclusionThreshold01) /
-                    math.max(1f - VoxelDensityHeavyOcclusionThreshold01, 0.0001f));
-                return math.clamp(
-                    math.lerp(VoxelDensityHeavyLowPassStartHertz, VoxelDensityHardLowPassCutoffHertz, hardOcclusionT),
-                    MinimumLowPassCutoffHertz,
-                    OpenLowPassCutoffHertz);
-            }
-
-            return math.clamp(
-                OpenLowPassCutoffHertz / (1f + (density * VoxelDensityLowPassScale)),
-                MinimumLowPassCutoffHertz,
-                OpenLowPassCutoffHertz);
         }
 
         private static AcousticEnclosureResult BuildOpenWaterResult(float probeDistance)

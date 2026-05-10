@@ -3,7 +3,7 @@
 Status: `ACTIVE`
 Verification: `PENDING VERIFICATION`
 Date: `2026-04-20`
-Source prompt: `Docs/DEPRECATED/External_And_Log_Bundles/САРГАСОВЫ ШТУКИ/САРГАСОВЫ ВОДОРОСЛИ.txt`
+Source prompt: `Docs/DEPRECATED/External_And_Log_Bundles/SARGASOVY ShTUKI/SARGASOVY VODOROSLI.txt`
 
 ## Purpose
 

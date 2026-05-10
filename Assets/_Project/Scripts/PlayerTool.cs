@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — PlayerTool.cs  v2.1 ENTERPRISE
-// Абстрактный базовый класс для всех инструментов игрока.
+// Abstraktnyy bazovyy klass dlya vseh instrumentov igroka.
 //
 // v2.1 ENTERPRISE:
 //   [ADD] Zero-GC Operational Summaries via FixedCharBuffer
@@ -22,8 +22,8 @@ namespace Hecton8.Gameplay
     using Hecton8.Tools;
 
     /// <summary>
-    /// Базовый класс для всех инструментов, которые игрок
-    /// может держать в руках. Управляется через <see cref="PlayerToolManager"/>.
+    /// Bazovyy klass dlya vseh instrumentov, kotorye igrok
+    /// mozhet derzhat v rukah. Upravlyaetsya cherez <see cref="PlayerToolManager"/>.
     /// </summary>
     public abstract class PlayerTool : MonoBehaviour, IPoolable
     {
@@ -32,20 +32,20 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Tool Identity ─────────────────────────────")]
-        [Tooltip("Ссылка на ItemData этого инструмента.")]
+        [Tooltip("Ssylka na ItemData etogo instrumenta.")]
         [SerializeField] private ItemData _toolData;
 
-        [Tooltip("Метаданные инструмента (durability, upgrades, stats).")]
+        [Tooltip("Metadannye instrumenta (durability, upgrades, stats).")]
         [SerializeField] private ToolMetadata _toolMetadata;
 
         [Header("── Settings ──────────────────────────────────")]
-        [Tooltip("Включить автоматический износ при использовании.")]
+        [Tooltip("Vklyuchit avtomaticheskiy iznos pri ispolzovanii.")]
         [SerializeField] private bool enableDurabilityDrain = true;
 
-        [Tooltip("Включить энергопотребление при использовании.")]
+        [Tooltip("Vklyuchit energopotreblenie pri ispolzovanii.")]
         [SerializeField] private bool enableEnergyConsumption = true;
 
-        [Tooltip("Включить подробные lifecycle-логи для диагностики.")]
+        [Tooltip("Vklyuchit podrobnye lifecycle-logi dlya diagnostiki.")]
         [SerializeField] private bool lifecycleDebugLogging = false;
 
         [Tooltip("Optional swim-presentation contract for near-camera hand ownership.")]
@@ -155,7 +155,7 @@ namespace Hecton8.Gameplay
 
             if (_survivalSystem == null && enableEnergyConsumption)
             {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                     playerTransform.TryGetComponent(out _survivalSystem);
             }
 

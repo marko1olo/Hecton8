@@ -254,18 +254,15 @@ namespace Hecton8.World
                 new Vector3(center.x, heightPayload.TerrainPosition.y + heightPayload.TerrainSize.y * 0.5f, center.z),
                 new Vector3(diameter, math.max(8f, terrainTop - heightPayload.TerrainPosition.y), diameter));
 
-            Graphics.DrawMeshInstancedIndirect(
-                scatterMesh,
-                0,
-                scatterMaterial,
-                drawBounds,
-                _argsBuffer,
-                0,
-                null,
-                shadowCastingMode,
-                receiveShadows,
-                gameObject.layer,
-                viewCamera);
+            RenderParams renderParams = new RenderParams(scatterMaterial)
+            {
+                worldBounds = drawBounds,
+                layer = gameObject.layer,
+                shadowCastingMode = shadowCastingMode,
+                receiveShadows = receiveShadows,
+                camera = viewCamera
+            };
+            Graphics.RenderMeshIndirect(renderParams, scatterMesh, _argsBuffer, 1, 0);
 
             _debugGridResolution = _gridResolution;
             _debugVisibleCount = candidateCount;
@@ -337,7 +334,7 @@ namespace Hecton8.World
             }
 
             if (_modInstanceMatrixBuffer == null)
-                _modInstanceMatrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MaxModInstancesPerFrame, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[1024] - reserved mod instancing matrix layer - owner: GPUScatterDirector
+                _modInstanceMatrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, MaxModInstancesPerFrame, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[1024] - reserved mod instancing matrix layer - owner: GPUScatterDirector
         }
 
         private bool TrySubmitModInstanceMatrix(in float4x4 matrix)
@@ -358,7 +355,9 @@ namespace Hecton8.World
 
             if (_modInstanceCount > 0)
             {
-                _modInstanceMatrixBuffer.SetData(_modInstanceMatrices, 0, 0, _modInstanceCount);
+                NativeArray<float4x4> gpuWrite = _modInstanceMatrixBuffer.LockBufferForWrite<float4x4>(0, _modInstanceCount);
+                NativeArray<float4x4>.Copy(_modInstanceMatrices, 0, gpuWrite, 0, _modInstanceCount);
+                _modInstanceMatrixBuffer.UnlockBufferAfterWrite<float4x4>(_modInstanceCount);
                 Shader.SetGlobalBuffer(_ModInstanceMatricesId, _modInstanceMatrixBuffer);
             }
 
@@ -387,7 +386,7 @@ namespace Hecton8.World
         private void EnsureIndirectArgsBuffer()
         {
             if (_argsBuffer == null)
-                _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] — indirect indexed draw args for GPU scatter — owner: GPUScatterDirector
+                _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] — indirect indexed draw args for GPU scatter — owner: GPUScatterDirector
 
             if (ReferenceEquals(_argsUploadMesh, scatterMesh))
                 return;
@@ -398,7 +397,7 @@ namespace Hecton8.World
             _argsUpload[0].startIndex = scatterMesh != null ? scatterMesh.GetIndexStart(0) : 0u;
             _argsUpload[0].baseVertexIndex = scatterMesh != null ? (uint)math.max(0, scatterMesh.GetBaseVertex(0)) : 0u;
             _argsUpload[0].startInstance = 0u;
-            _argsBuffer.SetData(_argsUpload);
+            GraphicsBufferUploadUtility.UploadArray(_argsBuffer, _argsUpload, 1);
         }
 
         private void PopulateFrustumPlaneUpload(Camera cullCamera)

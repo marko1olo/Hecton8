@@ -2,8 +2,8 @@
 // HECTON-8 — SaveManager.cs
 // Save persistence service. Runtime owner is injected through GlobalRegistry.
 //
-// АРХИТЕКТУРА:
-//   • Реестр ISaveable через explicit registration (zero GC при save/load).
+// ARHITEKTURA:
+//   • Reestr ISaveable cherez explicit registration (zero GC pri save/load).
 //   • XXHash3 checksums for header/payload integrity.
 //   • Unity 6 Awaitable API: BackgroundThreadAsync / MainThreadAsync.
 // ============================================================================
@@ -37,7 +37,7 @@ namespace Hecton8.SaveSystem
     {
         private const long MainThreadSnapshotBudgetMs = 50L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
-        private static readonly long LoadApplyFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 333L);
+        private static readonly long LoadApplyFrameBudgetTicks = HydrationScheduler.FrameBudgetTicks;
         private const float SafeAupSnapGroundPaddingMeters = 0.28f;
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: LOCALIZED DATA CORRUPTION. TERRAIN RE-INITIALIZED.";
@@ -105,6 +105,7 @@ namespace Hecton8.SaveSystem
 
         private static readonly IComparer<ISaveable> SavePriorityComparer = new SavePriorityComparerImpl();
         private static readonly IComparer<ISaveable> LoadPriorityComparer = new LoadPriorityComparerImpl();
+        private static string s_persistentDataPathRoot;
 
         private sealed class SavePriorityComparerImpl : IComparer<ISaveable>
         {
@@ -292,6 +293,7 @@ namespace Hecton8.SaveSystem
         private void Awake()
         {
             _sessionStartTime = Time.realtimeSinceStartupAsDouble;
+            CachePersistentDataPathRoot();
             InitializeNativeBuffers();
             SaveBinaryStorage.WarmRuntime();
         }
@@ -371,6 +373,7 @@ namespace Hecton8.SaveSystem
 
         public void InitializeService()
         {
+            CachePersistentDataPathRoot();
             InitializeNativeBuffers();
 
             if (_serviceRegistered)
@@ -420,7 +423,7 @@ namespace Hecton8.SaveSystem
 
             if (!_compressedSaveBuffer.IsCreated)
             {
-                // COLD ALLOC: NativeArray<byte>[67378176] — worst-case LZ4 block-compressed save payload buffer for 64MB raw save budget — owner: SaveManager
+                // COLD ALLOC: NativeArray<byte>[71303168] — protected 16KB LZ4 block-compressed save payload buffer for 64MB raw save budget — owner: SaveManager
                 _compressedSaveBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 NativeMemorySentinel.RegisterNativeArray(_compressedSaveBuffer, NativeMemoryOwner, nameof(_compressedSaveBuffer), NativeMemoryLifetime);
             }
@@ -642,6 +645,7 @@ namespace Hecton8.SaveSystem
 
         public async Awaitable SaveGameAsync(string slotName)
         {
+            CachePersistentDataPathRoot();
             LastOperationSucceeded = false;
             LastOperationError = string.Empty;
             LastOperationSlot = string.Empty;
@@ -785,9 +789,10 @@ namespace Hecton8.SaveSystem
                     out payloadHash64,
                     out rawPayloadLength);
 
-                RegisterCompressionPipelineElapsed(Stopwatch.GetTimestamp() - compressionPipelineStartTicks);
-
+                long compressionPipelineElapsedTicks = Stopwatch.GetTimestamp() - compressionPipelineStartTicks;
                 await Awaitable.MainThreadAsync();
+                SaveContextFrameData frameData = SaveContextFrameData.CaptureMainThread();
+                RegisterCompressionPipelineElapsed(compressionPipelineElapsedTicks, in frameData);
                 StageIntegrityPayload(_savePayloadBuffer, rawPayloadLength, payloadHash64, slotName);
                 int backupRetention = GetBackupRetentionCount(slotName);
                 SaveSlotIntegrityState savedIntegrity = backupRetention > 0
@@ -802,9 +807,10 @@ namespace Hecton8.SaveSystem
             }
             catch (Exception ex)
             {
+                await Awaitable.MainThreadAsync();
                 RecordFailure(slotName, "save", ex.Message);
                 LastOperationError = ex.Message;
-                LogError($"[SaveManager] Save failed: {ex.Message}");
+                LogError("[SaveManager] Save failed: " + ex);
                 SaveEvents.RaiseSaveFailed(slotName, ex.Message);
             }
             finally
@@ -830,13 +836,28 @@ namespace Hecton8.SaveSystem
                 $"Budget is {MainThreadSnapshotBudgetMs}ms. Snapshot purity is pending verification.");
         }
 
-        private void RegisterCompressionPipelineElapsed(long elapsedTicks)
+        private readonly struct SaveContextFrameData
+        {
+            public readonly int FrameCount;
+
+            private SaveContextFrameData(int frameCount)
+            {
+                FrameCount = frameCount;
+            }
+
+            public static SaveContextFrameData CaptureMainThread()
+            {
+                return new SaveContextFrameData(Time.frameCount);
+            }
+        }
+
+        private void RegisterCompressionPipelineElapsed(long elapsedTicks, in SaveContextFrameData frameData)
         {
             _lastSaveCompressionPipelineTicks = elapsedTicks > 0L ? elapsedTicks : 0L;
             if (elapsedTicks <= CompressionThrottleBudgetTicks)
                 return;
 
-            _compressionThrottleReleaseFrame = Time.frameCount + 1;
+            _compressionThrottleReleaseFrame = frameData.FrameCount + 1;
             _compressionThrottleLateFrameArmed = true;
         }
 
@@ -953,7 +974,7 @@ namespace Hecton8.SaveSystem
 
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
-            if (playerTransform == null && !SceneBootstrap.TryGetCurrentPlayerTransform(out playerTransform))
+            if (playerTransform == null && !GameBootstrapper.TryGetCurrentPlayerTransform(out playerTransform))
                 return false;
 
             Vector3 savedRuntimePosition = data.playerStats.GetPosition();
@@ -1086,6 +1107,7 @@ namespace Hecton8.SaveSystem
 
         public async Awaitable LoadGameAsync(string slotName)
         {
+            CachePersistentDataPathRoot();
             LastOperationSucceeded = false;
             LastOperationError = string.Empty;
             LastOperationSlot = string.Empty;
@@ -1285,7 +1307,7 @@ namespace Hecton8.SaveSystem
                 SortRegistryIfDirty(LoadPriorityComparer);
 
                 VoxelDeltaProcessor voxelDeltaProcessor = null;
-                long loadApplyDeadlineTicks = Stopwatch.GetTimestamp() + LoadApplyFrameBudgetTicks;
+                long loadApplyDeadlineTicks = HydrationScheduler.CreateDeadlineTicks();
                 for (int i = 0; i < _saveableCount; i++)
                 {
                     ISaveable saveable = _saveables[i];
@@ -1301,8 +1323,8 @@ namespace Hecton8.SaveSystem
                     saveable.LoadFromSaveData(data);
                     if (i + 1 < _saveableCount && Stopwatch.GetTimestamp() >= loadApplyDeadlineTicks)
                     {
-                        await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);
-                        loadApplyDeadlineTicks = Stopwatch.GetTimestamp() + LoadApplyFrameBudgetTicks;
+                        await HydrationScheduler.NextFrameAsync(destroyCancellationToken);
+                        loadApplyDeadlineTicks = HydrationScheduler.CreateDeadlineTicks();
                     }
                 }
 
@@ -1384,9 +1406,10 @@ namespace Hecton8.SaveSystem
             }
             catch (Exception ex)
             {
+                await Awaitable.MainThreadAsync();
                 RecordFailure(slotName, "load", ex.Message);
                 LastOperationError = ex.Message;
-                LogError($"[SaveManager] Load failed: {ex.Message}");
+                LogError("[SaveManager] Load failed: " + ex);
                 SaveEvents.RaiseLoadFailed(slotName, ex.Message);
                 HideLoadingPipelineScreen();
             }
@@ -1574,7 +1597,31 @@ namespace Hecton8.SaveSystem
         }
         public static string GetTempSaveFilePath(string slotName) => $"{ResolveSafeSlotFileStem(slotName)}.sav.tmp";
         public static string GetDiagnosticSaveFilePath(string slotName) => $"{ResolveSafeSlotFileStem(slotName)}.diag";
-        private static string GetPersistentAbsolutePath(string relativePath) => Path.Combine(Application.persistentDataPath, relativePath);
+        private static string GetPersistentAbsolutePath(string relativePath)
+        {
+            if (Path.IsPathRooted(relativePath))
+                return relativePath;
+
+            string root = s_persistentDataPathRoot;
+            if (string.IsNullOrEmpty(root))
+            {
+                root = Application.persistentDataPath;
+                s_persistentDataPathRoot = root;
+                SaveSidecarStorage.SetPersistentDataPathRoot(root);
+            }
+
+            return Path.Combine(root, relativePath);
+        }
+
+        private static void CachePersistentDataPathRoot()
+        {
+            string root = Application.persistentDataPath;
+            if (string.IsNullOrEmpty(root))
+                return;
+
+            s_persistentDataPathRoot = root;
+            SaveSidecarStorage.SetPersistentDataPathRoot(root);
+        }
 
         private static bool FileExists(string path)
         {
@@ -1641,6 +1688,10 @@ namespace Hecton8.SaveSystem
 
             // Step 6: promote the verified temp artifact to the authoritative primary slot.
             File.Move(GetPersistentAbsolutePath(tempPath), GetPersistentAbsolutePath(finalPath));
+
+            string absoluteFinalPath = GetPersistentAbsolutePath(finalPath);
+            if (new FileInfo(absoluteFinalPath) is FileInfo promotedInfo && promotedInfo.Exists)
+                AsyncWriteManager.QueueThrottledFlush(absoluteFinalPath, promotedInfo.Length, out _);
 
             // Step 7: primary must exist after promotion.
             if (!FileExists(finalPath))

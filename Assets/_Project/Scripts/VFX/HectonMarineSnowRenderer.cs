@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Optimization;
+using Hecton8.Physics;
 using Hecton8.VFX;
 using Hecton8.World;
 using Unity.Collections;
@@ -18,6 +19,7 @@ namespace Hecton8.Environment
     {
         private const float BiolumeSurgeDurationSeconds = 4f;
         private const int ThreadGroupSize = 64;
+        private const int MaxMarineSnowParticleCapacity = 32768;
         private const int ParticleStride = 64;
         private const int FrameConstantsStride = 112;
         private const int ParticleFlagBubble = 1 << 0;
@@ -25,8 +27,27 @@ namespace Hecton8.Environment
         private const int ParticleFlagSnow = 1 << 3;
         private const float ActiveDensityEpsilon = 0.0001f;
         private const float ShaderVectorPublishEpsilon = 0.0001f;
+        private const float ExternalGpuBindingColdTickSeconds = 0.1f;
         private static readonly Vector4 DepthCollisionParams = new Vector4(15f, 0.25f, 0.5f, 0f);
         private static readonly Vector4 DefaultFlowSynchronyParams = new Vector4(1f, 0.26f, 0f, 0f);
+        private static readonly Vector4 DisabledTerrainHeightScale = new Vector4(0f, 0f, 0f, 0f);
+        private static readonly Vector4 DefaultPropwashParams = new Vector4(2f, 0.08f, 0.025f, 1f);
+        private static readonly Vector4 InvalidVector = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
+        private static readonly Matrix4x4 IdentityMatrix = Matrix4x4.identity;
+        private static readonly Matrix4x4 InvalidMatrix = new Matrix4x4(InvalidVector, InvalidVector, InvalidVector, InvalidVector);
+        private static readonly Vector3[] QuadMeshVertices =
+        {
+            new Vector3(-1f, -1f, 0f),
+            new Vector3(-1f, 1f, 0f),
+            new Vector3(1f, 1f, 0f),
+            new Vector3(-1f, -1f, 0f),
+            new Vector3(1f, 1f, 0f),
+            new Vector3(1f, -1f, 0f)
+        }; // COLD ALLOC: Vector3[6] - immutable marine-snow indirect quad vertices - owner: HectonMarineSnowRenderer
+        private static readonly int[] QuadMeshIndices =
+        {
+            0, 1, 2, 3, 4, 5
+        }; // COLD ALLOC: int[6] - immutable marine-snow indirect quad indices - owner: HectonMarineSnowRenderer
 
         [StructLayout(LayoutKind.Sequential)]
         private struct ParticleGpuData
@@ -58,17 +79,33 @@ namespace Hecton8.Environment
             internal static readonly int ParticlesReadId = Shader.PropertyToID("_MarineSnowParticlesRead");
             internal static readonly int ParticlesWriteId = Shader.PropertyToID("_MarineSnowParticlesWrite");
             internal static readonly int ParticlesRenderId = Shader.PropertyToID("_MarineSnowParticles");
+            internal static readonly int VisibleParticleIndicesId = Shader.PropertyToID("_MarineSnowVisibleParticleIndices");
+            internal static readonly int IndirectArgsId = Shader.PropertyToID("_MarineSnowIndirectArgs");
             internal static readonly int FlowFieldId = Shader.PropertyToID("_MarineSnowFlowField");
+            internal static readonly int AbyssalFlowFieldResultId = Shader.PropertyToID("_AbyssalFlowFieldResult");
+            internal static readonly int AbyssalGridResolutionId = Shader.PropertyToID("_AbyssalGridResolution");
+            internal static readonly int AbyssalFlowCenterId = Shader.PropertyToID("_AbyssalFlowCenter");
+            internal static readonly int AbyssalFlowSpacingId = Shader.PropertyToID("_AbyssalFlowSpacing");
             internal static readonly int FrameConstantsId = Shader.PropertyToID("_HectonMarineSnowFrame");
             internal static readonly int DriftParamsId = Shader.PropertyToID("_MarineSnowDriftParams");
             internal static readonly int FlowParamsId = Shader.PropertyToID("_MarineSnowFlowParams");
             internal static readonly int BubbleParamsId = Shader.PropertyToID("_MarineSnowBubbleParams");
+            internal static readonly int TerrainHeightTextureId = Shader.PropertyToID("_MarineSnowTerrainHeightTexture");
+            internal static readonly int TerrainHeightRectId = Shader.PropertyToID("_MarineSnowTerrainHeightRect");
+            internal static readonly int TerrainHeightScaleId = Shader.PropertyToID("_MarineSnowTerrainHeightScale");
+            internal static readonly int PropwashParamsId = Shader.PropertyToID("_MarineSnowPropwashParams");
             internal static readonly int FlowSynchronyParamsId = Shader.PropertyToID("_HectonFlowSynchronyParams");
             internal static readonly int RenderParamsId = Shader.PropertyToID("_MarineSnowRenderParams");
             internal static readonly int TintId = Shader.PropertyToID("_MarineSnowTint");
             internal static readonly int EmissionParamsId = Shader.PropertyToID("_MarineSnowEmissionParams");
             internal static readonly int ViewProjectionId = Shader.PropertyToID("_MarineSnowViewProjection");
             internal static readonly int ViewMatrixId = Shader.PropertyToID("_MarineSnowViewMatrix");
+            internal static readonly int CaveVoxelSdfTexId = Shader.PropertyToID("_HectonCaveVoxelSdfTex");
+            internal static readonly int CaveVoxelActiveId = Shader.PropertyToID("_HectonCaveVoxelActive");
+            internal static readonly int CaveVoxelWorldToLocalId = Shader.PropertyToID("_HectonCaveVoxelWorldToLocal");
+            internal static readonly int CaveVoxelHalfExtentsId = Shader.PropertyToID("_HectonCaveVoxelHalfExtents");
+            internal static readonly int SubmarineWashSphereId = Shader.PropertyToID("_HectonSubmarineWashSphere");
+            internal static readonly int SubmarineWashVelocityId = Shader.PropertyToID("_HectonSubmarineWashVelocity");
             internal static readonly int ZBufferParamsId = Shader.PropertyToID("_MarineSnowZBufferParams");
             internal static readonly int DepthTextureTexelSizeId = Shader.PropertyToID("_MarineSnowDepthTextureTexelSize");
             internal static readonly int DepthCollisionParamsId = Shader.PropertyToID("_MarineSnowDepthCollisionParams");
@@ -96,8 +133,8 @@ namespace Hecton8.Environment
         [SerializeField] private VFXEmissionProfile.FluidType fluidType = VFXEmissionProfile.FluidType.Snow;
 
         [Header("â”€â”€ Population â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
-        [Tooltip("Maximum compute-simulated plankton particles. Runtime buffer sizing supports up to 100000 particles; tune lower on MX350 scenes that cannot afford the overdraw.")]
-        [SerializeField, Range(512, 100000)] private int maxParticles = 100000;
+        [Tooltip("Maximum compute-simulated plankton particles. Hard-capped to the MX350 marine-snow budget.")]
+        [SerializeField, Range(512, MaxMarineSnowParticleCapacity)] private int maxParticles = MaxMarineSnowParticleCapacity;
         [Tooltip("Empty safety radius around the camera to avoid particles clipping through the visor.")]
         [SerializeField, Range(0.1f, 4f)] private float innerRadius = 0.8f;
         [Tooltip("Outer shell radius. Particles respawn to the ring when they drift beyond this distance.")]
@@ -169,10 +206,17 @@ namespace Hecton8.Environment
         private GraphicsBuffer _particleBufferA;
         private GraphicsBuffer _particleBufferB;
         private GraphicsBuffer _flowFieldBuffer;
+        private GraphicsBuffer _emptyFlowFieldBuffer;
         private GraphicsBuffer _frameConstantsBuffer;
+        private GraphicsBuffer _visibleParticleIndexBuffer;
+        private GraphicsBuffer _indirectArgsBuffer;
+        private GraphicsBuffer _emptyAbyssalFlowBuffer;
+        private GraphicsBuffer _boundAbyssalFlowBuffer;
         private Camera _targetCameraComponent;
+        private Mesh _quadMesh;
         private Bounds _drawBounds;
         private int _kernelIndex = -1;
+        private int _clearVisibleKernel = -1;
         private int _sonarGlowClearKernel = -1;
         private int _sonarGlowAccumulateKernel = -1;
         private int _frameParity;
@@ -204,6 +248,42 @@ namespace Hecton8.Environment
         private Vector4 _lastPublishedSonarGlowParams;
         private Texture _lastPublishedSonarGlowTexture;
         private Texture _boundCameraDepthTexture;
+        private Texture _boundTerrainHeightTexture;
+        private Texture _boundCaveSdfTexture;
+        private Texture3D _emptyCaveSdfTexture;
+        private Vector4 _boundAbyssalGridResolution;
+        private Vector4 _boundAbyssalFlowCenter;
+        private Vector4 _boundAbyssalFlowSpacing;
+        private Vector4 _boundCaveVoxelHalfExtents;
+        private Vector4 _boundTerrainHeightRect;
+        private Vector4 _boundTerrainHeightScale;
+        private Vector4 _boundSubmarineWashSphere;
+        private Vector4 _boundSubmarineWashVelocity;
+        private Vector4 _boundPropwashParams;
+        private GraphicsBuffer _boundSimulationReadBuffer;
+        private GraphicsBuffer _boundSimulationWriteBuffer;
+        private GraphicsBuffer _boundSimulationFlowFieldBuffer;
+        private GraphicsBuffer _boundSimulationVisibleParticleIndexBuffer;
+        private GraphicsBuffer _boundSimulationIndirectArgsBuffer;
+        private GraphicsBuffer _boundMaterialParticlesBuffer;
+        private GraphicsBuffer _boundMaterialVisibleParticleIndexBuffer;
+        private GraphicsBuffer _boundSonarGlowParticlesWriteBuffer;
+        private Texture _boundSonarGlowClearTexture;
+        private Texture _boundSonarGlowAccumulateTexture;
+        private Vector4 _boundEmissionParams = InvalidVector;
+        private Vector4 _boundBubbleParams = InvalidVector;
+        private Vector4 _boundFlowSynchronyParams = InvalidVector;
+        private Vector4 _boundZBufferParams = InvalidVector;
+        private Vector4 _boundDepthTextureTexelSize = InvalidVector;
+        private Vector4 _boundDepthCollisionParams = InvalidVector;
+        private Vector4 _boundSonarGlowTexelSize = InvalidVector;
+        private Vector4 _boundSonarGlowParams = InvalidVector;
+        private Matrix4x4 _boundViewProjection = InvalidMatrix;
+        private Matrix4x4 _boundViewMatrix = InvalidMatrix;
+        private Matrix4x4 _boundCaveVoxelWorldToLocal = IdentityMatrix;
+        private float _boundCaveVoxelActive = -1f;
+        private float _externalGpuBindingColdTickTimer;
+        private bool _externalGpuBindingsDirty = true;
         private bool _sonarGlowGlobalsDirty = true;
         [SerializeField] private int _debugActiveParticleCount;
         [SerializeField] private float _debugAdaptiveRenderScale = 1f;
@@ -211,6 +291,8 @@ namespace Hecton8.Environment
         [SerializeField] private VRAMMonitor.VRAMPressureState _debugAdaptiveVramPressureState;
         [SerializeField] private float _debugBiolumeSurgeBlend;
 
+        private readonly Vector4[] _emptyAbyssalFlowUpload = new Vector4[1]; // COLD ALLOC: Vector4[1] - zeroed fallback abyssal-flow buffer upload cache - owner: HectonMarineSnowRenderer
+        private readonly float2[] _emptyFlowFieldUpload = new float2[1]; // COLD ALLOC: float2[1] - zeroed fallback ecosystem flow-field buffer upload cache - owner: HectonMarineSnowRenderer
         /// <summary>
         /// True when the compute path has all required resources and can replace the fallback particle system.
         /// </summary>
@@ -305,7 +387,7 @@ namespace Hecton8.Environment
             if (targetCamera == null)
                 return;
 
-            int particleCount = math.max(64, maxParticles);
+            int particleCount = ResolveConfiguredCapacity();
             BootstrapParticles(particleCount);
             GraphicsBufferUploadUtility.UploadArray(_particleBufferA, _bootstrapParticles, particleCount);
             GraphicsBufferUploadUtility.UploadArray(_particleBufferB, _bootstrapParticles, particleCount);
@@ -345,6 +427,8 @@ namespace Hecton8.Environment
             RefreshFlowFieldUpload(dt);
             ApplyStaticBindingsIfNeeded();
             UpdateFrameConstants(math.max(0f, dt), effectiveDensityScale);
+            RefreshExternalGpuBindings(dt);
+            DispatchVisibleClear();
             DispatchSimulation();
             DispatchSonarGlow();
             RenderMarineSnow();
@@ -409,7 +493,7 @@ namespace Hecton8.Environment
             if (_buffersReady)
                 return;
 
-            int clampedParticleCount = math.max(64, maxParticles);
+            int clampedParticleCount = ResolveConfiguredCapacity();
             if (marineSnowCompute == null || marineSnowMaterial == null)
                 return;
 
@@ -417,6 +501,14 @@ namespace Hecton8.Environment
             if (_kernelIndex < 0)
             {
                 LogMissingMainKernel();
+                enabled = false;
+                return;
+            }
+
+            _clearVisibleKernel = marineSnowCompute.FindKernel("ClearVisibleParticles");
+            if (_clearVisibleKernel < 0)
+            {
+                LogMissingVisibleKernel();
                 enabled = false;
                 return;
             }
@@ -438,14 +530,23 @@ namespace Hecton8.Environment
             _particleBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleGpuData>(clampedParticleCount);
             // COLD ALLOC: GraphicsBuffer[1] â€” per-frame marine-snow constant buffer â€” owner: HectonMarineSnowRenderer
             _frameConstantsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FrameConstantsData>(1);
-            // COLD ALLOC: GraphicsBuffer[1] â€” indirect draw arguments for the marine-snow billboard pass â€” owner: HectonMarineSnowRenderer
+            _emptyFlowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float2>(1); // COLD ALLOC: GraphicsBuffer[1] - zero fallback ecosystem flow-vector buffer - owner: HectonMarineSnowRenderer
+            GraphicsBufferUploadUtility.UploadArray(_emptyFlowFieldBuffer, _emptyFlowFieldUpload, 1);
+            _visibleParticleIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[maxParticles] - GPU-written visible-particle index list - owner: HectonMarineSnowRenderer
+            _indirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - GPU-written culled indirect indexed draw arguments - owner: HectonMarineSnowRenderer
+            _emptyAbyssalFlowBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(1); // COLD ALLOC: GraphicsBuffer[1] - zero fallback abyssal-flow vector buffer - owner: HectonMarineSnowRenderer
+            GraphicsBufferUploadUtility.UploadArray(_emptyAbyssalFlowBuffer, _emptyAbyssalFlowUpload, 1);
             BootstrapParticles(clampedParticleCount);
             GraphicsBufferUploadUtility.UploadArray(_particleBufferA, _bootstrapParticles, clampedParticleCount);
             GraphicsBufferUploadUtility.UploadArray(_particleBufferB, _bootstrapParticles, clampedParticleCount);
             _frameParity = 0;
+            EnsureEmptyCaveSdfTexture();
+            EnsureQuadMesh();
             EnsureSonarGlowTexture();
             _buffersReady = true;
+            ResetGpuBindingCaches();
             _staticBindingsDirty = true;
+            _externalGpuBindingsDirty = true;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
@@ -453,6 +554,14 @@ namespace Hecton8.Environment
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("HectonMarineSnowRenderer: compute kernel CSMain not found. Disabling compute marine snow.");
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingVisibleKernel()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError("HectonMarineSnowRenderer: compute kernel ClearVisibleParticles not found. Disabling compute marine snow.");
 #endif
         }
 
@@ -478,10 +587,12 @@ namespace Hecton8.Environment
                 float seed1 = HashToFloat01((uint)index, 0xBB67AE85u);
                 float seed2 = HashToFloat01((uint)index, 0xA54FF53Au);
                 float seed3 = HashToFloat01((uint)index, 0x510E527Fu);
-                float angle = seed0 * math.PI * 2f;
-                float radius = math.lerp(respawnMinRadius, respawnMaxRadius, math.sqrt(seed1));
+                float2 lateralSeed = new float2(seed0 * 2f - 1f, seed1 * 2f - 1f);
+                float lateralMajorAxis = math.max(math.abs(lateralSeed.x), math.abs(lateralSeed.y));
+                float2 lateralDirection = lateralMajorAxis > 0.0001f ? lateralSeed / lateralMajorAxis : new float2(1f, 0f);
+                float radius = math.lerp(respawnMinRadius, respawnMaxRadius, seed1);
                 float height = math.lerp(minVertical, maxVertical, seed2);
-                Vector3 position = cameraPosition + new Vector3(math.cos(angle), 0f, math.sin(angle)) * radius;
+                Vector3 position = cameraPosition + new Vector3(lateralDirection.x, 0f, lateralDirection.y) * radius;
                 position.y = cameraPosition.y + height;
                 float baseSpeed = math.lerp(descentMinSpeed, descentMaxSpeed, seed3);
                 float size = math.lerp(particleSizeMin, particleSizeMax, HashToFloat01((uint)index, 0x9B05688Cu));
@@ -566,6 +677,7 @@ namespace Hecton8.Environment
                 ReleaseBuffer(ref _flowFieldBuffer);
                 // COLD ALLOC: GraphicsBuffer[flowVectors.Length] â€” ecosystem flow-field snapshot staging on GPU, sized to the authoritative bridge payload â€” owner: HectonMarineSnowRenderer
                 _flowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float2>(requiredCount);
+                _boundSimulationFlowFieldBuffer = null;
                 _staticBindingsDirty = true;
             }
 
@@ -579,13 +691,29 @@ namespace Hecton8.Environment
             if (!_staticBindingsDirty)
                 return;
 
-            if (_particleBufferA == null || _particleBufferB == null || _frameConstantsBuffer == null)
+            if (_particleBufferA == null ||
+                _particleBufferB == null ||
+                _frameConstantsBuffer == null ||
+                _emptyFlowFieldBuffer == null ||
+                _visibleParticleIndexBuffer == null ||
+                _indirectArgsBuffer == null ||
+                _emptyAbyssalFlowBuffer == null)
                 return;
 
+            GraphicsBuffer flowFieldBuffer = _flowFieldBuffer != null ? _flowFieldBuffer : _emptyFlowFieldBuffer;
             marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.ParticlesReadId, _particleBufferA);
+            _boundSimulationReadBuffer = _particleBufferA;
             marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.ParticlesWriteId, _particleBufferB);
-            if (_flowFieldBuffer != null)
-                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FlowFieldId, _flowFieldBuffer);
+            _boundSimulationWriteBuffer = _particleBufferB;
+            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FlowFieldId, flowFieldBuffer);
+            _boundSimulationFlowFieldBuffer = flowFieldBuffer;
+            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.VisibleParticleIndicesId, _visibleParticleIndexBuffer);
+            _boundSimulationVisibleParticleIndexBuffer = _visibleParticleIndexBuffer;
+            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.IndirectArgsId, _indirectArgsBuffer);
+            _boundSimulationIndirectArgsBuffer = _indirectArgsBuffer;
+            marineSnowCompute.SetBuffer(_clearVisibleKernel, ShaderIds.IndirectArgsId, _indirectArgsBuffer);
+            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.AbyssalFlowFieldResultId, _emptyAbyssalFlowBuffer);
+            _boundAbyssalFlowBuffer = _emptyAbyssalFlowBuffer;
             marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FrameConstantsId, _frameConstantsBuffer);
             VFXEmissionProfile.FluidSettings emissionSettings = ResolveEmissionSettings();
             marineSnowCompute.SetVector(
@@ -603,8 +731,13 @@ namespace Hecton8.Environment
                     0.15f,
                     0f));
             marineSnowCompute.SetVector(ShaderIds.BubbleParamsId, Vector4.zero);
+            _boundBubbleParams = Vector4.zero;
+            marineSnowCompute.SetVector(ShaderIds.DepthCollisionParamsId, DepthCollisionParams);
+            _boundDepthCollisionParams = DepthCollisionParams;
 
             marineSnowMaterial.SetBuffer(ShaderIds.FrameConstantsId, _frameConstantsBuffer);
+            marineSnowMaterial.SetBuffer(ShaderIds.VisibleParticleIndicesId, _visibleParticleIndexBuffer);
+            _boundMaterialVisibleParticleIndexBuffer = _visibleParticleIndexBuffer;
             marineSnowMaterial.SetVector(
                 ShaderIds.RenderParamsId,
                 new Vector4(
@@ -672,43 +805,160 @@ namespace Hecton8.Environment
             VFXEmissionProfile.FluidSettings emissionSettings = ResolveEmissionSettings();
             float biolumeSurgeBlend = ResolveBiolumeSurgeBlend();
             float surgeTurbulenceScale = math.lerp(1f, biolumeSurgeTurbulenceMultiplier, biolumeSurgeBlend);
-            marineSnowCompute.SetVector(
-                ShaderIds.EmissionParamsId,
-                new Vector4(
-                    emissionSettings.buoyancyModifier,
-                    emissionSettings.turbulenceScale * surgeTurbulenceScale,
-                    emissionSettings.wobbleScale * surgeTurbulenceScale,
-                    (float)fluidType));
-            marineSnowCompute.SetVector(
-                ShaderIds.BubbleParamsId,
-                new Vector4(
-                    _underwaterActive ? _bubbleTrailMovement01 : 0f,
-                    _underwaterActive ? _bubbleTrailExhale01 : 0f,
-                    _lastDepth,
-                    activeFlag));
-            marineSnowCompute.SetVector(ShaderIds.FlowSynchronyParamsId, ResolveFlowSynchronyParams());
+            Vector4 emissionParams = new Vector4(
+                emissionSettings.buoyancyModifier,
+                emissionSettings.turbulenceScale * surgeTurbulenceScale,
+                emissionSettings.wobbleScale * surgeTurbulenceScale,
+                (float)fluidType);
+            Vector4 bubbleParams = new Vector4(
+                _underwaterActive ? _bubbleTrailMovement01 : 0f,
+                _underwaterActive ? _bubbleTrailExhale01 : 0f,
+                _lastDepth,
+                activeFlag);
+            SetComputeVectorHotIfChanged(ShaderIds.EmissionParamsId, emissionParams, ref _boundEmissionParams);
+            SetComputeVectorHotIfChanged(ShaderIds.BubbleParamsId, bubbleParams, ref _boundBubbleParams);
             if (_targetCameraComponent != null)
             {
                 Texture depthTexture = Shader.GetGlobalTexture(ShaderIds.CameraDepthTextureId);
-                if (depthTexture != null && depthTexture != _boundCameraDepthTexture)
-                {
-                    marineSnowCompute.SetTexture(_kernelIndex, ShaderIds.CameraDepthTextureId, depthTexture);
-                    _boundCameraDepthTexture = depthTexture;
-                }
+                if (depthTexture != null)
+                    SetKernelTextureIfChanged(_kernelIndex, ShaderIds.CameraDepthTextureId, depthTexture, ref _boundCameraDepthTexture);
 
                 Matrix4x4 viewProjection = GL.GetGPUProjectionMatrix(_targetCameraComponent.projectionMatrix, false) * _targetCameraComponent.worldToCameraMatrix;
-                marineSnowCompute.SetMatrix(ShaderIds.ViewProjectionId, viewProjection);
-                marineSnowCompute.SetMatrix(ShaderIds.ViewMatrixId, _targetCameraComponent.worldToCameraMatrix);
-                marineSnowCompute.SetVector(ShaderIds.ZBufferParamsId, Shader.GetGlobalVector(ShaderIds.GlobalZBufferParamsId));
-                marineSnowCompute.SetVector(
-                    ShaderIds.DepthTextureTexelSizeId,
-                    new Vector4(
-                        _targetCameraComponent.pixelWidth > 0 ? 1f / _targetCameraComponent.pixelWidth : 0f,
-                        _targetCameraComponent.pixelHeight > 0 ? 1f / _targetCameraComponent.pixelHeight : 0f,
-                        _targetCameraComponent.pixelWidth,
-                        _targetCameraComponent.pixelHeight));
-                marineSnowCompute.SetVector(ShaderIds.DepthCollisionParamsId, DepthCollisionParams);
+                Vector4 depthTextureTexelSize = new Vector4(
+                    _targetCameraComponent.pixelWidth > 0 ? 1f / _targetCameraComponent.pixelWidth : 0f,
+                    _targetCameraComponent.pixelHeight > 0 ? 1f / _targetCameraComponent.pixelHeight : 0f,
+                    _targetCameraComponent.pixelWidth,
+                    _targetCameraComponent.pixelHeight);
+                SetComputeMatrixHotIfChanged(ShaderIds.ViewProjectionId, viewProjection, ref _boundViewProjection);
+                SetComputeMatrixHotIfChanged(ShaderIds.ViewMatrixId, _targetCameraComponent.worldToCameraMatrix, ref _boundViewMatrix);
+                SetComputeVectorHotIfChanged(ShaderIds.ZBufferParamsId, Shader.GetGlobalVector(ShaderIds.GlobalZBufferParamsId), ref _boundZBufferParams);
+                SetComputeVectorHotIfChanged(ShaderIds.DepthTextureTexelSizeId, depthTextureTexelSize, ref _boundDepthTextureTexelSize);
             }
+        }
+
+        private void RefreshExternalGpuBindings(float dt)
+        {
+            SetComputeVectorIfChanged(ShaderIds.SubmarineWashSphereId, Shader.GetGlobalVector(ShaderIds.SubmarineWashSphereId), ref _boundSubmarineWashSphere);
+            SetComputeVectorIfChanged(ShaderIds.SubmarineWashVelocityId, Shader.GetGlobalVector(ShaderIds.SubmarineWashVelocityId), ref _boundSubmarineWashVelocity);
+            SetComputeVectorIfChanged(ShaderIds.PropwashParamsId, DefaultPropwashParams, ref _boundPropwashParams);
+
+            _externalGpuBindingColdTickTimer -= math.max(0f, dt);
+            if (!_externalGpuBindingsDirty && _externalGpuBindingColdTickTimer > 0f)
+                return;
+
+            RefreshAbyssalFlowBinding();
+            RefreshCaveSdfBinding();
+            RefreshTerrainHeightBinding();
+            SetComputeVectorIfChanged(ShaderIds.FlowSynchronyParamsId, ResolveFlowSynchronyParams(), ref _boundFlowSynchronyParams);
+            _externalGpuBindingColdTickTimer = ExternalGpuBindingColdTickSeconds;
+            _externalGpuBindingsDirty = false;
+        }
+
+        private void RefreshAbyssalFlowBinding()
+        {
+            GraphicsBuffer flowFieldBuffer = _emptyAbyssalFlowBuffer;
+            Vector4 gridResolution = Vector4.zero;
+            Vector4 flowCenter = Vector4.zero;
+            Vector4 flowSpacing = Vector4.zero;
+
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            if (fluidEngine != null &&
+                fluidEngine.TryGetGpuAbyssalFlowFieldBuffer(
+                    out GraphicsBuffer publishedFlowFieldBuffer,
+                    out Vector4 publishedGridResolution,
+                    out Vector4 publishedFlowCenter,
+                    out Vector4 publishedFlowSpacing))
+            {
+                flowFieldBuffer = publishedFlowFieldBuffer;
+                gridResolution = publishedGridResolution;
+                flowCenter = publishedFlowCenter;
+                flowSpacing = publishedFlowSpacing;
+            }
+
+            if (flowFieldBuffer != null && flowFieldBuffer != _boundAbyssalFlowBuffer)
+            {
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.AbyssalFlowFieldResultId, flowFieldBuffer);
+                _boundAbyssalFlowBuffer = flowFieldBuffer;
+            }
+
+            SetComputeVectorIfChanged(ShaderIds.AbyssalGridResolutionId, gridResolution, ref _boundAbyssalGridResolution);
+            SetComputeVectorIfChanged(ShaderIds.AbyssalFlowCenterId, flowCenter, ref _boundAbyssalFlowCenter);
+            SetComputeVectorIfChanged(ShaderIds.AbyssalFlowSpacingId, flowSpacing, ref _boundAbyssalFlowSpacing);
+        }
+
+        private void RefreshCaveSdfBinding()
+        {
+            Texture sdfTexture = _emptyCaveSdfTexture;
+            Matrix4x4 worldToLocal = IdentityMatrix;
+            Vector4 halfExtentsAndRange = Vector4.zero;
+            float active = 0f;
+
+            HectonCaveVoxelLightingVolume caveVolume = HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
+            if (caveVolume != null &&
+                caveVolume.TryGetPublishedGpuSdfPayload(
+                    out Texture3D publishedSdfTexture,
+                    out Matrix4x4 publishedWorldToLocal,
+                    out Vector4 publishedHalfExtentsAndRange))
+            {
+                sdfTexture = publishedSdfTexture;
+                worldToLocal = publishedWorldToLocal;
+                halfExtentsAndRange = publishedHalfExtentsAndRange;
+                active = 1f;
+            }
+
+            if (sdfTexture != null && sdfTexture != _boundCaveSdfTexture)
+            {
+                marineSnowCompute.SetTexture(_kernelIndex, ShaderIds.CaveVoxelSdfTexId, sdfTexture);
+                _boundCaveSdfTexture = sdfTexture;
+            }
+
+            SetComputeFloatIfChanged(ShaderIds.CaveVoxelActiveId, active, ref _boundCaveVoxelActive);
+            SetComputeMatrixIfChanged(ShaderIds.CaveVoxelWorldToLocalId, worldToLocal, ref _boundCaveVoxelWorldToLocal);
+            SetComputeVectorIfChanged(ShaderIds.CaveVoxelHalfExtentsId, halfExtentsAndRange, ref _boundCaveVoxelHalfExtents);
+        }
+
+        private void RefreshTerrainHeightBinding()
+        {
+            Texture heightTexture = Texture2D.blackTexture;
+            Vector4 heightRect = Vector4.zero;
+            Vector4 heightScale = DisabledTerrainHeightScale;
+
+            HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (bridge != null &&
+                bridge.TryGetActiveHeightTexturePayload(out HectonMapMagicVegetationBridge.TerrainHeightTexturePayload heightPayload) &&
+                heightPayload.HeightTexture != null &&
+                heightPayload.TerrainSize.x > 0f &&
+                heightPayload.TerrainSize.z > 0f)
+            {
+                heightTexture = heightPayload.HeightTexture;
+                heightRect = new Vector4(
+                    heightPayload.TerrainPosition.x,
+                    heightPayload.TerrainPosition.z,
+                    1f / heightPayload.TerrainSize.x,
+                    1f / heightPayload.TerrainSize.z);
+                heightScale = new Vector4(
+                    heightPayload.TerrainPosition.y,
+                    heightPayload.TerrainSize.y,
+                    1f,
+                    heightPayload.HeightmapResolution);
+            }
+
+            if (heightTexture != _boundTerrainHeightTexture)
+            {
+                marineSnowCompute.SetTexture(_kernelIndex, ShaderIds.TerrainHeightTextureId, heightTexture);
+                _boundTerrainHeightTexture = heightTexture;
+            }
+
+            SetComputeVectorIfChanged(ShaderIds.TerrainHeightRectId, heightRect, ref _boundTerrainHeightRect);
+            SetComputeVectorIfChanged(ShaderIds.TerrainHeightScaleId, heightScale, ref _boundTerrainHeightScale);
+        }
+
+        private void DispatchVisibleClear()
+        {
+            if (_clearVisibleKernel < 0 || _indirectArgsBuffer == null)
+                return;
+
+            marineSnowCompute.Dispatch(_clearVisibleKernel, 1, 1, 1);
         }
 
         private Vector3 ResolveCameraVelocity(Vector3 cameraPosition, float dt)
@@ -763,15 +1013,18 @@ namespace Hecton8.Environment
         {
             GraphicsBuffer readBuffer = _frameParity == 0 ? _particleBufferA : _particleBufferB;
             GraphicsBuffer writeBuffer = _frameParity == 0 ? _particleBufferB : _particleBufferA;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.ParticlesReadId, readBuffer);
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.ParticlesWriteId, writeBuffer);
-            if (_flowFieldBuffer != null)
-                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FlowFieldId, _flowFieldBuffer);
+            GraphicsBuffer flowFieldBuffer = _flowFieldBuffer != null ? _flowFieldBuffer : _emptyFlowFieldBuffer;
+            SetKernelBufferIfChanged(_kernelIndex, ShaderIds.ParticlesReadId, readBuffer, ref _boundSimulationReadBuffer);
+            SetKernelBufferIfChanged(_kernelIndex, ShaderIds.ParticlesWriteId, writeBuffer, ref _boundSimulationWriteBuffer);
+            SetKernelBufferIfChanged(_kernelIndex, ShaderIds.FlowFieldId, flowFieldBuffer, ref _boundSimulationFlowFieldBuffer);
+            SetKernelBufferIfChanged(_kernelIndex, ShaderIds.VisibleParticleIndicesId, _visibleParticleIndexBuffer, ref _boundSimulationVisibleParticleIndexBuffer);
+            SetKernelBufferIfChanged(_kernelIndex, ShaderIds.IndirectArgsId, _indirectArgsBuffer, ref _boundSimulationIndirectArgsBuffer);
 
             int groupCount = (_activeParticleCount + ThreadGroupSize - 1) / ThreadGroupSize;
             marineSnowCompute.Dispatch(_kernelIndex, groupCount, 1, 1);
 
-            marineSnowMaterial.SetBuffer(ShaderIds.ParticlesRenderId, writeBuffer);
+            SetMaterialBufferIfChanged(ShaderIds.ParticlesRenderId, writeBuffer, ref _boundMaterialParticlesBuffer);
+            SetMaterialBufferIfChanged(ShaderIds.VisibleParticleIndicesId, _visibleParticleIndexBuffer, ref _boundMaterialVisibleParticleIndexBuffer);
         }
 
         private void DispatchSonarGlow()
@@ -791,13 +1044,17 @@ namespace Hecton8.Environment
 
             Vector4 sonarGlowTexelSize = ResolveSonarGlowTexelSize();
             Vector4 sonarGlowParams = ResolveSonarGlowParams();
-            marineSnowCompute.SetVector(ShaderIds.SonarGlowTexelSizeId, sonarGlowTexelSize);
-            marineSnowCompute.SetVector(ShaderIds.SonarGlowParamsId, sonarGlowParams);
+            SetComputeVectorHotIfChanged(ShaderIds.SonarGlowTexelSizeId, sonarGlowTexelSize, ref _boundSonarGlowTexelSize);
+            SetComputeVectorHotIfChanged(ShaderIds.SonarGlowParamsId, sonarGlowParams, ref _boundSonarGlowParams);
             PublishSonarGlowGlobals(sonarGlowTexelSize, sonarGlowParams, _sonarGlowTexture);
 
-            marineSnowCompute.SetTexture(_sonarGlowClearKernel, ShaderIds.SonarGlowResultId, _sonarGlowTexture);
-            marineSnowCompute.SetTexture(_sonarGlowAccumulateKernel, ShaderIds.SonarGlowResultId, _sonarGlowTexture);
-            marineSnowCompute.SetBuffer(_sonarGlowAccumulateKernel, ShaderIds.ParticlesWriteId, _frameParity == 0 ? _particleBufferB : _particleBufferA);
+            SetKernelTextureIfChanged(_sonarGlowClearKernel, ShaderIds.SonarGlowResultId, _sonarGlowTexture, ref _boundSonarGlowClearTexture);
+            SetKernelTextureIfChanged(_sonarGlowAccumulateKernel, ShaderIds.SonarGlowResultId, _sonarGlowTexture, ref _boundSonarGlowAccumulateTexture);
+            SetKernelBufferIfChanged(
+                _sonarGlowAccumulateKernel,
+                ShaderIds.ParticlesWriteId,
+                _frameParity == 0 ? _particleBufferB : _particleBufferA,
+                ref _boundSonarGlowParticlesWriteBuffer);
 
             int clearGroupsX = (_sonarGlowWidth + 7) / 8;
             int clearGroupsY = (_sonarGlowHeight + 7) / 8;
@@ -868,6 +1125,40 @@ namespace Hecton8.Environment
             _sonarGlowGlobalsDirty = false;
         }
 
+        private void EnsureEmptyCaveSdfTexture()
+        {
+            if (_emptyCaveSdfTexture != null)
+                return;
+
+            TextureFormat textureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.R8)
+                ? TextureFormat.R8
+                : TextureFormat.Alpha8;
+            _emptyCaveSdfTexture = new Texture3D(1, 1, 1, textureFormat, false)
+            {
+                name = "__HectonMarineSnowEmptySdf",
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Point,
+                anisoLevel = 0
+            }; // COLD ALLOC: Texture3D[1] - fallback SDF binding for marine-snow compute when cave volume is inactive - owner: HectonMarineSnowRenderer
+            _emptyCaveSdfTexture.SetPixel(0, 0, 0, new Color(0.5f, 0f, 0f, 0f));
+            _emptyCaveSdfTexture.Apply(false, true);
+        }
+
+        private void EnsureQuadMesh()
+        {
+            if (_quadMesh != null)
+                return;
+
+            _quadMesh = new Mesh
+            {
+                name = "__HectonMarineSnowIndirectQuad",
+                bounds = new Bounds(Vector3.zero, Vector3.one * 2f)
+            }; // COLD ALLOC: Mesh[1] - six-vertex quad mesh for DrawMeshInstancedIndirect marine-snow draw - owner: HectonMarineSnowRenderer
+            _quadMesh.vertices = QuadMeshVertices;
+            _quadMesh.SetIndices(QuadMeshIndices, MeshTopology.Triangles, 0, false);
+            _quadMesh.UploadMeshData(true);
+        }
+
         private static bool NearlyEqual(Vector4 left, Vector4 right, float epsilon)
         {
             return math.abs(left.x - right.x) <= epsilon &&
@@ -876,14 +1167,106 @@ namespace Hecton8.Environment
                    math.abs(left.w - right.w) <= epsilon;
         }
 
+        private static bool NearlyEqual(Matrix4x4 left, Matrix4x4 right, float epsilon)
+        {
+            return math.abs(left.m00 - right.m00) <= epsilon &&
+                   math.abs(left.m01 - right.m01) <= epsilon &&
+                   math.abs(left.m02 - right.m02) <= epsilon &&
+                   math.abs(left.m03 - right.m03) <= epsilon &&
+                   math.abs(left.m10 - right.m10) <= epsilon &&
+                   math.abs(left.m11 - right.m11) <= epsilon &&
+                   math.abs(left.m12 - right.m12) <= epsilon &&
+                   math.abs(left.m13 - right.m13) <= epsilon &&
+                   math.abs(left.m20 - right.m20) <= epsilon &&
+                   math.abs(left.m21 - right.m21) <= epsilon &&
+                   math.abs(left.m22 - right.m22) <= epsilon &&
+                   math.abs(left.m23 - right.m23) <= epsilon &&
+                   math.abs(left.m30 - right.m30) <= epsilon &&
+                   math.abs(left.m31 - right.m31) <= epsilon &&
+                   math.abs(left.m32 - right.m32) <= epsilon &&
+                   math.abs(left.m33 - right.m33) <= epsilon;
+        }
+
+        private void SetKernelBufferIfChanged(int kernelIndex, int shaderId, GraphicsBuffer buffer, ref GraphicsBuffer cachedBuffer)
+        {
+            if (buffer == null || buffer == cachedBuffer)
+                return;
+
+            marineSnowCompute.SetBuffer(kernelIndex, shaderId, buffer);
+            cachedBuffer = buffer;
+        }
+
+        private void SetMaterialBufferIfChanged(int shaderId, GraphicsBuffer buffer, ref GraphicsBuffer cachedBuffer)
+        {
+            if (buffer == null || buffer == cachedBuffer)
+                return;
+
+            marineSnowMaterial.SetBuffer(shaderId, buffer);
+            cachedBuffer = buffer;
+        }
+
+        private void SetKernelTextureIfChanged(int kernelIndex, int shaderId, Texture texture, ref Texture cachedTexture)
+        {
+            if (texture == null || texture == cachedTexture)
+                return;
+
+            marineSnowCompute.SetTexture(kernelIndex, shaderId, texture);
+            cachedTexture = texture;
+        }
+
+        private void SetComputeVectorHotIfChanged(int shaderId, Vector4 value, ref Vector4 cachedValue)
+        {
+            if (NearlyEqual(value, cachedValue, ShaderVectorPublishEpsilon))
+                return;
+
+            marineSnowCompute.SetVector(shaderId, value);
+            cachedValue = value;
+        }
+
+        private void SetComputeMatrixHotIfChanged(int shaderId, Matrix4x4 value, ref Matrix4x4 cachedValue)
+        {
+            if (NearlyEqual(value, cachedValue, ShaderVectorPublishEpsilon))
+                return;
+
+            marineSnowCompute.SetMatrix(shaderId, value);
+            cachedValue = value;
+        }
+
+        private void SetComputeVectorIfChanged(int shaderId, Vector4 value, ref Vector4 cachedValue)
+        {
+            if (!_externalGpuBindingsDirty && NearlyEqual(value, cachedValue, ShaderVectorPublishEpsilon))
+                return;
+
+            marineSnowCompute.SetVector(shaderId, value);
+            cachedValue = value;
+        }
+
+        private void SetComputeFloatIfChanged(int shaderId, float value, ref float cachedValue)
+        {
+            if (!_externalGpuBindingsDirty && math.abs(value - cachedValue) <= ShaderVectorPublishEpsilon)
+                return;
+
+            marineSnowCompute.SetFloat(shaderId, value);
+            cachedValue = value;
+        }
+
+        private void SetComputeMatrixIfChanged(int shaderId, Matrix4x4 value, ref Matrix4x4 cachedValue)
+        {
+            if (!_externalGpuBindingsDirty && NearlyEqual(value, cachedValue, ShaderVectorPublishEpsilon))
+                return;
+
+            marineSnowCompute.SetMatrix(shaderId, value);
+            cachedValue = value;
+        }
+
         private void EnsureSonarGlowTexture()
         {
             if (_targetCameraComponent == null)
                 return;
 
             float renderScale = math.clamp(sonarGlowRenderScale, 0.1f, 1f);
-            int targetWidth = math.max(8, (int)math.ceil(_targetCameraComponent.pixelWidth * renderScale));
-            int targetHeight = math.max(8, (int)math.ceil(_targetCameraComponent.pixelHeight * renderScale));
+            int targetWidth = math.max(8, (int)(_targetCameraComponent.pixelWidth * renderScale + 0.999f));
+            int targetHeight = math.max(8, (int)(_targetCameraComponent.pixelHeight * renderScale + 0.999f));
             if (_sonarGlowTexture != null && _sonarGlowWidth == targetWidth && _sonarGlowHeight == targetHeight)
                 return;
 
@@ -903,6 +1286,9 @@ namespace Hecton8.Environment
             _sonarGlowWidth = targetWidth;
             _sonarGlowHeight = targetHeight;
             _sonarGlowGlobalsDirty = true;
+            _boundSonarGlowClearTexture = null;
+            _boundSonarGlowAccumulateTexture = null;
+            _boundSonarGlowTexelSize = InvalidVector;
         }
 
         private void ReleaseSonarGlowTexture()
@@ -916,11 +1302,17 @@ namespace Hecton8.Environment
             _sonarGlowWidth = 0;
             _sonarGlowHeight = 0;
             _sonarGlowGlobalsDirty = true;
+            _boundSonarGlowClearTexture = null;
+            _boundSonarGlowAccumulateTexture = null;
+            _boundSonarGlowTexelSize = InvalidVector;
         }
 
         private void RenderMarineSnow()
         {
-            if (_targetCameraComponent == null || marineSnowMaterial == null)
+            if (_targetCameraComponent == null ||
+                marineSnowMaterial == null ||
+                _quadMesh == null ||
+                _indirectArgsBuffer == null)
                 return;
 
             Vector3 cameraPosition = targetCamera.position;
@@ -929,16 +1321,18 @@ namespace Hecton8.Environment
                 cameraPosition + new Vector3(0f, (verticalSpan.x + verticalSpan.y) * 0.5f, 0f),
                 new Vector3(outerRadius * 2f, verticalSize, outerRadius * 2f));
 
-            RenderParams renderParams = new RenderParams(marineSnowMaterial)
-            {
-                worldBounds = _drawBounds,
-                shadowCastingMode = shadowCastingMode,
-                receiveShadows = false,
-                layer = gameObject.layer,
-                camera = _targetCameraComponent,
-                lightProbeUsage = LightProbeUsage.Off
-            };
-            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, _activeParticleCount);
+            Graphics.DrawMeshInstancedIndirect(
+                _quadMesh,
+                0,
+                marineSnowMaterial,
+                _drawBounds,
+                _indirectArgsBuffer,
+                0,
+                null,
+                shadowCastingMode,
+                false,
+                gameObject.layer,
+                _targetCameraComponent);
         }
 
         private void ReleaseBuffers()
@@ -946,16 +1340,81 @@ namespace Hecton8.Environment
             ReleaseBuffer(ref _particleBufferA);
             ReleaseBuffer(ref _particleBufferB);
             ReleaseBuffer(ref _flowFieldBuffer);
+            ReleaseBuffer(ref _emptyFlowFieldBuffer);
             ReleaseBuffer(ref _frameConstantsBuffer);
+            ReleaseBuffer(ref _visibleParticleIndexBuffer);
+            ReleaseBuffer(ref _indirectArgsBuffer);
+            ReleaseBuffer(ref _emptyAbyssalFlowBuffer);
+            ReleaseEmptyCaveSdfTexture();
+            ReleaseQuadMesh();
             ReleaseSonarGlowTexture();
             PublishSonarGlowGlobals(Vector4.zero, Vector4.zero, null);
             _buffersReady = false;
             _kernelIndex = -1;
+            _clearVisibleKernel = -1;
             _sonarGlowClearKernel = -1;
             _sonarGlowAccumulateKernel = -1;
-            _boundCameraDepthTexture = null;
+            ResetGpuBindingCaches();
+            _externalGpuBindingsDirty = true;
             _bootstrapParticles = null;
             ResetSpeedLineHistory();
+        }
+
+        private void ResetGpuBindingCaches()
+        {
+            _boundCameraDepthTexture = null;
+            _boundTerrainHeightTexture = null;
+            _boundCaveSdfTexture = null;
+            _boundAbyssalFlowBuffer = null;
+            _boundSimulationReadBuffer = null;
+            _boundSimulationWriteBuffer = null;
+            _boundSimulationFlowFieldBuffer = null;
+            _boundSimulationVisibleParticleIndexBuffer = null;
+            _boundSimulationIndirectArgsBuffer = null;
+            _boundMaterialParticlesBuffer = null;
+            _boundMaterialVisibleParticleIndexBuffer = null;
+            _boundSonarGlowParticlesWriteBuffer = null;
+            _boundSonarGlowClearTexture = null;
+            _boundSonarGlowAccumulateTexture = null;
+            _boundAbyssalGridResolution = Vector4.zero;
+            _boundAbyssalFlowCenter = Vector4.zero;
+            _boundAbyssalFlowSpacing = Vector4.zero;
+            _boundCaveVoxelHalfExtents = Vector4.zero;
+            _boundTerrainHeightRect = Vector4.zero;
+            _boundTerrainHeightScale = Vector4.zero;
+            _boundSubmarineWashSphere = Vector4.zero;
+            _boundSubmarineWashVelocity = Vector4.zero;
+            _boundPropwashParams = Vector4.zero;
+            _boundEmissionParams = InvalidVector;
+            _boundBubbleParams = InvalidVector;
+            _boundFlowSynchronyParams = InvalidVector;
+            _boundZBufferParams = InvalidVector;
+            _boundDepthTextureTexelSize = InvalidVector;
+            _boundDepthCollisionParams = InvalidVector;
+            _boundSonarGlowTexelSize = InvalidVector;
+            _boundSonarGlowParams = InvalidVector;
+            _boundViewProjection = InvalidMatrix;
+            _boundViewMatrix = InvalidMatrix;
+            _boundCaveVoxelWorldToLocal = IdentityMatrix;
+            _boundCaveVoxelActive = -1f;
+        }
+
+        private void ReleaseEmptyCaveSdfTexture()
+        {
+            if (_emptyCaveSdfTexture == null)
+                return;
+
+            Destroy(_emptyCaveSdfTexture);
+            _emptyCaveSdfTexture = null;
+        }
+
+        private void ReleaseQuadMesh()
+        {
+            if (_quadMesh == null)
+                return;
+
+            Destroy(_quadMesh);
+            _quadMesh = null;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)
@@ -982,7 +1441,7 @@ namespace Hecton8.Environment
 
         private int ResolveActiveParticleCount(float effectiveDensityScale)
         {
-            int capacity = math.max(64, maxParticles);
+            int capacity = ResolveConfiguredCapacity();
             float densityScale = math.saturate(effectiveDensityScale);
             if (densityScale <= ActiveDensityEpsilon)
             {
@@ -1018,7 +1477,7 @@ namespace Hecton8.Environment
             budgetScale *= math.min(1.12f, 1f + _bubbleTrailMovement01 * 0.08f + _bubbleTrailExhale01 * 0.06f);
             _debugAdaptiveBudgetScale = budgetScale;
 
-            int resolvedCount = math.clamp((int)math.round(capacity * budgetScale), 64, capacity);
+            int resolvedCount = math.clamp((int)(capacity * budgetScale + 0.5f), 64, capacity);
             _debugActiveParticleCount = resolvedCount;
             return resolvedCount;
         }
@@ -1026,6 +1485,11 @@ namespace Hecton8.Environment
         private float ResolveBiolumeSurgeBlend()
         {
             return math.saturate(_biolumeSurgeTimer / BiolumeSurgeDurationSeconds);
+        }
+
+        private int ResolveConfiguredCapacity()
+        {
+            return math.clamp(maxParticles, 64, MaxMarineSnowParticleCapacity);
         }
     }
 }

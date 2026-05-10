@@ -1,4 +1,3 @@
-using Crest;
 using System.Diagnostics;
 using UnityEngine;
 
@@ -22,13 +21,7 @@ namespace Hecton8.World
             if (!dumpOnAwake)
                 return;
 
-            OceanRenderer ocean = OceanRenderer.Instance;
-            OceanDepthCache depthCache = ocean != null ? ocean.GetComponentInChildren<OceanDepthCache>(true) : null;
-            if (depthCache == null)
-                return;
-
-            bool saved = depthCache.HectonSaveDepthCacheTexturePng(DepthDebugOutputPath);
-            LogDepthDump(saved);
+            LogDepthDump(false);
             dumpOnAwake = false;
         }
 

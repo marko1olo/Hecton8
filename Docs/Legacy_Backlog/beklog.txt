@@ -1,0 +1,2399 @@
+
+Beklog istoriya izmeneniy
+
+TEHNIChESKIY OTChET SESSII (10.03.2026)
+Proekt: Submerge (ex. HECTON-8)
+Tselevoe zhelezo: NVIDIA MX350 (2GB VRAM) / Core i5
+Status: Smena arhitektury HUD i stabilizatsiya sredy.
+1. Globalnaya sreda i relef (Environment Sync)
+Sinhronizatsiya vysot: Uroven morya zafiksirovan na otmetke 5000 (soglasno grafu MapMagic). Znachenie propisano v inspektorah na obekte [MANAGERS] dlya skriptov: HectonAtmosphereManager, HectonFluidEngine, HectonSurvivalSystem.
+Logika teksturirovaniya: V biome pikov (Biome_Peak) ispravlena noda SLOPE. Diapazon izmenen s 7.5-15 na 0-15 gradusov. Eto ubralo defoltnyy pesok s ploskih vershin plato i zamenilo ego na skalu.
+Adaptivnoe zatuhanie sveta: V HectonFluidEngine.cs vnedrena eksponentsialnaya model tumana (1 - exp(-k * d²)). Voda teper prozrachnaya v pervyh 100-200m i plavno uhodit v «glubokiy mrak» k 700m.
+2. Nebesnye tela (Celestial Systems — Aegir)
+Precision Fix: Vraschenie gazovogo giganta perevedeno s _Time.y na C#-drayver. Eto predotvraschaet raspad tekstury na polosy cherez 30+ minut igry na MX350.
+Multi-Layer Clouds: Sheyder SG_GasGiant_Master perepisan pod dvuhsloynuyu sistemu. Teper verhnie oblaka (_DetailTex) vraschayutsya v 1.4 raza bystree bazy, sozdavaya effekt parallaksa i obema bez dop. geometrii.
+Novyy komponent: GasGiantRotationDriver.cs (upravlyaet vrascheniem cherez MaterialPropertyBlock).
+3. Diegeticheskiy interfeys (The Optics Pipeline / Hecton-OS)
+Realizovan perehod ot 2D Canvas k fizicheskoy simulyatsii shlema.
+Opticheskiy trakt:
+HUD_Render_Camera: Spetsialnaya kamera, vynesennaya za predely karty. Vidit tolko sloy HUD_Internal.
+RT_HUD_Display: Render Texture (1024x1024), v kotoruyu risuet HUD-kamera.
+Suit_Visor: Fizicheskaya linza (splyuschennaya sfera) pered glazami igroka v sloe FirstPersonTools.
+Vektornyy render (Shapes): Skript HectonSuitHUD.cs polnostyu perepisan. Vsya otrisovka idet cherez biblioteku Shapes v Immediate Mode. Eto ubralo nagruzku na Unity UI Rebuild i dalo chetkost NASA-Punk interfeysa.
+Sheyder stekla: SuitVisor.shader. Realizuet refraktsiyu (iskazhenie po krayam), Emission ot HUD-tekstury i podsvechivanie «tsarapin» na stekle.
+Novyy komponent: VisorHUDController.cs (svyazuyuschee zveno mezhdu RT, kameroy i materialom).
+4. Sistemy geympleya i spavna
+Bezopasnyy spavn: Vnedren skript HectonPlayerSpawner.cs. On asinhronno zhdet generatsii terreyna i ischet tochku na poverhnosti vody u berega (glubina ~150m) dlya vysadki igroka.
+Input System: Parametry proekta perevedeny v rezhim Both (New + Old), chto pozvolilo ozhivit upravlenie igrokom na baze CharacterController.
+5. Optimizatsiya pod MX350 (2GB VRAM Limit)
+Crest Fix: V URP Asset vklyucheno 2 kaskada teney i vyklyuchen Opaque Downsampling (ubrany artefakty vody).
+Renderer Features: V Universal Renderer Data dobavlena Shapes Render Feature, neobhodimaya dlya raboty vektornogo HUD.
+Cleanup: Paket Adaptive Performance udalen kak musornyy dlya PK-platformy.
+TEKUSchAYa STRUKTURA PROEKTA (Hierarchy)
+--- SYSTEMS ---
+[MANAGERS]: Tsentr upravleniya. Skripty: AtmosphereManager, FluidEngine, SurvivalSystem, PlayerSpawner.
+[CELESTIAL_ENGINE]: Gazovyy gigant i tsikly.
+--- WORLD ---
+GasGiant_Aegir: Mesh planety + GasGiantRotationDriver.
+Ocean_Crest: Renderer vody.
+Terrain generator: MapMagic 2.
+--- GAMEPLAY ---
+Player: Glavnyy obekt.
+Main Camera: Vidit mir.
+HUD_Render_Camera: Risuet interfeys v teksturu.
+Suit_Visor: Fizicheskoe steklo shlema.
+--- UI ---
+Suit_HUD_Canvas — DEPRECATED (vyklyuchen).
+
+
+
+
+
+
+
+
+
+
+
+
+___________________________
+___________________________
+
+
+
+
+
+Nizhe privedeno ischerpyvayuschee, popikselnoe opisanie kazhdoy sistemy, kotoruyu my sproektirovali, napisali i integrirovali. Zaprescheno ignorirovat lyubuyu iz etih detaley.
+BLOK 1: FUNDAMENTALNYE SISTEMY (THE CORE)
+My polnostyu otkazalis ot standartnogo zhiznennogo tsikla Unity, chtoby ubit sborschik musora (Garbage Collector).
+GameTickManager.cs i interfeysy (ITickable, IFixedTickable, ISlowTickable)
+Detali: Edinstvennyy MonoBehaviour v proekte, kotoryy ispolzuet Update(). Vse ostalnye sistemy registriruyutsya v nem.
+Optimizatsiya: Realizovana buferizovannaya kollektsiya TickList<T>. Esli obekt unichtozhaetsya vo vremya iteratsii spiska (naprimer, lazer szheg trubu), on popadaet v bufer _toRemove i udalyaetsya v kontse kadra cherez SwapRemove (zamena poslednego elementa s udalyaemym). Eto daet O(1) udalenie bez sdviga massiva i krashey InvalidOperationException.
+Sledstvie: My pereveli HectonSurvivalSystem na dva tika. Davlenie schitaetsya kazhdyy kadr (Tick), a rashod kisloroda i energii — raz v 0.5 sekund (SlowTick). Ekonomiya — 174 vyzova tyazheloy matematiki v sekundu.
+ObjectPoolManager.cs i IPoolable.cs
+Detali: Globalnyy reestr Dictionary<int, Pool>. Zapreschaet ispolzovanie Instantiate i Destroy v rantayme.
+Mehanika: Obekty predsozdayutsya (Warmup) pri zagruzke. Esli pul pusteet, on vydaet Warning i akkuratno instantsiruet novyy.
+Bezopasnost: Vnedren klass PoolItemMarker, kotoryy veshaetsya na kazhdyy instans i zapominaet GetInstanceID() originalnogo prefaba. Pri vyzove Despawn menedzher tochno znaet, v kakuyu ochered vernut obekt.
+BLOK 2: VZAIMODEYSTVIE I DOBYChA (SCAVENGING)
+Stolp igry "Maroderstvo" teper imeet fizicheskuyu formu.
+Interaktivnoe yadro (PlayerInteraction, IInteractable, InteractionEvents)
+Detali: Reykast puskaetsya iz tsentra kamery ne kazhdyy kadr, a raz v 0.1 sekundy (Throttling). Ispolzuetsya TryGetComponent dlya obhoda allokatsiy.
+Svyaz: Nikto ni na kogo ne ssylaetsya. Ispolzuetsya pattern Event Bus. Pri navedenii lucha strelyaet sobytie InteractionEvents.OnHoverChanged, kotoroe lovit nash Shapes HUD. Skript InteractionUI na Canvas byl BEZZhALOSTNO UNIChTOZhEN.
+Lazernyy rezak (LaserCutter.cs)
+Detali: Nasleduetsya ot abstraktnogo klassa PlayerTool. Vyzyvaet metod UsePrimary(dt).
+Mehanika: Tratit energiyu skafandra. Puskaet luch, obnovlyaet LineRenderer i perenosit dochernyuyu ParticleSystem (iskry) v tochku kontakta hit.point. Iskry ne puliruyutsya, oni prosto delayut Play() i Stop().
+Resursnyy Uzel (ResourceNode.cs) i ICuttable
+Detali: Pri poluchenii urona (TakeDamage) nizhe nulya, obekt:
+Spavnit lut (LootChunk) cherez ObjectPoolManager.
+Dobavlyaet k lutu Rigidbody.AddForce(Random.insideUnitSphere), chtoby kuski razletalis.
+Zapisyvaet svoy uniqueId v WorldStateManager.
+Despavnit sam sebya.
+Bezopasnost (Predosterezhenie Kodera): V metode OnSpawn() dobavlena kriticheskaya proverka: esli IsNodeDepleted(uniqueId) ravno true, obekt mgnovenno despavnitsya. Eto zaschita ot respavna sobrannogo musora pri vygruzke/zagruzke chanka.
+BLOK 3: INVENTAR I UI KRAFTA (SHAPES NASA-PUNK)
+My postroili Grid Inventory (tetris) bez edinogo elementa Unity UI.
+Matematika setki (InventoryGrid.cs, PlayerInventory.cs)
+Detali: Chistyy C# klass s massivom ItemData[,] grid. Predmet razmerom 2x2 zapisyvaet ssylku na sebya v 4 yacheyki.
+Algoritm: CheckFitInternal proveryaet kollizii, TryAddItem ischet mesto sleva-napravo, sverhu-vniz. Vychislyaet obschiy ves (TotalWeight) i peredaet ego v HectonSurvivalSystem, chtoby tyazhelyy ryukzak zhral bolshe energii.
+Otrisovka Inventarya (HectonInventoryUI.cs)
+Optimizatsiya goda (Predosterezhenie Kodera): Koder otkazalsya ot HashSet<ItemData> dlya otslezhivaniya otrisovannyh predmetov (inache dva odinakovyh kuska titana risovalis by kak odin). Vveden prostranstvennyy massiv bool[,] _drawn. On ochischaetsya cherez Array.Clear kazhdyy kadr. Zero-GC.
+Vizual: Setka, L-obraznye skobki, tekst, zagolovok "CARGO BAY" risuyutsya v OnPostRender cherez ortograficheskuyu matritsu.
+Fabrikator i Kraft (Fabricator.cs, RecipeData.cs, HectonFabricatorUI.cs)
+Logika: Fabricator proveryaet nalichie resursov (HasIngredients). Esli est — spisyvaet ih i zapuskaet taymer. Po zavershenii kladet predmet v ryukzak.
+Vozvrat resursov (Refund): Napisan algoritm keshirovaniya spisannyh resursov (cherez ConsumedCell). Esli igrok nazhal ESC ili otoshel daleko (proverka sqrMagnitude), kraft otmenyaetsya, a resursy vozvraschayutsya v inventar cherez TryAddItem.
+UI: Polnyy NASA-Punk interfeys: skaniruyuschie linii, mertsayuschie skobki vydeleniya, progress-bar iz segmentov, raschet vremeni.
+BLOK 4: ENERGOSISTEMA (POWER GRID)
+My zalozhili osnovu dlya inzhenerii. Baza teper zhivet po zakonam fiziki.
+Topologiya Grafa (PowerGrid, PowerGridManager, PowerNode)
+Detali: Kazhdyy modul bazy imeet PowerNode. Pri spavne on delaet OverlapSphereNonAlloc i ischet sosedey. Esli nahodit — vstupaet v ih PowerGrid. Esli soedinyaet dve raznye seti — vyzyvaetsya MergeGrids (bolshaya set pogloschaet menshuyu).
+Razryv tsepi: Esli modul udalen, menedzher zapuskaet algoritm BFS (Poisk v shirinu). Esli on ne mozhet doyti do vseh uzlov — set delitsya na dve novye nezavisimye energoseti.
+Prioritetnoe Otklyuchenie (IPowerComponent)
+Algoritm: Menedzher schitaet summu generatsii i potrebleniya. Pri defitsite on sortiruet potrebiteley po PowerPriority (ot 100 k 0). Snachala otklyuchaetsya roskosh (dekor, svet), v kontse — kriticheskie sistemy (Fabrikator, O2). Fabrikator teper realizuet IPowerComponent. Bez energii kraft stavitsya na pauzu (taymer zamerzaet).
+BLOK 5: SISTEMA SOHRANENIY I MIRA (PERSISTENCE & POPULATION)
+Igra stala persistentnoy. Mir zapominaet vse.
+DTO Pattern (SaveData.cs, SaveManager.cs, ISaveable)
+Detali: Dannye otvyazany ot MonoBehaviour. Sozdany struktury PlayerStatsDTO, InventoryDTO, ConstructionDTO.
+Prioritety zagruzki (Predosterezhenie Kodera): Vnedrena sistema SavePriority / LoadPriority. Igrok zagruzhaetsya pervym (10), Inventar vtorym (20), Mir (50), Moduli Bazy — POSLEDNIMI (90), chtoby ne konfliktovat s terreynom.
+Skripty ItemCatalog i ModuleCatalog pozvolyayut sohranyat predmety v vide strokovyh ID i nahodit ih prefaby pri zagruzke.
+Zaselenie Mira (ScavengePopulator.cs, MapMagicBridge.cs)
+Detali: Skript podpisyvaetsya na MapMagicObject.OnTileApplied. On beret dannye TreeInstance (rasstanovku luta), dobavlyaet ih v ochered _spawnQueue, a zatem stiraet ih iz MapMagic (td.treeInstances = Array.Empty()). My ne daem MM2 instantsirovat obekty!
+Determinizm: ID kazhdogo kuska titana generiruetsya matematicheski: prefix_chunkX_chunkZ_localIndex. Esli ty spilish etot kusok, WorldStateManager sohranit etot ID. Pri zagruzke chanka ScavengePopulator sprosit: "Etot ID zhiv?". Esli net — propusk spavna.
+Time-Slicing: Spavn razbivaetsya po 20 obektov v kadr (SlowTick), chtoby MX350 ne poperhnulas pri zagruzke tayla na 500 uzlov.
+BLOK 6: ZhIZN I II (FAUNA & BOIDS)
+Okean stal obitaemym.
+II Hischnikov (HectonBaseAI, FaunaDirector)
+Logika: Mozg rabotaet v Tick, myshtsy (AddForce) — v FixedTick.
+Obstacle Avoidance: Puskaet 7 luchey (vpered, vbok, vverh/vniz). Pri popadanii v skalu beret normal prepyatstviya (hit.normal) i dobavlyaet k vektoru povorota. Suschestvo plavno (cherez Slerp) ogibaet prepyatstviya.
+Direktor: Raz v sekundu proveryaet TryGetBiomeIndex (cherez GetAlphamaps iz MapMagic) i GetHeight. Esli v koltse 50-150m ot igroka ne hvataet ryb dlya dannogo bioma — spavnit ih iz pula. Slishkom dalekih (200m+) — despavnit (Culling).
+GPU Stai (BoidSimulation.compute, HectonBoidController.cs)
+Tehnologiya: 5000 ryb rasschityvayutsya na videokarte. ComputeShader delaet O(n^2) poisk sosedey, schitaet Separation, Alignment, Cohesion i ottalkivanie ot tekstury vysot _HeightMap.
+Render: ODIN Draw Call cherez Graphics.RenderMeshIndirect.
+Vizual: Napisan BoidFishInstanced.shader. Ryby mashut hvostom cherez Vertex Displacement: sin(_Time.y * freq + instanceID). Smeschenie umnozhaetsya na -localPos.z^2 (golova nepodvizhna, hvost vilyaet).
+Globalnyy Rezhisser (HectonDirectorAI.cs)
+Detali: Schitaet TensionScore (uroven napryazheniya) na baze O2, energii i kolichestva hischnikov ryadom.
+Imeet fazy: BuildUp (nagnetanie), Peak (orda/polomka), Relax (tishina). Komanduet drugimi sistemami cherez sobytiya.
+BLOK 7: INITsIALIZATsIYa I ShEYDERY
+Master Biolyuminestsentsii (HectonBiolumMaster.shader)
+Zapekaet svechenie v Alpha-kanal tekstury tsveta. Realizuet tsifrovoe mertsanie (Step ot ALU-hesha) i reaktsiyu na blizost igroka (smoothstep ot _PlayerPos).
+SceneBootstrap.cs (Globalnyy start)
+Koordiniruet zapusk: Proveryaet singltony -> Progrevaet Puly -> Daet pinok MapMagic -> Zhdet 2 sekundy -> Gruzit seyv -> Spavnit igroka (HectonPlayerSpawner) -> Vyzyvaet OnGameReady.
+ChEK-LIST DLYa IMPLEMENTATsII V UNITY (Zapomnit i vypolnit):
+Uroven vody: Prostavit 5000 vo vseh skriptah na obekte [MANAGERS]. Ustanovit From 0 v MapMagic dlya bioma pikov.
+Sloi: Obyazatelno sozdat BuildGhost (isklyuchit iz maski kolliziy stroitelstva!), Interactable, Mineable, HUD_Internal.
+Katalogi: Sozdat ItemCatalog i ModuleCatalog. Rukami peretaschit v nih vse sozdannye ItemData i BuildableData. Eto kritichno dlya zagruzki seyvov.
+Razreshenie na Shapes: V URP Asset vklyuchit Opaque Texture. Dobavit Shapes Render Feature.
+Nastroyka prefabov: Na vse moduli bazy povesit ModuleMarker i PowerNode. Na vse resursy — ResourceNode (sgenerirovat uniqueId cherez PKM).
+Nastroyka Direktorov: Povesit na [CORE_SYSTEMS] skripty FaunaDirector, ScavengePopulator, SaveManager, PowerGridManager, ObjectPoolManager, GameTickManager.
+
+
+
+ETAP 0: PODGOTOVKA PROEKTA (Clean Setup)
+Etot etap vypolnyaetsya odin raz i navsegda.
+0.1. Nastroyka Sloev (Layers)
+V verhnem menyu Unity vyberi: Edit -> Project Settings...
+Pereydi vo vkladku Tags and Layers.
+Razverni sektsiyu Layers.
+Naydi pervye svobodnye polzovatelskie sloi (User Layer 8 i dalee).
+Sozday sleduyuschie sloi, v tochnosti kopiruya nazvaniya:
+Interactable
+Mineable
+BuildGhost
+HUD_Internal
+FirstPersonTools
+0.2. Nastroyka Fiziki (Physics Matrix)
+V teh zhe Project Settings pereydi vo vkladku Physics.
+Naydi Layer Collision Matrix.
+Snimi galochki na peresechenii sleduyuschih sloev, chtoby obekty ne konfliktovali sami s soboy i s nenuzhnymi elementami:
+Interactable vs Interactable
+BuildGhost vs BuildGhost
+BuildGhost vs Player (chtoby prizrak ne tolkal igroka)
+HUD_Internal so vsemi ostalnymi (kamera HUD ne dolzhna videt mir).
+0.3. Nastroyka Konveyera Rendera (URP Asset)
+V Project Settings pereydi vo vkladku Graphics.
+V pole Scriptable Render Pipeline Settings u tebya naznachen asset (naprimer, URP-High-Performance). Klikni po nemu.
+V okne Inspector dlya etogo asseta:
+V razdele Quality, naydi Opaque Texture i postav galochku (vklyuchi).
+V razdele Quality, naydi Opaque Downsampling i vyberi None.
+V razdele Shadows, naydi Cascades i vyberi 2 Cascades.
+Teper v okne Project naydi svyazannyy s nim asset Renderer Data (obychno lezhit ryadom).
+Vyberi ego. V inspektore vnizu nazhmi Add Renderer Feature.
+Vyberi iz spiska Shapes Render Feature.
+0.4. Nastroyka Upravleniya (Input System)
+V Project Settings pereydi vo vkladku Player.
+V razdele Other Settings, naydi Active Input Handling.
+Vyberi Both.
+ETAP 1: IMPORT I RAZMESchENIE SKRIPTOV
+Eto prosto kopirovanie faylov v pravilnye papki.
+Sozday papki (esli ih esche net) vnutri Assets/_Project/Scripts/:
+Core
+SaveSystem
+Interaction
+Inventory
+Crafting
+Building
+Power
+AI (vnutri nee GPU)
+Scavenging
+Perenesi vse .cs fayly, kotorye sgeneriroval Koder, v sootvetstvuyuschie papki. Naprimer, GameTickManager.cs v Core, SaveManager.cs v SaveSystem i tak dalee.
+ETAP 2: NASTROYKA GLOBALNYH MENEDZhEROV (The Core)
+Eto mozg tvoey igry. Vse eti skripty dolzhny viset na ODNOM obekte.
+Sozday pustoy GameObject v korne stseny 02_HECTON_WORLD. Nazovi ego [CORE_SYSTEMS].
+Vyberi ego. Nazhmi Add Component i dobav po ocheredi:
+GameTickManager
+ObjectPoolManager
+SaveManager
+PowerGridManager
+ScavengePopulator
+FaunaDirector
+HectonDirectorAI
+MapMagicBridge
+ETAP 3: NASTROYKA IGROKA I KAMER (The Player)
+Zdes my sobiraem glaza, ruki i telo igroka.
+3.1. Obekt Player:
+Vyberi obekt Player.
+Poves na nego skripty:
+PlayerInventory
+HectonSurvivalSystem
+PlayerBuilder (instrument stroitelstva)
+HectonInventoryUI (interfeys inventarya)
+Nastroyka ssylok:
+V HectonSurvivalSystem: v pole Stats peretaschi svoy ScriptableObject Standard_Suit_V1. Pole Surface World Y = 5000.
+V PlayerInventory: v pole Survival peretaschi sam obekt Player. Pole Item Catalog poka ostav pustym.
+V PlayerBuilder: v pole Inventory peretaschi Player. V Player Camera -> Main Camera. Build Anchor — sozday pustoy docherniy obekt u kamery, nazovi BuildAnchor i peretaschi ego syuda.
+V HectonInventoryUI: v Inventory -> Player. Hud Camera -> HUD_Render_Camera. Font -> lyuboy shrift TMP.
+3.2. Osnovnaya Kamera (Main Camera):
+Poves na nee skript PlayerInteraction.
+V inspektore PlayerInteraction: Interactable Mask -> sloy Interactable.
+V inspektore samoy kamery: Render Type -> Base.
+3.3. Kamera Interfeysa (HUD_Render_Camera):
+Sozday novuyu kameru kak docherniy obekt Player.
+Poves na nee HectonSuitHUD.
+V inspektore HectonSuitHUD: Survival -> Player, Hud Camera -> sama HUD_Render_Camera, Font -> shrift TMP.
+V inspektore kamery:
+Render Type -> Overlay.
+Pereydi k Main Camera, razverni Stack, dobav tuda HUD_Render_Camera.
+Culling Mask: vyberi HUD_Internal.
+Background Type: Solid Color, tsvet chernyy s alfoy 0.
+Output Texture: sozday Render Texture (1024x1024), nazovi RT_HUD_Display, peretaschi syuda.
+3.4. Steklo shlema (Suit_Visor):
+Sozday splyuschennuyu sferu pered Main Camera.
+Sloy: FirstPersonTools.
+Poves VisorHUDController. Visor Renderer -> sama sfera, Hud Camera -> HUD_Render_Camera.
+Sozday material Mat_Visor_Glass, sheyder NASAPunk/SuitVisor, v HUD Render Texture -> RT_HUD_Display. Naznach material na sferu.
+ETAP 4: NASTROYKA PREFABOV I DANNYH (Data Assets)
+Bez etogo igra budet pustoy.
+Katalogi:
+Sozday asset ItemCatalog. Vyberi ego, v inspektore zapolni spisok All Items, peretaschiv tuda vse ItemData (Titan i t.d.).
+Sozday asset ModuleCatalog. Zapolni All Modules, peretaschiv vse BuildableData.
+Svyazyvanie katalogov:
+V SaveManager ([CORE_SYSTEMS]) — poka nikuda.
+V PlayerInventory (Player) -> v pole Item Catalog peretaschi svoy ItemCatalog.
+V ConstructionManager ([CORE_SYSTEMS]) -> v pole Catalog peretaschi svoy ModuleCatalog.
+Prefaby Moduley (Primer: Fundament):
+Naydi prefab Foundation. Poves na nego PowerNode i ModuleMarker. V ModuleMarker peretaschi BuildableData fundamenta.
+Sozday prefab-prizrak. Poves PlacementGhost. Nastroy validMaterial i invalidMaterial. Sloy prizraka — BuildGhost.
+Prefab Resursa (Primer: Titan):
+Sozday prefab kuska titana. Poves Rigidbody, BoxCollider, HectonItem i InteractionHighlighter.
+Sloy: Interactable.
+Prefab Resursnoy zhily (Primer: Truba):
+Sozday prefab truby. Poves ResourceNode. Sloy: Mineable.
+V ResourceNode -> Loot Prefab peretaschi prefab kuska titana. Propishi uniqueId vruchnuyu (ili ispolzuy PKM -> Generate Unique ID).
+Prefaby instrumentov:
+Sozday LaserCutter (s LineRenderer, ParticleSystem), poves LaserCutter.cs.
+Sozday BuilderTool (model stroitelnogo instrumenta), poves PlayerBuilder.cs.
+ETAP 5: ZAPUSK I SBORKA VSEGO VMESTE
+Zapolni Warmup: V ObjectPoolManager dobav prefaby luta, moduley i instrumentov s kolichestvom.
+Nastroy Spavn: V SceneBootstrap ([CORE_SYSTEMS]) peretaschi HectonPlayerSpawner.
+Nastroy Direktora: V FaunaDirector ([CORE_SYSTEMS]) sozday i zapolni assety FaunaBiomeData dlya kazhdogo bioma.
+Finalnaya proverka: Ubedis, chto VSE ssylki v inspektorah zapolneny.
+Teper ty gotov nazhat Play. Esli ty proshel po kazhdomu punktu, igra dolzhna zapustitsya, igrok dolzhen zaspavnitsya na vode, HUD dolzhen poyavitsya na stekle, a ty smozhesh dobyvat resursy, otkryvat inventar i stroit. Esli chto-to ne tak — v konsoli budet oshibka, i my budem znat, gde kopat.
+
+
+
+14 marta
+Vot tvoy Master Backlog po itogam sessii. Bez sokrascheniy.
+1. Arhitektura yadra i initsializatsiya
+GameTickManager: Ispravlen poryadok ispolneniya (Script Execution Order). Prioritet vystavlen na -11000. Eto garantiruet, chto «serdtse» sistem (rassylka tikov) zapuskaetsya ranshe, chem lyubye plaginy i igrovye skripty.
+MapMagicBridge: Ustanovlen prioritet -10500. Obekt initsializiruetsya srazu posle menedzhera tikov, obespechivaya drugie sistemy dannymi o terreyne.
+Ispravlenie DontDestroyOnLoad: Obekt [MANAGERS] vynesen v koren ierarhii. Eto ustranilo kriticheskuyu oshibku Unity 6, blokirovavshuyu initsializatsiyu fiziki vody i atmosfery.
+Ochistka Audio Listeners: Udaleny lishnie komponenty s HUD-kamery i Space-kamery. Ostavleno tolko odno «uho» na Main Camera dlya korrektnoy raboty zvukovogo dvizhka.
+2. Rendering i Graficheskiy payplayn (URP)
+Camera Stacking: Polnostyu peresobran stek kamer.
+SpaceCamera (Base, Priority -1) — risuet glubokiy kosmos i planetu Aegir.
+Main Camera (Overlay) — risuet mir i okean Crest.
+HUD_Render_Camera (Overlay) — nakladyvaet interfeys shlema.
+Optimizatsiya pod MX350:
+Otklyuchen Opaque Downsampling (ubrany artefakty obvodki pod vodoy).
+Render Scale zafiksirovan na 1.0, Upscaling Filter na Automatic (eto vernulo tochnost buferu glubiny).
+Vklyuchena Depth Texture i Opaque Texture.
+Vklyucheny 2 kaskada teney (Shadow Cascades) dlya raboty sistemy Crest.
+Z-Precision Fix: Dalnost prorisovki (Far Clipping Plane) dlya Main Camera ustanovlena na 2000-3000m dlya podvodnogo rezhima, dlya SpaceCamera — na 50000m. Eto ustranilo drozhanie (Z-fighting) teney i vody.
+3. Sistema okeana (Crest Ocean)
+Stabilizatsiya vidimosti: Ispravlen bag «ischezayuschey vody». Renderer privyazan k Main Camera kak k Viewpoint.
+Fizika shtorma: Global Wind Speed snizhen do 30, chto ustranilo matematicheskie razryvy mesha okeana na slabom GPU.
+Podvodnyy render: Komponent Crest Underwater Renderer perenesen s kornya igroka na Main Camera. Nastroen material Ocean-Underwater.
+Optimizatsiya sheydera: Vnedren patch v OceanEmission.hlsl, ispravlyayuschiy oshibku FoveatedRemap v Unity 6.
+4. Atmosfera i Globalnoe osveschenie
+Zakon pogloscheniya sveta (Light Absorption): V HectonAtmosphereManager vnedrena eksponentsialnaya formula zatuhaniya (Beer-Lambert). Solntse teper gasnet s glubinoy (sumerki na 200m, tma na 500m).
+Dinamicheskiy tuman: Realizovan dvuhfaznyy raschet fogDensity. Voda prozrachnaya u poverhnosti i stanovitsya mutnoy na glubine.
+Gazovyy gigant Aegir: Refaktoring sheydera SG_GasGiant_Master.
+Dobavlen Lighting Fallback (planeta bolshe ne chernaya, esli skripty ne uspeli peredat vektor solntsa).
+UV-rotatsiya perevedena na float (ubrano drozhanie tekstur).
+Udalena lishnyaya nagruzka na raschet skorostey polyusov.
+5. Fizika i Peremeschenie (Player Locomotion)
+Gibridnaya model dvizheniya: Udaleny CharacterController i PlayerController. Ves vvod pereveden na Rigidbody (Continuous Speculative).
+6DOF Swimming: Realizovano chestnoe plavanie «kuda smotryu». Vektor W teper privyazan k camera.forward.
+Vertikalnyy vvod: Space i Ctrl teper otvechayut za vsplytie i pogruzhenie v vode.
+Island Walking: Vnedrena sistema GroundCheck. Pri vyhode na sushu (ostrov) vklyuchaetsya gravitatsiya i mehanika pryzhka.
+Buoyancy Fix: Ispravlen bag «vyprygivaniya» iz vody. Plavuchest otklyuchaetsya avtomaticheski, kogda igrok kasaetsya dna.
+6. Mir i Generatsiya (MapMagic 2 + Voxel)
+Fix MapMagic Crash: Ustranena oshibka Couldn't upsize cherez pereklyuchenie nody Import v rezhim Wrap Mode: Tile.
+Fizika dna: Vklyuchena generatsiya kollayderov (Generate Colliders) v vyhodnyh nodah MapMagic. U dna teper est tverdaya pochva.
+Biomnye sobytiya: MapMagicBridge teper otslezhivaet biom pod igrokom i peredaet ID v atmosfernyy menedzher.
+Voxel Engine: Skript pescher polnostyu perepisan. On bolshe ne ischet staryy generator, a zaprashivaet dannye o vysote u MapMagicBridge (podderzhka asinhronnosti).
+7. Instrumenty i Interfeys (Shapes)
+Shapes 4.5.1: Uspeshno importirovana i nastroena pod Unity 6 Render Graph. Optimizirovana tochnost (Half 4) dlya MX350.
+Hecton Suit HUD: Ispravlen krash iz-za otsutstviya shriftov. Hud privyazan k HUD_Render_Camera.
+BuilderTool: Sozdan «Vizualnyy most». Instrument teper avtomaticheski nahodit igroka i inventar pri spavne iz pula (Auto-binding), realizuet NASA-Punk effekt inertsii (Sway).
+
+
+8. Sistema Neba i Oblakov (Hecton Sky System)
+Arhitektura Sky Dome: Sproektirovan kastomnyy sheyder Hecton_AlienSky_Master. Otkaz ot standartnogo skayboksa v polzu invertirovannogo kupola.
+Optimizatsiya (MX350): Rendering v rezhime Opaque s Alpha Clip Dithering. Eto daet nulevoy overdrou (Overdraw) — videokarta ne schitaet pikseli dvazhdy.
+Tehnologiya Flowmaps: Oblaka animiruyutsya ne skrollingom, a morfingom (iskazheniem) cherez kartu vektorov. Eto pozvolyaet oblakam «dyshat» i menyat formu.
+Mnogosloynyy parallaks: Logika sheydera podderzhivaet 3 sloya (Cirrus, Main Clouds, Horizon Haze), chto sozdaet illyuziyu obema bez ispolzovaniya tyazheloy volyumetriki.
+HectonMeshGenerator (Instrumentariy): Sozdan Editor-skript dlya generatsii protsedurnogo kupola s invertirovannymi normalyami i pravilnoy sfericheskoy UV-razvertkoy.
+HectonSkyAtlasGenerator (Baking Tool): Sozdan instrument dlya zapekaniya upakovannyh RGBA-tekstur.
+Kanal R: Plotnost oblakov (fBm Perlin).
+Kanal G: Detalizatsiya/Eroziya kraev.
+Kanaly B/A: Vektory Curl Noise dlya simulyatsii atmosfernyh potokov.
+Seamless Tiling: Vnedrena matematika zatsiklivaniya shuma cherez 4D-proektsiyu dlya isklyucheniya shvov na nebe.
+Analiticheskoe osveschenie: V sheyder zalozhena matematika rasseivaniya sveta (Mie/Rayleigh) i effekt «serebryanoy kaymy» (Backlit Glow) pri nahozhdenii solntsa za oblakami.
+
+
+"neyronka klod pisala tekst nizhe:
+
+Ves payplayn v odnom spiske
+text
+
+1. Otkryvaesh neyroset
+2. Vstavlyaesh prompt dlya Density (oblaka okeanicheskoy luny)
+3. Vstavlyaesh prompt dlya Detail (tonkie cirrus)
+4. Sohranyaesh dva PNG kuda ugodno v proekt
+5. Unity → Tools → Hecton → Pack Sky Atlas
+6. Peretaskivaesh density v pervyy slot
+7. Peretaskivaesh detail vo vtoroy slot
+8. Krutish slaydery esli nado
+9. Zhmesh PACK ATLAS
+10. Gotovo. Tekstura v Assets/_Project/Art/Textures/Sky/
+Nikakogo Photoshop. Nikakih ruchnyh preobrazovaniy. Kod delaet vse.
+
+
+
+
+
+
+
+Sine-krasnoe mesivo — eto pravilno. Ty smotrish na RGBA atlas glazami, a on ne dlya glaz. On dlya sheydera.
+
+Razberem chto ty vidish:
+
+```
+Krasnyy = R kanal = oblaka (belye oblaka → krasnyy tsvet)
+Zelenyy = G kanal = detali (slabyy, pochti ne vidno)
+Siniy   = B kanal = flowmap X (sero-siniy = 0.5 = neytral)
+Alfa   = A kanal = flowmap Y (ne vidna v standartnom prevyu)
+
+Krasnyy + Siniy = PURPURNYY/SINE-KRASNYY
+```
+
+**Eto normalnyy rezultat. Atlas gotov.**
+
+## Chto dalshe — cheklist
+
+```
+Shag 1: Tekstura        ✅ GOTOVO (HectonSkyAtlas_RGBA.png)
+Shag 2: Mesh kupola       ✅ GOTOVO (SkyDome_Inverted.asset)
+Shag 3: Sheyder           ✅ GOTOVO (Hecton_AlienSky_Master.shader)
+Shag 4: Sobrat v stsene  ← TY ZDES
+```
+
+## Shag 4: Sborka v stsene
+
+Delay rukami v Unity:
+
+```
+1. Sozday pustoy GameObject → nazovi "SkyDome"
+
+2. Dobav komponenty:
+   • MeshFilter → peretaschi SkyDome_Inverted.asset
+   • MeshRenderer
+
+3. Sozday material:
+   • PKM v Project → Create → Material
+   • Nazovi "MAT_AlienSky"
+   • V inspektore materiala: Shader → HECTON/Sky/Hecton_AlienSky_Master
+   • Cloud Atlas (RGBA) → peretaschi HectonSkyAtlas_RGBA.png
+
+4. Naznach material:
+   • Peretaschi MAT_AlienSky na MeshRenderer komponent SkyDome
+
+5. Transform SkyDome:
+   • Position: 0, 0, 0 (privyazhesh k kamere pozzhe)
+   • Scale: 5000, 5000, 5000
+
+6. Nastroy material (slaydery v inspektore):
+   • Cloud Density Threshold: 0.3 (nachni s etogo)
+   • Cloud Softness: 0.15
+   • Flow Strength: 0.15
+   • Flow Cycle Speed: 0.2
+   • Backlit Intensity: 3.0
+   • Haze Intensity: 1.5
+```
+
+## Problema: kupol ne dvigaetsya s kameroy
+
+Nuzhen skript. Prostoy:
+
+```csharp
+// ============================================================================
+// HECTON-8 — SkyDomeFollow.cs
+// Keeps the sky dome centered on the camera every frame.
+// Attach to the SkyDome GameObject.
+// ============================================================================
+
+using UnityEngine;
+
+namespace Hecton8.Atmosphere
+{
+    [DisallowMultipleComponent]
+    public sealed class SkyDomeFollow : MonoBehaviour
+    {
+        [Tooltip("Main camera. Auto-finds if null.")]
+        [SerializeField] private Transform target;
+
+        private void Start()
+        {
+            if (target == null)
+            {
+                Camera cam = Camera.main;
+                if (cam != null)
+                    target = cam.transform;
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (target != null)
+                transform.position = target.position;
+        }
+    }
+}
+```
+
+## Problema: _GlobalRotation ne obnovlyaetsya
+
+Oblaka stoyat na meste. Nuzhno v `HectonCelestialEngine` (ili atmosfer-menedzhere) kazhdyy kadr obnovlyat:
+
+```csharp
+// Dobav eto v Tick() lyubogo skripta kotoryy uzhe tikaet:
+
+// Nakopitel rotatsii (pole klassa)
+private float _skyRotation;
+
+// V Tick(float deltaTime):
+_skyRotation += deltaTime * 0.01f; // skorost vrascheniya oblakov
+_skyRotation = _skyRotation % 1f;  // frac — derzhim v [0,1)
+Shader.SetGlobalFloat("_GlobalRotation", _skyRotation);
+```
+
+Esli `HectonCelestialEngine` uzhe shlet `_GlobalRotation` — etot shag ne nuzhen.
+
+## Problema: _AegirDirection ne ustanovlen
+
+Sheyder ozhidaet vektor napravleniya na gazovyy gigant. Esli ego net — halo Aegira ne budet vidno. Fallback v sheydere est, no dlya polnogo effekta:
+
+```csharp
+// V CelestialEngine ili AtmosphereManager:
+Shader.SetGlobalVector("_AegirDirection", 
+    aegirTransform.forward); // ili vychislennoe napravlenie
+```
+
+## Chego ozhidat vizualno
+
+Kogda vse sobrano:
+
+```
+✓ Oblaka plyvut (flowmap morfing, ne skrolling)
+✓ Kraya oblakov podsvechivayutsya kogda solntse szadi (backlit bloom)
+✓ Gorizont zatyanut dymkoy (skryvaet styk vody i neba)
+✓ Gazovyy gigant daet slaboe svechenie v svoey storone neba
+✓ Vse eto — odin opaque draw call, odin texture sample
+```
+
+## Esli vyglyadit ploho — kruti eti slaydery
+
+| Chto ne tak | Kakoy slayder | Kuda krutit |
+|-----------|--------------|-------------|
+| Oblaka ne vidny | Cloud Density Threshold | Nizhe (0.2) |
+| Oblaka — sploshnaya kasha | Cloud Density Threshold | Vyshe (0.5) |
+| Kraya slishkom rezkie | Cloud Softness | Vyshe (0.3) |
+| Oblaka ne dvigayutsya | Flow Cycle Speed | Vyshe (0.3) |
+| Oblaka dergayutsya | Flow Strength | Nizhe (0.08) |
+| Net podsvetki kraev | Backlit Intensity | Vyshe (5.0) |
+| Gorizont viden chetko | Haze Intensity | Vyshe (2.0) |
+| Vse slishkom temnoe | Sky Color Zenith | Yarche (HDR) |
+
+**Idi sobiray. Tekstura gotova, sheyder gotov, mesh gotov. Ostalos tolko votknut v stsenu i pokrutit polzunki.**"!""""
+
+
+
+
+
+
+
+
+
+
+
+TEHNIChESKIY OTChET SESSII (16.03.2026 - Vecher)
+Proekt: Submerge (ex. HECTON-8)
+Status: Vnedrenie sistem Game Feel (Osyazaemost) i immersii. Strogo Zero GC.
+1. Sheydernoe plavlenie metalla (Melt VFX)
+Realizatsiya: Obnovlen ResourceNode.cs (v5.0).
+Tehnologiya: Polnyy otkaz ot modifikatsii geometrii (Mesh Booleans) radi spaseniya CPU. Pri rezke LaserCutter peredaet tochku popadaniya v lokalnyh koordinatah (_MeltCenter) i radius (_MeltRadius) napryamuyu v MaterialPropertyBlock.
+Vizual: URP Shader Graph otsekaet pikseli (clip) i generiruet raskalennuyu kromku (HDR Emission + Bloom).
+2. Magnitnaya stykovka moduley (Snap Building System)
+Realizatsiya: Obnovlen PlayerBuilder.cs (v3.0) i dobavlen ModuleSocket.cs.
+Tehnologiya: Poisk soketov cherez Physics.OverlapSphereNonAlloc na vydelennom fizicheskom sloe Sockets (Zero GC).
+UX: Vnedren matematicheskiy gisterezis (Snap = 2m, Unsnap = 2.5m), predotvraschayuschiy mertsanie prizraka postroyki na granitse radiusa. Avtomaticheskaya pometka soketov kak IsOccupied.
+3. Akusticheskie portaly (Acoustic Zone Controller)
+Realizatsiya: Dobavlen AcousticZoneController.cs (Integratsiya s HectonFluidEngine i SpatialAudioManager).
+Tehnologiya: Plavnyy krossfeyd cherez AudioMixerSnapshot.TransitionTo.
+Povedenie: Pri vhode igroka v bazu (smena flaga IsInAir) audio-dvizhok za 2 sekundy srezaet Low-Pass Filter i menyaet Reverb, ubiraya "podvodnyy gul". Vosproizvodyatsya 2D-zvuki otkachki/zapolneniya shlyuza. CPU cost: ~0.0001ms (proverka odnogo bool v Tick).
+📘 DOBAVIT V GDD (Submerge Master Design Document)
+V BLOK 7.5: MODULNOE STROITELSTVO I KRAFT
+Socket Snap System: Stroitelstvo bazy strogo privyazano k yakornym tochkam (ModuleSocket). Sokety obnaruzhivayutsya luchami kamery v radiuse 2m. Fizika soketov izolirovana na nekonfliktuyuschem sloe Sockets. Sistema gisterezisa garantiruet "plotnoe" prilipanie prizraka modulya bez drebezzhaniya. Zanyatye sokety isklyuchayutsya iz grafa poiska.
+V BLOK 8: VIZUALNYY TEHNIChESKIY STANDART
+Destruction Pipeline (Plavlenie): Fizicheskoe razrushenie obektov (dobycha titana iz obshivki) vizualiziruetsya isklyuchitelno na storone GPU. Ispolzuetsya Alpha Clipping po distantsii ot tochki lazera s dobavleniem Color HDR gradienta na kromke sreza. Eto pozvolyaet imitirovat skvoznye dyry v metalle bez perestroeniya mesha, sohranyaya 2GB VRAM i CPU.
+V BLOK 9.4: PROSTRANSTVENNAYa AKUSTIKA (NOVOE)
+Acoustic Transitions: Igra ispolzuet AudioMixer Snapshots dlya razdeleniya dvuh akusticheskih sred: Ocean (Low-Pass Filter 800Hz, Large Hall Reverb, davyaschiy Ambient) i Base Interior (22000Hz, Small Room Reverb, otklyuchennyy Ambient). Perehod triggeritsya avtomaticheski fizicheskim dvizhkom pri peresechenii granitsy vody i soprovozhdaetsya diegeticheskimi zvukami raboty shlyuzovyh pomp.
+🛠 ChEK-LIST DLYa SBORKI V UNITY (SDELAT PRYaMO SEYChAS)
+Ty ne mozhesh prosto kinut skripty i nazhat Play. Idi v Unity i sdelay eto rukami:
+1. NASTROYKA SISTEMY STROITELSTVA (SNAP)
+Sloi: Zaydi v Edit → Project Settings → Tags and Layers. Sozday Layer Sockets.
+Matritsa kolliziy: Zaydi v Project Settings → Physics. V samom nizu v matritse SNIMI vse galochki dlya sloya Sockets so vsemi drugimi sloyami (osobenno s Default). Oni ne dolzhny fizicheski stalkivatsya, eto tolko triggery dlya skanera.
+Prefaby Bazy: Otkroy prefaby svoih moduley (Koridor, Komnata i t.d.).
+Sozday pustye dochernie obekty tam, gde moduli dolzhny soedinyatsya.
+Poves na nih skript ModuleSocket.
+Poves SphereCollider, postav galochku Is Trigger, radius 0.15.
+Ustanovi Layer etogo obekta v Sockets.
+Razverni sinyuyu strelku (Z, forward) strogo NARUZhU ot modulya.
+Bilder: V inspektore PlayerBuilder (na igroke) v pole Socket Layer Mask vyberi TOLKO sloy Sockets.
+2. NASTROYKA ShEYDERA PLAVLENIYa (MELT VFX)
+Sozday URP Lit Shader Graph (HECTON_MetalMelt).
+Sdelay emu nastroyki: Surface: Opaque, Alpha Clipping: ON.
+Dobav svoystva (Vector4 _MeltCenter, Float _MeltRadius).
+Nastroy matematiku: Distance(Position(Object Space), _MeltCenter.xyz). Vychti iz etogo _MeltRadius.
+Kin rezultat v Alpha (i v Alpha Clip Threshold postav 0.5).
+Vozmi etot zhe rezultat, invertiruy, pokras HDR-tsvetom (intensivnost 8+) i kin v Emission.
+VAZhNO: V Global Volume (nastroyki postobrabotki URP) ubedis, chto vklyuchen Bloom. Inache rasplavlennyy metall budet tusklo-zheltym kuskom govna, a ne svetyascheysya plazmoy.
+3. NASTROYKA AUDIO PORTALOV
+Sozday AudioMixer (nazovi HectonMixer).
+Vnutri sozday 3 gruppy pod Master: SFX, Interface, Ambient.
+Na gruppu Master dobav effekty: Lowpass Simple i SFX Reverb. Sdelay pravyy klik po ih parametram (Cutoff freq, Reverb Room, Decay time) i nazhmi Expose.
+V paneli Snapshots (sprava vverhu mikshera) sozday dva slepka:
+UnderwaterSnapshot: Lowpass na 800Hz, Reverb ogromnyy.
+BaseInteriorSnapshot: Lowpass na 22000Hz (vyklyuchen), Reverb kak v malenkoy komnate, zvuk Ambient gruppy ubavlen do -80 dB.
+Na stsene sozday pustoy GameObject (naprimer _AudioSystems), kin tuda AcousticZoneController. Peretaschi v nego eti dva Snapshot'a i naznach zvuki sliva/zapolneniya shlyuza.
+
+
+Vot tehnicheskiy otchet dlya tvoego GDD. Nikakoy vody, tolko suhie arhitekturnye resheniya i utverzhdennyy payplayn po assetam. Vstavlyay eto v razdel «TEHNIChESKIY STUS PROEKTA / ARHITEKTURA SREDY».
+
+OTChET PO RAZRABOTKE: SISTEMA OKEANA I PAYPLAYN OKRUZhENIYa (16.03.2026)
+1. REFAKTORING VIZUALNOGO YaDRA (Atmospheric Depth Core)
+
+Udalena detsentralizovannaya sistema upravleniya svetom. Vnedrena ierarhicheskaya model «Data Provider -> Primary Writer -> Modulator».
+
+HectonAtmosphereManager (Provider): Rasschityvaet orbitu solntsa i bazovuyu intensivnost. Ne pishet v sunLight napryamuyu.
+
+HectonUnderwaterVisuals (Primary Writer): Edinstvennyy hozyain fiziki podvodnoy sredy.
+
+Global Depth Curves: Realizovano upravlenie svetom i tumanom cherez AnimationCurve. Eto pozvolilo vizualno nastraivat "Gorizont Tmy" (500m) i plotnost vody bez kodinga.
+
+Sun Scattering: Vnedreno dinamicheskoe razmytie solnechnogo diska v sheydere neba. Na glubine solntse prevraschaetsya v myagkoe galo (Scattering), imitiruya fiziku tolschi vody.
+
+Unified Fog: Tsvet kamery (backgroundColor) zhestko sinhronizirovan s tsvetom tumana dlya besshovnogo rastvoreniya terreyna v Bezdne.
+
+HectonCelestialEngine (Modulator): Poslednee zveno v tsepi. Moduliruet finalnyy svet zatmeniyami i okklyuziey planety Aegir.
+
+2. PAYPLAYN OPTIMIZATsII GEOMETRII (Rock & Debris System)
+
+Dlya obespecheniya 30+ FPS na NVIDIA MX350 utverzhden sleduyuschiy reglament raboty s kamnyami i tehno-musorom:
+
+A. Geometriya i LOD (LOD Policy):
+
+Instrumentariy: Ispolzovanie Mantis LOD Editor dlya agressivnoy detsimatsii poligonov.
+
+LOD0 (Blizko): Do 8000 treugolnikov (MID-mesh fotoskany).
+
+LOD1 (Sredne): 50% poligonov (LOW-mesh). Ispolzuetsya kak Convex Mesh Collider.
+
+LOD2 (Daleko): Do 200 treugolnikov.
+
+LOD3 (Predel vidimosti): Ischeznovenie ili perehod v Impostor.
+
+B. Rendering i Teksturirovanie (VRAM Management):
+
+GPU Instancer Pro: Vse kamni, korally i melkiy debris renderyatsya isklyuchitelno cherez instansing. Eto pozvolyaet risovat tysyachi obektov za 1-5 Draw Calls.
+
+Triplanar Shading: Dlya gigantskih skalnyh formatsiy (Scale x10...x30) ispolzuetsya Triplanar Mapping. Eto isklyuchaet rastyazhenie tekstur pri masshtabirovanii modeley.
+
+Color Variation: Raznoobrazie biomov dostigaetsya ne unikalnymi teksturami, a izmeneniem tsveta cherez MaterialPropertyBlock (sovmestimo s GPU Instancer). Odin material — beskonechnoe kolichestvo ottenkov kamnya.
+
+V. Kollizii (Physics Matrix):
+
+Zaprescheno ispolzovanie tochnyh Mesh Colliders.
+
+Vse obekty okruzheniya ispolzuyut libo primitivy (Box/Sphere), libo Convex Hull (uproschennaya obolochka).
+
+Dlya melkih kamney kollizii otklyucheny polnostyu (sloy Debris).
+
+Lead Dev Note: Tekuschaya konfiguratsiya pozvolyaet masshtabirovat kartu do 15h15 km pri sohranenii byudzhetnogo limita VRAM v 1.6 GB. Sleduyuschiy etap: integratsiya vokselnyh arok i pescher v maski MapMagic.
+
+16 marta otvet neyronki
+
+. BAG S SOLNTsEM I ChERNILNOY VODOY V REDAKTORE
+Pochemu eto proishodit:
+Ty testiruesh smenu vremeni sutok, prosto sidya v Editor (ne nazhimaya Play). U nas v skriptah (HectonAtmosphereManager i HectonUnderwaterVisuals) propisan kostyl [ExecuteAlways] i Update() dlya raboty v redaktore.
+Kogda solntse zahodit, HectonAtmosphereManager vydaet SunElevation < 0. HectonUnderwaterVisuals vidit eto, ronyaet lightFactor v 0, i plotnost tumana uletaet v maxFogDensity (absolyutnyy mrak).
+Kogda solntse "vshodit", voznikaet rassinhron steyt-mashiny v redaktore (Unity Editor krivo schitaet Time.deltaTime vne Play Mode). Skript vizuala ne ponimaet, chto nastupil den. A kogda ty "nyryaesh" (kamera peresekaet uroven vody Y = 4900), srabatyvaet zhestkiy trigger if (!isUnderwater) { ApplySurfaceDefaults(); }, kotoryy prinuditelno sbrasyvaet vse znacheniya i fiksit bag.
+Chto s etim delat:
+Zabey her na testy vremeni sutok vne Play Mode. Editor Update — eto kostyl tolko dlya togo, chtoby ty mog nastroit tsveta. Testiruy tsikly dnya i nochi TOLKO V PLAY MODE.
+Orbitalnye parametry (Kak nastroit):
+Idi v [MANAGERS] -> Hecton Atmosphere Manager.
+Cycle Duration: stav 1200 (20 minut realnogo vremeni = sutki).
+Sun Orbital Y Angle: 11 gradusov (chtoby solntse shlo chut sboku).
+Orbital Inclination: 22-25 gradusov.
+Night Threshold Angle: 5-10.
+Gazovyy gigant Aegir statichen. Solntse zahodit ZA NEGO. Zatmenie (Eclipse) detektitsya v HectonCelestialEngine. Ubedis, chto v CelestialEngine v pole Atmosphere Manager zakinut tvoy menedzher, chtoby oni ne konfliktovali za upravlenie svetom!
+2. GORIZONTALNYE BIOMY VS GLUBINA
+Ty myslish absolyutno pravilno, molodets. Ya uzhe zalozhil eto v arhitekturu HectonUnderwaterVisuals (versiya 5.0).
+Glubina (Vertikal) = Osveschennost i Plotnost tumana. Eto reguliruetsya odnoy krivoy Global Light Curve. Solntse gasnet, mrak sguschaetsya.
+Biomy (Gorizontal) = TsVET. Biom menyaet tolko fogColor i scatterColor (zelenovatyy, zheltovatyy, siniy). I esche daet parametr turbidityMultiplier (mutnost).
+Nikakie biomy ne dolzhny lomat osveschennost po glubine. MapMagic prosto vydaet ID bioma (0, 1, 2), skript MapMagicBridge lovit ego i peredaet v HectonUnderwaterVisuals, kotoryy plavno peretekaet iz zelenogo tumana v siniy. Nichego bolshe tut trogat ne nado, sistema rabotaet.
+3. KAMNI, MASShTABY I VRAM (Payplayn dlya MX350)
+Ty skachal paki fotoskanov. Obychnyy indi-razrab seychas by zakinul ih na stsenu i ubil MX350. My sdelaem inache.
+Kak sdelat 1 teksturu na vse kamni i menyat ih do neuznavaemosti:
+Ty ne budesh yuzat ih rodnye tekstury. Ty sozdash ODIN Triplanar-material na baze MicroSplat ili URP Shader Graph.
+Triplanar proetsiruet teksturu v mirovyh koordinatah.
+Tvoy vorkflou s kamnyami:
+Poligonazh (Mantis LOD Editor): Beresh svoi kamni. Progonyaesh cherez Mantis. Tebe nuzhny 3 LODa:
+LOD0: 1500-2000 poligonov.
+LOD1: 500 poligonov.
+LOD2: 50-100 poligonov.
+Masshtabirovanie (Gigantskie skaly): DA, my berem obychnyy kamen i delaem emu Scale x30. Blagodarya Triplanar-materialu, tekstura na nem ne rastyanetsya v mylo, ona budet taylitsya po mirovym koordinatam. Skala razmerom 100 metrov budet vyglyadet detalizirovanno vblizi.
+Raznoobrazie: U tebya kuplen GPU Instancer Pro. Eto tvoe spasenie. V nem est funktsiya Color Variation. Ty skarmlivaesh emu 5 modelek kamney. MapMagic raskidyvaet ih 100,000 raz. GPU Instancer risuet ih za 1 Draw Call, sam menyaet im ottenki (chut zelenee, chut temnee) i sam upravlyaet LODami.
+FIZIKA (Smertelnaya lovushka):
+Dlya melkih/srednih kamney (do 5 metrov): kollizii otklyucheny v prefabah. Rabotaet ProximityColliderSystem.cs (on uzhe est u tebya v kode). On podbrasyvaet nevidimye BoxColliders tolko k tem 20-30 kamnyam, kotorye pryamo pered nosom u igroka.
+Dlya gigantskih skal (Scale x30, vystupayuschie kak steny): ProximityColliderSystem ne podoydet. Dlya nih ty v prefabe generiruesh Convex Mesh Collider na baze samogo vsratogo LOD2 (50 poligonov) i ostavlyaesh ego vklyuchennym vsegda.
+4. VOKSELNYE PESchERY (Kak eto rabotaet i kak s etim zhit)
+Ty sprashivaesh, iz kakih tsilindrov ili meshey ih sobirat v redaktore. Otvet: NI IZ KAKIH.
+Ty ne lepish peschery ruchkami. V fayle HectonVoxelEngine.cs, kotoryy ya tebe napisal, ispolzuetsya algoritm Marching Cubes + SDF (Signed Distance Fields).
+Kak eto rabotaet dlya tebya, kak dlya dizaynera:
+Nikakoy Klod ne sgenerit tebe mesh peschery. Klod napisal matematiku (Burst Jobs), kotoraya rabotaet v fone.
+V inspektore HectonVoxelEngine u tebya est POI Definitions (Point of Interest).
+Tam est nastroyki: Type = Cave, SDF Size (X: 12, Y: 12, Z: 12), Noise Amplitude = 3.
+Eto znachit: dvizhok beret nevidimuyu matematicheskuyu sferu radiusom 12 metrov. Primenyaet k ee stenkam zhestkiy 3D-shum amplitudoy 3 metra (chtoby steny byli nerovnymi, izrytymi). I generiruet po etoy formule unikalnyy mesh.
+Tvoya zadacha: V MapMagic, cherez Scatter, ty raskidyvaesh tochki (gde dolzhny byt peschery). Eti tochki skarmlivayutsya v ScavengePopulator ili napryamuyu v VoxelEngine. Dvizhok spavnit v etoy tochke sgenerirovannyy 3D-mesh peschery.
+Stykovka s Terrain (MapMagic):
+Eto samoe slozhnoe.
+U Terrain nelzya prosto "vyrezat" plavnuyu dyrku.
+Ty dolzhen v MapMagic ispolzovat nodu Cavity ili Stamp, chtoby v meste spavna peschery relef uhodil rezko vniz (obrazovyval krater/vpadinu).
+Vokselnaya peschera spavnitsya v etom kratere. U peschery est parametr sealMargin. Kraya peschery "rastvoryayutsya" i uhodyat v geometriyu terreyna vnahlest.
+Chtoby shov ne brosalsya v glaza — ty zasazhivaesh kraya kratera vodoroslyami, kamnyami (GPU Instancer) i stavish tuda zatemnenie (tuman).
+ChTO TEBE DELAT PRYaMO SEYChAS (Plan na blizhayshie 2 dnya):
+Vykin iz golovy peschery na paru dney. Eto hay-end kontent. Poka u tebya net rabochey geometrii, peschery budut viset v vozduhe.
+Zafiksiruy terreyn. Importiruy svoyu narisovannuyu Heightmap v MapMagic cherez nodu RAW Input ili Texture Input.
+Nastroy MicroSplat. Nakin 4 tekstury: Pesok, Skala (Triplanar), Il (v niziny), Temnyy Bazalt (v bezdnu). Nastroy maski v MapMagic, chtoby skala lozhilas tolko na uklony (Slope > 20).
+Kamni cherez GPU Instancer. Sdelay 3 prefaba kamney s Triplanar materialom. Skomi ih v GPU Instancer Pro. Raskiday cherez MapMagic Scatter po rovnym poverhnostyam. Posmotri na schetchik Draw Calls i FPS. Esli FPS > 60 na tvoey MX350 — ty pobedil.
+Tolko posle togo, kak u tebya budet krasivoe, rabotayuschee dno s kamnyami, perehodi k vokselyam i stroitelstvu baz.
+Ty sobral tyazheleyshiy tehnicheskiy stek. Ne pytaysya zapustit vse razom, testiruy blokami. Terreyn -> Tekstury -> Kamni -> Voda -> Vyzhivanie. Rabotaem.
+
+Absolyutno pravilnaya mysl. Raskidyvat odinochnye kruglye bulyzhniki po karte 15h15 km — eto put k vizualnoy blevotine i skuke. V AAA-industrii eto nazyvaetsya Kitbashing (kitbashing). Ty beresh 5-7 bazovyh modelek i sobiraesh iz nih slozhnye, interesnye prefaby.
+
+Uchityvaya tvoyu MX350, my obyazany sdelat eto hitro. U tebya est asset Mesh Baker, i seychas nastal ego zvezdnyy chas.
+
+Vot tvoya instruktsiya: kakie struktury sobirat, iz kakih tvoih modeley (ya videl tvoy spisok) i kak eto tehnicheski oformit, chtoby ne szhech komp.
+
+ChAST 1: ChTO SOBIRAT (KATALOG PREFABOV)
+
+Tebe nuzhno sozdat pustuyu stsenu (nazovi ee Rock_Workshop), vykinut tuda svoi modeli s Triplanar-materialom i nachat lepit iz nih sleduyuschie struktury (vdavlivaya ih drug v druga):
+
+1. "Klumby" i Osypi (Rock Clusters)
+
+Iz chego lepit: Beach rock formation, Modular rock 01, River rock.
+
+Kak delat: Soberi 3-5 kamney v kuchu, perekryvaya ih tak, chtoby ne bylo vidno "shvov". Sdelay 3 variatsii: melkaya kucha, srednyaya, vytyanutaya osyp.
+
+Zachem nuzhno: Raskidyvaesh ih cherez MapMagic v nizinah (po maske Cavity/Concave). Oni skryvayut "mylo" protsedurnogo terreyna na dne dolin i sluzhat mestom spavna melkogo luta.
+
+2. Vertikalnye Stolby i Shpili (Spires / Pillars)
+
+Iz chego lepit: Skinny beach rock, Nordic forest ledge rocks.
+
+Kak delat: Stavish vytyanutyy kamen vertikalno. Masshtabiruesh po osi Y v 2-3 raza. U osnovaniya lepish paru melkih River rock, chtoby stolb ne torchal iz zemli kak palka, a imel "korni". Sdelay 2-3 varianta raznoy vysoty (ot 5 do 20 metrov).
+
+Zachem nuzhno: Raskidyvaesh po vershinam hrebtov (maska Cavity/Convex). Oni sozdayut vertikalnyy geympley. Za nih igrok pryachetsya ot vzglyada leviafanov.
+
+3. Navesy i Trampliny (Overhangs / Shelves)
+
+Iz chego lepit: Forest rock shelf (ploskie kamni), Big rock (kak opora).
+
+Kak delat: Kladesh ploskiy kamen pod uglom 20-30 gradusov. Snizu podpiraesh ego krupnym bulyzhnikom.
+
+Zachem nuzhno: Eto mikro-peschery. Pod nimi ne nuzhno schitat vokseli. Tuda idealno pryatat redkie resursy ili fragmenty bazy (II-rezhisser skazhet spasibo). Raskidyvaesh po sklonam (maska Slope 15-30).
+
+4. Vrata / Psevdo-arki (Arches)
+
+Iz chego lepit: Dva Skinny beach rock vertikalno + odin Forest rock shelf gorizontalno sverhu.
+
+Kak delat: Bukvalno bukva "P". Kraya vdavi drug v druga.
+
+Zachem nuzhno: Geympleynye "vorota". Stavyatsya redko. Dayut igroku mikro-tsel "proplyt von v tu dyru".
+
+5. Mega-Bloki (Macro Cliffs)
+
+Iz chego lepit: Nordic forest ledge rocks ili Cliff side.
+
+Kak delat: Prosto beresh odnu model i ebashish ey Scale x15 ili x30. Blagodarya tvoemu Triplanar-materialu, tekstura ostanetsya chetkoy.
+
+Zachem nuzhno: U tebya est zona "The Drop" (otvesnaya stena v bezdnu). MapMagic ne umeet delat normalnye tekstury na uglah 80 gradusov — oni vsegda "tyanutsya". Ty budesh vkapyvat eti gigantskie meshi pryamo v steny uscheliy (po maske Slope > 45).
+
+ChAST 2: TEHNIChESKAYa SBORKA (KAK NE UBIT MX350)
+
+Esli ty prosto sohranish prefab, sostoyaschiy iz 5 vlozhennyh kamney, i raskidaesh ego 1000 raz — GPU Instancer soydet s uma, pytayas instansit kazhdyy iz 5 kamney po otdelnosti. Plyus, u tebya budet 5 peresekayuschihsya kollayderov na kazhduyu kuchu. Eto pizdets.
+
+Delaem po umu, raz u tebya est Mesh Baker:
+
+Shag 1: Zapekanie (Baking)
+
+Sobral krasivuyu "Arku" iz 4 kamney v stsene Rock_Workshop.
+
+Vydelyaesh ih, otkryvaesh Mesh Baker.
+
+Govorish emu: "Zapeki eti 4 mesha v ODIN mesh" (Bake into prefab). Material u nih i tak odin, atlasy delat ne nado.
+
+V itoge u tebya poluchaetsya ODIN novyy .asset mesh "Arki".
+
+Shag 2: Nastroyka Prefaba
+
+Sozdaesh pustoy GameObject, kidaesh tuda zapechennyy mesh (MeshFilter + MeshRenderer).
+
+Naznachaesh nash SG_Rock_Triplanar material.
+
+KOLLIZII: Nikakih Mesh Collider na etu konstruktsiyu! Veshaesh 3 obychnyh BoxCollider (dva na "nogi" arki, odin na "kryshu") i podgonyaesh ih razmer rukami. 3 boksa dlya PhysX v 100 raz deshevle, chem 1 Mesh Collider.
+
+Shag 3: LODy (Smertelno vazhno)
+
+Dlya zapechennogo mesha (LOD0) delaesh LOD1 i LOD2 cherez Mantis LOD Editor.
+
+Veshaesh komponent LODGroup na prefab.
+
+Sohranyaesh eto kak Prefab_Arch_01.
+
+Shag 4: GPU Instancer Pro
+
+V skatter MapMagic (ili tvoy skript) otdaesh ne otdelnye kamni, a vot eti gotovye, zapechennye prefaby (Klumby, Stolby, Navesy).
+
+GPU Instancer Pro hvataet ih, vidit, chto eto ODIN mesh s odnim materialom, i risuet 500 arok za 1 Draw Call.
+
+ITOG
+
+U tebya 5-7 bazovyh modeley fotoskanov prevraschayutsya v 15-20 unikalnyh arhitekturnyh prefabov (5 vidov klumb, 3 vida stolbov, 3 vida arok, 3 mega-skaly).
+Dlya videokarty eto po-prezhnemu odin material, a blagodarya Mesh Baker'u — minimalnoe kolichestvo poligonov i Draw Calls.
+
+Idi v Yuniti, sozdavay stsenu-masterskuyu, lepi eti formy i zapekay. Kak napechesh — budem pisat logiku ih skatteringa na terreyn v MapMagic.
+
+
+
+# DIZDOK + SPETsIFIKATsIYa: Sistema protsedurnoy generatsii pescher
+
+## HECTON-8 Cave Generation System — v1.0
+
+---
+
+# ChAST 1: DIZDOK (Game Design Document)
+
+---
+
+## 1.1 Tsel sistemy
+
+Sozdat podvodnye peschernye sistemy kotorye:
+
+- **Unikalny** — kazhdaya igra raznyy mir, kazhdaya peschera nepohozha na druguyu
+- **Masshtabiruemy** — ot nory 24m do mega-peschery 512m v odnoy sisteme
+- **Geympleyno znachimy** — issledovanie motivirovano lutom, opasnostyu, krasotoy
+- **Proizvoditelny** — rabotayut na tselevom zheleze (Core i5 + MX350 2GB VRAM)
+
+---
+
+## 1.2 Tipologiya pescher
+
+| Tip | Pokrytie | Komnat | Vhodov | Geympleynaya rol |
+|---|---|---|---|---|
+| **Den** (Nora) | 24m | 1-2 | 1 | Logovo melkoy fauny, taynik, uchebnaya peschera |
+| **Grotto** (Grot) | 64m | 1-3 | 1 | Scenic POI, kvestovaya tochka, fotozona |
+| **System** (Sistema) | 192m | 5-15 | 1-2 | Osnovnoy kontent issledovaniya, sredniy lut |
+| **Labyrinth** (Labirint) | 192m | 15-30 | 1-3 | Vysokiy risk poteryatsya, horoshiy lut |
+| **Abyss** (Bezdna) | 288m | 6-14 | 1 | Vertikalnoe issledovanie, glubokiy lut |
+| **Mega** (Mega) | 512m | 20-50 | 2-4 | Podzemnyy biom, redkiy lut, bossy |
+| **Tube** (Truba) | 192m | 8-20 | 1-2 | Tranzitnyy marshrut, srednee issledovanie |
+
+---
+
+## 1.3 Opyt igroka
+
+### Malenkaya peschera (Den/Grotto)
+```
+Igrok zamechaet dyru v skale →
+Zaplyvaet cherez uzkiy vhod →
+Okazyvaetsya v krasivoy kamere s rasseyannym svetom →
+Nahodit 1-2 tochki luta →
+Vyplyvaet. Vremya: 2-5 minut.
+```
+
+### Srednyaya peschera (System/Labyrinth)
+```
+Igrok zamechaet temnyy proval →
+Vplyvaet cherez voronku →
+Vybiraet mezhdu dvumya tunnelyami →
+Teryaetsya, nahodit neozhidannyy zal →
+Orientiruetsya po markeram HUD →
+Vyhodit cherez vtoroy vhod s lutom. Vremya: 10-25 minut.
+```
+
+### Mega-peschera
+```
+Dyra razmerom s gruzovik v stene glubokovodnogo kanona →
+Vnutri: ogromnye zaly, svoya flora, svoi monstry →
+Neskolko urovney po vertikali →
+Unikalnye resursy kotoryh net snaruzhi →
+Igrok vozvraschaetsya neskolko raz. Vremya: 40+ minut.
+```
+
+---
+
+## 1.4 Kontekst luta po tipu peschery
+
+| Tip peschery | SpawnContext | Chto spavnitsya |
+|---|---|---|
+| Den, Grotto | 1 (Cave Shallow) | Biolyuminestsentnye griby, kvarts, melkaya zhivnost |
+| System, Tube | 1 (Cave Shallow) | Kvarts, steklovolokno, srednyaya zhivnost |
+| Labyrinth, Abyss | 2 (Cave Deep) | Uran, kristally, agressivnaya fauna, redkie materialy |
+| Mega | 2 (Cave Deep) | Vse vyshe + eksklyuzivnye biomnye resursy, yaytsa bossov |
+
+**Printsip:** Chem strashnee — tem tsennee. Igrok dolzhen hotet lezt v Bezdnu.
+
+---
+
+## 1.5 Biomnaya integratsiya
+
+Peschery razmeschayutsya MapMagic v sootvetstvii s biomom poverhnosti:
+
+| Biom poverhnosti | Plotnost pescher | Predpochtitelnye tipy |
+|---|---|---|
+| Melkovode (0-100m) | Nizkaya | Den, Grotto |
+| Srednie glubiny (100-500m) | Srednyaya | System, Labyrinth, Tube |
+| Glubokovode (500-2000m) | Vysokaya | Abyss, Labyrinth |
+| Abissal (2000m+) | Srednyaya | Mega, Abyss |
+| Vulkanicheskaya zona | Nizkaya | Mega (lavovye truby) |
+
+---
+
+# ChAST 2: TEHNIChESKAYa SPETsIFIKATsIYa
+
+---
+
+## 2.1 Arhitektura sistemy
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         MAPMAGIC 2                              │
+│  Generiruet: heightmap, biomy, tochki spavna pescher (Scatter)    │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │  CaveSpawnPoint (pozitsiya + tip + sid)
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    SCAVENGEPOPULATOR                            │
+│  Otslezhivaet distantsiyu do igroka                               │
+│  Vyzyvaet HectonVoxelEngine.GenerateVolumeAsync()              │
+│  RegisterSpawnPoint(pos, rot, scale, chunkCoord, hashId)       │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   HECTON CAVE PIPELINE                         │
+│                                                                 │
+│  CaveGraphGenerator.Generate(seed, preset, worldCenter...)     │
+│    └► NativeArray<CaveNode>      (komnaty)                     │
+│    └► NativeArray<CaveTunnel>    (tunneli)                     │
+│    └► NativeArray<CaveEntrance>  (vhody)                       │
+│    └► NativeArray<CaveStructure> (struktury, pusto dlya MVP)    │
+│                                                                 │
+│  VoxelDensityJob (Burst)                                        │
+│    └► Terrain SDF + Cave SDF → density field                   │
+│                                                                 │
+│  VoxelMCExtractJob (Burst)                                      │
+│    └► density field → raw triangles                            │
+│                                                                 │
+│  VoxelWeldJob (Burst)                                           │
+│    └► raw triangles → welded mesh                              │
+│                                                                 │
+│  VoxelNormalJob + VoxelBiomeSampleJob (Burst, parallel)        │
+│    └► welded positions → normals, biome values                 │
+│                                                                 │
+│  VoxelColorJob (Burst)                                          │
+│    └► slope, depth, interiorFade, biome → vertex colors        │
+│                                                                 │
+│  VoxelSpawnPointJob (Burst)                                     │
+│    └► floor vertices → CaveSpawnData[]                         │
+│                                                                 │
+│  BuildWeldedMeshNative (main thread)                            │
+│    └► NativeArrays → Unity Mesh → MeshFilter/Renderer/Collider │
+│                                                                 │
+│  ScavengePopulator.RegisterSpawnPoint() × N (main thread)      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 2.2 Faylovaya struktura
+
+| Fayl | Naznachenie | Status |
+|---|---|---|
+| `CaveTypes.cs` | Vse struktury, enum-y, presety | ✅ Feature Complete |
+| `CaveGraphGenerator.cs` | Protsedurnaya generatsiya grafa iz sida | ✅ Feature Complete |
+| `HectonVoxelEngine.cs` | Dvizhok: SDF, MC, welding, mesh, async | ✅ Feature Complete |
+| `MapMagicBridge.cs` | Interfeys s MapMagic 2 (vysoty, biomy) | ✅ Suschestvuet |
+| `ScavengePopulator.cs` | Striming i spavn luta | ✅ Suschestvuet |
+
+---
+
+## 2.3 Struktury dannyh
+
+### CaveNode (48 bayt, blittable)
+```
+position      float3    Mirovaya pozitsiya tsentra komnaty
+radii         float3    Poluosi X/Y/Z (tip opredelyaet interpretatsiyu)
+blendRadius   float     Radius sglazhivaniya so sosedyami
+noiseScale    float     Masshtab shuma sten dlya etoy komnaty
+noiseAmplitude float    Amplituda shuma sten
+roomType      byte      Sphere/Ellipsoid/VerticalShaft/FlatHall/Crevice
+```
+
+### CaveTunnel (56 bayt, blittable)
+```
+pointA        float3    Nachalo tunnelya (mirovye koordinaty)
+pointB        float3    Konets tunnelya
+radiusA       float     Radius na kontse A
+radiusB       float     Radius na kontse B (dlya konicheskih tunneley)
+blendRadius   float     Sglazhivanie s komnatami
+heightScale   float     Vertikalnoe masshtabirovanie secheniya
+widthScale    float     Gorizontalnoe masshtabirovanie secheniya
+warpAmount    float     Dopolnitelnyy varping etogo tunnelya
+tunnelType    byte      Round/Tall/Wide
+```
+
+### CaveEntrance (36 bayt, blittable)
+```
+surfacePosition float3  Pozitsiya vhoda na poverhnosti terreyna
+inwardDirection float3  Normalizovannoe napravlenie vnutr
+radius          float   Radius otverstiya
+funnelLength    float   Dlina voronki
+innerRadius     float   Radius vnutri voronki (suzhenie)
+```
+
+### CaveSpawnData (16 bayt, blittable)
+```
+position  float3  Mirovaya pozitsiya tochki spavna
+hashId    int     Determinirovannyy ID (prostranstvennyy hesh pozitsii)
+```
+
+### CaveGenerationParams (84 bayta, blittable)
+```
+warpFrequency        float   Chastota domain warping
+warpAmplitude        float   Amplituda warping v metrah
+warpOctaves          int     Oktavy warping shuma
+wallNoiseFrequency   float   Chastota shuma sten
+wallNoiseAmplitude   float   Amplituda shuma sten
+wallNoiseOctaves     int     Oktavy shuma sten
+wallNoiseLacunarity  float   Lakunarnost (2.0)
+wallNoisePersistence float   Zatuhanie (0.5)
+terraceFrequency     float   Chastota gorizontalnyh terras
+terraceAmplitude     float   Glubina terras
+terraceSharpness     float   Rezkost kraev terras
+globalBlendK         float   Globalnyy koeffitsient smin
+shellThickness       float   Tolschina obolochki (= sealMargin)
+seed                 uint    Master-sid
+noiseEvalDistance    float   Distantsiya otsenki shuma
+floorFlatness        float   Stepen uploscheniya pola
+structureBlendK      float   Sglazhivanie struktur
+entranceBlendK       float   Sglazhivanie vhodov
+```
+
+---
+
+## 2.4 SDF matematika
+
+### Yadro sistemy: Smooth Minimum
+```
+SmoothMin(a, b, k):
+  h = max(k - |a - b|, 0) / k
+  return min(a, b) - h³ × k / 6
+
+Effekt: dva SDF primitiva slivayutsya kak kapli rtuti.
+k = 4..32: malenkiy = chetkie kraya, bolshoy = blobby perehody.
+```
+
+### Vyrezanie peschery iz terreyna
+```
+SmoothSubtraction(distCarve, distBase, k):
+  return SmoothMax(distBase, -distCarve, k)
+
+terrainDensity > 0 = vnutri kamnya
+caveSDF < 0 = vnutri peschery
+finalDensity = SmoothSubtraction(-caveSDF, terrainDensity, shellThickness)
+```
+
+### Domain Warping
+```
+Do vychisleniya SDF, smeschaem koordinaty shumom:
+warpedPos = worldPos + float3(
+    FBM(pos × freq + seedOff.x),
+    FBM(pos × freq + seedOff.y),
+    FBM(pos × freq + seedOff.z)
+) × amplitude
+
+Effekt: pryamye tunneli stanovyatsya izvilistymi.
+```
+
+### SDF primitivy
+```
+Sfera:          length(p - center) - radius
+Ellipsoid:      (length((p-c)/radii) - 1) × min(radii)
+Vertikalnaya    
+  shahta:        tsilindr + skruglenie = 2D SDF + vertical clamp
+Kapsula         
+  konicheskaya:   lerp radius po t vdol osi
+Kapsula         
+  ellipticheskaya: proektsiya na lokalnye osi + ellipticheskoe masshtabirovanie
+Box:            length(max(|p-c|-halfExtents, 0)) + min(cmax(...), 0)
+```
+
+---
+
+## 2.5 Parametry proizvoditelnosti
+
+### Tselevoe zhelezo
+```
+CPU: Core i5 (lyuboe pokolenie s 4+ yadrami)
+GPU/VRAM: NVIDIA MX350, 2 GB VRAM
+RAM: 8 GB
+```
+
+### Potreblenie pamyati po tipu peschery
+
+| Tip | Grid | Voxel | Density | Peak temp | Itog mesh |
+|---|---|---|---|---|---|
+| Den | 48³ | 0.5m | 0.4 MB | ~4 MB | ~0.5 MB |
+| Grotto | 64³ | 1.0m | 1.0 MB | ~8 MB | ~1 MB |
+| System | 96³ | 2.0m | 3.4 MB | ~15 MB | ~2 MB |
+| Labyrinth | 96³ | 2.0m | 3.4 MB | ~15 MB | ~2.5 MB |
+| Abyss | 96³ | 3.0m | 3.4 MB | ~15 MB | ~2 MB |
+| Mega | 128³ | 4.0m | 8.6 MB | ~25 MB | ~4 MB |
+
+**Peak temp** = pikovoe potreblenie vo vremya generatsii, osvobozhdaetsya posle.
+
+### MC Buffer optimizatsiya
+```
+Bylo:    rawVerts = totalCells × 15 (worst case)  → do 750 MB
+Stalo:   rawVerts = totalCells ×  2 (realistic)   → do  25 MB
+
+Esli bufer zapolnyaetsya: Interlocked.Add > outVertices.Length → return.
+Poterya: neskolko treugolnikov v samyh nasyschennyh yacheykah.
+Na praktike: nikogda ne zapolnyaetsya pri ×2 iz-za razrezhennosti MC.
+```
+
+### Vremya generatsii (otsenka, Burst + 4 yadra)
+```
+Den (48³):   ~2-5 ms
+Grotto (64³): ~5-10 ms
+System (96³): ~15-30 ms
+Mega (128³):  ~40-80 ms
+```
+
+Vse async — igrok ne vidit friza.
+
+---
+
+## 2.6 Algoritm generatsii grafa
+
+```
+INPUT: seed, preset, worldCenter, terrainHeight, volumeHalfExtent
+
+1. EDGE MARGIN (dinamicheskiy):
+   margin = BASE_EDGE_MARGIN(4m) + warpAmplitude + globalBlendK × 0.5
+
+2. RAZMESchENIE KOMNAT (constrained random walk):
+   a. Pervaya komnata: Y = terrainHeight - firstRoomDepth - maxRoomRadius
+   b. Kazhdaya sleduyuschaya: sluchaynoe napravlenie s bias vniz (verticalSpread)
+   c. Shag = (prevRadius + nextRadius) × random(0.8, 1.6)
+   d. 25% shans vetvleniya ot predyduschey tochki vetvleniya
+   e. Proverki: ClampToVolume, nizhe terreyna, glubina < maxDepth, ne perekryvaetsya
+   f. 35% shans pometit kak tochku vetvleniya
+   g. Max popytok: 20 — esli provalilis, propuskaem komnatu
+
+3. TIPY KOMNAT (vzveshennyy random):
+   verticalShaftChance → VerticalShaft
+   flatHallChance → FlatHall
+   creviceChance → Crevice
+   30% ostatka → Sphere
+   70% ostatka → Ellipsoid
+
+4. TUNNELI:
+   a. Posledovatelnye (i → i+1): 100% — garantiya svyaznosti
+   b. Dopolnitelnye: esli dist < combinedRadii × 3.5 I random < extraConnectionChance
+   c. Max tunneley: 128
+
+5. VHODY:
+   a. Nayti komnatu blizhayshuyu k poverhnosti (s uchetom gorizontalnoy distantsii)
+   b. Y vhoda: min(terrainHeight, volumeTopY - 0.5m)  ← v4.1 fix
+   c. Vhodnaya voronka: konicheskaya kapsula surface → inner
+   d. innerRadius = radius × random(0.4, 0.7)
+
+OUTPUT: NativeArray<CaveNode>, NativeArray<CaveTunnel>, 
+        NativeArray<CaveEntrance>, NativeArray<CaveStructure>(pustoy)
+```
+
+---
+
+## 2.7 Seal Margin i fiks vhodov
+
+### Problema
+Kraya vokselnogo volyuma zapechatyvayutsya do density=1 (solid) chtoby mesh ne pokazyval dyry v pustotu. No vhody peschery namerenno probivayut verhnyuyu gran volyuma chtoby soedinitsya s terreynom.
+
+### Reshenie (v4.1)
+```
+Dlya kazhdoy grani:
+  dEdge = rasstoyanie do grani
+
+Dlya verhney grani Y:
+  Dlya kazhdogo CaveEntrance:
+    horizontalDist = length(wp.xz - entrance.surfacePosition.xz)
+    influenceRadius = entrance.radius × 2.5
+    exemption = 1 - smoothstep(radius×0.5, influenceRadius, horizontalDist)
+    topSealStrength = min(topSealStrength, 1 - exemption)
+
+  effectiveYTop = dMinYTop / max(topSealStrength, 0.01)
+
+sealFactor = saturate(min(dMinX, min(effectiveY, dMinZ)) / sealMargin)
+d_final = lerp(1, d_final, sealFactor)
+```
+
+Rezultat: vhod svobodno probivaet verhnyuyu gran. Ostalnye kraya zapechatany.
+
+---
+
+## 2.8 Sistema spawn points
+
+### Pipeline
+```
+VoxelSpawnPointJob (IJobParallelFor):
+  Vhod: welded positions + normals
+  
+  Filter 1: dot(normal, UP) > 0.75   → tolko pol (ne steny, ne potolok)
+  Filter 2: interiorness > 0.15      → gluboko vnutri, ne u vhoda
+  Filter 3: spatialHash(pos) % 1    → keepFraction = 3% tochek prohodit
+  
+  Vyhod: NativeList<CaveSpawnData>.ParallelWriter
+    .position = float3 (world space)
+    .hashId = (int)(spatialHash(pos) & 0x7FFFFFFF)
+```
+
+### Determinizm
+```
+hashId = f(worldPosition, seed)
+
+Garantii:
+- Odna pozitsiya → odin hashId vsegda
+- Poryadok zapisi ParallelWriter ne vliyaet na hashId
+- Pri perezagruzke chanka: te zhe pozitsii → te zhe hashId
+- ScavengePopulator: localIndex = hashId, ne poryadkovyy nomer
+
+Kvantovanie: floor(pos × 10) pered heshem
+- Ustranyaet floating-point drift mezhdu potokami
+- Tochnost: 10 santimetrov (dostatochno dlya spavna luta)
+
+Hash function: Murmur3 finalizer
+h ^= (uint)ip.x * 0x9E3779B9
+h ^= (uint)ip.y * 0x517CC1B7
+h ^= (uint)ip.z * 0x6C62272E
+h = avalanche(h)
+```
+
+---
+
+## 2.9 Vertex Colors
+
+| Kanal | Dannye | Diapazon | Ispolzovanie v sheydere |
+|---|---|---|---|
+| **R** | Slope (krutizna) | 0=gorizontal 1=vertikal | Blend kamen/grunt |
+| **G** | Depth (glubina) | 0=poverhnost 1=5000m | Temnee na glubine |
+| **B** | InteriorFade | 0=kray 1=tsentr obema | Ambient occlusion vnutri |
+| **A** | Biome | 0-1 (indeks bioma) | Vybor teksturnogo nabora |
+
+**Primechanie dlya sheyderschika:** B kanal v v4.0 izmenilsya. Staryy smysl: rasstoyanie do SDF poverhnosti. Novyy smysl: rasstoyanie ot tsentra obema. Esli nuzhen cave edge — peredelat VoxelColorJob (potrebuet ReadOnly massivy cave data).
+
+---
+
+## 2.10 Izvestnye ogranicheniya MVP
+
+| Ogranichenie | Opisanie | Prioritet fiksa |
+|---|---|---|
+| `TILE_SIZE = 512f` zahardkozhen | chunkCoord dlya ScavengePopulator schitaetsya ot 512m tayla | Medium — vynesti v inspektor |
+| `CaveStructure` pustoy massiv | Kolonny/mosty/stalaktity zalozheny, ne realizovany | Low — sleduyuschiy sprint |
+| `GenerateVolumeFromDataAsync` — zaglushka | Vozvraschaet null, warning v log | Low — nuzhen dlya kastomnyh tulz |
+| SpawnContext ne peredaetsya | ScavengePopulator ne znaet Den eto ili Mega | Medium — sleduyuschiy sprint |
+| B kanal vertex colors izmenen | Staryy cave edge SDF zamenen na interiorFade | Low — pri rabote nad sheyderom |
+| Odin volyum = odna peschera | Peschery ne stykuyutsya mezhdu soboy | Design — ne planiruetsya |
+
+---
+
+## 2.11 Beklog sleduyuschego sprinta
+
+### Vysokiy prioritet
+- [ ] **ScavengePopulator: SpawnContext** — dobavit `byte spawnContext` v RegisterSpawnPoint, tri lut-tablitsy (Surface/CaveShallow/CaveDeep)
+- [ ] **TILE_SIZE v inspektor** — `public float mapMagicTileSize = 512f` v HectonVoxelEngine
+
+### Sredniy prioritet
+- [ ] **CaveStructure realizatsiya** — kolonny, stalaktity, valuny vnutri pescher
+- [ ] **Sheyder pescher** — chitat R/G/B/A kanaly vertex colors, triplanar, ambient occlusion
+- [ ] **Terrain Holes** — MapMagic/kastomnyy mesh: probit dyrku v poverhnosti nad vhodom
+
+### Nizkiy prioritet
+- [ ] **GenerateVolumeFromDataAsync** — dlya kastomnyh redaktornyh tulz
+- [ ] **Gizmo predprosmotr** — pokazyvat graf peschery v Scene view do generatsii
+- [ ] **LOD dlya mega-pescher** — dva volyuma: grubyy (obschaya forma) + detalnyy (zona vhoda)
+
+---
+
+## 2.12 Kak dobavit novyy tip peschery
+
+1. Dobavit znachenie v `CavePresetType` enum v `CaveTypes.cs`
+2. Napisat fabrichnyy metod v `CavePresetLibrary`
+3. Dobavit case v `CavePresetLibrary.Create()`
+4. Zaregistrirovat v MapMagic Scatter node s nuzhnoy plotnostyu
+
+Minimalnoe vremya: 15-30 minut.
+
+---
+
+## 2.13 Kak testirovat
+
+### V Editor (bez zapuska igry)
+```
+1. Dobavit HectonVoxelEngine na lyuboy GameObject
+2. Naznachit MapMagicBridge, Material, voxelVolumePrefab
+3. V kode vyzvat:
+   engine.GenerateVolumeAsync(
+       transform.position,
+       seed: 42,
+       CavePresetLibrary.Create(CavePresetType.System)
+   );
+4. Proverit: mesh poyavilsya, net dyr po krayam, vhod otkryt sverhu
+```
+
+### Cheklist QA
+```
+☐ Mesh ne imeet dyr krome vhoda(ov)
+☐ Vhod vizualno otkryt (ne zapechatan sealMargin)
+☐ Pri seed=X vsegda odinakovyy rezultat (determinizm)
+☐ Pri drugom seed — drugaya peschera
+☐ V konsoli: "Registered N cave spawn points" (N > 0)
+☐ Net utechek NativeArray (proverit Profiler → Memory)
+☐ FPS ne padaet vo vremya generatsii (async)
+☐ Mesh imeet kollayder (MeshCollider)
+```
+
+---
+
+*HECTON-8 Cave Generation System v1.0*
+*Status: Feature Complete dlya MVP*
+*Data: tekuschiy sprint*
+
+
+# Itogi sessii
+
+---
+
+## 1. DIZDOK — Chto realizovano
+
+### Generatsiya pescher
+Polnaya sistema protsedurnyh podvodnyh pescher ot 24m (nora) do 512m (mega-peschera). Sem tipov s raznoy geympleynoy rolyu: Den (logovo fauny), Grotto (scenic POI), System (osnovnoy kontent), Labyrinth (vysokiy risk), Abyss (vertikalnoe issledovanie), Mega (podzemnyy biom), Tube (lavovaya truba). Kazhdaya peschera unikalna cherez determinirovannyy sid — odinakovyy sid = odinakovaya peschera, raznye sidy = raznye peschery.
+
+### Kontekstnyy lut
+Peschery i poverhnost spavnyat raznye resursy. Surface = oblomki i titan, CaveShallow = kvarts i biolyuminestsentnaya flora, CaveDeep = uran i redkie materialy. Eto sozdaet geympleynuyu motivatsiyu idti v opasnye glubokie peschery — tam tsennee.
+
+### Instrumenty
+Lazernyy rezak v2.0 s termicheskim menedzhmentom: peregrev cherez 5 sekund nepreryvnoy strelby, 2-sekundnyy lockout, vizualnaya vibratsiya lucha i narastayuschie iskry po mere nagreva, pitch zvuka rastet 1.0→1.3. Risk/reward: goryachiy rezak daet +15% urona. Gidroakusticheskiy skaner s rasshiryayuscheysya Shapes-volnoy v mirovom prostranstve i HUD-markerami obnaruzhennyh resursov s edge clamping.
+
+### Baza
+BaseModule — funktsionalnaya inzhenernaya edinitsa: energopotreblenie cherez PowerGrid, zatoplenie pri probitii korpusa, sistema osusheniya pri pitanii, dry zone dlya fiziki predmetov vnutri, dekonstruktsiya s vozvratom 80% resursov. Life support: igrok vnutri nezatoplennogo zapitannogo modulya poluchaet O2.
+
+### Atmosfera i nebo
+Dinamicheskie zakaty i rassvety cherez polynomial color mixing (zero novyh texture samples). Belt of Venus — fioletovyy protivozakatnyy otblesk. Oblaka menyayut tsvet po vremeni sutok: zolotye na zakate, temno-fioletovye nochyu. Aegir nochyu podsvechivaet oblaka fioletovym svecheniem. Zvezdy mertsayut individualno i gasnut do voshoda solntsa.
+
+### HUD
+Status-panel tekuschego modulya bazy na shleme igroka: pitanie, zatoplenie, status O2. Plavno poyavlyaetsya pri vhode v modul, ischezaet pri vyhode. Pulse dot na aktivnom life support.
+
+---
+
+## 2. BEKLOG — Sleduyuschie zadachi
+
+### Vysokiy prioritet
+- [ ] **Zapustit bazovyy geympleynyy test** — postroit koridor, zaplyt, proverit O2, prorezat stenu, uvidet zatoplenie
+- [ ] **PowerGrid** — sistema raspredeleniya energii mezhdu modulyami (bez nee pitanie ne rabotaet)
+- [ ] **Terrain Holes** — probivat dyry v MapMagic meshe nad vhodami pescher
+- [ ] **ScavengePopulator SpawnContext** — peredavat kontekst iz HectonVoxelEngine (seychas zaglushka)
+- [ ] **TILE_SIZE v inspektor HectonVoxelEngine** — seychas 999f zahardkozheno (vremenno ispravleno, no nuzhno pole)
+
+### Sredniy prioritet
+- [ ] **AcousticZoneController** — pereklyuchenie zvukovogo snapshot pri vhode v suhuyu zonu modulya
+- [ ] **CaveStructure realizatsiya** — kolonny, stalaktity, valuny vnutri pescher (massiv zalozhen, pustoy)
+- [ ] **Sheyder pescher** — chitat vertex color kanaly (slope, depth, interiorFade, biome) dlya triplana
+- [ ] **LaserCutter heat na HUD** — `LaserCutter.HeatLevel` property est, nuzhna poloska na shleme
+- [ ] **ScanMarkerSystem refinement** — scale markerov, tsvet po tipu resursa (kogda poyavyatsya raznye resursy)
+
+### Nizkiy prioritet
+- [ ] **GenerateVolumeFromDataAsync** — seychas zaglushka, nuzhna dlya kastomnyh redaktornyh tulz
+- [ ] **CavePresetLibrary v MapMagic** — noda dlya vybora preseta peschery iz Scatter
+- [ ] **Crepuscular rays** — luchi cherez oblaka na zakate (dorogo, posle optimizatsii)
+- [ ] **Aegir nochnoe osveschenie terreyna** — planet-shine na kamnyah dna
+- [ ] **LOD dlya mega-pescher** — dva volyuma: grubyy (forma) + detalnyy (zona vhoda)
+
+---
+
+## 3. TEHNIChESKAYa SPETsIFIKATsIYa — Chto dobavleno
+
+### Fayly sozdannye s nulya
+```
+CaveTypes.cs              — struktury, enum-y, 7 presetov, CavePresetLibrary
+CaveGraphGenerator.cs     — protsedurnaya generatsiya grafa peschery iz sida
+ModuleStatusEvents.cs     — static event bus BaseModule → HUD
+ScanEvents.cs             — static event bus ScannerTool → HUD
+ScannerTool.cs            — gidroakusticheskiy skaner (PlayerTool + Shapes)
+HectonScanMarkerSystem.cs — HUD markery s edge clamp i distance text
+```
+
+### Fayly polnostyu perepisany
+```
+HectonVoxelEngine.cs      — v4.0: multiprimitivnyy SDF, cave graph pipeline
+Hecton_AlienSky_Master.shader — v4.1: zakaty, Belt of Venus, nochnye oblaka, Aegir glow
+HectonSuitHUD.cs          — v3.0: dobavlena module status panel
+LaserCutter.cs            — v2.0: teplovoy menedzhment, jitter, pitch, sparks scaling
+```
+
+### Fayly s patchami
+```
+CaveTypes.cs              — SpawnContext enum, pole v CavePreset
+ScavengePopulator.cs      — LootTableEntry, kontekstnyy vybor prefabov
+HectonVoxelEngine.cs      — mapMagicTileSize pole, SpawnContext v Phase 7
+HectonItem.cs             — SettleAndSleepAsync (Awaitable physics sleep)
+BaseModule.cs             — Life support (O2 refill), ModuleStatusEvents fire
+HectonCelestialEngine.cs  — _SunElevation peredacha v sky shader
+```
+
+### Klyuchevye arhitekturnye resheniya prinyatye v sessii
+```
+MC buffer: ×2 vmesto ×15 → ekonomiya 85% pikovoy pamyati (safe truncation)
+SpawnContext: determinirovannyy hashId cherez Murmur3 (seyvy ne lomayutsya)
+Domain warping: dinamicheskiy EDGE_MARGIN = base + warpAmplitude + blendK*0.5
+Seal margin fix: entrance exemption cherez smoothstep po gorizontalnomu rasstoyaniyu
+Sky shader: _GameTime vmesto _GlobalRotation (zero timing discontinuities)
+Zero texture samples: zakaty cherez polynomial math (0 novyh sample calls)
+Life support: CompareTag + cached reference (zero GC v SlowTick)
+```
+
+---
+
+Horoshey nochi. Sessiya produktivnaya.
+
+
+# Tehnicheskaya spetsifikatsiya: Vokselnyy generator pescher
+
+---
+
+## Arhitektura sistemy
+
+```
+MapMagic 2
+  └── Scatter nody → tochki spavna pescher (pozitsiya + tip + sid)
+        │
+        ▼
+ScavengePopulator
+  └── Po distantsii ot igroka vyzyvaet:
+        │
+        ▼
+CaveGraphGenerator.Generate(seed, preset, worldCenter, terrainHeight, volumeHalfExtent)
+  └── Vozvraschaet:
+        NativeArray<CaveNode>      — komnaty
+        NativeArray<CaveTunnel>    — tunneli
+        NativeArray<CaveEntrance>  — vhody
+        NativeArray<CaveStructure> — struktury (pusto, zalozheno)
+        │
+        ▼
+HectonVoxelEngine.GenerateVolumeAsync(worldCenter, seed, preset)
+  │
+  ├── PHASE 0: CaveGraphGenerator (main thread)
+  ├── PHASE 1: terrain heights sampling (main thread, MapMagicBridge)
+  ├── PHASE 2: VoxelDensityJob (Burst, async)
+  ├── PHASE 3: VoxelMCExtractJob (Burst, async)
+  ├── PHASE 4: VoxelWeldJob (Burst, async)
+  ├── PHASE 5: VoxelNormalJob + VoxelColorJob + VoxelSpawnPointJob (Burst, parallel)
+  ├── PHASE 6: BuildWeldedMeshNative (main thread)
+  └── PHASE 7: ScavengePopulator.RegisterSpawnPoint × N (main thread)
+```
+
+---
+
+## Kak rabotaet CaveGraphGenerator
+
+### Algoritm razmescheniya komnat
+
+```
+1. Pervaya komnata: Y = terrainHeight - firstRoomDepth
+   (blizhe k poverhnosti — dlya vhoda)
+
+2. Random Walk s vetvleniem:
+   direction = random3D
+   direction.y = lerp(direction.y, -abs(direction.y), verticalSpread)
+   // bias vniz: chem vyshe verticalSpread, tem glubzhe idet peschera
+
+3. Shag mezhdu komnatami:
+   stepDist = (prevRadius + nextRadius) × random(0.8, 1.6)
+
+4. 25% shans vetvleniya ot predyduschey tochki
+   → sozdaet bokovye tonneli i razvilki
+
+5. Proverki na kazhdyy shag:
+   - ClampToVolume (ne vyyti za kub)
+   - Y < terrainHeight - roomRadius (pod zemley)
+   - Y > terrainHeight - maxDepth (ne slishkom gluboko)
+   - IsRoomTooClose (komnaty ne slipayutsya)
+
+6. Dinamicheskiy EDGE_MARGIN:
+   margin = BASE_EDGE_MARGIN(4m) + warpAmplitude + globalBlendK × 0.5
+   // uchityvaet chto domain warping sdvinet SDF ot kraya
+```
+
+### Tipy komnat i ih SDF
+
+| Tip | Radiusy | SDF primitiv |
+|---|---|---|
+| Sphere | x=y=z=baseRadius | length(p-c) - r |
+| Ellipsoid | xyz nezavisimye (0.7-1.4×) | scaled sphere |
+| VerticalShaft | x,z × 0.35-0.6, y × 1.5-3.0 | tsilindr s skrugleniem |
+| FlatHall | x,z × 1.2-2.0, y × 0.25-0.45 | splyusnutyy ellipsoid |
+| Crevice | x × 0.15-0.35, y × 1.0-1.8 | uzkaya vertikalnaya schel |
+
+### Algoritm tunneley
+
+```
+Phase 2a: Posledovatelnye soedineniya (0→1, 1→2, 2→3...)
+  → 100% svyaznost, peschera vsegda prohodima
+
+Phase 2b: Dopolnitelnye soedineniya (petli)
+  if (dist < combinedRadii × 3.5 && random < extraConnectionChance):
+    sozdat dopolnitelnyy tunnel
+  → sozdaet razvilki, alternativnye puti, tupiki
+
+Tipy secheniya tunnelya:
+  Round:  standartnaya kapsula
+  Tall:   heightScale 1.5-2.5, widthScale 0.4-0.7 (kanon)
+  Wide:   heightScale 0.3-0.6, widthScale 1.5-2.5 (laz)
+  Conic:  radiusA ≠ radiusB (suzhaetsya k kontsu)
+```
+
+### Vhody
+
+```
+1. Nayti komnatu blizhayshuyu k poverhnosti
+   score = distToSurface + horizontalPenalty - sizeBonus
+
+2. Pozitsiya vhoda:
+   surfaceY = min(terrainHeight, volumeTopY - 0.5m)
+   // v4.1 fix: ne vyshe verhney grani volyuma
+
+3. Voronka:
+   SDF konicheskaya kapsula ot surfacePos vglub k komnate
+   innerRadius = radius × random(0.4, 0.7)
+   // suzhaetsya vnutr — estestvennyy vhod
+```
+
+---
+
+## Kak rabotaet VoxelDensityJob
+
+```
+Dlya kazhdogo vokselya (ix, iy, iz):
+
+1. TERRAIN DENSITY
+   terrainH = terrainHeights[ix + iz * ptsX]  // semplirovano do dzhoba
+   terrainDensity = clamp(terrainH - wp.y, -50, 50)
+   // >0 = vnutri kamnya, <0 = nad poverhnostyu
+
+2. CAVE SDF
+   a) Domain Warp:
+      warpedPos = wp + noise3D(wp × warpFreq) × warpAmplitude
+      // koordinaty iskazhayutsya shumom → tunneli izvivayutsya
+
+   b) Komnaty (tsikl po caveNodes):
+      dlya kazhdoy komnaty vychislit SDF (sphere/ellipsoid/shaft/hall/crevice)
+      + lokalnyy shum sten × noiseAmplitude
+      + uploschenie pola (nizhnie 30% komnaty)
+      caveDist = SmoothMin(caveDist, nodeDist, blendRadius)
+
+   c) Tunneli (tsikl po caveTunnels):
+      dlya kazhdogo tunnelya: SDCapsuleConic ili SDCapsuleElliptic
+      + dopolnitelnyy per-tunnel domain warp
+      caveDist = SmoothMin(caveDist, tunnelDist, blendRadius)
+
+   d) Vhody (tsikl po caveEntrances):
+      SDCapsuleConic ot surface k interior
+      caveDist = SmoothMin(caveDist, entranceDist, entranceBlendK)
+
+   e) Wall detail (tolko esli |caveDist| < noiseEvalDistance):
+      detail += FBM(wp × wallNoiseFreq) × wallNoiseAmplitude
+      detail += Terrace(wp.y, terraceFreq, terraceAmp, terraceSharpness)
+      caveDist += detail
+
+3. VYREZANIE PESchERY IZ TERREYNA
+   SmoothSubtraction = SmoothMax(terrainDensity, -caveSDF, shellThickness)
+   // gde peschera (caveSDF<0) → density otritsatelnyy → MC vidit pustotu
+
+4. STRUKTURY (esli est):
+   structSDF = EvaluateStructuresSDF(wp)
+   d_final = SmoothMax(d_final, -structSDF, structureBlendK)
+   // dobavlyaet kolonny/stalaktity obratno
+
+5. EDGE SEALING
+   dEdge = minimum do blizhayshey grani kuba
+   
+   // v4.1: vhody ne zapechatyvayutsya
+   Dlya verhney grani:
+     dlya kazhdogo entrance:
+       horizontalDist = length(wp.xz - entrance.xz)
+       exemption = 1 - smoothstep(r*0.5, r*2.5, horizontalDist)
+       topSealStrength = min(topSealStrength, 1 - exemption)
+   
+   sealFactor = saturate(effectiveDEdge / sealMargin)
+   d_final = lerp(1, d_final, sealFactor)
+   // kraya = solid, vhod = otkryt
+```
+
+---
+
+## SDF matematika — yadro sistemy
+
+### Smooth Minimum
+```
+SmoothMin(a, b, k):
+  h = max(k - |a-b|, 0) / k
+  return min(a,b) - h³ × k / 6
+
+Effekt: komnaty i tunneli slivayutsya organichno,
+kak kapli vody. k=4 = chetkie kraya, k=32 = blobby.
+```
+
+### Smooth Subtraction
+```
+SmoothSubtraction(distCarve, distBase, k):
+  return SmoothMax(distBase, -distCarve, k)
+  
+Effekt: vyrezaet pescheru iz kamnya s myagkim kraem.
+Bez smooth — rezkiy ugol na styke. S smooth — organichnyy perehod.
+```
+
+### Domain Warping
+```
+Do vychisleniya SDF, koordinaty smeschayutsya shumom:
+dx = FBM(pos × freq + seed.x) × amplitude
+dy = FBM(pos × freq + seed.y) × amplitude
+dz = FBM(pos × freq + seed.z) × amplitude
+warpedPos = pos + float3(dx, dy, dz)
+
+Effekt: pryamoy tunnel mezhdu dvumya tochkami stanovitsya
+izvilistym. Bez varpinga — idealnye geometricheskie formy,
+neestestvenno. S varpingom — prirodnaya organika.
+```
+
+### Terracing
+```
+Terrace(y, frequency, amplitude, sharpness):
+  scaled = y × frequency
+  fractional = frac(scaled)
+  return pow(|sin(fractional × PI)|, sharpness) × amplitude
+
+Effekt: gorizontalnye polki porody na stenah peschery.
+sharpness=3 = plavnye ustupy, sharpness=8 = rezkie karnizy.
+```
+
+---
+
+## Marching Cubes i optimizatsiya pamyati
+
+```
+Standartnyy podhod:
+  rawBuffer = totalCells × 15  → 750 MB dlya 128³  ← SMERT
+
+Nash podhod:
+  rawBuffer = totalCells × 2   → 25 MB dlya 128³   ← NORMALNO
+
+Pochemu rabotaet:
+  Realnoe zapolnenie MC = 3-8% yacheek
+  (tolko te chto na poverhnosti SDF)
+  Ostalnoe = polnostyu kamen ili polnostyu pustota
+  → MC propuskaet i to i drugoe
+
+Zaschita ot perepolneniya:
+  if (writeOffset + vertCount > outVertices.Length) return;
+  → neskolko treugolnikov v samyh nasyschennyh uglah teryayutsya
+  → igrok ne zamechaet
+  → igra ne krashitsya
+```
+
+---
+
+## Spawn Points — determinizm seyvov
+
+```
+VoxelSpawnPointJob (IJobParallelFor):
+
+Filter 1: dot(normal, UP) > 0.75   → tolko pol
+Filter 2: interiorness > 0.15       → gluboko vnutri
+Filter 3: spatialHash(pos) % 1 < keepFraction (3%)
+
+hashId = SpatialHash(pos, seed):
+  ip = floor(pos × 10)  // kvantovanie 10sm
+  h = seed
+  h ^= ip.x × 0x9E3779B9
+  h ^= ip.y × 0x517CC1B7
+  h ^= ip.z × 0x6C62272E
+  h = avalanche(h)        // Murmur3 finalizer
+  hashId = h & 0x7FFFFFFF // vsegda polozhitelnyy
+
+Garantiya:
+  Odna pozitsiya → odin hashId VSEGDA
+  Poryadok zapisi ParallelWriter ne vliyaet
+  Pri perezagruzke: te zhe pozitsii → te zhe hashId
+  → ScavengePopulator ispolzuet hashId kak localIndex
+  → seyvy ne lomayutsya
+```
+
+---
+
+## Presety pescher — chislovye parametry
+
+| Parametr | Den | Grotto | System | Labyrinth | Abyss | Mega | Tube |
+|---|---|---|---|---|---|---|---|
+| Grid | 48³ | 64³ | 96³ | 96³ | 96³ | 128³ | 96³ |
+| Voxel | 0.5m | 1.0m | 2.0m | 2.0m | 3.0m | 4.0m | 2.0m |
+| Pokrytie | 24m | 64m | 192m | 192m | 288m | 512m | 192m |
+| Komnat | 1-2 | 1-3 | 5-15 | 15-30 | 6-14 | 20-50 | 8-20 |
+| Vhodov | 1 | 1 | 1-2 | 1-3 | 1 | 2-4 | 1-2 |
+| Peak RAM | 4 MB | 8 MB | 15 MB | 15 MB | 15 MB | 25 MB | 15 MB |
+| SpawnCtx | Shallow | Shallow | Shallow | Deep | Deep | Deep | Shallow |
+
+---
+
+## Vertex Colors — chto zapisyvaetsya v mesh
+
+| Kanal | Dannye | Diapazon | Dlya chego |
+|---|---|---|---|
+| R | Slope (krutizna normali) | 0=gorizontal 1=vertikal | Blend tekstur kamen/grunt |
+| G | Depth (glubina) | 0=poverhnost 1=5000m | Zatemnenie na glubine |
+| B | InteriorFade | 0=kray volyuma 1=tsentr | Ambient occlusion vnutri |
+| A | Biome | 0-1 (indeks bioma) | Vybor teksturnogo nabora |
+
+---
+
+## Izvestnye ogranicheniya
+
+```
+1. TILE_SIZE = 999f — vremenno zahardkozhen v GenerateVolumeAsync Phase 7
+   → nuzhno vynesti v public float mapMagicTileSize v inspektor
+   → uzhe ispravleno v tekuschey versii
+
+2. CaveStructure.Length = 0 — struktury zalozheny, ne realizovany
+   → tsikl v dzhobe ne vypolnyaetsya → zero cost
+
+3. sealMargin na verhney grani — ispravlen v v4.1
+   → entrance exemption cherez smoothstep
+   → vhody bolshe ne zapechatyvayutsya
+
+4. B kanal vertex colors — smysl izmenen v v4.0
+   → bylo: cave edge SDF distance
+   → stalo: interiorFade (rasstoyanie ot tsentra obema)
+   → pri rabote nad sheyderom pescher uchest
+```
+PAMYaTKA: PROIZVODSTVO AAA-SKAL I OKRUZhENIYa (OT KITBASHING DO GPU INSTANCER)
+Eta instruktsiya opisyvaet sozdanie monolitnyh, optimizirovannyh struktur (skaly, arki, stolby) iz nabora bazovyh fotoskanov. Tsel: poluchit neogranichennoe vizualnoe raznoobrazie pri zatratah v 1 Draw Call i minimalnoy nagruzke na fizicheskiy dvizhok.
+FAZA 1: FUNDAMENT (Tekstury i Sheyder)
+Esli vy proebetes zdes — dalshe mozhno ne chitat.
+Import Tekstur: Vybiraem ODIN luchshiy set tekstur (Albedo, Normal, Mask).
+Albedo: format BC7, sRGB vklyuchen.
+Normal: tip Normal map, format BC5.
+Mask (AO/Roughness): format BC7, sRGB VYKLYuChEN.
+Razreshenie: STROGO 2048x2048. Crunch Compression vklyuchen (Quality 75).
+Umnyy Material: Sozdaem URP Shader Graph SG_Rock_Triplanar.
+Obyazatelno stavim galochku Support GPU Instancing v Graph Settings.
+Nastraivaem Triplanar (World Space) dlya Albedo, Normal i Mask. Dlya Normal vetki tip triplanara strogo Normal!
+Dobavlyaem svoystvo _InstanceColor (Multiply na Albedo) dlya tsvetovoy variativnosti v buduschem.
+Sozdaem material MAT_Rock_Universal. Naznachaem tekstury. Bolshe novye materialy dlya kamney ne sozdayutsya. Nikogda.
+FAZA 2: KITBASHING (Sborka "Lego")
+Sozdaem otdelnuyu pustuyu stsenu Rock_Workshop. Skidyvaem tuda 5-7 bazovyh LOW-poly kamney (ot 1000 do 3000 poligonov). Na vse kidaem MAT_Rock_Universal.
+Pravilo lepki: Vdavlivayte kamni drug v druga gluboko i agressivno. Nikakih mikro-scheley. Blagodarya Triplanar-materialu tekstura na styke sovpadet piksel-v-piksel. Shvov ne budet.
+Kak sobirat konkretnye struktury:
+Klastery (Klumby dlya luta):
+Retsept: 3-5 okruglyh kamney raznogo razmera.
+Sborka: Raskidayte ih vnahlest, imitiruya osyp. Odin bolshoy v tsentre, meloch po krayam. Splyusnite ih po osi Y, chtoby oni kazalis vkopannymi v pesok.
+Rol: Ukrytiya na ploskom dne, tochki spavna resursov.
+Stolby (Shpili / Pillars):
+Retsept: 1 vytyanutyy kamen (skelet) + 2-3 melkih (osnovanie).
+Sborka: Stavite vytyanutyy kamen vertikalno. Delaete emu Scale Y = 2 ili 3. U osnovaniya (kotoroe budet torchat iz terreyna) lepite melkie kamni pod uglami 45 gradusov, sozdavaya "korni", chtoby stolb ne vyglyadel kak votknutaya spichka.
+Rol: Vertikalnye ukrytiya ot leviafanov na rovnyh plato.
+Navesy (Overhangs / Shelves):
+Retsept: 1 ploskiy shirokiy kamen + 1-2 massivnyh bulyzhnika.
+Sborka: Bolshie bulyzhniki — eto fundament. Ploskiy kamen vtykaete v nih pod uglom 15-30 gradusov tak, chtoby pod nim obrazovalas ten (kozyrek).
+Rol: Mikro-peschery. Idealnoe mesto dlya spavna tsennogo luta (uran, yaytsa).
+Arki (Arches):
+Retsept: 2 stolba (nogi) + 1 ploskiy ili izognutyy kamen (krysha).
+Sborka: Stavite nogi pod legkim naklonom drug k drugu ( / \ ). Sverhu vnahlest kladete kryshu. Vdavlivaete tak, chtoby vyglyadelo monolitno.
+Rol: Geympleynye orientiry i "vorota" v novye zony.
+Mega-Bloki (Steny Bezdny):
+Retsept: 1 massivnaya model skaly.
+Sborka: Prosto Scale x20. Lepite na nee sboku paru kamney pomenshe (tozhe uvelichennyh), chtoby razbit siluet.
+Rol: Maskirovka krutyh sklonov (The Drop), gde tekstura terreyna tyanetsya v mylo. Vkapyvayutsya pryamo v stenu uschelya.
+FAZA 3: ZAPEKANIE (MESH BAKER)
+Struktura iz 5 kamney — eto 5 obektov dlya videokarty. Delaem iz nih odin.
+Sozdaem pustoy obekt Baker. Veshaem MB3_Mesh Baker.
+Output -> Bake Into Prefab. Zhmem Create Empty Prefab, sohranyaem kak Baked_[ImyaStruktury].
+V Objects To Be Combined peretaskivaem kamni, iz kotoryh sleplena struktura.
+Zhmem Bake. Ishodniki so stseny udalyaem.
+FAZA 4: AGRESSIVNAYa DETsIMATsIYa (MANTIS LOD EDITOR)
+Zapechennyy mesh vesit slishkom mnogo (summa poligonov vseh kuskov). Rezhem ego.
+Vytaskivaem Baked_[ImyaStruktury] na stsenu.
+Otkryvaem Window -> Mantis LOD Editor. Zhmem Get Mesh.
+Sozdaem LOD1: Polzunok na 30-40% poligonov (ostavlyaem ~1500-2500 treugolnikov). Save Mesh -> Mesh_[Imya]_LOD1.asset.
+Sozdaem LOD2: Polzunok na 2-5% poligonov (ostavlyaem 50-150 treugolnikov, chtoby vyglyadelo kak kartoshka, no sohranyalo siluet). Save Mesh -> Mesh_[Imya]_LOD2.asset.
+FAZA 5: SBORKA ETALONNOGO PREFABA (AAA STANDARD)
+Sobiraem finalnyy obekt, kotoryy poydet v igru.
+Sozdaem pustoy GameObject ENV_[ImyaStruktury]. SBROSIT KOORDINATY V 0,0,0!
+Vnutr kidaem tri pustyh obekta: LOD0, LOD1, LOD2. Naveshivaem na nih MeshFilter (s nashimi tremya meshami) i MeshRenderer (s materialom MAT_Rock_Universal).
+Na roditelskiy obekt ENV_[Imya] veshaem komponent LOD Group.
+Nastraivaem pereklyucheniya: LOD0 (do 50-40%), LOD1 (do 15%), LOD2 (do 2-5%).
+FIZIKA (ZhIZNENNO VAZhNO):
+Nikakih Mesh Collider na LOD0!
+Dlya melkih/srednih obektov (Klumby, Navesy): Veshaem na roditelya 2-3 Box Collider ili Sphere Collider i podgonyaem razmer rukami.
+Dlya slozhnyh/krupnyh (Arki, Mega-Bloki): Veshaem Mesh Collider. V pole Mesh OBYaZATELNO kidaem SAMYY LOUPOLNYY MESh (LOD2 na 50 poligonov). OBYaZATELNO stavim galochku Convex (Vypuklyy).
+Sloy obekta (Layer) stavim v Default ili Environment.
+Sohranyaem prefab v papku Assets/_Project/Prefabs/Environment/Rocks/.
+FAZA 6: MASSOVYY RENDER (GPU INSTANCER & MAPMAGIC)
+Otkryvaem menedzher GPU Instancer Pro. Zakidyvaem tuda nashi gotovye prefaby ENV_[Imya]. Dvizhok generiruet dlya nih instans-dannye.
+V MapMagic 2 nastraivaem nody Scatter:
+Peredaem koordinaty v GPU Instancer (cherez API ili Output-nody).
+V node Adjust obyazatelno zadaem randomnyy povorot po Y (0-360), chtoby skryt povtoryaemost.
+V node Floor stavim Align to Normal na 0.4-0.6 (chtoby kamni ne viseli uglami v vozduhe, no i ne kleilis plashmya k skalam).
+Zadaem otritsatelnyy Offset po osi Y (-0.5 ... -2.0), chtoby kamni vsegda spavnilis slegka vkopannymi v grunt (skryvaet shvy).
+REZULTAT:
+Na karte 15h15 km lezhat desyatki tysyach skal, arok i stolbov. Vse oni delyat 1 material, 1 nabor iz treh 2K tekstur. GPU Instancer risuet ih za 1 Draw Call na tip. Fizicheskiy dvizhok schitaet kollizii tolko po sotne poligonov ili primitivam. Videokarta MX350 vydaet stabilnye 60 FPS.
+KONETs PAMYaTKI.
+
+
+21 marta
+
+Slushay moy tehnicheskiy otchet po itogam smeny. Ty prodelal kolossalnyy obem «chernovoy» raboty, kotoraya prevraschaet musornye fotoskany v strukturirovannuyu biblioteku assetov AAA-urovnya.
+
+Status na tekuschiy moment: 17 iz 25 prefabov gotovy. Eto 68% vsey biblioteki okruzheniya.
+
+Vot podrobnoe sammari togo, chto my vnedrili i kak teper rabotaet tvoy konveyer.
+
+1. TEHNIChESKIY PAYPLAYN: IZ GRUPPY V PREFAB
+
+My utverdili i otrabotali pyatistupenchatuyu sistemu peregona geometrii:
+
+Phase: Markup (Razmetka):
+
+Ispolzovanie HectonSurfacePainter (v2.1).
+
+Rasstanovka soketov (SOCKET_Top, Side, Under) s avtomaticheskim opredeleniem tipa po normali poverhnosti.
+
+Ekstraktsiya dannyh v RockAttachmentData.asset (ScriptableObject). Sokety otdeleny ot mesha, chto pozvolyaet menyat geometriyu bez poteri tochek spavna flory.
+
+Phase: Consolidation (Zapekanie):
+
+Sliyanie grupp kamney cherez MB3_Mesh Baker.
+
+Reshenie problemy "Evaluation version": Perehod na metod Bake Into Scene Object s posleduyuschim vytaskivaniem mesha iz pamyati v fayl cherez kastomnyy HectonMeshSaver.
+
+Pivoty: Dlya novyh assetov vybran Pivot: Bounds Center (ili Bottom Center), chto isklyuchaet smescheniya pri spavne.
+
+Phase: Optimization (LODing):
+
+Ispolzovanie Mantis LOD Editor Professional.
+
+LOD 0: Originalnyy zapechennyy mesh (do 30-50k dlya mega-skal, 10-15k dlya kuch).
+
+LOD 1 (High): ~50% poligonov.
+
+LOD 2 (Medium): ~15% poligonov.
+
+LOD 3 (Low/Collider): ~3-5% (300-900 trisov).
+
+Phase: Integration (Sborka):
+
+Sozdanie prefabov po patternu ENV_Rock_[Name].
+
+Nastroyka LOD Group s porogami (0.6 / 0.15 / 0.04).
+
+Vnedrenie komponenta RockDataLink dlya svyazi s bazoy soketov.
+
+Phase: Physics (Fizika):
+
+Mesh Collider na baze LOD 3.
+
+Ispolzovanie Convex dlya prostyh form (kuchi, stolby) i Static Mesh (Non-Convex) dlya slozhnyh (arki).
+
+2. KATALOG SOZDANNYH ASSETOV (Svodka po 17 shtukam)
+
+Ty sobral osnovu landshafta, razdelennuyu na sleduyuschie tipy:
+
+Klastery (Kuchi): 8 shtuk (Kucha1, Kucha2, Kuchka melkaya i t.d.). Prednaznacheny dlya zapolneniya dna. Pozitsionirovanie: gorizontalnoe, s utopleniem v pesok.
+
+Stolby (Pillars): 3 shtuki (Pillar1, Pillar2). Vertikalnye dominanty. Ispolzovany vytyanutye fotoskany s usilennym Scale po Y.
+
+Arki: 2 shtuki (Arka1, Arka2). Slozhnye struktury dlya navigatsii. Ispravleny cherez «GEO-konteyner» dlya kompensatsii bityh pivotov.
+
+Skaly (Cliffs): 4 shtuki (Skala bolshaya, Skala srednyaya, Gorizontalnaya skala, Ogromnaya skala). Massivnye bloki (do 90k trisov v LOD0) dlya maskirovki shvov terreyna i vertikalnyh sten Bezdny.
+
+3. REShENNYE KRITIChESKIE PROBLEMY
+
+Mina "Bitogo Pivota":
+My obnaruzhili, chto chast meshey zapekalas s offsetom otnositelno (0,0,0). Resheno vnedreniem dochernego obekta GEO, kotoryy neset na sebe korrektiruyuschiy Transform, Mesh Collider i RockDataLink. Eto pozvolilo sohranit «nuli» na kornevom obekte dlya MapMagic.
+
+Mina "Zamylennogo LOD":
+Ispravleno cherez Recalculate Bounds. Teper Unity vidit realnyy gabarit arki, i pereklyuchenie urovney detalizatsii proishodit korrektno, a ne «v posledniy moment».
+
+Mina "Rozovyh tekstur":
+Unifitsirovan material MAT_Rock_Universal (Triplanar Vector2 Tiling). Vse 17 prefabov ispolzuyut odnu i tu zhe teksturu i odin i tot zhe Shader Graph. Ves etot zoopark iz 17 obektov otrisuetsya videokartoy MX350 za 1 Draw Call blagodarya GPU Instancing.
+
+4. PLAN NA ZAVTRA (BRIFING)
+
+Dobivaem hvosty: Ostalos 8 melkih kamney. Sdelay ih maksimalno bystro. Dlya nih ne nuzhny slozhnye LOD-tsepochki, hvatit 2 urovney (LOD0 i LOD2).
+
+Menyu (The Interface): Zavtra nachinaem «ebatsya s menyu». Eto znachit:
+
+Sozdanie 01_MAIN_MENU stseny.
+
+Razrabotka NASA-Punk stilistiki knopok (Shapes).
+
+Logika sohraneniya/zagruzki slotov cherez SaveManager i Easy Save 3.
+
+MapMagic & GPU Instancer: Kak tolko dobesh 25-y prefab, my skormim ih generatoru, i ty nakonets uvidish svoy mir ne v «Rock_Workshop», a na beskonechnom dne okeana.
+
+Lead Dev Verdict: Rabota idet po grafiku. Ty usvoil Enterprise-podhod k ierarhii i optimizatsii. 17 prefabov s LOD-gruppami za den — eto produktivno.
+
+Otdyhay. Zavtra budet bitva s UI i arhitekturoy dannyh. Konets otcheta.
+
+5: SISTEMA SOHRANENIY I MIRA (PERSISTENCE & POPULATION)
+5.5. Struktura Glavnogo Menyu i Navigatsii (Hecton-OS Boot Sequence)
+Steyt-mashina UI: Perehody mezhdu panelyami glavnogo menyu (Main, Save/Load, Settings) osuschestvlyayutsya cherez perekrestnoe zatuhanie CanvasGroup.alpha (Fade) s mgnovennoy blokirovkoy interactable i blocksRaycasts. Eto isklyuchaet dvoynye kliki i vizualnye artefakty pri perekrytii.
+Generatsiya Slotov: Sloty sohraneniy generiruyutsya dinamicheski. Kontroller zaprashivaet u SaveManager metadannye (Playtime, Timestamp) bez polnoy zagruzki fayla sohraneniya.
+Asinhronnaya zagruzka: Perehod v igrovuyu stsenu (02_HECTON_WORLD) vypolnyaetsya cherez SceneManager.LoadSceneAsync. Progress zagruzki privyazan k vizualnomu polzunku na ekrane. Indeks tselevogo slota peredaetsya cherez PlayerPrefs("TargetSaveSlot").
+Sistema Lokalizatsii (L10n): Vnedren pattern Event-Driven lokalizatsii. UI-teksty ne soderzhat hardkoda. Vse nadpisi zaprashivayutsya u LocalizationManager po strokovym konstantam (naprimer, MENU_NEW_GAME). Pri smene yazyka vyzyvaetsya sobytie OnLanguageChanged, i vse aktivnye UI-elementy mgnovenno pererisovyvayut tekst. Podderzhivaetsya zagruzka slovarey iz vneshnih JSON-faylov.
+
+
+TEKUSchIE ZADAChI (Kriticheskiy put):
+Sborka Ierarhii Menyu v Unity: Sozdat pustye GameObject s komponentami CanvasGroup dlya paneley Panel_MainScreen, Panel_SaveLoad_Popup, Panel_ModalConfirm, Panel_LoadingScreen soglasno strukture iz dizdoka.
+Privyazka Skriptov: Razvesit skripty MainMenuController i ModalWindow na Canvas. Peretaschit v inspektor vse ssylki na knopki, teksty i CanvasGroup.
+Sozdanie Prefaba Slota: Sobrat knopku Prefab_SaveSlot s dvumya tekstovymi polyami (Imya slota i Detali), povesit na nee SaveSlotUI i privyazat v inspektor MainMenuController.
+Integratsiya SaveManager: Zamenit zaglushku SaveManager iz koda neyronki na nash realnyy boevoy SaveManager.cs. Ubeditsya, chto metod TryGetSaveMetadata rabotaet korrektno.
+BUDUSchIE ZADAChI (Posle zapuska stseny):
+5. Perehvat TargetSaveSlot: V skripte SceneBootstrap.cs (ili gde u tebya idet initsializatsiya zagruzki v stsene 02_HECTON_WORLD) dobavit chtenie PlayerPrefs.GetString("TargetSaveSlot"), chtoby igra ponimala, gruzit li ey seyv ili nachinat novuyu igru.
+
+V BACKLOG (Zavershennye zadachi):
+
+Optimizatsiya prefabov statiki (udalenie vnutrennih graney, generatsiya lou-poli kollayderov HectonPhysicsSkinGenerator).
+
+Razreshenie konfliktov steyt-mashin osvescheniya (Zakaty/Zatmeniya/Okean).
+
+Refaktoring HectonPlayerMovement (Ustranenie dzhittera, integratsiya Fluid Dynamics, Data-Driven skafandry).
+
+Gibridnaya sistema detektsii poverhnostey (MapMagic Biomes + Tags) dlya audio.
+V BACKLOG (Tekuschie zadachi):
+
+Integratsiya statiki (Kamni) cherez payplayn MapMagic → GPU Instancer Pro.
+
+Sinhronizatsiya GPU Instancer Pro s ProximityColliderSystem dlya fiziki dna.
+
+
+BACKLOG: Status razrabotki
+✅ ZAVERShENO (Milestone: Core Movement & Juice)
+[Core] Polnyy perehod na Unity 6 Awaitable API i Unity.Mathematics (Zero GC).
+[Core] Razdelenie logiki na HectonPlayerMovement (fizika) i CameraJuiceProcessor (vizual).
+[Physics] Integratsiya dinamicheskoy vysoty vody Crest Ocean.
+[Physics] Sistema plavnogo perehoda «Hodba ↔ Plavanie» na osnove koeffitsienta pogruzheniya.
+[Juice] Protsedurnyy kren kamery (Roll) pri streyfah i povorotah cherez pruzhinnye dempfery.
+[Juice] Effekt «prisedaniya» kamery pri zhestkoy posadke na grunt (Impact Dip).
+[Juice] Adaptivnaya inertsiya shlema (Pitch Inertia) pod vodoy.
+[Event System] Globalnye triggery: OnWaterSplash, OnSubmergeChange, OnExhale, OnFootstep.
+🏗 V RABOTE (Tekuschiy etap)
+[VFX] Privyazka partiklov bryzg k sobytiyu OnWaterSplash.
+[Audio] Dinamicheskiy miksher dyhaniya, zavisyaschiy ot glubiny i ustalosti.
+[VFX] Sheyder kapel na vizore, srabatyvayuschiy po OnSubmergeChange.
+📅 SLEDUYuSchIE ShAGI (Planning)
+[Crest] Integratsiya FlowProvider dlya zameny sinusoidalnogo techeniya realnymi potokami okeana.
+[Environment] Privyazka ProximityColliderSystem k GPU-instansingu kamney na dne.
+
+25 marta
+
+
+
+# HECTON-8 — POLNYY SVOD VYPOLNENNYH RABOT
+
+## Sessiya: Camera Juice Immersion Pack + MapMagic→GPUI Rock Pipeline
+
+---
+
+## ChAST 1: CAMERA JUICE IMMERSION PACK (v7.0 → v7.0a)
+
+### 1.1 Chto bylo na vhode
+
+Sistema HectonPlayerMovement v6.3 s bazovoy immersiey:
+- Rigidbody-based movement, zero-jitter camera
+- Crest Ocean integration (wave height sampling)
+- Surface lock, graduated gravity, smoothed immersion
+- Body yaw lag underwater
+- CameraJuiceProcessor v6.1 s head bob, idle sway, surface bob, roll, momentum pitch, turn sway, landing impact
+
+### 1.2 Chto bylo realizovano — 10 fich
+
+#### Ficha 1: Swim Bobbing (grebkovoe pokachivanie)
+**Fayl:** `CameraJuiceProcessor.cs` → `ProcessSwimBob()`
+**Sut:** Ritmichnoe pokachivanie kamery pri plavanii s inputom, imitiruyuschee grebki.
+**Komponenty:**
+- Vertikalnyy bob (osnovnoy stroke)
+- Forward/back body undulation (polovinnaya chastota)
+- Alternating arm roll (sdvig fazy π/2)
+- Intensivnost masshtabiruetsya po skorosti plavaniya (min 0.3 pri dvizhenii)
+- Plavnyy fade in/out cherez exponential blend
+
+**Parametry SuitData:**
+- `enableSwimBob` (bool)
+- `swimBobFrequency` (0.3–3 Hz, default 0.9)
+- `swimBobVerticalAmplitude` (0–0.15m, default 0.04)
+- `swimBobForwardAmplitude` (0–0.08m, default 0.015)
+- `swimBobRollAmplitude` (0–3°, default 0.8)
+- `swimBobTransitionSpeed` (1–15, default 4)
+
+#### Ficha 2: Pitch Inertia Underwater (inertsiya shlema)
+**Status:** Realizovana v v7.0, **OTKLYuChENA v v7.0a**.
+**Prichina otklyucheniya:** Pri vertikalnom dvizhenii myshi spring-damped pitch sozdaval effekt "reverse jerk" — kamera snachala dergalas v protivopolozhnuyu storonu, potom dogonyala. Oschuschalos kak soprotivlenie. Body yaw lag uzhe dostatochno dlya oschuscheniya massy.
+**Parametry ostalis v SuitData** (ne lomayut serializatsiyu):
+- `enableUnderwaterPitchInertia` (bool)
+- `underwaterPitchSpringOmega` (5–40, default 18)
+
+**Kod:** `ProcessPitchInertia()` udalen iz pipeline. `ApplyCameraState()` ispolzuet `_cameraPitch` napryamuyu.
+
+#### Ficha 3: Collision Camera Shake (udar o skalu)
+**Fayl:** `HectonPlayerMovement.cs` → `OnCollisionEnter()`, `CameraJuiceProcessor.cs` → `RegisterCollisionImpulse()`, `ProcessCollisionShake()`
+**Sut:** Pri stolknovenii Rigidbody s obektom na skorosti vyshe poroga — damped oscillation na kamere.
+**Realizatsiya:**
+- `OnCollisionEnter` izvlekaet `collision.relativeVelocity.magnitude`
+- Normalizuet 0–1 po diapazonu threshold→max
+- Pseudo-random sign per axis (deterministic ot Time.time, zero GC)
+- Tri kanala shake: Y position, X position, pitch
+- Vse tri vosstanavlivayutsya cherez spring-damped k nulyu
+
+**Parametry SuitData:**
+- `enableCollisionShake` (bool)
+- `collisionShakeThreshold` (0.5–10 m/s, default 2)
+- `collisionShakeMaxVelocity` (3–30 m/s, default 12)
+- `collisionShakeMaxAmplitude` (0–0.15m, default 0.05)
+- `collisionShakeMaxPitch` (0–5°, default 2)
+- `collisionShakeRecoveryOmega` (4–25, default 10)
+
+#### Ficha 4: Splash Events (vhod/vyhod iz vody)
+**Fayl:** `CameraJuiceProcessor.cs` → `DetectWaterEvents()`
+**Sut:** Detektsiya bystrogo peresecheniya poverhnosti vody dlya zvuka/VFX.
+**Mehanika:**
+- Vychislyaet `immersionRate = |Δimmersion| / dt`
+- Esli rate ≥ threshold → splash
+- Intensity = max(verticalSpeedFactor, rateFactor), clamped 0–1
+- Auto-triggers `RegisterSplash()` → camera dip cherez spring
+
+**Events (pollable, zero GC):**
+- `SplashThisFrame` (bool) — byl li splash v etom kadre
+- `SplashIntensity` (float 0–1) — sila dlya zvuka/VFX
+
+**Movement events (delegate-based):**
+- `OnWaterSplash(float intensity)` — dlya audio/VFX sistem
+- Splash camera dip cherez `_splashDipCurrent` + spring recovery
+
+**Parametry SuitData:**
+- `splashImmersionRateThreshold` (0.1–5, default 0.8)
+- `splashMinVerticalSpeed` (0.5–5 m/s, default 1.5)
+- `splashCameraDip` (0–0.1m, default 0.03)
+
+#### Ficha 5: Submerge Change Event (golova pod vodoy)
+**Fayl:** `CameraJuiceProcessor.cs` → `DetectWaterEvents()`
+**Sut:** Detektsiya momenta, kogda golova peresekaet porog pogruzheniya.
+**Events:**
+- `SubmergeChangedThisFrame` (bool)
+- `IsSubmerged` (bool)
+- `OnSubmergeChange(bool isSubmerged)` — delegate v HectonPlayerMovement
+
+**Parametr SuitData:**
+- `submergeThreshold` (0.7–0.98, default 0.85)
+
+#### Ficha 6: Depth Sway Multiplier (azotnyy narkoz)
+**Fayl:** `CameraJuiceProcessor.cs` → `ComputeDepthMultiplier()` applied to idle sway
+**Sut:** S glubinoy idle sway amplituda uvelichivaetsya, imitiruya poteryu ustoychivosti.
+**Realizatsiya:** Lineynaya interpolyatsiya mnozhitelya 1.0→max po diapazonu depth start→end.
+
+**Parametry SuitData:**
+- `depthSwayStart` (0–100m, default 10)
+- `depthSwayEnd` (10–300m, default 80)
+- `depthSwayMultiplierMax` (1.0–3.0, default 1.6)
+
+#### Ficha 7: Depth Roll Multiplier (poterya gorizonta)
+**Fayl:** `CameraJuiceProcessor.cs` → `ComputeDepthMultiplier()` applied to swim roll
+**Sut:** Na glubine roll ot streyfa/myshi usilivaetsya — net vizualnoy privyazki k gorizontu.
+**Realizatsiya:** Tot zhe `ComputeDepthMultiplier` no dlya rollScale.
+
+**Parametr SuitData:**
+- `depthRollMultiplierMax` (1.0–2.5, default 1.4)
+
+#### Ficha 8: Depth Swim Slowdown (davlenie)
+**Fayl:** `HectonPlayerMovement.cs` → `SwimPhysics()`
+**Sut:** Na glubine swimForce umenshaetsya i drag uvelichivaetsya.
+**Realizatsiya:**
+- `depthSlowdown` = 1 - saturate((depth-start)/(end-start)) × max
+- `effectiveSwimForce = swimForce × depthSlowdown`
+- `effectiveDragCoeff = swimDragCoefficient + depthDragAdd`
+- Primenyaetsya i k swimVerticalForce
+
+**Parametry SuitData:**
+- `depthSwimSlowdownStart` (0–100m, default 20)
+- `depthSwimSlowdownEnd` (20–500m, default 150)
+- `depthSwimSlowdownMax` (0–0.5, default 0.2) — maksimalnoe snizhenie sily
+- `depthDragIncreaseMax` (0–3, default 0.8) — maksimalnoe uvelichenie drag
+
+#### Ficha 9: FOV Depth Compression (klaustrofobiya)
+**Fayl:** `CameraJuiceProcessor.cs` → `ProcessDepthFovCompression()`, `HectonPlayerMovement.cs` → `ApplyCameraState()`
+**Sut:** FOV suzhaetsya s glubinoy, sozdavaya oschuschenie davleniya.
+**Realizatsiya:**
+- SmoothStep (t² × (3-2t)) dlya plavnogo narastaniya
+- `fovOffset` — otritsatelnoe znachenie, umenshayuschee FOV
+- V `ApplyCameraState()`: `targetFov = baseFov + fovOffset`, primenyaetsya cherez exponential lerp
+
+**Novye polya v HectonPlayerMovement:**
+- `baseFov` (serialize, default = camera.fieldOfView pri Awake)
+- `_cameraComponent` — keshirovannaya ssylka na Camera
+
+**Parametry SuitData:**
+- `enableDepthFovCompression` (bool)
+- `depthFovCompressionStart` (0–50m, default 5)
+- `depthFovCompressionEnd` (10–300m, default 100)
+- `depthFovCompressionMax` (0–20°, default 6)
+
+#### Ficha 10: Exhale Rhythm (dyhanie pod vodoy)
+**Fayl:** `CameraJuiceProcessor.cs` → `ProcessExhaleRhythm()`, `RecoverExhaleSpring()`
+**Sut:** Periodicheskiy vydoh: micro camera dip + event dlya puzyrey.
+**Realizatsiya v7.0a (posle fiksa):**
+- Taymer s randomizirovannym intervalom (deterministic ot Time.time)
+- Pri trigger: impulse na `_exhaleDipCurrent` (bez pitch — ubran kak derganyy)
+- Spring recovery cherez `RecoverExhaleSpring()`
+- Aktiven tolko pri immersion > 0.7
+
+**Events:**
+- `ExhaleThisFrame` (bool, pollable)
+- `OnExhale()` — delegate v HectonPlayerMovement
+
+**Parametry SuitData:**
+- `enableExhaleRhythm` (bool)
+- `exhaleIntervalBase` (2–10s, default 4.5)
+- `exhaleIntervalVariation` (0–3s, default 1)
+- `exhaleDipAmplitude` (0–0.04m, default 0.012)
+- `exhalePitchAmplitude` (0–2°, default 0.4) — suschestvuet no ne ispolzuetsya v v7.0a
+- `exhaleDuration` (0.1–1s, default 0.4)
+
+### 1.3 Novye struktury dannyh
+
+**CameraJuiceInput** — dobavleny polya:
+- `float depth` — metry nizhe poverhnosti vody
+- `float swimSpeed` — polnaya 3D skorost plavaniya
+- `float cameraPitch` — tekuschiy pitch kamery
+
+**CameraJuiceOutput** — dobavleno pole:
+- `float fovOffset` — smeschenie FOV (otritsatelnoe = suzhenie)
+
+### 1.4 Novye polya v HectonPlayerMovement
+
+- `float baseFov` — bazovyy FOV kamery (Inspector)
+- `Camera _cameraComponent` — kesh komponenta
+- `float _currentDepth` — tekuschaya glubina (vychislyaetsya v FixedTick)
+- `ComputeDepth()` — metod vychisleniya glubiny
+- `OnCollisionEnter(Collision)` — obrabotchik stolknoveniy dlya shake
+- Events: `OnWaterSplash`, `OnSubmergeChange`, `OnExhale`
+- Public: `CurrentDepth`, `IsPlayerSubmerged`
+- Debug fields: `_debugDepth`, `_debugFovOffset`, `_debugSplashThisFrame`, `_debugExhaleThisFrame`, `_debugIsSubmerged`
+
+### 1.5 Bag-fiksy (v7.0 → v7.0a)
+
+| Bag | Prichina | Fiks |
+|-----|---------|------|
+| Kamera dergaetsya pri vertikalnom dvizhenii myshi na vode | Pitch Inertia spring sozdaval reverse-direction offset | Pitch inertia polnostyu otklyuchena, `ApplyCameraState` ispolzuet `_cameraPitch` napryamuyu |
+| Derganyy kivok pri vydohe | Pitch impulse v exhale byl slishkom rezkim | Pitch komponent exhale ubran, dip impulse smyagchen (×0.8 vmesto ×1.5) |
+
+### 1.6 Fayly (itogovye versii)
+
+| Fayl | Versiya | Status |
+|------|--------|--------|
+| `SuitData.cs` | v7.0 | Polnyy, ~30 novyh parametrov |
+| `CameraJuiceProcessor.cs` | v7.0a | Polnyy, 10 novyh effektov, pitch inertia otklyuchena |
+| `HectonPlayerMovement.cs` | v7.0a | Polnyy, depth calc, collision, events, FOV |
+
+---
+
+## ChAST 2: MAPMAGIC → GPU INSTANCER ROCK PIPELINE
+
+### 2.1 Zadacha
+
+Spavn do 100,000 kamney na protsedurnom dne bez edinogo GameObject. MapMagic generiruet scatter points → nash kod perehvatyvaet → GPU Instancer renderit → ProximityColliderSystem generiruet fiziku tolko ryadom s igrokom.
+
+**Hardware target:** NVIDIA MX350 (2GB VRAM).
+
+### 2.2 Arhitektura
+
+```
+MapMagic Graph
+    │
+    ▼
+[Scatter] → [Adjust] → [HectonRockOutput]
+                              │
+                              │ Generate() — worker thread
+                              │   reads TransitionsList
+                              │
+                              │ Finalize() — worker thread
+                              │   converts Transition[] → Matrix4x4[]
+                              │   groups by layerID
+                              │
+                              │ Apply() — main thread
+                              ▼
+                    HectonRockManager.RegisterChunk()
+                              │
+                              │ SlowTick() — every 0.5s (ISlowTickable)
+                              │   aggregates all chunks per layer
+                              │
+                    ┌─────────┴──────────┐
+                    ▼                    ▼
+          GPUInstancerAPI          ProximityColliderSystem
+     .InitializeWithMatrix4x4Array()    .Initialize(Vector3[])
+     .UpdateVisibilityBuffer...()
+                    │                    │
+                    ▼                    ▼
+              GPU rendering        Burst Jobs + Object Pool
+              (no GameObjects)     (colliders only near player)
+```
+
+### 2.3 HectonRockOutput.cs
+
+**Put:** `Assets/_Project/Scripts/HectonRockOutput.cs`
+**Tip:** MapMagic 2.1.18 Custom Output Node
+**Nasleduet:** `OutputGenerator`, realizuet `IInlet<TransitionsList>`
+
+**Pattern (skopirovan s ObjectsOutput):**
+1. `Generate(TileData, StopToken)` — chitaet TransitionsList cherez `data.ReadInletProduct(this)`, sohranyaet cherez `data.StoreOutput()`, pomechaet `data.MarkFinalize()`
+2. `Finalize(TileData, StopToken)` — static metod, iteriruet vse outputs etogo tipa cherez `data.Outputs<>()`, konvertiruet `Transition.pos/rotation/scale` → `Matrix4x4.TRS()`, gruppiruet po layerID, sozdaet `HectonRockApplyData`, pomechaet `data.MarkApply()`
+3. `HectonRockApplyData.Apply(Terrain)` — main thread, vyzyvaet `HectonRockManager.Instance.RegisterChunk()`
+4. `ClearApplied(TileData, Terrain)` — vyzyvaet `HectonRockManager.Instance.UnregisterChunk()`
+
+**Svoystva nody:**
+- `int layerID` — ID sloya kamney (sootvetstvuet konfigu menedzhera)
+- `OutputLevel outputLevel` — Main (override abstract property)
+
+**Koordinata chanka:** vychislyaetsya iz `data.area.active.worldPos / worldSize`
+
+**Biome support:** bazovaya maska cherez `biomeMask.GetWorldValue()` s porogom 0.5
+
+**Klyuchevye resheniya:**
+- TransitionsList chitaetsya cherez `trns.arr[t].pos`, `.rotation`, `.scale` (pryamoy dostup k struct array)
+- `finalizeAction` — static delegate dlya MapMagic finalize system
+- Area check: `data.area.active.Contains(trn.pos)` — propusk obektov vne aktivnoy oblasti
+
+### 2.4 HectonRockManager.cs
+
+**Put:** `Assets/_Project/Scripts/HectonRockManager.cs`
+**Tip:** MonoBehaviour, Singleton, ISlowTickable
+**Execution Order:** -5000
+
+**Konfiguratsiya:**
+```csharp
+[Serializable]
+public struct RockLayerConfig
+{
+    public int layerId;                    // sootvetstvuet HectonRockOutput.layerID
+    public GPUInstancerPrefab prefabReference; // komponent na prefabe kamnya
+}
+```
+
+**Runtime extraction:** V Awake iz `GPUInstancerPrefab.prefabPrototype` izvlekaetsya `GPUInstancerPrefabPrototype` — imenno etot tip trebuet GPU Instancer API.
+
+**Hranenie dannyh:**
+- `Dictionary<int, Dictionary<Vector2Int, Matrix4x4[]>>` — layerId → (chunkCoord → matrices)
+- Dirty flag — obnovlenie tolko pri izmeneniyah
+
+**SlowTick (kazhdye 0.5s):**
+1. Proveryaet dirty flag
+2. Per-layer: podschet total instances, grow buffer esli nuzhno, `Array.Copy` vseh chankov v flat array
+3. Push v GPUI: pervyy raz `InitializeWithMatrix4x4Array`, potom `UpdateVisibilityBufferWithMatrix4x4Array`
+4. Cross-layer: izvlechenie pozitsiy iz Matrix4x4 (m03, m13, m23), `Array.Copy` v trimmed array
+5. Push v ProximityColliderSystem: `Initialize(Vector3[])`
+
+**GPU Instancer API vyzovy:**
+- `GPUInstancerAPI.InitializeWithMatrix4x4Array(GPUInstancerPrefabManager, GPUInstancerPrefabPrototype, Matrix4x4[])`
+- `GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(GPUInstancerPrefabManager, GPUInstancerPrefabPrototype, Matrix4x4[])`
+
+**Vazhnyy bag-fiks (v1.1):** GPU Instancer API prinimaet `GPUInstancerPrefabPrototype` (ScriptableObject), a NE `GPUInstancerPrefab` (MonoBehaviour). Pervaya versiya peredavala nepravilnyy tip.
+
+**Pamyat (100,000 rocks):**
+- Matrix4x4[] = ~6.1 MB
+- Vector3[] = ~1.2 MB
+- Dictionary overhead = negligible
+- Total: ~7.5 MB
+
+### 2.5 Bagi i fiksy pri integratsii
+
+| Oshibka | Prichina | Fiks |
+|--------|---------|------|
+| `CS0246: disassemblyRecipient` | Nesuschestvuyuschiy parametr GeneratorMenuAttribute | Ubran iz atributa |
+| `CS0115: no suitable method to override GetApplyData` | MapMagic ne imeet takogo metoda | Zamenen na pattern Generate→StoreOutput→MarkFinalize→Finalize→MarkApply |
+| `CS0534: does not implement ClearApplied` | Abstract method v OutputGenerator | Realizovan: vychislyaet chunkCoord, vyzyvaet UnregisterChunk |
+| `CS0534: does not implement OutputLevel.get` | Abstract property v OutputGenerator | Realizovan cherez pole + override |
+| `CS0246: ApplyData not found` | Tip nazyvalsya IApplyData v namespace MapMagic.Nodes | Ispravlen using + pravilnoe nasledovanie |
+| `CS1503: cannot convert GPUInstancerPrefab to GPUInstancerPrefabPrototype` | API prinimaet Prototype, ne Prefab component | Izvlechenie `.prefabPrototype` v Awake, hranenie pravilnogo tipa |
+
+### 2.6 Fayly (itogovye versii)
+
+| Fayl | Versiya | Status |
+|------|--------|--------|
+| `HectonRockOutput.cs` | v1.0 | Kompiliruetsya, integrirovan s MapMagic |
+| `HectonRockManager.cs` | v1.1 | Kompiliruetsya, GPUI type fix |
+
+---
+
+## ChAST 3: BACKLOG — ChTO NE SDELANO
+
+### 3.1 Immersiya — sleduyuschiy etap
+
+| ID | Ficha | Prioritet | Zametki |
+|----|-------|-----------|---------|
+| IMM-01 | Crest Flow Integration | Vysokiy | Zamenit sinusoidalnyy ambient current na realnoe techenie iz Crest IFlowProvider |
+| IMM-02 | Surface swim realism ("lezhat na volne") | Vysokiy | Surface lock + Crest height uzhe rabotayut, no nuzhna dovodka oschuscheniy |
+| IMM-03 | Pitch Inertia v2 | Sredniy | Peredelat bez reverse-jerk. Vozmozhno cherez damped velocity multiplier, a ne position offset |
+| IMM-04 | Thermocline layer | Nizkiy | Nastraivaemaya glubina s izmeneniem drag, event dlya vizuala |
+| IMM-05 | Visor condensation | Nizkiy | Post-process effekt pri vsplytii |
+| IMM-06 | Depth-dependent step sound | Nizkiy | OnDepthChanged event kazhdye 10m |
+
+### 3.2 Rock Pipeline — sleduyuschiy etap
+
+| ID | Zadacha | Prioritet | Zametki |
+|----|--------|-----------|---------|
+| ROCK-01 | Testirovanie v runtime | Kritichnyy | Proverit chto nody poyavlyayutsya v MapMagic grafe, dannye dohodyat do menedzhera |
+| ROCK-02 | Mnozhestvennye tipy kamney | Vysokiy | Neskolko RockLayerConfig s raznymi layerID i prefabs |
+| ROCK-03 | LOD dlya kollayderov | Sredniy | Raznyy razmer BoxCollider dlya raznyh distance bands |
+| ROCK-04 | ProximityColliderSystem optimizatsiya | Sredniy | ReinitializePositions bez peresozdaniya NativeArray esli dlina sovpadaet |
+| ROCK-05 | MapMagic biome-aware rocks | Nizkiy | Polnotsennaya BiomeBlend integratsiya (seychas bazovyy mask threshold 0.5) |
+| ROCK-06 | GPUI MapMagic2 Integration package | Informatsiya | V papke Extras est `GPUI_MapMagic2_Integration.unitypackage` — stoit izuchit, mozhet dubliruet nashu rabotu |
+
+### 3.3 Izvestnye riski
+
+| Risk | Opisanie | Mitigatsiya |
+|------|----------|-----------|
+| GPUI buffer size | Pri >100k instansov mozhet ne hvatit VRAM na MX350 | Monitorit `_debugTotalInstances`, ogranichit scatter density |
+| ProximityColliderSystem reinit GC | Kazhdye 0.5s pri dirty rebuild — new Vector3[] + NativeArray | Dobavit metod ReinitializePositions (ROCK-04) |
+| MapMagic chunk coord collision | Esli worldSize nekorrekten — dva tayla mogut dat odinakovyy chunkCoord | Proverit s realnymi taylami, vozmozhno nuzhen offset |
+| Exhale rhythm determinism | `math.frac(Time.time * 3.17f)` ne istinno random, mozhet davat patterny | Dlya MVP dostatochno, potom zamenit na seeded PRNG |
+
+---
+
+## ChAST 4: TEHNIChESKIE PRINTsIPY (sohranyat v sleduyuschih sessiyah)
+
+1. **Zero GC** v goryachih putyah (Tick, FixedTick, SlowTick)
+2. **Tick** = input + camera (render framerate)
+3. **FixedTick** = physics only
+4. **SlowTick** = heavy operations (GPUI rebuild, biome detection)
+5. **Rigidbody** nikogda ne vraschaetsya — kamera vraschaetsya otdelno
+6. Vse **data-driven** cherez SuitData
+7. **Spring-damped** povedenie vezde, nikakih blunt lerp
+8. Kazhdyy effekt **parametrizuem i vyklyuchaem**
+9. NativeArray → **Dispose obyazatelen**
+10. MapMagic pattern: **Generate → StoreOutput → MarkFinalize → Finalize → MarkApply*
+
+
+HECTON8 — BACKLOG
+================
+
+[x] Vynesti swim keys v nastraivaemye KeyCode v HectonPlayerMovement
+[x] interactKey vynesti v PlayerInteraction + ActiveInteractKey dlya UI
+[x] InteractionUI.ShowPrompt — ispolzovat ResolveInteractPrefix() (byl bag)
+[x] ControlScheme ScriptableObject — edinaya tochka nastroyki klavish
+    — HectonPlayerMovement i PlayerInteraction chitayut iz nego (fallback na lokalnye polya)
+    — Sozdat asset: Assets → Create → Hecton8 → Control Scheme
+    — Naznachit v inspektore oboih komponentov
+
+[x] Podklyuchit ControlScheme k ostalnym sistemam
+    — LaserCutter: deconstructModifier (R) iz ControlScheme
+    — PlayerToolManager: sloty 1-4 iz ControlScheme
+    — ScannerTool, BuilderTool: svoih hardkodnyh klavish net
+    — HectonFabricatorUI: tolko UI-navigatsiya (Escape/W/S/Space) — ne trogaem
+
+[ ] Migratsiya na Unity Input System
+    — te zhe defolty (WASD, Space, E, Ctrl/C)
+    — avtogeneratsiya ekrana «Upravlenie» v pauze/PDA iz bindingov
+
+[x] Sprint — Left Shift
+    — SuitData: sprintMultiplier = 1.6 (nastraivaetsya)
+    — HectonPlayerMovement: _isSprinting, chitaet sprintKey iz ControlScheme
+    — Primenyaetsya tolko na zemle (ne v vode)
+
+[x] Fonar v2.0 ENTERPRISE — klavisha F
+    — PlayerFlashlight.cs: ITickable, plavnyy fade, chitaet flashlightKey iz ControlScheme
+    — FlashlightEvents: OnToggled, OnBatteryDepleted, OnOverheat, OnFlickerStart
+    — Battery drain + Heat buildup + Flickering (Perlin noise)
+    — Overheat shutdown + cooldown period
+    — VolumetricLightBeam integration (optional, via reflection)
+    — Audio feedback (toggle/low battery/overheat)
+    — Zero GC design
+
+[x] Karta / PDA v2.0 ENTERPRISE — klavisha M
+    — PlayerPDA.cs: ITickable, staticheskiy IsOpen, 3 vkladki (Map/Log/Controls)
+    — PDAEvents: OnOpened, OnClosed, OnTabChanged, OnLowBatteryShutdown
+    — CanvasGroup fade animation (smooth alpha transition)
+    — Battery drain system + low battery auto-shutdown
+    — Tab history stack (Backspace = nazad, pre-allocated 8 entries)
+    — Audio feedback (open/close/tab switch/low battery)
+    — HectonPlayerMovement + PlayerInteraction: gard || PlayerPDA.IsOpen
+    — Zero GC design
+
+[ ] HUD / Visor UX v4.0 ENTERPRISE
+    — HectonSuitHUDExtensions.cs: rasshireniya dlya HUD (rabotaet s HectonSuitHUD v3.0)
+    — FlashlightStatusIndicator: ikonka + heat bar + overheat warning
+    — PDAStatusIndicator: ikonka kogda PDA otkryt
+    — NotificationSystem: vsplyvayuschie uvedomleniya (overheat, low battery, fade in/out)
+    — EquipmentStatusPanel: top-right panel s ikonkami instrumentov
+    — Event integration: FlashlightEvents, PDAEvents
+    — Zero GC: pre-allocated notification queue (max 5), cached handlers
+    — HectonSurvivalSystem v5.0: EnergyPercent property + DrainEnergy(int) method
+    — Naznachit HectonSuitHUDExtensions na HUD Camera (ryadom s HectonSuitHUD)
+
+[x] Tool System v1.0 ENTERPRISE — Master Grade instrumenty
+    — ToolMetadata.cs: rasshirennye dannye (durability, upgrades, stats, tier, category)
+    — ToolUpgradeData.cs: moduli uluchsheniya (stat modifiers, special effects, crafting)
+    — ToolDurabilitySystem.cs: iznos i remont (singleton, ISaveable, events)
+    — SaveData v2.0: toolDurabilityMap, toolBrokenMap (ES3SerializableDictionary)
+    — Zero GC: pre-allocated dictionaries, cached references, struct-based calculations
+    — Events: OnDurabilityChanged, OnToolBroken, OnToolRepaired
+    — Upgrade system: do 3 slotov, tier requirements, compatibility check
+    — Repair system: resource-based repair, cost calculation
+
+[x] Tool HUD Panel v2.0 ENTERPRISE
+    — ToolHUDPanel.cs: prodvinutaya panel instrumenta v HUD
+    — Durability bar: vizualnaya shkala iznosa s tsvetovoy indikatsiey (good/warning/critical)
+    — Upgrade slots display: pokazyvaet ustanovlennye uluchsheniya (do 3 slotov)
+    — Real-time stats: efficiency, speed, energy consumption (s uchetom upgrades)
+    — Tool name & tier: nazvanie i uroven (Basic/Advanced/Master)
+    — Warning indicators: critical durability, broken tool (pulse animation)
+    — Smooth animations: fade in/out, pulse effects
+    — Event integration: ToolDurabilitySystem events
+    — Zero GC: pre-allocated string cache, cached references, struct-based animation
+    — Naznachit na HUD Camera (ryadom s HectonSuitHUD i HectonSuitHUDExtensions)
+
+[ ] PDA Tool Management Tab
+    — Vkladka upravleniya instrumentami v PDA
+    — Spisok vseh instrumentov s filtratsiey (tier, category, broken)
+    — Ustanovka/udalenie uluchsheniy
+    — Remont instrumentov
+    — Detalnaya informatsiya (stats, upgrades, durability history)
+*

@@ -1,16 +1,16 @@
 // ============================================================================
 // HECTON-8 — EndingTerminalInteractable.cs
-// Интерактивный терминал ядра Атлас-6 — точка выбора концовки.
+// Interaktivnyy terminal yadra Atlas-6 — tochka vybora kontsovki.
 //
-// ЛОР: Терминал рядом с ядром на -5000м.
-// На терминале: полные данные программы Посева, причина "поломки" Атлас-6,
-// и — главное — что он строил 847 дней.
+// LOR: Terminal ryadom s yadrom na -5000m.
+// Na terminale: polnye dannye programmy Poseva, prichina "polomki" Atlas-6,
+// i — glavnoe — chto on stroil 847 dney.
 //
-// АРХИТЕКТУРА:
-//   • IInteractable — взаимодействие открывает UI выбора концовки.
-//   • Активен только если EndingSystem.IsConditionMet.
-//   • Показывает три варианта через NotificationEvents (временно).
-//   • В финальной версии — отдельный UI экран.
+// ARHITEKTURA:
+//   • IInteractable — vzaimodeystvie otkryvaet UI vybora kontsovki.
+//   • Aktiven tolko esli EndingSystem.IsConditionMet.
+//   • Pokazyvaet tri varianta cherez NotificationEvents (vremenno).
+//   • V finalnoy versii — otdelnyy UI ekran.
 // ============================================================================
 
 using Conditional = System.Diagnostics.ConditionalAttribute;
@@ -138,12 +138,12 @@ namespace Hecton8.Gameplay
         {
             _choiceOpen = true;
 
-            // Показываем данные Атлас-6 через нарратив
+            // Pokazyvaem dannye Atlas-6 cherez narrativ
             NarrativeEvents.RaiseDiscoveryMade("atlas6_core_data_accessed");
 
-            // Публикуем три варианта через HUD
-            // В финальной версии — отдельный UI экран с тремя кнопками
-            // Сейчас — уведомления с инструкцией
+            // Publikuem tri varianta cherez HUD
+            // V finalnoy versii — otdelnyy UI ekran s tremya knopkami
+            // Seychas — uvedomleniya s instruktsiey
             Hecton8.UI.NotificationEvents.PushWarning(
                 _cachedDataLoadedText);
 

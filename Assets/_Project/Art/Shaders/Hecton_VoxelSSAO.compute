@@ -4,7 +4,6 @@
 
 RWTexture2D<float> _HectonVoxelSSAOResult;
 Texture2D<float> _HectonVoxelSSAODepth;
-Texture2D<float4> _BlueNoiseTex;
 
 float4 _HectonVoxelSSAOInputSize;
 float4 _HectonVoxelSSAOOutputSize;
@@ -13,7 +12,6 @@ float _HectonVoxelSSAOProjectionScale;
 float _HectonVoxelSSAORadiusMeters;
 float _HectonVoxelSSAOIntensity;
 float _HectonVoxelSSAODepthSigma;
-float _HectonVoxelSSAOHasBlueNoise;
 int _HectonVoxelSSAOSampleCount;
 
 bool IsFiniteScalar(float value)
@@ -44,21 +42,6 @@ static const float2 kKernelDirections[6] =
 float ResolveInterleavedNoise(float2 pixelCoord)
 {
     return frac(52.9829189 * frac(dot(pixelCoord, float2(0.06711056, 0.00583715))));
-}
-
-float ResolveBlueNoise(float2 pixelCoord)
-{
-    if (_HectonVoxelSSAOHasBlueNoise < 0.5)
-        return ResolveInterleavedNoise(pixelCoord);
-
-    uint width;
-    uint height;
-    _BlueNoiseTex.GetDimensions(width, height);
-    if (width == 0 || height == 0)
-        return ResolveInterleavedNoise(pixelCoord);
-
-    float2 uv = frac(pixelCoord / float2(width, height));
-    return _BlueNoiseTex.SampleLevel(sampler_LinearClamp, uv, 0).r;
 }
 
 bool IsDepthValid(float rawDepth)
@@ -129,7 +112,7 @@ void ResolveVoxelSSAO(uint3 dispatchThreadId : SV_DispatchThreadID)
     }
 
     float radiusPixels = clamp(_HectonVoxelSSAOProjectionScale / max(centerLinearDepth, 0.5), 1.0, 24.0);
-    float rotationAngle = ResolveFiniteOrDefault(ResolveBlueNoise(dispatchThreadId.xy), 0.0) * 6.2831853;
+    float rotationAngle = ResolveFiniteOrDefault(ResolveInterleavedNoise(dispatchThreadId.xy), 0.0) * 6.2831853;
     float2 rotation = float2(cos(rotationAngle), sin(rotationAngle));
 
     float occlusion = 0.0;

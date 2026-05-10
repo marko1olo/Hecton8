@@ -13,6 +13,7 @@ namespace Hecton8.World
     [RequireComponent(typeof(LineRenderer))]
     public sealed class BioCableIK : MonoBehaviour
     {
+        private const float SegmentDistanceEpsilonSq = 0.00000001f;
 
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
@@ -210,12 +211,7 @@ namespace Hecton8.World
 
                 point += velocity * deltaTime;
 
-                Vector3 toPrevious = point - _points[i - 1];
-                float distance = toPrevious.magnitude;
-                if (distance > 0.0001f)
-                    point = _points[i - 1] + toPrevious * (segmentLength / distance);
-                else
-                    point = _points[i - 1] - _anchorUpWS * segmentLength;
+                point = ConstrainSegmentToLength(_points[i - 1], point);
 
                 _points[i] = point;
                 _velocities[i] = velocity;
@@ -266,12 +262,7 @@ namespace Hecton8.World
 
                 point += velocity * deltaTime;
 
-                Vector3 toPrevious = point - _points[i - 1];
-                float distance = toPrevious.magnitude;
-                if (distance > 0.0001f)
-                    point = _points[i - 1] + toPrevious * (segmentLength / distance);
-                else
-                    point = _points[i - 1] - _anchorUpWS * segmentLength;
+                point = ConstrainSegmentToLength(_points[i - 1], point);
 
                 _points[i] = point;
                 _velocities[i] = velocity;
@@ -389,18 +380,19 @@ namespace Hecton8.World
             if (restLength <= 0.0001f)
                 return;
 
-            float tailDistance = (_points[_points.Length - 1] - _anchorPositionWS).magnitude;
-            float attractorDistance = (attractorPositionWS - _anchorPositionWS).magnitude;
-            float effectiveDistance = Mathf.Max(tailDistance, attractorDistance);
-            float stretchRatio = effectiveDistance / restLength;
-            _debugStretchRatio = stretchRatio;
-            if (stretchRatio <= elasticStretchLimit)
+            float tailDistanceSq = (_points[_points.Length - 1] - _anchorPositionWS).sqrMagnitude;
+            float attractorDistanceSq = (attractorPositionWS - _anchorPositionWS).sqrMagnitude;
+            float effectiveDistanceSq = math.max(tailDistanceSq, attractorDistanceSq);
+            float stretchRatioSq = effectiveDistanceSq / math.max(restLength * restLength, 0.0001f);
+            float stretchRatioEstimate = 0.5f * (stretchRatioSq + 1f);
+            _debugStretchRatio = stretchRatioEstimate;
+            if (stretchRatioEstimate <= elasticStretchLimit)
             {
                 _elasticBreakTimer = 0f;
                 return;
             }
 
-            float overStretch01 = Mathf.Clamp01((stretchRatio - elasticStretchLimit) / Mathf.Max(elasticStretchLimit, 0.001f));
+            float overStretch01 = Mathf.Clamp01((stretchRatioEstimate - elasticStretchLimit) / Mathf.Max(elasticStretchLimit, 0.001f));
             _elasticBreakTimer += deltaTime * LerpClamped(0.35f, 1.35f, Mathf.Clamp01(attraction01 + overStretch01));
             if (_elasticBreakTimer < elasticBreakHoldTime || _pendingElasticRupture)
                 return;
@@ -515,6 +507,16 @@ namespace Hecton8.World
             return from + (to - from) * math.saturate(t);
         }
 
+        private Vector3 ConstrainSegmentToLength(Vector3 previousPoint, Vector3 point)
+        {
+            Vector3 toPrevious = point - previousPoint;
+            float distanceSq = toPrevious.sqrMagnitude;
+            if (distanceSq > SegmentDistanceEpsilonSq)
+                return previousPoint + toPrevious * (segmentLength * math.rsqrt(distanceSq));
+
+            return previousPoint - _anchorUpWS * segmentLength;
+        }
+
         private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
         {
             float lengthSq = direction.sqrMagnitude;
@@ -541,11 +543,13 @@ namespace Hecton8.World
             if (cableMaterial != null)
                 return cableMaterial;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!_loggedMissingCableMaterial)
             {
                 _loggedMissingCableMaterial = true;
                 Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
             }
+#endif
 
             return null;
         }

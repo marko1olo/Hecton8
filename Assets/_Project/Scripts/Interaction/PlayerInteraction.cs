@@ -147,8 +147,8 @@ namespace Hecton8.Interaction
         public IInteractable CurrentHovered => _currentHovered;
 
         /// <summary>
-        /// Актуальная клавиша взаимодействия для подсказок UI.
-        /// Возвращает строку (например, "E" или "Mouse0").
+        /// Aktualnaya klavisha vzaimodeystviya dlya podskazok UI.
+        /// Vozvraschaet stroku (naprimer, "E" ili "Mouse0").
         /// </summary>
         public static string ActiveInteractKey
         {

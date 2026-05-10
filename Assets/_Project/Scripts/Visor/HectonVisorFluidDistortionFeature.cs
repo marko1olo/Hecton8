@@ -29,7 +29,6 @@ namespace Hecton8.Visor
 
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorFluidDistortion.shader";
-        private const string BlueNoiseAssetPath = "Assets/_Project/Art/TEXTURES/Utility/TX_BlueNoise_256_R8.png";
 #endif
 
         [Serializable]
@@ -65,17 +64,11 @@ namespace Hecton8.Visor
             [Tooltip("Viewport edge fade used to keep the center readable while droplets accumulate on the visor rim.")]
             [Range(0.1f, 4f)] public float edgeFadeExponent = 1.35f;
 
-            [Tooltip("Single low-resolution blue-noise mask used to distribute visor dust and condensation breakup.")]
-            public Texture2D blueNoiseTexture = null;
-
             [Tooltip("Dust visibility added by ambient light on the visor layer.")]
             [Range(0f, 1f)] public float dustStrength = 0.28f;
 
             [Tooltip("How aggressively ambient light exposes visor dust.")]
             [Range(0f, 4f)] public float ambientDustResponse = 1.45f;
-
-            [Tooltip("Pixel size of the repeating blue-noise source. Kept explicit so the shader can tile without a second lookup.")]
-            [Range(16f, 512f)] public float blueNoiseTilePixels = 256f;
         }
 
         private readonly struct RuntimeState
@@ -116,7 +109,6 @@ namespace Hecton8.Visor
             private Material _material;
             private RuntimeState _runtimeState;
             private Material _lastParameterMaterial;
-            private Texture _lastBlueNoiseTexture;
             private Vector4 _lastLocalVelocityShader = Vector4.positiveInfinity;
             private float _lastIntensity = float.PositiveInfinity;
             private float _lastRainIntensity = float.PositiveInfinity;
@@ -134,8 +126,6 @@ namespace Hecton8.Visor
             private float _lastAmbientLight = float.PositiveInfinity;
             private float _lastDustStrength = float.PositiveInfinity;
             private float _lastAmbientDustResponse = float.PositiveInfinity;
-            private float _lastBlueNoiseTilePixels = float.PositiveInfinity;
-            private float _lastHasBlueNoise = float.PositiveInfinity;
 
             public VisorFluidPass()
             {
@@ -240,8 +230,6 @@ namespace Hecton8.Visor
                      localVelocity.y * localVelocity.y +
                      localVelocity.z * localVelocity.z) * VisorSpeedSquaredToShader01);
                 Vector4 localVelocityShader = new Vector4(lateralVelocity, verticalVelocity, forwardVelocity, 0f);
-                float hasBlueNoise = settings.blueNoiseTexture != null ? 1f : 0f;
-
                 SetMaterialFloatIfChanged(material, ShaderConstants.IntensityId, effectIntensity, ref _lastIntensity);
                 SetMaterialFloatIfChanged(material, ShaderConstants.RainIntensityId, rainIntensity, ref _lastRainIntensity);
                 SetMaterialFloatIfChanged(material, ShaderConstants.WetnessId, wetness, ref _lastWetness);
@@ -259,18 +247,10 @@ namespace Hecton8.Visor
                 SetMaterialFloatIfChanged(material, ShaderConstants.AmbientLightId, ambientLight01, ref _lastAmbientLight);
                 SetMaterialFloatIfChanged(material, ShaderConstants.DustStrengthId, Sanitize01(settings.dustStrength), ref _lastDustStrength);
                 SetMaterialFloatIfChanged(material, ShaderConstants.AmbientDustResponseId, SanitizeNonNegative(settings.ambientDustResponse), ref _lastAmbientDustResponse);
-                SetMaterialFloatIfChanged(material, ShaderConstants.BlueNoiseTilePixelsId, SanitizeAtLeast(settings.blueNoiseTilePixels, 16f), ref _lastBlueNoiseTilePixels);
-                SetMaterialFloatIfChanged(material, ShaderConstants.HasBlueNoiseId, hasBlueNoise, ref _lastHasBlueNoise);
-                if (settings.blueNoiseTexture != null && !ReferenceEquals(settings.blueNoiseTexture, _lastBlueNoiseTexture))
-                {
-                    material.SetTexture(ShaderConstants.BlueNoiseTexId, settings.blueNoiseTexture);
-                    _lastBlueNoiseTexture = settings.blueNoiseTexture;
-                }
             }
 
             private void ResetMaterialParameterCache()
             {
-                _lastBlueNoiseTexture = null;
                 _lastLocalVelocityShader = Vector4.positiveInfinity;
                 _lastIntensity = float.PositiveInfinity;
                 _lastRainIntensity = float.PositiveInfinity;
@@ -288,8 +268,6 @@ namespace Hecton8.Visor
                 _lastAmbientLight = float.PositiveInfinity;
                 _lastDustStrength = float.PositiveInfinity;
                 _lastAmbientDustResponse = float.PositiveInfinity;
-                _lastBlueNoiseTilePixels = float.PositiveInfinity;
-                _lastHasBlueNoise = float.PositiveInfinity;
             }
 
             private static void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue)
@@ -335,9 +313,6 @@ namespace Hecton8.Visor
             internal static readonly int AmbientLightId = Shader.PropertyToID("_HectonVisorFluidAmbientLight");
             internal static readonly int DustStrengthId = Shader.PropertyToID("_HectonVisorFluidDustStrength");
             internal static readonly int AmbientDustResponseId = Shader.PropertyToID("_HectonVisorFluidAmbientDustResponse");
-            internal static readonly int BlueNoiseTilePixelsId = Shader.PropertyToID("_HectonVisorFluidBlueNoiseTilePixels");
-            internal static readonly int HasBlueNoiseId = Shader.PropertyToID("_HectonVisorFluidHasBlueNoise");
-            internal static readonly int BlueNoiseTexId = Shader.PropertyToID("_HectonVisorFluidBlueNoiseTex");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -351,8 +326,6 @@ namespace Hecton8.Visor
 #if UNITY_EDITOR
             if (settings != null && settings.shader == null)
                 settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
-            if (settings != null && settings.blueNoiseTexture == null)
-                settings.blueNoiseTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(BlueNoiseAssetPath);
 #endif
 
             _pass ??= new VisorFluidPass();

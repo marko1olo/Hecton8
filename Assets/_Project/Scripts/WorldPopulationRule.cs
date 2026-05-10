@@ -348,17 +348,17 @@ namespace Hecton8.World
             string pair = $"{primaryZone.Kind} <-> {secondaryZone.Kind}";
             return socket.Kind switch
             {
-                WorldContentSocket.ContentKind.NavigationMarker => $"{pair}: маршрут должен удерживать память на стыке двух типов воды.",
-                WorldContentSocket.ContentKind.FabricationStation => $"{pair}: точка отдыха нужна там, где спокойный контур начинает уступать давлению.",
-                WorldContentSocket.ContentKind.HazardPoint => $"{pair}: опасность должна читаться как явная граница перехода.",
-                WorldContentSocket.ContentKind.CombatPoint => $"{pair}: угроза подхватывает игрока именно на переломе маршрута.",
-                WorldContentSocket.ContentKind.Landmark => $"{pair}: редкая цель сильнее запоминается на стыке двух идентичностей места.",
-                WorldContentSocket.ContentKind.ResourcePickup => $"{pair}: мелкая награда помогает понять, что ты уже входишь в соседний контур.",
-                WorldContentSocket.ContentKind.ResourceNode => $"{pair}: плотная награда оправдывает заход чуть глубже за привычный маршрут.",
-                WorldContentSocket.ContentKind.ServiceTarget => $"{pair}: сервисная проблема лучше работает как узкое место перехода.",
-                WorldContentSocket.ContentKind.PowerPoint => $"{pair}: силовая линия естественно связывает два соседних контура.",
-                WorldContentSocket.ContentKind.ConstructionPoint => $"{pair}: стройка лучше читается как связка между двумя режимами пространства.",
-                _ => $"{pair}: точка помогает почувствовать переход, а не резкий обрыв зоны."
+                WorldContentSocket.ContentKind.NavigationMarker => $"{pair}: marshrut dolzhen uderzhivat pamyat na styke dvuh tipov vody.",
+                WorldContentSocket.ContentKind.FabricationStation => $"{pair}: tochka otdyha nuzhna tam, gde spokoynyy kontur nachinaet ustupat davleniyu.",
+                WorldContentSocket.ContentKind.HazardPoint => $"{pair}: opasnost dolzhna chitatsya kak yavnaya granitsa perehoda.",
+                WorldContentSocket.ContentKind.CombatPoint => $"{pair}: ugroza podhvatyvaet igroka imenno na perelome marshruta.",
+                WorldContentSocket.ContentKind.Landmark => $"{pair}: redkaya tsel silnee zapominaetsya na styke dvuh identichnostey mesta.",
+                WorldContentSocket.ContentKind.ResourcePickup => $"{pair}: melkaya nagrada pomogaet ponyat, chto ty uzhe vhodish v sosedniy kontur.",
+                WorldContentSocket.ContentKind.ResourceNode => $"{pair}: plotnaya nagrada opravdyvaet zahod chut glubzhe za privychnyy marshrut.",
+                WorldContentSocket.ContentKind.ServiceTarget => $"{pair}: servisnaya problema luchshe rabotaet kak uzkoe mesto perehoda.",
+                WorldContentSocket.ContentKind.PowerPoint => $"{pair}: silovaya liniya estestvenno svyazyvaet dva sosednih kontura.",
+                WorldContentSocket.ContentKind.ConstructionPoint => $"{pair}: stroyka luchshe chitaetsya kak svyazka mezhdu dvumya rezhimami prostranstva.",
+                _ => $"{pair}: tochka pomogaet pochuvstvovat perehod, a ne rezkiy obryv zony."
             };
         }
 

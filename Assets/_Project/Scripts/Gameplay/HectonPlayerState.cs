@@ -79,10 +79,27 @@ namespace Hecton8.Gameplay
 
         public void EnsureScheduledSweepState(int commandCount, int resultCount)
         {
+            int requiredCommandCount = math.max(1, commandCount);
+            int requiredResultCount = math.max(1, resultCount);
+
+            if (ScheduledSweepCommands.IsCreated && ScheduledSweepCommands.Length < requiredCommandCount)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(ScheduledSweepCommands);
+                ScheduledSweepCommands.Dispose();
+                ScheduledSweepCommands = default;
+            }
+
+            if (ScheduledSweepResults.IsCreated && ScheduledSweepResults.Length < requiredResultCount)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(ScheduledSweepResults);
+                ScheduledSweepResults.Dispose();
+                ScheduledSweepResults = default;
+            }
+
             if (!ScheduledSweepCommands.IsCreated)
             {
                 ScheduledSweepCommands = new NativeArray<CapsulecastCommand>(
-                    math.max(1, commandCount),
+                    requiredCommandCount,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CapsulecastCommand>[commandCount] - deferred KCC sweep commands; Allocator.Persistent native storage is 16-byte aligned - owner: HectonPlayerMotorNativeState
                 NativeMemorySentinel.RegisterNativeArray(
@@ -95,7 +112,7 @@ namespace Hecton8.Gameplay
             if (!ScheduledSweepResults.IsCreated)
             {
                 ScheduledSweepResults = new NativeArray<RaycastHit>(
-                    math.max(1, resultCount),
+                    requiredResultCount,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[resultCount] - deferred KCC sweep results; Allocator.Persistent native storage is 16-byte aligned - owner: HectonPlayerMotorNativeState
                 NativeMemorySentinel.RegisterNativeArray(

@@ -1,10 +1,9 @@
-using Crest;
 using UnityEngine;
 
 namespace Hecton8.World
 {
     /// <summary>
-    /// Play-mode forensic probe for Crest foam settings and sampled water height.
+    /// Placeholder for plugin-owned Crest foam forensics.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-10000)]
@@ -12,45 +11,20 @@ namespace Hecton8.World
     {
         [Header("Forensics")]
         [SerializeField]
-        [Tooltip("If enabled, force Crest foam fade to a high value on Awake for immediate foam dissipation during forensic runs.")]
+        [Tooltip("If enabled, reports that Crest foam probing must run from the plugin ACL.")]
         private bool forceFoamFadeRate = true;
 
         [SerializeField, UnityEngine.RangeAttribute(0f, 20f)]
-        [Tooltip("Foam fade-rate override applied during forensic runs.")]
+        [Tooltip("Retained for serialized compatibility with prior forensic scenes.")]
         private float forcedFoamFadeRate = 20f;
-
-        private readonly SampleHeightHelper _sampleHeightHelper = new SampleHeightHelper(); // COLD ALLOC: SampleHeightHelper[1] — one-shot Crest water-height forensic probe — owner: CrestFoamDebugger
 
         private void Awake()
         {
-            OceanRenderer ocean = OceanRenderer.Instance;
-            if (ocean == null)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[CrestFoamDebugger] OceanRenderer.Instance is null.");
-#endif
+            if (!forceFoamFadeRate && forcedFoamFadeRate <= 0f)
                 return;
-            }
-
-            SimSettingsFoam foamSettings = ocean._simSettingsFoam;
-            float sampledWaveHeight = ocean.SeaLevel;
-            bool sampledWaveHeightSuccessfully = false;
-            if (ocean.Viewpoint != null)
-            {
-                _sampleHeightHelper.Init(ocean.Viewpoint.position, 2f, false, this);
-                sampledWaveHeightSuccessfully = _sampleHeightHelper.Sample(out sampledWaveHeight);
-            }
-
-            if (forceFoamFadeRate && foamSettings != null)
-                foamSettings._foamFadeRate = forcedFoamFadeRate;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log(
-                $"[CrestFoamDebugger] FoamFadeRate={(foamSettings != null ? foamSettings._foamFadeRate : -1f):0.###} " +
-                $"SimulateFoam={ocean.CreateFoamSim} " +
-                $"WaveHeight={(sampledWaveHeightSuccessfully ? sampledWaveHeight : ocean.SeaLevel):0.###} " +
-                $"SeaLevel={ocean.SeaLevel:0.###} " +
-                $"ViewpointSampleSucceeded={sampledWaveHeightSuccessfully}");
+            Debug.LogWarning("[CrestFoamDebugger] Disabled in Core. Crest probes must live in Hecton8.Plugins.");
 #endif
         }
     }

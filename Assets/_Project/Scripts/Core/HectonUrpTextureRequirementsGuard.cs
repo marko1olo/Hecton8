@@ -1,5 +1,4 @@
 using System;
-using Crest;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -64,21 +63,11 @@ namespace Hecton8.Core
             if (camera == null)
                 return;
 
-            OceanRenderer oceanRenderer = OceanRenderer.Instance;
-            if (oceanRenderer == null)
-                return;
-
             if (!camera.TryGetComponent(out UniversalAdditionalCameraData cameraData) ||
                 cameraData.renderType != CameraRenderType.Base)
             {
                 return;
             }
-
-            int oceanLayerMask = 1 << oceanRenderer.Layer;
-            bool rendersOcean = (camera.cullingMask & oceanLayerMask) != 0;
-            bool hasUnderwaterRenderer = camera.TryGetComponent<UnderwaterRenderer>(out _);
-            if (!rendersOcean && !hasUnderwaterRenderer)
-                return;
 
             if (cameraData.requiresDepthOption != CameraOverrideOption.On)
                 cameraData.requiresDepthOption = CameraOverrideOption.On;

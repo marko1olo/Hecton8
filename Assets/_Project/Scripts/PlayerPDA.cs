@@ -1,38 +1,38 @@
 // ============================================================================
 // HECTON-8 — PlayerPDA.cs  v2.0 ENTERPRISE
-// Персональный дата-ассистент (inventory / loadout / construction / barter / data log).
-// Назначить на Player root. Управляет Canvas-панелью PDA.
+// Personalnyy data-assistent (inventory / loadout / construction / barter / data log).
+// Naznachit na Player root. Upravlyaet Canvas-panelyu PDA.
 //
 // v2.0 ENTERPRISE ADDITIONS:
 //   [ADD] PDAEvents — queue-backed global PDA event lane (Opened, Closed, TabChanged)
-//   [ADD] Audio feedback — open/close/tab switch sounds через SpatialAudioManager
-//   [ADD] Panel slide animation — плавное появление/исчезновение Canvas
-//   [ADD] Battery drain system — PDA потребляет энергию из HectonSurvivalSystem
-//   [ADD] Low battery warning — автозакрытие при критическом заряде
-//   [ADD] Tab history stack — возврат на предыдущую вкладку через Backspace
+//   [ADD] Audio feedback — open/close/tab switch sounds cherez SpatialAudioManager
+//   [ADD] Panel slide animation — plavnoe poyavlenie/ischeznovenie Canvas
+//   [ADD] Battery drain system — PDA potreblyaet energiyu iz HectonSurvivalSystem
+//   [ADD] Low battery warning — avtozakrytie pri kriticheskom zaryade
+//   [ADD] Tab history stack — vozvrat na predyduschuyu vkladku cherez Backspace
 //   [ADD] Diagnostics — _debugIsOpen, _debugActiveTab, _debugBatteryDrain
-//   [ADD] Null-safety — все ссылки проверяются, graceful degradation
-//   [ADD] CanvasGroup fade — alpha transition для плавного появления
+//   [ADD] Null-safety — vse ssylki proveryayutsya, graceful degradation
+//   [ADD] CanvasGroup fade — alpha transition dlya plavnogo poyavleniya
 //
-// АРХИТЕКТУРА:
-//   • IsOpen — статическое свойство, читается HectonPlayerMovement
-//     и PlayerInteraction для блокировки ввода (аналогично HectonFabricatorUI).
-//   • Клавиша M (или из ControlScheme).
-//   • Canvas-панель назначается в инспекторе — PDA не знает о содержимом.
-//   • Вкладки (inventory, loadout, controls, data log) — дочерние GameObject'ы панели,
-//     переключаются через SetActiveTab(int).
-//   • Battery drain — опциональная интеграция с HectonSurvivalSystem.
+// ARHITEKTURA:
+//   • IsOpen — staticheskoe svoystvo, chitaetsya HectonPlayerMovement
+//     i PlayerInteraction dlya blokirovki vvoda (analogichno HectonFabricatorUI).
+//   • Klavisha M (ili iz ControlScheme).
+//   • Canvas-panel naznachaetsya v inspektore — PDA ne znaet o soderzhimom.
+//   • Vkladki (inventory, loadout, controls, data log) — dochernie GameObject'y paneli,
+//     pereklyuchayutsya cherez SetActiveTab(int).
+//   • Battery drain — optsionalnaya integratsiya s HectonSurvivalSystem.
 //
 // ZERO GC:
-//   • Все события — делегаты без boxing
+//   • Vse sobytiya — delegaty bez boxing
 //   • Tab history — pre-allocated stack (max 8 entries)
 //   • Audio clips — cached references, no string lookups
 //   • CanvasGroup — cached component, no GetComponent per frame
 //
-// ИНТЕГРАЦИЯ:
-//   HectonPlayerMovement.Tick() — гард: if (PlayerPDA.IsOpen) return;
-//   PlayerInteraction.Tick()    — гард: if (PlayerPDA.IsOpen) return;
-//   HectonSurvivalSystem        — опционально: DrainEnergy(batteryDrainRate * dt)
+// INTEGRATsIYa:
+//   HectonPlayerMovement.Tick() — gard: if (PlayerPDA.IsOpen) return;
+//   PlayerInteraction.Tick()    — gard: if (PlayerPDA.IsOpen) return;
+//   HectonSurvivalSystem        — optsionalno: DrainEnergy(batteryDrainRate * dt)
 // ============================================================================
 
 using Hecton8.Audio;
@@ -53,8 +53,8 @@ using UnityEngine.UI;
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Глобальная шина событий PDA. Zero GC, thread-safe.
-    /// Подписчики: HUD, аудио, аналитика, сохранения.
+    /// Globalnaya shina sobytiy PDA. Zero GC, thread-safe.
+    /// Podpischiki: HUD, audio, analitika, sohraneniya.
     /// </summary>
     public enum PDAEventType : byte
     {
@@ -596,16 +596,16 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         [Header("── References ──────────────────────────────")]
-        [Tooltip("Корневой GameObject Canvas-панели PDA.")]
+        [Tooltip("Kornevoy GameObject Canvas-paneli PDA.")]
         [SerializeField] private GameObject pdaPanel;
 
-        [Tooltip("CanvasGroup для fade-анимации. Если null — мгновенное появление.")]
+        [Tooltip("CanvasGroup dlya fade-animatsii. Esli null — mgnovennoe poyavlenie.")]
         [SerializeField] private CanvasGroup pdaCanvasGroup;
 
-        [Tooltip("Вкладки PDA. Порядок: 0=Inventory, 1=Loadout, 2=Construction, 3=Barter, 4=Data Log, 5=Spectrum, 6=Atlas Signal, 7=Diagnostics.")]
+        [Tooltip("Vkladki PDA. Poryadok: 0=Inventory, 1=Loadout, 2=Construction, 3=Barter, 4=Data Log, 5=Spectrum, 6=Atlas Signal, 7=Diagnostics.")]
         [SerializeField] private GameObject[] tabs = new GameObject[8];
 
-        [Tooltip("HectonSurvivalSystem для battery drain. Опционально.")]
+        [Tooltip("HectonSurvivalSystem dlya battery drain. Optsionalno.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
 
         // ══════════════════════════════════════════════════════════
@@ -613,22 +613,22 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         [Header("── Settings ────────────────────────────────")]
-        [Tooltip("Вкладка по умолчанию при открытии (0=Inventory, 1=Loadout, 2=Construction, 3=Barter, 4=Data Log, 5=Spectrum, 6=Atlas Signal, 7=Diagnostics).")]
+        [Tooltip("Vkladka po umolchaniyu pri otkrytii (0=Inventory, 1=Loadout, 2=Construction, 3=Barter, 4=Data Log, 5=Spectrum, 6=Atlas Signal, 7=Diagnostics).")]
         [SerializeField] private int defaultTab = 0;
 
-        [Tooltip("Скорость fade-анимации (alpha/sec). 0 = мгновенно.")]
+        [Tooltip("Skorost fade-animatsii (alpha/sec). 0 = mgnovenno.")]
         [SerializeField, Range(0f, 10f)] private float fadeSpeed = 5f;
 
-        [Tooltip("Включить battery drain. PDA потребляет энергию при открытии.")]
+        [Tooltip("Vklyuchit battery drain. PDA potreblyaet energiyu pri otkrytii.")]
         [SerializeField] private bool enableBatteryDrain = true;
 
-        [Tooltip("Энергия/сек при открытом PDA. 0.5 = 2 секунды на 1%.")]
+        [Tooltip("Energiya/sek pri otkrytom PDA. 0.5 = 2 sekundy na 1%.")]
         [SerializeField, Range(0f, 5f)] private float batteryDrainRate = 0.5f;
 
-        [Tooltip("Критический уровень энергии (%). Ниже — PDA автозакрывается.")]
+        [Tooltip("Kriticheskiy uroven energii (%). Nizhe — PDA avtozakryvaetsya.")]
         [SerializeField, Range(0f, 20f)] private float lowBatteryThreshold = 5f;
 
-        [Tooltip("Включить tab history (Backspace = назад).")]
+        [Tooltip("Vklyuchit tab history (Backspace = nazad).")]
         [SerializeField] private bool enableTabHistory = true;
 
         // ══════════════════════════════════════════════════════════
@@ -636,19 +636,19 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         [Header("── Audio ───────────────────────────────────")]
-        [Tooltip("Звук открытия PDA (holographic deploy).")]
+        [Tooltip("Zvuk otkrytiya PDA (holographic deploy).")]
         [SerializeField] private AudioClip openSound;
 
-        [Tooltip("Звук закрытия PDA (holographic collapse).")]
+        [Tooltip("Zvuk zakrytiya PDA (holographic collapse).")]
         [SerializeField] private AudioClip closeSound;
 
-        [Tooltip("Звук переключения вкладки (soft beep).")]
+        [Tooltip("Zvuk pereklyucheniya vkladki (soft beep).")]
         [SerializeField] private AudioClip tabSwitchSound;
 
-        [Tooltip("Звук low battery warning (alert tone).")]
+        [Tooltip("Zvuk low battery warning (alert tone).")]
         [SerializeField] private AudioClip lowBatterySound;
 
-        [Tooltip("Громкость звуков PDA.")]
+        [Tooltip("Gromkost zvukov PDA.")]
         [SerializeField, Range(0f, 1f)] private float audioVolume = 0.6f;
 
         // ══════════════════════════════════════════════════════════
@@ -664,12 +664,12 @@ namespace Hecton8.UI
         [SerializeField] private int _debugTabHistoryDepth;
 
         // ══════════════════════════════════════════════════════════
-        //  STATIC STATE — читается другими системами
+        //  STATIC STATE — chitaetsya drugimi sistemami
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// True когда PDA открыт. Читается HectonPlayerMovement и
-        /// PlayerInteraction для блокировки ввода.
+        /// True kogda PDA otkryt. Chitaetsya HectonPlayerMovement i
+        /// PlayerInteraction dlya blokirovki vvoda.
         /// </summary>
         public static bool IsOpen { get; private set; }
         internal static PlayerPDA ActiveRuntimeInstance { get; private set; }
@@ -964,7 +964,7 @@ namespace Hecton8.UI
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
-            // Закрываем при отключении компонента
+            // Zakryvaem pri otklyuchenii komponenta
             if (IsOpen) ForceClose();
         }
 
@@ -1207,7 +1207,7 @@ namespace Hecton8.UI
             ClearTabHistory();
         }
 
-        /// <summary>Переключить вкладку (0=Inventory, 1=Controls, 2=Data Log).</summary>
+        /// <summary>Pereklyuchit vkladku (0=Inventory, 1=Controls, 2=Data Log).</summary>
         public void SetActiveTab(int index)
         {
             if (tabs == null || tabs.Length == 0) return;
@@ -1231,7 +1231,7 @@ namespace Hecton8.UI
             }
         }
 
-        /// <summary>Программное закрытие без анимации (для OnDisable).</summary>
+        /// <summary>Programmnoe zakrytie bez animatsii (dlya OnDisable).</summary>
         public void ForceClose()
         {
             if (!IsOpen) return;

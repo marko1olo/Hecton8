@@ -5,321 +5,321 @@ Status: ARCHIVED
 
 # HECTON-8 — Final Gap Audit And Delivery Plan
 
-Дата: 2026-04-13  
-Статус: PENDING VERIFICATION  
-Основа вывода: только репозиторий, документы, сцены, иерархия Unity, состав данных, тесты, текущие production-asset'ы. Не по обещаниям. Не по названиям файлов. Не по ощущениям.
+Data: 2026-04-13  
+Status: PENDING VERIFICATION  
+Osnova vyvoda: tolko repozitoriy, dokumenty, stseny, ierarhiya Unity, sostav dannyh, testy, tekuschie production-asset'y. Ne po obeschaniyam. Ne po nazvaniyam faylov. Ne po oschuscheniyam.
 
-## 1. Жёсткий вердикт
+## 1. Zhestkiy verdikt
 
-Проект не находится в состоянии "ранний черновой прототип". База уже большая. Но и до финальной коммерческой версии он не близко.
+Proekt ne nahoditsya v sostoyanii "ranniy chernovoy prototip". Baza uzhe bolshaya. No i do finalnoy kommercheskoy versii on ne blizko.
 
-Моя текущая честная оценка готовности до финальной 1.0 версии:
+Moya tekuschaya chestnaya otsenka gotovnosti do finalnoy 1.0 versii:
 
-| Область | Готовность | Комментарий |
+| Oblast | Gotovnost | Kommentariy |
 |---|---:|---|
-| Базовый runtime/world backbone | 55-65% | Каркас мира, менеджеры, bootstrap, scene flow, вода, атмосфера, часть процедурки реально есть |
-| Core player loop | 45-55% | Передвижение, взаимодействие, выживание, инвентарь, PDA, фонарь, билдер, фабрикация в основе присутствуют |
-| Визуальная основа мира | 45-60% | Небо, газовый гигант, вода, свет, постпроцесс и часть материалов есть, но final-art proof нет |
-| Процедурный контент-пайплайн | 45-55% | Пайплайн уже жирный, но это не равно финальному контенту |
-| Меню / shell / UX | 30-40% | Меню живое, но production-readiness не подтверждён; настройки и часть flow ещё заглушки |
-| Нарратив / пролог / квесты / прогрессия | 10-20% | Кодовые заготовки есть, production-интеграции и контента почти нет |
-| Мировая плотность / экология / финальное наполнение | 15-25% | Это один из главных незакрытых блоков |
-| QA / тесты / perf-proof / release-hardening | 10-15% | Для масштаба проекта проверок почти нет |
+| Bazovyy runtime/world backbone | 55-65% | Karkas mira, menedzhery, bootstrap, scene flow, voda, atmosfera, chast protsedurki realno est |
+| Core player loop | 45-55% | Peredvizhenie, vzaimodeystvie, vyzhivanie, inventar, PDA, fonar, bilder, fabrikatsiya v osnove prisutstvuyut |
+| Vizualnaya osnova mira | 45-60% | Nebo, gazovyy gigant, voda, svet, postprotsess i chast materialov est, no final-art proof net |
+| Protsedurnyy kontent-payplayn | 45-55% | Payplayn uzhe zhirnyy, no eto ne ravno finalnomu kontentu |
+| Menyu / shell / UX | 30-40% | Menyu zhivoe, no production-readiness ne podtverzhden; nastroyki i chast flow esche zaglushki |
+| Narrativ / prolog / kvesty / progressiya | 10-20% | Kodovye zagotovki est, production-integratsii i kontenta pochti net |
+| Mirovaya plotnost / ekologiya / finalnoe napolnenie | 15-25% | Eto odin iz glavnyh nezakrytyh blokov |
+| QA / testy / perf-proof / release-hardening | 10-15% | Dlya masshtaba proekta proverok pochti net |
 
-Итоговая сводная оценка: **около 30% до финальной версии**, с коридором **25-35%**, статус **PENDING VERIFICATION**.
+Itogovaya svodnaya otsenka: **okolo 30% do finalnoy versii**, s koridorom **25-35%**, status **PENDING VERIFICATION**.
 
-Это не оценка "сколько написано кода". Это оценка "сколько реально осталось до продукта, который можно называть финальной игрой".
+Eto ne otsenka "skolko napisano koda". Eto otsenka "skolko realno ostalos do produkta, kotoryy mozhno nazyvat finalnoy igroy".
 
-## 2. На чём основана оценка
+## 2. Na chem osnovana otsenka
 
-Проверено следующее:
+Provereno sleduyuschee:
 
-- Build Settings реально выровнены под `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`.
-- В `Assets/_Project/Scripts` найдено 457 first-party C# файлов.
-- В `Assets/_Project/Prefabs` найдено 367 prefab-файлов.
-- В `Assets/_Project/Scenes` найдено 9 scene-файлов, из них production-ядро составляют 3.
-- В Unity test inventory найдено только 13 тестов. Для такого проекта это почти ничего.
-- В `02_HECTON_WORLD` реально стоят основные мировые менеджеры, Crest ocean, terrain, celestial/gas giant, survival/player stack.
-- В этой же production-сцене присутствуют прямые признаки незачищенного прототипного состояния: `Fabrication_Trial`, `Tool_Staging`, `__TEMP_DENSE_KELP_PREVIEW`, smoke-тестеры на Player.
-- По `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md` флора покрыта в основном generated starter finals; authored finals по перечисленным семействам = 0.
-- По `PROCEDURAL_GEOLOGY_STATUS_REPORT.md` и `PROCEDURAL_STRUCTURAL_STATUS_REPORT.md` геология и структурка выглядят лучше по asset-base, но runtime visual proof и profiler proof не закрыты.
-- В lore-данных кодовая инфраструктура частично есть, но production content почти пуст:
-  - `Assets/_Project/Data/Lore/Quests` пусто
-  - `Assets/_Project/Data/Lore/AudioLogs` пусто
-  - `Assets/_Project/Data/Lore/SuitUpgrades` пусто
-- `HectonLoreSystemsRoot.cs` существует как сценовый корневой интегратор, но в текущей production world-сцене отдельного `LoreSystems` root не обнаружено. Это означает: много lore-систем написаны, но не доказано, что они реально живут в основной игре.
-- `01_MAIN_MENU_PRODUCTION_READINESS.md` сам по себе говорит, что shell не закрыт как production-ready.
-- `BUILD_PLAYTEST_ISSUES.md` фиксирует живые нерешённые build-проблемы.
+- Build Settings realno vyrovneny pod `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`.
+- V `Assets/_Project/Scripts` naydeno 457 first-party C# faylov.
+- V `Assets/_Project/Prefabs` naydeno 367 prefab-faylov.
+- V `Assets/_Project/Scenes` naydeno 9 scene-faylov, iz nih production-yadro sostavlyayut 3.
+- V Unity test inventory naydeno tolko 13 testov. Dlya takogo proekta eto pochti nichego.
+- V `02_HECTON_WORLD` realno stoyat osnovnye mirovye menedzhery, Crest ocean, terrain, celestial/gas giant, survival/player stack.
+- V etoy zhe production-stsene prisutstvuyut pryamye priznaki nezachischennogo prototipnogo sostoyaniya: `Fabrication_Trial`, `Tool_Staging`, `__TEMP_DENSE_KELP_PREVIEW`, smoke-testery na Player.
+- Po `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md` flora pokryta v osnovnom generated starter finals; authored finals po perechislennym semeystvam = 0.
+- Po `PROCEDURAL_GEOLOGY_STATUS_REPORT.md` i `PROCEDURAL_STRUCTURAL_STATUS_REPORT.md` geologiya i strukturka vyglyadyat luchshe po asset-base, no runtime visual proof i profiler proof ne zakryty.
+- V lore-dannyh kodovaya infrastruktura chastichno est, no production content pochti pust:
+  - `Assets/_Project/Data/Lore/Quests` pusto
+  - `Assets/_Project/Data/Lore/AudioLogs` pusto
+  - `Assets/_Project/Data/Lore/SuitUpgrades` pusto
+- `HectonLoreSystemsRoot.cs` suschestvuet kak stsenovyy kornevoy integrator, no v tekuschey production world-stsene otdelnogo `LoreSystems` root ne obnaruzheno. Eto oznachaet: mnogo lore-sistem napisany, no ne dokazano, chto oni realno zhivut v osnovnoy igre.
+- `01_MAIN_MENU_PRODUCTION_READINESS.md` sam po sebe govorit, chto shell ne zakryt kak production-ready.
+- `BUILD_PLAYTEST_ISSUES.md` fiksiruet zhivye nereshennye build-problemy.
 
-## 3. Что уже реально сделано
+## 3. Chto uzhe realno sdelano
 
-### 3.1. Архитектурная база
+### 3.1. Arhitekturnaya baza
 
-Сделано:
+Sdelano:
 
-- Правильный production scene flow.
-- Большой runtime-слой менеджеров в `02_HECTON_WORLD`.
-- Отдельные системы под стриминг, интерес-менеджмент, population, caves, geology bridge, scatter, biome matrix, visuals, atmosphere.
-- Save/load shell существует.
-- Audio/music backbone существует.
-- В проекте уже не один-два демо-скрипта, а реально большая системная база.
+- Pravilnyy production scene flow.
+- Bolshoy runtime-sloy menedzherov v `02_HECTON_WORLD`.
+- Otdelnye sistemy pod striming, interes-menedzhment, population, caves, geology bridge, scatter, biome matrix, visuals, atmosphere.
+- Save/load shell suschestvuet.
+- Audio/music backbone suschestvuet.
+- V proekte uzhe ne odin-dva demo-skripta, a realno bolshaya sistemnaya baza.
 
-Вывод:
+Vyvod:
 
-Каркас игры уже есть. Это не "начало с нуля". Но каркас и финальная игра не одно и то же.
+Karkas igry uzhe est. Eto ne "nachalo s nulya". No karkas i finalnaya igra ne odno i to zhe.
 
 ### 3.2. Core gameplay foundation
 
-Сделано:
+Sdelano:
 
-- Игрок, движение, выживание.
-- Интеракции.
-- Инвентарь.
+- Igrok, dvizhenie, vyzhivanie.
+- Interaktsii.
+- Inventar.
 - PDA.
-- Фонарь.
+- Fonar.
 - Builder.
-- Fabrication / barter / runtime smoke coverage по компонентам есть хотя бы в следах интеграции.
+- Fabrication / barter / runtime smoke coverage po komponentam est hotya by v sledah integratsii.
 
-Вывод:
+Vyvod:
 
-Core loop foundation существует. Но production-proof полного цикла "вошёл -> выжил -> исследовал -> добыл -> вернулся -> улучшился -> открыл следующий слой" пока не доказан.
+Core loop foundation suschestvuet. No production-proof polnogo tsikla "voshel -> vyzhil -> issledoval -> dobyl -> vernulsya -> uluchshilsya -> otkryl sleduyuschiy sloy" poka ne dokazan.
 
-### 3.3. Визуально-техническая основа
+### 3.3. Vizualno-tehnicheskaya osnova
 
-Сделано:
+Sdelano:
 
-- Вода на Crest.
+- Voda na Crest.
 - Terrain / MapMagic integration.
-- Небо / celestial stack / газовый гигант.
+- Nebo / celestial stack / gazovyy gigant.
 - Underwater visuals.
-- Музыкальный director и soundscape foundation.
-- Большой объём art/data/prefab базы.
+- Muzykalnyy director i soundscape foundation.
+- Bolshoy obem art/data/prefab bazy.
 
-Вывод:
+Vyvod:
 
-Визуальная основа присутствует. Но это ещё не финальный художественный результат. Это foundation.
+Vizualnaya osnova prisutstvuet. No eto esche ne finalnyy hudozhestvennyy rezultat. Eto foundation.
 
-### 3.4. Процедурный контент
+### 3.4. Protsedurnyy kontent
 
-Сделано:
+Sdelano:
 
-- Процедурная флора, геология, структурные семейства.
-- Отдельные отчёты по вертикалям и gap ledger.
-- Уже есть pipeline-мышление, а не хаотичный набор ассетов.
+- Protsedurnaya flora, geologiya, strukturnye semeystva.
+- Otdelnye otchety po vertikalyam i gap ledger.
+- Uzhe est pipeline-myshlenie, a ne haotichnyy nabor assetov.
 
-Вывод:
+Vyvod:
 
-Это сильная сторона проекта. Но главная ловушка здесь простая: **наличие процедурного пайплайна не равно финальному world content**.
+Eto silnaya storona proekta. No glavnaya lovushka zdes prostaya: **nalichie protsedurnogo payplayna ne ravno finalnomu world content**.
 
-## 4. Что выглядит готовым, но по факту ещё не финал
+## 4. Chto vyglyadit gotovym, no po faktu esche ne final
 
-### 4.1. Lore systems и narrative systems
+### 4.1. Lore systems i narrative systems
 
-Проблема:
+Problema:
 
-Есть документы и кодовые системы, которые выглядят внушительно: квесты, аудиологи, сигналы Atlas-6, апгрейды костюма, depth zones, corporate orders, random events, first hour director, endings.
+Est dokumenty i kodovye sistemy, kotorye vyglyadyat vnushitelno: kvesty, audiologi, signaly Atlas-6, apgreydy kostyuma, depth zones, corporate orders, random events, first hour director, endings.
 
-Факт:
+Fakt:
 
-- production content folders для нескольких ключевых слоёв пусты;
-- scene-level live integration не доказана;
-- отдельного активного `LoreSystems` root в текущей world-сцене не видно.
+- production content folders dlya neskolkih klyuchevyh sloev pusty;
+- scene-level live integration ne dokazana;
+- otdelnogo aktivnogo `LoreSystems` root v tekuschey world-stsene ne vidno.
 
-Вывод:
+Vyvod:
 
-Сейчас это больше похоже на **архитектурные заготовки и частичную кодовую базу**, а не на завершённую narrative/progression часть игры.
+Seychas eto bolshe pohozhe na **arhitekturnye zagotovki i chastichnuyu kodovuyu bazu**, a ne na zavershennuyu narrative/progression chast igry.
 
 ### 4.2. Main menu / shell
 
-Проблема:
+Problema:
 
-Меню уже есть, но собственный документ готовности меню прямо фиксирует, что production-readiness не завершён.
+Menyu uzhe est, no sobstvennyy dokument gotovnosti menyu pryamo fiksiruet, chto production-readiness ne zavershen.
 
-Факт:
+Fakt:
 
-- settings panel остаётся заглушкой или частично собранным блоком;
-- build issues по pause/menu уже были;
-- часть shell-флоу не имеет полноценного закрытия.
+- settings panel ostaetsya zaglushkoy ili chastichno sobrannym blokom;
+- build issues po pause/menu uzhe byli;
+- chast shell-flou ne imeet polnotsennogo zakrytiya.
 
-Вывод:
+Vyvod:
 
-Shell существует, но до финального пользовательского качества далеко.
+Shell suschestvuet, no do finalnogo polzovatelskogo kachestva daleko.
 
 ### 4.3. Procedural flora
 
-Проблема:
+Problema:
 
-Флора покрыта широко, но authored finals нет.
+Flora pokryta shiroko, no authored finals net.
 
-Факт:
+Fakt:
 
-Отчёт по флоре прямо показывает generated starter finals и нулевой authored final coverage по перечисленным семействам.
+Otchet po flore pryamo pokazyvaet generated starter finals i nulevoy authored final coverage po perechislennym semeystvam.
 
-Вывод:
+Vyvod:
 
-Для production это означает: мир можно быстро наполнить, но он пока рискует выглядеть как технически продуктивная, но художественно недоведённая масса.
+Dlya production eto oznachaet: mir mozhno bystro napolnit, no on poka riskuet vyglyadet kak tehnicheski produktivnaya, no hudozhestvenno nedovedennaya massa.
 
 ### 4.4. World scene cleanliness
 
-Проблема:
+Problema:
 
-Production-сцена несёт следы trial/temp/smoke состояния.
+Production-stsena neset sledy trial/temp/smoke sostoyaniya.
 
-Факт:
+Fakt:
 
-В иерархии есть временные узлы, staging-узлы и smoke-тестеры на живом Player.
+V ierarhii est vremennye uzly, staging-uzly i smoke-testery na zhivom Player.
 
-Вывод:
+Vyvod:
 
-Проект пока собран как активная мастерская, а не как очищенный shipping-branch.
+Proekt poka sobran kak aktivnaya masterskaya, a ne kak ochischennyy shipping-branch.
 
-## 5. Что реально отсутствует или критично недоделано
+## 5. Chto realno otsutstvuet ili kritichno nedodelano
 
-Ниже не "мелочи". Ниже то, что отделяет массивную техническую заготовку от финальной игры.
+Nizhe ne "melochi". Nizhe to, chto otdelyaet massivnuyu tehnicheskuyu zagotovku ot finalnoy igry.
 
-### 5.1. Финальная игровая структура и progression loop
+### 5.1. Finalnaya igrovaya struktura i progression loop
 
-Нужно закрыть:
+Nuzhno zakryt:
 
-- Пролог.
-- Жёсткий first-hour flow.
-- Среднесрочную progression curve.
-- Причины идти глубже и возвращаться.
-- Пороговые unlock-механики по depth/zones.
-- Концы арок: midgame, late game, ending conditions.
+- Prolog.
+- Zhestkiy first-hour flow.
+- Srednesrochnuyu progression curve.
+- Prichiny idti glubzhe i vozvraschatsya.
+- Porogovye unlock-mehaniki po depth/zones.
+- Kontsy arok: midgame, late game, ending conditions.
 
-Сейчас проблема в том, что foundation систем есть, а **закрытого игрового маршрута игрока** не видно.
+Seychas problema v tom, chto foundation sistem est, a **zakrytogo igrovogo marshruta igroka** ne vidno.
 
 ### 5.2. Narrative content production
 
-Нужно закрыть:
+Nuzhno zakryt:
 
-- Квестовый контент.
-- Аудиологи.
+- Kvestovyy kontent.
+- Audiologi.
 - Data-driven suit upgrades.
-- Корпоративные директивы и Atlas-6 сигналы как реальный контент, а не просто код.
-- Environmental storytelling в руинах, на поверхности, в глубине.
+- Korporativnye direktivy i Atlas-6 signaly kak realnyy kontent, a ne prosto kod.
+- Environmental storytelling v ruinah, na poverhnosti, v glubine.
 
-Без этого HECTON-8 не добирается до заявленного NASA-Punk / Deep Sea Noir тона. Останется набором систем и красивой воды.
+Bez etogo HECTON-8 ne dobiraetsya do zayavlennogo NASA-Punk / Deep Sea Noir tona. Ostanetsya naborom sistem i krasivoy vody.
 
-### 5.3. Мировая плотность и биомное наполнение
+### 5.3. Mirovaya plotnost i biomnoe napolnenie
 
-Нужно закрыть:
+Nuzhno zakryt:
 
 - Surface / island ecology.
-- Полноценную подводную биомную дифференциацию.
-- Редкие точки интереса.
+- Polnotsennuyu podvodnuyu biomnuyu differentsiatsiyu.
+- Redkie tochki interesa.
 - Ruins / colony remnants / industrial remains.
 - Interior decor vertical.
 - Colony parts vertical.
-- Живую плотность малого контента между hero-точками.
+- Zhivuyu plotnost malogo kontenta mezhdu hero-tochkami.
 
-Это один из самых тяжёлых незакрытых блоков. Сейчас виден pipeline. Не виден финальный плотный authored world.
+Eto odin iz samyh tyazhelyh nezakrytyh blokov. Seychas viden pipeline. Ne viden finalnyy plotnyy authored world.
 
 ### 5.4. Caves / geology / traversal payoff
 
-Нужно закрыть:
+Nuzhno zakryt:
 
-- Пещеры как полноценные игровые маршруты, а не только генеративный факт существования.
+- Peschery kak polnotsennye igrovye marshruty, a ne tolko generativnyy fakt suschestvovaniya.
 - Seam quality.
 - Landmark readability.
 - Reward placement.
 - Visibility / navigation / fear curve.
-- Точки возврата и shortcut logic.
+- Tochki vozvrata i shortcut logic.
 
-Геология по ассет-базе уже лучше, чем флора. Но пещеры как коммерческий игровой контент ещё не доказаны.
+Geologiya po asset-baze uzhe luchshe, chem flora. No peschery kak kommercheskiy igrovoy kontent esche ne dokazany.
 
-### 5.5. Строительство, база, производство, возвратный цикл
+### 5.5. Stroitelstvo, baza, proizvodstvo, vozvratnyy tsikl
 
-Нужно закрыть:
+Nuzhno zakryt:
 
-- Зачем игрок возвращается на базу.
-- Что база даёт кроме наличия систем.
-- Реальный production flow по энергии, ремонту, кислороду, хранению, крафту, улучшениям.
-- Привязка базы к прогрессии и выживанию.
+- Zachem igrok vozvraschaetsya na bazu.
+- Chto baza daet krome nalichiya sistem.
+- Realnyy production flow po energii, remontu, kislorodu, hraneniyu, kraftu, uluchsheniyam.
+- Privyazka bazy k progressii i vyzhivaniyu.
 
-Иначе база останется "системой, которая есть", но не станет опорой мета-цикла.
+Inache baza ostanetsya "sistemoy, kotoraya est", no ne stanet oporoy meta-tsikla.
 
 ### 5.6. Fauna / life layer
 
-Нужно закрыть:
+Nuzhno zakryt:
 
-- Читаемые классы поведения.
-- Реальные экосистемные роли.
-- Опасность / давление / обход / охота / избегание.
-- Сценарии встреч.
-- Редкие существа и глубинные события.
+- Chitaemye klassy povedeniya.
+- Realnye ekosistemnye roli.
+- Opasnost / davlenie / obhod / ohota / izbeganie.
+- Stsenarii vstrech.
+- Redkie suschestva i glubinnye sobytiya.
 
-Без этого глубина мира будет ощущаться визуально, но не поведенчески.
+Bez etogo glubina mira budet oschuschatsya vizualno, no ne povedencheski.
 
 ### 5.7. Shell / UX / accessibility / player trust
 
-Нужно закрыть:
+Nuzhno zakryt:
 
-- Настройки.
-- Аудио-настройки.
-- Видеонастройки.
-- Переназначение управления в полном production виде.
-- Сохранение пользовательских опций.
+- Nastroyki.
+- Audio-nastroyki.
+- Videonastroyki.
+- Perenaznachenie upravleniya v polnom production vide.
+- Sohranenie polzovatelskih optsiy.
 - Pause flow.
 - Confirmation dialogs.
 - Error handling.
 - Accessibility minimum set.
 
-Для финального продукта это не optional-блок.
+Dlya finalnogo produkta eto ne optional-blok.
 
 ### 5.8. Release engineering / QA / diagnostics
 
-Нужно закрыть:
+Nuzhno zakryt:
 
-- Реальный perf-proof на целевом железе.
+- Realnyy perf-proof na tselevom zheleze.
 - VRAM/RT budget proof.
 - Regression tracking.
 - Build validation cadence.
 - Smoke suites.
-- Нормальный PlayMode coverage.
+- Normalnyy PlayMode coverage.
 - Crash/reporting strategy.
 - Benchmark/profiling routine.
 
-13 тестов на этот объём проекта означают одно: project health сейчас держится в основном на ручной проверке и удаче интегратора.
+13 testov na etot obem proekta oznachayut odno: project health seychas derzhitsya v osnovnom na ruchnoy proverke i udache integratora.
 
-## 6. Главные разрывы между текущим состоянием и финальной игрой
+## 6. Glavnye razryvy mezhdu tekuschim sostoyaniem i finalnoy igroy
 
-Если сжать всё до сути, финал сейчас тормозят не отдельные скрипты, а вот эти 8 разрывов:
+Esli szhat vse do suti, final seychas tormozyat ne otdelnye skripty, a vot eti 8 razryvov:
 
-1. Есть world backbone, но нет доказанного full game loop.
-2. Есть lore-архитектура, но почти нет production content.
-3. Есть procedural generation, но нет достаточного объёма final-authored world density.
-4. Есть меню и shell, но не закрыт пользовательский production flow.
-5. Есть визуальная база, но нет полного art-finish и runtime-proof.
-6. Есть многие системы, но production-сцены ещё несут trial/temp/smoke мусор.
-7. Есть много кода, но почти нет достаточного тестового и profiling покрытия.
-8. Есть ambition уровня AA, но текущая степень интеграции пока ближе к крупному vertical foundation, а не к near-ship product.
+1. Est world backbone, no net dokazannogo full game loop.
+2. Est lore-arhitektura, no pochti net production content.
+3. Est procedural generation, no net dostatochnogo obema final-authored world density.
+4. Est menyu i shell, no ne zakryt polzovatelskiy production flow.
+5. Est vizualnaya baza, no net polnogo art-finish i runtime-proof.
+6. Est mnogie sistemy, no production-stseny esche nesut trial/temp/smoke musor.
+7. Est mnogo koda, no pochti net dostatochnogo testovogo i profiling pokrytiya.
+8. Est ambition urovnya AA, no tekuschaya stepen integratsii poka blizhe k krupnomu vertical foundation, a ne k near-ship product.
 
-## 7. Что делать дальше: правильный порядок
+## 7. Chto delat dalshe: pravilnyy poryadok
 
-Ниже порядок не "красивый". Ниже порядок, который уменьшает риск утонуть в бесконечном polishing без продукта.
+Nizhe poryadok ne "krasivyy". Nizhe poryadok, kotoryy umenshaet risk utonut v beskonechnom polishing bez produkta.
 
-### Этап 0. Зафиксировать правду по production branch
+### Etap 0. Zafiksirovat pravdu po production branch
 
-Сделать:
+Sdelat:
 
-- Очистить production world scene от temp/trial/staging/smoke мусора или вынести это в debug/sandbox.
-- Зафиксировать единственный truth-path запуска.
-- Отметить все системы, которые существуют только в коде, но не live в сцене.
-- Собрать один документ truth-matrix:
+- Ochistit production world scene ot temp/trial/staging/smoke musora ili vynesti eto v debug/sandbox.
+- Zafiksirovat edinstvennyy truth-path zapuska.
+- Otmetit vse sistemy, kotorye suschestvuyut tolko v kode, no ne live v stsene.
+- Sobrat odin dokument truth-matrix:
   - system exists in code
   - system wired in scene
   - system has content
   - system survived playtest
 
-Зачем:
+Zachem:
 
-Сейчас в проекте слишком легко спутать "написано" с "готово".
+Seychas v proekte slishkom legko sputat "napisano" s "gotovo".
 
-### Этап 1. Собрать один честный end-to-end vertical slice
+### Etap 1. Sobrat odin chestnyy end-to-end vertical slice
 
-Сделать:
+Sdelat:
 
 - Bootstrap.
 - Main menu.
@@ -332,19 +332,19 @@ Production-сцена несёт следы trial/temp/smoke состояния.
 - Save/load.
 - Repeat once with escalating danger.
 
-Условие:
+Uslovie:
 
-Это должен быть не абстрактный test loop, а реальный мини-фрагмент финальной игры.
+Eto dolzhen byt ne abstraktnyy test loop, a realnyy mini-fragment finalnoy igry.
 
-Зачем:
+Zachem:
 
-Пока такого среза нет, весь остальной объём слишком легко оказывается иллюзией прогресса.
+Poka takogo sreza net, ves ostalnoy obem slishkom legko okazyvaetsya illyuziey progressa.
 
-### Этап 2. Закрыть content ownership
+### Etap 2. Zakryt content ownership
 
-Сделать:
+Sdelat:
 
-- Прописать владельца для каждой вертикали:
+- Propisat vladeltsa dlya kazhdoy vertikali:
   - narrative
   - quests
   - flora authoring
@@ -354,32 +354,32 @@ Production-сцена несёт следы trial/temp/smoke состояния.
   - colony parts
   - fauna encounters
   - shell UX
-- По каждой вертикали определить:
+- Po kazhdoy vertikali opredelit:
   - source of truth
   - content budget
   - done criteria
   - perf budget
 
-Зачем:
+Zachem:
 
-Сейчас у проекта много систем, но часть вертикалей ещё без жёсткого production ownership.
+Seychas u proekta mnogo sistem, no chast vertikaley esche bez zhestkogo production ownership.
 
-### Этап 3. Narrative and progression first, polish later
+### Etap 3. Narrative and progression first, polish later
 
-Сделать:
+Sdelat:
 
-- Написать и вшить пролог.
-- Заполнить quests/audio logs/suit upgrades реальными asset'ами данных.
-- Привязать narrative beats к depth progression.
-- Сделать Atlas-6 и corporate layer частью маршрута игрока, а не просто мира фоном.
+- Napisat i vshit prolog.
+- Zapolnit quests/audio logs/suit upgrades realnymi asset'ami dannyh.
+- Privyazat narrative beats k depth progression.
+- Sdelat Atlas-6 i corporate layer chastyu marshruta igroka, a ne prosto mira fonom.
 
-Зачем:
+Zachem:
 
-Если narrative/progression не закрыть рано, дальше будет бесконечная доработка мира без стержня.
+Esli narrative/progression ne zakryt rano, dalshe budet beskonechnaya dorabotka mira bez sterzhnya.
 
-### Этап 4. Добить мир до финальной плотности
+### Etap 4. Dobit mir do finalnoy plotnosti
 
-Сделать:
+Sdelat:
 
 - Surface ecology.
 - Mid-depth biome identity.
@@ -392,108 +392,108 @@ Production-сцена несёт следы trial/temp/smoke состояния.
 - Reward placement.
 - Return-path readability.
 
-Зачем:
+Zachem:
 
-Финальный продукт ощущается не количеством систем, а плотностью значимых мест и их смыслом.
+Finalnyy produkt oschuschaetsya ne kolichestvom sistem, a plotnostyu znachimyh mest i ih smyslom.
 
-### Этап 5. База, выживание, производство, возврат
+### Etap 5. Baza, vyzhivanie, proizvodstvo, vozvrat
 
-Сделать:
+Sdelat:
 
-- Проверить, что база не декоративная.
-- Сделать её центром recovery / crafting / planning / safety / upgrade loop.
-- Привязать ресурсы, ремонт, кислород, power и апгрейды в единый цикл.
+- Proverit, chto baza ne dekorativnaya.
+- Sdelat ee tsentrom recovery / crafting / planning / safety / upgrade loop.
+- Privyazat resursy, remont, kislorod, power i apgreydy v edinyy tsikl.
 
-Зачем:
+Zachem:
 
-Иначе core survival fantasy не закрепляется.
+Inache core survival fantasy ne zakreplyaetsya.
 
-### Этап 6. Shell, options, player trust
+### Etap 6. Shell, options, player trust
 
-Сделать:
+Sdelat:
 
-- Полноценные settings.
-- Надёжный pause flow.
-- User messaging на save/load fail.
+- Polnotsennye settings.
+- Nadezhnyy pause flow.
+- User messaging na save/load fail.
 - Option persistence.
 - Input rebind UX.
 - Accessibility minimum.
 
-Зачем:
+Zachem:
 
-Это дешёвые по сравнению с world-content задачи, но они критичны для финального ощущения качества.
+Eto deshevye po sravneniyu s world-content zadachi, no oni kritichny dlya finalnogo oschuscheniya kachestva.
 
-### Этап 7. Perf, memory, verification
+### Etap 7. Perf, memory, verification
 
-Сделать:
+Sdelat:
 
-- Замерить CPU, GC, VRAM, RT, batches, SetPass на целевом железе.
-- Убрать зоны без proof.
-- Стабилизировать world streaming.
-- Зафиксировать regression protocol.
-- Поднять coverage хотя бы до уровня, где каждое обновление не ломает сохранения, shell и core loop.
+- Zamerit CPU, GC, VRAM, RT, batches, SetPass na tselevom zheleze.
+- Ubrat zony bez proof.
+- Stabilizirovat world streaming.
+- Zafiksirovat regression protocol.
+- Podnyat coverage hotya by do urovnya, gde kazhdoe obnovlenie ne lomaet sohraneniya, shell i core loop.
 
-Зачем:
+Zachem:
 
-Без этого любые заявления о готовности ничего не стоят.
+Bez etogo lyubye zayavleniya o gotovnosti nichego ne stoyat.
 
-## 8. Хинты, которые нужно держать в голове
+## 8. Hinty, kotorye nuzhno derzhat v golove
 
-### 8.1. Не путать объём работы с готовностью продукта
+### 8.1. Ne putat obem raboty s gotovnostyu produkta
 
-457 first-party scripts не означают 80% готовности. Для игры такого типа финал определяется контентом, интеграцией, UX и стабилизацией, а не только кодовой массой.
+457 first-party scripts ne oznachayut 80% gotovnosti. Dlya igry takogo tipa final opredelyaetsya kontentom, integratsiey, UX i stabilizatsiey, a ne tolko kodovoy massoy.
 
-### 8.2. Главный риск сейчас не "мало систем", а "ложное чувство близости к финалу"
+### 8.2. Glavnyy risk seychas ne "malo sistem", a "lozhnoe chuvstvo blizosti k finalu"
 
-Самая опасная ошибка на этой стадии: увидеть большую сцену, сотни скриптов, воду, музыку, газовый гигант и решить, что осталось только polish. Это неверно.
+Samaya opasnaya oshibka na etoy stadii: uvidet bolshuyu stsenu, sotni skriptov, vodu, muzyku, gazovyy gigant i reshit, chto ostalos tolko polish. Eto neverno.
 
-### 8.3. Не раздувать procedural pipeline ради самого pipeline
+### 8.3. Ne razduvat procedural pipeline radi samogo pipeline
 
-Если новая процедурка не увеличивает читабельность мира, смысл exploration или плотность значимых мест, это не приближает релиз.
+Esli novaya protsedurka ne uvelichivaet chitabelnost mira, smysl exploration ili plotnost znachimyh mest, eto ne priblizhaet reliz.
 
-### 8.4. Narrative content надо делать раньше, чем кажется
+### 8.4. Narrative content nado delat ranshe, chem kazhetsya
 
-Если оставить пролог, квесты и лор-контент "на потом", проект уйдёт в бесконечную техно-арт доработку без законченной игры.
+Esli ostavit prolog, kvesty i lor-kontent "na potom", proekt uydet v beskonechnuyu tehno-art dorabotku bez zakonchennoy igry.
 
-### 8.5. Production scene должна стать чистой
+### 8.5. Production scene dolzhna stat chistoy
 
-Временные preview/staging/smoke сущности должны быть либо вынесены, либо жёстко помечены debug-only. Shipping-сцена не может оставаться мастерской.
+Vremennye preview/staging/smoke suschnosti dolzhny byt libo vyneseny, libo zhestko pomecheny debug-only. Shipping-stsena ne mozhet ostavatsya masterskoy.
 
-### 8.6. Пустые data-папки важнее многих новых скриптов
+### 8.6. Pustye data-papki vazhnee mnogih novyh skriptov
 
-Пустые `Quests`, `AudioLogs`, `SuitUpgrades` сейчас говорят о состоянии проекта больше, чем ещё 20 новых системных классов.
+Pustye `Quests`, `AudioLogs`, `SuitUpgrades` seychas govoryat o sostoyanii proekta bolshe, chem esche 20 novyh sistemnyh klassov.
 
-### 8.7. Художественная доводка флоры будет обязательной
+### 8.7. Hudozhestvennaya dovodka flory budet obyazatelnoy
 
-Generated starter finals полезны как coverage, но не как финальный художественный ответ для sellable AA-мира.
+Generated starter finals polezny kak coverage, no ne kak finalnyy hudozhestvennyy otvet dlya sellable AA-mira.
 
-### 8.8. QA нельзя больше откладывать
+### 8.8. QA nelzya bolshe otkladyvat
 
-На этой стадии проект уже слишком большой, чтобы продолжать держать его на ручном воспоминании о том, что где работает.
+Na etoy stadii proekt uzhe slishkom bolshoy, chtoby prodolzhat derzhat ego na ruchnom vospominanii o tom, chto gde rabotaet.
 
-## 9. Конкретный полный список оставшейся работы
+## 9. Konkretnyy polnyy spisok ostavsheysya raboty
 
-Ниже практический backlog без косметики.
+Nizhe prakticheskiy backlog bez kosmetiki.
 
 ### 9.1. Product truth
 
-- Собрать system truth-matrix по всем ключевым вертикалям.
-- Пометить live / partial / code-only / doc-only.
-- Удалить или вынести временные production-scene сущности.
+- Sobrat system truth-matrix po vsem klyuchevym vertikalyam.
+- Pometit live / partial / code-only / doc-only.
+- Udalit ili vynesti vremennye production-scene suschnosti.
 
 ### 9.2. Core game route
 
-- Сделать законченный first-hour route.
-- Сделать пролог.
-- Сформировать минимально завершённый midgame route.
-- Зафиксировать конец одной полной петли прогрессии.
+- Sdelat zakonchennyy first-hour route.
+- Sdelat prolog.
+- Sformirovat minimalno zavershennyy midgame route.
+- Zafiksirovat konets odnoy polnoy petli progressii.
 
 ### 9.3. Narrative data
 
-- Наполнить quest assets.
-- Наполнить audio log assets.
-- Наполнить suit upgrade assets.
-- Проверить real scene wiring всех lore systems.
+- Napolnit quest assets.
+- Napolnit audio log assets.
+- Napolnit suit upgrade assets.
+- Proverit real scene wiring vseh lore systems.
 
 ### 9.4. World content
 
@@ -508,37 +508,37 @@ Generated starter finals полезны как coverage, но не как фин
 
 ### 9.5. Flora and environment art finish
 
-- Отобрать семейства, где authored finals обязательны.
-- Довести hero flora.
-- Добить material/shader consistency.
-- Проверить up-close texture quality.
+- Otobrat semeystva, gde authored finals obyazatelny.
+- Dovesti hero flora.
+- Dobit material/shader consistency.
+- Proverit up-close texture quality.
 
 ### 9.6. Caves and geology gameplay
 
-- Сделать полноценные cave routes.
-- Проверить seams.
-- Добавить rewards / threats / orientation cues.
-- Проверить performance и visibility.
+- Sdelat polnotsennye cave routes.
+- Proverit seams.
+- Dobavit rewards / threats / orientation cues.
+- Proverit performance i visibility.
 
 ### 9.7. Base / crafting / support loop
 
-- Проверить oxygen/refill flow.
-- Сделать нужность базы.
-- Связать crafting, storage, power, repair, progression.
-- Проверить возвратный цикл.
+- Proverit oxygen/refill flow.
+- Sdelat nuzhnost bazy.
+- Svyazat crafting, storage, power, repair, progression.
+- Proverit vozvratnyy tsikl.
 
 ### 9.8. Fauna
 
-- Довести encounter design.
-- Развести поведенческие роли.
-- Добавить depth-specific pressure.
-- Проверить, что fauna не просто населяет, а влияет на решения игрока.
+- Dovesti encounter design.
+- Razvesti povedencheskie roli.
+- Dobavit depth-specific pressure.
+- Proverit, chto fauna ne prosto naselyaet, a vliyaet na resheniya igroka.
 
 ### 9.9. Shell / UI / UX
 
-- Добить main menu.
-- Добить settings.
-- Добить pause.
+- Dobit main menu.
+- Dobit settings.
+- Dobit pause.
 - Option persistence.
 - Error states.
 - Save/load feedback.
@@ -547,14 +547,14 @@ Generated starter finals полезны как coverage, но не как фин
 
 ### 9.10. Save / persistence / migration
 
-- Прогнать многоцикловые save/load проверки.
-- Проверить world-state persistence.
-- Проверить зависимые системы после reload.
-- Проверить corrupt/fallback flows.
+- Prognat mnogotsiklovye save/load proverki.
+- Proverit world-state persistence.
+- Proverit zavisimye sistemy posle reload.
+- Proverit corrupt/fallback flows.
 
 ### 9.11. Perf / memory / render
 
-- Реальные прогоны на target hardware.
+- Realnye progony na target hardware.
 - VRAM and RenderTexture budgets.
 - Streaming hitch audit.
 - Scatter CPU audit.
@@ -563,8 +563,8 @@ Generated starter finals полезны как coverage, но не как фин
 
 ### 9.12. QA / build / operations
 
-- Нормальный smoke checklist.
-- Больше PlayMode tests на critical flows.
+- Normalnyy smoke checklist.
+- Bolshe PlayMode tests na critical flows.
 - Build validation cadence.
 - Regression log discipline.
 - Crash/diagnostic strategy.
@@ -606,67 +606,67 @@ Generated starter finals полезны как coverage, но не как фин
 - Task: guarantee the root exists in the live world scene and verify the expected systems are actually instantiated in-game.
 - Non-overlap rule: do not author content in this front; only wiring and verification.
 
-## 10. Оценки времени и сравнение со студийной выработкой
+## 10. Otsenki vremeni i sravnenie so studiynoy vyrabotkoy
 
-Ниже не маркетинг. Ниже рабочая оценка по текущему фактическому состоянию.
+Nizhe ne marketing. Nizhe rabochaya otsenka po tekuschemu fakticheskomu sostoyaniyu.
 
-### 10.1. Сколько уже сделано в пересчёте на обычную студийную работу
+### 10.1. Skolko uzhe sdelano v pereschete na obychnuyu studiynuyu rabotu
 
-То, что уже собрано сейчас, по масштабу больше похоже не на 1.5 месяца "обычной" ручной AA-разработки, а примерно на такой эквивалент:
+To, chto uzhe sobrano seychas, po masshtabu bolshe pohozhe ne na 1.5 mesyatsa "obychnoy" ruchnoy AA-razrabotki, a primerno na takoy ekvivalent:
 
-- **3-5 сильных разработчиков / тех-артистов / интеграторов на 2.5-4 месяца**, если у них уже были бы те же middleware и чёткий лидер.
-- Или **2-3 очень сильных senior-generalist человека на 4-6 месяцев**.
+- **3-5 silnyh razrabotchikov / teh-artistov / integratorov na 2.5-4 mesyatsa**, esli u nih uzhe byli by te zhe middleware i chetkiy lider.
+- Ili **2-3 ochen silnyh senior-generalist cheloveka na 4-6 mesyatsev**.
 
-Почему так:
+Pochemu tak:
 
-- Уже есть крупный системный backbone.
-- Уже есть большой procedural/world stack.
-- Уже есть меню, player stack, survival, PDA, builder, audio, save, visuals, celestial/water foundation.
-- Уже есть сотни скриптов и сотни prefab/data units.
+- Uzhe est krupnyy sistemnyy backbone.
+- Uzhe est bolshoy procedural/world stack.
+- Uzhe est menyu, player stack, survival, PDA, builder, audio, save, visuals, celestial/water foundation.
+- Uzhe est sotni skriptov i sotni prefab/data units.
 
-Но это сравнение только по **объёму собранного foundation**, а не по готовности к релизу.
+No eto sravnenie tolko po **obemu sobrannogo foundation**, a ne po gotovnosti k relizu.
 
-### 10.2. Сколько ещё осталось до финальной версии
+### 10.2. Skolko esche ostalos do finalnoy versii
 
-Если продолжать в текущем темпе, но работать не вширь, а на закрытие продуктовых дыр, то реалистичный коридор такой:
+Esli prodolzhat v tekuschem tempe, no rabotat ne vshir, a na zakrytie produktovyh dyr, to realistichnyy koridor takoy:
 
-- **Минимум 6-9 месяцев** до честной цельной 1.0, если фокус будет жёсткий, без расползания, и большая часть оставшейся работы действительно пойдёт через AI-assisted pipeline под сильным ручным контролем.
-- **Более реалистично 9-14 месяцев**, если считать настоящую доводку мира, narrative content, shell, стабилизацию, perf, save-hardening и QA.
-- **Легко уйти в 14-18 месяцев**, если продолжать наращивать системы быстрее, чем закрываются вертикали и production content.
+- **Minimum 6-9 mesyatsev** do chestnoy tselnoy 1.0, esli fokus budet zhestkiy, bez raspolzaniya, i bolshaya chast ostavsheysya raboty deystvitelno poydet cherez AI-assisted pipeline pod silnym ruchnym kontrolem.
+- **Bolee realistichno 9-14 mesyatsev**, esli schitat nastoyaschuyu dovodku mira, narrative content, shell, stabilizatsiyu, perf, save-hardening i QA.
+- **Legko uyti v 14-18 mesyatsev**, esli prodolzhat naraschivat sistemy bystree, chem zakryvayutsya vertikali i production content.
 
-### 10.3. Эквивалент по людям для оставшейся части
+### 10.3. Ekvivalent po lyudyam dlya ostavsheysya chasti
 
-Оставшийся объём до финала выглядит примерно как:
+Ostavshiysya obem do finala vyglyadit primerno kak:
 
-- **12-20 человеко-месяцев очень сильной работы**, если считать только жёстко необходимое до 1.0 без раздувания.
-- Реалистичнее закладывать **18-30 человеко-месяцев**, потому что именно последние 30-40% продукта самые дорогие: интеграция, контент, вычитка, UX, фиксы, perf, regression, cleanup.
+- **12-20 cheloveko-mesyatsev ochen silnoy raboty**, esli schitat tolko zhestko neobhodimoe do 1.0 bez razduvaniya.
+- Realistichnee zakladyvat **18-30 cheloveko-mesyatsev**, potomu chto imenno poslednie 30-40% produkta samye dorogie: integratsiya, kontent, vychitka, UX, fiksy, perf, regression, cleanup.
 
-Если переводить это в обычную маленькую AA-команду без магии:
+Esli perevodit eto v obychnuyu malenkuyu AA-komandu bez magii:
 
-- **4-6 человек на 4-6 месяцев** на добивку до внятного финала при хорошем управлении.
-- Или **2-3 очень сильных человека на 8-12 месяцев**, если команда компактная и один человек держит product truth железной рукой.
+- **4-6 chelovek na 4-6 mesyatsev** na dobivku do vnyatnogo finala pri horoshem upravlenii.
+- Ili **2-3 ochen silnyh cheloveka na 8-12 mesyatsev**, esli komanda kompaktnaya i odin chelovek derzhit product truth zheleznoy rukoy.
 
-### 10.4. Самая важная оговорка
+### 10.4. Samaya vazhnaya ogovorka
 
-Сейчас проект нельзя оценивать по принципу "осталось немного, потому что уже много всего видно". Для таких игр последние проценты стоят дороже первых.
+Seychas proekt nelzya otsenivat po printsipu "ostalos nemnogo, potomu chto uzhe mnogo vsego vidno". Dlya takih igr poslednie protsenty stoyat dorozhe pervyh.
 
-Текущий реальный смысл оценки такой:
+Tekuschiy realnyy smysl otsenki takoy:
 
-- foundation уже собран на уровень выше среднего инди-черновика;
-- product closure ещё далеко;
-- главный остаток работы теперь не "написать ещё систем", а **сделать из набора систем и пайплайнов законченную игру**.
+- foundation uzhe sobran na uroven vyshe srednego indi-chernovika;
+- product closure esche daleko;
+- glavnyy ostatok raboty teper ne "napisat esche sistem", a **sdelat iz nabora sistem i payplaynov zakonchennuyu igru**.
 
-## 11. Финальный вывод
+## 11. Finalnyy vyvod
 
-На сегодня HECTON-8 выглядит как **крупная и местами уже серьёзная production foundation-сборка**, но не как near-final game.
+Na segodnya HECTON-8 vyglyadit kak **krupnaya i mestami uzhe sereznaya production foundation-sborka**, no ne kak near-final game.
 
-Честный диагноз:
+Chestnyy diagnoz:
 
-- база мира и систем уже сильная;
-- визуально-техническая основа есть;
-- procedural stack уже большой;
-- но narrative, progression, world density, shell quality, QA-proof и release-hardening ещё не закрыты.
+- baza mira i sistem uzhe silnaya;
+- vizualno-tehnicheskaya osnova est;
+- procedural stack uzhe bolshoy;
+- no narrative, progression, world density, shell quality, QA-proof i release-hardening esche ne zakryty.
 
-Если говорить без подлизывания: сейчас проект ближе к **тяжёлому фундаменту и частично собранному vertical foundation**, чем к финальной версии.
+Esli govorit bez podlizyvaniya: seychas proekt blizhe k **tyazhelomu fundamentu i chastichno sobrannomu vertical foundation**, chem k finalnoy versii.
 
-Оценка на сегодня: **около 30% до финальной 1.0**, статус **PENDING VERIFICATION**.
+Otsenka na segodnya: **okolo 30% do finalnoy 1.0**, status **PENDING VERIFICATION**.

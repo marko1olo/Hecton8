@@ -5,6 +5,12 @@ namespace Hecton8.SaveSystem
     [Serializable]
     public sealed class SaveSlotMaintenanceRecord
     {
+        internal const byte LastAuditReadableFlag = 1 << 0;
+        internal const byte LastAuditRecommendedRepairFlag = 1 << 1;
+        internal const byte LastLoadUsedBackupFlag = 1 << 2;
+        internal const byte LastLoadUsedLegacyCompressionFlag = 1 << 3;
+        internal const byte LastLoadSelfRepairedFlag = 1 << 4;
+
         public string SlotName;
         public long LastSuccessfulSaveTicksUtc;
         public long LastSuccessfulLoadTicksUtc;
@@ -30,6 +36,32 @@ namespace Hecton8.SaveSystem
         public string LastRepairMessage;
 
         public string slotName => SlotName;
+
+        internal byte PackStateFlags()
+        {
+            byte flags = 0;
+            if (LastAuditReadable)
+                flags |= LastAuditReadableFlag;
+            if (LastAuditRecommendedRepair)
+                flags |= LastAuditRecommendedRepairFlag;
+            if (LastLoadUsedBackup)
+                flags |= LastLoadUsedBackupFlag;
+            if (LastLoadUsedLegacyCompression)
+                flags |= LastLoadUsedLegacyCompressionFlag;
+            if (LastLoadSelfRepaired)
+                flags |= LastLoadSelfRepairedFlag;
+
+            return flags;
+        }
+
+        internal void ApplyStateFlags(byte flags)
+        {
+            LastAuditReadable = (flags & LastAuditReadableFlag) != 0;
+            LastAuditRecommendedRepair = (flags & LastAuditRecommendedRepairFlag) != 0;
+            LastLoadUsedBackup = (flags & LastLoadUsedBackupFlag) != 0;
+            LastLoadUsedLegacyCompression = (flags & LastLoadUsedLegacyCompressionFlag) != 0;
+            LastLoadSelfRepaired = (flags & LastLoadSelfRepairedFlag) != 0;
+        }
 
         public static string GetPath(string slotName)
         {

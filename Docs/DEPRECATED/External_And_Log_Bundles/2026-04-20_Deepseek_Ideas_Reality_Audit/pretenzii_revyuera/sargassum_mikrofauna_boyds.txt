@@ -1,0 +1,393 @@
+KRITIKA OT REVYuERA PO ChASTI KODA - sargassum microfauna boids.CS
+
+-=-==-=-=-=-=-=-=-=-=-=-=--=-=-==-=
+
+
+Kak Senior QA Automation Engineer, Lead Architect i GPU-arhitektor, ya provel vskrytie tvoego skripta. Zadumka otlichnaya, no realizatsiya soderzhit kriticheskie oshibki, kotorye garantirovanno ubyut performans na MX350, vyzovut TDR (Timeout Detection and Recovery) na videokarte i slomayut fizicheskuyu simulyatsiyu.
+
+Etot kod narushaet printsipy Zero-GC v goryachih putyah, nasiluet shinu PCIe sinhronnymi operatsiyami i imeet fundamentalnye oshibki v payplayne GPU-culling'a.
+
+Nizhe predstavlen hirurgicheskiy otchet.
+
+🔴 KRITIChESKIE OBSERY (BAGI, UTEChKI, GPU-SMERT)
+
+1. Frustum Culling ubivaet simulyatsiyu i teni (Arhitekturnyy proval)
+V Tick() ty vyzyvaesh ShouldDispatchSimulation(). Esli kamera otvernulas ot stai (Frustum == false), metod vozvraschaet false, i Tick() delaet return.
+
+Sledstvie 1: Staya perestaet simulirovatsya i zamiraet vo vremeni. Kogda igrok povernetsya obratno, on uvidit zamerzshih ryb, kotorye teleportiruyutsya.
+
+Sledstvie 2: Ne vyzyvaetsya RenderCurrentBuffer(). Funktsiya DrawMeshInstancedIndirect ne otpravlyaetsya v payplayn. Boidy vne ekrana ne budut otbrasyvat teni v pole zreniya igroka! Ostav GPU Frustum Culling samomu sheyderu (cherez Append-bufery) ili hotya by vyzyvay Draw vsegda, esli staya v radiuse simulationCullDistance.
+
+2. GPU Atomic Contention i NaN-virusy (PBD Stability)
+V BuildSpawnSet i BuildDeepSpawnSet est fallbackCenter. Esli dlya boida ne nashlos mesta (found == false), on spavnitsya rovno v fallbackCenter.
+
+Smert GPU (Gridlock): Desyatki boidov spavnyatsya v odnoy idealnoy matematicheskoy tochke. Oni vse popadut v odnu yacheyku Spatial Grid. Esli v tvoem HLSL-kode net zhestkogo break pri count >= 32 vo vremya atomarnoy zapisi (InterlockedAdd), videokarta zavisnet v beskonechnom tsikle (TDR crash).
+
+Vzryv sfer (NaN): V faze simulyatsii distantsiya mezhdu nimi ravna 0.0f. Vyzov normalize(dir) vydast NaN. Etot NaN zarazit sosedey cherez Velocity/Position, i vsya staya prosto ischeznet s ekrana navsegda.
+
+Reshenie: Dobavlyay randomnyy dzhitter k fallbackPosition (hotya by + Random.insideUnitSphere * 0.1f). V HLSL obyazatelno oborachivay vektora: float len = length(dir); if(len < 0.0001f) dir = randomDir;.
+
+3. Inektsiya musora v Compute Shader (Massive Threats)
+V BindSimulationUniforms ty bindish dlinu massiva, a ne aktivnoe kolichestvo ugroz:
+
+code
+C#
+download
+content_copy
+expand_less
+boidCompute.SetInt(_MassiveThreatCountId, _massiveThreats != null ? _massiveThreats.Length : 0);
+
+_massiveThreats.Length — eto VSEGDA maxMassiveThreatCount (capacity), potomu chto massiv allotsiruetsya odin raz. GPU budet iterirovatsya po mertvym ili ekspayrnutym Leviafanam s musornymi koordinatami. Nuzhno peredavat _activeMassiveThreatCount.
+
+4. Consumed State Culling (Gde zaschita?)
+Ty upomyanul, chto sedennye boidy dolzhny skipatsya. C# peredaet _ConsumedCollapseSpeedId, no v C# net logiki kompaktizatsii bufera. Ubedis, chto v HLSL v kernele BuildSpatialGrid PERED InterlockedAdd stoit:
+if (boid.State == STATE_CONSUMED) return;
+Inache mertvye boidy budut zabivat yacheyki Spatial Grid (limit 32), vytesnyaya zhivyh.
+
+🟡 ARHITEKTURNAYa GRYaZ I PERFORMANCE SLOP
+
+1. Nasilie nad PCIe i lishnyaya pamyat (NativeArray -> Managed -> SetBuffer)
+V metode CompletePendingLeviathanNodeBuild:
+
+code
+C#
+download
+content_copy
+expand_less
+for (int i = 0; i < safeCount; i++) {
+    LeviathanNodeNativeData node = _leviathanNodeScratchNative[i];
+    _leviathanNodes[i] = new LeviathanNodeData { ... }; // Kopirovanie v Managed Array!
+}
+_leviathanNodeBuffer.SetData(_leviathanNodes); // Otpravka na GPU
+
+Eto prestuplenie. Ty gonyaesh dannye iz unmanaged pamyati (Job) v managed pamyat (vyzyvaya kesh-promahi), chtoby potom otdat ih v SetData. V Unity 6 ComputeBuffer.SetData napryamuyu prinimaet NativeArray. Vyrezhi managed-massiv _leviathanNodes voobsche. Peredavay _leviathanNodeScratchNative napryamuyu v bufer.
+
+2. Spam GetComponent v goryachem tsikle (Tick)
+Kazhdyy kadr v Tick() vyzyvaetsya ResolveDependencies(). Esli na playerTransform realno net Rigidbody (naprimer, igrok esche ne zaspavnen do kontsa ili on v drugoy forme), kod:
+
+code
+C#
+download
+content_copy
+expand_less
+if (_playerRigidbody == null && playerTransform != null)
+    _playerRigidbody = playerTransform.GetComponent<Rigidbody>();
+
+budet dergat tyazhelyy GetComponent kazhdyy kadr. Sdelay flag _dependenciesResolved ili ispolzuy TryGetComponent odin raz pri smene sostoyaniya.
+
+3. Ispolzovanie Debug-peremennyh v boevoy logike
+Eto prosto pozorische dlya senor-koda:
+
+code
+C#
+download
+content_copy
+expand_less
+boidCompute.SetInt(_FormationBeaconCountId, _debugFormationBeaconCount);
+boidCompute.SetInt(_LeviathanNodeCountId, _debugLeviathanNodeCount);
+_materialPropertyBlock.SetFloat(_ParasiteAggressionId, _debugParasiteAggression01);
+
+Privatnye _debug... polya ne dolzhny upravlyat sostoyaniem sheydera. Sozday normalnye peremennye _activeFormationBeaconCount, _activeLeviathanNodeCount i bindi ih.
+
+4. Physics.AddForce vs Custom Integrators (Konflikt steyt-mashiny)
+V ApplyLeviathanShockwave ty vyzyvaesh targetBody.AddForce(..., ForceMode.Impulse). V proekte pro podvodnye lodki (s Drag Manager'om i kastomnymi plotnostyami vody) ispolzovanie gologo AddForce privedet k tomu, chto fizika soydet s uma. Etot impuls poderetsya s kastomnym kontrollerom plavuchesti. Ubedis, chto u vas net interfeysa vrode IImpulseReceiver dlya kastomnogo primeneniya sil.
+
+5. Dublirovanie koda (Logical Redundancy)
+U tebya est metod UpdateMassiveThreats(), kotoryy v tsikle filtruet ugrozy po vremeni i zapisyvaet v _activeMassiveThreatCount.
+I est metod RecalculateMassiveThreatCount(), kotoryy delaet ABSOLYuTNO TO ZhE SAMOE stroka v stroku. Udali RecalculateMassiveThreatCount().
+
+📋 KONKRETNYE REKOMENDATsII PO REFAKTORINGU (ChTO REZAT)
+
+Pochini Frustum Culling:
+Izmeni ShouldDispatchSimulation():
+
+code
+C#
+download
+content_copy
+expand_less
+Vector3 cameraPosition = viewCamera.transform.position;
+float maxDistanceSq = simulationCullDistance * simulationCullDistance;
+bool inRange = (_renderBounds.center - cameraPosition).sqrMagnitude <= maxDistanceSq;
+
+// Flag vidimosti sohranyaem tolko dlya otrisovki, simulyatsiyu ne ubivaem!
+_isVisibleThisFrame = GeometryUtility.TestPlanesAABB(_frustumPlanes, _renderBounds);
+return inRange;
+
+A v Tick() oberni tolko vyzov DrawMeshInstancedIndirect usloviem if (_isVisibleThisFrame || castShadows). No luchshe renderit vsegda (poka v radiuse simulyatsii), chtoby teni korrektno padali v kadr.
+
+Optimiziruy matematiku v ApplyLeviathanShockwave:
+Ty schitaesh radialDirection.magnitude vnutri tsikla dlya KAZhDOGO RigidBody. Zameni na sqrMagnitude, sravnivay s kvadratom radiusa i delay bystryy Mathf.Sqrt tolko dlya teh, kto realno v zone porazheniya.
+
+Sinhronizatsiya buferov:
+Vmesto sinhronnogo SetData v _leviathanNodeBuffer pryamo posredi kadra (chto vyzyvaet bubble na PCIe), ispolzuy dvoynuyu buferizatsiyu (kak u tebya sdelano s _boidsBufferA/B) dlya splaynov Leviafana, libo zalivay dannye cherez SetData(NativeArray) asinhronno ili v samom nachale kadra do Dispatch.
+
+Zaschita ot NaN-virusov:
+V C# pri raschete fallback:
+
+code
+C#
+download
+content_copy
+expand_less
+spawnPosition = fallbackCenter + UnityEngine.Random.insideUnitSphere * 0.5f;
+
+Itog: Kontsept i integratsiya s Burst/Jobs horoshi. Zero-GC soblyuden (net new v Tick), Async GPU Readback nastroen verno. No arhitektura svyazyvaniya CPU i GPU stradaet ot "detskih" bolezney (Frustum ostanavlivaet vremya, bag s Length massiva, kopirovanie Native->Managed). Isprav eti punkty, i staya budet letat na 60 FPS dazhe na kartoshke.
+
+Esli my otbrosim ochevidnye veschi i pereydem k realnomu glubokomu auditu, to vot tebe spisok problem, kotorye "vystrelyat" v relize, kogda ty dobavish v igru bolshe odnogo vida ryb ili kogda igrok uplyvet za 5 kilometrov ot nachala koordinat.
+
+Kak Senior GPU Architect, ya smotryu v samye uzkie mesta: PCIe Bus Contention, Warp Occupancy i Floating Point Drift.
+
+1. PCIe Stall: Sinhronnyy SetData v SlowTick
+
+Ty obnovlyaesh dannye cherez SetData() v metode SlowTick.
+
+V chem problema: ComputeBuffer.SetData — eto blokiruyuschaya operatsiya dlya CPU, poka dannye ne budut skopirovany v promezhutochnyy bufer drayvera. Esli SlowTick srabotaet odnovremenno s tyazhelym kadrom (naprimer, podgruzka chanka MapMagic), ty poluchish mikro-friz na 5-10ms.
+
+Realnyy risk: Na MX350 (mobilnaya shina) propusknaya sposobnost PCIe ogranichena. Delat SetData dlya 2048 boidov + 96 ankorov + 64 uzlov splayna v seredine kadra — eto plohoy ton.
+
+Kak nado: Ispolzovat GraphicsBuffer (Unity 6) i SetData s ukazaniem konkretnyh regionov pamyati, libo LockBufferForWrite dlya asinhronnoy zalivki.
+
+2. Spatial Aliasing (Drozhanie setki)
+
+Tvoy SpatialGrid stroitsya dinamicheski na osnove _fieldExtents i _fieldCenter.
+
+V chem problema: Kogda staya (ili igrok) dvizhetsya, _fieldCenter menyaetsya. Eto znachit, chto granitsy yacheek setki "plyvut" otnositelno mirovyh koordinat.
+
+Rezultat: Boid, stoyaschiy na meste, mozhet rezko okazatsya v drugoy yacheyke tolko potomu, chto setka sdvinulas. V etot moment spisok ego sosedey polnostyu menyaetsya za odin kadr. Eto vyzyvaet "Force Flickering" (dergane), kotoroe vyglyadit kak melkaya vibratsiya ryb.
+
+Reshenie: Setka dolzhna byt vyrovnena po globalnomu shagu (naprimer, floor(pos / cellSize) * cellSize), chtoby dvizhenie stai ne smeschalo granitsy yacheek otnositelno mira.
+
+3. Precision Death (Smert tochnosti na glubine)
+
+Igra pro "Deep Sea", koordinaty Y = -4000.
+
+V chem problema: Ty peredaesh mirovye pozitsii v sheyder. Esli igrok uplyvet na X: 10000, Z: 10000, to pri float3 vychisleniyah vnutri Compute Shader (osobenno pri vozvedenii v kvadrat v distSq) tochnosti nachnet ne hvatat.
+
+Rezultat: Boidy nachnut dvigatsya "stupenkami" ili ih nachnet haotichno vybrasyvat v storony iz-za oshibok okrugleniya pri normalizatsii vektorov.
+
+Reshenie: Simulyatsiya vnutri sheydera dolzhna idti v Camera-Relative Space. Peredavay v sheyder ne mirovye pozitsii, a PositionWS - CameraPositionWS.
+
+4. Spline-Physics Desync (Rassinhron golovy i tela)
+
+Eto samaya opasnaya logicheskaya dyra.
+
+Logika: BuildLeviathanNodeJob (Burst) schitaet pozitsii uzlov. FixedTick (CPU) ispolzuet TryResolveLeviathanHeadPose dlya rascheta urona igroku.
+
+Dyra: Job mozhet zavershitsya cherez 1 ili 2 kadra posle togo, kak on byl zaplanirovan. V eto vremya v FixedTick ty ispolzuesh starye dannye splayna dlya proverki kollizii golovy, no boidy na GPU uzhe mogut otrisovyvatsya po novym dannym (ili naoborot).
+
+Rezultat: Igrok poluchaet uron ot "pustogo mesta", kogda vizualnaya golova Leviafana esche v 5 metrah ot nego.
+
+Reshenie: Ves fizicheskiy steyt Leviafana (pozitsiya golovy, radius) dolzhen bratsya iz odnogo i togo zhe Snapshot-a dannyh, kotoryy byl aktualen na moment nachala FixedUpdate.
+
+5. InterlockedAdd Bottleneck (MX350 Special)
+
+V yadre BuildSpatialGrid ty navernyaka ispolzuesh InterlockedAdd dlya podscheta boidov v yacheyke.
+
+V chem problema: MX350 imeet ochen malo blokov ROP i medlennuyu podsistemu atomnyh operatsiy. Esli staya plotno sbivaetsya v "bait ball" (a v rezhime Abyssal eto imenno tak), sotni boidov odnovremenno pytayutsya postuchatsya v odnu i tu zhe yacheyku pamyati.
+
+Rezultat: GPU Warp Stall. Ves vychislitelnyy blok budet stoyat i zhdat, poka atomarnye operatsii proydut v ochered. Eto mozhet prosadit FPS silnee, chem sama otrisovka.
+
+Reshenie: Ispolzovat dvuhprohodnoe postroenie setki (Counting Sort podhod): 1. Poschitat kol-vo boidov v yacheykah. 2. Sdelat Prefix Sum. 3. Zapisat boidov. Eto O(N), no bez zhestkih atomarnyh blokirovok.
+
+6. Lineynyy poisk v TryResolveNearestHarvesterAnchor
+
+V FixedTick ty kazhdyy raz iterirueshsya po ActiveAbyssalAnchors.
+
+V chem problema: Eto klassicheskiy O(N) poisk na CPU. Esli na karte 100-200 takih yakorey (DeadZone Massive Structures), eto lishnyaya nagruzka na Main Thread.
+
+Reshenie: Raz uzh u tebya est WorldSpatialHashGrid.CollectContactsNonAlloc, ispolzuy ego i dlya yakorey. Ne ischi pereborom, delay zapros k svoey zhe prostranstvennoy baze dannyh.
+
+7. Otsutstvie "Warm-up" simulyatsii
+
+Pri OnEnable ty prosto stavish ryb v pozitsii spavna.
+
+V chem problema: V pervyy kadr vse boidy imeyut "idealnye" pozitsii iz spavnera, no nulevye ili sluchaynye skorosti. V sleduyuschiy kadr sily Separation i Cohesion udaryat po nim s maksimalnoy siloy, tak kak oni esche ne raspredelilis estestvennym obrazom.
+
+Rezultat: Pri aktivatsii stai (naprimer, igrok podplyl) ryby "vzryvayutsya" v raznye storony v pervyy kadr, i tolko potom uspokaivayutsya.
+
+Reshenie: Pri spavne nuzhno prognat simulyatsiyu (Compute Shader) 30-60 raz za odin kadr s fiksirovannym dt, chtoby staya "ustoyalas" do togo, kak igrok ee uvidit.
+
+Rezyume:
+
+Kod napisan "po uchebniku" horoshego midla, no on ne uchityvaet fiziku zheleza.
+
+PCIe — uzkoe gorlyshko.
+
+Atomarnye operatsii na GPU — potentsialnyy friz.
+
+Plavayuschaya tochka — tvoy vrag na distantsiyah > 2km.
+
+Verdikt: Esli eto prototip — ok. Esli eto arhitektura dlya finalnoy igry — ty utonesh v bagah determinizma i drozhaniya grafiki cherez mesyats. Perevodi simulyatsiyu v Camera-Relative i izbavlyaysya ot Managed-kopirovaniy v CompletePendingLeviathanNodeBuild.
+
+Slushay syuda. Esli my uhodim ot obsuzhdeniya «gryaznogo koda» i smotrim na arhitekturnuyu zhiznesposobnost etoy sistemy v kontekste igry, kotoraya dolzhna rabotat stabilno chasami, vot tebe spisok «podvodnyh kamney», kotorye vyplyvut ne v profaylere, a v bag-reportah igrokov.
+
+Vot realnyy, obektivnyy audit «vtorogo urovnya»:
+
+1. Problema «Myagkogo» vvoda i zaderzhki (Async Readback Lag)
+
+Ty ispolzuesh AsyncGPUReadback dlya polucheniya kolichestva prisosavshihsya parazitov (_reportedLatchedDroneCount), chtoby primenit ApplyEnvironmentalDrag k igroku.
+
+Obektivno: Asinhronnyy chtenie iz GPU imeet zaderzhku v 1-3 kadra (minimum).
+
+Rezultat: Igrok nazhimaet na gaz ili sovershaet rezkiy manevr, drony na GPU vizualno ottseplyayutsya, no CPU esche 3 kadra «chuvstvuet» staryy Drag. Eto sozdaet oschuschenie «vatnogo» upravleniya (input lag). V hardkornom simulyatore na glubine 4 km, gde tochnost vazhna, eto budet besit igroka na podsoznatelnom urovne.
+
+Reshenie: Libo delay prediktsiyu na CPU, libo smiris s tem, chto fizika igroka vsegda «v proshlom» otnositelno grafiki stai.
+
+2. Smeschenie stai pri dreyfe (Global Drift Pop)
+
+Ty obnovlyaesh _fieldCenter i _renderBounds na osnove dragManager.GlobalDriftOffset.
+
+Obektivno: Pozitsii boidov hranyatsya v bufere v World Space. Kogda GlobalDriftOffset obnovlyaetsya, ty menyaesh granitsy sistemy (_fieldCenter), no ne trogaesh pozitsii samih boidov vnutri bufera (eto delaet sheyder, no s lagom v kadr).
+
+Rezultat: Esli dreyf v kakoy-to moment dast skachok (naprimer, pri smene zony ili rezkom izmenenii techeniya), staya mozhet «vyprygnut» za predely _renderBounds ili FieldExtents. V etot moment srabotaet libo containmentWeight (ryby rezko dernutsya nazad), libo staya prosto ischeznet iz-za kullinga Unity (tak kak Bounds uleteli, a meshi esche net).
+
+Reshenie: Simulyatsiya dolzhna byt lokalnoy otnositelno tsentra polya, a v render peredavatsya matritsa transformatsii tsentra.
+
+3. Fragmentatsiya Native-pamyati (Allocator.Persistent)
+
+Metod EnsureNativeArrayCapacity delaet Dispose() i new NativeArray kazhdyy raz, kogda menyaetsya razmer (naprimer, pri perestroenii splayna Leviafana).
+
+Obektivno: Hotya eto Persistent allokator, chastye pereallokatsii v dolgoy igrovoy sessii (4-8 chasov) mogut privesti k fragmentatsii pamyati v kuche Unity, osobenno na konsolyah ili slabyh PK.
+
+Rezultat: Postepennoe padenie proizvoditelnosti allokatsiy ili krash cherez neskolko chasov igry v «tyazhelyh» zonah.
+
+Reshenie: Allotsiruy massivy odin raz pod maksimalno vozmozhnuyu emkost (Capacity) i ispolzuy tolko chast massiva.
+
+4. Shadow Caster & Bounds "Popping"
+
+Ty ispolzuesh ogromnye _renderBounds, chtoby pokryt vsyu stayu.
+
+Obektivno: Unity ispolzuet eti Bounds dlya opredeleniya togo, nuzhno li otrisovyvat teni ot obekta.
+
+Rezultat: Esli istochnik sveta (naprimer, prozhektor igroka) nahoditsya pod takim uglom, chto sami boidy vidny, no tsentr ih Bounds nahoditsya za predelami konusa sveta — teni mogut vnezapno ischeznut. Ili naoborot — teni budut schitatsya dlya ogromnogo pustogo prostranstva, sedaya Shadow Map atlas i snizhaya razreshenie teney dlya drugih obektov.
+
+Reshenie: Bounds dolzhny dinamicheski pereschityvatsya na GPU (cherez ComputeBuffer.CopyCount i otdelnyy kernel), chtoby oni vsegda byli plotnymi vokrug stai. No DrawMeshInstancedIndirect etogo ne umeet «iz korobki» bez BatchRendererGroup.
+
+5. Konflikt FixedUpdate i SimulationTime
+
+Tvoy Leviafan dvizhetsya v FixedUpdate (cherez fiziku i traumu), no boidy animiruyutsya v Tick cherez _simulationTime.
+
+Obektivno: Tick (Update) i FixedUpdate nikogda ne sinhronizirovany idealno.
+
+Rezultat: Pri padenii FPS ty uvidish «effekt slayd-shou»: fizicheskoe telo (golova Leviafana, kotoraya nanosit uron) budet dvigatsya ryvkami FixedUpdate, a vizualnoe oblako ryb budet plavno «proplyvat» skvoz nego ili otstavat. Igrok budet poluchat uron ot pustogo mesta, cherez kotoroe golova proletela kadr nazad.
+
+6. Limit Shockwave (Zhestkoe ogranichenie)
+
+Limit v 12 Rigidbodies (leviathanShockwaveHitCapacity) — eto mina zamedlennogo deystviya.
+
+Obektivno: V gustyh zaroslyah sargassuma mozhet byt 40-50 melkih obektov (oblomki, resursy, kuski vodorosley).
+
+Rezultat: Esli Leviafan proplyvaet skvoz kuchu musora, pervye 12 obektov razletyatsya krasivo, a ostalnye dazhe ne shelohnutsya, hotya golova proshla skvoz nih. Eto mgnovenno razrushaet pogruzhenie (immersion) i vyglyadit kak deshevyy bag.
+
+Reshenie: Uvelich limit do 32 ili ispolzuy SpatialHash dlya bolee umnoy vyborki samyh krupnyh/blizkih obektov.
+
+7. Smert tochnosti (Floating Point Precision) na glubine
+
+Proekt podrazumevaet kartu bolshih masshtabov («Deep Sea»).
+
+Obektivno: V Unity float nachinaet drozhat uzhe na rasstoyanii 5000-8000 edinits ot tsentra koordinat.
+
+Rezultat: Na glubokovodnyh stantsiyah (DeadZone) boidy nachnut «dergatsya» pri otrisovke, tak kak tochnosti float3 v Compute Shader ne budet hvatat dlya plavnogo slozheniya skorostey.
+
+Reshenie: Perehodi na Camera-RelativeRendering. Peredavay v sheyder ne mirovye koordinaty, a PositionWS - CameraPositionWS.
+
+Itogovyy verdikt:
+Etot skript — otlichnaya zagotovka dlya vizualnogo effekta, no on ploho svyazan s geympleynoy fizikoy. Glavnye riski:
+
+Rassinhron vizualnogo Leviafana i ego fizicheskoy golovy.
+
+Lag v upravlenii podlodkoy iz-za asinhronnogo chteniya dannyh o parazitah.
+
+Vizualnye artefakty teney i kullinga iz-za statichnyh/netochnyh Bounds.
+
+Esli ty hochesh 60 FPS na MX350, tebe nuzhno perestat gonyat dannye tuda-syuda i maksimalno izolirovat simulyatsiyu v lokalnoe prostranstvo.
+
+Ladno, otbrosim teoriyu i pereydem k "promyshlennomu" auditu. Est veschi, kotorye ne pokazhet profayler na pustoy stsene, no kotorye prevratyat igru v koshmar na etape otkrytogo beta-testa, kogda igroki nachnut stroit bazy ili zamanivat Leviafana v uzkie peschery.
+
+Vot tebe «gryaznaya pravda» ob etom kode, esli smotret na nego kak na chast zhivoy ekosistemy igry:
+
+1. Problema «33-go boida» (Spatial Grid Overflow)
+
+U tebya zhestkiy limit: SpatialGridMaxBoidsPerCell = 32.
+
+Realnost: V rezhime «Bait Ball» (Deep Mode) ili «Leviathan», kogda sotni boidov shlopyvayutsya v uzkiy splayn ili vokrug odnogo istochnika sveta, plotnost budet zapredelnoy.
+
+Obektivno: Kak tolko v odnu yacheyku popadaet 33-y boid, on ischezaet dlya fiziki sosedey. On perestaet tolkatsya (Separation) i perestaet sledovat za staey (Cohesion).
+
+Rezultat: Vizualno eto vyglyadit kak «sverhplotnoe yadro», gde ryby prosto proletayut drug skvoz druga, a po krayam — normalnaya staya. Eto lomaet oschuschenie «organichnosti» Swarm-effekta. Na GPU s nizkoy tochnostyu (float16) eto mozhet privesti k beskonechnym silam, esli dva boida okazhutsya v odnoy tochke, a ih «sosedstvo» ne budet obrabotano iz-za limita yacheyki.
+
+2. «Shleyf» iz mertvyh putey (Stale Path Sync)
+
+Ty beresh put dlya Leviafana cherez _mapMagicVegetationBridge.TryGetLatestAbyssalPathPayload.
+
+Realnost: Navigatsionnye puti (A*) obychno pereschityvayutsya ne kazhdyy kadr, a raz v 100-500 ms (Slow Update).
+
+Obektivno: Tvoy C# skript v FixedTick schitaet pozitsiyu golovy Leviafana po etomu puti pryamo seychas, no dannye puti mogut byt uzhe ustarevshimi na 10 kadrov.
+
+Rezultat: Leviafan nanosit uron tam, gde on dolzhen byl byt po raschetam navigatora, no vizualnoe oblako boidov (kotoroe letit po tem zhe dannym) uzhe uplylo vpered ili dergaetsya. Igrok budet poluchat «fantomnye» udary ot pustogo mesta, kotoroe staya proletela mgnovenie nazad.
+
+3. Nakopitelnaya oshibka SimulationPhaseWrap
+
+Ty vruchnuyu perematyvaesh vremya: _simulationTime -= wrappedDuration.
+
+Realnost: Ty ispolzuesh float dlya _simulationTime.
+
+Obektivno: Cherez 2-3 chasa nepreryvnoy igry (survival-zhanr eto podrazumevaet) tochnost float pri dobavlenii dt k 60-sekundnomu tsiklu nachnet degradirovat.
+
+Rezultat: Determinirovannyy shum (HashToFloat01) nachnet «plyt». Ryby nachnut dvigatsya ne plavno, a mikro-ryvkami, potomu chto shag vremeni stanet slishkom grubym dlya trigonometrii v sheydere. Ty eto ne zametish za 5 minut testa, no igrok na 10-m chase sessii uvidit «stroboskop».
+
+Reshenie: Vsegda schitay vremya v sheydere otnositelno double (esli est) ili peredavay Time.elapsedTimeAsDouble cherez dva float (high/low chasti).
+
+4. PCIe Choke: Smert ot tysyachi SetData
+
+Posmotri na BindSimulationUniforms. Ty vyzyvaesh SetBuffer, SetInt, SetFloat, SetVector — bolee 40 vyzovov API pered kazhdym dispatchem.
+
+Realnost: Esli u tebya na karte 5-10 raznyh stay mikro-fauny (v raznyh biomah), ty delaesh 400+ vyzovov ustanovki parametrov kazhdyy kadr.
+
+Obektivno: Kazhdyy takoy vyzov — eto zapis v Command Buffer drayvera. Na slabom zheleze (mobilnye protsessory, starye GPU) eto nagruzhaet CPU silnee, chem sama simulyatsiya.
+
+Reshenie: Sgruppiruy vse nastroyki v odnu struct SimulationParams i peredavay ih ODNIM vyzovom SetConstantBuffer ili ComputeBuffer.SetData. Eto sekonomit tebe 2-3 ms protsessornogo vremeni na kadrah s vysokoy nagruzkoy.
+
+5. Lovushka GeometryUtility.TestPlanesAABB
+
+Ty ispolzuesh _renderBounds dlya kullinga.
+
+Realnost: Eti granitsy — ogromnyy boks, ohvatyvayuschiy vsyu stayu.
+
+Obektivno: Esli kamera vidit hotya by odin ugol etogo gigantskogo boksa, GPU nachinaet molotit vsyu stayu (2048 boidov).
+
+Rezultat: Esli staya rastyanuta (Leviafan dlinoy 100 metrov), ona pochti vsegda budet vidna dlya kullinga, dazhe esli 90% ryb za spinoy igroka ili skryty za skaloy.
+
+Reshenie: Nuzhno razbivat otrisovku na chanki (Indirect Multi-draw) ili ispolzovat Hierarchical Z-Buffer Culling pryamo v sheydere, chtoby GPU sam otsekal teh ryb, kotorye za kamnyami.
+
+6. "Jitter" (Drozhanie) gradientov
+
+Ty schitaesh plotnost cherez _DensityTex i gradientWorldStep = 0.8f.
+
+Realnost: Tekstura plotnosti imeet konechnoe razreshenie (naprimer, 512x512 na region).
+
+Obektivno: Pri Y = -4000 i bolshih mirovyh koordinatah shag v 0.8 edinits mozhet popadat mezhdu pikselyami tekstury, vyzyvaya bilineynuyu interpolyatsiyu.
+
+Rezultat: Sila, tolkayuschaya rybu vnutr kusta, budet ne plavnoy, a «stupenchatoy». Boidy budut vibrirovat pri popytke stabilizirovatsya vnutri plotnoy rastitelnosti. Eto tipichnyy «effekt drozhaniya» GPU-simulyatsiy v bolshih mirah.
+
+7. FixedUpdate vs Readback Race Condition
+
+Ty zaprashivaesh AsyncGPUReadback.Request v Tick (Update), a primenyaesh rezultaty v FixedUpdate.
+
+Realnost: Update i FixedUpdate zhivut v raznyh izmereniyah. Mezhdu nimi mozhet proyti 0.5 kadra, a mozhet i 2 kadra.
+
+Obektivno: K momentu, kogda FixedUpdate primenit _reportedLatchedDroneCount, staya na GPU uzhe mozhet polnostyu izmenitsya.
+
+Rezultat: Ryby prisosalis, ty chuvstvuesh Drag. Ryby ottsepilis, no ty chuvstvuesh Drag esche paru fizicheskih shagov. V dinamichnom boyu eto sozdaet oschuschenie «lagayuschey fiziki».
+
+Verdikt:
+Kod napisan professionalno, no on «slishkom doveryaet» abstraktsiyam. Dlya NASA-punk vyzhivacha na MX350 tebe nuzhno:
+
+Zapech vse yuniformy v odin bufer.
+
+Dobavit dzhitter v pozitsii spavna, chtoby ne ubit Spatial Grid.
+
+Pereyti na Camera-Relative koordinaty, inache na glubine 4km tochnost fiziki ryb tebya predast.
+
+Uyti ot lineynogo poiska yakorey v polzu togo zhe Spatial Hash.

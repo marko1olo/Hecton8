@@ -12,7 +12,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Physics/Crest 5 Kinematics Adapter")]
-    public sealed class Crest5KinematicsAdapter : HectonCrestOceanKinematics
+    public sealed class Crest5KinematicsAdapter : CrestBridge
     {
         private const int MaxBatchSampleCount = 5;
         private const float DefaultSeaLevel = 4900f;

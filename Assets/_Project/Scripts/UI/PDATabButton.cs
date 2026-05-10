@@ -1,8 +1,8 @@
 // ============================================================================
 // HECTON-8 — PDATabButton.cs
-// Кнопка вкладки PDA.
-// Управляет визуальным состоянием (активная/неактивная) и переключением вкладок.
-// NOTE: Создан как заглушка для восстановления компиляции после рефакторинга.
+// Knopka vkladki PDA.
+// Upravlyaet vizualnym sostoyaniem (aktivnaya/neaktivnaya) i pereklyucheniem vkladok.
+// NOTE: Sozdan kak zaglushka dlya vosstanovleniya kompilyatsii posle refaktoringa.
 // ============================================================================
 
 using TMPro;
@@ -14,8 +14,8 @@ using UnityEngine.UI;
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Кнопка вкладки в PDA.
-    /// Отображает состояние (активная/неактивная) и обрабатывает нажатие.
+    /// Knopka vkladki v PDA.
+    /// Otobrazhaet sostoyanie (aktivnaya/neaktivnaya) i obrabatyvaet nazhatie.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Tab Button")]
@@ -42,26 +42,26 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Индекс вкладки.
+        /// Indeks vkladki.
         /// </summary>
         public int TabIndex => _tabIndex;
 
         /// <summary>
-        /// Активна ли вкладка.
+        /// Aktivna li vkladka.
         /// </summary>
         public bool IsActive => _isActive;
 
         /// <summary>
-        /// Инициализирует кнопку вкладки.
+        /// Initsializiruet knopku vkladki.
         /// </summary>
-        /// <param name="tabIndex">Индекс вкладки.</param>
-        /// <param name="playerPDA">Ссылка на PlayerPDA для переключения вкладок.</param>
-        /// <param name="background">Изображение фона кнопки.</param>
-        /// <param name="label">Текст метки.</param>
-        /// <param name="bgActive">Цвет фона в активном состоянии.</param>
-        /// <param name="bgInactive">Цвет фона в неактивном состоянии.</param>
-        /// <param name="textActive">Цвет текста в активном состоянии.</param>
-        /// <param name="textInactive">Цвет текста в неактивном состоянии.</param>
+        /// <param name="tabIndex">Indeks vkladki.</param>
+        /// <param name="playerPDA">Ssylka na PlayerPDA dlya pereklyucheniya vkladok.</param>
+        /// <param name="background">Izobrazhenie fona knopki.</param>
+        /// <param name="label">Tekst metki.</param>
+        /// <param name="bgActive">Tsvet fona v aktivnom sostoyanii.</param>
+        /// <param name="bgInactive">Tsvet fona v neaktivnom sostoyanii.</param>
+        /// <param name="textActive">Tsvet teksta v aktivnom sostoyanii.</param>
+        /// <param name="textInactive">Tsvet teksta v neaktivnom sostoyanii.</param>
         public void Init(
             int tabIndex,
             PlayerPDA playerPDA,
@@ -80,13 +80,13 @@ namespace Hecton8.UI
             _bgInactive = bgInactive;
             _textActive = textActive;
             _textInactive = textInactive;
-            _isActive = tabIndex == 0; // Первая вкладка активна по умолчанию
+            _isActive = tabIndex == 0; // Pervaya vkladka aktivna po umolchaniyu
         }
 
         /// <summary>
-        /// Устанавливает активное состояние вкладки.
+        /// Ustanavlivaet aktivnoe sostoyanie vkladki.
         /// </summary>
-        /// <param name="active">True если вкладка активна.</param>
+        /// <param name="active">True esli vkladka aktivna.</param>
         public void SetActive(bool active)
         {
             _isActive = active;
@@ -118,7 +118,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            // Добавляем обработчик клика если есть Button компонент
+            // Dobavlyaem obrabotchik klika esli est Button komponent
             Button button = _button;
             if (button != null)
                 button.onClick.AddListener(_cachedClickAction);

@@ -12,6 +12,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Dev/Tool Trial Range Runtime Smoke Tester")]
     public sealed class ToolTrialRangeRuntimeSmokeTester : MonoBehaviour
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         [Header("References")]
         [SerializeField] private PlayerToolManager toolManager;
         [SerializeField] private BeaconNetworkSystem beaconNetwork;
@@ -985,5 +986,6 @@ namespace Hecton8.Gameplay
 
             return null;
         }
+#endif
     }
 }

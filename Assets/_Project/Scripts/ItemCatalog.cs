@@ -1,10 +1,10 @@
 // ============================================================================
 // HECTON-8 — ItemCatalog.cs
-// Каталог всех ItemData в игре. Нужен для save/load:
-// сохраняем string ID → загружаем → ищем ItemData по ID.
+// Katalog vseh ItemData v igre. Nuzhen dlya save/load:
+// sohranyaem string ID → zagruzhaem → ischem ItemData po ID.
 //
-// ScriptableObject. Заполняется вручную или автоматически
-// через Editor-скрипт, собирающий все ItemData из проекта.
+// ScriptableObject. Zapolnyaetsya vruchnuyu ili avtomaticheski
+// cherez Editor-skript, sobirayuschiy vse ItemData iz proekta.
 // ============================================================================
 
 using System;
@@ -182,8 +182,8 @@ namespace Hecton8.SaveSystem
 #endif
 
         /// <summary>
-        /// Словарь: stable ID / legacy asset name → ItemData. Строится один раз в OnEnable.
-        /// Используется для O(1) поиска при загрузке инвентаря и обратной совместимости старых save.
+        /// Slovar: stable ID / legacy asset name → ItemData. Stroitsya odin raz v OnEnable.
+        /// Ispolzuetsya dlya O(1) poiska pri zagruzke inventarya i obratnoy sovmestimosti staryh save.
         /// </summary>
         private Dictionary<string, ItemData> _lookup;
         private Dictionary<int, ItemData> _hashLookup;
@@ -220,8 +220,8 @@ namespace Hecton8.SaveSystem
         }
 
         /// <summary>
-        /// Ищет ItemData по строковому ID. Поддерживает authored stable ID и legacy asset name.
-        /// Возвращает null, если не найден.
+        /// Ischet ItemData po strokovomu ID. Podderzhivaet authored stable ID i legacy asset name.
+        /// Vozvraschaet null, esli ne nayden.
         /// </summary>
         public ItemData FindById(string id)
         {

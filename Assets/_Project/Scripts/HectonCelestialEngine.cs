@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — HectonCelestialEngine.cs  v5.1
-// Небесная механика: газовый гигант, затмения, planet-shine, окклюзия, небо.
+// Nebesnaya mehanika: gazovyy gigant, zatmeniya, planet-shine, okklyuziya, nebo.
 //
 // ═══════════════════════════════════════════════════════════════
 // v5.1 CHANGES — RACE CONDITION FIX + SKY OCCLUSION:
@@ -438,7 +438,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
             return _hasAtmosphericLightingState && state.IsValid;
         }
         // ─────────────────────────────────────────────
-        // КОНФИГУРАЦИЯ
+        // KONFIGURATsIYa
         // ─────────────────────────────────────────────
 
         [Header("═══ REFERENCES ═══")]
@@ -672,7 +672,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         [SerializeField] private float twilightEndAngle = -5f;
 
         // ─────────────────────────────────────────────
-        // СОБЫТИЯ
+        // SOBYTIYa
         // ─────────────────────────────────────────────
 
         // ─────────────────────────────────────────────
@@ -1447,10 +1447,10 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
 
             if (playerTransform == null)
             {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform currentPlayer) && currentPlayer != null)
+                if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform currentPlayer) && currentPlayer != null)
                 {
                     playerTransform = currentPlayer;
-                    Debug.LogWarning("[HectonCelestialEngine] Player not assigned, using SceneBootstrap player transform.");
+                    Debug.LogWarning("[HectonCelestialEngine] Player not assigned, using GameBootstrapper player transform.");
                 }
             }
 

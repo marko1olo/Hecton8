@@ -108,8 +108,8 @@ namespace Hecton8.Dev
                 ContainsAll(saveBinaryStorage, "payloadLength & 1", "Mod payload rejected: odd byte length.", "PayloadLength & 1");
 
             bool hydrationTimeSlicePass =
-                ContainsAll(saveManager, "LoadApplyFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 333L)", "await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);") &&
-                ContainsAll(persistentWorldRegistry, "HydrationFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 333L)", "TryProcessHydrationBurst", "await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);") &&
+                ContainsAll(saveManager, "LoadApplyFrameBudgetTicks = HydrationScheduler.FrameBudgetTicks", "await HydrationScheduler.NextFrameAsync(destroyCancellationToken);", "loadApplyDeadlineTicks = HydrationScheduler.CreateDeadlineTicks();") &&
+                ContainsAll(persistentWorldRegistry, "HydrationFrameBudgetTicks = HydrationScheduler.FrameBudgetTicks", "TryProcessHydrationBurst", "await HydrationScheduler.NextFrameAsync(destroyCancellationToken);") &&
                 ContainsAll(persistentWorldRegistry, "HydrationPerformanceWarningBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 5000L)", "PublishHydrationBudgetWarningIfNeeded", "GlobalTelemetryBus.PublishPerformanceWarning");
 
             bool hydrationGcPurgePass =

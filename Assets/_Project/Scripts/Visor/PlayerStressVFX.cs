@@ -253,7 +253,7 @@ namespace Hecton8.Visor
                 TryGetComponent(out _playerHealth);
 
             if ((_survivalSystem == null || _playerMovement == null || _playerHealth == null) &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (_survivalSystem == null)

@@ -1,59 +1,59 @@
 // ============================================================================
 // HECTON-8 — BaseModule.cs
-// Базовый контроллер модуля подводной базы.
+// Bazovyy kontroller modulya podvodnoy bazy.
 //
-// ОТВЕТСТВЕННОСТИ:
-//   1. Хранит целостность модуля (integrity) в рантайме.
-//   2. Управляет затоплением (flood) и осушением (drain).
-//   3. Реализует IPowerComponent для базового энергопотребления.
-//   4. Реализует IPoolable для совместимости с ObjectPoolManager.
-//   5. Реализует ISlowTickable для централизованного тика через GameTickManager.
-//   6. Реализует ICuttable для совместимости с LaserCutter (→ ApplyDamage).
-//   7. Управляет Interior Zone (Сухая Зона) — подавляет водную физику
-//      для объектов внутри незатопленного модуля.
-//   8. Деконструкция (Deconstruct) — возврат ресурсов и уничтожение модуля.
+// OTVETSTVENNOSTI:
+//   1. Hranit tselostnost modulya (integrity) v rantayme.
+//   2. Upravlyaet zatopleniem (flood) i osusheniem (drain).
+//   3. Realizuet IPowerComponent dlya bazovogo energopotrebleniya.
+//   4. Realizuet IPoolable dlya sovmestimosti s ObjectPoolManager.
+//   5. Realizuet ISlowTickable dlya tsentralizovannogo tika cherez GameTickManager.
+//   6. Realizuet ICuttable dlya sovmestimosti s LaserCutter (→ ApplyDamage).
+//   7. Upravlyaet Interior Zone (Suhaya Zona) — podavlyaet vodnuyu fiziku
+//      dlya obektov vnutri nezatoplennogo modulya.
+//   8. Dekonstruktsiya (Deconstruct) — vozvrat resursov i unichtozhenie modulya.
 //
-// ДЕКОНСТРУКЦИЯ:
-//   • Deconstruct(PlayerInventory) вызывается из LaserCutter при завершении
-//     прогресса разбора (режим R+ЛКМ).
-//   • Ресурсы возвращаются с коэффициентом REFUND_RATIO (80% по умолчанию).
-//   • Если инвентарь полон — ресурс спавнится как HectonItem в мир
-//     через ObjectPoolManager.
-//   • После раздачи ресурсов вызывается ConstructionManager.DestroyModule().
+// DEKONSTRUKTsIYa:
+//   • Deconstruct(PlayerInventory) vyzyvaetsya iz LaserCutter pri zavershenii
+//     progressa razbora (rezhim R+LKM).
+//   • Resursy vozvraschayutsya s koeffitsientom REFUND_RATIO (80% po umolchaniyu).
+//   • Esli inventar polon — resurs spavnitsya kak HectonItem v mir
+//     cherez ObjectPoolManager.
+//   • Posle razdachi resursov vyzyvaetsya ConstructionManager.DestroyModule().
 //
-// СУХИЕ ЗОНЫ (Interior Zone):
-//   • BoxCollider (Trigger) на дочернем объекте или этом же GO охватывает
-//     внутреннее пространство модуля.
-//   • OnTriggerEnter: если модуль не затоплен → BuoyancyObject.EnterDryZone()
+// SUHIE ZONY (Interior Zone):
+//   • BoxCollider (Trigger) na dochernem obekte ili etom zhe GO ohvatyvaet
+//     vnutrennee prostranstvo modulya.
+//   • OnTriggerEnter: esli modul ne zatoplen → BuoyancyObject.EnterDryZone()
 //   • OnTriggerExit: BuoyancyObject.ExitDryZone()
-//   • При смене isFlooded: синхронизация всех отслеживаемых объектов.
-//   • Кэширование через Dictionary<ulong, BuoyancyObject> по EntityId —
-//     zero GetComponent в OnTriggerStay (Stay не используется вовсе).
+//   • Pri smene isFlooded: sinhronizatsiya vseh otslezhivaemyh obektov.
+//   • Keshirovanie cherez Dictionary<ulong, BuoyancyObject> po EntityId —
+//     zero GetComponent v OnTriggerStay (Stay ne ispolzuetsya vovse).
 //
-// СОХРАНЕНИЕ:
-//   Модуль НЕ сохраняет себя самостоятельно.
-//   ConstructionManager читает публичные свойства CurrentIntegrity / IsFlooded
-//   при сериализации базы и записывает их обратно при загрузке.
+// SOHRANENIE:
+//   Modul NE sohranyaet sebya samostoyatelno.
+//   ConstructionManager chitaet publichnye svoystva CurrentIntegrity / IsFlooded
+//   pri serializatsii bazy i zapisyvaet ih obratno pri zagruzke.
 //
-// СОСТОЯНИЯ:
+// SOSTOYaNIYa:
 //   • Healthy      : currentIntegrity == maxIntegrity, not flooded
 //   • Damaged      : currentIntegrity < maxIntegrity, leak VFX active
 //   • Breached     : currentIntegrity <= 0 → flooded = true
 //   • Draining     : flooded && hasPower && integrity == maxIntegrity
 //
-// ЭНЕРГОСИСТЕМА:
-//   • Базовое потребление берётся из BuildableData.powerRating.
-//   • Если питания нет — помпы не работают, освещение гаснет, ремонт стоит.
-//   • Если питание есть и модуль цел — вода откачивается.
+// ENERGOSISTEMA:
+//   • Bazovoe potreblenie beretsya iz BuildableData.powerRating.
+//   • Esli pitaniya net — pompy ne rabotayut, osveschenie gasnet, remont stoit.
+//   • Esli pitanie est i modul tsel — voda otkachivaetsya.
 //
 // ZERO GC:
-//   • Нет Update / FixedUpdate — вся логика через ISlowTickable.
-//   • OnPowerStatusChanged включает/выключает свет без per-frame polling.
-//   • GetComponents в горячем пути не вызываются.
+//   • Net Update / FixedUpdate — vsya logika cherez ISlowTickable.
+//   • OnPowerStatusChanged vklyuchaet/vyklyuchaet svet bez per-frame polling.
+//   • GetComponents v goryachem puti ne vyzyvayutsya.
 //   • Dictionary — pre-allocated capacity, no boxing (int keys).
-//   • OnTriggerStay не используется — только Enter/Exit.
-//   • Deconstruct: for-циклы, TryAddItem, zero LINQ.
-//   • Статические коллекции отсутствуют — нет утечек памяти при смене сцен.
+//   • OnTriggerStay ne ispolzuetsya — tolko Enter/Exit.
+//   • Deconstruct: for-tsikly, TryAddItem, zero LINQ.
+//   • Staticheskie kollektsii otsutstvuyut — net utechek pamyati pri smene stsen.
 // ============================================================================
 
 using System;
@@ -194,19 +194,19 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Фиксированная дельта медленного тика (секунды).
-        /// GameTickManager вызывает SlowTick() с этим интервалом.
+        /// Fiksirovannaya delta medlennogo tika (sekundy).
+        /// GameTickManager vyzyvaet SlowTick() s etim intervalom.
         /// </summary>
         private const float SLOW_TICK_DT = 0.5f;
 
         /// <summary>
-        /// Начальная ёмкость словаря отслеживаемых объектов.
-        /// Типичный модуль содержит 0–16 плавучих объектов одновременно.
+        /// Nachalnaya emkost slovarya otslezhivaemyh obektov.
+        /// Tipichnyy modul soderzhit 0–16 plavuchih obektov odnovremenno.
         /// </summary>
         private const int TRACKED_INITIAL_CAPACITY = 16;
 
         /// <summary>
-        /// Максимум коллайдеров, пересчитываемых при холодной синхронизации interior zone.
+        /// Maksimum kollayderov, pereschityvaemyh pri holodnoy sinhronizatsii interior zone.
         /// </summary>
         private const int INTERIOR_OVERLAP_CAPACITY = 32;
         private const float SeawaterDensityKilogramsPerCubicMeter = 1025f;
@@ -255,8 +255,8 @@ namespace Hecton8.Gameplay
         private const string LegacyAirlockPersistentId = "base.module.airlock";
 
         /// <summary>
-        /// Коэффициент возврата ресурсов при деконструкции.
-        /// 0.8 = 80% ресурсов возвращается.
+        /// Koeffitsient vozvrata resursov pri dekonstruktsii.
+        /// 0.8 = 80% resursov vozvraschaetsya.
         /// </summary>
         private const float REFUND_RATIO = 0.8f;
 
@@ -273,15 +273,15 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Integrity ─────────────────────────────────")]
-        [Tooltip("Максимальная целостность модуля.")]
+        [Tooltip("Maksimalnaya tselostnost modulya.")]
         [SerializeField] private float maxIntegrity = 100f;
 
-        [Tooltip("Текущая целостность модуля на старте.")]
+        [Tooltip("Tekuschaya tselostnost modulya na starte.")]
         [SerializeField] private float currentIntegrity = 100f;
         [Tooltip("Optional immutable template that owns abandoned-module integrity authoring and VFX socket coordinates.")]
         [SerializeField] private BaseModuleTemplate moduleTemplate;
 
-        [Tooltip("Модуль затоплен на старте? Обычно false.")]
+        [Tooltip("Modul zatoplen na starte? Obychno false.")]
         [SerializeField] private bool isFlooded;
 
         [Header("── Anchor / Unmoored Physics ──────────────────")]
@@ -400,22 +400,22 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(0.1f)] private float localGravityHoldSeconds = DefaultLocalGravityHoldSeconds;
 
         [Header("── Flood / Drain ─────────────────────────────")]
-        [Tooltip("Сколько секунд требуется на полную откачку воды.")]
+        [Tooltip("Skolko sekund trebuetsya na polnuyu otkachku vody.")]
         [SerializeField] private float drainDuration = 8f;
         [SerializeField] private float floodPumpEnergyCost = 65f;
 
-        [Tooltip("Скорость пассивного восстановления целостности (единиц/сек). 0 = отключено.")]
+        [Tooltip("Skorost passivnogo vosstanovleniya tselostnosti (edinits/sek). 0 = otklyucheno.")]
         [SerializeField] private float passiveRecoveryRate = 0f;
 
-        [Tooltip("Скорость пассивной деградации целостности (единиц/сек). " +
-                 "Лор: ~0.1% в игровой день. При глубине > 500м — умножается на depthDegradationMultiplier.")]
+        [Tooltip("Skorost passivnoy degradatsii tselostnosti (edinits/sek). " +
+                 "Lor: ~0.1% v igrovoy den. Pri glubine > 500m — umnozhaetsya na depthDegradationMultiplier.")]
         [SerializeField] private float passiveDegradationRate = 0.001f;
 
-        [Tooltip("Множитель деградации на глубине > 500м (давление на корпус).")]
+        [Tooltip("Mnozhitel degradatsii na glubine > 500m (davlenie na korpus).")]
         [SerializeField, UnityEngine.Range(1f, 5f)] private float depthDegradationMultiplier = 2f;
 
         [Header("── Cascade Failures ──────────────────────────────")]
-        [Tooltip("Текущий каскадный отказ модуля. None = штатно, остальные требуют сервисного восстановления.")]
+        [Tooltip("Tekuschiy kaskadnyy otkaz modulya. None = shtatno, ostalnye trebuyut servisnogo vosstanovleniya.")]
         [SerializeField] private BaseModuleFailureMode failureMode;
         [Tooltip("Permanent integrity lost after each cascade failure.")]
         [SerializeField] private float repairWearPerCascade = 12f;
@@ -449,19 +449,19 @@ namespace Hecton8.Gameplay
         [Tooltip("Normalized bulkhead stress recovered per second when the airlock is no longer holding back flood pressure.")]
         [SerializeField, Min(0f)] private float bulkheadStressRecoveryPerSecond = DefaultBulkheadStressRecoveryPerSecond;
 
-        [Tooltip("Скорость утечки кислорода из скафандра игрока внутри аварийного модуля.")]
+        [Tooltip("Skorost utechki kisloroda iz skafandra igroka vnutri avariynogo modulya.")]
         [SerializeField] private float oxygenLeakDrainRate = 10f;
 
-        [Tooltip("Урон скафандру игрока внутри горящего модуля.")]
+        [Tooltip("Uron skafandru igroka vnutri goryaschego modulya.")]
         [SerializeField] private float fireSuitDamageRate = 12f;
 
-        [Tooltip("Сжигаемая пожаром энергия костюма игрока внутри модуля.")]
+        [Tooltip("Szhigaemaya pozharom energiya kostyuma igroka vnutri modulya.")]
         [SerializeField] private float fireSuitEnergyDrainRate = 6f;
 
         [Header("── Interior Zone (Dry Zone) ──────────────────")]
-        [Tooltip("BoxCollider (Trigger), охватывающий внутреннее пространство модуля. " +
-                 "Объекты с BuoyancyObject внутри этого триггера не испытывают водных сил, " +
-                 "пока модуль не затоплен. Назначь вручную или создай автоматически.")]
+        [Tooltip("BoxCollider (Trigger), ohvatyvayuschiy vnutrennee prostranstvo modulya. " +
+                 "Obekty s BuoyancyObject vnutri etogo triggera ne ispytyvayut vodnyh sil, " +
+                 "poka modul ne zatoplen. Naznach vruchnuyu ili sozday avtomaticheski.")]
         [SerializeField] private BoxCollider interiorTrigger;
 
         [Tooltip("Authored interior wall surfaces that swap to a dedicated condensation material when hot air meets cold hull.")]
@@ -493,13 +493,13 @@ namespace Hecton8.Gameplay
         private float parasiteSporeHazardRadius = 3.2f;
 
         [Header("── Deconstruction ────────────────────────────")]
-        [Tooltip("Префаб мирового предмета (HectonItem) для спавна ресурсов, " +
-                 "которые не поместились в инвентарь. " +
-                 "Должен иметь HectonItem + BuoyancyObject + Rigidbody.")]
+        [Tooltip("Prefab mirovogo predmeta (HectonItem) dlya spavna resursov, " +
+                 "kotorye ne pomestilis v inventar. " +
+                 "Dolzhen imet HectonItem + BuoyancyObject + Rigidbody.")]
         [SerializeField] private GameObject worldItemPrefab;
 
         [Header("── Visual References ─────────────────────────")]
-        [Tooltip("Объект воды внутри модуля. Активен, когда модуль затоплен.")]
+        [Tooltip("Obekt vody vnutri modulya. Aktiven, kogda modul zatoplen.")]
         [SerializeField] private GameObject waterVolume;
 
         [Tooltip("Optional water-surface proxy transform driven by room flood fill. Only the local Y value is animated.")]
@@ -508,10 +508,10 @@ namespace Hecton8.Gameplay
         [Tooltip("Fallback local-space Y range for the water-surface proxy when the interior trigger cannot provide bounds.")]
         [SerializeField] private Vector2 floodSurfaceLocalYRange = new Vector2(-1.25f, 1.25f);
 
-        [Tooltip("Эффект пузырьков / утечки при повреждении.")]
+        [Tooltip("Effekt puzyrkov / utechki pri povrezhdenii.")]
         [SerializeField] private ParticleSystem leakVfx;
 
-        [Tooltip("Внутренние источники света. Выключаются при отсутствии питания.")]
+        [Tooltip("Vnutrennie istochniki sveta. Vyklyuchayutsya pri otsutstvii pitaniya.")]
         [SerializeField] private Light[] interiorLights;
 
         [Header("Brownout Ambience")]
@@ -530,7 +530,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Seconds required for white interior lighting to transition into emergency red.")]
         [SerializeField, Min(0.05f)] private float brownoutEmergencyTransitionSeconds = DefaultBrownoutEmergencyTransitionSeconds;
 
-        [Tooltip("Локальный Volume для тумана / постпроцесса затопления.")]
+        [Tooltip("Lokalnyy Volume dlya tumana / postprotsessa zatopleniya.")]
         [SerializeField] private Volume floodedLocalVolume;
 
         [Tooltip("Optional camera/probe transform used to enable flooded screen-space distortion only while below the water plane.")]
@@ -579,10 +579,10 @@ namespace Hecton8.Gameplay
         [Tooltip("CO2 threshold beyond which power alone can no longer restore breathable reserve.")]
         [SerializeField] private float co2CriticalThreshold = 75f;
         [Header("── Power Fallback ────────────────────────────")]
-        [Tooltip("Fallback power draw, если BuildableData / ModuleMarker отсутствуют.")]
+        [Tooltip("Fallback power draw, esli BuildableData / ModuleMarker otsutstvuyut.")]
         [SerializeField] private float fallbackPowerRating = -10f;
 
-        [Tooltip("Приоритет отключения помп/освещения модуля.")]
+        [Tooltip("Prioritet otklyucheniya pomp/osvescheniya modulya.")]
         [Range(0, 100)]
         [SerializeField] private int powerPriority = 50;
 
@@ -672,15 +672,15 @@ namespace Hecton8.Gameplay
         private float _carbonFilterTimerSeconds;
 
         /// <summary>
-        /// Предыдущее состояние isFlooded, используемое для определения
-        /// момента смены состояния затопления (edge detection).
-        /// Инициализируется в OnSpawn/Awake значением isFlooded.
+        /// Predyduschee sostoyanie isFlooded, ispolzuemoe dlya opredeleniya
+        /// momenta smeny sostoyaniya zatopleniya (edge detection).
+        /// Initsializiruetsya v OnSpawn/Awake znacheniem isFlooded.
         /// </summary>
         private bool _wasFlooded;
 
         /// <summary>
-        /// Защита от повторного вызова Deconstruct (например, два игрока
-        /// одновременно разбирают модуль в будущем мультиплеере).
+        /// Zaschita ot povtornogo vyzova Deconstruct (naprimer, dva igroka
+        /// odnovremenno razbirayut modul v buduschem multipleere).
         /// </summary>
         private bool _isDeconstructing;
         // ── Life Support State ──
@@ -699,16 +699,16 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Словарь отслеживаемых BuoyancyObject внутри Interior Zone.
-        /// Key: Collider.GetEntityId() (не GameObject — т.к. триггер видит Collider).
-        /// Value: кэшированный BuoyancyObject.
+        /// Slovar otslezhivaemyh BuoyancyObject vnutri Interior Zone.
+        /// Key: Collider.GetEntityId() (ne GameObject — t.k. trigger vidit Collider).
+        /// Value: keshirovannyy BuoyancyObject.
         /// </summary>
         private readonly Dictionary<ulong, BuoyancyObject> _trackedObjects
             = new Dictionary<ulong, BuoyancyObject>(TRACKED_INITIAL_CAPACITY);
 
         /// <summary>
-        /// Временный список InstanceID для безопасного удаления из словаря
-        /// во время итерации (при синхронизации состояния затопления).
+        /// Vremennyy spisok InstanceID dlya bezopasnogo udaleniya iz slovarya
+        /// vo vremya iteratsii (pri sinhronizatsii sostoyaniya zatopleniya).
         /// Pre-allocated, zero GC.
         /// </summary>
         private readonly List<ulong> _keysToRemove = new List<ulong>(TRACKED_INITIAL_CAPACITY);
@@ -723,10 +723,10 @@ namespace Hecton8.Gameplay
         private float _solarEmpBlackoutRemainingSeconds;
 
         // ══════════════════════════════════════════════════════════
-        //  PUBLIC PROPERTIES — для ConstructionManager save/load
+        //  PUBLIC PROPERTIES — dlya ConstructionManager save/load
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Максимальная целостность (read-only).</summary>
+        /// <summary>Maksimalnaya tselostnost (read-only).</summary>
         public float MaxIntegrity => maxIntegrity;
         internal static int ActiveModuleCount => s_activeModules.Count;
         internal static BaseModule GetActiveModuleAt(int index)
@@ -735,8 +735,8 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Текущая целостность. ConstructionManager записывает сюда
-        /// значение при загрузке сохранения.
+        /// Tekuschaya tselostnost. ConstructionManager zapisyvaet syuda
+        /// znachenie pri zagruzke sohraneniya.
         /// </summary>
         public float CurrentIntegrity
         {
@@ -745,8 +745,8 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Флаг затопления. ConstructionManager записывает сюда
-        /// значение при загрузке сохранения.
+        /// Flag zatopleniya. ConstructionManager zapisyvaet syuda
+        /// znachenie pri zagruzke sohraneniya.
         /// </summary>
         public bool IsFlooded
         {
@@ -754,19 +754,19 @@ namespace Hecton8.Gameplay
             set => _integrityComponent.SetFlooded(value);
         }
 
-        /// <summary>Целостность упала до нуля — модуль пробит.</summary>
+        /// <summary>Tselostnost upala do nulya — modul probit.</summary>
         public bool IsBreached => _integrityComponent.CurrentIntegrity <= 0f;
 
-        /// <summary>Идёт ли сейчас откачка воды.</summary>
+        /// <summary>Idet li seychas otkachka vody.</summary>
         public bool IsDraining => _integrityComponent.IsDraining;
 
-        /// <summary>Идёт ли деконструкция (защита от повторных вызовов).</summary>
+        /// <summary>Idet li dekonstruktsiya (zaschita ot povtornyh vyzovov).</summary>
         public bool IsDeconstructing => _isDeconstructing;
 
-        /// <summary>Текущий каскадный аварийный статус модуля.</summary>
+        /// <summary>Tekuschiy kaskadnyy avariynyy status modulya.</summary>
         public BaseModuleFailureMode CurrentFailureMode => _integrityComponent.FailureMode;
 
-        /// <summary>Модуль находится в аварийном каскадном состоянии.</summary>
+        /// <summary>Modul nahoditsya v avariynom kaskadnom sostoyanii.</summary>
         public bool HasCascadeFailure => _integrityComponent.FailureMode != BaseModuleFailureMode.None;
 
         /// <summary>Current repair ceiling after accumulated material fatigue.</summary>
@@ -914,8 +914,8 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Базовое энергопотребление модуля.
-        /// Источник: BuildableData.powerRating → fallback.
+        /// Bazovoe energopotreblenie modulya.
+        /// Istochnik: BuildableData.powerRating → fallback.
         /// </summary>
         public float PowerRating => StaticDebuffedPowerRating;
 
@@ -924,9 +924,9 @@ namespace Hecton8.Gameplay
         public bool HasPower => HasOperationalPower;
 
         /// <summary>
-        /// Реакция на изменение статуса питания от PowerGrid:
-        ///   • Свет включается / выключается.
-        ///   • Drain запускается / останавливается.
+        /// Reaktsiya na izmenenie statusa pitaniya ot PowerGrid:
+        ///   • Svet vklyuchaetsya / vyklyuchaetsya.
+        ///   • Drain zapuskaetsya / ostanavlivaetsya.
         /// </summary>
         public void OnPowerStatusChanged(bool hasPower)
         {
@@ -960,9 +960,9 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Реализация ICuttable — делегирует в ApplyDamage.
-        /// Позволяет LaserCutter резать модули базы.
-        /// hitPoint может использоваться для локализации повреждений в будущем.
+        /// Realizatsiya ICuttable — delegiruet v ApplyDamage.
+        /// Pozvolyaet LaserCutter rezat moduli bazy.
+        /// hitPoint mozhet ispolzovatsya dlya lokalizatsii povrezhdeniy v buduschem.
         /// </summary>
         public void ApplyCutDamage(float damage, Vector3 hitPoint)
         {
@@ -1101,11 +1101,11 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Централизованный медленный тик от GameTickManager.
-        /// Выполняет:
-        ///   1. Пассивный ремонт (если есть питание и integrity > 0).
-        ///   2. Прогресс откачки воды (drain timer).
-        /// Без питания — никаких операций не происходит.
+        /// Tsentralizovannyy medlennyy tik ot GameTickManager.
+        /// Vypolnyaet:
+        ///   1. Passivnyy remont (esli est pitanie i integrity > 0).
+        ///   2. Progress otkachki vody (drain timer).
+        /// Bez pitaniya — nikakih operatsiy ne proishodit.
         /// </summary>
         public void SlowTick()
         {
@@ -1132,12 +1132,12 @@ namespace Hecton8.Gameplay
                 Repair(passiveRecoveryRate * SLOW_TICK_DT);
             }
 
-            // Пассивная деградация — лор: давление, время, глубина
+            // Passivnaya degradatsiya — lor: davlenie, vremya, glubina
             if (passiveDegradationRate > 0f && _integrityComponent.CurrentIntegrity > 0f)
             {
                 float degradation = passiveDegradationRate * SLOW_TICK_DT;
 
-                // Глубина > 500м — усиленная деградация от давления
+                // Glubina > 500m — usilennaya degradatsiya ot davleniya
                 if (_trackedPlayerSurvival != null && _trackedPlayerSurvival.Depth > 500f)
                     degradation *= depthDegradationMultiplier;
 
@@ -1356,8 +1356,8 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Наносит урон модулю.
-        /// При достижении 0 — модуль пробит и затапливается.
+        /// Nanosit uron modulyu.
+        /// Pri dostizhenii 0 — modul probit i zataplivaetsya.
         /// </summary>
         public void ApplyDamage(float amount)
         {
@@ -1437,9 +1437,9 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Ремонтирует модуль.
-        /// Если целостность полностью восстановлена и есть питание —
-        /// начинается откачка воды.
+        /// Remontiruet modul.
+        /// Esli tselostnost polnostyu vosstanovlena i est pitanie —
+        /// nachinaetsya otkachka vody.
         /// </summary>
         public void Repair(float amount)
         {
@@ -1475,7 +1475,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Принудительное затопление. Останавливает drain, активирует визуал.
+        /// Prinuditelnoe zatoplenie. Ostanavlivaet drain, aktiviruet vizual.
         /// </summary>
         public void ForceFlood()
         {
@@ -1510,7 +1510,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Принудительное завершение осушения. Сбрасывает drain state и визуал.
+        /// Prinuditelnoe zavershenie osusheniya. Sbrasyvaet drain state i vizual.
         /// </summary>
         public void ForceDrainComplete()
         {
@@ -1983,8 +1983,8 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Полный сброс визуального состояния модуля по текущим данным.
-        /// Вызывается ConstructionManager после загрузки сохранения.
+        /// Polnyy sbros vizualnogo sostoyaniya modulya po tekuschim dannym.
+        /// Vyzyvaetsya ConstructionManager posle zagruzki sohraneniya.
         /// </summary>
         public void RefreshAfterLoad()
         {
@@ -1999,8 +1999,8 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Устанавливает состояние модуля при загрузке сохранения.
-        /// Вызывается ConstructionManager.LoadFromSaveData().
+        /// Ustanavlivaet sostoyanie modulya pri zagruzke sohraneniya.
+        /// Vyzyvaetsya ConstructionManager.LoadFromSaveData().
         /// </summary>
         public void SetState(float integrity, bool flooded)
         {
@@ -2008,7 +2008,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Устанавливает состояние модуля при загрузке сохранения, включая аварийный статус.
+        /// Ustanavlivaet sostoyanie modulya pri zagruzke sohraneniya, vklyuchaya avariynyy status.
         /// </summary>
         public void SetState(float integrity, bool flooded, BaseModuleFailureMode cascadeFailure)
         {
@@ -2087,33 +2087,33 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Разбирает модуль, возвращая ресурсы игроку.
+        /// Razbiraet modul, vozvraschaya resursy igroku.
         ///
-        /// Порядок:
-        ///   1. Получить buildCost из ModuleMarker.Data.
-        ///   2. Для каждого ресурса: refund = floor(amount * REFUND_RATIO).
-        ///   3. Попытка добавить в PlayerInventory.Grid.
-        ///   4. Если инвентарь полон — спавн HectonItem в мир через ObjectPoolManager.
-        ///   5. Освобождение dry zone (ReleaseAllTrackedObjects).
+        /// Poryadok:
+        ///   1. Poluchit buildCost iz ModuleMarker.Data.
+        ///   2. Dlya kazhdogo resursa: refund = floor(amount * REFUND_RATIO).
+        ///   3. Popytka dobavit v PlayerInventory.Grid.
+        ///   4. Esli inventar polon — spavn HectonItem v mir cherez ObjectPoolManager.
+        ///   5. Osvobozhdenie dry zone (ReleaseAllTrackedObjects).
         ///   6. ConstructionManager.DestroyModule(gameObject).
         ///
         /// ZERO GC:
-        ///   • for-циклы по List, без LINQ.
-        ///   • TryAddItem возвращает bool, без аллокаций.
+        ///   • for-tsikly po List, bez LINQ.
+        ///   • TryAddItem vozvraschaet bool, bez allokatsiy.
         ///   • ObjectPoolManager.Spawn — zero GC (pre-warmed pool).
         ///
-        /// ЗАЩИТА:
-        ///   • _isDeconstructing предотвращает повторный вызов.
-        ///   • Null-safe: если ModuleMarker/Data/buildCost отсутствуют —
-        ///     модуль уничтожается без возврата ресурсов (с Warning).
+        /// ZASchITA:
+        ///   • _isDeconstructing predotvraschaet povtornyy vyzov.
+        ///   • Null-safe: esli ModuleMarker/Data/buildCost otsutstvuyut —
+        ///     modul unichtozhaetsya bez vozvrata resursov (s Warning).
         /// </summary>
         /// <param name="playerInventory">
-        /// Инвентарь игрока для возврата ресурсов.
-        /// Null допустим — все ресурсы будут спавнены в мир.
+        /// Inventar igroka dlya vozvrata resursov.
+        /// Null dopustim — vse resursy budut spavneny v mir.
         /// </param>
         public void Deconstruct(PlayerInventory playerInventory)
         {
-            // ── Guard: повторный вызов ──
+            // ── Guard: povtornyy vyzov ──
             if (_isDeconstructing)
                 return;
 
@@ -2127,7 +2127,7 @@ namespace Hecton8.Gameplay
             InventoryGrid grid = playerInventory != null ? playerInventory.Grid : null;
             EjectHostedModuleContents(playerInventory, pool, ref dropPosition);
 
-            // ── Получение данных о стоимости ──
+            // ── Poluchenie dannyh o stoimosti ──
             BuildableData buildData = _moduleMarker != null ? _moduleMarker.Data : null;
             List<InventoryCost> buildCost = buildData != null ? buildData.buildCost : null;
 
@@ -2141,8 +2141,8 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                // ── Позиция для спавна выпавших предметов ──
-                // Немного выше центра модуля, чтобы предметы не застревали в полу
+                // ── Pozitsiya dlya spavna vypavshih predmetov ──
+                // Nemnogo vyshe tsentra modulya, chtoby predmety ne zastrevali v polu
                 int costCount = buildCost.Count;
                 for (int c = 0; c < costCount; c++)
                 {
@@ -2150,7 +2150,7 @@ namespace Hecton8.Gameplay
                     if (cost == null || cost.item == null)
                         continue;
 
-                    // ── Расчёт возврата ──
+                    // ── Raschet vozvrata ──
                     int refundAmount = Mathf.FloorToInt(cost.amount * REFUND_RATIO);
                     if (refundAmount <= 0)
                         continue;
@@ -2159,7 +2159,7 @@ namespace Hecton8.Gameplay
                     {
                         bool addedToInventory = false;
 
-                        // ── Попытка добавить в инвентарь ──
+                        // ── Popytka dobavit v inventar ──
                         int itemHashId = cost.item != null
                             ? Hecton.Localization.LocHash.Compute(cost.item.PersistentId)
                             : 0;
@@ -2169,23 +2169,23 @@ namespace Hecton8.Gameplay
                             playerInventory.TryAddItem(itemHashId, 1))
                             addedToInventory = true;
 
-                        // ── Fallback: спавн в мир ──
+                        // ── Fallback: spavn v mir ──
                         if (!addedToInventory)
                         {
                             SpawnWorldItem(itemHashId, dropPosition, pool, playerInventory);
 
-                            // Смещаем позицию для следующего предмета,
-                            // чтобы они не стакались в одной точке
+                            // Smeschaem pozitsiyu dlya sleduyuschego predmeta,
+                            // chtoby oni ne stakalis v odnoy tochke
                             dropPosition.x += 0.3f;
                         }
                     }
                 }
             }
 
-            // ── Освобождение dry zone ──
+            // ── Osvobozhdenie dry zone ──
             ReleaseAllTrackedObjects();
 
-            // ── Уничтожение модуля через ConstructionManager ──
+            // ── Unichtozhenie modulya cherez ConstructionManager ──
             ConstructionManager cm = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
             if (cm != null)
             {
@@ -2193,7 +2193,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                // Fallback: если ConstructionManager недоступен
+                // Fallback: esli ConstructionManager nedostupen
                 ObjectPoolManager fallbackPool = GlobalRegistry.ObjectPool;
                 if (fallbackPool != null)
                     fallbackPool.Despawn(gameObject);
@@ -2203,15 +2203,15 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Проверяет, можно ли деконструировать этот модуль.
-        /// Используется LaserCutter для валидации перед началом разбора.
+        /// Proveryaet, mozhno li dekonstruirovat etot modul.
+        /// Ispolzuetsya LaserCutter dlya validatsii pered nachalom razbora.
         /// </summary>
         public bool CanDeconstruct()
         {
             if (_isDeconstructing) return false;
 
-            // Будущее: запрет деконструкции при затоплении,
-            // наличии подключённых модулей, питании и т.д.
+            // Buduschee: zapret dekonstruktsii pri zatoplenii,
+            // nalichii podklyuchennyh moduley, pitanii i t.d.
             return true;
         }
 
@@ -2247,21 +2247,21 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Спавнит ресурс как физический предмет в мире.
+        /// Spavnit resurs kak fizicheskiy predmet v mire.
         ///
-        /// Паттерн:
-        ///   1. Если worldItemPrefab назначен → Spawn через ObjectPoolManager.
-        ///   2. Спавненный HectonItem инициализируется по hashId через ItemCatalog.
-        ///   3. Если worldItemPrefab == null → ресурс потерян (с Warning).
+        /// Pattern:
+        ///   1. Esli worldItemPrefab naznachen → Spawn cherez ObjectPoolManager.
+        ///   2. Spavnennyy HectonItem initsializiruetsya po hashId cherez ItemCatalog.
+        ///   3. Esli worldItemPrefab == null → resurs poteryan (s Warning).
         ///
-        /// Разделение ответственностей:
-        ///   BaseModule НЕ знает про конкретный визуал предмета.
-        ///   worldItemPrefab — generic контейнер с HectonItem + Rigidbody.
-        ///   Каталожные данные на HectonItem устанавливаются программно.
+        /// Razdelenie otvetstvennostey:
+        ///   BaseModule NE znaet pro konkretnyy vizual predmeta.
+        ///   worldItemPrefab — generic konteyner s HectonItem + Rigidbody.
+        ///   Katalozhnye dannye na HectonItem ustanavlivayutsya programmno.
         ///
-        /// Будущее: если нужна визуальная дифференциация (разные модели
-        /// для титана vs стекла), worldItemPrefab может быть заменён
-        /// на per-resource world prefab, если появится отдельный визуальный владелец.
+        /// Buduschee: esli nuzhna vizualnaya differentsiatsiya (raznye modeli
+        /// dlya titana vs stekla), worldItemPrefab mozhet byt zamenen
+        /// na per-resource world prefab, esli poyavitsya otdelnyy vizualnyy vladelets.
         /// </summary>
         private void SpawnWorldItem(int itemHashId, Vector3 position, ObjectPoolManager pool, PlayerInventory playerInventory)
         {
@@ -2305,13 +2305,13 @@ namespace Hecton8.Gameplay
             if (itemGO == null)
                 return;
 
-            // ── Инициализация HectonItem данными ──
-            // HectonItem на worldItemPrefab инициализируется hashId через ItemCatalog.
-            // Базовый модуль не тянет asset-ссылки в логику возврата ресурсов.
+            // ── Initsializatsiya HectonItem dannymi ──
+            // HectonItem na worldItemPrefab initsializiruetsya hashId cherez ItemCatalog.
+            // Bazovyy modul ne tyanet asset-ssylki v logiku vozvrata resursov.
             //
-            // АРХИТЕКТУРНОЕ РЕШЕНИЕ:
-            // Визуальный/world seam остаётся внутри HectonItem.
-            // Это чище, чем рефлексия, и сохраняет Zero-GC.
+            // ARHITEKTURNOE REShENIE:
+            // Vizualnyy/world seam ostaetsya vnutri HectonItem.
+            // Eto chische, chem refleksiya, i sohranyaet Zero-GC.
             if (itemGO.TryGetComponent(out HectonItem hectonItem))
             {
                 hectonItem.SetItemByHash(itemCatalog, itemHashId, 1);
@@ -3371,7 +3371,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Одноразовый SFX у модуля через SpatialAudioManager (пул 3D). Луп утечки по-прежнему на <see cref="audioSource"/>.
+        /// Odnorazovyy SFX u modulya cherez SpatialAudioManager (pul 3D). Lup utechki po-prezhnemu na <see cref="audioSource"/>.
         /// </summary>
         private void PlaySpatialSfx(AudioClip clip)
         {

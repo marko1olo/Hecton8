@@ -5,365 +5,365 @@ Status: ARCHIVED
 
 # AI Fauna Chunk Streaming Plan
 
-## Что есть сейчас по факту
+## Chto est seychas po faktu
 
-- `FaunaDirector` уже умеет спавнить и удалять существ вокруг игрока.
-- Но сейчас это не настоящий чанковый мир.
-- Сейчас это кольцо вокруг игрока:
-  - внутренний радиус спавна `50 м`
-  - внешний радиус спавна `150 м`
-  - удаление примерно после `200 м`
-  - глобальный лимит по умолчанию `30`
-  - до `3` спавнов за тик
+- `FaunaDirector` uzhe umeet spavnit i udalyat suschestv vokrug igroka.
+- No seychas eto ne nastoyaschiy chankovyy mir.
+- Seychas eto koltso vokrug igroka:
+  - vnutrenniy radius spavna `50 m`
+  - vneshniy radius spavna `150 m`
+  - udalenie primerno posle `200 m`
+  - globalnyy limit po umolchaniyu `30`
+  - do `3` spavnov za tik
 
-Простыми словами:
-- для прототипа это хорошо
-- для карты `15 x 15 км` этого очень мало
-- так нельзя получить ощущение огроменного живого океана
+Prostymi slovami:
+- dlya prototipa eto horosho
+- dlya karty `15 x 15 km` etogo ochen malo
+- tak nelzya poluchit oschuschenie ogromennogo zhivogo okeana
 
-## Что уже есть в проекте, на что можно опереться
+## Chto uzhe est v proekte, na chto mozhno operetsya
 
 - `ScavengePopulator`
-  - уже умеет жить по чанкам
-  - хранит активные чанки
-  - грузит и выгружает их без каши
+  - uzhe umeet zhit po chankam
+  - hranit aktivnye chanki
+  - gruzit i vygruzhaet ih bez kashi
 - `WorldStreamingDirector`
-  - уже умеет подстраивать стриминг под глубину и скорость игрока
+  - uzhe umeet podstraivat striming pod glubinu i skorost igroka
 - `BiomeSamplerCache`
-  - уже умеет работать по клеткам
+  - uzhe umeet rabotat po kletkam
 - `WorldProceduralScatterDirector`
-  - уже умеет мыслить клетками и окнами
+  - uzhe umeet myslit kletkami i oknami
 
-Простыми словами:
-- чанковое мышление в проекте уже есть
-- именно фауна пока ещё не переведена на этот взрослый режим
+Prostymi slovami:
+- chankovoe myshlenie v proekte uzhe est
+- imenno fauna poka esche ne perevedena na etot vzroslyy rezhim
 
-## Какая архитектура нужна для большой карты
+## Kakaya arhitektura nuzhna dlya bolshoy karty
 
-### 1. Не один спавн-радиус, а 4 слоя жизни мира
+### 1. Ne odin spavn-radius, a 4 sloya zhizni mira
 
-#### Слой 1. Дальняя живая экология
+#### Sloy 1. Dalnyaya zhivaya ekologiya
 
-Это самый дальний слой.
+Eto samyy dalniy sloy.
 
-Тут нет настоящих `GameObject`-существ.
-Тут хранятся только данные:
-- сколько жизни в чанке
-- какие виды там живут
-- спокойный это чанк или опасный
-- есть ли там крупная угроза
-- жив ли редкий хищник
-- когда этот чанк последний раз тревожили
+Tut net nastoyaschih `GameObject`-suschestv.
+Tut hranyatsya tolko dannye:
+- skolko zhizni v chanke
+- kakie vidy tam zhivut
+- spokoynyy eto chank ili opasnyy
+- est li tam krupnaya ugroza
+- zhiv li redkiy hischnik
+- kogda etot chank posledniy raz trevozhili
 
-Простыми словами:
-- мир живёт и без игрока
-- но мы не спавним всю карту честными объектами
+Prostymi slovami:
+- mir zhivet i bez igroka
+- no my ne spavnim vsyu kartu chestnymi obektami
 
-#### Слой 2. Дальняя видимая жизнь
+#### Sloy 2. Dalnyaya vidimaya zhizn
 
-Это средняя дальность.
+Eto srednyaya dalnost.
 
-Тут живут:
-- косяки
-- облака мелкой рыбы
-- простые дальние силуэты
-- иногда дальний крупный силуэт
+Tut zhivut:
+- kosyaki
+- oblaka melkoy ryby
+- prostye dalnie siluety
+- inogda dalniy krupnyy siluet
 
-Тут должны использоваться:
+Tut dolzhny ispolzovatsya:
 - GPU boids
-- дешёвые визуальные прокси
-- очень простая логика без тяжёлого мозга
+- deshevye vizualnye proksi
+- ochen prostaya logika bez tyazhelogo mozga
 
-Простыми словами:
-- игрок видит, что океан населён
-- но CPU не умирает
+Prostymi slovami:
+- igrok vidit, chto okean naselen
+- no CPU ne umiraet
 
-#### Слой 3. Средняя живая зона
+#### Sloy 3. Srednyaya zhivaya zona
 
-Это уже ближе к игроку.
+Eto uzhe blizhe k igroku.
 
-Тут появляются:
-- настоящие одиночные мирные существа
-- настоящие территориальные существа
-- отдельные хищники
+Tut poyavlyayutsya:
+- nastoyaschie odinochnye mirnye suschestva
+- nastoyaschie territorialnye suschestva
+- otdelnye hischniki
 
-Но не весь их мозг работает каждый кадр.
+No ne ves ih mozg rabotaet kazhdyy kadr.
 
-Здесь нужна:
-- редкая логика обновления
-- дешёвое движение
-- ограниченный радиус восприятия
-- отключение тяжёлых подсистем, пока игрок не опасно близко
+Zdes nuzhna:
+- redkaya logika obnovleniya
+- deshevoe dvizhenie
+- ogranichennyy radius vospriyatiya
+- otklyuchenie tyazhelyh podsistem, poka igrok ne opasno blizko
 
-#### Слой 4. Ближняя полная симуляция
+#### Sloy 4. Blizhnyaya polnaya simulyatsiya
 
-Это ближняя зона вокруг игрока.
+Eto blizhnyaya zona vokrug igroka.
 
-Тут работают уже все серьёзные вещи:
-- шум
-- свет
-- расследование
-- предупреждение
-- охота
-- стая
-- защита гнезда
-- крупные сценарии левиафанов
+Tut rabotayut uzhe vse sereznye veschi:
+- shum
+- svet
+- rassledovanie
+- preduprezhdenie
+- ohota
+- staya
+- zaschita gnezda
+- krupnye stsenarii leviafanov
 
-Простыми словами:
-- полный дорогой мозг должен жить только рядом с игроком
+Prostymi slovami:
+- polnyy dorogoy mozg dolzhen zhit tolko ryadom s igrokom
 
-## Предлагаемая геометрия мира для фауны
+## Predlagaemaya geometriya mira dlya fauny
 
-### Чанк фауны
+### Chank fauny
 
-Базовый чанк фауны:
-- `192 x 192 м`
+Bazovyy chank fauny:
+- `192 x 192 m`
 
-Почему так:
-- это уже достаточно крупно для большого мира
-- но не слишком крупно для локальной жизни
-- на карту `15 x 15 км` это даёт управляемую сетку
+Pochemu tak:
+- eto uzhe dostatochno krupno dlya bolshogo mira
+- no ne slishkom krupno dlya lokalnoy zhizni
+- na kartu `15 x 15 km` eto daet upravlyaemuyu setku
 
-### Внутренняя клетка чанка
+### Vnutrennyaya kletka chanka
 
-Внутри чанка:
-- клетка `64 x 64 м`
+Vnutri chanka:
+- kletka `64 x 64 m`
 
-Она нужна для:
-- локальных лимитов
-- безопасного распределения существ
-- дешёвого учёта, где уже занято, а где пусто
+Ona nuzhna dlya:
+- lokalnyh limitov
+- bezopasnogo raspredeleniya suschestv
+- deshevogo ucheta, gde uzhe zanyato, a gde pusto
 
-### Кольца вокруг игрока
+### Koltsa vokrug igroka
 
-Для фауны нужен не один круг, а несколько:
+Dlya fauny nuzhen ne odin krug, a neskolko:
 
-- `0-180 м`
-  - полная симуляция
-- `180-420 м`
-  - средняя симуляция
-- `420-900 м`
-  - дальняя видимая жизнь
-- `900-1800 м`
-  - только данные экологии, без живых объектов
+- `0-180 m`
+  - polnaya simulyatsiya
+- `180-420 m`
+  - srednyaya simulyatsiya
+- `420-900 m`
+  - dalnyaya vidimaya zhizn
+- `900-1800 m`
+  - tolko dannye ekologii, bez zhivyh obektov
 
-Это стартовые числа.
-Их потом надо будет крутить по:
-- глубине
-- скорости игрока
-- плотности биома
+Eto startovye chisla.
+Ih potom nado budet krutit po:
+- glubine
+- skorosti igroka
+- plotnosti bioma
 
-## Как это должно работать в реальности
+## Kak eto dolzhno rabotat v realnosti
 
-### У каждого чанка есть паспорт
+### U kazhdogo chanka est pasport
 
-Нужна структура вроде:
+Nuzhna struktura vrode:
 - `FaunaChunkState`
 
-Она хранит:
-- координату чанка
-- seed чанка
-- семейство биома
-- тип воды
-- уровень мирной жизни
-- уровень угрозы
-- список доступных видов
-- лимит мирных существ
-- лимит территориальных
-- лимит хищников
-- есть ли слот крупной угрозы
-- список уже активных объектов
-- время последней тревоги
+Ona hranit:
+- koordinatu chanka
+- seed chanka
+- semeystvo bioma
+- tip vody
+- uroven mirnoy zhizni
+- uroven ugrozy
+- spisok dostupnyh vidov
+- limit mirnyh suschestv
+- limit territorialnyh
+- limit hischnikov
+- est li slot krupnoy ugrozy
+- spisok uzhe aktivnyh obektov
+- vremya posledney trevogi
 
-Простыми словами:
-- чанк знает, кто в нём вообще может жить
-- и сколько этой жизни там допустимо
+Prostymi slovami:
+- chank znaet, kto v nem voobsche mozhet zhit
+- i skolko etoy zhizni tam dopustimo
 
-### Чанк не спавнит всё подряд
+### Chank ne spavnit vse podryad
 
-При входе игрока в радиус:
-- чанк не создаёт сразу весь зоопарк
-- он смотрит на бюджет
-- и досыпает жизнь постепенно
+Pri vhode igroka v radius:
+- chank ne sozdaet srazu ves zoopark
+- on smotrit na byudzhet
+- i dosypaet zhizn postepenno
 
-То есть:
-- сначала мирная дальняя жизнь
-- потом локальные одиночные
-- потом угрозы
-- потом, если место реально этого требует, крупная встреча
+To est:
+- snachala mirnaya dalnyaya zhizn
+- potom lokalnye odinochnye
+- potom ugrozy
+- potom, esli mesto realno etogo trebuet, krupnaya vstrecha
 
-### Крупные угрозы не живут по маленьким чанкам
+### Krupnye ugrozy ne zhivut po malenkim chankam
 
-Левиафан не должен быть “свой на каждый чанк”.
+Leviafan ne dolzhen byt “svoy na kazhdyy chank”.
 
-Для него нужен отдельный уровень:
+Dlya nego nuzhen otdelnyy uroven:
 - `FaunaMacroZone`
 
-Размер:
-- примерно `600-900 м`
+Razmer:
+- primerno `600-900 m`
 
-Именно в этой макрозоне решается:
-- есть ли тут большой хозяин
-- какой именно
-- где его основные маршруты
-- где игрок может с ним пересечься
+Imenno v etoy makrozone reshaetsya:
+- est li tut bolshoy hozyain
+- kakoy imenno
+- gde ego osnovnye marshruty
+- gde igrok mozhet s nim peresechsya
 
-Простыми словами:
-- левиафан должен быть хозяином большого куска воды
-- а не просто жирным существом из клетки `192 м`
+Prostymi slovami:
+- leviafan dolzhen byt hozyainom bolshogo kuska vody
+- a ne prosto zhirnym suschestvom iz kletki `192 m`
 
-## Как сделать много существ и не убить игру
+## Kak sdelat mnogo suschestv i ne ubit igru
 
-### 1. Не все существа должны быть честными GameObject
+### 1. Ne vse suschestva dolzhny byt chestnymi GameObject
 
-Это главное правило.
+Eto glavnoe pravilo.
 
-Для огромной карты:
-- настоящие `GameObject` нужны только рядом
-- всё остальное должно жить как:
-  - данные
+Dlya ogromnoy karty:
+- nastoyaschie `GameObject` nuzhny tolko ryadom
+- vse ostalnoe dolzhno zhit kak:
+  - dannye
   - boids
-  - прокси
-  - редкие дальние силуэты
+  - proksi
+  - redkie dalnie siluety
 
-### 2. Мирная рыба должна быть массовой, но дешёвой
+### 2. Mirnaya ryba dolzhna byt massovoy, no deshevoy
 
-Правильный баланс такой:
-- массовая мелкая жизнь = GPU / прокси
-- одиночные интересные существа = обычный AI
-- опасные умные существа = полный AI
+Pravilnyy balans takoy:
+- massovaya melkaya zhizn = GPU / proksi
+- odinochnye interesnye suschestva = obychnyy AI
+- opasnye umnye suschestva = polnyy AI
 
-Иначе:
-- либо мир пустой
-- либо CPU умирает
+Inache:
+- libo mir pustoy
+- libo CPU umiraet
 
-### 3. Чанки должны работать по бюджету за тик
+### 3. Chanki dolzhny rabotat po byudzhetu za tik
 
-Нужно жёстко ограничить:
-- сколько чанков можно обновить за тик
-- сколько существ можно досоздать за тик
-- сколько дорогих переходов AI можно включить за тик
+Nuzhno zhestko ogranichit:
+- skolko chankov mozhno obnovit za tik
+- skolko suschestv mozhno dosozdat za tik
+- skolko dorogih perehodov AI mozhno vklyuchit za tik
 
-Простыми словами:
-- никакой “игрок резко поплыл и мы создали 200 существ за кадр”
+Prostymi slovami:
+- nikakoy “igrok rezko poplyl i my sozdali 200 suschestv za kadr”
 
-### 4. Сохранение тоже должно быть чанковым
+### 4. Sohranenie tozhe dolzhno byt chankovym
 
-Сохранять надо не всю фауну карты как живые объекты.
+Sohranyat nado ne vsyu faunu karty kak zhivye obekty.
 
-Нужно сохранять только:
-- состояние чанков
-- убитых редких существ
-- потревоженные гнёзда
-- истощённые особые точки
-- состояние крупных угроз
+Nuzhno sohranyat tolko:
+- sostoyanie chankov
+- ubityh redkih suschestv
+- potrevozhennye gnezda
+- istoschennye osobye tochki
+- sostoyanie krupnyh ugroz
 
-Простыми словами:
-- save должен помнить важные последствия
-- но не обязан хранить траекторию каждой мелкой рыбки
+Prostymi slovami:
+- save dolzhen pomnit vazhnye posledstviya
+- no ne obyazan hranit traektoriyu kazhdoy melkoy rybki
 
-## Какой баланс по видам нужен для такой карты
+## Kakoy balans po vidam nuzhen dlya takoy karty
 
-### Мирной жизни должно быть на порядки больше, но не честными AI-объектами
+### Mirnoy zhizni dolzhno byt na poryadki bolshe, no ne chestnymi AI-obektami
 
-Для большой карты нормальная идея такая:
+Dlya bolshoy karty normalnaya ideya takaya:
 
-- мирная массовая жизнь:
-  - очень много
-  - в основном boids и прокси
-- мирная интересная жизнь:
-  - заметно меньше
-  - уже честные объекты
-- территориальные:
-  - редкие точки характера
-- хищники:
-  - ещё реже
-- крупные хищники:
-  - локальные события
-- левиафаны:
-  - редкие хозяева больших участков
+- mirnaya massovaya zhizn:
+  - ochen mnogo
+  - v osnovnom boids i proksi
+- mirnaya interesnaya zhizn:
+  - zametno menshe
+  - uzhe chestnye obekty
+- territorialnye:
+  - redkie tochki haraktera
+- hischniki:
+  - esche rezhe
+- krupnye hischniki:
+  - lokalnye sobytiya
+- leviafany:
+  - redkie hozyaeva bolshih uchastkov
 
-Простыми словами:
-- игрок должен почти всегда видеть жизнь
-- но не почти всегда видеть бой
+Prostymi slovami:
+- igrok dolzhen pochti vsegda videt zhizn
+- no ne pochti vsegda videt boy
 
-### Для мелководья
+### Dlya melkovodya
 
-Раз карта огромная, мелководье не должно быть “стартовой лужей”.
+Raz karta ogromnaya, melkovode ne dolzhno byt “startovoy luzhey”.
 
-Там должно быть:
-- много мирной жизни
-- редкие территориальные хозяева рифов
-- редкие хищные карманы
-- 1-2 очень редкие крупные поверхностные setpiece-встречи
+Tam dolzhno byt:
+- mnogo mirnoy zhizni
+- redkie territorialnye hozyaeva rifov
+- redkie hischnye karmany
+- 1-2 ochen redkie krupnye poverhnostnye setpiece-vstrechi
 
-### Для средней глубины
+### Dlya sredney glubiny
 
-Там должно быть:
-- меньше массовой красоты
-- больше локальной опасности
-- больше интересных проходов и засад
+Tam dolzhno byt:
+- menshe massovoy krasoty
+- bolshe lokalnoy opasnosti
+- bolshe interesnyh prohodov i zasad
 
-### Для поздней глубины
+### Dlya pozdney glubiny
 
-Там должно быть:
-- меньше общего шума
-- больше давления
-- больше умных хищников
-- крупные угрозы в именованных местах
+Tam dolzhno byt:
+- menshe obschego shuma
+- bolshe davleniya
+- bolshe umnyh hischnikov
+- krupnye ugrozy v imenovannyh mestah
 
-## Что именно надо делать следующим кодом
+## Chto imenno nado delat sleduyuschim kodom
 
-### Шаг 1
+### Shag 1
 
-Сделать новый слой данных:
+Sdelat novyy sloy dannyh:
 - `FaunaChunkState`
 - `FaunaMacroZoneState`
 
-### Шаг 2
+### Shag 2
 
-Перевести `FaunaDirector` из режима:
-- “кольцо вокруг игрока”
+Perevesti `FaunaDirector` iz rezhima:
+- “koltso vokrug igroka”
 
-в режим:
-- “активные чанки вокруг игрока”
+v rezhim:
+- “aktivnye chanki vokrug igroka”
 
-### Шаг 3
+### Shag 3
 
-Добавить уровни симуляции:
-- дальняя экология
-- дальняя видимая жизнь
-- средняя симуляция
-- полная ближняя симуляция
+Dobavit urovni simulyatsii:
+- dalnyaya ekologiya
+- dalnyaya vidimaya zhizn
+- srednyaya simulyatsiya
+- polnaya blizhnyaya simulyatsiya
 
-### Шаг 4
+### Shag 4
 
-Вывести мирную массовую жизнь в отдельный дешёвый слой:
+Vyvesti mirnuyu massovuyu zhizn v otdelnyy deshevyy sloy:
 - boids
-- либо очень дешёвые групповые прокси
+- libo ochen deshevye gruppovye proksi
 
-### Шаг 5
+### Shag 5
 
-Сделать для крупных угроз отдельные макрозоны, а не выдавать их по обычной логике маленьких чанков
+Sdelat dlya krupnyh ugroz otdelnye makrozony, a ne vydavat ih po obychnoy logike malenkih chankov
 
-## Честный вывод
+## Chestnyy vyvod
 
-### На вопрос “есть ли у нас чанки?”
+### Na vopros “est li u nas chanki?”
 
-Ответ:
-- в проекте чанковое мышление уже есть
-- но именно фауна пока ещё не переведена на настоящий чанковый режим
+Otvet:
+- v proekte chankovoe myshlenie uzhe est
+- no imenno fauna poka esche ne perevedena na nastoyaschiy chankovyy rezhim
 
-### На вопрос “как это должно быть реализовано?”
+### Na vopros “kak eto dolzhno byt realizovano?”
 
-Ответ:
-- не одним радиусом вокруг игрока
-- а чанками + слоями симуляции + макрозонами крупных угроз
+Otvet:
+- ne odnim radiusom vokrug igroka
+- a chankami + sloyami simulyatsii + makrozonami krupnyh ugroz
 
-### На вопрос “как сделать очень много существ и не убить игру?”
+### Na vopros “kak sdelat ochen mnogo suschestv i ne ubit igru?”
 
-Ответ:
-- не пытаться делать всех существ полными AI-объектами
-- массовую жизнь держать в дешёвом слое
-- полный AI включать только рядом
-- крупные события держать отдельно на уровне больших зон
+Otvet:
+- ne pytatsya delat vseh suschestv polnymi AI-obektami
+- massovuyu zhizn derzhat v deshevom sloe
+- polnyy AI vklyuchat tolko ryadom
+- krupnye sobytiya derzhat otdelno na urovne bolshih zon

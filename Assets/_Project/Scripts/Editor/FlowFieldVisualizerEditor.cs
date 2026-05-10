@@ -1,9 +1,9 @@
 // ============================================================================
 // HECTON-8 — FlowFieldVisualizerEditor.cs
-// Редакторские утилиты для FlowFieldVisualizer.
+// Redaktorskie utility dlya FlowFieldVisualizer.
 //
-// Добавляет кнопки в Inspector для быстрого управления
-// и пункт меню для создания визуализатора.
+// Dobavlyaet knopki v Inspector dlya bystrogo upravleniya
+// i punkt menyu dlya sozdaniya vizualizatora.
 // ============================================================================
 
 #if UNITY_EDITOR
@@ -71,7 +71,7 @@ public static class FlowFieldVisualizerMenu
         const string FolderPath = "Assets/_Project/Data";
         string path = AssetDatabase.GenerateUniqueAssetPath(FolderPath + "/FlowFieldProfile.asset");
 
-        // Создаём папку, если не существует
+        // Sozdaem papku, esli ne suschestvuet
         string dir = System.IO.Path.GetDirectoryName(path);
         if (!AssetDatabase.IsValidFolder(dir))
             AssetDatabase.CreateFolder("Assets/_Project", "Data");

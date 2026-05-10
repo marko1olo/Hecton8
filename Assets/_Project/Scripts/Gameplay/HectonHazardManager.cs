@@ -87,9 +87,10 @@ namespace Hecton8.Gameplay
             if (!IsFiniteRuntimePosition(runtimePoint))
                 return 0f;
 
+            AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePoint);
             HazardZoneManager zoneManager = TryResolveZoneManager();
             return zoneManager != null
-                ? zoneManager.GetHazardIntensity(runtimePoint, type)
+                ? zoneManager.GetHazardIntensity(in pointAup, type)
                 : 0f;
         }
 

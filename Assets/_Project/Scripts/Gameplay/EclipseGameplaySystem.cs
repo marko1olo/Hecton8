@@ -1,23 +1,23 @@
 // ============================================================================
 // HECTON-8 — EclipseGameplaySystem.cs
-// Геймплейные последствия Великого Затмения.
+// Geympleynye posledstviya Velikogo Zatmeniya.
 //
-// ЛОР (лор1):
-//   • Температура падает на 8°C за минуту
-//   • Ночные хищники поднимаются из глубины
-//   • Биолюминесценция усиливается
-//   • Бездонник поднимается до 200-300м
-//   • Planet-shine — единственное освещение
+// LOR (lor1):
+//   • Temperatura padaet na 8°C za minutu
+//   • Nochnye hischniki podnimayutsya iz glubiny
+//   • Biolyuminestsentsiya usilivaetsya
+//   • Bezdonnik podnimaetsya do 200-300m
+//   • Planet-shine — edinstvennoe osveschenie
 //
-// АРХИТЕКТУРА:
-//   • Слушает CelestialEvents eclipse start/end lane.
-//   • Публикует события для HUD, атмосферы, фауны.
-//   • ISlowTickable — температурный дрейф во время затмения.
-//   • Интегрируется с HectonAtmosphereManager через событие.
+// ARHITEKTURA:
+//   • Slushaet CelestialEvents eclipse start/end lane.
+//   • Publikuet sobytiya dlya HUD, atmosfery, fauny.
+//   • ISlowTickable — temperaturnyy dreyf vo vremya zatmeniya.
+//   • Integriruetsya s HectonAtmosphereManager cherez sobytie.
 //
 // ZERO GC:
-//   • Никаких new/LINQ в SlowTick.
-//   • Static events для decoupled уведомлений.
+//   • Nikakih new/LINQ v SlowTick.
+//   • Static events dlya decoupled uvedomleniy.
 // ============================================================================
 
 using System;
@@ -323,25 +323,25 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Temperature ─────────────────────────────")]
-        [Tooltip("Скорость падения температуры во время затмения (°C/сек).")]
-        [SerializeField] private float temperatureCoolRate = 0.133f; // 8°C/мин = 0.133°C/сек
+        [Tooltip("Skorost padeniya temperatury vo vremya zatmeniya (°C/sek).")]
+        [SerializeField] private float temperatureCoolRate = 0.133f; // 8°C/min = 0.133°C/sek
 
-        [Tooltip("Максимальное падение температуры за одно затмение (°C).")]
+        [Tooltip("Maksimalnoe padenie temperatury za odno zatmenie (°C).")]
         [SerializeField] private float maxTemperatureDrop = 8f;
 
-        [Tooltip("Скорость восстановления температуры после затмения (°C/сек).")]
+        [Tooltip("Skorost vosstanovleniya temperatury posle zatmeniya (°C/sek).")]
         [SerializeField] private float temperatureRecoveryRate = 0.05f;
 
         [Header("── Night Predators ──────────────────────────")]
-        [Tooltip("Задержка перед подъёмом ночных хищников (сек после начала затмения).")]
+        [Tooltip("Zaderzhka pered podemom nochnyh hischnikov (sek posle nachala zatmeniya).")]
         [SerializeField] private float predatorRiseDelay = 60f;
 
-        [Tooltip("Интенсивность подъёма хищников [0..1].")]
+        [Tooltip("Intensivnost podema hischnikov [0..1].")]
         [SerializeField, Range(0f, 1f)] private float predatorRiseIntensity = 0.7f;
         [SerializeField, Min(0f)] private float predatorRiseHoldSeconds = 180f;
 
         [Header("── Bioluminescence ────────────────────────")]
-        [Tooltip("Множитель биолюминесценции во время затмения.")]
+        [Tooltip("Mnozhitel biolyuminestsentsii vo vremya zatmeniya.")]
         [SerializeField] private float biolumMultiplier = 2f;
 
         [Header("Eclipse Audio")]
@@ -423,7 +423,7 @@ namespace Hecton8.Gameplay
             {
                 _eclipseTimer += dt;
 
-                // Температурный дрейф
+                // Temperaturnyy dreyf
                 if (_currentTempDrop < maxTemperatureDrop)
                 {
                     float newDrop = Mathf.Min(maxTemperatureDrop,
@@ -436,7 +436,7 @@ namespace Hecton8.Gameplay
                     }
                 }
 
-                // Ночные хищники поднимаются после задержки
+                // Nochnye hischniki podnimayutsya posle zaderzhki
                 if (!_predatorsRisen && _eclipseTimer >= predatorRiseDelay)
                 {
                     _predatorsRisen = true;
@@ -451,7 +451,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                // Восстановление температуры
+                // Vosstanovlenie temperatury
                 if (_currentTempDrop > 0f)
                 {
                     _currentTempDrop = Mathf.Max(0f,
@@ -504,7 +504,7 @@ namespace Hecton8.Gameplay
                 LocalizationKeys.ECLIPSE_EVENT_STARTED,
                 "GREAT ECLIPSE - TEMPERATURE FALLING. NIGHT PREDATORS ASCENDING."));
 
-            // Биолюминесценция усиливается
+            // Biolyuminestsentsiya usilivaetsya
             PublishBiolumMultiplier(ResolveTargetBiolumMultiplier());
             PublishEclipseAcousticPitchShift(ResolveTargetAcousticPitchShiftCents());
 
@@ -521,7 +521,7 @@ namespace Hecton8.Gameplay
                 LocalizationKeys.ECLIPSE_EVENT_ENDED,
                 "ECLIPSE ENDED - TEMPERATURE RECOVERING."));
 
-            // Биолюминесценция возвращается к норме
+            // Biolyuminestsentsiya vozvraschaetsya k norme
             PublishBiolumMultiplier(1f);
             PublishEclipseAcousticPitchShift(0f);
 

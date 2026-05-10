@@ -664,7 +664,8 @@ namespace Hecton8.Interaction
             ResolveSwimBlockoutRig();
             EnsureRuntimeProxy();
             ResolveOpposingHandAttachment();
-            AllocatePersistentBuffers();
+            if (HectonXRRuntimeState.IsXRActive)
+                AllocatePersistentBuffers();
             ResolveFingerSegments();
             if (enableSuitCollisionShell)
                 EnsureSuitCollisionShell();
@@ -673,7 +674,8 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
-            AllocatePersistentBuffers();
+            if (HectonXRRuntimeState.IsXRActive)
+                AllocatePersistentBuffers();
             if (enableSuitCollisionShell)
                 EnsureSuitCollisionShell();
         }
@@ -1539,6 +1541,9 @@ namespace Hecton8.Interaction
         private void ScheduleFingerPoseBatch()
         {
             if (_fingerPoseScheduled)
+                return;
+
+            if (!HectonXRRuntimeState.IsXRActive || fingerSegments == null || fingerSegments.Length <= 0)
                 return;
 
             if (_runtimeGripPoint == null || _activeBody == null)

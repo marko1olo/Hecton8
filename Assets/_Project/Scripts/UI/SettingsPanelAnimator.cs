@@ -1,5 +1,6 @@
-using UnityEngine;
 using Hecton8.Core;
+using System.Runtime.InteropServices;
+using UnityEngine;
 
 namespace Hecton8.UI
 {
@@ -33,10 +34,6 @@ namespace Hecton8.UI
         [SerializeField] private float actionsDelay = 0.6f;
         [SerializeField] private float actionsDuration = 0.3f;
 
-        [Header("=== EASING ===")]
-        [SerializeField] private AnimationCurve fadeInCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-        [SerializeField] private AnimationCurve fadeOutCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
-
         [Header("=== FADE OUT ===")]
         [SerializeField] private bool supportFadeOut = true;
         [SerializeField] private float fadeOutDuration = 0.2f;
@@ -45,6 +42,9 @@ namespace Hecton8.UI
         // FIELDS
         // ══════════════════════════════════════════════════════════
 
+        private const byte AnimationIncomplete = 0;
+        private const byte AnimationComplete = 1;
+
         private enum State { Idle, FadingIn, FadingOut }
 
         private State _state;
@@ -52,12 +52,12 @@ namespace Hecton8.UI
         private bool _registered;
         private System.Action _onFadeOutComplete;
 
-        // Animation state per group
+        [StructLayout(LayoutKind.Sequential)]
         private struct GroupState
         {
             public float startTime;
             public float duration;
-            public bool completed;
+            public byte completed;
         }
 
         private GroupState _headerState;
@@ -76,7 +76,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            TryRegister();
+            if (_state != State.Idle)
+                TryRegister();
         }
 
         private void OnDisable()
@@ -96,7 +97,10 @@ namespace Hecton8.UI
         public void Tick(float dt)
         {
             if (_state == State.Idle)
+            {
+                Unregister();
                 return;
+            }
 
             _timer += dt;
 
@@ -113,7 +117,7 @@ namespace Hecton8.UI
         private void TickFadeIn()
         {
             // Animate header
-            if (!_headerState.completed)
+            if (_headerState.completed != AnimationComplete)
                 AnimateGroupFadeIn(headerGroup, ref _headerState);
 
             // Animate preset buttons
@@ -121,7 +125,7 @@ namespace Hecton8.UI
             {
                 for (int i = 0; i < _presetStates.Length && i < presetButtonGroups.Length; i++)
                 {
-                    if (!_presetStates[i].completed)
+                    if (_presetStates[i].completed != AnimationComplete)
                         AnimateGroupFadeIn(presetButtonGroups[i], ref _presetStates[i]);
                 }
             }
@@ -131,24 +135,28 @@ namespace Hecton8.UI
             {
                 for (int i = 0; i < _settingsStates.Length && i < settingsRowGroups.Length; i++)
                 {
-                    if (!_settingsStates[i].completed)
+                    if (_settingsStates[i].completed != AnimationComplete)
                         AnimateGroupFadeIn(settingsRowGroups[i], ref _settingsStates[i]);
                 }
             }
 
             // Animate action buttons
-            if (!_actionsState.completed)
+            if (_actionsState.completed != AnimationComplete)
                 AnimateGroupFadeIn(actionButtonsGroup, ref _actionsState);
 
             // Check if all animations complete
             if (IsAnimationComplete())
+            {
                 _state = State.Idle;
+                Unregister();
+            }
         }
 
         private void TickFadeOut()
         {
-            float t = Mathf.Clamp01(_timer / fadeOutDuration);
-            float alpha = fadeOutCurve.Evaluate(t);
+            float duration = fadeOutDuration > 0.0001f ? fadeOutDuration : 0.0001f;
+            float t = Mathf.Clamp01(_timer / duration);
+            float alpha = 1f - SmoothStep01(t);
 
             // Fade out all groups simultaneously
             if (headerGroup != null)
@@ -178,9 +186,11 @@ namespace Hecton8.UI
             // Check if fade out complete
             if (t >= 1f)
             {
-                _state = State.Idle;
-                _onFadeOutComplete?.Invoke();
+                System.Action onComplete = _onFadeOutComplete;
                 _onFadeOutComplete = null;
+                _state = State.Idle;
+                Unregister();
+                onComplete?.Invoke();
             }
         }
 
@@ -195,6 +205,7 @@ namespace Hecton8.UI
         {
             _state = State.FadingIn;
             _timer = 0f;
+            _onFadeOutComplete = null;
             InitializeStates();
             HideAllGroups();
             TryRegister();
@@ -208,6 +219,9 @@ namespace Hecton8.UI
         {
             if (!supportFadeOut)
             {
+                _state = State.Idle;
+                _onFadeOutComplete = null;
+                Unregister();
                 onComplete?.Invoke();
                 return;
             }
@@ -224,7 +238,9 @@ namespace Hecton8.UI
         public void SkipAnimation()
         {
             _state = State.Idle;
+            _onFadeOutComplete = null;
             ShowAllGroups();
+            Unregister();
         }
 
         /// <summary>
@@ -246,37 +262,51 @@ namespace Hecton8.UI
             {
                 startTime = headerDelay,
                 duration = headerDuration,
-                completed = false
+                completed = AnimationIncomplete
             };
 
             // Preset buttons
-            if (presetButtonGroups != null && presetButtonGroups.Length > 0)
+            int presetCount = presetButtonGroups != null ? presetButtonGroups.Length : 0;
+            if (presetCount > 0)
             {
-                _presetStates = new GroupState[presetButtonGroups.Length]; // COLD ALLOC: GroupState[4] — preset button animation states
-                for (int i = 0; i < presetButtonGroups.Length; i++)
+                if (_presetStates == null || _presetStates.Length != presetCount)
+                    _presetStates = new GroupState[presetCount]; // COLD ALLOC: GroupState[presetCount] — cached preset button animation states
+
+                for (int i = 0; i < presetCount; i++)
                 {
                     _presetStates[i] = new GroupState
                     {
                         startTime = presetDelay + i * presetStagger,
                         duration = presetDuration,
-                        completed = false
+                        completed = AnimationIncomplete
                     };
                 }
             }
+            else
+            {
+                _presetStates = null;
+            }
 
             // Settings rows
-            if (settingsRowGroups != null && settingsRowGroups.Length > 0)
+            int settingsCount = settingsRowGroups != null ? settingsRowGroups.Length : 0;
+            if (settingsCount > 0)
             {
-                _settingsStates = new GroupState[settingsRowGroups.Length]; // COLD ALLOC: GroupState[N] — settings row animation states
-                for (int i = 0; i < settingsRowGroups.Length; i++)
+                if (_settingsStates == null || _settingsStates.Length != settingsCount)
+                    _settingsStates = new GroupState[settingsCount]; // COLD ALLOC: GroupState[settingsCount] — cached settings row animation states
+
+                for (int i = 0; i < settingsCount; i++)
                 {
                     _settingsStates[i] = new GroupState
                     {
                         startTime = settingsDelay + i * settingsStagger,
                         duration = settingsDuration,
-                        completed = false
+                        completed = AnimationIncomplete
                     };
                 }
+            }
+            else
+            {
+                _settingsStates = null;
             }
 
             // Action buttons
@@ -284,37 +314,38 @@ namespace Hecton8.UI
             {
                 startTime = actionsDelay,
                 duration = actionsDuration,
-                completed = false
+                completed = AnimationIncomplete
             };
         }
 
         private void AnimateGroupFadeIn(CanvasGroup group, ref GroupState state)
         {
-            if (group == null || state.completed)
+            if (group == null || state.completed == AnimationComplete)
                 return;
 
             if (_timer < state.startTime)
                 return;
 
             float elapsed = _timer - state.startTime;
-            float t = Mathf.Clamp01(elapsed / state.duration);
-            float alpha = fadeInCurve.Evaluate(t);
+            float duration = state.duration > 0.0001f ? state.duration : 0.0001f;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float alpha = SmoothStep01(t);
             group.alpha = alpha;
 
             if (t >= 1f)
-                state.completed = true;
+                state.completed = AnimationComplete;
         }
 
         private bool IsAnimationComplete()
         {
-            if (!_headerState.completed)
+            if (_headerState.completed != AnimationComplete)
                 return false;
 
             if (_presetStates != null)
             {
                 for (int i = 0; i < _presetStates.Length; i++)
                 {
-                    if (!_presetStates[i].completed)
+                    if (_presetStates[i].completed != AnimationComplete)
                         return false;
                 }
             }
@@ -323,15 +354,20 @@ namespace Hecton8.UI
             {
                 for (int i = 0; i < _settingsStates.Length; i++)
                 {
-                    if (!_settingsStates[i].completed)
+                    if (_settingsStates[i].completed != AnimationComplete)
                         return false;
                 }
             }
 
-            if (!_actionsState.completed)
+            if (_actionsState.completed != AnimationComplete)
                 return false;
 
             return true;
+        }
+
+        private static float SmoothStep01(float t)
+        {
+            return t * t * (3f - (2f * t));
         }
 
         private void HideAllGroups()
@@ -396,9 +432,15 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
+            if (GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI))
+            {
+                _registered = true;
+                return;
+            }
+
             _registered =
-                GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI) ||
-                GlobalRegistry.Updatables.Contains(this);
+                GlobalRegistry.Updatables.Contains(this) ||
+                SystemDispatcher.GetLane(PriorityLayer.UI).Contains(this);
         }
 
         private void Unregister()

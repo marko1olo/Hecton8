@@ -103,7 +103,7 @@ namespace Hecton.Localization
         private const string DeepAbyssZoneId = "zone_deep_abyss";
         private const string CorruptionBlocks = "#%&█";
         private const string LatinCorruptionAlphabet = "AEINORSTUVWXYZ";
-        private const string CyrillicCorruptionAlphabet = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+        private const string CyrillicCorruptionAlphabet = "ABVGDEZhZIYKLMNOPRSTUFHTsChShSchYEYuYa";
         private const string ArabicCorruptionAlphabet = "ابتثجحخدذرزسشصضطظعغفقكلمنهوي";
         private const string CjkCorruptionAlphabet = "深海圧壳酸氧流核域警号層站影断障";
         private const string HangulCorruptionAlphabet = "심해압력산소전력균열경보파손격리영역장치";
@@ -875,7 +875,7 @@ namespace Hecton.Localization
             if (_cachedPlayerToolManager != null)
                 return _cachedPlayerToolManager;
 
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
+            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
                 return null;
 
             _cachedPlayerToolManager = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null) ? Hecton8.Core.GlobalRegistry.Player.ToolManager : playerTransform.GetComponent<PlayerToolManager>());
@@ -1060,7 +1060,7 @@ namespace Hecton.Localization
             {
                 playerTransform = playerMovement.transform;
             }
-            else if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform resolvedTransform))
+            else if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform resolvedTransform))
             {
                 playerTransform = resolvedTransform;
             }
@@ -1195,7 +1195,7 @@ namespace Hecton.Localization
             if (_cachedPlayerMovement != null)
                 return _cachedPlayerMovement;
 
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
+            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
                 return null;
 
             _cachedPlayerMovement = playerTransform.GetComponent<HectonPlayerMovement>();
@@ -1580,21 +1580,21 @@ namespace Hecton.Localization
             {
                 _tables[GameLanguage.Russian] = new Dictionary<string, string>(160)
                 {
-                    { LocalizationKeys.MENU_NEW_GAME, "Новая игра" },
-                    { LocalizationKeys.MENU_LOAD_GAME, "Загрузить" },
-                    { LocalizationKeys.MENU_SETTINGS, "Настройки" },
-                    { LocalizationKeys.MENU_QUIT, "Выход" },
-                    { LocalizationKeys.MODAL_CONFIRM, "Подтвердить" },
-                    { LocalizationKeys.MODAL_CANCEL, "Отмена" },
-                    { LocalizationKeys.MODAL_NEW_GAME_TITLE, "Новая игра" },
-                    { LocalizationKeys.MODAL_NEW_GAME_MESSAGE, "Начать новую игру?" },
-                    { LocalizationKeys.MODAL_LOAD_TITLE, "Загрузка" },
-                    { LocalizationKeys.MODAL_LOAD_MESSAGE, "Загрузить сохранение \"{0}\"?" },
-                    { LocalizationKeys.MODAL_QUIT_TITLE, "Выход" },
-                    { LocalizationKeys.MODAL_QUIT_MESSAGE, "Выйти из игры?" },
-                    { LocalizationKeys.SLOT_PREFIX, "СЛОТ" },
-                    { LocalizationKeys.SLOT_NO_DATA, "НЕТ ДАННЫХ" },
-                    { LocalizationKeys.SLOT_PLAYTIME, "Время игры" },
+                    { LocalizationKeys.MENU_NEW_GAME, "Novaya igra" },
+                    { LocalizationKeys.MENU_LOAD_GAME, "Zagruzit" },
+                    { LocalizationKeys.MENU_SETTINGS, "Nastroyki" },
+                    { LocalizationKeys.MENU_QUIT, "Vyhod" },
+                    { LocalizationKeys.MODAL_CONFIRM, "Podtverdit" },
+                    { LocalizationKeys.MODAL_CANCEL, "Otmena" },
+                    { LocalizationKeys.MODAL_NEW_GAME_TITLE, "Novaya igra" },
+                    { LocalizationKeys.MODAL_NEW_GAME_MESSAGE, "Nachat novuyu igru?" },
+                    { LocalizationKeys.MODAL_LOAD_TITLE, "Zagruzka" },
+                    { LocalizationKeys.MODAL_LOAD_MESSAGE, "Zagruzit sohranenie \"{0}\"?" },
+                    { LocalizationKeys.MODAL_QUIT_TITLE, "Vyhod" },
+                    { LocalizationKeys.MODAL_QUIT_MESSAGE, "Vyyti iz igry?" },
+                    { LocalizationKeys.SLOT_PREFIX, "SLOT" },
+                    { LocalizationKeys.SLOT_NO_DATA, "NET DANNYH" },
+                    { LocalizationKeys.SLOT_PLAYTIME, "Vremya igry" },
                     { LocalizationKeys.LOADING_PERCENT, "{0}%" },
                 };
             }

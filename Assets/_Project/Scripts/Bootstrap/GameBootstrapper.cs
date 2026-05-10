@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.AI;
 using Hecton8.Atmosphere;
@@ -26,6 +28,8 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
+using Unity.Profiling.LowLevel.Unsafe;
 #if UNITY_ADDRESSABLES_EXIST
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -37,6 +41,25 @@ using UnityEngine.UI;
 
 namespace Hecton8.Bootstrap
 {
+    public enum GameBootstrapperEventType : byte
+    {
+        GameReady = 0,
+        BootstrapFailed = 1
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GameBootstrapperEventPayload
+    {
+        public uint ErrorHash;
+        public ushort EventType;
+        public ushort Reserved;
+    }
+
+    public interface IGameBootstrapperEventListener
+    {
+        void OnGameBootstrapperEvent(in GameBootstrapperEventPayload payload);
+    }
+
     /// <summary>
     /// Deterministic bootstrap owner for the GlobalRegistry core and guarded scene routing.
     /// </summary>
@@ -47,6 +70,7 @@ namespace Hecton8.Bootstrap
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string MainMenuSceneName = "01_MAIN_MENU";
         private const string FatalBootCrashFileName = "fatal_boot_crash.log";
+        private const string BootStateFileName = "boot.bin";
         private const string PersistentRootName = "[PROJECT_PERSISTENT_ROOT]";
         private const string BootstrapAudioListenerRuntimeName = "[BootstrapAudioListener]";
         private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
@@ -61,20 +85,64 @@ namespace Hecton8.Bootstrap
         private const int ShaderWarmupTimeoutMilliseconds = 5000;
         private const int SuspiciousGraphicsMemoryFallbackThresholdMb = 256;
         private const double ObjectPoolWarmupFrameBudgetMilliseconds = 8.0d;
-        private const string FatalBootOverlayMessageTemplate =
-            "BIOS ERROR 0xBOOT_FATAL\nPHASE: {0}\nACTION: SEE fatal_boot_crash.log";
         private const int FatalBootCrashLogBufferBytes = 24576;
-        private const string BiosErrorMessageTemplate =
-            "BIOS ERROR 0xBOOT\nEXPECTED: 00_BOOTSTRAP [0]\nDETECTED: {0} [{1}]\nACTION: FORCED RECOVERY";
+        private const int BootStateRecordBytes = 32;
+        private const uint BootStateMagic = 0x38484248u; // HBH8
+        private const ushort BootStateVersion = 1;
+        private const int PendingEventCapacity = 12;
+        private const int SceneRootGraphLimit = 512;
+        private const int WarmupBatchSize = 8;
+        private const float WorldReadyPollIntervalSec = 0.1f;
+        private const int WorldReadyThreshold = 100;
+        private const int WorldReadyStagnationPollLimit = 40;
+        private const float GroundCheckPollIntervalSec = 0.2f;
+        private const float GroundCheckRayOffset = 2f;
+        private const float GroundCheckRayLength = 1000f;
+        private const float GroundCheckLogIntervalSec = 5f;
+        private const float BytesPerMegabyte = 1024f * 1024f;
+        private const int LowMemorySystemThresholdMb = 6144;
+        private const int LowMemoryVramThresholdMb = 2048;
         private const double BootstrapSceneLoadWatchdogSeconds = 10.0d;
         private const double BootstrapJobWaitWatchdogSeconds = 10.0d;
         private const int BootstrapSceneRootScratchCapacity = 256;
         private const int BootstrapTransformScratchCapacity = 4096;
         private static readonly UTF8Encoding _fatalBootCrashEncoding = new UTF8Encoding(false);
+#if UNITY_INCLUDE_TESTS
+        private static readonly bool _isUnityTestRunnerProcess = ResolveUnityTestRunnerProcess();
+#endif
         // COLD ALLOC: List<GameObject>[256] - bootstrap scene-root traversal scratch without scene-wide array allocation - owner: GameBootstrapper
         private static readonly List<GameObject> _bootstrapSceneRootScratch = new List<GameObject>(BootstrapSceneRootScratchCapacity);
         // COLD ALLOC: List<Transform>[4096] - bootstrap transform traversal scratch without recursive iterator allocation - owner: GameBootstrapper
         private static readonly List<Transform> _bootstrapTransformScratch = new List<Transform>(BootstrapTransformScratchCapacity);
+        // COLD ALLOC: StringBuilder[256] - BIOS route-error overlay formatter without string.Format params/boxing - owner: GameBootstrapper
+        private static readonly StringBuilder _biosErrorMessageBuilder = new StringBuilder(256);
+        // COLD ALLOC: StringBuilder[128] - fatal boot overlay formatter without string.Format params array - owner: GameBootstrapper
+        private static readonly StringBuilder _fatalOverlayMessageBuilder = new StringBuilder(128);
+        // COLD ALLOC: RegistryBucket<IGameBootstrapperEventListener>[12] - bootstrap listeners drained on dispatcher LateUpdate - owner: GameBootstrapper
+        private static readonly RegistryBucket<IGameBootstrapperEventListener> _listeners =
+            new RegistryBucket<IGameBootstrapperEventListener>(PendingEventCapacity);
+        // COLD ALLOC: Dictionary<uint,string>[8] - hashed bootstrap failure reasons for cold-path diagnostics resolution - owner: GameBootstrapper
+        private static readonly Dictionary<uint, string> _failureReasonsByHash = new Dictionary<uint, string>(8);
+        private static NativeQueue<GameBootstrapperEventPayload> _pendingEvents;
+        private static NativeQueue<GameBootstrapperEventPayload> _nextFrameEvents;
+        private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
+#if UNITY_EDITOR
+        private static string _pendingDirtySceneReloadPath;
+        private static readonly List<GameObject> _dontDestroyRootScratch = new List<GameObject>(32); // COLD ALLOC: List<GameObject>[32] - editor-only DDOL residue scan scratch - owner: GameBootstrapper
+#endif
+        private static readonly string[] _TextureMemoryCandidates =
+        {
+            "Texture Memory",
+            "Texture Used Memory"
+        };
+        private static readonly string[] _TotalReservedMemoryCandidates =
+        {
+            "Total Reserved Memory",
+            "System Used Memory",
+            "Total Used Memory"
+        };
 
         private enum BootstrapPhase : byte
         {
@@ -87,6 +155,18 @@ namespace Hecton8.Bootstrap
             SceneActivate = 6,
             Complete = 7,
             Fatal = 8,
+        }
+
+        private enum BootStateMarker : byte
+        {
+            Unknown = 0,
+            Started = 1,
+            PhaseStarted = 2,
+            ServiceStarted = 3,
+            CoreReady = 4,
+            WorldGen = 5,
+            Complete = 6,
+            Fatal = 7,
         }
 
         private enum BootstrapDependencyNode : byte
@@ -120,18 +200,6 @@ namespace Hecton8.Bootstrap
             Count = 26,
         }
 
-        private readonly struct BootstrapDependencyEdge
-        {
-            public readonly BootstrapDependencyNode Source;
-            public readonly BootstrapDependencyNode Dependency;
-
-            public BootstrapDependencyEdge(BootstrapDependencyNode source, BootstrapDependencyNode dependency)
-            {
-                Source = source;
-                Dependency = dependency;
-            }
-        }
-
         private static readonly string[] _bootstrapDependencyNodeNames =
         {
             "SystemDispatcher",
@@ -162,54 +230,8 @@ namespace Hecton8.Bootstrap
             "ModWorldPersistenceManager",
         };
 
-        private static readonly BootstrapDependencyEdge[] _bootstrapDependencyEdges =
-        {
-            new BootstrapDependencyEdge(BootstrapDependencyNode.GameTickManager, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.SaveManager, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.ObjectPoolManager, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.RenderDispatcher, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.SceneRuntimeService, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.EquipmentInteractionHandler, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.HectonFloatingOrigin, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.GlobalPhysicsStateManager, BootstrapDependencyNode.HectonFloatingOrigin),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.PhysicsApplySystem, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.PhysicsApplySystem, BootstrapDependencyNode.GlobalPhysicsStateManager),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.DebrisManager, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.DebrisManager, BootstrapDependencyNode.ObjectPoolManager),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.DebrisManager, BootstrapDependencyNode.PhysicsApplySystem),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.EnvironmentRuntimeContextService, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.OceanKinematicsRuntimeService, BootstrapDependencyNode.EnvironmentRuntimeContextService),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.EcosystemDirector, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.FaunaSimulation, BootstrapDependencyNode.EcosystemDirector),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.FaunaSimulation, BootstrapDependencyNode.PhysicsApplySystem),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.SpatialAudioManager, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.PowerGridManager, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.ConstructionManager, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.ConstructionManager, BootstrapDependencyNode.SaveManager),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.ConstructionManager, BootstrapDependencyNode.ObjectPoolManager),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.ConstructionManager, BootstrapDependencyNode.PowerGridManager),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.ConnectionSplineBatchRenderer, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.ConnectionSplineBatchRenderer, BootstrapDependencyNode.HectonFloatingOrigin),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.BeaconNetworkSystem, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.BeaconNetworkSystem, BootstrapDependencyNode.SaveManager),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.ModWorldPersistenceManager, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.ModWorldPersistenceManager, BootstrapDependencyNode.SaveManager),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.ModWorldPersistenceManager, BootstrapDependencyNode.ObjectPoolManager),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.ModWorldPersistenceManager, BootstrapDependencyNode.SceneRuntimeService),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.NativeInputManager, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.InputDispatcher, BootstrapDependencyNode.NativeInputManager),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.InputDispatcher, BootstrapDependencyNode.SystemDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.PlayerRuntimeContextService, BootstrapDependencyNode.InputDispatcher),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.PlayerInventoryManager, BootstrapDependencyNode.PlayerRuntimeContextService),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.PlayerInventoryManager, BootstrapDependencyNode.ObjectPoolManager),
-            new BootstrapDependencyEdge(BootstrapDependencyNode.PlayerSensoryManager, BootstrapDependencyNode.PlayerRuntimeContextService),
-        };
-
         private static readonly object _bootstrapDependencyScratchLock = new object();
-        // COLD ALLOC: int[bootstrap-node-count] - bootstrap dependency in-degree scratch without async Span state capture risk - owner: GameBootstrapper
-        private static readonly int[] _bootstrapDependencyInDegreeScratch = new int[(int)BootstrapDependencyNode.Count];
-        // COLD ALLOC: BootstrapDependencyNode[bootstrap-node-count] - bootstrap dependency queue scratch without async Span state capture risk - owner: GameBootstrapper
-        private static readonly BootstrapDependencyNode[] _bootstrapDependencyQueueScratch = new BootstrapDependencyNode[(int)BootstrapDependencyNode.Count];
+        // COLD ALLOC: GlobalRegistryServiceSlot[bootstrap-node-count] - registry dependency execution order scratch - owner: GameBootstrapper
         private static readonly GlobalRegistryServiceSlot[] _bootstrapRegistryExecutionOrderScratch =
             new GlobalRegistryServiceSlot[(int)BootstrapDependencyNode.Count];
         private static readonly uint _BootstrapTotalBootTimeHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Bootstrap.TotalBootTimeMs"));
@@ -223,9 +245,43 @@ namespace Hecton8.Bootstrap
         private static bool _preWarmAssetsReady;
         private static bool _bootstrapDurationTelemetryPublished;
         private static long _bootstrapStartTimestamp;
+        private static uint _registryCoreReadyChecksum;
+        private static bool _bootStateSafeModeRequested;
+
         [Header("Bootstrap Prewarm")]
         [Tooltip("Shader variant collections warmed during MemoryPreWarm before scene or player activation.")]
         [SerializeField] private ShaderVariantCollection[] shaderVariantCollections;
+        [SerializeField] private uint expectedBiosRegistryFnv1a;
+#if UNITY_ADDRESSABLES_EXIST
+        [Tooltip("Addressable groups loaded sequentially before dependent services consume them.")]
+        [SerializeField] private AssetLabelReference[] addressableDependencyGroups;
+#endif
+
+        [Header("Scene Activation")]
+        [Tooltip("If true, always start a new game and ignore the handoff context.")]
+        [SerializeField] private bool forceNewGame;
+        [SerializeField] private bool prewarmProceduralScatterBeforePlayerActivation = true;
+        [SerializeField, Range(1, 4)] private int scatterBootstrapPrimePasses = 2;
+        [SerializeField] private List<WarmupEntry> warmupEntries = new List<WarmupEntry>();
+        [SerializeField] private MonoBehaviour playerSpawner;
+        [SerializeField] private Vector3 fallbackSpawnPosition = new Vector3(0f, 10f, 0f);
+        [SerializeField] private GameObject playerObject;
+        [SerializeField] private MonoBehaviour playerController;
+        [SerializeField] private Rigidbody playerRigidbody;
+        [SerializeField] private float worldGenWaitTime = 2f;
+        [SerializeField] private float bootstrapTimeout = 30f;
+        [SerializeField] private float groundReadyTimeout = 15f;
+        [SerializeField] private LayerMask groundReadyLayerMask = HectonLayerMasks.SeamProbeLayerMask;
+        [SerializeField] private bool verboseSceneActivationLogging = true;
+#pragma warning disable CS0414
+        [SerializeField] private string _debugSceneActivationStep = "Not started";
+        [SerializeField] private bool _debugSceneActivationCompleted;
+        [SerializeField] private float _debugStartupTextureMemoryMb;
+        [SerializeField] private float _debugStartupReservedMemoryMb;
+        [SerializeField] private string _debugStartupTextureMetric = "Unresolved";
+        [SerializeField] private string _debugStartupReservedMetric = "Unresolved";
+#pragma warning restore CS0414
+
 #if UNITY_ADDRESSABLES_EXIST
         [Header("Bootstrap UI")]
         [Tooltip("Addressable HUD/PDA prefabs that must instantiate before UI bootstrap can complete.")]
@@ -234,7 +290,16 @@ namespace Hecton8.Bootstrap
 
         private bool _bootstrapRunInProgress;
         private bool _sceneActivationRunInProgress;
-        private SceneBootstrap _pendingSceneBootstrap;
+        private bool _sceneActivationRequested;
+        private bool _sceneActivationStarted;
+        private int _sceneActivationSceneHandle = -1;
+        private bool _isLoadingSave;
+        private WorldProceduralScatterDirector _worldProceduralScatterDirector;
+        private Task _backgroundDomainHandshakeTask;
+        private string _backgroundDomainHandshakePath;
+        private readonly RaycastHit[] _groundCheckHits = new RaycastHit[1]; // COLD ALLOC: bootstrap ground-ready probe only needs nearest collider.
+        private readonly List<GameObject> _shippingCleanupRootObjects = new List<GameObject>(64); // COLD ALLOC: List<GameObject>[64] - root cache for one-shot shipping scene cleanup - owner: GameBootstrapper
+        private readonly List<Transform> _shippingCleanupTraversalStack = new List<Transform>(256); // COLD ALLOC: List<Transform>[256] - traversal stack for one-shot shipping scene cleanup - owner: GameBootstrapper
 #if UNITY_ADDRESSABLES_EXIST
         private AsyncOperationHandle<GameObject>[] _uiPrefabInstanceHandles;
 #endif
@@ -242,10 +307,31 @@ namespace Hecton8.Bootstrap
         private readonly BootstrapDependencyNode[] _bootstrapExecutionOrder = new BootstrapDependencyNode[(int)BootstrapDependencyNode.Count];
         private int _bootstrapExecutionOrderCount;
 
+        [Serializable]
+        public struct WarmupEntry
+        {
+            public GameObject prefab;
+            [Min(1)]
+            public int count;
+            public string label;
+        }
+
         /// <summary>
         /// True once the bootstrap core finished its ordered initialization phases.
         /// </summary>
         public static bool IsBootstrapComplete => _isBootstrapComplete;
+
+        public static bool IsGameReady => BootstrapState.IsGameReady;
+
+        public static bool HasActiveInstance => BootstrapState.HasActiveInstance;
+
+        public static GameBootstrapper ActiveInstance => GlobalRegistry.BootstrapperRuntime;
+
+        public static GameObject CurrentPlayerObject => BootstrapState.CurrentPlayerObject;
+
+        public static Transform CurrentPlayerTransform => BootstrapState.CurrentPlayerTransform;
+
+        public static int PendingEventCount => _pendingEventCount + _nextFrameEventCount;
 
         /// <summary>
         /// True when boot is running in data-only server/testing mode.
@@ -271,9 +357,114 @@ namespace Hecton8.Bootstrap
                    GlobalRegistry.ObjectPool != null;
         }
 
+        public static bool TryValidateSceneRootBudget(string sceneName, string context)
+        {
+            if (string.IsNullOrEmpty(sceneName))
+                return true;
+
+            Scene scene = SceneManager.GetSceneByName(sceneName);
+            return TryValidateSceneRootBudget(scene, context);
+        }
+
+        public static bool TryValidateSceneRootBudget(Scene scene, string context)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+                return true;
+
+            int rootCount = scene.rootCount;
+            if (rootCount <= SceneRootGraphLimit)
+                return true;
+
+            Debug.LogError(
+                "[GameBootstrapper] SCENE_GRAPH_CORRUPTION_GUARD abort. context=" +
+                context +
+                " scene=" +
+                scene.name +
+                " rootCount=" +
+                rootCount +
+                " limit=" +
+                SceneRootGraphLimit);
+            return false;
+        }
+
+        public static bool TryGetCurrentPlayerTransform(out Transform playerTransform)
+        {
+            return BootstrapState.TryGetCurrentPlayerTransform(out playerTransform);
+        }
+
+        public static void Register(IGameBootstrapperEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureEventQueueInitialized();
+            _listeners.Register(listener);
+        }
+
+        public static void Unregister(IGameBootstrapperEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            _listeners.Unregister(listener);
+        }
+
+        public static void FlushPendingEvents()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainPendingEventsWithoutDispatch();
+                return;
+            }
+
+            PromoteNextFrameEventsIfFrontEmpty();
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out GameBootstrapperEventPayload payload))
+                    return;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+                scanBudget--;
+
+                IGameBootstrapperEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        IGameBootstrapperEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnGameBootstrapperEvent(in payload);
+                    }
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
+            }
+
+            if (_pendingEvents.IsEmpty())
+            {
+                _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
+        }
+
+        public static bool TryResolveBootstrapFailureReason(uint errorHash, out string reason)
+        {
+            return _failureReasonsByHash.TryGetValue(errorHash, out reason);
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            ResetBootstrapEventState();
             GlobalRegistry.ClearBootstrapperRuntime(null);
             _isBootstrapComplete = false;
             _entryRecoveryIssued = false;
@@ -283,8 +474,13 @@ namespace Hecton8.Bootstrap
             _preWarmAssetsReady = false;
             _bootstrapDurationTelemetryPublished = false;
             _bootstrapStartTimestamp = 0L;
+            _registryCoreReadyChecksum = 0u;
+            _bootStateSafeModeRequested = false;
             _bootstrapSceneRootScratch.Clear();
             _bootstrapTransformScratch.Clear();
+            _biosErrorMessageBuilder.Length = 0;
+            _fatalOverlayMessageBuilder.Length = 0;
+            BootstrapState.Reset();
             if (_sceneGuardRegistered)
             {
                 SceneManager.sceneLoaded -= HandleSceneLoadedGuard;
@@ -294,9 +490,185 @@ namespace Hecton8.Bootstrap
             BootstrapBiosErrorOverlay.Hide();
         }
 
+        private static void ResetBootstrapEventState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(GameBootstrapper), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(GameBootstrapper), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
+            _listeners.Clear();
+            _failureReasonsByHash.Clear();
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
+        }
+
+        private static void EnsureEventQueueInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<GameBootstrapperEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<GameBootstrapperEventPayload>[12] - deferred bootstrap event lane flushed by SystemDispatcher LateUpdate - owner: GameBootstrapper
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(GameBootstrapper),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<GameBootstrapperEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<GameBootstrapperEventPayload>[12] - next-frame bootstrap event lane prevents same-frame reentrant dispatch - owner: GameBootstrapper
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(GameBootstrapper),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
+        }
+
+        private static void RaiseGameReadyEvent()
+        {
+            EnsureEventQueueInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+                return;
+
+            GameBootstrapperEventPayload payload = new GameBootstrapperEventPayload
+            {
+                ErrorHash = 0u,
+                EventType = (ushort)GameBootstrapperEventType.GameReady,
+                Reserved = 0
+            };
+
+            EnqueueBootstrapEvent(in payload);
+        }
+
+        private static void RaiseBootstrapFailedEvent(string error)
+        {
+            uint errorHash = string.IsNullOrWhiteSpace(error)
+                ? 0u
+                : unchecked((uint)Hecton.Localization.LocHash.Compute(error));
+            EnsureEventQueueInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+                return;
+
+            if (errorHash != 0u && !_failureReasonsByHash.ContainsKey(errorHash))
+                _failureReasonsByHash.Add(errorHash, error);
+
+            GameBootstrapperEventPayload payload = new GameBootstrapperEventPayload
+            {
+                ErrorHash = errorHash,
+                EventType = (ushort)GameBootstrapperEventType.BootstrapFailed,
+                Reserved = 0
+            };
+
+            EnqueueBootstrapEvent(in payload);
+        }
+
+        private static void EnqueueBootstrapEvent(in GameBootstrapperEventPayload payload)
+        {
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+        }
+
+        private static void DrainPendingEventsWithoutDispatch()
+        {
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+                return;
+
+            if (_pendingEventCount <= 0)
+            {
+                PromoteNextFrameEventsIfFrontEmpty();
+                if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+                    return;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<GameBootstrapperEventPayload> queue,
+            ref int pendingCount)
+        {
+            if (!queue.IsCreated)
+                return true;
+
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget > 0 && !queue.IsEmpty())
+            {
+                if (!queue.TryDequeue(out _))
+                    return false;
+
+                if (pendingCount > 0)
+                    pendingCount--;
+                scanBudget--;
+            }
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                _pendingEventCount > 0 ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<GameBootstrapperEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void GuardInitialSceneEntry()
         {
+#if UNITY_INCLUDE_TESTS
+            if (_isUnityTestRunnerProcess)
+                return;
+#endif
             if (!Application.isPlaying || _isBootstrapComplete)
                 return;
 
@@ -308,6 +680,10 @@ namespace Hecton8.Bootstrap
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void GuardEntryVectorBeforeSceneLoad()
         {
+#if UNITY_INCLUDE_TESTS
+            if (_isUnityTestRunnerProcess)
+                return;
+#endif
             if (!Application.isPlaying || _isBootstrapComplete)
                 return;
 
@@ -371,6 +747,7 @@ namespace Hecton8.Bootstrap
                 return;
             }
 
+            GlobalRegistry.BeginRegistration();
             GlobalRegistry.RegisterBootstrapperRuntime(this);
 
             if (Application.isPlaying)
@@ -396,6 +773,11 @@ namespace Hecton8.Bootstrap
 #if UNITY_ADDRESSABLES_EXIST
             ReleaseAddressableUIPrefabs();
 #endif
+            ShutdownServicesInReverseBootstrapOrder();
+            BootstrapState.ClearCurrentPlayerObject(playerObject);
+            BootstrapState.PublishBootstrapPresence(false);
+            if (Application.isPlaying)
+                BootstrapState.PublishGameReady(false);
             DisposeSessionNativeStateForShutdown();
             GlobalRegistry.ClearBootstrapperRuntime(this);
         }
@@ -406,7 +788,7 @@ namespace Hecton8.Bootstrap
             Hecton8.Modding.ModLoader.ResetStaticState();
             Hecton8.Modding.ModRegistryEvents.ResetStaticState();
             BootstrapEvents.ResetStaticState();
-            SceneBootstrap.ResetStaticState();
+            ResetBootstrapEventState();
             SaveEvents.ResetStaticState();
             Hecton.Localization.LocalizationEvents.ResetStaticState();
             ObjectPoolDiagnostics.ResetStaticState();
@@ -447,6 +829,7 @@ namespace Hecton8.Bootstrap
             if (_isBootstrapComplete || _bootstrapRunInProgress)
                 return;
 
+            GlobalRegistry.BeginRegistration();
             EnsureCrashTelemetryBufferRegistered();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             EnsureRuntimeWatchdogRegistered();
@@ -459,35 +842,43 @@ namespace Hecton8.Bootstrap
         /// <summary>
         /// Requests gameplay scene activation through the unified bootstrap owner.
         /// </summary>
-        /// <param name="sceneBootstrap">Scene activation executor in the loaded scene.</param>
-        public static void RequestSceneActivation(SceneBootstrap sceneBootstrap)
+        public static void RequestSceneActivation()
         {
-            if (sceneBootstrap == null)
-                return;
-
             GameBootstrapper bootstrapper = EnsureRuntimeInstance();
             if (bootstrapper == null)
                 return;
 
-            bootstrapper.ScheduleSceneActivation(sceneBootstrap);
+            bootstrapper.ScheduleSceneActivation();
         }
 
-        private void ScheduleSceneActivation(SceneBootstrap sceneBootstrap)
+        public static void RequestSceneActivation(MonoBehaviour ignoredOwner)
         {
-            if (sceneBootstrap == null)
-                return;
+            RequestSceneActivation();
+        }
 
-            _pendingSceneBootstrap = sceneBootstrap;
+        private void ScheduleSceneActivation()
+        {
+            _sceneActivationRequested = true;
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (_sceneActivationSceneHandle != activeScene.handle)
+            {
+                _sceneActivationSceneHandle = activeScene.handle;
+                _sceneActivationStarted = false;
+                _debugSceneActivationCompleted = false;
+            }
+
             if (!_isBootstrapComplete || _sceneActivationRunInProgress)
                 return;
 
             _sceneActivationRunInProgress = true;
-            _ = RunSceneActivationAsync(sceneBootstrap, destroyCancellationToken);
+            GlobalRegistry.BeginRegistration();
+            _ = RunSceneActivationAsync(destroyCancellationToken);
         }
 
         private async Awaitable<bool> RunBootstrapStateMachineAsync(CancellationToken ownerToken)
         {
             BootstrapStatus.BeginBoot();
+            WriteBootStateRecord(BootStateMarker.Started, BootstrapPhase.HardwareCheck, GlobalRegistryServiceSlot.Unknown);
             _bootstrapStartTimestamp = Stopwatch.GetTimestamp();
             _bootstrapDurationTelemetryPublished = false;
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ownerToken);
@@ -517,14 +908,26 @@ namespace Hecton8.Bootstrap
 
                 EnsureExtendedRegistryCoverageForActiveScene();
                 _isBootstrapComplete = true;
+                _registryCoreReadyChecksum = CalculateRegistryActiveServiceTypeHash();
+                if (expectedBiosRegistryFnv1a != 0u && _registryCoreReadyChecksum != expectedBiosRegistryFnv1a)
+                {
+                    HandleFatalBootstrapException(
+                        "BIOSIntegrityChecksum",
+                        new InvalidOperationException("[GameBootstrapper] BIOS integrity checksum mismatch."));
+                    return false;
+                }
+
+                WriteBootStateRecord(BootStateMarker.CoreReady, BootstrapPhase.CoreServices, GlobalRegistryServiceSlot.Unknown);
                 BootstrapBiosErrorOverlay.Hide();
                 BootstrapEvents.NotifyBootstrapComplete();
 
                 if (!await RunBootstrapPhaseAsync(BootstrapPhase.SceneActivate, BootstrapStepToken.SceneActivate, InitializeSceneActivatePhaseAsync, ct))
                     return false;
 
+                GlobalRegistry.LockReady();
                 PublishTotalBootTimeTelemetry();
                 _currentPhase = BootstrapPhase.Complete;
+                WriteBootStateRecord(BootStateMarker.Complete, BootstrapPhase.Complete, GlobalRegistryServiceSlot.Unknown);
                 return true;
             }
             catch (OperationCanceledException)
@@ -535,6 +938,7 @@ namespace Hecton8.Bootstrap
             catch (Exception exception)
             {
                 _currentPhase = BootstrapPhase.Fatal;
+                WriteBootStateRecord(BootStateMarker.Fatal, BootstrapPhase.Fatal, GlobalRegistryServiceSlot.Unknown);
                 HandleFatalBootstrapException("BootstrapEntry", exception);
                 return false;
             }
@@ -565,8 +969,9 @@ namespace Hecton8.Bootstrap
             CancellationToken ct)
         {
             _currentPhase = phase;
+            WriteBootStateRecord(BootStateMarker.PhaseStarted, phase, GlobalRegistryServiceSlot.Unknown);
             BootstrapStatus.BeginStep(stepToken);
-            Stopwatch phaseStopwatch = Stopwatch.StartNew();
+            long phaseStartTimestamp = Stopwatch.GetTimestamp();
             try
             {
                 bool phaseComplete = phaseAction == null || await phaseAction(ct);
@@ -591,9 +996,12 @@ namespace Hecton8.Bootstrap
             }
             finally
             {
-                phaseStopwatch.Stop();
-                double elapsedMilliseconds = phaseStopwatch.Elapsed.TotalMilliseconds;
+                double elapsedMilliseconds =
+                    (Stopwatch.GetTimestamp() - phaseStartTimestamp) * 1000.0 / Stopwatch.Frequency;
                 CrashTelemetryBuffer.RecordBootstrapPhaseDuration(stepToken, elapsedMilliseconds);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                BootstrapHealthMonitor.RecordPhaseDuration(stepToken, elapsedMilliseconds);
+#endif
                 BootstrapStatus.EndStep(stepToken);
             }
         }
@@ -631,8 +1039,11 @@ namespace Hecton8.Bootstrap
             {
                 ct.ThrowIfCancellationRequested();
                 _headlessBootMode = HasCommandLineArg(HeadlessCommandLineArg);
+                InspectPreviousBootState();
                 global::Hecton8.Core.HectonHardwareProfile hardwareProfile = CaptureHardwareProfile();
                 GlobalRegistry.RegisterHardwareProfile(in hardwareProfile);
+                ApplyMemoryGate(in hardwareProfile);
+                StartBackgroundDomainHandshake();
 
                 Scene activeScene = SceneManager.GetActiveScene();
                 if (!TryRecoverEntryVector(activeScene, false))
@@ -686,6 +1097,9 @@ namespace Hecton8.Bootstrap
         {
             try
             {
+                if (!await JoinBackgroundDomainHandshakeAsync(ct))
+                    return false;
+
                 bool initialized = await InitializeCoreLayerAsync(ct);
                 if (initialized && !await WarmObjectPoolPresetsAsync(ct))
                     return false;
@@ -790,14 +1204,12 @@ namespace Hecton8.Bootstrap
                     return await LoadMainMenuAsync(ct);
                 }
 
-                SceneBootstrap sceneBootstrap = _pendingSceneBootstrap;
-                if (sceneBootstrap == null)
-                    sceneBootstrap = SceneBootstrap.ActiveInstance;
-
-                if (sceneBootstrap == null)
+                if (!_sceneActivationRequested && BootstrapState.IsGameReady)
                     return true;
 
-                return await ExecuteSceneActivationAsync(sceneBootstrap, ct);
+                _sceneActivationRequested = true;
+                BootstrapState.PublishBootstrapPresence(true);
+                return await ExecuteSceneActivationAsync(ct);
             }
             catch (OperationCanceledException)
             {
@@ -805,33 +1217,37 @@ namespace Hecton8.Bootstrap
             }
         }
 
-        private async Awaitable<bool> RunSceneActivationAsync(SceneBootstrap sceneBootstrap, CancellationToken ownerToken)
+        private async Awaitable<bool> RunSceneActivationAsync(CancellationToken ownerToken)
         {
             try
             {
-                return await ExecuteSceneActivationAsync(sceneBootstrap, ownerToken);
+                bool activated = await ExecuteSceneActivationAsync(ownerToken);
+                if (activated)
+                    GlobalRegistry.LockReady();
+
+                return activated;
             }
             catch (OperationCanceledException)
             {
+                return false;
+            }
+            catch (Exception exception)
+            {
+                HandleFatalBootstrapException(nameof(BootstrapPhase.SceneActivate), exception);
                 return false;
             }
             finally
             {
-                if (ReferenceEquals(_pendingSceneBootstrap, sceneBootstrap))
-                    _pendingSceneBootstrap = null;
-
+                _sceneActivationRequested = false;
                 _sceneActivationRunInProgress = false;
             }
         }
 
-        private static async Awaitable<bool> ExecuteSceneActivationAsync(SceneBootstrap sceneBootstrap, CancellationToken ct)
+        private async Awaitable<bool> ExecuteSceneActivationAsync(CancellationToken ct)
         {
             try
             {
-                if (sceneBootstrap == null)
-                    return false;
-
-                return await sceneBootstrap.ExecuteSceneActivationAsync(ct);
+                return await ExecuteSceneReadinessGatesAsync(ct);
             }
             catch (OperationCanceledException)
             {
@@ -867,7 +1283,7 @@ namespace Hecton8.Bootstrap
                 if (!await WaitForBootstrapActivationGatesAsync(ct))
                     return false;
 
-                if (!SceneBootstrap.TryValidateSceneRootBudget(MainMenuSceneName, "bootstrap-main-menu-preactivation"))
+                if (!TryValidateSceneRootBudget(MainMenuSceneName, "bootstrap-main-menu-preactivation"))
                     return false;
 
                 SceneRuntimeService.ReleaseSceneActivation(loadOperation);
@@ -1042,6 +1458,9 @@ namespace Hecton8.Bootstrap
             EnsureSettingsRuntimeRegistered();
             UIStateStore.EnsureInitialized();
 #if UNITY_ADDRESSABLES_EXIST
+            if (!await LoadAddressableDependencyChainAsync(ct))
+                return false;
+
             if (!await LoadAddressableUIPrefabsAsync(ct))
                 return false;
 #endif
@@ -1126,6 +1545,37 @@ namespace Hecton8.Bootstrap
             return true;
 #endif
         }
+
+#if UNITY_ADDRESSABLES_EXIST
+        private async Awaitable<bool> LoadAddressableDependencyChainAsync(CancellationToken ct)
+        {
+            int groupCount = addressableDependencyGroups != null ? addressableDependencyGroups.Length : 0;
+            for (int i = 0; i < groupCount; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                AssetLabelReference group = addressableDependencyGroups[i];
+                if (group == null || string.IsNullOrEmpty(group.labelString))
+                    continue;
+
+                AsyncOperationHandle handle = Addressables.DownloadDependenciesAsync(group.labelString, false);
+                while (!handle.IsDone)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+                }
+
+                if (handle.Status != AsyncOperationStatus.Succeeded)
+                {
+                    Addressables.Release(handle);
+                    return false;
+                }
+
+                Addressables.Release(handle);
+            }
+
+            return true;
+        }
+#endif
 
         private void ReleaseAddressableUIPrefabs()
         {
@@ -1232,16 +1682,30 @@ namespace Hecton8.Bootstrap
                 if (ResolveBootstrapNodePhase(node) != phase)
                     continue;
 
-                if (!InitializeBootstrapDependencyNode(node))
+                WriteBootStateRecord(BootStateMarker.ServiceStarted, phase, ResolveRegistrySlotForBootstrapNode(node));
+                long serviceStartTimestamp = Stopwatch.GetTimestamp();
+                try
                 {
-                    LogBootstrapDependencyFailure(phase, node);
-                    return false;
-                }
+                    if (!InitializeBootstrapDependencyNode(node))
+                    {
+                        LogBootstrapDependencyFailure(phase, node);
+                        return false;
+                    }
 
-                if (!await WaitForBootstrapDependencyHeartbeatAsync(node, ct))
+                    if (!await WaitForBootstrapDependencyHeartbeatAsync(node, ct))
+                    {
+                        LogBootstrapDependencyFailure(phase, node);
+                        return false;
+                    }
+
+                }
+                finally
                 {
-                    LogBootstrapDependencyFailure(phase, node);
-                    return false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    double elapsedMilliseconds =
+                        (Stopwatch.GetTimestamp() - serviceStartTimestamp) * 1000.0 / Stopwatch.Frequency;
+                    BootstrapHealthMonitor.RecordServiceDuration((int)node, elapsedMilliseconds);
+#endif
                 }
             }
 
@@ -2037,7 +2501,7 @@ namespace Hecton8.Bootstrap
 
         private static bool InitializeSpatialAudioBootstrapNode()
         {
-            Stopwatch serviceStopwatch = Stopwatch.StartNew();
+            long serviceStartTimestamp = Stopwatch.GetTimestamp();
             try
             {
                 SpatialAudioManager spatialAudioManager = EnsureAudioServiceRegistered();
@@ -2045,8 +2509,9 @@ namespace Hecton8.Bootstrap
                     return TryRegisterNoOpAudioFallback("SpatialAudioManager missing");
 
                 spatialAudioManager.InitializeService();
-                serviceStopwatch.Stop();
-                if (serviceStopwatch.ElapsedMilliseconds > OptionalServiceTimeoutMilliseconds)
+                long elapsedMilliseconds =
+                    (Stopwatch.GetTimestamp() - serviceStartTimestamp) * 1000L / Stopwatch.Frequency;
+                if (elapsedMilliseconds > OptionalServiceTimeoutMilliseconds)
                     LogOptionalBootstrapWarning("SpatialAudioManager exceeded the optional-service bootstrap budget.");
 
                 if (GlobalRegistry.Audio != null)
@@ -2056,7 +2521,6 @@ namespace Hecton8.Bootstrap
             }
             catch (Exception exception)
             {
-                serviceStopwatch.Stop();
                 return TryRegisterNoOpAudioFallback(exception.Message);
             }
         }
@@ -2383,85 +2847,6 @@ namespace Hecton8.Bootstrap
             }
         }
 
-        private static bool TryBuildBootstrapDependencyExecutionOrderLocked(
-            BootstrapDependencyNode[] executionOrder,
-            int nodeCount,
-            out int executionOrderCount)
-        {
-            executionOrderCount = 0;
-            Array.Clear(_bootstrapDependencyInDegreeScratch, 0, nodeCount);
-            Array.Clear(_bootstrapDependencyQueueScratch, 0, nodeCount);
-
-            for (int edgeIndex = 0; edgeIndex < _bootstrapDependencyEdges.Length; edgeIndex++)
-            {
-                BootstrapDependencyEdge edge = _bootstrapDependencyEdges[edgeIndex];
-                _bootstrapDependencyInDegreeScratch[(int)edge.Source]++;
-            }
-
-            int queueTail = 0;
-            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-            {
-                if (_bootstrapDependencyInDegreeScratch[nodeIndex] == 0)
-                    _bootstrapDependencyQueueScratch[queueTail++] = (BootstrapDependencyNode)nodeIndex;
-            }
-
-            int queueHead = 0;
-            while (queueHead < queueTail)
-            {
-                BootstrapDependencyNode dependencyNode = _bootstrapDependencyQueueScratch[queueHead++];
-                executionOrder[executionOrderCount++] = dependencyNode;
-                for (int edgeIndex = 0; edgeIndex < _bootstrapDependencyEdges.Length; edgeIndex++)
-                {
-                    BootstrapDependencyEdge edge = _bootstrapDependencyEdges[edgeIndex];
-                    if (edge.Dependency != dependencyNode)
-                        continue;
-
-                    int sourceIndex = (int)edge.Source;
-                    _bootstrapDependencyInDegreeScratch[sourceIndex]--;
-                    if (_bootstrapDependencyInDegreeScratch[sourceIndex] == 0)
-                        _bootstrapDependencyQueueScratch[queueTail++] = edge.Source;
-                }
-            }
-
-            if (executionOrderCount == nodeCount)
-                return true;
-
-            StringBuilder cycleReport = new StringBuilder(512); // COLD ALLOC: StringBuilder[512] - bootstrap dependency-cycle fatal report - owner: GameBootstrapper
-            cycleReport.AppendLine("[GameBootstrapper] Circular dependency detected in bootstrap registration graph.");
-
-            for (int edgeIndex = 0; edgeIndex < _bootstrapDependencyEdges.Length; edgeIndex++)
-            {
-                BootstrapDependencyEdge edge = _bootstrapDependencyEdges[edgeIndex];
-                if (_bootstrapDependencyInDegreeScratch[(int)edge.Source] <= 0 ||
-                    _bootstrapDependencyInDegreeScratch[(int)edge.Dependency] <= 0)
-                    continue;
-
-                string sourceName = ResolveBootstrapDependencyNodeName(edge.Source);
-                string dependencyName = ResolveBootstrapDependencyNodeName(edge.Dependency);
-                cycleReport.Append(" - ");
-                cycleReport.Append(sourceName);
-                cycleReport.Append(" -> ");
-                cycleReport.Append(dependencyName);
-                cycleReport.AppendLine();
-                GlobalTelemetryBus.PublishBootstrapDependencyCycle(sourceName, dependencyName);
-            }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError(cycleReport.ToString());
-#endif
-            bool biosShown = BootstrapBiosErrorOverlay.Show("BIOS ERROR 0xBOOT_CYCLE\nACTION: SEE CONSOLE / TELEMETRY");
-            QuitForFatalBootstrapCycleInReleaseIfNeeded(biosShown);
-            return false;
-        }
-
-        private static void QuitForFatalBootstrapCycleInReleaseIfNeeded(bool biosShown)
-        {
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
-            if (!biosShown && Application.isPlaying)
-                Application.Quit(-1);
-#endif
-        }
-
         private static string ResolveBootstrapDependencyNodeName(BootstrapDependencyNode node)
         {
             int index = (int)node;
@@ -2472,15 +2857,18 @@ namespace Hecton8.Bootstrap
 
         private static void HandleSceneLoadedGuard(Scene scene, LoadSceneMode mode)
         {
+#if UNITY_INCLUDE_TESTS
+            if (_isUnityTestRunnerProcess)
+                return;
+#endif
             if (!Application.isPlaying)
                 return;
 
             if (_isBootstrapComplete)
             {
                 EnsureExtendedRegistryCoverageForActiveScene();
-                SceneBootstrap sceneBootstrap = SceneBootstrap.ActiveInstance;
-                if (sceneBootstrap != null)
-                    RequestSceneActivation(sceneBootstrap);
+                if (!IsBootstrapScene(scene))
+                    RequestSceneActivation();
 
                 BootstrapBiosErrorOverlay.Hide();
                 return;
@@ -2491,6 +2879,10 @@ namespace Hecton8.Bootstrap
 
         private static bool TryRecoverEntryVector(Scene scene, bool allowRecovery)
         {
+#if UNITY_INCLUDE_TESTS
+            if (_isUnityTestRunnerProcess)
+                return IsBootstrapScene(scene);
+#endif
             if (IsBootstrapScene(scene))
             {
                 _entryRecoveryIssued = false;
@@ -2498,12 +2890,9 @@ namespace Hecton8.Bootstrap
                 return true;
             }
 
-            string message = string.Format(
-                BiosErrorMessageTemplate,
+            BootstrapBiosErrorOverlay.Show(BuildBiosErrorMessage(
                 string.IsNullOrEmpty(scene.name) ? "<unnamed>" : scene.name,
-                scene.buildIndex);
-
-            BootstrapBiosErrorOverlay.Show(message);
+                scene.buildIndex));
 
             if (!allowRecovery || _entryRecoveryIssued)
                 return false;
@@ -2513,6 +2902,903 @@ namespace Hecton8.Bootstrap
             SceneManager.LoadScene(BootstrapSceneName);
             return false;
         }
+
+        private async Awaitable<bool> ExecuteSceneReadinessGatesAsync(CancellationToken ownerToken)
+        {
+            if (_sceneActivationStarted)
+                return _debugSceneActivationCompleted;
+
+            _sceneActivationStarted = true;
+            _debugSceneActivationCompleted = false;
+            BootstrapState.PublishGameReady(false);
+            BootstrapState.PublishBootstrapPresence(true);
+
+            Scene activeScene = SceneManager.GetActiveScene();
+#if UNITY_EDITOR
+            if (RejectDirtyEditorSceneAndReloadFromDisk(activeScene))
+                return false;
+#endif
+            SceneInstantiationGate.ActiveRuntime?.BeginSceneLoad(activeScene.name);
+            ResolveSceneActivationReferences(activeScene);
+            DisablePlayer();
+            ApplyShippingSceneCleanup(activeScene);
+
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(
+                ownerToken,
+                destroyCancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(bootstrapTimeout));
+            CancellationToken ct = cts.Token;
+
+            try
+            {
+                SetSceneActivationStep("Step 1: Verifying Singletons");
+                if (!VerifySingletons())
+                {
+                    FailSceneActivation("Critical singletons missing. Bootstrap aborted.");
+                    return false;
+                }
+
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+                ct.ThrowIfCancellationRequested();
+
+                SetSceneActivationStep("Step 2: Pool Warmup");
+                await WarmupPoolsAsync(ct);
+
+                SetSceneActivationStep("Step 3: World Generation");
+                WriteBootStateRecord(BootStateMarker.WorldGen, BootstrapPhase.SceneActivate, GlobalRegistryServiceSlot.WorldGen);
+                StartWorldGeneration();
+                if (worldGenWaitTime > 0f)
+                    await Awaitable.WaitForSecondsAsync(worldGenWaitTime, cancellationToken: ct);
+                else
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+
+                ct.ThrowIfCancellationRequested();
+
+                SetSceneActivationStep("Step 4: Save/Load");
+                await LoadOrNewGameAsync();
+                ResolveSceneActivationReferences(activeScene);
+                ct.ThrowIfCancellationRequested();
+
+                SetSceneActivationStep("Step 5: World-Ready Check");
+                await WaitForWorldReadyAsync(ct);
+
+                SetSceneActivationStep("Step 6: Ground-Ready Check");
+                await WaitForGroundReadyAsync(ct);
+
+                SetSceneActivationStep("Step 7: Player Spawn");
+                await SpawnPlayerAsync(ct);
+                SceneInstantiationGate.ActiveRuntime?.MarkPlayerInstantiated(playerObject);
+                ct.ThrowIfCancellationRequested();
+
+                SetSceneActivationStep("Step 8: Runtime World Prime");
+                await PrimeRuntimeWorldAsync(ct);
+                SceneInstantiationGate.ActiveRuntime?.MarkWorldPrimed();
+                ct.ThrowIfCancellationRequested();
+
+                SetSceneActivationStep("Step 8.5: Cold Cleanup + Memory Snapshot");
+                await RunColdCleanupAndCaptureMemorySnapshotAsync(ct);
+                ct.ThrowIfCancellationRequested();
+
+                SetSceneActivationStep("Step 8.75: Resident World Prefab Gate");
+                if (!await WaitForResidentWorldPrefabPoolsReadyAsync(ct))
+                    return false;
+                ct.ThrowIfCancellationRequested();
+
+                SetSceneActivationStep("Step 8.9: Scene Gate Verification");
+                await WaitForSceneInstantiationGateAsync(ct);
+                ct.ThrowIfCancellationRequested();
+
+                SetSceneActivationStep("Step 8.95: Scene Graph Guard");
+                if (!TryValidateSceneRootBudget(activeScene, "game-bootstrapper-scene-activation"))
+                {
+                    FailSceneActivation("Scene graph corruption guard aborted activation.");
+                    return false;
+                }
+
+                ActivatePlayer();
+
+                SetSceneActivationStep("Complete");
+                _debugSceneActivationCompleted = true;
+                BootstrapState.PublishGameReady(true);
+                BootstrapState.PublishBootstrapPresence(false);
+                RaiseGameReadyEvent();
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                BootstrapState.PublishGameReady(false);
+                BootstrapState.PublishBootstrapPresence(false);
+                if (this == null || destroyCancellationToken.IsCancellationRequested)
+                    return false;
+
+                FailSceneActivation("Bootstrap timed out after " + bootstrapTimeout + "s. Last step: " + _debugSceneActivationStep);
+                return false;
+            }
+            catch (Exception exception)
+            {
+                BootstrapState.PublishGameReady(false);
+                BootstrapState.PublishBootstrapPresence(false);
+                if (this == null)
+                    return false;
+
+                FailSceneActivation("Bootstrap failed at [" + _debugSceneActivationStep + "]: " + exception.Message);
+                HandleFatalBootstrapException(_debugSceneActivationStep, exception);
+                return false;
+            }
+        }
+
+        private void ResolveSceneActivationReferences(Scene scene)
+        {
+            if (playerObject == null)
+                playerObject = BootstrapState.CurrentPlayerObject;
+
+            if (playerObject == null)
+            {
+                GameObject taggedPlayer = GameObject.FindGameObjectWithTag("Player");
+                if (taggedPlayer != null && !IsTemporaryRuntimeShellObject(taggedPlayer))
+                    playerObject = taggedPlayer;
+            }
+
+            if (playerSpawner == null)
+            {
+                HectonPlayerSpawner spawner =
+                    UnityEngine.Object.FindAnyObjectByType<HectonPlayerSpawner>(FindObjectsInactive.Include);
+                if (spawner != null && !IsTemporaryRuntimeShellObject(spawner.gameObject))
+                    playerSpawner = spawner;
+            }
+
+            if (playerRigidbody == null && playerObject != null)
+                playerRigidbody = playerObject.GetComponent<Rigidbody>();
+
+            if (playerController == null && playerObject != null)
+                playerController = playerObject.GetComponent<MonoBehaviour>();
+
+            PublishPlayerRuntimeReference();
+        }
+
+        private bool VerifySingletons()
+        {
+            bool allCritical = true;
+
+            if (GlobalRegistry.Dispatcher == null)
+            {
+                Debug.LogError("[GameBootstrapper] SystemDispatcher not found.");
+                allCritical = false;
+            }
+
+            if (GlobalRegistry.ObjectPool == null)
+            {
+                Debug.LogError("[GameBootstrapper] ObjectPoolManager not found.");
+                allCritical = false;
+            }
+
+            if (PrefabRegistry.ActiveRuntimeInstance == null)
+            {
+                Debug.LogError("[GameBootstrapper] PrefabRegistry not found.");
+                allCritical = false;
+            }
+
+            if (GlobalRegistry.SaveRuntime == null)
+            {
+                Debug.LogError("[GameBootstrapper] SaveManager not found.");
+                allCritical = false;
+            }
+
+            if (GlobalRegistry.WorldState == null)
+                Debug.LogWarning("[GameBootstrapper] WorldStateManager not found.");
+
+            if (GlobalRegistry.ConstructionRuntime == null)
+                Debug.LogWarning("[GameBootstrapper] ConstructionManager not found.");
+
+            return allCritical;
+        }
+
+        private async Awaitable WarmupPoolsAsync(CancellationToken ct)
+        {
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (pool == null || warmupEntries == null)
+                return;
+
+            for (int i = 0, entryCount = warmupEntries.Count; i < entryCount; i++)
+            {
+                WarmupEntry entry = warmupEntries[i];
+                if (entry.prefab == null || entry.count <= 0)
+                    continue;
+
+                string label = string.IsNullOrEmpty(entry.label) ? entry.prefab.name : entry.label;
+                for (int created = 0; created < entry.count;)
+                {
+                    int batch = Mathf.Min(WarmupBatchSize, entry.count - created);
+                    pool.Warmup(entry.prefab, batch);
+                    created += batch;
+                    SetSceneActivationStep("Warming Pool: " + label + " (" + created + "/" + entry.count + ")");
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+                    ct.ThrowIfCancellationRequested();
+                }
+            }
+        }
+
+        private void StartWorldGeneration()
+        {
+            MapMagicBridge mapMagicBridge = GlobalRegistry.MapMagic;
+            if (mapMagicBridge != null && mapMagicBridge.IsAvailable && !IsTemporaryRuntimeShellObject(mapMagicBridge.gameObject))
+                return;
+
+            global::HectonWorldGenerator legacyWorldGenerator =
+                GlobalRegistry.WorldSeedProvider as global::HectonWorldGenerator;
+            if (legacyWorldGenerator != null && !IsTemporaryRuntimeShellObject(legacyWorldGenerator.gameObject))
+                return;
+        }
+
+        private async Awaitable LoadOrNewGameAsync()
+        {
+            SaveManager save = GlobalRegistry.SaveRuntime;
+            if (save == null)
+            {
+                _isLoadingSave = false;
+                InitNewGame();
+                return;
+            }
+
+            GameStartContext context;
+            if (!GameStartContextHolder.TryGetCurrentOrRestore(out context))
+                context = GameStartContext.CreateNewGame();
+
+            GameStartContextHolder.ClearPersistedHandoff();
+            if (forceNewGame)
+                context = GameStartContext.CreateNewGame();
+
+            GameStartContextHolder.Current = context;
+            if (context.StartMode == GameStartMode.NewGame || string.IsNullOrEmpty(context.TargetSaveSlot))
+            {
+                _isLoadingSave = false;
+                InitNewGame();
+                return;
+            }
+
+            if (!save.SaveExists(context.TargetSaveSlot))
+            {
+                _isLoadingSave = false;
+                InitNewGame();
+                return;
+            }
+
+            try
+            {
+                await save.LoadGameAsync(context.TargetSaveSlot);
+                if (!save.LastOperationSucceeded)
+                {
+                    _isLoadingSave = false;
+                    InitNewGame();
+                    return;
+                }
+
+                _isLoadingSave = true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError("[GameBootstrapper] Save load failed: " + exception.Message);
+                _isLoadingSave = false;
+                InitNewGame();
+            }
+        }
+
+        private void InitNewGame()
+        {
+            WorldStateManager worldStateManager = GlobalRegistry.WorldState;
+            if (worldStateManager != null)
+                worldStateManager.ClearAll();
+
+            ConstructionManager constructionManager = GlobalRegistry.ConstructionRuntime;
+            if (constructionManager != null)
+                constructionManager.ClearAllModules();
+        }
+
+        private async Awaitable WaitForWorldReadyAsync(CancellationToken ct)
+        {
+            ScavengePopulator populator = GlobalRegistry.ScavengePopulator;
+            if (populator == null)
+                return;
+
+            int lastPendingCount = int.MaxValue;
+            int stagnantPollCount = 0;
+            while (populator.PendingSpawnCount > WorldReadyThreshold)
+            {
+                int pendingCount = populator.PendingSpawnCount;
+                if (pendingCount < lastPendingCount)
+                {
+                    lastPendingCount = pendingCount;
+                    stagnantPollCount = 0;
+                }
+                else if (++stagnantPollCount >= WorldReadyStagnationPollLimit)
+                {
+                    Debug.LogWarning("[GameBootstrapper] World-ready queue stalled. Continuing bootstrap.");
+                    return;
+                }
+
+                await Awaitable.WaitForSecondsAsync(WorldReadyPollIntervalSec, cancellationToken: ct);
+                ct.ThrowIfCancellationRequested();
+            }
+        }
+
+        private async Awaitable WaitForGroundReadyAsync(CancellationToken ct)
+        {
+            if (!_isLoadingSave || playerObject == null)
+                return;
+
+            Vector3 playerPosition = playerObject.transform.position;
+            float elapsed = 0f;
+            while (elapsed < groundReadyTimeout)
+            {
+                ct.ThrowIfCancellationRequested();
+                Vector3 rayOrigin = playerPosition + Vector3.up * GroundCheckRayOffset;
+                Ray ray = new Ray(rayOrigin, Vector3.down);
+                int groundMask = groundReadyLayerMask.value != 0
+                    ? groundReadyLayerMask.value
+                    : HectonLayerMasks.SeamProbeLayerMask;
+
+                if (UnityEngine.Physics.RaycastNonAlloc(
+                        ray,
+                        _groundCheckHits,
+                        GroundCheckRayLength,
+                        groundMask,
+                        QueryTriggerInteraction.Ignore) > 0)
+                {
+                    return;
+                }
+
+                await Awaitable.WaitForSecondsAsync(GroundCheckPollIntervalSec, cancellationToken: ct);
+                elapsed += GroundCheckPollIntervalSec;
+            }
+
+            Debug.LogWarning("[GameBootstrapper] Ground-ready timed out. Activating player without collider confirmation.");
+        }
+
+        private async Awaitable SpawnPlayerAsync(CancellationToken ct)
+        {
+            if (_isLoadingSave)
+                return;
+
+            if (playerSpawner != null && playerSpawner.TryGetComponent(out HectonPlayerSpawner spawner))
+            {
+                await spawner.SpawnPlayerAsync(ct);
+                ResolveSceneActivationReferences(SceneManager.GetActiveScene());
+                return;
+            }
+
+            if (playerObject != null)
+            {
+                playerObject.transform.position = fallbackSpawnPosition;
+                PublishPlayerRuntimeReference();
+                return;
+            }
+
+            Debug.LogWarning("[GameBootstrapper] No player spawner or owned player reference is available.");
+        }
+
+        private async Awaitable PrimeRuntimeWorldAsync(CancellationToken ct)
+        {
+            if (!prewarmProceduralScatterBeforePlayerActivation)
+                return;
+
+            if (!TryResolveProductionScatterDirector(out _worldProceduralScatterDirector))
+                return;
+
+            int passCount = Mathf.Clamp(scatterBootstrapPrimePasses, 1, 4);
+            if (_worldProceduralScatterDirector.TryPrewarmBootstrapSamplingPipeline())
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+
+            for (int i = 0; i < passCount; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                if (!_worldProceduralScatterDirector.TryPrimeBootstrapScatterPass())
+                    return;
+
+                if (!_worldProceduralScatterDirector.HasBootstrapPrimeWork)
+                    return;
+
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+            }
+        }
+
+        private async Awaitable RunColdCleanupAndCaptureMemorySnapshotAsync(CancellationToken ct)
+        {
+            AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
+            if (governor != null)
+                governor.ForceDrainPendingReleaseQueue();
+
+            await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+            ct.ThrowIfCancellationRequested();
+
+            VRAMPressureMonitor pressureMonitor = GlobalRegistry.VRAMPressure;
+            if (pressureMonitor != null)
+                pressureMonitor.ForceImmediateSampleAndResponse();
+
+            CaptureStartupMemorySnapshot();
+            float totalVramMb = 0f;
+            VRAMMonitor vramMonitor = GlobalRegistry.VRAMMonitor;
+            if (vramMonitor != null)
+                totalVramMb = vramMonitor.TotalVRAMBytes / BytesPerMegabyte;
+
+            SceneInstantiationGate.ActiveRuntime?.CaptureMemorySnapshot(
+                _debugStartupTextureMemoryMb,
+                _debugStartupReservedMemoryMb,
+                totalVramMb);
+        }
+
+        private async Awaitable WaitForSceneInstantiationGateAsync(CancellationToken ct)
+        {
+            SceneInstantiationGate gate = SceneInstantiationGate.ActiveRuntime;
+            if (gate != null)
+                await gate.WaitForOpenAsync(ct);
+        }
+
+        private async Awaitable<bool> WaitForResidentWorldPrefabPoolsReadyAsync(CancellationToken ct)
+        {
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            if (registry == null)
+            {
+                FailSceneActivation("PersistentWorldRegistry missing.");
+                return false;
+            }
+
+            while (Application.isPlaying && BootstrapState.HasActiveInstance && !registry.AreResidentWorldPrefabPoolsReady())
+            {
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+                ct.ThrowIfCancellationRequested();
+            }
+
+            return true;
+        }
+
+        private void DisablePlayer()
+        {
+            PublishPlayerRuntimeReference();
+            if (playerRigidbody == null && playerObject != null)
+                playerRigidbody = playerObject.GetComponent<Rigidbody>();
+
+            if (playerRigidbody != null)
+                playerRigidbody.isKinematic = true;
+
+            if (playerObject != null && playerObject.activeSelf)
+                playerObject.SetActive(false);
+
+            if (playerController != null)
+                playerController.enabled = false;
+        }
+
+        private void ActivatePlayer()
+        {
+            PublishPlayerRuntimeReference();
+            if (playerObject != null)
+                playerObject.SetActive(true);
+
+            if (playerRigidbody != null)
+                playerRigidbody.isKinematic = false;
+
+            if (playerController != null)
+                playerController.enabled = true;
+        }
+
+        private void PublishPlayerRuntimeReference()
+        {
+            if (IsTemporaryRuntimeShellObject(playerObject))
+                playerObject = null;
+
+            if (playerObject == null && playerRigidbody != null && !IsTemporaryRuntimeShellObject(playerRigidbody.gameObject))
+                playerObject = playerRigidbody.gameObject;
+
+            if (playerObject == null && playerController != null && !IsTemporaryRuntimeShellObject(playerController.gameObject))
+                playerObject = playerController.gameObject;
+
+            Hecton8.Meta.MetaRuntimeInstaller.EnsureRuntimeSystems();
+            Hecton8.Economy.EconomyRuntimeInstaller.EnsureRuntimeSystems();
+            Hecton8.Ecosystem.EcosystemRuntimeInstaller.EnsureRuntimeSystems();
+            Hecton8.PDA.PDARuntimeInstaller.EnsurePlayerSystems(playerObject);
+            Hecton8.Progression.ProgressionRuntimeInstaller.EnsurePlayerSystems(playerObject);
+            Hecton8.Narrative.NarrativeRuntimeInstaller.EnsurePlayerSystems(playerObject);
+            Hecton8.Audio.AtmosphericAudioRuntimeInstaller.EnsurePlayerSystems(playerObject);
+            BootstrapState.PublishCurrentPlayerObject(playerObject);
+        }
+
+        private void ApplyShippingSceneCleanup(Scene scene)
+        {
+            int suppressedCount = WorldShippingContentFilter.DeactivateSuppressedSceneObjects(
+                scene,
+                _shippingCleanupRootObjects,
+                _shippingCleanupTraversalStack);
+
+            if (suppressedCount > 0)
+                LogSceneActivation("[ShippingCleanup] Deactivated " + suppressedCount + " dev/trial scene objects.");
+        }
+
+        private void CaptureStartupMemorySnapshot()
+        {
+            TryReadMemoryMetricMegabytes(_TextureMemoryCandidates, out _debugStartupTextureMemoryMb, out _debugStartupTextureMetric);
+            TryReadMemoryMetricMegabytes(_TotalReservedMemoryCandidates, out _debugStartupReservedMemoryMb, out _debugStartupReservedMetric);
+        }
+
+        private static bool TryReadMemoryMetricMegabytes(
+            string[] candidates,
+            out float megabytes,
+            out string resolvedMetric)
+        {
+            megabytes = 0f;
+            resolvedMetric = "Unresolved";
+
+            List<ProfilerRecorderHandle> handles = new List<ProfilerRecorderHandle>(256); // COLD ALLOC: one-shot profiler handle scan during bootstrap before gameplay starts.
+            ProfilerRecorderHandle.GetAvailable(handles);
+
+            for (int candidateIndex = 0; candidateIndex < candidates.Length; candidateIndex++)
+            {
+                string candidate = candidates[candidateIndex];
+                for (int handleIndex = 0; handleIndex < handles.Count; handleIndex++)
+                {
+                    ProfilerRecorderDescription description =
+                        ProfilerRecorderHandle.GetDescription(handles[handleIndex]);
+
+                    if (!string.Equals(description.Name, candidate, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    ProfilerRecorder recorder = default;
+                    try
+                    {
+                        recorder = ProfilerRecorder.StartNew(
+                            description.Category,
+                            description.Name,
+                            1,
+                            ProfilerRecorderOptions.Default);
+
+                        if (!recorder.Valid)
+                            continue;
+
+                        megabytes = recorder.LastValue / BytesPerMegabyte;
+                        resolvedMetric = description.Name;
+                        return true;
+                    }
+                    catch (ArgumentException)
+                    {
+                    }
+                    finally
+                    {
+                        if (recorder.Valid)
+                            recorder.Dispose();
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsTemporaryRuntimeShellObject(GameObject candidate)
+        {
+            if (candidate == null)
+                return false;
+
+            Transform current = candidate.transform;
+            while (current != null)
+            {
+                if (IsTemporaryRuntimeShellName(current.name))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static bool IsTemporaryRuntimeShellName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return false;
+
+            return name.StartsWith("__", StringComparison.OrdinalIgnoreCase) ||
+                   name.StartsWith("temp", StringComparison.OrdinalIgnoreCase) ||
+                   name.IndexOf("_trial", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   name.IndexOf("_staging", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   name.IndexOf("_preview", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   name.IndexOf("_smoke", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool TryResolveProductionScatterDirector(out WorldProceduralScatterDirector director)
+        {
+            director = WorldProceduralScatterDirector.ActiveRuntimeInstance;
+            if (director != null && !IsTemporaryRuntimeShellObject(director.gameObject))
+                return true;
+
+            int registeredDirectorCount = WorldProceduralScatterDirector.RegisteredDirectorCount;
+            for (int i = 0; i < registeredDirectorCount; i++)
+            {
+                WorldProceduralScatterDirector candidate = WorldProceduralScatterDirector.GetRegisteredDirectorAt(i);
+                if (candidate == null || IsTemporaryRuntimeShellObject(candidate.gameObject))
+                    continue;
+
+                director = candidate;
+                return true;
+            }
+
+            director = null;
+            return false;
+        }
+
+        private void FailSceneActivation(string error)
+        {
+            Debug.LogError("[GameBootstrapper] " + error);
+            RaiseBootstrapFailedEvent(error);
+        }
+
+        private void LogSceneActivation(string message)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RuntimeDiagnosticsTrace.WriteEvent("game-bootstrapper.scene", message);
+#endif
+            if (verboseSceneActivationLogging)
+                Debug.Log("[GameBootstrapper] " + message);
+        }
+
+        private void SetSceneActivationStep(string step)
+        {
+            _debugSceneActivationStep = step;
+            LogSceneActivation(step);
+        }
+
+#if UNITY_EDITOR
+        private static bool RejectDirtyEditorSceneAndReloadFromDisk(Scene scene)
+        {
+            if (!Application.isEditor || !scene.IsValid() || !scene.isDirty)
+                return false;
+
+            string scenePath = scene.path;
+            if (string.IsNullOrEmpty(scenePath))
+            {
+                Debug.LogError("[GameBootstrapper] Dirty editor scene rejected, but scene has no disk path.");
+                return true;
+            }
+
+            Debug.LogError("[GameBootstrapper] Dirty editor scene rejected; reloading from disk: " + scenePath);
+            _pendingDirtySceneReloadPath = scenePath;
+            UnityEditor.EditorApplication.delayCall -= ProcessDirtySceneReloadFromDisk;
+            UnityEditor.EditorApplication.delayCall += ProcessDirtySceneReloadFromDisk;
+            return true;
+        }
+
+        private static void ProcessDirtySceneReloadFromDisk()
+        {
+            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                UnityEditor.EditorApplication.ExitPlaymode();
+                UnityEditor.EditorApplication.delayCall -= ProcessDirtySceneReloadFromDisk;
+                UnityEditor.EditorApplication.delayCall += ProcessDirtySceneReloadFromDisk;
+                return;
+            }
+
+            string scenePath = _pendingDirtySceneReloadPath;
+            _pendingDirtySceneReloadPath = null;
+            if (!string.IsNullOrEmpty(scenePath))
+                UnityEditor.SceneManagement.EditorSceneManager.OpenScene(scenePath, UnityEditor.SceneManagement.OpenSceneMode.Single);
+        }
+#endif
+
+        private void StartBackgroundDomainHandshake()
+        {
+            if (_backgroundDomainHandshakeTask != null)
+                return;
+
+            _backgroundDomainHandshakePath = Application.persistentDataPath;
+            string capturedPath = _backgroundDomainHandshakePath;
+            _backgroundDomainHandshakeTask = Task.Run(() => PrepareBackgroundDomainHandshake(capturedPath));
+        }
+
+        private static void PrepareBackgroundDomainHandshake(string persistentDataPath)
+        {
+            if (string.IsNullOrEmpty(persistentDataPath))
+                return;
+
+            string telemetryPath = Path.Combine(persistentDataPath, "Telemetry");
+            Directory.CreateDirectory(telemetryPath);
+        }
+
+        private async Awaitable<bool> JoinBackgroundDomainHandshakeAsync(CancellationToken ct)
+        {
+            Task task = _backgroundDomainHandshakeTask;
+            if (task == null)
+                return true;
+
+            while (!task.IsCompleted)
+            {
+                ct.ThrowIfCancellationRequested();
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+            }
+
+            if (task.IsFaulted)
+            {
+                Debug.LogError("[GameBootstrapper] Background domain handshake failed: " + task.Exception);
+                return false;
+            }
+
+            return !task.IsCanceled;
+        }
+
+        private static void ApplyMemoryGate(in HectonHardwareProfile hardwareProfile)
+        {
+            if (hardwareProfile.SystemMemoryMegabytes < LowMemorySystemThresholdMb ||
+                hardwareProfile.GraphicsMemoryMegabytes <= LowMemoryVramThresholdMb)
+            {
+                GlobalRegistry.FlagFallbackLowMemoryProfile();
+            }
+        }
+
+        private static void InspectPreviousBootState()
+        {
+            string persistentDataPath = Application.persistentDataPath;
+            if (string.IsNullOrEmpty(persistentDataPath))
+                return;
+
+            string path = Path.Combine(persistentDataPath, BootStateFileName);
+            if (!File.Exists(path))
+                return;
+
+            byte[] record = File.ReadAllBytes(path); // COLD ALLOC: boot.bin readback before gameplay; owner: GameBootstrapper
+            if (record.Length < BootStateRecordBytes)
+                return;
+
+            uint magic = ReadUInt32(record, 0);
+            ushort version = ReadUInt16(record, 4);
+            if (magic != BootStateMagic || version != BootStateVersion)
+                return;
+
+            BootStateMarker marker = (BootStateMarker)record[6];
+            if (marker == BootStateMarker.Complete)
+                return;
+
+            _bootStateSafeModeRequested = true;
+            GlobalRegistry.RequestSafeModeBoot();
+        }
+
+        private static unsafe void WriteBootStateRecord(
+            BootStateMarker marker,
+            BootstrapPhase phase,
+            GlobalRegistryServiceSlot serviceSlot)
+        {
+            string persistentDataPath = Application.persistentDataPath;
+            if (string.IsNullOrEmpty(persistentDataPath))
+                return;
+
+            string absolutePath = Path.Combine(persistentDataPath, BootStateFileName);
+            NativeArray<byte> record = new NativeArray<byte>(
+                BootStateRecordBytes,
+                Allocator.Temp,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[32] - boot crash recovery state - owner: GameBootstrapper
+            try
+            {
+                byte* data = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(record);
+                WriteUInt32(data, 0, BootStateMagic);
+                WriteUInt16(data, 4, BootStateVersion);
+                data[6] = (byte)marker;
+                data[7] = (byte)phase;
+                data[8] = serviceSlot == GlobalRegistryServiceSlot.Unknown ? byte.MaxValue : (byte)serviceSlot;
+                WriteUInt32(data, 12, _registryCoreReadyChecksum);
+                WriteUInt32(data, 16, GlobalRegistry.ActiveServiceTypeHash);
+                WriteUInt64(data, 20, unchecked((ulong)DateTime.UtcNow.Ticks));
+                data[28] = _bootStateSafeModeRequested ? (byte)1 : (byte)0;
+                data[29] = (byte)GlobalRegistry.ActiveBootProfile;
+                AsyncWriteManager.WriteAll(absolutePath, data, BootStateRecordBytes, out _);
+            }
+            finally
+            {
+                record.Dispose();
+            }
+        }
+
+        private static uint CalculateRegistryActiveServiceTypeHash()
+        {
+            uint hash = GlobalRegistry.CalculateActiveServiceTypeFnv1a();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (hash == 0u)
+                Debug.LogError("[GameBootstrapper] BIOS integrity checksum resolved to zero.");
+#endif
+            return hash;
+        }
+
+        private void ShutdownServicesInReverseBootstrapOrder()
+        {
+            if (_bootstrapExecutionOrderCount <= 0)
+                TryBuildBootstrapDependencyExecutionOrder(_bootstrapExecutionOrder, out _bootstrapExecutionOrderCount);
+
+            for (int index = _bootstrapExecutionOrderCount - 1; index >= 0; index--)
+            {
+                GlobalRegistryServiceSlot slot = ResolveRegistrySlotForBootstrapNode(_bootstrapExecutionOrder[index]);
+                if (slot != GlobalRegistryServiceSlot.Unknown)
+                    GlobalRegistry.ShutdownRegisteredServiceSlot(slot);
+            }
+
+            GlobalRegistry.ShutdownRegisteredServicesInReverseSlotOrder();
+        }
+
+        private static GlobalRegistryServiceSlot ResolveRegistrySlotForBootstrapNode(BootstrapDependencyNode node)
+        {
+            switch (node)
+            {
+                case BootstrapDependencyNode.SystemDispatcher: return GlobalRegistryServiceSlot.SystemDispatcherRuntime;
+                case BootstrapDependencyNode.GameTickManager: return GlobalRegistryServiceSlot.TickManagerRuntime;
+                case BootstrapDependencyNode.SaveManager: return GlobalRegistryServiceSlot.Save;
+                case BootstrapDependencyNode.ObjectPoolManager: return GlobalRegistryServiceSlot.ObjectPool;
+                case BootstrapDependencyNode.RenderDispatcher: return GlobalRegistryServiceSlot.RenderDispatcherRuntime;
+                case BootstrapDependencyNode.SceneRuntimeService: return GlobalRegistryServiceSlot.SceneRuntime;
+                case BootstrapDependencyNode.EquipmentInteractionHandler: return GlobalRegistryServiceSlot.InteractionSignals;
+                case BootstrapDependencyNode.HectonFloatingOrigin: return GlobalRegistryServiceSlot.FloatingOriginRuntime;
+                case BootstrapDependencyNode.GlobalPhysicsStateManager: return GlobalRegistryServiceSlot.PhysicsStateManagerRuntime;
+                case BootstrapDependencyNode.PhysicsApplySystem: return GlobalRegistryServiceSlot.Physics;
+                case BootstrapDependencyNode.DebrisManager: return GlobalRegistryServiceSlot.Debris;
+                case BootstrapDependencyNode.EnvironmentRuntimeContextService: return GlobalRegistryServiceSlot.Environment;
+                case BootstrapDependencyNode.OceanKinematicsRuntimeService: return GlobalRegistryServiceSlot.OceanKinematics;
+                case BootstrapDependencyNode.EcosystemDirector: return GlobalRegistryServiceSlot.EcosystemDirector;
+                case BootstrapDependencyNode.FaunaSimulation: return GlobalRegistryServiceSlot.FaunaSimulation;
+                case BootstrapDependencyNode.SpatialAudioManager: return GlobalRegistryServiceSlot.Audio;
+                case BootstrapDependencyNode.NativeInputManager: return GlobalRegistryServiceSlot.NativeInputManagerRuntime;
+                case BootstrapDependencyNode.InputDispatcher: return GlobalRegistryServiceSlot.Input;
+                case BootstrapDependencyNode.PlayerRuntimeContextService: return GlobalRegistryServiceSlot.Player;
+                case BootstrapDependencyNode.PlayerInventoryManager: return GlobalRegistryServiceSlot.PlayerInventory;
+                case BootstrapDependencyNode.PlayerSensoryManager: return GlobalRegistryServiceSlot.PlayerSensory;
+                case BootstrapDependencyNode.PowerGridManager: return GlobalRegistryServiceSlot.PowerGrid;
+                case BootstrapDependencyNode.ConstructionManager: return GlobalRegistryServiceSlot.Logistics;
+                case BootstrapDependencyNode.ConnectionSplineBatchRenderer: return GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime;
+                case BootstrapDependencyNode.BeaconNetworkSystem: return GlobalRegistryServiceSlot.BeaconNetworkRuntime;
+                case BootstrapDependencyNode.ModWorldPersistenceManager: return GlobalRegistryServiceSlot.ModWorldPersistenceRuntime;
+                default: return GlobalRegistryServiceSlot.Unknown;
+            }
+        }
+
+        private static uint ReadUInt32(byte[] data, int offset)
+        {
+            return (uint)(data[offset] |
+                          (data[offset + 1] << 8) |
+                          (data[offset + 2] << 16) |
+                          (data[offset + 3] << 24));
+        }
+
+        private static ushort ReadUInt16(byte[] data, int offset)
+        {
+            return (ushort)(data[offset] | (data[offset + 1] << 8));
+        }
+
+        private static unsafe void WriteUInt16(byte* data, int offset, ushort value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static unsafe void WriteUInt32(byte* data, int offset, uint value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+            data[offset + 2] = (byte)(value >> 16);
+            data[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteUInt64(byte* data, int offset, ulong value)
+        {
+            for (int i = 0; i < 8; i++)
+                data[offset + i] = (byte)(value >> (i * 8));
+        }
+
+#if UNITY_INCLUDE_TESTS
+        private static bool ResolveUnityTestRunnerProcess()
+        {
+            string[] args = System.Environment.GetCommandLineArgs(); // COLD ALLOC: string[] — Unity Test Framework process probe — owner: GameBootstrapper
+            for (int i = 0; i < args.Length; i++)
+            {
+                string arg = args[i];
+                if (string.Equals(arg, "-runTests", StringComparison.Ordinal) ||
+                    string.Equals(arg, "-runEditorTests", StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+#endif
 
         private static void EnsureExtendedRegistryCoverageForActiveScene()
         {
@@ -2675,11 +3961,32 @@ namespace Hecton8.Bootstrap
 
             string crashMessage = BuildFatalBootstrapMessage(phaseName, exception);
             WriteFatalBootstrapLog(crashMessage);
-            BootstrapBiosErrorOverlay.Show(string.Format(FatalBootOverlayMessageTemplate, phaseName));
+            BootstrapBiosErrorOverlay.Show(BuildFatalBootOverlayMessage(phaseName));
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogException(exception);
 #endif
+        }
+
+        private static string BuildBiosErrorMessage(string sceneName, int buildIndex)
+        {
+            StringBuilder builder = _biosErrorMessageBuilder;
+            builder.Length = 0;
+            builder.Append("BIOS ERROR 0xBOOT")
+                .Append('\n').Append("EXPECTED: 00_BOOTSTRAP [0]")
+                .Append('\n').Append("DETECTED: ").Append(sceneName).Append(" [").Append(buildIndex).Append(']')
+                .Append('\n').Append("ACTION: FORCED RECOVERY");
+            return builder.ToString();
+        }
+
+        private static string BuildFatalBootOverlayMessage(string phaseName)
+        {
+            StringBuilder builder = _fatalOverlayMessageBuilder;
+            builder.Length = 0;
+            builder.Append("BIOS ERROR 0xBOOT_FATAL")
+                .Append('\n').Append("PHASE: ").Append(string.IsNullOrEmpty(phaseName) ? "Unknown" : phaseName)
+                .Append('\n').Append("ACTION: SEE fatal_boot_crash.log");
+            return builder.ToString();
         }
 
         private static string BuildFatalBootstrapMessage(string phaseName, Exception exception)
@@ -2769,6 +4076,12 @@ namespace Hecton8.Bootstrap
         /// <inheritdoc />
         public void PlayAtPoint(AudioClip clip, Vector3 position, float volume, float pitch, AudioMixerGroup mixerGroup)
         {
+        }
+
+        /// <inheritdoc />
+        public bool QueueAudioEvent(in AudioEvent audioEvent)
+        {
+            return false;
         }
 
         /// <inheritdoc />

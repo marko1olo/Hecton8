@@ -13,7 +13,7 @@ namespace Hecton8.Editor
     /// </summary>
     public static class LocalizationCjkCoverageValidator
     {
-        private const string PrimaryTextAssetPath = "Assets/_Project/Art/Materials/Fonts/текст SDF.asset";
+        private const string PrimaryTextAssetPath = "Assets/_Project/Art/Materials/Fonts/tekst SDF.asset";
         private const string ChineseLocalizationPath = "Assets/_Project/Scripts/ChineseSimplified.json";
         private const string PrimaryTextAssetPathUtf = "Assets/_Project/Art/Materials/Fonts/\u0442\u0435\u043a\u0441\u0442 SDF.asset";
         private const string JapaneseLocalizationPath = "Assets/_Project/Scripts/Japanese.json";

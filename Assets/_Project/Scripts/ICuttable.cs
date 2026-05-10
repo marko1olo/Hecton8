@@ -1,26 +1,26 @@
 // ============================================================================
 // HECTON-8 — ICuttable.cs
-// Контракт для объектов, которые можно резать лазером.
+// Kontrakt dlya obektov, kotorye mozhno rezat lazerom.
 //
-// РЕАЛИЗАЦИИ:
-//   • ResourceNode  — ресурсный узел, делегирует в TakeDamage.
-//   • BaseModule    — модуль базы, делегирует в ApplyDamage.
+// REALIZATsII:
+//   • ResourceNode  — resursnyy uzel, delegiruet v TakeDamage.
+//   • BaseModule    — modul bazy, delegiruet v ApplyDamage.
 //
-// ПОТРЕБИТЕЛИ:
-//   • LaserCutter.UsePrimary() — вызывает ApplyCutDamage через
-//     TryGetComponent<ICuttable> на рейкаст-цели.
+// POTREBITELI:
+//   • LaserCutter.UsePrimary() — vyzyvaet ApplyCutDamage cherez
+//     TryGetComponent<ICuttable> na reykast-tseli.
 //
-// КОНТРАКТ:
-//   • damage — урон за кадр (damagePerSecond × deltaTime).
-//     Гарантия вызывающей стороны: damage > 0.
-//   • hitPoint — мировая точка попадания луча (Vector3).
-//     Реализация может использовать для декалей, VFX, направленных
-//     повреждений. Может игнорировать.
+// KONTRAKT:
+//   • damage — uron za kadr (damagePerSecond × deltaTime).
+//     Garantiya vyzyvayuschey storony: damage > 0.
+//   • hitPoint — mirovaya tochka popadaniya lucha (Vector3).
+//     Realizatsiya mozhet ispolzovat dlya dekaley, VFX, napravlennyh
+//     povrezhdeniy. Mozhet ignorirovat.
 //
 // ZERO GC:
-//   • Интерфейс без свойств — TryGetComponent<ICuttable> не вызывает
-//     boxing (Unity кэширует интерфейсные запросы на MonoBehaviour).
-//   • Параметры — value types (float, Vector3).
+//   • Interfeys bez svoystv — TryGetComponent<ICuttable> ne vyzyvaet
+//     boxing (Unity keshiruet interfeysnye zaprosy na MonoBehaviour).
+//   • Parametry — value types (float, Vector3).
 // ============================================================================
 
 using UnityEngine;
@@ -30,16 +30,16 @@ namespace Hecton8.Gameplay
     public interface ICuttable
     {
         /// <summary>
-        /// Применяет урон от режущего инструмента.
+        /// Primenyaet uron ot rezhuschego instrumenta.
         /// </summary>
         /// <param name="damage">
-        /// Урон за текущий кадр. Положительное значение.
-        /// Типичный источник: damagePerSecond × deltaTime.
+        /// Uron za tekuschiy kadr. Polozhitelnoe znachenie.
+        /// Tipichnyy istochnik: damagePerSecond × deltaTime.
         /// </param>
         /// <param name="hitPoint">
-        /// Мировая позиция точки попадания луча / инструмента.
-        /// Используется для локализации повреждений, спавна декалей,
-        /// направленных VFX.
+        /// Mirovaya pozitsiya tochki popadaniya lucha / instrumenta.
+        /// Ispolzuetsya dlya lokalizatsii povrezhdeniy, spavna dekaley,
+        /// napravlennyh VFX.
         /// </param>
         void ApplyCutDamage(float damage, Vector3 hitPoint);
     }

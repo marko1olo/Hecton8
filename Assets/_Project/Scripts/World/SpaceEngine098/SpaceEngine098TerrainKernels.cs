@@ -109,7 +109,7 @@ namespace Hecton8.World
                     (point + parameters.Warp * dsum) * frequency,
                     seed + (uint)i * 4099u);
                 float weight = math.saturate(signal * math.max(0f, parameters.Gain));
-                signal = parameters.Offset - math.sqrt(math.max(0f, parameters.RidgeSmooth) + noiseDeriv.w * noiseDeriv.w);
+                signal = parameters.Offset - FastRidgeMagnitude(noiseDeriv.w, math.max(0f, parameters.RidgeSmooth));
                 signal *= signal * weight;
                 sum += signal * amplitude;
                 dsum -= amplitude * noiseDeriv.xyz * noiseDeriv.w;
@@ -161,20 +161,20 @@ namespace Hecton8.World
                 {
                     int2 cell = baseCell + new int2(dx, dz);
                     float2 feature = new float2(cell.x, cell.y) + Hash2(cell, seed);
-                    float distSq = math.lengthsq(feature - point);
-                    if (distSq < f1)
+                    float distance = FastMagnitudeApprox(feature - point);
+                    if (distance < f1)
                     {
                         f2 = f1;
-                        f1 = distSq;
+                        f1 = distance;
                     }
-                    else if (distSq < f2)
+                    else if (distance < f2)
                     {
-                        f2 = distSq;
+                        f2 = distance;
                     }
                 }
             }
 
-            return math.sqrt(new float2(f1, f2));
+            return new float2(f1, f2);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -210,6 +210,27 @@ namespace Hecton8.World
             }
 
             return sum / math.max(0.0001f, normalization);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastDistance2(float2 value)
+        {
+            return FastMagnitudeApprox(value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastRidgeMagnitude(float signal, float smooth)
+        {
+            return math.abs(signal) + (smooth * 0.5f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastMagnitudeApprox(float2 value)
+        {
+            float2 abs = math.abs(value);
+            float max = math.max(abs.x, abs.y);
+            float min = math.min(abs.x, abs.y);
+            return max + (min * 0.41421356f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -525,7 +546,7 @@ namespace Hecton8.World
             for (int i = 0; i < CraterAupCenters.Length; i++)
             {
                 float3 center = CraterAupCenters[i];
-                float r = math.length(absolute - new float2(center.x, center.z)) / safeRadius;
+                float r = SpaceEngine098TerrainMath.FastDistance2(absolute - new float2(center.x, center.z)) / safeRadius;
                 if (r >= 1f)
                     continue;
 

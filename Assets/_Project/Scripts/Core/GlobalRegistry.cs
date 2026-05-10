@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 using Hecton.Localization;
 using Hecton8.AtlasSignal;
@@ -62,12 +63,184 @@ namespace Hecton8.Core
     /// </summary>
     public static class GlobalRegistry
     {
+        /// <summary>
+        /// BIOS lifecycle phase for the registry mutation gate.
+        /// </summary>
+        public enum RegistryPhase : byte
+        {
+            Uninitialized = 0,
+            Registering = 1,
+            Ready = 2
+        }
+
+        public enum BootConfigurationProfile : byte
+        {
+            Normal = 0,
+            FallbackLowMemory = 1,
+            SafeMode = 2
+        }
+
+        private const int ServiceSlotMaskWordCount = 4;
+        // COLD ALLOC: long[4] - requested service-slot bitset for ghost-service detection - owner: GlobalRegistry
+        private static readonly long[] _requestedServiceSlotMask = new long[ServiceSlotMaskWordCount];
+        // COLD ALLOC: long[4] - registered service-slot bitset for ghost-service detection - owner: GlobalRegistry
+        private static readonly long[] _registeredServiceSlotMask = new long[ServiceSlotMaskWordCount];
+        // COLD ALLOC: string[140] - allocation-free ghost-service slot names; index matches GlobalRegistryServiceSlot numeric value - owner: GlobalRegistry
+        private static readonly string[] _serviceSlotNames =
+        {
+            nameof(GlobalRegistryServiceSlot.Input),
+            nameof(GlobalRegistryServiceSlot.Physics),
+            nameof(GlobalRegistryServiceSlot.Audio),
+            nameof(GlobalRegistryServiceSlot.Scene),
+            nameof(GlobalRegistryServiceSlot.Save),
+            nameof(GlobalRegistryServiceSlot.UI),
+            nameof(GlobalRegistryServiceSlot.ObjectPool),
+            nameof(GlobalRegistryServiceSlot.Player),
+            nameof(GlobalRegistryServiceSlot.PlayerInventory),
+            nameof(GlobalRegistryServiceSlot.ModularEquipment),
+            nameof(GlobalRegistryServiceSlot.PlayerSensory),
+            nameof(GlobalRegistryServiceSlot.Environment),
+            nameof(GlobalRegistryServiceSlot.Weather),
+            nameof(GlobalRegistryServiceSlot.OceanKinematics),
+            nameof(GlobalRegistryServiceSlot.PowerGrid),
+            nameof(GlobalRegistryServiceSlot.Submarine),
+            nameof(GlobalRegistryServiceSlot.SubmarineHullBreach),
+            nameof(GlobalRegistryServiceSlot.InteractionSignals),
+            nameof(GlobalRegistryServiceSlot.Debris),
+            nameof(GlobalRegistryServiceSlot.EcosystemDirector),
+            nameof(GlobalRegistryServiceSlot.ThermodynamicsService),
+            nameof(GlobalRegistryServiceSlot.Logistics),
+            nameof(GlobalRegistryServiceSlot.WorldGen),
+            nameof(GlobalRegistryServiceSlot.EncounterDirector),
+            nameof(GlobalRegistryServiceSlot.QuestSystem),
+            nameof(GlobalRegistryServiceSlot.FluidRuntime),
+            nameof(GlobalRegistryServiceSlot.ThermodynamicsRuntime),
+            nameof(GlobalRegistryServiceSlot.NarrativeDirectorRuntime),
+            nameof(GlobalRegistryServiceSlot.QuestRuntime),
+            nameof(GlobalRegistryServiceSlot.TickManager),
+            nameof(GlobalRegistryServiceSlot.Dispatcher),
+            nameof(GlobalRegistryServiceSlot.RenderDispatcher),
+            nameof(GlobalRegistryServiceSlot.PhysicsStateManager),
+            nameof(GlobalRegistryServiceSlot.FaunaSimulation),
+            nameof(GlobalRegistryServiceSlot.FluidSimulation),
+            nameof(GlobalRegistryServiceSlot.PersistentWorldRegistry),
+            nameof(GlobalRegistryServiceSlot.PDALogbook),
+            nameof(GlobalRegistryServiceSlot.PlayerMotor),
+            nameof(GlobalRegistryServiceSlot.Profile),
+            nameof(GlobalRegistryServiceSlot.InputBinding),
+            nameof(GlobalRegistryServiceSlot.CullingRuntime),
+            nameof(GlobalRegistryServiceSlot.LODSystemRuntime),
+            nameof(GlobalRegistryServiceSlot.DynamicResolutionRuntime),
+            nameof(GlobalRegistryServiceSlot.ImpostorRuntime),
+            nameof(GlobalRegistryServiceSlot.DepthZoneRuntime),
+            nameof(GlobalRegistryServiceSlot.LocalizationRuntime),
+            nameof(GlobalRegistryServiceSlot.AudioLogRuntime),
+            nameof(GlobalRegistryServiceSlot.AtlasSignalRuntime),
+            nameof(GlobalRegistryServiceSlot.FirstHourRuntime),
+            nameof(GlobalRegistryServiceSlot.EmergencyRelayRuntime),
+            nameof(GlobalRegistryServiceSlot.AtmosphereRuntime),
+            nameof(GlobalRegistryServiceSlot.BeaconNetworkRuntime),
+            nameof(GlobalRegistryServiceSlot.ScanLogRuntime),
+            nameof(GlobalRegistryServiceSlot.ToolDurabilityRuntime),
+            nameof(GlobalRegistryServiceSlot.LoreDatabaseRuntime),
+            nameof(GlobalRegistryServiceSlot.AssetLifecycleRuntime),
+            nameof(GlobalRegistryServiceSlot.AssetLoadDispatcherRuntime),
+            nameof(GlobalRegistryServiceSlot.VRAMMonitorRuntime),
+            nameof(GlobalRegistryServiceSlot.VRAMPressureRuntime),
+            nameof(GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime),
+            nameof(GlobalRegistryServiceSlot.RenderTexturePoolRuntime),
+            nameof(GlobalRegistryServiceSlot.WorldStateRuntime),
+            nameof(GlobalRegistryServiceSlot.UserOptionsRuntime),
+            nameof(GlobalRegistryServiceSlot.BiolumManagerRuntime),
+            nameof(GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime),
+            nameof(GlobalRegistryServiceSlot.SargassumDragRuntime),
+            nameof(GlobalRegistryServiceSlot.SargassumCutRuntime),
+            nameof(GlobalRegistryServiceSlot.PlayerExpressionRuntime),
+            nameof(GlobalRegistryServiceSlot.SpectrumRuntime),
+            nameof(GlobalRegistryServiceSlot.SoundscapeRuntime),
+            nameof(GlobalRegistryServiceSlot.AcousticZoneRuntime),
+            nameof(GlobalRegistryServiceSlot.SurfaceWeatherRuntime),
+            nameof(GlobalRegistryServiceSlot.EnvironmentalStrainRuntime),
+            nameof(GlobalRegistryServiceSlot.EcosystemHealthRuntime),
+            nameof(GlobalRegistryServiceSlot.FaunaGeneticsRuntime),
+            nameof(GlobalRegistryServiceSlot.PlayerExplorationRuntime),
+            nameof(GlobalRegistryServiceSlot.DiscoveryRuntime),
+            nameof(GlobalRegistryServiceSlot.ResourceScarcityRuntime),
+            nameof(GlobalRegistryServiceSlot.PDAExchangeRuntime),
+            nameof(GlobalRegistryServiceSlot.PlayerActionRuntime),
+            nameof(GlobalRegistryServiceSlot.PDAMarkerRuntime),
+            nameof(GlobalRegistryServiceSlot.AmbientWaterMotionRuntime),
+            nameof(GlobalRegistryServiceSlot.SuitUpgradeRuntime),
+            nameof(GlobalRegistryServiceSlot.EndingRuntime),
+            nameof(GlobalRegistryServiceSlot.Atlas6DirectiveRuntime),
+            nameof(GlobalRegistryServiceSlot.HazardZoneRuntime),
+            nameof(GlobalRegistryServiceSlot.MissionRuntime),
+            nameof(GlobalRegistryServiceSlot.RockManagerRuntime),
+            nameof(GlobalRegistryServiceSlot.CameraJuiceRuntime),
+            nameof(GlobalRegistryServiceSlot.MusicDirectorRuntime),
+            nameof(GlobalRegistryServiceSlot.SubtitleRuntime),
+            nameof(GlobalRegistryServiceSlot.AtlasSignalDecoderRuntime),
+            nameof(GlobalRegistryServiceSlot.ScrapRuntime),
+            nameof(GlobalRegistryServiceSlot.AutonomousExtractorRuntime),
+            nameof(GlobalRegistryServiceSlot.VisorRTRuntime),
+            nameof(GlobalRegistryServiceSlot.CameraRTRuntime),
+            nameof(GlobalRegistryServiceSlot.PostFXRTRuntime),
+            nameof(GlobalRegistryServiceSlot.UIRTRuntime),
+            nameof(GlobalRegistryServiceSlot.SettingsRuntime),
+            nameof(GlobalRegistryServiceSlot.RuntimeWatchdogRuntime),
+            nameof(GlobalRegistryServiceSlot.CrashTelemetryRuntime),
+            nameof(GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime),
+            nameof(GlobalRegistryServiceSlot.MapMagicRuntime),
+            nameof(GlobalRegistryServiceSlot.ProceduralFieldSamplerRuntime),
+            nameof(GlobalRegistryServiceSlot.ResourceDistributionRuntime),
+            nameof(GlobalRegistryServiceSlot.RandomEventRuntime),
+            nameof(GlobalRegistryServiceSlot.EclipseGameplayRuntime),
+            nameof(GlobalRegistryServiceSlot.WorldSeedProvider),
+            nameof(GlobalRegistryServiceSlot.GeologyTerrainSeamRuntime),
+            nameof(GlobalRegistryServiceSlot.GeologyVoxelBridgeRuntime),
+            nameof(GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime),
+            nameof(GlobalRegistryServiceSlot.FloatingOriginRuntime),
+            nameof(GlobalRegistryServiceSlot.PDAIntrusionRuntime),
+            nameof(GlobalRegistryServiceSlot.CelestialEngineRuntime),
+            nameof(GlobalRegistryServiceSlot.VoxelEngineRuntime),
+            nameof(GlobalRegistryServiceSlot.BiomeMatrixRuntime),
+            nameof(GlobalRegistryServiceSlot.UnderwaterVisualsRuntime),
+            nameof(GlobalRegistryServiceSlot.DynamicDifficultyRuntime),
+            nameof(GlobalRegistryServiceSlot.ToolHapticsRuntime),
+            nameof(GlobalRegistryServiceSlot.ARWaypointRuntime),
+            nameof(GlobalRegistryServiceSlot.VRSomaticProvider),
+            nameof(GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime),
+            nameof(GlobalRegistryServiceSlot.NativeInputManagerRuntime),
+            nameof(GlobalRegistryServiceSlot.RaycastBatchRuntime),
+            nameof(GlobalRegistryServiceSlot.FieldOperationLogRuntime),
+            nameof(GlobalRegistryServiceSlot.CorporateOrderRuntime),
+            nameof(GlobalRegistryServiceSlot.BiolumControllerRuntime),
+            nameof(GlobalRegistryServiceSlot.UIAudioFeedbackRuntime),
+            nameof(GlobalRegistryServiceSlot.UITooltipRuntime),
+            nameof(GlobalRegistryServiceSlot.ScavengePopulatorRuntime),
+            nameof(GlobalRegistryServiceSlot.RunModifierRuntime),
+            nameof(GlobalRegistryServiceSlot.MigrationDirectorRuntime),
+            nameof(GlobalRegistryServiceSlot.BasePollutionRuntime),
+            nameof(GlobalRegistryServiceSlot.EntityChangeManagerRuntime),
+            nameof(GlobalRegistryServiceSlot.PerformanceMonitorRuntime),
+            nameof(GlobalRegistryServiceSlot.MapMagicVegetationRuntime),
+            nameof(GlobalRegistryServiceSlot.ModWorldPersistenceRuntime),
+            nameof(GlobalRegistryServiceSlot.LoadingScreenRuntime),
+            nameof(GlobalRegistryServiceSlot.ModalWindowRuntime),
+            nameof(GlobalRegistryServiceSlot.TerrainProviderRuntime)
+        };
+        private static int _registryPhase = (int)RegistryPhase.Uninitialized;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static bool _registeringGetViolationLogged;
+        private static bool _readyLockViolationLogged;
+#endif
         // COLD ALLOC: RegistryBucket<IUpdatable>[128] - global multi-instance update registry - owner: GlobalRegistry
         private static readonly RegistryBucket<IUpdatable> _updatables = new RegistryBucket<IUpdatable>(512);
         // COLD ALLOC: RegistryBucket<IRenderable>[64] - global multi-instance render registry - owner: GlobalRegistry
         private static readonly RegistryBucket<IRenderable> _renderables = new RegistryBucket<IRenderable>(64);
         private static readonly RegistryBucket<IFixedTickable> _fixedTickables = new RegistryBucket<IFixedTickable>(256);
         private static readonly RegistryBucket<ISlowTickable> _slowTickables = new RegistryBucket<ISlowTickable>(256);
+        private static readonly RegistryBucket<IFrostTickable> _frostTickables = new RegistryBucket<IFrostTickable>(128);
         private static readonly RegistryBucket<IGlobalRegistryHotSwapListener> _hotSwapListeners = new RegistryBucket<IGlobalRegistryHotSwapListener>(256);
         private static readonly RegistryBucket<IRegistryEventListener> _registryEventListeners = new RegistryBucket<IRegistryEventListener>(64);
         // COLD ALLOC: NoOpInputService[1] - null-object fallback for premature GlobalRegistry.Input reads - owner: GlobalRegistry
@@ -84,6 +257,14 @@ namespace Hecton8.Core
             (1u << (int)GlobalRegistryResolutionScope.PlayerSensory);
         private const uint ForceOverrideTokenValue = 0x484F5453u; // "HOTS"
         [ThreadStatic] private static uint _resolutionMask;
+        [ThreadStatic] private static IInputService _threadInput;
+        [ThreadStatic] private static IPhysicsService _threadPhysics;
+        [ThreadStatic] private static GameTickManager _threadTickManager;
+        [ThreadStatic] private static CrashTelemetryBuffer _threadTelemetry;
+        [ThreadStatic] private static IAudioService _threadAudio;
+        private static BootConfigurationProfile _activeBootProfile = BootConfigurationProfile.Normal;
+        private static bool _safeModeBootRequested;
+        private static uint _activeServiceTypeHash;
 
         public readonly struct ForceOverrideToken
         {
@@ -95,6 +276,24 @@ namespace Hecton8.Core
             }
 
             internal bool IsValid => Value == ForceOverrideTokenValue;
+        }
+
+        public static BootConfigurationProfile ActiveBootProfile => _activeBootProfile;
+
+        public static bool IsSafeModeBootRequested => _safeModeBootRequested;
+
+        public static uint ActiveServiceTypeHash => _activeServiceTypeHash;
+
+        public static void FlagFallbackLowMemoryProfile()
+        {
+            if (_activeBootProfile == BootConfigurationProfile.Normal)
+                _activeBootProfile = BootConfigurationProfile.FallbackLowMemory;
+        }
+
+        public static void RequestSafeModeBoot()
+        {
+            _safeModeBootRequested = true;
+            _activeBootProfile = BootConfigurationProfile.SafeMode;
         }
 
         internal enum GlobalRegistryResolutionScope : byte
@@ -131,11 +330,13 @@ namespace Hecton8.Core
         private static ISceneService _scene;
         private static ISaveService _save;
         private static IUIService _ui;
+        private static IModalWindowService _modalWindowRuntime;
         private static IARWaypointService _arWaypoint;
         private static ObjectPoolManager _objectPool;
         private static IPlayerRuntimeContext _player;
         private static HectonPlayerMotor _playerMotor;
         private static IPlayerInventoryService _playerInventory;
+        private static float _playerInventoryMassKg;
         private static IModularEquipmentService _modularEquipment;
         private static IPlayerSensoryService _playerSensory;
         private static IEnvironmentRuntimeContext _environment;
@@ -190,6 +391,7 @@ namespace Hecton8.Core
         private static FirstHourDirector _firstHourRuntime;
         private static EmergencyServiceRelayDirector _emergencyRelayRuntime;
         private static HectonAtmosphereManager _atmosphereRuntime;
+        private static ITerrainProvider _terrainProviderRuntime;
         private static MapMagicBridge _mapMagicRuntime;
         private static HectonMapMagicVegetationBridge _mapMagicVegetationRuntime;
         private static ScavengePopulator _scavengePopulatorRuntime;
@@ -347,6 +549,11 @@ namespace Hecton8.Core
         public static GameBootstrapper BootstrapperRuntime => _bootstrapperRuntime;
 
         /// <summary>
+        /// Current mutation phase of the registry BIOS.
+        /// </summary>
+        public static RegistryPhase Phase => (RegistryPhase)Volatile.Read(ref _registryPhase);
+
+        /// <summary>
         /// Registry-owned scene service component before and after interface registration.
         /// </summary>
         internal static SceneRuntimeService SceneRuntime => _sceneRuntime;
@@ -408,8 +615,16 @@ namespace Hecton8.Core
         {
             get
             {
-                if (_input != null)
-                    return _input;
+                IInputService cached = _threadInput;
+                IInputService registered = _input;
+                if (cached != null && ReferenceEquals(cached, registered))
+                    return cached;
+
+                if (registered != null)
+                {
+                    _threadInput = registered;
+                    return registered;
+                }
 
                 PublishInputFallbackWarning();
                 return _noOpInputService;
@@ -457,17 +672,53 @@ namespace Hecton8.Core
         /// <summary>
         /// Registered physics service slot.
         /// </summary>
-        public static IPhysicsService Physics => _physics;
+        public static IPhysicsService Physics
+        {
+            get
+            {
+                IPhysicsService cached = _threadPhysics;
+                IPhysicsService registered = _physics;
+                if (cached != null && ReferenceEquals(cached, registered))
+                    return cached;
+
+                _threadPhysics = registered;
+                return registered;
+            }
+        }
 
         /// <summary>
         /// Registered audio service slot.
         /// </summary>
-        public static IAudioService Audio => _audio;
+        public static IAudioService Audio
+        {
+            get
+            {
+                IAudioService cached = _threadAudio;
+                IAudioService registered = _audio;
+                if (cached != null && ReferenceEquals(cached, registered))
+                    return cached;
+
+                _threadAudio = registered;
+                return registered;
+            }
+        }
 
         /// <summary>
         /// Authoritative crash telemetry runtime owner.
         /// </summary>
-        public static CrashTelemetryBuffer CrashTelemetry => _crashTelemetryRuntime;
+        public static CrashTelemetryBuffer CrashTelemetry
+        {
+            get
+            {
+                CrashTelemetryBuffer cached = _threadTelemetry;
+                CrashTelemetryBuffer registered = _crashTelemetryRuntime;
+                if (cached != null && ReferenceEquals(cached, registered))
+                    return cached;
+
+                _threadTelemetry = registered;
+                return registered;
+            }
+        }
 
         /// <summary>
         /// Authoritative player critical procedural audio runtime owner.
@@ -559,6 +810,16 @@ namespace Hecton8.Core
                 IPlayerInventoryService inventoryService = PlayerInventory;
                 return inventoryService != null ? inventoryService.Inventory : null;
             }
+        }
+
+        /// <summary>
+        /// Last Burst-derived player inventory mass published by PlayerInventory.
+        /// </summary>
+        public static float PlayerInventoryMassKg => _playerInventoryMassKg;
+
+        public static void PublishPlayerInventoryMassKg(float totalMassKg)
+        {
+            _playerInventoryMassKg = float.IsFinite(totalMassKg) && totalMassKg > 0f ? totalMassKg : 0f;
         }
 
         /// <summary>
@@ -850,6 +1111,11 @@ namespace Hecton8.Core
         /// Registered celestial runtime owner.
         /// </summary>
         public static HectonCelestialEngine CelestialEngine => _celestialEngineRuntime;
+
+        /// <summary>
+        /// Registered terrain sampling provider. Gameplay must use this interface instead of MapMagic types.
+        /// </summary>
+        public static ITerrainProvider Terrain => _terrainProviderRuntime;
 
         /// <summary>
         /// Registered MapMagic bridge runtime owner.
@@ -1175,7 +1441,19 @@ namespace Hecton8.Core
         /// <summary>
         /// Registered tick-manager owner.
         /// </summary>
-        public static GameTickManager TickManager => _tickManager;
+        public static GameTickManager TickManager
+        {
+            get
+            {
+                GameTickManager cached = _threadTickManager;
+                GameTickManager registered = _tickManager;
+                if (cached != null && ReferenceEquals(cached, registered))
+                    return cached;
+
+                _threadTickManager = registered;
+                return registered;
+            }
+        }
 
         /// <summary>
         /// Registered gameplay dispatcher owner.
@@ -1238,6 +1516,11 @@ namespace Hecton8.Core
         public static RegistryBucket<ISlowTickable> SlowTickables => _slowTickables;
 
         /// <summary>
+        /// Dense multi-instance frost maintenance registry.
+        /// </summary>
+        public static RegistryBucket<IFrostTickable> FrostTickables => _frostTickables;
+
+        /// <summary>
         /// Dense registry of explicit service hot-swap listeners.
         /// </summary>
         public static RegistryBucket<IGlobalRegistryHotSwapListener> HotSwapListeners => _hotSwapListeners;
@@ -1250,6 +1533,33 @@ namespace Hecton8.Core
         public static int PendingServiceReboundCount => _pendingServiceReboundCount + _nextFrameServiceReboundCount;
 
         /// <summary>
+        /// Opens the only sanctioned service-registration window.
+        /// </summary>
+        public static void BeginRegistration()
+        {
+            int previousPhase = Volatile.Read(ref _registryPhase);
+            if (previousPhase == (int)RegistryPhase.Registering)
+                return;
+
+            if (previousPhase == (int)RegistryPhase.Ready)
+                throw new CriticalBootException("[GlobalRegistry] Ready-locked registry cannot re-open registration.");
+
+            Interlocked.CompareExchange(
+                ref _registryPhase,
+                (int)RegistryPhase.Registering,
+                (int)RegistryPhase.Uninitialized);
+        }
+
+        /// <summary>
+        /// Locks the registry against further service publication and fails if a requested service never registered.
+        /// </summary>
+        public static void LockReady()
+        {
+            AssertNoGhostServicesOrThrow();
+            Interlocked.Exchange(ref _registryPhase, (int)RegistryPhase.Ready);
+        }
+
+        /// <summary>
         /// Returns a registered service through the guarded BIOS access lane.
         /// Editor/development builds throw on premature access; release builds return a safe null-object or null fallback.
         /// </summary>
@@ -1257,6 +1567,9 @@ namespace Hecton8.Core
         /// <returns>Registered service or release fallback.</returns>
         public static T Get<T>() where T : class
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            GuardGenericGetDuringRegistration<T>();
+#endif
             if (TryGet<T>(out T service))
                 return service;
 
@@ -1275,7 +1588,10 @@ namespace Hecton8.Core
         /// <returns>True when the service slot is registered.</returns>
         public static bool TryGet<T>(out T service) where T : class
         {
-            service = ResolveRegisteredServiceObject(ResolveServiceSlot<T>()) as T;
+            GlobalRegistryServiceSlot serviceSlot = ResolveServiceSlot<T>();
+            if (Volatile.Read(ref _registryPhase) != (int)RegistryPhase.Ready)
+                MarkServiceRequested(serviceSlot);
+            service = ResolveRegisteredServiceObject(serviceSlot) as T;
             return service != null;
         }
 
@@ -1284,6 +1600,21 @@ namespace Hecton8.Core
         {
             ShutdownRegisteredServices();
             ConfigureBootstrapRegistryBridge();
+            Interlocked.Exchange(ref _registryPhase, (int)RegistryPhase.Uninitialized);
+            Array.Clear(_requestedServiceSlotMask, 0, _requestedServiceSlotMask.Length);
+            Array.Clear(_registeredServiceSlotMask, 0, _registeredServiceSlotMask.Length);
+            _activeBootProfile = BootConfigurationProfile.Normal;
+            _safeModeBootRequested = false;
+            _activeServiceTypeHash = 0u;
+            _threadInput = null;
+            _threadPhysics = null;
+            _threadTickManager = null;
+            _threadTelemetry = null;
+            _threadAudio = null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _registeringGetViolationLogged = false;
+            _readyLockViolationLogged = false;
+#endif
             _input = null;
             _inputBinding = null;
             _nativeInputManagerRuntime = null;
@@ -1293,6 +1624,7 @@ namespace Hecton8.Core
             _scene = null;
             _save = null;
             _ui = null;
+            _modalWindowRuntime = null;
             _objectPool = null;
             _player = null;
             _playerInventory = null;
@@ -1349,6 +1681,7 @@ namespace Hecton8.Core
             _emergencyRelayRuntime = null;
             _atmosphereRuntime = null;
             _celestialEngineRuntime = null;
+            _terrainProviderRuntime = null;
             _mapMagicRuntime = null;
             _mapMagicVegetationRuntime = null;
             _scavengePopulatorRuntime = null;
@@ -1439,6 +1772,7 @@ namespace Hecton8.Core
             _updatables.Clear();
             _fixedTickables.Clear();
             _slowTickables.Clear();
+            _frostTickables.Clear();
             _renderables.Clear();
             _hotSwapListeners.Clear();
             _registryEventListeners.Clear();
@@ -1605,6 +1939,15 @@ namespace Hecton8.Core
         public static void RegisterUIService(IUIService instance)
         {
             RegisterService(ref _ui, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative scene modal facade.
+        /// </summary>
+        /// <param name="instance">Modal facade instance.</param>
+        public static void RegisterModalWindowService(IModalWindowService instance)
+        {
+            RegisterService(ref _modalWindowRuntime, instance);
         }
 
         /// <summary>
@@ -2152,6 +2495,14 @@ namespace Hecton8.Core
         public static void RegisterAtmosphereRuntime(HectonAtmosphereManager instance)
         {
             RegisterServiceAllowSameInstance(ref _atmosphereRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative terrain sampling provider.
+        /// </summary>
+        public static void RegisterTerrainProvider(ITerrainProvider instance)
+        {
+            RegisterServiceAllowSameInstance(ref _terrainProviderRuntime, instance);
         }
 
         /// <summary>
@@ -2916,6 +3267,15 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current scene modal facade if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterModalWindowService(IModalWindowService instance)
+        {
+            UnregisterService(ref _modalWindowRuntime, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current AR waypoint projection service if the owner matches.
         /// </summary>
         /// <param name="instance">Service owner requesting unregistration.</param>
@@ -3438,6 +3798,14 @@ namespace Hecton8.Core
         public static void UnregisterAtmosphereRuntime(HectonAtmosphereManager instance)
         {
             UnregisterService(ref _atmosphereRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current terrain sampling provider if the owner matches.
+        /// </summary>
+        public static void UnregisterTerrainProvider(ITerrainProvider instance)
+        {
+            UnregisterService(ref _terrainProviderRuntime, instance);
         }
 
         /// <summary>
@@ -4103,6 +4471,44 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers a frost maintenance owner into both the global bucket and its dispatcher lane.
+        /// </summary>
+        /// <param name="item">Frost-tick owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        public static void RegisterFrostTickable(IFrostTickable item, PriorityLayer layer)
+        {
+            TryRegisterFrostTickable(item, layer);
+        }
+
+        /// <summary>
+        /// Registers a frost maintenance owner into both the global bucket and its dispatcher lane.
+        /// </summary>
+        /// <param name="item">Frost-tick owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        /// <returns>True when both registry and dispatcher lane accepted the item.</returns>
+        public static bool TryRegisterFrostTickable(IFrostTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return false;
+
+            if (!Application.isPlaying)
+                return false;
+
+            if (!TryEnsureDispatcherRegistration())
+                return false;
+            if (!_frostTickables.TryRegister(item))
+                return false;
+
+            if (!SystemDispatcher.Register(item, layer))
+            {
+                _frostTickables.Unregister(item);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Registers an end-of-frame owner into its dispatcher late-frame lane.
         /// </summary>
         /// <param name="item">Late-frame owner.</param>
@@ -4235,6 +4641,20 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters a frost maintenance owner from both the global bucket and its dispatcher lane.
+        /// </summary>
+        /// <param name="item">Frost-tick owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        public static void UnregisterFrostTickable(IFrostTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            _frostTickables.TryUnregister(item);
+            SystemDispatcher.Unregister(item, layer);
+        }
+
+        /// <summary>
         /// Unregisters an end-of-frame owner from its dispatcher lane.
         /// </summary>
         /// <param name="item">Late-frame owner.</param>
@@ -4345,8 +4765,68 @@ namespace Hecton8.Core
             _updatables.Clear();
             _fixedTickables.Clear();
             _slowTickables.Clear();
+            _frostTickables.Clear();
             _renderables.Clear();
             SystemDispatcher.ClearAllLanes();
+        }
+
+        /// <summary>
+        /// Builds a cold-path diagnostic report for services that were requested but never registered.
+        /// </summary>
+        public static bool TryBuildGhostServiceReport(out string report)
+        {
+            StringBuilder builder = null;
+            int ghostCount = 0;
+
+            for (int wordIndex = 0; wordIndex < ServiceSlotMaskWordCount; wordIndex++)
+            {
+                ulong ghostMask = (ulong)(Volatile.Read(ref _requestedServiceSlotMask[wordIndex]) &
+                    ~Volatile.Read(ref _registeredServiceSlotMask[wordIndex]));
+                while (ghostMask != 0ul)
+                {
+                    int bitIndex = CountTrailingZeroBits(ghostMask);
+                    int serviceSlotIndex = (wordIndex << 6) + bitIndex;
+                    ghostMask &= ~(1ul << bitIndex);
+
+                    if (serviceSlotIndex == (int)GlobalRegistryServiceSlot.Unknown)
+                        continue;
+
+                    if (builder == null)
+                    {
+                        builder = new StringBuilder(512);
+                        builder.Append("[GlobalRegistry] Ghost service request(s) detected before Ready lock:");
+                    }
+
+                    builder.Append('\n')
+                        .Append(" - ")
+                        .Append(ResolveServiceSlotName(serviceSlotIndex));
+                    ghostCount++;
+                }
+            }
+
+            report = builder != null ? builder.ToString() : null;
+            return ghostCount > 0;
+        }
+
+        private static string ResolveServiceSlotName(int serviceSlotIndex)
+        {
+            return (uint)serviceSlotIndex < (uint)_serviceSlotNames.Length
+                ? _serviceSlotNames[serviceSlotIndex]
+                : "Unknown";
+        }
+
+        /// <summary>
+        /// Fails the current boot if any requested registry service slot remained empty.
+        /// </summary>
+        public static void AssertNoGhostServicesOrThrow()
+        {
+            if (!TryBuildGhostServiceReport(out string report))
+                return;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError(report);
+#endif
+            throw new CriticalBootException(report);
         }
 
         private static bool TryEnsureDispatcherRegistration()
@@ -4409,6 +4889,82 @@ namespace Hecton8.Core
             throw new DependencyCycleException(ResolveDependencyCycleMessage(requestedScope));
         }
 
+        private static void GuardGenericGetDuringRegistration<T>() where T : class
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (Phase != RegistryPhase.Registering)
+                return;
+
+            if (!_registeringGetViolationLogged)
+            {
+                _registeringGetViolationLogged = true;
+                Debug.LogError("[GlobalRegistry] Get<T>() during Registering is forbidden. requested=" + typeof(T).Name);
+            }
+
+            throw new CriticalBootException("[GlobalRegistry] Get<T>() during Registering is forbidden: " + typeof(T).Name);
+#endif
+        }
+
+        private static void GuardServicePublication<T>(ForceOverrideToken forceOverrideToken) where T : class
+        {
+            if (forceOverrideToken.IsValid || Phase != RegistryPhase.Ready)
+                return;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_readyLockViolationLogged)
+            {
+                _readyLockViolationLogged = true;
+                Debug.LogError("[GlobalRegistry] Ready-locked registry rejected registration: " + typeof(T).Name);
+            }
+#endif
+            throw new CriticalBootException("[GlobalRegistry] Ready-locked registry rejected registration: " + typeof(T).Name);
+        }
+
+        private static void MarkServiceRequested(GlobalRegistryServiceSlot serviceSlot)
+        {
+            SetServiceSlotBit(_requestedServiceSlotMask, serviceSlot);
+        }
+
+        private static void MarkServiceRegistered(GlobalRegistryServiceSlot serviceSlot)
+        {
+            SetServiceSlotBit(_registeredServiceSlotMask, serviceSlot);
+        }
+
+        private static void SetServiceSlotBit(long[] mask, GlobalRegistryServiceSlot serviceSlot)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Unknown)
+                return;
+
+            int serviceSlotIndex = (int)(byte)serviceSlot;
+            int wordIndex = serviceSlotIndex >> 6;
+            if ((uint)wordIndex >= (uint)ServiceSlotMaskWordCount)
+                return;
+
+            long bit = 1L << (serviceSlotIndex & 63);
+            long current = Volatile.Read(ref mask[wordIndex]);
+            while ((current & bit) == 0L)
+            {
+                long next = current | bit;
+                long observed = Interlocked.CompareExchange(ref mask[wordIndex], next, current);
+                if (observed == current)
+                    return;
+
+                current = observed;
+            }
+        }
+
+        private static int CountTrailingZeroBits(ulong value)
+        {
+            int count = 0;
+            while ((value & 1ul) == 0ul)
+            {
+                value >>= 1;
+                count++;
+            }
+
+            return count;
+        }
+
         private static string ResolveDependencyCycleMessage(GlobalRegistryResolutionScope requestedScope)
         {
             switch (requestedScope)
@@ -4451,16 +5007,32 @@ namespace Hecton8.Core
                 return;
             }
 
-            T previousService = slot;
+            GuardServicePublication<T>(forceOverrideToken);
+            GlobalRegistryServiceSlot serviceSlot = ResolveServiceSlot<T>();
+            T previousService = Volatile.Read(ref slot);
             if (ReferenceEquals(previousService, instance))
+            {
+                MarkServiceRegistered(serviceSlot);
                 return;
+            }
 
             if (previousService != null && !forceOverrideToken.IsValid)
                 ThrowSlotHijack(previousService, instance);
 
-            Volatile.Write(ref slot, instance);
+            if (forceOverrideToken.IsValid)
+            {
+                previousService = Interlocked.Exchange(ref slot, instance);
+            }
+            else
+            {
+                previousService = Interlocked.CompareExchange(ref slot, instance, null);
+                if (previousService != null && !ReferenceEquals(previousService, instance))
+                    ThrowSlotHijack(previousService, instance);
+            }
+
+            MarkServiceRegistered(serviceSlot);
             if (previousService != null)
-                QueueServiceRebound(ResolveServiceSlot<T>(), previousService, instance);
+                QueueServiceRebound(serviceSlot, previousService, instance);
         }
 
         private static void RegisterServiceAllowSameInstance<T>(ref T slot, T instance) where T : class
@@ -4489,7 +5061,8 @@ namespace Hecton8.Core
             if (ReferenceEquals(previousService, instance))
                 return;
 
-            Volatile.Write(ref slot, instance);
+            Interlocked.Exchange(ref slot, instance);
+            MarkServiceRegistered(serviceSlot);
             QueueServiceRebound(serviceSlot, previousService, instance);
         }
 
@@ -4519,8 +5092,10 @@ namespace Hecton8.Core
                 return;
             }
 
-            T previousService = slot;
-            slot = null;
+            T previousService = Interlocked.CompareExchange(ref slot, null, instance);
+            if (!ReferenceEquals(previousService, instance))
+                return;
+
             QueueServiceRebound(ResolveServiceSlot<T>(), previousService, null);
         }
 
@@ -4766,6 +5341,11 @@ namespace Hecton8.Core
             return null;
         }
 
+        internal static object ResolveRegisteredServiceForHeartbeat(GlobalRegistryServiceSlot serviceSlot)
+        {
+            return ResolveRegisteredServiceObject(serviceSlot);
+        }
+
         private static object ResolveRegisteredServiceObject(GlobalRegistryServiceSlot serviceSlot)
         {
             switch (serviceSlot)
@@ -4778,6 +5358,7 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.Scene: return _scene;
                 case GlobalRegistryServiceSlot.Save: return _save;
                 case GlobalRegistryServiceSlot.UI: return _ui;
+                case GlobalRegistryServiceSlot.ModalWindowRuntime: return _modalWindowRuntime;
                 case GlobalRegistryServiceSlot.ARWaypointRuntime: return _arWaypoint;
                 case GlobalRegistryServiceSlot.ObjectPool: return _objectPool;
                 case GlobalRegistryServiceSlot.Player: return _player;
@@ -4825,6 +5406,7 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.FirstHourRuntime: return _firstHourRuntime;
                 case GlobalRegistryServiceSlot.EmergencyRelayRuntime: return _emergencyRelayRuntime;
                 case GlobalRegistryServiceSlot.AtmosphereRuntime: return _atmosphereRuntime;
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime: return _terrainProviderRuntime;
                 case GlobalRegistryServiceSlot.BeaconNetworkRuntime: return _beaconNetworkRuntime;
                 case GlobalRegistryServiceSlot.ScanLogRuntime: return _scanLogRuntime;
                 case GlobalRegistryServiceSlot.ToolDurabilityRuntime: return _toolDurabilityRuntime;
@@ -4912,14 +5494,22 @@ namespace Hecton8.Core
             }
         }
 
+        public static void ShutdownRegisteredServicesInReverseSlotOrder()
+        {
+            for (int slot = (int)GlobalRegistryServiceSlot.Unknown - 1; slot >= 0; slot--)
+                ShutdownRegisteredServiceSlot((GlobalRegistryServiceSlot)slot);
+        }
+
         private static void ShutdownRegisteredServices()
         {
-            for (int slot = 0; slot < (int)GlobalRegistryServiceSlot.Unknown; slot++)
-            {
-                object service = ResolveRegisteredServiceObject((GlobalRegistryServiceSlot)slot);
-                if (service is IServiceShutdown shutdown)
-                    ShutdownRegisteredService(shutdown);
-            }
+            ShutdownRegisteredServicesInReverseSlotOrder();
+        }
+
+        public static void ShutdownRegisteredServiceSlot(GlobalRegistryServiceSlot slot)
+        {
+            object service = ResolveRegisteredServiceObject(slot);
+            if (service is IServiceShutdown shutdown)
+                ShutdownRegisteredService(shutdown);
         }
 
         private static void ShutdownRegisteredService(IServiceShutdown shutdown)
@@ -4934,6 +5524,34 @@ namespace Hecton8.Core
                 Debug.LogException(exception);
 #endif
             }
+        }
+
+        public static uint CalculateActiveServiceTypeFnv1a()
+        {
+            const uint fnvOffset = 2166136261u;
+            const uint fnvPrime = 16777619u;
+            uint hash = fnvOffset;
+
+            for (int slot = 0; slot < (int)GlobalRegistryServiceSlot.Unknown; slot++)
+            {
+                object service = ResolveRegisteredServiceObject((GlobalRegistryServiceSlot)slot);
+                if (service == null)
+                    continue;
+
+                Type serviceType = service.GetType();
+                string fullName = serviceType.FullName ?? serviceType.Name;
+                for (int i = 0; i < fullName.Length; i++)
+                {
+                    hash ^= fullName[i];
+                    hash *= fnvPrime;
+                }
+
+                hash ^= (uint)slot;
+                hash *= fnvPrime;
+            }
+
+            _activeServiceTypeHash = hash;
+            return hash;
         }
 
         private static void NotifyHotSwapListeners(
@@ -4958,7 +5576,11 @@ namespace Hecton8.Core
 
         private static GlobalRegistryServiceSlot ResolveServiceSlot<T>() where T : class
         {
-            Type serviceType = typeof(T);
+            return ServiceSlotCache<T>.Slot;
+        }
+
+        private static GlobalRegistryServiceSlot ResolveServiceSlotCold(Type serviceType)
+        {
             if (serviceType == typeof(IInputService)) return GlobalRegistryServiceSlot.Input;
             if (serviceType == typeof(IInputBindingService)) return GlobalRegistryServiceSlot.InputBinding;
             if (serviceType == typeof(InputManager)) return GlobalRegistryServiceSlot.NativeInputManagerRuntime;
@@ -4968,6 +5590,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(ISceneService)) return GlobalRegistryServiceSlot.Scene;
             if (serviceType == typeof(ISaveService)) return GlobalRegistryServiceSlot.Save;
             if (serviceType == typeof(IUIService)) return GlobalRegistryServiceSlot.UI;
+            if (serviceType == typeof(IModalWindowService)) return GlobalRegistryServiceSlot.ModalWindowRuntime;
             if (serviceType == typeof(IARWaypointService)) return GlobalRegistryServiceSlot.ARWaypointRuntime;
             if (serviceType == typeof(ObjectPoolManager)) return GlobalRegistryServiceSlot.ObjectPool;
             if (serviceType == typeof(IPlayerRuntimeContext)) return GlobalRegistryServiceSlot.Player;
@@ -5029,6 +5652,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(FirstHourDirector)) return GlobalRegistryServiceSlot.FirstHourRuntime;
             if (serviceType == typeof(EmergencyServiceRelayDirector)) return GlobalRegistryServiceSlot.EmergencyRelayRuntime;
             if (serviceType == typeof(HectonAtmosphereManager)) return GlobalRegistryServiceSlot.AtmosphereRuntime;
+            if (serviceType == typeof(ITerrainProvider)) return GlobalRegistryServiceSlot.TerrainProviderRuntime;
             if (serviceType == typeof(MapMagicBridge)) return GlobalRegistryServiceSlot.MapMagicRuntime;
             if (serviceType == typeof(ScavengePopulator)) return GlobalRegistryServiceSlot.ScavengePopulatorRuntime;
             if (serviceType == typeof(ModWorldPersistenceManager)) return GlobalRegistryServiceSlot.ModWorldPersistenceRuntime;
@@ -5102,6 +5726,11 @@ namespace Hecton8.Core
             if (serviceType == typeof(RenderDispatcher)) return GlobalRegistryServiceSlot.RenderDispatcher;
             if (serviceType == typeof(GlobalPhysicsStateManager)) return GlobalRegistryServiceSlot.PhysicsStateManager;
             return GlobalRegistryServiceSlot.Unknown;
+        }
+
+        private static class ServiceSlotCache<T> where T : class
+        {
+            internal static readonly GlobalRegistryServiceSlot Slot = ResolveServiceSlotCold(typeof(T));
         }
 
         private sealed class NoOpInputService : IInputService

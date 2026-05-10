@@ -28,7 +28,7 @@ namespace NASAPunk.Visor
         [SerializeField] private string overlayName = "HUD_RT_Compositor";
         [SerializeField] [Range(0f, 1f)] private float overlayAlpha = 1f;
         [SerializeField] private bool forceCanvasActive;
-        [SerializeField] private bool forceScreenSpaceOverlay = true;
+        [SerializeField] private bool forceScreenSpaceOverlay;
         [SerializeField] private bool forceSharedProjection = true;
         [SerializeField] private bool hideWhenTextureMissing;
         [SerializeField] private bool preserveExistingChildren = true;
@@ -70,6 +70,13 @@ namespace NASAPunk.Visor
 
         private void OnEnable()
         {
+            if (Application.isPlaying && !IsRuntimeScreenPreviewAllowed())
+            {
+                HideExistingOverlay();
+                enabled = false;
+                return;
+            }
+
             RegisterActiveCompositor();
             _pendingRefresh = true;
             if (!Application.isPlaying)
@@ -259,6 +266,7 @@ namespace NASAPunk.Visor
             if (rect != null && rect.localScale == Vector3.zero)
                 rect.localScale = Vector3.one;
 
+#if UNITY_EDITOR
             if (forceScreenSpaceOverlay)
             {
                 if (targetCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
@@ -266,6 +274,7 @@ namespace NASAPunk.Visor
                 if (targetCanvas.worldCamera != null)
                     targetCanvas.worldCamera = null;
             }
+#endif
 
             if (!targetCanvas.overrideSorting)
                 targetCanvas.overrideSorting = true;
@@ -410,6 +419,35 @@ namespace NASAPunk.Visor
             _overlayCanvasGroup.alpha = targetAlpha;
             _overlayCanvasGroup.interactable = false;
             _overlayCanvasGroup.blocksRaycasts = false;
+        }
+
+        private void HideExistingOverlay()
+        {
+            if (targetCanvas == null)
+                return;
+
+            Transform overlayTransform = targetCanvas.transform.Find(overlayName);
+            if (overlayTransform == null)
+                return;
+
+            if (overlayTransform.TryGetComponent(out RawImage rawImage))
+                rawImage.enabled = false;
+
+            if (!overlayTransform.TryGetComponent(out CanvasGroup canvasGroup))
+                return;
+
+            canvasGroup.alpha = 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+        }
+
+        private static bool IsRuntimeScreenPreviewAllowed()
+        {
+#if UNITY_EDITOR
+            return true;
+#else
+            return false;
+#endif
         }
 
         private static CanvasGroup EnsureCanvasGroup(RectTransform rect, bool allowCreation)

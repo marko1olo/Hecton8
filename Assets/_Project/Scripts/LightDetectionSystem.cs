@@ -5,8 +5,8 @@ using UnityEngine;
 namespace Hecton8.AI
 {
     /// <summary>
-    /// Простой расчёт заметности игрока по фонарю.
-    /// Смотрим: включён ли фонарь, в каком он режиме, насколько игрок светит в сторону существа и как далеко оно стоит.
+    /// Prostoy raschet zametnosti igroka po fonaryu.
+    /// Smotrim: vklyuchen li fonar, v kakom on rezhime, naskolko igrok svetit v storonu suschestva i kak daleko ono stoit.
     /// </summary>
     public static class LightDetectionSystem
     {

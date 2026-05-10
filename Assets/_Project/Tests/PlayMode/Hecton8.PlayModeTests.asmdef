@@ -1,13 +1,15 @@
 {
     "name":  "Hecton8.PlayModeTests",
     "rootNamespace":  "Hecton8.Tests.PlayMode",
+    "optionalUnityReferences":  [
+                                    "TestAssemblies"
+                                ],
     "references":  [
-                       "UnityEngine.TestRunner",
-                       "UnityEditor.TestRunner",
-                       "Hecton8.Core"
+                       "Hecton8.Core",
+                       "Unity.Mathematics"
                    ],
     "includePlatforms":  [
-                             "Editor"
+
                          ],
     "excludePlatforms":  [
 
@@ -19,8 +21,7 @@
                               ],
     "autoReferenced":  false,
     "defineConstraints":  [
-                              "HECTON8_ENABLE_PLAYMODE_TESTS",
-                              "HECTON8_ENABLE_OPTIONAL_ASSEMBLIES"
+                              "UNITY_INCLUDE_TESTS"
                           ],
     "versionDefines":  [
 

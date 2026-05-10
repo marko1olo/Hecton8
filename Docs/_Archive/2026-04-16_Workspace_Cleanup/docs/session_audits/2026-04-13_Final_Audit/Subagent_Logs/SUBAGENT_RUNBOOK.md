@@ -5,20 +5,20 @@ Status: ARCHIVED
 
 # HECTON-8 — Subagent Runbook
 
-Дата: 2026-04-13  
-Статус: PENDING VERIFICATION
+Data: 2026-04-13  
+Status: PENDING VERIFICATION
 
-## Правила запуска
+## Pravila zapuska
 
-- У каждого субагента свой лог-файл в этой папке.
-- У каждого субагента свой owner scope.
-- Выход за owner scope запрещён.
-- Если задача требует правки чужого owner-файла, субагент должен остановиться и записать блокер в свой лог.
-- Любой результат без live/log proof считается `PENDING VERIFICATION`.
+- U kazhdogo subagenta svoy log-fayl v etoy papke.
+- U kazhdogo subagenta svoy owner scope.
+- Vyhod za owner scope zapreschen.
+- Esli zadacha trebuet pravki chuzhogo owner-fayla, subagent dolzhen ostanovitsya i zapisat bloker v svoy log.
+- Lyuboy rezultat bez live/log proof schitaetsya `PENDING VERIFICATION`.
 
-## Формат лога
+## Format loga
 
-Каждый агент пишет только в свой файл:
+Kazhdyy agent pishet tolko v svoy fayl:
 
 - `agent_01_main_menu_log.md`
 - `agent_02_pause_shell_log.md`
@@ -37,7 +37,7 @@ Status: ARCHIVED
 - `agent_15_perf_memory_log.md`
 - `agent_16_tests_builds_log.md`
 
-## Минимальное содержимое лога
+## Minimalnoe soderzhimoe loga
 
 - Scope
 - Files touched
@@ -45,9 +45,9 @@ Status: ARCHIVED
 - Blockers
 - Verification status
 
-## Запрет на интерференцию
+## Zapret na interferentsiyu
 
-- Нельзя двум агентам писать в один и тот же source file.
-- Нельзя одновременно писать в одну и ту же `.unity` сцену более чем одному агенту.
-- Нельзя одновременно трогать shell owner'ов и global option owner без соблюдения точек входа.
-- Нельзя смешивать content authoring и bootstrap wiring в одном файле.
+- Nelzya dvum agentam pisat v odin i tot zhe source file.
+- Nelzya odnovremenno pisat v odnu i tu zhe `.unity` stsenu bolee chem odnomu agentu.
+- Nelzya odnovremenno trogat shell owner'ov i global option owner bez soblyudeniya tochek vhoda.
+- Nelzya smeshivat content authoring i bootstrap wiring v odnom fayle.

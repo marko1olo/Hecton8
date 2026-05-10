@@ -1,9 +1,9 @@
 // ============================================================================
 // HECTON-8 — FlowFieldProfile.cs
-// Профиль настроек для FlowFieldVisualizer.
+// Profil nastroek dlya FlowFieldVisualizer.
 //
-// Позволяет сохранять и переиспользовать конфигурации визуализации
-// для разных сценариев (тестирование течений, баланс геймплея и т.д.).
+// Pozvolyaet sohranyat i pereispolzovat konfiguratsii vizualizatsii
+// dlya raznyh stsenariev (testirovanie techeniy, balans geympleya i t.d.).
 // ============================================================================
 
 using UnityEngine;
@@ -11,7 +11,7 @@ using UnityEngine;
 namespace Hecton8.Physics
 {
     /// <summary>
-    /// ScriptableObject-профиль с сериализуемыми настройками визуализатора течений.
+    /// ScriptableObject-profil s serializuemymi nastroykami vizualizatora techeniy.
     /// </summary>
     [CreateAssetMenu(
         fileName = "FlowFieldProfile",
@@ -56,7 +56,7 @@ namespace Hecton8.Physics
         public bool showLocalCurrents = true;
         public bool onlySelectedVolumes = false;
 
-        /// <summary>Применяет настройки профиля к визуализатору.</summary>
+        /// <summary>Primenyaet nastroyki profilya k vizualizatoru.</summary>
         public void ApplyTo(FlowFieldVisualizer visualizer)
         {
             if (visualizer == null) return;
@@ -88,7 +88,7 @@ namespace Hecton8.Physics
             visualizer.Recalculate();
         }
 
-        /// <summary>Сохраняет текущие настройки визуализатора в профиль.</summary>
+        /// <summary>Sohranyaet tekuschie nastroyki vizualizatora v profil.</summary>
         public void CaptureFrom(FlowFieldVisualizer visualizer)
         {
             if (visualizer == null) return;

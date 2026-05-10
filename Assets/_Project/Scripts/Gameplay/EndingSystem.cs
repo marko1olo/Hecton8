@@ -1,35 +1,35 @@
 // ============================================================================
 // HECTON-8 — EndingSystem.cs
-// Система концовок игры.
+// Sistema kontsovok igry.
 //
-// ЛОР (лор1 — Финал):
-//   Игрок добрался до ядра Атлас-6 на -5000м.
-//   Три выбора — ни один не "правильный". Это нуар.
+// LOR (lor1 — Final):
+//   Igrok dobralsya do yadra Atlas-6 na -5000m.
+//   Tri vybora — ni odin ne "pravilnyy". Eto nuar.
 //
-//   ВЫКЛЮЧИТЬ АТЛАС-6:
-//     Сигнал прекращается. Корпорация придёт.
-//     Терраформирование продолжится. Жизнь уничтожена.
-//     Игрок улетает. Экономически логично — морально нет.
+//   VYKLYuChIT ATLAS-6:
+//     Signal prekraschaetsya. Korporatsiya pridet.
+//     Terraformirovanie prodolzhitsya. Zhizn unichtozhena.
+//     Igrok uletaet. Ekonomicheski logichno — moralno net.
 //
-//   ОСТАВИТЬ АТЛАС-6:
-//     Сигнал продолжается. Корпорация не придёт пока сигнал активен.
-//     Жизнь защищена — временно. Сигнал когда-нибудь найдут и заглушат.
+//   OSTAVIT ATLAS-6:
+//     Signal prodolzhaetsya. Korporatsiya ne pridet poka signal aktiven.
+//     Zhizn zaschischena — vremenno. Signal kogda-nibud naydut i zaglushat.
 //
-//   УСИЛИТЬ СИГНАЛ:
-//     Сигнал публичный — весь сектор слышит.
-//     Корпорацию не остановить — но теперь все знают.
-//     Атлас-6 выключается сам — задача выполнена.
-//     Игрок становится тем, кто раскрыл тайну.
+//   USILIT SIGNAL:
+//     Signal publichnyy — ves sektor slyshit.
+//     Korporatsiyu ne ostanovit — no teper vse znayut.
+//     Atlas-6 vyklyuchaetsya sam — zadacha vypolnena.
+//     Igrok stanovitsya tem, kto raskryl taynu.
 //
-// АРХИТЕКТУРА:
-//   • Отслеживает условия активации (глубина + расшифровка сигнала).
-//   • Публикует события для всех систем при выборе концовки.
-//   • ISaveable: сохраняет выбранную концовку.
-//   • Интегрируется с Atlas6DirectiveSystem, QuestManager, NarrativeEvents.
+// ARHITEKTURA:
+//   • Otslezhivaet usloviya aktivatsii (glubina + rasshifrovka signala).
+//   • Publikuet sobytiya dlya vseh sistem pri vybore kontsovki.
+//   • ISaveable: sohranyaet vybrannuyu kontsovku.
+//   • Integriruetsya s Atlas6DirectiveSystem, QuestManager, NarrativeEvents.
 //
 // ZERO GC:
 //   • Static events, enum state.
-//   • Никаких new/LINQ в hot path.
+//   • Nikakih new/LINQ v hot path.
 // ============================================================================
 
 using System;
@@ -50,9 +50,9 @@ namespace Hecton8.Gameplay
     public enum EndingChoice
     {
         None        = 0,
-        ShutDown    = 1,   // Выключить Атлас-6
-        Leave       = 2,   // Оставить Атлас-6
-        Amplify     = 3    // Усилить сигнал
+        ShutDown    = 1,   // Vyklyuchit Atlas-6
+        Leave       = 2,   // Ostavit Atlas-6
+        Amplify     = 3    // Usilit signal
     }
 
     /// <summary>
@@ -613,10 +613,10 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Activation Conditions ───────────────────")]
-        [Tooltip("Минимальная глубина для активации концовки (метры).")]
+        [Tooltip("Minimalnaya glubina dlya aktivatsii kontsovki (metry).")]
         [SerializeField] private float requiredDepth = 4800f;
 
-        [Tooltip("Минимальная сила сигнала для активации (расшифровка).")]
+        [Tooltip("Minimalnaya sila signala dlya aktivatsii (rasshifrovka).")]
         [SerializeField, Range(0f, 1f)] private float requiredSignalStrength = 0.90f;
 
         [Header("── Quest IDs ───────────────────────────────")]
@@ -719,11 +719,11 @@ namespace Hecton8.Gameplay
             if (signal == null) return;
             if (signal.CurrentStrength < requiredSignalStrength) return;
 
-            // Условия выполнены
+            // Usloviya vypolneny
             _conditionMet = true;
             EndingEvents.RaiseConditionMet();
 
-            // Активируем квест
+            // Aktiviruem kvest
             QuestManager qm = GlobalRegistry.Quest;
             if (qm != null && _endingQuestHash != 0u)
                 qm.ActivateQuest(_endingQuestHash);
@@ -784,11 +784,11 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — ВЫБОР КОНЦОВКИ
+        //  PUBLIC API — VYBOR KONTsOVKI
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Игрок выбрал концовку. Вызывается из UI терминала ядра.
+        /// Igrok vybral kontsovku. Vyzyvaetsya iz UI terminala yadra.
         /// </summary>
         public void ForceConditionMetFromQuestDAG()
         {
@@ -817,7 +817,7 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — КОНЦОВКИ
+        //  PRIVATE — KONTsOVKI
         // ══════════════════════════════════════════════════════════
 
         private void ExecuteEnding(EndingChoice choice)
@@ -837,7 +837,7 @@ namespace Hecton8.Gameplay
                     break;
             }
 
-            // Завершаем квест
+            // Zavershaem kvest
             QuestManager qm = GlobalRegistry.Quest;
             if (qm != null && _endingQuestHash != 0u)
                 qm.CompleteQuest(_endingQuestHash);
@@ -850,14 +850,14 @@ namespace Hecton8.Gameplay
 
         private void ExecuteShutDown()
         {
-            // Атлас-6 выключен. Сигнал прекращается.
+            // Atlas-6 vyklyuchen. Signal prekraschaetsya.
             AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (signal != null)
                 signal.DecodeSignal(_atlasShutdownMessageHash);
 
             Atlas6DirectiveSystem directive = Hecton8.Core.GlobalRegistry.Atlas6Directive;
             if (directive != null)
-                directive.RegisterBarterTransaction(); // Корпорация получила что хотела
+                directive.RegisterBarterTransaction(); // Korporatsiya poluchila chto hotela
 
             NarrativeEvents.RaiseDiscoveryMade(_endingShutdownDiscoveryHash);
 
@@ -868,7 +868,7 @@ namespace Hecton8.Gameplay
 
         private void ExecuteLeave()
         {
-            // Атлас-6 продолжает работу. Сигнал активен.
+            // Atlas-6 prodolzhaet rabotu. Signal aktiven.
             NarrativeEvents.RaiseDiscoveryMade(_endingLeaveDiscoveryHash);
 
             NotificationEvents.PushInfo(ResolveLocalized(
@@ -878,14 +878,14 @@ namespace Hecton8.Gameplay
 
         private void ExecuteAmplify()
         {
-            // Сигнал усилен — публичный. Атлас-6 выключается сам.
+            // Signal usilen — publichnyy. Atlas-6 vyklyuchaetsya sam.
             AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (signal != null)
                 signal.DecodeSignal(_atlasAmplifiedPublicMessageHash);
 
             NarrativeEvents.RaiseDiscoveryMade(_endingAmplifyDiscoveryHash);
 
-            // Публикуем в шейдер — максимальная интенсивность сигнала
+            // Publikuem v sheyder — maksimalnaya intensivnost signala
             Shader.SetGlobalFloat(
                 Shader.PropertyToID("_AtlasSignalStrength"), 1f);
 
@@ -904,7 +904,7 @@ namespace Hecton8.Gameplay
             if (_survivalSystem != null)
                 return true;
 
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
+            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
                 playerTransform == null)
             {
                 return false;
@@ -945,8 +945,8 @@ namespace Hecton8.Gameplay
 
         private void HandleSignalDecoded()
         {
-            // Полная расшифровка — условие может быть выполнено
-            // SlowTick проверит глубину на следующем тике
+            // Polnaya rasshifrovka — uslovie mozhet byt vypolneno
+            // SlowTick proverit glubinu na sleduyuschem tike
         }
 
         private static string ResolveLocalized(string key, string fallback)

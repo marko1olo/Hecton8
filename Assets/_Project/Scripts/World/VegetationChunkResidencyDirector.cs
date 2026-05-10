@@ -49,10 +49,16 @@ namespace Hecton8.World
                 _desiredChunkDistances[i] = float.PositiveInfinity;
 
             Vector2 playerPositionXZ = new Vector2(playerPosition.x, playerPosition.z);
-            Vector2 planarVelocity = new Vector2(_playerVelocity.x, _playerVelocity.z);
-            float planarSpeed = planarVelocity.magnitude;
-            bool usePredictiveResidency = planarSpeed >= predictiveMinSpeed;
-            Vector2 forward = usePredictiveResidency ? planarVelocity / Mathf.Max(0.0001f, planarSpeed) : Vector2.right;
+            float planarVelocityX = _playerVelocity.x;
+            float planarVelocityZ = _playerVelocity.z;
+            float planarSpeedSq = (planarVelocityX * planarVelocityX) + (planarVelocityZ * planarVelocityZ);
+            float predictiveMinSpeedSq = predictiveMinSpeed * predictiveMinSpeed;
+            bool usePredictiveResidency = planarSpeedSq >= predictiveMinSpeedSq;
+            float invPlanarSpeed = usePredictiveResidency ? math.rsqrt(math.max(planarSpeedSq, 0.000001f)) : 0f;
+            float planarSpeed = usePredictiveResidency ? planarSpeedSq * invPlanarSpeed : 0f;
+            Vector2 forward = usePredictiveResidency
+                ? new Vector2(planarVelocityX * invPlanarSpeed, planarVelocityZ * invPlanarSpeed)
+                : Vector2.right;
             Vector2 right = new Vector2(-forward.y, forward.x);
             float forwardRadius = residentRadius + Mathf.Min(predictiveLeadMaxMeters, planarSpeed * predictiveLeadSeconds);
             float rearRadius = residentRadius * rearResidencyScale;
@@ -463,6 +469,7 @@ namespace Hecton8.World
                     AbyssalFlowNoiseScale = abyssalFlowNoiseScale,
                     AbyssalFlowNoiseStrength = abyssalFlowNoiseStrength,
                     AbyssalFlowVerticalStrength = abyssalFlowVerticalStrength,
+                    ApplyOrganicKelpPlacementRules = 0,
                     ThreatGridCenter = new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z),
                     ThreatGridCellSize = threatGridCellSize,
                     ThreatGridResolution = _ecosystemThreatGridResolution,
@@ -474,7 +481,6 @@ namespace Hecton8.World
                     ScaleSalt = 0x85EBCA6Bu,
                     WidthSalt = 0xC2B2AE35u,
                     ScaleJitter = proceduralScaleJitter,
-                    RotationJitterRadians = proceduralRotationJitterDegrees * Mathf.Deg2Rad,
                     RotationSalt = 0xA24BAEDCu
                 };
 
@@ -545,6 +551,11 @@ namespace Hecton8.World
                     AbyssalFlowNoiseScale = abyssalFlowNoiseScale,
                     AbyssalFlowNoiseStrength = abyssalFlowNoiseStrength,
                     AbyssalFlowVerticalStrength = abyssalFlowVerticalStrength,
+                    ApplyOrganicKelpPlacementRules = 1,
+                    OrganicKelpMaxDepthBelowSurface = math.min(
+                        OrganicKelpMaxDepthBelowSurfaceMeters,
+                        math.max(0f, waterLevel - kelpMinHeight)),
+                    OrganicKelpMinimumNormalY = OrganicKelpMaxSlopeNormalY,
                     ThreatGridCenter = new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z),
                     ThreatGridCellSize = threatGridCellSize,
                     ThreatGridResolution = _ecosystemThreatGridResolution,
@@ -556,7 +567,6 @@ namespace Hecton8.World
                     ScaleSalt = 0x27D4EB2Fu,
                     WidthSalt = 0x165667B1u,
                     ScaleJitter = proceduralScaleJitter,
-                    RotationJitterRadians = proceduralRotationJitterDegrees * Mathf.Deg2Rad,
                     RotationSalt = 0x94D049BBu
                 };
 
@@ -608,7 +618,6 @@ namespace Hecton8.World
                     FloatingFlowDirection = new float2(_floatingFlowDirectionNormalized.x, _floatingFlowDirectionNormalized.y),
                     FloatingFlowAnisotropy = floatingFlowAnisotropy,
                     ScaleJitter = proceduralScaleJitter,
-                    RotationJitterRadians = proceduralRotationJitterDegrees * Mathf.Deg2Rad,
                     RotationSalt = 0xC13FA9A9u
                 };
 

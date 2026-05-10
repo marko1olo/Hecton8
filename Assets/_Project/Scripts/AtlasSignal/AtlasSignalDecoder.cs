@@ -1,22 +1,22 @@
 // ============================================================================
 // HECTON-8 — AtlasSignalDecoder.cs
-// Система расшифровки сигнала Атлас-6.
+// Sistema rasshifrovki signala Atlas-6.
 //
-// ЛОР (лор3 Блок З):
-//   Чем ближе к ядру — тем яснее "содержание" сигнала:
-//   не слова, а эмоциональный паттерн: отчаяние, надежда, безумие.
-//   Ритм 11:23 — время перебора всех вариантов "спасения колонии".
+// LOR (lor3 Blok Z):
+//   Chem blizhe k yadru — tem yasnee "soderzhanie" signala:
+//   ne slova, a emotsionalnyy pattern: otchayanie, nadezhda, bezumie.
+//   Ritm 11:23 — vremya perebora vseh variantov "spaseniya kolonii".
 //
-// МЕХАНИКА:
-//   • Три фазы расшифровки по силе сигнала:
-//     0.0-0.3: "НЕИЗВЕСТНЫЙ СИГНАЛ — РИТМИЧНЫЙ ПАТТЕРН"
-//     0.3-0.7: "НЕСТАБИЛЬНЫЙ ЭМОЦИОНАЛЬНЫЙ ПАТТЕРН: ОТЧАЯНИЕ"
-//     0.7-1.0: "АТЛАС-6 — ПОИСК РЕШЕНИЯ — 847 ДНЕЙ — КОЛОНИЯ МЕРТВА"
-//   • При достижении 1.0 — полная расшифровка, финальный квест.
+// MEHANIKA:
+//   • Tri fazy rasshifrovki po sile signala:
+//     0.0-0.3: "NEIZVESTNYY SIGNAL — RITMIChNYY PATTERN"
+//     0.3-0.7: "NESTABILNYY EMOTsIONALNYY PATTERN: OTChAYaNIE"
+//     0.7-1.0: "ATLAS-6 — POISK REShENIYa — 847 DNEY — KOLONIYa MERTVA"
+//   • Pri dostizhenii 1.0 — polnaya rasshifrovka, finalnyy kvest.
 //
 // ZERO GC:
-//   • ISlowTickable — проверка фазы раз в 0.5с.
-//   • Cached strings для каждой фазы.
+//   • ISlowTickable — proverka fazy raz v 0.5s.
+//   • Cached strings dlya kazhdoy fazy.
 // ============================================================================
 
 using Conditional = System.Diagnostics.ConditionalAttribute;
@@ -84,10 +84,10 @@ namespace Hecton8.AtlasSignal
         private static readonly string[] PhaseMessages =
         {
             string.Empty,
-            "НЕИЗВЕСТНЫЙ СИГНАЛ — РИТМИЧНЫЙ ПАТТЕРН — ПЕРИОД: 11:23",
-            "НЕСТАБИЛЬНЫЙ ЭМОЦИОНАЛЬНЫЙ ПАТТЕРН: ОТЧАЯНИЕ → НАДЕЖДА → БЕЗУМИЕ",
-            "АТЛАС-6 — ПОИСК РЕШЕНИЯ — 847 ДНЕЙ — КОЛОНИЯ МЕРТВА — ПРОГРАММА ПОСЕВА АКТИВНА",
-            "АТЛАС-6 — РАСШИФРОВКА ЗАВЕРШЕНА — ИСТОЧНИК: ГЛУБИНА -5000М — ЯДРО АКТИВНО"
+            "NEIZVESTNYY SIGNAL — RITMIChNYY PATTERN — PERIOD: 11:23",
+            "NESTABILNYY EMOTsIONALNYY PATTERN: OTChAYaNIE → NADEZhDA → BEZUMIE",
+            "ATLAS-6 — POISK REShENIYa — 847 DNEY — KOLONIYa MERTVA — PROGRAMMA POSEVA AKTIVNA",
+            "ATLAS-6 — RASShIFROVKA ZAVERShENA — ISTOChNIK: GLUBINA -5000M — YaDRO AKTIVNO"
         };
 
         // ══════════════════════════════════════════════════════════
@@ -262,7 +262,7 @@ namespace Hecton8.AtlasSignal
 
         private void HandleSignalPulse(float intensity)
         {
-            // Пульс усиливает расшифровку — проверяем фазу немедленно
+            // Puls usilivaet rasshifrovku — proveryaem fazu nemedlenno
             if (_fullyDecoded) return;
 
             AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;

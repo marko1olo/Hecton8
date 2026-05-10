@@ -1,8 +1,8 @@
 ﻿# PROJECT ATLAS
 
-Version: 1.5.23
+Version: 1.5.27
 Date: 2026-05-09
-Status: PENDING FINAL UNITY PROOF (R168 DOTNET BUILD PASSED / UNITY MCP BLOCKED / TIMESTAMP GATE CONTAMINATED)
+Status: PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)
 Scope: live orientation map for the current HECTON-8 workspace
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `STRM_Persistent_Object_Registry.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`, `VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`, `PROJECT_LTS_Compatibility_Layer.txt`
 
@@ -56,13 +56,13 @@ Primary first-party code still lives under:
 - `Assets/_Project/Art`
 - `Assets/_Project/UI`
 
-Observed first-party C# file count under `Assets/_Project`: `1255`
-Observed first-party C# physical line count under `Assets/_Project`: `743328`
-Observed first-party C# file count under `Assets/_Project/Scripts`: `1214`
-Observed first-party C# physical line count under `Assets/_Project/Scripts`: `728007`
+Observed first-party C# file count under `Assets/_Project`: `1292`
+Observed first-party C# physical line count under `Assets/_Project`: `759122`
+Observed first-party C# file count under `Assets/_Project/Scripts`: `1248`
+Observed first-party C# physical line count under `Assets/_Project/Scripts`: `742892`
 Line-count method: PowerShell over `System.IO.StreamReader.ReadLine()` for every matched file.
 
-SOURCE DRIFT DETECTED: previous same-day Atlas scan recorded `1233` / `1192` C# files and `667771` script physical lines; current May 9 local autonomous compile snapshot records `1255` / `1214` C# files and `728007` script physical lines.
+SOURCE DRIFT DETECTED: previous same-day Atlas scan recorded `1233` / `1192` C# files and `667771` script physical lines; current May 9 local autonomous compile snapshot records `1292` / `1248` C# files and `742892` script physical lines.
 
 MASSIVE REFACTOR DETECTED: same-day script line-count delta exceeds `500` lines. Treat all earlier May 7 source-count claims as superseded by this timestamped snapshot unless a newer report states otherwise.
 
@@ -71,11 +71,11 @@ It does not imply quality, cohesion, or compile health.
 
 Current build-master compile state:
 
-- `dotnet build ./Hecton8.Core.csproj --no-restore -m:1 -p:UseSharedCompilation=false -p:BuildInParallel=false -nr:false` succeeded in the latest completed attempt.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` succeeded in the latest completed attempt.
 - Latest Core dependency build succeeded with `0 Warning(s)` and `0 Error(s)`.
-- Latest build artifact: `CodexArtifacts/2026-05-09_R168_CORE_SERIAL_NORESTORE_BUILD.log`.
-- R168 supersedes R129-R167 after later source churn, repeated failed live-churn gates, stale clean snapshots, transient Input/Core boundary regressions, BLACKBOX export callback/thread drift, emergency-relay helper drift, R154 invalidation by an in-build source write, post-R155 input churn, R160 timestamp invalidation, R161 Input assembly regression, post-R163 source writes, post-R165 guarded diagnostic-log preprocessor edits, and the `HectonBiolumZone.cs` development-build diagnostics guard pass.
-- R168 is current local `dotnet` compile evidence, but not frozen-source proof: later `.cs` writes were observed after the R168 artifact end timestamp.
+- Latest build artifact: `CodexArtifacts/2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log`.
+- R186 supersedes R171-R185 after repeated live C# writes, R179 transient compile break exposure, R181 invalid root-only dependency mode, R184 `IAudioService` contract drift, and R185 `PredatorCognitionDomain` static/instance vortex-steering drift.
+- R186 is the latest completed local `dotnet` compile evidence with `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`.
 - MCP proof is blocked by the May 8 hallucination check; do not use prior MCP-clean wording as current evidence.
 - Latest current-state report: `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`.
 
@@ -221,7 +221,7 @@ Authority files for this boundary:
 
 These points were revalidated against current source in this pass:
 
-- `GlobalRegistryContracts.cs` now contains `38` direct public interfaces, not the older `19`, `27`, `31`, `33`, `34`, `36`, `37`, `39`, or `40` snapshots.
+- `GlobalRegistryContracts.cs` now contains `40` direct public interfaces, not the older `19`, `27`, `31`, `33`, `34`, `36`, `37`, `38`, or `39` snapshots.
 - `SpatialAudioManager` directly implements `IAudioService` and registers through `GlobalRegistry.RegisterAudioService(this)`.
 - `SuitHUDV4CanvasOverlay` is the direct first-party `IUIService` implementor found in current source scan.
 - current bootstrap authority is split across `BootstrapController`, `GameBootstrapper`, and `SceneBootstrap`; it is not a single-owner startup surface.
@@ -403,10 +403,10 @@ Mandates followed for this update:
 
 Current measured source and documentation surface:
 
-- `Assets/_Project`: `1255` C# files, `742158` physical lines.
-- `Assets/_Project/Scripts`: `1214` C# files, `726837` physical lines.
+- `Assets/_Project`: `1292` C# files, `759122` physical lines.
+- `Assets/_Project/Scripts`: `1248` C# files, `742892` physical lines.
 - Script LOC method: PowerShell `System.IO.StreamReader.ReadLine()` over every `*.cs` file.
-- SOURCE DRIFT DETECTED: previous same-day Atlas count was `1214` / `1173` C# files and `656678` script-line proxy count; current deltas are `+41` files under `Assets/_Project`, `+41` files under `Assets/_Project/Scripts`, and `+69966` script physical lines.
+- SOURCE DRIFT DETECTED: previous same-day Atlas count was `1214` / `1173` C# files and `656678` script-line proxy count; current deltas are `+78` files under `Assets/_Project`, `+75` files under `Assets/_Project/Scripts`, and `+86214` script physical lines.
 - MASSIVE REFACTOR DETECTED: the same-day script line delta is greater than `500`.
 - `.agents-skills`: `52` mandate files.
 - `Docs/**/*.md`: `444` markdown files.
@@ -421,13 +421,13 @@ Current top-level `Assets/_Project/Scripts` ownership counts:
 
 | Folder | C# files |
 |---|---:|
-| `(root)` | `337` |
-| `Editor` | `167` |
-| `World` | `163` |
-| `Gameplay` | `114` |
-| `UI` | `85` |
-| `Core` | `42` |
-| `Construction` | `34` |
+| `(root)` | `342` |
+| `Editor` | `169` |
+| `World` | `152` |
+| `Gameplay` | `123` |
+| `UI` | `84` |
+| `Core` | `49` |
+| `Construction` | `35` |
 | `Optimization` | `22` |
 | `Interaction` | `22` |
 | `Visor` | `22` |
@@ -562,12 +562,12 @@ Mandates followed for this update:
 
 Current measured source/docs surface:
 
-- `Assets/_Project`: `1255` C# files, `742158` physical lines.
-- `Assets/_Project/Scripts`: `1214` C# files, `726837` physical lines.
+- `Assets/_Project`: `1292` C# files, `759122` physical lines.
+- `Assets/_Project/Scripts`: `1248` C# files, `742892` physical lines.
 - Script LOC method: PowerShell `System.IO.StreamReader.ReadLine()` over every `*.cs` file.
-- SOURCE DRIFT DETECTED: previous same-day Atlas count was `1214` / `1173` C# files and `656678` script-line proxy count; current deltas are `+41` files under `Assets/_Project`, `+41` files under `Assets/_Project/Scripts`, and `+69966` script physical lines.
+- SOURCE DRIFT DETECTED: previous same-day Atlas count was `1214` / `1173` C# files and `656678` script-line proxy count; current deltas are `+78` files under `Assets/_Project`, `+75` files under `Assets/_Project/Scripts`, and `+86214` script physical lines.
 - MASSIVE REFACTOR DETECTED: the same-day script line delta is greater than `500`.
-- Scripts directly under `Assets/_Project/Scripts`: `337`.
+- Scripts directly under `Assets/_Project/Scripts`: `342`.
 - Strict `StartCoroutine(` hits under `Assets/_Project/Scripts`: `0`.
 - `Docs`: `874` non-meta files in the current filesystem view.
 - `Docs/ARCHIVARIUS REPORTS`: `120` non-meta files in the current filesystem view.

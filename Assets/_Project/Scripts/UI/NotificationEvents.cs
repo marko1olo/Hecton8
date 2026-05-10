@@ -41,13 +41,13 @@ namespace Hecton8.UI
         private const uint NotificationRegisteredMessageMissWarningHash = 0x4E45564Du; // NEVM
         private const uint NotificationRegisteredMessageContextHash = 0x4E455643u; // NEVC
 
-        // COLD ALLOC: RegistryBucket<INotificationEventListener>[8] - HUD notification listeners drained on dispatcher LateUpdate - owner: NotificationEvents
+        // COLD ALLOC: RegistryBucket<INotificationEventListener>[8] — HUD notification listeners drained on dispatcher LateUpdate — owner: NotificationEvents
         private static readonly RegistryBucket<INotificationEventListener> _listeners = new RegistryBucket<INotificationEventListener>(ListenerCapacity);
-        // COLD ALLOC: INotificationEventListener[8] - listener additions deferred while dispatching notification events - owner: NotificationEvents
+        // COLD ALLOC: INotificationEventListener[8] — listener additions deferred while dispatching notification events — owner: NotificationEvents
         private static readonly INotificationEventListener[] _deferredRegisterListeners = new INotificationEventListener[ListenerCapacity];
-        // COLD ALLOC: INotificationEventListener[8] - listener removals deferred while dispatching notification events - owner: NotificationEvents
+        // COLD ALLOC: INotificationEventListener[8] — listener removals deferred while dispatching notification events — owner: NotificationEvents
         private static readonly INotificationEventListener[] _deferredUnregisterListeners = new INotificationEventListener[ListenerCapacity];
-        // COLD ALLOC: Dictionary<uint,string>[64] - notification message registry keyed by stable FNV-1a hash for cold-path UI resolution - owner: NotificationEvents
+        // COLD ALLOC: Dictionary<uint,string>[64] — notification message registry keyed by stable FNV-1a hash for cold-path UI resolution — owner: NotificationEvents
         private static readonly Dictionary<uint, string> _messagesByHash = new Dictionary<uint, string>(64);
         private static NativeQueue<NotificationEventPayload> _pendingEvents;
         private static NativeQueue<NotificationEventPayload> _nextFrameEvents;
@@ -322,7 +322,7 @@ namespace Hecton8.UI
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<NotificationEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<NotificationEventPayload>[8] - deferred notification lane flushed by SystemDispatcher LateUpdate - owner: NotificationEvents
+                _pendingEvents = new NativeQueue<NotificationEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<NotificationEventPayload>[8] — deferred notification lane flushed by SystemDispatcher LateUpdate — owner: NotificationEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -334,7 +334,7 @@ namespace Hecton8.UI
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<NotificationEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<NotificationEventPayload>[8] - next-frame notification lane prevents same-frame reentrant dispatch - owner: NotificationEvents
+                _nextFrameEvents = new NativeQueue<NotificationEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<NotificationEventPayload>[8] — next-frame notification lane prevents same-frame reentrant dispatch — owner: NotificationEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,

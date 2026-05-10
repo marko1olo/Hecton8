@@ -70,6 +70,9 @@ namespace Hecton8.Gameplay
         private const string MissingExteriorSpawnPointMessage = "[BaseAirlock] Exterior spawn point not set.";
         private const string InvalidInteriorSpawnPointPoseMessage = "[BaseAirlock] Interior spawn point pose is invalid.";
         private const string InvalidExteriorSpawnPointPoseMessage = "[BaseAirlock] Exterior spawn point pose is invalid.";
+        private const float PlayerDockingSnapDurationSeconds = 0.5f;
+        private const float PlayerDockingSnapInverseDuration = 1f / PlayerDockingSnapDurationSeconds;
+        private const float PlayerDockingSnapCompletionSeconds = PlayerDockingSnapDurationSeconds - 0.0001f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -185,6 +188,20 @@ namespace Hecton8.Gameplay
         private Rigidbody _cachedInteractorBody;
         private global::Hecton8.Physics.BuoyancyObject _cachedInteractorBuoyancy;
         private bool _cachedInteractorComponentCacheValid;
+        private bool _playerDockingSnapActive;
+        private Transform _snapInteractor;
+        private Rigidbody _snapBody;
+        private global::Hecton8.Physics.BuoyancyObject _snapBuoyancy;
+        private Vector3 _snapStartLocalPosition;
+        private Vector3 _snapTargetLocalPosition;
+        private Quaternion _snapStartLocalRotation = Quaternion.identity;
+        private Quaternion _snapTargetLocalRotation = Quaternion.identity;
+        private float _snapElapsedSeconds;
+        private bool _snapBodyStateCached;
+        private bool _snapBodyWasKinematic;
+        private bool _snapBodyUseGravity;
+        private float _snapBodyLinearDamping;
+        private float _snapBodyAngularDamping;
         private Vector3 _bulkheadOpenLocalPosition;
         private Vector3 _bulkheadClosedLocalPosition;
         private float _bulkheadSlide01;
@@ -276,6 +293,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            CancelPlayerDockingSnap();
             ReleaseCycleInputLock();
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
@@ -284,6 +302,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            CancelPlayerDockingSnap();
             ReleaseCycleInputLock();
             TryUnregister();
         }
@@ -320,6 +339,12 @@ namespace Hecton8.Gameplay
         {
             AdvanceBulkheadSlide(deltaTime);
             EmitPressureDifferentialWhistle();
+
+            if (_playerDockingSnapActive)
+            {
+                AdvancePlayerDockingSnap(deltaTime);
+                return;
+            }
 
             if (_state != AirlockState.Cycling)
                 return;
@@ -532,9 +557,21 @@ namespace Hecton8.Gameplay
         private void CompleteCycle()
         {
             Transform completedInteractor = _cycleInteractor;
+            if (completedInteractor != null &&
+                _hasPendingDestination &&
+                BeginPlayerDockingSnap(completedInteractor, _pendingDestinationPosition, _pendingDestinationRotation))
+            {
+                return;
+            }
+
             if (completedInteractor != null && _hasPendingDestination)
                 TeleportPlayer(completedInteractor, _pendingDestinationPosition, _pendingDestinationRotation);
 
+            FinalizeCompletedCycle(completedInteractor);
+        }
+
+        private void FinalizeCompletedCycle(Transform completedInteractor)
+        {
             _state = AirlockState.Ready;
 
             // Restore state light after the cycle ends.
@@ -609,24 +646,147 @@ namespace Hecton8.Gameplay
                     HectonFloatingOrigin.EndSafeTeleportProtocol();
             }
 
-            // Toggle environment state
+            ApplyCompletedEnvironmentTransition(player, buoyancy);
+        }
+
+        private bool BeginPlayerDockingSnap(Transform player, Vector3 destinationPosition, Quaternion destinationRotation)
+        {
+            if (player == null || !IsFinite(destinationPosition) || !IsFinite(destinationRotation))
+                return false;
+
+            Transform frame = _cachedTransform != null ? _cachedTransform : transform;
+            if (frame == null || !IsFinite(frame.position) || !IsFinite(frame.rotation))
+                return false;
+
+            ResolveInteractorComponents(player, out Rigidbody playerBody, out global::Hecton8.Physics.BuoyancyObject buoyancy);
+            Vector3 startPosition = playerBody != null ? playerBody.position : player.position;
+            Quaternion startRotation = playerBody != null ? playerBody.rotation : player.rotation;
+            if (!IsFinite(startPosition) || !IsFinite(startRotation))
+                return false;
+
+            Quaternion inverseFrameRotation = Quaternion.Inverse(frame.rotation);
+            _snapStartLocalPosition = frame.InverseTransformPoint(startPosition);
+            _snapTargetLocalPosition = frame.InverseTransformPoint(destinationPosition);
+            _snapStartLocalRotation = inverseFrameRotation * startRotation;
+            _snapTargetLocalRotation = inverseFrameRotation * destinationRotation;
+            _snapInteractor = player;
+            _snapBody = playerBody;
+            _snapBuoyancy = buoyancy;
+            _snapElapsedSeconds = 0f;
+            _playerDockingSnapActive = true;
+
+            if (_snapBody != null)
+            {
+                _snapBodyWasKinematic = _snapBody.isKinematic;
+                _snapBodyUseGravity = _snapBody.useGravity;
+                _snapBodyLinearDamping = _snapBody.linearDamping;
+                _snapBodyAngularDamping = _snapBody.angularDamping;
+                _snapBodyStateCached = true;
+                _snapBody.linearVelocity = Vector3.zero;
+                _snapBody.angularVelocity = Vector3.zero;
+                _snapBody.useGravity = false;
+                _snapBody.linearDamping = 0f;
+                _snapBody.angularDamping = 0f;
+                _snapBody.isKinematic = true;
+            }
+
+            ApplyPlayerDockingSnapPose(0f);
+            return true;
+        }
+
+        private void AdvancePlayerDockingSnap(float deltaTime)
+        {
+            float safeDeltaTime = math.max(0f, deltaTime);
+            _snapElapsedSeconds = math.min(PlayerDockingSnapDurationSeconds, _snapElapsedSeconds + safeDeltaTime);
+            float normalizedTime = math.saturate(_snapElapsedSeconds * PlayerDockingSnapInverseDuration);
+            ApplyPlayerDockingSnapPose(SmoothStep01(normalizedTime));
+            if (_snapElapsedSeconds < PlayerDockingSnapCompletionSeconds)
+                return;
+
+            CompletePlayerDockingSnap();
+        }
+
+        private void ApplyPlayerDockingSnapPose(float easedTime)
+        {
+            Transform frame = _cachedTransform != null ? _cachedTransform : transform;
+            if (frame == null)
+                return;
+
+            Vector3 localPosition = LerpUnclampedVector(_snapStartLocalPosition, _snapTargetLocalPosition, easedTime);
+            Quaternion localRotation = NlerpQuaternion(_snapStartLocalRotation, _snapTargetLocalRotation, easedTime);
+            Vector3 worldPosition = frame.TransformPoint(localPosition);
+            Quaternion worldRotation = frame.rotation * localRotation;
+            if (!IsFinite(worldPosition) || !IsFinite(worldRotation))
+                return;
+
+            if (_snapBody != null)
+            {
+                _snapBody.MovePosition(worldPosition);
+                _snapBody.MoveRotation(worldRotation);
+                return;
+            }
+
+            if (_snapInteractor != null)
+                _snapInteractor.SetPositionAndRotation(worldPosition, worldRotation);
+        }
+
+        private void CompletePlayerDockingSnap()
+        {
+            Transform completedInteractor = _snapInteractor;
+            global::Hecton8.Physics.BuoyancyObject buoyancy = _snapBuoyancy;
+            ApplyPlayerDockingSnapPose(1f);
+            RestorePlayerDockingSnapBodyState();
+            _playerDockingSnapActive = false;
+            _snapInteractor = null;
+            _snapBody = null;
+            _snapBuoyancy = null;
+            ApplyCompletedEnvironmentTransition(completedInteractor, buoyancy);
+            FinalizeCompletedCycle(completedInteractor);
+        }
+
+        private void CancelPlayerDockingSnap()
+        {
+            if (!_playerDockingSnapActive)
+                return;
+
+            RestorePlayerDockingSnapBodyState();
+            _playerDockingSnapActive = false;
+            _snapInteractor = null;
+            _snapBody = null;
+            _snapBuoyancy = null;
+        }
+
+        private void RestorePlayerDockingSnapBodyState()
+        {
+            if (_snapBody == null || !_snapBodyStateCached)
+            {
+                _snapBodyStateCached = false;
+                return;
+            }
+
+            _snapBody.linearVelocity = Vector3.zero;
+            _snapBody.angularVelocity = Vector3.zero;
+            _snapBody.linearDamping = _snapBodyLinearDamping;
+            _snapBody.angularDamping = _snapBodyAngularDamping;
+            _snapBody.useGravity = _snapBodyUseGravity;
+            _snapBody.isKinematic = _snapBodyWasKinematic;
+            _snapBodyStateCached = false;
+        }
+
+        private void ApplyCompletedEnvironmentTransition(Transform player, global::Hecton8.Physics.BuoyancyObject buoyancy)
+        {
             _isPlayerInside = !_isPlayerInside;
             TransitionAirlockAudioSnapshot(_isPlayerInside);
-
             BaseAirlockEvents.RaiseEnvironmentChanged(this, player);
-
-            // Notify environment change
-            // True = Dry (inside base), False = Wet (outside)
             OnEnvironmentChanged?.Invoke(_isPlayerInside);
 
-            // Update player's BuoyancyObject if present
-            if (buoyancy != null)
-            {
-                if (_isPlayerInside)
-                    buoyancy.EnterDryZone();
-                else
-                    buoyancy.ExitDryZone();
-            }
+            if (buoyancy == null)
+                return;
+
+            if (_isPlayerInside)
+                buoyancy.EnterDryZone();
+            else
+                buoyancy.ExitDryZone();
         }
 
         private void ResolveInteractorComponents(Transform player, out Rigidbody body, out global::Hecton8.Physics.BuoyancyObject buoyancy)
@@ -974,6 +1134,17 @@ namespace Hecton8.Gameplay
                 math.lerp(start.x, end.x, t),
                 math.lerp(start.y, end.y, t),
                 math.lerp(start.z, end.z, t));
+        }
+
+        private static Quaternion NlerpQuaternion(Quaternion start, Quaternion end, float t)
+        {
+            quaternion startQ = new quaternion(start.x, start.y, start.z, start.w);
+            quaternion endQ = new quaternion(end.x, end.y, end.z, end.w);
+            float4 endValue = math.dot(startQ.value, endQ.value) < 0f ? -endQ.value : endQ.value;
+            float4 blended = math.lerp(startQ.value, endValue, math.saturate(t));
+            float lengthSq = math.dot(blended, blended);
+            blended = lengthSq > 0.000001f ? blended * math.rsqrt(lengthSq) : startQ.value;
+            return new Quaternion(blended.x, blended.y, blended.z, blended.w);
         }
 
         private static Quaternion ResolveBasisRotationNoTrig(Vector3 forward, Vector3 up)

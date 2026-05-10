@@ -197,7 +197,7 @@ namespace Hecton8.EditorTools
                 new Vector3(8f, 0.9f, 124f),
                 new Vector3(1.4f, 1.8f, 1.2f),
                 starterRecipes,
-                "Полевой верстак");
+                "Polevoy verstak");
 
             CreateOrUpdateSceneFabricator(
                 OutpostRootName,
@@ -206,7 +206,7 @@ namespace Hecton8.EditorTools
                 new Vector3(84f, 4900.8f, 1662f),
                 new Vector3(1.6f, 2.0f, 1.35f),
                 starterRecipes,
-                "Форпост-фабрикатор");
+                "Forpost-fabrikator");
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

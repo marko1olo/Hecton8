@@ -27,8 +27,27 @@ float4 _GpuBuoyancyWave1B;
 float4 _GpuBuoyancyWave2A;
 float4 _GpuBuoyancyWave2B;
 
-static const float GravityConstant = 9.81;
 static const float TwoPi = 6.28318530718;
+static const float CinematicPhaseSpeedBase = 0.85;
+static const float CinematicPhaseSpeedPerMeter = 0.23;
+
+float FastTriangleSigned(float phase)
+{
+    float triangle01 = 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
+    return triangle01 * 2.0 - 1.0;
+}
+
+float2 NormalizeFastOrDefault(float2 value, float2 fallback)
+{
+    float2 absValue = abs(value);
+    float maxComponent = max(absValue.x, absValue.y);
+    if (maxComponent <= 0.000001)
+        return fallback;
+
+    return absValue.x >= absValue.y
+        ? float2(value.x >= 0.0 ? 1.0 : -1.0, 0.0)
+        : float2(0.0, value.y >= 0.0 ? 1.0 : -1.0);
+}
 
 float3 ComputeWaveDisplacement(float2 worldXZ, float4 waveA, float4 waveB, float timeSeconds)
 {
@@ -37,14 +56,12 @@ float3 ComputeWaveDisplacement(float2 worldXZ, float4 waveA, float4 waveB, float
     if (amplitude <= 0.0 || wavelength <= 0.01)
         return 0.0.xxx;
 
-    float2 direction = dot(waveA.xy, waveA.xy) > 0.0001
-        ? normalize(waveA.xy)
-        : float2(1.0, 0.0);
+    float2 direction = NormalizeFastOrDefault(waveA.xy, float2(1.0, 0.0));
     float waveNumber = TwoPi / max(0.01, wavelength);
-    float phaseVelocity = sqrt(GravityConstant / waveNumber) * max(0.01, waveB.z);
+    float phaseVelocity = (CinematicPhaseSpeedBase + wavelength * CinematicPhaseSpeedPerMeter) * max(0.01, waveB.z);
     float phase = waveNumber * dot(direction, worldXZ) - phaseVelocity * waveNumber * timeSeconds + waveB.y;
-    float sinPhase = sin(phase);
-    float cosPhase = cos(phase);
+    float sinPhase = FastTriangleSigned(phase);
+    float cosPhase = FastTriangleSigned(phase + 1.5707964);
     float horizontalDisplacement = waveB.x * amplitude;
 
     return float3(
@@ -65,30 +82,16 @@ float3 ComputeTotalDisplacement(float2 worldXZ, float timeSeconds)
 float SampleWaveHeight(float2 worldXZ, float timeSeconds)
 {
     float3 displacement = ComputeTotalDisplacement(worldXZ, timeSeconds);
-    float2 correctedXZ = worldXZ - displacement.xz;
-    displacement = ComputeTotalDisplacement(correctedXZ, timeSeconds);
-    correctedXZ = worldXZ - displacement.xz;
-    displacement = ComputeTotalDisplacement(correctedXZ, timeSeconds);
     return displacement.y;
 }
 
-float SampleFourCornerWaveHeight(float3 positionWS, GpuBuoyancyObjectData objectData, float timeSeconds)
+float SampleObjectWaveHeight(float3 positionWS, GpuBuoyancyObjectData objectData, float timeSeconds)
 {
     bool centerFinite = all(abs(objectData.BoundsCenterWS) < float3(1.0e20, 1.0e20, 1.0e20));
-    bool extentsFinite = all(abs(objectData.BoundsExtentsWS) < float3(1.0e20, 1.0e20, 1.0e20));
     float2 centerXZ = centerFinite
         ? objectData.BoundsCenterWS.xz
         : positionWS.xz;
-    float2 extentsXZ = extentsFinite
-        ? max(abs(objectData.BoundsExtentsWS.xz), float2(0.05, 0.05))
-        : float2(0.05, 0.05);
-
-    float waveOffset = 0.0;
-    waveOffset += SampleWaveHeight(centerXZ + float2(-extentsXZ.x, -extentsXZ.y), timeSeconds);
-    waveOffset += SampleWaveHeight(centerXZ + float2( extentsXZ.x, -extentsXZ.y), timeSeconds);
-    waveOffset += SampleWaveHeight(centerXZ + float2(-extentsXZ.x,  extentsXZ.y), timeSeconds);
-    waveOffset += SampleWaveHeight(centerXZ + float2( extentsXZ.x,  extentsXZ.y), timeSeconds);
-    return waveOffset * 0.25;
+    return SampleWaveHeight(centerXZ, timeSeconds);
 }
 
 [numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
@@ -107,7 +110,16 @@ void EvaluateBuoyancy(uint3 dispatchThreadId : SV_DispatchThreadID)
     }
 
     float timeSeconds = _GpuBuoyancyWaterParams.w;
-    float waveOffset = SampleFourCornerWaveHeight(positionWS, objectData, timeSeconds);
+    float baseDepth = _GpuBuoyancyWaterParams.x - positionWS.y;
+    float maxWaveEnvelope = abs(_GpuBuoyancyWave0A.z) + abs(_GpuBuoyancyWave1A.z) + abs(_GpuBuoyancyWave2A.z);
+    if (baseDepth > max(objectData.Height, 0.01) + maxWaveEnvelope + 0.5)
+    {
+        float buoyancyForceY = _GpuBuoyancyWaterParams.y * objectData.Volume * _GpuBuoyancyWaterParams.z;
+        _GpuBuoyancyResults[instanceIndex] = float4(0.0, buoyancyForceY, 0.0, 0.0);
+        return;
+    }
+
+    float waveOffset = SampleObjectWaveHeight(positionWS, objectData, timeSeconds);
     float depthBelowSurface = _GpuBuoyancyWaterParams.x + waveOffset - positionWS.y;
     if (depthBelowSurface <= 0.0)
     {

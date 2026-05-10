@@ -729,7 +729,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            depth    = math.max(0f, surfaceWorldY - transform.position.y);
+            depth    = math.max(0f, surfaceWorldY - ResolveSurvivalRuntimePosition().y);
             pressure = 1f + depth * 0.1f;
         }
 
@@ -794,12 +794,13 @@ namespace Hecton8.Gameplay
         {
             var atmosphere = Hecton8.Core.GlobalRegistry.Atmosphere;
             float baseTemp = atmosphere != null ? atmosphere.CurrentTemperature : 20f;
-            float localHeat = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Heat);
+            Vector3 survivalRuntimePosition = ResolveSurvivalRuntimePosition();
+            float localHeat = ResolveHazardIntensity(HazardType.Heat);
             float abyssalColdPenalty = ResolveAbyssalColdPenaltyCelsius();
             float hazardTemperature = baseTemp + localHeat - abyssalColdPenalty;
             _environmentTemperature = ResolveExternalThermalShockTemperature(
                 hazardTemperature,
-                ResolveAbyssalThermalExternalTemperature(transform.position));
+                ResolveAbyssalThermalExternalTemperature(survivalRuntimePosition));
             float floodedThermalInsulationFactor = ResolveFloodedThermalInsulationFactor();
             float floodedExternalTemperature = ResolveFloodedExternalTemperature(_environmentTemperature);
             float thermalExposureScale = ResolveTransportThermalExposureScale();
@@ -872,6 +873,7 @@ namespace Hecton8.Gameplay
             AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
             if (thermalManager == null ||
                 !thermalManager.SampleThermalFlow(worldPosition, 1.1f, out AbyssalThermalManager.ThermalFlowSample sample) ||
+                !math.isfinite(sample.Heat01) ||
                 sample.Heat01 <= 0f)
             {
                 return float.NegativeInfinity;
@@ -985,7 +987,7 @@ namespace Hecton8.Gameplay
             if (!WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge) || _vegetationBridge == null)
                 return 1f;
 
-            return math.max(1f, _vegetationBridge.GetDeepColdStressMultiplier(transform.position));
+            return FiniteAtLeast(_vegetationBridge.GetDeepColdStressMultiplier(ResolveSurvivalRuntimePosition()), 1f, 1f);
         }
 
         private void TrackRapidAscentRisk(float deltaTime)
@@ -1143,11 +1145,11 @@ namespace Hecton8.Gameplay
 
         private bool TrySamplePlayerAupAirPocket(out float oxygenRefillFraction)
         {
-            Vector3 center = transform.position;
+            Vector3 center = ResolveSurvivalRuntimePosition();
             if (HectonVoxelEngine.TrySampleAirPocket(center, out oxygenRefillFraction))
                 return true;
 
-            Vector3 up = transform.up;
+            Vector3 up = Vector3.up;
             float halfHeight = 0.9f;
             if (HectonVoxelEngine.TrySampleAirPocket(center + up * halfHeight, out oxygenRefillFraction))
                 return true;
@@ -1223,7 +1225,7 @@ namespace Hecton8.Gameplay
             float baseRad = atmosphere != null ? atmosphere.CurrentRadiation : 0f;
 
             // Add local radiation sources
-            float localRad = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Radiation);
+            float localRad = ResolveHazardIntensity(HazardType.Radiation);
             float currentRad = baseRad + localRad;
 
             if (currentRad <= stats.RadiationThreshold)
@@ -1254,7 +1256,7 @@ namespace Hecton8.Gameplay
             if (Hecton8.Core.GlobalRegistry.HazardZones != null)
                 return;
 
-            float toxicity = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Toxicity);
+            float toxicity = ResolveHazardIntensity(HazardType.Toxicity);
             if (toxicity <= 0.001f)
                 return;
 
@@ -1418,9 +1420,9 @@ namespace Hecton8.Gameplay
 
         private float ResolveOxygenMovementScale()
         {
-            float authoredCruiseSpeed = ResolveAuthoredCruiseSpeedMetersPerSecond();
-            float currentSpeed = ResolveCurrentMovementSpeedMetersPerSecond();
-            float move01 = math.saturate(currentSpeed / authoredCruiseSpeed);
+            float authoredCruiseSpeed = FiniteAtLeast(ResolveAuthoredCruiseSpeedMetersPerSecond(), 1f, 0.01f);
+            float authoredCruiseSpeedSq = FiniteAtLeast(authoredCruiseSpeed * authoredCruiseSpeed, 1f, 0.0001f);
+            float move01 = math.saturate(ResolveCurrentMovementSpeedSq() / authoredCruiseSpeedSq);
             return math.lerp(1f, OxygenMovementScaleCeiling, move01);
         }
 
@@ -1488,13 +1490,6 @@ namespace Hecton8.Gameplay
             return math.saturate(numerator / math.max(denominator, 0.0001f));
         }
 
-        private static float ResolveMagnitude(float sqrMagnitude)
-        {
-            return sqrMagnitude > 0.000001f
-                ? math.sqrt(sqrMagnitude)
-                : 0f;
-        }
-
         private static float LerpClamped(float from, float to, float t)
         {
             return math.lerp(from, to, math.saturate(t));
@@ -1527,6 +1522,51 @@ namespace Hecton8.Gameplay
                    float.IsFinite(value.w);
         }
 
+        private float ResolveHazardIntensity(HazardType type)
+        {
+            return TryResolveSurvivalAup(out AbsoluteUniversePosition playerAup)
+                ? HectonHazardManager.GetHazardIntensity(in playerAup, type)
+                : 0f;
+        }
+
+        private bool TryResolveSurvivalAup(out AbsoluteUniversePosition playerAup)
+        {
+            if (_playerMovement != null)
+            {
+                playerAup = _playerMovement.CurrentAup;
+                if (IsFiniteAup(in playerAup))
+                    return true;
+            }
+
+            playerAup = AbsoluteUniversePosition.FromRuntimePosition(ResolveSurvivalRuntimePosition());
+            return IsFiniteAup(in playerAup);
+        }
+
+        private Vector3 ResolveSurvivalRuntimePosition()
+        {
+            if (_playerMovement != null)
+            {
+                float3 runtimePosition = _playerMovement.CurrentAup.ToRuntimeFloat3();
+                if (math.all(math.isfinite(runtimePosition)))
+                    return new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            }
+
+            Vector3 runtimePositionFallback = transform.position;
+            return IsFinite(runtimePositionFallback) ? runtimePositionFallback : Vector3.zero;
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition positionAup)
+        {
+            return math.isfinite(positionAup.LocalX) &&
+                   math.isfinite(positionAup.LocalY) &&
+                   math.isfinite(positionAup.LocalZ);
+        }
+
+        private static float FiniteAtLeast(float value, float fallback, float minimum)
+        {
+            return math.isfinite(value) ? math.max(minimum, value) : math.max(minimum, fallback);
+        }
+
         private float ResolveMovementStressMagnitude01()
         {
             if (_playerMovement == null)
@@ -1557,11 +1597,13 @@ namespace Hecton8.Gameplay
                 math.max(powerStress, hazardStress));
         }
 
-        private float ResolveCurrentMovementSpeedMetersPerSecond()
+        private float ResolveCurrentMovementSpeedSq()
         {
-            return _playerRigidbody != null
-                ? ResolveMagnitude(_playerRigidbody.linearVelocity.sqrMagnitude)
-                : 0f;
+            if (_playerRigidbody == null)
+                return 0f;
+
+            float speedSq = _playerRigidbody.linearVelocity.sqrMagnitude;
+            return math.isfinite(speedSq) && speedSq > 0f ? speedSq : 0f;
         }
 
         private float ResolveAuthoredCruiseSpeedMetersPerSecond()
@@ -1569,12 +1611,12 @@ namespace Hecton8.Gameplay
             float authoredCruiseSpeed = 1f;
 
             if (_playerMovement != null && _playerMovement.CurrentSuit != null)
-                authoredCruiseSpeed = math.max(0.01f, _playerMovement.CurrentSuit.maxSwimSpeed);
+                authoredCruiseSpeed = FiniteAtLeast(_playerMovement.CurrentSuit.maxSwimSpeed, 1f, 0.01f);
 
             if (_playerTransportCoordinator != null)
-                authoredCruiseSpeed *= math.max(0.01f, _playerTransportCoordinator.ResolveTransportSpeedMultiplier());
+                authoredCruiseSpeed *= FiniteAtLeast(_playerTransportCoordinator.ResolveTransportSpeedMultiplier(), 1f, 0.01f);
 
-            return math.max(0.01f, authoredCruiseSpeed);
+            return FiniteAtLeast(authoredCruiseSpeed, 1f, 0.01f);
         }
 
         private void UpdateHungerAndThirst(float dt)
@@ -1642,7 +1684,7 @@ namespace Hecton8.Gameplay
             // Temperature Publishing (Atmosphere + Local)
             float baseTemp = atmosphere != null ? atmosphere.CurrentTemperature : 20f;
             float totalTemp = baseTemp +
-                HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Heat) -
+                ResolveHazardIntensity(HazardType.Heat) -
                 ResolveAbyssalColdPenaltyCelsius();
             if (math.abs(totalTemp - lastPubTemp) > Epsilon)
             {
@@ -1652,7 +1694,7 @@ namespace Hecton8.Gameplay
 
             // Radiation Publishing (Atmosphere + Local)
             float baseRad = atmosphere != null ? atmosphere.CurrentRadiation : 0f;
-            float totalRad = baseRad + HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Radiation);
+            float totalRad = baseRad + ResolveHazardIntensity(HazardType.Radiation);
             if (math.abs(totalRad - lastPubRad) > Epsilon)
             {
                 lastPubRad = totalRad;
@@ -2243,7 +2285,7 @@ namespace Hecton8.Gameplay
                 MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.IntegrityFailure);
 
                 if (_bleedingSeverity01 > BleedingTrailPulseThreshold)
-                    BleedingTrailPulse?.Invoke(_bleedingSeverity01, transform.position);
+                    BleedingTrailPulse?.Invoke(_bleedingSeverity01, ResolveSurvivalRuntimePosition());
 
                 _bleedingSecondsRemaining = math.max(0f, _bleedingSecondsRemaining - dt);
                 if (_bleedingSecondsRemaining <= 0f)
@@ -2340,7 +2382,7 @@ namespace Hecton8.Gameplay
         {
             _lastDeathRecord = new SurvivalDeathRecord(
                 _lastDeathCause,
-                transform.position,
+                ResolveSurvivalRuntimePosition(),
                 _currentLifeDurationSeconds,
                 _currentLifePeakDepthMeters,
                 _currentLifeLowestOxygenNormalized,

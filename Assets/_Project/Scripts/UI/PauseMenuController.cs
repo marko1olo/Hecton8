@@ -463,7 +463,7 @@ namespace Hecton8.UI
         {
             if (playerPDA == null)
             {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                     playerTransform != null)
                 {
                     playerPDA = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerPDA != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerPDA : playerTransform.GetComponent<PlayerPDA>());
@@ -1531,7 +1531,11 @@ namespace Hecton8.UI
 
         private static string ResolveSaveErrorForModal(in FixedString128Bytes error)
         {
-            return error.Length > 0 ? error.ToString() : _cachedUnknownErrorModal;
+            if (error.Length <= 0)
+                return _cachedUnknownErrorModal;
+
+            FixedString128Bytes errorCopy = error;
+            return errorCopy.ConvertToString();
         }
 
         private void CycleLanguage()
@@ -1605,7 +1609,7 @@ namespace Hecton8.UI
             switch (language)
             {
                 case GameLanguage.English: return "English";
-                case GameLanguage.Russian: return "Русский";
+                case GameLanguage.Russian: return "Russkiy";
                 case GameLanguage.German: return "Deutsch";
                 case GameLanguage.French: return "Français";
                 case GameLanguage.Spanish: return "Español";
@@ -1613,7 +1617,7 @@ namespace Hecton8.UI
                 case GameLanguage.PortugueseBrazilian: return "Português (Brasil)";
                 case GameLanguage.Polish: return "Polski";
                 case GameLanguage.Turkish: return "Türkçe";
-                case GameLanguage.Ukrainian: return "Українська";
+                case GameLanguage.Ukrainian: return "Ukra_nska";
                 case GameLanguage.ChineseSimplified: return "简体中文";
                 case GameLanguage.ChineseTraditional: return "繁體中文";
                 case GameLanguage.Japanese: return "日本語";
@@ -1819,7 +1823,7 @@ namespace Hecton8.UI
                     continue;
 
                 string name = candidate.name;
-                if (name.IndexOf("текст", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                if (name.IndexOf("tekst", StringComparison.OrdinalIgnoreCase) >= 0 ||
                     name.IndexOf("text", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     return candidate;
@@ -1835,7 +1839,7 @@ namespace Hecton8.UI
                 return false;
 
             string name = font.name;
-            return name.IndexOf("циф", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            return name.IndexOf("tsif", StringComparison.OrdinalIgnoreCase) >= 0 ||
                    name.IndexOf("digit", StringComparison.OrdinalIgnoreCase) >= 0 ||
                    name.IndexOf("number", StringComparison.OrdinalIgnoreCase) >= 0;
         }

@@ -51,7 +51,7 @@ namespace Hecton8.UI
             if (overlay != null)
                 return overlay;
 
-            if (Hecton8.Bootstrap.SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+            if (Hecton8.Bootstrap.GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 Transform overlayTransform = playerTransform.root.Find(ActiveHudOverlayName);

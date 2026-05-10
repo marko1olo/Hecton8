@@ -19,8 +19,16 @@ namespace Hecton8.World
             float pillarHeightMeters = 1000f)
         {
             ResourceDistributionDirector director = GlobalRegistry.ResourceDistribution;
-            if (director == null || !featureRecords.IsCreated || maxPillars <= 0)
+            if (director == null ||
+                !featureRecords.IsCreated ||
+                maxPillars <= 0 ||
+                !math.isfinite(pillarRadiusMeters) ||
+                !math.isfinite(pillarHeightMeters) ||
+                pillarRadiusMeters <= 0f ||
+                pillarHeightMeters <= 0f)
+            {
                 return 0;
+            }
 
             int safeMaxPillars = math.min(maxPillars, featureRecords.Length);
             int visitedPillars = 0;
@@ -31,9 +39,13 @@ namespace Hecton8.World
                 if (record.Valid == 0 || record.Kind != (byte)AnomalyFeatureKind.ChthonicPillar)
                     continue;
 
+                double3 pillarAup = new double3(record.AupX, record.AupY, record.AupZ);
+                if (!math.isfinite(record.Strength01) || !math.all(math.isfinite(pillarAup)))
+                    continue;
+
                 visitedPillars++;
                 spawnedResources += director.TryBindChthonicPillarResourcesAtAup(
-                    new double3(record.AupX, record.AupY, record.AupZ),
+                    pillarAup,
                     pillarRadiusMeters,
                     pillarHeightMeters,
                     unchecked((uint)record.Index));

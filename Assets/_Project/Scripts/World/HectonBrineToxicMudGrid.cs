@@ -196,6 +196,30 @@ namespace Hecton8.World
             return false;
         }
 
+        public static bool ContainsAupSubmergedCell(int cellId, in AbsoluteUniversePosition aup)
+        {
+            if (cellId <= 0 || s_count <= 0 || !IsFiniteAup(in aup))
+                return false;
+
+            return ContainsAupSubmergedCell(cellId, aup.ToAbsoluteDouble3());
+        }
+
+        public static bool OverlapsAupSubmergedCell(
+            int cellId,
+            in AbsoluteUniversePosition aup,
+            float queryRadiusMeters,
+            float verticalHalfExtentMeters)
+        {
+            if (cellId <= 0 || s_count <= 0 || !IsFiniteAup(in aup))
+                return false;
+
+            return OverlapsAupSubmergedCell(
+                cellId,
+                aup.ToAbsoluteDouble3(),
+                queryRadiusMeters,
+                verticalHalfExtentMeters);
+        }
+
         public static bool ContainsRuntimeXZ(Vector3 runtimePosition)
         {
             if (s_count <= 0)
@@ -362,6 +386,19 @@ namespace Hecton8.World
             return false;
         }
 
+        private static bool ContainsAupSubmergedCell(int cellId, double3 aup)
+        {
+            if (!TryResolveCell(cellId, out ToxicMudCell cell) || !math.all(math.isfinite(aup)))
+                return false;
+
+            if (aup.y > cell.SurfaceY || aup.y < cell.MinY)
+                return false;
+
+            double dx = aup.x - cell.CenterX;
+            double dz = aup.z - cell.CenterZ;
+            return IsInsideCellEllipse(in cell, dx, dz);
+        }
+
         private static bool OverlapsAupSubmergedVolume(double3 aup, float queryRadiusMeters, float verticalHalfExtentMeters)
         {
             if (s_count <= 0)
@@ -394,6 +431,31 @@ namespace Hecton8.World
             }
 
             return false;
+        }
+
+        private static bool OverlapsAupSubmergedCell(
+            int cellId,
+            double3 aup,
+            float queryRadiusMeters,
+            float verticalHalfExtentMeters)
+        {
+            if (!TryResolveCell(cellId, out ToxicMudCell cell) || !math.all(math.isfinite(aup)))
+                return false;
+
+            if (!TryResolveNonNegativeQueryExtent(queryRadiusMeters, out double safeQueryRadius) ||
+                !TryResolveNonNegativeQueryExtent(verticalHalfExtentMeters, out double safeVerticalHalfExtent))
+            {
+                return false;
+            }
+
+            double minY = aup.y - safeVerticalHalfExtent;
+            double maxY = aup.y + safeVerticalHalfExtent;
+            if (minY > cell.SurfaceY || maxY < cell.MinY)
+                return false;
+
+            double dx = aup.x - cell.CenterX;
+            double dz = aup.z - cell.CenterZ;
+            return IsInsideExpandedCellEllipse(in cell, dx, dz, safeQueryRadius);
         }
 
         private static bool IsOutsideGlobalBounds(double x, double z, double padding)
@@ -439,6 +501,27 @@ namespace Hecton8.World
             return math.isfinite(position.LocalX) &&
                    math.isfinite(position.LocalY) &&
                    math.isfinite(position.LocalZ);
+        }
+
+        private static bool TryResolveCell(int cellId, out ToxicMudCell cell)
+        {
+            if (cellId <= 0)
+            {
+                cell = default;
+                return false;
+            }
+
+            for (int i = 0; i < s_count; i++)
+            {
+                if (s_cells[i].CellId != cellId)
+                    continue;
+
+                cell = s_cells[i];
+                return true;
+            }
+
+            cell = default;
+            return false;
         }
 
         private static bool IsInsideCellEllipse(in ToxicMudCell cell, double dx, double dz)

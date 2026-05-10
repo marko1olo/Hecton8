@@ -492,14 +492,37 @@ namespace Hecton8.World
                 (int)math.round(position.y * 4f),
                 (int)math.round(position.z * 4f),
                 (int)math.round(scale01 * 255f)));
-            float angle = (seed & 0xFFFFu) * (math.PI * 2f / 65535f);
+            float2 lateralDirection = ResolveOctantDirection((int)(seed & 7u));
             float lateral = math.lerp(0.025f, 0.12f, scale01);
             float sink = -math.lerp(0.025f, 0.06f, scale01);
             float impulseLateral = math.saturate(1f - math.abs(resolvedImpulse.y)) * 0.035f;
             return new Vector3(
-                math.cos(angle) * lateral + resolvedImpulse.x * impulseLateral,
+                lateralDirection.x * lateral + resolvedImpulse.x * impulseLateral,
                 sink,
-                math.sin(angle) * lateral + resolvedImpulse.z * impulseLateral);
+                lateralDirection.y * lateral + resolvedImpulse.z * impulseLateral);
+        }
+
+        private static float2 ResolveOctantDirection(int sector)
+        {
+            switch (sector & 7)
+            {
+                case 0:
+                    return new float2(1f, 0f);
+                case 1:
+                    return new float2(0.70710677f, 0.70710677f);
+                case 2:
+                    return new float2(0f, 1f);
+                case 3:
+                    return new float2(-0.70710677f, 0.70710677f);
+                case 4:
+                    return new float2(-1f, 0f);
+                case 5:
+                    return new float2(-0.70710677f, -0.70710677f);
+                case 6:
+                    return new float2(0f, -1f);
+                default:
+                    return new float2(0.70710677f, -0.70710677f);
+            }
         }
 
         private void RegisterSpray(Vector3 positionWS, Vector3 directionWS, float intensity01)
@@ -630,19 +653,15 @@ namespace Hecton8.World
             _drawPropertyBlock.SetFloat(_WakeTearStrengthId, wakeTearStrength);
             _drawPropertyBlock.SetFloat(_WakeThresholdId, wakeThreshold);
 
-            Graphics.DrawMeshInstanced(
-                _quadMesh,
-                0,
-                _runtimeMaterial,
-                _pressureSprayMatrices,
-                matrixCount,
-                _drawPropertyBlock,
-                ShadowCastingMode.Off,
-                false,
-                gameObject.layer,
-                null,
-                LightProbeUsage.Off,
-                null);
+            RenderParams renderParams = new RenderParams(_runtimeMaterial)
+            {
+                matProps = _drawPropertyBlock,
+                layer = gameObject.layer,
+                shadowCastingMode = ShadowCastingMode.Off,
+                receiveShadows = false,
+                lightProbeUsage = LightProbeUsage.Off
+            };
+            Graphics.RenderMeshInstanced(renderParams, _quadMesh, 0, _pressureSprayMatrices, matrixCount);
         }
 
         private void DrawDecal(in FluidDecalState decal)

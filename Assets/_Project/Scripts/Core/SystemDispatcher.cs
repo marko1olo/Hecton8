@@ -56,6 +56,7 @@ namespace Hecton8.Core
     {
         private const int LaneCount = 4;
         private const float DefaultSlowTickIntervalSeconds = 0.5f;
+        private const int FrostTickIntervalFrames = 300;
         private const double SlowJobCompleteWarningMilliseconds = 1.0;
         private const double SlowDispatcherPhaseWarningMilliseconds = 100.0;
         private const int MaxQueuedDispatcherRaycasts = 256;
@@ -82,6 +83,7 @@ namespace Hecton8.Core
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.Dispatcher.Update");
         private static readonly ProfilerMarker _fixedUpdateProfilerMarker = new ProfilerMarker("H8.Dispatcher.FixedUpdate");
         private static readonly ProfilerMarker _slowTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.SlowTick");
+        private static readonly ProfilerMarker _frostTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.FrostTick");
         private static readonly ProfilerMarker _lateFrameProfilerMarker = new ProfilerMarker("H8.Dispatcher.LateFrame");
         private static readonly ProfilerMarker _postFixedProfilerMarker = new ProfilerMarker("H8.Dispatcher.PostFixed");
         private static readonly ProfilerMarker _lateFrameCommandQueueDrainProfilerMarker = new ProfilerMarker("H8.Dispatcher.CommandQueue.Drain");
@@ -129,8 +131,15 @@ namespace Hecton8.Core
             new ProfilerMarker("H8.Dispatcher.Slow.Player"),
             new ProfilerMarker("H8.Dispatcher.Slow.UI"),
         };
+        private static readonly ProfilerMarker[] _frostLaneProfilerMarkers =
+        {
+            new ProfilerMarker("H8.Dispatcher.Frost.Core"),
+            new ProfilerMarker("H8.Dispatcher.Frost.Environment"),
+            new ProfilerMarker("H8.Dispatcher.Frost.Player"),
+            new ProfilerMarker("H8.Dispatcher.Frost.UI"),
+        };
 
-        // COLD ALLOC: RegistryBucket<IUpdatable>[4] — fixed dispatcher lanes ordered by bootstrap layer — owner: SystemDispatcher
+        // COLD ALLOC: RegistryBucket<IUpdatable>[4] - fixed dispatcher lanes ordered by bootstrap layer - owner: SystemDispatcher
         private static readonly RegistryBucket<IUpdatable>[] _priorityLanes =
         {
             new RegistryBucket<IUpdatable>(256),
@@ -152,6 +161,13 @@ namespace Hecton8.Core
             new RegistryBucket<ISlowTickable>(96),
             new RegistryBucket<ISlowTickable>(32),
         };
+        private static readonly RegistryBucket<IFrostTickable>[] _frostPriorityLanes =
+        {
+            new RegistryBucket<IFrostTickable>(48),
+            new RegistryBucket<IFrostTickable>(48),
+            new RegistryBucket<IFrostTickable>(24),
+            new RegistryBucket<IFrostTickable>(8),
+        };
         private static readonly RegistryBucket<ILateFrameTickable>[] _lateFramePriorityLanes =
         {
             new RegistryBucket<ILateFrameTickable>(128),
@@ -168,13 +184,13 @@ namespace Hecton8.Core
         };
 
         private static IFoveatedDispatcher _foveatedSimulationManager = new FoveatedSimulationManager();
-        // COLD ALLOC: IDispatcherRaycastReceiver[256] — dispatcher-owned pending raycast receivers — owner: SystemDispatcher
+        // COLD ALLOC: IDispatcherRaycastReceiver[256] - dispatcher-owned pending raycast receivers - owner: SystemDispatcher
         private static readonly IDispatcherRaycastReceiver[] _pendingDispatcherRaycastReceivers = new IDispatcherRaycastReceiver[MaxQueuedDispatcherRaycasts];
-        // COLD ALLOC: int[256] — dispatcher-owned pending raycast request ids — owner: SystemDispatcher
+        // COLD ALLOC: int[256] - dispatcher-owned pending raycast request ids - owner: SystemDispatcher
         private static readonly int[] _pendingDispatcherRaycastRequestIds = new int[MaxQueuedDispatcherRaycasts];
-        // COLD ALLOC: IDispatcherRaycastReceiver[256] — dispatcher-owned scheduled raycast receivers — owner: SystemDispatcher
+        // COLD ALLOC: IDispatcherRaycastReceiver[256] - dispatcher-owned scheduled raycast receivers - owner: SystemDispatcher
         private static readonly IDispatcherRaycastReceiver[] _scheduledDispatcherRaycastReceivers = new IDispatcherRaycastReceiver[MaxQueuedDispatcherRaycasts];
-        // COLD ALLOC: int[256] — dispatcher-owned scheduled raycast request ids — owner: SystemDispatcher
+        // COLD ALLOC: int[256] - dispatcher-owned scheduled raycast request ids - owner: SystemDispatcher
         private static readonly int[] _scheduledDispatcherRaycastRequestIds = new int[MaxQueuedDispatcherRaycasts];
         // COLD ALLOC: uint[32] - late-frame circuit-breaker lane hash counters - owner: SystemDispatcher
         private static readonly uint[] _lateFrameCircuitBreakerLaneHashes = new uint[LateFrameCircuitBreakerLaneCapacity];
@@ -192,6 +208,7 @@ namespace Hecton8.Core
         private static readonly bool[] _baseStressCascadeTelemetryEmitted = new bool[BaseStressCascadeCircuitBreakerCapacity];
         private float _slowTickAccumulator;
         private float _fixedStepAccumulator;
+        private int _frostTickFrameCountdown;
         private bool _serviceRegistered;
         private static int _lateFrameEventDispatchBudget;
         private static bool _lateFrameEventBudgetActive;
@@ -577,6 +594,16 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Returns the frost maintenance registry lane for a fixed priority layer.
+        /// </summary>
+        /// <param name="layer">Priority lane.</param>
+        /// <returns>Dense frost-tick lane bucket.</returns>
+        public static RegistryBucket<IFrostTickable> GetFrostLane(PriorityLayer layer)
+        {
+            return _frostPriorityLanes[GetLaneIndex(layer)];
+        }
+
+        /// <summary>
         /// Returns the late-frame registry lane for a fixed priority layer.
         /// </summary>
         /// <param name="layer">Priority lane.</param>
@@ -639,6 +666,19 @@ namespace Hecton8.Core
                 return false;
 
             return GetSlowLane(layer).TryRegister(item);
+        }
+
+        /// <summary>
+        /// Registers a frost maintenance owner into a fixed priority lane.
+        /// </summary>
+        /// <param name="item">Frost-tick owner.</param>
+        /// <param name="layer">Priority lane.</param>
+        internal static bool Register(IFrostTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return false;
+
+            return GetFrostLane(layer).TryRegister(item);
         }
 
         /// <summary>
@@ -710,6 +750,19 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters a frost maintenance owner from a fixed priority lane.
+        /// </summary>
+        /// <param name="item">Frost-tick owner.</param>
+        /// <param name="layer">Priority lane.</param>
+        internal static void Unregister(IFrostTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            GetFrostLane(layer).TryUnregister(item);
+        }
+
+        /// <summary>
         /// Unregisters a late-frame owner from a fixed priority lane.
         /// </summary>
         /// <param name="item">Late-frame owner.</param>
@@ -745,6 +798,7 @@ namespace Hecton8.Core
                 _priorityLanes[i].Clear();
                 _fixedPriorityLanes[i].Clear();
                 _slowPriorityLanes[i].Clear();
+                _frostPriorityLanes[i].Clear();
                 _lateFramePriorityLanes[i].Clear();
                 _postFixedPriorityLanes[i].Clear();
             }
@@ -778,6 +832,7 @@ namespace Hecton8.Core
 
             _slowTickAccumulator = 0f;
             _fixedStepAccumulator = 0f;
+            _frostTickFrameCountdown = FrostTickIntervalFrames;
         }
 
         private void OnDestroy()
@@ -806,6 +861,7 @@ namespace Hecton8.Core
 
             _slowTickAccumulator = 0f;
             _fixedStepAccumulator = 0f;
+            _frostTickFrameCountdown = FrostTickIntervalFrames;
             CurrentFrameDeltaTime = 0f;
             CurrentFrameUnscaledDeltaTime = 0f;
             _serviceRegistered = false;
@@ -897,6 +953,7 @@ namespace Hecton8.Core
                 _foveatedSimulationManager.ScheduleFrameJobs();
                 RunFixedStepAccumulator(CurrentFrameUnscaledDeltaTime, blockGameplayLanes);
                 RunSlowTick(deltaTime, blockGameplayLanes);
+                RunFrostTick(blockGameplayLanes);
                 ScheduleDispatcherRaycasts();
             }
         }
@@ -1039,13 +1096,13 @@ namespace Hecton8.Core
                     NarrativeEvents.PendingCount +
                     SaveEvents.PendingCount +
                     QuestEvents.PendingCount +
-                    Hecton8.Bootstrap.SceneBootstrap.PendingEventCount +
+                    Hecton8.Bootstrap.GameBootstrapper.PendingEventCount +
                     ObjectPoolDiagnostics.PendingCount +
                     PerformanceEvents.PendingCount +
                     GlobalRegistry.PendingServiceReboundCount);
 
                 BootstrapEvents.FlushPending();
-                Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents();
+                Hecton8.Bootstrap.GameBootstrapper.FlushPendingEvents();
                 PerformanceEvents.FlushPending();
                 ObjectPoolDiagnostics.FlushPending();
                 GlobalRegistry.FlushPendingServiceReboundEvents();
@@ -1714,11 +1771,44 @@ namespace Hecton8.Core
             }
         }
 
+        private void RunFrostTick(bool blockGameplayLanes)
+        {
+            if (_frostTickFrameCountdown > 1)
+            {
+                _frostTickFrameCountdown--;
+                return;
+            }
+
+            _frostTickFrameCountdown = FrostTickIntervalFrames;
+
+            using (_frostTickProfilerMarker.Auto())
+            {
+                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+                {
+                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+                        continue;
+
+                    RegistryBucket<IFrostTickable> lane = _frostPriorityLanes[laneIndex];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    lane.ValidateNoDestroyedEntriesDebug(nameof(IFrostTickable));
+#endif
+                    using (_frostLaneProfilerMarkers[laneIndex].Auto())
+                    {
+                        IFrostTickable[] rawArray = lane.RawArray;
+                        int count = lane.Count;
+
+                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                            rawArray[itemIndex].FrostTick();
+                    }
+                }
+            }
+        }
+
         private static void EnsureDispatcherRaycastBuffers()
         {
             if (!_pendingDispatcherRaycastCommands.IsCreated)
             {
-                _pendingDispatcherRaycastCommands = new NativeQueue<RaycastCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RaycastCommand>[256] — dispatcher-owned global deferred physics request lane — owner: SystemDispatcher
+                _pendingDispatcherRaycastCommands = new NativeQueue<RaycastCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RaycastCommand>[256] - dispatcher-owned global deferred physics request lane - owner: SystemDispatcher
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingDispatcherRaycastCommands,
                     MaxQueuedDispatcherRaycasts,
@@ -1730,7 +1820,7 @@ namespace Hecton8.Core
 
             if (!_scheduledDispatcherRaycastCommands.IsCreated)
             {
-                _scheduledDispatcherRaycastCommands = new NativeList<RaycastCommand>(MaxQueuedDispatcherRaycasts, Allocator.Persistent); // COLD ALLOC: NativeList<RaycastCommand>[256] — dispatcher-owned scheduled deferred raycast commands — owner: SystemDispatcher
+                _scheduledDispatcherRaycastCommands = new NativeList<RaycastCommand>(MaxQueuedDispatcherRaycasts, Allocator.Persistent); // COLD ALLOC: NativeList<RaycastCommand>[256] - dispatcher-owned scheduled deferred raycast commands - owner: SystemDispatcher
                 NativeMemorySentinel.RegisterNativeList(
                     _scheduledDispatcherRaycastCommands,
                     nameof(SystemDispatcher),
@@ -1740,7 +1830,7 @@ namespace Hecton8.Core
 
             if (!_scheduledDispatcherRaycastHits.IsCreated)
             {
-                _scheduledDispatcherRaycastHits = new NativeArray<RaycastHit>(MaxQueuedDispatcherRaycasts, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[256] — dispatcher-owned deferred raycast hit lane — owner: SystemDispatcher
+                _scheduledDispatcherRaycastHits = new NativeArray<RaycastHit>(MaxQueuedDispatcherRaycasts, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[256] - dispatcher-owned deferred raycast hit lane - owner: SystemDispatcher
                 NativeMemorySentinel.RegisterNativeArray(
                     _scheduledDispatcherRaycastHits,
                     nameof(SystemDispatcher),

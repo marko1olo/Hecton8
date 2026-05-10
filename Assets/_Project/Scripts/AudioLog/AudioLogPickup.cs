@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — AudioLogPickup.cs
-// Интерактивный объект в мире — аудиодневник колонии.
+// Interaktivnyy obekt v mire — audiodnevnik kolonii.
 // ============================================================================
 
 using Hecton.Localization;
@@ -16,11 +16,11 @@ namespace Hecton8.Narrative
     public sealed class AudioLogPickup : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
     {
         private const int MaxRegisteredPickupTemplates = 64;
-        private const string DefaultPlaybackVerbRu = "Воспроизвести запись";
+        private const string DefaultPlaybackVerbRu = "Vosproizvesti zapis";
         private const string DefaultPlaybackVerbEn = "Play Log";
-        private const string DefaultTextVerbRu = "Открыть запись";
+        private const string DefaultTextVerbRu = "Otkryt zapis";
         private const string DefaultTextVerbEn = "Open Log";
-        private const string DefaultArchiveVerbRu = "Открыть архив";
+        private const string DefaultArchiveVerbRu = "Otkryt arhiv";
         private const string DefaultArchiveVerbEn = "Open Archive";
         private static readonly uint _defaultPlaybackVerbRuHash = QuestFlagHashKernel.ComputeStableHash(DefaultPlaybackVerbRu);
         private static readonly uint _defaultPlaybackVerbEnHash = QuestFlagHashKernel.ComputeStableHash(DefaultPlaybackVerbEn);
@@ -33,17 +33,17 @@ namespace Hecton8.Narrative
         private static readonly RegistryBucket<AudioLogPickup> _registeredPickupTemplates = new RegistryBucket<AudioLogPickup>(MaxRegisteredPickupTemplates);
 
         [Header("── Audio Log ───────────────────────────────")]
-        [Tooltip("Данные аудиодневника.")]
+        [Tooltip("Dannye audiodnevnika.")]
         [SerializeField] private AudioLogData logData;
 
-        [Tooltip("Текст подсказки взаимодействия.")]
+        [Tooltip("Tekst podskazki vzaimodeystviya.")]
         [SerializeField] private string interactVerb = DefaultPlaybackVerbRu;
 
         [Header("── Behaviour ───────────────────────────────")]
-        [Tooltip("Деактивировать объект после первого взаимодействия.")]
+        [Tooltip("Deaktivirovat obekt posle pervogo vzaimodeystviya.")]
         [SerializeField] private bool deactivateAfterPickup;
 
-        [Tooltip("Подсветка при наведении.")]
+        [Tooltip("Podsvetka pri navedenii.")]
         [SerializeField] private GameObject highlightObject;
 
         private string _cachedInteractText;

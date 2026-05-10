@@ -1,0 +1,1558 @@
+Vot tvoy otchet. Kak Lead Architect i Senior QA, ya posmotrel na etot «FULL IMMERSION BUILD». Spoyler: immunitet k GC zdes tolko na slovah, fizika konfliktuet sama s soboy, a hvalenyy Zero-GC Policy probit v neskolkih goryachih putyah.
+
+Dlya skripta, kotoryy krutitsya v yadre vyzhivacha na 4 km glubine (i, vidimo, dolzhen zhrat minimum taktov CPU dlya raboty na MX350), zdes slishkom mnogo monolitnogo main-thread musora. Vy zayavlyaete Burst/Jobs v kontekste proekta, no v skripte na 3000 strok net ni odnogo Job-a. Vsya matematika voln i fizika schitaetsya v osnovnom potoke.
+
+Pereydem k vskrytiyu.
+
+🚨 KRITIChESKIE OBSERY (BAGI I LOGIChESKIE DYRY)
+
+1. Samounichtozhenie impulsov cherez ClampVelocity (Fizicheskiy konflikt)
+V FixedTick vy vyzyvaete ApplyWipeoutRecoveryForces(), dobavlyaete impuls ot vzryva/stolknoveniya (naprimer, pri TriggerTransportBailout), a na sleduyuschey zhe stroke vyzyvaete ClampVelocity(suit).
+Chto proishodit: Igrok poluchaet moschnyy impuls ot Wipeout (skazhem, 25 m/s). V etom zhe kadre ClampVelocity vidit, chto skorost vyshe suit.maxWalkSpeed (naprimer, 5 m/s), i momentalno obrezaet vektor skorosti. Vash Bailout/Wipeout oschuschaetsya kak udar v betonnuyu stenu — igrok prosto zamiraet na meste.
+Reshenie: ClampVelocity obyazan otklyuchatsya ili dinamicheski rasshiryat limity, esli _wipeoutTimer > 0 ili esli na Rigidbodi deystvuet vneshniy impuls.
+
+2. State Machine Hole: Ekzokostyumy bessmertny k puchine
+Posmotri na stroku ~2488 v FixedTick:
+
+code
+C#
+download
+content_copy
+expand_less
+if (_isWalking) { 
+    WalkPhysics(suit, fixedDeltaTime); 
+    // ...
+} else { 
+    SwimPhysics(suit, fixedDeltaTime, activeTransportPreset); 
+    // ... ZDES ApplySargassumEntanglementForce, ApplyAbyssalCableEntanglementForce, ApplyThermalUpdrafts
+}
+
+Metod ShouldUseLandLocomotion vozvraschaet true, esli aktiven Ekzokostyum (IsExosuitTransportActive()). Iz-za etogo _isWalking stanovitsya true. Sledovatelno, blok else ignoriruetsya.
+Itog: Esli igrok v Ekzokostyume, na nego fizicheski ne deystvuyut termalnye geyzery, techeniya bezdny, kabelnye lovushki i sargassum. Ekzokostyum prosto "prohodit" skvoz endgeym-ugrozy.
+
+3. Beskonechnyy tsikl implozii (Fatal Pressure Loop)
+Smotrim v UpdateHullStress:
+
+code
+C#
+download
+content_copy
+expand_less
+if (_hullStressIntensity < crushDepthImplosionThreshold || _wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f) return; 
+StartFatalPressureSequence();
+
+Kogda taymer fatalnogo davleniya istekaet, vyzyvaetsya TriggerFatalPressureImplosion(), kotoryy delaet StartWipeout(). Vnimanie: on ne ubivaet igroka napryamuyu, a veshaet na nego _wipeoutTimer i peredaet travmu v _survivalSystem.
+Itog: Esli HP pozvolyaet perezhit travmu, _wipeoutTimer stanovitsya > 0. Eto blokiruet start novoy implozii. Wipeout konchaetsya -> davlenie vse esche fatalnoe -> taymer zapuskaetsya zanovo -> snova Wipeout. Igrok budet dergatsya v beskonechnom tsikle mikro-imploziy.
+
+4. Rassinhron OnCollisionEnter i GameTickManager
+Skript otpisan ot standartnyh Update/FixedUpdate (rabotaet cherez vash ITickable / IFixedTickable). NO! Vy ispolzuete yunitishnyy OnCollisionEnter.
+Callback stolknoveniy strelyaet vo vremya vnutrenney fazy fiziki Unity. Esli vash kastomnyy GameTickManager rabotaet ne v zhestkoy sinhronizatsii s Physics.autoSimulation, vy menyaete steyt (naprimer _wipeoutTimer) v nepredskazuemyy moment mezhdu kastomnymi tikami. Eto privedet k plavayuschim glitcham i potere kadrov vvoda.
+
+5. Teleportatsiya lomaet Continuous Dynamic
+V TryApplyStepAssist:
+
+code
+C#
+download
+content_copy
+expand_less
+Vector3 newPosition = _rb.position; ...
+_rb.position = newPosition; // ZLO
+
+Menyat transform.position / rb.position napryamuyu u Rigidbody s ContinuousDynamic — eto vystrel v nogu. Vy lomaete interpolyatsiyu, ubivaete kesh CCD i mozhete provalitsya skvoz kollaydery na sleduyuschem kadre.
+Zamenit na: _rb.MovePosition(newPosition).
+
+🗑️ PERFORMANCE SLOP (HOT PATH VIOLYaTsII)
+
+1. Ubiystvennyy TryGetComponent v Update-tsikle
+Stroka 1269 vnutri Tick():
+
+code
+C#
+download
+content_copy
+expand_less
+if (_swimPresentationController == null)
+    TryGetComponent(out _swimPresentationController);
+
+Esli u igroka net etogo komponenta (a sudya po kodu, on optsionalnyy), TryGetComponent budet vyzyvatsya kazhdyy kadr. Eto ne Zero-GC, eto smert dlya MX350.
+Reshenie: Iskat odin raz v Awake i vystavlyat flag _hasCheckedSwimPresentationController.
+
+2. Tormoza ot _capsuleCollider.bounds
+Metod GetBodyBottomY():
+
+code
+C#
+download
+content_copy
+expand_less
+if (_capsuleCollider != null) return _capsuleCollider.bounds.min.y;
+
+Etot metod vyzyvaetsya vnutri ComputeImmersionRatio, GroundCheck, UpdateBottomClearance — po 5-6 raz za FixedTick. V Unity obraschenie k collider.bounds provotsiruet pereschet AABB (Axis-Aligned Bounding Box) na storone C++. Eto neveroyatno tyazhelaya operatsiya dlya vyzova v tsikle.
+Reshenie: Schitayte matematicheski: _rb.position.y + _capsuleCollider.center.y - (_capsuleCollider.height * 0.5f).
+
+3. Tyazhelyy poisk Okeana (O(N) po vsey stsene)
+V ResolveOceanKinematics() (str. 1836):
+
+code
+C#
+download
+content_copy
+expand_less
+gameObject.scene.GetRootGameObjects(_sceneRootBuffer);
+// ... zatem GetComponentsInChildren po VSEM rutam
+
+Da, vy ispolzuete NonAlloc-versii, no poisk komponentov po grafu vsey stseny raz v sekundu (_nextOceanKinematicsResolveTime) — eto chudovischnyy arhitekturnyy proval.
+Reshenie: Okean (Crest API) dolzhen sam registrirovatsya v globalnom Service Locator (naprimer, OceanProvider.Instance) pri starte. Nikakih skanirovaniy stseny iz kontrollera igroka.
+
+🏗️ ARHITEKTURNAYa GRYaZ I IZBYTOChNOST
+
+1. Zhestkaya privyazka Camera Yaw k World Space (Motion Sickness Guarantee)
+Vy initsializiruete i hranite _cameraYaw kak World Space ugol. Esli igrok zaydet vnutr dvizhuscheysya podlodki (shlyuza/reka) i korabl nachnet povorachivat, _cameraYaw ostanetsya prezhnim. Modelka igroka i kamera budut krutitsya vnutri komnaty kak yula.
+Dlya NASA-punk s transportom kamera i dvizhenie dolzhny schitatsya otnositelno lokalnogo prostranstva tekuschego roditelskogo Rigidbody (opornoy poverhnosti).
+
+2. Mertvyy kod i dublikaty
+
+ConsumeJumpRequest() delaet _jumpRequested = false; _jumpBufferTimer = 0f;. No v FixedTick est otdelnyy blok: if (_jumpBufferTimer > 0f) { ... if (_jumpBufferTimer <= 0) { _jumpRequested = false; } }. Kod rassypan i dubliruetsya.
+
+Mnozhestvennye Mathf.Clamp ugla kamery. Snachala v ApplyLookInput, potom v ApplyFatalPressureLookClamp, potom esche raz v ApplyCameraState. Vyberite odno mesto sborki konechnogo ugla.
+
+3. Pomoyka v inspektore (Diagnostics)
+Stroki 500-550: 50+ poley _debug... s #pragma warning disable CS0414. Eto zagryaznyaet pamyat klassa. V sereznom proekte pod eto pishetsya kastomnyy [CustomEditor] ili otdelnyy klass PlayerMovementDebugger, kotoryy risuet dannye cherez Handles ili GUI, ne zasoryaya monobeh. Vynesite eto iz osnovnogo klassa.
+
+4.AddComponent v Awake
+
+code
+C#
+download
+content_copy
+expand_less
+if (!TryGetComponent(out _heavyTowWinch)) {
+    _heavyTowWinch = gameObject.AddComponent<HeavyTowWinch>(); // COLD ALLOC
+}
+
+Da, allokatsiya "holodnaya", no zachem? Ispolzuyte [RequireComponent(typeof(HeavyTowWinch))]. Unity avtomaticheski dobavit ego pri sozdanii prefaba. Nikakih rantaym-allokatsiy pamyati pod novye komponenty.
+
+🔪 VERDIKT I REKOMENDATsII PO REFAKTORINGU
+
+Vyrezat TryGetComponent iz Tick i FixedTick nemedlenno. Keshirovat vse zhestko na starte.
+
+Perepisat ClampVelocity: on ne dolzhen trogat rb.linearVelocity napryamuyu, esli igrok nahoditsya v sostoyanii Wipeout, ili esli nedavno byl primenen impuls (dobavte _velocityClampBypassTimer).
+
+Peresobrat steyt-mashinu v FixedTick. Logika ekzokostyuma (_isWalking) ne dolzhna isklyuchat primenenie fiziki podvodnyh techeniy (else-blok). Razdelite raschet "Locomotion" (Walk/Swim) i "Environment Forces" (Currents, Sargassum, Entanglement). Eto dve raznye zony otvetstvennosti, oni dolzhny rabotat parallelno.
+
+Ubrat bounds: Zamenit _capsuleCollider.bounds na matematicheskiy raschet vysoty.
+
+Job System: Esli hotite realnyy perfomans na slozhnyh vychisleniyah voln Kresta i turbulentnosti — vynesite raschet ApplyUnderwaterTurbulence i semplinga okeana v IJob. Skarmlivayte tuda koordinaty 5 semplov, poluchayte obratno vektora sil. Seychas eto chistyy Main Thread.
+
+Kod bogat na fichi, no arhitekturno eto «Spaghetti Monster», kotoryy derzhitsya na kostylyah iz taymerov. Trebuetsya zhestkaya separatsiya fiziki peredvizheniya ot fiziki okruzheniya.
+
+
+Privet. Kod posmotrel. Esli korotko: dlya prototipa — poydet, no dlya prodakshena s targetom v 60 FPS na MX350 i Zero-GC — eto katastrofa.
+
+Skript predstavlyaet soboy klassicheskiy God Object (3000+ strok), kotoryy lezet i v kameru, i v fiziku, i v UI, i v input. Vy zayavlyaete ispolzovanie Burst i Jobs, no etot skript — eto 100% odnopotochnoe mesivo na glavnom potoke bez edinoy dzhoby, peregruzhennoe tyazheloy matematikoy.
+
+Nizhe — hirurgicheskiy razbor kriticheskih obserov i arhitekturnoy gryazi.
+
+🚨 KRITIChESKIE OBSERY (BAGI, UTEChKI, PROSADKI FPS)
+1. CPU-Killer: Beskonechnyy spam TryGetComponent i GetComponentInChildren
+
+Vy sdelali keshirovanie dlya _underwaterVisuals (cherez flag _resolvedUnderwaterVisuals), no zabyli sdelat eto dlya ToolManager i TransportCoordinator!
+
+code
+C#
+download
+content_copy
+expand_less
+private void ResolvePlayerToolManager() {
+    if (_playerToolManager != null) return;
+    if (!TryGetComponent(out _playerToolManager))
+        _playerToolManager = GetComponentInChildren<PlayerToolManager>(true); // UBIYTsA
+}
+
+Sut baga: Esli na igroke net PlayerToolManager, etot metod budet vyzyvatsya KAZhDYY KADR (v Tick i FixedTick). Poisk GetComponentInChildren(true) obhodit vsyu ierarhiyu igroka (so vsemi kostyami i UI). Eto unichtozhit perfomans na MX350.
+Lechenie: Dobavit _resolvedPlayerToolManager i _resolvedPlayerTransportCoordinator, kak vy eto sdelali dlya drugih komponentov.
+
+2. Friz igry raz v sekundu: ResolveOceanKinematics
+code
+C#
+download
+content_copy
+expand_less
+gameObject.scene.GetRootGameObjects(_sceneRootBuffer);
+// ...
+rootObject.GetComponentsInChildren(true, _sceneOceanProviderBuffer);
+
+Esli adapter Crest ne nayden, etot kusok koda vyzyvaetsya raz v sekundu. On delaet GetComponentsInChildren po VSEY STsENE. V igre pro vyzhivanie, gde na dne lezhat tysyachi oblomkov (Nasa-punk wrecked environments), etot metod vyzovet spayk (freym-drop) dlitelnostyu v 10-50 ms kazhduyu grebanuyu sekundu.
+Lechenie: Nikakih skanov stseny. Okean dolzhen registrirovat sebya sam pri starte (ServiceLocator ili globalnyy Singleton OceanKinematicsRegistry.Active).
+
+3. Poterya tochnosti Float (Floating Point Degradation)
+code
+C#
+download
+content_copy
+expand_less
+_currentTimer += fixedDeltaTime; 
+if (_currentTimer > 100000f) _currentTimer -= 100000f;
+...
+float lateralOscillation = math.sin(turbulencePhase * TwoPi + ...); // turbulencePhase = _currentTimer * freq
+
+Chislo 100 000 dlya float — eto smert tochnosti fazy. Shag floata na takih znacheniyah ogromnyy. math.sin(100000 * 6.28) prevratit vashi plavnye volny turbulentnosti v derganoe mesivo (dzhitter) spustya 2-3 chasa igry.
+Lechenie: Sbrasyvayte taymer po modulyu (1f / frequency) ili hotya by na 1000f.
+
+4. Promah GroundCheck (Razmer bufera)
+code
+C#
+download
+content_copy
+expand_less
+private readonly RaycastHit[] _groundHitBuffer = new RaycastHit[8];
+
+Sfera kastitsya s razmerom bufera = 8. Esli vy stoite v gustyh sargassovyh vodoroslyah (u kotoryh est kollaydery), ili vokrug valyayutsya 8 kamney/oblomkov — luch zapolnit bufer musorom, ne doydet do realnoy zemli, i _isGrounded vernet false. Igrok "zastryanet" v vozduhe ili poteryaet upravlenie.
+Lechenie: Uvelichte bufer hotya by do 32 i zhestko filtruyte groundLayers, chtoby tuda ne popadal melkiy musor.
+
+🏗 ARHITEKTURNAYa GRYaZ I LOGIChESKIE DYRY
+1. Narushenie inkapsulyatsii kamery (Sync Mismatch)
+code
+C#
+download
+content_copy
+expand_less
+_cameraWorldRotation = Quaternion.Euler(finalPitch, _cameraYaw, finalRoll);
+playerCamera.rotation = _cameraWorldRotation;
+playerCamera.localPosition = finalPos;
+
+Etot kod v kontse Tick() zhestko perezapisyvaet transformatsiyu kamery. Esli u vas est Cinemachine, protsedurnaya otdacha ot oruzhiya (Weapon Sway), tryaska ot vzryvov — oni vse slomayutsya, potomu chto skript muvmenta forsit transform pod sebya.
+Rekomendatsiya: Skript peremescheniya ne dolzhen trogat playerCamera napryamuyu. On dolzhen otdavat CameraJuiceOutput v spetsialnyy CameraRigController, kotoryy uzhe smeshivaet muvment, otdachu i effekty v odin finalnyy transform.
+
+2. Dyra v State Machine: Ekzokostyum bessmerten k techeniyam
+
+Smotrim v ResolveLocomotionMode: Ekzokostyum schitaetsya rezhimom hodby (_isWalking = true).
+Smotrim v fiziku: if (_isWalking) { WalkPhysics(); } else { SwimPhysics(); ApplyAbyssalCurrents(); ApplyThermalUpdrafts(); }.
+Itog: Esli igrok nahoditsya v Ekzokostyume na glubine 4 km, on absolyutno ignoriruet termalnye geyzery (ApplyThermalUpdrafts) i abissalnye daundarfty (ApplyAbyssalCurrents), potomu chto etot kod prosto ne vyzyvaetsya v bloke WalkPhysics. Eto ubivaet geymdizayn glubokovodnyh opasnostey.
+
+3. Legacy-musor (Hardkod inputa)
+code
+C#
+download
+content_copy
+expand_less
+if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed)
+
+Tselyy blok ReadMoveFallback i ReadLookFallback zhestko oprashivaet Keyboard.current i Mouse.current. Vy ispolzuete novuyu Unity Input System (sudya po InputManager), na koy chert vam etot follbek v prodakshene? Eto mertvyy kod, kotoryy tolko uslozhnyaet debag i lomaet remapping klavish.
+Rekomendatsiya: Udalit polnostyu. Esli InputManager otvalilsya — igra dolzhna padat ili stoyat na meste, a ne kostylno chitat WASD.
+
+4. Zhutkaya svyaznost (Violation of SOLID)
+code
+C#
+download
+content_copy
+expand_less
+if (provider is Crest5KinematicsAdapter) return 200;
+if (provider is Crest4KinematicsAdapter) return 100;
+
+Skript igroka "znaet" pro versii adapterov okeana Crest! Eto dno arhitektury. Zavtra vy pereydete na Crest 6 ili kastomnyy okean, i vam pridetsya lezt v logiku igroka. Adaptery dolzhny realizovat svoystvo int Priority { get; } v interfeyse IHectonOceanKinematics.
+
+5. Bulimiya apdeytov kursora
+code
+C#
+download
+content_copy
+expand_less
+if (_inputCleared || Cursor.lockState != CursorLockMode.Locked) {
+    Cursor.lockState = CursorLockMode.Locked;
+    Cursor.visible = false;
+}
+
+Spamit lok kursora v kazhdom Tick (Update) — durnoy ton. Eto lomaet editor pri debage (nevozmozhno nazhat pauzu ili vydelit obekt, kursor vechno ischezaet) i mozhet konfliktovat s UI-sistemoy. Kursor dolzhen lochitsya tolko po sobytiyam (OnMenuClosed / OnGameplayStarted).
+
+🔪 REZYuME DLYa REFAKTORINGA (ChTO DELAT PRYaMO SEYChAS)
+
+Dobavit flagi keshirovaniya: _resolvedPlayerToolManager i _resolvedPlayerTransportCoordinator. Eto nemedlenno podnimet FPS.
+
+Udalit follbeki inputa: Ubeyte metody ReadVerticalFallbackKeys, ReadMoveFallback, ReadLookFallback.
+
+Reshit problemu ResolveOceanKinematics: Sdelayte tak, chtoby OceanKinematicsProvider sam registriroval sebya v staticheskoy peremennoy HectonOceanRegistry.ActiveProvider pri Awake. Uberite GetComponentsInChildren iz skripta igroka.
+
+Pochinit taymer voln: Izmenit sbros _currentTimer na if (_currentTimer > TwoPi * 100f) _currentTimer -= TwoPi * 100f; (vazhno uchityvat mnozhiteli chastoty, chtoby ne bylo sryva fazy).
+
+Otorvat kameru: Perenesti primenenie _cameraWorldRotation i localPosition v otdelnyy PlayerCameraRig, kotoryy budet slushat HectonPlayerMovement.
+
+Vynesti tyazheluyu matematiku v Jobs: Dlya 60 FPS na slabom zheleze raschety v ApplyUnderwaterTurbulence i UpdateDynamicWaveSampling dolzhny byt vyneseny v IJob s ispolzovaniem [BurstCompile]. Seychas protsessor molotit kuchu matrichnyh preobrazovaniy, kvaternionov i sinusov v osnovnom potoke.
+
+STATUS AUDITA: PROVALEN. KOD KRASNYY.
+
+Skript predstavlyaet soboy klassicheskiy «God Object» (pochti 3500 strok), v kotoryy zapihali absolyutno vse: ot fiziki i inputov do parsinga lora vodorosley (Sargassum), glitchey vizora i proverki peregreva dzhetpakov ekzokostyuma. Dlya Zero-GC politiki i 60 FPS na slabom zheleze zdes dopuscheny kriticheskie arhitekturnye i performans-prestupleniya.
+
+Esli my zalem eto v main, igra budet frizit raz v sekundu, fizika soydet s uma, a mobilnye/low-end protsessory (tipa MX350) prosto sgoryat ot pererascheta tenzorov inertsii.
+
+Nizhe detalnyy razbor i plan po spaseniyu.
+
+🚨 KRITIChESKIE OBSERY (Bagi, Utechki, Spayki proizvoditelnosti)
+1. The "1-Second Hitch" (Smertelnyy friz v FixedTick)
+
+Gde: UpdateOceanWaterHeight() -> ResolveOceanKinematics(bool forceSceneSearch)
+Problema: Esli adapter okeana (Crest) ne nayden v stsene, skript kazhduyu sekundu delaet eto:
+
+code
+C#
+download
+content_copy
+expand_less
+gameObject.scene.GetRootGameObjects(_sceneRootBuffer);
+// ... i v tsikle:
+rootObject.GetComponentsInChildren(true, _sceneOceanProviderBuffer);
+
+Posledstviya: GetComponentsInChildren(true) po vsey ierarhii stseny vnutri FixedTick. Na tyazheloy stsene eto vyzovet moschneyshiy spayk CPU (glubokiy friz na 10–50 ms) kazhduyu sekundu.
+Lechenie: Zhestoko vyrezat. Servisy urovnya OceanKinematics obyazany registrirovat sebya v globalnom ServiceLocator / DI ili Singleton pri OnEnable. Pleer ne dolzhen begat po stsene i iskat okean.
+
+2. Annigilyatsiya Impulsov (Wipeout / Bailout Bug)
+
+Gde: StartWipeout() / TriggerTransportBailout() i ClampVelocity()
+Problema: Pri avarii skript chestno bet igroka impulsom: _rb.AddForce(bailoutImpulse, ForceMode.Impulse);. No srazu posle etogo v tom zhe ili sleduyuschem FixedTick vyzyvaetsya ClampVelocity(suit).
+
+code
+C#
+download
+content_copy
+expand_less
+if (fullSqr > maxSqr) {
+    float scale = maxSpd / math.sqrt(fullSqr);
+    _velocity.x *= scale; _velocity.y *= scale; _velocity.z *= scale;
+    _rb.linearVelocity = _velocity;
+}
+
+Posledstviya: Lyuboy vzryv, vybros iz transporta ili ryvok ot schupalets budet mgnovenno obrezan do skorosti plavaniya (maxSwimSpeed). Vmesto zrelischnogo otleta na 15 metrov, igrok sdelaet zhalkiy "puk" i myagko poplyvet.
+Lechenie: Dobavit _impulseBypassTimer. Esli igrok v sostoyanii Wipeout/Bailout, ClampVelocity ne dolzhen obrezat skorost (ili dolzhen ispolzovat otdelnyy, gorazdo bolshiy limit).
+
+3. Ezhekadrovyy Native-vyzov TryGetComponent (Performance Slop)
+
+Gde: V metode Tick(float deltaTime)
+
+code
+C#
+download
+content_copy
+expand_less
+if (_swimPresentationController == null)
+    TryGetComponent(out _swimPresentationController);
+
+Problema: Metod vypolnyaetsya kazhdyy kadr rendera (Update). Esli na prefabe igroka net (i ne dolzhno byt) PlayerSwimPresentationController, skript budet dergat C++ sloy Unity TryGetComponent 60/144 raza v sekundu. Eto utechka protsessornogo vremeni.
+Lechenie: Vvesti flag keshirovaniya _resolvedSwimPresentation, kak eto uzhe sdelano (pravilno) v IsHeavyCarryActive().
+
+4. Fizicheskoe samoubiystvo (Recalculate Center Of Mass)
+
+Gde: UpdateHeavyTowRuntimeResponse() (vyzyvaetsya iz FixedTick)
+
+code
+C#
+download
+content_copy
+expand_less
+if (_rb != null)
+    _rb.centerOfMass = _baseCenterOfMass + _heavyTowCenterOfMassOffset;
+
+Problema: Prisvoenie Rigidbody.centerOfMass zastavlyaet vnutrenniy dvizhok PhysX zanovo pereschityvat tenzor inertsii i budit (Wake up) kollaydery. Skript delaet eto kazhdyy FixedTick, dazhe esli _heavyTowCenterOfMassOffset raven Vector3.zero (kogda my nichego ne taschim).
+Lechenie: Zavernut v proverku na izmeneniya:
+
+code
+C#
+download
+content_copy
+expand_less
+var targetCoM = _baseCenterOfMass + _heavyTowCenterOfMassOffset;
+if (math.distancesq(_rb.centerOfMass, targetCoM) > 0.0001f)
+    _rb.centerOfMass = targetCoM;
+5. GC-Allokatsii v Iventah (Zero-GC Violation)
+
+Gde: HandleSargassumEntanglementStrain
+
+code
+C#
+download
+content_copy
+expand_less
+SargassumGlobalDragManager.RaiseEntanglementStrain(
+    new SargassumGlobalDragManager.EntanglementStrainSignal { ... }
+);
+
+Problema: Esli EntanglementStrainSignal eto klass (class), to pri vysokih nagruzkah (zaputyvanie v vodoroslyah dlitsya sekundy) eto budet sozdavat musor kazhduyu fizicheskuyu iteratsiyu.
+Lechenie: Ubeditsya, chto EntanglementStrainSignal opredelen kak struct (zhelatelno readonly struct). Peredavat cherez in.
+
+🗑 ARHITEKTURNAYa GRYaZ (Logical Redundancy)
+1. Raztroenie Lichnosti Vetra i Techeniy (Dual/Triple Current Systems)
+
+Gde: ApplyAmbientCurrent() i ResolveAbyssalAmbientFlowWithNoise()
+
+code
+C#
+download
+content_copy
+expand_less
+Unity.Mathematics.float3 phantom = CurrentManager.SampleCurrent(...);
+Vector3 localVolumeCurrent = Hecton8.Physics.CurrentVolume.SampleAt(currentPosition);
+
+Simptomy: Skript odnovremenno oprashivaet CurrentManager (staraya ili storonnyaya sistema), CurrentVolume (kakaya-to novaya lokalnaya volyumetrika) i AbyssalThermalManager.
+Verdikt: Eto dublirovanie logiki i dvoynaya plata CPU za semplingi. Vse vektory techeniy dolzhny slivatsya (merge) v odnom meste (naprimer, v menedzhere pogody/techeniy), a igrok dolzhen delat rovno 1 zapros za odin FixedTick: EnvironmentSystem.GetTotalCurrentAt(pos).
+
+2. Proverka Inputov kazhdyy kadr v Tick
+
+Gde: Tick() -> RefreshInputManagerBinding();
+
+code
+C#
+download
+content_copy
+expand_less
+private void RefreshInputManagerBinding() {
+    InputManager currentManager = InputManager.Instance;
+    if (ReferenceEquals(_inputManager, currentManager) ... ) return;
+}
+
+Neyronka popytalas sdelat "samovosstanavlivayuschuyusya" ssylku na InputManager. No dergat Singleton InputManager.Instance kazhdyy kadr — eto gryaznyy hak. InputManager dolzhen zhit dolshe igroka, libo podpisyvat/otpisyvat igroka cherez iventy starta/smerti.
+
+3. God Class (Narushenie SRP)
+
+Skript igroka znaet pro plotnost vodorosley (Sargassum), pro zvuki rvuschihsya kabeley, pro temperaturnye apdrafty (Thermal), pro eholokatsiyu (Sonar) i kolichestvo parazitov na hulle:
+
+AdvanceSargassumInfluence
+
+AdvanceAbyssalThermalInfluence
+
+ApplyParasiteLatchForces
+
+TriggerActiveSonarPing
+
+Pochemu eto ploho: Dobavlenie novoy mehaniki zastavlyaet nas snova lezt v 3500-strochnyy monolit.
+Kak nuzhno po umu (na buduschee): Vnedrit sistemu Modifikatorov (Modifiers/ForceProviders). Skript igroka dolzhen prosto imet spisok aktivnyh IExternalForceProvider. Menedzher parazitov sam primenyaet silu. Menedzher vodorosley sam veshaet debaff na skorost. Skript dvizheniya dolzhen tolko predostavlyat API: ApplyExternalForce(Vector3 force), SetSpeedMultiplier(string key, float mult).
+
+🔨 REZYuME / ChTO DELAT SEYChAS (Hirurgiya)
+
+Nemedlenno vyrezat poisk okeana cherez GetComponentsInChildren. Perepishi ResolveOceanKinematics na chtenie zaranee zaregistrirovannogo adaptera iz ServiceLocator ili staticheskogo konteksta.
+
+Pochinit ClampVelocity, dobaviv obhod (Bypass) limitov na vremya _wipeoutTimer > 0 i _transportBailoutCooldownTimer > 0.
+
+Zakryt spam-dostup k Rigidbody.centerOfMass (dobavit proverku na izmenenie).
+
+Pofiksit TryGetComponent vnutri Tick.
+
+Vynesti logiku InputManager v standartnye OnEnable / OnDisable bez proverki RefreshInputManagerBinding v kazhdom kadre.
+
+Vse ostalnoe matematicheski (Burst-friendly math., otsutstvie Vector3.Distance, preallokatsii buferov RaycastHit[8]) napisano vesma dobrotno. Vektornaya matematika i kvaterniony ispolzuyutsya ekonomno, _rb.useGravity = false s kastomnym primeneniem rabotaet korrektno.
+
+Itog: Arhitektura gryaznovata (perenasyschena zonami otvetstvennosti), no s tochki zreniya CPU, esli ispravit vysheukazannye 4 punkta, skript bez problem voydet v Zero-GC ramki i budet derzhat 60 FPS na slabom zheleze. Otprav eto na dorabotku.
+Kod proanalizirovan. Kak Principal Physics Engineer, ya vizhu ambitsioznuyu i slozhnuyu sistemu (vpechatlyayuschiy gibrid kinematiki i rigidbody-dinamiki), no ona usypana arhitekturnymi i matematicheskimi minami.
+
+Vot detalnyy razbor kriticheskih uyazvimostey, kotorye privedut k glitcham, padeniyu FPS, krasham fiziki i slomannym steyt-mashinam.
+
+🚨 1. State Machine Race Conditions: Konflikt Exosuit i Buoyancy
+
+Metod: ResolveLocomotionMode & FixedTick (Blok 8. Mode Detection)
+Problema: Ekzokostyum zhivet v sostoyanii kvantovoy neopredelennosti — on odnovremenno hodit i plyvet, no s gravitatsiey iz chernoy dyry.
+
+V ShouldUseLandLocomotion() zhestko propisano: if (IsExosuitTransportActive()) return true;. Eto zastavlyaet flag _isWalking vsegda byt true.
+
+Iz-za etogo v FixedTick vsegda vyzyvaetsya WalkPhysics, dazhe esli igrok v ekzokostyume nahoditsya na glubine 2 km. SwimPhysics dlya ekzokostyuma otklyuchen apparatno.
+
+Smertelnyy konflikt: Dlya ekzokostyuma skript primenyaet gravitatsiyu: _gravityScale = exosuitNegativeBuoyancyScale; (znachenie > 1). Odnako kontroller nigde ne otklyuchaet komponent BuoyancyObject.
+
+Itog: Na dne morya na Rigidbodi odnovremenno deystvuet umnozhennaya gravitatsiya (vniz) i raschet plavuchesti ot BuoyancyObject (vverh). Eto privedet k dichayshemu vysokochastotnomu dzhitteru (mikropryzhkam) na nerovnyh poverhnostyah, tak kak fizicheskiy dvizhok budet razryvatsya mezhdu dvumya protivopolozhnymi silami.
+
+🚨 2. Utechka abstraktsii (Crest Facade Leak)
+
+Metod: ResolveOceanKinematicsProviderPriority
+Problema: Pattern Fasad (IHectonOceanKinematics) sloman hardkodom konkretnyh realizatsiy.
+
+V kode est stroki: if (provider is Crest5KinematicsAdapter) return 200; i if (provider is Crest4KinematicsAdapter) return 100;.
+
+Itog: Esli vy reshite polnostyu udalit staryy asset Crest 4 (chto logichno pri perehode na v5) i udalite ego asmdef/skripty, etot klass perestanet kompilirovatsya (TypeLoadException). Fasad ne dolzhen znat o klassah, kotorye pod nim lezhat.
+
+🚨 3. FPS-Dependence: Poteryannye dt v stresse korpusa
+
+Metod: UpdateHullStress & FixedTick (blok Fatal Pressure)
+Problema: Klassicheskaya oshibka perezapisi taymerov pri FixedUpdate-lagah.
+
+Smotrim na sbros kuldaunov stonov korpusa i glitchey vizora:
+
+code
+C#
+download
+content_copy
+expand_less
+_fatalPressureSequenceGlitchPulseTimer = math.lerp(fatalPressureGlitchPulseIntervalMax, fatalPressureGlitchPulseIntervalMin, _fatalPressureSequenceIntensity);
+code
+C#
+download
+content_copy
+expand_less
+_hullStressGroanCooldownTimer = math.lerp(crushDepthGroanIntervalMax, crushDepthGroanIntervalMin, groanT);
+
+Itog: Pri prosadke FPS fixedDeltaTime mozhet stat bolshim. Vmesto togo chtoby dobavlyat/vychitat deltu (t.e. += lerp_value), taymer prosto perenaznachaetsya =. Otritsatelnyy defitsit vremeni (overshoot) «proglatyvaetsya». Pri lagah zvuki skrezheta metalla i glitchi na ekrane budut proishodit gorazdo rezhe, chem zadumano po taymingam.
+
+🚨 4. Ubiytsa proizvoditelnosti: Exosuit Foot Probes
+
+Metod: TryResolveExosuitFootSlope & ResolveOceanKinematics
+Problema: Spam tyazhelymi kastami i obhodom stseny.
+
+Kazhdyy FixedTick, esli vy v ekzokostyume, kod delaet:
+
+SphereCastNonAlloc (v GroundCheck)
+
+Esche odin SphereCastNonAlloc (v UpdateBottomClearance)
+
+Dva RaycastNonAlloc dlya levoy i pravoy nogi.
+
+Itog: 4 tyazhelyh lucha kazhdyy kadr fiziki na kazhdogo igroka. Nikakogo keshirovaniya net. Luchi nog strelyayut vniz dazhe kogda ekzokostyum nahoditsya v vozduhe/pryzhke.
+
+Bomba zamedlennogo deystviya: V ResolveOceanKinematics est kod: gameObject.scene.GetRootGameObjects(_sceneRootBuffer);, za kotorym sleduet GetComponentsInChildren. Esli Crest nedostupen (naprimer, v peschere), etot kod zapuskaetsya kazhduyu 1 sekundu. On skaniruet vsyu ierarhiyu stseny. Eto privedet k mikrofrizu dlinoy v 2-5 ms kazhduyu sekundu.
+
+🚨 5. Vzryv fiziki (NaN): Heavy Tow i Hooke's Law
+
+Metody: ApplyCuttingTensionPhysics i ApplySargassumEntanglementForce
+Problema: Yavnoe integrirovanie Eylera (Explicit Euler) na zhestkih pruzhinah s umnozheniem massy.
+
+V metode rascheta natyazheniya sargassuma:
+
+code
+C#
+download
+content_copy
+expand_less
+_forceVector = -springDirection * totalForceMagnitude * _rb.mass;
+_rb.AddForce(_forceVector, ForceMode.Force);
+
+OShIBKA: ForceMode.Force v Unity uzhe uchityvaet massu obekta pod kapotom (formula a = F / m). Esli vy umnozhaete silu na _rb.mass, vy delaete uskorenie nezavisimym ot massy. Legkiy igrok (80 kg) i tyazhelyy buksiruemyy gruz (1000 kg) poluchat odinakovo gigantskoe uskorenie.
+
+V ApplyCuttingTensionPhysics pruzhina schitaetsya kak extension * cuttingTensionSpring. Koeffitsient zhestkosti v inspektore mozhet byt do 120. Bez neyavnogo reshatelya (Implicit Solver) ili multisteppinga, pri rezkom ryvke lebedki extension stanet ogromnym. Sila prilozhitsya v odnom kadre, Rigidbodi pereletit tochku krepleniya, na sleduyuschem kadre pruzhina udarit v obratnuyu storonu v 2 raza silnee. Na 3-m kadre pozitsiya uletit v Infinity, a rigidbodi propadet s ekrana (NaN velocity).
+
+🗑️ 6. VERDIKT: "Gryaznye" metody (Zero-GC Violations)
+
+Kontroller pozitsioniruetsya kak "Zero-GC", no ostavlyaet musor:
+
+Allokatsii v HandleSargassumEntanglementStrain:
+
+code
+C#
+download
+content_copy
+expand_less
+SargassumGlobalDragManager.RaiseEntanglementStrain(new SargassumGlobalDragManager.EntanglementStrainSignal { ... });
+
+Esli EntanglementStrainSignal eto class, a ne struct, vy allotsiruete obekt kazhdyy FixedUpdate, poka igrok zastryal v vodoroslyah. Eto vyzovet srabatyvanie Garbage Collector'a pryamo vo vremya ekshena.
+
+Skrytaya allokatsiya C#-strok (Editor):
+
+code
+C#
+download
+content_copy
+expand_less
+_debugSuitName = currentSuitData != null ? currentSuitData.name : "NONE";
+
+Obraschenie k svoystvu .name u lyubogo UnityEngine.Object (vklyuchaya ScriptableObject) porozhdaet vyzov v C++ yadro i vozvraschaet novuyu allotsirovannuyu stroku. Vyzov etogo koda zagryaznyaet kuchu, lomaya chistotu profaylinga pri debage.
+
+Pereraspredelenie massiva v GetRootGameObjects:
+
+code
+C#
+download
+content_copy
+expand_less
+_sceneRootBuffer.Clear();
+gameObject.scene.GetRootGameObjects(_sceneRootBuffer);
+
+Iznachalno _sceneRootBuffer imeet emkost 16. Esli v stsene bolshe 16 kornevyh obektov, vyzov GetRootGameObjects zastavit List<GameObject> sozdat novyy massiv bolshego razmera pod kapotom (GC Alloc). Nuzhno libo uvelichit iznachalnuyu emkost new List<GameObject>(256), libo voobsche izbavitsya ot poiska po vsey stsene.
+
+
+
+-=-==--=-==--=-==-=-=-
+VYShE BYLI PREDYaVY PO HECTON PLAYER MOVEMENT
+-==--=-=-==-=-
+IDEM DALShE
+
+HectonMapMagicVegetationBridge.cs
+
+ANALIZ
+
+
+----
+
+
+Privet. Ya provel revyu etogo monstra. Kod vyglyadit tak, budto kto-to ochen staralsya napisat High-Performance C#, no zastryal odnoy nogoy v 2015 godu s managed-massivami, a drugoy — v modnom Burst Compiler, ne ponimaya zhiznennogo tsikla pamyati.
+
+Dlya igry s zhestkoy Zero-GC politikoy i targetom v stabilnye 60 FPS na srednih spekah zdes dopuscheno neskolko fatalnyh arhitekturnyh proschetov.
+
+Nizhe — detalnyy razbor. Razrezaem.
+
+🚨 KRITIChESKIE OBSERY (Bagi, Utechki, Krashi)
+
+1. Double Buffering Failure & Use-After-Free (Eksport NativeArray)
+Ty otdaesh naruzhu svoystva vrode ActiveSurfaceMatricesNative dlya vneshnih sistem (AI, Crest API). No posmotri, kak ty ih resayzish v EnsureNativeCapacity:
+
+code
+C#
+download
+content_copy
+expand_less
+if (cache.IsCreated) {
+    if (cache.Length > 0) NativeArray<T>.Copy(cache, expanded, cache.Length);
+    cache.Dispose(); // <--- FATALITI
+}
+cache = expanded;
+
+Esli v etot moment lyubaya vneshnyaya Burst-dzhoba chitaet ActiveSurfaceMatricesNative (a ona chitaet, tak kak dvoynoy buferizatsii dlya eksporta net), ty lovish zhestkiy krash dvizhka (Use-After-Free). Eksportiruemye nativnye massivy nelzya prosto tak dispouzit po hodu kadra. Nuzhen Ring Buffer ili hotya by chestnyy Double Buffering (Current/Next) s pinningom hendlov.
+
+2. O(N * C) Ubiystvo CPU v ThreatPropagationJob
+Vnutri ThreatPropagationJob.Execute (vypolnyaetsya dlya kazhdoy yacheyki setki, kotoryh mogut byt desyatki tysyach) ty vyzyvaesh SampleThreatAttractorAtPosition.
+Vnutri nego:
+
+code
+C#
+download
+content_copy
+expand_less
+for (int i = 0; i < chunkCount; i++) {
+    VegetationDensityChunkRecord chunk = chunks[i];
+    if (position.x < chunk.MinX ... ) continue; 
+    // ...
+
+Kazhduyu iz 40,000 yacheek ty progonyaesh cherez tsikl po chunkCount (do 256 chankov). Eto 10,000,000+ iteratsiy lineynogo poiska za tik. Burst eto prozhuet, no eto otvratitelnyy perfomans-slop. ThreatAttractorGrid dolzhen semplirovatsya za 
+𝑂
+(
+1
+)
+O(1)
+ cherez matematicheskiy mapping koordinat v indeks setki, a ne cherez AABB-brutfors chankov.
+
+3. Invalidatsiya kuchi v NativeAStarJob (Binary Min-Heap)
+V HeapPushOrDecrease ty napisal zaschitu:
+
+code
+C#
+download
+content_copy
+expand_less
+if (!HeapNodes.IsCreated || heapCount >= HeapNodes.Length) return;
+
+Esli kucha zapolnyaetsya (a MaxExpandedNodes mozhet ne sovpast s realnym grafom, ili evristika zagonit algoritm v ugol), uzel prosto molcha ignoriruetsya. Put ne budet nayden, a algoritm sdelaet vid, chto vse normalno, vmesto togo chtoby vernut oshibku ili rasshirit bufer. Beskonechnogo tsikla pri poiske v "pustoy" Dead Zone ne budet (spasibo schetchiku expandedNodes < MaxExpandedNodes), no put budet lomatsya v samyh neozhidannyh mestah.
+
+4. Memory Leak: Terrain Hole Lifecycle
+Ty vyzyvaesh RegisterTerrainHole, kotoryy skladyvaet dyry v _terrainHoleRecords. I vse.
+Esli "Agent-Vokselschik" (ili igrok) proburit pescheru, uplyvet na 10 km i ne vyzovet UnregisterTerrainHole, etot nativnyy massiv budet puhnut beskonechno. Dlya otkrytogo mira eto chistaya utechka pamyati. Neobhodim mehanizm Spatial Eviction (ochistka po distantsii) ili privyazka zhiznennogo tsikla Hole k chanku (Chunk-based holes), chtoby pri vygruzke chanka vygruzhalis i dyry.
+
+5. Allocator Spike v SlowTick
+V metode RebuildArtificialStructureThreatSnapshot() ty delaesh eto:
+
+code
+C#
+download
+content_copy
+expand_less
+if (!_artificialStructureHashNative.IsCreated || _artificialStructureHashNative.Capacity < hashCapacity) {
+    if (_artificialStructureHashNative.IsCreated) _artificialStructureHashNative.Dispose();
+    _artificialStructureHashNative = new NativeParallelMultiHashMap<int, int>(hashCapacity, Allocator.Persistent);
+}
+
+hashCapacity plavaet v zavisimosti ot EstimateArtificialStructureHashEntries. Esli igrok plyvet po granitse mega-struktury, hashCapacity budet prygat vverh-vniz. Ty budesh postoyanno delat Dispose i vydelyat novuyu pamyat v kuche (vnutri SlowTick!). Zafiksiruy Capacity s zapasom ili ispolzuy metod .Capacity = newCapacity (u NativeParallelMultiHashMap eto podderzhivaetsya bez peresozdaniya obekta).
+
+6. Zamorozka striminga pri defragmentatsii
+V Tick u tebya napisano:
+
+code
+C#
+download
+content_copy
+expand_less
+if (_poolDefragScheduled) return;
+
+Poka rabotaet DefragPoolJob, ty polnostyu blokiruesh striming chankov (ProcessPendingChunkBuilds ne vyzyvaetsya). V bystroy lodke igrok vyletit za predely striminga, potomu chto dvizhok reshil potratit 3 kadra na defragmentatsiyu pula. Defragmentatsiya ne dolzhna blokirovat sozdanie novyh chankov, ona dolzhna rabotat tolko s vygruzhaemymi/suschestvuyuschimi.
+
+💩 ARHITEKTURNAYa GRYaZ (Musor, Dublikaty, Narusheniya GC-politiki)
+
+1. Shizofreniya Managed i Native massivov
+Ty podderzhivaesh DVA zerkalnyh hranilischa: Matrix4x4[] ActiveSurfaceMatrices i NativeArray<Matrix4x4> ActiveSurfaceMatricesNative. I ty sinhroniziruesh ih cherez:
+
+code
+C#
+download
+content_copy
+expand_less
+NativeArray<Matrix4x4>.Copy(...);
+CopyNativeToManaged(...); // <-- GC allokatsii pri resayze, dvoynoy rashod RAM
+
+Dlya chego? Esli rendereru (ComputeBuffer.SetData) nuzhny Native-massivy, a dzhobam nuzhny Native-massivy, polnostyu vypili managed-massivy. Tebe voobsche ne nuzhny int[], Vector3[] na urovne agregatsii. Eto perezhitok starogo Unity.
+
+2. Narushenie Zero-GC v Chunk Payloads
+V metode BuildChunkAbyssalNavPayload:
+
+code
+C#
+download
+content_copy
+expand_less
+if (nodes == null) nodes = AllocateVector3PayloadArray(maxNodeCount); 
+// kotoryy vnutri delaet return new Vector3[count];
+
+Kazhdyy raz, kogda sobiraetsya chank (a eto proishodit desyatki raz v sekundu pri bystrom dvizhenii), ty vydelyaesh novye managed-massivy dlya grafa putey i struktury mega-oblomkov. Eto vyzyvaet zhestkiy spayk GC.
+Reshenie: Ispolzuy NativeList<Vector3> v strukture peyloada ili vydelyay iz globalnogo NativeSlabAllocator.
+
+3. Performance Slop: Camera GetComponent
+V metode ResolveActiveViewCamera():
+
+code
+C#
+download
+content_copy
+expand_less
+_cachedViewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+
+I eto vyzyvaetsya raz v sekundu (CameraResolveRetryInterval = 1f), esli kamera ne naydena. Esli igrok umer/kamera vremenno otklyuchena, u tebya kazhduyu sekundu po ierarhii bezhit tyazheleyshiy GetComponentInChildren. Kamera dolzhna sama registrirovat sebya v HectonMapMagicVegetationBridge.Instance.SetViewCamera(). Nikogda ne ischi kameru cherez Reflection-podobnye metody v apdeyte.
+
+4. Illyuziya State Machine Integrity
+V zadache ukazano: "Prover, net li konfliktov, kogda dva rezhima pytayutsya upravlyat Rigidbody".
+Skript chitaet _playerRigidbody.linearVelocity, no ne pishet v nego. S tochki zreniya State Machine zdes vse bezopasno, skript vystupaet chistym observer'om. Za eto plyus.
+
+🔪 VERDIKT I REKOMENDATsII
+
+Kod nuzhno refaktorit. Tekuschaya versiya sest ves RAM dvoynymi buferami i uronit freymreyt iz-za krivogo semplinga Threat Grid.
+
+Vyrezat Managed Arrays polnostyu. Ostav tolko NativeArray. Metody CopyActiveSurfaceInstances udali, pust vneshnie sistemy chitayut Native-dannye (peredavay im NativeSlice ili read-only view).
+
+Perepisat Threat Grid Sampling. Prevrati SampleThreatAttractorAtPosition v O(1) chtenie iz ThreatAttractorGrid po indeksam. Lineynyy poisk po chankam vnutri Burst-dzhoby — eto prestuplenie.
+
+Bezopasnyy eksport NativeBuffer'ov. Realizuy sistemu versionirovaniya (Double Buffering) dlya _surfaceAggregateMatricesNative. U tebya dolzhen byt Front Buffer (kotoryy seychas chitaet AI/Crest) i Back Buffer (v kotoryy pishet most). V kontse kadra prosto menyayte ssylki atomarno.
+
+Spatial Hashing dlya Terrain Holes. Sdelay ochistku dyr, distantsiya do kotoryh prevyshaet 2x residentRadius. Inache igra prosto zadohnetsya v pamyati cherez 2 chasa geympleya.
+
+Ubrat new v AllocateVector3PayloadArray. Perevedi ChunkAbyssalNavPayload na nativnye kollektsii, allotsiruemye iz zaranee sozdannogo pula pamyati (Memory Arena).
+
+Kod masshtabnyy, matematika horosha (vorley/shumy dlya vodorosley sdelany gramotno), no svyazki mezhdu sistemami nuzhno srochno izolirovat ot GC i Data-Races.
+Privetstvuyu. Ya vnimatelno prepariroval tvoy 6500-strochnyy monolit. Dlya sistemy, kotoraya dolzhna rabotat na glubine 4 km v NASA-punk settinge pri zhestkoy Zero-GC politike i tselevyh 60 FPS na MX350, zdes est kak probleski genialnosti, tak i absolyutno fatalnye arhitekturnye dyry.
+
+S tochki zreniya Burst, Jobs i obschey matematiki — kod napisan inzhenerom, kotoryy ponimaet, chto delaet. No na styke Unity API i upravleniya pamyatyu my imeem katastrofu. Esli pustit etot kod v prod, igra budet frizit kazhdye 5-10 sekund, a cherez chas igry sozhret vsyu RAM i krashnetsya iz-za fragmentatsii.
+
+Nizhe podrobnyy razbor po dvum vektoram: Kriticheskie obsery (Blokery) i Arhitekturnaya gryaz.
+
+🚨 KRITIChESKIE OBSERY (Fatals & Memory Leaks)
+1. Ubiystvo Main Thread pri otmene dzhobov (Job Dependency Hazard)
+
+V metode CancelChunkBuildJob:
+
+code
+C#
+download
+content_copy
+expand_less
+jobState.Handle.Complete(); // <--- FATAL
+DisposeJobState(jobState);
+_chunkBuildJobs.Remove(key);
+
+Esli igrok bystro razvernetsya na 180 gradusov (ili budet teleportirovan), sistema reshit eviktnut 10-20 chankov. Ty blokiruesh glavnyy potok, zastavlyaya ego zhdat zaversheniya generatsii chankov, kotorye ty tut zhe udalish! Eto garantirovannyy mikrofriz (ili makrofriz na 50+ ms).
+Reshenie: Perenosit otmenennye dzhoby v List<ChunkBuildJobState> _pendingDisposal, kazhdyy kadr v Tick proveryat if (job.Handle.IsCompleted), i tolko togda dispouzit nativnye massivy.
+
+2. GC-Spam cherez ComputeBuffer (Zero-GC Policy Violation)
+
+Posmotri na metod EnsureStructuredBuffer:
+
+code
+C#
+download
+content_copy
+expand_less
+if (buffer != null && buffer.count >= count) return;
+ReleaseBuffer(ref buffer);
+buffer = new ComputeBuffer(count, stride, ComputeBufferType.Structured);
+
+Ty ne okruglyaesh count do sleduyuschey stepeni dvoyki! Po mere dvizheniya igroka count menyaetsya (naprimer, s 15000 na 15050). Ty kazhdyy raz vyzyvaesh Release() i new ComputeBuffer(). Sinhronnoe peresozdanie obektov v VRAM na glavnom potoke ubet FPS i zamusorit GC.
+Reshenie: Rasti eksponentsialno (Mathf.NextPowerOfTwo), a rendereru peredavat aktualnyy count dlya otrisovki, chtoby ne risovat musor v hvoste bufera.
+
+3. Katastroficheskie allokatsii TerrainData
+
+V metode CacheTileMasks:
+
+code
+C#
+download
+content_copy
+expand_less
+float[,,] alphamaps = terrainData.GetAlphamaps(0, 0, alphamapResolution, alphamapResolution);
+float[,] heights = terrainData.GetHeights(0, 0, heightResolution, heightResolution);
+
+GetAlphamaps i GetHeights v Unity kazhdyy vyzov sozdayut novye managed-massivy. Dlya tayla 1024x1024 eto desyatki megabayt GC-musora. Eto proishodit pryamo v Tick() cherez TryValidateResidentTileCaches!
+Reshenie: Ispolzovat Unity 2022+ API TerrainData.SyncHeightmap() i chitat heightmapTexture.GetPixelData<ushort>() (ili Graphics.CopyTexture), a dlya alfy chitat napryamuyu iz terrainData.alphamapTextures. Libo zaprosit u MapMagic ih vnutrennie Native-struktury.
+
+4. Native Persistent Fragmentatsiya v ScheduleChunkBuild
+
+Ty allotsiruesh massivy pod dzhoby s Allocator.Persistent:
+
+code
+C#
+download
+content_copy
+expand_less
+jobState.GrassRecords = AllocateJobRecordArray(grassCountX * grassCountZ); // Vnutri new NativeArray(..., Allocator.Persistent)
+
+I dispouzish ih v FinalizeCompletedChunkBuilds. Tysyachi allokatsiy/deallokatsiy Persistent pamyati v minutu privedut k fragmentatsii na urovne allokatora OS.
+Reshenie: Ispolzovat Allocator.TempJob (esli generatsiya garantirovanno ukladyvaetsya v 4 kadra), libo ispolzovat globalnyy koltsevoy bufer/Scratchpad Pool dlya rabochih dannyh dzhobov.
+
+5. Utechka Managed pamyati na goryachem puti v FinalizeCompletedChunkBuilds
+
+Metody vrode AllocateVector3PayloadArray ili AllocateMegaWreckSectionPayloadArray delayut tupo new Vector3[count] i new MegaWreckStreamSection[count]. Eto vyzyvaetsya iz Tick() pri finalizatsii kazhdogo chanka. U tebya sotni massivov budut sozdavatsya i uletat v GC.
+Reshenie: Upakovat navigatsionnye nody i wreck-sektsii v edinyy ploskiy NativeList<T> ili hotya by ispolzovat ArrayPool.
+
+6. Utechka Zhiznennogo Tsikla Terrain Holes
+
+Ty registriruesh peschery cherez RegisterTerrainHole. Esli sistema, kotoraya ih registriruet (naprimer, strimer vokseley), krashnetsya ili prosto "zabudet" vyzvat UnregisterTerrainHole, _terrainHoleRecords budet rasti vechno.
+Kazhdyy chank v tsikle CountTerrainHolesIntersectingChunk proveryaet vse dyry. O(N) degradiruet so vremenem.
+Reshenie: Dobavit prostranstvennoe heshirovanie (ili QuadTree) dlya dyr i avtomaticheskuyu sborku musora dlya SourceType.CaveEntrance po distantsii ot igroka.
+
+⚙️ OTsENKA LOW-LEVEL & BURST INTEGRITY
+
+Native Pool Fragmentation (DefragPoolJob): Bezopasno. Logika dvoynoy buferizatsii s otlozhennym RebuildAndBindActiveBuffers isklyuchaet chtenie rendererom musora v moment defragmentatsii. Peresecheniya pamyati net, tak kak kopirovanie idet iz SourcePool v ScratchPool. NO: Ty beresh chanki iz Dictionary.Enumerator v BuildPoolDefragPlan. Poryadok iteratsii slovarya kvazi-sluchaen. Defragmentatsiya fizicheski unichtozhit prostranstvennuyu lokalnost (Spatial Locality) chankov v nativnom bufere, chto ubet GPU Cache Hit Rate pri instansinge. Sortiruy keys po Z-order ili distantsii pered kopirovaniem.
+
+Binary Min-Heap Integrity (NativeAStarJob): Napisano otlichno. Zaschita cherez MaxExpandedNodes est, HeapNodes vydelyaetsya rovno pod razmer grafa (OOM ne budet). Logika ThreatPenaltyWeight, gde 0 ugrozy = shtraf, idealno realizuet logiku "hischnik idet na shum" (low-threat water penalization).
+
+Double Buffering Logic: Realizovano gramotno. Main thread chitaet iz _ecosystemThreatGridCurrentNative cherez float-view, poka Burst pishet v NextNative. Pri sinhronizatsii ukazateli atomarno svapayutsya. Zdes problem net.
+
+🧹 ARHITEKTURNAYa GRYaZ (Performance Slop)
+1. Shizofreniya dublirovaniya massivov (Shadow Arrays)
+
+V metode CopyChunkSliceToAggregate ty kopiruesh dannye iz pula:
+
+code
+C#
+download
+content_copy
+expand_less
+NativeArray<Matrix4x4>.Copy(... nativeMatrices ...);
+CopyNativeToManaged(... managedMatrices ...);
+
+Zachem ty derzhish v pamyati 7 gigantskih managed-massivov (_surfaceAggregateMatrices i t.d.) i parallelno 7 NativeArray? Chtoby vystavit publichnye svoystva vrode ActiveSurfaceMatrices? Ty tratish 40-50 MB RAM i dragotsennoe vremya CPU na kopirovanie pamyati v managed kuchu kazhdyy raz, kogda menyaetsya chank.
+Vyrezat: Udali vse managed massivy agregatsii. Ostav tolko NativeArray. Komu nuzhny dannye — pust chitayut ActiveSurfaceMatricesNative napryamuyu. Unity 6 prekrasno rabotaet s nativnymi buferami.
+
+2. Spam GetComponent
+
+V ResolveActiveViewCamera:
+
+code
+C#
+download
+content_copy
+expand_less
+if (!playerTransform.TryGetComponent(out _cachedViewCamera))
+    _cachedViewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+
+Vyzyvaetsya raz v sekundu (CameraResolveRetryInterval), esli kamera pochemu-to otvalilas. GetComponentInChildren po vsey ierarhii igroka — eto tyazheleyshaya operatsiya.
+Reshenie: Ispolzuy Camera.main ili zastav sistemu kamer sabmitit svoyu ssylku cherez staticheskiy event. Hvatit iskat komponenty v rantayme.
+
+3. Izbytochnye proverki Bounds
+
+Ty napisal DoesChunkBoundsIntersectCircle, GetBoundsDistanceSqr, EvaluateChunkEvictionScore i HasNewPermanentEchoInBounds. Vezde povtoryaetsya odna i ta zhe logika Mathf.Clamp dlya poiska blizhayshey tochki na AABB.
+Reshenie: Vynesi eto vo vspomogatelnuyu matematicheskuyu struct v Burst-kompiliruemom kontekste ili hotya by ispolzuy [MethodImpl(MethodImplOptions.AggressiveInlining)].
+
+📝 VERDIKT
+
+Kod — moschnyy monstr, kotoryy napisan chelovekom, ponimayuschim, kak rabotaet potokovaya podgruzka mira i nativnye vychisleniya. Burst-sostavlyayuschaya (A*, diffuziya ugroz, volnovye funktsii) velikolepna.
+
+No na urovne integratsii — eto resheto dlya Garbage Collector'a.
+
+Chto delat pryamo seychas (Action Plan):
+
+Perepisat rabotu s ComputeBuffer na vydelenie Mathf.NextPowerOfTwo.
+
+V CancelChunkBuildJob zamenit job.Handle.Complete() na asinhronnuyu otlozhennuyu ochistku.
+
+Vykinut GetHeights() / GetAlphamaps(), oni nesovmestimy s politikoy Zero-GC. Iskat obhodnye puti chteniya RAW-tekstur taylov MapMagic.
+
+Vypilit vse dubliruyuschie Managed-massivy (_surfaceAggregateMatrices i prochie), ostavit tolko Native-payplayn.
+
+Dlya ChunkAbyssalNavPayload napisat kastomnyy Native-allokator (ili puling) vmesto `new Vector3
+
+Kak Lead Low-Level Engineer i Senior QA Architect, ya provel revyu etogo monstra na 6800 strok. Skript vyglyadit kak popytka napisat AAA-sistemu, no pod kapotom spryatany miny, kotorye razorvut performans i pamyat na kuski.
+
+Tvoy kod ne proydet Zero-GC Policy, a integratsiya s Burst/Jobs imeet fatalnye arhitekturnye dyry. Razberem po poryadku.
+
+🛠 ChAST 1: OTChET LEAD LOW-LEVEL ENGINEER (Burst, Memory, Jobs)
+1. Utechka dannyh pri psevdo-Double Buffering (FATALNO)
+
+Ty prosil proverit atomarnost pereklyucheniya ActiveSurfaceMatricesNative. Tam net Double Buffering, eto illyuziya.
+Posmotri na EnsureNativeCapacity<T> (stroka 6050):
+
+code
+C#
+download
+content_copy
+expand_less
+if (cache.IsCreated) {
+    if (cache.Length > 0) NativeArray<T>.Copy(cache, expanded, cache.Length);
+    cache.Dispose(); // <--- VOT ZDES VSE UMRET
+}
+cache = expanded;
+
+Metod TryGetActiveSurfaceNativePayload otdaet ssylku na _surfaceAggregateMatricesNative vneshnim sistemam (AI, Ocean Currents). Esli chank zagruzilsya/vygruzilsya, RebuildAndBindActiveBuffers vyzovet EnsureNativeCapacity, kotoryy sdelaet .Dispose() massivu, poka vneshnyaya Job'a ego chitaet.
+Rezultat: InvalidOperationException: Use After Free ili hard-krash Unity.
+Reshenie: Otdavat naruzhu tolko struktury-hendly s dvoynoy buferizatsiey (cherez indeksy 0/1), gde staryy bufer ne ubivaetsya, poka JobHandle chitateley ne zavershen. Libo zhestko zavyazyvat zavisimosti cherez JobHandle.
+
+2. Native Pool Fragmentation & DefragPoolJob
+
+Zdes ty spravilsya luchshe. Logika sdviga bezopasna, tak kak DefragPoolJob pishet v _surfaceDefragScratchPool. Svap massivov SwapChunkPools proishodit sinhronno v CompleteNativePoolDefragIfReady na glavnom potoke. Renderer ne obraschaetsya k Pool napryamuyu, on chitaet iz AggregateNative-massivov, kotorye peresobirayutsya posle defragmentatsii.
+No est minus: Posle defraga ty vyzyvaesh RebuildAndBindActiveBuffers(), kotoryy delaet massivnyy NativeArray.Copy vseh 60 000+ matrits na Main Thread. Eto vyzovet spayk kadra.
+
+3. Binary Min-Heap Integrity (NativeAStarJob)
+
+Riska perepolneniya i uhoda v beskonechnyy tsikl v Dead Zone net blagodarya zhestkomu kapu MaxExpandedNodes i proverke heapCount >= HeapNodes.Length pered pushom. Sryv steka predotvraschen.
+Odnako: Tvoya evristika HeuristicCost schitaet chistuyu evklidovu distantsiyu, a GScore nakruchivaetsya mnozhitelyami (InteriorTraversalCostMultiplier, penalti za ugrozu). Esli mnozhitel menshe 1.0 (naprimer, InteriorTraversalCostMultiplier = 0.82f), evristika stanovitsya nedopustimoy (Inadmissible). A* vyroditsya v zhadnyy poisk i nachnet vydavat krivye neoptimalnye puti. Evristika nikogda ne dolzhna prevyshat realnuyu stoimost shaga.
+
+4. Terrain Hole Lifecycle (Utechka pamyati i performansa)
+
+Ty absolyutno prav. RegisterTerrainHole pishet v persistentnyy massiv. Nikakogo Garbage Collection po distantsii.
+Esli vokselnyy bur igroka ostavit 500 dyr pozadi, massiv _terrainHoleRecordsNative razrastetsya. No chto huzhe: GenerateAnchoredVegetationJob na kazhdoy iteratsii progonyaet proverku IsInsideTerrainHoleStatic cherez ves etot massiv O(N). Pri 1000 staryh dyr, spaun chanka zamedlitsya v sotni raz.
+Reshenie: Vvesti prostranstvennyy Spatial Hash Grid dlya Terrain Holes ili avtomaticheskiy LRU-kesh (eviktit dyry, esli distantsiya do igroka > 3000m).
+
+5. Threat Grid Diffusion
+
+Algoritm ThreatPropagationJob napisan otlichno. Chtenie 8 sosedey O(N) vmesto kvadratichnoy slozhnosti. Tryuk s ShiftX/ShiftZ (virtualnoe smeschenie vmesto fizicheskogo kopirovaniya setki) — moe pochtenie, eto ochen elegantno s tochki zreniya kesh-promahov.
+
+🦠 ChAST 2: OTChET SENIOR QA / LEAD ARCHITECT (Arhitektura, GC, Bugs)
+
+Tvoy kod provalivaet Zero-GC Policy. Vyzov new v goryachih putyah.
+
+1. GC Allocations v SlowTick i Tick (KRITIChNO)
+
+V SlowTick vyzyvaetsya TryBootstrapExistingTiles(). V nem: mapMagicBridge.RuntimeMapMagicObject.GetComponentsInChildren<TerrainTile>(true). Esli mir poka ne zagruzhen (_tileStates.Count == 0), eta stroka spamit vydeleniem pustogo C# massiva kazhdyy SlowTick.
+
+V FinalizeCompletedChunkBuilds (kotoraya vyzyvaetsya v Tick!) vyzyvaetsya BuildChunkAbyssalNavPayload. Smotrim vnutr:
+
+code
+C#
+download
+content_copy
+expand_less
+nodes = AllocateVector3PayloadArray(maxNodeCount); // Vozvraschaet new Vector3[count];
+
+Kazhdyy sgenerirovannyy chank (a oni strimyatsya postoyanno pri ezde) vydelyaet 4 managed-massiva na hipe! Eto vyzovet srabatyvanie Garbage Collector'a posredi ezdy, obespechen mikrofriz.
+Reshenie: Vyrezat Managed massivy. Ispolzovat UnsafeList<Vector3> ili kastomnyy nativnyy allokator dlya hraneniya grafov navigatsii chankov.
+
+2. Arhitekturnaya gryaz: Floating Origin Spayk
+
+Funktsiya ApplyWorldOffsetToAllChunks(Vector3 offset) — eto prigovor.
+Pri World Shift (kogda igrok otplyl na 5000m) ty:
+
+Zavershaesh VSE Job-y.
+
+Idesh tsiklom po vsem chankam i vyzyvaesh ScheduleShiftChunkSlice, kotoryy perepisyvaet Matrix4x4 kazhdoy travinki (sotni tysyach instansov).
+
+Perezapisyvaesh vse keshi na Main Thread.
+Eto zamorozit igru na 200-500ms.
+Reshenie: Floating Origin ne dolzhen perepisyvat bayty v pamyati. Pereday Vector3 GlobalOffset globalnoy peremennoy v Shader (dlya rendera) i v _surfaceAggregateMatricesNative prosto uchityvay etot offset pri otdache dannyh (ili v Job'ah A* / kolliziy). Matritsy v pule dolzhny ostavatsya v lokalnoy koordinatnoy setke mira!
+
+3. State Machine i RigidBody
+
+V UpdatePlayerMotionState est proverka:
+
+code
+C#
+download
+content_copy
+expand_less
+if (playerTransform != null && (_playerRigidbody == null || _playerRigidbody.transform != playerTransform))
+    playerTransform.TryGetComponent(out _playerRigidbody);
+
+Eto vyzyvaetsya iz SlowTick. TryGetComponent hot i bystr, no delat eto postoyanno, esli u igroka deystvitelno net Rigidbody (naprimer, on v ekzokostyume na kastomnoy kinematike) — eto pustaya trata tsiklov.
+Reshenie: Flag _hasCheckedRigidbody, chtoby ne pytatsya dostavat ego postoyanno, esli ego iznachalno net.
+
+4. Sostoyanie gonki (Race Condition) v Float View
+
+Funktsiya GetThreatGridFloatView():
+
+code
+C#
+download
+content_copy
+expand_less
+for (int i = 0; i < _ecosystemThreatGridCellCount; i++)
+    _ecosystemThreatGridFloatViewNative[i] = DecodeThreatByte(_ecosystemThreatGridCurrentNative[i]);
+
+Ona vyzyvaetsya iz Main Thread. Esli vneshnyaya sistema v etot moment asinhronno chitaet _ecosystemThreatGridFloatViewNative cherez Job, budet Race Condition.
+
+📝 REZYuME I EKShEN-PLAN (ChTO VYREZAT I ISPRAVIT)
+
+Ubit Dispose() v EnsureNativeCapacity: Zamenit na realnyy Double Buffering s otlozhennym Dispose (ispolzuya Unity.Collections.LowLevel.Unsafe.UnsafeList ili schetchiki ssylok), libo zastavit vseh chitateley vozvraschat JobHandle, chtoby ty mog vyzyvat .Dispose(JobHandle).
+
+
+-==--==-=-=- VYShEL BYL ANALIZ VEGETEYShN BRIDZh
+
+=-==-=-=-=--=
+ANALIZ SargassumMicroFaunaBoids
+
+
+----
+
+Kak Senior QA Automation Engineer, Lead Architect i Senior Graphics & AI Programmer, ya provel audit etogo koda.
+
+Skript pisali kak minimum dva raznyh cheloveka (ili neyroset s razdvoeniem lichnosti): odin akkuratno rasstavlyal NonAlloc i keshiroval massivy, a vtoroy vstavil gvozd v shinu PCIe i zalil Update vyzovami GetComponent.
+
+Dlya MX350 etot kod — smertnyy prigovor. On narushaet fundamentalnye pravila raboty s GPU i fizicheskim payplaynom Unity. Vot tvoy hirurgicheskiy otchet.
+
+🚨 KRITIChESKIE OBSERY (Bagi, Utechki, Tormoza)
+
+1. Ubiystvo shiny PCIe (Sinhronnye stall-y kazhdyy kadr)
+V metode BindSimulationUniforms (kotoryy vyzyvaetsya kazhdyy Tick!) est vot etot kusok:
+
+code
+C#
+download
+content_copy
+expand_less
+if (_latchStatsBuffer != null && _latchStatsClear != null) {
+    System.Array.Clear(_latchStatsClear, 0, _latchStatsClear.Length);
+    _latchStatsBuffer.SetData(_latchStatsClear); // OShIBKA FATALNOGO UROVNYa
+    boidCompute.SetBuffer(_kernelIndex, _LatchStatsId, _latchStatsBuffer);
+}
+
+Pochemu eto katastrofa: Ty delaesh sinhronnyy CPU->GPU transfer 7 intov kazhdyy kadr. Huzhe togo, ty delaesh eto v tot zhe bufer, iz kotorogo parallelno idet AsyncGPUReadback! CPU otpravlyaet dannye, GPU pytaetsya ih chitat/pisat, Readback zhdet... Ty poluchaesh Pipeline Stall, kotoryy zastavit drayver MX350 blokirovat osnovnoy potok.
+
+Reshenie: Napishi otdelnyy malyusenkiy CSClear kernel v Compute Shader (1 thread group), kotoryy budet obnulyat etot bufer na storone videokarty pered osnovnym dispatchem. Nikakih SetData v Update!
+
+2. State Machine Integrity & Physics Loop Violation
+V Tick (kotoryy rabotaet v Update) vyzyvayutsya:
+
+_playerMovement.RequestExternalHullStress(...)
+
+_playerMovement.ApplyParasiteLatchInfluence(...)
+
+_playerMovement.ApplyEnvironmentalDrag(...)
+A v FixedTick (fizicheskiy shag) vyzyvaetsya:
+
+_playerMovement.ApplyPhysicalTrauma(...)
+
+targetBody.AddForce(...)
+
+Pochemu eto bag: Ty modifitsiruesh drag i state fizicheskogo obekta (RigidBody/PlayerMovement) s plavayuschey chastotoy Update, a integratsiya fiziki proishodit v FixedUpdate. Eto privedet k race conditions, nestabilnoy skorosti buksirovschika i nepredskazuemym fizicheskim glitcham pri prosadkah FPS. Vse ApplyDrag i vliyaniya parazitov obyazany pereehat v FixedTick.
+
+3. Klassicheskaya lovushka GetComponent v goryachem tsikle
+Metod ResolveDependencies() vyzyvaetsya v nachale kazhdogo Tick.
+
+code
+C#
+download
+content_copy
+expand_less
+if (_playerMovement == null && playerTransform != null)
+    playerTransform.TryGetComponent(out _playerMovement);
+if (viewCamera == null && playerTransform != null)
+    viewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+
+Pochemu eto bag: Esli u igroka net HectonPlayerMovement ili on otklyuchen, TryGetComponent vernet null. V sleduyuschem kadre _playerMovement vse esche null, i tyazhelyy reflekshn-poisk (osobenno GetComponentInChildren) zapustitsya snova. Eto sozhret 1-2 ms protsessornogo vremeni prosto na poisk nesuschestvuyuschih komponentov kazhdyy kadr.
+
+Reshenie: Flagi initsializatsii. Iskat zavisimosti nuzhno odin raz (naprimer, pri spavne igroka ili podpiske na event ego poyavleniya).
+
+4. VRAM Hostage (Utechka videopamyati pri otklyuchenii)
+V OnDisable net vyzova ReleaseBuffers(). Bufery udalyayutsya tolko v OnDestroy(). Esli ty deaktiviruesh GO (naprimer, smenil biom ili igrok zashel v shlyuz), v VRAM ostayutsya viset 9 ComputeBuffer (~neskolko megabayt). Esli takih zon na karte neskolko — VRAM zakonchitsya.
+
+Reshenie: Libo delay Release v OnDisable, libo (luchshe) vynesi bufery v globalnyy menedzher, chtoby oni pereispolzovalis mezhdu vsemi royami na urovne.
+
+5. Ezhekadrovyy spam SetData v UpdateMassiveThreats
+
+code
+C#
+download
+content_copy
+expand_less
+if (!changed) return;
+RecalculateMassiveThreatCount();
+_massiveThreatBuffer.SetData(_massiveThreats);
+
+Tak kak RemainingDuration umenshaetsya kazhdyy kadr cherez deltaTime, changed vsegda true, poka est hot odin leviafan. Eto oznachaet ezhekadrovuyu zagruzku 160 bayt (Massiv struktur) s CPU na GPU.
+
+Reshenie: Pereday _simulationTime v Compute Shader i peredavay ugroze fiksirovannyy EndTime = _simulationTime + Duration. Pust GPU sam ignoriruet ugrozy, u kotoryh _SimulationTime > EndTime. SetData nuzhno vyzyvat tolko v moment poyavleniya novoy ugrozy (vnutri HandleMassiveDisplacement).
+
+🧠 ARHITEKTURNAYa GRYaZ (Graphics & AI)
+
+1. Jitter i Teleportatsiya pri smene steytov Boids
+Ty prosil proverit perehod mezhdu rezhimami Calm/Panic/Formation.
+Posmotri na RefreshSpawnData: esli uroven ugrozy peresekaet leviathanThreatThreshold, flag _lastDeepLeviathanMode menyaetsya. Eto vyzyvaet BuildDeepSpawnData(), kotoryy v svoyu ochered vyzyvaet BuildLeviathanSpawnSet(), a tot delaet _boidsBufferA.SetData(_spawnData).
+
+Verdikt: Pri perehode v rezhim ataki Leviafana ves roy (1000 ryb) mgnovenno TELEPORTIRUETSYa iz oblaka vokrug igroka v geometricheski rovnyy splayn. Eto vyglyadit kak urodlivyy vizualnyy glitch. Smena formatsii dolzhna proishodit tolko vnutri Compute Shader cherez Lerp sil prityazheniya, a ne perezapisyu pozitsiy s CPU!
+
+2. Feykovyy LOD i Vygoranie GPU
+V kontse Tick() est proverka CheckFrustumVisibility(). Ona ispolzuetsya tolko dlya togo, chtoby otmenit Graphics.DrawMeshInstancedIndirect.
+No sam boidCompute.Dispatch krutitsya vsegda. Dazhe esli igrok uplyl na 2 kilometra, GPU kazhdyy kadr schitaet kollizii, strah i fiziku dlya tysyach boidov. Dlya MX350 eto smert.
+
+Reshenie: V Tick() dobav proverku sqrMagnitude distantsii ot kamery do _fieldCenter. Esli distantsiya bolshe 100 metrov — delay return DO Dispatch. Ne grey videokartu vholostuyu.
+
+3. Leviathan Spline Reconstruction Desync (Rassinhron CPU i GPU)
+Chtoby proveryat uron, na CPU vossozdaetsya golova Leviafana:
+
+code
+C#
+download
+content_copy
+expand_less
+float wavePhase = _simulationTime * leviathanWaveFrequency;
+float lateralWave = Mathf.Sin(wavePhase) * ...
+
+Spustya paru chasov igry (esli igrok ne perezagruzhalsya) znachenie _simulationTime dostignet soten tysyach. V etot moment Mathf.Sin na CPU (kotoryy ispolzuet odni instruktsii FPU) i sin() v HLSL na GPU (kotoryy ispolzuet 32-bit fast math) nachnut rashoditsya.
+Golova leviafana vizualno budet nahoditsya v metre ot togo mesta, gde CPU obschityvaet ApplyPhysicalTrauma. Igrok budet poluchat uron "iz vozduha", a pryamoe stolknovenie ne budet registrirovatsya.
+
+Reshenie: Libo pereodicheski sbrasyvat _simulationTime cherez mod (naprimer, _simulationTime %= 1000f; na CPU i peredavat chistyy ostatok na GPU), libo (chto nadezhnee) zabirat koordinaty golovy cherez AsyncGPUReadback vmeste s parametrami dronov-parazitov!
+
+4. Ochered AsyncGPUReadback
+
+code
+C#
+download
+content_copy
+expand_less
+_parasiteLatchReadbackRequest = AsyncGPUReadback.Request(_latchStatsBuffer);
+_parasiteLatchReadbackPending = true;
+
+Esli komponent vyklyuchaetsya/unichtozhaetsya, poka _parasiteLatchReadbackPending == true, a bufer unichtozhen cherez Release(), pri popytke dostupa _parasiteLatchReadbackRequest.GetData<int>() vykinet Native Exception i uronit redaktor/bild.
+
+Reshenie: V OnDisable obyazatelno proveryat if (_parasiteLatchReadbackPending) _parasiteLatchReadbackRequest.WaitForCompletion(); ili hotya by lovit oshibku unichtozhennogo hendla.
+
+🔪 ITOGOVYE REKOMENDATsII PO REFAKTORINGU:
+
+Vyrezhi ochistku bufera na CPU: Napishi ClearStats.compute, dispetcherizuy ego pered boidCompute.Dispatch. Uberi _latchStatsClear.
+
+Isprav arhitekturu obnovleniy: Perenesi vsyu razdachu sil (HullStress, Drag) v FixedTick, zakeshirovav znacheniya iz Tick.
+
+Ubey TryGetComponent spam: Sdelay odin InitializePlayer(Transform player) metod, kotoryy snaruzhi dergaet ZoneDirector pri smene igroka, a ne ischi ego kazhdyy kadr.
+
+Uberi SetData pri apdeyte: MassiveThreat i FormationObstacle dolzhny zhit na GPU po vremeni (ExpiryTime). Ne zalivay ih dannye ezhekadrovo.
+
+Prekrati teleportirovat boidov: Perehod v formu Leviafana dolzhen byt plavnym smeshivaniem vesov (Weight) vnutri sheydera, a ne peregeneratsiey _spawnData na CPU.
+
+Status koda: REJECTED (Needs Major Rework). Pri tekuschem vide on budet frizit na MX350 iz-za PCIe stall'ov i vyzhret CPU na poiske komponentov.
+
+
+Kod prinyat na hirurgicheskiy stol.
+Ty prislal klassicheskiy primer skripta, kotoryy na moschnom PK razrabotchika vydast 144 FPS, a na tselevoy MX350 zastavit igru zahlebnutsya v mikrofrizah i vyletah.
+
+V kode est fatalnye arhitekturnye proschety, gonki dannyh (race conditions) na shine PCIe, utechki nativnoy pamyati i invalidatsiya steyt-mashiny.
+
+Razbiraem eto govno na zapchasti.
+
+🚨 1. KRITIChESKIE OBSERY (Bagi, Krashi, Utechki)
+
+1. Unichtozhenie shiny PCIe i Race Condition v AsyncGPUReadback
+V metode BindSimulationUniforms() (vyzyvaetsya kazhdyy kadr) ty delaesh eto:
+
+code
+C#
+download
+content_copy
+expand_less
+System.Array.Clear(_latchStatsClear, 0, _latchStatsClear.Length);
+_latchStatsBuffer.SetData(_latchStatsClear);
+
+A v UpdateParasiteLatchReadback() ty asinhronno chitaesh etot zhe bufer raz v 0.12 sek.
+
+Smert dlya MX350: SetData kazhdyy kadr forsiruet sinhronizatsiyu CPU->GPU. Eto lomaet payplayn komand i zhret propusknuyu sposobnost PCIe.
+
+Race Condition: AsyncGPUReadback vypolnyaetsya otlozhenno (do 3 kadrov). Tak kak ty zatiraesh bufer nulyami so storony CPU kazhdyy kadr, tvoy Readback s veroyatnostyu 80% prochitaet eti samye nuli DO togo, kak Compute Shader uspeet zapisat v nih dannye cherez InterlockedAdd. Ty budesh poluchat rvanye dannye o dronah.
+
+Reshenie: Napishi kroshechnyy kernel CSClearStats v Compute Shader i dispatchi ego pered osnovnym. Uberi SetData iz goryachego tsikla navsegda.
+
+2. Garantirovannyy Native Crash pri vyhode iz igry / vygruzke stseny
+V UpdateParasiteLatchReadback ty sozdaesh asinhronnyy zapros:
+
+code
+C#
+download
+content_copy
+expand_less
+_parasiteLatchReadbackRequest = AsyncGPUReadback.Request(_latchStatsBuffer);
+
+V OnDestroy() / OnDisable() ty vyzyvaesh ReleaseBuffers(), kotoryy delaet _latchStatsBuffer.Release().
+
+Itog: Esli komponent otklyuchaetsya (smert igroka, vygruzka chanka), poka visit _parasiteLatchReadbackPending == true, Unity popytaetsya zapisat dannye v osvobozhdennyy uchastok videopamyati. Poluchish zhestkiy vylet dvizhka (Access Violation).
+
+Reshenie: V OnDisable pered relizom buferov obyazatelno delay _parasiteLatchReadbackRequest.WaitForCompletion();.
+
+3. Utechka Native Memory (C# Job System)
+Metod BuildLeviathanData() vyzyvaetsya v SlowTick. Smotrim syuda:
+
+code
+C#
+download
+content_copy
+expand_less
+if (_mapMagicVegetationBridge.TryGetLatestAbyssalPathPayload(out Unity.Collections.NativeArray<Vector3> path, out int pathCount) && pathCount > 1) {
+    _leviathanPathNodeCount = CopyLeviathanPathNodes(path, pathCount);
+}
+
+Gde path.Dispose()? Esli TryGetLatestAbyssalPathPayload allotsiruet NativeArray (chto logichno dlya peredachi iz Job'ov v Main Thread) i vozvraschaet cherez out, ty teryaesh ssylku na nego kazhdyy SlowTick. Za 10 minut igry pamyat perepolnitsya. Ubedis v kontrakte mosta, kto vladelets pamyati.
+
+4. Rassinhron State Machine (Dergane boidov)
+V Tick (kazhdyy kadr) ty obnovlyaesh flagi:
+
+code
+C#
+download
+content_copy
+expand_less
+_deepModeActive = IsDeepModeActive(); // Proverka po glubine Y
+
+V etot zhe moment BindSimulationUniforms skarmlivaet _DeepModeId v Compute Shader.
+NO pozitsii yakorey i _spawnData obnovlyayutsya tolko v SlowTick!
+
+Itog: Igrok peresekaet glubinu deepSeaWorldYThreshold. V tekuschem kadre sheyder pereklyuchaetsya na logiku Deep Sea, no poluchaet starye yakorya iz melkovodya (potomu chto RefreshSpawnData esche ne vyzvalsya). Roy boidov mgnovenno teleportiruetsya ili razletaetsya na kuski, a cherez polsekundy (kogda srabotaet SlowTick) "dernetsya" k pravilnym koordinatam.
+
+Reshenie: Keshiruy _deepModeActive i menyay ego TOLKO vnutri RefreshSpawnData.
+
+🗑 2. ARHITEKTURNAYa GRYaZ (Performance Slop)
+
+1. GetComponent Spam v Goryachem Tsikle
+Metod ResolveDependencies() vyzyvaetsya v Tick(dt).
+Esli playerTransform raven null (igrok umer ili sel v drugoy transport), skript nachinaet kazhdyy kadr molotit:
+
+code
+C#
+download
+content_copy
+expand_less
+playerTransform.TryGetComponent(out _playerMovement);
+playerTransform.TryGetComponent(out _playerHealth);
+viewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+
+Eto chudovischnyy overhed. GetComponent v Update/Tick — strozhayshee tabu dlya Zero-GC proektov.
+
+Reshenie: Ischi igroka i kameru cherez sobytiya (Event Bus: OnPlayerSpawned / OnPlayerDied).
+
+2. Feykovyy LOD i Culling (GPU molotit vholostuyu)
+Metod CheckFrustumVisibility() otklyuchaet DrawMeshInstancedIndirect, esli boidy vne ekrana.
+No boidCompute.Dispatch vse ravno vyzyvaetsya! Esli igrok nahoditsya v 5 kilometrah ot etoy zony, videokarta MX350 prodolzhaet schitat fiziku, kollizii i separatsiyu dlya 2048 nevidimyh chastits.
+
+Reshenie: Vvedi distantsionnyy Culling. Esli rasstoyanie do igroka > 200 metrov — delay return; v samom nachale Tick i ne dergay boidCompute.
+
+3. Invalidnaya matematika Leviafana (Spline Reconstruction Jitter)
+Logika rekonstruktsii skorosti:
+
+code
+C#
+download
+content_copy
+expand_less
+_leviathanHeadVelocityWS = hadPreviousHead && dt > 0.0001f 
+    ? (headPositionWS - previousHeadPosition) / dt 
+    : headForwardWS * cruiseSpeed;
+
+Ty pribavlyaesh k headPositionWS sinusoidy (lateralWave, verticalWaveOffset). Vychislenie skorosti cherez diskretnuyu deltu pozitsii s nalozhennym sinusom pri plavayuschem dt (Delta Time) dast dikiy shum.
+_leviathanHeadVelocityWS.magnitude budet skakat ot 1 do 100 iz kadra v kadr. Iz-za etogo proverki vrode _leviathanHeadVelocityWS.magnitude < leviathanShockwaveSpeedThreshold budut srabatyvat haotichno.
+
+Reshenie: Skorost leviafana dlya fiziki (Trauma, Shockwave) dolzhna bratsya kak chistaya matematicheskaya proizvodnaya vektora dvizheniya po splaynu, ignoriruya vizualnye volnovye ostsillyatsii.
+
+4. Collider .bounds Recalculation Overhead
+V HarvestFormationObstacles():
+
+code
+C#
+download
+content_copy
+expand_less
+Bounds bounds = collider.bounds;
+
+Vyzov .bounds u kollaydera v Unity — eto ne chtenie svoystva. Eto sinhronizatsiya s fizicheskim dvizhkom (PhysX) i pereraschet AABB s uchetom tekuschey matritsy transformatsii. Delat eto dlya 32 obektov v SlowTick mozhno, no esli v sloy popadet MeshCollider slozhnogo ruina — budet spayk.
+
+Reshenie: Esli skaly statichnye — keshiruy ih AABB pri spavne chanka.
+
+🛠 ChTO DELAT (Hirurgicheskoe vmeshatelstvo)
+
+Vyrezat SetData(_latchStatsClear) iz Tick. Zamenit na boidCompute.Dispatch(ClearKernel, 1, 1, 1);.
+
+Zalochit smenu rezhimov (State Machine): Tick dolzhen brat steyt iz bufera, kotoryy podgotavlivaet SlowTick. Pereklyuchat logiku mozhno TOLKO kogda na CPU gotovy novye dannye dlya otpravki.
+
+Dobavit WaitForCompletion() na AsyncGPUReadback v bloke deinitsializatsii.
+
+Ubrat ResolveDependencies iz Tick. Podpishis na GlobalPlayerReference.OnChanged.
+
+Dobavit Spatial Culling: Esli sqrMagnitude ot _fieldCenter do playerTransform.position > 40000 (200m), glushit Tick polnostyu (ne dispatchit sheyder).
+
+Obstacle Proxy Buffer (16 shtuk) — dlya GPU norm, no na urovne geymdizayna 16 proksi malo. Ubedis, chto radius formationObstacleSearchRadius (seychas do 80m) ne zahvatyvaet bolshe 16 skal, inache boidy budut proletat skvoz "ne vlezshie" v bufer kamni. Sortiruy rezultaty OverlapSphereNonAlloc po distantsii i beri 16 blizhayshih. Seychas ty beresh pervye popavshiesya v massive ot dvizhka (a on otdaet ih v proizvolnom poryadke!).
+
+Sdelay eti pravki, inache freymtaym na MX350 budet vyglyadet kak kardiogramma bolnogo aritmiey.
+=--==-=-=-=-=-=-=-
+
+ETO BYL ANALIHZ SARGASSUM BOYDS
+
+
+-==-=-=-=-=-
+
+ANALIZ HectonVoxelEngine
+
+
+---
+OTChET OB AUDITE: HectonVoxelEngine.cs
+
+Komu: Lead Developer, HECTON-8
+Ot kogo: Senior QA Automation Engineer / Lead Geometry Scientist
+Status: 🔴 REJECTED (Kriticheskie arhitekturnye defekty, utechki pamyati, degradatsiya SDF)
+
+Kod vyglyadit tak, budto kto-to prochital statyu pro Marching Cubes v 2015 godu, prikrutil Burst i reshil, chto etogo dostatochno dlya AAA. Vy narushaete bazovye pravila Unity Jobs, lomaete matematiku SDF i dopuskaete proboiny v Floating Origin.
+
+Nizhe — hirurgicheskiy razbor togo, pochemu etot skript ne proydet QA-geyt i ubet performans na targete (MX350).
+
+ChAST 1: KRITIChESKIE OBSERY (BAGI I UTEChKI)
+
+(Rol: QA & Lead Architect)
+
+1. Native Memory Leak (Skrytaya utechka pri asinhronnoy otmene)
+
+V metodah GenerateVolumeAsync i RebuildVolumeAsync vy initsializiruete grafy pescher (NativeArrays) DO bloka try-finally i do polucheniya scratchLease:
+
+code
+C#
+download
+content_copy
+expand_less
+CaveGraphGenerator.Generate(..., out var caveNodes, ...);
+VoxelStreamingScratchLease scratchLease = await AcquireStreamingScratchLeaseAsync(..., ct);
+try { ... } 
+finally { scratchLease.Dispose(); caveNodes.Dispose(); ... }
+
+Problema: Esli AcquireStreamingScratchLeaseAsync vykinet OperationCanceledException iz-za srabotavshego CancellationToken vo vremya ozhidaniya, blok finally ne vypolnitsya. caveNodes, caveTunnels i drugie massivy navsegda ostanutsya v unmanaged pamyati.
+Reshenie: Oborachivayte allokatsii v try-finally SRAZU posle ih sozdaniya.
+
+2. Sync Mismatch: Razryv Floating Origin (Prostranstvennyy rassinhron)
+
+Vy fiksiruete shiftAtStart v nachale generatsii i korrektno smeschaete targetGO.transform.position = -shiftDelta; v kontse. No vy zabyli pro Spawn Points!
+
+code
+C#
+download
+content_copy
+expand_less
+ScavengePopulator.Instance.RegisterSpawnPoint((Vector3)data.position, ...);
+
+Koordinaty data.position byli vychisleny v dzhobe VoxelSpawnPointJob na osnove starogo prostranstva. Esli vo vremya await'ov proizoshel sdvig mira, spavn-pointy uletyat v bezdnu, potomu chto vy ne primenili k nim -shiftDelta pri registratsii. Tochki spavna luta i flory okazhutsya vne peschery.
+
+3. Performance Slop: Kvadratnye korni v samom goryachem tsikle (VoxelDensityJob)
+
+Vnutri VoxelDensityJob (kotoryy vypolnyaetsya milliony raz) vy ispolzuete math.distance:
+
+V ApplyEdgeSeal
+
+V EvaluateEntranceSkirtSDF
+
+V EvaluateCraterModifiers
+Problema: math.distance pod kapotom ispolzuet math.sqrt(). Eto ubivaet avto-vektorizatsiyu i zhzhet tsikly CPU.
+Reshenie: Zamenit na math.lengthsq (kvadrat distantsii) i sravnivat s radius * radius.
+
+ChAST 2: DETSADOVSKAYa GEOMETRIYa (SDF & NORMALS)
+
+(Rol: Lead Geometry Scientist)
+
+1. SDF Distortion & "The Minecraft Look" (Degradatsiya metriki SDF)
+
+Vy tupo vychitaete FBM shum iz distantsii v EvaluateCaveSDF:
+
+code
+C#
+download
+content_copy
+expand_less
+caveDist -= EvaluateFractalNoiseCarve(warpedPos, wp, caveDist);
+
+Problema: Eto matematicheskoe prestuplenie. Vychitanie vysokochastotnogo shuma napryamuyu iz SDF narushaet Lipshitsevu nepreryvnost (Lipschitz continuity). Prostranstvo perestaet byt Evklidovym. Marching Cubes, ekstrapoliruya peresecheniya, budet vydavat stupenchatye, rvanye poligony (tot samyy "maynkraft"), a ne organicheskiy kamen, potomu chto gradient plotnosti stanovitsya dikim.
+Reshenie: Shum neobhodimo delit na ego proizvodnuyu, libo domnozhat finalnyy carveMask na ponizhayuschiy koeffitsient bounding-box (obychno 0.5f - 0.8f ot amplitudy).
+
+2. Analytical Normal Precision (Mertvye normali)
+
+V VoxelNormalJob vy ispolzuete 4-vyborochnyy metod tetraedra:
+
+code
+C#
+download
+content_copy
+expand_less
+float3 gradient = e0 * d0 + e1 * d1 + e2 * d2 + e3 * d3;
+
+Dlya gladkih sfer eto rabotaet. Dlya pescher s dobavleniem FractalNoise3D i sloistyh terras (Terraces) etot metod dast otvratitelnye "plastikovye" artefakty sheydinga. Tetraedralnaya approksimatsiya na vysokochastotnom shume vydaet skoshennye vektora.
+Reshenie: Perepishite VoxelNormalJob na 6-tap Central Difference metod (tsentralnaya raznost: d(x+e) - d(x-e) dlya kazhdoy osi). Dlya kamennoy porody eto masthev, inache svet budet blikovat kak na polietilene.
+
+3. Triplanar Phase Sync (Plyvuschie tekstury)
+
+Vy peredaete targetGO.transform.position = -shiftDelta. Sam mesh ostaetsya v koordinatah pre-shifta.
+Kogda sheyder popytaetsya nalozhit Triplanar Mapping po mirovym koordinatam (_WorldSpaceCameraPos ili Transform.localToWorld), faza shuma tekstur sdvinetsya rovno na shiftDelta. Igrok uvidit, kak tekstury "edut" po stenam peschery pri kazhdom obnovlenii Floating Origin.
+Reshenie: Vy dolzhny zapekat "Absolute World Position" (do primeneniya Floating Origin) v dopolnitelnyy UV-kanal (naprimer, UV3) vo vremya fazy generatsii mesha, i ispolzovat etot UV3 kanal dlya Triplanar Mapping v sheydere voxelMaterial.
+
+4. Crater Carving Performance (Slozhnost O(N*M))
+
+V EvaluateCraterModifiers vy iteriruete massiv VSEH kraterov dlya KAZhDOGO vokselya. Esli na tayle 10 kraterov, vy delaete 10 proverok dlya 2,000,000 vokseley.
+Reshenie: Bystryy AABB check pered vychisleniem tochnoy distantsii:
+
+code
+C#
+download
+content_copy
+expand_less
+if (math.abs(wp.x - crater.position.x) > crater.radius + crater.blendRadius) continue;
+ChAST 3: ARHITEKTURNAYa GRYaZ I REKOMENDATsII
+
+1. Logical Redundancy (Ogromnyy kopipast):
+Metody GenerateVolumeAsync, GenerateVolumeFromDataAsync i RebuildVolumeAsync dubliruyut payplayn: initsializatsiya massivov -> lupy MapMagic -> dzhoby MC -> dzhoby Weld -> sborka mesha. Eto bolee 500 strok dubliruyuschegosya koda.
+Prikaz: Vynesti ves protsess obrabotki (s 1 po 6 fazu) v privatnyy metod ExecuteVoxelPipelineAsync. Na vhod podavat uzhe gotovye massivy nodes, tunnels, etc.
+
+2. Invalidatsiya Box-Collider (Meloch, no bolno):
+Vy sobiraete MeshCollider asinhronno, no esli peschera ogromnaya, Unity Physics zafrizit Main Thread pri prisvoenii mcol.sharedMesh = mesh.
+Prikaz: V Unity 6 ispolzuyte Physics.BakeMesh(mesh.GetInstanceID(), false) vnutri Burst-dzhoby DO vozvrata na Main Thread, chtoby fizika ne zaikalas.
+
+3. VoxelColorJob Depth Bounding:
+V float depth = math.saturate(-p.y / math.max(maxDepth, 1f));
+Dlya glubokovodnoy igry 0 mozhet byt ne poverhnostyu okeana, a lokalnym nulem chanka. Ubedites, chto p.y zdes — eto absolyutnaya mirovaya glubina, ne iskazhennaya lokalnym Origin Shift. Inache gradient bioma (tsvet vody, tuman) slomaetsya.
+
+VERDIKT:
+
+Arhitekturno zadumka pulinga vokseley i Burst-scratch-slotov otlichnaya. No realizatsiya matematiki i integratsiya v ekosistemu dvizhka (Floating Origin, Cancellation Tokens) vypolnena diletantom.
+
+Ispravit utechki i matematiku SDF nemedlenno. Kod k merdzhu ne dopuskayu.
+OTChET OB AUDITE: HectonVoxelEngine.cs
+
+Komu: Komanda Hecton-8
+Ot kogo: Senior QA Automation Engineer / Lead Architect & Lead Geometry Scientist
+Verdikt: Arhitektura imeet potentsial, no tekuschaya realizatsiya obvalit FPS na vashem MX350 do odnoznachnyh znacheniy, porvet GC i vydast vizualnye artefakty urovnya indi-podelok iz 2014 goda. Kod nuzhno hirurgicheski vskryvat.
+
+ChAST 1: ANALIZ OT LEAD ARCHITECT & QA
+
+Vasha Zero-GC politika suschestvuet tolko na bumage. Asinhronnost syraya, a vychisleniya gruzyat Main Thread.
+
+🚨 KRITIChESKIE OBSERY (Utechki, Bottlenecks, Krashi)
+
+Main Thread Murder (Feykovaya Asinhronnost)
+V metodah GenerateVolumeAsync i GenerateVolumeFromDataAsync proishodit sempling vysot:
+
+code
+C#
+download
+content_copy
+expand_less
+for (int iz = 0; iz < ptsZ; iz++)
+    for (int ix = 0; ix < ptsX; ix++)
+        if (mapMagicBridge.TryGetHeight(wx, wz, out float height)) // ...
+
+Setka 128x128 (129³ tochek) = 16 641 vyzov TryGetHeight na Main Thread za odin kadr. Esli MapMagic vnutri delaet Raycast ili lezet v heshmapy, eto vyzovet chudovischnyy spayk (friz na 10–50 ms).
+Lechenie: Heightmap dolzhen generirovatsya asinhronno cherez MapMagic API (naprimer, zapros matritsy vysot) i peredavatsya v Job.
+
+Native Memory Allocation Spam (Narushenie Zero-GC)
+V Phase 5 i RebuildVolumeAsync vy dinamicheski allotsiruete pamyat, zamaskirovav eto Allocator.Persistent:
+
+code
+C#
+download
+content_copy
+expand_less
+var normals = new NativeArray<float3>(weldedCount, Allocator.Persistent...);
+var biomeVals = new NativeArray<float>(...);
+var colors = new NativeArray<Color>(...);
+var spawnPointList = new NativeList<CaveSpawnData>(...);
+
+V finally oni dispozyatsya. Eto ne utechka, no eto Cold Allocation na kazhdyy vyzov generatsii! U vas est VoxelStreamingScratchSlot — pochemu eti massivy ne dobavleny v pul? Razmery izvestny (po maxVerts), prosto dopishite ih v ScratchSlot.
+
+Kopirovanie dannyh na Main Thread vmesto .Reinterpret
+V metode BuildWeldedMeshNative:
+
+code
+C#
+download
+content_copy
+expand_less
+var mPos = new NativeArray<Vector3>(vertCount, Allocator.Temp...);
+for (int i = 0; i < vertCount; i++) mPos[i] = (Vector3)positions[i]; // ZhEST
+mesh.SetVertices(mPos);
+
+Vy v tsikle na Main Thread kopiruete 100 000+ vershin iz float3 v Vector3?
+Lechenie: Unity API pozvolyaet peredavat dannye napryamuyu bez kopirovaniya:
+mesh.SetVertices(positions.Reinterpret<Vector3>());
+To zhe samoe dlya normals i colors. Udalite etot pozornyy tsikl.
+
+Algoritmicheskaya katastrofa: O(V * N) v Burst Job
+Vnutri VoxelDensityJob.EvaluateCaveSDF kazhdyy voksel (a ih 
+129
+3
+≈
+2.1
+129
+3
+≈2.1
+ mln) iteriruetsya po VSEM caveNodes, caveTunnels, caveEntrances i caveStructures.
+2 mln vokseley * 50 struktur = 100 millionov proverok SDF za odin chank.
+Lechenie: Vnedrit Spatial Grid / Bounding Box Culling vnutri Job. Vychislyat SDF struktury tolko esli distance(voxel, bounds.center) < bounds.extents + blendRadius.
+
+🧹 ARHITEKTURNAYa GRYaZ I LOGIChESKOE DUBLIROVANIE
+
+Rassinhron Floating Origin (Smertelnaya oshibka)
+V GenerateVolumeAsync vy zapominaete shiftAtStart = HectonFloatingOrigin.Instance.TotalOffset, a v EvaluateCaveSDF peredaete wp (World Position).
+Problema: Shum Fraktala (FractalNoise3D(wp, ...)) ispolzuet wp. Esli igrok proshel 5 km, proizoshel shift koordinat. Koordinaty generatsii pomenyalis. Itog: Peschera izmenit svoyu geometriyu (steny "poplyvut") pri zagruzke togo zhe samogo sida s drugimi znacheniyami TotalOffset!
+Lechenie: V ApplyDomainWarp i FractalNoise3D peredavat ne wp, a AbsoluteUniversePosition (wp + HectonFloatingOrigin.Instance.TotalOffset).
+
+Dvoynoy kod
+Logika generatsii v GenerateVolumeAsync i GenerateVolumeFromDataAsync dubliruetsya na 85%. Oba metoda nuzhno svesti k odnomu privatnomu ExecuteGenerationPipeline(NativeArrays...), kotoryy budet prinimat libo gotovye massivy, libo generirovat ih.
+
+ChAST 2: ANALIZ OT LEAD GEOMETRY SCIENTIST
+
+Dlya NASA-punk na glubine 4 km etot vizual slishkom primitiven. Vyglyadit kak razdutyy Minecraft.
+
+🚨 KRITIChESKIE TOChKI PROVERKI (Geometriya)
+
+Analytical Normal Precision (Detsadovskie normali)
+
+code
+C#
+download
+content_copy
+expand_less
+float3 e0 = new float3(1f, -1f, -1f); // ...
+float3 gradient = e0 * d0 + e1 * d1 + e2 * d2 + e3 * d3;
+
+Ispolzuetsya 4-semplovyy tetraedralnyy metod (Tetraedr). Dlya bazovyh sfer eto OK. Dlya vashey "sloistoy" porody s FBM-shumom (EvaluateWallDetail) eto dast diagonalnyy Bias (skosy normaley) i artefakty granenosti pri osveschenii farami podlodki.
+Lechenie: Perepisat VoxelNormalJob na klassicheskiy Central Differences (6 semplov po osyam X, Y, Z). Da, eto 6 vyborok SDF vmesto 4, no osveschenie stanet absolyutno rovnym.
+
+SDF Ellipsoid (Gryaznaya approksimatsiya)
+
+code
+C#
+download
+content_copy
+expand_less
+return (lenScaled - 1f) * math.cmin(radii);
+
+Eto deshevaya approksimatsiya. Za ee predelami (v Exterior) distantsiya iskazhaetsya. Kogda vy slivaete ellipsoid s tunnelem cherez SmoothMin, iskazhennyy gradient dast "puzyri" ili rezkie razryvy (pinchi) na styke.
+Lechenie: Ispolzovat tochnyy (analiticheskiy) SDF ellipsoida, libo zamenit ellipsoidy na rastyanutye kapsuly.
+
+Voxel Skirting (Dyryavye yubki u vhodov)
+EvaluateEntranceSkirtSDF klipaet vhod po: terrainClip = wp.y - SampleTerrainHeight(wp.xz).
+No SampleTerrainHeight beret bilineynuyu interpolyatsiyu iz setki vokseley, a ne s fakticheskogo mesha MapMagic! Mesh terreyna i izopoverhnost vokseley ne sovpadut. Igrok uvidit scheli mezhdu pescheroy i dnom okeana.
+Lechenie: Uvelichit embedDepth, chtoby yubka s zapasom uhodila skvoz geometriyu terreyna, plyus dobavit Depth Bias v sheydere voxelMaterial.
+
+Triplanar Phase Sync & Visuals
+Metod VoxelColorJob zapisyvaet: R = slope, G = depth, B = interiorFade. Eto uroven prototipa.
+Gde Curvature (krivizna poverhnosti)? V pescherah AAA-klassa kraya kamney dolzhny byt vyterty (dlya etogo nuzhen Ambient Occlusion i Curvature Map).
+Lechenie: Poskolku Marching Cubes ne daet Dual Contouring ostryh uglov, vam nuzhno zapech Curvature v vershinah. Vychislyayte kriviznu cherez raznitsu normaley sosednih uzlov setki i pakuyte ee v A-kanal Vertex Color.
+
+Smooth Min (smin) Artifacts
+V funktsii SmoothMin:
+
+code
+C#
+download
+content_copy
+expand_less
+k = math.max(k, 0.0001f);
+float h = math.max(k - math.abs(a - b), 0f) / k;
+
+Funktsiya polinomialnogo SmoothMin horosha, no pri peresechenii mnozhestva primitivov v odnoy tochke (naprimer, 3 tunnelya shodyatsya v odnom Node) ona narushaet Lipschitz Continuity. Poyavyatsya artefakty (vspuchivaniya). Ispolzuyte Exponential Smooth Min (smin_exp) ili delayte SmoothUnion posledovatelno s sortirovkoy distantsiy.
+
+REZYuME DLYa EKZEKUTsII
+
+Vypilit kopirovanie massivov (vnedrit .Reinterpret).
+
+Dobavit AbsoluteUniversePosition dlya shuma (pochinit Floating Origin).
+
+Perenesti generatsiyu vysot v Burst/Job, ubrat s Main Thread.
+
+Dobavit Bounding Box Culling v tsikl rascheta SDF.
+
+Zamenit tetraedralnye normali na 6-semplovye.
+
+Vynesti NativeArray allokatsii iz GenerateVolume v ScratchSlot.

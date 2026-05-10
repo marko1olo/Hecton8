@@ -16,6 +16,8 @@ namespace Hecton8.EditorTools
         private const int MaxTrianglesPerMeshCheck = 4096;
         private const float DegenerateAreaThreshold = 0.000001f;
         private const float UvCellSize = 0.125f;
+        private const int UvUtilizationGridSize = 64;
+        private const float MaxUvEmptySpaceRatio = 0.30f;
 
         internal sealed class AuditResult
         {
@@ -133,35 +135,50 @@ namespace Hecton8.EditorTools
                 if (mesh == null || mesh.vertexCount <= 0)
                     continue;
 
-                Vector2[] uv2 = mesh.uv2;
-                if (uv2 == null || uv2.Length != mesh.vertexCount)
+                List<Vector2> uv2 = new List<Vector2>(mesh.vertexCount);
+                mesh.GetUVs(1, uv2);
+                if (uv2.Count != mesh.vertexCount)
                 {
                     inspection.HasIssue = true;
                     inspection.CanAttemptAutoFix = true;
                     inspection.Issues.Add($"{mesh.name}: missing or incomplete UV2/lightmap channel.");
-                    continue;
                 }
-
-                if (TryDetectUvOverlap(mesh, uv2, out string overlapReason))
+                else if (TryDetectUvOverlap(mesh, uv2, out string overlapReason))
                 {
                     inspection.HasIssue = true;
                     inspection.CanAttemptAutoFix = true;
                     inspection.Issues.Add($"{mesh.name}: {overlapReason}");
+                }
+
+                List<Vector2> uv0 = new List<Vector2>(mesh.vertexCount);
+                mesh.GetUVs(0, uv0);
+                if (uv0.Count != mesh.vertexCount)
+                {
+                    inspection.HasIssue = true;
+                    inspection.Issues.Add($"{mesh.name}: missing or incomplete UV0; UV island utilization cannot be measured.");
+                }
+                else if (TryMeasureUvEmptySpace(mesh, uv0, out float emptySpaceRatio, out string utilizationReason)
+                    && emptySpaceRatio > MaxUvEmptySpaceRatio)
+                {
+                    inspection.HasIssue = true;
+                    inspection.Issues.Add(utilizationReason);
                 }
             }
 
             return inspection;
         }
 
-        private static bool TryDetectUvOverlap(Mesh mesh, Vector2[] uv2, out string reason)
+        private static bool TryDetectUvOverlap(Mesh mesh, List<Vector2> uv2, out string reason)
         {
             int testedTriangles = 0;
             Dictionary<long, List<TriangleRecord>> buckets = new Dictionary<long, List<TriangleRecord>>(256);
+            List<int> indices = new List<int>((int)Math.Min(1024L, ResolveIndexCount(mesh)));
 
             for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
             {
-                int[] indices = mesh.GetIndices(subMeshIndex);
-                int triangleCount = indices.Length / 3;
+                indices.Clear();
+                mesh.GetTriangles(indices, subMeshIndex, true);
+                int triangleCount = indices.Count / 3;
                 for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
                 {
                     if (testedTriangles >= MaxTrianglesPerMeshCheck)
@@ -230,6 +247,83 @@ namespace Hecton8.EditorTools
 
             reason = string.Empty;
             return false;
+        }
+
+        private static bool TryMeasureUvEmptySpace(
+            Mesh mesh,
+            List<Vector2> uv0,
+            out float emptySpaceRatio,
+            out string reason)
+        {
+            bool[] occupiedCells = new bool[UvUtilizationGridSize * UvUtilizationGridSize];
+            List<int> indices = new List<int>((int)Math.Min(1024L, ResolveIndexCount(mesh)));
+            int triangleCount = 0;
+
+            for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+            {
+                indices.Clear();
+                mesh.GetTriangles(indices, subMeshIndex, true);
+                int submeshTriangleCount = indices.Count / 3;
+                for (int triangleIndex = 0; triangleIndex < submeshTriangleCount; triangleIndex++)
+                {
+                    int i0 = indices[triangleIndex * 3];
+                    int i1 = indices[triangleIndex * 3 + 1];
+                    int i2 = indices[triangleIndex * 3 + 2];
+                    TriangleRecord triangle = new TriangleRecord(uv0[i0], uv0[i1], uv0[i2], i0, i1, i2);
+
+                    if (Mathf.Abs(SignedArea(triangle.A, triangle.B, triangle.C)) <= DegenerateAreaThreshold)
+                        continue;
+
+                    int minCellX = Mathf.Clamp(Mathf.FloorToInt(triangle.MinX * UvUtilizationGridSize), 0, UvUtilizationGridSize - 1);
+                    int minCellY = Mathf.Clamp(Mathf.FloorToInt(triangle.MinY * UvUtilizationGridSize), 0, UvUtilizationGridSize - 1);
+                    int maxCellX = Mathf.Clamp(Mathf.FloorToInt(triangle.MaxX * UvUtilizationGridSize), 0, UvUtilizationGridSize - 1);
+                    int maxCellY = Mathf.Clamp(Mathf.FloorToInt(triangle.MaxY * UvUtilizationGridSize), 0, UvUtilizationGridSize - 1);
+
+                    for (int cellY = minCellY; cellY <= maxCellY; cellY++)
+                    {
+                        for (int cellX = minCellX; cellX <= maxCellX; cellX++)
+                        {
+                            if (TriangleIntersectsUvCell(triangle, cellX, cellY))
+                                occupiedCells[cellY * UvUtilizationGridSize + cellX] = true;
+                        }
+                    }
+
+                    triangleCount++;
+                }
+            }
+
+            if (triangleCount <= 0)
+            {
+                emptySpaceRatio = 1f;
+                reason = $"{mesh.name}: UV0 has no measurable triangles; asset is Bloated.";
+                return true;
+            }
+
+            int occupiedCount = 0;
+            for (int i = 0; i < occupiedCells.Length; i++)
+            {
+                if (occupiedCells[i])
+                    occupiedCount++;
+            }
+
+            emptySpaceRatio = 1f - occupiedCount / (float)occupiedCells.Length;
+            reason = $"{mesh.name}: UV0 empty space {emptySpaceRatio:P0} exceeds 30%; asset is Bloated.";
+            return true;
+        }
+
+        private static bool TriangleIntersectsUvCell(TriangleRecord triangle, int cellX, int cellY)
+        {
+            float invGrid = 1f / UvUtilizationGridSize;
+            Vector2 min = new Vector2(cellX * invGrid, cellY * invGrid);
+            Vector2 max = new Vector2((cellX + 1) * invGrid, (cellY + 1) * invGrid);
+            Vector2 a = min;
+            Vector2 b = new Vector2(max.x, min.y);
+            Vector2 c = max;
+            Vector2 d = new Vector2(min.x, max.y);
+
+            TriangleRecord cellTriA = new TriangleRecord(a, b, c, -1, -2, -3);
+            TriangleRecord cellTriB = new TriangleRecord(a, c, d, -1, -3, -4);
+            return TrianglesOverlap(triangle, cellTriA) || TrianglesOverlap(triangle, cellTriB);
         }
 
         private static bool SharesVertex(TriangleRecord a, TriangleRecord b)
@@ -308,6 +402,18 @@ namespace Hecton8.EditorTools
         private static long PackCell(int x, int y)
         {
             return ((long)x << 32) ^ (uint)y;
+        }
+
+        private static long ResolveIndexCount(Mesh mesh)
+        {
+            if (mesh == null)
+                return 0L;
+
+            long indexCount = 0L;
+            for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+                indexCount += mesh.GetIndexCount(subMeshIndex);
+
+            return indexCount;
         }
     }
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -10,6 +9,7 @@ using Hecton8.UI;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace Hecton8.Core
 {
@@ -18,7 +18,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9490)]
-    public sealed class RuntimeWatchdog : MonoBehaviour, IUpdatable, IServiceHeartbeat, IServiceShutdown
+    public sealed class RuntimeWatchdog : MonoBehaviour, IUpdatable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
     {
         public interface IEmergencyResetTarget
         {
@@ -61,13 +61,14 @@ namespace Hecton8.Core
 
         private const int LaneCapacity = 32;
         private const int SampleIntervalFrames = 60;
-        private const int FrameStripConsecutiveFrames = 5;
+        private const int FrameStripConsecutiveFrames = 3;
         private const int FaunaEmergencyCullCooldownFrames = 60;
         private const int FaunaEmergencyCullEmptyCooldownFrames = 15;
         private const double EmergencyResetFailureCooldownSeconds = 1.0d;
         private const double StallThresholdSeconds = 5.0;
         private const double FrozenServiceThresholdSeconds = 2.0;
-        private const float BaseFrameStripThresholdSeconds = 0.015f;
+        private const double RegistryHeartbeatGuardIntervalSeconds = 60.0d;
+        private const float BaseFrameStripThresholdSeconds = 0.01667f;
         private const float XrFrameStripThresholdSeconds = 0.0075f;
         private const float GlobalLodBiasEmergency = 0.5f;
         private const float BaseFaunaArteryBudgetMs = 2.0f;
@@ -76,12 +77,13 @@ namespace Hecton8.Core
         private const float MmfHealthCheckIntervalSeconds = 60f;
         private const float MmfHealthRetryDelaySeconds = 5f;
         private const long BaseMmfBloatThresholdBytes = 50L * 1024L * 1024L;
+        private const long RuntimeMemorySpikeThresholdBytes = 50L * 1024L * 1024L;
+        private const int MemorySpikeSampleIntervalFrames = 10;
         private const long InvalidMmfSectorHash = long.MinValue;
+        private const int RegistryHeartbeatSlotCount = (int)GlobalRegistryServiceSlot.Unknown;
         private const int FaunaLogicRateColdTick = 1;
         private const int GetFileExInfoStandard = 0;
         private const uint WatchdogStateGlobalLodStripped = 1u << 0;
-        private const string DeadlockTraceFilePrefix = "runtime_watchdog_deadlock_";
-        private const string DeadlockTraceFileExtension = ".txt";
 
         private static readonly int _globalLodBiasId = Shader.PropertyToID("_GlobalLodBias");
         private static readonly int _faunaLogicRateId = Shader.PropertyToID("_FaunaLogicRate");
@@ -91,6 +93,9 @@ namespace Hecton8.Core
         private static readonly uint _mmfBloatAlarmHash = unchecked((uint)LocHash.Compute("MMF_BLOAT_ALARM"));
         private static readonly uint _uiDeadlockHash = unchecked((uint)LocHash.Compute("UI_DEADLOCK"));
         private static readonly uint _criticalGcSpikeHash = unchecked((uint)LocHash.Compute("CRITICAL_GC_SPIKE"));
+        private static readonly uint _runtimeMemorySpikeHash = unchecked((uint)LocHash.Compute("RUNTIME_MEMORY_SPIKE"));
+        private static readonly uint _memorySubsystemBreachHash = unchecked((uint)LocHash.Compute("MEMORY_SUBSYSTEM_BREACH"));
+        private static readonly uint _registryHeartbeatStaleHash = unchecked((uint)LocHash.Compute("REGISTRY_HEARTBEAT_STALE"));
         private static readonly uint _fastTickSteadyStateHash = unchecked((uint)LocHash.Compute("FAST_TICK_STEADY_STATE"));
         private static readonly uint _nativeLeakReapedHash = unchecked((uint)LocHash.Compute("NATIVE_LEAK_REAPED"));
         private static readonly uint _nativeLeakLabelHash = unchecked((uint)LocHash.Compute("NATIVE_LEAK_LABEL"));
@@ -98,20 +103,24 @@ namespace Hecton8.Core
         private static readonly long _baseFaunaArteryBudgetTicks = MillisecondsToStopwatchTicks(BaseFaunaArteryBudgetMs);
         private static readonly long _xrFaunaArteryBudgetTicks = Math.Max(1L, _baseFaunaArteryBudgetTicks >> 1);
 
-        // COLD ALLOC: int[32] - cross-thread liveness counters - owner: RuntimeWatchdog
+        // COLD ALLOC: int[32] — cross-thread liveness counters — owner: RuntimeWatchdog
         private static readonly int[] _heartbeatCounters = new int[LaneCapacity];
-        // COLD ALLOC: int[32] - sampled liveness counters - owner: RuntimeWatchdog
+        // COLD ALLOC: int[32] — sampled liveness counters — owner: RuntimeWatchdog
         private static readonly int[] _lastObservedCounters = new int[LaneCapacity];
-        // COLD ALLOC: double[32] - last heartbeat change timestamps - owner: RuntimeWatchdog
+        // COLD ALLOC: double[32] — last heartbeat change timestamps — owner: RuntimeWatchdog
         private static readonly double[] _lastChangeTimes = new double[LaneCapacity];
-        // COLD ALLOC: bool[32] - active liveness lane mask - owner: RuntimeWatchdog
+        // COLD ALLOC: bool[32] — active liveness lane mask — owner: RuntimeWatchdog
         private static readonly bool[] _activeLanes = new bool[LaneCapacity];
-        // COLD ALLOC: IEmergencyResetTarget[32] - frozen-service recovery callback table - owner: RuntimeWatchdog
+        // COLD ALLOC: IEmergencyResetTarget[32] — frozen-service recovery callback table — owner: RuntimeWatchdog
         private static readonly IEmergencyResetTarget[] _emergencyResetTargets = new IEmergencyResetTarget[LaneCapacity];
+        // COLD ALLOC: int[255] - registry service TickCount samples - owner: RuntimeWatchdog
+        private static readonly int[] _registryHeartbeatTicks = new int[RegistryHeartbeatSlotCount];
+        // COLD ALLOC: byte[255] - active registry heartbeat sample mask - owner: RuntimeWatchdog
+        private static readonly byte[] _registryHeartbeatActive = new byte[RegistryHeartbeatSlotCount];
 
-        // COLD ALLOC: object[1] - MMF background size result synchronization - owner: RuntimeWatchdog
+        // COLD ALLOC: object[1] — MMF background size result synchronization — owner: RuntimeWatchdog
         private static readonly object _mmfHealthResultLock = new object();
-        // COLD ALLOC: WaitCallback[1] - MMF background size probe entry point - owner: RuntimeWatchdog
+        // COLD ALLOC: WaitCallback[1] — MMF background size probe entry point — owner: RuntimeWatchdog
         private static readonly WaitCallback _mmfHealthCallback = ExecuteMmfHealthCheck;
 
         private static Canvas _hudCanvas;
@@ -127,7 +136,6 @@ namespace Hecton8.Core
         private static string _mmfHealthWorkPath;
         private static long _mmfHealthWorkSectorHash;
         private static int _mmfHealthWorkGeneration;
-        private static string _deadlockTraceDirectory;
 
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -138,18 +146,25 @@ namespace Hecton8.Core
 #endif
 
         private bool _registeredUpdatable;
+        private bool _registeredLateFrameTick;
         private uint _watchdogStateFlags;
         private int _nextSampleFrame;
         private int _consecutiveOverBudgetFrames;
+        private uint _lastInputLatencySequence;
         private int _lastConsumedMmfHealthGeneration;
         private int _lastGen0CollectionCount;
         private int _lastGcSpikeFrame = -1;
+        private int _lastMemorySpikeFrame = -1;
+        private int _nextMemorySpikeSampleFrame;
+        private int _lastMemoryBreachFrame = -1;
         private int _steadyStateGcGen0CollectionsDelta;
         private float _gcSteadyStateWarmupRemaining = GcSteadyStateWarmupSeconds;
         private bool _gcSteadyStateActive;
         private double _nextMmfHealthCheckTime;
+        private double _nextRegistryHeartbeatGuardTime;
         private long _lastMmfBytes = -1L;
         private long _lastMmfSectorHash = InvalidMmfSectorHash;
+        private long _lastTotalAllocatedMemoryBytes;
 
         public static int ActiveTargetFPS => HectonXRRuntimeState.IsXRActive ? VrTargetFPS : TargetFPS;
         public ServiceHeartbeatState HeartbeatState => _registeredUpdatable ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.Booting;
@@ -164,6 +179,8 @@ namespace Hecton8.Core
             Array.Clear(_lastChangeTimes, 0, _lastChangeTimes.Length);
             Array.Clear(_activeLanes, 0, _activeLanes.Length);
             Array.Clear(_emergencyResetTargets, 0, _emergencyResetTargets.Length);
+            Array.Clear(_registryHeartbeatTicks, 0, _registryHeartbeatTicks.Length);
+            Array.Clear(_registryHeartbeatActive, 0, _registryHeartbeatActive.Length);
             _hudCanvas = null;
             _lastHudCanvasUpdateTime = 0d;
             _hudDeadlockRecoveryFrame = 0;
@@ -177,7 +194,6 @@ namespace Hecton8.Core
             _mmfHealthWorkPath = null;
             _mmfHealthWorkSectorHash = InvalidMmfSectorHash;
             _mmfHealthWorkGeneration = 0;
-            _deadlockTraceDirectory = null;
         }
 
         public static RuntimeWatchdog EnsureRuntimeInstance()
@@ -186,7 +202,7 @@ namespace Hecton8.Core
             if (watchdog != null)
                 return watchdog;
 
-            GameObject runtimeRoot = new GameObject("[RuntimeWatchdog]"); // COLD ALLOC: GameObject[1] - bootstrap-owned watchdog root - owner: RuntimeWatchdog
+            GameObject runtimeRoot = new GameObject("[RuntimeWatchdog]"); // COLD ALLOC: GameObject[1] — bootstrap-owned watchdog root — owner: RuntimeWatchdog
             watchdog = runtimeRoot.AddComponent<RuntimeWatchdog>();
             watchdog.InitializeService();
             return watchdog;
@@ -200,6 +216,16 @@ namespace Hecton8.Core
 
             _activeLanes[laneIndex] = true;
             Interlocked.Increment(ref _heartbeatCounters[laneIndex]);
+        }
+
+        /// <summary>
+        /// Reports a subsystem cost sample for the current frame without managed payloads.
+        /// </summary>
+        /// <param name="subsystemHash">Stable subsystem hash.</param>
+        /// <param name="costMilliseconds">Measured cost in milliseconds.</param>
+        public static void ReportSubsystemCost(uint subsystemHash, float costMilliseconds)
+        {
+            FrameTimeWatchdog.ReportSubsystemCost(subsystemHash, costMilliseconds);
         }
 
         internal static long BeginFaunaArterySample()
@@ -298,9 +324,14 @@ namespace Hecton8.Core
         public void InitializeService()
         {
             GlobalTelemetryBus.Initialize();
+            MathGuard.Initialize();
+            BlackBoxHeartbeatThread.Start();
             GlobalRegistry.RegisterRuntimeWatchdogRuntime(this);
             ResetGcCollectionSentinel();
+            ResetMemorySpikeTracker();
+            ResetRegistryHeartbeatGuard(Time.realtimeSinceStartupAsDouble);
             TryRegisterUpdatable();
+            TryRegisterLateFrameTickable();
         }
 
         private void Awake()
@@ -317,27 +348,41 @@ namespace Hecton8.Core
 
             _nextSampleFrame = Time.frameCount + SampleIntervalFrames;
             _nextMmfHealthCheckTime = Time.realtimeSinceStartupAsDouble + MmfHealthCheckIntervalSeconds;
+            ResetRegistryHeartbeatGuard(Time.realtimeSinceStartupAsDouble);
             GlobalTelemetryBus.Initialize();
+            MathGuard.Initialize();
             ResetGcCollectionSentinel();
+            ResetMemorySpikeTracker();
         }
 
         private void OnEnable()
         {
+            BlackBoxHeartbeatThread.Start();
             TryRegisterUpdatable();
+            TryRegisterLateFrameTickable();
         }
 
         private void Start()
         {
             TryRegisterUpdatable();
+            TryRegisterLateFrameTickable();
         }
 
         private void OnDisable()
         {
-            if (!_registeredUpdatable)
-                return;
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _registeredLateFrameTick = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = false;
+            if (_registeredUpdatable)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+                _registeredUpdatable = false;
+            }
+
+            BlackBoxHeartbeatThread.Stop();
         }
 
         private void OnDestroy()
@@ -354,22 +399,30 @@ namespace Hecton8.Core
                 GlobalRegistry.UnregisterRuntimeWatchdogRuntime(this);
             _watchdogStateFlags = 0u;
             _consecutiveOverBudgetFrames = 0;
+            _lastInputLatencySequence = 0u;
             _lastConsumedMmfHealthGeneration = 0;
             _lastMmfBytes = -1L;
             _lastMmfSectorHash = InvalidMmfSectorHash;
+            _nextRegistryHeartbeatGuardTime = 0d;
+            _lastMemoryBreachFrame = -1;
             ResetGcCollectionSentinel();
+            ResetMemorySpikeTracker();
         }
 
         public void Tick(float deltaTime)
         {
+            BlackBoxHeartbeatThread.Ping();
             int frame = Time.frameCount;
             ConsumeMmfHealthResult();
+            FrameTimeWatchdog.Tick();
             EnforceFrameBudget(deltaTime);
             TickGcCollectionSentinel(deltaTime);
+            TickMemorySpikeTracker(frame);
 
             double now = Time.realtimeSinceStartupAsDouble;
             EnforceHudHeartbeat(now, frame);
             QueueMmfHealthCheckIfDue(now);
+            SampleRegistryHeartbeatsIfDue(now);
 
             if (frame < _nextSampleFrame)
                 return;
@@ -424,6 +477,95 @@ namespace Hecton8.Core
             PublishCriticalGcSpikeNoThrow(_criticalGcSpikeHash, _fastTickSteadyStateHash, delta);
         }
 
+        private void ResetMemorySpikeTracker()
+        {
+            _lastTotalAllocatedMemoryBytes = Profiler.GetTotalAllocatedMemoryLong();
+            _lastMemorySpikeFrame = -1;
+            _lastMemoryBreachFrame = -1;
+            _nextMemorySpikeSampleFrame = Time.frameCount + MemorySpikeSampleIntervalFrames;
+        }
+
+        private void TickMemorySpikeTracker(int frame)
+        {
+            if (frame < _nextMemorySpikeSampleFrame)
+                return;
+
+            _nextMemorySpikeSampleFrame = frame + MemorySpikeSampleIntervalFrames;
+            long currentBytes = Profiler.GetTotalAllocatedMemoryLong();
+            long previousBytes = _lastTotalAllocatedMemoryBytes;
+            long earlyDeltaBytes = currentBytes > previousBytes && previousBytes > 0L ? currentBytes - previousBytes : 0L;
+            uint memoryContextHash = ResolveMemorySpikeFingerprint(previousBytes, currentBytes, earlyDeltaBytes, frame);
+            TriggerMemorySubsystemBreachIfUnsafe(currentBytes, ResolveRuntimeMemorySafeBoundBytes(), frame, memoryContextHash);
+            if (previousBytes <= 0L)
+            {
+                _lastTotalAllocatedMemoryBytes = currentBytes;
+                return;
+            }
+
+            long deltaBytes = currentBytes - previousBytes;
+            _lastTotalAllocatedMemoryBytes = currentBytes;
+            if (deltaBytes <= ResolveScaledByteThreshold(RuntimeMemorySpikeThresholdBytes))
+                return;
+
+            if (_lastMemorySpikeFrame == frame)
+                return;
+
+            _lastMemorySpikeFrame = frame;
+            uint spikeHash = ResolveMemorySpikeFingerprint(previousBytes, currentBytes, deltaBytes, frame);
+            GlobalTelemetryBus.RequestEmergencyFlushAsync();
+            CrashTelemetryBuffer.ReportRuntimeMemorySpike(previousBytes, currentBytes, deltaBytes, spikeHash);
+            float deltaMegabytes = deltaBytes * (1f / (1024f * 1024f));
+            PublishPerformanceWarningNoThrow(_runtimeMemorySpikeHash, spikeHash, deltaMegabytes);
+        }
+
+        private void TriggerMemorySubsystemBreachIfUnsafe(long currentBytes, long safeBoundBytes, int frame, uint contextHash)
+        {
+            if (currentBytes <= safeBoundBytes || _lastMemoryBreachFrame == frame)
+                return;
+
+            _lastMemoryBreachFrame = frame;
+            SuitHUDV4CanvasOverlay.TriggerMemorySubsystemBreach(contextHash);
+            PublishPerformanceWarningNoThrow(
+                _memorySubsystemBreachHash,
+                contextHash,
+                currentBytes * (1f / (1024f * 1024f)));
+        }
+
+        private static long ResolveRuntimeMemorySafeBoundBytes()
+        {
+            long systemMemoryMegabytes = SystemInfo.systemMemorySize;
+            if (systemMemoryMegabytes <= 0L)
+                return 3L * 1024L * 1024L * 1024L;
+
+            long systemMemoryBytes = systemMemoryMegabytes * 1024L * 1024L;
+            long safeBoundBytes = (long)(systemMemoryBytes * 0.75d);
+            return Math.Max(ResolveScaledByteThreshold(RuntimeMemorySpikeThresholdBytes), safeBoundBytes);
+        }
+
+        private static uint ResolveMemorySpikeFingerprint(long previousBytes, long currentBytes, long deltaBytes, int frame)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = MixHash(hash, (uint)frame);
+                hash = MixHash(hash, (uint)previousBytes);
+                hash = MixHash(hash, (uint)(previousBytes >> 32));
+                hash = MixHash(hash, (uint)currentBytes);
+                hash = MixHash(hash, (uint)(currentBytes >> 32));
+                hash = MixHash(hash, (uint)deltaBytes);
+                return MixHash(hash, (uint)(deltaBytes >> 32));
+            }
+        }
+
+        private static uint MixHash(uint hash, uint value)
+        {
+            unchecked
+            {
+                hash ^= value;
+                return hash * 16777619u;
+            }
+        }
+
         private void EnforceFrameBudget(float deltaTime)
         {
             if (deltaTime <= 0f)
@@ -454,6 +596,27 @@ namespace Hecton8.Core
                 _budgetStripHash,
                 _watchdogContextHash,
                 deltaTime * 1000f);
+        }
+
+        public void LateFrameTick()
+        {
+            Signal(RuntimeWatchdogLane.DispatcherLateFrame);
+            BlackBoxHeartbeatThread.Ping();
+            MathGuard.DrainInvalidNumberErrors();
+
+            uint latencySequence = InputLatencyTracker.CompletedSequence;
+            if (latencySequence == _lastInputLatencySequence)
+                return;
+
+            _lastInputLatencySequence = latencySequence;
+            float latencyMs = InputLatencyTracker.SampleCompletedLatencyMs();
+            if (latencyMs <= AwaitableDebtMonitor.LatencyCrimeThreshold)
+                return;
+
+            GlobalTelemetryBus.PublishInputLagWarning(latencyMs);
+            CrashTelemetryBuffer.ReportLatencyCrime(
+                AwaitableDebtMonitor.PendingNextFrameContinuations,
+                latencyMs);
         }
 
         private static void ForceFaunaEmergencyColdTick(float elapsedMilliseconds)
@@ -546,6 +709,44 @@ namespace Hecton8.Core
                 return;
 
             Canvas.ForceUpdateCanvases();
+        }
+
+        private void ResetRegistryHeartbeatGuard(double now)
+        {
+            Array.Clear(_registryHeartbeatTicks, 0, _registryHeartbeatTicks.Length);
+            Array.Clear(_registryHeartbeatActive, 0, _registryHeartbeatActive.Length);
+            _nextRegistryHeartbeatGuardTime = now + RegistryHeartbeatGuardIntervalSeconds;
+        }
+
+        private void SampleRegistryHeartbeatsIfDue(double now)
+        {
+            if (now < _nextRegistryHeartbeatGuardTime)
+                return;
+
+            _nextRegistryHeartbeatGuardTime = now + RegistryHeartbeatGuardIntervalSeconds;
+            for (int slot = 0; slot < RegistryHeartbeatSlotCount; slot++)
+            {
+                object service = GlobalRegistry.ResolveRegisteredServiceForHeartbeat((GlobalRegistryServiceSlot)slot);
+                if (!(service is IServiceHeartbeat heartbeat) ||
+                    !heartbeat.IsServiceReady ||
+                    heartbeat.HeartbeatState == ServiceHeartbeatState.Failed ||
+                    heartbeat.HeartbeatState == ServiceHeartbeatState.Shutdown)
+                {
+                    _registryHeartbeatActive[slot] = 0;
+                    _registryHeartbeatTicks[slot] = 0;
+                    continue;
+                }
+
+                int tickCount = heartbeat.TickCount;
+                if (_registryHeartbeatActive[slot] != 0 && _registryHeartbeatTicks[slot] == tickCount)
+                {
+                    GlobalTelemetryBus.PublishRegistryHeartbeatStale((uint)slot, unchecked((uint)tickCount));
+                    PublishPerformanceWarningNoThrow(_registryHeartbeatStaleHash, (uint)slot, 1f);
+                }
+
+                _registryHeartbeatTicks[slot] = tickCount;
+                _registryHeartbeatActive[slot] = 1;
+            }
         }
 
         private void QueueMmfHealthCheckIfDue(double now)
@@ -767,7 +968,7 @@ namespace Hecton8.Core
                     continue;
                 }
 
-                WriteDeadlockTraceDump(laneIndex, currentCounter, now - lastChange);
+                GlobalTelemetryBus.RequestEmergencyFlushAsync();
                 Application.Quit(-1);
                 return;
             }
@@ -797,140 +998,9 @@ namespace Hecton8.Core
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                UnityEngine.Debug.LogException(exception);
+                H8Debug.LogException(exception);
 #endif
                 return false;
-            }
-        }
-
-        private static void WriteDeadlockTraceDump(int laneIndex, int counter, double stalledSeconds)
-        {
-            try
-            {
-                string directory = ResolveExecutableAdjacentDirectory();
-                Directory.CreateDirectory(directory);
-                string fileName = DeadlockTraceFilePrefix +
-                                  DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_fff", CultureInfo.InvariantCulture) +
-                                  DeadlockTraceFileExtension;
-                string path = Path.Combine(directory, fileName);
-                string stackTrace = new StackTrace(0, true).ToString();
-
-                if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
-                {
-                    File.WriteAllText(path, stackTrace);
-                    return;
-                }
-
-                try
-                {
-                    int length = 0;
-                    char[] buffer = lease.Buffer;
-                    AppendLiteral(buffer, ref length, "HECTON8_RUNTIME_WATCHDOG_DEADLOCK");
-                    AppendLine(buffer, ref length);
-                    AppendLiteral(buffer, ref length, "frame=");
-                    AppendInt(buffer, ref length, Time.frameCount);
-                    AppendLiteral(buffer, ref length, " lane=");
-                    AppendInt(buffer, ref length, laneIndex);
-                    AppendLiteral(buffer, ref length, " counter=");
-                    AppendInt(buffer, ref length, counter);
-                    AppendLiteral(buffer, ref length, " stalledSeconds=");
-                    AppendDouble(buffer, ref length, stalledSeconds);
-                    AppendLine(buffer, ref length);
-                    AppendLiteral(buffer, ref length, "mainThreadStack:");
-                    AppendLine(buffer, ref length);
-
-                    File.WriteAllText(path, new string(buffer, 0, length));
-                    File.AppendAllText(path, stackTrace);
-                }
-                finally
-                {
-                    CharBufferPool.Release(lease);
-                }
-            }
-            catch (Exception exception)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                UnityEngine.Debug.LogException(exception);
-#endif
-            }
-        }
-
-        private static string ResolveExecutableAdjacentDirectory()
-        {
-            if (!string.IsNullOrEmpty(_deadlockTraceDirectory))
-                return _deadlockTraceDirectory;
-
-            DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
-            _deadlockTraceDirectory = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
-            return _deadlockTraceDirectory;
-        }
-
-        private static void AppendLiteral(char[] buffer, ref int length, string value)
-        {
-            if (buffer == null || string.IsNullOrEmpty(value))
-                return;
-
-            for (int i = 0; i < value.Length && length < buffer.Length; i++)
-                buffer[length++] = value[i];
-        }
-
-        private static void AppendLine(char[] buffer, ref int length)
-        {
-            if (buffer == null || length >= buffer.Length)
-                return;
-
-            buffer[length++] = '\n';
-        }
-
-        private static void AppendInt(char[] buffer, ref int length, int value)
-        {
-            if (buffer == null || length >= buffer.Length)
-                return;
-
-            if (value == 0)
-            {
-                buffer[length++] = '0';
-                return;
-            }
-
-            if (value < 0)
-            {
-                buffer[length++] = '-';
-                value = -value;
-            }
-
-            int start = length;
-            while (value > 0 && length < buffer.Length)
-            {
-                int digit = value % 10;
-                buffer[length++] = (char)('0' + digit);
-                value /= 10;
-            }
-
-            int end = length - 1;
-            while (start < end)
-            {
-                char temp = buffer[start];
-                buffer[start] = buffer[end];
-                buffer[end] = temp;
-                start++;
-                end--;
-            }
-        }
-
-        private static void AppendDouble(char[] buffer, ref int length, double value)
-        {
-            if (buffer == null || length >= buffer.Length)
-                return;
-
-            int available = buffer.Length - length;
-            if (value.TryFormat(
-                    buffer.AsSpan(length, available),
-                    out int charsWritten,
-                    "0.000",
-                    CultureInfo.InvariantCulture))
-            {
-                length += charsWritten;
             }
         }
 
@@ -943,7 +1013,7 @@ namespace Hecton8.Core
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                UnityEngine.Debug.LogException(exception);
+                H8Debug.LogException(exception);
 #endif
             }
         }
@@ -957,7 +1027,7 @@ namespace Hecton8.Core
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                UnityEngine.Debug.LogException(exception);
+                H8Debug.LogException(exception);
 #endif
             }
         }
@@ -969,6 +1039,14 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
     }
 }

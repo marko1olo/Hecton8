@@ -233,9 +233,6 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             SAMPLER(sampler_SargassumCutMaskRT);
             TEXTURE2D(_HectonShallowWaterFieldRT);
             SAMPLER(sampler_HectonShallowWaterFieldRT);
-            TEXTURE2D(_BlueNoiseTex);
-            SAMPLER(sampler_BlueNoiseTex);
-            float4 _BlueNoiseTex_TexelSize;
 
             struct Attributes
             {
@@ -488,16 +485,15 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
-            float ResolveVegetationBlueNoise(float4 positionCS)
+            float ResolveVegetationIgn(float4 positionCS)
             {
                 float2 pixel = floor(positionCS.xy);
-                float fallback = InterleavedGradientNoise(pixel);
-                float useBlueNoise = step(0.0001, _BlueNoiseTex_TexelSize.z) * step(0.0001, _BlueNoiseTex_TexelSize.w);
-                float2 r2Offset = frac(floor(_Time.y * 60.0) * float2(0.75487766, 0.56984029));
-                float2 texelScale = lerp(float2(1.0 / 64.0, 1.0 / 64.0), _BlueNoiseTex_TexelSize.xy, useBlueNoise);
-                float2 blueNoiseUV = frac(pixel * texelScale + r2Offset);
-                float sampled = SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r;
-                return lerp(fallback, sampled, useBlueNoise);
+                return InterleavedGradientNoise(pixel);
+            }
+
+            half ResolveLodDitherCoverage(half ignNoise, float lodAlpha)
+            {
+                return (half)step(ignNoise, saturate(lodAlpha));
             }
 
             half ResolveVegetationVisibilityGate(half signal, half threshold, half feather)
@@ -1591,8 +1587,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                half screenIgn = (half)ResolveVegetationIgn(input.positionCS);
                 half cutMask = ResolveVegetationCutMask(input.instanceType, input.positionWS);
                 half coverageVisibility = ResolveVegetationVisibilityGate(0.08h - cutMask, 0.0h, 0.025h);
+                coverageVisibility *= ResolveLodDitherCoverage(screenIgn, input.lodAlpha);
 
                 half porousCoverageMask = input.instanceType > 1.5h ? ResolveSargassumPorousCoverage(input.positionWS, input.heightMask) : 1.0h;
                 if (input.instanceType > 1.5h)
@@ -1790,7 +1788,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half fogBlend = saturate(input.fogFactor * lerp(1.0h, 1.25h, abyssFactor));
                 finalColor = lerp(finalColor, abyssFogColor, fogBlend);
 #if defined(_QUALITY_MX350)
-                half ditherOffset = (half)((ResolveVegetationBlueNoise(input.positionCS) - 0.5) * (1.0 / 255.0));
+                half ditherOffset = (half)((screenIgn - 0.5) * (1.0 / 255.0));
                 finalColor = max(finalColor + ditherOffset, half3(0.0015h, 0.0023h, 0.0031h));
 #endif
                 coverageVisibility = saturate(coverageVisibility);

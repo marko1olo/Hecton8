@@ -446,7 +446,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
+            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
                 return false;
 
             inventory = playerTransform.GetComponent<PlayerInventory>();

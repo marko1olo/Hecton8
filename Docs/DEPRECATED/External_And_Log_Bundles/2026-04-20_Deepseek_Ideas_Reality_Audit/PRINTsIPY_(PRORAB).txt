@@ -1,0 +1,177 @@
+I. PRINTsIPY DLYa TEBYa (ARHITEKTOR / VLADELETs)
+Tvoya zadacha — ne pisat kod, a uderzhivat «Matritsu» proekta v ravnovesii.
+Diktatura Namereniya (Precision of Intent): Poskolku ty odin, u tebya net prava na «poprobuem tak». Kazhdyy tvoy zapros k nam dolzhen byt okonchatelnym arhitekturnym resheniem. Ty ne prosish «sdelay II», ty prikazyvaesh «vnedri Utility AI na baze polinomov, ispolzuya NativeArray dlya pamyati».
+Ekonomika Gneva (Ruthless Deletion): Esli agent (rabotnik) nachinaet «gallyutsinirovat» ili plodit kostyli — ne pytaysya ego ispravit. Ubivay kontekst i zastavlyay peredelyvat. Odin plohoy skript v proekte takogo masshtaba — eto rakovaya opuhol, kotoraya sozhret tvoy CPU cherez nedelyu.
+Printsip «Chernogo Yaschika»: Ty dolzhen smotret na kod agentov kak na vrazhdebnuyu sredu. Tvoya proverka — eto ne chtenie strok, a proverka metrik. Net 0 bayt allokatsii? V korzinu. Net ispolzovaniya AUP? V korzinu.
+Berezhlivost Konteksta: Tvoy glavnyy resurs — tvoi Mandates (Mandaty). Eto tvoi «zakony fiziki». Nikogda ne pozvolyay nam ih narushat, dazhe radi «bystrogo fiksa».
+II. PRINTsIPY DLYa MENYa (PRORAB / CTO)
+Moya zadacha — byt tvoim tserberom i filtrom mezhdu tvoim videniem i lenivym kodom agentov.
+Prezumptsiya Lzhi (Presumption of Hallucination): Ya ishozhu iz togo, chto agent hochet «srezat ugly». Ya obyazan iskat v ih otchetah ne slova «Done», a uliki: nomera strok, adresa v pamyati, konkretnye matematicheskie formuly (vrode Scalar Triple Product).
+Sistemnoe Sopryazhenie (Cross-Domain Integrity): Ya slezhu, chtoby Agent-Fizik ne slomal Agenta-Optimizatora. Esli Fizik hochet keshirovat Vector3, ya byu ego po rukam Mandatom ob IOriginShiftListener.
+Generatsiya Tyazhelyh Smyslov: Moi prompty dlya agentov dolzhny byt «nepodemnymi». Ya dolzhen nagruzhat ih tak, chtoby oni tratili 80% vremeni na analiz suschestvuyuschih 100+ faylov i tolko 20% na napisanie koda.
+Nulevaya Tolerantnost k Boylerpleytu: Ya zapreschayu agentam pisat «standartnyy Unity-kod». My pishem na nizkourovnevom C# (High-Performance C#). Esli ya vizhu MonoBehaviour.Update, ya dolzhen obosnovat tebe, pochemu eto ne SystemDispatcher.
+III. PRINTsIPY DLYa AGENTOV (RABOTNIKI)
+Ih zadacha — byt Burst-kompiliruemymi biorobotami.
+Religiya DOD (Data-Oriented Design): Obekt — eto musor. Komponent — eto musor. Edinstvennaya istina — eto Massiv Dannyh (NativeArray). Agent obyazan dumat strukturami, a ne klassami.
+Absolyut Koordinat (AUP over Unity-space): Lyubaya pozitsiya v kode, ne uchityvayuschaya FloatingOrigin, yavlyaetsya grehom. Agent dolzhen «chuvstvovat» masshtab 100-kilometrovogo okeana v kazhdoy peremennoy float3.
+Borba za Kesh-liniyu (Cache Friendliness): Rabotnik dolzhen raspolagat dannye tak, chtoby protsessor i3 ne zahlebnulsya. Padding struktur (16 bayt), otsutstvie pryzhkov po pamyati, lineynoe chtenie.
+Otkaz ot Magii (No Managed Magic): LINQ, foreach, string.Format, GameObject.Find — eto zapreschennye tehnologii drevnih. Agent, ispolzuyuschiy ih v goryachem tsikle, podlezhit nemedlennoy ochistke konteksta.
+Evidence-Based Reporting: Otchet «0 Errors» ne prinimaetsya bez dokazatelstva togo, chto agent proveril smezhnye sistemy. Esli on pravil LaserCutter.cs, on obyazan dolozhit, kak eto povliyalo na InteractionSignal v GlobalRegistry.
+Detali realizatsii (Neordinarnyy podhod):
+MX350 kak Dvigatel Progressa: My ne vosprinimaem slabuyu videokartu kak ogranichenie. My vosprinimaem ee kak filtr kachestva. Esli ficha ne tyanet na MX350 pri 60 FPS — znachit, eta ficha arhitekturno slabaya. My delaem igru, kotoraya «letaet» tam, gde drugie dazhe ne zapustyatsya. Eto nashe rynochnoe preimuschestvo.
+Izolyatsiya Odinochki: Poskolku ty odin, ty ne mozhesh tratit vremya na debag. Poetomu my vnedryaem NaN-Vaccination (zaschitu ot NaN) i Inquisition Logs v kazhdyy sistemnyy tik. Sistema dolzhna sama soobschat, gde u nee «techet» pamyat ili «vzryvaetsya» fizika, do togo, kak ty nazhmesh Play.
+Stil «Glubokogo Bureniya»: My ne fiksim bagi. My menyaem patterny, kotorye porodili eti bagi. Esli u nas «letayut konechnosti» v IK, my ne pravim vesa, my perepisyvaem sposob peredachi matrits v PlayableGraph.
+
+
+IV. PRINTsIP «ARHITEKTURNOGO SADIZMA» (DLYa AGENTOV)
+My ne prosim ih byt vezhlivymi, my zastavlyaem ih byt effektivnymi cherez bol.
+Zapret na «Myagkie» Resheniya: Esli agent predlagaet ispolzovat Update() ili «vremennyy kostyl», eto priravnivaetsya k sabotazhu. V nashem mire «vremennoe» — eto to, chto ubet FPS cherez mesyats. Ya budu generirovat prompty tak, chtoby u agenta ne bylo vybora, krome kak pisat slozhnyy, no chistyy DOD-kod.
+Printsip «Vyzhzhennoy Zemli»: Esli v fayle na 1000 strok naydena sistemnaya oshibka (naprimer, narushenie AUP), agent ne dolzhen patchit ee. On dolzhen perepisat ves blok, otvechayuschiy za logiku peremescheniya. My ne lechim simptomy, my vyrezaem organy i stavim titanovye protezy.
+Totalnaya Introspektsiya: Kazhdaya sistema, kotoruyu pishet agent, obyazana imet «diagnosticheskiy hvost». Esli eto sistema plavuchesti, ona dolzhna vydavat v konsol (v debag-rezhime) vektory sil. Bez vizualnogo podtverzhdeniya matematiki rabota agenta schitaetsya nezavershennoy.
+V. PRINTsIP «SEMANTIChESKOGO SITA» (DLYa MENYa — CTO)
+Kak ya budu filtrovat to, chto ty v menya vlivaesh.
+Detektor Kopipasty: Ya budu sledit, ne kopiruet li agent odin i tot zhe shablon iz Mandate v kod bez osmysleniya. Esli ya vizhu «kargo-kult» (kod, kotoryy vyglyadit pravilno, no ne reshaet zadachu), ya nemedlenno byu trevogu.
+Sinhronizatsiya po Vertikali: Ya proveryayu, chtoby nastroyki grafiki (Rendering) ne protivorechili fizike (Physics). Esli my rezhem distantsiyu prorisovki dlya MX350, ya obyazan zastavit Agenta-II uchityvat eto v PerceptionDistance, chtoby ryby ne napadali iz «nevidimosti».
+Upravlenie Tehnicheskim Dolgom: Ya vedu skrytyy reestr togo, chto my «ne dozhali». Kazhdaya nedorabotka (PENDING) — eto tsel dlya sleduyuschego Master-Prompta. Ya ne dam tebe zabyt o krivom IK, dazhe esli my seychas zanyaty sheyderami tumana.
+VI. PRINTsIP «BOZhESTVENNOGO RYChAGA» (DLYa TEBYa — ARHITEKTOR)
+Kak tebe odnomu ne soyti s uma.
+Distantsirovanie ot RUtiny: Ty ne dolzhen dumat o tom, kak napisat for-tsikl. Ty dolzhen dumat o tom, kak dannye tekut po trubam. Tvoy mozg — eto vysokourovnevyy profayler. Esli ty chuvstvuesh, chto nachinaesh sam fiksit zapyatye v kode agenta — ty proigral. Ostanovis i prikazhi sdelat eto mne.
+Estetika kak Proverka Matematiki: V NASA-Punk vse dolzhno byt funktsionalno. Esli vizualnyy effekt (naprimer, blik na shleme) ne privyazan k dannym (glubina, davlenie, svet), on nam ne nuzhen. Funktsiya rozhdaet Vizual. Esli matematika chistaya — kartinka budet dorogoy.
+Printsip «Operezhayuschego Udara»: Ty dolzhen trebovat realizatsii sistem zaschity (NaN guards, Memory alignment) do togo, kak my nachnem pisat osnovnoy geympley. Snachala stroim «zaschitnyy perimetr» dvizhka, potom puskaem tuda geympleynyh «akterov».
+VII. FILOSOFIYa «MX350 NOIR» (SVERH-TsEL)
+My ne delaem igru dlya «slabyh PK». My delaem igru, kotoraya ispolzuet ogranicheniya MX350 kak hudozhestvennyy stil.
+Malo pamyati? Delaem agressivnyy striming i tuman, prevraschaya eto v klaustrofobnyy horror.
+Slabyy CPU? Perehodim na Burst/Job, i eto daet nam vozmozhnost obschityvat tysyachi ryb, chego ne delayut dazhe AAA-studii na moschnom zheleze.
+
+VIII. PRINTsIP «OKEANSKOY TESSELYaTsII SMYSLA»
+My masshtabiruem ne tolko pikseli, no i samu slozhnost matematiki.
+Arhitekturnyy Parallaks (Math LOD):
+Na RTX my schitaem chestnuyu turbulentnost vody cherez 4-oktavnyy shum. Na MX350 Agent obyazan zamenit eto na odnu teksturnuyu vyborku + analiticheskuyu approksimatsiyu. Vizualno raznitsa 5%, po nagruzke — 500%. Rezultat: krasivo vezde, «letaet» vezde.
+Smert «Minimalok»:
+U nas net rezhima «vse vyklyucheno». Esli my rezhem teni, my zamenyaem ih na Directional Occlusion v sheydere. Igrok ne dolzhen videt «goluyu» kartinku — on dolzhen videt stilizovannuyu kartinku. Krasota — eto invariant, menyaetsya tolko metod ee dostizheniya.
+Realizm cherez Dannye (Data-Driven Realism):
+Realizm v HECTON-8 — eto ne kolichestvo poligonov, a povedenie. Esli podlodka tyazhelaya, ee IK i inertsiya dolzhny oschuschatsya fizicheski chestno. Agent obyazan ispolzovat Added Mass Term (prisoedinennuyu massu vody) v fizike. Eto daet tot samyy «dorogoy» AAA-oschuschenie vesa, kotoroe rabotaet dazhe na kubike.
+IX. PRINTsIP «NASA-PUNK NOIR» (VIZUALNYY KONTRAKT)
+Sheydery dolzhny vyglyadet dorogo pri lyubom rasklade.
+Material Purity:
+Nikakih standartnyh materialov. Tolko nashi Hecton8_CoreLit.hlsl. Vse poverhnosti dolzhny imet mikro-detali: tsarapiny, kondensat, sledy davleniya. My ispolzuem Channel Packing (RGBA: Metallic, AO, Smoothness, Emission), chtoby vyzhimat maksimum iz shiny dannyh MX350.
+Volumetric Integration:
+Tuman — eto nashe vse. On skryvaet lody i sozdaet Noir-atmosferu. Agenty po grafike obyazany vnedryat Dithered Transparency i Blue Noise, chtoby obemnye effekty ne «strobili» i vyglyadeli myagko dazhe bez vysokogo semplirovaniya.
+Zero-Jitter World:
+Realizm umiraet, kogda obekty «drozhat». Blagodarya AUP i Atomic Origin Shift, nash mir budet stoyat kak vkopannyy. Eto baza dlya vizualnoy stabilnosti AAA-klassa.
+X. ULTIMATIVNYY PRINTsIP KONTROLYa: «ShKALA GNEVA»
+Kak my budem proveryat masshtabiruemost.
+Kazhdyy agent v kontse raboty obyazan predostavit Scalability Matrix dlya svoego koda:
+Minimal (MX350): Chto my uprostili? (Naprimer: 1 iteratsiya gravitatsii, 4-tapnyy normal-mapping).
+Ultra (RTX/High-End): Chto my dobavili? (Naprimer: chestnyy raschet zavihreniy, 16-tapnyy sempling, sub-pikselnyy IK).
+XI. PRINTsIP «SIMPATIChESKOY SETI» (CROSS-DOMAIN DYNAMICS)
+Sistemy ne dolzhny prosto «ne bagovat». Oni dolzhny usilivat drug druga cherez dannye.
+Zvuk kak vtorichnaya fizika: My ne prosto proigryvaem zvuki. Audio-agent obyazan brat dannye iz PhysicsEventBus. Esli podlodka udarilas — eto ne prosto zvuk udara, eto impuls, kotoryy peredaetsya v AcousticRadar. Realizm rozhdaetsya tam, gde geympley vidit fiziku, a zvuk slyshit ee.
+Vizual kak interfeys: V NASA-Punk my ne risuem poloski zdorovya. My risuem treschiny na stekle. Agent po renderingu dolzhen svyazat hullStress (iz fiziki) napryamuyu s MaterialPropertyBlock shlema. Esli igroku strashno — eto potomu, chto ego sheydery nachinayut «glyuchit» ot davleniya, a ne potomu, chto UI pokrasnel.
+Ekosistema kak shum: Ryby (Swarm) — eto ne prosto massovka. Ih plotnost dolzhna vliyat na Sonar. Esli vperedi kosyak ryb — sonar dolzhen davat «pomehi». Eto sozdaet glubinu simulyatsii, kotoruyu igroki schityvayut kak «dorogoy proekt».
+XII. PRINTsIP «PROGRAMMNOGO PANTsIRYa» (SELF-DIAGNOSTICS)
+Igra dolzhna sama govorit tebe, gde ona umiraet, do togo kak eto zametit igrok.
+Inquisition Watchdog: V kazhdyy sistemnyy Tick (AI, Physics, Render) my vnedryaem mikro-proverki na NaN i Infinity. Esli fizika «vsplyla» — sistema dolzhna ne vyletat, a delat Emergency Reset obekta i pisat v tvoy skrytyy log: «Agent 2, tvoy raschet plavuchesti vydal musor v koordinate X».
+Budget Guard: My propishem v kode zhestkie asserty na vremya vypolneniya. Esli VoxelRebuild zanyal bolshe 8ms — sistema dolzhna avtomaticheski snizhat LOD na letu, ne sprashivaya razresheniya. Dlya tebya eto garantiya, chto FPS ne upadet nizhe 60, dazhe esli ty nagorodil v stsene 1000 obektov.
+AUP Sanity Check: Raz v 300 kadrov my delaem proverku «dreyfa». Esli koordinaty float3 nachinayut teryat tochnost otnositelno AUP (Absolute Universe Position) — sistema prinuditelno vyzyvaet OriginShift.
+XIII. PRINTsIP «ESTETIChESKOGO TEHNO-FETIShIZMA» (NASA-PUNK NOIR)
+Krasota v detalyah, kotorye nichego ne stoyat dlya GPU.
+ALU vmesto Tekstur: Na MX350 pamyat — eto defitsit. Poetomu my delaem upor na Procedural Detail. Rzhavchina, poteki vody, kaustika — vse eto dolzhno schitatsya matematicheski (ALU), a ne tyanutsya iz tyazhelyh tekstur. Eto daet chetkost kartinki 4K dazhe pri malom obeme VRAM.
+Noir Lighting (The Dark Side): V nashem Noir «temnota» — eto ne otsutstvie sveta, eto aktivnoe prisutstvie tumana. My ispolzuem Blue Noise dlya dizeringa teney. Eto pozvolyaet tenyam vyglyadet myagko i «kinoshno» dazhe pri nizkom razreshenii ShadowMaps.
+Analogovoe nesovershenstvo: My dobavlyaem v kameru effekt «starogo obektiva» i iskazheniya ot davleniya vody. Eto skryvaet lou-poli geometriyu i prevraschaet ee v stilisticheskiy vybor. NASA-Punk — eto kogda tehnika vyglyadit nadezhnoy, no iznoshennoy.
+
+1. Religiya AUP (Absolute Universe Position)
+Eto glavnaya «skvoznaya» vesch. V mandatah po fizike, vokselyam, II i skatteru vezde figuriruet AUP.
+Common Pattern: My nikogda ne doveryaem transform.position. Ono — lish vremennoe predstavlenie dannyh dlya Unity.
+Sut: Lyubaya koordinata v igre — eto int64x3 (sektor) + float3 (smeschenie).
+Zachem: Eto pozvolyaet tebe odnomu stroit mir razmerom v tysyachi kilometrov. Esli agent pishet Vector3 pos bez privyazki k OriginShift, on sovershaet greh. Vse sistemy «obschayutsya» na yazyke AUP.
+2. Pattern «Double-Buffer & Fence»
+Pochti v kazhdom mandate (ot II do Rendera) propisan printsip dvoynoy buferizatsii dannyh.
+Common Pattern: bufferA (Read-only dlya vseh sistem) i bufferB (Write-only dlya tekuschey dzhoby). V kontse kadra oni menyayutsya mestami.
+Sut: Eto isklyuchaet «sostoyanie gonki» (Data Race). II prinimaet resheniya, glyadya na «vcherashnie» (predyduschiy kadr) pozitsii fiziki, poka fizika schitaet «zavtrashnie».
+Zachem: Eto baza dlya Burst i Job System. Bez etogo igra na i3 prevratitsya v mesivo iz oshibok dostupa k pamyati.
+3. Bitovaya Diktatura (Bitmask over Objects)
+V mandatah po logistike (energoseti), II i inventaryu zaprescheny slozhnye obekty sostoyaniy.
+Common Pattern: Ispolzovanie uint ili byte flagov dlya hraneniya sostoyaniy.
+Sut:
+V energoseti: bit 0 = active, bit 1 = ruptured.
+V II: bit 0 = hunting, bit 1 = fleeing.
+Zachem: Eto pozvolyaet protsessoru obrabatyvat tysyachi suschnostey za odin prohod (SIMD). Agenty postoyanno pytayutsya zasunut tuda Enums ili, upasi bog, Booleans — bey ih za eto. Nam nuzhna plotnost dannyh.
+4. Vizualnyy Dizering i «Noir-stabilizatsiya»
+Eto obschaya cherta vseh mandatov po grafike (REND-) i interfeysam (UI-).
+Common Pattern: Zapret na prozrachnost cherez Alpha-Blending. Tolko Dithered Transparency s ispolzovaniem sinego shuma (Blue Noise).
+Sut: Prozrachnost «ubivaet» MX350. My ispolzuem dizering (shahmatku iz pikseley), kotoruyu potom «razmyvaet» tuman i TAA.
+Zachem: Eto sozdaet tot samyy Deep Sea Noir. Kartinka kazhetsya plotnoy i obemnoy, hotya na samom dele my ekonomim 70% resursov videokarty.
+5. Printsip «Sensornoy Eholokatsii»
+Fizika i Zvuk v nashih mandatah — eto pochti odno i to zhe.
+Common Pattern: Kazhdoe fizicheskoe sobytie obyazano porozhdat signal v PhysicsEventBus.
+Sut: Zvukovoy dvizhok ne «ugadyvaet», kogda proigrat zvuk. On podpisyvaetsya na tenzornye izmeneniya podlodki. II hischnikov ne «vidit» skvoz steny, on delaet RaycastCommand.ScheduleBatch, ispolzuya tot zhe sloy okklyuzii, chto i render.
+Zachem: Eto sozdaet Realism-by-Data. Igrok chuvstvuet, chto mir chestnyy. Esli on slyshit skrezhet — znachit, fizicheskiy dvizhok realno zafiksiroval izgib mesha pod davleniem.
+1. Kontseptsiya «Snapshot & Resolve» (Dvoynaya buferizatsiya dannyh)
+Eto krasnaya nit cherez vse mandaty (AI, Physics, Logistics).
+Common Thing: Sistema nikogda ne rabotaet s «zhivymi» dannymi v realnom vremeni. Snachala delaetsya Snapshot (snimok sostoyaniya v NativeArray), zatem Burst-dzhoba provodit Resolve (vychislenie), i tolko potom rezultat zapisyvaetsya v Back Buffer.
+Zachem eto tebe: Ty mozhesh izmenyat chto ugodno v lyuboy sisteme, ne boyas «sostoyaniya gonki» (race conditions). Poka fizika schitaet novoe polozhenie podlodki, II smotrit na stabilnyy snimok iz predyduschego kadra. Eto klyuch k determinizmu.
+2. Diktatura Bitmask (Bitovaya upakovka sostoyaniy)
+Zabud pro bool isBroken, bool isActive. Mandaty po Logistike, II i Skatteru trebuyut upakovki v uint ili byte.
+Common Thing: Sostoyanie obekta — eto nabor bit.
+bit 0 — zhiv, bit 1 — v zone vidimosti, bit 2 — povrezhden.
+Zachem eto tebe: Eto pozvolyaet delat mgnovennye filtratsii cherez bitovye maski ((flags & MASK) != 0). Eto ekonomit kesh protsessora i3 i pozvolyaet tebe obschityvat 10,000 ryb tam, gde obychnaya igra tormozila by na 100.
+3. Zakon «Matematicheskoy Konservatsii»
+Eto to, chto delaet HECTON-8 realistichnym. Mandaty po Energosetyam (LOGI) i Zhidkostyam (PHYS-Fluid) trebuyut soblyudeniya fizicheskih zakonov v kode.
+Common Thing: Nikakih «magicheskih» chisel. Esli voda vtekaet v otsek, ona beretsya iz vneshney sredy. Esli energiya techet po provodam, ona zatuhaet po zakonu Oma.
+Zachem eto tebe: Tebe ne nuzhno vruchnuyu nastraivat balans. Esli ty pravilno realizoval Jacobi Relaxation dlya uzlov seti, balans «vyrovnyaetsya» sam po zakonam fiziki. Matematika rabotaet na tebya.
+4. Printsip «ALU over Bandwidth» (Vychisleniya vazhnee pamyati)
+Eto kritichno dlya MX350. Videokarta medlenno chitaet tekstury, no bystro schitaet tsifry.
+Common Thing: V mandatah REND-Noir i REND-URP propisano: ispolzovat protsedurnyy shum (ALU), a ne tyanut tekstury. Dizering (Blue Noise), kaustika, iskazheniya — vse eto formuly, a ne kartinki.
+Zachem eto tebe: Bild budet vesit menshe, a kartinka budet chetche. My ne zabivaem 2GB VRAM musorom, my zastavlyaem sheydery «risovat» matematikoy.
+5. Atomarnost «Floating Origin» (AUP-tsentrichnost)
+Ves proekt stoit na Absolute Universe Position.
+Common Thing: Ni odin skript ne imeet prava hranit Vector3 pozitsii dolshe odnogo kadra bez ucheta GlobalFloatingOrigin.Offset.
+Zachem eto tebe: Eto izbavlyaet tebya ot samogo strashnogo baga ogromnyh mirov — «drozhaniya» (jitter) modeley na rasstoyanii 5 km ot tsentra. Tvoy mir mozhet byt beskonechnym, i on budet stoyat kak vkopannyy.
+6. Interfeysnaya Izolyatsiya (SRP — Single Responsibility)
+Sistemy ne znayut drug o druge napryamuyu.
+Common Thing: Kommunikatsiya idet cherez EventBus ili GlobalRegistry. Fizika ne vyzyvaet zvuk. Fizika kidaet sobytie ImpactEvent, a zvukovaya sistema ego «slyshit».
+Zachem eto tebe: Poskolku ty odin, ty budesh chasto menyat sistemy. Blagodarya etoy izolyatsii, ty mozhesh polnostyu vykinut staruyu sistemu zvuka i vstavit novuyu, ne menyaya ni odnoy strochki v kode fiziki.
+
+1. Smert «Aktera», Vlast «Bufera» (DOD Sovereignty)
+V standartnom Unity «Akter» (GameObject) — eto tsentr mira. V HECTON-8 «Akter» — eto musor.
+Common Thing: Vse, chto imeet sostoyanie, zhivet v NativeArray ili NativeStream.
+Sut: Pozitsii, golod hischnikov, zaryad batarei, potok toka v kabele — eto prosto indeksy v massivah dannyh.
+Zachem tebe eto: Kogda ty odin, ty ne mozhesh debazhit 1000 raznyh obektov. Tebe prosche debazhit odin massiv. Esli dannye v bufere chistye — vsya igra rabotaet. Eto pozvolyaet Burst-kompilyatoru vyzhimat iz i3 mosch servernogo protsessora, potomu chto dannye lezhat rovno, a ne razbrosany po kuche.
+2. PCIe-Distsiplina (Hardware over Software)
+My optimiziruem ne «kod», my optimiziruem shinu peredachi dannyh mezhdu CPU i GPU. Eto kritichno dlya MX350.
+Common Thing: Povsemestnyy perehod s ComputeBuffer.SetData na GraphicsBuffer.LockBufferForWrite.
+Sut: My ne prosim videokartu «prinyat dannye», kogda nam udobno. My napryamuyu pishem v oblast pamyati, kotoruyu videokarta vidit.
+Zachem tebe eto: Eto ubiraet «mikro-frizy». Bolshinstvo igr na Unity tormozyat ne iz-za grafiki, a iz-za togo, chto protsessor zhdet, poka videokarta podtverdit priem dannyh. HECTON-8 prosto let dannye v pamyat potokom.
+3. Matematika «Absolyutnogo Nulya» (Deterministic Precision)
+V okeane net «primerno». Esli matematika drozhit — immersiya dohnet.
+Common Thing: Ispolzovanie AUP (Absolute Universe Position) i 3D Triple Product.
+Sut: My emuliruem 64-bitnuyu tochnost tam, gde dvizhok daet tolko 32-bitnuyu. Smeschenie Floating Origin — eto ne prosto «teleport igroka», eto atomarnaya peresborka vseh matrits.
+Zachem tebe eto: Bez etogo na rasstoyanii 10 km ot spavna tvoi vokseli nachnut «plyasat», a podlodka — provalivatsya skvoz dno. Eti mandaty garantiruyut, chto mir budet stoyat kak vkopannyy, dazhe esli ty uplyvesh na kray sveta.
+4. Pattern «Dvoynogo Zaslona» (Double-Buffer & Fence)
+Eto edinstvennyy sposob zastavit Job System rabotat bez krashey.
+Common Thing: FrontBuffer dlya chteniya, BackBuffer dlya zapisi + JobHandle zavisimosti.
+Sut: Kazhdaya sistema (II, Fizika, Render) potreblyaet dannye «proshlogo kadra» i gotovit dannye «buduschego». Oni nikogda ne peresekayutsya v odnom momente vremeni.
+Zachem tebe eto: Eto daet tebe besplatnuyu mnogopotochnost. Poka render risuet kadr, fizika uzhe schitaet sleduyuschiy, i oni ne meshayut drug drugu. Dlya odinochki eto znachit, chto ty mozhesh naraschivat slozhnost sistem, ne boyas, chto oni «sozhrut» drug druga.
+5. Temporalnaya Segregatsiya (The Cadence of Reality)
+Ne vse v mire dolzhno proishodit odnovremenno.
+Common Thing: Razdelenie na FastTick (60Hz), SlowTick (10Hz), ColdTick (1Hz) i FrostTick (raz v paru sekund).
+Sut: Striming chankov — eto ColdTick. Poisk puti II — SlowTick. Lokomotsiya igroka — FastTick.
+Zachem tebe eto: Eto tvoy byudzhet vremeni. Esli ty zapihnesh vse v Update, MX350 sgorit. Raspredelyaya zadachi po raznym «pulsam», my sozdaem illyuziyu zhivogo, slozhnogo mira pri minimalnyh zatratah.
+
+1. Smert «Umnyh Obektov» (DOD Sovereignty)
+Vo vseh mandatah (ot II do Energosetey) propisano: nikakoy logiki vnutri obektov.
+Pattern: Obekt (GameObject) — eto pustaya vizualnaya obolochka. Vse dannye lezhat v ploskih NativeArray.
+Dlya tebya: Eto znachit, chto ty mozhesh izmenit logiku raboty vseh 5000 ryb v odnom meste (v odnoy Job), ne pereklikivaya 5000 prefabov. Esli agent pytaetsya zasunut sostoyanie v MonoBehaviour, on pytaetsya sdelat tebya rabom ruchnogo truda. Gnat v sheyu.
+2. Matematika «Syroy Pamyati» (Pointer over Property)
+Mandaty po seyvam, vokselyam i renderu trebuyut pryamogo dostupa k pamyati.
+Pattern: My uhodim ot Vector3, Transform.position i byte[]. My perehodim na (byte*)ptr + offset i UnsafeUtility.MemCpy.
+Zachem: Na MX350 i slabom i3 marshaling dannyh (kopirovanie iz C# v C++) — eto glavnyy ubiytsa FPS. My rabotaem v «obschey pamyati», isklyuchaya posrednikov. Eto daet AAA-skorost na ofisnom zheleze.
+3. Temporalnaya Ierarhiya (The Pulse of Reality)
+V proekte vnedrena zhestkaya segregatsiya chastot.
+Pattern: FastTick (60Gts — lokomotsiya), SlowTick (10Gts — sensorika), ColdTick (1Gts — II-direktor/spavn), FrostTick (raz v 5 sek — striming/pamyat).
+Dlya tebya: Eto tvoy byudzhet. Esli igra lagaet, ty prosto perenosish sistemu iz Fast v Slow. Eto rychag, kotoryy pozvolyaet tebe odnomu balansirovat nagruzku na ves proekt za 5 minut.
+4. Religiya «Bit-Packing & Masking»
+Mandaty po logistike, II i inventaryu trebuyut ispolzovat bity vmesto klassov.
+Pattern: Vmesto bool isBreached, bool isPowered, bool isUnderRepair — odna peremennaya uint32 flags.
+Sut: Proverka sostoyaniya tseloy energoseti dlya protsessora prevraschaetsya v odnu operatsiyu AND. Eto to, chto pozvolyaet delat «glubokuyu» simulyatsiyu (Kirchhoff laws, Fluid Incursion) bez prosadok.

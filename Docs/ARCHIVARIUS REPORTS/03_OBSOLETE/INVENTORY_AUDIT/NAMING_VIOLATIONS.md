@@ -21,107 +21,107 @@ The following assets contain Cyrillic characters and **must be renamed immediate
 #### Fonts
 | Path | Violation |
 |------|-----------|
-| `Assets/_Project/Art/Materials/Fonts/текст SDF.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Materials/Fonts/текст SDF.asset.meta` | Cyrillic filename |
-| `Assets/_Project/Art/Materials/Fonts/текст.ttf` | Cyrillic filename |
-| `Assets/_Project/Art/Materials/Fonts/текст.ttf.meta` | Cyrillic filename |
-| `Assets/_Project/Art/Materials/Fonts/цифры SDF.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Materials/Fonts/цифры SDF.asset.meta` | Cyrillic filename |
-| `Assets/_Project/Art/Materials/Fonts/цифры.ttf` | Cyrillic filename |
-| `Assets/_Project/Art/Materials/Fonts/цифры.ttf.meta` | Cyrillic filename |
+| `Assets/_Project/Art/Materials/Fonts/tekst SDF.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Materials/Fonts/tekst SDF.asset.meta` | Cyrillic filename |
+| `Assets/_Project/Art/Materials/Fonts/tekst.ttf` | Cyrillic filename |
+| `Assets/_Project/Art/Materials/Fonts/tekst.ttf.meta` | Cyrillic filename |
+| `Assets/_Project/Art/Materials/Fonts/tsifry SDF.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Materials/Fonts/tsifry SDF.asset.meta` | Cyrillic filename |
+| `Assets/_Project/Art/Materials/Fonts/tsifry.ttf` | Cyrillic filename |
+| `Assets/_Project/Art/Materials/Fonts/tsifry.ttf.meta` | Cyrillic filename |
 
 #### Meshes (Cleaned)
 | Path | Violation |
 |------|-----------|
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__арка1_GEO_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__арка2_geo_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__Арка_1_стонхенж_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__Болдер_1_geo_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__большая_горизонтальная_geo_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__донная_куча_geo_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__Кам_с_кучк_3-3-1_5__LOD0-rfk_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__Камень_баз_4-4-2_м_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__Камень_баз_6-4-4м_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__куча1_geo_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__куча2_geo_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__куча_3_болд_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__Кучка_3_5-5-2_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__Кучка_4__5-5_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__Кучка_5___5-5-2_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__Огром_скала_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__Огроменная_скала_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__пиллар2_geo_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__Скала2_geo_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV__скала_большая_GEO_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV_блин_плоск_5_на_5__geo_LOD0_cleaned.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Meshes/Cleaned/ENV_ПИЛЛАР1_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__arka1_GEO_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__arka2_geo_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__Arka_1_stonhenzh_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__Bolder_1_geo_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__bolshaya_gorizontalnaya_geo_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__donnaya_kucha_geo_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__Kam_s_kuchk_3-3-1_5__LOD0-rfk_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__Kamen_baz_4-4-2_m_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__Kamen_baz_6-4-4m_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__kucha1_geo_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__kucha2_geo_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__kucha_3_bold_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__Kuchka_3_5-5-2_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__Kuchka_4__5-5_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__Kuchka_5___5-5-2_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__Ogrom_skala_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__Ogromennaya_skala_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__pillar2_geo_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__Skala2_geo_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV__skala_bolshaya_GEO_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV_blin_plosk_5_na_5__geo_LOD0_cleaned.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Meshes/Cleaned/ENV_PILLAR1_LOD0_cleaned.asset` | Cyrillic filename |
 
 *(Note: Each of the above has LOD1/LOD2/LOD3/PHYSICS_SKIN variants and .meta files — total ~120+ Cyrillic-named files in Meshes/Cleaned alone.)*
 
 #### Models (Baked)
 | Path | Violation |
 |------|-----------|
-| `Assets/_Project/Art/Models/Baked/PILLAR1 лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/Арка 1 стонхендж лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/арка 2 лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/арка1 лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/болдер 1 лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/болдер 2 лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/донная куча лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/камень баз 6-4-4 лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/камень бзв 4-4-2 лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/Камень с кучкой 3-3-1.5 лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/круговая лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/куча 2 камн лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/куча 3 болд лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/куча1 лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/кучка 5 5-5-2 лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/кучка мелка 1 лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/кучка3 5-5-2 лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/кучка4 плоск 5-5 лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/лежач скала лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/огром скала лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/Огромная скала! лод0.asset` | Cyrillic filename |
-| `Assets/_Project/Art/Models/Baked/пиллар2 лод0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/PILLAR1 lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/Arka 1 stonhendzh lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/arka 2 lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/arka1 lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/bolder 1 lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/bolder 2 lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/donnaya kucha lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/kamen baz 6-4-4 lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/kamen bzv 4-4-2 lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/Kamen s kuchkoy 3-3-1.5 lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/krugovaya lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/kucha 2 kamn lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/kucha 3 bold lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/kucha1 lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/kuchka 5 5-5-2 lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/kuchka melka 1 lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/kuchka3 5-5-2 lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/kuchka4 plosk 5-5 lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/lezhach skala lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/ogrom skala lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/Ogromnaya skala! lod0.asset` | Cyrillic filename |
+| `Assets/_Project/Art/Models/Baked/pillar2 lod0.asset` | Cyrillic filename |
 
 *(Note: Each of the above has LOD1/LOD2/LOD3 variants and .meta files — total ~90+ Cyrillic-named files in Models/Baked alone.)*
 
 #### Prefabs
 | Path | Violation |
 |------|-----------|
-| `Assets/_Project/Prefabs/Nature/Rocks/Метки для наростов/Socket_Side.prefab` | Cyrillic folder name |
-| `Assets/_Project/Prefabs/Nature/Rocks/Метки для наростов/Socket_Top.prefab` | Cyrillic folder name |
-| `Assets/_Project/Prefabs/Nature/Rocks/Метки для наростов/Socket_Under.prefab` | Cyrillic folder name |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Арка 1 стонхенж.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ арка1.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ арка2.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ болдер 1.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Болдер 2.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ большая горизонтальная.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ донная куча.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Кам с кучк 3-3-1.5 .prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Камень баз 4-4-2 м.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Камень баз 6-4-4м.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ круговая.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ куча 3 болд.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ куча1.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ куча2.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Кучка 3 5-5-2.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Кучка 4  5-5.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Кучка 5   5-5-2.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ кучка мелка 1.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Огром скала.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Огроменная скала.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ пиллар2.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ скала большая.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Скала2.prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_блин плоск 5 на 5 .prefab` | Cyrillic folder + filename |
-| `Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ПИЛЛАР1.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/Rocks/Metki dlya narostov/Socket_Side.prefab` | Cyrillic folder name |
+| `Assets/_Project/Prefabs/Nature/Rocks/Metki dlya narostov/Socket_Top.prefab` | Cyrillic folder name |
+| `Assets/_Project/Prefabs/Nature/Rocks/Metki dlya narostov/Socket_Under.prefab` | Cyrillic folder name |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Arka 1 stonhenzh.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ arka1.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ arka2.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ bolder 1.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Bolder 2.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ bolshaya gorizontalnaya.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ donnaya kucha.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Kam s kuchk 3-3-1.5 .prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Kamen baz 4-4-2 m.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Kamen baz 6-4-4m.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ krugovaya.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ kucha 3 bold.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ kucha1.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ kucha2.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Kuchka 3 5-5-2.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Kuchka 4  5-5.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Kuchka 5   5-5-2.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ kuchka melka 1.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Ogrom skala.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Ogromennaya skala.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ pillar2.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ skala bolshaya.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_ Skala2.prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_blin plosk 5 na 5 .prefab` | Cyrillic folder + filename |
+| `Assets/_Project/Prefabs/Nature/GOTOVYE PREFABY KAMNEY/ENV_PILLAR1.prefab` | Cyrillic folder + filename |
 
 #### Other Data
 | Path | Violation |
 |------|-----------|
-| `Assets/_Project/Data/текст.txt` | Cyrillic filename |
+| `Assets/_Project/Data/tekst.txt` | Cyrillic filename |
 
 **TOTAL CYRILLIC FILES IDENTIFIED: ~250+** (including .meta companions and LOD variants)
 

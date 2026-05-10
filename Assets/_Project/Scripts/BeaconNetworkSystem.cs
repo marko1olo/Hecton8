@@ -4,6 +4,7 @@ using Hecton8.Bootstrap;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -18,14 +19,27 @@ namespace Hecton8.Gameplay
             public readonly string Id;
             public readonly string Label;
             public readonly Vector3 Position;
+            public readonly AbsoluteUniversePosition PositionAup;
             public readonly Color Color;
             public readonly float LightRange;
 
             public BeaconSnapshot(string id, string label, Vector3 position, Color color, float lightRange)
+                : this(id, label, position, AbsoluteUniversePosition.FromRuntimePosition(position), color, lightRange)
+            {
+            }
+
+            public BeaconSnapshot(
+                string id,
+                string label,
+                Vector3 position,
+                AbsoluteUniversePosition positionAup,
+                Color color,
+                float lightRange)
             {
                 Id = id;
                 Label = label;
                 Position = position;
+                PositionAup = positionAup;
                 Color = color;
                 LightRange = lightRange;
             }
@@ -159,7 +173,21 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            return runtime.TryRetractNearestInternal(origin, out beacon, out distance);
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            return runtime.TryRetractNearestInternal(in originAup, out beacon, out distance);
+        }
+
+        public static bool TryRetractNearest(in AbsoluteUniversePosition originAup, out BeaconRuntime beacon, out float distance)
+        {
+            BeaconNetworkSystem runtime = GlobalRegistry.BeaconNetwork;
+            if (runtime == null)
+            {
+                beacon = null;
+                distance = 0f;
+                return false;
+            }
+
+            return runtime.TryRetractNearestInternal(in originAup, out beacon, out distance);
         }
 
         public static bool TryGetNearest(Vector3 origin, out BeaconSnapshot snapshot, out float distance)
@@ -172,7 +200,21 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            return runtime.TryGetNearestInternal(origin, out snapshot, out distance);
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            return runtime.TryGetNearestInternal(in originAup, out snapshot, out distance);
+        }
+
+        public static bool TryGetNearest(in AbsoluteUniversePosition originAup, out BeaconSnapshot snapshot, out float distance)
+        {
+            BeaconNetworkSystem runtime = GlobalRegistry.BeaconNetwork;
+            if (runtime == null)
+            {
+                snapshot = default;
+                distance = 0f;
+                return false;
+            }
+
+            return runtime.TryGetNearestInternal(in originAup, out snapshot, out distance);
         }
 
         public int CopySnapshots(BeaconSnapshot[] buffer)
@@ -185,9 +227,21 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < count; i++)
             {
                 BeaconRuntime beacon = _activeBeacons[i];
-                buffer[i] = beacon != null
-                    ? new BeaconSnapshot(beacon.BeaconId, beacon.Label, beacon.transform.position, beacon.BeaconColor, beacon.LightRange)
-                    : default;
+                if (beacon != null)
+                {
+                    Vector3 runtimePosition = beacon.RuntimePosition;
+                    buffer[i] = new BeaconSnapshot(
+                        beacon.BeaconId,
+                        beacon.Label,
+                        runtimePosition,
+                        beacon.PositionAup,
+                        beacon.BeaconColor,
+                        beacon.LightRange);
+                }
+                else
+                {
+                    buffer[i] = default;
+                }
             }
 
             return count;
@@ -219,7 +273,7 @@ namespace Hecton8.Gameplay
 
                 if (beacon != null)
                 {
-                    entry.SetPosition(beacon.transform.position);
+                    entry.SetPosition(beacon.RuntimePosition);
                     entry.SetRotation(beacon.transform.rotation);
                 }
 
@@ -338,9 +392,9 @@ namespace Hecton8.Gameplay
         {
             beaconNetworkSystem = null;
 
-            GameObject playerObject = SceneBootstrap.CurrentPlayerObject;
+            GameObject playerObject = GameBootstrapper.CurrentPlayerObject;
             if (playerObject == null &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 playerObject = playerTransform.gameObject;
@@ -353,38 +407,40 @@ namespace Hecton8.Gameplay
             return beaconNetworkSystem != null;
         }
 
-        private bool TryRetractNearestInternal(Vector3 origin, out BeaconRuntime beacon, out float distance)
+        private bool TryRetractNearestInternal(in AbsoluteUniversePosition originAup, out BeaconRuntime beacon, out float distance)
         {
-            CleanupNullEntries();
             beacon = null;
             distance = 0f;
 
-            float bestSqr = float.MaxValue;
+            double bestDistanceSq = double.MaxValue;
+            int bestIndex = -1;
             for (int i = _activeBeacons.Count - 1; i >= 0; i--)
             {
                 BeaconRuntime candidate = _activeBeacons[i];
                 if (candidate == null)
                     continue;
 
-                float sqr = (candidate.transform.position - origin).sqrMagnitude;
-                if (sqr < bestSqr)
+                AbsoluteUniversePosition candidateAup = candidate.PositionAup;
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in candidateAup, in originAup);
+                if (distanceSq < bestDistanceSq)
                 {
-                    bestSqr = sqr;
+                    bestDistanceSq = distanceSq;
                     beacon = candidate;
+                    bestIndex = i;
                 }
             }
 
-            if (beacon == null)
+            if (beacon == null || bestIndex < 0)
                 return false;
 
-            distance = ApproximateDistance(bestSqr);
-            _activeBeacons.Remove(beacon);
+            distance = ApproximateDistance(bestDistanceSq);
+            _activeBeacons.RemoveAt(bestIndex);
             beacon.DespawnSelf();
             NetworkChanged?.Invoke();
             return true;
         }
 
-        private bool TryGetNearestInternal(Vector3 origin, out BeaconSnapshot snapshot, out float distance)
+        private bool TryGetNearestInternal(in AbsoluteUniversePosition originAup, out BeaconSnapshot snapshot, out float distance)
         {
             snapshot = default;
             distance = 0f;
@@ -393,36 +449,48 @@ namespace Hecton8.Gameplay
 
             BeaconRuntime best = null;
             Vector3 bestPosition = default;
-            float bestSqr = float.MaxValue;
+            AbsoluteUniversePosition bestAup = default;
+            double bestDistanceSq = double.MaxValue;
             for (int i = 0; i < _activeBeacons.Count; i++)
             {
                 BeaconRuntime beacon = _activeBeacons[i];
                 if (beacon == null)
                     continue;
 
-                Vector3 beaconPosition = beacon.transform.position;
-                float sqr = (beaconPosition - origin).sqrMagnitude;
-                if (sqr < bestSqr)
+                AbsoluteUniversePosition beaconAup = beacon.PositionAup;
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in beaconAup, in originAup);
+                if (distanceSq < bestDistanceSq)
                 {
-                    bestSqr = sqr;
+                    bestDistanceSq = distanceSq;
                     best = beacon;
-                    bestPosition = beaconPosition;
+                    bestPosition = beacon.RuntimePosition;
+                    bestAup = beaconAup;
                 }
             }
 
             if (best == null)
                 return false;
 
-            distance = ApproximateDistance(bestSqr);
-            snapshot = new BeaconSnapshot(best.BeaconId, best.Label, bestPosition, best.BeaconColor, best.LightRange);
+            distance = ApproximateDistance(bestDistanceSq);
+            snapshot = new BeaconSnapshot(best.BeaconId, best.Label, bestPosition, bestAup, best.BeaconColor, best.LightRange);
             return true;
         }
 
         private static float ApproximateDistance(float distanceSq)
         {
-            return distanceSq > 0f && float.IsFinite(distanceSq)
-                ? distanceSq * math.rsqrt(distanceSq)
-                : 0f;
+            return ApproximateDistance((double)distanceSq);
+        }
+
+        private static float ApproximateDistance(double distanceSq)
+        {
+            if (distanceSq <= 0d || double.IsNaN(distanceSq) || double.IsInfinity(distanceSq))
+                return 0f;
+
+            if (distanceSq >= float.MaxValue)
+                return float.MaxValue;
+
+            float distanceSqFloat = (float)distanceSq;
+            return distanceSqFloat * math.rsqrt(distanceSqFloat);
         }
 
         private BeaconRuntime SpawnRuntimeBeacon(
@@ -441,7 +509,7 @@ namespace Hecton8.Gameplay
                 {
                     instance.TryGetComponent(out BeaconRuntime pooled);
                     if (pooled == null)
-                        pooled = instance.AddComponent<BeaconRuntime>();
+                        pooled = instance.AddComponent<BeaconRuntime>(); // COLD ALLOC: BeaconRuntime[1] — prefab missing runtime component fallback — owner: BeaconNetworkSystem
                     return pooled;
                 }
             }
@@ -456,10 +524,10 @@ namespace Hecton8.Gameplay
             float lightRange,
             Vector3 fallbackScale)
         {
-            GameObject beaconRoot = new GameObject("Beacon_Runtime");
+            GameObject beaconRoot = new GameObject("Beacon_Runtime"); // COLD ALLOC: GameObject[1] — fallback beacon root when prefab/pool is unavailable — owner: BeaconNetworkSystem
             beaconRoot.transform.SetPositionAndRotation(position, rotation);
 
-            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube); // COLD ALLOC: GameObject[1] — fallback beacon body primitive when prefab/pool is unavailable — owner: BeaconNetworkSystem
             body.name = "BeaconBody";
             body.transform.SetParent(beaconRoot.transform, false);
             body.transform.localScale = fallbackScale;
@@ -477,13 +545,13 @@ namespace Hecton8.Gameplay
                 renderer.sharedMaterial = fallbackMaterial;
             }
 
-            Light lightComp = beaconRoot.AddComponent<Light>();
+            Light lightComp = beaconRoot.AddComponent<Light>(); // COLD ALLOC: Light[1] — fallback beacon point light when prefab/pool is unavailable — owner: BeaconNetworkSystem
             lightComp.type = LightType.Point;
             lightComp.range = lightRange;
             lightComp.intensity = 1.6f;
             lightComp.color = color;
 
-            BeaconRuntime runtime = beaconRoot.AddComponent<BeaconRuntime>();
+            BeaconRuntime runtime = beaconRoot.AddComponent<BeaconRuntime>(); // COLD ALLOC: BeaconRuntime[1] — fallback beacon runtime when prefab/pool is unavailable — owner: BeaconNetworkSystem
             runtime.SetOwnedFallbackMaterial(fallbackMaterial);
             return runtime;
         }
@@ -493,8 +561,29 @@ namespace Hecton8.Gameplay
             if (beacon == null)
                 return;
 
-            if (_activeBeacons.Remove(beacon))
+            if (TryRemoveActiveBeacon(beacon))
                 NetworkChanged?.Invoke();
+        }
+
+        private bool TryRemoveActiveBeacon(BeaconRuntime beacon)
+        {
+            int index = IndexOfActiveBeacon(beacon);
+            if (index < 0)
+                return false;
+
+            _activeBeacons.RemoveAt(index);
+            return true;
+        }
+
+        private int IndexOfActiveBeacon(BeaconRuntime beacon)
+        {
+            for (int i = 0; i < _activeBeacons.Count; i++)
+            {
+                if (ReferenceEquals(_activeBeacons[i], beacon))
+                    return i;
+            }
+
+            return -1;
         }
 
         private void ClearAllRuntimeBeacons()
@@ -544,22 +633,22 @@ namespace Hecton8.Gameplay
         private static readonly string[] _cachedUpperStrings = new string[16]; // COLD ALLOC: string[16] — upper-case label cache slots — owner: BeaconNetworkSystem
 
         /// <summary>
-        /// Кэшированный ToUpperInvariant для избежания повторных аллокаций строк.
-        /// Хранит до 16 последних преобразований для повторного использования.
+        /// Keshirovannyy ToUpperInvariant dlya izbezhaniya povtornyh allokatsiy strok.
+        /// Hranit do 16 poslednih preobrazovaniy dlya povtornogo ispolzovaniya.
         /// </summary>
         private static string CachedToUpperInvariant(string input)
         {
             if (string.IsNullOrEmpty(input))
                 return input;
 
-            // Простой hash для кэширования (не криптографический)
-            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
+            // Prostoy hash dlya keshirovaniya (ne kriptograficheskiy)
+            int hash = input.GetHashCode() & 0xF; // Maska dlya indeksa 0-15
 
             string cached = _cachedUpperStrings[hash];
             if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
                 return cached;
 
-            // Создаем новую строку и кэшируем
+            // Sozdaem novuyu stroku i keshiruem
             string upper = input.ToUpperInvariant();
             _cachedUpperStrings[hash] = upper;
             return upper;

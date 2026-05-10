@@ -43,6 +43,8 @@ MonoBehaviour:
     - Hecton8.Core
     - Hecton8.Input
     - Hecton8.Input.Generated
+    - Hecton8.PlayModeTests
+    - Hecton8.Plugins
     - Hecton8.SpaceEngine098Terrain
     - Hecton8.World.Contracts
     - JBooth.MicroSplat.Core

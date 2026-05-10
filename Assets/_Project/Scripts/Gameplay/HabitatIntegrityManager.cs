@@ -11,6 +11,7 @@ using Hecton8.Core;
 using Hecton8.Power;
 using Hecton8.World;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -48,14 +49,15 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Canonical event packet for integrity/power/clarity damage signals.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public struct DamageSignal
     {
         public float magnitude;
+        public float depth;
         public float3 localPoint;
         public uint damageType;
-        public byte integrityDelta;
-        public float depth;
         public ushort sourceID;
+        public byte integrityDelta;
     }
 
     /// <summary>
@@ -795,13 +797,16 @@ namespace Hecton8.Gameplay
         private float ResolveDepthMeters()
         {
             float seaLevelY = 0f;
-            MapMagicBridge mapMagicBridge = GlobalRegistry.MapMagic;
-            if (mapMagicBridge != null)
-                seaLevelY = mapMagicBridge.WaterSurfaceLevel;
+            ITerrainProvider terrainProvider = GlobalRegistry.Terrain;
+            if (terrainProvider != null)
+                seaLevelY = terrainProvider.WaterSurfaceLevel;
             else if (Hecton8.Core.GlobalRegistry.Atmosphere != null)
                 seaLevelY = Hecton8.Core.GlobalRegistry.Atmosphere.SeaLevelY;
 
-            return Mathf.Max(0f, seaLevelY - _cachedTransform.position.y);
+            Transform hostTransform = _cachedTransform != null ? _cachedTransform : transform;
+            AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(hostTransform.position);
+            double absoluteModuleY = (moduleAup.GridY * AbsoluteUniversePosition.CellSizeMeters) + moduleAup.LocalY;
+            return Mathf.Max(0f, (float)(seaLevelY - absoluteModuleY));
         }
 
         private static float ResolvePressureDelta(float depthMeters)

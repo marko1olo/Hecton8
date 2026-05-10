@@ -9,6 +9,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.InputSystem.XR;
 
 namespace Hecton8.Core
@@ -1710,7 +1711,7 @@ namespace Hecton8.Core
     /// </summary>
     public static class InputLatencyTracker
     {
-        private static long _pendingInputTimestamp;
+        private static double _pendingInputTimestamp;
         private static int _pendingInputFrame;
         private static float _lastCompletedLatencyMs;
         private static uint _completedSequence;
@@ -1720,7 +1721,7 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _pendingInputTimestamp = 0L;
+            _pendingInputTimestamp = 0d;
             _pendingInputFrame = -1;
             _lastCompletedLatencyMs = 0f;
             _completedSequence = 0u;
@@ -1728,8 +1729,11 @@ namespace Hecton8.Core
 
         public static void MarkInputCaptured()
         {
-            long timestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            if (_pendingInputTimestamp == 0L || Time.frameCount != _pendingInputFrame)
+            double timestamp = InputSystem.currentTime;
+            if (timestamp <= 0d)
+                timestamp = Time.unscaledTimeAsDouble;
+
+            if (_pendingInputTimestamp <= 0d || Time.frameCount != _pendingInputFrame)
             {
                 _pendingInputTimestamp = timestamp;
                 _pendingInputFrame = Time.frameCount;
@@ -1738,21 +1742,25 @@ namespace Hecton8.Core
 
         public static void MarkRenderCompleted()
         {
-            long inputTimestamp = _pendingInputTimestamp;
-            if (inputTimestamp <= 0L)
+            double inputTimestamp = _pendingInputTimestamp;
+            if (inputTimestamp <= 0d)
                 return;
 
-            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - inputTimestamp;
-            if (elapsedTicks <= 0L)
+            double renderTimestamp = Time.unscaledTimeAsDouble;
+            if (renderTimestamp <= 0d)
+                renderTimestamp = Time.realtimeSinceStartupAsDouble;
+
+            double elapsedSeconds = renderTimestamp - inputTimestamp;
+            if (elapsedSeconds <= 0d)
             {
-                _pendingInputTimestamp = 0L;
+                _pendingInputTimestamp = 0d;
                 _pendingInputFrame = -1;
                 return;
             }
 
-            _lastCompletedLatencyMs = (float)(elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
+            _lastCompletedLatencyMs = (float)(elapsedSeconds * 1000.0);
             _completedSequence++;
-            _pendingInputTimestamp = 0L;
+            _pendingInputTimestamp = 0d;
             _pendingInputFrame = -1;
         }
 

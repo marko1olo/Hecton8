@@ -777,7 +777,7 @@ namespace Hecton8.Gameplay
 
         private void AutoResolveReferences()
         {
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (toolManager == null)

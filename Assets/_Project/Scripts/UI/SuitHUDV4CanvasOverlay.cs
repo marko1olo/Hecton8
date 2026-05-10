@@ -30,7 +30,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit HUD V4 Canvas Overlay")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, IScannerInterferenceUiSink, ISceneBootstrapEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener, ISaveEventListener
+    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, IScannerInterferenceUiSink, IGameBootstrapperEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener, ISaveEventListener
     {
         // COLD ALLOC: List<SuitHUDV4CanvasOverlay>[4] — active HUD overlay registry — owner: SuitHUDV4CanvasOverlay
         private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
@@ -40,7 +40,6 @@ namespace Hecton8.UI
         private static readonly List<GameObject> s_sceneRootResolveBuffer = new List<GameObject>(16);
         // COLD ALLOC: List<Image>[32] — image resolve scratch — owner: SuitHUDV4CanvasOverlay
         private static readonly List<Image> s_imageResolveBuffer = new List<Image>(32);
-        private static readonly HeadingLabelCacheEntry[] s_headingLabels = BuildHeadingLabels();
         private const string PrimaryHudCanvasName = "Suit_HUD_Canvas";
         private const string DefaultSuitLabel = "EXPEDITION SUIT";
         private const string DefaultTemperatureLabel = "TEMP";
@@ -69,7 +68,6 @@ namespace Hecton8.UI
         private const string DefaultCriticalLabel = "CRITICAL";
         private const string DepthNumberToken = "{N0:F0}";
         private const string FixedTenthsNumberToken = "{N0:F1}";
-        private const string HeadingNumberTemplate = "HEADING {N0:D3} / ";
         private const int SlowCadenceFrameModulo = 30;
         private const int MediumCadenceFrameModulo = 6;
         private const int StaticCanvasSortingOrder = 10;
@@ -99,6 +97,7 @@ namespace Hecton8.UI
         private const byte CriticalMaskPower = 1 << 1;
         private const byte CriticalMaskHealth = 1 << 2;
         private const float ToolDepletedWarningDurationSeconds = 2.25f;
+        private const float MemorySubsystemBreachHoldSeconds = 4f;
         private const float SavingProgressFadeSpeed = 6.5f;
         private const float SavingProgressVisibleEpsilon = 0.001f;
         private const float SavingProgressMinimumVisibleSeconds = 0.35f;
@@ -188,6 +187,10 @@ namespace Hecton8.UI
         private static readonly char[] s_loadPrefixChars = "MASS: ".ToCharArray();
         private static readonly char[] s_loadKgSuffixChars = " KG".ToCharArray();
         private static readonly char[] s_emptyHudChars = Array.Empty<char>();
+        private static readonly char[] s_memorySubsystemBreachBuffer = "MEMORY SUBSYSTEM BREACH 0x00000000".ToCharArray();
+        private static double s_memorySubsystemBreachUntilTime;
+        private static uint s_memorySubsystemBreachCode;
+        private static int s_memorySubsystemBreachVersion;
         private static readonly int _HudDepthKeyHash = LocHash.Compute(LocalizationKeys.HUD_DEPTH);
         private static readonly int _HudTemperatureKeyHash = LocHash.Compute(LocalizationKeys.HUD_TEMP);
         private static readonly int _HudPressureKeyHash = LocHash.Compute(LocalizationKeys.HUD_PRESSURE);
@@ -208,6 +211,43 @@ namespace Hecton8.UI
             UiLayerIndex = HectonLayerMasks.UI;
             s_layerCacheInitialized = true;
         }
+
+        public static void TriggerMemorySubsystemBreach(uint errorCode)
+        {
+            s_memorySubsystemBreachCode = errorCode;
+            WriteMemorySubsystemBreachHex(errorCode);
+            s_memorySubsystemBreachUntilTime = Time.unscaledTimeAsDouble + MemorySubsystemBreachHoldSeconds;
+            unchecked
+            {
+                s_memorySubsystemBreachVersion++;
+            }
+        }
+
+        private static bool TryResolveMemorySubsystemBreach(out char[] buffer, out int length, out int version)
+        {
+            version = s_memorySubsystemBreachVersion;
+            if (s_memorySubsystemBreachCode == 0u || Time.unscaledTimeAsDouble > s_memorySubsystemBreachUntilTime)
+            {
+                buffer = null;
+                length = 0;
+                return false;
+            }
+
+            buffer = s_memorySubsystemBreachBuffer;
+            length = s_memorySubsystemBreachBuffer.Length;
+            return true;
+        }
+
+        private static void WriteMemorySubsystemBreachHex(uint value)
+        {
+            const string HexDigits = "0123456789ABCDEF";
+            int cursor = s_memorySubsystemBreachBuffer.Length - 8;
+            for (int digit = 0; digit < 8; digit++)
+            {
+                int shift = 28 - (digit * 4);
+                s_memorySubsystemBreachBuffer[cursor + digit] = HexDigits[(int)((value >> shift) & 0xFu)];
+            }
+        }
         private static readonly int _StatusPressureLimitExceededKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_PRESSURE_LIMIT_EXCEEDED);
         private static readonly int _StatusApproachingSafeDepthKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_APPROACHING_SAFE_DEPTH_LIMIT);
         private static readonly int _StatusSuitDamageCriticalKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_SUIT_DAMAGE_CRITICAL);
@@ -225,16 +265,13 @@ namespace Hecton8.UI
             ProjectionSource
         }
 
-        private readonly struct HeadingLabelCacheEntry
+        private static bool IsScreenOverlayAllowed()
         {
-            public HeadingLabelCacheEntry(char[] buffer, int length)
-            {
-                Buffer = buffer;
-                Length = length;
-            }
-
-            public char[] Buffer { get; }
-            public int Length { get; }
+#if UNITY_EDITOR
+            return true;
+#else
+            return false;
+#endif
         }
 
         private readonly struct FixedCharBuffer
@@ -256,7 +293,7 @@ namespace Hecton8.UI
                     return false;
                 }
 
-                return value.TryFormat(_buffer.AsSpan(), out length);
+                return ZeroGCFormatter.TryWriteInt(value, _buffer.AsSpan(), out length);
             }
 
             public bool TryWriteTemplateInt(ReadOnlySpan<char> template, int value, out int length)
@@ -267,7 +304,7 @@ namespace Hecton8.UI
                     return false;
                 }
 
-                return LocNumericBuffer.TryWrite(template, _buffer.AsSpan(), LocNumericArg.Int(value), out length);
+                return ZeroGCFormatter.TryWriteMetricTemplateInt(template, value, _buffer.AsSpan(), out length);
             }
 
             public bool TryWriteTemplateFloatTenths(ReadOnlySpan<char> template, int roundedTenths, out int length)
@@ -278,7 +315,7 @@ namespace Hecton8.UI
                     return false;
                 }
 
-                return LocNumericBuffer.TryWrite(template, _buffer.AsSpan(), LocNumericArg.Float(roundedTenths * 0.1f), out length);
+                return ZeroGCFormatter.TryWriteMetricTemplateFloatTenths(template, roundedTenths, _buffer.AsSpan(), out length);
             }
         }
 
@@ -302,7 +339,7 @@ namespace Hecton8.UI
 
         [Header("Presentation")]
         [SerializeField] private bool keepVisibleInEditMode = true;
-        [SerializeField] private RenderPath renderPath = RenderPath.ScreenOverlay;
+        [SerializeField] private RenderPath renderPath = RenderPath.ProjectionSource;
         [SerializeField] [Range(0.85f, 1.2f)] private float overallScale = 0.98f;
         [SerializeField] [Range(0f, 1f)] private float chromeAlpha = 0.14f;
         [SerializeField] private float projectionPlaneDistance = DiegeticHudDistanceMeters;
@@ -524,6 +561,9 @@ namespace Hecton8.UI
             s_activeOverlays.Clear();
             s_controllerResolveBuffer.Clear();
             s_sceneRootResolveBuffer.Clear();
+            s_memorySubsystemBreachUntilTime = 0d;
+            s_memorySubsystemBreachCode = 0u;
+            s_memorySubsystemBreachVersion = 0;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -660,9 +700,14 @@ namespace Hecton8.UI
         // COLD ALLOC: char[256] — localized pressure metric template buffer — owner: SuitHUDV4CanvasOverlay
         private char[] _pressureTemplateBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         private int _pressureTemplateLength;
-        private char[] _depthDisplayBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
-        private char[] _temperatureDisplayBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
-        private char[] _pressureDisplayBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
+        // COLD ALLOC: char[64] — depth meter display staging buffer — owner: SuitHUDV4CanvasOverlay
+        private char[] _depthDisplayBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity];
+        // COLD ALLOC: char[64] — temperature meter display staging buffer — owner: SuitHUDV4CanvasOverlay
+        private char[] _temperatureDisplayBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity];
+        // COLD ALLOC: char[64] — pressure meter display staging buffer — owner: SuitHUDV4CanvasOverlay
+        private char[] _pressureDisplayBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity];
+        // COLD ALLOC: char[64] — compass ribbon display staging buffer — owner: SuitHUDV4CanvasOverlay
+        private char[] _headingDisplayBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity];
         // COLD ALLOC: char[256] — LOAD telemetry fallback staging buffer — owner: SuitHUDV4CanvasOverlay
         private char[] _loadDisplayFallbackBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         private Canvas _appliedCanvasTarget;
@@ -1005,7 +1050,7 @@ namespace Hecton8.UI
             ResolveGraphicRaycasterCold();
             LocalizationEvents.RegisterLanguageListener(this);
             LocalizationEvents.RegisterCorruptionVisualStateListener(this);
-            SceneBootstrap.Register(this);
+            GameBootstrapper.Register(this);
             PlayerSignalEvents.Register(this);
             if (Application.isPlaying)
                 SaveEvents.Register(this);
@@ -1049,7 +1094,7 @@ namespace Hecton8.UI
         {
             LocalizationEvents.UnregisterLanguageListener(this);
             LocalizationEvents.UnregisterCorruptionVisualStateListener(this);
-            SceneBootstrap.Unregister(this);
+            GameBootstrapper.Unregister(this);
             PlayerSignalEvents.Unregister(this);
             SaveEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
@@ -1417,10 +1462,10 @@ namespace Hecton8.UI
             _root.anchoredPosition = _rootBaseAnchoredPosition + jitterOffset;
         }
 
-        public void OnSceneBootstrapEvent(in SceneBootstrapEventPayload payload)
+        public void OnGameBootstrapperEvent(in GameBootstrapperEventPayload payload)
         {
-            if ((SceneBootstrapEventType)payload.EventType == SceneBootstrapEventType.GameReady)
-                HandleSceneBootstrapReady();
+            if ((GameBootstrapperEventType)payload.EventType == GameBootstrapperEventType.GameReady)
+                HandleGameBootstrapperReady();
         }
 
         public void OnSaveEvent(in SaveEventPayload payload)
@@ -1489,7 +1534,7 @@ namespace Hecton8.UI
             _savingProgressTargetAlpha = 0f;
         }
 
-        private void HandleSceneBootstrapReady()
+        private void HandleGameBootstrapperReady()
         {
             if (!isActiveAndEnabled)
                 return;
@@ -1636,7 +1681,7 @@ namespace Hecton8.UI
             Transform playerRoot = null;
             bool hasPlayerRoot = false;
             if (survival == null || playerMovement == null || flashlight == null || underwaterVisuals == null || _toolManager == null)
-                hasPlayerRoot = SceneBootstrap.TryGetCurrentPlayerTransform(out playerRoot);
+                hasPlayerRoot = GameBootstrapper.TryGetCurrentPlayerTransform(out playerRoot);
 
             if (projectionCamera == null)
             {
@@ -1742,12 +1787,17 @@ namespace Hecton8.UI
             if (targetCanvas == null)
                 return;
 
+            if (!IsScreenOverlayAllowed() && renderPath != RenderPath.ProjectionSource)
+            {
+                renderPath = RenderPath.ProjectionSource;
+                _layoutBuilt = false;
+                InvalidateVisualCaches();
+            }
+
             RectTransform canvasRect = targetCanvas.transform as RectTransform;
             CacheDefaultCanvasHierarchy(canvasRect);
             Vector2 referenceResolution = ResolveUiReferenceResolution();
-            bool useProjectionCanvas =
-                renderPath == RenderPath.ProjectionSource &&
-                projectionCamera != null;
+            bool useProjectionCanvas = renderPath == RenderPath.ProjectionSource || !IsScreenOverlayAllowed();
             bool canvasStateMatches =
                 _canvasStateApplied &&
                 ReferenceEquals(_appliedCanvasTarget, targetCanvas) &&
@@ -1819,12 +1869,16 @@ namespace Hecton8.UI
             }
             else
             {
+#if !UNITY_EDITOR
+                return false;
+#else
                 if (targetCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
                     return false;
                 if (targetCanvas.worldCamera != null)
                     return false;
                 if (targetCanvas.sortingOrder != overlaySortingOrder)
                     return false;
+#endif
             }
 
             CanvasScaler scaler = ResolveCanvasScaler();
@@ -1884,6 +1938,11 @@ namespace Hecton8.UI
 
         private void ApplyOverlayCanvasState(Canvas canvas, RectTransform canvasRect)
         {
+#if !UNITY_EDITOR
+            renderPath = RenderPath.ProjectionSource;
+            ApplyProjectionCanvasState(canvas, canvasRect, ResolveUiReferenceResolution());
+            return;
+#else
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.worldCamera = null;
             canvas.overrideSorting = true;
@@ -1906,6 +1965,7 @@ namespace Hecton8.UI
             canvasRect.anchoredPosition = Vector2.zero;
             canvasRect.localRotation = Quaternion.identity;
             canvasRect.localScale = Vector3.one;
+#endif
         }
 
         private void ApplyProjectionCanvasState(Canvas canvas, RectTransform canvasRect, Vector2 referenceResolution)
@@ -3490,9 +3550,12 @@ namespace Hecton8.UI
             float safeDepthFallback = hasSurvivalStats ? FiniteAtLeast(survival.Stats.SafeDepth, 50f, 1f) : 50f;
             float safeDepth = FiniteAtLeast(ReadHeadlessUIValue(UIValueSlotId.SafeDepthMeters, safeDepthFallback), safeDepthFallback, 1f);
             float safeDepthNormalized = ResolveSafeDepthNormalized(depth, safeDepth);
-            float oxygenCurrent = ReadHeadlessUIValue(UIValueSlotId.OxygenCurrent, survival != null ? survival.Oxygen : oxygen * 100f);
-            float energyCurrent = ReadHeadlessUIValue(UIValueSlotId.EnergyCurrent, survival != null ? survival.Energy : power * 100f);
-            float healthCurrent = ReadHeadlessUIValue(UIValueSlotId.IntegrityCurrent, survival != null ? survival.Integrity : health * 100f);
+            float oxygenCurrentFallback = survival != null ? FiniteNonNegative(survival.Oxygen, oxygen * 100f) : oxygen * 100f;
+            float energyCurrentFallback = survival != null ? FiniteNonNegative(survival.Energy, power * 100f) : power * 100f;
+            float healthCurrentFallback = survival != null ? FiniteNonNegative(survival.Integrity, health * 100f) : health * 100f;
+            float oxygenCurrent = FiniteNonNegative(ReadHeadlessUIValue(UIValueSlotId.OxygenCurrent, oxygenCurrentFallback), oxygenCurrentFallback);
+            float energyCurrent = FiniteNonNegative(ReadHeadlessUIValue(UIValueSlotId.EnergyCurrent, energyCurrentFallback), energyCurrentFallback);
+            float healthCurrent = FiniteNonNegative(ReadHeadlessUIValue(UIValueSlotId.IntegrityCurrent, healthCurrentFallback), healthCurrentFallback);
             float stressPulse = _biosRecoveryMode ? 0f : UpdateStressPulse(dt);
             Color pulsedPrimary = ResolveStressPulseColor(primary, warning, stressPulse, stressPulseBrightnessBoost, stressPulseWarningBlend);
             Color pulsedDim = ResolveStressPulseColor(dim, warning, stressPulse, stressPulseBrightnessBoost * 0.45f, stressPulseWarningBlend * 0.38f);
@@ -3502,6 +3565,13 @@ namespace Hecton8.UI
             bool hullStressWhisperMode = !_biosRecoveryMode && ShouldUseHullStressWhisperMode(manager);
             float traumaCorruptionIntensity = _traumaGlitchIntensity > CorruptedModeThreshold ? _traumaGlitchIntensity : 0f;
             float displayCorruptionIntensity = math.max(hullStressCorruptionIntensity, traumaCorruptionIntensity);
+            bool memorySubsystemBreachActive = TryResolveMemorySubsystemBreach(
+                out char[] memorySubsystemBreachBuffer,
+                out int memorySubsystemBreachLength,
+                out int memorySubsystemBreachVersion);
+            if (memorySubsystemBreachActive)
+                displayCorruptionIntensity = math.max(displayCorruptionIntensity, 0.32f);
+
             bool corruptedMode = !_biosRecoveryMode && displayCorruptionIntensity > 0f;
             bool toolDepletedWarningActive = !_biosRecoveryMode && _toolDepletedWarningTimer > 0f;
             EvaluateCriticalHapticCoupling(oxygen, power, health);
@@ -3528,7 +3598,7 @@ namespace Hecton8.UI
             float localizedDepth = LocalizedMeasurementFormatter.ConvertDistanceMeters(depth, _localizedMeasurementLanguage);
             float localizedTemperature = LocalizedMeasurementFormatter.ConvertTemperatureCelsius(_displayTemperature, _localizedMeasurementLanguage);
             bool localizedRtl = LocalizedMeasurementFormatter.IsRightToLeft(_localizedMeasurementLanguage);
-            bool specialCadenceBypass = _biosRecoveryMode || hullStressWhisperMode || corruptedMode;
+            bool specialCadenceBypass = _biosRecoveryMode || hullStressWhisperMode || corruptedMode || memorySubsystemBreachActive;
             bool shouldRefreshSuitLabel = specialCadenceBypass || refreshSlowCadence || _appliedSuitLabelVersion == int.MinValue;
             bool shouldRefreshHeadingLabel = specialCadenceBypass || NeedsHeadingCadenceRefresh(refreshMediumCadence, heading);
             bool shouldRefreshTelemetryText = specialCadenceBypass || NeedsTelemetryCadenceRefresh(refreshMediumCadence, oxygen, depth, localizedTemperature, pressure);
@@ -3563,12 +3633,14 @@ namespace Hecton8.UI
                     if (shouldRefreshHeadingLabel)
                     {
                         int roundedHeading = RoundToIntFast(heading);
-                        HeadingLabelCacheEntry headingEntry = ResolveHeadingLabelEntry(roundedHeading);
                         int headingVersion = roundedHeading % 360;
                         if (headingVersion < 0)
                             headingVersion += 360;
 
-                        SetDisplayBufferIfChanged(_headingLabel, headingEntry.Buffer, headingEntry.Length, false, Alpha(dim, 0.58f), headingVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 107, ref _appliedHeadingLabelVersion, ref _appliedHeadingLabelColor);
+                        if (!ZeroGCFormatter.TryWriteCompassHeading(headingVersion, ResolveCardinal(headingVersion).AsSpan(), _headingDisplayBuffer.AsSpan(), out int headingLength))
+                            headingLength = 0;
+
+                        SetDisplayBufferIfChanged(_headingLabel, _headingDisplayBuffer, headingLength, false, Alpha(dim, 0.58f), headingVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 107, ref _appliedHeadingLabelVersion, ref _appliedHeadingLabelColor);
                         _lastStreamedHeadingDegrees = heading;
                     }
                 }
@@ -3637,6 +3709,24 @@ namespace Hecton8.UI
                 float criticalAlpha = IsBlinkVisible(Time.unscaledTime, 12f) ? 1f : 0.2f;
                 LocNumericBuffer.Write(DefaultCriticalLabel.AsSpan(), out char[] criticalBuffer, out int criticalLength);
                 SetDisplayBufferIfChanged(_statusLabel, criticalBuffer, criticalLength, false, Alpha(primary, criticalAlpha), 1, false, 0f, 0, 0, ref _appliedStatusWhisperVersion, ref _appliedStatusLabelColor);
+                _hasAppliedStatusKeyHash = false;
+            }
+            else if (memorySubsystemBreachActive)
+            {
+                float breachAlpha = IsBlinkVisible(Time.unscaledTime, 18f) ? 1f : 0.28f;
+                SetDisplayBufferIfChanged(
+                    _statusLabel,
+                    memorySubsystemBreachBuffer,
+                    memorySubsystemBreachLength,
+                    false,
+                    new Color(1f, 0.08f, 0.06f, breachAlpha),
+                    memorySubsystemBreachVersion,
+                    false,
+                    0f,
+                    0,
+                    0,
+                    ref _appliedStatusWhisperVersion,
+                    ref _appliedStatusLabelColor);
                 _hasAppliedStatusKeyHash = false;
             }
             else if (toolDepletedWarningActive)
@@ -3782,22 +3872,23 @@ namespace Hecton8.UI
         private void ResolveInventoryLoadValues(out float totalMassKg, out float carryCapacityKg, out float load01)
         {
             float fallbackMassKg = _playerInventory != null
-                ? math.max(0f, _playerInventory.TotalMassKg)
-                : (survival != null ? math.max(0f, survival.Weight) : 0f);
+                ? FiniteNonNegative(_playerInventory.TotalMassKg, 0f)
+                : (survival != null ? FiniteNonNegative(survival.Weight, 0f) : 0f);
             float fallbackCapacityKg = survival != null && survival.Stats != null
-                ? math.max(0.01f, survival.Stats.CarryCapacityKg)
+                ? FiniteAtLeast(survival.Stats.CarryCapacityKg, 200f, 0.01f)
                 : 200f;
             float fallbackLoad01 = playerMovement != null
-                ? math.saturate(playerMovement.InventoryLoad01)
-                : math.saturate(fallbackMassKg / fallbackCapacityKg);
+                ? FiniteSaturate01(playerMovement.InventoryLoad01, 0f)
+                : FiniteSaturate01(fallbackMassKg / fallbackCapacityKg, 0f);
 
-            totalMassKg = math.max(0f, ReadHeadlessUIValue(UIValueSlotId.InventoryMassKg, fallbackMassKg));
-            carryCapacityKg = math.max(0.01f, ReadHeadlessUIValue(UIValueSlotId.CarryCapacityKg, fallbackCapacityKg));
-            load01 = math.saturate(ReadHeadlessUIValue(UIValueSlotId.InventoryLoad01, fallbackLoad01));
+            totalMassKg = FiniteNonNegative(ReadHeadlessUIValue(UIValueSlotId.InventoryMassKg, fallbackMassKg), fallbackMassKg);
+            carryCapacityKg = FiniteAtLeast(ReadHeadlessUIValue(UIValueSlotId.CarryCapacityKg, fallbackCapacityKg), fallbackCapacityKg, 0.01f);
+            load01 = FiniteSaturate01(ReadHeadlessUIValue(UIValueSlotId.InventoryLoad01, fallbackLoad01), fallbackLoad01);
         }
 
         private static float ReadHeadlessUIValue(UIValueSlotId slotId, float fallback)
         {
+            fallback = FiniteOr(fallback, 0f);
             if (!UIStateStore.TryReadValue(slotId, out UIValueSlot valueSlot))
                 return fallback;
 
@@ -3894,17 +3985,22 @@ namespace Hecton8.UI
 
         private static float FiniteSaturate01(float value, float fallback)
         {
-            return math.isfinite(value) ? math.saturate(value) : math.saturate(fallback);
+            return math.isfinite(value) ? math.saturate(value) : math.saturate(FiniteOr(fallback, 0f));
         }
 
         private static float FiniteNonNegative(float value, float fallback)
         {
-            return math.isfinite(value) ? math.max(0f, value) : math.max(0f, fallback);
+            return math.isfinite(value) ? math.max(0f, value) : math.max(0f, FiniteOr(fallback, 0f));
         }
 
         private static float FiniteAtLeast(float value, float fallback, float minimum)
         {
-            return math.isfinite(value) ? math.max(minimum, value) : math.max(minimum, fallback);
+            return math.isfinite(value) ? math.max(minimum, value) : math.max(minimum, FiniteOr(fallback, minimum));
+        }
+
+        private static float FiniteOr(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
         }
 
         private bool PrepareLoadMassVertexRefresh(int version, Color loadColor, bool corruptedMode, int corruptionVersion, int corruptionSalt)
@@ -4329,7 +4425,8 @@ namespace Hecton8.UI
             float dampFactor,
             bool updateValueText)
         {
-            float clamped = math.saturate(normalized);
+            float clamped = FiniteSaturate01(normalized, 0f);
+            currentValue = FiniteNonNegative(currentValue, 0f);
             Color accent = clamped <= 0.2f ? warning : primary;
             bool hullStressWhisperMode = hullStressWhisperBuffer != null && hullStressWhisperLength > 0;
             if (gauge.Icon != null)
@@ -4544,7 +4641,7 @@ namespace Hecton8.UI
 
             refs.Value = CreateText(name + "_Value", refs.Root, 15f, FontStyles.Bold, TextAlignmentOptions.Center, 0.98f, ResolveNumericFontAsset());
             Anchor(refs.Value.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f + resolvedValueOffsetY), new Vector2(44f, 22f));
-            refs.ValueBuffer = new char[12]; // COLD ALLOC: char[12] — gauge numeric buffer — owner: SuitHUDV4CanvasOverlay
+            refs.ValueBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity]; // COLD ALLOC: char[64] — O2/power/health gauge numeric buffer — owner: SuitHUDV4CanvasOverlay
 
             refs.Sub = CreateText(name + "_Sub", refs.Root, 10f, FontStyles.Normal, TextAlignmentOptions.Center, 0.52f, ResolveLabelFontAsset());
             Anchor(refs.Sub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -48f), new Vector2(86f, 12f));
@@ -5117,7 +5214,7 @@ namespace Hecton8.UI
             if (!hasCachedValue || cachedValue != value)
             {
                 SetLocalizedRtlState(label, false);
-                if (!value.TryFormat(stagingBuffer, out int length))
+                if (!ZeroGCFormatter.TryWriteInt(value, stagingBuffer.AsSpan(), out int length))
                     length = 0;
 
                 ApplyHudCharArray(label, stagingBuffer, length);
@@ -5961,12 +6058,13 @@ namespace Hecton8.UI
             float headlessMovementSpeed = ReadHeadlessUIValue(UIValueSlotId.MovementSpeed, -1f);
             if (headlessMovementSpeed >= 0f)
             {
-                headlessMovementSpeed = math.max(0f, headlessMovementSpeed);
+                headlessMovementSpeed = FiniteNonNegative(headlessMovementSpeed, 0f);
                 movementSpeedSq = headlessMovementSpeed * headlessMovementSpeed;
             }
 
-            float velocityContribution = math.min(math.max(0f, movementSpeedSq) * reticleVelocityFactor * ReticleSquaredSpeedSpreadScale, 36f);
-            float heatContribution = math.saturate(ReadHeadlessUIValue(UIValueSlotId.ToolHeat01, ResolveReticleHeat01())) * reticleHeatSpread;
+            movementSpeedSq = FiniteNonNegative(movementSpeedSq, 0f);
+            float velocityContribution = math.min(movementSpeedSq * reticleVelocityFactor * ReticleSquaredSpeedSpreadScale, 36f);
+            float heatContribution = FiniteSaturate01(ReadHeadlessUIValue(UIValueSlotId.ToolHeat01, ResolveReticleHeat01()), 0f) * reticleHeatSpread;
             float targetSpread = math.max(0f, reticleBaseSpread + velocityContribution + heatContribution);
             float blendT = ApproximateOneMinusExpNeg(math.max(0.01f, reticleSpreadBlendSpeed) * math.max(dt, 0.016f));
             _reticleSpreadPixels = math.lerp(_reticleSpreadPixels, targetSpread, blendT);
@@ -6149,35 +6247,6 @@ namespace Hecton8.UI
             _cachedPaletteWarning = warning;
         }
 
-        private static HeadingLabelCacheEntry ResolveHeadingLabelEntry(int roundedHeading)
-        {
-            int normalizedHeading = roundedHeading % 360;
-            if (normalizedHeading < 0)
-                normalizedHeading += 360;
-
-            return s_headingLabels[normalizedHeading];
-        }
-
-        private static HeadingLabelCacheEntry[] BuildHeadingLabels()
-        {
-            HeadingLabelCacheEntry[] labels = new HeadingLabelCacheEntry[360];
-            for (int i = 0; i < labels.Length; i++)
-            {
-                LocNumericBuffer.Write(HeadingNumberTemplate.AsSpan(), LocNumericArg.Int(i), out char[] prefixBuffer, out int prefixLength);
-                string cardinal = ResolveCardinal(i);
-                char[] labelBuffer = new char[prefixLength + cardinal.Length];
-                for (int j = 0; j < prefixLength; j++)
-                    labelBuffer[j] = prefixBuffer[j];
-
-                for (int j = 0; j < cardinal.Length; j++)
-                    labelBuffer[prefixLength + j] = cardinal[j];
-
-                labels[i] = new HeadingLabelCacheEntry(labelBuffer, labelBuffer.Length);
-            }
-
-            return labels;
-        }
-
         private static bool Approximately(Vector2 a, Vector2 b)
         {
             return Mathf.Approximately(a.x, b.x) &&
@@ -6225,7 +6294,9 @@ namespace Hecton8.UI
 
         public void SetRenderPathProjectionSource(bool projectionSource)
         {
-            RenderPath nextPath = projectionSource ? RenderPath.ProjectionSource : RenderPath.ScreenOverlay;
+            RenderPath nextPath = projectionSource || !IsScreenOverlayAllowed()
+                ? RenderPath.ProjectionSource
+                : RenderPath.ScreenOverlay;
             if (renderPath == nextPath && CanvasStateMatchesRequestedRenderPath(nextPath, projectionCamera))
                 return;
 
@@ -6258,8 +6329,13 @@ namespace Hecton8.UI
                        ReferenceEquals(canvas.worldCamera, requestedProjectionCamera);
             }
 
+#if !UNITY_EDITOR
+            return canvas.renderMode == RenderMode.WorldSpace &&
+                   ReferenceEquals(canvas.worldCamera, requestedProjectionCamera);
+#else
             return canvas.renderMode == RenderMode.ScreenSpaceOverlay &&
                    canvas.worldCamera == null;
+#endif
         }
 
         public void CopyConfigurationFrom(SuitHUDV4CanvasOverlay source)
@@ -6323,24 +6399,18 @@ namespace Hecton8.UI
 
             if (!_tickRegistered)
             {
-                _tickRegistered =
-                    GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI) ||
-                    GlobalRegistry.Updatables.Contains(this);
+                _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             }
 
             if (!_lateFrameTickRegistered)
             {
-                _lateFrameTickRegistered =
-                    GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI) ||
-                    SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
+                _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
             }
 
             if (_slowTickRegistered)
                 return;
 
-            _slowTickRegistered =
-                GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI) ||
-                GlobalRegistry.SlowTickables.Contains(this);
+            _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterRuntimeTick()
@@ -6383,6 +6453,7 @@ namespace Hecton8.UI
         {
             ActiveRuntimeInstance = null;
 
+#if UNITY_EDITOR
             for (int i = 0; i < s_activeOverlays.Count; i++)
             {
                 SuitHUDV4CanvasOverlay overlay = s_activeOverlays[i];
@@ -6394,6 +6465,7 @@ namespace Hecton8.UI
                     return;
                 }
             }
+#endif
 
             for (int i = 0; i < s_activeOverlays.Count; i++)
             {

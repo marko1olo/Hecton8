@@ -8,6 +8,8 @@ using Hecton8.Caves;
 using Hecton8.Core;
 using System.Collections.Generic;
 using Hecton8.Visor;
+using Hecton8.World;
+using Unity.Mathematics;
 
 namespace Hecton8.Biolum
 {
@@ -27,6 +29,7 @@ namespace Hecton8.Biolum
         private static readonly int _FloraOceanBiolumStrengthId = Shader.PropertyToID("_HectonOceanBiolumStrength");
         private static readonly int _FloraFloorBiolumColorId = Shader.PropertyToID("_HectonFloorBiolumColor");
         private static readonly int _FloraFloorBiolumStrengthId = Shader.PropertyToID("_HectonFloorBiolumStrength");
+        private static readonly int _GlobalBiolumPhaseId = Shader.PropertyToID("_GlobalBiolumPhase");
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // SINGLETON
@@ -75,6 +78,8 @@ namespace Hecton8.Biolum
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private const int ActiveZoneListCapacity = 32;
+        private const float GlobalBiolumPhaseRateHz = 0.58f;
+        private const float GlobalBiolumPhasePublishEpsilon = 0.0001f;
 
         // COLD ALLOC: List<HectonBiolumZone>[32] - active cave-zone registry - owner: HectonBiolumManager
         private readonly List<HectonBiolumZone> _activeCaveZones = new List<HectonBiolumZone>(ActiveZoneListCapacity);
@@ -92,6 +97,10 @@ namespace Hecton8.Biolum
         private float _floraGlobalUpdateTimer = 0f;
         private float _nextCameraResolveTime = 0f;
         private float _sonarPulseBoost = 0f;
+        private float _globalBiolumPhase = 0f;
+        private float _lastPublishedGlobalBiolumPhase = -1f;
+        private AbsoluteUniversePosition _cachedCameraAup;
+        private int _cachedCameraAupFrame = -1;
 
         private const float CameraResolveCooldown = 1f;
         private static readonly Color _SonarResponseColor = new Color(0.62f, 0.94f, 1f, 1f);
@@ -189,7 +198,7 @@ namespace Hecton8.Biolum
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (_debugLogUpdates) Debug.Log($"[BiolumManager] Registered {zone.GetType().Name}: {_activeCaveZones.Count} caves, {_activeOceanZones.Count} ocean, {_activeFloorZones.Count} floor");
+            if (_debugLogUpdates) Debug.Log("[BiolumManager] Registered zone", this);
 #endif
         }
 
@@ -205,7 +214,7 @@ namespace Hecton8.Biolum
             _activeFloorZones.Remove(zone);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (_debugLogUpdates) Debug.Log($"[BiolumManager] Unregistered zone");
+            if (_debugLogUpdates) Debug.Log("[BiolumManager] Unregistered zone", this);
 #endif
         }
 
@@ -228,12 +237,13 @@ namespace Hecton8.Biolum
 
             int count = 0;
             float maxDistanceSq = maxDistance > 0f ? maxDistance * maxDistance : float.PositiveInfinity;
+            AbsoluteUniversePosition referenceAup = AbsoluteUniversePosition.FromRuntimePosition(referencePosition);
 
             if (includeOcean)
-                count = CollectNearbyZonesNonAlloc(_activeOceanZones, referencePosition, maxDistanceSq, destination, weights, count);
+                count = CollectNearbyZonesNonAlloc(_activeOceanZones, in referenceAup, maxDistanceSq, destination, weights, count);
 
             if (includeFloor)
-                count = CollectNearbyZonesNonAlloc(_activeFloorZones, referencePosition, maxDistanceSq, destination, weights, count);
+                count = CollectNearbyZonesNonAlloc(_activeFloorZones, in referenceAup, maxDistanceSq, destination, weights, count);
 
             return count;
         }
@@ -245,6 +255,21 @@ namespace Hecton8.Biolum
         {
             TryResolveCameraReference(false);
             return _cachedCameraTransform != null ? _cachedCameraTransform.position : Vector3.zero;
+        }
+
+        /// <summary>
+        /// Returns camera AUP cached for the current frame so zone LOD never does long-range transform subtraction.
+        /// </summary>
+        public AbsoluteUniversePosition GetCameraAup()
+        {
+            int frame = Time.frameCount;
+            if (_cachedCameraAupFrame != frame)
+            {
+                _cachedCameraAup = AbsoluteUniversePosition.FromRuntimePosition(GetCameraPosition());
+                _cachedCameraAupFrame = frame;
+            }
+
+            return _cachedCameraAup;
         }
 
         /// <summary>
@@ -276,6 +301,8 @@ namespace Hecton8.Biolum
         /// </summary>
         public void Tick(float deltaTime)
         {
+            PublishGlobalBiolumPhase(deltaTime);
+
 #if UNITY_EDITOR
             _debugTickInvocations++;
             _debugLastTickFrame = Time.frameCount;
@@ -320,7 +347,7 @@ namespace Hecton8.Biolum
             UpdateFloraShaderGlobals();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (_debugLogUpdates) Debug.Log($"[BiolumManager] Initialized (zones: {_activeCaveZones.Count} caves, {_activeOceanZones.Count} ocean, {_activeFloorZones.Count} floor)");
+            if (_debugLogUpdates) Debug.Log("[BiolumManager] Initialized", this);
 #endif
         }
 
@@ -344,15 +371,15 @@ namespace Hecton8.Biolum
 
         private void UpdateFloraShaderGlobals()
         {
-            Vector3 cameraPosition = GetCameraPosition();
+            AbsoluteUniversePosition cameraAup = GetCameraAup();
 
             Color oceanColor;
             float oceanStrength;
-            bool hasOcean = TrySampleDominantZone(_activeOceanZones, cameraPosition, out oceanColor, out oceanStrength);
+            bool hasOcean = TrySampleDominantZone(_activeOceanZones, in cameraAup, out oceanColor, out oceanStrength);
 
             Color floorColor;
             float floorStrength;
-            bool hasFloor = TrySampleDominantZone(_activeFloorZones, cameraPosition, out floorColor, out floorStrength);
+            bool hasFloor = TrySampleDominantZone(_activeFloorZones, in cameraAup, out floorColor, out floorStrength);
 
             _cachedOceanBiolumColor = hasOcean ? oceanColor : Color.black;
             _cachedFloorBiolumColor = hasFloor ? floorColor : Color.black;
@@ -375,6 +402,18 @@ namespace Hecton8.Biolum
             Shader.SetGlobalFloat(_FloraOceanBiolumStrengthId, _cachedOceanBiolumStrength);
             Shader.SetGlobalColor(_FloraFloorBiolumColorId, _cachedFloorBiolumColor);
             Shader.SetGlobalFloat(_FloraFloorBiolumStrengthId, _cachedFloorBiolumStrength);
+        }
+
+        private void PublishGlobalBiolumPhase(float deltaTime)
+        {
+            _globalBiolumPhase = math.frac(_globalBiolumPhase + math.max(0f, deltaTime) * GlobalBiolumPhaseRateHz);
+            if (math.abs(_globalBiolumPhase - _lastPublishedGlobalBiolumPhase) <= GlobalBiolumPhasePublishEpsilon)
+            {
+                return;
+            }
+
+            Shader.SetGlobalFloat(_GlobalBiolumPhaseId, _globalBiolumPhase);
+            _lastPublishedGlobalBiolumPhase = _globalBiolumPhase;
         }
 
         private static Color FastLerpColor(Color from, Color to, float t)
@@ -420,7 +459,7 @@ namespace Hecton8.Biolum
             return false;
         }
 
-        private bool TrySampleDominantZone(List<HectonBiolumZone> zones, Vector3 referencePosition, out Color sampledColor, out float sampledStrength)
+        private bool TrySampleDominantZone(List<HectonBiolumZone> zones, in AbsoluteUniversePosition referenceAup, out Color sampledColor, out float sampledStrength)
         {
             sampledColor = Color.black;
             sampledStrength = 0f;
@@ -440,14 +479,15 @@ namespace Hecton8.Biolum
                     continue;
                 }
 
-                Vector3 delta = zone.GetZonePosition() - referencePosition;
                 float zoneRangeSq = zoneRange * zoneRange;
-                float distanceSq = delta.sqrMagnitude;
-                if (distanceSq > zoneRangeSq)
+                AbsoluteUniversePosition zoneAup = zone.GetZoneAup();
+                double distanceSqDouble = AbsoluteUniversePosition.DistanceSq(in zoneAup, in referenceAup);
+                if (distanceSqDouble > zoneRangeSq)
                 {
                     continue;
                 }
 
+                float distanceSq = (float)math.min(distanceSqDouble, float.MaxValue);
                 float proximity = 1f - Mathf.Clamp01(distanceSq / zoneRangeSq);
                 float weightedStrength = zone.SampleZoneIntensity() * proximity;
                 if (weightedStrength <= sampledStrength)
@@ -462,7 +502,7 @@ namespace Hecton8.Biolum
             return sampledStrength > 0f;
         }
 
-        private static int CollectNearbyZonesNonAlloc(List<HectonBiolumZone> zones, Vector3 referencePosition, float maxDistanceSq, HectonBiolumZone[] destination, float[] weights, int count)
+        private static int CollectNearbyZonesNonAlloc(List<HectonBiolumZone> zones, in AbsoluteUniversePosition referenceAup, float maxDistanceSq, HectonBiolumZone[] destination, float[] weights, int count)
         {
             int destinationCapacity = destination.Length;
             if (destinationCapacity == 0)
@@ -479,12 +519,13 @@ namespace Hecton8.Biolum
                 if (zoneRange <= 0.01f)
                     continue;
 
-                Vector3 delta = zone.GetZonePosition() - referencePosition;
-                float distanceSq = delta.sqrMagnitude;
+                AbsoluteUniversePosition zoneAup = zone.GetZoneAup();
+                double distanceSqDouble = AbsoluteUniversePosition.DistanceSq(in zoneAup, in referenceAup);
                 float effectiveRangeSq = zoneRange * zoneRange;
-                if (distanceSq > effectiveRangeSq || distanceSq > maxDistanceSq)
+                if (distanceSqDouble > effectiveRangeSq || distanceSqDouble > maxDistanceSq)
                     continue;
 
+                float distanceSq = (float)math.min(distanceSqDouble, float.MaxValue);
                 float proximity = 1f - Mathf.Clamp01(distanceSq / effectiveRangeSq);
                 float score = zone.SampleZoneIntensity() * proximity;
                 if (score <= 0f)
@@ -537,6 +578,9 @@ namespace Hecton8.Biolum
             Shader.SetGlobalFloat(_FloraOceanBiolumStrengthId, 0f);
             Shader.SetGlobalColor(_FloraFloorBiolumColorId, Color.black);
             Shader.SetGlobalFloat(_FloraFloorBiolumStrengthId, 0f);
+            Shader.SetGlobalFloat(_GlobalBiolumPhaseId, 0f);
+            _globalBiolumPhase = 0f;
+            _lastPublishedGlobalBiolumPhase = 0f;
         }
 
         private void TryRegisterService()

@@ -144,8 +144,19 @@ namespace Hecton8.World
             if (!environmentalVegetationBridge.TrySampleAbyssalFlow(runtimePosition, out Vector3 flowVector))
                 return false;
 
-            flowMagnitude = flowVector.magnitude;
+            flowMagnitude = FastMagnitudeApprox(flowVector);
             return true;
+        }
+
+        private static float FastMagnitudeApprox(Vector3 value)
+        {
+            float ax = Mathf.Abs(value.x);
+            float ay = Mathf.Abs(value.y);
+            float az = Mathf.Abs(value.z);
+            float max = Mathf.Max(ax, Mathf.Max(ay, az));
+            float min = Mathf.Min(ax, Mathf.Min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (mid * 0.41421356f) + (min * 0.29289322f);
         }
 
         private bool EnsureEnvironmentalVegetationBridgeResolved()

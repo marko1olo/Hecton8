@@ -148,17 +148,31 @@ namespace Hecton8.Gameplay
 
             int toggleCount = math.clamp((int)math.ceil(clampedSeverity * MaxShortCircuitBits), 1, MaxShortCircuitBits);
             ushort toggleMask = 0;
+            int selectedCount = 0;
             int attempts = 0;
 
-            while (math.countbits((uint)toggleMask) < toggleCount && attempts < MaxShortCircuitBits * 4)
+            while (selectedCount < toggleCount && attempts < MaxShortCircuitBits * 4)
             {
                 int bitIndex = (int)(NextRandom() & 0x0Fu);
-                toggleMask |= (ushort)(1 << bitIndex);
+                ushort bit = (ushort)(1 << bitIndex);
+                if ((toggleMask & bit) == 0)
+                {
+                    toggleMask |= bit;
+                    selectedCount++;
+                }
+
                 attempts++;
             }
 
-            for (int bitIndex = 0; math.countbits((uint)toggleMask) < toggleCount && bitIndex < MaxShortCircuitBits; bitIndex++)
-                toggleMask |= (ushort)(1 << bitIndex);
+            for (int bitIndex = 0; selectedCount < toggleCount && bitIndex < MaxShortCircuitBits; bitIndex++)
+            {
+                ushort bit = (ushort)(1 << bitIndex);
+                if ((toggleMask & bit) != 0)
+                    continue;
+
+                toggleMask |= bit;
+                selectedCount++;
+            }
 
             if (toggleMask == 0)
                 return;

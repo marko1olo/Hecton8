@@ -1,61 +1,61 @@
 // ============================================================================
 // HECTON-8 — ISaveable.cs
-// Интерфейс для любой системы, участвующей в сохранении/загрузке.
+// Interfeys dlya lyuboy sistemy, uchastvuyuschey v sohranenii/zagruzke.
 //
-// Реализуется MonoBehaviour-системами:
-//   • HectonSurvivalSystem (статы игрока)
-//   • PlayerInventory (содержимое инвентаря)
-//   • WorldStateManager (состояние ресурсных узлов)
-//   • ConstructionManager (построенные модули)
+// Realizuetsya MonoBehaviour-sistemami:
+//   • HectonSurvivalSystem (staty igroka)
+//   • PlayerInventory (soderzhimoe inventarya)
+//   • WorldStateManager (sostoyanie resursnyh uzlov)
+//   • ConstructionManager (postroennye moduli)
 //
-// ПРИОРИТЕТЫ:
-//   Числа меньше = обрабатываются раньше.
-//   При сохранении порядок обычно не критичен.
-//   При загрузке порядок ВАЖЕН:
-//     10 — Player stats (позиция, HP) → сначала
-//     20 — Inventory → после игрока
-//     50 — World state → после инвентаря
-//     90 — Construction → последним (может зависеть от мира)
+// PRIORITETY:
+//   Chisla menshe = obrabatyvayutsya ranshe.
+//   Pri sohranenii poryadok obychno ne kritichen.
+//   Pri zagruzke poryadok VAZhEN:
+//     10 — Player stats (pozitsiya, HP) → snachala
+//     20 — Inventory → posle igroka
+//     50 — World state → posle inventarya
+//     90 — Construction → poslednim (mozhet zaviset ot mira)
 // ============================================================================
 
 namespace Hecton8.SaveSystem
 {
     /// <summary>
-    /// Контракт для систем, участвующих в save/load.
+    /// Kontrakt dlya sistem, uchastvuyuschih v save/load.
     /// </summary>
     public interface ISaveable
     {
         /// <summary>
-        /// Приоритет при сохранении. Меньше = раньше.
-        /// Рекомендации: Player=10, Inventory=20, World=50, Construction=90.
+        /// Prioritet pri sohranenii. Menshe = ranshe.
+        /// Rekomendatsii: Player=10, Inventory=20, World=50, Construction=90.
         /// </summary>
         int SavePriority { get; }
 
         /// <summary>
-        /// Приоритет при загрузке. Меньше = раньше.
-        /// КРИТИЧНО: игрок должен загружаться первым.
+        /// Prioritet pri zagruzke. Menshe = ranshe.
+        /// KRITIChNO: igrok dolzhen zagruzhatsya pervym.
         /// </summary>
         int LoadPriority { get; }
 
         /// <summary>
-        /// Записывает текущее состояние системы в SaveData.
-        /// Вызывается SaveManager при сохранении.
+        /// Zapisyvaet tekuschee sostoyanie sistemy v SaveData.
+        /// Vyzyvaetsya SaveManager pri sohranenii.
         ///
-        /// КОНТРАКТ:
-        ///   • Заполнять ТОЛЬКО свою секцию DTO.
-        ///   • Не трогать чужие секции.
-        ///   • Не аллоцировать новые массивы (использовать EnsureCapacity).
+        /// KONTRAKT:
+        ///   • Zapolnyat TOLKO svoyu sektsiyu DTO.
+        ///   • Ne trogat chuzhie sektsii.
+        ///   • Ne allotsirovat novye massivy (ispolzovat EnsureCapacity).
         /// </summary>
         void PopulateSaveData(SaveData data);
 
         /// <summary>
-        /// Восстанавливает состояние системы из SaveData.
-        /// Вызывается SaveManager при загрузке.
+        /// Vosstanavlivaet sostoyanie sistemy iz SaveData.
+        /// Vyzyvaetsya SaveManager pri zagruzke.
         ///
-        /// КОНТРАКТ:
-        ///   • Читать ТОЛЬКО свою секцию DTO.
-        ///   • Валидировать данные перед применением.
-        ///   • При ошибках — использовать дефолтные значения, не крашить.
+        /// KONTRAKT:
+        ///   • Chitat TOLKO svoyu sektsiyu DTO.
+        ///   • Validirovat dannye pered primeneniem.
+        ///   • Pri oshibkah — ispolzovat defoltnye znacheniya, ne krashit.
         /// </summary>
         void LoadFromSaveData(SaveData data);
     }

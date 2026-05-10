@@ -1,35 +1,35 @@
 // ============================================================================
 // HECTON-8 — InteractionHighlighter.cs
-// Подсвечивает интерактивный объект через MaterialPropertyBlock.
+// Podsvechivaet interaktivnyy obekt cherez MaterialPropertyBlock.
 //
-// РЕФАКТОРИНГ v2.0 (Zero GC):
-//   • Полностью удалены iterator Fade, legacy coroutine start, legacy coroutine stop.
-//     Каждый вызов legacy coroutine start аллоцировал ~100 bytes на GC heap
+// REFAKTORING v2.0 (Zero GC):
+//   • Polnostyu udaleny iterator Fade, legacy coroutine start, legacy coroutine stop.
+//     Kazhdyy vyzov legacy coroutine start allotsiroval ~100 bytes na GC heap
 //     (Coroutine object + iterator state machine + boxing).
-//     При частом наведении на объекты (10+ раз/сек) — ощутимый GC pressure.
-//   • Реализует ITickable — интеграция с GameTickManager.
-//   • Ленивая регистрация: Register в GameTickManager ТОЛЬКО когда
-//     цвет в переходном состоянии (currentColor ≠ targetColor).
-//     Unregister когда цвет достиг цели. Нет CPU расхода вхолостую.
-//   • Плавная интерполяция через scalar math.lerp + нормализованный прогресс
-//     в Tick(float dt). Frame-rate independent.
-//   • OnDisable: обязательный Unregister + мгновенный сброс цвета.
+//     Pri chastom navedenii na obekty (10+ raz/sek) — oschutimyy GC pressure.
+//   • Realizuet ITickable — integratsiya s GameTickManager.
+//   • Lenivaya registratsiya: Register v GameTickManager TOLKO kogda
+//     tsvet v perehodnom sostoyanii (currentColor ≠ targetColor).
+//     Unregister kogda tsvet dostig tseli. Net CPU rashoda vholostuyu.
+//   • Plavnaya interpolyatsiya cherez scalar math.lerp + normalizovannyy progress
+//     v Tick(float dt). Frame-rate independent.
+//   • OnDisable: obyazatelnyy Unregister + mgnovennyy sbros tsveta.
 //
-// АРХИТЕКТУРА:
-//   • Нет Update(), нет Coroutine, нет аллокаций в рантайме.
-//   • MaterialPropertyBlock — без копий материалов (shared material safe).
-//   • Два режима: Emission (свечение) и BaseColorTint (тонирование).
-//   • Shader Property IDs кэшированы статически.
-//   • _originalColors кэшированы в Awake (для BaseColorTint).
+// ARHITEKTURA:
+//   • Net Update(), net Coroutine, net allokatsiy v rantayme.
+//   • MaterialPropertyBlock — bez kopiy materialov (shared material safe).
+//   • Dva rezhima: Emission (svechenie) i BaseColorTint (tonirovanie).
+//   • Shader Property IDs keshirovany staticheski.
+//   • _originalColors keshirovany v Awake (dlya BaseColorTint).
 //
-// ЖИЗНЕННЫЙ ЦИКЛ ТИКАНИЯ:
+// ZhIZNENNYY TsIKL TIKANIYa:
 //   ┌──────────────────────────────────────────────────────────────┐
 //   │ SetHighlight(true)                                          │
 //   │   └→ _targetColor = highlightColor * intensity              │
 //   │   └→ _lerpProgress = 0                                     │
 //   │   └→ BeginFade() → Register(ITickable)                     │
 //   │                                                             │
-//   │ Tick(dt) каждый кадр:                                       │
+//   │ Tick(dt) kazhdyy kadr:                                       │
 //   │   └→ _lerpProgress += dt / fadeDuration                    │
 //   │   └→ _currentValue = Lerp(startColor, targetColor, t)      │
 //   │   └→ ApplyImmediate(_currentValue)                         │
@@ -38,16 +38,16 @@
 //   │ SetHighlight(false)                                         │
 //   │   └→ _targetColor = Color.black / Color.white              │
 //   │   └→ _lerpProgress = 0                                     │
-//   │   └→ BeginFade() → Register(ITickable) (если ещё не)       │
+//   │   └→ BeginFade() → Register(ITickable) (esli esche ne)       │
 //   │                                                             │
 //   │ OnDisable()                                                 │
 //   │   └→ Unregister(ITickable)                                 │
-//   │   └→ ApplyImmediate(offColor) — мгновенный сброс           │
+//   │   └→ ApplyImmediate(offColor) — mgnovennyy sbros           │
 //   └──────────────────────────────────────────────────────────────┘
 //
 // ZERO GC:
-//   • Нет legacy coroutine start (iterator + Coroutine object = ~100B per call).
-//   • Нет foreach, LINQ, лямбд.
+//   • Net legacy coroutine start (iterator + Coroutine object = ~100B per call).
+//   • Net foreach, LINQ, lyambd.
 //   • Color — struct (stack, zero GC).
 //   • MaterialPropertyBlock.SetColor — zero GC.
 //   • Renderer.GetPropertyBlock/SetPropertyBlock — zero GC.
@@ -70,24 +70,24 @@ namespace Hecton8.Interaction
         public enum Mode { Emission, BaseColorTint }
 
         [Header("── Highlight ─────────────────────────────────")]
-        [Tooltip("Режим подсветки:\n" +
-                 "• Emission — добавляет свечение (требует Emission в материале).\n" +
-                 "• BaseColorTint — тонирует базовый цвет (универсально).")]
+        [Tooltip("Rezhim podsvetki:\n" +
+                 "• Emission — dobavlyaet svechenie (trebuet Emission v materiale).\n" +
+                 "• BaseColorTint — toniruet bazovyy tsvet (universalno).")]
         [SerializeField] private Mode highlightMode = Mode.Emission;
 
-        [Tooltip("Цвет подсветки.")]
+        [Tooltip("Tsvet podsvetki.")]
         [SerializeField] private Color highlightColor = new Color(0.25f, 0.7f, 1f, 1f);
 
-        [Tooltip("Множитель интенсивности (только для Emission mode). " +
-                 "Значения > 1 дают HDR-свечение через bloom.")]
+        [Tooltip("Mnozhitel intensivnosti (tolko dlya Emission mode). " +
+                 "Znacheniya > 1 dayut HDR-svechenie cherez bloom.")]
         [SerializeField] private float intensity = 2.5f;
 
-        [Tooltip("Длительность перехода (секунды). 0 = мгновенно.")]
+        [Tooltip("Dlitelnost perehoda (sekundy). 0 = mgnovenno.")]
         [SerializeField] private float fadeDuration = 0.12f;
 
         [Header("── Renderers ─────────────────────────────────")]
-        [Tooltip("Целевые рендереры. Если пусто — авто-заполняется " +
-                 "через GetComponentsInChildren<Renderer>() в Awake.")]
+        [Tooltip("Tselevye renderery. Esli pusto — avto-zapolnyaetsya " +
+                 "cherez GetComponentsInChildren<Renderer>() v Awake.")]
         [SerializeField] private Renderer[] targetRenderers;
 
         // ══════════════════════════════════════════════════════════
@@ -105,37 +105,37 @@ namespace Hecton8.Interaction
         /// <summary>Reusable MaterialPropertyBlock. Created once at owner initialization.</summary>
         private MaterialPropertyBlock _block;
 
-        /// <summary>Логическое состояние: подсветка включена.</summary>
+        /// <summary>Logicheskoe sostoyanie: podsvetka vklyuchena.</summary>
         private bool _highlighted;
 
-        /// <summary>Текущее значение цвета (интерполируемое).</summary>
+        /// <summary>Tekuschee znachenie tsveta (interpoliruemoe).</summary>
         private Color _currentValue;
 
-        /// <summary>Цвет, ОТ которого начался текущий fade.</summary>
+        /// <summary>Tsvet, OT kotorogo nachalsya tekuschiy fade.</summary>
         private Color _fadeFromColor;
 
-        /// <summary>Цвет, К которому идёт текущий fade.</summary>
+        /// <summary>Tsvet, K kotoromu idet tekuschiy fade.</summary>
         private Color _fadeToColor;
 
         /// <summary>
-        /// Нормализованный прогресс интерполяции [0..1].
-        /// 0 = начало fade, 1 = fade завершён.
-        /// Инкрементируется в Tick: _lerpProgress += dt / fadeDuration.
+        /// Normalizovannyy progress interpolyatsii [0..1].
+        /// 0 = nachalo fade, 1 = fade zavershen.
+        /// Inkrementiruetsya v Tick: _lerpProgress += dt / fadeDuration.
         /// </summary>
         private float _lerpProgress;
 
         /// <summary>
-        /// Флаг: объект зарегистрирован в GameTickManager как ITickable.
-        /// Предотвращает двойной Register и orphan Unregister.
-        /// true = Tick() вызывается каждый кадр (fade в процессе).
-        /// false = объект не тикается (fade завершён или не начат).
+        /// Flag: obekt zaregistrirovan v GameTickManager kak ITickable.
+        /// Predotvraschaet dvoynoy Register i orphan Unregister.
+        /// true = Tick() vyzyvaetsya kazhdyy kadr (fade v protsesse).
+        /// false = obekt ne tikaetsya (fade zavershen ili ne nachat).
         /// </summary>
         private bool _isTicking;
 
         /// <summary>
-        /// Кэш оригинальных цветов рендереров (для BaseColorTint mode).
-        /// Заполняется один раз в Awake. Размер = targetRenderers.Length.
-        /// Color — struct, массив на managed heap (one-time alloc).
+        /// Kesh originalnyh tsvetov rendererov (dlya BaseColorTint mode).
+        /// Zapolnyaetsya odin raz v Awake. Razmer = targetRenderers.Length.
+        /// Color — struct, massiv na managed heap (one-time alloc).
         /// </summary>
         private Color[] _originalColors;
 
@@ -147,42 +147,42 @@ namespace Hecton8.Interaction
         {
             EnsurePropertyBlock();
 
-            // ── Авто-заполнение рендереров ──
+            // ── Avto-zapolnenie rendererov ──
             if (targetRenderers == null || targetRenderers.Length == 0)
                 targetRenderers = GetComponentsInChildren<Renderer>();
 
-            // ── Кэш оригинальных цветов (для BaseColorTint) ──
+            // ── Kesh originalnyh tsvetov (dlya BaseColorTint) ──
             if (highlightMode == Mode.BaseColorTint)
                 CacheOriginalColors();
 
-            // ── Начальное состояние: не подсвечен ──
+            // ── Nachalnoe sostoyanie: ne podsvechen ──
             _currentValue  = GetOffColor();
             _fadeFromColor = _currentValue;
             _fadeToColor   = _currentValue;
-            _lerpProgress  = 1f; // Fade завершён (нечего интерполировать)
+            _lerpProgress  = 1f; // Fade zavershen (nechego interpolirovat)
             _highlighted   = false;
             _isTicking     = false;
         }
 
         /// <summary>
-        /// OnDisable: гарантированная отписка и сброс визуала.
+        /// OnDisable: garantirovannaya otpiska i sbros vizuala.
         ///
-        /// КРИТИЧНО: если объект деактивируется во время fade —
-        /// Tick() перестанет вызываться, но объект останется
-        /// в списке GameTickManager (→ "fake null" auto-cleanup
-        /// подберёт его, но лучше не полагаться на это).
+        /// KRITIChNO: esli obekt deaktiviruetsya vo vremya fade —
+        /// Tick() perestanet vyzyvatsya, no obekt ostanetsya
+        /// v spiske GameTickManager (→ "fake null" auto-cleanup
+        /// podberet ego, no luchshe ne polagatsya na eto).
         ///
-        /// Поэтому: всегда Unregister + мгновенный сброс цвета.
+        /// Poetomu: vsegda Unregister + mgnovennyy sbros tsveta.
         /// </summary>
         private void OnDisable()
         {
-            // ── Отписка от GameTickManager ──
+            // ── Otpiska ot GameTickManager ──
             StopTicking();
 
             if (targetRenderers == null || targetRenderers.Length == 0)
                 return;
 
-            // ── Мгновенный сброс цвета ──
+            // ── Mgnovennyy sbros tsveta ──
             Color offColor = GetOffColor();
             ApplyImmediate(offColor);
             _currentValue  = offColor;
@@ -196,19 +196,19 @@ namespace Hecton8.Interaction
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Включить / выключить подсветку.
+        /// Vklyuchit / vyklyuchit podsvetku.
         ///
-        /// Если fadeDuration > 0: запускает плавный переход через
-        /// ITickable.Tick(). Объект регистрируется в GameTickManager
-        /// только на время перехода.
+        /// Esli fadeDuration > 0: zapuskaet plavnyy perehod cherez
+        /// ITickable.Tick(). Obekt registriruetsya v GameTickManager
+        /// tolko na vremya perehoda.
         ///
-        /// Если fadeDuration <= 0: мгновенное переключение, без Register.
+        /// Esli fadeDuration <= 0: mgnovennoe pereklyuchenie, bez Register.
         ///
-        /// Повторный вызов с тем же значением — no-op.
+        /// Povtornyy vyzov s tem zhe znacheniem — no-op.
         ///
-        /// ZERO GC: никаких аллокаций. Всё на struct'ах и флагах.
+        /// ZERO GC: nikakih allokatsiy. Vse na struct'ah i flagah.
         /// </summary>
-        /// <param name="active">true = подсветить, false = убрать подсветку.</param>
+        /// <param name="active">true = podsvetit, false = ubrat podsvetku.</param>
         public void SetHighlight(bool active)
         {
             if (_highlighted == active) return;
@@ -218,23 +218,23 @@ namespace Hecton8.Interaction
 
             if (fadeDuration <= 0f)
             {
-                // ── Мгновенный переход ──
+                // ── Mgnovennyy perehod ──
                 ApplyImmediate(target);
                 _currentValue  = target;
                 _fadeToColor   = target;
                 _lerpProgress  = 1f;
 
-                // Если тикались — останавливаемся
+                // Esli tikalis — ostanavlivaemsya
                 StopTicking();
             }
             else
             {
-                // ── Плавный переход ──
+                // ── Plavnyy perehod ──
                 BeginFade(_currentValue, target);
             }
         }
 
-        /// <summary>Текущее логическое состояние подсветки.</summary>
+        /// <summary>Tekuschee logicheskoe sostoyanie podsvetki.</summary>
         public bool IsHighlighted => _highlighted;
 
         // ══════════════════════════════════════════════════════════
@@ -242,39 +242,39 @@ namespace Hecton8.Interaction
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Вызывается GameTickManager каждый кадр ТОЛЬКО во время fade.
+        /// Vyzyvaetsya GameTickManager kazhdyy kadr TOLKO vo vremya fade.
         ///
-        /// Инкрементирует _lerpProgress, интерполирует цвет,
-        /// применяет через MaterialPropertyBlock.
+        /// Inkrementiruet _lerpProgress, interpoliruet tsvet,
+        /// primenyaet cherez MaterialPropertyBlock.
         ///
-        /// Когда _lerpProgress >= 1.0 — fade завершён:
-        ///   1. Устанавливает точный целевой цвет (без floating point drift).
-        ///   2. Отписывается от GameTickManager (StopTicking).
-        ///   → Tick() больше не вызывается до следующего SetHighlight.
-        ///   → Zero CPU cost в idle состоянии.
+        /// Kogda _lerpProgress >= 1.0 — fade zavershen:
+        ///   1. Ustanavlivaet tochnyy tselevoy tsvet (bez floating point drift).
+        ///   2. Otpisyvaetsya ot GameTickManager (StopTicking).
+        ///   → Tick() bolshe ne vyzyvaetsya do sleduyuschego SetHighlight.
+        ///   → Zero CPU cost v idle sostoyanii.
         ///
         /// ZERO GC: scalar color lerp — struct math. ApplyImmediate — zero GC.
         /// </summary>
         public void Tick(float deltaTime)
         {
-            // ── Инкремент прогресса ──
-            // fadeDuration гарантированно > 0 (BeginFade не вызывается иначе).
-            // Защита от division by zero через max(fadeDuration, epsilon).
+            // ── Inkrement progressa ──
+            // fadeDuration garantirovanno > 0 (BeginFade ne vyzyvaetsya inache).
+            // Zaschita ot division by zero cherez max(fadeDuration, epsilon).
             _lerpProgress += deltaTime / fadeDuration;
 
             if (_lerpProgress >= 1f)
             {
-                // ── Fade завершён ──
+                // ── Fade zavershen ──
                 _lerpProgress = 1f;
                 _currentValue = _fadeToColor;
                 ApplyImmediate(_currentValue);
 
-                // Отписываемся — больше не тикаемся до следующего SetHighlight
+                // Otpisyvaemsya — bolshe ne tikaemsya do sleduyuschego SetHighlight
                 StopTicking();
             }
             else
             {
-                // ── Интерполяция в процессе ──
+                // ── Interpolyatsiya v protsesse ──
                 _currentValue = LerpColor(_fadeFromColor, _fadeToColor, _lerpProgress);
                 ApplyImmediate(_currentValue);
             }
@@ -295,14 +295,14 @@ namespace Hecton8.Interaction
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Начинает плавный переход от текущего цвета к целевому.
-        /// Запоминает начальный и конечный цвет, сбрасывает прогресс,
-        /// регистрируется в GameTickManager (если ещё не).
+        /// Nachinaet plavnyy perehod ot tekuschego tsveta k tselevomu.
+        /// Zapominaet nachalnyy i konechnyy tsvet, sbrasyvaet progress,
+        /// registriruetsya v GameTickManager (esli esche ne).
         ///
-        /// Если уже тикаемся (предыдущий fade не завершён) —
-        /// НЕ делаем Unregister+Register. Просто обновляем
-        /// _fadeFromColor и _fadeToColor. Переход плавно
-        /// "перенацеливается" с текущей позиции.
+        /// Esli uzhe tikaemsya (predyduschiy fade ne zavershen) —
+        /// NE delaem Unregister+Register. Prosto obnovlyaem
+        /// _fadeFromColor i _fadeToColor. Perehod plavno
+        /// "perenatselivaetsya" s tekuschey pozitsii.
         /// </summary>
         private void BeginFade(Color from, Color to)
         {
@@ -314,12 +314,12 @@ namespace Hecton8.Interaction
         }
 
         /// <summary>
-        /// Регистрирует объект в GameTickManager как ITickable.
-        /// Вызывается при начале fade. Идемпотентный: если уже
-        /// зарегистрирован — no-op (проверка _isTicking).
+        /// Registriruet obekt v GameTickManager kak ITickable.
+        /// Vyzyvaetsya pri nachale fade. Idempotentnyy: esli uzhe
+        /// zaregistrirovan — no-op (proverka _isTicking).
         ///
-        /// GameTickManager.Register внутри тоже проверяет дубликаты
-        /// (ContainsRef), но _isTicking экономит вызов метода.
+        /// GameTickManager.Register vnutri tozhe proveryaet dublikaty
+        /// (ContainsRef), no _isTicking ekonomit vyzov metoda.
         /// </summary>
         private void StartTicking()
         {
@@ -334,9 +334,9 @@ namespace Hecton8.Interaction
         }
 
         /// <summary>
-        /// Снимает объект с обновления в GameTickManager.
-        /// Вызывается когда fade завершён или при OnDisable.
-        /// Идемпотентный: если не зарегистрирован — no-op.
+        /// Snimaet obekt s obnovleniya v GameTickManager.
+        /// Vyzyvaetsya kogda fade zavershen ili pri OnDisable.
+        /// Idempotentnyy: esli ne zaregistrirovan — no-op.
         /// </summary>
         private void StopTicking()
         {
@@ -351,9 +351,9 @@ namespace Hecton8.Interaction
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Возвращает целевой цвет для "включённого" состояния.
+        /// Vozvraschaet tselevoy tsvet dlya "vklyuchennogo" sostoyaniya.
         /// Emission: highlightColor × intensity (HDR).
-        /// BaseColorTint: highlightColor (LDR тонирование).
+        /// BaseColorTint: highlightColor (LDR tonirovanie).
         /// </summary>
         private Color GetOnColor()
         {
@@ -366,9 +366,9 @@ namespace Hecton8.Interaction
         }
 
         /// <summary>
-        /// Возвращает целевой цвет для "выключенного" состояния.
-        /// Emission: чёрный (нет свечения).
-        /// BaseColorTint: белый (оригинальный цвет × 1 = без изменений).
+        /// Vozvraschaet tselevoy tsvet dlya "vyklyuchennogo" sostoyaniya.
+        /// Emission: chernyy (net svecheniya).
+        /// BaseColorTint: belyy (originalnyy tsvet × 1 = bez izmeneniy).
         /// </summary>
         private Color GetOffColor()
         {
@@ -385,17 +385,17 @@ namespace Hecton8.Interaction
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Мгновенно применяет цвет ко всем рендерерам через MaterialPropertyBlock.
+        /// Mgnovenno primenyaet tsvet ko vsem rendereram cherez MaterialPropertyBlock.
         ///
         /// ZERO GC:
         ///   • Renderer.GetPropertyBlock(block) — fills existing block, zero alloc.
         ///   • MaterialPropertyBlock.SetColor — zero alloc (struct param).
         ///   • Renderer.SetPropertyBlock(block) — zero alloc.
-        ///   • for-цикл по массиву — zero alloc.
+        ///   • for-tsikl po massivu — zero alloc.
         ///
-        /// MaterialPropertyBlock НЕ создаёт копию материала.
-        /// Все instances с тем же material разделяют его.
-        /// PropertyBlock переопределяет свойства per-renderer.
+        /// MaterialPropertyBlock NE sozdaet kopiyu materiala.
+        /// Vse instances s tem zhe material razdelyayut ego.
+        /// PropertyBlock pereopredelyaet svoystva per-renderer.
         /// </summary>
         private void ApplyImmediate(Color value)
         {
@@ -419,9 +419,9 @@ namespace Hecton8.Interaction
                         break;
 
                     case Mode.BaseColorTint:
-                        // Тонируем оригинальный цвет: original × tintValue.
-                        // При value = white (1,1,1,1) → original × 1 = без изменений.
-                        // При value = highlightColor → original × tint = подсвечен.
+                        // Toniruem originalnyy tsvet: original × tintValue.
+                        // Pri value = white (1,1,1,1) → original × 1 = bez izmeneniy.
+                        // Pri value = highlightColor → original × tint = podsvechen.
                         Color tinted = _originalColors[i] * value;
                         _block.SetColor(_BaseColorID, tinted);
                         _block.SetColor(_ColorID,     tinted); // Built-in RP fallback
@@ -446,17 +446,17 @@ namespace Hecton8.Interaction
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Кэширует оригинальные цвета материалов для BaseColorTint mode.
-        /// Вызывается один раз в Awake.
+        /// Keshiruet originalnye tsveta materialov dlya BaseColorTint mode.
+        /// Vyzyvaetsya odin raz v Awake.
         ///
-        /// Использует sharedMaterial.color (НЕ material.color, который
-        /// создаёт копию материала и утекает если не Destroy).
+        /// Ispolzuet sharedMaterial.color (NE material.color, kotoryy
+        /// sozdaet kopiyu materiala i utekaet esli ne Destroy).
         ///
-        /// Если рендерер или материал null — fallback к белому.
-        /// Белый × tint = tint (корректное поведение).
+        /// Esli renderer ili material null — fallback k belomu.
+        /// Belyy × tint = tint (korrektnoe povedenie).
         ///
-        /// One-time allocation: Color[] на managed heap.
-        /// Color — struct (16 bytes), массив не создаёт GC pressure.
+        /// One-time allocation: Color[] na managed heap.
+        /// Color — struct (16 bytes), massiv ne sozdaet GC pressure.
         /// </summary>
         private void CacheOriginalColors()
         {

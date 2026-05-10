@@ -1,8 +1,8 @@
 // ============================================================================
 // HECTON-8 — ControlScheme.cs
-// ScriptableObject: единая точка настройки всех клавиш.
-// Создать: Assets → Create → Hecton8 → Control Scheme
-// Назначить в инспекторе HectonPlayerMovement и PlayerInteraction.
+// ScriptableObject: edinaya tochka nastroyki vseh klavish.
+// Sozdat: Assets → Create → Hecton8 → Control Scheme
+// Naznachit v inspektore HectonPlayerMovement i PlayerInteraction.
 // ============================================================================
 
 using UnityEngine;
@@ -17,7 +17,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Interaction ──────────────────────────────")]
-        [Tooltip("Взаимодействие с объектами. Стандартная клавиша: E.")]
+        [Tooltip("Vzaimodeystvie s obektami. Standartnaya klavisha: E.")]
         public KeyCode interactKey = KeyCode.E;
 
         // ══════════════════════════════════════════════════════════
@@ -25,19 +25,19 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Swim Vertical ─────────────────────────────")]
-        [Tooltip("Вверх в воде. Стандартная клавиша: Space.")]
+        [Tooltip("Vverh v vode. Standartnaya klavisha: Space.")]
         public KeyCode swimAscendPrimary   = KeyCode.Space;
 
-        [Tooltip("Доп. клавиша вверх. None = отключено.")]
+        [Tooltip("Dop. klavisha vverh. None = otklyucheno.")]
         public KeyCode swimAscendAlternate = KeyCode.None;
 
-        [Tooltip("Вниз в воде. Основная клавиша: Left Ctrl.")]
+        [Tooltip("Vniz v vode. Osnovnaya klavisha: Left Ctrl.")]
         public KeyCode swimDescendPrimary  = KeyCode.LeftControl;
 
-        [Tooltip("Вниз в воде. Альтернативная клавиша: C.")]
+        [Tooltip("Vniz v vode. Alternativnaya klavisha: C.")]
         public KeyCode swimDescendAlternate = KeyCode.C;
 
-        [Tooltip("Запасной вниз (исторический Q).")]
+        [Tooltip("Zapasnoy vniz (istoricheskiy Q).")]
         public KeyCode swimDescendLegacy   = KeyCode.Q;
 
         // ══════════════════════════════════════════════════════════
@@ -51,14 +51,14 @@ namespace Hecton8.Gameplay
         public KeyCode toolSlot4    = KeyCode.Alpha4;
         public KeyCode inventoryKey = KeyCode.Tab;
 
-        [Tooltip("Модификатор деконструкции лазером (удерживать + ЛКМ).")]
+        [Tooltip("Modifikator dekonstruktsii lazerom (uderzhivat + LKM).")]
         public KeyCode deconstructModifier = KeyCode.R;
 
         // ══════════════════════════════════════════════════════════
-        //  FUTURE (задел — пока не подключены)
+        //  FUTURE (zadel — poka ne podklyucheny)
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Future (не подключены) ───────────────────")]
+        [Header("── Future (ne podklyucheny) ───────────────────")]
         public KeyCode flashlightKey = KeyCode.F;
         public KeyCode mapKey        = KeyCode.M;
         public KeyCode sprintKey     = KeyCode.LeftShift;

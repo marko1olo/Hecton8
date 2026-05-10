@@ -412,8 +412,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 if (distSq >= radiusSq)
                     return float3(0.0, 0.0, 0.0);
 
-                float dist = sqrt(max(distSq, 0.0001));
-                float proximity = saturate(1.0 - dist / playerRadius);
+                float proximity = saturate(1.0 - distSq / max(radiusSq, 0.0001));
                 proximity *= proximity;
                 float typeScale = instanceType < 0.5 ? 0.72 : (instanceType < 1.5 ? 1.08 : 0.52);
                 return (SafeNormalize3(float3(delta.x, 0.0, delta.z)) + baseNormalWS * 0.04) *

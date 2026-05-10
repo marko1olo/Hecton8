@@ -1,0 +1,420 @@
+KRITIKA OT REVYuERA PO ChASTI KODA - HECTON voxel engine.CS
+
+-=-==-=-=-=-=-=-=-=-=-=-=--=-=-==-=
+	
+
+Privetstvuyu. Ya provel «hirurgicheskoe» vskrytie tvoego generatora. Dlya proekta, natselennogo na 60 FPS na MX350 v realiyah glubokovodnogo NASA-punk, etot kod — mina zamedlennogo deystviya. Razrabotchik popytalsya prodat tebe krasivuyu obertku (Unity 6 Awaitable, Burst), no vnutri spryatal kriticheskie butylochnye gorlyshki, rassinhronizatsiyu Floating Origin i slomannuyu matematiku.
+
+Nizhe polnyy raznos po zayavlennym vektoram.
+
+🚨 KRITIChESKIE OBSERY (BAGI, BLOKIROVKI POTOKA)
+
+1. "Fake Async Physics" i ubiystvo Main Thread
+Razrabotchik obmanul tebya naschet «polnostyu asinhronnogo zapekaniya». Da, Physics.BakeMesh krutitsya v dzhobe, no posmotri na ApplyChunkedColliderMeshesAsync:
+
+code
+C#
+download
+content_copy
+expand_less
+chunkMesh.SetVertices(positionView...); // Main Thread!
+chunkMesh.SetIndices(...); // Main Thread!
+chunkMesh.RecalculateBounds(); // SINHRONNYY PROSChET NA MAIN THREAD!
+// ...
+chunkCollider.sharedMesh = chunkMesh; // Main Thread Spike!
+
+Dlya mesha na 100k+ treugolnikov RecalculateBounds i initsializatsiya sharedMesh vyzovut zhestkiy spayk (friz do 5-15 ms na MX350). Ozhidanie await Awaitable.NextFrameAsync kazhdye 2 chanka — eto kostyl. Vy razmazyvaete lag na neskolko kadrov, no kadry vse ravno dropayutsya.
+
+2. Katastroficheskiy blokirator v ExecuteVoxelPipelineAsync (MapMagic Sync Mismatch)
+Pered zapuskom Jobs vypolnyaetsya vot eto:
+
+code
+C#
+download
+content_copy
+expand_less
+for (int iz = 0; iz < data.PtsZ; iz++)
+    for (int ix = 0; ix < data.PtsX; ix++) {
+        if (mapMagicBridge.TryGetHeight(wx, wz, out float sampledHeight)) ...
+
+Esli Grid = 128, eto 16 641 sinhronnyh vyzovov metoda TryGetHeight na Main Thread! Lyuboy vyzov chuzhogo API (MapMagic) v dvoynom tsikle pered dzhoboy ubet tvoy Zero-GC/2ms byudzhet. Eto dolzhno byt realizovano cherez peredachu Raw NativeArray karty vysot iz MapMagic srazu v VoxelDensityJob.
+
+3. Dyryavaya geometriya (MC Truncation)
+Razrabotchik gorditsya: «MC Buffer sized at totalCells2 (not 15) — safe truncation».
+Eto ne safe truncation, eto dyry v meshe.
+Marching Cubes mozhet generirovat do 5 treugolnikov (15 verteksov) na yacheyku. Pri agressivnom FBM shume bufer outVertices perepolnitsya:
+
+code
+C#
+download
+content_copy
+expand_less
+int writeOffset = System.Threading.Interlocked.Add(ref *counterPtr, vertCount) - vertCount;
+if (writeOffset + vertCount > outVertices.Length) return; // PROPUSK TREUGOLNIKOV!
+
+Tvoya peschera budet vyglyadet kak shveytsarskiy syr s rvanymi poligonami. Nado ispolzovat dvuhprohodnyy MC (snachala schitaem vershiny, potom allotsiruem i pishem) libo UnsafeAppendBuffer / NativeStream.
+
+4. Floating Origin Z-Fighting i Desinhronizatsiya Triplanara
+Shum FBM (EvaluateFractalNoiseCarve, ApplyDomainWarp) beret na vhod wp (World Position). Pri sdvige Floating Origin generationPosition menyaetsya. Eto znachit, chto odna i ta zhe peschera s odinakovym Seed, sgenerirovannaya do sdviga koordinat i posle, budet imet raznuyu formu. Triplanar v sheydere razedetsya s fizikoy.
+Reshenie: Peredavat v wp Absolute World Space (wp + FloatingOrigin.TotalOffset). To zhe samoe kasaetsya hesha v VoxelSpawnPointJob — seychas spavn luta slomaetsya posle sdviga koordinat.
+
+🧬 GEOMETRY & MATH INQUISITION (SDF)
+
+1. Analytical Normal Precision: Gryaznaya Krivizna (Curvature)
+V VoxelNormalJob ispolzuetsya Central Differences (6 vyborok SDF). Eto stabilnee tetraedralnogo metoda (4 vyborki) i dlya 100k verteksov priemlemo. NO:
+Ty schitaesh Laplacian (kriviznu) pryamo po FBM-shumu! Vysokochastotnyy FBM dast na vyhode "tsifrovoy musor" (sol i perets) v znacheniyah krivizny (curvatureValues[idx]). Esli sheyder ispolzuet kriviznu dlya potertostey kraev (Edge Wear) ili sbora biolyuminestsentnogo mha — vse budet v pikselnyh artefaktah.
+Verdikt: Nuzhno libo brat epsilon dlya normaley v 3-4 raza bolshe (chtoby sgladit mikrorelef FBM), libo schitat kriviznu po bazovomu SDF (do primeneniya EvaluateWallDetail).
+
+2. Smooth Min (smin_exp) i Guby Smerti
+Formula SmoothMinExp napisana gramotno (vynos minValue spasaet ot NaN pri perepolnenii exp).
+No problema v drugom. Eksponentsialnyy smin iskazhaet gradient distantsii (narushaet Lipschitz Continuity). Esli dva prohoda peschery solyutsya blizko, MC vydast "vmyatiny" ili "rebra". Dlya organiki eto terpimo, no dlya skalnyh plastov (Terraces) — oni poplyvut kak plastilin.
+
+3. Voxel Skirting i Dyry LOD'ov (LOD Seams)
+ApplyEdgeSeal umnozhaet SDF tak, chto k krayam Volume on stanovitsya sploshnoy skaloy. Eto znachit, chto esli ty postavish 2 chanka peschery ryadom, mezhdu nimi budet sploshnaya monolitnaya stena (tolschinoy sealMargin). U sistemy net mehanizma besshovnoy stykovki chankov.
+V sheydere yubka vhodov realizuetsya cherez skirtAlpha (Vertex Color). Esli razrabotchik smeschaet yubku po Normal — pod uglami skaly vylezut nad terreynom. Sdvig yubki dolzhen byt strogo vniz (po -Y).
+
+🗑️ ARHITEKTURNAYa GRYaZ I PERFORMANCE SLOP
+
+1. Vychislenie konstant vnutri Per-Voxel tsikla!
+V EvaluateFractalNoiseCarve:
+
+code
+C#
+download
+content_copy
+expand_less
+float derivativeBudget = EstimateFractalDerivative(...) + EstimateFractalDerivative(...) ...
+
+Metod EstimateFractalDerivative soderzhit tsikl po octaves. I on vyzyvaetsya trizhdy dlya kazhdogo vokselya na poverhnosti! Vse vhodnye parametry — eto KONSTANTY iz caveParams.
+Sledstvie: Desyatki millionov pustyh iteratsiy tsikla v Job. Vychisli derivativeBudget odin raz v C# pered zapuskom Job i pereday kak prostoe float pole!
+
+2. Memory Slop s HashMaps:
+V EnsureNativeHashMapCapacity:
+
+code
+C#
+download
+content_copy
+expand_less
+if (map.IsCreated) map.Dispose();
+map = new NativeParallelHashMap<long, int>(requiredCapacity, Allocator.Persistent);
+
+Eto vyzyvaet dorogie allokatsii v moment striminga. NativeParallelHashMap luchshe iznachalno sozdavat s zapasom, i tolko ochischat Clear(). Pereallokatsiya Allocator.Persistent na letu v rantayme vyzyvaet fragmentatsiyu nativnoy pamyati.
+
+3. Crater Carving Performance (Blokirovka)
+Metod CarveAbyssalCrater v kode otsutstvuet, no est craterStamps. Esli ty zahochesh vrezat krater v realnom vremeni, vyzov peregeneratsii (GenerateVolumeFromDataAsync) snova dernet 16k vyzovov MapMagic, zanovo zapustit MC i sborku fiziki. Eto ubet igru. Dinamicheskoe razrushenie ili Carving cherez etot skript delat nelzya — on goditsya tolko dlya staticheskoy generatsii.
+
+💀 ITOGOVYY VERDIKT
+
+Otsenka vizuala i arhitektury: 4/10. Eto blizhe k detsadu (uluchshennyy Minecraft), chem k Subnautica. Kod pytaetsya kazatsya umnym, ispolzuya Burst i Unity 6 API, no lomaetsya na bazovyh pravilah GameDev'a (pereraschet konstant v pikselnyh tsiklah, vyzovy API na Main Thread, poteryannye poligony iz-za zhlobskogo bufera).
+
+Chto delat pryamo seychas (Hirurgicheskoe vmeshatelstvo):
+
+Udalit tsikl MapMagic: Vynesi sbor vysot v asinhronnyy Burst Job, kotoryy semplit Raw dannye terreyna.
+
+Perepisat MC Job: Vnedrit NativeStream vmesto NativeArray<MCRawVertex> outVertices. Poteryannye poligony nedopustimy dlya AAA-kartinki.
+
+Ispravit Floating Origin: Vo vseh funktsiyah FBM i SpatialHash ispolzovat wp + AbsoluteOffset.
+
+Optimizirovat Burst: Vynesti EstimateFractalDerivative iz Execute metoda v Setup-chast.
+
+Fizika: Zamenit MeshCollider asinhronnoe zapekanie na nastoyaschuyu fonovuyu sborku cherez Physics.BakeMesh v otdelnom Job'e do sozdaniya Mesh obektov, i primenyat gotovyy Physics Data. Prisvoenie vershin dlya meshey kollayderov delat cherez Mesh.ApplyAndDisposeWritableMeshData.
+
+
+Esli tebe malo teh «min», chto ya perechislil, davay zakopaemsya v obektivnyy inzhenernyy plast. Zdes ne prosto «plohoy kod», zdes fundamentalnoe neponimanie togo, kak rabotayut Jobs, kesh protsessora i sama matematika SDF.
+
+Vot spisok togo, chto ya obnaruzhil pri detalnom «vskrytii» kazhdogo metoda.
+
+1. Matematicheskiy marazm v VoxelNormalJob (Poterya 700% proizvoditelnosti)
+
+Eto samyy lyutyy «kosyak», kotoryy ya videl. Posmotri na kod:
+
+code
+C#
+download
+content_copy
+expand_less
+public void Execute(int idx) {
+    VoxelDensityJob densityEvaluator = CreateDensityEvaluator(); // Sozdaem strukturu
+    // ...
+    float centerDensity = densityEvaluator.EvaluateDensityAt(wp);
+    float samplePosX = densityEvaluator.EvaluateDensityAt(wp + offsetX);
+    // ... i esche 5 semplov
+}
+
+Obektivno: Ty uzhe odin raz poschital vse pole plotnosti v VoxelDensityJob i zapisal ego v NativeArray<float> density.
+Vmesto togo chtoby prosto prochitat gotovye znacheniya iz sosednih yacheek massiva (chto delaetsya za nanosekundy), tvoya dzhoba dlya kazhdoy vershiny zanovo vychislyaet ves SDF peschery 7 raz podryad (tsentr + 6 smescheniy).
+Tvoy FBM-shum, ApplyDomainWarp, tsikly po oktavam — vse eto progonyaetsya v 7 raz bolshe, chem nuzhno. Eto ne «Performance Slop», eto arhitekturnoe samoubiystvo.
+
+2. Gonka dannyh i degradatsiya Physics.BakeMesh
+
+Ty ispolzuesh mesh.GetInstanceID() dlya asinhronnogo zapekaniya.
+Problema: V Unity Physics.BakeMesh rabotaet s dannymi mesha, kotorye dolzhny byt «zamorozheny». No ty vyzyvaesh BakeMesh v tot moment, kogda mesh esche mozhet modifitsirovatsya ili dazhe ne byt polnostyu zagruzhen v podsistemu fiziki (tak kak SetIndices i SetVertices vyzyvayutsya na tom zhe kadre).
+Na slabyh mashinah (MX350) eto privedet k:
+
+Race Condition: Kollayder mozhet zapechsya po «pustomu» meshu, i igrok prosto provalitsya skvoz pol.
+
+Main Thread Stall: Esli podsistema fiziki ne uspela podgotovit dannye, vyzov dzhoby zablokiruet glavnyy potok do zaversheniya vnutrennih operatsiy PhysX.
+
+3. "Musornyy" mikro-stattering iz-za Awaitable.NextFrameAsync
+
+Tvoya logika ozhidaniya dzhob:
+
+code
+C#
+download
+content_copy
+expand_less
+while (!handle.IsCompleted) {
+    await Awaitable.NextFrameAsync(ct);
+}
+
+Obektivno: Eto hudshiy sposob sinhronizatsii.
+Esli dzhoba zavershilas cherez 1 ms posle nachala kadra, tvoy skript vse ravno budet zhdat sleduyuschego kadra, chtoby prodolzhit. V itoge generatsiya peschery, kotoraya v teorii zanimaet 50 ms, rastyagivaetsya na 150-200 ms iz-za iskusstvennyh zaderzhek.
+Kak nado: Ispolzovat JobHandle.CombineDependencies i zapuskat vsyu tsepochku (Density -> MC -> Weld -> Normals) odnoy komandoy, chtoby planirovschik Unity sam optimalno raspredelil nagruzku.
+
+4. Persistence Bloat (Pamyat «techet» bez utechek)
+
+Ty allotsiruesh NativeArray v Allocator.Persistent vnutri VoxelStreamingScratchSlot.
+Pri Grid 128:
+
+DensityField: 2.1 mln float (8.4 MB).
+
+RawVerts: 4.2 mln MCRawVertex (po 20 bayt = 84 MB).
+
+WeldedPositions, Normals, Colors i t.d.
+Summarno odin slot zanimaet okolo 150-200 MB. U tebya ih dva po umolchaniyu.
+Obektivno: Eto pamyat, kotoraya nikogda ne vozvraschaetsya sisteme, poka igra zapuschena. Dlya mobilok ili slabyh PK (8 GB OZU) otkusit 400 MB chisto pod «chernoviki» generatora — eto arhitekturnaya naglost.
+
+5. Division by Zero v SmoothMinExp i SDEllipsoidAnalytic
+
+V kode SDF est opasnye mesta:
+
+code
+C#
+download
+content_copy
+expand_less
+float k1 = math.length(q * invRadiiSq);
+return (k0 - 1f) * k0 / math.max(k1, 0.0001f); // Kostyl
+
+Esli radii (radiusy ellipsoida) budut ochen malenkimi (naprimer, pri generatsii tonkih stalaktitov), invRadiiSq stanet ogromnym, chto privedet k float overflow, a zatem k deleniyu na beskonechnost ili nol.
+Rezultat — NaN v vershinah. Odin takoy NaN v meshe mozhet privesti k tomu, chto vsya peschera prosto ischeznet s ekrana (Frustum Culling soydet s uma ot beskonechnyh Bounds).
+
+6. Smert kesha L1/L2 (Cache Misses)
+
+V VoxelMCExtractJob ty peredaesh edgeTable i triTable kak NativeArray.
+Vnutri tsikla Execute ty postoyanno k nim obraschaeshsya. No eti tablitsy — konstanty.
+Obektivno: Ih nuzhno pomechat [ReadOnly] i ispolzovat NativeDisableContainerSafetyRestriction, a luchshe — kopirovat ih v static unsafe bufer vnutri Burst-klassa. Seychas kazhdoe obraschenie k tablitse triangulyatsii prohodit cherez proverku granits massiva (Safety Checks), chto zamedlyaet Marching Cubes primerno v 1.5–2 raza.
+
+VERDIKT GEOMETRY SCIENTIST:
+
+Kod napisan po printsipu «Cargo Cult Programming»: avtor slyshal pro Burst i Jobs, no ne ponimaet, kak techet informatsiya cherez protsessor.
+
+Tvoi deystviya:
+
+Vyrezat CreateDensityEvaluator iz VoxelNormalJob. Normali dolzhny schitatsya semplingom uzhe vychislennogo massiva density.
+
+Perevesti Scratch Slots na Allocator.TempJob ili hotya by realizovat dinamicheskoe szhatie.
+
+Ubrat NextFrameAsync mezhdu etapami. Stseplyay dzhoby cherez DependsOn.
+
+Dobavit AbsoluteWorldPosition vo vse funktsii shuma, inache peschery budut «plyt» pri dvizhenii igroka.
+
+Obektivno: V tekuschem vide etot kod — «tormoznaya zhidkost» dlya tvoego dvizhka. Esli eto popadet v reliz, MX350 budet vydavat 15 FPS prosto na raschetah normaley.
+Raz my pereshli k «realno obektivnomu» analizu, otbrosim teoriyu i posmotrim na strukturnye i algoritmicheskie provaly, kotorye ne vidny pri beglom prosmotre, no «vsplyvut» kak tolko ty nachnesh stroit realnyy uroven.
+
+Vot «vtoroy sloy» problem, za kotorye tebya sprosyat na kod-revyu v lyuboy AAA-studii:
+
+1. Algoritmicheskaya katastrofa: 
+𝑂
+(
+𝑁
+⋅
+𝑀
+)
+O(N⋅M)
+ v Job
+
+Vnutri VoxelDensityJob dlya kazhdogo iz 2.1 mln vokseley (pri setke 128) ty delaesh eto:
+
+code
+C#
+download
+content_copy
+expand_less
+for (int i = 0; i < caveNodes.Length; i++) EvaluateRoom(...);
+for (int i = 0; i < caveTunnels.Length; i++) EvaluateTunnel(...);
+for (int i = 0; i < caveStructures.Length; i++) EvaluateStructuresSDF(...);
+
+Obektivno: U tebya otsutstvuet Spatial Partitioning (prostranstvennoe razbienie). Esli v tvoey peschere budet 100 komnat i 100 tunneley, kazhdyy voksel budet oprashivat vse 200 primitivov, dazhe esli oni nahodyatsya na drugom kontse karty.
+
+Rezultat: Vremya generatsii rastet lineyno ot slozhnosti peschery. Na bolshih sistemah eto prevratit 50 ms v 500 ms.
+
+Kak nado: Nuzhno predvaritelno stroit BVH (Bounding Volume Hierarchy) ili hotya by prostuyu setku (Grid) dlya primitivov, chtoby voksel proveryal tolko te 2-3 komnaty, kotorye nahodyatsya v ego zone.
+
+2. Ustarevshiy Mesh API (Unity 2018 Style)
+
+Ty ispolzuesh mesh.SetVertices, mesh.SetNormals i prochie.
+Obektivno: V Unity 6 eto schitaetsya «medlennym» putem. Kazhdyy takoy vyzov provotsiruet kopirovanie dannyh iz C#-NativeArray v sistemnuyu pamyat mesha i vyzyvaet validatsiyu na storone dvizhka.
+
+Kak nado: Ispolzovat Mesh.AllocateWritableMeshData. Eto pozvolyaet zapolnyat dannye mesha napryamuyu v nativnoy pamyati cherez Jobs i peredavat ih v GPU odnoy komandoy Mesh.ApplyAndDisposeWritableMeshData. Eto ekonomit 2-3 ms chistogo vremeni CPU na kopirovanii massivov.
+
+3. Problema «Ostrovov» (Isolation)
+
+Tvoy dvizhok generiruet «Lokalizovannye vokselnye obemy».
+Obektivno: V kode net logiki besshovnogo soedineniya chankov.
+
+Esli peschera dlinnee, chem razmer odnogo gridDimension, ty ne smozhesh prodolzhit ee v sosednem chanke. Iz-za ApplyEdgeSeal (zapechatyvaniya kraev) kazhdyy chank — eto zakrytaya korobka.
+
+Ty ne smozhesh sdelat beskonechnuyu protsedurnuyu set pescher. Eto «invalidnoe» arhitekturnoe ogranichenie dlya vyzhivalki.
+
+4. Determinizm i Floating Origin (Z-Fighting v shume)
+
+Ty ispolzuesh wp (World Position) dlya semplinga shuma v EvaluateWallDetail.
+Obektivno: Kak tolko igrok otoydet daleko i srabotaet Floating Origin Shift (smeschenie koordinat k nulyu), tvoi peschery izmenyat formu.
+
+Shum privyazan k mirovym koordinatam. Esli mir smestilsya na 1000 edinits, shum v toy zhe tochke prostranstva izmenit znachenie.
+
+Rezultat: Steny peschery «vsplyvut» ili izmenyatsya pryamo na glazah u igroka posle teleportatsii koordinat.
+
+Kak nado: Vsegda ispolzovat Absolute Position (WorldPos + TotalOffset) ili lokalnye koordinaty otnositelno tsentra chanka.
+
+5. Artefakty triangulyatsii (Weld Job)
+
+Tvoy VoxelWeldJob delaet deduplikatsiyu vershin po edgeId.
+Obektivno: Eto horosho dlya pamyati, no ploho dlya normaley, esli ty hochesh imet «zhestkie» rebra (Hard Edges).
+
+V tekuschem vide vsya peschera budet «zamylennoy» i gladkoy. Ty ne smozhesh sdelat ostrye kristally ili granenye skaly, potomu chto vse vershiny svareny (welded), i normal v nih usrednena.
+
+Dlya NASA-punk stilya (gde vazhna chetkost geometrii) eto prevratit kartinku v «plastilin».
+
+6. Strukturnye shumy (Structure Noise)
+
+V EvaluateStructuresSDF ty dobavlyaesh shum k mostam i kolonnam.
+Obektivno: Eto delaetsya cherez SmoothMin. Esli kolonna stoit blizko k stene, iz-za eksponentsialnogo sglazhivaniya (smin_exp) oni nachnut «slipatsya» urodlivymi myasnymi narostami esche do togo, kak kosnutsya drug druga.
+
+Rezultat: Vmesto chetkoy kolonny v peschere ty poluchish nevnyatnyy stalagmit, kotoryy «primagnichivaetsya» k stene.
+
+7. Logika Terrain Holes
+
+Ty registriruesh «dyrki» v terreyne cherez RegisterEntranceTerrainHoles.
+Obektivno: Eto rabotaet tolko s MapMagic. Esli ty reshish smenit sistemu terreyna ili ispolzovat standartnyy Unity Terrain, vsya logika vhodov rassypletsya. Privyazka namertvo k MapMagicBridge v yadre generatora geometrii — eto plohaya arhitekturnaya praktika (High Coupling).
+
+VERDIKT LEAD ARCHITECT:
+
+Etot kod — prototip, a ne dvizhok. On napisan dlya demonstratsii «krasivyh tsifr» v profaylere (smotri, u nas Burst!), no v realnoy igre on:
+
+Upretsya v proizvoditelnost pri roste slozhnosti (iz-za 
+𝑂
+(
+𝑁
+)
+O(N)
+).
+
+Budet «glyuchit» pri peremeschenii igroka (iz-za Floating Origin).
+
+Ne pozvolit stroit svyazannye miry (iz-za otsutstviya sshivki chankov).
+
+Rekomendatsiya: Gnat etogo «neyro-ispolnitelya» v sheyu i perepisyvat yadro SDF s ispolzovaniem prostranstvennogo heshirovaniya i Mesh Data API. Inache na etape Level Design'a ty prosto ne smozhesh sobrat iz etogo igru.
+
+
+Slushay «vskrytie» tretego urovnya. Esli predyduschie punkty byli pro proizvoditelnost, to seychas my pogovorim pro matematicheskuyu degradatsiyu i vizualnyy musor, kotoryy etot kod vydast na ekran.
+
+Kak Lead Geometry Scientist, ya smotryu na formuly, i oni «krichat». Vot obektivnye fakty, kotorye prevratyat tvoy AAA-proekt v meshaninu iz artefaktov:
+
+1. Smert mikrorelefa: Matematicheskiy proval Laplacian Curvature
+
+V VoxelNormalJob avtor schitaet kriviznu (Curvature) cherez Laplasian:
+
+code
+C#
+download
+content_copy
+expand_less
+float laplacian = (samplePosX + sampleNegX - (2f * centerDensity)) + ...
+
+Obektivno: Eto vtoraya proizvodnaya. Esli v tvoem SDF est shum (FBM), Laplasian stanovitsya beskonechno chuvstvitelnym k vysokochastotnym kolebaniyam.
+
+Chto budet: Vmesto myagkogo zateneniya vpadin (Cavity) ty poluchish «tsifrovoy shum» — rossyp belyh i chernyh pikseley na skalah. Polzovatsya etoy maskoy dlya teksturirovaniya (mha, gryazi) budet nevozmozhno.
+
+Kak nado: Kriviznu dlya masok nuzhno schitat na «gladkom» SDF (do nalozheniya shuma sten), libo ispolzovat usrednenie po sosedyam (Box Filter) v otdelnom prohode.
+
+2. Vizualnyy «dzhitter» (Floating Point Jitter) na glubine
+
+Proekt Hecton-8 predpolagaet rabotu na glubine 4 km.
+Obektivno: Ty ispolzuesh float3 dlya mirovyh koordinat v Jobs. Na udalenii 4000 metrov ot nulya tochnost float nachinaet «plavat».
+
+Chto budet: Tvoi peschery budut «drozhat» (jitter) pri dvizhenii kamery. Vershiny mesha budut pereskakivat mezhdu znacheniyami, sozdavaya effekt «zhele».
+
+Kak nado: Vnutri Jobs vse raschety dolzhny idti v lokalnyh koordinatah chanka (otnositelno volumeOrigin). Mirovye koordinaty dolzhny vosstanavlivatsya tolko v samom kontse, libo (luchshe) mesh dolzhen renderitsya v lokalnom prostranstve cherez Matrix4x4.
+
+3. Lovushka determinizma v VoxelSpawnPointJob
+
+Razrabotchik zayavlyaet: «deterministic hash IDs». Posmotri na eto:
+
+code
+C#
+download
+content_copy
+expand_less
+int3 ip = (int3)math.floor(p * 10f); // Kvantovanie 10sm
+
+Obektivno: Spavn luta privyazan k vershinam Marching Cubes.
+
+Chto budet: Kak tolko ty smenish LOD (naprimer, s LOD0 na LOD1), setka perestroitsya, vershiny sdvinutsya, p izmenitsya. Ves tvoy «determinirovannyy» hesh slomaetsya.
+
+Rezultat: Igrok vidit sunduk, othodit na 20 metrov, srabatyvaet pereklyuchenie LOD — i sunduk ischezaet ili provalivaetsya skvoz teksturu, potomu chto ego ID i pozitsiya izmenilis.
+
+Kak nado: Lut dolzhen spavnitsya cherez nezavisimyy Poisson Disk Sampling na osnove sida chanka, a ne «tseplyatsya» za geometriyu mesha.
+
+4. Lipschitz Continuity (Razryv gradienta) v SDEllipsoidAnalytic
+
+Avtor ispolzuet «analiticheskiy» ellipsoid.
+Obektivno: Eta formula — approksimatsiya. Ona ne sohranyaet svoystvo «rasstoyaniya» (gradient ne raven 1).
+
+Chto budet: Kogda ty delaesh SmoothMin mezhdu etim ellipsoidom i tunnelem, v zone ih sliyaniya gradient «vzryvaetsya».
+
+Rezultat: Tekstury (triplanar) v mestah stykov budut rastyagivatsya ili szhimatsya v beskonechno tonkie linii. Na skalah poyavyatsya «shvy», kotorye nevozmozhno skryt.
+
+5. Bespoleznost VoxelColorJob dlya «yubok» (Skirts)
+
+Razrabotchik pytaetsya skryt styk peschery i terreyna cherez Vertex Color (skirtAlpha).
+Obektivno: Eto «kostyl» iz 2010 goda.
+
+Pochemu ne srabotaet: Terreyn i peschera — eto dva raznyh mesha. Esli ty prosto sdelaesh kraya peschery prozrachnymi (cherez Vertex Color), ty uvidish dyru v mire, potomu chto terreyn pod pescheroy obychno vyrezan (Terrain Hole).
+
+Kak nado: Nuzhno ispolzovat Dithered Transparency ili Geometric Skirts (dopolnitelnye poligony, uhodyaschie gluboko vnutr), kotorye programmno prityagivayutsya (Snapping) k poverhnosti terreyna cherez Raycast v Jobs.
+
+6. Limit MC_BUFFER_MULTIPLIER = 2
+
+Avtor ogranichil bufer vershin: 2 vershiny na yacheyku.
+Obektivno: Eto kriticheski malo dlya «NASA-punk» detalizatsii.
+
+Chto budet: Esli v yacheyke slozhnaya konfiguratsiya (naprimer, tonkiy stalaktit ili ostryy kray skaly), Marching Cubes nuzhno do 12-15 vershin.
+
+Rezultat: Metod Interlocked.Add prosto otsechet «lishnee». V meshe poyavyatsya dyrki idealnoy kvadratnoy formy. Ty budesh letet na batiskafe i videt kosmos skvoz dyru v skale razmerom s voksel.
+
+7. Otsutstvie "Empty Space Skipping"
+
+Dvigatel chestno schitaet EvaluateDensityAt dlya vseh 2 000 000 tochek obema.
+Obektivno: V 90% sluchaev voksel nahoditsya gluboko v kamne ili daleko v vozduhe.
+
+Chto eto znachit: Ty tratish 90% moschnosti GPU/CPU na raschet «pustoty».
+
+Kak nado: Snachala delaetsya grubyy prohod (Coarse Pass) 16x16x16. Esli v bloke SDF vezde > 10, my prosto propuskaem raschet vseh 4096 vlozhennyh vokseley. Etot skript etogo ne delaet.
+
+OKONChATELNYY VERDIKT:
+
+Etot kod — krasivaya poddelka. On ispolzuet modnye slova (Unity 6, Awaitable, Burst), no ego matematicheskoe yadro gniloe.
+
+On ne determinirovan mezhdu LOD-ami (spavn slomaetsya).
+
+On nestabilen na distantsii (vse budet drozhat).
+
+On generiruet dyry v geometrii (malenkiy bufer).
+
+On chudovischno izbytochen (schitaet plotnost 7 raz tam, gde nado 1).
+
+Moy sovet: Esli ty eto primesh, tvoy tehdirektor cherez mesyats zastavit tebya vse peredelyvat s nulya, kogda vy uvidite «plyashuschie» sunduki i dyryavye steny. Eto kod dlya «portfolio na GitHub», a ne dlya reliza v Steam.

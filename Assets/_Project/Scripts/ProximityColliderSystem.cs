@@ -1,31 +1,31 @@
 // ============================================================================
 // HECTON-8 — ProximityColliderSystem.cs
-// Подставляет физические коллайдеры из пула к ближайшим точкам (камни/мусор),
-// которые рендерятся через GPU Instancer без собственной физики.
+// Podstavlyaet fizicheskie kollaydery iz pula k blizhayshim tochkam (kamni/musor),
+// kotorye renderyatsya cherez GPU Instancer bez sobstvennoy fiziki.
 //
-// АРХИТЕКТУРА:
-//   • ITickable — тикается через GameTickManager (единый Update).
-//   • Unity.Jobs + Burst — вычисление дистанций на worker threads.
-//   • ObjectPoolManager — пул пустых GameObject с BoxCollider.
-//   • Гистерезис 40/45м — предотвращает мерцание на границе радиуса.
+// ARHITEKTURA:
+//   • ITickable — tikaetsya cherez GameTickManager (edinyy Update).
+//   • Unity.Jobs + Burst — vychislenie distantsiy na worker threads.
+//   • ObjectPoolManager — pul pustyh GameObject s BoxCollider.
+//   • Gisterezis 40/45m — predotvraschaet mertsanie na granitse radiusa.
 //
-// ZERO GC В TICK:
-//   • NativeArray (persistent) — никаких new в горячих путях.
-//   • Кэшированный массив GameObject[] для активных коллайдеров.
-//   • Кэшированный массив byte[] для предыдущего состояния.
-//   • Никаких LINQ, foreach, List, лямбд, замыканий.
+// ZERO GC V TICK:
+//   • NativeArray (persistent) — nikakih new v goryachih putyah.
+//   • Keshirovannyy massiv GameObject[] dlya aktivnyh kollayderov.
+//   • Keshirovannyy massiv byte[] dlya predyduschego sostoyaniya.
+//   • Nikakih LINQ, foreach, List, lyambd, zamykaniy.
 //
-// ПОТОКОБЕЗОПАСНОСТЬ:
-//   Job планируется в Tick, завершение проверяется в следующем Tick.
-//   Все мутации (Spawn/Despawn) — строго Main Thread.
+// POTOKOBEZOPASNOST:
+//   Job planiruetsya v Tick, zavershenie proveryaetsya v sleduyuschem Tick.
+//   Vse mutatsii (Spawn/Despawn) — strogo Main Thread.
 //
-// ПАМЯТЬ:
-//   При 10,000 точек:
+// PAMYaT:
+//   Pri 10,000 tochek:
 //     NativeArray<float3>  = 10,000 × 12 bytes = ~120 KB
 //     NativeArray<byte>    = 10,000 ×  1 byte  = ~10 KB
 //     GameObject[]         = 10,000 ×  8 bytes  = ~80 KB (references)
 //     byte[] prevStatus    = 10,000 ×  1 byte  = ~10 KB
-//     ИТОГО: ~220 KB — ничтожно для любого железа.
+//     ITOGO: ~220 KB — nichtozhno dlya lyubogo zheleza.
 // ============================================================================
 
 using Hecton8.Core;
@@ -55,24 +55,24 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         [Header("── References ────────────────────────────────")]
-        [Tooltip("Transform игрока. Если не назначен — ищется по тегу Player.")]
+        [Tooltip("Transform igroka. Esli ne naznachen — ischetsya po tegu Player.")]
         [SerializeField] private Transform playerTransform;
 
-        [Tooltip("Префаб пустого GameObject с BoxCollider для пула. " +
-                 "Должен быть прогрет в ObjectPoolManager.warmupPresets.")]
+        [Tooltip("Prefab pustogo GameObject s BoxCollider dlya pula. " +
+                 "Dolzhen byt progret v ObjectPoolManager.warmupPresets.")]
         [SerializeField] private GameObject colliderPrefab;
 
         [Header("── Proximity Settings ────────────────────────")]
-        [Tooltip("Радиус активации коллайдеров (метры).")]
+        [Tooltip("Radius aktivatsii kollayderov (metry).")]
         [SerializeField] private float activateRadius = 40f;
 
-        [Tooltip("Радиус деактивации коллайдеров (метры). " +
-                 "Должен быть > activateRadius для гистерезиса.")]
+        [Tooltip("Radius deaktivatsii kollayderov (metry). " +
+                 "Dolzhen byt > activateRadius dlya gisterezisa.")]
         [SerializeField] private float deactivateRadius = 45f;
 
         [Header("── Performance ───────────────────────────────")]
-        [Tooltip("Максимальное количество Spawn/Despawn операций за один Tick. " +
-                 "Предотвращает лаг-спайки при телепортации игрока.")]
+        [Tooltip("Maksimalnoe kolichestvo Spawn/Despawn operatsiy za odin Tick. " +
+                 "Predotvraschaet lag-spayki pri teleportatsii igroka.")]
         [SerializeField] private int maxOperationsPerTick = 64;
 
         [Header("── Diagnostics (Read Only) ───────────────────")]
@@ -85,12 +85,12 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         // ── Job I/O (persistent allocations) ──
-        private NativeArray<float3> _positions;      // позиции всех точек
-        private NativeArray<byte>   _jobResults;     // результат Job: 0=far, 1=near
+        private NativeArray<float3> _positions;      // pozitsii vseh tochek
+        private NativeArray<byte>   _jobResults;     // rezultat Job: 0=far, 1=near
 
         // ── Main-thread cached arrays (zero GC) ──
-        private GameObject[] _activeColliders;       // null = нет коллайдера
-        private byte[]       _prevStatus;            // предыдущее состояние (0/1)
+        private GameObject[] _activeColliders;       // null = net kollaydera
+        private byte[]       _prevStatus;            // predyduschee sostoyanie (0/1)
 
         // ── Job management ──
         private JobHandle _jobHandle;
@@ -109,18 +109,18 @@ namespace Hecton8.Core
         private int _pointCount;
 
         // ══════════════════════════════════════════════════════════
-        //  BURST JOB — вычисление дистанций на worker threads
+        //  BURST JOB — vychislenie distantsiy na worker threads
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Burst-compiled Job. Вычисляет квадрат дистанции от игрока
-        /// до каждой точки. Записывает 1 (near) или 0 (far) в результат.
+        /// Burst-compiled Job. Vychislyaet kvadrat distantsii ot igroka
+        /// do kazhdoy tochki. Zapisyvaet 1 (near) ili 0 (far) v rezultat.
         ///
-        /// Гистерезис реализован через два радиуса:
-        ///   • Если точка УЖЕ активна (prevStatus=1) — используем deactivateRadiusSq
-        ///   • Если точка НЕ активна (prevStatus=0) — используем activateRadiusSq
+        /// Gisterezis realizovan cherez dva radiusa:
+        ///   • Esli tochka UZhE aktivna (prevStatus=1) — ispolzuem deactivateRadiusSq
+        ///   • Esli tochka NE aktivna (prevStatus=0) — ispolzuem activateRadiusSq
         ///
-        /// Это позволяет избежать мерцания коллайдеров на границе радиуса.
+        /// Eto pozvolyaet izbezhat mertsaniya kollayderov na granitse radiusa.
         /// </summary>
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct DistanceCalcJob : IJobParallelFor
@@ -146,31 +146,31 @@ namespace Hecton8.Core
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — ИНИЦИАЛИЗАЦИЯ ТОЧЕК
+        //  PUBLIC API — INITsIALIZATsIYa TOChEK
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Инициализирует систему массивом позиций камней/мусора.
-        /// Вызывается один раз после генерации мира или загрузки сцены.
+        /// Initsializiruet sistemu massivom pozitsiy kamney/musora.
+        /// Vyzyvaetsya odin raz posle generatsii mira ili zagruzki stseny.
         ///
-        /// ВАЖНО: передаётся копия данных. Оригинальный массив можно
-        /// освободить после вызова. NativeArray аллоцируется с Persistent.
+        /// VAZhNO: peredaetsya kopiya dannyh. Originalnyy massiv mozhno
+        /// osvobodit posle vyzova. NativeArray allotsiruetsya s Persistent.
         ///
-        /// Пример использования:
-        ///   var positions = new Vector3[10000]; // заполнить позициями
+        /// Primer ispolzovaniya:
+        ///   var positions = new Vector3[10000]; // zapolnit pozitsiyami
         ///   proximitySystem.Initialize(positions);
         /// </summary>
-        /// <param name="worldPositions">Мировые координаты всех точек.</param>
+        /// <param name="worldPositions">Mirovye koordinaty vseh tochek.</param>
         public void Initialize(Vector3[] worldPositions)
         {
             Initialize(worldPositions, worldPositions != null ? worldPositions.Length : 0);
         }
 
         /// <summary>
-        /// Перегрузка для частичного использования предварительно выделенного массива.
+        /// Peregruzka dlya chastichnogo ispolzovaniya predvaritelno vydelennogo massiva.
         /// </summary>
-        /// <param name="worldPositions">Буфер мировых координат.</param>
-        /// <param name="count">Количество валидных элементов в начале буфера.</param>
+        /// <param name="worldPositions">Bufer mirovyh koordinat.</param>
+        /// <param name="count">Kolichestvo validnyh elementov v nachale bufera.</param>
         public void Initialize(Vector3[] worldPositions, int count)
         {
             if (worldPositions == null)
@@ -195,7 +195,7 @@ namespace Hecton8.Core
 
             _pointCount = count;
 
-            // ── Аллокация NativeArrays (Persistent — живут до Dispose) ──
+            // ── Allokatsiya NativeArrays (Persistent — zhivut do Dispose) ──
             _positions  = new NativeArray<float3>(_pointCount, Allocator.Persistent,
                                                    NativeArrayOptions.UninitializedMemory);
             _jobResults = new NativeArray<byte>(_pointCount, Allocator.Persistent,
@@ -204,7 +204,7 @@ namespace Hecton8.Core
             _prevStatusNative = new NativeArray<byte>(_pointCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             RegisterNativeBuffers();
 
-            // ── Копируем позиции в NativeArray<float3> ──
+            // ── Kopiruem pozitsii v NativeArray<float3> ──
             for (int i = 0; i < _pointCount; i++)
             {
                 _positions[i] = new float3(
@@ -233,9 +233,9 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Перегрузка для NativeArray (zero-copy, если вызывающий
-        /// гарантирует lifetime).
-        /// ВАЖНО: данные КОПИРУЮТСЯ — оригинал можно освобождать.
+        /// Peregruzka dlya NativeArray (zero-copy, esli vyzyvayuschiy
+        /// garantiruet lifetime).
+        /// VAZhNO: dannye KOPIRUYuTSYa — original mozhno osvobozhdat.
         /// </summary>
         public void Initialize(NativeArray<float3> worldPositions)
         {
@@ -284,13 +284,13 @@ namespace Hecton8.Core
         public int MaxOperationsPerFrame => maxOperationsPerTick;
 
         /// <summary>
-        /// Полностью очищает runtime-состояние системы.
+        /// Polnostyu ochischaet runtime-sostoyanie sistemy.
         /// </summary>
         /// <remarks>
-        /// Безопасно завершает активную Job, возвращает все выданные collider proxy
-        /// обратно в пул и освобождает внутренние буферы. Используется, когда
-        /// в мире больше не осталось точек для ближней физики или требуется
-        /// переинициализировать систему новым набором позиций.
+        /// Bezopasno zavershaet aktivnuyu Job, vozvraschaet vse vydannye collider proxy
+        /// obratno v pul i osvobozhdaet vnutrennie bufery. Ispolzuetsya, kogda
+        /// v mire bolshe ne ostalos tochek dlya blizhney fiziki ili trebuetsya
+        /// pereinitsializirovat sistemu novym naborom pozitsiy.
         /// </remarks>
         public void ClearRuntimeData()
         {
@@ -307,7 +307,7 @@ namespace Hecton8.Core
         }
 
         // ══════════════════════════════════════════════════════════
-        //  LIFECYCLE — регистрация в GameTickManager
+        //  LIFECYCLE — registratsiya v GameTickManager
         // ══════════════════════════════════════════════════════════
 
         private void OnEnable()
@@ -316,10 +316,10 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
             EnsureAssemblyReloadHook();
 #endif
-            // ── Авто-resolve игрока через bootstrap, если ссылка не задана ──
+            // ── Avto-resolve igroka cherez bootstrap, esli ssylka ne zadana ──
             TryResolvePlayerTransform();
 
-            // ── Валидация ──
+            // ── Validatsiya ──
             if (colliderPrefab == null)
             {
                 Debug.LogError("[ProximityColliderSystem] colliderPrefab is not assigned! " +
@@ -333,7 +333,7 @@ namespace Hecton8.Core
                 Debug.LogWarning("[ProximityColliderSystem] playerTransform is not ready during OnEnable. Runtime retry will continue.");
             }
 
-            // ── Валидация радиусов ──
+            // ── Validatsiya radiusov ──
             if (deactivateRadius <= activateRadius)
             {
                 Debug.LogWarning("[ProximityColliderSystem] deactivateRadius should be > " +
@@ -359,7 +359,7 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
-            // ── Завершаем текущую Job, если она в полёте ──
+            // ── Zavershaem tekuschuyu Job, esli ona v polete ──
             if (_registeredToDispatcher)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -378,7 +378,7 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
-            // ── Завершаем Job и возвращаем все коллайдеры в пул ──
+            // ── Zavershaem Job i vozvraschaem vse kollaydery v pul ──
             JobHandle teardownDependency = CancelScheduledJobForTeardown();
             DespawnAllColliders();
             Cleanup(teardownDependency);
@@ -387,21 +387,21 @@ namespace Hecton8.Core
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ITickable.Tick — ГЛАВНЫЙ ГОРЯЧИЙ ПУТЬ
+        //  ITickable.Tick — GLAVNYY GORYaChIY PUT
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Вызывается каждый кадр через GameTickManager.
+        /// Vyzyvaetsya kazhdyy kadr cherez GameTickManager.
         ///
-        /// Паттерн: "Schedule → Wait → Process → Schedule"
+        /// Pattern: "Schedule → Wait → Process → Schedule"
         ///
-        /// Кадр N:   Schedule Job (вычисление дистанций)
-        /// Кадр N+1: Complete Job, обработка результатов, Schedule новый Job
+        /// Kadr N:   Schedule Job (vychislenie distantsiy)
+        /// Kadr N+1: Complete Job, obrabotka rezultatov, Schedule novyy Job
         ///
-        /// Это даёт Job целый кадр на выполнение — worker threads
-        /// работают параллельно с остальной игровой логикой.
+        /// Eto daet Job tselyy kadr na vypolnenie — worker threads
+        /// rabotayut parallelno s ostalnoy igrovoy logikoy.
         ///
-        /// ZERO GC: никаких аллокаций. Все массивы кэшированы.
+        /// ZERO GC: nikakih allokatsiy. Vse massivy keshirovany.
         /// </summary>
 #if UNITY_EDITOR
         private static void EnsureAssemblyReloadHook()
@@ -463,7 +463,7 @@ namespace Hecton8.Core
             }
 
             // ═══════════════════════════════════════════════════
-            //  STEP 1: Обработка результатов предыдущей Job
+            //  STEP 1: Obrabotka rezultatov predyduschey Job
             // ═══════════════════════════════════════════════════
 
             if (_jobScheduled)
@@ -473,7 +473,7 @@ namespace Hecton8.Core
             }
 
             // ═══════════════════════════════════════════════════
-            //  STEP 2: Планируем новую Job на следующий кадр
+            //  STEP 2: Planiruem novuyu Job na sleduyuschiy kadr
             // ═══════════════════════════════════════════════════
 
             ScheduleDistanceJob();
@@ -504,7 +504,7 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Копирует prevStatus в NativeArray и планирует Burst Job.
+        /// Kopiruet prevStatus v NativeArray i planiruet Burst Job.
         /// Persistent buffer avoids TempJob lifetime warnings when a distance job spans multiple frames.
         /// </summary>
         private NativeArray<byte> _prevStatusNative;
@@ -520,11 +520,11 @@ namespace Hecton8.Core
                 return;
             }
 
-            // ── Копируем managed → native (memcpy, zero GC) ──
-            // NativeArray<byte>.CopyFrom(byte[]) — специализированный fast path.
+            // ── Kopiruem managed → native (memcpy, zero GC) ──
+            // NativeArray<byte>.CopyFrom(byte[]) — spetsializirovannyy fast path.
             _prevStatusNative.CopyFrom(_prevStatus);
 
-            // ── Создаём и планируем Job ──
+            // ── Sozdaem i planiruem Job ──
             var job = new DistanceCalcJob
             {
                 playerPos          = new float3(
@@ -539,26 +539,26 @@ namespace Hecton8.Core
             };
 
             // ── innerloopBatchCount = 256 ──
-            // Каждый worker thread обрабатывает пачку по 256 точек.
-            // Для 10,000 точек = ~39 батчей. На 4-ядерном CPU =
-            // ~10 батчей на ядро. Отличный баланс overhead/parallelism.
+            // Kazhdyy worker thread obrabatyvaet pachku po 256 tochek.
+            // Dlya 10,000 tochek = ~39 batchey. Na 4-yadernom CPU =
+            // ~10 batchey na yadro. Otlichnyy balans overhead/parallelism.
             _jobHandle  = job.Schedule(_pointCount, 256);
             _jobScheduled = true;
             _jobPendingFrameCount = 0;
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — ОБРАБОТКА РЕЗУЛЬТАТОВ
+        //  PRIVATE — OBRABOTKA REZULTATOV
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Читает результаты Job и выполняет Spawn/Despawn.
+        /// Chitaet rezultaty Job i vypolnyaet Spawn/Despawn.
         ///
-        /// Ограничение maxOperationsPerTick предотвращает лаг-спайк
-        /// при телепортации игрока (когда разом нужно спавнить/деспавнить
-        /// сотни коллайдеров). Оставшиеся обработаются в следующих кадрах.
+        /// Ogranichenie maxOperationsPerTick predotvraschaet lag-spayk
+        /// pri teleportatsii igroka (kogda razom nuzhno spavnit/despavnit
+        /// sotni kollayderov). Ostavshiesya obrabotayutsya v sleduyuschih kadrah.
         ///
-        /// ZERO GC: for-цикл по NativeArray + managed array.
+        /// ZERO GC: for-tsikl po NativeArray + managed array.
         /// </summary>
         private void ProcessJobResults()
         {
@@ -580,20 +580,20 @@ namespace Hecton8.Core
                 if (newStatus == 1) activeCount++;
 #endif
 
-                // ── Без изменений — skip ──
+                // ── Bez izmeneniy — skip ──
                 if (newStatus == oldStatus) continue;
 
-                // ── Лимит операций за кадр ──
+                // ── Limit operatsiy za kadr ──
                 if (operationsThisTick >= maxOperationsPerTick) break;
 
                 if (newStatus == 1 && oldStatus == 0)
                 {
                     // ═══════════════════════════════════
-                    //  ACTIVATE: точка вошла в радиус
+                    //  ACTIVATE: tochka voshla v radius
                     // ═══════════════════════════════════
 
-                    // Двойная проверка: коллайдер может уже быть (race condition
-                    // при переинициализации). Пропускаем без аллокации.
+                    // Dvoynaya proverka: kollayder mozhet uzhe byt (race condition
+                    // pri pereinitsializatsii). Propuskaem bez allokatsii.
                     if (_activeColliders[i] != null) 
                     {
                         _prevStatus[i] = 1;
@@ -617,7 +617,7 @@ namespace Hecton8.Core
                 else if (newStatus == 0 && oldStatus == 1)
                 {
                     // ═══════════════════════════════════
-                    //  DEACTIVATE: точка вышла из радиуса
+                    //  DEACTIVATE: tochka vyshla iz radiusa
                     // ═══════════════════════════════════
 
                     GameObject colliderObj = _activeColliders[i];
@@ -659,12 +659,12 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Готовит систему к безопасной переинициализации.
+        /// Gotovit sistemu k bezopasnoy pereinitsializatsii.
         /// </summary>
         /// <remarks>
-        /// Важно вызывать этот путь перед освобождением массивов. Иначе можно
-        /// dispose-нуть данные, пока Job еще работает, или оставить активные
-        /// collider proxy висеть после смены world-данных.
+        /// Vazhno vyzyvat etot put pered osvobozhdeniem massivov. Inache mozhno
+        /// dispose-nut dannye, poka Job esche rabotaet, ili ostavit aktivnye
+        /// collider proxy viset posle smeny world-dannyh.
         /// </remarks>
         private void PrepareForReinitialize()
         {
@@ -691,8 +691,8 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Возвращает все активные коллайдеры в пул.
-        /// Вызывается при уничтожении или переинициализации.
+        /// Vozvraschaet vse aktivnye kollaydery v pul.
+        /// Vyzyvaetsya pri unichtozhenii ili pereinitsializatsii.
         /// </summary>
         private void DespawnAllColliders()
         {
@@ -708,7 +708,7 @@ namespace Hecton8.Core
                     if (pool != null)
                         pool.Despawn(obj);
                     else
-                        Destroy(obj); // fallback если пул уничтожен
+                        Destroy(obj); // fallback esli pul unichtozhen
 
                     _activeColliders[i] = null;
                 }
@@ -761,7 +761,7 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Обновляет позицию одной точки (например, камень сдвинулся).
+        /// Obnovlyaet pozitsiyu odnoy tochki (naprimer, kamen sdvinulsya).
         /// ZERO GC. O(1).
         /// </summary>
         public void UpdatePointPosition(int index, Vector3 newPosition)
@@ -770,13 +770,13 @@ namespace Hecton8.Core
             if (index < 0 || index >= _pointCount) return;
             if (_jobScheduled) return;
 
-            // ── Безопасно: NativeArray write между Jobs ──
+            // ── Bezopasno: NativeArray write mezhdu Jobs ──
             // Job completion is owned by LateFrameTick; writes are skipped while a job reads this buffer.
             _positions[index] = new float3(newPosition.x, newPosition.y, newPosition.z);
         }
 
         /// <summary>
-        /// Меняет Transform игрока в рантайме (например, смена контроллера).
+        /// Menyaet Transform igroka v rantayme (naprimer, smena kontrollera).
         /// </summary>
         public void SetPlayerTransform(Transform newPlayer)
         {
@@ -788,12 +788,12 @@ namespace Hecton8.Core
             if (playerTransform != null)
                 return;
 
-            SceneBootstrap.TryGetCurrentPlayerTransform(out playerTransform);
+            GameBootstrapper.TryGetCurrentPlayerTransform(out playerTransform);
         }
 
         /// <summary>
-        /// Обновляет радиусы активации/деактивации.
-        /// Кэширует квадраты для Job.
+        /// Obnovlyaet radiusy aktivatsii/deaktivatsii.
+        /// Keshiruet kvadraty dlya Job.
         /// </summary>
         public void SetRadii(float activate, float deactivate)
         {
@@ -822,7 +822,7 @@ namespace Hecton8.Core
             if (maxOperationsPerTick < 1)
                 maxOperationsPerTick = 1;
 
-            // ── Обновляем кэш, если изменили в Inspector во время Play ──
+            // ── Obnovlyaem kesh, esli izmenili v Inspector vo vremya Play ──
             if (Application.isPlaying && _initialized)
             {
                 _activateRadiusSq   = activateRadius * activateRadius;
@@ -831,8 +831,8 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Визуализация радиусов в Scene View.
-        /// Рисуем два круга: зелёный (activate) и красный (deactivate).
+        /// Vizualizatsiya radiusov v Scene View.
+        /// Risuem dva kruga: zelenyy (activate) i krasnyy (deactivate).
         /// </summary>
         private void OnDrawGizmosSelected()
         {
@@ -840,15 +840,15 @@ namespace Hecton8.Core
 
             Vector3 pos = playerTransform.position;
 
-            // ── Радиус активации (зелёный) ──
+            // ── Radius aktivatsii (zelenyy) ──
             Gizmos.color = new Color(0f, 1f, 0f, 0.15f);
             Gizmos.DrawWireSphere(pos, activateRadius);
 
-            // ── Радиус деактивации (красный) ──
+            // ── Radius deaktivatsii (krasnyy) ──
             Gizmos.color = new Color(1f, 0f, 0f, 0.15f);
             Gizmos.DrawWireSphere(pos, deactivateRadius);
 
-            // ── Зона гистерезиса (жёлтая, заполненная) ──
+            // ── Zona gisterezisa (zheltaya, zapolnennaya) ──
             Gizmos.color = new Color(1f, 1f, 0f, 0.05f);
             Gizmos.DrawSphere(pos, deactivateRadius);
         }

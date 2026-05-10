@@ -1,22 +1,22 @@
 // ============================================================================
 // HECTON-8 — HectonBiolumMaster.shader  (v3 — LOD + Optimized)
-// Мастер-шейдер биолюминесценции для подводной флоры и фауны.
+// Master-sheyder biolyuminestsentsii dlya podvodnoy flory i fauny.
 //
-// АРХИТЕКТУРА v3:
-//   • URP Lit (PBR) с полной поддержкой Normal Map и Metallic/Smoothness.
-//   • HDR Emission: пульсация, proximity, digital flicker — ВСЁ в Vertex Stage.
-//   • Результат передаётся как single half emissionFactor : TEXCOORD8.
-//   • Fragment только умножает emissionFactor × emissionMask из текстуры.
-//   • NASA-Punk цифровое мерцание через step + дешёвый frac-hash (без sin).
+// ARHITEKTURA v3:
+//   • URP Lit (PBR) s polnoy podderzhkoy Normal Map i Metallic/Smoothness.
+//   • HDR Emission: pulsatsiya, proximity, digital flicker — VSE v Vertex Stage.
+//   • Rezultat peredaetsya kak single half emissionFactor : TEXCOORD8.
+//   • Fragment tolko umnozhaet emissionFactor × emissionMask iz tekstury.
+//   • NASA-Punk tsifrovoe mertsanie cherez step + deshevyy frac-hash (bez sin).
 //
-// ОПТИМИЗАЦИИ v3 (поверх v2):
-//   1. _LODLevel float (0=High, 1=Med, 2=Low) вместо keyword variants.
-//      Один вариант шейдера, LOD branching в Vertex (почти бесплатно).
+// OPTIMIZATsII v3 (poverh v2):
+//   1. _LODLevel float (0=High, 1=Med, 2=Low) vmesto keyword variants.
+//      Odin variant sheydera, LOD branching v Vertex (pochti besplatno).
 //      Low: ~3 ALU (static emission). Med: ~8 ALU (no flicker). High: ~12 ALU (full).
-//   2. _PlayerPos.w validity flag — proximity skipped if C# не выставил позицию.
-//   3. DepthNormals: encoded normals (×0.5+0.5) для корректного SSAO.
-//   4. MetaInput zero-init для safety.
-//   5. half precision everywhere — критично для MX350 register throughput.
+//   2. _PlayerPos.w validity flag — proximity skipped if C# ne vystavil pozitsiyu.
+//   3. DepthNormals: encoded normals (×0.5+0.5) dlya korrektnogo SSAO.
+//   4. MetaInput zero-init dlya safety.
+//   5. half precision everywhere — kritichno dlya MX350 register throughput.
 //
 // LOD TIERS:
 //   High (_LODLevel=0): Full pulsation + flicker + proximity. ~12 ALU vertex.

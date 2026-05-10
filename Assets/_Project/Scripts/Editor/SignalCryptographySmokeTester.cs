@@ -361,17 +361,17 @@ namespace Hecton8.Editor
             {
                 string registerBody = ExtractMethodBody(narrativeEvents, "public static void Register(INarrativeEventListener listener)");
                 string enqueueBody = ExtractMethodBody(narrativeEvents, "private static bool Enqueue(in NarrativeEventPayload payload)");
-                string resetBody = ExtractMethodBody(narrativeEvents, "private static void ResetStaticState()");
-                string overflowBody = ExtractMethodBody(narrativeEvents, "private static void ReportQueueOverflow(ushort eventType)");
+                string narrativeResetBody = ExtractMethodBody(narrativeEvents, "private static void ResetStaticState()");
+                string narrativeOverflowBody = ExtractMethodBody(narrativeEvents, "private static void ReportQueueOverflow(ushort eventType)");
 
                 AssertContains(narrativeEvents, "public static int DroppedEventCount => _droppedEventCount", "Narrative events expose dropped-event counter", report, ref failureCount);
                 AssertNotContains(registerBody, "EnsureInitialized()", "Narrative listener registration does not cold-allocate event queues", report, ref failureCount);
                 AssertContains(enqueueBody, "ReportQueueOverflow(payload.EventType)", "Narrative event queue overflow preserves event-type context", report, ref failureCount);
-                AssertContains(overflowBody, "_droppedEventCount++", "Narrative event overflow increments monotonic counter", report, ref failureCount);
-                AssertContains(overflowBody, "_lastQueueOverflowTelemetryFrame == frame", "Narrative event overflow telemetry is frame-rate limited", report, ref failureCount);
-                AssertContains(overflowBody, "NarrativeQueueContextHash ^ ((uint)eventType << 24)", "Narrative event overflow context encodes event type", report, ref failureCount);
-                AssertContains(resetBody, "_droppedEventCount = 0", "Narrative reset clears dropped-event counter", report, ref failureCount);
-                AssertContains(resetBody, "_lastQueueOverflowTelemetryFrame = -1", "Narrative reset rearms overflow telemetry gate", report, ref failureCount);
+                AssertContains(narrativeOverflowBody, "_droppedEventCount++", "Narrative event overflow increments monotonic counter", report, ref failureCount);
+                AssertContains(narrativeOverflowBody, "_lastQueueOverflowTelemetryFrame == frame", "Narrative event overflow telemetry is frame-rate limited", report, ref failureCount);
+                AssertContains(narrativeOverflowBody, "NarrativeQueueContextHash ^ ((uint)eventType << 24)", "Narrative event overflow context encodes event type", report, ref failureCount);
+                AssertContains(narrativeResetBody, "_droppedEventCount = 0", "Narrative reset clears dropped-event counter", report, ref failureCount);
+                AssertContains(narrativeResetBody, "_lastQueueOverflowTelemetryFrame = -1", "Narrative reset rearms overflow telemetry gate", report, ref failureCount);
                 AssertNotContains(enqueueBody, "Debug.Log", "Narrative enqueue path has no managed debug logging", report, ref failureCount);
                 AssertNotContains(narrativeEvents, "Awaitable", "Narrative events have no Awaitable dependency", report, ref failureCount);
                 AssertNotContains(narrativeEvents, "await ", "Narrative events have no await usage", report, ref failureCount);
@@ -382,8 +382,8 @@ namespace Hecton8.Editor
                 string registerBody = ExtractMethodBody(craftingEvents, "public static void Register(ICraftingEventListener listener)");
                 string enqueueBody = ExtractMethodBody(craftingEvents, "private static bool Enqueue(in CraftingEventPayload payload)");
                 string reserveBody = ExtractMethodBody(craftingEvents, "private static bool TryReserveReferenceSlot(CraftingEventType eventType, out int referenceSlot)");
-                string resetBody = ExtractMethodBody(craftingEvents, "internal static void ResetStaticState()");
-                string overflowBody = ExtractMethodBody(craftingEvents, "private static void ReportQueueOverflow(ushort eventType)");
+                string craftingResetBody = ExtractMethodBody(craftingEvents, "internal static void ResetStaticState()");
+                string craftingOverflowBody = ExtractMethodBody(craftingEvents, "private static void ReportQueueOverflow(ushort eventType)");
                 string slotExhaustedBody = ExtractMethodBody(craftingEvents, "private static void ReportReferenceSlotExhausted(ushort eventType)");
 
                 AssertContains(craftingEvents, "public static int DroppedEventCount => _droppedEventCount", "Crafting events expose dropped-event counter", report, ref failureCount);
@@ -392,16 +392,16 @@ namespace Hecton8.Editor
                 AssertContains(enqueueBody, "ReportQueueOverflow(payload.EventType)", "Crafting event queue overflow preserves event-type context", report, ref failureCount);
                 AssertContains(enqueueBody, "ReleaseReferenceSlot(payload.ReferenceSlot)", "Crafting queue overflow releases reserved reference slot", report, ref failureCount);
                 AssertContains(reserveBody, "ReportReferenceSlotExhausted((ushort)eventType)", "Crafting reference slot exhaustion preserves event-type context", report, ref failureCount);
-                AssertContains(overflowBody, "_droppedEventCount++", "Crafting event overflow increments monotonic counter", report, ref failureCount);
-                AssertContains(overflowBody, "_lastQueueOverflowTelemetryFrame == frame", "Crafting event overflow telemetry is frame-rate limited", report, ref failureCount);
-                AssertContains(overflowBody, "CraftingQueueContextHash ^ ((uint)eventType << 24)", "Crafting event overflow context encodes event type", report, ref failureCount);
+                AssertContains(craftingOverflowBody, "_droppedEventCount++", "Crafting event overflow increments monotonic counter", report, ref failureCount);
+                AssertContains(craftingOverflowBody, "_lastQueueOverflowTelemetryFrame == frame", "Crafting event overflow telemetry is frame-rate limited", report, ref failureCount);
+                AssertContains(craftingOverflowBody, "CraftingQueueContextHash ^ ((uint)eventType << 24)", "Crafting event overflow context encodes event type", report, ref failureCount);
                 AssertContains(slotExhaustedBody, "_droppedReferenceSlotCount++", "Crafting reference slot exhaustion increments monotonic counter", report, ref failureCount);
                 AssertContains(slotExhaustedBody, "_lastReferenceSlotTelemetryFrame == frame", "Crafting reference slot telemetry is frame-rate limited", report, ref failureCount);
                 AssertContains(slotExhaustedBody, "CraftingReferenceSlotContextHash ^ ((uint)eventType << 24)", "Crafting reference slot context encodes event type", report, ref failureCount);
-                AssertContains(resetBody, "_droppedEventCount = 0", "Crafting reset clears dropped-event counter", report, ref failureCount);
-                AssertContains(resetBody, "_droppedReferenceSlotCount = 0", "Crafting reset clears reference-slot counter", report, ref failureCount);
-                AssertContains(resetBody, "_lastQueueOverflowTelemetryFrame = -1", "Crafting reset rearms queue overflow telemetry gate", report, ref failureCount);
-                AssertContains(resetBody, "_lastReferenceSlotTelemetryFrame = -1", "Crafting reset rearms reference-slot telemetry gate", report, ref failureCount);
+                AssertContains(craftingResetBody, "_droppedEventCount = 0", "Crafting reset clears dropped-event counter", report, ref failureCount);
+                AssertContains(craftingResetBody, "_droppedReferenceSlotCount = 0", "Crafting reset clears reference-slot counter", report, ref failureCount);
+                AssertContains(craftingResetBody, "_lastQueueOverflowTelemetryFrame = -1", "Crafting reset rearms queue overflow telemetry gate", report, ref failureCount);
+                AssertContains(craftingResetBody, "_lastReferenceSlotTelemetryFrame = -1", "Crafting reset rearms reference-slot telemetry gate", report, ref failureCount);
                 AssertNotContains(enqueueBody, "Debug.Log", "Crafting enqueue path has no managed debug logging", report, ref failureCount);
                 AssertNotContains(craftingEvents, "Awaitable", "Crafting events have no Awaitable dependency", report, ref failureCount);
                 AssertNotContains(craftingEvents, "await ", "Crafting events have no await usage", report, ref failureCount);
@@ -412,8 +412,8 @@ namespace Hecton8.Editor
                 string registerBody = ExtractMethodBody(interactionEvents, "public static void Register(IInteractionEventListener listener)");
                 string enqueueBody = ExtractMethodBody(interactionEvents, "private static bool Enqueue(in InteractionEventPayload payload)");
                 string reserveBody = ExtractMethodBody(interactionEvents, "private static bool TryReserveReferenceSlot(InteractionEventType eventType, out int referenceSlot)");
-                string resetBody = ExtractMethodBody(interactionEvents, "internal static void ResetStaticState()");
-                string overflowBody = ExtractMethodBody(interactionEvents, "private static void ReportQueueOverflow(ushort eventType)");
+                string interactionResetBody = ExtractMethodBody(interactionEvents, "internal static void ResetStaticState()");
+                string interactionOverflowBody = ExtractMethodBody(interactionEvents, "private static void ReportQueueOverflow(ushort eventType)");
                 string slotExhaustedBody = ExtractMethodBody(interactionEvents, "private static void ReportReferenceSlotExhausted(ushort eventType)");
 
                 AssertContains(interactionEvents, "public static int DroppedEventCount => _droppedEventCount", "Interaction events expose dropped-event counter", report, ref failureCount);
@@ -422,16 +422,16 @@ namespace Hecton8.Editor
                 AssertContains(enqueueBody, "ReportQueueOverflow(payload.EventType)", "Interaction event queue overflow preserves event-type context", report, ref failureCount);
                 AssertContains(enqueueBody, "ReleaseReferenceSlot(payload.ReferenceSlot)", "Interaction queue overflow releases reserved reference slot", report, ref failureCount);
                 AssertContains(reserveBody, "ReportReferenceSlotExhausted((ushort)eventType)", "Interaction reference slot exhaustion preserves event-type context", report, ref failureCount);
-                AssertContains(overflowBody, "_droppedEventCount++", "Interaction event overflow increments monotonic counter", report, ref failureCount);
-                AssertContains(overflowBody, "_lastQueueOverflowTelemetryFrame == frame", "Interaction event overflow telemetry is frame-rate limited", report, ref failureCount);
-                AssertContains(overflowBody, "InteractionQueueContextHash ^ ((uint)eventType << 24)", "Interaction event overflow context encodes event type", report, ref failureCount);
+                AssertContains(interactionOverflowBody, "_droppedEventCount++", "Interaction event overflow increments monotonic counter", report, ref failureCount);
+                AssertContains(interactionOverflowBody, "_lastQueueOverflowTelemetryFrame == frame", "Interaction event overflow telemetry is frame-rate limited", report, ref failureCount);
+                AssertContains(interactionOverflowBody, "InteractionQueueContextHash ^ ((uint)eventType << 24)", "Interaction event overflow context encodes event type", report, ref failureCount);
                 AssertContains(slotExhaustedBody, "_droppedReferenceSlotCount++", "Interaction reference slot exhaustion increments monotonic counter", report, ref failureCount);
                 AssertContains(slotExhaustedBody, "_lastReferenceSlotTelemetryFrame == frame", "Interaction reference slot telemetry is frame-rate limited", report, ref failureCount);
                 AssertContains(slotExhaustedBody, "InteractionReferenceSlotContextHash ^ ((uint)eventType << 24)", "Interaction reference slot context encodes event type", report, ref failureCount);
-                AssertContains(resetBody, "_droppedEventCount = 0", "Interaction reset clears dropped-event counter", report, ref failureCount);
-                AssertContains(resetBody, "_droppedReferenceSlotCount = 0", "Interaction reset clears reference-slot counter", report, ref failureCount);
-                AssertContains(resetBody, "_lastQueueOverflowTelemetryFrame = -1", "Interaction reset rearms queue overflow telemetry gate", report, ref failureCount);
-                AssertContains(resetBody, "_lastReferenceSlotTelemetryFrame = -1", "Interaction reset rearms reference-slot telemetry gate", report, ref failureCount);
+                AssertContains(interactionResetBody, "_droppedEventCount = 0", "Interaction reset clears dropped-event counter", report, ref failureCount);
+                AssertContains(interactionResetBody, "_droppedReferenceSlotCount = 0", "Interaction reset clears reference-slot counter", report, ref failureCount);
+                AssertContains(interactionResetBody, "_lastQueueOverflowTelemetryFrame = -1", "Interaction reset rearms queue overflow telemetry gate", report, ref failureCount);
+                AssertContains(interactionResetBody, "_lastReferenceSlotTelemetryFrame = -1", "Interaction reset rearms reference-slot telemetry gate", report, ref failureCount);
                 AssertNotContains(enqueueBody, "Debug.Log", "Interaction enqueue path has no managed debug logging", report, ref failureCount);
                 AssertNotContains(interactionEvents, "Awaitable", "Interaction events have no Awaitable dependency", report, ref failureCount);
                 AssertNotContains(interactionEvents, "await ", "Interaction events have no await usage", report, ref failureCount);
@@ -442,8 +442,8 @@ namespace Hecton8.Editor
 
             string raiseMatrixBody = ExtractMethodBody(biomeMatrixDirector, "public static void RaiseMatrixBiomeChanged(HectonBiomeMatrixProfile profile)");
             string raiseDepthBody = ExtractMethodBody(biomeMatrixDirector, "public static void RaiseDepthTierChanged(int depthTier, float depthMeters)");
-            string resetBody = ExtractMethodBody(biomeMatrixDirector, "private static void ResetStaticState()");
-            string overflowBody = ExtractMethodBody(biomeMatrixDirector, "private static void ReportQueueOverflow(byte eventType)");
+            string biomeResetBody = ExtractMethodBody(biomeMatrixDirector, "private static void ResetStaticState()");
+            string biomeOverflowBody = ExtractMethodBody(biomeMatrixDirector, "private static void ReportQueueOverflow(byte eventType)");
             string profileOverflowBody = ExtractMethodBody(biomeMatrixDirector, "private static void ReportProfileSlotOverflow()");
 
             AssertContains(biomeMatrixDirector, "[StructLayout(LayoutKind.Sequential)]", "Biome matrix event payload has sequential layout", report, ref failureCount);
@@ -452,15 +452,15 @@ namespace Hecton8.Editor
             AssertContains(raiseMatrixBody, "ReportQueueOverflow(MatrixBiomeChangedEventType)", "Biome matrix biome-change queue overflow preserves event-type context", report, ref failureCount);
             AssertContains(raiseMatrixBody, "ReportProfileSlotOverflow()", "Biome matrix profile slot overflow is counted", report, ref failureCount);
             AssertContains(raiseDepthBody, "ReportQueueOverflow(DepthTierChangedEventType)", "Biome matrix depth-tier queue overflow preserves event-type context", report, ref failureCount);
-            AssertContains(overflowBody, "_droppedEventCount++", "Biome matrix event overflow increments monotonic counter", report, ref failureCount);
-            AssertContains(overflowBody, "_lastQueueOverflowTelemetryFrame == frame", "Biome matrix event overflow telemetry is frame-rate limited", report, ref failureCount);
-            AssertContains(overflowBody, "QueueContextHash ^ ((uint)eventType << 24)", "Biome matrix event overflow context encodes event type", report, ref failureCount);
+            AssertContains(biomeOverflowBody, "_droppedEventCount++", "Biome matrix event overflow increments monotonic counter", report, ref failureCount);
+            AssertContains(biomeOverflowBody, "_lastQueueOverflowTelemetryFrame == frame", "Biome matrix event overflow telemetry is frame-rate limited", report, ref failureCount);
+            AssertContains(biomeOverflowBody, "QueueContextHash ^ ((uint)eventType << 24)", "Biome matrix event overflow context encodes event type", report, ref failureCount);
             AssertContains(profileOverflowBody, "_droppedProfileSlotCount++", "Biome matrix profile slot exhaustion increments monotonic counter", report, ref failureCount);
             AssertContains(profileOverflowBody, "_lastProfileSlotOverflowTelemetryFrame == frame", "Biome matrix profile slot telemetry is frame-rate limited", report, ref failureCount);
-            AssertContains(resetBody, "_droppedEventCount = 0", "Biome matrix reset clears dropped-event counter", report, ref failureCount);
-            AssertContains(resetBody, "_droppedProfileSlotCount = 0", "Biome matrix reset clears profile-slot counter", report, ref failureCount);
-            AssertContains(resetBody, "_lastQueueOverflowTelemetryFrame = -1", "Biome matrix reset rearms queue overflow telemetry gate", report, ref failureCount);
-            AssertContains(resetBody, "_lastProfileSlotOverflowTelemetryFrame = -1", "Biome matrix reset rearms profile-slot telemetry gate", report, ref failureCount);
+            AssertContains(biomeResetBody, "_droppedEventCount = 0", "Biome matrix reset clears dropped-event counter", report, ref failureCount);
+            AssertContains(biomeResetBody, "_droppedProfileSlotCount = 0", "Biome matrix reset clears profile-slot counter", report, ref failureCount);
+            AssertContains(biomeResetBody, "_lastQueueOverflowTelemetryFrame = -1", "Biome matrix reset rearms queue overflow telemetry gate", report, ref failureCount);
+            AssertContains(biomeResetBody, "_lastProfileSlotOverflowTelemetryFrame = -1", "Biome matrix reset rearms profile-slot telemetry gate", report, ref failureCount);
         }
 
         private static void RunSpectrogramAudit(string decoder, string spectrogram, StringBuilder report, ref int failureCount)

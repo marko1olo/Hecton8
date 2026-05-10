@@ -1,5 +1,6 @@
 namespace Hecton8.Gameplay
 {
+    using System;
     using System.Collections.Generic;
     using Hecton8.Core;
     using Hecton8.Interaction;
@@ -221,10 +222,6 @@ namespace Hecton8.Gameplay
             _visorVibrationHoldTimer = 0f;
             _cachedValveOpen01 = 0f;
             _cachedValveAngular01 = 0f;
-            _biosLootCacheFrameCounter = 0u;
-            _cachedHasLootSphereAup = false;
-            _cachedLootSphereAup = default;
-            _cachedObserverMovement = null;
             InvalidateColdReferenceCache();
             InvalidatePublishedShaderCache();
             PublishShaderState();
@@ -257,10 +254,7 @@ namespace Hecton8.Gameplay
             _visorVibration01 = 0f;
             _visorVibrationHoldTimer = 0f;
             _biosRefreshTimer = 0f;
-            _biosLootCacheFrameCounter = 0u;
-            _cachedHasLootSphereAup = false;
-            _cachedLootSphereAup = default;
-            _cachedObserverMovement = null;
+            InvalidateBiosLootCache();
             if (_smoke01 > _resolvedVentedSmokeThreshold01)
                 _stateBits |= StateSmokeActive;
 
@@ -337,6 +331,15 @@ namespace Hecton8.Gameplay
             _coldReferenceSearchMask = 0u;
             if (_seatStrapLatches != null)
                 _seatStrapLatches.Clear();
+            InvalidateBiosLootCache();
+        }
+
+        private void InvalidateBiosLootCache()
+        {
+            _biosLootCacheFrameCounter = 0u;
+            _cachedHasLootSphereAup = false;
+            _cachedLootSphereAup = default;
+            _cachedObserverMovement = null;
         }
 
         /// <inheritdoc />

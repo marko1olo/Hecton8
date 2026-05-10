@@ -1,21 +1,21 @@
 // ============================================================================
 // HECTON-8 — CorporateOrderSystem.cs
-// Система противоречивых корпоративных приказов.
+// Sistema protivorechivyh korporativnyh prikazov.
 //
-// ЛОР (лор3 Блок А):
-//   Игрок получает противоречивые приказы через задержку связи (8-12 часов).
-//   Фракция «Этики» vs «Прагматики».
-//   Это не диалог — это нарратив через интерфейс.
+// LOR (lor3 Blok A):
+//   Igrok poluchaet protivorechivye prikazy cherez zaderzhku svyazi (8-12 chasov).
+//   Fraktsiya «Etiki» vs «Pragmatiki».
+//   Eto ne dialog — eto narrativ cherez interfeys.
 //
-// МЕХАНИКА:
-//   • Приказы приходят с задержкой (игровое время).
-//   • При получении конфликтующего приказа — HUD уведомление.
-//   • Игрок видит оба приказа в PDA (Data Log).
-//   • Выбор — через действия в мире, не через диалог.
+// MEHANIKA:
+//   • Prikazy prihodyat s zaderzhkoy (igrovoe vremya).
+//   • Pri poluchenii konfliktuyuschego prikaza — HUD uvedomlenie.
+//   • Igrok vidit oba prikaza v PDA (Data Log).
+//   • Vybor — cherez deystviya v mire, ne cherez dialog.
 //
 // ZERO GC:
-//   • ISlowTickable — проверка таймеров.
-//   • Pre-allocated массив состояний приказов.
+//   • ISlowTickable — proverka taymerov.
+//   • Pre-allocated massiv sostoyaniy prikazov.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -42,8 +42,8 @@ namespace Hecton8.Narrative
         [SerializeField] private DeepReachCorporationData corporationData;
 
         [Header("── Timing ───────────────────────────────────")]
-        [Tooltip("Игровых секунд в одном игровом часе (для задержки приказов).")]
-        [SerializeField] private float gameSecondsPerHour = 120f; // 2 мин реального времени = 1 игровой час
+        [Tooltip("Igrovyh sekund v odnom igrovom chase (dlya zaderzhki prikazov).")]
+        [SerializeField] private float gameSecondsPerHour = 120f; // 2 min realnogo vremeni = 1 igrovoy chas
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -57,7 +57,7 @@ namespace Hecton8.Narrative
         private readonly HashSet<string> _receivedOrders  = new HashSet<string>(16);
         private readonly HashSet<uint> _activeConflicts = new HashSet<uint>(8);
 
-        // Таймеры ожидания приказов (orderId → remaining seconds)
+        // Taymery ozhidaniya prikazov (orderId → remaining seconds)
         private readonly Dictionary<string, float> _pendingTimers =
             new Dictionary<string, float>(16);
 
@@ -66,10 +66,10 @@ namespace Hecton8.Narrative
         private bool _saveRegistered;
         private bool _ordersScheduled;
 
-        // COLD ALLOC: буфер для доставки приказов в SlowTick
+        // COLD ALLOC: bufer dlya dostavki prikazov v SlowTick
         private readonly List<string> _deliveryBuffer = new List<string>(16);
 
-        // COLD ALLOC: буфер ключей для итерации Dictionary без foreach-аллокации
+        // COLD ALLOC: bufer klyuchey dlya iteratsii Dictionary bez foreach-allokatsii
         private readonly List<string> _pendingKeyBuffer = new List<string>(16);
 
         // ══════════════════════════════════════════════════════════
@@ -286,7 +286,7 @@ namespace Hecton8.Narrative
             // Cinematic fake: static HUD warning avoids runtime preview string assembly.
             NotificationEvents.PushWarning(IncomingOrderWarningMessage);
 
-            // Проверяем конфликт
+            // Proveryaem konflikt
             if (!string.IsNullOrEmpty(order.conflictsWithOrderId) &&
                 _receivedOrders.Contains(order.conflictsWithOrderId))
             {
@@ -364,7 +364,7 @@ namespace Hecton8.Narrative
             foreach (string id in _receivedOrders)
                 data.corporateReceivedOrderIds.Add(id);
 
-            // Сохраняем таймеры ожидания
+            // Sohranyaem taymery ozhidaniya
             data.corporatePendingOrderIds.Clear();
             data.corporatePendingOrderTimers.Clear();
             foreach (var kvp in _pendingTimers)
@@ -398,7 +398,7 @@ namespace Hecton8.Narrative
                 }
             }
 
-            // Если нет сохранённых таймеров — планируем заново
+            // Esli net sohranennyh taymerov — planiruem zanovo
             if (_pendingTimers.Count == 0 && _receivedOrders.Count == 0)
                 ScheduleAllOrders();
         }

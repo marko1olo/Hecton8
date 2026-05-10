@@ -13,7 +13,7 @@ namespace Hecton8.UI
 {
     /// <summary>
     /// Unified owner for user settings (graphics, audio, video).
-    /// Persists via UserOptionsPersistence (PlayerPrefs backend).
+    /// Persists via UserOptionsPersistence (options.h8cfg backend).
     /// Bootstrap-owned persistent runtime settings service.
     /// </summary>
     [DisallowMultipleComponent]
@@ -626,40 +626,40 @@ namespace Hecton8.UI
 
         /// <summary>
         /// Reset all settings to defaults.
-        /// Clears all PlayerPrefs keys, sets default values, applies, and saves.
+        /// Clears all options.h8cfg keys, sets default values, applies, and saves.
         /// </summary>
         public void ResetToDefaults()
         {
-            // Clear all Hecton_* PlayerPrefs keys before setting defaults
+            // Clear all Hecton_* options.h8cfg keys before setting defaults.
             if (_persistence != null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log("[SettingsManager] Clearing all settings keys from PlayerPrefs...");
+                Debug.Log("[SettingsManager] Clearing all settings keys from options.h8cfg...");
 #endif
-                PlayerPrefs.DeleteKey(QualityLevelKey);
-                PlayerPrefs.DeleteKey(MasterVolumeKey);
-                PlayerPrefs.DeleteKey(MusicVolumeKey);
-                PlayerPrefs.DeleteKey(SfxVolumeKey);
-                PlayerPrefs.DeleteKey(AmbientVolumeKey);
-                PlayerPrefs.DeleteKey(VsyncKey);
-                PlayerPrefs.DeleteKey(FullscreenKey);
-                PlayerPrefs.DeleteKey(ResolutionWidthKey);
-                PlayerPrefs.DeleteKey(ResolutionHeightKey);
-                PlayerPrefs.DeleteKey(FieldOfViewKey);
-                PlayerPrefs.DeleteKey(ShadowQualityKey);
-                PlayerPrefs.DeleteKey(ShadowDistanceKey);
-                PlayerPrefs.DeleteKey(AntiAliasingKey);
-                PlayerPrefs.DeleteKey(AmbientOcclusionKey);
-                PlayerPrefs.DeleteKey(BloomKey);
-                PlayerPrefs.DeleteKey(MotionBlurKey);
-                PlayerPrefs.DeleteKey(TextureQualityKey);
-                PlayerPrefs.DeleteKey(GraphicsPresetKey);
-                PlayerPrefs.DeleteKey(VrComfortModeKey);
-                PlayerPrefs.DeleteKey(VrSnapTurnKey);
-                PlayerPrefs.DeleteKey(VrHorizonLockKey);
-                PlayerPrefs.DeleteKey(VrComfortVignetteKey);
-                PlayerPrefs.DeleteKey(VrHeadRelativeSwimBiasKey);
-                PlayerPrefs.Save();
+                _persistence.DeleteKey(QualityLevelKey);
+                _persistence.DeleteKey(MasterVolumeKey);
+                _persistence.DeleteKey(MusicVolumeKey);
+                _persistence.DeleteKey(SfxVolumeKey);
+                _persistence.DeleteKey(AmbientVolumeKey);
+                _persistence.DeleteKey(VsyncKey);
+                _persistence.DeleteKey(FullscreenKey);
+                _persistence.DeleteKey(ResolutionWidthKey);
+                _persistence.DeleteKey(ResolutionHeightKey);
+                _persistence.DeleteKey(FieldOfViewKey);
+                _persistence.DeleteKey(ShadowQualityKey);
+                _persistence.DeleteKey(ShadowDistanceKey);
+                _persistence.DeleteKey(AntiAliasingKey);
+                _persistence.DeleteKey(AmbientOcclusionKey);
+                _persistence.DeleteKey(BloomKey);
+                _persistence.DeleteKey(MotionBlurKey);
+                _persistence.DeleteKey(TextureQualityKey);
+                _persistence.DeleteKey(GraphicsPresetKey);
+                _persistence.DeleteKey(VrComfortModeKey);
+                _persistence.DeleteKey(VrSnapTurnKey);
+                _persistence.DeleteKey(VrHorizonLockKey);
+                _persistence.DeleteKey(VrComfortVignetteKey);
+                _persistence.DeleteKey(VrHeadRelativeSwimBiasKey);
+                _persistence.Save();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log("[SettingsManager] All settings keys cleared. Applying defaults...");
@@ -1385,7 +1385,7 @@ namespace Hecton8.UI
                 return true;
             }
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (playerTransform.TryGetComponent(out Camera playerOwnedCamera))
@@ -1459,7 +1459,7 @@ namespace Hecton8.UI
                 return true;
             }
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null &&
                 TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(playerTransform)))
             {

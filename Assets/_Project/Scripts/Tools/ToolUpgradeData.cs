@@ -1,19 +1,19 @@
 // ============================================================================
 // HECTON-8 — ToolUpgradeData.cs  v1.0 ENTERPRISE
-// Данные модуля улучшения инструмента.
-// ScriptableObject — устанавливается в ToolMetadata.installedUpgrades[].
+// Dannye modulya uluchsheniya instrumenta.
+// ScriptableObject — ustanavlivaetsya v ToolMetadata.installedUpgrades[].
 //
 // v1.0 ENTERPRISE FEATURES:
 //   [ADD] Stat modifiers — efficiency, speed, energy consumption
 //   [ADD] Special effects — durability multiplier, repair cost reduction
-//   [ADD] Tier requirements — какой уровень инструмента требуется
-//   [ADD] Crafting cost — стоимость создания улучшения
+//   [ADD] Tier requirements — kakoy uroven instrumenta trebuetsya
+//   [ADD] Crafting cost — stoimost sozdaniya uluchsheniya
 //   [ADD] Localization keys
 //
-// АРХИТЕКТУРА:
-//   • Один ToolUpgradeData = один модуль улучшения
-//   • Может быть установлен в любой инструмент (если tier подходит)
-//   • Бонусы суммируются с базовыми статами инструмента
+// ARHITEKTURA:
+//   • Odin ToolUpgradeData = odin modul uluchsheniya
+//   • Mozhet byt ustanovlen v lyuboy instrument (esli tier podhodit)
+//   • Bonusy summiruyutsya s bazovymi statami instrumenta
 // ============================================================================
 
 using UnityEngine;
@@ -28,16 +28,16 @@ namespace Hecton8.Tools
         // ══════════════════════════════════════════════════════════
 
         [Header("── Identity ────────────────────────────────")]
-        [Tooltip("Уникальный ID улучшения.")]
+        [Tooltip("Unikalnyy ID uluchsheniya.")]
         public string upgradeID = "upgrade_efficiency_mk1";
 
-        [Tooltip("Название улучшения (ключ локализации).")]
+        [Tooltip("Nazvanie uluchsheniya (klyuch lokalizatsii).")]
         public string nameLocKey = "UPGRADE_EFFICIENCY_MK1_NAME";
 
-        [Tooltip("Описание улучшения (ключ локализации).")]
+        [Tooltip("Opisanie uluchsheniya (klyuch lokalizatsii).")]
         public string descriptionLocKey = "UPGRADE_EFFICIENCY_MK1_DESC";
 
-        [Tooltip("Иконка улучшения (для UI).")]
+        [Tooltip("Ikonka uluchsheniya (dlya UI).")]
         public Sprite icon;
 
         // ══════════════════════════════════════════════════════════
@@ -45,10 +45,10 @@ namespace Hecton8.Tools
         // ══════════════════════════════════════════════════════════
 
         [Header("── Requirements ────────────────────────────")]
-        [Tooltip("Минимальный tier инструмента для установки.")]
+        [Tooltip("Minimalnyy tier instrumenta dlya ustanovki.")]
         public ToolTier requiredTier = ToolTier.Basic;
 
-        [Tooltip("Категории инструментов, на которые можно установить.")]
+        [Tooltip("Kategorii instrumentov, na kotorye mozhno ustanovit.")]
         public ToolCategory[] compatibleCategories = new ToolCategory[]
         {
             ToolCategory.Utility,
@@ -60,15 +60,15 @@ namespace Hecton8.Tools
         // ══════════════════════════════════════════════════════════
 
         [Header("── Stat Modifiers ──────────────────────────")]
-        [Tooltip("Бонус к эффективности (+0.2 = +20%).")]
+        [Tooltip("Bonus k effektivnosti (+0.2 = +20%).")]
         [Range(-0.5f, 1f)]
         public float efficiencyBonus = 0.2f;
 
-        [Tooltip("Бонус к скорости (+0.1 = +10%).")]
+        [Tooltip("Bonus k skorosti (+0.1 = +10%).")]
         [Range(-0.5f, 1f)]
         public float speedBonus = 0f;
 
-        [Tooltip("Модификатор энергопотребления (-0.2 = -20%).")]
+        [Tooltip("Modifikator energopotrebleniya (-0.2 = -20%).")]
         [Range(-0.5f, 0.5f)]
         public float energyConsumptionModifier = 0f;
 
@@ -77,11 +77,11 @@ namespace Hecton8.Tools
         // ══════════════════════════════════════════════════════════
 
         [Header("── Special Effects ─────────────────────────")]
-        [Tooltip("Множитель износа (0.8 = -20% износа).")]
+        [Tooltip("Mnozhitel iznosa (0.8 = -20% iznosa).")]
         [Range(0.5f, 1.5f)]
         public float durabilityDrainMultiplier = 1f;
 
-        [Tooltip("Снижение стоимости ремонта (%).")]
+        [Tooltip("Snizhenie stoimosti remonta (%).")]
         [Range(0f, 50f)]
         public float repairCostReduction = 0f;
 
@@ -90,11 +90,11 @@ namespace Hecton8.Tools
         // ══════════════════════════════════════════════════════════
 
         [Header("── Crafting ────────────────────────────────")]
-        [Tooltip("Стоимость создания улучшения (в единицах ресурса).")]
+        [Tooltip("Stoimost sozdaniya uluchsheniya (v edinitsah resursa).")]
         [Range(1, 50)]
         public int craftingCost = 5;
 
-        [Tooltip("ID ресурса для создания (например, 'copper').")]
+        [Tooltip("ID resursa dlya sozdaniya (naprimer, 'copper').")]
         public string craftingResourceID = "copper";
 
         // ══════════════════════════════════════════════════════════
@@ -102,19 +102,19 @@ namespace Hecton8.Tools
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Проверяет совместимость с инструментом.
+        /// Proveryaet sovmestimost s instrumentom.
         /// </summary>
         public bool IsCompatibleWith(ToolMetadata tool)
         {
             if (tool == null) return false;
 
-            // Проверка tier
+            // Proverka tier
             if (tool.tier < requiredTier)
                 return false;
 
-            // Проверка категории
+            // Proverka kategorii
             if (compatibleCategories == null || compatibleCategories.Length == 0)
-                return true; // универсальное улучшение
+                return true; // universalnoe uluchshenie
 
             foreach (ToolCategory cat in compatibleCategories)
             {

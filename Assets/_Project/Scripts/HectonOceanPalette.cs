@@ -1,14 +1,14 @@
 // ============================================================================
 // HECTON-8 — HectonOceanPalette.cs
-// ScriptableObject: коллекция биомных профилей подводной среды.
+// ScriptableObject: kollektsiya biomnyh profiley podvodnoy sredy.
 //
-// Массив профилей индексирован по MapMagic splat layer index.
-// Элемент [0] = первый выход Biomes Set ноды MapMagic.
+// Massiv profiley indeksirovan po MapMagic splat layer index.
+// Element [0] = pervyy vyhod Biomes Set nody MapMagic.
 //
-// HectonUnderwaterVisuals получает biomeIndex через MapMagicBiomeEvents.
-// и выбирает целевой профиль из этого массива.
+// HectonUnderwaterVisuals poluchaet biomeIndex cherez MapMagicBiomeEvents.
+// i vybiraet tselevoy profil iz etogo massiva.
 //
-// ЛОРНЫЙ ПОРЯДОК:
+// LORNYY PORYaDOK:
 //   [0] = Shallow Grave     [3] = The Drop
 //   [1] = Golden Zone       [4] = Abyssal Plain
 //   [2] = Industrial Shelf  [5] = The Wound
@@ -25,15 +25,15 @@ namespace Hecton8.Environment
     public sealed class HectonOceanPalette : ScriptableObject
     {
         [Header("═══ BIOME PROFILES ═══")]
-        [Tooltip("Массив биомных профилей.\n" +
-                 "Индекс = MapMagic splat layer index.\n" +
-                 "[0] = Shallow Grave, [1] = Golden Zone, и т.д.")]
+        [Tooltip("Massiv biomnyh profiley.\n" +
+                 "Indeks = MapMagic splat layer index.\n" +
+                 "[0] = Shallow Grave, [1] = Golden Zone, i t.d.")]
         [SerializeField]
         private HectonBiomeProfile[] biomeProfiles;
 
         [Header("═══ SURFACE DEFAULTS ═══")]
-        [Tooltip("Профиль для поверхности (над водой).\n" +
-                 "Сбрасывает все подводные эффекты к дневным значениям.")]
+        [Tooltip("Profil dlya poverhnosti (nad vodoy).\n" +
+                 "Sbrasyvaet vse podvodnye effekty k dnevnym znacheniyam.")]
         [SerializeField]
         private HectonBiomeProfile surfaceProfile;
 

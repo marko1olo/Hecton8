@@ -1,14 +1,14 @@
 // ============================================================================
 // HECTON-8 — BuildableData.cs
-// Данные строительного модуля подводной базы.
+// Dannye stroitelnogo modulya podvodnoy bazy.
 //
-// РЕФАКТОРИНГ v2 — ЭНЕРГОСИСТЕМА:
-//   • Добавлены поля powerRating и powerPriority.
-//   • PowerNode читает эти данные при спавне модуля.
-//   • Data-Driven: потребление/генерация настраивается в ассете.
+// REFAKTORING v2 — ENERGOSISTEMA:
+//   • Dobavleny polya powerRating i powerPriority.
+//   • PowerNode chitaet eti dannye pri spavne modulya.
+//   • Data-Driven: potreblenie/generatsiya nastraivaetsya v assete.
 //
-// ScriptableObject — один ассет на тип модуля.
-// Создаётся через: Hecton → Buildable Module.
+// ScriptableObject — odin asset na tip modulya.
+// Sozdaetsya cherez: Hecton → Buildable Module.
 // ===========================================================================
 
 using System;
@@ -30,30 +30,30 @@ namespace Hecton8.Building
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  InventoryCost — стоимость одного ресурса
+    //  InventoryCost — stoimost odnogo resursa
     // ══════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Одна позиция в списке стоимости постройки.
+    /// Odna pozitsiya v spiske stoimosti postroyki.
     /// </summary>
     [Serializable]
     public sealed class InventoryCost
     {
-        [Tooltip("Ресурс (ScriptableObject ItemData)")]
+        [Tooltip("Resurs (ScriptableObject ItemData)")]
         public ItemData item;
 
-        [Tooltip("Количество единиц этого ресурса")]
+        [Tooltip("Kolichestvo edinits etogo resursa")]
         [Min(1)]
         public int amount = 1;
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  BuildableData — данные строительного модуля
+    //  BuildableData — dannye stroitelnogo modulya
     // ══════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Чистые данные одного строительного модуля.
-    /// Никакой логики — только описание.
+    /// Chistye dannye odnogo stroitelnogo modulya.
+    /// Nikakoy logiki — tolko opisanie.
     /// </summary>
     [CreateAssetMenu(
         fileName = "NewModule",
@@ -63,19 +63,19 @@ namespace Hecton8.Building
     {
         // ─────────────────────── Identity ────────────────────────
         [Header("Identity")]
-        [Tooltip("Название модуля для UI: 'Фундамент', 'Коридор'")]
+        [Tooltip("Nazvanie modulya dlya UI: 'Fundament', 'Koridor'")]
         public string moduleName = "Module";
         [Tooltip("Stable module ID used by saves, scanner archives, and future content packs. Leave empty to fall back to the asset name.")]
         [SerializeField] private string stableId = string.Empty;
 
-        [Tooltip("Иконка для меню строительства (опционально)")]
+        [Tooltip("Ikonka dlya menyu stroitelstva (optsionalno)")]
         public Sprite icon;
 
         [TextArea(2, 4)]
-        [Tooltip("Описание модуля для подсказки")]
+        [Tooltip("Opisanie modulya dlya podskazki")]
         public string description = "";
 
-        [Tooltip("Семейство модуля для browser/filter/directive logic.")]
+        [Tooltip("Semeystvo modulya dlya browser/filter/directive logic.")]
         public BuildableFamily family = BuildableFamily.Structure;
 
         [Tooltip("Packed QuestState flag required before this blueprint is visible. 0 = visible by default.")]
@@ -83,10 +83,10 @@ namespace Hecton8.Building
 
         // ─────────────────────── Prefabs ─────────────────────────
         [Header("Prefabs")]
-        [Tooltip("Полупрозрачный префаб-призрак (должен иметь PlacementGhost)")]
+        [Tooltip("Poluprozrachnyy prefab-prizrak (dolzhen imet PlacementGhost)")]
         public GameObject ghostPrefab;
 
-        [Tooltip("Финальный префаб, устанавливаемый в мир")]
+        [Tooltip("Finalnyy prefab, ustanavlivaemyy v mir")]
         public GameObject finalPrefab;
 
         [Tooltip("Optional standardized habitat template that owns socket math, proxy bounds, integrity defaults, and stable hash IDs.")]
@@ -94,30 +94,30 @@ namespace Hecton8.Building
 
         // ─────────────────────── Cost ────────────────────────────
         [Header("Build Cost")]
-        [Tooltip("Список ресурсов для постройки")]
+        [Tooltip("Spisok resursov dlya postroyki")]
         public List<InventoryCost> buildCost = new List<InventoryCost>();
 
         // ─────────────────────── Power ───────────────────────────
         [Header("Power")]
-        [Tooltip("Энергетический рейтинг модуля (Ватты).\n" +
-                 "• Положительное = генерация (солнечная панель: +200)\n" +
-                 "• Отрицательное = потребление (жилая комната: -30)\n" +
-                 "• Ноль = пассивный (коридор, стена)\n\n" +
-                 "Это БАЗОВОЕ потребление модуля.\n" +
-                 "Дополнительные потребители (Fabricator)\n" +
-                 "добавляют своё через IPowerComponent.")]
+        [Tooltip("Energeticheskiy reyting modulya (Vatty).\n" +
+                 "• Polozhitelnoe = generatsiya (solnechnaya panel: +200)\n" +
+                 "• Otritsatelnoe = potreblenie (zhilaya komnata: -30)\n" +
+                 "• Nol = passivnyy (koridor, stena)\n\n" +
+                 "Eto BAZOVOE potreblenie modulya.\n" +
+                 "Dopolnitelnye potrebiteli (Fabricator)\n" +
+                 "dobavlyayut svoe cherez IPowerComponent.")]
         public float powerRating;
 
-        [Tooltip("Приоритет отключения при дефиците энергии.\n" +
-                 "0 = критический (жизнеобеспечение)\n" +
-                 "50 = обычный\n" +
-                 "100 = роскошь (декор)")]
+        [Tooltip("Prioritet otklyucheniya pri defitsite energii.\n" +
+                 "0 = kriticheskiy (zhizneobespechenie)\n" +
+                 "50 = obychnyy\n" +
+                 "100 = roskosh (dekor)")]
         [Range(0, 100)]
         public int powerPriority = 50;
 
         // ─────────────────────── Cache ───────────────────────────
 
-        /// <summary>Кэшированная строка для UI.</summary>
+        /// <summary>Keshirovannaya stroka dlya UI.</summary>
         private string _cachedBuildText;
 
         // ═════════════════════════════════════════════════════════
@@ -149,7 +149,7 @@ namespace Hecton8.Building
         // ═════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Возвращает кэшированную строку "Построить {moduleName}".
+        /// Vozvraschaet keshirovannuyu stroku "Postroit {moduleName}".
         /// Zero allocation.
         /// </summary>
         public string GetBuildText()
@@ -160,7 +160,7 @@ namespace Hecton8.Building
         }
 
         /// <summary>
-        /// Суммарное количество ресурсных единиц для постройки.
+        /// Summarnoe kolichestvo resursnyh edinits dlya postroyki.
         /// </summary>
         public int TotalResourceCount
         {
@@ -174,13 +174,13 @@ namespace Hecton8.Building
         }
 
         /// <summary>
-        /// true если модуль генерирует энергию (powerRating > 0).
-        /// Удобно для UI-фильтрации.
+        /// true esli modul generiruet energiyu (powerRating > 0).
+        /// Udobno dlya UI-filtratsii.
         /// </summary>
         public bool IsGenerator => powerRating > 0f;
 
         /// <summary>
-        /// true если модуль потребляет энергию (powerRating &lt; 0).
+        /// true esli modul potreblyaet energiyu (powerRating &lt; 0).
         /// </summary>
         public bool IsConsumer => powerRating < 0f;
 
@@ -281,7 +281,7 @@ namespace Hecton8.Building
 
         private void RebuildCache()
         {
-            _cachedBuildText = $"Построить {moduleName}";
+            _cachedBuildText = $"Postroit {moduleName}";
         }
 
         // ══════════════════════════════════════════════════════════
@@ -291,22 +291,22 @@ namespace Hecton8.Building
         private static readonly string[] _cachedUpperStrings = new string[16];
 
         /// <summary>
-        /// Кэшированный ToUpperInvariant для избежания повторных аллокаций строк.
-        /// Хранит до 16 последних преобразований для повторного использования.
+        /// Keshirovannyy ToUpperInvariant dlya izbezhaniya povtornyh allokatsiy strok.
+        /// Hranit do 16 poslednih preobrazovaniy dlya povtornogo ispolzovaniya.
         /// </summary>
         private static string CachedToUpperInvariant(string input)
         {
             if (string.IsNullOrEmpty(input))
                 return input;
 
-            // Простой hash для кэширования (не криптографический)
-            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
+            // Prostoy hash dlya keshirovaniya (ne kriptograficheskiy)
+            int hash = input.GetHashCode() & 0xF; // Maska dlya indeksa 0-15
 
             string cached = _cachedUpperStrings[hash];
             if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
                 return cached;
 
-            // Создаем новую строку и кэшируем
+            // Sozdaem novuyu stroku i keshiruem
             string upper = input.ToUpperInvariant();
             _cachedUpperStrings[hash] = upper;
             return upper;

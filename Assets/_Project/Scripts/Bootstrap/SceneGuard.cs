@@ -2,15 +2,15 @@
 // HECTON-8 — SceneGuard.cs
 // Protect non-bootstrap scenes from being loaded directly.
 //
-// ПРАВИЛО:
-// ✗ Запуск 01_MAIN_MENU без 00_BOOTSTRAP = ЗАПРЕЩЕНО
-// ✗ Запуск 02_HECTON_WORLD без 00_BOOTSTRAP = ЗАПРЕЩЕНО
-// ✓ Запуск 00_BOOTSTRAP = РАЗРЕШЕНО
+// PRAVILO:
+// ✗ Zapusk 01_MAIN_MENU bez 00_BOOTSTRAP = ZAPRESchENO
+// ✗ Zapusk 02_HECTON_WORLD bez 00_BOOTSTRAP = ZAPRESchENO
+// ✓ Zapusk 00_BOOTSTRAP = RAZREShENO
 //
-// Если это нарушение обнаружено:
-//   1. Логируем ошибку
-//   2. Перезагружаем 00_BOOTSTRAP
-//   3. Затем загружаем нужную сцену через GameStartContext
+// Esli eto narushenie obnaruzheno:
+//   1. Logiruem oshibku
+//   2. Perezagruzhaem 00_BOOTSTRAP
+//   3. Zatem zagruzhaem nuzhnuyu stsenu cherez GameStartContext
 //
 // ============================================================================
 
@@ -23,11 +23,11 @@ using Hecton8.World;
 namespace Hecton8.Guardian
 {
     /// <summary>
-    /// Guard для сцен. Проверяет что bootstrap был загружен.
-    /// При нарушении — перезагружает bootstrap и переходит в нужную сцену.
+    /// Guard dlya stsen. Proveryaet chto bootstrap byl zagruzhen.
+    /// Pri narushenii — perezagruzhaet bootstrap i perehodit v nuzhnuyu stsenu.
     /// </summary>
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(-29000)] // После BootstrapController, но до остального
+    [DefaultExecutionOrder(-29000)] // Posle BootstrapController, no do ostalnogo
     public sealed class SceneGuard : MonoBehaviour
     {
         [SerializeField] private bool _enforceBootstrap = true;
@@ -39,7 +39,7 @@ namespace Hecton8.Guardian
             if (!_enforceBootstrap)
                 return;
 
-            // ── Проверка что bootstrap был загружен ──
+            // ── Proverka chto bootstrap byl zagruzhen ──
             if (!GameBootstrapper.AreAllSystemsReady())
             {
                 Scene currentScene = gameObject.scene;
@@ -48,7 +48,7 @@ namespace Hecton8.Guardian
                     $"[SceneGuard] Scene '{currentScene.name}' loaded WITHOUT bootstrap! " +
                     $"This violates the architecture. Reloading 00_BOOTSTRAP...");
 
-                // ── Переход: 00_BOOTSTRAP → нужная сцена ──
+                // ── Perehod: 00_BOOTSTRAP → nuzhnaya stsena ──
                 string targetScene = currentScene.name;
                 LoadBootstrapThenTarget(targetScene);
             }
@@ -56,16 +56,16 @@ namespace Hecton8.Guardian
 
         private static void LoadBootstrapThenTarget(string targetSceneName)
         {
-            // ── Устанавливаем контекст ──
-            // После загрузки bootstrap и menu user выберет сцену вручную
+            // ── Ustanavlivaem kontekst ──
+            // Posle zagruzki bootstrap i menu user vyberet stsenu vruchnuyu
             GameStartContextHolder.Reset();
 
-            // ── Загружаем bootstrap ──
+            // ── Zagruzhaem bootstrap ──
             SceneManager.LoadScene("00_BOOTSTRAP");
 
-            // Примечание: Правильный переход (bootstrap → menu → world) будет
-            // когда user нажимает кнопки в UI. Этот guard просто восстанавливает
-            // состояние после неправильной загрузки сцены.
+            // Primechanie: Pravilnyy perehod (bootstrap → menu → world) budet
+            // kogda user nazhimaet knopki v UI. Etot guard prosto vosstanavlivaet
+            // sostoyanie posle nepravilnoy zagruzki stseny.
         }
     }
 }

@@ -54,7 +54,6 @@ namespace NASAPunk.Visor
         [SerializeField] private Camera _baseStackCamera;
         [SerializeField] private Camera _referenceCamera;
         [SerializeField] private RenderTexture _sharedRenderTexture;
-        [SerializeField] private Texture2D _blueNoiseTexture;
         [SerializeField] private Light _strongestSceneLightSource;
 
         [Header("Projection")]
@@ -180,7 +179,6 @@ namespace NASAPunk.Visor
         private Renderer _appliedVisorPropertyRenderer;
         private bool _hasAppliedVisorMaterialProperties;
         private bool _hasResolvedDynamicVisorMaterialInputs;
-        private Texture _appliedBlueNoiseTexture;
         private float _appliedHudIntensity;
         private Color _appliedHudColor;
         private float _appliedScratchBleed;
@@ -286,7 +284,6 @@ namespace NASAPunk.Visor
         private uint _glitchRngState = 1u;
 
         private static readonly int ID_HUDTex = Shader.PropertyToID("_HUD_RenderTexture");
-        private static readonly int ID_BlueNoiseTex = Shader.PropertyToID("_BlueNoiseTex");
         private static readonly int ID_HUDIntensity = Shader.PropertyToID("_HUD_Intensity");
         private static readonly int ID_HUDColor = Shader.PropertyToID("_HUD_Color");
         private static readonly int ID_ScratchBleed = Shader.PropertyToID("_HUD_ScratchBleed");
@@ -772,7 +769,7 @@ namespace NASAPunk.Visor
                 InvalidateVisorMaterialPropertyCache();
 
             _visorRenderer.GetPropertyBlock(_mpb);
-            bool propertyBlockChanged = ApplyBlueNoiseTextureBindingIfNeeded();
+            bool propertyBlockChanged = false;
             propertyBlockChanged |= ApplyVisorFloat(ID_HUDIntensity, compositeHudIntensity, ref _appliedHudIntensity);
             propertyBlockChanged |= ApplyVisorColor(ID_HUDColor, compositeHudTint, ref _appliedHudColor);
             propertyBlockChanged |= ApplyVisorFloat(ID_ScratchBleed, _scratchBleed, ref _appliedScratchBleed);
@@ -815,17 +812,6 @@ namespace NASAPunk.Visor
             _materialPropertiesDirty = false;
         }
 
-        private bool ApplyBlueNoiseTextureBindingIfNeeded()
-        {
-            Texture texture = _blueNoiseTexture != null ? _blueNoiseTexture : Texture2D.blackTexture;
-            if (_hasAppliedVisorMaterialProperties && _appliedBlueNoiseTexture == texture)
-                return false;
-
-            _mpb.SetTexture(ID_BlueNoiseTex, texture);
-            _appliedBlueNoiseTexture = texture;
-            return true;
-        }
-
         private bool ApplyVisorFloat(int propertyId, float value, ref float cachedValue)
         {
             if (_hasAppliedVisorMaterialProperties && math.abs(cachedValue - value) <= VisorPropertyFloatWriteEpsilon)
@@ -866,7 +852,6 @@ namespace NASAPunk.Visor
         {
             _appliedVisorPropertyRenderer = null;
             _hasAppliedVisorMaterialProperties = false;
-            _appliedBlueNoiseTexture = null;
         }
 
         private void RefreshDynamicVisorMaterialInputs()
@@ -1049,7 +1034,7 @@ namespace NASAPunk.Visor
             HectonSurvivalSystem resolvedSystem = _survivalSystem;
             TraumaDispatcher resolvedTraumaDispatcher = _traumaDispatcher;
             HectonPlayerHealth resolvedPlayerHealth = _playerHealth;
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&
                 currentPlayerTransform != null)
             {
                 if (resolvedSystem == null || resolvedSystem.transform != currentPlayerTransform)

@@ -293,7 +293,7 @@ The best next sequence is:
 ## What To Read Next
 
 Start with:
-- [Live Fix Plan](C:/hades/Hecton8/Что_и_как_исправляем_—_живой_план.md)
+- [Live Fix Plan](C:/hades/Hecton8/Chto_i_kak_ispravlyaem_—_zhivoy_plan.md)
 - [NEXT_SPRINT_TASKS.md](C:/hades/Hecton8/NEXT_SPRINT_TASKS.md)
 - [TOOLS_ENTERPRISE_SPRINT.md](C:/hades/Hecton8/TOOLS_ENTERPRISE_SPRINT.md)
 

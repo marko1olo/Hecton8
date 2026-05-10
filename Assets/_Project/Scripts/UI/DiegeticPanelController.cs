@@ -1650,7 +1650,7 @@ namespace Hecton8.UI
 
             _cameraRetryTimer = now + 1f;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (playerTransform.TryGetComponent(out Camera playerCamera))

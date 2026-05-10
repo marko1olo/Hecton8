@@ -2,43 +2,43 @@
 Date: 2026-05-01
 Status: DEPRECATED
 
-## Коротко
-Готовые geology-префабы не трогаем и не удаляем. Они остаются в проекте как fallback.
+## Korotko
+Gotovye geology-prefaby ne trogaem i ne udalyaem. Oni ostayutsya v proekte kak fallback.
 
-Основной production-path:
-- кодом генерятся новые geology meshes
-- из них собираются новые final prefabs
-- на них назначается существующий triplanar rock shader/material
-- family assets начинают ссылаться на новые generated finals
-- старые готовые префабы остаются запасным путём и не ломаются
+Osnovnoy production-path:
+- kodom generyatsya novye geology meshes
+- iz nih sobirayutsya novye final prefabs
+- na nih naznachaetsya suschestvuyuschiy triplanar rock shader/material
+- family assets nachinayut ssylatsya na novye generated finals
+- starye gotovye prefaby ostayutsya zapasnym putem i ne lomayutsya
 
-## Жёсткие правила
-- Не переписывать и не удалять `Forest_Rock_Shelf`, `Mossy_Forest_Rock`, `Nordic_Beach_Rock`, `Nordic_Beach_Rock_Formation`, `Rock_Skala`.
-- Не считать старые готовые префабы основным путём.
-- Не писать validator/report/status markdown.
-- Не писать editor tool, который только проверяет.
-- Не делать runtime-first. Цель: заранее сгенерённые production assets в проекте.
-- Не делать UV workflow. Triplanar обязателен.
-- Не делать placeholder meshes.
-- Если не хватает внешнего ресурса, остановка только по blocked-формату.
+## Zhestkie pravila
+- Ne perepisyvat i ne udalyat `Forest_Rock_Shelf`, `Mossy_Forest_Rock`, `Nordic_Beach_Rock`, `Nordic_Beach_Rock_Formation`, `Rock_Skala`.
+- Ne schitat starye gotovye prefaby osnovnym putem.
+- Ne pisat validator/report/status markdown.
+- Ne pisat editor tool, kotoryy tolko proveryaet.
+- Ne delat runtime-first. Tsel: zaranee sgenerennye production assets v proekte.
+- Ne delat UV workflow. Triplanar obyazatelen.
+- Ne delat placeholder meshes.
+- Esli ne hvataet vneshnego resursa, ostanovka tolko po blocked-formatu.
 
-## Owner-система
-### Основные владельцы
+## Owner-sistema
+### Osnovnye vladeltsy
 - `WorldProceduralGeologyFinalAuthoring`
-  Главный authoring owner. Создаёт реальные mesh assets и prefab assets.
+  Glavnyy authoring owner. Sozdaet realnye mesh assets i prefab assets.
 - `WorldProceduralGeologyProfileAuthoring`
-  Держит profiles для всех geology categories.
+  Derzhit profiles dlya vseh geology categories.
 - `WorldProceduralFinalVariantAuthoring`
-  Привязывает generated finals к family assets.
+  Privyazyvaet generated finals k family assets.
 - `WorldProceduralProxyAuthoring`
-  Остаётся владельцем family/rule/proxy bootstrap. Через него добавляется shelf/cliff family.
+  Ostaetsya vladeltsem family/rule/proxy bootstrap. Cherez nego dobavlyaetsya shelf/cliff family.
 
-### Новый файл
+### Novyy fayl
 - `WorldProceduralGeologyMeshBuilder`
-  Чистый production builder, который строит mesh data для geology finals.
+  Chistyy production builder, kotoryy stroit mesh data dlya geology finals.
 
-## Что именно создаётся
-### Категории
+## Chto imenno sozdaetsya
+### Kategorii
 - `family.rock.small_floor`
 - `family.rock.cluster.medium`
 - `family.rock.arch.large`
@@ -46,7 +46,7 @@ Status: DEPRECATED
 - `family.landmark.spire`
 - `family.rock.shelf.large`
 
-### Количество generated finals
+### Kolichestvo generated finals
 - Small floor rocks: 10
 - Medium clusters: 10
 - Shelf / cliff large: 8
@@ -54,7 +54,7 @@ Status: DEPRECATED
 - Cave entrance: 6
 - Landmark spire: 6
 
-### Что есть у каждого generated asset
+### Chto est u kazhdogo generated asset
 - LOD0 mesh
 - LOD1 mesh
 - LOD2 mesh
@@ -63,11 +63,11 @@ Status: DEPRECATED
 - saved prefab in project
 - linked final variant in family asset
 
-## Где лежат production assets
+## Gde lezhat production assets
 ### Meshes
 - `Assets/_Project/Art/Meshes/WorldProceduralGeology/`
 
-Папки:
+Papki:
 - `RockSmallFloor`
 - `RockClusterMedium`
 - `RockShelfLarge`
@@ -78,147 +78,147 @@ Status: DEPRECATED
 ### Prefabs
 - `Assets/_Project/Prefabs/Nature/Rocks/ProceduralFinals/`
 
-Старые готовые префабы остаются на месте. Новые generated finals лежат рядом, отдельными prefab assets.
+Starye gotovye prefaby ostayutsya na meste. Novye generated finals lezhat ryadom, otdelnymi prefab assets.
 
 ### Materials
-- один общий generated geology material на базе `Assets/_Project/Art/Materials/Mat_TriplanarRock.mat`
-- либо набор category materials на том же shader path
-- новый shader не создаётся
+- odin obschiy generated geology material na baze `Assets/_Project/Art/Materials/Mat_TriplanarRock.mat`
+- libo nabor category materials na tom zhe shader path
+- novyy shader ne sozdaetsya
 
-## Как работает mesh builder
-### Общий принцип
-Builder не делает один базовый силуэт. Он строит сложную форму сразу из нескольких процедурных масс и деталей.
+## Kak rabotaet mesh builder
+### Obschiy printsip
+Builder ne delaet odin bazovyy siluet. On stroit slozhnuyu formu srazu iz neskolkih protsedurnyh mass i detaley.
 
-На каждый объект:
-- главный объём
-- вторичные массы
-- сколы
-- полки
-- трещинные рёбра
-- выступы
-- асимметрия
-- шумовая деформация
+Na kazhdyy obekt:
+- glavnyy obem
+- vtorichnye massy
+- skoly
+- polki
+- treschinnye rebra
+- vystupy
+- asimmetriya
+- shumovaya deformatsiya
 - layered erosion look
 
-### По категориям
+### Po kategoriyam
 #### Small floor rocks
-- низкие, тяжёлые, читаемые сверху
-- не превращаются в одинаковые булыжники
-- 10 разных форм
-- контроль по вершинам: не раздувать сверх нужного
+- nizkie, tyazhelye, chitaemye sverhu
+- ne prevraschayutsya v odinakovye bulyzhniki
+- 10 raznyh form
+- kontrol po vershinam: ne razduvat sverh nuzhnogo
 
 #### Medium clusters
-- 2-5 связанных масс
+- 2-5 svyazannyh mass
 - cover silhouette
-- разные оси наклона
-- читаемая масса без мусорной мелочи
+- raznye osi naklona
+- chitaemaya massa bez musornoy melochi
 
 #### Shelf / cliff large
-- большие уступы
-- слоистые свесы
+- bolshie ustupy
+- sloistye svesy
 - cliff face
 - shelf extension
-- тяжёлая боковая масса
-- отдельная production family, не суррогат arch/cluster
+- tyazhelaya bokovaya massa
+- otdelnaya production family, ne surrogat arch/cluster
 
 #### Rock arch large
-- две тяжёлые опоры
-- верхний мост
-- асимметрия
+- dve tyazhelye opory
+- verhniy most
+- asimmetriya
 - fracture detail
 - underside detail
-- 6 разных типов, не одна и та же арка
+- 6 raznyh tipov, ne odna i ta zhe arka
 
 #### Cave entrance
-- читаемый вход
-- боковые губы
-- верхний свод
-- глубина входа
-- внешний debris/seam
-- несколько разных форм портала
+- chitaemyy vhod
+- bokovye guby
+- verhniy svod
+- glubina vhoda
+- vneshniy debris/seam
+- neskolko raznyh form portala
 
 #### Landmark spire
-- сильный дальний силуэт
-- массивная база
-- сужение вверх
-- вторичные выступы
-- не превращать в простой столб
+- silnyy dalniy siluet
+- massivnaya baza
+- suzhenie vverh
+- vtorichnye vystupy
+- ne prevraschat v prostoy stolb
 
-## LOD контракт
-Для всех generated geology finals:
+## LOD kontrakt
+Dlya vseh generated geology finals:
 - 3 visible LOD
 - thresholds: `0.6 / 0.15 / 0.04`
-- `CrossFade` включён
-- LOD1 режет среднюю мелочь
-- LOD2 держит только главный силуэт
+- `CrossFade` vklyuchen
+- LOD1 rezhet srednyuyu meloch
+- LOD2 derzhit tolko glavnyy siluet
 
-Отдельные правила:
-- арка на LOD2 остаётся аркой
-- cave entrance на LOD2 остаётся входом
-- shelf/cliff на LOD2 остаётся уступом
-- spire на LOD2 остаётся шпилем
+Otdelnye pravila:
+- arka na LOD2 ostaetsya arkoy
+- cave entrance na LOD2 ostaetsya vhodom
+- shelf/cliff na LOD2 ostaetsya ustupom
+- spire na LOD2 ostaetsya shpilem
 
-## Коллизии
+## Kollizii
 ### Small floor
-- 1-3 primitive colliders максимум
+- 1-3 primitive colliders maksimum
 
 ### Cluster medium
 - 2-3 primitive colliders
 
 ### Shelf / cliff
-- упрощённые коллизии под поверхность и край
+- uproschennye kollizii pod poverhnost i kray
 
 ### Arch
-- коллизия не должна убивать проход под аркой
+- kolliziya ne dolzhna ubivat prohod pod arkoy
 
 ### Cave entrance
-- коллизия не должна закрывать вход
+- kolliziya ne dolzhna zakryvat vhod
 
 ### Spire
-- грубая простая коллизия
+- grubaya prostaya kolliziya
 
-Общее правило:
-- не ставить `MeshCollider` на LOD0
+Obschee pravilo:
+- ne stavit `MeshCollider` na LOD0
 
-## Материал и шейдер
-Используется существующий:
+## Material i sheyder
+Ispolzuetsya suschestvuyuschiy:
 - `Assets/_Project/Art/Materials/Mat_TriplanarRock.mat`
 
-Что делается:
-- создаётся managed generated geology material stack на этом shader path
-- instancing включается там, где это нужно
-- нового parallel shader pipeline нет
-- UV unwrap нет
+Chto delaetsya:
+- sozdaetsya managed generated geology material stack na etom shader path
+- instancing vklyuchaetsya tam, gde eto nuzhno
+- novogo parallel shader pipeline net
+- UV unwrap net
 
 ## Family / rule linkage
-### Что меняется
-- `family.rock.small_floor` переводится на generated finals
-- `family.rock.cluster.medium` переводится на generated finals
-- `family.rock.arch.large` получает несколько generated finals
-- `family.cave.entrance` получает несколько generated finals
-- `family.landmark.spire` получает несколько generated finals
-- добавляется `family.rock.shelf.large`
+### Chto menyaetsya
+- `family.rock.small_floor` perevoditsya na generated finals
+- `family.rock.cluster.medium` perevoditsya na generated finals
+- `family.rock.arch.large` poluchaet neskolko generated finals
+- `family.cave.entrance` poluchaet neskolko generated finals
+- `family.landmark.spire` poluchaet neskolko generated finals
+- dobavlyaetsya `family.rock.shelf.large`
 
-### Что не меняется
-- старые готовые prefabs остаются fallback
-- proxy path остаётся
-- существующие ручные большие prefabs не ломаются
+### Chto ne menyaetsya
+- starye gotovye prefabs ostayutsya fallback
+- proxy path ostaetsya
+- suschestvuyuschie ruchnye bolshie prefabs ne lomayutsya
 
-## Порядок работы без распыления
-### Этап 1
-Сделать `WorldProceduralGeologyMeshBuilder`
-- один builder
-- все 6 categories
-- генерация LOD0/1/2
+## Poryadok raboty bez raspyleniya
+### Etap 1
+Sdelat `WorldProceduralGeologyMeshBuilder`
+- odin builder
+- vse 6 categories
+- generatsiya LOD0/1/2
 
-### Этап 2
-Переделать `WorldProceduralGeologyFinalAuthoring`
-- убрать сборку geology из готовых камней как основной путь
-- создавать mesh assets + prefab assets
-- сразу назначать material + colliders + LODGroup
+### Etap 2
+Peredelat `WorldProceduralGeologyFinalAuthoring`
+- ubrat sborku geology iz gotovyh kamney kak osnovnoy put
+- sozdavat mesh assets + prefab assets
+- srazu naznachat material + colliders + LODGroup
 
-### Этап 3
-Расширить `WorldProceduralGeologyProfileAuthoring`
+### Etap 3
+Rasshirit `WorldProceduralGeologyProfileAuthoring`
 - small
 - cluster
 - shelf
@@ -226,45 +226,45 @@ Builder не делает один базовый силуэт. Он строи�
 - cave
 - spire
 
-### Этап 4
-Расширить `WorldProceduralFinalVariantAuthoring`
-- все generated finals привязать к family assets
-- старые ручные assets не удалять
+### Etap 4
+Rasshirit `WorldProceduralFinalVariantAuthoring`
+- vse generated finals privyazat k family assets
+- starye ruchnye assets ne udalyat
 
-### Этап 5
-Расширить `WorldProceduralProxyAuthoring`
-- добавить `family.rock.shelf.large`
-- добавить rule для shelf/cliff geology
-- оставить старое как fallback path
+### Etap 5
+Rasshirit `WorldProceduralProxyAuthoring`
+- dobavit `family.rock.shelf.large`
+- dobavit rule dlya shelf/cliff geology
+- ostavit staroe kak fallback path
 
-### Этап 6
-Сгенерировать реальные project assets
-Результат физически лежит в проекте:
+### Etap 6
+Sgenerirovat realnye project assets
+Rezultat fizicheski lezhit v proekte:
 - meshes
 - prefabs
 - materials if needed
 - updated family links
 
-## Что считается итогом работы
-Сделано только если есть:
-- реальные mesh assets в проекте
-- реальные generated prefabs в проекте
-- материал назначен
-- family assets указывают на generated finals
-- старые готовые prefabs остались как fallback
-- shelf/cliff geology появился как production asset line
+## Chto schitaetsya itogom raboty
+Sdelano tolko esli est:
+- realnye mesh assets v proekte
+- realnye generated prefabs v proekte
+- material naznachen
+- family assets ukazyvayut na generated finals
+- starye gotovye prefabs ostalis kak fallback
+- shelf/cliff geology poyavilsya kak production asset line
 
-## Что остаётся PENDING VERIFICATION
+## Chto ostaetsya PENDING VERIFICATION
 - shader compile inside Unity
-- фактический визуал в сцене
-- collider behavior для arch/cave
+- fakticheskiy vizual v stsene
+- collider behavior dlya arch/cave
 - GPUI registration where needed
 - MapMagic scatter activation where needed
 - profiler/log evidence
 
-## Зафиксированное решение
-- существующие готовые geology prefabs не ломаем
-- не заменяем их удалением
-- они остаются fallback
-- основной production путь: новые generated geology finals кодом
-- scope не распыляется: один builder, один authoring path, шесть geology categories, заранее сохранённые assets
+## Zafiksirovannoe reshenie
+- suschestvuyuschie gotovye geology prefabs ne lomaem
+- ne zamenyaem ih udaleniem
+- oni ostayutsya fallback
+- osnovnoy production put: novye generated geology finals kodom
+- scope ne raspylyaetsya: odin builder, odin authoring path, shest geology categories, zaranee sohranennye assets

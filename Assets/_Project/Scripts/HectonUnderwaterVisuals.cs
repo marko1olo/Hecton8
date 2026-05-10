@@ -874,7 +874,6 @@ namespace Hecton8.Environment
         private Camera _capturedCompositionSpaceCamera;
         private CrestOceanRenderer _oceanRenderer;
         private Transform _shallowSunBeamTransform;
-        private Transform _playerRigidbodySearchRoot;
         private Vector3 _shallowSunBeamBaseLocalPosition;
         private CrestUnderwaterRenderer _mainCameraUnderwaterRenderer;
         private CrestUnderwaterRenderer _spaceCameraUnderwaterRenderer;
@@ -3758,9 +3757,9 @@ namespace Hecton8.Environment
                     TryCachePlayerMovementFromTransformHierarchy(mainCamera.transform, "MainCameraHierarchy");
 
                 if (_playerMovement == null &&
-                    SceneBootstrap.TryGetCurrentPlayerTransform(out Transform cachedPlayerTransform))
+                    GameBootstrapper.TryGetCurrentPlayerTransform(out Transform cachedPlayerTransform))
                 {
-                    TryCachePlayerMovementFromTransformHierarchy(cachedPlayerTransform, "SceneBootstrap");
+                    TryCachePlayerMovementFromTransformHierarchy(cachedPlayerTransform, "GameBootstrapper");
                     CachePlayerMovement(cachedPlayerTransform);
                 }
 
@@ -3770,7 +3769,7 @@ namespace Hecton8.Environment
                     return;
 
                 _nextRuntimePlayerCameraResolveTime = Time.unscaledTime + RuntimeCameraResolveRetryInterval;
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 {
                     CachePlayerMovement(playerTransform);
 
@@ -3821,7 +3820,7 @@ namespace Hecton8.Environment
                     return;
 
                 _nextRuntimeMainCameraResolveTime = Time.unscaledTime + RuntimeCameraResolveRetryInterval;
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 {
                     Camera playerOwnedCamera = ResolveRuntimeMainCamera(playerTransform);
                     if (playerOwnedCamera != null)
@@ -5463,14 +5462,11 @@ namespace Hecton8.Environment
 
             RefreshBottomSiltProbe(playerCamera.position);
 
-            if (_playerRigidbody == null)
+            if (_playerRigidbody == null &&
+                PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null)
             {
-                Transform playerRoot = playerCamera.parent;
-                if (playerRoot != null && !ReferenceEquals(_playerRigidbodySearchRoot, playerRoot))
-                {
-                    playerRoot.TryGetComponent(out _playerRigidbody);
-                    _playerRigidbodySearchRoot = playerRoot;
-                }
+                _playerRigidbody = runtimeContext.PlayerRigidbody;
             }
 
             float playerSpeedSq = _playerRigidbody != null ? _playerRigidbody.linearVelocity.sqrMagnitude : 0f;
@@ -6065,11 +6061,24 @@ namespace Hecton8.Environment
             Rigidbody nextPlayerRigidbody = null;
             PlayerTransportCoordinator nextPlayerTransportCoordinator = null;
 
-            if (playerTransform != null)
+            if (playerTransform != null &&
+                PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null &&
+                ReferenceEquals(runtimeContext.PlayerTransform, playerTransform))
             {
-                playerTransform.TryGetComponent(out nextPlayerMovement);
-                playerTransform.TryGetComponent(out nextPlayerRigidbody);
-                playerTransform.TryGetComponent(out nextPlayerTransportCoordinator);
+                nextPlayerMovement = runtimeContext.PlayerMovement;
+                nextPlayerRigidbody = runtimeContext.PlayerRigidbody;
+                nextPlayerTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
+            }
+            else if (playerTransform != null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null && ReferenceEquals(playerContext.PlayerTransform, playerTransform))
+                {
+                    nextPlayerMovement = playerContext.PlayerMovement;
+                    nextPlayerRigidbody = playerContext.PlayerRigidbody;
+                    nextPlayerTransportCoordinator = playerContext.PlayerTransportCoordinator;
+                }
             }
 
             if (!ReferenceEquals(_subscribedPlayerMovement, nextPlayerMovement))
@@ -6080,7 +6089,6 @@ namespace Hecton8.Environment
 
             _playerMovement = nextPlayerMovement;
             _playerRigidbody = nextPlayerRigidbody;
-            _playerRigidbodySearchRoot = null;
             _playerTransportCoordinator = nextPlayerTransportCoordinator;
             _debugPlayerMovementFound = _playerMovement != null;
             if (_playerMovement == null)
@@ -6153,15 +6161,38 @@ namespace Hecton8.Environment
 
         private bool TryCachePlayerMovementFromTransformHierarchy(Transform anchor, string sourceLabel)
         {
+            if (anchor == null)
+                return false;
+
+            Transform playerRoot = null;
+            HectonPlayerMovement movement = null;
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null)
+            {
+                playerRoot = runtimeContext.PlayerTransform;
+                movement = runtimeContext.PlayerMovement;
+            }
+            else
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                {
+                    playerRoot = playerContext.PlayerTransform;
+                    movement = playerContext.PlayerMovement;
+                }
+            }
+
+            if (playerRoot == null || movement == null)
+                return false;
+
             Transform current = anchor;
             while (current != null)
             {
-                if (current.TryGetComponent(out HectonPlayerMovement movement))
+                if (ReferenceEquals(current, playerRoot) || ReferenceEquals(current, movement.transform))
                 {
-                    CachePlayerMovement(current);
-                    if (movement != null)
-                        _debugPlayerMovementSource = sourceLabel;
-                    return movement != null;
+                    CachePlayerMovement(playerRoot);
+                    _debugPlayerMovementSource = sourceLabel;
+                    return true;
                 }
 
                 current = current.parent;

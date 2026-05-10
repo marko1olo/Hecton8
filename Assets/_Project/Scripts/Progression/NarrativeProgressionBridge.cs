@@ -85,6 +85,7 @@ namespace Hecton8.Progression
         // COLD ALLOC: int[32] - transient boot-time bucket fill offsets - owner: NarrativeProgressionBridge
         private readonly int[] _biomeRuleBucketWriteOffsets = new int[MaxBiomeMarkerRules];
         private int _biomeRuleBucketCount;
+        private bool _biomeRuleHashesCached;
 
         private void Awake()
         {
@@ -93,7 +94,7 @@ namespace Hecton8.Progression
 
         private void OnEnable()
         {
-            CacheRuleHashes();
+            EnsureRuleHashesCached();
             BiomeMatrixEvents.Register(this);
             BaseAirlockEvents.Register(this);
             ScanEvents.Register(this);
@@ -315,13 +316,11 @@ namespace Hecton8.Progression
                         rule.iconType,
                         rule.titleHashId,
                         rule.title,
+                        rule.visibleOnHud,
                         out _))
                 {
                     continue;
                 }
-
-                if (!rule.visibleOnHud)
-                    markerRegistry.SetMarkerHudVisibility(rule.markerHashId, false);
 
                 _revealedBiomeMarkerMask |= ruleMask;
             }
@@ -354,6 +353,7 @@ namespace Hecton8.Progression
             if (biomeMarkerRules == null || biomeMarkerRules.Length == 0)
             {
                 BuildBiomeRuleBuckets();
+                _biomeRuleHashesCached = true;
                 return;
             }
 
@@ -370,6 +370,15 @@ namespace Hecton8.Progression
             }
 
             BuildBiomeRuleBuckets();
+            _biomeRuleHashesCached = true;
+        }
+
+        private void EnsureRuleHashesCached()
+        {
+            if (_biomeRuleHashesCached)
+                return;
+
+            CacheRuleHashes();
         }
 
         private bool TryResolveBiomeRuleBucket(int biomeId, out int bucketStart, out int bucketCount)
@@ -474,6 +483,7 @@ namespace Hecton8.Progression
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            _biomeRuleHashesCached = false;
             CacheRuleHashes();
         }
 #endif

@@ -2,49 +2,49 @@ import os
 
 def print_tree(startpath, indent=""):
     """
-    Рекурсивная функция для вывода структуры папок в виде дерева.
+    Rekursivnaya funktsiya dlya vyvoda struktury papok v vide dereva.
     """
-    # Получаем список всех элементов в папке
+    # Poluchaem spisok vseh elementov v papke
     try:
         entries = os.listdir(startpath)
     except PermissionError:
-        print(f"{indent}[Нет доступа к этой папке]")
+        print(f"{indent}[Net dostupa k etoy papke]")
         return
     except FileNotFoundError:
-        print(f"{indent}[Папка не найдена]")
+        print(f"{indent}[Papka ne naydena]")
         return
 
-    # Сортируем: сначала папки, потом файлы (для удобства чтения)
-    # Можно убрать key, если нужно просто по алфавиту
+    # Sortiruem: snachala papki, potom fayly (dlya udobstva chteniya)
+    # Mozhno ubrat key, esli nuzhno prosto po alfavitu
     entries.sort(key=lambda e: (not os.path.isdir(os.path.join(startpath, e)), e.lower()))
 
     for i, entry in enumerate(entries):
         entry_path = os.path.join(startpath, entry)
         is_last = (i == len(entries) - 1)
         
-        # Выбираем символ ветки: ├── для промежуточных, └── для последнего
+        # Vybiraem simvol vetki: ├── dlya promezhutochnyh, └── dlya poslednego
         connector = "└── " if is_last else "├── "
         
-        # Печатаем имя файла или папки
-        # Добавляем слэш в конце, если это папка, для наглядности
+        # Pechataem imya fayla ili papki
+        # Dobavlyaem slesh v kontse, esli eto papka, dlya naglyadnosti
         display_name = entry + "/" if os.path.isdir(entry_path) else entry
         print(f"{indent}{connector}{display_name}")
 
-        # Если это папка, заходим внутрь (рекурсия)
+        # Esli eto papka, zahodim vnutr (rekursiya)
         if os.path.isdir(entry_path):
-            # Добавляем отступ для следующего уровня
-            # Если элемент последний, то вертикальной линии | не будет
+            # Dobavlyaem otstup dlya sleduyuschego urovnya
+            # Esli element posledniy, to vertikalnoy linii | ne budet
             extension = "    " if is_last else "│   "
             print_tree(entry_path, indent + extension)
 
-# --- НАСТРОЙКИ ---
-# Путь к вашей папке. Обратите внимание на букву 'r' перед кавычками, 
-# чтобы обратные слеши не воспринимались как спецсимволы.
+# --- NASTROYKI ---
+# Put k vashey papke. Obratite vnimanie na bukvu 'r' pered kavychkami, 
+# chtoby obratnye sleshi ne vosprinimalis kak spetssimvoly.
 target_path = r"C:\hades\Hecton8\Assets\GPUInstancer"
 
-# Запуск
+# Zapusk
 if __name__ == "__main__":
-    print(f"Структура папки: {target_path}\n")
-    # Печатаем корневую папку
+    print(f"Struktura papki: {target_path}\n")
+    # Pechataem kornevuyu papku
     print(os.path.basename(target_path) + "/") 
     print_tree(target_path)

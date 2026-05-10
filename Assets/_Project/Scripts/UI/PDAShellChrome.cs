@@ -5,7 +5,6 @@ using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton.Localization;
 using Hecton8.Input;
-using System.Text;
 using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
@@ -53,6 +52,7 @@ namespace Hecton8.UI
         private static readonly int ShaderColorId = Shader.PropertyToID("_Color");
         private static readonly int FaceColorId = Shader.PropertyToID("_FaceColor");
         private static readonly char[] s_emptyBuffer = new char[1];
+        [ThreadStatic] private static char[] s_numericTemplateConversionBuffer;
 
         [Header("References")]
         [SerializeField] private PlayerPDA playerPDA;
@@ -192,7 +192,7 @@ namespace Hecton8.UI
                 _playerMovement = playerContext.PlayerMovement;
 
             if ((!playerPDA || !playerInventory || !toolManager || !survivalSystem) &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (playerInventory == null)
@@ -841,20 +841,21 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(source))
                 return fallback;
 
-            bool foundNumericPlaceholder = false;
+            int numericPlaceholderCount = 0;
             for (int i = 0; i < source.Length - 1; i++)
             {
                 if (source[i] == '{' && source[i + 1] >= '0' && source[i + 1] <= '9')
                 {
-                    foundNumericPlaceholder = true;
-                    break;
+                    numericPlaceholderCount++;
                 }
             }
 
-            if (!foundNumericPlaceholder)
+            if (numericPlaceholderCount <= 0)
                 return source;
 
-            StringBuilder builder = new StringBuilder(source.Length + 8);
+            EnsureCharCapacity(ref s_numericTemplateConversionBuffer, source.Length + numericPlaceholderCount);
+            char[] buffer = s_numericTemplateConversionBuffer;
+            int cursor = 0;
             for (int i = 0; i < source.Length; i++)
             {
                 char current = source[i];
@@ -863,16 +864,17 @@ namespace Hecton8.UI
                     source[i + 1] >= '0' &&
                     source[i + 1] <= '9')
                 {
-                    builder.Append("{N");
-                    builder.Append(source[i + 1]);
+                    buffer[cursor++] = '{';
+                    buffer[cursor++] = 'N';
+                    buffer[cursor++] = source[i + 1];
                     i++;
                     continue;
                 }
 
-                builder.Append(current);
+                buffer[cursor++] = current;
             }
 
-            return builder.ToString();
+            return new string(buffer, 0, cursor);
         }
 
         private static void SplitSinglePlaceholderTemplate(string template, out string prefix, out string suffix)

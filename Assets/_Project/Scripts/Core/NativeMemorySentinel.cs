@@ -90,6 +90,7 @@ namespace Hecton8.Core
         private static int _activeTempAllocationCount;
         private static int _activeTempJobAllocationCount;
         private static int _telemetryPublishInProgress;
+        private static int _mainThreadId = Thread.CurrentThread.ManagedThreadId;
         private static bool _sceneHooksRegistered;
 
         /// <summary>Active tracked allocation count.</summary>
@@ -131,6 +132,7 @@ namespace Hecton8.Core
             _activeTempAllocationCount = 0;
             _activeTempJobAllocationCount = 0;
             _telemetryPublishInProgress = 0;
+            _mainThreadId = Thread.CurrentThread.ManagedThreadId;
             _sceneHooksRegistered = false;
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
         }
@@ -420,7 +422,7 @@ namespace Hecton8.Core
                         AdjustTransientAllocationCount(lifetime, 1);
                         existing.Lifetime = lifetime;
                         existing.Allocator = ResolveAllocator(lifetime);
-                        existing.AllocationFrame = Application.isPlaying ? Time.frameCount : 0;
+                        existing.AllocationFrame = ResolveCurrentFrame(0);
                         existing.StackTrace = CaptureStackTrace(lifetime);
                         recordChanged = true;
                     }
@@ -428,7 +430,7 @@ namespace Hecton8.Core
                     if (existing.LeakReported)
                     {
                         existing.LeakReported = false;
-                        existing.AllocationFrame = Application.isPlaying ? Time.frameCount : existing.AllocationFrame;
+                        existing.AllocationFrame = ResolveCurrentFrame(existing.AllocationFrame);
                         existing.StackTrace = CaptureStackTrace(existing.Lifetime);
                         recordChanged = true;
                     }
@@ -460,7 +462,7 @@ namespace Hecton8.Core
                 Id = id,
                 Pointer = pointerValue,
                 Bytes = bytes,
-                AllocationFrame = Application.isPlaying ? Time.frameCount : 0,
+                AllocationFrame = ResolveCurrentFrame(0),
                 Lifetime = lifetime,
                 Allocator = ResolveAllocator(lifetime),
                 Owner = owner,
@@ -864,6 +866,22 @@ namespace Hecton8.Core
             }
         }
 
+        private static int ResolveCurrentFrame(int fallbackFrame)
+        {
+            if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
+                return fallbackFrame;
+
+            return Application.isPlaying ? Time.frameCount : fallbackFrame;
+        }
+
+        private static float ResolveCurrentUnscaledTime()
+        {
+            if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
+                return 0f;
+
+            return Application.isPlaying ? Time.unscaledTime : 0f;
+        }
+
         private static void TrackPersistentReallocation(
             string owner,
             string label,
@@ -873,7 +891,7 @@ namespace Hecton8.Core
             if (!IsPersistentLifetime(lifetime) || bytes <= 0L)
                 return;
 
-            float now = Application.isPlaying ? Time.unscaledTime : 0f;
+            float now = ResolveCurrentUnscaledTime();
             int recordIndex = FindPersistentReallocationRecord(owner, label);
             if (recordIndex < 0)
             {

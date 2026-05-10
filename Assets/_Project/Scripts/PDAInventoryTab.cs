@@ -1,8 +1,8 @@
 // ============================================================================
 // HECTON-8 — PDAInventoryTab.cs
-// Вкладка инвентаря внутри PDA.
-// Строит UI программно. Читает PlayerInventory и PlayerToolManager.
-// Вешается на GameObject вкладки Tab_Inventory.
+// Vkladka inventarya vnutri PDA.
+// Stroit UI programmno. Chitaet PlayerInventory i PlayerToolManager.
+// Veshaetsya na GameObject vkladki Tab_Inventory.
 // ============================================================================
 
 using System;
@@ -346,7 +346,7 @@ namespace Hecton8.UI
                 playerPDA = playerContext.PlayerPDA;
 
             if ((!playerInventory || !toolManager || !playerPDA) &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (_dropOrigin == null)
@@ -1805,8 +1805,8 @@ namespace Hecton8.UI
         //  POINTER INTERACTION
         // ══════════════════════════════════════════════════════════
         /// <summary>
-        /// Вызывается кнопкой DROP. Удаляет одну единицу из стека,
-        /// спавнит worldPrefab перед игроком.
+        /// Vyzyvaetsya knopkoy DROP. Udalyaet odnu edinitsu iz steka,
+        /// spavnit worldPrefab pered igrokom.
         /// </summary>
         internal void DropSelectedItem()
         {
@@ -1895,7 +1895,7 @@ namespace Hecton8.UI
                 interactorPosition,
                 hasInteractorPosition));
 
-            // Проверяем остался ли предмет на этой позиции
+            // Proveryaem ostalsya li predmet na etoy pozitsii
             int remainingHashId = playerInventory.GetItemHashAt(_selectedX, _selectedY);
             if (remainingHashId != _selectedItemHashId)
             {
@@ -2023,14 +2023,14 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Вызывается кнопкой USE. Потребляет одну единицу предмета.
+        /// Vyzyvaetsya knopkoy USE. Potreblyaet odnu edinitsu predmeta.
         /// </summary>
         internal void UseSelectedItem()
         {
             if (_selectedItem == null || playerInventory == null) return;
             if (!_selectedItem.isConsumable) return;
 
-            // Звук использования (приоритет: предмет → UI default)
+            // Zvuk ispolzovaniya (prioritet: predmet → UI default)
             AudioClip clip = _selectedItem.useSound != null
                 ? _selectedItem.useSound
                 : useSound;
@@ -2039,7 +2039,7 @@ namespace Hecton8.UI
             bool consumed = playerInventory.ConsumeOneItem(_selectedX, _selectedY);
             if (!consumed) return;
 
-            // Проверяем остался ли предмет
+            // Proveryaem ostalsya li predmet
             int remainingHashId = playerInventory.GetItemHashAt(_selectedX, _selectedY);
             if (remainingHashId != _selectedItemHashId)
                 ClearSelection();
@@ -2103,7 +2103,7 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Вызывается кнопкой SORT.
+        /// Vyzyvaetsya knopkoy SORT.
         /// </summary>
         internal void SortInventoryAction()
         {

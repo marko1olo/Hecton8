@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Hecton8.Core;
 using Hecton8.UI;
 using Unity.Mathematics;
@@ -144,10 +145,17 @@ namespace Hecton8.Visor
             if (pdaPanel == null || !pdaPanel.TryGetFocusGateData(out Vector3 panelOrigin, out _))
                 return false;
 
+            if (!IsFinite(rayOriginPosition) || !IsFinite(rayForward) || !IsFinite(panelOrigin))
+                return false;
+
             float3 toPanel = (float3)(panelOrigin - rayOriginPosition);
             float distanceSq = math.lengthsq(toPanel);
-            float safeFocusDistance = math.max(0.05f, focusDistanceMeters);
-            if (distanceSq > safeFocusDistance * safeFocusDistance)
+            if (!math.isfinite(distanceSq))
+                return false;
+
+            float safeFocusDistance = SanitizeMinimum(focusDistanceMeters, 0.05f);
+            float safeFocusDistanceSq = safeFocusDistance * safeFocusDistance;
+            if (distanceSq > safeFocusDistanceSq)
                 return false;
 
             if (distanceSq <= 0.0001f)
@@ -155,40 +163,44 @@ namespace Hecton8.Visor
 
             float3 forward = (float3)rayForward;
             float forwardLengthSq = math.lengthsq(forward);
-            if (forwardLengthSq <= 0.0001f)
+            if (!math.isfinite(forwardLengthSq) || forwardLengthSq <= 0.0001f)
                 return false;
 
             float forwardDot = math.dot(forward, toPanel);
-            if (forwardDot <= 0f)
+            if (!math.isfinite(forwardDot) || forwardDot <= 0f)
                 return false;
 
-            float threshold = math.saturate(focusGateDotThreshold);
+            float threshold = Sanitize01(focusGateDotThreshold);
             return forwardDot * forwardDot >= distanceSq * forwardLengthSq * threshold * threshold;
         }
 
         private void ApplyFocusTargets(float worldTarget, float hudTarget, float deltaTime)
         {
-            float safeDt = math.max(0f, deltaTime);
+            bool deltaTimeFinite = math.isfinite(deltaTime);
+            float safeDt = deltaTimeFinite ? math.max(0f, deltaTime) : 0f;
             float blend = safeDt > 0f
-                ? FastDecayBlend(math.max(0.01f, focusBlendSpeed), safeDt)
-                : 1f;
+                ? FastDecayBlend(SanitizeMinimum(focusBlendSpeed, 0.01f), safeDt)
+                : (deltaTimeFinite ? 1f : 0f);
             float alpha = SmoothStep01(blend);
 
-            _worldBlur = math.lerp(_worldBlur, math.saturate(worldTarget), alpha);
-            _hudBlur = math.lerp(_hudBlur, math.saturate(hudTarget), alpha);
+            _worldBlur = math.lerp(Sanitize01(_worldBlur), Sanitize01(worldTarget), alpha);
+            _hudBlur = math.lerp(Sanitize01(_hudBlur), Sanitize01(hudTarget), alpha);
             ApplyGlobalIfChanged(HectonWorldFocusBlurId, ref _appliedWorldBlur, _worldBlur);
             ApplyGlobalIfChanged(HectonHudFocusBlurId, ref _appliedHudBlur, _hudBlur);
         }
 
         private bool AreFocusTargetsSettled(float worldTarget, float hudTarget)
         {
-            return math.abs(_worldBlur - math.saturate(worldTarget)) <= FocusSleepEpsilon &&
-                math.abs(_hudBlur - math.saturate(hudTarget)) <= FocusSleepEpsilon;
+            return math.abs(Sanitize01(_worldBlur) - Sanitize01(worldTarget)) <= FocusSleepEpsilon &&
+                math.abs(Sanitize01(_hudBlur) - Sanitize01(hudTarget)) <= FocusSleepEpsilon;
         }
 
         private static void ApplyGlobalIfChanged(int shaderId, ref float appliedValue, float value)
         {
-            float clampedValue = math.saturate(value);
+            float clampedValue = Sanitize01(value);
+            if (!math.isfinite(appliedValue))
+                appliedValue = -1f;
+
             if (math.abs(appliedValue - clampedValue) <= GlobalWriteEpsilon)
                 return;
 
@@ -198,13 +210,13 @@ namespace Hecton8.Visor
 
         private static float SmoothStep01(float t)
         {
-            t = math.saturate(t);
+            t = Sanitize01(t);
             return t * t * (3f - (2f * t));
         }
 
         private static float FastDecayBlend(float speed, float deltaTime)
         {
-            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            float x = SanitizeNonNegative(speed) * SanitizeNonNegative(deltaTime);
             if (x >= 3.5f)
                 return 1f;
 
@@ -234,13 +246,31 @@ namespace Hecton8.Visor
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            focusDistanceMeters = math.max(0.05f, focusDistanceMeters);
-            focusGateDotThreshold = math.saturate(focusGateDotThreshold);
-            focusBlendSpeed = math.max(0.01f, focusBlendSpeed);
-            worldBlurWhenPdaFocused = math.saturate(worldBlurWhenPdaFocused);
-            hudBlurWhenSceneFocused = math.saturate(hudBlurWhenSceneFocused);
+            focusDistanceMeters = SanitizeMinimum(focusDistanceMeters, 0.05f);
+            focusGateDotThreshold = Sanitize01(focusGateDotThreshold);
+            focusBlendSpeed = SanitizeMinimum(focusBlendSpeed, 0.01f);
+            worldBlurWhenPdaFocused = Sanitize01(worldBlurWhenPdaFocused);
+            hudBlurWhenSceneFocused = Sanitize01(hudBlurWhenSceneFocused);
         }
 #endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Sanitize01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeMinimum(float value, float minimum)
+        {
+            return math.isfinite(value) ? math.max(minimum, value) : minimum;
+        }
 
         private static bool IsFinite(Vector3 value)
         {

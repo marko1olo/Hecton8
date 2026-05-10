@@ -1,6 +1,6 @@
 // ══════════════════════════════════════════════════════════════════
 // HectonAtmosphereManager.cs  v2.1 (OPTIMIZATION PASS)
-// Орбитальная модель солнца + время суток + затмения + _SunDirection
+// Orbitalnaya model solntsa + vremya sutok + zatmeniya + _SunDirection
 //
 // ═══════════════════════════════════════════════════════════════
 // v2.1 CHANGES (OPTIMIZATION):

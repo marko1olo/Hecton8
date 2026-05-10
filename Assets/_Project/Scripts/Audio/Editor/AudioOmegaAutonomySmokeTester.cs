@@ -148,7 +148,7 @@ namespace Hecton8.Audio.Editor
                    body.IndexOf("new ", StringComparison.Ordinal) < 0 &&
                    body.IndexOf(".Complete()", StringComparison.Ordinal) < 0 &&
                    body.IndexOf(".Run()", StringComparison.Ordinal) < 0 &&
-                   body.IndexOf("TryTraceVoxelDensityOcclusion", StringComparison.Ordinal) < 0 &&
+                   body.IndexOf("TryRefreshSourceCinematicMuffle", StringComparison.Ordinal) < 0 &&
                    body.IndexOf("RenderLeviathanGranularRoarSample", StringComparison.Ordinal) < 0 &&
                    body.IndexOf("MixInterleavedInto", StringComparison.Ordinal) >= 0;
         }

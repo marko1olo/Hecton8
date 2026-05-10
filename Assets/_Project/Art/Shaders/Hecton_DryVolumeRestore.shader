@@ -30,9 +30,6 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
 
         TEXTURE2D_X(_Crest_CameraColorTexture);
         TEXTURE2D_X(_BlitTexture);
-        TEXTURE2D(_BlueNoiseTex);
-        SAMPLER(sampler_BlueNoiseTex);
-        float4 _BlueNoiseTex_TexelSize;
 
         float4 _HectonNoirResolveSettings;
         float4 _HectonNoirAbyssFloor;
@@ -77,19 +74,6 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
         {
             float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
             return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
-        }
-
-        float ResolveBlueNoise(float2 screenUV)
-        {
-            float fallback = ResolveInterleavedNoise(screenUV);
-            if (_BlueNoiseTex_TexelSize.z < 0.0001)
-                return fallback;
-
-            float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
-            float textureSize = max(_HectonNoirDitherParams.z, 64.0);
-            float2 blueNoiseUV = frac((pixel / textureSize) + _HectonNoirDitherParams.xy);
-            float sampled = SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r;
-            return sampled;
         }
 
         float ResolveFarRawDepth()
@@ -192,7 +176,7 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
 
             resolvedColor += (half3)SampleMarineSnowSonarGlow(input.screenUV);
 
-            float noise = ResolveBlueNoise(input.screenUV);
+            float noise = ResolveInterleavedNoise(input.screenUV);
             half freeze = (half)saturate(_HectonFreezeFrameDither);
             half scanline = (half)step(0.5, frac(input.positionCS.y * 0.5));
             half ditherMask = (half)step(noise, freeze);

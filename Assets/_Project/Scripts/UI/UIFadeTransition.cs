@@ -157,9 +157,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered =
-                GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI) ||
-                GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void Unregister()

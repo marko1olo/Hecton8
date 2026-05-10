@@ -1,32 +1,32 @@
 // ============================================================================
 // HECTON-8 — PlayerBuilder.cs
-// Контроллер строительства модульной базы.
+// Kontroller stroitelstva modulnoy bazy.
 //
 // v3.0 — SOCKET SNAP SYSTEM:
-//   [ADD] Система магнитного прилипания к точкам стыковки (ModuleSocket).
-//   [ADD] Поиск сокетов через Physics.OverlapSphereNonAlloc (zero GC).
-//   [ADD] Гистерезис: snapRadius=2m, unsnapRadius=2.5m (без мерцания).
-//   [ADD] Плавный snap/unsnap через экспоненциальное сглаживание.
-//   [ADD] Занятые сокеты (IsOccupied) пропускаются при поиске.
-//   [ADD] При размещении: ближайший сокет помечается как occupied.
-//   [ADD] socketLayerMask для фильтрации (Layer "Sockets").
+//   [ADD] Sistema magnitnogo prilipaniya k tochkam stykovki (ModuleSocket).
+//   [ADD] Poisk soketov cherez Physics.OverlapSphereNonAlloc (zero GC).
+//   [ADD] Gisterezis: snapRadius=2m, unsnapRadius=2.5m (bez mertsaniya).
+//   [ADD] Plavnyy snap/unsnap cherez eksponentsialnoe sglazhivanie.
+//   [ADD] Zanyatye sokety (IsOccupied) propuskayutsya pri poiske.
+//   [ADD] Pri razmeschenii: blizhayshiy soket pomechaetsya kak occupied.
+//   [ADD] socketLayerMask dlya filtratsii (Layer "Sockets").
 //
-//   ПОВЕДЕНИЕ:
-//     1. Raycast из камеры → hitPoint на поверхности.
-//     2. OverlapSphereNonAlloc вокруг hitPoint на слое Sockets.
-//     3. Если найден свободный сокет ≤ snapRadius → snap mode:
-//        - Позиция призрака = socket.position
-//        - Ротация призрака = socket.rotation × yawOffset
-//     4. Если расстояние до снапнутого сокета > unsnapRadius → unsnap:
-//        - Плавный переход обратно к raycast-позиции.
-//     5. Гистерезис (snap=2m, unsnap=2.5m) предотвращает мерцание.
+//   POVEDENIE:
+//     1. Raycast iz kamery → hitPoint na poverhnosti.
+//     2. OverlapSphereNonAlloc vokrug hitPoint na sloe Sockets.
+//     3. Esli nayden svobodnyy soket ≤ snapRadius → snap mode:
+//        - Pozitsiya prizraka = socket.position
+//        - Rotatsiya prizraka = socket.rotation × yawOffset
+//     4. Esli rasstoyanie do snapnutogo soketa > unsnapRadius → unsnap:
+//        - Plavnyy perehod obratno k raycast-pozitsii.
+//     5. Gisterezis (snap=2m, unsnap=2.5m) predotvraschaet mertsanie.
 //
 //   ZERO GC:
-//     • OverlapSphereNonAlloc → предаллоцированный Collider[16].
+//     • OverlapSphereNonAlloc → predallotsirovannyy Collider[16].
 //     • TryGetComponent<ModuleSocket> → zero GC.
-//     • Все struct math, никаких List/LINQ/лямбд.
+//     • Vse struct math, nikakih List/LINQ/lyambd.
 //
-// ПРЕДЫДУЩИЕ ВЕРСИИ (сохранены):
+// PREDYDUSchIE VERSII (sohraneny):
 //   v2.0: PlayerTool inheritance, ghost pool lifecycle.
 //   v1.0: Basic placement.
 // ============================================================================
@@ -68,13 +68,13 @@ namespace Hecton8.Building
         // ══════════════════════════════════════════════════════════
 
         [Header("── Builder References ────────────────────────")]
-        [Tooltip("Инвентарь игрока для проверки и списания ресурсов")]
+        [Tooltip("Inventar igroka dlya proverki i spisaniya resursov")]
         [SerializeField] private PlayerInventory inventory;
 
-        [Tooltip("Камера игрока (от неё пускается Raycast)")]
+        [Tooltip("Kamera igroka (ot nee puskaetsya Raycast)")]
         [SerializeField] private Camera playerCamera;
 
-        [Tooltip("Точка перед камерой (fallback, если Raycast в пустоту)")]
+        [Tooltip("Tochka pered kameroy (fallback, esli Raycast v pustotu)")]
         [SerializeField] private Transform buildAnchor;
         [SerializeField] private HUDNotification hudNotification;
 
@@ -83,17 +83,17 @@ namespace Hecton8.Building
         // ══════════════════════════════════════════════════════════
 
         [Header("── Building ──────────────────────────────────")]
-        [Tooltip("Активный модуль для строительства.")]
+        [Tooltip("Aktivnyy modul dlya stroitelstva.")]
         [SerializeField] private BuildableData activeBuildable;
         [SerializeField] private bool autoResolveCatalogSelection = true;
 
-        [Tooltip("Максимальная дальность размещения (метры)")]
+        [Tooltip("Maksimalnaya dalnost razmescheniya (metry)")]
         [SerializeField] private float buildDistance = 8f;
 
-        [Tooltip("Скорость сглаживания движения призрака")]
+        [Tooltip("Skorost sglazhivaniya dvizheniya prizraka")]
         [SerializeField] private float ghostFollowSpeed = 12f;
 
-        [Tooltip("Слой поверхности для размещения (Terrain, Default)")]
+        [Tooltip("Sloy poverhnosti dlya razmescheniya (Terrain, Default)")]
         [SerializeField] private LayerMask surfaceMask = HectonLayerMasks.ConstructionSurfaceLayerMask;
         [Tooltip("Rigid world-space grid size used for free placement positions.")]
         [SerializeField] private float constructionGridSize = 2.5f;
@@ -103,11 +103,11 @@ namespace Hecton8.Building
         [SerializeField] private float structuralDepthPenalty = 0.75f;
 
         [Header("── Rotation ──────────────────────────────────")]
-        [Tooltip("Угол поворота призрака при нажатии ПКМ (градусы)")]
+        [Tooltip("Ugol povorota prizraka pri nazhatii PKM (gradusy)")]
         [SerializeField] private float rotationStep = 90f;
 
         [Header("── Diagnostics ───────────────────────────────")]
-        [Tooltip("Включить подробные BuilderDebug-логи для диагностики construction loop.")]
+        [Tooltip("Vklyuchit podrobnye BuilderDebug-logi dlya diagnostiki construction loop.")]
         [SerializeField] private bool builderDebugLogging = false;
 
         // ══════════════════════════════════════════════════════════
@@ -115,22 +115,22 @@ namespace Hecton8.Building
         // ══════════════════════════════════════════════════════════
 
         [Header("── Socket Snap (v3.0) ────────────────────────")]
-        [Tooltip("Радиус обнаружения сокетов вокруг точки луча (метры).\n" +
-                 "Когда hitPoint ≤ snapRadius от свободного сокета → snap.")]
+        [Tooltip("Radius obnaruzheniya soketov vokrug tochki lucha (metry).\n" +
+                 "Kogda hitPoint ≤ snapRadius ot svobodnogo soketa → snap.")]
         [SerializeField] private float snapRadius = 2f;
 
-        [Tooltip("Радиус отрыва от сокета (метры).\n" +
-                 "Должен быть > snapRadius для гистерезиса.\n" +
-                 "Когда hitPoint > unsnapRadius от снапнутого сокета → unsnap.")]
+        [Tooltip("Radius otryva ot soketa (metry).\n" +
+                 "Dolzhen byt > snapRadius dlya gisterezisa.\n" +
+                 "Kogda hitPoint > unsnapRadius ot snapnutogo soketa → unsnap.")]
         [SerializeField] private float unsnapRadius = 2.5f;
 
-        [Tooltip("Слой сокетов для OverlapSphereNonAlloc.\n" +
-                 "Создай Layer 'Sockets' в Project Settings → Tags & Layers.\n" +
-                 "На каждом ModuleSocket: SphereCollider(trigger) + Layer=Sockets.")]
+        [Tooltip("Sloy soketov dlya OverlapSphereNonAlloc.\n" +
+                 "Sozday Layer 'Sockets' v Project Settings → Tags & Layers.\n" +
+                 "Na kazhdom ModuleSocket: SphereCollider(trigger) + Layer=Sockets.")]
         [SerializeField] private LayerMask socketLayerMask = HectonLayerMasks.SocketsLayerMask;
 
-        [Tooltip("Скорость прилипания к сокету (Lerp factor per second).\n" +
-                 "Выше = резче snap. 20 = почти мгновенно.")]
+        [Tooltip("Skorost prilipaniya k soketu (Lerp factor per second).\n" +
+                 "Vyshe = rezche snap. 20 = pochti mgnovenno.")]
         [SerializeField] private float snapSpeed = 20f;
 
         // ══════════════════════════════════════════════════════════
@@ -142,7 +142,7 @@ namespace Hecton8.Building
         [SerializeField] private AudioClip errorSound;
         [SerializeField] private AudioClip rotateSound;
 
-        [Tooltip("Звук прилипания к сокету (опционально).")]
+        [Tooltip("Zvuk prilipaniya k soketu (optsionalno).")]
         [SerializeField] private AudioClip snapSound;
 
         // ══════════════════════════════════════════════════════════
@@ -172,32 +172,32 @@ namespace Hecton8.Building
 
         /// <summary>
         /// Pre-allocated buffer for OverlapSphereNonAlloc.
-        /// 16 сокетов — покрывает даже хаб с 8 выходами.
-        /// Zero GC: массив создаётся один раз.
+        /// 16 soketov — pokryvaet dazhe hab s 8 vyhodami.
+        /// Zero GC: massiv sozdaetsya odin raz.
         /// </summary>
         private readonly Collider[] _socketBuffer = new Collider[16];
 
         /// <summary>
-        /// true когда призрак "прилип" к сокету.
-        /// Используется для гистерезиса (snap/unsnap разные радиусы).
+        /// true kogda prizrak "prilip" k soketu.
+        /// Ispolzuetsya dlya gisterezisa (snap/unsnap raznye radiusy).
         /// </summary>
         private bool _isSnapped;
 
         /// <summary>
-        /// Transform сокета, к которому прилип призрак.
-        /// null когда не в snap-режиме.
-        /// Кэшируется для: позиции, ротации, и отметки occupied при размещении.
+        /// Transform soketa, k kotoromu prilip prizrak.
+        /// null kogda ne v snap-rezhime.
+        /// Keshiruetsya dlya: pozitsii, rotatsii, i otmetki occupied pri razmeschenii.
         /// </summary>
         private Transform _snappedSocketTransform;
 
         /// <summary>
-        /// Кэшированный ModuleSocket компонент снапнутого сокета.
-        /// Используется для проверки IsOccupied и SetOccupied при размещении.
+        /// Keshirovannyy ModuleSocket komponent snapnutogo soketa.
+        /// Ispolzuetsya dlya proverki IsOccupied i SetOccupied pri razmeschenii.
         /// </summary>
         private ModuleSocket _snappedSocket;
 
         /// <summary>
-        /// Предыдущий snap-статус. Для edge detection (звук при snap/unsnap).
+        /// Predyduschiy snap-status. Dlya edge detection (zvuk pri snap/unsnap).
         /// </summary>
         private bool _wasSnapped;
         private ModuleCatalog _buildCatalog;
@@ -242,7 +242,7 @@ namespace Hecton8.Building
         public bool HasPlacementPreview => _currentGhostObj != null;
         public BuildReadiness ActiveBuildReadiness => GetActiveBuildReadiness();
 
-        /// <summary>Сейчас призрак прилип к сокету.</summary>
+        /// <summary>Seychas prizrak prilip k soketu.</summary>
         public bool IsSnapped => _isSnapped;
 
         private struct ValidationSnapshot
@@ -829,26 +829,26 @@ namespace Hecton8.Building
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Обновляет позицию призрака каждый кадр.
+        /// Obnovlyaet pozitsiyu prizraka kazhdyy kadr.
         ///
-        /// v3.0 АЛГОРИТМ:
-        ///   1. Raycast из центра камеры → hitPoint.
-        ///   2. OverlapSphereNonAlloc вокруг hitPoint на socketLayerMask.
-        ///   3. Найти ближайший свободный ModuleSocket.
-        ///   4. ГИСТЕРЕЗИС:
-        ///      - Если НЕ снапнут и dist ≤ snapRadius → SNAP.
-        ///      - Если снапнут и dist > unsnapRadius → UNSNAP.
-        ///      - Между snapRadius и unsnapRadius → сохранять текущий статус.
-        ///   5. Если SNAP → целевая позиция = socket.position,
-        ///      целевая ротация = socket.rotation × yawOffset.
-        ///   6. Если НЕ SNAP → обычное поведение (raycast surface).
-        ///   7. Плавная интерполяция (exp smoothing).
+        /// v3.0 ALGORITM:
+        ///   1. Raycast iz tsentra kamery → hitPoint.
+        ///   2. OverlapSphereNonAlloc vokrug hitPoint na socketLayerMask.
+        ///   3. Nayti blizhayshiy svobodnyy ModuleSocket.
+        ///   4. GISTEREZIS:
+        ///      - Esli NE snapnut i dist ≤ snapRadius → SNAP.
+        ///      - Esli snapnut i dist > unsnapRadius → UNSNAP.
+        ///      - Mezhdu snapRadius i unsnapRadius → sohranyat tekuschiy status.
+        ///   5. Esli SNAP → tselevaya pozitsiya = socket.position,
+        ///      tselevaya rotatsiya = socket.rotation × yawOffset.
+        ///   6. Esli NE SNAP → obychnoe povedenie (raycast surface).
+        ///   7. Plavnaya interpolyatsiya (exp smoothing).
         ///
         /// ZERO GC:
         ///   • OverlapSphereNonAlloc → _socketBuffer[16] (pre-allocated).
         ///   • TryGetComponent → zero GC.
         ///   • Struct Ray, RaycastHit, Vector3, Quaternion — stack.
-        ///   • Никаких List, LINQ, лямбд, new.
+        ///   • Nikakih List, LINQ, lyambd, new.
         /// </summary>
         private void UpdateGhostPosition(float dt)
         {
@@ -865,7 +865,7 @@ namespace Hecton8.Building
 
             bool rayHit = TryGetBuildHit(ray, ResolveSurfaceMask(), out _hit);
 
-            // ── Точка луча (для поиска сокетов и fallback) ──
+            // ── Tochka lucha (dlya poiska soketov i fallback) ──
             Vector3 rawTargetPoint = rayHit
                 ? _hit.point
                 : ray.origin + ray.direction * buildDistance;
@@ -877,25 +877,25 @@ namespace Hecton8.Building
             // ═══════════════════════════════════════════════════
             //  SOCKET SEARCH (v3.0)
             //
-            //  OverlapSphereNonAlloc: ищет коллайдеры на слое Sockets
-            //  в радиусе вокруг hitPoint. Pre-allocated buffer → zero GC.
+            //  OverlapSphereNonAlloc: ischet kollaydery na sloe Sockets
+            //  v radiuse vokrug hitPoint. Pre-allocated buffer → zero GC.
             //
-            //  Радиус поиска = unsnapRadius (больший из двух) для того,
-            //  чтобы поймать сокет, от которого мы могли бы отрываться.
-            //  Фактическая проверка snap/unsnap — по дистанции ниже.
+            //  Radius poiska = unsnapRadius (bolshiy iz dvuh) dlya togo,
+            //  chtoby poymat soket, ot kotorogo my mogli by otryvatsya.
+            //  Fakticheskaya proverka snap/unsnap — po distantsii nizhe.
             // ═══════════════════════════════════════════════════
 
-            float searchRadius = unsnapRadius; // ищем в большем радиусе
+            float searchRadius = unsnapRadius; // ischem v bolshem radiuse
             int resolvedSocketMask = ResolveSocketMask();
             int socketCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 rawTargetPoint,
                 searchRadius,
                 _socketBuffer,
                 resolvedSocketMask,
-                QueryTriggerInteraction.Collide // сокеты = trigger colliders
+                QueryTriggerInteraction.Collide // sokety = trigger colliders
             );
 
-            // ── Найти ближайший свободный сокет ──
+            // ── Nayti blizhayshiy svobodnyy soket ──
             float   bestDist      = float.MaxValue;
             Transform bestTransform = null;
             ModuleSocket bestSocket = null;
@@ -908,15 +908,15 @@ namespace Hecton8.Building
                 Collider socketCollider = _socketBuffer[i];
                 if (socketCollider == null) continue;
 
-                // ── Получаем ModuleSocket (zero GC) ──
+                // ── Poluchaem ModuleSocket (zero GC) ──
                 if (!socketCollider.TryGetComponent(out ModuleSocket socket))
                     continue;
 
-                // ── Пропускаем занятые ──
+                // ── Propuskaem zanyatye ──
                 if (socket.IsOccupied)
                     continue;
 
-                // ── Дистанция от hitPoint до сокета ──
+                // ── Distantsiya ot hitPoint do soketa ──
                 if (!_habitatConstructionManager.TryResolveSocketAlignment(
                         _currentGhostObj.transform,
                         _ghostSocketBuffer,
@@ -942,20 +942,20 @@ namespace Hecton8.Building
                 }
             }
 
-            // ── Очистка буфера (предотвращает удержание ссылок) ──
+            // ── Ochistka bufera (predotvraschaet uderzhanie ssylok) ──
             for (int i = 0; i < socketCount; i++)
                 _socketBuffer[i] = null;
 
             // ═══════════════════════════════════════════════════
             //  SNAP / UNSNAP DECISION (HYSTERESIS)
             //
-            //  Два радиуса предотвращают мерцание:
-            //    snapRadius (2m):   hitPoint ≤ 2m от сокета → SNAP
-            //    unsnapRadius (2.5m): hitPoint > 2.5m от сокета → UNSNAP
-            //    Между 2m и 2.5m: сохраняем текущий статус.
+            //  Dva radiusa predotvraschayut mertsanie:
+            //    snapRadius (2m):   hitPoint ≤ 2m ot soketa → SNAP
+            //    unsnapRadius (2.5m): hitPoint > 2.5m ot soketa → UNSNAP
+            //    Mezhdu 2m i 2.5m: sohranyaem tekuschiy status.
             //
-            //  Без гистерезиса: на расстоянии ровно 2m призрак
-            //  каждый кадр snap→unsnap→snap→unsnap (flicker).
+            //  Bez gisterezisa: na rasstoyanii rovno 2m prizrak
+            //  kazhdyy kadr snap→unsnap→snap→unsnap (flicker).
             // ═══════════════════════════════════════════════════
 
             bool previousSnapState = _isSnapped;
@@ -964,10 +964,10 @@ namespace Hecton8.Building
 
             if (_isSnapped)
             {
-                // ── Сейчас снапнут: проверяем условие ОТРЫВА ──
+                // ── Seychas snapnut: proveryaem uslovie OTRYVA ──
                 if (bestTransform == null || bestDist > (unsnapRadius * unsnapRadius))
                 {
-                    // Отрываемся: нет сокетов поблизости ИЛИ слишком далеко
+                    // Otryvaemsya: net soketov poblizosti ILI slishkom daleko
                     _isSnapped = false;
                     _snappedSocketTransform = null;
                     _snappedSocket = null;
@@ -975,8 +975,8 @@ namespace Hecton8.Building
                 }
                 else
                 {
-                    // Обновляем: возможно, ближайший сокет сменился
-                    // (игрок навёл на другой сокет того же модуля)
+                    // Obnovlyaem: vozmozhno, blizhayshiy soket smenilsya
+                    // (igrok navel na drugoy soket togo zhe modulya)
                     _snappedSocketTransform = bestTransform;
                     _snappedSocket = bestSocket;
                     _snappedGhostSocket = bestGhostSocket;
@@ -984,7 +984,7 @@ namespace Hecton8.Building
             }
             else
             {
-                // ── Сейчас НЕ снапнут: проверяем условие ПРИЛИПАНИЯ ──
+                // ── Seychas NE snapnut: proveryaem uslovie PRILIPANIYa ──
                 if (bestTransform != null && bestDist <= (snapRadius * snapRadius))
                 {
                     _isSnapped = true;
@@ -994,7 +994,7 @@ namespace Hecton8.Building
                 }
             }
 
-            // ── Звук snap/unsnap (edge detection) ──
+            // ── Zvuk snap/unsnap (edge detection) ──
             if (_isSnapped && !_wasSnapped)
             {
                 PlaySound(snapSound);
@@ -1007,17 +1007,17 @@ namespace Hecton8.Building
 
             if (_isSnapped && _snappedSocket != null)
             {
-                // ── SNAP MODE: позиция и ротация от сокета ──
+                // ── SNAP MODE: pozitsiya i rotatsiya ot soketa ──
                 targetPos = bestAlignedPosition;
 
-                // Socket.forward = направление стыковки.
-                // YawOffset позволяет игроку вращать модуль
-                // вокруг оси стыковки (если нужно).
+                // Socket.forward = napravlenie stykovki.
+                // YawOffset pozvolyaet igroku vraschat modul
+                // vokrug osi stykovki (esli nuzhno).
                 targetRot = bestAlignedRotation;
             }
             else if (rayHit)
             {
-                // ── SURFACE MODE: обычное поведение (raycast) ──
+                // ── SURFACE MODE: obychnoe povedenie (raycast) ──
                 targetPos = freePlacementPosition;
 
                 Quaternion surfaceRot = Quaternion.FromToRotation(Vector3.up, _hit.normal);
@@ -1026,7 +1026,7 @@ namespace Hecton8.Building
             }
             else
             {
-                // ── FALLBACK: призрак висит перед камерой ──
+                // ── FALLBACK: prizrak visit pered kameroy ──
                 if (buildAnchor != null)
                 {
                     float3 snappedAnchorPosition = _habitatConstructionManager.SnapWorldPosition(buildAnchor.position, activeGridSize);
@@ -1043,9 +1043,9 @@ namespace Hecton8.Building
             // ═══════════════════════════════════════════════════
             //  SMOOTH INTERPOLATION
             //
-            //  Используем разную скорость для snap и non-snap:
-            //    Snap: snapSpeed (быстрый, ~20) — "щёлк" к позиции.
-            //    Non-snap: ghostFollowSpeed (плавный, ~12) — обычное следование.
+            //  Ispolzuem raznuyu skorost dlya snap i non-snap:
+            //    Snap: snapSpeed (bystryy, ~20) — "schelk" k pozitsii.
+            //    Non-snap: ghostFollowSpeed (plavnyy, ~12) — obychnoe sledovanie.
             //
             //  Cheap cinematic smoothing: x/(1+x) avoids exp() in the placement tick.
             // ═══════════════════════════════════════════════════
@@ -1080,13 +1080,13 @@ namespace Hecton8.Building
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Попытка установить модуль:
-        ///   1. Проверка CanBuild (коллизии)
-        ///   2. Проверка ресурсов в инвентаре
-        ///   3. Списание ресурсов
-        ///   4. Деспавн призрака → спавн финального модуля
-        ///   5. v3.0: если снапнуты к сокету → пометить его как occupied
-        ///   6. Пересоздание призрака для продолжения строительства
+        /// Popytka ustanovit modul:
+        ///   1. Proverka CanBuild (kollizii)
+        ///   2. Proverka resursov v inventare
+        ///   3. Spisanie resursov
+        ///   4. Despavn prizraka → spavn finalnogo modulya
+        ///   5. v3.0: esli snapnuty k soketu → pometit ego kak occupied
+        ///   6. Peresozdanie prizraka dlya prodolzheniya stroitelstva
         /// </summary>
         private void TryPlaceModule()
         {
@@ -1145,9 +1145,9 @@ namespace Hecton8.Building
                 return;
             }
 
-            // ── v3.0: Пометить сокет как занятый ──
+            // ── v3.0: Pometit soket kak zanyatyy ──
 
-            // ── Спавн финального модуля ──
+            // ── Spavn finalnogo modulya ──
             GameObject placedModule = SpawnPlacedModule(activeBuildable, placePos, placeRot, pool);
 
             if (placedModule == null)
@@ -1191,13 +1191,13 @@ namespace Hecton8.Building
             PlaySound(buildSound);
             NotifyBuildPlaced(activeBuildable);
 
-            // ── Сброс snap-состояния ──
+            // ── Sbros snap-sostoyaniya ──
             _isSnapped = false;
             _snappedSocketTransform = null;
             _snappedSocket = null;
             _snappedGhostSocket = null;
 
-            // ── Пересоздаём призрак ──
+            // ── Peresozdaem prizrak ──
             DespawnGhost();
             SpawnGhost();
         }
@@ -2244,16 +2244,16 @@ namespace Hecton8.Building
         {
             if (playerCamera == null) return;
 
-            // Визуализация дальности строительства
+            // Vizualizatsiya dalnosti stroitelstva
             Gizmos.color = new Color(0f, 1f, 0.5f, 0.15f);
             Gizmos.DrawWireSphere(playerCamera.transform.position, buildDistance);
 
-            // Визуализация snap-зоны (только в Play Mode при наличии призрака)
+            // Vizualizatsiya snap-zony (tolko v Play Mode pri nalichii prizraka)
             if (Application.isPlaying && _currentGhostObj != null)
             {
                 if (_isSnapped && _snappedSocketTransform != null)
                 {
-                    // Snap active — зелёная линия к сокету
+                    // Snap active — zelenaya liniya k soketu
                     Gizmos.color = Color.green;
                     Gizmos.DrawLine(_currentGhostObj.transform.position,
                                     _snappedSocketTransform.position);

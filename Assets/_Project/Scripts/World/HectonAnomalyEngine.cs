@@ -42,12 +42,22 @@ namespace Hecton8.World
             {
                 Width = math.max(1, Width),
                 Height = math.max(1, Height),
-                CellSizeMeters = math.max(0.001f, CellSizeMeters),
-                MinimumDepthMeters = math.max(0f, MinimumDepthMeters),
+                CellSizeMeters = ResolvePositiveFinite(CellSizeMeters, 0.001f),
+                MinimumDepthMeters = ResolveNonNegativeFinite(MinimumDepthMeters, 0f),
                 MaxFloodCells = math.max(8, MaxFloodCells),
-                EqualHeightEpsilon = math.max(0.000001f, EqualHeightEpsilon),
+                EqualHeightEpsilon = ResolvePositiveFinite(EqualHeightEpsilon, 0.000001f),
                 MaxFloodFillOperationsPerSlice = math.max(64, MaxFloodFillOperationsPerSlice == 0 ? 512 : MaxFloodFillOperationsPerSlice)
             };
+        }
+
+        private static float ResolvePositiveFinite(float value, float fallback)
+        {
+            return math.isfinite(value) && value > 0f ? value : fallback;
+        }
+
+        private static float ResolveNonNegativeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) && value >= 0f ? value : fallback;
         }
     }
 
@@ -274,12 +284,14 @@ namespace Hecton8.World
             JobHandle dependency = default)
         {
             ValidateTerrainSdfBuffers(terrainHeights, terrainWidth, terrainDepth, sdf, sdfWidth, sdfHeight, sdfDepth);
+            if (!IsFiniteAup(terrainOriginAup) || !IsFiniteAup(sdfOriginAup))
+                return dependency;
 
             int safeSdfWidth = math.max(1, sdfWidth);
             int safeSdfHeight = math.max(1, sdfHeight);
             int safeSdfDepth = math.max(1, sdfDepth);
-            float safeTerrainCellSize = math.max(0.001f, terrainCellSizeMeters);
-            float safeVoxelSize = math.max(0.001f, voxelSizeMeters);
+            float safeTerrainCellSize = ResolvePositiveFinite(terrainCellSizeMeters, 0.001f);
+            float safeVoxelSize = ResolvePositiveFinite(voxelSizeMeters, 0.001f);
 
             var job = new SnapSDFToTerrainJob
             {
@@ -377,6 +389,8 @@ namespace Hecton8.World
             JobHandle dependency = default)
         {
             ValidateSdfBuffer(sdf, sdfWidth, sdfHeight, sdfDepth);
+            if (!IsFiniteAup(sdfOriginAup) || !IsFiniteAup(pillarBaseAup))
+                return dependency;
 
             var job = new InjectMegaPillarSDFJob
             {
@@ -384,13 +398,13 @@ namespace Hecton8.World
                 SdfWidth = math.max(1, sdfWidth),
                 SdfHeight = math.max(1, sdfHeight),
                 SdfDepth = math.max(1, sdfDepth),
-                VoxelSizeMeters = math.max(0.001f, voxelSizeMeters),
+                VoxelSizeMeters = ResolvePositiveFinite(voxelSizeMeters, 0.001f),
                 SdfOriginAup = sdfOriginAup,
                 PillarBaseAup = pillarBaseAup,
-                RadiusMeters = math.max(0.001f, radiusMeters),
-                HeightMeters = math.max(0.001f, heightMeters),
-                EdgeWarpMeters = math.max(0f, edgeWarpMeters),
-                NoiseFrequency = math.max(0.000001f, noiseFrequency)
+                RadiusMeters = ResolvePositiveFinite(radiusMeters, 0.001f),
+                HeightMeters = ResolvePositiveFinite(heightMeters, 0.001f),
+                EdgeWarpMeters = ResolveNonNegativeFinite(edgeWarpMeters, 0f),
+                NoiseFrequency = ResolvePositiveFinite(noiseFrequency, 0.000001f)
             };
 
             double3 chunkMinAup = sdfOriginAup;
@@ -431,6 +445,8 @@ namespace Hecton8.World
             if (!selectedFeature.IsCreated || selectedFeature.Length <= 0)
                 throw new ArgumentException("Selected feature buffer is not valid.", nameof(selectedFeature));
             ValidateSdfBuffer(sdf, sdfWidth, sdfHeight, sdfDepth);
+            if (!IsFiniteAup(sdfOriginAup))
+                return dependency;
 
             int safeSdfWidth = math.max(1, sdfWidth);
             int safeSdfHeight = math.max(1, sdfHeight);
@@ -442,12 +458,12 @@ namespace Hecton8.World
                 SdfWidth = safeSdfWidth,
                 SdfHeight = safeSdfHeight,
                 SdfDepth = safeSdfDepth,
-                VoxelSizeMeters = math.max(0.001f, voxelSizeMeters),
+                VoxelSizeMeters = ResolvePositiveFinite(voxelSizeMeters, 0.001f),
                 SdfOriginAup = sdfOriginAup,
-                RadiusMeters = math.max(0.001f, radiusMeters),
-                HeightMeters = math.max(0.001f, heightMeters),
-                EdgeWarpMeters = math.max(0f, edgeWarpMeters),
-                NoiseFrequency = math.max(0.000001f, noiseFrequency)
+                RadiusMeters = ResolvePositiveFinite(radiusMeters, 0.001f),
+                HeightMeters = ResolvePositiveFinite(heightMeters, 0.001f),
+                EdgeWarpMeters = ResolveNonNegativeFinite(edgeWarpMeters, 0f),
+                NoiseFrequency = ResolvePositiveFinite(noiseFrequency, 0.000001f)
             };
             job.ChunkMinAup = sdfOriginAup;
             job.ChunkMaxAup = ResolveSdfChunkMaxAup(
@@ -519,6 +535,9 @@ namespace Hecton8.World
             JobHandle dependency = default)
         {
             ValidateSdfBuffer(sdf, sdfWidth, sdfHeight, sdfDepth);
+            if (!IsFiniteAup(sdfOriginAup) || !IsFiniteAup(fissureTopAup))
+                return dependency;
+
             int safeSdfWidth = math.max(1, sdfWidth);
             int safeSdfHeight = math.max(1, sdfHeight);
             int safeSdfDepth = math.max(1, sdfDepth);
@@ -533,13 +552,13 @@ namespace Hecton8.World
                 SdfWidth = safeSdfWidth,
                 SdfHeight = safeSdfHeight,
                 SdfDepth = safeSdfDepth,
-                VoxelSizeMeters = math.max(0.001f, voxelSizeMeters),
+                VoxelSizeMeters = ResolvePositiveFinite(voxelSizeMeters, 0.001f),
                 SdfOriginAup = sdfOriginAup,
                 FissureTopAup = fissureTopAup,
-                DirectionXZ = math.normalizesafe(directionXz, new float2(1f, 0f)),
-                HalfLengthMeters = math.max(0.001f, halfLengthMeters),
-                RadiusMeters = math.max(0.001f, radiusMeters),
-                DepthMeters = math.max(0.001f, depthMeters),
+                DirectionXZ = ResolveSafeDirectionXz(directionXz),
+                HalfLengthMeters = ResolvePositiveFinite(halfLengthMeters, 0.001f),
+                RadiusMeters = ResolvePositiveFinite(radiusMeters, 0.001f),
+                DepthMeters = ResolvePositiveFinite(depthMeters, 0.001f),
                 FissureInfluencePacked = fissureInfluencePacked
             };
 
@@ -572,11 +591,11 @@ namespace Hecton8.World
                 SdfWidth = math.max(1, sdfWidth),
                 SdfHeight = math.max(1, sdfHeight),
                 SdfDepth = math.max(1, sdfDepth),
-                VoxelSizeMeters = math.max(0.001f, voxelSizeMeters),
-                SlopeThreshold = math.max(0f, slopeThreshold),
-                LateralAmplitudeMeters = math.max(0f, lateralAmplitudeMeters),
-                NoiseFrequency = math.max(0.000001f, noiseFrequency),
-                Strength = math.saturate(strength)
+                VoxelSizeMeters = ResolvePositiveFinite(voxelSizeMeters, 0.001f),
+                SlopeThreshold = ResolveNonNegativeFinite(slopeThreshold, 0f),
+                LateralAmplitudeMeters = ResolveNonNegativeFinite(lateralAmplitudeMeters, 0f),
+                NoiseFrequency = ResolvePositiveFinite(noiseFrequency, 0.000001f),
+                Strength = math.isfinite(strength) ? math.saturate(strength) : 0f
             };
 
             int safeSdfWidth = math.max(1, sdfWidth);
@@ -620,16 +639,39 @@ namespace Hecton8.World
                 throw new ArgumentException("SDF array is smaller than sdfWidth * sdfHeight * sdfDepth.", nameof(sdf));
         }
 
+        private static bool IsFiniteAup(double3 aup)
+        {
+            return math.all(math.isfinite(aup));
+        }
+
+        private static float ResolvePositiveFinite(float value, float fallback)
+        {
+            return math.isfinite(value) && value > 0f ? value : fallback;
+        }
+
+        private static float ResolveNonNegativeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) && value >= 0f ? value : fallback;
+        }
+
+        private static float2 ResolveSafeDirectionXz(float2 directionXz)
+        {
+            if (!math.all(math.isfinite(directionXz)) || math.lengthsq(directionXz) <= 0.000001f)
+                return new float2(1f, 0f);
+
+            return math.normalize(directionXz);
+        }
+
         private static int ResolvePillarEnvelopeRadiusCells(float radiusMeters, float edgeWarpMeters, float voxelSizeMeters)
         {
-            float safeVoxel = math.max(0.001f, voxelSizeMeters);
-            float maxRadius = math.max(0.001f, radiusMeters) + math.max(0f, edgeWarpMeters) + safeVoxel;
+            float safeVoxel = ResolvePositiveFinite(voxelSizeMeters, 0.001f);
+            float maxRadius = ResolvePositiveFinite(radiusMeters, 0.001f) + ResolveNonNegativeFinite(edgeWarpMeters, 0f) + safeVoxel;
             return math.max(0, (int)math.ceil(maxRadius / safeVoxel));
         }
 
         private static double3 ResolveSdfChunkMaxAup(double3 sdfOriginAup, int sdfWidth, int sdfHeight, int sdfDepth, float voxelSizeMeters)
         {
-            double safeVoxel = math.max(0.001f, voxelSizeMeters);
+            double safeVoxel = ResolvePositiveFinite(voxelSizeMeters, 0.001f);
             return new double3(
                 sdfOriginAup.x + math.max(0, sdfWidth - 1) * safeVoxel,
                 sdfOriginAup.y + math.max(0, sdfHeight - 1) * safeVoxel,
@@ -643,8 +685,11 @@ namespace Hecton8.World
             double3 chunkMinAup,
             double3 chunkMaxAup)
         {
-            double radius = math.max(0.001f, radiusMeters);
-            double height = math.max(0.001f, heightMeters);
+            if (!IsFiniteAup(pillarBaseAup) || !IsFiniteAup(chunkMinAup) || !IsFiniteAup(chunkMaxAup))
+                return false;
+
+            double radius = ResolvePositiveFinite(radiusMeters, 0.001f);
+            double height = ResolvePositiveFinite(heightMeters, 0.001f);
             double minX = pillarBaseAup.x - radius;
             double maxX = pillarBaseAup.x + radius;
             double minY = pillarBaseAup.y;

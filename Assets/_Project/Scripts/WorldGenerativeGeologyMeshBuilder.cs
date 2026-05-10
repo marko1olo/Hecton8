@@ -1,22 +1,22 @@
 // ============================================================================
 // HECTON-8 — WorldGenerativeGeologyMeshBuilder.cs
-// Процедурный генератор реальной геологической геометрии.
+// Protsedurnyy generator realnoy geologicheskoy geometrii.
 //
-// РОЛЬ:
-//   Единственный owner формы для всей геологии проекта.
-//   Используется и editor authoring, и runtime generation.
-//   Один hash = одна форма. Детерминировано.
+// ROL:
+//   Edinstvennyy owner formy dlya vsey geologii proekta.
+//   Ispolzuetsya i editor authoring, i runtime generation.
+//   Odin hash = odna forma. Determinirovano.
 //
-// КАТЕГОРИИ:
-//   RockFloor       — мелкие камни (10 вариантов)
-//   RockCluster     — средние кластеры (8 вариантов)
-//   RockShelf       — уступы / cliff shelves (6 вариантов)
-//   RockArch        — большие арки (6 вариантов)
-//   CaveEntrance    — входы в пещеры (5 вариантов)
-//   LandmarkSpire   — высокие шпили (5 вариантов)
+// KATEGORII:
+//   RockFloor       — melkie kamni (10 variantov)
+//   RockCluster     — srednie klastery (8 variantov)
+//   RockShelf       — ustupy / cliff shelves (6 variantov)
+//   RockArch        — bolshie arki (6 variantov)
+//   CaveEntrance    — vhody v peschery (5 variantov)
+//   LandmarkSpire   — vysokie shpili (5 variantov)
 //
-// ZERO UV: вся геометрия под трипланарный шейдер, UV не нужны.
-// LOD: LOD0 полный, LOD1 упрощённый, LOD2 силуэт.
+// ZERO UV: vsya geometriya pod triplanarnyy sheyder, UV ne nuzhny.
+// LOD: LOD0 polnyy, LOD1 uproschennyy, LOD2 siluet.
 // ============================================================================
 using System.Collections.Generic;
 using UnityEngine;
@@ -52,16 +52,16 @@ namespace Hecton8.World
         // ── Public entry point ────────────────────────────────────
 
         /// <summary>
-        /// Генерирует полный LOD-набор для указанного архетипа.
-        /// stableHash определяет вариант формы детерминированно.
-        /// scale — мировой масштаб (1.0 = стандарт).
+        /// Generiruet polnyy LOD-nabor dlya ukazannogo arhetipa.
+        /// stableHash opredelyaet variant formy determinirovanno.
+        /// scale — mirovoy masshtab (1.0 = standart).
         /// </summary>
         public static GeologyMeshBundle Build(
             GeologyArchetype archetype,
             int stableHash,
             float scale = 1f)
         {
-            // Нормализуем hash чтобы не было отрицательных
+            // Normalizuem hash chtoby ne bylo otritsatelnyh
             int h = Mathf.Abs(stableHash);
 
             GeologyMeshBundle bundle = archetype switch
@@ -78,17 +78,17 @@ namespace Hecton8.World
             return bundle;
         }
 
-        // ── RockFloor — мелкие камни ──────────────────────────────
+        // ── RockFloor — melkie kamni ──────────────────────────────
 
         private static GeologyMeshBundle BuildRockFloor(int h, float s)
         {
-            // 10 вариантов мелких камней
+            // 10 variantov melkih kamney
             int variant = h % 10;
             float w = s * Mathf.Lerp(0.4f, 1.1f, (variant * 0.11f) % 1f);
             float ht = s * Mathf.Lerp(0.2f, 0.65f, (variant * 0.17f) % 1f);
             float d = s * Mathf.Lerp(0.35f, 0.9f, (variant * 0.13f) % 1f);
 
-            // Базовая форма — деформированный куб с шумом
+            // Bazovaya forma — deformirovannyy kub s shumom
             Mesh lod0 = BuildRockFloorMesh(w, ht, d, h, 3, 0.22f, true);
             Mesh lod1 = BuildRockFloorMesh(w, ht, d, h, 2, 0.14f, true);
             Mesh lod2 = BuildRockFloorMesh(w, ht, d, h, 1, 0.06f, false);
@@ -106,12 +106,12 @@ namespace Hecton8.World
             };
         }
 
-        // ── RockCluster — средние кластеры ────────────────────────
+        // ── RockCluster — srednie klastery ────────────────────────
 
         private static GeologyMeshBundle BuildRockCluster(int h, float s)
         {
             int variant = h % 10;
-            // Кластер из 2-4 масс
+            // Klaster iz 2-4 mass
             int count = 2 + (variant % 3);
             float baseSize = s * Mathf.Lerp(1.2f, 2.8f, (variant * 0.14f) % 1f);
             Vector3[] offsets = new Vector3[count];
@@ -194,7 +194,7 @@ namespace Hecton8.World
             };
         }
 
-        // ── RockShelf — уступы / cliff shelves ────────────────────
+        // ── RockShelf — ustupy / cliff shelves ────────────────────
 
         private static GeologyMeshBundle BuildRockShelf(int h, float s)
         {
@@ -221,7 +221,7 @@ namespace Hecton8.World
             };
         }
 
-        // ── RockArch — большие арки ───────────────────────────────
+        // ── RockArch — bolshie arki ───────────────────────────────
 
         private static GeologyMeshBundle BuildRockArch(int h, float s)
         {
@@ -248,7 +248,7 @@ namespace Hecton8.World
             };
         }
 
-        // ── CaveEntrance — входы в пещеры ─────────────────────────
+        // ── CaveEntrance — vhody v peschery ─────────────────────────
 
         private static GeologyMeshBundle BuildCaveEntrance(int h, float s)
         {
@@ -262,7 +262,7 @@ namespace Hecton8.World
             Mesh lod0 = BuildCaveEntranceMesh(w, ht, d, openW, openH, h, 6, 0.22f);
             Mesh lod1 = BuildCaveEntranceMesh(w, ht, d, openW, openH, h, 4, 0.12f);
             Mesh lod2 = BuildCaveEntranceMesh(w, ht, d, openW * 1.05f, openH * 1.05f, h, 2, 0.06f);
-            // Collider сохраняет проём — не закрывает вход
+            // Collider sohranyaet proem — ne zakryvaet vhod
             Mesh col  = BuildCaveEntranceCollider(w, ht, d, openW, openH);
 
             SetMeshName(lod0, $"CaveEntrance_v{variant}_LOD0");
@@ -277,7 +277,7 @@ namespace Hecton8.World
             };
         }
 
-        // ── LandmarkSpire — высокие шпили ─────────────────────────
+        // ── LandmarkSpire — vysokie shpili ─────────────────────────
 
         private static GeologyMeshBundle BuildLandmarkSpire(int h, float s)
         {
@@ -304,12 +304,12 @@ namespace Hecton8.World
             };
         }
 
-        // ── Mesh builders — реальная геометрия ────────────────────
+        // ── Mesh builders — realnaya geometriya ────────────────────
 
         /// <summary>
-        /// Деформированный параллелепипед с шумовым смещением вершин.
-        /// subdivisions: количество делений по каждой оси (1-5).
-        /// noiseAmp: амплитуда шума (0 = чистый куб).
+        /// Deformirovannyy parallelepiped s shumovym smescheniem vershin.
+        /// subdivisions: kolichestvo deleniy po kazhdoy osi (1-5).
+        /// noiseAmp: amplituda shuma (0 = chistyy kub).
         /// </summary>
         private static Mesh BuildDeformedBox(
             float w, float h, float d,
@@ -330,12 +330,12 @@ namespace Hecton8.World
             int sub = Mathf.Clamp(subdivisions, 1, 5);
             int baseIndex = verts.Count;
 
-            // Генерируем вершины по 6 граням с subdivision
-            // Каждая грань: (sub+1)*(sub+1) вершин
-            // Грани: +X, -X, +Y, -Y, +Z, -Z
+            // Generiruem vershiny po 6 granyam s subdivision
+            // Kazhdaya gran: (sub+1)*(sub+1) vershin
+            // Grani: +X, -X, +Y, -Y, +Z, -Z
             Vector3 half = new Vector3(w * 0.5f, h * 0.5f, d * 0.5f);
 
-            // Для каждой грани строим сетку
+            // Dlya kazhdoy grani stroim setku
             BuildBoxFace(verts, tris, center, half, seed, noiseAmp, sub, 0); // +X
             BuildBoxFace(verts, tris, center, half, seed, noiseAmp, sub, 1); // -X
             BuildBoxFace(verts, tris, center, half, seed, noiseAmp, sub, 2); // +Y
@@ -352,7 +352,7 @@ namespace Hecton8.World
             int baseIdx = verts.Count;
             int n = sub + 1;
 
-            // Определяем оси грани
+            // Opredelyaem osi grani
             Vector3 normal, tangent, bitangent;
             float faceOffset;
             GetFaceAxes(faceIndex, half, out normal, out tangent, out bitangent, out faceOffset);
@@ -369,7 +369,7 @@ namespace Hecton8.World
                         + tangent * (u * 2f)
                         + bitangent * (v * 2f);
 
-                    // Шумовое смещение вдоль нормали
+                    // Shumovoe smeschenie vdol normali
                     if (noiseAmp > 0f)
                     {
                         float n1 = Noise3D(pos * 1.7f + Vector3.one * seed * 0.13f);
@@ -383,7 +383,7 @@ namespace Hecton8.World
                 }
             }
 
-            // Треугольники
+            // Treugolniki
             for (int j = 0; j < sub; j++)
             {
                 for (int i = 0; i < sub; i++)
@@ -393,7 +393,7 @@ namespace Hecton8.World
                     int c = baseIdx + (j + 1) * n + i;
                     int d2 = baseIdx + (j + 1) * n + i + 1;
 
-                    // Нормаль грани определяет порядок обхода
+                    // Normal grani opredelyaet poryadok obhoda
                     if (faceIndex % 2 == 0)
                     {
                         tris.Add(a); tris.Add(c); tris.Add(b);
@@ -422,7 +422,7 @@ namespace Hecton8.World
                 case 4: normal = Vector3.forward; tangent = Vector3.right;   bitangent = Vector3.up;    faceOffset = half.z; break;
                 default: normal = Vector3.back;   tangent = Vector3.left;    bitangent = Vector3.up;    faceOffset = half.z; break;
             }
-            // Масштабируем tangent/bitangent под размер грани
+            // Masshtabiruem tangent/bitangent pod razmer grani
             tangent   *= (faceIndex < 2 ? half.z : (faceIndex < 4 ? half.x : half.x));
             bitangent *= (faceIndex < 2 ? half.y : (faceIndex < 4 ? half.z : half.y));
         }
@@ -437,7 +437,7 @@ namespace Hecton8.World
             List<Vector3> verts = new List<Vector3>(512);
             List<int> tris = new List<int>(1024);
 
-            // Основная стена
+            // Osnovnaya stena
             Mesh wallA = BuildDeformedEllipsoid(width * 0.62f, height * 0.82f, depth * 0.56f, seed, 4 + sub, 7 + sub, noiseAmp * 0.9f, 0.15f);
             Mesh wallB = BuildDeformedEllipsoid(width * 0.55f, height * 0.9f, depth * 0.52f, seed + 9, 4 + sub, 7 + sub, noiseAmp * 0.9f, 0.15f);
             Mesh wallC = BuildDeformedEllipsoid(width * 0.48f, height * 0.76f, depth * 0.48f, seed + 17, 4 + sub, 6 + sub, noiseAmp * 0.85f, 0.2f);
@@ -445,19 +445,19 @@ namespace Hecton8.World
             AppendMeshTransformed(verts, tris, wallB, new Vector3(width * 0.14f, height * 0.5f, -depth * 0.18f), Quaternion.Euler(-6f, 10f, 6f), Vector3.one);
             AppendMeshTransformed(verts, tris, wallC, new Vector3(0f, height * 0.62f, -depth * 0.42f), Quaternion.Euler(0f, 22f, -4f), Vector3.one);
 
-            // Выступающий shelf
+            // Vystupayuschiy shelf
             Mesh shelfLip = BuildDeformedEllipsoid(width * 0.92f, height * 0.24f, depth * 0.42f + overhang, seed + 7, 4 + sub, 8 + sub, noiseAmp * 0.7f, 0.25f);
             AppendMeshTransformed(verts, tris, shelfLip,
                 new Vector3(0f, height * 0.84f, depth * 0.24f + overhang * 0.48f),
                 Quaternion.Euler(-5f, 0f, 0f), Vector3.one);
 
-            // Нижний уступ
+            // Nizhniy ustup
             Mesh lowerLedge = BuildDeformedEllipsoid(width * 0.72f, height * 0.16f, depth * 0.34f, seed + 13, 3 + sub, 6 + sub, noiseAmp * 0.45f, 0.28f);
             AppendMeshTransformed(verts, tris, lowerLedge,
                 new Vector3(0f, height * 0.34f, depth * 0.12f),
                 Quaternion.Euler(0f, seed % 17 - 8f, 0f), Vector3.one);
 
-            // Слоистость — горизонтальные полосы
+            // Sloistost — gorizontalnye polosy
             int layers = 2 + (seed % 3);
             for (int i = 0; i < layers; i++)
             {
@@ -532,7 +532,7 @@ namespace Hecton8.World
             List<Vector3> verts = new List<Vector3>(1024);
             List<int> tris = new List<int>(2048);
 
-            // Левая опора
+            // Levaya opora
             float leftX = -span * 0.5f + asym * span * 0.1f;
             float rightX = span * 0.5f + asym * span * 0.1f;
             float legH = height * 0.55f;
@@ -541,21 +541,21 @@ namespace Hecton8.World
             AppendDeformedEllipsoid(verts, tris, new Vector3(leftX, legH * 0.54f, 0f),
                 legW, legH, thick * 1.18f, seed, 4 + sub, 6 + sub, noiseAmp * 0.8f, 0.2f);
 
-            // Правая опора
+            // Pravaya opora
             AppendDeformedEllipsoid(verts, tris, new Vector3(rightX, legH * 0.52f, 0f),
                 legW * 1.02f, legH, thick * 1.12f, seed + 5, 4 + sub, 6 + sub, noiseAmp * 0.8f, 0.2f);
 
-            // Свод арки — строим из сегментов по дуге
+            // Svod arki — stroim iz segmentov po duge
             int archSegs = Mathf.Max(4, sub * 2);
             BuildArchBridge(verts, tris, leftX, rightX, height, thick, seed, noiseAmp, archSegs);
 
-            // Дополнительные массы у основания
+            // Dopolnitelnye massy u osnovaniya
             AppendDeformedEllipsoid(verts, tris, new Vector3(leftX * 0.7f, legH * 0.16f, thick * 0.22f),
                 legW * 1.55f, legH * 0.34f, thick * 1.55f, seed + 11, 4, 6, noiseAmp * 0.5f, 0.25f);
             AppendDeformedEllipsoid(verts, tris, new Vector3(rightX * 0.7f, legH * 0.16f, -thick * 0.22f),
                 legW * 1.45f, legH * 0.34f, thick * 1.55f, seed + 19, 4, 6, noiseAmp * 0.5f, 0.25f);
 
-            // Трещины и ребра на своде
+            // Treschiny i rebra na svode
             int ridgeCount = 2 + (seed % 3);
             for (int i = 0; i < ridgeCount; i++)
             {
@@ -638,7 +638,7 @@ namespace Hecton8.World
                 float segLen = Vector2.Distance(new Vector2(x0, y0), new Vector2(x1, y1));
                 float angle = Mathf.Atan2(y1 - y0, x1 - x0) * Mathf.Rad2Deg;
 
-                // Шумовое смещение сегмента
+                // Shumovoe smeschenie segmenta
                 float noise = noiseAmp > 0f ? Noise3D(center * 1.3f + Vector3.one * seed * 0.17f) * noiseAmp * 0.5f : 0f;
                 center.y += noise;
 
@@ -650,7 +650,7 @@ namespace Hecton8.World
 
         private static Mesh BuildArchCollider(float span, float height, float thick)
         {
-            // Collider арки: две ноги + упрощённый свод, проём открыт
+            // Collider arki: dve nogi + uproschennyy svod, proem otkryt
             List<Vector3> verts = new List<Vector3>(64);
             List<int> tris = new List<int>(128);
 
@@ -659,7 +659,7 @@ namespace Hecton8.World
                 thick * 1.3f, legH, thick * 1.3f, 0, 1, 0f);
             AppendDeformedBox(verts, tris, new Vector3(span * 0.5f, legH * 0.5f, 0),
                 thick * 1.3f, legH, thick * 1.3f, 0, 1, 0f);
-            // Свод — один широкий блок сверху
+            // Svod — odin shirokiy blok sverhu
             AppendDeformedBox(verts, tris, new Vector3(0, height + thick * 0.3f, 0),
                 span + thick, thick * 1.2f, thick * 1.3f, 0, 1, 0f);
 
@@ -675,16 +675,16 @@ namespace Hecton8.World
             List<Vector3> verts = new List<Vector3>(1024);
             List<int> tris = new List<int>(2048);
 
-            // Левая боковая масса
+            // Levaya bokovaya massa
             float sideW = (w - openW) * 0.5f;
             AppendDeformedEllipsoid(verts, tris, new Vector3(-(openW * 0.5f + sideW * 0.58f), h * 0.5f, -d * 0.04f),
                 sideW * 1.18f, h, d * 1.06f, seed, 4 + sub, 6 + sub, noiseAmp * 0.9f, 0.18f);
 
-            // Правая боковая масса
+            // Pravaya bokovaya massa
             AppendDeformedEllipsoid(verts, tris, new Vector3(openW * 0.5f + sideW * 0.58f, h * 0.48f, d * 0.02f),
                 sideW * 1.15f, h * 0.96f, d, seed + 3, 4 + sub, 6 + sub, noiseAmp * 0.9f, 0.18f);
 
-            // Верхняя перемычка (над проёмом)
+            // Verhnyaya peremychka (nad proemom)
             float topH = h - openH;
             if (topH > 0.1f)
             {
@@ -692,14 +692,14 @@ namespace Hecton8.World
                     openW * 1.04f, topH * 1.05f, d * 0.96f, seed + 7, 4 + sub, 6 + sub, noiseAmp * 0.75f, 0.12f);
             }
 
-            // Губы входа — выступающие края
+            // Guby vhoda — vystupayuschie kraya
             float lipDepth = d * 0.35f;
             AppendDeformedEllipsoid(verts, tris, new Vector3(-(openW * 0.5f + sideW * 0.22f), openH * 0.52f, d * 0.28f),
                 sideW * 0.64f, openH * 0.92f, lipDepth, seed + 11, 4 + Mathf.Max(1, sub - 1), 5 + sub, noiseAmp * 0.55f, 0.1f);
             AppendDeformedEllipsoid(verts, tris, new Vector3(openW * 0.5f + sideW * 0.22f, openH * 0.5f, d * 0.3f),
                 sideW * 0.62f, openH * 0.9f, lipDepth, seed + 17, 4 + Mathf.Max(1, sub - 1), 5 + sub, noiseAmp * 0.55f, 0.1f);
 
-            // Верхняя губа
+            // Verhnyaya guba
             if (topH > 0.1f)
             {
                 AppendDeformedEllipsoid(verts, tris, new Vector3(0, openH + topH * 0.28f, d * 0.35f),
@@ -728,7 +728,7 @@ namespace Hecton8.World
                     openW * 0.72f, openH * 0.2f, d * 0.28f, seed + 97, 1, noiseAmp * 0.2f);
             }
 
-            // Debris ring вокруг входа
+            // Debris ring vokrug vhoda
             int sideBreakers = 2 + (seed % 2);
             for (int i = 0; i < sideBreakers; i++)
             {
@@ -772,7 +772,7 @@ namespace Hecton8.World
         private static Mesh BuildCaveEntranceCollider(
             float w, float h, float d, float openW, float openH)
         {
-            // Collider: только боковые массы и верх, проём открыт
+            // Collider: tolko bokovye massy i verh, proem otkryt
             List<Vector3> verts = new List<Vector3>(64);
             List<int> tris = new List<int>(128);
 
@@ -801,7 +801,7 @@ namespace Hecton8.World
             List<Vector3> verts = new List<Vector3>(1024);
             List<int> tris = new List<int>(2048);
 
-            // Главный ствол — конусообразный с шумом
+            // Glavnyy stvol — konusoobraznyy s shumom
             int sections = Mathf.Max(3, sub * 2);
             for (int i = 0; i < sections; i++)
             {
@@ -824,7 +824,7 @@ namespace Hecton8.World
                     seed + i * 7, 4 + Mathf.Max(1, sub - 1), 6 + sub, noiseAmp * (1f - t0 * 0.45f), 0.08f);
             }
 
-            // Вторичные выступы
+            // Vtorichnye vystupy
             for (int i = 0; i < secondaryCount; i++)
             {
                 float angle = (i / (float)Mathf.Max(1, secondaryCount)) * Mathf.PI * 2f + seed * 0.37f;
@@ -847,7 +847,7 @@ namespace Hecton8.World
                 AppendMeshTransformed(verts, tris, shard, secPos, tilt, Vector3.one);
             }
 
-            // Тяжёлая база
+            // Tyazhelaya baza
             AppendDeformedEllipsoid(verts, tris, new Vector3(0, baseW * 0.28f, 0),
                 baseW * 1.7f, baseW * 0.72f, baseW * 1.58f, seed + 41, 4 + Mathf.Max(1, sub - 1), 6 + sub, noiseAmp * 0.42f, 0.3f);
 
@@ -1064,8 +1064,8 @@ namespace Hecton8.World
         // ── Deterministic noise ───────────────────────────────────
 
         /// <summary>
-        /// Детерминированный 3D шум на основе sin-хэша.
-        /// Возвращает [-1, 1]. Без аллокаций.
+        /// Determinirovannyy 3D shum na osnove sin-hesha.
+        /// Vozvraschaet [-1, 1]. Bez allokatsiy.
         /// </summary>
         private static float Noise3D(Vector3 p)
         {

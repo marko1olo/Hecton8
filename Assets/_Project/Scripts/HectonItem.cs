@@ -1,18 +1,18 @@
 // ============================================================================
 // HECTON-8 — HectonItem.cs
-// Подбираемый предмет в мире. Реализует IInteractable.
-// Использует Data-Driven подход: вся информация — в ItemData.
+// Podbiraemyy predmet v mire. Realizuet IInteractable.
+// Ispolzuet Data-Driven podhod: vsya informatsiya — v ItemData.
 //
-// ИЗМЕНЕНИЕ v2:
-//   Добавлен public метод SetItemData(ItemData, int) для программной
-//   инициализации при спавне из BaseModule.Deconstruct().
-//   Позволяет переиспользовать один worldItemPrefab для любых ресурсов.
+// IZMENENIE v2:
+//   Dobavlen public metod SetItemData(ItemData, int) dlya programmnoy
+//   initsializatsii pri spavne iz BaseModule.Deconstruct().
+//   Pozvolyaet pereispolzovat odin worldItemPrefab dlya lyubyh resursov.
 //
-// ИЗМЕНЕНИЕ v3.1 (POOL-SAFE SETTLE):
-//   Убран async Awaitable SettleAndSleepAsync — destroyCancellationToken
-//   НЕ срабатывает при SetActive(false) (пулинг). Заменён на ITickable
-//   с конечным автоматом и таймером. Полностью Zero GC.
-//   Сброс состояния в OnDisable() гарантирует корректность при пулинге.
+// IZMENENIE v3.1 (POOL-SAFE SETTLE):
+//   Ubran async Awaitable SettleAndSleepAsync — destroyCancellationToken
+//   NE srabatyvaet pri SetActive(false) (puling). Zamenen na ITickable
+//   s konechnym avtomatom i taymerom. Polnostyu Zero GC.
+//   Sbros sostoyaniya v OnDisable() garantiruet korrektnost pri pulinge.
 // ============================================================================
 
 using Hecton8.Core;
@@ -45,20 +45,20 @@ namespace Hecton8.Items
         [SerializeField] private int      quantity = 1;
 
         // ─────────────────────── Settle Config ───────────────────
-        // Время ожидания перед первой попыткой усыпить Rigidbody (сек).
+        // Vremya ozhidaniya pered pervoy popytkoy usypit Rigidbody (sek).
         private const float SettleDelay       = 2.0f;
-        // Время ожидания перед повторной попыткой (сек).
+        // Vremya ozhidaniya pered povtornoy popytkoy (sek).
         private const float SettleRetryDelay  = 1.0f;
-        // Порог скорости для засыпания (sqrMagnitude).
+        // Porog skorosti dlya zasypaniya (sqrMagnitude).
         private const float SleepVelocitySqr  = 0.01f;
 
         // ─────────────────────── Settle State ────────────────────
         /// <summary>
-        /// Фазы конечного автомата засыпания Rigidbody.
-        /// Idle     — не тикаемся, ждать нечего.
-        /// Waiting  — первичное ожидание (SettleDelay).
-        /// Retrying — повторное ожидание (SettleRetryDelay).
-        /// Done     — Rigidbody усыплён или отказ, тикание остановлено.
+        /// Fazy konechnogo avtomata zasypaniya Rigidbody.
+        /// Idle     — ne tikaemsya, zhdat nechego.
+        /// Waiting  — pervichnoe ozhidanie (SettleDelay).
+        /// Retrying — povtornoe ozhidanie (SettleRetryDelay).
+        /// Done     — Rigidbody usyplen ili otkaz, tikanie ostanovleno.
         /// </summary>
         private enum SettlePhase : byte
         {
@@ -99,7 +99,7 @@ namespace Hecton8.Items
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (itemData == null)
-                Debug.LogError($"[HectonItem] ItemData не назначен на {gameObject.name}!", this);
+                Debug.LogError($"[HectonItem] ItemData ne naznachen na {gameObject.name}!", this);
 #endif
         }
 
@@ -124,8 +124,8 @@ namespace Hecton8.Items
             InteractableRegistry.InvalidateTree(this);
             LocalizationEvents.UnregisterLanguageListener(this);
 
-            // Гарантированная отписка при деактивации (пулинг).
-            // Сбрасываем фазу — при следующем OnEnable начнём заново.
+            // Garantirovannaya otpiska pri deaktivatsii (puling).
+            // Sbrasyvaem fazu — pri sleduyuschem OnEnable nachnem zanovo.
             StopSettle();
             if (_rb != null)
                 GlobalPhysicsStateManager.UnregisterTrackedBody(_rb);
@@ -147,7 +147,7 @@ namespace Hecton8.Items
                         }
                         else
                         {
-                            // Ещё движется — одна повторная попытка
+                            // Esche dvizhetsya — odna povtornaya popytka
                             _settlePhase = SettlePhase.Retrying;
                             _settleTimer = SettleRetryDelay;
                         }
@@ -158,21 +158,21 @@ namespace Hecton8.Items
                     _settleTimer -= deltaTime;
                     if (_settleTimer <= 0f)
                     {
-                        TrySleepRigidbody(); // Пытаемся, результат неважен
+                        TrySleepRigidbody(); // Pytaemsya, rezultat nevazhen
                         FinishSettle();
                     }
                     break;
 
                 default:
-                    // Idle или Done — не должны тикаться, но на всякий случай
+                    // Idle ili Done — ne dolzhny tikatsya, no na vsyakiy sluchay
                     StopSettle();
                     break;
             }
         }
 
         /// <summary>
-        /// Пытается усыпить Rigidbody если скорость достаточно мала.
-        /// Возвращает true если усыпил или rb == null.
+        /// Pytaetsya usypit Rigidbody esli skorost dostatochno mala.
+        /// Vozvraschaet true esli usypil ili rb == null.
         /// </summary>
         private bool TrySleepRigidbody()
         {
@@ -228,14 +228,14 @@ namespace Hecton8.Items
         // ─────────────────────── Public API ──────────────────────
 
         /// <summary>
-        /// Программная инициализация данных предмета.
-        /// Вызывается при спавне из BaseModule.Deconstruct()
-        /// для установки конкретного ресурса на generic worldItemPrefab.
+        /// Programmnaya initsializatsiya dannyh predmeta.
+        /// Vyzyvaetsya pri spavne iz BaseModule.Deconstruct()
+        /// dlya ustanovki konkretnogo resursa na generic worldItemPrefab.
         ///
-        /// Безопасно вызывать повторно (перезаписывает данные).
+        /// Bezopasno vyzyvat povtorno (perezapisyvaet dannye).
         /// </summary>
-        /// <param name="data">Данные предмета (ItemData ScriptableObject).</param>
-        /// <param name="qty">Количество единиц.</param>
+        /// <param name="data">Dannye predmeta (ItemData ScriptableObject).</param>
+        /// <param name="qty">Kolichestvo edinits.</param>
         public void SetItemData(ItemData data, int qty)
         {
             SetItemData(data, qty, 0UL, DefaultQualityMilli);
@@ -273,10 +273,10 @@ namespace Hecton8.Items
             return true;
         }
 
-        /// <summary>Текущие данные предмета (read-only).</summary>
+        /// <summary>Tekuschie dannye predmeta (read-only).</summary>
         public ItemData Data => itemData;
 
-        /// <summary>Текущее количество (read-only).</summary>
+        /// <summary>Tekuschee kolichestvo (read-only).</summary>
         public int Quantity => quantity;
         public int ItemHashId => _cachedItemHashId;
         /// <summary>Persisted genetics payload carried by biological seed world items.</summary>

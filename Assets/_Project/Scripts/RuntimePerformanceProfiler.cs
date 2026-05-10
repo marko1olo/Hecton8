@@ -1514,12 +1514,16 @@ namespace Hecton8.Dev
 
         private static bool ShouldYieldMenuRouteToShellSmoke()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             ShellVerificationRuntimeSmokeTester shellSmoke =
-                ShellVerificationRuntimeSmokeTester.ActiveRuntimeInstance;
+                VerificationRuntimeProbe.FindSceneObjectIncludingInactive<ShellVerificationRuntimeSmokeTester>();
             if (shellSmoke == null)
                 return false;
 
             return shellSmoke.WantsAutoStart() || ShellVerificationRuntimeSmokeTester.HasPersistedResumeState();
+#else
+            return false;
+#endif
         }
 
         private bool TryCapturePendingSceneSnapshotByRealtime(float realtimeNow)

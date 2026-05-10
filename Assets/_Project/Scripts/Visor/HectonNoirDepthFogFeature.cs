@@ -1,0 +1,277 @@
+using System;
+using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.Universal;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+namespace Hecton8.Visor
+{
+    /// <summary>
+    /// Single-pass depth fog deception. It reads depth, dithers fog coverage with deterministic IGN, and composites before transparents.
+    /// </summary>
+    public sealed class HectonNoirDepthFogFeature : ScriptableRendererFeature
+    {
+#if UNITY_EDITOR
+        private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_NoirDepthFog.shader";
+#endif
+
+        private static bool IsUnsupportedCameraType(CameraType cameraType)
+        {
+            return cameraType == CameraType.Preview ||
+                   cameraType == CameraType.Reflection ||
+                   cameraType == CameraType.SceneView;
+        }
+
+        [Serializable]
+        private sealed class FeatureSettings
+        {
+            [Tooltip("Hidden fullscreen shader used for depth-based noir fog.")]
+            public Shader shader = null;
+
+            [Tooltip("Injection point. Before transparents keeps particles and visor overlays readable.")]
+            public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingTransparents;
+
+            [Tooltip("Shallow fog tint in linear space after Unity converts the serialized color.")]
+            public Color shallowFogColor = new Color(0.025f, 0.075f, 0.095f, 1f);
+
+            [Tooltip("Abyss fog tint. Keep nonzero; pure black is forbidden by noir dithering mandate.")]
+            public Color abyssFogColor = new Color(0.004f, 0.010f, 0.018f, 1f);
+
+            [Tooltip("Visual fog gain for the depth ramp. This is not physical extinction.")]
+            [Range(0.0001f, 0.05f)] public float density = 0.0105f;
+
+            [Tooltip("Fog starts after this eye-space distance.")]
+            [Range(0f, 15f)] public float startDistanceMeters = 1.5f;
+
+            [Tooltip("Eye-space distance where the fake fog ramp reaches abyss coverage.")]
+            [Range(10f, 180f)] public float maxDepthMeters = 80f;
+
+            [Tooltip("Coverage noise amplitude. Applied to fog alpha only; no clip/discard.")]
+            [Range(0f, 1f)] public float ditherStrength = 0.8f;
+        }
+
+        private sealed class NoirDepthFogPass : ScriptableRenderPass
+        {
+            private sealed class PassData
+            {
+                internal TextureHandle Source;
+                internal TextureHandle Destination;
+                internal Material Material;
+            }
+
+            private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Noir Depth Fog");
+            private FeatureSettings _settings;
+            private Material _material;
+            private Material _lastUploadedMaterial;
+            private bool _hasMaterialState;
+            private Color _lastShallowFogColor;
+            private Color _lastAbyssFogColor;
+            private Vector4 _lastParamsA;
+            private Vector4 _lastParamsB;
+
+            public NoirDepthFogPass()
+            {
+                profilingSampler = _profilingSampler;
+                requiresIntermediateTexture = true;
+            }
+
+            public void Setup(FeatureSettings settings, Material material)
+            {
+                _settings = settings;
+                _material = material;
+                renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingTransparents;
+                ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
+                requiresIntermediateTexture = true;
+            }
+
+            public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
+            {
+                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
+
+                if (!Application.isPlaying || _settings == null || _material == null)
+                    return;
+
+                UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
+                if (resourceData.isActiveTargetBackBuffer)
+                    return;
+
+                UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
+                if (IsUnsupportedCameraType(cameraData.cameraType))
+                    return;
+
+                TextureHandle sourceTexture = resourceData.activeColorTexture;
+                TextureHandle depthTexture = resourceData.cameraDepthTexture;
+                if (!sourceTexture.IsValid() || !depthTexture.IsValid())
+                    return;
+
+                TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
+                TextureDesc destinationDesc = new TextureDesc(sourceDesc);
+                destinationDesc.name = "_HectonNoirDepthFogComposite";
+                destinationDesc.clearBuffer = false;
+                destinationDesc.depthBufferBits = DepthBits.None;
+                destinationDesc.msaaSamples = MSAASamples.None;
+                destinationDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
+                destinationDesc.useMipMap = false;
+                destinationDesc.autoGenerateMips = false;
+
+                TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
+                UpdateMaterialParameters(_material, _settings);
+
+                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Noir Depth Fog", out PassData passData, _profilingSampler))
+                {
+                    passData.Source = sourceTexture;
+                    passData.Destination = destinationTexture;
+                    passData.Material = _material;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                    builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.UseTexture(destinationTexture, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
+                    {
+                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
+                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
+
+                        cmd.SetGlobalFloat(ShaderConstants.ActiveId, 1f);
+                        Blitter.BlitCameraTexture(cmd, data.Source, data.Destination, LoadAction, StoreAction, data.Material, 0);
+                    });
+                }
+
+                resourceData.cameraColor = destinationTexture;
+            }
+
+            private void UpdateMaterialParameters(Material material, FeatureSettings settings)
+            {
+                Color shallowFogColor = settings.shallowFogColor.linear;
+                Color abyssFogColor = settings.abyssFogColor.linear;
+                Vector4 paramsA = new Vector4(
+                    math.max(settings.density, 0.00001f),
+                    math.max(settings.startDistanceMeters, 0f),
+                    math.max(settings.maxDepthMeters, 1f),
+                    0f);
+                Vector4 paramsB = new Vector4(0f, 0f, 0f, math.saturate(settings.ditherStrength));
+
+                if (_lastUploadedMaterial != material)
+                {
+                    _lastUploadedMaterial = material;
+                    _hasMaterialState = false;
+                }
+
+                if (!_hasMaterialState || _lastShallowFogColor != shallowFogColor)
+                {
+                    material.SetColor(ShaderConstants.ShallowColorId, shallowFogColor);
+                    _lastShallowFogColor = shallowFogColor;
+                }
+
+                if (!_hasMaterialState || _lastAbyssFogColor != abyssFogColor)
+                {
+                    material.SetColor(ShaderConstants.AbyssColorId, abyssFogColor);
+                    _lastAbyssFogColor = abyssFogColor;
+                }
+
+                if (!_hasMaterialState || _lastParamsA != paramsA)
+                {
+                    material.SetVector(ShaderConstants.ParamsAId, paramsA);
+                    _lastParamsA = paramsA;
+                }
+
+                if (!_hasMaterialState || _lastParamsB != paramsB)
+                {
+                    material.SetVector(ShaderConstants.ParamsBId, paramsB);
+                    _lastParamsB = paramsB;
+                }
+
+                _hasMaterialState = true;
+            }
+        }
+
+        private static class ShaderConstants
+        {
+            internal static readonly int ShallowColorId = Shader.PropertyToID("_HectonNoirDepthFogShallowColor");
+            internal static readonly int AbyssColorId = Shader.PropertyToID("_HectonNoirDepthFogAbyssColor");
+            internal static readonly int ParamsAId = Shader.PropertyToID("_HectonNoirDepthFogParamsA");
+            internal static readonly int ParamsBId = Shader.PropertyToID("_HectonNoirDepthFogParamsB");
+            internal static readonly int ActiveId = Shader.PropertyToID("_HectonNoirDepthFogActive");
+        }
+
+        [SerializeField] private FeatureSettings settings = new FeatureSettings();
+
+        private NoirDepthFogPass _pass;
+        private Material _material;
+
+        public override void Create()
+        {
+#if UNITY_EDITOR
+            if (settings != null && settings.shader == null)
+                settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
+#endif
+
+            Shader shader = settings != null && settings.shader != null
+                ? settings.shader
+                : Shader.Find("Hidden/Hecton8/NoirDepthFog");
+            RecreateMaterial(ref _material, shader);
+            _pass ??= new NoirDepthFogPass();
+        }
+
+        public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
+        {
+            if (!Application.isPlaying)
+            {
+                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
+                return;
+            }
+
+            if (settings == null || _pass == null || _material == null)
+            {
+                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
+                return;
+            }
+
+            if (IsUnsupportedCameraType(renderingData.cameraData.cameraType))
+            {
+                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
+                return;
+            }
+
+            _pass.Setup(settings, _material);
+            renderer.EnqueuePass(_pass);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            DisposeMaterial(ref _material);
+        }
+
+        private static void RecreateMaterial(ref Material material, Shader shader)
+        {
+            if (shader == null)
+            {
+                DisposeMaterial(ref material);
+                return;
+            }
+
+            if (material != null && material.shader == shader)
+                return;
+
+            DisposeMaterial(ref material);
+            material = CoreUtils.CreateEngineMaterial(shader);
+        }
+
+        private static void DisposeMaterial(ref Material material)
+        {
+            if (material == null)
+                return;
+
+            CoreUtils.Destroy(material);
+            material = null;
+        }
+    }
+}

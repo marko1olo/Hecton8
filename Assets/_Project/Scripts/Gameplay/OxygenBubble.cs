@@ -109,8 +109,9 @@ namespace Hecton8.Gameplay
         private Collider _collider;
         private BubbleState _state = BubbleState.Floating;
         private float _lifetimeTimer;
-        private float _driftOffset;
         private float _driftPhase;
+        private uint _driftSequence;
+        private uint _driftSeedBase;
         private bool _isRegistered;
 
         // Pre-cached player tag for CompareTag
@@ -134,6 +135,7 @@ namespace Hecton8.Gameplay
         {
             _transform = transform;
             _collider = GetComponent<Collider>();
+            _driftSeedBase = unchecked((uint)EntityId.ToULong(GetEntityId()));
 
             // Ensure collider is a trigger
             if (_collider != null)
@@ -141,16 +143,14 @@ namespace Hecton8.Gameplay
                 _collider.isTrigger = true;
             }
 
-            // Random drift offset for variation
-            _driftOffset = UnityEngine.Random.Range(0f, 6.28f); // 0 to 2π
-            _driftPhase = math.frac(_driftOffset * 0.15915494f);
+            _driftPhase = ResolveDeterministicDriftPhase(_driftSequence);
         }
 
         private void OnEnable()
         {
             _state = BubbleState.Floating;
             _lifetimeTimer = 0f;
-            _driftPhase = math.frac(_driftOffset * 0.15915494f);
+            _driftPhase = ResolveDeterministicDriftPhase(_driftSequence);
 
             RegisterToTick();
         }
@@ -316,8 +316,25 @@ namespace Hecton8.Gameplay
         {
             _state = BubbleState.Floating;
             _lifetimeTimer = 0f;
-            _driftOffset = UnityEngine.Random.Range(0f, 6.28f);
-            _driftPhase = math.frac(_driftOffset * 0.15915494f);
+            _driftSequence++;
+            _driftPhase = ResolveDeterministicDriftPhase(_driftSequence);
+        }
+
+        private float ResolveDeterministicDriftPhase(uint sequence)
+        {
+            uint seed = _driftSeedBase;
+            seed ^= sequence * 0x9E3779B9u;
+            return HashToUnit01(seed);
+        }
+
+        private static float HashToUnit01(uint value)
+        {
+            value ^= value >> 16;
+            value *= 0x7FEB352Du;
+            value ^= value >> 15;
+            value *= 0x846CA68Bu;
+            value ^= value >> 16;
+            return (value & 0x00FFFFFFu) * (1f / 16777215f);
         }
 
         // ══════════════════════════════════════════════════════════

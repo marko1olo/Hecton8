@@ -13,7 +13,6 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.Rendering;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -122,15 +121,15 @@ namespace Hecton8.World
         public Mesh DetailMesh;
         /// <summary>Filtered merged mesh containing only Clutter-tier modules for distant fill.</summary>
         public Mesh ClutterMesh;
-        /// <summary>Lightweight axis-aligned proxy mesh used for NavMesh baking and collision.</summary>
+        /// <summary>Lightweight axis-aligned proxy mesh used for collision.</summary>
         public Mesh ProxyMesh;
-        /// <summary>NavMeshData submitted to the async NavMesh builder. Null when navigation is disabled.</summary>
-        public NavMeshData Navigation;
-        /// <summary>Async operation tracking the NavMesh build progress. Null when navigation is disabled.</summary>
+        /// <summary>Reserved navigation payload. Always null; predator navigation uses local steering/SDF queries.</summary>
+        public UnityEngine.Object Navigation;
+        /// <summary>Reserved async operation. Always null; runtime navigation baking is disabled.</summary>
         public AsyncOperation NavigationBuild;
-        /// <summary>Mutable async handle managing NavMesh instance lifecycle. Must be disposed by the consumer.</summary>
+        /// <summary>Reserved navigation handle. Always null while runtime navigation baking is disabled.</summary>
         [NonSerialized] public WreckNavigationHandle NavigationHandle;
-        /// <summary>Current state of the async navigation bake.</summary>
+        /// <summary>Current state of the disabled navigation bake path.</summary>
         public WreckNavigationState NavigationState;
         /// <summary>Axis-aligned world-space bounds enclosing the entire generated wreck.</summary>
         public Bounds WorldBounds;
@@ -141,25 +140,23 @@ namespace Hecton8.World
     }
 
     /// <summary>
-    /// Mutable async NavMesh bake handle returned with each generated wreck.
+    /// Mutable disabled navigation handle kept only for serialized compatibility.
     /// </summary>
     public sealed class WreckNavigationHandle : IDisposable
     {
         private readonly ProceduralWreckGenerator _owner;
         private readonly Action<AsyncOperation> _completedCallback;
 
-        /// <summary>NavMesh data asset submitted to the async NavMesh builder.</summary>
-        public NavMeshData Data { get; }
+        /// <summary>Reserved data payload. Always null while runtime navigation baking is disabled.</summary>
+        public UnityEngine.Object Data { get; }
         /// <summary>World-space bounds enclosing the navigation proxy geometry.</summary>
         public Bounds WorldBounds { get; }
-        /// <summary>Async operation tracking NavMesh build progress. Null when the build has not started or has failed.</summary>
+        /// <summary>Reserved async operation. Always null while runtime navigation baking is disabled.</summary>
         public AsyncOperation BuildOperation { get; private set; }
-        /// <summary>Registered NavMesh data instance. Valid only when <see cref="State"/> is <see cref="WreckNavigationState.Ready"/>.</summary>
-        public NavMeshDataInstance Instance { get; private set; }
         /// <summary>Current lifecycle state of the navigation bake.</summary>
         public WreckNavigationState State { get; private set; }
 
-        internal WreckNavigationHandle(ProceduralWreckGenerator owner, NavMeshData data, Bounds worldBounds)
+        internal WreckNavigationHandle(ProceduralWreckGenerator owner, UnityEngine.Object data, Bounds worldBounds)
         {
             _owner = owner;
             _completedCallback = OnBuildCompleted;
@@ -180,33 +177,21 @@ namespace Hecton8.World
             BuildOperation.completed += _completedCallback;
         }
 
-        internal void MarkReady(NavMeshDataInstance instance)
-        {
-            Instance = instance;
-            State = WreckNavigationState.Ready;
-        }
-
         internal void MarkFailed()
         {
             State = WreckNavigationState.Failed;
         }
 
         /// <summary>
-        /// Cancels any in-progress bake, removes the NavMesh instance, and releases the handle.
+        /// Cancels any in-progress disabled bake callback and releases the handle.
         /// </summary>
         public void Dispose()
         {
-            if (Data != null && State == WreckNavigationState.Baking)
-                NavMeshBuilder.Cancel(Data);
-
             if (BuildOperation != null)
             {
                 BuildOperation.completed -= _completedCallback;
                 BuildOperation = null;
             }
-
-            if (Instance.valid)
-                Instance.Remove();
 
             _owner?.ReleaseNavigationHandle(this);
             State = WreckNavigationState.None;
@@ -819,23 +804,23 @@ namespace Hecton8.World
 
         [Header("Navigation")]
         [SerializeField]
-        [Tooltip("True when a lightweight proxy mesh should be passed to Unity NavMeshBuilder.UpdateNavMeshDataAsync after mesh merge completes.")]
-        private bool buildAsyncNavMesh = true;
+        [Tooltip("Disabled. Wreck predators use local steering/SDF queries, not baked navigation.")]
+        private bool buildAsyncNavigationBake = false;
 
         [SerializeField, Min(0.1f)]
-        [Tooltip("Slim diver radius used for async NavMesh baking.")]
+        [Tooltip("Legacy diver radius retained for serialized data only. Runtime navigation baking is disabled.")]
         private float navAgentRadius = 0.3f;
 
         [SerializeField, Min(0.5f)]
-        [Tooltip("Agent height used for async NavMesh baking.")]
+        [Tooltip("Legacy agent height retained for serialized data only. Runtime navigation baking is disabled.")]
         private float navAgentHeight = 1.8f;
 
         [SerializeField, Range(0f, 60f)]
-        [Tooltip("Maximum climbable slope used by async NavMesh baking.")]
+        [Tooltip("Legacy climb slope retained for serialized data only. Runtime navigation baking is disabled.")]
         private float navAgentSlope = 45f;
 
         [SerializeField, Range(0f, 1f)]
-        [Tooltip("Maximum climbable ledge height used by async NavMesh baking.")]
+        [Tooltip("Legacy climb ledge retained for serialized data only. Runtime navigation baking is disabled.")]
         private float navAgentClimb = 0.4f;
 
         [Header("Modules")]
@@ -953,7 +938,6 @@ namespace Hecton8.World
         private string _propagationQueueSentinelLabel;
         private string _allPlacementsSentinelLabel;
         private string _filteredPlacementsSentinelLabel;
-        private List<NavMeshBuildSource> _navMeshSources;
         private List<WreckNavigationHandle> _activeNavigationHandles;
         private Mesh.MeshDataArray[] _readOnlyMeshSnapshots;
         private JobHandle[] _copyHandles;
@@ -1236,7 +1220,6 @@ namespace Hecton8.World
                 _runtimeDefinitions.Dispose();
             }
 
-            _navMeshSources?.Clear();
             _initialized = false;
         }
 
@@ -1390,10 +1373,8 @@ namespace Hecton8.World
             // COLD ALLOC: NativeArray<WreckModuleRuntimeDefinition>[16] - native WFC module table - owner: ProceduralWreckGenerator
             _runtimeDefinitions = new NativeArray<WreckModuleRuntimeDefinition>(MaxModuleDefinitions, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_runtimeDefinitions, nameof(ProceduralWreckGenerator), nameof(_runtimeDefinitions), NativeAllocationLifetime.Scene);
-            // COLD ALLOC: List<NavMeshBuildSource>[8] - reusable async NavMesh source list - owner: ProceduralWreckGenerator
-            _navMeshSources = new List<NavMeshBuildSource>(8);
-            // COLD ALLOC: List<WreckNavigationHandle>[8] - active async navmesh registrations - owner: ProceduralWreckGenerator
-            _activeNavigationHandles = new List<WreckNavigationHandle>(8);
+            buildAsyncNavigationBake = false;
+            _activeNavigationHandles = null;
             // COLD ALLOC: Mesh.MeshDataArray[maxPlacements] - scheduled read-only source snapshots - owner: ProceduralWreckGenerator
             _readOnlyMeshSnapshots = new Mesh.MeshDataArray[maxPlacements];
             // COLD ALLOC: JobHandle[maxPlacements] - scheduled mesh copy handles - owner: ProceduralWreckGenerator
@@ -1433,10 +1414,10 @@ namespace Hecton8.World
             SpawnWreckLoot(renderWorldBounds, seed);
 
             WreckNavigationHandle navigationHandle = null;
-            NavMeshData navMeshData = null;
-            AsyncOperation navMeshOperation = null;
-            if (buildAsyncNavMesh && proxyMesh != null)
-                BuildAsyncNavMesh(runtimeOrigin, worldBounds, proxyMesh, out navigationHandle, out navMeshData, out navMeshOperation);
+            UnityEngine.Object navigationData = null;
+            AsyncOperation navigationOperation = null;
+            if (buildAsyncNavigationBake && proxyMesh != null)
+                BuildDisabledNavigationBake(runtimeOrigin, worldBounds, proxyMesh, out navigationHandle, out navigationData, out navigationOperation);
 
             _debugLastSeed = seed;
             _debugLastPlacementCount = _allPlacements.Length;
@@ -1454,8 +1435,8 @@ namespace Hecton8.World
                 DetailMesh = null,
                 ClutterMesh = null,
                 ProxyMesh = proxyMesh,
-                Navigation = navMeshData,
-                NavigationBuild = navMeshOperation,
+                Navigation = navigationData,
+                NavigationBuild = navigationOperation,
                 NavigationHandle = navigationHandle,
                 NavigationState = navigationHandle != null ? navigationHandle.State : WreckNavigationState.None,
                 WorldBounds = renderWorldBounds,
@@ -1497,10 +1478,10 @@ namespace Hecton8.World
             await YieldAfterGenerationStageAsync(stageStartTime);
 
             WreckNavigationHandle navigationHandle = null;
-            NavMeshData navMeshData = null;
-            AsyncOperation navMeshOperation = null;
-            if (buildAsyncNavMesh && proxyMesh != null)
-                BuildAsyncNavMesh(runtimeOrigin, worldBounds, proxyMesh, out navigationHandle, out navMeshData, out navMeshOperation);
+            UnityEngine.Object navigationData = null;
+            AsyncOperation navigationOperation = null;
+            if (buildAsyncNavigationBake && proxyMesh != null)
+                BuildDisabledNavigationBake(runtimeOrigin, worldBounds, proxyMesh, out navigationHandle, out navigationData, out navigationOperation);
 
             _debugLastSeed = seed;
             _debugLastPlacementCount = _allPlacements.Length;
@@ -1517,8 +1498,8 @@ namespace Hecton8.World
                 DetailMesh = null,
                 ClutterMesh = null,
                 ProxyMesh = proxyMesh,
-                Navigation = navMeshData,
-                NavigationBuild = navMeshOperation,
+                Navigation = navigationData,
+                NavigationBuild = navigationOperation,
                 NavigationHandle = navigationHandle,
                 NavigationState = navigationHandle != null ? navigationHandle.State : WreckNavigationState.None,
                 WorldBounds = renderWorldBounds,
@@ -2926,52 +2907,23 @@ namespace Hecton8.World
             }
         }
 
-        private void BuildAsyncNavMesh(
+        private void BuildDisabledNavigationBake(
             Vector3 runtimeOrigin,
             Bounds worldBounds,
             Mesh proxyMesh,
             out WreckNavigationHandle navigationHandle,
-            out NavMeshData navMeshData,
-            out AsyncOperation navMeshOperation)
+            out UnityEngine.Object navigationData,
+            out AsyncOperation navigationOperation)
         {
             navigationHandle = null;
-            navMeshData = null;
-            navMeshOperation = null;
-
-            if (proxyMesh == null || NavMesh.GetSettingsCount() <= 0)
-                return;
-
-            if (!IsFiniteBounds(worldBounds))
-                return;
-
-            worldBounds.Expand(new Vector3(navAgentRadius * 2f, navAgentHeight, navAgentRadius * 2f));
-
-            NavMeshBuildSettings settings = NavMesh.GetSettingsByIndex(0);
-            settings.agentRadius = navAgentRadius;
-            settings.agentHeight = navAgentHeight;
-            settings.agentSlope = navAgentSlope;
-            settings.agentClimb = navAgentClimb;
-
-            _navMeshSources.Clear();
-            _navMeshSources.Add(new NavMeshBuildSource
-            {
-                shape = NavMeshBuildSourceShape.Mesh,
-                sourceObject = proxyMesh,
-                transform = Matrix4x4.TRS(runtimeOrigin, Quaternion.identity, Vector3.one),
-                area = 0
-            });
-
-            navMeshData = new NavMeshData();
-            navMeshOperation = NavMeshBuilder.UpdateNavMeshDataAsync(navMeshData, settings, _navMeshSources, worldBounds);
-            navigationHandle = new WreckNavigationHandle(this, navMeshData, worldBounds);
-            navigationHandle.Bind(navMeshOperation);
-            _activeNavigationHandles.Add(navigationHandle);
-            _debugLastNavigationState = navigationHandle.State;
+            navigationData = null;
+            navigationOperation = null;
+            _debugLastNavigationState = WreckNavigationState.None;
         }
 
         private Mesh ResolveNavigationProxyMesh()
         {
-            if (!buildAsyncNavMesh)
+            if (!buildAsyncNavigationBake)
                 return null;
 
             return wreckCollisionProxyMesh != null
@@ -2981,7 +2933,7 @@ namespace Hecton8.World
 
         private async Awaitable<Mesh> ResolveNavigationProxyMeshAsync()
         {
-            if (!buildAsyncNavMesh)
+            if (!buildAsyncNavigationBake)
                 return null;
 
             return wreckCollisionProxyMesh != null
@@ -3389,25 +3341,10 @@ namespace Hecton8.World
 
         internal void HandleNavigationBakeCompleted(WreckNavigationHandle navigationHandle)
         {
-            if (navigationHandle == null || navigationHandle.Data == null || !IsFiniteBounds(navigationHandle.WorldBounds))
-            {
-                if (navigationHandle != null)
-                    navigationHandle.MarkFailed();
-
-                _debugLastNavigationState = WreckNavigationState.Failed;
-                return;
-            }
-
-            NavMeshDataInstance instance = NavMesh.AddNavMeshData(navigationHandle.Data);
-            if (!instance.valid)
-            {
+            if (navigationHandle != null)
                 navigationHandle.MarkFailed();
-                _debugLastNavigationState = WreckNavigationState.Failed;
-                return;
-            }
 
-            navigationHandle.MarkReady(instance);
-            _debugLastNavigationState = WreckNavigationState.Ready;
+            _debugLastNavigationState = WreckNavigationState.None;
         }
 
         internal void ReleaseNavigationHandle(WreckNavigationHandle navigationHandle)

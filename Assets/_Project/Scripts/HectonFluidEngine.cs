@@ -1,38 +1,38 @@
 // ============================================================================
 // HECTON-8 — HectonFluidEngine.cs v2.1 (OPTIMIZATION PASS)
-// Высокопроизводительная система плавучести и сопротивления среды.
+// Vysokoproizvoditelnaya sistema plavuchesti i soprotivleniya sredy.
 //
 // v2.1 CHANGES (OPTIMIZATION):
-//   [OPT] HashSet<BuoyancyObject> для O(1) duplicate check
-//     • Register() от O(N) → O(1) для дубликат-проверки
-//     • Unregister() теперь удаляет из HashSet сразу
-//     • Impact: быстрее регистрация объектов при спавне
+//   [OPT] Dense BuoyancyObject list duplicate check
+//     • Register() keeps one managed registry instead of mirrored hash buckets
+//     • Unregister() removes from the dense list directly
+//     • Impact: less managed memory and better cache locality
 //
 //   [OPT] Cached LOD distance squares (_cachedNearDistSq, etc.)
-//     • Избегает пересчета nearDistanceSq^2 каждый FixedTick
-//     • Вычисляется один раз в Awake, обновляется в OnValidate
-//     • Impact: -5-10% вычисления в GatherData() при 200+ объектах
+//     • Izbegaet perescheta nearDistanceSq^2 kazhdyy FixedTick
+//     • Vychislyaetsya odin raz v Awake, obnovlyaetsya v OnValidate
+//     • Impact: -5-10% vychisleniya v GatherData() pri 200+ obektah
 //
-//   [OPT] TryResolveObserver() → TryResolveObserverOnce() в Awake
-//     • Убран scene-search observer-а из FixedTick
-//     • ONE-TIME инициализация вместо проверки каждый кадр
-//     • Impact: одна O(N) операция при загрузке, не каждый фрейм
+//   [OPT] TryResolveObserver() → TryResolveObserverOnce() v Awake
+//     • Ubran scene-search observer-a iz FixedTick
+//     • ONE-TIME initsializatsiya vmesto proverki kazhdyy kadr
+//     • Impact: odna O(N) operatsiya pri zagruzke, ne kazhdyy freym
 //
-//   [OPT] GatherData() удаляет null объекты в HashSet
-//     • Синхронизация _registeredObjects при очистке destroyed объектов
-//     • Гарантирует консистентность реестра
+//   [OPT] GatherData() removes null objects from the dense registry
+//     • Swap-remove keeps the parallel managed lists compact
+//     • Guarantees registry consistency
 //
 // v2.0 (JOB + BURST BASELINE):
-//   • Job System + Burst compiler для параллельного вычисления
-//   • NativeArrays с Capacity Doubling (нет per-frame реаллокаций)
-//   • LOD система (4 уровня дистанций)
+//   • Job System + Burst compiler dlya parallelnogo vychisleniya
+//   • NativeArrays s Capacity Doubling (net per-frame reallokatsiy)
+//   • LOD sistema (4 urovnya distantsiy)
 //   • Dry zones (isInAir flag)
-//   • CurrentVolume интеграция
+//   • CurrentVolume integratsiya
 //
 // PRODUCTION-READY GUARANTEES:
-//   ✅ Zero GC в hot paths (FixedTick, GatherData)
-//   ✅ Burst-compiled Job для SIMD parallelism
-//   ✅ Supports 100+ objects без фризов на MX350 (бюджет 0.3ms)
+//   ✅ Zero GC v hot paths (FixedTick, GatherData)
+//   ✅ Burst-compiled Job dlya SIMD parallelism
+//   ✅ Supports 100+ objects bez frizov na MX350 (byudzhet 0.3ms)
 // ============================================================================
 
 using System.Collections.Generic;
@@ -55,6 +55,70 @@ using UnityEditor;
 
 namespace Hecton8.Physics
 {
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ActiveThrusterFlow
+    {
+        public float3 PositionWS;
+        public float3 DirectionWS;
+        public float Strength;
+        public float Radius;
+        public float ConeCos;
+        public int Active;
+        public float Padding0;
+        public float Padding1;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct WhirlpoolFlow
+    {
+        public float3 CenterWS;
+        public float Radius;
+        public float TangentialStrength;
+        public float CentripetalStrength;
+        public float VerticalPull;
+        public int Active;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FluidImpactEvent
+    {
+        public float3 PositionWS;
+        public float3 VelocityWS;
+        public float MassKg;
+        public float SurfaceY;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct InteriorFloodNode
+    {
+        public float CurrentLiters;
+        public float CapacityLiters;
+        public float TransferLitersPerSecond;
+        public float StructuralMassKg;
+        public int FirstEdgeIndex;
+        public int EdgeCount;
+        public uint Flags;
+        public uint Padding;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct InteriorFloodEdge
+    {
+        public int ToNode;
+        public float FlowMultiplier;
+        public int IsOpen;
+        public int Padding;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct InteriorFloodBfsResult
+    {
+        public float TotalWaterMassKg;
+        public float StructuralLoadKg;
+        public int FloodedNodeCount;
+        public int Padding;
+    }
+
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
     public sealed class HectonFluidEngine : MonoBehaviour, IFixedTickable, IPostFixedTickable
@@ -67,6 +131,9 @@ namespace Hecton8.Physics
         private const int GpuReadbackRingSize = 3;
         private const int MaxAbyssalHeatSourceCount = 8;
         private const int MaxCavitationBurstEvents = 8;
+        public const int MaxAnalyticalThrusterCount = 4;
+        public const int MaxAnalyticalWhirlpoolCount = 2;
+        private const int FluidImpactEventQueueCapacity = 64;
         private const int CavitationShockwaveHitCapacity = 64;
         private const float AbyssalBiolumeSurgeHoldSeconds = 4f;
         private const float GiantWakeDirectionEpsilonSq = 0.0001f;
@@ -138,6 +205,8 @@ namespace Hecton8.Physics
         private static readonly ProfilerMarker _scheduledApplyProfilerMarker = new ProfilerMarker("H8.Fluid.ApplyScheduledForces");
         private static readonly ProfilerMarker _gpuReadbackProfilerMarker = new ProfilerMarker("H8.Fluid.ConsumeGpuReadback");
         private static readonly ProfilerMarker _gpuAbyssalReadbackProfilerMarker = new ProfilerMarker("H8.Fluid.ConsumeAbyssalReadback");
+        private static readonly int _buoyancyForceNanErrorCode = unchecked((int)Hecton.Localization.LocHash.Compute("NAN_ERROR_HASH_BUOYANCY_FORCE"));
+        private static readonly int _buoyancyTorqueNanErrorCode = unchecked((int)Hecton.Localization.LocHash.Compute("NAN_ERROR_HASH_BUOYANCY_TORQUE"));
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
@@ -169,20 +238,21 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
         [Header("── Water ─────────────────────────────────────")]
-        [Tooltip("Y-координата поверхности воды (world space)")]
+        [Tooltip("Y-koordinata poverhnosti vody (world space)")]
         [SerializeField] private float waterLevel = 5000f;
         [SerializeField] private bool enableCinematicTideShift = true;
         [SerializeField, Range(0f, 8f)] private float cinematicTideAmplitudeMeters = 2f;
 
-        [Tooltip("Плотность воды (кг/м³). Пресная = 1000, Морская = 1025")]
+        [Tooltip("Plotnost vody (kg/m³). Presnaya = 1000, Morskaya = 1025")]
         [SerializeField] private float waterDensity = 1000f;
 
-        [Tooltip("Коэффициент вязкого сопротивления. " +
-                 "Чем больше — тем сильнее торможение под водой.")]
+        [Tooltip("Koeffitsient vyazkogo soprotivleniya. " +
+                 "Chem bolshe — tem silnee tormozhenie pod vodoy.")]
         [SerializeField] private float viscousDrag = 3f;
+        [SerializeField, Min(0f)] private float maxQuadraticDragForcePerKg = 180f;
 
-        [Tooltip("Коэффициент углового сопротивления. " +
-                 "Замедляет вращение объектов под водой.")]
+        [Tooltip("Koeffitsient uglovogo soprotivleniya. " +
+                 "Zamedlyaet vraschenie obektov pod vodoy.")]
         [SerializeField] private float angularDrag = 1f;
 
         // ══════════════════════════════════════════════════════════
@@ -190,17 +260,23 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
         [Header("── Currents ──────────────────────────────────")]
-        [Tooltip("Глобальный вектор подводного течения (м/с). " +
-                 "Применяется ко всем погружённым объектам.")]
+        [Tooltip("Globalnyy vektor podvodnogo techeniya (m/s). " +
+                 "Primenyaetsya ko vsem pogruzhennym obektam.")]
         [SerializeField] private Vector3 currentVector = Vector3.zero;
 
-        [Tooltip("Сила воздействия течения (множитель)")]
+        [Tooltip("Sila vozdeystviya techeniya (mnozhitel)")]
         [SerializeField] private float currentStrength = 1f;
         [SerializeField] private bool enablePhantomCurrent = true;
         [SerializeField] private float currentNoiseScale = 0.018f;
         [SerializeField] private float currentTimeScale = 0.12f;
         [SerializeField, Range(0f, 1f)] private float currentVerticalFactor = 0.18f;
         [SerializeField] private float phantomCurrentStrength = 0.9f;
+
+        [Header("-- Analytical Flow Field -----------------------")]
+        [SerializeField] private bool enableAnalyticalFlowField = true;
+        [SerializeField, Min(0.01f)] private float haloclineBoundaryDepthMeters = 200f;
+        [SerializeField, Min(1f)] private float deepLayerDensityMultiplier = 1.5f;
+        [SerializeField] private float haloclineShearForcePerKg = 4f;
 
         [Header("-- Giant's Wake -----------------------")]
         [Tooltip("Adds a subtle abyssal current bias from the parent gas giant sky direction.")]
@@ -225,8 +301,8 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
         [Header("── Performance ───────────────────────────────")]
-        [Tooltip("Минимальный batch size для Job. " +
-                 "Меньше = больше параллелизма, больше = меньше overhead.")]
+        [Tooltip("Minimalnyy batch size dlya Job. " +
+                 "Menshe = bolshe parallelizma, bolshe = menshe overhead.")]
         [SerializeField] private int jobBatchSize = 32;
         [SerializeField] private bool enableDistanceLod = true;
         [SerializeField] private Transform lodObserver;
@@ -283,7 +359,7 @@ namespace Hecton8.Physics
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Y-координата поверхности воды.</summary>
+        /// <summary>Y-koordinata poverhnosti vody.</summary>
         public float WaterLevel
         {
             get => waterLevel;
@@ -300,14 +376,14 @@ namespace Hecton8.Physics
             get { return ResolveCinematicWaterLevelY(); }
         }
 
-        /// <summary>Плотность воды (кг/м³).</summary>
+        /// <summary>Plotnost vody (kg/m³).</summary>
         public float WaterDensity
         {
             get => waterDensity;
             set => waterDensity = math.max(0.01f, value);
         }
 
-        /// <summary>Вектор течения (м/с). Изменяется в рантайме.</summary>
+        /// <summary>Vektor techeniya (m/s). Izmenyaetsya v rantayme.</summary>
         public Vector3 CurrentVector
         {
             get => currentVector;
@@ -318,7 +394,7 @@ namespace Hecton8.Physics
             }
         }
 
-        /// <summary>Сила глобального течения.</summary>
+        /// <summary>Sila globalnogo techeniya.</summary>
         public float CurrentStrength
         {
             get => currentStrength;
@@ -329,7 +405,7 @@ namespace Hecton8.Physics
             }
         }
 
-        /// <summary>Включено ли phantom течение.</summary>
+        /// <summary>Vklyucheno li phantom techenie.</summary>
         public bool EnablePhantomCurrent
         {
             get => enablePhantomCurrent;
@@ -340,7 +416,7 @@ namespace Hecton8.Physics
             }
         }
 
-        /// <summary>Масштаб шума phantom течения.</summary>
+        /// <summary>Masshtab shuma phantom techeniya.</summary>
         public float CurrentNoiseScale
         {
             get => currentNoiseScale;
@@ -351,7 +427,7 @@ namespace Hecton8.Physics
             }
         }
 
-        /// <summary>Временной масштаб phantom течения.</summary>
+        /// <summary>Vremennoy masshtab phantom techeniya.</summary>
         public float CurrentTimeScale
         {
             get => currentTimeScale;
@@ -362,7 +438,7 @@ namespace Hecton8.Physics
             }
         }
 
-        /// <summary>Вертикальный фактор phantom течения.</summary>
+        /// <summary>Vertikalnyy faktor phantom techeniya.</summary>
         public float CurrentVerticalFactor
         {
             get => currentVerticalFactor;
@@ -373,7 +449,7 @@ namespace Hecton8.Physics
             }
         }
 
-        /// <summary>Сила phantom течения.</summary>
+        /// <summary>Sila phantom techeniya.</summary>
         public float PhantomCurrentStrength
         {
             get => phantomCurrentStrength;
@@ -384,7 +460,7 @@ namespace Hecton8.Physics
             }
         }
 
-        /// <summary>Количество зарегистрированных объектов.</summary>
+        /// <summary>Kolichestvo zaregistrirovannyh obektov.</summary>
         public int ObjectCount => _objects.Count;
 
         public Vector3 GiantWakeCurrent => _debugGiantWakeCurrent;
@@ -412,14 +488,190 @@ namespace Hecton8.Physics
                    instance.EnqueueCavitationBurst(position, direction, intensity01, radius, acceleration, sourceBodyInstanceId);
         }
 
+        public Vector3 GetFlowAtPosition(Vector3 position)
+        {
+            float3 flow = GetFlowAtPosition(new float3(position.x, position.y, position.z));
+            return new Vector3(flow.x, flow.y, flow.z);
+        }
+
+        public float3 GetFlowAtPosition(float3 position)
+        {
+            if (!math.all(math.isfinite(position)) || !enableAnalyticalFlowField)
+                return float3.zero;
+
+            WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
+            float resolvedWaterLevel = ResolveCinematicWaterLevelY();
+            float3 baseCurrent = new float3(
+                currentVector.x * currentStrength,
+                currentVector.y * currentStrength,
+                currentVector.z * currentStrength);
+            float depthBelowSurface = math.max(0f, resolvedWaterLevel - position.y);
+            float3 flow = HectonAnalyticalFlowField.SampleBaseFlow(
+                position,
+                depthBelowSurface,
+                baseCurrent,
+                math.lengthsq(_resolvedGiantWakeCurrent) > GiantWakeDirectionEpsilonSq
+                    ? _resolvedGiantWakeCurrent
+                    : ResolveGiantWakeCurrentBase(),
+                giantWakeDepthFadeStart,
+                giantWakeDepthFadeRange,
+                (uint)weatherSnapshot.StateMask,
+                weatherSnapshot.CurrentMeta.GlobalBaseVector,
+                weatherSnapshot.CurrentMeta.GlobalScale,
+                weatherSnapshot.WeatherIntensity,
+                enablePhantomCurrent ? (byte)1 : (byte)0,
+                currentNoiseScale,
+                currentTimeScale,
+                currentVerticalFactor,
+                phantomCurrentStrength,
+                ResolveWaterLevelTimeSeconds(),
+                haloclineBoundaryDepthMeters,
+                haloclineShearForcePerKg);
+
+            for (int i = 0; i < MaxAnalyticalThrusterCount; i++)
+                HectonAnalyticalFlowField.ApplyThrusterFlow(ref flow, position, _thrusterFlowBuffer[i]);
+
+            for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
+                HectonAnalyticalFlowField.ApplyWhirlpoolFlow(ref flow, position, _whirlpoolFlowBuffer[i]);
+
+            return HectonAnalyticalFlowField.ResolveFiniteFloat3OrZero(flow);
+        }
+
+        public float GetWaterHeightAtPosition(Vector3 position)
+        {
+            return GetWaterHeightAtPosition(new float3(position.x, position.y, position.z));
+        }
+
+        public float GetWaterHeightAtPosition(float3 position)
+        {
+            WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
+            float waveOffset = HectonGerstnerWater.SampleHeight(
+                position.xz,
+                weatherSnapshot.Wave0,
+                weatherSnapshot.Wave1,
+                weatherSnapshot.Wave2,
+                weatherSnapshot.CurrentMeta.TimeAccumulator);
+            return ResolveCinematicWaterLevelY() + waveOffset;
+        }
+
+        public bool TrySetActiveThruster(
+            int slot,
+            Vector3 position,
+            Vector3 direction,
+            float strength,
+            float radius,
+            float coneDegrees)
+        {
+            if ((uint)slot >= MaxAnalyticalThrusterCount ||
+                !IsFiniteVector(position) ||
+                !IsFiniteVector(direction) ||
+                direction.sqrMagnitude <= 0.0001f ||
+                strength <= 0f ||
+                radius <= 0f)
+            {
+                return false;
+            }
+
+            float3 rawDirection = new float3(direction.x, direction.y, direction.z);
+            float3 normalizedDirection = NormalizeFastOrDefault(rawDirection, new float3(0f, 0f, 1f));
+            float clampedConeDegrees = math.clamp(coneDegrees, 1f, 89f);
+            float cone01 = clampedConeDegrees * 0.011111111f;
+            _thrusterFlowBuffer[slot] = new ActiveThrusterFlow
+            {
+                PositionWS = new float3(position.x, position.y, position.z),
+                DirectionWS = normalizedDirection,
+                Strength = math.max(0f, strength),
+                Radius = math.max(0.01f, radius),
+                ConeCos = 1f - cone01 * cone01,
+                Active = 1
+            };
+            OnCurrentSettingsChanged();
+            return true;
+        }
+
+        public void ClearActiveThruster(int slot)
+        {
+            if ((uint)slot >= MaxAnalyticalThrusterCount)
+                return;
+
+            _thrusterFlowBuffer[slot] = default;
+            OnCurrentSettingsChanged();
+        }
+
+        public void ClearActiveThrusters()
+        {
+            for (int i = 0; i < MaxAnalyticalThrusterCount; i++)
+                _thrusterFlowBuffer[i] = default;
+            OnCurrentSettingsChanged();
+        }
+
+        public bool TrySetWhirlpool(
+            int slot,
+            Vector3 center,
+            float radius,
+            float tangentialStrength,
+            float centripetalStrength,
+            float verticalPull)
+        {
+            if ((uint)slot >= MaxAnalyticalWhirlpoolCount ||
+                !IsFiniteVector(center) ||
+                radius <= 0f)
+            {
+                return false;
+            }
+
+            _whirlpoolFlowBuffer[slot] = new WhirlpoolFlow
+            {
+                CenterWS = new float3(center.x, center.y, center.z),
+                Radius = math.max(0.01f, radius),
+                TangentialStrength = tangentialStrength,
+                CentripetalStrength = centripetalStrength,
+                VerticalPull = math.max(0f, verticalPull),
+                Active = 1
+            };
+            OnCurrentSettingsChanged();
+            return true;
+        }
+
+        public void ClearWhirlpool(int slot)
+        {
+            if ((uint)slot >= MaxAnalyticalWhirlpoolCount)
+                return;
+
+            _whirlpoolFlowBuffer[slot] = default;
+            OnCurrentSettingsChanged();
+        }
+
+        public void ClearWhirlpools()
+        {
+            for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
+                _whirlpoolFlowBuffer[i] = default;
+            OnCurrentSettingsChanged();
+        }
+
+        public bool TryDequeueImpactEvent(out FluidImpactEvent impactEvent)
+        {
+            impactEvent = default;
+            if (!TryDrainScheduledBuoyancyJob() || !_fluidImpactEvents.IsCreated)
+                return false;
+
+            if (!_fluidImpactEvents.TryDequeue(out impactEvent))
+                return false;
+
+            if (_fluidImpactQueuedCount > 0)
+                _fluidImpactQueuedCount--;
+
+            return true;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  EVENTS
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Вызывается при изменении настроек течений (для визуализаторов).</summary>
+        /// <summary>Vyzyvaetsya pri izmenenii nastroek techeniy (dlya vizualizatorov).</summary>
         public event System.Action OnCurrentSettingsChangedEvent;
 
-        /// <summary>Уведомляет подписчиков об изменении настроек течений.</summary>
+        /// <summary>Uvedomlyaet podpischikov ob izmenenii nastroek techeniy.</summary>
         private void OnCurrentSettingsChanged()
         {
             OnCurrentSettingsChangedEvent?.Invoke();
@@ -429,20 +681,18 @@ namespace Hecton8.Physics
         //  MANAGED REGISTRY (parallel lists)
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Список зарегистрированных BuoyancyObject.</summary>
+        /// <summary>Spisok zaregistrirovannyh BuoyancyObject.</summary>
+        // COLD ALLOC: List<BuoyancyObject>[256] — dense buoyancy object registry — owner: HectonFluidEngine
         private readonly List<BuoyancyObject> _objects = new List<BuoyancyObject>(256);
 
-        /// <summary>Параллельный список Rigidbody (индексы совпадают с _objects).</summary>
+        /// <summary>Parallelnyy spisok Rigidbody (indeksy sovpadayut s _objects).</summary>
+        // COLD ALLOC: List<Rigidbody>[256] — dense rigidbody registry parallel to _objects — owner: HectonFluidEngine
         private readonly List<Rigidbody> _bodies = new List<Rigidbody>(256);
-
-        /// <summary>HashSet для O(1) дубликат-чека при Register.</summary>
-        private readonly HashSet<BuoyancyObject> _registeredObjects = new HashSet<BuoyancyObject>(256);
-
         // ══════════════════════════════════════════════════════════
         //  LOD DISTANCE CACHING
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Кэшированные квадраты дистанций для LOD (пересчитываются при очищении).</summary>
+        /// <summary>Keshirovannye kvadraty distantsiy dlya LOD (pereschityvayutsya pri ochischenii).</summary>
         private float _cachedNearDistSq = 400f;      // 20^2
         private float _cachedMediumDistSq = 2025f;   // 45^2
         private float _cachedFarDistSq = 8100f;      // 90^2
@@ -453,6 +703,8 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
         private NativeArray<float3>         _positions;
+        private NativeArray<float3>         _previousPositions;
+        private NativeArray<byte>           _previousPositionValid;
         private NativeArray<float3>         _velocities;
         private NativeArray<float3>         _angularVelocities;
         private NativeArray<float3>         _upVectors;
@@ -461,9 +713,17 @@ namespace Hecton8.Physics
         private NativeArray<float>          _gpuBuoyancyForcesY;
         private NativeArray<float3>         _resultForces;
         private NativeArray<float3>         _resultTorques;
+        private NativeArray<FluidImpactEvent> _impactEventScratch;
+        private NativeArray<int> _impactEventFlags;
         private NativeArray<GpuBuoyancyObjectData> _gpuBuoyancyObjectDataUpload;
         private NativeArray<float4> _gpuBuoyancyReadback;
         private NativeArray<GpuHeatSourceData> _gpuAbyssalHeatSourceUpload;
+        private NativeArray<ActiveThrusterFlow> _activeThrusterFlows;
+        private NativeArray<WhirlpoolFlow> _activeWhirlpools;
+        private int _activeThrusterFlowCount;
+        private int _activeWhirlpoolFlowCount;
+        private NativeQueue<FluidImpactEvent> _fluidImpactEvents;
+        private int _fluidImpactQueuedCount;
         // COLD ALLOC: Rigidbody[capacity] — schedule-time rigidbody snapshot for deferred force application — owner: HectonFluidEngine
         private Rigidbody[] _scheduledBodies;
         private JobHandle _scheduledBuoyancyHandle;
@@ -476,8 +736,12 @@ namespace Hecton8.Physics
         // COLD ALLOC: Rigidbody[64] — static deduplicated cavitation shockwave rigidbody targets — owner: HectonFluidEngine
         private static readonly Rigidbody[] s_CavitationShockwaveRigidbodies = new Rigidbody[CavitationShockwaveHitCapacity];
         private int _cavitationBurstCount;
+        // COLD ALLOC: ActiveThrusterFlow[4] — fixed analytical propwash inputs — owner: HectonFluidEngine
+        private readonly ActiveThrusterFlow[] _thrusterFlowBuffer = new ActiveThrusterFlow[MaxAnalyticalThrusterCount];
+        // COLD ALLOC: WhirlpoolFlow[2] — fixed analytical whirlpool inputs — owner: HectonFluidEngine
+        private readonly WhirlpoolFlow[] _whirlpoolFlowBuffer = new WhirlpoolFlow[MaxAnalyticalWhirlpoolCount];
 
-        /// <summary>Текущая ёмкость NativeArrays (всегда >= count объектов).</summary>
+        /// <summary>Tekuschaya emkost NativeArrays (vsegda >= count obektov).</summary>
         private int _nativeCapacity;
         private int _lodFrameCounter;
         private float _observerResolveRetryTimer;
@@ -495,6 +759,9 @@ namespace Hecton8.Physics
         private GraphicsBuffer _gpuAbyssalFlowResultBuffer;
         private GraphicsBuffer _gpuAbyssalHeatSourceBuffer;
         private GraphicsBuffer _gpuAbyssalAggregateBuffer;
+        private Vector4 _lastAbyssalGridResolution;
+        private Vector4 _lastAbyssalFlowCenter;
+        private Vector4 _lastAbyssalFlowSpacing;
         private AsyncGPUReadbackRequest[] _gpuAbyssalReadbackRequests;
         private bool[] _gpuAbyssalReadbackActive;
         private int _gpuAbyssalReadbackWriteIndex;
@@ -517,6 +784,8 @@ namespace Hecton8.Physics
                 Destroy(gameObject);
                 return;
             }
+
+            MathGuard.Initialize();
 
             // Initial observer resolution. If player/camera appears later,
             // FixedTick retries on a cooldown instead of staying in full-cost mode forever.
@@ -541,11 +810,11 @@ namespace Hecton8.Physics
                 _gpuAbyssalSurgeKernel = abyssalFlowFieldCompute.FindKernel("DetectBiolumeSurge");
             }
 
-            _gpuReadbackRequests = new AsyncGPUReadbackRequest[GpuReadbackRingSize]; // COLD ALLOC: AsyncGPUReadbackRequest[3] - fixed GPU buoyancy readback ring state - owner: HectonFluidEngine
-            _gpuReadbackCounts = new int[GpuReadbackRingSize]; // COLD ALLOC: int[3] - GPU buoyancy readback element counts - owner: HectonFluidEngine
-            _gpuReadbackActive = new bool[GpuReadbackRingSize]; // COLD ALLOC: bool[3] - GPU buoyancy readback slot activity - owner: HectonFluidEngine
-            _gpuAbyssalReadbackRequests = new AsyncGPUReadbackRequest[GpuReadbackRingSize]; // COLD ALLOC: AsyncGPUReadbackRequest[3] - fixed GPU abyssal-flow readback ring state - owner: HectonFluidEngine
-            _gpuAbyssalReadbackActive = new bool[GpuReadbackRingSize]; // COLD ALLOC: bool[3] - GPU abyssal-flow readback slot activity - owner: HectonFluidEngine
+            _gpuReadbackRequests = new AsyncGPUReadbackRequest[GpuReadbackRingSize]; // COLD ALLOC: AsyncGPUReadbackRequest[3] — fixed GPU buoyancy readback ring state — owner: HectonFluidEngine
+            _gpuReadbackCounts = new int[GpuReadbackRingSize]; // COLD ALLOC: int[3] — GPU buoyancy readback element counts — owner: HectonFluidEngine
+            _gpuReadbackActive = new bool[GpuReadbackRingSize]; // COLD ALLOC: bool[3] — GPU buoyancy readback slot activity — owner: HectonFluidEngine
+            _gpuAbyssalReadbackRequests = new AsyncGPUReadbackRequest[GpuReadbackRingSize]; // COLD ALLOC: AsyncGPUReadbackRequest[3] — fixed GPU abyssal-flow readback ring state — owner: HectonFluidEngine
+            _gpuAbyssalReadbackActive = new bool[GpuReadbackRingSize]; // COLD ALLOC: bool[3] — GPU abyssal-flow readback slot activity — owner: HectonFluidEngine
             PublishCurrentWaterLevelUniform();
         }
 
@@ -633,20 +902,18 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Регистрирует BuoyancyObject. Вызывается из OnEnable.
-        /// Кэширует Rigidbody в параллельном списке.
+        /// Registriruet BuoyancyObject. Vyzyvaetsya iz OnEnable.
+        /// Keshiruet Rigidbody v parallelnom spiske.
         /// </summary>
         public void Register(BuoyancyObject obj)
         {
             if (obj == null || obj.Body == null) return;
 
-            // O(1) duplicate check via HashSet
-            if (_registeredObjects.Contains(obj))
+            if (ContainsRegisteredObject(obj))
                 return;
 
             _objects.Add(obj);
             _bodies.Add(obj.Body);
-            _registeredObjects.Add(obj);
 
             UpdateDiagnostics();
         }
@@ -680,16 +947,32 @@ namespace Hecton8.Physics
             return true;
         }
 
+        public bool TryGetGpuAbyssalFlowFieldBuffer(
+            out GraphicsBuffer flowFieldBuffer,
+            out Vector4 gridResolution,
+            out Vector4 flowCenter,
+            out Vector4 flowSpacing)
+        {
+            flowFieldBuffer = _gpuAbyssalFlowResultBuffer;
+            gridResolution = _lastAbyssalGridResolution;
+            flowCenter = _lastAbyssalFlowCenter;
+            flowSpacing = _lastAbyssalFlowSpacing;
+            return flowFieldBuffer != null &&
+                   flowFieldBuffer.count > 0 &&
+                   gridResolution.w > 0f &&
+                   flowSpacing.x > 0f &&
+                   flowSpacing.y > 0f;
+        }
+
         /// <summary>
-        /// Снимает BuoyancyObject с регистрации. Вызывается из OnDisable.
-        /// Swap-remove для O(1).
+        /// Snimaet BuoyancyObject s registratsii. Vyzyvaetsya iz OnDisable.
+        /// Swap-remove dlya O(1).
         /// </summary>
         public void Unregister(BuoyancyObject obj)
         {
             if (obj == null) return;
 
-            // Fast removal via HashSet
-            if (!_registeredObjects.Remove(obj))
+            if (!ContainsRegisteredObject(obj))
                 return;  // Not registered
 
             int count = _objects.Count;
@@ -700,6 +983,7 @@ namespace Hecton8.Physics
                     int last = count - 1;
 
                     // Swap with last
+                    MoveNativeSlotCache(i, last);
                     _objects[i] = _objects[last];
                     _bodies[i]  = _bodies[last];
 
@@ -716,23 +1000,43 @@ namespace Hecton8.Physics
         }
 
         // ══════════════════════════════════════════════════════════
+        private void MoveNativeSlotCache(int destination, int source)
+        {
+            if (destination == source)
+                return;
+
+            if (_positions.IsCreated && source < _positions.Length && destination < _positions.Length)
+                _positions[destination] = _positions[source];
+
+            if (_previousPositions.IsCreated && source < _previousPositions.Length && destination < _previousPositions.Length)
+                _previousPositions[destination] = _previousPositions[source];
+
+            if (_previousPositionValid.IsCreated &&
+                source < _previousPositionValid.Length &&
+                destination < _previousPositionValid.Length)
+            {
+                _previousPositionValid[destination] = _previousPositionValid[source];
+                _previousPositionValid[source] = 0;
+            }
+        }
+
         //  IFixedTickable — MAIN PHYSICS LOOP
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Вызывается GameTickManager в FixedUpdate.
+        /// Vyzyvaetsya GameTickManager v FixedUpdate.
         ///
         /// Pipeline:
         ///   Runtime guard: a completed previous job is drained before this method writes
         ///   new data into the same NativeArrays. If the job is still running, this fixed
         ///   step is skipped instead of blocking.
-        ///   1. Resize NativeArrays если count > capacity (Capacity Doubling)
-        ///   2. Gather: копируем данные из Rigidbody → NativeArrays
+        ///   1. Resize NativeArrays esli count > capacity (Capacity Doubling)
+        ///   2. Gather: kopiruem dannye iz Rigidbody → NativeArrays
         ///   3. Schedule: BuoyancyJob (Burst, parallel)
         ///   4. Completion: only after IsCompleted, no blocking wait
-        ///   5. Apply: queue force packets через PhysicsForceRouter
+        ///   5. Apply: queue force packets cherez PhysicsForceRouter
         ///
-        /// Все шаги кроме Job — main thread.
+        /// Vse shagi krome Job — main thread.
         /// Job — worker threads, Burst compiled, SIMD.
         /// </summary>
         public void FixedTick(float fixedDeltaTime)
@@ -769,10 +1073,10 @@ namespace Hecton8.Physics
                 ReallocateNativeArrays(count);
             }
 
-            // ── 2. Gather (может уменьшить _objects.Count при очистке null) ──
+            // ── 2. Gather (mozhet umenshit _objects.Count pri ochistke null) ──
             GatherData(cinematicWaterLevel);
 
-            // Пересчитываем count после очистки destroyed объектов
+            // Pereschityvaem count posle ochistki destroyed obektov
             count = _objects.Count;
             if (count == 0)
             {
@@ -789,6 +1093,7 @@ namespace Hecton8.Physics
             WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
             _resolvedGiantWakeCurrent = ResolveGiantWakeCurrentBase();
             _debugGiantWakeCurrent = new Vector3(_resolvedGiantWakeCurrent.x, _resolvedGiantWakeCurrent.y, _resolvedGiantWakeCurrent.z);
+            CopyAnalyticalFlowInputsToNative();
             ConsumeGpuAbyssalFlowReadbacks();
             ConsumeGpuBuoyancyReadbacks();
             TryDispatchGpuAbyssalFlowField(weatherSnapshot, cinematicWaterLevel);
@@ -809,7 +1114,11 @@ namespace Hecton8.Physics
                     Wave0 = weatherSnapshot.Wave0,
                     Wave1 = weatherSnapshot.Wave1,
                     Wave2 = weatherSnapshot.Wave2,
-                    TimeSeconds = weatherSnapshot.CurrentMeta.TimeAccumulator
+                    TimeSeconds = weatherSnapshot.CurrentMeta.TimeAccumulator,
+                    WaterLevelY = cinematicWaterLevel,
+                    MaxWaveEnvelope = math.abs(weatherSnapshot.Wave0.Amplitude) +
+                                      math.abs(weatherSnapshot.Wave1.Amplitude) +
+                                      math.abs(weatherSnapshot.Wave2.Amplitude)
                 };
 
                 waveHandle = waveJob.Schedule(count, jobBatchSize);
@@ -818,18 +1127,30 @@ namespace Hecton8.Physics
             BuoyancyJob job = new BuoyancyJob
             {
                 positions        = _positions,
+                previousPositions = _previousPositions,
+                previousPositionValid = _previousPositionValid,
                 velocities       = _velocities,
                 angularVelocities = _angularVelocities,
                 upVectors        = _upVectors,
                 objParams        = _params,
                 waveOffsets      = _waveOffsets,
                 gpuBuoyancyForcesY = _gpuBuoyancyForcesY,
+                activeThrusters = _activeThrusterFlows,
+                activeWhirlpools = _activeWhirlpools,
+                activeThrusterCount = _activeThrusterFlowCount,
+                activeWhirlpoolCount = _activeWhirlpoolFlowCount,
+                impactEvents = _impactEventScratch,
+                impactEventFlags = _impactEventFlags,
                 resultForces     = _resultForces,
                 resultTorques    = _resultTorques,
+                mathGuardWriter = MathGuard.AsParallelWriter(),
+                forceNanErrorCode = _buoyancyForceNanErrorCode,
+                torqueNanErrorCode = _buoyancyTorqueNanErrorCode,
 
                 waterLevel       = cinematicWaterLevel,
                 waterDensity     = waterDensity,
                 viscousDrag      = viscousDrag,
+                maxQuadraticDragForcePerKg = maxQuadraticDragForcePerKg,
                 angularDragCoeff = angularDrag,
                 gravity          = math.abs(UnityEngine.Physics.gravity.y),
                 baseCurrentForce = new float3(
@@ -842,7 +1163,10 @@ namespace Hecton8.Physics
                 enableTidalShearZones = enableTidalShearZones ? (byte)1 : (byte)0,
                 tidalShearTorqueStrength = tidalShearTorqueStrength,
                 tidalShearFrequency = tidalShearFrequency,
-                time             = Time.unscaledTime,
+                time             = math.isfinite(weatherSnapshot.CurrentMeta.TimeAccumulator) &&
+                                   weatherSnapshot.CurrentMeta.TimeAccumulator > 0f
+                    ? weatherSnapshot.CurrentMeta.TimeAccumulator
+                    : Time.unscaledTime,
                 weatherStateMask = (uint)weatherSnapshot.StateMask,
                 weatherCurrentDirection = weatherSnapshot.CurrentMeta.GlobalBaseVector,
                 weatherCurrentScale = weatherSnapshot.CurrentMeta.GlobalScale,
@@ -852,6 +1176,10 @@ namespace Hecton8.Physics
                 currentTimeScale = currentTimeScale,
                 currentVerticalFactor = currentVerticalFactor,
                 phantomCurrentStrength = phantomCurrentStrength,
+                enableAnalyticalFlowField = enableAnalyticalFlowField ? (byte)1 : (byte)0,
+                haloclineBoundaryDepthMeters = haloclineBoundaryDepthMeters,
+                deepLayerDensityMultiplier = deepLayerDensityMultiplier,
+                haloclineShearForcePerKg = haloclineShearForcePerKg,
                 useGpuBuoyancyForce = useGpuBuoyancy ? (byte)1 : (byte)0
             };
 
@@ -893,16 +1221,16 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Копирует позиции, скорости и параметры из managed Rigidbody
-        /// в NativeArrays для Job. Main thread.
+        /// Kopiruet pozitsii, skorosti i parametry iz managed Rigidbody
+        /// v NativeArrays dlya Job. Main thread.
         ///
-        /// Удаляет null/destroyed объекты на лету (swap-remove в обратном цикле).
+        /// Udalyaet null/destroyed obekty na letu (swap-remove v obratnom tsikle).
         ///
-        /// ИЗМЕНЕНИЕ (Dry Zones / Ground Contact):
-        ///   Копирует owner-side fluid suppression truth в BuoyancyParams.isInAir.
+        /// IZMENENIE (Dry Zones / Ground Contact):
+        ///   Kopiruet owner-side fluid suppression truth v BuoyancyParams.isInAir.
         ///   Dry zones always suppress fluid. Grounded contact suppresses fluid
         ///   only when the object is effectively above the waterline.
-        ///   BuoyancyJob проверяет этот флаг и обнуляет силы, если true.
+        ///   BuoyancyJob proveryaet etot flag i obnulyaet sily, esli true.
         /// </summary>
         private void GatherData(float resolvedWaterLevel)
         {
@@ -917,13 +1245,13 @@ namespace Hecton8.Physics
                 BuoyancyObject obj = _objects[i];
                 Rigidbody rb = _bodies[i];
 
-                // ── Защита от destroyed объектов (fake null check) ──
+                // ── Zaschita ot destroyed obektov (fake null check) ──
                 if (obj == null || rb == null)
                 {
                     int last = _objects.Count - 1;
+                    MoveNativeSlotCache(i, last);
                     _objects[i] = _objects[last];
                     _bodies[i]  = _bodies[last];
-                    _registeredObjects.Remove(obj);  // Remove from HashSet too
                     _objects.RemoveAt(last);
                     _bodies.RemoveAt(last);
                     continue;
@@ -1007,7 +1335,17 @@ namespace Hecton8.Physics
                     biomeBuoyancyMultiplier = Mathf.Max(0.05f, sampledBuoyancyMultiplier);
                 }
 
-                _positions[i]  = new float3(com.x, com.y, com.z);
+                float3 currentPosition = new float3(com.x, com.y, com.z);
+                if (_previousPositions.IsCreated &&
+                    _previousPositionValid.IsCreated &&
+                    i < _previousPositions.Length &&
+                    i < _previousPositionValid.Length)
+                {
+                    _previousPositions[i] = _previousPositionValid[i] != 0 ? _positions[i] : currentPosition;
+                    _previousPositionValid[i] = 1;
+                }
+
+                _positions[i]  = currentPosition;
                 _velocities[i] = new float3(vel.x, vel.y, vel.z);
                 _angularVelocities[i] = new float3(angVel.x, angVel.y, angVel.z);
                 _upVectors[i] = new float3(up.x, up.y, up.z);
@@ -1058,15 +1396,32 @@ namespace Hecton8.Physics
         {
             using (_scheduledApplyProfilerMarker.Auto())
             {
+            bool canDrainImpactEvents =
+                _fluidImpactEvents.IsCreated &&
+                _impactEventFlags.IsCreated &&
+                _impactEventScratch.IsCreated;
             for (int i = 0; i < _scheduledForceCount; i++)
             {
+                if (canDrainImpactEvents &&
+                    (uint)i < (uint)_impactEventFlags.Length &&
+                    (uint)i < (uint)_impactEventScratch.Length &&
+                    _impactEventFlags[i] != 0)
+                {
+                    _impactEventFlags[i] = 0;
+                    if (_fluidImpactQueuedCount < FluidImpactEventQueueCapacity)
+                    {
+                        _fluidImpactEvents.Enqueue(_impactEventScratch[i]);
+                        _fluidImpactQueuedCount++;
+                    }
+                }
+
                 Rigidbody rb = _scheduledBodies[i];
                 if (rb == null) continue;
 
                 float3 force  = _resultForces[i];
                 float3 torque = _resultTorques[i];
 
-                // Пропускаем нулевые силы (объект над водой или в сухой зоне)
+                // Propuskaem nulevye sily (obekt nad vodoy ili v suhoy zone)
                 if (TrySanitizePhysicsVector(force, NonFiniteBuoyancyForceLog, out Vector3 sanitizedForce) &&
                     sanitizedForce.sqrMagnitude > 0.0001f)
                 {
@@ -1093,7 +1448,7 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Пересоздаёт NativeArrays с увеличенной ёмкостью (Capacity Doubling).
+        /// Peresozdaet NativeArrays s uvelichennoy emkostyu (Capacity Doubling).
         /// </summary>
         private bool EnqueueCavitationBurst(
             Vector3 position,
@@ -1112,7 +1467,8 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            Vector3 safeDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.back;
+            Vector3 safeDirection = NormalizeFastOrDefault(direction, Vector3.back);
+
             _cavitationBurstQueue[_cavitationBurstCount++] = new CavitationBurstEvent
             {
                 Position = position,
@@ -1154,10 +1510,8 @@ namespace Hecton8.Physics
             if (burstEvent.Direction.sqrMagnitude > 0.0001f)
                 particleTransform.rotation = Quaternion.LookRotation(burstEvent.Direction, Vector3.up);
 
-            int emitCount = Mathf.Clamp(
-                Mathf.CeilToInt(cavitationBubbleEmitCountAtFullIntensity * burstEvent.Intensity01),
-                1,
-                cavitationBubbleEmitCountAtFullIntensity);
+            int rawEmitCount = (int)(cavitationBubbleEmitCountAtFullIntensity * burstEvent.Intensity01 + 0.999f);
+            int emitCount = Mathf.Clamp(rawEmitCount, 1, cavitationBubbleEmitCountAtFullIntensity);
             cavitationBubbleParticles.Emit(emitCount);
         }
 
@@ -1200,18 +1554,17 @@ namespace Hecton8.Physics
                     continue;
 
                 Vector3 radial = targetBody.worldCenterOfMass - burstEvent.Position;
-                float radialDistance = radial.magnitude;
-                Vector3 radialDirection = radialDistance > 0.0001f
-                    ? radial / radialDistance
+                float radialDistanceSq = radial.sqrMagnitude;
+                Vector3 radialDirection = radialDistanceSq > 0.000001f
+                    ? NormalizeFastOrDefault(radial, burstEvent.Direction)
                     : burstEvent.Direction;
                 radialDirection = Vector3.Lerp(radialDirection, burstEvent.Direction, 0.2f);
                 radialDirection.y += cavitationShockwaveVerticalLift;
-                if (radialDirection.sqrMagnitude <= 0.0001f)
-                    radialDirection = Vector3.up;
-                else
-                    radialDirection.Normalize();
+                radialDirection = NormalizeFastOrDefault(radialDirection, Vector3.up);
 
-                float distance01 = math.saturate(1f - radialDistance / math.max(burstEvent.Radius, 0.0001f));
+                float radiusSq = math.max(0.0001f, burstEvent.Radius * burstEvent.Radius);
+                float distance01 = math.saturate(1f - radialDistanceSq / radiusSq);
+                distance01 *= distance01;
                 if (distance01 <= 0.0001f)
                     continue;
 
@@ -1271,6 +1624,10 @@ namespace Hecton8.Physics
 
             _positions     = new NativeArray<float3>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.UninitializedMemory);
+            _previousPositions = new NativeArray<float3>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory);
+            _previousPositionValid = new NativeArray<byte>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory);
             _velocities    = new NativeArray<float3>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.UninitializedMemory);
             _angularVelocities = new NativeArray<float3>(newCapacity, Allocator.Persistent,
@@ -1287,12 +1644,22 @@ namespace Hecton8.Physics
                                  NativeArrayOptions.ClearMemory);
             _resultTorques = new NativeArray<float3>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
+            _impactEventScratch = new NativeArray<FluidImpactEvent>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory);
+            _impactEventFlags = new NativeArray<int>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory);
             _gpuBuoyancyObjectDataUpload = new NativeArray<GpuBuoyancyObjectData>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.UninitializedMemory);
             _gpuBuoyancyReadback = new NativeArray<float4>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
             _gpuAbyssalHeatSourceUpload = new NativeArray<GpuHeatSourceData>(MaxAbyssalHeatSourceCount, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
+            _activeThrusterFlows = new NativeArray<ActiveThrusterFlow>(MaxAnalyticalThrusterCount, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory);
+            _activeWhirlpools = new NativeArray<WhirlpoolFlow>(MaxAnalyticalWhirlpoolCount, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory);
+            _fluidImpactEvents = new NativeQueue<FluidImpactEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FluidImpactEvent>[64] — deferred water impact acoustic lane — owner: HectonFluidEngine
+            PrewarmQueue(ref _fluidImpactEvents, FluidImpactEventQueueCapacity);
             RegisterNativeMemorySentinel();
             _scheduledBodies = new Rigidbody[newCapacity];
             EnsureGpuBuoyancyBuffers(newCapacity);
@@ -1302,12 +1669,14 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Освобождает NativeArrays. Вызывается при Destroy и Resize.
+        /// Osvobozhdaet NativeArrays. Vyzyvaetsya pri Destroy i Resize.
         /// </summary>
         private void DisposeNativeArrays()
         {
             JobHandle dependency = _scheduledBuoyancyJobActive ? _scheduledBuoyancyHandle : default;
             DisposeNativeArray(ref _positions, dependency);
+            DisposeNativeArray(ref _previousPositions, dependency);
+            DisposeNativeArray(ref _previousPositionValid, dependency);
             DisposeNativeArray(ref _velocities, dependency);
             DisposeNativeArray(ref _angularVelocities, dependency);
             DisposeNativeArray(ref _upVectors, dependency);
@@ -1316,9 +1685,17 @@ namespace Hecton8.Physics
             DisposeNativeArray(ref _gpuBuoyancyForcesY, dependency);
             DisposeNativeArray(ref _resultForces, dependency);
             DisposeNativeArray(ref _resultTorques, dependency);
+            DisposeNativeArray(ref _impactEventScratch, dependency);
+            DisposeNativeArray(ref _impactEventFlags, dependency);
             DisposeNativeArray(ref _gpuBuoyancyObjectDataUpload, dependency);
             DisposeNativeArray(ref _gpuBuoyancyReadback, dependency);
             DisposeNativeArray(ref _gpuAbyssalHeatSourceUpload, dependency);
+            DisposeNativeArray(ref _activeThrusterFlows, dependency);
+            DisposeNativeArray(ref _activeWhirlpools, dependency);
+            DisposeNativeQueue(ref _fluidImpactEvents, dependency, nameof(_fluidImpactEvents));
+            _fluidImpactQueuedCount = 0;
+            _activeThrusterFlowCount = 0;
+            _activeWhirlpoolFlowCount = 0;
             _scheduledBodies = null;
             _scheduledBuoyancyHandle = default;
             _scheduledBuoyancyJobActive = false;
@@ -1334,6 +1711,8 @@ namespace Hecton8.Physics
         private void RegisterNativeMemorySentinel()
         {
             NativeMemorySentinel.RegisterNativeArray(_positions, NativeMemoryOwner, nameof(_positions), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_previousPositions, NativeMemoryOwner, nameof(_previousPositions), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_previousPositionValid, NativeMemoryOwner, nameof(_previousPositionValid), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_velocities, NativeMemoryOwner, nameof(_velocities), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_angularVelocities, NativeMemoryOwner, nameof(_angularVelocities), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_upVectors, NativeMemoryOwner, nameof(_upVectors), NativeMemoryLifetime);
@@ -1342,9 +1721,19 @@ namespace Hecton8.Physics
             NativeMemorySentinel.RegisterNativeArray(_gpuBuoyancyForcesY, NativeMemoryOwner, nameof(_gpuBuoyancyForcesY), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_resultForces, NativeMemoryOwner, nameof(_resultForces), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_resultTorques, NativeMemoryOwner, nameof(_resultTorques), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_impactEventScratch, NativeMemoryOwner, nameof(_impactEventScratch), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_impactEventFlags, NativeMemoryOwner, nameof(_impactEventFlags), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_gpuBuoyancyObjectDataUpload, NativeMemoryOwner, nameof(_gpuBuoyancyObjectDataUpload), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_gpuBuoyancyReadback, NativeMemoryOwner, nameof(_gpuBuoyancyReadback), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_gpuAbyssalHeatSourceUpload, NativeMemoryOwner, nameof(_gpuAbyssalHeatSourceUpload), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_activeThrusterFlows, NativeMemoryOwner, nameof(_activeThrusterFlows), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_activeWhirlpools, NativeMemoryOwner, nameof(_activeWhirlpools), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeQueue(
+                _fluidImpactEvents,
+                FluidImpactEventQueueCapacity,
+                NativeMemoryOwner,
+                nameof(_fluidImpactEvents),
+                NativeMemoryLifetime);
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
@@ -1362,10 +1751,109 @@ namespace Hecton8.Physics
             array = default;
         }
 
+        private static void DisposeNativeQueue<T>(ref NativeQueue<T> queue, JobHandle dependency, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, label);
+            if (dependency.IsCompleted)
+                queue.Dispose();
+            else
+                queue.Dispose(dependency);
+
+            queue = default;
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
+        }
+
+        private void CopyAnalyticalFlowInputsToNative()
+        {
+            if (!_activeThrusterFlows.IsCreated || !_activeWhirlpools.IsCreated)
+                return;
+
+            int thrusterWriteIndex = 0;
+            for (int i = 0; i < MaxAnalyticalThrusterCount; i++)
+            {
+                ActiveThrusterFlow thruster = _thrusterFlowBuffer[i];
+                if (thruster.Active == 0 || thruster.Strength <= 0f || thruster.Radius <= 0f)
+                    continue;
+
+                _activeThrusterFlows[thrusterWriteIndex++] = thruster;
+            }
+
+            for (int i = thrusterWriteIndex; i < MaxAnalyticalThrusterCount; i++)
+                _activeThrusterFlows[i] = default;
+
+            _activeThrusterFlowCount = thrusterWriteIndex;
+
+            int whirlpoolWriteIndex = 0;
+            for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
+            {
+                WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
+                if (whirlpool.Active == 0 || whirlpool.Radius <= 0f)
+                    continue;
+
+                _activeWhirlpools[whirlpoolWriteIndex++] = whirlpool;
+            }
+
+            for (int i = whirlpoolWriteIndex; i < MaxAnalyticalWhirlpoolCount; i++)
+                _activeWhirlpools[i] = default;
+
+            _activeWhirlpoolFlowCount = whirlpoolWriteIndex;
+        }
+
         private static bool IsFiniteVector(Vector3 value)
         {
             float3 numericValue = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(numericValue));
+        }
+
+        private bool ContainsRegisteredObject(BuoyancyObject target)
+        {
+            int count = _objects.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (ReferenceEquals(_objects[i], target))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static Vector3 NormalizeFastOrDefault(Vector3 value, Vector3 fallback)
+        {
+            float3 axis = DominantAxisOrDefault(new float3(value.x, value.y, value.z), new float3(fallback.x, fallback.y, fallback.z));
+            return new Vector3(axis.x, axis.y, axis.z);
+        }
+
+        private static float3 DominantAxisOrDefault(float3 value, float3 fallback)
+        {
+            float3 absValue = math.abs(value);
+            float maxComponent = math.cmax(absValue);
+            if (maxComponent <= 0.000001f)
+                return fallback;
+
+            if (absValue.x >= absValue.y && absValue.x >= absValue.z)
+                return new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f);
+
+            if (absValue.y >= absValue.z)
+                return new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f);
+
+            return new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f));
         }
 
         private static bool TrySanitizePhysicsVector(float3 value, string errorMessage, out Vector3 sanitized)
@@ -1382,10 +1870,20 @@ namespace Hecton8.Physics
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void ReportNonFinitePhysicsVector(string message)
         {
             NativeAllocationTrackerRuntimeBridge.ReportLeak(message);
             Debug.LogError(message);
+        }
+
+        private static float ApproximateMagnitude(float3 value)
+        {
+            float3 absValue = math.abs(value);
+            float maxComponent = math.cmax(absValue);
+            float minComponent = math.cmin(absValue);
+            float midComponent = absValue.x + absValue.y + absValue.z - maxComponent - minComponent;
+            return maxComponent + midComponent * 0.375f + minComponent * 0.125f;
         }
 
         private void ReleaseIdleNativeBuffersIfNeeded()
@@ -1421,7 +1919,16 @@ namespace Hecton8.Physics
                 waterLevel,
                 enableCinematicTideShift,
                 cinematicTideAmplitudeMeters,
-                Time.time);
+                ResolveWaterLevelTimeSeconds());
+        }
+
+        private static float ResolveWaterLevelTimeSeconds()
+        {
+            WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
+            float syncedTime = weatherSnapshot.CurrentMeta.TimeAccumulator;
+            return math.isfinite(syncedTime) && syncedTime > 0f
+                ? syncedTime
+                : Time.time;
         }
 
         private void EnsureGpuBuoyancyBuffers(int capacity)
@@ -1432,9 +1939,9 @@ namespace Hecton8.Physics
             if (_gpuBuoyancyPositionBuffer == null || _gpuBuoyancyPositionBuffer.count != capacity)
             {
                 ReleaseGpuBuoyancyBuffers();
-                _gpuBuoyancyPositionBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float3>(capacity); // COLD ALLOC: GraphicsBuffer[capacity] - GPU buoyancy position upload buffer - owner: HectonFluidEngine
-                _gpuBuoyancyParamBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<GpuBuoyancyObjectData>(capacity); // COLD ALLOC: GraphicsBuffer[capacity] - GPU buoyancy object payload buffer - owner: HectonFluidEngine
-                _gpuBuoyancyResultBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(capacity); // COLD ALLOC: GraphicsBuffer[capacity] - GPU buoyancy result buffer for async readback - owner: HectonFluidEngine
+                _gpuBuoyancyPositionBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float3>(capacity); // COLD ALLOC: GraphicsBuffer[capacity] — GPU buoyancy position upload buffer — owner: HectonFluidEngine
+                _gpuBuoyancyParamBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<GpuBuoyancyObjectData>(capacity); // COLD ALLOC: GraphicsBuffer[capacity] — GPU buoyancy object payload buffer — owner: HectonFluidEngine
+                _gpuBuoyancyResultBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(capacity); // COLD ALLOC: GraphicsBuffer[capacity] — GPU buoyancy result buffer for async readback — owner: HectonFluidEngine
             }
         }
 
@@ -1468,9 +1975,9 @@ namespace Hecton8.Physics
             if (_gpuAbyssalFlowResultBuffer == null || _gpuAbyssalFlowResultBuffer.count != nodeCount)
             {
                 ReleaseGpuAbyssalFlowBuffers();
-                _gpuAbyssalFlowResultBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(nodeCount); // COLD ALLOC: GraphicsBuffer[nodeCount] - GPU abyssal flow-vector field storage - owner: HectonFluidEngine
-                _gpuAbyssalHeatSourceBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<GpuHeatSourceData>(MaxAbyssalHeatSourceCount); // COLD ALLOC: GraphicsBuffer[8] - inferred hydrothermal heat-source upload staging - owner: HectonFluidEngine
-                _gpuAbyssalAggregateBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, 1, sizeof(uint)); // COLD ALLOC: GraphicsBuffer[1] - GPU abyssal aggregate surge bitmask readback - owner: HectonFluidEngine
+                _gpuAbyssalFlowResultBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(nodeCount); // COLD ALLOC: GraphicsBuffer[nodeCount] — GPU abyssal flow-vector field storage — owner: HectonFluidEngine
+                _gpuAbyssalHeatSourceBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<GpuHeatSourceData>(MaxAbyssalHeatSourceCount); // COLD ALLOC: GraphicsBuffer[8] — inferred hydrothermal heat-source upload staging — owner: HectonFluidEngine
+                _gpuAbyssalAggregateBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, 1, sizeof(uint)); // COLD ALLOC: GraphicsBuffer[1] — GPU abyssal aggregate surge bitmask readback — owner: HectonFluidEngine
             }
         }
 
@@ -1500,6 +2007,10 @@ namespace Hecton8.Physics
                 for (int i = 0; i < _gpuAbyssalReadbackActive.Length; i++)
                     _gpuAbyssalReadbackActive[i] = false;
             }
+
+            _lastAbyssalGridResolution = Vector4.zero;
+            _lastAbyssalFlowCenter = Vector4.zero;
+            _lastAbyssalFlowSpacing = Vector4.zero;
         }
 
         private void ConsumeGpuAbyssalFlowReadbacks()
@@ -1605,7 +2116,7 @@ namespace Hecton8.Physics
             abyssalFlowFieldCompute.SetVector(_AbyssalFlowWeatherWindId, new Vector4(weatherWindManaged.x, weatherWindManaged.y, weatherWindManaged.z, 0f));
             abyssalFlowFieldCompute.SetVector(_AbyssalFlowWeatherParamsId, new Vector4(
                 weatherSnapshot.CurrentMeta.ThermalIntensity,
-                math.length(weatherWindManaged),
+                ApproximateMagnitude(new float3(weatherWindManaged.x, weatherWindManaged.y, weatherWindManaged.z)),
                 resolvedWaveHeight,
                 weatherSnapshot.CurrentMeta.TimeAccumulator));
             abyssalFlowFieldCompute.SetFloat(_AbyssalFlowSurfaceYId, resolvedWaterLevel);
@@ -1619,6 +2130,9 @@ namespace Hecton8.Physics
             Shader.SetGlobalVector(_AbyssalGridResolutionId, gridResolution);
             Shader.SetGlobalVector(_AbyssalFlowCenterId, flowCenterVector);
             Shader.SetGlobalVector(_AbyssalFlowSpacingId, flowSpacingVector);
+            _lastAbyssalGridResolution = gridResolution;
+            _lastAbyssalFlowCenter = flowCenterVector;
+            _lastAbyssalFlowSpacing = flowSpacingVector;
 
             _gpuAbyssalReadbackRequests[slot] = AsyncGPUReadback.Request(_gpuAbyssalAggregateBuffer);
             _gpuAbyssalReadbackActive[slot] = true;
@@ -1702,9 +2216,9 @@ namespace Hecton8.Physics
             if (horizontalLengthSq <= GiantWakeDirectionEpsilonSq)
                 return float3.zero;
 
-            float3 wakeDirection = horizontalDirection * math.rsqrt(horizontalLengthSq);
+            float3 wakeDirection = NormalizeFastOrDefault(horizontalDirection, new float3(1f, 0f, 0f));
             wakeDirection.y = giantWakeVerticalBias;
-            wakeDirection = math.normalizesafe(wakeDirection, new float3(1f, 0f, 0f));
+            wakeDirection = NormalizeFastOrDefault(wakeDirection, new float3(1f, 0f, 0f));
             return wakeDirection * math.max(0f, giantWakeCurrentStrength);
         }
 
@@ -1741,6 +2255,31 @@ namespace Hecton8.Physics
                 case 6: return new float3(0f, -verticalProbeOffset, 0f);
                 default: return new float3(horizontalProbeOffset * 0.70710677f, 0f, horizontalProbeOffset * 0.70710677f);
             }
+        }
+
+        private static float FastMagnitudeApprox(float3 value)
+        {
+            float3 absValue = math.abs(value);
+            float maxComponent = math.cmax(absValue);
+            float minComponent = math.cmin(absValue);
+            float midComponent = absValue.x + absValue.y + absValue.z - maxComponent - minComponent;
+            return maxComponent + midComponent * 0.375f + minComponent * 0.125f;
+        }
+
+        private static float3 NormalizeFastOrDefault(float3 value, float3 fallback)
+        {
+            float3 absValue = math.abs(value);
+            float maxComponent = math.cmax(absValue);
+            if (maxComponent <= 0.000001f)
+                return fallback;
+
+            if (absValue.x >= absValue.y && absValue.x >= absValue.z)
+                return new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f);
+
+            if (absValue.y >= absValue.z)
+                return new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f);
+
+            return new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f));
         }
 
         private void ConsumeGpuBuoyancyReadbacks()
@@ -1870,7 +2409,7 @@ namespace Hecton8.Physics
 
             _observerResolveRetryTimer = ObserverResolveRetryInterval;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 lodObserver = playerTransform;
         }
 
@@ -1899,11 +2438,14 @@ namespace Hecton8.Physics
             if (waterDensity < 0.01f) waterDensity = 0.01f;
             if (cinematicTideAmplitudeMeters < 0f) cinematicTideAmplitudeMeters = 0f;
             if (viscousDrag  < 0f)    viscousDrag  = 0f;
+            if (maxQuadraticDragForcePerKg < 0f) maxQuadraticDragForcePerKg = 0f;
             if (angularDrag  < 0f)    angularDrag  = 0f;
             if (jobBatchSize < 1)     jobBatchSize = 1;
             if (currentNoiseScale < 0.0001f) currentNoiseScale = 0.0001f;
             if (currentTimeScale < 0f) currentTimeScale = 0f;
             if (phantomCurrentStrength < 0f) phantomCurrentStrength = 0f;
+            if (haloclineBoundaryDepthMeters < 0.01f) haloclineBoundaryDepthMeters = 0.01f;
+            if (deepLayerDensityMultiplier < 1f) deepLayerDensityMultiplier = 1f;
             if (giantWakeCurrentStrength < 0f) giantWakeCurrentStrength = 0f;
             giantWakeVerticalBias = Mathf.Clamp(giantWakeVerticalBias, -1f, 1f);
             if (giantWakeDepthFadeStart < 0f) giantWakeDepthFadeStart = 0f;
@@ -1985,14 +2527,14 @@ namespace Hecton8.Physics
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  BuoyancyParams — данные объекта для Job (blittable struct)
+    //  BuoyancyParams — dannye obekta dlya Job (blittable struct)
     // ══════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Параметры одного объекта для BuoyancyJob.
-    /// Blittable struct — безопасен для NativeArray и Burst.
+    /// Parametry odnogo obekta dlya BuoyancyJob.
+    /// Blittable struct — bezopasen dlya NativeArray i Burst.
     ///
-    /// ИЗМЕНЕНИЕ: добавлено поле isInAir для системы Сухих Зон.
+    /// IZMENENIE: dobavleno pole isInAir dlya sistemy Suhih Zon.
     /// Dry-zone and simulation flags are packed into explicit bytes to keep the Burst payload deterministic.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
@@ -2001,16 +2543,16 @@ namespace Hecton8.Physics
         public float3 boundsCenter;
         public float3 boundsExtents;
 
-        /// <summary>Плотность объекта (кг/м³).</summary>
+        /// <summary>Plotnost obekta (kg/m³).</summary>
         public float density;
 
-        /// <summary>Объём объекта (м³).</summary>
+        /// <summary>Obem obekta (m³).</summary>
         public float volume;
 
-        /// <summary>Высота объекта (м) для частичного погружения.</summary>
+        /// <summary>Vysota obekta (m) dlya chastichnogo pogruzheniya.</summary>
         public float height;
 
-        /// <summary>Масса Rigidbody (кг).</summary>
+        /// <summary>Massa Rigidbody (kg).</summary>
         public float mass;
         public float currentResponse;
         public float surfaceStability;
@@ -2020,13 +2562,14 @@ namespace Hecton8.Physics
         public float3 localCurrent;
 
         /// <summary>
-        /// Объект находится в сухой зоне (внутри незатопленного модуля).
-        /// Если true — все водные силы обнуляются в BuoyancyJob.
+        /// Obekt nahoditsya v suhoy zone (vnutri nezatoplennogo modulya).
+        /// Esli true — vse vodnye sily obnulyayutsya v BuoyancyJob.
         /// </summary>
         public byte isInAir;
         public byte simulationMode;
         public byte simplifiedSubmersion;
         public byte useLocalFluidDensityOverride;
+        public uint alignmentPadding;
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -2034,21 +2577,21 @@ namespace Hecton8.Physics
     // ══════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Параллельный Job для вычисления сил плавучести, сопротивления
-    /// и подводных течений.
+    /// Parallelnyy Job dlya vychisleniya sil plavuchesti, soprotivleniya
+    /// i podvodnyh techeniy.
     ///
-    /// Burst-compiled SIMD-оптимизация, нет managed code, нет GC.
+    /// Burst-compiled SIMD-optimizatsiya, net managed code, net GC.
     ///
-    /// ИЗМЕНЕНИЕ (Dry Zones):
-    ///   Первая проверка в Execute: если p.isInAir == true,
-    ///   результирующие силы и моменты = float3.zero.
-    ///   Объект внутри базы не испытывает никаких водных сил.
+    /// IZMENENIE (Dry Zones):
+    ///   Pervaya proverka v Execute: esli p.isInAir == true,
+    ///   rezultiruyuschie sily i momenty = float3.zero.
+    ///   Obekt vnutri bazy ne ispytyvaet nikakih vodnyh sil.
     ///
-    /// ФИЗИКА:
-    ///   Архимед:    F_buoy  = ρ_water × V_submerged × g  (вверх)
-    ///   Drag:       F_drag  = -v × C_drag × subRatio     (против движения)
-    ///   Течение:    F_curr  = currentForce × subRatio     (по направлению)
-    ///   AngDrag:    T_drag  = -ω × C_angDrag × subRatio  (против вращения)
+    /// FIZIKA:
+    ///   Arhimed:    F_buoy  = ρ_water × V_submerged × g  (vverh)
+    ///   Drag:       F_drag  = -v × C_drag × subRatio     (protiv dvizheniya)
+    ///   Techenie:    F_curr  = currentForce × subRatio     (po napravleniyu)
+    ///   AngDrag:    T_drag  = -ω × C_angDrag × subRatio  (protiv vrascheniya)
     /// </summary>
     /// <summary>
     /// Burst-compiled fallback wave evaluator used by CPU-side buoyancy systems.
@@ -2058,9 +2601,6 @@ namespace Hecton8.Physics
     [StructLayout(LayoutKind.Sequential)]
     public struct WaveQueryJob : IJobParallelFor
     {
-        private const float Gravity = 9.81f;
-        private const float TwoPi = 6.28318530718f;
-
         [ReadOnly] public NativeArray<float3> PositionsWS;
         [ReadOnly] public NativeArray<BuoyancyParams> ObjParams;
         [WriteOnly] public NativeArray<float> VerticalOffsets;
@@ -2069,82 +2609,41 @@ namespace Hecton8.Physics
         public GerstnerWaveComponent Wave1;
         public GerstnerWaveComponent Wave2;
         public float TimeSeconds;
+        public float WaterLevelY;
+        public float MaxWaveEnvelope;
 
         public void Execute(int index)
         {
-            float2 centerXZ = PositionsWS[index].xz;
-            float2 extentsXZ = new float2(0.05f, 0.05f);
+            float3 positionWS = PositionsWS[index];
+            BuoyancyParams buoyancyParams = default;
+            float objectHeight = 0.01f;
+            float2 centerXZ = positionWS.xz;
             if (index < ObjParams.Length)
             {
-                BuoyancyParams buoyancyParams = ObjParams[index];
+                buoyancyParams = ObjParams[index];
+                objectHeight = math.max(buoyancyParams.height, 0.01f);
                 if (math.all(math.isfinite(buoyancyParams.boundsCenter)))
                     centerXZ = buoyancyParams.boundsCenter.xz;
-
-                if (math.all(math.isfinite(buoyancyParams.boundsExtents)))
-                    extentsXZ = math.max(math.abs(buoyancyParams.boundsExtents.xz), new float2(0.05f, 0.05f));
             }
 
-            float waveOffset =
-                SampleWaveHeight(centerXZ + new float2(-extentsXZ.x, -extentsXZ.y)) +
-                SampleWaveHeight(centerXZ + new float2( extentsXZ.x, -extentsXZ.y)) +
-                SampleWaveHeight(centerXZ + new float2(-extentsXZ.x,  extentsXZ.y)) +
-                SampleWaveHeight(centerXZ + new float2( extentsXZ.x,  extentsXZ.y));
+            float baseDepth = WaterLevelY - positionWS.y;
+            if (baseDepth > objectHeight + MaxWaveEnvelope + 0.5f)
+            {
+                VerticalOffsets[index] = 0f;
+                return;
+            }
 
-            VerticalOffsets[index] = ResolveFiniteFloatOrZero(waveOffset * 0.25f);
+            VerticalOffsets[index] = ResolveFiniteFloatOrZero(SampleWaveHeight(centerXZ));
         }
 
         private float SampleWaveHeight(float2 worldXZ)
         {
-            float3 displacement = ComputeTotalDisplacement(worldXZ);
-
-            float2 correctedXZ = worldXZ - displacement.xz;
-            displacement = ComputeTotalDisplacement(correctedXZ);
-
-            correctedXZ = worldXZ - displacement.xz;
-            displacement = ComputeTotalDisplacement(correctedXZ);
-
-            return ResolveFiniteFloatOrZero(displacement.y);
-        }
-
-        private float3 ComputeTotalDisplacement(float2 worldXZ)
-        {
-            float3 total = float3.zero;
-            total += ComputeDisplacement(worldXZ, Wave0);
-            total += ComputeDisplacement(worldXZ, Wave1);
-            total += ComputeDisplacement(worldXZ, Wave2);
-            return total;
-        }
-
-        private float3 ComputeDisplacement(float2 worldXZ, GerstnerWaveComponent wave)
-        {
-            if (wave.Amplitude <= 0f || wave.Wavelength <= 0.01f)
-                return float3.zero;
-
-            float2 direction = math.normalizesafe(wave.DirectionXZ, new float2(1f, 0f));
-            float waveNumber = TwoPi / math.max(0.01f, wave.Wavelength);
-            float phaseVelocity = math.sqrt(Gravity / waveNumber) * math.max(0.01f, wave.SpeedMultiplier);
-            float phase = waveNumber * math.dot(direction, worldXZ) - phaseVelocity * waveNumber * TimeSeconds + wave.PhaseOffset;
-            float sinPhase = math.sin(phase);
-            float cosPhase = math.cos(phase);
-            float horizontalDisplacement = wave.Steepness * wave.Amplitude;
-
-            float3 displacement;
-            displacement.x = -direction.x * horizontalDisplacement * sinPhase;
-            displacement.y = wave.Amplitude * cosPhase;
-            displacement.z = -direction.y * horizontalDisplacement * sinPhase;
-            return ResolveFiniteFloat3OrZero(displacement);
+            return HectonGerstnerWater.SampleHeight(worldXZ, Wave0, Wave1, Wave2, TimeSeconds);
         }
 
         private static float ResolveFiniteFloatOrZero(float value)
         {
             return (math.isnan(value) || math.isinf(value) || !math.isfinite(value)) ? 0f : value;
-        }
-
-        private static float3 ResolveFiniteFloat3OrZero(float3 value)
-        {
-            return (math.any(math.isnan(value)) || math.any(math.isinf(value)) || !math.all(math.isfinite(value)))
-                ? float3.zero
-                : value;
         }
     }
 
@@ -2161,21 +2660,33 @@ namespace Hecton8.Physics
 
         // ── Input (ReadOnly) ──
         [ReadOnly] public NativeArray<float3>         positions;
+        [ReadOnly] public NativeArray<float3>         previousPositions;
+        [ReadOnly] public NativeArray<byte>           previousPositionValid;
         [ReadOnly] public NativeArray<float3>         velocities;
         [ReadOnly] public NativeArray<float3>         angularVelocities;
         [ReadOnly] public NativeArray<float3>         upVectors;
         [ReadOnly] public NativeArray<BuoyancyParams> objParams;
         [ReadOnly] public NativeArray<float>          waveOffsets;
         [ReadOnly] public NativeArray<float>          gpuBuoyancyForcesY;
+        [ReadOnly] public NativeArray<ActiveThrusterFlow> activeThrusters;
+        [ReadOnly] public NativeArray<WhirlpoolFlow> activeWhirlpools;
+        public int activeThrusterCount;
+        public int activeWhirlpoolCount;
+        [WriteOnly] public NativeArray<FluidImpactEvent> impactEvents;
+        [WriteOnly] public NativeArray<int> impactEventFlags;
 
         // ── Output (WriteOnly) ──
         [WriteOnly] public NativeArray<float3> resultForces;
         [WriteOnly] public NativeArray<float3> resultTorques;
+        public NativeQueue<int>.ParallelWriter mathGuardWriter;
+        public int forceNanErrorCode;
+        public int torqueNanErrorCode;
 
         // ── Shared parameters (uniform) ──
         public float  waterLevel;
         public float  waterDensity;
         public float  viscousDrag;
+        public float  maxQuadraticDragForcePerKg;
         public float  angularDragCoeff;
         public float  gravity;
         public float3 baseCurrentForce;
@@ -2195,10 +2706,15 @@ namespace Hecton8.Physics
         public float  currentTimeScale;
         public float  currentVerticalFactor;
         public float  phantomCurrentStrength;
+        public byte   enableAnalyticalFlowField;
+        public float  haloclineBoundaryDepthMeters;
+        public float  deepLayerDensityMultiplier;
+        public float  haloclineShearForcePerKg;
         public byte   useGpuBuoyancyForce;
 
         public void Execute(int i)
         {
+            impactEventFlags[i] = 0;
             BuoyancyParams p = objParams[i];
 
             if (p.simulationMode == 1)
@@ -2216,10 +2732,10 @@ namespace Hecton8.Physics
             }
 
             // ══════════════════════════════════════════════
-            //  DRY ZONE CHECK — объект внутри незатопленного модуля
+            //  DRY ZONE CHECK — obekt vnutri nezatoplennogo modulya
             // ══════════════════════════════════════════════
-            // Мгновенное отключение всей водной физики.
-            // Объект подчиняется только Unity gravity.
+            // Mgnovennoe otklyuchenie vsey vodnoy fiziki.
+            // Obekt podchinyaetsya tolko Unity gravity.
             if (p.isInAir != 0)
             {
                 resultForces[i]  = float3.zero;
@@ -2230,13 +2746,14 @@ namespace Hecton8.Physics
             float3 pos = positions[i];
             float3 vel = velocities[i];
             float3 angularVel = angularVelocities[i];
-            float3 up = math.normalizesafe(upVectors[i], new float3(0f, 1f, 0f));
+            float3 up = NormalizeFastOrDefault(upVectors[i], new float3(0f, 1f, 0f));
 
-            // ── Глубина погружения центра масс ──
+            // ── Glubina pogruzheniya tsentra mass ──
             float waveOffset = waveOffsets[i];
-            float depthBelowSurface = waterLevel + waveOffset - pos.y;
+            float surfaceY = waterLevel + waveOffset;
+            float depthBelowSurface = surfaceY - pos.y;
 
-            // ── Объект над водой → нулевые силы ──
+            // ── Obekt nad vodoy → nulevye sily ──
             if (depthBelowSurface <= 0f)
             {
                 resultForces[i]  = float3.zero;
@@ -2244,17 +2761,36 @@ namespace Hecton8.Physics
                 return;
             }
 
-            // ── Коэффициент погружения (0..1) ──
+            if (previousPositionValid[i] != 0 && previousPositions[i].y > surfaceY && pos.y <= surfaceY)
+            {
+                impactEvents[i] = new FluidImpactEvent
+                {
+                    PositionWS = pos,
+                    VelocityWS = vel,
+                    MassKg = p.mass,
+                    SurfaceY = surfaceY
+                };
+                impactEventFlags[i] = 1;
+            }
+
+            // ── Koeffitsient pogruzheniya (0..1) ──
             float subRatio = p.simplifiedSubmersion != 0
                 ? (depthBelowSurface > 0f ? 1f : 0f)
                 : math.saturate(depthBelowSurface / p.height);
             float resolvedWaterDensity = p.useLocalFluidDensityOverride != 0
                 ? math.max(0.01f, p.localFluidDensity)
                 : waterDensity;
-            float densityRatio = math.max(0.1f, resolvedWaterDensity / math.max(0.01f, waterDensity));
+            float denseLayer01 = 0f;
+            if (enableAnalyticalFlowField != 0)
+            {
+                float safeHaloclineDepth = math.max(0.01f, haloclineBoundaryDepthMeters);
+                denseLayer01 = depthBelowSurface >= safeHaloclineDepth ? 1f : 0f;
+                resolvedWaterDensity *= math.lerp(1f, math.max(1f, deepLayerDensityMultiplier), denseLayer01);
+            }
+
 
             // ══════════════════════════════════════════════
-            //  1. СИЛА АРХИМЕДА (Buoyancy)
+            //  1. SILA ARHIMEDA (Buoyancy)
             // ══════════════════════════════════════════════
             float displacedVolume = p.volume * subRatio;
             float buoyancyMagnitude = resolvedWaterDensity * displacedVolume * gravity;
@@ -2270,13 +2806,12 @@ namespace Hecton8.Physics
             float3 buoyancyForce = new float3(0f, buoyancyMagnitude, 0f);
 
             // ══════════════════════════════════════════════
-            //  2. ВЯЗКОЕ СОПРОТИВЛЕНИЕ (Drag)
+            //  2. VYaZKOE SOPROTIVLENIE (Drag)
             // ══════════════════════════════════════════════
-            float dragFactor = viscousDrag * subRatio * densityRatio;
-            float3 dragForce = -vel * dragFactor * p.mass;
+            float3 dragForce = float3.zero;
 
             // ══════════════════════════════════════════════
-            //  3. ПОДВОДНОЕ ТЕЧЕНИЕ (Current)
+            //  3. PODVODNOE TEChENIE (Current)
             // ══════════════════════════════════════════════
             float3 standardCurrent = baseCurrentForce + p.localCurrent;
             standardCurrent += weatherCurrentDirection * math.max(0f, weatherCurrentScale) * math.max(0f, weatherBlend);
@@ -2289,7 +2824,7 @@ namespace Hecton8.Physics
 
             if (enablePhantomCurrent != 0 && p.currentResponse > 0.0001f)
             {
-                sampledCurrent += CurrentManager.SampleCurrent(
+                sampledCurrent += HectonAnalyticalFlowField.SampleCinematicCurrent(
                     pos,
                     time,
                     currentNoiseScale,
@@ -2310,7 +2845,7 @@ namespace Hecton8.Physics
 
                 if (surfaceLayer01 > 0.0001f && p.currentResponse > 0.0001f)
                 {
-                    sampledCurrent += CurrentManager.SampleCurrent(
+                    sampledCurrent += HectonAnalyticalFlowField.SampleCinematicCurrent(
                         pos + new float3(17.3f, 0f, 11.1f),
                         time,
                         currentNoiseScale,
@@ -2327,10 +2862,44 @@ namespace Hecton8.Physics
                     sampledCurrent.y = math.lerp(sampledCurrent.y, sampledCurrent.y * ThermoclineVerticalAttenuation, thermoclineBand01);
             }
 
+            if (enableAnalyticalFlowField != 0)
+            {
+                int thrusterCount = math.min(math.max(0, activeThrusterCount), activeThrusters.Length);
+                for (int thrusterIndex = 0; thrusterIndex < thrusterCount; thrusterIndex++)
+                    HectonAnalyticalFlowField.ApplyThrusterFlow(ref sampledCurrent, pos, activeThrusters[thrusterIndex]);
+
+                int whirlpoolCount = math.min(math.max(0, activeWhirlpoolCount), activeWhirlpools.Length);
+                for (int whirlpoolIndex = 0; whirlpoolIndex < whirlpoolCount; whirlpoolIndex++)
+                    HectonAnalyticalFlowField.ApplyWhirlpoolFlow(ref sampledCurrent, pos, activeWhirlpools[whirlpoolIndex]);
+            }
+
+            float3 analyticalShearForce = float3.zero;
+            if (enableAnalyticalFlowField != 0 && denseLayer01 > 0f && haloclineShearForcePerKg != 0f && p.currentResponse > 0.0001f)
+            {
+                analyticalShearForce = new float3(
+                    0f,
+                    0f,
+                    haloclineShearForcePerKg * p.mass * subRatio * math.max(0f, p.currentResponse));
+            }
+
             float3 currentF = sampledCurrent * (subRatio * p.mass * p.currentResponse);
+            float3 relativeVelocity = vel - sampledCurrent;
+            float relativeSpeedSq = math.lengthsq(relativeVelocity);
+            if (relativeSpeedSq > 0.000001f && maxQuadraticDragForcePerKg > 0f)
+            {
+                float relativeSpeed = FastMagnitudeApprox(relativeVelocity);
+                float dragScalar = math.max(0f, viscousDrag) *
+                                   resolvedWaterDensity *
+                                   math.max(0.01f, p.volume) *
+                                   subRatio;
+                dragForce = -relativeVelocity * (relativeSpeed * dragScalar);
+                dragForce = ClampVectorMagnitude(
+                    dragForce,
+                    math.max(0f, maxQuadraticDragForcePerKg) * math.max(0.01f, p.mass));
+            }
 
             // ══════════════════════════════════════════════
-            //  4. ДЕМПФИРОВАНИЕ ПОКАЧИВАНИЯ
+            //  4. DEMPFIROVANIE POKAChIVANIYa
             // ══════════════════════════════════════════════
             float dampingForce = 0f;
             if (subRatio < 1f)
@@ -2341,17 +2910,17 @@ namespace Hecton8.Physics
             float3 dampingVec = new float3(0f, dampingForce, 0f);
 
             // ══════════════════════════════════════════════
-            //  ИТОГ
+            //  ITOG
             // ══════════════════════════════════════════════
 
             float surfaceBand = math.saturate(1f - math.abs(depthBelowSurface - p.height) / math.max(0.25f, p.height * 1.5f));
             float3 tiltAxis = math.cross(up, new float3(0f, 1f, 0f));
             float3 stabilityTorque = tiltAxis * (p.surfaceStability * buoyancyMagnitude * surfaceBand * 0.12f);
             float3 angularDragTorque = -angularVel * (angularDragCoeff * math.max(0.1f, p.angularDragMultiplier) * subRatio * math.max(1f, p.mass * 0.35f));
-            float3 flowAxis = math.normalizesafe(sampledCurrent, new float3(1f, 0f, 0f));
+            float3 flowAxis = NormalizeFastOrDefault(sampledCurrent, new float3(1f, 0f, 0f));
             float3 gyroscopicAxis = math.cross(up, flowAxis);
-            float currentSpeed = math.length(sampledCurrent);
-            float volumeLever = math.sqrt(math.max(0.0001f, p.volume));
+            float currentSpeed = FastMagnitudeApprox(sampledCurrent);
+            float volumeLever = CinematicVolumeLever(p.volume);
             float lightTumbleBias = math.saturate(1f / math.max(0.25f, p.mass));
             float massStabilizer = math.rcp(math.max(1f, p.mass));
             float3 gyroscopicFlowTorque = gyroscopicAxis *
@@ -2366,14 +2935,17 @@ namespace Hecton8.Physics
                 float wakeSpeedSq = math.lengthsq(resolvedGiantWakeCurrent);
                 if (standardSpeedSq > 0.0001f && wakeSpeedSq > 0.0001f)
                 {
-                    float3 standardAxis = standardCurrent * math.rsqrt(standardSpeedSq);
-                    float3 wakeAxis = resolvedGiantWakeCurrent * math.rsqrt(wakeSpeedSq);
-                    float crossMagnitude = math.length(math.cross(standardAxis, wakeAxis));
+                    float3 standardAxis = NormalizeFastOrDefault(standardCurrent, new float3(1f, 0f, 0f));
+                    float3 wakeAxis = NormalizeFastOrDefault(resolvedGiantWakeCurrent, new float3(1f, 0f, 0f));
+                    float crossMagnitudeSq = math.lengthsq(math.cross(standardAxis, wakeAxis));
                     float opposition = math.saturate(-math.dot(standardAxis, wakeAxis));
-                    float shear01 = math.saturate((crossMagnitude + opposition) * math.sqrt(math.min(standardSpeedSq, wakeSpeedSq)) * 0.85f);
+                    float minCurrentSpeed = math.min(
+                        FastMagnitudeApprox(standardCurrent),
+                        FastMagnitudeApprox(resolvedGiantWakeCurrent));
+                    float shear01 = math.saturate((crossMagnitudeSq + opposition) * minCurrentSpeed * 0.85f);
                     float phase = math.dot(pos, new float3(0.071f, 0.113f, 0.097f)) + time * math.max(0.01f, tidalShearFrequency);
-                    float turbulence = math.sin(phase) * math.cos(phase * 1.731f + 2.17f);
-                    float3 shearAxis = math.normalizesafe(math.cross(standardAxis, wakeAxis), up);
+                    float turbulence = FastTriangleSigned(phase) * FastTriangleSigned(phase * 1.731f + 2.17f);
+                    float3 shearAxis = NormalizeFastOrDefault(math.cross(standardAxis, wakeAxis), up);
                     shearTorque = shearAxis *
                                   (turbulence * shear01 * math.max(0f, tidalShearTorqueStrength) *
                                    volumeLever * subRatio * math.max(0f, p.currentResponse));
@@ -2381,19 +2953,47 @@ namespace Hecton8.Physics
                 }
             }
 
-            resultForces[i] = ResolveFiniteFloat3OrZero(buoyancyForce + dragForce + currentF + dampingVec);
-            resultTorques[i] = ResolveFiniteFloat3OrZero(angularDragTorque + stabilityTorque + gyroscopicFlowTorque + shearTorque);
+            resultForces[i] = MathGuard.SanitizeFiniteOrZero(
+                buoyancyForce + dragForce + currentF + dampingVec + analyticalShearForce,
+                forceNanErrorCode,
+                mathGuardWriter);
+            resultTorques[i] = MathGuard.SanitizeFiniteOrZero(
+                angularDragTorque + stabilityTorque + gyroscopicFlowTorque + shearTorque,
+                torqueNanErrorCode,
+                mathGuardWriter);
+        }
+
+        private static float FastMagnitudeApprox(float3 value)
+        {
+            float3 absValue = math.abs(value);
+            float maxComponent = math.cmax(absValue);
+            float minComponent = math.cmin(absValue);
+            float midComponent = absValue.x + absValue.y + absValue.z - maxComponent - minComponent;
+            return maxComponent + midComponent * 0.375f + minComponent * 0.125f;
+        }
+
+        private static float CinematicVolumeLever(float volume)
+        {
+            float safeVolume = math.max(0.0001f, volume);
+            float smallVolumeLever = 0.2f + safeVolume * 0.8f;
+            float largeVolumeLever = 0.75f + safeVolume * 0.25f;
+            return math.min(8f, math.select(smallVolumeLever, largeVolumeLever, safeVolume > 1f));
+        }
+
+        private static float FastTriangleSigned(float phase)
+        {
+            float triangle01 = 1f - math.abs(math.frac(phase * 0.15915494f + 0.25f) * 2f - 1f);
+            return triangle01 * 2f - 1f;
         }
 
         private static float3 ClampVectorMagnitude(float3 value, float maxMagnitude)
         {
             float safeMaxMagnitude = math.max(0f, maxMagnitude);
-            float magnitudeSq = math.lengthsq(value);
-            float maxMagnitudeSq = safeMaxMagnitude * safeMaxMagnitude;
-            if (magnitudeSq <= maxMagnitudeSq || magnitudeSq <= 0.000001f)
+            float magnitude = FastMagnitudeApprox(value);
+            if (magnitude <= safeMaxMagnitude || magnitude <= 0.000001f)
                 return value;
 
-            return value * (safeMaxMagnitude * math.rsqrt(magnitudeSq));
+            return value * (safeMaxMagnitude / magnitude);
         }
 
         private static float3 ResolveFiniteFloat3OrZero(float3 value)
@@ -2401,6 +3001,429 @@ namespace Hecton8.Physics
             return (math.any(math.isnan(value)) || math.any(math.isinf(value)) || !math.all(math.isfinite(value)))
                 ? float3.zero
                 : value;
+        }
+
+        private static float3 NormalizeFastOrDefault(float3 value, float3 fallback)
+        {
+            float3 absValue = math.abs(value);
+            float maxComponent = math.cmax(absValue);
+            if (maxComponent <= 0.000001f)
+                return fallback;
+
+            if (absValue.x >= absValue.y && absValue.x >= absValue.z)
+                return new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f);
+
+            if (absValue.y >= absValue.z)
+                return new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f);
+
+            return new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f));
+        }
+    }
+
+    internal static class HectonGerstnerWater
+    {
+        private const float TwoPi = 6.28318530718f;
+        private const float CinematicPhaseSpeedBase = 0.85f;
+        private const float CinematicPhaseSpeedPerMeter = 0.23f;
+
+        public static float SampleHeight(
+            float2 worldXZ,
+            GerstnerWaveComponent wave0,
+            GerstnerWaveComponent wave1,
+            GerstnerWaveComponent wave2,
+            float timeSeconds)
+        {
+            float3 displacement = ComputeTotalDisplacement(worldXZ, wave0, wave1, wave2, timeSeconds);
+            return ResolveFiniteFloatOrZero(displacement.y);
+        }
+
+        private static float3 ComputeTotalDisplacement(
+            float2 worldXZ,
+            GerstnerWaveComponent wave0,
+            GerstnerWaveComponent wave1,
+            GerstnerWaveComponent wave2,
+            float timeSeconds)
+        {
+            float3 total = float3.zero;
+            total += ComputeDisplacement(worldXZ, wave0, timeSeconds);
+            total += ComputeDisplacement(worldXZ, wave1, timeSeconds);
+            total += ComputeDisplacement(worldXZ, wave2, timeSeconds);
+            return total;
+        }
+
+        private static float3 ComputeDisplacement(float2 worldXZ, GerstnerWaveComponent wave, float timeSeconds)
+        {
+            if (wave.Amplitude <= 0f || wave.Wavelength <= 0.01f)
+                return float3.zero;
+
+            float2 direction = NormalizeFastOrDefault(wave.DirectionXZ, new float2(1f, 0f));
+            float waveNumber = TwoPi / math.max(0.01f, wave.Wavelength);
+            float phaseVelocity = (CinematicPhaseSpeedBase + wave.Wavelength * CinematicPhaseSpeedPerMeter) *
+                                  math.max(0.01f, wave.SpeedMultiplier);
+            float phase = waveNumber * math.dot(direction, worldXZ) - phaseVelocity * waveNumber * timeSeconds + wave.PhaseOffset;
+            float sinPhase = FastTriangleSigned(phase);
+            float cosPhase = FastTriangleSigned(phase + 1.5707964f);
+            float horizontalDisplacement = wave.Steepness * wave.Amplitude;
+
+            float3 displacement;
+            displacement.x = -direction.x * horizontalDisplacement * sinPhase;
+            displacement.y = wave.Amplitude * cosPhase;
+            displacement.z = -direction.y * horizontalDisplacement * sinPhase;
+            return HectonAnalyticalFlowField.ResolveFiniteFloat3OrZero(displacement);
+        }
+
+        private static float ResolveFiniteFloatOrZero(float value)
+        {
+            return (math.isnan(value) || math.isinf(value) || !math.isfinite(value)) ? 0f : value;
+        }
+
+        private static float FastTriangleSigned(float phase)
+        {
+            float triangle01 = 1f - math.abs(math.frac(phase * 0.15915494f + 0.25f) * 2f - 1f);
+            return triangle01 * 2f - 1f;
+        }
+
+        private static float FastMagnitudeApprox(float2 value)
+        {
+            float2 absValue = math.abs(value);
+            float major = math.max(absValue.x, absValue.y);
+            float minor = math.min(absValue.x, absValue.y);
+            return major + minor * 0.375f;
+        }
+
+        private static float2 NormalizeFastOrDefault(float2 value, float2 fallback)
+        {
+            float2 absValue = math.abs(value);
+            float maxComponent = math.max(absValue.x, absValue.y);
+            if (maxComponent <= 0.000001f)
+                return fallback;
+
+            return absValue.x >= absValue.y
+                ? new float2(math.select(-1f, 1f, value.x >= 0f), 0f)
+                : new float2(0f, math.select(-1f, 1f, value.y >= 0f));
+        }
+    }
+
+    internal static class HectonAnalyticalFlowField
+    {
+        private const float SurfaceStormLayerDepthMeters = 50f;
+        private const float StormSurfaceTurbulenceStrength = 0.4f;
+
+        public static float3 SampleBaseFlow(
+            float3 position,
+            float depthBelowSurface,
+            float3 baseCurrent,
+            float3 giantWakeCurrent,
+            float giantWakeDepthFadeStart,
+            float giantWakeDepthFadeRange,
+            uint weatherStateMask,
+            float3 weatherCurrentDirection,
+            float weatherCurrentScale,
+            float weatherBlend,
+            byte enablePhantomCurrent,
+            float currentNoiseScale,
+            float currentTimeScale,
+            float currentVerticalFactor,
+            float phantomCurrentStrength,
+            float time,
+            float haloclineBoundaryDepthMeters,
+            float haloclineShearVelocity)
+        {
+            float3 flow = baseCurrent;
+            flow += weatherCurrentDirection * math.max(0f, weatherCurrentScale) * math.max(0f, weatherBlend);
+
+            float wakeDepth01 = math.saturate(
+                (depthBelowSurface - math.max(0f, giantWakeDepthFadeStart)) /
+                math.max(0.001f, giantWakeDepthFadeRange));
+            flow += giantWakeCurrent * wakeDepth01;
+
+            if (enablePhantomCurrent != 0)
+            {
+                flow += SampleCinematicCurrent(
+                    position,
+                    time,
+                    currentNoiseScale,
+                    currentTimeScale,
+                    phantomCurrentStrength,
+                    currentVerticalFactor);
+            }
+
+            bool stormActive = (weatherStateMask & (uint)Hecton8.Core.WeatherState.Storm) != 0u;
+            if (stormActive)
+            {
+                float surfaceLayer01 = 1f - math.saturate(depthBelowSurface / math.max(SurfaceStormLayerDepthMeters, 0.0001f));
+                float stormBlend = math.max(0f, weatherBlend);
+                float stormBiasScale = weatherCurrentScale * math.max(0.35f, stormBlend);
+                flow.xz += weatherCurrentDirection.xz * stormBiasScale;
+
+                if (surfaceLayer01 > 0.0001f)
+                {
+                    flow += SampleCinematicCurrent(
+                        position + new float3(17.3f, 0f, 11.1f),
+                        time,
+                        currentNoiseScale,
+                        currentTimeScale,
+                        phantomCurrentStrength * (StormSurfaceTurbulenceStrength * surfaceLayer01),
+                        currentVerticalFactor * surfaceLayer01);
+                }
+            }
+
+            if (depthBelowSurface >= math.max(0.01f, haloclineBoundaryDepthMeters))
+                flow.z += haloclineShearVelocity;
+
+            return ResolveFiniteFloat3OrZero(flow);
+        }
+
+        public static float3 SampleCinematicCurrent(
+            float3 worldPos,
+            float time,
+            float noiseScale,
+            float timeScale,
+            float strength,
+            float verticalFactor)
+        {
+            if (strength == 0f || noiseScale <= 0f || !math.all(math.isfinite(worldPos)))
+                return float3.zero;
+
+            float t = time * timeScale;
+            float sx = worldPos.x * noiseScale;
+            float sy = worldPos.y * noiseScale;
+            float sz = worldPos.z * noiseScale;
+            float nx = FastTriangleSigned(sx * 2.41f + sz * 0.73f + sy * 0.19f + t);
+            float nz = FastTriangleSigned(sz * 2.17f - sx * 0.61f + sy * 0.13f + t * 1.23f + 2.11f);
+            float ny = FastTriangleSigned(sx * 0.43f + sz * 0.29f + sy * 0.07f + t * 0.5f + 4.37f) * verticalFactor;
+            return ResolveFiniteFloat3OrZero(new float3(nx, ny, nz) * strength);
+        }
+
+        public static void ApplyThrusterFlow(ref float3 flow, float3 samplePosition, ActiveThrusterFlow thruster)
+        {
+            if (thruster.Active == 0 || thruster.Strength <= 0f || thruster.Radius <= 0f)
+                return;
+
+            float3 toSample = samplePosition - thruster.PositionWS;
+            float distanceSq = math.lengthsq(toSample);
+            float radiusSq = thruster.Radius * thruster.Radius;
+            if (distanceSq <= 0.000001f || distanceSq > radiusSq)
+                return;
+
+            float3 exhaustDirection = -NormalizeFastOrDefault(thruster.DirectionWS, new float3(0f, 0f, 1f));
+            float axialDistance = math.dot(toSample, exhaustDirection);
+            if (axialDistance <= 0f)
+                return;
+
+            float coneCosSq = thruster.ConeCos * thruster.ConeCos;
+            float axialSq = axialDistance * axialDistance;
+            float coneThresholdSq = coneCosSq * distanceSq;
+            if (axialSq < coneThresholdSq)
+                return;
+
+            float distanceFalloff = math.saturate(1f - distanceSq / math.max(radiusSq, 0.000001f));
+            float coneFalloff = math.saturate((axialSq - coneThresholdSq) / math.max(0.001f, distanceSq * (1f - coneCosSq)));
+            flow += exhaustDirection * (thruster.Strength * distanceFalloff * distanceFalloff * coneFalloff);
+        }
+
+        public static void ApplyWhirlpoolFlow(ref float3 flow, float3 samplePosition, WhirlpoolFlow whirlpool)
+        {
+            if (whirlpool.Active == 0 || whirlpool.Radius <= 0f)
+                return;
+
+            float3 toCenter = whirlpool.CenterWS - samplePosition;
+            toCenter.y = 0f;
+            float distanceSq = math.lengthsq(toCenter);
+            float radiusSq = whirlpool.Radius * whirlpool.Radius;
+            if (distanceSq <= 0.000001f || distanceSq > radiusSq)
+                return;
+
+            float3 inward = NormalizeFastOrDefault(toCenter, new float3(1f, 0f, 0f));
+            float3 tangent = new float3(inward.z, 0f, -inward.x);
+            float falloff = math.saturate(1f - distanceSq / math.max(radiusSq, 0.000001f));
+            flow += tangent * (whirlpool.TangentialStrength * falloff);
+            flow += inward * (whirlpool.CentripetalStrength * falloff);
+            flow.y -= whirlpool.VerticalPull * falloff;
+        }
+
+        public static float3 ResolveFiniteFloat3OrZero(float3 value)
+        {
+            return (math.any(math.isnan(value)) || math.any(math.isinf(value)) || !math.all(math.isfinite(value)))
+                ? float3.zero
+                : value;
+        }
+
+        private static float FastTriangleSigned(float phase)
+        {
+            float triangle01 = 1f - math.abs(math.frac(phase * 0.15915494f + 0.25f) * 2f - 1f);
+            return triangle01 * 2f - 1f;
+        }
+
+        private static float FastMagnitudeApprox(float3 value)
+        {
+            float3 absValue = math.abs(value);
+            float maxComponent = math.cmax(absValue);
+            float minComponent = math.cmin(absValue);
+            float midComponent = absValue.x + absValue.y + absValue.z - maxComponent - minComponent;
+            return maxComponent + midComponent * 0.375f + minComponent * 0.125f;
+        }
+
+        private static float3 NormalizeFastOrDefault(float3 value, float3 fallback)
+        {
+            float3 absValue = math.abs(value);
+            float maxComponent = math.cmax(absValue);
+            if (maxComponent <= 0.000001f)
+                return fallback;
+
+            if (absValue.x >= absValue.y && absValue.x >= absValue.z)
+                return new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f);
+
+            if (absValue.y >= absValue.z)
+                return new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f);
+
+            return new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f));
+        }
+    }
+
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct InteriorFloodBfsJob : IJob
+    {
+        public const uint FloodSeedFlag = 1u;
+        private const int DefaultSeedScanBudget = 32;
+        private const int DefaultNodeVisitBudget = 32;
+        private const int DefaultEdgeVisitBudget = 64;
+
+        public NativeArray<InteriorFloodNode> Nodes;
+        [ReadOnly] public NativeArray<InteriorFloodEdge> Edges;
+        public NativeArray<int> Queue;
+        public NativeArray<int> Visited;
+        public NativeArray<InteriorFloodBfsResult> Result;
+        public float DeltaTime;
+        public float WaterDensityKgPerM3;
+        public int VisitStamp;
+        public int SeedScanStart;
+        public int MaxSeedScanCount;
+        public int MaxNodeVisits;
+        public int MaxEdgeVisits;
+        public int ResultSampleStride;
+        public int ResultSamplePhase;
+
+        public void Execute()
+        {
+            int nodeCount = math.min(Nodes.Length, math.min(Queue.Length, Visited.Length));
+            if (nodeCount <= 0)
+                return;
+
+            int visitStamp = math.max(1, VisitStamp);
+            int seedBudget = ResolveBudget(MaxSeedScanCount, DefaultSeedScanBudget, nodeCount);
+            int nodeVisitBudget = ResolveBudget(MaxNodeVisits, DefaultNodeVisitBudget, nodeCount);
+            int edgeVisitBudget = math.max(1, MaxEdgeVisits > 0 ? MaxEdgeVisits : DefaultEdgeVisitBudget);
+            int seedStart = PositiveModulo(SeedScanStart, nodeCount);
+            int head = 0;
+            int tail = 0;
+            for (int scan = 0; scan < seedBudget && tail < nodeVisitBudget; scan++)
+            {
+                int i = (seedStart + scan) % nodeCount;
+                InteriorFloodNode node = Nodes[i];
+                if (node.CurrentLiters <= 0.001f && (node.Flags & FloodSeedFlag) == 0u)
+                    continue;
+                if (Visited[i] == visitStamp)
+                    continue;
+
+                Visited[i] = visitStamp;
+                Queue[tail++] = i;
+            }
+
+            float safeDeltaTime = math.max(0f, DeltaTime);
+            int processedNodes = 0;
+            int processedEdges = 0;
+            while (head < tail && processedNodes < nodeVisitBudget && processedEdges < edgeVisitBudget)
+            {
+                processedNodes++;
+                int nodeIndex = Queue[head++];
+                InteriorFloodNode source = Nodes[nodeIndex];
+                float availableLiters = math.max(0f, source.CurrentLiters);
+                int edgeStart = math.max(0, source.FirstEdgeIndex);
+                int edgeEnd = math.min(Edges.Length, edgeStart + math.max(0, source.EdgeCount));
+
+                for (int edgeIndex = edgeStart;
+                     edgeIndex < edgeEnd && availableLiters > 0.001f && processedEdges < edgeVisitBudget;
+                     edgeIndex++)
+                {
+                    processedEdges++;
+                    InteriorFloodEdge edge = Edges[edgeIndex];
+                    int targetIndex = edge.ToNode;
+                    if (edge.IsOpen == 0 || (uint)targetIndex >= nodeCount)
+                        continue;
+
+                    InteriorFloodNode target = Nodes[targetIndex];
+                    float targetRemainingLiters = math.max(0f, target.CapacityLiters - target.CurrentLiters);
+                    if (targetRemainingLiters <= 0.001f)
+                        continue;
+
+                    float transferLiters = math.min(
+                        availableLiters,
+                        math.min(
+                            targetRemainingLiters,
+                            math.max(0f, source.TransferLitersPerSecond) *
+                            math.max(0f, edge.FlowMultiplier) *
+                            safeDeltaTime));
+                    if (transferLiters <= 0.001f)
+                        continue;
+
+                    source.CurrentLiters -= transferLiters;
+                    target.CurrentLiters += transferLiters;
+                    availableLiters -= transferLiters;
+                    Nodes[targetIndex] = target;
+
+                    if (Visited[targetIndex] != visitStamp && tail < nodeVisitBudget)
+                    {
+                        Visited[targetIndex] = visitStamp;
+                        Queue[tail++] = targetIndex;
+                    }
+                }
+
+                Nodes[nodeIndex] = source;
+            }
+
+            float totalLiters = 0f;
+            float structuralLoadKg = 0f;
+            int floodedCount = 0;
+            int sampleStride = math.clamp(ResultSampleStride > 0 ? ResultSampleStride : 1, 1, nodeCount);
+            int samplePhase = PositiveModulo(ResultSamplePhase, sampleStride);
+            for (int i = samplePhase; i < nodeCount; i += sampleStride)
+            {
+                InteriorFloodNode node = Nodes[i];
+                float liters = math.max(0f, node.CurrentLiters);
+                if (liters <= 0.001f)
+                    continue;
+
+                float nodeWaterMassKg = liters * 0.001f * math.max(0.01f, WaterDensityKgPerM3);
+                totalLiters += liters;
+                structuralLoadKg += nodeWaterMassKg + math.max(0f, node.StructuralMassKg);
+                floodedCount++;
+            }
+
+            if (Result.Length > 0)
+            {
+                float sampleScale = sampleStride;
+                Result[0] = new InteriorFloodBfsResult
+                {
+                    TotalWaterMassKg = totalLiters * sampleScale * 0.001f * math.max(0.01f, WaterDensityKgPerM3),
+                    StructuralLoadKg = structuralLoadKg * sampleScale,
+                    FloodedNodeCount = floodedCount * sampleStride
+                };
+            }
+        }
+
+        private static int ResolveBudget(int requested, int fallback, int limit)
+        {
+            int budget = requested > 0 ? requested : fallback;
+            return math.clamp(budget, 1, math.max(1, limit));
+        }
+
+        private static int PositiveModulo(int value, int modulo)
+        {
+            if (modulo <= 0)
+                return 0;
+            int result = value % modulo;
+            return result < 0 ? result + modulo : result;
         }
     }
 }

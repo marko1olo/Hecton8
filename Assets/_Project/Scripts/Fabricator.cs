@@ -1,33 +1,33 @@
 // ============================================================================
 // HECTON-8 — Fabricator.cs
-// Машина-верстак для крафта предметов.
+// Mashina-verstak dlya krafta predmetov.
 //
-// РЕФАКТОРИНГ v3 — ДИНАМИЧЕСКОЕ ПИТАНИЕ:
-//   • Реализует IPowerComponent для интеграции с PowerGrid.
-//   • При отсутствии питания крафт встаёт на ПАУЗУ (не отменяется).
-//   • PowerRating: 0 в idle, -craftPowerDraw при крафте.
-//   • При восстановлении питания крафт продолжается с того же места.
-//   • При StartCraft/CompleteCraft/CancelCraft → PowerGrid.UpdateBalance()
-//     для мгновенного пересчёта баланса сети.
+// REFAKTORING v3 — DINAMIChESKOE PITANIE:
+//   • Realizuet IPowerComponent dlya integratsii s PowerGrid.
+//   • Pri otsutstvii pitaniya kraft vstaet na PAUZU (ne otmenyaetsya).
+//   • PowerRating: 0 v idle, -craftPowerDraw pri krafte.
+//   • Pri vosstanovlenii pitaniya kraft prodolzhaetsya s togo zhe mesta.
+//   • Pri StartCraft/CompleteCraft/CancelCraft → PowerGrid.UpdateBalance()
+//     dlya mgnovennogo perescheta balansa seti.
 //
-// ЖИЗНЕННЫЙ ЦИКЛ КРАФТА:
-//   1. Игрок наводится → OnHoverStart → HUD показывает промпт
+// ZhIZNENNYY TsIKL KRAFTA:
+//   1. Igrok navoditsya → OnHoverStart → HUD pokazyvaet prompt
 //   2. [E] → Interact → CraftingEvents.RaiseFabricatorOpened
-//   3. UI вызывает StartCraft(recipe) → CanCraft проверка
-//   4. Ресурсы списываются СРАЗУ → таймер запускается
-//      → NotifyGridBalanceChanged() — сеть пересчитывает с -100W
-//   5. Tick(dt): если HasPower → _craftTimer продвигается
-//               если !HasPower → ПАУЗА (таймер не тикает)
-//   6. Завершение → результат в инвентарь → OnCraftCompleted
-//      → NotifyGridBalanceChanged() — сеть пересчитывает без -100W
-//   7. Отмена → ресурсы возвращаются → OnCraftCancelled
-//      → NotifyGridBalanceChanged() — сеть пересчитывает без -100W
+//   3. UI vyzyvaet StartCraft(recipe) → CanCraft proverka
+//   4. Resursy spisyvayutsya SRAZU → taymer zapuskaetsya
+//      → NotifyGridBalanceChanged() — set pereschityvaet s -100W
+//   5. Tick(dt): esli HasPower → _craftTimer prodvigaetsya
+//               esli !HasPower → PAUZA (taymer ne tikaet)
+//   6. Zavershenie → rezultat v inventar → OnCraftCompleted
+//      → NotifyGridBalanceChanged() — set pereschityvaet bez -100W
+//   7. Otmena → resursy vozvraschayutsya → OnCraftCancelled
+//      → NotifyGridBalanceChanged() — set pereschityvaet bez -100W
 //
 // ZERO GC:
-//   • Tick: float арифметика, delegate?.Invoke (no boxing)
-//   • CanCraft: for-циклы с ReferenceEquals, no LINQ
-//   • IPowerComponent свойства: value types only
-//   • PowerNode кэширован в Awake — zero TryGetComponent в горячем пути
+//   • Tick: float arifmetika, delegate?.Invoke (no boxing)
+//   • CanCraft: for-tsikly s ReferenceEquals, no LINQ
+//   • IPowerComponent svoystva: value types only
+//   • PowerNode keshirovan v Awake — zero TryGetComponent v goryachem puti
 // ============================================================================
 
 using System;
@@ -71,29 +71,29 @@ namespace Hecton8.Crafting
         // ══════════════════════════════════════════════════════════
 
         [Header("── Identity ──────────────────────────────────")]
-        [Tooltip("Название фабрикатора для UI промпта")]
-        [SerializeField] private string fabricatorName = "Фабрикатор";
+        [Tooltip("Nazvanie fabrikatora dlya UI prompta")]
+        [SerializeField] private string fabricatorName = "Fabrikator";
 
         [Header("── Recipes ───────────────────────────────────")]
-        [Tooltip("Список доступных рецептов на этом верстаке")]
+        [Tooltip("Spisok dostupnyh retseptov na etom verstake")]
         [SerializeField] private List<RecipeData> availableRecipes = new List<RecipeData>();
 
         [Header("── Settings ──────────────────────────────────")]
-        [Tooltip("Максимальная дистанция использования (метры). " +
-                 "Если игрок отойдёт дальше — крафт отменяется.")]
+        [Tooltip("Maksimalnaya distantsiya ispolzovaniya (metry). " +
+                 "Esli igrok otoydet dalshe — kraft otmenyaetsya.")]
         [SerializeField] private float maxUseDistance = 3.5f;
 
         [Tooltip("When enabled, a completed recipe immediately queues again if unlocks, ingredients, capacity, and power still pass.")]
         [SerializeField] private bool isContinuous;
 
         [Header("── Power ─────────────────────────────────────")]
-        [Tooltip("Потребление энергии ВО ВРЕМЯ КРАФТА (Ватты). " +
-                 "В idle фабрикатор не потребляет дополнительно. " +
-                 "Базовое потребление модуля берётся из BuildableData через PowerNode.")]
+        [Tooltip("Potreblenie energii VO VREMYa KRAFTA (Vatty). " +
+                 "V idle fabrikator ne potreblyaet dopolnitelno. " +
+                 "Bazovoe potreblenie modulya beretsya iz BuildableData cherez PowerNode.")]
         [SerializeField] private float craftPowerDraw = 100f;
 
-        [Tooltip("Приоритет отключения при дефиците. " +
-                 "0 = критический (не отключать), 100 = роскошь (отключить первым).")]
+        [Tooltip("Prioritet otklyucheniya pri defitsite. " +
+                 "0 = kriticheskiy (ne otklyuchat), 100 = roskosh (otklyuchit pervym).")]
         [Range(0, 100)]
         [SerializeField] private int powerPriority = 50;
 
@@ -161,16 +161,16 @@ namespace Hecton8.Crafting
         //  CACHED STATE
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Кэшированный текст промпта. Строится один раз.</summary>
+        /// <summary>Keshirovannyy tekst prompta. Stroitsya odin raz.</summary>
         private string _interactText;
         // COLD ALLOC: char[96] - cached IInteractable prompt staging buffer - owner: Fabricator
         private readonly char[] _interactTextBuffer = new char[InteractTextBufferCapacity];
         private int _interactTextLength;
 
-        /// <summary>Ссылка на инвентарь текущего игрока.</summary>
+        /// <summary>Ssylka na inventar tekuschego igroka.</summary>
         private PlayerInventory _playerInventory;
 
-        /// <summary>Transform игрока для проверки дистанции.</summary>
+        /// <summary>Transform igroka dlya proverki distantsii.</summary>
         private Transform _playerTransform;
         private HectonPlayerMovement _playerMovement;
         private bool _playerMovementLookupAttempted;
@@ -181,10 +181,10 @@ namespace Hecton8.Crafting
         private bool _thermalHostAupCached;
 
         /// <summary>
-        /// Кэшированный PowerNode на этом же GameObject.
-        /// Используется для мгновенного уведомления PowerGrid
-        /// при изменении состояния крафта (PowerRating меняется).
-        /// Null-safe: если PowerNode отсутствует — уведомление не отправляется.
+        /// Keshirovannyy PowerNode na etom zhe GameObject.
+        /// Ispolzuetsya dlya mgnovennogo uvedomleniya PowerGrid
+        /// pri izmenenii sostoyaniya krafta (PowerRating menyaetsya).
+        /// Null-safe: esli PowerNode otsutstvuet — uvedomlenie ne otpravlyaetsya.
         /// </summary>
         private PowerNode _powerNode;
         private ScanLogSystem _scanLogSystem;
@@ -261,7 +261,7 @@ namespace Hecton8.Crafting
 
         private BaseLogisticsNetwork.LogisticsReservation _networkReservation;
 
-        /// <summary>Порог публикации прогресса.</summary>
+        /// <summary>Porog publikatsii progressa.</summary>
         private const float ProgressPublishThreshold = 0.01f;
         private const string NativeMemoryOwner = nameof(Fabricator);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
@@ -271,7 +271,7 @@ namespace Hecton8.Crafting
         //  PUBLIC API — QUERIES
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Идёт ли сейчас процесс крафта.</summary>
+        /// <summary>Idet li seychas protsess krafta.</summary>
         public bool IsCrafting => _isCrafting;
 
         public bool IsContinuous
@@ -280,15 +280,15 @@ namespace Hecton8.Crafting
             set => isContinuous = value;
         }
 
-        /// <summary>Нормализованный прогресс (0..1).</summary>
+        /// <summary>Normalizovannyy progress (0..1).</summary>
         public float CraftProgress => _isCrafting && _activeRecipe != null
             ? Mathf.Clamp01(_craftTimer / Mathf.Max(0.001f, _activeRecipe.craftTime * Mathf.Max(1, _activeCraftMultiplier)))
             : 0f;
 
-        /// <summary>Активный рецепт (null если не крафтим).</summary>
+        /// <summary>Aktivnyy retsept (null esli ne kraftim).</summary>
         public RecipeData ActiveRecipe => _activeRecipe;
 
-        /// <summary>Список доступных рецептов. Read-only для UI.</summary>
+        /// <summary>Spisok dostupnyh retseptov. Read-only dlya UI.</summary>
         public IReadOnlyList<RecipeData> AvailableRecipes
         {
             get
@@ -315,49 +315,49 @@ namespace Hecton8.Crafting
             }
         }
 
-        /// <summary>Крафт на паузе из-за отсутствия питания.</summary>
+        /// <summary>Kraft na pauze iz-za otsutstviya pitaniya.</summary>
         public bool IsPausedNoPower => _isCrafting && !HasOperationalPower;
 
         internal PowerGrid CurrentPowerGrid => _powerNode != null ? _powerNode.Grid : null;
 
         // ══════════════════════════════════════════════════════════
-        //  IPowerComponent — ЭНЕРГОСИСТЕМА
+        //  IPowerComponent — ENERGOSISTEMA
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Потребление энергии фабрикатором.
+        /// Potreblenie energii fabrikatorom.
         ///
-        /// Idle (не крафтит): 0 Вт.
-        ///   Базовое потребление модуля обеспечивается PowerNode
-        ///   через BuildableData.powerRating.
+        /// Idle (ne kraftit): 0 Vt.
+        ///   Bazovoe potreblenie modulya obespechivaetsya PowerNode
+        ///   cherez BuildableData.powerRating.
         ///
-        /// Crafting: -craftPowerDraw Вт.
-        ///   Дополнительное потребление на работу станка.
+        /// Crafting: -craftPowerDraw Vt.
+        ///   Dopolnitelnoe potreblenie na rabotu stanka.
         ///
-        /// Итого при крафте: BuildableData.powerRating + (-craftPowerDraw).
-        ///   Пример: -20 (базовый) + (-100) (крафт) = -120 Вт.
+        /// Itogo pri krafte: BuildableData.powerRating + (-craftPowerDraw).
+        ///   Primer: -20 (bazovyy) + (-100) (kraft) = -120 Vt.
         /// </summary>
         public float PowerRating => _isCrafting && !_emergencyPowerLockActive ? -craftPowerDraw * _activeCraftPowerMultiplier : 0f;
 
-        /// <summary>Приоритет отключения.</summary>
+        /// <summary>Prioritet otklyucheniya.</summary>
         public int PowerPriority => powerPriority;
 
-        /// <summary>Текущее состояние питания.</summary>
+        /// <summary>Tekuschee sostoyanie pitaniya.</summary>
         public bool HasPower => _hasPower;
 
         /// <summary>True while the submarine OS has suspended this fabricator from non-essential load service.</summary>
         public bool IsEmergencyPowerLocked => _emergencyPowerLockActive;
 
         /// <summary>
-        /// Уведомление от PowerGrid об изменении питания.
+        /// Uvedomlenie ot PowerGrid ob izmenenii pitaniya.
         ///
-        /// При потере питания:
-        ///   • Крафт ЗАМОРАЖИВАЕТСЯ (таймер не тикает).
-        ///   • Крафт НЕ отменяется — ресурсы уже списаны.
-        ///   • При восстановлении — крафт продолжится.
+        /// Pri potere pitaniya:
+        ///   • Kraft ZAMORAZhIVAETSYa (taymer ne tikaet).
+        ///   • Kraft NE otmenyaetsya — resursy uzhe spisany.
+        ///   • Pri vosstanovlenii — kraft prodolzhitsya.
         ///
-        /// При восстановлении:
-        ///   • Крафт продолжается с того же места.
+        /// Pri vosstanovlenii:
+        ///   • Kraft prodolzhaetsya s togo zhe mesta.
         /// </summary>
         public void OnPowerStatusChanged(bool hasPower)
         {
@@ -365,7 +365,7 @@ namespace Hecton8.Crafting
 
             if (!hasPower && _isCrafting)
             {
-                // Крафт заморожен
+                // Kraft zamorozhen
                 PlaySound(powerLostSound);
             }
         }
@@ -398,8 +398,8 @@ namespace Hecton8.Crafting
         {
             RebuildInteractText();
 
-            // Кэшируем PowerNode для мгновенного уведомления сети.
-            // PowerNode должен быть на том же GameObject, что и Fabricator.
+            // Keshiruem PowerNode dlya mgnovennogo uvedomleniya seti.
+            // PowerNode dolzhen byt na tom zhe GameObject, chto i Fabricator.
             TryGetComponent(out _powerNode);
             EnsureScanLogSystem();
             MarkRecipeCacheDirty();
@@ -491,8 +491,8 @@ namespace Hecton8.Crafting
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Проверяет, можно ли скрафтить данный рецепт.
-        /// Добавлена проверка питания: без питания крафт не начинается.
+        /// Proveryaet, mozhno li skraftit dannyy retsept.
+        /// Dobavlena proverka pitaniya: bez pitaniya kraft ne nachinaetsya.
         /// </summary>
         public bool CanCraft(RecipeData recipe)
         {
@@ -606,9 +606,9 @@ namespace Hecton8.Crafting
         }
 
         /// <summary>
-        /// Запускает процесс крафта.
-        /// После смены _isCrafting → PowerRating меняется с 0 на -craftPowerDraw.
-        /// NotifyGridBalanceChanged() заставляет сеть мгновенно пересчитать баланс.
+        /// Zapuskaet protsess krafta.
+        /// Posle smeny _isCrafting → PowerRating menyaetsya s 0 na -craftPowerDraw.
+        /// NotifyGridBalanceChanged() zastavlyaet set mgnovenno pereschitat balans.
         /// </summary>
         public bool StartCraft(RecipeData recipe)
         {
@@ -645,7 +645,7 @@ namespace Hecton8.Crafting
             EnqueueCraftingTask(recipe, _activeCraftPowerMultiplier, safeMultiplier);
             SetFabricationSparksActive(true);
 
-            // ── Уведомляем энергосеть: PowerRating изменился (0 → -craftPowerDraw) ──
+            // ── Uvedomlyaem energoset: PowerRating izmenilsya (0 → -craftPowerDraw) ──
             NotifyGridBalanceChanged();
 
             CraftingEvents.RaiseCraftStarted(recipe);
@@ -666,9 +666,9 @@ namespace Hecton8.Crafting
         }
 
         /// <summary>
-        /// Отменяет текущий крафт. Возвращает ингредиенты.
-        /// После смены _isCrafting → PowerRating меняется с -craftPowerDraw на 0.
-        /// NotifyGridBalanceChanged() заставляет сеть мгновенно пересчитать баланс.
+        /// Otmenyaet tekuschiy kraft. Vozvraschaet ingredienty.
+        /// Posle smeny _isCrafting → PowerRating menyaetsya s -craftPowerDraw na 0.
+        /// NotifyGridBalanceChanged() zastavlyaet set mgnovenno pereschitat balans.
         /// </summary>
         public void CancelCraft()
         {
@@ -684,7 +684,7 @@ namespace Hecton8.Crafting
             ClearCraftingTaskQueue();
             SetFabricationSparksActive(false);
 
-            // ── Уведомляем энергосеть: PowerRating изменился (-craftPowerDraw → 0) ──
+            // ── Uvedomlyaem energoset: PowerRating izmenilsya (-craftPowerDraw → 0) ──
             NotifyGridBalanceChanged();
 
             CraftingEvents.RaiseCraftCancelled();
@@ -694,17 +694,17 @@ namespace Hecton8.Crafting
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ITickable — ТАЙМЕР КРАФТА
+        //  ITickable — TAYMER KRAFTA
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Вызывается GameTickManager каждый кадр.
+        /// Vyzyvaetsya GameTickManager kazhdyy kadr.
         ///
-        /// ЭНЕРГОПАУЗА: если _hasPower == false и идёт крафт:
-        ///   • Таймер НЕ продвигается.
-        ///   • Прогресс НЕ публикуется (UI показывает паузу).
-        ///   • Крафт НЕ отменяется.
-        ///   • Проверка дистанции продолжается (игрок может отойти).
+        /// ENERGOPAUZA: esli _hasPower == false i idet kraft:
+        ///   • Taymer NE prodvigaetsya.
+        ///   • Progress NE publikuetsya (UI pokazyvaet pauzu).
+        ///   • Kraft NE otmenyaetsya.
+        ///   • Proverka distantsii prodolzhaetsya (igrok mozhet otoyti).
         /// </summary>
         public void Tick(float deltaTime)
         {
@@ -742,7 +742,7 @@ namespace Hecton8.Crafting
                 return;
             }
 
-            // ── Проверка дистанции (всегда, даже без питания) ──
+            // ── Proverka distantsii (vsegda, dazhe bez pitaniya) ──
             if (!IsPlayerInRange())
             {
                 CancelCraft();
@@ -750,7 +750,7 @@ namespace Hecton8.Crafting
             }
 
             // ═══════════════════════════════════════════════════
-            //  POWER PAUSE: нет питания → таймер заморожен
+            //  POWER PAUSE: net pitaniya → taymer zamorozhen
             // ═══════════════════════════════════════════════════
             if (!_craftingTaskQueue.IsCreated || !_craftingTaskQueue.TryDequeue(out CraftingTask task))
             {
@@ -824,9 +824,9 @@ namespace Hecton8.Crafting
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Завершает крафт: выдаёт результат в инвентарь.
-        /// После смены _isCrafting → PowerRating меняется с -craftPowerDraw на 0.
-        /// NotifyGridBalanceChanged() заставляет сеть мгновенно пересчитать баланс.
+        /// Zavershaet kraft: vydaet rezultat v inventar.
+        /// Posle smeny _isCrafting → PowerRating menyaetsya s -craftPowerDraw na 0.
+        /// NotifyGridBalanceChanged() zastavlyaet set mgnovenno pereschitat balans.
         /// </summary>
         private void EnqueueCraftingTask(RecipeData recipe, float powerMultiplier, int multiplier)
         {
@@ -937,10 +937,10 @@ namespace Hecton8.Crafting
                 _networkReservation = null;
             }
 
-            // ── Уведомляем энергосеть: PowerRating изменился (-craftPowerDraw → 0) ──
+            // ── Uvedomlyaem energoset: PowerRating izmenilsya (-craftPowerDraw → 0) ──
             NotifyGridBalanceChanged();
 
-            // ── Потребляем энергию из сети при завершении крафта ──
+            // ── Potreblyaem energiyu iz seti pri zavershenii krafta ──
             if (powerCost > 0f && _powerNode != null && _powerNode.Grid != null)
             {
                 _powerNode.Grid.ConsumePower(powerCost);
@@ -992,18 +992,18 @@ namespace Hecton8.Crafting
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Уведомляет PowerGrid о необходимости пересчёта баланса.
+        /// Uvedomlyaet PowerGrid o neobhodimosti perescheta balansa.
         ///
-        /// Вызывается при каждом изменении PowerRating:
-        ///   • StartCraft:    0 → -craftPowerDraw (начало потребления)
-        ///   • CompleteCraft: -craftPowerDraw → 0 (конец потребления)
-        ///   • CancelCraft:   -craftPowerDraw → 0 (отмена потребления)
+        /// Vyzyvaetsya pri kazhdom izmenenii PowerRating:
+        ///   • StartCraft:    0 → -craftPowerDraw (nachalo potrebleniya)
+        ///   • CompleteCraft: -craftPowerDraw → 0 (konets potrebleniya)
+        ///   • CancelCraft:   -craftPowerDraw → 0 (otmena potrebleniya)
         ///
-        /// Без этого вызова PowerGrid узнал бы об изменении только
-        /// при следующем SlowTick (~0.5-1с задержка). С вызовом —
-        /// баланс пересчитывается мгновенно.
+        /// Bez etogo vyzova PowerGrid uznal by ob izmenenii tolko
+        /// pri sleduyuschem SlowTick (~0.5-1s zaderzhka). S vyzovom —
+        /// balans pereschityvaetsya mgnovenno.
         ///
-        /// Null-safe: если PowerNode или Grid отсутствуют — no-op.
+        /// Null-safe: esli PowerNode ili Grid otsutstvuyut — no-op.
         /// </summary>
         private void NotifyGridBalanceChanged()
         {
@@ -2371,7 +2371,7 @@ namespace Hecton8.Crafting
 
             if (maxUseDistance < 1f) maxUseDistance = 1f;
             if (craftPowerDraw < 0f) craftPowerDraw = 0f;
-            if (string.IsNullOrEmpty(fabricatorName)) fabricatorName = "Фабрикатор";
+            if (string.IsNullOrEmpty(fabricatorName)) fabricatorName = "Fabrikator";
 
             RebuildInteractText();
             MarkRecipeCacheDirty();

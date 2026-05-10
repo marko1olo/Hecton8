@@ -184,9 +184,9 @@ namespace Hecton8.EditorTools
             _activeRepresentativeSignatures = usedMemorySignatures;
             return new[]
             {
-                new RepresentativeBiome("Самый ресурсный", SelectBestRepresentative(candidates, usedMatrixIndices, usedFamilyIds, pattern, GetResourceRepresentativeScore)),
-                new RepresentativeBiome("Самый техногенный", SelectBestRepresentative(candidates, usedMatrixIndices, usedFamilyIds, pattern, GetTechRepresentativeScore)),
-                new RepresentativeBiome("Самый опасный", SelectBestRepresentative(candidates, usedMatrixIndices, usedFamilyIds, pattern, GetDangerRepresentativeScore))
+                new RepresentativeBiome("Samyy resursnyy", SelectBestRepresentative(candidates, usedMatrixIndices, usedFamilyIds, pattern, GetResourceRepresentativeScore)),
+                new RepresentativeBiome("Samyy tehnogennyy", SelectBestRepresentative(candidates, usedMatrixIndices, usedFamilyIds, pattern, GetTechRepresentativeScore)),
+                new RepresentativeBiome("Samyy opasnyy", SelectBestRepresentative(candidates, usedMatrixIndices, usedFamilyIds, pattern, GetDangerRepresentativeScore))
             };
         }
 
@@ -461,7 +461,7 @@ namespace Hecton8.EditorTools
                     builder.AppendLine($"- Accent mix: cluster `{snapshot.dominantClusterAccent}` | structure `{snapshot.dominantStructureAccent}`");
                     builder.AppendLine($"- Structure roles: natural `{snapshot.structureNaturalLandmarkCount}` | tech `{snapshot.structureTechFragmentCount}` | cave `{snapshot.structureCaveReadCount}` | bio `{snapshot.structureBiologicalSilhouetteCount}`");
                     builder.AppendLine($"- Spawn mix: passive `{snapshot.spawnPassiveCount}` | predator `{snapshot.spawnPredatorCount}`");
-                    builder.AppendLine($"- Чем запоминается: {snapshot.memoryLine}");
+                    builder.AppendLine($"- Chem zapominaetsya: {snapshot.memoryLine}");
                     builder.AppendLine();
                 }
             }
@@ -472,18 +472,18 @@ namespace Hecton8.EditorTools
         private static string BuildMemoryLine(HectonBiomeMatrixProfile profile)
         {
             if (profile == null)
-                return "Биом не найден.";
+                return "Biom ne nayden.";
 
             string landmark = CleanSentence(profile.landmarkIdentity);
             string extraction = CleanSentence(profile.extractionFocus);
             string risk = CleanSentence(profile.riskSummary);
             string safePocket = CleanSentence(profile.safePocketIdentity);
-            return $"ориентир: {landmark}; полезный мотив: {extraction}; тихая точка: {safePocket}; риск: {risk}";
+            return $"orientir: {landmark}; poleznyy motiv: {extraction}; tihaya tochka: {safePocket}; risk: {risk}";
         }
 
         private static string CleanSentence(string value)
         {
-            return string.IsNullOrWhiteSpace(value) ? "не описан" : value.Trim();
+            return string.IsNullOrWhiteSpace(value) ? "ne opisan" : value.Trim();
         }
 
         private static bool GetBool(SerializedObject serializedObject, string propertyName)

@@ -23,7 +23,8 @@ namespace Hecton8.Input
     public enum InputDisplayStyle
     {
         KeyboardMouse = 0,
-        Gamepad = 1
+        Gamepad = 1,
+        SteamDeck = 2
     }
 
     /// <summary>
@@ -1642,7 +1643,7 @@ namespace Hecton8.Input
             if (string.IsNullOrWhiteSpace(path))
                 return false;
 
-            if (displayStyle == InputDisplayStyle.Gamepad)
+            if (IsGamepadDisplayStyle(displayStyle))
                 return path.IndexOf("Gamepad", StringComparison.OrdinalIgnoreCase) >= 0;
 
             return path.IndexOf("Keyboard", StringComparison.OrdinalIgnoreCase) >= 0 ||
@@ -1652,7 +1653,7 @@ namespace Hecton8.Input
         private static string FormatBindingChip(string display, InputDisplayStyle displayStyle)
         {
             string sanitized = string.IsNullOrWhiteSpace(display) ? "?" : display.Trim().ToUpperInvariant();
-            string prefix = displayStyle == InputDisplayStyle.Gamepad ? "\u25C6" : "\u2328";
+            string prefix = IsGamepadDisplayStyle(displayStyle) ? "\u25C6" : "\u2328";
             return $"<b><color=#AEE8FF>{prefix}</color> {sanitized}</b>";
         }
 
@@ -1835,12 +1836,12 @@ namespace Hecton8.Input
                 if (existingStyle == style)
                     return;
 
-                if (existingStyle == InputDisplayStyle.Gamepad)
+                if (IsGamepadDisplayStyle(existingStyle))
                     _connectedGamepadCount = Mathf.Max(0, _connectedGamepadCount - 1);
             }
 
             _displayStyleByDeviceId[deviceId] = style;
-            if (style == InputDisplayStyle.Gamepad)
+            if (IsGamepadDisplayStyle(style))
                 _connectedGamepadCount++;
         }
 
@@ -1853,7 +1854,7 @@ namespace Hecton8.Input
             if (!_displayStyleByDeviceId.TryGetValue(deviceId, out InputDisplayStyle style))
                 return;
 
-            if (style == InputDisplayStyle.Gamepad)
+            if (IsGamepadDisplayStyle(style))
                 _connectedGamepadCount = Mathf.Max(0, _connectedGamepadCount - 1);
 
             _displayStyleByDeviceId.Remove(deviceId);
@@ -1869,7 +1870,7 @@ namespace Hecton8.Input
                 return;
             }
 
-            if (CurrentDisplayStyle == InputDisplayStyle.Gamepad && _connectedGamepadCount == 0)
+            if (IsGamepadDisplayStyle(CurrentDisplayStyle) && _connectedGamepadCount == 0)
                 SetCurrentDisplayStyle(InputDisplayStyle.KeyboardMouse);
         }
 
@@ -1891,7 +1892,39 @@ namespace Hecton8.Input
 
         private static InputDisplayStyle ResolveDisplayStyle(InputDevice device)
         {
-            return device is Gamepad ? InputDisplayStyle.Gamepad : InputDisplayStyle.KeyboardMouse;
+            if (!(device is Gamepad))
+                return InputDisplayStyle.KeyboardMouse;
+
+            return LooksLikeSteamDeck(device) ? InputDisplayStyle.SteamDeck : InputDisplayStyle.Gamepad;
+        }
+
+        private static bool IsGamepadDisplayStyle(InputDisplayStyle style)
+        {
+            return style == InputDisplayStyle.Gamepad || style == InputDisplayStyle.SteamDeck;
+        }
+
+        private static bool LooksLikeSteamDeck(InputDevice device)
+        {
+            if (device == null)
+                return false;
+
+            var description = device.description;
+            return ContainsSteamDeckToken(description.product) ||
+                   ContainsSteamDeckToken(description.manufacturer) ||
+                   ContainsSteamDeckToken(description.interfaceName) ||
+                   ContainsSteamDeckToken(device.displayName) ||
+                   ContainsSteamDeckToken(device.name);
+        }
+
+        private static bool ContainsSteamDeckToken(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return false;
+
+            return value.IndexOf("Steam Deck", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   value.IndexOf("SteamDeck", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   (value.IndexOf("Valve", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                    value.IndexOf("Deck", StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         public string SaveBindingOverridesAsJson()

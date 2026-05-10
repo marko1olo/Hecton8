@@ -17,6 +17,7 @@ namespace Hecton8.Editor
         private static int s_lastGen0CollectionCount;
         private static long s_lastManagedHeapBytes;
         private static bool s_installed;
+        private static readonly bool s_isUnityTestRunnerProcess = ResolveUnityTestRunnerProcess();
 
         static GCSentinel()
         {
@@ -27,7 +28,7 @@ namespace Hecton8.Editor
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || s_isUnityTestRunnerProcess)
                 return;
 
             ResetCounters();
@@ -66,7 +67,7 @@ namespace Hecton8.Editor
 
         private static void TickEditor()
         {
-            if (!EditorApplication.isPlaying)
+            if (!EditorApplication.isPlaying || s_isUnityTestRunnerProcess)
             {
                 Uninstall();
                 return;
@@ -87,6 +88,22 @@ namespace Hecton8.Editor
             s_lastGen0CollectionCount = currentGen0Collections;
             s_lastManagedHeapBytes = currentManagedHeapBytes;
             s_framesRemaining = FrameWindow;
+        }
+
+        private static bool ResolveUnityTestRunnerProcess()
+        {
+            string[] args = System.Environment.GetCommandLineArgs(); // EDITOR COLD ALLOC: process argv probe during domain load only.
+            for (int i = 0; i < args.Length; i++)
+            {
+                string arg = args[i];
+                if (string.Equals(arg, "-runTests", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(arg, "-runEditorTests", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

@@ -1,5 +1,5 @@
 // SG_SkyboxBlend.shader
-// Шейдер скайбокса с блендом между дневным и ночным кубмапом + звёзды
+// Sheyder skayboksa s blendom mezhdu dnevnym i nochnym kubmapom + zvezdy
 
 Shader "Hecton/SkyboxBlend"
 {
@@ -68,7 +68,7 @@ Shader "Hecton/SkyboxBlend"
             Varyings vert(Attributes input)
             {
                 Varyings output;
-                // Skybox: позиция без трансляции
+                // Skybox: pozitsiya bez translyatsii
                 float3 posWS = TransformObjectToWorld(input.positionOS.xyz);
                 output.positionCS = TransformWorldToHClip(posWS);
                 output.texcoord = input.positionOS.xyz;
@@ -100,21 +100,21 @@ Shader "Hecton/SkyboxBlend"
                 float4 dayColor = SAMPLE_TEXTURECUBE(_DayCubemap, sampler_DayCubemap, dir);
                 float4 nightColor = SAMPLE_TEXTURECUBE(_NightCubemap, sampler_NightCubemap, dir);
 
-                // Тинтируем
+                // Tintiruem
                 dayColor.rgb *= _DayTint.rgb;
                 nightColor.rgb *= _NightTint.rgb;
 
-                // Звёзды в ночном кубмапе масштабируются _StarIntensity
-                // Предполагаем что ночной кубмап содержит звёзды в rgb
+                // Zvezdy v nochnom kubmape masshtabiruyutsya _StarIntensity
+                // Predpolagaem chto nochnoy kubmap soderzhit zvezdy v rgb
                 nightColor.rgb *= _StarIntensity;
 
-                // Бленд
+                // Blend
                 float blend = saturate(_Blend);
                 blend = blend * blend * (3.0 - 2.0 * blend); // smoothstep
 
                 float3 finalColor = lerp(dayColor.rgb, nightColor.rgb, blend);
 
-                // Добавляем минимальный ambient к ночи чтобы не было pitch black
+                // Dobavlyaem minimalnyy ambient k nochi chtoby ne bylo pitch black
                 float3 nightAmbient = float3(0.005, 0.005, 0.012) * blend;
                 finalColor += nightAmbient;
                 finalColor = ApplyFreezeFrameDither(finalColor, input.positionCS.xy);

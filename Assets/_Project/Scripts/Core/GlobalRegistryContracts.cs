@@ -563,6 +563,27 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Blittable gameplay audio request consumed by the central audio service queue.
+    /// EventID maps to an authored clip-table slot owned by the audio runtime.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public readonly struct AudioEvent
+    {
+        public readonly uint EventID;
+        public readonly Vector3 Position;
+        public readonly float Volume;
+        public readonly float Pitch;
+
+        public AudioEvent(uint eventID, Vector3 position, float volume, float pitch)
+        {
+            EventID = eventID;
+            Position = position;
+            Volume = volume;
+            Pitch = pitch;
+        }
+    }
+
+    /// <summary>
     /// Minimal audio service contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IAudioService
@@ -591,6 +612,13 @@ namespace Hecton8.Core
         /// Plays one world-space clip through the authored 3D pool and explicit mixer route.
         /// </summary>
         void PlayAtPoint(AudioClip clip, Vector3 position, float volume, float pitch, AudioMixerGroup mixerGroup);
+
+        /// <summary>
+        /// Queues one world-space audio event for the central NativeQueue-backed audio drain.
+        /// </summary>
+        /// <param name="audioEvent">Blittable event payload. EventID is one-based into the authored audio event table.</param>
+        /// <returns>True when the event was accepted by the queue.</returns>
+        bool QueueAudioEvent(in AudioEvent audioEvent);
 
         /// <summary>
         /// Plays one helmet/UI clip through the authored 2D pool.
@@ -961,6 +989,11 @@ namespace Hecton8.Core
         /// Cached survival owner resolved from the current player root.
         /// </summary>
         HectonSurvivalSystem SurvivalSystem { get; }
+
+        /// <summary>
+        /// Cached health facade resolved from the current player root.
+        /// </summary>
+        HectonPlayerHealth PlayerHealth { get; }
 
         /// <summary>
         /// Cached trauma dispatcher resolved from the current player root.
@@ -1552,6 +1585,22 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Scene-owned modal UI facade. Static UI callers route through GlobalRegistry instead of a local singleton.
+    /// </summary>
+    public interface IModalWindowService
+    {
+        void ShowModal(
+            string title,
+            string message,
+            System.Action onConfirm,
+            System.Action onCancel,
+            string confirmLabel,
+            string cancelLabel);
+
+        void CloseModal();
+    }
+
+    /// <summary>
     /// Unmanaged registry event payload drained by <see cref="SystemDispatcher"/>.
     /// Managed service references are carried by GlobalRegistry sidecar slots during dispatch only.
     /// </summary>
@@ -1682,6 +1731,7 @@ namespace Hecton8.Core
         CrashTelemetryRuntime = 100,
         PlayerCriticalAudioRuntime = 101,
         MapMagicRuntime = 102,
+        TerrainProviderRuntime = 139,
         ProceduralFieldSamplerRuntime = 103,
         ResourceDistributionRuntime = 104,
         RandomEventRuntime = 105,
@@ -1717,6 +1767,7 @@ namespace Hecton8.Core
         MapMagicVegetationRuntime = 135,
         ModWorldPersistenceRuntime = 136,
         LoadingScreenRuntime = 137,
+        ModalWindowRuntime = 138,
         Unknown = 255
     }
 
@@ -1752,6 +1803,38 @@ namespace Hecton8.Core
         void OnGlobalRegistryServiceRebound(
             GlobalRegistryServiceSlot serviceSlot,
             ref object currentService);
+    }
+
+    /// <summary>
+    /// Terrain height/normal authority exposed to gameplay without leaking MapMagic types.
+    /// Implementations must answer from cached terrain ownership and avoid scene-wide scans in hot queries.
+    /// </summary>
+    public interface ITerrainProvider
+    {
+        /// <summary>
+        /// True when the terrain backend can answer samples.
+        /// </summary>
+        bool IsAvailable { get; }
+
+        /// <summary>
+        /// Current water-surface level used by spawn and terrain validation code.
+        /// </summary>
+        float WaterSurfaceLevel { get; }
+
+        /// <summary>
+        /// Samples runtime-space terrain height at X/Z.
+        /// </summary>
+        bool TryGetHeight(float x, float z, out float height);
+
+        /// <summary>
+        /// Samples runtime-space terrain normal at X/Z using caller-provided spacing.
+        /// </summary>
+        bool TryGetNormal(float x, float z, float sampleDistance, out Vector3 normal);
+
+        /// <summary>
+        /// Samples terrain height from an Absolute Universe Position.
+        /// </summary>
+        bool TryGetHeightAUP(Vector3 absoluteUniversePosition, out float height);
     }
 
     /// <summary>

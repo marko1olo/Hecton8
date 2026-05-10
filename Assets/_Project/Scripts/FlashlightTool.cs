@@ -388,7 +388,7 @@ namespace Hecton8.Gameplay
 
             if (_flashlight == null)
             {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                     playerTransform != null)
                 {
                     IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;

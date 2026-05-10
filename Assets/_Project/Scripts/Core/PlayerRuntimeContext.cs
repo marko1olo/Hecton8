@@ -100,6 +100,7 @@ namespace Hecton8.Core
         public HectonPlayerMovement PlayerMovement { get; private set; }
         public Rigidbody PlayerRigidbody { get; private set; }
         public HectonSurvivalSystem SurvivalSystem { get; private set; }
+        public HectonPlayerHealth PlayerHealth { get; private set; }
         public PlayerToolManager ToolManager { get; private set; }
         public PlayerInventory Inventory { get; private set; }
         public PlayerTransportCoordinator PlayerTransportCoordinator { get; private set; }
@@ -129,6 +130,7 @@ namespace Hecton8.Core
             PlayerMovement = null;
             PlayerRigidbody = null;
             SurvivalSystem = null;
+            PlayerHealth = null;
             ToolManager = null;
             Inventory = null;
             PlayerTransportCoordinator = null;
@@ -155,6 +157,7 @@ namespace Hecton8.Core
             HectonPlayerMovement playerMovement,
             Rigidbody playerRigidbody,
             HectonSurvivalSystem survivalSystem,
+            HectonPlayerHealth playerHealth,
             PlayerToolManager toolManager,
             PlayerInventory inventory,
             PlayerTransportCoordinator playerTransportCoordinator,
@@ -175,6 +178,7 @@ namespace Hecton8.Core
             PlayerMovement = playerMovement;
             PlayerRigidbody = playerRigidbody;
             SurvivalSystem = survivalSystem;
+            PlayerHealth = playerHealth;
             ToolManager = toolManager;
             Inventory = inventory;
             PlayerTransportCoordinator = playerTransportCoordinator;
@@ -193,7 +197,7 @@ namespace Hecton8.Core
 
         public void PublishMovementState(in PlayerMovementRuntimeState state)
         {
-            MovementState = state;
+            MovementState = MathGuard.SanitizePlayerMovementRuntimeState(in state, in MovementState);
         }
 
         /// <summary>

@@ -20,7 +20,7 @@ namespace Hecton8.Editor
         private const string AssetScPath = "Assets/_Project/Art/Materials/Fonts/NotoSansCJKsc-Regular SDF.asset";
         private const string AssetJpPath = "Assets/_Project/Art/Materials/Fonts/NotoSansCJKjp-Regular SDF.asset";
         private const string AssetArabicPrimePath = "Assets/_Project/Art/Materials/Fonts/NotoSansArabic-Prime SDF.asset";
-        private const string PrimaryTextAssetPath = "Assets/_Project/Art/Materials/Fonts/текст SDF.asset";
+        private const string PrimaryTextAssetPath = "Assets/_Project/Art/Materials/Fonts/tekst SDF.asset";
         private const string NumericTextAssetPath = "Assets/_Project/Art/Materials/Fonts/Ñ†Ð¸Ñ„Ñ€Ñ‹ SDF.asset";
         private const string LiberationSansAssetPath = "Assets/_Project/Data/LiberationSans SDF.asset";
         private const string ChineseLocalizationPath = "Assets/_Project/Scripts/ChineseSimplified.json";
@@ -39,8 +39,8 @@ namespace Hecton8.Editor
 
         private static readonly string[] TargetFontAssetPaths =
         {
-            "Assets/_Project/Art/Materials/Fonts/текст SDF.asset",
-            "Assets/_Project/Art/Materials/Fonts/цифры SDF.asset",
+            "Assets/_Project/Art/Materials/Fonts/tekst SDF.asset",
+            "Assets/_Project/Art/Materials/Fonts/tsifry SDF.asset",
             "Assets/_Project/Art/Materials/Fonts/NotoSans-Regular SDF.asset",
             "Assets/_Project/Art/Materials/Fonts/NotoSansArabic-Regular SDF.asset",
             "Assets/_Project/Data/LiberationSans SDF.asset",

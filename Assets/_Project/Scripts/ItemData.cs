@@ -48,11 +48,22 @@ namespace Hecton8.Items
 
         public ItemData Item => item;
 
-        public int ResolveRandomAmount()
+        /// <summary>
+        /// Resolves an authored salvage range to one predictable midpoint value. No runtime RNG.
+        /// </summary>
+        public int ResolveDeterministicAmount()
         {
             int min = Mathf.Max(0, minYield);
             int max = Mathf.Max(min, maxYield);
-            return max <= min ? min : Random.Range(min, max + 1);
+            return min + ((max - min) >> 1);
+        }
+
+        /// <summary>
+        /// Compatibility shim for old callers. Kept deterministic by design.
+        /// </summary>
+        public int ResolveRandomAmount()
+        {
+            return ResolveDeterministicAmount();
         }
     }
 

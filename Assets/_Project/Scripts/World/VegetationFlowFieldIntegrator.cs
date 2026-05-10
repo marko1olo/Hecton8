@@ -77,6 +77,15 @@ namespace Hecton8.World
                 : fallback;
         }
 
+        private static float ApproxMagnitude2(float2 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float hi = math.max(ax, ay);
+            float lo = math.min(ax, ay);
+            return hi + (lo * 0.375f);
+        }
+
         private static float InverseLerpSpeedSq(float minSpeed, float maxSpeed, float speedSq)
         {
             float minSq = minSpeed * minSpeed;
@@ -632,8 +641,8 @@ namespace Hecton8.World
                     int rowOffset = layerOffset + (cellZ * horizontalResolution);
                     for (int cellX = 1; cellX < horizontalResolution - 1; cellX++)
                     {
-                        float previousMaxSpeed = 0f;
-                        float currentMaxSpeed = 0f;
+                        float previousMaxSpeedSq = 0f;
+                        float currentMaxSpeedSq = 0f;
                         for (int offsetY = -1; offsetY <= 1; offsetY++)
                         {
                             int sampleLayerOffset = (cellY + offsetY) * cellsPerLayer;
@@ -643,13 +652,14 @@ namespace Hecton8.World
                                 for (int offsetX = -1; offsetX <= 1; offsetX++)
                                 {
                                     int sampleIndex = sampleRowOffset + cellX + offsetX;
-                                    previousMaxSpeed = math.max(previousMaxSpeed, math.length(previousField[sampleIndex]));
-                                    currentMaxSpeed = math.max(currentMaxSpeed, math.length(currentField[sampleIndex]));
+                                    previousMaxSpeedSq = math.max(previousMaxSpeedSq, math.lengthsq(previousField[sampleIndex]));
+                                    currentMaxSpeedSq = math.max(currentMaxSpeedSq, math.lengthsq(currentField[sampleIndex]));
                                 }
                             }
                         }
 
-                        if (math.abs(currentMaxSpeed - previousMaxSpeed) > velocityDeltaThreshold)
+                        float velocityDeltaThresholdSq = velocityDeltaThreshold * velocityDeltaThreshold;
+                        if (math.abs(currentMaxSpeedSq - previousMaxSpeedSq) > velocityDeltaThresholdSq)
                             return true;
                     }
                 }
@@ -854,6 +864,9 @@ namespace Hecton8.World
             public float AbyssalFlowNoiseScale;
             public float AbyssalFlowNoiseStrength;
             public float AbyssalFlowVerticalStrength;
+            public int ApplyOrganicKelpPlacementRules;
+            public float OrganicKelpMaxDepthBelowSurface;
+            public float OrganicKelpMinimumNormalY;
             public float3 ThreatGridCenter;
             public float ThreatGridCellSize;
             public int ThreatGridResolution;
@@ -865,7 +878,6 @@ namespace Hecton8.World
             public uint ScaleSalt;
             public uint WidthSalt;
             public float ScaleJitter;
-            public float RotationJitterRadians;
             public uint RotationSalt;
 
             public void Execute(int index)
@@ -1026,10 +1038,19 @@ namespace Hecton8.World
                     }
                 }
 
+                float depthBelowSurface = math.max(0f, WaterLevel - position.y);
+                if (ApplyOrganicKelpPlacementRules != 0 && semanticType == OrganicSemanticType)
+                {
+                    if (depthBelowSurface > OrganicKelpMaxDepthBelowSurface ||
+                        normal.y < OrganicKelpMinimumNormalY)
+                    {
+                        return;
+                    }
+                }
+
                 if (IntersectsBaseModuleAabb(position, scale, heightScale, widthScale))
                     return;
 
-                float depthBelowSurface = math.max(0f, WaterLevel - position.y);
                 flowVector = ApplyAbyssalFlowNoiseStatic(
                     flowVector,
                     position,
@@ -1040,8 +1061,8 @@ namespace Hecton8.World
                     AbyssalFlowVerticalStrength,
                     seed);
                 flowDirection = NormalizeSafe2(new float2(flowVector.x, flowVector.z), flowDirection);
-                float rotationJitter = ((Hash01(seed ^ RotationSalt) * 2f) - 1f) * RotationJitterRadians;
-                quaternion rotation = math.mul(BuildAlignedRotation(normal, variation), quaternion.AxisAngle(normal, rotationJitter));
+                int rotationSector = ResolveOctantSector(variation, seed, RotationSalt);
+                quaternion rotation = BuildAlignedRotation(normal, rotationSector);
                 Output[index] = new JobInstanceRecord
                 {
                     Matrix = float4x4.TRS(position, rotation, new float3(scale, scale, scale)),
@@ -1256,7 +1277,6 @@ namespace Hecton8.World
             public float2 FloatingFlowDirection;
             public float FloatingFlowAnisotropy;
             public float ScaleJitter;
-            public float RotationJitterRadians;
             public uint RotationSalt;
 
             public void Execute(int index)
@@ -1326,8 +1346,9 @@ namespace Hecton8.World
                 float3 position = new float3(sampleX, WaterLevel + FloatingSurfaceOffset, sampleZ);
                 float2 flowDirection = NormalizeSafe2(FloatingFlowDirection, new float2(1f, 0f));
                 float3 flowVector = new float3(flowDirection.x, 0f, flowDirection.y);
-                float rotationAngle = (variation * math.PI * 2f) + (((Hash01(seed ^ RotationSalt) * 2f) - 1f) * RotationJitterRadians);
-                quaternion rotation = quaternion.RotateY(rotationAngle);
+                int rotationSector = ResolveOctantSector(variation, seed, RotationSalt);
+                float2 yawDirection = ResolveOctantDirection(rotationSector);
+                quaternion rotation = quaternion.LookRotationSafe(new float3(yawDirection.x, 0f, yawDirection.y), new float3(0f, 1f, 0f));
                 Output[index] = new JobInstanceRecord
                 {
                     Matrix = float4x4.TRS(position, rotation, new float3(scale, scale, scale)),
@@ -1867,7 +1888,7 @@ namespace Hecton8.World
             private float ResolveFlowSpeedMetersPerSecond(float2 wakeDir)
             {
                 float baseSpeed = math.max(0.05f, WeatherCurrentSpeed * math.max(0.35f, WeatherIntensity));
-                float wakeSpeed = math.length(wakeDir);
+                float wakeSpeed = ApproxMagnitude2(wakeDir);
                 float hotspotSpeed = math.saturate(HotspotThreatLevel) * 0.85f;
                 return math.min(20f, baseSpeed + wakeSpeed + hotspotSpeed);
             }

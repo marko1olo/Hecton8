@@ -1229,7 +1229,7 @@ Status: ARCHIVED
     - `Assets/_Project/Scripts/UI/PauseControlsPanel.cs`
   - What changed:
     - both scripts now sanitize assigned fonts through a readable-font resolver
-    - numeric-only fonts like `цифры SDF` are rejected for text labels/binding text
+    - numeric-only fonts like `tsifry SDF` are rejected for text labels/binding text
   - Why:
     - runtime warnings were emitted for Cyrillic/letter glyphs missing from the numeric font
   - Result:
@@ -1462,116 +1462,116 @@ Status: ARCHIVED
 
 ## 2026-03-26
 
-- `SuitHUDV4CanvasOverlay` получил второй pass по левому bar-блоку после неудачного первого варианта:
-  - первый bar-layout оказался визуально перегруженным и слабым
-  - второй pass убирает `Sub` из видимого интерфейса, сокращает label/value, делает bars длиннее и чище
-  - цель: уйти от дешёвого “табличного” вида к более собранному tech-strip
-- По `Scene View` sky/clouds:
-  - confirmed через MCP: после фикса editor не считается под водой (`CurrentDepth = 0`, `IsUnderwater = false`)
-  - значит остаточная проблема облаков уже не в underwater-state
-  - оставшийся дефект находится в editor-представлении sky pipeline / material presentation, а не в глубине/воде
+- `SuitHUDV4CanvasOverlay` poluchil vtoroy pass po levomu bar-bloku posle neudachnogo pervogo varianta:
+  - pervyy bar-layout okazalsya vizualno peregruzhennym i slabym
+  - vtoroy pass ubiraet `Sub` iz vidimogo interfeysa, sokraschaet label/value, delaet bars dlinnee i chische
+  - tsel: uyti ot deshevogo “tablichnogo” vida k bolee sobrannomu tech-strip
+- Po `Scene View` sky/clouds:
+  - confirmed cherez MCP: posle fiksa editor ne schitaetsya pod vodoy (`CurrentDepth = 0`, `IsUnderwater = false`)
+  - znachit ostatochnaya problema oblakov uzhe ne v underwater-state
+  - ostavshiysya defekt nahoditsya v editor-predstavlenii sky pipeline / material presentation, a ne v glubine/vode
 
-- `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs` переведён с круговых gauge-ring на горизонтальные slanted bars в `HUD_V4_CanvasRoot/GaugeClusterRoot`:
-  - `LayoutRevision` поднят до `9`
-  - левый блок теперь строится как вертикальный stack из `Gauge_O2`, `Gauge_HLT`, `Gauge_PWR`
-  - каждый gauge состоит из `Icon`, `BarBack`, `BarFill`, `BarFrame`, `Label`, `Value`, `Sub`
-  - реальные live-метрики для bar-блока: `oxygen`, `integrity`, `energy`
-  - `food/water` сознательно не добавлялись, потому что в `HectonSurvivalSystem` этих данных нет
-- Добавлен editor-fix для `Scene View`:
+- `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs` pereveden s krugovyh gauge-ring na gorizontalnye slanted bars v `HUD_V4_CanvasRoot/GaugeClusterRoot`:
+  - `LayoutRevision` podnyat do `9`
+  - levyy blok teper stroitsya kak vertikalnyy stack iz `Gauge_O2`, `Gauge_HLT`, `Gauge_PWR`
+  - kazhdyy gauge sostoit iz `Icon`, `BarBack`, `BarFill`, `BarFrame`, `Label`, `Value`, `Sub`
+  - realnye live-metriki dlya bar-bloka: `oxygen`, `integrity`, `energy`
+  - `food/water` soznatelno ne dobavlyalis, potomu chto v `HectonSurvivalSystem` etih dannyh net
+- Dobavlen editor-fix dlya `Scene View`:
   - `Assets/_Project/Scripts/Editor/SceneViewSkyboxEnforcer.cs`
-  - насильно включает `showSkybox`, `showClouds`, `showImageEffects`, `showFog`, `sceneLighting`, `CameraClearFlags.Skybox`
-  - цель: убрать зависимость scene-view от случайно выключенного skybox/fx режима редактора
-- Проверка через MCP после этих правок:
-  - консоль без новых ошибок
-  - `HUD_V4_CanvasRoot/GaugeClusterRoot` реально пересобран в bar-иерархию
-  - `Scene View` больше не даёт чистый оранжевый контур по краю; виден газовый гигант, но sky still not final — остаточная проблема ещё есть
+  - nasilno vklyuchaet `showSkybox`, `showClouds`, `showImageEffects`, `showFog`, `sceneLighting`, `CameraClearFlags.Skybox`
+  - tsel: ubrat zavisimost scene-view ot sluchayno vyklyuchennogo skybox/fx rezhima redaktora
+- Proverka cherez MCP posle etih pravok:
+  - konsol bez novyh oshibok
+  - `HUD_V4_CanvasRoot/GaugeClusterRoot` realno peresobran v bar-ierarhiyu
+  - `Scene View` bolshe ne daet chistyy oranzhevyy kontur po krayu; viden gazovyy gigant, no sky still not final — ostatochnaya problema esche est
 
-- Плоский HUD в `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs` переведён на более честную семантику без фейковых survival-метрик:
-  - `DEPTH` теперь показывается отрицательным (`-50 m`)
-  - третий gauge больше не `HLT/HULL`, а `SAFE / DEPTH LIMIT`
-  - статусная строка больше не использует `HULL INTEGRITY` как основной текст для обычного костюма
-- Проверка по коду показала: в `HectonSurvivalSystem` нет реальных `food/water/hunger/thirst`; есть только `oxygen/energy/integrity/depth/pressure`. Без новой механики вода/еда в HUD были бы фейком.
-- Плоский HUD изолирован по шрифтам:
-  - добавлены `labelFont` и `numericFont` в `SuitHUDV4CanvasOverlay`
-  - live `Suit_HUD_Canvas.labelFont` переключён на `Assets/_Project/Art/Materials/Fonts/текст SDF.asset`
-  - `numericFont` оставлен на `Assets/_Project/Art/Materials/Fonts/цифры SDF.asset`
-- `Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab` обновлён под те же font references, чтобы изоляция не жила только в сцене.
+- Ploskiy HUD v `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs` pereveden na bolee chestnuyu semantiku bez feykovyh survival-metrik:
+  - `DEPTH` teper pokazyvaetsya otritsatelnym (`-50 m`)
+  - tretiy gauge bolshe ne `HLT/HULL`, a `SAFE / DEPTH LIMIT`
+  - statusnaya stroka bolshe ne ispolzuet `HULL INTEGRITY` kak osnovnoy tekst dlya obychnogo kostyuma
+- Proverka po kodu pokazala: v `HectonSurvivalSystem` net realnyh `food/water/hunger/thirst`; est tolko `oxygen/energy/integrity/depth/pressure`. Bez novoy mehaniki voda/eda v HUD byli by feykom.
+- Ploskiy HUD izolirovan po shriftam:
+  - dobavleny `labelFont` i `numericFont` v `SuitHUDV4CanvasOverlay`
+  - live `Suit_HUD_Canvas.labelFont` pereklyuchen na `Assets/_Project/Art/Materials/Fonts/tekst SDF.asset`
+  - `numericFont` ostavlen na `Assets/_Project/Art/Materials/Fonts/tsifry SDF.asset`
+- `Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab` obnovlen pod te zhe font references, chtoby izolyatsiya ne zhila tolko v stsene.
 
-Не стирать старые записи. Новые записи добавлять в начало файла.
+Ne stirat starye zapisi. Novye zapisi dobavlyat v nachalo fayla.
 
-Правила ведения:
-- Писать коротко и по фактам.
-- Для каждого изменения фиксировать: что менялось, где менялось, зачем менялось, к чему привело.
-- Если правка оказалась плохой, не удалять запись, а помечать как неудачную и писать откат.
-- Если состояние сцены или live-параметры важны, фиксировать их явно.
-- Если есть гипотеза, помечать её как гипотезу, а не как факт.
+Pravila vedeniya:
+- Pisat korotko i po faktam.
+- Dlya kazhdogo izmeneniya fiksirovat: chto menyalos, gde menyalos, zachem menyalos, k chemu privelo.
+- Esli pravka okazalas plohoy, ne udalyat zapis, a pomechat kak neudachnuyu i pisat otkat.
+- Esli sostoyanie stseny ili live-parametry vazhny, fiksirovat ih yavno.
+- Esli est gipoteza, pomechat ee kak gipotezu, a ne kak fakt.
 
 ## 2026-03-27 - Flashlight tool adapter
 
-- Добавлен `Assets/_Project/Scripts/FlashlightTool.cs`.
-  - Что: новый `PlayerTool`-наследник для фонаря.
-  - Зачем: аккуратно ввести `Flashlight` в общий tool / prefab / quickbar pipeline, не создавая вторую систему света.
-  - Как: `FlashlightTool` не рендерит свой отдельный свет, а оборачивает уже существующий `PlayerFlashlight`.
-  - Поведение первого прохода:
-    - primary = toggle текущего `PlayerFlashlight`
-    - secondary = status/info через `HUDNotification`
-    - при unequip может выключить свет только если до equip фонарь был выключен
-- Создан placeholder-material:
+- Dobavlen `Assets/_Project/Scripts/FlashlightTool.cs`.
+  - Chto: novyy `PlayerTool`-naslednik dlya fonarya.
+  - Zachem: akkuratno vvesti `Flashlight` v obschiy tool / prefab / quickbar pipeline, ne sozdavaya vtoruyu sistemu sveta.
+  - Kak: `FlashlightTool` ne renderit svoy otdelnyy svet, a oborachivaet uzhe suschestvuyuschiy `PlayerFlashlight`.
+  - Povedenie pervogo prohoda:
+    - primary = toggle tekuschego `PlayerFlashlight`
+    - secondary = status/info cherez `HUDNotification`
+    - pri unequip mozhet vyklyuchit svet tolko esli do equip fonar byl vyklyuchen
+- Sozdan placeholder-material:
   - `Assets/_Project/Art/Materials/Tools/Mat_Tool_Flashlight_Placeholder.mat`
-- Создан held prefab scaffold:
+- Sozdan held prefab scaffold:
   - `Assets/_Project/Prefabs/Tools/Held/Tool_Flashlight_Held.prefab`
-  - В prefab вручную зафиксированы:
+  - V prefab vruchnuyu zafiksirovany:
     - `_toolData -> Item_Tool_Flashlight`
     - `_toolMetadata -> ToolMetadata_Flashlight`
-    - root transform обнулён
-    - visual child сдвинут/масштабирован как placeholder-корпус
-- В `Tool_Flashlight_Held.prefab` отключены `enableDurabilityDrain` и `enableEnergyConsumption` у базового `PlayerTool`-слоя.
-  - Причина: энергия/состояние фонаря уже обслуживаются существующим `PlayerFlashlight`, не нужно дублировать drain в двух системах.
-- Временные `_TMP` tool objects удалены из live scene:
+    - root transform obnulen
+    - visual child sdvinut/masshtabirovan kak placeholder-korpus
+- V `Tool_Flashlight_Held.prefab` otklyucheny `enableDurabilityDrain` i `enableEnergyConsumption` u bazovogo `PlayerTool`-sloya.
+  - Prichina: energiya/sostoyanie fonarya uzhe obsluzhivayutsya suschestvuyuschim `PlayerFlashlight`, ne nuzhno dublirovat drain v dvuh sistemah.
+- Vremennye `_TMP` tool objects udaleny iz live scene:
   - `Tool_Flashlight_Held_TMP`
   - `ToolPrefab_Scanner_TMP`
   - `ToolPrefab_Repair_TMP`
   - `ToolPrefab_Builder_TMP`
   - `ToolPrefab_LaserCutter_TMP`
-- Сцена `Assets/_Project/Scenes/02_HECTON_WORLD.unity` сохранена после cleanup.
-- Проверка:
+- Stsena `Assets/_Project/Scenes/02_HECTON_WORLD.unity` sohranena posle cleanup.
+- Proverka:
   - Unity compile clean
-  - console clean (0 warnings/errors по новым правкам)
-  - активные 4 слота игрока не менялись, чтобы не ломать текущий тестовый набор
+  - console clean (0 warnings/errors po novym pravkam)
+  - aktivnye 4 slota igroka ne menyalis, chtoby ne lomat tekuschiy testovyy nabor
 
 ## 2026-03-26
 
-- Gauge ring в `SuitHUDV4CanvasOverlay` переписан второй раз:
-  - убрана квадратная `Image`-заглушка
-  - теперь используется runtime-generated ring sprite + `Image.Type.Filled` с `Radial360`
-  - цель: Subnautica-like круговой индикатор вокруг числа
-- `LayoutRevision` в `SuitHUDV4CanvasOverlay` поднят до `7`, чтобы gauge hierarchy пересобралась.
-- RenderSettings.skybox переставлен с ошибочного `Mat_Skybox_Final` на проектный `Mat_HectonSky`.
-- Проверка показала: `Sky_System/Sphere` не исчезала. Она активна, `MeshRenderer.enabled = true`, material = `Mat_HectonSky`.
-- Вывод по небу: проблема не в отсутствии `Sky_System`, а в том, как `Scene View` показывает купол/небесную систему изнутри и как celestial state затемняет сцену.
+- Gauge ring v `SuitHUDV4CanvasOverlay` perepisan vtoroy raz:
+  - ubrana kvadratnaya `Image`-zaglushka
+  - teper ispolzuetsya runtime-generated ring sprite + `Image.Type.Filled` s `Radial360`
+  - tsel: Subnautica-like krugovoy indikator vokrug chisla
+- `LayoutRevision` v `SuitHUDV4CanvasOverlay` podnyat do `7`, chtoby gauge hierarchy peresobralas.
+- RenderSettings.skybox perestavlen s oshibochnogo `Mat_Skybox_Final` na proektnyy `Mat_HectonSky`.
+- Proverka pokazala: `Sky_System/Sphere` ne ischezala. Ona aktivna, `MeshRenderer.enabled = true`, material = `Mat_HectonSky`.
+- Vyvod po nebu: problema ne v otsutstvii `Sky_System`, a v tom, kak `Scene View` pokazyvaet kupol/nebesnuyu sistemu iznutri i kak celestial state zatemnyaet stsenu.
 
-- Задача переключена обратно на плоский HUD. Объёмная ветка отключена:
+- Zadacha pereklyuchena obratno na ploskiy HUD. Obemnaya vetka otklyuchena:
   - `HUD_Render_Camera` inactive
   - `SuitHUDPresentationController` disabled
   - `VisorHUDController` disabled
   - `Suit_Visor.MeshRenderer` disabled
   - `Suit_HUD_ProjectionSource` inactive
-- Возвращён проектный sky material в RenderSettings:
+- Vozvraschen proektnyy sky material v RenderSettings:
   - `Assets/_Project/Art/Materials/Mat_HectonSky.mat`
-  - Ранее по ошибке был подставлен `Mat_Skybox_Final`, это было неверно.
-- Проверено через MCP:
-  - `Sky_System/Sphere` существует
+  - Ranee po oshibke byl podstavlen `Mat_Skybox_Final`, eto bylo neverno.
+- Provereno cherez MCP:
+  - `Sky_System/Sphere` suschestvuet
   - `MeshRenderer.enabled = true`
   - `scale = 25000`
   - material = `Mat_HectonSky`
-- По небу/солнцу зафиксирован live-state:
+- Po nebu/solntsu zafiksirovan live-state:
   - `HectonCelestialEngine.IsEclipseActive = true`
   - `Directional Light.intensity = 0`
-  - `Mat_HectonSky` имеет `_NightBlend = 1.0`, `_EclipseOcclusion = 1.0`
-  - Проблема с тёмной сценой связана не с time-of-day, а с eclipse-state.
-- Gauge ring в `SuitHUDV4CanvasOverlay` сначала был переведён с отсутствующего glyph на текст `"O"`. Это было технической заглушкой и визуально плохим решением.
-- Затем gauge ring был переделан в `Image`-рамку и `Image`-fill прямоугольного типа. Это тоже оказалось неправильным визуальным направлением.
-- Следующий шаг по HUD: сделать gauge как настоящий круговой индикатор с radial fill, без текстовых символов и без квадратной имитации.
+  - `Mat_HectonSky` imeet `_NightBlend = 1.0`, `_EclipseOcclusion = 1.0`
+  - Problema s temnoy stsenoy svyazana ne s time-of-day, a s eclipse-state.
+- Gauge ring v `SuitHUDV4CanvasOverlay` snachala byl pereveden s otsutstvuyuschego glyph na tekst `"O"`. Eto bylo tehnicheskoy zaglushkoy i vizualno plohim resheniem.
+- Zatem gauge ring byl peredelan v `Image`-ramku i `Image`-fill pryamougolnogo tipa. Eto tozhe okazalos nepravilnym vizualnym napravleniem.
+- Sleduyuschiy shag po HUD: sdelat gauge kak nastoyaschiy krugovoy indikator s radial fill, bez tekstovyh simvolov i bez kvadratnoy imitatsii.
 ## 2026-03-26 - PDA / Inventory handoff
 
 - Stabilized project away from the abandoned volumetric HUD branch.

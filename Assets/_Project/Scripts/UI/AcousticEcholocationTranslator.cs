@@ -501,22 +501,62 @@ namespace Hecton8.UI
         private bool TryResolveNearestAbyssalAnchor(out int distanceMeters)
         {
             distanceMeters = 0;
-            if (_vegetationBridge == null ||
-                !_vegetationBridge.TryGetActiveAbyssalAnchorPayload(out NativeArray<Vector3> anchors, out int count) ||
+            if (_vegetationBridge == null)
+            {
+                return false;
+            }
+
+            if (!TryResolveClassificationOriginAup(out AbsoluteUniversePosition originAup))
+                return false;
+
+            if (_vegetationBridge.TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition> anchorAups, out int aupCount) &&
+                anchorAups.IsCreated &&
+                aupCount > 0)
+            {
+                return TryResolveNearestAbyssalAnchorDistance(anchorAups, aupCount, in originAup, out distanceMeters);
+            }
+
+            if (!_vegetationBridge.TryGetActiveAbyssalAnchorPayload(out NativeArray<Vector3> anchors, out int count) ||
                 !anchors.IsCreated ||
                 count <= 0)
             {
                 return false;
             }
 
-            float nearestDistanceMeters = float.MaxValue;
-            if (!TryResolveClassificationOriginAup(out AbsoluteUniversePosition originAup))
-                return false;
-
             int limit = math.min(MaxAbyssalAnchorClassificationScan, math.min(count, anchors.Length));
+            float nearestDistanceMeters = float.MaxValue;
             for (int i = 0; i < limit; i++)
             {
                 AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchors[i]);
+                float candidateDistanceMeters = ApproximateAupDistanceMeters(in anchorAup, in originAup);
+                if (candidateDistanceMeters > AnchorClassificationRadius ||
+                    candidateDistanceMeters >= nearestDistanceMeters)
+                {
+                    continue;
+                }
+
+                nearestDistanceMeters = candidateDistanceMeters;
+            }
+
+            if (nearestDistanceMeters == float.MaxValue)
+                return false;
+
+            distanceMeters = nearestDistanceMeters >= int.MaxValue ? int.MaxValue : (int)math.round(nearestDistanceMeters);
+            return true;
+        }
+
+        private static bool TryResolveNearestAbyssalAnchorDistance(
+            NativeArray<AbsoluteUniversePosition> anchorAups,
+            int count,
+            in AbsoluteUniversePosition originAup,
+            out int distanceMeters)
+        {
+            distanceMeters = 0;
+            int limit = math.min(MaxAbyssalAnchorClassificationScan, math.min(count, anchorAups.Length));
+            float nearestDistanceMeters = float.MaxValue;
+            for (int i = 0; i < limit; i++)
+            {
+                AbsoluteUniversePosition anchorAup = anchorAups[i];
                 float candidateDistanceMeters = ApproximateAupDistanceMeters(in anchorAup, in originAup);
                 if (candidateDistanceMeters > AnchorClassificationRadius ||
                     candidateDistanceMeters >= nearestDistanceMeters)
@@ -1493,7 +1533,7 @@ namespace Hecton8.UI
             slot.Duration = math.max(MinDuration, request.DurationSeconds > 0f ? request.DurationSeconds : DefaultDuration);
             slot.Intensity = math.saturate(request.Intensity);
             slot.WorldPosition = request.WorldPosition;
-            slot.WorldAup = AbsoluteUniversePosition.FromRuntimePosition(request.WorldPosition);
+            slot.WorldAup = request.ResolveWorldAup();
             slot.HasWorldAup = true;
             slot.LastAnchoredPosition = CaptionHiddenPosition;
             slot.LastAlpha = -1f;
@@ -1649,7 +1689,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
                 _viewCamera = null;
                 _viewTransform = playerTransform;

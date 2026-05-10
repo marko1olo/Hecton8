@@ -49,7 +49,7 @@ namespace Hecton8.EditorTools
             int failures = 0;
             StringBuilder failureBuilder = new StringBuilder(1024); // COLD ALLOC: StringBuilder[1024] - editor smoke failure staging - owner: TechArtPipelineSmokeTester
 
-            bool blueNoise = CheckBlueNoise(ref checks, ref failures, failureBuilder);
+            bool ignDither = CheckIgnDither(ref checks, ref failures, failureBuilder);
             bool voxelShader = CheckVoxelShader(ref checks, ref failures, failureBuilder);
             bool visorShader = CheckVisorShader(ref checks, ref failures, failureBuilder);
             bool bridge = CheckBridge(ref checks, ref failures, failureBuilder);
@@ -66,7 +66,7 @@ namespace Hecton8.EditorTools
                 .Append("\"status\":\"").Append(passed ? "PASS" : "FAIL").Append("\",")
                 .Append("\"checks\":").Append(checks).Append(',')
                 .Append("\"failures\":").Append(failures).Append(',')
-                .Append("\"blueNoise\":").Append(JsonBool(blueNoise)).Append(',')
+                .Append("\"ignDither\":").Append(JsonBool(ignDither)).Append(',')
                 .Append("\"voxelShader\":").Append(JsonBool(voxelShader)).Append(',')
                 .Append("\"visorShader\":").Append(JsonBool(visorShader)).Append(',')
                 .Append("\"streamingBridge\":").Append(JsonBool(bridge)).Append(',')
@@ -81,18 +81,17 @@ namespace Hecton8.EditorTools
             return passed;
         }
 
-        private static bool CheckBlueNoise(ref int checks, ref int failures, StringBuilder failuresOut)
+        private static bool CheckIgnDither(ref int checks, ref int failures, StringBuilder failuresOut)
         {
             checks++;
             string absolutePath = ResolveProjectPath(BlueNoisePath);
             string absoluteMetaPath = ResolveProjectPath(BlueNoiseMetaPath);
-            bool pass = File.Exists(absolutePath) &&
-                        File.Exists(absoluteMetaPath) &&
-                        HasImageSize(absolutePath, 256, 256) &&
-                        FileContains(absoluteMetaPath, "enableMipMap: 0") &&
-                        FileContains(absoluteMetaPath, "sRGBTexture: 0") &&
-                        FileContains(absoluteMetaPath, "textureFormat: 63");
-            return Record(pass, "blueNoise256R8", ref failures, failuresOut);
+            bool pass = !File.Exists(absolutePath) &&
+                        !File.Exists(absoluteMetaPath) &&
+                        FileContains(VisorShaderPath, "ResolveInterleavedGradientNoise") &&
+                        !FileContains(VisorShaderPath, "ResolveBlueNoise") &&
+                        !FileContains(VisorShaderPath, "_HectonVisorFluidBlueNoiseTex");
+            return Record(pass, "ignDitherNoBlueNoiseAsset", ref failures, failuresOut);
         }
 
         private static bool CheckVoxelShader(ref int checks, ref int failures, StringBuilder failuresOut)
@@ -109,11 +108,10 @@ namespace Hecton8.EditorTools
         private static bool CheckVisorShader(ref int checks, ref int failures, StringBuilder failuresOut)
         {
             checks++;
-            bool pass = FileContains(VisorShaderPath, "_HectonVisorFluidBlueNoiseTex") &&
-                        FileContains(VisorShaderPath, "ComputeDustMask") &&
-                        FileContains(VisorShaderPath, "ResolveBlueNoise") &&
-                        FileContains(VisorShaderPath, "if (_HectonVisorFluidHasBlueNoise < 0.5)");
-            return Record(pass, "visorShaderBlueNoiseDust", ref failures, failuresOut);
+            bool pass = FileContains(VisorShaderPath, "ComputeDustMask") &&
+                        FileContains(VisorShaderPath, "ResolveInterleavedGradientNoise") &&
+                        !FileContains(VisorShaderPath, "SAMPLE_TEXTURE2D_LOD(_HectonVisorFluidBlueNoiseTex");
+            return Record(pass, "visorShaderIgnDust", ref failures, failuresOut);
         }
 
         private static bool CheckBridge(ref int checks, ref int failures, StringBuilder failuresOut)
@@ -182,12 +180,6 @@ namespace Hecton8.EditorTools
                                !MethodBlockContains(BridgePath, "private void TickChunkFade", "$\"") &&
                                !MethodBlockContains(BridgePath, "private void TickChunkFade", ".ToString(");
             return Record(noBridgeNative && noJobBarrier && noStaticInstance && noHotString, "forensicStaticRules", ref failures, failuresOut);
-        }
-
-        private static bool HasImageSize(string absolutePath, int width, int height)
-        {
-            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(BlueNoisePath);
-            return texture != null && texture.width == width && texture.height == height;
         }
 
         private static bool FileContains(string assetPath, string token)

@@ -619,6 +619,13 @@ namespace Hecton8.World
         private static readonly int _VatInstancePhaseScaleId = Shader.PropertyToID("_VatInstancePhaseScale");
         private static readonly int _VatPositionScaleId = Shader.PropertyToID("_VatPositionScale");
         private static readonly int _VatNormalBlendId = Shader.PropertyToID("_VatNormalBlend");
+        private static readonly int _HitFlashStartTimeId = Shader.PropertyToID("_HitFlashStartTime");
+        private static readonly int _HitFlashDurationId = Shader.PropertyToID("_HitFlashDuration");
+        private static readonly int _HitFlashIntensityId = Shader.PropertyToID("_HitFlashIntensity");
+        private static readonly int _HitFlashRadiusId = Shader.PropertyToID("_HitFlashRadius");
+        private static readonly int _HitFlashBloatId = Shader.PropertyToID("_HitFlashBloat");
+        private static readonly int _HitFlashOriginWSId = Shader.PropertyToID("_HitFlashOriginWS");
+        private static readonly int _HitFlashColorId = Shader.PropertyToID("_HitFlashColor");
         private static readonly int _DensityTexId = Shader.PropertyToID("_DensityTex");
         private static readonly int _DensityWorldRectId = Shader.PropertyToID("_DensityWorldRect");
         private static readonly int _CutMaskTexId = Shader.PropertyToID("_CutMaskTex");
@@ -677,7 +684,7 @@ namespace Hecton8.World
         private Mesh boidMesh;
 
         [SerializeField]
-        [Tooltip("Instanced material used by RenderMeshPrimitives.")]
+        [Tooltip("Instanced material used by RenderMeshIndirect.")]
         private Material boidMaterial;
 
         [Header("── VAT Rendering ──────────────────")]
@@ -708,6 +715,27 @@ namespace Hecton8.World
         [SerializeField, Range(0f, 1f)]
         [Tooltip("Blend factor between authored mesh normals and VAT normal samples.")]
         private float boidVatNormalBlend = 1f;
+
+        [Header("── GPU Hit Reaction ────────────────")]
+        [SerializeField, Min(0.01f)]
+        [Tooltip("Seconds the GPU-only hit flash remains visible after a registered impact.")]
+        private float hitFlashDurationSeconds = 0.1f;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("World radius affected by a registered VAT hit reaction. Zero means the whole rendered school flashes.")]
+        private float hitFlashRadiusMeters = 6f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Default intensity for GPU-only VAT hit flashes.")]
+        private float hitFlashIntensity = 1f;
+
+        [SerializeField, Range(0f, 0.12f)]
+        [Tooltip("Local-normal bloat distance applied in the vertex shader while the hit flash is active.")]
+        private float hitFlashBloatMeters = 0.035f;
+
+        [SerializeField]
+        [Tooltip("Color blended by the fragment shader while the hit flash is active.")]
+        private Color hitFlashColor = new Color(1f, 0.08f, 0.04f, 1f);
 
         [SerializeField]
         [Tooltip("Primary density owner. If null the controller resolves the active runtime singleton.")]
@@ -1171,7 +1199,7 @@ namespace Hecton8.World
         private int _debugFieldRevision;
 
         [SerializeField]
-        [Tooltip("Current render bounds used by RenderMeshPrimitives.")]
+        [Tooltip("Current render bounds used by RenderMeshIndirect.")]
         private Bounds _debugRenderBounds;
 
         [SerializeField]
@@ -1310,8 +1338,11 @@ namespace Hecton8.World
         private NativeArray<SimulationFrameConstants> _simulationFrameNative;
         private NativeArray<uint> _threatGridUploadNative;
         private NativeArray<uint> _threatVoxelUploadNative;
+        private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _boidIndirectArgsUpload =
+            new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: IndirectDrawIndexedArgs[1] - VAT micro-fauna indirect draw upload cache - owner: SargassumMicroFaunaBoids
         private GraphicsBuffer _boidsBufferA;
         private GraphicsBuffer _boidsBufferB;
+        private GraphicsBuffer _boidIndirectArgsBuffer;
         private GraphicsBuffer _grazingAnchorBuffer;
         private GraphicsBuffer _massiveThreatBuffer;
         private GraphicsBuffer _formationBeaconBuffer;
@@ -1340,6 +1371,8 @@ namespace Hecton8.World
         private int _dispatchGroupCount = 1;
         private int _clearSpatialGridDispatchGroupCount = 1;
         private ComputeShader _boundBoidCompute;
+        private Mesh _boidIndirectArgsMesh;
+        private int _boidIndirectArgsInstanceCount = -1;
         private int _frameParity;
         private int _lastFieldRevision = -1;
         private bool _registeredTick;
@@ -1363,6 +1396,26 @@ namespace Hecton8.World
         private float _simulationTime;
         private float _simulationPhaseOffset;
         private float _cachedVatSwayAmplitudeScale = 1f;
+        private Vector3 _hitFlashOriginWS;
+        private float _hitFlashStartTime = -1000f;
+        private float _hitFlashRuntimeRadius;
+        private float _hitFlashRuntimeIntensity;
+        private bool _hitFlashPropertiesDirty = true;
+        private bool _renderPropertiesDirty = true;
+        private GraphicsBuffer _renderPropertiesBoidBuffer;
+        private Texture _renderPropertiesVatPositionTexture;
+        private Texture _renderPropertiesVatNormalTexture;
+        private float _renderPropertiesParasiteMode;
+        private float _renderPropertiesParasiteAggression;
+        private float _renderPropertiesVelocitySleepScale;
+        private float _renderPropertiesLodDitherKeep01;
+        private float _renderPropertiesVatEnabled;
+        private float _renderPropertiesVatFrameCount;
+        private float _renderPropertiesVatVertexCount;
+        private float _renderPropertiesVatPlaybackSpeed;
+        private float _renderPropertiesVatInstancePhaseScale;
+        private float _renderPropertiesVatPositionScale;
+        private float _renderPropertiesVatNormalBlend;
         private float _spatialGridCellSizeWS = 1f;
         private Vector3 _spatialGridOriginWS = Vector3.zero;
         private Vector3Int _spatialGridResolution = Vector3Int.one;
@@ -1457,7 +1510,6 @@ namespace Hecton8.World
         private Vector3 _playerMotionCachePosition;
         private Vector3 _playerMotionCacheVelocity;
         private bool _playerTransformProbeAttempted;
-        private bool _playerComponentProbeAttempted;
         private bool _viewCameraProbeAttempted;
         private bool _runtimeServiceProbeAttempted;
         private PopulationDensityPoint _statisticalPopulationPoint;
@@ -1482,6 +1534,7 @@ namespace Hecton8.World
         {
             _computeDispatchDisabled = false;
             _materialPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - indirect boid render properties - owner: SargassumMicroFaunaBoids
+            _hitFlashPropertiesDirty = true;
             SanitizeSettings();
             RefreshRenderLayerCache();
             RefreshRenderScaleCache();
@@ -1499,6 +1552,7 @@ namespace Hecton8.World
             InvalidateViewPoseCache();
             ResetDependencyProbeCache();
             _materialPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - indirect boid render properties - owner: SargassumMicroFaunaBoids
+            _hitFlashPropertiesDirty = true;
             RefreshRenderLayerCache();
             RefreshRenderScaleCache();
             ResolveDependencies();
@@ -1806,7 +1860,6 @@ namespace Hecton8.World
 
         private void ResolveDependencies()
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
             bool missingRuntimeServices = biolumManager == null ||
                                           dragManager == null ||
                                           cutManager == null ||
@@ -1840,12 +1893,29 @@ namespace Hecton8.World
                 _runtimeServiceProbeAttempted = true;
             }
 
-            if (playerContext != null && playerContext.IsInitialized)
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null &&
+                runtimeContext.IsBound)
             {
-                playerTransform ??= playerContext.PlayerTransform;
-                _playerRigidbody ??= playerContext.PlayerRigidbody;
-                _playerMovement ??= playerContext.PlayerMovement;
-                _playerFlashlight ??= playerContext.Flashlight;
+                playerTransform ??= runtimeContext.PlayerTransform;
+                _playerRigidbody ??= runtimeContext.PlayerRigidbody;
+                _playerMovement ??= runtimeContext.PlayerMovement;
+                _playerTransportCoordinator ??= runtimeContext.PlayerTransportCoordinator;
+                _playerHealth ??= runtimeContext.PlayerHealth;
+                _playerFlashlight ??= runtimeContext.Flashlight;
+            }
+            else
+            {
+                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                if (playerContext != null && playerContext.IsInitialized)
+                {
+                    playerTransform ??= playerContext.PlayerTransform;
+                    _playerRigidbody ??= playerContext.PlayerRigidbody;
+                    _playerMovement ??= playerContext.PlayerMovement;
+                    _playerTransportCoordinator ??= playerContext.PlayerTransportCoordinator;
+                    _playerHealth ??= playerContext.PlayerHealth;
+                    _playerFlashlight ??= playerContext.Flashlight;
+                }
             }
 
             if (playerTransform == null && !_playerTransformProbeAttempted)
@@ -1856,35 +1926,6 @@ namespace Hecton8.World
             else if (playerTransform != null)
             {
                 _playerTransformProbeAttempted = true;
-            }
-
-            bool missingPlayerComponents = _playerRigidbody == null ||
-                                           _playerMovement == null ||
-                                           _playerTransportCoordinator == null ||
-                                           _playerHealth == null ||
-                                           _playerFlashlight == null;
-            if (!_playerComponentProbeAttempted && missingPlayerComponents && playerTransform != null)
-            {
-                if (_playerRigidbody == null)
-                    playerTransform.TryGetComponent(out _playerRigidbody);
-
-                if (_playerMovement == null)
-                    playerTransform.TryGetComponent(out _playerMovement);
-
-                if (_playerTransportCoordinator == null)
-                    playerTransform.TryGetComponent(out _playerTransportCoordinator);
-
-                if (_playerHealth == null)
-                    playerTransform.TryGetComponent(out _playerHealth);
-
-                if (_playerFlashlight == null)
-                    playerTransform.TryGetComponent(out _playerFlashlight);
-
-                _playerComponentProbeAttempted = true;
-            }
-            else if (!missingPlayerComponents)
-            {
-                _playerComponentProbeAttempted = true;
             }
 
             if (viewCamera == null && playerTransform != null && !_viewCameraProbeAttempted)
@@ -1904,7 +1945,6 @@ namespace Hecton8.World
         private void ResetDependencyProbeCache()
         {
             _playerTransformProbeAttempted = false;
-            _playerComponentProbeAttempted = false;
             _viewCameraProbeAttempted = false;
             _runtimeServiceProbeAttempted = false;
         }
@@ -1957,6 +1997,10 @@ namespace Hecton8.World
             boidVatInstancePhaseScale = math.max(0f, boidVatInstancePhaseScale);
             boidVatPositionScale = math.max(0.0001f, boidVatPositionScale);
             boidVatNormalBlend = math.saturate(boidVatNormalBlend);
+            hitFlashDurationSeconds = math.max(0.01f, hitFlashDurationSeconds);
+            hitFlashRadiusMeters = math.max(0f, hitFlashRadiusMeters);
+            hitFlashIntensity = math.saturate(hitFlashIntensity);
+            hitFlashBloatMeters = math.clamp(hitFlashBloatMeters, 0f, 0.12f);
             parasiteDroneWorldYThreshold = math.clamp(parasiteDroneWorldYThreshold, -4000f, -1000f);
             parasiteAffinityWeight = math.clamp(parasiteAffinityWeight, 0f, 12f);
             parasiteHullStressIntensity = math.saturate(parasiteHullStressIntensity);
@@ -4209,6 +4253,27 @@ namespace Hecton8.World
             UploadMassiveThreats();
         }
 
+        /// <summary>
+        /// Registers a GPU-only VAT hit reaction. Rendering owns the timestamp; no boid buffer mutation or CPU animation path is used.
+        /// </summary>
+        internal void RegisterVatHitReaction(Vector3 originWS, float radiusMeters, float intensity01)
+        {
+            float clampedIntensity = math.saturate(intensity01) * math.saturate(hitFlashIntensity);
+            if (clampedIntensity <= 0.0001f ||
+                !float.IsFinite(originWS.x) ||
+                !float.IsFinite(originWS.y) ||
+                !float.IsFinite(originWS.z))
+            {
+                return;
+            }
+
+            _hitFlashOriginWS = originWS;
+            _hitFlashRuntimeRadius = math.max(0f, radiusMeters > 0.0001f ? radiusMeters : hitFlashRadiusMeters);
+            _hitFlashRuntimeIntensity = clampedIntensity;
+            _hitFlashStartTime = Time.time;
+            _hitFlashPropertiesDirty = true;
+        }
+
         private void UpdateFragmentationState(
             Vector3 playerPosition,
             Vector3 playerVelocity,
@@ -4898,6 +4963,123 @@ namespace Hecton8.World
             _cachedRenderLayer = gameObject.layer;
         }
 
+        private bool EnsureBoidIndirectArgsBuffer()
+        {
+            if (_boidIndirectArgsBuffer != null)
+                return true;
+
+            _boidIndirectArgsBuffer = new GraphicsBuffer(
+                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                1,
+                GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - VAT micro-fauna indirect draw args - owner: SargassumMicroFaunaBoids
+            _boidIndirectArgsMesh = null;
+            _boidIndirectArgsInstanceCount = -1;
+            return _boidIndirectArgsBuffer != null;
+        }
+
+        private bool UploadBoidIndirectArgs(Mesh mesh, int instanceCount)
+        {
+            if (mesh == null || instanceCount <= 0 || !EnsureBoidIndirectArgsBuffer())
+                return false;
+
+            if (_boidIndirectArgsMesh == mesh && _boidIndirectArgsInstanceCount == instanceCount)
+                return true;
+
+            _boidIndirectArgsUpload[0].indexCountPerInstance = mesh.GetIndexCount(0);
+            _boidIndirectArgsUpload[0].instanceCount = (uint)instanceCount;
+            _boidIndirectArgsUpload[0].startIndex = mesh.GetIndexStart(0);
+            _boidIndirectArgsUpload[0].baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0));
+            _boidIndirectArgsUpload[0].startInstance = 0u;
+            GraphicsBufferUploadUtility.UploadArray(_boidIndirectArgsBuffer, _boidIndirectArgsUpload, 1);
+            _boidIndirectArgsMesh = mesh;
+            _boidIndirectArgsInstanceCount = instanceCount;
+            return true;
+        }
+
+        private void UploadHitFlashPropertiesIfNeeded()
+        {
+            if (!_hitFlashPropertiesDirty || _materialPropertyBlock == null)
+                return;
+
+            _materialPropertyBlock.SetFloat(_HitFlashStartTimeId, _hitFlashStartTime);
+            _materialPropertyBlock.SetFloat(_HitFlashDurationId, hitFlashDurationSeconds);
+            _materialPropertyBlock.SetFloat(_HitFlashIntensityId, _hitFlashRuntimeIntensity);
+            _materialPropertyBlock.SetFloat(_HitFlashRadiusId, _hitFlashRuntimeRadius);
+            _materialPropertyBlock.SetFloat(_HitFlashBloatId, hitFlashBloatMeters);
+            float hitFlashInvRadiusSq = _hitFlashRuntimeRadius > 0.0001f ? 1f / (_hitFlashRuntimeRadius * _hitFlashRuntimeRadius) : 0f;
+            _materialPropertyBlock.SetVector(_HitFlashOriginWSId, new Vector4(_hitFlashOriginWS.x, _hitFlashOriginWS.y, _hitFlashOriginWS.z, hitFlashInvRadiusSq));
+            _materialPropertyBlock.SetColor(_HitFlashColorId, hitFlashColor);
+            _hitFlashPropertiesDirty = false;
+        }
+
+        private bool ShouldUploadRenderFloat(float value, ref float cachedValue)
+        {
+            if (!_renderPropertiesDirty && cachedValue == value)
+                return false;
+
+            cachedValue = value;
+            return true;
+        }
+
+        private void UploadBoidRenderPropertiesIfNeeded(GraphicsBuffer currentBuffer, bool vatEnabled)
+        {
+            if (_renderPropertiesDirty || !ReferenceEquals(_renderPropertiesBoidBuffer, currentBuffer))
+            {
+                _materialPropertyBlock.SetBuffer(_BoidsBufferId, currentBuffer);
+                _renderPropertiesBoidBuffer = currentBuffer;
+            }
+
+            float parasiteMode = _parasiteModeActive ? 1f : 0f;
+            float parasiteAggression = _debugParasiteAggression01;
+            float velocitySleepScale = _debugHibernation01 >= 0.999f ? 0f : 1f;
+            float lodDitherKeep01 = ResolveLodDitherKeep01(_debugHibernation01);
+            float vatEnabledFloat = vatEnabled ? 1f : 0f;
+            float vatFrameCount = vatEnabled ? boidVatFrameCount : 1f;
+            float vatVertexCount = _boidMeshVertexCount;
+            float vatPositionScale = boidVatPositionScale * _cachedVatSwayAmplitudeScale;
+
+            if (ShouldUploadRenderFloat(parasiteMode, ref _renderPropertiesParasiteMode))
+                _materialPropertyBlock.SetFloat(_ParasiteModeId, parasiteMode);
+            if (ShouldUploadRenderFloat(parasiteAggression, ref _renderPropertiesParasiteAggression))
+                _materialPropertyBlock.SetFloat(_ParasiteAggressionId, parasiteAggression);
+            if (ShouldUploadRenderFloat(velocitySleepScale, ref _renderPropertiesVelocitySleepScale))
+                _materialPropertyBlock.SetFloat(_VelocitySleepScaleId, velocitySleepScale);
+            if (ShouldUploadRenderFloat(lodDitherKeep01, ref _renderPropertiesLodDitherKeep01))
+                _materialPropertyBlock.SetFloat(_LodDitherKeep01Id, lodDitherKeep01);
+            if (ShouldUploadRenderFloat(vatEnabledFloat, ref _renderPropertiesVatEnabled))
+                _materialPropertyBlock.SetFloat(_VatEnabledId, vatEnabledFloat);
+            if (ShouldUploadRenderFloat(vatFrameCount, ref _renderPropertiesVatFrameCount))
+                _materialPropertyBlock.SetFloat(_VatFrameCountId, vatFrameCount);
+            if (ShouldUploadRenderFloat(vatVertexCount, ref _renderPropertiesVatVertexCount))
+                _materialPropertyBlock.SetFloat(_VatVertexCountId, vatVertexCount);
+            if (ShouldUploadRenderFloat(boidVatPlaybackSpeed, ref _renderPropertiesVatPlaybackSpeed))
+                _materialPropertyBlock.SetFloat(_VatPlaybackSpeedId, boidVatPlaybackSpeed);
+            if (ShouldUploadRenderFloat(boidVatInstancePhaseScale, ref _renderPropertiesVatInstancePhaseScale))
+                _materialPropertyBlock.SetFloat(_VatInstancePhaseScaleId, boidVatInstancePhaseScale);
+            if (ShouldUploadRenderFloat(vatPositionScale, ref _renderPropertiesVatPositionScale))
+                _materialPropertyBlock.SetFloat(_VatPositionScaleId, vatPositionScale);
+            if (ShouldUploadRenderFloat(boidVatNormalBlend, ref _renderPropertiesVatNormalBlend))
+                _materialPropertyBlock.SetFloat(_VatNormalBlendId, boidVatNormalBlend);
+
+            if (vatEnabled)
+            {
+                if (_renderPropertiesDirty || _renderPropertiesVatPositionTexture != boidVatPositionTexture)
+                {
+                    _materialPropertyBlock.SetTexture(_VatPositionTexId, boidVatPositionTexture);
+                    _renderPropertiesVatPositionTexture = boidVatPositionTexture;
+                }
+
+                if (_renderPropertiesDirty || _renderPropertiesVatNormalTexture != boidVatNormalTexture)
+                {
+                    _materialPropertyBlock.SetTexture(_VatNormalTexId, boidVatNormalTexture);
+                    _renderPropertiesVatNormalTexture = boidVatNormalTexture;
+                }
+            }
+
+            _renderPropertiesDirty = false;
+        }
+
         private void RenderCurrentBuffer()
         {
             GraphicsBuffer currentBuffer = _frameParity == 0 ? _boidsBufferA : _boidsBufferB;
@@ -4913,23 +5095,11 @@ namespace Hecton8.World
             bool vatEnabled = boidVatPositionTexture != null &&
                               boidVatNormalTexture != null &&
                               boidVatFrameCount > 1;
-            _materialPropertyBlock.SetBuffer(_BoidsBufferId, currentBuffer);
-            _materialPropertyBlock.SetFloat(_ParasiteModeId, _parasiteModeActive ? 1f : 0f);
-            _materialPropertyBlock.SetFloat(_ParasiteAggressionId, _debugParasiteAggression01);
-            _materialPropertyBlock.SetFloat(_VelocitySleepScaleId, _debugHibernation01 >= 0.999f ? 0f : 1f);
-            _materialPropertyBlock.SetFloat(_LodDitherKeep01Id, ResolveLodDitherKeep01(_debugHibernation01));
-            _materialPropertyBlock.SetFloat(_VatEnabledId, vatEnabled ? 1f : 0f);
-            _materialPropertyBlock.SetFloat(_VatFrameCountId, vatEnabled ? boidVatFrameCount : 1f);
-            _materialPropertyBlock.SetFloat(_VatVertexCountId, _boidMeshVertexCount);
-            _materialPropertyBlock.SetFloat(_VatPlaybackSpeedId, boidVatPlaybackSpeed);
-            _materialPropertyBlock.SetFloat(_VatInstancePhaseScaleId, boidVatInstancePhaseScale);
-            _materialPropertyBlock.SetFloat(_VatPositionScaleId, boidVatPositionScale * _cachedVatSwayAmplitudeScale);
-            _materialPropertyBlock.SetFloat(_VatNormalBlendId, boidVatNormalBlend);
-            if (vatEnabled)
-            {
-                _materialPropertyBlock.SetTexture(_VatPositionTexId, boidVatPositionTexture);
-                _materialPropertyBlock.SetTexture(_VatNormalTexId, boidVatNormalTexture);
-            }
+            UploadBoidRenderPropertiesIfNeeded(currentBuffer, vatEnabled);
+            UploadHitFlashPropertiesIfNeeded();
+
+            if (!UploadBoidIndirectArgs(boidMesh, _activeBoidCount))
+                return;
 
             int targetLayer = useGameObjectLayer ? _cachedRenderLayer : 0;
             RenderParams renderParams = new RenderParams(boidMaterial)
@@ -4941,7 +5111,7 @@ namespace Hecton8.World
                 layer = targetLayer,
                 lightProbeUsage = LightProbeUsage.Off
             };
-            Graphics.RenderMeshPrimitives(renderParams, boidMesh, 0, _activeBoidCount);
+            Graphics.RenderMeshIndirect(renderParams, boidMesh, _boidIndirectArgsBuffer, 1, 0);
         }
 
         private void TryRegister()
@@ -5020,6 +5190,7 @@ namespace Hecton8.World
         {
             ReleaseBuffer(ref _boidsBufferA);
             ReleaseBuffer(ref _boidsBufferB);
+            ReleaseBuffer(ref _boidIndirectArgsBuffer);
             ReleaseBuffer(ref _grazingAnchorBuffer);
             ReleaseBuffer(ref _massiveThreatBuffer);
             ReleaseBuffer(ref _formationBeaconBuffer);
@@ -5036,6 +5207,13 @@ namespace Hecton8.World
             _pbdCorrectionBufferRawTarget = false;
             _spatialGridCountBufferRawTarget = false;
             _computeStaticBuffersBound = false;
+            _boidIndirectArgsMesh = null;
+            _boidIndirectArgsInstanceCount = -1;
+            _renderPropertiesBoidBuffer = null;
+            _renderPropertiesVatPositionTexture = null;
+            _renderPropertiesVatNormalTexture = null;
+            _renderPropertiesDirty = true;
+            _hitFlashPropertiesDirty = true;
         }
 
         private void CompletePendingReadbackAndReleaseBuffers()
@@ -5709,6 +5887,8 @@ namespace Hecton8.World
             {
                 SanitizeSettings();
                 RefreshRenderLayerCache();
+                _renderPropertiesDirty = true;
+                _hitFlashPropertiesDirty = true;
                 ResetComputeKernelBindings();
                 RefreshActiveBoidCount();
             }

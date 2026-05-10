@@ -139,7 +139,7 @@ float Fbm3(float3 samplePosition)
     return sum;
 }
 
-float ResolveBlueNoise(float2 screenUv)
+float ResolveInterleavedGradientNoise(float2 screenUv)
 {
     float2 pixel = floor(screenUv * _HectonVolumetricFullSize.xy);
     return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
@@ -327,7 +327,7 @@ void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
     float rayLength = min(rayLengthSq * invRayLength, max(_HectonVolumetricMarchParams.x, 0.1));
     int stepCount = clamp((int)round(_HectonVolumetricMarchParams.y), 1, 7);
     float stepSize = rayLength * SafeRcp((float)stepCount);
-    float jitter = ResolveBlueNoise(screenUv) * stepSize * saturate(_HectonVolumetricMarchParams.z);
+    float jitter = ResolveInterleavedGradientNoise(screenUv) * stepSize * saturate(_HectonVolumetricMarchParams.z);
     float3 rayDirectionWS = rayVectorWS * invRayLength;
     float3 lightDirectionWS = SafeNormalize3(_HectonVolumetricMainLightDirection.xyz);
     float3 lightColor = _HectonVolumetricMainLightColor.rgb;
@@ -375,7 +375,7 @@ void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
         {
             float3 flashlightColor;
             float flashlightCone = ResolveFlashlightConeMask(samplePositionWS, -rayDirectionWS, flashlightColor);
-            float coneDither = lerp(0.58, 1.22, ResolveBlueNoise(screenUv + float2(stepIndex * 0.071, stepIndex * 0.113)));
+            float coneDither = lerp(0.58, 1.22, ResolveInterleavedGradientNoise(screenUv + float2(stepIndex * 0.071, stepIndex * 0.113)));
             accumulatedLight += density * localScatterCoeff * flashlightCone * coneDither * transmittance * stepSize * flashlightColor;
         }
 
@@ -445,7 +445,7 @@ void CompositeVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     float4 volumetric = weightSum > 1e-5 ? accumulated * SafeRcp(weightSum) : 0.0;
     float freeze = saturate(_HectonFreezeFrameDither);
-    float freezeNoise = ResolveBlueNoise(centerUv + frac(_Time.y * float2(0.7548777, 0.5698403)));
+    float freezeNoise = ResolveInterleavedGradientNoise(centerUv);
     float freezeKeep = lerp(1.0, step(freezeNoise, saturate(volumetric.a + 0.25)), freeze);
     volumetric.rgb = volumetric.rgb * freezeKeep + (freezeNoise - 0.5) * freeze * 0.018;
     _HectonVolumetricCompositeResult[pixel] = float4(sourceColor.rgb + volumetric.rgb, sourceColor.a);

@@ -160,12 +160,16 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     _HectonScatterInstances[instanceIndex] = instanceData;
 
     float3 toCamera = positionWS - _HectonScatterCameraPosition;
-    float distanceToCamera = length(toCamera);
-    if (distanceToCamera > _HectonScatterMaxDistance || distanceToCamera <= 0.0001)
+    float distanceToCameraSq = dot(toCamera, toCamera);
+    float maxDistance = max(_HectonScatterMaxDistance, 0.0);
+    float maxDistanceSq = maxDistance * maxDistance;
+    if (distanceToCameraSq > maxDistanceSq || distanceToCameraSq <= 0.00000001)
         return;
 
-    float3 directionToSample = toCamera / distanceToCamera;
-    if (distanceToCamera > _HectonScatterPeripheralDistance &&
+    float3 directionToSample = toCamera * rsqrt(distanceToCameraSq);
+    float peripheralDistance = max(_HectonScatterPeripheralDistance, 0.0);
+    float peripheralDistanceSq = peripheralDistance * peripheralDistance;
+    if (distanceToCameraSq > peripheralDistanceSq &&
         dot(directionToSample, normalize(_HectonScatterCameraForward)) < _HectonScatterPeripheralDot)
     {
         return;

@@ -82,6 +82,14 @@ namespace Hecton8.Gameplay
         private Color _appliedMarkerColor;
         private float _appliedFlickerFrequency;
         private float _appliedFlickerIntensity;
+        private float _cachedProjectionDistance = -1f;
+        private float _cachedFieldOfView = -1f;
+        private float _cachedEdgeMarginPixels = -1f;
+        private float _cachedWorldPerPixel;
+        private float _cachedSafeHalfWidth = 0.5f;
+        private float _cachedSafeHalfHeight = 0.5f;
+        private int _cachedPixelWidth = -1;
+        private int _cachedPixelHeight = -1;
         private bool _markerMaterialDirty = true;
         private bool _registered;
 
@@ -215,15 +223,11 @@ namespace Hecton8.Gameplay
             Transform cameraTransform = hudCamera.transform;
             Vector3 playerPositionVector = _playerTransform.position;
             AbsoluteUniversePosition playerAup = ResolvePlayerAup(playerPositionVector);
-            float projectionDistance = hudCamera.nearClipPlane + ProjectionPaddingMeters;
-            float pixelHeight = math.max(1f, hudCamera.pixelHeight);
-            float pixelWidth = math.max(1f, hudCamera.pixelWidth);
-            float frustumHeight = 2f * math.tan(math.radians(hudCamera.fieldOfView) * 0.5f) * projectionDistance;
-            float worldPerPixel = frustumHeight / pixelHeight;
-            float edgeMarginX = edgeMarginPixels / pixelWidth;
-            float edgeMarginY = edgeMarginPixels / pixelHeight;
-            float safeHalfWidth = math.max(0.001f, 0.5f - edgeMarginX);
-            float safeHalfHeight = math.max(0.001f, 0.5f - edgeMarginY);
+            UpdateProjectionCache();
+            float projectionDistance = _cachedProjectionDistance;
+            float worldPerPixel = _cachedWorldPerPixel;
+            float safeHalfWidth = _cachedSafeHalfWidth;
+            float safeHalfHeight = _cachedSafeHalfHeight;
             int visibleCount = 0;
 
             for (int i = 0; i < MaxMarkers; i++)
@@ -286,6 +290,34 @@ namespace Hecton8.Gameplay
             return visibleCount;
         }
 
+        private void UpdateProjectionCache()
+        {
+            int pixelHeight = math.max(1, hudCamera.pixelHeight);
+            int pixelWidth = math.max(1, hudCamera.pixelWidth);
+            float projectionDistance = hudCamera.nearClipPlane + ProjectionPaddingMeters;
+            float fieldOfView = hudCamera.fieldOfView;
+            float edgeMargin = edgeMarginPixels;
+
+            if (_cachedPixelHeight == pixelHeight &&
+                _cachedPixelWidth == pixelWidth &&
+                _cachedProjectionDistance == projectionDistance &&
+                _cachedFieldOfView == fieldOfView &&
+                _cachedEdgeMarginPixels == edgeMargin)
+            {
+                return;
+            }
+
+            float frustumHeight = 2f * ApproximateTanPositive(math.radians(fieldOfView) * 0.5f) * projectionDistance;
+            _cachedProjectionDistance = projectionDistance;
+            _cachedFieldOfView = fieldOfView;
+            _cachedEdgeMarginPixels = edgeMargin;
+            _cachedPixelWidth = pixelWidth;
+            _cachedPixelHeight = pixelHeight;
+            _cachedWorldPerPixel = frustumHeight / pixelHeight;
+            _cachedSafeHalfWidth = math.max(0.001f, 0.5f - (edgeMargin / pixelWidth));
+            _cachedSafeHalfHeight = math.max(0.001f, 0.5f - (edgeMargin / pixelHeight));
+        }
+
         private void EnsureHudCamera()
         {
             if (hudCamera != null)
@@ -305,10 +337,17 @@ namespace Hecton8.Gameplay
             s_controllerResolveBuffer.Clear();
         }
 
+        private static float ApproximateTanPositive(float radians)
+        {
+            float x = math.clamp(radians, 0f, 1.4f);
+            float x2 = x * x;
+            return x * ((15f - x2) / math.max(0.0001f, 15f - (6f * x2)));
+        }
+
         private void EnsurePlayerTransform()
         {
             if (_playerTransform == null)
-                SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
+                GameBootstrapper.TryGetCurrentPlayerTransform(out _playerTransform);
         }
 
         private void EnsureRuntimeResources()

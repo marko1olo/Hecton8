@@ -1,14 +1,14 @@
 // ============================================================================
 // HECTON-8 — ModuleMarker.cs
-// Лёгкий компонент-маркер на каждом построенном модуле базы.
+// Legkiy komponent-marker na kazhdom postroennom module bazy.
 //
-// Задачи:
-//   1. Хранить ссылку на BuildableData (для UI, деконструкции)
-//   2. Хранить кэшированный prefabId (для сериализации)
-//   3. Zero overhead: нет Update, нет аллокаций
+// Zadachi:
+//   1. Hranit ssylku na BuildableData (dlya UI, dekonstruktsii)
+//   2. Hranit keshirovannyy prefabId (dlya serializatsii)
+//   3. Zero overhead: net Update, net allokatsiy
 //
-// Добавляется на finalPrefab модуля в редакторе.
-// Если забыли — ConstructionManager добавит автоматически.
+// Dobavlyaetsya na finalPrefab modulya v redaktore.
+// Esli zabyli — ConstructionManager dobavit avtomaticheski.
 // ============================================================================
 
 using Hecton8.Building;
@@ -19,8 +19,8 @@ using UnityEngine;
 namespace Hecton8.Construction
 {
     /// <summary>
-    /// Маркер построенного модуля базы.
-    /// Хранит идентификационные данные для save/load и UI.
+    /// Marker postroennogo modulya bazy.
+    /// Hranit identifikatsionnye dannye dlya save/load i UI.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Construction/Module Marker")]
@@ -31,8 +31,8 @@ namespace Hecton8.Construction
         // ══════════════════════════════════════════════════════════
 
         [Header("── Module Identity ───────────────────────────")]
-        [Tooltip("Ссылка на BuildableData этого модуля. " +
-                 "Назначается в префабе или программно.")]
+        [Tooltip("Ssylka na BuildableData etogo modulya. " +
+                 "Naznachaetsya v prefabe ili programmno.")]
         [SerializeField] private BuildableData buildableData;
 
         // ══════════════════════════════════════════════════════════
@@ -40,8 +40,8 @@ namespace Hecton8.Construction
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Кэшированный строковый ID для сериализации.
-        /// Строится один раз в Initialize / Awake.
+        /// Keshirovannyy strokovyy ID dlya serializatsii.
+        /// Stroitsya odin raz v Initialize / Awake.
         /// </summary>
         private string _prefabId;
         private bool   _initialized;
@@ -52,13 +52,13 @@ namespace Hecton8.Construction
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>BuildableData этого модуля.</summary>
+        /// <summary>BuildableData etogo modulya.</summary>
         public BuildableData Data => buildableData;
 
         /// <summary>
-        /// Строковый ID для save/load.
-        /// Использует BuildableData.PersistentId с legacy fallback на имя ассета.
-        /// Zero alloc при повторных вызовах.
+        /// Strokovyy ID dlya save/load.
+        /// Ispolzuet BuildableData.PersistentId s legacy fallback na imya asseta.
+        /// Zero alloc pri povtornyh vyzovah.
         /// </summary>
         public string PrefabId
         {
@@ -73,7 +73,7 @@ namespace Hecton8.Construction
         public FieldTargetRole SpatialRole => _spatialRole;
 
         /// <summary>
-        /// Программная инициализация (если маркер добавлен в рантайме).
+        /// Programmnaya initsializatsiya (esli marker dobavlen v rantayme).
         /// </summary>
         public void Initialize(BuildableData data)
         {

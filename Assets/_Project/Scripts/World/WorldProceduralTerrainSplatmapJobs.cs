@@ -44,7 +44,7 @@ namespace Hecton8.World
             float safeHeightScale = math.max(0.001f, HeightScaleMeters);
             float dx = (east - west) * safeHeightScale / (safeCellSize * 2f);
             float dz = (north - south) * safeHeightScale / (safeCellSize * 2f);
-            float slopeDegrees = math.degrees(math.atan(math.sqrt(dx * dx + dz * dz)));
+            float slopeDegrees = math.degrees(math.atan(FastMagnitudeApprox(new float2(dx, dz))));
 
             float halfBlend = math.max(0.001f, SlopeBlendWidthDegrees);
             float rock = math.smoothstep(
@@ -82,6 +82,14 @@ namespace Hecton8.World
                 return 0f;
 
             return math.saturate(Sediment01[index]);
+        }
+
+        private static float FastMagnitudeApprox(float2 value)
+        {
+            float2 abs = math.abs(value);
+            float max = math.max(abs.x, abs.y);
+            float min = math.min(abs.x, abs.y);
+            return max + (min * 0.41421356f);
         }
     }
 }

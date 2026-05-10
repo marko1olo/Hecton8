@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 - SaveStation.cs
-// Мирный терминал сохранения с defensive-поведением и интеграцией в HUD.
+// Mirnyy terminal sohraneniya s defensive-povedeniem i integratsiey v HUD.
 // ============================================================================
 
 using Hecton.Localization;
@@ -12,25 +12,25 @@ using UnityEngine;
 namespace Hecton8.Interaction
 {
     /// <summary>
-    /// Терминал в мире, который запускает сохранение в указанный слот.
+    /// Terminal v mire, kotoryy zapuskaet sohranenie v ukazannyy slot.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
     public sealed class SaveStation : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
     {
         [Header("── Settings ──────────────────────────────")]
-        [Tooltip("Отображаемое имя терминала в подсказке взаимодействия.")]
+        [Tooltip("Otobrazhaemoe imya terminala v podskazke vzaimodeystviya.")]
         [SerializeField] private string _stationName = "Save Station";
         [SerializeField] private LocalizedTextReference _localizedStationName;
 
-        [Tooltip("Имя save-слота, в который терминал будет сохранять игру.")]
+        [Tooltip("Imya save-slota, v kotoryy terminal budet sohranyat igru.")]
         [SerializeField] private string _saveSlot = "slot_0";
 
-        [Tooltip("Необязательная ссылка на HUD-уведомления. Если не задана, ищется лениво.")]
+        [Tooltip("Neobyazatelnaya ssylka na HUD-uvedomleniya. Esli ne zadana, ischetsya lenivo.")]
         [SerializeField] private HUDNotification _hudNotification;
 
         [Header("── Audio ──────────────────────────────")]
-        [Tooltip("Звук активации терминала.")]
+        [Tooltip("Zvuk aktivatsii terminala.")]
         [SerializeField] private AudioClip _interactionSound;
 
         private string _cachedInteractText;

@@ -113,6 +113,8 @@ namespace Hecton8.Gameplay
         private Transform _playerTarget;
         private FloraState _state = FloraState.Idle;
         private float _cooldownTimer;
+        private uint _shotSeed;
+        private uint _shotOrdinal;
         private bool _isRegistered;
         private bool _playerFound;
         private bool _poolMissingLogged;
@@ -138,6 +140,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _transform = transform;
+            _shotSeed = MixHash(unchecked((uint)EntityId.ToULong(GetEntityId())) ^ 0x48464C52u);
 
             // Use self as muzzle if not assigned
             if (muzzlePoint == null)
@@ -334,8 +337,7 @@ namespace Hecton8.Gameplay
             Vector3 spawnPos = muzzlePoint.position;
             Quaternion spawnRot = muzzlePoint.rotation;
 
-            // Add inaccuracy
-            float randomAngle = UnityEngine.Random.Range(-inaccuracy, inaccuracy);
+            float randomAngle = ResolveShotSpreadAngle();
             spawnRot = Quaternion.AngleAxis(randomAngle, Vector3.up) * spawnRot;
 
             ObjectPoolManager pool = GlobalRegistry.ObjectPool;
@@ -435,6 +437,31 @@ namespace Hecton8.Gameplay
 
             Vector3 velocity = forward * math.max(0f, authoredSpeed);
             return IsFinite(velocity) ? velocity : Vector3.zero;
+        }
+
+        private float ResolveShotSpreadAngle()
+        {
+            float authoredSpread = math.max(0f, inaccuracy);
+            if (authoredSpread <= 0f)
+                return 0f;
+
+            uint value = _shotSeed + (_shotOrdinal++ * 0x9E3779B9u);
+            return ((HashToUnit01(value) * 2f) - 1f) * authoredSpread;
+        }
+
+        private static float HashToUnit01(uint value)
+        {
+            return (MixHash(value) & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private static uint MixHash(uint value)
+        {
+            value ^= value >> 16;
+            value *= 0x7FEB352Du;
+            value ^= value >> 15;
+            value *= 0x846CA68Bu;
+            value ^= value >> 16;
+            return value;
         }
 
         private static bool IsFinite(Vector3 value)

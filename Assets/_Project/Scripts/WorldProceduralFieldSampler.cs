@@ -411,7 +411,7 @@ namespace Hecton8.World
         [SerializeField] private bool limitMatrixBiomeOverrideToFallback = true;
 
         [Header("Diagnostics")]
-        [Tooltip("Оставляй выключенным в обычном runtime. Живые inspector-диагностики sampler-а дорогие и нужны только для точечной отладки.")]
+        [Tooltip("Ostavlyay vyklyuchennym v obychnom runtime. Zhivye inspector-diagnostiki sampler-a dorogie i nuzhny tolko dlya tochechnoy otladki.")]
         [SerializeField] private bool enableLiveRuntimeDiagnostics;
         [SerializeField] private bool _debugBridgeReady;
         [SerializeField] private bool _debugZoneDirectorReady;

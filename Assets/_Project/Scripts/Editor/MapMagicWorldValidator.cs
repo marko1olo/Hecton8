@@ -4,6 +4,7 @@ using Hecton8.Environment;
 using MapMagic.Core;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using GPUInstancer;
 using UnityEditor;
 using UnityEngine;
@@ -12,6 +13,17 @@ namespace Hecton8.EditorTools
 {
     public static class MapMagicWorldValidator
     {
+        private const string MapMagicSerializedBlockPrefix = "\n    - refId:";
+
+        private static readonly string[] ForbiddenMapMagicGraphNodeTypeTokens =
+        {
+            "MapMagic.Nodes.MatrixGenerators.Blur200",
+            "MapMagic.Nodes.MatrixGenerators.Erosion200",
+            "MapMagic.Nodes.MatrixGenerators.Cavity200",
+            "MapMagic.Nodes.MatrixGenerators.Terrace200",
+            "MapMagic.Nodes.MatrixGenerators.HectonHydraulicErosionMapMagicNode"
+        };
+
         [MenuItem("Hecton/Validation/Validate MapMagic World Stack", priority = 236)]
         public static void ValidateMapMagicWorldStack()
         {
@@ -265,6 +277,10 @@ namespace Hecton8.EditorTools
                 Debug.LogError("[MapMagicWorldValidation] MapMagicObject has no graph assigned.", mapMagic);
                 errorCount++;
             }
+            else
+            {
+                ValidateMapMagicGraphBudget(mapMagic, ref errorCount, ref warningCount);
+            }
 
             if (!mapMagic.gameObject.activeInHierarchy)
             {
@@ -321,6 +337,151 @@ namespace Hecton8.EditorTools
                 Debug.LogWarning("[MapMagicWorldValidation] Terrain drawInstanced is disabled.", mapMagic);
                 warningCount++;
             }
+        }
+
+        private static void ValidateMapMagicGraphBudget(
+            MapMagicObject mapMagic,
+            ref int errorCount,
+            ref int warningCount)
+        {
+            string graphPath = AssetDatabase.GetAssetPath(mapMagic.graph);
+            if (string.IsNullOrEmpty(graphPath))
+            {
+                Debug.LogError("[MapMagicWorldValidation] MapMagic graph has no asset path; graph budget cannot be audited.", mapMagic);
+                errorCount++;
+                return;
+            }
+
+            string[] dependencies = AssetDatabase.GetDependencies(graphPath, true);
+            if (dependencies == null || dependencies.Length == 0)
+            {
+                ScanMapMagicGraphAssetForForbiddenNodes(graphPath, mapMagic, ref errorCount, ref warningCount);
+                return;
+            }
+
+            bool scannedAny = false;
+            for (int i = 0; i < dependencies.Length; i++)
+            {
+                string dependencyPath = dependencies[i];
+                if (string.IsNullOrEmpty(dependencyPath) ||
+                    !dependencyPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                scannedAny = true;
+                ScanMapMagicGraphAssetForForbiddenNodes(dependencyPath, mapMagic, ref errorCount, ref warningCount);
+            }
+
+            if (!scannedAny)
+            {
+                Debug.LogWarning(
+                    $"[MapMagicWorldValidation] Graph '{graphPath}' reported no asset dependencies; only direct scene references were validated.",
+                    mapMagic);
+                warningCount++;
+            }
+        }
+
+        private static void ScanMapMagicGraphAssetForForbiddenNodes(
+            string assetPath,
+            UnityEngine.Object context,
+            ref int errorCount,
+            ref int warningCount)
+        {
+            string fullPath = Path.GetFullPath(assetPath);
+            if (!File.Exists(fullPath))
+                return;
+
+            string assetText = File.ReadAllText(fullPath);
+            for (int i = 0; i < ForbiddenMapMagicGraphNodeTypeTokens.Length; i++)
+            {
+                string token = ForbiddenMapMagicGraphNodeTypeTokens[i];
+                int searchIndex = 0;
+                while (searchIndex < assetText.Length)
+                {
+                    int tokenIndex = assetText.IndexOf(token, searchIndex, StringComparison.OrdinalIgnoreCase);
+                    if (tokenIndex < 0)
+                        break;
+
+                    int blockStart = assetText.LastIndexOf(
+                        MapMagicSerializedBlockPrefix,
+                        tokenIndex,
+                        StringComparison.Ordinal);
+
+                    if (blockStart < 0)
+                    {
+                        Debug.LogError(
+                            $"[MapMagicWorldValidation] Forbidden MapMagic graph token '{token}' found in '{assetPath}' but serialized block bounds could not be resolved.",
+                            context);
+                        errorCount++;
+                        searchIndex = tokenIndex + token.Length;
+                        continue;
+                    }
+
+                    int blockEnd = assetText.IndexOf(
+                        MapMagicSerializedBlockPrefix,
+                        tokenIndex + token.Length,
+                        StringComparison.Ordinal);
+                    if (blockEnd < 0)
+                        blockEnd = assetText.Length;
+
+                    if (IsSerializedMapMagicGeneratorEnabled(assetText, blockStart, blockEnd))
+                    {
+                        Debug.LogError(
+                            $"[MapMagicWorldValidation] Enabled forbidden MapMagic generator '{token}' found in '{assetPath}'. Runtime terrain graph must use simple noise/Voronoi/curve math only.",
+                            context);
+                        errorCount++;
+                    }
+                    else
+                    {
+                        Debug.LogWarning(
+                            $"[MapMagicWorldValidation] Disabled forbidden MapMagic generator baggage '{token}' remains serialized in '{assetPath}'. Runtime bypass is active; asset cleanup is still required.",
+                            context);
+                        warningCount++;
+                    }
+
+                    searchIndex = blockEnd;
+                }
+            }
+        }
+
+        private static bool IsSerializedMapMagicGeneratorEnabled(string assetText, int blockStart, int blockEnd)
+        {
+            int fieldsIndex = assetText.IndexOf("      fields:", blockStart, blockEnd - blockStart, StringComparison.Ordinal);
+            int valuesIndex = assetText.IndexOf("      values:", blockStart, blockEnd - blockStart, StringComparison.Ordinal);
+            if (fieldsIndex < 0 || valuesIndex < 0 || valuesIndex <= fieldsIndex)
+                return true;
+
+            int enabledFieldIndex = assetText.IndexOf("      - enabled", fieldsIndex, valuesIndex - fieldsIndex, StringComparison.Ordinal);
+            if (enabledFieldIndex < 0)
+                return true;
+
+            int enabledFieldOrdinal = 0;
+            int fieldCursor = assetText.IndexOf("      - ", fieldsIndex, valuesIndex - fieldsIndex, StringComparison.Ordinal);
+            while (fieldCursor >= 0 && fieldCursor < enabledFieldIndex)
+            {
+                enabledFieldOrdinal++;
+                fieldCursor = assetText.IndexOf("      - ", fieldCursor + 1, valuesIndex - fieldCursor - 1, StringComparison.Ordinal);
+            }
+
+            int valueCursor = valuesIndex;
+            for (int i = 0; i <= enabledFieldOrdinal; i++)
+            {
+                valueCursor = assetText.IndexOf("      - t:", valueCursor + 1, blockEnd - valueCursor - 1, StringComparison.Ordinal);
+                if (valueCursor < 0)
+                    return true;
+            }
+
+            int valueLineIndex = assetText.IndexOf("        v:", valueCursor, blockEnd - valueCursor, StringComparison.Ordinal);
+            if (valueLineIndex < 0)
+                return true;
+
+            int valueLineEnd = assetText.IndexOf('\n', valueLineIndex);
+            if (valueLineEnd < 0 || valueLineEnd > blockEnd)
+                valueLineEnd = blockEnd;
+
+            string valueText = assetText.Substring(valueLineIndex + 10, valueLineEnd - valueLineIndex - 10).Trim();
+            return valueText != "0";
         }
 
         private static void ValidateBridge(

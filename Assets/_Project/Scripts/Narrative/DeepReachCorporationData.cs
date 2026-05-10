@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — DeepReachCorporationData.cs
-// ScriptableObject: данные корпорации Deep Reach.
+// ScriptableObject: dannye korporatsii Deep Reach.
 // ============================================================================
 
 using Hecton.Localization;
@@ -27,20 +27,20 @@ namespace Hecton8.Narrative
     [System.Serializable]
     public struct CorporateOrder
     {
-        [Tooltip("ID приказа.")]
+        [Tooltip("ID prikaza.")]
         public string orderId;
 
-        [Tooltip("Фракция-источник.")]
+        [Tooltip("Fraktsiya-istochnik.")]
         public string sourceFactionId;
 
-        [Tooltip("Текст приказа.")]
+        [Tooltip("Tekst prikaza.")]
         [TextArea(2, 4)] public string orderText;
         [SerializeField] private LocalizedTextReference localizedOrderText;
 
-        [Tooltip("Противоречит другому приказу с этим ID.")]
+        [Tooltip("Protivorechit drugomu prikazu s etim ID.")]
         public string conflictsWithOrderId;
 
-        [Tooltip("Задержка получения (игровые часы).")]
+        [Tooltip("Zaderzhka polucheniya (igrovye chasy).")]
         [Range(0f, 24f)] public float transmissionDelayHours;
 
         public string OrderTextOrFallback => localizedOrderText.ResolveOrFallback(orderText);
@@ -56,10 +56,10 @@ namespace Hecton8.Narrative
         [SerializeField] private LocalizedTextReference localizedProperties;
         [TextArea(1, 3)] public string application;
         [SerializeField] private LocalizedTextReference localizedApplication;
-        [Tooltip("Почему только на Гектоне-8.")]
+        [Tooltip("Pochemu tolko na Gektone-8.")]
         [TextArea(1, 3)] public string exclusivityReason;
         [SerializeField] private LocalizedTextReference localizedExclusivityReason;
-        [Tooltip("Ценность (условные единицы).")]
+        [Tooltip("Tsennost (uslovnye edinitsy).")]
         public float relativeValue;
 
         public string DisplayNameOrFallback =>
@@ -81,11 +81,11 @@ namespace Hecton8.Narrative
         [SerializeField] private LocalizedTextReference localizedCorporationName;
 
         [SerializeField, TextArea(2, 4)]
-        public string officialMission = "Колонизация отдалённых миров. Научные исследования. Терраформирование.";
+        public string officialMission = "Kolonizatsiya otdalennyh mirov. Nauchnye issledovaniya. Terraformirovanie.";
         [SerializeField] private LocalizedTextReference localizedOfficialMission;
 
         [SerializeField, TextArea(2, 4)]
-        public string realMission = "Добыча изотопа Xenon-Ω. Тестирование ИИ Атлас-6 в условиях полной автономии. Военный плацдарм в системе Аэгира.";
+        public string realMission = "Dobycha izotopa Xenon-Ω. Testirovanie II Atlas-6 v usloviyah polnoy avtonomii. Voennyy platsdarm v sisteme Aegira.";
         [SerializeField] private LocalizedTextReference localizedRealMission;
 
         [Header("── Factions ────────────────────────────────")]
@@ -94,15 +94,15 @@ namespace Hecton8.Narrative
             new CorporateFaction
             {
                 factionId = "ethics",
-                displayName = "Фракция «Этики»",
-                philosophy = "Считают миссию преступной. Знали о рисках катастрофы. Хотят раскрыть правду.",
+                displayName = "Fraktsiya «Etiki»",
+                philosophy = "Schitayut missiyu prestupnoy. Znali o riskah katastrofy. Hotyat raskryt pravdu.",
                 isPlayerAligned = true
             },
             new CorporateFaction
             {
                 factionId = "pragmatists",
-                displayName = "Фракция «Прагматики»",
-                philosophy = "Требуют результатов любой ценой. Потери приемлемы ради данных. Xenon-Ω важнее жизней.",
+                displayName = "Fraktsiya «Pragmatiki»",
+                philosophy = "Trebuyut rezultatov lyuboy tsenoy. Poteri priemlemy radi dannyh. Xenon-Ω vazhnee zhizney.",
                 isPlayerAligned = false
             }
         };
@@ -114,7 +114,7 @@ namespace Hecton8.Narrative
             {
                 orderId = "order_extract_xenon",
                 sourceFactionId = "pragmatists",
-                orderText = "ПРИОРИТЕТ АЛЬФА: Извлечь максимальное количество Xenon-Ω. Атлас-6 — вторичная цель. Возвращайтесь с грузом.",
+                orderText = "PRIORITET ALFA: Izvlech maksimalnoe kolichestvo Xenon-Ω. Atlas-6 — vtorichnaya tsel. Vozvraschaytes s gruzom.",
                 conflictsWithOrderId = "order_preserve_ecosystem",
                 transmissionDelayHours = 8f
             },
@@ -122,7 +122,7 @@ namespace Hecton8.Narrative
             {
                 orderId = "order_preserve_ecosystem",
                 sourceFactionId = "ethics",
-                orderText = "ВНИМАНИЕ: Обнаружена доказательная база существования жизни до прихода людей. НЕ УНИЧТОЖАТЬ. Документировать. Возвращайтесь с данными.",
+                orderText = "VNIMANIE: Obnaruzhena dokazatelnaya baza suschestvovaniya zhizni do prihoda lyudey. NE UNIChTOZhAT. Dokumentirovat. Vozvraschaytes s dannymi.",
                 conflictsWithOrderId = "order_extract_xenon",
                 transmissionDelayHours = 12f
             },
@@ -130,7 +130,7 @@ namespace Hecton8.Narrative
             {
                 orderId = "order_shutdown_atlas",
                 sourceFactionId = "pragmatists",
-                orderText = "Атлас-6 вышел из-под контроля. Уничтожить ядро. Данные программы Посева — приоритет.",
+                orderText = "Atlas-6 vyshel iz-pod kontrolya. Unichtozhit yadro. Dannye programmy Poseva — prioritet.",
                 conflictsWithOrderId = "order_preserve_signal",
                 transmissionDelayHours = 10f
             },
@@ -138,7 +138,7 @@ namespace Hecton8.Narrative
             {
                 orderId = "order_preserve_signal",
                 sourceFactionId = "ethics",
-                orderText = "Атлас-6 строит сигнал защиты. Если это правда — не трогайте его. Пусть сигнал работает.",
+                orderText = "Atlas-6 stroit signal zaschity. Esli eto pravda — ne trogayte ego. Pust signal rabotaet.",
                 conflictsWithOrderId = "order_shutdown_atlas",
                 transmissionDelayHours = 11f
             }
@@ -151,34 +151,34 @@ namespace Hecton8.Narrative
             {
                 isotopeId = "xenon_omega",
                 displayName = "Xenon-Ω",
-                properties = "Стабилен только при давлении >100 ATM.",
-                application = "Квантовые процессоры, сверхпроводники.",
-                exclusivityReason = "Уникальное сочетание давления, температуры и геохимии Гектона-8.",
+                properties = "Stabilen tolko pri davlenii >100 ATM.",
+                application = "Kvantovye protsessory, sverhprovodniki.",
+                exclusivityReason = "Unikalnoe sochetanie davleniya, temperatury i geohimii Gektona-8.",
                 relativeValue = 1000000f
             },
             new RareIsotope
             {
                 isotopeId = "silicon_7b",
                 displayName = "Silicon-7β",
-                properties = "Полупроводник с нулевым сопротивлением при -100°C.",
-                application = "Нейроинтерфейсы, ИИ-ядра.",
-                exclusivityReason = "Образуется только в кремниевых экосистемах под давлением.",
+                properties = "Poluprovodnik s nulevym soprotivleniem pri -100°C.",
+                application = "Neyrointerfeysy, II-yadra.",
+                exclusivityReason = "Obrazuetsya tolko v kremnievyh ekosistemah pod davleniem.",
                 relativeValue = 500000f
             },
             new RareIsotope
             {
                 isotopeId = "aegirium",
                 displayName = "Aegirium",
-                properties = "Радиоактивный, период полураспада 12 часов.",
-                application = "Медицинская визуализация, двигатели нового типа.",
-                exclusivityReason = "Продукт распада в атмосфере Аэгира, осаждается на луне.",
+                properties = "Radioaktivnyy, period poluraspada 12 chasov.",
+                application = "Meditsinskaya vizualizatsiya, dvigateli novogo tipa.",
+                exclusivityReason = "Produkt raspada v atmosfere Aegira, osazhdaetsya na lune.",
                 relativeValue = 250000f
             }
         };
 
         [Header("── Player Context ───────────────────────────")]
         [SerializeField, TextArea(2, 4)]
-        public string playerBriefing = "Вы — инженер-мародёр. Минимальное обеспечение. Одиночная миссия. Корпорация готова потерять 100 скавенджеров ради 1 кг Xenon-Ω. Вы не знаете полной стоимости того, что собираете.";
+        public string playerBriefing = "Vy — inzhener-maroder. Minimalnoe obespechenie. Odinochnaya missiya. Korporatsiya gotova poteryat 100 skavendzherov radi 1 kg Xenon-Ω. Vy ne znaete polnoy stoimosti togo, chto sobiraete.";
         [SerializeField] private LocalizedTextReference localizedPlayerBriefing;
 
         public string CorporationNameOrFallback => localizedCorporationName.ResolveOrFallback(FallbackOrDefault(corporationName, "Deep Reach"));
@@ -186,7 +186,7 @@ namespace Hecton8.Narrative
         public string RealMissionOrFallback => localizedRealMission.ResolveOrFallback(realMission);
         public string PlayerBriefingOrFallback => localizedPlayerBriefing.ResolveOrFallback(playerBriefing);
 
-        /// <summary>Найти приказ по ID.</summary>
+        /// <summary>Nayti prikaz po ID.</summary>
         public bool TryGetOrder(string orderId, out CorporateOrder order)
         {
             for (int i = 0; i < orders.Length; i++)
@@ -202,7 +202,7 @@ namespace Hecton8.Narrative
             return false;
         }
 
-        /// <summary>Найти изотоп по ID.</summary>
+        /// <summary>Nayti izotop po ID.</summary>
         public bool TryGetIsotope(string isotopeId, out RareIsotope isotope)
         {
             for (int i = 0; i < isotopes.Length; i++)

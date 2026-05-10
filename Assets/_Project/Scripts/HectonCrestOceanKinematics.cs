@@ -8,7 +8,7 @@ namespace Hecton8.Physics
     /// Shared anti-corruption base for Crest-backed ocean providers.
     /// Gameplay talks only to <see cref="IHectonOceanKinematics"/> while Crest-specific query ownership stays here.
     /// </summary>
-    public abstract class HectonCrestOceanKinematics : MonoBehaviour, IHectonOceanKinematics
+    public abstract class HectonCrestOceanKinematics : MonoBehaviour, IOceanKinematics
     {
         // COLD ALLOC: Vector3[1] - single-sample ocean query position scratch for interface convenience methods - owner: HectonCrestOceanKinematics
         private readonly Vector3[] _singleSamplePosition = new Vector3[1];
@@ -147,4 +147,5 @@ namespace Hecton8.Physics
             return heightSucceeded & waveSucceeded;
         }
     }
+
 }

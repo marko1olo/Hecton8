@@ -247,18 +247,23 @@ namespace Hecton8.Interaction
 
             TryGetComponent(out _physicalHandController);
             RefreshPanelButtonLayerMask();
-            if (enablePhysicalPanelButtons)
+            if (enablePhysicalPanelButtons && HectonXRRuntimeState.IsXRActive)
                 EnsurePhysicalHandController();
         }
 
         private void OnEnable()
         {
+            HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
+            HectonXRRuntimeState.XRActiveChanged += HandleXRActiveChanged;
             RefreshPanelButtonLayerMask();
+            if (enablePhysicalPanelButtons && HectonXRRuntimeState.IsXRActive)
+                EnsurePhysicalHandController();
             RefreshTickRegistration();
         }
 
         private void OnDisable()
         {
+            HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
             CancelActiveInteraction();
             UnregisterFromTickSystems();
         }
@@ -469,7 +474,10 @@ namespace Hecton8.Interaction
 
         private void TickPhysicalPanelButtons()
         {
-            if (!enablePhysicalPanelButtons || _physicalHandController == null)
+            if (!enablePhysicalPanelButtons || !HectonXRRuntimeState.IsXRActive)
+                return;
+
+            if (_physicalHandController == null && !EnsurePhysicalHandController())
                 return;
 
             if (!_physicalHandController.TryGetInteractionProbePose(out Vector3 handPosition, out Quaternion handRotation))
@@ -537,6 +545,14 @@ namespace Hecton8.Interaction
 
             if (bestButton != null)
                 bestButton.TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, handSide);
+        }
+
+        private void HandleXRActiveChanged(bool isActive)
+        {
+            if (isActive && enablePhysicalPanelButtons)
+                EnsurePhysicalHandController();
+
+            RefreshTickRegistration();
         }
 
         private void RefreshPanelButtonLayerMask()
@@ -1110,12 +1126,18 @@ namespace Hecton8.Interaction
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            bool needsTick = enablePhysicalPanelButtons || _state != InteractionState.Idle;
+            bool needsTick =
+                _state != InteractionState.Idle ||
+                (enablePhysicalPanelButtons && HectonXRRuntimeState.IsXRActive);
+            bool handControllerNeedsFixedTick =
+                _physicalHandController != null &&
+                ((enablePhysicalPanelButtons && HectonXRRuntimeState.IsXRActive) ||
+                 _state == InteractionState.DraggingHeavyObject);
             bool needsFixedTick =
-                _physicalHandController != null ||
+                handControllerNeedsFixedTick ||
                 _state == InteractionState.PullingPocketItem ||
                 _state == InteractionState.DraggingHeavyObject;
-            bool needsLateFrameTick = _physicalHandController != null;
+            bool needsLateFrameTick = _physicalHandController != null && _physicalHandController.RequiresLateFrameTick;
 
             if (needsTick && !_registeredTick)
             {

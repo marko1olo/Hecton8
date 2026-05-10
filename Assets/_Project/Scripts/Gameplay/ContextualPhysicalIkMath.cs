@@ -41,7 +41,8 @@ namespace Hecton8.Gameplay
                     : fallback;
             }
 
-            return value * math.rsqrt(lengthSq);
+            float length = math.max(MinimumDistance, ApproximateLengthNoSqrt(value));
+            return value * math.rcp(length);
         }
 
         public static float3 CatmullRom(float3 p0, float3 p1, float3 p2, float3 p3, float t)
@@ -228,8 +229,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float inverseTargetDistance = math.rsqrt(targetDistanceSq);
-            float targetDistance = targetDistanceSq * inverseTargetDistance;
+            float targetDistance = math.max(MinimumDistance, ApproximateLengthNoSqrt(toTarget));
+            float inverseTargetDistance = math.rcp(targetDistance);
             float minReach = math.abs(upperLength - lowerLength) + 0.001f;
             float safeReachMargin = math.max(0.02f, reachSafetyMargin);
             float maxReach = math.max(minReach + 0.001f, upperLength + lowerLength - safeReachMargin);
@@ -248,7 +249,7 @@ namespace Hecton8.Gameplay
 
             float bendCos = upperCos;
             float bendSinSq = math.saturate(1.0f - (bendCos * bendCos));
-            float bendSin = bendSinSq * math.rsqrt(math.max(bendSinSq, MinimumLengthSq));
+            float bendSin = bendSinSq;
             bendSin = math.select(bendSin, 0.0f, bendSinSq <= MinimumLengthSq || !math.isfinite(bendSin));
 
             float3 desiredUpperDirection = SafeNormalize((targetDirection * bendCos) + (bendDirection * bendSin), targetDirection);
@@ -271,7 +272,7 @@ namespace Hecton8.Gameplay
         {
             float4 v = value.value;
             float lenSq = math.max(math.dot(v, v), MinimumLengthSq);
-            v *= math.rsqrt(lenSq);
+            v *= math.rcp(math.max(0.0001f, 0.5f + (lenSq * 0.5f)));
             return new quaternion(v);
         }
 
@@ -404,8 +405,11 @@ namespace Hecton8.Gameplay
 
         private static float ApproximateLengthNoSqrt(float3 value)
         {
-            float lengthSq = math.lengthsq(value);
-            return lengthSq * math.rsqrt(math.max(lengthSq, MinimumLengthSq));
+            float3 absolute = math.abs(value);
+            float max = math.cmax(absolute);
+            float min = math.cmin(absolute);
+            float mid = absolute.x + absolute.y + absolute.z - max - min;
+            return max + (mid * 0.375f) + (min * 0.125f);
         }
     }
 }

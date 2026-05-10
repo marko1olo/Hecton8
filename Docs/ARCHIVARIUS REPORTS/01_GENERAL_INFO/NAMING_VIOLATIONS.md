@@ -1,4 +1,4 @@
-﻿# Naming Violations
+# Naming Violations
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
@@ -65,14 +65,14 @@ rg -n "//.*[\p{Cyrillic}]|/\*.*[\p{Cyrillic}]|\*.*[\p{Cyrillic}]" `
 
 Representative Cyrillic path hits:
 
-- `Assets/кучка мелка 1 лод 1.asset`
-- `Assets/пиллар2 лод1.asset`
-- `Assets/Scenes/пустая сцена.unity`
-- `Assets/_Project/Art/Materials/Fonts/текст.ttf`
-- `Assets/_Project/Art/Materials/Fonts/цифры.ttf`
-- `Assets/_Project/Art/Meshes/Cleaned/ENV__арка1_GEO_LOD0_cleaned.asset`
-- `Assets/_Project/Art/Meshes/Cleaned/ENV__Болдер_1_geo_LOD0_cleaned.asset`
-- `Assets/_Project/Art/Meshes/Cleaned/ENV__донная_куча_geo_LOD0_cleaned.asset`
+- `Assets/kuchka melka 1 lod 1.asset`
+- `Assets/pillar2 lod1.asset`
+- `Assets/Scenes/pustaya stsena.unity`
+- `Assets/_Project/Art/Materials/Fonts/tekst.ttf`
+- `Assets/_Project/Art/Materials/Fonts/tsifry.ttf`
+- `Assets/_Project/Art/Meshes/Cleaned/ENV__arka1_GEO_LOD0_cleaned.asset`
+- `Assets/_Project/Art/Meshes/Cleaned/ENV__Bolder_1_geo_LOD0_cleaned.asset`
+- `Assets/_Project/Art/Meshes/Cleaned/ENV__donnaya_kucha_geo_LOD0_cleaned.asset`
 
 Representative Cyrillic comment hits:
 

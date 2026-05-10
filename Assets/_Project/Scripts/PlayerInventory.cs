@@ -493,6 +493,7 @@ namespace Hecton8.Inventory
         private NativeArray<ushort> _itemStateFlags;
         private NativeArray<byte> _itemGenetics;
         private NativeArray<ushort> _qualityMilli;
+        private NativeArray<byte> _durabilities;
         private NativeArray<uint> _lastUpdateUnixSeconds;
         private NativeArray<ushort> _scavengeSimStackCounts;
         private NativeArray<byte> _simulationOccupiedCells;
@@ -536,6 +537,7 @@ namespace Hecton8.Inventory
         private bool _hasPendingInventoryCommit;
         private bool _inventoryShadowValid;
         private bool _hasCommittedInventoryShadowHash;
+        private bool _durabilitySnapshotDirty = true;
 
         public float TotalWeight { get; private set; }
         public float TotalMassKg { get; private set; }
@@ -595,6 +597,7 @@ namespace Hecton8.Inventory
             // COLD ALLOC: ushort[columns * rows] — persistent per-anchor quality values (0-1000) — owner: PlayerInventory
             _qualityMilli = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: uint[columns * rows] — persistent per-anchor last update timestamps — owner: PlayerInventory
+            _durabilities = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - direct UI durability SOA mirror (0-100) - owner: PlayerInventory
             _lastUpdateUnixSeconds = new NativeArray<uint>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: ushort[columns * rows] — stack simulation scratch — owner: PlayerInventory
             _scavengeSimStackCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -658,6 +661,7 @@ namespace Hecton8.Inventory
             DisposeNativeArray(ref _itemStateFlags);
             DisposeNativeArray(ref _itemGenetics);
             DisposeNativeArray(ref _qualityMilli);
+            DisposeNativeArray(ref _durabilities);
             DisposeNativeArray(ref _lastUpdateUnixSeconds);
             DisposeNativeArray(ref _scavengeSimStackCounts);
             DisposeNativeArray(ref _simulationOccupiedCells);
@@ -687,6 +691,7 @@ namespace Hecton8.Inventory
             NativeMemorySentinel.RegisterNativeArray(_itemStateFlags, NativeMemoryOwner, nameof(_itemStateFlags), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_itemGenetics, NativeMemoryOwner, nameof(_itemGenetics), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_qualityMilli, NativeMemoryOwner, nameof(_qualityMilli), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_durabilities, NativeMemoryOwner, nameof(_durabilities), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_lastUpdateUnixSeconds, NativeMemoryOwner, nameof(_lastUpdateUnixSeconds), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_scavengeSimStackCounts, NativeMemoryOwner, nameof(_scavengeSimStackCounts), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_simulationOccupiedCells, NativeMemoryOwner, nameof(_simulationOccupiedCells), NativeMemoryLifetime);
@@ -749,6 +754,9 @@ namespace Hecton8.Inventory
             _itemStateFlags[anchorIndex] = 0;
             _itemGenetics[anchorIndex] = 0;
             _qualityMilli[anchorIndex] = 0;
+            if (_durabilities.IsCreated && (uint)anchorIndex < (uint)_durabilities.Length)
+                _durabilities[anchorIndex] = 0;
+            _durabilitySnapshotDirty = true;
             _lastUpdateUnixSeconds[anchorIndex] = 0;
             ClearAnchorPhysicalMetadata(anchorIndex);
 
@@ -1483,6 +1491,7 @@ namespace Hecton8.Inventory
             ClearNativeArray(_itemStateFlags);
             ClearNativeArray(_itemGenetics);
             ClearNativeArray(_qualityMilli);
+            ClearNativeArray(_durabilities);
             ClearNativeArray(_lastUpdateUnixSeconds);
             TotalWeight = 0f;
 
@@ -1606,6 +1615,7 @@ namespace Hecton8.Inventory
             ClearNativeArray(_itemStateFlags);
             ClearNativeArray(_itemGenetics);
             ClearNativeArray(_qualityMilli);
+            ClearNativeArray(_durabilities);
             ClearNativeArray(_lastUpdateUnixSeconds);
             ClearNativeArray(_anchorUnitMassKg);
             ClearNativeArray(_anchorUnitVolumeM3);
@@ -1776,6 +1786,33 @@ namespace Hecton8.Inventory
         public NativeArray<ushort>.ReadOnly GetStackCountsReadOnly()
         {
             return _stackCounts.IsCreated ? _stackCounts.AsReadOnly() : default;
+        }
+
+        public NativeArray<int>.ReadOnly GetItemIDsReadOnly()
+        {
+            return _grid != null ? _grid.AnchorHashIds : default;
+        }
+
+        public NativeArray<ushort>.ReadOnly GetQuantitiesReadOnly()
+        {
+            return GetStackCountsReadOnly();
+        }
+
+        public NativeArray<byte>.ReadOnly GetDurabilitiesReadOnly()
+        {
+            SyncDurabilityBytesFromQuality();
+            return _durabilities.IsCreated ? _durabilities.AsReadOnly() : default;
+        }
+
+        public bool TryGetInventorySoA(
+            out NativeArray<int>.ReadOnly itemIDs,
+            out NativeArray<ushort>.ReadOnly quantities,
+            out NativeArray<byte>.ReadOnly durabilities)
+        {
+            itemIDs = GetItemIDsReadOnly();
+            quantities = GetQuantitiesReadOnly();
+            durabilities = GetDurabilitiesReadOnly();
+            return _grid != null && _stackCounts.IsCreated && _durabilities.IsCreated;
         }
 
         public NativeArray<ushort>.ReadOnly GetCraftLockedCountsReadOnly()
@@ -2106,6 +2143,7 @@ namespace Hecton8.Inventory
             ClearNativeArray(_itemStateFlags);
             ClearNativeArray(_itemGenetics);
             ClearNativeArray(_qualityMilli);
+            ClearNativeArray(_durabilities);
             ClearNativeArray(_lastUpdateUnixSeconds);
             ClearNativeArray(_anchorUnitMassKg);
             ClearNativeArray(_anchorUnitVolumeM3);
@@ -2185,6 +2223,7 @@ namespace Hecton8.Inventory
             if (_massCacheDirty)
                 RefreshDerivedMassAndSurvivalLoad();
 
+            _durabilitySnapshotDirty = true;
             PublishEncumbranceChanged();
             InventoryVersion++;
             InventoryEvents.NotifyInventoryChanged();
@@ -2333,6 +2372,7 @@ namespace Hecton8.Inventory
             TotalVolumeM3 = math.max(0f, totals.y);
             TotalRadiationSv = math.max(0f, totals.z);
             TotalWeight = TotalMassKg;
+            GlobalRegistry.PublishPlayerInventoryMassKg(TotalMassKg);
             if (survival != null)
                 survival.SetWeight(TotalMassKg);
 
@@ -3083,6 +3123,32 @@ namespace Hecton8.Inventory
             _anchorUnitRadiationSv[anchorIndex] = 0f;
             if (_thermalRunawayByAnchor.IsCreated && (uint)anchorIndex < (uint)_thermalRunawayByAnchor.Length)
                 _thermalRunawayByAnchor[anchorIndex] = 0f;
+        }
+
+        private void SyncDurabilityBytesFromQuality()
+        {
+            if (!_durabilitySnapshotDirty ||
+                _grid == null ||
+                !_qualityMilli.IsCreated ||
+                !_durabilities.IsCreated)
+            {
+                return;
+            }
+
+            int count = math.min(_qualityMilli.Length, _durabilities.Length);
+            for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
+            {
+                if (!_grid.HasAnchor(anchorIndex))
+                {
+                    _durabilities[anchorIndex] = 0;
+                    continue;
+                }
+
+                ushort qualityMilli = _qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli;
+                _durabilities[anchorIndex] = (byte)math.clamp((qualityMilli + 5) / 10, 0, 100);
+            }
+
+            _durabilitySnapshotDirty = false;
         }
 
         private static uint ResolveCurrentUnixTimestamp()

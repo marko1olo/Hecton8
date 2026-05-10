@@ -449,7 +449,7 @@ namespace Hecton8.Gameplay
 
                 BurstRandom rng = new BurstRandom(request.Seed != 0u ? request.Seed : 1u);
                 float power = math.max(MinimumPower, request.Power01);
-                float3 hitNormal = math.normalizesafe(
+                float3 hitNormal = NormalizeFastOrDefault(
                     new float3(request.RuntimeHitNormal.x, request.RuntimeHitNormal.y, request.RuntimeHitNormal.z),
                     new float3(0f, 1f, 0f));
 
@@ -480,13 +480,13 @@ namespace Hecton8.Gameplay
                     Matrix4x4 worldMatrix = Matrix4x4.TRS(request.RuntimeOrigin, request.RuntimeRotation, Vector3.one) *
                                             request.Definition.GetLocalMatrix(chunkIndex);
                     Vector3 runtimePosition = worldMatrix.GetColumn(3);
-                    float3 direction = math.normalizesafe(
+                    float3 direction = NormalizeFastOrDefault(
                         new float3(
                             runtimePosition.x - request.RuntimeHitPoint.x,
                             runtimePosition.y - request.RuntimeHitPoint.y,
                             runtimePosition.z - request.RuntimeHitPoint.z) +
                         hitNormal * 0.45f +
-                        rng.NextFloat3Direction() * 0.22f,
+                        NextCheapSignedVector(ref rng) * 0.22f,
                         hitNormal);
                     float massScale = math.max(0.2f, request.Definition.GetMassScale(chunkIndex));
                     float impulse = request.Definition.BaseImpulse *
@@ -495,7 +495,7 @@ namespace Hecton8.Gameplay
                                     massScale;
                     float3 velocity = direction * impulse;
                     velocity.y += 0.35f + power * 0.8f;
-                    float3 angularVelocity = rng.NextFloat3Direction() * (0.95f + power * 4.5f) / massScale;
+                    float3 angularVelocity = NextCheapSignedVector(ref rng) * (0.95f + power * 4.5f) / massScale;
 
                     DebrisChunkState state = new DebrisChunkState
                     {
@@ -947,6 +947,20 @@ namespace Hecton8.Gameplay
             return estimate;
         }
 
+        private static float3 NormalizeFastOrDefault(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            return lengthSq > 0.000001f ? value * math.rsqrt(lengthSq) : fallback;
+        }
+
+        private static float3 NextCheapSignedVector(ref BurstRandom rng)
+        {
+            return new float3(
+                (rng.NextFloat() * 2f) - 1f,
+                (rng.NextFloat() * 2f) - 1f,
+                (rng.NextFloat() * 2f) - 1f);
+        }
+
         private static float RefineMagnitudeEstimate(float valueSq, float estimate)
         {
             return 0.5f * (estimate + (valueSq * math.rcp(math.max(estimate, 0.000001f))));
@@ -1073,7 +1087,7 @@ namespace Hecton8.Gameplay
                     uint seed = math.hash(new uint2(RandomSeed != 0u ? RandomSeed : 1u, (uint)i + 1u));
                     BurstRandom rng = new BurstRandom(seed != 0u ? seed : 1u);
                     float inverseMass = 1f / math.max(0.2f, state.MassScale);
-                    randomDrift = rng.NextFloat3Direction() * (NoiseStrength * dt * inverseMass);
+                    randomDrift = DebrisManager.NextCheapSignedVector(ref rng) * (NoiseStrength * dt * inverseMass);
                     state.Velocity += new float3(0f, -Gravity, 0f) * dt;
                     state.Velocity += randomDrift;
                     state.Velocity *= math.saturate(1f - (state.LinearDamping * dt));

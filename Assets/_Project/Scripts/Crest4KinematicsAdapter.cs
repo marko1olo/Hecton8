@@ -10,7 +10,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Physics/Crest 4 Kinematics Adapter")]
-    public sealed class Crest4KinematicsAdapter : HectonCrestOceanKinematics
+    public sealed class Crest4KinematicsAdapter : CrestBridge
     {
         private const int MaxBatchSampleCount = 5;
         private const int ProviderPriority = 400;

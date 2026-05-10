@@ -132,7 +132,7 @@ namespace Hecton8.Core
         [Tooltip("Distance from (0,0,0) that triggers a shift.")]
         [SerializeField] private float _threshold = 1000f;
 
-        [Tooltip("Object to follow (normally Player). If null, resolves via SceneBootstrap.")]
+        [Tooltip("Object to follow (normally Player). If null, resolves via GameBootstrapper.")]
         [SerializeField] private Transform _anchor;
 
         /// <summary>Cumulative absolute-universe offset committed since startup.</summary>
@@ -1226,7 +1226,7 @@ namespace Hecton8.Core
 
             _anchorResolveTimer = AnchorResolveCooldown;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
                 _anchor = playerTransform;
                 _anchor.TryGetComponent(out _anchorRigidbody);

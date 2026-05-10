@@ -1,14 +1,14 @@
-﻿// ============================================================================
-// HECTON-8 â€” AmbientWaterMotionManager.cs
+// ============================================================================
+// HECTON-8 — AmbientWaterMotionManager.cs
 // Centralized visual bob/sway updater. One tick for many decorative props.
 //
 // v1.1 OPTIMIZATIONS:
-//   [FIX] TryResolveObserver: Ð´Ð¾Ð±Ð°Ð²Ð»ÐµÐ½ _observerResolveCooldown â€” Ð½Ðµ Ð´Ñ‘Ñ€Ð³Ð°ÐµÐ¼
-//         SceneBootstrap/player resolve ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€ ÐµÑÐ»Ð¸ observer ÐµÑ‰Ñ‘ Ð½Ðµ Ð³Ð¾Ñ‚Ð¾Ð².
-//   [FIX] Register: Ð·Ð°Ð¼ÐµÐ½Ð° Contains (O(n)) Ð½Ð° HashSet Ð´Ð»Ñ O(1) Ð´ÐµÐ´ÑƒÐ¿Ð»Ð¸ÐºÐ°Ñ†Ð¸Ð¸.
-//   [FIX] ApplyMotion: ÐºÑÑˆÐ¸Ñ€ÑƒÐµÐ¼ worldPos Ð¸Ð· CachedTransform.position Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð·,
-//         Ð¿ÐµÑ€ÐµÐ´Ð°Ñ‘Ð¼ Ð² ShouldUpdate Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð½Ðµ Ñ‡Ð¸Ñ‚Ð°Ñ‚ÑŒ position Ð´Ð²Ð°Ð¶Ð´Ñ‹ Ñ‡ÐµÑ€ÐµÐ· bridge.
-//   [FIX] ShouldUpdate: Ð¿Ñ€Ð¸Ð½Ð¸Ð¼Ð°ÐµÑ‚ worldPos ÐºÐ°Ðº Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€, ÑƒÐ±Ñ€Ð°Ð½ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ñ‹Ð¹ .position.
+//   [FIX] TryResolveObserver: dobavlen _observerResolveCooldown — ne dergaem
+//         GameBootstrapper/player resolve kazhdyy kadr esli observer esche ne gotov.
+//   [FIX] Register: zamena Contains (O(n)) na HashSet dlya O(1) deduplikatsii.
+//   [FIX] ApplyMotion: keshiruem worldPos iz CachedTransform.position odin raz,
+//         peredaem v ShouldUpdate chtoby ne chitat position dvazhdy cherez bridge.
+//   [FIX] ShouldUpdate: prinimaet worldPos kak parametr, ubran povtornyy .position.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -52,12 +52,12 @@ namespace Hecton8.Physics
         [SerializeField] private int _debugBiomeCurrentBiomeId = -1;
         [SerializeField] private Vector3 _debugBiomeCurrentVector;
 
-        // â”€â”€ Registered objects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        // List Ð´Ð»Ñ Ð¸Ñ‚ÐµÑ€Ð°Ñ†Ð¸Ð¸ (cache-friendly), HashSet Ð´Ð»Ñ O(1) Ð´ÐµÐ´ÑƒÐ¿Ð»Ð¸ÐºÐ°Ñ†Ð¸Ð¸ Ð² Register.
+        // ── Registered objects ───────────────────────────────────────────────
+        // List dlya iteratsii (cache-friendly), HashSet dlya O(1) deduplikatsii v Register.
         private readonly List<AmbientWaterMotion> _objects =
-            new List<AmbientWaterMotion>(MotionCapacity); // COLD ALLOC: List<AmbientWaterMotion>[128] — active ambient-water motion registry — owner: AmbientWaterMotionManager
+            new List<AmbientWaterMotion>(MotionCapacity); // COLD ALLOC: List<AmbientWaterMotion>[128] � active ambient-water motion registry � owner: AmbientWaterMotionManager
         private readonly HashSet<AmbientWaterMotion> _objectsSet =
-            new HashSet<AmbientWaterMotion>(MotionCapacity); // COLD ALLOC: HashSet<AmbientWaterMotion>[128] — duplicate guard for ambient-water motion registry — owner: AmbientWaterMotionManager
+            new HashSet<AmbientWaterMotion>(MotionCapacity); // COLD ALLOC: HashSet<AmbientWaterMotion>[128] � duplicate guard for ambient-water motion registry � owner: AmbientWaterMotionManager
 
         private float _time;
         private int   _frameCounter;
@@ -73,16 +73,16 @@ namespace Hecton8.Physics
         private float _biomeCurrentBlendElapsed;
         private bool _hasBiomeCurrentTarget;
 
-        // â”€â”€ Observer resolve cooldown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        // Ð•ÑÐ»Ð¸ observer Ð½Ðµ Ð½Ð°Ð·Ð½Ð°Ñ‡ÐµÐ½ Ð¸ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½ â€” Ð½Ðµ Ð´Ñ‘Ñ€Ð³Ð°ÐµÐ¼ bootstrap ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€.
+        // ── Observer resolve cooldown ────────────────────────────────────────
+        // Esli observer ne naznachen i ne nayden — ne dergaem bootstrap kazhdyy kadr.
         private float _observerResolveTimer;
         private const float ObserverResolveCooldown = 2f;
 
         public static AmbientWaterMotionManager Instance => GlobalRegistry.AmbientWaterMotion;
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ════════════════════════════════════════════════════════════════════
         //  LIFECYCLE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ════════════════════════════════════════════════════════════════════
 
         private void Awake()
         {
@@ -94,7 +94,7 @@ namespace Hecton8.Physics
             }
 
             RefreshDistanceThresholds();
-            // ÐŸÑ€Ð¾Ð±ÑƒÐµÐ¼ ÑÑ€Ð°Ð·Ñƒ Ð¿Ñ€Ð¸ ÑÑ‚Ð°Ñ€Ñ‚Ðµ
+            // Probuem srazu pri starte
             TryResolveObserver(force: true);
         }
 
@@ -121,15 +121,15 @@ namespace Hecton8.Physics
 
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  REGISTRATION â€” O(1) Ð´ÐµÐ´ÑƒÐ¿Ð»Ð¸ÐºÐ°Ñ†Ð¸Ñ Ñ‡ÐµÑ€ÐµÐ· HashSet
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ════════════════════════════════════════════════════════════════════
+        //  REGISTRATION — O(1) deduplikatsiya cherez HashSet
+        // ════════════════════════════════════════════════════════════════════
 
         public void Register(AmbientWaterMotion motion)
         {
             if (motion == null) return;
 
-            // HashSet.Add Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ false ÐµÑÐ»Ð¸ ÑƒÐ¶Ðµ ÐµÑÑ‚ÑŒ â€” O(1) vs O(n) Contains
+            // HashSet.Add vozvraschaet false esli uzhe est — O(1) vs O(n) Contains
             if (_objectsSet.Add(motion))
                 _objects.Add(motion);
 
@@ -146,9 +146,9 @@ namespace Hecton8.Physics
             _debugActiveObjects = _objects.Count;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ════════════════════════════════════════════════════════════════════
         //  TICK
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ════════════════════════════════════════════════════════════════════
 
         public void Tick(float deltaTime)
         {
@@ -162,7 +162,7 @@ namespace Hecton8.Physics
             _time += deltaTime;
             if (_time > 100000f) _time -= 100000f;
 
-            // Cooldown Ð½Ð° Ð¿Ð¾Ð¸ÑÐº observer â€” Ð½Ðµ ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€
+            // Cooldown na poisk observer — ne kazhdyy kadr
             _observerResolveTimer -= deltaTime;
             if (_observerResolveTimer <= 0f)
             {
@@ -174,21 +174,21 @@ namespace Hecton8.Physics
             _debugFarCount    = 0;
             _debugCulledCount = 0;
 
-            // ÐšÑÑˆÐ¸Ñ€ÑƒÐµÐ¼ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸ÑŽ Ð½Ð°Ð±Ð»ÑŽÐ´Ð°Ñ‚ÐµÐ»Ñ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð· Ð·Ð° Ñ‚Ð¸Ðº
-            // Ð˜Ð·Ð±ÐµÐ³Ð°ÐµÐ¼ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ñ‹Ñ… bridge calls Ð² ShouldUpdate Ð´Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ Ð¾Ð±ÑŠÐµÐºÑ‚Ð°
+            // Keshiruem pozitsiyu nablyudatelya odin raz za tik
+            // Izbegaem povtornyh bridge calls v ShouldUpdate dlya kazhdogo obekta
             AbsoluteUniversePosition observerAup = lodObserver != null
                 ? AbsoluteUniversePosition.FromRuntimePosition(lodObserver.position)
                 : default;
 
-            // ÐšÐ²Ð°Ð´Ñ€Ð°Ñ‚Ñ‹ Ð´Ð¸ÑÑ‚Ð°Ð½Ñ†Ð¸Ð¹ â€” ÑÑ‡Ð¸Ñ‚Ð°ÐµÐ¼ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð· Ð·Ð° Ñ‚Ð¸Ðº
+            // Kvadraty distantsiy — schitaem odin raz za tik
             for (int i = _objects.Count - 1; i >= 0; i--)
             {
                 AmbientWaterMotion motion = _objects[i];
 
-                // Null-check: Ð¾Ð±ÑŠÐµÐºÑ‚ Ð¼Ð¾Ð³ Ð±Ñ‹Ñ‚ÑŒ ÑƒÐ½Ð¸Ñ‡Ñ‚Ð¾Ð¶ÐµÐ½ Ð±ÐµÐ· OnDisable
+                // Null-check: obekt mog byt unichtozhen bez OnDisable
                 if (motion == null || motion.CachedTransform == null)
                 {
-                    // Swap-and-pop: O(1) ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ðµ Ð¸Ð· ÑÐµÑ€ÐµÐ´Ð¸Ð½Ñ‹ ÑÐ¿Ð¸ÑÐºÐ°
+                    // Swap-and-pop: O(1) udalenie iz serediny spiska
                     _objectsSet.Remove(motion);
                     int last = _objects.Count - 1;
                     _objects[i] = _objects[last];
@@ -196,8 +196,8 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                // Ð§Ð¸Ñ‚Ð°ÐµÐ¼ position ÐžÐ”Ð˜Ð Ð ÐÐ— â€” ÐºÑÑˆÐ¸Ñ€ÑƒÐµÐ¼ Ð´Ð»Ñ ShouldUpdate Ð¸ ApplyMotion
-                // Ð‘Ñ‹Ð»Ð¾: position Ñ‡Ð¸Ñ‚Ð°Ð»ÑÑ Ð´Ð²Ð°Ð¶Ð´Ñ‹ (Ð² ShouldUpdate Ð¸ Ð² ApplyMotion)
+                // Chitaem position ODIN RAZ — keshiruem dlya ShouldUpdate i ApplyMotion
+                // Bylo: position chitalsya dvazhdy (v ShouldUpdate i v ApplyMotion)
                 AbsoluteUniversePosition motionAup = motion.RestAup;
                 float3 runtimeRestPosition = motionAup.ToRuntimeFloat3();
                 Vector3 worldPos = new Vector3(runtimeRestPosition.x, runtimeRestPosition.y, runtimeRestPosition.z);
@@ -212,9 +212,9 @@ namespace Hecton8.Physics
             _debugActiveObjects = _objects.Count;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  SHOULD UPDATE â€” Ð¿Ñ€Ð¸Ð½Ð¸Ð¼Ð°ÐµÑ‚ Ð¿Ñ€ÐµÐ´Ð²Ñ‹Ñ‡Ð¸ÑÐ»ÐµÐ½Ð½Ñ‹Ðµ Ð´Ð°Ð½Ð½Ñ‹Ðµ, Ð½ÐµÑ‚ bridge calls
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ════════════════════════════════════════════════════════════════════
+        //  SHOULD UPDATE — prinimaet predvychislennye dannye, net bridge calls
+        // ════════════════════════════════════════════════════════════════════
 
         private bool ShouldUpdateAup(
             AmbientWaterMotion motion,
@@ -368,24 +368,24 @@ namespace Hecton8.Physics
         {
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  OBSERVER RESOLVE â€” Ñ cooldown, Ð½Ðµ ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ════════════════════════════════════════════════════════════════════
+        //  OBSERVER RESOLVE — s cooldown, ne kazhdyy kadr
+        // ════════════════════════════════════════════════════════════════════
 
-        /// <param name="force">true = Ð¸Ð³Ð½Ð¾Ñ€Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ cooldown (Awake, OnEnable).</param>
+        /// <param name="force">true = ignorirovat cooldown (Awake, OnEnable).</param>
         private void TryResolveObserver(bool force = false)
         {
-            // Ð•ÑÐ»Ð¸ ÑƒÐ¶Ðµ ÐµÑÑ‚ÑŒ â€” Ð½Ðµ Ð¸Ñ‰ÐµÐ¼
+            // Esli uzhe est — ne ischem
             if (lodObserver != null) return;
 
-            // Ð•ÑÐ»Ð¸ cooldown Ð½Ðµ Ð¸ÑÑ‚Ñ‘Ðº Ð¸ Ð½Ðµ Ñ„Ð¾Ñ€ÑÐ¸Ð¼ â€” Ð¿Ñ€Ð¾Ð¿ÑƒÑÐºÐ°ÐµÐ¼
+            // Esli cooldown ne istek i ne forsim — propuskaem
             if (!force && _observerResolveTimer > 0f) return;
 
-            // Ð¡Ð±Ñ€Ð°ÑÑ‹Ð²Ð°ÐµÐ¼ Ñ‚Ð°Ð¹Ð¼ÐµÑ€ Ð½ÐµÐ·Ð°Ð²Ð¸ÑÐ¸Ð¼Ð¾ Ð¾Ñ‚ Ñ€ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚Ð° Ð¿Ð¾Ð¸ÑÐºÐ°
-            // ÐÐµ Ð½Ð°ÑˆÐ»Ð¸ ÑÐµÐ¹Ñ‡Ð°Ñ â€” Ð¿Ð¾Ð´Ð¾Ð¶Ð´Ñ‘Ð¼ ÐµÑ‰Ñ‘ ObserverResolveCooldown ÑÐµÐºÑƒÐ½Ð´
+            // Sbrasyvaem taymer nezavisimo ot rezultata poiska
+            // Ne nashli seychas — podozhdem esche ObserverResolveCooldown sekund
             _observerResolveTimer = ObserverResolveCooldown;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 lodObserver = playerTransform;
         }
 

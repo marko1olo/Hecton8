@@ -84,12 +84,12 @@ This document summarizes the analysis and fixes performed on the HECTON-8 projec
 
 **Fixes Applied**:
 1. **Mode Label (lines 285-289)**:
-   - BEFORE: `_currentModeLabel.text = $"АКТИВНЫЙ РЕЖИМ: {ModeNames[idx]}";`
+   - BEFORE: `_currentModeLabel.text = $"AKTIVNYY REZhIM: {ModeNames[idx]}";`
    - AFTER: Added dirty-flag pattern:
      ```csharp
      if (_currentModeLabel != null)
      {
-         string modeText = string.Format("АКТИВНЫЙ РЕЖИМ: {0}", ModeNames[idx]);
+         string modeText = string.Format("AKTIVNYY REZhIM: {0}", ModeNames[idx]);
          if (_currentModeLabel.text != modeText)
          {
              _currentModeLabel.text = modeText;
@@ -118,7 +118,7 @@ This document summarizes the analysis and fixes performed on the HECTON-8 projec
      if (_sonarStatusLabel != null)
      {
          string sonarText = active == SpectrumMode.Sonar
-             ? $"СОНАР АКТИВЕН — РАДИУС: {(sys != null ? "100" : "—")}М"
+             ? $"SONAR AKTIVEN — RADIUS: {(sys != null ? "100" : "—")}M"
              : string.Empty;
          if (_sonarStatusLabel.text != sonarText)
          {

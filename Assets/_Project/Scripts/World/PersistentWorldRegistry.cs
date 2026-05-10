@@ -201,7 +201,7 @@ namespace Hecton8.World
         public ushort LastVisibleFrame;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Pack = 16, Size = 64)]
     internal struct EntityDataRecord
     {
         public AbsoluteUniversePositionBlit128 Position;
@@ -480,6 +480,7 @@ namespace Hecton8.World
         private const int DefaultChunkSizeMeters = 64;
         private const int DefaultHydrationRadius = 1;
         private const float DropScatterRadiusMeters = 0.55f;
+        private const float ScatterDiagonal2 = 0.70710677f;
         private const float DropScatterMinLiftMeters = 0.06f;
         private const float DropScatterMaxLiftMeters = 0.22f;
         private const float PlatformVelocityInheritanceFallbackHalfX = 18f;
@@ -525,7 +526,7 @@ namespace Hecton8.World
         private const int FaunaSleepStartShift = 2;
         private const int FaunaSleepStartMaxEncoded = (1 << 22) - 1;
         private const float FaunaSleepStartQuantumSeconds = 0.25f;
-        private const float WhaleFallDurationSeconds = 259200f;
+        private const float WhaleFallDurationSeconds = 7200f;
         private const int MaxWhaleFallInfluenceScan = 64;
         private const int MaxApexMigrationVisitedUids = 256;
         private const int EcosystemFaunaRecordBirthLimitPerSectorPass = 4;
@@ -547,7 +548,7 @@ namespace Hecton8.World
         private const float TombstoneDecayFrostTickSeconds = 5f;
         private const int MaxTombstoneDecayAppliesPerLateFrame = 128;
         private static readonly int3 ApexFaunaTombstoneChunkId = new int3(int.MinValue, 0, 0);
-        private static readonly long HydrationFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 333L);
+        private static readonly long HydrationFrameBudgetTicks = HydrationScheduler.FrameBudgetTicks;
         private static readonly long HydrationPerformanceWarningBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 5000L);
         private static readonly uint _hydrationApplyBudgetWarningHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.HydrationApplyBudget"));
         private static readonly uint _hydrationApplyContextHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.HydrationApply"));
@@ -1320,9 +1321,16 @@ namespace Hecton8.World
 
         internal bool TryRegisterResourceNodeMetamorphosis(ulong tombstoneId, Vector3 runtimePosition)
         {
+            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            return TryRegisterResourceNodeMetamorphosis(tombstoneId, in position);
+        }
+
+        internal bool TryRegisterResourceNodeMetamorphosis(ulong tombstoneId, in AbsoluteUniversePosition position)
+        {
             if (tombstoneId == 0UL ||
                 !_records.IsCreated ||
-                _records.Length >= _records.Capacity)
+                _records.Length >= _records.Capacity ||
+                !IsFinite(position.ToAbsoluteDouble3()))
             {
                 return false;
             }
@@ -1333,7 +1341,6 @@ namespace Hecton8.World
             if (!TryGenerateResourceNodeMetamorphosisInstanceUid(tombstoneId, out uint instanceUid))
                 return false;
 
-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters);
             PersistentWorldItemRecord record = new PersistentWorldItemRecord
             {
@@ -1656,23 +1663,48 @@ namespace Hecton8.World
         private static Vector3 ApplyDeterministicDropScatter(Vector3 runtimePosition, uint instanceUid)
         {
             uint state = instanceUid != 0u ? instanceUid : 0xA511E9B3u;
-            float angle = NextScatter01(ref state) * (math.PI * 2f);
+            float2 direction = NextScatterPlanarDirection(ref state);
             float radius = NextScatter01(ref state) * DropScatterRadiusMeters;
             float lift = math.lerp(DropScatterMinLiftMeters, DropScatterMaxLiftMeters, NextScatter01(ref state));
 
             Vector3 offset;
-            offset.x = math.cos(angle) * radius;
+            offset.x = direction.x * radius;
             offset.y = lift;
-            offset.z = math.sin(angle) * radius;
+            offset.z = direction.y * radius;
             return runtimePosition + offset;
         }
 
         private static float NextScatter01(ref uint state)
         {
+            return (NextScatterBits(ref state) & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private static uint NextScatterBits(ref uint state)
+        {
             state ^= state << 13;
             state ^= state >> 17;
             state ^= state << 5;
-            return (state & 0x00FFFFFFu) * (1f / 16777215f);
+            return state;
+        }
+
+        private static float2 NextScatterPlanarDirection(ref uint state)
+        {
+            return ResolveScatterPlanarDirection(NextScatterBits(ref state));
+        }
+
+        private static float2 ResolveScatterPlanarDirection(uint seed)
+        {
+            switch ((seed >> 29) & 7u)
+            {
+                case 0u: return new float2(1f, 0f);
+                case 1u: return new float2(-1f, 0f);
+                case 2u: return new float2(0f, 1f);
+                case 3u: return new float2(0f, -1f);
+                case 4u: return new float2(ScatterDiagonal2, ScatterDiagonal2);
+                case 5u: return new float2(-ScatterDiagonal2, ScatterDiagonal2);
+                case 6u: return new float2(ScatterDiagonal2, -ScatterDiagonal2);
+                default: return new float2(-ScatterDiagonal2, -ScatterDiagonal2);
+            }
         }
 
         internal static ulong ComputeResourceNodeTombstoneId(Vector3 runtimePosition)
@@ -2077,6 +2109,7 @@ namespace Hecton8.World
 
                 if (!ApplySectorOverrides(desiredSectorHashes, loadedSectorRecords, out string overrideError))
                 {
+                    await Awaitable.MainThreadAsync();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError($"[PersistentWorldRegistry] Sector override merge failed: {overrideError}");
 #endif
@@ -2085,6 +2118,7 @@ namespace Hecton8.World
 
                 if (!TryLoadSectorEntityStateOverrides(desiredSectorHashes, out stagedEntityStates, out string entityStateError))
                 {
+                    await Awaitable.MainThreadAsync();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError($"[PersistentWorldRegistry] Sector entity-state restore failed: {entityStateError}");
 #endif
@@ -3241,7 +3275,9 @@ namespace Hecton8.World
                     if (!SaveBinaryStorage.TryCommitIndexedPersistentWorldSectorOverride(_indexedSectorSavePath, state.TempPath, out string error))
                     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        await Awaitable.MainThreadAsync();
                         Debug.LogError($"[PersistentWorldRegistry] Sector override commit failed for 0x{sectorHash:X16}: {error}");
+                        await Awaitable.BackgroundThreadAsync();
 #endif
                     }
                     else if (!string.IsNullOrEmpty(state.EntityStateTempPath) && File.Exists(state.EntityStateTempPath))
@@ -3427,10 +3463,15 @@ namespace Hecton8.World
 
         internal int ConsumeCachedFaunaHibernationStates(Vector3 playerPosition, float restoreRadiusMeters, List<EntityDataRecord> destination)
         {
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            return ConsumeCachedFaunaHibernationStates(in playerAup, restoreRadiusMeters, destination);
+        }
+
+        internal int ConsumeCachedFaunaHibernationStates(in AbsoluteUniversePosition playerAup, float restoreRadiusMeters, List<EntityDataRecord> destination)
+        {
             if (destination == null || restoreRadiusMeters <= 0f || !_indexedSectorPagingEnabled || string.IsNullOrEmpty(_indexedSectorOverrideDirectory))
                 return 0;
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
             int2 playerSector = QuantizeSector(in playerAup);
             double restoreRadiusSq = restoreRadiusMeters * restoreRadiusMeters;
             int restoredCount = 0;
@@ -3705,6 +3746,12 @@ namespace Hecton8.World
 
         internal int MigrateApexFaunaHibernationStatesToward(Vector3 attractorPosition, float searchRadiusMeters, float stepMeters)
         {
+            AbsoluteUniversePosition attractorAup = AbsoluteUniversePosition.FromRuntimePosition(attractorPosition);
+            return MigrateApexFaunaHibernationStatesToward(in attractorAup, searchRadiusMeters, stepMeters);
+        }
+
+        internal int MigrateApexFaunaHibernationStatesToward(in AbsoluteUniversePosition attractorAup, float searchRadiusMeters, float stepMeters)
+        {
             if (!_indexedSectorPagingEnabled ||
                 string.IsNullOrEmpty(_indexedSectorOverrideDirectory) ||
                 searchRadiusMeters <= 0f ||
@@ -3713,7 +3760,6 @@ namespace Hecton8.World
                 return 0;
             }
 
-            AbsoluteUniversePosition attractorAup = AbsoluteUniversePosition.FromRuntimePosition(attractorPosition);
             double3 attractorAbsolute = attractorAup.ToAbsoluteDouble3();
             int2 centerSector = QuantizeSector(in attractorAup);
             int sectorRadius = math.max(1, (int)math.ceil(searchRadiusMeters / PagedSectorEdgeLengthMeters));
@@ -3974,13 +4020,13 @@ namespace Hecton8.World
                 }
 
                 uint jitterHash = instanceUid ^ (uint)(i * 747796405);
-                float angle = (jitterHash & 0xFFFFu) * (Mathf.PI * 2f / 65535f);
-                float radius = (((jitterHash >> 16) & 0xFFFFu) / 65535f) * EcosystemFaunaCloneJitterRadiusMeters;
+                float2 jitterDirection = ResolveScatterPlanarDirection(jitterHash);
+                float radius = (((jitterHash >> 8) & 0xFFFFu) * (EcosystemFaunaCloneJitterRadiusMeters / 65535f));
                 AbsoluteUniversePosition templateAup = AbsoluteUniversePosition.FromAlignedBlit(in template.Position);
                 double3 seededAbsolute = templateAup.ToAbsoluteDouble3() + new double3(
-                    math.cos(angle) * radius,
+                    (double)jitterDirection.x * radius,
                     0d,
-                    math.sin(angle) * radius);
+                    (double)jitterDirection.y * radius);
                 AbsoluteUniversePosition seededAup = AbsoluteUniversePosition.FromAbsolutePosition(seededAbsolute);
                 EntityDataRecord seededState = CreateFaunaHibernationState(
                     instanceUid,
@@ -4844,7 +4890,7 @@ namespace Hecton8.World
                     if (!TryProcessHydrationBurst())
                         break;
 
-                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);
+                    await HydrationScheduler.NextFrameAsync(destroyCancellationToken);
                 }
             }
             catch (OperationCanceledException)

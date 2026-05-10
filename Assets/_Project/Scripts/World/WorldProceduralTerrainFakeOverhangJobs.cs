@@ -44,7 +44,7 @@ namespace Hecton8.World
             float dx = (hEast - hWest) / (safeCellSize * 2f);
             float dz = (hNorth - hSouth) / (safeCellSize * 2f);
             float2 gradient = new float2(dx, dz);
-            float gradientLength = math.length(gradient);
+            float gradientLength = FastMagnitudeApprox(gradient);
             float slopeDegrees = math.degrees(math.atan(gradientLength));
             float cliff01 = math.saturate((slopeDegrees - SlopeThresholdDegrees) / math.max(1f, 89f - SlopeThresholdDegrees));
             if (cliff01 <= 0.0001f)
@@ -64,6 +64,14 @@ namespace Hecton8.World
             float noise01 = math.saturate((noise.snoise(worldXZ * math.max(0.0001f, NoiseFrequency) + (float)Seed * 0.00137f) * 0.5f) + 0.5f);
             float offset = math.max(0f, MaxOffsetMeters) * cliff01 * math.lerp(0.35f, 1f, noise01);
             HorizontalOffsetsMeters[index] = pushDirection * offset;
+        }
+
+        private static float FastMagnitudeApprox(float2 value)
+        {
+            float2 abs = math.abs(value);
+            float max = math.max(abs.x, abs.y);
+            float min = math.min(abs.x, abs.y);
+            return max + (min * 0.41421356f);
         }
     }
 }

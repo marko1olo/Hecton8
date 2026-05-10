@@ -46,7 +46,7 @@ namespace NASAPunk.Visor
         [SerializeField] private SuitHUDV4CanvasOverlay projectionSourceOverlay;
         [SerializeField] private SuitHUDScreenCompositor screenCompositor;
         [SerializeField] private bool suppressOverlaysInProjectedMode = true;
-        [SerializeField] private bool previewProjectedSourceOnScreen = true;
+        [SerializeField] private bool previewProjectedSourceOnScreen = false;
         [SerializeField] private bool preferCanvasProjectionSource = true;
         [SerializeField] private bool syncProjectionLayoutFromOverlay = false;
 
@@ -314,7 +314,7 @@ namespace NASAPunk.Visor
                 s_overlayResolveBuffer.Clear();
             }
 
-            if (screenCompositor == null)
+            if (screenCompositor == null && IsProjectionSourcePreviewEnabled())
             {
                 SuitHUDScreenCompositor.CopyActiveCompositorsTo(s_compositorResolveBuffer);
                 screenCompositor = FindCompositor(s_compositorResolveBuffer, screenCompositor, transform.root);
@@ -339,7 +339,7 @@ namespace NASAPunk.Visor
                 visorController == null ||
                 diegeticProjectionRenderer == null ||
                 canvasOverlay == null ||
-                screenCompositor == null)
+                (IsProjectionSourcePreviewEnabled() && screenCompositor == null))
             {
                 return true;
             }
@@ -354,9 +354,14 @@ namespace NASAPunk.Visor
 
         private void ApplyPresentation(bool force, bool allowProjectionSourceCreation = true)
         {
+            bool screenOverlayFallbackAllowed = IsScreenOverlayFallbackAllowed();
             bool projectedModeRequested =
                 presentationMode == PresentationMode.ModernProjectedSharedRT ||
-                presentationMode == PresentationMode.ModernProjectedRuntimeRT;
+                presentationMode == PresentationMode.ModernProjectedRuntimeRT ||
+                !screenOverlayFallbackAllowed;
+            PresentationMode projectedProjectionMode = presentationMode == PresentationMode.ModernProjectedRuntimeRT
+                ? PresentationMode.ModernProjectedRuntimeRT
+                : PresentationMode.ModernProjectedSharedRT;
 
             EnsureProjectionSource(projectedModeRequested, allowProjectionSourceCreation);
             bool projectedMode = projectedModeRequested && IsProjectedPresentationAvailable();
@@ -375,15 +380,17 @@ namespace NASAPunk.Visor
             PrepareModernHud(overlayModernHud, ResolveOverlayHostCamera());
             PrepareModernHud(projectedModernHud, visorProjectionCamera);
 
-            bool useOverlayModern = !projectedMode;
+            bool useOverlayModern = !projectedMode && screenOverlayFallbackAllowed;
             bool useProjectedModern = projectedMode;
 
             if (visorController != null)
             {
                 visorController.SetSharedRenderTexture(sharedProjectionTexture);
                 visorController.SetProjectionMode(ResolveProjectionMode(projectedMode
-                    ? presentationMode
-                    : PresentationMode.ModernOverlay));
+                    ? projectedProjectionMode
+                    : screenOverlayFallbackAllowed
+                        ? PresentationMode.ModernOverlay
+                        : projectedProjectionMode));
             }
 
             if (preferCanvasProjectionSource && projectedMode && projectionSourceOverlay != null)
@@ -392,11 +399,13 @@ namespace NASAPunk.Visor
             SetBehaviourEnabledIfChanged(overlayModernHud, useOverlayModern);
             SetBehaviourEnabledIfChanged(projectedModernHud, useProjectedModern);
 
-            SuppressOverlayPaths(projectedMode, allowProjectionSourceCreation);
+            SuppressOverlayPaths(projectedMode, allowProjectionSourceCreation, screenOverlayFallbackAllowed);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             debugAppliedModeLabel = projectedModeRequested && !projectedMode
-                ? presentationMode + " -> FallbackOverlay"
+                ? screenOverlayFallbackAllowed
+                    ? presentationMode + " -> FallbackOverlay"
+                    : presentationMode + " -> ProjectionUnavailable"
                 : presentationMode == PresentationMode.LegacyOverlay
                     ? "ModernOverlay (legacy retired)"
                     : ResolvePresentationModeLabel(presentationMode);
@@ -442,10 +451,10 @@ namespace NASAPunk.Visor
             }
         }
 
-        private void SuppressOverlayPaths(bool projectedMode, bool allowHierarchySearch)
+        private void SuppressOverlayPaths(bool projectedMode, bool allowHierarchySearch, bool screenOverlayFallbackAllowed)
         {
-            bool suppress = projectedMode && suppressOverlaysInProjectedMode;
-            bool showProjectionPreview = projectedMode && previewProjectedSourceOnScreen;
+            bool suppress = (projectedMode || !screenOverlayFallbackAllowed) && suppressOverlaysInProjectedMode;
+            bool showProjectionPreview = projectedMode && IsProjectionSourcePreviewEnabled();
 
             if (canvasOverlay != null)
             {
@@ -453,7 +462,7 @@ namespace NASAPunk.Visor
                     SetOverlayCanvasVisible(canvasOverlay, false, allowHierarchySearch);
                 else
                 {
-                    canvasOverlay.SetRenderPathProjectionSource(false);
+                    canvasOverlay.SetRenderPathProjectionSource(!screenOverlayFallbackAllowed);
                     SetOverlayCanvasVisible(canvasOverlay, true, allowHierarchySearch);
                 }
 
@@ -461,9 +470,15 @@ namespace NASAPunk.Visor
             }
 
             SetBehaviourEnabledIfChanged(screenCompositor, showProjectionPreview);
-
-            Transform compositorTransform = ResolveHudRtCompositorTransform(allowHierarchySearch);
-            SetTransformCanvasVisible(compositorTransform, showProjectionPreview, allowHierarchySearch);
+            if (showProjectionPreview)
+            {
+                Transform compositorTransform = ResolveHudRtCompositorTransform(allowHierarchySearch);
+                SetTransformCanvasVisible(compositorTransform, true, allowHierarchySearch);
+            }
+            else if (_cachedHudRtCompositorTransform != null)
+            {
+                SetTransformCanvasVisible(_cachedHudRtCompositorTransform, false, allowHierarchySearch);
+            }
 
             debugOverlaysSuppressed = suppress && !showProjectionPreview;
         }
@@ -485,7 +500,7 @@ namespace NASAPunk.Visor
             if (preferCanvasProjectionSource && projectionSourceOverlay == null)
                 return false;
 
-            if (previewProjectedSourceOnScreen && screenCompositor == null)
+            if (IsProjectionSourcePreviewEnabled() && screenCompositor == null)
                 return false;
 
             return true;
@@ -529,7 +544,7 @@ namespace NASAPunk.Visor
             if (distance <= fitCamera.nearClipPlane + 0.01f)
                 return;
 
-            float height = 2f * distance * Mathf.Tan(fitCamera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+            float height = 2f * distance * ApproximateTanPositive(fitCamera.fieldOfView * 0.5f * Mathf.Deg2Rad);
             float width = height * fitCamera.aspect;
             float fill = Mathf.Max(0.01f, diegeticProjectionViewportFill);
             Vector3 targetScale = new Vector3(width * fill, height * fill, surface.localScale.z);
@@ -786,6 +801,31 @@ namespace NASAPunk.Visor
                 default:
                     return VisorHUDController.ProjectionMode.Disabled;
             }
+        }
+
+        private bool IsProjectionSourcePreviewEnabled()
+        {
+#if UNITY_EDITOR
+            return previewProjectedSourceOnScreen;
+#else
+            return false;
+#endif
+        }
+
+        private static bool IsScreenOverlayFallbackAllowed()
+        {
+#if UNITY_EDITOR
+            return true;
+#else
+            return false;
+#endif
+        }
+
+        private static float ApproximateTanPositive(float radians)
+        {
+            float x = Mathf.Clamp(radians, 0f, 1.4f);
+            float x2 = x * x;
+            return x * ((15f - x2) / Mathf.Max(0.0001f, 15f - 6f * x2));
         }
 
         private static string ResolvePresentationModeLabel(PresentationMode mode)

@@ -30,9 +30,17 @@ namespace Hecton8.Crafting
             [ReadOnly] public NativeParallelHashMap<int, int> AvailableItemCounts;
             public NativeArray<byte> Result;
             public int RecipeCostCount;
+            public ulong AvailableResourceMask;
+            public ulong RecipeResourceMask;
 
             public void Execute()
             {
+                if ((AvailableResourceMask & RecipeResourceMask) != RecipeResourceMask)
+                {
+                    Result[0] = 0;
+                    return;
+                }
+
                 byte canCraft = 1;
                 for (int index = 0; index < RecipeCostCount; index++)
                 {
@@ -209,18 +217,34 @@ namespace Hecton8.Crafting
                 return false;
 
             MergeAccessibleNetworkCounts(fabricator, availableItemCounts, recipeCosts, recipeCostCount);
+            BuildRecipeResourceMasks(
+                recipeCosts,
+                recipeCostCount,
+                availableItemCounts,
+                out ulong recipeResourceMask,
+                out ulong availableResourceMask);
 
-            result[0] = 0;
-            new EvaluateRecipeAvailabilityJob
+            if ((availableResourceMask & recipeResourceMask) != recipeResourceMask)
             {
-                RecipeCosts = recipeCosts,
-                AvailableItemCounts = availableItemCounts,
-                Result = result,
-                RecipeCostCount = recipeCostCount
-            }.Execute();
+                if (safeMultiplier <= 1)
+                    return false;
+            }
+            else
+            {
+                result[0] = 0;
+                new EvaluateRecipeAvailabilityJob
+                {
+                    RecipeCosts = recipeCosts,
+                    AvailableItemCounts = availableItemCounts,
+                    Result = result,
+                    RecipeCostCount = recipeCostCount,
+                    AvailableResourceMask = availableResourceMask,
+                    RecipeResourceMask = recipeResourceMask
+                }.Execute();
 
-            if (result[0] != 0)
-                return true;
+                if (result[0] != 0)
+                    return true;
+            }
 
             if (safeMultiplier <= 1)
                 return false;
@@ -243,6 +267,15 @@ namespace Hecton8.Crafting
 
             int rawCostCount = complexRawCostCount[0];
             MergeAccessibleNetworkCounts(fabricator, availableItemCounts, complexRawCosts, rawCostCount);
+            BuildRecipeResourceMasks(
+                complexRawCosts,
+                rawCostCount,
+                availableItemCounts,
+                out ulong rawRecipeResourceMask,
+                out ulong rawAvailableResourceMask);
+
+            if ((rawAvailableResourceMask & rawRecipeResourceMask) != rawRecipeResourceMask)
+                return false;
 
             result[0] = 0;
             new EvaluateRecipeAvailabilityJob
@@ -250,7 +283,9 @@ namespace Hecton8.Crafting
                 RecipeCosts = complexRawCosts,
                 AvailableItemCounts = availableItemCounts,
                 Result = result,
-                RecipeCostCount = rawCostCount
+                RecipeCostCount = rawCostCount,
+                AvailableResourceMask = rawAvailableResourceMask,
+                RecipeResourceMask = rawRecipeResourceMask
             }.Execute();
 
             return result[0] != 0;
@@ -538,7 +573,7 @@ namespace Hecton8.Crafting
                 if (!sourceItem.TryGetDeconstructYield(index, out DeconstructYieldEntry entry))
                     continue;
 
-                int amount = entry.ResolveRandomAmount();
+                int amount = entry.ResolveDeterministicAmount();
                 if (amount <= 0 || entry.Item == null)
                     continue;
 
@@ -573,6 +608,40 @@ namespace Hecton8.Crafting
 
             costs[costCount++] = new int2(itemHashId, quantity);
             return true;
+        }
+
+        private static void BuildRecipeResourceMasks(
+            NativeArray<int2> recipeCosts,
+            int recipeCostCount,
+            NativeParallelHashMap<int, int> availableItemCounts,
+            out ulong recipeMask,
+            out ulong availableMask)
+        {
+            recipeMask = 0UL;
+            availableMask = 0UL;
+            int safeCount = math.min(recipeCostCount, recipeCosts.IsCreated ? recipeCosts.Length : 0);
+            for (int index = 0; index < safeCount; index++)
+            {
+                int itemHashId = recipeCosts[index].x;
+                int quantity = recipeCosts[index].y;
+                if (itemHashId == 0 || quantity <= 0)
+                    continue;
+
+                ulong resourceBit = 1UL << ResolveResourceMaskBit(itemHashId);
+                recipeMask |= resourceBit;
+
+                if (availableItemCounts.IsCreated &&
+                    availableItemCounts.TryGetValue(itemHashId, out int availableCount) &&
+                    availableCount > 0)
+                {
+                    availableMask |= resourceBit;
+                }
+            }
+        }
+
+        private static int ResolveResourceMaskBit(int itemHashId)
+        {
+            return itemHashId & 63;
         }
 
         private static void MergeAccessibleNetworkCounts(

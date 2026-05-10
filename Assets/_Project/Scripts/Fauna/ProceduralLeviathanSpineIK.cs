@@ -24,6 +24,9 @@ namespace Hecton8.AI
         private const string NativeMemoryOwner = nameof(ProceduralLeviathanSpineIK);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const float DegreesToRadians = 0.01745329252f;
+        private const float DistantIkSolveDistanceMeters = 40f;
+        private const float DistantIkSolveDistanceSqr = DistantIkSolveDistanceMeters * DistantIkSolveDistanceMeters;
+        private const int DistantIkCadenceFrameMask = 3;
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct SolveSpineJob : IJobParallelForTransform
@@ -86,7 +89,7 @@ namespace Hecton8.AI
                 if (lateralSq <= 0.0001f)
                     return safeBase;
 
-                float3 lateralDirection = lateral * math.rsqrt(lateralSq);
+                float3 lateralDirection = ResolveDominantAxis(lateral, safeBase);
                 float sinLimit = math.max(0f, CheapSinSigned(clampedRadians));
                 float3 limitedDirection = (safeBase * minDot) + (lateralDirection * sinLimit);
                 return ContextualPhysicalIkMath.SafeNormalize(limitedDirection, safeBase);
@@ -99,9 +102,36 @@ namespace Hecton8.AI
                 if (math.dot(fromValue, toValue) < 0f)
                     toValue = -toValue;
 
-                float4 blended = math.lerp(fromValue, toValue, math.saturate(weight));
-                blended *= math.rsqrt(math.max(math.dot(blended, blended), 0.000001f));
+                float4 blended = CheapNormalizeQuaternionValue(math.lerp(fromValue, toValue, math.saturate(weight)));
                 return new quaternion(blended.x, blended.y, blended.z, blended.w);
+            }
+
+            private static float3 ResolveDominantAxis(float3 direction, float3 fallback)
+            {
+                if (math.lengthsq(direction) <= 0.0001f)
+                    direction = fallback;
+
+                if (math.lengthsq(direction) <= 0.0001f)
+                    return new float3(0f, 0f, 1f);
+
+                float3 absolute = math.abs(direction);
+                if (absolute.x >= absolute.y && absolute.x >= absolute.z)
+                    return new float3(math.select(1f, -1f, direction.x < 0f), 0f, 0f);
+
+                if (absolute.y >= absolute.z)
+                    return new float3(0f, math.select(1f, -1f, direction.y < 0f), 0f);
+
+                return new float3(0f, 0f, math.select(1f, -1f, direction.z < 0f));
+            }
+
+            private static float4 CheapNormalizeQuaternionValue(float4 value)
+            {
+                float lengthSq = math.dot(value, value);
+                if (lengthSq <= 0.000001f)
+                    return new float4(0f, 0f, 0f, 1f);
+
+                float invLength = math.rcp(math.max(0.0001f, 0.5f + (lengthSq * 0.5f)));
+                return value * invLength;
             }
 
             private static float CheapSinSigned(float radians)
@@ -133,7 +163,7 @@ namespace Hecton8.AI
                     normalizedAxis.y * sinHalf,
                     normalizedAxis.z * sinHalf,
                     cosHalf);
-                result.value *= math.rsqrt(math.max(math.lengthsq(result.value), 0.000001f));
+                result.value = CheapNormalizeQuaternionValue(result.value);
                 return result;
             }
 
@@ -301,6 +331,10 @@ namespace Hecton8.AI
         private Transform _strikeTarget;
         private bool _headLookTargetActive;
         private bool _wasStrikeActiveLastTick;
+        private Transform _cachedPlayerTransform;
+        private int _playerTransformCacheFrame = -1;
+        private int _distantIkFrameOffset;
+        private bool _distantIkCadenceActive;
         // COLD ALLOC: List<SkinnedMeshRenderer>[8] â€“ skeletal root discovery scratch buffer for leviathan presentation binding â€“ owner: ProceduralLeviathanSpineIK
         private readonly List<SkinnedMeshRenderer> _rendererScratch = new List<SkinnedMeshRenderer>(8);
         // COLD ALLOC: List<Transform>[64] â€” temporary transform scan buffer for leviathan vertebra auto-resolution â€” owner: ProceduralLeviathanSpineIK
@@ -310,6 +344,8 @@ namespace Hecton8.AI
 
         private void Awake()
         {
+            int instanceId = GetInstanceID();
+            _distantIkFrameOffset = (int)((uint)instanceId & DistantIkCadenceFrameMask);
             _faunaBrain = GetComponent<FaunaBrain>();
             if (_rigidbody == null)
                 TryGetComponent(out _rigidbody);
@@ -402,12 +438,50 @@ namespace Hecton8.AI
             _headLookTargetActive = active;
         }
 
+        private bool ShouldSkipDistantIkSolve()
+        {
+            int frame = Time.frameCount;
+            bool cadenceFrame = (frame & DistantIkCadenceFrameMask) == _distantIkFrameOffset;
+            if (_distantIkCadenceActive && !cadenceFrame)
+                return true;
+
+            if (!cadenceFrame)
+                return false;
+
+            Transform playerTransform = ResolvePlayerTransformForDistantIk();
+            if (playerTransform == null)
+            {
+                _distantIkCadenceActive = false;
+                return false;
+            }
+
+            Vector3 selfPosition = _rigidbody != null ? _rigidbody.position : transform.position;
+            float3 toPlayer = (float3)(playerTransform.position - selfPosition);
+            _distantIkCadenceActive = math.lengthsq(toPlayer) > DistantIkSolveDistanceSqr;
+            return false;
+        }
+
+        private Transform ResolvePlayerTransformForDistantIk()
+        {
+            int frame = Time.frameCount;
+            if (_cachedPlayerTransform != null && _playerTransformCacheFrame == frame)
+                return _cachedPlayerTransform;
+
+            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            _cachedPlayerTransform = player != null ? player.PlayerTransform : null;
+            _playerTransformCacheFrame = frame;
+            return _cachedPlayerTransform;
+        }
+
         public void Tick(float deltaTime)
         {
             if (deltaTime <= 0f || _faunaBrain == null || _vertebraAccessArray.length <= 0)
                 return;
 
             if (_jobScheduled)
+                return;
+
+            if (ShouldSkipDistantIkSolve())
                 return;
 
             if (!TryResolveHeadPose(out float3 headPosition, out float3 headForward, out float speedNormalized))
@@ -426,7 +500,7 @@ namespace Hecton8.AI
             _smoothedTravelDirection = ContextualPhysicalIkMath.SafeNormalize(
                 math.lerp(previousTravelDirection, velocityDirection, dampingAlpha),
                 velocityDirection);
-            float3 headLead = headPosition + _smoothedTravelDirection * (ApproximateLength(velocity) * safeLookAhead);
+            float3 headLead = headPosition + _smoothedTravelDirection * (ResolveSpeedBucket(math.lengthsq(velocity)) * safeLookAhead);
             _lastResolvedHeadPosition = headPosition;
             _phaseTime += deltaTime;
             float amplitudeDamping = math.lerp(1f, math.saturate(reverseTurnAmplitudeScale), reversal01);
@@ -448,8 +522,9 @@ namespace Hecton8.AI
                 float3 strikeTargetVelocity = _strikeTargetRigidbody != null ? (float3)_strikeTargetRigidbody.linearVelocity : float3.zero;
                 float3 strikeTargetPosition = _strikeTargetRigidbody != null ? (float3)_strikeTargetRigidbody.position : _strikeTargetWorldPosition;
                 resolvedStrikeTargetPosition = strikeTargetPosition + (strikeTargetVelocity * math.max(0f, strikeLeadSeconds));
-                float strikeDistance = ApproximateLength(resolvedStrikeTargetPosition - headPosition);
-                strikeDistanceNormalized = math.saturate(1f - (strikeDistance / math.max(1f, _strikeRange)));
+                float strikeRange = math.max(1f, _strikeRange);
+                float strikeDistanceSq = math.lengthsq(resolvedStrikeTargetPosition - headPosition);
+                strikeDistanceNormalized = math.saturate(1f - (strikeDistanceSq / (strikeRange * strikeRange)));
                 _strikeRecoveryTimeRemaining = safeRecoverySeconds;
                 _strikeRecoveryDistanceNormalized = strikeDistanceNormalized;
                 _strikeRecoveryTargetWorldPosition = resolvedStrikeTargetPosition;
@@ -648,22 +723,24 @@ namespace Hecton8.AI
                 headForward = ResolveOwnerForward();
             }
 
-            float speed = _rigidbody != null ? ApproximateLength((float3)_rigidbody.linearVelocity) : 0f;
             float maxSpeed = 1f;
             if (_faunaBrain != null && _faunaBrain.SpeciesProfile != null)
                 maxSpeed = math.max(1f, _faunaBrain.SpeciesProfile.aggressiveSpeedMultiplier * 6f);
 
-            speedNormalized = math.saturate(speed / maxSpeed);
+            float speedSq = _rigidbody != null ? math.lengthsq((float3)_rigidbody.linearVelocity) : 0f;
+            speedNormalized = math.saturate(speedSq / (maxSpeed * maxSpeed));
             return true;
         }
 
-        private static float ApproximateLength(float3 value)
+        private static float ResolveSpeedBucket(float velocitySqr)
         {
-            float3 absolute = math.abs(value);
-            float max = math.cmax(absolute);
-            float min = math.cmin(absolute);
-            float mid = absolute.x + absolute.y + absolute.z - max - min;
-            return max + (mid * 0.375f) + (min * 0.125f);
+            if (velocitySqr >= 100f)
+                return 10f;
+            if (velocitySqr >= 25f)
+                return 5f;
+            if (velocitySqr >= 4f)
+                return 2f;
+            return velocitySqr > 0.0001f ? 1f : 0f;
         }
 
         private float3 ResolveOwnerRuntimePosition()
@@ -1049,8 +1126,18 @@ namespace Hecton8.AI
                 normalizedAxis.y * sinHalf,
                 normalizedAxis.z * sinHalf,
                 cosHalf);
-            result.value *= math.rsqrt(math.max(math.lengthsq(result.value), 0.000001f));
+            result.value = CheapNormalizeQuaternionValue(result.value);
             return result;
+        }
+
+        private static float4 CheapNormalizeQuaternionValue(float4 value)
+        {
+            float lengthSq = math.dot(value, value);
+            if (lengthSq <= 0.000001f)
+                return new float4(0f, 0f, 0f, 1f);
+
+            float invLength = math.rcp(math.max(0.0001f, 0.5f + (lengthSq * 0.5f)));
+            return value * invLength;
         }
     }
 }

@@ -5,29 +5,29 @@ Status: ARCHIVED
 
 # HECTON-8 — Workstream Index
 
-Дата: 2026-04-13  
-Статус: PENDING VERIFICATION
+Data: 2026-04-13  
+Status: PENDING VERIFICATION
 
-Эта папка нужна не для красивого планирования, а для раздачи работы агентам без хаоса.
+Eta papka nuzhna ne dlya krasivogo planirovaniya, a dlya razdachi raboty agentam bez haosa.
 
-## Порядок запуска
+## Poryadok zapuska
 
-Первая волна:
+Pervaya volna:
 
 1. `01_SHELL_UI_WORKSTREAM.md`
 2. `02_NARRATIVE_PROGRESSION_WORKSTREAM.md`
 3. `03_WORLD_CONTENT_AND_RUNTIME_WORKSTREAM.md`
 
-Вторая волна:
+Vtoraya volna:
 
 1. `04_BASE_LOOP_AND_SUPPORT_SYSTEMS_WORKSTREAM.md`
 2. `05_PERF_QA_RELEASE_WORKSTREAM.md`
 
-## Главный принцип
+## Glavnyy printsip
 
-Нельзя пускать агентов в пересекающиеся owner-файлы.  
-Нельзя одновременно трогать scene wiring, UI shell и narrative bootstrap без жёсткого разделения.  
-Каждый workstream должен иметь:
+Nelzya puskat agentov v peresekayuschiesya owner-fayly.  
+Nelzya odnovremenno trogat scene wiring, UI shell i narrative bootstrap bez zhestkogo razdeleniya.  
+Kazhdyy workstream dolzhen imet:
 
 - owner files;
 - main tasks;
@@ -35,28 +35,28 @@ Status: ARCHIVED
 - expected result;
 - exit criteria.
 
-## Что давать агентам в первую очередь
+## Chto davat agentam v pervuyu ochered
 
-Если агентов мало:
+Esli agentov malo:
 
 1. Shell/UI.
 2. Narrative/Progression.
 3. World content/runtime cleanup.
 
-Если агентов много:
+Esli agentov mnogo:
 
-1. Один агент на shell/menu.
-2. Один агент на pause/rebind/options.
-3. Один агент на quest/content data.
-4. Один агент на audio logs.
-5. Один агент на suit upgrades / progression.
-6. Один агент на world cleanup / scene truth.
-7. Один агент на caves/ruins/world density.
-8. Один агент на perf/QA/build hardening.
+1. Odin agent na shell/menu.
+2. Odin agent na pause/rebind/options.
+3. Odin agent na quest/content data.
+4. Odin agent na audio logs.
+5. Odin agent na suit upgrades / progression.
+6. Odin agent na world cleanup / scene truth.
+7. Odin agent na caves/ruins/world density.
+8. Odin agent na perf/QA/build hardening.
 
-## Обязательное правило для всех агентов
+## Obyazatelnoe pravilo dlya vseh agentov
 
-- Не трогать чужие owner-файлы.
-- Не переименовывать public API без отдельного подтверждения.
-- Не тащить новые системы, если текущий owner уже существует.
-- Любой результат без реальной верификации считать `PENDING VERIFICATION`.
+- Ne trogat chuzhie owner-fayly.
+- Ne pereimenovyvat public API bez otdelnogo podtverzhdeniya.
+- Ne taschit novye sistemy, esli tekuschiy owner uzhe suschestvuet.
+- Lyuboy rezultat bez realnoy verifikatsii schitat `PENDING VERIFICATION`.

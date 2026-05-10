@@ -725,7 +725,9 @@ namespace Hecton8.World
             AbyssalThermalManager registeredThermodynamics = GlobalRegistry.Thermodynamics;
             if (registeredThermodynamics != null && registeredThermodynamics != this)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[AbyssalThermalManager] Duplicate instance detected. Destroying the newer component.", this);
+#endif
                 Destroy(this);
                 return;
             }
@@ -2149,7 +2151,7 @@ namespace Hecton8.World
                 ThermalVentState vent = _ventStates[ventIndex];
                 float seed = HashToFloat01((uint)i, (uint)ventIndex, 0xA24BAEDCu);
                 float angle = HashToFloat01((uint)i, (uint)ventIndex, 0xE7037ED1u) * Mathf.PI * 2f;
-                float radiusT = Mathf.Sqrt(HashToFloat01((uint)i, (uint)ventIndex, 0x8EBC6AF1u));
+                float radiusT = HashToFloat01((uint)i, (uint)ventIndex, 0x8EBC6AF1u);
                 float radialDistance = vent.RadiusWS * 0.45f * radiusT;
                 Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radialDistance;
                 Vector3 position = vent.PositionWS + offset + Vector3.up * LerpClamped(0.2f, 1.6f, HashToFloat01((uint)i, (uint)ventIndex, 0x589965CDu));
@@ -2356,12 +2358,13 @@ namespace Hecton8.World
                 }
 
                 double distanceSq = ComputeAupDistanceSq(playerPosition, nest.PositionWS);
-                float distance = distanceSq > 0d ? (float)math.sqrt(distanceSq) : 0f;
-                bool canCharge = transportActive && distance <= nest.RadiusWS;
+                float radius = math.max(0.001f, nest.RadiusWS);
+                double radiusSq = radius * radius;
+                bool canCharge = transportActive && distanceSq <= radiusSq;
                 if (canCharge && nest.Cooldown <= 0f)
                 {
                     float chargeRate = empChargeDuration > 0.0001f ? 1f / empChargeDuration : 1f;
-                    float chargeWeight = 1f - Mathf.Clamp01(distance / Mathf.Max(0.001f, nest.RadiusWS));
+                    float chargeWeight = 1f - Mathf.Clamp01((float)(distanceSq / radiusSq));
                     nest.Charge01 = Mathf.Clamp01(nest.Charge01 + chargeRate * chargeWeight * dt);
                 }
                 else
@@ -2428,8 +2431,7 @@ namespace Hecton8.World
             }
 
             Vector3 toPlayer = playerPosition - nest.PositionWS;
-            float toPlayerDistanceSq = toPlayer.sqrMagnitude;
-            float castDistance = Mathf.Min(empPulseRange, toPlayerDistanceSq > 0.0001f ? math.sqrt(toPlayerDistanceSq) : 0f);
+            float castDistance = Mathf.Max(empSphereCastRadius, empPulseRange);
             if (castDistance <= 0.0001f)
                 castDistance = empPulseRange;
 
@@ -2482,11 +2484,13 @@ namespace Hecton8.World
             for (int i = 0; i < activeCount; i++)
             {
                 Vector3 targetAnchor = _ventStates[i].CableAnchorWS;
-                double travelDistanceSq = ComputeAupDistanceSq(sourceAnchor, targetAnchor);
-                float travelDistance = travelDistanceSq > 0d ? (float)math.sqrt(travelDistanceSq) : 0f;
+                int hopDistance = math.abs(i - sourceVentIndex);
+                float hopDelay = math.max(
+                    0.025f,
+                    math.min(empChainGlowDuration / math.max(1, activeCount), 1f / math.max(empChainPropagationSpeed, 0.001f)));
                 float delay = i == sourceVentIndex
                     ? 0f
-                    : travelDistance / Mathf.Max(empChainPropagationSpeed, 0.001f);
+                    : hopDistance * hopDelay;
 
                 if (_cableEmpChainGlowTimers[i] > 0f || _cableEmpChainDelayTimers[i] > 0f)
                 {
@@ -2523,8 +2527,12 @@ namespace Hecton8.World
             double3 targetAbsolute = targetAup.ToAbsoluteDouble3();
             double deltaX = targetAbsolute.x - originAbsolute.x;
             double deltaZ = targetAbsolute.z - originAbsolute.z;
-            double planarDistanceSq = (deltaX * deltaX) + (deltaZ * deltaZ);
-            return planarDistanceSq > 0d ? (float)math.sqrt(planarDistanceSq) : 0f;
+            double ax = System.Math.Abs(deltaX);
+            double az = System.Math.Abs(deltaZ);
+            double max = System.Math.Max(ax, az);
+            double min = System.Math.Min(ax, az);
+            double estimate = max + (min * 0.4142135623730951d);
+            return estimate > float.MaxValue ? float.MaxValue : (float)estimate;
         }
 
         private static AbsoluteUniversePosition ResolveAup(Vector3 runtimePosition)

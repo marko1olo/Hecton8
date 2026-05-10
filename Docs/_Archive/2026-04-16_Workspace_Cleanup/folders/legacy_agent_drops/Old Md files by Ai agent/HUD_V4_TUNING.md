@@ -43,68 +43,68 @@ Symptom -> what to turn:
 - whole left block sits too low/high:
   - tweak `gaugeClusterOffset.y`
 
-Рабочий HUD: `--- UI ---/Suit_HUD_Canvas/HUD_V4_CanvasRoot`
+Rabochiy HUD: `--- UI ---/Suit_HUD_Canvas/HUD_V4_CanvasRoot`
 
-Компонент:
+Komponent:
 - [SuitHUDV4CanvasOverlay.cs](C:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs)
 
-## Что крутить в инспекторе
+## Chto krutit v inspektore
 
-Объект: `Suit_HUD_Canvas`
+Obekt: `Suit_HUD_Canvas`
 
-Основное:
-- `overallScale`: общий масштаб всего HUD
-- `chromeAlpha`: сила верхней/нижней/боковой вуали
+Osnovnoe:
+- `overallScale`: obschiy masshtab vsego HUD
+- `chromeAlpha`: sila verhney/nizhney/bokovoy vuali
 
-Позиции блоков:
-- `headerOffset`: верхний заголовок
-- `telemetryOffset`: правый depth/temp/pressure блок
-- `telemetrySize`: размер правого блока
-- `gaugeClusterOffset`: левый vitals-блок
-- `gaugeClusterSize`: размер левого vitals-блока
-- `statusOffset`: нижняя центральная строка
-- `reticleOffset`: центральный прицел
+Pozitsii blokov:
+- `headerOffset`: verhniy zagolovok
+- `telemetryOffset`: pravyy depth/temp/pressure blok
+- `telemetrySize`: razmer pravogo bloka
+- `gaugeClusterOffset`: levyy vitals-blok
+- `gaugeClusterSize`: razmer levogo vitals-bloka
+- `statusOffset`: nizhnyaya tsentralnaya stroka
+- `reticleOffset`: tsentralnyy pritsel
 
-Новый bar-блок:
-- `gaugeRowSpacing`: вертикальный шаг между `OXYGEN / HEALTH / ENERGY`
-- `gaugeBarWidth`: длина slanted bar
-- `gaugeBarHeight`: толщина bar
-- `gaugeIconSize`: размер иконки слева
-- `gaugeValueOffsetX`: насколько число вынесено вправо от bar
-- `gaugeLabelOffsetX`: тонкая подстройка label/sub относительно bar
+Novyy bar-blok:
+- `gaugeRowSpacing`: vertikalnyy shag mezhdu `OXYGEN / HEALTH / ENERGY`
+- `gaugeBarWidth`: dlina slanted bar
+- `gaugeBarHeight`: tolschina bar
+- `gaugeIconSize`: razmer ikonki sleva
+- `gaugeValueOffsetX`: naskolko chislo vyneseno vpravo ot bar
+- `gaugeLabelOffsetX`: tonkaya podstroyka label/sub otnositelno bar
 
-## Практические симптомы
+## Prakticheskie simptomy
 
-Если bars наезжают друг на друга:
-- увеличить `gaugeRowSpacing`
-- при необходимости увеличить `gaugeClusterSize.y`
+Esli bars naezzhayut drug na druga:
+- uvelichit `gaugeRowSpacing`
+- pri neobhodimosti uvelichit `gaugeClusterSize.y`
 
-Если bars слишком длинные и лезут в центр экрана:
-- уменьшить `gaugeBarWidth`
-- сдвинуть `gaugeClusterOffset.x` ближе к краю
+Esli bars slishkom dlinnye i lezut v tsentr ekrana:
+- umenshit `gaugeBarWidth`
+- sdvinut `gaugeClusterOffset.x` blizhe k krayu
 
-Если числа оторваны от bars:
-- уменьшить `gaugeValueOffsetX`
+Esli chisla otorvany ot bars:
+- umenshit `gaugeValueOffsetX`
 
-Если иконки слишком крупные или давят на текст:
-- уменьшить `gaugeIconSize`
-- при необходимости подвинуть `gaugeLabelOffsetX`
+Esli ikonki slishkom krupnye ili davyat na tekst:
+- umenshit `gaugeIconSize`
+- pri neobhodimosti podvinut `gaugeLabelOffsetX`
 
-Если левый блок слишком шумный:
-- уменьшить `chromeAlpha`
-- уменьшить `overallScale`
+Esli levyy blok slishkom shumnyy:
+- umenshit `chromeAlpha`
+- umenshit `overallScale`
 
-## Текущая логика метрик
+## Tekuschaya logika metrik
 
-Левый блок использует только реальные данные:
+Levyy blok ispolzuet tolko realnye dannye:
 - `OXYGEN` -> `HectonSurvivalSystem.Oxygen`
 - `HEALTH` -> `HectonSurvivalSystem.Integrity`
 - `ENERGY` -> `HectonSurvivalSystem.Energy`
 
-Не используется:
+Ne ispolzuetsya:
 - `Food`
 - `Water`
 
-Причина:
-- в текущем gameplay-коде этих метрик нет
-- рисовать их сейчас было бы фейком
+Prichina:
+- v tekuschem gameplay-kode etih metrik net
+- risovat ih seychas bylo by feykom

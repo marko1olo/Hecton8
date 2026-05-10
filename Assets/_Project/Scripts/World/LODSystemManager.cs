@@ -136,6 +136,8 @@ namespace Hecton8.World
 
         private Camera _mainCamera;
         private Transform _cameraTransform;
+        private int _viewerAupCacheFrame = -1;
+        private AbsoluteUniversePosition _viewerAupCache;
         private float _cameraResolveRetryTimer;
         private float _defaultLODBias = 1f;
         private float _nextNullCleanupTime;
@@ -144,6 +146,7 @@ namespace Hecton8.World
         private int _lodBatchStartIndex;
         private int _scheduledLODGroupBatchCount;
         private int _nextLODPerformanceWarningFrame;
+        private int _lastFrameTransitionCount;
 
         private float _lodSystemCPUTime;
 
@@ -165,6 +168,11 @@ namespace Hecton8.World
         /// Current quality preset.
         /// </summary>
         public LODQualityPreset QualityPreset => _qualityPreset;
+
+        /// <summary>
+        /// Count of LOD mode transitions applied during the last Tick batch.
+        /// </summary>
+        public int LastFrameTransitionCount => _lastFrameTransitionCount;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -202,6 +210,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            InvalidateViewerAupCache();
             EnsureDistanceScratchAllocated();
             TryRegisterService();
             TryRegister();
@@ -215,6 +224,7 @@ namespace Hecton8.World
             TryUnregisterService();
 
             ReleaseDistanceScratch();
+            InvalidateViewerAupCache();
         }
 
         private void OnDestroy()
@@ -228,6 +238,7 @@ namespace Hecton8.World
             UnregisterAllImpostorCandidates();
             TryUnregister();
             TryUnregisterService();
+            InvalidateViewerAupCache();
         }
 
         private void EnsureDistanceScratchAllocated()
@@ -292,6 +303,8 @@ namespace Hecton8.World
         /// <param name="dt">Delta time from GameTickManager</param>
         public void Tick(float dt)
         {
+            _lastFrameTransitionCount = 0;
+
             // Cache camera reference
             if (_mainCamera == null && !TryResolveMainCamera(dt))
             {
@@ -301,9 +314,10 @@ namespace Hecton8.World
             // Early exit if no LOD groups registered
             if (_registeredLODGroups.Count == 0) return;
 
-            if (Time.time >= _nextNullCleanupTime)
+            float now = Time.time;
+            if (now >= _nextNullCleanupTime)
             {
-                _nextNullCleanupTime = Time.time + 1f;
+                _nextNullCleanupTime = now + 1f;
                 CleanupNullRegistrations();
 
                 if (_registeredLODGroups.Count == 0) return;
@@ -452,7 +466,7 @@ namespace Hecton8.World
         public float ApplyEmergencyLODBiasStrike()
         {
             float current = QualitySettings.lodBias;
-            float next = Mathf.Max(0.35f, current - 0.1f);
+            float next = math.max(0.35f, current - 0.1f);
             if (next < current)
                 QualitySettings.lodBias = next;
 
@@ -477,7 +491,7 @@ namespace Hecton8.World
             if (_registeredLODGroups.Count == 0) return;
 
             EnsureDistanceScratchAllocated();
-            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(_cameraTransform.position);
+            AbsoluteUniversePosition cameraAup = ResolveViewerAup();
             int count = ResolveHotPathLODGroupBatchCount();
             if (_lodHotPathCursor >= _registeredLODGroups.Count)
                 _lodHotPathCursor = 0;
@@ -514,8 +528,9 @@ namespace Hecton8.World
 
         private void ApplyLODTransitions()
         {
-            int count = Mathf.Min(_scheduledLODGroupBatchCount, _registeredLODGroups.Count);
+            int count = math.min(_scheduledLODGroupBatchCount, _registeredLODGroups.Count);
             float crossfadeThresholdSqr = _crossfadeDistanceThreshold * _crossfadeDistanceThreshold;
+            int transitionCount = 0;
 
             for (int i = 0; i < count; i++)
             {
@@ -532,6 +547,7 @@ namespace Hecton8.World
                     {
                         lodGroup.fadeMode = LODFadeMode.CrossFade;
                         lodGroup.animateCrossFading = true;
+                        transitionCount++;
                     }
                 }
                 else
@@ -541,10 +557,12 @@ namespace Hecton8.World
                     {
                         lodGroup.fadeMode = LODFadeMode.None;
                         lodGroup.animateCrossFading = false;
+                        transitionCount++;
                     }
                 }
             }
 
+            _lastFrameTransitionCount = transitionCount;
             _lodHotPathCursor = count > 0
                 ? ResolveHotPathLODGroupIndex(_lodBatchStartIndex, count)
                 : 0;
@@ -582,8 +600,8 @@ namespace Hecton8.World
 
         private int ResolveHotPathLODGroupBatchCount()
         {
-            int authoringCap = Mathf.Max(1, _maxLODGroupsPerFrame);
-            return Mathf.Min(_registeredLODGroups.Count, Mathf.Min(authoringCap, MaxHotPathLODGroupsPerFrame));
+            int authoringCap = math.max(1, _maxLODGroupsPerFrame);
+            return math.min(_registeredLODGroups.Count, math.min(authoringCap, MaxHotPathLODGroupsPerFrame));
         }
 
         private int ResolveHotPathLODGroupIndex(int startIndex, int offset)
@@ -603,21 +621,23 @@ namespace Hecton8.World
 
             if (_cameraResolveRetryTimer > 0f)
             {
-                _cameraResolveRetryTimer -= Mathf.Max(0f, dt);
+                _cameraResolveRetryTimer -= math.max(0f, dt);
                 return false;
             }
 
             _cameraResolveRetryTimer = CameraResolveRetryInterval;
             _mainCamera = _cameraReference;
+            if (_mainCamera == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                _mainCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            }
+
             if (_mainCamera == null &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
-                if (!playerTransform.TryGetComponent(out _mainCamera))
-                {
-                    IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
-                    _mainCamera = playerContext != null ? playerContext.PlayerCamera : null;
-                }
+                playerTransform.TryGetComponent(out _mainCamera);
             }
 
             if (_mainCamera == null)
@@ -628,6 +648,33 @@ namespace Hecton8.World
             _cameraTransform = _mainCamera.transform;
             _cameraResolveRetryTimer = 0f;
             return true;
+        }
+
+        private AbsoluteUniversePosition ResolveViewerAup()
+        {
+            int frame = Time.frameCount;
+            if (_viewerAupCacheFrame == frame)
+                return _viewerAupCache;
+
+            _viewerAupCacheFrame = frame;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (playerMovement != null)
+            {
+                _viewerAupCache = playerMovement.CurrentAup;
+                return _viewerAupCache;
+            }
+
+            _viewerAupCache = _cameraTransform != null
+                ? AbsoluteUniversePosition.FromRuntimePosition(_cameraTransform.position)
+                : default;
+            return _viewerAupCache;
+        }
+
+        private void InvalidateViewerAupCache()
+        {
+            _viewerAupCacheFrame = -1;
+            _viewerAupCache = default;
         }
 
         private void ApplyQualityPreset(LODQualityPreset preset)
@@ -749,7 +796,7 @@ namespace Hecton8.World
 
         private void CleanupNullRegistrations()
         {
-            int cleanupCount = Mathf.Min(_registeredLODGroups.Count, MaxHotPathLODGroupsPerFrame);
+            int cleanupCount = math.min(_registeredLODGroups.Count, MaxHotPathLODGroupsPerFrame);
 
             for (int processed = 0; processed < cleanupCount && _registeredLODGroups.Count > 0; processed++)
             {

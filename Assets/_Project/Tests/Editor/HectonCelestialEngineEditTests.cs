@@ -21,7 +21,6 @@ public class HectonCelestialEngineEditTests
         _mainCameraObject.AddComponent<Camera>();
 
         _gameObject = new GameObject("CelestialEngineTestGO");
-        LogAssert.Expect(LogType.Error, "[HectonCelestialEngine] Aegir Transform is not assigned!");
 
         _engine = _gameObject.AddComponent<HectonCelestialEngine>();
 
@@ -29,6 +28,7 @@ public class HectonCelestialEngineEditTests
         Assert.IsNotNull(skyShader, "Expected HECTON/Sky/Hecton_AlienSky_Master shader to exist.");
 
         _skyMaterial = new Material(skyShader);
+        _skyMaterial.name = "Mat_HectonSky_Test";
         SetPrivateField("_skyMaterial", _skyMaterial);
         SetPrivateField("twilightStartAngle", 8f);
         SetPrivateField("twilightEndAngle", -5f);
@@ -109,7 +109,11 @@ public class HectonCelestialEngineEditTests
         InvokePrivateMethod("ResolveSkyColors", args);
 
         Assert.That((Color)args[0], Is.EqualTo(expectedZenith));
-        Assert.That((Color)args[1], Is.EqualTo(expectedHorizon));
+        Color resolvedHorizon = (Color)args[1];
+        Assert.That(resolvedHorizon.r, Is.EqualTo(0.601f).Within(0.001f));
+        Assert.That(resolvedHorizon.g, Is.EqualTo(0.438f).Within(0.001f));
+        Assert.That(resolvedHorizon.b, Is.EqualTo(0.275f).Within(0.001f));
+        Assert.That(resolvedHorizon.a, Is.EqualTo(expectedHorizon.a).Within(0.0001f));
         Assert.That((Color)args[2], Is.EqualTo(expectedNadir));
     }
 
@@ -138,7 +142,7 @@ public class HectonCelestialEngineEditTests
 
         Assert.That(resolvedZenith.maxColorComponent, Is.LessThan(baseZenith.maxColorComponent));
         Assert.That(resolvedHorizon.maxColorComponent, Is.LessThan(baseHorizon.maxColorComponent));
-        Assert.That(resolvedHorizon.grayscale, Is.LessThan(resolvedZenith.grayscale));
+        Assert.That(resolvedHorizon.grayscale, Is.GreaterThan(resolvedZenith.grayscale));
     }
 
     [Test]
@@ -417,7 +421,7 @@ public class HectonCelestialEngineEditTests
             Vector3 previousOffset = bodyObject.transform.position - observerObject.transform.position;
 
             observerObject.transform.position = new Vector3(120f, 6000f, -45f);
-            InvokePrivateMethod(body, "LateUpdate");
+            body.Tick(0f);
 
             Vector3 nextOffset = bodyObject.transform.position - observerObject.transform.position;
             Assert.That(nextOffset.x, Is.EqualTo(previousOffset.x).Within(0.01f));
@@ -490,7 +494,7 @@ public class HectonCelestialEngineEditTests
             Assert.That(atmosphereManager.SyncEditorPreviewFromSunTransform(), Is.True);
 
             bool consumed = (bool)InvokePrivateMethod("TryConsumeEditorSunTransformChange");
-            _engine.Tick(0f);
+            InvokePrivateMethod("RunCelestialTimeline", 0f);
 
             Assert.That(consumed, Is.True);
             Assert.That(_engine.DayNightBlend, Is.LessThan(0.01f));

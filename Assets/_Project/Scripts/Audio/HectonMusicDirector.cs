@@ -869,7 +869,7 @@ namespace Hecton8.Audio
                 : _playerTransform;
 
             if (resolvedPlayerTransform == null &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform bootstrapPlayerTransform))
+                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform bootstrapPlayerTransform))
             {
                 resolvedPlayerTransform = bootstrapPlayerTransform;
             }

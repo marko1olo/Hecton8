@@ -72,7 +72,7 @@ Status: DEPRECATED
 
 ## IV. Historical Issues (Resolved per Code Review)
 
-Per `НАЙДЕННЫЕ ПРОБЛЕМЫ.txt`, the following were previously flagged as missing `IOriginShiftListener`:
+Per `NAYDENNYE PROBLEMY.txt`, the following were previously flagged as missing `IOriginShiftListener`:
 - `AbyssalThermalManager.cs` — **Now implements IOriginShiftListener** ✅
 - `FloraInteractionManager.cs` — **Now implements IOriginShiftListener** ✅
 - `SargassumGlobalDragManager.cs` — **Now implements IOriginShiftListener** ✅

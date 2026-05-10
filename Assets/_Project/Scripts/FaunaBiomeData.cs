@@ -1,17 +1,17 @@
 // ============================================================================
 // HECTON-8 — FaunaBiomeData.cs
-// ScriptableObject с настройками фауны для конкретного биома.
+// ScriptableObject s nastroykami fauny dlya konkretnogo bioma.
 //
-// ИСПОЛЬЗОВАНИЕ:
-//   1. Создай через меню: Assets → Create → Hecton8 → AI → Fauna Biome Data.
-//   2. Назначь biomeIndex (соответствует splat layer в MapMagic Biomes Set).
-//   3. Заполни possibleCreatures: префабы, веса, лимиты.
-//   4. Добавь в FaunaDirector.biomeDatasets.
+// ISPOLZOVANIE:
+//   1. Sozday cherez menyu: Assets → Create → Hecton8 → AI → Fauna Biome Data.
+//   2. Naznach biomeIndex (sootvetstvuet splat layer v MapMagic Biomes Set).
+//   3. Zapolni possibleCreatures: prefaby, vesa, limity.
+//   4. Dobav v FaunaDirector.biomeDatasets.
 //
-// АРХИТЕКТУРА:
-//   • Data-Driven: все настройки в ассете, не в коде.
-//   • FaunaEntry: struct для zero GC при итерации.
-//   • totalWeight кэшируется при первом запросе (OnEnable).
+// ARHITEKTURA:
+//   • Data-Driven: vse nastroyki v assete, ne v kode.
+//   • FaunaEntry: struct dlya zero GC pri iteratsii.
+//   • totalWeight keshiruetsya pri pervom zaprose (OnEnable).
 // ============================================================================
 
 using System;
@@ -32,58 +32,58 @@ namespace Hecton8.AI
         // ══════════════════════════════════════════════════════════
 
         [Header("── Biome Identity ────────────────────────────")]
-        [Tooltip("Индекс биома в MapMagic Biomes Set (splat layer index). " +
-                 "Должен совпадать с порядком слоёв в Terrain.")]
+        [Tooltip("Indeks bioma v MapMagic Biomes Set (splat layer index). " +
+                 "Dolzhen sovpadat s poryadkom sloev v Terrain.")]
         public int biomeIndex;
 
-        [Tooltip("Человекочитаемое название биома (для отладки).")]
+        [Tooltip("Chelovekochitaemoe nazvanie bioma (dlya otladki).")]
         public string biomeName = "Default Biome";
 
         [Header("── Creatures ─────────────────────────────────")]
-        [Tooltip("Список возможных существ для этого биома. " +
-                 "Вес определяет вероятность спавна.")]
+        [Tooltip("Spisok vozmozhnyh suschestv dlya etogo bioma. " +
+                 "Ves opredelyaet veroyatnost spavna.")]
         public List<FaunaEntry> possibleCreatures = new List<FaunaEntry>();
 
         [Header("── Spawn Settings ────────────────────────────")]
-        [Tooltip("Максимальное количество существ этого биома одновременно.")]
+        [Tooltip("Maksimalnoe kolichestvo suschestv etogo bioma odnovremenno.")]
         public int biomeMaxCreatures = 10;
 
-        [Tooltip("Минимальная высота спавна относительно дна (метры). " +
-                 "0 = на дне, 5 = 5 метров над дном.")]
+        [Tooltip("Minimalnaya vysota spavna otnositelno dna (metry). " +
+                 "0 = na dne, 5 = 5 metrov nad dnom.")]
         public float spawnHeightAboveBottom = 2f;
 
-        [Tooltip("Максимальная высота спавна относительно дна (метры).")]
+        [Tooltip("Maksimalnaya vysota spavna otnositelno dna (metry).")]
         public float spawnHeightMax = 15f;
 
         [Header("Large Threat Zone")]
-        [Tooltip("Если включено, у биома есть большой участок воды для крупной угрозы.")]
+        [Tooltip("Esli vklyucheno, u bioma est bolshoy uchastok vody dlya krupnoy ugrozy.")]
         public bool useLargeThreatMacroZone;
 
-        [Tooltip("Короткое имя большого участка воды для отчётов и отладки.")]
+        [Tooltip("Korotkoe imya bolshogo uchastka vody dlya otchetov i otladki.")]
         public string largeThreatZoneLabel = string.Empty;
 
-        [Tooltip("Радиус большого участка воды для крупной угрозы (метры).")]
+        [Tooltip("Radius bolshogo uchastka vody dlya krupnoy ugrozy (metry).")]
         public float largeThreatZoneRadius = 768f;
 
-        [Tooltip("Главная крупная угроза этого места.")]
+        [Tooltip("Glavnaya krupnaya ugroza etogo mesta.")]
         public CreatureArchetypeData largeThreatArchetype;
 
-        [Tooltip("Какой сценарий большой встречи закреплён за местом.")]
+        [Tooltip("Kakoy stsenariy bolshoy vstrechi zakreplen za mestom.")]
         public LeviathanEncounterType largeThreatEncounterType = LeviathanEncounterType.PresenceCircle;
 
-        [Tooltip("Если включено, место держит тяжёлый хищник, а не левиафан.")]
+        [Tooltip("Esli vklyucheno, mesto derzhit tyazhelyy hischnik, a ne leviafan.")]
         public bool preferHeavyHunterInsteadOfLeviathan;
 
         // ══════════════════════════════════════════════════════════
-        //  CACHED — суммарный вес для weighted random
+        //  CACHED — summarnyy ves dlya weighted random
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Кэшированный суммарный вес. Вычисляется один раз.</summary>
+        /// <summary>Keshirovannyy summarnyy ves. Vychislyaetsya odin raz.</summary>
         [NonSerialized] private float _totalWeight = -1f;
 
         /// <summary>
-        /// Суммарный вес всех записей. Ленивая инициализация.
-        /// Используется для weighted random selection.
+        /// Summarnyy ves vseh zapisey. Lenivaya initsializatsiya.
+        /// Ispolzuetsya dlya weighted random selection.
         /// </summary>
         public float TotalWeight
         {
@@ -100,26 +100,26 @@ namespace Hecton8.AI
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Выбирает случайное существо на основе весов.
+        /// Vybiraet sluchaynoe suschestvo na osnove vesov.
         ///
-        /// Алгоритм: Weighted Random Selection.
-        ///   1. Генерируем random [0..totalWeight).
-        ///   2. Проходим по записям, вычитая вес каждой.
-        ///   3. Когда остаток ≤ 0 — выбрана эта запись.
+        /// Algoritm: Weighted Random Selection.
+        ///   1. Generiruem random [0..totalWeight).
+        ///   2. Prohodim po zapisyam, vychitaya ves kazhdoy.
+        ///   3. Kogda ostatok ≤ 0 — vybrana eta zapis.
         ///
-        /// ZERO GC: for-цикл по List, Random.Range returns float.
+        /// ZERO GC: for-tsikl po List, Random.Range returns float.
         ///
-        /// Проверяет maxAlive: если для данного типа достигнут лимит,
-        /// пропускает его (вес не учитывается). Для этого нужен
-        /// актуальный счётчик — передаётся через currentCounts.
+        /// Proveryaet maxAlive: esli dlya dannogo tipa dostignut limit,
+        /// propuskaet ego (ves ne uchityvaetsya). Dlya etogo nuzhen
+        /// aktualnyy schetchik — peredaetsya cherez currentCounts.
         /// </summary>
         /// <param name="currentCounts">
-        /// Массив текущего количества живых существ каждого типа.
-        /// Индексы соответствуют possibleCreatures. Может быть null
-        /// (тогда лимиты не проверяются).
+        /// Massiv tekuschego kolichestva zhivyh suschestv kazhdogo tipa.
+        /// Indeksy sootvetstvuyut possibleCreatures. Mozhet byt null
+        /// (togda limity ne proveryayutsya).
         /// </param>
-        /// <param name="entry">Выбранная запись.</param>
-        /// <returns>true если удалось выбрать (есть свободные слоты).</returns>
+        /// <param name="entry">Vybrannaya zapis.</param>
+        /// <returns>true esli udalos vybrat (est svobodnye sloty).</returns>
         public bool TrySelectCreature(int[] currentCounts, out FaunaEntry entry)
         {
             Unity.Mathematics.Random random = CreateFallbackRandom(currentCounts);
@@ -133,7 +133,7 @@ namespace Hecton8.AI
             int count = possibleCreatures.Count;
             if (count == 0) return false;
 
-            // ── Вычисляем доступный суммарный вес ──
+            // ── Vychislyaem dostupnyy summarnyy ves ──
             float availableWeight = 0f;
 
             for (int i = 0; i < count; i++)
@@ -142,7 +142,7 @@ namespace Hecton8.AI
                 GameObject resolvedPrefab = e.GetResolvedPrefab();
                 if (resolvedPrefab == null) continue;
 
-                // Проверка лимита
+                // Proverka limita
                 if (currentCounts != null && i < currentCounts.Length)
                 {
                     if (currentCounts[i] >= e.GetResolvedMaxAlive())
@@ -163,7 +163,7 @@ namespace Hecton8.AI
                 GameObject resolvedPrefab = e.GetResolvedPrefab();
                 if (resolvedPrefab == null) continue;
 
-                // Проверка лимита
+                // Proverka limita
                 if (currentCounts != null && i < currentCounts.Length)
                 {
                     if (currentCounts[i] >= e.GetResolvedMaxAlive())
@@ -200,10 +200,10 @@ namespace Hecton8.AI
         }
 
         /// <summary>
-        /// Генерирует случайную высоту спавна между дном и максимумом.
+        /// Generiruet sluchaynuyu vysotu spavna mezhdu dnom i maksimumom.
         /// </summary>
-        /// <param name="bottomHeight">Высота дна (мировая Y).</param>
-        /// <returns>Мировая Y-координата для спавна.</returns>
+        /// <param name="bottomHeight">Vysota dna (mirovaya Y).</param>
+        /// <returns>Mirovaya Y-koordinata dlya spavna.</returns>
         public float GetRandomSpawnHeight(float bottomHeight)
         {
             Unity.Mathematics.Random random = CreateFallbackRandom(bottomHeight);
@@ -246,7 +246,7 @@ namespace Hecton8.AI
 
         private void OnEnable()
         {
-            _totalWeight = -1f; // Пересчёт при следующем запросе
+            _totalWeight = -1f; // Pereschet pri sleduyuschem zaprose
         }
 
         private Unity.Mathematics.Random CreateFallbackRandom(int[] currentCounts)
@@ -282,30 +282,30 @@ namespace Hecton8.AI
     }
 
     // ══════════════════════════════════════════════════════════════
-    //  FaunaEntry — запись о типе существа
+    //  FaunaEntry — zapis o tipe suschestva
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Описание одного типа существа в биоме.
-    /// Serializable struct для Inspector.
+    /// Opisanie odnogo tipa suschestva v biome.
+    /// Serializable struct dlya Inspector.
     /// </summary>
     [Serializable]
     public struct FaunaEntry
     {
-        [Tooltip("Профиль вида существа. Если задан, он становится главным источником настроек " +
-                 "для префаба, веса спавна и лимитов по биому.")]
+        [Tooltip("Profil vida suschestva. Esli zadan, on stanovitsya glavnym istochnikom nastroek " +
+                 "dlya prefaba, vesa spavna i limitov po biomu.")]
         public CreatureArchetypeData archetype;
 
-        [Tooltip("Префаб существа (должен иметь FaunaBrain + быть в пуле).")]
+        [Tooltip("Prefab suschestva (dolzhen imet FaunaBrain + byt v pule).")]
         public GameObject prefab;
 
-        [Tooltip("Вес спавна. Больше = чаще появляется. " +
-                 "Относительно других записей в списке.")]
+        [Tooltip("Ves spavna. Bolshe = chasche poyavlyaetsya. " +
+                 "Otnositelno drugih zapisey v spiske.")]
         [Range(0.01f, 100f)]
         public float spawnWeight;
 
-        [Tooltip("Максимальное количество живых экземпляров " +
-                 "данного типа одновременно.")]
+        [Tooltip("Maksimalnoe kolichestvo zhivyh ekzemplyarov " +
+                 "dannogo tipa odnovremenno.")]
         [Range(1, 50)]
         public int maxAlive;
 

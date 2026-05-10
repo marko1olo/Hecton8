@@ -22,8 +22,8 @@ namespace Hecton8.UI
         private const string NotoSansCjkScAssetPath = "Assets/_Project/Art/Materials/Fonts/NotoSansCJKsc-Regular SDF.asset";
         private const string NotoSansCjkJpAssetPath = "Assets/_Project/Art/Materials/Fonts/NotoSansCJKjp-Regular SDF.asset";
         private const string NotoSansArabicPrimeAssetPath = "Assets/_Project/Art/Materials/Fonts/NotoSansArabic-Prime SDF.asset";
-        private const string PrimaryTextFontName = "текст SDF";
-        private const string NumericTextFontName = "цифры SDF";
+        private const string PrimaryTextFontName = "tekst SDF";
+        private const string NumericTextFontName = "tsifry SDF";
         private const string LiberationSansFontName = "LiberationSans SDF";
         private const string GlyphSeed =
             " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" +

@@ -45,6 +45,7 @@ namespace Hecton8.Editor
         private const string BasinMaskLabel = "basinMask";
         private const string CandidateMaskLabel = "candidateMask";
         private const string BasinRecordsLabel = "basinRecords";
+        private const string BrineBoundsLabel = "brineBounds";
         private const string FloodHeapLabel = "floodHeap";
         private const string VisitedStampLabel = "visitedStamp";
         private const string AcceptedCellsLabel = "acceptedCells";
@@ -68,8 +69,10 @@ namespace Hecton8.Editor
         [MenuItem("Tools/Hecton/Dev/Terrain/Run Anomaly Test Harness")]
         public static void Run()
         {
+            RunAnomalySettingsSanitizationAssertion();
             RunPerfectBowlAssertion();
             RunOpenEdgeBowlRejectionAssertion();
+            RunBrineBoundsJobRecordIntegrityAssertion();
             RunBrineToxicMudGridAssertion();
             RunBrinePoolGeneratorStaleRootAssertion();
             RunTimeSlicedPerfectBowlAssertion();
@@ -83,13 +86,157 @@ namespace Hecton8.Editor
         }
 
         /// <summary>
+        /// Validates NaN/Infinity authoring values are replaced before they can enter Burst jobs.
+        /// </summary>
+        public static void RunAnomalySettingsSanitizationAssertion()
+        {
+            var basin = new AnomalyBasinDetectionSettings
+            {
+                Width = -7,
+                Height = 0,
+                CellSizeMeters = float.NaN,
+                MinimumDepthMeters = float.PositiveInfinity,
+                MaxFloodCells = -4,
+                EqualHeightEpsilon = float.NaN,
+                MaxFloodFillOperationsPerSlice = -16
+            }.Sanitized();
+
+            Assert.AreEqual(1, basin.Width, "Basin settings did not clamp width.");
+            Assert.AreEqual(1, basin.Height, "Basin settings did not clamp height.");
+            Assert.AreEqual(0.001f, basin.CellSizeMeters, "Basin settings accepted a non-finite cell size.");
+            Assert.AreEqual(0f, basin.MinimumDepthMeters, "Basin settings accepted a non-finite minimum depth.");
+            Assert.AreEqual(8, basin.MaxFloodCells, "Basin settings did not clamp flood cell budget.");
+            Assert.AreEqual(0.000001f, basin.EqualHeightEpsilon, "Basin settings accepted a non-finite height epsilon.");
+            Assert.AreEqual(64, basin.MaxFloodFillOperationsPerSlice, "Basin settings did not clamp slice operation budget.");
+
+            var ridge = new AnomalyRidgeDetectionSettings
+            {
+                Width = 0,
+                Height = -3,
+                CellSizeMeters = float.NaN,
+                OriginAup = new double3(double.NaN, 8.0, 16.0),
+                MinimumPillarProminenceMeters = float.NaN,
+                MinimumPillarRidgeArms = -1,
+                MinimumFissureDepthMeters = float.PositiveInfinity,
+                EqualHeightEpsilon = float.NaN,
+                RequireTectonicBoundary = 2,
+                TectonicBoundaryFrequency = float.NaN,
+                MinimumTectonicBoundaryMask = float.NaN
+            }.Sanitized();
+
+            Assert.AreEqual(1, ridge.Width, "Ridge settings did not clamp width.");
+            Assert.AreEqual(1, ridge.Height, "Ridge settings did not clamp height.");
+            Assert.AreEqual(0.001f, ridge.CellSizeMeters, "Ridge settings accepted a non-finite cell size.");
+            Assert.IsTrue(math.all(ridge.OriginAup == double3.zero), "Ridge settings accepted a non-finite AUP origin.");
+            Assert.AreEqual(0f, ridge.MinimumPillarProminenceMeters, "Ridge settings accepted non-finite pillar prominence.");
+            Assert.AreEqual(3, ridge.MinimumPillarRidgeArms, "Ridge settings did not clamp ridge arms.");
+            Assert.AreEqual(0f, ridge.MinimumFissureDepthMeters, "Ridge settings accepted non-finite fissure depth.");
+            Assert.AreEqual(0.000001f, ridge.EqualHeightEpsilon, "Ridge settings accepted a non-finite height epsilon.");
+            Assert.AreEqual((byte)1, ridge.RequireTectonicBoundary, "Ridge settings did not normalize tectonic boundary flag.");
+            Assert.AreEqual(0.0001f, ridge.TectonicBoundaryFrequency, "Ridge settings accepted non-finite tectonic frequency.");
+            Assert.AreEqual(0.55f, ridge.MinimumTectonicBoundaryMask, "Ridge settings accepted non-finite tectonic mask threshold.");
+        }
+
+        /// <summary>
+        /// Validates brine bounds resolution rejects damaged basin records before mesh generation sees them.
+        /// </summary>
+        public static void RunBrineBoundsJobRecordIntegrityAssertion()
+        {
+            NativeArray<byte> basinMask = default;
+            NativeArray<AnomalyBasinRecord> basinRecords = default;
+            NativeArray<AnomalyBrinePoolBounds> bounds = default;
+
+            try
+            {
+                // COLD ALLOC: NativeArray brine bound buffers[4] - deterministic editor brine bound validation - owner: AnomalyTestHarness
+                basinMask = new NativeArray<byte>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                basinRecords = new NativeArray<AnomalyBasinRecord>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                bounds = new NativeArray<AnomalyBrinePoolBounds>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(basinMask, NativeMemoryOwner, BasinMaskLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeArray(basinRecords, NativeMemoryOwner, BasinRecordsLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeArray(bounds, NativeMemoryOwner, BrineBoundsLabel, NativeAllocationLifetime.TempJob);
+
+                basinMask[0] = 1;
+                basinRecords[0] = new AnomalyBasinRecord
+                {
+                    BasinId = 1,
+                    MinX = 0,
+                    MinZ = 0,
+                    MaxX = 1,
+                    MaxZ = 1,
+                    CellCount = 2,
+                    DeepestHeight = 0f,
+                    LipHeight = 60f,
+                    Valid = 1
+                };
+
+                var job = new ResolveBrinePoolBoundsJob
+                {
+                    BasinMask = basinMask,
+                    BasinRecords = basinRecords,
+                    Bounds = bounds,
+                    Width = 2,
+                    Height = 2
+                };
+                JobHandle handle = job.Schedule(1, 1);
+                // COLD SYNC JOB: Editor harness must inspect deterministic brine bound rejection immediately.
+                handle.Complete();
+                Assert.AreEqual((byte)0, bounds[0].Valid, "Brine bounds accepted a record whose mask count did not match CellCount.");
+
+                basinRecords[0] = new AnomalyBasinRecord
+                {
+                    BasinId = 1,
+                    MinX = 0,
+                    MinZ = 0,
+                    MaxX = 0,
+                    MaxZ = 0,
+                    CellCount = 1,
+                    DeepestHeight = 10f,
+                    LipHeight = 10f,
+                    Valid = 1
+                };
+                handle = job.Schedule(1, 1);
+                // COLD SYNC JOB: Editor harness must inspect deterministic brine bound depth rejection immediately.
+                handle.Complete();
+                Assert.AreEqual((byte)0, bounds[0].Valid, "Brine bounds accepted a record with no positive brine depth.");
+
+                basinRecords[0] = new AnomalyBasinRecord
+                {
+                    BasinId = 1,
+                    MinX = 0,
+                    MinZ = 0,
+                    MaxX = 0,
+                    MaxZ = 0,
+                    CellCount = 1,
+                    DeepestHeight = 0f,
+                    LipHeight = 60f,
+                    Valid = 1
+                };
+                handle = job.Schedule(1, 1);
+                // COLD SYNC JOB: Editor harness must inspect deterministic brine bound acceptance immediately.
+                handle.Complete();
+                Assert.AreEqual((byte)1, bounds[0].Valid, "Brine bounds rejected a valid one-cell basin.");
+                Assert.AreEqual(1, bounds[0].MaskedCount, "Brine bounds did not report exact masked cell count.");
+                Assert.AreEqual(60f, bounds[0].LipHeight, "Brine bounds did not preserve exact lip height.");
+            }
+            finally
+            {
+                DisposeTracked(ref basinMask);
+                DisposeTracked(ref basinRecords);
+                DisposeTracked(ref bounds);
+            }
+        }
+
+        /// <summary>
         /// Validates toxic mud registry id, dimension, AUP, and unregister invariants.
         /// </summary>
         public static void RunBrineToxicMudGridAssertion()
         {
             const int validCellId = 990001;
             const int invalidCellId = 990002;
+            const int secondCellId = 990003;
             AbsoluteUniversePosition center = AbsoluteUniversePosition.FromAbsolutePosition(new double3(100.0, 20.0, 200.0));
+            AbsoluteUniversePosition secondCenter = AbsoluteUniversePosition.FromAbsolutePosition(new double3(130.0, 20.0, 200.0));
             AbsoluteUniversePosition aboveSurface = AbsoluteUniversePosition.FromAbsolutePosition(new double3(100.0, 21.0, 200.0));
             AbsoluteUniversePosition belowVolume = AbsoluteUniversePosition.FromAbsolutePosition(new double3(100.0, 14.0, 200.0));
             AbsoluteUniversePosition edgeOnEllipse = AbsoluteUniversePosition.FromAbsolutePosition(new double3(105.0, 20.0, 200.0));
@@ -125,6 +272,16 @@ namespace Hecton8.Editor
                 Assert.IsFalse(HectonBrineToxicMudGrid.OverlapsAupXZ(in center, -0.5f), "Brine toxic mud grid accepted a negative XZ query radius.");
                 Assert.IsFalse(HectonBrineToxicMudGrid.OverlapsAupXZ(in center, float.PositiveInfinity), "Brine toxic mud grid accepted an infinite XZ query radius.");
                 Assert.IsFalse(HectonBrineToxicMudGrid.OverlapsAupSubmergedVolume(in center, 0.5f, float.NaN), "Brine toxic mud grid accepted a NaN vertical query extent.");
+                Assert.IsTrue(HectonBrineToxicMudGrid.ContainsAupSubmergedCell(validCellId, in center), "Brine toxic mud grid did not contain the center in the exact registered cell.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.ContainsAupSubmergedCell(invalidCellId, in center), "Brine toxic mud grid accepted an exact-cell query for an invalid id.");
+                HectonBrineToxicMudGrid.RegisterCell(secondCellId, in secondCenter, 8f, 8f, 4f);
+                Assert.AreEqual(2, HectonBrineToxicMudGrid.RegisteredCellCount, "Brine toxic mud grid did not hold two independent cells.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.ContainsAupSubmergedCell(secondCellId, in center), "Exact-cell toxic mud query leaked from a neighboring brine cell.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.OverlapsAupSubmergedCell(secondCellId, in center, 0.5f, 0.5f), "Exact-cell toxic mud overlap leaked from a neighboring brine cell.");
+                Assert.IsTrue(HectonBrineToxicMudGrid.ContainsAupSubmergedCell(secondCellId, in secondCenter), "Exact-cell toxic mud query missed the second brine cell center.");
+                Assert.IsTrue(HectonBrineToxicMudGrid.OverlapsAupSubmergedCell(secondCellId, in secondCenter, 0.5f, 0.5f), "Exact-cell toxic mud overlap missed the second brine cell center.");
+                HectonBrineToxicMudGrid.UnregisterCell(secondCellId);
+                Assert.AreEqual(1, HectonBrineToxicMudGrid.RegisteredCellCount, "Brine toxic mud grid did not unregister the second exact-cell fixture.");
                 HectonBrineToxicMudGrid.RegisterCell(validCellId, new Vector3(float.NaN, 20f, 200f), 10f, 12f, 5f);
                 Assert.AreEqual(0, HectonBrineToxicMudGrid.RegisteredCellCount, "Non-finite runtime cell update did not unregister stale brine state.");
 

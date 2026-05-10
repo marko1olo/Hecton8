@@ -27,6 +27,16 @@ namespace Hecton8.Gameplay
         public float TargetFieldOfView;
 
         /// <summary>
+        /// KCC-owned world velocity used by the late-frame camera position predictor.
+        /// </summary>
+        public Vector3 KccLinearVelocity;
+
+        /// <summary>
+        /// Current fixed-step duration used to resolve the remaining render fraction.
+        /// </summary>
+        public float FixedDeltaTime;
+
+        /// <summary>
         /// Delta time used to smooth camera transitions for this frame.
         /// </summary>
         public float DeltaTime;

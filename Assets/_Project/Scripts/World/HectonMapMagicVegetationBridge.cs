@@ -48,7 +48,9 @@ namespace Hecton8.World
         private const string GreenSandLayerName = "L_sandGreen";
         private const string RockLayerName = "L_Rocks";
         private const float DefaultWaterLevel = 4900f;
-        private const float DefaultKelpMinHeight = 4600f;
+        private const float OrganicKelpMaxDepthBelowSurfaceMeters = 200f;
+        private const float OrganicKelpMaxSlopeNormalY = 0.8660254f;
+        private const float DefaultKelpMinHeight = DefaultWaterLevel - OrganicKelpMaxDepthBelowSurfaceMeters;
         private const float DefaultVirtualChunkSize = 100f;
         private const float CameraResolveRetryInterval = 1f;
         private const float CacheValidationInterval = 0.5f;
@@ -89,7 +91,8 @@ namespace Hecton8.World
         private const float BiolumeSurgeVelocityDeltaThreshold = 8f;
         private const float DefaultThermalGridDepthMeters = 4000f;
         private const float AbyssalFlowNoiseStartDepthMeters = 2000f;
-        private const float ScatterMinimumSurfaceNormalUpDot = 0.2f;
+        private const float ScatterMinimumSurfaceNormalUpDot = OrganicKelpMaxSlopeNormalY;
+        private const float ScatterMinimumSurfaceNormalUpDotSq = ScatterMinimumSurfaceNormalUpDot * ScatterMinimumSurfaceNormalUpDot;
         private const int MaxTileCacheLruIterations = 512;
         private const int MaxChunkPoolEvictionIterations = 2048;
         private const int MaxPathReconstructionIterations = 4096;
@@ -246,7 +249,7 @@ namespace Hecton8.World
         private float waterLevel = DefaultWaterLevel;
 
         [SerializeField, Min(4600f)]
-        [Tooltip("Minimum terrain height that still accepts kelp placement.")]
+        [Tooltip("Minimum terrain height that still accepts organic kelp placement. Runtime clamp enforces the 200m depth cap.")]
         private float kelpMinHeight = DefaultKelpMinHeight;
 
         [SerializeField, Range(0f, 1f)]
@@ -856,10 +859,6 @@ namespace Hecton8.World
         [Tooltip("Uniform scale jitter amplitude applied around the sampled base scale. 0.2 means +/-20%.")]
         private float proceduralScaleJitter = 0.2f;
 
-        [SerializeField, Range(0f, 360f)]
-        [Tooltip("Additional per-instance rotation jitter in degrees applied in Burst jobs.")]
-        private float proceduralRotationJitterDegrees = 360f;
-
         [Header("Draw Bounds")]
         [SerializeField]
         [Tooltip("Extra padding added to aggregated chunk bounds before binding renderers.")]
@@ -951,6 +950,47 @@ namespace Hecton8.World
 
             /// <summary>Authoritative cache revision for the resolved tile.</summary>
             public int CacheRevision { get; }
+        }
+
+        /// <summary>
+        /// Read-only 16-bit terrain height payload for AI, physics, and terrain jobs.
+        /// The vegetation bridge owns the backing NativeArray; consumers must treat it as an alias.
+        /// </summary>
+        public readonly struct TerrainHeightSamplePayload
+        {
+            public TerrainHeightSamplePayload(
+                NativeArray<ushort> heightSamples,
+                Vector3 terrainPosition,
+                Vector3 terrainSize,
+                int heightmapResolution,
+                int cacheRevision)
+            {
+                HeightSamples = heightSamples;
+                TerrainPosition = terrainPosition;
+                TerrainSize = terrainSize;
+                HeightmapResolution = heightmapResolution;
+                CacheRevision = cacheRevision;
+            }
+
+            /// <summary>R16 height samples, row-major, resolution squared.</summary>
+            public NativeArray<ushort> HeightSamples { get; }
+
+            /// <summary>World-space minimum corner of the terrain tile.</summary>
+            public Vector3 TerrainPosition { get; }
+
+            /// <summary>World-space size of the terrain tile.</summary>
+            public Vector3 TerrainSize { get; }
+
+            /// <summary>Heightmap resolution used by the active native payload.</summary>
+            public int HeightmapResolution { get; }
+
+            /// <summary>Authoritative cache revision for the resolved tile.</summary>
+            public int CacheRevision { get; }
+
+            public bool IsValid =>
+                HeightSamples.IsCreated &&
+                HeightmapResolution > 1 &&
+                HeightSamples.Length >= HeightmapResolution * HeightmapResolution;
         }
 
         private struct TileNativeCacheBuffer
@@ -1723,7 +1763,7 @@ namespace Hecton8.World
             nativePoolGuardMb = math.max(MinimumNativePoolBudgetMb, nativePoolGuardMb);
             vegetationAudioProbeRadius = math.max(0.5f, vegetationAudioProbeRadius);
             surfacePoolShare = math.clamp(surfacePoolShare, 0.5f, 0.9f);
-            kelpMinHeight = math.clamp(kelpMinHeight, 4600f, waterLevel);
+            kelpMinHeight = math.clamp(kelpMinHeight, waterLevel - OrganicKelpMaxDepthBelowSurfaceMeters, waterLevel);
             grassStepMeters = math.clamp(grassStepMeters, 1f, 2f);
             grassFarStepMeters = math.clamp(grassFarStepMeters, 4f, 5f);
             grassHighDensityRadius = math.max(25f, grassHighDensityRadius);
@@ -1737,7 +1777,6 @@ namespace Hecton8.World
             sargassumVisibilityWeight = math.clamp(sargassumVisibilityWeight, 0f, 1.5f);
             sargassumVisibilityBand = math.max(0.25f, sargassumVisibilityBand);
             proceduralScaleJitter = math.clamp(proceduralScaleJitter, 0f, 0.5f);
-            proceduralRotationJitterDegrees = math.clamp(proceduralRotationJitterDegrees, 0f, 360f);
             floatingCellSize = math.max(6f, floatingCellSize);
             floatingSecondaryCellSize = math.max(4f, floatingSecondaryCellSize);
             floatingWallWidth = math.clamp(floatingWallWidth, 1f, 6f);
@@ -2293,6 +2332,9 @@ namespace Hecton8.World
         /// <summary>Active resident abyssal anchor positions in persistent native memory for direct readback.</summary>
         public NativeArray<Vector3> ActiveAbyssalAnchorsNative => _nativeMemory.AbyssalAnchorPositionsNative;
 
+        /// <summary>Active resident abyssal anchor positions as AUP in persistent native memory for acoustic consumers.</summary>
+        public NativeArray<AbsoluteUniversePosition> ActiveAbyssalAnchorAupsNative => _nativeMemory.AbyssalAnchorAupPositionsNative;
+
         /// <summary>Number of active surface instances.</summary>
         public int ActiveSurfaceInstanceCount => _surfaceFrontCount;
 
@@ -2555,6 +2597,57 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Returns the current player-tile R16 height payload for AI and physics jobs.
+        /// </summary>
+        public bool TryGetActiveHeightSamplePayload(out TerrainHeightSamplePayload payload)
+        {
+            payload = default;
+            if (!TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition) ||
+                !TryFindPlayerTileState(playerRuntimePosition, out TileRuntimeState state) ||
+                state == null)
+            {
+                return false;
+            }
+
+            return TryBuildHeightSamplePayload(state, out payload);
+        }
+
+        /// <summary>
+        /// Returns the R16 height payload for the terrain tile containing the requested world-space position.
+        /// </summary>
+        public bool TryGetHeightSamplePayload(float worldX, float worldZ, out TerrainHeightSamplePayload payload)
+        {
+            payload = default;
+            if (!TryFindTileStateAtPosition(new Vector3(worldX, 0f, worldZ), out TileRuntimeState state) ||
+                state == null)
+            {
+                return false;
+            }
+
+            return TryBuildHeightSamplePayload(state, out payload);
+        }
+
+        private static bool TryBuildHeightSamplePayload(TileRuntimeState state, out TerrainHeightSamplePayload payload)
+        {
+            payload = default;
+            if (state == null ||
+                state.HeightmapResolution <= 1 ||
+                !TryGetActiveTileCache(state, out _, out _, out NativeArray<ushort> heightSamples) ||
+                !heightSamples.IsCreated)
+            {
+                return false;
+            }
+
+            payload = new TerrainHeightSamplePayload(
+                heightSamples,
+                state.TerrainPosition,
+                state.TerrainSize,
+                state.HeightmapResolution,
+                state.CacheRevision);
+            return payload.IsValid;
+        }
+
+        /// <summary>
         /// Returns the current surface semantic payload as native memory for AI and deep-biome consumers.
         /// </summary>
         public bool TryGetActiveSurfaceSemanticPayload(
@@ -2637,6 +2730,16 @@ namespace Hecton8.World
         public bool TryGetActiveAbyssalAnchorPayload(out NativeArray<Vector3> anchors, out int count)
         {
             anchors = _nativeMemory.AbyssalAnchorPositionsNative;
+            count = _abyssalAnchorCount;
+            return count > 0 && anchors.IsCreated;
+        }
+
+        /// <summary>
+        /// Returns the current resident abyssal-anchor positions as AUP native memory for sonar/acoustic consumers.
+        /// </summary>
+        public bool TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition> anchors, out int count)
+        {
+            anchors = _nativeMemory.AbyssalAnchorAupPositionsNative;
             count = _abyssalAnchorCount;
             return count > 0 && anchors.IsCreated;
         }
@@ -2919,14 +3022,13 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Approximates terrain slope in degrees from cached terrain heights without allocations.
+        /// Samples cached terrain normal.y from finite height gradients without allocating.
         /// </summary>
-        public bool TrySampleTerrainSlopeDegrees(Vector3 position, float sampleDistance, out float slopeDegrees)
+        public bool TrySampleTerrainNormalY(Vector3 position, float sampleDistance, out float normalY)
         {
-            slopeDegrees = 0f;
+            normalY = 1f;
             float resolvedSampleDistance = math.max(0.5f, sampleDistance);
-            if (!TryGetCachedTerrainHeight(position.x, position.z, out float centerHeight) ||
-                !TryGetCachedTerrainHeight(position.x + resolvedSampleDistance, position.z, out float heightPosX) ||
+            if (!TryGetCachedTerrainHeight(position.x + resolvedSampleDistance, position.z, out float heightPosX) ||
                 !TryGetCachedTerrainHeight(position.x - resolvedSampleDistance, position.z, out float heightNegX) ||
                 !TryGetCachedTerrainHeight(position.x, position.z + resolvedSampleDistance, out float heightPosZ) ||
                 !TryGetCachedTerrainHeight(position.x, position.z - resolvedSampleDistance, out float heightNegZ))
@@ -2936,8 +3038,8 @@ namespace Hecton8.World
 
             float gradientX = (heightPosX - heightNegX) / (resolvedSampleDistance * 2f);
             float gradientZ = (heightPosZ - heightNegZ) / (resolvedSampleDistance * 2f);
-            float gradientMagnitude = FastGradientMagnitude((gradientX * gradientX) + (gradientZ * gradientZ));
-            slopeDegrees = FastAtanDegreesPositive(gradientMagnitude);
+            float normalLengthSq = 1f + (gradientX * gradientX) + (gradientZ * gradientZ);
+            normalY = math.rsqrt(math.max(normalLengthSq, 0.000001f));
             return true;
         }
 
@@ -2948,17 +3050,6 @@ namespace Hecton8.World
             int estimateBits = (math.asint(safe) >> 1) + 0x1FBD1DF5;
             float estimate = math.asfloat(estimateBits);
             return math.select(0f, 0.5f * (estimate + safe / math.max(estimate, 0.000000000001f)), x > 0f);
-        }
-
-        private static float FastAtanDegreesPositive(float value)
-        {
-            float x = math.max(0f, value);
-            float reciprocal = 1f / math.max(x, 0.000001f);
-            bool useReciprocal = x > 1f;
-            float y = math.select(x, reciprocal, useReciprocal);
-            float radians = y / (1f + 0.280872f * y * y);
-            radians = math.select(radians, 1.5707964f - radians, useReciprocal);
-            return radians * 57.29578f;
         }
 
         /// <summary>
@@ -3034,8 +3125,7 @@ namespace Hecton8.World
             out Quaternion snappedRotation)
         {
             snappedPosition = position;
-            float safeYawDegrees = yawDegrees - (math.floor(yawDegrees / 360f) * 360f);
-            snappedRotation = Quaternion.Euler(0f, safeYawDegrees, 0f);
+            snappedRotation = Quaternion.identity;
 
             Vector3 surfacePoint;
             Vector3 surfaceNormal;
@@ -3047,11 +3137,11 @@ namespace Hecton8.World
             if (!IsScatterSurfaceNormalSpawnable(surfaceNormal))
                 return false;
 
-            Vector3 clampedUp = ClampScatterUpVector(surfaceNormal, maxTiltAngleDegrees);
-            Quaternion alignRotation = Quaternion.FromToRotation(Vector3.up, clampedUp);
-            Quaternion yawRotation = Quaternion.AngleAxis(safeYawDegrees, clampedUp);
-            snappedPosition = surfacePoint + (clampedUp * math.max(0f, surfaceOffset));
-            snappedRotation = yawRotation * alignRotation;
+            Vector3 surfaceUp = ResolveScatterSurfaceUp(surfaceNormal);
+            int yawSector = QuantizeYawDegreesToOctant(yawDegrees);
+            Vector3 tangentForward = ResolveScatterSurfaceTangent(surfaceUp, yawSector);
+            snappedPosition = surfacePoint + (surfaceUp * math.max(0f, surfaceOffset));
+            snappedRotation = Quaternion.LookRotation(tangentForward, surfaceUp);
             return true;
         }
 
@@ -4438,11 +4528,10 @@ namespace Hecton8.World
             float2 downhill = new float2(-normal.x, -normal.z);
             if (math.lengthsq(downhill) <= 0.000001f)
             {
-                float angle = Hash01(seed ^ 0xB5297A4Du) * math.PI * 2f;
-                return new float2(math.cos(angle), math.sin(angle));
+                return ResolveOctantDirection((int)((seed ^ 0xB5297A4Du) & 7u));
             }
 
-            return NormalizeFloat2Fast(downhill, new float2(1f, 0f));
+            return ResolveOctantDirectionFromVector(downhill.x, downhill.y);
         }
 
         private static byte ResolveBiomeLayerStatic(
@@ -4513,7 +4602,7 @@ namespace Hecton8.World
             out float occupancy)
         {
             float2 world = new float2(worldX, worldZ);
-            float2 normalizedFlow = NormalizeFloat2Fast(flowDirection, new float2(1f, 0f));
+            float2 normalizedFlow = ResolveOctantDirectionFromVector(flowDirection.x, flowDirection.y);
             float2 crossFlow = new float2(-normalizedFlow.y, normalizedFlow.x);
             float2 flowSpace = new float2(
                 math.dot(world, normalizedFlow),
@@ -4632,52 +4721,45 @@ namespace Hecton8.World
             return true;
         }
 
-        private static Vector3 ClampScatterUpVector(Vector3 normal, float maxTiltAngleDegrees)
-        {
-            Vector3 safeNormal = SafeNormalizeVector3(normal, Vector3.up);
-            float safeMaxTilt = math.clamp(maxTiltAngleDegrees, 0f, 89.5f);
-            float safeTiltRadians = safeMaxTilt * 0.0174532924f;
-            float minUpDot = FastCosApproxRadians(safeTiltRadians);
-            if (safeNormal.y >= minUpDot)
-                return safeNormal;
-
-            Vector3 planar = new Vector3(safeNormal.x, 0f, safeNormal.z);
-            float planarLengthSq = planar.sqrMagnitude;
-            if (planarLengthSq <= 0.000001f)
-                return Vector3.up;
-
-            Vector3 planarDirection = planar * math.rsqrt(planarLengthSq);
-            float maxPlanar = FastSinApproxRadians(safeTiltRadians);
-            return new Vector3(planarDirection.x * maxPlanar, minUpDot, planarDirection.z * maxPlanar);
-        }
-
         private static bool IsScatterSurfaceNormalSpawnable(Vector3 normal)
         {
             float lengthSq = normal.sqrMagnitude;
             if (lengthSq <= 0.0001f)
                 return false;
 
-            return normal.y * math.rsqrt(lengthSq) >= ScatterMinimumSurfaceNormalUpDot;
+            return normal.y > 0f && (normal.y * normal.y) >= ScatterMinimumSurfaceNormalUpDotSq * lengthSq;
         }
 
-        private static Vector3 SafeNormalizeVector3(Vector3 value, Vector3 fallback)
+        private static Vector3 ResolveScatterSurfaceUp(Vector3 normal)
         {
-            float lengthSq = value.sqrMagnitude;
-            return lengthSq > 0.0001f ? value * math.rsqrt(lengthSq) : fallback;
+            float lengthSq = normal.sqrMagnitude;
+            if (lengthSq <= 0.0001f)
+                return Vector3.up;
+
+            float invLength = math.rsqrt(lengthSq);
+            return new Vector3(normal.x * invLength, normal.y * invLength, normal.z * invLength);
         }
 
-        private static float FastSinApproxRadians(float radians)
+        private static int QuantizeYawDegreesToOctant(float yawDegrees)
         {
-            float x = math.clamp(radians, -math.PI, math.PI);
-            float x2 = x * x;
-            return x * (1f - x2 * (0.16666667f - x2 * (0.008333331f - x2 * 0.0001984127f)));
+            float wrapped = yawDegrees - (math.floor(yawDegrees / 360f) * 360f);
+            return (int)math.floor((wrapped + 22.5f) * 0.0222222228f) & 7;
         }
 
-        private static float FastCosApproxRadians(float radians)
+        private static Vector3 ResolveScatterSurfaceTangent(Vector3 surfaceUp, int yawSector)
         {
-            float x = math.clamp(radians, -math.PI, math.PI);
-            float x2 = x * x;
-            return 1f - x2 * (0.5f - x2 * (0.041666667f - x2 * 0.001388889f));
+            float2 octant = ResolveOctantDirection(yawSector);
+            Vector3 authoredForward = new Vector3(octant.x, 0f, octant.y);
+            Vector3 tangent = authoredForward - (surfaceUp * Vector3.Dot(authoredForward, surfaceUp));
+            if (tangent.sqrMagnitude > 0.000001f)
+                return tangent;
+
+            tangent = Vector3.Cross(surfaceUp, Vector3.right);
+            if (tangent.sqrMagnitude > 0.000001f)
+                return tangent;
+
+            tangent = Vector3.Cross(surfaceUp, Vector3.forward);
+            return tangent.sqrMagnitude > 0.000001f ? tangent : Vector3.forward;
         }
 
         private static bool IsInsideTerrainHoleStatic(float worldX, float worldZ, NativeArray<TerrainHoleRecord> holes, int holeCount)
@@ -4803,20 +4885,61 @@ namespace Hecton8.World
             return NormalizeFloat3Fast(math.cross(tangentZ, tangentX), new float3(0f, 1f, 0f));
         }
 
-        private static quaternion BuildAlignedRotation(float3 normal, float variation)
+        private static quaternion BuildAlignedRotation(float3 normal, int sector)
         {
             float3 reference = math.abs(normal.y) > 0.99f ? new float3(1f, 0f, 0f) : new float3(0f, 1f, 0f);
             float3 tangent = NormalizeFloat3Fast(math.cross(reference, normal), new float3(1f, 0f, 0f));
-            float3 bitangent = NormalizeFloat3Fast(math.cross(normal, tangent), new float3(0f, 0f, 1f));
-            float angle = variation * math.PI * 2f;
-            float3 forward = NormalizeFloat3Fast((tangent * math.cos(angle)) + (bitangent * math.sin(angle)), new float3(0f, 0f, 1f));
+            float3 bitangent = math.cross(normal, tangent);
+            float2 octant = ResolveOctantDirection(sector);
+            float3 forward = (tangent * octant.x) + (bitangent * octant.y);
             return quaternion.LookRotationSafe(forward, normal);
         }
 
-        private static float2 NormalizeFloat2Fast(float2 value, float2 fallback)
+        private static int ResolveOctantSector(float variation, uint seed, uint salt)
         {
-            float lengthSq = math.lengthsq(value);
-            return lengthSq > 0.000001f ? value * math.rsqrt(lengthSq) : fallback;
+            int baseSector = (int)(math.saturate(variation) * 7.999f);
+            int jitterSector = (int)(Hash01(seed ^ salt) * 7.999f);
+            return (baseSector + jitterSector) & 7;
+        }
+
+        private static float2 ResolveOctantDirection(int sector)
+        {
+            switch (sector & 7)
+            {
+                case 0:
+                    return new float2(1f, 0f);
+                case 1:
+                    return new float2(0.70710677f, 0.70710677f);
+                case 2:
+                    return new float2(0f, 1f);
+                case 3:
+                    return new float2(-0.70710677f, 0.70710677f);
+                case 4:
+                    return new float2(-1f, 0f);
+                case 5:
+                    return new float2(-0.70710677f, -0.70710677f);
+                case 6:
+                    return new float2(0f, -1f);
+                default:
+                    return new float2(0.70710677f, -0.70710677f);
+            }
+        }
+
+        private static float2 ResolveOctantDirectionFromVector(float x, float y)
+        {
+            float absX = math.abs(x);
+            float absY = math.abs(y);
+            if (absX <= 0.000001f && absY <= 0.000001f)
+                return new float2(1f, 0f);
+
+            float signX = x < 0f ? -1f : 1f;
+            float signY = y < 0f ? -1f : 1f;
+            float minor = math.min(absX, absY);
+            float major = math.max(absX, absY);
+            if (minor * 2f >= major)
+                return new float2(signX * 0.70710677f, signY * 0.70710677f);
+
+            return absX >= absY ? new float2(signX, 0f) : new float2(0f, signY);
         }
 
         private static float3 NormalizeFloat3Fast(float3 value, float3 fallback)
@@ -5318,7 +5441,10 @@ namespace Hecton8.World
             Vector2 planarVelocity = new Vector2(_playerVelocity.x, _playerVelocity.z);
             float planarVelocitySq = planarVelocity.sqrMagnitude;
             if (planarVelocitySq >= predictiveMinSpeed * predictiveMinSpeed)
-                return planarVelocity * math.rsqrt(planarVelocitySq);
+            {
+                float2 octant = ResolveOctantDirectionFromVector(planarVelocity.x, planarVelocity.y);
+                return new Vector2(octant.x, octant.y);
+            }
 
             return Vector2.right;
         }
@@ -6202,6 +6328,7 @@ namespace Hecton8.World
             _underwaterFrontReaderHandle = default;
             _underwaterBackReaderHandle = default;
             DisposeNativeArray(ref _nativeMemory.AbyssalAnchorPositionsNative);
+            DisposeNativeArray(ref _nativeMemory.AbyssalAnchorAupPositionsNative);
             DisposeNativeArray(ref _nativeMemory.AbyssalNavNodeSnapshotNative);
             DisposeNativeArray(ref _nativeMemory.AbyssalNavConduitVectorsSnapshotNative);
             DisposeNativeArray(ref _nativeMemory.AbyssalNavConduitStrengthSnapshotNative);
@@ -6799,11 +6926,8 @@ namespace Hecton8.World
 
         private static Vector2 NormalizeFlowDirection(Vector2 direction)
         {
-            float directionSq = direction.sqrMagnitude;
-            if (directionSq <= 0.0001f)
-                return Vector2.right;
-
-            return direction * math.rsqrt(directionSq);
+            float2 octant = ResolveOctantDirectionFromVector(direction.x, direction.y);
+            return new Vector2(octant.x, octant.y);
         }
 
         private static float Hash01(uint seed)

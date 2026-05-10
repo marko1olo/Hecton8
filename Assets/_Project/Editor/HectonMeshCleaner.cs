@@ -239,13 +239,13 @@ public class HectonMeshCleaner : EditorWindow
         EditorGUILayout.Space(4);
         EditorGUILayout.LabelField("── OCCLUSION SETTINGS ──", EditorStyles.boldLabel);
         EditorGUILayout.HelpBox(
-            "Для каждого треугольника кастуется луч вдоль нормали и против неё.\n" +
-            "Если ОБА направления заблокированы в пределах Occlusion Distance → треугольник внутренний → удаляется.\n" +
-            "Треугольник на поверхности всегда имеет хотя бы одно свободное направление → остаётся.",
+            "Dlya kazhdogo treugolnika kastuetsya luch vdol normali i protiv nee.\n" +
+            "Esli OBA napravleniya zablokirovany v predelah Occlusion Distance → treugolnik vnutrenniy → udalyaetsya.\n" +
+            "Treugolnik na poverhnosti vsegda imeet hotya by odno svobodnoe napravlenie → ostaetsya.",
             MessageType.Info);
 
         occlusionDistance = EditorGUILayout.Slider(
-            new GUIContent("Occlusion Distance", "Макс. расстояние для обнаружения блокировки. Меньше = безопаснее."),
+            new GUIContent("Occlusion Distance", "Maks. rasstoyanie dlya obnaruzheniya blokirovki. Menshe = bezopasnee."),
             occlusionDistance, 0.01f, 5.0f);
 
         EditorGUILayout.BeginHorizontal();
@@ -566,27 +566,35 @@ public class HectonMeshCleaner : EditorWindow
     {
         // Read all vertex data channels
         List<Vector3> srcVerts = new List<Vector3>(source.vertexCount);
+        List<Vector3> srcNormals = new List<Vector3>(source.vertexCount);
+        List<Vector2> srcUV0 = new List<Vector2>(source.vertexCount);
+        List<Vector2> srcUV1 = new List<Vector2>(source.vertexCount);
+        List<Vector2> srcUV2 = new List<Vector2>(source.vertexCount);
+        List<Vector2> srcUV3 = new List<Vector2>(source.vertexCount);
+        List<Vector4> srcTangents = new List<Vector4>(source.vertexCount);
+        List<Color> srcColors = new List<Color>(source.vertexCount);
+        List<Color32> srcColors32 = new List<Color32>(source.vertexCount);
         source.GetVertices(srcVerts);
-        Vector3[] srcNormals = source.normals;
-        Vector2[] srcUV0 = source.uv;
-        Vector2[] srcUV1 = source.uv2;
-        Vector2[] srcUV2 = source.uv3;
-        Vector2[] srcUV3 = source.uv4;
-        Vector4[] srcTangents = source.tangents;
-        Color[] srcColors = source.colors;
-        Color32[] srcColors32 = source.colors32;
+        source.GetNormals(srcNormals);
+        source.GetUVs(0, srcUV0);
+        source.GetUVs(1, srcUV1);
+        source.GetUVs(2, srcUV2);
+        source.GetUVs(3, srcUV3);
+        source.GetTangents(srcTangents);
+        source.GetColors(srcColors);
+        source.GetColors(srcColors32);
         List<int> allTris = new List<int>((int)global::System.Math.Min(ResolveIndexCount(source), int.MaxValue));
         CollectMeshTriangles(source, allTris);
         int totalTriCount = allTris.Count / 3;
 
-        bool hasNormals = srcNormals != null && srcNormals.Length == srcVerts.Count;
-        bool hasUV0 = srcUV0 != null && srcUV0.Length == srcVerts.Count;
-        bool hasUV1 = srcUV1 != null && srcUV1.Length == srcVerts.Count;
-        bool hasUV2 = srcUV2 != null && srcUV2.Length == srcVerts.Count;
-        bool hasUV3 = srcUV3 != null && srcUV3.Length == srcVerts.Count;
-        bool hasTangents = srcTangents != null && srcTangents.Length == srcVerts.Count;
-        bool hasColors = srcColors != null && srcColors.Length == srcVerts.Count;
-        bool hasColors32 = !hasColors && srcColors32 != null && srcColors32.Length == srcVerts.Count;
+        bool hasNormals = srcNormals.Count == srcVerts.Count;
+        bool hasUV0 = srcUV0.Count == srcVerts.Count;
+        bool hasUV1 = srcUV1.Count == srcVerts.Count;
+        bool hasUV2 = srcUV2.Count == srcVerts.Count;
+        bool hasUV3 = srcUV3.Count == srcVerts.Count;
+        bool hasTangents = srcTangents.Count == srcVerts.Count;
+        bool hasColors = srcColors.Count == srcVerts.Count;
+        bool hasColors32 = !hasColors && srcColors32.Count == srcVerts.Count;
 
         // ── Map each flat triangle index → submesh index ──
         int subMeshCount = source.subMeshCount;
@@ -772,13 +780,7 @@ public class HectonMeshCleaner : EditorWindow
         if (hasUV3) result.SetUVs(3, newUV3List);
         if (hasTangents) result.SetTangents(newTangents);
         if (hasColors) result.SetColors(newColors);
-        if (hasColors32)
-        {
-            List<Color> convertedColors = new List<Color>(newColors32.Count);
-            for (int i = 0; i < newColors32.Count; i++)
-                convertedColors.Add(newColors32[i]);
-            result.SetColors(convertedColors);
-        }
+        if (hasColors32) result.SetColors(newColors32);
 
         result.subMeshCount = subMeshCount;
         for (int s = 0; s < subMeshCount; s++)

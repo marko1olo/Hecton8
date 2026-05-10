@@ -6,9 +6,6 @@ using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton8.Visor
 {
@@ -18,10 +15,6 @@ namespace Hecton8.Visor
     [DisallowMultipleComponent]
     public sealed class CausticsProjectorManager : MonoBehaviour, ITickable, ISlowTickable
     {
-#if UNITY_EDITOR
-        private const string DefaultCausticsTextureAPath = "Assets/Feel/MMTools/Tools/MMVFX/MMNoise/MMVoronoiNoise.png";
-        private const string DefaultCausticsTextureBPath = "Assets/Feel/MMTools/Tools/MMVFX/MMNoise/MMCellNoise.png";
-#endif
         private const float DependencyResolveRetryIntervalSeconds = 0.5f;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const double CausticsPublishBudgetWarningMilliseconds = 0.2d;
@@ -39,8 +32,6 @@ namespace Hecton8.Visor
         private static readonly int _CausticsSimulationParamsAId = Shader.PropertyToID("_HectonCausticsSimulationParamsA");
         private static readonly int _CausticsSimulationParamsBId = Shader.PropertyToID("_HectonCausticsSimulationParamsB");
         private static readonly int _CausticsSimulationParamsCId = Shader.PropertyToID("_HectonCausticsSimulationParamsC");
-        private static readonly int _CausticsTextureAId = Shader.PropertyToID("_HectonCausticsTextureA");
-        private static readonly int _CausticsTextureBId = Shader.PropertyToID("_HectonCausticsTextureB");
         private static readonly int _CausticsTextureParamsId = Shader.PropertyToID("_HectonCausticsTextureParams");
         private static readonly int _AbyssalFlowWeatherCurrentId = Shader.PropertyToID("_AbyssalFlowWeatherCurrent");
 
@@ -60,11 +51,7 @@ namespace Hecton8.Visor
         [SerializeField, Range(0f, 1f)]
         private float stormFadePenalty = 0.28f;
 
-        [Header("Texture Caustics")]
-        [SerializeField] private Texture2D causticsTextureA;
-        [SerializeField] private Texture2D causticsTextureB;
-
-        [Header("Texture Scroll")]
+        [Header("Analytical Caustics")]
         [SerializeField, Range(4f, 32f)]
         private float primaryCellDensity = 12f;
         [SerializeField, Range(8f, 48f)]
@@ -98,8 +85,6 @@ namespace Hecton8.Visor
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private int _nextPerformanceWarningFrame;
 #endif
-        private Texture2D _publishedCausticsTextureA;
-        private Texture2D _publishedCausticsTextureB;
         private Vector4 _publishedCausticsWorldRect;
         private Vector4 _publishedCausticsColor;
         private Vector4 _publishedCausticsSimulationParamsA;
@@ -112,8 +97,6 @@ namespace Hecton8.Visor
 
         private void Awake()
         {
-            ResolveDefaultCausticsTextures();
-            PublishCausticsTextureGlobals();
             _playerTransform = transform;
             ResolveDependencies();
             PublishShaderOnlyGlobals(_shaderTimeSeconds);
@@ -121,8 +104,6 @@ namespace Hecton8.Visor
 
         private void OnEnable()
         {
-            ResolveDefaultCausticsTextures();
-            PublishCausticsTextureGlobals();
             TryRegisterTickHandlers();
             PublishShaderOnlyGlobals(_shaderTimeSeconds);
         }
@@ -185,7 +166,7 @@ namespace Hecton8.Visor
 
         private void ResolveDependencies()
         {
-            if (_playerTransform == null && SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            if (_playerTransform == null && GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 _playerTransform = playerTransform;
 
             if (_survivalSystem == null)
@@ -237,7 +218,6 @@ namespace Hecton8.Visor
             Vector4 abyssalFlowWeatherCurrent = ResolveAbyssalFlowWeatherCurrent(timeValue, runtimeAnchor);
             Vector4 waveCoupling = ResolveFakeWaveCoupling(timeValue, in abyssalFlowWeatherCurrent);
 
-            bool textureCausticsEnabled = causticsTextureA != null && causticsTextureB != null;
             Color linearScatteringColor = scatteringColor.linear;
             Vector4 causticsColor = new Vector4(
                 linearScatteringColor.r,
@@ -246,7 +226,7 @@ namespace Hecton8.Visor
                 linearScatteringColor.a);
             Vector4 simulationParamsA = new Vector4(primaryCellDensity, secondaryCellDensity, primaryScrollSpeed, secondaryScrollSpeed);
             Vector4 simulationParamsB = new Vector4(ridgeSharpness, secondaryLayerWeight, timeValue, waterLevel);
-            Vector4 textureParams = new Vector4(textureCausticsEnabled ? 1f : 0f, 0f, 0f, 0f);
+            Vector4 textureParams = Vector4.zero;
             Vector4 causticsParams = new Vector4(
                 _fade01 * math.max(0f, causticsIntensity),
                 waterLevel,
@@ -265,34 +245,6 @@ namespace Hecton8.Visor
                 causticsParams,
                 ref _publishedCausticsParams);
             _hasPublishedCausticsVectors = true;
-        }
-
-        private void PublishCausticsTextureGlobals()
-        {
-            if (_publishedCausticsTextureA != causticsTextureA)
-            {
-                _publishedCausticsTextureA = causticsTextureA;
-                if (_publishedCausticsTextureA != null)
-                    Shader.SetGlobalTexture(_CausticsTextureAId, _publishedCausticsTextureA);
-            }
-
-            if (_publishedCausticsTextureB != causticsTextureB)
-            {
-                _publishedCausticsTextureB = causticsTextureB;
-                if (_publishedCausticsTextureB != null)
-                    Shader.SetGlobalTexture(_CausticsTextureBId, _publishedCausticsTextureB);
-            }
-        }
-
-        private void ResolveDefaultCausticsTextures()
-        {
-#if UNITY_EDITOR
-            if (causticsTextureA == null)
-                causticsTextureA = AssetDatabase.LoadAssetAtPath<Texture2D>(DefaultCausticsTextureAPath);
-
-            if (causticsTextureB == null)
-                causticsTextureB = AssetDatabase.LoadAssetAtPath<Texture2D>(DefaultCausticsTextureBPath);
-#endif
         }
 
         private void UpdateWorldRect(in Vector3 anchor)

@@ -5,12 +5,12 @@ Status: ARCHIVED
 
 # HECTON-8 — Agent Assignment Matrix
 
-Дата: 2026-04-13  
-Статус: PENDING VERIFICATION
+Data: 2026-04-13  
+Status: PENDING VERIFICATION
 
-Это не общий план. Это прямой лист раздачи задач агентам.
+Eto ne obschiy plan. Eto pryamoy list razdachi zadach agentam.
 
-## Волна 1
+## Volna 1
 
 ### Agent 1 — Main Menu / Save-Load Flow
 
@@ -19,30 +19,30 @@ Owner files:
 - `Assets/_Project/Scripts/MainMenuController.cs`
 - `Assets/_Project/Scripts/SaveSlotUI.cs`
 
-Задача:
+Zadacha:
 
-- Добить main menu flow.
-- Убрать пустые и тупиковые panel states.
-- Привести `new game / load game / back / cancel` к одному понятному сценарию.
-- Проверить default selection и возвраты.
+- Dobit main menu flow.
+- Ubrat pustye i tupikovye panel states.
+- Privesti `new game / load game / back / cancel` k odnomu ponyatnomu stsenariyu.
+- Proverit default selection i vozvraty.
 
-Не трогать:
+Ne trogat:
 
 - `PauseMenuController.cs`
 - input rebinding
 - narrative systems
-- save backend contract в `SaveManager`
+- save backend contract v `SaveManager`
 
-Результат:
+Rezultat:
 
-- Main menu перестаёт быть полузаглушкой.
-- Save/load path выглядит как production shell.
+- Main menu perestaet byt poluzaglushkoy.
+- Save/load path vyglyadit kak production shell.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- Нет тупиковых состояний.
-- Все back-paths закрыты.
-- Пользователь может стабильно пройти menu -> load/new game -> world.
+- Net tupikovyh sostoyaniy.
+- Vse back-paths zakryty.
+- Polzovatel mozhet stabilno proyti menu -> load/new game -> world.
 
 ### Agent 2 — Pause Shell
 
@@ -51,28 +51,28 @@ Owner files:
 - `Assets/_Project/Scripts/UI/PauseMenuController.cs`
 - `Assets/_Project/Scripts/UI/PauseMenuHost.cs`
 
-Задача:
+Zadacha:
 
-- Довести pause menu.
-- Проверить секции `Main / Saves / Help / Settings`.
-- Исправить selection defaults и возвраты.
-- Проверить pause resume path и переход назад в main menu.
+- Dovesti pause menu.
+- Proverit sektsii `Main / Saves / Help / Settings`.
+- Ispravit selection defaults i vozvraty.
+- Proverit pause resume path i perehod nazad v main menu.
 
-Не трогать:
+Ne trogat:
 
 - `MainMenuController.cs`
 - quest / lore systems
 - world bootstrap
 
-Результат:
+Rezultat:
 
-- Pause перестаёт быть хрупким shell-слоем.
+- Pause perestaet byt hrupkim shell-sloem.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- Нет разваленных переходов.
-- Нет пустых section routes.
-- Проверен сценарий pause -> settings/save -> resume.
+- Net razvalennyh perehodov.
+- Net pustyh section routes.
+- Proveren stsenariy pause -> settings/save -> resume.
 
 ### Agent 3 — Pause Rebinding UI
 
@@ -80,28 +80,28 @@ Owner files:
 
 - `Assets/_Project/Scripts/UI/PauseControlsPanel.cs`
 
-Задача:
+Zadacha:
 
-- Довести rebinding UI в pause.
-- Проверить reset/apply/save/cancel.
-- Проверить поведение при missing binding rows.
-- Привести статусы и текст к внятному виду.
+- Dovesti rebinding UI v pause.
+- Proverit reset/apply/save/cancel.
+- Proverit povedenie pri missing binding rows.
+- Privesti statusy i tekst k vnyatnomu vidu.
 
-Не трогать:
+Ne trogat:
 
 - `PDAControlsRebindUI.cs`
 - `MainMenuController.cs`
 - general options persistence owner
 
-Результат:
+Rezultat:
 
-- Rebinding в pause работает как отдельный законченный слой.
+- Rebinding v pause rabotaet kak otdelnyy zakonchennyy sloy.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- Rows корректно строятся.
-- Overrides сохраняются.
-- Ошибки и пустые bindings не ломают UI.
+- Rows korrektno stroyatsya.
+- Overrides sohranyayutsya.
+- Oshibki i pustye bindings ne lomayut UI.
 
 ### Agent 4 — PDA Rebinding UI
 
@@ -109,58 +109,58 @@ Owner files:
 
 - `Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs`
 
-Задача:
+Zadacha:
 
-- Довести rebinding UI в PDA.
-- Проверить tab switching, row resolution, reset/save flow.
-- Проверить consistency с `RebindingManager`.
+- Dovesti rebinding UI v PDA.
+- Proverit tab switching, row resolution, reset/save flow.
+- Proverit consistency s `RebindingManager`.
 
-Не трогать:
+Ne trogat:
 
 - `PauseControlsPanel.cs`
 - `MainMenuController.cs`
 - lore / quest files
 
-Результат:
+Rezultat:
 
-- PDA controls panel не выглядит недоделанным дубликатом.
+- PDA controls panel ne vyglyadit nedodelannym dublikatom.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- PDA rebinding path стабилен.
-- Overrides читаются и сохраняются без рассинхрона.
+- PDA rebinding path stabilen.
+- Overrides chitayutsya i sohranyayutsya bez rassinhrona.
 
 ### Agent 5 — Options Persistence Owner
 
 Owner files:
 
-- новый owner под user options
-- минимальные точки входа в menu/pause UI
+- novyy owner pod user options
+- minimalnye tochki vhoda v menu/pause UI
 - `Assets/_Project/Scripts/Input/RebindingManager.cs`
 - `Assets/_Project/Scripts/LocalizationManager.cs`
 
-Задача:
+Zadacha:
 
-- Создать единый persistence слой для не-input настроек.
-- Зафиксировать contract хранения опций.
-- Подключить menu/pause к этому owner'у без расползания логики.
+- Sozdat edinyy persistence sloy dlya ne-input nastroek.
+- Zafiksirovat contract hraneniya optsiy.
+- Podklyuchit menu/pause k etomu owner'u bez raspolzaniya logiki.
 
-Не трогать:
+Ne trogat:
 
 - main menu layout
 - pause shell layout
 - world systems
 
-Результат:
+Rezultat:
 
-- В проекте появляется единый владелец пользовательских настроек.
+- V proekte poyavlyaetsya edinyy vladelets polzovatelskih nastroek.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- Настройки сохраняются между сессиями.
-- Есть явный owner вместо разрозненных `PlayerPrefs` островков.
+- Nastroyki sohranyayutsya mezhdu sessiyami.
+- Est yavnyy owner vmesto razroznennyh `PlayerPrefs` ostrovkov.
 
-## Волна 2
+## Volna 2
 
 ### Agent 6 — Narrative Spine
 
@@ -172,27 +172,27 @@ Owner files:
 - `Assets/_Project/Data/Lore/Registries`
 - `Assets/_Project/Data/Lore/DepthZones`
 
-Задача:
+Zadacha:
 
-- Собрать narrative spine первого часа.
-- Заполнить discovery layer.
-- Привязать depth beats к registries и событиям.
+- Sobrat narrative spine pervogo chasa.
+- Zapolnit discovery layer.
+- Privyazat depth beats k registries i sobytiyam.
 
-Не трогать:
+Ne trogat:
 
 - quest assets
 - audio logs
 - suit upgrades
 - menu/pause
 
-Результат:
+Rezultat:
 
-- Появляется осмысленный narrative backbone вместо абстрактного лора.
+- Poyavlyaetsya osmyslennyy narrative backbone vmesto abstraktnogo lora.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- Есть минимум один связный narrative route.
-- Discovery IDs и progression links не пустые и не висят в воздухе.
+- Est minimum odin svyaznyy narrative route.
+- Discovery IDs i progression links ne pustye i ne visyat v vozduhe.
 
 ### Agent 7 — Quest Content
 
@@ -203,26 +203,26 @@ Owner files:
 - `Assets/_Project/Scripts/Quest/QuestEvents.cs`
 - `Assets/_Project/Data/Lore/Quests`
 
-Задача:
+Zadacha:
 
-- Создать реальные quest assets.
-- Определить trigger points.
-- Проверить активацию от существующих событий.
+- Sozdat realnye quest assets.
+- Opredelit trigger points.
+- Proverit aktivatsiyu ot suschestvuyuschih sobytiy.
 
-Не трогать:
+Ne trogat:
 
 - audio logs
 - suit upgrades
 - world cleanup
 
-Результат:
+Rezultat:
 
-- Quest system выходит из состояния пустой инфраструктуры.
+- Quest system vyhodit iz sostoyaniya pustoy infrastruktury.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- `Data/Lore/Quests` больше не пустой.
-- Есть хотя бы один рабочий квестовый маршрут.
+- `Data/Lore/Quests` bolshe ne pustoy.
+- Est hotya by odin rabochiy kvestovyy marshrut.
 
 ### Agent 8 — Audio Logs
 
@@ -234,26 +234,26 @@ Owner files:
 - `Assets/_Project/Scripts/UI/PDADataLogTab.cs`
 - `Assets/_Project/Data/Lore/AudioLogs`
 
-Задача:
+Zadacha:
 
-- Создать audio log assets.
-- Привязать pickup flow.
-- Проверить discovery и PDA presentation.
+- Sozdat audio log assets.
+- Privyazat pickup flow.
+- Proverit discovery i PDA presentation.
 
-Не трогать:
+Ne trogat:
 
 - quest logic
 - suit upgrades
 - menu/pause
 
-Результат:
+Rezultat:
 
-- Audio log system начинает существовать как контент, а не только как код.
+- Audio log system nachinaet suschestvovat kak kontent, a ne tolko kak kod.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- `Data/Lore/AudioLogs` не пустой.
-- Игрок может подобрать лог и увидеть/проиграть его через PDA.
+- `Data/Lore/AudioLogs` ne pustoy.
+- Igrok mozhet podobrat log i uvidet/proigrat ego cherez PDA.
 
 ### Agent 9 — Suit Progression
 
@@ -265,26 +265,26 @@ Owner files:
 - `Assets/_Project/Scripts/Visor/SuitHUDPresentationController.cs`
 - `Assets/_Project/Data/Lore/SuitUpgrades`
 
-Задача:
+Zadacha:
 
-- Создать data-driven suit upgrades.
-- Привязать unlock conditions.
-- Проверить отражение состояния в HUD.
+- Sozdat data-driven suit upgrades.
+- Privyazat unlock conditions.
+- Proverit otrazhenie sostoyaniya v HUD.
 
-Не трогать:
+Ne trogat:
 
 - quests
 - audio logs
 - pause/menu
 
-Результат:
+Rezultat:
 
-- У прогрессии появляется осязаемый слой улучшений.
+- U progressii poyavlyaetsya osyazaemyy sloy uluchsheniy.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- `Data/Lore/SuitUpgrades` не пустой.
-- Upgrade path реально влияет на состояние игрока и HUD.
+- `Data/Lore/SuitUpgrades` ne pustoy.
+- Upgrade path realno vliyaet na sostoyanie igroka i HUD.
 
 ### Agent 10 — Lore Bootstrap Integration
 
@@ -295,28 +295,28 @@ Owner files:
 - `Assets/_Project/Scripts/Editor/HectonLoreSystemsRootEditor.cs`
 - `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
 
-Задача:
+Zadacha:
 
-- Гарантировать наличие live `LoreSystems` root в production world path.
-- Проверить, что lore systems реально поднимаются в сцене.
-- Не допустить состояния "код есть, в live-мире не живёт".
+- Garantirovat nalichie live `LoreSystems` root v production world path.
+- Proverit, chto lore systems realno podnimayutsya v stsene.
+- Ne dopustit sostoyaniya "kod est, v live-mire ne zhivet".
 
-Не трогать:
+Ne trogat:
 
 - content authoring
 - shell/menu
 - world density
 
-Результат:
+Rezultat:
 
-- Narrative stack перестаёт быть призраком в коде.
+- Narrative stack perestaet byt prizrakom v kode.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- В `02_HECTON_WORLD` подтверждён live root.
-- Системы реально инстанцируются в production path.
+- V `02_HECTON_WORLD` podtverzhden live root.
+- Sistemy realno instantsiruyutsya v production path.
 
-## Волна 3
+## Volna 3
 
 ### Agent 11 — Production World Cleanup
 
@@ -326,26 +326,26 @@ Owner files:
 - `Assets/_Project/Scripts/SceneBootstrap.cs`
 - world bootstrap owners
 
-Задача:
+Zadacha:
 
-- Зачистить production path от `temp / trial / staging / smoke`.
-- Отделить debug-only route от shipping route.
-- Зафиксировать truth hierarchy.
+- Zachistit production path ot `temp / trial / staging / smoke`.
+- Otdelit debug-only route ot shipping route.
+- Zafiksirovat truth hierarchy.
 
-Не трогать:
+Ne trogat:
 
 - quests/audio logs
 - main menu/pause
 - save backend
 
-Результат:
+Rezultat:
 
-- Production world перестаёт быть активной мастерской.
+- Production world perestaet byt aktivnoy masterskoy.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- В live route нет временного мусора.
-- Debug path и shipping path отделены.
+- V live route net vremennogo musora.
+- Debug path i shipping path otdeleny.
 
 ### Agent 12 — World Density / Biomes
 
@@ -355,26 +355,26 @@ Owner files:
 - `Assets/_Project/Scripts/World/WorldPopulationDirector.cs`
 - `Assets/_Project/Scripts/World/BiomeMatrixDirector.cs`
 
-Задача:
+Zadacha:
 
-- Усилить world density.
-- Добить биомную дифференциацию.
-- Добавить смысл между hero-точками.
+- Usilit world density.
+- Dobit biomnuyu differentsiatsiyu.
+- Dobavit smysl mezhdu hero-tochkami.
 
-Не трогать:
+Ne trogat:
 
 - shell/UI
 - lore bootstrap
 - save backend
 
-Результат:
+Rezultat:
 
-- Мир перестаёт держаться только на backbone и procedural mass.
+- Mir perestaet derzhatsya tolko na backbone i procedural mass.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- Есть читаемые различия по биомам и слоям мира.
-- Между крупными точками появились meaningful fillers.
+- Est chitaemye razlichiya po biomam i sloyam mira.
+- Mezhdu krupnymi tochkami poyavilis meaningful fillers.
 
 ### Agent 13 — Caves / Geology Gameplay
 
@@ -383,24 +383,24 @@ Owner files:
 - `Assets/_Project/Scripts/World/WorldCaveDirector.cs`
 - geology integration owners
 
-Задача:
+Zadacha:
 
-- Довести caves до уровня маршрутов, а не только генерации.
-- Проверить rewards, landmarks, shortcuts, fear/visibility curve.
+- Dovesti caves do urovnya marshrutov, a ne tolko generatsii.
+- Proverit rewards, landmarks, shortcuts, fear/visibility curve.
 
-Не трогать:
+Ne trogat:
 
 - menu/pause
 - quests
 - general perf pass
 
-Результат:
+Rezultat:
 
-- Пещеры становятся игровым контентом, а не просто геометрией.
+- Peschery stanovyatsya igrovym kontentom, a ne prosto geometriey.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- Есть хотя бы один полноценный cave route с payoff.
+- Est hotya by odin polnotsennyy cave route s payoff.
 
 ### Agent 14 — Base Loop / Return Value
 
@@ -409,27 +409,27 @@ Owner files:
 - support/crafting/building/power/inventory owners
 - survival path owners
 
-Задача:
+Zadacha:
 
-- Зафиксировать, зачем игрок возвращается.
-- Склеить crafting, storage, power, oxygen, upgrade loop.
-- Проверить continuity после save/load.
+- Zafiksirovat, zachem igrok vozvraschaetsya.
+- Skleit crafting, storage, power, oxygen, upgrade loop.
+- Proverit continuity posle save/load.
 
-Не трогать:
+Ne trogat:
 
 - shell/UI
 - narrative content
 - world cleanup
 
-Результат:
+Rezultat:
 
-- База и support systems становятся опорой цикла, а не декорацией.
+- Baza i support systems stanovyatsya oporoy tsikla, a ne dekoratsiey.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- Есть рабочая петля `explore -> gather -> return -> recover/craft/upgrade -> go deeper`.
+- Est rabochaya petlya `explore -> gather -> return -> recover/craft/upgrade -> go deeper`.
 
-## Волна 4
+## Volna 4
 
 ### Agent 15 — Perf / Memory Truth
 
@@ -439,55 +439,55 @@ Owner files:
 - profiling routines
 - relevant docs/ledgers
 
-Задача:
+Zadacha:
 
-- Собрать baseline по CPU, GC, VRAM, RT, batches, SetPass.
-- Проверить streaming hitch и scatter cost.
+- Sobrat baseline po CPU, GC, VRAM, RT, batches, SetPass.
+- Proverit streaming hitch i scatter cost.
 
-Не трогать:
+Ne trogat:
 
 - feature scope
 - narrative authoring
 
-Результат:
+Rezultat:
 
-- У команды появляются реальные цифры, а не ощущения.
+- U komandy poyavlyayutsya realnye tsifry, a ne oschuscheniya.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- Есть baseline measurements и список red zones.
+- Est baseline measurements i spisok red zones.
 
 ### Agent 16 — Critical Flow Tests / Build Discipline
 
 Owner files:
 
 - `Assets/_Project/Tests`
-- critical path owners для shell/save/pause/core loop
+- critical path owners dlya shell/save/pause/core loop
 - build issue docs
 
-Задача:
+Zadacha:
 
-- Поднять минимальный smoke/test слой по critical path.
-- Зафиксировать build cadence и issue discipline.
+- Podnyat minimalnyy smoke/test sloy po critical path.
+- Zafiksirovat build cadence i issue discipline.
 
-Не трогать:
+Ne trogat:
 
 - world content authoring
 - narrative content production
 
-Результат:
+Rezultat:
 
-- Регрессии начинают ловиться раньше.
+- Regressii nachinayut lovitsya ranshe.
 
-Критерий готовности:
+Kriteriy gotovnosti:
 
-- Есть smoke checklist.
-- Есть coverage на main menu, pause, save/load и один core progression path.
+- Est smoke checklist.
+- Est coverage na main menu, pause, save/load i odin core progression path.
 
-## Жёсткие правила выдачи
+## Zhestkie pravila vydachi
 
-- Не давать двум агентам один и тот же owner file.
-- Не совмещать scene integration и content authoring в одном агенте, если можно разделить.
-- Не пускать агентов одновременно в `02_HECTON_WORLD.unity`, если задачи не разделены по ownership.
-- Сначала закрывать пустоты и integration gaps, потом polishing.
-- Любую задачу без live proof считать `PENDING VERIFICATION`.
+- Ne davat dvum agentam odin i tot zhe owner file.
+- Ne sovmeschat scene integration i content authoring v odnom agente, esli mozhno razdelit.
+- Ne puskat agentov odnovremenno v `02_HECTON_WORLD.unity`, esli zadachi ne razdeleny po ownership.
+- Snachala zakryvat pustoty i integration gaps, potom polishing.
+- Lyubuyu zadachu bez live proof schitat `PENDING VERIFICATION`.

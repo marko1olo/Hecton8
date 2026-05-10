@@ -44,16 +44,19 @@ namespace Hecton8.World
                 float3 axisX = new float3(instanceMatrix.m00, instanceMatrix.m10, instanceMatrix.m20);
                 float3 axisY = new float3(instanceMatrix.m01, instanceMatrix.m11, instanceMatrix.m21);
                 float3 axisZ = new float3(instanceMatrix.m02, instanceMatrix.m12, instanceMatrix.m22);
-                float radius = math.max(
-                    MinRadius,
+                float radiusScaleSq = RadiusScale * RadiusScale;
+                float minRadiusSq = MinRadius * MinRadius;
+                float radiusSq = math.max(
+                    minRadiusSq,
                     math.max(
-                        math.length(axisX),
-                        math.max(math.length(axisY), math.length(axisZ))) * RadiusScale);
+                        math.lengthsq(axisX),
+                        math.max(math.lengthsq(axisY), math.lengthsq(axisZ))) * radiusScaleSq);
 
                 for (int planeIndex = 0; planeIndex < PlaneCount; planeIndex++)
                 {
                     float4 plane = CullingPlanes[planeIndex];
-                    if (math.dot(plane.xyz, center) + plane.w < -radius)
+                    float signedDistance = math.dot(plane.xyz, center) + plane.w;
+                    if (signedDistance < 0f && (signedDistance * signedDistance) > radiusSq)
                     {
                         VisibilityMask[index] = 0;
                         return;
@@ -237,6 +240,7 @@ namespace Hecton8.World
                 receiveShadows,
                 motionMode);
 
+            FrameTimeWatchdog.ReportBatchRendererGroupBatchCount(1);
             WriteDirectDrawOutput(cullingOutput, output);
         }
 

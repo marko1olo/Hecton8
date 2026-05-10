@@ -198,7 +198,7 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
+            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
             {
                 s_playerTransform = null;
                 toolManager = null;

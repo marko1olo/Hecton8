@@ -183,7 +183,18 @@ namespace MapMagic.Nodes.MatrixGenerators
             int cellCount = src.arr != null ? src.arr.Length : 0;
             int width = math.max(1, src.rect.size.x);
             int height = math.max(1, src.rect.size.z);
-            if (cellCount <= 0 || width * height > cellCount)
+            if (!HasValidMatrixCellContract(width, height, cellCount))
+            {
+                data.StoreProduct(brineMaskOut, brineMask);
+                data.StoreProduct(brineLipRidgeOut, brineLipRidgeMask);
+                data.StoreProduct(deepestPointsOut, deepestPoints);
+                data.StoreProduct(pillarCoordinatesOut, pillarCoordinates);
+                data.StoreProduct(fissureMaskOut, fissureMaskMatrix);
+                return;
+            }
+
+            Vector3 sourceWorldPos = (Vector3)src.worldPos;
+            if (!IsFiniteVector3(sourceWorldPos))
             {
                 data.StoreProduct(brineMaskOut, brineMask);
                 data.StoreProduct(brineLipRidgeOut, brineLipRidgeMask);
@@ -231,10 +242,12 @@ namespace MapMagic.Nodes.MatrixGenerators
 
                 float resolvedHeightScale = ResolveHeightScaleMeters(src, data, heightScaleMeters);
                 for (int i = 0; i < cellCount; i++)
-                    heightmap[i] = math.saturate(src.arr[i]) * resolvedHeightScale;
+                {
+                    float sample = src.arr[i];
+                    heightmap[i] = math.isfinite(sample) ? math.saturate(sample) * resolvedHeightScale : 0f;
+                }
 
                 float cellSizeMeters = ResolveCellSizeMeters(src);
-                Vector3 sourceWorldPos = (Vector3)src.worldPos;
                 var settings = new AnomalyBasinDetectionSettings
                 {
                     Width = width,
@@ -346,9 +359,12 @@ namespace MapMagic.Nodes.MatrixGenerators
         private static void CopyHeightOffsetToMatrix(NativeArray<float> sourceMeters, float[] destination, float heightScaleMeters)
         {
             int count = math.min(sourceMeters.Length, destination != null ? destination.Length : 0);
-            float invHeightScale = 1f / math.max(0.001f, heightScaleMeters);
+            float invHeightScale = 1f / ResolvePositiveFinite(heightScaleMeters, 0.001f);
             for (int i = 0; i < count; i++)
-                destination[i] = math.max(0f, sourceMeters[i]) * invHeightScale;
+            {
+                float meters = sourceMeters[i];
+                destination[i] = math.isfinite(meters) ? math.max(0f, meters) * invHeightScale : 0f;
+            }
         }
 
         private static void CopyDeepestPoints(
@@ -363,6 +379,8 @@ namespace MapMagic.Nodes.MatrixGenerators
             {
                 AnomalyBasinRecord record = records[i];
                 if (record.Valid == 0)
+                    continue;
+                if (!math.isfinite(record.DeepestHeight) || !math.isfinite(record.LipHeight))
                     continue;
 
                 float x = worldPos.x + (record.DeepestX + 0.5f) * cellSize;
@@ -384,6 +402,8 @@ namespace MapMagic.Nodes.MatrixGenerators
                 AnomalyFeatureRecord record = records[i];
                 if (record.Valid == 0 || record.Kind != (byte)AnomalyFeatureKind.ChthonicPillar)
                     continue;
+                if (!IsFiniteDouble3(new double3(record.AupX, record.AupY, record.AupZ)) || !math.isfinite(record.Strength01))
+                    continue;
 
                 var transition = new Transition((float)record.AupX, (float)record.AupY, (float)record.AupZ)
                 {
@@ -396,19 +416,44 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         private static float ResolveHeightScaleMeters(MatrixWorld matrix, TileData data, float fallbackHeightScaleMeters)
         {
-            if (matrix.worldSize.y > 0.0001f)
+            if (math.isfinite(matrix.worldSize.y) && matrix.worldSize.y > 0.0001f)
                 return matrix.worldSize.y;
 
-            if (data != null && data.globals != null && data.globals.height > 0.0001f)
+            if (data != null && data.globals != null && math.isfinite(data.globals.height) && data.globals.height > 0.0001f)
                 return data.globals.height;
 
-            return math.max(0.001f, fallbackHeightScaleMeters);
+            return ResolvePositiveFinite(fallbackHeightScaleMeters, 0.001f);
         }
 
         private static float ResolveCellSizeMeters(MatrixWorld matrix)
         {
             int safeWidth = math.max(1, matrix.rect.size.x - 1);
-            return math.max(0.001f, matrix.worldSize.x / safeWidth);
+            float cellSize = matrix.worldSize.x / safeWidth;
+            return ResolvePositiveFinite(cellSize, 0.001f);
+        }
+
+        private static bool HasValidMatrixCellContract(int width, int height, int cellCount)
+        {
+            if (width <= 0 || height <= 0 || cellCount <= 0)
+                return false;
+
+            long required = (long)width * height;
+            return required <= cellCount;
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+        }
+
+        private static bool IsFiniteDouble3(double3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static float ResolvePositiveFinite(float value, float fallback)
+        {
+            return math.isfinite(value) && value > 0f ? value : fallback;
         }
 
         private static void PublishColdPathTelemetry(int cellCount, int resolvedMaxFloodCells)

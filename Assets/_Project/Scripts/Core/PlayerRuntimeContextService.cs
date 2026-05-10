@@ -29,6 +29,7 @@ namespace Hecton8.Core
         private HectonPlayerMovement _playerMovement;
         private Rigidbody _playerRigidbody;
         private HectonSurvivalSystem _survivalSystem;
+        private HectonPlayerHealth _playerHealth;
         private PlayerToolManager _toolManager;
         private PlayerInventory _inventory;
         private PlayerTransportCoordinator _playerTransportCoordinator;
@@ -103,6 +104,16 @@ namespace Hecton8.Core
             {
                 SyncPlayerContext();
                 return _survivalSystem;
+            }
+        }
+
+        /// <inheritdoc />
+        public HectonPlayerHealth PlayerHealth
+        {
+            get
+            {
+                SyncPlayerContext();
+                return _playerHealth;
             }
         }
 
@@ -418,6 +429,7 @@ namespace Hecton8.Core
             _playerMovement = null;
             _playerRigidbody = null;
             _survivalSystem = null;
+            _playerHealth = null;
             _toolManager = null;
             _inventory = null;
             _playerTransportCoordinator = null;
@@ -475,6 +487,7 @@ namespace Hecton8.Core
             _playerMovement = null;
             _playerRigidbody = null;
             _survivalSystem = null;
+            _playerHealth = null;
             _toolManager = null;
             _inventory = null;
             _playerTransportCoordinator = null;
@@ -496,6 +509,7 @@ namespace Hecton8.Core
                 _playerObject.TryGetComponent(out _playerMovement);
                 _playerObject.TryGetComponent(out _playerRigidbody);
                 _playerObject.TryGetComponent(out _survivalSystem);
+                _playerObject.TryGetComponent(out _playerHealth);
                 _playerObject.TryGetComponent(out _toolManager);
                 _playerObject.TryGetComponent(out _inventory);
                 _playerObject.TryGetComponent(out _playerTransportCoordinator);
@@ -520,6 +534,7 @@ namespace Hecton8.Core
                 _playerMovement,
                 _playerRigidbody,
                 _survivalSystem,
+                _playerHealth,
                 _toolManager,
                 _inventory,
                 _playerTransportCoordinator,

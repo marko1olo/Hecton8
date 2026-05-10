@@ -12,8 +12,6 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         [NoScaleOffset] _BiomeFamilyTintVolume ("Visual Family 3D Tint Volume", 3D) = "white" {}
         _Instance_Color ("Instance Color", Color) = (1, 1, 1, 1)
         _Tiling ("Tiling", Range(0.01, 4)) = 0.2
-        _DominantAxisEdgeNoise ("Dominant Axis Edge Noise", Range(0, 0.08)) = 0.035
-        _TriplanarBlendSharpness ("Triplanar Blend Sharpness", Range(1, 16)) = 8
         _Metallic ("Metallic Scale", Range(0, 1)) = 0
         _Smoothness ("Smoothness", Range(0, 1)) = 0.15
         _OcclusionStrength ("Occlusion Strength", Range(0, 1)) = 1
@@ -22,6 +20,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         [NoScaleOffset] _MaskMap ("Packed Mask (R Metallic G AO B Smoothness A Emission)", 2D) = "white" {}
         _SkirtSandTint ("Skirt Sand Tint", Color) = (0.42, 0.38, 0.31, 1)
         _SkirtBlendContrast ("Skirt Blend Contrast", Range(0.1, 4)) = 1.4
+        _TerrainSeamFadeDistance ("Terrain Seam Fade Distance", Range(0.25, 3.5)) = 2
+        _TerrainSeamBandMeters ("Terrain Seam Band Meters", Float) = 3.5
         _CutScarColor ("Cut Scar Color", Color) = (1.0, 0.42, 0.12, 1)
         _CutScarWarmColor ("Cut Scar Warm Color", Color) = (0.42, 0.06, 0.03, 1)
         _CutScarCharColor ("Cut Scar Char Color", Color) = (0.06, 0.03, 0.02, 1)
@@ -121,12 +121,12 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float4 _BiomeFamilyTintVolumeWorldOrigin;
             float4 _BiomeFamilyTintVolumeWorldSize;
             float _Tiling;
-            float _DominantAxisEdgeNoise;
-            float _TriplanarBlendSharpness;
             float _Metallic;
             float _Smoothness;
             float _OcclusionStrength;
             float _SkirtBlendContrast;
+            float _TerrainSeamFadeDistance;
+            float _TerrainSeamBandMeters;
             float _CutScarEmission;
             float _CutScarSharpness;
             float _CutScarDarkening;
@@ -256,7 +256,14 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         half3 SafeNormalize3(half3 value)
         {
             half lenSq = dot(value, value);
-            return lenSq > 0.0001h ? value * rsqrt(lenSq) : half3(0.0h, 1.0h, 0.0h);
+            if (lenSq <= 0.0001h)
+                return half3(0.0h, 1.0h, 0.0h);
+
+            half3 axis = abs(value);
+            half maxAxis = max(axis.x, max(axis.y, axis.z));
+            half minAxis = min(axis.x, min(axis.y, axis.z));
+            half midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
+            return value / max(maxAxis + midAxis * 0.375h + minAxis * 0.25h, 0.0001h);
         }
 
         half FastVoxelPower01(half value, half exponent)
@@ -308,35 +315,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
         }
 
-        float Hash31(float3 value)
-        {
-            value = frac(value * 0.1031);
-            value += dot(value, value.yzx + 33.33);
-            return frac((value.x + value.y) * value.z);
-        }
-
         float ValueNoise3(float3 value)
         {
-            float3 cell = floor(value);
-            float3 fracValue = frac(value);
-            float3 smoothValue = fracValue * fracValue * (3.0 - 2.0 * fracValue);
-
-            float n000 = Hash31(cell + float3(0.0, 0.0, 0.0));
-            float n100 = Hash31(cell + float3(1.0, 0.0, 0.0));
-            float n010 = Hash31(cell + float3(0.0, 1.0, 0.0));
-            float n110 = Hash31(cell + float3(1.0, 1.0, 0.0));
-            float n001 = Hash31(cell + float3(0.0, 0.0, 1.0));
-            float n101 = Hash31(cell + float3(1.0, 0.0, 1.0));
-            float n011 = Hash31(cell + float3(0.0, 1.0, 1.0));
-            float n111 = Hash31(cell + float3(1.0, 1.0, 1.0));
-
-            float nx00 = lerp(n000, n100, smoothValue.x);
-            float nx10 = lerp(n010, n110, smoothValue.x);
-            float nx01 = lerp(n001, n101, smoothValue.x);
-            float nx11 = lerp(n011, n111, smoothValue.x);
-            float nxy0 = lerp(nx00, nx10, smoothValue.y);
-            float nxy1 = lerp(nx01, nx11, smoothValue.y);
-            return lerp(nxy0, nxy1, smoothValue.z);
+            float primary = HectonCoreLitTrianglePulse01(dot(value, float3(0.173, 0.097, 0.131)));
+            float secondary = HectonCoreLitTrianglePulse01(dot(value.yzx + 17.13, float3(0.071, 0.149, 0.109)));
+            return saturate(primary * 0.68 + secondary * 0.32);
         }
 
         float3 ResolveSamplePositionWS(float3 positionWS)
@@ -350,40 +333,6 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             half stitch = saturate(edgeBlend * heightAgreement);
             half3 neighborNormalWS = SafeNormalize3(lerp(normalWS, half3(0.0h, 1.0h, 0.0h), 0.35h));
             return SafeNormalize3(lerp(normalWS, neighborNormalWS, stitch));
-        }
-
-        half3 ResolveSharpTriplanarBlendWeights(half3 normalWS)
-        {
-            half3 blend = max(abs(normalWS), half3(0.0001h, 0.0001h, 0.0001h));
-            blend = FastVoxelPower01(blend, max((half)_TriplanarBlendSharpness, 8.0h));
-            return blend / max(blend.x + blend.y + blend.z, 0.0001h);
-        }
-
-        void ResolveDominantAxisProjection(float3 positionWS, half3 normalWS, out float2 uv, out half dominantAxis)
-        {
-            half3 absNormal = ResolveSharpTriplanarBlendWeights(normalWS);
-            float tiling = max(_Tiling, 0.0001);
-
-            if (absNormal.x >= absNormal.y && absNormal.x >= absNormal.z)
-            {
-                uv = positionWS.zy * tiling;
-                dominantAxis = 0.0h;
-            }
-            else if (absNormal.z >= absNormal.y)
-            {
-                uv = positionWS.xy * tiling;
-                dominantAxis = 2.0h;
-            }
-            else
-            {
-                uv = positionWS.xz * tiling;
-                dominantAxis = 1.0h;
-            }
-
-            half edgeBand = saturate((1.0h - max(absNormal.x, max(absNormal.y, absNormal.z))) * 2.0h);
-            float noise = Hash31(float3(floor(uv * 37.0), (float)dominantAxis + 5.37)) * 2.0 - 1.0;
-            float stochasticEdgeOffset = noise * edgeBand * _DominantAxisEdgeNoise;
-            uv += float2(stochasticEdgeOffset, -stochasticEdgeOffset);
         }
 
         float ResolveCaveMouthVertexDisplacement(float3 absolutePositionWS, float3 normalOS, half splatBlend, half skirtAlpha)
@@ -443,7 +392,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
             float scanline = frac(positionCS.y * 0.125 + _Time.y * 17.0);
             half scanPulse = smoothstep(0.84h, 0.98h, (half)scanline);
-            half staticNoise = (half)Hash31(floor(positionWS * 5.0 + _Time.y * 3.0));
+            half staticNoise = (half)ValueNoise3(positionWS * 5.0 + _Time.y * 3.0);
             half edgeNoise = smoothstep(0.52h, 0.93h, staticNoise);
             half malfunction = saturate((scanPulse * 0.55h + edgeNoise * 0.45h) * reveal * strength);
 
@@ -461,64 +410,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float scale = max(_CaveMouthPhosphorPulseScale, 0.05);
             float phase = dot(positionWS, float3(0.37, 0.19, 0.41)) * scale + _Time.y * 3.7;
             half sinePulse = smoothstep(0.78h, 1.0h, (half)HectonCoreLitTrianglePulse01(phase));
-            half gridNoise = (half)Hash31(floor(positionWS * (scale * 2.0) + _Time.y));
+            half gridNoise = (half)ValueNoise3(positionWS * (scale * 2.0) + _Time.y);
             return gate * saturate(sinePulse * lerp(0.65h, 1.0h, gridNoise));
         }
 
-        half4 SampleDominantAxisColorAtUv(TEXTURE2D_PARAM(tex, samp), float2 uv)
-        {
-            return SAMPLE_TEXTURE2D(tex, samp, uv);
-        }
-
-        half4 SampleDominantAxisColor(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 normalWS)
-        {
-            float2 uv;
-            half dominantAxis;
-            ResolveDominantAxisProjection(positionWS, normalWS, uv, dominantAxis);
-            return SampleDominantAxisColorAtUv(TEXTURE2D_ARGS(tex, samp), uv);
-        }
-
-        half ResolveStochasticDominantAxis(float3 positionWS, half3 normalWS)
-        {
-            half3 absNormal = ResolveSharpTriplanarBlendWeights(normalWS);
-            half dominantAxis = 0.0h;
-            half dominantWeight = absNormal.x;
-            half runnerUpAxis = 1.0h;
-            half runnerUpWeight = absNormal.y;
-
-            if (absNormal.y > dominantWeight)
-            {
-                runnerUpAxis = dominantAxis;
-                runnerUpWeight = dominantWeight;
-                dominantAxis = 1.0h;
-                dominantWeight = absNormal.y;
-            }
-            else if (absNormal.y > runnerUpWeight)
-            {
-                runnerUpAxis = 1.0h;
-                runnerUpWeight = absNormal.y;
-            }
-
-            if (absNormal.z > dominantWeight)
-            {
-                runnerUpAxis = dominantAxis;
-                runnerUpWeight = dominantWeight;
-                dominantAxis = 2.0h;
-                dominantWeight = absNormal.z;
-            }
-            else if (absNormal.z > runnerUpWeight)
-            {
-                runnerUpAxis = 2.0h;
-                runnerUpWeight = absNormal.z;
-            }
-
-            half edgeWindow = max((half)_DominantAxisEdgeNoise * max((half)_TriplanarBlendSharpness, 1.0h), 0.0001h);
-            half edgeBlend = saturate(1.0h - (dominantWeight - runnerUpWeight) / edgeWindow);
-            half selector = (half)Hash31(floor(positionWS * max(_Tiling * 2.0, 0.0001)));
-            return selector < edgeBlend * 0.5h ? runnerUpAxis : dominantAxis;
-        }
-
-        float2 ResolveStochasticDominantAxisUv(float3 positionWS, half axis)
+        float2 ResolveAxisProjectionUv(float3 positionWS, half axis)
         {
             float tiling = max(_Tiling, 0.0001);
             if (axis < 0.5h)
@@ -530,11 +426,51 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return positionWS.xz * tiling;
         }
 
-        half4 SampleStochasticDominantAxisColor(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 normalWS)
+        void ResolveCinematicTwoAxisProjection(half3 normalWS, out half primaryAxis, out half secondaryAxis, out half secondaryWeight)
         {
-            half axis = ResolveStochasticDominantAxis(positionWS, normalWS);
-            float2 uv = ResolveStochasticDominantAxisUv(positionWS, axis);
-            return SAMPLE_TEXTURE2D(tex, samp, uv);
+            half3 axis = abs(normalWS);
+            half primaryWeight;
+            half candidateA;
+            half candidateB;
+
+            if (axis.x >= axis.y && axis.x >= axis.z)
+            {
+                primaryAxis = 0.0h;
+                primaryWeight = axis.x;
+                secondaryAxis = axis.z >= axis.y ? 2.0h : 1.0h;
+                candidateA = axis.z;
+                candidateB = axis.y;
+            }
+            else if (axis.z >= axis.y)
+            {
+                primaryAxis = 2.0h;
+                primaryWeight = axis.z;
+                secondaryAxis = axis.x >= axis.y ? 0.0h : 1.0h;
+                candidateA = axis.x;
+                candidateB = axis.y;
+            }
+            else
+            {
+                primaryAxis = 1.0h;
+                primaryWeight = axis.y;
+                secondaryAxis = axis.x >= axis.z ? 0.0h : 2.0h;
+                candidateA = axis.x;
+                candidateB = axis.z;
+            }
+
+            half secondaryMagnitude = max(candidateA, candidateB);
+            secondaryWeight = saturate((secondaryMagnitude / max(primaryWeight + secondaryMagnitude, 0.0001h)) * 0.65h);
+        }
+
+        half4 SampleCinematicAxisColor(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 normalWS)
+        {
+            half primaryAxis;
+            half secondaryAxis;
+            half secondaryWeight;
+            ResolveCinematicTwoAxisProjection(normalWS, primaryAxis, secondaryAxis, secondaryWeight);
+            half4 primarySample = SAMPLE_TEXTURE2D(tex, samp, ResolveAxisProjectionUv(positionWS, primaryAxis));
+            half4 secondarySample = SAMPLE_TEXTURE2D(tex, samp, ResolveAxisProjectionUv(positionWS, secondaryAxis));
+            return lerp(primarySample, secondarySample, secondaryWeight);
         }
 
         half3 ResolveBiomeVisualFamilyTint(uint family)
@@ -622,12 +558,15 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return SafeNormalize3(half3(tangentNormal.x, tangentNormal.z * normalSign.y, tangentNormal.y));
         }
 
-        half3 SampleDominantAxisNormal(float3 positionWS, half3 baseNormalWS)
+        half3 SampleCinematicTwoAxisNormal(float3 positionWS, half3 baseNormalWS)
         {
-            float2 uv;
-            half dominantAxis;
-            ResolveDominantAxisProjection(positionWS, baseNormalWS, uv, dominantAxis);
-            return SampleDominantAxisNormalAtUv(uv, dominantAxis, baseNormalWS);
+            half primaryAxis;
+            half secondaryAxis;
+            half secondaryWeight;
+            ResolveCinematicTwoAxisProjection(baseNormalWS, primaryAxis, secondaryAxis, secondaryWeight);
+            half3 primaryNormalWS = SampleDominantAxisNormalAtUv(ResolveAxisProjectionUv(positionWS, primaryAxis), primaryAxis, baseNormalWS);
+            half3 secondaryNormalWS = SampleDominantAxisNormalAtUv(ResolveAxisProjectionUv(positionWS, secondaryAxis), secondaryAxis, baseNormalWS);
+            return lerp(primaryNormalWS, secondaryNormalWS, secondaryWeight);
         }
 
         half EvaluateGlobalCutMask(float3 positionWS)
@@ -658,7 +597,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
         half ResolveSkirtCoverageMask(half vertexAlpha)
         {
-            return FastVoxelPower01(saturate(vertexAlpha), max(_SkirtBlendContrast, 0.1));
+            half bandMeters = max((half)_TerrainSeamBandMeters, 0.01h);
+            half fadeMeters = clamp((half)_TerrainSeamFadeDistance, 0.01h, bandMeters);
+            half fadeStartAlpha = saturate(1.0h - fadeMeters / bandMeters);
+            half remappedAlpha = saturate((saturate(vertexAlpha) - fadeStartAlpha) / max(1.0h - fadeStartAlpha, 0.0001h));
+            return FastVoxelPower01(remappedAlpha, max(_SkirtBlendContrast, 0.1));
         }
 
         half ResolveSkirtCoverage(half vertexAlpha, float2 positionCS)
@@ -670,7 +613,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
         half ResolveShadowCoverage(half vertexAlpha, float2 positionCS, half scarMask, float3 positionWS)
         {
-            half shapedAlpha = FastVoxelPower01(saturate(vertexAlpha), max(_SkirtBlendContrast, 0.1));
+            half shapedAlpha = ResolveSkirtCoverageMask(vertexAlpha);
             float scarNoise = Hash21(floor(positionWS.xz * 3.0 + scarMask * 19.0));
             half erosion = scarMask * _ShadowScarErosion * (1.0h - scarNoise);
             half coverage = saturate(shapedAlpha - erosion);
@@ -917,13 +860,10 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 baseNormalWS = RecalculateDisplacedNormalWS(input.positionWS, baseNormalWS);
                 float3 samplePositionWS = input.absolutePositionWS;
                 half vertexCaveAo = saturate(dot(input.terrainSplatColor.rgb, half3(0.3333h, 0.3333h, 0.3334h)));
-                float2 rockUv;
-                half rockDominantAxis;
-                ResolveDominantAxisProjection(samplePositionWS, baseNormalWS, rockUv, rockDominantAxis);
-                half3 dominantNormalWS = SampleDominantAxisNormalAtUv(rockUv, rockDominantAxis, baseNormalWS);
+                half3 dominantNormalWS = SampleCinematicTwoAxisNormal(samplePositionWS, baseNormalWS);
 
-                half4 baseSample = SampleStochasticDominantAxisColor(TEXTURE2D_ARGS(_Base_Map, sampler_Base_Map), samplePositionWS, baseNormalWS);
-                half4 packedMask = SampleStochasticDominantAxisColor(TEXTURE2D_ARGS(_Mask_Map, sampler_Mask_Map), samplePositionWS, baseNormalWS);
+                half4 baseSample = SampleCinematicAxisColor(TEXTURE2D_ARGS(_Base_Map, sampler_Base_Map), samplePositionWS, baseNormalWS);
+                half4 packedMask = SampleCinematicAxisColor(TEXTURE2D_ARGS(_Mask_Map, sampler_Mask_Map), samplePositionWS, baseNormalWS);
                 HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, (half)_Metallic, (half)_OcclusionStrength, (half)_Smoothness);
                 half globalCutMask = EvaluateGlobalCutMask(input.positionWS);
                 half damageVolumeMask = globalCutMask >= 0.999h ? 0.0h : EvaluateDamageVolumeMask(input.positionWS);
@@ -964,7 +904,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 ambientOcclusion *= 1.0h - caveMouthDistanceAo * 0.45h;
                 albedo *= 1.0h - caveMouthDistanceAo * 0.24h;
                 half horizontalDust = ResolveHorizontalSiltDust(samplePositionWS, normalWS);
-                half4 siltSample = SampleStochasticDominantAxisColor(TEXTURE2D_ARGS(_SiltLayerMap, sampler_SiltLayerMap), samplePositionWS, normalWS);
+                half4 siltSample = SampleCinematicAxisColor(TEXTURE2D_ARGS(_SiltLayerMap, sampler_SiltLayerMap), samplePositionWS, normalWS);
                 half3 siltAlbedo = saturate(siltSample.rgb * (half3)_SiltTint.rgb * 1.2h);
                 albedo = lerp(albedo, siltAlbedo, horizontalDust);
                 smoothness = lerp(smoothness, min(smoothness, 0.22h), horizontalDust);

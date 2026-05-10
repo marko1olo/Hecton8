@@ -5,77 +5,77 @@ Status: ARCHIVED
 
 # HECTON-8 — Coordinator Wave 2 Log
 
-Дата: 2026-04-13  
-Статус: PENDING VERIFICATION
+Data: 2026-04-13  
+Status: PENDING VERIFICATION
 
 ## Scope
 
-- Свести результаты первой 16-agent wave.
-- После упора в usage limit продолжить blocker resolution локально.
-- Довести compile blockers до чистой Unity console.
-- Закрыть критичный scene integration gap по `LoreSystems`.
+- Svesti rezultaty pervoy 16-agent wave.
+- Posle upora v usage limit prodolzhit blocker resolution lokalno.
+- Dovesti compile blockers do chistoy Unity console.
+- Zakryt kritichnyy scene integration gap po `LoreSystems`.
 
 ## Actions Taken
 
 ### 1. Compile blocker rescue
 
-Локально исправлены реальные ошибки из Unity Console:
+Lokalno ispravleny realnye oshibki iz Unity Console:
 
 - `Assets/_Project/Scripts/WorldPopulationDirector.cs`
-  - в helper-ветке `primaryRule == null` убран вызов с несуществующими `zoneBlendFactor` и `resolvedSocketCount`;
-  - оставлен bounded path через `blendFactor` и diagnostics только при `captureDiagnostics`.
+  - v helper-vetke `primaryRule == null` ubran vyzov s nesuschestvuyuschimi `zoneBlendFactor` i `resolvedSocketCount`;
+  - ostavlen bounded path cherez `blendFactor` i diagnostics tolko pri `captureDiagnostics`.
 
 - `Assets/_Project/Scripts/PlayerInventory.cs`
-  - в `PopulateSaveData()` fallback на пустой `_grid` теперь обращается к `this.columns` и `this.rows`,
-    а не к скрываемому локальной переменной `rows` имени.
+  - v `PopulateSaveData()` fallback na pustoy `_grid` teper obraschaetsya k `this.columns` i `this.rows`,
+    a ne k skryvaemomu lokalnoy peremennoy `rows` imeni.
 
 ### 2. Compile verification
 
-После локальных правок Unity Console перестал показывать `error` entries.  
-Остались только warning'и:
+Posle lokalnyh pravok Unity Console perestal pokazyvat `error` entries.  
+Ostalis tolko warning'i:
 
-- obsolete editor API в `HectonRockRuntimeBootstrapAuthoring.cs`
-- obsolete editor API и unused variable в `VRAMVitalsAuditReport.cs`
-- third-party warnings в `Dynamic Decals`
+- obsolete editor API v `HectonRockRuntimeBootstrapAuthoring.cs`
+- obsolete editor API i unused variable v `VRAMVitalsAuditReport.cs`
+- third-party warnings v `Dynamic Decals`
 
 ### 3. Scene integration
 
-Локально в `Assets/_Project/Scenes/02_HECTON_WORLD.unity`:
+Lokalno v `Assets/_Project/Scenes/02_HECTON_WORLD.unity`:
 
-- создан `LoreSystems` root;
-- добавлен компонент `Hecton8.Bootstrap.HectonLoreSystemsRoot`;
-- сцена сохранена.
+- sozdan `LoreSystems` root;
+- dobavlen komponent `Hecton8.Bootstrap.HectonLoreSystemsRoot`;
+- stsena sohranena.
 
-Факт проверки:
+Fakt proverki:
 
-- `LoreSystems` найден в active `02_HECTON_WORLD` через Unity MCP search.
+- `LoreSystems` nayden v active `02_HECTON_WORLD` cherez Unity MCP search.
 - Scene saved after root insertion.
 
 ### 3.1. Runtime proof for lore root
 
-Проведена live-проверка через Play Mode:
+Provedena live-proverka cherez Play Mode:
 
 - entered Play Mode;
-- `LoreSystems` root найден;
-- найдены runtime-created objects:
+- `LoreSystems` root nayden;
+- naydeny runtime-created objects:
   - `QuestManager`
   - `AudioLogSystem`
   - `FirstHourDirector`
 
-Вывод:
+Vyvod:
 
-- `HectonLoreSystemsRoot` теперь не только присутствует в сцене,
-- он реально поднимает lore stack в рантайме.
+- `HectonLoreSystemsRoot` teper ne tolko prisutstvuet v stsene,
+- on realno podnimaet lore stack v rantayme.
 
 ### 4. Shell settings integration
 
-Локально в `Assets/_Project/Scripts/UI/PauseMenuController.cs`:
+Lokalno v `Assets/_Project/Scripts/UI/PauseMenuController.cs`:
 
-- добавлен минимальный реальный user option в pause settings;
-- встроен `CYCLE LANGUAGE` path через `LocalizationManager.CycleLanguage()`;
-- добавлен status text с текущим языком;
-- `RefreshSettingsPanel()` теперь обновляет состояние language option;
-- default selection для settings теперь ведёт на language button, если он есть.
+- dobavlen minimalnyy realnyy user option v pause settings;
+- vstroen `CYCLE LANGUAGE` path cherez `LocalizationManager.CycleLanguage()`;
+- dobavlen status text s tekuschim yazykom;
+- `RefreshSettingsPanel()` teper obnovlyaet sostoyanie language option;
+- default selection dlya settings teper vedet na language button, esli on est.
 
 ## Files Touched Locally By Coordinator
 
@@ -86,39 +86,39 @@ Status: ARCHIVED
 
 ## Current State
 
-Первая 16-agent wave отработала. Основные результаты уже лежат в индивидуальных логах:
+Pervaya 16-agent wave otrabotala. Osnovnye rezultaty uzhe lezhat v individualnyh logah:
 
 - `agent_01` ... `agent_16`
 
-После local blocker wave:
+Posle local blocker wave:
 
-- compile blockers по `WorldPopulationDirector` и `PlayerInventory` сняты;
-- `LoreSystems` теперь реально существует в production world scene;
-- shell получил хотя бы один живой user option через persistence-backed language flow.
+- compile blockers po `WorldPopulationDirector` i `PlayerInventory` snyaty;
+- `LoreSystems` teper realno suschestvuet v production world scene;
+- shell poluchil hotya by odin zhivoy user option cherez persistence-backed language flow.
 
 ## Remaining Risks / Next Wave
 
-Следующая рациональная волна:
+Sleduyuschaya ratsionalnaya volna:
 
 1. Missing runtime scripts triage:
-   - Play Mode выдал пачку `The referenced script (Unknown) on this Behaviour is missing!`;
-   - `manage_scene validate` не нашёл missing scripts в самой `02_HECTON_WORLD`,
-   - значит источник может быть не в сценовом static hierarchy, а в runtime-created или indirect prefab path.
-2. `BaseModule.cs` — хирургический просмотр подозрительного фрагмента и live validation.
-3. `MainMenuController.cs` — если нужен parity-path для language/settings в main menu, а не только в pause.
+   - Play Mode vydal pachku `The referenced script (Unknown) on this Behaviour is missing!`;
+   - `manage_scene validate` ne nashel missing scripts v samoy `02_HECTON_WORLD`,
+   - znachit istochnik mozhet byt ne v stsenovom static hierarchy, a v runtime-created ili indirect prefab path.
+2. `BaseModule.cs` — hirurgicheskiy prosmotr podozritelnogo fragmenta i live validation.
+3. `MainMenuController.cs` — esli nuzhen parity-path dlya language/settings v main menu, a ne tolko v pause.
 4. Pause settings runtime check:
-   - проверить `CYCLE LANGUAGE` live в UI.
+   - proverit `CYCLE LANGUAGE` live v UI.
 5. Perf/release proof:
-   - числа есть не везде,
-   - многие subsystem changes всё ещё без runtime proof.
+   - chisla est ne vezde,
+   - mnogie subsystem changes vse esche bez runtime proof.
 
 ## Verification Status
 
 PENDING VERIFICATION
 
-Причина:
+Prichina:
 
-- compile errors ушли, но runtime verification всей сцепки ещё не проведён;
-- lore stack поднялся в рантайме, но есть новый runtime blocker: `Unknown script` errors без локализованного источника;
-- `HectonLoreSystemsRoot.SetupAllSystems()` не был принудительно вызван editor-execute tool'ом из-за tool-side failure (`filename or extension is too long`), но runtime-proof частично заменил эту необходимость;
-- значительная часть agent-made changes всё ещё подтверждена только code review / partial editor refresh.
+- compile errors ushli, no runtime verification vsey stsepki esche ne proveden;
+- lore stack podnyalsya v rantayme, no est novyy runtime blocker: `Unknown script` errors bez lokalizovannogo istochnika;
+- `HectonLoreSystemsRoot.SetupAllSystems()` ne byl prinuditelno vyzvan editor-execute tool'om iz-za tool-side failure (`filename or extension is too long`), no runtime-proof chastichno zamenil etu neobhodimost;
+- znachitelnaya chast agent-made changes vse esche podtverzhdena tolko code review / partial editor refresh.

@@ -1,0 +1,1620 @@
+Rebuild player physics systems
+No tasks in progress
+
+
+[CORE IDENTITY]: Senior Technical Lead, HECTON-8 (NASA-Punk / Deep Sea Noir).
+[TASK]: Total Physics Reconstruction of HectonPlayerMovement.cs and related systems.
+
+[CONTEXT]: Your current code has been audited and REJECTED as a "Cargo Cult". You are effectively sabotaging PhysX. You have ONE chance to perform a surgical strike on the core physics.
+
+[REQUIRED ACTIONS - SECTOR: PHYSICS]:
+1. [ARCHITECTURE]: Deconstruct HectonPlayerMovement.cs (3500+ lines). Split into HectonPlayerMotor (Kinematics), HectonPlayerEnvironmentHandler (External Forces), and HectonPlayerStateMachine. Use interfaces.
+2. [CRITICAL]: Fix "Double Integration". If MovePosition is used for sweep gating, you MUST project or zero out the velocity vector along the hit normal to prevent 2x displacement (wall clipping).
+3. [CRITICAL]: Eliminate Buffer Corruption. Stop sharing _groundHitBuffer. Every sub-system (Motor, Environment, Foot Probes) must own a unique pre-allocated RaycastHit[32] array.
+4. [MATH]: Submarine Relative Kinematics. Fix the Gimbal Lock in look-input. Use Quaternions (rotation * platformDelta) instead of flattening vectors to Y=0 on tilted hulls. Implement full PRTS (Platform Relative Transform System).
+5. [MATH]: Torque Kraken. Stop applying parasite forces outside CoM without caps. Split into AddForce and AddTorque with hard angular acceleration limits.
+6. [STABILITY]: Numerical Stability. Implement analytical damping for quadratic drag (v^2) to prevent velocity reversal. Guard all linearVelocity writes with math.isfinite().
+7. [POLISH]: Fix "Floating Point Drift" in _bodyYaw using Mathf.DeltaAngle. Fix "Crest Normal Flip" by using Crest 5 API instead of manual Vector3.Cross.
+8. [SYNC]: Address "Boolean Hell". Replace overlapping 'if' statements with a rigid State Machine. Fix TimeScale confusion (use fixedDeltaTime correctly with timeScale).
+
+[MANDATORY PRE-REQUISITE]:
+Scan the folder C:\hades\Hecton8\.agents-skills\ and load ALL mandates related to Physics, Submarines, Tethers, and Zero-GC. Use their filenames to identify them. Failure to follow mandates = REJECT.
+
+[SYSTEM MANDATE v4.0: THE CRUCIBLE AUDIT REPORT]
+Provide a technical report strictly in this format:
+1. MANDATE INGESTION: List the mandate files you read.
+2. CRITICAL DEBT CLEARANCE: 
+   - SNIPPETS: Show "BEFORE" and "AFTER" for each of the 8 points above.
+   - MATH FIX: Describe your analytical drag and relative kinematics formulas.
+3. ALGORITHMIC & MEMORY PERFECTION: 
+   - Prove Zero-GC status in Tick/FixedTick.
+   - Specify unique buffer sizes and disposal logic.
+4. HARDWARE SYNCHRONIZATION: Describe how you fixed interpolation sabotage and collision-kinematic conflicts.
+5. ESTIMATED GAIN: Specific cycle/ms savings for MX350.
+
+
+Tvoy otvet proveryaetsya Lead Architect & CTO. Faza 4 (Inkvizitsiya) trebuet absolyutnogo tehnicheskogo sovershenstva. 
+Lyuboe ispolzovanie Resources.FindObjectsOfTypeAll, LINQ, nesinhronizirovannyh potokov ili O(N^2) algoritmov privedet k otkloneniyu.
+Predostav zhestkiy tehnicheskiy otchet po forme:
+MANDATE INGESTION: Yavno perechisli, kakie .md fayly iz C:\hades\Hecton8\.agents-skills\ ty izuchil dlya resheniya zadachi.
+CRITICAL DEBT CLEARANCE:
+SNIPPETS: Pokazhi kod «DO» i «POSLE» dlya kazhdogo ispravlennogo baga iz spiska revyuera.
+MATH FIX: Obosnuy ispravlennye formuly (Funnel, Drag, Phase Accumulation, etc.).
+ALGORITHMIC & MEMORY PERFECTION:
+Dokazhi matematicheski, chto tvoy algoritm stal O(N) (dlya putey) ili chto tvoy GPU-hesh zaschischen ot Thread Contention.
+Podtverdi Zero-GC status. Ukazhi, gde vyzvan Dispose dlya Native-kollektsiy.
+HARDWARE SYNCHRONIZATION (GPU/Threads/PhysX):
+Opishi ispolzovanie MemoryBarrier, Interlocked, UAV Barriers ili ConstantBuffers.
+Opishi, kak reshena problema Floating Origin i Double Integration.
+ESTIMATED GAIN: Zhestkie tsifry. Skolko Raycast'ov sekonomleno? Kakova raznitsa v ms mezhdu O(N^2) i O(N)? Kakova ekonomiya PCIe trafika?
+
+Show more
+12:32 AM
+
+
+
+229 previous messages
+Using unity-mcp-orchestrator because this is a Unity physics refactor with code, scene, and verification implications. First step is mandate ingestion and codebase reconnaissance: I’m scanning AGENTS.md, Docs/, and .agents-skills/ to identify the physics, submarine, tether, and zero-GC constraints before touching HectonPlayerMovement.cs.
+
+
+Ran 4 commands
+I’ve identified the likely mandate set: physics integrity, submarine kinematics, tether constraints, zero-GC, native memory, and floating-origin precision. Next pass is reading those mandates plus the movement audit and the current player movement implementation to map the actual fault lines before I cut code.
+
+
+Ran 7 commands
+Mandates are loaded. The next step is source truth: current HectonPlayerMovement, the existing HectonPlayerMotor, and the movement audit/reviewer notes. I’m mapping where the eight defects exist in code, not where the prompt claims they exist.
+
+
+Ran 7 commands
+The file is exactly what the review describes: the helper subsystems exist, but the monolith still owns nearly all force application and buffer reuse. I’m now tracing the actual dependency graph around HectonPlayerMovement so the split lands on existing contracts instead of inventing a second broken architecture.
+
+
+Ran 9 commands
+[ANALYSIS]
+Target: Assets/_Project/Scripts/HectonPlayerMovement.cs plus Gameplay/HectonPlayerMotor.cs, Gameplay/HectonPlayerEnvironmentHandler.cs, Gameplay/HectonPlayerStateMachine.cs, Gameplay/ITransportPlatform.cs, and Crest integration points.
+Affected systems: locomotion force application, transport-relative kinematics, sweep gating, ground/foot probes, Crest body sampling, parasite/tether-like external force application, wipeout recovery, environment force dispatch.
+Zero GC proof target: no new managed allocations in Tick/FixedTick; all physics queries stay NonAlloc; each subsystem owns its own preallocated hit buffer; no LINQ, no Find*, no per-step string work, no new delegates.
+State check: current code still has duplicated force ownership (_rb.AddForce in monolith plus helper buffers), shared _groundHitBuffer, quaternion math partially sabotaged by Y-flattening, wipeout sweep keeps forward velocity after MovePosition, and helper subsystems are present but not authoritative.
+Rule quote: [FORBID] Update/LateUpdate/FixedUpdate in gameplay code. [REQ] Use ITickable/IFixedTickable via GameTickManager. and [FORBID] Any system sharing buffer with another system executing same FixedUpdate frame without explicit ownership token. and [FORBID] Euler-step drag... [RULE] Analytical solution mandatory.
+
+Plan:
+
+Extract authoritative fixed-step state and force ownership so motor/environment/state-machine stop being decorative.
+Replace shared collision buffers with subsystem-owned buffers and rewire the key ground, step, sweep, and foot-probe call sites.
+Fix transport-relative rotation/motion using cached platform delta quaternions and platform-relative position integration.
+Fix sweep/double-integration, drag stability, torque caps, finite guards, _bodyYaw drift, and Crest normal sampling path.
+Compile, inspect console, and report only what code and tooling actually verified.
+
+Ran 34 commands
+The monolith’s helper components are also sequenced wrong: Motor and EnvironmentHandler register with GameTickManager before the owner, so their buffered work runs on stale state with a one-step lag. I’m collapsing execution back under the owner’s FixedTick while keeping the subsystems and interfaces as real ownership boundaries, not decorative components.
+
+
+Ran 15 commands
+I have enough context to cut code. The edits will do four things in one pass: make the helper subsystems authoritative, remove the shared raycast buffer hazard, replace the transport math with cached platform deltas, and harden velocity/torque/drag paths so PhysX stops fighting the controller.
+
+
+Created 6 files, edited 1 file, deleted 3 files, ran 4 commands
+Context automatically compacted
+Prodolzhayu hirurgicheskiy razbor monolita. Seychas dobivayu HectonPlayerMovement.cs: perevozhu helper-komponenty v realnye vladeltsy faz, razvozhu bufery, zatem zamenyayu opasnye Rigidbody-vyzovy na motor s proektsiey skorosti i PRTS-kinematikoy.
+
+
+Ran 4 commands
+Kontrakt helper-podsistem uzhe pereveden v realnye vladeltsy faz. Dalshe kriticheskiy uchastok: v monolite esche ostalis pryamye MovePosition/linearVelocity/AddForce*, obschiy _groundHitBuffer i ploskaya Y-normalizatsiya platformy. Eto seychas vyrezayu.
+
+
+Ran 23 commands
+Dalshe idu po vsem pryamym Rigidbody-zapisyam. Tsel prostaya: v kontrollere ne dolzhno ostatsya nesanktsionirovannyh AddForce/MovePosition/linearVelocity, inache dekompozitsiya opyat dekorativnaya i revyu eto ubet.
+
+
+Ran 7 commands
+Pravlyu motor pervym, potomu chto ves monolit dalshe budet marshrutizirovatsya cherez nego. Nuzhny nedostayuschie primitivy: Impulse, ogranichennyy AngularVelocityChange i edinyy bezopasnyy marshrut dlya force modes.
+
+
+Edited 1 file, ran 3 commands
+Razvozhu bufery i transportnyy kesh. Eto kritichno: poka odna i ta zhe RaycastHit[32] obsluzhivaet i zemlyu, i stupeni, i foot probes, lyubye perekrestnye vyzovy ostayutsya istochnikom skrytoy porchi dannyh.
+
+
+Edited 1 file, ran 10 commands
+Bufery razvozhu po podsistemam: ground, foot probes, step assist, overhead clearance, bottom clearance. Wipeout sweep uydet v motor-owned buffer, chtoby ni odin cast bolshe ne zhil na obschey pamyati.
+
+
+Edited 1 file, ran 1 command
+Seychas vvozhu edinyy shlyuz v HectonPlayerMovement. Posle etogo vse silovye zapisi idut tolko cherez motor API, a monolit perestaet napryamuyu lomat Rigidbody-sostoyanie.
+
+
+Edited 1 file, ran 12 commands
+Perehozhu k Crest i uglovoy matematike. Tut dve tseli: ubrat normal iz ruchnogo Cross, i zavernut yaw-pruzhinu na DeltaAngle, chtoby bolshe ne nakaplivat dreyf na dlinnyh sessiyah.
+
+
+Edited 1 file, ran 4 commands
+Perestavlyayu fazy FixedTick: snachala sostoyanie i environment queues, potom carrier motion i sweep gate. Inache transport/svip rabotayut po ustarevshemu kontekstu i snova dayut rashozhdenie kadra.
+
+
+Edited 1 file
+Kodovaya hirurgiya pochti zakryta. Seychas proveryayu to, chto realno vazhno: kompiliruetsya li svyazka movement/motor/environment/state, i ne ostavil li ya sintaksicheskiy musor posle massovoy marshrutizatsii Rigidbody-vyzovov.
+
+Validate script
+Validate script
+Validate script
+Validate script
+Unity MCP nedostupen, validatsii iz redaktora net. Perehozhu na lokalnuyu proverku cherez solution/csproj, chtoby hotya by poymat chistye C# oshibki do otcheta.
+
+
+Ran 4 commands
+Sborka nashla realnyy regress: novye enum-fayly ne popali v tot zhe assembly definition, chto HectonPlayerMovement/IHectonPlayerStateMachine. Ispravlyayu eto seychas, inache dazhe idealnaya logika ne imeet znacheniya.
+
+
+Ran 3 commands
+Ispravlenie prostoe: novye enum-i nelzya derzhat v otdelnyh faylah bez regeneratsii Unity csproj. Perenoshu ih v suschestvuyuschiy IHectonPlayerStateMachine.cs i udalyayu otdelnye fayly, chtoby sborka videla tipy nemedlenno.
+
+
+Edited 1 file, deleted 3 files, ran 1 command
+Lokalnaya sborka bolshe ne padaet na moih faylah. Ostatochnyy bloker teper vne zadachi: HectonMapMagicVegetationBridge.cs uzhe sloman v rabochem dereve i lomaet obschiy Assembly-CSharp. Proveryu eto tochechno po logam i zafiksiruyu kak vneshniy regress.
+
+
+Ran 2 commands
+Fiksiruyu koordinaty dlya otcheta i dobirayu fakty. Nuzhny tolko dokazuemye veschi: gde stoyat novye bufery, gde zhivet PRTS, gde teper analiticheskiy drag, i gde sweep bolshe ne delaet 2x displacement.
+
+
+Ran 8 commands
+Delayu posledniy lokalnyy sanitarnyy prohod: git diff --check i poisk tolko po izmenennym movement-faylam. Eto ne zamenyaet Unity Editor, no lovit banalnyy musor do finalnogo otcheta.
+
+
+Ran 5 commands
+MANDATE INGESTION
+Studied:
+
+PHYS_Physics_Integrity_Determinism_ForceMode.txt
+CORE_Submarine_Vehicles_Kinematics_AUP.txt
+PHYS_Tether_Cable_Acceleration_Constraints.txt
+OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+Primary implementation lives in HectonPlayerMovement.cs (line 4091), HectonPlayerMotor.cs (line 198), HectonPlayerEnvironmentHandler.cs (line 63), HectonPlayerStateMachine.cs (line 48), IHectonPlayerStateMachine.cs (line 6).
+
+CRITICAL DEBT CLEARANCE
+
+Architecture. BEFORE: decorative helpers plus _stateMachine?.SyncLocomotionMode(_currentLocomotionMode);. AFTER: _stateMachine?.AdvanceFixed(fixedDeltaTime);, SyncStateMachineContext(...), _environmentHandler?.ExecuteStep(fixedDeltaTime);, and all Rigidbody writes route through HectonPlayerMotor.
+Double integration. BEFORE: _rb.MovePosition(_rb.position + safeDisplacement); _rb.linearVelocity = clampedVelocity;. AFTER: _playerMotor.TrySweepGatedMove(intendedDisplacement, groundLayers, wipeoutSweepSkinWidth, out blockingHit) and motor-side ProjectLinearVelocityOnPlane(blockingHit.normal).
+Buffer corruption. BEFORE: single _groundHitBuffer = new RaycastHit[32]. AFTER: dedicated RaycastHit[32] owners for ground, foot probes, step assist, overhead clearance, bottom clearance, plus motor sweep and environment buffers.
+Submarine relative kinematics / gimbal lock. BEFORE: localForward.y = 0f; rotatedWorldForward.y = 0f;. AFTER: Quaternion localRotation = Quaternion.Inverse(basisRotation) * ResolveWorldYawRotation(worldYaw); and carrier PRTS via ApplyCarrierMotion(previousPlatformPosition, currentPlatformPosition, deltaRotation, Vector3.zero).
+Torque Kraken. BEFORE: _rb.AddForceAtPosition(totalForce, applicationPoint, ForceMode.Force); and raw _rb.AddTorque(..., ForceMode.VelocityChange);. AFTER: ApplyMotorOffCenterForce(totalForce, applicationPoint) with lever-arm clamp and ApplyMotorAngularVelocityChange(..., maxAngularAcceleration, fixedDeltaTime).
+Numerical stability. BEFORE: explicit quadratic drag force dragMagnitude = coeff * speed * speed with sign-flip risk under large dt. AFTER: dampedVelocity = HectonPlayerMotor.AnalyticalQuadraticDrag(_velocity, coeff / mass, fixedDeltaTime); ApplyMotorVelocityChange(dampedVelocity - _velocity); plus finite-guarded SetLinearVelocity.
+Floating drift / Crest normal flip. BEFORE: _bodyYaw = SpringDamp(...) and Vector3.Cross(lateralAxis, longitudinalAxis). AFTER: _bodyYaw = SpringDampAngle(... Mathf.DeltaAngle ...) and water normal from averaged Crest-sampled _crestQueryNormals[i].
+Boolean hell / fixed-step sync. BEFORE: wipeout/state lived as overlapping booleans with mode mirror only. AFTER: explicit PlayerEnvironmentState, PlayerSupportState, PlayerOverrideState, fixed-step AdvanceFixed, and authoritative SyncContext(...) using the fixedDeltaTime parameter only.
+MATH FIX
+
+Quadratic drag: v(t+dt) = v(t) / (1 + k * |v(t)| * dt), with k = effectiveDragCoeff / mass. This is monotonic, stable for variable fixed steps, and cannot reverse velocity.
+Sweep gate: v' = ProjectOnPlane(v, n). The blocked normal component is removed after MovePosition, so PhysX does not integrate the same penetration vector twice.
+PRTS: p' = P_curr + ΔR * (p - P_prev), where ΔR = R_curr * inverse(R_prev). This preserves tilted-hull relative motion without flattening platform space to world Y.
+Yaw damping: target' = current + DeltaAngle(current, target), then spring damp toward target'. This removes wraparound drift at 0/360.
+ALGORITHMIC & MEMORY PERFECTION
+
+Hot-path allocation status: no new arrays/lists/delegates/closures were introduced in Tick or FixedTick. All new buffers are field-owned cold allocations.
+Buffer ownership: motor sweep 32, environment 32, ground 32, foot 32, step 32, overhead 32, bottom-clearance 32. No shared RaycastHit[] remains in the movement controller.
+Complexity: all added scan loops are O(H) with H <= 32, therefore fixed upper bound per query. No O(N^2) path was introduced.
+Native memory: no new NativeArray/NativeList/jobs were introduced in these modified files, so no new Dispose path exists here. Existing unrelated NativeArray breakage remains in HectonMapMagicVegetationBridge.cs (line 2763).
+HARDWARE SYNCHRONIZATION (GPU/Threads/PhysX)
+
+MovePosition is now centralized and limited to two cases: carrier-frame correction and sweep gate. Random mixed AddForce/MovePosition/linearVelocity writes from the controller were removed.
+Collision-kinematic conflict was reduced by centralizing velocity writes in motor finite guards and projecting blocked velocity after sweep instead of reauthoring a forward speed.
+Time-scale confusion: new state-machine advance, drag solve, and angular-velocity cap all use the fixedDeltaTime argument, not Time.deltaTime and not ad-hoc timeScale.
+MemoryBarrier, Interlocked, UAV barriers, and ConstantBuffer changes were not used because this patch is main-thread C#/PhysX only. Introducing GPU/thread barriers here would be irrelevant.
+ESTIMATED GAIN
+
+Hard ms claim: unavailable. Measured proof absent. STATUS: PENDING VERIFICATION.
+GC claim: structural zero-allocation compliance for the modified hot paths is satisfied by code inspection, but profiler confirmation is still absent.
+Raycast count saved: 0. This patch removed shared-buffer corruption, not probe count. It traded correctness for determinism, not fewer casts.
+CPU expectation on MX350/i5-1135G7: likely correctness-driven and sub-0.1 ms net change, but that number is not claimable without Profiler/GCMonitor.
+PCIe traffic saved: 0. No GPU upload path changed.
+VERIFICATION
+
+Local dotnet build Assembly-CSharp.csproj no longer reports errors in the modified movement/state/motor/environment files.
+Full project build still fails on unrelated existing errors in HectonMapMagicVegetationBridge.cs (line 2763), 3492, 3493, 3494, 3626, 3630, 4213.
+Unity MCP validation was unavailable because no Unity session was attached.
+WARNING: Regression risk in transport camera feel, wipeout rebound feel, and moving-platform edge cases until Unity playtest plus GCMonitor/Profiler capture.
+
+
+
+
+1:15 AM
+38 files changed
++1200
+-848
+Undo
+
+Review
+Assets/_Project/Scripts/Gameplay/PlayerEnvironmentState.cs
+Assets/_Project/Scripts/Gameplay/PlayerOverrideState.cs
+Assets/_Project/Scripts/Gameplay/PlayerSupportState.cs
+Assets/_Project/Scripts/Gameplay/IHectonPlayerStateMachine.cs
+Assets/_Project/Scripts/Gameplay/HectonPlayerStateMachine.cs
+Assets/_Project/Scripts/Gameplay/HectonPlayerStateMachine.cs
+Assets/_Project/Scripts/Gameplay/HectonPlayerEnvironmentHandler.cs
+Assets/_Project/Scripts/Gameplay/HectonPlayerEnvironmentHandler.cs
+Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs
+Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs
+Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+HectonPlayerMovement.cs
++28
+-28
+Too large to render inline
+
+Review
+HectonPlayerMovement.cs
++53
+-53
+Too large to render inline
+
+Review
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+HectonPlayerMovement.cs
++27
+-24
+Too large to render inline
+
+Review
+HectonPlayerMovement.cs
++5
+-5
+Too large to render inline
+
+Review
+HectonPlayerMovement.cs
++23
+-60
+Too large to render inline
+
+Review
+HectonPlayerMovement.cs
++20
+-20
+Too large to render inline
+
+Review
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+HectonPlayerMovement.cs
++8
+-12
+Too large to render inline
+
+Review
+HectonPlayerMovement.cs
++14
+-7
+Too large to render inline
+
+Review
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/Gameplay/IHectonPlayerStateMachine.cs
+Assets/_Project/Scripts/Gameplay/PlayerEnvironmentState.cs
+Assets/_Project/Scripts/Gameplay/PlayerOverrideState.cs
+Assets/_Project/Scripts/Gameplay/PlayerSupportState.cs
+
+
+
+
+Full access
+
+GPT-5.4
+
+Extra High
+
+IDE context
+
+
+Work locally
+
+
+
+Fix zero-GC UI framework
+No tasks in progress
+
+
+[CORE IDENTITY]: Senior Technical Lead, HECTON-8.
+[TASK]: Zero-GC UI Framework and Fail-Safe Input Management.
+
+[CONTEXT]: Your code contains recursive StackOverflow risks and heap-slop that will kill performance on MX350.
+
+[REQUIRED ACTIONS - SECTOR: UI & FRAMEWORK]:
+1. [CRITICAL]: Stack Overflow. Remove the recursive try-catch in SafeEnableActionMap. Implement a proper State Machine for device reconnection.
+2. [GC]: String Purge. Completely remove Substring, Replace, and ToLower from ExtractControlName. Use ReadOnlySpan<char> for all path parsing.
+3. [GC]: String-Free HUD. Implement the IntToBuffer manual digit extraction for all numeric HUD elements (Health, O2). Forbid .ToString().
+4. [PERF]: Device Polling. Stop the per-frame 'is Gamepad' type check. Use InputSystem.onDeviceChange to cache the current InputDisplayStyle.
+5. [PERF]: Native Interop. Cache Input.ReadValue<Vector2> in a local field during the callback. Stop calling Native C++ core every Tick.
+6. [SAFE]: Registry O(1). Implement Swap-with-last for TMP_TextRegistry. Remove O(N) List.Remove calls. 
+7. [SAFE]: DDOL Race. Fix the Instance race condition where DDOL objects are destroyed by scene pre-placed managers.
+8. [DATA]: ItemData Integrity. Ensure world items use the Delta-Persistence model (save only changes from seed).
+
+[MANDATORY PRE-REQUISITE]:
+Scan C:\hades\Hecton8\.agents-skills\ for Zero-GC, UI Data, Global Registry, and Persistence mandates.
+
+[SYSTEM MANDATE v4.0: THE CRUCIBLE AUDIT REPORT]
+1. MANDATE INGESTION: List files read.
+2. CRITICAL DEBT CLEARANCE: 
+   - SNIPPETS: Show the ReadOnlySpan parsing and the new Input State Machine.
+   - LOGIC FIX: Explain the Instance initialization and the Swap-with-last removal.
+3. ALGORITHMIC & MEMORY PERFECTION: 
+   - Confirm 0-GC status for HUD updates.
+   - Show the 0-alloc string formatting logic.
+4. HARDWARE SYNCHRONIZATION: Describe the UI Matrix Scaling logic.
+5. ESTIMATED GAIN: GC allocation reduction (bytes/frame) and CPU ms.
+
+Tvoy otvet proveryaetsya Lead Architect & CTO. Faza 4 (Inkvizitsiya) trebuet absolyutnogo tehnicheskogo sovershenstva. 
+Lyuboe ispolzovanie Resources.FindObjectsOfTypeAll, LINQ, nesinhronizirovannyh potokov ili O(N^2) algoritmov privedet k otkloneniyu.
+Predostav zhestkiy tehnicheskiy otchet po forme:
+MANDATE INGESTION: Yavno perechisli, kakie .md fayly iz C:\hades\Hecton8\.agents-skills\ ty izuchil dlya resheniya zadachi.
+CRITICAL DEBT CLEARANCE:
+SNIPPETS: Pokazhi kod «DO» i «POSLE» dlya kazhdogo ispravlennogo baga iz spiska revyuera.
+MATH FIX: Obosnuy ispravlennye formuly (Funnel, Drag, Phase Accumulation, etc.).
+ALGORITHMIC & MEMORY PERFECTION:
+Dokazhi matematicheski, chto tvoy algoritm stal O(N) (dlya putey) ili chto tvoy GPU-hesh zaschischen ot Thread Contention.
+Podtverdi Zero-GC status. Ukazhi, gde vyzvan Dispose dlya Native-kollektsiy.
+HARDWARE SYNCHRONIZATION (GPU/Threads/PhysX):
+Opishi ispolzovanie MemoryBarrier, Interlocked, UAV Barriers ili ConstantBuffers.
+Opishi, kak reshena problema Floating Origin i Double Integration.
+ESTIMATED GAIN: Zhestkie tsifry. Skolko Raycast'ov sekonomleno? Kakova raznitsa v ms mezhdu O(N^2) i O(N)? Kakova ekonomiya PCIe trafika?
+
+Show more
+12:33 AM
+
+
+
+173 previous messages
+STATUS: PENDING VERIFICATION.
+
+MANDATE INGESTION
+
+C:\hades\Hecton8\.agents-skills\OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+C:\hades\Hecton8\.agents-skills\UI_Data_Streaming_ZeroGC_Optimization.txt
+C:\hades\Hecton8\.agents-skills\ARCH_Global_Registry_ServiceLocator_DI_Init.txt
+C:\hades\Hecton8\.agents-skills\DATA_Save_Persistence_Binary_Delta_Checksum.txt
+C:\hades\Hecton8\.agents-skills\ARCH_Project_Bootstrap_Sequence_Init_Safety.txt
+CRITICAL DEBT CLEARANCE
+
+StackOverflow / device recovery in InputManager.cs (line 35). Before: SafeEnableActionMap -> catch -> RecoverActionMapAfterStateFault -> HandleStaleActionMap -> SafeEnableActionMap, unbounded recursion. After: TrySetActionMapEnabled(...) queues RequestActionMapRecovery() and a bounded state machine Stable -> RebuildPending -> Rebuilding -> AwaitingDeviceReconnect/Stable at lines 1268 and 1370.
+String purge in InputManager.cs (line 1705). Before: Substring + Replace + ToLowerInvariant in ExtractControlName. After: ReadOnlySpan<char> slicing plus PathContainsToken(...) and ControlMatches(...); zero managed strings on the parse path.
+String-free HUD numerics in SuitHUDV4CanvasOverlay.cs (line 1255). Before: gauge.Value.SetText("{0:0}", roundedValue). After: IntToBuffer(gauge.ValueBuffer, roundedValue); gauge.Value.SetCharArray(...) with preallocated char[12].
+Per-frame device type polling in InputManager.cs (line 1050). Before: every callback did device is Gamepad. After: InputSystem.onDeviceChange maintains _displayStyleByDeviceId; callbacks only read cached style by deviceId.
+Native interop poll spam in InputManager.cs (line 193). Before: every consumer property hit ReadValue<T>() / IsPressed() again. After: callbacks cache _moveInput, _lookInput, _verticalMovementInput, _isJumping, _isSprinting, _isPrimaryActionHeld, _isSecondaryActionHeld; getters return fields only.
+TMP registry O(1) in HectonTextNode.cs (line 49). Before: List<HectonTextNode> backing store. After: dense array + explicit s_count; unregister is tail swap + count--, no List.Remove/RemoveAt.
+DDOL race in InputManager.cs (line 96). Before: Instance auto-created [InputManager] immediately when _instance == null. After: FindAnyObjectByType<InputManager>(FindObjectsInactive.Include) runs first, so scene-authored managers win and the fallback DDOL object is not created spuriously.
+Delta-persistence integrity in PickupItem.cs (line 253). Before: every interact wrote to WorldStateManager even if no deterministic world identity existed. After: save delta is written only when _worldStateIdentityAvailable is true.
+MATH FIX
+
+Not applicable. No funnel, drag, phase accumulation, floating-origin, or double-integration code was changed. Any claim here would be fabricated.
+ALGORITHMIC & MEMORY PERFECTION
+
+GlyphProvider path parse is now allocation-free and linear. Cost is bounded by a small constant number of linear scans: LastIndexOf('/') + token search + control compare = O(n).
+TMP_TextRegistry.Unregister is explicit O(1): 1 tail read, up to 2 writes, 1 count decrement. No compaction walk.
+Patched HUD gauge numerics are allocation-free on the managed side: RoundToInt -> IntToBuffer -> SetCharArray with persistent char[12]. No .ToString(), no Substring, no Replace, no lowercase clone.
+Native collections introduced by this patch: 0. Dispose() additions for NativeArray/NativeList/NativeHashMap: 0, because none were added. Existing runtime asset cleanup in InputManager.OnDestroy remains.
+No LINQ, Resources.FindObjectsOfTypeAll, async threads, or O(N^2) loops were added.
+HARDWARE SYNCHRONIZATION
+
+UI matrix scaling was not rewritten. Existing HectonUIScaler already computes scaleX = screenWidth / refWidth, scaleY = screenHeight / refHeight, blends in log space with matchWidthOrHeight, clamps to min/max, then writes _uiMatrix = TRS(... scale ...) and applies contentRoot.localScale = (_uiMatrix.m00, _uiMatrix.m11, 1) at SuitHUDV4CanvasOverlay.cs:2239-2288.
+MemoryBarrier, Interlocked, UAV barriers, ConstantBuffer changes, PCIe transfer changes, PhysX changes: 0.
+Floating Origin and Double Integration fixes: 0. This task did not touch world transforms or physics integration.
+FAILURE MODES / REGRESSION MODEL
+
+CPU: improved on input reads and glyph parsing; measured proof absent.
+GC: improved on glyph parsing and patched gauge numerics; measured proof absent.
+Memory: registry backing store is explicit and bounded by capacity growth; no per-frame heap churn added.
+Cadence: input recovery no longer recurses. Failure mode is now controlled parking in AwaitingDeviceReconnect after a failed rebuild.
+Correctness: WARNING: regression risk in stale action-map faults that are not caused by actual device topology changes; the new model waits for reconnect/rebuild instead of self-recursing.
+VERIFICATION
+
+dotnet build Hecton8.Input.csproj -nologo: passed, 0 warnings, 0 errors.
+dotnet build Assembly-CSharp.csproj -nologo: blocked by pre-existing unrelated errors in Hecton8.Core.csproj (PlayerEnvironmentState, PlayerSupportState, PlayerOverrideState missing in IHectonPlayerStateMachine.cs, HectonPlayerMovement.cs, HectonPlayerStateMachine.cs).
+No profiler / GCMonitor numbers were available. Per project rule: measured proof absent.
+ESTIMATED GAIN
+
+Managed alloc count removed from binding glyph resolution: 3 string allocations -> 0 per resolution (Substring, Replace, ToLowerInvariant removed).
+Input native poll sites: static grep shows 62 property references across scripts; those getters are now field reads instead of re-entering the Input System native path. Exact per-frame call count is runtime-dependent.
+Gauge numeric formatting path: patched O2/Health/Power gauge writes now use persistent buffers only.
+Raycasts saved: 0.
+PCIe traffic delta: 0.
+PhysX query delta: 0.
+CPU ms and bytes/frame: measured proof absent. Profiler/GCMonitor capture is still required for acceptance.
+
+
+
+
+1:09 AM
+30 files changed
++749
+-414
+Undo
+
+Review
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+Assets/_Project/Scripts/UI/HectonTextNode.cs
+Assets/_Project/Scripts/UI/HectonTextNode.cs
+Assets/_Project/Scripts/UI/HectonTextNode.cs
+Assets/_Project/Scripts/UI/HectonTextNode.cs
+Assets/_Project/Scripts/UI/HectonTextNode.cs
+Assets/_Project/Scripts/UI/HectonTextNode.cs
+Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
+Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
+Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
+Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
+Assets/_Project/Scripts/Items/PickupItem.cs
+Assets/_Project/Scripts/Input/InputManager.cs
+
+
+
+
+Full access
+
+GPT-5.4
+
+Extra High
+
+IDE context
+
+
+Work locally
+
+
+Optimize boids compute stability
+No tasks in progress
+
+
+[CORE IDENTITY]: Senior Technical Lead, HECTON-8.
+[TASK]: GPU Compute Stability and PCIe Bandwidth Optimization (SargassumMicroFaunaBoids.cs).
+
+[CONTEXT]: Your current implementation is a "TDR Crash Generator". It is dangerous for low-end hardware like MX350.
+
+[REQUIRED ACTIONS - SECTOR: GPU]:
+1. [CRITICAL]: Atomic Gridlock. Implement MAX_BOIDS_PER_CELL = 32. Use InterlockedAdd with a hard exit to prevent GPU hangs in dense clusters.
+2. [PERF]: PCIe Choke. Pack all 40+ uniforms into a single ConstantBuffer struct. Reduce SetInt/SetFloat calls to a single SetConstantBuffer.
+3. [MATH]: Spatial Aliasing. Align the Spatial Grid to a global step (floor(pos/cellSize)) so boundaries don't shift relative to world coords.
+4. [MATH]: Precision Death. Implement Camera-Relative simulation inside the shader (pos - cameraPos) to maintain precision at 4km depth.
+5. [SYNC]: Spline-Physics Lag. Ensure the Leviathan hitbox (CPU) and visual swarm (GPU) use the same data snapshot to prevent "phantom hits".
+6. [PERF]: Frustum Culling. Stop freezing the simulation when off-screen. Cull only the Draw call. Use smooth "hibernation" for distant swarms.
+7. [GC]: Managed Junk. Remove managed-to-native copies in CompletePendingLeviathanNodeBuild. Pass NativeArray directly to SetData.
+8. [SAFE]: NaN Vaccination. Use math.isfinite() before all Interlocked operations and normalize calls.
+
+[MANDATORY PRE-REQUISITE]:
+Scan C:\hades\Hecton8\.agents-skills\ for GPU Compute, Boids, and Fluid Aesthetics mandates.
+
+[SYSTEM MANDATE v4.0: THE CRUCIBLE AUDIT REPORT]
+1. MANDATE INGESTION: List files read.
+2. CRITICAL DEBT CLEARANCE: 
+   - SNIPPETS: Show the new Spatial Grid kernel and ConstantBuffer layout.
+   - MATH FIX: Describe the phase wrapping and camera-relative math.
+3. ALGORITHMIC & MEMORY PERFECTION: 
+   - Prove O(N * K) complexity after Grid implementation.
+   - Confirm 0-GC in Tick path.
+4. HARDWARE SYNCHRONIZATION: Describe UAV Barriers and PCIe bandwidth reduction.
+5. ESTIMATED GAIN: ms saved per frame on MX350.
+
+Tvoy otvet proveryaetsya Lead Architect & CTO. Faza 4 (Inkvizitsiya) trebuet absolyutnogo tehnicheskogo sovershenstva.
+Lyuboe ispolzovanie Resources.FindObjectsOfTypeAll, LINQ, nesinhronizirovannyh potokov ili O(N^2) algoritmov privedet k otkloneniyu.
+Predostav zhestkiy tehnicheskiy otchet po forme:
+MANDATE INGESTION: Yavno perechisli, kakie .md fayly iz C:\hades\Hecton8\.agents-skills\ ty izuchil dlya resheniya zadachi.
+CRITICAL DEBT CLEARANCE:
+SNIPPETS: Pokazhi kod «DO» i «POSLE» dlya kazhdogo ispravlennogo baga iz spiska revyuera.
+MATH FIX: Obosnuy ispravlennye formuly (Funnel, Drag, Phase Accumulation, etc.).
+ALGORITHMIC & MEMORY PERFECTION:
+Dokazhi matematicheski, chto tvoy algoritm stal O(N) (dlya putey) ili chto tvoy GPU-hesh zaschischen ot Thread Contention.
+Podtverdi Zero-GC status. Ukazhi, gde vyzvan Dispose dlya Native-kollektsiy.
+HARDWARE SYNCHRONIZATION (GPU/Threads/PhysX):
+Opishi ispolzovanie MemoryBarrier, Interlocked, UAV Barriers ili ConstantBuffers.
+Opishi, kak reshena problema Floating Origin i Double Integration.
+ESTIMATED GAIN: Zhestkie tsifry. Skolko Raycast'ov sekonomleno? Kakova raznitsa v ms mezhdu O(N^2) i O(N)? Kakova ekonomiya PCIe trafika?
+
+Show more
+12:33 AM
+
+
+
+148 previous messages
+MANDATE INGESTION
+.agents-skills registry in this repo is .txt, not .md. Relevant mandates actually read:
+
+C:\hades\Hecton8\.agents-skills\GPU_Compute_Kernels_Kernels_Optimization_MX350.txt
+C:\hades\Hecton8\.agents-skills\AI_Flocking_Boids_Swarm_SpatialHash_Logic.txt
+C:\hades\Hecton8\.agents-skills\REND_VFX_Fluid_Aesthetics_Compute_Particles.txt
+C:\hades\Hecton8\.agents-skills\MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+C:\hades\Hecton8\.agents-skills\OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+C:\hades\Hecton8\.agents-skills\OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+Project docs read before code:
+
+Docs/README.md
+Docs/2026-04-20_Sargassum_Reality_Audit/HECTON8_SARGASSUM_REALITY_AUDIT_AND_EXECUTION_PLAN.md
+Docs/2026-04-20_Sargassum_Reality_Audit/CHANGELOG.md
+Primary edit targets:
+
+SargassumMicroFaunaBoids.cs (line 1044)
+SargassumMicroFaunaBoids.compute (line 75)
+CRITICAL DEBT CLEARANCE
+
+Atomic Gridlock
+BEFORE
+RWStructuredBuffer<int> _SpatialGridHeads;
+RWStructuredBuffer<int> _SpatialGridNext;
+InterlockedAdd(_SpatialGridCounts[cellIndex], 1, previousCount);
+AFTER
+
+RWByteAddressBuffer _SpatialGridCounts;
+RWStructuredBuffer<uint> _SpatialGridCells;
+_SpatialGridCounts.InterlockedAdd(byteOffset, 1u, previousCount);
+if (previousCount >= (uint)max(_SpatialGridMeta.w, 1)) { ... return; }
+_SpatialGridCells[cellBase + (int)previousCount] = index;
+PCIe Choke
+BEFORE
+boidCompute.SetInt(_BoidCountId, boidCount);
+boidCompute.SetFloat(_DeltaTimeId, dt);
+boidCompute.SetVector(_FieldCenterId, _fieldCenter);
+// 40+ more SetFloat/SetVector calls
+AFTER
+
+SimulationFrameConstants frameConstants = default;
+_simulationFrameNative[0] = frameConstants;
+_simulationFrameBuffer.SetData(_simulationFrameNative);
+boidCompute.SetConstantBuffer(_SimulationFrameBufferId, _simulationFrameBuffer, 0, SimulationFrameConstantsStride);
+Spatial Aliasing
+BEFORE
+_spatialGridCellSizeWS = new Vector3(fieldSize.x / resolutionX, ...);
+_spatialGridMinWS = _fieldCenter - _fieldExtents;
+AFTER
+
+_spatialGridCellSizeWS = Mathf.Max(baseCellSize, axisClampCellSize);
+_spatialGridOriginWS = new Vector3(
+    FloorToMultiple(fieldMin.x, _spatialGridCellSizeWS), ...);
+cell = floor((positionWS - _SpatialGridOrigin.xyz) / safeCellSize);
+Precision Death
+BEFORE
+float3 position = selfBoid.Position + _GlobalDriftDelta;
+AFTER
+
+float3 positionWS = selfBoid.Position + _GlobalDriftDelta;
+float3 position = ToCameraRelative(positionWS);
+result.Position = ToWorldSpace(position);
+Spline-Physics Lag
+BEFORE
+LeviathanNodeNativeData -> managed copy -> _leviathanNodes[]
+_leviathanNodeBuffer.SetData(_leviathanNodes);
+AFTER
+
+(_leviathanNodeFrontNative, _leviathanNodeBackNative) = (...);
+_leviathanPathNodeCount = safeCount;
+UploadActiveLeviathanSnapshot();
+_leviathanNodeBuffer.SetData(_leviathanNodeFrontNative, 0, 0, safeCount);
+Frustum Culling Freeze
+BEFORE
+if (!ShouldDispatchSimulation()) { _debugVisible = false; return; }
+AFTER
+
+bool dispatchedSimulation = TryConsumeSimulationStep(..., out simulationDeltaTime, out hibernation01);
+bool shouldRender = ShouldRenderSwarm(cameraDistanceSq);
+if (dispatchedSimulation) { ... dispatch compute ... }
+if (shouldRender) { RenderCurrentBuffer(); }
+Managed Junk
+BEFORE
+for (int i = 0; i < safeCount; i++) _leviathanNodes[i] = new LeviathanNodeData { ... };
+_leviathanNodeBuffer.SetData(_leviathanNodes);
+AFTER
+
+_leviathanNodeBuffer.SetData(_leviathanNodeFrontNative, 0, 0, safeCount);
+NaN Vaccination
+BEFORE
+float3 SafeNormalize(float3 value) { float lengthSq = dot(value, value); ... }
+InterlockedAdd(_LatchStats[...], quantizedLocalOffset.x);
+AFTER
+
+if (!IsFiniteFloat3(value)) return 0;
+if (!isfinite(lengthSq) || lengthSq <= EPSILON) return 0;
+if (IsFiniteFloat3(localOffset)) { InterlockedAdd(...); }
+if (!IsFiniteFloat3(positionWS)) return;
+MATH FIX
+
+Grid alignment: originWS = floor(fieldMin / cellSize) * cellSize, cell = floor((posWS - originWS) / cellSize). Grid no longer slides with local bounds jitter.
+Camera-relative: force math runs in p_cr = p_ws - camera_ws; writeback restores p_ws = p_cr + camera_ws. Density/cut/grid sampling stay in world space, so field lookup does not drift.
+Phase: accumulator stays monotonic as _simulationTime + _simulationPhaseOffset; only trig inputs are wrapped with WrapAngle(). That preserves motion continuity while stopping large-angle precision loss in sin/cos.
+Drag/Funnel: containment and density-gradient math now uses positionWS.xz for field sampling, but force vectors are applied in camera-relative space. No double integration, no mismatched frames.
+ALGORITHMIC & MEMORY PERFECTION
+
+Spatial build is O(N): one cell resolve, one atomic reserve, one bounded write per boid.
+Neighbor search is O(N*K) with hard K = 27 cells * 32 boids = 864 candidates per pass. There are two passes, so worst-case upper bound is 1728N. Because 32 is a hard cap, growth is linear in N, not pairwise N².
+Tick-path GC audit: no new managed allocation added in Tick, BindSimulationUniforms, or CompletePendingLeviathanNodeBuild.
+Native lifetime:
+allocate in SargassumMicroFaunaBoids.cs (line 1373)
+dispose in SargassumMicroFaunaBoids.cs (line 2923)
+Disposed explicitly: _staticObstacleCache, _leviathanPathScratchNative, _leviathanNodeFrontNative, _leviathanNodeBackNative, _leviathanNodeCountNative, _simulationFrameNative.
+HARDWARE SYNCHRONIZATION (GPU/Threads/PhysX)
+
+GPU order is now ClearSpatialGrid -> BuildSpatialGrid -> CSMain on the same compute queue. That gives ordered UAV visibility across dispatches; no same-dispatch cross-thread readback dependency was introduced.
+Atomics only reserve cell slots and latch stats. All InterlockedAdd sites are now behind finite-value guards.
+CPU/GPU Leviathan sync: job writes back snapshot, CompletePendingLeviathanNodeBuild(false) swaps to front before dispatch, GPU upload uses front, CPU hitbox/path sampling also uses front. Same frame, same snapshot. Phantom hits removed by design.
+Floating-origin issue solved locally inside shader with camera-relative math. No world-origin system rewrite, no double integration layer added.
+ESTIMATED GAIN
+Estimated only. No Unity profiler / RenderDoc / GPU capture was available. Status remains PENDING VERIFICATION.
+
+Uniform API calls: roughly 45+ compute parameter setter calls collapsed to 1 constant-buffer bind + 1 buffer upload.
+Raw constant payload: 31 * 16 = 496 B/frame, about 29.8 KB/s at 60 FPS. Real win is not bytes; it is driver transaction count and validation collapse.
+CPU submission estimate from uniform collapse: ~0.03 ms to ~0.12 ms saved per frame on MX350-class laptop CPU. Needs profiler confirmation.
+Far-swarm hibernation: dispatch cadence drops from 60 Hz to about 5.56 Hz at 0.18 s step. That is about 90.7% fewer compute dispatches while still preserving simulation continuity.
+Neighbor complexity:
+brute force at N=768: 589,824 pair checks
+grid search upper bound, two passes, worst-case saturated cells: 1,327,104 slot reads
+grid search at realistic average local occupancy K=4..8: 165,888..331,776 reads across both passes, about 43%..72% below brute force
+Raycasts saved: 0. This task does not use raycasts.
+Managed copy removal for Leviathan nodes: one full managed staging pass per completed path build removed. CPU upload now goes NativeArray -> ComputeBuffer.SetData(...) directly.
+VERIFICATION
+
+dotnet build Assembly-CSharp.csproj is blocked by unrelated existing repo errors in Hecton8.Core (PlayerEnvironmentState, PlayerSupportState, PlayerOverrideState missing). That prevents full C# compile closure for the repo.
+git diff --check passed for the two edited files. Only line-ending warnings remain.
+Compute shader compile was not Unity-verified in-editor. PENDING VERIFICATION.
+Regression model:
+CPU: fewer driver calls, extra accumulator math negligible
+GC: no new hot-path managed allocs
+Memory: + constant buffer, - head/next buffers, - managed Leviathan copy
+Cadence: distant swarms hibernate instead of freezing
+Correctness: shared Leviathan snapshot across GPU visual and CPU hitbox
+WARNING: Regression risk in GPU shader compatibility if target backend mishandles RWByteAddressBuffer atomics or compute constant buffers differently than DX11/DX12. This needs Unity Editor validation on target hardware.
+
+
+
+
+
+1:08 AM
+29 files changed
++648
+-428
+Undo
+
+Review
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute
+Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute
+Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute
+Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute
+Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute
+Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute
+Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute
+Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+
+
+
+
+Full access
+
+GPT-5.4
+
+Extra High
+
+IDE context
+
+
+Work locally
+
+
+
+Fix audio synthesis and sonar
+No tasks in progress
+
+
+[CORE IDENTITY]: Senior Technical Lead, HECTON-8.
+[TASK]: Thread-Safe Audio Synthesis and 6-Axis Acoustic Probing.
+
+[CONTEXT]: Reviewer found "Phase Discontinuity and Safety Crashes". Your DSP math is fundamentally broken for long sessions.
+
+[REQUIRED ACTIONS - SECTOR: AUDIO]:
+1. [CRITICAL]: Safety System. You are touching NativeArrays from a raw Thread. Move synthesis to IJobParallelFor.Run() or use [NativeDisableContainerSafetyRestriction] with a 3-paragraph justification.
+2. [CRITICAL]: Access Violation. Remove Join(250). You must wait indefinitely for the thread to die before disposing buffers.
+3. [MATH]: Phase Accumulation. Stop using time * freq. Implement a persistent phase accumulator (phase += freq * invSampleRate) to allow FM synthesis without pops.
+4. [PERF]: Denormal Spikes. Add 1e-15f to all feedback state variables in Biquad filters to prevent x86 microcode stalls in silence.
+5. [SAFE]: Torn Reads. Pack all sonar ping parameters into a single struct. Use Interlocked.Exchange to swap the entire state atomically.
+6. [ARCHITECTURE]: 6-Axis Radar. Implement 6-axis orthogonal probing (Up, Down, L, R, F, B). Time-slice them: 1 ray per SlowTick frame. 
+7. [SAFE]: Reverb Hierarchy. Fix the IsChildOf bug. Use a LayerMask that excludes player and carrier hulls so the radar doesn't "blind" itself inside ships.
+
+[MANDATORY PRE-REQUISITE]:
+Scan C:\hades\Hecton8\.agents-skills\ for DSP, Audio Synthesis, and Sensory Simulation mandates.
+
+[SYSTEM MANDATE v4.0: THE CRUCIBLE AUDIT REPORT]
+1. MANDATE INGESTION: List files read.
+2. CRITICAL DEBT CLEARANCE: 
+   - SNIPPETS: Show the new phase accumulator and the 6-axis raycast logic.
+   - MATH FIX: Explain the Anti-denormal and Doppler formulas.
+3. ALGORITHMIC & MEMORY PERFECTION: 
+   - Confirm 0-GC in OnAudioFilterRead.
+   - List buffer disposal order.
+4. HARDWARE SYNCHRONIZATION: Describe Memory Barriers used in the Ring Buffer.
+5. ESTIMATED GAIN: CPU load reduction in silent zones and sonar precision.
+
+Tvoy otvet proveryaetsya Lead Architect & CTO. Faza 4 (Inkvizitsiya) trebuet absolyutnogo tehnicheskogo sovershenstva. 
+Lyuboe ispolzovanie Resources.FindObjectsOfTypeAll, LINQ, nesinhronizirovannyh potokov ili O(N^2) algoritmov privedet k otkloneniyu.
+Predostav zhestkiy tehnicheskiy otchet po forme:
+MANDATE INGESTION: Yavno perechisli, kakie .md fayly iz C:\hades\Hecton8\.agents-skills\ ty izuchil dlya resheniya zadachi.
+CRITICAL DEBT CLEARANCE:
+SNIPPETS: Pokazhi kod «DO» i «POSLE» dlya kazhdogo ispravlennogo baga iz spiska revyuera.
+MATH FIX: Obosnuy ispravlennye formuly (Funnel, Drag, Phase Accumulation, etc.).
+ALGORITHMIC & MEMORY PERFECTION:
+Dokazhi matematicheski, chto tvoy algoritm stal O(N) (dlya putey) ili chto tvoy GPU-hesh zaschischen ot Thread Contention.
+Podtverdi Zero-GC status. Ukazhi, gde vyzvan Dispose dlya Native-kollektsiy.
+HARDWARE SYNCHRONIZATION (GPU/Threads/PhysX):
+Opishi ispolzovanie MemoryBarrier, Interlocked, UAV Barriers ili ConstantBuffers.
+Opishi, kak reshena problema Floating Origin i Double Integration.
+ESTIMATED GAIN: Zhestkie tsifry. Skolko Raycast'ov sekonomleno? Kakova raznitsa v ms mezhdu O(N^2) i O(N)? Kakova ekonomiya PCIe trafika?
+
+Show more
+12:33 AM
+
+
+
+86 previous messages
+Status: PENDING VERIFICATION.
+
+MANDATE INGESTION
+
+V C:\hades\Hecton8\.agents-skills\ net .md po etomu sektoru; reestr hranit mandates v .txt. Prochitany:
+.agents-skills\AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC.txt
+.agents-skills\AUD_Acoustic_Sonar_Occlusion_Sensory_Simulation.txt
+.agents-skills\OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+.agents-skills\OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+.agents-skills\MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+Dopolnitelno proveren kontekstovyy log: Docs\2026-04-15_Player_Retention_Recovery\STARTUP_LOG_SPAM_AUDIT.md
+CRITICAL DEBT CLEARANCE
+
+Izmeneny PlayerCriticalProceduralAudioRenderer.cs (line 410) i NativeAudioFrameRingBuffer.cs (line 1).
+1. Safety / raw-thread native access. DO: NativeArray<float> _frames; TryWrite(NativeArray<float> source...) i audio/worker threads chitali native backing napryamuyu. POSLE: float[] _frames; TryWrite(float[] source...), publish sequence = write samples -> Interlocked.MemoryBarrier() -> Volatile.Write(writeCursor), consume sequence = Volatile.Read(writeCursor) odin raz -> read -> Interlocked.MemoryBarrier() -> Volatile.Write(readCursor). NativeDisableContainerSafetyRestriction ne dobavlyalsya; unsafe native handoff udalen polnostyu.
+2. Access violation. DO: producerThread.Join(250);. POSLE: producerThread.Join(); v PlayerCriticalProceduralAudioRenderer.cs (line 463).
+3. Phase accumulation. DO: double time = sampleFrame * InvSampleRate; Oscillator(time, freq) i FractionalCycles(time, frequency). POSLE: AdvancePhase(ref state.CarrierAPhase, carrierA, invSampleRate) i AdvanceSine(ref state.ChirpPhase, chirpFrequency, invSampleRate) v PlayerCriticalProceduralAudioRenderer.cs (line 1159).
+4. Denormal spikes. DO: feedback path schital - a1 * _lowPassOutputHistory1[0] - a2 * _lowPassOutputHistory2[0]. POSLE: float outputHistory1 = _lowPassOutputHistory1[0] + 1e-15f; float outputHistory2 = _lowPassOutputHistory2[0] + 1e-15f; v PlayerCriticalProceduralAudioRenderer.cs (line 1006).
+5. Torn reads. DO: chetyre Volatile.Write po polyam ping + otdelnyy Interlocked.Exchange tolko dlya startFrame. POSLE: odin SonarTriggerState, double-buffer slots _pendingSonarStateA/_pendingSonarStateB, atomic slot publish cherez Interlocked.Exchange(ref _pendingSonarStateReadIndex, inactiveIndex) v PlayerCriticalProceduralAudioRenderer.cs (line 766).
+6. 6-axis radar. DO: _targetEnclosureVolume = distanceSum / 6f; i fakticheski ceiling-average heuristic. POSLE: verticalSpan * lateralSpan * depthSpan po Up/Down/Left/Right/Forward/Back, odin luch za SlowTick v PlayerCriticalProceduralAudioRenderer.cs (line 410).
+7. Reverb hierarchy self-blind bug. DO: Physics.RaycastNonAlloc(... ceilingProbeLayers ...) + hitTransform.IsChildOf(_boundPlayerTransform). POSLE: odin zaranee sobrannyy _resolvedEnclosureProbeLayerMask, kotoryy isklyuchaet Player, Vehicle, BaseModule, TriggerZone, TransparentFX, FirstPersonTools; IsChildOf udalen iz hot path v PlayerCriticalProceduralAudioRenderer.cs (line 659).
+MATH FIX
+
+Faza: phase[n+1] = frac(phase[n] + freq[n] / Fs). Sostoyanie hranitsya v double per-oscillator. Eto sohranyaet nepreryvnost cherez block boundary i delaet FM korrektnym, potomu chto chastota menyaet inkrement, a ne absolyutnoe time * freq.
+Dopler: doppler = (c + v_r) / (c - v_r), gde c = 1480 m/s, v_r zazhat v ±0.9c. Echo delay: t = 2d / c. Attenuation: TL = 20log10(d) + 0.0035d, zatem 10^(-TL/20) s reference-distance clamp. Eto seychas v PlayerCriticalProceduralAudioRenderer.cs (line 921).
+Anti-denormal: y1' = y1 + 1e-15f, y2' = y2 + 1e-15f pered feedback multiply. Tsel ne “uluchshit zvuk”, a ne dat x86 uyti v subnormal path na tishine.
+Funnel/Drag ne trogalis. V ownership etogo fayla ih net.
+ALGORITHMIC & MEMORY PERFECTION
+
+OnAudioFilterRead zero-GC: net new, net LINQ, net boxing, net string ops, net locks. Tolko frameCount i AddToInterleaved(...) po preallocated float[].
+Assimptotika: synthesis O(N) po N = frameCount; ring write/read O(N); probe path O(1) za SlowTick frame i O(6) za polnyy scan cycle. O(N^2) zdes ne bylo ni do, ni posle.
+Dispose order: 1) Interlocked.Exchange(_audioProducerRunning, 0) 2) Join() 3) _sampleRingBuffer.Dispose() 4) null ring ref 5) null scratch arrays 6) reset flags/state.
+Native collections: v worker/audio handoff path ih bolshe net. V etom subsystem NativeArray.Dispose() bolshe ne nuzhen. Vneshnie NativeArray<Vector3> iz vegetation bridge tolko chitayutsya i ostayutsya owned drugim subsystem.
+Resources.FindObjectsOfTypeAll, LINQ, unsynchronized PhysX/thread access, O(N^2) algoritmy v etom patche ne ispolzovalis.
+HARDWARE SYNCHRONIZATION (GPU/Threads/PhysX)
+
+CPU barriers: producer pishet samples v float[], zatem Interlocked.MemoryBarrier(), zatem publikuet writeCursor cherez Volatile.Write. Consumer chitaet writeCursor odin raz cherez Volatile.Read, chitaet samples, zatem Interlocked.MemoryBarrier() i dvigaet readCursor.
+Sonar snapshot sync: main thread pishet ves SonarTriggerState v inactive slot, zatem atomically menyaet published slot index cherez Interlocked.Exchange. Worker thread beret index cherez Volatile.Read i chitaet uzhe tselnyy struct. Torn-read okno zakryto.
+PhysX: Physics.RaycastNonAlloc vyzyvaetsya tolko na main thread v SlowTick. Nikakogo PhysX iz worker/audio thread.
+GPU/UAV/ConstantBuffer barriers: N/A. Patch polnostyu CPU-side. PCIe upload path ne menyalsya.
+Floating Origin: probe system hranit tolko scalar distances i phase state; absolyutnye world positions mezhdu kadrami ne keshiruyutsya. Double integration net: echo delay ispolzuet rasstoyanie odin raz, Doppler ispolzuet radialnuyu skorost odin raz.
+ESTIMATED GAIN
+
+Raycasts: otnositelno naivnogo 6 rays every SlowTick time-slicing ekonomit 5 raycasts na kadr SlowTick, to est 50 raycasts/sek pri 10 Hz. Otnositelno starogo koda per-frame raycast count ne vyros: bylo 1, ostalos 1, no prostranstvennoe pokrytie stalo 6-axis / 0.6s.
+Silent-zone CPU: ustranen denormal-risk na 2 feedback-state multiply na sample, to est 96,000 denormal-susceptible feedback ops/sek na 48 kHz mono. ms-delta ne izmerena. Status: PENDING VERIFICATION.
+Sonar precision: vmesto odnogo usrednennogo ceiling-distance teper ispolzuetsya 6 ortogonalnyh rasstoyaniy i volume estimate; lozhnoe sovpadenie “uzkaya shahta == shirokiy koridor” snizheno.
+PCIe traffic: 0 B izmeneniya. GPU path ne uchastvoval.
+“O(N^2) -> O(N) ms delta”: 0 ms, potomu chto etot patch ne delal asimptoticheskiy perehod; on ispravlyal safety/maths, a ne slozhnost.
+VERIFICATION
+
+Izolirovannaya sborka proshla: dotnet build Assembly-CSharp.csproj -p:BuildProjectReferences=false.
+Polnaya sborka s project references padaet vne etogo patcha: InputManager.cs (line 1082) (ProcessInputRecoveryStateMachine missing) i InputManager.cs (line 1107) (ReadOnlyArray<> missing).
+Runtime GCMonitor / Profiler / MCP numbers ne snimalis. Measured proof absent. Status ostaetsya PENDING VERIFICATION.
+
+
+
+
+1:02 AM
+15 files changed
++418
+-373
+Undo
+
+Review
+Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+
+
+
+
+Full access
+
+GPT-5.4
+
+Extra High
+
+IDE context
+
+
+Work locally
+
+
+
+
+
+Fix voxel pipeline integrity
+No tasks in progress
+
+
+[CORE IDENTITY]: Senior Technical Lead, HECTON-8.
+[TASK]: Voxel Pipeline Integrity and Geometry AAA-Polish (HectonVoxelEngine.cs).
+
+[CONTEXT]: Reviewer diagnostic: "Minecraft-tier geometry with 700% CPU waste". You are recalculating SDF unnecessarily and stalling the main thread.
+
+[REQUIRED ACTIONS - SECTOR: VOXEL]:
+1. [PERF]: SDF Recalc Madness. VoxelNormalJob MUST read the pre-computed densityField. Forbid recalculating noise/SDF 7 times per vertex.
+2. [PERF]: Voxel Loop Complexity. Implement Spatial Partitioning (BVH or Grid) for rooms/tunnels. Each voxel checking 200 primitives is O(N*M) and unacceptable.
+3. [CRITICAL]: MC Truncation. Fix holes in mesh by using NativeStream or a properly sized two-pass buffer for Marching Cubes.
+4. [CRITICAL]: Physics Spike. Split chunk colliders into Sub-Chunks. Assign sharedMesh distributed over frames (await NextFrame) to kill the 15ms spike.
+5. [MATH]: Floating Origin. Use Absolute Universe Position (World + Offset) for all noise sampling to prevent caves from "swimming" when the origin shifts.
+6. [MATH]: Laplacian Polish. Calculate curvature on smooth SDF (pre-noise) to prevent "salt and pepper" pixel artifacts on rock textures.
+7. [SHADER]: Skirt Depth Bias. Implement Clip-Space depth bias (POSITION.z -= bias) for voxel skirts to ensure they render behind terrain without Z-fighting.
+8. [GC]: MapMagic Sync. Replace 16,000 TryGetHeight calls with a single Raw NativeArray transfer from the Bridge.
+
+[MANDATORY PRE-REQUISITE]:
+Scan C:\hades\Hecton8\.agents-skills\ for Voxel, SDF, Geometry, and Graphics mandates.
+
+[SYSTEM MANDATE v4.0: THE CRUCIBLE AUDIT REPORT]
+1. MANDATE INGESTION: List files read.
+2. CRITICAL DEBT CLEARANCE: 
+   - SNIPPETS: Show the new NormalJob and the Async Bake logic.
+   - MATH FIX: Describe the smin_exp and the Laplacian smoothing method.
+3. ALGORITHMIC & MEMORY PERFECTION: 
+   - Confirm Zero-copy Mesh API (AllocateWritableMeshData).
+   - Explain the Sub-Chunking strategy.
+4. HARDWARE SYNCHRONIZATION: Describe the Physics.BakeMesh job dependency chain.
+5. ESTIMATED GAIN: Frames per second gain and reduction in Main Thread ms.
+Tvoy otvet proveryaetsya Lead Architect & CTO. Faza 4 (Inkvizitsiya) trebuet absolyutnogo tehnicheskogo sovershenstva.
+Lyuboe ispolzovanie Resources.FindObjectsOfTypeAll, LINQ, nesinhronizirovannyh potokov ili O(N^2) algoritmov privedet k otkloneniyu.
+Predostav zhestkiy tehnicheskiy otchet po forme:
+MANDATE INGESTION: Yavno perechisli, kakie .md fayly iz C:\hades\Hecton8\.agents-skills\ ty izuchil dlya resheniya zadachi.
+CRITICAL DEBT CLEARANCE:
+SNIPPETS: Pokazhi kod «DO» i «POSLE» dlya kazhdogo ispravlennogo baga iz spiska revyuera.
+MATH FIX: Obosnuy ispravlennye formuly (Funnel, Drag, Phase Accumulation, etc.).
+ALGORITHMIC & MEMORY PERFECTION:
+Dokazhi matematicheski, chto tvoy algoritm stal O(N) (dlya putey) ili chto tvoy GPU-hesh zaschischen ot Thread Contention.
+Podtverdi Zero-GC status. Ukazhi, gde vyzvan Dispose dlya Native-kollektsiy.
+HARDWARE SYNCHRONIZATION (GPU/Threads/PhysX):
+Opishi ispolzovanie MemoryBarrier, Interlocked, UAV Barriers ili ConstantBuffers.
+Opishi, kak reshena problema Floating Origin i Double Integration.
+ESTIMATED GAIN: Zhestkie tsifry. Skolko Raycast'ov sekonomleno? Kakova raznitsa v ms mezhdu O(N^2) i O(N)? Kakova ekonomiya PCIe trafika?
+
+Show more
+12:32 AM
+
+
+
+147 previous messages
+MANDATE INGESTION
+Prochitany relevantnye registrovye mandaty iz C:\hades\Hecton8\.agents-skills\:
+
+VOX_Voxel_SDF_Geometry_MarchingCubes_Pipeline.txt
+VOX_Voxel_World_Logic_Carving_Persistence.txt
+VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt
+MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+Dopolnitelno prochitany proektnye dokumenty i vladeltsy sistemy: AGENTS.md, Docs/PROCEDURAL_ASSET_PIPELINE.md, Docs/HECTON8_GEOLOGY_PRODUCTION_PLAN.md, Docs/SYSTEMS_CONTRACTS.md, MapMagicBridge.cs, HectonFloatingOrigin.cs, HectonVoxelVolume.cs, CaveTypes.cs.
+
+CRITICAL DEBT CLEARANCE
+SNIPPETS:
+
+SDF Recalc Madness: bylo CreateDensityEvaluator() + EvaluateDensityAt(...) 7 raz na vershinu; stalo VoxelNormalJob c trilinear sampling iz densityField i smoothDensityField v HectonVoxelEngine.cs (line 1791).
+MC Truncation: bylo Interlocked.Add v fiksirovannyy bufer + if (writeOffset + vertCount > outVertices.Length) return;; stalo VoxelMCCountJob -> prefix sum -> exact NativeArray<MCRawVertex> v HectonVoxelEngine.cs (line 1538) i HectonVoxelEngine.cs (line 1600).
+Voxel Loop Complexity: bylo for caveNodes i for caveTunnels na kazhdyy voxel; stalo BuildSpatialPartitions + bucket lookup v HectonVoxelEngine.cs (line 3333).
+MapMagic Sync: bylo PtsX*PtsZ vyzovov mapMagicBridge.TryGetHeight(...); stalo odin bulk-call TryFillTerrainHeightGridFromNativeCache(...) v HectonMapMagicVegetationBridge.cs (line 1296) i vyzov iz HectonVoxelEngine.cs (line 2944).
+Floating Origin: bylo shumovoe semplirovanie ot lokalnogo wp; stalo absoluteWp = wp + absoluteNoiseOffset + ComputeWarpedLocalPosition(...) v HectonVoxelEngine.cs (line 685) i HectonVoxelEngine.cs (line 779).
+Physics Spike: bylo full-vertex collider chunk upload i paketnoe vklyuchenie; stalo local remap per sub-chunk, BakeMesh, sharedMesh, await NextFrameAsync na kazhdyy chunk v HectonVoxelEngine.cs (line 3794).
+Zero-copy Mesh API: bylo SetVertices/SetNormals/SetColors/SetUVs/RecalculateTangents/RecalculateBounds; stalo Mesh.AllocateWritableMeshData v HectonVoxelEngine.cs (line 3578) i HectonVoxelEngine.cs (line 3637).
+Skirt Depth Bias: path uzhe suschestvoval; ya zafiksiroval bias na max(positionCS.w, 0.0001) v Hecton_AbyssalVoxelRock.shader (line 137).
+Novyy NormalJob:
+
+float samplePosX = SampleField(densityField, wp + offsetX);
+float sampleNegX = SampleField(densityField, wp - offsetX);
+...
+normals[idx] = math.normalizesafe(-gradient, new float3(0f, 1f, 0f));
+
+float centerDensity = SampleField(smoothDensityField, wp);
+float laplacian =
+    (smoothPosX + smoothNegX - (2f * centerDensity)) +
+    (smoothPosY + smoothNegY - (2f * centerDensity)) +
+    (smoothPosZ + smoothNegZ - (2f * centerDensity));
+Novaya async collider bake logika:
+
+UploadColliderMesh(chunkMesh, localPositions.AsArray(), localIndices, localPositions.Length, chunkIndexCount);
+
+JobHandle bakeHandle = new VoxelMeshBakeJob
+{
+    MeshId = chunkMesh.GetEntityId(),
+    Convex = false
+}.Schedule();
+
+await AwaitForJobCompletionAsync(bakeHandle, ct);
+chunkCollider.sharedMesh = chunkMesh;
+await Awaitable.NextFrameAsync(cancellationToken: ct);
+MATH FIX:
+
+smin_exp: m = min(a,b); result = m - log(exp(-clamp(k(a-m),0,60)) + exp(-clamp(k(b-m),0,60))) / k. Klamp eksponenty rezhet underflow/NaN bez smeny smooth-union povedeniya.
+Laplacian polish: Δf ≈ f(x+h)+f(x-h)+f(y+h)+f(y-h)+f(z+h)+f(z-h)-6f(p) na smoothDensityField, ne na noisy SDF. Eto ubiraet salt-and-pepper curvature noise.
+Funnel/Drag/Phase Accumulation: ne otnosyatsya k etomu patchu. Zdes ispravlyalis tolko voxel SDF, AUP sampling i curvature.
+ALGORITHMIC & MEMORY PERFECTION
+
+Staroe: O(V * (R + T)) dlya dominant room/tunnel scan.
+Novoe: O(V * k + R * b_r + T * b_t), gde k = srednyaya occupancy bucket-a, b_r/b_t = chislo bucket-ov, peresechennyh primitivom. Pri fiksirovannom grid-partition eto lineynyy po voxel count hot path.
+Interlocked iz MC emit path udalen. Exact offset write teper determinirovan i ne rvet mesh pri overflow.
+Zero-copy mesh upload podtverzhden: UploadSurfaceMesh i UploadColliderMesh ispolzuyut Mesh.AllocateWritableMeshData.
+Zero-GC hot path sohranen. Novye allokatsii tolko native/cold.
+Dispose zakryt yavno: HectonVoxelEngine.cs (line 2176), HectonVoxelEngine.cs (line 2280), plus temp native containers inside collider chunk loop.
+WARNING: Regression risk in partition AABB inflation if future room/tunnel noise amplitudes exceed current conservative bounds.
+HARDWARE SYNCHRONIZATION (GPU/Threads/PhysX)
+
+CPU chain: VoxelDensityJob -> VoxelMCCountJob -> main-thread prefix sum -> VoxelMCExtractJob -> VoxelWeldJob -> UploadSurfaceMesh.
+PhysX chain: UploadColliderMesh(chunk) -> Physics.BakeMesh job -> await completion -> MeshCollider.sharedMesh assignment -> await NextFrame.
+Unsynchronized thread writes removed. sharedMesh is not assigned before BakeMesh completes.
+Interlocked/MemoryBarrier/UAV barriers zdes ne nuzhny: eto Burst CPU + PhysX path, ne compute/UAV pipeline. Ispravlenie imenno ubiraet staryy Interlocked.Add iz MC emit.
+Shader constant path: _SkirtDepthBias i already-existing floating-origin globals (_TotalUniverseOffset) ostayutsya owner-controlled.
+Floating origin double-integration ne dopuschen: absolute offset primenyaetsya tolko k noise/UV3 sampling, ne k runtime vertex positions.
+ESTIMATED GAIN
+Eto analitika, ne profiler measurement.
+
+VoxelNormalJob: ekonomiya 7 * weldedVertexCount polnyh density-eval. Pri 40k welded verts eto 280k SDF eval; pri ~200 room/tunnel primitives eto ~56M primitive tests ubrano tolko iz normal pass.
+Spatial partition: pri 8^3 = 512 bucket-ah i 200 dominant primitives even conservative bucket occupancy k=8..12 daet ~16x..25x menshe room/tunnel checks per voxel otnositelno full scan.
+MapMagic sync: pri 129 x 129 terrain grid ubrano 16,640 - 1 = 16,639 managed bridge calls. Raw height sampling ostaetsya, Terrain API round-trip ubran.
+Collider bake: odin ~120k tri collider teper rezhetsya na 8 x ~15k tri sub-bakes s one-frame cadence. Ozhidaemyy rezultat: vmesto odnogo ~15 ms spike poluchit raspredelennyy pik poryadka ~2-4 ms/frame na bake/assign segment. Eto otsenka, ne izmerenie.
+Raycast savings: 0. Etot patch ne pro raycast path.
+PCIe traffic: vyigrysh nesuschestvennyy. Osnovnoy profit zdes CPU/PhysX i ustranenie lishnih CPU-side copies, ne shina.
+VERIFICATION / STATUS
+
+Lokalnyy Roslyn syntax parse: HectonVoxelEngine.cs i HectonMapMagicVegetationBridge.cs proshli.
+Unity compile, runtime GC, main-thread ms i PhysX bake profile ne provereny: Unity session nedostupna, GCMonitor/Profiler logs ne predostavleny.
+STATUS: PENDING VERIFICATION.
+REGRESSION MODEL: CPU hot path analiticheski luchshe; GC hot path bez novyh managed alloc; native memory vyshe iz-za exact MC buffers, no lifetime zakryt; collider cadence rastyanut po kadram; correctness improved by removing silent MC truncation and noise-swim path.
+
+
+
+
+1:02 AM
+28 files changed
++1023
+-412
+Undo
+
+Review
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader
+
+
+
+
+Full access
+
+GPT-5.4
+
+Extra High
+
+IDE context
+
+
+Work locally
+
+
+
+Fix MapMagic vegetation bridge
+No tasks in progress
+
+
+[CORE IDENTITY]: Senior Technical Lead, HECTON-8.
+[TASK]: Native Memory Stability and O(N) Algorithm Overhaul for MapMagicVegetationBridge.cs.
+
+[CONTEXT]: Your module is currently an "InvalidOperationException Simulator". It is architecturally unstable and algorithmically bloated. Fix it.
+
+[REQUIRED ACTIONS - SECTOR: DATA & NAV]:
+1. [CRITICAL]: Data Races. Implement true Double-Buffering for ThermalGrid and FlowField systems. Forbid Main Thread reads from current write-buffers.
+2. [CRITICAL]: Pathfinding Complexity. Replace O(P^2 * S) string pulling with a linear O(N) Funnel Algorithm. Use a Spatial Hash lookup for obstacle checks inside the job instead of iterating all chunks.
+3. [MATH]: Diffusion Stall. Move ThreatGrid from 'byte' to 'float' or 'unorm16'. Byte rounding at small deltaTimes is killing the simulation.
+4. [PERF]: Main Thread Stalls. Move RebuildAndBindActiveBuffers (memcpy of 50k+ matrices) into a Burst Job. 
+5. [MEMORY]: Managed Leaks. Remove managed arrays (Sections[]) from inside structs stored in Dictionaries. Use NativeArray<T> with Allocator.Persistent and manual life-cycle.
+6. [SAFE]: World Shift Stall. Stop rewriting matrix positions on CPU during Floating Origin Shift. Keep matrices in local space; move the offset to the Shader/GPU level.
+7. [SAFE]: Async Readback. Ensure request.done checks before Dispose() to prevent hard CTD during scene unload or playmode stop.
+8. [ARCHITECTURE]: Residency Thrashing. Add a hysteresis buffer (radius + 20%) to prevent rapid load/unload of chunks.
+
+[MANDATORY PRE-REQUISITE]:
+Scan C:\hades\Hecton8\.agents-skills\ and load mandates for Native Memory, Jobs, Pathfinding, and World Streaming. Identify them by name.
+
+[SYSTEM MANDATE v4.0: THE CRUCIBLE AUDIT REPORT]
+1. MANDATE INGESTION: List files read.
+2. CRITICAL DEBT CLEARANCE: 
+   - SNIPPETS: Show "BEFORE" and "AFTER" for the fixes.
+   - MATH FIX: Describe the Funnel Algorithm and float-based diffusion logic.
+3. ALGORITHMIC & MEMORY PERFECTION: 
+   - Prove O(N) complexity for path smoothing.
+   - List all NativeArray types and confirm where .Dispose() is called.
+4. HARDWARE SYNCHRONIZATION: Describe the Double-Buffering fence and the GPU-side Floating Origin fix.
+5. ESTIMATED GAIN: MB/s bandwidth saved and ms saved during world shift.
+
+Tvoy otvet proveryaetsya Lead Architect & CTO. Faza 4 (Inkvizitsiya) trebuet absolyutnogo tehnicheskogo sovershenstva. 
+Lyuboe ispolzovanie Resources.FindObjectsOfTypeAll, LINQ, nesinhronizirovannyh potokov ili O(N^2) algoritmov privedet k otkloneniyu.
+Predostav zhestkiy tehnicheskiy otchet po forme:
+MANDATE INGESTION: Yavno perechisli, kakie .md fayly iz C:\hades\Hecton8\.agents-skills\ ty izuchil dlya resheniya zadachi.
+CRITICAL DEBT CLEARANCE:
+SNIPPETS: Pokazhi kod «DO» i «POSLE» dlya kazhdogo ispravlennogo baga iz spiska revyuera.
+MATH FIX: Obosnuy ispravlennye formuly (Funnel, Drag, Phase Accumulation, etc.).
+ALGORITHMIC & MEMORY PERFECTION:
+Dokazhi matematicheski, chto tvoy algoritm stal O(N) (dlya putey) ili chto tvoy GPU-hesh zaschischen ot Thread Contention.
+Podtverdi Zero-GC status. Ukazhi, gde vyzvan Dispose dlya Native-kollektsiy.
+HARDWARE SYNCHRONIZATION (GPU/Threads/PhysX):
+Opishi ispolzovanie MemoryBarrier, Interlocked, UAV Barriers ili ConstantBuffers.
+Opishi, kak reshena problema Floating Origin i Double Integration.
+ESTIMATED GAIN: Zhestkie tsifry. Skolko Raycast'ov sekonomleno? Kakova raznitsa v ms mezhdu O(N^2) i O(N)? Kakova ekonomiya PCIe trafika?
+
+Show more
+12:32 AM
+
+
+Using unity-mcp-orchestrator because this is a Unity runtime/Native memory overhaul. First step is mandate ingestion and codebase inspection: I’m reading AGENTS.md, the relevant .agents-skills mandates, and the current MapMagicVegetationBridge.cs implementation before touching code.
+
+I’m gathering the mandate set and locating the bridge plus adjacent systems now. After that I’ll issue the required [ANALYSIS] block and then patch the code.
+
+
+Ran 5 commands
+Mandate set is narrowed to the systems the task explicitly hits: native memory/job lifetime, funnel path smoothing, world streaming residency, floating origin precision, and flow-field math. I’m locating the concrete bridge file and its dependent types before writing the mandatory analysis block.
+
+
+Ran 6 commands
+I found the actual file: Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs. Now I’m reading only the sections tied to the requested failures: threat/thermal/flow buffers, path smoothing, active-buffer rebuild, world-shift handling, async readback, and residency logic.
+
+
+Ran 5 commands
+I have the governing docs and the bridge path. Next pass is code archaeology: extracting the exact methods and structs that implement threat diffusion, flow/thermal grids, path smoothing, chunk residency, matrix uploads, and readback teardown so the changes stay local and defensible.
+
+
+Ran 5 commands
+I’ve isolated the fault surface. The current file already contains partial versions of some requested systems, but several are architecturally wrong: the threat/flow/thermal buffers are exposed directly, mega-wreck payloads still use managed arrays, the path smoother is not linear-time funneling, and world-shift still mutates CPU-side payloads. I’m reading those exact methods now before patching.
+
+
+Ran 20 commands
+[ANALYSIS]
+Target: Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs (line 23) native-memory stabilization and algorithmic overhaul for threat/flow/thermal grids, abyssal path smoothing, active aggregate rebuild, mega-wreck payload storage, world-shift handling, async terrain readback, and residency hysteresis.
+
+Affected systems: MapMagic chunk residency, indirect vegetation aggregate export, abyssal nav graph/A* path solve, ecosystem threat diffusion, abyssal flow field, abyssal thermal grid, mega-wreck streaming payload cache, floating-origin propagation, terrain height async readback finalization.
+
+Zero GC proof:
+
+No LINQ, no managed allocations in Tick/SlowTick/job execution.
+Double-buffer state remains NativeArray<T>/NativeList<T> with Allocator.Persistent.
+Active aggregate rebuild moves memcpy into Burst jobs against pre-sized native buffers.
+Mega-wreck per-chunk payload storage is being converted away from managed Sections[] inside dictionary values.
+Public read APIs will expose completed front snapshots only; write buffers stay private.
+State check:
+
+Current file violates buffer isolation: EcosystemFlowField => _ecosystemFlowFieldCurrentNative, AbyssalThermalGrid => _abyssalThermalGridNative, and compressed threat access expose the same storage that later becomes write target after swap.
+Current threat diffusion quantizes every step to byte inside ThreatPropagationJob, causing small-dt stall.
+Current path smoothing still samples obstacle fields per portal and can devolve into repeated rescans with density lookups; this is not the mandated O(N) portal funnel.
+Current RebuildAndBindActiveBuffers() does large main-thread slice copies for matrices/metadata/types.
+Current ChunkMegaWreckPayload stores managed Sections[] in _chunkMegaWreckPayloads.
+Current world shift still CPU-rewrites nav/mega-wreck/path snapshot world positions.
+Current async readback teardown clears native cache buffers without guarding unfinished requests in DisposeTileNativeCaches.
+Rule quote:
+
+NATIVE_MEMORY_JOBS PRIME_03: Never expose Back buffer to readers. Front buffer is read-only to all external systems.
+PATHFINDING_FUNNEL: Path smoothing: O(N) Funnel (Simple String Pulling). No iterative relaxation.
+WORLD_STREAMING_RESIDENCY: residentRadius = R_base, evictionRadius = R_base * 1.20f.
+FLOATING_ORIGIN_PRECISION: GPU matrix pools immutable during shift. Offset applied per-vertex in shader.
+Mandates loaded for this task:
+
+c:\hades\Hecton8\.agents-skills\OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+c:\hades\Hecton8\.agents-skills\AI_Navigation_AStar_Funnel_Smoothing_Pathfinding.txt
+c:\hades\Hecton8\.agents-skills\STRM_World_Streaming_Residency_Chunk_Management.txt
+c:\hades\Hecton8\.agents-skills\MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+c:\hades\Hecton8\.agents-skills\CORE_Weather_Abyssal_FlowField_Currents.txt
+I’m patching the bridge now. The write set is confined to this file unless compile validation proves a dependent contract mismatch.
+
+
+Ran 20 commands
+I’m editing now. The first patch converts the internal threat representation to float, introduces front/back storage for flow and thermal grids, adds the 20% residency hysteresis control, and removes the managed mega-wreck array from dictionary payloads.
+
+
+Edited 1 file, ran 6 commands
+The next patch is the buffer-core rewrite: threat becomes float-front/float-back with compressed mirror buffers, flow and thermal become true front/back systems, and all public readers stay pinned to completed front snapshots only.
+
+Edited file
+HectonMapMagicVegetationBridge.cs
++18
+-5
+
+                DisposeNativeArray(ref _ecosystemThreatGridCurrentNative);
+                // COLD ALLOC: NativeArray<byte>[_ecosystemThreatGridCellCount] - compressed ecosystem threat grid front buffer for active threat sampling - owner: HectonMapMagicVegetationBridge
+                _ecosystemThreatGridCurrentNative = new NativeArray<byte>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                // COLD ALLOC: NativeArray<float>[_ecosystemThreatGridCellCount] - ecosystem threat-grid front buffer for read-only sampling - owner: HectonMapMagicVegetationBridge
+                _ecosystemThreatGridCurrentNative = new NativeArray<float>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _threatGridInitialized = false;
+                _threatFloatViewDirty = true;
+            }
+                DisposeNativeArray(ref _ecosystemThreatGridNextNative);
+                // COLD ALLOC: NativeArray<byte>[_ecosystemThreatGridCellCount] - compressed ecosystem threat grid back buffer for cellular propagation - owner: HectonMapMagicVegetationBridge
+                _ecosystemThreatGridNextNative = new NativeArray<byte>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                // COLD ALLOC: NativeArray<float>[_ecosystemThreatGridCellCount] - ecosystem threat-grid back buffer for diffusion writes - owner: HectonMapMagicVegetationBridge
+                _ecosystemThreatGridNextNative = new NativeArray<float>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_ecosystemThreatGridCompressedCurrentNative.IsCreated || _ecosystemThreatGridCompressedCurrentNative.Length != _ecosystemThreatGridCellCount)
+            {
+                DisposeNativeArray(ref _ecosystemThreatGridCompressedCurrentNative);
+                // COLD ALLOC: NativeArray<byte>[_ecosystemThreatGridCellCount] - compressed threat-grid front mirror for low-cost consumers - owner: HectonMapMagicVegetationBridge
+                _ecosystemThreatGridCompressedCurrentNative = new NativeArray<byte>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_ecosystemThreatGridCompressedNextNative.IsCreated || _ecosystemThreatGridCompressedNextNative.Length != _ecosystemThreatGridCellCount)
+            {
+                DisposeNativeArray(ref _ecosystemThreatGridCompressedNextNative);
+                // COLD ALLOC: NativeArray<byte>[_ecosystemThreatGridCellCount] - compressed threat-grid back mirror for diffusion writes - owner: HectonMapMagicVegetationBridge
+                _ecosystemThreatGridCompressedNextNative = new NativeArray<byte>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+Edited file
+HectonMapMagicVegetationBridge.cs
++16
+-2
+
+                DisposeNativeArray(ref _ecosystemFlowFieldCurrentNative);
+                // COLD ALLOC: NativeArray<float2>[_ecosystemThreatGridCellCount] - abyssal flow-field vector payload for AI swarm navigation - owner: HectonMapMagicVegetationBridge
+                // COLD ALLOC: NativeArray<float2>[_ecosystemThreatGridCellCount] - abyssal flow-field front buffer for read-only navigation sampling - owner: HectonMapMagicVegetationBridge
+                _ecosystemFlowFieldCurrentNative = new NativeArray<float2>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_ecosystemFlowFieldNextNative.IsCreated || _ecosystemFlowFieldNextNative.Length != _ecosystemThreatGridCellCount)
+            {
+                DisposeNativeArray(ref _ecosystemFlowFieldNextNative);
+                // COLD ALLOC: NativeArray<float2>[_ecosystemThreatGridCellCount] - abyssal flow-field back buffer for Burst writes - owner: HectonMapMagicVegetationBridge
+                _ecosystemFlowFieldNextNative = new NativeArray<float2>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+        }
+                DisposeNativeArray(ref _abyssalThermalGridNative);
+                // COLD ALLOC: NativeArray<float>[_abyssalThermalGridCellCount] - persistent 3D abyssal thermal grid for suit and ecology queries - owner: HectonMapMagicVegetationBridge
+                // COLD ALLOC: NativeArray<float>[_abyssalThermalGridCellCount] - abyssal thermal-grid front buffer for stable sampling - owner: HectonMapMagicVegetationBridge
+                _abyssalThermalGridNative = new NativeArray<float>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_abyssalThermalGridNextNative.IsCreated || _abyssalThermalGridNextNative.Length != _abyssalThermalGridCellCount)
+            {
+                DisposeNativeArray(ref _abyssalThermalGridNextNative);
+                // COLD ALLOC: NativeArray<float>[_abyssalThermalGridCellCount] - abyssal thermal-grid back buffer for Burst writes - owner: HectonMapMagicVegetationBridge
+                _abyssalThermalGridNextNative = new NativeArray<float>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+        }
+Ran $p='c:\hades\Hecton8\Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs'; $lines=Get-Content $p; $lines[(3332-1)..(3455-1)]
+Ran $p='c:\hades\Hecton8\Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs'; $lines=Get-Content $p; $lines[(3455-1)..(3538-1)]
+Ran $p='c:\hades\Hecton8\Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs'; $lines=Get-Content $p; $lines[(3538-1)..(3600-1)]
+Edited file
+HectonMapMagicVegetationBridge.cs
++15
+-4
+
+            _threatPropagationHandle.Complete();
+            NativeArray<byte> threatSwap = _ecosystemThreatGridCurrentNative;
+            NativeArray<float> threatSwap = _ecosystemThreatGridCurrentNative;
+            _ecosystemThreatGridCurrentNative = _ecosystemThreatGridNextNative;
+            _ecosystemThreatGridNextNative = threatSwap;
+            NativeArray<byte> threatCompressedSwap = _ecosystemThreatGridCompressedCurrentNative;
+            _ecosystemThreatGridCompressedCurrentNative = _ecosystemThreatGridCompressedNextNative;
+            _ecosystemThreatGridCompressedNextNative = threatCompressedSwap;
+            NativeArray<byte> echoSwap = _ecosystemThreatEchoCurrentNative;
+            _threatPropagationScheduled = false;
+            _threatFloatViewDirty = true;
+            _threatFloatViewDirty = false;
+            if (InvalidateChunksForNewPermanentEchoes())
+                NextThreat = _ecosystemThreatGridNextNative,
+                NextThreatCompressed = _ecosystemThreatGridCompressedNextNative,
+                CurrentEchoFlags = _ecosystemThreatEchoCurrentNative,
+            _flowFieldHandle.Complete();
+            NativeArray<float2> flowSwap = _ecosystemFlowFieldCurrentNative;
+            _ecosystemFlowFieldCurrentNative = _ecosystemFlowFieldNextNative;
+            _ecosystemFlowFieldNextNative = flowSwap;
+            _ecosystemFlowFieldCenter = _scheduledFlowFieldCenter;
+            _abyssalThermalGridHandle.Complete();
+            NativeArray<float> thermalSwap = _abyssalThermalGridNative;
+            _abyssalThermalGridNative = _abyssalThermalGridNextNative;
+            _abyssalThermalGridNextNative = thermalSwap;
+            _abyssalThermalGridCenter = _scheduledAbyssalThermalGridCenter;
+                ThreatAttractorGrid = _threatSamplingAttractorGridNative,
+                ChunkHash = _threatSamplingChunkHashNative,
+                NavSupportGrid = _flowNavSupportGridNative,
+                Output = _ecosystemFlowFieldCurrentNative,
+                Output = _ecosystemFlowFieldNextNative,
+                GridResolution = _ecosystemThreatGridResolution,
+            {
+                Output = _abyssalThermalGridNative,
+                Output = _abyssalThermalGridNextNative,
+                ThreatChunks = _threatSamplingChunksNative,
+Edited file
+HectonMapMagicVegetationBridge.cs
++2
+-11
+
+            {
+                float threat = DecodeThreatByte(_ecosystemThreatGridCurrentNative[i]);
+                float threat = _ecosystemThreatGridCurrentNative[i];
+                if (threat <= bestThreat)
+
+            EnsureFloatNativeCapacity(ref _ecosystemThreatGridFloatViewNative, _ecosystemThreatGridCellCount);
+            if (_threatFloatViewDirty)
+            {
+                for (int i = 0; i < _ecosystemThreatGridCellCount; i++)
+                    _ecosystemThreatGridFloatViewNative[i] = DecodeThreatByte(_ecosystemThreatGridCurrentNative[i]);
+
+                _threatFloatViewDirty = false;
+            }
+
+            return _ecosystemThreatGridFloatViewNative;
+            return _ecosystemThreatGridCurrentNative;
+        }
+Ran rg -n "DecodeThreatByte\(_ecosystemThreatGridCurrentNative|_ecosystemThreatGridCompressedCurrentNative|_ecosystemThreatGridFloatViewNative|_threatFloatViewDirty" 'c:\hades\Hecton8\Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs'
+Ran $p='c:\hades\Hecton8\Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs'; $lines=Get-Content $p; $lines[(3170-1)..(3245-1)]
+Edited file
+HectonMapMagicVegetationBridge.cs
++87
+-0
+
+            {
+                if (_threatSamplingChunkHashNative.IsCreated)
+                    _threatSamplingChunkHashNative.Clear();
+
+                return;
+            NativeArray<float2>.Copy(_threatAttractorGridNative, _threatSamplingAttractorGridNative, _threatSamplingChunkCount * DensityGridCellCount);
+            Vector3 hashCenter = _threatGridInitialized
+                ? _ecosystemThreatGridCenter
+                : (playerTransform != null ? playerTransform.position : Vector3.zero);
+            RebuildThreatSamplingChunkHash(hashCenter);
+        }
+
+        private void RebuildThreatSamplingChunkHash(Vector3 gridCenter)
+        {
+            if (_threatSamplingChunkCount <= 0 ||
+                !_threatSamplingChunksNative.IsCreated ||
+                _ecosystemThreatGridResolution <= 0 ||
+                threatGridCellSize <= 0f)
+            {
+                if (_threatSamplingChunkHashNative.IsCreated)
+                    _threatSamplingChunkHashNative.Clear();
+
+                return;
+            }
+
+            int hashCapacity = 0;
+            for (int i = 0; i < _threatSamplingChunkCount; i++)
+                hashCapacity += EstimateThreatSamplingChunkHashEntries(_threatSamplingChunksNative[i], gridCenter);
+
+            hashCapacity = Mathf.Max(1, hashCapacity);
+            if (!_threatSamplingChunkHashNative.IsCreated)
+            {
+                // COLD ALLOC: NativeParallelMultiHashMap<int,int>[hashCapacity] - threat-sampling chunk spatial hash for funnel/flow obstacle lookups - owner: HectonMapMagicVegetationBridge
+                _threatSamplingChunkHashNative = new NativeParallelMultiHashMap<int, int>(hashCapacity, Allocator.Persistent);
+            }
+            else
+            {
+                if (_threatSamplingChunkHashNative.Capacity < hashCapacity)
+                    _threatSamplingChunkHashNative.Capacity = hashCapacity;
+
+                _threatSamplingChunkHashNative.Clear();
+            }
+
+            for (int i = 0; i < _threatSamplingChunkCount; i++)
+                StampThreatSamplingChunkHash(_threatSamplingChunksNative[i], gridCenter, i);
+        }
+
+        private int EstimateThreatSamplingChunkHashEntries(VegetationDensityChunkRecord chunk, Vector3 gridCenter)
+        {
+            if (_ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
+                return 0;
+
+            GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
+            float minX = Mathf.Max(chunk.MinX, minGridX);
+            float maxX = Mathf.Min(chunk.MaxX, maxGridX);
+            float minZ = Mathf.Max(chunk.MinZ, minGridZ);
+            float maxZ = Mathf.Min(chunk.MaxZ, maxGridZ);
+            if (minX > maxX || minZ > maxZ)
+                return 0;
+
+            int minCellX = Mathf.Clamp(Mathf.FloorToInt((minX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellX = Mathf.Clamp(Mathf.FloorToInt((maxX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int minCellZ = Mathf.Clamp(Mathf.FloorToInt((minZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellZ = Mathf.Clamp(Mathf.FloorToInt((maxZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            return Mathf.Max(0, (maxCellX - minCellX + 1) * (maxCellZ - minCellZ + 1));
+        }
+
+        private void StampThreatSamplingChunkHash(VegetationDensityChunkRecord chunk, Vector3 gridCenter, int chunkIndex)
+        {
+            if (!_threatSamplingChunkHashNative.IsCreated || _ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
+                return;
+
+            GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
+            float minX = Mathf.Max(chunk.MinX, minGridX);
+            float maxX = Mathf.Min(chunk.MaxX, maxGridX);
+            float minZ = Mathf.Max(chunk.MinZ, minGridZ);
+            float maxZ = Mathf.Min(chunk.MaxZ, maxGridZ);
+            if (minX > maxX || minZ > maxZ)
+                return;
+
+            int minCellX = Mathf.Clamp(Mathf.FloorToInt((minX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellX = Mathf.Clamp(Mathf.FloorToInt((maxX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int minCellZ = Mathf.Clamp(Mathf.FloorToInt((minZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellZ = Mathf.Clamp(Mathf.FloorToInt((maxZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
+            {
+                int rowOffset = cellZ * _ecosystemThreatGridResolution;
+                for (int cellX = minCellX; cellX <= maxCellX; cellX++)
+                    _threatSamplingChunkHashNative.Add(rowOffset + cellX, chunkIndex);
+            }
+        }
+Ran $p='c:\hades\Hecton8\Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs'; $lines=Get-Content $p; $lines[(11805-1)..(11910-1)]
+Ran $p='c:\hades\Hecton8\Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs'; $lines=Get-Content $p; $lines[(11970-1)..(12140-1)]
+Edited file
+HectonMapMagicVegetationBridge.cs
++21
+-5
+
+            int resolution,
+            NativeArray<byte> threatGrid)
+            NativeArray<float> threatGrid)
+        {
+
+            float sample00 = DecodeThreatByte(threatGrid[(cellZ * resolution) + cellX]);
+            float sample10 = DecodeThreatByte(threatGrid[(cellZ * resolution) + nextCellX]);
+            float sample01 = DecodeThreatByte(threatGrid[(nextCellZ * resolution) + cellX]);
+            float sample11 = DecodeThreatByte(threatGrid[(nextCellZ * resolution) + nextCellX]);
+            float sample00 = threatGrid[(cellZ * resolution) + cellX];
+            float sample10 = threatGrid[(cellZ * resolution) + nextCellX];
+            float sample01 = threatGrid[(nextCellZ * resolution) + cellX];
+            float sample11 = threatGrid[(nextCellZ * resolution) + nextCellX];
+            float sampleX0 = Mathf.Lerp(sample00, sample10, fracX);
+
+        private static int ComputeThreatGridCellIndex(float3 position, float3 gridCenter, float cellSize, int resolution)
+        {
+            if (resolution <= 0 || cellSize <= 0f)
+                return -1;
+
+            float halfExtent = (resolution - 1) * 0.5f * cellSize;
+            float localX = position.x - (gridCenter.x - halfExtent);
+            float localZ = position.z - (gridCenter.z - halfExtent);
+            if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
+                return -1;
+
+            int cellX = math.clamp((int)math.floor(localX / cellSize), 0, resolution - 1);
+            int cellZ = math.clamp((int)math.floor(localZ / cellSize), 0, resolution - 1);
+            return (cellZ * resolution) + cellX;
+        }
+
+        private float SampleCanopyHeightAtPosition(float worldX, float worldZ)
+Edited file
+HectonMapMagicVegetationBridge.cs
++95
+-0
+
+
+        private static float3 SampleDensityChannelsAtPositionHashed(
+            float3 position,
+            NativeArray<VegetationDensityChunkRecord> chunks,
+            NativeArray<float3> densityGrid,
+            NativeParallelMultiHashMap<int, int> chunkHash,
+            float3 gridCenter,
+            float cellSize,
+            int gridResolution,
+            int chunkCount)
+        {
+            if (!chunkHash.IsCreated)
+                return SampleDensityChannelsAtPosition(position, chunks, densityGrid, chunkCount);
+
+            int cellIndex = ComputeThreatGridCellIndex(position, gridCenter, cellSize, gridResolution);
+            if (cellIndex < 0)
+                return float3.zero;
+
+            float3 density = float3.zero;
+            NativeParallelMultiHashMapIterator<int> iterator;
+            int chunkIndex;
+            if (!chunkHash.TryGetFirstValue(cellIndex, out chunkIndex, out iterator))
+                return density;
+
+            do
+            {
+                if (chunkIndex < 0 || chunkIndex >= chunkCount || chunkIndex >= chunks.Length)
+                    continue;
+
+                VegetationDensityChunkRecord chunk = chunks[chunkIndex];
+                if (position.x < chunk.MinX || position.x > chunk.MaxX || position.z < chunk.MinZ || position.z > chunk.MaxZ)
+                    continue;
+
+                density += SampleChunkDensityChannels(position.x, position.z, chunk, densityGrid);
+            }
+            while (chunkHash.TryGetNextValue(out chunkIndex, ref iterator));
+
+            return density;
+        }
+
+        private static float2 SampleThreatAttractorAtPosition(
+
+        private static float2 SampleThreatAttractorAtPositionHashed(
+            float3 position,
+            NativeArray<VegetationDensityChunkRecord> chunks,
+            NativeArray<float2> attractorGrid,
+            NativeParallelMultiHashMap<int, int> chunkHash,
+            float3 gridCenter,
+            float cellSize,
+            int gridResolution,
+            int chunkCount)
+        {
+            if (!chunkHash.IsCreated)
+                return SampleThreatAttractorAtPosition(position, chunks, attractorGrid, chunkCount);
+
+            int cellIndex = ComputeThreatGridCellIndex(position, gridCenter, cellSize, gridResolution);
+            if (cellIndex < 0)
+                return float2.zero;
+
+            float2 attractor = float2.zero;
+            NativeParallelMultiHashMapIterator<int> iterator;
+            int chunkIndex;
+            if (!chunkHash.TryGetFirstValue(cellIndex, out chunkIndex, out iterator))
+                return attractor;
+
+            do
+            {
+                if (chunkIndex < 0 || chunkIndex >= chunkCount || chunkIndex >= chunks.Length)
+                    continue;
+
+                VegetationDensityChunkRecord chunk = chunks[chunkIndex];
+                if (position.x < chunk.MinX || position.x > chunk.MaxX || position.z < chunk.MinZ || position.z > chunk.MaxZ)
+                    continue;
+
+                float width = math.max(0.01f, chunk.MaxX - chunk.MinX);
+                float depth = math.max(0.01f, chunk.MaxZ - chunk.MinZ);
+                float normalizedX = math.saturate((position.x - chunk.MinX) / width) * (DensityGridResolution - 1);
+                float normalizedZ = math.saturate((position.z - chunk.MinZ) / depth) * (DensityGridResolution - 1);
+                int cellX = math.clamp((int)math.floor(normalizedX), 0, DensityGridResolution - 1);
+                int cellZ = math.clamp((int)math.floor(normalizedZ), 0, DensityGridResolution - 1);
+                int nextCellX = math.min(cellX + 1, DensityGridResolution - 1);
+                int nextCellZ = math.min(cellZ + 1, DensityGridResolution - 1);
+                float fracX = normalizedX - cellX;
+                float fracZ = normalizedZ - cellZ;
+
+                float2 sample00 = attractorGrid[chunk.GridOffset + (cellZ * DensityGridResolution) + cellX];
+                float2 sample10 = attractorGrid[chunk.GridOffset + (cellZ * DensityGridResolution) + nextCellX];
+                float2 sample01 = attractorGrid[chunk.GridOffset + (nextCellZ * DensityGridResolution) + cellX];
+                float2 sample11 = attractorGrid[chunk.GridOffset + (nextCellZ * DensityGridResolution) + nextCellX];
+                float2 sampleX0 = math.lerp(sample00, sample10, fracX);
+                float2 sampleX1 = math.lerp(sample01, sample11, fracX);
+                attractor += math.lerp(sampleX0, sampleX1, fracZ);
+            }
+            while (chunkHash.TryGetNextValue(out chunkIndex, ref iterator));
+
+            return attractor;
+        }
+
+        private static float3 SampleChunkDensityChannels(
+14 files changed
++286
+-33
+Undo
+
+Review
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+HectonMapMagicVegetationBridge.cs
++21
+-5
+Too large to render inline
+
+Review
+HectonMapMagicVegetationBridge.cs
++95
+-0
+Too large to render inline
+
+Review
+
+
+
+
+Full access
+
+GPT-5.4
+
+Extra High
+
+IDE context
+
+
+Work locally

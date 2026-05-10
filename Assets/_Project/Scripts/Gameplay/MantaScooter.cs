@@ -1853,7 +1853,7 @@ namespace Hecton8.Gameplay
                 _playerMovement.TryGetComponent(out _playerRigidbody);
 
             if ((_playerMovement == null || _mantaSurvivalSystem == null || _playerRigidbody == null) &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
                 if (_playerMovement == null)
                     playerTransform.TryGetComponent(out _playerMovement);

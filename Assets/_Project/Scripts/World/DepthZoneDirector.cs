@@ -1,17 +1,17 @@
 // ============================================================================
 // HECTON-8 — DepthZoneDirector.cs
-// Определяет текущую зону игрока по глубине и публикует события.
+// Opredelyaet tekuschuyu zonu igroka po glubine i publikuet sobytiya.
 //
-// РОЛЬ:
-//   • Отслеживает глубину игрока через HectonSurvivalSystem.
-//   • При смене зоны: публикует событие, регистрирует discovery,
-//     обновляет QuestManager, уведомляет HUD.
-//   • Проверяет требования к тиру корпуса — предупреждает если
-//     игрок ныряет глубже допустимого.
+// ROL:
+//   • Otslezhivaet glubinu igroka cherez HectonSurvivalSystem.
+//   • Pri smene zony: publikuet sobytie, registriruet discovery,
+//     obnovlyaet QuestManager, uvedomlyaet HUD.
+//   • Proveryaet trebovaniya k tiru korpusa — preduprezhdaet esli
+//     igrok nyryaet glubzhe dopustimogo.
 //
 // ZERO GC:
-//   • ISlowTickable — проверка зоны раз в 0.5с.
-//   • Никаких new/LINQ в SlowTick.
+//   • ISlowTickable — proverka zony raz v 0.5s.
+//   • Nikakih new/LINQ v SlowTick.
 // ============================================================================
 
 using System;
@@ -89,9 +89,9 @@ namespace Hecton8.World
             _profilesByHash.Clear();
         }
 
-        /// <summary>Вход в новую зону. DepthZoneProfile: новая зона.</summary>
+        /// <summary>Vhod v novuyu zonu. DepthZoneProfile: novaya zona.</summary>
 
-        /// <summary>Выход из зоны. DepthZoneProfile: покинутая зона.</summary>
+        /// <summary>Vyhod iz zony. DepthZoneProfile: pokinutaya zona.</summary>
 
         public static void Register(IDepthZoneEventListener listener)
         {
@@ -254,11 +254,11 @@ namespace Hecton8.World
         // ══════════════════════════════════════════════════════════
 
         [Header("── Zones ───────────────────────────────────")]
-        [Tooltip("Все зоны глубины. Порядок не важен — сортируются по minDepth.")]
+        [Tooltip("Vse zony glubiny. Poryadok ne vazhen — sortiruyutsya po minDepth.")]
         [SerializeField] private DepthZoneProfile[] zones = new DepthZoneProfile[0];
 
         [Header("── References ──────────────────────────────")]
-        [Tooltip("Система выживания для чтения глубины.")]
+        [Tooltip("Sistema vyzhivaniya dlya chteniya glubiny.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
 
         [Header("â”€â”€ Notification Cadence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
@@ -347,10 +347,10 @@ namespace Hecton8.World
 
             float depth = survivalSystem.Depth;
 
-            // Находим текущую зону
+            // Nahodim tekuschuyu zonu
             DepthZoneProfile newZone = FindZoneForDepth(depth);
 
-            // Обновляем QuestManager после разрешения текущей authored zone context.
+            // Obnovlyaem QuestManager posle razresheniya tekuschey authored zone context.
             QuestManager questManager = GlobalRegistry.Quest;
             if (questManager != null)
             {
@@ -362,12 +362,12 @@ namespace Hecton8.World
 
             if (newZone == _currentZone)
             {
-                // Проверяем предупреждение о корпусе
+                // Proveryaem preduprezhdenie o korpuse
                 CheckHullWarning(newZone);
                 return;
             }
 
-            // Смена зоны
+            // Smena zony
             DepthZoneProfile oldZone = _currentZone;
             _currentZone = newZone;
             _hullWarningShown = false;
@@ -379,11 +379,11 @@ namespace Hecton8.World
             {
                 DepthZoneEvents.RaiseZoneEntered(newZone);
 
-                // Регистрируем discovery
+                // Registriruem discovery
                 if (!string.IsNullOrEmpty(newZone.discoveryId))
                     NarrativeEvents.RaiseDiscoveryMade(newZone.discoveryId);
 
-                // HUD уведомление
+                // HUD uvedomlenie
                 if (ShouldPublishZoneEnterNotification())
                 {
                     NotificationEvents.PushInfo(GetZoneEnterMessage(newZone));
@@ -409,7 +409,7 @@ namespace Hecton8.World
                 if (z == null) continue;
                 if (!z.ContainsDepth(depth)) continue;
 
-                // Берём зону с наибольшим minDepth (наиболее специфичную)
+                // Berem zonu s naibolshim minDepth (naibolee spetsifichnuyu)
                 if (z.minDepth > bestMin)
                 {
                     bestMin = z.minDepth;

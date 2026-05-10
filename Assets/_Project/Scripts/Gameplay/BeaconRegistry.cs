@@ -3,6 +3,7 @@
 // Fixed-capacity registry for active DeployableBeacon instances.
 // ============================================================================
 
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -15,7 +16,7 @@ namespace Hecton8.Gameplay
     {
         private const int MaxBeacons = 128;
 
-        // COLD ALLOC: DeployableBeacon[128] - active beacon registry storage - owner: BeaconRegistry
+        // COLD ALLOC: DeployableBeacon[128] — active beacon registry storage — owner: BeaconRegistry
         private static readonly DeployableBeacon[] _beacons = new DeployableBeacon[MaxBeacons];
         private static int _beaconCount;
 
@@ -29,7 +30,10 @@ namespace Hecton8.Gameplay
                 return;
 
             if (!EnsureDenseCapacity(_beaconCount + 1))
+            {
+                LogCapacityExceeded();
                 return;
+            }
 
             _beacons[_beaconCount] = beacon;
             _beaconCount++;
@@ -75,29 +79,49 @@ namespace Hecton8.Gameplay
             return null;
         }
 
-        /// <summary>Finds the nearest beacon to a position. Returns null if no beacons are registered.</summary>
+        /// <summary>Finds the nearest beacon to a runtime-space position. Returns null if no beacons are registered.</summary>
         public static DeployableBeacon GetNearest(Vector3 position)
         {
-            if (_beaconCount == 0)
-                return null;
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            return GetNearest(in originAup);
+        }
 
-            DeployableBeacon nearest = null;
-            float nearestDistSq = float.MaxValue;
+        /// <summary>Finds the nearest beacon to an absolute universe position.</summary>
+        public static DeployableBeacon GetNearest(in AbsoluteUniversePosition originAup)
+        {
+            return TryGetNearest(in originAup, out DeployableBeacon nearest, out _)
+                ? nearest
+                : null;
+        }
+
+        /// <summary>Finds the nearest beacon and returns squared AUP distance.</summary>
+        public static bool TryGetNearest(in AbsoluteUniversePosition originAup, out DeployableBeacon nearest, out double nearestDistanceSq)
+        {
+            if (_beaconCount == 0)
+            {
+                nearest = null;
+                nearestDistanceSq = double.MaxValue;
+                return false;
+            }
+
+            nearest = null;
+            nearestDistanceSq = double.MaxValue;
             for (int i = 0; i < _beaconCount; i++)
             {
                 DeployableBeacon beacon = _beacons[i];
                 if (beacon == null)
                     continue;
 
-                float distSq = (beacon.Position - position).sqrMagnitude;
-                if (distSq >= nearestDistSq)
+                AbsoluteUniversePosition beaconAup = beacon.PositionAup;
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in beaconAup, in originAup);
+                if (distanceSq >= nearestDistanceSq)
                     continue;
 
-                nearestDistSq = distSq;
+                nearestDistanceSq = distanceSq;
                 nearest = beacon;
             }
 
-            return nearest;
+            return nearest != null;
         }
 
         /// <summary>Clears all registered beacons. Call when loading a new scene.</summary>
@@ -126,6 +150,15 @@ namespace Hecton8.Gameplay
         private static bool EnsureDenseCapacity(int requiredCount)
         {
             return requiredCount <= MaxBeacons;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogCapacityExceeded()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning("[BeaconRegistry] Fixed active beacon capacity exceeded.");
+#endif
         }
     }
 }
