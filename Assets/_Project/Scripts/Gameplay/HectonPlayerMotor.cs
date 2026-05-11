@@ -60,6 +60,8 @@ namespace Hecton8.Gameplay
         private const float WakeSiltEmissionSpeedThresholdMetersPerSecond = 4.5f;
         private const float WakeSiltEmissionCooldownSeconds = 0.35f;
         private const float HydrodynamicAddedMassAccelerationScale = 0.45f;
+        private const float HydrodynamicAddedMassAccelerationForceScalar =
+            1f / (1f + HydrodynamicAddedMassAccelerationScale);
         private const float WallSlideTelemetryMaxNormalY = 0.75f;
         private const float VoxelProxySlideDistanceRetain = 0.92f;
         private const float VoxelProxySlideVelocityRetain = 0.65f;
@@ -778,7 +780,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>Applies added-mass scalar only to acceleration; deceleration remains force / mass.</summary>
-        public static Vector3 ResolveHydrodynamicAddedMassStatelessForce(Vector3 force, Vector3 velocity, float mass)
+        public static Vector3 ResolveHydrodynamicAddedMassStatelessForce(Vector3 force, Vector3 velocity)
         {
             Vector3 safeForce = SafeVelocity(force);
             if (safeForce.sqrMagnitude <= MinVectorMagnitudeSq)
@@ -788,9 +790,7 @@ namespace Hecton8.Gameplay
             float velocitySq = safeVelocity.sqrMagnitude;
             bool accelerating = velocitySq <= MinVectorMagnitudeSq ||
                 math.dot((float3)safeForce, (float3)safeVelocity) > 0f;
-            float safeMass = math.max(0.0001f, mass);
-            float addedMass = safeMass * HydrodynamicAddedMassAccelerationScale;
-            float forceScalar = math.select(1f, safeMass * math.rcp(safeMass + addedMass), accelerating);
+            float forceScalar = math.select(1f, HydrodynamicAddedMassAccelerationForceScalar, accelerating);
             return SafeVelocity(safeForce * forceScalar, safeForce);
         }
 

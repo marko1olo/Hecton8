@@ -76,6 +76,7 @@ namespace Hecton8.Gameplay
         public JobHandle KinematicRepairTargetHandle;
 
         private const int NativeCacheLineBytes = 64;
+        private const int NativeCacheLineMask = NativeCacheLineBytes - 1;
         private const string NativeMemoryOwner = nameof(HectonPlayerMotorNativeState);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
@@ -130,7 +131,7 @@ namespace Hecton8.Gameplay
             int safeCount = math.max(1, requestedCount);
             int elementBytes = math.max(1, UnsafeUtility.SizeOf<T>());
             int requestedBytes = safeCount * elementBytes;
-            int paddedBytes = ((requestedBytes + NativeCacheLineBytes - 1) / NativeCacheLineBytes) * NativeCacheLineBytes;
+            int paddedBytes = (requestedBytes + NativeCacheLineMask) & ~NativeCacheLineMask;
             return math.max(safeCount, (paddedBytes + elementBytes - 1) / elementBytes);
         }
 

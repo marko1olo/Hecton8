@@ -10537,8 +10537,7 @@ namespace Hecton8.Gameplay
             _forceVector = ResolveCriticalEncumbranceSwimForce(_forceVector, IsCriticallyEncumbered);
             _forceVector = HectonPlayerMotor.ResolveHydrodynamicAddedMassStatelessForce(
                 _forceVector,
-                _velocity,
-                _rb != null ? _rb.mass : 1f);
+                _velocity);
 
             ApplyMotorAccelerationFromForce(_forceVector);
             ApplySargassumEntanglementForce(transportPreset);

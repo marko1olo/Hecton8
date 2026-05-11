@@ -683,6 +683,17 @@ namespace Hecton8.Celestial
         [SerializeField] private Vector3 sunOrbitAxis = Vector3.right;
         [SerializeField] private float sunStartAngle;
 
+        [Header("Analytical Keplerian Orbits")]
+        [SerializeField] private bool enableAnalyticalOrbitSolver = true;
+        [SerializeField] private bool driveObserverBodiesFromAnalyticalOrbits = true;
+        [SerializeField] private KeplerOrbitDefinition gasGiantOrbit = KeplerOrbitDefinition.GasGiantDefault();
+        [SerializeField] private KeplerOrbitDefinition moon0Orbit = KeplerOrbitDefinition.Moon0Default();
+        [SerializeField] private KeplerOrbitDefinition moon1Orbit = KeplerOrbitDefinition.Moon1Default();
+        [SerializeField, Range(0f, 8f)] private float celestialTideAmplitudeMeters = 2.25f;
+        [SerializeField, Range(0f, 1f)] private float highTideThreshold01 = 0.78f;
+        [SerializeField, Range(0f, 1f)] private float fullMoonBloomThreshold01 = 0.92f;
+        [SerializeField, Range(1f, 3650f)] private float inGameYearDays = 365f;
+
         [Header("Eclipse Detection")]
         [SerializeField] private float eclipseAngularRadiusOverride;
         [SerializeField] private bool useCinematicEclipseOccluderRadius = true;
@@ -816,6 +827,8 @@ namespace Hecton8.Celestial
         private bool _sunDirectionResolvedFromMatrix;
 
         private float3 _resolvedSunDirection;
+        private CelestialRuntimeSnapshot _celestialRuntimeSnapshot;
+        private uint _celestialRuntimeSequence;
         private float _penumbraFactor;
         private Color _resolvedSkyZenith;
         private Color _resolvedSkyHorizon;
@@ -908,6 +921,8 @@ namespace Hecton8.Celestial
         private const int FirmamentStartupStarCount = 100000;
         private const int FirmamentStarBakeThreads = 64;
         private const float CelestialTimelineStepSeconds = 0.1f;
+        private const double KeplerTwoPi = 6.283185307179586476925286766559d;
+        private const double KeplerDegToRad = 0.01745329251994329576923690768489d;
         private const int CelestialTimelineMaxStepsPerSlowTick = 5;
         private const int FirmamentMinResolution = 256;
         private const int FirmamentMx350ResolutionCap = 2048;
@@ -960,6 +975,15 @@ namespace Hecton8.Celestial
         private static readonly int _ID_HectonSkyRotation = Shader.PropertyToID("_HectonSkyRotation");
         private static readonly int _ID_HectonSkyOccluderCount = Shader.PropertyToID("_HectonSkyOccluderCount");
         private static readonly int _ID_HectonSkyOccluders = Shader.PropertyToID("_HectonSkyOccluders");
+        private static readonly int _ID_HectonCelestialTidePull = Shader.PropertyToID("_HectonCelestialTidePull");
+        private static readonly int _ID_HectonCelestialTideHeight = Shader.PropertyToID("_HectonCelestialTideHeight");
+        private static readonly int _ID_HectonCelestialGasGiantOffset = Shader.PropertyToID("_HectonCelestialGasGiantOffset");
+        private static readonly int _ID_HectonCelestialMoon0Offset = Shader.PropertyToID("_HectonCelestialMoon0Offset");
+        private static readonly int _ID_HectonCelestialMoon1Offset = Shader.PropertyToID("_HectonCelestialMoon1Offset");
+        private static readonly int _ID_HectonCelestialPhaseParams = Shader.PropertyToID("_HectonCelestialPhaseParams");
+        private static readonly int _ID_HectonCelestialRuntimeFlags = Shader.PropertyToID("_HectonCelestialRuntimeFlags");
+        private static readonly int _ID_HectonCelestialRadiationStorm = Shader.PropertyToID("_HectonCelestialRadiationStorm");
+        private static readonly int _ID_HectonCelestialBiolumMultiplier = Shader.PropertyToID("_HectonCelestialBiolumMultiplier");
         private static readonly uint _FirmamentResolutionClampWarningHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.FirmamentResolutionClamp"));
         private static readonly uint _FirmamentBakeContextHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.FirmamentBake"));
         private static readonly uint _CelestialTimelineBudgetWarningHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.CelestialTimelineBudget"));
@@ -1232,6 +1256,7 @@ namespace Hecton8.Celestial
             RestoreSunDefaults();
             CleanupPlanetShineLight();
             TryUnregisterFromTickManager();
+            ClearCelestialRuntimeSnapshot();
 
 #if UNITY_EDITOR
             if (!Application.isPlaying)
@@ -1263,6 +1288,7 @@ namespace Hecton8.Celestial
             RestoreSurfaceCloudShadowCookie();
             ReleaseRuntimeAegirRingShadowCookie();
             TryUnregisterFromTickManager();
+            ClearCelestialRuntimeSnapshot();
         }
 
         private void TryRegisterToTickManager()
@@ -1439,6 +1465,7 @@ namespace Hecton8.Celestial
             SyncCrestPrimaryLight();
             ApplySurfaceCloudShadowCookie(celestialDeltaTime);
             UpdateSunVisualPosition();
+            UpdateAnalyticalCelestialState();
 
             float sunElevation = CalculateSunElevation();
             _currentSunAngle = sunElevation;
@@ -1467,6 +1494,7 @@ namespace Hecton8.Celestial
             // v5.1: ApplySunOcclusion is the LAST intensity writer.
             // It MULTIPLIES whatever UnderwaterVisuals wrote.
             ApplySunOcclusion();
+            PublishCelestialRuntimeSnapshot();
 
             CelestialEvents.RaiseSunAngleChanged(_currentSunAngle);
         }

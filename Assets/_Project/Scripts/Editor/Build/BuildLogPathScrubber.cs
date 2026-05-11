@@ -97,33 +97,59 @@ namespace Hecton8.Editor.Build
 
         private static unsafe string ScrubAbsolutePathFragments(string value)
         {
-            StringBuilder builder = null;
+            char[] output = null;
+            StringBuilder overflowBuilder = null;
+            int outputIndex = 0;
             int copyStart = 0;
             int index = 0;
+            bool replaced = false;
             fixed (char* valuePtr = value)
             {
                 while (index < value.Length)
                 {
-                    if (!IsMachinePathStart(valuePtr, value.Length, index) &&
-                        !IsAbsolutePathStart(valuePtr, value.Length, index))
+                    char current = valuePtr[index];
+                    if (current != '/' && !IsAsciiLetter(current))
                     {
                         index++;
                         continue;
                     }
 
-                    builder ??= new StringBuilder(value.Length);
-                    builder.Append(value, copyStart, index - copyStart);
-                    builder.Append(MachinePathToken);
+                    if (!IsAbsolutePathStart(valuePtr, value.Length, index))
+                    {
+                        index++;
+                        continue;
+                    }
+
+                    replaced = true;
+                    output ??= new char[value.Length];
+                    if (overflowBuilder != null)
+                    {
+                        overflowBuilder.Append(value, copyStart, index - copyStart);
+                        overflowBuilder.Append(MachinePathToken);
+                    }
+                    else if (!TryAppend(value, copyStart, index - copyStart, MachinePathToken, ref output, ref outputIndex))
+                    {
+                        overflowBuilder ??= CreateOverflowBuilder(value, copyStart, output, outputIndex);
+                        overflowBuilder.Append(value, copyStart, index - copyStart);
+                        overflowBuilder.Append(MachinePathToken);
+                    }
+
                     index = FindPathEnd(valuePtr, value.Length, index);
                     copyStart = index;
                 }
             }
 
-            if (builder == null)
+            if (!replaced)
                 return value;
 
-            builder.Append(value, copyStart, value.Length - copyStart);
-            return builder.ToString();
+            if (overflowBuilder != null)
+            {
+                overflowBuilder.Append(value, copyStart, value.Length - copyStart);
+                return overflowBuilder.ToString();
+            }
+
+            CopyChars(value, copyStart, value.Length - copyStart, output, ref outputIndex);
+            return new string(output, 0, outputIndex);
         }
 
         private static string NormalizeSlashes(string value)
@@ -148,10 +174,36 @@ namespace Hecton8.Editor.Build
             return builder.ToString();
         }
 
-        private static unsafe bool IsMachinePathStart(char* value, int length, int index)
+        private static StringBuilder CreateOverflowBuilder(string value, int copyStart, char[] output, int outputIndex)
         {
-            return StartsWith(value, length, index, ProjectRoot) ||
-                   StartsWith(value, length, index, UserRoot);
+            StringBuilder builder = new StringBuilder(value.Length + MachinePathToken.Length);
+            if (outputIndex > 0)
+                builder.Append(output, 0, outputIndex);
+            return builder;
+        }
+
+        private static bool TryAppend(
+            string source,
+            int sourceStart,
+            int sourceLength,
+            string token,
+            ref char[] output,
+            ref int outputIndex)
+        {
+            int required = outputIndex + sourceLength + token.Length;
+            if (required > output.Length)
+                return false;
+
+            CopyChars(source, sourceStart, sourceLength, output, ref outputIndex);
+            CopyChars(token, 0, token.Length, output, ref outputIndex);
+            return true;
+        }
+
+        private static void CopyChars(string source, int sourceStart, int sourceLength, char[] output, ref int outputIndex)
+        {
+            int safeLength = Math.Min(sourceLength, source.Length - sourceStart);
+            for (int i = 0; i < safeLength; i++)
+                output[outputIndex++] = source[sourceStart + i];
         }
 
         private static unsafe bool IsAbsolutePathStart(char* value, int length, int index)
@@ -163,6 +215,9 @@ namespace Hecton8.Editor.Build
             {
                 return true;
             }
+
+            if (value[index] != '/')
+                return false;
 
             return StartsWith(value, length, index, "/Users/") || StartsWith(value, length, index, "/home/");
         }

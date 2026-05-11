@@ -590,9 +590,9 @@ namespace Hecton8.Gameplay
         [SerializeField] private float _debugDrainProgress;
         [SerializeField] private int _debugTrackedObjectCount;
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  RUNTIME STATE
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         private bool _hasPower = true;
         private bool _ambientLightsBrownedOut;
@@ -670,18 +670,16 @@ namespace Hecton8.Gameplay
         private float _carbonFilterTimerSeconds;
 
         /// <summary>
-        /// Predyduschee sostoyanie isFlooded, ispolzuemoe dlya opredeleniya
-        /// momenta smeny sostoyaniya zatopleniya (edge detection).
-        /// Initsializiruetsya v OnSpawn/Awake znacheniem isFlooded.
+        /// Previous flooded state used for flood-state edge detection.
+        /// Initialized from isFlooded in OnSpawn/Awake.
         /// </summary>
         private bool _wasFlooded;
 
         /// <summary>
-        /// Zaschita ot povtornogo vyzova Deconstruct (naprimer, dva igroka
-        /// odnovremenno razbirayut modul v buduschem multipleere).
+        /// Guard against repeated Deconstruct calls, including future multiplayer overlap.
         /// </summary>
         private bool _isDeconstructing;
-        // ── Life Support State ──
+        // Life Support State
 
         /// <summary>
         /// Cached reference to player's survival system.
@@ -692,21 +690,20 @@ namespace Hecton8.Gameplay
         private HectonPlayerMovement _trackedPlayerMovement;
         private readonly ModuleIntegrityComponent _integrityComponent = new ModuleIntegrityComponent();
         private readonly ModuleLifeSupportComponent _lifeSupportComponent = new ModuleLifeSupportComponent();
-        // ══════════════════════════════════════════════════════════
-        //  INTERIOR ZONE — TRACKED OBJECTS
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
+        //  INTERIOR ZONE - TRACKED OBJECTS
+        // ==========================================================
 
         /// <summary>
-        /// Slovar otslezhivaemyh BuoyancyObject vnutri Interior Zone.
-        /// Key: Collider.GetEntityId() (ne GameObject — t.k. trigger vidit Collider).
-        /// Value: keshirovannyy BuoyancyObject.
+        /// Tracked BuoyancyObject entries inside the interior zone.
+        /// Key: Collider.GetEntityId(); trigger callbacks see Collider, not GameObject.
+        /// Value: cached BuoyancyObject.
         /// </summary>
         private readonly Dictionary<ulong, BuoyancyObject> _trackedObjects
             = new Dictionary<ulong, BuoyancyObject>(TRACKED_INITIAL_CAPACITY);
 
         /// <summary>
-        /// Vremennyy spisok InstanceID dlya bezopasnogo udaleniya iz slovarya
-        /// vo vremya iteratsii (pri sinhronizatsii sostoyaniya zatopleniya).
+        /// Temporary key list for safe dictionary removal during flood-state resync.
         /// Pre-allocated, zero GC.
         /// </summary>
         private readonly List<ulong> _keysToRemove = new List<ulong>(TRACKED_INITIAL_CAPACITY);
@@ -720,11 +717,11 @@ namespace Hecton8.Gameplay
         [SerializeField] private float _debugSolarEmpBlackoutSeconds;
         private float _solarEmpBlackoutRemainingSeconds;
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC PROPERTIES — dlya ConstructionManager save/load
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
+        //  PUBLIC PROPERTIES - ConstructionManager save/load
+        // ==========================================================
 
-        /// <summary>Maksimalnaya tselostnost (read-only).</summary>
+        /// <summary>Maximum integrity, read-only.</summary>
         public float MaxIntegrity => maxIntegrity;
         internal static int ActiveModuleCount => s_activeModules.Count;
         internal static BaseModule GetActiveModuleAt(int index)

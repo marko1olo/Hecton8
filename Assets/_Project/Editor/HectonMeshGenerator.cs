@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — HectonMeshGenerator.cs
+// HECTON-8 - HectonMeshGenerator.cs
 // Editor utility for procedural sky dome mesh generation.
 //
 // PURPOSE:
@@ -7,28 +7,28 @@
 //   The mesh is saved as a persistent .asset file for reuse.
 //
 // MESH SPECIFICATION:
-//   • Shape: Hemisphere (upper half of sphere, Y ≥ 0)
-//   • Normals: Inverted (pointing INWARD) — camera sits inside the dome
-//   • UV Mapping: Spherical projection, seamless at zenith
-//   • Radius: 1 unit (scale via Transform in scene)
-//   • Segments: 64 longitude × 32 latitude (2048 quads = 4096 tris)
-//   • Bottom ring: Y = 0 (horizon), closed with a flat cap
+//   - Shape: Hemisphere (upper half of sphere, Y >= 0)
+//   - Normals: Inverted (pointing INWARD); camera sits inside the dome
+//   - UV Mapping: Spherical projection, seamless at zenith
+//   - Radius: 1 unit (scale via Transform in scene)
+//   - Segments: 64 longitude x 32 latitude (2048 quads = 4096 tris)
+//   - Bottom ring: Y = 0 (horizon), closed with a flat cap
 //
 // USAGE:
-//   Menu: Tools → Hecton → Generate Sky Dome
+//   Menu: Tools > Hecton > Generate Sky Dome
 //   Output: Assets/_Project/Art/Models/SkyDome_Inverted.asset
 //
 // SHADER COMPATIBILITY:
 //   Designed for Hecton_AlienSky_Master.shader:
-//     • Cull Front (shader culls front faces, our inverted normals face inward)
-//     • UV.x = longitude (0→1 around dome), UV.y = latitude (0=horizon, 1=zenith)
-//     • Seamless at zenith: all top-ring vertices share UV.y = 1.0
+//     - Cull Front (shader culls front faces, our inverted normals face inward)
+//     - UV.x = longitude (0..1 around dome), UV.y = latitude (0=horizon, 1=zenith)
+//     - Seamless at zenith: all top-ring vertices share UV.y = 1.0
 //
 // NOTES:
-//   • Editor-only script (#if UNITY_EDITOR)
-//   • No runtime allocations — runs once in editor
-//   • Creates output directory if it doesn't exist
-//   • Overwrites existing asset at the same path
+//   - Editor-only script (#if UNITY_EDITOR)
+//   - No runtime allocations; runs once in editor
+//   - Creates output directory if it doesn't exist
+//   - Overwrites existing asset at the same path
 // ============================================================================
 
 #if UNITY_EDITOR
@@ -41,9 +41,9 @@ namespace Hecton8.Editor
 {
     public static class HectonMeshGenerator
     {
-        // ══════════════════════════════════════════════════════════
+        // ---------------------------------------------------------
         //  CONSTANTS
-        // ══════════════════════════════════════════════════════════
+        // ---------------------------------------------------------
 
         /// <summary>Number of segments around the dome (longitude).</summary>
         private const int LongitudeSegments = 64;
@@ -53,6 +53,9 @@ namespace Hecton8.Editor
 
         /// <summary>Dome radius in local space. Scale via Transform.</summary>
         private const float Radius = 1f;
+        private const float InvRadius = 1f / Radius;
+        private const float InvLongitudeSegments = 1f / LongitudeSegments;
+        private const float InvLatitudeSegments = 1f / LatitudeSegments;
 
         /// <summary>Output directory relative to Assets/.</summary>
         private const string OutputDirectory = "Assets/_Project/Art/Models";
@@ -60,16 +63,25 @@ namespace Hecton8.Editor
         /// <summary>Output asset filename.</summary>
         private const string OutputFilename = "SkyDome_Inverted.asset";
 
-        // ══════════════════════════════════════════════════════════
+        // COLD ALLOC: float[LatitudeSegments+1] - sky dome latitude sine LUT - owner: HectonMeshGenerator
+        private static readonly float[] s_LatSin = BuildLatitudeSinLut();
+        // COLD ALLOC: float[LatitudeSegments+1] - sky dome latitude cosine LUT - owner: HectonMeshGenerator
+        private static readonly float[] s_LatCos = BuildLatitudeCosLut();
+        // COLD ALLOC: float[LongitudeSegments+1] - sky dome longitude sine LUT - owner: HectonMeshGenerator
+        private static readonly float[] s_LonSin = BuildLongitudeSinLut();
+        // COLD ALLOC: float[LongitudeSegments+1] - sky dome longitude cosine LUT - owner: HectonMeshGenerator
+        private static readonly float[] s_LonCos = BuildLongitudeCosLut();
+
+        // ---------------------------------------------------------
         //  MENU ITEM
-        // ══════════════════════════════════════════════════════════
+        // ---------------------------------------------------------
 
         [MenuItem("Tools/Hecton/Generate Sky Dome", false, 100)]
         private static void GenerateSkyDome()
         {
             Mesh mesh = CreateInvertedHemisphereMesh();
 
-            // ── Ensure output directory exists ──
+            // Ensure output directory exists.
             if (!Directory.Exists(OutputDirectory))
             {
                 Directory.CreateDirectory(OutputDirectory);
@@ -78,7 +90,7 @@ namespace Hecton8.Editor
 
             string fullPath = Path.Combine(OutputDirectory, OutputFilename);
 
-            // ── Check for existing asset ──
+            // Check for existing asset.
             Mesh existingMesh = AssetDatabase.LoadAssetAtPath<Mesh>(fullPath);
 
             if (existingMesh != null)
@@ -105,14 +117,14 @@ namespace Hecton8.Editor
                     $"  Triangles: {ResolveTriangleCount(mesh)}");
             }
 
-            // ── Ping in Project window ──
+            // Ping in Project window.
             EditorGUIUtility.PingObject(
                 AssetDatabase.LoadAssetAtPath<Mesh>(fullPath));
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ---------------------------------------------------------
         //  MESH GENERATION
-        // ══════════════════════════════════════════════════════════
+        // ---------------------------------------------------------
 
         /// <summary>
         /// Creates an inverted hemisphere mesh.
@@ -122,7 +134,7 @@ namespace Hecton8.Editor
         ///   Latitude rings: 0 (horizon, Y=0) to LatitudeSegments (zenith, Y=R).
         ///   Longitude slices: 0 to LongitudeSegments (wraps, last = first UV.x=1).
         ///
-        ///   Vertex grid: (LongitudeSegments + 1) × (LatitudeSegments + 1)
+        ///   Vertex grid: (LongitudeSegments + 1) x (LatitudeSegments + 1)
         ///   +1 on longitude for UV seam (x=0 and x=1 are same position, different UV).
         ///
         ///   Plus 1 zenith vertex (single point at top, shared by all top triangles).
@@ -130,8 +142,8 @@ namespace Hecton8.Editor
         ///   Plus 1 center vertex for bottom cap.
         ///
         /// UV MAPPING:
-        ///   U = longitude / LongitudeSegments  → [0, 1] around dome
-        ///   V = latitude / LatitudeSegments     → [0, 1] horizon to zenith
+        ///   U = longitude / LongitudeSegments -> [0, 1] around dome
+        ///   V = latitude / LatitudeSegments -> [0, 1] horizon to zenith
         ///
         ///   Zenith vertex: U = 0.5, V = 1.0 (center of texture top edge)
         ///   This prevents UV pinching at the pole.
@@ -142,15 +154,15 @@ namespace Hecton8.Editor
         ///
         /// NORMALS:
         ///   All point INWARD (toward center of sphere).
-        ///   normal = -normalize(position)
+        ///   normal = -position * InvRadius
         /// </summary>
         private static Mesh CreateInvertedHemisphereMesh()
         {
             int lonSegments = LongitudeSegments;
             int latSegments = LatitudeSegments;
 
-            // ── Vertex count calculation ──
-            // Main grid: (lon+1) × (lat+1) — includes UV seam column
+            // Vertex count calculation.
+            // Main grid: (lon+1) x (lat+1); includes UV seam column.
             // Bottom cap: center vertex (1)
             // Zenith is part of the grid (top ring)
             int gridVertCount = (lonSegments + 1) * (latSegments + 1);
@@ -161,34 +173,29 @@ namespace Hecton8.Editor
             Vector3[] normals  = new Vector3[totalVerts];
             Vector2[] uvs      = new Vector2[totalVerts];
 
-            // ── Triangle count calculation ──
-            // Main dome: lon × lat × 2 triangles per quad × 3 indices
-            // Bottom cap: lon triangles × 3 indices
+            // Triangle count calculation.
+            // Main dome: lon x lat x 2 triangles per quad x 3 indices.
+            // Bottom cap: lon triangles x 3 indices.
             int mainTriCount = lonSegments * latSegments * 6;
             int capTriCount  = lonSegments * 3;
             int[] triangles  = new int[mainTriCount + capTriCount];
 
-            // ══════════════════════════════════════════════
+            // ---------------------------------------------------------
             //  GENERATE VERTICES (hemisphere grid)
-            // ══════════════════════════════════════════════
-
-            float piHalf = Mathf.PI * 0.5f;
-            float pi2    = Mathf.PI * 2f;
+            // ---------------------------------------------------------
 
             int vertIdx = 0;
 
             for (int lat = 0; lat <= latSegments; lat++)
             {
-                // latFraction: 0 (horizon) → 1 (zenith)
-                float latFraction = (float)lat / latSegments;
+                // latFraction: 0 (horizon) -> 1 (zenith)
+                float latFraction = lat * InvLatitudeSegments;
 
-                // Polar angle: 0 (horizon, XZ plane) → π/2 (zenith, +Y axis)
-                float polarAngle = latFraction * piHalf;
+                // Polar angle: 0 (horizon, XZ plane) -> PI/2 (zenith, +Y axis)
+                float sinPolar = s_LatSin[lat];
+                float cosPolar = s_LatCos[lat];
 
-                float sinPolar = Mathf.Sin(polarAngle);
-                float cosPolar = Mathf.Cos(polarAngle);
-
-                // Y = sin(polar) × R → 0 at horizon, R at zenith
+                // Y = sin(polar) x R -> 0 at horizon, R at zenith.
                 float y = sinPolar * Radius;
 
                 // Horizontal radius at this latitude
@@ -196,23 +203,19 @@ namespace Hecton8.Editor
 
                 for (int lon = 0; lon <= lonSegments; lon++)
                 {
-                    // lonFraction: 0 → 1 (full circle)
-                    float lonFraction = (float)lon / lonSegments;
+                    // lonFraction: 0 -> 1 (full circle)
+                    float lonFraction = lon * InvLongitudeSegments;
 
-                    // Azimuth angle: 0 → 2π
-                    float azimuth = lonFraction * pi2;
-
-                    float x = Mathf.Cos(azimuth) * ringRadius;
-                    float z = Mathf.Sin(azimuth) * ringRadius;
+                    // Azimuth angle: 0 -> 2PI.
+                    float x = s_LonCos[lon] * ringRadius;
+                    float z = s_LonSin[lon] * ringRadius;
 
                     vertices[vertIdx] = new Vector3(x, y, z);
 
-                    // ── Inverted normal (pointing INWARD) ──
-                    // Normal = -normalized(position) for inward-facing sphere
-                    Vector3 outward = new Vector3(x, y, z).normalized;
-                    normals[vertIdx] = -outward;
+                    // Unit-radius sphere: inward normal is direct negative position.
+                    normals[vertIdx] = new Vector3(-x * InvRadius, -y * InvRadius, -z * InvRadius);
 
-                    // ── UV mapping ──
+                    // UV mapping.
                     // U = longitude [0..1], V = latitude [0..1]
                     // V=0 at horizon, V=1 at zenith
                     uvs[vertIdx] = new Vector2(lonFraction, latFraction);
@@ -221,28 +224,28 @@ namespace Hecton8.Editor
                 }
             }
 
-            // ── Bottom cap center vertex (Y = 0, center of horizon ring) ──
+            // Bottom cap center vertex (Y = 0, center of horizon ring).
             vertices[bottomCenterIdx] = Vector3.zero;
             normals[bottomCenterIdx]  = Vector3.up; // pointing inward (upward from below)
             uvs[bottomCenterIdx]      = new Vector2(0.5f, 0f);
 
-            // ══════════════════════════════════════════════
+            // ---------------------------------------------------------
             //  GENERATE TRIANGLES (inverted winding)
-            // ══════════════════════════════════════════════
+            // ---------------------------------------------------------
 
             int triIdx = 0;
             int rowWidth = lonSegments + 1; // vertices per latitude ring
 
-            // ── Main dome quads ──
+            // Main dome quads.
             // Each quad = 2 triangles between adjacent latitude rings.
             // INVERTED winding: swap triangle vertex order for inward-facing.
             //
             // Standard (outward): (A, B, C) and (C, B, D)
             // Inverted (inward):  (A, C, B) and (C, D, B)
             //
-            //  A --- B     A = lat × rowWidth + lon
+            //  A --- B     A = lat x rowWidth + lon
             //  |   / |     B = A + 1
-            //  |  /  |     C = (lat+1) × rowWidth + lon
+            //  |  /  |     C = (lat+1) x rowWidth + lon
             //  | /   |     D = C + 1
             //  C --- D
 
@@ -267,7 +270,7 @@ namespace Hecton8.Editor
                 }
             }
 
-            // ── Bottom cap triangles ──
+            // Bottom cap triangles.
             // Connects the horizon ring (lat=0) to the center vertex.
             // Fills the hole at the bottom of the hemisphere.
             //
@@ -287,15 +290,15 @@ namespace Hecton8.Editor
                 triangles[triIdx++] = horizonA;
             }
 
-            // ══════════════════════════════════════════════
+            // ---------------------------------------------------------
             //  ASSEMBLE MESH
-            // ══════════════════════════════════════════════
+            // ---------------------------------------------------------
 
             Mesh mesh = new Mesh();
             mesh.name = "SkyDome_Inverted";
 
             // Use 32-bit index buffer if vertex count exceeds 16-bit limit
-            // (65535). Our mesh: ~2145 verts — 16-bit is fine.
+            // (65535). Our mesh: ~2145 verts; 16-bit is fine.
             mesh.indexFormat = totalVerts > 65535
                 ? UnityEngine.Rendering.IndexFormat.UInt32
                 : UnityEngine.Rendering.IndexFormat.UInt16;
@@ -305,10 +308,10 @@ namespace Hecton8.Editor
             mesh.SetUVs(0, uvs);
             mesh.SetTriangles(triangles, 0, true);
 
-            // ── Tangents for normal mapping (if ever needed) ──
+            // Tangents for normal mapping (if ever needed).
             mesh.RecalculateTangents();
 
-            // ── Bounds: sphere of radius 1 centered at origin ──
+            // Bounds: sphere of radius 1 centered at origin.
             mesh.bounds = new Bounds(
                 new Vector3(0f, Radius * 0.5f, 0f),
                 new Vector3(Radius * 2f, Radius, Radius * 2f));
@@ -316,9 +319,49 @@ namespace Hecton8.Editor
             return mesh;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ---------------------------------------------------------
+        //  LUT BUILDERS
+        // ---------------------------------------------------------
+
+        private static float[] BuildLatitudeSinLut()
+        {
+            float[] values = new float[LatitudeSegments + 1];
+            float step = (Mathf.PI * 0.5f) * InvLatitudeSegments;
+            for (int i = 0; i < values.Length; i++)
+                values[i] = Mathf.Sin(i * step);
+            return values;
+        }
+
+        private static float[] BuildLatitudeCosLut()
+        {
+            float[] values = new float[LatitudeSegments + 1];
+            float step = (Mathf.PI * 0.5f) * InvLatitudeSegments;
+            for (int i = 0; i < values.Length; i++)
+                values[i] = Mathf.Cos(i * step);
+            return values;
+        }
+
+        private static float[] BuildLongitudeSinLut()
+        {
+            float[] values = new float[LongitudeSegments + 1];
+            float step = (Mathf.PI * 2f) * InvLongitudeSegments;
+            for (int i = 0; i < values.Length; i++)
+                values[i] = Mathf.Sin(i * step);
+            return values;
+        }
+
+        private static float[] BuildLongitudeCosLut()
+        {
+            float[] values = new float[LongitudeSegments + 1];
+            float step = (Mathf.PI * 2f) * InvLongitudeSegments;
+            for (int i = 0; i < values.Length; i++)
+                values[i] = Mathf.Cos(i * step);
+            return values;
+        }
+
+        // ---------------------------------------------------------
         //  VALIDATION
-        // ══════════════════════════════════════════════════════════
+        // ---------------------------------------------------------
 
         private static long ResolveTriangleCount(Mesh mesh)
         {

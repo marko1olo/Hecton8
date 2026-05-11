@@ -3355,7 +3355,7 @@ namespace Hecton8.AI
                 int3 step = math.select(new int3(-1, -1, -1), new int3(1, 1, 1), positiveMask);
                 float3 cellMin = ThreatVoxelOrigin + (new float3(currentVoxel.x, currentVoxel.y, currentVoxel.z) * ThreatVoxelCellSize);
                 float3 voxelBoundary = cellMin + math.select(float3.zero, ThreatVoxelCellSize, positiveMask);
-                float3 safeAbsDir = math.max(math.abs(rayDir), new float3(DdaEpsilon, DdaEpsilon, DdaEpsilon));
+                float3 safeAbsDir = math.max(math.abs(rayDir), new float3(DdaEpsilon));
                 float3 rayDirInv = math.rcp(safeAbsDir);
                 float3 tMax = math.abs((voxelBoundary - start) * rayDirInv);
                 float3 tDelta = ThreatVoxelCellSize * rayDirInv;
@@ -3390,7 +3390,7 @@ namespace Hecton8.AI
                     return false;
                 }
 
-                float3 invCellSize = math.rcp(math.max(ThreatVoxelCellSize, new float3(DdaEpsilon, DdaEpsilon, DdaEpsilon)));
+                float3 invCellSize = math.rcp(math.max(ThreatVoxelCellSize, new float3(DdaEpsilon)));
                 int3 candidate = new int3(
                     (int)math.floor(local.x * invCellSize.x),
                     (int)math.floor(local.y * invCellSize.y),

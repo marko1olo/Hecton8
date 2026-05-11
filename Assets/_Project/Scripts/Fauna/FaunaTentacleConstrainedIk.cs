@@ -88,24 +88,21 @@ namespace Hecton8.AI
 
         private static float ResolveSegmentLength(float authoredLength, float3 rootPosition, float3 tipPosition)
         {
-            if (authoredLength > 0.0001f)
-                return authoredLength;
-
             float3 span = tipPosition - rootPosition;
             float spanSq = math.lengthsq(span);
-            return math.max(0.0001f, (spanSq * math.rsqrt(math.max(spanSq, MinLengthSq))) * InvThree);
+            float fallbackLength = (spanSq * math.rsqrt(math.max(spanSq, MinLengthSq))) * InvThree;
+            return math.max(0.0001f, math.select(fallbackLength, authoredLength, authoredLength > 0.0001f));
         }
 
         private static float3 ResolveDominantSide(float3 direction)
         {
             float3 absolute = math.abs(direction);
-            if (absolute.y <= absolute.x && absolute.y <= absolute.z)
-                return new float3(0f, math.select(1f, -1f, direction.y < 0f), 0f);
-
-            if (absolute.x <= absolute.z)
-                return new float3(math.select(1f, -1f, direction.x < 0f), 0f, 0f);
-
-            return new float3(0f, 0f, math.select(1f, -1f, direction.z < 0f));
+            float3 xAxis = new float3(math.select(1f, -1f, direction.x < 0f), 0f, 0f);
+            float3 yAxis = new float3(0f, math.select(1f, -1f, direction.y < 0f), 0f);
+            float3 zAxis = new float3(0f, 0f, math.select(1f, -1f, direction.z < 0f));
+            bool useY = absolute.y <= absolute.x && absolute.y <= absolute.z;
+            bool useX = absolute.x <= absolute.z;
+            return math.select(math.select(zAxis, xAxis, useX), yAxis, useY);
         }
     }
 }

@@ -129,7 +129,7 @@ namespace Hecton8.Narrative
 
         private const int PlaybackQueueCapacity = 16;
         private const int EncryptedFragmentStateCapacity = 32;
-        private const int ResolvedLogHashCapacity = AudioLogDiscoveryBitMask.MaxLogCount;
+        private const int ResolvedLogHashCapacity = AudioLogDiscoveryBitMaskEmbedded.MaxLogCount;
         private const uint EncryptedLogCompleteMask = 0xFu;
         // COLD ALLOC: HashSet<uint>[1024] — discovered audio-log hashes per save — owner: AudioLogSystem
         private const string NativeMemoryOwner = nameof(AudioLogSystem);
@@ -1109,8 +1109,8 @@ namespace Hecton8.Narrative
                 data.audioLogDiscoveredIds = new List<string>(math.max(0, maxSavedLogs)); // COLD ALLOC: List<string>[maxSavedLogs] — fallback discovered audio-log save list — owner: AudioLogSystem
             else
                 data.audioLogDiscoveredIds.Clear();
-            AudioLogDiscoveryBitMask.EnsureCapacity(ref data.audioLogDiscoveryBitWords);
-            AudioLogDiscoveryBitMask.Clear(data.audioLogDiscoveryBitWords);
+            AudioLogDiscoveryBitMaskEmbedded.EnsureCapacity(ref data.audioLogDiscoveryBitWords);
+            AudioLogDiscoveryBitMaskEmbedded.Clear(data.audioLogDiscoveryBitWords);
             EnsureSaveEncryptedFragmentArrays(data);
             data.audioLogEncryptedFragmentCount = 0;
             int count = 0;
@@ -1123,7 +1123,7 @@ namespace Hecton8.Narrative
                     continue;
                 }
 
-                AudioLogDiscoveryBitMask.Set(data.audioLogDiscoveryBitWords, i);
+                AudioLogDiscoveryBitMaskEmbedded.Set(data.audioLogDiscoveryBitWords, i);
 
                 if (count < maxSavedLogs &&
                     _logLookupByHash.TryGetValue(logHash, out AudioLogData logData) &&
@@ -1191,16 +1191,16 @@ namespace Hecton8.Narrative
         private bool LoadDiscoveredLogsFromPackedBits(SaveData data)
         {
             if (data == null ||
-                !AudioLogDiscoveryBitMask.HasExpectedCapacity(data.audioLogDiscoveryBitWords) ||
-                !AudioLogDiscoveryBitMask.HasAnySet(data.audioLogDiscoveryBitWords))
+                !AudioLogDiscoveryBitMaskEmbedded.HasExpectedCapacity(data.audioLogDiscoveryBitWords) ||
+                !AudioLogDiscoveryBitMaskEmbedded.HasAnySet(data.audioLogDiscoveryBitWords))
             {
                 return false;
             }
 
-            int count = math.min(_resolvedLogHashCount, AudioLogDiscoveryBitMask.MaxLogCount);
+            int count = math.min(_resolvedLogHashCount, AudioLogDiscoveryBitMaskEmbedded.MaxLogCount);
             for (int i = 0; i < count; i++)
             {
-                if (!AudioLogDiscoveryBitMask.IsSet(data.audioLogDiscoveryBitWords, i))
+                if (!AudioLogDiscoveryBitMaskEmbedded.IsSet(data.audioLogDiscoveryBitWords, i))
                     continue;
 
                 uint logHash = _resolvedLogHashes[i];

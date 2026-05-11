@@ -192,7 +192,7 @@ namespace Hecton8.Gameplay
             {
                 float seed = (i + 1) * 37.13f;
                 float angle = seed + eventAge * (0.19f + i * 0.041f);
-                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * (120f + i * 55f);
+                Vector3 offset = new Vector3(CinematicMath.FastCos(angle), 0f, CinematicMath.FastSin(angle)) * (120f + i * 55f);
                 offset += Vector3.up * (70f + i * 18f);
                 _meteorFogShadowPayload[i] = new Vector4(
                     playerPosition.x + offset.x,

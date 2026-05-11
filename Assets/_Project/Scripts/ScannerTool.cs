@@ -36,7 +36,7 @@ namespace Hecton8.Gameplay
         private const float ScientificDefaultTemperatureC = 4.2f;
         private const float ScientificSurfaceSalinityPpt = 34.6f;
         private const float ScientificDeepSalinityPpt = 35.8f;
-        private const float ScientificSalinityDepthRangeMeters = 1800f;
+        private const float InvScientificSalinityDepthRangeMeters = 0.00055555556f;
         private const float ScientificAttractantTraceThreshold01 = 0.1f;
         private const float BearingDeadzoneTanSq = 0.031091204f; // tan(10 degrees)^2
         private const int OperationalStringCacheHz = 10;
@@ -2731,8 +2731,8 @@ namespace Hecton8.Gameplay
                 depthMeters = 0f;
             }
 
-            toxicity01 = Mathf.Clamp01(HectonHazardManager.GetHazardIntensity(worldPosition, HazardType.Toxicity));
-            float haloclineT = Mathf.Clamp01(depthMeters / ScientificSalinityDepthRangeMeters);
+            toxicity01 = math.saturate(HectonHazardManager.GetHazardIntensity(worldPosition, HazardType.Toxicity));
+            float haloclineT = math.saturate(depthMeters * InvScientificSalinityDepthRangeMeters);
             salinityPpt = math.lerp(ScientificSurfaceSalinityPpt, ScientificDeepSalinityPpt, haloclineT) +
                           (chemicalLoad01 * 0.35f) +
                           (toxicity01 * 0.25f);

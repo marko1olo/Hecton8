@@ -2423,13 +2423,14 @@ namespace Hecton8.World
             }
 
             Vector3 toPlayer = playerPosition - nest.PositionWS;
-            float castDistance = Mathf.Max(empSphereCastRadius, empPulseRange);
+            float castDistance = math.max(empSphereCastRadius, empPulseRange);
             if (castDistance <= 0.0001f)
                 castDistance = empPulseRange;
+            float castDistanceSq = castDistance * castDistance;
 
             float3 toPlayer3 = new float3(toPlayer.x, toPlayer.y, toPlayer.z);
             bool hitPlayerTransport = math.all(math.isfinite(toPlayer3)) &&
-                                      math.lengthsq(toPlayer3) <= castDistance * castDistance;
+                                      math.lengthsq(toPlayer3) <= castDistanceSq;
 
             if (hitPlayerTransport)
             {

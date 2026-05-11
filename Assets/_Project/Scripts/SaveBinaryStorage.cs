@@ -5441,26 +5441,6 @@ namespace Hecton8.SaveSystem
             return -1;
         }
 
-        private static int FindIndexedSectorGroup(
-            long sectorHash,
-            NativeArray<short> slotToGroupIndex,
-            NativeList<IndexedSectorGroup> groups)
-        {
-            int startSlot = ResolveIndexedSectorDirectorySlot(sectorHash);
-            for (int probe = 0; probe < IndexedSectorDirectorySlotCount; probe++)
-            {
-                int slot = (startSlot + probe) & (IndexedSectorDirectorySlotCount - 1);
-                int groupIndex = slotToGroupIndex[slot];
-                if (groupIndex < 0)
-                    return -1;
-
-                if (groups[groupIndex].SectorHash == sectorHash)
-                    return groupIndex;
-            }
-
-            return -1;
-        }
-
         internal static int Lz4BlockCompress(byte* source, int sourceLength, byte* destination, int destinationCapacity)
         {
             if (source == null || destination == null || sourceLength <= 0 || destinationCapacity <= 8)

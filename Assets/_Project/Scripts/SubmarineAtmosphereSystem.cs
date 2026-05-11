@@ -644,8 +644,10 @@ namespace Hecton8.Atmosphere
         private const float DefaultInertFraction = 1f - DefaultInitialOxygenFraction - DefaultInitialCarbonDioxideFraction;
         private const float DefaultOxygenTankCapacity = 100f;
         private const float DefaultLowOxygenThreshold01 = 0.2f;
+        private const float DefaultCarbonDioxideToxicityFraction = 0.05f;
+        private const float DefaultCarbonDioxideFullToxicityFraction = 0.10f;
         private const float DefaultPlayerOxygenConsumptionPercentPerSecond = 0.5f;
-        private const float DefaultAtmosphereSlowTickSeconds = 0.1f;
+        private const float DefaultAtmosphereSlowTickSeconds = 1f;
         private const int MaxAtmosphereCatchupTicks = 4;
         private const int MaxFakeAtmospherePlayerCountPerRoom = 4;
         private const float DefaultHeatWattsToCelsiusPerSecond = 0.001f;
@@ -804,6 +806,97 @@ namespace Hecton8.Atmosphere
             public float PressureSpikeKPa;
         }
 
+        internal static float ResolveDaltonPressureKPa(
+            float oxygenUnits,
+            float carbonDioxideUnits,
+            float nitrogenUnits,
+            float waterVaporVolumeCubicMeters,
+            float roomVolumeCubicMeters,
+            float gasVolumeCubicMeters,
+            float temperatureCelsius,
+            float referencePressureKPa,
+            float maximumPressureKPa,
+            float referenceTemperatureCelsius,
+            float oxygenTankCapacity,
+            out float oxygenPartialPressureKPa,
+            out float carbonDioxidePartialPressureKPa,
+            out float nitrogenPartialPressureKPa)
+        {
+            float tankCapacity = math.max(1f, SanitizeFiniteStatic(oxygenTankCapacity, DefaultOxygenTankCapacity));
+            float referencePressure = math.max(1f, SanitizeFiniteStatic(referencePressureKPa, DefaultReferencePressureKPa));
+            float maximumPressure = math.max(referencePressure, SanitizeFiniteStatic(maximumPressureKPa, DefaultMaximumPressureKPa));
+            float roomVolume = math.max(0.001f, SanitizeFiniteStatic(roomVolumeCubicMeters, 0.001f));
+            float gasVolume = math.max(0.001f, SanitizeFiniteStatic(gasVolumeCubicMeters, roomVolume));
+            float compressionScale = math.max(1f, roomVolume / gasVolume);
+            float temperatureScale = ResolveGasTemperatureScale(temperatureCelsius, referenceTemperatureCelsius);
+            float pressureScale = referencePressure * compressionScale * temperatureScale;
+
+            oxygenPartialPressureKPa =
+                math.saturate(SanitizeNonNegativeStatic(oxygenUnits) / tankCapacity) *
+                DefaultInitialOxygenFraction *
+                pressureScale;
+            carbonDioxidePartialPressureKPa =
+                math.saturate(SanitizeNonNegativeStatic(carbonDioxideUnits) / tankCapacity) *
+                pressureScale;
+            nitrogenPartialPressureKPa =
+                math.saturate(SanitizeNonNegativeStatic(nitrogenUnits) / tankCapacity) *
+                pressureScale;
+            float waterVaporPartialPressureKPa =
+                math.saturate(SanitizeNonNegativeStatic(waterVaporVolumeCubicMeters) / gasVolume) *
+                pressureScale;
+            float rawTotal =
+                oxygenPartialPressureKPa +
+                carbonDioxidePartialPressureKPa +
+                nitrogenPartialPressureKPa +
+                waterVaporPartialPressureKPa;
+            if (!math.isfinite(rawTotal) || rawTotal <= 0f)
+            {
+                oxygenPartialPressureKPa = 0f;
+                carbonDioxidePartialPressureKPa = 0f;
+                nitrogenPartialPressureKPa = 0f;
+                return 0f;
+            }
+
+            float cappedTotal = math.min(rawTotal, maximumPressure);
+            if (cappedTotal < rawTotal)
+            {
+                float capScale = cappedTotal / math.max(rawTotal, Epsilon);
+                oxygenPartialPressureKPa *= capScale;
+                carbonDioxidePartialPressureKPa *= capScale;
+                nitrogenPartialPressureKPa *= capScale;
+            }
+
+            return cappedTotal;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveGasTemperatureScale(float temperatureCelsius, float referenceTemperatureCelsius)
+        {
+            float temperatureKelvin = math.max(1f, SanitizeFiniteStatic(temperatureCelsius, DefaultReferenceTemperatureCelsius) + 273.15f);
+            float referenceKelvin = math.max(1f, SanitizeFiniteStatic(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius) + 273.15f);
+            return temperatureKelvin / referenceKelvin;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeFiniteStatic(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeNonNegativeStatic(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveCarbonDioxideToxicity01(float carbonDioxidePressureFraction)
+        {
+            return math.saturate(
+                (SanitizeNonNegativeStatic(carbonDioxidePressureFraction) - DefaultCarbonDioxideToxicityFraction) /
+                math.max(0.0001f, DefaultCarbonDioxideFullToxicityFraction - DefaultCarbonDioxideToxicityFraction));
+        }
+
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential, Pack = 16)]
         private struct AtmosphereStepJob : IJob
@@ -831,6 +924,9 @@ namespace Hecton8.Atmosphere
             public NativeArray<float> GasVolumeBack;
             public NativeArray<float> TemperatureBack;
             public NativeArray<float> SteamBack;
+            [WriteOnly] public NativeArray<float> O2PartialPressureBack;
+            [WriteOnly] public NativeArray<float> CO2PartialPressureBack;
+            [WriteOnly] public NativeArray<float> N2PartialPressureBack;
             [WriteOnly] public NativeArray<uint> RoomStatusMaskBack;
 
             public int RoomCount;
@@ -846,6 +942,7 @@ namespace Hecton8.Atmosphere
             public float OxygenTankCapacity;
             public float HeatWattsToCelsiusPerSecond;
             public float LowOxygenThresholdUnits;
+            public float CarbonDioxideToxicityFraction;
             public float FreezingTemperatureCelsius;
             public float HighPressureStatusKPa;
 
@@ -883,6 +980,9 @@ namespace Hecton8.Atmosphere
                         GasVolumeBack[roomIndex] = minimumGasVolume;
                         TemperatureBack[roomIndex] = referenceTemperature;
                         SteamBack[roomIndex] = 0f;
+                        O2PartialPressureBack[roomIndex] = 0f;
+                        CO2PartialPressureBack[roomIndex] = 0f;
+                        N2PartialPressureBack[roomIndex] = 0f;
                         continue;
                     }
 
@@ -897,7 +997,7 @@ namespace Hecton8.Atmosphere
                         SanitizeNonNegative(CO2Front[roomIndex]) + (SanitizeNonNegative(CO2GenerationRates[roomIndex]) * playerCount * deltaTime),
                         0f,
                         tankCapacity);
-                    float inert = 0f;
+                    float inert = math.clamp(SanitizeNonNegative(InertFront[roomIndex]), 0f, tankCapacity);
                     float steam = SanitizeNonNegative(SteamFront[roomIndex]);
 
                     O2Back[roomIndex] = oxygen;
@@ -916,7 +1016,7 @@ namespace Hecton8.Atmosphere
                         minimumTemperature,
                         maximumTemperature);
                     TemperatureBack[roomIndex] = roomTemperature;
-                    PressureBack[roomIndex] = ResolveFakePressure(roomVolume, floodVolume, steam, roomTemperature, referencePressure, maximumPressure, referenceTemperature, maximumTemperature);
+                    PressureBack[roomIndex] = referencePressure;
                 }
 
                 for (int doorIndex = 0; doorIndex < DoorCapacity; doorIndex++)
@@ -932,29 +1032,60 @@ namespace Hecton8.Atmosphere
 
                     float averageOxygen = (O2Back[roomA] + O2Back[roomB]) * 0.5f;
                     float averageToxicity = (CO2Back[roomA] + CO2Back[roomB]) * 0.5f;
+                    float averageInert = (InertBack[roomA] + InertBack[roomB]) * 0.5f;
+                    float averageSteam = (SteamBack[roomA] + SteamBack[roomB]) * 0.5f;
                     float averageHeat = (TemperatureBack[roomA] + TemperatureBack[roomB]) * 0.5f;
-                    float averagePressure = (PressureBack[roomA] + PressureBack[roomB]) * 0.5f;
 
                     O2Back[roomA] = averageOxygen;
                     O2Back[roomB] = averageOxygen;
                     CO2Back[roomA] = averageToxicity;
                     CO2Back[roomB] = averageToxicity;
+                    InertBack[roomA] = averageInert;
+                    InertBack[roomB] = averageInert;
+                    SteamBack[roomA] = averageSteam;
+                    SteamBack[roomB] = averageSteam;
                     TemperatureBack[roomA] = averageHeat;
                     TemperatureBack[roomB] = averageHeat;
-                    PressureBack[roomA] = averagePressure;
-                    PressureBack[roomB] = averagePressure;
                 }
 
                 uint statusMask = 0u;
                 float lowOxygenThreshold = SanitizeNonNegative(LowOxygenThresholdUnits);
+                float carbonDioxideToxicityFraction = math.max(
+                    0.0001f,
+                    SanitizeFinite(CarbonDioxideToxicityFraction, DefaultCarbonDioxideToxicityFraction));
                 float pressureThreshold = math.max(referencePressure, SanitizeFinite(HighPressureStatusKPa, referencePressure));
                 for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
                 {
                     if (roomIndex >= RoomCount)
                         continue;
 
+                    float roomVolume = math.max(SanitizeFinite(RoomVolumes[roomIndex], minimumGasVolume), minimumGasVolume);
+                    float gasVolume = math.max(minimumGasVolume, SanitizeFinite(GasVolumeBack[roomIndex], minimumGasVolume));
+                    float pressure = ResolveDaltonPressureKPa(
+                        O2Back[roomIndex],
+                        CO2Back[roomIndex],
+                        InertBack[roomIndex],
+                        SteamBack[roomIndex],
+                        roomVolume,
+                        gasVolume,
+                        TemperatureBack[roomIndex],
+                        referencePressure,
+                        maximumPressure,
+                        referenceTemperature,
+                        tankCapacity,
+                        out float oxygenPartialPressureKPa,
+                        out float carbonDioxidePartialPressureKPa,
+                        out float nitrogenPartialPressureKPa);
+                    PressureBack[roomIndex] = pressure;
+                    O2PartialPressureBack[roomIndex] = oxygenPartialPressureKPa;
+                    CO2PartialPressureBack[roomIndex] = carbonDioxidePartialPressureKPa;
+                    N2PartialPressureBack[roomIndex] = nitrogenPartialPressureKPa;
+
                     uint roomBit = 1u << roomIndex;
-                    if (O2Back[roomIndex] < lowOxygenThreshold)
+                    float carbonDioxidePressureFraction = pressure > Epsilon
+                        ? carbonDioxidePartialPressureKPa / pressure
+                        : 0f;
+                    if (O2Back[roomIndex] < lowOxygenThreshold || carbonDioxidePressureFraction >= carbonDioxideToxicityFraction)
                         statusMask |= roomBit << RoomStatusToxicShift;
 
                     if (TemperatureBack[roomIndex] <= FreezingTemperatureCelsius)
@@ -965,26 +1096,6 @@ namespace Hecton8.Atmosphere
                 }
 
                 RoomStatusMaskBack[0] = statusMask;
-            }
-
-            private static float ResolveFakePressure(
-                float roomVolume,
-                float floodVolume,
-                float steamVolume,
-                float temperatureCelsius,
-                float referencePressure,
-                float maximumPressure,
-                float referenceTemperature,
-                float maximumTemperature)
-            {
-                float flood01 = math.saturate(floodVolume / math.max(roomVolume, Epsilon));
-                float steam01 = math.saturate(steamVolume / math.max(roomVolume, Epsilon));
-                float heat01 = math.saturate((temperatureCelsius - referenceTemperature) / math.max(1f, maximumTemperature - referenceTemperature));
-                float pressure01 = math.saturate((flood01 * 0.65f) + (steam01 * 0.35f) + (heat01 * 0.2f));
-                return math.clamp(
-                    math.lerp(referencePressure, maximumPressure, pressure01),
-                    0f,
-                    maximumPressure);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1047,7 +1158,7 @@ namespace Hecton8.Atmosphere
         [Tooltip("Fallback room O2 drain in percent per second per local player.")]
         [SerializeField, Min(0f)] private float playerOxygenConsumptionPercentPerSecond = DefaultPlayerOxygenConsumptionPercentPerSecond;
 
-        [Tooltip("Atmosphere job cadence. 0.1 seconds is 10 Hz.")]
+        [Tooltip("Atmosphere job cadence. 1.0 seconds is the 1 Hz ColdTick.")]
         [SerializeField, Min(0.02f)] private float atmosphereSlowTickSeconds = DefaultAtmosphereSlowTickSeconds;
 
         [Tooltip("Fake heat gain in Celsius per second per watt.")]
@@ -1313,6 +1424,12 @@ namespace Hecton8.Atmosphere
         private NativeArray<float> _inertBack;
         private NativeArray<float> _pressureFront;
         private NativeArray<float> _pressureBack;
+        private NativeArray<float> _o2PartialPressureFront;
+        private NativeArray<float> _o2PartialPressureBack;
+        private NativeArray<float> _co2PartialPressureFront;
+        private NativeArray<float> _co2PartialPressureBack;
+        private NativeArray<float> _n2PartialPressureFront;
+        private NativeArray<float> _n2PartialPressureBack;
         private NativeArray<float> _gasVolumeFront;
         private NativeArray<float> _gasVolumeBack;
         private NativeArray<float> _o2ConsumptionRates;
@@ -1451,6 +1568,35 @@ namespace Hecton8.Atmosphere
                 return DefaultInitialCarbonDioxideFraction;
 
             return math.saturate(FiniteNonNegativeOrZero(_co2Front[roomIndex]) / math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity)));
+        }
+
+        public float GetRoomOxygenPartialPressureKPa(int roomIndex)
+        {
+            if (!_o2PartialPressureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+                return DefaultInitialOxygenFraction * ResolveSafeReferencePressureKPa();
+
+            return FiniteClampedOr(_o2PartialPressureFront[roomIndex], DefaultInitialOxygenFraction * ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
+        }
+
+        public float GetRoomCarbonDioxidePartialPressureKPa(int roomIndex)
+        {
+            if (!_co2PartialPressureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+                return DefaultInitialCarbonDioxideFraction * ResolveSafeReferencePressureKPa();
+
+            return FiniteClampedOr(_co2PartialPressureFront[roomIndex], DefaultInitialCarbonDioxideFraction * ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
+        }
+
+        public float GetRoomNitrogenPartialPressureKPa(int roomIndex)
+        {
+            if (!_n2PartialPressureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+                return DefaultInertFraction * ResolveSafeReferencePressureKPa();
+
+            return FiniteClampedOr(_n2PartialPressureFront[roomIndex], DefaultInertFraction * ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
+        }
+
+        public float GetRoomCarbonDioxidePressureFraction(int roomIndex)
+        {
+            return ResolveRoomCarbonDioxidePressureFraction(roomIndex);
         }
 
         public float GetRoomTemperatureCelsius(int roomIndex)
@@ -3180,6 +3326,18 @@ namespace Hecton8.Atmosphere
             _pressureFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[8] — back room-pressure snapshot — owner: SubmarineAtmosphereSystem
             _pressureBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] - front O2 partial-pressure snapshot in kPa - owner: SubmarineAtmosphereSystem
+            _o2PartialPressureFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] - back O2 partial-pressure snapshot in kPa - owner: SubmarineAtmosphereSystem
+            _o2PartialPressureBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] - front CO2 partial-pressure snapshot in kPa - owner: SubmarineAtmosphereSystem
+            _co2PartialPressureFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] - back CO2 partial-pressure snapshot in kPa - owner: SubmarineAtmosphereSystem
+            _co2PartialPressureBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] - front N2 partial-pressure snapshot in kPa - owner: SubmarineAtmosphereSystem
+            _n2PartialPressureFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] - back N2 partial-pressure snapshot in kPa - owner: SubmarineAtmosphereSystem
+            _n2PartialPressureBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[8] — front available gas volume snapshot — owner: SubmarineAtmosphereSystem
             _gasVolumeFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[8] — back available gas volume snapshot — owner: SubmarineAtmosphereSystem

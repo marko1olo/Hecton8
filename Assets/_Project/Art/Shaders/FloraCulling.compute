@@ -368,12 +368,8 @@ bool IsVisibleInDarkness(float3 samplePositionWS)
             continue;
 
         float3 lightDirectionWS = _HectonScooterHeadlightDirectionsWS[headlightIndex].xyz;
-        float lightDirectionLenSq = dot(lightDirectionWS, lightDirectionWS);
-        if (!IsFiniteScalar(lightDirectionLenSq) || lightDirectionLenSq <= 0.00000001)
-            continue;
-
         float dotLight = dot(lightDirectionWS, toSampleWS);
-        if (!PassesDotThresholdSq(dotLight, _HectonScooterHeadlightConeData[headlightIndex].x, sampleDistanceSq * lightDirectionLenSq))
+        if (!PassesDotThresholdSq(dotLight, _HectonScooterHeadlightConeData[headlightIndex].x, sampleDistanceSq))
             continue;
 
         float invRange = _HectonScooterHeadlightConeData[headlightIndex].z;

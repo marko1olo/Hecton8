@@ -152,14 +152,14 @@ namespace Hecton8.Construction
             TryRegisterSaveParticipant();
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // -----------------------------------------------------------------------------
         //  LIFECYCLE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // -----------------------------------------------------------------------------
 
         private void Awake()
         {
-            // â”€â”€ Service â”€â”€
-            // â”€â”€ Pre-allocate â”€â”€
+            // Service storage.
+            // Pre-allocate runtime lists.
             EnsureRuntimeStorage();
             _ambientAccidentTimer = 0f;
         }
@@ -341,8 +341,8 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
-        /// Ð£Ð´Ð°Ð»ÑÐµÑ‚ Ð¼Ð¾Ð´ÑƒÐ»ÑŒ Ð¸Ð· Ñ€ÐµÐµÑÑ‚Ñ€Ð°. ÐÐ• Ð´ÐµÑÐ¿Ð°Ð²Ð½Ð¸Ñ‚ ÐµÐ³Ð¾.
-        /// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐ¹ Ð´Ð»Ñ Ð´ÐµÐºÐ¾Ð½ÑÑ‚Ñ€ÑƒÐºÑ†Ð¸Ð¸: Unregister + Pool.Despawn.
+        /// Removes the module from the registry. Does not despawn it.
+        /// Use for deconstruction flows: Unregister + Pool.Despawn.
         ///
         /// Swap-remove: O(1).
         /// </summary>
@@ -358,8 +358,8 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
-        /// Ð£Ð´Ð°Ð»ÑÐµÑ‚ Ð¸Ð· Ñ€ÐµÐµÑÑ‚Ñ€Ð° Ð˜ Ð´ÐµÑÐ¿Ð°Ð²Ð½Ð¸Ñ‚ Ñ‡ÐµÑ€ÐµÐ· Ð¿ÑƒÐ».
-        /// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ Ð¿Ñ€Ð¸ Ð´ÐµÐºÐ¾Ð½ÑÑ‚Ñ€ÑƒÐºÑ†Ð¸Ð¸ Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹.
+        /// Removes the module from the registry and despawns it through the pool.
+        /// Used by module deconstruction.
         /// </summary>
         public void DestroyModule(GameObject module)
         {
@@ -424,30 +424,30 @@ namespace Hecton8.Construction
             return 0;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  PUBLIC API â€” CLEAR ALL
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // -----------------------------------------------------------------------------
+        //  PUBLIC API - CLEAR ALL
+        // -----------------------------------------------------------------------------
 
         /// <summary>
-        /// Ð”ÐµÑÐ¿Ð°Ð²Ð½Ð¸Ñ‚ Ð’Ð¡Ð• Ð¼Ð¾Ð´ÑƒÐ»Ð¸ Ñ‡ÐµÑ€ÐµÐ· Ð¿ÑƒÐ» Ð¸ Ð¾Ñ‡Ð¸Ñ‰Ð°ÐµÑ‚ Ñ€ÐµÐµÑÑ‚Ñ€.
+        /// Despawns all modules through the pool and clears the registry.
         ///
-        /// Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ:
-        ///   â€¢ LoadFromSaveData() Ð¿ÐµÑ€ÐµÐ´ Ñ€ÐµÑÐ¿Ð°Ð²Ð½Ð¾Ð¼ Ð¸Ð· ÑÐµÐ¹Ð²Ð°
-        ///   â€¢ New Game (ÐµÑÐ»Ð¸ Ð½ÑƒÐ¶Ð½Ð¾ Ð½Ð°Ñ‡Ð°Ñ‚ÑŒ Ñ Ñ‡Ð¸ÑÑ‚Ð¾Ð³Ð¾ Ð¼Ð¸Ñ€Ð°)
+        /// Called by:
+        ///   - LoadFromSaveData() before respawning save contents.
+        ///   - New Game when the world must start empty.
         ///
-        /// Ð˜Ñ‚ÐµÑ€Ð°Ñ†Ð¸Ñ Ð¾Ð±Ñ€Ð°Ñ‚Ð½Ñ‹Ð¼ Ñ†Ð¸ÐºÐ»Ð¾Ð¼: Ð±ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ð¾ Ð¿Ñ€Ð¸ Despawn,
-        /// ÐºÐ¾Ñ‚Ð¾Ñ€Ñ‹Ð¹ Ð¼Ð¾Ð¶ÐµÑ‚ Ð²Ñ‹Ð·Ð²Ð°Ñ‚ÑŒ OnDisable Ð½Ð° Ð¼Ð¾Ð´ÑƒÐ»ÑÑ….
+        /// Iterates backwards so Despawn-triggered OnDisable callbacks cannot invalidate
+        /// the active loop.
         /// </summary>
         public void ClearAllModules()
         {
             ObjectPoolManager pool = GlobalRegistry.ObjectPool;
 
-            // â”€â”€ ÐžÐ±Ñ€Ð°Ñ‚Ð½Ñ‹Ð¹ Ñ†Ð¸ÐºÐ»: Ð±ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ð¾ Ð¿Ñ€Ð¸ Ð¼Ð¾Ð´Ð¸Ñ„Ð¸ÐºÐ°Ñ†Ð¸Ð¸ ÑÐ¿Ð¸ÑÐºÐ° â”€â”€
+            // Iterate backwards while the list can be modified by despawn callbacks.
             for (int i = _spawnedModules.Count - 1; i >= 0; i--)
             {
                 GameObject module = _spawnedModules[i];
 
-                if (module == null) continue; // ÑƒÐ¶Ðµ ÑƒÐ½Ð¸Ñ‡Ñ‚Ð¾Ð¶ÐµÐ½
+                if (module == null) continue; // already destroyed
 
                 DespawnOrDestroyModuleInstance(module, pool);
             }
@@ -459,26 +459,26 @@ namespace Hecton8.Construction
             UpdateDiagnostics();
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  ISaveable â€” SAVE / LOAD (Priority 90)
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // -----------------------------------------------------------------------------
+        //  ISaveable - SAVE / LOAD (Priority 90)
+        // -----------------------------------------------------------------------------
 
-        /// <summary>Construction Ð·Ð°Ð³Ñ€ÑƒÐ¶Ð°ÐµÑ‚ÑÑ ÐŸÐžÐ¡Ð›Ð•Ð”ÐÐ•Ð™ (Ð·Ð°Ð²Ð¸ÑÐ¸Ñ‚ Ð¾Ñ‚ Ð¼Ð¸Ñ€Ð°).</summary>
+        /// <summary>Construction loads last because it depends on the world state.</summary>
         public int SavePriority => 90;
         public int LoadPriority => 90;
 
         /// <summary>
-        /// Ð—Ð°Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÑ‚ Ð²ÑÐµ Ð¿Ð¾ÑÑ‚Ñ€Ð¾ÐµÐ½Ð½Ñ‹Ðµ Ð¼Ð¾Ð´ÑƒÐ»Ð¸ Ð² ConstructionDTO.
+        /// Writes all placed modules into ConstructionDTO.
         ///
-        /// Ð”Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ Ð¼Ð¾Ð´ÑƒÐ»Ñ:
-        ///   1. ÐŸÐ¾Ð»ÑƒÑ‡Ð°ÐµÑ‚ ModuleMarker â†’ PrefabId
-        ///   2. Ð§Ð¸Ñ‚Ð°ÐµÑ‚ transform.position Ð¸ rotation
-        ///   3. Ð§Ð¸Ñ‚Ð°ÐµÑ‚ BaseModule.CurrentIntegrity Ð¸ IsFlooded (ÐµÑÐ»Ð¸ ÐµÑÑ‚ÑŒ)
-        ///   4. Ð—Ð°Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÑ‚ Ð² dto.modules[]
+        /// For each module:
+        ///   1. Resolve ModuleMarker -> PrefabId.
+        ///   2. Read transform position and rotation.
+        ///   3. Read BaseModule dynamic state when present.
+        ///   4. Write the result into dto.modules[].
         ///
-        /// ÐœÐ¾Ð´ÑƒÐ»Ð¸ Ð±ÐµÐ· ModuleMarker â€” Ð¿Ñ€Ð¾Ð¿ÑƒÑÐºÐ°ÑŽÑ‚ÑÑ Ñ Warning.
-        /// ÐœÐ¾Ð´ÑƒÐ»Ð¸ Ð±ÐµÐ· BaseModule â€” Ð·Ð°Ð¿Ð¸ÑÑ‹Ð²Ð°ÑŽÑ‚ÑÑ Ñ Ð´ÐµÑ„Ð¾Ð»Ñ‚Ð½Ñ‹Ð¼Ð¸ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸ÑÐ¼Ð¸
-        /// (100% HP, Ð½Ðµ Ð·Ð°Ñ‚Ð¾Ð¿Ð»ÐµÐ½). Ð­Ñ‚Ð¾ ÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð½Ð¾ Ð´Ð»Ñ Ð¿Ð°ÑÑÐ¸Ð²Ð½Ñ‹Ñ… Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ (Ð¾Ð¿Ð¾Ñ€Ñ‹).
+        /// Modules without ModuleMarker are skipped with a warning.
+        /// Modules without BaseModule are saved with default state values
+        /// for passive supports and decoration.
         /// </summary>
         public void PopulateSaveData(SaveData data)
         {
@@ -494,38 +494,44 @@ namespace Hecton8.Construction
             {
                 GameObject module = _spawnedModules[i];
 
-                // â”€â”€ Guard: destroyed reference â”€â”€
+                // Guard: destroyed reference.
                 if (module == null) continue;
 
-                // â”€â”€ Guard: missing marker â”€â”€
+                // Guard: missing marker.
                 if (!module.TryGetComponent(out ModuleMarker marker))
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning(
                         $"[ConstructionManager] Module '{module.name}' has no ModuleMarker. " +
                         "Skipping save for this module.");
+#endif
                     continue;
                 }
 
-                // â”€â”€ Guard: empty ID â”€â”€
+                // Guard: empty ID.
                 string prefabId = marker.PrefabId;
                 if (string.IsNullOrEmpty(prefabId))
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning(
                         $"[ConstructionManager] Module '{module.name}' has empty PrefabId. " +
                         "Skipping.");
+#endif
                     continue;
                 }
 
-                // â”€â”€ Guard: capacity â”€â”€
+                // Guard: save capacity.
                 if (moduleIndex >= ConstructionDTO.MaxModules)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning(
                         $"[ConstructionManager] Max modules ({ConstructionDTO.MaxModules}) reached. " +
                         $"Truncating save: {count - moduleIndex} modules not saved.");
+#endif
                     break;
                 }
 
-                // â”€â”€ Serialize transform â”€â”€
+                // Serialize transform.
                 Transform t = module.transform;
                 ModuleDTO moduleDto = new ModuleDTO();
                 moduleDto.prefabId = prefabId;
@@ -539,9 +545,9 @@ namespace Hecton8.Construction
                 graphNodeDto.SetAup(AbsoluteUniversePosition.FromRuntimePosition(t.position));
                 graphNodeDto.SetRotation(t.rotation);
 
-                // â”€â”€ Serialize dynamic state â”€â”€
-                // ÐŸÐ°ÑÑÐ¸Ð²Ð½Ñ‹Ðµ Ð¼Ð¾Ð´ÑƒÐ»Ð¸ (Ð¾Ð¿Ð¾Ñ€Ñ‹, Ð´ÐµÐºÐ¾Ñ€) Ð½Ðµ Ð¸Ð¼ÐµÑŽÑ‚ BaseModule.
-                // Ð”Ð»Ñ Ð½Ð¸Ñ… Ð¿Ð¸ÑˆÐµÐ¼ Ð´ÐµÑ„Ð¾Ð»Ñ‚Ð½Ñ‹Ðµ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ñ â€” Ð¿Ñ€Ð¸ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐµ Ð¾Ð½Ð¸ ÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð½Ñ‹.
+                // Serialize dynamic state.
+                // Passive modules have no BaseModule.
+                // Defaults are valid for load.
                 if (module.TryGetComponent(out BaseModule baseModule))
                 {
                     moduleDto.integrity = baseModule.CurrentIntegrity;
@@ -591,25 +597,25 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
-        /// Ð’Ð¾ÑÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÑ‚ Ð¿Ð¾ÑÑ‚Ñ€Ð¾ÐµÐ½Ð½Ñ‹Ðµ Ð¼Ð¾Ð´ÑƒÐ»Ð¸ Ð¸Ð· ConstructionDTO.
+        /// Restores placed modules from ConstructionDTO.
         ///
-        /// ÐŸÐ¾Ñ€ÑÐ´Ð¾Ðº:
-        ///   1. ClearAllModules() â€” ÑƒÐ´Ð°Ð»Ð¸Ñ‚ÑŒ Ñ‚ÐµÐºÑƒÑ‰ÑƒÑŽ Ð±Ð°Ð·Ñƒ
-        ///   2. Ð”Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ ModuleDTO:
-        ///      a. ÐÐ°Ð¹Ñ‚Ð¸ Ð¿Ñ€ÐµÑ„Ð°Ð± Ñ‡ÐµÑ€ÐµÐ· ModuleCatalog
-        ///      b. Spawn Ñ‡ÐµÑ€ÐµÐ· ObjectPoolManager
-        ///      c. Ð’Ð¾ÑÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ð´Ð¸Ð½Ð°Ð¼Ð¸Ñ‡ÐµÑÐºÐ¾Ðµ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ (integrity, isFlooded)
-        ///         Ð”Ðž Ð¿ÐµÑ€Ð²Ð¾Ð³Ð¾ SlowTick (ÑÐ¸Ð½Ñ…Ñ€Ð¾Ð½Ð½Ð¾, Ð² Ñ‚Ð¾Ð¼ Ð¶Ðµ ÐºÐ°Ð´Ñ€Ðµ)
-        ///      d. RegisterModule (Ñ Ð¿Ñ€Ð¸Ð²ÑÐ·ÐºÐ¾Ð¹ BuildableData)
+        /// Order:
+        ///   1. ClearAllModules() removes the current base.
+        ///   2. For each ModuleDTO:
+        ///      a. Resolve prefab through ModuleCatalog.
+        ///      b. Spawn through ObjectPoolManager.
+        ///      c. Restore dynamic state before the first SlowTick.
+        ///         This happens synchronously in the same frame.
+        ///      d. RegisterModule with BuildableData binding.
         ///
-        /// ÐœÐ¸Ð³Ñ€Ð°Ñ†Ð¸Ñ v1 â†’ v2: ÐµÑÐ»Ð¸ integrity == 0f (Ð´ÐµÑ„Ð¾Ð»Ñ‚ Ð´Ð»Ñ float Ð¿Ñ€Ð¸
-        /// Ð´ÐµÑÐµÑ€Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ð¸ ÑÑ‚Ð°Ñ€Ð¾Ð³Ð¾ ÑÐµÐ¹Ð²Ð° Ð±ÐµÐ· ÑÑ‚Ð¾Ð³Ð¾ Ð¿Ð¾Ð»Ñ), Ñ‚Ñ€Ð°ÐºÑ‚ÑƒÐµÐ¼ ÐºÐ°Ðº 100%.
+        /// Migration v1 -> v2: integrity == 0f means the field did not exist
+        /// in the old save, so it is treated as 100%.
         ///
-        /// ÐŸÑ€Ð¸ Ð¾ÑˆÐ¸Ð±ÐºÐ°Ñ…: Ð¼Ð¾Ð´ÑƒÐ»ÑŒ Ð¿Ñ€Ð¾Ð¿ÑƒÑÐºÐ°ÐµÑ‚ÑÑ, Ð¸Ð³Ñ€Ð° Ð½Ðµ ÐºÑ€Ð°ÑˆÐ¸Ñ‚ÑÑ.
+        /// On errors, the module is skipped and the game continues.
         /// </summary>
         public void LoadFromSaveData(SaveData data)
         {
-            // â”€â”€ Ð’Ð°Ð»Ð¸Ð´Ð°Ñ†Ð¸Ñ â”€â”€
+            // Validation.
             if (catalog == null)
             {
                 Debug.LogError(
@@ -620,9 +626,11 @@ namespace Hecton8.Construction
 
             if (catalog.HasLookupAmbiguity)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(
                     "[ConstructionManager] ModuleCatalog has ambiguous ID aliases. " +
                     $"Construction load aborted: {catalog.LookupAmbiguitySummary}");
+#endif
                 return;
             }
 
@@ -632,9 +640,9 @@ namespace Hecton8.Construction
                                     dto.graphNodes != null &&
                                     dto.graphNodeCount > 0;
 
-            // â”€â”€ 1. Ð£Ð´Ð°Ð»ÑÐµÐ¼ Ñ‚ÐµÐºÑƒÑ‰ÑƒÑŽ Ð±Ð°Ð·Ñƒ â”€â”€
+            // 1. Remove current base.
 
-            // â”€â”€ Guard: Ð¿ÑƒÑÑ‚Ñ‹Ðµ Ð´Ð°Ð½Ð½Ñ‹Ðµ â”€â”€
+            // Guard: empty data.
             if ((!hasGraphTopology && (dto.modules == null || dto.moduleCount <= 0)) ||
                 (hasGraphTopology && dto.graphNodeCount <= 0))
             {
@@ -643,7 +651,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            // â”€â”€ 2. Ð ÐµÑÐ¿Ð°Ð²Ð½ Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ Ð¸Ð· ÑÐµÐ¹Ð²Ð° â”€â”€
+            // 2. Respawn modules from save.
             ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             ClearAllModules();
             int count = hasGraphTopology
@@ -658,7 +666,7 @@ namespace Hecton8.Construction
                 bool hasLegacyModuleState = dto.modules != null && i >= 0 && i < dto.moduleCount && i < dto.modules.Length;
                 ModuleDTO moduleDto = hasLegacyModuleState ? dto.modules[i] : default;
 
-                // â”€â”€ ÐŸÐ¾Ð¸ÑÐº Ð¿Ñ€ÐµÑ„Ð°Ð±Ð° â”€â”€
+                // Resolve prefab.
                 string prefabId = hasGraphTopology && !string.IsNullOrEmpty(graphNodeDto.prefabId)
                     ? graphNodeDto.prefabId
                     : moduleDto.prefabId;
@@ -678,14 +686,16 @@ namespace Hecton8.Construction
 
                 if (buildData == null)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning(
                         $"[ConstructionManager] Module '{prefabId}' " +
                         "not found in catalog. Skipping.");
+#endif
                     skippedCount++;
                     continue;
                 }
 
-                // â”€â”€ Ð’Ð°Ð»Ð¸Ð´Ð°Ñ†Ð¸Ñ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ â”€â”€
+                // Validate position.
                 Vector3 pos = hasGraphTopology
                     ? graphNodeDto.GetAup().ToRuntimeFloat3()
                     : moduleDto.GetPosition();
@@ -697,27 +707,31 @@ namespace Hecton8.Construction
                     float.IsNaN(pos.y) || float.IsInfinity(pos.y) ||
                     float.IsNaN(pos.z) || float.IsInfinity(pos.z))
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning(
                         $"[ConstructionManager] Module '{moduleDto.prefabId}' " +
                         "has invalid position. Skipping.");
+#endif
                     skippedCount++;
                     continue;
                 }
 
-                // ÐÐ¾Ñ€Ð¼Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ quaternion (Ð·Ð°Ñ‰Ð¸Ñ‚Ð° Ð¾Ñ‚ float-Ð´Ñ€Ð¸Ñ„Ñ‚Ð° Ð² ÑÐµÐ¹Ð²Ðµ)
+                // Normalize quaternion to protect against save drift.
                 if (rot.x == 0f && rot.y == 0f && rot.z == 0f && rot.w == 0f)
                     rot = Quaternion.identity;
                 else
                     rot.Normalize();
 
-                // â”€â”€ Spawn â”€â”€
+                // Spawn.
                 GameObject module;
                 if (buildData.finalPrefab != null)
                 {
                     if (pool == null)
                     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                         Debug.LogWarning(
                             $"[ConstructionManager] ObjectPoolManager unavailable while loading '{prefabId}'. Skipping pooled prefab.");
+#endif
                         skippedCount++;
                         continue;
                     }
@@ -726,32 +740,36 @@ namespace Hecton8.Construction
                 }
                 else if (!ConstructionRuntimeProxyFactory.TryCreatePlacedProxy(buildData, pos, rot, out module))
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning(
                         $"[ConstructionManager] Module '{prefabId}' has no finalPrefab and proxy generation failed. Skipping.");
+#endif
                     skippedCount++;
                     continue;
                 }
 
                 if (module == null)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning(
                         $"[ConstructionManager] Failed to spawn '{prefabId}'.");
+#endif
                     skippedCount++;
                     continue;
                 }
 
-                // â”€â”€ Restore dynamic state â”€â”€
-                // Ð’ÐÐ–ÐÐž: Ð²Ñ‹Ð¿Ð¾Ð»Ð½ÑÐµÑ‚ÑÑ ÑÐ¸Ð½Ñ…Ñ€Ð¾Ð½Ð½Ð¾, Ð”Ðž Ð¿ÐµÑ€Ð²Ð¾Ð³Ð¾ SlowTick.
-                // BaseModule.OnEnable() Ñ€ÐµÐ³Ð¸ÑÑ‚Ñ€Ð¸Ñ€ÑƒÐµÑ‚ SlowTick, Ð½Ð¾ Ð¿ÐµÑ€Ð²Ñ‹Ð¹
-                // Ð²Ñ‹Ð·Ð¾Ð² Ð¿Ñ€Ð¾Ð¸Ð·Ð¾Ð¹Ð´Ñ‘Ñ‚ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð² ÑÐ»ÐµÐ´ÑƒÑŽÑ‰ÐµÐ¼ Ð¸Ð½Ñ‚ÐµÑ€Ð²Ð°Ð»Ðµ Ñ‚Ð°Ð¹Ð¼ÐµÑ€Ð°.
-                // Ðš ÑÑ‚Ð¾Ð¼Ñƒ Ð¼Ð¾Ð¼ÐµÐ½Ñ‚Ñƒ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ ÑƒÐ¶Ðµ Ð±ÑƒÐ´ÐµÑ‚ ÑƒÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½Ð¾.
+                // Restore dynamic state.
+                // Restore synchronously before the first SlowTick.
+                // BaseModule.OnEnable() registers SlowTick, but the first tick
+                // runs on the next timer interval.
+                // State is already restored by then.
                 if (module.TryGetComponent(out BaseModule baseModule))
                 {
                     baseModule.ApplyBuildableTemplate(buildData);
 
-                    // ÐœÐ¸Ð³Ñ€Ð°Ñ†Ð¸Ñ v1 â†’ v2: integrity == 0f Ð¾Ð·Ð½Ð°Ñ‡Ð°ÐµÑ‚,
-                    // Ñ‡Ñ‚Ð¾ Ð¿Ð¾Ð»Ðµ Ð½Ðµ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð¾Ð²Ð°Ð»Ð¾ Ð² ÑÑ‚Ð°Ñ€Ð¾Ð¼ ÑÐµÐ¹Ð²Ðµ.
-                    // Ð¢Ñ€Ð°ÐºÑ‚ÑƒÐµÐ¼ ÐºÐ°Ðº Â«Ð¿Ð¾Ð»Ð½Ð¾Ðµ Ð·Ð´Ð¾Ñ€Ð¾Ð²ÑŒÐµÂ».
+                    // Migration v1 -> v2: integrity == 0f means
+                    // the field did not exist in the old save.
+                    // Treat it as full health.
                     float loadedIntegrity = moduleDto.integrity;
                     if (loadedIntegrity <= 0f)
                         loadedIntegrity = DefaultIntegrity;
@@ -793,7 +811,7 @@ namespace Hecton8.Construction
                         maintenanceStation.TryRestoreSlottedTool(slottedToolItem);
                 }
 
-                // â”€â”€ Register Ñ Ð¿Ñ€Ð¸Ð²ÑÐ·ÐºÐ¾Ð¹ Ðº BuildableData â”€â”€
+                // Register with BuildableData binding.
                 if (hasLegacyModuleState && data.version >= 36 && itemCatalog != null)
                 {
                     if (module.TryGetComponent(out LogisticsSorterModule logisticsSorter))
@@ -813,20 +831,22 @@ namespace Hecton8.Construction
                 loadedCount++;
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log(
                 $"[ConstructionManager] Loaded {loadedCount} modules" +
                 (skippedCount > 0 ? $", skipped {skippedCount}." : "."));
+#endif
 
             UpdateDiagnostics();
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  PRIVATE â€” COLLECTION HELPERS (Zero GC)
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // -----------------------------------------------------------------------------
+        //  PRIVATE - COLLECTION HELPERS (Zero GC)
+        // -----------------------------------------------------------------------------
 
         /// <summary>
-        /// ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÑ‚ Ð½Ð°Ð»Ð¸Ñ‡Ð¸Ðµ Ð¼Ð¾Ð´ÑƒÐ»Ñ Ð¿Ð¾ ÑÑÑ‹Ð»ÐºÐµ. O(n), Ð½Ð¾ Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ
-        /// Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð¿Ñ€Ð¸ Register (Ñ€ÐµÐ´ÐºÐ¾). Zero GC.
+        /// Checks whether the module reference is already registered. O(n), but only
+        /// called by Register. Zero GC.
         /// </summary>
         private void PopulateGraphEdges(ref ConstructionDTO dto, int savedNodeCount)
         {
@@ -848,13 +868,15 @@ namespace Hecton8.Construction
                     if (destinationIndex <= sourceIndex || destinationIndex >= savedNodeCount)
                         continue;
 
-                    if (edgeWriteIndex >= ConstructionDTO.MaxGraphEdges)
-                    {
-                        Debug.LogWarning(
-                            $"[ConstructionManager] Habitat graph edge budget ({ConstructionDTO.MaxGraphEdges}) exceeded during save. Truncating persisted topology.");
-                        dto.graphEdgeCount = edgeWriteIndex;
-                        return;
-                    }
+                if (edgeWriteIndex >= ConstructionDTO.MaxGraphEdges)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogWarning(
+                        $"[ConstructionManager] Habitat graph edge budget ({ConstructionDTO.MaxGraphEdges}) exceeded during save. Truncating persisted topology.");
+#endif
+                    dto.graphEdgeCount = edgeWriteIndex;
+                    return;
+                }
 
                     dto.graphEdges[edgeWriteIndex] = new ModuleGraphEdgeDTO
                     {
@@ -919,8 +941,8 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
-        /// Swap-remove: O(1) ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ðµ Ð±ÐµÐ· ÑÐ´Ð²Ð¸Ð³Ð° Ð¼Ð°ÑÑÐ¸Ð²Ð°.
-        /// ÐŸÐ¾Ñ€ÑÐ´Ð¾Ðº Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ Ð½Ðµ Ð³Ð°Ñ€Ð°Ð½Ñ‚Ð¸Ñ€Ð¾Ð²Ð°Ð½ (Ð´Ð¾Ð¿ÑƒÑÑ‚Ð¸Ð¼Ð¾ Ð´Ð»Ñ ÑÑ‚Ð¾Ð¹ ÑÐ¸ÑÑ‚ÐµÐ¼Ñ‹).
+        /// Swap-remove: O(1) deletion without shifting the full array.
+        /// Module order is intentionally not stable in this registry.
         /// </summary>
         private void SwapRemove(GameObject module)
         {
@@ -959,8 +981,8 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
-        /// ÐžÑ‡Ð¸Ñ‰Ð°ÐµÑ‚ null-ÑÑÑ‹Ð»ÐºÐ¸ Ð¸Ð· ÑÐ¿Ð¸ÑÐºÐ° (Ð·Ð°Ñ‰Ð¸Ñ‚Ð° Ð¾Ñ‚ Destroy Ð¸Ð·Ð²Ð½Ðµ).
-        /// Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¿ÐµÑ€ÐµÐ´ Save Ð´Ð»Ñ Ð³Ð°Ñ€Ð°Ð½Ñ‚Ð¸Ð¸ Ñ†ÐµÐ»Ð¾ÑÑ‚Ð½Ð¾ÑÑ‚Ð¸.
+        /// Removes null references from the list after external Destroy calls.
+        /// Called before Save to keep the registry coherent.
         /// </summary>
         private void PurgeNullEntries()
         {
@@ -988,9 +1010,9 @@ namespace Hecton8.Construction
             }
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // -----------------------------------------------------------------------------
         //  DIAGNOSTICS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // -----------------------------------------------------------------------------
 
         private void TryRegisterLogisticsService()
         {
@@ -1229,7 +1251,7 @@ namespace Hecton8.Construction
                 return;
 
             string source = ResolveModuleSource(module);
-            string summary = BuildAmbientAccidentSummary(module, risk);
+            string summary = BuildAmbientAccidentSummary(module);
             FieldOperationLogSystem.RecordOperation(source, "SERVICE ACCIDENT", summary, "WARN");
 
             module.ApplyDamage(module.CurrentIntegrity + 1f);
@@ -1247,24 +1269,17 @@ namespace Hecton8.Construction
             return "BASE";
         }
 
-        private static string BuildAmbientAccidentSummary(BaseModule module, float risk)
+        private static string BuildAmbientAccidentSummary(BaseModule module)
         {
             if (module == null)
                 return "Neglected service hardware destabilized and rolled into a cascade failure.";
 
-            float integrity01 = module.MaxIntegrity > 0f
-                ? module.CurrentIntegrity / module.MaxIntegrity
-                : 0f;
-
-            string condition;
             if (module.IsFlooded)
-                condition = "Residual flooding was left unresolved.";
+                return "Residual flooding was left unresolved and rolled into a live compartment incident.";
             else if (!module.HasPower)
-                condition = "Power loss left pumps and service recovery offline.";
+                return "Power loss left pumps offline and rolled into a live compartment incident.";
             else
-                condition = "Hull fatigue crossed the unattended maintenance margin.";
-
-            return $"Integrity {integrity01:0%}. {condition} Risk {Mathf.Clamp01(risk):0%} converted into a live compartment incident.";
+                return "Hull fatigue crossed the maintenance margin and rolled into a live compartment incident.";
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

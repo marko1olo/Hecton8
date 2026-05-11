@@ -26,7 +26,9 @@ namespace Hecton8.Physics
     [AddComponentMenu("Hecton/Physics/Ambient Water Motion Manager")]
     public sealed class AmbientWaterMotionManager : MonoBehaviour, ITickable, IUpdatable, IBiomeMatrixEventListener
     {
-        private const float BiomeFlowBlendSeconds = 5f;
+        private const float BiomeFlowBlendInvSeconds = 0.2f;
+        private const float DegreesToHalfRadians = 0.008726646259971648f;
+        private const float MaxVisualRotationDegrees = 24f;
         private const int MotionCapacity = 128;
 
         [Header("Observer / LOD")]
@@ -52,7 +54,7 @@ namespace Hecton8.Physics
         [SerializeField] private int _debugBiomeCurrentBiomeId = -1;
         [SerializeField] private Vector3 _debugBiomeCurrentVector;
 
-        // ── Registered objects ───────────────────────────────────────────────
+        // Registered objects.
         // List handles cache-friendly iteration; HashSet provides O(1) registration dedupe.
         private readonly List<AmbientWaterMotion> _objects =
             new List<AmbientWaterMotion>(MotionCapacity); // COLD ALLOC: List<AmbientWaterMotion>[128] - active ambient-water motion registry - owner: AmbientWaterMotionManager
@@ -76,16 +78,14 @@ namespace Hecton8.Physics
         private float _biomeCurrentBlendElapsed;
         private bool _hasBiomeCurrentTarget;
 
-        // ── Observer resolve cooldown ────────────────────────────────────────
+        // Observer resolve cooldown.
         // If no observer is assigned or found, avoid hitting bootstrap every frame.
         private float _observerResolveTimer;
         private const float ObserverResolveCooldown = 2f;
 
         public static AmbientWaterMotionManager Instance => GlobalRegistry.AmbientWaterMotion;
 
-        // ════════════════════════════════════════════════════════════════════
         //  LIFECYCLE
-        // ════════════════════════════════════════════════════════════════════
 
         private void Awake()
         {
@@ -124,9 +124,7 @@ namespace Hecton8.Physics
 
         }
 
-        // ════════════════════════════════════════════════════════════════════
         //  REGISTRATION - O(1) dedupe through HashSet
-        // ════════════════════════════════════════════════════════════════════
 
         public void Register(AmbientWaterMotion motion)
         {
@@ -144,14 +142,16 @@ namespace Hecton8.Physics
             if (motion == null) return;
 
             if (_objectsSet.Remove(motion))
-                _objects.Remove(motion);
+            {
+                int index = _objects.IndexOf(motion);
+                if (index >= 0)
+                    RemoveMotionAtSwapBack(index);
+            }
 
             _debugActiveObjects = _objects.Count;
         }
 
-        // ════════════════════════════════════════════════════════════════════
         //  TICK
-        // ════════════════════════════════════════════════════════════════════
 
         public void Tick(float deltaTime)
         {
@@ -188,19 +188,16 @@ namespace Hecton8.Physics
             {
                 AmbientWaterMotion motion = _objects[i];
 
-                // Null-check: obekt mog byt unichtozhen bez OnDisable
+                // Object may have been destroyed without OnDisable.
                 if (motion == null || motion.CachedTransform == null)
                 {
-                    // Swap-and-pop: O(1) udalenie iz serediny spiska
+                    // Swap-and-pop: O(1) removal from the active list.
                     _objectsSet.Remove(motion);
-                    int last = _objects.Count - 1;
-                    _objects[i] = _objects[last];
-                    _objects.RemoveAt(last);
+                    RemoveMotionAtSwapBack(i);
                     continue;
                 }
 
                 // Read position once; cache it for ShouldUpdate and ApplyMotion.
-                // Bylo: position chitalsya dvazhdy (v ShouldUpdate i v ApplyMotion)
                 AbsoluteUniversePosition motionAup = motion.RestAup;
                 float3 runtimeRestPosition = motionAup.ToRuntimeFloat3();
                 Vector3 worldPos = new Vector3(runtimeRestPosition.x, runtimeRestPosition.y, runtimeRestPosition.z);
@@ -215,9 +212,14 @@ namespace Hecton8.Physics
             _debugActiveObjects = _objects.Count;
         }
 
-        // ════════════════════════════════════════════════════════════════════
+        private void RemoveMotionAtSwapBack(int index)
+        {
+            int last = _objects.Count - 1;
+            _objects[index] = _objects[last];
+            _objects.RemoveAt(last);
+        }
+
         //  SHOULD UPDATE - precomputed input, no bridge calls
-        // ════════════════════════════════════════════════════════════════════
 
         private bool ShouldUpdateAup(
             AmbientWaterMotion motion,
@@ -309,7 +311,7 @@ namespace Hecton8.Physics
                         - currentDir.x * currentMagnitude * 3f;
 
             tr.localPosition = motion.RestLocalPosition + offset;
-            tr.localRotation = motion.RestLocalRotation * Quaternion.Euler(pitch, yaw, roll);
+            tr.localRotation = motion.RestLocalRotation * ApproximateVisualRotation(pitch, yaw, roll);
         }
 
         private static float ApproximateVectorMagnitude(Vector3 value)
@@ -347,13 +349,22 @@ namespace Hecton8.Physics
             return new Vector3(0f, 0f, value.z >= 0f ? 1f : -1f);
         }
 
+        private static Quaternion ApproximateVisualRotation(float pitchDegrees, float yawDegrees, float rollDegrees)
+        {
+            float x = math.clamp(pitchDegrees, -MaxVisualRotationDegrees, MaxVisualRotationDegrees) * DegreesToHalfRadians;
+            float y = math.clamp(yawDegrees, -MaxVisualRotationDegrees, MaxVisualRotationDegrees) * DegreesToHalfRadians;
+            float z = math.clamp(rollDegrees, -MaxVisualRotationDegrees, MaxVisualRotationDegrees) * DegreesToHalfRadians;
+            float invLength = math.rsqrt(1f + x * x + y * y + z * z);
+            return new Quaternion(x * invLength, y * invLength, z * invLength, invLength);
+        }
+
         private void UpdateBiomeCurrentBlend(float deltaTime)
         {
             if (!_hasBiomeCurrentTarget)
                 return;
 
             _biomeCurrentBlendElapsed += math.max(0f, deltaTime);
-            float t = math.saturate(_biomeCurrentBlendElapsed / BiomeFlowBlendSeconds);
+            float t = math.saturate(_biomeCurrentBlendElapsed * BiomeFlowBlendInvSeconds);
             float smooth = t * t * (3f - 2f * t);
             float3 biomeCurrent = math.lerp(
                 new float3(_biomeCurrentStartVector.x, _biomeCurrentStartVector.y, _biomeCurrentStartVector.z),
@@ -395,11 +406,9 @@ namespace Hecton8.Physics
         {
         }
 
-        // ════════════════════════════════════════════════════════════════════
         //  OBSERVER RESOLVE - cooled down, not every frame
-        // ════════════════════════════════════════════════════════════════════
 
-        /// <param name="force">true = ignorirovat cooldown (Awake, OnEnable).</param>
+        /// <param name="force">true ignores cooldown during startup.</param>
         private void TryResolveObserver(bool force = false)
         {
             // Existing observer: no lookup.
@@ -408,7 +417,6 @@ namespace Hecton8.Physics
             // Cooldown still active and not forced: skip.
             if (!force && _observerResolveTimer > 0f) return;
 
-            // Sbrasyvaem taymer nezavisimo ot rezultata poiska
             // Observer not found now; wait ObserverResolveCooldown seconds.
             _observerResolveTimer = ObserverResolveCooldown;
 

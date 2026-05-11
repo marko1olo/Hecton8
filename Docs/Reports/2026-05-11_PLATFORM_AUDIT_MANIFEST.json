@@ -1,0 +1,60 @@
+{
+  "generatedDate": "2026-05-11",
+  "status": "PENDING VERIFICATION",
+  "scope": [
+    "Windows desktop",
+    "Linux desktop",
+    "macOS desktop",
+    "PC VR streaming",
+    "standalone Android VR",
+    "consoles"
+  ],
+  "proofBoundary": "Static project scan plus existing local Core dotnet compile only. No fresh Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, XR device, Linux, macOS, Android, or console proof captured in this platform audit pass.",
+  "documents": [
+    {
+      "path": "Docs/Reports/2026-05-11_PLATFORM_READINESS_AUDIT.md",
+      "role": "executive readiness audit, heatmap, Hub-vs-deep blocker separation",
+      "status": "PENDING VERIFICATION"
+    },
+    {
+      "path": "Docs/Reports/2026-05-11_PLATFORM_BLOCKER_REGISTER.md",
+      "role": "blocker register with evidence IDs, severity, fix class, platform density",
+      "status": "PENDING VERIFICATION"
+    },
+    {
+      "path": "Docs/Reports/2026-05-11_PLATFORM_VERIFICATION_MATRIX.md",
+      "role": "required proof matrix for builds, runtime routes, profiler, GC, memory, XR, Addressables, storage",
+      "status": "PENDING VERIFICATION"
+    }
+  ],
+  "currentClassification": {
+    "Windows10_11Desktop": "PENDING VERIFICATION",
+    "LegacyWindows": "DO NOT TARGET",
+    "LinuxDesktop": "BLOCKED",
+    "MacOSDesktop": "BLOCKED",
+    "SteamDeck": "BLOCKED / UNPROVEN",
+    "PcVrStreaming": "BLOCKED",
+    "StandaloneAndroidVr": "BLOCKED",
+    "IosVisionOs": "OUT OF SCOPE / BLOCKED",
+    "Consoles": "VENDOR BLOCKED"
+  },
+  "dominantBlockerTypes": [
+    "proof absence",
+    "missing Unity platform modules outside Windows",
+    "missing XR Plugin Management and OpenXR provider",
+    "missing Addressables project data despite active runtime code",
+    "Windows-heavy save/telemetry/native compression path",
+    "no Android/XR quality tier",
+    "native plugin/importer platform matrix absent",
+    "vendor SDK/dev-kit/certification absence for consoles"
+  ],
+  "nextRequiredEvidence": [
+    "Windows current-source player build log",
+    "Windows player launch log",
+    "Windows bootstrap -> menu -> world -> pause -> save route proof",
+    "Windows profiler, GC, memory capture",
+    "Addressables settings/groups/catalog proof or active dependency removal",
+    "Linux/macOS/Android module install proof before target builds",
+    "OpenXR package/provider configuration before VR claims"
+  ]
+}

@@ -22,7 +22,7 @@ namespace Hecton8.Construction
         private const int TransportLookupCacheCapacity = 16;
         private const float MaxDockingFixedDeltaSeconds = 0.05f;
 
-        [Header("── Docking ──────────────────")]
+        [Header("Docking")]
         [Tooltip("Optional snap anchor applied when a rigidbody transport is docked. Falls back to this transform.")]
         [SerializeField] private Transform dockAnchor;
 
@@ -56,27 +56,27 @@ namespace Hecton8.Construction
         [Tooltip("When enabled, child cargo crates found on the docked transport become part of the base logistics grid.")]
         [SerializeField] private bool connectDockedCargoToLogistics = true;
 
-        [Header("── Power ───────────────────")]
+        [Header("Power")]
         [Tooltip("Power draw while the dock is actively charging a transport.")]
         [SerializeField, Range(0f, 400f)] private float chargingPowerDraw = 120f;
 
         [Tooltip("Grid shedding priority used by this dock.")]
         [SerializeField, Range(0, 100)] private int powerPriority = 35;
 
-        [Header("── Diagnostics ─────────────")]
+        [Header("Diagnostics")]
         [SerializeField] private bool _debugHasPower = true;
         [SerializeField] private bool _debugDockOccupied;
         [SerializeField] private string _debugDockedTransportName;
 
-        // COLD ALLOC: List<StorageCrate>[4] — temporary cargo storage bridge for the currently docked transport — owner: VehicleDockingModule
+        // COLD ALLOC: List<StorageCrate>[4] - temporary cargo storage bridge for the currently docked transport - owner: VehicleDockingModule
         private readonly List<StorageCrate> _connectedCargoCrates = new List<StorageCrate>(4);
-        // COLD ALLOC: List<StorageCrate>[4] — component query buffer for docked transport cargo discovery — owner: VehicleDockingModule
+        // COLD ALLOC: List<StorageCrate>[4] - component query buffer for docked transport cargo discovery - owner: VehicleDockingModule
         private readonly List<StorageCrate> _cargoDiscoveryBuffer = new List<StorageCrate>(4);
-        // COLD ALLOC: ulong[16] — trigger collider id cache for transport lifecycle owner discovery — owner: VehicleDockingModule
+        // COLD ALLOC: ulong[16] - trigger collider id cache for transport lifecycle owner discovery - owner: VehicleDockingModule
         private readonly ulong[] _transportLookupColliderIds = new ulong[TransportLookupCacheCapacity];
-        // COLD ALLOC: IPlayerTransportLifecycleOwner[16] — resolved transport owner cache for trigger contacts — owner: VehicleDockingModule
+        // COLD ALLOC: IPlayerTransportLifecycleOwner[16] - resolved transport owner cache for trigger contacts - owner: VehicleDockingModule
         private readonly IPlayerTransportLifecycleOwner[] _transportLookupOwners = new IPlayerTransportLifecycleOwner[TransportLookupCacheCapacity];
-        // COLD ALLOC: MonoBehaviour[16] — resolved transport owner component cache for trigger contacts — owner: VehicleDockingModule
+        // COLD ALLOC: MonoBehaviour[16] - resolved transport owner component cache for trigger contacts - owner: VehicleDockingModule
         private readonly MonoBehaviour[] _transportLookupBehaviours = new MonoBehaviour[TransportLookupCacheCapacity];
 
         private Transform _cachedTransform;

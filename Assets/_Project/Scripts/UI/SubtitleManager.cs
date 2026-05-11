@@ -652,7 +652,6 @@ namespace Hecton8.UI
                 _audioCueGroup.alpha = 0f;
         }
 
-#if false
         private bool TryCopyNormalizedSubtitleToPool(
             ReadOnlySpan<char> message,
             out CharBufferPool.Lease lease,
@@ -769,8 +768,6 @@ namespace Hecton8.UI
 
             return safeLength;
         }
-
-#endif
         private void RefreshStressCorruptionIfNeeded()
         {
             if (_currentSource == SubtitleSource.AudioLog)

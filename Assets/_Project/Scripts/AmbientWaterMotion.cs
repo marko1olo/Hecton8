@@ -14,6 +14,10 @@ namespace Hecton8.Physics
     [AddComponentMenu("Hecton/Physics/Ambient Water Motion")]
     public sealed class AmbientWaterMotion : MonoBehaviour
     {
+        private const uint PhaseHashMultiplier = 747796405u;
+        private const uint PhaseHashIncrement = 2891336453u;
+        private const float PhaseStepRadians = 0.006135923151542565f;
+
         [Header("Profile")]
         [SerializeField] private AmbientWaterMotionProfile profile;
         [SerializeField] private bool autoApplyProfile = true;
@@ -56,9 +60,9 @@ namespace Hecton8.Physics
             _cachedTransform = transform;
             CaptureRestPose();
 
-            int id = unchecked((int)EntityId.ToULong(GetEntityId()));
-            float seed = id < 0 ? -id : id;
-            _phase = seed * 0.173f;
+            uint seed = unchecked((uint)EntityId.ToULong(GetEntityId()));
+            seed = unchecked((seed * PhaseHashMultiplier) + PhaseHashIncrement);
+            _phase = (seed & 1023u) * PhaseStepRadians;
         }
 
         private void OnEnable()

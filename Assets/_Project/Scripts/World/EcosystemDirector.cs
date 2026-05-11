@@ -336,16 +336,19 @@ namespace Hecton8.World
                 state.AlgaeBloom01 = bloom01;
                 state.PreyPopulationRounded = preyPopulation;
                 state.PredatorPopulationRounded = predatorPopulation;
-                state.ApexInSector = predatorPopulation > 0 ? (byte)1 : (byte)0;
+                byte apexInSector = (byte)math.select(0, 1, predatorPopulation > 0);
+                byte headlessSpeciesId = (byte)math.select(1, 2, predatorPopulation > preyPopulation);
+                float preyPerPredator = math.select(
+                    StarvationComfortPreyPerPredator,
+                    preyPopulation * math.rcp(math.max(1f, predatorPopulation)),
+                    predatorPopulation > 0);
+                state.ApexInSector = apexInSector;
                 BackStates[index] = state;
                 PreyBackCounts[index] = preyPopulation;
                 PredatorBackCounts[index] = predatorPopulation;
 
                 HeadlessPositions[index] = ResolveSectorCenterPosition(state.SectorCoord);
-                HeadlessSpeciesID[index] = predatorPopulation > preyPopulation ? (byte)2 : (byte)1;
-                float preyPerPredator = predatorPopulation > 0
-                    ? preyPopulation * math.rcp(math.max(1f, predatorPopulation))
-                    : StarvationComfortPreyPerPredator;
+                HeadlessSpeciesID[index] = headlessSpeciesId;
                 HeadlessHunger[index] = PackUnitByte(1f - preyPerPredator * invStarvationComfort);
                 HeadlessSectorCoord[index] = state.SectorCoord;
                 HeadlessSectorID[index] = ResolveSectorId(state.SectorCoord);
@@ -1273,7 +1276,7 @@ namespace Hecton8.World
                     PreyPopulationRounded = preyPopulation,
                     PredatorPopulationRounded = predatorPopulation,
                     BiomeId = biomeId,
-                    ApexInSector = predatorPopulation > 0 ? (byte)1 : (byte)0
+                    ApexInSector = PackBooleanByte(predatorPopulation > 0)
                 };
 
                 _sectorFrontStates[sectorIndex] = restoredState;
@@ -1504,7 +1507,7 @@ namespace Hecton8.World
             SectorPopulationState state = _sectorFrontStates[slotIndex];
             state.PredatorPopulationRounded = math.max(0, state.PredatorPopulationRounded - 1);
             state.PredatorPopulation = state.PredatorPopulationRounded;
-            state.ApexInSector = state.PredatorPopulationRounded > 0 ? (byte)1 : (byte)0;
+            state.ApexInSector = PackBooleanByte(state.PredatorPopulationRounded > 0);
             int preyBloom = math.max(1, (int)(maxPreyPopulation * InvAlgaeBloomPreyGrowthDivisor));
             state.PreyPopulationRounded = math.min(maxPreyPopulation, state.PreyPopulationRounded + preyBloom);
             state.PreyPopulation = state.PreyPopulationRounded;
@@ -2635,7 +2638,7 @@ namespace Hecton8.World
             state.PreyPopulationRounded = preyPopulation;
             state.PredatorPopulationRounded = predatorPopulation;
             state.BiomeId = biomeId;
-            state.ApexInSector = predatorPopulation > 0 ? (byte)1 : (byte)0;
+            state.ApexInSector = PackBooleanByte(predatorPopulation > 0);
             return state;
         }
 
@@ -2681,12 +2684,13 @@ namespace Hecton8.World
             if (_headlessEntities.Positions.IsCreated)
                 _headlessEntities.Positions[slotIndex] = ResolveSectorCenterPosition(state.SectorCoord);
             if (_headlessEntities.SpeciesID.IsCreated)
-                _headlessEntities.SpeciesID[slotIndex] = state.PredatorPopulationRounded > state.PreyPopulationRounded ? (byte)2 : (byte)1;
+                _headlessEntities.SpeciesID[slotIndex] = (byte)math.select(1, 2, state.PredatorPopulationRounded > state.PreyPopulationRounded);
             if (_headlessEntities.Hunger.IsCreated)
             {
-                float preyPerPredator = state.PredatorPopulationRounded > 0
-                    ? state.PreyPopulationRounded * math.rcp(math.max(1f, state.PredatorPopulationRounded))
-                    : starvationComfortPreyPerPredator;
+                float preyPerPredator = math.select(
+                    starvationComfortPreyPerPredator,
+                    state.PreyPopulationRounded * math.rcp(math.max(1f, state.PredatorPopulationRounded)),
+                    state.PredatorPopulationRounded > 0);
                 float invStarvationComfort = math.rcp(math.max(1f, starvationComfortPreyPerPredator));
                 _headlessEntities.Hunger[slotIndex] = PackUnitByte(1f - preyPerPredator * invStarvationComfort);
             }
@@ -2705,9 +2709,9 @@ namespace Hecton8.World
             out int predatorPopulation)
         {
             uint apexBucket = (MixSectorBits(sectorCoord.x, sectorCoord.y) >> 4) & 0x0Fu;
-            bool spawnLeviathan = apexBucket < (uint)math.clamp(apexBucketCutoff, 0, ApexSectorBucketCount);
-            preyPopulation = spawnLeviathan ? 0 : math.max(0, grazerPopulationPerSector);
-            predatorPopulation = spawnLeviathan ? math.max(0, leviathanPopulationPerSector) : 0;
+            int spawnLeviathanMask = math.select(0, 1, apexBucket < (uint)math.clamp(apexBucketCutoff, 0, ApexSectorBucketCount));
+            preyPopulation = math.max(0, grazerPopulationPerSector) * (1 - spawnLeviathanMask);
+            predatorPopulation = math.max(0, leviathanPopulationPerSector) * spawnLeviathanMask;
         }
 
         private static float ResolveSectorFoodDensity01(int2 sectorCoord, int biomeId, float harvestPressure01, float algaeBloom01)
@@ -2833,6 +2837,11 @@ namespace Hecton8.World
         private static byte PackUnitByte(float value)
         {
             return (byte)math.clamp(RoundPositiveToInt(math.saturate(value) * 255f), 0, 255);
+        }
+
+        private static byte PackBooleanByte(bool value)
+        {
+            return (byte)math.select(0, 1, value);
         }
 
     }
