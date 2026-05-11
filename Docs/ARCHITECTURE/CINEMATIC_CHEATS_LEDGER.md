@@ -45,6 +45,8 @@ Mandate authority:
 
 | Cheat | Source evidence | Expensive path avoided | Runtime-proof state |
 |---|---|---|---|
+| Bio-root sway LUT | `Assets/_Project/Scripts/CaveBioRootsGenerator.cs` uses a 1024-sample sine LUT plus quarter-wave cosine lookup for purely visual root sway. | Per-root, per-frame `Mathf.Sin`/`Mathf.Cos` calls for decorative cave vegetation motion. | Source verified; profiler/GCMonitor proof still required. |
+| Bio-root deterministic hash | `CaveBioRootsGenerator.Hash01(...)` uses an integer avalanche hash for placement/phase seeds. | Trigonometric pseudo-random hash and any `UnityEngine.Random` dependency for stable cave dressing. | Source verified; placement replay proof still required. |
 | Local rain shelter gate | `Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs` uses cached `BuoyancyObject.IsInDryZone` for local screen-space rain exposure. | Upward shelter physics raycast and TempJob raycast buffers for a visual-only rain effect. | Source verified; profiler/GCMonitor proof still required. |
 | AUP thunder distance | `HectonSurfaceWeatherDirector.ResolveAupThunderDistanceMeters(...)` computes thunder delay from `AbsoluteUniversePosition.DistanceSq(...)`. | Camera-relative `Vector3` distance drift for large-world weather logic. | Source verified; runtime event replay still required. |
 | Acoustic radar shader presentation | `SuitHUDV4CanvasOverlay` feeds a compact radar texture/material overlay from `SpatialAudioManager` radar payloads. | Per-blip world objects or full UI hierarchy mutation for passive acoustic feedback. | Source verified; HUD GC and canvas rebuild proof still required. |

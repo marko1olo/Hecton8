@@ -3019,7 +3019,7 @@ namespace Hecton8.Inventory
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
             float playerMass = playerBody != null ? Mathf.Max(0.1f, playerBody.mass) : 80f;
-            return Mathf.Max(0f, impactSignal.Force / (playerMass * 9.81f));
+            return math.max(0f, impactSignal.Force * math.rcp(playerMass * 9.81f));
         }
 
         private void ApplyKineticInventoryDamage()
@@ -3094,9 +3094,7 @@ namespace Hecton8.Inventory
                 return false;
 
             ushort currentQualityMilli = _qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli;
-            ushort nextQualityMilli = (ushort)(currentQualityMilli / 2);
-            if (nextQualityMilli == currentQualityMilli && currentQualityMilli > 0)
-                nextQualityMilli = (ushort)Mathf.Max(0, currentQualityMilli - 1);
+            ushort nextQualityMilli = (ushort)(currentQualityMilli >> 1);
 
             if (nextQualityMilli <= 0)
             {
@@ -3360,7 +3358,7 @@ namespace Hecton8.Inventory
             float ambientTemperature = survival != null ? survival.EnvironmentTemperature : 2f;
             float tempFactor = ApproximateExpSigned((ambientTemperature - 4f) * 0.05f);
             uint elapsedSeconds = nowTimestamp >= lastTimestamp ? nowTimestamp - lastTimestamp : 0u;
-            float currentQuality = math.clamp((_qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli) / 1000f, 0f, 1f);
+            float currentQuality = math.clamp((_qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli) * 0.001f, 0f, 1f);
             float decayedQuality = math.clamp(currentQuality - (elapsedSeconds * 0.001f * tempFactor), 0f, 1f);
             _qualityMilli[anchorIndex] = (ushort)math.clamp((int)math.round(decayedQuality * 1000f), 0, 1000);
             _lastUpdateUnixSeconds[anchorIndex] = nowTimestamp;
@@ -3391,14 +3389,14 @@ namespace Hecton8.Inventory
         {
             x = math.max(0f, x);
             float x2 = x * x;
-            return math.saturate(1f / (1f + x + (0.48f * x2) + (0.235f * x2 * x)));
+            return math.saturate(math.rcp(1f + x + (0.48f * x2) + (0.235f * x2 * x)));
         }
 
         private static float ApproximateExpSigned(float x)
         {
             return x < 0f
                 ? ApproximateExpNegPositiveInput(-x)
-                : 1f / ApproximateExpNegPositiveInput(math.min(x, 4f));
+                : math.rcp(ApproximateExpNegPositiveInput(math.min(x, 4f)));
         }
 
         private bool IsValidCraftReservation(in CraftReservation reservation)

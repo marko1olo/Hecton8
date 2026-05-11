@@ -422,7 +422,7 @@ namespace Hecton8.Celestial
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3000)]  // v5.1: MUST tick AFTER UnderwaterVisuals(-4000)
-public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixEventListener
+    public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixEventListener
     {
         private const string MandatedSkyMaterialName = "Mat_HectonSky";
         private const float SurfaceCloudShadowCookieEpsilon = 0.0001f;
@@ -442,7 +442,6 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         // KONFIGURATsIYa
         // ─────────────────────────────────────────────
 
-        [Header("═══ REFERENCES ═══")]
         [Serializable]
         private struct KeplerOrbitDefinition
         {
@@ -528,7 +527,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         [SerializeField] private Transform playerTransform;
         [SerializeField] private HectonAtmosphereManager _atmosphereManager;
 
-        [Header("═══ SKY MATERIAL ═══")]
+        [Header("Sky Material")]
         [SerializeField] private Material _skyMaterial;
         [SerializeField] private float _cloudSpeed = 0.01f;
 
@@ -544,7 +543,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         [SerializeField, Min(8f)] private float aegirRingShadowCookieSize = 1800f;
         [SerializeField, Range(-0.25f, 0.25f)] private float aegirRingShadowHorizonThreshold = 0.02f;
 
-        [Header("═══ SKY COLOR PROFILES ═══")]
+        [Header("Sky Color Profiles")]
         [HideInInspector]
         [SerializeField] private SkyColorProfile _dayProfile = new SkyColorProfile
         {
@@ -569,7 +568,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
             nadirColor   = new Color(0.005f, 0.003f, 0.01f, 1f)
         };
 
-        [Header("═══ HORIZON RESPONSE ═══")]
+        [Header("Horizon Response")]
         [HideInInspector]
         [Tooltip("Compresses horizon luminance so the sky and gas giant dissolve into the same atmospheric band instead of reading as separate layers.")]
         [SerializeField, Range(0.25f, 1f)] private float _horizonBrightnessScale = 0.72f;
@@ -577,7 +576,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         [Tooltip("Pulls the horizon tint back toward the zenith hue to avoid a chalk-white band near the waterline.")]
         [SerializeField, Range(0f, 1f)] private float _horizonZenithBlend = 0.3f;
 
-        [Header("═══ CELESTIAL ATMOSPHERE VEIL ═══")]
+        [Header("Celestial Atmosphere Veil")]
         [Tooltip("Thickens the horizon veil. Raise this first when the bottom of Aegir or the moons still reads as a hard cutout at the sea line.")]
         [SerializeField, Range(0f, 4f)] private float horizonDensity = 1.35f;
         [Tooltip("Clears the zenith portion of the atmosphere so the gas giant belts and moon detail stay readable overhead.")]
@@ -585,7 +584,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         [Tooltip("Controls how long the horizon veil holds before relaxing toward the zenith. Higher values keep the sky-color dissolve lower for longer.")]
         [SerializeField, Range(0.35f, 4f)] private float atmosphereBlendPower = 1.4f;
 
-        [Header("═══ SURFACE HAZE TUNING ═══")]
+        [Header("Surface Haze Tuning")]
         [Tooltip("Master multiplier for above-water distance haze. Raise this first when coastlines and sea stay too sharp at long range.")]
         [SerializeField, Range(0.5f, 3f)] private float _surfaceFogDensityMultiplier = 1.35f;
         [Tooltip("Extra strength for the sky-material horizon haze band. Raise this if the air still feels too clean after fog density is correct.")]
@@ -610,7 +609,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         [SerializeField, Range(0.02f, 0.24f)] private float _surfaceHorizonMistShelfSoftness = 0.1f;
 
         [Space(10)]
-        [Header("═══ AEGIR ATMOSPHERE COMPOSITE ═══")]
+        [Header("Aegir Atmosphere Composite")]
         [Tooltip("Base transmittance multiplier pushed into Aegir. Lower values keep more cloud-band body color visible through haze; higher values let the sky occlude the disc earlier.")]
         [SerializeField, Range(0f, 1.5f)] private float _atmosphereTransmittanceWeight = 0.92f;
         [Tooltip("Base in-scattering multiplier pushed into Aegir. Raise this when you want more sky glow near the horizon; lower it when Aegir starts reading as a flat fog disk.")]
@@ -654,18 +653,18 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         [HideInInspector]
         [SerializeField] private int _visualDefaultsVersion;
 
-        [Header("═══ SUN OCCLUSION ═══")]
+        [Header("Sun Occlusion")]
         [SerializeField] private LensFlareComponentSRP _sunLensFlare;
         [SerializeField] private float sunDistance = 100000f;
         [SerializeField] private Transform sunVisualTransform;
         [SerializeField] private float flareFadeSpeed = 5.0f;
 
-        [Header("═══ SKYBOX ═══")]
+        [Header("Skybox")]
         [SerializeField] private Material daySkybox;
         [SerializeField] private Material nightSkybox;
         [SerializeField] private Material blendedSkyboxMaterial;
 
-        [Header("═══ DEEP VRAM GATE ═══")]
+        [Header("Deep VRAM Gate")]
         [Tooltip("Below this depth, celestial textures are detached from runtime materials to reduce deep-water VRAM residency. Asset imports are not modified.")]
         [SerializeField, Min(0f)] private float deepTextureUnloadDepth = 1000f;
         [Tooltip("Keeps celestial texture residency reduced until the player climbs clearly out of the deep-water threshold instead of thrashing at one boundary.")]
@@ -679,12 +678,12 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         [Tooltip("Render-scale threshold required before celestial textures are restored after a perf-pressure reduction.")]
         [SerializeField, Range(0.5f, 1f)] private float adaptiveDeepTextureRestoreRenderScale = 0.9f;
 
-        [Header("═══ ORBITAL PARAMETERS ═══")]
+        [Header("Orbital Parameters")]
         [SerializeField] private float orbitalPeriod = 3600f;
         [SerializeField] private Vector3 sunOrbitAxis = Vector3.right;
         [SerializeField] private float sunStartAngle;
 
-        [Header("═══ ECLIPSE DETECTION ═══")]
+        [Header("Eclipse Detection")]
         [SerializeField] private float eclipseAngularRadiusOverride;
         [SerializeField] private bool useCinematicEclipseOccluderRadius = true;
         [SerializeField, Range(0.05f, 5f)] private float cinematicEclipseOccluderRadiusDegrees = 1.15f;
@@ -697,12 +696,12 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         [SerializeField, Range(0.5f, 15f)] private float lunarResonanceAlignmentDegrees = 5f;
         [SerializeField, Range(1f, 5f)] private float lunarResonanceBiolumMultiplier = 3f;
 
-        [Header("═══ ECLIPSE BACKLIGHT ═══")]
+        [Header("Eclipse Backlight")]
         [SerializeField] private float backlitAlignmentSoftStart = 0.97f;
         [SerializeField] private float backlitAlignmentFullStart = 0.995f;
         [SerializeField] private float backlitFactorMultiplier = 1.0f;
 
-        [Header("═══ PLANET-SHINE ═══")]
+        [Header("Planet Shine")]
         [SerializeField] private float planetShineMaxIntensity = 0.35f;
         [SerializeField] private Color planetShineColor = Color.HSVToRGB(0.75f, 0.2f, 0.9f);
         [SerializeField] private float planetShineNewMoonThreshold = 0.1f;
@@ -713,7 +712,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         [SerializeField, Range(0.5f, 0.999f)] private float moonPhaseShadowStartDot = 0.82f;
         [SerializeField, Range(0.5f, 0.999f)] private float moonPhaseShadowFullDot = 0.985f;
 
-        [Header("═══ SHADER PARAMETERS ═══")]
+        [Header("Shader Parameters")]
         [SerializeField] private float equatorialRotationSpeed = 0.02f;
         [SerializeField] private float polarRotationMultiplier = 0.4f;
         [SerializeField] private float backlitIntensity = 0.08f;
@@ -746,7 +745,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         [SerializeField, Range(0.005f, 0.45f)] private float aegirRingCausticSoftness = 0.08f;
         [SerializeField, Range(0f, 0.25f)] private float aegirRingCausticScrollSpeed = 0.014f;
 
-        [Header("═══ TRANSITION CURVES ═══")]
+        [Header("Transition Curves")]
         [SerializeField] private float twilightStartAngle = 5f;
         [SerializeField] private float twilightEndAngle = -5f;
 

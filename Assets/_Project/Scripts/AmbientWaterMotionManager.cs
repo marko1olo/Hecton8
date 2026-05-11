@@ -55,9 +55,9 @@ namespace Hecton8.Physics
         // ── Registered objects ───────────────────────────────────────────────
         // List handles cache-friendly iteration; HashSet provides O(1) registration dedupe.
         private readonly List<AmbientWaterMotion> _objects =
-            new List<AmbientWaterMotion>(MotionCapacity); // COLD ALLOC: List<AmbientWaterMotion>[128] � active ambient-water motion registry � owner: AmbientWaterMotionManager
+            new List<AmbientWaterMotion>(MotionCapacity); // COLD ALLOC: List<AmbientWaterMotion>[128] - active ambient-water motion registry - owner: AmbientWaterMotionManager
         private readonly HashSet<AmbientWaterMotion> _objectsSet =
-            new HashSet<AmbientWaterMotion>(MotionCapacity); // COLD ALLOC: HashSet<AmbientWaterMotion>[128] � duplicate guard for ambient-water motion registry � owner: AmbientWaterMotionManager
+            new HashSet<AmbientWaterMotion>(MotionCapacity); // COLD ALLOC: HashSet<AmbientWaterMotion>[128] - duplicate guard for ambient-water motion registry - owner: AmbientWaterMotionManager
 
         private float _time;
         private int   _frameCounter;
@@ -125,7 +125,7 @@ namespace Hecton8.Physics
         }
 
         // ════════════════════════════════════════════════════════════════════
-        //  REGISTRATION — O(1) deduplikatsiya cherez HashSet
+        //  REGISTRATION - O(1) dedupe through HashSet
         // ════════════════════════════════════════════════════════════════════
 
         public void Register(AmbientWaterMotion motion)
