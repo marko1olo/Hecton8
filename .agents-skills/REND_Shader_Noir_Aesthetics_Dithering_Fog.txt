@@ -1,4 +1,10 @@
 # SHADER_AESTHETICS_NOIR.md
+## 2026-05-11 VISUAL-FAKE OVERRIDE
+
+[RULE] Noir realism is carried by controlled post, fog, LUTs, dither, authored masks, and lighting eligibility, not physical atmospheric simulation.
+[RULE] MX350 path uses depth fog/LUT haze and baked AO; raymarch fog is MED+/HIGH only after profiler proof.
+[FORBID] URP SSAO. If screen-space AO is used, it is the custom half-res SSDO path from the render mandate, or baked AO only.
+
 # HECTON-8 | Distilled Technical Mandate | Rev 1.0
 
 ---
@@ -224,7 +230,7 @@ Single RGBA texture `_NoirMaskTex` per material:
 R → Emissive Mask      (0=no emissive, 1=full emissive bleed)
 G → Scratches/Wear     (feeds roughness + normal micro-detail)
 B → Moisture/Wetness   (modulates specular, adds refraction wobble)
-A → Ambient Occlusion  (baked micro-AO, multiplied with SSAO)
+A → Ambient Occlusion  (baked micro-AO, multiplied with custom SSDO on MED+ or baked-only on MX350)
 
 ### 6.1 Channel Decode Patterns
 

@@ -36,12 +36,20 @@ namespace Hecton8.Audio
         private const float NaturalLogTen = 2.3025851f;
         private const float HullNoiseFloor = 0.0001f;
         private const float SonarChirpDurationSeconds = 0.5f;
+        private const float SonarChirpDurationSecondsInv = 2f;
+        private const float SonarTailAttackSeconds = 0.24f;
+        private const float SonarTailAttackSecondsInv = 4.1666665f;
         private const float SonarTailDurationSeconds = 3.8f;
         private const float SonarTotalDurationSeconds = 4.0f;
         private const float SoundSpeedWaterMetersPerSecond = 1480f;
+        private const float SoundSpeedWaterMetersPerSecondInv = 0.0006756757f;
         private const float PredatorKillAudioRadiusMeters = 90f;
+        private const float PredatorKillAudioRadiusMetersInv = 0.011111111f;
         private const float MeteorBoomAudioRadiusMeters = 42f;
+        private const float MeteorBoomAudioRadiusMetersInv = 0.023809524f;
         private const float MechanicalWhirrAudioRadiusMeters = 18f;
+        private const float MechanicalWhirrAudioRadiusMetersInv = 0.055555556f;
+        private const float MechanicalWhirrPitchCutoffInv = 0.00083333335f;
         private const float SonarEchoReferenceDistanceMeters = 24f;
         private const float SonarEchoMaximumDistanceMeters = 1800f;
         private const float SonarEchoMaximumDelaySeconds = 2.2f;
@@ -65,7 +73,7 @@ namespace Hecton8.Audio
         private const float HullGroanLoopPitchMaximum = 1.2f;
         private const float HullGroanLoopPitchUpdateIntervalSeconds = 0.18f;
         private const float AbyssalLowPassStartDepthMeters = 500f;
-        private const float AbyssalLowPassFadeDepthMeters = 4500f;
+        private const float AbyssalLowPassFadeDepthMetersInv = 0.00022222222f;
         private const float AbyssalLowPassCutoffHertz = 380f;
         private const float PsychoacousticPressureReferenceDepthMeters = 500f;
         private const float PsychoacousticPressureMinimumCutoffHertz = 420f;
@@ -75,7 +83,10 @@ namespace Hecton8.Audio
         private const float MinimumFilterWetMixDb = -10000f;
         private const float BiquadDenormalBias = 1e-15f;
         private const float PressureCreakDepthReferenceMeters = 4000f;
+        private const float PressureCreakDepthReferenceMetersInv = 0.00025f;
         private const float StructuralBreachAreaReferenceSquareMeters = 12f;
+        private const float StructuralBreachAreaReferenceSquareMetersInv = 0.083333333f;
+        private const float StructuralBreachCellCountInv = 0.041666667f;
         private const float StructuralStressFollowSharpness = 4.5f;
         private const float PressureCreakMinimumEventsPerSecond = 0.2f;
         private const float PressureCreakMaximumEventsPerSecond = 1.0f;
@@ -98,10 +109,10 @@ namespace Hecton8.Audio
         private const float HullSubBassMaximumGain = 0.22f;
         private const float DepthSubwooferBoostFrequencyHertz = 30f;
         private const float DepthSubwooferBoostStartDepthMeters = 1000f;
-        private const float DepthSubwooferBoostFullDepthMeters = 6000f;
+        private const float DepthSubwooferBoostDepthRangeInv = 0.0002f;
         private const float DepthSubwooferBoostMaximumGain = 0.16f;
         private const float AbyssalHullDistortionStartDepthMeters = 2200f;
-        private const float AbyssalHullDistortionFullDepthMeters = 6200f;
+        private const float AbyssalHullDistortionDepthRangeInv = 0.00025f;
         private const float AbyssalHullDistortionMaximumBlend = 0.24f;
         private const float AbyssalHullDistortionMaximumDrive = 2.35f;
         private const float HullLfeThreatMinimum01 = 0.12f;
@@ -156,6 +167,7 @@ namespace Hecton8.Audio
         private const int SonarEchoCompositeCandidateCapacity = 32;
         private const int SonarEchoCompositeGroupCapacity = 8;
         private const double SonarEchoCompositeCellSizeMeters = 10d;
+        private const double SonarEchoCompositeCellSizeMetersInv = 0.1d;
         private const float SonarEchoMinimumDopplerRatio = 0.05f;
         private const float SonarEchoMaximumDopplerRatio = 4f;
         private const int ImpactClangDelayCapacity = 1024;
@@ -506,6 +518,7 @@ namespace Hecton8.Audio
         private readonly ManualResetEventSlim _audioProducerWakeSignal = new(false);
         private int _frameCapacity;
         private int _sampleRate;
+        private int _sonarTotalDurationSamples;
         private bool _buffersInitialized;
         private bool _runtimeRegistered;
         private bool _registered;
@@ -1406,8 +1419,8 @@ namespace Hecton8.Audio
             _structuralHullStressTickValue = math.lerp(_structuralHullStressTickValue, structuralStressTarget, structuralBlendT);
             _targetStructuralHullStressValue = _structuralHullStressTickValue;
             float structuralStressVelocityTarget = math.saturate(
-                math.abs(structuralStressTarget - _structuralHullStressTickValue) /
-                math.max(PressureCreakDerivativeReferencePerSecond * deltaTime, 0.0001f));
+                math.abs(structuralStressTarget - _structuralHullStressTickValue) *
+                math.rcp(math.max(PressureCreakDerivativeReferencePerSecond * deltaTime, 0.0001f)));
             _structuralHullStressVelocityTickValue = math.lerp(
                 _structuralHullStressVelocityTickValue,
                 structuralStressVelocityTarget,
@@ -1716,7 +1729,7 @@ namespace Hecton8.Audio
                 return;
 
             long elapsedTicks = Interlocked.Read(ref _dspProducerLastOverBudgetTicks);
-            float elapsedMilliseconds = (float)((elapsedTicks * 1000d) / System.Diagnostics.Stopwatch.Frequency);
+            float elapsedMilliseconds = (float)(elapsedTicks * 1000d * (double)math.rcp((float)System.Diagnostics.Stopwatch.Frequency));
             GlobalTelemetryBus.PublishPerformanceWarning(
                 _dspProducerOverBudgetWarningHash,
                 _dspProducerContextHash,
@@ -1854,7 +1867,7 @@ namespace Hecton8.Audio
             float speedRange = math.max(
                 VehicleCavitationScreechFullMetersPerSecond - VehicleCavitationScreechStartMetersPerSecond,
                 0.01f);
-            return math.saturate((math.max(0f, speedMetersPerSecond) - VehicleCavitationScreechStartMetersPerSecond) / speedRange);
+            return math.saturate((math.max(0f, speedMetersPerSecond) - VehicleCavitationScreechStartMetersPerSecond) * math.rcp(speedRange));
         }
 
         private void UpdateCaveReverb(float deltaTime)
@@ -2192,7 +2205,7 @@ namespace Hecton8.Audio
             {
                 SonarEchoCompositeGroup group = _sonarEchoCompositeGroups[i];
                 int hitCount = math.max(1, group.HitCount);
-                float invHitCount = 1f / hitCount;
+                float invHitCount = math.rcp((float)hitCount);
                 float hitScale = ResolveSonarCompositeHitScale(hitCount);
                 EnqueueCompositeAcousticEcho(
                     group.DistanceMeters * invHitCount,
@@ -2314,11 +2327,10 @@ namespace Hecton8.Audio
             const uint primeY = 19349663u;
             const uint primeZ = 83492791u;
             const uint primeMaterial = 2654435761u;
-            double cellSize = SonarEchoCompositeCellSizeMeters;
             double sectorSize = 5000d;
-            int cellX = FastFloorToInt(((position.GridX * sectorSize) + position.LocalX) / cellSize);
-            int cellY = FastFloorToInt(((position.GridY * sectorSize) + position.LocalY) / cellSize);
-            int cellZ = FastFloorToInt(((position.GridZ * sectorSize) + position.LocalZ) / cellSize);
+            int cellX = FastFloorToInt(((position.GridX * sectorSize) + position.LocalX) * SonarEchoCompositeCellSizeMetersInv);
+            int cellY = FastFloorToInt(((position.GridY * sectorSize) + position.LocalY) * SonarEchoCompositeCellSizeMetersInv);
+            int cellZ = FastFloorToInt(((position.GridZ * sectorSize) + position.LocalZ) * SonarEchoCompositeCellSizeMetersInv);
 
             unchecked
             {
@@ -2336,9 +2348,9 @@ namespace Hecton8.Audio
             float resonanceScale = math.clamp(resonance, 0.65f, 1.45f);
             float materialPitchScale = ResolveSonarMaterialPitchScale(audioMaterialId);
             float materialDecayMultiplier = ResolveSonarMaterialDecayMultiplier(audioMaterialId);
-            float resonance01 = math.saturate((resonanceScale - 0.65f) / 0.8f);
+            float resonance01 = math.saturate((resonanceScale - 0.65f) * 1.25f);
             float roundTripDistance = math.max(0f, distanceMeters) * 2f;
-            float echoDelaySeconds = math.clamp(roundTripDistance / SoundSpeedWaterMetersPerSecond, 0f, SonarEchoMaximumDelaySeconds);
+            float echoDelaySeconds = math.clamp(roundTripDistance * SoundSpeedWaterMetersPerSecondInv, 0f, SonarEchoMaximumDelaySeconds);
             float echoAttenuation = ApproximateExpNegPositive(roundTripDistance * SonarEchoAbsorptionCoefficient);
             float echoExcitation = math.saturate(
                 returnStrength *
@@ -2531,7 +2543,7 @@ namespace Hecton8.Audio
 
             float proximity = isPlayerOwnedImpact
                 ? 1f
-                : 1f - math.saturate(distance / maxDistance);
+                : 1f - math.saturate(distance * math.rcp(math.max(maxDistance, 0.001f)));
             if (!impactSignal.IsHeavy && impactSignal.MassVelocity < PhysicsImpactMinimumAudibleMassVelocity)
                 return;
 
@@ -2617,7 +2629,7 @@ namespace Hecton8.Audio
                 : 0f;
             float clangExcitation = math.saturate(audible01 * materialPitchScale * threatScale);
             float echoExcitation = math.saturate(audible01 * materialDecayMultiplier * 0.72f);
-            float echoDelaySeconds = math.clamp(distance / SoundSpeedWaterMetersPerSecond, 0f, SonarEchoMaximumDelaySeconds);
+            float echoDelaySeconds = math.clamp(distance * SoundSpeedWaterMetersPerSecondInv, 0f, SonarEchoMaximumDelaySeconds);
             float echoLowPassCutoffHz = ResolveSonarMaterialLowPassCutoffHz(
                 impulseEvent.AudioMaterialId,
                 math.lerp(720f, AcousticOcclusionUtility.OpenLowPassCutoffHertz, proximity));
@@ -2659,13 +2671,13 @@ namespace Hecton8.Audio
             if (!TryResolveBoundPlayerDistanceWithin(info.WorldPosition, PredatorKillAudioRadiusMeters, out float distance))
                 return;
 
-            float proximity = 1f - math.saturate(distance / PredatorKillAudioRadiusMeters);
+            float proximity = 1f - math.saturate(distance * PredatorKillAudioRadiusMetersInv);
             float transmission01 = math.saturate(info.AcousticTransmission01);
             float audible01 = math.saturate(info.Intensity * proximity * math.max(0.08f, transmission01));
             if (audible01 <= 0.001f)
                 return;
 
-            float echoDelaySeconds = math.clamp(distance / SoundSpeedWaterMetersPerSecond, 0f, SonarEchoMaximumDelaySeconds);
+            float echoDelaySeconds = math.clamp(distance * SoundSpeedWaterMetersPerSecondInv, 0f, SonarEchoMaximumDelaySeconds);
             float echoLowPassCutoffHz = math.clamp(
                 math.min(info.LowPassCutoffHz, math.lerp(420f, AcousticOcclusionUtility.OpenLowPassCutoffHertz, transmission01)),
                 AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
@@ -2691,12 +2703,12 @@ namespace Hecton8.Audio
             if (!TryResolveBoundPlayerDistanceWithin(info.WorldPosition, MeteorBoomAudioRadiusMeters, out float distance))
                 return;
 
-            float proximity = 1f - math.saturate(distance / MeteorBoomAudioRadiusMeters);
+            float proximity = 1f - math.saturate(distance * MeteorBoomAudioRadiusMetersInv);
             float audible01 = math.saturate(info.Intensity * proximity * math.max(0.2f, info.AcousticTransmission01));
             if (audible01 <= 0.001f)
                 return;
 
-            float echoDelaySeconds = math.clamp(distance / SoundSpeedWaterMetersPerSecond, 0f, SonarEchoMaximumDelaySeconds);
+            float echoDelaySeconds = math.clamp(distance * SoundSpeedWaterMetersPerSecondInv, 0f, SonarEchoMaximumDelaySeconds);
             float lowPassCutoffHz = math.clamp(
                 info.LowPassCutoffHz,
                 AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
@@ -2721,12 +2733,12 @@ namespace Hecton8.Audio
             if (!TryResolveBoundPlayerDistanceWithin(info.WorldPosition, MechanicalWhirrAudioRadiusMeters, out float distance))
                 return;
 
-            float proximity = 1f - math.saturate(distance / MechanicalWhirrAudioRadiusMeters);
+            float proximity = 1f - math.saturate(distance * MechanicalWhirrAudioRadiusMetersInv);
             float audible01 = math.saturate(info.Intensity * proximity * math.max(0.18f, info.AcousticTransmission01));
             if (audible01 <= 0.001f)
                 return;
 
-            float pitchScale = math.clamp(info.LowPassCutoffHz / 1200f, 0.75f, 1.45f);
+            float pitchScale = math.clamp(info.LowPassCutoffHz * MechanicalWhirrPitchCutoffInv, 0.75f, 1.45f);
             TryEnqueueImpactAudioEvent(
                 audible01 * 0.1f,
                 audible01 * 0.55f,
@@ -2754,7 +2766,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            float proximity = 1f - math.saturate(distance / maxDistance);
+            float proximity = 1f - math.saturate(distance * math.rcp(math.max(maxDistance, 0.001f)));
             float transmission01 = math.saturate(info.AcousticTransmission01);
             float aggroLevel = math.saturate(math.max(info.Intensity, info.ChirpDurationSeconds) * proximity * math.max(0.1f, transmission01));
             if (aggroLevel <= 0.001f)
@@ -2807,7 +2819,7 @@ namespace Hecton8.Audio
             }
 
             float deltaTime = math.max(0.0001f, now - _lastLeviathanRoarSampleTime);
-            float radialVelocity = (_lastLeviathanRoarDistanceMeters - currentDistance) / deltaTime;
+            float radialVelocity = (_lastLeviathanRoarDistanceMeters - currentDistance) * math.rcp(deltaTime);
             radialVelocity = math.clamp(
                 radialVelocity,
                 -LeviathanDopplerVelocityClampMetersPerSecond,
@@ -2837,7 +2849,7 @@ namespace Hecton8.Audio
             if (!TryResolveBoundPlayerDistanceWithin(stressInfo.WorldPosition, maxDistance, out float distance))
                 return;
 
-            float proximity = 1f - math.saturate(distance / maxDistance);
+            float proximity = 1f - math.saturate(distance * math.rcp(math.max(maxDistance, 0.001f)));
             float stress = math.saturate(stressInfo.Stress01 * math.max(0.25f, proximity));
             if (stress <= 0f)
                 return;
@@ -2890,7 +2902,7 @@ namespace Hecton8.Audio
 
         private static float ResolveImpactVolume01FromMassVelocity(float massVelocity)
         {
-            return math.saturate(math.max(0f, massVelocity) / PhysicsImpactMassVelocityReference);
+            return math.saturate(math.max(0f, massVelocity) * math.rcp(PhysicsImpactMassVelocityReference));
         }
 
         private static float ResolveImpactClangMaterialMultiplier(byte materialId)
@@ -3149,6 +3161,7 @@ namespace Hecton8.Audio
         private void RefreshSabineDelaySamples()
         {
             float sampleRate = math.max(_sampleRate, 1);
+            _sonarTotalDurationSamples = math.max(1, (int)(SonarTotalDurationSeconds * sampleRate + 0.999f));
             _sabineDelaySamplesA = ResolveSabineDelaySamples(SabineReverbDelayASeconds, sampleRate);
             _sabineDelaySamplesB = ResolveSabineDelaySamples(SabineReverbDelayBSeconds, sampleRate);
             _sabineDelaySamplesC = ResolveSabineDelaySamples(SabineReverbDelayCSeconds, sampleRate);
@@ -3574,8 +3587,8 @@ namespace Hecton8.Audio
         private float ResolveAbyssalLowPassTarget(float depthMeters)
         {
             return math.saturate(
-                (math.max(0f, depthMeters) - AbyssalLowPassStartDepthMeters) /
-                math.max(AbyssalLowPassFadeDepthMeters, 0.01f));
+                (math.max(0f, depthMeters) - AbyssalLowPassStartDepthMeters) *
+                AbyssalLowPassFadeDepthMetersInv);
         }
 
         private void UpdatePressureScrubberHumCache(
@@ -3717,10 +3730,10 @@ namespace Hecton8.Audio
             }
 
             float distanceMeters = math.min(forwardEcho.HitDistanceMeters, SonarEchoMaximumDistanceMeters);
-            echoDelaySeconds = math.min(distanceMeters / SoundSpeedWaterMetersPerSecond, SonarEchoMaximumDelaySeconds);
+            echoDelaySeconds = math.min(distanceMeters * SoundSpeedWaterMetersPerSecondInv, SonarEchoMaximumDelaySeconds);
             echoAttenuation = math.clamp(
                 echoExcitation *
-                (SonarEchoReferenceDistanceMeters / (SonarEchoReferenceDistanceMeters + distanceMeters)) *
+                (SonarEchoReferenceDistanceMeters * math.rcp(SonarEchoReferenceDistanceMeters + distanceMeters)) *
                 forwardEcho.Transmission01,
                 0f,
                 0.92f);
@@ -3885,7 +3898,7 @@ namespace Hecton8.Audio
                 float burstHash = Hash01(burstIndex ^ 0xB0E1C9A5u);
                 float burstGate = math.saturate((burstHash - burstThreshold) * burstDensityInv);
                 float burstOffset = sampleIndex & ToolCavitationBurstMask;
-                float burstEnvelope = math.saturate(burstOffset / 8f) * ApproximateExpNegPositive(0.085f * burstOffset);
+                float burstEnvelope = math.saturate(burstOffset * 0.125f) * ApproximateExpNegPositive(0.085f * burstOffset);
                 float white = XorShiftSigned(sampleIndex, 0x7E5A3C91u);
                 float high = HighBandNoise(sampleIndex ^ 0xA91F37D5u);
                 float shapedNoise = (white * 0.34f) + (high * 0.66f);
@@ -4141,7 +4154,7 @@ namespace Hecton8.Audio
             float x5 = x3 * x2;
             float mid = x2 * (3f - (2f * x));
             float broad = x * (2f - x);
-            float loadBlend = math.saturate((5f - sharpness) * (1f / 4.5f));
+            float loadBlend = math.saturate((5f - sharpness) * 0.22222222f);
             return math.lerp(math.lerp(x5, mid, loadBlend), broad, loadBlend * loadBlend);
         }
 
@@ -4584,7 +4597,7 @@ namespace Hecton8.Audio
 
         private static float ResolveHullPressureDepth01(float depthMeters)
         {
-            return math.saturate(math.max(0f, depthMeters) / PressureCreakDepthReferenceMeters);
+            return math.saturate(math.max(0f, depthMeters) * PressureCreakDepthReferenceMetersInv);
         }
 
         private float ResolveAbsoluteDepthMeters()
@@ -4694,8 +4707,8 @@ namespace Hecton8.Audio
             for (int wordIndex = 0; wordIndex < breachWordCount; wordIndex++)
                 breachedCellCount += CountBits(readModel.GetHullBreachMaskWord(wordIndex));
 
-            float breachAreaSeverity = math.saturate(totalBreachArea / StructuralBreachAreaReferenceSquareMeters);
-            float cellFailureSeverity = math.saturate(breachedCellCount / 24f);
+            float breachAreaSeverity = math.saturate(totalBreachArea * StructuralBreachAreaReferenceSquareMetersInv);
+            float cellFailureSeverity = math.saturate(breachedCellCount * StructuralBreachCellCountInv);
             float structuralSeverity = math.saturate(math.max(
                 breachAreaSeverity,
                 breachAreaSeverity * 0.65f + cellFailureSeverity * 0.35f));
@@ -4861,7 +4874,7 @@ namespace Hecton8.Audio
 
             float clampedIntensity = math.saturate(intensity);
             int clipCount = boilingWaterPoolClips != null ? boilingWaterPoolClips.Length : 0;
-            float perSourceMaximumVolume = math.saturate(boilingWaterLoopMaximumVolume) / activeSourceCount;
+            float perSourceMaximumVolume = math.saturate(boilingWaterLoopMaximumVolume) * math.rcp((float)math.max(activeSourceCount, 1));
             float now = Time.unscaledTime;
             bool shouldRefreshPitch = now >= _boilingLoopNextPitchUpdateTime;
             if (shouldRefreshPitch)
@@ -4987,7 +5000,7 @@ namespace Hecton8.Audio
         {
             Vector3 velocity = _playerRigidbody.linearVelocity;
             float downwardSpeed = math.max(0f, -velocity.y);
-            return math.saturate(downwardSpeed / 2.4f);
+            return math.saturate(downwardSpeed * 0.41666667f);
         }
 
         private static int NextPowerOfTwo(int value)
@@ -5165,6 +5178,7 @@ namespace Hecton8.Audio
             float impactMetallicImpulse = math.saturate(impactMetallicTarget);
             float previousStructuralSnap = structuralSnapStart;
             float frameTScale = frameCount > 1 ? math.rcp((float)(frameCount - 1)) : 0f;
+            int blockSampleRate = math.max(1, _sampleRate);
 
             for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
             {
@@ -5189,7 +5203,7 @@ namespace Hecton8.Audio
                 float pressureBed =
                     (LayeredBrownLike(sampleIndex) * pressureLfo * hullPressureBedAmount) * pressureStressDrive;
 
-                float pressureCreak = RenderPressureCreakSample(ref state, sampleIndex, stress, structuralStressVelocity, depthParam, invSampleRate);
+                float pressureCreak = RenderPressureCreakSample(ref state, sampleIndex, stress, structuralStressVelocity, depthParam, invSampleRate, blockSampleRate);
                 float granularMetal = RenderStructuralGranularSample(
                     ref state,
                     _metallicGrainBank,
@@ -5287,8 +5301,8 @@ namespace Hecton8.Audio
             int delayLeftSamples = rightDot > 0f ? delaySamples : 0;
             int delayRightSamples = rightDot < 0f ? delaySamples : 0;
             float shadowAlpha = ApproximateExpNegPositive(
-                (TwoPi * math.max(400f, shadowCutoffHertz)) /
-                math.max(_sampleRate, 1f));
+                (TwoPi * math.max(400f, shadowCutoffHertz)) *
+                math.rcp(math.max(_sampleRate, 1f)));
 
             for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
             {
@@ -5359,8 +5373,8 @@ namespace Hecton8.Audio
             int activeTapCount = activeTapBuffer.IsCreated
                 ? math.clamp(_workerActiveSonarTapCount, 0, math.min(SonarEchoTapCapacity, activeTapBuffer.Length))
                 : 0;
-            long maxActiveFrame = activeState.StartFrame + (long)math.ceil(SonarTotalDurationSeconds * math.max(_sampleRate, 1));
-            float dopplerFrameDelta = frameCount > 1 ? 1f / (frameCount - 1) : 1f;
+            long maxActiveFrame = activeState.StartFrame + math.max(1, _sonarTotalDurationSamples);
+            float dopplerFrameDelta = frameCount > 1 ? math.rcp((float)(frameCount - 1)) : 1f;
             for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
             {
                 long sampleFrame = blockStartFrame + frameIndex;
@@ -5385,7 +5399,7 @@ namespace Hecton8.Audio
                 float chirp = 0f;
                 if (age < SonarChirpDurationSeconds)
                 {
-                    float chirpT = math.saturate(age / SonarChirpDurationSeconds);
+                    float chirpT = math.saturate(age * SonarChirpDurationSecondsInv);
                     float chirpFrequency = math.lerp(2000f, 400f, chirpT);
                     float chirpEnv = ApproximateExpNegPositive(age * 5f);
                     chirp = chirpEnv * AdvanceSine(ref state.ChirpPhase, chirpFrequency, invSampleRate);
@@ -5460,7 +5474,7 @@ namespace Hecton8.Audio
                 if (age >= 0.08f)
                 {
                     float tailAge = age - 0.08f;
-                    float tailEnv = math.saturate(tailAge / 0.24f) * ApproximateExpNegPositive(tailAge * 0.95f);
+                    float tailEnv = math.saturate(tailAge * SonarTailAttackSecondsInv) * ApproximateExpNegPositive(tailAge * 0.95f);
                     float slowLfo = 0.55f + 0.45f * AdvanceSine(ref state.TailSlowPhase, 0.38d, invSampleRate);
                     float beat =
                         AdvanceSine(ref state.TailBeatAPhase, 150d, invSampleRate) +
@@ -5847,7 +5861,8 @@ namespace Hecton8.Audio
             float stress,
             float stressDerivative,
             float depthParam,
-            double invSampleRate)
+            double invSampleRate,
+            int sampleRate)
         {
             if (stress <= HullNoiseFloor || depthParam <= HullNoiseFloor)
                 return 0f;
@@ -5862,7 +5877,7 @@ namespace Hecton8.Audio
                 float eventThreshold = math.saturate(lambda * (float)invSampleRate);
                 if (Hash01(sampleIndex ^ 0x2C9D4F31u) <= eventThreshold)
                 {
-                    StartPressureCreakGrain(ref state, sampleIndex, stress, depthParam, stressDerivative, invSampleRate);
+                    StartPressureCreakGrain(ref state, sampleIndex, stress, depthParam, stressDerivative, sampleRate);
                     StartStructuralGranularLoop(ref state, sampleIndex, stress, stressDerivative, depthParam);
                 }
             }
@@ -5892,9 +5907,8 @@ namespace Hecton8.Audio
             float stress,
             float depthParam,
             float stressDerivative,
-            double invSampleRate)
+            int sampleRate)
         {
-            int sampleRate = math.max(1, (int)(1d / invSampleRate + 0.5d));
             int attackSamples = math.max(1, (int)(PressureCreakAttackSeconds * sampleRate + 0.5f));
             int decaySamples = math.max(1, (int)(PressureCreakDecaySeconds * sampleRate + 0.5f));
             int sustainSamples = math.max(1, (int)(math.lerp(PressureCreakSustainSeconds, PressureCreakSustainSeconds * 1.65f, stress) * sampleRate + 0.5f));
@@ -6000,8 +6014,8 @@ namespace Hecton8.Audio
             float triangle = 1f - (4f * math.abs((float)state.SubBassPhase - 0.5f));
             float amplitude = HullSubBassMaximumGain * math.saturate(depthParam * 0.85f + structuralStress * 0.15f);
             float boostedDepth01 = math.saturate(
-                (absoluteDepthMeters - DepthSubwooferBoostStartDepthMeters) /
-                math.max(DepthSubwooferBoostFullDepthMeters - DepthSubwooferBoostStartDepthMeters, 1f));
+                (absoluteDepthMeters - DepthSubwooferBoostStartDepthMeters) *
+                DepthSubwooferBoostDepthRangeInv);
             float depthSine = AdvanceSine(ref state.DepthSubwooferPhase, DepthSubwooferBoostFrequencyHertz, invSampleRate);
             float depthSineAmplitude =
                 DepthSubwooferBoostMaximumGain *
@@ -6112,8 +6126,8 @@ namespace Hecton8.Audio
         {
             float depthMeters = depthParam * PressureCreakDepthReferenceMeters;
             float depthBlend = math.saturate(
-                (depthMeters - AbyssalHullDistortionStartDepthMeters) /
-                math.max(1f, AbyssalHullDistortionFullDepthMeters - AbyssalHullDistortionStartDepthMeters));
+                (depthMeters - AbyssalHullDistortionStartDepthMeters) *
+                AbyssalHullDistortionDepthRangeInv);
             if (depthBlend <= HullNoiseFloor)
                 return sample;
 
@@ -6478,7 +6492,7 @@ namespace Hecton8.Audio
             state ^= state << 13;
             state ^= state >> 17;
             state ^= state << 5;
-            return (state & 0x00FFFFFFu) * (1f / 8388607.5f) - 1f;
+            return (state & 0x00FFFFFFu) * 0.000000119209296f - 1f;
         }
 
         private static float ResolveImpactPitchJitter(uint seed)
@@ -6487,13 +6501,13 @@ namespace Hecton8.Audio
             state ^= state << 13;
             state ^= state >> 17;
             state ^= state << 5;
-            return math.lerp(0.8f, 1.2f, (state & 0x00FFFFFFu) * (1f / 16777215f));
+            return math.lerp(0.8f, 1.2f, (state & 0x00FFFFFFu) * 0.000000059604648f);
         }
 
         private static float HashSigned(uint value)
         {
             value = HashUInt(value);
-            return (value & 0x00FFFFFFu) * (1f / 8388607.5f) - 1f;
+            return (value & 0x00FFFFFFu) * 0.000000119209296f - 1f;
         }
 
         private static uint HashUInt(uint value)

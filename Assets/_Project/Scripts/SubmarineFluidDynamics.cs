@@ -407,8 +407,8 @@ namespace Hecton8.Physics
         private SubmarineAtmosphereSystem _atmosphereSystem;
         private ISubmarineHullBreachReadModel _structuralBreachReadModel;
         private IHectonOceanKinematics _oceanKinematics;
-        private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) â€” local component search scratch for interface-only structural breach wiring â€” owner: SubmarineFluidDynamics
-        private readonly List<LogisticsPipeNode> _pipeBindingBuffer = new List<LogisticsPipeNode>(16); // COLD ALLOC: List<LogisticsPipeNode>(16) — rare cold-path pipe rupture propagation cache — owner: SubmarineFluidDynamics
+        private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>[4] - local component search scratch for structural breach wiring - owner: SubmarineFluidDynamics
+        private readonly List<LogisticsPipeNode> _pipeBindingBuffer = new List<LogisticsPipeNode>(16); // COLD ALLOC: List<LogisticsPipeNode>[16] - rare cold-path pipe rupture propagation cache - owner: SubmarineFluidDynamics
         // COLD ALLOC: Vector3[8] â€” cached local buoyancy sample points for exterior waterline force distribution â€” owner: SubmarineFluidDynamics
         private readonly Vector3[] _exteriorBuoyancySampleLocalPoints = new Vector3[ExteriorBuoyancySampleCount];
         // COLD ALLOC: SpatialQueryHit[16] â€” breach depressurization loose-body query scratch â€” owner: SubmarineFluidDynamics
@@ -685,15 +685,15 @@ namespace Hecton8.Physics
 
                 float3 floodCenter = DryCenterLocal;
                 if (totalFloodMass > Epsilon)
-                    floodCenter = weightedSum / totalFloodMass;
+                    floodCenter = weightedSum * math.rcp(totalFloodMass);
 
                 float maxFloodMass = totalCapacity * WaterDensityKgPerCubicMeter;
                 float floodMassRatio = maxFloodMass > Epsilon
-                    ? math.saturate(totalFloodMass / maxFloodMass)
+                    ? math.saturate(totalFloodMass * math.rcp(maxFloodMass))
                     : 0f;
 
-                float3 targetCenter = math.lerp(DryCenterLocal, floodCenter, floodMassRatio);
-                float3 inertiaTensor = math.lerp(DryInertiaTensor, FloodedInertiaTensor, floodMassRatio);
+                float3 targetCenter = LerpMad(DryCenterLocal, floodCenter, floodMassRatio);
+                float3 inertiaTensor = LerpMad(DryInertiaTensor, FloodedInertiaTensor, floodMassRatio);
 
                 Output[0] = new FloodMassPropertiesResult
                 {
@@ -929,10 +929,10 @@ namespace Hecton8.Physics
             float roomVolume = compartmentIndex < _compartmentMaxVolumes.Length
                 ? math.max(Epsilon, _compartmentMaxVolumes[compartmentIndex])
                 : Epsilon;
-            float compartmentRadius = math.pow(roomVolume / 4.1887903f, 0.33333334f);
+            float compartmentRadius = SafeCubeRoot(roomVolume * math.rcp(4.1887903f));
             float influenceRadius = math.max(0.5f, compartmentRadius + math.max(0f, depressurizationRoomRadiusPaddingMeters));
             float rawForceNewtons = pressureDeltaKPa * 1000f * math.max(Epsilon, breachAreaSquareMeters);
-            float baseAcceleration = rawForceNewtons / math.max(1f, depressurizationReferenceMassKilograms);
+            float baseAcceleration = rawForceNewtons * math.rcp(math.max(1f, depressurizationReferenceMassKilograms));
             float maximumAcceleration = math.max(0f, maximumDepressurizationAccelerationMetersPerSecondSquared);
             if (!math.isfinite(baseAcceleration) || baseAcceleration <= Epsilon || maximumAcceleration <= Epsilon)
                 return;
@@ -1204,7 +1204,7 @@ namespace Hecton8.Physics
 
             float cellVolume = ExteriorThermalCellSizeMeters * ExteriorThermalCellSizeMeters * ExteriorThermalCellSizeMeters;
             float cellMass = cellVolume * WaterDensityKgPerCubicMeter;
-            float deltaTemperature = heatEnergyJoules / math.max(1f, cellMass * ExteriorWaterSpecificHeatCapacityJoulesPerKilogramCelsius);
+            float deltaTemperature = heatEnergyJoules * math.rcp(math.max(1f, cellMass * ExteriorWaterSpecificHeatCapacityJoulesPerKilogramCelsius));
             if (!math.isfinite(deltaTemperature) || deltaTemperature <= 0f)
                 return;
 
@@ -1907,7 +1907,7 @@ namespace Hecton8.Physics
 
                 float compartmentCapacity = math.max(0f, _compartmentMaxVolumes[i]);
                 float compartmentWeight = compartmentCapacity > Epsilon
-                    ? compartmentCapacity / totalCapacity
+                    ? compartmentCapacity * math.rcp(totalCapacity)
                     : 0f;
                 float catastrophicBreachArea = clampedBreachAreaSquareMeters * compartmentWeight;
                 _compartmentBreachAreas[i] = catastrophicBreachArea;
@@ -1966,7 +1966,7 @@ namespace Hecton8.Physics
                 {
                     if ((_compartmentFlags[compartmentIndex] & FlagIceExpanded) != 0u)
                     {
-                        _compartmentFloodVolumes[compartmentIndex] = math.max(0f, currentVolume / IceExpansionVolumeScale);
+                        _compartmentFloodVolumes[compartmentIndex] = math.max(0f, currentVolume * math.rcp(IceExpansionVolumeScale));
                         _compartmentFlags[compartmentIndex] &= ~FlagIceExpanded;
                     }
 
@@ -2004,7 +2004,7 @@ namespace Hecton8.Physics
                 if (_atmosphereSystem.GetRoomTemperatureCelsius(compartmentIndex) < 0f)
                     continue;
 
-                _compartmentFloodVolumes[compartmentIndex] = math.max(0f, _compartmentFloodVolumes[compartmentIndex] / IceExpansionVolumeScale);
+                _compartmentFloodVolumes[compartmentIndex] = math.max(0f, _compartmentFloodVolumes[compartmentIndex] * math.rcp(IceExpansionVolumeScale));
                 _compartmentFlags[compartmentIndex] &= ~FlagIceExpanded;
             }
         }
@@ -2070,7 +2070,7 @@ namespace Hecton8.Physics
                 return;
 
             float maxVolume = math.max(Epsilon, _compartmentMaxVolumes[compartmentIndex]);
-            float fillRatio = math.saturate(_compartmentFloodVolumes[compartmentIndex] / maxVolume);
+            float fillRatio = math.saturate(_compartmentFloodVolumes[compartmentIndex] * math.rcp(maxVolume));
             if (fillRatio <= 0.1f)
                 return;
 
@@ -2156,7 +2156,7 @@ namespace Hecton8.Physics
                 return 1f;
 
             float totalGeneration = math.max(0f, powerGridService.TotalGeneration);
-            return math.saturate(totalGeneration / totalConsumption);
+            return math.saturate(totalGeneration * math.rcp(totalConsumption));
         }
 
         private int ResolveNearestCompartmentIndex(Vector3 localPosition)
@@ -2329,7 +2329,7 @@ namespace Hecton8.Physics
                     continue;
 
                 float rawForceNewtons = pressureDeltaKPa * 1000f * breachAreaSquareMeters;
-                float baseAcceleration = rawForceNewtons / referenceMassKilograms;
+                float baseAcceleration = rawForceNewtons * math.rcp(referenceMassKilograms);
                 if (!math.isfinite(baseAcceleration) || baseAcceleration <= Epsilon)
                     continue;
 
@@ -2483,7 +2483,7 @@ namespace Hecton8.Physics
             float roomVolume = compartmentIndex < _compartmentMaxVolumes.Length
                 ? math.max(Epsilon, _compartmentMaxVolumes[compartmentIndex])
                 : Epsilon;
-            float compartmentRadius = math.pow(roomVolume / 4.1887903f, 0.33333334f);
+            float compartmentRadius = SafeCubeRoot(roomVolume * math.rcp(4.1887903f));
             influenceRadius = math.max(0.5f, compartmentRadius + math.max(0f, depressurizationRoomRadiusPaddingMeters));
 
             Vector3 hullCenter = exteriorHullCollider != null ? exteriorHullCollider.bounds.center : _cachedTransform.position;
@@ -2700,7 +2700,7 @@ namespace Hecton8.Physics
                 _reportedFloodCenterOfMassLocal.x,
                 _reportedFloodCenterOfMassLocal.y,
                 _reportedFloodCenterOfMassLocal.z);
-            float3 blendedCenter = math.lerp(currentCenter, targetCenter, _reportedCenterBlendAlpha);
+            float3 blendedCenter = LerpMad(currentCenter, targetCenter, _reportedCenterBlendAlpha);
             if (!math.all(math.isfinite(blendedCenter)))
                 blendedCenter = currentCenter;
 
@@ -2781,7 +2781,7 @@ namespace Hecton8.Physics
                 floodMassRatio = 0f;
             }
 
-            float3 targetCenter = math.lerp(dryCenter, floodCenter, floodMassRatio);
+            float3 targetCenter = LerpMad(dryCenter, floodCenter, floodMassRatio);
             targetCenter = ApplyFloraOvergrowthCenterOfMassBias(targetCenter);
             if (!math.all(math.isfinite(targetCenter)))
                 targetCenter = dryCenter;
@@ -3007,7 +3007,7 @@ namespace Hecton8.Physics
 
                 submergedVolume += submergedSampleVolume;
 
-                Vector3 sampleAcceleration = Vector3.up * ((perSampleForceMagnitude * submersionFactor) / rigidbodyMass);
+                Vector3 sampleAcceleration = Vector3.up * ((perSampleForceMagnitude * submersionFactor) * math.rcp(rigidbodyMass));
                 if (!IsFiniteVector(sampleAcceleration))
                 {
                     EmergencyResetHydrodynamics();
@@ -3099,10 +3099,10 @@ namespace Hecton8.Physics
             float floraDensity01 = math.saturate(_currentFloraDragDensity01);
             float floraLinearMultiplier = math.max(
                 MinimumAnalyticalDragModifier,
-                math.lerp(1f, math.max(1f, floraDragLinearMultiplier), floraDensity01));
+                LerpMad(1f, math.max(1f, floraDragLinearMultiplier), floraDensity01));
             float floraAngularMultiplier = math.max(
                 MinimumAnalyticalDragModifier,
-                math.lerp(1f, math.max(1f, floraDragAngularMultiplier), floraDensity01));
+                LerpMad(1f, math.max(1f, floraDragAngularMultiplier), floraDensity01));
             _debugFloraDragDensity = floraDensity01;
             if (!float.IsFinite(criticalFloodRatio) ||
                 !float.IsFinite(dampingSubmersion) ||
@@ -3182,9 +3182,9 @@ namespace Hecton8.Physics
             if (densityCount <= 0)
                 return 0f;
 
-            float normalizedDensity = densitySum / densityCount;
-            float radiusScale = math.saturate(sampleRadius / math.max(floraDragMinimumSampleRadiusMeters, 0.01f));
-            return math.saturate(normalizedDensity * math.lerp(0.85f, 1.15f, math.saturate(radiusScale - 1f)));
+            float normalizedDensity = densitySum * math.rcp((float)densityCount);
+            float radiusScale = math.saturate(sampleRadius * math.rcp(math.max(floraDragMinimumSampleRadiusMeters, 0.01f)));
+            return math.saturate(normalizedDensity * LerpMad(0.85f, 1.15f, math.saturate(radiusScale - 1f)));
         }
 
         private static void AccumulateFloraDensitySample(
@@ -3234,7 +3234,7 @@ namespace Hecton8.Physics
 
                 if (currentTemperature > boilingPointCelsius)
                 {
-                    float intensity = math.saturate((currentTemperature - boilingPointCelsius) / 35f);
+                    float intensity = math.saturate((currentTemperature - boilingPointCelsius) * 0.028571428f);
                     int hazardId = ResolveExteriorThermalHazardId(slotIndex);
                     HectonHazardManager.Register(hazardId, cellCenter, intensity, ExteriorBoilingImpulseRadiusMeters, HazardType.Heat);
                     ApplyExteriorBoilingUpdraft(cellCenter, intensity, fixedDeltaTime);
@@ -3353,7 +3353,7 @@ namespace Hecton8.Physics
 
         private static Vector3 QuantizeExteriorThermalCell(Vector3 runtimePoint)
         {
-            float invCellSize = 1f / ExteriorThermalCellSizeMeters;
+            float invCellSize = math.rcp(ExteriorThermalCellSizeMeters);
             return new Vector3(
                 (math.floor(runtimePoint.x * invCellSize) + 0.5f) * ExteriorThermalCellSizeMeters,
                 (math.floor(runtimePoint.y * invCellSize) + 0.5f) * ExteriorThermalCellSizeMeters,
@@ -3468,7 +3468,7 @@ namespace Hecton8.Physics
                 }
 
                 float viscosity01 = _compartmentViscosity01.IsCreated ? math.saturate(_compartmentViscosity01[i]) : 0f;
-                float viscosityDamping = 1f / (1f + (viscosity01 * math.max(0f, viscositySloshDampingScale)));
+                float viscosityDamping = math.rcp(1f + (viscosity01 * math.max(0f, viscositySloshDampingScale)));
                 totalSloshTorque += -delayedAngularVelocity * (fillRatio * torqueScale * sloshMass * freesurf * viscosityDamping);
                 if (math.any(math.isnan(totalSloshTorque)) || !math.all(math.isfinite(totalSloshTorque)))
                 {
@@ -3486,7 +3486,7 @@ namespace Hecton8.Physics
                 if (torqueMagnitudeSq > maxTorqueMagnitudeSq && torqueMagnitudeSq > Epsilon)
                 {
                     float torqueMagnitude = ApproximateMagnitude(totalSloshTorque);
-                    float torqueClampScale = maxTorqueMagnitude / math.max(torqueMagnitude, Epsilon);
+                    float torqueClampScale = maxTorqueMagnitude * math.rcp(math.max(torqueMagnitude, Epsilon));
                     if (!math.isfinite(torqueClampScale))
                     {
                         EmergencyResetHydrodynamics();
@@ -3577,14 +3577,14 @@ namespace Hecton8.Physics
         private Vector3 ApplyHydrodynamicLinearInertiaScale(Vector3 force)
         {
             float scale = math.max(1f, _currentHydrodynamicLinearInertiaScale);
-            return scale > 1f ? (force / scale) : force;
+            return scale > 1f ? force * math.rcp(scale) : force;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Vector3 ApplyHydrodynamicAngularInertiaScale(Vector3 torque)
         {
             float scale = math.max(1f, _currentHydrodynamicAngularInertiaScale);
-            return scale > 1f ? (torque / scale) : torque;
+            return scale > 1f ? torque * math.rcp(scale) : torque;
         }
 
         private void QueueExteriorSplashEventIfNeeded(int sampleIndex, Vector3 worldPoint, float currentSubmersionFactor, float sampleHullMass)
@@ -3682,7 +3682,7 @@ namespace Hecton8.Physics
             else
             {
                 float fallbackVolume = math.max(Epsilon, ResolveExteriorDisplacementVolumeCubicMeters());
-                float fallbackHalfExtent = math.max(0.5f, math.pow(fallbackVolume, 1f / 3f) * 0.5f);
+                float fallbackHalfExtent = math.max(0.5f, SafeCubeRoot(fallbackVolume) * 0.5f);
                 extentsLocal = new Vector3(fallbackHalfExtent, fallbackHalfExtent * 0.6f, fallbackHalfExtent * 1.4f);
             }
 
@@ -3786,7 +3786,7 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            float candidate = numerator / denominator;
+            float candidate = numerator * math.rcp(denominator);
             if (math.isnan(candidate) || !math.isfinite(candidate))
                 return false;
 
@@ -3797,7 +3797,14 @@ namespace Hecton8.Physics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float SafeCubeRoot(float value)
         {
-            return math.pow(math.max(0f, value), 0.33333334f);
+            float safeValue = math.max(0f, value);
+            if (safeValue <= 0f)
+                return 0f;
+
+            float estimate = math.asfloat((math.asint(safeValue) / 3) + 709921077);
+            float estimateSq = math.max(estimate * estimate, 0.000001f);
+            estimate = ((estimate + estimate) + safeValue * math.rcp(estimateSq)) * 0.33333334f;
+            return math.isfinite(estimate) ? estimate : 0f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3811,7 +3818,7 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            float candidate = numerator / denominator;
+            float candidate = numerator * math.rcp(denominator);
             if (math.isnan(candidate) || !math.isfinite(candidate))
                 return false;
 
@@ -3877,7 +3884,7 @@ namespace Hecton8.Physics
             if (!TryResolveSafeQuotient(deltaTime, tauSeconds, out float normalizedStep))
                 return 0f;
 
-            float candidate = normalizedStep / (1f + normalizedStep);
+            float candidate = normalizedStep * math.rcp(1f + normalizedStep);
             return math.isfinite(candidate) ? math.saturate(candidate) : 0f;
         }
 
@@ -4039,7 +4046,7 @@ namespace Hecton8.Physics
                 return value;
 
             float magnitude = ApproximateMagnitude(value);
-            return value * (maxMagnitude / math.max(magnitude, Epsilon));
+            return value * (maxMagnitude * math.rcp(math.max(magnitude, Epsilon)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -4061,7 +4068,7 @@ namespace Hecton8.Physics
             if (safeValue <= 0f)
                 return 0f;
 
-            float magnitude = math.asfloat((math.asint(safeValue) >> 1) + 0x1FC00000);
+            float magnitude = safeValue * math.rsqrt(safeValue);
             return math.isfinite(magnitude) ? magnitude : 0f;
         }
 
@@ -4116,7 +4123,7 @@ namespace Hecton8.Physics
             if (!float.IsFinite(distanceSq) || distanceSq >= radiusSq)
                 return 0f;
 
-            return 1f - math.saturate(distanceSq / radiusSq);
+            return 1f - math.saturate(distanceSq * math.rcp(radiusSq));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -4125,8 +4132,20 @@ namespace Hecton8.Physics
             float3 from3 = new float3(from.x, from.y, from.z);
             float3 to3 = new float3(to.x, to.y, to.z);
             float safeT = math.isfinite(t) ? math.saturate(t) : 0f;
-            float3 value = math.lerp(from3, to3, safeT);
+            float3 value = LerpMad(from3, to3, safeT);
             return new Vector3(value.x, value.y, value.z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float LerpMad(float from, float to, float t)
+        {
+            return from + (to - from) * t;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 LerpMad(float3 from, float3 to, float t)
+        {
+            return from + (to - from) * t;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

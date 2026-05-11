@@ -13,6 +13,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 namespace Hecton8.World
 {
@@ -34,11 +35,16 @@ namespace Hecton8.World
         internal static EcosystemDirector ActiveRuntimeInstance { get; private set; }
 
         private const float DefaultSlowTickIntervalSeconds = 0.5f;
+        private const float FrostTickIntervalSeconds = 5f;
         private const float DefaultFloraGrazingSearchRadiusMeters = 2.75f;
         private const float SectorEdgeLengthMeters = 1000f;
         private const float InvSectorEdgeLengthMeters = 1f / SectorEdgeLengthMeters;
         private const float InvStableSectorRandomMask = 1f / 16777215f;
-        private const float DefaultLeviathanSectorSpawnChance = 0.15f;
+        private const float OxygenDieOffThreshold01 = 0.35f;
+        private const float InvOxygenDieOffThreshold01 = 1f / OxygenDieOffThreshold01;
+        private const float InvAlgaeBloomPreyGrowthDivisor = 0.2f;
+        private const int DefaultApexSectorBucketCutoff = 3;
+        private const int ApexSectorBucketCount = 16;
         private const int DefaultGrazerPopulationPerSector = 10;
         private const int DefaultLeviathanPopulationPerSector = 1;
         private const int MinimumSectorCapacity = 16;
@@ -48,12 +54,14 @@ namespace Hecton8.World
         private const float ThermalSpawnTemperatureThresholdCelsius = 40f;
         private const float ThermalSpawnDepthThresholdMeters = 2000f;
         private const float LightFalloffDepthMeters = 2500f;
+        private const float InvLightFalloffDepthMeters = 1f / LightFalloffDepthMeters;
         private const float PredatorDietValidationRadiusMeters = 500f;
         private const float CorpseSpawnInfluenceRadiusMeters = 500f;
         private const float MinimumCorpseDietInfluence01 = 0.001f;
         private const float CorpseSpawnSelectionScale = 2.6f;
         private const float WhaleFallScavengerSpawnMultiplier = 10f;
         private const float HighPlayerStressThreshold01 = 0.8f;
+        private const float InvHighPlayerStressRange01 = 1f / (1f - HighPlayerStressThreshold01);
         private const float WhaleFallAcousticImpulseLifetimeSeconds = 600f;
         private const float WhaleFallAcousticImpulseEnergyJoules = 28000f;
         private const float WhaleFallAcousticImpulseVolume01 = 0.42f;
@@ -65,6 +73,7 @@ namespace Hecton8.World
         private const float ApexSpawnGateCapsuleHalfHeightMeters = 3f;
         private const float ApexSpawnGateSweepDistanceMeters = 0.25f;
         private const float ApexSpawnGateCacheCellSizeMeters = 10f;
+        private const float InvApexSpawnGateCacheCellSizeMeters = 1f / ApexSpawnGateCacheCellSizeMeters;
         private const int HibernationPopulationSyncsPerColdSolve = 8;
         private const int ApexTerritoryOverlapCandidateCapacity = 16;
         private const int ApexTerritoryOverlapHitCapacity = 64;
@@ -82,7 +91,7 @@ namespace Hecton8.World
         private static readonly string[] ScavengerSpawnTokens = { "scavenger", "crab", "eel", "carrion", "cleaner" };
         private static readonly uint _FloraPredatorAupSaturationWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.FloraPredatorAupSaturation"));
         private static readonly uint _EcosystemDirectorContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute(nameof(EcosystemDirector)));
-        // COLD ALLOC: SpatialQueryHit[64] — non-alloc predator diet validation scratch for spawn gating — owner: EcosystemDirector
+        // COLD ALLOC: SpatialQueryHit[64] - non-alloc predator diet validation scratch for spawn gating - owner: EcosystemDirector
         private static readonly SpatialQueryHit[] _predatorSpawnValidationHits = new SpatialQueryHit[PredatorSpawnValidationHitCapacity];
         // COLD ALLOC: SpatialQueryHit[64] - non-alloc Apex territory candidate query scratch - owner: EcosystemDirector
         private static readonly SpatialQueryHit[] _apexTerritoryOverlapHits = new SpatialQueryHit[ApexTerritoryOverlapHitCapacity];
@@ -197,7 +206,7 @@ namespace Hecton8.World
                     if (!sampleIsSmaller)
                         continue;
 
-                    float overlap01 = ComputeSmallerSphereOverlap01(in sample.PositionAup, sample.Radius, in rival.PositionAup, rival.Radius);
+                    float overlap01 = ComputeSquaredTerritoryPressure01(in sample.PositionAup, sample.Radius, in rival.PositionAup, rival.Radius);
                     if (overlap01 <= OverlapThreshold01 || overlap01 <= bestOverlap01)
                         continue;
 
@@ -215,7 +224,7 @@ namespace Hecton8.World
                 Results[index] = result;
             }
 
-            private static float ComputeSmallerSphereOverlap01(
+            private static float ComputeSquaredTerritoryPressure01(
                 in AbsoluteUniversePositionBlit128 positionA,
                 float radiusA,
                 in AbsoluteUniversePositionBlit128 positionB,
@@ -226,18 +235,7 @@ namespace Hecton8.World
                 float centerDistanceSq = ResolveAupDistanceSqClamped(in positionA, in positionB);
                 float sumRadius = safeRadiusA + safeRadiusB;
                 float sumRadiusSq = sumRadius * sumRadius;
-                if (centerDistanceSq >= sumRadiusSq)
-                    return 0f;
-
-                float radiusDelta = math.abs(safeRadiusA - safeRadiusB);
-                if (centerDistanceSq <= radiusDelta * radiusDelta)
-                    return 1f;
-
-                float smallerRadius = math.min(safeRadiusA, safeRadiusB);
-                float largerRadius = math.max(safeRadiusA, safeRadiusB);
-                float containmentBias = smallerRadius / largerRadius;
-                float overlapPressure01 = math.saturate(1f - centerDistanceSq / math.max(0.001f, sumRadiusSq));
-                return math.saturate(overlapPressure01 * (1f + containmentBias));
+                return math.saturate(1f - centerDistanceSq * math.rcp(math.max(0.001f, sumRadiusSq)));
             }
 
             private static float ResolveAupDistanceSqClamped(
@@ -291,6 +289,7 @@ namespace Hecton8.World
                 float oxygen01 = state.Oxygen01 <= 0f ? 1f : math.saturate(state.Oxygen01);
                 float bloom01 = math.saturate(state.AlgaeBloom01);
                 float dt = math.max(0f, DeltaSeconds);
+                float invStarvationComfort = math.rcp(math.max(1f, StarvationComfortPreyPerPredator));
 
                 float dxdt = (PreyBirthRate * foodDensity01 * oxygen01 * prey) - (PredationRate * prey * predator);
                 float dydt = (PredatorGrowthRate * prey * predator) - (PredatorDeathRate * (1.1f - foodDensity01) * predator);
@@ -319,15 +318,15 @@ namespace Hecton8.World
                     oxygen01 = math.saturate(oxygen01 + 0.03f);
                 }
 
-                if (oxygen01 < 0.35f)
+                if (oxygen01 < OxygenDieOffThreshold01)
                 {
-                    float dieOffScale = math.saturate(oxygen01 / 0.35f);
-                    prey *= math.lerp(0.55f, 1f, dieOffScale);
-                    predator *= math.lerp(0.7f, 1f, dieOffScale);
+                    float dieOffScale = math.saturate(oxygen01 * InvOxygenDieOffThreshold01);
+                    prey *= 0.55f + (0.45f * dieOffScale);
+                    predator *= 0.7f + (0.3f * dieOffScale);
                 }
 
-                int preyPopulation = math.clamp((int)math.round(prey), 0, math.max(0, MaxPreyPopulation));
-                int predatorPopulation = math.clamp((int)math.round(predator), 0, math.max(0, MaxPredatorPopulation));
+                int preyPopulation = math.clamp(RoundPositiveToInt(prey), 0, math.max(0, MaxPreyPopulation));
+                int predatorPopulation = math.clamp(RoundPositiveToInt(predator), 0, math.max(0, MaxPredatorPopulation));
                 state.PreyPopulation = preyPopulation;
                 state.PredatorPopulation = predatorPopulation;
                 state.HarvestPressure = math.saturate(state.HarvestPressure * 0.65f);
@@ -345,11 +344,21 @@ namespace Hecton8.World
                 HeadlessPositions[index] = ResolveSectorCenterPosition(state.SectorCoord);
                 HeadlessSpeciesID[index] = predatorPopulation > preyPopulation ? (byte)2 : (byte)1;
                 float preyPerPredator = predatorPopulation > 0
-                    ? preyPopulation / math.max(1f, predatorPopulation)
+                    ? preyPopulation * math.rcp(math.max(1f, predatorPopulation))
                     : StarvationComfortPreyPerPredator;
-                HeadlessHunger[index] = (byte)math.round(math.saturate(1f - preyPerPredator / math.max(1f, StarvationComfortPreyPerPredator)) * 255f);
+                HeadlessHunger[index] = PackUnitByte(1f - preyPerPredator * invStarvationComfort);
                 HeadlessSectorCoord[index] = state.SectorCoord;
                 HeadlessSectorID[index] = ResolveSectorId(state.SectorCoord);
+            }
+
+            private static int RoundPositiveToInt(float value)
+            {
+                return (int)(math.max(0f, value) + 0.5f);
+            }
+
+            private static byte PackUnitByte(float value)
+            {
+                return (byte)math.clamp(RoundPositiveToInt(math.saturate(value) * 255f), 0, 255);
             }
         }
 
@@ -424,9 +433,10 @@ namespace Hecton8.World
         [Tooltip("Seconds between headless ecosystem solves. 5 seconds = FrostTick.")]
         [SerializeField, Min(1f)] private float coldTickIntervalSeconds = 5f;
 
-        [Header("Probability Table")]
-        [Tooltip("Deterministic 1 km sector roll chance that the sector presents one leviathan instead of a grazer pod.")]
-        [SerializeField, Range(0f, 1f)] private float leviathanSectorSpawnChance = DefaultLeviathanSectorSpawnChance;
+        [Header("Cinematic Sector Buckets")]
+        [Tooltip("Low-nibble bucket cutoff for deterministic 1 km apex-sector assignment. 3 means buckets 0,1,2 out of 16.")]
+        [FormerlySerializedAs("leviathanSectorSpawnChance")]
+        [SerializeField, Range(0, ApexSectorBucketCount)] private int apexSectorBucketCutoff = DefaultApexSectorBucketCutoff;
         [Tooltip("Fixed grazer count presented when the sector roll is not leviathan.")]
         [SerializeField, Min(0)] private int grazerPopulationPerSector = DefaultGrazerPopulationPerSector;
         [Tooltip("Fixed leviathan count presented when the sector roll hits the apex bucket.")]
@@ -641,7 +651,7 @@ namespace Hecton8.World
             if (!ChemicalInfluenceGrid.TrySampleNormalizedChannels(worldPosition, out normalizedChannels))
                 normalizedChannels = float4.zero;
 
-            float lightExposure01 = math.saturate(1f - (depthMeters / math.max(1f, LightFalloffDepthMeters)));
+            float lightExposure01 = math.saturate(1f - (depthMeters * InvLightFalloffDepthMeters));
             float eclipseSuppression01 = ResolveEclipsePredatorLightSuppression01(worldPosition);
             if (eclipseSuppression01 > 0f)
                 lightExposure01 *= 1f - eclipseSuppression01;
@@ -684,7 +694,7 @@ namespace Hecton8.World
             float scentPressure01 = math.saturate(math.max(envelope.BloodScent01, envelope.FearScent01));
             if (IsSharkLikePredator(archetype))
             {
-                selectionMultiplier = math.lerp(0.65f, 1.85f, scentPressure01);
+                selectionMultiplier = 0.65f + (1.2f * scentPressure01);
                 if (TryResolveEclipsePredatorTier0SelectionBoost(worldPosition, out float sharkEclipseSelectionBoost))
                     selectionMultiplier *= sharkEclipseSelectionBoost;
 
@@ -695,7 +705,7 @@ namespace Hecton8.World
 
             if (archetype.isAggressive || archetype.roleType == CreatureRoleType.Hunter || archetype.roleType == CreatureRoleType.Leviathan)
             {
-                selectionMultiplier = math.lerp(0.9f, 1.35f, scentPressure01);
+                selectionMultiplier = 0.9f + (0.45f * scentPressure01);
             }
 
             selectionMultiplier *= ResolvePlayerStressSpawnWeight(archetype, playerStress01);
@@ -710,7 +720,7 @@ namespace Hecton8.World
             {
                 float corpseInfluence01 = ResolveCombinedCorpseSpawnInfluence01(worldPosition, CorpseSpawnInfluenceRadiusMeters);
                 if (corpseInfluence01 > 0f)
-                    selectionMultiplier *= math.lerp(1f, math.max(CorpseSpawnSelectionScale, WhaleFallScavengerSpawnMultiplier), corpseInfluence01);
+                    selectionMultiplier *= 1f + ((math.max(CorpseSpawnSelectionScale, WhaleFallScavengerSpawnMultiplier) - 1f) * corpseInfluence01);
             }
 
             selectionMultiplier *= ResolveSpawnCreditSelectionWeight(archetype);
@@ -746,7 +756,7 @@ namespace Hecton8.World
             float stress01 = TryResolveDirectorPlayerStress01(out float resolvedStress01) ? resolvedStress01 : 0f;
             _playerStress01 = stress01;
             _debugPlayerStress01 = stress01;
-            float recoveryScale = math.lerp(1.15f, 0.55f, stress01);
+            float recoveryScale = 1.15f - (0.6f * stress01);
             _spawnCreditBudget = math.min(
                 spawnCreditBudgetMax,
                 _spawnCreditBudget + (spawnCreditRecoverPerSecond * math.max(0f, deltaSeconds) * recoveryScale));
@@ -779,15 +789,15 @@ namespace Hecton8.World
             if (stress01 <= HighPlayerStressThreshold01)
                 return 1f;
 
-            float t = math.saturate((stress01 - HighPlayerStressThreshold01) / math.max(0.0001f, 1f - HighPlayerStressThreshold01));
+            float t = math.saturate((stress01 - HighPlayerStressThreshold01) * InvHighPlayerStressRange01);
             if (IsApexRole(archetype))
-                return math.lerp(1f, 0.08f, t);
+                return 1f - (0.92f * t);
 
             if (IsPredatorOrApex(archetype))
-                return math.lerp(1f, 0.3f, t);
+                return 1f - (0.7f * t);
 
             if (archetype != null && archetype.roleType == CreatureRoleType.Ambient)
-                return math.lerp(1f, 1.45f, t);
+                return 1f + (0.45f * t);
 
             return 1f;
         }
@@ -921,7 +931,7 @@ namespace Hecton8.World
 
         private static int3 QuantizeApexSpawnGateCell(Vector3 worldPosition)
         {
-            float invCellSize = 1f / math.max(0.001f, ApexSpawnGateCacheCellSizeMeters);
+            float invCellSize = InvApexSpawnGateCacheCellSizeMeters;
             return new int3(
                 (int)math.floor(worldPosition.x * invCellSize),
                 (int)math.floor(worldPosition.y * invCellSize),
@@ -1240,10 +1250,9 @@ namespace Hecton8.World
             {
                 EcosystemSectorSaveRecord saveRecord = loadedRecords[sectorIndex];
                 int biomeId = ResolveBiomeIdForSector(saveRecord.SectorCoord);
-                ResolveProbabilityTablePopulation(
+                ResolveBucketTablePopulation(
                     saveRecord.SectorCoord,
-                    biomeId,
-                    leviathanSectorSpawnChance,
+                    apexSectorBucketCutoff,
                     grazerPopulationPerSector,
                     leviathanPopulationPerSector,
                     out int preyPopulation,
@@ -1458,7 +1467,7 @@ namespace Hecton8.World
             SectorPopulationState state = _sectorFrontStates[slotIndex];
             state.PreyPopulationRounded = math.max(0, state.PreyPopulationRounded - preyConsumed);
             state.PreyPopulation = state.PreyPopulationRounded;
-            state.HarvestPressure = math.saturate(state.HarvestPressure + preyConsumed / math.max(1f, maxPreyPopulation));
+            state.HarvestPressure = math.saturate(state.HarvestPressure + preyConsumed * math.rcp(math.max(1f, maxPreyPopulation)));
             _sectorFrontStates[slotIndex] = state;
             _sectorBackStates[slotIndex] = state;
             WriteHeadlessSlot(slotIndex, in state);
@@ -1496,7 +1505,7 @@ namespace Hecton8.World
             state.PredatorPopulationRounded = math.max(0, state.PredatorPopulationRounded - 1);
             state.PredatorPopulation = state.PredatorPopulationRounded;
             state.ApexInSector = state.PredatorPopulationRounded > 0 ? (byte)1 : (byte)0;
-            int preyBloom = math.max(1, maxPreyPopulation / 5);
+            int preyBloom = math.max(1, (int)(maxPreyPopulation * InvAlgaeBloomPreyGrowthDivisor));
             state.PreyPopulationRounded = math.min(maxPreyPopulation, state.PreyPopulationRounded + preyBloom);
             state.PreyPopulation = state.PreyPopulationRounded;
             state.HarvestPressure = math.saturate(state.HarvestPressure + 0.15f);
@@ -1559,17 +1568,14 @@ namespace Hecton8.World
             if (depthMeters > eclipsePredatorTier0DepthMaxMeters)
                 return 0f;
 
-            return math.saturate(math.lerp(
-                _eclipsePredatorMigrationIntensity01,
-                1f,
-                eclipsePredatorLightSuppression));
+            return math.saturate(_eclipsePredatorMigrationIntensity01 + ((1f - _eclipsePredatorMigrationIntensity01) * eclipsePredatorLightSuppression));
         }
 
         private void SanitizeSettings()
         {
             maxTrackedSectors = math.max(MinimumSectorCapacity, maxTrackedSectors);
-            coldTickIntervalSeconds = math.max(1f, coldTickIntervalSeconds);
-            leviathanSectorSpawnChance = math.saturate(leviathanSectorSpawnChance);
+            coldTickIntervalSeconds = FrostTickIntervalSeconds;
+            apexSectorBucketCutoff = math.clamp(apexSectorBucketCutoff, 0, ApexSectorBucketCount);
             grazerPopulationPerSector = math.max(0, grazerPopulationPerSector);
             leviathanPopulationPerSector = math.max(0, leviathanPopulationPerSector);
             maxPreyPopulation = math.max(math.max(1, grazerPopulationPerSector), maxPreyPopulation);
@@ -1762,6 +1768,7 @@ namespace Hecton8.World
         {
             float pressure01 = 0f;
             int count = math.min(_activeSectorCount, _sectorFrontStates.IsCreated ? _sectorFrontStates.Length : 0);
+            float invStarvationComfort = math.rcp(math.max(1f, starvationComfortPreyPerPredator));
             for (int i = 0; i < count; i++)
             {
                 SectorPopulationState state = _sectorFrontStates[i];
@@ -1771,8 +1778,8 @@ namespace Hecton8.World
                     continue;
                 }
 
-                float preyPerPredator = state.PreyPopulationRounded / math.max(1f, state.PredatorPopulationRounded);
-                float starvation01 = math.saturate(1f - (preyPerPredator / math.max(1f, starvationComfortPreyPerPredator)));
+                float preyPerPredator = state.PreyPopulationRounded * math.rcp(math.max(1f, state.PredatorPopulationRounded));
+                float starvation01 = math.saturate(1f - (preyPerPredator * invStarvationComfort));
                 float harvest01 = math.saturate(state.HarvestPressure * starvationHarvestWeight);
                 float oxygenCollapse01 = math.saturate(1f - state.Oxygen01);
                 pressure01 = math.max(pressure01, math.saturate(starvation01 + harvest01 + (oxygenCollapse01 * 0.25f)));
@@ -2199,7 +2206,7 @@ namespace Hecton8.World
             if (depthMeters > eclipsePredatorTier0DepthMaxMeters)
                 return false;
 
-            selectionBoost = math.lerp(1f, eclipsePredatorTier0SelectionBoost, _eclipsePredatorMigrationIntensity01);
+            selectionBoost = 1f + ((eclipsePredatorTier0SelectionBoost - 1f) * _eclipsePredatorMigrationIntensity01);
             return selectionBoost > 1f;
         }
 
@@ -2250,7 +2257,8 @@ namespace Hecton8.World
                 StarvationComfortPreyPerPredator = starvationComfortPreyPerPredator
             };
 
-            _scheduledSolveHandle = solveJob.Schedule(_activeSectorCount, 16);
+            int sectorBatchSize = ResolveSectorJobBatchSize(_activeSectorCount);
+            _scheduledSolveHandle = solveJob.Schedule(_activeSectorCount, sectorBatchSize);
             var migrationJob = new HeadlessThresholdMigrationJob
             {
                 States = _sectorBackStates,
@@ -2260,7 +2268,7 @@ namespace Hecton8.World
                 MigrationFoodThreshold01 = migrationFoodThreshold01,
                 MigrationPredatorTolerance = migrationPredatorTolerance
             };
-            _scheduledSolveHandle = migrationJob.Schedule(_activeSectorCount, 16, _scheduledSolveHandle);
+            _scheduledSolveHandle = migrationJob.Schedule(_activeSectorCount, sectorBatchSize, _scheduledSolveHandle);
             _solveScheduled = true;
         }
 
@@ -2351,9 +2359,25 @@ namespace Hecton8.World
                 OverlapThreshold01 = ApexTerritoryOverlapRetreatThreshold01
             };
 
-            _scheduledApexTerritoryOverlapHandle = overlapJob.Schedule(sampleCount, 4);
+            _scheduledApexTerritoryOverlapHandle = overlapJob.Schedule(sampleCount, ResolveApexTerritoryBatchSize(sampleCount));
             _scheduledApexTerritoryOverlapCount = sampleCount;
             _apexTerritoryOverlapScheduled = true;
+        }
+
+        private static int ResolveSectorJobBatchSize(int count)
+        {
+            if (count <= 16)
+                return 1;
+
+            if (count <= 64)
+                return 8;
+
+            return 16;
+        }
+
+        private static int ResolveApexTerritoryBatchSize(int count)
+        {
+            return count <= 4 ? 1 : 4;
         }
 
         private void CompleteScheduledApexTerritoryOverlap(bool forceComplete)
@@ -2588,10 +2612,9 @@ namespace Hecton8.World
         private SectorPopulationState SeedSectorState(int2 sectorCoord, bool seedWithBaseline)
         {
             int biomeId = ResolveBiomeIdForSector(sectorCoord);
-            ResolveProbabilityTablePopulation(
+            ResolveBucketTablePopulation(
                 sectorCoord,
-                biomeId,
-                leviathanSectorSpawnChance,
+                apexSectorBucketCutoff,
                 grazerPopulationPerSector,
                 leviathanPopulationPerSector,
                 out int preyPopulation,
@@ -2662,9 +2685,10 @@ namespace Hecton8.World
             if (_headlessEntities.Hunger.IsCreated)
             {
                 float preyPerPredator = state.PredatorPopulationRounded > 0
-                    ? state.PreyPopulationRounded / math.max(1f, state.PredatorPopulationRounded)
+                    ? state.PreyPopulationRounded * math.rcp(math.max(1f, state.PredatorPopulationRounded))
                     : starvationComfortPreyPerPredator;
-                _headlessEntities.Hunger[slotIndex] = (byte)math.round(math.saturate(1f - preyPerPredator / math.max(1f, starvationComfortPreyPerPredator)) * 255f);
+                float invStarvationComfort = math.rcp(math.max(1f, starvationComfortPreyPerPredator));
+                _headlessEntities.Hunger[slotIndex] = PackUnitByte(1f - preyPerPredator * invStarvationComfort);
             }
             if (_headlessEntities.SectorCoord.IsCreated)
                 _headlessEntities.SectorCoord[slotIndex] = state.SectorCoord;
@@ -2672,17 +2696,16 @@ namespace Hecton8.World
                 _headlessEntities.SectorID[slotIndex] = ResolveSectorId(state.SectorCoord);
         }
 
-        private static void ResolveProbabilityTablePopulation(
+        private static void ResolveBucketTablePopulation(
             int2 sectorCoord,
-            int biomeId,
-            float leviathanChance01,
+            int apexBucketCutoff,
             int grazerPopulationPerSector,
             int leviathanPopulationPerSector,
             out int preyPopulation,
             out int predatorPopulation)
         {
-            float roll01 = StableSectorRandom01(sectorCoord, biomeId);
-            bool spawnLeviathan = roll01 < math.saturate(leviathanChance01);
+            uint apexBucket = (MixSectorBits(sectorCoord.x, sectorCoord.y) >> 4) & 0x0Fu;
+            bool spawnLeviathan = apexBucket < (uint)math.clamp(apexBucketCutoff, 0, ApexSectorBucketCount);
             preyPopulation = spawnLeviathan ? 0 : math.max(0, grazerPopulationPerSector);
             predatorPopulation = spawnLeviathan ? math.max(0, leviathanPopulationPerSector) : 0;
         }
@@ -2794,12 +2817,22 @@ namespace Hecton8.World
 
         private static uint PackAdaptationTraits(float fitness, float speedMultiplier, float camouflageIndex, float maximumSpeedMultiplier)
         {
-            uint packedFitness = (uint)math.round(math.saturate(fitness) * 255f);
+            uint packedFitness = PackUnitByte(fitness);
             float safeMaximumSpeedMultiplier = math.max(1f, maximumSpeedMultiplier);
-            float speed01 = math.saturate((speedMultiplier - 1f) / (safeMaximumSpeedMultiplier - 1f + 0.0001f));
-            uint packedSpeed = (uint)math.round(speed01 * 255f);
-            uint packedCamouflage = (uint)math.round(math.saturate(camouflageIndex) * 255f);
+            float speed01 = math.saturate((speedMultiplier - 1f) * math.rcp(safeMaximumSpeedMultiplier - 1f + 0.0001f));
+            uint packedSpeed = PackUnitByte(speed01);
+            uint packedCamouflage = PackUnitByte(camouflageIndex);
             return packedFitness | (packedSpeed << 8) | (packedCamouflage << 16);
+        }
+
+        private static int RoundPositiveToInt(float value)
+        {
+            return (int)(math.max(0f, value) + 0.5f);
+        }
+
+        private static byte PackUnitByte(float value)
+        {
+            return (byte)math.clamp(RoundPositiveToInt(math.saturate(value) * 255f), 0, 255);
         }
 
     }

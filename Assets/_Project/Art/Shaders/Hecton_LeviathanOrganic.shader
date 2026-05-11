@@ -322,7 +322,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             output.normalWS = normalInputs.normalWS;
             output.tangentWS = float4(normalInputs.tangentWS, input.tangentOS.w);
             output.positionCS = HectonCoreLitApplyClipSpaceDepthBias(positionInputs.positionCS, _DepthBias, 1.0);
-            output.viewDirWS = HectonCoreLitSafeNormalize(GetWorldSpaceViewDir(positionInputs.positionWS));
+            output.viewDirWS = NormalizeApprox3D(GetWorldSpaceViewDir(positionInputs.positionWS));
             output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
             return output;
@@ -368,14 +368,14 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half3 color = ambientSh * surface.rgb * ambientOcclusion * caveAmbientFactor;
             float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
             Light mainLight = GetMainLight(shadowCoord);
-            half3 lightDir = HectonCoreLitSafeNormalize(mainLight.direction);
+            half3 lightDir = NormalizeApprox3D(mainLight.direction);
             half nDotL = saturate(dot(normalWS, lightDir));
             half specularStrength = lerp(0.05h, 0.22h, metallic);
             half specular = 0.0h;
             half specularEnergy = smoothness * specularStrength;
             if (nDotL > 0.0001h && specularEnergy > 0.0001h)
             {
-                half3 halfDir = HectonCoreLitSafeNormalize(lightDir + viewDirWS);
+                half3 halfDir = NormalizeApprox3D(lightDir + viewDirWS);
                 half specularBase = saturate(dot(normalWS, halfDir));
                 half specular2 = specularBase * specularBase;
                 half specular4 = specular2 * specular2;

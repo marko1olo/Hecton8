@@ -1288,7 +1288,7 @@ namespace Hecton8.Gameplay
             if (conditionScale >= 0.999f)
                 return scanCooldown;
 
-            return scanCooldown / math.max(0.45f, conditionScale);
+            return scanCooldown * math.rcp(math.max(0.45f, conditionScale));
         }
 
         private float ResolveEffectiveScanRadius()
@@ -2013,13 +2013,14 @@ namespace Hecton8.Gameplay
             float crossY = (forwardFlat.y * directionFlat.x) - (forwardFlat.x * directionFlat.y);
             float dot = math.dot(forwardFlat, directionFlat);
             float crossSq = crossY * crossY;
+            float invScaleSq = math.rcp(scaleSq);
             if (dot > 0f && crossSq <= scaleSq * BearingDeadzoneTanSq)
             {
                 approximateDegrees = 0;
                 return 0;
             }
 
-            approximateDegrees = ResolveApproximateBearingDegrees(math.saturate(crossSq / scaleSq), dot);
+            approximateDegrees = ResolveApproximateBearingDegrees(math.saturate(crossSq * invScaleSq), dot);
             return crossY >= 0f ? 1 : -1;
         }
 
@@ -2783,7 +2784,7 @@ namespace Hecton8.Gameplay
                 if (distanceSq > radiusSq)
                     continue;
 
-                float falloff = SmoothStep01(1f - math.saturate(distanceSq / radiusSq));
+                float falloff = SmoothStep01(1f - math.saturate(distanceSq * math.rcp(radiusSq)));
                 float blood = math.saturate(waypoint.Channels.x * falloff);
                 float exhaust = math.saturate(waypoint.Channels.y * falloff);
                 float3 direction = distanceSq > 0.000001f ? delta * math.rsqrt(distanceSq) : float3.zero;
@@ -2803,9 +2804,9 @@ namespace Hecton8.Gameplay
             }
 
             if (bloodWeight > 0f)
-                bloodGradient = ResolveSafeDirection(bloodGradientWeighted / bloodWeight);
+                bloodGradient = ResolveSafeDirection(bloodGradientWeighted * math.rcp(bloodWeight));
             if (exhaustWeight > 0f)
-                exhaustGradient = ResolveSafeDirection(exhaustGradientWeighted / exhaustWeight);
+                exhaustGradient = ResolveSafeDirection(exhaustGradientWeighted * math.rcp(exhaustWeight));
 
             return bloodSignal01 > 0.0001f || exhaustSignal01 > 0.0001f;
         }
@@ -2855,7 +2856,7 @@ namespace Hecton8.Gameplay
                 attractantChannel = ScientificAttractantChannel.Blood;
                 if (bloodGradientWeight > 0f)
                 {
-                    float3 direction = bloodGradientAccumulator / bloodGradientWeight;
+                    float3 direction = bloodGradientAccumulator * math.rcp(bloodGradientWeight);
                     scentDirection = ResolveSafeDirection(direction);
                 }
             }
@@ -2865,7 +2866,7 @@ namespace Hecton8.Gameplay
                 attractantChannel = ScientificAttractantChannel.Exhaust;
                 if (exhaustGradientWeight > 0f)
                 {
-                    float3 direction = exhaustGradientAccumulator / exhaustGradientWeight;
+                    float3 direction = exhaustGradientAccumulator * math.rcp(exhaustGradientWeight);
                     scentDirection = ResolveSafeDirection(direction);
                 }
             }
@@ -2900,15 +2901,15 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            float cellSizeX = Mathf.Max(0.0001f, voxelCellSize.x);
-            float cellSizeY = Mathf.Max(0.0001f, voxelCellSize.y);
-            float cellSizeZ = Mathf.Max(0.0001f, voxelCellSize.z);
-            float sampleX = Mathf.Clamp((worldPosition.x - volumeOrigin.x) / cellSizeX, 0f, gridDimensions.x - 1.001f);
-            float sampleY = Mathf.Clamp((worldPosition.y - volumeOrigin.y) / cellSizeY, 0f, gridDimensions.y - 1.001f);
-            float sampleZ = Mathf.Clamp((worldPosition.z - volumeOrigin.z) / cellSizeZ, 0f, gridDimensions.z - 1.001f);
+            float invCellSizeX = math.rcp(math.max(0.0001f, voxelCellSize.x));
+            float invCellSizeY = math.rcp(math.max(0.0001f, voxelCellSize.y));
+            float invCellSizeZ = math.rcp(math.max(0.0001f, voxelCellSize.z));
+            float sampleX = math.clamp((worldPosition.x - volumeOrigin.x) * invCellSizeX, 0f, gridDimensions.x - 1.001f);
+            float sampleY = math.clamp((worldPosition.y - volumeOrigin.y) * invCellSizeY, 0f, gridDimensions.y - 1.001f);
+            float sampleZ = math.clamp((worldPosition.z - volumeOrigin.z) * invCellSizeZ, 0f, gridDimensions.z - 1.001f);
 
             density = DecodeScientificDensity(encodedSdf, gridDimensions, sdfRange, sampleX, sampleY, sampleZ);
-            density01 = Mathf.Clamp01(Mathf.Max(0f, density) / sdfRange);
+            density01 = math.saturate(math.max(0f, density) * math.rcp(sdfRange));
             return true;
         }
 
@@ -2973,7 +2974,7 @@ namespace Hecton8.Gameplay
         private const int PulseInstanceCapacity = 2;
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int RingThicknessId = Shader.PropertyToID("_RingThickness");
-        private static readonly Quaternion PulseRotation = Quaternion.Euler(90f, 0f, 0f);
+        private static readonly Quaternion PulseRotation = new Quaternion(0.70710678f, 0f, 0f, 0.70710678f);
 
         private ScannerTool _scanner;
         private Material _runtimePulseMaterial;
@@ -3031,7 +3032,7 @@ namespace Hecton8.Gameplay
                 return;
 
             float elapsed = Time.time - _scanner.PulseStartTime;
-            float t = math.saturate(elapsed / _scanner.PulseDuration);
+            float t = math.saturate(elapsed * math.rcp(math.max(_scanner.PulseDuration, 0.0001f)));
             float currentRadius = math.lerp(0f, _scanner.ScanRadius, t);
             Color baseColor = _scanner.PulseColor;
             float alpha = baseColor.a * (1f - t * t);
@@ -3044,7 +3045,7 @@ namespace Hecton8.Gameplay
             Vector3 pulseRuntimeOrigin = (Vector3)_scanner.PulseOriginAup.ToRuntimeFloat3();
 
             _runtimePulseMaterial.SetColor(BaseColorId, ringColor);
-            _runtimePulseMaterial.SetFloat(RingThicknessId, thickness / math.max(currentRadius, 0.001f));
+            _runtimePulseMaterial.SetFloat(RingThicknessId, thickness * math.rcp(math.max(currentRadius, 0.001f)));
 
             int visibleCount = 0;
             Matrix4x4 primaryMatrix = Matrix4x4.TRS(pulseRuntimeOrigin, PulseRotation, new Vector3(currentRadius * 2f, currentRadius * 2f, 1f));

@@ -1,6 +1,14 @@
 # LIGHTING_OCCLUSION_LOGIC.md
 # HECTON-8 | Abyssal Lighting & Occlusion Mandate
 
+## 2026-05-11 VISUAL-FAKE OVERRIDE
+
+[RULE] Darkness is cheaper than simulated light. Use darkness volumes, baked AO, LUT haze, emissive proxies, and dithered shadow proxies before voxel/raymarch truth.
+[RULE] MX350 path rejects full volumetric lighting and per-fragment voxel GI unless a fresh profiler capture proves the pass below the 0.1ms suspicion threshold.
+[RULE] Light truth is gameplay-critical only for player flashlight, interactable hazards, and navigation-critical silhouettes.
+[FORBID] Per-surface fake-GI raycasts or multi-sample voxel marches as default lighting.
+[FORBID] More than the manager-approved pixel lights per surface; demote excess to emissive/material fake.
+
 ---
 
 ## §0. FOUNDATIONAL AXIOMS

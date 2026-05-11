@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Text;
+using Hecton8.Core;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -181,7 +182,7 @@ namespace Hecton8.EditorTools
                         .Append(" | ")
                         .Append(formatLabel)
                         .Append(" | estimatedCompressedMB=")
-                        .Append((estimatedBytes / (1024f * 1024f)).ToString("F2", System.Globalization.CultureInfo.InvariantCulture))
+                        .Append((estimatedBytes * GlobalTelemetryBus.BytesToMegabytes).ToString("F2", System.Globalization.CultureInfo.InvariantCulture))
                         .AppendLine();
                     rowsWritten++;
                 }
@@ -289,7 +290,7 @@ namespace Hecton8.EditorTools
             message.Append("[VRAMDictator] 02_HECTON_WORLD referenced textures: count=")
                 .Append(worldBudget.TextureCount)
                 .Append(" estimatedCompressedMB=")
-                .Append((worldBudget.TotalEstimatedBytes / (1024f * 1024f)).ToString("F2", System.Globalization.CultureInfo.InvariantCulture))
+                .Append((worldBudget.TotalEstimatedBytes * GlobalTelemetryBus.BytesToMegabytes).ToString("F2", System.Globalization.CultureInfo.InvariantCulture))
                 .Append(" budgetMB=900.00")
                 .AppendLine(".");
 

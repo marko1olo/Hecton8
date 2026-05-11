@@ -35,6 +35,13 @@ namespace Hecton8.EditorTools
         private const int AtlasCellSize = AtlasSize / AtlasGridColumns;
         private const int AtlasGridCapacity = AtlasGridColumns * AtlasGridRows;
         private const int AtlasInputCap = AtlasGridCapacity;
+        private const int MeshScratchInitialCapacity = 8192;
+
+        // COLD ALLOC: editor-only mesh processing scratch reused by atlas remap and vertex-color bake passes.
+        private static readonly List<Vector2> s_AtlasUvScratch = new List<Vector2>(MeshScratchInitialCapacity);
+        private static readonly List<Vector3> s_VertexScratch = new List<Vector3>(MeshScratchInitialCapacity);
+        private static readonly List<Vector3> s_NormalScratch = new List<Vector3>(MeshScratchInitialCapacity);
+        private static readonly List<Color32> s_ColorScratch = new List<Color32>(MeshScratchInitialCapacity);
 
         [MenuItem(ShadowProxyMenuPath, priority = 220)]
         private static void GenerateShadowProxiesForSelection()
@@ -181,6 +188,7 @@ namespace Hecton8.EditorTools
                 remappedMeshes += RemapPrefabUvsToAtlas(prefabPaths[i], textureRectLookup, atlasMaterial);
 
             AssetDatabase.SaveAssets();
+            Resources.UnloadUnusedAssets();
             Debug.Log("[HectonArtOptimizationTools] Atlas=" + atlasPath + ", textures=" + texturePaths.Count + ", remappedMeshes=" + remappedMeshes + ".");
         }
 
@@ -365,8 +373,12 @@ namespace Hecton8.EditorTools
 
             Mesh mesh = UnityEngine.Object.Instantiate(source);
             mesh.name = meshName;
-            List<Vector3> vertices = new List<Vector3>(mesh.vertexCount);
-            List<Vector3> normals = new List<Vector3>(mesh.vertexCount);
+            List<Vector3> vertices = s_VertexScratch;
+            List<Vector3> normals = s_NormalScratch;
+            EnsureListCapacity(vertices, mesh.vertexCount);
+            EnsureListCapacity(normals, mesh.vertexCount);
+            vertices.Clear();
+            normals.Clear();
             mesh.GetVertices(vertices);
             mesh.GetNormals(normals);
             if (normals.Count != vertices.Count)
@@ -374,11 +386,20 @@ namespace Hecton8.EditorTools
                 mesh.RecalculateNormals();
                 normals.Clear();
                 mesh.GetNormals(normals);
+                if (normals.Count != vertices.Count)
+                {
+                    vertices.Clear();
+                    normals.Clear();
+                    UnityEngine.Object.DestroyImmediate(mesh);
+                    return null;
+                }
             }
 
             Bounds bounds = mesh.bounds;
             float invHeight = bounds.size.y > 0.0001f ? 1f / bounds.size.y : 1f;
-            List<Color32> colors = new List<Color32>(vertices.Count);
+            List<Color32> colors = s_ColorScratch;
+            EnsureListCapacity(colors, vertices.Count);
+            colors.Clear();
             for (int i = 0; i < vertices.Count; i++)
             {
                 float y01 = Mathf.Clamp01((vertices[i].y - bounds.min.y) * invHeight);
@@ -391,6 +412,9 @@ namespace Hecton8.EditorTools
             }
 
             mesh.SetColors(colors);
+            vertices.Clear();
+            normals.Clear();
+            colors.Clear();
             return mesh;
         }
 
@@ -557,10 +581,13 @@ namespace Hecton8.EditorTools
 
                     Mesh remappedMesh = UnityEngine.Object.Instantiate(filter.sharedMesh);
                     remappedMesh.name = filter.sharedMesh.name + "_AtlasUV";
-                    List<Vector2> uv = new List<Vector2>(remappedMesh.vertexCount);
+                    List<Vector2> uv = s_AtlasUvScratch;
+                    EnsureListCapacity(uv, remappedMesh.vertexCount);
+                    uv.Clear();
                     remappedMesh.GetUVs(0, uv);
                     if (uv.Count != remappedMesh.vertexCount)
                     {
+                        uv.Clear();
                         UnityEngine.Object.DestroyImmediate(remappedMesh);
                         continue;
                     }
@@ -569,6 +596,7 @@ namespace Hecton8.EditorTools
                         uv[uvIndex] = new Vector2(rect.x + uv[uvIndex].x * rect.width, rect.y + uv[uvIndex].y * rect.height);
 
                     remappedMesh.SetUVs(0, uv);
+                    uv.Clear();
                     string meshPath = AssetDatabase.GenerateUniqueAssetPath(
                         AtlasFolder + "/" +
                         HectonEditorMeshUtility.SanitizeAssetToken(Path.GetFileNameWithoutExtension(prefabPath)) + "_" +
@@ -748,6 +776,12 @@ namespace Hecton8.EditorTools
             EnsureFolder(parent);
             if (!AssetDatabase.IsValidFolder(path))
                 AssetDatabase.CreateFolder(parent, folder);
+        }
+
+        private static void EnsureListCapacity<T>(List<T> list, int capacity)
+        {
+            if (list.Capacity < capacity)
+                list.Capacity = capacity;
         }
     }
 

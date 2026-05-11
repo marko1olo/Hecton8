@@ -5,6 +5,7 @@
 
 using UnityEngine;
 using Unity.Mathematics;
+using Hecton8.Core;
 
 namespace Hecton8.Biolum
 {
@@ -140,9 +141,9 @@ namespace Hecton8.Biolum
                 float angle = (i / (float)_clusterCount) * 360f;
                 float distance = _clusterSize * 1.5f;
                 Vector3 offset = new Vector3(
-                    Mathf.Cos(angle * Mathf.Deg2Rad) * distance,
+                    CinematicMath.FastCos(angle * Mathf.Deg2Rad) * distance,
                     -1f, // On floor
-                    Mathf.Sin(angle * Mathf.Deg2Rad) * distance
+                    CinematicMath.FastSin(angle * Mathf.Deg2Rad) * distance
                 );
                 _clusterCenters[i] = offset;
                 _lightsPerCluster[i] = 2 + i % 2; // 2-3 lights per cluster

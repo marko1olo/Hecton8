@@ -398,7 +398,7 @@ namespace Hecton8.Core
         ///
         /// Vyzyvaetsya iz HectonScatterOutput PERED seriey
         /// RegisterSpawnPoint() vyzovov dlya dannogo chanka.
-        /// Eto obrabatyvaet sluchay re-generate v MapMagic.
+        /// Eto obrabatyvaet sluchay re-generate v terrain generator.
         /// </summary>
         /// <param name="chunkCoord">Koordinata chanka.</param>
         /// <param name="expectedCount">Ozhidaemoe kolichestvo uzlov (dlya pre-alloc).</param>

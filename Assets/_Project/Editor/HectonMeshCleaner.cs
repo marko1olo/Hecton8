@@ -1,7 +1,7 @@
 // ============================================================================
 // HectonMeshCleaner.cs
 // Place in: Assets/Editor/HectonMeshCleaner.cs
-// v4.0 — Per-triangle occlusion + Submesh fix + Hole fill
+// v4.0 - Per-triangle occlusion + Submesh fix + Hole fill
 // ============================================================================
 using UnityEngine;
 using UnityEditor;
@@ -10,9 +10,9 @@ using System.IO;
 
 public class HectonMeshCleaner : EditorWindow
 {
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     // SETTINGS
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     private GameObject targetObject;
     private bool processAllLODs = true;
     private float occlusionDistance = 0.3f;
@@ -25,9 +25,9 @@ public class HectonMeshCleaner : EditorWindow
     private bool showPreview = true;
     private Color hiddenColor = new Color(1f, 0f, 0f, 0.5f);
 
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     // STATE
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     private ulong analyzedObjectEntityId = 0UL;
     private string analyzedObjectPath = "";
     private Dictionary<ulong, PerMeshAnalysis> perMeshAnalysis = new Dictionary<ulong, PerMeshAnalysis>();
@@ -41,6 +41,9 @@ public class HectonMeshCleaner : EditorWindow
     private string lastStatus = "";
     private MessageType lastStatusType = MessageType.None;
     private static readonly RaycastHit[] rayBuffer = new RaycastHit[64];
+    private static GUIStyle s_TitleStyle;
+    // COLD ALLOC: char[] - editor filename sanitization scratch - owner: HectonMeshCleaner
+    private static readonly char[] s_InvalidFileNameChars = Path.GetInvalidFileNameChars();
     // COLD ALLOC: List<int>[196608] - editor submesh triangle collection scratch - owner: HectonMeshCleaner
     private static readonly List<int> s_CollectSubmeshTriangles = new List<int>(196608);
     // COLD ALLOC: List<Vector3>[65536] - editor occlusion analysis vertex scratch - owner: HectonMeshCleaner
@@ -53,6 +56,12 @@ public class HectonMeshCleaner : EditorWindow
     private readonly List<Vector3> doubleSidedVerts = new List<Vector3>(65536);
     // COLD ALLOC: List<int>[393216] - editor double-sided mesh triangle scratch - owner: HectonMeshCleaner
     private readonly List<int> doubleSidedTris = new List<int>(393216);
+    // COLD ALLOC: List<MeshFilter>[4096] - editor mesh filter query scratch - owner: HectonMeshCleaner
+    private readonly List<MeshFilter> meshFilterScratch = new List<MeshFilter>(4096);
+    // COLD ALLOC: List<Vector3>[65536] - editor scene preview vertex scratch - owner: HectonMeshCleaner
+    private readonly List<Vector3> previewVerts = new List<Vector3>(65536);
+    // COLD ALLOC: List<int>[196608] - editor scene preview triangle scratch - owner: HectonMeshCleaner
+    private readonly List<int> previewTris = new List<int>(196608);
 
     private struct PerMeshAnalysis
     {
@@ -106,9 +115,9 @@ public class HectonMeshCleaner : EditorWindow
                EditorApplication.isPlayingOrWillChangePlaymode;
     }
 
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     // STATE PROTECTION
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     private void FullReset(string reason = "")
     {
         analysisReady = false;
@@ -130,8 +139,10 @@ public class HectonMeshCleaner : EditorWindow
         if (targetObject == null) { FullReset("Target null"); return false; }
         if (GetStableObjectId(targetObject) != analyzedObjectEntityId) { FullReset("Target changed"); return false; }
         if (GetHierarchyPath(targetObject) != analyzedObjectPath) { FullReset("Hierarchy changed"); return false; }
-        foreach (var mf in GetMeshFilters())
+        CollectMeshFilters(meshFilterScratch);
+        for (int i = 0; i < meshFilterScratch.Count; i++)
         {
+            MeshFilter mf = meshFilterScratch[i];
             ulong meshFilterId = GetStableObjectId(mf);
             if (!perMeshAnalysis.ContainsKey(meshFilterId)) continue;
             var a = perMeshAnalysis[meshFilterId];
@@ -195,9 +206,9 @@ public class HectonMeshCleaner : EditorWindow
         return SanitizeName(parent + "_" + mf.gameObject.name);
     }
 
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     // GUI
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     private void OnGUI()
     {
         if (analysisReady) ValidateState();
@@ -205,26 +216,26 @@ public class HectonMeshCleaner : EditorWindow
 
         // Header
         EditorGUILayout.Space(8);
-        var title = new GUIStyle(EditorStyles.boldLabel) { fontSize = 14, alignment = TextAnchor.MiddleCenter };
-        EditorGUILayout.LabelField("⛏ HECTON MESH CLEANER v4", title);
+        GUIStyle title = ResolveTitleStyle();
+        EditorGUILayout.LabelField(" HECTON MESH CLEANER v4", title);
         EditorGUILayout.LabelField("Per-triangle occlusion + Submesh fix + Hole fill", EditorStyles.centeredGreyMiniLabel);
         EditorGUILayout.Space(4);
 
         if (analysisReady && targetObject != null)
-            EditorGUILayout.HelpBox($"✓ Locked to: {analyzedObjectPath}", MessageType.None);
+            EditorGUILayout.HelpBox($"OK Locked to: {analyzedObjectPath}", MessageType.None);
 
         // Target
         EditorGUILayout.Space(4);
-        EditorGUILayout.LabelField("── TARGET ──", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("-- TARGET --", EditorStyles.boldLabel);
         EditorGUI.BeginChangeCheck();
         targetObject = (GameObject)EditorGUILayout.ObjectField("Root GameObject", targetObject, typeof(GameObject), true);
         if (EditorGUI.EndChangeCheck()) FullReset("Target changed");
 
         EditorGUILayout.BeginHorizontal();
-        if (Selection.activeGameObject != null && GUILayout.Button("← Use Selection", GUILayout.Height(22)))
+        if (Selection.activeGameObject != null && GUILayout.Button("<- Use Selection", GUILayout.Height(22)))
         { if (Selection.activeGameObject != targetObject) FullReset("Selection"); targetObject = Selection.activeGameObject; }
         GUI.backgroundColor = new Color(1f, 0.8f, 0.3f);
-        if (GUILayout.Button("🔄 Reset", GUILayout.Width(80), GUILayout.Height(22))) FullReset("Manual");
+        if (GUILayout.Button(" Reset", GUILayout.Width(80), GUILayout.Height(22))) FullReset("Manual");
         GUI.backgroundColor = Color.white;
         EditorGUILayout.EndHorizontal();
 
@@ -232,15 +243,16 @@ public class HectonMeshCleaner : EditorWindow
 
         if (targetObject != null)
         {
-            var mfs = GetMeshFilters();
+            CollectMeshFilters(meshFilterScratch);
             EditorGUI.indentLevel++;
-            foreach (var mf in mfs)
+            for (int i = 0; i < meshFilterScratch.Count; i++)
             {
+                MeshFilter mf = meshFilterScratch[i];
                 if (mf.sharedMesh == null) continue;
                 bool r = mf.sharedMesh.isReadable;
                 int sc = mf.sharedMesh.subMeshCount;
                 EditorGUILayout.LabelField(
-                    $"  {(r ? "✓" : "✗")} {mf.gameObject.name}: {ResolveTriangleCount(mf.sharedMesh)} tris, {sc} submesh(es)" +
+                    $"  {(r ? "OK" : "NO")} {mf.gameObject.name}: {ResolveTriangleCount(mf.sharedMesh)} tris, {sc} submesh(es)" +
                     (r ? "" : " [NOT READABLE!]"), EditorStyles.miniLabel);
             }
             EditorGUI.indentLevel--;
@@ -248,15 +260,15 @@ public class HectonMeshCleaner : EditorWindow
 
         // Settings
         EditorGUILayout.Space(4);
-        EditorGUILayout.LabelField("── OCCLUSION SETTINGS ──", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("-- OCCLUSION SETTINGS --", EditorStyles.boldLabel);
         EditorGUILayout.HelpBox(
-            "Dlya kazhdogo treugolnika kastuetsya luch vdol normali i protiv nee.\n" +
-            "Esli OBA napravleniya zablokirovany v predelah Occlusion Distance → treugolnik vnutrenniy → udalyaetsya.\n" +
-            "Treugolnik na poverhnosti vsegda imeet hotya by odno svobodnoe napravlenie → ostaetsya.",
+            "Each triangle casts one ray along the dominant normal and one against it.\n" +
+            "If both directions are blocked within Occlusion Distance, the triangle is internal and removed.\n" +
+            "Surface triangles keep at least one free direction and remain.",
             MessageType.Info);
 
         occlusionDistance = EditorGUILayout.Slider(
-            new GUIContent("Occlusion Distance", "Maks. rasstoyanie dlya obnaruzheniya blokirovki. Menshe = bezopasnee."),
+            new GUIContent("Occlusion Distance", "Max blocking detection distance. Lower is safer."),
             occlusionDistance, 0.01f, 5.0f);
 
         EditorGUILayout.BeginHorizontal();
@@ -271,7 +283,7 @@ public class HectonMeshCleaner : EditorWindow
 
         // Hole fill
         EditorGUILayout.Space(4);
-        EditorGUILayout.LabelField("── HOLE FILL ──", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("-- HOLE FILL --", EditorStyles.boldLabel);
         enableHoleFill = EditorGUILayout.Toggle("Enable Hole Fill", enableHoleFill);
         if (enableHoleFill)
         {
@@ -286,18 +298,19 @@ public class HectonMeshCleaner : EditorWindow
 
         // Stats
         EditorGUILayout.Space(4);
-        EditorGUILayout.LabelField("── RESULTS ──", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("-- RESULTS --", EditorStyles.boldLabel);
         EditorGUILayout.BeginVertical(EditorStyles.helpBox);
         if (lodResults.Count > 0)
         {
             int ts = 0, th = 0, tk = 0;
-            foreach (var r in lodResults)
+            for (int i = 0; i < lodResults.Count; i++)
             {
-                EditorGUILayout.LabelField($"  {r.name}: {r.srcTris} → {r.keptTris} (-{r.hiddenTris}, -{r.pctRemoved:F1}%)", EditorStyles.miniLabel);
+                LODResult r = lodResults[i];
+                EditorGUILayout.LabelField($"  {r.name}: {r.srcTris} -> {r.keptTris} (-{r.hiddenTris}, -{r.pctRemoved:F1}%)", EditorStyles.miniLabel);
                 ts += r.srcTris; th += r.hiddenTris; tk += r.keptTris;
             }
             float tp = ts > 0 ? (float)th / ts * 100f : 0;
-            EditorGUILayout.LabelField($"  TOTAL: {ts} → {tk} (-{th}, -{tp:F1}%)");
+            EditorGUILayout.LabelField($"  TOTAL: {ts} -> {tk} (-{th}, -{tp:F1}%)");
             if (lastTime > 0) EditorGUILayout.LabelField($"  Time: {lastTime:F2}s", EditorStyles.miniLabel);
         }
         else EditorGUILayout.LabelField("  Run ANALYZE first.");
@@ -310,14 +323,14 @@ public class HectonMeshCleaner : EditorWindow
         EditorGUILayout.BeginHorizontal();
         GUI.enabled = targetObject != null;
         GUI.backgroundColor = new Color(0.3f, 0.7f, 0.95f);
-        if (GUILayout.Button("🔍 ANALYZE\n(preview)", GUILayout.Height(50)))
+        if (GUILayout.Button(" ANALYZE\n(preview)", GUILayout.Height(50)))
         { FullReset("Fresh analyze"); AnalyzeAll(); }
 
         bool canApply = targetObject != null && analysisReady && perMeshAnalysis.Count > 0
             && GetStableObjectId(targetObject) == analyzedObjectEntityId;
         GUI.enabled = canApply;
         GUI.backgroundColor = new Color(0.2f, 0.85f, 0.3f);
-        if (GUILayout.Button("▶ APPLY\n(modify)", GUILayout.Height(50)))
+        if (GUILayout.Button("> APPLY\n(modify)", GUILayout.Height(50)))
         { if (ValidateState()) ApplyCleanup(); else SetStatus("Re-run ANALYZE!", MessageType.Error); }
         GUI.backgroundColor = Color.white; GUI.enabled = true;
         EditorGUILayout.EndHorizontal();
@@ -325,7 +338,7 @@ public class HectonMeshCleaner : EditorWindow
         GUI.enabled = targetObject != null;
         EditorGUILayout.Space(4);
         GUI.backgroundColor = new Color(0.9f, 0.6f, 0.1f);
-        if (GUILayout.Button("⚡ ANALYZE + APPLY", GUILayout.Height(30)))
+        if (GUILayout.Button("FAST ANALYZE + APPLY", GUILayout.Height(30)))
         { FullReset("One-click"); AnalyzeAll(); if (analysisReady && ValidateState()) ApplyCleanup(); }
         GUI.backgroundColor = Color.white; GUI.enabled = true;
 
@@ -333,25 +346,26 @@ public class HectonMeshCleaner : EditorWindow
         EditorGUILayout.EndScrollView();
     }
 
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     // ANALYZE
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     private void AnalyzeAll()
     {
         double t0 = EditorApplication.timeSinceStartup;
         if (targetObject == null) { SetStatus("No target!", MessageType.Error); return; }
-        var mfs = GetMeshFilters();
-        if (mfs.Length == 0) { SetStatus("No readable MeshFilters!", MessageType.Error); return; }
+        CollectMeshFilters(meshFilterScratch);
+        if (meshFilterScratch.Count == 0) { SetStatus("No readable MeshFilters!", MessageType.Error); return; }
 
         lodResults.Clear(); perMeshAnalysis.Clear(); previewHiddenTris.Clear();
         previewSourceMesh = null; previewTarget = null;
 
-        for (int m = 0; m < mfs.Length; m++)
+        for (int m = 0; m < meshFilterScratch.Count; m++)
         {
-            EditorUtility.DisplayProgressBar("Analyzing...", $"{mfs[m].gameObject.name} ({m + 1}/{mfs.Length})", (float)m / mfs.Length);
-            var res = AnalyzeMesh(mfs[m]);
+            MeshFilter meshFilter = meshFilterScratch[m];
+            EditorUtility.DisplayProgressBar("Analyzing...", $"{meshFilter.gameObject.name} ({m + 1}/{meshFilterScratch.Count})", (float)m / meshFilterScratch.Count);
+            var res = AnalyzeMesh(meshFilter);
             lodResults.Add(res.lod);
-            perMeshAnalysis[GetStableObjectId(mfs[m])] = res.data;
+            perMeshAnalysis[GetStableObjectId(meshFilter)] = res.data;
         }
 
         EditorUtility.ClearProgressBar();
@@ -443,7 +457,7 @@ public class HectonMeshCleaner : EditorWindow
         {
             previewSourceMesh = mesh;
             previewTarget = mf.gameObject;
-            previewHiddenTris = new HashSet<int>(hiddenTris);
+            CopyHashSet(hiddenTris, previewHiddenTris);
         }
 
         var data = new PerMeshAnalysis
@@ -484,9 +498,9 @@ public class HectonMeshCleaner : EditorWindow
         return false;
     }
 
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     // DOUBLE-SIDED MESH
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     private static Vector3 DominantAxisDirection(Vector3 vector)
     {
         float ax = Mathf.Abs(vector.x);
@@ -527,25 +541,25 @@ public class HectonMeshCleaner : EditorWindow
         return ds;
     }
 
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     // APPLY
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     private void ApplyCleanup()
     {
         if (!analysisReady || !ValidateState()) { SetStatus("Re-run ANALYZE!", MessageType.Error); return; }
-        var mfs = GetMeshFilters();
-        if (mfs.Length == 0) return;
+        CollectMeshFilters(meshFilterScratch);
+        if (meshFilterScratch.Count == 0) return;
 
         Undo.SetCurrentGroupName("Hecton Mesh Cleanup v4");
         int undoGroup = Undo.GetCurrentGroup();
         int totalRemoved = 0, totalKept = 0, processed = 0, skipped = 0;
 
-        for (int m = 0; m < mfs.Length; m++)
+        for (int m = 0; m < meshFilterScratch.Count; m++)
         {
-            MeshFilter mf = mfs[m];
+            MeshFilter mf = meshFilterScratch[m];
             ulong mfID = GetStableObjectId(mf);
 
-            EditorUtility.DisplayProgressBar("Applying...", $"{mf.gameObject.name} ({m + 1}/{mfs.Length})", (float)m / mfs.Length);
+            EditorUtility.DisplayProgressBar("Applying...", $"{mf.gameObject.name} ({m + 1}/{meshFilterScratch.Count})", (float)m / meshFilterScratch.Count);
 
             if (!perMeshAnalysis.ContainsKey(mfID)) { skipped++; continue; }
             var analysis = perMeshAnalysis[mfID];
@@ -579,13 +593,13 @@ public class HectonMeshCleaner : EditorWindow
         AssetDatabase.SaveAssets();
         FullReset("Applied");
 
-        SetStatus($"✓ {processed} meshes cleaned. Removed {totalRemoved} tris. Kept {totalKept}. Ctrl+Z to undo.", MessageType.Info);
+        SetStatus($"OK {processed} meshes cleaned. Removed {totalRemoved} tris. Kept {totalKept}. Ctrl+Z to undo.", MessageType.Info);
         SceneView.RepaintAll();
     }
 
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     // BUILD CLEANED MESH (SUBMESH-AWARE + HOLE FILL)
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     private Mesh BuildCleanedMesh(Mesh source, PerMeshAnalysis analysis)
     {
         // Read all vertex data channels
@@ -620,7 +634,7 @@ public class HectonMeshCleaner : EditorWindow
         bool hasColors = srcColors.Count == srcVerts.Count;
         bool hasColors32 = !hasColors && srcColors32.Count == srcVerts.Count;
 
-        // ── Map each flat triangle index → submesh index ──
+        // -- Map each flat triangle index -> submesh index --
         int subMeshCount = source.subMeshCount;
         int[] triToSubmesh = new int[totalTriCount];
         for (int s = 0; s < subMeshCount; s++)
@@ -632,7 +646,7 @@ public class HectonMeshCleaner : EditorWindow
                 triToSubmesh[startTri + t] = s;
         }
 
-        // ── Collect kept triangles per submesh ──
+        // -- Collect kept triangles per submesh --
         List<int>[] keptPerSubmesh = new List<int>[subMeshCount];
         for (int s = 0; s < subMeshCount; s++) keptPerSubmesh[s] = new List<int>();
 
@@ -647,7 +661,7 @@ public class HectonMeshCleaner : EditorWindow
             }
         }
 
-        // ── Hole Fill ──
+        // -- Hole Fill --
         List<int> fillTris = new List<int>(); // will go into submesh 0
         List<Vector3> extraVerts = new List<Vector3>();
         List<Vector3> extraNormals = new List<Vector3>();
@@ -659,8 +673,10 @@ public class HectonMeshCleaner : EditorWindow
 
             // New holes = boundary edges that weren't boundary in original
             HashSet<long> newHoleEdges = new HashSet<long>();
-            foreach (long e in keptBoundary)
+            HashSet<long>.Enumerator keptBoundaryEnumerator = keptBoundary.GetEnumerator();
+            while (keptBoundaryEnumerator.MoveNext())
             {
+                long e = keptBoundaryEnumerator.Current;
                 if (!analysis.originalBoundaryEdges.Contains(e))
                     newHoleEdges.Add(e);
             }
@@ -672,15 +688,17 @@ public class HectonMeshCleaner : EditorWindow
 
                 int extraVertBase = srcVerts.Count;
 
-                foreach (var loop in loops)
+                for (int loopIndex = 0; loopIndex < loops.Count; loopIndex++)
                 {
+                    List<int> loop = loops[loopIndex];
                     if (loop.Count < minHoleEdges || loop.Count > maxHoleEdges) continue;
 
                     // Compute centroid
                     Vector3 centroid = Vector3.zero;
                     Vector3 avgNormal = Vector3.zero;
-                    foreach (int vi in loop)
+                    for (int i = 0; i < loop.Count; i++)
                     {
+                        int vi = loop[i];
                         centroid += srcVerts[vi];
                         if (hasNormals) avgNormal += srcNormals[vi];
                     }
@@ -717,18 +735,23 @@ public class HectonMeshCleaner : EditorWindow
             }
         }
 
-        // ── Compact vertices ──
+        // -- Compact vertices --
         // Find all used vertex indices
         HashSet<int> usedVerts = new HashSet<int>();
         for (int s = 0; s < subMeshCount; s++)
-            foreach (int idx in keptPerSubmesh[s]) usedVerts.Add(idx);
-        foreach (int idx in fillTris)
         {
+            List<int> keptTris = keptPerSubmesh[s];
+            for (int i = 0; i < keptTris.Count; i++)
+                usedVerts.Add(keptTris[i]);
+        }
+        for (int i = 0; i < fillTris.Count; i++)
+        {
+            int idx = fillTris[i];
             if (idx < srcVerts.Count) usedVerts.Add(idx);
             // Extra verts are always "used"
         }
 
-        // Build remap: old index → new index
+        // Build remap: old index -> new index
         Dictionary<int, int> remap = new Dictionary<int, int>();
         List<Vector3> newVerts = new List<Vector3>();
         List<Vector3> newNormals = new List<Vector3>();
@@ -790,7 +813,7 @@ public class HectonMeshCleaner : EditorWindow
             keptPerSubmesh[0].AddRange(fillTris);
         }
 
-        // ── Build mesh ──
+        // -- Build mesh --
         Mesh result = new Mesh();
         result.name = source.name + "_cleaned";
         if (newVerts.Count > 65535) result.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
@@ -816,9 +839,9 @@ public class HectonMeshCleaner : EditorWindow
         return result;
     }
 
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     // BOUNDARY EDGES & HOLE FILL
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     private static long PackEdge(int a, int b)
     {
         int lo = Mathf.Min(a, b);
@@ -849,16 +872,21 @@ public class HectonMeshCleaner : EditorWindow
         }
 
         HashSet<long> boundary = new HashSet<long>();
-        foreach (var kvp in edgeCount)
+        Dictionary<long, int>.Enumerator edgeEnumerator = edgeCount.GetEnumerator();
+        while (edgeEnumerator.MoveNext())
+        {
+            KeyValuePair<long, int> kvp = edgeEnumerator.Current;
             if (kvp.Value == 1) boundary.Add(kvp.Key);
+        }
         return boundary;
     }
 
     private static HashSet<long> ComputeBoundaryEdgesFromSubmeshLists(List<int>[] submeshTris)
     {
         Dictionary<long, int> edgeCount = new Dictionary<long, int>();
-        foreach (var triList in submeshTris)
+        for (int listIndex = 0; listIndex < submeshTris.Length; listIndex++)
         {
+            List<int> triList = submeshTris[listIndex];
             for (int i = 0; i < triList.Count; i += 3)
             {
                 IncEdge(edgeCount, PackEdge(triList[i], triList[i + 1]));
@@ -867,8 +895,12 @@ public class HectonMeshCleaner : EditorWindow
             }
         }
         HashSet<long> boundary = new HashSet<long>();
-        foreach (var kvp in edgeCount)
+        Dictionary<long, int>.Enumerator edgeEnumerator = edgeCount.GetEnumerator();
+        while (edgeEnumerator.MoveNext())
+        {
+            KeyValuePair<long, int> kvp = edgeEnumerator.Current;
             if (kvp.Value == 1) boundary.Add(kvp.Key);
+        }
         return boundary;
     }
 
@@ -883,10 +915,12 @@ public class HectonMeshCleaner : EditorWindow
     /// </summary>
     private static List<List<int>> TraceLoops(HashSet<long> edges)
     {
-        // Build adjacency: vertex → list of connected vertices via boundary edges
+        // Build adjacency: vertex -> list of connected vertices via boundary edges
         Dictionary<int, List<int>> adj = new Dictionary<int, List<int>>();
-        foreach (long e in edges)
+        HashSet<long>.Enumerator edgeEnumerator = edges.GetEnumerator();
+        while (edgeEnumerator.MoveNext())
         {
+            long e = edgeEnumerator.Current;
             UnpackEdge(e, out int a, out int b);
             if (!adj.ContainsKey(a)) adj[a] = new List<int>();
             if (!adj.ContainsKey(b)) adj[b] = new List<int>();
@@ -897,8 +931,10 @@ public class HectonMeshCleaner : EditorWindow
         HashSet<long> visited = new HashSet<long>();
         List<List<int>> loops = new List<List<int>>();
 
-        foreach (long startEdge in edges)
+        edgeEnumerator = edges.GetEnumerator();
+        while (edgeEnumerator.MoveNext())
         {
+            long startEdge = edgeEnumerator.Current;
             if (visited.Contains(startEdge)) continue;
 
             UnpackEdge(startEdge, out int startA, out int startB);
@@ -918,8 +954,10 @@ public class HectonMeshCleaner : EditorWindow
                 if (!adj.ContainsKey(current)) break;
 
                 int next = -1;
-                foreach (int neighbor in adj[current])
+                List<int> neighbors = adj[current];
+                for (int i = 0; i < neighbors.Count; i++)
                 {
+                    int neighbor = neighbors[i];
                     if (neighbor == prev) continue;
                     long candidateEdge = PackEdge(current, neighbor);
                     if (!edges.Contains(candidateEdge)) continue;
@@ -953,24 +991,29 @@ public class HectonMeshCleaner : EditorWindow
         return loops;
     }
 
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     // UTILITY
-    // ═══════════════════════════════════════════════════════════════════
-    private MeshFilter[] GetMeshFilters()
+    // ===================================================================
+    private void CollectMeshFilters(List<MeshFilter> list)
     {
-        if (targetObject == null) return new MeshFilter[0];
-        List<MeshFilter> list = new List<MeshFilter>();
+        list.Clear();
+        if (targetObject == null) return;
+
         if (processAllLODs)
         {
-            foreach (var mf in targetObject.GetComponentsInChildren<MeshFilter>(true))
-                if (mf.sharedMesh != null && mf.sharedMesh.isReadable) list.Add(mf);
+            targetObject.GetComponentsInChildren<MeshFilter>(true, list);
+            for (int i = list.Count - 1; i >= 0; i--)
+            {
+                MeshFilter mf = list[i];
+                if (mf == null || mf.sharedMesh == null || !mf.sharedMesh.isReadable)
+                    list.RemoveAt(i);
+            }
         }
         else
         {
             var mf = targetObject.GetComponent<MeshFilter>();
             if (mf != null && mf.sharedMesh != null && mf.sharedMesh.isReadable) list.Add(mf);
         }
-        return list.ToArray();
     }
 
     private string SaveMesh(Mesh mesh, string name)
@@ -986,11 +1029,26 @@ public class HectonMeshCleaner : EditorWindow
 
     private void CleanupTemp()
     {
-        foreach (var g in UnityEngine.Object.FindObjectsByType<GameObject>())
+        GameObject[] objects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+        for (int i = 0; i < objects.Length; i++)
+        {
+            GameObject g = objects[i];
             if (g.name.StartsWith("_HectonTemp_")) DestroyImmediate(g);
+        }
     }
 
     private void SetStatus(string msg, MessageType type) { lastStatus = msg; lastStatusType = type; Repaint(); }
+
+    private static GUIStyle ResolveTitleStyle()
+    {
+        if (s_TitleStyle == null)
+        {
+            // COLD ALLOC: GUIStyle[1] - editor window title cache - owner: HectonMeshCleaner
+            s_TitleStyle = new GUIStyle(EditorStyles.boldLabel) { fontSize = 14, alignment = TextAnchor.MiddleCenter };
+        }
+
+        return s_TitleStyle;
+    }
 
     private static void EnsureFolder(string path)
     {
@@ -1007,31 +1065,44 @@ public class HectonMeshCleaner : EditorWindow
 
     private static string SanitizeName(string n)
     {
-        foreach (char c in Path.GetInvalidFileNameChars()) n = n.Replace(c, '_');
+        for (int i = 0; i < s_InvalidFileNameChars.Length; i++)
+            n = n.Replace(s_InvalidFileNameChars[i], '_');
         return n.Replace(' ', '_').Replace('.', '_');
     }
 
-    // ═══════════════════════════════════════════════════════════════════
+    private static void CopyHashSet(HashSet<int> source, HashSet<int> target)
+    {
+        target.Clear();
+        HashSet<int>.Enumerator sourceEnumerator = source.GetEnumerator();
+        while (sourceEnumerator.MoveNext())
+            target.Add(sourceEnumerator.Current);
+    }
+
+    // ===================================================================
     // SCENE PREVIEW
-    // ═══════════════════════════════════════════════════════════════════
+    // ===================================================================
     private void OnSceneGUI(SceneView sv)
     {
         if (!showPreview || !analysisReady || previewSourceMesh == null || previewTarget == null) return;
         if (targetObject == null || GetStableObjectId(targetObject) != analyzedObjectEntityId) return;
 
-        List<Vector3> verts = new List<Vector3>(previewSourceMesh.vertexCount);
-        List<int> tris = new List<int>((int)global::System.Math.Min(ResolveIndexCount(previewSourceMesh), int.MaxValue));
-        previewSourceMesh.GetVertices(verts);
-        CollectMeshTriangles(previewSourceMesh, tris);
-        int triCount = tris.Count / 3;
+        previewVerts.Clear();
+        previewTris.Clear();
+        previewSourceMesh.GetVertices(previewVerts);
+        CollectMeshTriangles(previewSourceMesh, previewTris);
+        int triCount = previewTris.Count / 3;
 
         Handles.matrix = previewTarget.transform.localToWorldMatrix;
         Handles.color = hiddenColor;
 
-        foreach (int t in previewHiddenTris)
+        HashSet<int>.Enumerator hiddenTriangleEnumerator = previewHiddenTris.GetEnumerator();
+        while (hiddenTriangleEnumerator.MoveNext())
         {
+            int t = hiddenTriangleEnumerator.Current;
             if (t >= triCount) continue;
-            Vector3 a = verts[tris[t * 3]], b = verts[tris[t * 3 + 1]], c = verts[tris[t * 3 + 2]];
+            Vector3 a = previewVerts[previewTris[t * 3]];
+            Vector3 b = previewVerts[previewTris[t * 3 + 1]];
+            Vector3 c = previewVerts[previewTris[t * 3 + 2]];
             Handles.DrawLine(a, b);
             Handles.DrawLine(b, c);
             Handles.DrawLine(c, a);

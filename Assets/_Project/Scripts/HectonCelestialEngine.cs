@@ -60,6 +60,7 @@ using System.Collections.Generic;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Environment;
+using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton.Localization;
 using UnityEngine;
@@ -442,6 +443,84 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         // ─────────────────────────────────────────────
 
         [Header("═══ REFERENCES ═══")]
+        [Serializable]
+        private struct KeplerOrbitDefinition
+        {
+            public float semiMajorAxisMeters;
+            [Range(0f, 0.95f)] public float eccentricity;
+            [Min(1f)] public float orbitalPeriodSeconds;
+            public float epochMeanAnomalyDegrees;
+            public float epochUniverseTimeSeconds;
+            public float inclinationDegrees;
+            public float longitudeAscendingNodeDegrees;
+            public float argumentOfPeriapsisDegrees;
+            public float orbitalDriftDegreesPerYear;
+            [Range(0f, 1f)] public float gravityWeight;
+            [Min(1f)] public float registryOffsetMeters;
+
+            public static KeplerOrbitDefinition GasGiantDefault()
+            {
+                return new KeplerOrbitDefinition
+                {
+                    semiMajorAxisMeters = 84000000f,
+                    eccentricity = 0.035f,
+                    orbitalPeriodSeconds = 172800f,
+                    epochMeanAnomalyDegrees = 40f,
+                    epochUniverseTimeSeconds = 0f,
+                    inclinationDegrees = 6f,
+                    longitudeAscendingNodeDegrees = 18f,
+                    argumentOfPeriapsisDegrees = 90f,
+                    orbitalDriftDegreesPerYear = 0.08f,
+                    gravityWeight = 0.18f,
+                    registryOffsetMeters = 96000f
+                };
+            }
+
+            public static KeplerOrbitDefinition Moon0Default()
+            {
+                return new KeplerOrbitDefinition
+                {
+                    semiMajorAxisMeters = 410000f,
+                    eccentricity = 0.072f,
+                    orbitalPeriodSeconds = 28800f,
+                    epochMeanAnomalyDegrees = 12f,
+                    epochUniverseTimeSeconds = 0f,
+                    inclinationDegrees = 4.8f,
+                    longitudeAscendingNodeDegrees = 34f,
+                    argumentOfPeriapsisDegrees = 12f,
+                    orbitalDriftDegreesPerYear = 1.2f,
+                    gravityWeight = 1f,
+                    registryOffsetMeters = 56000f
+                };
+            }
+
+            public static KeplerOrbitDefinition Moon1Default()
+            {
+                return new KeplerOrbitDefinition
+                {
+                    semiMajorAxisMeters = 690000f,
+                    eccentricity = 0.118f,
+                    orbitalPeriodSeconds = 43200f,
+                    epochMeanAnomalyDegrees = 186f,
+                    epochUniverseTimeSeconds = 0f,
+                    inclinationDegrees = -7.2f,
+                    longitudeAscendingNodeDegrees = -22f,
+                    argumentOfPeriapsisDegrees = 51f,
+                    orbitalDriftDegreesPerYear = -0.64f,
+                    gravityWeight = 0.72f,
+                    registryOffsetMeters = 76000f
+                };
+            }
+        }
+
+        private struct KeplerOrbitState
+        {
+            public float3 RegistryOffset;
+            public float3 Direction;
+            public float Phase01;
+            public float Fullness01;
+        }
+
         [SerializeField] private Light sunLight;
         [SerializeField] private Transform aegirTransform;
         [SerializeField] private ObserverRelativeCelestialBody aegirObserverRelativeBody;

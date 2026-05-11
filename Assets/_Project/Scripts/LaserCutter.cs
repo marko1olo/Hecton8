@@ -452,8 +452,6 @@ namespace Hecton8.Gameplay
         private const float MinEffectiveBeamPower = 0.02f;
         private const float LowPowerThresholdNormalized = 0.12f;
         private const float LowPowerOutputScale = 0.35f;
-        private const float CutHitSphereRadiusMeters = 0.5f;
-        private const int CutHitBufferCapacity = 8;
         private const float InvTau = 0.15915494f;
         private const float LaserJitterSecondaryScale = 1.37f;
         private const float LaserJitterSecondaryOffset = 2.1f;
@@ -461,7 +459,6 @@ namespace Hecton8.Gameplay
         private const float ShaderFloatPublishEpsilon = 0.0001f;
         private static int _WaterLayer = int.MinValue;
         private static int _TransparentFxLayer = int.MinValue;
-        private static int _BaseModuleLayer = int.MinValue;
         private const byte IdleState = (byte)ToolStateBits.Idle;
         private const byte ActiveState = (byte)ToolStateBits.Active;
         private const byte BusyState = (byte)ToolStateBits.Busy;
@@ -574,8 +571,6 @@ namespace Hecton8.Gameplay
 
         /// <summary>Raycast result (reused, zero GC).</summary>
         private RaycastHit _hitInfo;
-        // COLD ALLOC: RaycastHit[8] - cutter-local spherecast hit arbitration buffer - owner: LaserCutter
-        private readonly RaycastHit[] _cutHitBuffer = new RaycastHit[CutHitBufferCapacity];
 
         /// <summary>Cached diagnosis result (reused, zero GC).</summary>
         private CutterDiagnosis _cachedDiagnosis;
@@ -756,8 +751,6 @@ namespace Hecton8.Gameplay
                 _WaterLayer = Hecton8.Core.HectonLayerMasks.Water;
             if (_TransparentFxLayer == int.MinValue)
                 _TransparentFxLayer = Hecton8.Core.HectonLayerMasks.TransparentFX;
-            if (_BaseModuleLayer == int.MinValue)
-                _BaseModuleLayer = Hecton8.Core.HectonLayerMasks.BaseModule;
         }
 
         private void TryAssignCutAudioMixerRoute()
@@ -1816,139 +1809,12 @@ namespace Hecton8.Gameplay
 
         private bool TryGetCutHit(out RaycastHit hit)
         {
-            if (TryGetCutSphereHit(out hit))
-                return true;
-
             IInteractionSignalService interactionService = GlobalRegistry.InteractionSignals;
             if (interactionService != null && interactionService.IsInitialized)
                 return interactionService.TryRaycastPrimary(_raycastRequesterId, _cachedTransform.position, _cachedTransform.forward, GetRuntimeMaxRange(maxRange), ResolveCuttableRaycastMask(), QueryTriggerInteraction.Ignore, out hit);
 
             hit = default;
             return false;
-        }
-
-        private bool TryGetCutSphereHit(out RaycastHit hit)
-        {
-            hit = default;
-            if (_cachedTransform == null)
-                return false;
-
-            Vector3 direction = _cachedTransform.forward;
-            float range = GetRuntimeMaxRange(maxRange);
-            if (range <= 0f || direction.sqrMagnitude <= 0.0001f)
-                return false;
-
-            int layerMask = ResolveCuttableRaycastMask();
-            Vector3 origin = _cachedTransform.position;
-            Vector3 normalizedDirection = direction * math.rsqrt(direction.sqrMagnitude);
-            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
-                origin,
-                CutHitSphereRadiusMeters,
-                normalizedDirection,
-                _cutHitBuffer,
-                range,
-                layerMask,
-                QueryTriggerInteraction.Ignore);
-            if (hitCount <= 0)
-                return false;
-
-            int nearestHitIndex = -1;
-            int nearestBaseHitIndex = -1;
-            int nearestNonBaseHitIndex = -1;
-            float nearestHitDistance = float.MaxValue;
-            float nearestBaseHitDistance = float.MaxValue;
-            float nearestNonBaseHitDistance = float.MaxValue;
-
-            for (int i = 0; i < hitCount; i++)
-            {
-                RaycastHit candidate = _cutHitBuffer[i];
-                if (!IsValidCutHit(origin, normalizedDirection, range, layerMask, in candidate))
-                    continue;
-
-                float candidateDistance = candidate.distance;
-                if (candidateDistance < nearestHitDistance)
-                {
-                    nearestHitDistance = candidateDistance;
-                    nearestHitIndex = i;
-                }
-
-                if (IsBaseModuleHit(candidate.collider))
-                {
-                    if (candidateDistance < nearestBaseHitDistance)
-                    {
-                        nearestBaseHitDistance = candidateDistance;
-                        nearestBaseHitIndex = i;
-                    }
-                }
-                else if (candidateDistance < nearestNonBaseHitDistance)
-                {
-                    nearestNonBaseHitDistance = candidateDistance;
-                    nearestNonBaseHitIndex = i;
-                }
-            }
-
-            if (nearestBaseHitIndex >= 0 && nearestNonBaseHitIndex >= 0)
-            {
-                RaycastHit baseHit = _cutHitBuffer[nearestBaseHitIndex];
-                RaycastHit floraPriorityHit = _cutHitBuffer[nearestNonBaseHitIndex];
-                if ((floraPriorityHit.point - baseHit.point).sqrMagnitude <= (CutHitSphereRadiusMeters * CutHitSphereRadiusMeters))
-                {
-                    hit = floraPriorityHit;
-                    return true;
-                }
-            }
-
-            if (nearestBaseHitIndex >= 0)
-            {
-                RaycastHit baseHit = _cutHitBuffer[nearestBaseHitIndex];
-                if (IsBaseHitOccludedByConsumableFlora(baseHit.point))
-                {
-                    hit = baseHit;
-                    return true;
-                }
-            }
-
-            if (nearestHitIndex < 0)
-                return false;
-
-            hit = _cutHitBuffer[nearestHitIndex];
-            return true;
-        }
-
-        private static bool IsValidCutHit(Vector3 origin, Vector3 direction, float range, int layerMask, in RaycastHit hit)
-        {
-            if (hit.collider == null || hit.distance <= 0.05f || hit.distance > range)
-                return false;
-
-            int layer = hit.collider.gameObject.layer;
-            if ((layerMask & (1 << layer)) == 0)
-                return false;
-
-            Vector3 toHit = hit.point - origin;
-            if (math.dot((float3)hit.normal, (float3)direction) >= 0f)
-                return false;
-
-            return toHit.sqrMagnitude > 0.0001f;
-        }
-
-        private static bool IsBaseModuleHit(Collider collider)
-        {
-            EnsureLayerCache();
-            return collider != null && collider.gameObject.layer == _BaseModuleLayer;
-        }
-
-        private static bool IsBaseHitOccludedByConsumableFlora(Vector3 worldHitPoint)
-        {
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
-            if (organicManager == null)
-                return false;
-
-            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(worldHitPoint);
-            return organicManager.TryResolveNearestConsumableFlora(
-                runtimeHitPoint,
-                CutHitSphereRadiusMeters,
-                out _,
-                out _);
         }
 
         private void TryPublishBoilSignal(IInteractionSignalService interactionService, in EquipmentInteractionPacket packet, float deliveredDamage, float normalizedPower)

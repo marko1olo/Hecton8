@@ -79,13 +79,14 @@ Latest documentation sorting map: `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING
 Latest header/archive queue: `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`.
 Current root text scan saw `5` root `.md` files and `0` root `.txt`/`.log` files; only the three anchors listed above are active documentation authority.
 
-## 2026-05-08 Check
+## 2026-05-11 Check
 
 Root documentation anchors remain `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
 Root `TERRAIN_AND_BIOME_REALITY_MAP.md` is still not active authority; use `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
 Root `BROKEN_PREFABS.md` is still not active authority; it is a generated snapshot and must be summarized in a dated `Docs/Reports/` file before citation.
 Current root text scan saw `5` root `.md` files and `0` root `.txt`/`.log` files.
-Latest documentation synchronization pass: `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`.
-Latest active documentation manifest: `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`.
-Latest completed Core build evidence: `CodexArtifacts/2026-05-08_DOC_SYNC_CORE_BUILD3.log`, `Build succeeded`, `48 Warning(s)`, `0 Error(s)`; later source writes were observed, so this is not stable-source proof.
-Latest Unity MCP editor-console proof: active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, console error/warning entries `0`.
+Latest documentation/data continuation: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+Latest `.agents-skills` doctrine update: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
+Latest active documentation manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+Latest completed Core build evidence: `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`; this is not Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof.
+Current Unity MCP proof was not run in the May 11 continuation; older MCP editor-console readbacks are historical only.

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Narrative;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using UnityEngine;
@@ -34,6 +35,7 @@ namespace Hecton8.Gameplay
         [Header("State")]
         [SerializeField, Sirenix.OdinInspector.ReadOnly] private List<string> discoveredIds = new List<string>(); // COLD ALLOC: 64 for [N] discoveries (reasonable number of narrative discoveries)
         [SerializeField, Sirenix.OdinInspector.ReadOnly] private int currentDepthTier;
+        [SerializeField, Sirenix.OdinInspector.ReadOnly] private ulong narrativeAupTriggeredMask;
 
         // Runtime-only collection for active POIs in the world.
         // COLD ALLOC: 64 for initial capacity (reasonable number of POIs per scene).
@@ -59,6 +61,7 @@ namespace Hecton8.Gameplay
         public void PopulateSaveData(SaveData data)
         {
             data.narrativeDepthTier = currentDepthTier;
+            data.narrativeAupTriggeredMask = narrativeAupTriggeredMask;
             data.narrativeDiscoveryCount = Mathf.Min(discoveredIds.Count, SaveData.MaxNarrativeDiscoveries);
             
             if (data.narrativeDiscoveryIds == null || data.narrativeDiscoveryIds.Length != SaveData.MaxNarrativeDiscoveries)
@@ -76,6 +79,7 @@ namespace Hecton8.Gameplay
         public void LoadFromSaveData(SaveData data)
         {
             currentDepthTier = data.narrativeDepthTier;
+            narrativeAupTriggeredMask = data.narrativeAupTriggeredMask;
             discoveredIds.Clear();
 
             if (data.narrativeDiscoveryIds != null)
@@ -211,6 +215,8 @@ namespace Hecton8.Gameplay
                 return;
 
             AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
+            ScanAupNarrativeTriggers(in playerAup);
+
             float depth = Mathf.Max(0f, (float)-playerAup.ToAbsoluteDouble3().y);
             int newTier = CalculateDepthTier(depth);
 
@@ -221,6 +227,49 @@ namespace Hecton8.Gameplay
             NarrativeEvents.RaiseDepthTierReached(currentDepthTier);
 
             LogDepthTierReached();
+        }
+
+        private void ScanAupNarrativeTriggers(in AbsoluteUniversePosition playerAup)
+        {
+            if (_activePOIs.Count <= 0)
+                return;
+
+            for (int i = _activePOIs.Count - 1; i >= 0; i--)
+            {
+                NarrativeDiscovery poi = _activePOIs[i];
+                if (poi == null)
+                    continue;
+
+                if (!poi.TryGetAupTrigger(
+                        out int bitIndex,
+                        out float radiusMeters,
+                        out AbsoluteUniversePosition poiAup,
+                        out uint discoveryHash))
+                {
+                    continue;
+                }
+
+                ulong triggerBit = 1UL << bitIndex;
+                if ((narrativeAupTriggeredMask & triggerBit) != 0UL)
+                    continue;
+
+                if (_discoveredHashLookup.Contains(discoveryHash))
+                {
+                    narrativeAupTriggeredMask |= triggerBit;
+                    continue;
+                }
+
+                double radiusSq = (double)radiusMeters * radiusMeters;
+                if (AbsoluteUniversePosition.DistanceSq(in playerAup, in poiAup) > radiusSq)
+                    continue;
+
+                narrativeAupTriggeredMask |= triggerBit;
+                NarrativeEvents.RaiseDiscoveryMade(poi.DiscoveryId);
+
+                LoreDatabaseManager loreDatabase = GlobalRegistry.LoreDatabase;
+                if (loreDatabase != null)
+                    loreDatabase.TryUnlockByHash(LoreDatabaseManager.ComputeLoreHash(poi.DiscoveryId));
+            }
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]

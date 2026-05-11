@@ -406,8 +406,10 @@ public struct HectonNormalJob : IJobParallelFor
         float3 D = vertices[math.max(lz - 1, 0) * resX + lx];
         float3 U = vertices[math.min(lz + 1, resZ - 1) * resX + lx];
 
-        float3 n = math.normalizesafe(math.cross(U - D, R - L), new float3(0, 1, 0));
-        normals[idx] = n;
+        float3 crossNormal = math.cross(U - D, R - L);
+        float normalLengthSq = math.lengthsq(crossNormal);
+        float3 resolvedNormal = crossNormal * math.rsqrt(math.max(normalLengthSq, 0.000001f));
+        normals[idx] = math.select(new float3(0f, 1f, 0f), resolvedNormal, normalLengthSq > 0.000001f);
     }
 }
 
@@ -910,7 +912,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     {
         if (viewer == null)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             UnityEngine.Debug.LogWarning("[Hecton] No viewer assigned.");
 #endif
             return;
@@ -1484,11 +1486,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             mesh.RecalculateTangents();
             mesh.RecalculateBounds();
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            var go = new GameObject(mesh.name);
-#else
             var go = new GameObject(RuntimeChunkObjectName);
-#endif
             go.transform.SetParent(transform, false);
             go.isStatic = true;
 
@@ -2670,7 +2668,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             mr.shadowCastingMode = ShadowCastingMode.Off;
             mr.receiveShadows    = true;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             UnityEngine.Debug.Log($"[Hecton] Preview: {res}×{res} = {vc:N0} verts, " +
                       $"{tc / 3:N0} tris. Bounds: {mesh.bounds.size}");
 #endif

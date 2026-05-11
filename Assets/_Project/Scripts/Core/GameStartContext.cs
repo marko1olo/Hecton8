@@ -1,21 +1,21 @@
 // ============================================================================
-// HECTON-8 — GameStartContext.cs
-// Kontekst initsializatsii igry pri perehode iz menyu v mir.
+// HECTON-8 - GameStartContext.cs
+// Game session initialization context passed from menu to world.
 //
-// NAZNAChENIE:
-//   • Edinyy konteyner dlya peredachi parametrov igrovoy sessii
-//     mezhdu 00_BOOTSTRAP → 01_MAIN_MENU → 02_HECTON_WORLD
-//   • Zamenyaet razbrosannye static string TargetSaveSlot + PlayerPrefs
-//   • Soderzhit startovyy rezhim, slot sohraneniya, rezhim spavna i kontekst intro
+// PURPOSE:
+//   - Single container for game-session parameters passed between
+//     00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD.
+//   - Replaces scattered static TargetSaveSlot strings and PlayerPrefs handoff.
+//   - Stores start mode, save slot, spawn mode, and intro context.
 //
-// VLADELETs SOSTOYaNIYa:
-//   • MainMenuController — pishet v GameStartContextHolder.Current pri StartGame()
-//   • GameBootstrapper — chitaet iz GameStartContextHolder.Current v Start()
+// STATE OWNER:
+//   - MainMenuController writes GameStartContextHolder.Current during StartGame().
+//   - GameBootstrapper reads GameStartContextHolder.Current during Start().
 //
 // ZERO-GC:
-//   • Ispolzuet enum dlya startMode/spawnMode (no boxing)
-//   • Net new[] / new List / string allocations
-//   • Serializable dlya Debug Inspector-inga
+//   - Uses enums for startMode/spawnMode; no boxing.
+//   - No new[] / new List / string allocations.
+//   - Serializable for Debug Inspector visibility.
 // ============================================================================
 
 using System;
@@ -24,65 +24,65 @@ using UnityEngine;
 namespace Hecton8.Core
 {
     /// <summary>
-    /// Rezhim initsializatsii igrovoy sessii.
+    /// Game session initialization mode.
     /// </summary>
     public enum GameStartMode
     {
-        /// <summary>Novaya igra s nulya.</summary>
+        /// <summary>Start a new session from scratch.</summary>
         NewGame,
 
-        /// <summary>Zagruzka suschestvuyuschego sohraneniya.</summary>
+        /// <summary>Load an existing save slot.</summary>
         LoadGame,
 
-        /// <summary>Povtornoe vklyuchenie pauzy (vernulis v menyu i zagruzhaemsya obratno)</summary>
+        /// <summary>Resume after returning through the menu.</summary>
         Resume,
     }
 
     /// <summary>
-    /// Rezhim razmescheniya igroka pri starte.
+    /// Player placement mode during startup.
     /// </summary>
     public enum GameSpawnMode
     {
-        /// <summary>Ispolzovat sohranennuyu pozitsiyu (iz seyva ili konfiga)</summary>
+        /// <summary>Use the saved position from the save or startup config.</summary>
         SavedLocation,
 
-        /// <summary>Ispolzovat fallback pozitsiyu, esli est problemy s sohraneniem</summary>
+        /// <summary>Use the fallback position when saved placement is unavailable.</summary>
         FallbackLocation,
 
-        /// <summary>Ispolzovat pozitsiyu iz IntroBootLoader (esli est prologue)</summary>
+        /// <summary>Use the IntroBootLoader position when a prologue handoff exists.</summary>
         IntroLocation,
     }
 
     /// <summary>
-    /// Kontekst zapuska igry. Peredaetsya iz menyu v igrovoy mir.
+    /// Game startup context passed from menu to world.
     /// </summary>
     [Serializable]
     public struct GameStartContext
     {
         [SerializeField] private bool _isInitialized;
 
-        /// <summary>Rezhim initsializatsii (novaya igra / zagruzka / vozobnovlenie)</summary>
+        /// <summary>Session initialization mode: new, load, or resume.</summary>
         public GameStartMode StartMode;
 
-        /// <summary>Imya slota sohraneniya (pustoy string = novaya igra)</summary>
+        /// <summary>Save slot name; empty means a new game.</summary>
         public string TargetSaveSlot;
 
-        /// <summary>Rezhim spavna igroka (sohranennaya pozitsiya / fallback)</summary>
+        /// <summary>Player spawn mode: saved position or fallback.</summary>
         public GameSpawnMode SpawnMode;
 
-        /// <summary>Imya stseny intro (pustoy string = bez intro)</summary>
+        /// <summary>Intro scene name; empty means no intro.</summary>
         public string IntroSceneName;
 
-        /// <summary>Preset landinga (pustoy string = default)</summary>
+        /// <summary>Landing preset; empty means default.</summary>
         public string LandingPresetName;
 
         /// <summary>
-        /// Vozvraschaet znachimyy kontekst (true esli eto realnaya sessiya, a ne pustoy struct).
+        /// Returns true when this is a real session context, not an empty struct.
         /// </summary>
         public readonly bool IsValid => _isInitialized && (!string.IsNullOrEmpty(TargetSaveSlot) || StartMode == GameStartMode.NewGame);
 
         /// <summary>
-        /// Sozdaet novuyu igrovuyu sessiyu (NewGame).
+        /// Creates a NewGame session context.
         /// </summary>
         public static GameStartContext CreateNewGame(string landingPreset = "")
         {
@@ -98,7 +98,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Sozdaet kontekst zagruzki suschestvuyuschey sessii (LoadGame).
+        /// Creates a LoadGame context for an existing session.
         /// </summary>
         public static GameStartContext CreateLoadGame(
             string saveSlot,
@@ -116,7 +116,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Sozdaet kontekst vozobnovleniya pauzy (Resume iz menyu).
+        /// Creates a Resume context after returning through the menu.
         /// </summary>
         public static GameStartContext CreateResume(string saveSlot)
         {
@@ -150,7 +150,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Vspomogatelnyy metod dlya skopirovaniya s modifikatsiey odnogo polya.
+        /// Copies the context while changing only the spawn mode.
         /// </summary>
         public readonly GameStartContext WithSpawnMode(GameSpawnMode newSpawnMode)
         {
@@ -173,8 +173,8 @@ namespace Hecton8.Core
     }
 
     /// <summary>
-    /// Konteyner dlya peredachi GameStartContext mezhdu stsenami.
-    /// Singleton, zhivet v pamyati poka ne ispolzuetsya.
+    /// Container that carries GameStartContext between scenes.
+    /// Static handoff only; it lives in memory until consumed or reset.
     /// </summary>
     public static class GameStartContextHolder
     {
@@ -187,7 +187,7 @@ namespace Hecton8.Core
         private const string PersistKeyIssuedAtUtcTicks = "GameStartContext.IssuedAtUtcTicks";
         private const double PersistedHandoffMaxAgeSeconds = 45d;
 
-        /// <summary>Tekuschiy kontekst igrovoy sessii.</summary>
+        /// <summary>Current game session context.</summary>
         public static GameStartContext Current { get; set; }
 
         /// <summary>
@@ -230,7 +230,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Sbrasyvaet kontekst (ispolzuetsya pri vyhode v glavnoe menyu).
+        /// Resets context when returning to the main menu.
         /// </summary>
         public static void Reset()
         {
@@ -239,7 +239,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Logiruet tekuschiy kontekst dlya otladki.
+        /// Logs the current context for diagnostics.
         /// </summary>
         public static void LogCurrent()
         {

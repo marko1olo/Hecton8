@@ -42,6 +42,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -234,8 +235,8 @@ namespace Hecton8.Core
             {
                 CurrentRawValue = allocatedBytes,
                 ThresholdRawValue = thresholdBytes,
-                CurrentValue = allocatedBytes / (1024f * 1024f),
-                ThresholdValue = thresholdBytes / (1024f * 1024f),
+                CurrentValue = allocatedBytes * GlobalTelemetryBus.BytesToMegabytes,
+                ThresholdValue = thresholdBytes * GlobalTelemetryBus.BytesToMegabytes,
                 FrameCount = frameCount,
                 EventType = (ushort)PerformanceEventType.GCAllocExceeded,
                 Reserved = 0
@@ -512,6 +513,8 @@ namespace Hecton8.Core
 
         private float[] _frameTimeHistory;
         private int _frameTimeHistoryIndex;
+        private int _frameTimeHistoryMask;
+        private float _frameTimeHistoryReciprocal;
 
         private long _lastGCAllocCount;
         private long _lastGCTotalMemory;
@@ -532,6 +535,35 @@ namespace Hecton8.Core
         //  LIFECYCLE
         // ════════════════════════════════════════════════════════════
 
+        private static int ResolvePowerOfTwoHistoryLength(int requestedLength)
+        {
+            int value = 1;
+            while (value < requestedLength && value < 4096)
+                value <<= 1;
+
+            return value;
+        }
+
+        private static float ResolvePowerOfTwoReciprocal(int length)
+        {
+            switch (length)
+            {
+                case 1: return 1f;
+                case 2: return 0.5f;
+                case 4: return 0.25f;
+                case 8: return 0.125f;
+                case 16: return 0.0625f;
+                case 32: return 0.03125f;
+                case 64: return 0.015625f;
+                case 128: return 0.0078125f;
+                case 256: return 0.00390625f;
+                case 512: return 0.001953125f;
+                case 1024: return 0.0009765625f;
+                case 2048: return 0.00048828125f;
+                default: return 0.000244140625f;
+            }
+        }
+
         private void Awake()
         {
             PerformanceMonitor registered = GlobalRegistry.PerformanceMonitor;
@@ -543,8 +575,11 @@ namespace Hecton8.Core
 
             // COLD ALLOC: Stopwatch[1] - sampled performance timing state - owner: PerformanceMonitor
             _frameStopwatch = new System.Diagnostics.Stopwatch();
+            int historyLength = ResolvePowerOfTwoHistoryLength(math.max(1, (int)(avgFrameWindow * 60f)));
             // COLD ALLOC: float[avgFrameWindow*60] - sampled frame-time rolling window - owner: PerformanceMonitor
-            _frameTimeHistory = new float[Mathf.Max(1, (int)(avgFrameWindow * 60))];
+            _frameTimeHistory = new float[historyLength];
+            _frameTimeHistoryMask = historyLength - 1;
+            _frameTimeHistoryReciprocal = ResolvePowerOfTwoReciprocal(historyLength);
             _sampleCounter = 0;
             _sampleCountTotal = 0;
             _autoReportTimer = autoReportInterval;
@@ -708,15 +743,14 @@ namespace Hecton8.Core
         private void UpdateHistory()
         {
             _frameTimeHistory[_frameTimeHistoryIndex] = _currentSnapshot.frameTimeMs;
-            _frameTimeHistoryIndex = (_frameTimeHistoryIndex + 1) % _frameTimeHistory.Length;
+            _frameTimeHistoryIndex = (_frameTimeHistoryIndex + 1) & _frameTimeHistoryMask;
 
-            // Calculate rolling average
             float sum = 0f;
             for (int i = 0; i < _frameTimeHistory.Length; i++)
                 sum += _frameTimeHistory[i];
 
-            _avgFrameTimeMs = sum / _frameTimeHistory.Length;
-            _peakFrameTimeMs = Mathf.Max(_peakFrameTimeMs, _currentSnapshot.frameTimeMs);
+            _avgFrameTimeMs = sum * _frameTimeHistoryReciprocal;
+            _peakFrameTimeMs = math.max(_peakFrameTimeMs, _currentSnapshot.frameTimeMs);
         }
 
         private void CheckThresholds()
@@ -725,7 +759,7 @@ namespace Hecton8.Core
             if (_currentSnapshot.frameTimeMs > peakFrameTimeThreshold)
                 PerformanceEvents.RaiseFrameTimeSpike(_currentSnapshot.frameTimeMs, peakFrameTimeThreshold, frameCount);
 
-            long gcThresholdBytes = (long)(peakAllocThreshold * 1024f * 1024f);
+            long gcThresholdBytes = (long)(peakAllocThreshold * 1048576f);
             if (_currentSnapshot.gcAllocatedThisFrame > gcThresholdBytes)
                 PerformanceEvents.RaiseGCAllocExceeded(_currentSnapshot.gcAllocatedThisFrame, gcThresholdBytes, frameCount);
 
@@ -748,17 +782,18 @@ namespace Hecton8.Core
                 if (runtime == null)
                     return default;
 
-                float deltaSeconds = Mathf.Max(runtime._currentSnapshot.deltaTime, Mathf.Epsilon);
-                float uptimeSeconds = Mathf.Max(Time.realtimeSinceStartup, Mathf.Epsilon);
+                int targetFps = RuntimeWatchdog.ActiveTargetFPS;
 
                 return new PerformanceStats
                 {
                     frameTimeMs = runtime._currentSnapshot.frameTimeMs,
                     avgFrameTimeMs = runtime._avgFrameTimeMs,
                     peakFrameTimeMs = runtime._peakFrameTimeMs,
-                    gcAllocRateMBperSec = runtime._currentSnapshot.gcAllocatedThisFrame / (1024f * 1024f) / deltaSeconds,
+                    gcAllocRateMBperSec = runtime._currentSnapshot.gcAllocatedThisFrame *
+                                          GlobalTelemetryBus.BytesToMegabytes *
+                                          targetFps,
                     totalHeapBytes = runtime._currentSnapshot.gcTotalMemory,
-                    gcCollectionCountRate = (int)(runtime._currentSnapshot.gcCollectionCount / uptimeSeconds)
+                    gcCollectionCountRate = runtime._currentSnapshot.gcCollectionCount
                 };
             }
         }
@@ -768,6 +803,7 @@ namespace Hecton8.Core
         /// </summary>
         public static string DescribeStatus()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             PerformanceMonitor runtime = GlobalRegistry.PerformanceMonitor;
             if (runtime == null)
                 return "PerformanceMonitor: Not initialized";
@@ -779,8 +815,11 @@ namespace Hecton8.Core
             return
                 $"[PERF] samples={runtime._sampleCountTotal} " +
                 $"frame={stats.frameTimeMs:F2}ms avg={stats.avgFrameTimeMs:F2}ms peak={stats.peakFrameTimeMs:F2}ms " +
-                $"gc={stats.gcAllocRateMBperSec:F2}MB/s heap={stats.totalHeapBytes / (1024f * 1024f):F1}MB " +
+                $"gc={stats.gcAllocRateMBperSec:F2}MB/s heap={stats.totalHeapBytes * GlobalTelemetryBus.BytesToMegabytes:F1}MB " +
                 $"collections={stats.gcCollectionCountRate}/s";
+#else
+            return string.Empty;
+#endif
         }
 
         /// <summary>

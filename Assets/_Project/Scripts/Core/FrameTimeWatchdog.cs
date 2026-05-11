@@ -9,51 +9,49 @@ namespace Hecton8.Core
     public static class FrameTimeWatchdog
     {
         private const float SpikeThresholdSeconds = 0.01667f;
-        private const float ThermalThresholdSeconds = 0.025f;
-        private const float SustainedLowFpsThresholdSeconds = 1f / 30f;
-        private const float SustainedLowFpsWindowSeconds = 5f;
+        private const float CriticalThresholdSeconds = 0.025f;
+        private const float WarningThresholdSeconds = 0.01667f;
+        private const int DegradationConsecutiveFrames = 180;
         private const float ThermalParticleSpawnScale = 0.5f;
-        private const float AggressiveLodBias = 0.5f;
         private const uint DefaultSubsystemHash = 0x46545744u;
-        private const uint SustainedLowFpsHash = 0x4C4F4650u; // "LOFP"
+        private const uint SustainedFrameWarningHash = 0x4654574Eu; // "FTWN"
+        private const uint SustainedFrameCriticalHash = 0x46544352u; // "FTCR"
         private const uint DegradeDisableDistantFloraMask = 1u << 0;
         private const uint DegradeHalfParticleEmissionMask = 1u << 1;
-        private const uint DegradeDisableThermalVolumetricsMask = 1u << 2;
-        private const uint DegradeAggressiveLodMask = 1u << 3;
-
-        private static readonly int _globalLodBiasId = Shader.PropertyToID("_GlobalLodBias");
-        private static readonly int _thermalVolumetricEnabledId = Shader.PropertyToID("_H8ThermalVolumetricEnabled");
-        private static readonly int _thermalParticleSpawnScaleId = Shader.PropertyToID("_H8ThermalParticleSpawnScale");
-        private static readonly int _distantFloraEnabledId = Shader.PropertyToID("_H8DistantFloraEnabled");
+        private const uint DegradeDisableVoxelAoMask = 1u << 2;
+        private const uint DegradeCriticalLevelMask = 1u << 31;
 
         private static int _consecutiveSpikeFrames;
+        private static int _consecutiveWarningFrames;
         private static int _lastSpikeReportFrame = -1;
+        private static int _lastDegradationReportFrame = -1;
         private static int _reportedSubsystemFrame = -1;
         private static uint _reportedSubsystemHash;
         private static float _reportedSubsystemCostMs;
         private static int _reportedBrgBatchFrame = -1;
         private static int _reportedBrgBatchCount;
-        private static float _lowFpsAccumulatedSeconds;
         private static float _particleEmissionScale = 1f;
-        private static bool _thermalFallbackActive;
+        private static bool _voxelAoEnabled = true;
         private static bool _systemDegradationActive;
 
         public static bool IsDistantFloraRenderingEnabled => !_systemDegradationActive;
         public static float ParticleEmissionScale => _particleEmissionScale;
+        public static bool IsVoxelAmbientOcclusionEnabled => _voxelAoEnabled;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _consecutiveSpikeFrames = 0;
+            _consecutiveWarningFrames = 0;
             _lastSpikeReportFrame = -1;
+            _lastDegradationReportFrame = -1;
             _reportedSubsystemFrame = -1;
             _reportedSubsystemHash = 0u;
             _reportedSubsystemCostMs = 0f;
             _reportedBrgBatchFrame = -1;
             _reportedBrgBatchCount = 0;
-            _lowFpsAccumulatedSeconds = 0f;
             _particleEmissionScale = 1f;
-            _thermalFallbackActive = false;
+            _voxelAoEnabled = true;
             _systemDegradationActive = false;
         }
 
@@ -112,6 +110,7 @@ namespace Hecton8.Core
             if (deltaTime <= 0f)
             {
                 _consecutiveSpikeFrames = 0;
+                _consecutiveWarningFrames = 0;
                 return;
             }
 
@@ -125,18 +124,20 @@ namespace Hecton8.Core
 
             PublishDrawCallEstimateIfPresent();
 
-            if (deltaTime >= ThermalThresholdSeconds)
-                ActivateThermalFallback();
-
-            if (deltaTime >= SustainedLowFpsThresholdSeconds)
-            {
-                _lowFpsAccumulatedSeconds += deltaTime;
-                if (_lowFpsAccumulatedSeconds >= SustainedLowFpsWindowSeconds)
-                    ActivateSystemDegradation(deltaTime);
-            }
+            if (deltaTime > WarningThresholdSeconds)
+                _consecutiveWarningFrames++;
             else
+                _consecutiveWarningFrames = 0;
+
+            if (deltaTime >= CriticalThresholdSeconds)
             {
-                _lowFpsAccumulatedSeconds = 0f;
+                ActivateSystemDegradation(deltaTime, true);
+                return;
+            }
+
+            if (_consecutiveWarningFrames >= DegradationConsecutiveFrames)
+            {
+                PublishSystemDegradationWarning(deltaTime);
             }
         }
 
@@ -156,39 +157,42 @@ namespace Hecton8.Core
             CrashTelemetryBuffer.ReportCriticalPerformanceSpike(subsystemHash, frameTimeMilliseconds, DefaultSubsystemHash);
         }
 
-        private static void ActivateThermalFallback()
+        private static void PublishSystemDegradationWarning(float deltaTime)
         {
-            if (_thermalFallbackActive)
+            int frame = Time.frameCount;
+            if (_lastDegradationReportFrame == frame)
                 return;
 
-            _thermalFallbackActive = true;
-            Shader.SetGlobalInt(_thermalVolumetricEnabledId, 0);
-            Shader.SetGlobalFloat(_thermalParticleSpawnScaleId, ThermalParticleSpawnScale);
-            Shader.SetGlobalFloat(_globalLodBiasId, AggressiveLodBias);
+            _lastDegradationReportFrame = frame;
+            float frameTimeMilliseconds = deltaTime * 1000f;
+            PerformanceEvents.RaiseSystemDegradation(
+                frameTimeMilliseconds,
+                WarningThresholdSeconds * 1000f,
+                frame);
+            GlobalTelemetryBus.PublishSystemDegradation(SustainedFrameWarningHash, 0u, frameTimeMilliseconds);
         }
 
-        private static void ActivateSystemDegradation(float deltaTime)
+        private static void ActivateSystemDegradation(float deltaTime, bool critical)
         {
             if (_systemDegradationActive)
                 return;
 
             _systemDegradationActive = true;
             _particleEmissionScale = ThermalParticleSpawnScale;
-            ActivateThermalFallback();
-            Shader.SetGlobalInt(_distantFloraEnabledId, 0);
+            _voxelAoEnabled = false;
 
             float frameTimeMilliseconds = deltaTime * 1000f;
             const uint actionMask =
                 DegradeDisableDistantFloraMask |
                 DegradeHalfParticleEmissionMask |
-                DegradeDisableThermalVolumetricsMask |
-                DegradeAggressiveLodMask;
+                DegradeDisableVoxelAoMask |
+                DegradeCriticalLevelMask;
 
             PerformanceEvents.RaiseSystemDegradation(
                 frameTimeMilliseconds,
-                SustainedLowFpsThresholdSeconds * 1000f,
+                (critical ? CriticalThresholdSeconds : WarningThresholdSeconds) * 1000f,
                 Time.frameCount);
-            GlobalTelemetryBus.PublishSystemDegradation(SustainedLowFpsHash, actionMask, frameTimeMilliseconds);
+            GlobalTelemetryBus.PublishSystemDegradation(SustainedFrameCriticalHash, actionMask, frameTimeMilliseconds);
         }
 
         private static void PublishDrawCallEstimateIfPresent()

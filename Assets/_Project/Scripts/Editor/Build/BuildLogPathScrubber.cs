@@ -15,6 +15,7 @@ namespace Hecton8.Editor.Build
     public sealed class BuildLogPathScrubber : IPostprocessBuildWithReport
     {
         private const string OutputDirectory = "Library/Hecton8/SanitizedBuildLogs";
+        private const string MachinePathToken = "[H8_BUILD_MACHINE]";
         private static readonly Encoding NoBomUtf8 = new UTF8Encoding(false);
         private static readonly string ProjectRoot = NormalizePath(Directory.GetCurrentDirectory());
         private static readonly string UserRoot = NormalizePath(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
@@ -38,14 +39,7 @@ namespace Hecton8.Editor.Build
             if (string.IsNullOrEmpty(value))
                 return string.Empty;
 
-            string sanitized = value;
-            if (!string.IsNullOrEmpty(ProjectRoot))
-                sanitized = sanitized.Replace(ProjectRoot, "<PROJECT_ROOT>");
-
-            if (!string.IsNullOrEmpty(UserRoot))
-                sanitized = sanitized.Replace(UserRoot, "<USER_HOME>");
-
-            return ScrubAbsolutePathFragments(sanitized);
+            return ScrubAbsolutePathFragments(value);
         }
 
         private static void WriteSanitizedBuildReport(BuildReport report)
@@ -98,27 +92,31 @@ namespace Hecton8.Editor.Build
             if (string.IsNullOrEmpty(path))
                 return string.Empty;
 
-            return Path.GetFullPath(path).Replace('\\', '/');
+            return NormalizeSlashes(Path.GetFullPath(path));
         }
 
-        private static string ScrubAbsolutePathFragments(string value)
+        private static unsafe string ScrubAbsolutePathFragments(string value)
         {
             StringBuilder builder = null;
             int copyStart = 0;
             int index = 0;
-            while (index < value.Length)
+            fixed (char* valuePtr = value)
             {
-                if (!IsAbsolutePathStart(value, index))
+                while (index < value.Length)
                 {
-                    index++;
-                    continue;
-                }
+                    if (!IsMachinePathStart(valuePtr, value.Length, index) &&
+                        !IsAbsolutePathStart(valuePtr, value.Length, index))
+                    {
+                        index++;
+                        continue;
+                    }
 
-                builder ??= new StringBuilder(value.Length);
-                builder.Append(value, copyStart, index - copyStart);
-                builder.Append("<ABS_PATH>");
-                index = FindPathEnd(value, index);
-                copyStart = index;
+                    builder ??= new StringBuilder(value.Length);
+                    builder.Append(value, copyStart, index - copyStart);
+                    builder.Append(MachinePathToken);
+                    index = FindPathEnd(valuePtr, value.Length, index);
+                    copyStart = index;
+                }
             }
 
             if (builder == null)
@@ -128,9 +126,37 @@ namespace Hecton8.Editor.Build
             return builder.ToString();
         }
 
-        private static bool IsAbsolutePathStart(string value, int index)
+        private static string NormalizeSlashes(string value)
         {
-            if (index + 2 < value.Length &&
+            StringBuilder builder = null;
+            int copyStart = 0;
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (value[i] != '\\')
+                    continue;
+
+                builder ??= new StringBuilder(value.Length);
+                builder.Append(value, copyStart, i - copyStart);
+                builder.Append('/');
+                copyStart = i + 1;
+            }
+
+            if (builder == null)
+                return value;
+
+            builder.Append(value, copyStart, value.Length - copyStart);
+            return builder.ToString();
+        }
+
+        private static unsafe bool IsMachinePathStart(char* value, int length, int index)
+        {
+            return StartsWith(value, length, index, ProjectRoot) ||
+                   StartsWith(value, length, index, UserRoot);
+        }
+
+        private static unsafe bool IsAbsolutePathStart(char* value, int length, int index)
+        {
+            if (index + 2 < length &&
                 IsAsciiLetter(value[index]) &&
                 value[index + 1] == ':' &&
                 IsSlash(value[index + 2]))
@@ -138,12 +164,12 @@ namespace Hecton8.Editor.Build
                 return true;
             }
 
-            return StartsWith(value, index, "/Users/") || StartsWith(value, index, "/home/");
+            return StartsWith(value, length, index, "/Users/") || StartsWith(value, length, index, "/home/");
         }
 
-        private static int FindPathEnd(string value, int index)
+        private static unsafe int FindPathEnd(char* value, int length, int index)
         {
-            while (index < value.Length)
+            while (index < length)
             {
                 char c = value[index];
                 if (c == '\r' || c == '\n' || c == '\t' || c == '"' || c == '\'')
@@ -155,9 +181,9 @@ namespace Hecton8.Editor.Build
             return index;
         }
 
-        private static bool StartsWith(string value, int index, string token)
+        private static unsafe bool StartsWith(char* value, int length, int index, string token)
         {
-            if (index + token.Length > value.Length)
+            if (string.IsNullOrEmpty(token) || index + token.Length > length)
                 return false;
 
             for (int tokenIndex = 0; tokenIndex < token.Length; tokenIndex++)

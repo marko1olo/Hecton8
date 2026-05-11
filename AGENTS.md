@@ -122,6 +122,30 @@ MapMagic (terrain, via MapMagicBridge) · Crest (ocean, URP) · Odin Inspector (
 
 ## PRIME DIRECTIVES — VIOLATION = REJECTION
 
+### 0. AUTHORITY SPINE + VISUAL FAKE FIRST
+
+[RULE] Long-lived authority lives in stable project docs, not dated reports:
+1. `AGENTS.md`
+2. `.agents-skills/README.md`
+3. task-relevant `.agents-skills/*`
+4. `Docs/README.md`
+5. `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`
+6. `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`
+7. `Docs/SYSTEMS_CONTRACTS.md`
+8. `Docs/QUALITY_GATES.md`
+9. `Docs/ARCHITECTURE/README.md`
+10. `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
+11. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`
+12. `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md`
+
+[RULE] Dated reports under `Docs/Reports/YYYY-MM-DD_*` are evidence snapshots, counters, and audit trails. They do not become the permanent project brain. If a dated report changes policy, promote the policy into `AGENTS.md`, `.agents-skills`, or a stable `Docs/*.md` authority file.
+
+[RULE] Cinematic Cheat Protocol: any physical simulation of water, light, deformation, pressure, flow, ambience, cable sag, particles, flora motion, or distant motion must first prove that a deterministic visual/audio/haptic/UI/proxy fake cannot preserve player belief and gameplay correctness.
+[RULE] Default path is visual-realistic fake. Physical simulation is allowed only for player-critical collision/control, save-affecting state, combat/damage truth, or gameplay-critical hazards.
+[RULE] Any single runtime system adding more than `0.1ms` to a frame is suspicious until profiler proof, quality-tier gate, and load-shed behavior exist.
+[FORBID] Per-proton, per-droplet, per-bubble, per-cable-segment, or per-flora-blade truth unless the player can interact with that truth and measured budgets accept it.
+[FORBID] Declaring runtime readiness from docs, static scans, or local `dotnet build`. Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality require fresh logs/captures.
+
 ### 1. ZERO GC IN HOT PATHS
 
 Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
@@ -497,7 +521,7 @@ Document changes + GC delta + reason → Revert → Different approach → Bundl
 [REQ] Static geometry: Contribute GI = On. Cast Shadows = On only if in shadow frustum.
 [REQ] < 0.5 m objects: Cast Shadows = Off (justify if enabled). Flora: Two-Sided only for hero near-field.
 [REQ] Check shadow casters via Frame Debugger → Shadow Map before each art iteration.
-[FORBID] Dynamic objects Cast Shadows = On without justification — use Light Probes + LPPV.
+[FORBID] Dynamic objects Cast Shadows = On without justification - use Light Probes, APV where approved, or cheap probe approximation.
 [REQ] Occlusion Culling baked for caves/modules/corridors. Occludee Static > 1 m³. Occluder Static > 2 m³.
 [FORBID] Occluder Static on dynamic spawned objects. Rebake after cave/module geometry changes.
 [REQ] SRP Batcher — primary for dynamic objects: one material = one shader variant, CBUFFER marked up. Check Frame Debugger.
@@ -510,7 +534,7 @@ Document changes + GC delta + reason → Revert → Different approach → Bundl
 [REQ] Atlases for same material family (rocks/debris/coral). MipMaps On for world, Off for UI.
 [REQ] After new textures: check Texture Memory. > 900 MB = RED.
 [REQ] Baked Lighting for static geo. Realtime GI [FORBID] without justification.
-[REQ] Light Probes for all dynamic objects. LPPV for large dynamic meshes.
+[REQ] Light Probes for dynamic objects. APV/probe approximation for large dynamic meshes only after profiler and memory proof.
 [REQ] Reflection Probes: Baked or Realtime (refresh = Via Scripting). One per logical zone.
 [FORBID] Realtime Reflection Probe refresh = Every Frame (full extra render pass).
 [REQ] After lighting changes: rebake + check Baked Lightmaps memory.

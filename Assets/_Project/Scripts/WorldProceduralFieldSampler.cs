@@ -2780,13 +2780,15 @@ namespace Hecton8.World
             byte mapMagicBlend255 = 0;
             if (mapMagicBridge != null)
             {
+                int mapMagicMatrixBiomeId;
+                int mapMagicAlphamapLayer;
                 if (mapMagicBridge.TryGetMatrixBiomeInfluence(
                         position.x,
                         position.z,
-                        out int mapMagicMatrixBiomeId,
+                        out mapMagicMatrixBiomeId,
                         out int secondaryMatrixBiomeId,
                         out byte resolvedBlend255,
-                        out int mapMagicAlphamapLayer,
+                        out mapMagicAlphamapLayer,
                         out _))
                 {
                     matrixBiomeId = mapMagicMatrixBiomeId;
@@ -3586,13 +3588,15 @@ namespace Hecton8.World
 
             if (mapMagicBridge != null)
             {
+                int mapMagicMatrixBiomeId;
+                int alphamapLayer;
                 if (mapMagicBridge.TryGetMatrixBiomeInfluence(
                         x,
                         z,
-                        out int mapMagicMatrixBiomeId,
+                        out mapMagicMatrixBiomeId,
                         out secondaryBiomeMatrixId,
                         out byte blend255,
-                        out int alphamapLayer,
+                        out alphamapLayer,
                         out _))
                 {
                     biomeMatrixId = mapMagicMatrixBiomeId;

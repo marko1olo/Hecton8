@@ -91,7 +91,7 @@ namespace Hecton8.World
         private static readonly int _OceanBiolumStrengthId = Shader.PropertyToID("_HectonOceanBiolumStrength");
         private static readonly int _GlobalBiolumIntensityId = Shader.PropertyToID("_BiolumIntensity");
         private static readonly int _PeripheralCullDotId = Shader.PropertyToID("_HectonPeripheralCullDot");
-        private static readonly int _PeripheralCullDistanceId = Shader.PropertyToID("_HectonPeripheralCullDistance");
+        private static readonly int _PeripheralCullDistanceSqId = Shader.PropertyToID("_HectonPeripheralCullDistanceSq");
         private static readonly int _SourceMatricesId = Shader.PropertyToID("_HectonSourceInstanceMatrices");
         private static readonly int _SourceDataId = Shader.PropertyToID("_HectonSourceVegetationInstanceData");
         private static readonly int _VisibleIndicesLod0Id = Shader.PropertyToID("_HectonVisibleInstanceIndicesLOD0");
@@ -1598,8 +1598,11 @@ namespace Hecton8.World
             _cullingCompute.SetFloat(_LodNearDistanceId, brgNearLodDistance);
             _cullingCompute.SetFloat(_LodFarDistanceId, brgFarLodDistance);
             _cullingCompute.SetFloat(_LodTransitionRangeId, brgLodTransitionRange);
-            _cullingCompute.SetFloat(_PeripheralCullDotId, Mathf.Clamp(_peripheralCullDot, -1f, 1f));
-            _cullingCompute.SetFloat(_PeripheralCullDistanceId, Mathf.Max(0f, _peripheralCullDistance));
+            float peripheralCullDot = Mathf.Clamp(_peripheralCullDot, -1f, 1f);
+            float peripheralCullDistance = Mathf.Max(0f, _peripheralCullDistance);
+            float peripheralCullDistanceSq = peripheralCullDistance * peripheralCullDistance;
+            _cullingCompute.SetFloat(_PeripheralCullDotId, peripheralCullDot);
+            _cullingCompute.SetFloat(_PeripheralCullDistanceSqId, peripheralCullDistanceSq);
             _cullingCompute.SetFloat(_OcclusionDepthBiasId, _occlusionDepthBias);
             _cullingCompute.SetInt(_OcclusionEnabledId, depthPyramidReady && _enableDepthOcclusion ? 1 : 0);
             _cullingCompute.SetVector(_OcclusionZBufferParamsId, Shader.GetGlobalVector(_GlobalZBufferParamsId));
@@ -1643,8 +1646,8 @@ namespace Hecton8.World
                 _cullingCompute.SetFloat(_LodNearDistanceId, brgNearLodDistance);
                 _cullingCompute.SetFloat(_LodFarDistanceId, brgFarLodDistance);
                 _cullingCompute.SetFloat(_LodTransitionRangeId, brgLodTransitionRange);
-                _cullingCompute.SetFloat(_PeripheralCullDotId, Mathf.Clamp(_peripheralCullDot, -1f, 1f));
-                _cullingCompute.SetFloat(_PeripheralCullDistanceId, Mathf.Max(0f, _peripheralCullDistance));
+                _cullingCompute.SetFloat(_PeripheralCullDotId, peripheralCullDot);
+                _cullingCompute.SetFloat(_PeripheralCullDistanceSqId, peripheralCullDistanceSq);
                 _cullingCompute.SetInt(_DarknessCullEnabledId, _enableDarknessCulling ? 1 : 0);
                 _cullingCompute.SetFloat(_DarknessBiolumThresholdId, _darknessBiolumThreshold);
                 _cullingCompute.SetVectorArray(_ScooterHeadlightPositionsWsId, _scooterHeadlightPositionsWs);

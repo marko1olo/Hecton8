@@ -1,8 +1,8 @@
 ﻿# PROJECT ATLAS
 
-Version: 1.5.27
-Date: 2026-05-09
-Status: PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)
+Version: 1.5.28
+Date: 2026-05-11
+Status: PENDING FINAL UNITY PROOF (DOCS CONTINUATION CORE BUILD PASSED / UNITY MCP NOT RUN)
 Scope: live orientation map for the current HECTON-8 workspace
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `STRM_Persistent_Object_Registry.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`, `VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`, `PROJECT_LTS_Compatibility_Layer.txt`
 
@@ -20,7 +20,7 @@ It answers four narrow questions:
 
 ## 2. Workspace Snapshot
 
-Repository root observed on 2026-05-04 contains these top-level entries of interest:
+Repository root observed on 2026-05-11 contains these top-level entries of interest:
 
 - `.agents-skills`
 - `Assets`
@@ -36,6 +36,7 @@ Repository root observed on 2026-05-04 contains these top-level entries of inter
 - `Logs`
 - `AGENTS.md`
 - active root text files: `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, `BUILD_PLAYTEST_ISSUES.md`
+- generated/root evidence snapshots: `BROKEN_PREFABS.md`, `CYRILLIC_PURGE_REPORT_2026-05-10.json`, `playmode_metrics.json`, `tools_list_mcp.json`, `codex_unity_compile.log`, `codex_unity_sync.log`
 - non-canonical root compatibility mirror: `TERRAIN_AND_BIOME_REALITY_MAP.md`
 
 High-noise surfaces also exist:
@@ -56,13 +57,13 @@ Primary first-party code still lives under:
 - `Assets/_Project/Art`
 - `Assets/_Project/UI`
 
-Observed first-party C# file count under `Assets/_Project`: `1292`
-Observed first-party C# physical line count under `Assets/_Project`: `759122`
-Observed first-party C# file count under `Assets/_Project/Scripts`: `1248`
-Observed first-party C# physical line count under `Assets/_Project/Scripts`: `742892`
+Observed first-party C# file count under `Assets/_Project`: `1306`
+Observed first-party C# physical line count under `Assets/_Project`: `770577`
+Observed first-party C# file count under `Assets/_Project/Scripts`: `1262`
+Observed first-party C# physical line count under `Assets/_Project/Scripts`: `753858`
 Line-count method: PowerShell over `System.IO.StreamReader.ReadLine()` for every matched file.
 
-SOURCE DRIFT DETECTED: previous same-day Atlas scan recorded `1233` / `1192` C# files and `667771` script physical lines; current May 9 local autonomous compile snapshot records `1292` / `1248` C# files and `742892` script physical lines.
+SOURCE DRIFT DETECTED: previous R186 Atlas scan recorded `1292` / `1248` C# files and `742892` script physical lines; current May 11 documentation continuation snapshot records `1306` / `1262` C# files and `753858` script physical lines.
 
 MASSIVE REFACTOR DETECTED: same-day script line-count delta exceeds `500` lines. Treat all earlier May 7 source-count claims as superseded by this timestamped snapshot unless a newer report states otherwise.
 
@@ -73,11 +74,11 @@ Current build-master compile state:
 
 - `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` succeeded in the latest completed attempt.
 - Latest Core dependency build succeeded with `0 Warning(s)` and `0 Error(s)`.
-- Latest build artifact: `CodexArtifacts/2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log`.
-- R186 supersedes R171-R185 after repeated live C# writes, R179 transient compile break exposure, R181 invalid root-only dependency mode, R184 `IAudioService` contract drift, and R185 `PredatorCognitionDomain` static/instance vortex-steering drift.
-- R186 is the latest completed local `dotnet` compile evidence with `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`.
-- MCP proof is blocked by the May 8 hallucination check; do not use prior MCP-clean wording as current evidence.
-- Latest current-state report: `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`.
+- Latest build artifact: `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`.
+- The May 11 docs continuation build supersedes R186 as latest local `dotnet` compile evidence with `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`.
+- Unity MCP proof was not run in the May 11 continuation; do not use prior MCP-clean wording as current evidence.
+- Latest current-state report: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+- Official Unity release-page check on 2026-05-11 found `6000.4.6f1` released on `2026-05-05`; local project evidence still pins `6000.4.1f1`. This is version drift, not upgrade approval.
 
 ## 4. External / Package Surface
 
@@ -103,7 +104,7 @@ DOTS / Entities package boundary:
 
 ## 5. Mandate Registry
 
-Observed mandate count in `.agents-skills/*.txt`: `52`
+Observed mandate count in `.agents-skills/*.txt`: `53`, plus `.agents-skills/README.md` as the registry index.
 
 Operational rule remains unchanged:
 
@@ -129,10 +130,18 @@ Current active anchors include:
 - `HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`
 - `PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`
 - `PROCEDURAL_ASSET_PIPELINE.md`
+- `ARCHITECTURE/README.md`
+- `ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
+- `ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`
 - `ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOC_AUTHORITY_CLASSIFICATION.md`
 - `ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
+- `ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md`
 - `ARCHITECTURE/DISPATCH_PIPELINE.md`
 - `ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`
+- `Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`
+- `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`
+- `Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`
+- `Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`
 - `Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
 - `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
 - `Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
@@ -195,8 +204,8 @@ Canonical entry files inside this bundle:
 
 ### 6.3 Current Live Console Truth
 
-Latest documentation synchronization is `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`.
-Fresh Unity MCP/Console proof is blocked in the current session. Older MCP readbacks from May 4-May 6 are historical snapshots only and must not be used as current Unity Console, Play Mode, profiler, GCMonitor, player-build, scene-wiring, or memory-retention proof.
+Latest documentation synchronization is `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+Fresh Unity MCP/Console proof was not captured in the May 11 documentation continuation. Older MCP readbacks from May 4-May 8 are historical snapshots only and must not be used as current Unity Console, Play Mode, profiler, GCMonitor, player-build, scene-wiring, or memory-retention proof.
 
 This is not Play Mode proof and not runtime certification.
 
@@ -403,16 +412,16 @@ Mandates followed for this update:
 
 Current measured source and documentation surface:
 
-- `Assets/_Project`: `1292` C# files, `759122` physical lines.
-- `Assets/_Project/Scripts`: `1248` C# files, `742892` physical lines.
+- `Assets/_Project`: `1306` C# files, `770577` physical lines.
+- `Assets/_Project/Scripts`: `1262` C# files, `753858` physical lines.
 - Script LOC method: PowerShell `System.IO.StreamReader.ReadLine()` over every `*.cs` file.
-- SOURCE DRIFT DETECTED: previous same-day Atlas count was `1214` / `1173` C# files and `656678` script-line proxy count; current deltas are `+78` files under `Assets/_Project`, `+75` files under `Assets/_Project/Scripts`, and `+86214` script physical lines.
+- SOURCE DRIFT DETECTED: previous R186 count was `1292` / `1248` C# files and `742892` script physical lines; current deltas are `+14` files under `Assets/_Project`, `+14` files under `Assets/_Project/Scripts`, and `+10966` script physical lines.
 - MASSIVE REFACTOR DETECTED: the same-day script line delta is greater than `500`.
-- `.agents-skills`: `52` mandate files.
-- `Docs/**/*.md`: `444` markdown files.
-- Active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports/DEPRECATED`, and `03_OBSOLETE`: `231`.
-- Active non-report docs excluding archive/deprecated/obsolete and `Docs/Reports`: `163`.
-- Active `Docs/Reports/*.md`: `68`.
+- `.agents-skills`: `53` mandate files.
+- `Docs/**/*.md`: `449` markdown files.
+- Active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports/DEPRECATED`, and `03_OBSOLETE`: `236`.
+- Active non-report docs excluding archive/deprecated/obsolete and `Docs/Reports`: `166`.
+- Active `Docs/Reports/*.md`: `70`.
 - Scripts created on `2026-05-07` by filesystem timestamp: `23`.
 - Scripts modified on `2026-05-07` by filesystem timestamp: `197`.
 - Git-untracked entries at the May 6 doc sync checkpoint: `15`.
@@ -421,7 +430,7 @@ Current top-level `Assets/_Project/Scripts` ownership counts:
 
 | Folder | C# files |
 |---|---:|
-| `(root)` | `342` |
+| `(root)` | `335` |
 | `Editor` | `169` |
 | `World` | `152` |
 | `Gameplay` | `123` |
@@ -569,8 +578,8 @@ Current measured source/docs surface:
 - MASSIVE REFACTOR DETECTED: the same-day script line delta is greater than `500`.
 - Scripts directly under `Assets/_Project/Scripts`: `342`.
 - Strict `StartCoroutine(` hits under `Assets/_Project/Scripts`: `0`.
-- `Docs`: `874` non-meta files in the current filesystem view.
-- `Docs/ARCHIVARIUS REPORTS`: `120` non-meta files in the current filesystem view.
+- `Docs`: `897` total files in the current filesystem view (`866` non-meta).
+- `Docs/ARCHIVARIUS REPORTS`: `153` total files in the current filesystem view (`122` non-meta).
 - Active non-obsolete `Docs/**/*.md` markdown header debt: `0` missing `Date:`, `0` missing `Status:`.
 - Active non-report markdown header debt: `0`.
 
@@ -578,16 +587,16 @@ These counts are orientation data only. They are not readiness metrics and shoul
 
 Current active forensic reports to read before older atlas claims:
 
-1. `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`
-2. `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`
-3. `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`
-4. `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
-5. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
-6. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-7. `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`
-8. `Docs/Reports/DOOMSDAY_FLAW_REPORT.md`
-9. `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
-10. `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
+1. `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`
+2. `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`
+3. `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`
+4. `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`
+5. `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`
+6. `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`
+7. `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
+8. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+9. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+10. `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`
 11. `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md`
 12. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
 
@@ -598,7 +607,7 @@ Current risk corrections:
 - Event topology is stronger than old docs implied because late-frame dispatch budgeting and `HectonEventBus.MaxDispatchDepth = 4` exist, but recursive generation/depth is not globally proven safe.
 - Core asmdef purification is not complete. The current safe position is staged bridge extraction, not blind reference removal.
 - Object pool exhaustion behavior is safer by source review: spawn exhaustion publishes pool-exhausted telemetry and returns `null`; no global runtime instantiation purity claim is made for the entire project.
-- `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is now the conceptual entry point for current system ownership. It is not a runtime proof document.
+- Stable docs are now the conceptual entry point for current system ownership: `Docs/README.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, and `Docs/ARCHITECTURE/README.md`. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` remains evidence/reference, not runtime proof.
 
 Verification state:
 

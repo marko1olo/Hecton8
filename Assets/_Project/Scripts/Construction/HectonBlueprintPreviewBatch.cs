@@ -23,6 +23,7 @@ namespace Hecton8.Construction
         private const int MaxDrawMeshInstancedBatch = 1023;
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
         private struct BuildPreviewMatricesJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<BlueprintPreviewInstance> Instances;
@@ -38,12 +39,12 @@ namespace Hecton8.Construction
                 BlueprintPreviewInstance instance = Instances[index];
                 float requirement01 = (instance.OwnedMask & instance.RequirementMask) == instance.RequirementMask ? 1f : 0f;
                 float flickerPhase = (TimeSeconds * 17.0f) + (index * 0.38196602f);
-                float flicker = math.frac(math.sin(flickerPhase) * 43758.5453f);
+                float flicker = CinematicMath.FastTriangleWave01(flickerPhase);
                 float scaleMul = math.lerp(0.88f, 1.0f, requirement01) + ((flicker - 0.5f) * 0.018f * instance.FlickerAmplitude);
                 float bobPhase = math.frac((TimeSeconds * instance.BobFrequency) + (index * 0.173f));
-                float bob = (1f - math.abs((bobPhase * 2f) - 1f)) * 2f - 1f;
+                float bob = CinematicMath.FastTriangleWaveSigned(bobPhase);
                 float3 position = instance.Position + new float3(0f, bob * instance.BobAmplitude, 0f);
-                quaternion yaw = quaternion.AxisAngle(new float3(0f, 1f, 0f), TimeSeconds * instance.SpinRadiansPerSecond);
+                quaternion yaw = CinematicMath.FastYawQuaternion(TimeSeconds * instance.SpinRadiansPerSecond);
                 float4x4 trs = float4x4.TRS(position, math.mul(instance.Rotation, yaw), instance.Scale * math.max(0.001f, scaleMul));
                 Matrices[index] = ToMatrix4x4(in trs);
             }
@@ -71,7 +72,7 @@ namespace Hecton8.Construction
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
         public struct BlueprintPreviewInstance
         {
             public float3 Position;
@@ -286,7 +287,7 @@ namespace Hecton8.Construction
             _scheduledCount = math.min(_activeCount, _writeInstances.Length);
             if (_instancesDirty)
             {
-                NativeArray<BlueprintPreviewInstance>.Copy(_writeInstances, _buildInstances, _scheduledCount);
+                MemoryInquisitor.Blit(_writeInstances, 0, _buildInstances, 0, _scheduledCount);
                 _instancesDirty = false;
             }
 

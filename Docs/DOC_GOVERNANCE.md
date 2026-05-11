@@ -1,6 +1,6 @@
 ﻿# Documentation Governance
 
-Date: 2026-05-08
+Date: 2026-05-11
 Status: PENDING VERIFICATION
 
 Purpose: prevent workspace documentation from collapsing back into root-level noise.
@@ -9,37 +9,38 @@ Current-state boundary:
 
 - This file defines documentation placement and authority order only.
 - It is not runtime proof and does not certify that every listed document is current by itself.
-- Current documentation synchronization truth starts at `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`, then `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`, `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`, `Docs/Reports/2026-05-07_LIVE_CHURN_CONTINUATION_SYNC.md`, `Docs/Reports/2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md`, and `Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`.
-- Current documentation sorting truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, amended by the May 8 synchronization report.
-- Current project truth starts at `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`, `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`, `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`, `Docs/Reports/2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md`, `Docs/Reports/2026-05-07_LIVE_CHURN_CONTINUATION_SYNC.md`, `Docs/Reports/2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md`, `Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, current source files, and fresh verification logs.
+- Long-lived project authority lives in stable docs first. Dated reports are evidence snapshots and counters.
+- Current `.agents-skills` visual-fake doctrine is promoted into `../AGENTS.md`, `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`; `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` is supporting evidence.
+- Current documentation synchronization counters are evidence in `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` and `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`; they do not replace the stable docs.
+- Current documentation sorting authority starts at this file plus `Docs/README.md`. `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` and later synchronization reports are evidence for why the sorting changed.
+- Current project truth starts at `../AGENTS.md`, `.agents-skills/README.md`, task-relevant `.agents-skills/*`, `Docs/README.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`, `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`, current source files, and fresh verification logs. Dated reports support these files; they do not outrank them.
 - Current warning-cleanup evidence starts at `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`; current Omega build warning classification is scoped in `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`.
 
 ## Authority Order
 
 1. `../AGENTS.md`
-2. task-relevant `.agents-skills/*` mandates
-3. `Docs/README.md`
-4. `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`
-5. `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`
-6. `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`
-7. `Docs/Reports/2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md`
-8. `Docs/Reports/2026-05-07_LIVE_CHURN_CONTINUATION_SYNC.md`
-9. `Docs/Reports/2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md`
-10. `Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`
-11. `Docs/Reports/2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json`
-12. `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
-13. `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`
-14. `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
-15. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
-16. `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
-17. `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
-18. `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
-19. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-20. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
-21. active execution docs under `Docs/`
-22. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
-23. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
-24. archive bundles under `Docs/_Archive/`
+2. `.agents-skills/README.md`
+3. task-relevant `.agents-skills/*` mandates
+4. `Docs/README.md`
+5. `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`
+6. `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`
+7. `Docs/SYSTEMS_CONTRACTS.md`
+8. `Docs/QUALITY_GATES.md`
+9. `Docs/ARCHITECTURE/README.md`
+10. `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
+11. `Docs/DOC_GOVERNANCE.md`
+12. `Docs/ROOT_DOCS_REFERENCE.md`
+13. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`
+14. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md`
+15. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
+16. current source files
+17. fresh verification logs and artifacts
+18. `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md`
+19. dated reports under `Docs/Reports/` and `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/`
+20. active execution docs under `Docs/`
+21. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
+22. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
+23. archive bundles under `Docs/_Archive/`
 
 ## What Belongs In Root
 
@@ -127,7 +128,7 @@ Do not invent vague folders like `misc`, `temp docs`, `new stuff`, `agent notes`
 - when moving active docs, update `Docs/README.md`
 - when moving superseded docs to deprecated, add or update a local `README.md` explaining the replacement authority
 - when shrinking root, update `Docs/ROOT_DOCS_REFERENCE.md`
-- when refreshing broad documentation truth without rewriting every file, create a dated report under `Docs/Reports/` and update `Docs/README.md`, `Docs/Reports/README.md`, and the current-state anchor
+- when refreshing broad documentation truth without rewriting every file, create a dated report under `Docs/Reports/` and update the stable authority docs that own the durable rule
 - when archiving a large wave, update `Docs/_Archive/README.md` and the bundle manifest
 - if a legacy document is kept for historical value but not active authority, put it in a reference bundle or archive, not in root
 - if a filesystem lock blocks rename/delete, keep a temporary compatibility mirror but declare the canonical bundle path explicitly in `Docs/README.md`

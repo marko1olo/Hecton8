@@ -36,6 +36,7 @@ namespace Hecton8.World
         private const float DensityCapCellRadiusSqr = DensityCapCellSizeMeters * DensityCapCellSizeMeters;
         private const float DensityPenaltyMinimumDistanceSqr = 0.04f;
         private const int DensityCapMaxBoidsPerCell = 8;
+        private const float InvDensityCapMaxBoidsPerCell = 1f / DensityCapMaxBoidsPerCell;
         private const int MaxEntryCapacity = 1024;
         private const int DefaultQueryCapacity = 128;
         private const int DeferredCleanupFrameSpan = 60;
@@ -45,7 +46,7 @@ namespace Hecton8.World
         private const string NativeMemoryOwner = nameof(FaunaSpatialHashRegistry);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
-        // COLD ALLOC: Dictionary<int,Entry>[1024] — fauna-only AUP spatial metadata registry layered over HectonSpatialHash — owner: FaunaSpatialHashRegistry
+        // COLD ALLOC: Dictionary<int,Entry>[1024] - fauna-only AUP spatial metadata registry layered over HectonSpatialHash - owner: FaunaSpatialHashRegistry
         private static readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>(MaxEntryCapacity);
         // COLD ALLOC: int[1024] - dense fauna spatial handles for index-based cleanup scans - owner: FaunaSpatialHashRegistry
         private static readonly int[] _entryHandles = new int[MaxEntryCapacity];
@@ -151,10 +152,14 @@ namespace Hecton8.World
 
             int removeCount = 0;
             int scannedCount = 0;
+            int scanLimit = math.min(DeferredCleanupHandlesPerFrame, _entryHandleCount);
             int slot = _deferredCleanupCursor;
-            while (scannedCount < DeferredCleanupHandlesPerFrame && slot < _entryHandleCount)
+            while (scannedCount < scanLimit)
             {
                 int handle = _entryHandles[slot++];
+                if (slot >= _entryHandleCount)
+                    slot = 0;
+
                 scannedCount++;
                 if (handle > 0 &&
                     _entries.TryGetValue(handle, out Entry entry) &&
@@ -165,9 +170,7 @@ namespace Hecton8.World
                 }
             }
 
-            _deferredCleanupCursor += scannedCount;
-            if (_deferredCleanupCursor >= _entryHandleCount || scannedCount < DeferredCleanupHandlesPerFrame)
-                _deferredCleanupCursor = 0;
+            _deferredCleanupCursor = slot;
 
             for (int i = 0; i < removeCount; i++)
             {
@@ -601,7 +604,7 @@ namespace Hecton8.World
             if (densityCount <= DensityCapMaxBoidsPerCell || penaltyLengthSq <= 0.0001f)
                 return false;
 
-            float overflow01 = math.saturate((densityCount - DensityCapMaxBoidsPerCell) / (float)DensityCapMaxBoidsPerCell);
+            float overflow01 = math.saturate((densityCount - DensityCapMaxBoidsPerCell) * InvDensityCapMaxBoidsPerCell);
             float3 resolvedPenalty = ResolveDominantAxis(penalty) * (1f + overflow01 * 2.5f);
             penaltyDirection = new Vector3(resolvedPenalty.x, resolvedPenalty.y, resolvedPenalty.z);
             return penaltyDirection.sqrMagnitude > 0.0001f;

@@ -16,6 +16,7 @@ namespace Hecton8.Core
         private ushort _tail;
         private ushort _count;
         private ushort _capacity;
+        private ushort _mask;
 
         public int Count => _count;
         public bool IsEmpty => _count == 0;
@@ -30,7 +31,7 @@ namespace Hecton8.Core
                 if (elementSize <= 0 || elementSize > BufferBytes)
                     return 0;
 
-                return ComputeCapacity(elementSize);
+                return ComputeCapacityPowerOfTwo(elementSize);
             }
         }
 
@@ -55,8 +56,7 @@ namespace Hecton8.Core
                 data[_tail] = value;
             }
 
-            int nextTail = _tail + 1;
-            _tail = (ushort)(nextTail >= capacity ? 0 : nextTail);
+            _tail = (ushort)((_tail + 1) & _mask);
             _count++;
             return true;
         }
@@ -75,11 +75,9 @@ namespace Hecton8.Core
             {
                 T* data = (T*)Align(raw);
                 value = data[_head];
-                data[_head] = default;
             }
 
-            int nextHead = _head + 1;
-            _head = (ushort)(nextHead >= capacity ? 0 : nextHead);
+            _head = (ushort)((_head + 1) & _mask);
             _count--;
             return true;
         }
@@ -113,20 +111,36 @@ namespace Hecton8.Core
             if (elementSize <= 0 || elementSize > BufferBytes)
                 return 0;
 
-            int capacity = ComputeCapacity(elementSize);
+            int capacity = ComputeCapacityPowerOfTwo(elementSize);
             _capacity = (ushort)capacity;
+            _mask = capacity > 0 ? (ushort)(capacity - 1) : (ushort)0;
             return capacity;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int ComputeCapacity(int elementSize)
+        private int ComputeCapacityPowerOfTwo(int elementSize)
         {
             fixed (byte* raw = Buffer)
             {
                 byte* aligned = Align(raw);
                 int usableBytes = BufferBytes - (int)(aligned - raw);
-                return usableBytes > 0 ? usableBytes / elementSize : 0;
+                int rawCapacity = usableBytes > 0 ? usableBytes / elementSize : 0;
+                return FloorPowerOfTwo(rawCapacity);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int FloorPowerOfTwo(int value)
+        {
+            if (value <= 0)
+                return 0;
+
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
+            return value - (value >> 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

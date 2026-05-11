@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -74,13 +75,14 @@ namespace Hecton8.Gameplay
         public NativeArray<RaycastHit> KinematicRepairTargetResults;
         public JobHandle KinematicRepairTargetHandle;
 
+        private const int NativeCacheLineBytes = 64;
         private const string NativeMemoryOwner = nameof(HectonPlayerMotorNativeState);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         public void EnsureScheduledSweepState(int commandCount, int resultCount)
         {
-            int requiredCommandCount = math.max(1, commandCount);
-            int requiredResultCount = math.max(1, resultCount);
+            int requiredCommandCount = ResolveCacheLinePaddedElementCount<CapsulecastCommand>(commandCount);
+            int requiredResultCount = ResolveCacheLinePaddedElementCount<RaycastHit>(resultCount);
 
             if (ScheduledSweepCommands.IsCreated && ScheduledSweepCommands.Length < requiredCommandCount)
             {
@@ -101,7 +103,7 @@ namespace Hecton8.Gameplay
                 ScheduledSweepCommands = new NativeArray<CapsulecastCommand>(
                     requiredCommandCount,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CapsulecastCommand>[commandCount] - deferred KCC sweep commands; Allocator.Persistent native storage is 16-byte aligned - owner: HectonPlayerMotorNativeState
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CapsulecastCommand>[cache-line padded commandCount] - deferred KCC sweep commands; Allocator.Persistent native storage with 64-byte count padding - owner: HectonPlayerMotorNativeState
                 NativeMemorySentinel.RegisterNativeArray(
                     ScheduledSweepCommands,
                     NativeMemoryOwner,
@@ -114,13 +116,22 @@ namespace Hecton8.Gameplay
                 ScheduledSweepResults = new NativeArray<RaycastHit>(
                     requiredResultCount,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[resultCount] - deferred KCC sweep results; Allocator.Persistent native storage is 16-byte aligned - owner: HectonPlayerMotorNativeState
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[cache-line padded resultCount] - deferred KCC sweep results; Allocator.Persistent native storage with 64-byte count padding - owner: HectonPlayerMotorNativeState
                 NativeMemorySentinel.RegisterNativeArray(
                     ScheduledSweepResults,
                     NativeMemoryOwner,
                     nameof(ScheduledSweepResults),
                     NativeMemoryLifetime);
             }
+        }
+
+        private static int ResolveCacheLinePaddedElementCount<T>(int requestedCount) where T : struct
+        {
+            int safeCount = math.max(1, requestedCount);
+            int elementBytes = math.max(1, UnsafeUtility.SizeOf<T>());
+            int requestedBytes = safeCount * elementBytes;
+            int paddedBytes = ((requestedBytes + NativeCacheLineBytes - 1) / NativeCacheLineBytes) * NativeCacheLineBytes;
+            return math.max(safeCount, (paddedBytes + elementBytes - 1) / elementBytes);
         }
 
         public void EnsureKinematicRepairTargetState(int commandCount, int resultCount)

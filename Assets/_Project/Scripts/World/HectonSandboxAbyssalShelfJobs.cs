@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -484,8 +485,8 @@ namespace Hecton8.World
             float octave1Z = FractalPerlinNoise(octave1Sample + new float2(4.89f, 73.2f), parameters.Seed ^ 0x68E31DA4u) * 2f - 1f;
             float twist = FractalPerlinNoise(sample * 0.73f + new float2(31.19f, -22.7f), parameters.Seed ^ 0x1B56C4E9u) * 2f - 1f;
             float angle = twist * 1.0471976f;
-            float s = math.sin(angle);
-            float c = math.cos(angle);
+            float s = CinematicMath.FastSin(angle);
+            float c = CinematicMath.FastCos(angle);
             float2 warp = (new float2(octave0X, octave0Z) + new float2(octave1X, octave1Z) * 0.5f) * 0.6666667f;
             float2 twisted = new float2(warp.x * c - warp.y * s, warp.x * s + warp.y * c);
             return new double2(twisted.x * amplitude, twisted.y * amplitude);

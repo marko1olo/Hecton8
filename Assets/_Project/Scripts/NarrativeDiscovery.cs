@@ -9,6 +9,7 @@ using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Modding;
 using Hecton8.Narrative;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Interaction
@@ -41,14 +42,30 @@ namespace Hecton8.Interaction
         [SerializeField] private AudioLogData linkedAudioLog;
 
         [Header("Settings")]
+        [Tooltip("If enabled, the narrative director fires this discovery when the player AUP enters the configured radius.")]
+        [SerializeField] private bool triggerWhenAupWithinRadius;
+
+        [Tooltip("Single bit index in the director's ulong AUP trigger mask.")]
+        [SerializeField, Range(0, 63)] private int aupTriggerBitIndex;
+
+        [Tooltip("AUP distance radius in meters for automatic narrative discovery.")]
+        [SerializeField, Min(0.1f)] private float aupTriggerRadiusMeters = 50f;
+
+        [Tooltip("Disables this object after direct interaction discovery.")]
         [SerializeField] private bool disableAfterDiscovery = true;
+
+        [Tooltip("Optional highlight object shown while hovered.")]
         [SerializeField] private GameObject highlightObject;
 
         private string _cachedInteractText;
+        private AbsoluteUniversePosition _cachedAup;
+        private uint _cachedDiscoveryHash;
         private bool _registeredLifecycle;
         private static int _activeDiscoveryCount;
 
         public string DiscoveryId => discoveryId;
+        public uint DiscoveryHash => _cachedDiscoveryHash;
+        public AbsoluteUniversePosition CachedAup => _cachedAup;
         public bool HasValidDiscoveryId => !string.IsNullOrWhiteSpace(discoveryId);
         internal static int ActiveDiscoveryCount => _activeDiscoveryCount;
 
@@ -62,6 +79,7 @@ namespace Hecton8.Interaction
         {
             LocalizationEvents.RegisterLanguageListener(this);
             RebuildCache();
+            RefreshAupTriggerCache();
 
             NarrativeEvents.RaiseNarrativePOIRegistered(this);
             _registeredLifecycle = true;
@@ -165,11 +183,31 @@ namespace Hecton8.Interaction
 
         public string GetInteractText() => _cachedInteractText;
 
+        internal bool TryGetAupTrigger(
+            out int bitIndex,
+            out float radiusMeters,
+            out AbsoluteUniversePosition aup,
+            out uint discoveryHash)
+        {
+            bitIndex = aupTriggerBitIndex;
+            radiusMeters = aupTriggerRadiusMeters;
+            aup = _cachedAup;
+            discoveryHash = _cachedDiscoveryHash;
+            return triggerWhenAupWithinRadius &&
+                   HasValidDiscoveryId &&
+                   discoveryHash != 0u &&
+                   (uint)bitIndex < 64u &&
+                   radiusMeters > 0f;
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
             if (string.IsNullOrEmpty(discoveryId))
                 discoveryId = gameObject.name.ToLower().Replace(" ", "_");
+
+            if (aupTriggerRadiusMeters <= 0f)
+                aupTriggerRadiusMeters = 50f;
 
             RebuildCache();
         }
@@ -241,6 +279,13 @@ namespace Hecton8.Interaction
             disableAfterDiscovery = disableAfterUse;
             highlightObject = null;
             RebuildCache();
+            RefreshAupTriggerCache();
+        }
+
+        private void RefreshAupTriggerCache()
+        {
+            _cachedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(discoveryId);
+            _cachedAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
         }
     }
 }

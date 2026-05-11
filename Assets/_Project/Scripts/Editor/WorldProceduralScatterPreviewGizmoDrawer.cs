@@ -13,8 +13,11 @@ namespace Hecton8.EditorTools
         [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected)]
         private static void DrawScatterPreviewGizmos(WorldProceduralScatterDirector director, GizmoType gizmoType)
         {
-            if (director == null)
+            if (director == null || !director.isActiveAndEnabled)
+            {
+                _records.Clear();
                 return;
+            }
 
             director.BuildScatterPreviewGizmoSnapshot(_records);
 

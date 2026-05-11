@@ -1,6 +1,15 @@
 # PERFORMANCE_BUDGETS.md
 # HECTON-8 | Underwater Horror | NASA-Punk / Deep Sea Noir
 
+## 2026-05-11 VISUAL-FAKE OVERRIDE
+
+[RULE] `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt` is now part of this performance budget.
+[RULE] Any system costing more than `0.1ms` in a frame is suspicious until profiler evidence proves it is cold, amortized, or load-shed.
+[RULE] Simulate only gameplay truth. Water, fog, light, particles, slosh, ambience, debris, cable sag, and pressure feedback default to deterministic visual/audio/haptic fakes.
+[FORBID] Bloom on MX350/MINIMAL. The old MINIMAL post budget entry for Bloom is superseded.
+[FORBID] FSR2/DLSS-class temporal upscalers on MX350/MINIMAL. Use render scale, Unity STP where proven, or FSR1-class spatial upscaling only.
+[FORBID] Per-proton, per-droplet, per-bubble, per-blade, or per-cable-segment simulation as a default production path.
+
 ---
 
 ## §0 — HARDWARE BASELINE MATRIX
@@ -176,12 +185,12 @@ Runtime authority law:
 
 ### 3.5 Render Resolution & Upscaling
 
-// [FORBID] Heavy temporal upscalers (FSR2/DLSS) on MX350.
-// Use FSR 1.0 (Spatial) OR Unity STP.
-LOW:      Render at 85% native → FSR2 Balanced (1.7x)    → output native
-MED:      Render at native     → FSR2 optional            → output native
-HIGH:     Render at native     → TAA                      → output native
-ULTRA:    Render at 125%       → DLSS Quality / TAA-U     → output native
+// [FORBID] Heavy temporal upscalers (FSR2/DLSS-class) on MX350/MINIMAL/LOW.
+// Use spatial upscale, Unity STP, or fixed render-scale cheats before temporal upscalers.
+LOW:      Render at 85% native -> spatial upscale / STP only -> output native
+MED:      Render at native     -> STP optional               -> output native
+HIGH:     Render at native     -> TAA/STP optional           -> output native
+ULTRA:    Render at 125%       -> DLSS/TAA-U allowed only with profiler proof -> output native
 
 Minimum internal resolution floor: 720p regardless of native output.
 Depth of field, motion blur: disabled MINIMAL. Scaled opacity ULTRA.
@@ -191,9 +200,9 @@ Depth of field, motion blur: disabled MINIMAL. Scaled opacity ULTRA.
 Pass                  | MINIMAL | LOW    | MED    | ULTRA
 ||--------|--------|-------
 Depth of Field        | OFF     | 0.3ms  | 0.5ms  | 1.2ms
-Bloom                 | 0.2ms   | 0.4ms  | 0.6ms  | 1.0ms
+Bloom                 | OFF     | OFF    | 0.6ms  | 1.0ms
 SSR                   | OFF     | OFF    | 0.8ms  | 1.8ms
-SSAO                  | OFF     | 0.3ms  | 0.5ms  | 0.9ms
+Custom SSDO / Baked AO| OFF     | OFF    | 0.5ms  | 0.9ms
 Chromatic Aberration  | OFF     | 0.1ms  | 0.1ms  | 0.2ms
 God Rays (volumetric) | OFF     | 0.4ms  | 0.7ms  | 1.4ms
 Underwater Distortion | 0.3ms   | 0.4ms  | 0.5ms  | 0.8ms
@@ -378,10 +387,10 @@ SUSTAINED OVERLOAD (frame_time > 25ms for 3+ consecutive frames):
   Step 1: Disable volumetric shadow casting (saves ~1–2ms)
   Step 2: Reduce active Boid count by 50% (pool remainder, re-enable on recovery)
   Step 3: Increase SlowTick interval: 10 → 20 frames
-  Step 4: Disable SSR, reduce SSAO samples by 50%
+  Step 4: Disable SSR, reduce custom SSDO samples by 50%
   Step 5: Raymarching step count → MINIMAL tier values
   Step 6: Reduce max active rigidbodies by 40%
-  Step 7: Disable post-process passes beyond Bloom + Color Grade
+  Step 7: Disable post-process passes beyond Color Grade and required underwater distortion
 
 CRITICAL (frame_time > 33ms for 2+ frames):
   → Force resolution scale to 0.6
@@ -489,7 +498,7 @@ Emitter rules:
 Bioluminescence pulse VFX:
   Represented as dynamic point lights + particle emitters.
   Max simultaneous biolum lights: MINIMAL=4, MED=12, ULTRA=32
-  Light radius: 3–8m. Shadow cast: never (use fake SSAO influence only).
+  Light radius: 3-8m. Shadow cast: never (use cheap baked AO/custom SSDO influence only).
 
 Bubble simulation:
   MINIMAL: sprite billboards, no physics

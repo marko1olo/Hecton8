@@ -2,19 +2,18 @@
 
 Status: PENDING VERIFICATION
 Verification: `PENDING VERIFICATION`
-Date: 2026-05-07
+Date: 2026-05-11
 
 This is the working execution plan for getting HECTON-8 to a stable, optimized, verifiable runtime state.
 
 Current-state boundary:
 
-- Read `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as execution guidance.
+- This stable plan is the runtime execution authority. Dated reports are evidence/counter snapshots only.
+- Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, current source, and then May 11 evidence reports before using this plan as execution guidance.
 - This plan is still directionally valid, but it is not a runtime verification report.
-- Current May 4 local Core and Editor compile evidence is `0 Warning(s)` / `0 Error(s)`.
-- Latest May 6 Unity MCP editor readback reports active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, console error/warning entries `0`, render textures `37`, render texture bytes `56,320,492`, and renderer `PC_Renderer`; this is not Play Mode proof.
-- Latest May 4 DOTS and PlayModeTests builds are `0 Warning(s)` / `0 Error(s)`.
-- Current May 4 post-repair foundation guard scan exits `0`; this is source-gate proof only.
-- Play Mode deadlock, Unity editor responsiveness, zero-GC, and memory retention remain `PENDING VERIFICATION`.
+- Latest current compile evidence is `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`.
+- Current Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player build, import, scene wiring, visual quality, zero-GC, frame time, and memory retention remain `PENDING VERIFICATION`.
+- Older May 4/May 8/May 9 builds remain historical only where newer May 11 docs do not cover the question.
 - DOTS remains optional/prototype-only until source and profiler evidence prove otherwise.
 
 This plan replaces vague "finish DOTS" thinking with a hard sequence:
@@ -59,6 +58,10 @@ No step is considered complete without logs, profiler captures, or Unity verific
 
 ## 2. Non-Negotiable Rules
 
+- Apply `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt` before adding any water, light, flow, pressure, deformation, tether, ambience, particle, or distant-motion simulation.
+- Reject simulation when shader/VFX/audio/haptic/proxy presentation can preserve player belief.
+- Promote durable policy changes into `AGENTS.md`, `.agents-skills`, or stable `Docs/*.md` files. Do not leave project rules buried only in dated reports.
+- Any single runtime system cost above `0.1ms` is suspicious until profiler proof and load-shed behavior exist.
 - Do not create a second scatter runtime owner.
 - Do not create a separate coral/rock/ruin runtime stack.
 - Do not move player, UI, save, bootstrap, active AI, or pooled Rigidbody gameplay to ECS in the current phase.

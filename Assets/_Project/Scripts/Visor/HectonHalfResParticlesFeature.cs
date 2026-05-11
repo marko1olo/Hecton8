@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
@@ -219,6 +220,7 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = compositeTexture;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void UpdateCompositeMaterial(Material material, float compositeStrength)
             {
                 if (_lastUploadedCompositeMaterial != material)
@@ -294,6 +296,7 @@ namespace Hecton8.Visor
             SetGlobalActive(0f);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SetGlobalActive(float value)
         {
             if (_lastPublishedActive == value)

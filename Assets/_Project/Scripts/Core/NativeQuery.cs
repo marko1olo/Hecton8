@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -66,14 +67,20 @@ namespace Hecton8.Core
 
     public static class NativeQueryExtensions
     {
-        public static NativeList<T> Where<T>(
+        public static bool Where<T>(
             this NativeArray<T> source,
             FunctionPointer<NativePredicate<T>> predicate,
-            Allocator allocator = Allocator.TempJob) where T : unmanaged
+            ref NativeList<T> output) where T : unmanaged
         {
-            NativeList<T> output = new NativeList<T>(source.IsCreated ? source.Length : 0, allocator);
+            if (!output.IsCreated)
+                return false;
+
+            output.Clear();
             if (!source.IsCreated || !predicate.IsCreated || source.Length <= 0)
-                return output;
+                return true;
+
+            if (output.Capacity < source.Length)
+                return false;
 
             for (int i = 0; i < source.Length; i++)
             {
@@ -82,26 +89,32 @@ namespace Hecton8.Core
                     output.AddNoResize(value);
             }
 
-            return output;
+            return true;
         }
 
-        public static NativeList<TResult> Select<TSource, TResult>(
+        public static bool Select<TSource, TResult>(
             this NativeArray<TSource> source,
             FunctionPointer<NativeSelector<TSource, TResult>> selector,
-            Allocator allocator = Allocator.TempJob)
+            ref NativeList<TResult> output)
             where TSource : unmanaged
             where TResult : unmanaged
         {
-            NativeList<TResult> output = new NativeList<TResult>(source.IsCreated ? source.Length : 0, allocator);
+            if (!output.IsCreated)
+                return false;
+
+            output.Clear();
             if (!source.IsCreated || !selector.IsCreated || source.Length <= 0)
-                return output;
+                return true;
+
+            if (output.Capacity < source.Length)
+                return false;
 
             output.ResizeUninitialized(source.Length);
             NativeArray<TResult> outputArray = output.AsArray();
             for (int i = 0; i < source.Length; i++)
                 outputArray[i] = selector.Invoke(source[i]);
 
-            return output;
+            return true;
         }
 
         public static NativeQuery<T> WhereQuery<T>(
@@ -122,6 +135,7 @@ namespace Hecton8.Core
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential, Pack = 16)]
     public struct NativeFilterJob<T> : IJob where T : unmanaged
     {
         [ReadOnly] public NativeArray<T> Source;
@@ -143,6 +157,7 @@ namespace Hecton8.Core
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential, Pack = 16)]
     public struct NativeSelectJob<TSource, TResult> : IJob
         where TSource : unmanaged
         where TResult : unmanaged

@@ -2002,7 +2002,11 @@ namespace Hecton8.World
                 return;
 
             buffer.Clear();
-            Dictionary<long, ScatterPlacement> desiredPlacements = _desiredPlacements;
+            ScatterWorkingMemory memory = _memory;
+            if (memory == null)
+                return;
+
+            Dictionary<long, ScatterPlacement> desiredPlacements = memory.DesiredPlacements;
             if (desiredPlacements == null || desiredPlacements.Count == 0)
                 return;
 

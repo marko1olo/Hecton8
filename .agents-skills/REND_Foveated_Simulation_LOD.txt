@@ -1,5 +1,13 @@
 ## I. EXECUTION POLICY
 
+[2026-05-11 OVERRIDE]
+[RULE] This mandate is no longer permission to add broad foveated simulation by default.
+[RULE] Use foveated throttling only after the visual-fake decision ladder proves simulation is still needed.
+[RULE] Main-thread cost target is `<0.1ms`; the older `<0.5ms` note is a warning ceiling, not an acceptance target.
+[RULE] Presentation-only actors use animation/VAT/impostor/audio cues before lower-rate physical simulation.
+[FORBID] Raycast or physics scheduling for an entity whose only player-facing output is visual dressing, ambience, or distant motion.
+[FORBID] Doppler complexity as proof of realism underwater; use stable pitch/LPF/amplitude fakes unless audio gameplay requires physical velocity.
+
 [RULE] Zero heap allocation during scoring/throttling updates
 [FORBID] Per-entity Update() polling — centralized dispatcher only
 [FORBID] Raycast scheduling for Score < 0.2 entities

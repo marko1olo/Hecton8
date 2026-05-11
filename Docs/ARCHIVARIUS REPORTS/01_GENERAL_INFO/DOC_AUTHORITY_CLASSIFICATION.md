@@ -1,6 +1,6 @@
 ﻿# HECTON-8 Doc Authority Classification
 
-Date: 2026-05-07
+Date: 2026-05-11
 Status: PENDING VERIFICATION
 Scope: active documentation importance and authority sorting across repository root and `Docs/`
 
@@ -14,39 +14,41 @@ This file answers one question: which documents are actually important now, and 
 
 It is not runtime proof.
 If this file disagrees with current source, source wins.
-Latest documentation synchronization: `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`.
-Latest sorting authority: `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, amended by the May 6 synchronization pass.
-Latest header/archive cleanup queue: `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`, with full `Docs/**/*.md` `Date:` / `Status:` header debt closed by the May 6 synchronization pass.
+Latest documentation/data continuation: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+Latest active manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+Latest `.agents-skills` visual-fake doctrine: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
+Latest sorting authority: `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, amended by later synchronization passes.
+Latest header state: May 11 manifest reports active markdown header debt `0` missing `Date:`, `0` missing `Status:`.
 
 ## 1. Read First / Current Authority
 
-These files are the current navigation spine.
+These files are the current navigation spine. Stable authority comes before dated evidence.
 
 | Rank | File | Authority class | Why it matters |
 |---:|---|---|---|
 | 1 | `AGENTS.md` | PRIMARY OPERATING CONTRACT | Defines current rules, architecture constraints, verification discipline, and rejection conditions. |
-| 2 | `.agents-skills/*` | PRIMARY MANDATES | Task-specific rules. Must be read selectively before code or technical reports. |
-| 3 | `Docs/README.md` | PRIMARY DOC ENTRY | Current doc entry point and archive/deprecated routing. |
-| 4 | `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` | PRIMARY DOC SYNCHRONIZATION | Latest broad doc inventory, active header-debt closure, official Unity/package source check, and fresh Unity MCP editor-readback boundary. |
-| 5 | `Docs/Reports/2026-05-06_ACTIVE_DOCUMENTATION_MANIFEST.json` | MACHINE-READABLE DOC MANIFEST | Active markdown inventory with parsed `Date` / `Status`; data artifact, not runtime proof. |
-| 6 | `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` | PRIMARY DOC SORTING MAP | Latest root/`Docs` sorting map, first-read report order, and archive/deprecated boundary; read May 6 sync first for current counters. |
-| 7 | `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` | PRIMARY DOC CLEANUP QUEUE | Structural cleanup queue for relocated root logs and archive candidates; active missing `Date:` / `Status:` debt is now `0`. |
-| 8 | `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` | PRIMARY DOCSET ACTUALITY | Latest root/`Docs` read-pass, source-count sync, build/guard/MCP boundary, and pre-repair guard-failure history. |
-| 9 | `Docs/Reports/2026-05-04_WARNING_CLEANUP.md` | PRIMARY WARNING CLEANUP ADDENDUM | Latest first-party warning cleanup and post-refresh Unity console readback boundary. |
-| 10 | `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` | PRIMARY FOUNDATION GUARD ADDENDUM | Latest guard-clean source/build addendum; foundation guard scan exits `0`. |
-| 11 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | PRIMARY CURRENT STATE | Stable current-state anchor; now carries May 4 addendum and still refuses runtime-certification claims. |
-| 12 | `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md` | PRIMARY TERRAIN/BIOME REPORT | Canonical terrain/biome report; root duplicate is not authority. |
-| 13 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY PROJECT VERDICT | Blunt source/doc-backed project-level conclusion; explicitly not runtime proof. |
-| 14 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md` | PRIMARY WORKSPACE ATLAS | Current workspace orientation, active maps, and source-count deltas. |
-| 15 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | PRIMARY CONCEPT MAP | Current load-bearing/transitional/presentation/experimental system classification. |
-| 16 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOCSET_COVERAGE_MATRIX.md` | PRIMARY COVERAGE MAP | Domain-by-domain map of which docs to trust first. |
-| 17 | `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` | PRIMARY SPACEENGINE INTEGRATION | Current SpaceEngine 0.9.8 terrain math integration, Burst job list, smoke JSON boundary, and AUP/no-hot-string scans. |
-| 18 | `Docs/SPACE_ENGINE_RESEARCH/TERRAIN_AND_NOISE_098.md` | PRIMARY SPACEENGINE RESEARCH | Current terrain/noise research extraction and rules for adapting SpaceEngine math into HECTON. |
-| 19 | `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md` | PRIMARY PLANETARY SANDBOX | Current macro shelf, AUP conversion, sandbox terrain Burst jobs, and smoke/build boundaries. |
-| 20 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md` | PRIMARY NAMING LEDGER | Current non-ASCII path/content inventory and English replacement proposals. |
-| 21 | `Docs/Reports/2026-05-05_ARCHIVARIUS_REALITY_DELTA.md` | PRIMARY REALITY DELTA | Current Archivarius delta from March hand-authored terrain graph to May procedural shelf and SpaceEngine integration. |
-| 22 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md` | HISTORICAL RISK MATRIX | Historical broad subsystem reality map; read after current May 5/May 4/current-state anchors. |
-| 23 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md` | HISTORICAL ACTION QUEUE | Historical high-risk work queue and verification caveats; recheck against current reports before use. |
+| 2 | `.agents-skills/README.md` | PRIMARY MANDATE INDEX | Defines mandate registry buckets, read rule, and conflict resolution. |
+| 3 | `.agents-skills/*` | PRIMARY MANDATES | Task-specific rules. Must be read selectively before code or technical reports. |
+| 4 | `Docs/README.md` | PRIMARY DOC ENTRY | Current doc entry point and archive/deprecated routing. |
+| 5 | `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md` | PRIMARY ARCHITECTURE MAP | Whole-project architecture map and current authority boundary. |
+| 6 | `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md` | PRIMARY RUNTIME PLAN | Runtime execution order, system ownership, and verification boundary. |
+| 7 | `Docs/SYSTEMS_CONTRACTS.md` | PRIMARY SYSTEM CONTRACTS | Stable non-asset system contracts. |
+| 8 | `Docs/QUALITY_GATES.md` | PRIMARY ACCEPTANCE GATES | Required proof gates before readiness claims. |
+| 9 | `Docs/ARCHITECTURE/README.md` | PRIMARY ARCHITECTURE INDEX | Stable architecture pack index and visual-fake-first read order. |
+| 10 | `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md` | PRIMARY CINEMATIC-CHEAT LEDGER | Stable visual-realistic-fake doctrine and physical-simulation rejection gate. |
+| 11 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md` | PRIMARY ARCHIVARIUS INDEX | Stable local orientation and trust boundary. |
+| 12 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md` | PRIMARY WORKSPACE ATLAS | Current workspace orientation, active maps, and source-count deltas. |
+| 13 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | PRIMARY CONCEPT MAP | Current load-bearing/transitional/presentation/experimental system classification. |
+| 14 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOCSET_COVERAGE_MATRIX.md` | PRIMARY COVERAGE MAP | Domain-by-domain map of which docs to trust first. |
+| 15 | `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md` | REPORT VAULT BOUNDARY | Confirms `02_ACTUAL_REPORTS` is evidence, not direct authority. |
+| 16 | `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` | CURRENT EVIDENCE | Latest counters and May 11 compile-only boundary; no Unity/PlayMode/profiler proof. |
+| 17 | `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` | MACHINE-READABLE DOC MANIFEST | Current active markdown inventory with parsed `Date` / `Status`; data artifact, not runtime proof. |
+| 18 | `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` | MANDATE EVIDENCE | Supporting audit for visual-fake-first promotion; stable mandates carry the rule. |
+| 19 | `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` | DOC SORTING EVIDENCE | Sorting report evidence; lower authority than stable docs after May 11 promotion. |
+| 20 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | CONCEPTUAL STATE EVIDENCE | Historical/stable conceptual state anchor; still refuses runtime-certification claims. |
+| 21 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md` | NAMING LEDGER | Current non-ASCII path/content inventory and English replacement proposals. |
+| 22 | `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` | DOMAIN REFERENCE | SpaceEngine 0.9.8 terrain math integration evidence; use after stable authority files. |
+| 23 | `Docs/SPACE_ENGINE_RESEARCH/TERRAIN_AND_NOISE_098.md` | DOMAIN REFERENCE | Terrain/noise research extraction; adapt through HECTON mandates only. |
 
 ## 2. New / High-Value Reports
 
@@ -54,14 +56,17 @@ These are new enough and important enough to stay active.
 
 | File | Authority class | Keep active? | Notes |
 |---|---|---|---|
-| `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` | PRIMARY DOC SYNCHRONIZATION | yes | Latest broad documentation sync, current counters, full markdown header debt `0`, official Unity/package source check, and fresh Unity MCP editor-readback boundary. |
-| `Docs/Reports/2026-05-06_ACTIVE_DOCUMENTATION_MANIFEST.json` | MACHINE-READABLE DOC MANIFEST | yes | Active markdown inventory with parsed `Date` and `Status`; data artifact only. |
+| `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` | PRIMARY DOC/DATA CONTINUATION | yes | Latest current counters and compile-only boundary. |
+| `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` | MACHINE-READABLE DOC MANIFEST | yes | Current active markdown inventory with parsed `Date` and `Status`; data artifact only. |
+| `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` | PRIMARY MANDATE DOCTRINE | yes | Current visual-fake-first mandate correction layer. |
+| `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` | PREVIOUS DOC SYNCHRONIZATION | yes | Previous R186 sync; historical where May 11 data supersedes it. |
+| `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json` | PREVIOUS MACHINE-READABLE DOC MANIFEST | yes | Previous manifest; historical where May 11 manifest supersedes it. |
 | `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` | PRIMARY DOC SORTING MAP | yes | Latest documentation sorting map; root text handling, active bundle classes, and first-read report order. |
 | `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` | PRIMARY DOC CLEANUP QUEUE | yes | Structural cleanup queue: relocated root evidence logs and archive candidates; active missing-header debt is now `0`. |
 | `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` | PRIMARY DOCSET ACTUALITY | yes | Latest documentation read-pass, current source/doc counts, Core/Editor/DOTS/PlayModeTests compile evidence, MCP readback, and pre-repair guard-failure history. |
 | `Docs/Reports/2026-05-04_WARNING_CLEANUP.md` | PRIMARY WARNING CLEANUP ADDENDUM | yes | Latest first-party warning cleanup and post-refresh Unity console readback boundary. |
 | `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` | PRIMARY FOUNDATION GUARD ADDENDUM | yes | Latest guard-clean source/build addendum; foundation guard scan exits `0`. |
-| `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | PRIMARY CURRENT STATE | yes | Stable conceptual system-shape report; current path now includes May 4 evidence. |
+| `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | CONCEPTUAL EVIDENCE | yes | Dated system-shape evidence retained for reference; stable authority now starts at `AGENTS.md`, `.agents-skills/README.md`, and stable `Docs/*.md` files. |
 | `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md` | PRIMARY TERRAIN/BIOME REPORT | yes | Canonical terrain/biome report; root duplicate is not authority. |
 | `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Source/build/controlled-console evidence only; no PlayMode visual/audio/profiler proof. |
 | `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Source/build evidence only; no PlayMode smoke/profiler proof. |

@@ -34,8 +34,6 @@ namespace Hecton8.Core
         private const int TelemetryEntrySizeBytes = 64;
         private const int CrashExportHeaderSizeBytes = 16;
         private const int ExportScratchSizeBytes = CrashExportHeaderSizeBytes + (ExportSnapshotEntries * TelemetryEntrySizeBytes);
-        private const int BootstrapSafeHaltDumpSizeBytes = 96;
-        private const int BootstrapSafeHaltDumpOffsetBytes = ExportScratchSizeBytes - BootstrapSafeHaltDumpSizeBytes;
         private const int ExportStateIdle = 0;
         private const int ExportStateQueued = 1;
         private const int LiveTelemetryStateIdle = 0;
@@ -49,11 +47,11 @@ namespace Hecton8.Core
         private const float CriticalFrameTimeSeconds = 0.033f;
         private const float MaximumTrackedWorldMagnitude = 1000000f;
         private const float MaximumReservedMemoryMb = 4096f;
-        private const float BytesToMegabytes = 1f / (1024f * 1024f);
-        private const float NanosecondsToMilliseconds = 1f / 1000000f;
+        private const float BytesToMegabytes = GlobalTelemetryBus.BytesToMegabytes;
+        private const float NanosecondsToMilliseconds = 0.000001f;
+        private const float SignedTemperatureToUnit = 0.006666667f;
         private const uint LiveTelemetryMagic = 0x4D4C4554u; // "TELM"
         private const uint LiveTelemetryVersion = 1u;
-        private const ulong BootstrapSafeHaltDumpMagic = 0x544C484554435048ul; // "HPCTEHLT" little-endian sentinel.
         private const ulong BinaryMagic = 0x00384E4F54434548ul; // "HECTON8\0" in little-endian byte order.
         private const string ExportFilePrefix = "crash_";
         private const string ExportFileExtension = ".h8dump";
@@ -270,34 +268,6 @@ namespace Hecton8.Core
             GetFileExInfoLevels infoLevelId,
             out Win32FileAttributeData fileData);
 #endif
-
-        [StructLayout(LayoutKind.Sequential, Size = BootstrapSafeHaltDumpSizeBytes)]
-        private struct BootstrapSafeHaltMmfDump
-        {
-            public ulong Magic;
-            public uint Version;
-            public uint FrameIndex;
-            public uint ActiveStep;
-            public uint LongestStep;
-            public float BootElapsedSeconds;
-            public float ActiveStepElapsedMilliseconds;
-            public uint RecentStepMaskLow;
-            public uint RecentStepMaskHigh;
-            public uint RecentStepHash0;
-            public uint RecentStepHash1;
-            public uint RecentStepHash2;
-            public uint RecentStepHash3;
-            public uint RecentStepHash4;
-            public uint RecentStepHash5;
-            public uint RecentStepHash6;
-            public uint RecentStepHash7;
-            public uint RecentStepHash8;
-            public uint RecentStepHash9;
-            public uint ErrorFlags;
-            public uint Reserved0;
-            public uint Reserved1;
-            public uint Reserved2;
-        }
 
         private NativeArray<TelemetryEntry> _ringBuffer;
         private NativeArray<TelemetryEntry> _exportSnapshot;
@@ -707,7 +677,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Records a bootstrap safe-halt forensic row and exports the current crash snapshot synchronously.
+        /// Records a bootstrap safe-halt forensic row and queues the current crash snapshot for the BLACKBOX worker.
         /// </summary>
         public static void ReportBootstrapSafeHalt(
             BootstrapStepToken activeStep,
@@ -743,23 +713,6 @@ namespace Hecton8.Core
                 ExportReason.BootstrapSafeHalt,
                 (uint)ErrorBits.BootstrapSafeHalt,
                 bypassCooldown: true);
-            instance.WriteBootstrapSafeHaltMmfDump(
-                activeStep,
-                longestStep,
-                bootElapsedSeconds,
-                activeStepElapsedMilliseconds,
-                recentStepMaskLow,
-                recentStepMaskHigh,
-                recentStepHash0,
-                recentStepHash1,
-                recentStepHash2,
-                recentStepHash3,
-                recentStepHash4,
-                recentStepHash5,
-                recentStepHash6,
-                recentStepHash7,
-                recentStepHash8,
-                recentStepHash9);
         }
 
         /// <summary>
@@ -1493,103 +1446,6 @@ namespace Hecton8.Core
             _ringBuffer[writeIndex] = entry;
         }
 
-        private void WriteBootstrapSafeHaltMmfDump(
-            BootstrapStepToken activeStep,
-            BootstrapStepToken longestStep,
-            double bootElapsedSeconds,
-            double activeStepElapsedMilliseconds,
-            uint recentStepMaskLow,
-            uint recentStepMaskHigh,
-            uint recentStepHash0,
-            uint recentStepHash1,
-            uint recentStepHash2,
-            uint recentStepHash3,
-            uint recentStepHash4,
-            uint recentStepHash5,
-            uint recentStepHash6,
-            uint recentStepHash7,
-            uint recentStepHash8,
-            uint recentStepHash9)
-        {
-            BootstrapSafeHaltMmfDump dump = default;
-            dump.Magic = BootstrapSafeHaltDumpMagic;
-            dump.Version = 1u;
-            dump.FrameIndex = unchecked((uint)Time.frameCount);
-            dump.ActiveStep = (uint)activeStep;
-            dump.LongestStep = (uint)longestStep;
-            dump.BootElapsedSeconds = (float)math.max(0d, bootElapsedSeconds);
-            dump.ActiveStepElapsedMilliseconds = (float)math.max(0d, activeStepElapsedMilliseconds);
-            dump.RecentStepMaskLow = recentStepMaskLow;
-            dump.RecentStepMaskHigh = recentStepMaskHigh;
-            dump.RecentStepHash0 = recentStepHash0;
-            dump.RecentStepHash1 = recentStepHash1;
-            dump.RecentStepHash2 = recentStepHash2;
-            dump.RecentStepHash3 = recentStepHash3;
-            dump.RecentStepHash4 = recentStepHash4;
-            dump.RecentStepHash5 = recentStepHash5;
-            dump.RecentStepHash6 = recentStepHash6;
-            dump.RecentStepHash7 = recentStepHash7;
-            dump.RecentStepHash8 = recentStepHash8;
-            dump.RecentStepHash9 = recentStepHash9;
-            dump.ErrorFlags = (uint)ErrorBits.BootstrapSafeHalt;
-
-            try
-            {
-                lock (_crashTelemetryMmfGate)
-                {
-                    if (_crashTelemetryView == null)
-                        return;
-
-                    unsafe
-                    {
-                        byte* mappedBaseAddress = null;
-                        try
-                        {
-                            _crashTelemetryView.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedBaseAddress);
-                            if (mappedBaseAddress == null)
-                                return;
-
-                            byte* destination = mappedBaseAddress +
-                                (int)_crashTelemetryView.PointerOffset +
-                                BootstrapSafeHaltDumpOffsetBytes;
-                            if (!UnsafeMemoryCopyGuard.TryMemCpy(
-                                    destination,
-                                    ExportScratchSizeBytes - BootstrapSafeHaltDumpOffsetBytes,
-                                    &dump,
-                                    BootstrapSafeHaltDumpSizeBytes))
-                            {
-                                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
-                                return;
-                            }
-
-                            _crashTelemetryView.Flush();
-                            _crashTelemetryStream?.Flush(true);
-                        }
-                        finally
-                        {
-                            if (mappedBaseAddress != null)
-                                _crashTelemetryView.SafeMemoryMappedViewHandle.ReleasePointer();
-                        }
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException exception)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                H8Debug.LogException(exception);
-#endif
-            }
-            catch (IOException exception)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                H8Debug.LogException(exception);
-#endif
-            }
-            catch (Exception)
-            {
-            }
-        }
-
         private void WriteRuntimeWatchdogStallTelemetry(uint lane, uint counter)
         {
             uint frameIndex = unchecked((uint)Time.frameCount);
@@ -1692,7 +1548,7 @@ namespace Hecton8.Core
             if (bytes <= 0L)
                 return 0u;
 
-            long megabytes = bytes / (1024L * 1024L);
+            long megabytes = bytes >> 20;
             return megabytes >= uint.MaxValue ? uint.MaxValue : (uint)megabytes;
         }
 
@@ -1735,8 +1591,7 @@ namespace Hecton8.Core
 
             if (!UnsafeUtility.IsBlittable<TelemetryEntry>() ||
                 UnsafeUtility.SizeOf<CrashExportHeader>() != CrashExportHeaderSizeBytes ||
-                UnsafeUtility.SizeOf<TelemetryEntry>() != TelemetryEntrySizeBytes ||
-                UnsafeUtility.SizeOf<BootstrapSafeHaltMmfDump>() != BootstrapSafeHaltDumpSizeBytes)
+                UnsafeUtility.SizeOf<TelemetryEntry>() != TelemetryEntrySizeBytes)
             {
                 enabled = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1843,7 +1698,8 @@ namespace Hecton8.Core
                     _blackBoxExportThread = new Thread(RunBlackBoxExportThread)
                     {
                         IsBackground = true,
-                        Name = BlackBoxExportThreadName
+                        Name = BlackBoxExportThreadName,
+                        Priority = System.Threading.ThreadPriority.BelowNormal
                     };
                     _blackBoxExportThread.Start();
                     return true;
@@ -2959,7 +2815,7 @@ namespace Hecton8.Core
 
         private static uint QuantizeSignedTemperatureToByte(float temperatureCelsius)
         {
-            float normalized = math.saturate((temperatureCelsius + 50f) / 150f);
+            float normalized = math.saturate((temperatureCelsius + 50f) * SignedTemperatureToUnit);
             return QuantizeUnitToByte(normalized);
         }
 

@@ -94,6 +94,14 @@ namespace Hecton8.UI
             public SubtitleSource Source;
         }
 
+        private struct BufferedSubtitleRequest
+        {
+            public int BufferIndex;
+            public int Length;
+            public float Duration;
+            public SubtitleSource Source;
+        }
+
         private struct TimedSubtitleCue
         {
             public float StartTime;
@@ -142,6 +150,7 @@ namespace Hecton8.UI
         }
 
         private const int MaxQueuedSubtitles = 8;
+        private const int MaxBufferedSubtitleCharacters = CharBufferPool.RequiredVrTextCapacity;
         private const int MaxTimedAudioLogCueCount = 32;
         private const int MaxSubtitleRenderCharacters = 2048;
 
@@ -150,9 +159,19 @@ namespace Hecton8.UI
         private static readonly Color WaveformColor = new Color(0.72f, 0.97f, 1f, 0.92f);
 
         private readonly List<SubtitleRequest> _queue = new List<SubtitleRequest>(MaxQueuedSubtitles); // COLD ALLOC: List[8] - queued subtitle requests - owner: SubtitleManager
+        private readonly BufferedSubtitleRequest[] _bufferedQueue = new BufferedSubtitleRequest[MaxQueuedSubtitles]; // COLD ALLOC: BufferedSubtitleRequest[8] - zero-GC subtitle request ring - owner: SubtitleManager
+        private readonly char[][] _bufferedQueueBuffers =
+        {
+            new char[MaxBufferedSubtitleCharacters], new char[MaxBufferedSubtitleCharacters],
+            new char[MaxBufferedSubtitleCharacters], new char[MaxBufferedSubtitleCharacters],
+            new char[MaxBufferedSubtitleCharacters], new char[MaxBufferedSubtitleCharacters],
+            new char[MaxBufferedSubtitleCharacters], new char[MaxBufferedSubtitleCharacters]
+        }; // COLD ALLOC: char[8][256] - queued zero-GC subtitle text storage - owner: SubtitleManager
         private readonly TimedSubtitleCue[] _timedAudioLogCues = new TimedSubtitleCue[MaxTimedAudioLogCueCount]; // COLD ALLOC: TimedSubtitleCue[32] - parsed timed subtitle cue metadata - owner: SubtitleManager
         private readonly char[] _subtitleRenderBuffer = new char[MaxSubtitleRenderCharacters]; // COLD ALLOC: char[2048] - subtitle TMP render buffer - owner: SubtitleManager
         private readonly char[] _lastRenderedSubtitleBuffer = new char[MaxSubtitleRenderCharacters]; // COLD ALLOC: char[2048] - subtitle change cache - owner: SubtitleManager
+        private readonly char[] _currentBufferedSubtitleBuffer = new char[MaxBufferedSubtitleCharacters]; // COLD ALLOC: char[256] - active zero-GC subtitle source cache - owner: SubtitleManager
+        private readonly char[] _lastEnqueuedBufferedSubtitleBuffer = new char[MaxBufferedSubtitleCharacters]; // COLD ALLOC: char[256] - zero-GC repeat suppression cache - owner: SubtitleManager
 
         private static SubtitleManager s_activeInstance;
 
@@ -180,6 +199,11 @@ namespace Hecton8.UI
         private string _lastEnqueuedMessage;
         private SubtitleSource _lastEnqueuedSource;
         private float _lastEnqueueTime = -999f;
+        private int _bufferedQueueHead;
+        private int _bufferedQueueCount;
+        private int _currentBufferedSubtitleLength;
+        private int _lastEnqueuedBufferedSubtitleLength = -1;
+        private bool _currentUsesBufferedSubtitle;
         private int _lastRenderedSubtitleLength = -1;
         private bool _timedAudioLogActive;
         private float _timedAudioLogElapsed;
@@ -306,6 +330,51 @@ namespace Hecton8.UI
             Enqueue(resolved, duration, SubtitleSource.Generic, false);
         }
 
+        /// <summary>
+        /// Displays a caller-owned subtitle span through the zero-GC char-buffer path.
+        /// </summary>
+        /// <param name="text">Subtitle text. The span is copied before the method returns.</param>
+        /// <param name="duration">Display duration in seconds.</param>
+        /// <returns>True when a non-empty subtitle was accepted.</returns>
+        public bool DisplaySubtitle(ReadOnlySpan<char> text, float duration)
+        {
+            return EnqueueBuffered(text, duration, SubtitleSource.Generic, false);
+        }
+
+        /// <summary>
+        /// Resolves a localized hash and displays it through the zero-GC char-buffer path.
+        /// </summary>
+        /// <param name="keyHash">Stable localization hash.</param>
+        /// <param name="fallback">Fallback span used when Babel has no raw buffer.</param>
+        /// <param name="duration">Display duration in seconds.</param>
+        /// <returns>True when a non-empty subtitle was accepted.</returns>
+        public bool DisplaySubtitle(int keyHash, ReadOnlySpan<char> fallback, float duration)
+        {
+            ReadOnlySpan<char> resolved = LocRegistry.TryGetRawBuffer(keyHash, out char[] buffer, out int length)
+                ? buffer.AsSpan(0, length)
+                : fallback;
+            return EnqueueBuffered(resolved, duration, SubtitleSource.Generic, false);
+        }
+
+        /// <summary>
+        /// Displays a slice of a caller-owned character buffer without creating a string.
+        /// </summary>
+        /// <param name="buffer">Source character buffer.</param>
+        /// <param name="start">Start index in the source buffer.</param>
+        /// <param name="length">Number of characters to read.</param>
+        /// <param name="duration">Display duration in seconds.</param>
+        /// <returns>True when a non-empty subtitle was accepted.</returns>
+        public bool DisplaySubtitle(char[] buffer, int start, int length, float duration)
+        {
+            if (buffer == null || length <= 0)
+                return false;
+
+            int safeStart = Mathf.Clamp(start, 0, buffer.Length);
+            int safeLength = Mathf.Clamp(length, 0, buffer.Length - safeStart);
+            return safeLength > 0 &&
+                   EnqueueBuffered(buffer.AsSpan(safeStart, safeLength), duration, SubtitleSource.Generic, false);
+        }
+
         public void Tick(float deltaTime)
         {
             if (_root == null)
@@ -327,13 +396,19 @@ namespace Hecton8.UI
                     _currentAlpha = 0f;
                     _isShowing = false;
                     _currentMessage = string.Empty;
+                    _currentUsesBufferedSubtitle = false;
+                    _currentBufferedSubtitleLength = 0;
                     _currentSource = SubtitleSource.Generic;
 
-                if (_queue.Count > 0)
-                {
-                    SubtitleRequest next = _queue[0];
-                    _queue.RemoveAt(0);
-                    ShowImmediate(next.Message, next.Duration, next.Source);
+                    if (TryDequeueBufferedSubtitle(out BufferedSubtitleRequest bufferedNext))
+                    {
+                        ShowImmediate(bufferedNext);
+                    }
+                    else if (_queue.Count > 0)
+                    {
+                        SubtitleRequest next = _queue[0];
+                        _queue.RemoveAt(0);
+                        ShowImmediate(next.Message, next.Duration, next.Source);
                     }
                     else
                     {
@@ -463,10 +538,72 @@ namespace Hecton8.UI
             });
         }
 
+        private bool EnqueueBuffered(ReadOnlySpan<char> message, float duration, SubtitleSource source, bool interrupt)
+        {
+            EnsureBuilt();
+            if (!TryCopyNormalizedSubtitleToPool(message, out CharBufferPool.Lease lease, out int normalizedLength))
+                return false;
+
+            try
+            {
+                if (normalizedLength <= 0)
+                    return false;
+
+                float resolvedDuration = Mathf.Max(0.5f, duration);
+                float now = Time.unscaledTime;
+                char[] normalized = lease.Buffer;
+
+                if (_currentUsesBufferedSubtitle &&
+                    source == _currentSource &&
+                    normalizedLength == _currentBufferedSubtitleLength &&
+                    BuffersMatch(normalized, _currentBufferedSubtitleBuffer, normalizedLength) &&
+                    _timer > 0f)
+                {
+                    _timer = resolvedDuration;
+                    return true;
+                }
+
+                if (!interrupt &&
+                    source == _lastEnqueuedSource &&
+                    normalizedLength == _lastEnqueuedBufferedSubtitleLength &&
+                    BuffersMatch(normalized, _lastEnqueuedBufferedSubtitleBuffer, normalizedLength) &&
+                    now - _lastEnqueueTime < repeatSuppressWindow)
+                {
+                    return true;
+                }
+
+                CopyBuffer(normalized, _lastEnqueuedBufferedSubtitleBuffer, normalizedLength);
+                _lastEnqueuedBufferedSubtitleLength = normalizedLength;
+                _lastEnqueuedSource = source;
+                _lastEnqueueTime = now;
+
+                if (interrupt)
+                {
+                    ShowImmediate(normalized.AsSpan(0, normalizedLength), resolvedDuration, source);
+                    return true;
+                }
+
+                if (_timer <= 0f && _queue.Count == 0 && _bufferedQueueCount == 0 && !_isShowing && _currentAlpha <= 0.01f)
+                {
+                    ShowImmediate(normalized.AsSpan(0, normalizedLength), resolvedDuration, source);
+                    return true;
+                }
+
+                EnqueueBufferedSubtitle(normalized, normalizedLength, resolvedDuration, source);
+                return true;
+            }
+            finally
+            {
+                CharBufferPool.Release(in lease);
+            }
+        }
+
         private void ShowImmediate(string message, float duration, SubtitleSource source)
         {
             RegisterToTickManager();
             _currentMessage = message;
+            _currentUsesBufferedSubtitle = false;
+            _currentBufferedSubtitleLength = 0;
             _currentSource = source;
             _timer = duration;
             _currentAlpha = 0f;
@@ -488,6 +625,152 @@ namespace Hecton8.UI
                 _audioCueGroup.alpha = source == SubtitleSource.AudioLog ? _currentAlpha : 0f;
         }
 
+        private void ShowImmediate(BufferedSubtitleRequest request)
+        {
+            int bufferIndex = Mathf.Clamp(request.BufferIndex, 0, _bufferedQueueBuffers.Length - 1);
+            int safeLength = Mathf.Clamp(request.Length, 0, MaxBufferedSubtitleCharacters);
+            ShowImmediate(_bufferedQueueBuffers[bufferIndex].AsSpan(0, safeLength), request.Duration, request.Source);
+        }
+
+        private void ShowImmediate(ReadOnlySpan<char> message, float duration, SubtitleSource source)
+        {
+            RegisterToTickManager();
+            int safeLength = CopySpanToBuffer(message, _currentBufferedSubtitleBuffer);
+            _currentBufferedSubtitleLength = safeLength;
+            _currentUsesBufferedSubtitle = safeLength > 0;
+            _currentMessage = string.Empty;
+            _currentSource = source;
+            _timer = duration;
+            _currentAlpha = 0f;
+            _isShowing = safeLength > 0;
+            _lastStressCorruptionBucket = int.MinValue;
+
+            int renderLength = CopyBufferedDisplayToRenderBuffer(source);
+            ApplySubtitleBuffer(renderLength);
+
+            if (_audioCueGroup != null)
+                _audioCueGroup.alpha = 0f;
+        }
+
+#if false
+        private bool TryCopyNormalizedSubtitleToPool(
+            ReadOnlySpan<char> message,
+            out CharBufferPool.Lease lease,
+            out int normalizedLength)
+        {
+            lease = default;
+            normalizedLength = 0;
+
+            int start = 0;
+            int end = message.Length;
+            while (start < end && char.IsWhiteSpace(message[start]))
+                start++;
+
+            while (end > start && char.IsWhiteSpace(message[end - 1]))
+                end--;
+
+            if (end <= start || !CharBufferPool.TryAcquire(out lease))
+                return false;
+
+            normalizedLength = CopySpanToBuffer(message.Slice(start, end - start), lease.Buffer);
+            if (normalizedLength > 0)
+                return true;
+
+            CharBufferPool.Release(in lease);
+            lease = default;
+            return false;
+        }
+
+        private bool TryDequeueBufferedSubtitle(out BufferedSubtitleRequest request)
+        {
+            if (_bufferedQueueCount <= 0)
+            {
+                request = default;
+                _bufferedQueueHead = 0;
+                return false;
+            }
+
+            request = _bufferedQueue[_bufferedQueueHead];
+            _bufferedQueue[_bufferedQueueHead] = default;
+            _bufferedQueueHead = (_bufferedQueueHead + 1) % _bufferedQueue.Length;
+            _bufferedQueueCount--;
+            if (_bufferedQueueCount == 0)
+                _bufferedQueueHead = 0;
+
+            return true;
+        }
+
+        private void EnqueueBufferedSubtitle(
+            char[] normalized,
+            int normalizedLength,
+            float duration,
+            SubtitleSource source)
+        {
+            if (normalized == null || normalizedLength <= 0)
+                return;
+
+            int capacity = Mathf.Clamp(maxQueuedSubtitles, 1, _bufferedQueue.Length);
+            if (_bufferedQueueCount >= capacity)
+            {
+                _bufferedQueueHead = (_bufferedQueueHead + 1) % _bufferedQueue.Length;
+                _bufferedQueueCount--;
+            }
+
+            int slot = (_bufferedQueueHead + _bufferedQueueCount) % _bufferedQueue.Length;
+            int safeLength = CopyBuffer(normalized, _bufferedQueueBuffers[slot], normalizedLength);
+            _bufferedQueue[slot] = new BufferedSubtitleRequest
+            {
+                BufferIndex = slot,
+                Length = safeLength,
+                Duration = duration,
+                Source = source
+            };
+            _bufferedQueueCount++;
+        }
+
+        private int CopyBufferedDisplayToRenderBuffer(SubtitleSource source)
+        {
+            if (!_currentUsesBufferedSubtitle || _currentBufferedSubtitleLength <= 0)
+                return 0;
+
+            int safeLength = Mathf.Clamp(_currentBufferedSubtitleLength, 0, _currentBufferedSubtitleBuffer.Length);
+            ReadOnlySpan<char> sourceSpan = _currentBufferedSubtitleBuffer.AsSpan(0, safeLength);
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            if (source != SubtitleSource.AudioLog &&
+                manager != null &&
+                manager.TryApplyHullStressCorruptionIfNeeded(sourceSpan, _subtitleRenderBuffer, out int corruptedLength))
+            {
+                return Mathf.Clamp(corruptedLength, 0, _subtitleRenderBuffer.Length);
+            }
+
+            return CopySpanToBuffer(sourceSpan, _subtitleRenderBuffer);
+        }
+
+        private static int CopySpanToBuffer(ReadOnlySpan<char> source, char[] destination)
+        {
+            if (destination == null || source.Length <= 0)
+                return 0;
+
+            int safeLength = Mathf.Min(source.Length, destination.Length);
+            for (int i = 0; i < safeLength; i++)
+                destination[i] = source[i];
+
+            return safeLength;
+        }
+
+        private static int CopyBuffer(char[] source, char[] destination, int length)
+        {
+            if (source == null || destination == null || length <= 0)
+                return 0;
+
+            int safeLength = Mathf.Min(length, Mathf.Min(source.Length, destination.Length));
+            for (int i = 0; i < safeLength; i++)
+                destination[i] = source[i];
+
+            return safeLength;
+        }
+
+#endif
         private void RefreshStressCorruptionIfNeeded()
         {
             if (_currentSource == SubtitleSource.AudioLog)
@@ -499,6 +782,12 @@ namespace Hecton8.UI
                 return;
 
             _lastStressCorruptionBucket = stressBucket;
+            if (_currentUsesBufferedSubtitle)
+            {
+                ApplySubtitleBuffer(CopyBufferedDisplayToRenderBuffer(_currentSource));
+                return;
+            }
+
             string displayMessage = ResolveDisplayMessage(_currentSource, _currentMessage);
             CopyStringToRenderBuffer(displayMessage);
             ApplySubtitleBuffer(Mathf.Min(displayMessage != null ? displayMessage.Length : 0, _subtitleRenderBuffer.Length));

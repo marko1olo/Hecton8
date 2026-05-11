@@ -603,11 +603,22 @@ namespace Hecton8.Gameplay
 
         private void CleanupNullEntries()
         {
-            for (int i = _activeBeacons.Count - 1; i >= 0; i--)
+            int count = _activeBeacons.Count;
+            int writeIndex = 0;
+            for (int readIndex = 0; readIndex < count; readIndex++)
             {
-                if (_activeBeacons[i] == null)
-                    _activeBeacons.RemoveAt(i);
+                BeaconRuntime beacon = _activeBeacons[readIndex];
+                if (beacon == null)
+                    continue;
+
+                if (writeIndex != readIndex)
+                    _activeBeacons[writeIndex] = beacon;
+
+                writeIndex++;
             }
+
+            for (int i = count - 1; i >= writeIndex; i--)
+                _activeBeacons.RemoveAt(i);
         }
 
         private string BuildNextLabel()

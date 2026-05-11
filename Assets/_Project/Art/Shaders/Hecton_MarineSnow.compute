@@ -93,6 +93,8 @@ float4 _HectonMarineSnowFogDensityParams;
 #define TAU 6.2831853
 #define EPSILON 0.0001
 
+static const float3 MARINE_SNOW_CEILING_SLAP_NORMAL = float3(0.0, -1.0, 0.0);
+
 bool HasMarineSnowFlag(uint flags, uint mask)
 {
     return (flags & mask) != 0u;
@@ -148,6 +150,18 @@ float2 FastNormalize2Approx(float2 value)
         return 0.0.xx;
 
     return value * rcp(approxLength);
+}
+
+float2 DominantAxisDirection2(float2 value)
+{
+    float2 absValue = abs(value);
+    if (absValue.x <= EPSILON && absValue.y <= EPSILON)
+        return 0.0.xx;
+
+    if (absValue.x >= absValue.y)
+        return float2(value.x >= 0.0 ? 1.0 : -1.0, 0.0);
+
+    return float2(0.0, value.y >= 0.0 ? 1.0 : -1.0);
 }
 
 float FastTriangleSigned(float phase)
@@ -233,7 +247,7 @@ float2 SampleFlowFieldXZ(float3 positionWS)
 
 float3 SampleAbyssalFlowField(float3 positionWS);
 
-bool ShouldSampleAbyssalFlow(uint particleIndex)
+bool ShouldRunQuarterRate(uint particleIndex)
 {
     return (((particleIndex + (uint)_MarineSnowMetaParams.z) & 3u) == 0u);
 }
@@ -241,7 +255,7 @@ bool ShouldSampleAbyssalFlow(uint particleIndex)
 float3 ResolveFlowField(float3 positionWS, uint particleIndex)
 {
     float2 flowXZ = SampleFlowFieldXZ(positionWS);
-    float3 abyssalFlow = ShouldSampleAbyssalFlow(particleIndex) ? SampleAbyssalFlowField(positionWS) : 0.0.xxx;
+    float3 abyssalFlow = ShouldRunQuarterRate(particleIndex) ? SampleAbyssalFlowField(positionWS) : 0.0.xxx;
     return float3(flowXZ.x, 0.0, flowXZ.y) + abyssalFlow;
 }
 
@@ -339,11 +353,6 @@ float EvaluateSonarReactiveGlow(float3 positionWS)
     float waveBand = 1.0 - saturate(abs(distanceToOrigin - waveRadius) * rcp(max(waveBandWidth, 0.25)));
     float active = step(_Time.y, _SonarRevealExpireTime);
     return active * max(decay, waveBand * sonarPulseIntensity) * sonarPulseIntensity;
-}
-
-bool ShouldRunQuarterRate(uint particleIndex)
-{
-    return (((particleIndex + (uint)_MarineSnowMetaParams.z) & 3u) == 0u);
 }
 
 void AccumulateSonarGlowAtUv(float2 uv, float intensity, float size, uint particleIndex)
@@ -460,7 +469,7 @@ float3 ApplyPropwashSandForce(float3 positionWS, float3 velocityWS, float dt)
         return velocityWS;
 
     float attenuation = saturate(1.0 - distanceSq * rcp(max(radiusSq, EPSILON)));
-    float2 outward2 = FastNormalize2Approx(lateralDelta.xz);
+    float2 outward2 = DominantAxisDirection2(lateralDelta.xz);
     float3 outward = float3(outward2.x, 0.0, outward2.y);
     float radialGain = max(_MarineSnowPropwashParams.y, 0.0);
     float liftGain = max(_MarineSnowPropwashParams.z, 0.0);
@@ -484,7 +493,7 @@ float SampleCaveSignedDistance(float3 positionWS)
     return lerp(-_HectonCaveVoxelHalfExtents.w, _HectonCaveVoxelHalfExtents.w, encoded);
 }
 
-bool ResolveSdfBubbleCollision(inout Particle particle, float3 nextPosition)
+bool ResolveSdfBubbleCollision(inout Particle particle, uint particleIndex, float3 nextPosition)
 {
     if (_HectonCaveVoxelActive <= 0.5)
         return false;
@@ -495,8 +504,11 @@ bool ResolveSdfBubbleCollision(inout Particle particle, float3 nextPosition)
 
     particle.Flags |= 1u << 4;
     particle.Pos = particle.PrevPos;
-    particle.Vel.y = -abs(particle.Vel.y) * 0.35;
-    particle.Vel.xz += (particle.UV - float2(0.5, 0.5)) * 0.045;
+    particle.Vel = reflect(particle.Vel, MARINE_SNOW_CEILING_SLAP_NORMAL) * 0.35;
+    float2 jitterSeed = float2(
+        Hash21(particle.UV + float2((float)particleIndex * 0.017, _MarineSnowMetaParams.z * 0.013)),
+        Hash21(particle.Pad + float2((float)particleIndex * 0.029, _MarineSnowMetaParams.z * 0.019))) * 2.0 - 1.0;
+    particle.Vel.xz += DominantAxisDirection2(jitterSeed) * 0.045;
     return true;
 }
 
@@ -671,7 +683,7 @@ void AccumulateSonarGlow(uint3 dispatchThreadID : SV_DispatchThreadID)
     if (!TryResolveScreenUv(particle.Pos, screenUv))
         return;
 
-    AccumulateSonarGlowAtUv(screenUv, sonarGlow, particle.Size, particleIndex);
+    AccumulateSonarGlowAtUv(screenUv, sonarGlow, particle.Size, index);
 }
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
@@ -780,7 +792,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     float3 nextPosition = particle.Pos + particle.Vel * dt;
     float sceneEyeDepth;
-    bool sdfCollision = isBubble && ResolveSdfBubbleCollision(particle, nextPosition);
+    bool sdfCollision = isBubble && ResolveSdfBubbleCollision(particle, index, nextPosition);
     bool depthCollision = !sdfCollision && ResolveDepthCollision(particle.Pos, nextPosition, sceneEyeDepth);
     if (depthCollision)
     {

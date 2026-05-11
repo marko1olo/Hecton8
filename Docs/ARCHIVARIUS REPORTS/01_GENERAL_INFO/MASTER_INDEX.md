@@ -1,11 +1,9 @@
 ﻿# HECTON-8 ARCHIVARIUS MASTER INDEX
-Date: 2026-05-07
+Date: 2026-05-11
 Status: PENDING VERIFICATION
 
 
-**Date:** 2026-05-01
-**Status:** PENDING VERIFICATION
-**Scope:** `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO` + `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS`
+Scope: `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO` + `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS`
 
 ---
 
@@ -18,21 +16,22 @@ It replaces stale references to renamed, moved, or obsolete reports.
 This index is path-accurate, not truth-uniform.
 
 - files dated `2026-04-28_*` inside `02_ACTUAL_REPORTS` still physically exist in the active folder
-- several of those dated bundles are now historical static snapshots, not the preferred current-state authority
-- for current project-state orientation outside this folder, read `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` first, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-- for the current blunt project-level verdict, read `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
-- for Archivarius-local current-source corrections and editor-state caveats, prefer `PROJECT_ATLAS.md` and `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
+- those dated bundles are evidence snapshots, not the preferred current-state authority
+- current project authority starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, stable architecture docs, current source, and fresh logs
+- for Archivarius-local orientation, read `01_GENERAL_INFO/README.md`, `PROJECT_ATLAS.md`, `DOC_AUTHORITY_CLASSIFICATION.md`, and `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
+- for report-vault trust rules, read `02_ACTUAL_REPORTS/README.md`
+- for current counters and compile-only evidence, read `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` and `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`
 
 ## Coverage Snapshot
 
 | Bucket | Count |
 |---|---:|
-| `01_GENERAL_INFO` markdown files | 24 |
-| `02_ACTUAL_REPORTS` markdown files | 46 |
+| `01_GENERAL_INFO` markdown files | 26 |
+| `02_ACTUAL_REPORTS` markdown files | 47 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
 | `02_ACTUAL_REPORTS` patch artifacts | 9 |
-| **Total indexed docs/datasets** | **71** |
-| **Total physical non-meta files in folders `01` and `02`** | **80** |
+| **Total indexed docs/datasets** | **83** |
+| **Total physical non-meta files in folders `01` and `02`** | **83** |
 
 Patch artifacts in `02_ACTUAL_REPORTS` physically exist but are not current narrative authority by themselves.
 Read the paired surgery log or audit note before treating a `.patch` file as implementation truth.
@@ -58,9 +57,11 @@ Read the paired surgery log or audit note before treating a `.patch` file as imp
 | `INTERFACE_CONTRACT_TABLE.md` | Verified interface-to-implementor table |
 | `INTERFACE_STRATEGY.md` | Interface cleanup and ownership strategy |
 | `MASTER_INDEX.md` | This file |
+| `NAMING_VIOLATIONS.md` | Current non-ASCII path/content inventory and English replacement queue |
 | `NARRATIVE_DISCOVERY_PROGRESSION_SYSTEM_MAP.md` | Detailed ownership map for narrative, discovery, lore, Atlas progression, and PDA knowledge systems |
 | `PLAYER_GAMEPLAY_CORE_MAP.md` | Current player-facing gameplay ownership map |
 | `PROJECT_ATLAS.md` | Live workspace atlas rebuilt against current file-system state |
+| `README.md` | Stable Archivarius orientation index and trust boundary |
 | `STRUCTURAL_NARRATIVE.md` | One-frame code-walk narrative; not a measured profiler report |
 | `SURVIVAL_DAMAGE_HAZARD_SYSTEM_MAP.md` | Detailed ownership map for survival, pressure, thermal stress, hazard routing, parallel health semantics, and downstream stress consequences |
 | `SYSTEM_INTERCONNECT_MATRIX.md` | AUP-sensitive interconnect matrix |
@@ -76,6 +77,7 @@ Read the paired surgery log or audit note before treating a `.patch` file as imp
 
 | File | Role |
 |---|---|
+| `README.md` | Report-vault trust boundary; confirms this folder is evidence, not authority |
 | `EVENT_FLOW_MAP.md` | Source-backed event topology for current first-party code |
 | `INTERFACE_HEALTH_DASHBOARD.md` | Interface health summary corrected against live code |
 | `SINGLETON_FIX_PRIORITY.md` | Singleton remediation roadmap |

@@ -5,10 +5,18 @@ Status: PENDING VERIFICATION
 
 Purpose: canonical architecture contract for habitat logistics links, Bishop-frame pipe rendering, rupture buckling, and CSR adjacency rebuilds.
 
-2026-05-04 current-state boundary:
+## 2026-05-11 Current-State Override
+
+- Current data boundary: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+- Current manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+- Current visual-realistic-fake doctrine: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
+- Current compile-only evidence: `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, `CS_WRITES_AFTER_END=0`.
+- Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
+- Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
+Historical 2026-05-04 boundary:
 
 - This is the habitat logistics architecture contract, not construction stress-test proof.
-- Current project-state orientation starts at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, then `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, then the May 3 habitat/foundation reports for dated implementation evidence.
+- Historical project-state orientation previously started at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, then `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, then the May 3 habitat/foundation reports for dated implementation evidence.
 - `HabitatGraphManager`, `BaseModule`, `BaseAirlock`, `ConstructionManager`, and pipe rendering remain active review surfaces for native lifetime, save/load restoration, graph rebuild storms, and authority boundaries.
 
 Supersedes: transient construction notes spread across dated audit bundles. Older one-shot construction writeups remain historical material, not architecture authority.
@@ -408,7 +416,7 @@ Current material variants:
 
 - socket forward authoring can still produce ugly handles if prefab sockets are misoriented
 - rupture buckling uses `position.z` phase, so world orientation affects crush wave pattern
-- support inference is proximity-based, not explicit â€œsupport pylonâ€ taxonomy
+- support inference is proximity-based, not explicit Ã¢â‚¬Å“support pylonÃ¢â‚¬Â taxonomy
 - if rebuild cadence lags, visual rupture onset lags with it
 - if no downstream crack renderer binds the matrix cache, only authored decals / fluid aftermath appear
 

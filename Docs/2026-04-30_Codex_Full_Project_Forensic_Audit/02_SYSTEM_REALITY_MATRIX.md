@@ -73,7 +73,7 @@ Source-backed update after the May 1 audit pass:
 - Coroutine eradication has improved since the older Awaitable report. May 2 strict grep found `0` `StartCoroutine(` call sites under `Assets/_Project/Scripts`.
 - Object pool exhaustion policy was tightened by code inspection: spawn exhaustion returns `null` and emits `GlobalTelemetryBus.PublishPoolExhausted(...)`; runtime expansion through `InstantiatePooled` is warmup-only by current source review.
 - Unity MCP console proof from the previous May 1 report pass: error query returned `0` entries. Current delta pass attempted `read_console` twice and MCP returned `no_unity_session`; therefore this update has no fresh console proof. Play Mode, GCMonitor, profiler, and runtime deadlock proof remain absent.
-- `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is the current conceptual entry point for system ownership and active risks. It does not upgrade any readiness score and does not provide runtime proof.
+- `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is dated conceptual evidence for system ownership and active risks. Current authority now starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, stable `Docs/*.md` authority files, current source, and fresh logs. It does not upgrade any readiness score and does not provide runtime proof.
 
 Readiness adjustments implied by this delta:
 
@@ -83,7 +83,7 @@ Readiness adjustments implied by this delta:
 | Automated testing | Near-paper / 8% | broad smoke infrastructure exists, but formal proof is still weak and some harnesses still use coroutines |
 | Jobs / Burst adoption | Real / 64% | Burst metadata has improved, but local frame-lane barriers remain a production stall risk |
 | Headless simulation | not separately scored | must be treated as critical risk because gameplay state still depends on camera/Animator presentation |
-| Documentation trust | Real but stale-prone | confirmed stale-prone; active truth must now start from the May 4 documentation sweep, May 4 source/build/guard evidence, then current-source deltas |
+| Documentation trust | Real but stale-prone | confirmed stale-prone; active truth now starts from stable authority docs, current source/logs, and the May 11 evidence boundary, not from old dated sweeps |
 
 Conceptual corrections:
 

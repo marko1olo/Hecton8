@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -75,7 +76,7 @@ namespace Hecton8.Core
 
         public static int ResolveExponentialCapacity(int currentCapacity, int requiredCapacity, int minimumCapacity)
         {
-            int resolvedCapacity = Mathf.Max(1, Mathf.Max(currentCapacity, minimumCapacity));
+            int resolvedCapacity = math.max(1, math.max(currentCapacity, minimumCapacity));
             int growthWatchdog = 32;
             while (resolvedCapacity < requiredCapacity && growthWatchdog-- > 0)
             {
@@ -106,10 +107,11 @@ namespace Hecton8.Core
             }
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static string FormatBytes(long bytes)
         {
-            const double bytesPerMb = 1024.0 * 1024.0;
-            return (bytes / bytesPerMb).ToString("F2") + " MB";
+            return (bytes * GlobalTelemetryBus.BytesToMegabytes).ToString("F2") + " MB";
         }
+#endif
     }
 }

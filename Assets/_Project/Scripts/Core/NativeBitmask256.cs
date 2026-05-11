@@ -1,9 +1,10 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Unity.Mathematics;
 
 namespace Hecton8.Core
 {
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct NativeBitmask256
     {
         public ulong Word0;
@@ -23,8 +24,23 @@ namespace Hecton8.Core
             if ((uint)bitIndex >= 256u)
                 return false;
 
-            ref ulong word = ref GetWord(bitIndex >> 6);
-            word |= 1UL << (bitIndex & 63);
+            ulong bit = 1UL << (bitIndex & 63);
+            switch (bitIndex >> 6)
+            {
+                case 0:
+                    Word0 |= bit;
+                    break;
+                case 1:
+                    Word1 |= bit;
+                    break;
+                case 2:
+                    Word2 |= bit;
+                    break;
+                default:
+                    Word3 |= bit;
+                    break;
+            }
+
             return true;
         }
 
@@ -34,8 +50,23 @@ namespace Hecton8.Core
             if ((uint)bitIndex >= 256u)
                 return false;
 
-            ref ulong word = ref GetWord(bitIndex >> 6);
-            word &= ~(1UL << (bitIndex & 63));
+            ulong mask = ~(1UL << (bitIndex & 63));
+            switch (bitIndex >> 6)
+            {
+                case 0:
+                    Word0 &= mask;
+                    break;
+                case 1:
+                    Word1 &= mask;
+                    break;
+                case 2:
+                    Word2 &= mask;
+                    break;
+                default:
+                    Word3 &= mask;
+                    break;
+            }
+
             return true;
         }
 
@@ -77,19 +108,72 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private ref ulong GetWord(int wordIndex)
+        public static int CountLeadingZeros(ref NativeBitmask256 mask)
         {
-            switch (wordIndex)
+            if (mask.Word3 != 0UL)
+                return math.lzcnt(mask.Word3);
+
+            if (mask.Word2 != 0UL)
+                return 64 + math.lzcnt(mask.Word2);
+
+            if (mask.Word1 != 0UL)
+                return 128 + math.lzcnt(mask.Word1);
+
+            return mask.Word0 != 0UL ? 192 + math.lzcnt(mask.Word0) : 256;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int FindFirstEmptySlot(ref NativeBitmask256 mask)
+        {
+            ulong inverse0 = ~mask.Word0;
+            if (inverse0 != 0UL)
+                return math.tzcnt(inverse0);
+
+            ulong inverse1 = ~mask.Word1;
+            if (inverse1 != 0UL)
+                return 64 + math.tzcnt(inverse1);
+
+            ulong inverse2 = ~mask.Word2;
+            if (inverse2 != 0UL)
+                return 128 + math.tzcnt(inverse2);
+
+            ulong inverse3 = ~mask.Word3;
+            return inverse3 != 0UL ? 192 + math.tzcnt(inverse3) : -1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool HasBit(ref NativeBitmask256 mask, int bitIndex)
+        {
+            if ((uint)bitIndex >= 256u)
+                return false;
+
+            ulong word;
+            switch (bitIndex >> 6)
             {
                 case 0:
-                    return ref Word0;
+                    word = mask.Word0;
+                    break;
                 case 1:
-                    return ref Word1;
+                    word = mask.Word1;
+                    break;
                 case 2:
-                    return ref Word2;
+                    word = mask.Word2;
+                    break;
                 default:
-                    return ref Word3;
+                    word = mask.Word3;
+                    break;
             }
+
+            return (word & (1UL << (bitIndex & 63))) != 0UL;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Or(ref NativeBitmask256 mask, in NativeBitmask256 other)
+        {
+            mask.Word0 |= other.Word0;
+            mask.Word1 |= other.Word1;
+            mask.Word2 |= other.Word2;
+            mask.Word3 |= other.Word3;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

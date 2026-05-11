@@ -85,7 +85,7 @@ namespace Hecton8.Audio
         private const float HaasBlendSharpness = 14f;
         private const float Tier0FullDspDistanceMeters = 15f;
         private const float Tier1ReducedDspDistanceMeters = 40f;
-        private const float Tier1UpdateIntervalSeconds = 1f / 30f;
+        private const float Tier1UpdateIntervalSeconds = 0.033333335f;
         private const float Tier1LowPassCutoffHertz = 1800f;
         private const float CinematicSourceMuffleUpdateIntervalSeconds = 0.2f;
         private const float CinematicSourceMuffleReferenceDistanceMeters = Tier0FullDspDistanceMeters;
@@ -104,6 +104,7 @@ namespace Hecton8.Audio
         private const float ImpactEmitterAmplitudeScale = 0.75f;
         private const float ImpactEmitterMinimumAmplitude = 0.02f;
         private const int AcousticRadarBinCount = 360;
+        private const float AcousticRadarBinCountInv = 0.0027777778f;
         private const float AcousticRadarDecayFactorPerSlowTick = 0.75f;
         private const float AcousticRadarDecayIntervalSeconds = 0.1f;
         private const float AcousticRadarDistanceRangeMeters = 180f;
@@ -122,16 +123,20 @@ namespace Hecton8.Audio
         private const float CaveExternalLowPassBoundaryCutoffHertz = 2600f;
         private const float CaveExternalLowPassDeepInteriorCutoffHertz = 1100f;
         private const float CaveInteriorReferenceDistanceMeters = 6f;
+        private const float CaveInteriorReferenceDistanceMetersInv = 0.16666667f;
         private const float ManualDopplerFollowSharpness = 10f;
         private const float ManualDopplerMaximumRatio = 1.2f;
+        private const float ManualDopplerMaximumRatioInv = 0.8333333f;
         private const float ManualDopplerMinimumDenominatorMetersPerSecond = 32f;
         private const float ManualDopplerVelocityJumpThresholdMetersPerSecond = 10f;
         private const float ManualDopplerSmoothingSamples = 128f;
         private const float ManualDopplerSampleRateHertz = 48000f;
+        private const float ManualDopplerSampleRateHertzInv = 0.000020833333f;
         private const float RearHemisphereLowPassStartDot = -0.12f;
         private const float RearHemisphereLowPassFullDot = -0.92f;
         private const float RearHemisphereLowPassMaximumCutoffHertz = 18000f;
         private const float RearHemisphereLowPassMinimumCutoffHertz = 3200f;
+        private const float RearHemisphereLowPassCutoffRangeInv = 0.00006756757f;
         private const float BinauralWaterBlendSharpness = 7f;
         private const float ThreatBusDuckMaximumDb = -12f;
         private const float ThreatBusDuckAttackSeconds = 0.05f;
@@ -874,7 +879,7 @@ namespace Hecton8.Audio
                 return;
 
             _parasiteRoomAcousticCount = sanitizedCount;
-            _parasiteRoomTarget01 = math.saturate(sanitizedCount / (float)math.max(1, _parasiteRoomCountForFullInfection));
+            _parasiteRoomTarget01 = math.saturate(sanitizedCount * math.rcp((float)math.max(1, _parasiteRoomCountForFullInfection)));
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1659,7 +1664,7 @@ namespace Hecton8.Audio
 
             float maxDistance = math.max(_maxDistance, 0.01f);
             float maxDistanceSq = maxDistance * maxDistance;
-            float distance01Sq = math.saturate(distanceSqr / maxDistanceSq);
+            float distance01Sq = math.saturate(distanceSqr * math.rcp(maxDistanceSq));
             float energy = amplitude * (1f - distance01Sq);
             if (!(energy > bestScore))
                 return;
@@ -1676,8 +1681,8 @@ namespace Hecton8.Audio
             {
                 shadowCutoff = math.min(shadowCutoff, rearHemisphereCutoff);
                 float rearShadowAmount = math.saturate(
-                    (RearHemisphereLowPassMaximumCutoffHertz - rearHemisphereCutoff) /
-                    math.max(RearHemisphereLowPassMaximumCutoffHertz - RearHemisphereLowPassMinimumCutoffHertz, 1f));
+                    (RearHemisphereLowPassMaximumCutoffHertz - rearHemisphereCutoff) *
+                    RearHemisphereLowPassCutoffRangeInv);
                 shadowAmount = math.saturate(math.max(shadowAmount, rearShadowAmount));
             }
 
@@ -2332,7 +2337,7 @@ namespace Hecton8.Audio
             Vector3 traumaDirection = distanceSq > 0.000001f
                 ? listenerOffset * invDistance
                 : Vector3.up;
-            float distance01 = math.saturate(distanceSq / traumaRangeSq);
+            float distance01 = math.saturate(distanceSq * math.rcp(traumaRangeSq));
             float trauma01 = 1f - distance01 * distance01;
             _listenerPlayerMovement.ApplyPhysicalTrauma(
                 traumaDirection * (delayedEvent.TraumaImpulse * trauma01),
@@ -2589,7 +2594,7 @@ namespace Hecton8.Audio
             if (local >= 0f && local < cellSize)
                 return;
 
-            long gridDelta = FastFloorToLong(local / cellSize);
+            long gridDelta = FastFloorToLong(local * math.rcp(cellSize));
             grid += gridDelta;
             local -= gridDelta * cellSize;
             if (local < 0f)
@@ -2940,7 +2945,9 @@ namespace Hecton8.Audio
         {
             float farDistanceSq = Tier1ReducedDspDistanceMeters * Tier1ReducedDspDistanceMeters;
             float rangeSq = math.max(1f, farDistanceSq - CinematicSourceMuffleReferenceDistanceSq);
-            float far01 = math.saturate((math.max(0f, sourceListenerDistanceSq) - CinematicSourceMuffleReferenceDistanceSq) / rangeSq);
+            float far01 = math.saturate(
+                (math.max(0f, sourceListenerDistanceSq) - CinematicSourceMuffleReferenceDistanceSq) *
+                math.rcp(rangeSq));
             transmission01 = math.lerp(
                 CinematicFarMuffleNearTransmission,
                 CinematicFarMuffleFarTransmission,
@@ -3605,7 +3612,7 @@ namespace Hecton8.Audio
             {
                 Vector3 wind = weatherService.GlobalWindVector;
                 float windSpeedSq = wind.x * wind.x + wind.y * wind.y + wind.z * wind.z;
-                target01 = math.max(target01, math.saturate(windSpeedSq / GlobalWindHowlReferenceSpeedSq));
+                target01 = math.max(target01, math.saturate(windSpeedSq * math.rcp(GlobalWindHowlReferenceSpeedSq)));
                 if ((weatherService.CurrentWeatherState & WeatherState.Storm) != 0)
                     target01 = math.max(target01, math.saturate(_globalWindHowlStormFloor));
             }
@@ -4152,7 +4159,7 @@ namespace Hecton8.Audio
             int radialIndex = EncodeAcousticRadarDegreeBinFast(listenerLocalPosition);
             float distanceSq = ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
             float rangeSq = math.max(1f, AcousticRadarDistanceRangeMeters * AcousticRadarDistanceRangeMeters);
-            float falloff = 1f - math.saturate(distanceSq / rangeSq);
+            float falloff = 1f - math.saturate(distanceSq * math.rcp(rangeSq));
             float intensity = math.saturate(amplitude * falloff);
             _acousticRadarIntensityBins[radialIndex] = math.max(_acousticRadarIntensityBins[radialIndex], intensity);
         }
@@ -4408,7 +4415,8 @@ namespace Hecton8.Audio
                 return Vector3.zero;
             }
 
-            Vector3 velocity = (listenerAbsolutePosition - _previousListenerAbsolutePosition) / deltaTime;
+            float deltaTimeInv = math.rcp(deltaTime);
+            Vector3 velocity = (listenerAbsolutePosition - _previousListenerAbsolutePosition) * deltaTimeInv;
             _previousListenerAbsolutePosition = listenerAbsolutePosition;
             return velocity;
         }
@@ -4449,7 +4457,10 @@ namespace Hecton8.Audio
 
             Vector3 sourceVelocity = Vector3.zero;
             if (deltaTime > 0.0001f)
-                sourceVelocity = (sourceAbsolutePosition - _previousAbsolutePositions[sourceIndex]) / deltaTime;
+            {
+                float deltaTimeInv = math.rcp(deltaTime);
+                sourceVelocity = (sourceAbsolutePosition - _previousAbsolutePositions[sourceIndex]) * deltaTimeInv;
+            }
 
             _currentAbsoluteVelocities[sourceIndex] = sourceVelocity;
             _previousAbsolutePositions[sourceIndex] = sourceAbsolutePosition;
@@ -4472,8 +4483,8 @@ namespace Hecton8.Audio
                     SoundSpeedWaterMetersPerSecond - clampedRelativeVelocity,
                     ManualDopplerMinimumDenominatorMetersPerSecond);
                 targetRatio = math.clamp(
-                    numerator / denominator,
-                    1f / ManualDopplerMaximumRatio,
+                    numerator * math.rcp(denominator),
+                    ManualDopplerMaximumRatioInv,
                     ManualDopplerMaximumRatio);
 
                 float previousRelativeVelocity = _previousRelativeVelocities != null && sourceIndex < _previousRelativeVelocities.Length
@@ -4483,7 +4494,7 @@ namespace Hecton8.Audio
                 if (_previousRelativeVelocities != null && sourceIndex < _previousRelativeVelocities.Length)
                     _previousRelativeVelocities[sourceIndex] = clampedRelativeVelocity;
 
-                float smoothingDurationSeconds = ManualDopplerSmoothingSamples * math.rcp(ManualDopplerSampleRateHertz);
+                float smoothingDurationSeconds = ManualDopplerSmoothingSamples * ManualDopplerSampleRateHertzInv;
                 float followT = velocityDelta > ManualDopplerVelocityJumpThresholdMetersPerSecond
                     ? math.saturate(math.max(deltaTime, 0f) * math.rcp(math.max(smoothingDurationSeconds, 0.0001f)))
                     : FastDecayBlend(ManualDopplerFollowSharpness, deltaTime);
@@ -4574,7 +4585,7 @@ namespace Hecton8.Audio
                 SabineMinimumSurfaceAreaSquareMeters,
                 2f * (xy + xz + yz) * surfaceScale);
             rt60Seconds = math.clamp(
-                SabineEquationConstant * (roomVolumeCubicMeters / surfaceAreaSquareMeters),
+                SabineEquationConstant * (roomVolumeCubicMeters * math.rcp(surfaceAreaSquareMeters)),
                 SabineMinimumRt60Seconds,
                 SabineMaximumRt60Seconds);
             return true;
@@ -4605,7 +4616,7 @@ namespace Hecton8.Audio
                 math.min(
                     math.min(localViewerPosition.y - min.y, max.y - localViewerPosition.y),
                     math.min(localViewerPosition.z - min.z, max.z - localViewerPosition.z)));
-            caveInterior01 = math.saturate(distanceToWall / CaveInteriorReferenceDistanceMeters);
+            caveInterior01 = math.saturate(distanceToWall * CaveInteriorReferenceDistanceMetersInv);
             return true;
         }
 
@@ -4615,7 +4626,7 @@ namespace Hecton8.Audio
                 return 0f;
 
             float lifetime = math.max(0.001f, emitter.ExpireAt - emitter.SpawnAt);
-            float fade = math.saturate((emitter.ExpireAt - now) / lifetime);
+            float fade = math.saturate((emitter.ExpireAt - now) * math.rcp(lifetime));
             return emitter.Amplitude * fade;
         }
 
@@ -4679,7 +4690,7 @@ namespace Hecton8.Audio
         private static int EncodeAcousticRadarGridAzimuthFast(float3 listenerLocalPosition)
         {
             int degreeBin = EncodeAcousticRadarDegreeBinFast(listenerLocalPosition);
-            int azimuthIndex = (degreeBin * AcousticRadarGridAzimuthBins) / AcousticRadarBinCount;
+            int azimuthIndex = (int)((degreeBin * AcousticRadarGridAzimuthBins) * AcousticRadarBinCountInv);
             return math.clamp(azimuthIndex, 0, AcousticRadarGridAzimuthBins - 1);
         }
 
@@ -4706,7 +4717,7 @@ namespace Hecton8.Audio
             if (x >= 3.5f)
                 return 1f;
 
-            return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
+            return math.saturate((12f * x) * math.rcp(12f + (6f * x) + (x * x)));
         }
 
         private static float ResolveCinematicPitchRatioFromCents(float cents)

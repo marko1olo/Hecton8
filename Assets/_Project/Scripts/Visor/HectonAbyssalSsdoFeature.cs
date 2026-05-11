@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -41,7 +42,7 @@ namespace Hecton8.Visor
             [Tooltip("Internal render scale for the occlusion target.")]
             [Range(0.25f, 1f)] public float renderScale = 0.5f;
 
-            [Tooltip("World-space occlusion radius in meters.")]
+            [Tooltip("Depth-only occlusion radius in eye-space meters.")]
             [Range(0.25f, 3f)] public float radiusMeters = 1.5f;
 
             [Tooltip("Overall occlusion strength.")]
@@ -132,8 +133,6 @@ namespace Hecton8.Visor
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
-
                 if (!Application.isPlaying)
                     return;
 
@@ -192,9 +191,7 @@ namespace Hecton8.Visor
                 TextureHandle blurTexture = renderGraph.CreateTexture(blurDesc);
                 TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
 
-                Camera camera = cameraData.camera;
-                Matrix4x4 projectionMatrix = GL.GetGPUProjectionMatrix(camera.projectionMatrix, false);
-                float projectionScale = math.abs(projectionMatrix.m11) * 0.5f * sourceDesc.height * math.max(0.01f, _settings.radiusMeters);
+                float projectionScale = math.abs(cameraData.camera.projectionMatrix.m11) * 0.5f * sourceDesc.height * math.max(0.01f, _settings.radiusMeters);
 
                 UpdateMaterialParameters(
                     _occlusionMaterial,
@@ -242,7 +239,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(occlusionTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
                     {
@@ -262,7 +258,6 @@ namespace Hecton8.Visor
 
                     builder.UseTexture(occlusionTexture, AccessFlags.Read);
                     builder.UseTexture(blurTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
                     {
@@ -305,7 +300,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(occlusionTexture, AccessFlags.Read);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (CompositePassData data, UnsafeGraphContext context) =>
                     {
@@ -313,7 +307,6 @@ namespace Hecton8.Visor
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
                         const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
 
-                        cmd.SetGlobalFloat(ShaderConstants.ActiveId, 1f);
                         Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.compositeMaterial, 3);
                     });
                 }
@@ -383,6 +376,7 @@ namespace Hecton8.Visor
                     materialDirty);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue, bool materialDirty)
             {
                 if (!materialDirty && math.abs(cachedValue - value) <= MaterialFloatEpsilon)
@@ -392,6 +386,7 @@ namespace Hecton8.Visor
                 cachedValue = value;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static void SetMaterialVectorIfChanged(Material material, int shaderId, Vector4 value, ref Vector4 cachedValue, bool materialDirty)
             {
                 if (!materialDirty && Vector4DistanceSq(cachedValue, value) <= MaterialVectorEpsilonSq)
@@ -401,6 +396,7 @@ namespace Hecton8.Visor
                 cachedValue = value;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static float Vector4DistanceSq(Vector4 a, Vector4 b)
             {
                 float x = a.x - b.x;
@@ -424,7 +420,6 @@ namespace Hecton8.Visor
             internal static readonly int ProjectionScaleId = Shader.PropertyToID("_HectonAbyssalSsdoProjectionScale");
             internal static readonly int CompositeStrengthId = Shader.PropertyToID("_HectonAbyssalSsdoCompositeStrength");
             internal static readonly int SsdoTextureId = Shader.PropertyToID("_HectonAbyssalSSDOTex");
-            internal static readonly int ActiveId = Shader.PropertyToID("_HectonAbyssalSSDOActive");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -457,10 +452,7 @@ namespace Hecton8.Visor
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             if (!Application.isPlaying)
-            {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
                 return;
-            }
 
             if (settings == null ||
                 _pass == null ||
@@ -468,17 +460,11 @@ namespace Hecton8.Visor
                 _blurHorizontalMaterial == null ||
                 _blurVerticalMaterial == null ||
                 _compositeMaterial == null)
-            {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
                 return;
-            }
 
             CameraType cameraType = renderingData.cameraData.cameraType;
             if (IsUnsupportedCameraType(cameraType))
-            {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
                 return;
-            }
 
             _pass.Setup(settings, _occlusionMaterial, _blurHorizontalMaterial, _blurVerticalMaterial, _compositeMaterial);
             renderer.EnqueuePass(_pass);

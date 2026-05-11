@@ -4,6 +4,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 using System.Threading;
 using Hecton8.AI;
@@ -59,7 +60,7 @@ namespace Hecton8.Core
         private const int FrostTickIntervalFrames = 300;
         private const double SlowJobCompleteWarningMilliseconds = 1.0;
         private const double SlowDispatcherPhaseWarningMilliseconds = 100.0;
-        private const int MaxQueuedDispatcherRaycasts = 256;
+        private const int MaxQueuedDispatcherRaycasts = 1024;
         private const int DispatcherRaycastMinCommandsPerJob = 1;
         private const float FixedStepSeconds = 0.02f;
         private const int MaxFixedSubstepsPerFrame = 3;
@@ -79,6 +80,7 @@ namespace Hecton8.Core
         private const float AupNanInquisitorLogIntervalSeconds = 5f;
         private const float DispatcherPhaseWarningLogIntervalSeconds = 5f;
         private const string AupNanInquisitorWarningMessage = "[SystemDispatcher] AUP NaN-Inquisitor detected invalid camera-relative results.";
+        private const string HeapLockGuardMessage = "[SystemDispatcher] HEAP LOCK GUARD: managed heap increased during fixed-step dispatch.";
 #endif
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.Dispatcher.Update");
         private static readonly ProfilerMarker _fixedUpdateProfilerMarker = new ProfilerMarker("H8.Dispatcher.FixedUpdate");
@@ -885,6 +887,7 @@ namespace Hecton8.Core
 
         private void Update()
         {
+            GlobalRegistry.PublishAbsoluteUniverseTime(Time.timeAsDouble);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherUpdate);
 #endif
@@ -1638,6 +1641,9 @@ namespace Hecton8.Core
 
         private void DispatchFixedStep(float fixedDeltaTime, bool blockGameplayLanes)
         {
+#if UNITY_EDITOR && HECTON_HEAP_LOCK_GUARD
+            long heapBefore = Profiler.GetMonoUsedSizeLong();
+#endif
             using (_fixedUpdateProfilerMarker.Auto())
             {
                 for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
@@ -1713,6 +1719,14 @@ namespace Hecton8.Core
 
                 DrainAupNanInquisitor();
             }
+#if UNITY_EDITOR && HECTON_HEAP_LOCK_GUARD
+            long heapAfter = Profiler.GetMonoUsedSizeLong();
+            if (heapAfter > heapBefore)
+            {
+                Debug.LogError(HeapLockGuardMessage);
+                throw new System.InvalidOperationException(HeapLockGuardMessage);
+            }
+#endif
         }
 
         private static void DrainAupNanInquisitor()
@@ -1820,7 +1834,7 @@ namespace Hecton8.Core
 
             if (!_scheduledDispatcherRaycastCommands.IsCreated)
             {
-                _scheduledDispatcherRaycastCommands = new NativeList<RaycastCommand>(MaxQueuedDispatcherRaycasts, Allocator.Persistent); // COLD ALLOC: NativeList<RaycastCommand>[256] - dispatcher-owned scheduled deferred raycast commands - owner: SystemDispatcher
+                _scheduledDispatcherRaycastCommands = new NativeList<RaycastCommand>(MaxQueuedDispatcherRaycasts, Allocator.Persistent); // COLD ALLOC: NativeList<RaycastCommand>[1024] - dispatcher-owned scheduled deferred raycast commands - owner: SystemDispatcher
                 NativeMemorySentinel.RegisterNativeList(
                     _scheduledDispatcherRaycastCommands,
                     nameof(SystemDispatcher),
@@ -1830,7 +1844,7 @@ namespace Hecton8.Core
 
             if (!_scheduledDispatcherRaycastHits.IsCreated)
             {
-                _scheduledDispatcherRaycastHits = new NativeArray<RaycastHit>(MaxQueuedDispatcherRaycasts, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[256] - dispatcher-owned deferred raycast hit lane - owner: SystemDispatcher
+                _scheduledDispatcherRaycastHits = new NativeArray<RaycastHit>(MaxQueuedDispatcherRaycasts, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1024] - dispatcher-owned deferred raycast hit lane - owner: SystemDispatcher
                 NativeMemorySentinel.RegisterNativeArray(
                     _scheduledDispatcherRaycastHits,
                     nameof(SystemDispatcher),

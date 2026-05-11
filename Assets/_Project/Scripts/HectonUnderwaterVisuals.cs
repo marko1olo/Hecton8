@@ -64,8 +64,6 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using Unity.Mathematics;
 using VLB;
-using CrestUnderwaterRenderer = global::Crest.UnderwaterRenderer;
-using CrestOceanRenderer = global::Crest.OceanRenderer;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -872,11 +870,10 @@ namespace Hecton8.Environment
         private Camera _underwaterMarineSnowSearchCamera;
         private Camera _capturedCompositionMainCamera;
         private Camera _capturedCompositionSpaceCamera;
-        private CrestOceanRenderer _oceanRenderer;
         private Transform _shallowSunBeamTransform;
         private Vector3 _shallowSunBeamBaseLocalPosition;
-        private CrestUnderwaterRenderer _mainCameraUnderwaterRenderer;
-        private CrestUnderwaterRenderer _spaceCameraUnderwaterRenderer;
+        private Component _mainCameraUnderwaterRenderer;
+        private Component _spaceCameraUnderwaterRenderer;
         private bool _cameraCompositionDefaultsCaptured;
         private bool _runtimeCameraStackFallbackActive;
         private int _spaceCameraOriginalCullingMask;
@@ -889,8 +886,8 @@ namespace Hecton8.Environment
         private const int CelestialLayerIndex = 15;
         private const int _CelestialLayerMask = 1 << CelestialLayerIndex;
 #if UNITY_EDITOR
-        private CrestUnderwaterRenderer _editorCrestUnderwaterRenderer;
-        private CrestUnderwaterRenderer _editorSceneViewUnderwaterRenderer;
+        private Component _editorCrestUnderwaterRenderer;
+        private Component _editorSceneViewUnderwaterRenderer;
         private bool _editorCrestUnderwaterRendererWasEnabled;
         private Camera _editorGameplaySpaceCamera;
         private bool _editorGameplayMainCameraWasEnabled;
@@ -1087,10 +1084,9 @@ namespace Hecton8.Environment
             if (!cameraData.requiresColorTexture)
                 cameraData.requiresColorTexture = true;
 
-            bool shouldEnablePostProcessing = cameraData.TryGetComponent(out CrestUnderwaterRenderer underwaterRenderer) &&
-                                              underwaterRenderer != null;
+            cameraData.TryGetComponent(out Camera camera);
+            bool shouldEnablePostProcessing = camera != null && HasUnderwaterRenderer(camera);
             if (!shouldEnablePostProcessing &&
-                cameraData.TryGetComponent(out Camera camera) &&
                 camera != null &&
                 camera.CompareTag("MainCamera"))
             {
@@ -1099,6 +1095,71 @@ namespace Hecton8.Environment
 
             if (shouldEnablePostProcessing && !cameraData.renderPostProcessing)
                 cameraData.renderPostProcessing = true;
+        }
+
+        private static IOceanVisualBridge ResolveOceanVisualBridge()
+        {
+            return OceanVisualBridgeRegistry.Active;
+        }
+
+        private static bool HasUnderwaterRenderer(Camera camera)
+        {
+            IOceanVisualBridge bridge = ResolveOceanVisualBridge();
+            return bridge != null && bridge.HasUnderwaterRenderer(camera);
+        }
+
+        private static Component TryGetUnderwaterRenderer(Camera camera)
+        {
+            IOceanVisualBridge bridge = ResolveOceanVisualBridge();
+            return bridge != null ? bridge.TryGetUnderwaterRenderer(camera) : null;
+        }
+
+        private static Component EnsureUnderwaterRenderer(Camera camera)
+        {
+            IOceanVisualBridge bridge = ResolveOceanVisualBridge();
+            return bridge != null ? bridge.EnsureUnderwaterRenderer(camera) : null;
+        }
+
+        private static bool IsUnderwaterRendererEnabled(Component renderer)
+        {
+            IOceanVisualBridge bridge = ResolveOceanVisualBridge();
+            return bridge != null && bridge.IsUnderwaterRendererEnabled(renderer);
+        }
+
+        private static bool IsUnderwaterRendererActive(Component renderer)
+        {
+            IOceanVisualBridge bridge = ResolveOceanVisualBridge();
+            return bridge != null && bridge.IsUnderwaterRendererActive(renderer);
+        }
+
+        private static void SetUnderwaterRendererEnabled(Component renderer, bool enabled)
+        {
+            IOceanVisualBridge bridge = ResolveOceanVisualBridge();
+            if (bridge == null)
+                return;
+
+            bridge.SetUnderwaterRendererEnabled(renderer, enabled);
+        }
+
+        private static void SetCopyOceanMaterialParamsEachFrame(Component renderer, bool enabled)
+        {
+            IOceanVisualBridge bridge = ResolveOceanVisualBridge();
+            if (bridge == null)
+                return;
+
+            bridge.SetCopyOceanMaterialParamsEachFrame(renderer, enabled);
+        }
+
+        private static Material ResolveOceanMaterial()
+        {
+            IOceanVisualBridge bridge = ResolveOceanVisualBridge();
+            return bridge != null ? bridge.OceanMaterial : null;
+        }
+
+        private static bool HasUnderwaterRendererInstance()
+        {
+            IOceanVisualBridge bridge = ResolveOceanVisualBridge();
+            return bridge != null && bridge.HasUnderwaterInstance;
         }
 
         private void ApplyGameplayCameraCompositionFallback(
@@ -1502,17 +1563,14 @@ namespace Hecton8.Environment
             if (_gameplayMainCamera == null)
                 return;
 
-            if (!_gameplayMainCamera.TryGetComponent(out _editorCrestUnderwaterRenderer) ||
-                _editorCrestUnderwaterRenderer == null)
-            {
-                _editorCrestUnderwaterRenderer = null;
-            }
+            _editorCrestUnderwaterRenderer = TryGetUnderwaterRenderer(_gameplayMainCamera);
 
             if (_editorCrestUnderwaterRenderer != null)
             {
-                _editorCrestUnderwaterRendererWasEnabled = _editorCrestUnderwaterRenderer.enabled;
+                _editorCrestUnderwaterRendererWasEnabled =
+                    IsUnderwaterRendererEnabled(_editorCrestUnderwaterRenderer);
                 if (_editorCrestUnderwaterRendererWasEnabled)
-                    _editorCrestUnderwaterRenderer.enabled = false;
+                    SetUnderwaterRendererEnabled(_editorCrestUnderwaterRenderer, false);
 
                 _editorCrestSuppressed = _editorCrestUnderwaterRendererWasEnabled;
             }
@@ -1554,9 +1612,9 @@ namespace Hecton8.Environment
 
             if (_editorCrestUnderwaterRenderer != null &&
                 _editorCrestUnderwaterRendererWasEnabled &&
-                !_editorCrestUnderwaterRenderer.enabled)
+                !IsUnderwaterRendererEnabled(_editorCrestUnderwaterRenderer))
             {
-                _editorCrestUnderwaterRenderer.enabled = true;
+                SetUnderwaterRendererEnabled(_editorCrestUnderwaterRenderer, true);
             }
 
             _editorCrestSuppressed = false;
@@ -2355,7 +2413,8 @@ namespace Hecton8.Environment
             if (mainCamera == null) return;
             mainCamera.backgroundColor = _cachedUnderwaterFogColor;
             CameraClearFlags underwaterClearFlags =
-                _mainCameraUnderwaterRenderer != null && _mainCameraUnderwaterRenderer.IsActive
+                _mainCameraUnderwaterRenderer != null &&
+                IsUnderwaterRendererActive(_mainCameraUnderwaterRenderer)
                     ? CameraClearFlags.Skybox
                     : CameraClearFlags.SolidColor;
             ApplyRuntimeMainCameraClearFlags(underwaterClearFlags);
@@ -2611,7 +2670,7 @@ namespace Hecton8.Environment
             Camera spaceCamera = ResolveValidCameraReference(ref _spaceCamera);
             bool missingStackSetup =
                 _mainCameraUnderwaterRenderer == null ||
-                !_mainCameraUnderwaterRenderer.enabled ||
+                !IsUnderwaterRendererEnabled(_mainCameraUnderwaterRenderer) ||
                 (spaceCamera != null && !spaceCamera.enabled);
 
             if (!missingStackSetup)
@@ -2786,9 +2845,7 @@ namespace Hecton8.Environment
             if (targetMaterial == null)
                 return false;
 
-            Material oceanMaterial = CrestOceanRenderer.Instance != null
-                ? CrestOceanRenderer.Instance.OceanMaterial
-                : null;
+            Material oceanMaterial = ResolveOceanMaterial();
 
             if (!ReferenceEquals(targetMaterial, oceanMaterial))
                 return false;
@@ -2796,7 +2853,7 @@ namespace Hecton8.Environment
             if (_mainCameraUnderwaterRenderer != null)
                 return true;
 
-            if (CrestUnderwaterRenderer.Instance != null)
+            if (HasUnderwaterRendererInstance())
                 return true;
 
             return false;
@@ -3220,9 +3277,7 @@ namespace Hecton8.Environment
         {
             ApplyCrestMaterial(oceanUnderwaterMaterial, true);
 
-            Material oceanMaterial = CrestOceanRenderer.Instance != null
-                ? CrestOceanRenderer.Instance.OceanMaterial
-                : null;
+            Material oceanMaterial = ResolveOceanMaterial();
 
             if (oceanMaterial != null &&
                 !ReferenceEquals(oceanMaterial, oceanUnderwaterMaterial))
@@ -3488,22 +3543,19 @@ namespace Hecton8.Environment
             if (!Application.isPlaying || targetMaterial == null)
                 return;
 
-            Shader.SetGlobalVector(
-                CrestUnderwaterRenderer.ShaderIDs.s_CrestDepthFogDensity,
-                new Vector4(depthFogDensity.x, depthFogDensity.y, depthFogDensity.z, 0f));
-            Shader.SetGlobalColor(CrestUnderwaterRenderer.ShaderIDs.s_CrestDiffuse, diffuse.linear);
-            Shader.SetGlobalColor(CrestUnderwaterRenderer.ShaderIDs.s_CrestDiffuseGrazing, diffuseGrazing.linear);
-            Shader.SetGlobalColor(CrestUnderwaterRenderer.ShaderIDs.s_CrestDiffuseShadow, diffuseShadow.linear);
-            Shader.SetGlobalColor(CrestUnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceColour, diffuseGrazing.linear);
-            Shader.SetGlobalFloat(CrestUnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceSun, subSurfaceSun);
-            Shader.SetGlobalFloat(CrestUnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceBase, subSurfaceBase);
-            Shader.SetGlobalFloat(CrestUnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceSunFallOff, subSurfaceSunFalloff);
-            global::Crest.Helpers.SetGlobalKeyword(
-                "CREST_SUBSURFACESCATTERING_ON",
-                targetMaterial.IsKeywordEnabled("_SUBSURFACESCATTERING_ON"));
-            global::Crest.Helpers.SetGlobalKeyword(
-                "CREST_SHADOWS_ON",
-                targetMaterial.IsKeywordEnabled("_SHADOWS_ON"));
+            IOceanVisualBridge bridge = ResolveOceanVisualBridge();
+            if (bridge == null)
+                return;
+
+            bridge.ApplyUnderwaterGlobals(
+                targetMaterial,
+                depthFogDensity,
+                diffuse,
+                diffuseGrazing,
+                diffuseShadow,
+                subSurfaceSun,
+                subSurfaceBase,
+                subSurfaceSunFalloff);
         }
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -3887,14 +3939,14 @@ namespace Hecton8.Environment
             if (playerCamera != null)
             {
                 Camera playerOwnedCamera = playerCamera.GetComponent<Camera>();
-                if (playerOwnedCamera != null && playerOwnedCamera.GetComponent<CrestUnderwaterRenderer>() != null)
+                if (playerOwnedCamera != null && HasUnderwaterRenderer(playerOwnedCamera))
                 {
                     _gameplayMainCamera = playerOwnedCamera;
                     return;
                 }
             }
 
-            if (mainCamera != null && mainCamera.GetComponent<CrestUnderwaterRenderer>() != null)
+            if (mainCamera != null && HasUnderwaterRenderer(mainCamera))
             {
                 _gameplayMainCamera = mainCamera;
                 return;
@@ -3987,18 +4039,21 @@ namespace Hecton8.Environment
             if (mainCamera == null)
                 return;
 
-            if (!mainCamera.TryGetComponent(out _mainCameraUnderwaterRenderer) ||
-                _mainCameraUnderwaterRenderer == null)
+            _mainCameraUnderwaterRenderer = EnsureUnderwaterRenderer(mainCamera);
+            if (_mainCameraUnderwaterRenderer == null)
+                return;
+#if false
             {
                 // COLD ALLOC: UnderwaterRenderer[1] Ã¢â‚¬â€ restore Crest underwater pass on the gameplay camera when authoring data lost it Ã¢â‚¬â€ owner: HectonUnderwaterVisuals
                 _mainCameraUnderwaterRenderer =
-                    mainCamera.gameObject.AddComponent<CrestUnderwaterRenderer>();
+                    EnsureUnderwaterRenderer(mainCamera);
             }
+#endif
 
-            if (!_mainCameraUnderwaterRenderer.enabled)
-                _mainCameraUnderwaterRenderer.enabled = true;
+            if (!IsUnderwaterRendererEnabled(_mainCameraUnderwaterRenderer))
+                SetUnderwaterRendererEnabled(_mainCameraUnderwaterRenderer, true);
 
-            _mainCameraUnderwaterRenderer._copyOceanMaterialParamsEachFrame = true;
+            SetCopyOceanMaterialParamsEachFrame(_mainCameraUnderwaterRenderer, true);
             EnsureCameraTextureRequirements(mainCamera);
 
             ResolveSpaceCamera();
@@ -4018,19 +4073,19 @@ namespace Hecton8.Environment
             if (sceneViewCamera == null)
                 return;
 
-            if (!sceneViewCamera.TryGetComponent(out _editorSceneViewUnderwaterRenderer) ||
-                _editorSceneViewUnderwaterRenderer == null)
+            _editorSceneViewUnderwaterRenderer = EnsureUnderwaterRenderer(sceneViewCamera);
+            if (_editorSceneViewUnderwaterRenderer == null)
             {
                 // COLD ALLOC: UnderwaterRenderer[1] Ã¢â‚¬â€ restore Crest underwater pass on SceneView camera for editor preview ownership Ã¢â‚¬â€ owner: HectonUnderwaterVisuals
                 _editorSceneViewUnderwaterRenderer =
-                    sceneViewCamera.gameObject.AddComponent<CrestUnderwaterRenderer>();
+                    EnsureUnderwaterRenderer(sceneViewCamera);
             }
 
-            CrestUnderwaterRenderer template = ResolveEditorUnderwaterRendererTemplate();
+            Component template = ResolveEditorUnderwaterRendererTemplate();
             CopyUnderwaterRendererSettings(template, _editorSceneViewUnderwaterRenderer);
-            _editorSceneViewUnderwaterRenderer._copyOceanMaterialParamsEachFrame = true;
-            if (!_editorSceneViewUnderwaterRenderer.enabled)
-                _editorSceneViewUnderwaterRenderer.enabled = true;
+            SetCopyOceanMaterialParamsEachFrame(_editorSceneViewUnderwaterRenderer, true);
+            if (!IsUnderwaterRendererEnabled(_editorSceneViewUnderwaterRenderer))
+                SetUnderwaterRendererEnabled(_editorSceneViewUnderwaterRenderer, true);
 
             if (ReferenceEquals(mainCamera, sceneViewCamera))
                 _mainCameraUnderwaterRenderer = _editorSceneViewUnderwaterRenderer;
@@ -4043,15 +4098,15 @@ namespace Hecton8.Environment
             if (_gameplayMainCamera == null)
                 return;
 
-            if (!_gameplayMainCamera.TryGetComponent(out _editorCrestUnderwaterRenderer) ||
-                _editorCrestUnderwaterRenderer == null)
+            _editorCrestUnderwaterRenderer = EnsureUnderwaterRenderer(_gameplayMainCamera);
+            if (_editorCrestUnderwaterRenderer == null)
             {
                 // COLD ALLOC: UnderwaterRenderer[1] Ã¢â‚¬â€ restore Crest underwater pass on gameplay main camera for editor GameView ownership Ã¢â‚¬â€ owner: HectonUnderwaterVisuals
                 _editorCrestUnderwaterRenderer =
-                    _gameplayMainCamera.gameObject.AddComponent<CrestUnderwaterRenderer>();
+                    EnsureUnderwaterRenderer(_gameplayMainCamera);
             }
 
-            CrestUnderwaterRenderer template = ResolveEditorUnderwaterRendererTemplate();
+            Component template = ResolveEditorUnderwaterRendererTemplate();
             if (template != null &&
                 !ReferenceEquals(template, _editorCrestUnderwaterRenderer))
             {
@@ -4059,9 +4114,9 @@ namespace Hecton8.Environment
             }
 
             EnsureCameraTextureRequirements(_gameplayMainCamera);
-            _editorCrestUnderwaterRenderer._copyOceanMaterialParamsEachFrame = true;
-            if (!_editorCrestUnderwaterRenderer.enabled)
-                _editorCrestUnderwaterRenderer.enabled = true;
+            SetCopyOceanMaterialParamsEachFrame(_editorCrestUnderwaterRenderer, true);
+            if (!IsUnderwaterRendererEnabled(_editorCrestUnderwaterRenderer))
+                SetUnderwaterRendererEnabled(_editorCrestUnderwaterRenderer, true);
 
             if (ReferenceEquals(mainCamera, _gameplayMainCamera))
                 _mainCameraUnderwaterRenderer = _editorCrestUnderwaterRenderer;
@@ -4071,36 +4126,35 @@ namespace Hecton8.Environment
         {
             SceneView sceneView = SceneView.lastActiveSceneView;
             Camera sceneViewCamera = sceneView != null ? sceneView.camera : null;
-            if (sceneViewCamera != null &&
-                sceneViewCamera.TryGetComponent(out CrestUnderwaterRenderer sceneViewUnderwaterRenderer) &&
-                sceneViewUnderwaterRenderer != null)
+            if (sceneViewCamera != null)
             {
+                Component sceneViewUnderwaterRenderer = TryGetUnderwaterRenderer(sceneViewCamera);
                 _editorSceneViewUnderwaterRenderer = sceneViewUnderwaterRenderer;
-                if (sceneViewUnderwaterRenderer.enabled)
-                    sceneViewUnderwaterRenderer.enabled = false;
+                if (IsUnderwaterRendererEnabled(sceneViewUnderwaterRenderer))
+                    SetUnderwaterRendererEnabled(sceneViewUnderwaterRenderer, false);
             }
 
             if (_editorSceneViewUnderwaterRenderer != null &&
-                _editorSceneViewUnderwaterRenderer.enabled)
+                IsUnderwaterRendererEnabled(_editorSceneViewUnderwaterRenderer))
             {
-                _editorSceneViewUnderwaterRenderer.enabled = false;
+                SetUnderwaterRendererEnabled(_editorSceneViewUnderwaterRenderer, false);
             }
 
             if (ReferenceEquals(_mainCameraUnderwaterRenderer, _editorSceneViewUnderwaterRenderer))
                 _mainCameraUnderwaterRenderer = _editorCrestUnderwaterRenderer;
         }
 
-        private CrestUnderwaterRenderer ResolveEditorUnderwaterRendererTemplate()
+        private Component ResolveEditorUnderwaterRendererTemplate()
         {
             if (_editorCrestUnderwaterRenderer != null)
                 return _editorCrestUnderwaterRenderer;
 
-            if (_gameplayMainCamera != null &&
-                _gameplayMainCamera.TryGetComponent(out CrestUnderwaterRenderer gameplayRenderer) &&
-                gameplayRenderer != null)
+            if (_gameplayMainCamera != null)
             {
+                Component gameplayRenderer = TryGetUnderwaterRenderer(_gameplayMainCamera);
                 _editorCrestUnderwaterRenderer = gameplayRenderer;
-                return gameplayRenderer;
+                if (gameplayRenderer != null)
+                    return gameplayRenderer;
             }
 
             return _mainCameraUnderwaterRenderer;
@@ -4118,20 +4172,15 @@ namespace Hecton8.Environment
             if (mainCamera == null)
                 return;
 
-            _oceanRenderer = CrestOceanRenderer.Instance;
-            if (_oceanRenderer == null)
+            IOceanVisualBridge bridge = ResolveOceanVisualBridge();
+            if (bridge == null)
                 return;
 
-            Transform mainCameraTransform = mainCamera.transform;
-            if (ReferenceEquals(_oceanRenderer.ViewCamera, mainCamera) &&
-                ReferenceEquals(_oceanRenderer.Viewpoint, mainCameraTransform))
-            {
+            if (bridge.IsOceanCameraOwnedBy(mainCamera))
                 return;
-            }
 
             EnsureCameraTextureRequirements(mainCamera);
-            _oceanRenderer.ViewCamera = mainCamera;
-            _oceanRenderer.Viewpoint = mainCameraTransform;
+            bridge.AssignOceanCamera(mainCamera);
         }
 
         private void EnsureRuntimeVisualOwners()
@@ -4232,8 +4281,8 @@ namespace Hecton8.Environment
                 if (candidate == null)
                     continue;
 
-                if (!candidate.TryGetComponent(out CrestUnderwaterRenderer candidateRenderer) ||
-                    candidateRenderer == null)
+                Component candidateRenderer = TryGetUnderwaterRenderer(candidate);
+                if (candidateRenderer == null)
                 {
                     continue;
                 }
@@ -4255,19 +4304,17 @@ namespace Hecton8.Environment
         }
 
         private static void CopyUnderwaterRendererSettings(
-            CrestUnderwaterRenderer source,
-            CrestUnderwaterRenderer target)
+            Component source,
+            Component target)
         {
             if (source == null || target == null || ReferenceEquals(source, target))
                 return;
 
-            target._mode = source._mode;
-            target._depthFogDensityFactor = source._depthFogDensityFactor;
-            target._volumeGeometry = source._volumeGeometry;
-            target._invertCulling = source._invertCulling;
-            target._enableShaderAPI = source._enableShaderAPI;
-            target._copyOceanMaterialParamsEachFrame = source._copyOceanMaterialParamsEachFrame;
-            target._farPlaneMultiplier = source._farPlaneMultiplier;
+            IOceanVisualBridge bridge = ResolveOceanVisualBridge();
+            if (bridge == null)
+                return;
+
+            bridge.CopyUnderwaterRendererSettings(source, target);
         }
 
         private static void SetMaterialColorIfPresent(Material targetMaterial, int propertyId, Color value)
@@ -4371,9 +4418,7 @@ namespace Hecton8.Environment
             fallback = ReadMaterialVector3OrDefault(preferredMaterial, _ID_DepthFogDensity, fallback);
             fallback = ReadMaterialVector3OrDefault(oceanUnderwaterMaterial, _ID_DepthFogDensity, fallback);
 
-            Material oceanMaterial = CrestOceanRenderer.Instance != null
-                ? CrestOceanRenderer.Instance.OceanMaterial
-                : null;
+            Material oceanMaterial = ResolveOceanMaterial();
             fallback = ReadMaterialVector3OrDefault(oceanMaterial, _ID_DepthFogDensity, fallback);
 
             return new Vector3(

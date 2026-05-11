@@ -5,8 +5,6 @@ using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
-using MapMagic.Products;
-using MapMagic.Terrains;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -23,7 +21,7 @@ namespace Hecton8.World
     /// and keeps only the player-near residency ring bound to the indirect renderers.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed partial class HectonMapMagicVegetationBridge : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener
+    public sealed partial class HectonMapMagicVegetationBridge : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IMapMagicTerrainTileEventListener
     {
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         private struct PredatorFearNodeSnapshot
@@ -1004,7 +1002,6 @@ namespace Hecton8.World
         {
             public int TileX;
             public int TileZ;
-            public TerrainTile Tile;
             public Terrain Terrain;
             public TerrainData TerrainData;
             public Texture2D[] AlphamapTextureCache;
@@ -1441,7 +1438,7 @@ namespace Hecton8.World
         private readonly List<TerrainHoleRecord> _terrainHoleEvictionScratch = new List<TerrainHoleRecord>(16);
         // COLD ALLOC: List<long>[16] - deferred tile-removal staging while GPU height readbacks finish without blocking the main thread - owner: HectonMapMagicVegetationBridge
         private readonly List<long> _tileStateRemovalScratchKeys = new List<long>(16);
-        private TerrainTile[] _startupBootstrapTiles = Array.Empty<TerrainTile>();
+        private MapMagicTerrainTileSnapshot[] _startupBootstrapTiles = Array.Empty<MapMagicTerrainTileSnapshot>();
 
         private ChunkKey[] _desiredChunkKeys;
         private float[] _desiredChunkDistances;
@@ -4024,39 +4021,36 @@ namespace Hecton8.World
             RefreshResidency();
         }
 
-        private void HandleTileApplied(TerrainTile tile, TileData tileData, StopToken stop)
+        void IMapMagicTerrainTileEventListener.OnMapMagicTerrainTileApplied(in MapMagicTerrainTileSnapshot snapshot)
         {
-            if (!isActiveAndEnabled || tile == null || tileData == null || tileData.isDraft)
-                return;
-
-            if (stop != null && stop.stop)
+            if (!isActiveAndEnabled || !snapshot.IsValid)
                 return;
 
             ResolveRuntimeDependencies();
-            if (IsForeignTile(tile))
+            if (IsForeignTile(in snapshot))
                 return;
 
-            UpsertTileState(tile);
+            UpsertTileState(in snapshot);
             _activeSetDirty = true;
             RefreshResidency();
         }
 
-        private void HandleTileMoved(TerrainTile tile)
+        void IMapMagicTerrainTileEventListener.OnMapMagicTerrainTileMoved(in MapMagicTerrainTileSnapshot snapshot)
         {
-            if (!isActiveAndEnabled || tile == null)
+            if (!isActiveAndEnabled || !snapshot.IsValid)
                 return;
 
             ResolveRuntimeDependencies();
-            if (IsForeignTile(tile))
+            if (IsForeignTile(in snapshot))
                 return;
 
-            RemoveTileState(tile.coord.x, tile.coord.z);
+            RemoveTileState(snapshot.TileX, snapshot.TileZ);
             RefreshResidency();
         }
 
         private void LogNativePoolFragmentationIfDue()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (Time.unscaledTime < _nextNativePoolFragmentationLogTime)
                 return;
 
@@ -4068,10 +4062,9 @@ namespace Hecton8.World
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogLoopGuardHit(string loopName, int maxIterations)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             Debug.LogError($"[HectonMapMagicVegetationBridge] Loop guard hit: {loopName} after {maxIterations} iterations.");
 #endif
         }
@@ -5034,17 +5027,6 @@ namespace Hecton8.World
             return VegetationMath.SampleValueNoise(x, z, salt);
         }
 
-        private static Terrain ResolveMainTerrain(TerrainTile tile)
-        {
-            if (tile.main != null && tile.main.terrain != null)
-                return tile.main.terrain;
-
-            if (tile.ActiveTerrain != null)
-                return tile.ActiveTerrain;
-
-            return tile.GetTerrain(isDraft: false);
-        }
-
         private bool TryResolveLayerIndices(TerrainData terrainData, out LayerIndices indices)
         {
             indices = default;
@@ -5875,11 +5857,17 @@ namespace Hecton8.World
             if (_startupBootstrapTileCount > 0 || _startupBootstrapTileCursor > 0)
                 return true;
 
-            if (mapMagicBridge == null || mapMagicBridge.RuntimeMapMagicObject == null)
+            if (mapMagicBridge == null)
                 return false;
 
-            _startupBootstrapTiles = mapMagicBridge.RuntimeMapMagicObject.GetComponentsInChildren<TerrainTile>(true); // COLD ALLOC: TerrainTile[] deferred bootstrap snapshot for already-applied tiles - owner: HectonMapMagicVegetationBridge
-            _startupBootstrapTileCount = _startupBootstrapTiles != null ? _startupBootstrapTiles.Length : 0;
+            EnsureStartupBootstrapTileSnapshotCapacity(64);
+            _startupBootstrapTileCount = mapMagicBridge.CopyTerrainTileSnapshotsTo(_startupBootstrapTiles);
+            while (_startupBootstrapTileCount >= _startupBootstrapTiles.Length && _startupBootstrapTiles.Length < TileCacheLruCapacity * 4)
+            {
+                EnsureStartupBootstrapTileSnapshotCapacity(_startupBootstrapTiles.Length * 2);
+                _startupBootstrapTileCount = mapMagicBridge.CopyTerrainTileSnapshotsTo(_startupBootstrapTiles);
+            }
+
             _startupBootstrapTileCursor = 0;
             return true;
         }
@@ -5969,11 +5957,11 @@ namespace Hecton8.World
             while (_startupBootstrapTileCursor < _startupBootstrapTileCount &&
                    processedCount < safeBatchSize)
             {
-                TerrainTile tile = _startupBootstrapTiles[_startupBootstrapTileCursor++];
-                if (tile == null || ResolveMainTerrain(tile) == null || IsForeignTile(tile))
+                MapMagicTerrainTileSnapshot snapshot = _startupBootstrapTiles[_startupBootstrapTileCursor++];
+                if (!snapshot.IsValid || IsForeignTile(in snapshot))
                     continue;
 
-                UpsertTileState(tile);
+                UpsertTileState(in snapshot);
                 processedCount++;
             }
 
@@ -5982,31 +5970,39 @@ namespace Hecton8.World
 
         private void ReleaseDeferredStartupTileSnapshot()
         {
-            _startupBootstrapTiles = Array.Empty<TerrainTile>();
             _startupBootstrapTileCount = 0;
             _startupBootstrapTileCursor = 0;
         }
 
-        private void UpsertTileState(TerrainTile tile)
+        private void EnsureStartupBootstrapTileSnapshotCapacity(int requiredCapacity)
         {
-            if (tile == null)
+            int safeCapacity = math.max(1, requiredCapacity);
+            if (_startupBootstrapTiles != null && _startupBootstrapTiles.Length >= safeCapacity)
                 return;
 
-            Terrain terrain = ResolveMainTerrain(tile);
+            _startupBootstrapTiles = new MapMagicTerrainTileSnapshot[safeCapacity]; // COLD ALLOC: MapMagicTerrainTileSnapshot[startup] - deferred plugin tile snapshot bootstrap cache - owner: HectonMapMagicVegetationBridge
+        }
+
+        private void UpsertTileState(in MapMagicTerrainTileSnapshot snapshot)
+        {
+            if (!snapshot.IsValid)
+                return;
+
+            Terrain terrain = snapshot.Terrain;
             if (terrain == null || terrain.terrainData == null)
             {
-                RemoveTileState(tile.coord.x, tile.coord.z);
+                RemoveTileState(snapshot.TileX, snapshot.TileZ);
                 return;
             }
 
             TerrainData terrainData = terrain.terrainData;
             if (!TryResolveLayerIndices(terrainData, out LayerIndices indices))
             {
-                RemoveTileState(tile.coord.x, tile.coord.z);
+                RemoveTileState(snapshot.TileX, snapshot.TileZ);
                 return;
             }
 
-            long tileKey = PackTileCoord(tile.coord.x, tile.coord.z);
+            long tileKey = PackTileCoord(snapshot.TileX, snapshot.TileZ);
             int oldChunkCountX = 0;
             int oldChunkCountZ = 0;
             if (_tileStates.TryGetValue(tileKey, out TileRuntimeState existingState) && existingState != null)
@@ -6016,9 +6012,8 @@ namespace Hecton8.World
             }
 
             TileRuntimeState state = existingState ?? new TileRuntimeState();
-            state.TileX = tile.coord.x;
-            state.TileZ = tile.coord.z;
-            state.Tile = tile;
+            state.TileX = snapshot.TileX;
+            state.TileZ = snapshot.TileZ;
             state.Terrain = terrain;
             state.TerrainData = terrainData;
             RefreshTerrainTextureCaches(state, terrainData);
@@ -6033,7 +6028,7 @@ namespace Hecton8.World
             EnsureTileTerrainHoleMaskCapacity(state);
             MarkTileTerrainHolesDirty(state);
 
-            InvalidateTileChunks(tile.coord.x, tile.coord.z, math.max(oldChunkCountX, state.ChunkCountX), math.max(oldChunkCountZ, state.ChunkCountZ));
+            InvalidateTileChunks(snapshot.TileX, snapshot.TileZ, math.max(oldChunkCountX, state.ChunkCountX), math.max(oldChunkCountZ, state.ChunkCountZ));
             CacheTileMasks(state, terrainData);
             _tileStates[tileKey] = state;
         }
@@ -6079,15 +6074,15 @@ namespace Hecton8.World
             _lastPlayerPosition = currentPosition;
         }
 
-        private bool IsForeignTile(TerrainTile tile)
+        private bool IsForeignTile(in MapMagicTerrainTileSnapshot snapshot)
         {
-            if (tile == null)
+            if (!snapshot.IsValid)
                 return true;
 
-            if (mapMagicBridge == null || mapMagicBridge.RuntimeMapMagicObject == null)
+            if (mapMagicBridge == null || snapshot.Provider == null)
                 return false;
 
-            return tile.mapMagic != mapMagicBridge.RuntimeMapMagicObject;
+            return !ReferenceEquals(snapshot.Provider, mapMagicBridge);
         }
 
         private void TryRegister()
@@ -6121,8 +6116,7 @@ namespace Hecton8.World
         {
             if (!_eventsSubscribed)
             {
-                TerrainTile.OnTileApplied += HandleTileApplied;
-                TerrainTile.OnTileMoved += HandleTileMoved;
+                MapMagicTerrainTileEvents.Register(this);
                 _eventsSubscribed = true;
             }
 
@@ -6137,8 +6131,7 @@ namespace Hecton8.World
         {
             if (_eventsSubscribed)
             {
-                TerrainTile.OnTileApplied -= HandleTileApplied;
-                TerrainTile.OnTileMoved -= HandleTileMoved;
+                MapMagicTerrainTileEvents.Unregister(this);
                 _eventsSubscribed = false;
             }
 

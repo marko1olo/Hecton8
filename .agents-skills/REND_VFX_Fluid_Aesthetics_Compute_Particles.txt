@@ -1,6 +1,15 @@
 # VFX_FLUID_AESTHETICS.md
 # HECTON-8 | Fluid VFX Technical Mandate v1.0
 
+## 2026-05-11 VISUAL-FAKE OVERRIDE
+
+[RULE] Fluid VFX is presentation, not fluid truth.
+[RULE] Default water proof is screen-space depth fade, authored flow masks, GPU-side drift, and event-driven pooled emitters.
+[RULE] CPU never reads particle state except diagnostics; CPU also must not pretend particle motion is gameplay physics.
+[RULE] MX350 path must prefer sprite/impostor drift and shader wobble over compute-heavy particle simulation.
+[FORBID] Full bubble/debris/snow physical simulation as a default path.
+[FORBID] Per-cluster probe sampling on MX350 unless profiler proof shows it is below the 0.1ms suspicion threshold.
+
 ---
 
 ## §0 — FOUNDATIONAL CONTRACTS
@@ -48,7 +57,7 @@ struct Particle {
 // bit3  → isSnow
 // bit4  → collided (screen-space depth hit this frame)
 // bit5  → useVerlet
-// bit6  → clusterAnchor (LPPV probe assignment leader)
+// bit6  → clusterAnchor (probe approximation leader)
 // bit7  → reserved
 
 Dispatch group stride: 64 threads/group. Dead slots are managed via explicit `RWStructuredBuffer<uint>` plus `RWByteAddressBuffer` counters. No Append/Consume buffers.
@@ -78,8 +87,8 @@ Dispatch group stride: 64 threads/group. Dead slots are managed via explicit `RW
            Renderer consumes `VisibleIndices` directly
            No CPU draw calls. No IndirectArgs bubble.
 
-    ► [LPPV PROBE UPDATE]
-            Per-cluster-anchor particle: sample LPPV, write SH to CB
+    ► [PROBE APPROX UPDATE]
+            Per-cluster-anchor particle: sample approved probe approximation, write SH to CB
             Frequency: every 4 frames (jittered per cluster)
 
 Synchronization: Insert UAV barriers between Emission→Simulate→Cull. No implicit sync assumptions.
@@ -351,7 +360,7 @@ if Tier == 2:
 
 ---
 
-## §12 — LPPV INTEGRATION (LIGHTING)
+## §12 — PROBE APPROXIMATION (LIGHTING)
 
 Cluster Assignment (Emission.compute):
 
@@ -359,12 +368,12 @@ Cluster Assignment (Emission.compute):
 if LocalThreadID == 0: Flags |= (1u << 6)
 ClusterID = GroupID   // Group index = cluster index
 
-LPPV Update (separate pass, every 4 frames, jittered):
+Probe Approx Update (separate pass, every 4 frames, jittered):
 
 UpdateMask = (ClusterID + FrameCount) % 4 == 0
 
 if UpdateMask && isClusterAnchor:
-    // [FORBID] LPPV. Query Unity 6 Adaptive Probe Volumes via ProbeReferenceVolume.Sample(...)
+    // [RULE] Prefer global ambient/APV-baked probe approximation. Query Unity 6 Adaptive Probe Volumes only on MED+ after profiler proof.
     SH_L0L1 = ProbeReferenceVolume.Sample(Pos)
     CB_ClusterSH[ClusterID] = SH_L0L1
 
@@ -533,7 +542,7 @@ SNOW_TERMINAL_MAX      = 0.035f
 [ ] FlowFieldNative upload path: dirty-flag gated
 [ ] Double-buffer swap verified: no same-frame read-write alias
 [ ] DeadList initialized full at startup
-[ ] LPPV update jitter confirmed: 4-frame stagger, no same-frame cluster double-update
+[ ] Probe approximation update jitter confirmed: 4-frame stagger, no same-frame cluster double-update
 [ ] NaN guards active in simulate kernel
 [ ] Velocity clamp verified: no particle exceeds type max
 [ ] Soft particle fade active on all types

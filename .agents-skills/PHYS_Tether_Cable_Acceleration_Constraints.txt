@@ -5,6 +5,17 @@ Scope: All tether, cable, and grapple physics interactions
 
 ---
 
+## 2026-05-11 STALE-PATH OVERRIDE
+
+[RULE] AGENTS.md forbids Unity Joints and direct gameplay `Rigidbody.AddForce` ownership. This override supersedes every ConfigurableJoint/SpringJoint/AddForce approval below.
+[RULE] Primary tether gameplay uses custom acceleration/Verlet-style constraint packets owned by the physics apply pipeline, or a non-physics visual tether when gameplay truth does not require force transfer.
+[RULE] Cable sag, bend, vibration, recoil, and distant tow readability default to visual spline/VAT/audio/haptic fake.
+[FORBID] Unity `ConfigurableJoint`, `SpringJoint`, `HingeJoint`, or `CharacterJoint` as a new production tether path.
+[FORBID] Direct steady-state tether `rb.AddForce` calls from tether code. Use force packets consumed by `PhysicsApplySystem`.
+[FORBID] Per-frame bend raycasts for presentation-only cables.
+
+Sections below are retained as historical design context only where they do not conflict with this override.
+
 ## SECTION 0: AUTHORIZED AUTONOMY
 
 ### What You MAY Decide Without Asking
@@ -18,7 +29,7 @@ Scope: All tether, cable, and grapple physics interactions
 - The spring stiffness `k` or rest-length multiplier for any tether class.
 - The snap threshold tension value or stress accumulation rate.
 - The over-damping coefficient (currently mandated at 1.2x critical).
-- Constraint family and TGS policy. ConfigurableJoint only for primary tether constraint.
+- Constraint packet family and projection policy for primary gameplay tether constraints.
 - The definition of "Cable Slicing" (see Section 6).
 
 ---
@@ -26,16 +37,16 @@ Scope: All tether, cable, and grapple physics interactions
 ## SECTION 1: EXECUTION POLICY
 
 ### Non-Negotiable Rules
-1. Use Unity 6 ConfigurableJoint for tether-class primary constraints. Legacy custom spring / Verlet primary solvers are forbidden.
-// [FORBID] Custom Verlet fighting the engine.
-2. Enable TGS (Temporal Gauss-Seidel) solver in Physics Settings. Joint projection is recovery-only, not steady-state transport.
+1. Use owned physics constraint packets for tether-class primary constraints. Unity Joint solvers are forbidden.
+// [FORBID] Custom Verlet fighting the engine outside the owned physics apply pipeline.
+2. Projection is recovery-only, not steady-state transport.
 3. Bend point calculation runs only when LOS is broken. Cache topology. Do not raycast every frame when the direct segment is clear.
 4. All tether state evaluation executes in `FixedUpdate`. Visual segment positions update in `LateUpdate`. Zero tether physics in `Update`.
 5. Stress timer is cumulative, not instantaneous. A single frame of high tension does not snap a cable.
 6. `ForceMode.Impulse` is reserved for explicit snap / release events. It is not the steady-state cable solver.
 
 ### Enforcement
-Any script applying a tether spring force that does not use `ForceMode.Acceleration` will be rejected at PR. The reviewer will leave the comment: `MANDATE #3 VIOLATION: ForceMode`.
+Any script applying tether force outside the owned physics apply pipeline will be rejected at PR. The reviewer will leave the comment: `MANDATE #3 VIOLATION: Physics ownership`.
 
 ---
 
@@ -92,15 +103,15 @@ public class TetherInstance : MonoBehaviour
     public Rigidbody payloadRb;
     public TetherProfileSO profile;
     public TetherClass tetherClass;
-    public ConfigurableJoint joint;
+    public uint constraintHandle;
 
     // --- Runtime State ---
     [NonSerialized] public float restLength;
     [NonSerialized] public float currentLength;
     [NonSerialized] public float reducedMass;
     [NonSerialized] public float dampingCoefficient_c;
-    [NonSerialized] public SoftJointLimit linearLimit;
-    [NonSerialized] public JointDrive tetherDrive;
+    [NonSerialized] public float linearLimitMeters;
+    [NonSerialized] public float maxCorrectionMeters;
 
     // --- Bend Points ---
     [NonSerialized] public List<Vector3> bendPoints = new List<Vector3>(4);
@@ -142,32 +153,22 @@ c_actual   = c_critical * overDampingMultiplier
 - `TowCable`: `overDampingMultiplier` = 1.2 (mandatory minimum).
 - This eliminates oscillation in tow scenarios. The cable will not "bounce" the wreck.
 
-### 3.3 Primary Constraint Solver (ConfigurableJoint + TGS)
+### 3.3 Primary Constraint Solver (Owned Constraint Packets)
 
 Attach sequence:
 
-joint = payloadRb.gameObject.AddComponent<ConfigurableJoint>()
-joint.connectedBody = playerRb
-joint.autoConfigureConnectedAnchor = false
-joint.xMotion = ConfigurableJointMotion.Limited
-joint.yMotion = ConfigurableJointMotion.Limited
-joint.zMotion = ConfigurableJointMotion.Limited
-joint.linearLimit.limit = restLength
-joint.projectionMode = JointProjectionMode.PositionAndRotation
-joint.projectionDistance = 0.05f
-joint.projectionAngle = 5f
+constraintHandle = PhysicsConstraintRegistry.CreateTetherConstraint(playerRb, payloadRb)
+constraint.restLength = restLength
+constraint.maxProjectionDistance = 0.05f
+constraint.maxProjectionAngle = 5f
 
 reducedMass = (m_player * m_payload) / (m_player + m_payload)
 dampingCoefficient_c = 2 * sqrt(k * reducedMass) * overDampingMultiplier
 
-JointDrive drive:
+Constraint drive:
   positionSpring = k
   positionDamper = dampingCoefficient_c
-  maximumForce   = float.MaxValue
-
-joint.xDrive = drive
-joint.yDrive = drive
-joint.zDrive = drive
+  maximumForce   = profile.snapTensionThreshold
 
 [FORBID] `playerRb.AddForce(..., ForceMode.Acceleration)` as the steady-state tether solver.
 [FORBID] Manual primary-position correction loops fighting the joint solver.
@@ -184,12 +185,12 @@ If LOS is broken:
 
 If LOS is clear:
   Clear cached bend points
-  Keep single primary ConfigurableJoint constraint active
+  Keep single owned constraint packet active
 
 ### 3.5 Hard Limit Recovery / Projection
 
 If currentLength > restLength * nonElasticLimitRatio:
-  rely on ConfigurableJoint projection + TGS stabilization
+  rely on owned constraint projection stabilization
   projectionDistance = 0.05m
   projectionAngle    = 5deg
 
@@ -198,7 +199,7 @@ No manual velocity kill-pass in the primary constraint loop.
 
 ### 3.6 Stress Accumulation & Snap Protocol
 
-peakTension = length(joint.currentForce)
+peakTension = PhysicsApplySystem.ReadTetherTension(constraintHandle)
 
 if peakTension > profile.snapTensionThreshold:
 {
@@ -211,8 +212,8 @@ else
 
 if (_stressTimer >= profile.snapStressDuration)
 {
-    Destroy(joint);
-    payloadRb.AddForce(playerRb.transform.forward * profile.wipeoutImpulseMagnitude, ForceMode.Impulse);
+    PhysicsConstraintRegistry.Destroy(constraintHandle);
+    PhysicsApplySystem.PublishImpulse(payloadRb, playerRb.transform.forward * profile.wipeoutImpulseMagnitude);
     isSnapped = true;
 }
 
@@ -348,7 +349,7 @@ If slicing is detected for 3 consecutive FixedUpdate frames on the same segment 
 
 ### ✅ SAFE — Do This
 
-// CORRECT: Primary tether constraint uses ConfigurableJoint + TGS. No steady-state AddForce solver.
+// CORRECT: Primary tether constraint uses owned physics constraint packets. No steady-state AddForce solver.
 
 // CORRECT: Recalculate damping when payload mass changes
 void OnPayloadMassChanged() => RecalculateDampingCoefficient();
@@ -359,17 +360,17 @@ Vector3 corner = VoxelGrid.GetNearestCorner(hit.point);
 // CORRECT: Stress timer recovers slowly; does not reset instantly on one calm frame
 _stressTimer = Mathf.Max(0f, _stressTimer - Time.fixedDeltaTime * 0.5f);
 
-// CORRECT: Joint projection handles rare recovery cases.
-SolveConfigurableJoint();
+// CORRECT: Owned projection handles rare recovery cases.
+SolveOwnedTetherConstraint();
 
 ### ❌ ANTI-PATTERNS — These Will Fail Code Review
 
 // FORBIDDEN: Unity Joint
 gameObject.AddComponent<SpringJoint>();
-// REVIEWER NOTE: SpringJoint forbidden. ConfigurableJoint is the only allowed primary tether constraint.
+// REVIEWER NOTE: Unity Joint components are forbidden for production tether constraints.
 
 // FORBIDDEN: ForceMode.Force for spring
-payloadRb.AddForce(springForceVector, ForceMode.Force);
+PublishSpringForcePacket(springForceVector);
 // REVIEWER NOTE: MANDATE #3 VIOLATION — ForceMode.
 
 // FORBIDDEN: Instant snap on single high-tension frame

@@ -264,7 +264,9 @@ namespace Hecton8.Core
         [ThreadStatic] private static IAudioService _threadAudio;
         private static BootConfigurationProfile _activeBootProfile = BootConfigurationProfile.Normal;
         private static bool _safeModeBootRequested;
+        private static bool _lowMemoryProfileEnabled;
         private static uint _activeServiceTypeHash;
+        private static long _absoluteUniverseTimeBits;
 
         public readonly struct ForceOverrideToken
         {
@@ -282,10 +284,34 @@ namespace Hecton8.Core
 
         public static bool IsSafeModeBootRequested => _safeModeBootRequested;
 
+        public static bool H8_LOW_MEMORY_PROFILE => _lowMemoryProfileEnabled;
+
         public static uint ActiveServiceTypeHash => _activeServiceTypeHash;
+
+        public static int RegistryState => Volatile.Read(ref _registryPhase);
+
+        public static double AbsoluteUniverseTime =>
+            BitConverter.Int64BitsToDouble(Volatile.Read(ref _absoluteUniverseTimeBits));
+
+        internal static void PublishAbsoluteUniverseTime(double universeTime)
+        {
+            Volatile.Write(ref _absoluteUniverseTimeBits, BitConverter.DoubleToInt64Bits(universeTime));
+        }
+
+        public static CelestialRuntimeSnapshot CelestialRuntimeSnapshot => _celestialRuntimeSnapshot;
+
+        public static uint CelestialRuntimeSnapshotSequence =>
+            unchecked((uint)Volatile.Read(ref _celestialRuntimeSnapshotSequence));
+
+        internal static void PublishCelestialRuntimeSnapshot(in CelestialRuntimeSnapshot snapshot)
+        {
+            _celestialRuntimeSnapshot = snapshot;
+            Volatile.Write(ref _celestialRuntimeSnapshotSequence, unchecked((int)snapshot.Sequence));
+        }
 
         public static void FlagFallbackLowMemoryProfile()
         {
+            _lowMemoryProfileEnabled = true;
             if (_activeBootProfile == BootConfigurationProfile.Normal)
                 _activeBootProfile = BootConfigurationProfile.FallbackLowMemory;
         }
@@ -341,6 +367,8 @@ namespace Hecton8.Core
         private static IPlayerSensoryService _playerSensory;
         private static IEnvironmentRuntimeContext _environment;
         private static IWeatherService _weather;
+        private static CelestialRuntimeSnapshot _celestialRuntimeSnapshot;
+        private static int _celestialRuntimeSnapshotSequence;
         private static IHectonOceanKinematicsService _oceanKinematics;
         private static IPowerGridService _powerGrid;
         private static ISubmarineRuntimeContext _submarine;
@@ -1565,6 +1593,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <typeparam name="T">Registry-owned service type.</typeparam>
         /// <returns>Registered service or release fallback.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T Get<T>() where T : class
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1605,7 +1634,11 @@ namespace Hecton8.Core
             Array.Clear(_registeredServiceSlotMask, 0, _registeredServiceSlotMask.Length);
             _activeBootProfile = BootConfigurationProfile.Normal;
             _safeModeBootRequested = false;
+            _lowMemoryProfileEnabled = false;
             _activeServiceTypeHash = 0u;
+            _absoluteUniverseTimeBits = 0L;
+            _celestialRuntimeSnapshot = default;
+            _celestialRuntimeSnapshotSequence = 0;
             _threadInput = null;
             _threadPhysics = null;
             _threadTickManager = null;
@@ -1860,7 +1893,7 @@ namespace Hecton8.Core
         /// <param name="instance">Input service instance.</param>
         public static void RegisterInputService(IInputService instance)
         {
-            RegisterService(ref _input, instance);
+            Register(ref _input, instance);
         }
 
         /// <summary>
@@ -1901,7 +1934,7 @@ namespace Hecton8.Core
         /// <param name="instance">Physics service instance.</param>
         public static void RegisterPhysicsService(IPhysicsService instance)
         {
-            RegisterService(ref _physics, instance);
+            Register(ref _physics, instance);
         }
 
         /// <summary>
@@ -1910,7 +1943,7 @@ namespace Hecton8.Core
         /// <param name="instance">Audio service instance.</param>
         public static void RegisterAudioService(IAudioService instance)
         {
-            RegisterService(ref _audio, instance);
+            Register(ref _audio, instance);
         }
 
         /// <summary>
@@ -1919,7 +1952,7 @@ namespace Hecton8.Core
         /// <param name="instance">Scene service instance.</param>
         public static void RegisterSceneService(ISceneService instance)
         {
-            RegisterService(ref _scene, instance);
+            Register(ref _scene, instance);
             _sceneRuntime = instance as SceneRuntimeService;
         }
 
@@ -1929,7 +1962,7 @@ namespace Hecton8.Core
         /// <param name="instance">Save service instance.</param>
         public static void RegisterSaveService(ISaveService instance)
         {
-            RegisterService(ref _save, instance);
+            Register(ref _save, instance);
         }
 
         /// <summary>
@@ -1938,7 +1971,7 @@ namespace Hecton8.Core
         /// <param name="instance">UI service instance.</param>
         public static void RegisterUIService(IUIService instance)
         {
-            RegisterService(ref _ui, instance);
+            Register(ref _ui, instance);
         }
 
         /// <summary>
@@ -2039,7 +2072,7 @@ namespace Hecton8.Core
         /// <param name="instance">Ocean-kinematics service instance.</param>
         public static void RegisterOceanKinematicsService(IHectonOceanKinematicsService instance)
         {
-            RegisterService(ref _oceanKinematics, instance);
+            Register(ref _oceanKinematics, instance);
             _oceanKinematicsRuntime = instance as OceanKinematicsRuntimeService;
         }
 
@@ -2502,7 +2535,7 @@ namespace Hecton8.Core
         /// </summary>
         public static void RegisterTerrainProvider(ITerrainProvider instance)
         {
-            RegisterServiceAllowSameInstance(ref _terrainProviderRuntime, instance);
+            RegisterAllowSameInstance(ref _terrainProviderRuntime, instance);
         }
 
         /// <summary>
@@ -4991,6 +5024,59 @@ namespace Hecton8.Core
             GlobalTelemetryBus.PublishDependencyOrderWarning(_inputDependencyWarningHash, 0u);
         }
 
+        private static void Register<T>(ref T slot, T instance) where T : class, ISystem
+        {
+            Register(ref slot, instance, default);
+        }
+
+        private static void Register<T>(ref T slot, T instance, ForceOverrideToken forceOverrideToken)
+            where T : class, ISystem
+        {
+            if (instance == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError(
+                    "[GlobalRegistry] Cannot register null as " + typeof(T).Name + ".");
+#endif
+                return;
+            }
+
+            GuardServicePublication<T>(forceOverrideToken);
+            GlobalRegistryServiceSlot serviceSlot = ResolveServiceSlot<T>();
+            T previousService = Volatile.Read(ref slot);
+            if (ReferenceEquals(previousService, instance))
+            {
+                MarkServiceRegistered(serviceSlot);
+                return;
+            }
+
+            if (previousService != null && !forceOverrideToken.IsValid)
+                ThrowSlotHijack(previousService, instance);
+
+            if (forceOverrideToken.IsValid)
+            {
+                previousService = Interlocked.Exchange(ref slot, instance);
+            }
+            else
+            {
+                previousService = Interlocked.CompareExchange(ref slot, instance, null);
+                if (previousService != null && !ReferenceEquals(previousService, instance))
+                    ThrowSlotHijack(previousService, instance);
+            }
+
+            MarkServiceRegistered(serviceSlot);
+            if (previousService != null)
+                QueueServiceRebound(serviceSlot, previousService, instance);
+        }
+
+        private static void RegisterAllowSameInstance<T>(ref T slot, T instance) where T : class, ISystem
+        {
+            if (ReferenceEquals(slot, instance))
+                return;
+
+            Register(ref slot, instance);
+        }
+
         private static void RegisterService<T>(ref T slot, T instance) where T : class
         {
             RegisterService(ref slot, instance, default);
@@ -5523,6 +5609,11 @@ namespace Hecton8.Core
         {
             for (int slot = (int)GlobalRegistryServiceSlot.Unknown - 1; slot >= 0; slot--)
                 ShutdownRegisteredServiceSlot((GlobalRegistryServiceSlot)slot);
+        }
+
+        public static void GlobalReset()
+        {
+            ResetStaticState();
         }
 
         private static void ShutdownRegisteredServices()

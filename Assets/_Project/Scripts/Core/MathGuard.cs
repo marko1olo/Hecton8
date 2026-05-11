@@ -18,6 +18,7 @@ namespace Hecton8.Core
         private const float MinDirectionLengthSq = 0.000001f;
         private const float UnitDirectionLengthSqTolerance = 0.0625f;
         private const float MinTransportSpeedMultiplier = 0.01f;
+        private const int NaNErrorHash = unchecked((int)0x4E414E21); // "NAN!"
 
         private static NativeQueue<int> _invalidNumberQueue;
         private static int _initialized;
@@ -175,16 +176,59 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryAcceptFinite(Vector3 value, out Vector3 finite)
+        public static bool TryAcceptFinite(float3 value, out float3 finite)
         {
-            if (!IsFinite(value))
+            if (math.all(math.isfinite(value)))
             {
-                finite = Vector3.zero;
-                return false;
+                finite = value;
+                return true;
             }
 
-            finite = value;
-            return true;
+            finite = DominantAxisPayload(value);
+            Check(value, NaNErrorHash);
+            return false;
+        }
+
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryAcceptFinite(float3 value, out float3 finite, NativeQueue<int>.ParallelWriter writer)
+        {
+            if (math.all(math.isfinite(value)))
+            {
+                finite = value;
+                return true;
+            }
+
+            finite = DominantAxisPayload(value);
+            writer.Enqueue(NaNErrorHash);
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryAcceptFinite(Vector3 value, out Vector3 finite)
+        {
+            bool accepted = TryAcceptFinite(new float3(value.x, value.y, value.z), out float3 finite3);
+            finite = new Vector3(finite3.x, finite3.y, finite3.z);
+            return accepted;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 DominantAxisPayload(float3 value)
+        {
+            bool3 finiteMask = math.isfinite(value);
+            float3 finiteValue = math.select(float3.zero, value, finiteMask);
+            float ax = math.abs(finiteValue.x);
+            float ay = math.abs(finiteValue.y);
+            float az = math.abs(finiteValue.z);
+            if (ax >= ay && ax >= az)
+            {
+                return new float3(finiteValue.x, 0f, 0f);
+            }
+
+            if (ay >= az)
+                return new float3(0f, finiteValue.y, 0f);
+
+            return new float3(0f, 0f, finiteValue.z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

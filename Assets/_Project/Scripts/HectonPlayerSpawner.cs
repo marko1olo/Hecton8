@@ -55,9 +55,9 @@ public class HectonPlayerSpawner : MonoBehaviour
     private const float SpawnSearchTwoPi = 6.2831853071795864769f;
     private const float NearshoreDiagonal = 0.70710678118f;
 
-    // COLD ALLOC: float[1024] - spawn spiral trigonometry lookup - owner: HectonPlayerSpawner
+    // COLD ALLOC: float[1024] — spawn spiral trigonometry lookup — owner: HectonPlayerSpawner
     private static readonly float[] s_spawnSinLut = new float[SpawnAngleLutSize];
-    // COLD ALLOC: float[1024] - spawn spiral trigonometry lookup - owner: HectonPlayerSpawner
+    // COLD ALLOC: float[1024] — spawn spiral trigonometry lookup — owner: HectonPlayerSpawner
     private static readonly float[] s_spawnCosLut = new float[SpawnAngleLutSize];
     private static bool s_spawnTrigLutInitialized;
 
@@ -187,7 +187,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// Unity perezapisyvaet polya pri kazhdom vyzove Physics.Raycast.
     /// </summary>
     private RaycastHit _hitInfo;
-    private readonly RaycastHit[] _groundHits = new RaycastHit[1]; // COLD ALLOC: RaycastHit[1] - nearest terrain hit for spawn probe - owner: HectonPlayerSpawner
+    private readonly RaycastHit[] _groundHits = new RaycastHit[1]; // COLD ALLOC: RaycastHit[1] — nearest terrain hit for spawn probe — owner: HectonPlayerSpawner
 
     /// <summary>
     /// Vremya nachala operatsii SpawnPlayerAsync (realtimeSinceStartup).
@@ -860,9 +860,8 @@ public class HectonPlayerSpawner : MonoBehaviour
         playerRigidbody.WakeUp();
         playerRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
 
-        float elapsed = Time.realtimeSinceStartup - _operationStartTime;
-
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        float elapsed = Time.realtimeSinceStartup - _operationStartTime;
         LogSpawner(
             $"[HectonPlayerSpawner] Player spawned.\n" +
             $"   Position: ({position.x:F1}, {position.y:F1}, {position.z:F1})\n" +
@@ -919,9 +918,8 @@ public class HectonPlayerSpawner : MonoBehaviour
 
         TeleportPlayer(_spawnPosition);
 
-        float elapsed = Time.realtimeSinceStartup - _operationStartTime;
-
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        float elapsed = Time.realtimeSinceStartup - _operationStartTime;
         LogSpawnerWarning(
             $"[HectonPlayerSpawner] Fallback spawn at " +
             $"({_spawnPosition.x:F1}, {_spawnPosition.y:F1}, {_spawnPosition.z:F1})\n" +

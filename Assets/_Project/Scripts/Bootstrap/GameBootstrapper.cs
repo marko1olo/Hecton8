@@ -100,7 +100,7 @@ namespace Hecton8.Bootstrap
         private const float GroundCheckRayLength = 1000f;
         private const float GroundCheckLogIntervalSec = 5f;
         private const float BytesPerMegabyte = 1024f * 1024f;
-        private const int LowMemorySystemThresholdMb = 6144;
+        private const int LowMemorySystemThresholdMb = 8192;
         private const int LowMemoryVramThresholdMb = 2048;
         private const int HeartbeatFreezeSlowTickLimit = 3;
         private const double BootstrapSceneLoadWatchdogSeconds = 10.0d;
@@ -3263,8 +3263,8 @@ namespace Hecton8.Bootstrap
 
         private void StartWorldGeneration()
         {
-            MapMagicBridge mapMagicBridge = GlobalRegistry.MapMagic;
-            if (mapMagicBridge != null && mapMagicBridge.IsAvailable && !IsTemporaryRuntimeShellObject(mapMagicBridge.gameObject))
+            ITerrainProvider terrainProvider = GlobalRegistry.Terrain;
+            if (terrainProvider != null && terrainProvider.IsAvailable)
                 return;
 
             global::HectonWorldGenerator legacyWorldGenerator =

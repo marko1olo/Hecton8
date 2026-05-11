@@ -564,7 +564,7 @@ namespace Hecton8.Core
                 return;
 
             Transform cameraTransform = _cinematicCamera.transform;
-            float heave = math.sin(elapsedSeconds * math.PI * 2f * CinematicHeaveFrequencyHz) *
+            float heave = CinematicMath.FastSin(elapsedSeconds * math.PI * 2f * CinematicHeaveFrequencyHz) *
                           CinematicHeaveAmplitude *
                           SmoothStep01(eased);
             Vector3 heaveOffset = (_cinematicCameraStartRotation * Vector3.up) * heave;

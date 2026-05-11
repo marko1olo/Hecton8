@@ -54,9 +54,9 @@ namespace Hecton8.UI
         private static readonly Quaternion[] s_threatChevronRollByDominantAxis =
         {
             Quaternion.identity,
-            Quaternion.Euler(0f, 0f, 90f),
-            Quaternion.Euler(0f, 0f, 180f),
-            Quaternion.Euler(0f, 0f, -90f)
+            new Quaternion(0f, 0f, 0.70710678f, 0.70710678f),
+            new Quaternion(0f, 0f, 1f, 0f),
+            new Quaternion(0f, 0f, -0.70710678f, 0.70710678f)
         };
         private const string PrimaryHudCanvasName = "Suit_HUD_Canvas";
         private const string DefaultSuitLabel = "EXPEDITION SUIT";
@@ -1036,13 +1036,6 @@ namespace Hecton8.UI
         {
             public AbsoluteUniversePosition PositionAup;
             public float Threat01;
-            public byte ActiveFlag;
-
-            public bool Active
-            {
-                readonly get => ActiveFlag != 0;
-                set => ActiveFlag = value ? (byte)1 : (byte)0;
-            }
         }
 
         private enum DynamicCanvasCadenceBucket : byte
@@ -2445,10 +2438,11 @@ namespace Hecton8.UI
             float radius = math.max(1f, threatChevronRadiusMeters);
             float radiusSq = radius * radius;
             float safeCellSize = math.max(0.001f, cellSize);
+            float invSafeCellSize = math.rcp(safeCellSize);
             int halfResolution = gridResolution >> 1;
-            int radiusCells = CeilPositiveToInt(radius / safeCellSize);
-            int centerCellX = math.clamp(RoundToIntFast(-gridCenterRelativeToCamera.x / safeCellSize) + halfResolution, 0, gridResolution - 1);
-            int centerCellZ = math.clamp(RoundToIntFast(-gridCenterRelativeToCamera.z / safeCellSize) + halfResolution, 0, gridResolution - 1);
+            int radiusCells = CeilPositiveToInt(radius * invSafeCellSize);
+            int centerCellX = math.clamp(RoundToIntFast(-gridCenterRelativeToCamera.x * invSafeCellSize) + halfResolution, 0, gridResolution - 1);
+            int centerCellZ = math.clamp(RoundToIntFast(-gridCenterRelativeToCamera.z * invSafeCellSize) + halfResolution, 0, gridResolution - 1);
             float halfExtent = (gridResolution - 1) * 0.5f * safeCellSize;
             float originRelativeX = gridCenterRelativeToCamera.x - halfExtent;
             float originRelativeZ = gridCenterRelativeToCamera.z - halfExtent;
@@ -2750,7 +2744,7 @@ namespace Hecton8.UI
             float halfFovRadians = math.max(0.001f, projectionCamera.fieldOfView * DegreesToHalfRadians);
             float frustumHalfHeight = ApproximateTanPositive(halfFovRadians) * projectionDistance;
             float frustumHalfWidth = frustumHalfHeight * math.max(0.0001f, projectionCamera.aspect);
-                float invPixelHeight = math.rcp(math.max(1f, projectionCamera.pixelHeight));
+            float invPixelHeight = math.rcp(math.max(1f, projectionCamera.pixelHeight));
             float worldPerPixel = frustumHalfHeight * 2f * invPixelHeight;
             float insetWorld = math.max(0f, threatChevronEdgeInsetPixels) * worldPerPixel;
             float safeHalfWidth = math.max(worldPerPixel, frustumHalfWidth - insetWorld);

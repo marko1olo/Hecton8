@@ -126,7 +126,7 @@ namespace Hecton8.Environment
             internal static readonly int SonarRevealExpireTimeId = Shader.PropertyToID("_SonarRevealExpireTime");
         }
 
-        [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("References")]
         [Tooltip("Camera transform that owns the marine snow shell. Bind this to the runtime main camera.")]
         [SerializeField] private Transform targetCamera;
         [Tooltip("Compute shader responsible for marine-snow simulation.")]
@@ -140,7 +140,7 @@ namespace Hecton8.Environment
         [Tooltip("Fluid class emitted by this GPU particle owner.")]
         [SerializeField] private VFXEmissionProfile.FluidType fluidType = VFXEmissionProfile.FluidType.Snow;
 
-        [Header("â”€â”€ Population â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("Population")]
         [Tooltip("Maximum compute-simulated plankton particles. Hard-capped to the MX350 marine-snow budget.")]
         [SerializeField, Range(512, MaxMarineSnowParticleCapacity)] private int maxParticles = MaxMarineSnowParticleCapacity;
         [Tooltip("Empty safety radius around the camera to avoid particles clipping through the visor.")]
@@ -150,7 +150,7 @@ namespace Hecton8.Environment
         [Tooltip("Vertical span of the marine-snow shell relative to the target camera.")]
         [SerializeField] private Vector2 verticalSpan = new Vector2(-10f, 8f);
 
-        [Header("â”€â”€ Drift â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("Drift")]
         [Tooltip("Minimum base descent speed for marine snow.")]
         [SerializeField, Range(0.005f, 0.08f)] private float descentMinSpeed = 0.015f;
         [Tooltip("Maximum base descent speed for marine snow.")]
@@ -160,7 +160,7 @@ namespace Hecton8.Environment
         [Tooltip("Base drag coefficient for the mandated anisotropic-drag attenuation.")]
         [SerializeField, Range(0.01f, 0.5f)] private float baseDragCoefficient = 0.15f;
 
-        [Header("â”€â”€ Flow Coupling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("Flow Coupling")]
         [Tooltip("How strongly particles chase the authoritative ecosystem current before anisotropic drag is applied.")]
         [SerializeField, Range(0f, 1f)] private float flowBlend = 0.18f;
         [Tooltip("Extra flow-coupling gain injected by denser water states.")]
@@ -170,7 +170,7 @@ namespace Hecton8.Environment
         [Tooltip("If the flow-field center shifts by more than this many cells, force an upload immediately.")]
         [SerializeField, Range(0.1f, 4f)] private float flowFieldRecenterThresholdCells = 0.5f;
 
-        [Header("â”€â”€ Rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("Rendering")]
         [Tooltip("Minimum world-space snow billboard size.")]
         [SerializeField, Range(0.0005f, 0.02f)] private float particleSizeMin = 0.0035f;
         [Tooltip("Maximum world-space snow billboard size.")]
@@ -194,7 +194,7 @@ namespace Hecton8.Environment
         [Tooltip("Blend sharpness for speed-line stretch so brief frame spikes do not flash the whole shell.")]
         [SerializeField, Range(0.1f, 16f)] private float speedLineResponseSharpness = 7f;
 
-        [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Biolume Surge Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
+        [Header("Biolume Surge")]
         [Tooltip("Temporary particle-population multiplier applied while the global biolume surge bit remains active.")]
         [SerializeField, Range(1f, 3f)] private float biolumeSurgeParticleMultiplier = 1.75f;
         [Tooltip("Temporary turbulence multiplier applied while the global biolume surge bit remains active.")]
@@ -214,7 +214,7 @@ namespace Hecton8.Environment
         [Tooltip("Render scale for the marine-snow fog density buffer.")]
         [SerializeField, Range(0.1f, 0.5f)] private float fogDensityRenderScale = 0.25f;
 
-        private readonly FrameConstantsData[] _frameConstantsUpload = new FrameConstantsData[1]; // COLD ALLOC: FrameConstantsData[1] â€” reusable per-frame constant-buffer upload cache â€” owner: HectonMarineSnowRenderer
+        private readonly FrameConstantsData[] _frameConstantsUpload = new FrameConstantsData[1]; // COLD ALLOC: FrameConstantsData[1] - reusable per-frame constant-buffer upload cache - owner: HectonMarineSnowRenderer
 
         private ParticleGpuData[] _bootstrapParticles;
         private GraphicsBuffer _particleBufferA;
@@ -555,13 +555,13 @@ namespace Hecton8.Environment
                 return;
             }
 
-            // COLD ALLOC: ParticleGpuData[maxParticles] â€” maxParticles * 64B bootstrap upload cache, required to seed both GPU ping-pong buffers without runtime allocations â€” owner: HectonMarineSnowRenderer
+            // COLD ALLOC: ParticleGpuData[maxParticles] - maxParticles * 64B bootstrap upload cache, required to seed both GPU ping-pong buffers without runtime allocations - owner: HectonMarineSnowRenderer
             _bootstrapParticles = new ParticleGpuData[clampedParticleCount];
-            // COLD ALLOC: GraphicsBuffer[maxParticles] â€” persistent marine-snow particle state ping-pong buffer A â€” owner: HectonMarineSnowRenderer
+            // COLD ALLOC: GraphicsBuffer[maxParticles] - persistent marine-snow particle state ping-pong buffer A - owner: HectonMarineSnowRenderer
             _particleBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleGpuData>(clampedParticleCount);
-            // COLD ALLOC: GraphicsBuffer[maxParticles] â€” persistent marine-snow particle state ping-pong buffer B â€” owner: HectonMarineSnowRenderer
+            // COLD ALLOC: GraphicsBuffer[maxParticles] - persistent marine-snow particle state ping-pong buffer B - owner: HectonMarineSnowRenderer
             _particleBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleGpuData>(clampedParticleCount);
-            // COLD ALLOC: GraphicsBuffer[1] â€” per-frame marine-snow constant buffer â€” owner: HectonMarineSnowRenderer
+            // COLD ALLOC: GraphicsBuffer[1] - per-frame marine-snow constant buffer - owner: HectonMarineSnowRenderer
             _frameConstantsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FrameConstantsData>(1);
             _emptyFlowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float2>(1); // COLD ALLOC: GraphicsBuffer[1] - zero fallback ecosystem flow-vector buffer - owner: HectonMarineSnowRenderer
             GraphicsBufferUploadUtility.UploadArray(_emptyFlowFieldBuffer, _emptyFlowFieldUpload, 1);
@@ -709,7 +709,7 @@ namespace Hecton8.Environment
             if (_flowFieldBuffer == null || _flowFieldBuffer.count != requiredCount)
             {
                 ReleaseBuffer(ref _flowFieldBuffer);
-                // COLD ALLOC: GraphicsBuffer[flowVectors.Length] â€” ecosystem flow-field snapshot staging on GPU, sized to the authoritative bridge payload â€” owner: HectonMarineSnowRenderer
+                // COLD ALLOC: GraphicsBuffer[flowVectors.Length] - ecosystem flow-field snapshot staging on GPU, sized to the authoritative bridge payload - owner: HectonMarineSnowRenderer
                 _flowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float2>(requiredCount);
                 _boundSimulationFlowFieldBuffer = null;
                 _staticBindingsDirty = true;
@@ -875,9 +875,6 @@ namespace Hecton8.Environment
 
         private void RefreshExternalGpuBindings(float dt)
         {
-            SetComputeVectorHotIfChanged(ShaderIds.SubmarineWashSphereId, Shader.GetGlobalVector(ShaderIds.SubmarineWashSphereId), ref _boundSubmarineWashSphere);
-            SetComputeVectorHotIfChanged(ShaderIds.SubmarineWashVelocityId, Shader.GetGlobalVector(ShaderIds.SubmarineWashVelocityId), ref _boundSubmarineWashVelocity);
-
             _externalGpuBindingColdTickTimer -= math.max(0f, dt);
             if (!_externalGpuBindingsDirty && _externalGpuBindingColdTickTimer > 0f)
                 return;
@@ -885,6 +882,8 @@ namespace Hecton8.Environment
             RefreshAbyssalFlowBinding();
             RefreshCaveSdfBinding();
             RefreshTerrainHeightBinding();
+            SetComputeVectorIfChanged(ShaderIds.SubmarineWashSphereId, Shader.GetGlobalVector(ShaderIds.SubmarineWashSphereId), ref _boundSubmarineWashSphere);
+            SetComputeVectorIfChanged(ShaderIds.SubmarineWashVelocityId, Shader.GetGlobalVector(ShaderIds.SubmarineWashVelocityId), ref _boundSubmarineWashVelocity);
             SetComputeVectorIfChanged(ShaderIds.PropwashParamsId, DefaultPropwashParams, ref _boundPropwashParams);
             SetComputeVectorIfChanged(ShaderIds.FlowSynchronyParamsId, ResolveFlowSynchronyParams(), ref _boundFlowSynchronyParams);
             _externalGpuBindingColdTickTimer = ExternalGpuBindingColdTickSeconds;
@@ -949,7 +948,7 @@ namespace Hecton8.Environment
                 _boundCaveSdfTexture = sdfTexture;
             }
 
-            SetComputeFloatIfChanged(ShaderIds.CaveVoxelActiveId, active, ref _boundCaveVoxelActive);
+            SetComputeBinaryFloatIfChanged(ShaderIds.CaveVoxelActiveId, active, ref _boundCaveVoxelActive);
             SetComputeMatrixIfChanged(ShaderIds.CaveVoxelWorldToLocalId, worldToLocal, ref _boundCaveVoxelWorldToLocal);
             SetComputeVectorIfChanged(ShaderIds.CaveVoxelHalfExtentsId, halfExtentsAndRange, ref _boundCaveVoxelHalfExtents);
         }
@@ -1357,13 +1356,14 @@ namespace Hecton8.Environment
             cachedValue = value;
         }
 
-        private void SetComputeFloatIfChanged(int shaderId, float value, ref float cachedValue)
+        private void SetComputeBinaryFloatIfChanged(int shaderId, float value, ref float cachedValue)
         {
-            if (!_externalGpuBindingsDirty && math.abs(value - cachedValue) <= ShaderVectorPublishEpsilon)
+            float binaryValue = value >= 0.5f ? 1f : 0f;
+            if (!_externalGpuBindingsDirty && cachedValue == binaryValue)
                 return;
 
-            marineSnowCompute.SetFloat(shaderId, value);
-            cachedValue = value;
+            marineSnowCompute.SetFloat(shaderId, binaryValue);
+            cachedValue = binaryValue;
         }
 
         private void SetComputeMatrixIfChanged(int shaderId, Matrix4x4 value, ref Matrix4x4 cachedValue)
@@ -1388,7 +1388,7 @@ namespace Hecton8.Environment
 
             ReleaseSonarGlowTexture();
 
-            // COLD ALLOC: RenderTexture[sonarGlowWidth*sonarGlowHeight] — persistent sonar-reactive plankton splatmap — owner: HectonMarineSnowRenderer
+            // COLD ALLOC: RenderTexture[sonarGlowWidth*sonarGlowHeight] - persistent sonar-reactive plankton splatmap - owner: HectonMarineSnowRenderer
             _sonarGlowTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RInt, RenderTextureReadWrite.Linear)
             {
                 name = "HectonMarineSnowSonarGlow",

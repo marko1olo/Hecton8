@@ -34,6 +34,10 @@ namespace Hecton8.Tests.PlayMode
         private const int ZeroGcBaselineSearchFrameLimit = 1800;
         private const string SaveRoundtripSlot = "inquisition_roundtrip_slot";
         private const string SaveThreadAffinitySlot = "inquisition_thread_affinity_slot";
+        // COLD ALLOC: Vector3[100] — local physics batch-1 result buffer — owner: InquisitionStabilityPlayModeTests
+        private static readonly Vector3[] _determinismBatchOneResults = new Vector3[AupBodyCount];
+        // COLD ALLOC: Vector3[100] — local physics batch-4 result buffer — owner: InquisitionStabilityPlayModeTests
+        private static readonly Vector3[] _determinismBatchFourResults = new Vector3[AupBodyCount];
 
         [UnityTest]
         public IEnumerator AupOriginShift_TenMillionMeters_PreservesRelativePositionsToOneMillimeter()
@@ -351,15 +355,18 @@ namespace Hecton8.Tests.PlayMode
         [UnityTest]
         public IEnumerator PhysicsDeterminism_FallingObjects_LocalDispatchBatch1And4RestWithinAupTolerance()
         {
-            Vector3[] singleStep = SimulateFallingObjectsWithLocalDispatchBatch(1, "determinism_batch_1");
+            Array.Clear(_determinismBatchOneResults, 0, _determinismBatchOneResults.Length);
+            Array.Clear(_determinismBatchFourResults, 0, _determinismBatchFourResults.Length);
+
+            SimulateFallingObjectsWithLocalDispatchBatch(1, "determinism_batch_1", _determinismBatchOneResults);
             yield return null;
-            Vector3[] batched = SimulateFallingObjectsWithLocalDispatchBatch(4, "determinism_batch_4");
+            SimulateFallingObjectsWithLocalDispatchBatch(4, "determinism_batch_4", _determinismBatchFourResults);
             yield return null;
 
-            Assert.AreEqual(singleStep.Length, batched.Length);
-            for (int i = 0; i < singleStep.Length; i++)
+            Assert.AreEqual(_determinismBatchOneResults.Length, _determinismBatchFourResults.Length);
+            for (int i = 0; i < _determinismBatchOneResults.Length; i++)
             {
-                float deltaSq = (singleStep[i] - batched[i]).sqrMagnitude;
+                float deltaSq = (_determinismBatchOneResults[i] - _determinismBatchFourResults[i]).sqrMagnitude;
                 Assert.LessOrEqual(
                     deltaSq,
                     PhysicsRestToleranceMetersSq,
@@ -543,21 +550,33 @@ namespace Hecton8.Tests.PlayMode
             return path;
         }
 
-        private static Vector3[] SimulateFallingObjectsWithLocalDispatchBatch(int fixedStepsPerDispatch, string sceneName)
+        private static void SimulateFallingObjectsWithLocalDispatchBatch(
+            int fixedStepsPerDispatch,
+            string sceneName,
+            Vector3[] results)
         {
             const float fixedDeltaTime = 0.02f;
             const int simulationSteps = 250;
 
             int safeFixedStepsPerDispatch = SanitizeFixedStepsPerDispatch(fixedStepsPerDispatch);
-            return SimulateFallingObjectsInLocalPhysicsScene(
+            SimulateFallingObjectsInLocalPhysicsScene(
                 fixedDeltaTime,
                 simulationSteps,
                 safeFixedStepsPerDispatch,
-                sceneName);
+                sceneName,
+                results);
         }
 
-        private static Vector3[] SimulateFallingObjectsInLocalPhysicsScene(float fixedDeltaTime, int steps, int fixedStepsPerDispatch, string sceneName)
+        private static void SimulateFallingObjectsInLocalPhysicsScene(
+            float fixedDeltaTime,
+            int steps,
+            int fixedStepsPerDispatch,
+            string sceneName,
+            Vector3[] results)
         {
+            Assert.IsNotNull(results, "Physics determinism result buffer is null.");
+            Assert.GreaterOrEqual(results.Length, AupBodyCount, "Physics determinism result buffer is too small.");
+
             Scene scene = SceneManager.CreateScene(
                 sceneName,
                 new CreateSceneParameters(LocalPhysicsMode.Physics3D));
@@ -597,12 +616,10 @@ namespace Hecton8.Tests.PlayMode
                     physicsScene.Simulate(fixedDeltaTime);
             }
 
-            Vector3[] results = new Vector3[AupBodyCount];
             for (int i = 0; i < AupBodyCount; i++)
                 results[i] = objects[i].transform.position;
 
             SceneManager.UnloadSceneAsync(scene);
-            return results;
         }
 
         private static int SanitizeFixedStepsPerDispatch(int requestedSteps)

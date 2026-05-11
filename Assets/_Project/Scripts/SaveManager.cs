@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
@@ -96,11 +97,11 @@ namespace Hecton8.SaveSystem
         // COLD ALLOC: ISaveable[256] — fixed persistence registry prevents List resize during scene registration — owner: SaveManager
         private readonly ISaveable[] _saveables = new ISaveable[MaxRegisteredSaveables];
         // COLD ALLOC: List<IndexedSectorEntryInfo>[128] — reusable indexed-save directory probe scratch — owner: SaveManager
-        private readonly List<SaveBinaryStorage.IndexedSectorEntryInfo> _indexedSectorDirectoryScratch = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(128);
+        private readonly SaveBinaryStorage.IndexedSectorEntryInfo[] _indexedSectorDirectoryScratch = new SaveBinaryStorage.IndexedSectorEntryInfo[128];
         // COLD ALLOC: List<SaveSlotInfo>[8] - instance-owned metadata projection scratch - owner: SaveManager
-        private readonly List<SaveSlotInfo> _saveSlotInfoScratch = new List<SaveSlotInfo>(SaveSlotScratchCapacity);
+        private readonly SaveSlotInfo[] _saveSlotInfoScratch = new SaveSlotInfo[SaveSlotScratchCapacity];
         // COLD ALLOC: SaveLoadCandidate[9] - instance-owned load fallback chain scratch - owner: SaveManager
-        private readonly SaveLoadCandidate[] _loadCandidateScratch = new SaveLoadCandidate[MaxSaveLoadCandidateCount];
+        private NativeArray<SaveLoadCandidate> _loadCandidateScratch;
         private int _saveableCount;
         private bool _registryDirty;
         private bool _saveableCapacityWarningLogged;
@@ -114,11 +115,11 @@ namespace Hecton8.SaveSystem
         // COLD ALLOC: object[1] - serializes static repair/audit save-slot scratch - owner: SaveManager
         private static readonly object SaveSlotInfoScratchSync = new object();
         // COLD ALLOC: List<SaveSlotInfo>[8] - static repair/audit slot enumeration scratch - owner: SaveManager
-        private static readonly List<SaveSlotInfo> SaveSlotInfoScratch = new List<SaveSlotInfo>(SaveSlotScratchCapacity);
+        private static readonly SaveSlotInfo[] SaveSlotInfoScratch = new SaveSlotInfo[SaveSlotScratchCapacity];
         // COLD ALLOC: object[1] - serializes static repair/audit candidate scratch - owner: SaveManager
         private static readonly object SaveLoadCandidateScratchSync = new object();
         // COLD ALLOC: SaveLoadCandidate[9] - static repair/audit load fallback scratch - owner: SaveManager
-        private static readonly SaveLoadCandidate[] SaveLoadCandidateScratch = new SaveLoadCandidate[MaxSaveLoadCandidateCount];
+        private static NativeArray<SaveLoadCandidate> SaveLoadCandidateScratch;
         private static string s_persistentDataPathRoot;
 
         private sealed class SavePriorityComparerImpl : IComparer<ISaveable>
@@ -164,17 +165,34 @@ namespace Hecton8.SaveSystem
             public MemoryCorruptionException(string message) : base(message) { }
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 16)]
         private readonly struct SaveLoadCandidate
         {
-            public readonly string SavePath;
-            public readonly bool IsBackup;
-            public readonly int BackupGeneration;
+            private const int BackupFlag = 1 << 0;
 
-            public SaveLoadCandidate(string savePath, bool isBackup, int backupGeneration)
+            public readonly int Flags;
+            public readonly int BackupGeneration;
+            public readonly int Reserved0;
+            public readonly int Reserved1;
+
+            public bool IsBackup => (Flags & BackupFlag) != 0;
+
+            private SaveLoadCandidate(int flags, int backupGeneration)
             {
-                SavePath = savePath;
-                IsBackup = isBackup;
+                Flags = flags;
                 BackupGeneration = backupGeneration;
+                Reserved0 = 0;
+                Reserved1 = 0;
+            }
+
+            public static SaveLoadCandidate Primary()
+            {
+                return new SaveLoadCandidate(0, 0);
+            }
+
+            public static SaveLoadCandidate Backup(int backupGeneration)
+            {
+                return new SaveLoadCandidate(BackupFlag, math.max(1, backupGeneration));
             }
         }
 
@@ -388,6 +406,8 @@ namespace Hecton8.SaveSystem
 
             DisposeNativeArray(ref _savePayloadBuffer);
             DisposeNativeArray(ref _compressedSaveBuffer);
+            DisposeNativeArray(ref _loadCandidateScratch);
+            DisposeStaticLoadCandidateScratch();
 
             DisposeIntegrityResources();
         }
@@ -447,6 +467,36 @@ namespace Hecton8.SaveSystem
                 // COLD ALLOC: NativeArray<byte>[71303168] — protected 16KB LZ4 block-compressed save payload buffer for 64MB raw save budget — owner: SaveManager
                 _compressedSaveBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 NativeMemorySentinel.RegisterNativeArray(_compressedSaveBuffer, NativeMemoryOwner, nameof(_compressedSaveBuffer), NativeMemoryLifetime);
+            }
+
+            if (!_loadCandidateScratch.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<SaveLoadCandidate>[9] - unmanaged load fallback descriptors - owner: SaveManager
+                _loadCandidateScratch = new NativeArray<SaveLoadCandidate>(MaxSaveLoadCandidateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_loadCandidateScratch, NativeMemoryOwner, nameof(_loadCandidateScratch), NativeMemoryLifetime);
+            }
+        }
+
+        private static void EnsureStaticLoadCandidateScratch()
+        {
+            if (SaveLoadCandidateScratch.IsCreated)
+                return;
+
+            // COLD ALLOC: NativeArray<SaveLoadCandidate>[9] - static repair/audit fallback descriptors - owner: SaveManager
+            SaveLoadCandidateScratch = new NativeArray<SaveLoadCandidate>(MaxSaveLoadCandidateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(SaveLoadCandidateScratch, NativeMemoryOwner, nameof(SaveLoadCandidateScratch), NativeMemoryLifetime);
+        }
+
+        private static void DisposeStaticLoadCandidateScratch()
+        {
+            lock (SaveLoadCandidateScratchSync)
+            {
+                if (!SaveLoadCandidateScratch.IsCreated)
+                    return;
+
+                NativeMemorySentinel.UnregisterNativeArray(SaveLoadCandidateScratch);
+                SaveLoadCandidateScratch.Dispose();
+                SaveLoadCandidateScratch = default;
             }
         }
 
@@ -1171,7 +1221,7 @@ namespace Hecton8.SaveSystem
             ReportLoadPipelineStage(LoadingPipelineStage.PagingSectors, 0.08f);
             var totalTimer = Stopwatch.StartNew();
             NativeArray<byte> loadedVoxelDeltaSnapshot = default;
-            SaveLoadCandidate[] candidates = _loadCandidateScratch;
+            NativeArray<SaveLoadCandidate> candidates = _loadCandidateScratch;
             int candidateCount = 0;
 
             try
@@ -1185,7 +1235,7 @@ namespace Hecton8.SaveSystem
                 EcosystemSectorSaveRecord[] loadedEcosystemSectors = null;
                 SaveMetadata loadedMetadata = null;
                 SaveLoadCandidate loadedCandidate = default;
-                Exception lastError = null;
+                string lastErrorMessage = string.Empty;
                 candidateCount = BuildLoadCandidates(slotName, candidates);
                 bool usedLegacyFormat = false;
                 ulong loadedPayloadHash64 = 0UL;
@@ -1234,7 +1284,7 @@ namespace Hecton8.SaveSystem
                                     out criticalBackupGeneration,
                                     out candidateError))
                             {
-                                lastError = new Exception(candidateError);
+                                lastErrorMessage = candidateError;
                                 LogWarning($"[SaveManager] CRITICAL_RECOVERY failed for '{slotName}': {candidateError}");
                                 continue;
                             }
@@ -1249,7 +1299,7 @@ namespace Hecton8.SaveSystem
                         loadedEcosystemSectors = candidateEcosystemSectors;
                         loadedVoxelDeltaSnapshot = candidateVoxelDeltaSnapshot;
                         loadedCandidate = criticalBackupPromoted
-                            ? new SaveLoadCandidate(GetPrimarySaveFilePath(slotName), false, 0)
+                            ? SaveLoadCandidate.Primary()
                             : candidates[i];
                         loadedMetadata = candidateMetadata;
                         loadedPayloadHash64 = candidatePayloadHash64;
@@ -1284,7 +1334,7 @@ namespace Hecton8.SaveSystem
                         loadedWorldDeltas = recoveryWorldDeltas;
                         loadedEcosystemSectors = recoveryEcosystemSectors;
                         loadedVoxelDeltaSnapshot = recoveryVoxelDeltaSnapshot;
-                        loadedCandidate = new SaveLoadCandidate(GetPrimarySaveFilePath(slotName), false, 0);
+                        loadedCandidate = SaveLoadCandidate.Primary();
                         loadedMetadata = recoveryMetadata;
                         loadedPayloadHash64 = recoveryPayloadHash64;
                         loadedPayloadLength = recoveryPayloadLength;
@@ -1294,7 +1344,7 @@ namespace Hecton8.SaveSystem
                         break;
                     }
 
-                    lastError = new Exception(candidateError);
+                    lastErrorMessage = candidateError;
                     string candidateLabel = candidates[i].IsBackup
                         ? $"backup g{candidates[i].BackupGeneration}"
                         : "primary";
@@ -1302,7 +1352,7 @@ namespace Hecton8.SaveSystem
                 }
 
                 if (data == null)
-                    throw lastError ?? new Exception("No load candidate could be restored.");
+                    throw new Exception(string.IsNullOrEmpty(lastErrorMessage) ? "No load candidate could be restored." : lastErrorMessage);
 
                 await Awaitable.MainThreadAsync();
                 StageIntegrityPayload(_savePayloadBuffer, loadedPayloadLength, loadedPayloadHash64, slotName);
@@ -1319,7 +1369,8 @@ namespace Hecton8.SaveSystem
                 PersistentWorldRegistry persistentWorldRegistryForLoad = GlobalRegistry.PersistentWorldRegistry;
                 persistentWorldRegistryForLoad?.PreloadTombstonesFromLoadedRecords(loadedWorldDeltas);
                 ModSaveStateStore.LoadFromSaveData(data);
-                if (!ModSaveStateStore.TryLoadMmfPayloads(GetPersistentAbsolutePath(loadedCandidate.SavePath), out string modPayloadLoadError) ||
+                string loadedRelativeSavePath = GetCandidateSavePath(slotName, loadedCandidate);
+                if (!ModSaveStateStore.TryLoadMmfPayloads(GetPersistentAbsolutePath(loadedRelativeSavePath), out string modPayloadLoadError) ||
                     !string.IsNullOrEmpty(modPayloadLoadError))
                 {
                     ReportModPayloadLoadFailure(slotName, modPayloadLoadError);
@@ -1358,11 +1409,11 @@ namespace Hecton8.SaveSystem
                 if (persistentWorldRegistryForLoad != null)
                 {
                     ReportLoadPipelineStage(LoadingPipelineStage.PagingSectors, 0.68f);
-                    string loadedAbsolutePath = GetPersistentAbsolutePath(loadedCandidate.SavePath);
-                    _indexedSectorDirectoryScratch.Clear();
+                    string loadedAbsolutePath = GetPersistentAbsolutePath(loadedRelativeSavePath);
                     if (SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(
                             loadedAbsolutePath,
                             _indexedSectorDirectoryScratch,
+                            out _,
                             out _,
                             out string loadedDirectoryError))
                     {
@@ -1482,20 +1533,20 @@ namespace Hecton8.SaveSystem
                 return;
 
             results.Clear();
-            List<SaveSlotInfo> infos = _saveSlotInfoScratch;
-            infos.Clear();
+            int infoCount = 0;
             try
             {
-                GetAvailableSaveSlotInfos(infos);
-                for (int i = 0; i < infos.Count; i++)
+                infoCount = CollectAvailableSaveSlotInfos(_saveSlotInfoScratch);
+                for (int i = 0; i < infoCount; i++)
                 {
-                    if (infos[i].Metadata != null)
-                        results.Add(infos[i].Metadata);
+                    SaveSlotInfo info = _saveSlotInfoScratch[i];
+                    if (info != null && info.Metadata != null)
+                        results.Add(info.Metadata);
                 }
             }
             finally
             {
-                infos.Clear();
+                ClearSaveSlotScratch(_saveSlotInfoScratch, infoCount);
             }
         }
 
@@ -1533,20 +1584,20 @@ namespace Hecton8.SaveSystem
 
             lock (SaveSlotInfoScratchSync)
             {
-                List<SaveSlotInfo> slots = SaveSlotInfoScratch;
-                slots.Clear();
+                int slotCount = 0;
                 try
                 {
-                    CollectAvailableSaveSlotInfos(slots);
-                    for (int i = 0; i < slots.Count; i++)
+                    slotCount = CollectAvailableSaveSlotInfos(SaveSlotInfoScratch);
+                    for (int i = 0; i < slotCount; i++)
                     {
-                        if (TryRepairSaveSlotInternal(slots[i].slotName, out SaveSlotRepairResult result))
+                        SaveSlotInfo slot = SaveSlotInfoScratch[i];
+                        if (slot != null && TryRepairSaveSlotInternal(slot.slotName, out SaveSlotRepairResult result))
                             results.Add(result);
                     }
                 }
                 finally
                 {
-                    slots.Clear();
+                    ClearSaveSlotScratch(SaveSlotInfoScratch, slotCount);
                 }
             }
         }
@@ -1570,20 +1621,20 @@ namespace Hecton8.SaveSystem
 
             lock (SaveSlotInfoScratchSync)
             {
-                List<SaveSlotInfo> slots = SaveSlotInfoScratch;
-                slots.Clear();
+                int slotCount = 0;
                 try
                 {
-                    CollectAvailableSaveSlotInfos(slots);
-                    for (int i = 0; i < slots.Count; i++)
+                    slotCount = CollectAvailableSaveSlotInfos(SaveSlotInfoScratch);
+                    for (int i = 0; i < slotCount; i++)
                     {
-                        if (TryAuditSaveSlotInternal(slots[i].slotName, out SaveSlotAuditResult result))
+                        SaveSlotInfo slot = SaveSlotInfoScratch[i];
+                        if (slot != null && TryAuditSaveSlotInternal(slot.slotName, out SaveSlotAuditResult result))
                             results.Add(result);
                     }
                 }
                 finally
                 {
-                    slots.Clear();
+                    ClearSaveSlotScratch(SaveSlotInfoScratch, slotCount);
                 }
             }
         }
@@ -1623,6 +1674,65 @@ namespace Hecton8.SaveSystem
             results.Sort(SaveSlotTimestampDescendingComparison);
         }
 
+        private static int CollectAvailableSaveSlotInfos(SaveSlotInfo[] results)
+        {
+            if (results == null || results.Length <= 0)
+                return 0;
+
+            string persistentPath = Application.persistentDataPath;
+            if (!Directory.Exists(persistentPath))
+                return 0;
+
+            string[] files = Directory.GetFiles(persistentPath);
+            int slotNameCount = 0;
+            for (int i = 0; i < files.Length; i++)
+            {
+                string fileName = Path.GetFileName(files[i]);
+                if (TryExtractSlotName(fileName, out string slotName) &&
+                    !ContainsSlotName(files, slotNameCount, slotName))
+                {
+                    files[slotNameCount++] = slotName;
+                }
+            }
+
+            SaveManager manager = GlobalRegistry.SaveRuntime;
+            int resultCount = 0;
+            for (int i = 0; i < slotNameCount && resultCount < results.Length; i++)
+            {
+                string slotName = files[i];
+                SaveSlotInfo info = manager != null ? manager.BuildSaveSlotInfo(slotName) : BuildSaveSlotInfoStatic(slotName);
+                if (info != null && info.HasAnySaveData)
+                    results[resultCount++] = info;
+            }
+
+            SortSaveSlotScratch(results, resultCount);
+            return resultCount;
+        }
+
+        private static void SortSaveSlotScratch(SaveSlotInfo[] infos, int count)
+        {
+            int safeCount = math.min(count, infos != null ? infos.Length : 0);
+            for (int i = 1; i < safeCount; i++)
+            {
+                SaveSlotInfo candidate = infos[i];
+                int j = i - 1;
+                while (j >= 0 && CompareSaveSlotTimestampDescending(infos[j], candidate) > 0)
+                {
+                    infos[j + 1] = infos[j];
+                    j--;
+                }
+
+                infos[j + 1] = candidate;
+            }
+        }
+
+        private static void ClearSaveSlotScratch(SaveSlotInfo[] infos, int count)
+        {
+            int safeCount = math.min(count, infos != null ? infos.Length : 0);
+            for (int i = 0; i < safeCount; i++)
+                infos[i] = null;
+        }
+
         private static bool ContainsSlotName(string[] slotNames, int count, string slotName)
         {
             for (int i = 0; i < count; i++)
@@ -1639,14 +1749,19 @@ namespace Hecton8.SaveSystem
             if (!TryResolveSafeSlotName(slotName, out slotName))
                 return;
 
-            string[] artifactPaths = GetAllKnownArtifactPaths(slotName);
-            for (int i = 0; i < artifactPaths.Length; i++)
-            {
-                DeleteFileIfExists(artifactPaths[i]);
-            }
-
-            DeleteFileIfExists(SaveSlotMaintenanceRecord.GetPath(slotName));
+            DeleteKnownSaveArtifacts(slotName);
             SaveThumbnailSystem.DeleteThumbnail(slotName);
+        }
+
+        private static void DeleteKnownSaveArtifacts(string slotName)
+        {
+            DeleteFileIfExists(GetPrimarySaveFilePath(slotName));
+            DeleteFileIfExists(GetTempSaveFilePath(slotName));
+            DeleteFileIfExists(SaveSlotMaintenanceRecord.GetPath(slotName));
+
+            int maxGeneration = GetMaxBackupGenerationCount();
+            for (int generation = 1; generation <= maxGeneration; generation++)
+                DeleteFileIfExists(GetBackupSaveFilePath(slotName, generation));
         }
 
         public static string GetPrimarySaveFilePath(string slotName) => $"{ResolveSafeSlotFileStem(slotName)}.sav";
@@ -1886,9 +2001,9 @@ namespace Hecton8.SaveSystem
             return TryResolveSafeSlotName(slotName, out slotName);
         }
 
-        private static int BuildLoadCandidates(string slotName, SaveLoadCandidate[] candidates)
+        private static int BuildLoadCandidates(string slotName, NativeArray<SaveLoadCandidate> candidates)
         {
-            if (candidates == null || candidates.Length <= 0)
+            if (!candidates.IsCreated || candidates.Length <= 0)
                 return 0;
 
             int backupRetention = GetBackupRetentionCountStatic(slotName);
@@ -1896,7 +2011,7 @@ namespace Hecton8.SaveSystem
 
             string primarySavePath = GetPrimarySaveFilePath(slotName);
             if (FileExists(primarySavePath))
-                candidates[candidateCount++] = new SaveLoadCandidate(primarySavePath, false, 0);
+                candidates[candidateCount++] = SaveLoadCandidate.Primary();
 
             for (int generation = 1; generation <= backupRetention; generation++)
             {
@@ -1907,17 +2022,24 @@ namespace Hecton8.SaveSystem
                 if (candidateCount >= candidates.Length)
                     break;
 
-                candidates[candidateCount++] = new SaveLoadCandidate(backupSavePath, true, generation);
+                candidates[candidateCount++] = SaveLoadCandidate.Backup(generation);
             }
 
             return candidateCount;
         }
 
-        private static void ClearLoadCandidates(SaveLoadCandidate[] candidates, int candidateCount)
+        private static void ClearLoadCandidates(NativeArray<SaveLoadCandidate> candidates, int candidateCount)
         {
-            int safeCount = math.min(candidateCount, candidates != null ? candidates.Length : 0);
+            int safeCount = math.min(candidateCount, candidates.IsCreated ? candidates.Length : 0);
             for (int i = 0; i < safeCount; i++)
                 candidates[i] = default;
+        }
+
+        private static string GetCandidateSavePath(string slotName, SaveLoadCandidate candidate)
+        {
+            return candidate.IsBackup
+                ? GetBackupSaveFilePath(slotName, candidate.BackupGeneration)
+                : GetPrimarySaveFilePath(slotName);
         }
 
         private static bool TryRepairSaveSlotInternal(string slotName, out SaveSlotRepairResult result)
@@ -1963,10 +2085,11 @@ namespace Hecton8.SaveSystem
             bool usedLegacyFormat = false;
             string errorMessage = string.Empty;
 
-            SaveLoadCandidate[] candidates = SaveLoadCandidateScratch;
             int candidateCount = 0;
             lock (SaveLoadCandidateScratchSync)
             {
+                EnsureStaticLoadCandidateScratch();
+                NativeArray<SaveLoadCandidate> candidates = SaveLoadCandidateScratch;
                 try
                 {
                     candidateCount = BuildLoadCandidates(slotName, candidates);
@@ -2097,10 +2220,11 @@ namespace Hecton8.SaveSystem
             bool selectedLegacyFormat = false;
             bool hasSelectedCandidate = false;
 
-            SaveLoadCandidate[] candidates = SaveLoadCandidateScratch;
             int candidateCount = 0;
             lock (SaveLoadCandidateScratchSync)
             {
+                EnsureStaticLoadCandidateScratch();
+                NativeArray<SaveLoadCandidate> candidates = SaveLoadCandidateScratch;
                 try
                 {
                     candidateCount = BuildLoadCandidates(slotName, candidates);
@@ -2275,7 +2399,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            SaveLoadCandidate backupCandidate = new SaveLoadCandidate(backupSavePath, true, backupGeneration);
+            SaveLoadCandidate backupCandidate = SaveLoadCandidate.Backup(backupGeneration);
             if (!TryLoadCandidate(
                     slotName,
                     backupCandidate,
@@ -2408,9 +2532,10 @@ namespace Hecton8.SaveSystem
             indexedBackupRecoveryUsed = false;
             errorMessage = string.Empty;
 
-            if (!FileExists(candidate.SavePath))
+            string candidateSavePath = GetCandidateSavePath(slotName, candidate);
+            if (!FileExists(candidateSavePath))
             {
-                errorMessage = $"Save artifact '{candidate.SavePath}' is missing.";
+                errorMessage = "Save artifact is missing.";
                 return false;
             }
 
@@ -2461,7 +2586,7 @@ namespace Hecton8.SaveSystem
             try
             {
                 if (!SaveBinaryStorage.TryLoadSaveData(
-                    GetPersistentAbsolutePath(candidate.SavePath),
+                    GetPersistentAbsolutePath(GetCandidateSavePath(slotName, candidate)),
                     slotName,
                     readBuffer,
                     out data,
@@ -2505,7 +2630,8 @@ namespace Hecton8.SaveSystem
             usedLegacyFormat = false;
             errorMessage = string.Empty;
 
-            string absolutePath = GetPersistentAbsolutePath(candidate.SavePath);
+            string candidateSavePath = GetCandidateSavePath(slotName, candidate);
+            string absolutePath = GetPersistentAbsolutePath(candidateSavePath);
             if (SaveBinaryStorage.IsBinaryContainer(absolutePath))
             {
                 AcquireReadBuffer(out NativeArray<byte> readBuffer, out bool ownsReadBuffer);
@@ -2519,7 +2645,7 @@ namespace Hecton8.SaveSystem
                 }
             }
 
-            errorMessage = $"Unsupported non-binary save artifact '{candidate.SavePath}'.";
+            errorMessage = "Unsupported non-binary save artifact.";
             return false;
         }
 
@@ -2847,7 +2973,7 @@ namespace Hecton8.SaveSystem
             {
                 if (TryReadCandidateMetadata(
                     slotName,
-                    new SaveLoadCandidate(primarySavePath, false, 0),
+                    SaveLoadCandidate.Primary(),
                     out SaveMetadata primaryMetadata,
                     out _,
                     out _,
@@ -2870,7 +2996,7 @@ namespace Hecton8.SaveSystem
 
                 if (TryReadCandidateMetadata(
                     slotName,
-                    new SaveLoadCandidate(backupSavePath, true, generation),
+                    SaveLoadCandidate.Backup(generation),
                     out SaveMetadata backupMetadata,
                     out _,
                     out _,

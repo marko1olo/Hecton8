@@ -1,0 +1,123 @@
+# CINEMATIC_CHEAT_PROTOCOL_VISUAL_FAKE_FIRST.md
+# HECTON-8 | Visual Realism Without Physical Waste
+
+Status: ENFORCED
+Authority: AGENTS.md + 2026-05-11 documentation sync
+Scope: water, light, fog, deformation, damage feedback, audio feedback, haptics, flow, pressure, weather, cloth, cable, flora motion, fauna ambience, particles, and environmental effects.
+
+---
+
+## 0. Prime Rule
+
+[RULE] Default solution is a deterministic presentation fake.
+[RULE] Physical simulation is allowed only when gameplay correctness breaks without it.
+[RULE] Every new simulation proposal must first reject the cheaper fake with evidence.
+[FORBID] Simulating invisible causes when visible consequences are enough.
+[FORBID] Per-proton, per-droplet, per-bubble, per-cable-segment, or per-flora-blade truth unless the player can interact with that truth and the profiler accepts the cost.
+
+Acceptance question:
+
+Can the player believe the event through screen, audio, haptics, UI, controller feel, and bounded collision proxies without simulating the real phenomenon?
+
+If yes, implement the fake.
+
+---
+
+## 1. Decision Ladder
+
+Use this order before writing runtime code:
+
+1. Static authoring: baked mesh, baked AO, baked vertex color, baked flow mask, baked SDF, baked probe/LUT.
+2. Shader fake: depth fog, dither, scrolling normals, VAT, impostor, fake caustics, fake wetness, fake refraction.
+3. Event fake: spawn pooled VFX/SFX/haptic response from gameplay state.
+4. Coarse proxy: one collider, one volume, one state flag, one low-frequency sample.
+5. Data-only job: Burst/NativeArray, low cadence, no direct Unity object mutation.
+6. Real physics: only for player-critical collision, vehicle control, save-affecting state, or combat/damage truth.
+
+[FORBID] Starting at step 6 without documenting why steps 1-5 fail.
+
+---
+
+## 2. Frame-Time Dictatorship
+
+[RULE] Any single runtime system adding more than 0.1 ms to a frame is suspicious.
+[RULE] A 0.1 ms+ cost must have profiler proof, quality-tier gate, and a cheaper fallback.
+[RULE] If the fake and the simulation look equivalent in gameplay, the simulation is rejected.
+[RULE] If the fake looks weaker but saves enough frame time, improve art direction before adding simulation.
+
+Required proof:
+
+- BEFORE/AFTER frame time on the target tier.
+- GC allocation: 0 B/frame in hot paths.
+- VRAM delta.
+- Failure mode list.
+- Load-shed behavior under 25 ms sustained frame time.
+
+No measurements means `PENDING VERIFICATION`, never "accepted".
+
+---
+
+## 3. Visual Fake Catalog
+
+### Water and Flow
+
+[PREFER] Flow maps, scrolling normal fields, sparse particle drift, shader refraction, and event-driven bubbles.
+[LIMIT] Flow physics to player, vehicles, hazards, and near interactables.
+[FORBID] Global per-entity current forces when a VFX flow cue is enough.
+
+### Lighting and Darkness
+
+[PREFER] dark volumes, baked AO, LUT haze, emissive proxies, dithered shadow proxies, and light eligibility culling.
+[LIMIT] Raymarching to gated MED+ features with profiler proof.
+[FORBID] full volumetric truth on MX350.
+
+### Fluid Incursion and Pressure
+
+[PREFER] screen/audio/haptic leaks, compartment fill state, fake slosh shader planes, pressure creaks, and UI alarms.
+[LIMIT] real mass/CoM changes to player-controlled vessels or gameplay-critical hull breach.
+[FORBID] continuous internal fluid simulation for rooms the player cannot inspect or control.
+
+### Damage, Deformation, and Debris
+
+[PREFER] decals, morph/VAT, shader cracks, pooled fragments, low-frequency proxy colliders.
+[LIMIT] real rigidbodies to close, interactive, narrative-critical pieces.
+[FORBID] dynamic mesh collider rebuilds in gameplay unless asynchronous and proven cheaper than a collider fake.
+
+### Cables, Cloth, Flora, Tentacles
+
+[PREFER] visual splines, VAT, sine/noise bending, anchor proxies, and low-frequency topology checks.
+[LIMIT] real constraints to direct player gameplay.
+[FORBID] Unity Joint stacks and per-segment solvers as default presentation.
+
+### Audio and Haptics
+
+[PREFER] amplitude, filtering, occlusion state, procedural pulses, and controller haptics.
+[LIMIT] expensive spatial filters to explicit accessibility/headphone modes with budget proof.
+[FORBID] underwater HRTF convolution as a default path.
+
+---
+
+## 4. Documentation Contract
+
+Every mandate touching simulation must state:
+
+- Fake-first replacement option.
+- Gameplay truth that still requires physics.
+- Minimum quality tier for the expensive path.
+- Runtime proof required before acceptance.
+- Fallback when frame time, VRAM, or GC budget is violated.
+
+If an older mandate tells you to simulate first, this mandate overrides it.
+
+---
+
+## 5. Report Format
+
+When applying this mandate, report:
+
+- What was rejected as too expensive.
+- What fake was used instead.
+- What player belief channel carries the effect.
+- What remains physically true.
+- What was verified and what is still `PENDING VERIFICATION`.
+

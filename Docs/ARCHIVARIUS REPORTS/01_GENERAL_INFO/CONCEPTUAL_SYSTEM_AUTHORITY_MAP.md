@@ -1,6 +1,6 @@
 ﻿# HECTON-8 Conceptual System Authority Map
 
-Date: 2026-05-07
+Date: 2026-05-11
 Status: PENDING VERIFICATION
 Scope: concept-level current system ownership across source and active docs
 
@@ -16,6 +16,9 @@ It is the current conceptual map for what systems exist, which ones carry runtim
 
 Source wins over this file.
 Runtime proof is absent unless a later Unity/Profiler/MCP report says otherwise.
+Current authority starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, stable `Docs/*.md` files, current source, and fresh logs.
+Current data evidence starts at `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` and `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+Current presentation doctrine starts at `AGENTS.md`, `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`, `.agents-skills/README.md`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`; `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` is supporting evidence.
 
 ## 1. Conceptual Status Model
 

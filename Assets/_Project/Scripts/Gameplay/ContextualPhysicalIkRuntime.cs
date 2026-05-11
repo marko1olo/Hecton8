@@ -9,30 +9,47 @@ using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct ContextualPhysicalIkContactTarget
     {
+        [FieldOffset(0)]
         public float3 WorldPosition;
+        [FieldOffset(12)]
         public float3 WorldNormal;
+        [FieldOffset(24)]
         public float Blend;
+        [FieldOffset(28)]
         public float DeltaHeight;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 192)]
     internal struct ContextualPhysicalIkTargetFrame
     {
+        [FieldOffset(0)]
         public ContextualPhysicalIkContactTarget LeftFoot;
+        [FieldOffset(32)]
         public ContextualPhysicalIkContactTarget RightFoot;
+        [FieldOffset(64)]
         public ContextualPhysicalIkContactTarget LeftHand;
+        [FieldOffset(96)]
         public ContextualPhysicalIkContactTarget RightHand;
+        [FieldOffset(128)]
         public float3 ComOffsetLocal;
+        [FieldOffset(140)]
         public float2 ComLeanRadians;
+        [FieldOffset(148)]
         public float DeltaTime;
+        [FieldOffset(152)]
         public float ViewerDistanceSq;
+        [FieldOffset(156)]
         public float TunnelBlend;
+        [FieldOffset(160)]
         public uint UpdateBitfield;
+        [FieldOffset(164)]
         public byte ContextMask;
+        [FieldOffset(165)]
         public byte ThrottleTier;
+        [FieldOffset(166)]
         public byte ShouldComputeThisFrame;
     }
 
@@ -111,12 +128,15 @@ namespace Hecton8.Gameplay
             QueryParameters groundQuery = new QueryParameters(entity.GroundLayerMask, false, QueryTriggerInteraction.Ignore, false);
             QueryParameters wallQuery = new QueryParameters(entity.WallLayerMask, false, QueryTriggerInteraction.Ignore, false);
 
-            float leftFootDistance = entity.EnableFootPlacement != 0 ? math.max(0.0f, entity.LeftLegReach * entity.FootProbeDistanceScale) : 0.0f;
-            float rightFootDistance = entity.EnableFootPlacement != 0 ? math.max(0.0f, entity.RightLegReach * entity.FootProbeDistanceScale) : 0.0f;
+            float footPlacementMask = math.select(0.0f, 1.0f, entity.EnableFootPlacement != 0);
+            float leftFootDistance = math.max(0.0f, entity.LeftLegReach * entity.FootProbeDistanceScale) * footPlacementMask;
+            float rightFootDistance = math.max(0.0f, entity.RightLegReach * entity.FootProbeDistanceScale) * footPlacementMask;
             bool leftHandUsesPredictiveLatch = entity.PredictiveLeftHandBlend > 0.0001f;
             bool rightHandUsesPredictiveLatch = entity.PredictiveRightHandBlend > 0.0001f;
-            float leftHandDistance = entity.EnableHandBracing != 0 && !leftHandUsesPredictiveLatch ? math.max(0.0f, entity.LeftArmReach * entity.HandProbeDistanceScale) : 0.0f;
-            float rightHandDistance = entity.EnableHandBracing != 0 && !rightHandUsesPredictiveLatch ? math.max(0.0f, entity.RightArmReach * entity.HandProbeDistanceScale) : 0.0f;
+            float leftHandMask = math.select(0.0f, 1.0f, entity.EnableHandBracing != 0 && !leftHandUsesPredictiveLatch);
+            float rightHandMask = math.select(0.0f, 1.0f, entity.EnableHandBracing != 0 && !rightHandUsesPredictiveLatch);
+            float leftHandDistance = math.max(0.0f, entity.LeftArmReach * entity.HandProbeDistanceScale) * leftHandMask;
+            float rightHandDistance = math.max(0.0f, entity.RightArmReach * entity.HandProbeDistanceScale) * rightHandMask;
 
             float3 leftBraceDirection = math.mul(entity.RootRotation, new float3(-0.70710677f, -0.70710677f, 0.0f));
             float3 rightBraceDirection = math.mul(entity.RootRotation, new float3(0.70710677f, -0.70710677f, 0.0f));
@@ -433,7 +453,7 @@ namespace Hecton8.Gameplay
             float scaledReach = math.max(0.0001f, armReach * math.max(0.0001f, distanceScale));
             float proxyDistance = math.max(0.0001f, math.min(scaledReach, math.max(0.0001f, clearanceDistance)));
             float safeFadeDistance = math.max(0.0001f, fadeDistance);
-            return math.saturate((proxyDistance - math.max(0.0f, hit.distance)) / safeFadeDistance);
+            return math.saturate((proxyDistance - math.max(0.0f, hit.distance)) * math.rcp(safeFadeDistance));
         }
     }
 
@@ -448,11 +468,11 @@ namespace Hecton8.Gameplay
         private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRuntime);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
 
-        // COLD ALLOC: ContextualPhysicalIkRig[128] — stable slot owner registry for contextual IK entities — owner: ContextualPhysicalIkRuntime
+        // COLD ALLOC: ContextualPhysicalIkRig[128] - stable slot owner registry for contextual IK entities - owner: ContextualPhysicalIkRuntime
         private readonly ContextualPhysicalIkRig[] _registeredRigs = new ContextualPhysicalIkRig[MaxEntities];
-        // COLD ALLOC: bool[128] — active slot bitset for contextual IK entities — owner: ContextualPhysicalIkRuntime
+        // COLD ALLOC: bool[128] - active slot bitset for contextual IK entities - owner: ContextualPhysicalIkRuntime
         private readonly bool[] _slotActive = new bool[MaxEntities];
-        // COLD ALLOC: int[128] — free-slot stack for contextual IK stable indexing — owner: ContextualPhysicalIkRuntime
+        // COLD ALLOC: int[128] - free-slot stack for contextual IK stable indexing - owner: ContextualPhysicalIkRuntime
         private readonly int[] _freeSlots = new int[MaxEntities];
 
         private NativeArray<ContextualPhysicalIkEntityState> _scheduledEntityStates;
@@ -481,7 +501,7 @@ namespace Hecton8.Gameplay
             if (runtime != null)
                 return runtime;
 
-            GameObject runtimeRoot = new GameObject("[ContextualPhysicalIkRuntime]"); // COLD ALLOC: GameObject[1] — persistent contextual IK runtime owner — owner: ContextualPhysicalIkRuntime
+            GameObject runtimeRoot = new GameObject("[ContextualPhysicalIkRuntime]"); // COLD ALLOC: GameObject[1] - persistent contextual IK runtime owner - owner: ContextualPhysicalIkRuntime
             runtime = runtimeRoot.AddComponent<ContextualPhysicalIkRuntime>();
             GlobalRegistry.RegisterContextualPhysicalIkRuntime(runtime);
             return runtime;
@@ -614,7 +634,7 @@ namespace Hecton8.Gameplay
                 _scheduledEntityStates = new NativeArray<ContextualPhysicalIkEntityState>(
                     MaxEntities,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkEntityState>[128] — scheduled IK entity snapshots — owner: ContextualPhysicalIkRuntime
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkEntityState>[128] - scheduled IK entity snapshots - owner: ContextualPhysicalIkRuntime
                 NativeMemorySentinel.RegisterNativeArray(_scheduledEntityStates, NativeMemoryOwner, nameof(_scheduledEntityStates), NativeMemoryLifetime);
             }
 
@@ -623,7 +643,7 @@ namespace Hecton8.Gameplay
                 _scheduledCommands = new NativeArray<RaycastCommand>(
                     MaxEntities * RaysPerEntity,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[512] — contextual IK ground/hand probes — owner: ContextualPhysicalIkRuntime
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[512] - contextual IK ground/hand probes - owner: ContextualPhysicalIkRuntime
                 NativeMemorySentinel.RegisterNativeArray(_scheduledCommands, NativeMemoryOwner, nameof(_scheduledCommands), NativeMemoryLifetime);
             }
 
@@ -632,7 +652,7 @@ namespace Hecton8.Gameplay
                 _scheduledHits = new NativeArray<RaycastHit>(
                     MaxEntities * RaysPerEntity,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[512] — contextual IK raycast results — owner: ContextualPhysicalIkRuntime
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[512] - contextual IK raycast results - owner: ContextualPhysicalIkRuntime
                 NativeMemorySentinel.RegisterNativeArray(_scheduledHits, NativeMemoryOwner, nameof(_scheduledHits), NativeMemoryLifetime);
             }
 
@@ -641,7 +661,7 @@ namespace Hecton8.Gameplay
                 _frontTargetFrames = new NativeArray<ContextualPhysicalIkTargetFrame>(
                     MaxEntities,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTargetFrame>[128] — read-side IK target frames — owner: ContextualPhysicalIkRuntime
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTargetFrame>[128] - read-side IK target frames - owner: ContextualPhysicalIkRuntime
                 NativeMemorySentinel.RegisterNativeArray(_frontTargetFrames, NativeMemoryOwner, nameof(_frontTargetFrames), NativeMemoryLifetime);
             }
 
@@ -650,7 +670,7 @@ namespace Hecton8.Gameplay
                 _backTargetFrames = new NativeArray<ContextualPhysicalIkTargetFrame>(
                     MaxEntities,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTargetFrame>[128] — write-side IK target frames — owner: ContextualPhysicalIkRuntime
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTargetFrame>[128] - write-side IK target frames - owner: ContextualPhysicalIkRuntime
                 NativeMemorySentinel.RegisterNativeArray(_backTargetFrames, NativeMemoryOwner, nameof(_backTargetFrames), NativeMemoryLifetime);
             }
         }

@@ -7,6 +7,7 @@ using System.Threading;
 using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Profiling;
 
@@ -40,25 +41,25 @@ namespace Hecton8.Dev
         // COLD ALLOC: WaitCallback[1] — background CSV flush entry point — owner: BotController
         private static readonly WaitCallback _csvFlushCallback = ExecuteCsvFlush;
 
-        [StructLayout(LayoutKind.Sequential, Size = ExpeditionSampleStrideBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = ExpeditionSampleStrideBytes)]
         private struct ExpeditionSample
         {
-            public float ElapsedSeconds;
-            public float EstimatedDistanceMeters;
-            public float Fps;
-            public float MonoUsedMb;
-            public float TotalAllocatedMb;
-            public float TotalReservedMb;
-            public float GraphicsDriverAllocatedMb;
-            public int GcThreadAllocatedBytes;
-            public int GcGen0;
-            public int GcGen1;
-            public int GcGen2;
-            public int LodChangesFrame;
-            public float PositionX;
-            public float PositionY;
-            public float PositionZ;
-            public int Reserved;
+            [FieldOffset(0)] public float ElapsedSeconds;
+            [FieldOffset(4)] public float EstimatedDistanceMeters;
+            [FieldOffset(8)] public float Fps;
+            [FieldOffset(12)] public float MonoUsedMb;
+            [FieldOffset(16)] public float TotalAllocatedMb;
+            [FieldOffset(20)] public float TotalReservedMb;
+            [FieldOffset(24)] public float GraphicsDriverAllocatedMb;
+            [FieldOffset(28)] public int GcThreadAllocatedBytes;
+            [FieldOffset(32)] public int GcGen0;
+            [FieldOffset(36)] public int GcGen1;
+            [FieldOffset(40)] public int GcGen2;
+            [FieldOffset(44)] public int LodChangesFrame;
+            [FieldOffset(48)] public float PositionX;
+            [FieldOffset(52)] public float PositionY;
+            [FieldOffset(56)] public float PositionZ;
+            [FieldOffset(60)] public int Reserved;
         }
 
         [SerializeField, Tooltip("Starts the QA expedition automatically when the component registers.")]
@@ -284,7 +285,7 @@ namespace Hecton8.Dev
 
         private void RecordCsvSample(float sampleSeconds, int sampleFrames)
         {
-            if (_playerBody == null || _sampleCount >= _samples.Length)
+            if (_playerBody == null || _sampleCount >= MaxExpeditionSamples)
                 return;
 
             Vector3 position = _playerBody.position;
@@ -377,19 +378,19 @@ namespace Hecton8.Dev
                 return;
             }
 
-            if (absY >= absX)
+            bool useForwardAxis = absY >= absX;
+            if (useForwardAxis)
             {
                 Vector3 forward = DominantAxisOrFallback(cachedTransform.forward, Vector3.forward);
                 _driveDirection = _wasdCommand.y >= 0f ? forward : -forward;
-                _driveScale = absY;
             }
             else
             {
                 Vector3 right = DominantAxisOrFallback(cachedTransform.right, Vector3.right);
                 _driveDirection = _wasdCommand.x >= 0f ? right : -right;
-                _driveScale = absX;
             }
 
+            _driveScale = math.select(absX, absY, useForwardAxis);
             _hasDriveCommand = true;
         }
 
@@ -485,10 +486,9 @@ namespace Hecton8.Dev
 
         private static float DistanceSq(Vector3 a, Vector3 b)
         {
-            float deltaX = a.x - b.x;
-            float deltaY = a.y - b.y;
-            float deltaZ = a.z - b.z;
-            return (deltaX * deltaX) + (deltaY * deltaY) + (deltaZ * deltaZ);
+            return math.distancesq(
+                new float3(a.x, a.y, a.z),
+                new float3(b.x, b.y, b.z));
         }
 
         private float ResolveTargetDistanceMetersSq()

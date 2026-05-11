@@ -2118,7 +2118,7 @@ namespace Hecton8.VFX
                 float maxShakeDisplacementSq = maxShakeDisplacement * maxShakeDisplacement;
                 float offsetSq = math.lengthsq(offset);
                 if (offsetSq > maxShakeDisplacementSq)
-                    offset = math.normalizesafe(offset, float3.zero) * maxShakeDisplacement;
+                    offset *= math.rcp(math.max(CinematicMath.ApproximateLength(offset), 0.0001f)) * maxShakeDisplacement;
 
                 Results[0] = new ShakeJobResult { Offset = offset };
             }

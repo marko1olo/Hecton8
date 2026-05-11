@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -122,17 +122,17 @@ namespace Hecton8.Caves
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
 
-        // COLD ALLOC: Dictionary<ChunkAddress, ChunkDeltaState>[InitialChunkRegistryCapacity] â€” persistent voxel delta chunk registry â€” owner: VoxelDeltaProcessor
+        // COLD ALLOC: Dictionary<ChunkAddress, ChunkDeltaState>[InitialChunkRegistryCapacity] - persistent voxel delta chunk registry - owner: VoxelDeltaProcessor
         private readonly Dictionary<ChunkAddress, ChunkDeltaState> _chunkStates = new Dictionary<ChunkAddress, ChunkDeltaState>(InitialChunkRegistryCapacity);
         // COLD ALLOC: Dictionary<ChunkAddress, CompactedChunkState>[InitialChunkRegistryCapacity] - compacted replacement SDF chunk registry - owner: VoxelDeltaProcessor
         private readonly Dictionary<ChunkAddress, CompactedChunkState> _compactedChunkStates = new Dictionary<ChunkAddress, CompactedChunkState>(InitialChunkRegistryCapacity);
         // COLD ALLOC: Dictionary<ChunkAddress, int>[InitialChunkRegistryCapacity] - dirty chunk write version registry for compaction conflict checks - owner: VoxelDeltaProcessor
         private readonly Dictionary<ChunkAddress, int> _chunkWriteVersions = new Dictionary<ChunkAddress, int>(InitialChunkRegistryCapacity);
-        // COLD ALLOC: List<HectonVoxelVolume>[InitialVolumeRegistryCapacity] â€” live voxel volume registry for load-time rebuild dispatch â€” owner: VoxelDeltaProcessor
+        // COLD ALLOC: List<HectonVoxelVolume>[InitialVolumeRegistryCapacity] - live voxel volume registry for load-time rebuild dispatch - owner: VoxelDeltaProcessor
         private readonly List<HectonVoxelVolume> _registeredVolumes = new List<HectonVoxelVolume>(InitialVolumeRegistryCapacity);
-        // COLD ALLOC: List<HectonVoxelVolume>[InitialVolumeRegistryCapacity] â€” pending volume rebuild queue after loaded delta application â€” owner: VoxelDeltaProcessor
+        // COLD ALLOC: List<HectonVoxelVolume>[InitialVolumeRegistryCapacity] - pending volume rebuild queue after loaded delta application - owner: VoxelDeltaProcessor
         private readonly List<HectonVoxelVolume> _pendingRebuildVolumes = new List<HectonVoxelVolume>(InitialVolumeRegistryCapacity);
-        // COLD ALLOC: PendingCarveRequest[InitialPendingCarveCapacity] â€” deferred plasma-cut carve staging buffer â€” owner: VoxelDeltaProcessor
+        // COLD ALLOC: PendingCarveRequest[InitialPendingCarveCapacity] - deferred plasma-cut carve staging buffer - owner: VoxelDeltaProcessor
         private readonly PendingCarveRequest[] _pendingCarves = new PendingCarveRequest[InitialPendingCarveCapacity];
         // COLD ALLOC: ThermalMeltRuntime[16] - bounded lava crater-expansion requests - owner: VoxelDeltaProcessor
         private readonly ThermalMeltRuntime[] _thermalMeltEvents = new ThermalMeltRuntime[MaxActiveThermalMeltEvents];
@@ -149,7 +149,7 @@ namespace Hecton8.Caves
         private int3 _scheduledCarveTouchedMinCell;
         private int3 _scheduledCarveTouchedMaxCell;
         private bool _scheduledCarveTouchedAnyCell;
-        // COLD ALLOC: NativeArray<CarveCellWrite>[capacity] â€” staged Burst carve results before managed delta-chunk commit â€” owner: VoxelDeltaProcessor
+        // COLD ALLOC: NativeArray<CarveCellWrite>[capacity] - staged Burst carve results before managed delta-chunk commit - owner: VoxelDeltaProcessor
         private NativeArray<CarveCellWrite> _scheduledCarveWrites;
         // COLD ALLOC: PendingCompactionRequest[16] - bounded background dirty-chunk compaction queue - owner: VoxelDeltaProcessor
         private readonly PendingCompactionRequest[] _pendingCompactions = new PendingCompactionRequest[InitialPendingCompactionCapacity];
@@ -1581,7 +1581,7 @@ namespace Hecton8.Caves
             }
         }
 
-        private void TrySchedulePendingCarve()
+        private unsafe void TrySchedulePendingCarve()
         {
             if (IsScheduledCarveBusy || _pendingCarveCount <= 0)
                 return;
@@ -1664,7 +1664,8 @@ namespace Hecton8.Caves
                     MaterialId = request.MaterialId,
                     DeltaFlags = request.DeltaFlags,
                     Shape = shape,
-                    Writes = _scheduledCarveWrites
+                    Writes = _scheduledCarveWrites,
+                    WritesPtr = (CarveCellWrite*)NativeArrayUnsafeUtility.GetUnsafePtr(_scheduledCarveWrites)
                 };
 
                 using (_carveScheduleProfilerMarker.Auto())
@@ -2016,7 +2017,7 @@ namespace Hecton8.Caves
             return candidateDirtyCount < requestDirtyCount;
         }
 
-        private void TrySchedulePendingCompaction()
+        private unsafe void TrySchedulePendingCompaction()
         {
             if (_scheduledCompactionRunning || _pendingCompactionCount <= 0)
                 return;
@@ -2130,7 +2131,10 @@ namespace Hecton8.Caves
                     VoxelSize = math.max(request.Address.VoxelSize, MinRuntimeVoxelSize),
                     GridDimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z),
                     VolumeOrigin = new float3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z),
-                    CellSize = new float3(voxelCellSize.x, voxelCellSize.y, voxelCellSize.z),
+                    InvCellSize = new float3(
+                        1f / math.max(voxelCellSize.x, 0.0001f),
+                        1f / math.max(voxelCellSize.y, 0.0001f),
+                        1f / math.max(voxelCellSize.z, 0.0001f)),
                     SdfRange = sdfRange,
                     EncodedSdf = sourceSdf,
                     DirtyMaskWords = dirtyMaskCopy,
@@ -2139,7 +2143,15 @@ namespace Hecton8.Caves
                     DeltaCellFlags = flagsCopy,
                     OutputSdfValueBits = outputSdf,
                     OutputMaterialIds = outputMaterials,
-                    OutputCellFlags = outputFlags
+                    OutputCellFlags = outputFlags,
+                    EncodedSdfPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(sourceSdf),
+                    DirtyMaskWordsPtr = (uint*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(dirtyMaskCopy),
+                    DeltaSdfValueBitsPtr = (ushort*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(deltaSdfCopy),
+                    DeltaMaterialIdsPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(materialCopy),
+                    DeltaCellFlagsPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(flagsCopy),
+                    OutputSdfValueBitsPtr = (ushort*)NativeArrayUnsafeUtility.GetUnsafePtr(outputSdf),
+                    OutputMaterialIdsPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(outputMaterials),
+                    OutputCellFlagsPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(outputFlags)
                 };
                 JobHandle compactionHandle = job.Schedule(ChunkCellCount, 64);
                 _scheduledCompactionHandle = new VoxelDeltaUniformRunDetectJob
@@ -2581,7 +2593,7 @@ namespace Hecton8.Caves
             if (_scheduledCarveWrites.IsCreated)
                 DisposeTrackedNativeArray(ref _scheduledCarveWrites);
 
-            // COLD ALLOC: NativeArray<CarveCellWrite>[requiredCount] â€” staged carve-write buffer for deferred voxel SDF mutation commits â€” owner: VoxelDeltaProcessor
+            // COLD ALLOC: NativeArray<CarveCellWrite>[requiredCount] - staged carve-write buffer for deferred voxel SDF mutation commits - owner: VoxelDeltaProcessor
             _scheduledCarveWrites = new NativeArray<CarveCellWrite>(requiredCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterTrackedNativeArray(_scheduledCarveWrites, nameof(_scheduledCarveWrites));
         }
@@ -2901,7 +2913,7 @@ namespace Hecton8.Caves
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct CarveSdfJob : IJobParallelFor
+        private unsafe struct CarveSdfJob : IJobParallelFor
         {
             public int3 MinCell;
             public int3 Span;
@@ -2916,9 +2928,11 @@ namespace Hecton8.Caves
             public byte DeltaFlags;
             public byte Shape;
             [NativeDisableParallelForRestriction] public NativeArray<CarveCellWrite> Writes;
+            [NativeDisableUnsafePtrRestriction] public CarveCellWrite* WritesPtr;
 
             public void Execute(int index)
             {
+                CarveCellWrite* write = WritesPtr + index;
                 int spanXY = Span.x * Span.y;
                 int localZ = index / spanXY;
                 int remainder = index - (localZ * spanXY);
@@ -2933,7 +2947,7 @@ namespace Hecton8.Caves
                         : SphereSdfApprox(cellCenter - Center, Radius);
                 if (signedDistance >= BlendRadius)
                 {
-                    Writes[index] = default;
+                    *write = default;
                     return;
                 }
 
@@ -2941,7 +2955,7 @@ namespace Hecton8.Caves
                     ? math.clamp(-signedDistance, -8f, 8f)
                     : math.clamp(signedDistance, -8f, 8f);
 
-                Writes[index] = new CarveCellWrite
+                *write = new CarveCellWrite
                 {
                     AbsoluteCell = absoluteCell,
                     SdfValueBits = (ushort)math.f32tof16(densityValue),
@@ -2974,10 +2988,7 @@ namespace Hecton8.Caves
             private static float AxisWeightedLengthApprox(float3 value)
             {
                 float3 axis = math.abs(value);
-                float maxAxis = math.cmax(axis);
-                float minAxis = math.cmin(axis);
-                float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
-                return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
+                return math.cmax(axis) + (axis.x + axis.y + axis.z) * 0.33f;
             }
         }
 
@@ -3077,13 +3088,13 @@ namespace Hecton8.Caves
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct VoxelDeltaCompactionJob : IJobParallelFor
+        private unsafe struct VoxelDeltaCompactionJob : IJobParallelFor
         {
             public int3 ChunkCoord;
             public float VoxelSize;
             public int3 GridDimensions;
             public float3 VolumeOrigin;
-            public float3 CellSize;
+            public float3 InvCellSize;
             public float SdfRange;
             [ReadOnly] public NativeArray<byte> EncodedSdf;
             [ReadOnly] public NativeArray<uint> DirtyMaskWords;
@@ -3093,6 +3104,14 @@ namespace Hecton8.Caves
             [WriteOnly] public NativeArray<ushort> OutputSdfValueBits;
             [WriteOnly] public NativeArray<byte> OutputMaterialIds;
             [WriteOnly] public NativeArray<byte> OutputCellFlags;
+            [NativeDisableUnsafePtrRestriction] public byte* EncodedSdfPtr;
+            [NativeDisableUnsafePtrRestriction] public uint* DirtyMaskWordsPtr;
+            [NativeDisableUnsafePtrRestriction] public ushort* DeltaSdfValueBitsPtr;
+            [NativeDisableUnsafePtrRestriction] public byte* DeltaMaterialIdsPtr;
+            [NativeDisableUnsafePtrRestriction] public byte* DeltaCellFlagsPtr;
+            [NativeDisableUnsafePtrRestriction] public ushort* OutputSdfValueBitsPtr;
+            [NativeDisableUnsafePtrRestriction] public byte* OutputMaterialIdsPtr;
+            [NativeDisableUnsafePtrRestriction] public byte* OutputCellFlagsPtr;
 
             public void Execute(int flatIndex)
             {
@@ -3101,18 +3120,18 @@ namespace Hecton8.Caves
                 float sampledDensity = SampleEncodedSdf(absolutePosition);
                 if (IsDirty(flatIndex))
                 {
-                    byte deltaFlags = DeltaCellFlags[flatIndex];
-                    float deltaDensity = DecodeHalfToFloat(DeltaSdfValueBits[flatIndex]);
+                    byte deltaFlags = *(DeltaCellFlagsPtr + flatIndex);
+                    float deltaDensity = DecodeHalfToFloat(*(DeltaSdfValueBitsPtr + flatIndex));
                     float bakedDensity = BakeDeltaIntoBaseDensity(sampledDensity, deltaDensity, deltaFlags);
-                    OutputSdfValueBits[flatIndex] = (ushort)math.f32tof16(math.clamp(bakedDensity, -8f, 8f));
-                    OutputMaterialIds[flatIndex] = DeltaMaterialIds[flatIndex];
-                    OutputCellFlags[flatIndex] = DeltaModeReplace;
+                    *(OutputSdfValueBitsPtr + flatIndex) = (ushort)math.f32tof16(math.clamp(bakedDensity, -8f, 8f));
+                    *(OutputMaterialIdsPtr + flatIndex) = *(DeltaMaterialIdsPtr + flatIndex);
+                    *(OutputCellFlagsPtr + flatIndex) = DeltaModeReplace;
                     return;
                 }
 
-                OutputSdfValueBits[flatIndex] = (ushort)math.f32tof16(math.clamp(sampledDensity, -8f, 8f));
-                OutputMaterialIds[flatIndex] = DefaultMaterialId;
-                OutputCellFlags[flatIndex] = DeltaModeReplace;
+                *(OutputSdfValueBitsPtr + flatIndex) = (ushort)math.f32tof16(math.clamp(sampledDensity, -8f, 8f));
+                *(OutputMaterialIdsPtr + flatIndex) = DefaultMaterialId;
+                *(OutputCellFlagsPtr + flatIndex) = DeltaModeReplace;
             }
 
             private static float DecodeHalfToFloat(ushort bits)
@@ -3125,7 +3144,7 @@ namespace Hecton8.Caves
             {
                 int wordIndex = flatIndex >> 5;
                 uint bitMask = 1u << (flatIndex & 31);
-                return (DirtyMaskWords[wordIndex] & bitMask) != 0u;
+                return (*(DirtyMaskWordsPtr + wordIndex) & bitMask) != 0u;
             }
 
             private int3 AbsoluteCellFromFlatIndex(int flatIndex)
@@ -3138,9 +3157,9 @@ namespace Hecton8.Caves
 
             private float SampleEncodedSdf(float3 absolutePosition)
             {
-                float sampleX = math.clamp((absolutePosition.x - VolumeOrigin.x) / math.max(CellSize.x, 0.0001f), 0f, GridDimensions.x - 1.001f);
-                float sampleY = math.clamp((absolutePosition.y - VolumeOrigin.y) / math.max(CellSize.y, 0.0001f), 0f, GridDimensions.y - 1.001f);
-                float sampleZ = math.clamp((absolutePosition.z - VolumeOrigin.z) / math.max(CellSize.z, 0.0001f), 0f, GridDimensions.z - 1.001f);
+                float sampleX = math.clamp((absolutePosition.x - VolumeOrigin.x) * InvCellSize.x, 0f, GridDimensions.x - 1.001f);
+                float sampleY = math.clamp((absolutePosition.y - VolumeOrigin.y) * InvCellSize.y, 0f, GridDimensions.y - 1.001f);
+                float sampleZ = math.clamp((absolutePosition.z - VolumeOrigin.z) * InvCellSize.z, 0f, GridDimensions.z - 1.001f);
 
                 int x = (int)math.clamp(sampleX + 0.5f, 0f, GridDimensions.x - 1f);
                 int y = (int)math.clamp(sampleY + 0.5f, 0f, GridDimensions.y - 1f);
@@ -3155,7 +3174,7 @@ namespace Hecton8.Caves
 
             private float Decode(int index)
             {
-                return ((EncodedSdf[index] * (1f / 255f)) * 2f - 1f) * SdfRange;
+                return ((*(EncodedSdfPtr + index) * (1f / 255f)) * 2f - 1f) * SdfRange;
             }
         }
 

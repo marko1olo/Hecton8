@@ -145,13 +145,6 @@ namespace Hecton8.World
         private const float ThermalSpatialEventLifetimeSeconds = 1.25f;
         private const float DryAirDensityKilogramsPerCubicMeter = 1.225f;
         private const float DryAirHeatCapacityJoulesPerKilogramKelvin = 1005f;
-        private static readonly int _EmpPulseLayerMask =
-            HectonLayerMasks.PlayerLayerMask |
-            HectonLayerMasks.VehicleLayerMask |
-            HectonLayerMasks.DefaultLayerMask |
-            HectonLayerMasks.FirstPersonToolsLayerMask |
-            HectonLayerMasks.TriggerZoneLayerMask;
-
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
         [Tooltip("Compute shader that simulates the hydrothermal ash plume.")]
@@ -551,7 +544,6 @@ namespace Hecton8.World
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private HectonPlayerMovement _playerMovement;
         private AbyssalFluidDecalManager _fluidDecalManager;
-        private readonly RaycastHit[] _empHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] - bounded EMP nest pulse cast hits - owner: AbyssalThermalManager
         private bool[] _cableReleasedStates;
         private float[] _cableReleaseProgress;
         private float[] _cableElasticReleaseTimers;
@@ -1183,7 +1175,7 @@ namespace Hecton8.World
         {
             float angle = HashToFloat01((uint)_instanceId, (uint)(ventIndex + 1), 0x7D5C2A11u) * Mathf.PI * 2f;
             float radius = Mathf.Max(0.5f, vent.RadiusWS * 0.88f);
-            Vector3 radial = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+            Vector3 radial = new Vector3(CinematicMath.FastCos(angle), 0f, CinematicMath.FastSin(angle)) * radius;
             return vent.PositionWS + radial + Vector3.up * Mathf.Max(0.15f, vent.HeightWS * 0.08f);
         }
 
@@ -1725,7 +1717,7 @@ namespace Hecton8.World
             float angle01 = HashToFloat01(hashIndex, (uint)(ventIndex + 1), 0xB5297A4Du);
             float angle = angle01 * Mathf.PI * 2f;
             float radialDistance = LerpClamped(anchorRadius * 0.15f, anchorRadius, radial01);
-            Vector3 ventOffset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radialDistance;
+            Vector3 ventOffset = new Vector3(CinematicMath.FastCos(angle), 0f, CinematicMath.FastSin(angle)) * radialDistance;
             Vector3 ventPosition = anchorPosition + ventOffset;
             float radius = LerpClamped(ventRadiusMin, ventRadiusMax, HashToFloat01(hashIndex, (uint)(ventIndex + 5), 0x1B56C4E9u));
             float updraft = ventUpdraftVelocity * LerpClamped(0.85f, 1.2f, anchorWeight);
@@ -2153,7 +2145,7 @@ namespace Hecton8.World
                 float angle = HashToFloat01((uint)i, (uint)ventIndex, 0xE7037ED1u) * Mathf.PI * 2f;
                 float radiusT = HashToFloat01((uint)i, (uint)ventIndex, 0x8EBC6AF1u);
                 float radialDistance = vent.RadiusWS * 0.45f * radiusT;
-                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radialDistance;
+                Vector3 offset = new Vector3(CinematicMath.FastCos(angle), 0f, CinematicMath.FastSin(angle)) * radialDistance;
                 Vector3 position = vent.PositionWS + offset + Vector3.up * LerpClamped(0.2f, 1.6f, HashToFloat01((uint)i, (uint)ventIndex, 0x589965CDu));
                 Vector3 velocity = Vector3.up * (vent.UpdraftVelocity * LerpClamped(0.65f, 1.05f, seed));
                 float size = LerpClamped(smokeParticleSizeMin, smokeParticleSizeMax, HashToFloat01((uint)i, (uint)ventIndex, 0x1D8E4E27u));
@@ -2435,31 +2427,9 @@ namespace Hecton8.World
             if (castDistance <= 0.0001f)
                 castDistance = empPulseRange;
 
-            Vector3 castDirection = ResolveSafeDirection(toPlayer, Vector3.forward);
-            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
-                nest.PositionWS,
-                empSphereCastRadius,
-                castDirection,
-                _empHits,
-                castDistance,
-                _EmpPulseLayerMask,
-                QueryTriggerInteraction.Collide);
-
-            bool hitPlayerTransport = false;
-            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
-            {
-                Collider hitCollider = _empHits[hitIndex].collider;
-                if (hitCollider == null)
-                    continue;
-
-                if (hitCollider.transform == playerTransform ||
-                    hitCollider.transform.IsChildOf(playerTransform) ||
-                    hitCollider.GetComponentInParent<MantaScooter>() == mantaScooter)
-                {
-                    hitPlayerTransport = true;
-                    break;
-                }
-            }
+            float3 toPlayer3 = new float3(toPlayer.x, toPlayer.y, toPlayer.z);
+            bool hitPlayerTransport = math.all(math.isfinite(toPlayer3)) &&
+                                      math.lengthsq(toPlayer3) <= castDistance * castDistance;
 
             if (hitPlayerTransport)
             {
@@ -2642,7 +2612,7 @@ namespace Hecton8.World
 
                 _cableReleaseProgress[i] = cutProgress01;
                 float empPulse01 = empCharge01 > 0f
-                    ? 0.5f + 0.5f * Mathf.Sin((_simulationTime * empPulseSpeed) + i * 0.6180339f)
+                    ? CinematicMath.FastTriangleWave01(((_simulationTime * empPulseSpeed) + i * 0.6180339f) * 0.15915494309f)
                     : 0f;
                 cableRig.SetEmpCharge(empCharge01, empPulse01);
 

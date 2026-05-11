@@ -46,7 +46,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
-        public const int CurrentVersion = 61; // v61: Encrypted audio-log partial recovery persists hash/bitmask pairs.
+        public const int CurrentVersion = 62; // v62: packed audio-log discovery flags and AUP narrative trigger mask.
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -100,8 +100,14 @@ namespace Hecton8.SaveSystem
         /// <summary>Maksimalnyy dostignutyy narrative depth-tier.</summary>
         public int narrativeDepthTier;
 
+        /// <summary>One-bit-per-trigger state for AUP narrative radius events. v62 LORE.</summary>
+        public ulong narrativeAupTriggeredMask;
+
         /// <summary>Spisok ID obnaruzhennyh audiodnevnikov. v4.0 LORE</summary>
         public List<string> audioLogDiscoveredIds = new List<string>();
+
+        /// <summary>Packed 1024-bit audio-log discovery mask. Exactly 128 bytes of flag payload. v62 LORE.</summary>
+        public long[] audioLogDiscoveryBitWords;
 
         /// <summary>Number of partial encrypted audio-log recovery records persisted in the fixed hash arrays. v61 LORE.</summary>
         public int audioLogEncryptedFragmentCount;
@@ -240,6 +246,8 @@ namespace Hecton8.SaveSystem
                 narrativeDiscoveryIds = new string[MaxNarrativeDiscoveries],
                 narrativeDepthTier = 0,
                 audioLogDiscoveredIds = new List<string>(),
+                // COLD ALLOC: long[AudioLogDiscoveryBitMask.WordCount] — packed audio-log discovery persistence — owner: SaveData
+                audioLogDiscoveryBitWords = new long[AudioLogDiscoveryBitMask.WordCount],
                 audioLogEncryptedFragmentCount = 0,
                 audioLogEncryptedFragmentHashes = new uint[MaxEncryptedAudioLogFragments],
                 audioLogEncryptedFragmentBits = new uint[MaxEncryptedAudioLogFragments],
@@ -250,6 +258,7 @@ namespace Hecton8.SaveSystem
                 atlasSignalDetected = false,
                 atlasSignalPulseTimer = 0f,
                 atlasSignalRevealStage = 0,
+                narrativeAupTriggeredMask = 0UL,
                 suitInstalledUpgradeIds = new List<string>(),
                 suitUnlockedBlueprintIds = new List<string>(),
                 suitBrokenUpgradeIds = new List<string>(),

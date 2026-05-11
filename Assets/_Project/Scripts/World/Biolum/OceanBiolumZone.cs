@@ -5,6 +5,7 @@
 
 using UnityEngine;
 using Unity.Mathematics;
+using Hecton8.Core;
 
 namespace Hecton8.Biolum
 {
@@ -154,9 +155,9 @@ namespace Hecton8.Biolum
                 }
 
                 Vector3 offset = new Vector3(
-                    Mathf.Cos(angle * Mathf.Deg2Rad) * distance,
+                    CinematicMath.FastCos(angle * Mathf.Deg2Rad) * distance,
                     height,
-                    Mathf.Sin(angle * Mathf.Deg2Rad) * distance
+                    CinematicMath.FastSin(angle * Mathf.Deg2Rad) * distance
                 );
 
                 _lightPositions[i] = offset;

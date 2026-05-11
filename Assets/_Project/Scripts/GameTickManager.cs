@@ -111,17 +111,16 @@ namespace Hecton8.Core
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Slow Tick ─────────────────────────────────")]
-        [Tooltip("Interval mezhdu SlowTick vyzovami (sekundy). " +
-                 "0.5 = 2 raza v sekundu.")]
+        [Header("Slow Tick")]
+        [Tooltip("Interval between SlowTick calls in seconds. 0.5 means 2 calls per second.")]
         [SerializeField] private float slowTickInterval = 0.5f;
 
-        [Header("── Diagnostics (Read Only) ───────────────────")]
+        [Header("Diagnostics (Read Only)")]
         [SerializeField] private int _debugTickCount;
         [SerializeField] private int _debugFixedCount;
         [SerializeField] private int _debugSlowCount;
 
-        [Header("── Slow Tick Profiling ───────────────────────")]
+        [Header("Slow Tick Profiling")]
         [SerializeField] private bool enableSlowTickProfiling = true;
         [SerializeField] private float slowTickSpikeThresholdMs = 8f;
         [SerializeField] private float slowTickReportCooldownSeconds = 1.5f;

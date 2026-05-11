@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Unity.Burst;
@@ -105,6 +106,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential, Pack = 16)]
     internal unsafe struct DroneCognitionJob : IJobParallelFor
     {
         private const int UnclaimedTask = 0;
@@ -530,9 +532,9 @@ namespace Hecton8.Construction
                 float angle = index * FormationGoldenAngle;
                 float ringJitter = ((index % 7) - 3) * 0.35f;
                 return anchor + new float3(
-                    math.cos(angle) * EscortRadiusMeters,
+                    CinematicMath.FastCos(angle) * EscortRadiusMeters,
                     ringJitter,
-                    math.sin(angle) * EscortRadiusMeters);
+                    CinematicMath.FastSin(angle) * EscortRadiusMeters);
             }
 
             int x = (index % SearchGridSide) - (SearchGridSide >> 1);
@@ -563,7 +565,7 @@ namespace Hecton8.Construction
             quaternion targetRotation = ResolveSafeRotation(drone.HomeRotation);
             drone.DockingElapsed = elapsed;
             drone.Position = math.lerp(drone.DockStartPosition, drone.HomePosition, t);
-            drone.Rotation = math.slerp(ResolveSafeRotation(drone.DockStartRotation), targetRotation, t);
+            drone.Rotation = CinematicMath.FastNlerp(ResolveSafeRotation(drone.DockStartRotation), targetRotation, t);
             drone.Velocity = float3.zero;
 
             if (t < 1f)
@@ -745,7 +747,7 @@ namespace Hecton8.Construction
         private static quaternion ResolveSafeRotation(quaternion rotation)
         {
             return math.lengthsq(rotation.value) > MinimumVectorLengthSq
-                ? math.normalize(rotation)
+                ? CinematicMath.NormalizeQuaternionOrIdentity(rotation)
                 : quaternion.identity;
         }
 

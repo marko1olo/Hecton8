@@ -1,18 +1,18 @@
 // ============================================================================
-// HECTON-8 — DeployableBeacon.cs
+// HECTON-8 - DeployableBeacon.cs
 // Deployable tracking buoy for marking locations.
 //
 // ARCHITECTURE:
-//   • IInteractable for player interaction
-//   • IFixedTickable for buoyancy physics (no Update)
-//   • MaterialPropertyBlock for beacon light (zero GC)
-//   • UnityEvent for HUD integration
+//   - IInteractable for player interaction
+//   - IFixedTickable for buoyancy physics (no Update)
+//   - MaterialPropertyBlock for beacon light (zero GC)
+//   - UnityEvent for HUD integration
 //
 // FEATURES:
-//   • Floats to surface or hovers at fixed depth
-//   • Customizable label and color
-//   • Rename functionality via UnityEvent
-//   • HUD-readable properties
+//   - Floats to surface or hovers at fixed depth
+//   - Customizable label and color
+//   - Rename functionality via UnityEvent
+//   - HUD-readable properties
 // ============================================================================
 
 using Hecton.Localization;
@@ -36,11 +36,15 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton/Gameplay/Deployable Beacon")]
     public sealed class DeployableBeacon : MonoBehaviour, IInteractable, ITickable, IUpdatable, IFixedTickable, ILocalizationLanguageChangedListener
     {
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        private const ulong BeaconIdFnvOffset = 1469598103934665603UL;
+        private const ulong BeaconIdFnvPrime = 1099511628211UL;
+        private const int BeaconIdHexLength = 8;
 
-        [Header("── Beacon Settings ────────────────────────────")]
+        // ==========================================================
+        //  INSPECTOR
+        // ==========================================================
+
+        [Header("Beacon Settings")]
         [Tooltip("Display label for this beacon.")]
         [SerializeField] private string beaconLabel = "Beacon";
 
@@ -53,7 +57,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Unique ID for this beacon.")]
         [SerializeField] private string beaconId;
 
-        [Header("── Buoyancy ──────────────────────────────────")]
+        [Header("Buoyancy")]
         [Tooltip("Target depth (-Y). 0 = surface, negative = underwater.")]
         [SerializeField, Range(-500f, 0f)] private float targetDepth = 0f;
 
@@ -66,7 +70,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Lock position when at target depth.")]
         [SerializeField] private bool lockAtTarget = false;
 
-        [Header("── Status Light ───────────────────────────────")]
+        [Header("Status Light")]
         [Tooltip("Renderer for the beacon light.")]
         [SerializeField] private Renderer beaconLight;
 
@@ -79,14 +83,14 @@ namespace Hecton8.Gameplay
         [Tooltip("Light intensity.")]
         [SerializeField, Range(0.5f, 5f)] private float lightIntensity = 2f;
 
-        [Header("── Audio ──────────────────────────────────────")]
+        [Header("Audio")]
         [Tooltip("Sound played when beacon is deployed.")]
         [SerializeField] private AudioClip deploySound;
 
         [Tooltip("Sound played when beacon is interacted with.")]
         [SerializeField] private AudioClip interactSound;
 
-        [Header("── Events ─────────────────────────────────────")]
+        [Header("Events")]
         [Tooltip("Fired when player requests to rename the beacon.")]
         [SerializeField] private UnityEvent<DeployableBeacon> OnRenameRequested;
 
@@ -99,9 +103,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Fired when beacon reaches target depth.")]
         [SerializeField] private UnityEvent OnBeaconStabilized;
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         private Rigidbody _rb;
         private float _blinkTimer;
@@ -122,9 +126,9 @@ namespace Hecton8.Gameplay
         private const string DefaultInteractText = "Configure Beacon";
         private string _cachedInteractText;
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  PUBLIC PROPERTIES
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         /// <summary>Display label for this beacon.</summary>
         public string BeaconLabel
@@ -170,28 +174,56 @@ namespace Hecton8.Gameplay
         /// <summary>True if beacon is active and registered.</summary>
         public bool IsActive => enabled && gameObject.activeInHierarchy;
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         private void Awake()
         {
             _cachedTransform = transform;
             _emissionPropertyId = Shader.PropertyToID(string.IsNullOrEmpty(emissionProperty) ? "_EmissionColor" : emissionProperty);
-            _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: DeployableBeacon
+            _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - per-renderer props - owner: DeployableBeacon
 
             TryGetComponent(out _rb);
 
-            // Generate unique ID if not set
+            // Generate deterministic ID if not set.
             if (string.IsNullOrEmpty(beaconId))
             {
-                beaconId = System.Guid.NewGuid().ToString().Substring(0, 8);
+                beaconId = CreateDeterministicBeaconId();
             }
 
             if (beaconLight == null)
                 beaconLight = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
 
             RefreshCachedAup();
+        }
+
+        private string CreateDeterministicBeaconId()
+        {
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform.position);
+            ulong hash = BeaconIdFnvOffset;
+            hash = MixBeaconIdHash(hash, unchecked((ulong)aup.GridX));
+            hash = MixBeaconIdHash(hash, unchecked((ulong)aup.GridY));
+            hash = MixBeaconIdHash(hash, unchecked((ulong)aup.GridZ));
+            hash = MixBeaconIdHash(hash, unchecked((uint)(int)math.round(aup.LocalX * 100f)));
+            hash = MixBeaconIdHash(hash, unchecked((uint)(int)math.round(aup.LocalY * 100f)));
+            hash = MixBeaconIdHash(hash, unchecked((uint)(int)math.round(aup.LocalZ * 100f)));
+            hash = MixBeaconIdHash(hash, EntityId.ToULong(gameObject.GetEntityId()));
+
+            return string.Create(BeaconIdHexLength, hash, static (buffer, value) =>
+            {
+                for (int i = 0; i < BeaconIdHexLength; i++)
+                {
+                    int nibble = (int)((value >> ((BeaconIdHexLength - 1 - i) * 4)) & 0xFUL);
+                    buffer[i] = (char)(nibble < 10 ? '0' + nibble : 'A' + (nibble - 10));
+                }
+            });
+        }
+
+        private static ulong MixBeaconIdHash(ulong hash, ulong value)
+        {
+            hash ^= value;
+            return hash * BeaconIdFnvPrime;
         }
 
         private void OnEnable()
@@ -225,9 +257,9 @@ namespace Hecton8.Gameplay
             TryUnregisterTickSystems();
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  ITickable — BLINKING LOGIC
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
+        //  ITickable - BLINKING LOGIC
+        // ==========================================================
 
         /// <summary>
         /// ITickable implementation. Handles beacon light blinking.
@@ -248,9 +280,9 @@ namespace Hecton8.Gameplay
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  IFixedTickable — BUOYANCY PHYSICS
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
+        //  IFixedTickable - BUOYANCY PHYSICS
+        // ==========================================================
 
         /// <summary>
         /// IFixedTickable implementation. Handles buoyancy physics.
@@ -300,9 +332,9 @@ namespace Hecton8.Gameplay
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  IInteractable
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         /// <summary>
         /// Called when player's raycast first hits this object.
@@ -343,9 +375,9 @@ namespace Hecton8.Gameplay
             return _cachedInteractText;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         /// <summary>
         /// Sets the beacon label.
@@ -419,9 +451,9 @@ namespace Hecton8.Gameplay
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  VISUALS
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         /// <summary>
         /// Updates the beacon light using MaterialPropertyBlock.
@@ -441,9 +473,9 @@ namespace Hecton8.Gameplay
             beaconLight.SetPropertyBlock(_mpb);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  EDITOR
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         private void TryRegisterTickSystems()
         {

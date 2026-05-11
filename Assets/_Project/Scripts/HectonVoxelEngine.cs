@@ -25,9 +25,9 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 using UnityEditor;
 #endif
 
-// ════════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 //  REGION: MARCHING CUBES LOOKUP TABLES (unchanged from v3.2)
-// ════════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 #region Marching Cubes Tables
 
 public static class MCTables
@@ -2034,9 +2034,9 @@ public unsafe struct VoxelWeldJob : IJob
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 //  JOB 3: Cheap SDF normals and cinematic curvature masks
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelNormalJob : IJobParallelFor
 {
@@ -2059,18 +2059,19 @@ public struct VoxelNormalJob : IJobParallelFor
         int x = (int)math.clamp(sample.x + 0.5f, 0f, ptsX - 1f);
         int y = (int)math.clamp(sample.y + 0.5f, 0f, ptsY - 1f);
         int z = (int)math.clamp(sample.z + 0.5f, 0f, ptsZ - 1f);
-        float3 gradient = SampleGridNodeGradient(densityField, x, y, z);
-        float3 normal = FastNormalizeOrUp(-gradient);
+        float4 gradientAndAo = SampleGridNodeGradientAndAo(densityField, x, y, z);
+        float3 normal = FastNormalizeOrUp(-gradientAndAo.xyz);
         normals[idx] = normal;
 
         float horizontalMask = math.saturate((math.abs(normal.x) + math.abs(normal.z)) * 0.5f);
         float ceilingMask = math.saturate(-normal.y);
-        float curvature01 = math.saturate(0.45f + horizontalMask * 0.18f - ceilingMask * 0.22f);
+        float neighborCavityMask = 1f - gradientAndAo.w;
+        float curvature01 = math.saturate(0.45f + horizontalMask * 0.18f - ceilingMask * 0.22f + neighborCavityMask * 0.12f);
         curvatureValues[idx] = curvature01;
 
         float cavityMask = math.saturate((0.5f - curvature01) * 2f);
         float overheadMask = math.saturate(0.5f - normal.y * 0.5f);
-        ambientOcclusionValues[idx] = math.saturate(1f - cavityMask * 0.42f - overheadMask * 0.18f);
+        ambientOcclusionValues[idx] = math.saturate(gradientAndAo.w - cavityMask * 0.24f - overheadMask * 0.12f);
     }
 
     static float3 FastNormalizeOrUp(float3 value)
@@ -2083,19 +2084,41 @@ public struct VoxelNormalJob : IJobParallelFor
         float maxAxis = math.cmax(axis);
         float minAxis = math.cmin(axis);
         float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
-        float invLen = 1f / math.max(maxAxis + midAxis * 0.375f + minAxis * 0.25f, 0.0001f);
+        float invLen = math.rcp(math.max(maxAxis + midAxis * 0.375f + minAxis * 0.25f, 0.0001f));
         return value * invLen;
     }
 
-    float3 SampleGridNodeGradient(NativeArray<sbyte> field, int x, int y, int z)
+    float4 SampleGridNodeGradientAndAo(NativeArray<sbyte> field, int x, int y, int z)
     {
         int centerIndex = x + y * densityStrideY + z * densityStrideZ;
         float center = ReadDensity(field, centerIndex);
+        int xmIndex = centerIndex - math.select(0, 1, x > 0);
+        int xpIndex = centerIndex + math.select(0, 1, x < ptsX - 1);
+        int ymIndex = centerIndex - math.select(0, densityStrideY, y > 0);
+        int ypIndex = centerIndex + math.select(0, densityStrideY, y < ptsY - 1);
+        int zmIndex = centerIndex - math.select(0, densityStrideZ, z > 0);
+        int zpIndex = centerIndex + math.select(0, densityStrideZ, z < ptsZ - 1);
 
-        return new float3(
-            x < ptsX - 1 ? ReadDensity(field, centerIndex + 1) - center : center - ReadDensity(field, centerIndex - math.select(0, 1, x > 0)),
-            y < ptsY - 1 ? ReadDensity(field, centerIndex + densityStrideY) - center : center - ReadDensity(field, centerIndex - math.select(0, densityStrideY, y > 0)),
-            z < ptsZ - 1 ? ReadDensity(field, centerIndex + densityStrideZ) - center : center - ReadDensity(field, centerIndex - math.select(0, densityStrideZ, z > 0)));
+        float xm = ReadDensity(field, xmIndex);
+        float xp = ReadDensity(field, xpIndex);
+        float ym = ReadDensity(field, ymIndex);
+        float yp = ReadDensity(field, ypIndex);
+        float zm = ReadDensity(field, zmIndex);
+        float zp = ReadDensity(field, zpIndex);
+        float solidNeighborCount =
+            math.select(0f, 1f, xm > 0f) +
+            math.select(0f, 1f, xp > 0f) +
+            math.select(0f, 1f, ym > 0f) +
+            math.select(0f, 1f, yp > 0f) +
+            math.select(0f, 1f, zm > 0f) +
+            math.select(0f, 1f, zp > 0f);
+        float neighborAo = math.saturate(1f - solidNeighborCount * (1f / 9f));
+
+        return new float4(
+            x < ptsX - 1 ? xp - center : center - xm,
+            y < ptsY - 1 ? yp - center : center - ym,
+            z < ptsZ - 1 ? zp - center : center - zm,
+            neighborAo);
     }
 
     float ReadDensity(NativeArray<sbyte> field, int index)
@@ -3185,12 +3208,11 @@ public class HectonVoxelEngine : MonoBehaviour
     struct VoxelMeshBakeJob : IJob
     {
         public EntityId MeshId;
-        public byte Convex;
 
         public void Execute()
         {
             if (EntityId.ToULong(MeshId) != 0ul)
-                UnityEngine.Physics.BakeMesh(MeshId, Convex != 0);
+                UnityEngine.Physics.BakeMesh(MeshId, false);
         }
     }
 
@@ -6824,8 +6846,7 @@ public class HectonVoxelEngine : MonoBehaviour
                     {
                         JobHandle fallbackBakeHandle = new VoxelMeshBakeJob
                         {
-                            MeshId = mesh.GetEntityId(),
-                            Convex = 0
+                            MeshId = mesh.GetEntityId()
                         }.Schedule();
 
                         if (!await AwaitForPhysicsBakeCompletionOrDeferAsync(
@@ -6917,8 +6938,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
             JobHandle bakeHandle = new VoxelMeshBakeJob
             {
-                MeshId = chunkMesh.GetEntityId(),
-                Convex = 0
+                MeshId = chunkMesh.GetEntityId()
             }.Schedule();
 
             if (!await AwaitForPhysicsBakeCompletionOrDeferAsync(
@@ -7308,8 +7328,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
                 JobHandle bakeHandle = new VoxelMeshBakeJob
                 {
-                    MeshId = chunkMesh.GetEntityId(),
-                    Convex = 0
+                    MeshId = chunkMesh.GetEntityId()
                 }.Schedule();
 
                 if (!await AwaitForPhysicsBakeCompletionOrDeferAsync(

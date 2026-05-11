@@ -1,38 +1,38 @@
 // ============================================================================
-// HECTON-8 — HectonFluidEngine.cs v2.1 (OPTIMIZATION PASS)
-// Vysokoproizvoditelnaya sistema plavuchesti i soprotivleniya sredy.
+// HECTON-8 - HectonFluidEngine.cs v2.1 (OPTIMIZATION PASS)
+// High-performance buoyancy and hydrodynamic resistance system.
 //
 // v2.1 CHANGES (OPTIMIZATION):
 //   [OPT] Dense BuoyancyObject list duplicate check
-//     • Register() keeps one managed registry instead of mirrored hash buckets
-//     • Unregister() removes from the dense list directly
-//     • Impact: less managed memory and better cache locality
+//     - Register() keeps one managed registry instead of mirrored hash buckets
+//     - Unregister() removes from the dense list directly
+//     - Impact: less managed memory and better cache locality
 //
 //   [OPT] Cached LOD distance squares (_cachedNearDistSq, etc.)
-//     • Izbegaet perescheta nearDistanceSq^2 kazhdyy FixedTick
-//     • Vychislyaetsya odin raz v Awake, obnovlyaetsya v OnValidate
-//     • Impact: -5-10% vychisleniya v GatherData() pri 200+ obektah
+//     - Avoids recalculating nearDistanceSq values every FixedTick
+//     - Computed once in Awake and refreshed in OnValidate
+//     - Impact: -5-10% GatherData() work at 200+ objects
 //
-//   [OPT] TryResolveObserver() → TryResolveObserverOnce() v Awake
-//     • Ubran scene-search observer-a iz FixedTick
-//     • ONE-TIME initsializatsiya vmesto proverki kazhdyy kadr
-//     • Impact: odna O(N) operatsiya pri zagruzke, ne kazhdyy freym
+//   [OPT] TryResolveObserver() -> TryResolveObserverOnce() in Awake
+//     - Removes scene-search observer checks from FixedTick
+//     - One-time initialization instead of per-frame checks
+//     - Impact: one O(N) operation at load, not every frame
 //
 //   [OPT] GatherData() removes null objects from the dense registry
-//     • Swap-remove keeps the parallel managed lists compact
-//     • Guarantees registry consistency
+//     - Swap-remove keeps the parallel managed lists compact
+//     - Guarantees registry consistency
 //
 // v2.0 (JOB + BURST BASELINE):
-//   • Job System + Burst compiler dlya parallelnogo vychisleniya
-//   • NativeArrays s Capacity Doubling (net per-frame reallokatsiy)
-//   • LOD sistema (4 urovnya distantsiy)
-//   • Dry zones (isInAir flag)
-//   • CurrentVolume integratsiya
+//   - Job System + Burst compiler for parallel computation
+//   - NativeArrays with capacity doubling and no per-frame reallocation
+//   - LOD system with four distance tiers
+//   - Dry zones through isInAir flags
+//   - CurrentVolume integration
 //
 // PRODUCTION-READY GUARANTEES:
-//   ✅ Zero GC v hot paths (FixedTick, GatherData)
-//   ✅ Burst-compiled Job dlya SIMD parallelism
-//   ✅ Supports 100+ objects bez frizov na MX350 (byudzhet 0.3ms)
+//   - Zero GC in hot paths (FixedTick, GatherData)
+//   - Burst-compiled job for SIMD parallelism
+//   - Supports 100+ objects without MX350 stalls, budget 0.3ms
 // ============================================================================
 
 using System.Collections.Generic;
@@ -156,8 +156,9 @@ namespace Hecton8.Physics
         private const int GpuThreadGroupShift = 6;
         private const float AbyssalBiolumeSurgeHoldSeconds = 4f;
         private const float GiantWakeDirectionEpsilonSq = 0.0001f;
-        private const string NonFiniteBuoyancyForceLog = "[HectonFluidEngine] Non-finite buoyancy force output detected. Zeroing packet.";
-        private const string NonFiniteBuoyancyTorqueLog = "[HectonFluidEngine] Non-finite buoyancy torque output detected. Zeroing packet.";
+        private const uint HectonFluidEngineContextHash = 0x48464645u;
+        private const uint NonFiniteBuoyancyForceHash = 0x4E464246u;
+        private const uint NonFiniteBuoyancyTorqueHash = 0x4E464254u;
         private const string NativeMemoryOwner = nameof(HectonFluidEngine);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
@@ -1503,7 +1504,7 @@ namespace Hecton8.Physics
                 float3 torque = _resultTorques[i];
 
                 // Propuskaem nulevye sily (obekt nad vodoy ili v suhoy zone)
-                if (TrySanitizePhysicsVector(force, NonFiniteBuoyancyForceLog, out Vector3 sanitizedForce) &&
+                if (TrySanitizePhysicsVector(force, NonFiniteBuoyancyForceHash, out Vector3 sanitizedForce) &&
                     sanitizedForce.sqrMagnitude > 0.0001f)
                 {
                     PhysicsForceRouter.QueueAmbientForce(
@@ -1512,7 +1513,7 @@ namespace Hecton8.Physics
                         ForceMode.Force);
                 }
 
-                if (TrySanitizePhysicsVector(torque, NonFiniteBuoyancyTorqueLog, out Vector3 sanitizedTorque) &&
+                if (TrySanitizePhysicsVector(torque, NonFiniteBuoyancyTorqueHash, out Vector3 sanitizedTorque) &&
                     sanitizedTorque.sqrMagnitude > 0.0001f)
                 {
                     PhysicsForceRouter.QueueAmbientTorque(
@@ -1966,23 +1967,19 @@ namespace Hecton8.Physics
         {
             float3 absValue = math.abs(value);
             float maxComponent = math.cmax(absValue);
-            if (maxComponent <= 0.000001f)
-                return fallback;
-
-            if (absValue.x >= absValue.y && absValue.x >= absValue.z)
-                return new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f);
-
-            if (absValue.y >= absValue.z)
-                return new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f);
-
-            return new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f));
+            float3 xAxis = new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f);
+            float3 yAxis = new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f);
+            float3 zAxis = new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f));
+            float3 yzAxis = math.select(zAxis, yAxis, absValue.y >= absValue.z);
+            float3 axis = math.select(yzAxis, xAxis, absValue.x >= absValue.y && absValue.x >= absValue.z);
+            return math.select(axis, fallback, maxComponent <= 0.000001f);
         }
 
-        private static bool TrySanitizePhysicsVector(float3 value, string errorMessage, out Vector3 sanitized)
+        private static bool TrySanitizePhysicsVector(float3 value, uint warningHash, out Vector3 sanitized)
         {
             if (math.any(math.isnan(value)) || math.any(math.isinf(value)) || !math.all(math.isfinite(value)))
             {
-                ReportNonFinitePhysicsVector(errorMessage);
+                ReportNonFinitePhysicsVector(warningHash);
                 sanitized = Vector3.zero;
                 return false;
             }
@@ -1993,10 +1990,9 @@ namespace Hecton8.Physics
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-        private static void ReportNonFinitePhysicsVector(string message)
+        private static void ReportNonFinitePhysicsVector(uint warningHash)
         {
-            NativeAllocationTrackerRuntimeBridge.ReportLeak(message);
-            Debug.LogError(message);
+            GlobalTelemetryBus.PublishPerformanceWarning(warningHash, HectonFluidEngineContextHash, 1f);
         }
 
         private static float ApproximateMagnitude(float3 value)
@@ -3133,16 +3129,12 @@ namespace Hecton8.Physics
         {
             float3 absValue = math.abs(value);
             float maxComponent = math.cmax(absValue);
-            if (maxComponent <= 0.000001f)
-                return fallback;
-
-            if (absValue.x >= absValue.y && absValue.x >= absValue.z)
-                return new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f);
-
-            if (absValue.y >= absValue.z)
-                return new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f);
-
-            return new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f));
+            float3 xAxis = new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f);
+            float3 yAxis = new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f);
+            float3 zAxis = new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f));
+            float3 yzAxis = math.select(zAxis, yAxis, absValue.y >= absValue.z);
+            float3 axis = math.select(yzAxis, xAxis, absValue.x >= absValue.y && absValue.x >= absValue.z);
+            return math.select(axis, fallback, maxComponent <= 0.000001f);
         }
     }
 
@@ -3221,12 +3213,10 @@ namespace Hecton8.Physics
         {
             float2 absValue = math.abs(value);
             float maxComponent = math.max(absValue.x, absValue.y);
-            if (maxComponent <= 0.000001f)
-                return fallback;
-
-            return absValue.x >= absValue.y
-                ? new float2(math.select(-1f, 1f, value.x >= 0f), 0f)
-                : new float2(0f, math.select(-1f, 1f, value.y >= 0f));
+            float2 xAxis = new float2(math.select(-1f, 1f, value.x >= 0f), 0f);
+            float2 yAxis = new float2(0f, math.select(-1f, 1f, value.y >= 0f));
+            float2 axis = math.select(yAxis, xAxis, absValue.x >= absValue.y);
+            return math.select(axis, fallback, maxComponent <= 0.000001f);
         }
     }
 
@@ -3425,16 +3415,12 @@ namespace Hecton8.Physics
         {
             float3 absValue = math.abs(value);
             float maxComponent = math.cmax(absValue);
-            if (maxComponent <= 0.000001f)
-                return fallback;
-
-            if (absValue.x >= absValue.y && absValue.x >= absValue.z)
-                return new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f);
-
-            if (absValue.y >= absValue.z)
-                return new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f);
-
-            return new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f));
+            float3 xAxis = new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f);
+            float3 yAxis = new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f);
+            float3 zAxis = new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f));
+            float3 yzAxis = math.select(zAxis, yAxis, absValue.y >= absValue.z);
+            float3 axis = math.select(yzAxis, xAxis, absValue.x >= absValue.y && absValue.x >= absValue.z);
+            return math.select(axis, fallback, maxComponent <= 0.000001f);
         }
     }
 

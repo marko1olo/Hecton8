@@ -783,10 +783,33 @@ namespace Hecton8.SaveSystem
             public ushort Reserved;
         }
 
-        private sealed class IndexedSectorGroup
+        [StructLayout(LayoutKind.Sequential, Pack = 8, Size = 32)]
+        private struct IndexedSectorGroup
         {
             public long SectorHash;
-            public List<PersistentWorldDeltaRecord> Records;
+            public int DirectorySlot;
+            public int StartIndex;
+            public int Count;
+            public int WriteCount;
+            public int Reserved0;
+            public int Reserved1;
+        }
+
+        private struct IndexedSectorGroupBuffer : IDisposable
+        {
+            public NativeList<IndexedSectorGroup> Groups;
+            public NativeList<PersistentWorldDeltaRecord> Records;
+
+            public int Count => Groups.IsCreated ? Groups.Length : 0;
+
+            public void Dispose()
+            {
+                if (Groups.IsCreated)
+                    Groups.Dispose();
+                if (Records.IsCreated)
+                    Records.Dispose();
+                this = default;
+            }
         }
 
         private readonly struct IndexedSectorCommitTarget
@@ -935,6 +958,14 @@ namespace Hecton8.SaveSystem
             public ushort Quantity;
             public ushort PackedAux;
             public uint PackedState;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 6)]
+        internal struct QuantizedAupLocalOffsetShort3
+        {
+            public short XMillimeters;
+            public short YMillimeters;
+            public short ZMillimeters;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -1137,6 +1168,53 @@ namespace Hecton8.SaveSystem
                 InventoryHash = unchecked((int)compactState.PackedState),
                 InstanceUid = compactState.InstanceUid
             };
+        }
+
+        internal static QuantizedAupLocalOffsetShort3 QuantizeAupLocalOffsetShort3(
+            in AbsoluteUniversePosition position,
+            int3 chunkId,
+            int chunkSizeMeters)
+        {
+            double safeChunkSize = math.max(1, chunkSizeMeters);
+            double halfChunkSize = safeChunkSize * 0.5d;
+            double3 absolute = position.ToAbsoluteDouble3();
+            double3 chunkCenter = new double3(
+                (chunkId.x * safeChunkSize) + halfChunkSize,
+                (chunkId.y * safeChunkSize) + halfChunkSize,
+                (chunkId.z * safeChunkSize) + halfChunkSize);
+            double3 relativeMeters = absolute - chunkCenter;
+
+            return new QuantizedAupLocalOffsetShort3
+            {
+                XMillimeters = QuantizeMetersToShortMillimeters(relativeMeters.x),
+                YMillimeters = QuantizeMetersToShortMillimeters(relativeMeters.y),
+                ZMillimeters = QuantizeMetersToShortMillimeters(relativeMeters.z)
+            };
+        }
+
+        internal static AbsoluteUniversePosition UnpackAupLocalOffsetShort3(
+            int3 chunkId,
+            int chunkSizeMeters,
+            in QuantizedAupLocalOffsetShort3 packedOffset)
+        {
+            double safeChunkSize = math.max(1, chunkSizeMeters);
+            double halfChunkSize = safeChunkSize * 0.5d;
+            double3 chunkCenter = new double3(
+                (chunkId.x * safeChunkSize) + halfChunkSize,
+                (chunkId.y * safeChunkSize) + halfChunkSize,
+                (chunkId.z * safeChunkSize) + halfChunkSize);
+            double3 relativeMeters = new double3(
+                packedOffset.XMillimeters,
+                packedOffset.YMillimeters,
+                packedOffset.ZMillimeters) * 0.001d;
+
+            return AbsoluteUniversePosition.FromAbsolutePosition(chunkCenter + relativeMeters);
+        }
+
+        private static short QuantizeMetersToShortMillimeters(double meters)
+        {
+            int millimeters = (int)math.round(meters * 1000d);
+            return (short)math.clamp(millimeters, short.MinValue, short.MaxValue);
         }
 
         private static int ResolveCompactQuantity(in SectorCompactEntityStateRecord16 compactState, uint typeMask)
@@ -1760,11 +1838,11 @@ namespace Hecton8.SaveSystem
             ulong metadataHash64 = Hash64(rawPtr, metadataRawLength);
             uint metadataChecksum = unchecked((uint)metadataHash64);
 
-            List<IndexedSectorGroup> sectorGroups = BuildIndexedSectorGroups(persistentWorldDeltas, chunkSizeMeters);
+            IndexedSectorGroupBuffer sectorGroups = BuildIndexedSectorGroups(persistentWorldDeltas, chunkSizeMeters);
             int sectorCount = sectorGroups.Count;
             if (sectorCount > IndexedSectorDirectorySlotCount)
             {
-                long overflowSectorHash = sectorGroups[IndexedSectorDirectorySlotCount].SectorHash;
+                long overflowSectorHash = sectorGroups.Groups[IndexedSectorDirectorySlotCount].SectorHash;
                 ReportIndexedSectorDirectoryCapacityExceeded(overflowSectorHash, sectorCount);
                 sectorCount = IndexedSectorDirectorySlotCount;
             }
@@ -1785,36 +1863,37 @@ namespace Hecton8.SaveSystem
                     out uint metadataBlockFlags,
                     out error))
             {
+                sectorGroups.Dispose();
                 return false;
             }
 
             anyTokenSubstitution |= (metadataBlockFlags & FlagTokenSubstitution) != 0;
 
-            SectorEntry[] sectorEntries = new SectorEntry[IndexedSectorDirectorySlotCount];
+            using NativeArray<SectorEntry> sectorEntries = new NativeArray<SectorEntry>(
+                IndexedSectorDirectorySlotCount,
+                Allocator.Temp,
+                NativeArrayOptions.ClearMemory);
             int totalEntityCount = CountIndexedSectorRecords(sectorGroups, sectorCount);
             NativeParallelHashMap<int3, ushort> persistentWorldChunkLookup = default;
             NativeList<int3> persistentWorldChunkTable = default;
             NativeParallelHashMap<ulong, ushort> persistentWorldItemHashLookup = default;
             NativeList<ulong> persistentWorldItemHashTable = default;
-            NativeArray<PersistentWorldDeltaRecord> sectorRecordBuffer = default;
 
             try
             {
                 for (int sectorIndex = 0; sectorIndex < sectorCount; sectorIndex++)
                 {
-                    IndexedSectorGroup group = sectorGroups[sectorIndex];
-                    int recordCount = group.Records != null ? group.Records.Count : 0;
+                    IndexedSectorGroup group = sectorGroups.Groups[sectorIndex];
+                    int recordCount = group.Count;
                     if (recordCount <= 0)
                     {
                         continue;
                     }
 
-                    sectorRecordBuffer = new NativeArray<PersistentWorldDeltaRecord>(recordCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                    for (int i = 0; i < recordCount; i++)
-                        sectorRecordBuffer[i] = group.Records[i];
-
                     if (!TryBuildPersistentWorldSectionTables(
-                            sectorRecordBuffer,
+                            sectorGroups.Records,
+                            group.StartIndex,
+                            recordCount,
                             out persistentWorldChunkLookup,
                             out persistentWorldChunkTable,
                             out persistentWorldItemHashLookup,
@@ -1828,7 +1907,9 @@ namespace Hecton8.SaveSystem
                     UnsafeUtility.MemClear(rawPtr, sectorRawLength);
                     WritePersistentWorldSection(
                         rawPtr,
-                        sectorRecordBuffer,
+                        sectorGroups.Records,
+                        group.StartIndex,
+                        recordCount,
                         persistentWorldChunkLookup,
                         persistentWorldChunkTable,
                         persistentWorldItemHashLookup,
@@ -1850,7 +1931,7 @@ namespace Hecton8.SaveSystem
                     }
 
                     anyTokenSubstitution |= (sectorBlockFlags & FlagTokenSubstitution) != 0;
-                    if (!TryAssignIndexedSectorEntry(sectorEntries, group.SectorHash, new SectorEntry
+                    if (!TryAssignIndexedSectorEntryAtKnownSlot(sectorEntries, group.DirectorySlot, group.SectorHash, new SectorEntry
                     {
                         SectorHash = group.SectorHash,
                         ByteOffset = sectorByteOffset,
@@ -1870,14 +1951,11 @@ namespace Hecton8.SaveSystem
                         persistentWorldChunkTable.Dispose();
                     if (persistentWorldChunkLookup.IsCreated)
                         persistentWorldChunkLookup.Dispose();
-                    if (sectorRecordBuffer.IsCreated)
-                        sectorRecordBuffer.Dispose();
 
                     persistentWorldItemHashTable = default;
                     persistentWorldItemHashLookup = default;
                     persistentWorldChunkTable = default;
                     persistentWorldChunkLookup = default;
-                    sectorRecordBuffer = default;
                 }
             }
             finally
@@ -1890,8 +1968,7 @@ namespace Hecton8.SaveSystem
                     persistentWorldChunkTable.Dispose();
                 if (persistentWorldChunkLookup.IsCreated)
                     persistentWorldChunkLookup.Dispose();
-                if (sectorRecordBuffer.IsCreated)
-                    sectorRecordBuffer.Dispose();
+                sectorGroups.Dispose();
             }
 
             IndexedSectorDirectoryHeader directoryHeader = new IndexedSectorDirectoryHeader
@@ -1906,7 +1983,8 @@ namespace Hecton8.SaveSystem
             int directoryCursor = CurrentHeaderSize + IndexedSectorDirectoryHeaderSize;
             for (int i = 0; i < sectorEntries.Length; i++)
             {
-                UnsafeUtility.CopyStructureToPtr(ref sectorEntries[i], filePtr + directoryCursor);
+                SectorEntry entry = sectorEntries[i];
+                UnsafeUtility.CopyStructureToPtr(ref entry, filePtr + directoryCursor);
                 directoryCursor += UnsafeUtility.SizeOf<SectorEntry>();
             }
 
@@ -2258,6 +2336,37 @@ namespace Hecton8.SaveSystem
             return false;
         }
 
+        private static bool TryAssignIndexedSectorEntryAtKnownSlot(
+            NativeArray<SectorEntry> sectorEntries,
+            int knownSlot,
+            long sectorHash,
+            in SectorEntry entry,
+            out string error)
+        {
+            error = string.Empty;
+            if (!sectorEntries.IsCreated || sectorEntries.Length != IndexedSectorDirectorySlotCount)
+            {
+                error = "Indexed sector native directory buffer is invalid.";
+                return false;
+            }
+
+            if ((uint)knownSlot >= IndexedSectorDirectorySlotCount)
+            {
+                error = "Indexed sector known directory slot is invalid.";
+                return false;
+            }
+
+            SectorEntry existingEntry = sectorEntries[knownSlot];
+            if (!IsIndexedSectorEntryPopulated(in existingEntry) || existingEntry.SectorHash == sectorHash)
+            {
+                sectorEntries[knownSlot] = entry;
+                return true;
+            }
+
+            error = "Indexed sector known slot collision while assigning sector.";
+            return false;
+        }
+
         private static bool TryFindIndexedSectorEntryIndex(SectorEntry[] sectorEntries, long sectorHash, out int slotIndex)
         {
             slotIndex = -1;
@@ -2370,18 +2479,17 @@ namespace Hecton8.SaveSystem
                    length <= totalFileSize - offset;
         }
 
-        private static int CountIndexedSectorRecords(List<IndexedSectorGroup> sectorGroups, int sectorCount)
+        private static int CountIndexedSectorRecords(in IndexedSectorGroupBuffer sectorGroups, int sectorCount)
         {
-            if (sectorGroups == null || sectorCount <= 0)
+            if (!sectorGroups.Groups.IsCreated || sectorCount <= 0)
                 return 0;
 
             int safeCount = math.min(sectorCount, sectorGroups.Count);
             int total = 0;
             for (int i = 0; i < safeCount; i++)
             {
-                IndexedSectorGroup group = sectorGroups[i];
-                if (group.Records != null)
-                    total = checked(total + group.Records.Count);
+                IndexedSectorGroup group = sectorGroups.Groups[i];
+                total = checked(total + group.Count);
             }
 
             return total;
@@ -2819,71 +2927,92 @@ namespace Hecton8.SaveSystem
                 }
             }
 
-            List<PersistentWorldDeltaRecord> aggregatedWorldDeltas = new List<PersistentWorldDeltaRecord>(256);
-            if (sectorEntries != null)
+            NativeList<PersistentWorldDeltaRecord> aggregatedWorldDeltas = new NativeList<PersistentWorldDeltaRecord>(256, Allocator.Temp);
+            try
             {
-                for (int i = 0; i < sectorEntries.Length; i++)
+                if (sectorEntries != null)
                 {
-                    SectorEntry entry = sectorEntries[i];
-                    if (entry.CompressedSize <= 0 || entry.DecompressedSize <= 0)
-                        continue;
-
-                    if (!IsPersistentWorldPagedSectorWithinLoadWindow(entry.SectorHash, in prefix.PlayerPosition))
-                        continue;
-
-                    using NativeArray<byte> sectorRaw = new NativeArray<byte>(entry.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                    if (!TryReadIndexedCompressedBlock(ref mapping, entry.ByteOffset, entry.CompressedSize, entry.DecompressedSize, sectorRaw, out _, out error))
+                    for (int i = 0; i < sectorEntries.Length; i++)
                     {
-                        string sectorError = error;
-                        if (TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out string backupError))
+                        SectorEntry entry = sectorEntries[i];
+                        if (entry.CompressedSize <= 0 || entry.DecompressedSize <= 0)
+                            continue;
+
+                        if (!IsPersistentWorldPagedSectorWithinLoadWindow(entry.SectorHash, in prefix.PlayerPosition))
+                            continue;
+
+                        using NativeArray<byte> sectorRaw = new NativeArray<byte>(entry.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                        if (!TryReadIndexedCompressedBlock(ref mapping, entry.ByteOffset, entry.CompressedSize, entry.DecompressedSize, sectorRaw, out _, out error))
                         {
-                            indexedBackupRecoveryUsed = true;
+                            string sectorError = error;
+                            if (TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out string backupError))
+                            {
+                                indexedBackupRecoveryUsed = true;
+                                error = string.Empty;
+                                continue;
+                            }
+
+                            ReportIndexedSectorQuarantine(entry.SectorHash, sectorError, backupError);
                             error = string.Empty;
                             continue;
                         }
 
-                        ReportIndexedSectorQuarantine(entry.SectorHash, sectorError, backupError);
-                        error = string.Empty;
-                        continue;
-                    }
-
-                    byte* sectorRawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sectorRaw);
-                    if (!TryVerifyIndexedSectorPayloadChecksum(in entry, sectorRawPtr, entry.DecompressedSize, out error))
-                    {
-                        string sectorError = error;
-                        if (TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out string backupError))
+                        byte* sectorRawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sectorRaw);
+                        if (!TryVerifyIndexedSectorPayloadChecksum(in entry, sectorRawPtr, entry.DecompressedSize, out error))
                         {
-                            indexedBackupRecoveryUsed = true;
+                            string sectorError = error;
+                            if (TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out string backupError))
+                            {
+                                indexedBackupRecoveryUsed = true;
+                                error = string.Empty;
+                                continue;
+                            }
+
+                            ReportIndexedSectorQuarantine(entry.SectorHash, sectorError, backupError);
                             error = string.Empty;
                             continue;
                         }
 
-                        ReportIndexedSectorQuarantine(entry.SectorHash, sectorError, backupError);
-                        error = string.Empty;
-                        continue;
-                    }
-
-                    if (!TryReadPersistentWorldSectionFromBuffer(sectorRawPtr, entry.DecompressedSize, out PersistentWorldDeltaRecord[] sectorRecords, out error))
-                    {
-                        string sectorError = error;
-                        if (TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out string backupError))
+                        if (!TryReadPersistentWorldSectionFromBuffer(sectorRawPtr, entry.DecompressedSize, out PersistentWorldDeltaRecord[] sectorRecords, out error))
                         {
-                            indexedBackupRecoveryUsed = true;
+                            string sectorError = error;
+                            if (TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out string backupError))
+                            {
+                                indexedBackupRecoveryUsed = true;
+                                error = string.Empty;
+                                continue;
+                            }
+
+                            ReportIndexedSectorQuarantine(entry.SectorHash, sectorError, backupError);
                             error = string.Empty;
                             continue;
                         }
 
-                        ReportIndexedSectorQuarantine(entry.SectorHash, sectorError, backupError);
-                        error = string.Empty;
-                        continue;
-                    }
+                        if (sectorRecords == null || sectorRecords.Length <= 0)
+                            continue;
 
-                    if (sectorRecords != null && sectorRecords.Length > 0)
-                        aggregatedWorldDeltas.AddRange(sectorRecords);
+                        for (int recordIndex = 0; recordIndex < sectorRecords.Length; recordIndex++)
+                            aggregatedWorldDeltas.Add(sectorRecords[recordIndex]);
+                    }
+                }
+
+                if (aggregatedWorldDeltas.Length > 0)
+                {
+                    persistentWorldDeltas = new PersistentWorldDeltaRecord[aggregatedWorldDeltas.Length];
+                    for (int i = 0; i < persistentWorldDeltas.Length; i++)
+                        persistentWorldDeltas[i] = aggregatedWorldDeltas[i];
+                }
+                else
+                {
+                    persistentWorldDeltas = Array.Empty<PersistentWorldDeltaRecord>();
                 }
             }
+            finally
+            {
+                if (aggregatedWorldDeltas.IsCreated)
+                    aggregatedWorldDeltas.Dispose();
+            }
 
-            persistentWorldDeltas = aggregatedWorldDeltas.Count > 0 ? aggregatedWorldDeltas.ToArray() : Array.Empty<PersistentWorldDeltaRecord>();
             rawPayloadLength = metadataRawLength;
             metadata = new SaveMetadata
             {
@@ -2935,6 +3064,54 @@ namespace Hecton8.SaveSystem
                         continue;
 
                     results.Add(new IndexedSectorEntryInfo(entry.SectorHash, entry.ByteOffset, entry.CompressedSize, entry.DecompressedSize, entry.Checksum));
+                }
+
+                return true;
+            }
+            finally
+            {
+                AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
+            }
+        }
+
+        internal static bool TryReadIndexedPersistentWorldDirectory(
+            string absolutePath,
+            IndexedSectorEntryInfo[] results,
+            out int resultCount,
+            out int chunkSizeMeters,
+            out string error)
+        {
+            resultCount = 0;
+            chunkSizeMeters = DefaultIndexedPersistentWorldChunkSizeMeters;
+            error = string.Empty;
+            if (results == null || results.Length <= 0)
+            {
+                error = "Indexed sector result array is empty.";
+                return false;
+            }
+
+            if (!TryReadValidatedHeader(absolutePath, out AsyncWriteManager.ReadOnlyMapping mapping, out SaveFileHeader header, out _, out error))
+                return false;
+
+            try
+            {
+                if ((header.Flags & FlagIndexedSectorBlocks) == 0 || header.Version < IndexedBlockStorageVersion)
+                {
+                    error = "Save file is not an indexed sector container.";
+                    return false;
+                }
+
+                if (!TryReadIndexedDirectory(in header, ref mapping, out IndexedSectorDirectoryHeader directoryHeader, out SectorEntry[] sectorEntries, out error))
+                    return false;
+
+                chunkSizeMeters = directoryHeader.ChunkSizeMeters;
+                for (int i = 0; i < sectorEntries.Length && resultCount < results.Length; i++)
+                {
+                    SectorEntry entry = sectorEntries[i];
+                    if (!IsIndexedSectorEntryPopulated(in entry))
+                        continue;
+
+                    results[resultCount++] = new IndexedSectorEntryInfo(entry.SectorHash, entry.ByteOffset, entry.CompressedSize, entry.DecompressedSize, entry.Checksum);
                 }
 
                 return true;
@@ -3162,13 +3339,13 @@ namespace Hecton8.SaveSystem
         private static bool TryAppendIndexedPersistentWorldSectorFromBackup(
             string primaryPath,
             long desiredSectorHash,
-            List<PersistentWorldDeltaRecord> destination,
+            NativeList<PersistentWorldDeltaRecord> destination,
             out string error)
         {
             error = string.Empty;
-            if (destination == null)
+            if (!destination.IsCreated)
             {
-                error = "Indexed sector backup append destination is null.";
+                error = "Indexed sector backup append destination is not initialized.";
                 return false;
             }
 
@@ -4712,6 +4889,28 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        private static uint ComputeIndexedChecksumRoot(uint metadataChecksum, NativeArray<SectorEntry> sectorEntries)
+        {
+            unchecked
+            {
+                uint root = metadataChecksum == 0u ? 2166136261u : metadataChecksum;
+                if (!sectorEntries.IsCreated)
+                    return root;
+
+                for (int i = 0; i < sectorEntries.Length; i++)
+                {
+                    SectorEntry entry = sectorEntries[i];
+                    if (!IsIndexedSectorEntryPopulated(in entry))
+                        continue;
+
+                    uint leafHash = FoldIndexedSectorChecksum(in entry);
+                    root = (root ^ leafHash) * 16777619u;
+                }
+
+                return root == 0u ? 2166136261u : root;
+            }
+        }
+
         private static bool IsIndexedChecksumRootValid(uint metadataChecksum, SectorEntry[] sectorEntries, uint expectedChecksum)
         {
             uint checksumRoot = ComputeIndexedChecksumRoot(metadataChecksum, sectorEntries);
@@ -5122,39 +5321,144 @@ namespace Hecton8.SaveSystem
             return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
         }
 
-        private static List<IndexedSectorGroup> BuildIndexedSectorGroups(NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas, int chunkSizeMeters)
+        private static IndexedSectorGroupBuffer BuildIndexedSectorGroups(NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas, int chunkSizeMeters)
         {
-            int capacity = persistentWorldDeltas.IsCreated ? math.max(4, persistentWorldDeltas.Length / 16) : 4;
-            Dictionary<long, IndexedSectorGroup> groupsByHash = new Dictionary<long, IndexedSectorGroup>(capacity);
-            List<IndexedSectorGroup> groups = new List<IndexedSectorGroup>(capacity);
+            int sourceLength = persistentWorldDeltas.IsCreated ? persistentWorldDeltas.Length : 0;
+            int capacity = math.max(4, sourceLength);
+            IndexedSectorGroupBuffer buffer = new IndexedSectorGroupBuffer
+            {
+                Groups = new NativeList<IndexedSectorGroup>(math.min(IndexedSectorDirectorySlotCount, capacity), Allocator.Temp),
+                Records = new NativeList<PersistentWorldDeltaRecord>(capacity, Allocator.Temp)
+            };
 
-            if (!persistentWorldDeltas.IsCreated || persistentWorldDeltas.Length <= 0)
-                return groups;
+            if (sourceLength <= 0)
+                return buffer;
 
             int safeChunkSizeMeters = math.max(1, chunkSizeMeters);
-            for (int i = 0; i < persistentWorldDeltas.Length; i++)
-            {
-                PersistentWorldDeltaRecord record = persistentWorldDeltas[i];
-                if (!record.IsValid)
-                    continue;
+            NativeArray<short> slotToGroupIndex = new NativeArray<short>(
+                IndexedSectorDirectorySlotCount,
+                Allocator.Temp,
+                NativeArrayOptions.UninitializedMemory);
+            NativeArray<short> recordGroupIndex = new NativeArray<short>(
+                sourceLength,
+                Allocator.Temp,
+                NativeArrayOptions.UninitializedMemory);
 
-                long sectorHash = ComputePersistentWorldSectorHash(in record, safeChunkSizeMeters);
-                if (!groupsByHash.TryGetValue(sectorHash, out IndexedSectorGroup group))
+            try
+            {
+                for (int i = 0; i < slotToGroupIndex.Length; i++)
+                    slotToGroupIndex[i] = -1;
+
+                for (int i = 0; i < sourceLength; i++)
                 {
-                    group = new IndexedSectorGroup
+                    PersistentWorldDeltaRecord record = persistentWorldDeltas[i];
+                    if (!record.IsValid)
                     {
-                        SectorHash = sectorHash,
-                        Records = new List<PersistentWorldDeltaRecord>(8)
-                    };
-                    groupsByHash.Add(sectorHash, group);
-                    groups.Add(group);
+                        recordGroupIndex[i] = -1;
+                        continue;
+                    }
+
+                    long sectorHash = ComputePersistentWorldSectorHash(in record, safeChunkSizeMeters);
+                    int groupIndex = FindOrCreateIndexedSectorGroup(sectorHash, slotToGroupIndex, buffer.Groups);
+                    if (groupIndex < 0)
+                    {
+                        recordGroupIndex[i] = -1;
+                        ReportIndexedSectorDirectoryCapacityExceeded(sectorHash, IndexedSectorDirectorySlotCount + 1);
+                        continue;
+                    }
+
+                    recordGroupIndex[i] = (short)groupIndex;
+                    IndexedSectorGroup group = buffer.Groups[groupIndex];
+                    group.Count++;
+                    buffer.Groups[groupIndex] = group;
                 }
 
-                group.Records.Add(record);
+                int recordOffset = 0;
+                for (int i = 0; i < buffer.Groups.Length; i++)
+                {
+                    IndexedSectorGroup group = buffer.Groups[i];
+                    group.StartIndex = recordOffset;
+                    group.WriteCount = 0;
+                    buffer.Groups[i] = group;
+                    recordOffset = checked(recordOffset + group.Count);
+                }
+
+                buffer.Records.ResizeUninitialized(recordOffset);
+                for (int i = 0; i < sourceLength; i++)
+                {
+                    int groupIndex = recordGroupIndex[i];
+                    if (groupIndex < 0)
+                        continue;
+
+                    PersistentWorldDeltaRecord record = persistentWorldDeltas[i];
+                    IndexedSectorGroup group = buffer.Groups[groupIndex];
+                    int writeIndex = group.StartIndex + group.WriteCount;
+                    buffer.Records[writeIndex] = record;
+                    group.WriteCount++;
+                    buffer.Groups[groupIndex] = group;
+                }
+            }
+            finally
+            {
+                if (slotToGroupIndex.IsCreated)
+                    slotToGroupIndex.Dispose();
+                if (recordGroupIndex.IsCreated)
+                    recordGroupIndex.Dispose();
             }
 
-            groups.Sort(static (a, b) => a.SectorHash.CompareTo(b.SectorHash));
-            return groups;
+            return buffer;
+        }
+
+        private static int FindOrCreateIndexedSectorGroup(
+            long sectorHash,
+            NativeArray<short> slotToGroupIndex,
+            NativeList<IndexedSectorGroup> groups)
+        {
+            int startSlot = ResolveIndexedSectorDirectorySlot(sectorHash);
+            for (int probe = 0; probe < IndexedSectorDirectorySlotCount; probe++)
+            {
+                int slot = (startSlot + probe) & (IndexedSectorDirectorySlotCount - 1);
+                int groupIndex = slotToGroupIndex[slot];
+                if (groupIndex < 0)
+                {
+                    groupIndex = groups.Length;
+                    if (groupIndex > short.MaxValue)
+                        return -1;
+
+                    groups.Add(new IndexedSectorGroup
+                    {
+                        SectorHash = sectorHash,
+                        DirectorySlot = slot
+                    });
+                    slotToGroupIndex[slot] = (short)groupIndex;
+                    return groupIndex;
+                }
+
+                if (groups[groupIndex].SectorHash == sectorHash)
+                    return groupIndex;
+            }
+
+            return -1;
+        }
+
+        private static int FindIndexedSectorGroup(
+            long sectorHash,
+            NativeArray<short> slotToGroupIndex,
+            NativeList<IndexedSectorGroup> groups)
+        {
+            int startSlot = ResolveIndexedSectorDirectorySlot(sectorHash);
+            for (int probe = 0; probe < IndexedSectorDirectorySlotCount; probe++)
+            {
+                int slot = (startSlot + probe) & (IndexedSectorDirectorySlotCount - 1);
+                int groupIndex = slotToGroupIndex[slot];
+                if (groupIndex < 0)
+                    return -1;
+
+                if (groups[groupIndex].SectorHash == sectorHash)
+                    return groupIndex;
+            }
+
+            return -1;
         }
 
         internal static int Lz4BlockCompress(byte* source, int sourceLength, byte* destination, int destinationCapacity)
@@ -5792,6 +6096,77 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        private static bool TryBuildPersistentWorldSectionTables(
+            NativeList<PersistentWorldDeltaRecord> persistentWorldDeltas,
+            int startIndex,
+            int recordCount,
+            out NativeParallelHashMap<int3, ushort> chunkLookup,
+            out NativeList<int3> chunkTable,
+            out NativeParallelHashMap<ulong, ushort> itemHashLookup,
+            out NativeList<ulong> itemHashTable,
+            out string error)
+        {
+            chunkLookup = default;
+            chunkTable = default;
+            itemHashLookup = default;
+            itemHashTable = default;
+            error = string.Empty;
+
+            if (!persistentWorldDeltas.IsCreated ||
+                startIndex < 0 ||
+                recordCount < 0 ||
+                startIndex > persistentWorldDeltas.Length - recordCount)
+            {
+                error = "Persistent-world delta record range is invalid.";
+                return false;
+            }
+
+            int capacity = math.max(recordCount, 1);
+            chunkLookup = new NativeParallelHashMap<int3, ushort>(capacity, Allocator.Temp);
+            chunkTable = new NativeList<int3>(capacity, Allocator.Temp);
+            itemHashLookup = new NativeParallelHashMap<ulong, ushort>(capacity, Allocator.Temp);
+            itemHashTable = new NativeList<ulong>(capacity, Allocator.Temp);
+
+            int endIndex = startIndex + recordCount;
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
+                if (!deltaRecord.IsValid)
+                    continue;
+
+                if (!chunkLookup.ContainsKey(deltaRecord.ChunkId))
+                {
+                    if (chunkTable.Length >= ushort.MaxValue)
+                    {
+                        error = "Persistent-world delta chunk table exceeded 65535 unique chunks.";
+                        return false;
+                    }
+
+                    ushort chunkIndex = (ushort)chunkTable.Length;
+                    chunkLookup.Add(deltaRecord.ChunkId, chunkIndex);
+                    chunkTable.Add(deltaRecord.ChunkId);
+                }
+
+                if (deltaRecord.IsDeleted)
+                    continue;
+
+                if (!itemHashLookup.ContainsKey(deltaRecord.ItemPersistentIdHash))
+                {
+                    if (itemHashTable.Length >= ushort.MaxValue)
+                    {
+                        error = "Persistent-world delta item table exceeded 65535 unique item hashes.";
+                        return false;
+                    }
+
+                    ushort itemIndex = (ushort)itemHashTable.Length;
+                    itemHashLookup.Add(deltaRecord.ItemPersistentIdHash, itemIndex);
+                    itemHashTable.Add(deltaRecord.ItemPersistentIdHash);
+                }
+            }
+
+            return true;
+        }
+
         private static int ComputePersistentWorldSectionLength(int entityCount, int chunkCount, int itemHashCount)
         {
             return PersistentWorldSectionHeaderSize +
@@ -5853,6 +6228,99 @@ namespace Hecton8.SaveSystem
             }
 
             for (int i = 0; i < recordCount; i++)
+            {
+                PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
+                PersistentWorldSaveRecord16 saveRecord = default;
+                if (deltaRecord.IsDeleted &&
+                    chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort deletedChunkIndex))
+                {
+                    saveRecord = new PersistentWorldSaveRecord16
+                    {
+                        PackedLocalPosition = deltaRecord.PackedLocalPosition,
+                        InstanceUid = deltaRecord.InstanceUid,
+                        Quantity = 1,
+                        ItemFlags = deltaRecord.ItemFlags,
+                        Reserved = 0,
+                        ChunkIndex = deletedChunkIndex,
+                        ItemHashIndex = PersistentWorldDeletedItemHashIndex
+                    };
+                }
+                else if (deltaRecord.IsValid &&
+                         chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort chunkIndex) &&
+                         itemHashLookup.TryGetValue(deltaRecord.ItemPersistentIdHash, out ushort itemHashIndex))
+                {
+                    saveRecord = new PersistentWorldSaveRecord16
+                    {
+                        PackedLocalPosition = deltaRecord.PackedLocalPosition,
+                        InstanceUid = deltaRecord.InstanceUid,
+                        Quantity = (ushort)math.clamp(deltaRecord.Quantity, 1, ushort.MaxValue),
+                        ItemFlags = deltaRecord.ItemFlags,
+                        Reserved = 0,
+                        ChunkIndex = chunkIndex,
+                        ItemHashIndex = itemHashIndex
+                    };
+                }
+
+                UnsafeUtility.CopyStructureToPtr(ref saveRecord, AddByteOffset(destination, cursor));
+                cursor += UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>();
+            }
+        }
+
+        private static void WritePersistentWorldSection(
+            byte* destination,
+            NativeList<PersistentWorldDeltaRecord> persistentWorldDeltas,
+            int startIndex,
+            int recordCount,
+            NativeParallelHashMap<int3, ushort> chunkLookup,
+            NativeList<int3> chunkTable,
+            NativeParallelHashMap<ulong, ushort> itemHashLookup,
+            NativeList<ulong> itemHashTable)
+        {
+            int safeRecordCount = persistentWorldDeltas.IsCreated &&
+                                  startIndex >= 0 &&
+                                  recordCount >= 0 &&
+                                  startIndex <= persistentWorldDeltas.Length - recordCount
+                ? recordCount
+                : 0;
+            int sectionLength = ComputePersistentWorldSectionLength(safeRecordCount, chunkTable.Length, itemHashTable.Length);
+            PersistentWorldSectionHeader sectionHeader = new PersistentWorldSectionHeader
+            {
+                ChunkCount = (uint)chunkTable.Length,
+                ItemHashCount = (uint)itemHashTable.Length,
+                RecordCount = (uint)safeRecordCount
+            };
+
+            UnsafeUtility.CopyStructureToPtr(ref sectionHeader, destination);
+            int cursor = PersistentWorldSectionHeaderSize;
+
+            if (chunkTable.Length > 0)
+            {
+                void* chunkSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(chunkTable.AsArray());
+                int chunkBytes = chunkTable.Length * UnsafeUtility.SizeOf<int3>();
+                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, chunkSourcePtr, chunkBytes))
+                {
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
+                    return;
+                }
+
+                cursor += chunkBytes;
+            }
+
+            if (itemHashTable.Length > 0)
+            {
+                void* itemSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(itemHashTable.AsArray());
+                int itemBytes = itemHashTable.Length * UnsafeUtility.SizeOf<ulong>();
+                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, itemSourcePtr, itemBytes))
+                {
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
+                    return;
+                }
+
+                cursor += itemBytes;
+            }
+
+            int endIndex = startIndex + safeRecordCount;
+            for (int i = startIndex; i < endIndex; i++)
             {
                 PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
                 PersistentWorldSaveRecord16 saveRecord = default;

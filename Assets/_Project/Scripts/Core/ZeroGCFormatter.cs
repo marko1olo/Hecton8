@@ -42,6 +42,66 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryFormatFloat(float value, Span<char> destination, int precision, out int charsWritten)
+        {
+            charsWritten = 0;
+            if (destination.Length == 0)
+                return false;
+
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                destination[0] = '0';
+                charsWritten = 1;
+                return true;
+            }
+
+            int safePrecision = precision < 0 ? 0 : precision > 6 ? 6 : precision;
+            int scale = Pow10(safePrecision);
+            bool negative = value < 0f;
+            float absolute = negative ? -value : value;
+            int scaled = (int)((absolute * scale) + 0.5f);
+            int integerPart = scale > 1 ? scaled / scale : scaled;
+            int fractionPart = scale > 1 ? scaled - (integerPart * scale) : 0;
+
+            int cursor = 0;
+            if (negative)
+            {
+                if ((uint)cursor >= (uint)destination.Length)
+                    return false;
+
+                destination[cursor++] = '-';
+            }
+
+            if (!AppendPositiveIntDigits(integerPart, destination, ref cursor))
+                return false;
+
+            if (safePrecision <= 0)
+            {
+                charsWritten = cursor;
+                return true;
+            }
+
+            if ((uint)cursor >= (uint)destination.Length)
+                return false;
+
+            destination[cursor++] = '.';
+            int divisor = scale / 10;
+            for (int i = 0; i < safePrecision; i++)
+            {
+                if ((uint)cursor >= (uint)destination.Length)
+                    return false;
+
+                int digit = divisor > 0 ? fractionPart / divisor : 0;
+                destination[cursor++] = (char)('0' + digit);
+                fractionPart -= digit * divisor;
+                divisor /= 10;
+            }
+
+            charsWritten = cursor;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryWriteFloat(
             float value,
             ReadOnlySpan<char> format,
@@ -71,6 +131,58 @@ namespace Hecton8.Core
 
             source.CopyTo(destination.Slice(cursor));
             cursor += source.Length;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int Pow10(int power)
+        {
+            switch (power)
+            {
+                case 0:
+                    return 1;
+                case 1:
+                    return 10;
+                case 2:
+                    return 100;
+                case 3:
+                    return 1000;
+                case 4:
+                    return 10000;
+                case 5:
+                    return 100000;
+                default:
+                    return 1000000;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool AppendPositiveIntDigits(int value, Span<char> destination, ref int cursor)
+        {
+            if (value == 0)
+            {
+                if ((uint)cursor >= (uint)destination.Length)
+                    return false;
+
+                destination[cursor++] = '0';
+                return true;
+            }
+
+            int divisor = 1;
+            while (value / divisor >= 10)
+                divisor *= 10;
+
+            while (divisor > 0)
+            {
+                if ((uint)cursor >= (uint)destination.Length)
+                    return false;
+
+                int digit = value / divisor;
+                destination[cursor++] = (char)('0' + digit);
+                value -= digit * divisor;
+                divisor /= 10;
+            }
+
             return true;
         }
 

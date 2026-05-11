@@ -159,6 +159,12 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     uint baseHash = instanceIndex ^ (uint)_HectonScatterSeed;
     float2 jitter = Hash02(baseHash);
     float2 worldXZ = _HectonScatterFieldRect.xy + (float2(cellX, cellZ) + jitter) * _HectonScatterCellSize;
+
+    float2 planarCameraDelta = worldXZ - _HectonScatterCameraPosition.xz;
+    float planarDistanceSq = dot(planarCameraDelta, planarCameraDelta);
+    if (planarDistanceSq > _HectonScatterMaxDistanceSq)
+        return;
+
     float2 terrainUv = (worldXZ - float2(_HectonScatterTerrainPosition.x, _HectonScatterTerrainPosition.z)) *
         _HectonScatterTerrainSizeInvXZ;
 

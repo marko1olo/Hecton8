@@ -1136,6 +1136,13 @@ namespace Hecton8.SaveSystem
                 steps.Add("audioLog list created");
             }
 
+            if (!AudioLogDiscoveryBitMask.HasExpectedCapacity(data.audioLogDiscoveryBitWords))
+            {
+                AudioLogDiscoveryBitMask.EnsureCapacity(ref data.audioLogDiscoveryBitWords);
+                changed = true;
+                steps.Add("audioLog discovery bit words created");
+            }
+
             if (data.audioLogEncryptedFragmentHashes == null ||
                 data.audioLogEncryptedFragmentHashes.Length < SaveData.MaxEncryptedAudioLogFragments)
             {

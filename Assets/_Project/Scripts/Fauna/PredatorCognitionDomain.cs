@@ -182,6 +182,7 @@ namespace Hecton8.AI
         BaseSiegeRammer = 1u << 5,
         BaseSiegeDistractor = 1u << 6,
         BaseSiegeLoiterer = 1u << 7,
+        EcoHeadless = 1u << 8,
     }
 
     internal enum PredatorPackRole : byte
@@ -266,7 +267,9 @@ namespace Hecton8.AI
         private const float ThreatSmoothingK = 3f;
         private const float MaxThreatSmoothingDeltaTime = 0.05f;
         private const float MemoryLifetimeSeconds = 45f;
+        private const float MemoryLifetimeInvSeconds = 1f / MemoryLifetimeSeconds;
         private const float AcousticMemoryLifetimeSeconds = 45f;
+        private const float AcousticMemoryLifetimeInvSeconds = 1f / AcousticMemoryLifetimeSeconds;
         private const float MinimumDistanceMeters = 1.25f;
         private const float MinimumAttackCooldown = 0.35f;
         private const float MinimumScoreThreshold = 0.01f;
@@ -293,7 +296,9 @@ namespace Hecton8.AI
         private const float FarEvaluationIntervalSeconds = 1.0f / 10.0f;
         private const float RearEvaluationIntervalSeconds = 1.0f / 5.0f;
         private const float PredatorUtilityEvaluationIntervalSeconds = 0.5f;
+        private const float PredatorUtilityEvaluationStaggerStepSeconds = PredatorUtilityEvaluationIntervalSeconds * 0.03125f;
         private const float PredatorInterceptLeadSeconds = 0.65f;
+        private const float PredatorHeadlessDistanceSqr = 1000000f;
         private const float PredatorVisionConeCosineThreshold = 0.28f;
         private const float PredatorVisionConeCosineThresholdSqr =
             PredatorVisionConeCosineThreshold * PredatorVisionConeCosineThreshold;
@@ -321,7 +326,9 @@ namespace Hecton8.AI
         private const byte SolidThreatVoxel = 255;
         private const byte SignedDistanceSolidThreshold = 128;
         private const float QuantizedByteScale = 255f;
+        private const float QuantizedByteInvScale = 1f / QuantizedByteScale;
         private const float DdaEpsilon = 0.000001f;
+        private const float FlockCountInvSoftCap = 1f / 6f;
         private const float PlayerFacingBaitThreshold = 0.45f;
         private const float PackFlankHoldDistanceMeters = 3.5f;
         private const float BaseSiegeEngageRadiusMeters = 220f;
@@ -695,7 +702,7 @@ namespace Hecton8.AI
                     ? (int)PredatorPackRole.Bait
                     : (int)PredatorPackRole.None;
             output.FlankingManeuverDetected = (packedOutput.OutputFlags & (uint)CognitionOutputFlags.FlankingManeuverDetected) != 0u ? 1 : 0;
-            if (math.lengthsq(output.DesiredDirection) <= 0.0001f)
+            if (!MathGuard.IsFinite(output.DesiredDirection) || math.lengthsq(output.DesiredDirection) <= 0.0001f)
                 output.DesiredDirection = ResolveDominantAxis(fallbackForward, new float3(0f, 0f, 1f));
             return output;
         }
@@ -981,13 +988,13 @@ namespace Hecton8.AI
             _packBaitClaimTable = new NativeArray<int>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<int>[Capacity] - atomic flanker-role reservation table keyed by stable species hash - owner: PredatorCognitionDomain
             _packFlankerClaimTable = new NativeArray<int>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<HabitatSiegeTargetSnapshot>[64] — copied base weak-point snapshot for Burst predator siege cognition — owner: PredatorCognitionDomain
+            // COLD ALLOC: NativeArray<HabitatSiegeTargetSnapshot>[64] - copied base weak-point snapshot for Burst predator siege cognition - owner: PredatorCognitionDomain
             _habitatSiegeTargets = new NativeArray<HabitatSiegeTargetSnapshot>(HabitatGraphManager.MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int>[64] — atomic base-siege rammer reservation table keyed by habitat target index — owner: PredatorCognitionDomain
+            // COLD ALLOC: NativeArray<int>[64] - atomic base-siege rammer reservation table keyed by habitat target index - owner: PredatorCognitionDomain
             _baseSiegeRammerClaimTable = new NativeArray<int>(HabitatGraphManager.MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int>[64] — atomic base-siege distractor reservation table keyed by habitat target index — owner: PredatorCognitionDomain
+            // COLD ALLOC: NativeArray<int>[64] - atomic base-siege distractor reservation table keyed by habitat target index - owner: PredatorCognitionDomain
             _baseSiegeDistractorClaimTable = new NativeArray<int>(HabitatGraphManager.MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int>[64] — atomic base-siege loiterer reservation table keyed by habitat target index — owner: PredatorCognitionDomain
+            // COLD ALLOC: NativeArray<int>[64] - atomic base-siege loiterer reservation table keyed by habitat target index - owner: PredatorCognitionDomain
             _baseSiegeLoitererClaimTable = new NativeArray<int>(HabitatGraphManager.MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<byte>[Capacity] - per-slot due flags for foveated cognition cadence - owner: PredatorCognitionDomain
             _evaluationDueFlags = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -1095,6 +1102,9 @@ namespace Hecton8.AI
                     : ResolveEvaluationInterval(input.ImportanceScore);
                 float previousInterval = math.max(_evaluationIntervals[slot], CenterEvaluationIntervalSeconds);
                 float scheduledTime = _nextEvaluationTimes[slot];
+                bool firstPredatorSchedule = predatorRole && scheduledTime <= DdaEpsilon;
+                float staggerOffset = (slot & 31) * PredatorUtilityEvaluationStaggerStepSeconds;
+                scheduledTime = math.select(scheduledTime, currentTime + staggerOffset, firstPredatorSchedule);
                 scheduledTime = math.min(scheduledTime, currentTime + interval);
                 if (interval + DdaEpsilon < previousInterval)
                     scheduledTime = currentTime;
@@ -1350,20 +1360,22 @@ namespace Hecton8.AI
         private static int3 ResolveSpatialBucketCoordinates(float3 worldPosition, float3 boundsMin, float bucketCellSize)
         {
             float safeCellSize = math.max(bucketCellSize, 0.001f);
+            float invCellSize = math.rcp(safeCellSize);
             float3 localPosition = math.max(worldPosition - boundsMin, float3.zero);
             return new int3(
-                (int)math.floor(localPosition.x / safeCellSize),
-                (int)math.floor(localPosition.y / safeCellSize),
-                (int)math.floor(localPosition.z / safeCellSize));
+                (int)math.floor(localPosition.x * invCellSize),
+                (int)math.floor(localPosition.y * invCellSize),
+                (int)math.floor(localPosition.z * invCellSize));
         }
 
         private static int3 ResolveAcousticBucketCoordinates(float3 worldPosition, float bucketCellSize)
         {
             float safeCellSize = math.max(bucketCellSize, 0.001f);
+            float invCellSize = math.rcp(safeCellSize);
             int3 rawBucket = new int3(
-                (int)math.floor(worldPosition.x / safeCellSize),
-                (int)math.floor(worldPosition.y / safeCellSize),
-                (int)math.floor(worldPosition.z / safeCellSize));
+                (int)math.floor(worldPosition.x * invCellSize),
+                (int)math.floor(worldPosition.y * invCellSize),
+                (int)math.floor(worldPosition.z * invCellSize));
             return rawBucket + new int3(
                 AcousticBucketOriginBiasCells,
                 AcousticBucketOriginBiasCells,
@@ -1470,7 +1482,7 @@ namespace Hecton8.AI
 
         private static float DequantizeLane(uint lane)
         {
-            return math.saturate(lane / QuantizedByteScale);
+            return math.saturate(lane * QuantizedByteInvScale);
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -1607,7 +1619,7 @@ namespace Hecton8.AI
                     if (sameSpecies)
                     {
                         float inSeparation = math.select(0f, 1f, distSq < separationRadiusSq);
-                        separationForce += (diff / math.max(distSq, DdaEpsilon)) * inSeparation;
+                        separationForce += (diff * math.rcp(math.max(distSq, DdaEpsilon))) * inSeparation;
                         alignmentSum += otherInput.Velocity;
                         cohesionSum += otherInput.Position;
                         neighbourCount++;
@@ -1615,7 +1627,7 @@ namespace Hecton8.AI
                         if (distSq < swarmPbdMinDistanceSq)
                         {
                             float3 dir = ResolveDominantAxis(diff, float3.zero);
-                            float push01 = 1f - math.saturate(distSq / swarmPbdMinDistanceSq);
+                            float push01 = 1f - math.saturate(distSq * math.rcp(swarmPbdMinDistanceSq));
                             pbdCorrection += dir * (push01 * SwarmPbdMinDistance * 0.5f);
                         }
                     }
@@ -1634,7 +1646,7 @@ namespace Hecton8.AI
                             bestBaitSlot = otherSlot;
                         }
 
-                        float coordinationWeight = 1f - math.saturate(distSq / math.max(packCoordinationRadiusSq, 1f));
+                        float coordinationWeight = 1f - math.saturate(distSq * math.rcp(math.max(packCoordinationRadiusSq, 1f)));
                         if (coordinationWeight > predatorPackWeight)
                         {
                             float3 targetForward = ResolveDominantAxis(
@@ -1663,7 +1675,7 @@ namespace Hecton8.AI
                     bestClaimDistanceSq = distSq;
                 }
 
-                AmbientThreats[slot] = threatCount > 0 ? math.saturate(threatSum / threatCount) : 0f;
+                AmbientThreats[slot] = threatCount > 0 ? math.saturate(threatSum * math.rcp((float)threatCount)) : 0f;
                 ClaimedBoidIndices[slot] = claimedSlot;
                 ClaimedBoidPositions[slot] = claimedPosition;
 
@@ -1695,7 +1707,7 @@ namespace Hecton8.AI
                 int swarmCount = math.max(0, input.FlockCount);
                 if (neighbourCount > 0)
                 {
-                    float invNeighbourCount = 1f / neighbourCount;
+                    float invNeighbourCount = math.rcp((float)neighbourCount);
                     float3 averageVelocity = alignmentSum * invNeighbourCount;
                     float3 centerOfMass = cohesionSum * invNeighbourCount;
                     float3 alignmentForce = averageVelocity - input.Velocity;
@@ -1886,6 +1898,19 @@ namespace Hecton8.AI
                 }
 
                 bool isPredator = (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0;
+                if (isPredator && input.DistanceToPlayerSqr > PredatorHeadlessDistanceSqr)
+                {
+                    core.StateFlags = 0u;
+                    core.QuantizedDrives = PackDriveChannels(hunger, aggression, fear, threatLevel);
+                    core.QuantizedFatigue = PackSingleDrive(fatigue);
+                    control.LastPredatorStateCode = (int)PredatorUtilityState.None;
+                    Cores[slot] = core;
+                    Controls[slot] = control;
+                    Outputs[slot] = BuildHeadlessPackedOutput(fallbackForward);
+                    ChosenStates[slot] = (byte)PredatorUtilityState.None;
+                    return;
+                }
+
                 bool canFlee = (input.Flags & (int)CognitionInputFlags.CanFlee) != 0;
                 bool hasPlayerTarget = (input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0;
                 bool hasThreatTarget = (input.Flags & (int)CognitionInputFlags.HasThreatTarget) != 0;
@@ -2197,7 +2222,7 @@ namespace Hecton8.AI
                                           targetDistanceSq <= AmbushHoldDistanceMeters * AmbushHoldDistanceMeters &&
                                           math.lengthsq(predictedPlayerPosition - input.Position) > AmbushThreatWakeDistanceMeters * AmbushThreatWakeDistanceMeters;
                 float attackCommit01 = hasTarget
-                    ? ScoreHunger(math.saturate(1f - (targetDistanceSq / attackRangeSq)))
+                    ? ScoreHunger(math.saturate(1f - (targetDistanceSq * math.rcp(attackRangeSq))))
                     : 0f;
 
                 bool overrideActive = control.OverrideUntilTime > input.CurrentTime;
@@ -2427,7 +2452,7 @@ namespace Hecton8.AI
                 float escapeSafeDistanceSq = escapeSafeDistance * escapeSafeDistance;
                 float playerDistanceSq = math.lengthsq(input.PlayerPosition - input.Position);
                 float playerThreat = hasPlayerTarget
-                    ? math.saturate(1f - (playerDistanceSq / escapeSafeDistanceSq))
+                    ? math.saturate(1f - (playerDistanceSq * math.rcp(escapeSafeDistanceSq)))
                     : 0f;
                 bool lightAversionActive = IsLightAversionActive(input);
                 if (lightAversionActive)
@@ -2464,9 +2489,12 @@ namespace Hecton8.AI
                     0.05f,
                     1f);
                 bool lowHealth = input.HealthNormalized <= fleeHealthThreshold;
+                float patrolRadius = math.max(input.PatrolRadius, 1f);
+                float patrolRadiusSq = patrolRadius * patrolRadius;
+                float homeDistanceSq = math.lengthsq(input.Position - control.SpawnAnchor);
                 bool homeOutOfBounds = useHomeTerritory &&
                                        input.PatrolRadius > 0f &&
-                                       math.lengthsq(input.Position - control.SpawnAnchor) > (input.PatrolRadius * input.PatrolRadius);
+                                       homeDistanceSq > patrolRadiusSq;
                 bool shouldEscape = retreatForced ||
                                     (canFlee && lightAversionActive) ||
                                     (canFlee && hasPlayerTarget && (input.DistanceToPlayerSqr <= input.EscapeDistance * input.EscapeDistance || lowHealth || threatLevel >= 0.35f)) ||
@@ -2475,13 +2503,12 @@ namespace Hecton8.AI
                 float fatigueScore = ScoreFatigue(fatigue);
                 float curiosityWeight = math.max(0.1f, input.CuriosityWeight);
                 float escapeScore = ScoreFear(math.max(fear, threatLevel)) * math.max(0.1f, input.FearWeight) * math.select(0f, 1f, shouldEscape);
-                float patrolRadius = math.max(input.PatrolRadius, 1f);
                 float homeDistance01 = useHomeTerritory && input.PatrolRadius > 0f
-                    ? math.saturate(math.lengthsq(input.Position - control.SpawnAnchor) / (patrolRadius * patrolRadius))
+                    ? math.saturate(homeDistanceSq * math.rcp(patrolRadiusSq))
                     : 0f;
                 float returnScore = ScoreThreat(homeDistance01) * math.select(0f, 1f, homeOutOfBounds && !shouldEscape && !satedActive);
                 float scatterScore = math.select(0f, OverrideScoreBias + ScoreThreat(math.max(acousticScore, threatLevel)), scatterActive);
-                float flockingScore = ScoreThreat(math.saturate((float)input.FlockCount / 6f)) * math.select(0f, math.max(0.25f, 1f - escapeScore), isFlocking && input.FlockCount > 1 && !scatterActive && !satedActive && !shouldEscape && !homeOutOfBounds);
+                float flockingScore = ScoreThreat(math.saturate(input.FlockCount * FlockCountInvSoftCap)) * math.select(0f, math.max(0.25f, 1f - escapeScore), isFlocking && input.FlockCount > 1 && !scatterActive && !satedActive && !shouldEscape && !homeOutOfBounds);
                 float curiosityScore = math.max(ScoreThreat(acousticScore), ScoreThreat(threatVisual * 0.5f)) * curiosityWeight * math.select(0f, 1f, !shouldEscape && !satedActive);
                 float satedScore = math.select(0f, OverrideScoreBias + fatigueScore, satedActive);
                 float wanderScore = math.max(
@@ -2603,6 +2630,7 @@ namespace Hecton8.AI
                 int bestIndex = -1;
                 HabitatSiegeTargetSnapshot bestTarget = default;
                 float engageRadiusSq = BaseSiegeEngageRadiusMeters * BaseSiegeEngageRadiusMeters;
+                float invEngageRadiusSq = math.rcp(engageRadiusSq);
                 int targetCount = math.min(HabitatSiegeTargetCount, HabitatSiegeTargets.Length);
                 for (int i = 0; i < targetCount; i++)
                 {
@@ -2616,7 +2644,7 @@ namespace Hecton8.AI
                         continue;
 
                     HabitatSiegeTargetFlags flags = (HabitatSiegeTargetFlags)target.Flags;
-                    float range01 = 1f - math.saturate(distanceSq / engageRadiusSq);
+                    float range01 = 1f - math.saturate(distanceSq * invEngageRadiusSq);
                     float flagBias = 0f;
                     flagBias += math.select(0f, 0.25f, (flags & HabitatSiegeTargetFlags.Ruptured) != 0);
                     flagBias += math.select(0f, 0.15f, (flags & HabitatSiegeTargetFlags.Flooded) != 0);
@@ -2750,7 +2778,7 @@ namespace Hecton8.AI
                         continue;
                     }
 
-                    float decayWeight = 1f - math.saturate(age / AcousticMemoryLifetimeSeconds);
+                    float decayWeight = 1f - math.saturate(age * AcousticMemoryLifetimeInvSeconds);
                     decayWeight *= decayWeight;
 
                     int3 bucketDelta = math.abs(selfBucket - entry.BucketCoord);
@@ -2792,7 +2820,7 @@ namespace Hecton8.AI
                     if (age < 0f || age > MemoryLifetimeSeconds || entry.Intensity <= 0f)
                         continue;
 
-                    float decayWeight = 1f - math.saturate(age / MemoryLifetimeSeconds);
+                    float decayWeight = 1f - math.saturate(age * MemoryLifetimeInvSeconds);
                     decayWeight *= decayWeight;
                     float recallWeight = entry.Intensity * decayWeight;
                     if (recallWeight <= DdaEpsilon)
@@ -2811,7 +2839,7 @@ namespace Hecton8.AI
                     return false;
                 }
 
-                position = weightedPosition / totalWeight;
+                position = weightedPosition * math.rcp(totalWeight);
                 threatWeight = math.saturate(strongestWeight);
                 return true;
             }
@@ -2832,10 +2860,10 @@ namespace Hecton8.AI
                         (stimulusMask != 0 && (entry.StimulusType & stimulusMask) == 0))
                         continue;
 
-                    float decayWeight = 1f - math.saturate(age / MemoryLifetimeSeconds);
+                    float decayWeight = 1f - math.saturate(age * MemoryLifetimeInvSeconds);
                     decayWeight *= decayWeight;
                     float3 toMemory = entry.WorldPosition - currentPosition;
-                    float distanceWeight = 1f / (1f + (math.lengthsq(toMemory) * MemoryDistanceSqrFalloff));
+                    float distanceWeight = math.rcp(1f + (math.lengthsq(toMemory) * MemoryDistanceSqrFalloff));
                     float candidateScore = entry.Intensity * decayWeight * distanceWeight;
                     if (candidateScore <= bestScore)
                         continue;
@@ -2875,7 +2903,8 @@ namespace Hecton8.AI
                 {
                     float distanceSq = math.lengthsq(scavengePosition - selfPosition);
                     float rangeSq = ChemicalSignalRangeMeters * ChemicalSignalRangeMeters;
-                    directScore = math.saturate(directChemicalSignal01) * math.saturate(1f / (1f + (distanceSq / math.max(rangeSq, 1f))));
+                    float invRangeSq = math.rcp(math.max(rangeSq, 1f));
+                    directScore = math.saturate(directChemicalSignal01) * math.saturate(math.rcp(1f + (distanceSq * invRangeSq)));
                 }
 
                 if (TryResolveStrongestMemory(slot, selfPosition, currentTime, (int)CognitionStimulusType.Chemical, out _, out float memoryScore))
@@ -2909,8 +2938,9 @@ namespace Hecton8.AI
                     if (distanceSq > radius * radius)
                         continue;
 
+                    float invRadius = math.rcp(math.max(radius, 0.001f));
                     float radiusSq = radius * radius;
-                    float falloff = SmoothStep01(1f - math.saturate(distanceSq / radiusSq));
+                    float falloff = SmoothStep01(1f - math.saturate(distanceSq * math.rcp(math.max(radiusSq, 0.001f))));
                     float4 sample = waypoint.Channels * falloff;
                     float attractant = math.saturate(sample.x + sample.y);
                     float fear = math.saturate(sample.z);
@@ -2918,7 +2948,7 @@ namespace Hecton8.AI
                     fearSignal = math.max(fearSignal, fear);
 
                     if (attractant > DdaEpsilon)
-                        gradient += ResolveDominantAxis(delta, float3.zero) * (attractant / radius);
+                        gradient += ResolveDominantAxis(delta, float3.zero) * (attractant * invRadius);
                 }
 
                 return attractantSignal > DdaEpsilon || fearSignal > DdaEpsilon || math.lengthsq(gradient) > DdaEpsilon;
@@ -3014,11 +3044,12 @@ namespace Hecton8.AI
             private static int3 ResolveSpatialBucketCoordinates(float3 worldPosition, float3 boundsMin, float bucketCellSize)
             {
                 float safeCellSize = math.max(bucketCellSize, 0.001f);
+                float invCellSize = math.rcp(safeCellSize);
                 float3 localPosition = math.max(worldPosition - boundsMin, float3.zero);
                 return new int3(
-                    (int)math.floor(localPosition.x / safeCellSize),
-                    (int)math.floor(localPosition.y / safeCellSize),
-                    (int)math.floor(localPosition.z / safeCellSize));
+                    (int)math.floor(localPosition.x * invCellSize),
+                    (int)math.floor(localPosition.y * invCellSize),
+                    (int)math.floor(localPosition.z * invCellSize));
             }
 
             private static float ResolveThreatBlend(float deltaTime)
@@ -3039,10 +3070,11 @@ namespace Hecton8.AI
             private static int3 ResolveAcousticBucketCoordinates(float3 worldPosition, float bucketCellSize)
             {
                 float safeCellSize = math.max(bucketCellSize, 0.001f);
+                float invCellSize = math.rcp(safeCellSize);
                 int3 rawBucket = new int3(
-                    (int)math.floor(worldPosition.x / safeCellSize),
-                    (int)math.floor(worldPosition.y / safeCellSize),
-                    (int)math.floor(worldPosition.z / safeCellSize));
+                    (int)math.floor(worldPosition.x * invCellSize),
+                    (int)math.floor(worldPosition.y * invCellSize),
+                    (int)math.floor(worldPosition.z * invCellSize));
                 return rawBucket + new int3(
                     AcousticBucketOriginBiasCells,
                     AcousticBucketOriginBiasCells,
@@ -3236,7 +3268,7 @@ namespace Hecton8.AI
 
                 byte sample = SampleThreatVoxel(voxel);
                 if (ThreatVoxelUsesSignedDistanceEncoding != 0)
-                    return sample / QuantizedByteScale;
+                    return sample * QuantizedByteInvScale;
 
                 return IsThreatVoxelSolid(sample) ? 0f : 1f;
             }
@@ -3324,7 +3356,7 @@ namespace Hecton8.AI
                 float3 cellMin = ThreatVoxelOrigin + (new float3(currentVoxel.x, currentVoxel.y, currentVoxel.z) * ThreatVoxelCellSize);
                 float3 voxelBoundary = cellMin + math.select(float3.zero, ThreatVoxelCellSize, positiveMask);
                 float3 safeAbsDir = math.max(math.abs(rayDir), new float3(DdaEpsilon, DdaEpsilon, DdaEpsilon));
-                float3 rayDirInv = 1f / safeAbsDir;
+                float3 rayDirInv = math.rcp(safeAbsDir);
                 float3 tMax = math.abs((voxelBoundary - start) * rayDirInv);
                 float3 tDelta = ThreatVoxelCellSize * rayDirInv;
                 tMax = math.select(new float3(1000000f, 1000000f, 1000000f), tMax, activeAxisMask);
@@ -3358,10 +3390,11 @@ namespace Hecton8.AI
                     return false;
                 }
 
+                float3 invCellSize = math.rcp(math.max(ThreatVoxelCellSize, new float3(DdaEpsilon, DdaEpsilon, DdaEpsilon)));
                 int3 candidate = new int3(
-                    (int)math.floor(local.x / math.max(ThreatVoxelCellSize.x, DdaEpsilon)),
-                    (int)math.floor(local.y / math.max(ThreatVoxelCellSize.y, DdaEpsilon)),
-                    (int)math.floor(local.z / math.max(ThreatVoxelCellSize.z, DdaEpsilon)));
+                    (int)math.floor(local.x * invCellSize.x),
+                    (int)math.floor(local.y * invCellSize.y),
+                    (int)math.floor(local.z * invCellSize.z));
                 if (!IsVoxelInside(candidate))
                 {
                     voxel = int3.zero;
@@ -3484,6 +3517,17 @@ namespace Hecton8.AI
                 output.SpeedMultiplier = 1f;
                 output.TurnMultiplier = 1f;
                 output.LegacyState = (int)FaunaBrain.AIState.Wander;
+                return output;
+            }
+
+            private static PackedCognitionOutput BuildHeadlessPackedOutput(float3 fallbackForward)
+            {
+                PackedCognitionOutput output = BuildDefaultPackedOutput(fallbackForward);
+                output.ForceMultiplier = 0f;
+                output.SpeedMultiplier = 0f;
+                output.TurnMultiplier = 0f;
+                output.LegacyState = (int)FaunaBrain.AIState.Idle;
+                output.OutputFlags = (uint)CognitionOutputFlags.EcoHeadless;
                 return output;
             }
         }

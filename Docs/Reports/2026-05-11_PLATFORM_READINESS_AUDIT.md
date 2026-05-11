@@ -1,0 +1,533 @@
+# HECTON-8 Platform Readiness Audit
+
+Date: 2026-05-11
+Status: `PENDING VERIFICATION`
+Scope: Windows, Linux, macOS, consoles, standalone VR headsets, streamed PC VR.
+
+This report is evidence-based. No platform is marked ready without a fresh Unity Console pass, player build, launch test, profiler capture, GC proof, memory proof, and input/device proof for that exact target.
+
+## Mandates Applied
+
+Task-relevant registry mandates checked before this report:
+
+- `PROJECT_LTS_Compatibility_Layer.txt`
+- `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+- `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `REND_Foveated_Simulation_LOD.txt`
+- `CTRL_Device_Abstraction_Haptics.txt`
+- `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
+- `AUDIO_Hrtf_Binaural_Spatialization.txt`
+
+Relevant stable docs checked:
+
+- `AGENTS.md`
+- `Docs/QUALITY_GATES.md`
+- `Docs/SYSTEMS_CONTRACTS.md`
+- `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`
+- `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`
+- `Docs/ARCHITECTURE/README.md`
+- `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
+- `BUILD_PLAYTEST_ISSUES.md`
+- `BROKEN_PREFABS.md`
+- `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`
+- `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`
+
+## Executive Verdict
+
+The project is not platform-ready beyond a stale Windows-only build context.
+
+Current state:
+
+- Unity project version is `6000.4.1f1`.
+- Installed editor `6000.4.1f1` has only `windowsstandalonesupport`.
+- No Linux, macOS, Android, iOS, console, or XR platform module is installed locally.
+- Manifest has URP, Input System, Addressables, and Memory Profiler packages.
+- Manifest does not have `com.unity.xr.management` or `com.unity.xr.openxr`.
+- `ProjectSettings/XRSettings.asset` contains only legacy VR keys.
+- `ProjectSettings/ProjectSettings.asset` has empty `m_BuildTargetVRSettings`.
+- All three configured quality tiers exclude Android and iPhone.
+- Addressables package is installed, but no `Assets/AddressableAssetsData` directory exists.
+- Runtime loading policy is internally split: `AsyncLoadHelper` says runtime Resources/Addressables loading is disabled, while `GameBootstrapper`, `ItemCatalog`, and `AssetLifecycleGovernor` contain Addressables-dependent runtime paths.
+- Save/telemetry systems use `System.IO.MemoryMappedFiles`, unsafe mapped pointers, Windows `kernel32.dll` paths, and a Windows-only `liblz4.dll`.
+- Native plugin inventory contains Windows-only or editor/native third-party binaries. Platform metadata for `liblz4.dll` and `HectonAudioKernel.dll` is minimal GUID-only `.meta`, not an explicit per-platform PluginImporter config.
+- Latest local proof is Core `.NET` compile only: `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` says build succeeded with zero warnings/errors, but explicitly says it is not Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, or scene-wiring proof.
+
+Bottom line:
+
+- Windows 10/11 x64 is the only plausible near-term target.
+- Linux/macOS are not blocked only by Unity Hub modules; deeper native IO/plugin/shader/asset/import risks exist.
+- Standalone VR is blocked at project architecture/config level, not only by Android module installation.
+- Streamed PC VR is blocked by missing XR Plugin Management/OpenXR setup and missing stereo performance proof.
+- Consoles are blocked by access, modules, SDK/dev kits, certification, third-party plugin compatibility, native IO assumptions, and unproven platform defines.
+
+## Proof Ladder
+
+Current proof level is low.
+
+```text
+0  Static project scan                     [##########] present
+1  Local .NET/Core compile                 [##########] present
+2  Unity Console clean import              [..........] absent
+3  Play Mode smoke                         [..........] absent
+4  Windows player build current source     [..........] absent
+5  Windows launch + 60s profiler           [..........] absent
+6  Linux/macOS player build                [..........] absent
+7  XR provider/device launch               [..........] absent
+8  Console dev-kit build                   [..........] absent
+9  Certification/TRC/XR store compliance   [..........] absent
+```
+
+## Platform Readiness Heatmap
+
+Legend:
+
+- `GREEN`: current target build and runtime proof exists.
+- `YELLOW`: plausible but unverified; blockers known.
+- `RED`: blocked or not configured.
+- `BLACK`: cannot assess without vendor access/dev kit/SDK.
+
+```text
+Windows 10/11 x64 desktop          YELLOW  [#####.....] 50%
+Windows 7/8/8.1 desktop            RED     [..........]  0%
+Linux desktop                      RED     [#.........] 10%
+macOS Intel/Apple Silicon          RED     [#.........] 10%
+PC VR streaming on Windows         RED     [##........] 20%
+Standalone VR Android headsets     RED     [#.........] 10%
+iOS/visionOS/mobile Apple          RED     [..........]  0%
+Nintendo/Xbox/PlayStation          BLACK   [..........]  0%
+Steam Deck / Proton                RED     [##........] 20%
+```
+
+These percentages are risk/readiness estimates from static evidence, not certification scores.
+
+## Platform Matrix
+
+| Target | Local module state | Project config state | Deep blockers | Verdict |
+|---|---:|---:|---|---|
+| Windows 10/11 x64 desktop | Installed | Standalone defines are richest; old Windows player exists | No fresh Unity/player/profiler proof; Win-only native dependencies; old build only | `YELLOW / PENDING VERIFICATION` |
+| Windows 7/8/8.1 | Windows standalone module exists, but target support is not proven | No legacy OS profile | Unity 6 era support risk; graphics driver/API risk; no business reason shown | `RED / DO NOT TARGET` |
+| Linux x64 | Missing locally | No Linux build proof; Standalone defines shared with Windows, not Linux-specific | Native plugins, case-sensitive paths, MMF, liblz4 packaging, shader/API validation | `RED / BLOCKED` |
+| macOS Intel | Missing locally | macOS target OS set to 12.0, but no build proof | Mac plugin variants incomplete; signing/notarization; Metal/shader/import proof absent | `RED / BLOCKED` |
+| macOS Apple Silicon | Missing locally | No Apple Silicon validation | Universal/ARM64 native binaries, Metal, notarization, AOT/runtime plugin risks | `RED / BLOCKED` |
+| Steam Deck native Linux | Missing locally | No Linux build proof | Same Linux risks plus gamepad/UI/perf budget and shader cache validation | `RED / BLOCKED` |
+| Steam Deck through Proton | Windows module present | Not configured as first-class target | Proton compatibility untested; launcher/fullscreen/input/save paths unproven | `RED / UNPROVEN` |
+| PC VR streaming: Quest Link/Air Link/Virtual Desktop/Steam Link | Windows module present | No XR Plugin Management/OpenXR provider | Stereo render path, OpenXR runtime binding, controller mapping, 72/80/90/120 Hz proof absent | `RED / BLOCKED` |
+| Standalone Quest/PICO/Vive XR Android | Android module missing | No XR packages; Android/iPhone quality tiers excluded; template package id | Mobile VR render budget, foveation, store signing, controller, thermals, memory, Addressables | `RED / BLOCKED` |
+| iOS | iOS module missing | Template iPhone bundle id; no target profile | Mac/Xcode required, signing, Metal, AOT, memory and input proof absent | `RED / BLOCKED` |
+| visionOS | Not configured | Only default version field seen | No visionOS package/profile/proof; interaction model not designed | `RED / OUT OF SCOPE` |
+| Nintendo Switch/Switch 2 | Vendor module/SDK absent locally | Switch defines exist but reduced; only Switch 2 quality default seen | Dev kit, NDA SDK, memory/perf/TRC, shaders, storage, controller requirements | `BLACK / VENDOR BLOCKED` |
+| Xbox/Game Core | Vendor module/SDK absent locally | GameCore/Xbox defines reduced | GDK access, memory/perf/XR-irrelevant, native IO, achievements/save/cert requirements | `BLACK / VENDOR BLOCKED` |
+| PlayStation 4/5 | Vendor module/SDK absent locally | PS defines reduced | SDK/dev kit/cert, native plugins, save, activity cards/trophies, perf | `BLACK / VENDOR BLOCKED` |
+
+## What Unity Hub / Package Manager Can Fix
+
+These are shallow setup blockers. They only make builds possible; they do not prove runtime quality.
+
+| Fix | Where | Solves | Does not solve |
+|---|---|---|---|
+| Install Linux Build Support for Unity `6000.4.1f1` | Unity Hub | Enables Linux player build target locally | Native plugin compatibility, case-sensitive assets, Vulkan/OpenGL shader proof, Linux launch/test |
+| Install Mac Build Support for Unity `6000.4.1f1` | Unity Hub | Enables macOS player build target locally from this editor setup | Apple signing/notarization, Metal shader proof, native plugin universal/ARM64 support |
+| Install Android Build Support + SDK/NDK/OpenJDK | Unity Hub | Enables Android APK/AAB build path | XR runtime, Quest/PICO store config, mobile VR performance, thermals, quality tiers, foveation |
+| Install iOS Build Support | Unity Hub | Enables iOS Xcode project generation | Requires macOS/Xcode/signing; no runtime proof |
+| Add XR Plugin Management | Package Manager | Creates modern XR loader configuration path | Does not pick correct runtime, input, render mode, foveation, store target, or device proof |
+| Add Unity OpenXR plugin | Package Manager | Gives OpenXR provider for PC VR and supported standalone XR paths | Does not create action maps, comfort profile, stereo camera proof, or 90 Hz budget |
+| Install platform console modules | Vendor/Unity through platform access | Enables platform build target after approval | Does not solve SDK integration, certification, storage, account, input, memory, native binaries |
+| Install Addressables package | Already installed | Package API is available | Project settings/groups/catalog/build pipeline are absent or unproven |
+
+Conclusion: Hub/modules can open build menus. They do not make the game portable.
+
+## Deep Blockers
+
+### 1. XR is not configured
+
+Evidence:
+
+- `Packages/manifest.json` contains no `com.unity.xr.management`.
+- `Packages/manifest.json` contains no `com.unity.xr.openxr`.
+- `ProjectSettings/XRSettings.asset` has only legacy VR keys.
+- `ProjectSettings/ProjectSettings.asset` has `m_BuildTargetVRSettings: []`.
+- `HectonXRRuntimeState` uses `XRSettings.enabled`, `XRSettings.isDeviceActive`, and `XRDisplaySubsystem` state.
+- `InputDispatcher` caches `XRController.leftHand/rightHand` and sends haptic impulses.
+
+Interpretation:
+
+The code has an XR-aware bridge, but the project has no modern XR loader/provider configuration. PC VR streaming and standalone VR cannot be treated as ready. Streaming does not remove the need for OpenXR, stereo render validation, controller bindings, haptic validation, origin tracking, UI interaction, and frame budget proof.
+
+Required work:
+
+- Add XR Plugin Management and OpenXR.
+- Define platform-specific XR loader sets.
+- Define OpenXR interaction profiles.
+- Prove stereo render mode, render scale, foveation, MSAA, post stack, UI ray/pointer flow, pause/menu flow, recenter/origin behavior, haptics, and device hotplug.
+- Capture frame-time at target refresh: 72/80/90/120 Hz depending on device and runtime.
+
+### 2. Standalone VR has no mobile-quality profile
+
+Evidence:
+
+- `QualitySettings.asset` has `Surface (Medium)`, `Abyss (Low)`, `Orbit (High)`.
+- Each current tier excludes `Android` and `iPhone`.
+- Android identifiers are still Unity template identifiers.
+- Android min SDK is `25`, target SDK is automatic/current value `0`, release minify is off, and no keystore/signing proof exists.
+
+Interpretation:
+
+An Android module install is insufficient. Standalone VR needs explicit low-memory stereo render settings, foveated rendering, shader variant stripping, texture compression, occlusion, LOD/HLOD, input profiles, store signing, and thermal proof.
+
+Required work:
+
+- Create explicit `Quest/PICO Android VR Low` quality profile.
+- Set URP mobile/XR renderer data.
+- Lock texture compression and mip streaming budgets for headset memory.
+- Build Addressables catalogs for headset content.
+- Prove no runtime GC and no thermal collapse over an extended scene route.
+
+### 3. Addressables are half-present
+
+Evidence:
+
+- Addressables package `2.7.6` is installed.
+- No `Assets/AddressableAssetsData` directory was found.
+- `AsyncLoadHelper` says runtime Resources/Addressables loading is disabled.
+- `GameBootstrapper`, `ItemCatalog`, and `AssetLifecycleGovernor` contain runtime Addressables calls and `UNITY_ADDRESSABLES_EXIST` branches.
+
+Interpretation:
+
+The package alone is not enough. The runtime contract and project data are inconsistent. On desktop this can become missing prefabs, synchronous fallback pressure, or silent bootstrap failures. On consoles and standalone VR this becomes a memory/load certification problem.
+
+Required work:
+
+- Decide the real asset lifecycle owner.
+- Create Addressables settings, groups, labels, catalogs, build scripts, and platform profiles.
+- Remove or isolate disabled legacy loader paths.
+- Run platform catalog build and cold-launch proof.
+- Validate memory, async load timing, release, and bundle cache behavior.
+
+### 4. Save/telemetry storage is not portable
+
+Evidence:
+
+- `SaveBinaryStorage`, `CrashTelemetryBuffer`, `GlobalTelemetryBus`, and `UserOptionsPersistence` use `System.IO.MemoryMappedFiles`.
+- Save path uses unsafe mapped pointers via `SafeMemoryMappedViewHandle.AcquirePointer`.
+- `SaveBinaryStorage` imports `kernel32.dll`.
+- `SaveBinaryStorage` imports `liblz4`.
+- Only `Assets/_Project/Plugins/Windows/x86_64/liblz4.dll` is present for LZ4.
+- `HectonSensoryKernelNativeBridge` imports `HectonAudioKernel` only under `UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN`.
+
+Interpretation:
+
+Windows desktop can plausibly run this with the shipped DLLs. Linux/macOS/Android/consoles cannot be assumed. MemoryMappedFiles, unsafe view handles, native compression DLL loading, platform storage sandboxes, and console file APIs need explicit platform adapters or unsupported-platform gates.
+
+Required work:
+
+- Define a platform storage abstraction.
+- Provide non-MMF file-stream fallback for Android/iOS/consoles if MMF is unsupported or not cert-safe.
+- Package `liblz4` per platform or replace it with managed/Burst-safe compression under platform gates.
+- Run save/load corruption, migration, crash-recovery, and storage-permission tests per target.
+
+### 5. Native/third-party plugin inventory is not platform-clean
+
+Observed native/managed binary inventory includes:
+
+- Astar DLLs.
+- Candice SQLite DLL.
+- Bakery Windows editor binaries.
+- NiceVibrations Android AAR and editor plugins.
+- Mantis LOD Windows/Linux/Mac editor plugins.
+- MapMagic native plugins.
+- MeshBaker libraries.
+- DOTween DLLs.
+- Odin/Sirenix DLLs.
+- HectonAudioKernel Windows DLL.
+- liblz4 Windows DLL.
+- RealtimeCSG external DLLs.
+- Technie VHACD DLL.
+
+Interpretation:
+
+Some are editor-only, some runtime, some unclear from static scan. Consoles, Linux, macOS, Android, and Apple Silicon require explicit importer metadata and legal/license compatibility. Assets existing in the tree are not proof of safe runtime inclusion.
+
+Required work:
+
+- Build a plugin manifest with owner, runtime/editor scope, target platforms, source/license, importer settings, and fallback path.
+- Exclude editor-only native binaries from players.
+- Prove each runtime plugin under IL2CPP and target architecture.
+
+### 6. Platform scripting defines diverge
+
+Evidence:
+
+- Standalone defines include `CREST_OCEAN`, `CREST_URP`, `__MICROSPLAT__`, `MAPMAGIC2`, `MM_NATIVE`, `GPU_INSTANCER`, `BAKERY_INCLUDED`, `VLB_URP`, and more.
+- Android/iPhone/Switch/PS/Xbox defines are much smaller and omit many runtime/vendor symbols.
+
+Interpretation:
+
+The project may compile different code paths per platform. This is not inherently wrong, but it is unproven. A clean Windows compile does not imply Android, Linux, macOS, or console compile success.
+
+Required work:
+
+- Per-platform compile matrix.
+- Fail-fast build scripts with exact symbols logged.
+- Runtime feature availability report per target.
+
+### 7. Rendering budget is desktop-first
+
+Evidence:
+
+- URP `17.4.0` is installed.
+- Crest ocean exists in package and asset forms.
+- MapMagic/MicroSplat/GPUInstancer/Bakery/VolumetricLightBeam/AmplifyImpostors exist in project.
+- Quality gates demand MX350 16.67 ms, 0 GC, VRAM <= 1.6 GB, per-system tick <= 0.1 ms.
+- No current profiler/player frame-time proof exists.
+
+Interpretation:
+
+Desktop target is already demanding. Standalone VR doubles render eyes and raises refresh-rate requirements. Consoles require stable frame pacing and memory discipline. Linux/macOS require shader/API validation. Visual fakes must replace runtime simulation unless gameplay demands simulation and profiler proof exists.
+
+Required work:
+
+- Per-platform URP renderer assets.
+- Shader variant budget and stripping.
+- HLOD/impostor validation.
+- Foveated rendering for standalone VR.
+- PC VR render-scale/foveation/per-eye budget.
+- 60-second p95 frame-time captures, not averages.
+
+### 8. Input/controller matrix is incomplete
+
+Evidence:
+
+- Active input handler is `1` (new Input System only).
+- `InputDispatcher` has gamepad and XR controller caches plus haptic command drain.
+- No OpenXR package/provider is configured.
+- No console-specific input proof exists.
+
+Interpretation:
+
+Architecture exists for device abstraction, but device coverage is not proven. Consoles have certification rules for suspend/resume, disconnect/reconnect, controller assignment, platform overlays, and haptics. VR needs ray/poke/grab/menu/recenter and comfort validation.
+
+Required work:
+
+- Device matrix: keyboard/mouse, Xbox pad, DualSense, Switch Pro/Joy-Con, Steam Deck, OpenXR controllers.
+- Hotplug, focus loss, suspend/resume, haptic reset tests.
+- UI navigation tests for every menu and pause path.
+
+## Console Reality
+
+Consoles are not a normal Unity Hub checkbox in practice.
+
+Needed before any honest console readiness claim:
+
+- Approved platform developer account.
+- Unity platform module through vendor access.
+- SDK and dev kit.
+- Platform-specific player settings.
+- Platform storage/save abstraction.
+- Platform input/overlay/lifecycle handling.
+- Third-party plugin console license and binary support.
+- Memory/performance capture on dev kit.
+- TRC/XR/certification test pass.
+
+Current project has no evidence for those items. Console readiness is `BLACK / VENDOR BLOCKED`, not `RED / install module`.
+
+## Standalone VR Reality
+
+Standalone VR is the hardest target listed.
+
+Minimum technical gate before a first serious Quest/PICO-style route:
+
+- Android Build Support installed.
+- XR Plugin Management installed.
+- OpenXR provider configured for Android/headset target.
+- Platform package id, signing, min/target SDK, manifest permissions.
+- Android-compatible quality tier.
+- URP mobile XR renderer.
+- Single-pass instanced or multiview proof.
+- Fixed/foveated rendering strategy.
+- Reduced water/terrain/volumetrics via visual fake protocol.
+- Addressables groups/catalogs built for headset.
+- Texture compression and memory caps.
+- Controller action maps and haptics proven.
+- 72/80/90 Hz profiler proof on device.
+- Thermal soak test.
+
+Current state fails before the first device launch: no Android module locally, no XR provider, no Android quality tier, no Addressables project data.
+
+## PC VR Streaming Reality
+
+Quest Link, Air Link, Steam Link, Virtual Desktop, and SteamVR-style streaming still require the Windows app to be a working VR app.
+
+Minimum gate:
+
+- Windows standalone build.
+- XR Plugin Management.
+- OpenXR provider.
+- Correct OpenXR runtime selected on host PC.
+- Stereo camera/render path active.
+- Controller bindings, haptics, pause/menu interaction.
+- Render timing at headset refresh.
+- Latency/frame pacing proof.
+
+Streaming helps GPU location, not project readiness. Current state has Windows module but no XR provider and no stereo performance proof.
+
+## OS Version Notes
+
+Official Unity 6.4 player floor from Unity documentation:
+
+- Windows player: Windows 10 version 21H1 build 19043 or newer.
+- macOS player: macOS Monterey 12 or newer.
+- Linux desktop player: Ubuntu 22.04 or Ubuntu 24.04; desktop Linux is 64-bit only.
+- Android player: Android 7.1/API 25 or newer; development uses Android SDK API 35, NDK r27c, OpenJDK 17 from Unity Hub by default.
+- Unity XR support requires XR Plug-in Management/provider setup, not only legacy `XRSettings`.
+- Console build requirements are vendor/platform-holder controlled; Unity docs direct console specifics to platform-holder documentation/representatives.
+
+Windows:
+
+- Target Windows 10/11 x64 only until evidence says otherwise.
+- Older Windows versions should be treated as unsupported for Unity 6 production unless a deliberate legacy-support decision and official compatibility proof exist.
+
+Linux:
+
+- Treat as a separate port, not a build toggle.
+- Must validate file path case sensitivity, executable permissions, graphics API, audio device routing, save paths, native plugin loading, crash dumps, and distribution packaging.
+
+macOS:
+
+- Treat Intel and Apple Silicon separately.
+- Must validate Metal, universal/ARM64 native libraries, signing, notarization, sandbox-related file access, fullscreen/input, and controller support.
+
+Steam Deck:
+
+- Native Linux path inherits Linux blockers.
+- Proton path inherits Windows blockers plus compatibility risk.
+- Needs Steam Input, performance profile, shader cache, suspend/resume, and battery/thermal behavior proof.
+
+## Failure Modes
+
+Likely failure modes if platform expansion is attempted as a module-install-only task:
+
+- Build target appears in Unity, then compile fails under reduced platform symbols.
+- Build succeeds, then player fails at boot due to missing Addressables catalog/group data.
+- Player launches, then missing native DLL/so/dylib breaks save/compression/audio/plugin paths.
+- Android/standalone VR build launches black screen or flat mode because XR loader/provider is absent.
+- VR launches but fails frame pacing because desktop water/terrain/volumetric path is too expensive.
+- Linux/macOS build loads wrong asset path due to case-sensitive path mismatch.
+- Console build fails certification due to storage, suspend/resume, controller, or memory behavior.
+- Player passes a short smoke test but leaks/allocates during streaming, save, telemetry, terrain, or Addressables release.
+
+## Hot Path Impact
+
+No new runtime system was added by this report.
+
+Porting risks that directly affect hot paths:
+
+- XR stereo doubles camera/render pressure and raises frame-rate target.
+- Standalone VR has tighter CPU/GPU/thermal/memory budgets than the current desktop gate.
+- Addressables lifecycle mistakes can create load spikes, memory spikes, and release stalls.
+- Native compression/save fallbacks can move IO/compression into frame-critical paths if not isolated.
+- Third-party shader/terrain/water systems can blow shader variant and draw/SetPass budgets per platform.
+- Any physical water/light/deformation simulation added for portability is rejected unless visual fake is insufficient and profiler proof exists.
+
+## Regression Model
+
+Porting changes must be modeled as regression-prone even when they are "configuration only."
+
+Primary regression axes:
+
+- Compile symbols: Standalone symbols differ from Android/iPhone/console symbols.
+- Serialization: Addressables/catalog/profile changes can break serialized references and prefab loading.
+- Native plugins: importer changes can accidentally include/exclude DLLs in current Windows player.
+- Rendering: URP asset swaps can change lighting, fog, water, post-processing, and shader variants.
+- Input: XR/console action maps can break keyboard/gamepad flows if they replace rather than extend the dispatcher.
+- Save: platform storage abstraction can corrupt or orphan existing Windows saves if migration is not explicit.
+- Performance: foveation/HLOD/mobile tiers can hide gameplay-critical silhouettes or interaction targets.
+
+Required regression proof:
+
+- Keep Windows 10/11 desktop as baseline while adding new targets.
+- Every new target must run the same bootstrap/menu/world/save/pause traversal.
+- Record frame-time, GC alloc, memory, scene load, Addressables events, and native plugin load status.
+
+## Why Current State Is Kept / Rejected
+
+Kept:
+
+- Unity `6000.4.1f1` and URP `17.4.0` baseline: current project is already on it.
+- New Input System-only direction: consistent with `InputDispatcher`.
+- Windows 10/11 x64 as first proof target: only local platform module exists.
+- Visual fake first: required by project doctrine and critical for VR/consoles.
+- Addressables as intended lifecycle direction: package and runtime references exist.
+
+Rejected as readiness claims:
+
+- "Addressables installed" means streaming-ready. False; project settings/groups/catalogs are absent.
+- "XR code exists" means VR-ready. False; XR provider/loader/config/proof are absent.
+- "Windows old build exists" means current Windows ready. False; current source has no fresh player proof.
+- "Install Android module" means Quest/PICO ready. False; XR, quality, render, signing, memory, input, thermal, Addressables are missing.
+- "Install Linux/Mac module" means desktop ports ready. False; native IO/plugins/shaders/assets need proof.
+- "Console defines exist" means console path exists. False; vendor module/SDK/dev kit/cert proof absent.
+
+## Required Verification Matrix
+
+First pass after installing modules should be build-only, no gameplay claims:
+
+| Target | Required first command/result | Pass condition |
+|---|---|---|
+| Windows x64 | Unity batch build | Player build succeeds, clean log, launches |
+| Linux x64 | Unity batch build after Linux module | Build succeeds, launches on Linux host/VM, clean player log |
+| macOS Intel/ARM64 | macOS build after module | Build succeeds, launches on real Mac, signed/notarized path defined |
+| Android flat | Android build after module | APK/AAB builds and installs on device |
+| Android XR | Android + XR packages | Headset enters stereo XR mode and receives controller input |
+| PC VR OpenXR | Windows + OpenXR | Headset enters stereo XR mode, controllers/haptics work |
+| Console | Vendor toolchain | Dev kit build boots to menu/world under platform logs |
+
+Second pass must include runtime:
+
+- Bootstrap -> main menu -> new game -> world.
+- Pause open/close and every pause button.
+- Save write/read/reload.
+- Surface/underwater transition route.
+- Asset streaming/load/release route.
+- 60-second profiler capture.
+- GC alloc proof.
+- Memory/VRAM proof.
+- Native plugin load status.
+- Device hotplug/suspend/resume where platform requires it.
+
+## Priority Order
+
+Recommended order based on current evidence:
+
+1. Windows 10/11 x64 current-source player build and launch proof.
+2. Unity Console clean import and Play Mode smoke.
+3. Addressables project data and asset lifecycle contract cleanup.
+4. Linux/macOS build modules and compile-only matrix.
+5. Storage/native plugin platform abstraction.
+6. PC VR OpenXR on Windows.
+7. Standalone Android VR only after PC VR + mobile quality tier exist.
+8. Consoles only after vendor access and desktop/runtime systems are already platform-clean.
+
+## Official Unity References Checked
+
+- Unity 6.4 system requirements and supported platforms: https://docs.unity3d.com/6000.4/Documentation/Manual/system-requirements.html
+- Unity 6.4 XR plug-in architecture: https://docs.unity3d.com/6000.4/Documentation/Manual/XRPluginArchitecture.html
+- Unity 6.4 OpenXR package manual: https://docs.unity3d.com/6000.4/Documentation/Manual/com.unity.xr.openxr.html
+- Unity 6.4 Android dependency/setup docs: https://docs.unity3d.com/6000.4/Documentation/Manual/android-sdksetup.html
+
+## Final Classification
+
+```text
+Target family                  Current classification
+------------------------------------------------------
+Windows 10/11 desktop          Plausible baseline, not certified
+Linux desktop                  Port required
+macOS desktop                  Port required
+Steam Deck                     Port/proton validation required
+PC VR streaming                XR configuration required
+Standalone VR                  Major port required
+iOS/visionOS                   Out of current readiness
+Consoles                       Vendor-blocked major port
+```
+
+No target is release-ready by current evidence.

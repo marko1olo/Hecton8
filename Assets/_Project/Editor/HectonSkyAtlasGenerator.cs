@@ -1,17 +1,17 @@
 // ============================================================================
-// HECTON-8 — HectonAtlasPacker.cs
-// One-click pipeline: AI-generated PNGs → packed RGBA sky atlas.
+// HECTON-8 - HectonAtlasPacker.cs
+// One-click pipeline: AI-generated PNGs -> packed RGBA sky atlas.
 //
 // WORKFLOW:
 //   1. Generate Density + Detail textures via AI (any size, any format)
 //   2. Drop PNGs anywhere in Unity project
-//   3. Tools → Hecton → Pack Sky Atlas
+//   3. Tools -> Hecton -> Pack Sky Atlas
 //   4. Pick density PNG, pick detail PNG
 //   5. Script handles EVERYTHING:
-//      - Resize to 2048²
+//      - Resize to 2048^2
 //      - Convert to grayscale
 //      - Adjust contrast/levels
-//      - Generate procedural curl noise flowmap (B+A)
+//      - Generate deterministic triangle-wave flowmap (B+A)
 //      - Pack into single RGBA atlas
 //      - Save as linear PNG with correct import settings
 //
@@ -20,8 +20,8 @@
 // OUTPUT CHANNELS:
 //   R = Cloud density (from AI texture, processed)
 //   G = Detail erosion (from AI texture, softened)
-//   B = Flowmap X (procedural curl noise, 0.5 = neutral)
-//   A = Flowmap Y (procedural curl noise, 0.5 = neutral)
+//   B = Flowmap X (deterministic triangle-wave flow, 0.5 = neutral)
+//   A = Flowmap Y (deterministic triangle-wave flow, 0.5 = neutral)
 // ============================================================================
 
 #if UNITY_EDITOR
@@ -36,50 +36,46 @@ namespace Hecton8.Editor
 {
     public sealed class HectonAtlasPacker : EditorWindow
     {
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  CONSTANTS
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
-        private const int   AtlasSize = 2048;
-        private const float TwoPi     = math.PI * 2f;
-        private const string OutDir   = "Assets/_Project/Art/Textures/Sky";
-        private const string OutFile  = "HectonSkyAtlas_RGBA.png";
+        private const int AtlasSize = 2048;
+        private const string OutDir = "Assets/_Project/Art/Textures/Sky";
+        private const string OutFile = "HectonSkyAtlas_RGBA.png";
 
-        private static readonly float3 DECORRELATION =
-            new float3(137.919f, 251.731f, 197.413f);
-
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  PARAMETERS
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
-        // ── Density processing ──
+        // -- Density processing --
         private float _densityContrast   = 1.8f;
         private float _densityBrightness = -0.1f;
         private float _densityGamma      = 1.3f;
 
-        // ── Detail processing ──
+        // -- Detail processing --
         private float _detailOpacity     = 0.4f;
         private float _detailSoftness    = 0.7f;
 
-        // ── Flowmap generation ──
+        // -- Flowmap generation --
         private int   _flowSeed          = 42;
         private float _flowScale         = 0.4f;
         private float _flowIntensity     = 0.6f;
         private float _vortexBias        = 0.25f;
         private int   _flowEpsPx         = 8;
 
-        // ── Source textures ──
+        // -- Source textures --
         private Texture2D _srcDensity;
         private Texture2D _srcDetail;
 
-        // ── Preview ──
+        // -- Preview --
         private Texture2D _preview;
         private int       _previewCh;
         private Vector2   _scroll;
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  MENU
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         [MenuItem("Tools/Hecton/Pack Sky Atlas", false, 201)]
         private static void Open()
@@ -90,9 +86,9 @@ namespace Hecton8.Editor
             w.Show();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  GUI
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         private void OnGUI()
         {
@@ -103,35 +99,35 @@ namespace Hecton8.Editor
                 "HECTON-8 ATLAS PACKER",
                 EditorStyles.boldLabel);
             EditorGUILayout.LabelField(
-                "AI textures → RGBA atlas. No Photoshop.",
+                "AI textures -> RGBA atlas. No Photoshop.",
                 EditorStyles.miniLabel);
             GUILayout.Space(12);
 
-            // ── Source textures ──
+            // -- Source textures --
             EditorGUILayout.LabelField(
-                "═══ Source Textures ═══",
+                "=== Source Textures ===",
                 EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "Drop any PNG/JPG from AI generator.\n" +
-                "Any size — will be resized to 2048².\n" +
-                "Any color — will be converted to grayscale.",
+                "Any size - will be resized to 2048^2.\n" +
+                "Any color - will be converted to grayscale.",
                 MessageType.Info);
 
             _srcDensity = (Texture2D)EditorGUILayout.ObjectField(
-                new GUIContent("Density (→ R)",
+                new GUIContent("Density (-> R)",
                     "Cloud shapes. White = cloud, black = clear sky."),
                 _srcDensity, typeof(Texture2D), false);
 
             _srcDetail = (Texture2D)EditorGUILayout.ObjectField(
-                new GUIContent("Detail (→ G)",
+                new GUIContent("Detail (-> G)",
                     "Wispy erosion. Should be very subtle."),
                 _srcDetail, typeof(Texture2D), false);
 
             GUILayout.Space(8);
 
-            // ── Density processing ──
+            // -- Density processing --
             EditorGUILayout.LabelField(
-                "═══ Density Processing ═══",
+                "=== Density Processing ===",
                 EditorStyles.boldLabel);
             _densityContrast = EditorGUILayout.Slider(
                 new GUIContent("Contrast",
@@ -148,9 +144,9 @@ namespace Hecton8.Editor
                 _densityGamma, 0.3f, 3f);
             GUILayout.Space(6);
 
-            // ── Detail processing ──
+            // -- Detail processing --
             EditorGUILayout.LabelField(
-                "═══ Detail Processing ═══",
+                "=== Detail Processing ===",
                 EditorStyles.boldLabel);
             _detailOpacity = EditorGUILayout.Slider(
                 new GUIContent("Opacity",
@@ -163,9 +159,9 @@ namespace Hecton8.Editor
                 _detailSoftness, 0.2f, 1f);
             GUILayout.Space(6);
 
-            // ── Flowmap ──
+            // -- Flowmap --
             EditorGUILayout.LabelField(
-                "═══ Flowmap (Procedural) ═══",
+                "=== Flowmap (Procedural) ===",
                 EditorStyles.boldLabel);
             _flowSeed = EditorGUILayout.IntField(
                 "Seed", _flowSeed);
@@ -183,11 +179,11 @@ namespace Hecton8.Editor
                 _vortexBias, 0f, 1f);
             _flowEpsPx = EditorGUILayout.IntSlider(
                 new GUIContent("Smoothness (px)",
-                    "Curl derivative step. 8+ = smooth."),
+                    "Triangle-wave high-frequency damping. 8+ = smooth."),
                 _flowEpsPx, 2, 16);
             GUILayout.Space(16);
 
-            // ── Pack button ──
+            // -- Pack button --
             bool canPack = _srcDensity != null && _srcDetail != null;
 
             EditorGUI.BeginDisabledGroup(!canPack);
@@ -209,7 +205,7 @@ namespace Hecton8.Editor
 
             GUILayout.Space(8);
 
-            // ── Preview ──
+            // -- Preview --
             if (_preview != null)
             {
                 string[] ch = {
@@ -236,9 +232,9 @@ namespace Hecton8.Editor
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  PACK PIPELINE
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         private void PackAtlas()
         {
@@ -246,9 +242,9 @@ namespace Hecton8.Editor
 
             EditorUtility.DisplayProgressBar("Pack Atlas", "Loading...", 0f);
 
-            // ══════════════════════════════════════════════
+            // ==============================================
             // STEP 1: Load source textures as readable
-            // ══════════════════════════════════════════════
+            // ==============================================
 
             Texture2D densityReadable = MakeReadable(_srcDensity);
             Texture2D detailReadable  = MakeReadable(_srcDetail);
@@ -260,9 +256,9 @@ namespace Hecton8.Editor
                 return;
             }
 
-            // ══════════════════════════════════════════════
+            // ==============================================
             // STEP 2: Resize to atlas size
-            // ══════════════════════════════════════════════
+            // ==============================================
 
             EditorUtility.DisplayProgressBar("Pack Atlas", "Resizing...", 0.1f);
 
@@ -272,28 +268,19 @@ namespace Hecton8.Editor
             DestroyImmediate(densityReadable);
             DestroyImmediate(detailReadable);
 
-            // ══════════════════════════════════════════════
+            // ==============================================
             // STEP 3: Process + pack
-            // ══════════════════════════════════════════════
+            // ==============================================
 
             NativeArray<Color32> densityPx = densityResized.GetRawTextureData<Color32>();
             NativeArray<Color32> detailPx = detailResized.GetRawTextureData<Color32>();
 
-            // Pre-compute flow trig tables
             float inv = 1f / N;
-            float[] cosT = new float[N];
-            float[] sinT = new float[N];
-            for (int i = 0; i < N; i++)
-            {
-                float a = i * inv * TwoPi;
-                cosT[i] = math.cos(a);
-                sinT[i] = math.sin(a);
-            }
-
+            float flowScale = _flowScale * 4f + 0.25f;
+            float flowFineWeight = 1f / (1f + _flowEpsPx * 0.12f);
             float2 flowOff = new float2(
                 _flowSeed * 137.31f,
                 _flowSeed * 271.17f);
-            float eps = _flowEpsPx * inv;
 
             var atlas = new Texture2D(N, N, TextureFormat.RGBA32,
                 false, true); // LINEAR
@@ -318,7 +305,7 @@ namespace Hecton8.Editor
                     float u = x * inv;
                     float v = y * inv;
 
-                    // ── R: Density (grayscale + levels) ──
+                    // -- R: Density (grayscale + levels) --
                     float r = Luminance(densityPx[idx]);
 
                     // Brightness
@@ -327,11 +314,11 @@ namespace Hecton8.Editor
                     // Contrast (around 0.5 midpoint)
                     r = (r - 0.5f) * _densityContrast + 0.5f;
 
-                    // Gamma (power curve)
+                    // Gamma (cheap cinematic curve)
                     r = math.saturate(r);
-                    r = math.pow(r, _densityGamma);
+                    r = FastGammaCurve(r, _densityGamma);
 
-                    // ── G: Detail (grayscale + soften) ──
+                    // -- G: Detail (grayscale + soften) --
                     float g = Luminance(detailPx[idx]);
 
                     // Smoothstep for soft transitions
@@ -340,12 +327,9 @@ namespace Hecton8.Editor
                     // Reduce intensity
                     g *= _detailOpacity;
 
-                    // ── B+A: Flowmap (procedural curl noise) ──
-                    float2 flow = CurlNoise(
-                        x, y, N, eps,
-                        cosT, sinT,
-                        _flowScale,
-                        flowOff);
+                    // -- B+A: Flowmap (deterministic triangle-wave fake) --
+                    float2 flow = FastTriangleFlow(
+                        u, v, flowScale, flowOff, flowFineWeight);
 
                     // Vortex bias
                     float2 toCenter = new float2(0.5f - u, 0.5f - v);
@@ -357,7 +341,7 @@ namespace Hecton8.Editor
                     float vMask = math.smoothstep(1f, 0f, dist * 2.5f);
                     flow += tangent * _vortexBias * vMask;
 
-                    // Encode [-1,1] → [0,1], 0.5 = neutral
+                    // Encode [-1,1] -> [0,1], 0.5 = neutral
                     float b = math.saturate(
                         flow.x * _flowIntensity * 0.5f + 0.5f);
                     float a = math.saturate(
@@ -374,9 +358,9 @@ namespace Hecton8.Editor
             DestroyImmediate(densityResized);
             DestroyImmediate(detailResized);
 
-            // ══════════════════════════════════════════════
+            // ==============================================
             // STEP 4: Save
-            // ══════════════════════════════════════════════
+            // ==============================================
 
             EditorUtility.DisplayProgressBar("Pack Atlas", "Saving...", 0.95f);
 
@@ -395,22 +379,23 @@ namespace Hecton8.Editor
             if (_preview != null) DestroyImmediate(_preview);
             _preview = atlas;
             _previewCh = 0;
+            Resources.UnloadUnusedAssets();
 
             EditorUtility.ClearProgressBar();
 
             Debug.Log(
-                $"[AtlasPacker] ✓ Atlas packed!\n" +
+                $"[AtlasPacker] OK Atlas packed!\n" +
                 $"  {path}\n" +
-                $"  {N}×{N}, Linear, BC7\n" +
+                $"  {N}x{N}, Linear, BC7\n" +
                 $"  R=Density G=Detail B=FlowX A=FlowY");
 
             EditorGUIUtility.PingObject(
                 AssetDatabase.LoadAssetAtPath<Texture2D>(path));
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  TEXTURE UTILITIES
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         /// <summary>
         /// Creates a readable copy of any texture.
@@ -492,9 +477,9 @@ namespace Hecton8.Editor
             return (byte)math.clamp((int)math.round(math.saturate(value) * 255f), 0, 255);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  IMPORT SETTINGS
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         private static void SetImportSettings(string path)
         {
@@ -506,6 +491,7 @@ namespace Hecton8.Editor
             imp.sRGBTexture           = false; // LINEAR
             imp.alphaSource           = TextureImporterAlphaSource.FromInput;
             imp.alphaIsTransparency   = false;
+            imp.isReadable            = false;
             imp.wrapMode              = TextureWrapMode.Repeat;
             imp.filterMode            = FilterMode.Bilinear;
             imp.mipmapEnabled         = true;
@@ -522,70 +508,43 @@ namespace Hecton8.Editor
             imp.SaveAndReimport();
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  SEAMLESS CURL NOISE (for flowmap B+A channels)
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
+        //  DETERMINISTIC FLOW CHEATS (for flowmap B+A channels)
+        // ==========================================================
 
-        private static float Seamless(
-            float cosU, float sinU, float cosV, float sinV,
-            float freq, float2 offset)
+        private static float FastGammaCurve(float value, float gamma)
         {
-            float3 offA = new float3(
-                offset.x, offset.y, offset.x * 0.73f);
-            float3 offB = offA + DECORRELATION;
-
-            float3 pA = new float3(
-                cosU * freq, sinU * freq, cosV * freq) + offA;
-            float3 pB = new float3(
-                cosV * freq, sinV * freq, cosU * freq) + offB;
-
-            return (noise.snoise(pA) + noise.snoise(pB)) * 0.5f;
+            value = math.saturate(value);
+            float squared = value * value;
+            float lifted = 1f - (1f - value) * (1f - value);
+            float lowGamma = math.saturate(1f - gamma);
+            float highGamma = math.saturate(gamma - 1f);
+            return math.lerp(math.lerp(value, lifted, lowGamma), squared, highGamma);
         }
 
-        private static float FBM_Idx(
-            int xi, int yi, int N,
-            float[] cosT, float[] sinT,
-            float scale, float2 offset)
+        private static float2 FastTriangleFlow(
+            float u,
+            float v,
+            float scale,
+            float2 offset,
+            float fineWeight)
         {
-            int wx = ((xi % N) + N) % N;
-            int wy = ((yi % N) + N) % N;
+            float seedA = offset.x * 0.00137f + offset.y * 0.00019f;
+            float seedB = offset.y * 0.00191f - offset.x * 0.00023f;
+            float baseA = FastSignedTriangle(u * (1f + scale) + v * 0.37f + seedA);
+            float baseB = FastSignedTriangle(v * (1.2f + scale) - u * 0.29f + seedB);
+            float fineA = FastSignedTriangle((u + v) * (2.3f + scale) + seedA * 0.5f);
+            float fineB = FastSignedTriangle((u - v) * (2.7f + scale) + seedB * 0.5f);
 
-            float val = 0f, amp = 1f, freq = scale, maxA = 0f;
-
-            for (int i = 0; i < 2; i++) // 2 octaves for smooth flow
-            {
-                val  += Seamless(
-                    cosT[wx], sinT[wx], cosT[wy], sinT[wy],
-                    freq, offset) * amp;
-                maxA += amp;
-                amp  *= 0.4f;
-                freq *= 2f;
-                offset += new float2(53.71f, 37.93f);
-            }
-
-            return val / maxA;
-        }
-
-        private static float2 CurlNoise(
-            int px, int py, int N, float eps,
-            float[] cosT, float[] sinT,
-            float scale, float2 offset)
-        {
-            int epsPx = math.max(1, (int)(eps * N));
-
-            float pUp = FBM_Idx(px, py + epsPx, N,
-                cosT, sinT, scale, offset);
-            float pDn = FBM_Idx(px, py - epsPx, N,
-                cosT, sinT, scale, offset);
-            float pRt = FBM_Idx(px + epsPx, py, N,
-                cosT, sinT, scale, offset);
-            float pLf = FBM_Idx(px - epsPx, py, N,
-                cosT, sinT, scale, offset);
-
-            float epsW = epsPx * 2f / N;
             return new float2(
-                (pUp - pDn) / epsW,   // dΨ/dv → flow_x
-                -(pRt - pLf) / epsW); // -dΨ/du → flow_y
+                baseB + fineA * fineWeight,
+                -baseA + fineB * fineWeight) * 0.5f;
+        }
+
+        private static float FastSignedTriangle(float value)
+        {
+            float t = math.frac(value);
+            return 1f - 4f * math.abs(t - 0.5f);
         }
     }
 }

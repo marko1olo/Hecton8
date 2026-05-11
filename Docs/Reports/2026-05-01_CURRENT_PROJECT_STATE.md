@@ -4,9 +4,16 @@ Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: conceptual source-backed project state, not a runtime certification report
 
-Path note: filename retained as the stable current-state anchor. This file now includes May 2 documentation/build-evidence, May 3 event-generation/foundation/settings/registry/job-barrier addenda, and a May 4 documentation/build/guard addendum.
+Path note: filename retained for compatibility. This dated report is now evidence/reference, not the first authority entry point.
 
-## 2026-05-04 Current Addendum
+## 2026-05-11 Authority Override
+
+- Stable project authority starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, and current source/logs.
+- Current evidence/counter boundary starts at `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`, `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`, and `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
+- This file remains useful as a dated conceptual snapshot. It does not outrank stable docs, current source, fresh Unity logs, profiler captures, GCMonitor captures, player-build output, memory data, frame-time data, or visual-quality captures.
+- Visual-realistic-fake doctrine is now stable authority through `AGENTS.md`, `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`, `.agents-skills/README.md`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`.
+
+## Historical 2026-05-04 Addendum
 
 - Latest broad documentation sweep: `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
 - Latest first-party warning cleanup: `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`.
@@ -38,8 +45,8 @@ Path note: filename retained as the stable current-state anchor. This file now i
 
 ## What This File Is
 
-This file is the current conceptual entry point for agents.
-It reconciles active docs with current source ownership at a system level.
+This file is historical conceptual evidence for agents.
+It reconciled active docs with source ownership at a system level as of its dated pass, and must now be read after the stable authority spine listed above.
 
 This file is not proof of:
 
@@ -55,7 +62,7 @@ May 1, May 2, and May 3 build/guard details remain historical evidence in their 
 The May 3 settings persistence rebind added a `SettingsManager`/`UserOptionsPersistence` registry-order hardening pass and a fresh `dotnet build .\Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:UseSharedCompilation=false /clp:Summary /v:minimal` result with `0 Warning(s)` / `0 Error(s)`.
 The May 3 interaction prompt cache pass moved `EndingTerminalInteractable.GetInteractText()` to cached localized strings refreshed in lifecycle/language-change paths and produced a full `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:UseSharedCompilation=false` result with `0 Warning(s)` / `0 Error(s)`. This is historical source/build evidence only.
 
-Latest high-authority addenda:
+Historical addenda referenced by this report:
 
 - `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
 - `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`

@@ -57,8 +57,6 @@ namespace Hecton8.Gameplay
         [SerializeField] private LayerMask hitMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
         [SerializeField] private float feedbackInterval = 0.35f;
 
-        private static readonly RaycastHit[] HitBuffer = new RaycastHit[8];
-
         private Transform _cachedTransform;
         private float _cooldown;
         private float _nextFeedbackAt;
@@ -85,36 +83,8 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            Vector3 origin = _cachedTransform.position;
             Vector3 direction = _cachedTransform.forward;
-            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
-                origin,
-                radius,
-                direction,
-                HitBuffer,
-                range,
-                hitMask,
-                QueryTriggerInteraction.Ignore);
-
-            Collider bestCollider = null;
-            Vector3 bestPoint = origin + direction * range;
-            float bestDistance = float.MaxValue;
-
-            for (int i = 0; i < hitCount; i++)
-            {
-                Collider candidate = HitBuffer[i].collider;
-                if (candidate == null || candidate.transform == _cachedTransform || candidate.transform.IsChildOf(_cachedTransform))
-                    continue;
-
-                if (HitBuffer[i].distance < bestDistance)
-                {
-                    bestDistance = HitBuffer[i].distance;
-                    bestCollider = candidate;
-                    bestPoint = HitBuffer[i].point;
-                }
-            }
-
-            if (bestCollider != null)
+            if (TryFindBestHit(out Collider bestCollider, out Vector3 bestPoint, out float bestDistance))
             {
                 float effectiveDamage = damage * GetEfficiency();
                 bool applied = ToolHitUtility.ApplyDamage(bestCollider, effectiveDamage, bestPoint, direction, impulse);
@@ -135,9 +105,6 @@ namespace Hecton8.Gameplay
                     "WARN");
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
-
-            for (int i = 0; i < hitCount; i++)
-                HitBuffer[i] = default;
 
             _cooldown = swingCooldown / math.max(0.25f, GetSpeed());
         }
@@ -234,35 +201,25 @@ namespace Hecton8.Gameplay
         {
             Vector3 origin = _cachedTransform.position;
             Vector3 direction = _cachedTransform.forward;
-            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
-                origin,
-                radius,
-                direction,
-                HitBuffer,
-                range,
-                hitMask,
-                QueryTriggerInteraction.Ignore);
-
             bestCollider = null;
-            bestPoint = origin + direction * range;
-            bestDistance = float.MaxValue;
+            float queryRange = range + math.max(0f, radius);
+            bestPoint = origin + direction * queryRange;
+            bestDistance = queryRange;
 
-            for (int i = 0; i < hitCount; i++)
+            if (!TryResolveQueuedRaycast(origin, direction, queryRange, hitMask, QueryTriggerInteraction.Ignore, out RaycastHit hit))
+                return false;
+
+            Collider candidate = hit.collider;
+            if (candidate == null ||
+                candidate.transform == _cachedTransform ||
+                candidate.transform.IsChildOf(_cachedTransform))
             {
-                Collider candidate = HitBuffer[i].collider;
-                if (candidate == null || candidate.transform == _cachedTransform || candidate.transform.IsChildOf(_cachedTransform))
-                    continue;
-
-                if (HitBuffer[i].distance < bestDistance)
-                {
-                    bestDistance = HitBuffer[i].distance;
-                    bestCollider = candidate;
-                    bestPoint = HitBuffer[i].point;
-                }
+                return false;
             }
 
-            for (int i = 0; i < hitCount; i++)
-                HitBuffer[i] = default;
+            bestCollider = candidate;
+            bestPoint = hit.point;
+            bestDistance = hit.distance;
 
             return bestCollider != null;
         }

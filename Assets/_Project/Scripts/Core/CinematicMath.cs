@@ -1,0 +1,84 @@
+using System.Runtime.CompilerServices;
+using Unity.Mathematics;
+
+namespace Hecton8.Core
+{
+    /// <summary>
+    /// Visual-only math approximations for hot presentation paths.
+    /// </summary>
+    public static class CinematicMath
+    {
+        private const float TwoPi = 6.28318530718f;
+        private const float InvTwoPi = 0.15915494309f;
+        private const float HalfPi = 1.57079632679f;
+        private const float FastSinA = 1.27323954474f;
+        private const float FastSinB = 0.40528473456f;
+        private const float MinimumQuaternionLengthSq = 0.000001f;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ApproximateLength(float3 value)
+        {
+            float3 absolute = math.abs(value);
+            float maxAxis = math.max(absolute.x, math.max(absolute.y, absolute.z));
+            float minAxis = math.min(absolute.x, math.min(absolute.y, absolute.z));
+            float midAxis = (absolute.x + absolute.y + absolute.z) - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.25f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastTriangleWave01(float phase)
+        {
+            float wrapped = phase - math.floor(phase);
+            return 1f - math.abs((wrapped * 2f) - 1f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastTriangleWaveSigned(float phase)
+        {
+            return (FastTriangleWave01(phase) * 2f) - 1f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastSin(float radians)
+        {
+            float wrapped = radians - (math.floor((radians + math.PI) * InvTwoPi) * TwoPi);
+            return (FastSinA * wrapped) - (FastSinB * wrapped * math.abs(wrapped));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastCos(float radians)
+        {
+            return FastSin(radians + HalfPi);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion FastYawQuaternion(float radians)
+        {
+            float half = radians * 0.5f;
+            float y = FastSin(half);
+            float w = FastCos(half);
+            float invLength = math.rsqrt((y * y) + (w * w));
+            return new quaternion(0f, y * invLength, 0f, w * invLength);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion NormalizeQuaternionOrIdentity(quaternion value)
+        {
+            float lengthSq = math.lengthsq(value.value);
+            float4 normalized = value.value * math.rsqrt(math.max(lengthSq, MinimumQuaternionLengthSq));
+            return new quaternion(math.select(new float4(0f, 0f, 0f, 1f), normalized, lengthSq > MinimumQuaternionLengthSq));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion FastNlerp(quaternion from, quaternion to, float t)
+        {
+            float4 fromValue = from.value;
+            float4 toValue = to.value;
+            toValue = math.select(-toValue, toValue, math.dot(fromValue, toValue) >= 0f);
+            float4 blended = math.lerp(fromValue, toValue, math.saturate(t));
+            float lengthSq = math.lengthsq(blended);
+            float4 normalized = blended * math.rsqrt(math.max(lengthSq, MinimumQuaternionLengthSq));
+            return new quaternion(math.select(new float4(0f, 0f, 0f, 1f), normalized, lengthSq > MinimumQuaternionLengthSq));
+        }
+    }
+}

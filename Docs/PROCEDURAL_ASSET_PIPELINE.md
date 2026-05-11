@@ -1,5 +1,5 @@
 ﻿# PROCEDURAL_ASSET_PIPELINE.md
-Date: 2026-05-07
+Date: 2026-05-11
 ## ???????? ?? ????????? ??????????? ???????
 Status: PENDING VERIFICATION
 Verification: not runtime-measured in this pass
@@ -7,13 +7,14 @@ Target: NVIDIA MX350 2GB VRAM · i5-1135G7 · 12GB RAM
 Engine: Unity 6000.x · URP Forward+
 Tools: MapMagic 2.1.18 · GPU Instancer Pro · Mantis LOD · Mesh Baker
 
-2026-05-04 current-state boundary:
+2026-05-11 current-state boundary:
 
 - This is the procedural asset production contract, not proof that a specific generated asset exists or is wired.
-- Current project/system truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project/system truth starts at `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`, `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 - For procedural world placement ownership, read `Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`.
 - For readable geology/seismic ownership, read `Docs/ARCHITECTURE/SEISMIC_GEOLOGY_SYSTEM.md`.
 - The deprecated `Docs/HECTON8_GEOLOGY_PRODUCTION_PLAN.md` path must not be used as active authority.
+- Procedural assets must follow the visual-fake-first doctrine: imply richness through silhouette, material, LOD, shader motion, masks, decals, impostors, and pooled VFX before adding runtime simulation.
 
 ---
 
@@ -68,6 +69,8 @@ Tools: MapMagic 2.1.18 · GPU Instancer Pro · Mantis LOD · Mesh Baker
 
 [REQ] Detail != Polygons. Realism = normal maps + vertex displacement +
       triplanar + correct LOD transitions.
+[REQ] Realism != runtime physics. Prefer authored deformation, VAT, shader wetness,
+      fake caustics, flow masks, and proxy colliders before simulation.
 [REQ] One material = one draw call. ??? ???????? ????? GPU Instancer
       Color/Scale/Rotation randomization.
 [REQ] Zero UV dependency ??? ??????????? ?????????. Triplanar MANDATORY.

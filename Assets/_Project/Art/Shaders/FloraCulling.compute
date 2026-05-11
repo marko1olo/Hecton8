@@ -43,7 +43,7 @@ float _HectonLodNearDistance;
 float _HectonLodFarDistance;
 float _HectonLodTransitionRange;
 float _HectonPeripheralCullDot;
-float _HectonPeripheralCullDistance;
+float _HectonPeripheralCullDistanceSq;
 float4 _HectonZBufferParams;
 float _HectonOcclusionDepthBias;
 uint _HectonOcclusionEnabled;
@@ -389,18 +389,16 @@ bool IsVisibleInDarkness(float3 samplePositionWS)
 
 bool IsVisibleInPeripheralCone(float3 samplePositionWS)
 {
-    float peripheralDistance = max(_HectonPeripheralCullDistance, 0.0);
-    if (peripheralDistance <= 0.0)
+    if (_HectonPeripheralCullDistanceSq <= 0.0)
         return true;
 
     float3 toSampleWS = samplePositionWS - _HectonCameraPosition;
     float distanceSq = dot(toSampleWS, toSampleWS);
-    if (!IsFiniteScalar(distanceSq) || distanceSq <= peripheralDistance * peripheralDistance)
+    if (!IsFiniteScalar(distanceSq) || distanceSq <= _HectonPeripheralCullDistanceSq)
         return true;
 
-    float cameraForwardLenSq = dot(_HectonCameraForward, _HectonCameraForward);
     float dotForward = dot(toSampleWS, _HectonCameraForward);
-    return PassesDotThresholdSq(dotForward, _HectonPeripheralCullDot, distanceSq * cameraForwardLenSq);
+    return PassesDotThresholdSq(dotForward, _HectonPeripheralCullDot, distanceSq);
 }
 
 [numthreads(1, 1, 1)]

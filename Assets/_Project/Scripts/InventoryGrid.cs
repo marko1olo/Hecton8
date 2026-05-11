@@ -8,7 +8,9 @@ namespace Hecton8.Inventory
 {
     using Hecton8.Core;
     using Unity.Collections;
+    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
+    using Unity.Mathematics;
     using UnityEngine;
 
     public sealed class InventoryGrid
@@ -59,6 +61,7 @@ namespace Hecton8.Inventory
         private NativeArray<byte> _anchorRarityIds;
         private NativeArray<byte> _anchorFlags;
         private int _occupiedCells;
+        private ulong _singleCellFreeMask;
         private const string NativeMemoryOwner = nameof(InventoryGrid);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
@@ -78,6 +81,12 @@ namespace Hecton8.Inventory
         public NativeArray<byte>.ReadOnly AnchorRarityIds => _anchorRarityIds.IsCreated ? _anchorRarityIds.AsReadOnly() : default;
         public NativeArray<byte>.ReadOnly AnchorFlags => _anchorFlags.IsCreated ? _anchorFlags.AsReadOnly() : default;
 
+        public unsafe void* GetAnchorHashIdsUnsafeReadOnlyPtr(out int length)
+        {
+            length = _anchorHashIds.IsCreated ? _anchorHashIds.Length : 0;
+            return length > 0 ? NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_anchorHashIds) : null;
+        }
+
         public InventoryGrid(int columns, int rows)
         {
             _columns = columns;
@@ -95,6 +104,7 @@ namespace Hecton8.Inventory
             _anchorFlags = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeMemorySentinel();
             _occupiedCells = 0;
+            _singleCellFreeMask = BuildFirst64Mask(totalCells);
         }
 
         public void Dispose(JobHandle dependency)
@@ -109,6 +119,7 @@ namespace Hecton8.Inventory
             DisposeNativeArray(ref _anchorRarityIds, dependency);
             DisposeNativeArray(ref _anchorFlags, dependency);
             _occupiedCells = 0;
+            _singleCellFreeMask = 0UL;
         }
 
         private void RegisterNativeMemorySentinel()
@@ -237,6 +248,13 @@ namespace Hecton8.Inventory
                 placedX = -1;
                 placedY = -1;
                 return false;
+            }
+
+            if (width == 1 &&
+                height == 1 &&
+                TryAddSingleCellItem(in descriptor, out placedX, out placedY))
+            {
+                return true;
             }
 
             int maxX = _columns - width;
@@ -388,6 +406,7 @@ namespace Hecton8.Inventory
             if (!_cellAnchorIndices.IsCreated)
             {
                 _occupiedCells = 0;
+                _singleCellFreeMask = 0UL;
                 return;
             }
 
@@ -405,6 +424,7 @@ namespace Hecton8.Inventory
             }
 
             _occupiedCells = 0;
+            _singleCellFreeMask = BuildFirst64Mask(TotalCells);
         }
 
         private int CellIndex(int x, int y)
@@ -426,6 +446,57 @@ namespace Hecton8.Inventory
             }
 
             return true;
+        }
+
+        private bool TryAddSingleCellItem(in InventoryItemDescriptor descriptor, out int placedX, out int placedY)
+        {
+            int totalCells = TotalCells;
+            ulong availableMask = _singleCellFreeMask;
+            if (availableMask != 0UL)
+            {
+                int anchorIndex = (int)math.tzcnt(availableMask);
+                placedX = anchorIndex % _columns;
+                placedY = anchorIndex / _columns;
+                PlaceDescriptor(in descriptor, placedX, placedY);
+                return true;
+            }
+
+            for (int anchorIndex = 64; anchorIndex < totalCells; anchorIndex++)
+            {
+                if (_anchorHashIds[anchorIndex] != 0 || _cellAnchorIndices[anchorIndex] != 0)
+                    continue;
+
+                placedX = anchorIndex % _columns;
+                placedY = anchorIndex / _columns;
+                PlaceDescriptor(in descriptor, placedX, placedY);
+                return true;
+            }
+
+            placedX = -1;
+            placedY = -1;
+            return false;
+        }
+
+        private static ulong BuildFirst64Mask(int totalCells)
+        {
+            int cappedCells = math.clamp(totalCells, 0, 64);
+            return cappedCells == 64 ? ulong.MaxValue : ((1UL << cappedCells) - 1UL);
+        }
+
+        private void SetSingleCellFreeBit(int cellIndex)
+        {
+            if ((uint)cellIndex >= 64u)
+                return;
+
+            _singleCellFreeMask |= 1UL << cellIndex;
+        }
+
+        private void ClearSingleCellFreeBit(int cellIndex)
+        {
+            if ((uint)cellIndex >= 64u)
+                return;
+
+            _singleCellFreeMask &= ~(1UL << cellIndex);
         }
 
         private bool CheckFitExcludingAnchors(int startX, int startY, int width, int height, int ignoredAnchorA, int ignoredAnchorB)
@@ -485,7 +556,9 @@ namespace Hecton8.Inventory
             {
                 for (int cellX = startX; cellX < endX; cellX++)
                 {
-                    _cellAnchorIndices[CellIndex(cellX, cellY)] = encodedAnchorIndex;
+                    int cellIndex = CellIndex(cellX, cellY);
+                    _cellAnchorIndices[cellIndex] = encodedAnchorIndex;
+                    ClearSingleCellFreeBit(cellIndex);
                 }
             }
 
@@ -507,6 +580,8 @@ namespace Hecton8.Inventory
                     {
                         _cellAnchorIndices[cellIndex] = 0;
                         _occupiedCells--;
+                        if (_anchorHashIds[cellIndex] == 0)
+                            SetSingleCellFreeBit(cellIndex);
                     }
                 }
             }
@@ -522,6 +597,11 @@ namespace Hecton8.Inventory
             _anchorCategoryIds[anchorIndex] = 0;
             _anchorRarityIds[anchorIndex] = 0;
             _anchorFlags[anchorIndex] = 0;
+            if ((uint)anchorIndex < (uint)_cellAnchorIndices.Length &&
+                _cellAnchorIndices[anchorIndex] == 0)
+            {
+                SetSingleCellFreeBit(anchorIndex);
+            }
         }
     }
 }

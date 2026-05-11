@@ -27,7 +27,7 @@ namespace Hecton8.Physics
             if (safeValue <= 0f)
                 return 0f;
 
-            float magnitude = math.asfloat((math.asint(safeValue) >> 1) + 0x1FC00000);
+            float magnitude = safeValue * math.rsqrt(safeValue);
             return math.isfinite(magnitude) ? magnitude : 0f;
         }
 
@@ -151,7 +151,7 @@ namespace Hecton8.Physics
             out byte isValid)
         {
             isValid = 1;
-            float3 blendedCenter = math.lerp(currentCenter, targetCenter, math.saturate(blendAlpha));
+            float3 blendedCenter = LerpMad(currentCenter, targetCenter, math.saturate(blendAlpha));
             if (!math.all(math.isfinite(blendedCenter)))
             {
                 isValid = 0;
@@ -186,7 +186,7 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            float candidate = numerator / denominator;
+            float candidate = numerator * math.rcp(denominator);
             if (math.isnan(candidate) || !math.isfinite(candidate))
                 return false;
 
@@ -197,7 +197,20 @@ namespace Hecton8.Physics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SafeCubeRoot(float value)
         {
-            return math.pow(math.max(0f, value), 0.33333334f);
+            float safeValue = math.max(0f, value);
+            if (safeValue <= 0f)
+                return 0f;
+
+            float estimate = math.asfloat((math.asint(safeValue) / 3) + 709921077);
+            float estimateSq = math.max(estimate * estimate, 0.000001f);
+            estimate = ((estimate + estimate) + safeValue * math.rcp(estimateSq)) * 0.33333334f;
+            return math.isfinite(estimate) ? estimate : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 LerpMad(float3 from, float3 to, float t)
+        {
+            return from + (to - from) * t;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -211,7 +224,7 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            float candidate = numerator / denominator;
+            float candidate = numerator * math.rcp(denominator);
             if (math.isnan(candidate) || !math.isfinite(candidate))
                 return false;
 

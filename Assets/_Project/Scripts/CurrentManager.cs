@@ -1,12 +1,12 @@
 // ============================================================================
-//  CurrentManager.cs — Generator vektornogo polya techeniy (triangle fake).
-//  Vse metody static, bez allokatsiy, Burst-sovmestimy.
+//  CurrentManager.cs - deterministic triangle-wave current field.
+//  Static, allocation-free, and Burst-compatible.
 // ============================================================================
 using Unity.Mathematics;
 
 public static class CurrentManager
 {
-    // Smescheniya raznosyat pattern-kanaly, isklyuchaya korrelyatsiyu mezhdu osyami.
+    // Offsets decorrelate axis channels without noise calls.
     private const float OFFSET_A = 31.71f;
     private const float OFFSET_B = 67.30f;
     private const float OFFSET_C = 149.20f;
@@ -19,8 +19,8 @@ public static class CurrentManager
     }
 
     /// <summary>
-    /// Polnyy 3D-vektor techeniya v mirovoy tochke.
-    /// Vertikalnaya sostavlyayuschaya oslablena verticalFactor.
+    /// Full 3D current vector at a world-space point.
+    /// The vertical channel is scaled by verticalFactor.
     /// </summary>
     public static float3 SampleCurrent(
         float3 worldPos,
@@ -34,18 +34,18 @@ public static class CurrentManager
         float sx = worldPos.x * noiseScale;
         float sz = worldPos.z * noiseScale;
 
-        // Dva deterministicheskih triangle-kanala: bez dorogih funktsiy.
+        // Two deterministic triangle channels: no noise, no trig.
         float nx = FastTriangleSigned(sx * 2.41f + sz * 0.73f + t + OFFSET_A);
         float nz = FastTriangleSigned(sz * 2.17f - sx * 0.61f + t * 1.23f + OFFSET_C);
 
-        // Vertikalnyy kanal — medlennee, slabee.
+        // Vertical channel: slower and weaker.
         float ny = FastTriangleSigned(sx * 0.43f + sz * 0.29f + t * 0.5f + OFFSET_D) * verticalFactor;
 
         return new float3(nx, ny, nz) * strength;
     }
 
     /// <summary>
-    /// Tolko gorizontalnoe techenie (Y = 0). Deshevle na ~30 %.
+    /// Horizontal-only current, with Y fixed to zero.
     /// </summary>
     public static float3 SampleHorizontal(
         float3 worldPos,

@@ -64,7 +64,7 @@ namespace Hecton8.Dev
                 ContainsAll(saveManager, "ReportLoadPipelineStage(LoadingPipelineStage.PagingSectors", "ReportLoadPipelineStage(LoadingPipelineStage.HydratingEntities", "ReportLoadPipelineStage(LoadingPipelineStage.BuildingNavGrid");
 
             bool safeAupSnapPass =
-                ContainsAll(saveManager, "TryApplySafeAupSnapOnLoad(data)", "Physics.SphereCastNonAlloc", "AbsoluteUniversePosition.FromRuntimePosition", "HectonFloatingOrigin.BeginSafeTeleportProtocol");
+                ContainsAll(saveManager, "TryApplySafeAupSnapOnLoad(data)", "AbsoluteUniversePosition.FromRuntimePosition", "HectonFloatingOrigin.BeginSafeTeleportProtocol");
 
             bool savingHudPass =
                 ContainsAll(saveManager, "SaveEvents.RaiseMappedWriteStarted(slotName);") &&

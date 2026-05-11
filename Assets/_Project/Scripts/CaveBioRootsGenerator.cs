@@ -13,7 +13,13 @@ namespace Hecton8.Caves
     {
         private const string RootNamePrefix = "_BioRoot_";
         private const int RootNameCacheCapacity = 32;
+        private const int SwayLutSize = 1024;
+        private const int SwayLutMask = SwayLutSize - 1;
+        private const int SwayLutQuarter = SwayLutSize >> 2;
+        private const float InvTau = 0.15915494309189535f;
+        private const float Hash24ToUnit = 1f / 16777216f;
         private const float CeilingAnchorInset = 0.12f;
+        private static readonly float[] _SwaySinLut = CreateSwaySinLut(); // COLD ALLOC: float[1024] - visual root sway sine LUT - owner: CaveBioRootsGenerator
         private static readonly string[] _RootNames = CreateTwoDigitNameCache(RootNamePrefix, RootNameCacheCapacity); // COLD ALLOC: string[32] — bounded bio-root child names — owner: CaveBioRootsGenerator
 
         [Header("── Runtime Wiring ──────────────────")]
@@ -125,8 +131,9 @@ namespace Hecton8.Caves
                 Vector3 anchorLocal = _rootAnchorsLocal[i];
                 Vector3 anchorWS = _volumeTransform.TransformPoint(anchorLocal);
                 Vector3 wakeOffsetLS = ResolvePropWashOffset(anchorWS, playerPosition, playerVelocity, playerSpeed, _rootLengths[i]);
-                float oscillation = Mathf.Sin((time * _swayFrequency) + _rootPhases[i]);
-                Vector3 harmonicOffsetLS = new Vector3(oscillation * _swayAmplitude, 0f, Mathf.Cos((time * _swayFrequency * 0.73f) + _rootPhases[i]) * (_swayAmplitude * 0.35f));
+                float phase = (time * _swayFrequency) + _rootPhases[i];
+                float oscillation = FastSin(phase);
+                Vector3 harmonicOffsetLS = new Vector3(oscillation * _swayAmplitude, 0f, FastCos((time * _swayFrequency * 0.73f) + _rootPhases[i]) * (_swayAmplitude * 0.35f));
 
                 int segmentCount = positions.Length;
                 float length = _rootLengths[i];
@@ -352,8 +359,41 @@ namespace Hecton8.Caves
 
         private static float Hash01(int index, int salt)
         {
-            float hash = Mathf.Sin((index * 12.9898f) + (salt * 78.233f)) * 43758.5453f;
-            return hash - Mathf.Floor(hash);
+            uint hash = ((uint)index * 0x9E3779B9u) ^ ((uint)salt * 0x85EBCA6Bu);
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return (hash & 0x00FFFFFFu) * Hash24ToUnit;
+        }
+
+        private static float FastSin(float radians)
+        {
+            int index = PhaseToIndex(radians);
+            return _SwaySinLut[index & SwayLutMask];
+        }
+
+        private static float FastCos(float radians)
+        {
+            int index = PhaseToIndex(radians);
+            return _SwaySinLut[(index + SwayLutQuarter) & SwayLutMask];
+        }
+
+        private static int PhaseToIndex(float radians)
+        {
+            return (int)(radians * (SwayLutSize * InvTau));
+        }
+
+        private static float[] CreateSwaySinLut()
+        {
+            float[] values = new float[SwayLutSize];
+            for (int i = 0; i < SwayLutSize; i++)
+            {
+                values[i] = math.sin((i + 0.5f) * (2f * math.PI / SwayLutSize));
+            }
+
+            return values;
         }
 
         private static string GetCachedRootName(int index)

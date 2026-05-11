@@ -103,7 +103,7 @@ namespace Hecton8.Audio
         private static readonly uint _listenerExceptionWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AcousticZoneEvents.ListenerException"));
         private static readonly uint _listenerContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AcousticZoneEvents.Listeners"));
 
-        // COLD ALLOC: RegistryBucket<IAcousticZoneEventListener>[4] — deferred acoustic-zone listeners — owner: AcousticZoneEvents
+        // COLD ALLOC: RegistryBucket<IAcousticZoneEventListener>[4] - deferred acoustic-zone listeners - owner: AcousticZoneEvents
         private static readonly RegistryBucket<IAcousticZoneEventListener> _listeners =
             new RegistryBucket<IAcousticZoneEventListener>(ListenerCapacity);
         // COLD ALLOC: IAcousticZoneEventListener[4] - listener additions deferred while dispatching acoustic-zone changes - owner: AcousticZoneEvents
@@ -288,7 +288,7 @@ namespace Hecton8.Audio
         {
             if (!_pendingZoneChanges.IsCreated)
             {
-                _pendingZoneChanges = new NativeQueue<AcousticZoneChangedEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticZoneChangedEvent>[4] — deferred acoustic-zone lane — owner: AcousticZoneEvents
+                _pendingZoneChanges = new NativeQueue<AcousticZoneChangedEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticZoneChangedEvent>[4] - deferred acoustic-zone lane - owner: AcousticZoneEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingZoneChanges,
                     PendingZoneChangeCapacity,
@@ -300,7 +300,7 @@ namespace Hecton8.Audio
 
             if (!_nextFrameZoneChanges.IsCreated)
             {
-                _nextFrameZoneChanges = new NativeQueue<AcousticZoneChangedEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticZoneChangedEvent>[4] — next-frame acoustic-zone lane prevents same-frame reentrant dispatch — owner: AcousticZoneEvents
+                _nextFrameZoneChanges = new NativeQueue<AcousticZoneChangedEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticZoneChangedEvent>[4] - next-frame acoustic-zone lane prevents same-frame reentrant dispatch - owner: AcousticZoneEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameZoneChanges,
                     PendingZoneChangeCapacity,
@@ -609,7 +609,7 @@ namespace Hecton8.Audio
         //  INSPECTOR — SNAPSHOTS
         // ══════════════════════════════════════════════════════════
 
-        [Header("── AudioMixer Snapshots ──────────────────────")]
+        [Header("AudioMixer Snapshots")]
         [Tooltip("Snapshot dlya podvodnoy sredy.\n" +
                  "Nastroyki: Low-Pass Filter, Reverb (Large Hall),\n" +
                  "priglushennye vysokie, usilennye nizkie.")]
@@ -631,7 +631,7 @@ namespace Hecton8.Audio
         //  INSPECTOR — TRANSITION
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Transition Settings ───────────────────────")]
+        [Header("Transition Settings")]
         [Tooltip("Vremya perehoda mezhdu snapshot'ami (sekundy).\n" +
                  "2.0 = plavnyy krossfeyd, imitiruyuschiy otkachku vody.\n" +
                  "0.5 = bystryy perehod dlya testirovaniya.")]
@@ -656,7 +656,7 @@ namespace Hecton8.Audio
         [Tooltip("Ves Storm snapshot v Surface weather mix. Upravlyaet intensivnostyu storm wet layer.")]
         [SerializeField, Range(0f, 1f)] private float surfaceStormSnapshotWeight = 0.8f;
 
-        [Header("── Exterior State Stability ───────────────────────")]
+        [Header("Exterior State Stability")]
         [Tooltip("Glubina vhoda v podvodnoe akusticheskoe sostoyanie.\n" +
                  "Derzhitsya vyshe vizualnogo poroga, chtoby akustika ne drozhala na ryabi u poverhnosti.")]
         [SerializeField] private float acousticEnterUnderwaterDepth = SurfaceStateUtility.EnterUnderwaterDepth;
@@ -680,7 +680,7 @@ namespace Hecton8.Audio
         //  INSPECTOR — TRANSITION SOUNDS
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Transition Audio ──────────────────────────")]
+        [Header("Transition Audio")]
         [Tooltip("Zvuk otkachki vody (vhod v suhuyu zonu).\n" +
                  "Vosproizvoditsya cherez SpatialAudioManager.PlayStatic2D\n" +
                  "(2D, 'vnutri shlema'). Dlitelnost ~2-3 sekundy.")]
@@ -773,7 +773,7 @@ namespace Hecton8.Audio
         //  INSPECTOR — PLAYER REFERENCE
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Player ────────────────────────────────────")]
+        [Header("Player")]
         [Tooltip("BuoyancyObject na igroke. Esli ne naznachen —\n" +
                  "ischetsya avtomaticheski po tegu 'Player' pri starte.")]
 
@@ -816,7 +816,7 @@ namespace Hecton8.Audio
         [Tooltip("Imya exposed-parametra AudioMixer dlya dry level.")]
         [SerializeField] private string acousticDryLevelParameter = AcousticDryLevelParameterDefault;
 
-        [Header("── Biome Ambient Response ─────────────────────────")]
+        [Header("Biome Ambient Response")]
         [Tooltip("Optsionalnaya ssylka na BiomeMatrixDirector. Esli ne zadana — kontroller lenivo rezolvit runtime owner.")]
         [SerializeField] private BiomeMatrixDirector biomeMatrixDirector;
 
@@ -847,7 +847,7 @@ namespace Hecton8.Audio
         [Tooltip("Mnozhitel pitch podvodnogo loop v hostile biome.")]
         [SerializeField, Range(0.5f, 1.5f)] private float hostileAmbientPitchScale = 0.90f;
 
-        [Header("── Soundscape Tier Response ────────────────────")]
+        [Header("Soundscape Tier Response")]
         // Existing underwater acoustic owner consumes depth-band context directly.
         [Tooltip("Optsionalnaya ssylka na SoundscapeSystem. Esli ne zadana — kontroller lenivo rezolvit runtime owner.")]
         [SerializeField] private SoundscapeSystem soundscapeSystem;
@@ -891,7 +891,7 @@ namespace Hecton8.Audio
         [Tooltip("Mnozhitel pitch podvodnogo loop v thermal tier.")]
         [SerializeField, Range(0.5f, 1.5f)] private float thermalTierAmbientPitchScale = 0.9f;
 
-        [Header("── Listener Fallback Processing ─────────────")]
+        [Header("Listener Fallback Processing")]
         [Tooltip("If mixer snapshot authoring is incomplete, apply listener-level low-pass/reverb fallback so underwater/interior contrast still exists.")]
         [SerializeField] private bool enableSourceLevelAcousticFallback = true;
 
@@ -911,7 +911,7 @@ namespace Hecton8.Audio
         [Tooltip("Fallback interior reverb dry level. Exposed so sound design can retune dry/wet balance without code changes.")]
         [SerializeField, Range(-10000f, 0f)] private float interiorFallbackReverbDryLevel = 0f;
 
-        [Header("── Runtime Acoustic Graph Fallback ─────────────")]
+        [Header("Runtime Acoustic Graph Fallback")]
         [Tooltip("Continuous low-pass/reverb listener graph used when the authored mixer only contains attenuation.")]
         [SerializeField] private bool enableRuntimeAcousticGraph = true;
 
@@ -988,7 +988,7 @@ namespace Hecton8.Audio
         //  INSPECTOR — DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Diagnostics ───────────────────────────────")]
+        [Header("Diagnostics")]
 #pragma warning disable CS0414
         [SerializeField] private bool _debugIsInterior;
         [SerializeField] private bool _debugIsUnderwater;
@@ -1132,20 +1132,20 @@ namespace Hecton8.Audio
         private const float AcousticResonanceWriteEpsilon = 0.01f;
         private const float AcousticDecayWriteEpsilonSeconds = 0.01f;
         private const float AcousticDbWriteEpsilon = 0.1f;
-        // COLD ALLOC: AudioMixerSnapshot[3] — surface weather snapshot blend targets — owner: AcousticZoneController
+        // COLD ALLOC: AudioMixerSnapshot[3] - surface weather snapshot blend targets - owner: AcousticZoneController
         private readonly AudioMixerSnapshot[] _surfaceBlendSnapshots = new AudioMixerSnapshot[3];
-        // COLD ALLOC: float[3] — surface weather snapshot blend weights — owner: AcousticZoneController
+        // COLD ALLOC: float[3] - surface weather snapshot blend weights - owner: AcousticZoneController
         private readonly float[] _surfaceBlendWeights = new float[3];
         private bool _hasActiveResolvedSnapshotState;
         private bool _activeSurfaceBlendState;
         private AcousticZoneState _activeResolvedZone;
         private AudioMixerSnapshot _activeResolvedSnapshot;
         private int _activeSurfaceBlendSnapshotCount;
-        // COLD ALLOC: AudioMixerSnapshot[3] — last applied surface weather snapshot blend targets — owner: AcousticZoneController
+        // COLD ALLOC: AudioMixerSnapshot[3] - last applied surface weather snapshot blend targets - owner: AcousticZoneController
         private readonly AudioMixerSnapshot[] _activeSurfaceBlendSnapshots = new AudioMixerSnapshot[3];
-        // COLD ALLOC: float[3] — last applied surface weather snapshot blend weights — owner: AcousticZoneController
+        // COLD ALLOC: float[3] - last applied surface weather snapshot blend weights - owner: AcousticZoneController
         private readonly float[] _activeSurfaceBlendWeights = new float[3];
-        // COLD ALLOC: ActiveEmitterSample[24] — pooled world-emitter acoustic occlusion sample buffer — owner: AcousticZoneController
+        // COLD ALLOC: ActiveEmitterSample[24] - pooled world-emitter acoustic occlusion sample buffer - owner: AcousticZoneController
         private static readonly SpatialAudioManager.ActiveEmitterSample[] s_emitterOcclusionSamples =
             new SpatialAudioManager.ActiveEmitterSample[AcousticEmitterSampleCapacity];
 
@@ -1175,7 +1175,7 @@ namespace Hecton8.Audio
 
             _stateInitialized = false;
             _registeredToTickManager = false;
-            // COLD ALLOC: List<AudioSource>[32] — reused player-local audio scan buffer — owner: AcousticZoneController
+            // COLD ALLOC: List<AudioSource>[32] - reused player-local audio scan buffer - owner: AcousticZoneController
             _playerAudioSources = new List<AudioSource>(32);
 
 #if UNITY_EDITOR

@@ -41,25 +41,26 @@ namespace Hecton8.World
             float hSouth = Heights01[index - Width] * HeightScaleMeters;
             float hNorth = Heights01[index + Width] * HeightScaleMeters;
             float safeCellSize = math.max(0.001f, CellSizeMeters);
-            float dx = (hEast - hWest) / (safeCellSize * 2f);
-            float dz = (hNorth - hSouth) / (safeCellSize * 2f);
+            float invDoubleCellSize = math.rcp(safeCellSize * 2f);
+            float dx = (hEast - hWest) * invDoubleCellSize;
+            float dz = (hNorth - hSouth) * invDoubleCellSize;
             float2 gradient = new float2(dx, dz);
             float gradientLength = FastMagnitudeApprox(gradient);
             float slopeDegrees = math.degrees(math.atan(gradientLength));
-            float cliff01 = math.saturate((slopeDegrees - SlopeThresholdDegrees) / math.max(1f, 89f - SlopeThresholdDegrees));
+            float cliff01 = math.saturate((slopeDegrees - SlopeThresholdDegrees) * math.rcp(math.max(1f, 89f - SlopeThresholdDegrees)));
             if (cliff01 <= 0.0001f)
             {
                 HorizontalOffsetsMeters[index] = float2.zero;
                 return;
             }
 
-            float2 pushDirection = math.normalizesafe(-gradient, float2.zero);
-            if (math.lengthsq(pushDirection) <= 0.0001f)
+            if (gradientLength <= 0.0001f)
             {
                 HorizontalOffsetsMeters[index] = float2.zero;
                 return;
             }
 
+            float2 pushDirection = -gradient * math.rcp(math.max(gradientLength, 0.0001f));
             float2 worldXZ = new float2(x, z) * safeCellSize;
             float noise01 = math.saturate((noise.snoise(worldXZ * math.max(0.0001f, NoiseFrequency) + (float)Seed * 0.00137f) * 0.5f) + 0.5f);
             float offset = math.max(0f, MaxOffsetMeters) * cliff01 * math.lerp(0.35f, 1f, noise01);

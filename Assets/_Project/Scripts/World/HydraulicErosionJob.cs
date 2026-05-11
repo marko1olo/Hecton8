@@ -985,8 +985,18 @@ namespace Hecton8.World
         private static float2 HashDirection(int dropletIndex, int step)
         {
             uint hash = Hash((uint)dropletIndex * 0x9E3779B9u ^ (uint)step * 0x85EBCA6Bu);
-            float angle = Hash01(hash) * 6.28318530718f;
-            return new float2(math.cos(angle), math.sin(angle));
+            const float diagonal = 0.70710678118f;
+            switch ((int)(hash & 7u))
+            {
+                case 0: return new float2(1f, 0f);
+                case 1: return new float2(diagonal, diagonal);
+                case 2: return new float2(0f, 1f);
+                case 3: return new float2(-diagonal, diagonal);
+                case 4: return new float2(-1f, 0f);
+                case 5: return new float2(-diagonal, -diagonal);
+                case 6: return new float2(0f, -1f);
+                default: return new float2(diagonal, -diagonal);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

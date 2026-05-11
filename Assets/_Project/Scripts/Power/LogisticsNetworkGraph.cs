@@ -255,6 +255,7 @@ namespace Hecton8.Power
             public NativeArray<float> NodeServedDemand;
             public NativeArray<float> NodeVoltageSupplyRatio;
             public NativeArray<float> NodeSourcePotential;
+            public NativeArray<float> NodeConductanceSum;
             public NativeArray<float> NodeConductanceInverseSum;
             public NativeArray<float> PotentialFront;
             public NativeArray<float> PotentialBack;
@@ -363,7 +364,7 @@ namespace Hecton8.Power
 
                 summary.Balance = summary.TotalGeneration - summary.TotalConsumption;
                 summary.SupplyRatio = summary.TotalConsumption > Epsilon
-                    ? math.saturate(summary.TotalGeneration / summary.TotalConsumption)
+                    ? math.saturate(summary.TotalGeneration * math.rcp(summary.TotalConsumption))
                     : 1f;
                 summary.HasDeficit = summary.TotalGeneration + Epsilon < summary.TotalConsumption;
                 summary.BrownoutTier = ResolveBrownoutTier(summary.SupplyRatio);
@@ -485,7 +486,7 @@ namespace Hecton8.Power
 
                     float demand = ComponentDemand[componentIndex];
                     float generation = ComponentGeneration[componentIndex];
-                    float supplyRatio = demand > Epsilon ? math.saturate(generation / demand) : 1f;
+                    float supplyRatio = demand > Epsilon ? math.saturate(generation * math.rcp(demand)) : 1f;
                     ComponentRemainingSupply[componentIndex] = generation;
                     ComponentSupplyRatio[componentIndex] = supplyRatio;
                     ComponentBrownoutTier[componentIndex] = (byte)ResolveBrownoutTier(supplyRatio);
@@ -557,7 +558,7 @@ namespace Hecton8.Power
                     if (componentGeneration <= Epsilon || componentServedDemand <= Epsilon)
                         continue;
 
-                    float dispatchedGeneration = productionRate * math.saturate(componentServedDemand / componentGeneration);
+                    float dispatchedGeneration = productionRate * math.saturate(componentServedDemand * math.rcp(componentGeneration));
                     NodeNetInjection[nodeIndex] += dispatchedGeneration;
                 }
 
@@ -621,6 +622,7 @@ namespace Hecton8.Power
                     !EdgeConductance.IsCreated ||
                     !EdgeCapacity.IsCreated ||
                     !NodeSourcePotential.IsCreated ||
+                    !NodeConductanceSum.IsCreated ||
                     !NodeConductanceInverseSum.IsCreated ||
                     !RuntimeConductiveEdgeCount.IsCreated ||
                     EdgeCount <= 0 ||
@@ -744,16 +746,16 @@ namespace Hecton8.Power
 
             private void RemoveRupturedEdgeFromConductance(int sourceNodeIndex, float conductance)
             {
-                if (!IsValidNodeIndex(sourceNodeIndex) || conductance <= Epsilon)
+                if (!IsValidNodeIndex(sourceNodeIndex) ||
+                    !NodeConductanceSum.IsCreated ||
+                    sourceNodeIndex >= NodeConductanceSum.Length ||
+                    conductance <= Epsilon)
                     return;
 
-                float inverseConductanceSum = NodeConductanceInverseSum[sourceNodeIndex];
-                if (inverseConductanceSum <= 0f)
-                    return;
-
-                float conductanceSum = math.max(0f, (1f / inverseConductanceSum) - conductance);
+                float conductanceSum = math.max(0f, NodeConductanceSum[sourceNodeIndex] - conductance);
+                NodeConductanceSum[sourceNodeIndex] = conductanceSum;
                 NodeConductanceInverseSum[sourceNodeIndex] = conductanceSum > Epsilon
-                    ? 1f / conductanceSum
+                    ? math.rcp(conductanceSum)
                     : 0f;
             }
 
@@ -1053,6 +1055,7 @@ namespace Hecton8.Power
         private NativeArray<float> _nodeServedDemand;
         private NativeArray<float> _nodeVoltageSupplyRatio;
         private NativeArray<float> _nodeSourcePotential;
+        private NativeArray<float> _nodeConductanceSum;
         private NativeArray<float> _nodeConductanceInverseSum;
         private NativeArray<float> _potentialFront;
         private NativeArray<float> _potentialBack;
@@ -1119,6 +1122,8 @@ namespace Hecton8.Power
             RegisterNativeArray(_potentialFront, nameof(_potentialFront));
             _potentialBack = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[nodeCapacity] - Jacobi potential back buffer - owner: LogisticsNetworkGraph
             RegisterNativeArray(_potentialBack, nameof(_potentialBack));
+            _nodeConductanceSum = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[nodeCapacity] - precomputed outgoing conductance sum - owner: LogisticsNetworkGraph
+            RegisterNativeArray(_nodeConductanceSum, nameof(_nodeConductanceSum));
             _nodeConductanceInverseSum = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[nodeCapacity] - precomputed inverse outgoing conductance sum - owner: LogisticsNetworkGraph
             RegisterNativeArray(_nodeConductanceInverseSum, nameof(_nodeConductanceInverseSum));
             _runtimeConductiveEdgeCount = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[1] - runtime conductive edge count after ruptures - owner: LogisticsNetworkGraph
@@ -1229,6 +1234,7 @@ namespace Hecton8.Power
             DisposeNativeArray(ref _edgeWriteCursor, disposeDependency);
             DisposeNativeArray(ref _potentialFront, disposeDependency);
             DisposeNativeArray(ref _potentialBack, disposeDependency);
+            DisposeNativeArray(ref _nodeConductanceSum, disposeDependency);
             DisposeNativeArray(ref _nodeConductanceInverseSum, disposeDependency);
             DisposeNativeArray(ref _runtimeConductiveEdgeCount, disposeDependency);
             DisposeNativeList(ref _topologyEdgeList, disposeDependency, nameof(_topologyEdgeList));
@@ -1547,6 +1553,7 @@ namespace Hecton8.Power
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
                 _edgeWriteCursor[nodeIndex] = _edgeOffsets[nodeIndex];
+                _nodeConductanceSum[nodeIndex] = 0f;
                 _nodeConductanceInverseSum[nodeIndex] = 0f;
             }
 
@@ -1587,15 +1594,15 @@ namespace Hecton8.Power
                     (edgeState & (byte)LogisticsEdgeState.Ruptured) == 0)
                 {
                     _conductiveEdgeCount++;
-                    _nodeConductanceInverseSum[edge.SourceNodeIndex] += conductance;
+                    _nodeConductanceSum[edge.SourceNodeIndex] += conductance;
                 }
             }
 
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
-                float conductanceSum = _nodeConductanceInverseSum[nodeIndex];
+                float conductanceSum = _nodeConductanceSum[nodeIndex];
                 _nodeConductanceInverseSum[nodeIndex] = conductanceSum > Epsilon
-                    ? 1f / conductanceSum
+                    ? math.rcp(conductanceSum)
                     : 0f;
             }
 
@@ -1697,7 +1704,7 @@ namespace Hecton8.Power
 
             summary.Balance = summary.TotalGeneration - summary.TotalConsumption;
             summary.SupplyRatio = summary.TotalConsumption > Epsilon
-                ? math.saturate(summary.TotalGeneration / summary.TotalConsumption)
+                ? math.saturate(summary.TotalGeneration * math.rcp(summary.TotalConsumption))
                 : 1f;
             summary.HasDeficit = summary.TotalGeneration + Epsilon < summary.TotalConsumption;
             summary.BrownoutTier = ResolveBrownoutTier(summary.SupplyRatio);
@@ -1852,6 +1859,7 @@ namespace Hecton8.Power
                 NodeServedDemand = _nodeServedDemand,
                 NodeVoltageSupplyRatio = _nodeVoltageSupplyRatio,
                 NodeSourcePotential = _nodeSourcePotential,
+                NodeConductanceSum = _nodeConductanceSum,
                 NodeConductanceInverseSum = _nodeConductanceInverseSum,
                 PotentialFront = _potentialFront,
                 PotentialBack = _potentialBack,
@@ -2153,7 +2161,7 @@ namespace Hecton8.Power
                 float demand = _componentDemand[componentIndex];
                 float generation = _componentGeneration[componentIndex];
                 float supplyRatio = demand > Epsilon
-                    ? math.saturate(generation / demand)
+                    ? math.saturate(generation * math.rcp(demand))
                     : 1f;
 
                 _componentRemainingSupply[componentIndex] = generation;
@@ -2228,7 +2236,7 @@ namespace Hecton8.Power
                 if (componentGeneration <= Epsilon || componentServedDemand <= Epsilon)
                     continue;
 
-                float dispatchedGeneration = productionRate * math.saturate(componentServedDemand / componentGeneration);
+                float dispatchedGeneration = productionRate * math.saturate(componentServedDemand * math.rcp(componentGeneration));
                 _nodeNetInjection[nodeIndex] += dispatchedGeneration;
             }
 
@@ -2446,7 +2454,7 @@ namespace Hecton8.Power
             float combinedResistance = math.max(
                 MinResistance,
                 edgeResistance + sourceNode.Resistance + destinationNode.Resistance);
-            return 1f / combinedResistance;
+            return math.rcp(combinedResistance);
         }
 
         private float ResolveEdgeCapacityForBuild(int sourceNodeIndex, int destinationNodeIndex)
@@ -2638,6 +2646,7 @@ namespace Hecton8.Power
             EnsureIntArrayCapacity(ref _edgeWriteCursor, safeLength, nameof(_edgeWriteCursor));
             EnsureFloatArrayCapacity(ref _potentialFront, safeLength, nameof(_potentialFront));
             EnsureFloatArrayCapacity(ref _potentialBack, safeLength, nameof(_potentialBack));
+            EnsureFloatArrayCapacity(ref _nodeConductanceSum, safeLength, nameof(_nodeConductanceSum));
             EnsureFloatArrayCapacity(ref _nodeConductanceInverseSum, safeLength, nameof(_nodeConductanceInverseSum));
         }
 

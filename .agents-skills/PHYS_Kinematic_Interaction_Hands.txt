@@ -1,5 +1,14 @@
 ```markdown
 # PHYS_Kinematic_Interaction_Hands.md
+
+## 2026-05-11 PHYSICS OWNERSHIP OVERRIDE
+
+[RULE] This mandate describes control math, not direct Rigidbody ownership. Current AGENTS.md and `PHYS_Physics_Integrity_Determinism_ForceMode.txt` require force/velocity-change output to pass through the owned physics apply pipeline.
+[FORBID] Tool/hand interaction code calling `Rigidbody.AddForce`, `Rigidbody.AddTorque`, or Unity Joint APIs directly in production.
+[REQUIRE] Grab, drag, and angular correction produce deterministic apply packets with VelocityChange/Acceleration semantics. Visual-only hand lag, cable sway, object tremor, water wake, and haptic rumble default to presentation fakes.
+
+---
+
 ## Mandate: Physical Hand Interaction — PD Controller Grabbing System
 
 ---
@@ -104,7 +113,7 @@ Kd  = 2 * ζ * ω_n                   // derivative gain
 3. accel      = (Kp * posError) + (Kd * velError)
 4. deltaVel   = accel * fixedDeltaTime
 5. CLAMP:     magnitude(deltaVel) ≤ MAX_DELTA_VEL (e.g., 15.0 m/s per tick)
-6. Apply:     rb.AddForce(deltaVel, ForceMode.VelocityChange)
+6. Apply:     publish velocity-change packet to PhysicsApplySystem
 ```
 
 **Numerical Stability Guards:**
@@ -149,7 +158,7 @@ angularVelError = targetAngularVel - rb.angularVelocity
 angularAccel  = (Kp_a * axisAngle) + (Kd_a * angularVelError)
 deltaAngVel   = angularAccel * fixedDeltaTime
 CLAMP:        magnitude(deltaAngVel) ≤ MAX_DELTA_ANGVEL (e.g., 25 rad/s per tick)
-Apply:        rb.AddTorque(deltaAngVel, ForceMode.VelocityChange)
+Apply:        publish angular velocity-change packet to PhysicsApplySystem
 ```
 
 **Inertia Tensor Compensation (AAA pattern):**
@@ -241,17 +250,17 @@ Kd_effective  = Kd * gainMultiplier
 **Solution:** Zero rb.drag/rb.angularDrag during grab. Simulate fluid drag manually.
 
 ```
-// Per FixedUpdate, AFTER PD force application:
+// Per FixedUpdate, AFTER PD packet publication:
 fluidDensity   = lerp(SEA_DENSITY_SURFACE, SEA_DENSITY_DEEP, depthFraction)
                  // SEA_DENSITY_SURFACE = 1025 kg/m³, DEEP = 1065 kg/m³
 dragForce      = -0.5 * fluidDensity * DRAG_COEFFICIENT * frontalArea * velocity² * normalize(velocity)
                  // frontalArea: precomputed at grab-init from object bounds
                  // DRAG_COEFFICIENT: 0.47 (sphere approx), overridable per object
-rb.AddForce(dragForce, ForceMode.Force)
+publish drag packet to PhysicsApplySystem with owned acceleration/force semantics
 
 // Apply drag to angular velocity:
 angularDrag    = -rb.angularVelocity * ANGULAR_DRAG_COEFF * fluidDensity * 0.001f
-rb.AddTorque(angularDrag, ForceMode.VelocityChange)
+publish angular velocity-change packet to PhysicsApplySystem
 ```
 
 ---

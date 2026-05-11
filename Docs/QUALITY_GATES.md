@@ -1,19 +1,20 @@
 ﻿# QUALITY_GATES.md
 ## SECONDARY LAYER: QUALITY CONTROL
-Date: 2026-05-08
+Date: 2026-05-11
 Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 Apply only after production result exists.
 Source of truth for asset specs: PROCEDURAL_ASSET_PIPELINE.md
 Performance tooling: SYSTEMS_CONTRACTS.md (BenchmarkRunner.cs)
 
-2026-05-08 current-state boundary:
+2026-05-11 current-state boundary:
 
+- This stable file is the acceptance-gate authority. Dated reports are evidence/counter snapshots only.
 - This is a gate/checklist contract, not evidence that any asset passed.
 - Do not fill or cite this document as proof without a real prefab/material/scatter profile and fresh validation output.
-- Current project truth starts at `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`, `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`, `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`, `Docs/Reports/2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md`, `Docs/Reports/2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md`, `Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`, `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
-- Current May 8 full Core dependency build succeeds: `CodexArtifacts/2026-05-08_DOC_SYNC_CORE_BUILD3.log`, `48 Warning(s)`, `0 Error(s)`, with `0` first-party `Assets/_Project` warning lines; later source writes were observed, so this is latest completed build evidence, not stable-source proof.
-- Current May 8 Unity MCP console readback returned `0` error/warning entries with active scene `00_BOOTSTRAP`, Play Mode off, and compiling false; the Core build and editor-console readback are still not asset-quality, Play Mode, profiler, GCMonitor, scene/prefab gameplay, or player-build proof.
+- Current project truth starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, and then May 11 evidence reports.
+- Current completed full Core dependency build in the active documentation boundary is `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`.
+- Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, scene/prefab gameplay, player build, import, frame-time, memory, and visual quality proof remain absent.
 
 ---
 
@@ -97,6 +98,7 @@ CTO hard rules:
 - Any single runtime system tick above `0.1ms` is suspicious and blocks merge until a profiler trace proves the cost is cold, amortized, or moved out of the frame-critical lane.
 - Half-Res rendering modes do not get a larger memory budget; VRAM remains capped at `1.6GB`.
 - Synchronous `Physics.BakeMesh(...)` on the main thread is forbidden. Mesh baking must be asynchronous/job-bound or replaced by a cinematic collider fake for noncritical/distant geometry.
+- Any water/light/flow/pressure/deformation/cable/particle/ambience feature must document why the visual fake path is insufficient before adding runtime simulation.
 - No manual checklist can override profiler, console, or PlayMode evidence.
 
 ### Test scene requirements

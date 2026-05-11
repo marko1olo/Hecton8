@@ -6,7 +6,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton.Localization;
 using Hecton8.AI;
-using Hecton8.UI;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -62,7 +61,7 @@ namespace Hecton8.Core
 
         private const int LaneCapacity = 32;
         private const int SampleIntervalFrames = 60;
-        private const int FrameStripConsecutiveFrames = 3;
+        private const int FrameStripConsecutiveFrames = 180;
         private const int FaunaEmergencyCullCooldownFrames = 60;
         private const int FaunaEmergencyCullEmptyCooldownFrames = 15;
         private const double EmergencyResetFailureCooldownSeconds = 1.0d;
@@ -71,26 +70,23 @@ namespace Hecton8.Core
         private const double RegistryHeartbeatGuardIntervalSeconds = 60.0d;
         private const float BaseFrameStripThresholdSeconds = 0.01667f;
         private const float XrFrameStripThresholdSeconds = 0.0075f;
-        private const float GlobalLodBiasEmergency = 0.5f;
         private const float BaseFaunaArteryBudgetMs = 2.0f;
         private const float BaseHudHeartbeatTimeoutSeconds = 0.2f;
         private const float GcSteadyStateWarmupSeconds = 5f;
         private const float MmfHealthCheckIntervalSeconds = 60f;
         private const float MmfHealthRetryDelaySeconds = 5f;
-        private const float BytesToMegabytes = 1f / (1024f * 1024f);
+        private const float BytesToMegabytes = GlobalTelemetryBus.BytesToMegabytes;
         private const long BaseMmfBloatThresholdBytes = 50L * 1024L * 1024L;
         private const long RuntimeMemorySpikeThresholdBytes = 50L * 1024L * 1024L;
         private const long DefaultRuntimeMemorySafeBoundBytes = 3L * 1024L * 1024L * 1024L;
-        private const int MemorySpikeSampleIntervalFrames = 10;
+        private const int MemorySpikeSampleIntervalFrames = 12;
         private const int MemorySubsystemBreachCooldownFrames = 300;
         private const long InvalidMmfSectorHash = long.MinValue;
         private const int RegistryHeartbeatSlotCount = (int)GlobalRegistryServiceSlot.Unknown;
-        private const int FaunaLogicRateColdTick = 1;
         private const int GetFileExInfoStandard = 0;
-        private const uint WatchdogStateGlobalLodStripped = 1u << 0;
+        private const uint WatchdogStateFrameBudgetWarningSent = 1u << 0;
+        private const uint WatchdogDegradationActionMask = 1u << 30;
 
-        private static readonly int _globalLodBiasId = Shader.PropertyToID("_GlobalLodBias");
-        private static readonly int _faunaLogicRateId = Shader.PropertyToID("_FaunaLogicRate");
         private static readonly uint _watchdogContextHash = unchecked((uint)LocHash.Compute(nameof(RuntimeWatchdog)));
         private static readonly uint _budgetStripHash = unchecked((uint)LocHash.Compute("WATCHDOG_BUDGET_STRIP"));
         private static readonly uint _faunaEmergencyCullHash = unchecked((uint)LocHash.Compute("FAUNA_EMERGENCY_CULL"));
@@ -104,8 +100,7 @@ namespace Hecton8.Core
         private static readonly uint _nativeLeakReapedHash = unchecked((uint)LocHash.Compute("NATIVE_LEAK_REAPED"));
         private static readonly uint _nativeLeakLabelHash = unchecked((uint)LocHash.Compute("NATIVE_LEAK_LABEL"));
         private static readonly uint _nanSentinelRecoveryHash = unchecked((uint)LocHash.Compute("NAN_SENTINEL_RECOVERY"));
-        private static readonly double _stopwatchTickToMilliseconds = 1000.0d / Stopwatch.Frequency;
-        private static readonly double _millisecondsToStopwatchTicks = Stopwatch.Frequency / 1000.0d;
+        private static readonly double _millisecondsToStopwatchTicks = Stopwatch.Frequency * 0.001d;
         private static readonly long _baseFaunaArteryBudgetTicks = MillisecondsToStopwatchTicks(BaseFaunaArteryBudgetMs);
         private static readonly long _xrFaunaArteryBudgetTicks = Math.Max(1L, _baseFaunaArteryBudgetTicks >> 1);
 
@@ -143,6 +138,7 @@ namespace Hecton8.Core
         private static long _mmfHealthWorkSectorHash;
         private static int _mmfHealthWorkGeneration;
         private static long _runtimeMemorySafeBoundBytes;
+        private static long _runtimeMemoryBreachBoundBytes;
 
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -203,6 +199,7 @@ namespace Hecton8.Core
             _mmfHealthWorkSectorHash = InvalidMmfSectorHash;
             _mmfHealthWorkGeneration = 0;
             _runtimeMemorySafeBoundBytes = 0L;
+            _runtimeMemoryBreachBoundBytes = 0L;
         }
 
         public static RuntimeWatchdog EnsureRuntimeInstance()
@@ -254,7 +251,7 @@ namespace Hecton8.Core
             if (elapsedTicks <= ResolveFaunaArteryBudgetTicks())
                 return;
 
-            float elapsedMilliseconds = (float)(elapsedTicks * _stopwatchTickToMilliseconds);
+            float elapsedMilliseconds = ResolveFaunaArteryBudgetMilliseconds();
             ForceFaunaEmergencyColdTick(elapsedMilliseconds);
         }
 
@@ -421,6 +418,9 @@ namespace Hecton8.Core
         public void Tick(float deltaTime)
         {
             BlackBoxHeartbeatThread.Ping();
+            if (Time.timeScale == 0f)
+                return;
+
             int frame = Time.frameCount;
             ConsumeMmfHealthResult();
             FrameTimeWatchdog.Tick();
@@ -505,12 +505,12 @@ namespace Hecton8.Core
             _nextMemorySpikeSampleFrame = frame + MemorySpikeSampleIntervalFrames;
             long currentBytes = Profiler.GetTotalAllocatedMemoryLong();
             long previousBytes = _lastTotalAllocatedMemoryBytes;
-            long safeBoundBytes = ResolveCachedRuntimeMemorySafeBoundBytes();
-            if (currentBytes > safeBoundBytes)
+            long breachBoundBytes = ResolveCachedRuntimeMemoryBreachBoundBytes();
+            if (currentBytes >= breachBoundBytes)
             {
                 long earlyDeltaBytes = currentBytes > previousBytes && previousBytes > 0L ? currentBytes - previousBytes : 0L;
                 uint memoryContextHash = ResolveMemorySpikeFingerprint(previousBytes, currentBytes, earlyDeltaBytes, frame);
-                TriggerMemorySubsystemBreachIfUnsafe(currentBytes, safeBoundBytes, frame, memoryContextHash);
+                TriggerMemorySubsystemBreachIfUnsafe(currentBytes, breachBoundBytes, frame, memoryContextHash);
             }
 
             if (previousBytes <= 0L)
@@ -535,16 +535,16 @@ namespace Hecton8.Core
             PublishPerformanceWarningNoThrow(_runtimeMemorySpikeHash, spikeHash, deltaMegabytes);
         }
 
-        private void TriggerMemorySubsystemBreachIfUnsafe(long currentBytes, long safeBoundBytes, int frame, uint contextHash)
+        private void TriggerMemorySubsystemBreachIfUnsafe(long currentBytes, long breachBoundBytes, int frame, uint contextHash)
         {
-            if (currentBytes <= safeBoundBytes ||
+            if (currentBytes < breachBoundBytes ||
                 (_lastMemoryBreachFrame >= 0 && frame - _lastMemoryBreachFrame < MemorySubsystemBreachCooldownFrames))
             {
                 return;
             }
 
             _lastMemoryBreachFrame = frame;
-            SuitHUDV4CanvasOverlay.TriggerMemorySubsystemBreach(contextHash);
+            GlobalTelemetryBus.PublishMemoryBreachEvent(contextHash, currentBytes * BytesToMegabytes);
             PublishPerformanceWarningNoThrow(
                 _memorySubsystemBreachHash,
                 contextHash,
@@ -561,21 +561,30 @@ namespace Hecton8.Core
             if (systemMemoryMegabytes <= 0L)
             {
                 Volatile.Write(ref _runtimeMemorySafeBoundBytes, DefaultRuntimeMemorySafeBoundBytes);
+                Volatile.Write(ref _runtimeMemoryBreachBoundBytes, ComputeMemoryBreachBoundBytes(DefaultRuntimeMemorySafeBoundBytes));
                 return;
             }
 
             long systemMemoryBytes = systemMemoryMegabytes * 1024L * 1024L;
-            long safeBoundBytes = (long)(systemMemoryBytes * 0.75d);
-            Volatile.Write(
-                ref _runtimeMemorySafeBoundBytes,
-                Math.Max(ResolveScaledByteThreshold(RuntimeMemorySpikeThresholdBytes), safeBoundBytes));
+            long safeBoundBytes = (systemMemoryBytes >> 1) + (systemMemoryBytes >> 2);
+            safeBoundBytes = math.max(ResolveScaledByteThreshold(RuntimeMemorySpikeThresholdBytes), safeBoundBytes);
+            Volatile.Write(ref _runtimeMemorySafeBoundBytes, safeBoundBytes);
+            Volatile.Write(ref _runtimeMemoryBreachBoundBytes, ComputeMemoryBreachBoundBytes(safeBoundBytes));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static long ResolveCachedRuntimeMemorySafeBoundBytes()
+        private static long ResolveCachedRuntimeMemoryBreachBoundBytes()
         {
-            long cachedBoundBytes = Volatile.Read(ref _runtimeMemorySafeBoundBytes);
-            return cachedBoundBytes > 0L ? cachedBoundBytes : DefaultRuntimeMemorySafeBoundBytes;
+            long cachedBoundBytes = Volatile.Read(ref _runtimeMemoryBreachBoundBytes);
+            return cachedBoundBytes > 0L
+                ? cachedBoundBytes
+                : ComputeMemoryBreachBoundBytes(DefaultRuntimeMemorySafeBoundBytes);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static long ComputeMemoryBreachBoundBytes(long safeBoundBytes)
+        {
+            return (safeBoundBytes * 62259L) >> 16;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -622,14 +631,21 @@ namespace Hecton8.Core
                 return;
             }
 
-            if ((_watchdogStateFlags & WatchdogStateGlobalLodStripped) != 0u ||
+            if ((_watchdogStateFlags & WatchdogStateFrameBudgetWarningSent) != 0u ||
                 _consecutiveOverBudgetFrames < FrameStripConsecutiveFrames)
             {
                 return;
             }
 
-            Shader.SetGlobalFloat(_globalLodBiasId, GlobalLodBiasEmergency);
-            _watchdogStateFlags |= WatchdogStateGlobalLodStripped;
+            _watchdogStateFlags |= WatchdogStateFrameBudgetWarningSent;
+            PerformanceEvents.RaiseSystemDegradation(
+                deltaTime * 1000f,
+                ResolveFrameStripThresholdSeconds() * 1000f,
+                Time.frameCount);
+            GlobalTelemetryBus.PublishSystemDegradation(
+                _budgetStripHash,
+                WatchdogDegradationActionMask,
+                deltaTime * 1000f);
             PublishPerformanceWarningNoThrow(
                 _budgetStripHash,
                 _watchdogContextHash,
@@ -674,7 +690,6 @@ namespace Hecton8.Core
                 return;
             }
 
-            Shader.SetGlobalInt(_faunaLogicRateId, FaunaLogicRateColdTick);
             _nextFaunaEmergencyCullFrame = frame + FaunaEmergencyCullCooldownFrames;
             PublishPerformanceWarningNoThrow(
                 _faunaEmergencyCullHash,
@@ -700,6 +715,11 @@ namespace Hecton8.Core
         private static long ResolveFaunaArteryBudgetTicks()
         {
             return HectonXRRuntimeState.IsXRActive ? _xrFaunaArteryBudgetTicks : _baseFaunaArteryBudgetTicks;
+        }
+
+        private static float ResolveFaunaArteryBudgetMilliseconds()
+        {
+            return HectonXRRuntimeState.IsXRActive ? BaseFaunaArteryBudgetMs * 0.5f : BaseFaunaArteryBudgetMs;
         }
 
         private static long ResolveScaledByteThreshold(long baseValue)

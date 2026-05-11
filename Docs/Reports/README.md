@@ -1,9 +1,11 @@
 ﻿# Reports
 
-Date: 2026-05-09
-Status: PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)
+Date: 2026-05-11
+Status: PENDING FINAL UNITY PROOF (DOCS CONTINUATION CORE BUILD PASSED / UNITY MCP NOT RUN)
 
-Purpose: canonical drop zone for new reports, audits, and validation writeups that are still active.
+Purpose: canonical drop zone for reports, audits, counters, and validation writeups.
+
+Dated reports are evidence snapshots. Durable project policy belongs in `AGENTS.md`, `.agents-skills/README.md`, task-relevant `.agents-skills/*`, and stable docs such as `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`.
 
 ## Naming
 
@@ -16,9 +18,12 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 - do not drop one-shot reports loose in `Docs/`
 - when a report is older than `5` days and no longer drives current work, archive it
 
-## Current High-Authority Reports
+## Current Evidence Snapshots
 
+- `2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`
 - `2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`
+- `2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`
+- `2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`
 - `2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`
 - `2026-05-07_OMEGA_FINAL_INQUISITION.md`
 - `2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`
@@ -62,14 +67,24 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 - `AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
 - `DOOMSDAY_FLAW_REPORT.md`
 
-`2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` is the current documentation synchronization boundary with a 2026-05-09 R186 addendum.
-It supersedes conflicting May 7/May 8 source-count and build-blocker statements. Current counters are `Assets/_Project/**/*.cs` `1292`, `Assets/_Project/Scripts/**/*.cs` `1248`, project physical lines `759122`, script physical lines `742892`, and `GlobalRegistryContracts.cs` direct public interfaces `40`. Latest full Core dependency build is `CodexArtifacts/2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, `CS_WRITES_AFTER_END=0`. It supersedes R171-R185 after repeated live C# writes, R179 transient compile break exposure, R181 invalid root-only dependency mode, R184 `IAudioService` contract drift, and R185 `PredatorCognitionDomain` static/instance vortex-steering drift. This is local `dotnet` compile evidence only, not MCP proof, Unity Console proof, Play Mode, profiler, GCMonitor, player-build, runtime zero-GC, frame-time, scene-wiring, or memory-retention proof.
+`2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` is the current documentation/data boundary.
+It supersedes R186 as latest compile-only evidence with `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`. It records current counters: `Docs/**/*.md` `449`, active markdown `236`, direct `Docs/Reports/*.md` `70`, active JSON `15`, `Assets/_Project/**/*.cs` `1306`, `Assets/_Project/Scripts/**/*.cs` `1262`, project physical lines `770577`, script physical lines `753858`, and `GlobalRegistryContracts.cs` direct public interfaces `40`. This is local filesystem and `dotnet` evidence only, not Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof.
+The same pass records an official Unity release-page check: Unity `6000.4.6f1` exists with release date `2026-05-05`, newer than the local project pin `6000.4.1f1`. This is version drift only, not upgrade approval.
 
-`2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json` is the current machine-readable active documentation manifest.
-It lists active markdown files with parsed `Date`, `Status`, title, byte-size, and `requiresRuntimeProof` fields. Its source counts are orientation only and its build state is `R186` compile-only evidence with no C# source writes after build start/end.
+`2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` is the current machine-readable active documentation manifest.
+It lists active markdown files with parsed `Date`, `Status`, title, byte-size, and `requiresRuntimeProof` fields. It supersedes the May 8 manifest for counts and current compile artifact.
+
+`2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` is the current `.agents-skills` visual-fake doctrine boundary.
+It records that the registry was not fully current for the current production direction: several physical/visual realism mandates still pushed simulate-first, Unity Joint, broad flow/lighting, or default HRTF paths. It adds `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt` and override blocks to the affected mandates. This is documentation-only. It does not prove Unity import, Play Mode, profiler, GCMonitor, player build, frame time, memory retention, or visual quality.
+
+`2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` is the previous documentation synchronization counter boundary with a 2026-05-09 R186 addendum.
+It superseded conflicting May 7/May 8 source-count and build-blocker statements at the R186 boundary. It recorded then-current counters: `Assets/_Project/**/*.cs` `1292`, `Assets/_Project/Scripts/**/*.cs` `1248`, project physical lines `759122`, script physical lines `742892`, and `GlobalRegistryContracts.cs` direct public interfaces `40`. The then-latest full Core dependency build was `CodexArtifacts/2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, `CS_WRITES_AFTER_END=0`. This is historical local `dotnet` compile evidence only.
+
+`2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json` is the previous machine-readable active documentation manifest.
+It remains historical R186 evidence only where the May 11 manifest does not cover a field.
 
 `2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md` is the previous main documentation synchronization boundary.
-It supersedes conflicting May 7 numeric counters after the final inquisition runtime patch and build-master recheck. It records `Docs/**/*.md` `443`, active markdown `230`, direct `Docs/Reports/*.md` `67`, active markdown header debt `0`, `Assets/_Project/**/*.cs` `1233`, `Assets/_Project/Scripts/**/*.cs` `1192`, project physical lines last observed `683064`, script physical lines last observed `667771`, and `GlobalRegistryContracts.cs` direct public interfaces `39`. It also records that source line counts were moving during the pass. Latest build-master `dotnet build Hecton8.Core.csproj --no-restore` failed with `2 Error(s)` in `HectonVoxelEngine.cs` due missing `GlobalRegistry.PlayerRigidbody` and `GlobalRegistry.PlayerMovement`; earlier same-day successful Core logs are historical only.
+It is historical for counters and compile status. Use the May 11 continuation, May 11 manifest, and May 8/R186 continuation before citing any May 7 numeric or build-state claim.
 
 `2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md` is the latest final-inquisition fallback compile/MCP boundary.
 It records editor-only scanner changes, its then-current `PENDING FINAL UNITY PROOF` status, repeated MCP console failure, and fallback Core build evidence. Read the main documentation refresh first for the latest documentation counters and latest successful console retry.
@@ -113,8 +128,8 @@ It records the current Core compiler warning cleanup in `HectonVoxelEngine`, `Pl
 `2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` is the latest foundation guard repair addendum.
 It records the `CrashTelemetryBuffer` unsafe-copy guard repair, `MainMenuController.Update()` fallback removal, regenerated foundation guard scan exit `0`, raw `UnsafeUtility.MemCpy` outside guard `0`, unauthorized Unity loop methods `0`, fresh `Hecton8.Core` / `Hecton8.Editor` compiles `0 Warning(s)` / `0 Error(s)`, and Unity MCP editor readback with active scene `00_BOOTSTRAP`, console errors `0`, and warnings `0`. It is not Play Mode, GCMonitor, profiler, menu UX, save/load, or player-build proof.
 
-`2026-05-01_CURRENT_PROJECT_STATE.md` is the current conceptual entry point.
-It keeps its stable path but must now be read with the May 4 documentation sweep first. It does not replace source files or runtime verification logs; it defines which active reports should be read first.
+`2026-05-01_CURRENT_PROJECT_STATE.md` is conceptual evidence, not the first authority entry point.
+Stable entry starts at `AGENTS.md`, `.agents-skills/README.md`, `Docs/README.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, and `Docs/ARCHITECTURE/README.md`. This report does not replace source files or runtime verification logs.
 
 `2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md` is the latest celestial/meteor protocol report.
 It records source/build/controlled-console evidence, but `CelestialSyncSmokeTester` did not execute because no scene object existed in the active scene. It is not PlayMode visual/audio/profiler proof.

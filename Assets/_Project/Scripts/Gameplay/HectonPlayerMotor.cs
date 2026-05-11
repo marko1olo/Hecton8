@@ -20,16 +20,15 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Player/Hecton Player Motor")]
     public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces, IPostFixedTickable, ILateFrameTickable, IInventoryEventListener
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential, Pack = 16, Size = 64)]
         private struct ScheduledSweepState
         {
             public Vector3 StartPosition;
             public Vector3 CapsulePoint1;
             public Vector3 CapsulePoint2;
-            public float CapsuleRadius;
             public Vector3 Direction;
+            public float CapsuleRadius;
             public float Distance;
-            public int LayerMask;
             public int SelfColliderInstanceId;
             public float SkinWidth;
         }
@@ -779,7 +778,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>Applies added-mass scalar only to acceleration; deceleration remains force / mass.</summary>
-        public static Vector3 ResolveHydrodynamicAddedMassForce(Vector3 force, Vector3 velocity)
+        public static Vector3 ResolveHydrodynamicAddedMassStatelessForce(Vector3 force, Vector3 velocity, float mass)
         {
             Vector3 safeForce = SafeVelocity(force);
             if (safeForce.sqrMagnitude <= MinVectorMagnitudeSq)
@@ -789,11 +788,10 @@ namespace Hecton8.Gameplay
             float velocitySq = safeVelocity.sqrMagnitude;
             bool accelerating = velocitySq <= MinVectorMagnitudeSq ||
                 math.dot((float3)safeForce, (float3)safeVelocity) > 0f;
-            if (!accelerating)
-                return safeForce;
-
-            float forceScale = math.rcp(1f + HydrodynamicAddedMassAccelerationScale);
-            return SafeVelocity(safeForce * forceScale, safeForce);
+            float safeMass = math.max(0.0001f, mass);
+            float addedMass = safeMass * HydrodynamicAddedMassAccelerationScale;
+            float forceScalar = math.select(1f, safeMass * math.rcp(safeMass + addedMass), accelerating);
+            return SafeVelocity(safeForce * forceScalar, safeForce);
         }
 
         private void ResetBodyBoundCachedResults()
@@ -857,6 +855,7 @@ namespace Hecton8.Gameplay
             float safeSkinWidth = math.max(0f, skinWidth);
             float safeDistance = math.max(0.0001f, distance);
             Vector3 safeDirection = SafeNormal(direction, Vector3.forward);
+            Vector3 dominantProbeDirection = ResolveDominantProbeDirection(direction);
 
             EnsureScheduledSweepState();
             _scheduledSweepShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
@@ -869,7 +868,6 @@ namespace Hecton8.Gameplay
                 CapsuleRadius = safeRadius,
                 Direction = safeDirection,
                 Distance = safeDistance,
-                LayerMask = layerMask,
                 SkinWidth = safeSkinWidth,
                 SelfColliderInstanceId = selfColliderInstanceId
             };
@@ -909,7 +907,7 @@ namespace Hecton8.Gameplay
                 capsulePoint1,
                 capsulePoint2,
                 safeRadius,
-                ResolveScheduledLadderProbeDirection(safeDirection),
+                ResolveScheduledLadderProbeDirection(dominantProbeDirection),
                 ladderQuery,
                 math.max(ScheduledLadderProbeDistance, safeSkinWidth + safeRadius));
 

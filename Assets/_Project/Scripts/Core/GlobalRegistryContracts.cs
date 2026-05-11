@@ -24,6 +24,14 @@ using UnityEngine.Rendering;
 namespace Hecton8.Core
 {
     /// <summary>
+    /// Marker for registry-published service contracts.
+    /// Concrete runtime owners must publish through an interface that carries this marker.
+    /// </summary>
+    public interface ISystem
+    {
+    }
+
+    /// <summary>
     /// Fixed bootstrap and dispatch layers used by the registry-backed runtime core.
     /// </summary>
     public enum PriorityLayer : byte
@@ -377,9 +385,88 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Canonical celestial-state flags published by the deterministic world-pulse owner.
+    /// </summary>
+    [System.Flags]
+    public enum CelestialRuntimeFlags : uint
+    {
+        None = 0u,
+        Valid = 1u << 0,
+        EclipseActive = 1u << 1,
+        HighTide = 1u << 2,
+        FullMoonBloom = 1u << 3,
+        SolarRadiationStorm = 1u << 4,
+    }
+
+    /// <summary>
+    /// Blittable celestial runtime payload consumed by rendering, fluid, audio, and gameplay systems.
+    /// Double universe time is retained for deterministic sync; spatial presentation data is reduced to float vectors.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CelestialRuntimeSnapshot
+    {
+        /// <summary>Authoritative Absolute Universe Time used for the analytical orbit solve.</summary>
+        public double AbsoluteUniverseTime;
+
+        /// <summary>Observer-to-sun direction in runtime space.</summary>
+        public float3 SunDirection;
+
+        /// <summary>AUP-safe presentation offset for the gas giant relative to the observer.</summary>
+        public float3 GasGiantOffset;
+
+        /// <summary>AUP-safe presentation offset for the first moon relative to the observer.</summary>
+        public float3 Moon0Offset;
+
+        /// <summary>AUP-safe presentation offset for the second moon relative to the observer.</summary>
+        public float3 Moon1Offset;
+
+        /// <summary>Normalized observer-to-gas-giant direction.</summary>
+        public float3 GasGiantDirection;
+
+        /// <summary>Normalized observer-to-first-moon direction.</summary>
+        public float3 Moon0Direction;
+
+        /// <summary>Normalized observer-to-second-moon direction.</summary>
+        public float3 Moon1Direction;
+
+        /// <summary>Normalized dominant tide pull direction.</summary>
+        public float3 TidePullVector;
+
+        /// <summary>Signed sea-level offset in meters resolved from the current celestial pull.</summary>
+        public float TideHeightMeters;
+
+        /// <summary>Normalized high-tide state. 0 is lowest tide, 1 is highest tide.</summary>
+        public float TideHigh01;
+
+        /// <summary>First moon visual fullness, used by lunar phase materials.</summary>
+        public float Moon0Phase01;
+
+        /// <summary>Second moon visual fullness, used by lunar phase materials.</summary>
+        public float Moon1Phase01;
+
+        /// <summary>Gas giant visual fullness.</summary>
+        public float GasGiantPhase01;
+
+        /// <summary>Current eclipse occlusion factor.</summary>
+        public float EclipseOcclusion01;
+
+        /// <summary>Current radiation-storm intensity sourced from the global event lane.</summary>
+        public float RadiationStorm01;
+
+        /// <summary>Global bioluminescence multiplier resolved from full-moon and resonance states.</summary>
+        public float GlobalBiolumMultiplier;
+
+        /// <summary>Bitmask of <see cref="CelestialRuntimeFlags"/>.</summary>
+        public uint Flags;
+
+        /// <summary>Monotonic sequence used by frame caches to detect celestial tide updates.</summary>
+        public uint Sequence;
+    }
+
+    /// <summary>
     /// Minimal input service contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
-    public interface IInputService
+    public interface IInputService : ISystem
     {
         /// <summary>
         /// True once the service has completed explicit bootstrap registration.
@@ -518,7 +605,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Authoritative physics routing service contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
-    public interface IPhysicsService
+    public interface IPhysicsService : ISystem
     {
         /// <summary>
         /// True once the physics routing owner is initialized and ready to accept packets.
@@ -590,7 +677,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Minimal audio service contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
-    public interface IAudioService
+    public interface IAudioService : ISystem
     {
         /// <summary>
         /// True once the service has completed explicit bootstrap registration.
@@ -665,7 +752,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Authoritative scene transition service contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
-    public interface ISceneService
+    public interface ISceneService : ISystem
     {
         /// <summary>
         /// True when scene transitions are permitted by bootstrap state.
@@ -688,7 +775,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Authoritative save-system contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
-    public interface ISaveService
+    public interface ISaveService : ISystem
     {
         /// <summary>
         /// True once the save owner has completed runtime initialization and registration.
@@ -734,7 +821,7 @@ namespace Hecton8.Core
     /// Minimal UI service contract exposed through <see cref="GlobalRegistry"/>.
     /// Exactly one authoritative UI root may occupy the registry slot at runtime.
     /// </summary>
-    public interface IUIService
+    public interface IUIService : ISystem
     {
         /// <summary>
         /// True once the service has completed explicit bootstrap registration.
@@ -1813,7 +1900,7 @@ namespace Hecton8.Core
     /// Terrain height/normal authority exposed to gameplay without leaking MapMagic types.
     /// Implementations must answer from cached terrain ownership and avoid scene-wide scans in hot queries.
     /// </summary>
-    public interface ITerrainProvider
+    public interface ITerrainProvider : ISystem
     {
         /// <summary>
         /// True when the terrain backend can answer samples.
@@ -1839,13 +1926,18 @@ namespace Hecton8.Core
         /// Samples terrain height from an Absolute Universe Position.
         /// </summary>
         bool TryGetHeightAUP(Vector3 absoluteUniversePosition, out float height);
+
+        /// <summary>
+        /// Samples terrain height from an Absolute Universe Position encoded as float3.
+        /// </summary>
+        float GetHeightAt(float3 aup);
     }
 
     /// <summary>
     /// Registry-backed ocean provider selector published through <see cref="GlobalRegistry"/>.
     /// Gameplay systems must query this service instead of talking to Crest-adapter singletons directly.
     /// </summary>
-    public interface IHectonOceanKinematicsService
+    public interface IHectonOceanKinematicsService : ISystem
     {
         /// <summary>
         /// True once the selector service has completed bootstrap registration.

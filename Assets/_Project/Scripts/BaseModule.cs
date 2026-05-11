@@ -8,27 +8,25 @@
 //   3. Implements IPowerComponent for base power consumption.
 //   4. Implements IPoolable for ObjectPoolManager compatibility.
 //   5. Implements ISlowTickable for centralized slow ticking.
-//   6. Realizuet ICuttable dlya sovmestimosti s LaserCutter (→ ApplyDamage).
-//   7. Upravlyaet Interior Zone (Suhaya Zona) — podavlyaet vodnuyu fiziku
-//      dlya obektov vnutri nezatoplennogo modulya.
-//   8. Dekonstruktsiya (Deconstruct) — vozvrat resursov i unichtozhenie modulya.
+//   6. Implements ICuttable for LaserCutter compatibility through ApplyDamage.
+//   7. Controls the interior dry zone and suppresses water physics for objects
+//      inside an unflooded module.
+//   8. Handles deconstruction refund and module destruction handoff.
 //
 // DECONSTRUCTION:
-//   • Deconstruct(PlayerInventory) vyzyvaetsya iz LaserCutter pri zavershenii
-//     progressa razbora (rezhim R+LKM).
-//   • Resursy vozvraschayutsya s koeffitsientom REFUND_RATIO (80% po umolchaniyu).
-//   • Esli inventar polon — resurs spavnitsya kak HectonItem v mir
-//     cherez ObjectPoolManager.
-//   • Posle razdachi resursov vyzyvaetsya ConstructionManager.DestroyModule().
+//   - Deconstruct(PlayerInventory) is called by LaserCutter after teardown
+//     progress completes.
+//   - Resources refund at REFUND_RATIO.
+//   - Overflow resources spawn as HectonItem instances through ObjectPoolManager.
+//   - ConstructionManager.DestroyModule() owns final destruction.
 //
 // INTERIOR DRY ZONE:
-//   • BoxCollider (Trigger) na dochernem obekte ili etom zhe GO ohvatyvaet
-//     vnutrennee prostranstvo modulya.
-//   • OnTriggerEnter: esli modul ne zatoplen → BuoyancyObject.EnterDryZone()
-//   • OnTriggerExit: BuoyancyObject.ExitDryZone()
-//   • Pri smene isFlooded: sinhronizatsiya vseh otslezhivaemyh obektov.
-//   • Keshirovanie cherez Dictionary<ulong, BuoyancyObject> po EntityId —
-//     zero GetComponent v OnTriggerStay (Stay ne ispolzuetsya vovse).
+//   - A trigger BoxCollider defines the module interior.
+//   - OnTriggerEnter sends unflooded occupants to BuoyancyObject.EnterDryZone().
+//   - OnTriggerExit calls BuoyancyObject.ExitDryZone().
+//   - Flood-state changes resync all tracked occupants.
+//   - Dictionary<ulong, BuoyancyObject> is preallocated by EntityId; OnTriggerStay
+//     is not used.
 //
 // SAVE:
 //   Module state is not self-serialized.
@@ -36,24 +34,24 @@
 //   writes them back during load.
 //
 // STATES:
-//   • Healthy      : currentIntegrity == maxIntegrity, not flooded
-//   • Damaged      : currentIntegrity < maxIntegrity, leak VFX active
-//   • Breached     : currentIntegrity <= 0 → flooded = true
-//   • Draining     : flooded && hasPower && integrity == maxIntegrity
+//   - Healthy: currentIntegrity == maxIntegrity, not flooded.
+//   - Damaged: currentIntegrity < maxIntegrity, leak VFX active.
+//   - Breached: currentIntegrity <= 0, flooded = true.
+//   - Draining: flooded && hasPower && integrity == maxIntegrity.
 //
 // POWER:
-//   • Bazovoe potreblenie beretsya iz BuildableData.powerRating.
-//   • Esli pitaniya net — pompy ne rabotayut, osveschenie gasnet, remont stoit.
-//   • Esli pitanie est i modul tsel — voda otkachivaetsya.
+//   - Base consumption comes from BuildableData.powerRating.
+//   - Without power, pumps stop, lights turn off, and repair stalls.
+//   - With power and full integrity, water drains.
 //
 // ZERO GC:
-//   • Net Update / FixedUpdate — vsya logika cherez ISlowTickable.
-//   • OnPowerStatusChanged vklyuchaet/vyklyuchaet svet bez per-frame polling.
-//   • GetComponents v goryachem puti ne vyzyvayutsya.
-//   • Dictionary — pre-allocated capacity, no boxing (int keys).
-//   • OnTriggerStay ne ispolzuetsya — tolko Enter/Exit.
-//   • Deconstruct: for-tsikly, TryAddItem, zero LINQ.
-//   • Staticheskie kollektsii otsutstvuyut — net utechek pamyati pri smene stsen.
+//   - No Update / FixedUpdate; all repeated logic runs through ISlowTickable.
+//   - OnPowerStatusChanged toggles lights without per-frame polling.
+//   - GetComponents is not called in hot paths.
+//   - Dictionaries are preallocated; key lookups avoid boxing.
+//   - OnTriggerStay is not used.
+//   - Deconstruct uses for loops, TryAddItem, and no LINQ.
+//   - No static collections leak across scene changes.
 // ============================================================================
 
 using System;
@@ -112,9 +110,9 @@ namespace Hecton8.Gameplay
         private static readonly int s_BaseVoltageFlickerSpeedId = Shader.PropertyToID("_BaseVoltageFlickerSpeed");
         private static readonly int s_BaseVoltageMinimumId = Shader.PropertyToID("_BaseVoltageMinimum");
         private static readonly int s_BaseBrownoutEmergencyColorId = Shader.PropertyToID("_BaseBrownoutEmergencyColor");
-        // COLD ALLOC: Vector4[256] — global module center/radius upload scratch — owner: BaseModule
+        // COLD ALLOC: Vector4[256] - global module center/radius upload scratch - owner: BaseModule
         private static readonly Vector4[] s_moduleAmbienceData = new Vector4[ModuleWaterLevelShaderCapacity];
-        // COLD ALLOC: Vector4[256] — global module water/flicker upload scratch — owner: BaseModule
+        // COLD ALLOC: Vector4[256] - global module water/flicker upload scratch - owner: BaseModule
         private static readonly Vector4[] s_moduleFloodAndFlickerData = new Vector4[ModuleWaterLevelShaderCapacity];
         private static ComputeBuffer s_moduleAmbienceDataBuffer;
         private static ComputeBuffer s_moduleFloodAndFlickerDataBuffer;
@@ -189,9 +187,9 @@ namespace Hecton8.Gameplay
             Shader.SetGlobalBuffer(s_ModuleAmbienceDataId, s_moduleAmbienceDataBuffer);
             Shader.SetGlobalBuffer(s_ModuleWaterLevelsId, s_moduleFloodAndFlickerDataBuffer);
         }
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  CONSTANTS
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         /// <summary>
         /// Fiksirovannaya delta medlennogo tika (sekundy).
@@ -201,7 +199,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>
         /// Nachalnaya emkost slovarya otslezhivaemyh obektov.
-        /// Tipichnyy modul soderzhit 0–16 plavuchih obektov odnovremenno.
+        /// Tipichnyy modul soderzhit 0-16 plavuchih obektov odnovremenno.
         /// </summary>
         private const int TRACKED_INITIAL_CAPACITY = 16;
 
@@ -268,9 +266,9 @@ namespace Hecton8.Gameplay
         private const string InteriorCaveWeedChildName = "Cave-Weed";
         private const string InteriorBarnaclesChildName = "Barnacles";
 
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ==========================================================
 
         [Header("Integrity")]
         [Tooltip("Maximum module integrity.")]
@@ -407,11 +405,11 @@ namespace Hecton8.Gameplay
         [Tooltip("Passive integrity recovery rate in units per second. Zero disables it.")]
         [SerializeField] private float passiveRecoveryRate = 0f;
 
-        [Tooltip("Skorost passivnoy degradatsii tselostnosti (edinits/sek). " +
-                 "Lor: ~0.1% v igrovoy den. Pri glubine > 500m — umnozhaetsya na depthDegradationMultiplier.")]
+        [Tooltip("Passive integrity degradation rate in units per second. " +
+                 "Lore: approximately 0.1 percent per game day. Depth above 500m multiplies by depthDegradationMultiplier.")]
         [SerializeField] private float passiveDegradationRate = 0.001f;
 
-        [Tooltip("Mnozhitel degradatsii na glubine > 500m (davlenie na korpus).")]
+        [Tooltip("Integrity degradation multiplier applied below 500m depth for hull pressure stress.")]
         [SerializeField, UnityEngine.Range(1f, 5f)] private float depthDegradationMultiplier = 2f;
 
         [Header("Cascade Failures")]
@@ -449,19 +447,19 @@ namespace Hecton8.Gameplay
         [Tooltip("Normalized bulkhead stress recovered per second when the airlock is no longer holding back flood pressure.")]
         [SerializeField, Min(0f)] private float bulkheadStressRecoveryPerSecond = DefaultBulkheadStressRecoveryPerSecond;
 
-        [Tooltip("Skorost utechki kisloroda iz skafandra igroka vnutri avariynogo modulya.")]
+        [Tooltip("Player suit oxygen drain rate inside a failing module.")]
         [SerializeField] private float oxygenLeakDrainRate = 10f;
 
-        [Tooltip("Uron skafandru igroka vnutri goryaschego modulya.")]
+        [Tooltip("Player suit damage rate inside a burning module.")]
         [SerializeField] private float fireSuitDamageRate = 12f;
 
-        [Tooltip("Szhigaemaya pozharom energiya kostyuma igroka vnutri modulya.")]
+        [Tooltip("Player suit energy drain rate inside a burning module.")]
         [SerializeField] private float fireSuitEnergyDrainRate = 6f;
 
         [Header("Interior Zone (Dry Zone)")]
-        [Tooltip("BoxCollider (Trigger), ohvatyvayuschiy vnutrennee prostranstvo modulya. " +
-                 "Obekty s BuoyancyObject vnutri etogo triggera ne ispytyvayut vodnyh sil, " +
-                 "poka modul ne zatoplen. Naznach vruchnuyu ili sozday avtomaticheski.")]
+        [Tooltip("Trigger BoxCollider covering the module interior. " +
+                 "BuoyancyObject instances inside this trigger ignore water forces while the module is dry. " +
+                 "Assign manually or let the module generate it.")]
         [SerializeField] private BoxCollider interiorTrigger;
 
         [Tooltip("Authored interior wall surfaces that swap to a dedicated condensation material when hot air meets cold hull.")]
@@ -712,12 +710,12 @@ namespace Hecton8.Gameplay
         /// Pre-allocated, zero GC.
         /// </summary>
         private readonly List<ulong> _keysToRemove = new List<ulong>(TRACKED_INITIAL_CAPACITY);
-        // COLD ALLOC: List<BaseAirlock>[2] — cached owned airlock controllers for emergency lockdown fan-out — owner: BaseModule
+        // COLD ALLOC: List<BaseAirlock>[2] - cached owned airlock controllers for emergency lockdown fan-out - owner: BaseModule
         private readonly List<BaseAirlock> _airlockBuffer = new List<BaseAirlock>(2);
-        // COLD ALLOC: List<SealedDoor>[2] — cached owned sealed bulkhead doors for quarantine locking — owner: BaseModule
+        // COLD ALLOC: List<SealedDoor>[2] - cached owned sealed bulkhead doors for quarantine locking - owner: BaseModule
         private readonly List<SealedDoor> _sealedDoorBuffer = new List<SealedDoor>(2);
 
-        // COLD ALLOC: Collider[32] — resync interior occupants on enable/load/spawn — owner: BaseModule
+        // COLD ALLOC: Collider[32] - resync interior occupants on enable/load/spawn - owner: BaseModule
         private readonly Collider[] _interiorOverlapBuffer = new Collider[INTERIOR_OVERLAP_CAPACITY];
         [SerializeField] private float _debugSolarEmpBlackoutSeconds;
         private float _solarEmpBlackoutRemainingSeconds;
@@ -1222,6 +1220,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             CacheReferences();
+            TryRouteAudioSourceToSfxGroup(audioSource);
             ReadBuildablePower();
             ValidateInteriorTrigger();
             ConfigureRuntimeComponentsFromSerializedState();
@@ -2752,6 +2751,7 @@ namespace Hecton8.Gameplay
 
             if (audioSource != null && leakLoop != null)
             {
+                TryRouteAudioSourceToSfxGroup(audioSource);
                 if (active)
                 {
                     if (audioSource.clip != leakLoop || !audioSource.isPlaying)
@@ -3286,6 +3286,7 @@ namespace Hecton8.Gameplay
 
             if (oxygenScrubberHumLoop != null && oxygenScrubberHumSource.clip != oxygenScrubberHumLoop)
                 oxygenScrubberHumSource.clip = oxygenScrubberHumLoop;
+            TryRouteAudioSourceToSfxGroup(oxygenScrubberHumSource);
             oxygenScrubberHumSource.loop = true;
             oxygenScrubberHumSource.playOnAwake = false;
             oxygenScrubberHumSource.volume = 0f;
@@ -3293,6 +3294,15 @@ namespace Hecton8.Gameplay
             _configuredOxygenHumSource = oxygenScrubberHumSource;
             _configuredOxygenHumClip = oxygenScrubberHumLoop;
             _oxygenHumSourceConfigured = true;
+        }
+
+        private static void TryRouteAudioSourceToSfxGroup(AudioSource source)
+        {
+            if (source == null || source.outputAudioMixerGroup != null)
+                return;
+
+            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+                source.outputAudioMixerGroup = spatialAudioManager.SfxGroup;
         }
 
         private void ResetOxygenScrubberHumRuntime(bool invalidateConfiguration)

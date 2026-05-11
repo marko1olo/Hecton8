@@ -63,7 +63,7 @@ namespace Hecton8.Build
 
             uint value = unchecked((uint)gitCommitHash32);
             if (value == UnknownHash)
-                value = ParseCommitHash32(gitCommitHash);
+                value = unchecked((uint)ParseCommitHash32(gitCommitHash));
 
             for (int i = 0; i < 8; i++)
             {

@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -69,8 +70,8 @@ namespace Hecton8.World
             float highY = FractalValueNoise(sample * 0.73f + new float2(-5.89f, 61.2f), seed ^ 0x68E31DA4u) * 2f - 1f;
             float twist = FractalValueNoise(sample * 0.23f + new float2(17.3f, -29.1f), seed ^ 0x1B56C4E9u) * 2f - 1f;
             float angle = twist * 1.0471976f;
-            float s = math.sin(angle);
-            float c = math.cos(angle);
+            float s = CinematicMath.FastSin(angle);
+            float c = CinematicMath.FastCos(angle);
             float2 warp = new float2(lowX, lowY) * 0.64f + new float2(highX, highY) * 0.36f;
             return new float2(warp.x * c - warp.y * s, warp.x * s + warp.y * c) * 0.72f;
         }

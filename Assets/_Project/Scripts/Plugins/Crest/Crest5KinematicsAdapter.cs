@@ -96,12 +96,14 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
+            OceanVisualBridgeRegistry.Register(this);
             OceanKinematicsRuntimeService.RegisterProvider(this);
         }
 
         private void OnDisable()
         {
             OceanKinematicsRuntimeService.UnregisterProvider(this);
+            OceanVisualBridgeRegistry.Unregister(this);
         }
 
         /// <inheritdoc />

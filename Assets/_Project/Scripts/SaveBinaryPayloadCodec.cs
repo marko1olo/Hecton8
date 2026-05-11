@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Narrative;
 using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections;
@@ -157,7 +158,9 @@ namespace Hecton8.SaveSystem
                 && writer.WriteInt(data.narrativeDiscoveryCount)
                 && WriteStringArray(ref writer, data.narrativeDiscoveryIds)
                 && writer.WriteInt(data.narrativeDepthTier)
+                && writer.WriteStruct(data.narrativeAupTriggeredMask)
                 && WriteStringList(ref writer, data.audioLogDiscoveredIds)
+                && WriteAudioLogDiscoveryBitWords(ref writer, data)
                 && WriteEncryptedAudioLogFragments(ref writer, data)
                 && writer.WriteStructArray(data.industrialLoreUnlockWords)
                 && WriteStringList(ref writer, data.questActiveIds)
@@ -221,7 +224,9 @@ namespace Hecton8.SaveSystem
                 || !reader.ReadInt(out data.narrativeDiscoveryCount)
                 || !ReadStringArray(ref reader, out data.narrativeDiscoveryIds)
                 || !reader.ReadInt(out data.narrativeDepthTier)
+                || !ReadNarrativeAupTriggeredMask(ref reader, data.version, out data.narrativeAupTriggeredMask)
                 || !ReadStringList(ref reader, out data.audioLogDiscoveredIds)
+                || !ReadAudioLogDiscoveryBitWords(ref reader, data.version, data)
                 || !ReadEncryptedAudioLogFragments(ref reader, data.version, data)
                 || !reader.ReadStructArray(out data.industrialLoreUnlockWords)
                 || !ReadStringList(ref reader, out data.questActiveIds)
@@ -260,6 +265,62 @@ namespace Hecton8.SaveSystem
         }
 
         private const int EncryptedAudioLogFragmentSaveVersion = 61;
+        private const int PackedNarrativeLoreSaveVersion = 62;
+
+        private static bool ReadNarrativeAupTriggeredMask(
+            ref BufferReader reader,
+            int saveDataVersion,
+            out ulong triggeredMask)
+        {
+            triggeredMask = 0UL;
+            return saveDataVersion < PackedNarrativeLoreSaveVersion ||
+                   reader.ReadStruct(out triggeredMask);
+        }
+
+        private static bool WriteAudioLogDiscoveryBitWords(ref BufferWriter writer, SaveData data)
+        {
+            long[] words = data != null ? data.audioLogDiscoveryBitWords : null;
+            if (!AudioLogDiscoveryBitMask.HasExpectedCapacity(words))
+            {
+                for (int i = 0; i < AudioLogDiscoveryBitMask.WordCount; i++)
+                {
+                    if (!writer.WriteLong(0L))
+                        return false;
+                }
+
+                return true;
+            }
+
+            for (int i = 0; i < AudioLogDiscoveryBitMask.WordCount; i++)
+            {
+                if (!writer.WriteLong(words[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool ReadAudioLogDiscoveryBitWords(
+            ref BufferReader reader,
+            int saveDataVersion,
+            SaveData data)
+        {
+            if (data == null)
+                return false;
+
+            AudioLogDiscoveryBitMask.EnsureCapacity(ref data.audioLogDiscoveryBitWords);
+            AudioLogDiscoveryBitMask.Clear(data.audioLogDiscoveryBitWords);
+            if (saveDataVersion < PackedNarrativeLoreSaveVersion)
+                return true;
+
+            for (int i = 0; i < AudioLogDiscoveryBitMask.WordCount; i++)
+            {
+                if (!reader.ReadLong(out data.audioLogDiscoveryBitWords[i]))
+                    return false;
+            }
+
+            return true;
+        }
 
         private static bool WriteEncryptedAudioLogFragments(ref BufferWriter writer, SaveData data)
         {

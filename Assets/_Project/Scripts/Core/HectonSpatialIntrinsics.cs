@@ -89,9 +89,38 @@ namespace Hecton8.Core
 
             v128 mask = X86.Sse.and_ps(
                 X86.Sse.and_ps(
-                    X86.Sse.and_ps(X86.Sse.cmpge_ps(pointX, minX), X86.Sse.cmpge_ps(pointY, minY)),
-                    X86.Sse.and_ps(X86.Sse.cmpge_ps(pointZ, minZ), X86.Sse.cmple_ps(pointX, maxX))),
-                X86.Sse.and_ps(X86.Sse.cmple_ps(pointY, maxY), X86.Sse.cmple_ps(pointZ, maxZ)));
+                    X86.Sse.and_ps(CmpGe(pointX, minX), CmpGe(pointY, minY)),
+                    X86.Sse.and_ps(CmpGe(pointZ, minZ), CmpLe(pointX, maxX))),
+                X86.Sse.and_ps(CmpLe(pointY, maxY), CmpLe(pointZ, maxZ)));
+
+            return X86.Sse.movemask_ps(mask) & 0xF;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int IntersectsAabbMask4(
+            this HectonAabb query,
+            v128 minX,
+            v128 minY,
+            v128 minZ,
+            v128 maxX,
+            v128 maxY,
+            v128 maxZ)
+        {
+            if (!X86.Sse.IsSseSupported)
+                return IntersectsAabbMask4Fallback(in query, minX, minY, minZ, maxX, maxY, maxZ);
+
+            v128 queryMinX = X86.Sse.set1_ps(query.Min.x);
+            v128 queryMinY = X86.Sse.set1_ps(query.Min.y);
+            v128 queryMinZ = X86.Sse.set1_ps(query.Min.z);
+            v128 queryMaxX = X86.Sse.set1_ps(query.Max.x);
+            v128 queryMaxY = X86.Sse.set1_ps(query.Max.y);
+            v128 queryMaxZ = X86.Sse.set1_ps(query.Max.z);
+
+            v128 mask = X86.Sse.and_ps(
+                X86.Sse.and_ps(
+                    X86.Sse.and_ps(CmpLe(minX, queryMaxX), CmpLe(minY, queryMaxY)),
+                    X86.Sse.and_ps(CmpLe(minZ, queryMaxZ), CmpGe(maxX, queryMinX))),
+                X86.Sse.and_ps(CmpGe(maxY, queryMinY), CmpGe(maxZ, queryMinZ)));
 
             return X86.Sse.movemask_ps(mask) & 0xF;
         }
@@ -147,7 +176,7 @@ namespace Hecton8.Core
                 X86.Sse.mul_ps(dz, dz));
             v128 radiusSq = X86.Sse.mul_ps(combined, combined);
 
-            return X86.Sse.movemask_ps(X86.Sse.cmple_ps(distSq, radiusSq)) & 0xF;
+            return X86.Sse.movemask_ps(CmpLe(distSq, radiusSq)) & 0xF;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -173,6 +202,24 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int IntersectsAabbMask4Fallback(
+            in HectonAabb query,
+            v128 minX,
+            v128 minY,
+            v128 minZ,
+            v128 maxX,
+            v128 maxY,
+            v128 maxZ)
+        {
+            int mask = 0;
+            mask |= IntersectsAabbLane(in query, minX.Float0, minY.Float0, minZ.Float0, maxX.Float0, maxY.Float0, maxZ.Float0) ? 1 : 0;
+            mask |= IntersectsAabbLane(in query, minX.Float1, minY.Float1, minZ.Float1, maxX.Float1, maxY.Float1, maxZ.Float1) ? 2 : 0;
+            mask |= IntersectsAabbLane(in query, minX.Float2, minY.Float2, minZ.Float2, maxX.Float2, maxY.Float2, maxZ.Float2) ? 4 : 0;
+            mask |= IntersectsAabbLane(in query, minX.Float3, minY.Float3, minZ.Float3, maxX.Float3, maxY.Float3, maxZ.Float3) ? 8 : 0;
+            return mask;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool ContainsLane(in HectonAabb aabb, float x, float y, float z)
         {
             return x >= aabb.Min.x &&
@@ -191,6 +238,33 @@ namespace Hecton8.Core
             float dz = z - sphere.Center.z;
             float combined = radius + sphere.Radius;
             return (dx * dx) + (dy * dy) + (dz * dz) <= combined * combined;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IntersectsAabbLane(in HectonAabb query, float minX, float minY, float minZ, float maxX, float maxY, float maxZ)
+        {
+            return minX <= query.Max.x &&
+                   minY <= query.Max.y &&
+                   minZ <= query.Max.z &&
+                   maxX >= query.Min.x &&
+                   maxY >= query.Min.y &&
+                   maxZ >= query.Min.z;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static v128 CmpLe(v128 left, v128 right)
+        {
+            return X86.Avx.IsAvxSupported
+                ? X86.Avx.cmp_ps(left, right, (int)X86.Avx.CMP.LE_OQ)
+                : X86.Sse.cmple_ps(left, right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static v128 CmpGe(v128 left, v128 right)
+        {
+            return X86.Avx.IsAvxSupported
+                ? X86.Avx.cmp_ps(left, right, (int)X86.Avx.CMP.GE_OQ)
+                : X86.Sse.cmpge_ps(left, right);
         }
     }
 }

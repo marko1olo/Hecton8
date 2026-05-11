@@ -1,4 +1,12 @@
 ```markdown
+## 2026-05-11 VISUAL-FAKE OVERRIDE
+
+[RULE] Interior flooding defaults to gameplay state plus presentation fake.
+[RULE] Real mass/center-of-mass mutation is allowed only for player-controlled vessels, active salvage objects, or hull-breach gameplay where control truth changes.
+[RULE] Non-critical compartments use scalar fill ratio, pooled leak VFX, audio creaks, haptics, HUD alarms, and shader wetness planes.
+[FORBID] Continuous internal fluid, slosh, pressure, or transfer simulation for rooms the player cannot inspect, enter, or control.
+[FORBID] Rigidbody mass/CoM writes every FixedTick without measured proof and a fallback. Prefer low-cadence state changes and presentation interpolation.
+
 # PHYS_Fluid_Incursion_Interior.md
 ## Distilled Technical Mandate — HECTON-8 | Fluid Incursion & Buoyancy System
 

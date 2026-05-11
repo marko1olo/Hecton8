@@ -1,4 +1,13 @@
 # EQUIPMENT_INTERACTION.md
+
+## 2026-05-11 VISUAL-FAKE / PHYSICS OWNERSHIP OVERRIDE
+
+[RULE] Tool interaction may create gameplay state, decals, pooled VFX, audio, haptics, and structural graph edges. Tool modules do not create Unity Joint gameplay constraints as a production path.
+[FORBID] `ConfigurableJoint`, `SpringJoint`, `HingeJoint`, or direct concrete physics ownership from tool modules.
+[REQUIRE] Welds, anchors, hooks, and tethers publish deterministic structure/physics requests to the owning system. Presentation-only cable, seam, heat shimmer, slag, and recoil default to pooled visual/audio/haptic fakes.
+
+---
+
 ## Technical Mandate — HECTON-8 Engine 
 ---
 
@@ -242,7 +251,7 @@ ACTIVE (sustained beam):
 4. WeldProgress += power_final × fixedDeltaTime
 5. At WeldProgress ≥ WeldThreshold:
    EventBus→StructureSystem: RegisterWeldJoint(hitPoint, hitNormal, toolID)
-   StructureSystem: create ConfigurableJoint or anchor constraint between surfaces
+   StructureSystem: create deterministic structure edge or owned anchor constraint between surfaces
 6. Visual: lerp beam width (0.01→0.04m) over first 0.3s via AnimationCurve sample
 7. Overheat accumulation rate × 1.4 multiplier (welder runs hot)
 

@@ -195,7 +195,7 @@ namespace Hecton8.Physics
     {
         private const int ListenerCapacity = 16;
 
-        // COLD ALLOC: RegistryBucket<IPhysicsImpactEventListener>[16] - deferred physics impact listeners - owner: PhysicsEvents
+        // COLD ALLOC: RegistryBucket<IPhysicsImpactEventListener>[16] — deferred physics impact listeners — owner: PhysicsEvents
         private static readonly RegistryBucket<IPhysicsImpactEventListener> _impactListeners = new RegistryBucket<IPhysicsImpactEventListener>(ListenerCapacity);
 
         internal static bool HasImpactListeners => _impactListeners.Count > 0;
@@ -388,6 +388,8 @@ namespace Hecton8.Physics
         private static int _cachedWaterLevelFrame = -1;
         private static float _cachedWaterLevelBaseY;
         private static float _cachedWaterLevelAmplitude;
+        private static float _cachedWaterLevelCelestialTideY;
+        private static uint _cachedWaterLevelCelestialSequence;
         private static bool _cachedWaterLevelTidesEnabled;
         private static float _cachedCurrentWaterLevelY;
 
@@ -408,6 +410,8 @@ namespace Hecton8.Physics
             _cachedWaterLevelFrame = -1;
             _cachedWaterLevelBaseY = 0f;
             _cachedWaterLevelAmplitude = 0f;
+            _cachedWaterLevelCelestialTideY = 0f;
+            _cachedWaterLevelCelestialSequence = 0u;
             _cachedWaterLevelTidesEnabled = false;
             _cachedCurrentWaterLevelY = 0f;
         }
@@ -420,9 +424,16 @@ namespace Hecton8.Physics
         {
             int frame = Time.frameCount;
             float safeAmplitude = math.max(0f, tideAmplitudeMeters);
+            CelestialRuntimeSnapshot celestialSnapshot = GlobalRegistry.CelestialRuntimeSnapshot;
+            uint celestialSequence = GlobalRegistry.CelestialRuntimeSnapshotSequence;
+            float celestialTideY = (celestialSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u
+                ? celestialSnapshot.TideHeightMeters
+                : 0f;
             if (_cachedWaterLevelFrame == frame &&
                 math.abs(_cachedWaterLevelBaseY - baseWaterLevelY) <= 0.0001f &&
                 math.abs(_cachedWaterLevelAmplitude - safeAmplitude) <= 0.0001f &&
+                math.abs(_cachedWaterLevelCelestialTideY - celestialTideY) <= 0.0001f &&
+                _cachedWaterLevelCelestialSequence == celestialSequence &&
                 _cachedWaterLevelTidesEnabled == tidesEnabled)
             {
                 return _cachedCurrentWaterLevelY;
@@ -435,9 +446,12 @@ namespace Hecton8.Physics
                 resolvedWaterLevelY += combinedWave * safeAmplitude;
             }
 
+            resolvedWaterLevelY += celestialTideY;
             _cachedWaterLevelFrame = frame;
             _cachedWaterLevelBaseY = baseWaterLevelY;
             _cachedWaterLevelAmplitude = safeAmplitude;
+            _cachedWaterLevelCelestialTideY = celestialTideY;
+            _cachedWaterLevelCelestialSequence = celestialSequence;
             _cachedWaterLevelTidesEnabled = tidesEnabled;
             _cachedCurrentWaterLevelY = resolvedWaterLevelY;
             return resolvedWaterLevelY;
@@ -672,7 +686,7 @@ namespace Hecton8.Physics
         {
             if (!_lastValidPositions.IsCreated)
             {
-                // COLD ALLOC: NativeArray<float3>[512] - authoritative last-valid runtime-space body positions for origin-shift-safe recovery - owner: GlobalPhysicsStateManager
+                // COLD ALLOC: NativeArray<float3>[512] — authoritative last-valid runtime-space body positions for origin-shift-safe recovery — owner: GlobalPhysicsStateManager
                 _lastValidPositions = new NativeArray<float3>(MaxTrackedBodies, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 NativeMemorySentinel.RegisterNativeArray(
                     _lastValidPositions,
@@ -683,7 +697,7 @@ namespace Hecton8.Physics
 
             if (!_impactQueue.IsCreated)
             {
-                // COLD ALLOC: NativeQueue<PhysicsImpactEventData>[128] - deferred gameplay physics impact bus - owner: GlobalPhysicsStateManager
+                // COLD ALLOC: NativeQueue<PhysicsImpactEventData>[128] — deferred gameplay physics impact bus — owner: GlobalPhysicsStateManager
                 _impactQueue = new NativeQueue<PhysicsImpactEventData>(Allocator.Persistent);
                 NativeMemorySentinel.RegisterNativeQueue(
                     _impactQueue,

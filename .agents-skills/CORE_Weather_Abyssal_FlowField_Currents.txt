@@ -1,4 +1,13 @@
 # WEATHER_ABYSSAL_CURRENTS.md
+## 2026-05-11 VISUAL-FAKE OVERRIDE
+
+[RULE] Weather and abyssal currents are presentation-first.
+[RULE] Flow fields drive VFX/audio/AI hints before they drive physics.
+[RULE] Physics sampling is limited to player, vehicles, hazards, and near interactive debris. Distant ambience reads shader/VFX flow only.
+[RULE] Main-thread flow orchestration target is `<0.1ms`; older multi-ms budgets require load-shed and profiler proof.
+[FORBID] Per-entity main-thread current math beyond gameplay-critical entities.
+[FORBID] Global force application from current fields when visual drift and audio pressure cues are enough.
+
 # HECTON-8 | Abyssal Flow Field System | Technical Mandate v1.0
 # Architect Authority: Principal Engine / Physics Lead
 

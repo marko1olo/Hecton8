@@ -319,7 +319,7 @@ namespace Hecton8.Gameplay
 
                 quaternion currentWorldRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(boneHandle.GetRotation(stream));
                 quaternion desiredWorldRotation = NormalizeQuaternionNoSqrt(math.mul(
-                    ContextualPhysicalIkMath.FromToRotation(currentDirection, desiredDirection),
+                    ContextualPhysicalIkMath.FastDirectionDeltaNoTrig(currentDirection, desiredDirection),
                     currentWorldRotation));
 
                 quaternion currentLocalRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(boneHandle.GetLocalRotation(stream));
@@ -348,6 +348,7 @@ namespace Hecton8.Gameplay
             quaternion previousWorldRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(parentHandle.GetRotation(stream));
             float3 rootPosition = ContextualPhysicalIkMath.ToFloat3(StreamHandles[chain.FirstBoneHandleIndex].GetPosition(stream));
             float3 headForward = ContextualPhysicalIkMath.SafeNormalize(headForwardReference - headTarget, new float3(0.0f, 0.0f, 1.0f));
+            float invBoneSpan = math.rcp(math.max(1.0f, chain.BoneCount - 1.0f));
 
             for (int boneIndex = 0; boneIndex < chain.BoneCount; boneIndex++)
             {
@@ -357,12 +358,8 @@ namespace Hecton8.Gameplay
                 quaternion currentLocalRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(boneHandle.GetLocalRotation(stream));
                 quaternion currentWorldRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(boneHandle.GetRotation(stream));
 
-                float normalizedT = chain.BoneCount > 1
-                    ? (float)boneIndex / (chain.BoneCount - 1)
-                    : 0.0f;
-                float nextT = chain.BoneCount > 1
-                    ? math.saturate((float)(boneIndex + 1) / (chain.BoneCount - 1))
-                    : 1.0f;
+                float normalizedT = boneIndex * invBoneSpan;
+                float nextT = math.saturate((boneIndex + 1) * invBoneSpan);
 
                 float3 currentBonePosition = ContextualPhysicalIkMath.ToFloat3(boneHandle.GetPosition(stream));
                 float3 currentDirection;
@@ -406,7 +403,7 @@ namespace Hecton8.Gameplay
                 float3 blendedLocalPosition = math.lerp(currentLocalPosition, desiredLocalPosition, weight);
 
                 quaternion desiredWorldRotation = NormalizeQuaternionNoSqrt(math.mul(
-                    ContextualPhysicalIkMath.FromToRotation(currentDirection, desiredDirection),
+                    ContextualPhysicalIkMath.FastDirectionDeltaNoTrig(currentDirection, desiredDirection),
                     currentWorldRotation));
                 quaternion desiredLocalRotation = NormalizeQuaternionNoSqrt(math.mul(math.inverse(previousWorldRotation), desiredWorldRotation));
                 quaternion blendedLocalRotation = ApproximateNlerpNoSqrt(currentLocalRotation, desiredLocalRotation, weight);
@@ -475,7 +472,7 @@ namespace Hecton8.Gameplay
                     currentDirection);
 
                 quaternion desiredWorldRotation = NormalizeQuaternionNoSqrt(math.mul(
-                    ContextualPhysicalIkMath.FromToRotation(currentDirection, desiredDirection),
+                    ContextualPhysicalIkMath.FastDirectionDeltaNoTrig(currentDirection, desiredDirection),
                     currentWorldRotation));
                 quaternion desiredLocalRotation = NormalizeQuaternionNoSqrt(math.mul(math.inverse(previousWorldRotation), desiredWorldRotation));
                 quaternion blendedLocalRotation = ApproximateNlerpNoSqrt(currentLocalRotation, desiredLocalRotation, weight);
@@ -730,7 +727,7 @@ namespace Hecton8.Gameplay
         }
 #pragma warning restore 0649
 
-        [Header("── Core References ──────────────────")]
+        [Header("Core References")]
         [Tooltip("Animator owning the live playable graph that will be wrapped by the IK job.")]
         [SerializeField] private Animator animator;
 
@@ -740,7 +737,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Pelvis/hip bone used for center-of-mass shift and leg parenting.")]
         [SerializeField] private Transform pelvis;
 
-        [Header("── Terrain / Tunnel Probes ──────────")]
+        [Header("Terrain / Tunnel Probes")]
         [Tooltip("World-space probe origin used for the left foot ground ray.")]
         [SerializeField] private Transform leftFootProbe;
 
@@ -788,7 +785,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Wall/cave layers used for tunnel and hand-brace raycasts.")]
         [SerializeField] private LayerMask wallMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
-        [Header("── Left Leg ─────────────────────────")]
+        [Header("Left Leg")]
         [Tooltip("Left upper-leg/thigh bone.")]
         [SerializeField] private Transform leftUpperLeg;
 
@@ -801,7 +798,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Optional left knee pole hint.")]
         [SerializeField] private Transform leftKneeHint;
 
-        [Header("── Right Leg ────────────────────────")]
+        [Header("Right Leg")]
         [Tooltip("Right upper-leg/thigh bone.")]
         [SerializeField] private Transform rightUpperLeg;
 
@@ -814,7 +811,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Optional right knee pole hint.")]
         [SerializeField] private Transform rightKneeHint;
 
-        [Header("── Left Arm ─────────────────────────")]
+        [Header("Left Arm")]
         [Tooltip("Parent transform for the left upper arm. Usually chest/clavicle.")]
         [SerializeField] private Transform leftArmParent;
 
@@ -830,7 +827,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Optional left elbow pole hint.")]
         [SerializeField] private Transform leftElbowHint;
 
-        [Header("── Right Arm ───────────────────────")]
+        [Header("Right Arm")]
         [Tooltip("Parent transform for the right upper arm. Usually chest/clavicle.")]
         [SerializeField] private Transform rightArmParent;
 
@@ -846,13 +843,13 @@ namespace Hecton8.Gameplay
         [Tooltip("Optional right elbow pole hint.")]
         [SerializeField] private Transform rightElbowHint;
 
-        [Header("── Optional FABRIK Appendages ───────")]
+        [Header("Optional FABRIK Appendages")]
         [Tooltip("Optional multi-joint appendage chains solved with FABRIK inside the animation job.")]
         [SerializeField] private AppendageChainAuthoring[] appendageChains;
         [SerializeField] private SpineChainAuthoring spineChain;
         [SerializeField] private SecondaryChainAuthoring[] secondaryChains;
 
-        [Header("── Contextual Tuning ────────────────")]
+        [Header("Contextual Tuning")]
         [Tooltip("If disabled, foot terrain adaptation stays fully in authored animation.")]
         [SerializeField] private bool enableFootPlacement = true;
 
@@ -1259,8 +1256,8 @@ namespace Hecton8.Gameplay
 
             Vector3 fallbackNormal = (Vector3)ContextualPhysicalIkMath.SafeNormalize(controllerRuntime - targetRuntime, new float3(0.0f, 1.0f, 0.0f));
 
-            float range01 = math.saturate(1.0f - ((float)distanceSq / PredictiveRepairLatchDistanceSq));
-            float direction01 = math.saturate((directionDot - requiredDot) / math.max(1.0f - requiredDot, 0.0001f));
+            float range01 = math.saturate(1.0f - ((float)distanceSq * math.rcp(PredictiveRepairLatchDistanceSq)));
+            float direction01 = math.saturate((directionDot - requiredDot) * math.rcp(math.max(1.0f - requiredDot, 0.0001f)));
             float targetBlend = range01 * direction01;
             predictivePosition = (Vector3)targetRuntime;
             predictiveNormal = fallbackNormal;
@@ -1275,7 +1272,7 @@ namespace Hecton8.Gameplay
             float safeDeltaTime = math.max(deltaTime, 0.0001f);
             float3 currentRuntime = currentAup.ToRuntimeFloat3();
             float3 previousRuntime = previousAup.ToRuntimeFloat3();
-            float3 velocity = (currentRuntime - previousRuntime) / safeDeltaTime;
+            float3 velocity = (currentRuntime - previousRuntime) * math.rcp(safeDeltaTime);
             return math.all(math.isfinite(velocity)) ? (Vector3)velocity : Vector3.zero;
         }
 
@@ -1378,32 +1375,32 @@ namespace Hecton8.Gameplay
             _streamHandles = new NativeArray<TransformStreamHandle>(
                 totalHandleCount,
                 Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TransformStreamHandle>[dynamic] — sequential cached stream handles for contextual IK bones — owner: ContextualPhysicalIkRig
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TransformStreamHandle>[dynamic] - sequential cached stream handles for contextual IK bones - owner: ContextualPhysicalIkRig
             _twoBoneSetups = new NativeArray<ContextualPhysicalIkTwoBoneSetup>(
                 4,
                 Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTwoBoneSetup>[4] — fixed humanoid limb solve descriptors — owner: ContextualPhysicalIkRig
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTwoBoneSetup>[4] - fixed humanoid limb solve descriptors - owner: ContextualPhysicalIkRig
 
             if (validAppendageChainCount > 0)
             {
                 _appendageChainRuntimes = new NativeArray<ContextualPhysicalIkAppendageChainRuntime>(
                     validAppendageChainCount,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkAppendageChainRuntime>[dynamic] — appendage FABRIK descriptors — owner: ContextualPhysicalIkRig
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkAppendageChainRuntime>[dynamic] - appendage FABRIK descriptors - owner: ContextualPhysicalIkRig
                 _appendageSegmentLengths = new NativeArray<float>(
                     totalAppendageLengthCount,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[dynamic] — appendage segment lengths — owner: ContextualPhysicalIkRig
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[dynamic] - appendage segment lengths - owner: ContextualPhysicalIkRig
                 _appendageTargets = new NativeArray<ContextualPhysicalIkAppendageTarget>(
                     validAppendageChainCount,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkAppendageTarget>[dynamic] — appendage target positions and weights — owner: ContextualPhysicalIkRig
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkAppendageTarget>[dynamic] - appendage target positions and weights - owner: ContextualPhysicalIkRig
                 _appendageScratchPositions = new NativeArray<float3>(
                     totalAppendageScratchCount,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[dynamic] — appendage FABRIK scratch positions — owner: ContextualPhysicalIkRig
-                _appendageTargetSources = new Transform[validAppendageChainCount]; // COLD ALLOC: Transform[dynamic] — appendage target source cache — owner: ContextualPhysicalIkRig
-                _appendageFallbackTips = new Transform[validAppendageChainCount]; // COLD ALLOC: Transform[dynamic] — appendage fallback tip cache — owner: ContextualPhysicalIkRig
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[dynamic] - appendage FABRIK scratch positions - owner: ContextualPhysicalIkRig
+                _appendageTargetSources = new Transform[validAppendageChainCount]; // COLD ALLOC: Transform[dynamic] - appendage target source cache - owner: ContextualPhysicalIkRig
+                _appendageFallbackTips = new Transform[validAppendageChainCount]; // COLD ALLOC: Transform[dynamic] - appendage fallback tip cache - owner: ContextualPhysicalIkRig
             }
 
             if (validAppendageChainCount > 0)

@@ -1,4 +1,12 @@
 # URP_GRAPHICS_HOTPATH.md
+## 2026-05-11 VISUAL-FAKE OVERRIDE
+
+[RULE] The render path carries most realism. Prefer shader/post/LOD fakes over gameplay simulation.
+[RULE] MX350/MINIMAL uses cheap fog, dither, LUT haze, baked AO, impostors, HLOD cards, and authored masks before raymarching or dynamic lights.
+[RULE] Full or half-res raymarching is MED+ only unless a fresh MX350 profiler capture proves the cost.
+[FORBID] Bloom, full volumetrics, runtime lens flares, per-object material clones, or high-sample post stacks on MX350.
+[FORBID] A visual feature that costs more than `0.1ms` without a load-shed path.
+
 # HECTON-8 — Distilled Technical Mandate v1.0
 # Minimal target: i3-10gen / MX350 2GB / 6-8GB RAM | URP 14+
 

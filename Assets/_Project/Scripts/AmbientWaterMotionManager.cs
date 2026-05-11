@@ -4,11 +4,11 @@
 //
 // v1.1 OPTIMIZATIONS:
 //   [FIX] TryResolveObserver: throttles player resolve until observer exists.
-//         GameBootstrapper/player resolve kazhdyy kadr esli observer esche ne gotov.
-//   [FIX] Register: zamena Contains (O(n)) na HashSet dlya O(1) deduplikatsii.
-//   [FIX] ApplyMotion: keshiruem worldPos iz CachedTransform.position odin raz,
-//         peredaem v ShouldUpdate chtoby ne chitat position dvazhdy cherez bridge.
-//   [FIX] ShouldUpdate: prinimaet worldPos kak parametr, ubran povtornyy .position.
+//         GameBootstrapper/player resolve is skipped each frame while unresolved.
+//   [FIX] Register: replaced Contains (O(n)) with HashSet-backed O(1) dedupe.
+//   [FIX] ApplyMotion: caches worldPos from CachedTransform.position once,
+//         then passes it to ShouldUpdate to avoid a second bridge position read.
+//   [FIX] ShouldUpdate: accepts worldPos as a parameter; repeated .position read removed.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -53,7 +53,7 @@ namespace Hecton8.Physics
         [SerializeField] private Vector3 _debugBiomeCurrentVector;
 
         // ── Registered objects ───────────────────────────────────────────────
-        // List dlya iteratsii (cache-friendly), HashSet dlya O(1) deduplikatsii v Register.
+        // List handles cache-friendly iteration; HashSet provides O(1) registration dedupe.
         private readonly List<AmbientWaterMotion> _objects =
             new List<AmbientWaterMotion>(MotionCapacity); // COLD ALLOC: List<AmbientWaterMotion>[128] � active ambient-water motion registry � owner: AmbientWaterMotionManager
         private readonly HashSet<AmbientWaterMotion> _objectsSet =
@@ -77,7 +77,7 @@ namespace Hecton8.Physics
         private bool _hasBiomeCurrentTarget;
 
         // ── Observer resolve cooldown ────────────────────────────────────────
-        // Esli observer ne naznachen i ne nayden — ne dergaem bootstrap kazhdyy kadr.
+        // If no observer is assigned or found, avoid hitting bootstrap every frame.
         private float _observerResolveTimer;
         private const float ObserverResolveCooldown = 2f;
 
@@ -97,7 +97,7 @@ namespace Hecton8.Physics
             }
 
             RefreshDistanceThresholds();
-            // Probuem srazu pri starte
+            // Resolve once during startup; later retries are throttled.
             TryResolveObserver(force: true);
         }
 
@@ -132,7 +132,7 @@ namespace Hecton8.Physics
         {
             if (motion == null) return;
 
-            // HashSet.Add vozvraschaet false esli uzhe est — O(1) vs O(n) Contains
+            // HashSet.Add returns false for existing entries: O(1) instead of O(n) Contains.
             if (_objectsSet.Add(motion))
                 _objects.Add(motion);
 
@@ -165,7 +165,7 @@ namespace Hecton8.Physics
             _time += deltaTime;
             if (_time > 100000f) _time -= 100000f;
 
-            // Cooldown na poisk observer — ne kazhdyy kadr
+            // Observer lookup is cooled down; this does not run every frame.
             _observerResolveTimer -= deltaTime;
             if (_observerResolveTimer <= 0f)
             {
@@ -177,13 +177,13 @@ namespace Hecton8.Physics
             _debugFarCount    = 0;
             _debugCulledCount = 0;
 
-            // Keshiruem pozitsiyu nablyudatelya odin raz za tik
-            // Izbegaem povtornyh bridge calls v ShouldUpdate dlya kazhdogo obekta
+            // Cache observer position once per tick.
+            // Avoid repeated bridge calls in ShouldUpdate for each object.
             AbsoluteUniversePosition observerAup = lodObserver != null
                 ? AbsoluteUniversePosition.FromRuntimePosition(lodObserver.position)
                 : default;
 
-            // Kvadraty distantsiy — schitaem odin raz za tik
+            // Distance squares are resolved once per tick.
             for (int i = _objects.Count - 1; i >= 0; i--)
             {
                 AmbientWaterMotion motion = _objects[i];
@@ -199,7 +199,7 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                // Chitaem position ODIN RAZ — keshiruem dlya ShouldUpdate i ApplyMotion
+                // Read position once; cache it for ShouldUpdate and ApplyMotion.
                 // Bylo: position chitalsya dvazhdy (v ShouldUpdate i v ApplyMotion)
                 AbsoluteUniversePosition motionAup = motion.RestAup;
                 float3 runtimeRestPosition = motionAup.ToRuntimeFloat3();
@@ -216,7 +216,7 @@ namespace Hecton8.Physics
         }
 
         // ════════════════════════════════════════════════════════════════════
-        //  SHOULD UPDATE — prinimaet predvychislennye dannye, net bridge calls
+        //  SHOULD UPDATE - precomputed input, no bridge calls
         // ════════════════════════════════════════════════════════════════════
 
         private bool ShouldUpdateAup(
@@ -396,20 +396,20 @@ namespace Hecton8.Physics
         }
 
         // ════════════════════════════════════════════════════════════════════
-        //  OBSERVER RESOLVE — s cooldown, ne kazhdyy kadr
+        //  OBSERVER RESOLVE - cooled down, not every frame
         // ════════════════════════════════════════════════════════════════════
 
         /// <param name="force">true = ignorirovat cooldown (Awake, OnEnable).</param>
         private void TryResolveObserver(bool force = false)
         {
-            // Esli uzhe est — ne ischem
+            // Existing observer: no lookup.
             if (lodObserver != null) return;
 
-            // Esli cooldown ne istek i ne forsim — propuskaem
+            // Cooldown still active and not forced: skip.
             if (!force && _observerResolveTimer > 0f) return;
 
             // Sbrasyvaem taymer nezavisimo ot rezultata poiska
-            // Ne nashli seychas — podozhdem esche ObserverResolveCooldown sekund
+            // Observer not found now; wait ObserverResolveCooldown seconds.
             _observerResolveTimer = ObserverResolveCooldown;
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))

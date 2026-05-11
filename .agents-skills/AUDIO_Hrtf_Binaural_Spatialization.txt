@@ -1,7 +1,14 @@
 ## I. EXECUTION_POLICY
 
+[2026-05-11 UNDERWATER-AUDIO OVERRIDE]
+[RULE] Underwater spatial audio defaults to cheap perceptual fakes: low-pass, amplitude, reverb-zone state, occlusion scalar, haptic pulse, and UI/radar support.
+[RULE] HRTF/ITD/ILD is optional accessibility/headphone processing, not default underwater realism.
+[RULE] Full HRTF convolution is HIGH/ULTRA only with profiler proof; MX350 uses mono/near-stereo filtered ambience plus selected critical-source cues.
+[FORBID] 64-source per-sample HRTF processing on MX350.
+[FORBID] Treating Doppler as mandatory underwater. Use stable pitch/pressure/frequency cues unless gameplay requires velocity truth.
+
 [RULE] All filters pre-computed LUT. No runtime division/sqrt in DSP callback.
-[RULE] ITD/ILD/HRTF processing per-sample via Burst-compiled IAudioKernel.
+[RULE] If enabled on approved tier, ITD/ILD/HRTF processing runs through Burst/DSPGraph kernels. Default underwater mix uses cheap perceptual filters, occlusion scalar, reverb state, haptic pulse, and selected critical-source cues.
 [FORBID] AudioSource OnAudioFilterRead. Managed callback = instant termination.
 [FORBID] AnimationCurve evaluation in audio thread. Bake to float[] at init.
 [RULE] Fixed 48kHz sample rate. No dynamic rate switching. Removes branch cost.

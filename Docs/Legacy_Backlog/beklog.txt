@@ -85,7 +85,7 @@ Mehanika: Tratit energiyu skafandra. Puskaet luch, obnovlyaet LineRenderer i per
 Resursnyy Uzel (ResourceNode.cs) i ICuttable
 Detali: Pri poluchenii urona (TakeDamage) nizhe nulya, obekt:
 Spavnit lut (LootChunk) cherez ObjectPoolManager.
-Dobavlyaet k lutu Rigidbody.AddForce(Random.insideUnitSphere), chtoby kuski razletalis.
+Publikuet lutu owned impulse/visual-scatter packet cherez physics apply pipeline; pryamoy Rigidbody force-call v tool/resource code stale i zapreschen.
 Zapisyvaet svoy uniqueId v WorldStateManager.
 Despavnit sam sebya.
 Bezopasnost (Predosterezhenie Kodera): V metode OnSpawn() dobavlena kriticheskaya proverka: esli IsNodeDepleted(uniqueId) ravno true, obekt mgnovenno despavnitsya. Eto zaschita ot respavna sobrannogo musora pri vygruzke/zagruzke chanka.

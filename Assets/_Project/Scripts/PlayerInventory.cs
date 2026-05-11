@@ -230,6 +230,7 @@ namespace Hecton8.Inventory
                 int conversionCount = 0;
                 int changed = 0;
                 float safeBaseHalfLifeSeconds = math.max(1f, BaseHalfLifeSeconds);
+                float inverseBaseHalfLifeSeconds = math.rcp(safeBaseHalfLifeSeconds);
 
                 for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
                 {
@@ -242,9 +243,9 @@ namespace Hecton8.Inventory
 
                     ushort currentFlags = (ushort)(ItemStateFlags[anchorIndex] | RadioactiveMask);
                     ushort currentQualityMilli = QualityMilli[anchorIndex] > 0 ? QualityMilli[anchorIndex] : DefaultQuality;
-                    float currentQuality = math.clamp(currentQualityMilli / 1000f, 0f, 1f);
-                    float halfLifeSeconds = safeBaseHalfLifeSeconds / math.max(0.001f, radiationSv);
-                    float decayFactor = ApproximateExpNegPositiveInput((Ln2 / halfLifeSeconds) * DeltaSeconds);
+                    float currentQuality = math.clamp(currentQualityMilli * 0.001f, 0f, 1f);
+                    float radiationFactor = math.max(0.001f, radiationSv) * inverseBaseHalfLifeSeconds;
+                    float decayFactor = ApproximateExpNegPositiveInput(Ln2 * radiationFactor * DeltaSeconds);
                     float nextQuality = math.clamp(currentQuality * decayFactor, 0f, 1f);
                     ushort nextQualityMilli = (ushort)math.clamp((int)math.round(nextQuality * 1000f), 0, 1000);
 
@@ -1017,7 +1018,16 @@ namespace Hecton8.Inventory
             NativeParallelHashMap<int, int> destination,
             out int uniqueItemCount)
         {
+            return TryCopyAvailableItemCountsNonAlloc(destination, out uniqueItemCount, out _);
+        }
+
+        public bool TryCopyAvailableItemCountsNonAlloc(
+            NativeParallelHashMap<int, int> destination,
+            out int uniqueItemCount,
+            out ulong availableResourceMask)
+        {
             uniqueItemCount = 0;
+            availableResourceMask = 0UL;
             if (!destination.IsCreated || _grid == null || !_stackCounts.IsCreated)
                 return false;
 
@@ -1032,9 +1042,11 @@ namespace Hecton8.Inventory
                 if (itemHashId == 0)
                     continue;
 
-                int availableCount = Mathf.Max(0, Mathf.Max(1, (int)_stackCounts[anchorIndex]) - GetReservedCraftCount(anchorIndex));
+                int availableCount = math.max(0, math.max(1, (int)_stackCounts[anchorIndex]) - GetReservedCraftCount(anchorIndex));
                 if (availableCount <= 0)
                     continue;
+
+                availableResourceMask |= 1UL << (itemHashId & 63);
 
                 if (destination.TryGetValue(itemHashId, out int existingCount))
                 {
@@ -1046,6 +1058,7 @@ namespace Hecton8.Inventory
                 {
                     destination.Clear();
                     uniqueItemCount = 0;
+                    availableResourceMask = 0UL;
                     return false;
                 }
 
@@ -1807,6 +1820,17 @@ namespace Hecton8.Inventory
             return _grid != null ? _grid.AnchorHashIds : default;
         }
 
+        public unsafe void* GetItemIDsUnsafeReadOnlyPtr(out int length)
+        {
+            if (_grid == null)
+            {
+                length = 0;
+                return null;
+            }
+
+            return _grid.GetAnchorHashIdsUnsafeReadOnlyPtr(out length);
+        }
+
         public NativeArray<ushort>.ReadOnly GetQuantitiesReadOnly()
         {
             return GetStackCountsReadOnly();
@@ -2507,7 +2531,7 @@ namespace Hecton8.Inventory
             uint nowTimestamp)
         {
             ushort currentQualityMilli = _qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli;
-            float currentQuality = math.clamp(currentQualityMilli / 1000f, 0f, 1f);
+            float currentQuality = math.clamp(currentQualityMilli * 0.001f, 0f, 1f);
             float decayPerSecond = 0f;
 
             if (ItemPhysicalMetadataUtility.IsOrganic(runtimeDescriptor.AudioMaterialId))

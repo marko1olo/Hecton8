@@ -82,6 +82,16 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool PickleUnmanaged<T>(
+            in T value,
+            NativeArray<byte> destination,
+            int destinationByteOffset,
+            out int bytesWritten) where T : unmanaged
+        {
+            return WriteUnmanaged(in value, destination, destinationByteOffset, out bytesWritten);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ReadUnmanaged<T>(
             NativeArray<byte> source,
             int sourceByteOffset,
@@ -104,6 +114,60 @@ namespace Hecton8.Core
             byte* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + sourceByteOffset;
             void* destinationPtr = UnsafeUtility.AddressOf(ref value);
             UnsafeUtility.MemCpy(destinationPtr, sourcePtr, byteCount);
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool UnpickleUnmanaged<T>(
+            NativeArray<byte> source,
+            int sourceByteOffset,
+            out T value) where T : unmanaged
+        {
+            return ReadUnmanaged(source, sourceByteOffset, out value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool MemClear<T>(NativeArray<T> buffer) where T : unmanaged
+        {
+            if (!buffer.IsCreated)
+                return false;
+
+            long byteCount = (long)UnsafeUtility.SizeOf<T>() * buffer.Length;
+            if (byteCount <= 0L)
+                return true;
+
+            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
+            UnsafeUtility.MemClear(ptr, byteCount);
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool MemCpyStride(
+            void* source,
+            int sourceStrideBytes,
+            void* destination,
+            int destinationStrideBytes,
+            int elementSizeBytes,
+            int elementCount)
+        {
+            if (elementCount < 0 || elementSizeBytes < 0 || sourceStrideBytes < elementSizeBytes || destinationStrideBytes < elementSizeBytes)
+                return false;
+
+            if (elementCount == 0 || elementSizeBytes == 0)
+                return true;
+
+            if (source == null || destination == null)
+                return false;
+
+            byte* src = (byte*)source;
+            byte* dst = (byte*)destination;
+            for (int i = 0; i < elementCount; i++)
+            {
+                UnsafeUtility.MemCpy(dst, src, elementSizeBytes);
+                src += sourceStrideBytes;
+                dst += destinationStrideBytes;
+            }
+
             return true;
         }
 

@@ -7,6 +7,31 @@
 #ifndef SG_GAS_GIANT_CELESTIAL_LIGHTING_INCLUDED
 #define SG_GAS_GIANT_CELESTIAL_LIGHTING_INCLUDED
 
+float GasGiantApproxMagnitude3D(float3 value)
+{
+    float3 a = abs(value);
+    float maxAxis = max(max(a.x, a.y), a.z);
+    float minAxis = min(min(a.x, a.y), a.z);
+    float midAxis = a.x + a.y + a.z - maxAxis - minAxis;
+    return max(maxAxis + midAxis * 0.375 + minAxis * 0.1875, 0.0001);
+}
+
+float3 GasGiantNormalizeApprox3D(float3 value)
+{
+    return value * rcp(GasGiantApproxMagnitude3D(value));
+}
+
+float GasGiantFastPower01(float value, float exponent)
+{
+    float v = saturate(value);
+    float v2 = v * v;
+    float v4 = v2 * v2;
+    float v8 = v4 * v4;
+    float low = lerp(v, v2, saturate(exponent - 1.0));
+    float high = lerp(v2, v8, saturate((exponent - 2.0) * 0.16666667));
+    return lerp(low, high, step(2.0, exponent));
+}
+
 // -------------------------------------------------------
 // MAIN CUSTOM LIGHTING
 // -------------------------------------------------------
@@ -24,23 +49,24 @@ void GasGiantLighting_float(
     out float  FresnelGlow
 )
 {
-    // Normalize inputs for lighting.
-    float3 N = normalize(WorldNormal);
-    float3 L = normalize(-SunDirection);
-    float3 V = normalize(ViewDirection);
+    // Cinematic approximate unit vectors; avoids full normalization in fragment work.
+    float3 N = GasGiantNormalizeApprox3D(WorldNormal);
+    float3 L = GasGiantNormalizeApprox3D(-SunDirection);
+    float3 V = GasGiantNormalizeApprox3D(ViewDirection);
 
     // Base lighting with soft terminator.
     float NdotL = dot(N, L);
 
     // Widen the transition zone instead of clamping NdotL.
     float terminatorWidth = 0.15;
-    float softNdotL = saturate((NdotL + terminatorWidth) / (2.0 * terminatorWidth + 0.001));
+    float invTerminatorSpan = rcp(2.0 * terminatorWidth + 0.001);
+    float softNdotL = saturate((NdotL + terminatorWidth) * invTerminatorSpan);
 
     // Smoothstep softens the terminator further.
     softNdotL = smoothstep(0.0, 1.0, softNdotL);
 
     // Rayleigh-like orange rim on the day/night boundary.
-    float terminatorZone = 1.0 - abs(NdotL) / (terminatorWidth * 2.0 + 0.001);
+    float terminatorZone = 1.0 - abs(NdotL) * invTerminatorSpan;
     terminatorZone = saturate(terminatorZone);
     terminatorZone = terminatorZone * terminatorZone;
 
@@ -112,16 +138,16 @@ void AtmosphereFresnel_float(
     out float  AtmosphereAlpha
 )
 {
-    float3 N = normalize(WorldNormal);
-    float3 V = normalize(ViewDirection);
-    float3 L = normalize(-SunDirection);
+    float3 N = GasGiantNormalizeApprox3D(WorldNormal);
+    float3 V = GasGiantNormalizeApprox3D(ViewDirection);
+    float3 L = GasGiantNormalizeApprox3D(-SunDirection);
 
     float NdotV = saturate(dot(N, V));
     float fresnel = 1.0 - NdotV;
 
     // Two Fresnel layers.
-    float innerFresnel = pow(fresnel, InnerPower);
-    float outerFresnel = pow(fresnel, OuterPower);
+    float innerFresnel = GasGiantFastPower01(fresnel, InnerPower);
+    float outerFresnel = GasGiantFastPower01(fresnel, OuterPower);
 
     // Backlight flash: outer layer brightens when backlit.
     float backFacing = saturate(dot(-V, L));

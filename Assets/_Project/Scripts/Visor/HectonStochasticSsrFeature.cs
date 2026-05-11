@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -202,25 +203,22 @@ namespace Hecton8.Visor
                     _hasMaterialState = false;
                 }
 
-                if (!_hasMaterialState || _lastInputSize != inputSize)
-                {
-                    material.SetVector(ShaderConstants.InputSizeId, inputSize);
-                    _lastInputSize = inputSize;
-                }
-
-                if (!_hasMaterialState || _lastParamsA != paramsA)
-                {
-                    material.SetVector(ShaderConstants.ParamsAId, paramsA);
-                    _lastParamsA = paramsA;
-                }
-
-                if (!_hasMaterialState || _lastParamsB != paramsB)
-                {
-                    material.SetVector(ShaderConstants.ParamsBId, paramsB);
-                    _lastParamsB = paramsB;
-                }
+                bool materialDirty = !_hasMaterialState;
+                SetMaterialVectorIfChanged(material, ShaderConstants.InputSizeId, inputSize, ref _lastInputSize, materialDirty);
+                SetMaterialVectorIfChanged(material, ShaderConstants.ParamsAId, paramsA, ref _lastParamsA, materialDirty);
+                SetMaterialVectorIfChanged(material, ShaderConstants.ParamsBId, paramsB, ref _lastParamsB, materialDirty);
 
                 _hasMaterialState = true;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static void SetMaterialVectorIfChanged(Material material, int shaderId, Vector4 value, ref Vector4 cachedValue, bool materialDirty)
+            {
+                if (!materialDirty && cachedValue == value)
+                    return;
+
+                material.SetVector(shaderId, value);
+                cachedValue = value;
             }
         }
 

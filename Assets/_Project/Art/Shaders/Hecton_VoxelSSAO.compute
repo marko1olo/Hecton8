@@ -7,10 +7,7 @@ Texture2D<float> _HectonVoxelSSAODepth;
 
 float4 _HectonVoxelSSAOInputSize;
 float4 _HectonVoxelSSAOOutputSize;
-float _HectonVoxelSSAOProjectionScale;
-float _HectonVoxelSSAORadiusMeters;
-float _HectonVoxelSSAOIntensity;
-float _HectonVoxelSSAODepthSigma;
+float4 _HectonVoxelSSAOParamsA; // x=projection scale, y=radius meters, z=intensity, w=depth sigma
 
 bool IsFiniteScalar(float value)
 {
@@ -97,12 +94,12 @@ void ResolveVoxelSSAO(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     float centerLinearDepth = ResolveFiniteOrDefault(LinearEyeDepth(centerDepthRaw, _ZBufferParams), 0.0);
 
-    float radiusPixels = clamp(_HectonVoxelSSAOProjectionScale / max(centerLinearDepth, 0.5), 1.0, 24.0);
+    float radiusPixels = clamp(_HectonVoxelSSAOParamsA.x / max(centerLinearDepth, 0.5), 1.0, 24.0);
     float2 rotation = ResolveOctantRotation(ResolveFiniteOrDefault(ResolveInterleavedNoise(dispatchThreadId.xy), 0.0));
-    float radiusMeters = max(_HectonVoxelSSAORadiusMeters, 0.001);
+    float radiusMeters = max(_HectonVoxelSSAOParamsA.y, 0.001);
     float radiusMetersSq = radiusMeters * radiusMeters;
     float invRadiusMetersSq = rcp(radiusMetersSq);
-    float depthSigma = max(0.01, _HectonVoxelSSAODepthSigma);
+    float depthSigma = max(0.01, _HectonVoxelSSAOParamsA.w);
 
     float occlusion = 0.0;
     float weightSum = 0.0;
@@ -133,7 +130,7 @@ void ResolveVoxelSSAO(uint3 dispatchThreadId : SV_DispatchThreadID)
         float rangeWeight = 1.0 - saturate(depthDeltaSq * invRadiusMetersSq);
         float depthWeight = rcp(1.0 + depthDelta * depthSigma);
         float sampleWeight = rangeWeight * depthWeight;
-        occlusion += saturate(depthDelta * _HectonVoxelSSAOIntensity) * sampleWeight;
+        occlusion += saturate(depthDelta * _HectonVoxelSSAOParamsA.z) * sampleWeight;
         weightSum += sampleWeight;
     }
 

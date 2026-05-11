@@ -82,6 +82,22 @@ namespace Hecton8.Physics
             Vector3[] displacements);
 
         /// <inheritdoc />
+        public float3 GetFlowAt(float3 position)
+        {
+            return TrySampleSurfaceFlow(position, 1f, out float3 surfaceFlow)
+                ? surfaceFlow
+                : float3.zero;
+        }
+
+        /// <inheritdoc />
+        public float GetWaveHeight(float3 position)
+        {
+            return TrySampleWaveHeight(position, 1f, out float waterHeight)
+                ? waterHeight
+                : SeaLevel;
+        }
+
+        /// <inheritdoc />
         public bool TrySampleWaveHeight(float3 position, float minSpatialLength, out float waterHeight)
         {
             _singleSamplePosition[0] = new Vector3(position.x, position.y, position.z);

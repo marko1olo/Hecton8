@@ -1,11 +1,45 @@
 # CINEMATIC CHEATS LEDGER
-Date: 2026-05-07
+Date: 2026-05-11
 Status: PENDING VERIFICATION
 Scope: source-backed ledger of deliberate performance cheats that replace physical simulation with controlled presentation.
 
 ## Rule
 
+This stable ledger is the visual-realistic-fake authority. Dated reports are evidence/counter snapshots only.
+
 A cinematic cheat is acceptable only when the gameplay contract does not require full physical truth and the replacement is deterministic, bounded, and visible in source.
+
+2026-05-11 rule:
+
+- visual fake is the default path for water, light, deformation, pressure, flow, ambience, cable sag, particles, and distant motion
+- real simulation must prove that gameplay correctness fails without it
+- any frame cost above `0.1ms` is suspicious until measured and justified
+- no runtime-readiness language is allowed without profiler/GCMonitor/Unity proof
+
+Mandate authority:
+
+- `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `.agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt`
+- `.agents-skills/PHYS_Fluid_Incursion_Interior.txt`
+- `.agents-skills/CORE_Weather_Abyssal_FlowField_Currents.txt`
+- `.agents-skills/REND_Abyssal_Lighting_Voxel_Occlusion_Shadows.txt`
+- `.agents-skills/CORE_Tools_Equipment_Interaction_Raycast_Heat.txt`
+- `.agents-skills/PHYS_Kinematic_Interaction_Hands.txt`
+
+## May 11 Registry Corrections
+
+| Area | Correction | Runtime-proof state |
+|---|---|---|
+| Performance budgets | Added visual-fake-first override and explicit MX350 bans for Bloom and FSR2/DLSS-class temporal upscalers. | Documentation-only; profiler proof still required. |
+| Fluid VFX | Reframed particles as presentation, not gameplay fluid truth; APV/probe sampling is MED+ unless measured. | Documentation-only. |
+| Flow/weather | Flow fields drive VFX/audio/AI hints first; physics sampling is limited to player/vehicles/hazards/near interactables. | Documentation-only. |
+| Fluid incursion | Interior flooding defaults to scalar state plus leak/audio/haptic/shader fakes; real mass/CoM only for gameplay-critical vessels. | Documentation-only. |
+| Abyssal lighting | Darkness volumes, baked AO, LUT haze, emissive proxies, and dithered shadow proxies precede raymarch/voxel truth. | Documentation-only. |
+| Tether/cable physics | Old ConfigurableJoint/AddForce path is stale against current AGENTS.md; new production path must use custom constraint packets or visual fake. | Documentation-only. |
+| Tool/hand physics | Welds, anchors, grabs, drag, recoil, and scatter now route through owned physics packets or presentation fakes; direct tool-side Unity physics calls are stale. | Documentation-only. |
+| Underwater audio | HRTF/ITD/ILD becomes optional accessibility/headphone processing, not default underwater realism. | Documentation-only. |
 
 ## May 7 Entries
 

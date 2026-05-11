@@ -1,6 +1,6 @@
 // ============================================================================
-// HECTON-8 — AudioLogPickup.cs
-// Interaktivnyy obekt v mire — audiodnevnik kolonii.
+// HECTON-8 - AudioLogPickup.cs
+// Interactive colony audio-log pickup.
 // ============================================================================
 
 using Hecton.Localization;
@@ -32,18 +32,18 @@ namespace Hecton8.Narrative
         // COLD ALLOC: RegistryBucket<AudioLogPickup>[64] - active pickup templates for procedural lore lookup - owner: AudioLogPickup
         private static readonly RegistryBucket<AudioLogPickup> _registeredPickupTemplates = new RegistryBucket<AudioLogPickup>(MaxRegisteredPickupTemplates);
 
-        [Header("── Audio Log ───────────────────────────────")]
-        [Tooltip("Dannye audiodnevnika.")]
+        [Header("Audio Log")]
+        [Tooltip("Audio log data.")]
         [SerializeField] private AudioLogData logData;
 
-        [Tooltip("Tekst podskazki vzaimodeystviya.")]
+        [Tooltip("Interaction prompt text.")]
         [SerializeField] private string interactVerb = DefaultPlaybackVerbRu;
 
-        [Header("── Behaviour ───────────────────────────────")]
-        [Tooltip("Deaktivirovat obekt posle pervogo vzaimodeystviya.")]
+        [Header("Behaviour")]
+        [Tooltip("Deactivate this object after the first interaction.")]
         [SerializeField] private bool deactivateAfterPickup;
 
-        [Tooltip("Podsvetka pri navedenii.")]
+        [Tooltip("Hover highlight object.")]
         [SerializeField] private GameObject highlightObject;
 
         private string _cachedInteractText;
@@ -140,8 +140,8 @@ namespace Hecton8.Narrative
         {
             if (logData == null)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[AudioLogPickup] No AudioLogData assigned on {name}.");
+#if UNITY_EDITOR
+                Debug.LogWarning("[AudioLogPickup] No AudioLogData assigned.");
 #endif
                 return;
             }
@@ -149,7 +149,7 @@ namespace Hecton8.Narrative
             AudioLogSystem system = Hecton8.Core.GlobalRegistry.AudioLogs;
             if (system == null)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 Debug.LogWarning("[AudioLogPickup] Hecton8.Core.GlobalRegistry.AudioLogs is null.");
 #endif
                 return;

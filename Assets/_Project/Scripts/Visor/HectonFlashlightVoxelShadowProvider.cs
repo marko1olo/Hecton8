@@ -28,6 +28,7 @@ namespace Hecton8.Visor
         private const float DefaultShadowSoftness = 6.5f;
         private const float DefaultShadowStepCount = 7f;
         private const float LightResolveRetryIntervalSeconds = 0.5f;
+        private const float DegreesToRadians = 0.017453292519943295f;
         private const float InvTwoPi = 0.15915494f;
 
         private static readonly int _FlashlightActiveId = Shader.PropertyToID("_HectonFlashlightActive");
@@ -410,16 +411,17 @@ namespace Hecton8.Visor
         {
             Transform lightTransform = light.transform;
             float range = math.max(0.1f, light.range);
-            float coneHalfAngleRadians = math.max(1f, light.spotAngle * 0.5f) * Mathf.Deg2Rad;
+            float coneHalfAngleRadians = math.max(1f, light.spotAngle * 0.5f) * DegreesToRadians;
             float coneRadius = math.max(0.35f, ApproximateTanPositive(coneHalfAngleRadians) * range * coneRadiusPadding);
+            float invResolution = math.rcp(math.max(1, _resolutionRuntime));
 
             rotationWs = lightTransform.rotation;
             halfExtents = new Vector3(coneRadius, coneRadius, range * 0.5f);
             centerWs = lightTransform.position + lightTransform.forward * halfExtents.z;
             cellSize = new Vector3(
-                (halfExtents.x * 2f) / math.max(1, _resolutionRuntime),
-                (halfExtents.y * 2f) / math.max(1, _resolutionRuntime),
-                (halfExtents.z * 2f) / math.max(1, _resolutionRuntime));
+                halfExtents.x * 2f * invResolution,
+                halfExtents.y * 2f * invResolution,
+                halfExtents.z * 2f * invResolution);
             cellDiagonal = ApproximateMagnitude((float3)cellSize);
             sdfRange = math.max(cellDiagonal * math.max(1f, sdfRangeInCellDiagonals), cellDiagonal);
         }
@@ -433,7 +435,7 @@ namespace Hecton8.Visor
                 return true;
 
             float rotationDot = math.saturate(math.abs(Quaternion.Dot(_publishedRotationWs, desiredRotationWs)));
-            float rotationRefreshHalfRadians = math.max(0f, rotationRefreshThresholdDegrees) * Mathf.Deg2Rad * 0.5f;
+            float rotationRefreshHalfRadians = math.max(0f, rotationRefreshThresholdDegrees) * DegreesToRadians * 0.5f;
             if (rotationDot < ApproximateSpotConeCos(rotationRefreshHalfRadians))
                 return true;
 
@@ -637,7 +639,7 @@ namespace Hecton8.Visor
             }
 
             float boundaryBias = _scanCellDiagonal * 0.5f;
-            float inverseSdfRange = _scanSdfRange > 0.0001f ? 1f / _scanSdfRange : 0f;
+            float inverseSdfRange = _scanSdfRange > 0.0001f ? math.rcp(_scanSdfRange) : 0f;
             float zeroBandDistanceSq = boundaryBias * math.max(_scanSdfRange, 0.0001f);
 
             for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
@@ -677,7 +679,7 @@ namespace Hecton8.Visor
                 return;
             }
 
-            float outerAngleRadians = math.max(1f, _flashlightLight.spotAngle * 0.5f) * Mathf.Deg2Rad;
+            float outerAngleRadians = math.max(1f, _flashlightLight.spotAngle * 0.5f) * DegreesToRadians;
             float innerAngleRadians = outerAngleRadians * 0.76f;
             float outerCos = ApproximateSpotConeCos(outerAngleRadians);
             float innerCos = ApproximateSpotConeCos(innerAngleRadians);
@@ -711,7 +713,7 @@ namespace Hecton8.Visor
                 new Vector4(
                     outerCos,
                     1f,
-                    lightRange > 0.0001f ? 1f / lightRange : 0f,
+                    lightRange > 0.0001f ? math.rcp(lightRange) : 0f,
                     shadowFloor));
 
             if (hasVoxelVolume)
@@ -737,7 +739,7 @@ namespace Hecton8.Visor
             float rebuildSignal = _scanInProgress ? 0.55f : 0f;
             float restartSignal = _restartQueued ? 0.85f : 0f;
             float scanProgress = _resolutionRuntime > 0
-                ? math.saturate(_scanSliceCursor / (float)_resolutionRuntime)
+                ? math.saturate(_scanSliceCursor * math.rcp((float)_resolutionRuntime))
                 : 0f;
             float carrier = EvaluateCheapCarrier01((Time.frameCount * 0.6180339f) + scanProgress * 5.1f);
             float instability = math.max(staleSignal, math.max(rebuildSignal, restartSignal)) * carrier;
@@ -758,7 +760,7 @@ namespace Hecton8.Visor
         private static float ApproximateDistanceFromSq(float distanceSq, float range)
         {
             return distanceSq > 0f
-                ? distanceSq / math.max(range, 0.0001f)
+                ? distanceSq * math.rcp(math.max(range, 0.0001f))
                 : 0f;
         }
 
@@ -774,7 +776,7 @@ namespace Hecton8.Visor
         {
             float x = math.clamp(angleRadians, 0f, 1.4f);
             float x2 = x * x;
-            return x * ((15f - x2) / math.max(0.0001f, 15f - 6f * x2));
+            return x * (15f - x2) * math.rcp(math.max(0.0001f, 15f - 6f * x2));
         }
 
         private static float EvaluateCheapCarrier01(float phase)

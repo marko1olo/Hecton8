@@ -21,7 +21,6 @@ namespace Hecton8.Interaction
         private const int MaxQueuedSignals = 256;
         private const int MaxInteractionPacketsPerFrame = 256;
         private const int MaxQueuedRayRequests = 64;
-        private const int MaxHitArbitrationHits = 8;
         private const int MaxParentResolveDepth = 32;
         private const int MinCommandsPerJob = 1;
         private const int MaxCompletedRaycastAgeFrames = 1;
@@ -46,8 +45,6 @@ namespace Hecton8.Interaction
         private readonly bool[] _completedHasHit = new bool[MaxQueuedRayRequests];
         // COLD ALLOC: int[64] - frame stamps for completed frame-latent raycast results - owner: EquipmentInteractionHandler
         private readonly int[] _completedHitFrames = new int[MaxQueuedRayRequests];
-        // COLD ALLOC: RaycastHit[8] - fixed flora/base overlap arbitration buffer - owner: EquipmentInteractionHandler
-        private static readonly RaycastHit[] _hitArbitrationHits = new RaycastHit[MaxHitArbitrationHits];
         // COLD ALLOC: Transform[256] - platform-local hit point side-channel aligned with the native signal queue - owner: EquipmentInteractionHandler
         private readonly Transform[] _queuedPlatformTransforms = new Transform[MaxQueuedSignals];
         // COLD ALLOC: Vector3[256] - local platform hit points aligned with the native signal queue - owner: EquipmentInteractionHandler
@@ -602,7 +599,7 @@ namespace Hecton8.Interaction
             if (targetCollider == null || targetCollider.gameObject.layer != _baseModuleLayer)
                 return false;
 
-            if (!TryResolveParentComponent(targetCollider.transform, out BaseModule module))
+            if (!TryResolveParentComponent(targetCollider.transform, out BaseModule _))
                 return false;
 
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
@@ -624,98 +621,22 @@ namespace Hecton8.Interaction
             else
                 direction = NormalizeFinite(direction, Vector3.forward);
 
-            int layerMask = BuildHitArbitrationLayerMask(targetCollider.gameObject.layer);
-            Vector3 castOrigin = runtimeHitPoint - direction * AttachedFloraArbitrationRadiusMeters;
-            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
-                castOrigin,
-                AttachedFloraArbitrationRadiusMeters,
-                direction,
-                _hitArbitrationHits,
-                AttachedFloraArbitrationRadiusMeters * 2f,
-                layerMask,
-                QueryTriggerInteraction.Collide);
-            if (hitCount == _hitArbitrationHits.Length)
-                SortHitArbitrationHitsByDistance(hitCount);
-
-            bool sawHostModule = hitCount <= 0;
-            bool sawFloraCandidate = hitCount <= 0;
-
-            for (int i = 0; i < hitCount; i++)
+            FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+            uint capabilityMask = ToolCapabilityMasks.ResolveCapabilityMask((InteractionEffectType)signal.EffectType);
+            Vector3 hitNormal = new Vector3(signal.HitNormal.x, signal.HitNormal.y, signal.HitNormal.z);
+            if (floraInteractionManager != null &&
+                floraInteractionManager.TryApplyModuleParasiteCut(
+                    floraPosition,
+                    hitNormal,
+                    direction,
+                    signal.PowerDelivered,
+                    signal.Source.Power,
+                    capabilityMask))
             {
-                Collider hitCollider = _hitArbitrationHits[i].collider;
-                if (hitCollider == null)
-                    continue;
-
-                if (hitCollider == targetCollider)
-                {
-                    sawHostModule = true;
-                    continue;
-                }
-
-                if (TryResolveParentComponent(hitCollider.transform, out BaseModule hitModule) &&
-                    hitModule == module)
-                {
-                    sawHostModule = true;
-                    continue;
-                }
-
-                Vector3 hitPoint = _hitArbitrationHits[i].point;
-                if ((hitPoint - floraPosition).sqrMagnitude <= AttachedFloraArbitrationRadiusMeters * AttachedFloraArbitrationRadiusMeters)
-                    sawFloraCandidate = true;
-            }
-
-            if (sawHostModule || sawFloraCandidate)
-            {
-                FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
-                uint capabilityMask = ToolCapabilityMasks.ResolveCapabilityMask((InteractionEffectType)signal.EffectType);
-                Vector3 hitNormal = new Vector3(signal.HitNormal.x, signal.HitNormal.y, signal.HitNormal.z);
-                if (floraInteractionManager != null &&
-                    floraInteractionManager.TryApplyModuleParasiteCut(
-                        floraPosition,
-                        hitNormal,
-                        direction,
-                        signal.PowerDelivered,
-                        signal.Source.Power,
-                        capabilityMask))
-                {
-                    return true;
-                }
+                return true;
             }
 
             return true;
-        }
-
-        private static int BuildHitArbitrationLayerMask(int targetLayer)
-        {
-            EnsureLayerCache();
-            int layerMask = 0;
-            if (targetLayer >= 0 && targetLayer < 32)
-                layerMask |= 1 << targetLayer;
-            if (_baseModuleLayer >= 0 && _baseModuleLayer < 32)
-                layerMask |= 1 << _baseModuleLayer;
-            if (_interactableLayer >= 0 && _interactableLayer < 32)
-                layerMask |= 1 << _interactableLayer;
-            if (_voxelLayer >= 0 && _voxelLayer < 32)
-                layerMask |= 1 << _voxelLayer;
-            return layerMask;
-        }
-
-        private static void SortHitArbitrationHitsByDistance(int hitCount)
-        {
-            int safeCount = math.clamp(hitCount, 0, _hitArbitrationHits.Length);
-            for (int i = 1; i < safeCount; i++)
-            {
-                RaycastHit key = _hitArbitrationHits[i];
-                float keyDistance = key.distance;
-                int j = i - 1;
-                while (j >= 0 && _hitArbitrationHits[j].distance > keyDistance)
-                {
-                    _hitArbitrationHits[j + 1] = _hitArbitrationHits[j];
-                    j--;
-                }
-
-                _hitArbitrationHits[j + 1] = key;
-            }
         }
 
         private static bool CanApplyInteraction(in InteractionSignal signal, Collider targetCollider)

@@ -26,6 +26,7 @@
 
 using System;
 using Hecton.Localization;
+using Hecton8.Audio;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -228,12 +229,14 @@ namespace Hecton8.Gameplay
         {
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: RepairTool
             _cachedTransform = transform;
+            TryAssignRepairAudioMixerRoute();
             SetRepairVisuals(false);
         }
 
         public override void OnSpawn()
         {
             base.OnSpawn();
+            TryAssignRepairAudioMixerRoute();
             _isRepairing = false;
             _wasRepairingLastFrame = false;
             _invalidTargetReportedThisUse = false;
@@ -261,6 +264,7 @@ namespace Hecton8.Gameplay
         public override void OnEquip()
         {
             base.OnEquip();
+            TryAssignRepairAudioMixerRoute();
             _isRepairing = false;
             _wasRepairingLastFrame = false;
             _invalidTargetReportedThisUse = false;
@@ -295,6 +299,15 @@ namespace Hecton8.Gameplay
         private float ResolveRuntimeRepairRange()
         {
             return GetRuntimeMaxRange(repairRange);
+        }
+
+        private void TryAssignRepairAudioMixerRoute()
+        {
+            if (repairLoopAudio == null || repairLoopAudio.outputAudioMixerGroup != null)
+                return;
+
+            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+                repairLoopAudio.outputAudioMixerGroup = spatialAudioManager.SfxGroup;
         }
 
         private float ResolveRuntimeRepairPowerPerSecond()
@@ -603,6 +616,7 @@ namespace Hecton8.Gameplay
 
             if (repairLoopAudio != null && !repairLoopAudio.isPlaying)
             {
+                TryAssignRepairAudioMixerRoute();
                 repairLoopAudio.Play();
             }
         }
@@ -632,6 +646,7 @@ namespace Hecton8.Gameplay
 
             if (repairLoopAudio != null && !repairLoopAudio.isPlaying)
             {
+                TryAssignRepairAudioMixerRoute();
                 repairLoopAudio.Play();
             }
         }
@@ -762,7 +777,7 @@ namespace Hecton8.Gameplay
             s_integrityDiagnosticPrefixChars.CopyTo(_integrityDiagnosticBuffer, cursor);
             cursor += s_integrityDiagnosticPrefixChars.Length;
             int integrityPercent = module.MaxIntegrity > 0.01f
-                ? (int)math.round(math.saturate(module.CurrentIntegrity / module.MaxIntegrity) * 100f)
+                ? (int)(math.saturate(module.CurrentIntegrity / module.MaxIntegrity) * 100f + 0.5f)
                 : 0;
             if (!integrityPercent.TryFormat(_integrityDiagnosticBuffer.AsSpan(cursor), out int written))
                 return false;
@@ -823,7 +838,7 @@ namespace Hecton8.Gameplay
             float integrity01 = module.MaxIntegrity > 0f
                 ? math.saturate(module.CurrentIntegrity / module.MaxIntegrity)
                 : 0f;
-            int integrityPercent = (int)math.round(integrity01 * 100f);
+            int integrityPercent = (int)(integrity01 * 100f + 0.5f);
 
             if (module.IsFlooded && !module.HasPower && module.CurrentIntegrity >= module.MaxIntegrity)
             {

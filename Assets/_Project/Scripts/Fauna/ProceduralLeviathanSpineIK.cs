@@ -24,6 +24,8 @@ namespace Hecton8.AI
         private const string NativeMemoryOwner = nameof(ProceduralLeviathanSpineIK);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const float DegreesToRadians = 0.01745329252f;
+        private const float InvTau = 0.15915494f;
+        private const float HalfPi = 1.57079632679f;
         private const float DistantIkSolveDistanceMeters = 40f;
         private const float DistantIkSolveDistanceSqr = DistantIkSolveDistanceMeters * DistantIkSolveDistanceMeters;
         private const int DistantIkCadenceFrameMask = 3;
@@ -136,19 +138,22 @@ namespace Hecton8.AI
 
             private static float CheapSinSigned(float radians)
             {
-                return -CheapTriangleWaveSigned(radians - 1.57079632679f);
+                return -TriangleWaveSigned((radians - HalfPi) * InvTau);
             }
 
             private static float CheapCosSigned(float radians)
             {
-                return -CheapTriangleWaveSigned(radians);
+                return -TriangleWaveSigned(radians * InvTau);
             }
 
-            private static float CheapTriangleWaveSigned(float radians)
+            private static float TrianglePulse01(float cycle)
             {
-                float cycle = radians * 0.15915494309f;
-                cycle -= math.floor(cycle);
-                return 1f - 4f * math.abs(cycle - 0.5f);
+                return math.abs(math.frac(cycle) * 2f - 1f);
+            }
+
+            private static float TriangleWaveSigned(float cycle)
+            {
+                return 1f - (TrianglePulse01(cycle) * 2f);
             }
 
             private static quaternion CheapAxisAngle(float3 normalizedAxis, float radians)
@@ -335,11 +340,11 @@ namespace Hecton8.AI
         private int _playerTransformCacheFrame = -1;
         private int _distantIkFrameOffset;
         private bool _distantIkCadenceActive;
-        // COLD ALLOC: List<SkinnedMeshRenderer>[8] â€“ skeletal root discovery scratch buffer for leviathan presentation binding â€“ owner: ProceduralLeviathanSpineIK
+        // COLD ALLOC: List<SkinnedMeshRenderer>[8] - skeletal root discovery scratch buffer for leviathan presentation binding - owner: ProceduralLeviathanSpineIK
         private readonly List<SkinnedMeshRenderer> _rendererScratch = new List<SkinnedMeshRenderer>(8);
-        // COLD ALLOC: List<Transform>[64] â€” temporary transform scan buffer for leviathan vertebra auto-resolution â€” owner: ProceduralLeviathanSpineIK
+        // COLD ALLOC: List<Transform>[64] - temporary transform scan buffer for leviathan vertebra auto-resolution - owner: ProceduralLeviathanSpineIK
         private readonly List<Transform> _transformScratch = new List<Transform>(64);
-        // COLD ALLOC: List<Transform>[64] â€” parent-chain assembly buffer used to build the runtime vertebra array â€” owner: ProceduralLeviathanSpineIK
+        // COLD ALLOC: List<Transform>[64] - parent-chain assembly buffer used to build the runtime vertebra array - owner: ProceduralLeviathanSpineIK
         private readonly List<Transform> _chainScratch = new List<Transform>(64);
 
         private void Awake()
@@ -491,7 +496,7 @@ namespace Hecton8.AI
             float safeLookAhead = math.max(0.01f, velocityLookAheadSeconds);
             float3 velocity = _rigidbody != null
                 ? (float3)_rigidbody.linearVelocity
-                : (headPosition - _lastResolvedHeadPosition) / math.max(deltaTime, 0.0001f);
+                : (headPosition - _lastResolvedHeadPosition) * math.rcp(math.max(deltaTime, 0.0001f));
             float3 velocityDirection = ContextualPhysicalIkMath.SafeNormalize(velocity, headForward);
             float3 previousTravelDirection = ContextualPhysicalIkMath.SafeNormalize(_smoothedTravelDirection, velocityDirection);
             float reversal01 = math.saturate((-math.dot(previousTravelDirection, velocityDirection) + 1f) * 0.5f);
@@ -524,7 +529,7 @@ namespace Hecton8.AI
                 resolvedStrikeTargetPosition = strikeTargetPosition + (strikeTargetVelocity * math.max(0f, strikeLeadSeconds));
                 float strikeRange = math.max(1f, _strikeRange);
                 float strikeDistanceSq = math.lengthsq(resolvedStrikeTargetPosition - headPosition);
-                strikeDistanceNormalized = math.saturate(1f - (strikeDistanceSq / (strikeRange * strikeRange)));
+                strikeDistanceNormalized = math.saturate(1f - (strikeDistanceSq * math.rcp(strikeRange * strikeRange)));
                 _strikeRecoveryTimeRemaining = safeRecoverySeconds;
                 _strikeRecoveryDistanceNormalized = strikeDistanceNormalized;
                 _strikeRecoveryTargetWorldPosition = resolvedStrikeTargetPosition;
@@ -541,7 +546,7 @@ namespace Hecton8.AI
                 if (_strikeRecoveryTimeRemaining > 0f)
                 {
                     _strikeRecoveryTimeRemaining = math.max(0f, _strikeRecoveryTimeRemaining - deltaTime);
-                    float recoveryBlend = math.saturate(_strikeRecoveryTimeRemaining / safeRecoverySeconds);
+                    float recoveryBlend = math.saturate(_strikeRecoveryTimeRemaining * math.rcp(safeRecoverySeconds));
                     resolvedStrikeTargetPosition = math.lerp(headLead, _strikeRecoveryTargetWorldPosition, recoveryBlend);
                     strikeDistanceNormalized = math.lerp(0f, _strikeRecoveryDistanceNormalized, recoveryBlend);
                     effectiveStrikeBlend = recoveryBlend;
@@ -728,7 +733,7 @@ namespace Hecton8.AI
                 maxSpeed = math.max(1f, _faunaBrain.SpeciesProfile.aggressiveSpeedMultiplier * 6f);
 
             float speedSq = _rigidbody != null ? math.lengthsq((float3)_rigidbody.linearVelocity) : 0f;
-            speedNormalized = math.saturate(speedSq / (maxSpeed * maxSpeed));
+            speedNormalized = math.saturate(speedSq * math.rcp(maxSpeed * maxSpeed));
             return true;
         }
 
@@ -925,7 +930,7 @@ namespace Hecton8.AI
             if (validCount <= 0)
                 return;
 
-            // COLD ALLOC: Transform[validCount] â€“ cached vertebra chain used for post-job writeback â€“ owner: ProceduralLeviathanSpineIK
+            // COLD ALLOC: Transform[validCount] - cached vertebra chain used for post-job writeback - owner: ProceduralLeviathanSpineIK
             _runtimeChain = new Transform[validCount];
             int writeIndex = 0;
             for (int i = 0; i < vertebrae.Length; i++)
@@ -939,22 +944,22 @@ namespace Hecton8.AI
 
             TransformAccessArray.Allocate(validCount, -1, out _vertebraAccessArray);
             _vertebraAccessArray.SetTransforms(_runtimeChain);
-            // COLD ALLOC: NativeArray<float>[validCount] â€“ normalized vertebra spline coordinates for leviathan presentation job â€“ owner: ProceduralLeviathanSpineIK
+            // COLD ALLOC: NativeArray<float>[validCount] - normalized vertebra spline coordinates for leviathan presentation job - owner: ProceduralLeviathanSpineIK
             _normalizedBoneT = new NativeArray<float>(validCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            // COLD ALLOC: NativeArray<quaternion>[validCount] â€“ bind-space world rotations used as the procedural leviathan presentation baseline â€“ owner: ProceduralLeviathanSpineIK
+            // COLD ALLOC: NativeArray<quaternion>[validCount] - bind-space world rotations used as the procedural leviathan presentation baseline - owner: ProceduralLeviathanSpineIK
             _bindWorldRotations = new NativeArray<quaternion>(validCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            // COLD ALLOC: NativeArray<quaternion>[validCount] â€“ solved Catmull-Rom world rotations produced by the Burst spine job â€“ owner: ProceduralLeviathanSpineIK
+            // COLD ALLOC: NativeArray<quaternion>[validCount] - solved Catmull-Rom world rotations produced by the Burst spine job - owner: ProceduralLeviathanSpineIK
             _solvedWorldRotations = new NativeArray<quaternion>(validCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            // COLD ALLOC: NativeArray<quaternion>[1] â€” strike head world rotation written by the procedural leviathan Burst solve â€” owner: ProceduralLeviathanSpineIK
+            // COLD ALLOC: NativeArray<quaternion>[1] - strike head world rotation written by the procedural leviathan Burst solve - owner: ProceduralLeviathanSpineIK
             _solvedHeadWorldRotations = new NativeArray<quaternion>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            // COLD ALLOC: NativeArray<float>[1] â€” jaw-open radians written by the procedural leviathan Burst solve â€” owner: ProceduralLeviathanSpineIK
+            // COLD ALLOC: NativeArray<float>[1] - jaw-open radians written by the procedural leviathan Burst solve - owner: ProceduralLeviathanSpineIK
             _jawOpenRadians = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             RegisterRuntimeBuffers();
 
-            float denominator = math.max(1, validCount - 1);
+            float invDenominator = math.rcp(math.max(1f, validCount - 1f));
             for (int i = 0; i < validCount; i++)
             {
-                _normalizedBoneT[i] = i / denominator;
+                _normalizedBoneT[i] = i * invDenominator;
                 _bindWorldRotations[i] = _runtimeChain[i] != null
                     ? (quaternion)_runtimeChain[i].rotation
                     : quaternion.identity;
