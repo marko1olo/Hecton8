@@ -610,14 +610,10 @@ namespace Hecton8.Audio
         // ══════════════════════════════════════════════════════════
 
         [Header("AudioMixer Snapshots")]
-        [Tooltip("Snapshot dlya podvodnoy sredy.\n" +
-                 "Nastroyki: Low-Pass Filter, Reverb (Large Hall),\n" +
-                 "priglushennye vysokie, usilennye nizkie.")]
+        [Tooltip("Underwater snapshot. Expected tuning: low-pass filter, large-hall reverb, muted highs, reinforced lows.")]
         [SerializeField] private AudioMixerSnapshot underwaterSnapshot;
 
-        [Tooltip("Snapshot dlya interera bazy.\n" +
-                 "Nastroyki: LPF snyat, Reverb (Small Room),\n" +
-                 "chistye srednie, legkiy mehanicheskiy gul.")]
+        [Tooltip("Base interior snapshot. Expected tuning: LPF removed, small-room reverb, clean mids, light mechanical hum.")]
         [SerializeField] private AudioMixerSnapshot baseInteriorSnapshot;
 
         [Tooltip("Optional MasterMixer asset used to auto-resolve authored snapshot refs by name in cold path/editor.")]
@@ -632,48 +628,41 @@ namespace Hecton8.Audio
         // ══════════════════════════════════════════════════════════
 
         [Header("Transition Settings")]
-        [Tooltip("Vremya perehoda mezhdu snapshot'ami (sekundy).\n" +
-                 "2.0 = plavnyy krossfeyd, imitiruyuschiy otkachku vody.\n" +
-                 "0.5 = bystryy perehod dlya testirovaniya.")]
+        [Tooltip("Snapshot transition duration in seconds. 2.0 is a smooth water-drain crossfade; 0.5 is a fast test transition.")]
         [SerializeField] private float transitionDuration = 2.0f;
 
-        [Tooltip("Vremya perehoda v interer bazy. Daet otdelnyy control nad dry-zone LPF/reverb response.")]
+        [Tooltip("Transition duration into base interior. Controls dry-zone LPF and reverb response separately.")]
         [SerializeField] private float interiorTransitionDuration = 2.0f;
 
-        [Tooltip("Vremya perehoda k obychnomu surface snapshot bez pogodnogo pereblenda.")]
+        [Tooltip("Transition duration to the default surface snapshot without weather blending.")]
         [SerializeField] private float surfaceTransitionDuration = 2.0f;
 
-        [Tooltip("Vremya perehoda pri vhode v vodu (mozhet byt bystree,\n" +
-                 "t.k. 'voda zapolnyaet shlyuz' mgnovennee, chem 'otkachka').")]
+        [Tooltip("Transition duration when entering water. Usually faster than drainage.")]
         [SerializeField] private float underwaterTransitionDuration = 1.5f;
 
-        [Tooltip("Vremya weather-pereblenda dlya Surface/Rain/Storm snapshots.")]
+        [Tooltip("Weather blend duration for Surface/Rain/Storm snapshots.")]
         [SerializeField] private float surfaceWeatherTransitionDuration = 1.0f;
 
-        [Tooltip("Ves Rain snapshot v Surface weather mix. Upravlyaet perceived wet layer bez pravki koda.")]
+        [Tooltip("Rain snapshot weight in the surface weather mix.")]
         [SerializeField, Range(0f, 1f)] private float surfaceRainSnapshotWeight = 0.55f;
 
-        [Tooltip("Ves Storm snapshot v Surface weather mix. Upravlyaet intensivnostyu storm wet layer.")]
+        [Tooltip("Storm snapshot weight in the surface weather mix.")]
         [SerializeField, Range(0f, 1f)] private float surfaceStormSnapshotWeight = 0.8f;
 
         [Header("Exterior State Stability")]
-        [Tooltip("Glubina vhoda v podvodnoe akusticheskoe sostoyanie.\n" +
-                 "Derzhitsya vyshe vizualnogo poroga, chtoby akustika ne drozhala na ryabi u poverhnosti.")]
+        [Tooltip("Depth threshold for entering the underwater acoustic state. Kept above the visual threshold to prevent surface-chatter.")]
         [SerializeField] private float acousticEnterUnderwaterDepth = SurfaceStateUtility.EnterUnderwaterDepth;
 
-        [Tooltip("Glubina vyhoda iz podvodnogo akusticheskogo sostoyaniya.\n" +
-                 "Dolzhna byt nizhe enter-poroga, chtoby sohranit hysteresis.")]
+        [Tooltip("Depth threshold for leaving the underwater acoustic state. Must stay below the enter threshold for hysteresis.")]
         [SerializeField] private float acousticExitUnderwaterDepth = SurfaceStateUtility.ExitUnderwaterDepth;
         [SerializeField, Range(0.1f, 1f)] private float acousticEnterImmersionRatio = 0.82f;
         [SerializeField, Range(0.05f, 0.95f)] private float acousticExitImmersionRatio = 0.6f;
         [SerializeField] private float acousticForceUnderwaterDepth = 1.1f;
 
-        [Tooltip("Minimalnoe vremya podtverzhdeniya dlya pereklyucheniya mezhdu Surface i Underwater.\n" +
-                 "Interior pereklyuchaetsya bez zaderzhki.")]
+        [Tooltip("Minimum confirmation time before switching between Surface and Underwater. Interior switches immediately.")]
         [SerializeField] private float exteriorTransitionDebounce = 0.35f;
 
-        [Tooltip("Minimalnoe vremya uderzhaniya vneshnego akusticheskogo sostoyaniya posle uzhe sovershennogo perehoda.\n" +
-                 "Ne daet Surface/Underwater schelkat na pogranichnoy boltanke u poverhnosti.")]
+        [Tooltip("Minimum hold time after an exterior acoustic transition. Prevents Surface/Underwater chatter near the waterline.")]
         [SerializeField] private float exteriorTransitionHoldTime = 1.25f;
 
         // ══════════════════════════════════════════════════════════
@@ -774,8 +763,7 @@ namespace Hecton8.Audio
         // ══════════════════════════════════════════════════════════
 
         [Header("Player")]
-        [Tooltip("BuoyancyObject na igroke. Esli ne naznachen —\n" +
-                 "ischetsya avtomaticheski po tegu 'Player' pri starte.")]
+        [Tooltip("Player BuoyancyObject. If unassigned, it is resolved from the Player tag during startup.")]
 
         [SerializeField] private BuoyancyObject playerBuoyancy; // player acoustic owner ref
 
@@ -796,99 +784,98 @@ namespace Hecton8.Audio
         [SerializeField, Range(0f, 1f)] private float underwaterVegetationVolumeMax = 0.22f;
 
 
-        [Tooltip("Optsionalnaya ssylka na loop AudioSource s podvodnym embientom na igroke.\n" +
-                 "Esli ne zadana — kontroller lenivo ischet pervyy 2D loop/playOnAwake source pod player root.")]
+        [Tooltip("Optional player underwater ambient loop AudioSource. If unassigned, the controller lazily resolves the first 2D loop/playOnAwake source under the player root.")]
         [SerializeField] private AudioSource playerUnderwaterAmbientSource;
-        [Tooltip("Yavnyy AudioMixerGroup dlya podvodnogo loop istochnika igroka. Esli null — ispolzuetsya AmbientGroup iz SpatialAudioManager.")]
+        [Tooltip("Explicit AudioMixerGroup for the player underwater loop source. If null, SpatialAudioManager AmbientGroup is used.")]
         [SerializeField] private AudioMixerGroup playerUnderwaterAmbientMixerGroup;
-        [Tooltip("Imya exposed-parametra AudioMixer dlya chastoty low-pass filtra.")]
+        [Tooltip("AudioMixer exposed parameter name for low-pass cutoff frequency.")]
         [SerializeField] private string acousticLowPassCutoffParameter = AcousticLowPassCutoffParameterDefault;
-        [Tooltip("Imya exposed-parametra AudioMixer dlya rezonansa low-pass filtra.")]
+        [Tooltip("AudioMixer exposed parameter name for low-pass resonance.")]
         [SerializeField] private string acousticLowPassResonanceParameter = AcousticLowPassResonanceParameterDefault;
-        [Tooltip("Imya exposed-parametra AudioMixer dlya decay reverb.")]
+        [Tooltip("AudioMixer exposed parameter name for reverb decay.")]
         [SerializeField] private string acousticReverbDecayParameter = AcousticReverbDecayParameterDefault;
-        [Tooltip("Imya exposed-parametra AudioMixer dlya reflections level.")]
+        [Tooltip("AudioMixer exposed parameter name for reflections level.")]
         [SerializeField] private string acousticReflectionsLevelParameter = AcousticReflectionsLevelParameterDefault;
-        [Tooltip("Imya exposed-parametra AudioMixer dlya reverb level.")]
+        [Tooltip("AudioMixer exposed parameter name for reverb level.")]
         [SerializeField] private string acousticReverbLevelParameter = AcousticReverbLevelParameterDefault;
-        [Tooltip("Imya exposed-parametra AudioMixer dlya room HF.")]
+        [Tooltip("AudioMixer exposed parameter name for room high-frequency level.")]
         [SerializeField] private string acousticRoomHighFrequencyParameter = AcousticRoomHighFrequencyParameterDefault;
-        [Tooltip("Imya exposed-parametra AudioMixer dlya dry level.")]
+        [Tooltip("AudioMixer exposed parameter name for dry level.")]
         [SerializeField] private string acousticDryLevelParameter = AcousticDryLevelParameterDefault;
 
         [Header("Biome Ambient Response")]
-        [Tooltip("Optsionalnaya ssylka na BiomeMatrixDirector. Esli ne zadana — kontroller lenivo rezolvit runtime owner.")]
+        [Tooltip("Optional BiomeMatrixDirector reference. If unassigned, the controller lazily resolves the runtime owner.")]
         [SerializeField] private BiomeMatrixDirector biomeMatrixDirector;
 
-        [Tooltip("Period povtornoy popytki rezolva BiomeMatrixDirector v cold/runtime path.")]
+        [Tooltip("Retry interval for resolving BiomeMatrixDirector in the cold/runtime path.")]
         [SerializeField] private float biomeMatrixResolveRetryInterval = 1f;
 
-        [Tooltip("Mnozhitel gromkosti podvodnogo loop v calm biome.")]
+        [Tooltip("Underwater loop volume multiplier in calm biomes.")]
         [SerializeField, Range(0.25f, 1.5f)] private float calmAmbientVolumeScale = 0.84f;
 
-        [Tooltip("Mnozhitel gromkosti podvodnogo loop v lively biome.")]
+        [Tooltip("Underwater loop volume multiplier in lively biomes.")]
         [SerializeField, Range(0.25f, 1.5f)] private float livelyAmbientVolumeScale = 1.05f;
 
-        [Tooltip("Mnozhitel gromkosti podvodnogo loop v mixed/neutral biome.")]
+        [Tooltip("Underwater loop volume multiplier in mixed or neutral biomes.")]
         [SerializeField, Range(0.25f, 1.5f)] private float mixedAmbientVolumeScale = 0.94f;
 
-        [Tooltip("Mnozhitel gromkosti podvodnogo loop v hostile biome.")]
+        [Tooltip("Underwater loop volume multiplier in hostile biomes.")]
         [SerializeField, Range(0.25f, 1.5f)] private float hostileAmbientVolumeScale = 0.72f;
 
-        [Tooltip("Mnozhitel pitch podvodnogo loop v calm biome.")]
+        [Tooltip("Underwater loop pitch multiplier in calm biomes.")]
         [SerializeField, Range(0.5f, 1.5f)] private float calmAmbientPitchScale = 1.02f;
 
-        [Tooltip("Mnozhitel pitch podvodnogo loop v lively biome.")]
+        [Tooltip("Underwater loop pitch multiplier in lively biomes.")]
         [SerializeField, Range(0.5f, 1.5f)] private float livelyAmbientPitchScale = 1.01f;
 
-        [Tooltip("Mnozhitel pitch podvodnogo loop v mixed/neutral biome.")]
+        [Tooltip("Underwater loop pitch multiplier in mixed or neutral biomes.")]
         [SerializeField, Range(0.5f, 1.5f)] private float mixedAmbientPitchScale = 0.96f;
 
-        [Tooltip("Mnozhitel pitch podvodnogo loop v hostile biome.")]
+        [Tooltip("Underwater loop pitch multiplier in hostile biomes.")]
         [SerializeField, Range(0.5f, 1.5f)] private float hostileAmbientPitchScale = 0.90f;
 
         [Header("Soundscape Tier Response")]
         // Existing underwater acoustic owner consumes depth-band context directly.
-        [Tooltip("Optsionalnaya ssylka na SoundscapeSystem. Esli ne zadana — kontroller lenivo rezolvit runtime owner.")]
+        [Tooltip("Optional SoundscapeSystem reference. If unassigned, the controller lazily resolves the runtime owner.")]
         [SerializeField] private SoundscapeSystem soundscapeSystem;
 
-        [Tooltip("Period povtornoy popytki rezolva SoundscapeSystem v cold/runtime path.")]
+        [Tooltip("Retry interval for resolving SoundscapeSystem in the cold/runtime path.")]
         [SerializeField] private float soundscapeResolveRetryInterval = 1f;
 
-        [Tooltip("Mnozhitel gromkosti podvodnogo loop v shallow tier.")]
+        [Tooltip("Underwater loop volume multiplier in the shallow tier.")]
         [SerializeField, Range(0.25f, 1.5f)] private float shallowTierAmbientVolumeScale = 1f;
 
-        [Tooltip("Mnozhitel gromkosti podvodnogo loop v twilight tier.")]
+        [Tooltip("Underwater loop volume multiplier in the twilight tier.")]
         [SerializeField, Range(0.25f, 1.5f)] private float twilightTierAmbientVolumeScale = 0.94f;
 
-        [Tooltip("Mnozhitel gromkosti podvodnogo loop v darkness tier.")]
+        [Tooltip("Underwater loop volume multiplier in the darkness tier.")]
         [SerializeField, Range(0.25f, 1.5f)] private float darknessTierAmbientVolumeScale = 0.88f;
 
-        [Tooltip("Mnozhitel gromkosti podvodnogo loop v abyss tier.")]
+        [Tooltip("Underwater loop volume multiplier in the abyss tier.")]
         [SerializeField, Range(0.25f, 1.5f)] private float abyssTierAmbientVolumeScale = 0.82f;
 
-        [Tooltip("Mnozhitel gromkosti podvodnogo loop v deep abyss tier.")]
+        [Tooltip("Underwater loop volume multiplier in the deep abyss tier.")]
         [SerializeField, Range(0.25f, 1.5f)] private float deepAbyssTierAmbientVolumeScale = 0.74f;
 
-        [Tooltip("Mnozhitel gromkosti podvodnogo loop v thermal tier.")]
+        [Tooltip("Underwater loop volume multiplier in the thermal tier.")]
         [SerializeField, Range(0.25f, 1.5f)] private float thermalTierAmbientVolumeScale = 0.86f;
 
-        [Tooltip("Mnozhitel pitch podvodnogo loop v shallow tier.")]
+        [Tooltip("Underwater loop pitch multiplier in the shallow tier.")]
         [SerializeField, Range(0.5f, 1.5f)] private float shallowTierAmbientPitchScale = 1f;
 
-        [Tooltip("Mnozhitel pitch podvodnogo loop v twilight tier.")]
+        [Tooltip("Underwater loop pitch multiplier in the twilight tier.")]
         [SerializeField, Range(0.5f, 1.5f)] private float twilightTierAmbientPitchScale = 0.97f;
 
-        [Tooltip("Mnozhitel pitch podvodnogo loop v darkness tier.")]
+        [Tooltip("Underwater loop pitch multiplier in the darkness tier.")]
         [SerializeField, Range(0.5f, 1.5f)] private float darknessTierAmbientPitchScale = 0.93f;
 
-        [Tooltip("Mnozhitel pitch podvodnogo loop v abyss tier.")]
+        [Tooltip("Underwater loop pitch multiplier in the abyss tier.")]
         [SerializeField, Range(0.5f, 1.5f)] private float abyssTierAmbientPitchScale = 0.88f;
 
-        [Tooltip("Mnozhitel pitch podvodnogo loop v deep abyss tier.")]
+        [Tooltip("Underwater loop pitch multiplier in the deep abyss tier.")]
         [SerializeField, Range(0.5f, 1.5f)] private float deepAbyssTierAmbientPitchScale = 0.82f;
 
-        [Tooltip("Mnozhitel pitch podvodnogo loop v thermal tier.")]
+        [Tooltip("Underwater loop pitch multiplier in the thermal tier.")]
         [SerializeField, Range(0.5f, 1.5f)] private float thermalTierAmbientPitchScale = 0.9f;
 
         [Header("Listener Fallback Processing")]
@@ -1211,13 +1198,13 @@ namespace Hecton8.Audio
 
         private void Start()
         {
-            // ── Lenivyy poisk igroka ──
+            // Lazy player lookup.
             if (playerBuoyancy == null)
             {
                 FindPlayerBuoyancy(true);
             }
 
-            // ── Deferred registration ──
+            // Deferred registration.
             if (!_registeredToTickManager)
             {
                 TryRegister();
@@ -1240,7 +1227,7 @@ namespace Hecton8.Audio
             EnsureSnapshotBindings();
             RefreshAtmosphereZoneCache();
 
-            // ── Ustanovka nachalnogo snapshot bez perehoda ──
+            // Apply initial snapshot without transition.
             ApplyInitialSnapshot();
         }
 
@@ -1302,18 +1289,10 @@ namespace Hecton8.Audio
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Proveryaet sostoyanie igroka kazhdyy kadr.
-        /// Edge detection: perehod zapuskaetsya TOLKO pri smene
-        /// IsInAir (false→true ili true→false).
-        ///
-        /// CPU cost: ~0.0001ms (odin bool read + comparison).
-        /// Net allokatsiy, net slozhnoy logiki.
-        ///
-        /// Pochemu ITickable a ne ISlowTickable:
-        ///   Audio-perehod dolzhen nachinatsya MGNOVENNO pri smene zony.
-        ///   Zaderzhka 0.5s (SlowTick) zametna igroku — zvuk "zapazdyvaet"
-        ///   otnositelno vizualnogo perehoda cherez shlyuz.
-        ///   Odin bool per frame — nichtozhnaya nagruzka dazhe na MX350.
+        /// Checks the player acoustic zone every frame.
+        /// Edge detection starts a transition only when the zone changes.
+        /// CPU cost is one state read and comparison. No allocations, no complex logic.
+        /// Kept on ITickable because SlowTick delay is audible at airlock transitions.
         /// </summary>
         private void TryRegisterService()
         {
@@ -1342,22 +1321,22 @@ namespace Hecton8.Audio
 
         public void Tick(float deltaTime)
         {
-            // ── Lenivyy poisk igroka (esli esche ne nayden) ──
+            // Lazy player lookup if the runtime owner is not ready yet.
             if (playerBuoyancy == null)
             {
                 FindPlayerBuoyancy(false);
                 if (playerBuoyancy == null)
-                    return; // Igrok ne nayden — skip
+                    return; // Player not found yet.
             }
 
-            // ── Unity destroyed object check ──
+            // Unity destroyed-object check.
             if ((object)playerBuoyancy == null || playerBuoyancy == null)
             {
                 playerBuoyancy = null;
                 return;
             }
 
-            // ── Tekuschee sostoyanie ──
+            // Current acoustic zone.
             AcousticZoneState currentZone = ResolveCurrentZone();
             currentZone = ResolveStableZone(currentZone);
             RefreshBiomeAmbientContext();
@@ -1368,7 +1347,7 @@ namespace Hecton8.Audio
             UpdateFatalPressureLoopAudio(currentZone, deltaTime);
             UpdateSourceLevelAcousticGraph(currentZone, deltaTime);
 
-            // ── Pervyy kadr: ustanovit nachalnoe sostoyanie bez perehoda ──
+            // First frame: establish initial state without transition.
             if (!_stateInitialized)
             {
                 ApplyInitialSnapshot(currentZone);
@@ -1377,7 +1356,7 @@ namespace Hecton8.Audio
 
             ProcessPendingSnapshotTransition();
 
-            // ── Edge detection: perehod tolko pri SMENE sostoyaniya ──
+            // Edge detection: transition only when the zone changes.
             if (currentZone == _lastZone)
                 return;
 
@@ -1391,7 +1370,7 @@ namespace Hecton8.Audio
 
             ApplyZoneTransition(currentZone);
 
-            // ── Sobytie dlya vneshnih sistem ──
+            // Notify external systems.
             AcousticZoneEvents.Raise(new AcousticZoneChangedEvent(currentZone == AcousticZoneState.Interior));
 
             UpdateDiagnostics(currentZone);
@@ -1402,18 +1381,18 @@ namespace Hecton8.Audio
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Plavnyy perehod v interer bazy.
+        /// Smooth transition into the base interior.
         ///
         /// AudioMixerSnapshot.TransitionTo(timeToReach):
-        ///   Plavno perevodit AudioMixer v sostoyanie snapshot'a
-        ///   za ukazannoe vremya. Unity vnutrenne interpoliruet
-        ///   VSE parametry mixer'a (volume, LPF cutoff, reverb wet, etc.).
+        ///   Moves AudioMixer toward the snapshot over the requested duration.
+        ///   Unity interpolates mixer parameters internally.
+        ///   Includes volume, LPF cutoff, reverb wet, and related mixer parameters.
         ///   Zero GC — nativnaya operatsiya.
         ///
-        /// Perehodnyy zvuk (waterDrainSound):
-        ///   Vosproizvoditsya cherez PlayStatic2D (2D, "vnutri shlema").
-        ///   Imitiruet shipenie otkachivaemoy vody iz shlyuza.
-        ///   Dlitelnost klipa dolzhna primerno sovpadat s transitionDuration.
+        /// Transition sound (waterDrainSound):
+        ///   Played through PlayStatic2D as an in-helmet 2D sound.
+        ///   Simulates water draining from the airlock.
+        ///   Clip length should roughly match transitionDuration.
         /// </summary>
         private void TransitionToInterior()
         {
@@ -1430,13 +1409,13 @@ namespace Hecton8.Audio
         }
 
         /// <summary>
-        /// Plavnyy perehod v podvodnuyu sredu.
+        /// Smooth transition into the underwater environment.
         ///
-        /// underwaterTransitionDuration mozhet byt koroche transitionDuration,
-        /// t.k. "zapolnenie vodoy" fizicheski bystree, chem "otkachka".
-        /// Eto sozdaet asimmetrichnyy, bolee realistichnyy perehod:
-        ///   Vhod v bazu: 2.0s (medlennaya otkachka, shipenie)
-        ///   Vyhod v vodu: 1.5s (bystroe zapolnenie, bulkane)
+        /// underwaterTransitionDuration can be shorter than transitionDuration
+        /// because water-fill reads faster than drainage.
+        /// This gives the audio transition an asymmetric feel:
+        ///   Into base: 2.0s slow drain.
+        ///   Into water: 1.5s fast fill.
         /// </summary>
         private void TransitionToSurface()
         {
@@ -1464,8 +1443,8 @@ namespace Hecton8.Audio
         }
 
         /// <summary>
-        /// Ustanavlivaet nachalnyy snapshot BEZ perehoda (mgnovenno).
-        /// Vyzyvaetsya v Start() dlya korrektnogo nachalnogo sostoyaniya.
+        /// Applies the initial snapshot immediately.
+        /// Called from Start() to establish the correct initial state.
         ///
         /// TransitionTo(0f) — mgnovennoe pereklyuchenie (Unity podderzhivaet 0).
         /// </summary>
@@ -1579,11 +1558,11 @@ namespace Hecton8.Audio
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Lenivyy resolve BuoyancyObject na tekuschem igroke cherez GameBootstrapper.
-        /// Vyzyvaetsya odin raz. Esli igrok esche ne gotov — povtoryaet pozzhe v Tick.
+        /// Lazily resolves the current player BuoyancyObject through GameBootstrapper.
+        /// Called once. If the player is not ready yet, retries later from Tick.
         ///
-        /// TryGetComponent — zero GC.
-        /// TryGetComponent — zero GC.
+        /// TryGetComponent is zero GC.
+        /// TryGetComponent is zero GC.
         /// </summary>
         private void FindPlayerBuoyancy(bool force)
         {

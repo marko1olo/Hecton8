@@ -6,6 +6,7 @@ using System.IO;
 using System.Reflection;
 using Hecton8.Core;
 using Hecton8.Dev;
+using Hecton8.Optimization;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using NUnit.Framework;
@@ -382,6 +383,20 @@ namespace Hecton8.Tests.PlayMode
                 BotController.ResolvedExpeditionSampleStrideBytes,
                 "Bot expedition telemetry sample stride changed.");
             Assert.AreEqual(64, BotController.ResolvedExpeditionSampleStrideBytes);
+        }
+
+        [Test]
+        public void HardwareProfilerTierGate_LowWhenBenchmarkOrVramFails_HighOtherwise()
+        {
+            Assert.IsTrue(
+                HardwareProfiler.ShouldForceLowTier(5.001d, 4096),
+                "BIOS benchmark over 5ms per local physics step must force Low.");
+            Assert.IsTrue(
+                HardwareProfiler.ShouldForceLowTier(1.0d, 2999),
+                "Graphics memory below 3000MB must force Low.");
+            Assert.IsFalse(
+                HardwareProfiler.ShouldForceLowTier(5.0d, 3000),
+                "Benchmark at threshold with 3000MB graphics memory should allow High.");
         }
 
         [Test]

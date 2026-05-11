@@ -1,8 +1,8 @@
 ﻿# INTERFACE CONTRACT TABLE
 
-Date: 2026-05-07
+Date: 2026-05-11
 Status: PENDING VERIFICATION
-Source basis: `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs` plus direct first-party class declarations under `Assets/_Project/Scripts`
+Source basis: `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs` plus direct first-party class declarations under `Assets/_Project/Scripts`; May 11 focused recheck of `IDamageReceiver`
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
 
 ## Interface -> Implementor Table
@@ -13,7 +13,7 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 | `ILateFrameTickable` | Multiple first-party systems | LIVE | End-of-frame swap-window contract |
 | `IPostFixedTickable` | Multiple first-party systems | LIVE | Post-fixed deferred contract |
 | `IRenderable` | `HectonUnderwaterVisuals`, `HectonSubmarineOS`, `MissionMarkerSystem` | LIVE | Real render-dispatch hook |
-| `IDamageReceiver` | `HabitatIntegrityManager` | LIVE | Global damage packet receiver present |
+| `IDamageReceiver` | `HabitatIntegrityManager`, `HectonPlayerHealth` | LIVE | Global damage packet receivers present; both register transient runtime target ids through `CombatDamageRuntime` where active |
 | `IDebrisDefinition` | `OrganicDebrisProfile` | LIVE | Debris definition owner |
 | `IInputService` | `InputDispatcher` | LIVE | Registry-backed input owner |
 | `IPhysicsService` | `PhysicsApplySystem` | LIVE | Force-routing owner |
@@ -43,7 +43,7 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 |---|---|
 | `IAudioService` had no first-party implementor | False. `SpatialAudioManager` implements it. |
 | `IUIService` had multiple direct implementors | False in current source scan. Direct implementor found: `SuitHUDV4CanvasOverlay`. |
-| `IDamageReceiver` was shadow-conflicted by `HabitatIntegrityManager` | False in current source. Habitat now implements the global contract directly. |
+| `IDamageReceiver` was shadow-conflicted by `HabitatIntegrityManager` | False in current source. Habitat and player health now implement the global contract directly; habitat-local callbacks remain separate `IDamageSignalReceiver` / `IDamageSignalEmitter` contracts. |
 | `IRenderable` had only one live implementor | False. Three direct implementors were rechecked in this pass. |
 
 ## Verification Boundary

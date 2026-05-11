@@ -438,9 +438,7 @@ namespace Hecton8.Celestial
             state = _currentAtmosphericLightingState;
             return _hasAtmosphericLightingState && state.IsValid;
         }
-        // ─────────────────────────────────────────────
-        // KONFIGURATsIYa
-        // ─────────────────────────────────────────────
+        // Configuration
 
         [Serializable]
         private struct KeplerOrbitDefinition
@@ -512,7 +510,7 @@ namespace Hecton8.Celestial
             }
         }
 
-        private struct KeplerOrbitState
+        private struct CinematicOrbitState
         {
             public float3 RegistryOffset;
             public float3 Direction;
@@ -683,7 +681,7 @@ namespace Hecton8.Celestial
         [SerializeField] private Vector3 sunOrbitAxis = Vector3.right;
         [SerializeField] private float sunStartAngle;
 
-        [Header("Analytical Keplerian Orbits")]
+        [Header("Cinematic Orbit Fakes")]
         [SerializeField] private bool enableAnalyticalOrbitSolver = true;
         [SerializeField] private bool driveObserverBodiesFromAnalyticalOrbits = true;
         [SerializeField] private KeplerOrbitDefinition gasGiantOrbit = KeplerOrbitDefinition.GasGiantDefault();
@@ -920,9 +918,17 @@ namespace Hecton8.Celestial
         private const int CelestialAtmosphereLutResolution = 64;
         private const int FirmamentStartupStarCount = 100000;
         private const int FirmamentStarBakeThreads = 64;
+        private const float ComputeThreadGroup8Inv = 0.125f;
+        private const float FirmamentStarBakeThreadsInv = 0.015625f;
+        private const float HorizonDensityQuarter = 0.25f;
         private const float CelestialTimelineStepSeconds = 0.1f;
-        private const double KeplerTwoPi = 6.283185307179586476925286766559d;
-        private const double KeplerDegToRad = 0.01745329251994329576923690768489d;
+        private const int CelestialAnalyticalSnapshotSlowTickInterval = 10;
+        private const float OrbitDegreesToTurns = 0.0027777778f;
+        private const float SeedToUnit = 0.00000000023283064f;
+        private const float Inv90 = 0.011111111f;
+        private const float Inv88 = 0.011363636f;
+        private const float Inv64 = 0.015625f;
+        private const float Inv55 = 1.8181818f;
         private const int CelestialTimelineMaxStepsPerSlowTick = 5;
         private const int FirmamentMinResolution = 256;
         private const int FirmamentMx350ResolutionCap = 2048;
@@ -931,16 +937,23 @@ namespace Hecton8.Celestial
         private const int FirmamentMx350MemoryCapMb = 3072;
         private const int FirmamentMidVramMemoryCapMb = 8192;
         private const int AegirRingShadowGeneratedCookieResolution = 256;
-        private const float AegirRingShadowGeneratedLineMinLuma = 24f / 255f;
+        private const float AegirRingShadowGeneratedLineMinLuma = 0.094117647f;
         private const int BestVisualDefaultsVersion = 5;
         private const float NightAtmosphereInscatterFloor = 0.001f;
+        private static readonly double StopwatchTickToMilliseconds =
+            1000.0d * math.rcp((double)System.Diagnostics.Stopwatch.Frequency);
 #if UNITY_EDITOR
         private const string FirmamentBakeComputeAssetPath = "Assets/_Project/Art/Shaders/HectonFirmamentBake.compute";
 #endif
         private bool _editorPreviewDirty;
         private readonly List<ObserverRelativeCelestialBody> _observerBodyCache = new List<ObserverRelativeCelestialBody>(CelestialBodyCacheCapacity); // COLD ALLOC: List<ObserverRelativeCelestialBody>[8] - cold observer-body cache for moon renderer discovery - owner: HectonCelestialEngine
         private readonly List<Renderer> _moonRenderers = new List<Renderer>(CelestialBodyCacheCapacity); // COLD ALLOC: List<Renderer>[8] - cached moon renderers for shared atmosphere overrides - owner: HectonCelestialEngine
-        private readonly Color[] _celestialAtmosphereLutPixels = new Color[CelestialAtmosphereLutResolution]; // COLD ALLOC: Color[64] — celestial atmosphere LUT bake buffer — owner: HectonCelestialEngine
+        private readonly Color[] _celestialAtmosphereLutPixels = new Color[CelestialAtmosphereLutResolution]; // COLD ALLOC: Color[64] - celestial atmosphere LUT bake buffer - owner: HectonCelestialEngine
+        private int _celestialAnalyticalSnapshotCountdown;
+        private uint _lastPublishedCelestialSequence = uint.MaxValue;
+        private uint _lastPublishedCelestialFlags = uint.MaxValue;
+        private float _lastPublishedCelestialEclipseOcclusion = -1f;
+        private float _lastPublishedCelestialRadiationStorm = -1f;
 
         // ─────────────────────────────────────────────
         // SHADER PROPERTY IDs
@@ -1334,6 +1347,10 @@ namespace Hecton8.Celestial
             EnsureCelestialAtmosphereLutReady();
             CacheMoonRenderers();
             sunAngularRadiusDegrees = Mathf.Max(0.01f, sunAngularRadiusDegrees);
+            celestialTideAmplitudeMeters = Mathf.Clamp(celestialTideAmplitudeMeters, 0f, 8f);
+            highTideThreshold01 = Mathf.Clamp01(highTideThreshold01);
+            fullMoonBloomThreshold01 = Mathf.Clamp01(fullMoonBloomThreshold01);
+            inGameYearDays = Mathf.Max(1f, inGameYearDays);
             cinematicEclipseOccluderRadiusDegrees = Mathf.Max(0.01f, cinematicEclipseOccluderRadiusDegrees);
             eclipseEventStartPenumbraThreshold = Mathf.Clamp(eclipseEventStartPenumbraThreshold, 0.01f, 1f);
             aegirRingShadowCookieSize = Mathf.Max(8f, aegirRingShadowCookieSize);
@@ -1375,7 +1392,7 @@ namespace Hecton8.Celestial
 
         private void SyncEditorOrbitFromSunTransform()
         {
-            float3 orbitAxis = math.normalizesafe((float3)sunOrbitAxis, new float3(1f, 0f, 0f));
+            float3 orbitAxis = ResolveDominantAxisDirection((float3)sunOrbitAxis, new float3(1f, 0f, 0f));
             Vector3 worldOrbitAxis = new Vector3(orbitAxis.x, orbitAxis.y, orbitAxis.z);
             Vector3 referenceForward = Vector3.ProjectOnPlane(Vector3.forward, worldOrbitAxis);
             Vector3 currentForward = Vector3.ProjectOnPlane(sunLight.transform.forward, worldOrbitAxis);
@@ -1427,7 +1444,7 @@ namespace Hecton8.Celestial
         private void PublishCelestialTimelineBudgetWarningIfNeeded(long timelineStartTicks)
         {
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - timelineStartTicks;
-            double elapsedMilliseconds = elapsedTicks * 1000.0d / System.Diagnostics.Stopwatch.Frequency;
+            double elapsedMilliseconds = elapsedTicks * StopwatchTickToMilliseconds;
             if (elapsedMilliseconds <= CelestialTimelineBudgetMilliseconds ||
                 Time.frameCount < _nextCelestialTimelineWarningFrame)
             {
@@ -1708,14 +1725,14 @@ namespace Hecton8.Celestial
                 hideFlags = HideFlags.DontSave
             }; // COLD ALLOC: Texture2D[256x256 RGBA32] - fallback Aegir parallel-line directional-light cookie when no authored asset is wired - owner: HectonCelestialEngine
 
-            float invResolution = 1f / Mathf.Max(1, resolution - 1);
+            float invResolution = math.rcp(Mathf.Max(1, resolution - 1));
             for (int y = 0; y < resolution; y++)
             {
                 for (int x = 0; x < resolution; x++)
                 {
                     float u = x * invResolution;
-                    float primary = Mathf.Abs(Mathf.Sin((u * 13f + 0.17f) * Mathf.PI));
-                    float secondary = Mathf.Abs(Mathf.Sin((u * 29f + 0.41f) * Mathf.PI));
+                    float primary = CinematicMath.FastTriangleWave01((u * 13f) + 0.17f);
+                    float secondary = CinematicMath.FastTriangleWave01((u * 29f) + 0.41f);
                     float primaryLine = 1f - Mathf.SmoothStep(0.018f, 0.085f, primary);
                     float secondaryLine = 1f - Mathf.SmoothStep(0.012f, 0.052f, secondary);
                     float lineMask = Mathf.Clamp01(Mathf.Max(primaryLine, secondaryLine * 0.62f));
@@ -1785,8 +1802,9 @@ namespace Hecton8.Celestial
             if (wind.sqrMagnitude <= 0.0001f)
                 wind = Vector2.right;
 
-            wind.Normalize();
-            return wind;
+            return Mathf.Abs(wind.x) >= Mathf.Abs(wind.y)
+                ? new Vector2(wind.x < 0f ? -1f : 1f, 0f)
+                : new Vector2(0f, wind.y < 0f ? -1f : 1f);
         }
 
         private static float RepeatCookieOffset(float value, float size)
@@ -2008,11 +2026,12 @@ namespace Hecton8.Celestial
             if (_celestialAtmosphereLutTexture == null)
                 return;
 
+            float lutTStep = CelestialAtmosphereLutResolution > 1
+                ? math.rcp(CelestialAtmosphereLutResolution - 1f)
+                : 0f;
             for (int i = 0; i < CelestialAtmosphereLutResolution; i++)
             {
-                float t = CelestialAtmosphereLutResolution > 1
-                    ? (float)i / (CelestialAtmosphereLutResolution - 1)
-                    : 0f;
+                float t = i * lutTStep;
 
                 float sample01 = EvaluateAtmosphereBlend01(t);
                 Color profileColor = EvaluateAtmosphereGradientColor(
@@ -2112,18 +2131,18 @@ namespace Hecton8.Celestial
             float safeNightTransition = Mathf.Max(1f, nightAtmosphereTransitionDegrees);
             float safeTwilightStart = Mathf.Max(0.01f, twilightStartAngle);
 
-            float sunsetWindowT = 1f - Mathf.Clamp01(Mathf.Abs(sunElevation) / safeSunsetBand);
+            float sunsetWindowT = 1f - Mathf.Clamp01(Mathf.Abs(sunElevation) * math.rcp(safeSunsetBand));
             float twilightWeight = Mathf.SmoothStep(0f, 1f, sunsetWindowT);
 
             float dayBase = Mathf.SmoothStep(
                 0f,
                 1f,
-                Mathf.Clamp01(sunElevation / safeTwilightStart));
+                Mathf.Clamp01(sunElevation * math.rcp(safeTwilightStart)));
 
             float nightBase = Mathf.SmoothStep(
                 0f,
                 1f,
-                Mathf.Clamp01((twilightEndAngle - sunElevation) / safeNightTransition));
+                Mathf.Clamp01((twilightEndAngle - sunElevation) * math.rcp(safeNightTransition)));
 
             dayWeight = dayBase * (1f - twilightWeight);
             sunsetWeight = twilightWeight * (1f - nightBase * 0.85f);
@@ -2153,7 +2172,7 @@ namespace Hecton8.Celestial
                 return;
             }
 
-            float invTotalWeight = 1f / totalWeight;
+            float invTotalWeight = math.rcp(totalWeight);
             dayWeight *= invTotalWeight;
             sunsetWeight *= invTotalWeight;
             nightWeight *= invTotalWeight;
@@ -2165,7 +2184,7 @@ namespace Hecton8.Celestial
             if (math.lengthsq(sunDirection) <= 0.0001f && sunLight != null)
                 sunDirection = -(float3)sunLight.transform.forward;
 
-            float sinElevation = math.dot(math.normalizesafe(sunDirection, new float3(0f, 1f, 0f)), new float3(0f, 1f, 0f));
+            float sinElevation = math.dot(NormalizeVisualRsqrt(sunDirection, new float3(0f, 1f, 0f)), new float3(0f, 1f, 0f));
             return math.degrees(math.asin(math.clamp(sinElevation, -1f, 1f)));
         }
 
@@ -2202,7 +2221,7 @@ namespace Hecton8.Celestial
             }
 
             float safeTarget = Mathf.Max(targetLuminance, 0.0001f);
-            float liftFactor = Mathf.Clamp01((safeTarget - currentLuminance) / safeTarget);
+            float liftFactor = Mathf.Clamp01((safeTarget - currentLuminance) * math.rcp(safeTarget));
             Color lifted = Color.Lerp(color, Color.white, liftFactor * Mathf.Clamp01(maxWhiteBlend));
             lifted.a = 1f;
             return lifted;
@@ -2214,10 +2233,11 @@ namespace Hecton8.Celestial
             if (maxComponent <= 0.0001f)
                 return Color.white;
 
+            float invMaxComponent = math.rcp(maxComponent);
             Color normalized = new Color(
-                color.r / maxComponent,
-                color.g / maxComponent,
-                color.b / maxComponent,
+                color.r * invMaxComponent,
+                color.g * invMaxComponent,
+                color.b * invMaxComponent,
                 1f);
             return normalized;
         }
@@ -2356,12 +2376,12 @@ namespace Hecton8.Celestial
             firmamentBakeCompute.SetTexture(_firmamentStarKernel, _ID_BakedStarCubemap, _bakedStarCubemap);
             firmamentBakeCompute.Dispatch(
                 _firmamentClearKernel,
-                Mathf.CeilToInt(starResolution / 8f),
-                Mathf.CeilToInt(starResolution / 8f),
+                Mathf.CeilToInt(starResolution * ComputeThreadGroup8Inv),
+                Mathf.CeilToInt(starResolution * ComputeThreadGroup8Inv),
                 6);
             firmamentBakeCompute.Dispatch(
                 _firmamentStarKernel,
-                Mathf.CeilToInt((float)FirmamentStartupStarCount / FirmamentStarBakeThreads),
+                Mathf.CeilToInt(FirmamentStartupStarCount * FirmamentStarBakeThreadsInv),
                 1,
                 1);
 
@@ -2378,8 +2398,8 @@ namespace Hecton8.Celestial
                     Mathf.Max(0f, atmosphereScatteringExposure)));
             firmamentBakeCompute.Dispatch(
                 _firmamentAtmosphereKernel,
-                Mathf.CeilToInt(atmosphereWidth / 8f),
-                Mathf.CeilToInt(atmosphereHeight / 8f),
+                Mathf.CeilToInt(atmosphereWidth * ComputeThreadGroup8Inv),
+                Mathf.CeilToInt(atmosphereHeight * ComputeThreadGroup8Inv),
                 1);
 
             _firmamentBakedSeed = seed;
@@ -2653,7 +2673,7 @@ namespace Hecton8.Celestial
                 sunsetWeight,
                 nightWeight);
             float horizonHaze = 1f - Mathf.Clamp01(horizonTransmittance);
-            float lowSunFactor = 1f - Mathf.Clamp01((_currentSunAngle + 8f) / 88f);
+            float lowSunFactor = 1f - Mathf.Clamp01((_currentSunAngle + 8f) * Inv88);
             float hazeResponse = Mathf.Clamp01(horizonHaze * 0.72f + lowSunFactor * 0.28f);
             Color ambientBaseColor = ResolveSurfaceAmbientBaseColor();
             Color horizonSkyTint = Color.Lerp(skyHorizonColor, skyZenithColor, 0.14f);
@@ -2668,7 +2688,7 @@ namespace Hecton8.Celestial
             horizonSkyTint.a = 1f;
 
             float baseFogDensity = ResolveSurfaceBaseFogDensity();
-            float dayVisibility = Mathf.Clamp01((_currentSunAngle + 2f) / 64f);
+            float dayVisibility = Mathf.Clamp01((_currentSunAngle + 2f) * Inv64);
             float middayFogReduction = Mathf.Lerp(1.08f, 0.82f, dayVisibility);
             float fogDensity = Mathf.Max(
                 0.0001f,
@@ -2721,7 +2741,7 @@ namespace Hecton8.Celestial
             hazeIntensity = Mathf.Lerp(hazeIntensity, hazeIntensity * 1.18f, sunsetWeight);
             hazeIntensity = Mathf.Lerp(hazeIntensity, hazeIntensity * 0.42f, nightWeight);
 
-            float hazeFalloff = Mathf.Lerp(6.1f, 3.8f, hazeResponse) / hazeSpread;
+            float hazeFalloff = Mathf.Lerp(6.1f, 3.8f, hazeResponse) * math.rcp(hazeSpread);
             hazeFalloff = Mathf.Lerp(hazeFalloff, hazeFalloff * 0.9f, sunsetWeight);
             hazeFalloff = Mathf.Lerp(hazeFalloff, hazeFalloff * 1.15f, nightWeight);
             hazeFalloff = Mathf.Clamp(hazeFalloff, 1.35f, 8f);
@@ -2879,7 +2899,7 @@ namespace Hecton8.Celestial
                     return fogDensity;
             }
 
-            float densityFromHaze = Mathf.Lerp(0.0011f, 0.0036f, Mathf.Clamp01(horizonDensity / 4f));
+            float densityFromHaze = Mathf.Lerp(0.0011f, 0.0036f, Mathf.Clamp01(horizonDensity * HorizonDensityQuarter));
             return densityFromHaze;
         }
 
@@ -3225,7 +3245,7 @@ namespace Hecton8.Celestial
 
             UpdateInternalOrbit(dt);
 
-            float3 axis = math.normalizesafe((float3)sunOrbitAxis, new float3(1, 0, 0));
+            float3 axis = ResolveDominantAxisDirection((float3)sunOrbitAxis, new float3(1f, 0f, 0f));
             _sunOrbitRotationMatrix = BuildAxisAngleRotationMatrix(axis, math.radians(_accumulatedOrbitalAngle));
             float3 resolvedSunForward = math.mul(_sunOrbitRotationMatrix, new float4(0f, 0f, 1f, 0f)).xyz;
             if (math.lengthsq(resolvedSunForward) <= 0.0001f)
@@ -3240,19 +3260,19 @@ namespace Hecton8.Celestial
 
         private void UpdateInternalOrbit(float dt)
         {
-            float degreesPerSecond = 360f / math.max(orbitalPeriod, 1f);
+            float degreesPerSecond = 360f * math.rcp(math.max(orbitalPeriod, 1f));
             _accumulatedOrbitalAngle += degreesPerSecond * dt;
-            _accumulatedOrbitalAngle %= 360f;
+            _accumulatedOrbitalAngle -= FastFloorToInt(_accumulatedOrbitalAngle * OrbitDegreesToTurns) * 360f;
         }
 
         private static float4x4 BuildAxisAngleRotationMatrix(float3 axis, float radians)
         {
-            axis = math.normalizesafe(axis, new float3(1f, 0f, 0f));
+            axis = ResolveDominantAxisDirection(axis, new float3(1f, 0f, 0f));
             float x = axis.x;
             float y = axis.y;
             float z = axis.z;
-            float sin = math.sin(radians);
-            float cos = math.cos(radians);
+            float sin = FastSinRadians(radians);
+            float cos = FastCosRadians(radians);
             float oneMinusCos = 1f - cos;
 
             float m00 = oneMinusCos * x * x + cos;
@@ -3270,6 +3290,437 @@ namespace Hecton8.Celestial
                 new float4(m01, m11, m21, 0f),
                 new float4(m02, m12, m22, 0f),
                 new float4(0f, 0f, 0f, 1f));
+        }
+
+        private void UpdateAnalyticalCelestialState()
+        {
+            if (!enableAnalyticalOrbitSolver)
+            {
+                _celestialAnalyticalSnapshotCountdown = 0;
+                BuildFallbackCelestialRuntimeSnapshot();
+                return;
+            }
+
+            if (_celestialAnalyticalSnapshotCountdown > 0 &&
+                (_celestialRuntimeSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u)
+            {
+                _celestialAnalyticalSnapshotCountdown--;
+                return;
+            }
+
+            _celestialAnalyticalSnapshotCountdown = CelestialAnalyticalSnapshotSlowTickInterval - 1;
+
+            double universeTime = ResolveSynchronizedUniverseTimeSeconds();
+            uint seed = ResolveDeterministicStarSeed();
+            _celestialRuntimeSnapshot = EvaluateAnalyticalOrbitSnapshot(
+                universeTime,
+                seed,
+                _resolvedSunDirection,
+                gasGiantOrbit,
+                moon0Orbit,
+                moon1Orbit,
+                orbitalPeriod,
+                inGameYearDays,
+                celestialTideAmplitudeMeters,
+                highTideThreshold01,
+                fullMoonBloomThreshold01,
+                _smoothedOcclusionFactor,
+                _isEclipseActive,
+                ResolveRadiationStorm01(),
+                _lunarResonanceMultiplier,
+                _celestialRuntimeSequence + 1u);
+            _celestialRuntimeSequence = _celestialRuntimeSnapshot.Sequence;
+
+            if (driveObserverBodiesFromAnalyticalOrbits)
+                ApplyAnalyticalObserverDirections(in _celestialRuntimeSnapshot);
+        }
+
+        private void BuildFallbackCelestialRuntimeSnapshot()
+        {
+            CelestialRuntimeSnapshot snapshot = default;
+            snapshot.AbsoluteUniverseTime = ResolveSynchronizedUniverseTimeSeconds();
+            snapshot.SunDirection = NormalizeVisualRsqrt(_resolvedSunDirection, new float3(0f, 1f, 0f));
+            snapshot.GasGiantDirection = TryResolveAegirSkyDirection(out float3 aegirDirection)
+                ? aegirDirection
+                : float3.zero;
+            snapshot.GasGiantOffset = snapshot.GasGiantDirection * math.max(1f, gasGiantOrbit.registryOffsetMeters);
+            snapshot.EclipseOcclusion01 = math.saturate(_smoothedOcclusionFactor);
+            snapshot.RadiationStorm01 = ResolveRadiationStorm01();
+            snapshot.GlobalBiolumMultiplier = math.max(1f, _lunarResonanceMultiplier);
+            snapshot.Flags = PackCelestialRuntimeFlags(
+                _isEclipseActive,
+                snapshot.EclipseOcclusion01,
+                0f,
+                1f,
+                0f,
+                1f,
+                snapshot.RadiationStorm01);
+            snapshot.Sequence = _celestialRuntimeSequence + 1u;
+
+            _celestialRuntimeSnapshot = snapshot;
+            _celestialRuntimeSequence = snapshot.Sequence;
+        }
+
+        private void ApplyAnalyticalObserverDirections(in CelestialRuntimeSnapshot snapshot)
+        {
+            if (aegirObserverRelativeBody != null)
+                aegirObserverRelativeBody.SetFixedDirection(ToVector3(snapshot.GasGiantDirection));
+
+            int moonWriteIndex = 0;
+            for (int i = 0; i < _observerBodyCache.Count && moonWriteIndex < 2; i++)
+            {
+                ObserverRelativeCelestialBody body = _observerBodyCache[i];
+                if (body == null || body == aegirObserverRelativeBody)
+                    continue;
+
+                float3 direction = moonWriteIndex == 0 ? snapshot.Moon0Direction : snapshot.Moon1Direction;
+                body.SetFixedDirection(ToVector3(direction));
+                moonWriteIndex++;
+            }
+        }
+
+        private void PublishCelestialRuntimeSnapshot()
+        {
+            CelestialRuntimeSnapshot snapshot = _celestialRuntimeSnapshot;
+            if ((snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) == 0u)
+                return;
+
+            snapshot.EclipseOcclusion01 = math.saturate(_smoothedOcclusionFactor);
+
+            float radiationStorm = ResolveRadiationStorm01();
+            snapshot.RadiationStorm01 = radiationStorm;
+            snapshot.Flags = PackCelestialRuntimeFlags(
+                _isEclipseActive,
+                snapshot.EclipseOcclusion01,
+                snapshot.TideHigh01,
+                highTideThreshold01,
+                math.max(snapshot.Moon0Phase01, snapshot.Moon1Phase01),
+                fullMoonBloomThreshold01,
+                radiationStorm);
+
+            _celestialRuntimeSnapshot = snapshot;
+            if (snapshot.Sequence == _lastPublishedCelestialSequence &&
+                snapshot.Flags == _lastPublishedCelestialFlags &&
+                snapshot.EclipseOcclusion01 == _lastPublishedCelestialEclipseOcclusion &&
+                snapshot.RadiationStorm01 == _lastPublishedCelestialRadiationStorm)
+            {
+                return;
+            }
+
+            _lastPublishedCelestialSequence = snapshot.Sequence;
+            _lastPublishedCelestialFlags = snapshot.Flags;
+            _lastPublishedCelestialEclipseOcclusion = snapshot.EclipseOcclusion01;
+            _lastPublishedCelestialRadiationStorm = snapshot.RadiationStorm01;
+            GlobalRegistry.PublishCelestialRuntimeSnapshot(in snapshot);
+
+            Shader.SetGlobalVector(
+                _ID_HectonCelestialTidePull,
+                new Vector4(snapshot.TidePullVector.x, snapshot.TidePullVector.y, snapshot.TidePullVector.z, snapshot.TideHigh01));
+            Shader.SetGlobalFloat(_ID_HectonCelestialTideHeight, snapshot.TideHeightMeters);
+            Shader.SetGlobalVector(
+                _ID_HectonCelestialGasGiantOffset,
+                new Vector4(snapshot.GasGiantOffset.x, snapshot.GasGiantOffset.y, snapshot.GasGiantOffset.z, 0f));
+            Shader.SetGlobalVector(
+                _ID_HectonCelestialMoon0Offset,
+                new Vector4(snapshot.Moon0Offset.x, snapshot.Moon0Offset.y, snapshot.Moon0Offset.z, snapshot.Moon0Phase01));
+            Shader.SetGlobalVector(
+                _ID_HectonCelestialMoon1Offset,
+                new Vector4(snapshot.Moon1Offset.x, snapshot.Moon1Offset.y, snapshot.Moon1Offset.z, snapshot.Moon1Phase01));
+            Shader.SetGlobalVector(
+                _ID_HectonCelestialPhaseParams,
+                new Vector4(snapshot.Moon0Phase01, snapshot.Moon1Phase01, snapshot.GasGiantPhase01, snapshot.TideHigh01));
+            Shader.SetGlobalInt(_ID_HectonCelestialRuntimeFlags, unchecked((int)snapshot.Flags));
+            Shader.SetGlobalFloat(_ID_HectonCelestialRadiationStorm, snapshot.RadiationStorm01);
+            Shader.SetGlobalFloat(_ID_HectonCelestialBiolumMultiplier, snapshot.GlobalBiolumMultiplier);
+        }
+
+        private void ClearCelestialRuntimeSnapshot()
+        {
+            _celestialRuntimeSnapshot = default;
+            _celestialRuntimeSequence = 0u;
+            _celestialAnalyticalSnapshotCountdown = 0;
+            _lastPublishedCelestialSequence = uint.MaxValue;
+            _lastPublishedCelestialFlags = uint.MaxValue;
+            _lastPublishedCelestialEclipseOcclusion = -1f;
+            _lastPublishedCelestialRadiationStorm = -1f;
+            CelestialRuntimeSnapshot emptySnapshot = default;
+            GlobalRegistry.PublishCelestialRuntimeSnapshot(in emptySnapshot);
+            Shader.SetGlobalVector(_ID_HectonCelestialTidePull, Vector4.zero);
+            Shader.SetGlobalFloat(_ID_HectonCelestialTideHeight, 0f);
+            Shader.SetGlobalVector(_ID_HectonCelestialGasGiantOffset, Vector4.zero);
+            Shader.SetGlobalVector(_ID_HectonCelestialMoon0Offset, Vector4.zero);
+            Shader.SetGlobalVector(_ID_HectonCelestialMoon1Offset, Vector4.zero);
+            Shader.SetGlobalVector(_ID_HectonCelestialPhaseParams, Vector4.zero);
+            Shader.SetGlobalInt(_ID_HectonCelestialRuntimeFlags, 0);
+            Shader.SetGlobalFloat(_ID_HectonCelestialRadiationStorm, 0f);
+            Shader.SetGlobalFloat(_ID_HectonCelestialBiolumMultiplier, 1f);
+        }
+
+        private double ResolveSynchronizedUniverseTimeSeconds()
+        {
+            double universeTime = Application.isPlaying ? GlobalRegistry.AbsoluteUniverseTime : Time.timeAsDouble;
+            if (double.IsNaN(universeTime) || double.IsInfinity(universeTime) || universeTime < 0d)
+                universeTime = 0d;
+
+            double timeScale = _debugCelestialTimeScale < 1f ? 1d : _debugCelestialTimeScale;
+            return universeTime * timeScale;
+        }
+
+        private uint ResolveDeterministicStarSeed()
+        {
+            float seedValue = ResolveStarMapSeed();
+            if (!float.IsFinite(seedValue))
+                seedValue = 1f;
+
+            int rounded = Mathf.RoundToInt(seedValue);
+            return rounded == 0 ? 1u : unchecked((uint)rounded);
+        }
+
+        private float ResolveRadiationStorm01()
+        {
+            RandomEventSystem randomEvents = GlobalRegistry.RandomEvents;
+            return randomEvents != null && randomEvents.IsEventActive(RandomEventType.SolarFlare)
+                ? 1f
+                : 0f;
+        }
+
+        public static CelestialRuntimeSnapshot EvaluateAnalyticalOrbitSnapshotForSmoke(double absoluteUniverseTime, uint deterministicSeed)
+        {
+            return EvaluateAnalyticalOrbitSnapshot(
+                absoluteUniverseTime,
+                deterministicSeed,
+                new float3(0f, 1f, 0f),
+                KeplerOrbitDefinition.GasGiantDefault(),
+                KeplerOrbitDefinition.Moon0Default(),
+                KeplerOrbitDefinition.Moon1Default(),
+                3600f,
+                365f,
+                2.25f,
+                0.78f,
+                0.92f,
+                0f,
+                false,
+                0f,
+                1f,
+                1u);
+        }
+
+        private static CelestialRuntimeSnapshot EvaluateAnalyticalOrbitSnapshot(
+            double absoluteUniverseTime,
+            uint deterministicSeed,
+            float3 sunDirection,
+            in KeplerOrbitDefinition gasGiantDefinition,
+            in KeplerOrbitDefinition moon0Definition,
+            in KeplerOrbitDefinition moon1Definition,
+            float dayPeriodSeconds,
+            float yearDays,
+            float tideAmplitudeMeters,
+            float highTideThreshold,
+            float fullMoonBloomThreshold,
+            float eclipseOcclusion01,
+            bool eclipseActive,
+            float radiationStorm01,
+            float resonanceBiolumMultiplier,
+            uint sequence)
+        {
+            float3 safeSunDirection = NormalizeVisualRsqrt(sunDirection, new float3(0f, 1f, 0f));
+            float inverseYearSeconds = math.rcp(math.max(1f, math.max(1f, dayPeriodSeconds) * math.max(1f, yearDays)));
+            float seedPhase01 = ResolveSeedPhase01(deterministicSeed);
+
+            CinematicOrbitState gasGiant = EvaluateCinematicOrbit(
+                in gasGiantDefinition,
+                absoluteUniverseTime,
+                seedPhase01 + 0.17320508f,
+                inverseYearSeconds,
+                safeSunDirection);
+            CinematicOrbitState moon0 = EvaluateCinematicOrbit(
+                in moon0Definition,
+                absoluteUniverseTime,
+                seedPhase01 + 0.41421356f,
+                inverseYearSeconds,
+                safeSunDirection);
+            CinematicOrbitState moon1 = EvaluateCinematicOrbit(
+                in moon1Definition,
+                absoluteUniverseTime,
+                seedPhase01 + 0.73205084f,
+                inverseYearSeconds,
+                safeSunDirection);
+
+            float3 weightedPull =
+                moon0.Direction * math.max(0f, moon0Definition.gravityWeight) +
+                moon1.Direction * math.max(0f, moon1Definition.gravityWeight) +
+                gasGiant.Direction * math.max(0f, gasGiantDefinition.gravityWeight);
+            float3 tidePull = NormalizeVisualRsqrt(weightedPull, new float3(0f, 1f, 0f));
+            float moonAlignment01 = math.saturate(0.5f + 0.5f * math.dot(moon0.Direction, moon1.Direction));
+            float verticalPull01 = math.saturate(0.5f + 0.5f * tidePull.y);
+            float tideHigh01 = math.saturate((verticalPull01 * 0.65f) + (moonAlignment01 * 0.35f));
+            float tideHeight = ((tideHigh01 * 2f) - 1f) * math.max(0f, tideAmplitudeMeters);
+            float bloom01 = math.max(moon0.Fullness01, moon1.Fullness01);
+
+            uint flags = PackCelestialRuntimeFlags(
+                eclipseActive,
+                eclipseOcclusion01,
+                tideHigh01,
+                highTideThreshold,
+                bloom01,
+                fullMoonBloomThreshold,
+                radiationStorm01);
+
+            CelestialRuntimeSnapshot snapshot = default;
+            snapshot.AbsoluteUniverseTime = absoluteUniverseTime;
+            snapshot.SunDirection = safeSunDirection;
+            snapshot.GasGiantOffset = gasGiant.RegistryOffset;
+            snapshot.Moon0Offset = moon0.RegistryOffset;
+            snapshot.Moon1Offset = moon1.RegistryOffset;
+            snapshot.GasGiantDirection = gasGiant.Direction;
+            snapshot.Moon0Direction = moon0.Direction;
+            snapshot.Moon1Direction = moon1.Direction;
+            snapshot.TidePullVector = tidePull;
+            snapshot.TideHeightMeters = tideHeight;
+            snapshot.TideHigh01 = tideHigh01;
+            snapshot.Moon0Phase01 = moon0.Fullness01;
+            snapshot.Moon1Phase01 = moon1.Fullness01;
+            snapshot.GasGiantPhase01 = gasGiant.Fullness01;
+            snapshot.EclipseOcclusion01 = math.saturate(eclipseOcclusion01);
+            snapshot.RadiationStorm01 = math.saturate(radiationStorm01);
+            snapshot.GlobalBiolumMultiplier = ((flags & (uint)CelestialRuntimeFlags.FullMoonBloom) != 0u)
+                ? math.max(2f, resonanceBiolumMultiplier)
+                : math.max(1f, resonanceBiolumMultiplier);
+            snapshot.Flags = flags;
+            snapshot.Sequence = sequence;
+            return snapshot;
+        }
+
+        private static uint PackCelestialRuntimeFlags(
+            bool eclipseActive,
+            float eclipseOcclusion01,
+            float tideHigh01,
+            float highTideThreshold,
+            float fullMoonBloom01,
+            float fullMoonBloomThreshold,
+            float radiationStorm01)
+        {
+            uint flags = (uint)CelestialRuntimeFlags.Valid;
+            flags |= math.select(0u, (uint)CelestialRuntimeFlags.EclipseActive, eclipseActive || eclipseOcclusion01 > 0.01f);
+            flags |= math.select(0u, (uint)CelestialRuntimeFlags.HighTide, tideHigh01 >= math.saturate(highTideThreshold));
+            flags |= math.select(0u, (uint)CelestialRuntimeFlags.FullMoonBloom, fullMoonBloom01 >= math.saturate(fullMoonBloomThreshold));
+            flags |= math.select(0u, (uint)CelestialRuntimeFlags.SolarRadiationStorm, radiationStorm01 > 0f);
+            return flags;
+        }
+
+        private static CinematicOrbitState EvaluateCinematicOrbit(
+            in KeplerOrbitDefinition orbit,
+            double absoluteUniverseTime,
+            float seedPhase01,
+            float inverseYearSeconds,
+            float3 sunDirection)
+        {
+            float elapsedSeconds = (float)(absoluteUniverseTime - orbit.epochUniverseTimeSeconds);
+            float driftTurns = elapsedSeconds * inverseYearSeconds * orbit.orbitalDriftDegreesPerYear * OrbitDegreesToTurns;
+            float phase01 = Wrap01(
+                (elapsedSeconds * math.rcp(math.max(1f, orbit.orbitalPeriodSeconds))) +
+                (orbit.epochMeanAnomalyDegrees * OrbitDegreesToTurns) +
+                seedPhase01 +
+                driftTurns);
+            float nodeTurns = orbit.longitudeAscendingNodeDegrees * OrbitDegreesToTurns;
+            float periapsisTurns = orbit.argumentOfPeriapsisDegrees * OrbitDegreesToTurns;
+            float eccentricity01 = math.saturate(orbit.eccentricity);
+            float inclination01 = math.saturate(math.abs(orbit.inclinationDegrees) * Inv90);
+            float inclinationSign = orbit.inclinationDegrees < 0f ? -1f : 1f;
+            float3 directionInput = new float3(
+                TriangleSigned(phase01 + nodeTurns) + (TriangleSigned(phase01 + periapsisTurns) * eccentricity01 * 0.35f),
+                TriangleSigned(phase01 + 0.125f) * inclination01 * inclinationSign,
+                TriangleSigned(phase01 + 0.25f + periapsisTurns) * (1f - (eccentricity01 * 0.25f)));
+            float3 direction = NormalizeVisualRsqrt(directionInput, new float3(0f, 0f, 1f));
+            float cinematicRadialPulse = 1f + (TriangleSigned(phase01 + 0.375f) * eccentricity01 * 0.04f);
+            float registryDistance = math.max(1f, orbit.registryOffsetMeters * cinematicRadialPulse);
+
+            CinematicOrbitState state = default;
+            state.Direction = direction;
+            state.RegistryOffset = direction * registryDistance;
+            state.Phase01 = phase01;
+            state.Fullness01 = math.saturate(0.5f + (0.5f * math.dot(-sunDirection, direction)));
+            return state;
+        }
+
+        private static float ResolveSeedPhase01(uint seed)
+        {
+            uint mixed = seed;
+            mixed ^= mixed >> 16;
+            mixed *= 0x7feb352du;
+            mixed ^= mixed >> 15;
+            mixed *= 0x846ca68bu;
+            mixed ^= mixed >> 16;
+            return mixed * SeedToUnit;
+        }
+
+        private static float Wrap01(float value)
+        {
+            return value - FastFloorToInt(value);
+        }
+
+        private static float TriangleSigned(float phase01)
+        {
+            float t = Wrap01(phase01);
+            return math.clamp(1f - math.abs((t * 4f) - 2f), -1f, 1f);
+        }
+
+        private static int FastFloorToInt(float value)
+        {
+            int whole = (int)value;
+            return value < whole ? whole - 1 : whole;
+        }
+
+        private static float3 NormalizeVisualRsqrt(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.0001f)
+                return fallback;
+
+            return value * math.rsqrt(lengthSq);
+        }
+
+        private static float FastSinRadians(float radians)
+        {
+            float phase = radians * 0.15915494309f;
+            int whole = (int)phase;
+            phase -= whole;
+            if (phase < 0f)
+                phase += 1f;
+            else if (phase >= 1f)
+                phase -= 1f;
+
+            float centered = phase > 0.5f ? phase - 1f : phase;
+            float wave = (4f * centered) - (8f * centered * math.abs(centered));
+            return wave + 0.225f * ((wave * math.abs(wave)) - wave);
+        }
+
+        private static float FastCosRadians(float radians)
+        {
+            return FastSinRadians(radians + 1.57079632679f);
+        }
+
+        private static float3 ResolveDominantAxisDirection(float3 direction, float3 fallback)
+        {
+            float3 absDirection = math.abs(direction);
+            if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
+                return absDirection.x > 0.0001f
+                    ? new float3(direction.x < 0f ? -1f : 1f, 0f, 0f)
+                    : fallback;
+
+            if (absDirection.y >= absDirection.z)
+                return absDirection.y > 0.0001f
+                    ? new float3(0f, direction.y < 0f ? -1f : 1f, 0f)
+                    : fallback;
+
+            return absDirection.z > 0.0001f
+                ? new float3(0f, 0f, direction.z < 0f ? -1f : 1f)
+                : fallback;
+        }
+
+        private static Vector3 ToVector3(float3 value)
+        {
+            return new Vector3(value.x, value.y, value.z);
         }
 
         private void UpdateSunVisualPosition()
@@ -3299,7 +3750,7 @@ namespace Hecton8.Celestial
             if (distanceSqr <= 0.0001f)
                 return;
 
-            Vector3 forward = toObserver / Mathf.Sqrt(distanceSqr);
+            Vector3 forward = toObserver * math.rsqrt(distanceSqr);
             Vector3 referenceUp = Mathf.Abs(Vector3.Dot(forward, Vector3.up)) > 0.98f
                 ? Vector3.right
                 : Vector3.up;
@@ -3315,7 +3766,7 @@ namespace Hecton8.Celestial
                     return;
             }
 
-            right /= Mathf.Sqrt(rightSqr);
+            right *= math.rsqrt(rightSqr);
             Vector3 stableUp = Vector3.Cross(forward, right);
             sunVisualTransform.rotation = Quaternion.LookRotation(forward, stableUp);
         }
@@ -3639,7 +4090,7 @@ namespace Hecton8.Celestial
             if (_skyMaterial == null)
                 return;
 
-            float sunElevationNormalized = math.clamp(_currentSunAngle / 90f, -1f, 1f);
+            float sunElevationNormalized = math.clamp(_currentSunAngle * Inv90, -1f, 1f);
             float3 fromSun = -_resolvedSunDirection;
             Vector4 sunDirection = new Vector4(fromSun.x, fromSun.y, fromSun.z, 0f);
             Vector4 aegirDirection = Vector4.zero;
@@ -4020,7 +4471,8 @@ namespace Hecton8.Celestial
             float range = twilightStartAngle - twilightEndAngle;
             if (range < 0.001f) range = 10f;
 
-            float timeBlend = math.saturate((twilightStartAngle - sunElevation) / range);
+            float rangeInv = math.rcp(range);
+            float timeBlend = math.saturate((twilightStartAngle - sunElevation) * rangeInv);
             timeBlend = SmoothStep01(timeBlend);
 
             // v5.1: Eclipse also triggers night sky.
@@ -4036,7 +4488,8 @@ namespace Hecton8.Celestial
             float range = twilightStartAngle - twilightEndAngle;
             if (range < 0.001f) range = 10f;
 
-            float timeStars = math.saturate((twilightStartAngle - sunElevation) / range);
+            float rangeInv = math.rcp(range);
+            float timeStars = math.saturate((twilightStartAngle - sunElevation) * rangeInv);
             timeStars = SmoothStep01(timeStars);
 
             _currentStarIntensity = math.max(timeStars, _smoothedOcclusionFactor);
@@ -4091,8 +4544,8 @@ namespace Hecton8.Celestial
                 ? Mathf.Repeat(_atmosphereManager.TimeOfDay, 1f)
                 : Mathf.Repeat(_rotationPhase, 1f);
             float skyAngleRad = timeOfDay01 * math.PI * 2f;
-            float skyCos = math.cos(skyAngleRad);
-            float skySin = math.sin(skyAngleRad);
+            float skyCos = FastCosRadians(skyAngleRad);
+            float skySin = FastSinRadians(skyAngleRad);
             Matrix4x4 skyRotation = Matrix4x4.identity;
             skyRotation.m00 = skyCos;
             skyRotation.m02 = skySin;
@@ -4121,7 +4574,7 @@ namespace Hecton8.Celestial
                 if (sqrMagnitude <= 0.0001f || !float.IsFinite(sqrMagnitude))
                     continue;
 
-                float invMagnitude = 1f / Mathf.Sqrt(sqrMagnitude);
+                float invMagnitude = math.rsqrt(sqrMagnitude);
                 _skyOccluders[occluderCount++] = new Vector4(
                     bodyDirectionManaged.x * invMagnitude,
                     bodyDirectionManaged.y * invMagnitude,
@@ -4157,7 +4610,7 @@ namespace Hecton8.Celestial
                 _ID_HectonEclipseWaterShadowDirection,
                 new Vector4(planarDirection.x, planarDirection.y, math.saturate(eclipseWaterShadowSoftness), _penumbraFactor));
 
-            float sunAegirAlignment = math.saturate((math.dot(_resolvedSunDirection, new float3(aegirDirection.x, aegirDirection.y, aegirDirection.z)) - 0.45f) / 0.55f);
+            float sunAegirAlignment = math.saturate((math.dot(_resolvedSunDirection, new float3(aegirDirection.x, aegirDirection.y, aegirDirection.z)) - 0.45f) * Inv55);
             sunAegirAlignment = SmoothStep01(sunAegirAlignment);
             float ringStrength = math.saturate(aegirRingCausticStrength * sunAegirAlignment);
             Shader.SetGlobalVector(
@@ -4211,7 +4664,7 @@ namespace Hecton8.Celestial
             AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromTransform.position);
             AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toTransform.position);
             double3 delta = toAup.ToAbsoluteDouble3() - fromAup.ToAbsoluteDouble3();
-            return math.normalizesafe(new float3((float)delta.x, (float)delta.y, (float)delta.z), float3.zero);
+            return NormalizeVisualRsqrt(new float3((float)delta.x, (float)delta.y, (float)delta.z), float3.zero);
         }
 
         private void DisableLegacySunFlare()
@@ -4248,7 +4701,7 @@ namespace Hecton8.Celestial
                 float range = math.max(
                     backlitAlignmentFullStart - backlitAlignmentSoftStart, 0.001f);
                 float t = math.saturate(
-                    (alignment - backlitAlignmentSoftStart) / range);
+                    (alignment - backlitAlignmentSoftStart) * math.rcp(range));
                 t = SmoothStep01(t);
 
                 _currentBacklitFactor = math.saturate(t * backlitFactorMultiplier);
@@ -4374,7 +4827,7 @@ namespace Hecton8.Celestial
 
             float startDot = math.min(moonPhaseShadowStartDot, moonPhaseShadowFullDot);
             float fullDot = math.max(moonPhaseShadowStartDot, moonPhaseShadowFullDot);
-            float phaseT = math.saturate((bestAlignment - startDot) / math.max(fullDot - startDot, 0.0001f));
+            float phaseT = math.saturate((bestAlignment - startDot) * math.rcp(math.max(fullDot - startDot, 0.0001f)));
             phaseT = phaseT * phaseT * (3f - 2f * phaseT);
             _moonPhaseShadowVisibility = 1f - phaseT * math.saturate(moonPhaseShadowStrength);
         }
@@ -4431,6 +4884,7 @@ namespace Hecton8.Celestial
         {
             bool active = false;
             float thresholdDegrees = Mathf.Max(0.01f, lunarResonanceAlignmentDegrees);
+            float thresholdDot = FastCosRadians(math.radians(thresholdDegrees));
 
             for (int i = 0; i < _observerBodyCache.Count && !active; i++)
             {
@@ -4444,7 +4898,7 @@ namespace Hecton8.Celestial
                     if (!TryGetMoonDirection(second, out Vector3 secondDirection))
                         continue;
 
-                    if (Vector3.Angle(firstDirection, secondDirection) <= thresholdDegrees)
+                    if (Vector3.Dot(firstDirection, secondDirection) >= thresholdDot)
                     {
                         active = true;
                         break;
@@ -4467,7 +4921,7 @@ namespace Hecton8.Celestial
             if (sqrMagnitude <= 0.0001f || !float.IsFinite(sqrMagnitude))
                 return false;
 
-            direction = rawDirection / Mathf.Sqrt(sqrMagnitude);
+            direction = rawDirection * math.rsqrt(sqrMagnitude);
             return true;
         }
 
@@ -4499,11 +4953,12 @@ namespace Hecton8.Celestial
                     continue;
 
                 Vector3 bodyDirectionManaged = body.CurrentDirection;
-                if (bodyDirectionManaged.sqrMagnitude <= 0.0001f)
+                float sqrMagnitude = bodyDirectionManaged.sqrMagnitude;
+                if (sqrMagnitude <= 0.0001f || !float.IsFinite(sqrMagnitude))
                     continue;
 
                 hasOccluder = true;
-                float3 bodyDirection = math.normalize((float3)bodyDirectionManaged);
+                float3 bodyDirection = (float3)bodyDirectionManaged * math.rsqrt(sqrMagnitude);
                 float angularRadius = math.max(body.AngularDiameterDegrees * 0.5f, 0.01f);
                 EvaluateSunOccluder(
                     toSun,
@@ -4540,7 +4995,7 @@ namespace Hecton8.Celestial
                 sunOccluded = true;
 
             float exitAngle = sunRadius + occluderRadius + math.max(0f, eclipseHysteresisMargin);
-            float exitDot = math.cos(math.radians(math.max(0f, exitAngle)));
+            float exitDot = FastCosRadians(math.radians(math.max(0f, exitAngle)));
             if (dotSunOccluder >= exitDot)
                 insideExitBand = true;
         }
@@ -4553,16 +5008,16 @@ namespace Hecton8.Celestial
         {
             float sunRadius = math.max(0.0001f, sunRadiusDeg);
             float occluderRadius = math.max(0.0001f, occluderRadiusDeg);
-            float thresholdEnter = math.cos(math.radians(sunRadius + occluderRadius));
-            float thresholdFull = math.cos(math.radians(math.abs(occluderRadius - sunRadius)));
-            float t = (math.clamp(dotSunOccluder, -1f, 1f) - thresholdEnter) /
-                      math.max(0.0001f, thresholdFull - thresholdEnter);
+            float thresholdEnter = FastCosRadians(math.radians(sunRadius + occluderRadius));
+            float thresholdFull = FastCosRadians(math.radians(math.abs(occluderRadius - sunRadius)));
+            float t = (math.clamp(dotSunOccluder, -1f, 1f) - thresholdEnter) *
+                      math.rcp(math.max(0.0001f, thresholdFull - thresholdEnter));
             return SmoothStep01(t);
         }
 
         private static float ComputeCheapPenumbraOverlapFromSeparation(float sunRadiusDeg, float occluderRadiusDeg, float separationDeg)
         {
-            float dotSunOccluder = math.cos(math.radians(math.max(0f, separationDeg)));
+            float dotSunOccluder = FastCosRadians(math.radians(math.max(0f, separationDeg)));
             return ComputeCheapPenumbraOverlapFromDot(dotSunOccluder, sunRadiusDeg, occluderRadiusDeg);
         }
 
@@ -4597,9 +5052,7 @@ namespace Hecton8.Celestial
         {
             CacheSkyWeatherDefaults();
 
-            Vector2 resolvedDirection = windDirection.sqrMagnitude > 0.0001f
-                ? windDirection.normalized
-                : new Vector2(_defaultWindDirection.x, _defaultWindDirection.y).normalized;
+            Vector2 resolvedDirection = ResolveWeatherWindDirection(windDirection, new Vector2(_defaultWindDirection.x, _defaultWindDirection.y));
 
             _surfaceWeatherOverrideActive = true;
             _surfaceWeatherFogOverrideActive = true;
@@ -4647,6 +5100,9 @@ namespace Hecton8.Celestial
         public Vector3 ResolvedSunDirection => (Vector3)_resolvedSunDirection;
         public float SunOcclusionFactor => _smoothedOcclusionFactor;
         public float PenumbraFactor => _penumbraFactor;
+        public CelestialRuntimeSnapshot RuntimeSnapshot => _celestialRuntimeSnapshot;
+        public float TideHeightMeters => _celestialRuntimeSnapshot.TideHeightMeters;
+        public Vector3 TidePullVector => ToVector3(_celestialRuntimeSnapshot.TidePullVector);
         public bool IsLunarResonanceActive => _lunarResonanceActive;
         public float LunarResonanceBiolumMultiplier => _lunarResonanceMultiplier;
         public float AtmosphereDensity => _currentAtmosphereDensity;
@@ -4659,6 +5115,19 @@ namespace Hecton8.Celestial
         public static float EvaluatePenumbraOverlapForSmoke(float sunRadiusDeg, float occluderRadiusDeg, float separationDeg)
         {
             return ComputeCheapPenumbraOverlapFromSeparation(sunRadiusDeg, occluderRadiusDeg, separationDeg);
+        }
+
+        private static Vector2 ResolveWeatherWindDirection(Vector2 requestedDirection, Vector2 fallbackDirection)
+        {
+            float2 selected = requestedDirection.sqrMagnitude > 0.0001f
+                ? new float2(requestedDirection.x, requestedDirection.y)
+                : new float2(fallbackDirection.x, fallbackDirection.y);
+            float lengthSq = math.lengthsq(selected);
+            if (lengthSq <= 0.0001f || !math.isfinite(lengthSq))
+                return Vector2.right;
+
+            float2 resolved = selected * math.rsqrt(lengthSq);
+            return new Vector2(resolved.x, resolved.y);
         }
 
         public bool TryGetAegirSkyDirection(out Vector3 direction)

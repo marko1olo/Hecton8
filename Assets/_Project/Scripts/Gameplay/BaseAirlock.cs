@@ -73,6 +73,7 @@ namespace Hecton8.Gameplay
         private const float PlayerDockingSnapDurationSeconds = 0.5f;
         private const float PlayerDockingSnapInverseDuration = 1f / PlayerDockingSnapDurationSeconds;
         private const float PlayerDockingSnapCompletionSeconds = PlayerDockingSnapDurationSeconds - 0.0001f;
+        private const float AirlockEqualizationFakeSeconds = 5f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -80,7 +81,7 @@ namespace Hecton8.Gameplay
 
         [Header("── Airlock Settings ───────────────────────────")]
         [Tooltip("Duration of the airlock cycle animation (seconds).")]
-        [SerializeField, Range(1f, 10f)] private float cycleDuration = 3f;
+        [SerializeField, Range(1f, 10f)] private float cycleDuration = AirlockEqualizationFakeSeconds;
 
         [Tooltip("Internal airlock chamber volume used to calculate pressure equalization time.")]
         [SerializeField, Min(0.1f)] private float airlockVolumeM3 = 18f;
@@ -88,7 +89,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Equalization flow coefficient in m3 per sqrt(kPa) per second.")]
         [SerializeField, Min(0.01f)] private float equalizationFlowM3PerSqrtKPaSecond = 1.35f;
 
-        [Tooltip("Maximum pressure equalization time before mechanical bypass valves saturate.")]
+        [Tooltip("Fixed fake pressure equalization time. No gas particle simulation.")]
         [SerializeField, Min(1f)] private float maximumEqualizationSeconds = 18f;
 
         [Tooltip("Transform where the player spawns when entering the base.")]
@@ -989,20 +990,10 @@ namespace Hecton8.Gameplay
 
         private float ResolveEqualizationDurationSeconds()
         {
-            CacheOwningModule();
-            float pressureDeltaKPa = owningModule != null
-                ? owningModule.ResolveExternalPressureDeltaKPa()
-                : 0f;
-            float equalizationSeconds = airlockVolumeM3 *
-                                        ApproximatePressureRootKPa(pressureDeltaKPa) /
-                                        math.max(0.01f, equalizationFlowM3PerSqrtKPaSecond);
-            if (!float.IsFinite(equalizationSeconds))
-                equalizationSeconds = cycleDuration;
-
-            return math.clamp(
-                math.max(cycleDuration, equalizationSeconds),
-                cycleDuration,
-                math.max(cycleDuration, maximumEqualizationSeconds));
+            _ = airlockVolumeM3;
+            _ = equalizationFlowM3PerSqrtKPaSecond;
+            _ = maximumEqualizationSeconds;
+            return AirlockEqualizationFakeSeconds;
         }
 
         private void CaptureCycleInputLock()

@@ -55,21 +55,24 @@ Implication:
 
 ### 2.4 `IDamageReceiver`
 
-Current direct owner rechecked:
+Current direct owners rechecked:
 
 - `HabitatIntegrityManager`
+- `HectonPlayerHealth`
 
 Important correction:
 
 - the older shadow-conflict story is stale
 - the file now separates habitat-specific callback contracts into:
   - `IDamageSignalReceiver`
-  - `IDamageSignalEmitter`
-- `HabitatIntegrityManager` also implements the global `Hecton8.Core.IDamageReceiver`
+- `HabitatIntegrityManager` implements the global `Hecton8.Core.IDamageReceiver`
+- `HectonPlayerHealth` also implements the global `Hecton8.Core.IDamageReceiver` for packet-routed HP damage
+- tool damage can now enter the central packet lane through `ToolHitUtility.TryQueueCentralDamage(...)` when the receiver has a registered `CombatDamageRuntime` target id
 
 Implication:
 
 - docs must stop treating this as an unresolved ABI-level type conflict unless a new conflicting declaration appears again
+- the current risk is semantic overlap between survival integrity, habitat integrity, and player HP, not duplicate interface identity
 
 ## 3. Strategy Rules Going Forward
 

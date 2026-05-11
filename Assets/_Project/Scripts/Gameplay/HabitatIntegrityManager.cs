@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 â€” HabitatIntegrityManager.cs
+// HECTON-8 - HabitatIntegrityManager.cs
 // Per-module habitat flood controller. Adds normalized pressure-flood math,
 // logistics rupture coupling, and breathable-reserve aggregation on top of the
 // existing BaseModule binary flood/save owner.
@@ -102,6 +102,8 @@ namespace Hecton8.Gameplay
         public const ushort SubmarineImpact = 5;
         public const ushort FaunaEmp = 6;
         public const ushort InventoryRadiation = 7;
+        public const ushort FaunaBite = 8;
+        public const ushort FaunaLeviathanBite = 9;
     }
 
     [DisallowMultipleComponent]
@@ -110,7 +112,7 @@ namespace Hecton8.Gameplay
     public sealed class HabitatIntegrityManager : MonoBehaviour, IUpdatable, ISlowTickable, Hecton8.Core.IDamageReceiver, IDamageSignalReceiver, IDamageSignalEmitter, IToolEffectListener
     {
         private const float HabitatStepInterval = 0.1f;
-        private const float DefaultSlowTickInterval = 0.5f;
+        private const float DefaultSlowTickInterval = 0.1f;
         private const float BasePressureAtm = 1f;
         private const float BreachDepthThresholdMeters = 200f;
         private const float HighPressureJetDepthMeters = 1000f;
@@ -133,18 +135,18 @@ namespace Hecton8.Gameplay
         private static float s_globalBaseOxygenReserve;
         private static float s_globalBaseOxygenCapacity;
 
-        [Header("â”€â”€ Flood Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("Flood Settings")]
         [Tooltip("Normalized pump authority used in drainRate = pumpPower * 0.015.")]
         [SerializeField, Range(0f, 1f)] private float pumpPowerNormalized = 1f;
 
         [Tooltip("Extra CO2 contamination multiplier applied when flood water enters the habitat volume.")]
         [SerializeField, Range(0f, 4f)] private float floodCo2Amplifier = 1f;
 
-        [Header("â”€â”€ VFX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("VFX")]
         [Tooltip("Registers abyssal rupture fluid decals when a breach is confirmed.")]
         [SerializeField] private bool emitFluidDecals = true;
 
-        [Header("â”€â”€ Diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("Diagnostics")]
         [SerializeField] private bool _debugBreachActive;
         [SerializeField, Range(0f, 1f)] private float _debugFloodLevel;
         [SerializeField] private float _debugPressureDelta;
@@ -174,8 +176,11 @@ namespace Hecton8.Gameplay
         private float3 _breachLocalPoint;
         private float _lastReserveContribution;
         private float _lastCapacityContribution;
-        // COLD ALLOC: List<IDamageSignalReceiver>[2] â€” habitat damage listeners (player trauma + future HUD bridges) â€” owner: HabitatIntegrityManager
+        // COLD ALLOC: List<IDamageSignalReceiver>[2] - habitat damage listeners (player trauma + future HUD bridges) - owner: HabitatIntegrityManager
         private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(2);
+        private int _combatDamageTargetId;
+        private bool _combatDamageRegistered;
+        private bool _combatDamageSyncDirty;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -211,6 +216,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             ResolveReferences();
+            _combatDamageTargetId = CombatDamageRuntime.ResolveTargetId(gameObject);
             _toxicityHazardId = unchecked((int)(EntityId.ToULong(GetEntityId()) ^ (uint)ToxicHazardIdSalt));
             _moduleAmbientTemperatureCelsius = ResolveDryAmbientTemperatureCelsius();
             if (_baseModule != null && _baseModule.IsFlooded)
@@ -227,6 +233,7 @@ namespace Hecton8.Gameplay
             ResolveReferences();
             ToolEffectEvents.Register(this);
             TryRegister();
+            TryRegisterCombatDamageTarget();
             _slowTickAccumulator = 0f;
             _stepAccumulator = 0f;
             SyncOxygenContribution();
@@ -239,6 +246,7 @@ namespace Hecton8.Gameplay
             ClearNodeCompromise();
             ClearToxicityHazard();
             RemoveOxygenContribution();
+            TryUnregisterCombatDamageTarget();
             TryUnregister();
             _slowTickAccumulator = 0f;
             _stepAccumulator = 0f;
@@ -252,6 +260,7 @@ namespace Hecton8.Gameplay
             ClearNodeCompromise();
             ClearToxicityHazard();
             RemoveOxygenContribution();
+            TryUnregisterCombatDamageTarget();
             TryUnregister();
             _slowTickAccumulator = 0f;
             _stepAccumulator = 0f;
@@ -263,6 +272,8 @@ namespace Hecton8.Gameplay
             if (deltaTime <= 0f)
                 return;
 
+            TryRegisterCombatDamageTarget();
+            TryFlushCombatDamageSync();
             _slowTickAccumulator += deltaTime;
             if (_slowTickAccumulator < DefaultSlowTickInterval)
                 return;
@@ -408,7 +419,15 @@ namespace Hecton8.Gameplay
             switch (packet.Channel)
             {
                 case DamageChannel.Integrity:
-                    DispatchIntegrityChanged(packet.PreviousValue, packet.NextValue, signal);
+                    if (_baseModule != null && packet.Magnitude > 0f && packet.NextValue < packet.PreviousValue)
+                    {
+                        _baseModule.ApplyDamage(packet.Magnitude);
+                        MarkCombatDamageSyncDirty();
+                    }
+                    else
+                    {
+                        DispatchIntegrityChanged(packet.PreviousValue, packet.NextValue, signal);
+                    }
                     break;
 
                 case DamageChannel.Power:
@@ -469,6 +488,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void DispatchIntegrityChanged(float prev, float next, DamageSignal src)
         {
+            MarkCombatDamageSyncDirty();
             OnIntegrityChanged(prev, next, src);
             for (int i = 0; i < _damageReceivers.Count; i++)
                 _damageReceivers[i].OnIntegrityChanged(prev, next, src);
@@ -608,6 +628,69 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registered = false;
+        }
+
+        private void TryRegisterCombatDamageTarget()
+        {
+            if (_combatDamageRegistered || !Application.isPlaying)
+                return;
+
+            ResolveReferences();
+            if (_combatDamageTargetId == 0)
+                _combatDamageTargetId = CombatDamageRuntime.ResolveTargetId(gameObject);
+
+            _combatDamageRegistered = CombatDamageRuntime.RegisterTarget(
+                _combatDamageTargetId,
+                this,
+                ResolveCombatCurrentHealth(),
+                ResolveCombatMaxHealth(),
+                CombatEntityKind.Habitat,
+                CombatArmorClass.Structure,
+                0f,
+                0f);
+            _combatDamageSyncDirty = !_combatDamageRegistered;
+        }
+
+        private void TryUnregisterCombatDamageTarget()
+        {
+            if (!_combatDamageRegistered)
+                return;
+
+            CombatDamageRuntime.UnregisterTarget(_combatDamageTargetId, this);
+            _combatDamageRegistered = false;
+            _combatDamageSyncDirty = false;
+        }
+
+        private void MarkCombatDamageSyncDirty()
+        {
+            if (!_combatDamageRegistered)
+                return;
+
+            _combatDamageSyncDirty = !CombatDamageRuntime.SyncTargetHealth(
+                _combatDamageTargetId,
+                ResolveCombatCurrentHealth(),
+                ResolveCombatMaxHealth());
+        }
+
+        private void TryFlushCombatDamageSync()
+        {
+            if (!_combatDamageRegistered || !_combatDamageSyncDirty)
+                return;
+
+            _combatDamageSyncDirty = !CombatDamageRuntime.SyncTargetHealth(
+                _combatDamageTargetId,
+                ResolveCombatCurrentHealth(),
+                ResolveCombatMaxHealth());
+        }
+
+        private float ResolveCombatCurrentHealth()
+        {
+            return _baseModule != null ? Mathf.Max(0f, _baseModule.CurrentIntegrity) : IntegrityNormalized;
+        }
+
+        private float ResolveCombatMaxHealth()
+        {
+            return _baseModule != null ? Mathf.Max(1f, _baseModule.MaxIntegrity) : 1f;
         }
 
         private void SetNodeCompromise(bool compromised)

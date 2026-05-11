@@ -9,6 +9,9 @@ namespace Hecton8.Audio
 {
     internal unsafe sealed class AudioFrameSpscRingBuffer : IDisposable
     {
+        private const int MinimumCapacityFrames = 256;
+        private const int MaximumCapacityFrames = 1 << 30;
+
         private NativeArray<float> _frames;
         private NativeArray<int> _sharedState;
         private int _capacityFrames;
@@ -56,7 +59,8 @@ namespace Hecton8.Audio
 
         public void Initialize(int capacityFrames, int sourceChannels = 1)
         {
-            int resolvedCapacity = math.max(256, NextPowerOfTwo(capacityFrames));
+            int resolvedCapacity = math.max(MinimumCapacityFrames, NextPowerOfTwo(capacityFrames));
+            AssertPowerOfTwoCapacity(resolvedCapacity, resolvedCapacity - 1);
             int resolvedChannels = math.clamp(sourceChannels, 1, 2);
             if (IsCreated && _capacityFrames == resolvedCapacity && _sourceChannels == resolvedChannels)
             {
@@ -71,6 +75,7 @@ namespace Hecton8.Audio
             NativeMemorySentinel.RegisterNativeArray(_sharedState, nameof(AudioFrameSpscRingBuffer), nameof(_sharedState), NativeAllocationLifetime.Session);
             _capacityFrames = resolvedCapacity;
             _capacityMask = resolvedCapacity - 1;
+            AssertPowerOfTwoCapacity(_capacityFrames, _capacityMask);
             _sourceChannels = resolvedChannels;
             Volatile.Write(ref _overflowDropCount, 0);
             Volatile.Write(ref _lastTelemetryOverflowDropCount, 0);
@@ -82,6 +87,7 @@ namespace Hecton8.Audio
             if (!IsCreated)
                 return;
 
+            AssertPowerOfTwoCapacity(_capacityFrames, _capacityMask);
             WriteSharedMetadata();
             WriteSharedIndex(NativeAudioKernelRingBufferDescriptor.ReadIndexSlot, 0);
             WriteSharedIndex(NativeAudioKernelRingBufferDescriptor.WriteIndexSlot, 0);
@@ -159,6 +165,12 @@ namespace Hecton8.Audio
                 return false;
             }
 
+            if (!HasPowerOfTwoCapacity(_capacityFrames, _capacityMask))
+            {
+                status = NativeAudioKernelBridgeStatus.CapacityInvalid;
+                return false;
+            }
+
             int* sharedStatePtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(_sharedState);
             descriptor = new NativeAudioKernelRingBufferDescriptor
             {
@@ -211,6 +223,7 @@ namespace Hecton8.Audio
 
         private void WriteSharedMetadata()
         {
+            AssertPowerOfTwoCapacity(_capacityFrames, _capacityMask);
             WriteSharedIndex(NativeAudioKernelRingBufferDescriptor.CapacityFramesSlot, _capacityFrames);
             WriteSharedIndex(NativeAudioKernelRingBufferDescriptor.CapacityMaskSlot, _capacityMask);
             WriteSharedIndex(
@@ -231,12 +244,30 @@ namespace Hecton8.Audio
             while (power < value && growthWatchdog-- > 0)
             {
                 if (power > (int.MaxValue >> 1))
-                    return int.MaxValue;
+                    return MaximumCapacityFrames;
 
                 power <<= 1;
             }
 
             return power;
+        }
+
+        private static void AssertPowerOfTwoCapacity(int capacityFrames, int capacityMask)
+        {
+            if (!HasPowerOfTwoCapacity(capacityFrames, capacityMask))
+                throw new InvalidOperationException("Audio frame SPSC ring capacity must stay power-of-two for mask wrapping.");
+        }
+
+        private static bool HasPowerOfTwoCapacity(int capacityFrames, int capacityMask)
+        {
+            return capacityFrames > 1 &&
+                   capacityMask == capacityFrames - 1 &&
+                   IsPowerOfTwo(capacityFrames);
+        }
+
+        private static bool IsPowerOfTwo(int value)
+        {
+            return value > 0 && (value & (value - 1)) == 0;
         }
     }
 }

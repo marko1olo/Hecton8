@@ -2045,7 +2045,6 @@ public struct VoxelNormalJob : IJobParallelFor
     public int densityStrideZ;
     public float3 volumeOrigin;
     public float invVoxelStep;
-    public float densityDecodeScale;
     [ReadOnly] public NativeArray<sbyte> densityField;
     [ReadOnly] public NativeArray<float3> positions;
     [WriteOnly] public NativeArray<float3> normals;
@@ -2059,8 +2058,8 @@ public struct VoxelNormalJob : IJobParallelFor
         int x = (int)math.clamp(sample.x + 0.5f, 0f, ptsX - 1f);
         int y = (int)math.clamp(sample.y + 0.5f, 0f, ptsY - 1f);
         int z = (int)math.clamp(sample.z + 0.5f, 0f, ptsZ - 1f);
-        float4 gradientAndAo = SampleGridNodeGradientAndAo(densityField, x, y, z);
-        float3 normal = FastNormalizeOrUp(-gradientAndAo.xyz);
+        float4 gradientAndAo = SampleNearestGridGradientAndAo(densityField, x, y, z);
+        float3 normal = ApproxNormalizeOrUp(-gradientAndAo.xyz);
         normals[idx] = normal;
 
         float horizontalMask = math.saturate((math.abs(normal.x) + math.abs(normal.z)) * 0.5f);
@@ -2074,24 +2073,19 @@ public struct VoxelNormalJob : IJobParallelFor
         ambientOcclusionValues[idx] = math.saturate(gradientAndAo.w - cavityMask * 0.24f - overheadMask * 0.12f);
     }
 
-    static float3 FastNormalizeOrUp(float3 value)
+    static float3 ApproxNormalizeOrUp(float3 value)
     {
-        float lenSq = math.lengthsq(value);
-        if (lenSq <= 0.0001f)
-            return new float3(0f, 1f, 0f);
-
         float3 axis = math.abs(value);
         float maxAxis = math.cmax(axis);
         float minAxis = math.cmin(axis);
         float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
         float invLen = math.rcp(math.max(maxAxis + midAxis * 0.375f + minAxis * 0.25f, 0.0001f));
-        return value * invLen;
+        return math.select(new float3(0f, 1f, 0f), value * invLen, maxAxis > 0.0001f);
     }
 
-    float4 SampleGridNodeGradientAndAo(NativeArray<sbyte> field, int x, int y, int z)
+    float4 SampleNearestGridGradientAndAo(NativeArray<sbyte> field, int x, int y, int z)
     {
         int centerIndex = x + y * densityStrideY + z * densityStrideZ;
-        float center = ReadDensity(field, centerIndex);
         int xmIndex = centerIndex - math.select(0, 1, x > 0);
         int xpIndex = centerIndex + math.select(0, 1, x < ptsX - 1);
         int ymIndex = centerIndex - math.select(0, densityStrideY, y > 0);
@@ -2099,12 +2093,13 @@ public struct VoxelNormalJob : IJobParallelFor
         int zmIndex = centerIndex - math.select(0, densityStrideZ, z > 0);
         int zpIndex = centerIndex + math.select(0, densityStrideZ, z < ptsZ - 1);
 
-        float xm = ReadDensity(field, xmIndex);
-        float xp = ReadDensity(field, xpIndex);
-        float ym = ReadDensity(field, ymIndex);
-        float yp = ReadDensity(field, ypIndex);
-        float zm = ReadDensity(field, zmIndex);
-        float zp = ReadDensity(field, zpIndex);
+        float center = field[centerIndex];
+        float xm = field[xmIndex];
+        float xp = field[xpIndex];
+        float ym = field[ymIndex];
+        float yp = field[ypIndex];
+        float zm = field[zmIndex];
+        float zp = field[zpIndex];
         float solidNeighborCount =
             math.select(0f, 1f, xm > 0f) +
             math.select(0f, 1f, xp > 0f) +
@@ -2115,15 +2110,10 @@ public struct VoxelNormalJob : IJobParallelFor
         float neighborAo = math.saturate(1f - solidNeighborCount * (1f / 9f));
 
         return new float4(
-            x < ptsX - 1 ? xp - center : center - xm,
-            y < ptsY - 1 ? yp - center : center - ym,
-            z < ptsZ - 1 ? zp - center : center - zm,
+            math.select(center - xm, xp - center, x < ptsX - 1),
+            math.select(center - ym, yp - center, y < ptsY - 1),
+            math.select(center - zm, zp - center, z < ptsZ - 1),
             neighborAo);
-    }
-
-    float ReadDensity(NativeArray<sbyte> field, int index)
-    {
-        return field[index] * densityDecodeScale;
     }
 }
 
@@ -5882,7 +5872,6 @@ public class HectonVoxelEngine : MonoBehaviour
             densityStrideZ = data.PtsX * data.PtsY,
             volumeOrigin = data.VolumeOrigin,
             invVoxelStep = 1f / math.max(data.VoxelStep, 0.0001f),
-            densityDecodeScale = densityDecodeScale,
             densityField = quantizedDensityField,
             positions = data.WeldedPositions,
             normals = data.Normals,

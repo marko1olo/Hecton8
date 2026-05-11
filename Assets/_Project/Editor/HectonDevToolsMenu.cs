@@ -1,6 +1,6 @@
 // ============================================================================
-// Hecton8 — HectonDevToolsMenu.cs
-// Staticheskie punkty menyu dlya razrabotki (redaktor, ne rantaym bilda).
+// Hecton8 - HectonDevToolsMenu.cs
+// Static development menu entries for editor-only diagnostics.
 // ============================================================================
 
 using System;
@@ -18,11 +18,14 @@ using UnityEngine.SceneManagement;
 namespace Hecton8.Editor
 {
     /// <summary>
-    /// Obschie dev-utility: puti, PlayerPrefs, stsena, diagnostika sborki.
+    /// General editor utilities: paths, PlayerPrefs, scenes, and build diagnostics.
     /// </summary>
     public static class HectonDevToolsMenu
     {
         private const string MenuRoot = "Tools/Hecton/Dev/";
+
+        // COLD ALLOC: List<Transform>[128] - prefab cleanup traversal scratch - owner: HectonDevToolsMenu
+        private static readonly List<Transform> s_transformScratch = new List<Transform>(128);
 
         [MenuItem(MenuRoot + "Reveal Persistent Data Path", false, 10)]
         public static void RevealPersistentDataPath()
@@ -87,15 +90,15 @@ namespace Hecton8.Editor
             EditorUtility.RevealInFinder(root);
         }
 
-        [MenuItem(MenuRoot + "Clear All PlayerPrefs (this machine)…", false, 30)]
+        [MenuItem(MenuRoot + "Clear All PlayerPrefs (this machine)...", false, 30)]
         public static void ClearPlayerPrefs()
         {
             if (!EditorUtility.DisplayDialog(
                     "Hecton Dev",
-                    "Udalit vse PlayerPrefs dlya etogo polzovatelya i redaktora Unity?\n\n" +
-                    "Otkatit nelzya.",
-                    "Ochistit",
-                    "Otmena"))
+                    "Delete all PlayerPrefs for this Unity user and editor?\n\n" +
+                    "This cannot be undone.",
+                    "Clear",
+                    "Cancel"))
             {
                 return;
             }
@@ -109,7 +112,7 @@ namespace Hecton8.Editor
         public static void LogBuildInfo()
         {
             var sb = new StringBuilder(512);
-            sb.AppendLine("── Hecton Dev — Build info ──");
+            sb.AppendLine("-- Hecton Dev - Build info --");
             sb.AppendLine("Unity: " + Application.unityVersion);
             sb.AppendLine("Product: " + Application.productName);
             sb.AppendLine("Active build target: " + EditorUserBuildSettings.activeBuildTarget);
@@ -125,7 +128,7 @@ namespace Hecton8.Editor
             sb.Append("Scripting defines (").Append(defines.Length).AppendLine("):");
             for (int i = 0; i < defines.Length; i++)
             {
-                sb.Append("  • ").AppendLine(defines[i]);
+                sb.Append("  - ").AppendLine(defines[i]);
             }
 
             if (defines.Length == 0)
@@ -184,7 +187,7 @@ namespace Hecton8.Editor
 
         private const string ScreenshotsFolderName = "Screenshots";
 
-        [MenuItem(MenuRoot + "Capture Screenshot → ProjectRoot/Screenshots (Play Mode)", false, 70)]
+        [MenuItem(MenuRoot + "Capture Screenshot -> ProjectRoot/Screenshots (Play Mode)", false, 70)]
         public static void CaptureScreenshotToProject()
         {
             string screenshotsFolder = ResolveScreenshotsFolderPath();
@@ -196,7 +199,7 @@ namespace Hecton8.Editor
             Debug.Log("[Hecton Dev] Capturing screenshot to: " + absolutePath.Replace('\\', '/'));
         }
 
-        [MenuItem(MenuRoot + "Capture Screenshot → ProjectRoot/Screenshots (Play Mode)", true)]
+        [MenuItem(MenuRoot + "Capture Screenshot -> ProjectRoot/Screenshots (Play Mode)", true)]
         public static bool CaptureScreenshotValidate()
         {
             return EditorApplication.isPlaying;
@@ -211,7 +214,7 @@ namespace Hecton8.Editor
             return Path.Combine(projectRoot, ScreenshotsFolderName);
         }
 
-        // ── Project Settings (Unity 6 SettingsService paths) ──────────────
+        // Project Settings (Unity 6 SettingsService paths)
 
         [MenuItem(MenuRoot + "Project Settings/Audio", false, 100)]
         public static void OpenPsAudio()
@@ -273,7 +276,7 @@ namespace Hecton8.Editor
             EditorApplication.ExecuteMenuItem("Window/General/Console");
         }
 
-        // ── Scene & assets ───────────────────────────────────────────────
+        // Scene & assets
 
         [MenuItem(MenuRoot + "Scene/Copy Active Scene Path", false, 120)]
         public static void CopyActiveScenePath()
@@ -309,11 +312,11 @@ namespace Hecton8.Editor
             }
 
             var sb = new StringBuilder(256);
-            sb.AppendLine("── Hecton Dev — Loaded scenes ──");
+            sb.AppendLine("-- Hecton Dev - Loaded scenes --");
             for (int i = 0; i < scenes.Length; i++)
             {
                 Scene s = scenes[i];
-                sb.Append("  • ").Append(s.name);
+                sb.Append("  - ").Append(s.name);
                 if (!string.IsNullOrEmpty(s.path))
                 {
                     sb.Append("  (").Append(s.path).Append(')');
@@ -324,14 +327,14 @@ namespace Hecton8.Editor
 
             SpatialAudioManager[] sams = UnityEngine.Object.FindObjectsByType<SpatialAudioManager>(
                 FindObjectsInactive.Include);
-            sb.Append("SpatialAudioManager count: ").AppendLine(sams.Length.ToString());
+            sb.Append("SpatialAudioManager count: ").Append(sams.Length).AppendLine();
             if (sams.Length > 1)
             {
-                Debug.LogWarning("[Hecton Dev] Neskolko SpatialAudioManager — dopustimo tolko pri smene stsen; prover DontDestroyOnLoad.");
+                Debug.LogWarning("[Hecton Dev] Multiple SpatialAudioManager instances; allowed only during scene swaps. Check DontDestroyOnLoad.");
             }
             else if (sams.Length == 0)
             {
-                Debug.LogWarning("[Hecton Dev] SpatialAudioManager ne nayden v zagruzhennyh stsenah (mozhet byt ok v chistom sandbox).");
+                Debug.LogWarning("[Hecton Dev] SpatialAudioManager not found in loaded scenes (may be OK in a clean sandbox).");
             }
 
             int missingTotal = LogMissingScriptsInLoadedScenes();
@@ -430,7 +433,8 @@ namespace Hecton8.Editor
                         continue;
                     }
 
-                    List<Transform> transforms = new List<Transform>(64);
+                    List<Transform> transforms = s_transformScratch;
+                    transforms.Clear();
                     CollectTransforms(root.transform, transforms);
 
                     for (int t = 0; t < transforms.Count; t++)
@@ -462,6 +466,7 @@ namespace Hecton8.Editor
                 }
                 finally
                 {
+                    s_transformScratch.Clear();
                     if (root != null)
                     {
                         PrefabUtility.UnloadPrefabContents(root);

@@ -6,10 +6,21 @@ using System.Reflection;
 using System.Text;
 using UnityEditor;
 using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEditor.Callbacks;
 
 namespace Hecton8.Editor
 {
+    internal sealed class HectonComplianceBuildGate : IPreprocessBuildWithReport
+    {
+        public int callbackOrder => -20000;
+
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            HectonComplianceValidator.ValidateAllContracts(throwOnFailure: true, reportToConsole: true);
+        }
+    }
+
     /// <summary>
     /// Editor compliance gate for HECTON-8 assembly reloads and CI batch compiles.
     /// </summary>
@@ -29,15 +40,12 @@ namespace Hecton8.Editor
         private const string UnsafeMemCpyNeedle = "UnsafeUtility." + "MemCpy";
         private static readonly string[] ForbiddenCoreReferences =
         {
-            "UnityEngine.UI",
-            "Unity.TextMeshPro",
             "Crest",
             "WaveHarmonic.Crest",
             "WaveHarmonic.Crest.Shared",
             "MapMagic",
             "Den.Tools",
-            "GPUInstancer",
-            "VolumetricLightBeam"
+            "Steamworks"
         };
         private static readonly string[] ForbiddenRuntimeThirdPartyTokens =
         {
@@ -109,7 +117,7 @@ namespace Hecton8.Editor
             ScheduleDeferredValidation();
         }
 
-        private static void ValidateAllContracts(bool throwOnFailure, bool reportToConsole)
+        internal static void ValidateAllContracts(bool throwOnFailure, bool reportToConsole)
         {
             ComplianceReport report = new ComplianceReport();
             ValidateBurstContracts(report);

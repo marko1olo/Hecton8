@@ -1279,7 +1279,7 @@ namespace Hecton8.UI
                 ? ResolveProjectionPlaneDistance()
                 : math.max(previewCamera.nearClipPlane + ProjectionNearClipSafetyPaddingMeters, ProjectionNearClipSafetyPaddingMeters);
             float halfFovRadians = math.max(0.001f, previewCamera.fieldOfView * DegreesToHalfRadians);
-            float frustumHalfHeight = ApproximateTanPositive(halfFovRadians) * planeDistance;
+            float frustumHalfHeight = ExactPrimaryHudTanPositive(halfFovRadians) * planeDistance;
             float frustumHalfWidth = frustumHalfHeight * math.max(0.0001f, previewCamera.aspect);
             float invReferenceHeight = math.rcp(referenceResolution.y);
             float worldScale = math.max(0.000001f, frustumHalfHeight * 2f * invReferenceHeight);
@@ -1950,7 +1950,7 @@ namespace Hecton8.UI
 
             float safeDistance = ResolveProjectionPlaneDistance();
             float halfFovRadians = math.max(0.001f, targetCamera.fieldOfView * DegreesToHalfRadians);
-            float frustumHalfHeight = ApproximateTanPositive(halfFovRadians) * safeDistance;
+            float frustumHalfHeight = ExactPrimaryHudTanPositive(halfFovRadians) * safeDistance;
             float frustumHalfWidth = frustumHalfHeight * math.max(0.0001f, targetCamera.aspect);
             float invReferenceWidth = math.rcp(referenceResolution.x);
             float invReferenceHeight = math.rcp(referenceResolution.y);
@@ -5119,6 +5119,12 @@ namespace Hecton8.UI
             float numerator = 15f - x2;
             float denominator = math.max(0.0001f, 15f - 6f * x2);
             return x * numerator * math.rcp(denominator);
+        }
+
+        private static float ExactPrimaryHudTanPositive(float radians)
+        {
+            float x = math.clamp(radians, 0.001f, 1.55334306f);
+            return (float)Math.Tan(x);
         }
 
         private static int CeilPositiveToInt(float value)

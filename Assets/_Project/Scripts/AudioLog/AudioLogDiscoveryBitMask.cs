@@ -1,9 +1,9 @@
-namespace Hecton8.Narrative
+namespace Hecton8.Core.Contracts
 {
     /// <summary>
     /// Fixed 1024-bit discovery mask for audio-log save persistence.
     /// </summary>
-    internal static class AudioLogDiscoveryBitMask
+    public static class AudioLogDiscoveryBitMask
     {
         public const int MaxLogCount = 1024;
         public const int WordCount = 16;
@@ -19,7 +19,7 @@ namespace Hecton8.Narrative
             if (HasExpectedCapacity(words))
                 return;
 
-            // COLD ALLOC: long[16] — 1024 packed audio-log discovery flags, exactly 128 bytes — owner: AudioLogDiscoveryBitMask
+            // COLD ALLOC: long[16] - 1024 packed audio-log discovery flags, exactly 128 bytes - owner: AudioLogDiscoveryBitMask
             words = new long[WordCount];
         }
 

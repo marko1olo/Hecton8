@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -118,8 +119,9 @@ namespace Hecton8.Visor
 
                 TextureDesc maskDesc = new TextureDesc(sourceDesc);
                 maskDesc.name = "_HectonStochasticSsrMask";
-                maskDesc.width = math.max(1, sourceDesc.width >> 1);
-                maskDesc.height = math.max(1, sourceDesc.height >> 1);
+                int maskShift = FrameTimeWatchdog.CurrentMathLodMode == MathLodMode.Low ? 2 : 1;
+                maskDesc.width = math.max(1, sourceDesc.width >> maskShift);
+                maskDesc.height = math.max(1, sourceDesc.height >> maskShift);
                 maskDesc.clearBuffer = true;
                 maskDesc.clearColor = Color.black;
                 maskDesc.depthBufferBits = DepthBits.None;

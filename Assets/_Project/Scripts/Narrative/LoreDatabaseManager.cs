@@ -29,7 +29,7 @@ namespace Hecton8.Narrative
     /// <summary>
     /// Packed unlock-mask constants for the 50 industrial lore records.
     /// </summary>
-    internal static class IndustrialLoreBitMask
+    public static class IndustrialLoreBitMask
     {
         public const int RecordCount = 50;
         public const int PaddedBitCount = 64;

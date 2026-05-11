@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -2130,12 +2130,15 @@ namespace Hecton8.Caves
                     ChunkCoord = request.Address.ChunkCoord,
                     VoxelSize = math.max(request.Address.VoxelSize, MinRuntimeVoxelSize),
                     GridDimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z),
+                    GridStrideY = gridDimensions.x,
+                    GridStrideZ = gridDimensions.x * gridDimensions.y,
                     VolumeOrigin = new float3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z),
                     InvCellSize = new float3(
                         1f / math.max(voxelCellSize.x, 0.0001f),
                         1f / math.max(voxelCellSize.y, 0.0001f),
                         1f / math.max(voxelCellSize.z, 0.0001f)),
-                    SdfRange = sdfRange,
+                    SdfDecodeScale = sdfRange * (2f / 255f),
+                    SdfDecodeBias = -sdfRange,
                     EncodedSdf = sourceSdf,
                     DirtyMaskWords = dirtyMaskCopy,
                     DeltaSdfValueBits = deltaSdfCopy,
@@ -2957,7 +2960,9 @@ namespace Hecton8.Caves
 
                 *write = new CarveCellWrite
                 {
-                    AbsoluteCell = absoluteCell,
+                    AbsoluteCellX = absoluteCell.x,
+                    AbsoluteCellY = absoluteCell.y,
+                    AbsoluteCellZ = absoluteCell.z,
                     SdfValueBits = (ushort)math.f32tof16(densityValue),
                     MaterialId = MaterialId,
                     DeltaFlags = DeltaFlags,
@@ -2995,15 +3000,20 @@ namespace Hecton8.Caves
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         private struct CarveCellWrite
         {
-            public int3 AbsoluteCell;
+            public int AbsoluteCellX;
+            public int AbsoluteCellY;
+            public int AbsoluteCellZ;
             public ushort SdfValueBits;
-            public float BlendStrength;
             public byte MaterialId;
             public byte DeltaFlags;
+            public float BlendStrength;
             public byte IsActive;
             public byte Reserved;
-            public uint Reserved1;
+            public ushort Reserved1;
             public uint Reserved2;
+            public uint Reserved3;
+
+            public int3 AbsoluteCell => new int3(AbsoluteCellX, AbsoluteCellY, AbsoluteCellZ);
         }
 
         private struct CompactedChunkState : IDisposable
@@ -3093,9 +3103,12 @@ namespace Hecton8.Caves
             public int3 ChunkCoord;
             public float VoxelSize;
             public int3 GridDimensions;
+            public int GridStrideY;
+            public int GridStrideZ;
             public float3 VolumeOrigin;
             public float3 InvCellSize;
-            public float SdfRange;
+            public float SdfDecodeScale;
+            public float SdfDecodeBias;
             [ReadOnly] public NativeArray<byte> EncodedSdf;
             [ReadOnly] public NativeArray<uint> DirtyMaskWords;
             [ReadOnly] public NativeArray<ushort> DeltaSdfValueBits;
@@ -3169,12 +3182,12 @@ namespace Hecton8.Caves
 
             private int GridIndex(int x, int y, int z)
             {
-                return x + y * GridDimensions.x + z * GridDimensions.x * GridDimensions.y;
+                return x + y * GridStrideY + z * GridStrideZ;
             }
 
             private float Decode(int index)
             {
-                return ((*(EncodedSdfPtr + index) * (1f / 255f)) * 2f - 1f) * SdfRange;
+                return (*(EncodedSdfPtr + index) * SdfDecodeScale) + SdfDecodeBias;
             }
         }
 

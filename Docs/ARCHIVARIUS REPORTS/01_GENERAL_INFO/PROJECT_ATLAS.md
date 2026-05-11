@@ -1,6 +1,6 @@
 ﻿# PROJECT ATLAS
 
-Version: 1.5.28
+Version: 1.5.29
 Date: 2026-05-11
 Status: PENDING FINAL UNITY PROOF (DOCS CONTINUATION CORE BUILD PASSED / UNITY MCP NOT RUN)
 Scope: live orientation map for the current HECTON-8 workspace
@@ -230,7 +230,7 @@ Authority files for this boundary:
 
 These points were revalidated against current source in this pass:
 
-- `GlobalRegistryContracts.cs` now contains `40` direct public interfaces, not the older `19`, `27`, `31`, `33`, `34`, `36`, `37`, `38`, or `39` snapshots.
+- `GlobalRegistryContracts.cs` now contains `41` direct public interfaces, not the older `19`, `27`, `31`, `33`, `34`, `36`, `37`, `38`, `39`, or `40` snapshots.
 - `SpatialAudioManager` directly implements `IAudioService` and registers through `GlobalRegistry.RegisterAudioService(this)`.
 - `SuitHUDV4CanvasOverlay` is the direct first-party `IUIService` implementor found in current source scan.
 - current bootstrap authority is split across `BootstrapController`, `GameBootstrapper`, and `SceneBootstrap`; it is not a single-owner startup surface.
@@ -239,7 +239,8 @@ These points were revalidated against current source in this pass:
   - `HectonUnderwaterVisuals`
   - `HectonSubmarineOS`
   - `MissionMarkerSystem`
-- `HabitatIntegrityManager` now implements the global `Hecton8.Core.IDamageReceiver` contract directly.
+- `HabitatIntegrityManager` and `HectonPlayerHealth` now implement the global `Hecton8.Core.IDamageReceiver` contract directly.
+- `CombatDamageRuntime` is the current central packet lane for registered combat targets; `ToolHitUtility` routes tool hits into that lane when the receiver has a registered target id.
 - `GlobalRegistry` exposes a materially broader service surface than older docs described, including:
   - thermodynamics
   - logistics
@@ -296,7 +297,7 @@ Current survival-domain findings added in this pass:
 - `HectonHazardManager` is the ingress bridge for authored and runtime hazard sources.
 - `AbyssalThermalManager` is both thermodynamics service owner and a thermal hazard-source owner.
 - `DeepPsychosisController` and `PlayerStressVFX` are downstream stress-consequence owners, not primary survival owners.
-- `HectonPlayerHealth` is a real parallel HP/mutation branch whose own file documents a weak persistence path because `SaveData` has no dedicated player-health DTO.
+- `HectonPlayerHealth` is a real parallel HP/mutation branch, now also a packet-based `IDamageReceiver`, whose own file documents a weak persistence path because `SaveData` has no dedicated player-health DTO.
 
 ### 7.2 Event Topology Rechecked
 
@@ -484,7 +485,7 @@ Burst kernel ownership classification:
 
 Mandate sync result for today's additions:
 
-- `52` mandate files exist.
+- `53` mandate `.txt` files exist.
 - Empty mandate files: `0`.
 - Zero-GC/allocation-related mandate files by name: `4`.
 - AUP/coordinate/submarine/voxel/MapMagic-related mandate files by name: `6`.
@@ -495,8 +496,8 @@ Mandate sync result for today's additions:
 
 Interface health result from `GlobalRegistryContracts.cs`:
 
-- Current direct public interface count: `38`.
-- Interfaces with at least one source-line implementation/reference scan hit: not recounted after the 37th contract slot appeared.
+- Current direct public interface count: `41`.
+- Interfaces with at least one source-line implementation/reference scan hit: not fully recounted after the 41st contract slot appeared.
 - Ghost interfaces by this static scan: `PENDING VERIFICATION`.
 
 Naming sweep result:

@@ -27,6 +27,7 @@ namespace Hecton8.Input
         private const int FileMagic = 0x46433848; // H8CF, little endian.
         private const int FileHeaderBytes = 12;
         private const int MaxOptionsPayloadBytes = 64 * 1024;
+        private const long FixedOptionsFileBytes = FileHeaderBytes + MaxOptionsPayloadBytes;
         private static readonly Encoding OptionsEncoding = new UTF8Encoding(false);
 
         private readonly Dictionary<string, OptionRecord> _records =
@@ -380,21 +381,20 @@ namespace Hecton8.Input
         {
             int payloadLength = OptionsEncoding.GetByteCount(json);
             ValidatePayloadCapacity(payloadLength);
-            long fileLength = FileHeaderBytes + payloadLength;
             if (payloadLength > 0)
                 OptionsEncoding.GetBytes(json, 0, json.Length, _payloadBuffer, 0);
 
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
             {
-                stream.SetLength(fileLength);
+                stream.SetLength(FixedOptionsFileBytes);
                 using (MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
                            stream,
                            null,
-                           fileLength,
+                           FixedOptionsFileBytes,
                            MemoryMappedFileAccess.ReadWrite,
                            HandleInheritability.None,
                            leaveOpen: true))
-                using (MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(0L, fileLength, MemoryMappedFileAccess.Write))
+                using (MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(0L, FixedOptionsFileBytes, MemoryMappedFileAccess.Write))
                 {
                     accessor.Write(0L, FileMagic);
                     accessor.Write(4L, FileVersion);
@@ -412,6 +412,7 @@ namespace Hecton8.Input
             if (!fileInfo.Exists || fileInfo.Length < FileHeaderBytes)
                 return false;
 
+            long viewLength = fileInfo.Length > FixedOptionsFileBytes ? FixedOptionsFileBytes : fileInfo.Length;
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
                        stream,
@@ -420,15 +421,19 @@ namespace Hecton8.Input
                        MemoryMappedFileAccess.Read,
                        HandleInheritability.None,
                        leaveOpen: false))
-            using (MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(0L, fileInfo.Length, MemoryMappedFileAccess.Read))
+            using (MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(0L, viewLength, MemoryMappedFileAccess.Read))
             {
                 int magic = accessor.ReadInt32(0L);
                 if (magic != FileMagic)
                     return false;
 
                 int payloadLength = accessor.ReadInt32(8L);
-                if (payloadLength < 0 || payloadLength > fileInfo.Length - FileHeaderBytes)
+                if (payloadLength < 0 ||
+                    payloadLength > MaxOptionsPayloadBytes ||
+                    payloadLength > viewLength - FileHeaderBytes)
+                {
                     return false;
+                }
 
                 ValidatePayloadCapacity(payloadLength);
                 if (payloadLength > 0)

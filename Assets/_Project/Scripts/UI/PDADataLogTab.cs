@@ -38,12 +38,28 @@ namespace Hecton8.UI
     public sealed class PDADataLogTab : MonoBehaviour, ITickable, IUpdatable, IAudioLogEventListener, IPDAEventListener, ILocalizationLanguageChangedListener
     {
         private const string PlaybackTimerTemplate = "{0:00}:{1:00}";
+        // COLD ALLOC: char[11] - playback timer template characters - owner: PDADataLogTab
         private static readonly char[] PlaybackTimerTemplateChars = PlaybackTimerTemplate.ToCharArray();
         private const int MaxRegisteredCatalogTabs = 4;
-        private const float InvTwoPi = 1f / (Mathf.PI * 2f);
+        private const float InvTwoPi = 0.15915494f;
+        private const float Inv360 = 0.0027777778f;
+        private const int HologramYawLutSize = 8;
+        private const int HologramYawLutMask = HologramYawLutSize - 1;
 
         // COLD ALLOC: RegistryBucket<PDADataLogTab>[4] - active PDA catalog sources for procedural lore lookup - owner: PDADataLogTab
         private static readonly RegistryBucket<PDADataLogTab> _registeredCatalogTabs = new RegistryBucket<PDADataLogTab>(MaxRegisteredCatalogTabs);
+        // COLD ALLOC: Quaternion[8] - eight-step hologram yaw spin table, replaces Tick-path rotation construction - owner: PDADataLogTab
+        private static readonly Quaternion[] s_hologramYawLut =
+        {
+            Quaternion.identity,
+            new Quaternion(0f, 0.38268343f, 0f, 0.9238795f),
+            new Quaternion(0f, 0.70710677f, 0f, 0.70710677f),
+            new Quaternion(0f, 0.9238795f, 0f, 0.38268343f),
+            new Quaternion(0f, 1f, 0f, 0f),
+            new Quaternion(0f, 0.9238795f, 0f, -0.38268343f),
+            new Quaternion(0f, 0.70710677f, 0f, -0.70710677f),
+            new Quaternion(0f, 0.38268343f, 0f, -0.9238795f)
+        };
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -101,6 +117,7 @@ namespace Hecton8.UI
         private LocalizedTextMadnessFx _subtitleMadnessFx;
 
         // List rows â€” pre-allocated
+        // COLD ALLOC: List<LogRow>[32] - pre-allocated audio-log row cache - owner: PDADataLogTab
         private readonly List<LogRow> _rows = new List<LogRow>(32);
         private readonly string[] _localizedCategoryLabels = new string[5]; // COLD ALLOC: string[5] — localized category labels — owner: PDADataLogTab
         // COLD ALLOC: uint[allLogs.Length] — precomputed lore hashes for direct packed-word archive reads — owner: PDADataLogTab
@@ -1794,9 +1811,9 @@ namespace Hecton8.UI
                 anchor.up * (hologramHeight + bobWave * hologramBobAmplitude) +
                 anchor.forward * hologramForwardOffset;
 
-            Quaternion rotation =
-                playerCamera.transform.rotation *
-                Quaternion.Euler(0f, _hologramAnimationTime * hologramSpinDegreesPerSecond, 0f);
+            float spinTurns = math.frac(_hologramAnimationTime * hologramSpinDegreesPerSecond * Inv360);
+            int yawIndex = ((int)math.floor(spinTurns * HologramYawLutSize)) & HologramYawLutMask;
+            Quaternion rotation = playerCamera.transform.rotation * s_hologramYawLut[yawIndex];
 
             _hologramMatrices[0] = Matrix4x4.TRS(worldPosition, rotation, Vector3.one * hologramScale);
             Graphics.DrawMeshInstanced(mesh, 0, _runtimeHologramMaterial, _hologramMatrices, 1, null, UnityEngine.Rendering.ShadowCastingMode.Off, false, gameObject.layer);

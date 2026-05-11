@@ -1525,9 +1525,9 @@ namespace Hecton8.Construction
         {
             float angle = (slot * 2.3999631f) + 0.7853982f;
             return position + new float3(
-                Mathf.Cos(angle) * OrphanWanderDistanceMeters,
+                CinematicMath.FastCos(angle) * OrphanWanderDistanceMeters,
                 0f,
-                Mathf.Sin(angle) * OrphanWanderDistanceMeters);
+                CinematicMath.FastSin(angle) * OrphanWanderDistanceMeters);
         }
 
         private static void ApplyFriendlyRepairService(int slot, ref HeadlessDroneState drone, float dt)

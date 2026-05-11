@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// HectonUIBuilder.cs — One-click NASA-Punk HUD hierarchy generator.
+/// HectonUIBuilder.cs - One-click NASA-Punk HUD hierarchy generator.
 /// Tools / Hecton / Generate HUD Hierarchy
 ///
 /// Generates the full HUD_Master_V2 structure inside the active Canvas.
@@ -13,9 +13,9 @@ using TMPro;
 /// </summary>
 public static class HectonUIBuilder
 {
-    // ══════════════════════════════════════════════════════════════════
-    // COLORS — NASA-Punk palette
-    // ══════════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------------
+    // COLORS - NASA-Punk palette
+    // ------------------------------------------------------------------
 
     private static readonly Color ColorBrightCyan  = new Color(0.00f, 0.898f, 1.00f, 1.000f); // #00E5FF
     private static readonly Color ColorDarkCyan    = new Color(0.00f, 0.898f, 1.00f, 0.300f); // #00E5FF 30%
@@ -30,14 +30,14 @@ public static class HectonUIBuilder
         ("Gauge_HLT", "HLT", "75%"),
     };
 
-    // ══════════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------------
     // MENU ENTRY
-    // ══════════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------------
 
     [MenuItem("Tools/Hecton/Generate HUD Hierarchy", priority = 1)]
     private static void GenerateHUD()
     {
-        // ── Locate target Canvas ──────────────────────────────────────
+        // -- Locate target Canvas --------------------------------------
         Canvas targetCanvas = FindTargetCanvas();
         if (targetCanvas == null)
         {
@@ -48,7 +48,7 @@ public static class HectonUIBuilder
             return;
         }
 
-        // ── Guard: don't double-generate ─────────────────────────────
+        // -- Guard: don't double-generate -----------------------------
         if (targetCanvas.transform.Find("HUD_Master_V2") != null)
         {
             bool overwrite = EditorUtility.DisplayDialog(
@@ -62,7 +62,7 @@ public static class HectonUIBuilder
             Undo.DestroyObjectImmediate(existing);
         }
 
-        // ── Build ─────────────────────────────────────────────────────
+        // -- Build -----------------------------------------------------
         BuildHUDMaster(targetCanvas.transform);
 
         Debug.Log("[HectonUIBuilder] HUD_Master_V2 generated successfully inside: "
@@ -76,13 +76,13 @@ public static class HectonUIBuilder
         return true;
     }
 
-    // ══════════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------------
     // TOP-LEVEL: HUD_Master_V2
-    // ══════════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------------
 
     private static void BuildHUDMaster(Transform canvasTransform)
     {
-        // Root — stretch to fill entire canvas
+        // Root - stretch to fill entire canvas
         RectTransform master = CreateRect("HUD_Master_V2", canvasTransform);
         SetAnchorsAndStretch(master,
             anchorMin: Vector2.zero,
@@ -91,7 +91,7 @@ public static class HectonUIBuilder
             offsetMax: Vector2.zero);
 
         // Root must NOT have a visible Image background
-        // (no Image component added — canvas group only if needed later)
+        // (no Image component added - canvas group only if needed later)
 
         BuildLeftGauges(master);
         BuildRightTelemetry(master);
@@ -100,13 +100,13 @@ public static class HectonUIBuilder
         Selection.activeGameObject = master.gameObject;
     }
 
-    // ══════════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------------
     // LEFT GAUGES PANEL
-    // ══════════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------------
 
     private static void BuildLeftGauges(RectTransform parent)
     {
-        // ── Panel ─────────────────────────────────────────────────────
+        // -- Panel -----------------------------------------------------
         RectTransform panel = CreateRect("Left_Gauges", parent);
 
         // Anchor: Bottom-Left, Pivot: 0,0
@@ -119,7 +119,7 @@ public static class HectonUIBuilder
 
         // No background Image on panel
 
-        // ── HorizontalLayoutGroup ─────────────────────────────────────
+        // -- HorizontalLayoutGroup -------------------------------------
         HorizontalLayoutGroup hlg = panel.gameObject.AddComponent<HorizontalLayoutGroup>();
         Undo.RegisterCreatedObjectUndo(panel.gameObject, "Add HLG");
 
@@ -133,14 +133,17 @@ public static class HectonUIBuilder
         hlg.childForceExpandHeight = false;
         hlg.padding                = new RectOffset(0, 0, 0, 0);
 
-        // ── 3 Gauges ──────────────────────────────────────────────────
-        foreach (var def in GaugeDefs)
+        // -- 3 Gauges --------------------------------------------------
+        for (int i = 0; i < GaugeDefs.Length; i++)
+        {
+            var def = GaugeDefs[i];
             BuildGauge(panel, def.objName, def.labelText, def.valueText);
+        }
     }
 
-    // ══════════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------------
     // SINGLE GAUGE PREFAB
-    // ══════════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------------
 
     private static void BuildGauge(
         RectTransform parent,
@@ -148,12 +151,12 @@ public static class HectonUIBuilder
         string        labelText,
         string        valueText)
     {
-        // ── Gauge root (120 x 150) ────────────────────────────────────
+        // -- Gauge root (120 x 150) ------------------------------------
         RectTransform gauge = CreateRect(gaugeName, parent);
         gauge.sizeDelta = new Vector2(120f, 150f);
         // No background Image
 
-        // ── Label_Top ─────────────────────────────────────────────────
+        // -- Label_Top -------------------------------------------------
         RectTransform labelTop = CreateRect("Label_Top", gauge);
         SetAnchorPivotAndPos(labelTop,
             anchorMin   : new Vector2(0.5f, 1f),
@@ -168,7 +171,7 @@ public static class HectonUIBuilder
         tmpLabelTop.alignment       = TextAlignmentOptions.Center;
         tmpLabelTop.color           = ColorBrightCyan;
 
-        // ── Ring_BG ───────────────────────────────────────────────────
+        // -- Ring_BG ---------------------------------------------------
         RectTransform ringBg = CreateRect("Ring_BG", gauge);
         SetAnchorPivotAndPos(ringBg,
             anchorMin   : new Vector2(0.5f, 0.5f),
@@ -181,7 +184,7 @@ public static class HectonUIBuilder
         imgRingBg.color   = ColorDarkCyan;
         imgRingBg.type    = Image.Type.Simple;
 
-        // ── Ring_Fill ─────────────────────────────────────────────────
+        // -- Ring_Fill -------------------------------------------------
         RectTransform ringFill = CreateRect("Ring_Fill", gauge);
         SetAnchorPivotAndPos(ringFill,
             anchorMin   : new Vector2(0.5f, 0.5f),
@@ -198,7 +201,7 @@ public static class HectonUIBuilder
         imgRingFill.fillAmount     = 0.88f; // Default ~88%
         imgRingFill.fillClockwise  = true;
 
-        // ── Icon_Top ──────────────────────────────────────────────────
+        // -- Icon_Top --------------------------------------------------
         RectTransform iconTop = CreateRect("Icon_Top", gauge);
         SetAnchorPivotAndPos(iconTop,
             anchorMin   : new Vector2(0.5f, 0.5f),
@@ -209,9 +212,9 @@ public static class HectonUIBuilder
 
         Image imgIconTop   = iconTop.gameObject.AddComponent<Image>();
         imgIconTop.color   = ColorBrightCyan;
-        // Sprite left intentionally null — user assigns at build time
+        // Sprite left intentionally null - user assigns at build time
 
-        // ── Text_Value ────────────────────────────────────────────────
+        // -- Text_Value ------------------------------------------------
         RectTransform textValue = CreateRect("Text_Value", gauge);
         SetAnchorPivotAndPos(textValue,
             anchorMin   : new Vector2(0.5f, 0.5f),
@@ -227,7 +230,7 @@ public static class HectonUIBuilder
         tmpValue.alignment         = TextAlignmentOptions.Center;
         tmpValue.color             = ColorBrightCyan;
 
-        // ── Icon_Bot ──────────────────────────────────────────────────
+        // -- Icon_Bot --------------------------------------------------
         RectTransform iconBot = CreateRect("Icon_Bot", gauge);
         SetAnchorPivotAndPos(iconBot,
             anchorMin   : new Vector2(0.5f, 0.5f),
@@ -240,13 +243,13 @@ public static class HectonUIBuilder
         imgIconBot.color   = ColorBrightCyan;
     }
 
-    // ══════════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------------
     // RIGHT TELEMETRY PANEL
-    // ══════════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------------
 
     private static void BuildRightTelemetry(RectTransform parent)
     {
-        // ── Panel ─────────────────────────────────────────────────────
+        // -- Panel -----------------------------------------------------
         RectTransform panel = CreateRect("Right_Telemetry", parent);
 
         // Anchor: Bottom-Right, Pivot: 1,0
@@ -259,7 +262,7 @@ public static class HectonUIBuilder
 
         // No background Image on panel
 
-        // ── VerticalLayoutGroup ───────────────────────────────────────
+        // -- VerticalLayoutGroup ---------------------------------------
         VerticalLayoutGroup vlg = panel.gameObject.AddComponent<VerticalLayoutGroup>();
 
         vlg.childAlignment         = TextAnchor.MiddleRight;
@@ -272,7 +275,7 @@ public static class HectonUIBuilder
         vlg.childForceExpandHeight = false;
         vlg.padding                = new RectOffset(0, 0, 0, 0);
 
-        // ── Text_Depth ────────────────────────────────────────────────
+        // -- Text_Depth ------------------------------------------------
         RectTransform depthRect = CreateRect("Text_Depth", panel);
         depthRect.sizeDelta      = new Vector2(400f, 46f);
 
@@ -282,16 +285,16 @@ public static class HectonUIBuilder
         tmpDepth.alignment       = TextAlignmentOptions.Right;
         tmpDepth.color           = ColorBrightCyan;
 
-        // ── Deco_Line ─────────────────────────────────────────────────
+        // -- Deco_Line -------------------------------------------------
         // Width driven by VLG (Control Child Width = true), explicit height = 4
         RectTransform decoLine  = CreateRect("Deco_Line", panel);
         decoLine.sizeDelta      = new Vector2(300f, 4f); // VLG overrides width
 
         Image imgDeco   = decoLine.gameObject.AddComponent<Image>();
         imgDeco.color   = ColorBrightCyan;
-        // Sprite left null — user assigns a jagged line sprite here
+        // Sprite left null - user assigns a jagged line sprite here
 
-        // ── Text_Pressure ─────────────────────────────────────────────
+        // -- Text_Pressure ---------------------------------------------
         RectTransform pressureRect = CreateRect("Text_Pressure", panel);
         pressureRect.sizeDelta     = new Vector2(400f, 32f);
 
@@ -302,14 +305,14 @@ public static class HectonUIBuilder
         tmpPressure.color           = ColorLightGray;
     }
 
-    // ══════════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------------
     // HELPERS
-    // ══════════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------------
 
     /// <summary>
     /// Creates a named GameObject with a RectTransform, registers it with Undo,
     /// and parents it correctly. Returns the RectTransform.
-    /// This is the single creation point — keeps all build methods clean.
+    /// This is the single creation point - keeps all build methods clean.
     /// </summary>
     private static RectTransform CreateRect(string name, Transform parent)
     {
@@ -321,7 +324,7 @@ public static class HectonUIBuilder
         // Use Undo-aware parenting
         Undo.SetTransformParent(go.transform, parent, $"Parent {name}");
 
-        // Reset local transform — critical after parenting
+        // Reset local transform - critical after parenting
         go.transform.localPosition = Vector3.zero;
         go.transform.localRotation = Quaternion.identity;
         go.transform.localScale    = Vector3.one;

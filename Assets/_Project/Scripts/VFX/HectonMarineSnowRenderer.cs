@@ -20,7 +20,10 @@ namespace Hecton8.Environment
         private const float BiolumeSurgeDurationSeconds = 4f;
         private const int ThreadGroupSize = 64;
         private const int ThreadGroupShift = 6;
-        private const int MaxMarineSnowParticleCapacity = 32768;
+        private const int Mx350MarineSnowParticleCapacity = 32768;
+        private const int MidMarineSnowParticleCapacity = 65536;
+        private const int HighMarineSnowParticleCapacity = 100000;
+        private const int MaxMarineSnowParticleCapacity = HighMarineSnowParticleCapacity;
         private const int ParticleStride = 64;
         private const int FrameConstantsStride = 112;
         private const int ParticleFlagBubble = 1 << 0;
@@ -108,8 +111,10 @@ namespace Hecton8.Environment
             internal static readonly int CaveVoxelActiveId = Shader.PropertyToID("_HectonCaveVoxelActive");
             internal static readonly int CaveVoxelWorldToLocalId = Shader.PropertyToID("_HectonCaveVoxelWorldToLocal");
             internal static readonly int CaveVoxelHalfExtentsId = Shader.PropertyToID("_HectonCaveVoxelHalfExtents");
+            internal static readonly int CaveVoxelInvDoubleHalfExtentsId = Shader.PropertyToID("_HectonCaveVoxelInvDoubleHalfExtents");
             internal static readonly int SubmarineWashSphereId = Shader.PropertyToID("_HectonSubmarineWashSphere");
             internal static readonly int SubmarineWashVelocityId = Shader.PropertyToID("_HectonSubmarineWashVelocity");
+            internal static readonly int FloatingOriginOffsetId = Shader.PropertyToID("_HectonFloatingOriginOffset");
             internal static readonly int ZBufferParamsId = Shader.PropertyToID("_MarineSnowZBufferParams");
             internal static readonly int DepthTextureTexelSizeId = Shader.PropertyToID("_MarineSnowDepthTextureTexelSize");
             internal static readonly int DepthCollisionParamsId = Shader.PropertyToID("_MarineSnowDepthCollisionParams");
@@ -141,8 +146,6 @@ namespace Hecton8.Environment
         [SerializeField] private VFXEmissionProfile.FluidType fluidType = VFXEmissionProfile.FluidType.Snow;
 
         [Header("Population")]
-        [Tooltip("Maximum compute-simulated plankton particles. Hard-capped to the MX350 marine-snow budget.")]
-        [SerializeField, Range(512, MaxMarineSnowParticleCapacity)] private int maxParticles = MaxMarineSnowParticleCapacity;
         [Tooltip("Empty safety radius around the camera to avoid particles clipping through the visor.")]
         [SerializeField, Range(0.1f, 4f)] private float innerRadius = 0.8f;
         [Tooltip("Outer shell radius. Particles respawn to the ring when they drift beyond this distance.")]
@@ -240,6 +243,7 @@ namespace Hecton8.Environment
         private float _flowFieldUploadTimer;
         private float _simulationTime;
         private int _activeParticleCount;
+        private int _allocatedParticleCapacity;
         private bool _registeredTick;
         private bool _buffersReady;
         private bool _staticBindingsDirty = true;
@@ -252,6 +256,10 @@ namespace Hecton8.Environment
         private float _bubbleTrailMovement01;
         private float _bubbleTrailExhale01;
         private float _speedLineIntensity;
+        private float _speedLineStartVelocitySq;
+        private float _speedLineInvVelocityBandSq = 1f;
+        private float _speedLineStretchDelta;
+        private float _speedLineResponseSpeed = 0.1f;
         private bool _hasLastCameraPositionWS;
         private Vector3 _flowFieldCenterWS;
         private Vector3 _lastUploadedFlowFieldCenterWS;
@@ -279,10 +287,12 @@ namespace Hecton8.Environment
         private Vector4 _boundAbyssalFlowCenter;
         private Vector4 _boundAbyssalFlowSpacing;
         private Vector4 _boundCaveVoxelHalfExtents;
+        private Vector4 _boundCaveVoxelInvDoubleHalfExtents;
         private Vector4 _boundTerrainHeightRect;
         private Vector4 _boundTerrainHeightScale;
         private Vector4 _boundSubmarineWashSphere;
         private Vector4 _boundSubmarineWashVelocity;
+        private Vector4 _boundFloatingOriginOffset = InvalidVector;
         private Vector4 _boundPropwashParams;
         private GraphicsBuffer _boundSimulationReadBuffer;
         private GraphicsBuffer _boundSimulationWriteBuffer;
@@ -315,6 +325,9 @@ namespace Hecton8.Environment
         private bool _sonarGlowGlobalsDirty = true;
         private bool _fogDensityGlobalsDirty = true;
         [SerializeField] private int _debugActiveParticleCount;
+        [SerializeField] private int _debugAllocatedParticleCapacity;
+        [SerializeField] private int _debugScalabilityParticleCapacity = Mx350MarineSnowParticleCapacity;
+        [SerializeField] private HectonQualityTier _debugScalabilityQualityTier = HectonQualityTier.Unknown;
         [SerializeField] private float _debugAdaptiveRenderScale = 1f;
         [SerializeField] private float _debugAdaptiveBudgetScale = 1f;
         [SerializeField] private VRAMMonitor.VRAMPressureState _debugAdaptiveVramPressureState;
@@ -329,9 +342,16 @@ namespace Hecton8.Environment
 
         private void OnEnable()
         {
+            RefreshSpeedLineCache();
             ResolveTargetCamera();
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterTick();
+        }
+
+        private void OnValidate()
+        {
+            RefreshSpeedLineCache();
+            _staticBindingsDirty = true;
         }
 
         private void OnDisable()
@@ -396,6 +416,18 @@ namespace Hecton8.Environment
             _lastCameraPositionWS = Vector3.zero;
         }
 
+        private void RefreshSpeedLineCache()
+        {
+            float fullVelocity = math.max(1f, speedLineFullVelocity);
+            float startVelocity = fullVelocity * 0.72f;
+            float fullVelocitySq = fullVelocity * fullVelocity;
+            float startVelocitySq = startVelocity * startVelocity;
+            _speedLineStartVelocitySq = startVelocitySq;
+            _speedLineInvVelocityBandSq = math.rcp(math.max(0.01f, fullVelocitySq - startVelocitySq));
+            _speedLineStretchDelta = math.max(1f, speedLineMaxStretch) - 1f;
+            _speedLineResponseSpeed = math.max(0.1f, speedLineResponseSharpness);
+        }
+
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
@@ -416,7 +448,10 @@ namespace Hecton8.Environment
             if (targetCamera == null)
                 return;
 
-            int particleCount = ResolveConfiguredCapacity();
+            int particleCount = _allocatedParticleCapacity;
+            if (particleCount <= 0 || _particleBufferA == null || _particleBufferB == null)
+                return;
+
             BootstrapParticles(particleCount);
             GraphicsBufferUploadUtility.UploadArray(_particleBufferA, _bootstrapParticles, particleCount);
             GraphicsBufferUploadUtility.UploadArray(_particleBufferB, _bootstrapParticles, particleCount);
@@ -447,6 +482,7 @@ namespace Hecton8.Environment
                 return;
 
             UpdateBiolumeSurgeState(dt);
+            EnsureParticleBudget();
             _activeParticleCount = ResolveActiveParticleCount(effectiveDensityScale);
             if (_activeParticleCount <= 0)
             {
@@ -458,7 +494,8 @@ namespace Hecton8.Environment
             RefreshFlowFieldUpload(dt);
             ApplyStaticBindingsIfNeeded();
             UpdateFrameConstants(math.max(0f, dt), effectiveDensityScale);
-            RefreshExternalGpuBindings(dt);
+            RefreshHotGpuBindings();
+            RefreshColdGpuBindings(dt);
             DispatchVisibleClear();
             DispatchFogDensityClear();
             DispatchSimulation();
@@ -555,29 +592,69 @@ namespace Hecton8.Environment
                 return;
             }
 
-            // COLD ALLOC: ParticleGpuData[maxParticles] - maxParticles * 64B bootstrap upload cache, required to seed both GPU ping-pong buffers without runtime allocations - owner: HectonMarineSnowRenderer
+            // COLD ALLOC: ParticleGpuData[clampedParticleCount] - up to 100000 * 64B = 6.1 MiB hardware-tier bootstrap upload cache, required to seed both GPU ping-pong buffers without runtime allocations - owner: HectonMarineSnowRenderer
             _bootstrapParticles = new ParticleGpuData[clampedParticleCount];
-            // COLD ALLOC: GraphicsBuffer[maxParticles] - persistent marine-snow particle state ping-pong buffer A - owner: HectonMarineSnowRenderer
+            // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - up to 100000 * 64B = 6.1 MiB persistent marine-snow particle state ping-pong buffer A - owner: HectonMarineSnowRenderer
             _particleBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleGpuData>(clampedParticleCount);
-            // COLD ALLOC: GraphicsBuffer[maxParticles] - persistent marine-snow particle state ping-pong buffer B - owner: HectonMarineSnowRenderer
+            // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - up to 100000 * 64B = 6.1 MiB persistent marine-snow particle state ping-pong buffer B - owner: HectonMarineSnowRenderer
             _particleBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleGpuData>(clampedParticleCount);
             // COLD ALLOC: GraphicsBuffer[1] - per-frame marine-snow constant buffer - owner: HectonMarineSnowRenderer
             _frameConstantsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FrameConstantsData>(1);
             _emptyFlowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float2>(1); // COLD ALLOC: GraphicsBuffer[1] - zero fallback ecosystem flow-vector buffer - owner: HectonMarineSnowRenderer
             GraphicsBufferUploadUtility.UploadArray(_emptyFlowFieldBuffer, _emptyFlowFieldUpload, 1);
-            _visibleParticleIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[maxParticles] - GPU-written visible-particle index list - owner: HectonMarineSnowRenderer
+            _visibleParticleIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - GPU-written visible-particle index list - owner: HectonMarineSnowRenderer
             _indirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - GPU-written culled indirect indexed draw arguments - owner: HectonMarineSnowRenderer
             _emptyAbyssalFlowBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(1); // COLD ALLOC: GraphicsBuffer[1] - zero fallback abyssal-flow vector buffer - owner: HectonMarineSnowRenderer
             GraphicsBufferUploadUtility.UploadArray(_emptyAbyssalFlowBuffer, _emptyAbyssalFlowUpload, 1);
             BootstrapParticles(clampedParticleCount);
             GraphicsBufferUploadUtility.UploadArray(_particleBufferA, _bootstrapParticles, clampedParticleCount);
             GraphicsBufferUploadUtility.UploadArray(_particleBufferB, _bootstrapParticles, clampedParticleCount);
+            _allocatedParticleCapacity = clampedParticleCount;
+            _debugAllocatedParticleCapacity = clampedParticleCount;
             _frameParity = 0;
             EnsureEmptyCaveSdfTexture();
             EnsureQuadMesh();
             EnsureSonarGlowTexture();
             EnsureFogDensityTexture();
             _buffersReady = true;
+            ResetGpuBindingCaches();
+            _staticBindingsDirty = true;
+            _externalGpuBindingsDirty = true;
+        }
+
+        private void EnsureParticleBudget()
+        {
+            int clampedParticleCount = ResolveConfiguredCapacity();
+            if (clampedParticleCount == _allocatedParticleCapacity)
+                return;
+
+            ResizeParticleBuffers(clampedParticleCount);
+        }
+
+        private void ResizeParticleBuffers(int particleCount)
+        {
+            if (particleCount <= 0)
+                return;
+
+            ReleaseBuffer(ref _particleBufferA);
+            ReleaseBuffer(ref _particleBufferB);
+            ReleaseBuffer(ref _visibleParticleIndexBuffer);
+
+            // COLD ALLOC: ParticleGpuData[particleCount] - up to 100000 * 64B = 6.1 MiB hardware-tier resize bootstrap upload cache, only rebuilt when the scalability matrix capacity changes - owner: HectonMarineSnowRenderer
+            _bootstrapParticles = new ParticleGpuData[particleCount];
+            // COLD ALLOC: GraphicsBuffer[particleCount] - up to 100000 * 64B = 6.1 MiB resized marine-snow particle state ping-pong buffer A - owner: HectonMarineSnowRenderer
+            _particleBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleGpuData>(particleCount);
+            // COLD ALLOC: GraphicsBuffer[particleCount] - up to 100000 * 64B = 6.1 MiB resized marine-snow particle state ping-pong buffer B - owner: HectonMarineSnowRenderer
+            _particleBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleGpuData>(particleCount);
+            _visibleParticleIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(particleCount); // COLD ALLOC: GraphicsBuffer[particleCount] - resized GPU-written visible-particle index list - owner: HectonMarineSnowRenderer
+
+            BootstrapParticles(particleCount);
+            GraphicsBufferUploadUtility.UploadArray(_particleBufferA, _bootstrapParticles, particleCount);
+            GraphicsBufferUploadUtility.UploadArray(_particleBufferB, _bootstrapParticles, particleCount);
+
+            _allocatedParticleCapacity = particleCount;
+            _debugAllocatedParticleCapacity = particleCount;
+            _frameParity = 0;
             ResetGpuBindingCaches();
             _staticBindingsDirty = true;
             _externalGpuBindingsDirty = true;
@@ -873,7 +950,25 @@ namespace Hecton8.Environment
             }
         }
 
-        private void RefreshExternalGpuBindings(float dt)
+        private void RefreshHotGpuBindings()
+        {
+            Vector3 floatingOriginOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            SetComputeVectorHotIfChanged(
+                ShaderIds.SubmarineWashSphereId,
+                Shader.GetGlobalVector(ShaderIds.SubmarineWashSphereId),
+                ref _boundSubmarineWashSphere);
+            SetComputeVectorHotIfChanged(
+                ShaderIds.SubmarineWashVelocityId,
+                Shader.GetGlobalVector(ShaderIds.SubmarineWashVelocityId),
+                ref _boundSubmarineWashVelocity);
+            SetComputeVectorHotIfChanged(ShaderIds.PropwashParamsId, DefaultPropwashParams, ref _boundPropwashParams);
+            SetComputeVectorHotIfChanged(
+                ShaderIds.FloatingOriginOffsetId,
+                new Vector4(floatingOriginOffset.x, floatingOriginOffset.y, floatingOriginOffset.z, 0f),
+                ref _boundFloatingOriginOffset);
+        }
+
+        private void RefreshColdGpuBindings(float dt)
         {
             _externalGpuBindingColdTickTimer -= math.max(0f, dt);
             if (!_externalGpuBindingsDirty && _externalGpuBindingColdTickTimer > 0f)
@@ -882,9 +977,6 @@ namespace Hecton8.Environment
             RefreshAbyssalFlowBinding();
             RefreshCaveSdfBinding();
             RefreshTerrainHeightBinding();
-            SetComputeVectorIfChanged(ShaderIds.SubmarineWashSphereId, Shader.GetGlobalVector(ShaderIds.SubmarineWashSphereId), ref _boundSubmarineWashSphere);
-            SetComputeVectorIfChanged(ShaderIds.SubmarineWashVelocityId, Shader.GetGlobalVector(ShaderIds.SubmarineWashVelocityId), ref _boundSubmarineWashVelocity);
-            SetComputeVectorIfChanged(ShaderIds.PropwashParamsId, DefaultPropwashParams, ref _boundPropwashParams);
             SetComputeVectorIfChanged(ShaderIds.FlowSynchronyParamsId, ResolveFlowSynchronyParams(), ref _boundFlowSynchronyParams);
             _externalGpuBindingColdTickTimer = ExternalGpuBindingColdTickSeconds;
             _externalGpuBindingsDirty = false;
@@ -927,6 +1019,7 @@ namespace Hecton8.Environment
             Texture sdfTexture = _emptyCaveSdfTexture;
             Matrix4x4 worldToLocal = IdentityMatrix;
             Vector4 halfExtentsAndRange = Vector4.zero;
+            Vector4 invDoubleHalfExtents = Vector4.zero;
             float active = 0f;
 
             HectonCaveVoxelLightingVolume caveVolume = HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
@@ -934,11 +1027,13 @@ namespace Hecton8.Environment
                 caveVolume.TryGetPublishedGpuSdfPayload(
                     out Texture3D publishedSdfTexture,
                     out Matrix4x4 publishedWorldToLocal,
-                    out Vector4 publishedHalfExtentsAndRange))
+                    out Vector4 publishedHalfExtentsAndRange,
+                    out Vector4 publishedInvDoubleHalfExtents))
             {
                 sdfTexture = publishedSdfTexture;
                 worldToLocal = publishedWorldToLocal;
                 halfExtentsAndRange = publishedHalfExtentsAndRange;
+                invDoubleHalfExtents = publishedInvDoubleHalfExtents;
                 active = 1f;
             }
 
@@ -951,6 +1046,7 @@ namespace Hecton8.Environment
             SetComputeBinaryFloatIfChanged(ShaderIds.CaveVoxelActiveId, active, ref _boundCaveVoxelActive);
             SetComputeMatrixIfChanged(ShaderIds.CaveVoxelWorldToLocalId, worldToLocal, ref _boundCaveVoxelWorldToLocal);
             SetComputeVectorIfChanged(ShaderIds.CaveVoxelHalfExtentsId, halfExtentsAndRange, ref _boundCaveVoxelHalfExtents);
+            SetComputeVectorIfChanged(ShaderIds.CaveVoxelInvDoubleHalfExtentsId, invDoubleHalfExtents, ref _boundCaveVoxelInvDoubleHalfExtents);
         }
 
         private void RefreshTerrainHeightBinding()
@@ -1042,17 +1138,13 @@ namespace Hecton8.Environment
             if (_underwaterActive && dt > 0f)
             {
                 float speedSq = math.lengthsq((float3)cameraVelocity);
-                float fullVelocity = math.max(1f, speedLineFullVelocity);
-                float startVelocity = fullVelocity * 0.72f;
-                float fullVelocitySq = fullVelocity * fullVelocity;
-                float startVelocitySq = startVelocity * startVelocity;
-                float speed01 = math.saturate((speedSq - startVelocitySq) * math.rcp(math.max(0.01f, fullVelocitySq - startVelocitySq)));
+                float speed01 = math.saturate((speedSq - _speedLineStartVelocitySq) * _speedLineInvVelocityBandSq);
                 targetIntensity = speed01 * speed01 * (3f - 2f * speed01);
             }
 
-            float blendT = FastDecayBlend(math.max(0.1f, speedLineResponseSharpness), math.max(0f, dt));
+            float blendT = FastDecayBlend(_speedLineResponseSpeed, math.max(0f, dt));
             _speedLineIntensity += (targetIntensity - _speedLineIntensity) * blendT;
-            return 1f + (math.max(1f, speedLineMaxStretch) - 1f) * _speedLineIntensity;
+            return 1f + _speedLineStretchDelta * _speedLineIntensity;
         }
 
         private static float FastDecayBlend(float speed, float deltaTime)
@@ -1536,6 +1628,8 @@ namespace Hecton8.Environment
             ResetGpuBindingCaches();
             _externalGpuBindingsDirty = true;
             _bootstrapParticles = null;
+            _allocatedParticleCapacity = 0;
+            _debugAllocatedParticleCapacity = 0;
             ResetSpeedLineHistory();
         }
 
@@ -1561,10 +1655,12 @@ namespace Hecton8.Environment
             _boundAbyssalFlowCenter = Vector4.zero;
             _boundAbyssalFlowSpacing = Vector4.zero;
             _boundCaveVoxelHalfExtents = Vector4.zero;
+            _boundCaveVoxelInvDoubleHalfExtents = Vector4.zero;
             _boundTerrainHeightRect = Vector4.zero;
             _boundTerrainHeightScale = Vector4.zero;
             _boundSubmarineWashSphere = Vector4.zero;
             _boundSubmarineWashVelocity = Vector4.zero;
+            _boundFloatingOriginOffset = InvalidVector;
             _boundPropwashParams = Vector4.zero;
             _boundEmissionParams = InvalidVector;
             _boundBubbleParams = InvalidVector;
@@ -1624,7 +1720,7 @@ namespace Hecton8.Environment
 
         private int ResolveActiveParticleCount(float effectiveDensityScale)
         {
-            int capacity = ResolveConfiguredCapacity();
+            int capacity = _allocatedParticleCapacity > 0 ? _allocatedParticleCapacity : ResolveConfiguredCapacity();
             float densityScale = math.saturate(effectiveDensityScale);
             if (densityScale <= ActiveDensityEpsilon)
             {
@@ -1672,7 +1768,33 @@ namespace Hecton8.Environment
 
         private int ResolveConfiguredCapacity()
         {
-            return math.clamp(maxParticles, 64, MaxMarineSnowParticleCapacity);
+            return math.clamp(ResolveScalabilityMatrixParticleCapacity(), 64, MaxMarineSnowParticleCapacity);
+        }
+
+        private int ResolveScalabilityMatrixParticleCapacity()
+        {
+            HectonQualityTier qualityTier = GlobalRegistry.QualityTier;
+            int particleCapacity;
+            switch (qualityTier)
+            {
+                case HectonQualityTier.Ultra:
+                case HectonQualityTier.High:
+                    particleCapacity = HighMarineSnowParticleCapacity;
+                    break;
+                case HectonQualityTier.Mid:
+                    particleCapacity = MidMarineSnowParticleCapacity;
+                    break;
+                case HectonQualityTier.Low:
+                case HectonQualityTier.Mx350:
+                case HectonQualityTier.Unknown:
+                default:
+                    particleCapacity = Mx350MarineSnowParticleCapacity;
+                    break;
+            }
+
+            _debugScalabilityQualityTier = qualityTier;
+            _debugScalabilityParticleCapacity = particleCapacity;
+            return particleCapacity;
         }
     }
 }

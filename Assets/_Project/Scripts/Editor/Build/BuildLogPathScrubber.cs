@@ -17,8 +17,6 @@ namespace Hecton8.Editor.Build
         private const string OutputDirectory = "Library/Hecton8/SanitizedBuildLogs";
         private const string MachinePathToken = "[H8_BUILD_MACHINE]";
         private static readonly Encoding NoBomUtf8 = new UTF8Encoding(false);
-        private static readonly string ProjectRoot = NormalizePath(Directory.GetCurrentDirectory());
-        private static readonly string UserRoot = NormalizePath(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
 
         public int callbackOrder => 10000;
 
@@ -87,14 +85,6 @@ namespace Hecton8.Editor.Build
             Directory.CreateDirectory(OutputDirectory);
         }
 
-        private static string NormalizePath(string path)
-        {
-            if (string.IsNullOrEmpty(path))
-                return string.Empty;
-
-            return NormalizeSlashes(Path.GetFullPath(path));
-        }
-
         private static unsafe string ScrubAbsolutePathFragments(string value)
         {
             char[] output = null;
@@ -107,14 +97,37 @@ namespace Hecton8.Editor.Build
             {
                 while (index < value.Length)
                 {
+                    while (index < value.Length &&
+                           valuePtr[index] != ':' &&
+                           valuePtr[index] != '/')
+                    {
+                        index++;
+                    }
+
+                    if (index >= value.Length)
+                        break;
+
                     char current = valuePtr[index];
-                    if (current != '/' && !IsAsciiLetter(current))
+                    int pathStart = -1;
+                    if (current == '/')
+                    {
+                        pathStart = index;
+                    }
+                    else if (current == ':' &&
+                             index > 0 &&
+                             index + 1 < value.Length &&
+                             IsAsciiLetter(valuePtr[index - 1]) &&
+                             IsSlash(valuePtr[index + 1]))
+                    {
+                        pathStart = index - 1;
+                    }
+                    else
                     {
                         index++;
                         continue;
                     }
 
-                    if (!IsAbsolutePathStart(valuePtr, value.Length, index))
+                    if (!IsAbsolutePathStart(valuePtr, value.Length, pathStart))
                     {
                         index++;
                         continue;
@@ -124,17 +137,17 @@ namespace Hecton8.Editor.Build
                     output ??= new char[value.Length];
                     if (overflowBuilder != null)
                     {
-                        overflowBuilder.Append(value, copyStart, index - copyStart);
+                        overflowBuilder.Append(value, copyStart, pathStart - copyStart);
                         overflowBuilder.Append(MachinePathToken);
                     }
-                    else if (!TryAppend(value, copyStart, index - copyStart, MachinePathToken, ref output, ref outputIndex))
+                    else if (!TryAppend(value, copyStart, pathStart - copyStart, MachinePathToken, ref output, ref outputIndex))
                     {
                         overflowBuilder ??= CreateOverflowBuilder(value, copyStart, output, outputIndex);
-                        overflowBuilder.Append(value, copyStart, index - copyStart);
+                        overflowBuilder.Append(value, copyStart, pathStart - copyStart);
                         overflowBuilder.Append(MachinePathToken);
                     }
 
-                    index = FindPathEnd(valuePtr, value.Length, index);
+                    index = FindPathEnd(valuePtr, value.Length, pathStart);
                     copyStart = index;
                 }
             }
@@ -150,28 +163,6 @@ namespace Hecton8.Editor.Build
 
             CopyChars(value, copyStart, value.Length - copyStart, output, ref outputIndex);
             return new string(output, 0, outputIndex);
-        }
-
-        private static string NormalizeSlashes(string value)
-        {
-            StringBuilder builder = null;
-            int copyStart = 0;
-            for (int i = 0; i < value.Length; i++)
-            {
-                if (value[i] != '\\')
-                    continue;
-
-                builder ??= new StringBuilder(value.Length);
-                builder.Append(value, copyStart, i - copyStart);
-                builder.Append('/');
-                copyStart = i + 1;
-            }
-
-            if (builder == null)
-                return value;
-
-            builder.Append(value, copyStart, value.Length - copyStart);
-            return builder.ToString();
         }
 
         private static StringBuilder CreateOverflowBuilder(string value, int copyStart, char[] output, int outputIndex)

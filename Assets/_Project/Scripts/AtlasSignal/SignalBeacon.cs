@@ -403,9 +403,9 @@ namespace Hecton8.AtlasSignal
     public static class SignalBeaconRegistry
     {
         private const int Capacity = 32;
-        // COLD ALLOC: SignalBeacon[32] — active hash-only signal beacon registry — owner: SignalBeaconRegistry
+        // COLD ALLOC: SignalBeacon[32] - active hash-only signal beacon registry - owner: SignalBeaconRegistry
         private static readonly SignalBeacon[] _beacons = new SignalBeacon[Capacity];
-        // COLD ALLOC: SignalBeaconTelemetry[32] — cached beacon telemetry for O(1) PDA reads — owner: SignalBeaconRegistry
+        // COLD ALLOC: SignalBeaconTelemetry[32] - cached beacon telemetry for O(1) PDA reads - owner: SignalBeaconRegistry
         private static readonly SignalBeaconTelemetry[] _telemetrySlots = new SignalBeaconTelemetry[Capacity];
         private static SignalBeaconTelemetry _dominantTelemetry;
         private static uint _occupiedMask;
@@ -664,6 +664,7 @@ namespace Hecton8.AtlasSignal
                 ? math.max(0.001f, maxRangeMeters)
                 : 0.001d;
             double safeRangeSq = safeRange * safeRange;
+            double inverseSafeRangeSq = 1d / safeRangeSq;
             double distanceSq0 = AbsoluteUniversePosition.DistanceSq(in playerAup, in point0);
             double distanceSq1 = AbsoluteUniversePosition.DistanceSq(in playerAup, in point1);
             double distanceSq2 = AbsoluteUniversePosition.DistanceSq(in playerAup, in point2);
@@ -673,7 +674,7 @@ namespace Hecton8.AtlasSignal
 
             float strength = averageDistanceSq >= safeRangeSq
                 ? 0f
-                : math.saturate((float)(1d - (averageDistanceSq / safeRangeSq)));
+                : math.saturate((float)(1d - (averageDistanceSq * inverseSafeRangeSq)));
             float safeBaseErrorNoise = math.isfinite(baseErrorNoise01) ? baseErrorNoise01 : 1f;
             float safeErrorNoiseMultiplier = math.isfinite(errorNoiseMultiplier) ? math.max(1f, errorNoiseMultiplier) : 1f;
             float errorNoise = math.saturate(safeBaseErrorNoise * safeErrorNoiseMultiplier);
@@ -751,9 +752,11 @@ namespace Hecton8.AtlasSignal
             float safePhaseTolerance = math.isfinite(phaseTolerance01)
                 ? math.max(0.001f, phaseTolerance01)
                 : 0.001f;
-            float frequencyError01 = math.saturate(math.abs(safeInputFrequencyHz - safeTargetFrequencyHz) / safeFrequencyTolerance);
+            float inverseFrequencyTolerance = math.rcp(safeFrequencyTolerance);
+            float inversePhaseTolerance = math.rcp(safePhaseTolerance);
+            float frequencyError01 = math.saturate(math.abs(safeInputFrequencyHz - safeTargetFrequencyHz) * inverseFrequencyTolerance);
             float phaseDelta = math.abs(math.frac(safeInputPhase01 - safeTargetPhase01 + 0.5f) - 0.5f);
-            float phaseError01 = math.saturate(phaseDelta / safePhaseTolerance);
+            float phaseError01 = math.saturate(phaseDelta * inversePhaseTolerance);
             float waveSampleError = math.abs(EvaluateSineProxy(safeInputPhase01) - EvaluateSineProxy(safeTargetPhase01)) * 0.5f;
             return math.saturate(1f - ((frequencyError01 * 0.55f) + (phaseError01 * 0.35f) + (waveSampleError * 0.10f)));
         }

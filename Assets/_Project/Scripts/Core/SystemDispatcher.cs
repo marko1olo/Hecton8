@@ -888,6 +888,7 @@ namespace Hecton8.Core
         private void Update()
         {
             GlobalRegistry.PublishAbsoluteUniverseTime(Time.timeAsDouble);
+            GlobalRegistry.TickMathPrecisionTransition(Time.frameCount);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherUpdate);
 #endif
@@ -952,6 +953,7 @@ namespace Hecton8.Core
                     }
                 }
 
+                CombatDamageRuntime.FrameTick(deltaTime);
                 PredatorCognitionDomain.ScheduleFrameEvaluation(Time.frameCount);
                 _foveatedSimulationManager.ScheduleFrameJobs();
                 RunFixedStepAccumulator(CurrentFrameUnscaledDeltaTime, blockGameplayLanes);
@@ -1036,6 +1038,7 @@ namespace Hecton8.Core
                 }
                 AcousticOcclusionUtility.LateFrameTick();
                 PredatorCognitionDomain.LateFrameTick();
+                CombatDamageRuntime.LateFrameTick();
                 VoxelDynamicNavGridRuntime.CompletePendingDynamicObstacleUpdates();
             }
             finally
@@ -1782,6 +1785,7 @@ namespace Hecton8.Core
                 }
 
                 WorldSpatialHashGrid.SlowTickMaintenance(DefaultSlowTickIntervalSeconds);
+                CombatDamageRuntime.SlowTick(DefaultSlowTickIntervalSeconds);
             }
         }
 

@@ -235,7 +235,8 @@ namespace Hecton8.World
             if (!IsInitialized || !output.IsCreated || output.Length == 0)
                 return 0;
 
-            float3 safeForward = ResolveDominantAxisOrDefault(viewerForward, new float3(0f, 0f, 1f));
+            HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
+            float3 safeForward = DistanceMath.Normalize(viewerForward, 0f, scalabilityTier, new float3(0f, 0f, 1f));
             bool useForwardGate = minimumForwardDot > -1f;
             float safeMaxDistance = math.isfinite(maxDistanceMeters) && maxDistanceMeters > 0f
                 ? maxDistanceMeters
@@ -267,7 +268,7 @@ namespace Hecton8.World
 
                 if (useForwardGate)
                 {
-                    float3 direction = ResolveDominantAxisOrDefault(cameraRelative, safeForward);
+                    float3 direction = DistanceMath.Normalize(cameraRelative, distanceSq, scalabilityTier, safeForward);
                     if (math.dot(direction, safeForward) < minimumForwardDot)
                         continue;
                 }

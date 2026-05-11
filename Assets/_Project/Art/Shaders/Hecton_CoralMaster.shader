@@ -162,6 +162,11 @@ Shader "Hecton8/Flora/CoralMaster"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            half3 ResolveFloraNormalCheap(half3 value)
+            {
+                return (half3)HectonCoreLitSafeNormalize((float3)value);
+            }
+
             void ResolveFloraDominantAxisProjection(float3 positionWS, half3 normalWS, out float2 uv, out half dominantAxis)
             {
                 half3 absNormal = max(abs(normalWS), half3(0.0001h, 0.0001h, 0.0001h));
@@ -205,29 +210,12 @@ Shader "Hecton8/Flora/CoralMaster"
                 half3 tangentNormal = UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, uv), strength);
 
                 if (dominantAxis < 0.5h)
-                    return (half3)HectonCoreLitSafeNormalize(half3(0.0h, tangentNormal.y, tangentNormal.x));
+                    return ResolveFloraNormalCheap(half3(0.0h, tangentNormal.y, tangentNormal.x));
 
                 if (dominantAxis > 1.5h)
-                    return (half3)HectonCoreLitSafeNormalize(half3(tangentNormal.x, tangentNormal.y, 0.0h));
+                    return ResolveFloraNormalCheap(half3(tangentNormal.x, tangentNormal.y, 0.0h));
 
-                return (half3)HectonCoreLitSafeNormalize(half3(tangentNormal.x, 0.0h, tangentNormal.y));
-            }
-
-            half FastCoralSpecularPower01(half value, half exponent)
-            {
-                half v = saturate(value);
-                half v2 = v * v;
-                half v4 = v2 * v2;
-                half v8 = v4 * v4;
-                half v16 = v8 * v8;
-                half v32 = v16 * v16;
-                half v64 = v32 * v32;
-                half v128 = v64 * v64;
-                half v256 = v128 * v128;
-                half low = lerp(v8, v16, saturate((exponent - 8.0h) * 0.125h));
-                half mid = lerp(v16, v64, saturate((exponent - 16.0h) * 0.02083333h));
-                half high = lerp(v64, v256, saturate((exponent - 64.0h) * 0.00520833h));
-                return lerp(lerp(low, mid, step(16.0h, exponent)), high, step(64.0h, exponent));
+                return ResolveFloraNormalCheap(half3(tangentNormal.x, 0.0h, tangentNormal.y));
             }
 
             half ComputeCurvatureWetness(half3 normalWS)
@@ -269,7 +257,7 @@ Shader "Hecton8/Flora/CoralMaster"
                 LODFadeCrossFade(input.positionCS);
                 #endif
 
-                half3 baseNormalWS = (half3)HectonCoreLitSafeNormalize(input.normalWS);
+                half3 baseNormalWS = ResolveFloraNormalCheap(input.normalWS);
                 half3 viewDirWS = SafeNormalize(input.viewDirWS);
                 half tintMask = saturate(input.color.r) * _VertexTintStrength;
                 half moisture = saturate(input.color.g);
@@ -296,15 +284,15 @@ Shader "Hecton8/Flora/CoralMaster"
                         baseNormalWS,
                         _DetailNormalStrength);
 
-                half3 normalWS = (half3)HectonCoreLitSafeNormalize(baseNormalWS + triplanarNormalWS + detailNormalWS);
+                half3 normalWS = ResolveFloraNormalCheap(baseNormalWS + triplanarNormalWS + detailNormalWS);
                 float2 detailUv = samplePositionWS.xz * (_CausticScale * 0.06h)
                     + float2(_Time.y * _CausticSpeed, _Time.y * (_CausticSpeed * 0.61h));
                 half detailSample = (half)HectonCoreLitValueNoise2(detailUv);
 
                 Light mainLight = GetMainLight();
-                half3 lightDir = (half3)HectonCoreLitSafeNormalize(mainLight.direction);
+                half3 lightDir = (half3)mainLight.direction;
                 half NdotL = saturate(dot(normalWS, lightDir));
-                half wrapDiffuse = max(0.0h, dot(normalWS, lightDir) + 0.5h) / 1.5h;
+                half wrapDiffuse = max(0.0h, dot(normalWS, lightDir) + 0.5h) * 0.6666667h;
                 half rim = (half)HectonCoreLitFastPower01(1.0h - saturate(dot(normalWS, viewDirWS)), _RimPower);
 
                 half floorZoneInfluence = saturate(_HectonFloorBiolumStrength);
@@ -334,16 +322,10 @@ Shader "Hecton8/Flora/CoralMaster"
                 half3 subsurface = _SubsurfaceColor.rgb * (wrapDiffuse * _SubsurfaceStrength * causticMask);
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
                 
-                // PBR Specular
-                half3 halfDir = (half3)HectonCoreLitSafeNormalize(lightDir + viewDirWS);
-                half NdotH = saturate(dot(normalWS, halfDir));
-                half specularBase = FastCoralSpecularPower01(NdotH, lerp(8.0h, 60.0h, 1.0h - roughness)) * (1.0h - roughness);
-                half3 specular = specularBase * 0.22h * glossNoise * mainLight.color;
-
-                // Secondary "Slime" Specular (Master Grade Polish)
-                half slimeRoughness = saturate(roughness * 0.4h);
-                half slimeNdotH = FastCoralSpecularPower01(NdotH, lerp(128.0h, 256.0h, 1.0h - slimeRoughness));
-                half3 slimeSpecular = slimeNdotH * wetness * 0.45h * mainLight.color;
+                half specularSheen = NdotL * NdotL;
+                half3 specular = specularSheen * (1.0h - roughness) * 0.22h * glossNoise * mainLight.color;
+                half slimeSheen = specularSheen * specularSheen;
+                half3 slimeSpecular = slimeSheen * wetness * 0.45h * mainLight.color;
 
                 half3 biolum = volumeBiolum * (0.5h + thickness * 0.5h);
                 [branch]

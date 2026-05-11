@@ -19,10 +19,11 @@ namespace Hecton8.World
         private static readonly int _CaveVoxelActiveId = Shader.PropertyToID("_HectonCaveVoxelActive");
         private static readonly int _CaveVoxelWorldToLocalId = Shader.PropertyToID("_HectonCaveVoxelWorldToLocal");
         private static readonly int _CaveVoxelHalfExtentsId = Shader.PropertyToID("_HectonCaveVoxelHalfExtents");
+        private static readonly int _CaveVoxelInvDoubleHalfExtentsId = Shader.PropertyToID("_HectonCaveVoxelInvDoubleHalfExtents");
         private static readonly int _CaveVoxelAoParamsId = Shader.PropertyToID("_HectonCaveVoxelAoParams");
         private static readonly int _CaveVoxelSdfTexId = Shader.PropertyToID("_HectonCaveVoxelSdfTex");
 
-        [Header("── Runtime Volume ──────────────────")]
+        [Header("Runtime Volume")]
         [SerializeField]
         [Tooltip("Optional explicit follow target. When null, this GameObject transform is used.")]
         private Transform followTarget;
@@ -55,7 +56,7 @@ namespace Hecton8.World
         [Tooltip("Signed-distance clamp expressed in cell diagonals before encoding to R8.")]
         private float sdfRangeInCellDiagonals = 4f;
 
-        [Header("── Refresh ──────────────────")]
+        [Header("Refresh")]
         [SerializeField, Range(0.1f, 4f)]
         [Tooltip("Rebuild threshold in meters for follow-target drift.")]
         private float positionRefreshThreshold = 1.25f;
@@ -64,7 +65,7 @@ namespace Hecton8.World
         [Tooltip("Optional world-space offset applied to the follow target before centering the volume.")]
         private float verticalCenterOffset = 0f;
 
-        [Header("── Ambient Response ──────────────────")]
+        [Header("Ambient Response")]
         [SerializeField, Range(0.02f, 1.5f)]
         [Tooltip("Signed-distance start radius where ambient darkening begins.")]
         private float aoFadeStartMeters = 0.15f;
@@ -81,7 +82,7 @@ namespace Hecton8.World
         [Tooltip("Minimum surviving ambient factor when the sampled position is inside or hugging solid rock.")]
         private float aoFloor = 0.18f;
 
-        [Header("── Diagnostics ──────────────────")]
+        [Header("Diagnostics")]
         [SerializeField] private bool _debugHasValidVolume;
         [SerializeField] private int _debugSliceCursor;
         [SerializeField] private Vector3 _debugPublishedCenterWs;
@@ -223,7 +224,8 @@ namespace Hecton8.World
         internal bool TryGetPublishedGpuSdfPayload(
             out Texture3D sdfTexture,
             out Matrix4x4 worldToLocal,
-            out Vector4 halfExtentsAndRange)
+            out Vector4 halfExtentsAndRange,
+            out Vector4 invDoubleHalfExtents)
         {
             sdfTexture = _voxelDensityTexture;
             worldToLocal = _publishedWorldToLocal;
@@ -232,6 +234,7 @@ namespace Hecton8.World
                 _publishedHalfExtents.y,
                 _publishedHalfExtents.z,
                 _publishedSdfRange);
+            invDoubleHalfExtents = ResolveInvDoubleHalfExtents(_publishedHalfExtents);
             return _hasValidPublishedVolume &&
                    sdfTexture != null &&
                    halfExtentsAndRange.x > 0f &&
@@ -536,11 +539,13 @@ namespace Hecton8.World
             if (!hasVolume)
             {
                 Shader.SetGlobalVector(_CaveVoxelHalfExtentsId, Vector4.zero);
+                Shader.SetGlobalVector(_CaveVoxelInvDoubleHalfExtentsId, Vector4.zero);
                 Shader.SetGlobalMatrix(_CaveVoxelWorldToLocalId, Matrix4x4.identity);
                 return;
             }
 
             Shader.SetGlobalMatrix(_CaveVoxelWorldToLocalId, _publishedWorldToLocal);
+            Shader.SetGlobalVector(_CaveVoxelInvDoubleHalfExtentsId, ResolveInvDoubleHalfExtents(_publishedHalfExtents));
             Shader.SetGlobalVector(
                 _CaveVoxelHalfExtentsId,
                 new Vector4(
@@ -555,7 +560,17 @@ namespace Hecton8.World
         {
             Shader.SetGlobalFloat(_CaveVoxelActiveId, 0f);
             Shader.SetGlobalVector(_CaveVoxelHalfExtentsId, Vector4.zero);
+            Shader.SetGlobalVector(_CaveVoxelInvDoubleHalfExtentsId, Vector4.zero);
             Shader.SetGlobalMatrix(_CaveVoxelWorldToLocalId, Matrix4x4.identity);
+        }
+
+        private static Vector4 ResolveInvDoubleHalfExtents(Vector3 halfExtents)
+        {
+            return new Vector4(
+                0.5f / Mathf.Max(0.001f, halfExtents.x),
+                0.5f / Mathf.Max(0.001f, halfExtents.y),
+                0.5f / Mathf.Max(0.001f, halfExtents.z),
+                0f);
         }
 
         private static float EstimateLength3D(Vector3 value)

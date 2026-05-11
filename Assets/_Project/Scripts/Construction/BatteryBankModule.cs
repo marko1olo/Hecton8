@@ -17,7 +17,7 @@ namespace Hecton8.Construction
     {
         private const float DispatchDeltaTimeSeconds = 0.5f;
 
-        [Header("── Storage ──────────────────────────────")]
+        [Header("Storage")]
         [Tooltip("Total storable energy in watt-seconds.")]
         [SerializeField, Min(1f)] private float energyCapacityWattSeconds = 120000f;
 
@@ -38,11 +38,11 @@ namespace Hecton8.Construction
 
         [Tooltip("Power-priority used only while the bank is charging as a consumer.")]
         [SerializeField, Range(0, 100)] private int chargePriority = 96;
-        [Header("â”€â”€ Thermal Loss â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("Thermal Loss")]
         [Tooltip("Optional atmosphere owner that receives battery efficiency losses as room heat.")]
         [SerializeField] private SubmarineAtmosphereSystem atmosphereSystem;
 
-        [Header("── Diagnostics ─────────────────────────")]
+        [Header("Diagnostics")]
         [SerializeField] private bool _debugHasPower = true;
         [SerializeField] private float _debugStoredEnergyWattSeconds;
         [SerializeField] private float _debugChargeNormalized = 1f;

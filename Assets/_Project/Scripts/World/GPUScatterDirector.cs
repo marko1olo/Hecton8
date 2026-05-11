@@ -143,15 +143,14 @@ namespace Hecton8.World
         private GraphicsBuffer _argsBuffer;
         private GraphicsBuffer _modInstanceMatrixBuffer;
         private NativeArray<float4x4> _modInstanceMatrices;
-        private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _argsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: IndirectDrawIndexedArgs[1] — indirect indexed args upload cache for GPU scatter — owner: GPUScatterDirector
-        private readonly Plane[] _frustumPlaneCache = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] — reusable frustum plane cache for GPU scatter dispatch — owner: GPUScatterDirector
-        private readonly Vector4[] _frustumPlaneUpload = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] — reusable GPU frustum plane upload payload for GPU scatter dispatch — owner: GPUScatterDirector
+        private readonly Plane[] _frustumPlaneCache = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - reusable frustum plane cache for GPU scatter dispatch - owner: GPUScatterDirector
+        private readonly Vector4[] _frustumPlaneUpload = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] - reusable GPU frustum plane upload payload for GPU scatter dispatch - owner: GPUScatterDirector
         private int _modInstanceCount;
         private int _lastUploadedModInstanceCount = -1;
         private int _lastRequestedGrid = -1;
         private int _lastClampedCapacity = -1;
         private int _lastResolvedCapacity = -1;
-        private Mesh _argsUploadMesh;
+        private Mesh _argsBufferMesh;
 
         private void Awake()
         {
@@ -234,7 +233,7 @@ namespace Hecton8.World
             int heightResolution = math.max(1, heightPayload.HeightmapResolution);
             int heightMaxPixel = math.max(0, heightResolution - 1);
             float heightResolutionMinusOne = math.max(1f, heightMaxPixel);
-            float heightTexelSize = 1f / heightResolutionMinusOne;
+            float heightTexelSize = math.rcp(heightResolutionMinusOne);
             Vector3 terrainSize = heightPayload.TerrainSize;
             float terrainSizeX = math.isfinite(terrainSize.x) ? math.max(terrainSize.x, 0.001f) : 0.001f;
             float terrainSizeZ = math.isfinite(terrainSize.z) ? math.max(terrainSize.z, 0.001f) : 0.001f;
@@ -248,7 +247,7 @@ namespace Hecton8.World
             scatterCompute.SetFloat(_HeightTexelSizeId, heightTexelSize);
             scatterCompute.SetVector(_TerrainPositionId, heightPayload.TerrainPosition);
             scatterCompute.SetVector(_TerrainSizeId, terrainSize);
-            scatterCompute.SetVector(_TerrainSizeInvXZId, new Vector4(1f / terrainSizeX, 1f / terrainSizeZ, 0f, 0f));
+            scatterCompute.SetVector(_TerrainSizeInvXZId, new Vector4(math.rcp(terrainSizeX), math.rcp(terrainSizeZ), 0f, 0f));
             scatterCompute.SetVector(_FieldRectId, fieldRect);
             scatterCompute.SetInt(_GridResolutionId, _gridResolution);
             scatterCompute.SetInt(_CandidateCountId, candidateCount);
@@ -362,12 +361,12 @@ namespace Hecton8.World
         {
             if (!_modInstanceMatrices.IsCreated)
             {
-                _modInstanceMatrices = new NativeArray<float4x4>(MaxModInstancesPerFrame, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4x4>[1024] — mod instancing matrix upload staging — owner: GPUScatterDirector
+                _modInstanceMatrices = new NativeArray<float4x4>(MaxModInstancesPerFrame, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4x4>[1024] - mod instancing matrix upload staging - owner: GPUScatterDirector
                 NativeMemorySentinel.RegisterNativeArray(_modInstanceMatrices, NativeMemoryOwner, nameof(_modInstanceMatrices), NativeMemoryLifetime);
             }
 
             if (_modInstanceMatrixBuffer == null)
-                _modInstanceMatrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, MaxModInstancesPerFrame, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[1024] — reserved mod instancing matrix layer — owner: GPUScatterDirector
+                _modInstanceMatrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, MaxModInstancesPerFrame, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[1024] - reserved mod instancing matrix layer - owner: GPUScatterDirector
         }
 
         private bool TrySubmitModInstanceMatrix(in float4x4 matrix)
@@ -409,7 +408,7 @@ namespace Hecton8.World
                 return;
 
             ReleaseBuffer(ref _instanceBuffer);
-            _instanceBuffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<ScatterInstanceGpuData>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[gridResolution²] — persistent GPU scatter instance payload buffer — owner: GPUScatterDirector
+            _instanceBuffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<ScatterInstanceGpuData>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[gridResolution^2] - persistent GPU scatter instance payload buffer - owner: GPUScatterDirector
         }
 
         private void EnsureVisibleIndexBufferCapacity(int requiredCapacity)
@@ -418,24 +417,29 @@ namespace Hecton8.World
                 return;
 
             ReleaseBuffer(ref _visibleIndicesBuffer);
-            _visibleIndicesBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, requiredCapacity, UnsafeUtility.SizeOf<uint>()); // COLD ALLOC: GraphicsBuffer[gridResolution²] — append visible-index buffer for GPU scatter indirect draw — owner: GPUScatterDirector
+            _visibleIndicesBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, requiredCapacity, UnsafeUtility.SizeOf<uint>()); // COLD ALLOC: GraphicsBuffer[gridResolution^2] - append visible-index buffer for GPU scatter indirect draw - owner: GPUScatterDirector
         }
 
         private void EnsureIndirectArgsBuffer()
         {
             if (_argsBuffer == null)
-                _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] — indirect indexed draw args for GPU scatter — owner: GPUScatterDirector
+                _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - indirect indexed draw args for GPU scatter - owner: GPUScatterDirector
 
-            if (ReferenceEquals(_argsUploadMesh, scatterMesh))
+            if (ReferenceEquals(_argsBufferMesh, scatterMesh))
                 return;
 
-            _argsUploadMesh = scatterMesh;
-            _argsUpload[0].indexCountPerInstance = scatterMesh != null ? scatterMesh.GetIndexCount(0) : 0u;
-            _argsUpload[0].instanceCount = 0u;
-            _argsUpload[0].startIndex = scatterMesh != null ? scatterMesh.GetIndexStart(0) : 0u;
-            _argsUpload[0].baseVertexIndex = scatterMesh != null ? (uint)math.max(0, scatterMesh.GetBaseVertex(0)) : 0u;
-            _argsUpload[0].startInstance = 0u;
-            GraphicsBufferUploadUtility.UploadArray(_argsBuffer, _argsUpload, 1);
+            _argsBufferMesh = scatterMesh;
+            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
+                _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            {
+                indexCountPerInstance = scatterMesh != null ? scatterMesh.GetIndexCount(0) : 0u,
+                instanceCount = 0u,
+                startIndex = scatterMesh != null ? scatterMesh.GetIndexStart(0) : 0u,
+                baseVertexIndex = scatterMesh != null ? (uint)math.max(0, scatterMesh.GetBaseVertex(0)) : 0u,
+                startInstance = 0u
+            };
+            _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
         }
 
         private void PopulateFrustumPlaneUpload(Camera cullCamera)
@@ -484,7 +488,7 @@ namespace Hecton8.World
             _lastRequestedGrid = -1;
             _lastClampedCapacity = -1;
             _lastResolvedCapacity = -1;
-            _argsUploadMesh = null;
+            _argsBufferMesh = null;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)

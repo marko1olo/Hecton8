@@ -38,7 +38,7 @@ namespace Hecton8.Construction
     [DefaultExecutionOrder(-7000)]
     public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IGlobalRegistryHotSwapListener, IServiceHeartbeat, IServiceShutdown
     {
-        private const float SlowTickDeltaTime = 0.5f;
+        private const float SlowTickDeltaTime = 0.1f;
 
         internal static ConstructionManager ActiveRuntimeInstance { get; private set; }
 
@@ -104,6 +104,8 @@ namespace Hecton8.Construction
 
         /// <summary>Default flood state.</summary>
         private const bool  DefaultIsFlooded = false;
+        private const byte ModuleBlitFlagFlooded = 1 << 0;
+        private const byte ModuleBlitFlagInteriorReef = 1 << 1;
 
         // PUBLIC API - QUERIES
 
@@ -486,6 +488,7 @@ namespace Hecton8.Construction
             dto.EnsureCapacity();
             dto.graphNodeCount = 0;
             dto.graphEdgeCount = 0;
+            dto.moduleBlitCount = 0;
 
             int moduleIndex = 0;
             int count = _spawnedModules.Count;
@@ -556,6 +559,7 @@ namespace Hecton8.Construction
                     moduleDto.co2Normalized = baseModule.Co2Normalized;
                     moduleDto.isFlooded = baseModule.IsFlooded;
                     moduleDto.failureMode = (byte)baseModule.CurrentFailureMode;
+                    moduleDto.health = PackHealthByte(baseModule.CurrentIntegrity, baseModule.MaxIntegrity);
                     moduleDto.floodedReefFloodSeconds = baseModule.FloodedReefFloodSeconds;
                     moduleDto.interiorReefInfestationActive = baseModule.InteriorReefInfestationActive;
                 }
@@ -567,6 +571,7 @@ namespace Hecton8.Construction
                     moduleDto.co2Normalized = 0f;
                     moduleDto.isFlooded = DefaultIsFlooded;
                     moduleDto.failureMode = (byte)BaseModuleFailureMode.None;
+                    moduleDto.health = byte.MaxValue;
                     moduleDto.floodedReefFloodSeconds = 0f;
                     moduleDto.interiorReefInfestationActive = false;
                 }
@@ -588,11 +593,13 @@ namespace Hecton8.Construction
 
                 dto.modules[moduleIndex] = moduleDto;
                 dto.graphNodes[moduleIndex] = graphNodeDto;
+                dto.moduleBlitRecords[moduleIndex] = BuildModuleBlitRecord(moduleDto, graphNodeDto);
                 moduleIndex++;
             }
 
             dto.moduleCount = moduleIndex;
             dto.graphNodeCount = moduleIndex;
+            dto.moduleBlitCount = moduleIndex;
             PopulateGraphEdges(ref dto, moduleIndex);
         }
 
@@ -843,6 +850,62 @@ namespace Hecton8.Construction
         // -----------------------------------------------------------------------------
         //  PRIVATE - COLLECTION HELPERS (Zero GC)
         // -----------------------------------------------------------------------------
+
+        private static ModuleBlitDTO BuildModuleBlitRecord(in ModuleDTO moduleDto, in ModuleGraphNodeDTO graphNodeDto)
+        {
+            byte flags = 0;
+            if (moduleDto.isFlooded)
+                flags |= ModuleBlitFlagFlooded;
+            if (moduleDto.interiorReefInfestationActive)
+                flags |= ModuleBlitFlagInteriorReef;
+
+            return new ModuleBlitDTO
+            {
+                prefabHashId = HashStableString(moduleDto.prefabId),
+                moduleHashId = graphNodeDto.moduleHashId,
+                aupGridX = graphNodeDto.aupGridX,
+                aupGridY = graphNodeDto.aupGridY,
+                aupGridZ = graphNodeDto.aupGridZ,
+                aupLocalX = graphNodeDto.aupLocalX,
+                aupLocalY = graphNodeDto.aupLocalY,
+                aupLocalZ = graphNodeDto.aupLocalZ,
+                rotX = graphNodeDto.rotX,
+                rotY = graphNodeDto.rotY,
+                rotZ = graphNodeDto.rotZ,
+                rotW = graphNodeDto.rotW,
+                health = moduleDto.health,
+                flags = flags,
+                failureMode = moduleDto.failureMode,
+                reserved = 0
+            };
+        }
+
+        private static byte PackHealthByte(float currentIntegrity, float maxIntegrity)
+        {
+            if (!float.IsFinite(currentIntegrity) || currentIntegrity <= 0f)
+                return 0;
+
+            float safeMaxIntegrity = float.IsFinite(maxIntegrity) && maxIntegrity > 0.001f
+                ? maxIntegrity
+                : DefaultIntegrity;
+            int packed = Mathf.RoundToInt(Mathf.Clamp01(currentIntegrity / safeMaxIntegrity) * 255f);
+            return (byte)Mathf.Clamp(packed, 0, 255);
+        }
+
+        private static int HashStableString(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return 0;
+
+            unchecked
+            {
+                int hash = (int)2166136261u;
+                for (int i = 0; i < value.Length; i++)
+                    hash = (hash ^ value[i]) * 16777619;
+
+                return hash;
+            }
+        }
 
         /// <summary>
         /// Checks whether the module reference is already registered. O(n), but only

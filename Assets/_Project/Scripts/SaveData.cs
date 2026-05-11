@@ -20,6 +20,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts;
 using Hecton8.Narrative;
 using Hecton8.World;
 using Unity.Collections;
@@ -46,7 +48,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
-        public const int CurrentVersion = 62; // v62: packed audio-log discovery flags and AUP narrative trigger mask.
+        public const int CurrentVersion = 63; // v63: construction module health mirror and 64-byte MMF blit records.
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -616,6 +618,8 @@ namespace Hecton8.SaveSystem
         public ModuleGraphNodeDTO[] graphNodes;
         public int graphEdgeCount;
         public ModuleGraphEdgeDTO[] graphEdges;
+        public int moduleBlitCount;
+        public ModuleBlitDTO[] moduleBlitRecords;
         public const int MaxModules = 256;
         public const int MaxGraphEdges = MaxModules * 6;
 
@@ -629,7 +633,36 @@ namespace Hecton8.SaveSystem
 
             if (graphEdges == null || graphEdges.Length < MaxGraphEdges)
                 graphEdges = new ModuleGraphEdgeDTO[MaxGraphEdges];
+
+            if (moduleBlitRecords == null || moduleBlitRecords.Length < MaxModules)
+                moduleBlitRecords = new ModuleBlitDTO[MaxModules];
         }
+    }
+
+    /// <summary>
+    /// Fixed 64-byte construction module record for unmanaged binary/MMF copy.
+    /// Existing ModuleDTO remains the managed compatibility DTO because it contains strings and arrays.
+    /// </summary>
+    [Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    public struct ModuleBlitDTO
+    {
+        public int prefabHashId;
+        public int moduleHashId;
+        public long aupGridX;
+        public long aupGridY;
+        public long aupGridZ;
+        public float aupLocalX;
+        public float aupLocalY;
+        public float aupLocalZ;
+        public float rotX;
+        public float rotY;
+        public float rotZ;
+        public float rotW;
+        public byte health;
+        public byte flags;
+        public byte failureMode;
+        public byte reserved;
     }
 
     [Serializable]
@@ -1151,6 +1184,7 @@ namespace Hecton8.SaveSystem
         public float co2Normalized;
         public bool isFlooded;
         public byte failureMode;
+        public byte health;
         public float floodedReefFloodSeconds;
         public bool interiorReefInfestationActive;
         public int cultivationSlotCount;

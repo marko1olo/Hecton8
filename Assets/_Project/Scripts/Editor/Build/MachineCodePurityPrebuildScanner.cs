@@ -148,7 +148,8 @@ namespace Hecton8.Editor.Build
 
         private static bool HasStrictDefine()
         {
-            string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup);
+            NamedBuildTarget target = NamedBuildTarget.FromBuildTargetGroup(EditorUserBuildSettings.selectedBuildTargetGroup);
+            string defines = PlayerSettings.GetScriptingDefineSymbols(target);
             return defines.IndexOf(StrictDefine, StringComparison.Ordinal) >= 0;
         }
 

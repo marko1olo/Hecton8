@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Core;
-using Hecton8.Narrative;
+using Hecton8.Core.Contracts;
 using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections;
@@ -863,7 +863,8 @@ namespace Hecton8.SaveSystem
                 && writer.WriteInt(value.graphNodeCount)
                 && WriteModuleGraphNodeArray(ref writer, value.graphNodes)
                 && writer.WriteInt(value.graphEdgeCount)
-                && WriteModuleGraphEdgeArray(ref writer, value.graphEdges);
+                && WriteModuleGraphEdgeArray(ref writer, value.graphEdges)
+                && writer.WriteStructArraySlice(value.moduleBlitRecords, value.moduleBlitCount);
         }
 
         private static bool ReadConstruction(ref BufferReader reader, int version, out ConstructionDTO value)
@@ -877,10 +878,25 @@ namespace Hecton8.SaveSystem
 
             if (version >= 47)
             {
-                return reader.ReadInt(out value.graphNodeCount)
-                    && ReadModuleGraphNodeArray(ref reader, out value.graphNodes)
-                    && reader.ReadInt(out value.graphEdgeCount)
-                    && ReadModuleGraphEdgeArray(ref reader, out value.graphEdges);
+                if (!reader.ReadInt(out value.graphNodeCount) ||
+                    !ReadModuleGraphNodeArray(ref reader, out value.graphNodes) ||
+                    !reader.ReadInt(out value.graphEdgeCount) ||
+                    !ReadModuleGraphEdgeArray(ref reader, out value.graphEdges))
+                {
+                    return false;
+                }
+
+                if (version >= 63)
+                {
+                    if (!reader.ReadStructArray(out value.moduleBlitRecords))
+                        return false;
+
+                    value.moduleBlitCount = value.moduleBlitRecords != null
+                        ? Math.Clamp(value.moduleBlitRecords.Length, 0, ConstructionDTO.MaxModules)
+                        : 0;
+                }
+
+                return true;
             }
 
             value.graphNodeCount = 0;
@@ -1408,6 +1424,7 @@ namespace Hecton8.SaveSystem
                 && writer.WriteFloat(value.co2Normalized)
                 && writer.WriteBool(value.isFlooded)
                 && writer.WriteByte(value.failureMode)
+                && writer.WriteByte(value.health)
                 && writer.WriteFloat(value.floodedReefFloodSeconds)
                 && writer.WriteBool(value.interiorReefInfestationActive)
                 && writer.WriteInt(value.cultivationSlotCount)
@@ -1448,6 +1465,16 @@ namespace Hecton8.SaveSystem
             if (!ok)
                 return false;
 
+            if (version >= 63)
+            {
+                if (!reader.ReadByte(out value.health))
+                    return false;
+            }
+            else
+            {
+                value.health = PackLegacyModuleHealthByte(value.integrity);
+            }
+
             if (version >= 49)
             {
                 if (!reader.ReadFloat(out value.floodedReefFloodSeconds) ||
@@ -1486,6 +1513,14 @@ namespace Hecton8.SaveSystem
 
             value.cultivationQuality01 = null;
             return true;
+        }
+
+        private static byte PackLegacyModuleHealthByte(float integrity)
+        {
+            if (!math.isfinite(integrity) || integrity <= 0f)
+                return 0;
+
+            return (byte)math.clamp((int)math.round(math.saturate(integrity * 0.01f) * 255f), 0, 255);
         }
 
         private static bool WriteModuleGraphNode(ref BufferWriter writer, in ModuleGraphNodeDTO value)

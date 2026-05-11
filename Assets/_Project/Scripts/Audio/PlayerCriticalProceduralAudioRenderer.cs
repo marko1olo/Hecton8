@@ -217,6 +217,45 @@ namespace Hecton8.Audio
         private const int ImpactEventQueueCapacity = 64;
         private const int ImpactEventQueueMask = ImpactEventQueueCapacity - 1;
         private const int ImpactEventQueueEnqueueAttemptLimit = 8;
+        private const int MetallicGrainBankPowerOfTwoGuard =
+            1 / ((MetallicGrainBankCapacity > 0 &&
+                  (MetallicGrainBankCapacity & (MetallicGrainBankCapacity - 1)) == 0 &&
+                  MetallicGrainBankMask == MetallicGrainBankCapacity - 1) ? 1 : 0);
+        private const int BinauralDelayPowerOfTwoGuard =
+            1 / ((BinauralDelayCapacity > 0 &&
+                  (BinauralDelayCapacity & (BinauralDelayCapacity - 1)) == 0 &&
+                  BinauralDelayMask == BinauralDelayCapacity - 1) ? 1 : 0);
+        private const int MaxSafeFrameCapacityPowerOfTwoGuard =
+            1 / ((MaxSafeFrameCapacity > 0 &&
+                  (MaxSafeFrameCapacity & (MaxSafeFrameCapacity - 1)) == 0) ? 1 : 0);
+        private const int SonarEchoDelayPowerOfTwoGuard =
+            1 / ((SonarEchoDelayCapacity > 0 &&
+                  (SonarEchoDelayCapacity & (SonarEchoDelayCapacity - 1)) == 0 &&
+                  SonarEchoDelayMask == SonarEchoDelayCapacity - 1) ? 1 : 0);
+        private const int ImpactClangDelayPowerOfTwoGuard =
+            1 / ((ImpactClangDelayCapacity > 0 &&
+                  (ImpactClangDelayCapacity & (ImpactClangDelayCapacity - 1)) == 0 &&
+                  ImpactClangDelayMask == ImpactClangDelayCapacity - 1) ? 1 : 0);
+        private const int ThrusterCombDelayPowerOfTwoGuard =
+            1 / ((ThrusterCombDelayCapacity > 0 &&
+                  (ThrusterCombDelayCapacity & (ThrusterCombDelayCapacity - 1)) == 0 &&
+                  ThrusterCombDelayMask == ThrusterCombDelayCapacity - 1) ? 1 : 0);
+        private const int SabineReverbDelayPowerOfTwoGuard =
+            1 / ((SabineReverbDelayLineLength > 0 &&
+                  (SabineReverbDelayLineLength & (SabineReverbDelayLineLength - 1)) == 0 &&
+                  SabineReverbDelayLineMask == SabineReverbDelayLineLength - 1 &&
+                  (SabineReverbDelayCapacity & (SabineReverbDelayCapacity - 1)) == 0) ? 1 : 0);
+        private const int InteriorFdnDelayPowerOfTwoGuard =
+            1 / ((InteriorFdnDelayCapacity > 0 &&
+                  (InteriorFdnDelayCapacity & (InteriorFdnDelayCapacity - 1)) == 0 &&
+                  InteriorFdnDelayMask == InteriorFdnDelayCapacity - 1 &&
+                  InteriorFdnLaneLength > 0 &&
+                  (InteriorFdnLaneLength & (InteriorFdnLaneLength - 1)) == 0 &&
+                  InteriorFdnLaneMask == InteriorFdnLaneLength - 1) ? 1 : 0);
+        private const int ImpactEventQueuePowerOfTwoGuard =
+            1 / ((ImpactEventQueueCapacity > 0 &&
+                  (ImpactEventQueueCapacity & (ImpactEventQueueCapacity - 1)) == 0 &&
+                  ImpactEventQueueMask == ImpactEventQueueCapacity - 1) ? 1 : 0);
         private const int ColdBurstClearMinimumCount = 1024;
         private const float PhysicsImpactStressRadiusMeters = 18f;
         private const float PhysicsImpactStressDecayPerSecond = 1.65f;
@@ -680,6 +719,7 @@ namespace Hecton8.Audio
         private volatile float _targetReverbRt60Seconds;
         private volatile float _targetReverbWetMix;
         private volatile float _targetReverbOpenness;
+        private volatile int _targetReverbDspTier;
         private volatile float _targetBubbleBoilIntensity;
         private volatile float _targetThrusterBlendValue;
         private volatile float _targetThrusterLoadValue;
@@ -718,6 +758,13 @@ namespace Hecton8.Audio
 
         // COLD ALLOC: ImpactAudioEvent[64] - main-thread physics impact bridge for the audio worker SPSC path - owner: PlayerCriticalProceduralAudioRenderer
         private readonly ImpactAudioEvent[] _impactEventQueue = new ImpactAudioEvent[ImpactEventQueueCapacity];
+
+        private enum ReverbDspTier : byte
+        {
+            UnityProfileOnly = 0,
+            NativeSabine = 1
+        }
+
         [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct SonarEchoTap
         {
@@ -797,6 +844,7 @@ namespace Hecton8.Audio
             public float ReverbRt60Seconds;
             public float ReverbWetMix;
             public float ReverbOpenness;
+            public int ReverbDspTier;
             public float BubbleBoilIntensity;
             public float ThrusterBlend;
             public float ThrusterLoad;
@@ -1358,6 +1406,7 @@ namespace Hecton8.Audio
                 _targetReverbRt60Seconds = 0f;
                 _targetReverbWetMix = 0f;
                 _targetReverbOpenness = 1f;
+                _targetReverbDspTier = (int)ReverbDspTier.UnityProfileOnly;
                 _targetBubbleBoilIntensity = 0f;
                 _targetThrusterBlendValue = 0f;
                 _targetThrusterLoadValue = 0f;
@@ -1873,6 +1922,8 @@ namespace Hecton8.Audio
         private void UpdateCaveReverb(float deltaTime)
         {
             ResolveListenerReverbFilter();
+            ReverbDspTier reverbTier = ResolveReverbDspTier();
+            _targetReverbDspTier = (int)reverbTier;
             if (!_reverbMixerBindingsValid && _listenerReverbFilter == null)
                 return;
 
@@ -1922,6 +1973,15 @@ namespace Hecton8.Audio
             ApplyListenerReverbProfile(_smoothedReverbWetMix, _smoothedReverbDecayTime, _smoothedReverbOpenness);
         }
 
+        private static ReverbDspTier ResolveReverbDspTier()
+        {
+            HectonQualityTier qualityTier = GlobalRegistry.QualityTier;
+            return qualityTier == HectonQualityTier.High ||
+                   qualityTier == HectonQualityTier.Ultra
+                ? ReverbDspTier.NativeSabine
+                : ReverbDspTier.UnityProfileOnly;
+        }
+
         private void ResetReverbModelState()
         {
             _smoothedReverbDecayTime = openWaterDecayTime;
@@ -1935,6 +1995,7 @@ namespace Hecton8.Audio
             _targetReverbRt60Seconds = 0f;
             _targetReverbWetMix = 0f;
             _targetReverbOpenness = 1f;
+            _targetReverbDspTier = (int)ReverbDspTier.UnityProfileOnly;
         }
 
         private void ResolveListenerReverbFilter()
@@ -3942,21 +4003,36 @@ namespace Hecton8.Audio
             CriticalSidechainCompressorState sidechainState = _criticalSidechainCompressorState;
             if (sidechainState.Gain <= HullNoiseFloor)
                 sidechainState.Gain = 1f;
-            ResolveSabineReverbBlock(
-                parameters.ReverbRt60Seconds,
-                parameters.ReverbWetMix,
-                parameters.ReverbOpenness,
-                out bool sabineReverbActive,
-                out float sabineWetGain,
-                out float sabineDampingAlpha,
-                out int sabineDelayA,
-                out int sabineDelayB,
-                out int sabineDelayC,
-                out int sabineDelayD,
-                out float sabineFeedbackA,
-                out float sabineFeedbackB,
-                out float sabineFeedbackC,
-                out float sabineFeedbackD);
+            bool sabineReverbActive = false;
+            float sabineWetGain = 0f;
+            float sabineDampingAlpha = 0f;
+            int sabineDelayA = 1;
+            int sabineDelayB = 1;
+            int sabineDelayC = 1;
+            int sabineDelayD = 1;
+            float sabineFeedbackA = 0f;
+            float sabineFeedbackB = 0f;
+            float sabineFeedbackC = 0f;
+            float sabineFeedbackD = 0f;
+            if (parameters.ReverbDspTier == (int)ReverbDspTier.NativeSabine)
+            {
+                ResolveSabineReverbBlock(
+                    parameters.ReverbRt60Seconds,
+                    parameters.ReverbWetMix,
+                    parameters.ReverbOpenness,
+                    out sabineReverbActive,
+                    out sabineWetGain,
+                    out sabineDampingAlpha,
+                    out sabineDelayA,
+                    out sabineDelayB,
+                    out sabineDelayC,
+                    out sabineDelayD,
+                    out sabineFeedbackA,
+                    out sabineFeedbackB,
+                    out sabineFeedbackC,
+                    out sabineFeedbackD);
+            }
+
             SabineReverbSynthesisState sabineState = _sabineReverbSynthesisState;
             InteriorFdnReverbSynthesisState interiorFdnState = _interiorFdnReverbSynthesisState;
             TinnitusSynthesisState tinnitusState = _tinnitusSynthesisState;
@@ -6419,6 +6495,7 @@ namespace Hecton8.Audio
                 ReverbRt60Seconds = _targetReverbRt60Seconds,
                 ReverbWetMix = _targetReverbWetMix,
                 ReverbOpenness = _targetReverbOpenness,
+                ReverbDspTier = _targetReverbDspTier,
                 BubbleBoilIntensity = _targetBubbleBoilIntensity,
                 ThrusterBlend = _targetThrusterBlendValue,
                 ThrusterLoad = _targetThrusterLoadValue,

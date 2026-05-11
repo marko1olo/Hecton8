@@ -64,10 +64,12 @@ Shader "Hidden/Hecton8/NoirDepthFog"
         #endif
         }
 
-        float ResolveInterleavedNoise(float2 screenUV)
+        float ResolveTaaDitherPhaseNoise(float2 screenUV)
         {
             float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
-            return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            uint phaseIndex = _TaaFrameIndex & 3u;
+            float2 taaPhase = float2((float)(phaseIndex & 1u), (float)((phaseIndex >> 1u) & 1u)) * 0.5;
+            return frac(52.9829189 * frac(dot(pixel + taaPhase, float2(0.06711056, 0.00583715))));
         }
 
         float SampleMarineSnowFogDensity(float2 screenUV)
@@ -109,7 +111,7 @@ Shader "Hidden/Hecton8/NoirDepthFog"
             half fogFactor = saturate(filmRamp * lerp(0.42h, 1.16h, densityGain));
             fogFactor = saturate(fogFactor + (half)SampleMarineSnowFogDensity(input.screenUV));
 
-            half dither = (half)(ResolveInterleavedNoise(input.screenUV) - 0.5) * saturate((half)_HectonNoirDepthFogParamsB.w) * 0.0039215686h;
+            half dither = (half)(ResolveTaaDitherPhaseNoise(input.screenUV) - 0.5) * saturate((half)_HectonNoirDepthFogParamsB.w) * 0.0039215686h;
             fogFactor = saturate(fogFactor + dither);
 
             half3 fogColor = (half3)lerp(

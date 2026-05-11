@@ -37,6 +37,9 @@ namespace Hecton8.Audio
         private const float MixerCeilingDb = 0f;
         private const float EditorDebugStateIntervalSeconds = 0.25f;
         private const int DependencyRetryFrameInterval = 30;
+        private const float StormDepthAttenuationInv = 0.008333333f;
+        private const float AuthoredPressureRangeInv = 0.25f;
+        private const float Random24ToUnit = 0.000000059604648f;
         private static readonly int _PredatorThreatLayerMask = HectonLayerMasks.CreatureLayerMask;
 
         private static readonly string[] MenuSceneTokens = { "main_menu" };
@@ -998,7 +1001,7 @@ namespace Hecton8.Audio
             {
                 float senseRadius = math.max(1f, _predatorSenseRadius);
                 float senseRadiusSq = senseRadius * senseRadius;
-                _predatorProximity01 = 1f - math.saturate(math.max(0f, predatorHit.DistanceSqr) / senseRadiusSq);
+                _predatorProximity01 = 1f - math.saturate(math.max(0f, predatorHit.DistanceSqr) * math.rcp(senseRadiusSq));
             }
             else
             {
@@ -1068,7 +1071,7 @@ namespace Hecton8.Audio
             if (weatherDirector == null || depthMeters > 120f)
                 return 0f;
 
-            float depthAttenuation = 1f - math.saturate(depthMeters / 120f);
+            float depthAttenuation = 1f - math.saturate(depthMeters * StormDepthAttenuationInv);
             return math.saturate(weatherDirector.CurrentElectricalActivity * depthAttenuation);
         }
 
@@ -1470,7 +1473,7 @@ namespace Hecton8.Audio
                 {
                     _voiceFadeElapsedTimes[i] += deltaTime;
                     float duration = _voiceFadeDurations[i] > 0f ? _voiceFadeDurations[i] : 0.01f;
-                    float t = _voiceFadeElapsedTimes[i] / duration;
+                    float t = _voiceFadeElapsedTimes[i] * math.rcp(duration);
                     if (t > 1f)
                         t = 1f;
 
@@ -1654,7 +1657,7 @@ namespace Hecton8.Audio
             if (candidate == null || ReferenceEquals(candidate, rootProfile) || nearestBoundaryDistance > _depthBlendWindowMeters)
                 return;
 
-            float normalized = 1f - (nearestBoundaryDistance / _depthBlendWindowMeters);
+            float normalized = 1f - (nearestBoundaryDistance * math.rcp(math.max(0.0001f, _depthBlendWindowMeters)));
             if (normalized <= 0f)
                 return;
 
@@ -2097,7 +2100,7 @@ namespace Hecton8.Audio
                 return;
 
             _duckElapsed += deltaTime;
-            float t = _duckElapsed / _duckDuration;
+            float t = _duckElapsed * math.rcp(_duckDuration);
             if (t > 1f)
                 t = 1f;
 
@@ -2611,7 +2614,7 @@ namespace Hecton8.Audio
 
         private static float ResolvePressure01(int authoredValue)
         {
-            return math.saturate((authoredValue - 1f) / 4f);
+            return math.saturate((authoredValue - 1f) * AuthoredPressureRangeInv);
         }
 
         private static bool ReadsAsSafeZoneKind(WorldZoneAnchor.ZoneKind kind)
@@ -2786,7 +2789,7 @@ namespace Hecton8.Audio
             if (math.abs(denominator) <= 0.000001f)
                 return 0f;
 
-            return math.saturate((value - a) / denominator);
+            return math.saturate((value - a) * math.rcp(denominator));
         }
 
         private static float MoveTowards(float current, float target, float maxDelta)
@@ -2812,7 +2815,7 @@ namespace Hecton8.Audio
 
         private float NextRandom01()
         {
-            return (NextRandomUInt() & 0x00FFFFFFu) * (1f / 16777215f);
+            return (NextRandomUInt() & 0x00FFFFFFu) * Random24ToUnit;
         }
 
         private uint NextRandomUInt()

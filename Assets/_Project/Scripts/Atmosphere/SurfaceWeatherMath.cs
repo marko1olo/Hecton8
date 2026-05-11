@@ -2,7 +2,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using Hecton8.World;
+using Hecton8.Core;
 
 namespace Hecton8.Atmosphere
 {
@@ -341,8 +341,7 @@ namespace Hecton8.Atmosphere
                 preferredDirection *= math.rsqrt(preferredLengthSq);
 
             float randomAngle = randomB * TwoPi;
-            math.sincos(randomAngle, out float randomSin, out float randomCos);
-            float2 randomDirection = new float2(randomCos, randomSin);
+            float2 randomDirection = new float2(CinematicMath.FastCos(randomAngle), CinematicMath.FastSin(randomAngle));
             float clampedWindBias = math.saturate(state.lightningWindBias);
             float angularOffset = ((randomC * 2f) - 1f) * math.lerp(1.4f, 0.35f, clampedWindBias);
             float2 windBiasedDirection = RotateDirection(preferredDirection, angularOffset);
@@ -393,13 +392,20 @@ namespace Hecton8.Atmosphere
         {
             double3 listenerAbsolute = new double3(listenerPosition.x, listenerPosition.y, listenerPosition.z) + absoluteUniverseOffset;
             double3 strikeAbsolute = new double3(strikePosition.x, strikePosition.y, strikePosition.z) + absoluteUniverseOffset;
-            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromAbsolutePosition(listenerAbsolute);
-            AbsoluteUniversePosition strikeAup = AbsoluteUniversePosition.FromAbsolutePosition(strikeAbsolute);
-            double distanceSq = AbsoluteUniversePosition.DistanceSq(in listenerAup, in strikeAup);
-            if (!math.isfinite(distanceSq) || distanceSq <= 0d)
+            return ApproximateDistanceMeters(strikeAbsolute - listenerAbsolute);
+        }
+
+        private static float ApproximateDistanceMeters(double3 delta)
+        {
+            double3 absolute = math.abs(delta);
+            double maxAxis = math.max(absolute.x, math.max(absolute.y, absolute.z));
+            if (!math.isfinite(maxAxis) || maxAxis <= 0d)
                 return 0f;
 
-            return (float)math.min(math.sqrt(distanceSq), (double)float.MaxValue);
+            double minAxis = math.min(absolute.x, math.min(absolute.y, absolute.z));
+            double midAxis = (absolute.x + absolute.y + absolute.z) - maxAxis - minAxis;
+            double approximateDistance = maxAxis + (midAxis * 0.375d) + (minAxis * 0.25d);
+            return (float)math.min(approximateDistance, (double)float.MaxValue);
         }
 
         private static float ResolveStormInterference(float precipitationIntensity, float electricalActivity, float threshold)
@@ -421,9 +427,9 @@ namespace Hecton8.Atmosphere
             float frequency = math.clamp(state.gustFrequency, 0.005f, 0.2f);
             float phase = (unscaledTime + gustTimeOffset) * frequency * TwoPi;
             float composite =
-                math.sin(phase) * 0.58f +
-                math.sin(phase * 0.43f + 1.17f) * 0.29f +
-                math.sin(phase * 1.73f + 0.41f) * 0.13f;
+                CinematicMath.FastSin(phase) * 0.58f +
+                CinematicMath.FastSin(phase * 0.43f + 1.17f) * 0.29f +
+                CinematicMath.FastSin(phase * 1.73f + 0.41f) * 0.13f;
             float normalized = math.saturate((composite + 1f) * 0.5f);
             float envelope = normalized * normalized;
             float calmFloor = 1f - gustStrength * 0.12f;
@@ -440,9 +446,9 @@ namespace Hecton8.Atmosphere
             float frequency = math.clamp(state.squallFrequency, 0.005f, 0.08f);
             float phase = (unscaledTime + gustTimeOffset * 0.37f) * frequency * TwoPi;
             float composite =
-                math.sin(phase) * 0.61f +
-                math.sin(phase * 0.31f + 2.14f) * 0.27f +
-                math.sin(phase * 1.09f + 0.63f) * 0.12f;
+                CinematicMath.FastSin(phase) * 0.61f +
+                CinematicMath.FastSin(phase * 0.31f + 2.14f) * 0.27f +
+                CinematicMath.FastSin(phase * 1.09f + 0.63f) * 0.12f;
             float normalized = math.saturate((composite + 1f) * 0.5f);
             float bandEnvelope = normalized * normalized * normalized;
             float calmFloor = 1f - squallStrength * 0.26f;
@@ -452,7 +458,8 @@ namespace Hecton8.Atmosphere
 
         private static float2 RotateDirection(float2 direction, float angleRadians)
         {
-            math.sincos(angleRadians, out float sinValue, out float cosValue);
+            float sinValue = CinematicMath.FastSin(angleRadians);
+            float cosValue = CinematicMath.FastCos(angleRadians);
             return new float2(
                 direction.x * cosValue - direction.y * sinValue,
                 direction.x * sinValue + direction.y * cosValue);

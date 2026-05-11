@@ -37,11 +37,17 @@ namespace Hecton8.Gameplay
                 return false;
 
             PlayerInputState state = inputService.GetState();
+            Vector2 moveInput = state.MoveDelta;
+            Vector2 lookInput = state.LookDelta;
+            float verticalInput = state.VerticalDelta;
+            if (!IsFinite(moveInput) || !IsFinite(lookInput) || !math.isfinite(verticalInput))
+                return false;
+
             frame = new HectonPlayerInputFrame(
                 state,
-                state.MoveDelta,
-                state.LookDelta,
-                ResolveVerticalInput(in state),
+                ClampUnitInput(moveInput),
+                lookInput,
+                math.clamp(verticalInput, -1f, 1f),
                 state.HasAction(PlayerInputAction.Sprint));
             jumpBuffered = consumeBufferedJump && inputService.TryConsumeBufferedAction(PlayerBufferedAction.Jump, jumpBufferSeconds);
             return true;
@@ -50,6 +56,21 @@ namespace Hecton8.Gameplay
         public static float ResolveVerticalInput(in PlayerInputState state)
         {
             return math.clamp(state.VerticalDelta, -1f, 1f);
+        }
+
+        private static bool IsFinite(Vector2 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y);
+        }
+
+        private static Vector2 ClampUnitInput(Vector2 value)
+        {
+            float lengthSq = (value.x * value.x) + (value.y * value.y);
+            if (lengthSq <= 1f)
+                return value;
+
+            float inverseLength = math.rsqrt(lengthSq);
+            return new Vector2(value.x * inverseLength, value.y * inverseLength);
         }
     }
 

@@ -169,13 +169,16 @@ namespace Hecton8.Physics
             public float doorAreaSquareMeters;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
         private struct CompartmentState
         {
             public float currentVolume;
             public float maxVolume;
             public float3 localCentroid;
             public uint stateFlags;
+            public float o2PartialPressureKPa;
+            public float co2PartialPressureKPa;
+            public float n2PartialPressureKPa;
         }
 #pragma warning restore CS0649
 
@@ -1067,6 +1070,22 @@ namespace Hecton8.Physics
                 return 0f;
 
             return _compartmentMaxVolumes[compartmentIndex];
+        }
+
+        internal void SetCompartmentGasPartialPressuresKPa(
+            int compartmentIndex,
+            float oxygenPartialPressureKPa,
+            float carbonDioxidePartialPressureKPa,
+            float nitrogenPartialPressureKPa)
+        {
+            if (!IsCompartmentIndexValid(compartmentIndex) || _compartmentStates == null)
+                return;
+
+            CompartmentState state = _compartmentStates[compartmentIndex];
+            state.o2PartialPressureKPa = SanitizeNonNegativeFinite(oxygenPartialPressureKPa);
+            state.co2PartialPressureKPa = SanitizeNonNegativeFinite(carbonDioxidePartialPressureKPa);
+            state.n2PartialPressureKPa = SanitizeNonNegativeFinite(nitrogenPartialPressureKPa);
+            _compartmentStates[compartmentIndex] = state;
         }
 
         internal float GetCompartmentViscosity01(int compartmentIndex)
@@ -2574,12 +2593,16 @@ namespace Hecton8.Physics
                 _compartmentFlags[i] = flags;
                 if (_compartmentStates != null)
                 {
+                    CompartmentState previousState = _compartmentStates[i];
                     _compartmentStates[i] = new CompartmentState
                     {
                         currentVolume = currentVolume,
                         maxVolume = maxVolume,
                         localCentroid = _compartmentLocalCentroids[i],
-                        stateFlags = flags
+                        stateFlags = flags,
+                        o2PartialPressureKPa = previousState.o2PartialPressureKPa,
+                        co2PartialPressureKPa = previousState.co2PartialPressureKPa,
+                        n2PartialPressureKPa = previousState.n2PartialPressureKPa
                     };
                 }
 
@@ -4153,6 +4176,12 @@ namespace Hecton8.Physics
         {
             return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) ||
                      float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return float.IsFinite(value) ? math.max(0f, value) : 0f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

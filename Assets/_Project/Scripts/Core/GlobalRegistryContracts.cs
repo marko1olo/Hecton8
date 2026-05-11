@@ -1601,6 +1601,15 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// BIOS-owned math precision tier. Runtime systems read this instead of selecting their own accuracy path.
+    /// </summary>
+    public enum MathPrecisionLevel : byte
+    {
+        Low = 0,
+        High = 1
+    }
+
+    /// <summary>
     /// Immutable hardware profile captured during the bootstrap HardwareCheck phase.
     /// </summary>
     public readonly struct HectonHardwareProfile
@@ -1613,11 +1622,52 @@ namespace Hecton8.Core
             int systemMemoryMegabytes,
             int processorCount,
             HectonQualityTier qualityTier)
+            : this(
+                graphicsMemoryMegabytes,
+                systemMemoryMegabytes,
+                processorCount,
+                qualityTier,
+                0d,
+                MathPrecisionLevel.Low)
+        {
+        }
+
+        /// <summary>
+        /// Creates a boot-time hardware profile with BIOS physics benchmark telemetry.
+        /// </summary>
+        public HectonHardwareProfile(
+            int graphicsMemoryMegabytes,
+            int systemMemoryMegabytes,
+            int processorCount,
+            HectonQualityTier qualityTier,
+            double physicsBenchmarkMillisecondsPerStep)
+            : this(
+                graphicsMemoryMegabytes,
+                systemMemoryMegabytes,
+                processorCount,
+                qualityTier,
+                physicsBenchmarkMillisecondsPerStep,
+                MathPrecisionLevel.Low)
+        {
+        }
+
+        /// <summary>
+        /// Creates a boot-time hardware profile with BIOS physics benchmark telemetry and math precision routing.
+        /// </summary>
+        public HectonHardwareProfile(
+            int graphicsMemoryMegabytes,
+            int systemMemoryMegabytes,
+            int processorCount,
+            HectonQualityTier qualityTier,
+            double physicsBenchmarkMillisecondsPerStep,
+            MathPrecisionLevel mathPrecisionLevel)
         {
             GraphicsMemoryMegabytes = graphicsMemoryMegabytes;
             SystemMemoryMegabytes = systemMemoryMegabytes;
             ProcessorCount = processorCount;
             QualityTier = qualityTier;
+            PhysicsBenchmarkMillisecondsPerStep = physicsBenchmarkMillisecondsPerStep;
+            MathPrecisionLevel = mathPrecisionLevel;
         }
 
         /// <summary>Detected graphics memory in megabytes.</summary>
@@ -1631,6 +1681,12 @@ namespace Hecton8.Core
 
         /// <summary>Resolved runtime quality tier.</summary>
         public HectonQualityTier QualityTier { get; }
+
+        /// <summary>Cold BIOS local-physics benchmark cost in milliseconds per 0.02s step.</summary>
+        public double PhysicsBenchmarkMillisecondsPerStep { get; }
+
+        /// <summary>BIOS-selected math precision level for runtime shader/simulation paths.</summary>
+        public MathPrecisionLevel MathPrecisionLevel { get; }
     }
 
     /// <summary>

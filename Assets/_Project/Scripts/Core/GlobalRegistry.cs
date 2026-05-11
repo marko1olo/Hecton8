@@ -81,6 +81,11 @@ namespace Hecton8.Core
         }
 
         private const int ServiceSlotMaskWordCount = 4;
+        private const string MathLodLowKeyword = "_MATH_LOD_LOW";
+        private const string MathLodHighKeyword = "_MATH_LOD_HIGH";
+        private const int MathPrecisionTransitionFrameCount = 60;
+        private const int MathPrecisionBlendScale = 1000;
+        private static readonly int _mathLodLowBlendId = Shader.PropertyToID("_H8MathLodLowBlend");
         // COLD ALLOC: long[4] - requested service-slot bitset for ghost-service detection - owner: GlobalRegistry
         private static readonly long[] _requestedServiceSlotMask = new long[ServiceSlotMaskWordCount];
         // COLD ALLOC: long[4] - registered service-slot bitset for ghost-service detection - owner: GlobalRegistry
@@ -267,6 +272,11 @@ namespace Hecton8.Core
         private static bool _lowMemoryProfileEnabled;
         private static uint _activeServiceTypeHash;
         private static long _absoluteUniverseTimeBits;
+        private static int _mathPrecisionLevel = (int)MathPrecisionLevel.Low;
+        private static int _mathPrecisionTargetLevel = (int)MathPrecisionLevel.Low;
+        private static int _mathPrecisionTransitionFramesRemaining;
+        private static int _mathPrecisionTransitionTotalFrames;
+        private static int _mathPrecisionLowBlendMilli = MathPrecisionBlendScale;
 
         public readonly struct ForceOverrideToken
         {
@@ -1514,6 +1524,69 @@ namespace Hecton8.Core
         public static HectonQualityTier QualityTier => _hasHardwareProfile ? _hardwareProfile.QualityTier : HectonQualityTier.Unknown;
 
         /// <summary>
+        /// BIOS-selected math precision level for shader/simulation branches.
+        /// </summary>
+        public static MathPrecisionLevel MathPrecision =>
+            (MathPrecisionLevel)Volatile.Read(ref _mathPrecisionLevel);
+
+        /// <summary>
+        /// Current target precision during a watchdog-initiated degradation transition.
+        /// </summary>
+        public static MathPrecisionLevel TargetMathPrecision =>
+            (MathPrecisionLevel)Volatile.Read(ref _mathPrecisionTargetLevel);
+
+        /// <summary>
+        /// Low-precision blend in [0..1], updated once per dispatcher frame during degradation.
+        /// </summary>
+        public static float MathPrecisionLowBlend01 =>
+            Volatile.Read(ref _mathPrecisionLowBlendMilli) * 0.001f;
+
+        private static void SetMathPrecisionLevelImmediate(MathPrecisionLevel level)
+        {
+            int lowBlendMilli = level == MathPrecisionLevel.Low ? MathPrecisionBlendScale : 0;
+            Volatile.Write(ref _mathPrecisionLevel, (int)level);
+            Volatile.Write(ref _mathPrecisionTargetLevel, (int)level);
+            Volatile.Write(ref _mathPrecisionTransitionFramesRemaining, 0);
+            Volatile.Write(ref _mathPrecisionTransitionTotalFrames, 0);
+            ApplyMathPrecisionShaderState(level, lowBlendMilli);
+        }
+
+        private static void CompleteMathPrecisionTransition()
+        {
+            MathPrecisionLevel targetLevel = (MathPrecisionLevel)Volatile.Read(ref _mathPrecisionTargetLevel);
+            int lowBlendMilli = targetLevel == MathPrecisionLevel.Low ? MathPrecisionBlendScale : 0;
+            Volatile.Write(ref _mathPrecisionLevel, (int)targetLevel);
+            Volatile.Write(ref _mathPrecisionTransitionFramesRemaining, 0);
+            Volatile.Write(ref _mathPrecisionTransitionTotalFrames, 0);
+            ApplyMathPrecisionShaderState(targetLevel, lowBlendMilli);
+        }
+
+        private static void ApplyMathPrecisionShaderState(MathPrecisionLevel level, int lowBlendMilli)
+        {
+            int clampedBlendMilli = lowBlendMilli < 0
+                ? 0
+                : lowBlendMilli > MathPrecisionBlendScale ? MathPrecisionBlendScale : lowBlendMilli;
+            Volatile.Write(ref _mathPrecisionLowBlendMilli, clampedBlendMilli);
+            Shader.SetGlobalFloat(_mathLodLowBlendId, clampedBlendMilli * 0.001f);
+
+            bool lowPrecision = level == MathPrecisionLevel.Low;
+            if (lowPrecision)
+            {
+                Shader.EnableKeyword(MathLodLowKeyword);
+                Shader.DisableKeyword(MathLodHighKeyword);
+                return;
+            }
+
+            Shader.DisableKeyword(MathLodLowKeyword);
+            Shader.EnableKeyword(MathLodHighKeyword);
+        }
+
+        /// <summary>
+        /// System-steward scalability tier alias resolved from the BIOS hardware profile.
+        /// </summary>
+        public static HectonQualityTier ScalabilityTier => QualityTier;
+
+        /// <summary>
         /// Count of persistent native allocations registered with the memory sentinel.
         /// </summary>
         public static int NativeAllocationCount => NativeMemorySentinel.ActiveAllocationCount;
@@ -1637,6 +1710,12 @@ namespace Hecton8.Core
             _lowMemoryProfileEnabled = false;
             _activeServiceTypeHash = 0u;
             _absoluteUniverseTimeBits = 0L;
+            _mathPrecisionLevel = (int)MathPrecisionLevel.Low;
+            _mathPrecisionTargetLevel = (int)MathPrecisionLevel.Low;
+            _mathPrecisionTransitionFramesRemaining = 0;
+            _mathPrecisionTransitionTotalFrames = 0;
+            _mathPrecisionLowBlendMilli = MathPrecisionBlendScale;
+            ApplyMathPrecisionShaderState(MathPrecisionLevel.Low, MathPrecisionBlendScale);
             _celestialRuntimeSnapshot = default;
             _celestialRuntimeSnapshotSequence = 0;
             _threadInput = null;
@@ -1849,6 +1928,60 @@ namespace Hecton8.Core
         {
             _hardwareProfile = profile;
             _hasHardwareProfile = true;
+            SetMathPrecisionLevelImmediate(profile.MathPrecisionLevel);
+        }
+
+        /// <summary>
+        /// Registers the BIOS-selected math precision tier and immediately applies the shader keyword contract.
+        /// </summary>
+        /// <param name="level">Boot-time precision level.</param>
+        public static void RegisterMathPrecisionLevel(MathPrecisionLevel level)
+        {
+            SetMathPrecisionLevelImmediate(level);
+        }
+
+        /// <summary>
+        /// Begins the 60-frame high-to-low math-precision degradation ramp.
+        /// </summary>
+        public static void BeginMathPrecisionDegradation(int currentFrame)
+        {
+            if ((MathPrecisionLevel)Volatile.Read(ref _mathPrecisionTargetLevel) == MathPrecisionLevel.Low)
+                return;
+
+            Volatile.Write(ref _mathPrecisionTargetLevel, (int)MathPrecisionLevel.Low);
+            Volatile.Write(ref _mathPrecisionTransitionTotalFrames, MathPrecisionTransitionFrameCount);
+            Volatile.Write(ref _mathPrecisionTransitionFramesRemaining, MathPrecisionTransitionFrameCount);
+            ApplyMathPrecisionShaderState(MathPrecisionLevel.Low, Volatile.Read(ref _mathPrecisionLowBlendMilli));
+        }
+
+        /// <summary>
+        /// Advances the math-precision degradation blend. Called once from the dispatcher frame authority.
+        /// </summary>
+        public static void TickMathPrecisionTransition(int currentFrame)
+        {
+            int remaining = Volatile.Read(ref _mathPrecisionTransitionFramesRemaining);
+            if (remaining <= 0)
+                return;
+
+            int total = Volatile.Read(ref _mathPrecisionTransitionTotalFrames);
+            if (total <= 0)
+            {
+                CompleteMathPrecisionTransition();
+                return;
+            }
+
+            int nextRemaining = remaining - 1;
+            Volatile.Write(ref _mathPrecisionTransitionFramesRemaining, nextRemaining);
+
+            int elapsed = total - nextRemaining;
+            int blendMilli = elapsed >= total
+                ? MathPrecisionBlendScale
+                : (elapsed * MathPrecisionBlendScale) / total;
+            Volatile.Write(ref _mathPrecisionLowBlendMilli, blendMilli);
+            Shader.SetGlobalFloat(_mathLodLowBlendId, blendMilli * 0.001f);
+
+            if (nextRemaining <= 0)
+                CompleteMathPrecisionTransition();
         }
 
         /// <summary>

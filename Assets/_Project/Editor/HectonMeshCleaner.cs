@@ -1029,7 +1029,7 @@ public class HectonMeshCleaner : EditorWindow
 
     private void CleanupTemp()
     {
-        GameObject[] objects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+        GameObject[] objects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
         for (int i = 0; i < objects.Length; i++)
         {
             GameObject g = objects[i];

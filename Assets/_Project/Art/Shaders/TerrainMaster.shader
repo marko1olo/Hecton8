@@ -171,6 +171,12 @@ Shader "HECTON/Terrain/TerrainMaster"
             return saturate(fade + (noise - 0.5h) * edgeBand * strength);
         }
 
+        half HectonDitheredSaturateRamp(half value, half edge0, half invWidth, half ditherWidth, half ign01)
+        {
+            half ditheredEdge = edge0 + (ign01 - 0.5h) * ditherWidth;
+            return saturate((value - ditheredEdge) * invWidth);
+        }
+
         half EvaluateDistantTerrainHeightShadow(float3 positionWS)
         {
             float2 uv = (positionWS.xz - _HectonDistantTerrainShadowRect.xy) * _HectonDistantTerrainShadowRect.zw;
@@ -280,6 +286,8 @@ Shader "HECTON/Terrain/TerrainMaster"
             #pragma skip_variants _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
             // Fog
             #pragma multi_compile_fog
+            // Project math LOD, pushed by FrameTimeWatchdog/DistanceMath.
+            #pragma multi_compile _ _MATH_LOD_LOW
             // GPU instancing
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
@@ -372,9 +380,13 @@ Shader "HECTON/Terrain/TerrainMaster"
                 half stochasticStrength = saturate((half)_StochasticStrength);
                 float jitterGridScale = max(max(_SandScale, _RockScale), 0.0001);
                 float2 stochasticJitter = HectonResolveHexJitter(IN.positionWS.xz * jitterGridScale, stochasticStrength);
+                half screenIgn = HectonInterleavedGradientNoise(IN.positionCS.xy);
                 half baseUpDot = saturate(dot(IN.normalWS, float3(0.0, 1.0, 0.0)));
-                half erosionInvRange = rcp(max(1.0h - (half)_MicroErosionSlopeThreshold, 0.001h));
-                half steepMask = saturate(((1.0h - baseUpDot) - (half)_MicroErosionSlopeThreshold) * erosionInvRange) *
+                half erosionThreshold = (half)_MicroErosionSlopeThreshold;
+                half erosionWidth = max(1.0h - erosionThreshold, 0.001h);
+                half erosionInvRange = rcp(erosionWidth);
+                half erosionDitherWidth = min(erosionWidth * 0.5h, 0.035h);
+                half steepMask = HectonDitheredSaturateRamp(1.0h - baseUpDot, erosionThreshold, erosionInvRange, erosionDitherWidth, screenIgn) *
                     (half)_MicroErosionStrength;
                 float2 microBumpOffset = HectonResolveMicroBumpOffset(IN.positionWS, viewDirectionWS, rockWeight, steepMask);
                 sandUv += microBumpOffset * 0.35;
@@ -382,11 +394,17 @@ Shader "HECTON/Terrain/TerrainMaster"
                 half4 sandSample = HectonSampleStochastic2D(TEXTURE2D_ARGS(_SandTex, sampler_SandTex), sandUv, stochasticJitter);
                 half4 rockSample = HectonSampleStochastic2D(TEXTURE2D_ARGS(_RockTex, sampler_RockTex), rockUv, stochasticJitter);
 
+                half taaMicroBump = (screenIgn - 0.5h) * steepMask * 0.035h;
+                #if defined(_MATH_LOD_LOW)
+                    half2 materialRgOffset = half2(taaMicroBump, -taaMicroBump);
+                #else
                 half sandLuma = dot(sandSample.rgb, half3(0.25h, 0.5h, 0.25h));
                 half rockLuma = dot(rockSample.rgb, half3(0.25h, 0.5h, 0.25h));
                 half materialLuma = lerp(sandLuma, rockLuma, rockWeight);
                 half materialDetailStrength = lerp((half)_SandNormalStr, (half)_RockNormalStr, rockWeight) * 0.16h;
                 half2 materialRgOffset = half2(ddx(materialLuma), ddy(materialLuma)) * materialDetailStrength;
+                materialRgOffset += half2(taaMicroBump, -taaMicroBump);
+                #endif
                 half3 blendedNormalOffset = half3(materialRgOffset.x, 0.0h, materialRgOffset.y);
                 half3 sandAlbedo = sandSample.rgb * _SandColor.rgb;
                 half3 rockAlbedo = rockSample.rgb * _RockColor.rgb;
@@ -412,6 +430,10 @@ Shader "HECTON/Terrain/TerrainMaster"
                 emission *= 1.0h - distantHeightShadow * 0.9h;
 
                 // ---- Final world normal ----
+                #if defined(_MATH_LOD_LOW)
+                    half flowHash = screenIgn - 0.5h;
+                    half3 flowNormalWS = half3(flowHash, 0.0h, -flowHash) * (half)_FlowNormalStrength;
+                #else
                 float flowScale = max(_FlowNormalScale, 0.0001);
                 float2 flowUv = IN.positionWS.xz * flowScale +
                     float2(IN.positionWS.y * flowScale * 2.13, IN.positionWS.y * flowScale * 0.37);
@@ -419,11 +441,14 @@ Shader "HECTON/Terrain/TerrainMaster"
                     HectonUnpackNormalRG(
                         SAMPLE_TEXTURE2D(_FlowNormal, sampler_FlowNormal, flowUv),
                         (half)_FlowNormalStrength));
+                #endif
                 half3 finalNormalWS = HectonDominantAxisDirection(
                     IN.normalWS + blendedNormalOffset + flowNormalWS * steepMask);
                 half upDot = saturate(dot(finalNormalWS, float3(0.0, 1.0, 0.0)));
-                half sedimentInvWidth = rcp(max((half)_SedimentBlendWidth, 0.001h));
-                half sedimentMask = saturate((upDot - (half)_SedimentSlopeThreshold) * sedimentInvWidth) *
+                half sedimentWidth = max((half)_SedimentBlendWidth, 0.001h);
+                half sedimentInvWidth = rcp(sedimentWidth);
+                half sedimentDitherWidth = min(sedimentWidth * 0.5h, 0.035h);
+                half sedimentMask = HectonDitheredSaturateRamp(upDot, (half)_SedimentSlopeThreshold, sedimentInvWidth, sedimentDitherWidth, screenIgn) *
                     (half)_SedimentStrength;
                 albedo = lerp(albedo, sandAlbedo, sedimentMask);
                 smoothness = lerp(smoothness, smoothness * 0.55h, sedimentMask);

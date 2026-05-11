@@ -171,6 +171,11 @@ namespace Hecton8.Editor
             SkinnedMeshRenderer[] skinnedRenderers = importedRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true);
             for (int i = 0; i < skinnedRenderers.Length; i++)
                 RepairMesh(skinnedRenderers[i] != null ? skinnedRenderers[i].sharedMesh : null);
+
+            if (HectonBakeryUvAudit.TryValidateImportedModelUv2(importedRoot, assetPath, out string uvFailure))
+            {
+                throw new InvalidOperationException("[HectonFBXPostprocessor] " + uvFailure);
+            }
         }
 
         private static bool TryCreateFallbackLodGroup(GameObject importedRoot)

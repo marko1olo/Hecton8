@@ -636,7 +636,17 @@ namespace Hecton8.Construction
             if (outward.sqrMagnitude <= 0.0001f)
                 outward = _cachedTransform != null ? _cachedTransform.right : Vector3.right;
 
-            return outward.normalized;
+            return FastDirectionOrFallback(outward, Vector3.right);
+        }
+
+        private static Vector3 FastDirectionOrFallback(Vector3 value, Vector3 fallback)
+        {
+            float lengthSq = value.sqrMagnitude;
+            if (lengthSq <= 0.000001f || float.IsNaN(lengthSq) || float.IsInfinity(lengthSq))
+                return fallback.sqrMagnitude > 0.000001f ? fallback : Vector3.right;
+
+            float invLength = math.rsqrt(lengthSq);
+            return new Vector3(value.x * invLength, value.y * invLength, value.z * invLength);
         }
 
         internal void RegisterEmergencyVentVisual(float normalizedIntensity)

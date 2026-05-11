@@ -1217,7 +1217,7 @@ namespace Hecton8.World
                 if (collectDetailedDiagnostics && rejectedResidencyFamily == "None")
                 {
                     rejectedResidencyFamily = family != null ? family.familyId : "None";
-                    rejectedResidencyDistance = residencyDistanceSqr > 0f ? math.sqrt(residencyDistanceSqr) : 0f;
+                    rejectedResidencyDistance = ResolveDiagnosticDistance(residencyDistanceSqr);
                     rejectedResidencyRadius = residencyRadius;
                 }
 
@@ -1229,6 +1229,17 @@ namespace Hecton8.World
 
             layerPreferredFamilyIndex = GetPreferredFamilyIndexForLayer(activeFieldSample.biomeProfile, family, layer);
             return true;
+        }
+
+        private static float ResolveDiagnosticDistance(float distanceSqr)
+        {
+            if (!(distanceSqr > 0f))
+                return 0f;
+
+            if (!math.isfinite(distanceSqr))
+                return float.PositiveInfinity;
+
+            return distanceSqr * math.rsqrt(distanceSqr);
         }
 
         private ScatterSimulationCellState BuildScatterBackendCellState(

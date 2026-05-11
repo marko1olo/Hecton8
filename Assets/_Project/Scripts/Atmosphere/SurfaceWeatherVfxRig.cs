@@ -112,8 +112,9 @@ namespace Hecton8.Atmosphere
             Vector3 strikeDirection = new Vector3(windDirection.x, 0f, windDirection.y);
             if (strikeDirection.sqrMagnitude < 0.0001f)
             {
-                strikeDirection.x = Mathf.Cos(randomA * Mathf.PI * 2f);
-                strikeDirection.z = Mathf.Sin(randomA * Mathf.PI * 2f);
+                float angle = randomA * math.PI * 2f;
+                strikeDirection.x = CinematicMath.FastCos(angle);
+                strikeDirection.z = CinematicMath.FastSin(angle);
             }
 
             strikeDirection = ResolveSafeDirection(strikeDirection, Vector3.forward);
@@ -133,7 +134,7 @@ namespace Hecton8.Atmosphere
                 Vector3 point = startPoint + ((endPoint - startPoint) * t);
                 float jitterAmplitude = LerpClamped(14f, 1.5f, t);
                 float phase = (randomA * 13.37f) + (randomB * 7.11f) + (i * 1.618f);
-                point += side * (Mathf.Sin(phase) * jitterAmplitude);
+                point += side * (CinematicMath.FastSin(phase) * jitterAmplitude);
                 point += windOffset * (1f - t) * 0.2f;
                 _boltPoints[i] = point;
             }

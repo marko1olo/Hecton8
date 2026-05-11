@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — HectonPlayerHealth.cs
+// HECTON-8 - HectonPlayerHealth.cs
 // Player health system with damage, healing, and hazard effects.
 // ============================================================================
 
@@ -19,7 +19,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
     [AddComponentMenu("Hecton8/Gameplay/Player Health")]
-    public sealed class HectonPlayerHealth : MonoBehaviour, ISaveable, ITickable, IUpdatable
+    public sealed class HectonPlayerHealth : MonoBehaviour, ISaveable, ITickable, IUpdatable, IDamageReceiver
     {
         private const float MinimumRuntimeMaxHealth = 1f;
         private const float SurvivalGraceEligibilityThresholdNormalized = 0.10f;
@@ -55,7 +55,7 @@ namespace Hecton8.Gameplay
             'R','A','D','I','A','T','I','O','N',' ','L','O','A','D',' ','7','0',' ','P','E','R','C','E','N','T',' ','-',' ',
             'R','A','D','-','S','H','I','E','L','D',' ','R','E','Q','U','I','R','E','D'
         };
-        // COLD ALLOC: MutationThreshold[2] — fallback mutation thresholds when no authored profile is assigned — owner: HectonPlayerHealth
+        // COLD ALLOC: MutationThreshold[2] - fallback mutation thresholds when no authored profile is assigned - owner: HectonPlayerHealth
         private static readonly HazardMutationProfile.MutationThreshold[] s_fallbackMutationThresholds =
         {
             new HazardMutationProfile.MutationThreshold
@@ -304,11 +304,15 @@ namespace Hecton8.Gameplay
             _runtimeMaxHealthScale = clampedScale;
             maxHealth = nextMaxHealth;
             if (currentHealth <= maxHealth)
+            {
+                MarkCombatDamageSyncDirty();
                 return;
+            }
 
             float previousHealth = currentHealth;
             currentHealth = maxHealth;
             OnHealthChanged?.Invoke(previousHealth, currentHealth);
+            MarkCombatDamageSyncDirty();
         }
 
         // Private state
@@ -328,6 +332,9 @@ namespace Hecton8.Gameplay
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
         private Vector3 _lastKnownRuntimePosition;
+        private int _combatDamageTargetId;
+        private bool _combatDamageRegistered;
+        private bool _combatDamageSyncDirty;
 
         /// <summary>Initializes the health system.</summary>
         private void Awake()
@@ -340,6 +347,7 @@ namespace Hecton8.Gameplay
                 NotificationEvents.RegisterMessage(MutationDetectedMessage);
                 TryGetComponent(out _survivalSystem);
                 TryGetComponent(out _playerMovement);
+                _combatDamageTargetId = CombatDamageRuntime.ResolveTargetId(gameObject);
                 ApplyMutationRuntimeEffects();
                 _isInitialized = true;
             }
@@ -348,26 +356,33 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegisterToTickManager();
+            TryRegisterCombatDamageTarget();
         }
 
         private void Start()
         {
             TryRegisterToTickManager();
+            TryRegisterCombatDamageTarget();
         }
 
         private void OnDisable()
         {
+            TryUnregisterCombatDamageTarget();
             TryUnregisterFromTickManager();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterCombatDamageTarget();
             TryUnregisterFromTickManager();
         }
 
         /// <summary>Updates invulnerability timer.</summary>
         public void Tick(float deltaTime)
         {
+            TryRegisterCombatDamageTarget();
+            TryFlushCombatDamageSync();
+
             if (_survivalGraceLockoutTimer > 0f)
             {
                 _survivalGraceLockoutTimer -= deltaTime;
@@ -407,6 +422,7 @@ namespace Hecton8.Gameplay
 
             OnHealthChanged?.Invoke(oldHealth, currentHealth);
             OnDamageTaken?.Invoke(appliedDamage);
+            MarkCombatDamageSyncDirty();
 
             if (currentHealth <= 0)
             {
@@ -442,6 +458,7 @@ namespace Hecton8.Gameplay
             {
                 OnHealthChanged?.Invoke(oldHealth, currentHealth);
                 OnHealed?.Invoke(actualHeal);
+                MarkCombatDamageSyncDirty();
             }
 
             return actualHeal;
@@ -456,6 +473,7 @@ namespace Hecton8.Gameplay
             currentHealth = 0;
 
             OnHealthChanged?.Invoke(oldHealth, currentHealth);
+            MarkCombatDamageSyncDirty();
             Die();
         }
 
@@ -505,6 +523,32 @@ namespace Hecton8.Gameplay
                 return;
 
             audioService.PlayStatic2D(survivalGraceHeartbeatClip, survivalGraceHeartbeatVolume);
+        }
+
+        public void ReceiveDamage(in DamagePacket packet)
+        {
+            if (packet.Channel != DamageChannel.Integrity || packet.Magnitude <= 0f)
+                return;
+
+            float previousHealth = currentHealth;
+            bool applied = TakeDamage(packet.Magnitude);
+            if (!applied)
+            {
+                MarkCombatDamageSyncDirty();
+                return;
+            }
+
+            float appliedDamage = Mathf.Max(0f, previousHealth - currentHealth);
+            if (packet.SourceId == DamageSourceIds.FaunaLeviathanBite)
+                TryIssueLeviathanTraumaAdvisory(appliedDamage);
+
+            float severity01 = Mathf.Clamp01(appliedDamage * math.rcp(Mathf.Max(MinimumRuntimeMaxHealth, maxHealth)));
+            PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(
+                Mathf.Clamp01(severity01 * 2f),
+                severity01,
+                1f,
+                Mathf.Clamp01(HealthPercent),
+                false));
         }
 
         private void TryIssueLeviathanTraumaAdvisory(float appliedDamage)
@@ -615,6 +659,7 @@ namespace Hecton8.Gameplay
         public void LoadFromSaveData(SaveData data)
         {
             currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
+            MarkCombatDamageSyncDirty();
         }
 
         private void TryRegisterToTickManager()
@@ -636,6 +681,52 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredToTickManager = false;
+        }
+
+        private void TryRegisterCombatDamageTarget()
+        {
+            if (_combatDamageRegistered || !Application.isPlaying)
+                return;
+
+            if (_combatDamageTargetId == 0)
+                _combatDamageTargetId = CombatDamageRuntime.ResolveTargetId(gameObject);
+
+            _combatDamageRegistered = CombatDamageRuntime.RegisterTarget(
+                _combatDamageTargetId,
+                this,
+                currentHealth,
+                maxHealth,
+                CombatEntityKind.Player,
+                CombatArmorClass.Suit,
+                0f,
+                0f);
+            _combatDamageSyncDirty = !_combatDamageRegistered;
+        }
+
+        private void TryUnregisterCombatDamageTarget()
+        {
+            if (!_combatDamageRegistered)
+                return;
+
+            CombatDamageRuntime.UnregisterTarget(_combatDamageTargetId, this);
+            _combatDamageRegistered = false;
+            _combatDamageSyncDirty = false;
+        }
+
+        private void MarkCombatDamageSyncDirty()
+        {
+            if (!_combatDamageRegistered)
+                return;
+
+            _combatDamageSyncDirty = !CombatDamageRuntime.SyncTargetHealth(_combatDamageTargetId, currentHealth, maxHealth);
+        }
+
+        private void TryFlushCombatDamageSync()
+        {
+            if (!_combatDamageRegistered || !_combatDamageSyncDirty)
+                return;
+
+            _combatDamageSyncDirty = !CombatDamageRuntime.SyncTargetHealth(_combatDamageTargetId, currentHealth, maxHealth);
         }
 
         #endregion

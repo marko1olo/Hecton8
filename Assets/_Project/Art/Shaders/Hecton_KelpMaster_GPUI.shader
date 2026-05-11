@@ -86,7 +86,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 #include "./../../../GPUInstancer/Shaders/Include/GPUInstancerInclude.cginc"
-#pragma instancing_options procedural:setupGPUI assumeuniformscaling
+#pragma instancing_options procedural:setupGPUI
 #pragma multi_compile_instancing
 
             #pragma target 3.5
@@ -202,6 +202,11 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            half3 ResolveFloraNormalCheap(half3 value)
+            {
+                return (half3)HectonCoreLitSafeNormalize((float3)value);
+            }
+
             half ResolveFloraDominantAxis(half3 normalWS, float3 positionWS)
             {
                 half3 absNormal = abs(normalWS);
@@ -266,21 +271,6 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 return lerp(low, high, step(2.0h, exponent));
             }
 
-            half FastKelpSpecularPower01(half value, half exponent)
-            {
-                half v = saturate(value);
-                half v2 = v * v;
-                half v4 = v2 * v2;
-                half v8 = v4 * v4;
-                half v16 = v8 * v8;
-                half v32 = v16 * v16;
-                half v48 = v32 * v16;
-                half low = lerp(v8, v16, saturate((exponent - 8.0h) * 0.125h));
-                half mid = lerp(v16, v32, saturate((exponent - 16.0h) * 0.0625h));
-                half high = lerp(v32, v48, saturate((exponent - 32.0h) * 0.0625h));
-                return lerp(lerp(low, mid, step(16.0h, exponent)), high, step(32.0h, exponent));
-            }
-
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -336,8 +326,8 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 LODFadeCrossFade(input.positionCS);
                 #endif
 
-                half3 baseNormalWS = (half3)HectonCoreLitSafeNormalize(input.normalWS);
-                half3 tangentWS = (half3)HectonCoreLitSafeNormalize(input.tangentWS.xyz);
+                half3 baseNormalWS = ResolveFloraNormalCheap(input.normalWS);
+                half3 tangentWS = ResolveFloraNormalCheap(input.tangentWS.xyz);
                 half3 viewDirWS = SafeNormalize(input.viewDirWS);
                 half tintMask = saturate(input.color.r) * _VertexTintStrength;
                 half moisture = saturate(input.color.g);
@@ -367,14 +357,14 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 half detailSample = (half)HectonCoreLitValueNoise2(detailUv);
 
                 half curveSigned = (widthMask - 0.5h) * 2.0h;
-                half3 normalWS = (half3)HectonCoreLitSafeNormalize(
+                half3 normalWS = ResolveFloraNormalCheap(
                     baseNormalWS
                     + triplanarNormalWS
                     + tangentWS * (curveSigned * edgeMask * _BladeCurveNormalStrength)
                     + baseNormalWS * (midribMask * (_BladeCurveNormalStrength * 0.18h)));
 
                 Light mainLight = GetMainLight();
-                half3 lightDir = (half3)HectonCoreLitSafeNormalize(mainLight.direction);
+                half3 lightDir = (half3)mainLight.direction;
                 half NdotL = saturate(dot(normalWS, lightDir));
                 half wrapDiffuse = saturate(dot(normalWS, lightDir) * 0.5h + 0.5h);
                 half backLight = saturate(dot(-normalWS, lightDir));
@@ -403,16 +393,13 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 half3 ambient = SampleSH(normalWS) * (_AmbientStrength + wetness * 0.12h);
                 half3 diffuse = albedo * (ambient + mainLight.color * wrapDiffuse);
 
-                // Master Grade SSS (Biological Translucency)
-                half sssForward = FastKelpPower01(saturate(dot(lightDir, viewDirWS)), _SSSPower);
-                half sssBack = FastKelpPower01(saturate(dot(-lightDir, viewDirWS)), _SSSPower * 0.5h);
-                half sssMask = thicknessMask * causticMask;
-                half3 sssLighting = _SSSColor.rgb * ((sssForward + sssBack * 0.4h) * _SSSStrength * sssMask);
-                sssLighting += _SSSColor.rgb * (_SSSAmbient * ambient * thicknessMask);
+                half sssWrap = max(0.0h, dot(normalWS, lightDir) + 0.5h) * 0.6666667h;
+                half3 sssLighting = _SSSColor.rgb * ((sssWrap * _SSSStrength * causticMask) + (_SSSAmbient * ambient));
 
                 half3 transmission = _TransmissionColor.rgb * (backLight * _TransmissionStrength * thicknessMask * causticMask);
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
-                half specular = FastKelpSpecularPower01(saturate(dot((half3)HectonCoreLitSafeNormalize(lightDir + viewDirWS), normalWS)), lerp(12.0h, 48.0h, 1.0h - roughness)) * (1.0h - roughness) * 0.18h * glossMask;
+                half specularSheen = NdotL * NdotL;
+                half specular = specularSheen * specularSheen * (1.0h - roughness) * 0.18h * glossMask;
                 half3 biolum = volumeBiolum * (0.45h + thicknessMask * 0.55h);
                 [branch]
                 if (_BiolumStrength > 0.0001h)
@@ -443,7 +430,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
             ENDHLSL
         }
 
-        // ── ShadowCaster Pass (with vertex sway) ─────────────────
+        // ShadowCaster Pass (with vertex sway)
         Pass
         {
             Name "ShadowCaster"
@@ -458,7 +445,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 #include "./../../../GPUInstancer/Shaders/Include/GPUInstancerInclude.cginc"
-#pragma instancing_options procedural:setupGPUI assumeuniformscaling
+#pragma instancing_options procedural:setupGPUI
 #pragma multi_compile_instancing
 
             #pragma target 3.5
@@ -603,7 +590,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
             ENDHLSL
         }
 
-        // ── DepthOnly Pass (with vertex sway) ────────────────────
+        // DepthOnly Pass (with vertex sway)
         Pass
         {
             Name "DepthOnly"
@@ -617,7 +604,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 #include "./../../../GPUInstancer/Shaders/Include/GPUInstancerInclude.cginc"
-#pragma instancing_options procedural:setupGPUI assumeuniformscaling
+#pragma instancing_options procedural:setupGPUI
 #pragma multi_compile_instancing
 
             #pragma target 3.5

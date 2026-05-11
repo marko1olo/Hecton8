@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Atmosphere;
 using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Building;
@@ -49,15 +50,25 @@ namespace Hecton8.Construction
         private const float OppositeDirectionDotThreshold = -0.85f;
         private const float EdgeResistancePerMeter = 0.05f;
         private const float MinimumEdgeResistance = 0.1f;
-        private const float DefaultWaterDensityKilogramsPerCubicMeter = 1025f;
         private const float GravityAccelerationMetersPerSecondSquared = 9.81f;
-        private const float DefaultHydrodynamicDamagePerSecondAtFullOverload = 1.5f;
+        private const float GravityAccelerationMetersPerSecondSquaredInv = 1f / GravityAccelerationMetersPerSecondSquared;
         private const float DefaultHydroShearThresholdKilograms = 18000f;
+        private const float AnalyticalFullStressDepthMeters = 4000f;
+        private const float AnalyticalFullStressDepthInv = 1f / AnalyticalFullStressDepthMeters;
+        private const float AnalyticalMinimumDepthWeightScale = 0.15f;
+        private const float AnalyticalMaximumDepthWeightScale = 1.15f;
+        private const float AnalyticalAnchorReinforcementScale = 0.35f;
+        private const float AnalyticalReachableReinforcementScale = 0.25f;
+        private const float AnalyticalGroundedStressScale = 0.5f;
+        private const float AnalyticalGroundProbeMeters = 1f;
+        private const float AnalyticalShaderStressEpsilon = 0.0025f;
+        private const float AnalyticalShaderRadiusPaddingMeters = 2f;
+        private const float AnalyticalShaderDisplacementMaxMeters = 0.055f;
+        private const float AnalyticalShaderGridScale = 0.085f;
         private const float PressureBucklingCompressionDeltaThreshold = 0.15f;
         private const float RuptureCascadeNeighborStressMultiplier = 0.5f;
         private const float StructuralGroanStressThreshold01 = 0.8f;
         private const float StructuralGroanPitchRange = 0.32f;
-        private const float MinimumHydrodynamicFlowSpeedMetersPerSecond = 0.1f;
         private const float CondensationInteriorTemperatureCelsius = 30f;
         private const float CondensationExternalTemperatureCelsius = 5f;
         private const float SupportCaptureRadiusMeters = 3f;
@@ -70,6 +81,8 @@ namespace Hecton8.Construction
         private const float SiegeVulnerableIntegrityThreshold01 = 0.72f;
         private static readonly int CarbonFilterItemHashId = LocHash.Compute("Data_CarbonFilter");
         private static readonly uint RuptureCascadeEventHash = unchecked((uint)LocHash.Compute("HabitatGraphManager.RuptureCascade"));
+        private static readonly int HabitatStressCenterRadiusId = Shader.PropertyToID("_HectonHabitatStressCenterRadius");
+        private static readonly int HabitatStressParamsId = Shader.PropertyToID("_HectonHabitatStressParams");
         private const string NativeMemoryOwner = nameof(HabitatGraphManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private static readonly Color PipeSplineColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
@@ -110,6 +123,11 @@ namespace Hecton8.Construction
         private int _nodeCount;
         private int _edgeCount;
         private int _siegeTargetCount;
+        private float _analyticalStress;
+        private float _analyticalIntegrity;
+        private float _lastPublishedAnalyticalStress01 = -1f;
+        private uint _lastPublishedAnalyticalBreachNodeId;
+        private uint _analyticalBreachNodeId;
 
         internal HabitatGraphManager(int initialModuleCapacity)
         {
@@ -156,6 +174,7 @@ namespace Hecton8.Construction
 
         public void Dispose()
         {
+            PublishAnalyticalStressShader(float3.zero, 0f, 0f);
             ClearVisualLinks();
             DisposeNativeBuffers();
             _graph.Dispose();
@@ -225,46 +244,246 @@ namespace Hecton8.Construction
             if (runtimeTopologyChanged)
                 PublishRuntimeRuptureTopologyState();
 
-            HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-            if (bridge == null)
+            EvaluateAnalyticalIntegrityStress();
+            PublishSiegeTargetSnapshot();
+        }
+
+        internal float AnalyticalStress => _analyticalStress;
+        internal float AnalyticalIntegrity => _analyticalIntegrity;
+
+        private void EvaluateAnalyticalIntegrityStress()
+        {
+            int moduleCount = math.min(_nodeCount, _moduleBuffer.Count);
+            if (moduleCount <= 0)
             {
-                PublishSiegeTargetSnapshot();
+                _analyticalStress = 0f;
+                _analyticalIntegrity = 0f;
+                _analyticalBreachNodeId = 0u;
+                PublishAnalyticalStressShader(float3.zero, 0f, 0f);
                 return;
             }
 
-            for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
+            float stressSum = 0f;
+            float reinforcementSum = 0f;
+            float integritySum = 0f;
+            float3 centerSum = float3.zero;
+            int activeModuleCount = 0;
+
+            for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
             {
-                ModuleRecord module = _moduleBuffer[moduleIndex];
+                ModuleRecord module = _moduleBuffer[nodeIndex];
                 BaseModule baseModule = module.BaseModule;
                 if (baseModule == null || !baseModule.isActiveAndEnabled || baseModule.IsBreached)
                     continue;
 
-                if (!bridge.TrySampleAbyssalFlow(module.Position, out Vector3 flowVector))
-                    continue;
+                float moduleIntegrity = math.max(1f, baseModule.MaxIntegrity);
+                float moduleStress = ResolveAnalyticalModuleDepthWeight(module, baseModule, moduleIntegrity);
+                if (IsAnalyticalGrounded(module))
+                    moduleStress *= AnalyticalGroundedStressScale;
 
-                float flowSpeedSquared = flowVector.sqrMagnitude;
-                if (flowSpeedSquared < (MinimumHydrodynamicFlowSpeedMetersPerSecond * MinimumHydrodynamicFlowSpeedMetersPerSecond))
-                    continue;
-
-                float projectedAreaSquareMeters = ResolveProjectedDragAreaSquareMeters(baseModule);
-                float moduleYieldStrengthNewtons = ResolveYieldStrengthNewtons(baseModule);
-                if (projectedAreaSquareMeters <= 0f || moduleYieldStrengthNewtons <= 0f)
-                    continue;
-
-                // DragForce = 0.5 * rho * v^2 * A. Overload above yield converts into normalized fatigue.
-                float dragForceNewtons = 0.5f * DefaultWaterDensityKilogramsPerCubicMeter * flowSpeedSquared * projectedAreaSquareMeters;
-                if (dragForceNewtons <= moduleYieldStrengthNewtons)
-                    continue;
-
-                float overloadRatio = (dragForceNewtons - moduleYieldStrengthNewtons) / moduleYieldStrengthNewtons;
-                float damageAmount = overloadRatio * deltaTime * DefaultHydrodynamicDamagePerSecondAtFullOverload * math.max(1f, baseModule.MaxIntegrity);
-                if (damageAmount <= 0f || !math.isfinite(damageAmount))
-                    continue;
-
-                baseModule.ApplyDamage(damageAmount);
+                stressSum += moduleStress;
+                reinforcementSum += ResolveAnalyticalReinforcementValue(nodeIndex, module, baseModule, moduleIntegrity);
+                integritySum += moduleIntegrity;
+                centerSum += module.Position;
+                activeModuleCount++;
             }
 
-            PublishSiegeTargetSnapshot();
+            if (activeModuleCount <= 0)
+            {
+                _analyticalStress = 0f;
+                _analyticalIntegrity = 0f;
+                _analyticalBreachNodeId = 0u;
+                PublishAnalyticalStressShader(float3.zero, 0f, 0f);
+                return;
+            }
+
+            float netStress = math.max(0f, stressSum - reinforcementSum);
+            _analyticalStress = math.isfinite(netStress) ? netStress : 0f;
+            _analyticalIntegrity = math.max(1f, integritySum);
+
+            float stress01 = math.saturate(_analyticalStress * math.rcp(_analyticalIntegrity));
+            if (_analyticalStress > _analyticalIntegrity)
+            {
+                TryFlagAnalyticalIntegrityLeak(moduleCount, _analyticalStress);
+            }
+            else
+            {
+                _analyticalBreachNodeId = 0u;
+            }
+
+            float3 center = centerSum * math.rcp(activeModuleCount);
+            float radius = ResolveAnalyticalBaseRadius(center, moduleCount) + AnalyticalShaderRadiusPaddingMeters;
+            PublishAnalyticalStressShader(center, radius, stress01);
+        }
+
+        private static float ResolveAnalyticalModuleDepthWeight(ModuleRecord module, BaseModule baseModule, float moduleIntegrity)
+        {
+            float depthMeters = baseModule.PressureCompressionDepthMeters;
+            if (depthMeters <= 0.25f || !math.isfinite(depthMeters))
+                depthMeters = ResolveRuntimeDepthMeters(module.Position);
+
+            float depth01 = math.saturate(depthMeters * AnalyticalFullStressDepthInv);
+            float scale = math.lerp(AnalyticalMinimumDepthWeightScale, AnalyticalMaximumDepthWeightScale, depth01);
+            return moduleIntegrity * scale;
+        }
+
+        private float ResolveAnalyticalReinforcementValue(int nodeIndex, ModuleRecord module, BaseModule baseModule, float moduleIntegrity)
+        {
+            float reinforcement = 0f;
+            if (module.IsAnchorNode)
+                reinforcement += moduleIntegrity * AnalyticalAnchorReinforcementScale;
+
+            if (_anchorReachability.IsCreated &&
+                nodeIndex >= 0 &&
+                nodeIndex < _anchorReachability.Length &&
+                _anchorReachability[nodeIndex] != 0)
+            {
+                reinforcement += moduleIntegrity * AnalyticalReachableReinforcementScale;
+            }
+
+            float yieldMassKilograms = ResolveYieldStrengthNewtons(baseModule) * GravityAccelerationMetersPerSecondSquaredInv;
+            if (math.isfinite(yieldMassKilograms) && yieldMassKilograms > 0f)
+                reinforcement += math.min(moduleIntegrity * 0.5f, yieldMassKilograms * 0.0005f);
+
+            return reinforcement;
+        }
+
+        private static float ResolveRuntimeDepthMeters(float3 runtimePosition)
+        {
+            HectonAtmosphereManager atmosphereManager = GlobalRegistry.Atmosphere;
+            if (atmosphereManager == null)
+                return math.max(0f, -runtimePosition.y);
+
+            return math.max(0f, atmosphereManager.SeaLevelY - runtimePosition.y);
+        }
+
+        private static bool IsAnalyticalGrounded(ModuleRecord module)
+        {
+            return IsGroundedHybridSample(module.Position, AnalyticalGroundProbeMeters * 2f);
+        }
+
+        private static bool IsGroundedHybridSample(float3 position, float probeMeters)
+        {
+            if (!VoxelDynamicNavGridRuntime.TrySampleHybridNavigation(position, out VoxelDynamicNavGridRuntime.HybridNavigationSample sample))
+                return false;
+
+            if (sample.Mode == VoxelDynamicNavGridRuntime.HybridNavigationMode.SolidVoxel)
+                return true;
+
+            if (sample.HasTerrainHeight != 0 && math.abs(position.y - sample.TerrainHeight) <= probeMeters)
+                return true;
+
+            return sample.Mode == VoxelDynamicNavGridRuntime.HybridNavigationMode.CaveVoxel &&
+                   math.abs(position.y - sample.FloorBoundaryY) <= probeMeters;
+        }
+
+        private float ResolveAnalyticalBaseRadius(float3 center, int moduleCount)
+        {
+            float radiusSq = 1f;
+            for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
+            {
+                BaseModule baseModule = _moduleBuffer[nodeIndex].BaseModule;
+                if (baseModule == null || !baseModule.isActiveAndEnabled)
+                    continue;
+
+                float distanceSq = math.lengthsq(_moduleBuffer[nodeIndex].Position - center);
+                if (distanceSq > radiusSq)
+                    radiusSq = distanceSq;
+            }
+
+            return ResolveFastLengthFromSq(radiusSq);
+        }
+
+        private void PublishAnalyticalStressShader(float3 center, float radius, float stress01)
+        {
+            if (_lastPublishedAnalyticalBreachNodeId == _analyticalBreachNodeId &&
+                math.abs(stress01 - _lastPublishedAnalyticalStress01) <= AnalyticalShaderStressEpsilon &&
+                stress01 > 0f)
+            {
+                return;
+            }
+
+            _lastPublishedAnalyticalStress01 = stress01;
+            _lastPublishedAnalyticalBreachNodeId = _analyticalBreachNodeId;
+            Shader.SetGlobalVector(
+                HabitatStressCenterRadiusId,
+                new Vector4(center.x, center.y, center.z, math.max(0f, radius)));
+            Shader.SetGlobalVector(
+                HabitatStressParamsId,
+                new Vector4(
+                    stress01,
+                    AnalyticalShaderDisplacementMaxMeters,
+                    AnalyticalShaderGridScale,
+                    (float)(_analyticalBreachNodeId & 1023u)));
+        }
+
+        private void TryFlagAnalyticalIntegrityLeak(int moduleCount, float stress)
+        {
+            if (_analyticalBreachNodeId != 0u && ContainsAnalyticalBreachNode(moduleCount, _analyticalBreachNodeId))
+                return;
+
+            uint seed = ComposeAnalyticalBreachSeed(moduleCount, stress);
+            int startIndex = moduleCount > 0 ? (int)(seed % (uint)moduleCount) : 0;
+            for (int offset = 0, nodeIndex = startIndex; offset < moduleCount; offset++, nodeIndex++)
+            {
+                if (nodeIndex == moduleCount)
+                    nodeIndex = 0;
+
+                ModuleRecord module = _moduleBuffer[nodeIndex];
+                BaseModule baseModule = module.BaseModule;
+                if (baseModule == null ||
+                    !baseModule.isActiveAndEnabled ||
+                    baseModule.IsBreached ||
+                    baseModule.CurrentFailureMode != BaseModuleFailureMode.None)
+                {
+                    continue;
+                }
+
+                baseModule.SetState(
+                    baseModule.CurrentIntegrity,
+                    baseModule.IsFlooded,
+                    BaseModuleFailureMode.OxygenLeak,
+                    baseModule.MaxRecoverableIntegrity,
+                    baseModule.AirReserveNormalized,
+                    baseModule.Co2Normalized,
+                    baseModule.FloodedReefFloodSeconds,
+                    baseModule.InteriorReefInfestationActive);
+                _analyticalBreachNodeId = ResolveAnalyticalNodeKey(nodeIndex, module.NodeId);
+                return;
+            }
+        }
+
+        private bool ContainsAnalyticalBreachNode(int moduleCount, uint nodeId)
+        {
+            for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
+            {
+                ModuleRecord module = _moduleBuffer[nodeIndex];
+                BaseModule baseModule = module.BaseModule;
+                if (ResolveAnalyticalNodeKey(nodeIndex, module.NodeId) == nodeId &&
+                    baseModule != null &&
+                    baseModule.isActiveAndEnabled &&
+                    baseModule.CurrentFailureMode != BaseModuleFailureMode.None)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static uint ResolveAnalyticalNodeKey(int nodeIndex, uint nodeId)
+        {
+            return nodeId != 0u ? nodeId : (uint)(nodeIndex + 1);
+        }
+
+        private uint ComposeAnalyticalBreachSeed(int moduleCount, float stress)
+        {
+            uint seed = unchecked((uint)moduleCount * 1664525u + 1013904223u);
+            seed ^= (uint)math.clamp((int)math.round(math.max(0f, stress) * 17f), 0, int.MaxValue);
+            for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
+                seed = unchecked(seed * 1664525u + ResolveAnalyticalNodeKey(nodeIndex, _moduleBuffer[nodeIndex].NodeId) + 1013904223u);
+
+            return seed;
         }
 
         private void ApplyWaterPumpDrainage(float deltaTime)
@@ -745,7 +964,7 @@ namespace Hecton8.Construction
                     {
                         float rawPotential = ResolveFungalMindPotentialScore(currentRecord, _nodes[currentNodeIndex]);
                         float depthPenalty = 1f + (math.max(0, currentDepth - 1) * 0.08f);
-                        float score = rawPotential / depthPenalty;
+                        float score = rawPotential * math.rcp(depthPenalty);
                         if (score > bestScore && math.isfinite(score))
                         {
                             bestScore = score;
@@ -1266,7 +1485,7 @@ namespace Hecton8.Construction
             float spanSq = math.lengthsq(spanDelta);
             float unsupportedSpanMeters = LogisticsPipeBuilder.UnsupportedSpanMeters;
             float unsupportedSpanSq = unsupportedSpanMeters * unsupportedSpanMeters;
-            float radiusScale = math.lerp(0.65f, 1.2f, math.saturate(spanSq / math.max(0.0001f, unsupportedSpanSq)));
+            float radiusScale = math.lerp(0.65f, 1.2f, math.saturate(spanSq * math.rcp(math.max(0.0001f, unsupportedSpanSq))));
             fluidDecals.RegisterRuptureFluid(midpointRuntime, radiusScale);
             _emittedRuptureEdgeVfxKeys.Add(linkId);
             _emittedRuptureEdgeVfxLookup.Add(linkId);
@@ -1660,7 +1879,7 @@ namespace Hecton8.Construction
                 return math.lengthsq(point - start);
             }
 
-            projection = math.saturate(math.dot(point - start, segment) / segmentLengthSq);
+            projection = math.saturate(math.dot(point - start, segment) * math.rcp(segmentLengthSq));
             float3 closestPoint = start + segment * projection;
             return math.lengthsq(point - closestPoint);
         }
@@ -1733,8 +1952,8 @@ namespace Hecton8.Construction
 
         private static float ResolveHydroShearThresholdKilograms(BaseModule sourceModule, BaseModule destinationModule)
         {
-            float sourceYieldMassKilograms = ResolveYieldStrengthNewtons(sourceModule) / GravityAccelerationMetersPerSecondSquared;
-            float destinationYieldMassKilograms = ResolveYieldStrengthNewtons(destinationModule) / GravityAccelerationMetersPerSecondSquared;
+            float sourceYieldMassKilograms = ResolveYieldStrengthNewtons(sourceModule) * GravityAccelerationMetersPerSecondSquaredInv;
+            float destinationYieldMassKilograms = ResolveYieldStrengthNewtons(destinationModule) * GravityAccelerationMetersPerSecondSquaredInv;
             float weakestYieldMassKilograms = math.min(sourceYieldMassKilograms, destinationYieldMassKilograms);
             if (weakestYieldMassKilograms <= 0f || !math.isfinite(weakestYieldMassKilograms))
                 weakestYieldMassKilograms = DefaultHydroShearThresholdKilograms;

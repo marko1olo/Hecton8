@@ -30,12 +30,14 @@ namespace Hecton8.Dev
         private const float BytesToMegabytes = 1f / (1024f * 1024f);
         private const int MaxAllowedLodChangesPerFrame = 50;
         private const int MaxExpeditionSamples = 1802;
+        private const int MaxEmergencyTickOperations = 64;
         private const int CsvNumberBufferLength = 32;
         public const int ExpeditionSampleStrideBytes = 64;
         private const string CsvFileName = "bot_expedition.csv";
         private const string FailureNone = "NONE";
         private const string FailureLowFps = "FPS_UNDER_45_FOR_10S";
         private const string FailureLodBurst = "LOD_TRANSITIONS_OVER_50";
+        private const string FailureEmergencyTimeout = "BOT_EMERGENCY_TIMEOUT";
         private const string CsvHeader = "elapsed_seconds,distance_est_meters,fps,mono_used_mb,total_allocated_mb,total_reserved_mb,graphics_driver_allocated_mb,gc_thread_allocated_bytes,gc_gen0,gc_gen1,gc_gen2,lod_changes_frame,pos_x,pos_y,pos_z";
 
         // COLD ALLOC: WaitCallback[1] — background CSV flush entry point — owner: BotController
@@ -98,6 +100,7 @@ namespace Hecton8.Dev
         private int _startGen1;
         private int _startGen2;
         private int _maxLodChangesSinceSample;
+        private int _emergencyTickOperations;
         private bool _registered;
         private bool _running;
         private bool _csvDirty;
@@ -228,14 +231,24 @@ namespace Hecton8.Dev
             if (!_running)
                 return;
 
+            _emergencyTickOperations = 0;
+            if (!TryAdvanceEmergencyTick())
+                return;
+
             float safeDeltaTime = SanitizeNonNegative(deltaTime);
             _elapsedSeconds += safeDeltaTime;
+            if (!TryAdvanceEmergencyTick())
+                return;
+
             ResolvePlayerBody(force: false, deltaTime: safeDeltaTime);
             if (_playerBody == null)
             {
                 StopExpedition();
                 return;
             }
+
+            if (!TryAdvanceEmergencyTick())
+                return;
 
             if (_hasDriveCommand && _accelerationMetersPerSecondSq > 0f)
             {
@@ -250,12 +263,18 @@ namespace Hecton8.Dev
             _sampleFrameCount++;
             TrackLodTransitionPeak();
             _sampleTimer += safeDeltaTime;
+            if (!TryAdvanceEmergencyTick())
+                return;
+
             if (_sampleTimer >= SampleIntervalSeconds)
             {
                 RecordCsvSample(_sampleTimer, _sampleFrameCount);
                 _sampleTimer = 0f;
                 _sampleFrameCount = 0;
             }
+
+            if (!TryAdvanceEmergencyTick())
+                return;
 
             float traveledSq = DistanceSq(_startPosition, _playerBody.position);
             if (traveledSq >= _targetDistanceMetersSq || _elapsedSeconds >= MaxRuntimeSeconds)
@@ -437,7 +456,11 @@ namespace Hecton8.Dev
                 using (StreamWriter writer = new StreamWriter(CsvPath, append: false))
                 {
                     writer.WriteLine(CsvHeader);
-                    for (int i = 0; i < _sampleCount; i++)
+                    int sampleCount = _sampleCount;
+                    if (sampleCount > MaxExpeditionSamples)
+                        sampleCount = MaxExpeditionSamples;
+
+                    for (int i = 0; i < sampleCount; i++)
                     {
                         ExpeditionSample sample = _samples[i];
                         WriteFloatCsv(writer, sample.ElapsedSeconds, "F3", numberBuffer);
@@ -592,6 +615,18 @@ namespace Hecton8.Dev
         private static float Abs(float value)
         {
             return value < 0f ? -value : value;
+        }
+
+        private bool TryAdvanceEmergencyTick()
+        {
+            _emergencyTickOperations++;
+            if (_emergencyTickOperations <= MaxEmergencyTickOperations)
+                return true;
+
+            _hasFailure = true;
+            _failureReason = FailureEmergencyTimeout;
+            StopExpedition();
+            return false;
         }
     }
 }

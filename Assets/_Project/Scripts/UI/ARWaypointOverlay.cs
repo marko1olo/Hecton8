@@ -47,14 +47,36 @@ namespace Hecton8.UI
         private const string DefaultRelayLabel = "SERVICE RELAY";
         private const string DefaultAnchorLabel = "ABYSSAL ANCHOR";
         private const string DefaultExternalLabel = "WAYPOINT";
+        private const int EdgeRotationUp = 0;
+        private const int EdgeRotationRight = 1;
+        private const int EdgeRotationLeft = 2;
+        private const int EdgeRotationDown = 3;
+        private const int EdgeRotationUpRight = 4;
+        private const int EdgeRotationDownRight = 5;
+        private const int EdgeRotationUpLeft = 6;
+        private const int EdgeRotationDownLeft = 7;
 
         private static readonly uint _WaypointSolveBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HUD_AR_WAYPOINT_SOLVE_OVER_BUDGET"));
         private static readonly uint _WaypointSolveBudgetContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ARWaypointOverlay.Solve"));
         private static readonly Color RelayColor = new Color(0.64f, 0.94f, 0.98f, 0.96f);
         private static readonly Color AnchorColor = new Color(0.98f, 0.74f, 0.22f, 0.96f);
         private static readonly Color OccludedColor = new Color(0.94f, 0.94f, 0.94f, 0.62f);
+        // COLD ALLOC: Quaternion[8] - precomputed edge-marker rotations, replaces Tick-path rotation construction - owner: ARWaypointOverlay
+        private static readonly Quaternion[] s_edgeRotationLut =
+        {
+            Quaternion.identity,
+            new Quaternion(0f, 0f, -0.70710677f, 0.70710677f),
+            new Quaternion(0f, 0f, 0.70710677f, 0.70710677f),
+            new Quaternion(0f, 0f, 1f, 0f),
+            new Quaternion(0f, 0f, -0.38268343f, 0.9238795f),
+            new Quaternion(0f, 0f, -0.9238795f, 0.38268343f),
+            new Quaternion(0f, 0f, 0.38268343f, 0.9238795f),
+            new Quaternion(0f, 0f, 0.9238795f, 0.38268343f)
+        };
+        // COLD ALLOC: List<SuitHUDV4CanvasOverlay>[4] - overlay lookup scratch buffer - owner: ARWaypointOverlay
         private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer =
             new List<SuitHUDV4CanvasOverlay>(4);
+        // COLD ALLOC: List<RectTransform>[32] - direct child lookup scratch buffer - owner: ARWaypointOverlay
         private static readonly List<RectTransform> s_directChildBuffer =
             new List<RectTransform>(32);
 
@@ -114,7 +136,7 @@ namespace Hecton8.UI
             public string CachedLabel;
             public int CachedAnchoredX;
             public int CachedAnchoredY;
-            public int CachedRotationDegrees;
+            public int CachedRotationIndex;
             public byte CachedAlphaByte;
             public bool CachedEdgeState;
             public bool CachedFillEnabled;
@@ -720,23 +742,23 @@ namespace Hecton8.UI
             return value;
         }
 
-        private static float ResolveApproxEdgeRotationDegrees(Vector2 direction)
+        private static int ResolveApproxEdgeRotationIndex(Vector2 direction)
         {
             float absX = math.abs(direction.x);
             float absY = math.abs(direction.y);
             if (absX <= ProjectionDepthEpsilon && absY <= ProjectionDepthEpsilon)
-                return 0f;
+                return EdgeRotationUp;
 
             if (absX > absY * 2.41421356f)
-                return direction.x >= 0f ? -90f : 90f;
+                return direction.x >= 0f ? EdgeRotationRight : EdgeRotationLeft;
 
             if (absY > absX * 2.41421356f)
-                return direction.y >= 0f ? 0f : 180f;
+                return direction.y >= 0f ? EdgeRotationUp : EdgeRotationDown;
 
             if (direction.x >= 0f)
-                return direction.y >= 0f ? -45f : -135f;
+                return direction.y >= 0f ? EdgeRotationUpRight : EdgeRotationDownRight;
 
-            return direction.y >= 0f ? 45f : 135f;
+            return direction.y >= 0f ? EdgeRotationUpLeft : EdgeRotationDownLeft;
         }
 
         private void SetExternalWaypointInternal(
@@ -1059,11 +1081,11 @@ namespace Hecton8.UI
 
             int pixelX = (int)math.round(anchoredPosition.x);
             int pixelY = (int)math.round(anchoredPosition.y);
-            int rotationDegrees = clampedToEdge ? (int)ResolveApproxEdgeRotationDegrees(clampDirection) : 0;
+            int rotationIndex = clampedToEdge ? ResolveApproxEdgeRotationIndex(clampDirection) : EdgeRotationUp;
             if (slot.HasTransformState &&
                 slot.CachedAnchoredX == pixelX &&
                 slot.CachedAnchoredY == pixelY &&
-                slot.CachedRotationDegrees == rotationDegrees)
+                slot.CachedRotationIndex == rotationIndex)
             {
                 return;
             }
@@ -1071,11 +1093,9 @@ namespace Hecton8.UI
             slot.HasTransformState = true;
             slot.CachedAnchoredX = pixelX;
             slot.CachedAnchoredY = pixelY;
-            slot.CachedRotationDegrees = rotationDegrees;
+            slot.CachedRotationIndex = rotationIndex;
             slot.Root.anchoredPosition = new Vector2(pixelX, pixelY);
-            slot.Root.localRotation = rotationDegrees != 0
-                ? Quaternion.Euler(0f, 0f, rotationDegrees)
-                : Quaternion.identity;
+            slot.Root.localRotation = s_edgeRotationLut[rotationIndex];
         }
 
         private static void ApplySlotAlpha(ref WaypointSlot slot, float alpha)

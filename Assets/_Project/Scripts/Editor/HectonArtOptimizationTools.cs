@@ -527,6 +527,12 @@ namespace Hecton8.EditorTools
 
                 readable = CaptureReadableTexture(source, AtlasCellSize, AtlasCellSize);
                 NativeArray<Color32> sourcePixels = readable.GetRawTextureData<Color32>();
+                if (sourcePixels.Length != AtlasCellSize * AtlasCellSize)
+                    throw new InvalidOperationException("[HectonArtOptimizationTools] Atlas source readable copy has unexpected stride: " + sourcePath);
+
+                if (atlasPixels.Length != AtlasSize * AtlasSize)
+                    throw new InvalidOperationException("[HectonArtOptimizationTools] Atlas target raw data length does not match RGBA32 stride.");
+
                 CopyAtlasCellRowsUnsafe(sourcePixels, atlasPixels, targetX, targetY);
             }
             finally
@@ -547,7 +553,7 @@ namespace Hecton8.EditorTools
             const int PixelBytes = 4;
             byte* sourceBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(sourcePixels);
             byte* atlasBase = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(atlasPixels);
-            long rowBytes = AtlasCellSize * PixelBytes;
+            long rowBytes = (long)AtlasCellSize * PixelBytes;
             int sourceStrideBytes = AtlasCellSize * PixelBytes;
             int atlasStrideBytes = AtlasSize * PixelBytes;
 

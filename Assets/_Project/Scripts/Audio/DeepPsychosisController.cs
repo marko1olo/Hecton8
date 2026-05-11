@@ -15,6 +15,7 @@ namespace Hecton8.Audio
     {
         private const int DependencyRetryFrameInterval = 30;
         private const float DiagonalCueAxis = 0.70710678f;
+        private const float Random24ToUnit = 0.000000059604648f;
 
         [Header("── Clip Pools ──────────────────")]
         [Tooltip("3D whisper cues emitted around the player during deep psychosis windows.")]
@@ -145,7 +146,7 @@ namespace Hecton8.Audio
                 : 0f;
             float pollutionPressure01 = pollutionLoad <= pollutionThreshold
                 ? 0f
-                : math.saturate((pollutionLoad - pollutionThreshold) / math.max(1f, pollutionThreshold));
+                : math.saturate((pollutionLoad - pollutionThreshold) * math.rcp(math.max(1f, pollutionThreshold)));
 
             float depthStress01 = deepPressure01 * oxygenDanger01;
             _psychosisIntensity01 = math.saturate(math.max(depthStress01, pollutionPressure01 * 0.65f));
@@ -367,7 +368,7 @@ namespace Hecton8.Audio
 
         private float NextRandom01()
         {
-            return (NextRandomUInt() & 0x00FFFFFFu) * (1f / 16777215f);
+            return (NextRandomUInt() & 0x00FFFFFFu) * Random24ToUnit;
         }
 
         private uint NextRandomUInt()

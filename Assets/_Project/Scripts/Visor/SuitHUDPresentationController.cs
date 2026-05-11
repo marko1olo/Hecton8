@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -18,6 +19,8 @@ namespace NASAPunk.Visor
     {
         private const float AutoResolveRetryInterval = 1f;
         private const float DegreesToHalfRadians = 0.00872664626f;
+        private const float PrimaryHudTanMinRadians = 0.001f;
+        private const float PrimaryHudTanMaxRadians = 1.55334306f;
         private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
         private static readonly List<SuitHUDScreenCompositor> s_compositorResolveBuffer = new List<SuitHUDScreenCompositor>(2);
 
@@ -367,6 +370,7 @@ namespace NASAPunk.Visor
             EnsureProjectionSource(projectedModeRequested, allowProjectionSourceCreation);
             bool projectedMode = projectedModeRequested && IsProjectedPresentationAvailable();
             ApplyDiegeticProjectionFrustumFit(projectedMode);
+            ApplyHudMotionVectorStabilization(projectedMode);
 
             if (!force &&
                 _appliedMode == presentationMode &&
@@ -545,13 +549,22 @@ namespace NASAPunk.Visor
             if (distance <= fitCamera.nearClipPlane + 0.01f)
                 return;
 
-            float height = 2f * distance * ApproximateTanPositive(fitCamera.fieldOfView * DegreesToHalfRadians);
+            float height = 2f * distance * ExactPrimaryHudTanPositive(fitCamera.fieldOfView * DegreesToHalfRadians);
             float width = height * fitCamera.aspect;
             float fill = Mathf.Max(0.01f, diegeticProjectionViewportFill);
             Vector3 targetScale = new Vector3(width * fill, height * fill, surface.localScale.z);
 
             if ((surface.localScale - targetScale).sqrMagnitude > 0.000001f)
                 surface.localScale = targetScale;
+        }
+
+        private void ApplyHudMotionVectorStabilization(bool projectedMode)
+        {
+            if (!projectedMode || diegeticProjectionRenderer == null)
+                return;
+
+            if (diegeticProjectionRenderer.motionVectorGenerationMode != MotionVectorGenerationMode.ForceNoMotion)
+                diegeticProjectionRenderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
         }
 
         private void EnsureProjectionSource(bool projectedMode, bool allowProjectionSourceCreation)
@@ -822,13 +835,10 @@ namespace NASAPunk.Visor
 #endif
         }
 
-        private static float ApproximateTanPositive(float radians)
+        private static float ExactPrimaryHudTanPositive(float radians)
         {
-            float x = Mathf.Clamp(radians, 0f, 1.4f);
-            float x2 = x * x;
-            float numerator = 15f - x2;
-            float denominator = Mathf.Max(0.0001f, 15f - 6f * x2);
-            return x * numerator * Unity.Mathematics.math.rcp(denominator);
+            float x = Mathf.Clamp(radians, PrimaryHudTanMinRadians, PrimaryHudTanMaxRadians);
+            return (float)Math.Tan(x);
         }
 
         private static string ResolvePresentationModeLabel(PresentationMode mode)

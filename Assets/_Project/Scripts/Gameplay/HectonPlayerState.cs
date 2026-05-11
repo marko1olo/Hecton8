@@ -104,7 +104,7 @@ namespace Hecton8.Gameplay
                 ScheduledSweepCommands = new NativeArray<CapsulecastCommand>(
                     requiredCommandCount,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CapsulecastCommand>[cache-line padded commandCount] - deferred KCC sweep commands; Allocator.Persistent native storage with 64-byte count padding - owner: HectonPlayerMotorNativeState
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<CapsulecastCommand>[cache-line padded commandCount] - deferred KCC sweep commands; Allocator.Persistent native storage with 64-byte count padding - owner: HectonPlayerMotorNativeState
                 NativeMemorySentinel.RegisterNativeArray(
                     ScheduledSweepCommands,
                     NativeMemoryOwner,
@@ -117,7 +117,7 @@ namespace Hecton8.Gameplay
                 ScheduledSweepResults = new NativeArray<RaycastHit>(
                     requiredResultCount,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[cache-line padded resultCount] - deferred KCC sweep results; Allocator.Persistent native storage with 64-byte count padding - owner: HectonPlayerMotorNativeState
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RaycastHit>[cache-line padded resultCount] - deferred KCC sweep results; Allocator.Persistent native storage with 64-byte count padding - owner: HectonPlayerMotorNativeState
                 NativeMemorySentinel.RegisterNativeArray(
                     ScheduledSweepResults,
                     NativeMemoryOwner,

@@ -67,6 +67,7 @@ float4 _AbyssalGridResolution;
 float4 _AbyssalFlowCenter;
 float4 _AbyssalFlowSpacing;
 float4 _HectonCaveVoxelHalfExtents;
+float4 _HectonCaveVoxelInvDoubleHalfExtents;
 float4 _HectonSubmarineWashSphere;
 float4 _HectonSubmarineWashVelocity;
 float4 _HectonFloatingOriginOffset;
@@ -126,30 +127,16 @@ float HashSin(float2 value)
     return Hash21(value);
 }
 
-float ApproxLength2(float2 value)
+float DominantMagnitude2(float2 value)
 {
     float2 absValue = abs(value);
-    float major = max(absValue.x, absValue.y);
-    float minor = min(absValue.x, absValue.y);
-    return major + minor * 0.375;
+    return max(absValue.x, absValue.y);
 }
 
-float ApproxLength3(float3 value)
+float DominantMagnitude3(float3 value)
 {
     float3 absValue = abs(value);
-    float major = max(absValue.x, max(absValue.y, absValue.z));
-    float minor = min(absValue.x, min(absValue.y, absValue.z));
-    float middle = absValue.x + absValue.y + absValue.z - major - minor;
-    return major + middle * 0.375 + minor * 0.25;
-}
-
-float2 FastNormalize2Approx(float2 value)
-{
-    float approxLength = ApproxLength2(value);
-    if (!isfinite(approxLength) || approxLength <= EPSILON)
-        return 0.0.xx;
-
-    return value * rcp(approxLength);
+    return max(absValue.x, max(absValue.y, absValue.z));
 }
 
 float2 DominantAxisDirection2(float2 value)
@@ -164,19 +151,42 @@ float2 DominantAxisDirection2(float2 value)
     return float2(0.0, value.y >= 0.0 ? 1.0 : -1.0);
 }
 
+float2 QuantizedOctDirection2(float2 value)
+{
+    float2 absValue = abs(value);
+    if (absValue.x <= EPSILON && absValue.y <= EPSILON)
+        return 0.0.xx;
+
+    float2 axis = DominantAxisDirection2(value);
+    float major = max(absValue.x, absValue.y);
+    float minor = min(absValue.x, absValue.y);
+    if (minor * 2.0 < major)
+        return axis;
+
+    return float2(
+        value.x >= 0.0 ? 0.70710678 : -0.70710678,
+        value.y >= 0.0 ? 0.70710678 : -0.70710678);
+}
+
+float3 DominantAxisDirection3(float3 value)
+{
+    float3 absValue = abs(value);
+    if (absValue.x <= EPSILON && absValue.y <= EPSILON && absValue.z <= EPSILON)
+        return 0.0.xxx;
+
+    if (absValue.x >= absValue.y && absValue.x >= absValue.z)
+        return float3(value.x >= 0.0 ? 1.0 : -1.0, 0.0, 0.0);
+
+    if (absValue.y >= absValue.z)
+        return float3(0.0, value.y >= 0.0 ? 1.0 : -1.0, 0.0);
+
+    return float3(0.0, 0.0, value.z >= 0.0 ? 1.0 : -1.0);
+}
+
 float FastTriangleSigned(float phase)
 {
     float triangle01 = 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
     return triangle01 * 2.0 - 1.0;
-}
-
-float3 SafeNormalizeMarineSnow(float3 value)
-{
-    float approxLength = ApproxLength3(value);
-    if (!isfinite(approxLength) || approxLength <= EPSILON)
-        return float3(0.0, 0.0, 0.0);
-
-    return value * rcp(approxLength);
 }
 
 float ResolveFlowSynchronyPhase(float3 positionWS)
@@ -187,8 +197,8 @@ float ResolveFlowSynchronyPhase(float3 positionWS)
 
 float3 ResolveFlowSynchronyOffset(float3 positionWS, float3 flowSample)
 {
-    float3 flowDirection = SafeNormalizeMarineSnow(flowSample);
-    float flowMagnitude = ApproxLength2(flowSample.xz) * max(_HectonFlowSynchronyParams.x, 1.0);
+    float3 flowDirection = DominantAxisDirection3(flowSample);
+    float flowMagnitude = DominantMagnitude2(flowSample.xz) * max(_HectonFlowSynchronyParams.x, 1.0);
     if (flowMagnitude <= EPSILON)
         return 0.0.xxx;
 
@@ -339,27 +349,28 @@ float EvaluateSonarReactiveGlow(float3 positionWS)
     if (distanceToOriginSq > revealRadiusSq)
         return 0.0;
 
-    float distanceToOrigin = ApproxLength3(toOrigin);
     float sonarWaveSpeed = max(_SonarRevealWaveParams.y, 0.01);
     float sonarFadeDuration = max(_SonarRevealWaveParams.z, 0.05);
     float sonarPulseIntensity = saturate(_SonarRevealWaveParams.w);
     float invSonarWaveSpeed = rcp(sonarWaveSpeed);
     float invSonarFadeDuration = rcp(sonarFadeDuration);
-    float arrivalTime = _SonarRevealWaveParams.x + distanceToOrigin * invSonarWaveSpeed;
+    float arrivalTime = _SonarRevealWaveParams.x + distanceToOriginSq * rcp(max(revealRadiusSq, EPSILON)) * (revealRadius * invSonarWaveSpeed);
     float timeSinceArrival = _Time.y - arrivalTime;
     float decay = 1.0 - saturate(max(timeSinceArrival, 0.0) * invSonarFadeDuration);
     float waveRadius = max(0.0, _SonarWaveFront);
+    float waveRadiusSq = waveRadius * waveRadius;
     float waveBandWidth = lerp(6.0, 2.0, sonarPulseIntensity);
-    float waveBand = 1.0 - saturate(abs(distanceToOrigin - waveRadius) * rcp(max(waveBandWidth, 0.25)));
+    float waveBandSqWidth = max(waveBandWidth * max(waveRadius * 2.0 + waveBandWidth, 0.25), 0.25);
+    float waveBand = 1.0 - saturate(abs(distanceToOriginSq - waveRadiusSq) * rcp(waveBandSqWidth));
     float active = step(_Time.y, _SonarRevealExpireTime);
     return active * max(decay, waveBand * sonarPulseIntensity) * sonarPulseIntensity;
 }
 
-void AccumulateSonarGlowAtUv(float2 uv, float intensity, float size, uint particleIndex)
+void AccumulateSonarGlowAtUv(float2 uv, float intensity, float size)
 {
     int width = (int)max(_HectonMarineSnowSonarGlowTexelSize.z, 0.0);
     int height = (int)max(_HectonMarineSnowSonarGlowTexelSize.w, 0.0);
-    if (width <= 0 || height <= 0 || intensity <= 0.0 || !ShouldRunQuarterRate(particleIndex))
+    if (width <= 0 || height <= 0 || intensity <= 0.0)
         return;
 
     int2 pixel = int2(saturate(uv) * float2(width - 1, height - 1) + 0.5);
@@ -483,9 +494,12 @@ float SampleCaveSignedDistance(float3 positionWS)
     if (_HectonCaveVoxelActive <= 0.5)
         return _HectonCaveVoxelHalfExtents.w;
 
-    float3 halfExtents = max(_HectonCaveVoxelHalfExtents.xyz, float3(0.001, 0.001, 0.001));
+    float3 invDoubleHalfExtents = _HectonCaveVoxelInvDoubleHalfExtents.xyz;
+    if (any(invDoubleHalfExtents <= 0.0))
+        return _HectonCaveVoxelHalfExtents.w;
+
     float3 localPosition = mul(_HectonCaveVoxelWorldToLocal, float4(positionWS, 1.0)).xyz;
-    float3 sampleUv = localPosition * rcp(halfExtents * 2.0) + 0.5;
+    float3 sampleUv = localPosition * invDoubleHalfExtents + 0.5;
     if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
         return _HectonCaveVoxelHalfExtents.w;
 
@@ -588,7 +602,7 @@ Particle BuildRespawnParticle(uint particleIndex)
     float2 radialVector = float2(
         Hash11(particleIndex * 0.6180339 + frameSeed * 0.037) * 2.0 - 1.0,
         Hash11(particleIndex * 1.2710339 + frameSeed * 0.053) * 2.0 - 1.0);
-    radialVector = FastNormalize2Approx(radialVector);
+    radialVector = QuantizedOctDirection2(radialVector);
     float radiusSeed = max(
         Hash11(particleIndex * 1.731 + frameSeed * 0.071),
         Hash11(particleIndex * 2.731 + frameSeed * 0.079));
@@ -612,9 +626,9 @@ Particle BuildBubbleTrailParticle(uint particleIndex, float bubbleDrive, float e
 {
     Particle particle = BuildRespawnParticle(particleIndex);
     float3 cameraPosition = _MarineSnowCameraPosition_Time.xyz;
-    float3 cameraRight = SafeNormalizeMarineSnow(_MarineSnowCameraRight_DeltaTime.xyz);
-    float3 cameraUp = SafeNormalizeMarineSnow(_MarineSnowCameraUp_Density.xyz);
-    float3 cameraForward = SafeNormalizeMarineSnow(cross(cameraRight, cameraUp));
+    float3 cameraRight = _MarineSnowCameraRight_DeltaTime.xyz;
+    float3 cameraUp = _MarineSnowCameraUp_Density.xyz;
+    float3 cameraForward = cross(cameraRight, cameraUp);
 
     float side = (Hash11(particleIndex * 1.23 + _MarineSnowMetaParams.z) - 0.5) * lerp(0.36, 0.58, exhaleDrive);
     float forward = lerp(0.10, 0.72, Hash11(particleIndex * 2.23 + _MarineSnowMetaParams.z * 0.41));
@@ -670,6 +684,8 @@ void AccumulateSonarGlow(uint3 dispatchThreadID : SV_DispatchThreadID)
     uint particleCount = (uint)max(_MarineSnowMetaParams.x, 0.0);
     if (index >= particleCount)
         return;
+    if (!ShouldRunQuarterRate(index))
+        return;
 
     Particle particle = _MarineSnowParticlesWrite[index];
     if (particle.Life <= 0.0)
@@ -683,7 +699,7 @@ void AccumulateSonarGlow(uint3 dispatchThreadID : SV_DispatchThreadID)
     if (!TryResolveScreenUv(particle.Pos, screenUv))
         return;
 
-    AccumulateSonarGlowAtUv(screenUv, sonarGlow, particle.Size, index);
+    AccumulateSonarGlowAtUv(screenUv, sonarGlow, particle.Size);
 }
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
@@ -749,10 +765,10 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     particle.Vel.y += shallowWaterDisplacement * 0.025 * dt;
     particle.Vel = ApplyPropwashSandForce(particle.Pos, particle.Vel, dt);
 
-    float3 flowDirN = SafeNormalizeMarineSnow(synchronizedFlow);
+    float3 flowDirN = DominantAxisDirection3(synchronizedFlow);
     if (dot(flowDirN, flowDirN) > EPSILON)
     {
-        float3 particleDirN = SafeNormalizeMarineSnow(particle.Vel);
+        float3 particleDirN = DominantAxisDirection3(particle.Vel);
         float alignment = dot(particleDirN, flowDirN);
         float alignmentN = saturate((alignment + 1.0) * 0.5);
         float dragMultiplier = lerp(1.0, 0.1, alignmentN);
@@ -772,7 +788,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float phase = particle.Pad.x * TAU;
         float wobbleFrequency = 2.1 + particle.Size * 8.0;
         float wobbleMagnitude = 0.12 * particle.Size * wobbleScale;
-        float wobbleAttenuation = 1.0 - saturate(ApproxLength3(synchronizedFlow) * 0.4);
+        float wobbleAttenuation = 1.0 - saturate(DominantMagnitude3(synchronizedFlow) * 0.5);
         float2 lateralOscillation = float2(
             FastTriangleSigned(simulationTime * wobbleFrequency + particle.Pos.y * 1.7 + phase),
             FastTriangleSigned(simulationTime * wobbleFrequency * 0.83 + particle.Pos.y * 1.3 + phase + 2.6707963)) * wobbleMagnitude;

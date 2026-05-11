@@ -20,6 +20,7 @@ namespace Hecton8.Environment
         private const float BiomeBlendChangeEpsilon = 0.0001f;
         private const float WeatherLutChangeEpsilon = 0.01f;
         private const float VectorNormalizeEpsilon = 0.0001f;
+        private const float Lcg24BitToUnit = 1f / 16777216f;
         private const int NoirFogLutRowCount = 1;
         private const int MaxRuntimeNoirFogLutResolution = 64;
 #if UNITY_EDITOR
@@ -225,7 +226,7 @@ namespace Hecton8.Environment
         private float _biolumeSurgeTimer;
         private WeatherRuntimeSnapshot _runtimeSnapshot;
         private float3 _lastAppliedCurrentVector;
-        private Unity.Mathematics.Random _weatherRandom;
+        private uint _weatherRandomState;
         private Texture2D _noirFogLutTexture;
         private Color[] _noirFogLutPixels;
         private WeatherProfile _activeBiomeLutSourceProfile;
@@ -457,7 +458,7 @@ namespace Hecton8.Environment
         private void SeedRandom()
         {
             uint seed = randomSeed == 0u ? 1u : randomSeed;
-            _weatherRandom = new Unity.Mathematics.Random(seed);
+            _weatherRandomState = seed;
         }
 
         private void AdvanceTransition(float deltaTime)
@@ -541,7 +542,7 @@ namespace Hecton8.Environment
 
             CurrentMeta currentMeta = _runtimeSnapshot.CurrentMeta;
             currentMeta.GlobalBaseVector = NormalizeSafe(currentVector, new float3(0f, 0f, 1f));
-            currentMeta.GlobalScale = math.length(currentVector);
+            currentMeta.GlobalScale = ApproximateMagnitude(currentVector);
             currentMeta.ThermalIntensity = math.max(0f, thermalIntensity);
 
             _runtimeSnapshot.StateMask = ResolvePublishedMask();
@@ -557,7 +558,7 @@ namespace Hecton8.Environment
             Vector3 windVectorManaged = new Vector3(windVector.x, windVector.y, windVector.z);
             Shader.SetGlobalVector(_GlobalCurrentVectorId, new Vector4(currentVectorManaged.x, currentVectorManaged.y, currentVectorManaged.z, 0f));
             Shader.SetGlobalVector(_GlobalWindVectorId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, 0f));
-            Shader.SetGlobalVector(_GlobalWindId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, math.length(windVector)));
+            Shader.SetGlobalVector(_GlobalWindId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, ApproximateMagnitude(windVector)));
             Shader.SetGlobalFloat(_WeatherIntensityId, _weatherIntensity);
             Shader.SetGlobalInt(_WeatherStateMaskId, (int)_runtimeSnapshot.StateMask);
             PublishNoirFogShaderState();
@@ -819,7 +820,7 @@ namespace Hecton8.Environment
 
         private static float ResolveWeatherLutStrength(WeatherProfile profile, float3 fallbackWindVector, float resolvedWaveHeight)
         {
-            float windMagnitude = math.length(ResolveWeatherProfileWindVector(profile, fallbackWindVector));
+            float windMagnitude = ApproximateMagnitude(ResolveWeatherProfileWindVector(profile, fallbackWindVector));
             return math.saturate((windMagnitude * 0.04f) + (math.max(0f, resolvedWaveHeight) * 0.08f));
         }
 
@@ -990,10 +991,11 @@ namespace Hecton8.Environment
 
         private float NextRandom01()
         {
-            if (_weatherRandom.state == 0u)
-                _weatherRandom = new Unity.Mathematics.Random(1u);
+            if (_weatherRandomState == 0u)
+                _weatherRandomState = 1u;
 
-            return _weatherRandom.NextFloat();
+            _weatherRandomState = unchecked((_weatherRandomState * 1664525u) + 1013904223u);
+            return (_weatherRandomState >> 8) * Lcg24BitToUnit;
         }
 
 #if UNITY_EDITOR
@@ -1098,6 +1100,15 @@ namespace Hecton8.Environment
             return lengthSq > VectorNormalizeEpsilon
                 ? value * math.rsqrt(lengthSq)
                 : fallback;
+        }
+
+        private static float ApproximateMagnitude(float3 value)
+        {
+            float3 absValue = math.abs(value);
+            float maxAxis = math.cmax(absValue);
+            float minAxis = math.cmin(absValue);
+            float midAxis = absValue.x + absValue.y + absValue.z - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
         }
 
         private static float ApproximateOneMinusExpNegPositive(float x)

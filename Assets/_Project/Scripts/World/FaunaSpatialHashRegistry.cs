@@ -151,16 +151,14 @@ namespace Hecton8.World
                 _deferredCleanupCursor = 0;
 
             int removeCount = 0;
-            int scannedCount = 0;
             int scanLimit = math.min(DeferredCleanupHandlesPerFrame, _entryHandleCount);
             int slot = _deferredCleanupCursor;
-            while (scannedCount < scanLimit)
+            for (int scannedCount = 0; scannedCount < scanLimit; scannedCount++)
             {
                 int handle = _entryHandles[slot++];
                 if (slot >= _entryHandleCount)
                     slot = 0;
 
-                scannedCount++;
                 if (handle > 0 &&
                     _entries.TryGetValue(handle, out Entry entry) &&
                     !IsEntryQueryEligible(entry) &&
@@ -607,7 +605,7 @@ namespace Hecton8.World
             float overflow01 = math.saturate((densityCount - DensityCapMaxBoidsPerCell) * InvDensityCapMaxBoidsPerCell);
             float3 resolvedPenalty = ResolveDominantAxis(penalty) * (1f + overflow01 * 2.5f);
             penaltyDirection = new Vector3(resolvedPenalty.x, resolvedPenalty.y, resolvedPenalty.z);
-            return penaltyDirection.sqrMagnitude > 0.0001f;
+            return true;
         }
 
         private static float3 ResolveDominantAupAxis(in AbsoluteUniversePosition from, in AbsoluteUniversePosition to)

@@ -17,7 +17,7 @@ namespace Hecton8.AI
         private static readonly int WoundOwnerWorldToLocalId = Shader.PropertyToID("_HectonCreatureWoundOwnerWorldToLocal");
         private static readonly int WoundOwnerSphereId = Shader.PropertyToID("_HectonCreatureWoundOwnerSphere");
 
-        [Header("── Wound Projection ─────────────────")]
+        [Header("Wound Projection")]
         [Tooltip("Maximum number of persistent wound stamps kept on the active leviathan shader owner.")]
         [SerializeField, Range(1, MaxWounds)] private int maxWounds = MaxWounds;
         [Tooltip("Minimum wound radius authored into the shared shader buffer.")]
@@ -102,7 +102,7 @@ namespace Hecton8.AI
 
             int safeCapacity = math.clamp(maxWounds, 1, MaxWounds);
             float normalizedDamage = _faunaBrain != null && _faunaBrain.MaxHealth > 0.001f
-                ? math.saturate(math.max(0f, damageAmount) / _faunaBrain.MaxHealth)
+                ? math.saturate(math.max(0f, damageAmount) * math.rcp(_faunaBrain.MaxHealth))
                 : math.saturate(math.max(0f, damageAmount) * 0.1f);
 
             Transform ownerTransform = ResolveCachedTransform();

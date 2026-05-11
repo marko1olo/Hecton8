@@ -4,6 +4,7 @@
 // ============================================================================
 
 using System;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -61,17 +62,15 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(7500)]
     public sealed class AsyncLoadHelper : MonoBehaviour, ITickable
     {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static bool _unsupportedLoadErrorLogged;
-#endif
+        private static readonly uint _UnsupportedLoadWarningHash = unchecked((uint)LocHash.Compute("AsyncLoadHelper.UnsupportedRuntimeLoad"));
+        private static readonly uint _AsyncLoadHelperContextHash = unchecked((uint)LocHash.Compute("AsyncLoadHelper"));
+        private static bool _unsupportedLoadWarningPublished;
         private static int _nextRequestId = 1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            _unsupportedLoadErrorLogged = false;
-#endif
+            _unsupportedLoadWarningPublished = false;
             _nextRequestId = 1;
         }
 
@@ -174,16 +173,17 @@ namespace Hecton8.Core
 
         private static void LogUnsupportedLoad(string path, Type assetType, int requestCount)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (_unsupportedLoadErrorLogged)
+            if (_unsupportedLoadWarningPublished)
                 return;
 
-            _unsupportedLoadErrorLogged = true;
-            string typeName = assetType != null ? assetType.Name : "Unknown";
-            Debug.LogError(
-                $"AsyncLoadHelper is disabled. Runtime Resources/Addressables loading is not available in this project. " +
-                $"Requests: {requestCount}. Path: {path}. Type: {typeName}. " +
-                "Use scene-owned references, ObjectPoolManager, or an approved async content pipeline.");
+            _unsupportedLoadWarningPublished = true;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _UnsupportedLoadWarningHash,
+                _AsyncLoadHelperContextHash,
+                requestCount > 1 ? requestCount : 1);
+
+#if UNITY_EDITOR
+            Debug.LogError("AsyncLoadHelper is disabled. Runtime Resources/Addressables loading is not available in this project. Use scene-owned references, ObjectPoolManager, or an approved async content pipeline.");
 #endif
         }
     }

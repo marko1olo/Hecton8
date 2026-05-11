@@ -86,6 +86,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         float4 _HectonFlashlightVoxelHalfExtents;
         float4x4 _HectonFlashlightVoxelWorldToLocal;
         float4 _HectonCaveVoxelHalfExtents;
+        float4 _HectonCaveVoxelInvDoubleHalfExtents;
         float4x4 _HectonCaveVoxelWorldToLocal;
         float4 _SunDirection;
         float4 _HectonScooterVelocityWS;
@@ -494,9 +495,12 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             if (_HectonCaveVoxelActive <= 0.5)
                 return _HectonCaveVoxelHalfExtents.w;
 
-            float3 halfExtents = max(_HectonCaveVoxelHalfExtents.xyz, float3(0.001, 0.001, 0.001));
+            float3 invDoubleHalfExtents = _HectonCaveVoxelInvDoubleHalfExtents.xyz;
+            if (any(invDoubleHalfExtents <= 0.0))
+                return _HectonCaveVoxelHalfExtents.w;
+
             float3 localPosition = mul(_HectonCaveVoxelWorldToLocal, float4(positionWS, 1.0)).xyz;
-            float3 sampleUv = localPosition / (halfExtents * 2.0) + 0.5;
+            float3 sampleUv = localPosition * invDoubleHalfExtents + 0.5;
             if (sampleUv.x <= 0.0 || sampleUv.x >= 1.0 ||
                 sampleUv.y <= 0.0 || sampleUv.y >= 1.0 ||
                 sampleUv.z <= 0.0 || sampleUv.z >= 1.0)

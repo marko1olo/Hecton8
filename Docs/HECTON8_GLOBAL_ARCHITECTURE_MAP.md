@@ -34,7 +34,7 @@ This file replaces the older generated map whose `808`-script snapshot and some 
 
 2026-05-11 correction:
 - Counts above supersede the April 30 `1038/998/444135`, earlier May 1 `1060/1020/466768`, May 1 `1020/544728`, earlier May 2 `489893`, May 2 `1087/1047/571562/317`, May 6 `651121/552119`, and earlier May 7 `651253/559502`, `651810/560025`, `652238/560372`, `652787/560848`, `655363/563210`, and `667771` snapshots.
-- Current `GlobalRegistryContracts.cs` contains `40` direct public interfaces.
+- Current `GlobalRegistryContracts.cs` contains `41` direct public interfaces.
 - Older interface coverage ratios in this document are stale orientation only; re-open `GlobalRegistryContracts.cs` and implementors before making interface-completion claims.
 - Current completed full Core dependency build succeeded with `0 Warning(s)` and `0 Error(s)` in `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`; the May 11 timestamp gate observed `0` C# writes after build start/end.
 - Current Unity MCP proof was not run in the May 11 continuation; older MCP readbacks are historical only.
@@ -96,12 +96,13 @@ Current direct rendering contract owners:
 - `IRenderable` -> `Gameplay/HectonSubmarineOS`
 - `IRenderable` -> `Quest/MissionMarkerSystem`
 
-Current direct damage contract owner confirmed by source scan:
+Current direct damage contract owners confirmed by source scan:
 
 - `Hecton8.Core.IDamageReceiver` -> `Gameplay/HabitatIntegrityManager`
+- `Hecton8.Core.IDamageReceiver` -> `Gameplay/HectonPlayerHealth`
 
-This is materially different from older documents that claimed `IAudioService` was ghost, `IUIService` was directly multi-owned, or `IDamageReceiver` had two current implementers.
-It also supersedes older interface-count claims. Current direct public interface count is `40`; coverage must be rechecked from source before being used as proof.
+This is materially different from older documents that claimed `IAudioService` was ghost, `IUIService` was directly multi-owned, or `IDamageReceiver` was an unresolved shadow-conflict.
+It also supersedes older interface-count claims. Current direct public interface count is `41`; coverage must be rechecked from source before being used as proof.
 
 ## 4. Event Architecture
 

@@ -954,8 +954,8 @@ namespace Hecton8.Atmosphere
                 for (int x = 0; x < resolution; x++)
                 {
                     float u = x * invResolution;
-                    float ringA = Mathf.SmoothStep(0.0f, 1.0f, Mathf.Abs(Mathf.Sin((u * 11.0f + 0.13f) * Mathf.PI)));
-                    float ringB = Mathf.SmoothStep(0.0f, 1.0f, Mathf.Abs(Mathf.Sin((u * 23.0f + 0.41f) * Mathf.PI)));
+                    float ringA = Mathf.SmoothStep(0.0f, 1.0f, CinematicMath.FastTriangleWave01((u * 11.0f) + 0.13f));
+                    float ringB = Mathf.SmoothStep(0.0f, 1.0f, CinematicMath.FastTriangleWave01((u * 23.0f) + 0.41f));
                     float cookie = math.lerp(0.58f, 1.0f, math.saturate(math.max(ringA, ringB)));
                     _aegirRingShadowCookie.SetPixel(x, 0, new Color(cookie, cookie, cookie, 1f));
                 }
@@ -1102,7 +1102,7 @@ namespace Hecton8.Atmosphere
 
         private void SyncCycleFromEditorSunTransform()
         {
-            float3 sunForward = math.normalizesafe(
+            float3 sunForward = NormalizeVisualRsqrt(
                 (float3)_sunLight.transform.forward,
                 new float3(0f, 0f, 1f));
 
@@ -1110,7 +1110,7 @@ namespace Hecton8.Atmosphere
             quaternion qAzimuth = quaternion.RotateY(math.radians(_sunOrbitalYAngle));
             quaternion orbitFrame = math.mul(qAzimuth, qInclination);
             float3 localForward = math.mul(math.inverse(orbitFrame), sunForward);
-            localForward = math.normalizesafe(localForward, new float3(0f, 0f, 1f));
+            localForward = NormalizeVisualRsqrt(localForward, new float3(0f, 0f, 1f));
 
             float resolvedSunAngle = math.degrees(
                 math.atan2(-localForward.y, localForward.z));
@@ -1193,8 +1193,8 @@ namespace Hecton8.Atmosphere
             {
                 float angle = (float)i / segments * math.PI * 2f;
                 float3 localPoint = new float3(
-                    math.cos(angle) * orbitRadius,
-                    math.sin(angle) * orbitRadius, 0f);
+                    CinematicMath.FastCos(angle) * orbitRadius,
+                    CinematicMath.FastSin(angle) * orbitRadius, 0f);
                 float3 worldPoint = math.mul(orbitFrame, localPoint);
                 Vector3 wp = transform.position + (Vector3)worldPoint;
 
@@ -1347,14 +1347,24 @@ namespace Hecton8.Atmosphere
             PublishCycleShaderGlobals(normalized);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 NormalizeVisualRsqrt(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.0001f)
+                return fallback;
+
+            return value * math.rsqrt(lengthSq);
+        }
+
         private static float4x4 BuildAxisAngleRotationMatrix(float3 axis, float radians)
         {
-            axis = math.normalizesafe(axis, new float3(1f, 0f, 0f));
+            axis = NormalizeVisualRsqrt(axis, new float3(1f, 0f, 0f));
             float x = axis.x;
             float y = axis.y;
             float z = axis.z;
-            float sin = math.sin(radians);
-            float cos = math.cos(radians);
+            float sin = CinematicMath.FastSin(radians);
+            float cos = CinematicMath.FastCos(radians);
             float oneMinusCos = 1f - cos;
 
             float m00 = oneMinusCos * x * x + cos;
@@ -1377,7 +1387,7 @@ namespace Hecton8.Atmosphere
         private void PublishCycleShaderGlobals(float normalizedTime)
         {
             float timeOfDay01 = math.saturate(normalizedTime);
-            float thresholdSin = math.sin(math.radians(_nightThresholdAngle));
+            float thresholdSin = CinematicMath.FastSin(math.radians(_nightThresholdAngle));
             float thresholdSpan = math.max(thresholdSin * 2f, 0.001f);
             float daytimeLerp = math.saturate((_sunElevationDot + thresholdSin) / thresholdSpan);
             float smoothedDaytime = daytimeLerp * daytimeLerp * (3f - 2f * daytimeLerp);
@@ -1509,7 +1519,7 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool EvaluateDaytime()
         {
-            float thresholdSin = math.sin(math.radians(_nightThresholdAngle));
+            float thresholdSin = CinematicMath.FastSin(math.radians(_nightThresholdAngle));
             return _sunElevationDot > thresholdSin;
         }
 
@@ -1555,7 +1565,7 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ComputeSunValues()
         {
-            float fadeThreshold = math.sin(math.radians(_sunHorizonFadeAngle));
+            float fadeThreshold = CinematicMath.FastSin(math.radians(_sunHorizonFadeAngle));
 
             if (_sunElevationDot <= 0f)
             {
@@ -1586,7 +1596,7 @@ namespace Hecton8.Atmosphere
                 planetPhase = celestial.PlanetPhase;
                 eclipseBacklit = math.saturate(celestial.EclipseBacklitFactor);
                 if (celestial.TryGetAegirSkyDirection(out Vector3 direction))
-                    aegirDirection = math.normalizesafe(new float3(direction.x, direction.y, direction.z), new float3(0f, 0f, 1f));
+                    aegirDirection = NormalizeVisualRsqrt(new float3(direction.x, direction.y, direction.z), new float3(0f, 0f, 1f));
             }
 
             float depthMeters = math.max(0f, ResolvePlayerDepth());

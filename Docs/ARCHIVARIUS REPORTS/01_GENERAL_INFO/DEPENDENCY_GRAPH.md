@@ -73,7 +73,8 @@ It is a layered runtime with several communication styles coexisting.
 
 ### 4.4 Damage / Integrity
 
-- `HabitatIntegrityManager` now implements the global `IDamageReceiver`
+- `HabitatIntegrityManager` and `HectonPlayerHealth` now implement the global `IDamageReceiver`
+- `ToolHitUtility` can route tool damage into `CombatDamageRuntime` when a hit receiver has a registered target id
 - habitat-specific signal contracts still exist beside it
 - the risk is no longer a duplicate interface name in current source
 - the risk is multi-layer damage semantics spread across packet and callback models

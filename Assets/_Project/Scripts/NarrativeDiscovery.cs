@@ -59,6 +59,7 @@ namespace Hecton8.Interaction
 
         private string _cachedInteractText;
         private AbsoluteUniversePosition _cachedAup;
+        private double _cachedAupTriggerRadiusSq;
         private uint _cachedDiscoveryHash;
         private bool _registeredLifecycle;
         private static int _activeDiscoveryCount;
@@ -185,19 +186,19 @@ namespace Hecton8.Interaction
 
         internal bool TryGetAupTrigger(
             out int bitIndex,
-            out float radiusMeters,
+            out double radiusSq,
             out AbsoluteUniversePosition aup,
             out uint discoveryHash)
         {
             bitIndex = aupTriggerBitIndex;
-            radiusMeters = aupTriggerRadiusMeters;
+            radiusSq = _cachedAupTriggerRadiusSq;
             aup = _cachedAup;
             discoveryHash = _cachedDiscoveryHash;
             return triggerWhenAupWithinRadius &&
                    HasValidDiscoveryId &&
                    discoveryHash != 0u &&
                    (uint)bitIndex < 64u &&
-                   radiusMeters > 0f;
+                   radiusSq > 0d;
         }
 
 #if UNITY_EDITOR
@@ -210,6 +211,7 @@ namespace Hecton8.Interaction
                 aupTriggerRadiusMeters = 50f;
 
             RebuildCache();
+            RefreshAupTriggerCache();
         }
 #endif
 
@@ -285,6 +287,8 @@ namespace Hecton8.Interaction
         private void RefreshAupTriggerCache()
         {
             _cachedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(discoveryId);
+            float safeRadiusMeters = aupTriggerRadiusMeters > 0f ? aupTriggerRadiusMeters : 0f;
+            _cachedAupTriggerRadiusSq = (double)safeRadiusMeters * safeRadiusMeters;
             _cachedAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
         }
     }

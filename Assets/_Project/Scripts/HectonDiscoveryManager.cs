@@ -136,7 +136,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Proveryaet, otkryt li ukazannyy biom.
+        /// Returns whether the biome has already been discovered.
         /// </summary>
         public bool IsDiscovered(int biomeId)
         {

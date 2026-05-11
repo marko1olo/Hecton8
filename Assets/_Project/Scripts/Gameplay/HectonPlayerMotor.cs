@@ -59,6 +59,7 @@ namespace Hecton8.Gameplay
         private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
         private const float WakeSiltEmissionSpeedThresholdMetersPerSecond = 4.5f;
         private const float WakeSiltEmissionCooldownSeconds = 0.35f;
+        private const float HydrodynamicMinimumEffectiveMassKg = 0.001f;
         private const float HydrodynamicAddedMassAccelerationScale = 0.45f;
         private const float HydrodynamicAddedMassAccelerationForceScalar =
             1f / (1f + HydrodynamicAddedMassAccelerationScale);
@@ -66,6 +67,8 @@ namespace Hecton8.Gameplay
         private const float VoxelProxySlideDistanceRetain = 0.92f;
         private const float VoxelProxySlideVelocityRetain = 0.65f;
         private const float VoxelProxyGlideFallbackMetersPerSecond = 0.35f;
+        private const float DirectionalDragDominantAxisThresholdSq = 100f;
+        private const float DirectionalDragSpeedSqPolynomialScale = 0.01f;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const double SweepSolveTelemetryBudgetMilliseconds = 0.2d;
 #endif
@@ -729,15 +732,29 @@ namespace Hecton8.Gameplay
                 return Vector3.zero;
 
             float speed = ApproximateSpeedMagnitude(velocity3);
-            float3 velocityDirection = velocity3 * math.rcp(math.max(speed, DenormalVelocityFlushThresholdMetersPerSecond));
+            float3 velocityDirection = ResolveScalableDragDirection(velocity3, speedSq);
             float3 safeForward = ResolveDominantPlanarAxis(forward, Vector3.forward);
             float drag = math.max(0.2f, math.abs(math.dot(velocityDirection, safeForward)));
             float directionalCrossSection = math.lerp(2.75f, 1f, math.saturate(drag));
-            float areaScale = math.max(0.01f, crossSectionalAreaScale) * directionalCrossSection;
+            float speedCurve01 = math.saturate(speedSq * DirectionalDragSpeedSqPolynomialScale);
+            float nonlinearDragCurve = 1f + (speedCurve01 * (0.35f + (0.65f * speedCurve01)));
+            float areaScale = math.max(0.01f, crossSectionalAreaScale) * directionalCrossSection * nonlinearDragCurve;
             float safeDt = math.max(dt, 0.0001f);
             float denominator = 1f + math.max(0f, dragCoefficient) * areaScale * speed * safeDt;
             float3 result = velocity3 * math.rcp(math.max(denominator, 0.001f));
             return SafeVelocity(new Vector3(result.x, result.y, result.z), velocity);
+        }
+
+        private static float3 ResolveScalableDragDirection(float3 velocity, float speedSq)
+        {
+            float3 fallbackAxis = DistanceMath.DominantAxisOrDefault(velocity, new float3(0f, 0f, 1f));
+            if (FrameTimeWatchdog.CurrentMathLodMode != MathLodMode.High ||
+                speedSq > DirectionalDragDominantAxisThresholdSq)
+            {
+                return fallbackAxis;
+            }
+
+            return velocity * math.rsqrt(math.max(speedSq, DenormalVelocityFlushThresholdMetersPerSecondSq));
         }
 
         /// <summary>Clears transient runtime state.</summary>
@@ -792,6 +809,25 @@ namespace Hecton8.Gameplay
                 math.dot((float3)safeForce, (float3)safeVelocity) > 0f;
             float forceScalar = math.select(1f, HydrodynamicAddedMassAccelerationForceScalar, accelerating);
             return SafeVelocity(safeForce * forceScalar, safeForce);
+        }
+
+        /// <summary>Converts force to acceleration with stateless added mass and a zero-mass singularity guard.</summary>
+        public static Vector3 ResolveHydrodynamicAddedMassStatelessAcceleration(Vector3 force, Vector3 velocity, float mass)
+        {
+            Vector3 safeForce = SafeVelocity(force);
+            if (safeForce.sqrMagnitude <= MinVectorMagnitudeSq)
+                return safeForce;
+
+            Vector3 safeVelocity = SafeVelocity(velocity);
+            float velocitySq = safeVelocity.sqrMagnitude;
+            bool accelerating = velocitySq <= MinVectorMagnitudeSq ||
+                math.dot((float3)safeForce, (float3)safeVelocity) > 0f;
+            float finiteMass = math.select(0f, mass, math.isfinite(mass));
+            float bodyMass = math.max(HydrodynamicMinimumEffectiveMassKg, finiteMass);
+            float addedMass = bodyMass * HydrodynamicAddedMassAccelerationScale;
+            float safeMass = math.max(HydrodynamicMinimumEffectiveMassKg, bodyMass + addedMass);
+            float invMass = math.select(math.rcp(bodyMass), math.rcp(safeMass), accelerating);
+            return SafeVelocity(safeForce * invMass, Vector3.zero);
         }
 
         private void ResetBodyBoundCachedResults()

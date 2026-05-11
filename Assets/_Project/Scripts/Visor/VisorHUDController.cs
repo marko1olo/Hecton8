@@ -179,6 +179,7 @@ namespace NASAPunk.Visor
         private Renderer _appliedVisorPropertyRenderer;
         private bool _hasAppliedVisorMaterialProperties;
         private bool _hasResolvedDynamicVisorMaterialInputs;
+        private Renderer _appliedMotionVectorRenderer;
         private float _appliedHudIntensity;
         private Color _appliedHudColor;
         private float _appliedScratchBleed;
@@ -196,6 +197,13 @@ namespace NASAPunk.Visor
         private float _appliedScreenFrostStrength;
         private float _appliedChromaticAberration;
         private float _appliedStaticNoise;
+        private float _appliedScalableRefractionScale;
+        private float _appliedScalableChromaticScale;
+        private float _appliedLowTierDitherScale;
+        private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
+        private float _cachedScalableRefractionScale;
+        private float _cachedScalableChromaticScale;
+        private float _cachedLowTierDitherScale;
         private float _appliedHypoxiaLevel;
         private float _appliedHullStressFlicker;
         private float _appliedHazardRadiationLevel;
@@ -282,6 +290,7 @@ namespace NASAPunk.Visor
         private float _appliedVRBrownoutIntensity = -1f;
 
         private uint _glitchRngState = 1u;
+        private static HectonQualityTier s_fallbackQualityTier = HectonQualityTier.Unknown;
 
         private static readonly int ID_HUDTex = Shader.PropertyToID("_HUD_RenderTexture");
         private static readonly int ID_HUDIntensity = Shader.PropertyToID("_HUD_Intensity");
@@ -301,6 +310,9 @@ namespace NASAPunk.Visor
         private static readonly int ID_ScreenFrostStrength = Shader.PropertyToID("_ScreenFrostStrength");
         private static readonly int ID_ChromaticAberration = Shader.PropertyToID("_ChromaticAberration");
         private static readonly int ID_StaticNoise = Shader.PropertyToID("_StaticNoise");
+        private static readonly int ID_ScalableRefractionScale = Shader.PropertyToID("_HectonVisorRefractionScale");
+        private static readonly int ID_ScalableChromaticScale = Shader.PropertyToID("_HectonVisorChromaticScale");
+        private static readonly int ID_LowTierDitherScale = Shader.PropertyToID("_HectonVisorLowTierDither");
         private static readonly int ID_HypoxiaLevel = Shader.PropertyToID("_HypoxiaLevel");
         private static readonly int ID_HullStressFlicker = Shader.PropertyToID("_HullStressFlicker");
         private static readonly int ID_HazardRadiationLevel = Shader.PropertyToID("_HazardRadiationLevel");
@@ -331,6 +343,7 @@ namespace NASAPunk.Visor
         {
             s_activeControllers.Clear();
             s_hudPhosphorModeUserCount = 0;
+            s_fallbackQualityTier = HectonQualityTier.Unknown;
             Shader.DisableKeyword(HudPhosphorKeyword);
             Shader.SetGlobalFloat(ID_HectonVRBrownoutIntensity, 0f);
         }
@@ -748,6 +761,11 @@ namespace NASAPunk.Visor
 
             EnsurePropertyBlock();
             RefreshDynamicVisorMaterialInputs();
+            ApplyHudMotionVectorStabilization();
+            ResolveScalabilityMatrixGlassState(
+                out float scalableRefractionScale,
+                out float scalableChromaticScale,
+                out float lowTierDitherScale);
 
             float condensationStrength = Mathf.Clamp01(_condensationShockIntensity + _criticalPressureCondensation + _coldCondensation);
             float environmentalDistortion = _interferenceDistortionIntensity * _interferenceDistortionMax;
@@ -787,6 +805,9 @@ namespace NASAPunk.Visor
             propertyBlockChanged |= ApplyVisorFloat(ID_ScreenFrostStrength, _screenFrostStrength, ref _appliedScreenFrostStrength);
             propertyBlockChanged |= ApplyVisorFloat(ID_ChromaticAberration, compositeChromaticAberration, ref _appliedChromaticAberration);
             propertyBlockChanged |= ApplyVisorFloat(ID_StaticNoise, compositeStaticNoise, ref _appliedStaticNoise);
+            propertyBlockChanged |= ApplyVisorFloat(ID_ScalableRefractionScale, scalableRefractionScale, ref _appliedScalableRefractionScale);
+            propertyBlockChanged |= ApplyVisorFloat(ID_ScalableChromaticScale, scalableChromaticScale, ref _appliedScalableChromaticScale);
+            propertyBlockChanged |= ApplyVisorFloat(ID_LowTierDitherScale, lowTierDitherScale, ref _appliedLowTierDitherScale);
             propertyBlockChanged |= ApplyVisorFloat(ID_HypoxiaLevel, _hudHypoxiaLevel, ref _appliedHypoxiaLevel);
             propertyBlockChanged |= ApplyVisorFloat(ID_HullStressFlicker, _hudHullStressFlicker, ref _appliedHullStressFlicker);
             propertyBlockChanged |= ApplyVisorFloat(ID_HazardRadiationLevel, _hazardRadiationLevel, ref _appliedHazardRadiationLevel);
@@ -810,6 +831,88 @@ namespace NASAPunk.Visor
             }
 
             _materialPropertiesDirty = false;
+        }
+
+        private void ApplyHudMotionVectorStabilization()
+        {
+            if (_visorRenderer == null)
+                return;
+
+            if (_appliedMotionVectorRenderer == _visorRenderer &&
+                _visorRenderer.motionVectorGenerationMode == MotionVectorGenerationMode.ForceNoMotion)
+            {
+                return;
+            }
+
+            _visorRenderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+            _appliedMotionVectorRenderer = _visorRenderer;
+        }
+
+        private void ResolveScalabilityMatrixGlassState(
+            out float refractionScale,
+            out float chromaticScale,
+            out float lowTierDitherScale)
+        {
+            HectonQualityTier tier = GlobalRegistry.QualityTier;
+            if (tier == HectonQualityTier.Unknown)
+                tier = ResolveFallbackQualityTier();
+
+            if (tier != _cachedScalabilityTier)
+            {
+                ResolveScalabilityMatrixGlassScalars(
+                    tier,
+                    out _cachedScalableRefractionScale,
+                    out _cachedScalableChromaticScale,
+                    out _cachedLowTierDitherScale);
+                _cachedScalabilityTier = tier;
+            }
+
+            refractionScale = _cachedScalableRefractionScale;
+            chromaticScale = _cachedScalableChromaticScale;
+            lowTierDitherScale = _cachedLowTierDitherScale;
+        }
+
+        private static void ResolveScalabilityMatrixGlassScalars(
+            HectonQualityTier tier,
+            out float refractionScale,
+            out float chromaticScale,
+            out float lowTierDitherScale)
+        {
+            switch (tier)
+            {
+                case HectonQualityTier.Low:
+                case HectonQualityTier.Mx350:
+                    refractionScale = 0f;
+                    chromaticScale = 0f;
+                    lowTierDitherScale = 1f;
+                    return;
+                case HectonQualityTier.Mid:
+                    refractionScale = 0.55f;
+                    chromaticScale = 0.45f;
+                    lowTierDitherScale = 0.35f;
+                    return;
+                default:
+                    refractionScale = 1f;
+                    chromaticScale = 1f;
+                    lowTierDitherScale = 0f;
+                    return;
+            }
+        }
+
+        private static HectonQualityTier ResolveFallbackQualityTier()
+        {
+            if (s_fallbackQualityTier != HectonQualityTier.Unknown)
+                return s_fallbackQualityTier;
+
+            int graphicsMemoryMb = SystemInfo.graphicsMemorySize;
+            if (graphicsMemoryMb > 0 && graphicsMemoryMb <= 2048)
+            {
+                s_fallbackQualityTier = HectonQualityTier.Mx350;
+                return s_fallbackQualityTier;
+            }
+
+            s_fallbackQualityTier = HectonQualityTier.High;
+            return s_fallbackQualityTier;
         }
 
         private bool ApplyVisorFloat(int propertyId, float value, ref float cachedValue)

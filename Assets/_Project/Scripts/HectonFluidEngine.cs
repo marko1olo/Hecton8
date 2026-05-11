@@ -29,10 +29,10 @@
 //   - Dry zones through isInAir flags
 //   - CurrentVolume integration
 //
-// PRODUCTION-READY GUARANTEES:
-//   - Zero GC in hot paths (FixedTick, GatherData)
+// HOT-PATH CONTRACT:
+//   - Zero GC in FixedTick and GatherData paths
 //   - Burst-compiled job for SIMD parallelism
-//   - Supports 100+ objects without MX350 stalls, budget 0.3ms
+//   - Frame-time budget claims require profiler proof; target is sub-0.1ms
 // ============================================================================
 
 using System.Collections.Generic;
@@ -219,6 +219,7 @@ namespace Hecton8.Physics
         private static readonly int _AbyssalFlowSurfaceYId = Shader.PropertyToID("_AbyssalFlowSurfaceY");
         private static readonly int _CurrentWaterLevelId = Shader.PropertyToID("_CurrentWaterLevel");
         private static readonly int _CurrentWaterLevelYId = Shader.PropertyToID("_CurrentWaterLevelY");
+        private static readonly int _PrebakedVectorNoise3DId = Shader.PropertyToID("_HectonPrebakedVectorNoise3D");
         private static readonly int _AbyssalFlowThermoclineYId = Shader.PropertyToID("_AbyssalFlowThermoclineY");
         private static readonly int _AbyssalFlowHeatSourceCountId = Shader.PropertyToID("_AbyssalFlowHeatSourceCount");
         private static readonly int _AbyssalFlowWeatherStateMaskId = Shader.PropertyToID("_AbyssalFlowWeatherStateMask");
@@ -260,7 +261,7 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
         [Header("── Water ─────────────────────────────────────")]
-        [Tooltip("Y-koordinata poverhnosti vody (world space)")]
+        [Tooltip("World-space Y coordinate of the water surface.")]
         [SerializeField] private float waterLevel = 5000f;
         [SerializeField] private bool enableCinematicTideShift = true;
         [SerializeField, Range(0f, 8f)] private float cinematicTideAmplitudeMeters = 2f;
@@ -273,8 +274,7 @@ namespace Hecton8.Physics
         [SerializeField] private float viscousDrag = 3f;
         [SerializeField, Min(0f)] private float maxQuadraticDragForcePerKg = 180f;
 
-        [Tooltip("Koeffitsient uglovogo soprotivleniya. " +
-                 "Zamedlyaet vraschenie obektov pod vodoy.")]
+        [Tooltip("Angular drag coefficient for submerged object rotation damping.")]
         [SerializeField] private float angularDrag = 1f;
 
         // ══════════════════════════════════════════════════════════
@@ -282,17 +282,20 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
         [Header("── Currents ──────────────────────────────────")]
-        [Tooltip("Globalnyy vektor podvodnogo techeniya (m/s). " +
-                 "Primenyaetsya ko vsem pogruzhennym obektam.")]
+        [Tooltip("Global underwater current vector in m/s applied to submerged objects.")]
         [SerializeField] private Vector3 currentVector = Vector3.zero;
 
-        [Tooltip("Sila vozdeystviya techeniya (mnozhitel)")]
+        [Tooltip("Current influence multiplier.")]
         [SerializeField] private float currentStrength = 1f;
         [SerializeField] private bool enablePhantomCurrent = true;
         [SerializeField] private float currentNoiseScale = 0.018f;
         [SerializeField] private float currentTimeScale = 0.12f;
         [SerializeField, Range(0f, 1f)] private float currentVerticalFactor = 0.18f;
         [SerializeField] private float phantomCurrentStrength = 0.9f;
+        [SerializeField] private bool enablePrebakedVectorNoise = true;
+        [SerializeField, Min(0.25f)] private float prebakedVectorNoiseCellSizeMeters = 48f;
+        [SerializeField, Range(0f, 1f)] private float prebakedVectorNoiseTriangleModulation = 0.35f;
+        [SerializeField] private int prebakedVectorNoiseSeed = 1828914165;
 
         [Header("-- Analytical Flow Field -----------------------")]
         [SerializeField] private bool enableAnalyticalFlowField = true;
@@ -324,8 +327,7 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
         [Header("── Performance ───────────────────────────────")]
-        [Tooltip("Minimalnyy batch size dlya Job. " +
-                 "Menshe = bolshe parallelizma, bolshe = menshe overhead.")]
+        [Tooltip("Minimum job batch size. Lower values increase parallelism; higher values reduce scheduling overhead.")]
         [SerializeField] private int jobBatchSize = 32;
         [SerializeField] private bool enableDistanceLod = true;
         [SerializeField] private Transform lodObserver;
@@ -529,6 +531,11 @@ namespace Hecton8.Physics
                 currentVector.y * currentStrength,
                 currentVector.z * currentStrength);
             float depthBelowSurface = math.max(0f, resolvedWaterLevel - position.y);
+            NativeArray<float3> vectorNoiseField = _prebakedVectorNoiseField.IsCreated
+                ? _prebakedVectorNoiseField
+                : default;
+            int vectorNoiseLength = _prebakedVectorNoiseField.IsCreated ? _prebakedVectorNoiseField.Length : 0;
+            Vector3 aupOffset = HectonFloatingOrigin.CurrentTotalOffset;
             float3 flow = HectonAnalyticalFlowField.SampleBaseFlow(
                 position,
                 depthBelowSurface,
@@ -549,7 +556,13 @@ namespace Hecton8.Physics
                 phantomCurrentStrength,
                 ResolveWaterLevelTimeSeconds(),
                 haloclineBoundaryDepthMeters,
-                haloclineShearForcePerKg);
+                haloclineShearForcePerKg,
+                vectorNoiseField,
+                vectorNoiseLength,
+                new float3(aupOffset.x, aupOffset.y, aupOffset.z),
+                math.rcp(math.max(0.25f, prebakedVectorNoiseCellSizeMeters)),
+                enablePrebakedVectorNoise ? (byte)1 : (byte)0,
+                prebakedVectorNoiseTriangleModulation);
 
             for (int i = 0; i < MaxAnalyticalThrusterCount; i++)
                 HectonAnalyticalFlowField.ApplyThrusterFlow(ref flow, position, _thrusterFlowBuffer[i]);
@@ -795,6 +808,9 @@ namespace Hecton8.Physics
         private NativeArray<WhirlpoolFlow> _activeWhirlpools;
         private NativeArray<FluidViscosityRegion> _activeViscosityRegions;
         private NativeArray<float> _viscosityGradientLut;
+        private NativeArray<float3> _prebakedVectorNoiseField;
+        private Texture3D _prebakedVectorNoiseTexture;
+        private int _prebakedVectorNoiseRuntimeSeed = int.MinValue;
         private int _activeThrusterFlowCount;
         private int _activeWhirlpoolFlowCount;
         private int _activeViscosityRegionCount;
@@ -893,11 +909,14 @@ namespace Hecton8.Physics
             _gpuReadbackActive = new bool[GpuReadbackRingSize]; // COLD ALLOC: bool[3] — GPU buoyancy readback slot activity — owner: HectonFluidEngine
             _gpuAbyssalReadbackRequests = new AsyncGPUReadbackRequest[GpuReadbackRingSize]; // COLD ALLOC: AsyncGPUReadbackRequest[3] — fixed GPU abyssal-flow readback ring state — owner: HectonFluidEngine
             _gpuAbyssalReadbackActive = new bool[GpuReadbackRingSize]; // COLD ALLOC: bool[3] — GPU abyssal-flow readback slot activity — owner: HectonFluidEngine
+            EnsurePrebakedVectorNoiseField();
             PublishCurrentWaterLevelUniform();
         }
 
         private void OnEnable()
         {
+            EnsurePrebakedVectorNoiseField();
+
             if (Application.isPlaying && !_fluidRuntimeRegistered)
             {
                 HectonFluidEngine registeredFluid = GlobalRegistry.Fluid;
@@ -950,6 +969,7 @@ namespace Hecton8.Physics
             // Release runtime job buffers before editor domain/play-mode teardown.
             // In-editor play transitions do not always guarantee a clean OnDestroy path
             // for persistent native allocations, so we free them on disable as well.
+            DisposePrebakedVectorNoiseField();
             DisposeNativeArrays();
         }
 
@@ -972,6 +992,7 @@ namespace Hecton8.Physics
                 GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
                 _postFixedRegistered = false;
             }
+            DisposePrebakedVectorNoiseField();
             DisposeNativeArrays();
         }
 
@@ -1176,6 +1197,11 @@ namespace Hecton8.Physics
             ConsumeGpuBuoyancyReadbacks();
             TryDispatchGpuAbyssalFlowField(weatherSnapshot, cinematicWaterLevel);
             TryDispatchGpuBuoyancySampling(weatherSnapshot, count, cinematicWaterLevel);
+            NativeArray<float3> vectorNoiseField = _prebakedVectorNoiseField.IsCreated
+                ? _prebakedVectorNoiseField
+                : default;
+            int vectorNoiseLength = _prebakedVectorNoiseField.IsCreated ? _prebakedVectorNoiseField.Length : 0;
+            Vector3 vectorNoiseAupOffset = HectonFloatingOrigin.CurrentTotalOffset;
 
             JobHandle waveHandle = default;
             bool useGpuBuoyancy = enableGpuBuoyancySampling &&
@@ -1217,6 +1243,8 @@ namespace Hecton8.Physics
                 activeWhirlpools = _activeWhirlpools,
                 activeViscosityRegions = _activeViscosityRegions,
                 viscosityGradientLut = _viscosityGradientLut,
+                vectorNoiseField = vectorNoiseField,
+                vectorNoiseFieldLength = vectorNoiseLength,
                 activeThrusterCount = _activeThrusterFlowCount,
                 activeWhirlpoolCount = _activeWhirlpoolFlowCount,
                 activeViscosityRegionCount = _activeViscosityRegionCount,
@@ -1257,6 +1285,10 @@ namespace Hecton8.Physics
                 currentTimeScale = currentTimeScale,
                 currentVerticalFactor = currentVerticalFactor,
                 phantomCurrentStrength = phantomCurrentStrength,
+                vectorNoiseAupOffset = new float3(vectorNoiseAupOffset.x, vectorNoiseAupOffset.y, vectorNoiseAupOffset.z),
+                vectorNoiseInvCellSize = math.rcp(math.max(0.25f, prebakedVectorNoiseCellSizeMeters)),
+                enablePrebakedVectorNoise = enablePrebakedVectorNoise ? (byte)1 : (byte)0,
+                vectorNoiseTriangleModulation = prebakedVectorNoiseTriangleModulation,
                 enableAnalyticalFlowField = enableAnalyticalFlowField ? (byte)1 : (byte)0,
                 haloclineBoundaryDepthMeters = haloclineBoundaryDepthMeters,
                 deepLayerDensityMultiplier = deepLayerDensityMultiplier,
@@ -1450,7 +1482,8 @@ namespace Hecton8.Physics
                     simulationMode = simulationMode,
                     simplifiedSubmersion = simplifiedSubmersion,
                     useLocalFluidDensityOverride = obj.UseLocalFluidDensityOverride ? (byte)1 : (byte)0,
-                    angularDragMultiplier = obj.RuntimeAngularDragMultiplier
+                    angularDragMultiplier = obj.RuntimeAngularDragMultiplier,
+                    alignmentPadding = obj.AllowDistanceLod ? 0u : BuoyancyParams.ExactSurfaceNormalFlag
                 };
 
                 ResourceDistributionDirector brineDirector = GlobalRegistry.ResourceDistribution;
@@ -1886,6 +1919,126 @@ namespace Hecton8.Physics
                 float x = lastIndex > 0 ? i * math.rcp((float)lastIndex) : 1f;
                 _viscosityGradientLut[i] = x * x * (3f - 2f * x);
             }
+        }
+
+        private void EnsurePrebakedVectorNoiseField()
+        {
+            if (!enablePrebakedVectorNoise)
+            {
+                DisposePrebakedVectorNoiseField();
+                return;
+            }
+
+            if (_prebakedVectorNoiseField.IsCreated &&
+                _prebakedVectorNoiseField.Length == HectonAnalyticalFlowField.VectorNoiseVoxelCount &&
+                _prebakedVectorNoiseRuntimeSeed == prebakedVectorNoiseSeed)
+            {
+                return;
+            }
+
+            DisposePrebakedVectorNoiseField();
+
+            _prebakedVectorNoiseField = new NativeArray<float3>(
+                HectonAnalyticalFlowField.VectorNoiseVoxelCount,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float3>[32768] - prebaked 3D vector-noise flow atlas - owner: HectonFluidEngine
+            NativeMemorySentinel.RegisterNativeArray(
+                _prebakedVectorNoiseField,
+                NativeMemoryOwner,
+                nameof(_prebakedVectorNoiseField),
+                NativeMemoryLifetime);
+
+            Color[] pixels = new Color[HectonAnalyticalFlowField.VectorNoiseVoxelCount]; // COLD ALLOC: Color[32768] - one-shot Texture3D upload staging - owner: HectonFluidEngine
+            uint seed = unchecked((uint)prebakedVectorNoiseSeed);
+            int index = 0;
+            for (int z = 0; z < HectonAnalyticalFlowField.VectorNoiseResolution; z++)
+            {
+                for (int y = 0; y < HectonAnalyticalFlowField.VectorNoiseResolution; y++)
+                {
+                    for (int x = 0; x < HectonAnalyticalFlowField.VectorNoiseResolution; x++)
+                    {
+                        float3 sample = BuildPrebakedCurlVector(x, y, z, seed);
+                        _prebakedVectorNoiseField[index] = sample;
+                        pixels[index] = new Color(
+                            sample.x * 0.5f + 0.5f,
+                            sample.y * 0.5f + 0.5f,
+                            sample.z * 0.5f + 0.5f,
+                            1f);
+                        index++;
+                    }
+                }
+            }
+
+            _prebakedVectorNoiseTexture = new Texture3D(
+                HectonAnalyticalFlowField.VectorNoiseResolution,
+                HectonAnalyticalFlowField.VectorNoiseResolution,
+                HectonAnalyticalFlowField.VectorNoiseResolution,
+                TextureFormat.RGBAHalf,
+                false); // COLD ALLOC: Texture3D[32^3 RGBAHalf] - shared organic current atlas - owner: HectonFluidEngine
+            _prebakedVectorNoiseTexture.wrapMode = TextureWrapMode.Repeat;
+            _prebakedVectorNoiseTexture.filterMode = FilterMode.Trilinear;
+            _prebakedVectorNoiseTexture.SetPixels(pixels);
+            _prebakedVectorNoiseTexture.Apply(false, true);
+            Shader.SetGlobalTexture(_PrebakedVectorNoise3DId, _prebakedVectorNoiseTexture);
+            _prebakedVectorNoiseRuntimeSeed = prebakedVectorNoiseSeed;
+        }
+
+        private void DisposePrebakedVectorNoiseField()
+        {
+            JobHandle dependency = _scheduledBuoyancyJobActive ? _scheduledBuoyancyHandle : default;
+            DisposeNativeArray(ref _prebakedVectorNoiseField, dependency);
+            _prebakedVectorNoiseRuntimeSeed = int.MinValue;
+
+            if (_prebakedVectorNoiseTexture == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(_prebakedVectorNoiseTexture);
+#if UNITY_EDITOR
+            else
+                DestroyImmediate(_prebakedVectorNoiseTexture);
+#else
+            else
+                Destroy(_prebakedVectorNoiseTexture);
+#endif
+            _prebakedVectorNoiseTexture = null;
+        }
+
+        private static float3 BuildPrebakedCurlVector(int x, int y, int z, uint seed)
+        {
+            float3 curl;
+            curl.x = SampleVectorNoiseScalar(x, y + 1, z, seed + 0x8DA6B343u) -
+                     SampleVectorNoiseScalar(x, y - 1, z, seed + 0x8DA6B343u) -
+                     (SampleVectorNoiseScalar(x, y, z + 1, seed + 0xD8163841u) -
+                      SampleVectorNoiseScalar(x, y, z - 1, seed + 0xD8163841u));
+            curl.y = SampleVectorNoiseScalar(x, y, z + 1, seed + 0xCB1AB31Fu) -
+                     SampleVectorNoiseScalar(x, y, z - 1, seed + 0xCB1AB31Fu) -
+                     (SampleVectorNoiseScalar(x + 1, y, z, seed + 0x8DA6B343u) -
+                      SampleVectorNoiseScalar(x - 1, y, z, seed + 0x8DA6B343u));
+            curl.z = SampleVectorNoiseScalar(x + 1, y, z, seed + 0xD8163841u) -
+                     SampleVectorNoiseScalar(x - 1, y, z, seed + 0xD8163841u) -
+                     (SampleVectorNoiseScalar(x, y + 1, z, seed + 0xCB1AB31Fu) -
+                      SampleVectorNoiseScalar(x, y - 1, z, seed + 0xCB1AB31Fu));
+
+            float magnitudeSq = math.lengthsq(curl);
+            if (magnitudeSq <= 0.000001f || !math.isfinite(magnitudeSq))
+                return new float3(1f, 0f, 0f);
+
+            return curl * math.rsqrt(magnitudeSq);
+        }
+
+        private static float SampleVectorNoiseScalar(int x, int y, int z, uint seed)
+        {
+            uint hash = seed;
+            hash ^= (uint)x * 0x9E3779B9u;
+            hash ^= (uint)y * 0x85EBCA6Bu;
+            hash ^= (uint)z * 0xC2B2AE35u;
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return ((hash & 0x00FFFFFFu) * (1f / 8388607.5f)) - 1f;
         }
 
         private void CopyAnalyticalFlowInputsToNative()
@@ -2547,6 +2700,8 @@ namespace Hecton8.Physics
             if (currentNoiseScale < 0.0001f) currentNoiseScale = 0.0001f;
             if (currentTimeScale < 0f) currentTimeScale = 0f;
             if (phantomCurrentStrength < 0f) phantomCurrentStrength = 0f;
+            if (prebakedVectorNoiseCellSizeMeters < 0.25f) prebakedVectorNoiseCellSizeMeters = 0.25f;
+            prebakedVectorNoiseTriangleModulation = Mathf.Clamp01(prebakedVectorNoiseTriangleModulation);
             if (haloclineBoundaryDepthMeters < 0.01f) haloclineBoundaryDepthMeters = 0.01f;
             if (deepLayerDensityMultiplier < 1f) deepLayerDensityMultiplier = 1f;
             if (giantWakeCurrentStrength < 0f) giantWakeCurrentStrength = 0f;
@@ -2643,6 +2798,8 @@ namespace Hecton8.Physics
     [StructLayout(LayoutKind.Sequential)]
     public struct BuoyancyParams
     {
+        public const uint ExactSurfaceNormalFlag = 1u;
+
         public float3 boundsCenter;
         public float3 boundsExtents;
 
@@ -2775,6 +2932,8 @@ namespace Hecton8.Physics
         [ReadOnly] public NativeArray<WhirlpoolFlow> activeWhirlpools;
         [ReadOnly] public NativeArray<FluidViscosityRegion> activeViscosityRegions;
         [ReadOnly] public NativeArray<float> viscosityGradientLut;
+        [ReadOnly] public NativeArray<float3> vectorNoiseField;
+        public int vectorNoiseFieldLength;
         public int activeThrusterCount;
         public int activeWhirlpoolCount;
         public int activeViscosityRegionCount;
@@ -2812,6 +2971,10 @@ namespace Hecton8.Physics
         public float  currentTimeScale;
         public float  currentVerticalFactor;
         public float  phantomCurrentStrength;
+        public float3 vectorNoiseAupOffset;
+        public float  vectorNoiseInvCellSize;
+        public byte   enablePrebakedVectorNoise;
+        public float  vectorNoiseTriangleModulation;
         public byte   enableAnalyticalFlowField;
         public float  haloclineBoundaryDepthMeters;
         public float  deepLayerDensityMultiplier;
@@ -2853,7 +3016,7 @@ namespace Hecton8.Physics
             float3 pos = positions[i];
             float3 vel = velocities[i];
             float3 angularVel = angularVelocities[i];
-            float3 up = DominantAxisOrDefault(upVectors[i], new float3(0f, 1f, 0f));
+            float3 up = ResolveSurfaceNormalLod(upVectors[i], p.alignmentPadding);
 
             // ── Glubina pogruzheniya tsentra mass ──
             float waveOffset = waveOffsets[i];
@@ -2931,13 +3094,18 @@ namespace Hecton8.Physics
 
             if (enablePhantomCurrent != 0 && p.currentResponse > 0.0001f)
             {
-                sampledCurrent += HectonAnalyticalFlowField.SampleCinematicCurrent(
+                sampledCurrent += HectonAnalyticalFlowField.SamplePrebakedVectorCurrent(
                     pos,
                     time,
-                    currentNoiseScale,
+                    vectorNoiseField,
+                    vectorNoiseFieldLength,
+                    vectorNoiseAupOffset,
+                    vectorNoiseInvCellSize,
+                    enablePrebakedVectorNoise,
                     currentTimeScale,
                     phantomCurrentStrength,
-                    currentVerticalFactor);
+                    currentVerticalFactor,
+                    vectorNoiseTriangleModulation);
             }
 
             bool stormActive = (weatherStateMask & (uint)Hecton8.Core.WeatherState.Storm) != 0u;
@@ -2952,13 +3120,18 @@ namespace Hecton8.Physics
 
                 if (surfaceLayer01 > 0.0001f && p.currentResponse > 0.0001f)
                 {
-                    sampledCurrent += HectonAnalyticalFlowField.SampleCinematicCurrent(
+                    sampledCurrent += HectonAnalyticalFlowField.SamplePrebakedVectorCurrent(
                         pos + new float3(17.3f, 0f, 11.1f),
                         time,
-                        currentNoiseScale,
+                        vectorNoiseField,
+                        vectorNoiseFieldLength,
+                        vectorNoiseAupOffset,
+                        vectorNoiseInvCellSize,
+                        enablePrebakedVectorNoise,
                         currentTimeScale,
                         phantomCurrentStrength * (StormSurfaceTurbulenceStrength * surfaceLayer01),
-                        currentVerticalFactor * surfaceLayer01);
+                        currentVerticalFactor * surfaceLayer01,
+                        vectorNoiseTriangleModulation);
                 }
             }
 
@@ -3125,6 +3298,17 @@ namespace Hecton8.Physics
                 : value;
         }
 
+        private static float3 ResolveSurfaceNormalLod(float3 value, uint flags)
+        {
+            if ((flags & BuoyancyParams.ExactSurfaceNormalFlag) != 0u)
+            {
+                float3 safeValue = math.select(new float3(0f, 1f, 0f), value, math.lengthsq(value) > 0.000001f);
+                return math.normalize(safeValue);
+            }
+
+            return DominantAxisOrDefault(value, new float3(0f, 1f, 0f));
+        }
+
         private static float3 DominantAxisOrDefault(float3 value, float3 fallback)
         {
             float3 absValue = math.abs(value);
@@ -3222,6 +3406,11 @@ namespace Hecton8.Physics
 
     internal static class HectonAnalyticalFlowField
     {
+        public const int VectorNoiseResolution = 32;
+        public const int VectorNoiseVoxelCount = VectorNoiseResolution * VectorNoiseResolution * VectorNoiseResolution;
+        private const int VectorNoiseMask = VectorNoiseResolution - 1;
+        private const int VectorNoiseSliceShift = 5;
+        private const int VectorNoisePlaneShift = 10;
         private const float SurfaceStormLayerDepthMeters = 50f;
         private const float StormSurfaceTurbulenceStrength = 0.4f;
 
@@ -3243,7 +3432,13 @@ namespace Hecton8.Physics
             float phantomCurrentStrength,
             float time,
             float haloclineBoundaryDepthMeters,
-            float haloclineShearVelocity)
+            float haloclineShearVelocity,
+            NativeArray<float3> vectorNoiseField,
+            int vectorNoiseFieldLength,
+            float3 vectorNoiseAupOffset,
+            float vectorNoiseInvCellSize,
+            byte enablePrebakedVectorNoise,
+            float vectorNoiseTriangleModulation)
         {
             float3 flow = baseCurrent;
             flow += weatherCurrentDirection * math.max(0f, weatherCurrentScale) * math.max(0f, weatherBlend);
@@ -3255,13 +3450,18 @@ namespace Hecton8.Physics
 
             if (enablePhantomCurrent != 0)
             {
-                flow += SampleCinematicCurrent(
+                flow += SamplePrebakedVectorCurrent(
                     position,
                     time,
-                    currentNoiseScale,
+                    vectorNoiseField,
+                    vectorNoiseFieldLength,
+                    vectorNoiseAupOffset,
+                    vectorNoiseInvCellSize,
+                    enablePrebakedVectorNoise,
                     currentTimeScale,
                     phantomCurrentStrength,
-                    currentVerticalFactor);
+                    currentVerticalFactor,
+                    vectorNoiseTriangleModulation);
             }
 
             bool stormActive = (weatherStateMask & (uint)Hecton8.Core.WeatherState.Storm) != 0u;
@@ -3274,13 +3474,18 @@ namespace Hecton8.Physics
 
                 if (surfaceLayer01 > 0.0001f)
                 {
-                    flow += SampleCinematicCurrent(
+                    flow += SamplePrebakedVectorCurrent(
                         position + new float3(17.3f, 0f, 11.1f),
                         time,
-                        currentNoiseScale,
+                        vectorNoiseField,
+                        vectorNoiseFieldLength,
+                        vectorNoiseAupOffset,
+                        vectorNoiseInvCellSize,
+                        enablePrebakedVectorNoise,
                         currentTimeScale,
                         phantomCurrentStrength * (StormSurfaceTurbulenceStrength * surfaceLayer01),
-                        currentVerticalFactor * surfaceLayer01);
+                        currentVerticalFactor * surfaceLayer01,
+                        vectorNoiseTriangleModulation);
                 }
             }
 
@@ -3290,25 +3495,38 @@ namespace Hecton8.Physics
             return ResolveFiniteFloat3OrZero(flow);
         }
 
-        public static float3 SampleCinematicCurrent(
+        public static float3 SamplePrebakedVectorCurrent(
             float3 worldPos,
             float time,
-            float noiseScale,
+            NativeArray<float3> vectorNoiseField,
+            int vectorNoiseFieldLength,
+            float3 vectorNoiseAupOffset,
+            float vectorNoiseInvCellSize,
+            byte enablePrebakedVectorNoise,
             float timeScale,
             float strength,
-            float verticalFactor)
+            float verticalFactor,
+            float triangleModulation)
         {
-            if (strength == 0f || noiseScale <= 0f || !math.all(math.isfinite(worldPos)))
+            if (enablePrebakedVectorNoise == 0 ||
+                strength == 0f ||
+                vectorNoiseInvCellSize <= 0f ||
+                vectorNoiseFieldLength < VectorNoiseVoxelCount ||
+                !math.all(math.isfinite(worldPos)))
+            {
                 return float3.zero;
+            }
 
-            float t = time * timeScale;
-            float sx = worldPos.x * noiseScale;
-            float sy = worldPos.y * noiseScale;
-            float sz = worldPos.z * noiseScale;
-            float nx = FastTriangleSigned(sx * 2.41f + sz * 0.73f + sy * 0.19f + t);
-            float nz = FastTriangleSigned(sz * 2.17f - sx * 0.61f + sy * 0.13f + t * 1.23f + 2.11f);
-            float ny = FastTriangleSigned(sx * 0.43f + sz * 0.29f + sy * 0.07f + t * 0.5f + 4.37f) * verticalFactor;
-            return ResolveFiniteFloat3OrZero(new float3(nx, ny, nz) * strength);
+            float3 aupCell = (worldPos + vectorNoiseAupOffset) * vectorNoiseInvCellSize;
+            int x = FastFloorToInt(aupCell.x) & VectorNoiseMask;
+            int y = FastFloorToInt(aupCell.y) & VectorNoiseMask;
+            int z = FastFloorToInt(aupCell.z) & VectorNoiseMask;
+            int index = x | (y << VectorNoiseSliceShift) | (z << VectorNoisePlaneShift);
+            float3 vectorSample = vectorNoiseField[index];
+            vectorSample.y *= math.saturate(verticalFactor);
+
+            float modulation = 1f + FastTriangleSigned(time * timeScale) * math.saturate(triangleModulation);
+            return ResolveFiniteFloat3OrZero(vectorSample * (strength * math.max(0f, modulation)));
         }
 
         public static float SampleViscosityMultiplier(
@@ -3400,6 +3618,12 @@ namespace Hecton8.Physics
         {
             float triangle01 = 1f - math.abs(math.frac(phase * 0.15915494f + 0.25f) * 2f - 1f);
             return triangle01 * 2f - 1f;
+        }
+
+        private static int FastFloorToInt(float value)
+        {
+            int truncated = (int)value;
+            return math.select(truncated - 1, truncated, value >= truncated);
         }
 
         private static float FastMagnitudeApprox(float3 value)

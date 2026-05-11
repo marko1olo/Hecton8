@@ -1579,7 +1579,7 @@ namespace Hecton8.World
                     continue;
 
                 // COLD ALLOC: GameObject[1] - persistent abyssal bio-cable visual rig child created once per cable slot - owner: AbyssalThermalManager
-                GameObject cableObject = new GameObject($"BioCableIK_{i:00}");
+                GameObject cableObject = new GameObject("BioCableIK");
                 cableObject.transform.SetParent(transform, false);
                 cableObject.transform.localPosition = Vector3.zero;
                 cableObject.transform.localRotation = Quaternion.identity;

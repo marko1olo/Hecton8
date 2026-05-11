@@ -749,13 +749,13 @@ namespace Hecton8.Gameplay
             set => _integrityComponent.SetFlooded(value);
         }
 
-        /// <summary>Tselostnost upala do nulya — modul probit.</summary>
+        /// <summary>Integrity reached zero; module is breached.</summary>
         public bool IsBreached => _integrityComponent.CurrentIntegrity <= 0f;
 
-        /// <summary>Idet li seychas otkachka vody.</summary>
+        /// <summary>Water drain is currently active.</summary>
         public bool IsDraining => _integrityComponent.IsDraining;
 
-        /// <summary>Idet li dekonstruktsiya (zaschita ot povtornyh vyzovov).</summary>
+        /// <summary>Deconstruction is currently active; blocks repeated calls.</summary>
         public bool IsDeconstructing => _isDeconstructing;
 
         /// <summary>Tekuschiy kaskadnyy avariynyy status modulya.</summary>
@@ -909,8 +909,8 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Bazovoe energopotreblenie modulya.
-        /// Istochnik: BuildableData.powerRating → fallback.
+        /// Base module power draw.
+        /// Source: BuildableData.powerRating, then fallback.
         /// </summary>
         public float PowerRating => StaticDebuffedPowerRating;
 
@@ -919,9 +919,9 @@ namespace Hecton8.Gameplay
         public bool HasPower => HasOperationalPower;
 
         /// <summary>
-        /// Reaktsiya na izmenenie statusa pitaniya ot PowerGrid:
-        ///   • Svet vklyuchaetsya / vyklyuchaetsya.
-        ///   • Drain zapuskaetsya / ostanavlivaetsya.
+        /// Reacts to power status changes from PowerGrid:
+        ///   - Lights enable or disable.
+        ///   - Drain starts or stops.
         /// </summary>
         public void OnPowerStatusChanged(bool hasPower)
         {
@@ -955,9 +955,9 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Realizatsiya ICuttable — delegiruet v ApplyDamage.
-        /// Pozvolyaet LaserCutter rezat moduli bazy.
-        /// hitPoint mozhet ispolzovatsya dlya lokalizatsii povrezhdeniy v buduschem.
+        /// ICuttable bridge into ApplyDamage.
+        /// Allows LaserCutter to damage base modules.
+        /// hitPoint is retained for localized damage.
         /// </summary>
         public void ApplyCutDamage(float damage, Vector3 hitPoint)
         {
@@ -1096,11 +1096,9 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Tsentralizovannyy medlennyy tik ot GameTickManager.
-        /// Vypolnyaet:
-        ///   1. Passivnyy remont (esli est pitanie i integrity > 0).
-        ///   2. Progress otkachki vody (drain timer).
-        /// Bez pitaniya — nikakih operatsiy ne proishodit.
+        /// Central slow tick from GameTickManager.
+        /// Runs passive repair when powered and advances water drain.
+        /// No power means no operational work.
         /// </summary>
         public void SlowTick()
         {
@@ -1127,12 +1125,12 @@ namespace Hecton8.Gameplay
                 Repair(passiveRecoveryRate * SLOW_TICK_DT);
             }
 
-            // Passivnaya degradatsiya — lor: davlenie, vremya, glubina
+            // Passive degradation: pressure, time, depth.
             if (passiveDegradationRate > 0f && _integrityComponent.CurrentIntegrity > 0f)
             {
                 float degradation = passiveDegradationRate * SLOW_TICK_DT;
 
-                // Glubina > 500m — usilennaya degradatsiya ot davleniya
+                // Depth above 500m increases pressure degradation.
                 if (_trackedPlayerSurvival != null && _trackedPlayerSurvival.Depth > 500f)
                     degradation *= depthDegradationMultiplier;
 

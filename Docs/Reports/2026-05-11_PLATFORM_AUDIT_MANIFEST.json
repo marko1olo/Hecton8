@@ -9,7 +9,7 @@
     "standalone Android VR",
     "consoles"
   ],
-  "proofBoundary": "Static project scan plus existing local Core dotnet compile only. No fresh Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, XR device, Linux, macOS, Android, or console proof captured in this platform audit pass.",
+  "proofBoundary": "Static project scan plus Windows Editor-context Unity audit/import proof plus direct PlaybackEngines filesystem evidence that LinuxStandaloneSupport is installed. No fresh Play Mode, profiler, GCMonitor, player build, player launch, frame-time, memory, scene wiring, XR device, Linux runtime, macOS, Android, or console proof captured in this platform audit pass.",
   "documents": [
     {
       "path": "Docs/Reports/2026-05-11_PLATFORM_READINESS_AUDIT.md",
@@ -25,12 +25,34 @@
       "path": "Docs/Reports/2026-05-11_PLATFORM_VERIFICATION_MATRIX.md",
       "role": "required proof matrix for builds, runtime routes, profiler, GC, memory, XR, Addressables, storage",
       "status": "PENDING VERIFICATION"
+    },
+    {
+      "path": "Docs/Reports/2026-05-11_PLATFORM_COMPATIBILITY_EDITOR_AUDIT.md",
+      "role": "Unity-generated editor audit of local build target support, packages, settings, and native plugin parity",
+      "status": "PENDING VERIFICATION"
+    }
+  ],
+  "evidenceArtifacts": [
+    {
+      "path": "CodexArtifacts/2026-05-11_PLATFORM_UNITY_AUDIT_R14_FINAL.log",
+      "result": "PASS",
+      "notes": "Unity batch audit ExitCode 0; platform compatibility report written; strict scan found no error CS, Burst error, BC0101, Tundra build failed, Scripts have compiler errors, or Unhandled Exception."
+    },
+    {
+      "path": "CodexArtifacts/2026-05-11_PLATFORM_UNITY_IMPORT_R10_POST_AUDIT.log",
+      "result": "PASS",
+      "notes": "Unity batch import ExitCode 0; log contains Exiting batchmode successfully now and Application will terminate with return code 0."
+    },
+    {
+      "path": "CodexArtifacts/2026-05-11_PLATFORM_UNITY_AUDIT_R5.log through R8, plus R11 through R13",
+      "result": "SUPERSEDED",
+      "notes": "Earlier attempts were inconclusive or failed due Bee/ILPP orchestration interruption or concurrent Unity project lock before stable R14 evidence."
     }
   ],
   "currentClassification": {
     "Windows10_11Desktop": "PENDING VERIFICATION",
     "LegacyWindows": "DO NOT TARGET",
-    "LinuxDesktop": "BLOCKED",
+    "LinuxDesktop": "MODULE INSTALLED / BUILD AND RUNTIME PROOF PENDING",
     "MacOSDesktop": "BLOCKED",
     "SteamDeck": "BLOCKED / UNPROVEN",
     "PcVrStreaming": "BLOCKED",
@@ -40,7 +62,7 @@
   },
   "dominantBlockerTypes": [
     "proof absence",
-    "missing Unity platform modules outside Windows",
+    "missing macOS/Android/iOS/visionOS/tvOS/UWP/Web Unity platform modules; Linux module is installed but unbuilt",
     "missing XR Plugin Management and OpenXR provider",
     "missing Addressables project data despite active runtime code",
     "Windows-heavy save/telemetry/native compression path",
@@ -54,7 +76,8 @@
     "Windows bootstrap -> menu -> world -> pause -> save route proof",
     "Windows profiler, GC, memory capture",
     "Addressables settings/groups/catalog proof or active dependency removal",
-    "Linux/macOS/Android module install proof before target builds",
+    "Linux x64 player build log now that Linux Build Support is installed",
+    "macOS/Android module install proof before those target builds",
     "OpenXR package/provider configuration before VR claims"
   ]
 }

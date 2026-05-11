@@ -858,6 +858,8 @@ namespace Hecton8.Gameplay
         private const float ExosuitJumpJetNoiseScale = 0.17f;
         private const float ExosuitJumpJetNoiseTimeScale = 0.73f;
         private const float ExosuitJumpJetNoiseVectorScale = 0.055f;
+        private const float RuntimeNarcosisInputNoiseScale = 0.22f;
+        private const float RuntimeNarcosisInputNoiseFrequency = 1.37f;
 
         [Header("Exosuit Locomotion")]
         [Tooltip("Extra grounded walk force multiplier while an exosuit transport owns locomotion.")]
@@ -1266,6 +1268,7 @@ namespace Hecton8.Gameplay
         private float _externalEnvironmentalDragCurrentMultiplier = 1f;
         private float _externalEnvironmentalDragHoldTimer;
         private bool _externalEnvironmentalDragRequestedThisStep;
+        private float _runtimeNarcosisInputNoise01;
         private Vector3 _cuttingTensionAnchorRequestedWS = Vector3.zero;
         private Vector3 _cuttingTensionAnchorCurrentWS = Vector3.zero;
         private Vector3 _cuttingTensionAnchorNormalRequestedWS = Vector3.up;
@@ -1461,6 +1464,7 @@ namespace Hecton8.Gameplay
         [StructLayout(LayoutKind.Sequential)]
         private struct RenderInterpolationState
         {
+            public Vector3 BodyPosition;
             public float CameraYaw;
             public float BodyYaw;
             public Vector3 LinearVelocity;
@@ -1554,6 +1558,11 @@ namespace Hecton8.Gameplay
             _runtimeStaminaMultiplier = math.clamp(multiplier, 0.2f, 1f);
         }
 
+        internal void SetRuntimeNarcosisInputNoise(float severity01)
+        {
+            _runtimeNarcosisInputNoise01 = math.saturate(severity01);
+        }
+
         internal void TriggerCriticalStaminaFailure(float durationSeconds = CriticalStaminaFailureDurationSeconds)
         {
             _criticalStaminaFailureTimer = math.max(_criticalStaminaFailureTimer, math.max(0f, durationSeconds));
@@ -1572,6 +1581,31 @@ namespace Hecton8.Gameplay
 
             if (_juiceProcessor != null)
                 _juiceProcessor.RegisterEntanglementStrain(math.lerp(0.35f, 0.95f, clampedSeverity));
+        }
+
+        private void ApplyRuntimeNarcosisInputNoise(ref float inputH, ref float inputV, ref float inputVertical)
+        {
+            float severity01 = math.saturate(_runtimeNarcosisInputNoise01);
+            if (severity01 <= 0f)
+                return;
+
+            float inputIntent = math.max(math.max(math.abs(inputH), math.abs(inputV)), math.abs(inputVertical));
+            if (inputIntent <= 0.001f)
+                return;
+
+            float phase = _currentTimer * RuntimeNarcosisInputNoiseFrequency + _instanceId * 0.00137f;
+            inputH = math.clamp(
+                inputH + SignedTriangleRadians(phase) * RuntimeNarcosisInputNoiseScale * severity01,
+                -1f,
+                1f);
+            inputV = math.clamp(
+                inputV + SignedTriangleRadians(phase * 1.618f + 1.1f) * RuntimeNarcosisInputNoiseScale * 0.5f * severity01,
+                -1f,
+                1f);
+            inputVertical = math.clamp(
+                inputVertical + SignedTriangleRadians(phase * 1.231f + 2.7f) * RuntimeNarcosisInputNoiseScale * 0.35f * severity01,
+                -1f,
+                1f);
         }
 
         /// <summary>
@@ -2287,7 +2321,8 @@ namespace Hecton8.Gameplay
             if (_rb == null)
                 return;
 
-            float invMass = 1f / math.max(_rb.mass, 0.0001f);
+            float finiteMass = math.select(0f, _rb.mass, math.isfinite(_rb.mass));
+            float invMass = math.rcp(math.max(finiteMass, 0.001f));
             ApplyMotorAcceleration(force * invMass);
         }
 
@@ -2500,8 +2535,10 @@ namespace Hecton8.Gameplay
         private void InitializeRenderInterpolationState()
         {
             Vector3 currentVelocity = _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.linearVelocity) : Vector3.zero;
+            Vector3 currentPosition = ResolveCurrentRenderInterpolationBodyPosition();
             _previousRenderInterpolationState = new RenderInterpolationState
             {
+                BodyPosition = currentPosition,
                 CameraYaw = _cameraYaw,
                 BodyYaw = _bodyYaw,
                 LinearVelocity = currentVelocity,
@@ -2517,9 +2554,11 @@ namespace Hecton8.Gameplay
         private void CaptureFixedInterpolationState()
         {
             Vector3 currentVelocity = HectonPlayerMotor.SafeVelocity(_rb.linearVelocity);
+            Vector3 currentPosition = ResolveCurrentRenderInterpolationBodyPosition();
             _previousRenderInterpolationState = _currentRenderInterpolationState;
             _currentRenderInterpolationState = new RenderInterpolationState
             {
+                BodyPosition = currentPosition,
                 CameraYaw = _cameraYaw,
                 BodyYaw = _bodyYaw,
                 LinearVelocity = currentVelocity,
@@ -2545,6 +2584,16 @@ namespace Hecton8.Gameplay
                 _previousRenderInterpolationState.VerticalVelocity,
                 _currentRenderInterpolationState.VerticalVelocity,
                 alpha);
+        }
+
+        private Vector3 ResolveCurrentRenderInterpolationBodyPosition()
+        {
+            if (_rb != null)
+                return HectonPlayerMotor.SafeVelocity(_rb.position);
+
+            return _cachedTransform != null
+                ? HectonPlayerMotor.SafeVelocity(_cachedTransform.position)
+                : Vector3.zero;
         }
 
         private void RefreshFixedFrameSpatialCache()
@@ -3675,6 +3724,12 @@ namespace Hecton8.Gameplay
                 _fixedFrameBodyTopY -= shiftOffset.y;
                 _fixedFrameBodyEyeY -= shiftOffset.y;
                 _groundCheckOrigin -= shiftOffset;
+            }
+
+            if (_renderInterpolationStateInitialized)
+            {
+                _previousRenderInterpolationState.BodyPosition -= shiftOffset;
+                _currentRenderInterpolationState.BodyPosition -= shiftOffset;
             }
 
             _sargassumMovementInfluence?.ApplyOriginShiftOffset(shiftOffset);
@@ -6025,9 +6080,11 @@ namespace Hecton8.Gameplay
 
         private void ResetRenderInterpolationHistoryForTeleport()
         {
+            Vector3 currentPosition = ResolveCurrentRenderInterpolationBodyPosition();
             _renderInterpolatedLinearVelocity = Vector3.zero;
             _previousRenderInterpolationState = new RenderInterpolationState
             {
+                BodyPosition = currentPosition,
                 CameraYaw = _cameraYaw,
                 BodyYaw = _bodyYaw,
                 LinearVelocity = Vector3.zero,
@@ -6593,6 +6650,8 @@ namespace Hecton8.Gameplay
                 TargetRotation = _cameraWorldRotation,
                 TargetLocalPosition = finalPos,
                 TargetFieldOfView = targetFov,
+                PreviousFixedPosition = _previousRenderInterpolationState.BodyPosition,
+                CurrentFixedPosition = _currentRenderInterpolationState.BodyPosition,
                 KccLinearVelocity = _renderInterpolatedLinearVelocity,
                 FixedDeltaTime = _currentFixedDeltaTime,
                 DeltaTime = _juiceInput.deltaTime,
@@ -10337,6 +10396,7 @@ namespace Hecton8.Gameplay
             float gatedInputH = IsCriticalStaminaFailureActive ? 0f : _inputH;
             float gatedInputV = IsCriticalStaminaFailureActive ? 0f : _inputV;
             float gatedInputVertical = IsCriticalStaminaFailureActive ? 0f : _inputVertical;
+            ApplyRuntimeNarcosisInputNoise(ref gatedInputH, ref gatedInputV, ref gatedInputVertical);
             bool hasInput = gatedInputH != 0f || gatedInputV != 0f || gatedInputVertical != 0f;
             bool surfaceDiveAssistActive = _surfaceDiveAssistTimer > 0f;
             if (!hasInput && rawTransportPropulsionForce <= 0f && !surfaceDiveAssistActive)
@@ -10535,11 +10595,12 @@ namespace Hecton8.Gameplay
             }
 
             _forceVector = ResolveCriticalEncumbranceSwimForce(_forceVector, IsCriticallyEncumbered);
-            _forceVector = HectonPlayerMotor.ResolveHydrodynamicAddedMassStatelessForce(
+            Vector3 swimAcceleration = HectonPlayerMotor.ResolveHydrodynamicAddedMassStatelessAcceleration(
                 _forceVector,
-                _velocity);
+                _velocity,
+                _rb != null ? _rb.mass : 0f);
 
-            ApplyMotorAccelerationFromForce(_forceVector);
+            ApplyMotorAcceleration(swimAcceleration);
             ApplySargassumEntanglementForce(transportPreset);
             ApplyAbyssalCableEntanglementForce(transportPreset);
             ApplySargassumMatBuoyancySupport();

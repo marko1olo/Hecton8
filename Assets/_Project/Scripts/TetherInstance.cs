@@ -906,11 +906,11 @@ namespace Hecton8.Physics
             Vector3 delta = end - start;
             float distanceSq = delta.sqrMagnitude;
             float minDistanceSq = MinDistance * MinDistance;
-            if (distanceSq <= minDistanceSq)
+            if (!math.isfinite(distanceSq) || distanceSq <= minDistanceSq)
                 return false;
 
-            float distance = math.sqrt(distanceSq);
-            Vector3 direction = delta * math.rsqrt(distanceSq);
+            ResolveLengthAndInvLength(distanceSq, out float distance, out float invDistance);
+            Vector3 direction = delta * invDistance;
             float endpointInset = math.clamp(_bendEndpointInset, 0.005f, distance * 0.45f);
             float castDistance = distance - endpointInset * 2f;
             if (castDistance <= MinDistance)
@@ -1100,16 +1100,16 @@ namespace Hecton8.Physics
                 Vector3 delta = end - start;
                 float distanceSq = delta.sqrMagnitude;
                 float minDistanceSq = MinDistance * MinDistance;
-                if (distanceSq <= minDistanceSq)
+                if (!math.isfinite(distanceSq) || distanceSq <= minDistanceSq)
                     continue;
 
-                float distance = math.sqrt(distanceSq);
+                ResolveLengthAndInvLength(distanceSq, out float distance, out float invDistance);
                 float segmentInset = math.min(math.max(0.01f, _bendEndpointInset), distance * 0.25f);
                 float castDistance = distance - segmentInset * 2f;
                 if (castDistance <= MinDistance)
                     continue;
 
-                Vector3 direction = delta * math.rsqrt(distanceSq);
+                Vector3 direction = delta * invDistance;
                 int hits = UnityEngine.Physics.RaycastNonAlloc(
                     start + direction * segmentInset,
                     direction,
@@ -1369,7 +1369,7 @@ namespace Hecton8.Physics
             Vector3 separation = payloadPositionWS - constraintAnchorPosition;
             float distanceSq = separation.sqrMagnitude;
             float minDistanceSq = MinDistance * MinDistance;
-            if (distanceSq <= minDistanceSq)
+            if (!math.isfinite(distanceSq) || distanceSq <= minDistanceSq)
             {
                 _primaryConstraintForceMagnitude = 0f;
                 return;
@@ -1383,8 +1383,8 @@ namespace Hecton8.Physics
                 return;
             }
 
-            float distance = math.sqrt(distanceSq);
-            Vector3 directionAwayFromAnchor = separation * math.rsqrt(distanceSq);
+            ResolveLengthAndInvLength(distanceSq, out float distance, out float invDistance);
+            Vector3 directionAwayFromAnchor = separation * invDistance;
             float extension = distance - targetDistance;
             if (extension <= 0f)
             {
@@ -1568,8 +1568,14 @@ namespace Hecton8.Physics
         private static float ResolveMagnitude(float sqrMagnitude)
         {
             return sqrMagnitude > MinVectorMagnitudeSq
-                ? math.sqrt(sqrMagnitude)
+                ? sqrMagnitude * math.rsqrt(sqrMagnitude)
                 : 0f;
+        }
+
+        private static void ResolveLengthAndInvLength(float sqrMagnitude, out float length, out float invLength)
+        {
+            invLength = math.rsqrt(sqrMagnitude);
+            length = sqrMagnitude * invLength;
         }
 
         private static Vector3 ClampPdDerivativeVelocity(

@@ -2,6 +2,9 @@
 using System;
 using Unity.Collections;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
 
 namespace Hecton8.EditorTools
@@ -14,6 +17,10 @@ namespace Hecton8.EditorTools
         internal const string ArtRoot = "Assets/_Project/Art";
         internal const int HeroMaxTextureSize = 2048;
         internal const int ScatterMaxTextureSize = 512;
+        internal const string TierHighLabel = "Tier_High";
+        internal const string TierLowLabel = "Tier_Low";
+        private const string TieredTextureGroupName = "Hecton_TextureStreaming_Auto";
+        private const string SyncTierLabelsMenuPath = "Hecton/Art Optimization/Sync Texture Addressables Tier Labels";
 
         private void OnPreprocessTexture()
         {
@@ -29,8 +36,14 @@ namespace Hecton8.EditorTools
             TextureImporter importer = assetImporter as TextureImporter;
             if (texture == null ||
                 importer == null ||
-                !IsManagedArtTexture(assetPath) ||
-                !IsNormalMap(assetPath, importer) ||
+                !IsManagedArtTexture(assetPath))
+            {
+                return;
+            }
+
+            ApplyAddressablesTierLabel(texture, assetPath, importer);
+
+            if (!IsNormalMap(assetPath, importer) ||
                 !ShouldFlipNormalGreenChannel(assetPath, texture))
             {
                 return;
@@ -42,6 +55,27 @@ namespace Hecton8.EditorTools
             FlipGreenChannel(pixels);
 
             texture.Apply(false, false);
+        }
+
+        [MenuItem(SyncTierLabelsMenuPath, priority = 211)]
+        private static void SyncTextureTierLabels()
+        {
+            string[] textureGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { ArtRoot });
+            int labeled = 0;
+
+            for (int i = 0; i < textureGuids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(textureGuids[i]);
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                if (texture == null || importer == null || !IsManagedArtTexture(path))
+                    continue;
+
+                if (ApplyAddressablesTierLabel(texture, path, importer))
+                    labeled++;
+            }
+
+            Debug.Log("[HectonTextureImportDictator] Synced Addressables tier labels for textures=" + labeled + ".");
         }
 
         internal static bool ApplyImportPolicy(TextureImporter importer, string path)
@@ -166,6 +200,116 @@ namespace Hecton8.EditorTools
                    lowerPath.EndsWith(".exr", StringComparison.Ordinal);
         }
 
+        private static bool ApplyAddressablesTierLabel(Texture2D texture, string path, TextureImporter importer)
+        {
+            if (texture == null || importer == null || string.IsNullOrEmpty(path))
+                return false;
+
+            importer.GetSourceTextureWidthAndHeight(out int sourceWidth, out int sourceHeight);
+            if (!TryResolveTierLabel(path, sourceWidth, sourceHeight, out string label))
+                return ClearAddressablesTierLabels(path);
+
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.GetSettings(true);
+            if (settings == null)
+                return false;
+
+            AddressableAssetGroup group = ResolveTieredTextureGroup(settings);
+            if (group == null)
+                return false;
+
+            string guid = AssetDatabase.AssetPathToGUID(path);
+            if (string.IsNullOrEmpty(guid))
+                return false;
+
+            AddressableAssetEntry entry = settings.CreateOrMoveEntry(guid, group, false, false);
+            if (entry == null)
+                return false;
+
+            bool changed = false;
+            if (!string.Equals(entry.address, path, StringComparison.Ordinal))
+            {
+                entry.address = path;
+                changed = true;
+            }
+
+            string otherLabel = string.Equals(label, TierHighLabel, StringComparison.Ordinal)
+                ? TierLowLabel
+                : TierHighLabel;
+            changed |= entry.SetLabel(label, true, true, false);
+            changed |= entry.SetLabel(otherLabel, false, true, false);
+
+            if (changed)
+            {
+                EditorUtility.SetDirty(settings);
+            }
+
+            return changed;
+        }
+
+        private static bool ClearAddressablesTierLabels(string path)
+        {
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (settings == null)
+                return false;
+
+            string guid = AssetDatabase.AssetPathToGUID(path);
+            if (string.IsNullOrEmpty(guid))
+                return false;
+
+            AddressableAssetEntry entry = settings.FindAssetEntry(guid);
+            if (entry == null)
+                return false;
+
+            bool changed = entry.SetLabel(TierHighLabel, false, false, false);
+            changed |= entry.SetLabel(TierLowLabel, false, false, false);
+            if (changed)
+            {
+                EditorUtility.SetDirty(settings);
+            }
+
+            return changed;
+        }
+
+        private static bool TryResolveTierLabel(string path, int width, int height, out string label)
+        {
+            label = null;
+            int maxDimension = Mathf.Max(width, height);
+            if (maxDimension >= HeroMaxTextureSize)
+            {
+                label = TierHighLabel;
+                return true;
+            }
+
+            if (maxDimension <= ScatterMaxTextureSize && IsAtlasTexture(path))
+            {
+                label = TierLowLabel;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static AddressableAssetGroup ResolveTieredTextureGroup(AddressableAssetSettings settings)
+        {
+            if (settings == null)
+                return null;
+
+            if (settings.DefaultGroup != null)
+                return settings.DefaultGroup;
+
+            AddressableAssetGroup group = settings.FindGroup(TieredTextureGroupName);
+            if (group != null)
+                return group;
+
+            return settings.CreateGroup(
+                TieredTextureGroupName,
+                false,
+                false,
+                false,
+                null,
+                typeof(BundledAssetGroupSchema));
+        }
+
         private static bool IsMaskMap(string path)
         {
             string lowerPath = Normalize(path);
@@ -209,6 +353,14 @@ namespace Hecton8.EditorTools
                    lowerPath.Contains("debris") ||
                    lowerPath.Contains("terrain textures") ||
                    lowerPath.Contains("worldproceduralflora");
+        }
+
+        private static bool IsAtlasTexture(string path)
+        {
+            string lowerPath = Normalize(path);
+            return lowerPath.Contains("atlas") ||
+                   lowerPath.Contains("sheet") ||
+                   lowerPath.Contains("flipbook");
         }
 
         private static string Normalize(string path)

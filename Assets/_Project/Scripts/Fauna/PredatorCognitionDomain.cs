@@ -2735,18 +2735,8 @@ namespace Hecton8.AI
             private static int BuildWinningStateMask(float4 scores, float winningScore)
             {
                 float4 threshold = new float4(winningScore - DdaEpsilon);
-                bool4 matches = scores >= threshold;
-                bool pickProwling = matches.x;
-                bool pickStalking = !pickProwling && matches.y;
-                bool pickAttacking = !pickProwling && !pickStalking && matches.z;
-                bool pickFleeing = !pickProwling && !pickStalking && !pickAttacking && matches.w;
-
-                int winningMask = 0;
-                winningMask |= math.select(0, 1 << 0, pickProwling);
-                winningMask |= math.select(0, 1 << 1, pickStalking);
-                winningMask |= math.select(0, 1 << 2, pickAttacking);
-                winningMask |= math.select(0, 1 << 3, pickFleeing);
-                return winningMask;
+                int winningMask = math.bitmask(scores >= threshold) & 0xF;
+                return winningMask & -winningMask;
             }
 
             private static int DecodePredatorStateCode(int winningMask)

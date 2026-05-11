@@ -1,18 +1,18 @@
 // ============================================================================
-// HECTON-8 — HectonItem.cs
-// Podbiraemyy predmet v mire. Realizuet IInteractable.
-// Ispolzuet Data-Driven podhod: vsya informatsiya — v ItemData.
+// HECTON-8 - HectonItem.cs
+// World pickup item. Implements IInteractable.
+// Uses data-driven ItemData metadata.
 //
-// IZMENENIE v2:
-//   Dobavlen public metod SetItemData(ItemData, int) dlya programmnoy
-//   initsializatsii pri spavne iz BaseModule.Deconstruct().
-//   Pozvolyaet pereispolzovat odin worldItemPrefab dlya lyubyh resursov.
+// CHANGE v2:
+//   Added SetItemData(ItemData, int) for programmatic initialization from
+//   BaseModule.Deconstruct() spawns. A single worldItemPrefab can represent
+//   multiple resource item records.
 //
-// IZMENENIE v3.1 (POOL-SAFE SETTLE):
-//   Ubran async Awaitable SettleAndSleepAsync — destroyCancellationToken
-//   NE srabatyvaet pri SetActive(false) (puling). Zamenen na ITickable
-//   s konechnym avtomatom i taymerom. Polnostyu Zero GC.
-//   Sbros sostoyaniya v OnDisable() garantiruet korrektnost pri pulinge.
+// CHANGE v3.1 (POOL-SAFE SETTLE):
+//   Removed async Awaitable SettleAndSleepAsync because destroyCancellationToken
+//   does not fire on SetActive(false) pooled despawn. Replaced with an
+//   ITickable state machine and timer. Zero GC.
+//   OnDisable resets state for pooled reuse.
 // ============================================================================
 
 using Hecton8.Core;
@@ -39,26 +39,26 @@ namespace Hecton8.Items
         private const float DeepSeaSeawaterDensityKgPerM3 = 1025f;
         private const float LooseItemBuoyancyAngularDragMultiplier = 2.75f;
         private const ushort DefaultQualityMilli = 1000;
-        // ─────────────────────── Data ────────────────────────────
+        // Data
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
         [SerializeField] private int      quantity = 1;
 
-        // ─────────────────────── Settle Config ───────────────────
-        // Vremya ozhidaniya pered pervoy popytkoy usypit Rigidbody (sek).
+        // Settle Config
+        // Delay before the first Rigidbody sleep attempt.
         private const float SettleDelay       = 2.0f;
-        // Vremya ozhidaniya pered povtornoy popytkoy (sek).
+        // Delay before the retry sleep attempt.
         private const float SettleRetryDelay  = 1.0f;
-        // Porog skorosti dlya zasypaniya (sqrMagnitude).
+        // Squared velocity threshold for sleeping.
         private const float SleepVelocitySqr  = 0.01f;
 
-        // ─────────────────────── Settle State ────────────────────
+        // Settle State
         /// <summary>
-        /// Fazy konechnogo avtomata zasypaniya Rigidbody.
-        /// Idle     — ne tikaemsya, zhdat nechego.
-        /// Waiting  — pervichnoe ozhidanie (SettleDelay).
-        /// Retrying — povtornoe ozhidanie (SettleRetryDelay).
-        /// Done     — Rigidbody usyplen ili otkaz, tikanie ostanovleno.
+        /// Rigidbody sleep state machine phases.
+        /// Idle: no pending tick.
+        /// Waiting: initial SettleDelay window.
+        /// Retrying: retry SettleRetryDelay window.
+        /// Done: sleeping succeeded or settling was abandoned.
         /// </summary>
         private enum SettlePhase : byte
         {
@@ -72,7 +72,7 @@ namespace Hecton8.Items
         private float       _settleTimer;
         private bool        _isTickRegistered;
 
-        // ─────────────────────── Cached ──────────────────────────
+        // Cached
         private InteractionHighlighter _highlighter;
         private Rigidbody _rb;
         private BuoyancyObject _buoyancy;
@@ -85,7 +85,7 @@ namespace Hecton8.Items
         private ulong _geneticsMask;
         private ushort _qualityMilli = DefaultQualityMilli;
 
-        // ═════════════════════════════════════════════════════════
+        // Lifecycle
         private void Awake()
         {
             _highlighter = GetComponent<InteractionHighlighter>();
@@ -99,11 +99,11 @@ namespace Hecton8.Items
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (itemData == null)
-                Debug.LogError($"[HectonItem] ItemData ne naznachen na {gameObject.name}!", this);
+                Debug.LogError($"[HectonItem] ItemData is not assigned on {gameObject.name}.", this);
 #endif
         }
 
-        // ─────────────────────── Pool-Safe Settle (v3.1) ─────────
+        // Pool-Safe Settle (v3.1)
         private void OnEnable()
         {
             LocalizationEvents.RegisterLanguageListener(this);
@@ -124,15 +124,15 @@ namespace Hecton8.Items
             InteractableRegistry.InvalidateTree(this);
             LocalizationEvents.UnregisterLanguageListener(this);
 
-            // Garantirovannaya otpiska pri deaktivatsii (puling).
-            // Sbrasyvaem fazu — pri sleduyuschem OnEnable nachnem zanovo.
+            // Guaranteed unsubscribe on pooled deactivation.
+            // Reset phase so the next OnEnable starts clean.
             StopSettle();
             if (_rb != null)
                 GlobalPhysicsStateManager.UnregisterTrackedBody(_rb);
             ClearPersistentWorldRecord();
         }
 
-        // ─────────────────────── ITickable ───────────────────────
+        // ITickable
         public void Tick(float deltaTime)
         {
             switch (_settlePhase)
@@ -147,7 +147,7 @@ namespace Hecton8.Items
                         }
                         else
                         {
-                            // Esche dvizhetsya — odna povtornaya popytka
+                            // Still moving; allow one retry.
                             _settlePhase = SettlePhase.Retrying;
                             _settleTimer = SettleRetryDelay;
                         }
@@ -158,21 +158,21 @@ namespace Hecton8.Items
                     _settleTimer -= deltaTime;
                     if (_settleTimer <= 0f)
                     {
-                        TrySleepRigidbody(); // Pytaemsya, rezultat nevazhen
+                        TrySleepRigidbody(); // Attempt once; final result is non-blocking.
                         FinishSettle();
                     }
                     break;
 
                 default:
-                    // Idle ili Done — ne dolzhny tikatsya, no na vsyakiy sluchay
+                    // Idle or Done should not tick, but unregister defensively.
                     StopSettle();
                     break;
             }
         }
 
         /// <summary>
-        /// Pytaetsya usypit Rigidbody esli skorost dostatochno mala.
-        /// Vozvraschaet true esli usypil ili rb == null.
+        /// Attempts to sleep the Rigidbody when velocity is low enough.
+        /// Returns true when sleep succeeded or no Rigidbody exists.
         /// </summary>
         private bool TrySleepRigidbody()
         {
@@ -225,17 +225,17 @@ namespace Hecton8.Items
             _isTickRegistered = false;
         }
 
-        // ─────────────────────── Public API ──────────────────────
+        // Public API
 
         /// <summary>
-        /// Programmnaya initsializatsiya dannyh predmeta.
-        /// Vyzyvaetsya pri spavne iz BaseModule.Deconstruct()
-        /// dlya ustanovki konkretnogo resursa na generic worldItemPrefab.
+        /// Programmatic item-data initialization.
+        /// Called by BaseModule.Deconstruct() spawn paths to bind a concrete
+        /// resource record onto the shared worldItemPrefab.
         ///
-        /// Bezopasno vyzyvat povtorno (perezapisyvaet dannye).
+        /// Safe to call repeatedly; the latest call overwrites item state.
         /// </summary>
-        /// <param name="data">Dannye predmeta (ItemData ScriptableObject).</param>
-        /// <param name="qty">Kolichestvo edinits.</param>
+        /// <param name="data">ItemData ScriptableObject payload.</param>
+        /// <param name="qty">Stack quantity.</param>
         public void SetItemData(ItemData data, int qty)
         {
             SetItemData(data, qty, 0UL, DefaultQualityMilli);
@@ -273,10 +273,10 @@ namespace Hecton8.Items
             return true;
         }
 
-        /// <summary>Tekuschie dannye predmeta (read-only).</summary>
+        /// <summary>Current item data.</summary>
         public ItemData Data => itemData;
 
-        /// <summary>Tekuschee kolichestvo (read-only).</summary>
+        /// <summary>Current stack quantity.</summary>
         public int Quantity => quantity;
         public int ItemHashId => _cachedItemHashId;
         /// <summary>Persisted genetics payload carried by biological seed world items.</summary>
@@ -350,7 +350,7 @@ namespace Hecton8.Items
                 : 0;
         }
 
-        // ─────────────────────── IInteractable ───────────────────
+        // IInteractable
         public void OnHoverStart()
         {
             _highlighter.SetHighlight(true);
@@ -528,7 +528,7 @@ namespace Hecton8.Items
                    !float.IsNaN(value.z) && !float.IsInfinity(value.z);
         }
 
-        // ─────────────────────── Editor ──────────────────────────
+        // Editor
 #if UNITY_EDITOR
         private void OnValidate()
         {

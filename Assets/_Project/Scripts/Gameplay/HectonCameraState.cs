@@ -27,6 +27,16 @@ namespace Hecton8.Gameplay
         public float TargetFieldOfView;
 
         /// <summary>
+        /// Previous fixed-step KCC body position used by the late-frame camera interpolation window.
+        /// </summary>
+        public Vector3 PreviousFixedPosition;
+
+        /// <summary>
+        /// Current fixed-step KCC body position used by the late-frame camera interpolation window.
+        /// </summary>
+        public Vector3 CurrentFixedPosition;
+
+        /// <summary>
         /// KCC-owned world velocity used by the late-frame camera position predictor.
         /// </summary>
         public Vector3 KccLinearVelocity;

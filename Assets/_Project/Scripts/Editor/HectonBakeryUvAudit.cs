@@ -17,7 +17,10 @@ namespace Hecton8.EditorTools
         private const float DegenerateAreaThreshold = 0.000001f;
         private const float MaxUvEmptySpaceRatio = 0.30f;
         private const float UvAreaCoverageFudge = 1.18f;
-        private const float UvOverlapAreaFudge = 1.08f;
+        private const int UvOverlapRasterResolution = 256;
+        private const int UvOverlapRasterPixelCount = UvOverlapRasterResolution * UvOverlapRasterResolution;
+        private const int UvOverlapRasterWordCount = UvOverlapRasterPixelCount / 32;
+        private const float UvRasterInsideEpsilon = 0.0000001f;
         private const int UvScratchInitialCapacity = 8192;
         private const int IndexScratchInitialCapacity = 12288;
 
@@ -25,6 +28,8 @@ namespace Hecton8.EditorTools
         private static readonly List<Vector2> s_Uv2Scratch = new List<Vector2>(UvScratchInitialCapacity);
         private static readonly List<Vector2> s_Uv0Scratch = new List<Vector2>(UvScratchInitialCapacity);
         private static readonly List<int> s_IndexScratch = new List<int>(IndexScratchInitialCapacity);
+        // COLD ALLOC: uint[2048] - 256x256 UV overlap raster bitset - owner: HectonBakeryUvAudit
+        private static readonly uint[] s_UvOverlapRasterBits = new uint[UvOverlapRasterWordCount];
 
         internal sealed class AuditResult
         {
@@ -151,12 +156,57 @@ namespace Hecton8.EditorTools
             return inspection;
         }
 
+        internal static bool TryValidateImportedModelUv2(GameObject importedRoot, string modelPath, out string reason)
+        {
+            reason = string.Empty;
+            if (importedRoot == null)
+                return false;
+
+            MeshFilter[] filters = importedRoot.GetComponentsInChildren<MeshFilter>(true);
+            for (int i = 0; i < filters.Length; i++)
+            {
+                Mesh mesh = filters[i] != null ? filters[i].sharedMesh : null;
+                if (TryValidateMeshUv2(mesh, modelPath, out reason))
+                    return true;
+            }
+
+            SkinnedMeshRenderer[] skinnedRenderers = importedRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
+            {
+                Mesh mesh = skinnedRenderers[i] != null ? skinnedRenderers[i].sharedMesh : null;
+                if (TryValidateMeshUv2(mesh, modelPath, out reason))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryValidateMeshUv2(Mesh mesh, string modelPath, out string reason)
+        {
+            reason = string.Empty;
+            if (mesh == null || mesh.vertexCount <= 0)
+                return false;
+
+            List<Vector2> uv2 = s_Uv2Scratch;
+            EnsureScratchCapacity(uv2, mesh.vertexCount);
+            uv2.Clear();
+            mesh.GetUVs(1, uv2);
+            if (uv2.Count != mesh.vertexCount)
+                return false;
+
+            if (!TryDetectUvOverlap(mesh, uv2, out string overlapReason))
+                return false;
+
+            reason = modelPath + ": " + overlapReason;
+            return true;
+        }
+
         private static bool TryDetectUvOverlap(Mesh mesh, List<Vector2> uv2, out string reason)
         {
             int testedTriangles = 0;
             List<int> indices = s_IndexScratch;
             EnsureScratchCapacity(indices, ResolveIndexScratchCapacity(mesh));
-            float occupiedArea = 0f;
+            ClearUvOverlapRaster();
 
             for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
             {
@@ -174,7 +224,11 @@ namespace Hecton8.EditorTools
                     int i0 = indices[triangleIndex * 3];
                     int i1 = indices[triangleIndex * 3 + 1];
                     int i2 = indices[triangleIndex * 3 + 2];
-                    float triangleArea = Mathf.Abs(SignedArea(uv2[i0], uv2[i1], uv2[i2])) * 0.5f;
+                    Vector2 a = uv2[i0];
+                    Vector2 b = uv2[i1];
+                    Vector2 c = uv2[i2];
+                    float signedArea = SignedArea(a, b, c);
+                    float triangleArea = Mathf.Abs(signedArea) * 0.5f;
 
                     if (triangleArea <= DegenerateAreaThreshold)
                     {
@@ -182,19 +236,104 @@ namespace Hecton8.EditorTools
                         return true;
                     }
 
-                    occupiedArea += triangleArea;
+                    if (TryRasterizeUvTriangle(a, b, c, signedArea, out int overlapCell))
+                    {
+                        int overlapX = overlapCell & (UvOverlapRasterResolution - 1);
+                        int overlapY = overlapCell >> 8;
+                        reason = $"{mesh.name}: Overlapped UVs detected by {UvOverlapRasterResolution}x{UvOverlapRasterResolution} raster at cell {overlapX},{overlapY}.";
+                        return true;
+                    }
+
                     testedTriangles++;
                 }
             }
 
-            if (occupiedArea * UvOverlapAreaFudge > 1f)
-            {
-                reason = $"{mesh.name}: UV2 estimated occupied area exceeds atlas bounds; probable lightmap overlap.";
-                return true;
-            }
-
             reason = string.Empty;
             return false;
+        }
+
+        private static void ClearUvOverlapRaster()
+        {
+            for (int i = 0; i < s_UvOverlapRasterBits.Length; i++)
+                s_UvOverlapRasterBits[i] = 0u;
+        }
+
+        private static bool TryRasterizeUvTriangle(
+            Vector2 a,
+            Vector2 b,
+            Vector2 c,
+            float signedArea,
+            out int overlapCell)
+        {
+            overlapCell = -1;
+
+            float minU = Mathf.Min(a.x, Mathf.Min(b.x, c.x));
+            float maxU = Mathf.Max(a.x, Mathf.Max(b.x, c.x));
+            float minV = Mathf.Min(a.y, Mathf.Min(b.y, c.y));
+            float maxV = Mathf.Max(a.y, Mathf.Max(b.y, c.y));
+
+            int minX = Mathf.Clamp((int)(minU * UvOverlapRasterResolution), 0, UvOverlapRasterResolution - 1);
+            int maxX = Mathf.Clamp((int)(maxU * UvOverlapRasterResolution), 0, UvOverlapRasterResolution - 1);
+            int minY = Mathf.Clamp((int)(minV * UvOverlapRasterResolution), 0, UvOverlapRasterResolution - 1);
+            int maxY = Mathf.Clamp((int)(maxV * UvOverlapRasterResolution), 0, UvOverlapRasterResolution - 1);
+            float invResolution = 1f / UvOverlapRasterResolution;
+
+            for (int y = minY; y <= maxY; y++)
+            {
+                float sampleV = (y + 0.5f) * invResolution;
+                for (int x = minX; x <= maxX; x++)
+                {
+                    float sampleU = (x + 0.5f) * invResolution;
+                    if (!IsPointInsideTriangleStrict(sampleU, sampleV, a, b, c, signedArea))
+                        continue;
+
+                    int cell = (y * UvOverlapRasterResolution) + x;
+                    if (!TryMarkUvRasterCell(cell))
+                    {
+                        overlapCell = cell;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsPointInsideTriangleStrict(
+            float u,
+            float v,
+            Vector2 a,
+            Vector2 b,
+            Vector2 c,
+            float signedArea)
+        {
+            Vector2 p = new Vector2(u, v);
+            float edge0 = SignedArea(b, c, p);
+            float edge1 = SignedArea(c, a, p);
+            float edge2 = SignedArea(a, b, p);
+
+            if (signedArea > 0f)
+            {
+                return edge0 > UvRasterInsideEpsilon &&
+                       edge1 > UvRasterInsideEpsilon &&
+                       edge2 > UvRasterInsideEpsilon;
+            }
+
+            return edge0 < -UvRasterInsideEpsilon &&
+                   edge1 < -UvRasterInsideEpsilon &&
+                   edge2 < -UvRasterInsideEpsilon;
+        }
+
+        private static bool TryMarkUvRasterCell(int cell)
+        {
+            int word = cell >> 5;
+            uint mask = 1u << (cell & 31);
+            uint previous = s_UvOverlapRasterBits[word];
+            if ((previous & mask) != 0u)
+                return false;
+
+            s_UvOverlapRasterBits[word] = previous | mask;
+            return true;
         }
 
         private static bool TryMeasureUvEmptySpace(

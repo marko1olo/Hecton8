@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
+using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -49,12 +51,10 @@ namespace Hecton8.Visor
             {
                 internal ComputeShader computeShader;
                 internal int kernelIndex;
-                internal uint threadGroupSizeX;
-                internal uint threadGroupSizeY;
                 internal TextureHandle depth;
                 internal TextureHandle result;
-                internal Vector4 inputSize;
-                internal Vector4 outputSize;
+                internal int dispatchX;
+                internal int dispatchY;
                 internal Vector4 paramsA;
             }
 
@@ -65,6 +65,8 @@ namespace Hecton8.Visor
             private int _kernelIndex = -1;
             private uint _threadGroupSizeX = 8;
             private uint _threadGroupSizeY = 8;
+            private float _threadGroupInvX = 0.125f;
+            private float _threadGroupInvY = 0.125f;
 
             public VoxelSsaoPass()
             {
@@ -83,6 +85,8 @@ namespace Hecton8.Visor
                 {
                     _kernelIndex = _computeShader.FindKernel("ResolveVoxelSSAO");
                     _computeShader.GetKernelThreadGroupSizes(_kernelIndex, out _threadGroupSizeX, out _threadGroupSizeY, out _);
+                    _threadGroupInvX = math.rcp(math.max(1f, (float)_threadGroupSizeX));
+                    _threadGroupInvY = math.rcp(math.max(1f, (float)_threadGroupSizeY));
                 }
             }
 
@@ -95,6 +99,9 @@ namespace Hecton8.Visor
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
+                if (!FrameTimeWatchdog.IsVoxelAmbientOcclusionEnabled)
+                    return;
+
                 if (_settings == null || _computeShader == null || _kernelIndex < 0)
                     return;
 
@@ -111,23 +118,22 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc depthDesc = renderGraph.GetTextureDesc(depthTexture);
-                int aoWidth = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(depthDesc.width * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
-                int aoHeight = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(depthDesc.height * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
+                float renderScale = math.clamp(_settings.renderScale, 0.25f, 1f);
+                int aoWidth = QuantizeDimension(math.max(1, (int)math.round(depthDesc.width * renderScale)));
+                int aoHeight = QuantizeDimension(math.max(1, (int)math.round(depthDesc.height * renderScale)));
                 EnsureAoTexture(aoWidth, aoHeight);
 
                 TextureHandle aoTexture = renderGraph.ImportTexture(_aoTexture);
-                float projectionScale = Mathf.Abs(cameraData.camera.projectionMatrix.m11) * 0.5f * depthDesc.height * Mathf.Max(0.01f, _settings.radiusMeters);
+                float projectionScale = math.abs(cameraData.camera.projectionMatrix.m11) * 0.5f * depthDesc.height * math.max(0.01f, _settings.radiusMeters);
 
                 using (var builder = renderGraph.AddComputePass("Hecton Voxel SSAO", out ComputePassData passData, _profilingSampler))
                 {
                     passData.computeShader = _computeShader;
                     passData.kernelIndex = _kernelIndex;
-                    passData.threadGroupSizeX = _threadGroupSizeX;
-                    passData.threadGroupSizeY = _threadGroupSizeY;
                     passData.depth = depthTexture;
                     passData.result = aoTexture;
-                    passData.inputSize = BuildSizeVector(depthDesc.width, depthDesc.height);
-                    passData.outputSize = BuildSizeVector(aoWidth, aoHeight);
+                    passData.dispatchX = CeilByThreadGroup(aoWidth, _threadGroupInvX);
+                    passData.dispatchY = CeilByThreadGroup(aoHeight, _threadGroupInvY);
                     passData.paramsA = BuildParamsA(_settings, projectionScale);
 
                     builder.UseTexture(depthTexture, AccessFlags.Read);
@@ -137,35 +143,29 @@ namespace Hecton8.Visor
 
                     builder.SetRenderFunc(static (ComputePassData data, ComputeGraphContext context) =>
                     {
-                        int dispatchX = Mathf.CeilToInt(data.outputSize.x / Mathf.Max(1u, data.threadGroupSizeX));
-                        int dispatchY = Mathf.CeilToInt(data.outputSize.y / Mathf.Max(1u, data.threadGroupSizeY));
                         var cmd = context.cmd;
                         cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceDepthId, data.depth);
                         cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.ResultId, data.result);
-                        cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.InputSizeId, data.inputSize);
-                        cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.OutputSizeId, data.outputSize);
                         cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.ParamsAId, data.paramsA);
-                        cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
+                        cmd.DispatchCompute(data.computeShader, data.kernelIndex, data.dispatchX, data.dispatchY, 1);
                     });
                 }
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static Vector4 BuildSizeVector(int width, int height)
+            private static int CeilByThreadGroup(int dimension, float invThreadGroupSize)
             {
-                int safeWidth = Mathf.Max(1, width);
-                int safeHeight = Mathf.Max(1, height);
-                return new Vector4(safeWidth, safeHeight, 1f / safeWidth, 1f / safeHeight);
+                return math.max(1, (int)math.ceil(math.max(1, dimension) * invThreadGroupSize));
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static Vector4 BuildParamsA(FeatureSettings settings, float projectionScale)
             {
                 return new Vector4(
-                    Mathf.Max(0.01f, projectionScale),
-                    Mathf.Max(0.01f, settings.radiusMeters),
-                    Mathf.Max(0f, settings.intensity),
-                    Mathf.Max(0.01f, settings.depthSigma));
+                    math.max(0.01f, projectionScale),
+                    math.max(0.01f, settings.radiusMeters),
+                    math.max(0f, settings.intensity),
+                    math.max(0.01f, settings.depthSigma));
             }
 
             private void EnsureAoTexture(int width, int height)
@@ -194,8 +194,8 @@ namespace Hecton8.Visor
 
             private static int QuantizeDimension(int dimension)
             {
-                int safeDimension = Mathf.Max(1, dimension);
-                return ((safeDimension + RenderTextureBucketSize - 1) / RenderTextureBucketSize) * RenderTextureBucketSize;
+                int safeDimension = math.max(1, dimension);
+                return (safeDimension + RenderTextureBucketSize - 1) & ~(RenderTextureBucketSize - 1);
             }
 
         }
@@ -204,8 +204,6 @@ namespace Hecton8.Visor
         {
             internal static readonly int SourceDepthId = Shader.PropertyToID("_HectonVoxelSSAODepth");
             internal static readonly int ResultId = Shader.PropertyToID("_HectonVoxelSSAOResult");
-            internal static readonly int InputSizeId = Shader.PropertyToID("_HectonVoxelSSAOInputSize");
-            internal static readonly int OutputSizeId = Shader.PropertyToID("_HectonVoxelSSAOOutputSize");
             internal static readonly int ParamsAId = Shader.PropertyToID("_HectonVoxelSSAOParamsA");
             internal static readonly int GlobalTextureId = Shader.PropertyToID("_HectonVoxelSSAOTex");
         }

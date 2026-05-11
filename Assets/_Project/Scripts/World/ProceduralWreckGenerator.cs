@@ -321,9 +321,12 @@ namespace Hecton8.World
                 if (HasNormals)
                 {
                     Vector3 sourceNormal = sourceNormals[vertexIndex];
-                    transformedNormal = math.normalize(math.rotate(Rotation, new float3(sourceNormal.x, sourceNormal.y, sourceNormal.z)));
-                    if (!math.all(math.isfinite(transformedNormal)))
-                        transformedNormal = new float3(0f, 1f, 0f);
+                    float3 rotatedNormal = math.rotate(Rotation, new float3(sourceNormal.x, sourceNormal.y, sourceNormal.z));
+                    float normalLengthSq = math.lengthsq(rotatedNormal);
+                    transformedNormal = math.select(
+                        transformedNormal,
+                        rotatedNormal * math.rsqrt(math.max(normalLengthSq, 0.000001f)),
+                        math.isfinite(normalLengthSq) && normalLengthSq > 0.000001f);
                 }
 
                 float2 uv = float2.zero;

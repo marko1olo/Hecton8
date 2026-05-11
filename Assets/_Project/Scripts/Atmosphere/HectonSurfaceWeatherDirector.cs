@@ -1191,7 +1191,9 @@ namespace Hecton8.Atmosphere
                 preferredDirection *= math.rsqrt(preferredDirection.sqrMagnitude);
 
             float randomAngle = randomA * math.PI * 2f;
-            Vector2 randomDirection = new Vector2(math.cos(randomAngle), math.sin(randomAngle));
+            Vector2 randomDirection = new Vector2(
+                CinematicMath.FastCos(randomAngle),
+                CinematicMath.FastSin(randomAngle));
             float clampedWindBias = math.saturate(_currentState.lightningWindBias);
             float angularOffset = ((randomB * 2f) - 1f) * math.lerp(1.4f, 0.35f, clampedWindBias);
             Vector2 windBiasedDirection = RotateDirection(preferredDirection, angularOffset);
@@ -1235,20 +1237,29 @@ namespace Hecton8.Atmosphere
         {
             AbsoluteUniversePosition strikeAup = AbsoluteUniversePosition.FromRuntimePosition(strikePosition);
             AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listenerPosition);
-            double distanceSq = AbsoluteUniversePosition.DistanceSq(in strikeAup, in listenerAup);
-            if (!math.isfinite(distanceSq) || distanceSq <= 0d)
-                return 0f;
-
-            return (float)math.min(math.sqrt(distanceSq), (double)float.MaxValue);
+            return ApproximateDistanceMeters(strikeAup.ToAbsoluteDouble3() - listenerAup.ToAbsoluteDouble3());
         }
 
         private static Vector2 RotateDirection(Vector2 direction, float angleRadians)
         {
-            float sin = math.sin(angleRadians);
-            float cos = math.cos(angleRadians);
+            float sin = CinematicMath.FastSin(angleRadians);
+            float cos = CinematicMath.FastCos(angleRadians);
             return new Vector2(
                 direction.x * cos - direction.y * sin,
                 direction.x * sin + direction.y * cos);
+        }
+
+        private static float ApproximateDistanceMeters(double3 delta)
+        {
+            double3 absolute = math.abs(delta);
+            double maxAxis = math.max(absolute.x, math.max(absolute.y, absolute.z));
+            if (!math.isfinite(maxAxis) || maxAxis <= 0d)
+                return 0f;
+
+            double minAxis = math.min(absolute.x, math.min(absolute.y, absolute.z));
+            double midAxis = absolute.x + absolute.y + absolute.z - maxAxis - minAxis;
+            double approximateDistance = maxAxis + (midAxis * 0.375d) + (minAxis * 0.25d);
+            return (float)math.min(approximateDistance, (double)float.MaxValue);
         }
 
         private float ResolveNextLightningCooldown(float electricalActivity)
@@ -1348,9 +1359,9 @@ namespace Hecton8.Atmosphere
             float frequency = math.clamp(state.gustFrequency, 0.005f, 0.2f);
             float phase = (Time.unscaledTime + _gustTimeOffset) * frequency * math.PI * 2f;
             float composite =
-                math.sin(phase) * 0.58f +
-                math.sin(phase * 0.43f + 1.17f) * 0.29f +
-                math.sin(phase * 1.73f + 0.41f) * 0.13f;
+                CinematicMath.FastSin(phase) * 0.58f +
+                CinematicMath.FastSin(phase * 0.43f + 1.17f) * 0.29f +
+                CinematicMath.FastSin(phase * 1.73f + 0.41f) * 0.13f;
 
             float normalized = math.saturate((composite + 1f) * 0.5f);
             float envelope = normalized * normalized;
@@ -1368,9 +1379,9 @@ namespace Hecton8.Atmosphere
             float frequency = math.clamp(state.squallFrequency, 0.005f, 0.08f);
             float phase = (Time.unscaledTime + _gustTimeOffset * 0.37f) * frequency * math.PI * 2f;
             float composite =
-                math.sin(phase) * 0.61f +
-                math.sin(phase * 0.31f + 2.14f) * 0.27f +
-                math.sin(phase * 1.09f + 0.63f) * 0.12f;
+                CinematicMath.FastSin(phase) * 0.61f +
+                CinematicMath.FastSin(phase * 0.31f + 2.14f) * 0.27f +
+                CinematicMath.FastSin(phase * 1.09f + 0.63f) * 0.12f;
 
             float normalized = math.saturate((composite + 1f) * 0.5f);
             float bandEnvelope = normalized * normalized * normalized;

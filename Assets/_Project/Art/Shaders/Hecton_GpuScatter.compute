@@ -37,6 +37,7 @@ float _HectonScatterPeripheralDistanceSq;
 float _HectonScatterPeripheralDot;
 float4 _HectonScatterFrustumPlanes[HECTON_SCATTER_FRUSTUM_PLANES];
 float4 _HectonCaveVoxelHalfExtents;
+float4 _HectonCaveVoxelInvDoubleHalfExtents;
 float4x4 _HectonCaveVoxelWorldToLocal;
 float _HectonCaveVoxelActive;
 
@@ -134,9 +135,12 @@ float SampleCaveSignedDistance(float3 positionWS)
     if (_HectonCaveVoxelActive <= 0.5)
         return _HectonCaveVoxelHalfExtents.w;
 
-    float3 halfExtents = max(_HectonCaveVoxelHalfExtents.xyz, float3(0.001, 0.001, 0.001));
+    float3 invDoubleHalfExtents = _HectonCaveVoxelInvDoubleHalfExtents.xyz;
+    if (any(invDoubleHalfExtents <= 0.0))
+        return _HectonCaveVoxelHalfExtents.w;
+
     float3 localPosition = mul(_HectonCaveVoxelWorldToLocal, float4(positionWS, 1.0)).xyz;
-    float3 sampleUv = localPosition / (halfExtents * 2.0) + 0.5;
+    float3 sampleUv = localPosition * invDoubleHalfExtents + 0.5;
     if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
         return _HectonCaveVoxelHalfExtents.w;
 

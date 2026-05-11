@@ -14,6 +14,7 @@ namespace Hecton8.Editor.Build
     public sealed class ThreadAffinityPrebuildScanner : IPreprocessBuildWithReport
     {
         private const string RuntimeSourceRoot = "Assets/_Project/Scripts";
+        private const string AutoFixReportRelativePath = "Logs/ThreadAffinityAutoFixPreview.txt";
         private const int MaxReportedFindings = 64;
 
         private static readonly string[] _backgroundMarkers =
@@ -51,14 +52,38 @@ namespace Hecton8.Editor.Build
             Debug.Log("[ThreadAffinityPrebuildScanner] No forbidden Unity main-thread API use found in background regions.");
         }
 
+        [MenuItem("Tools/Hecton8/Compliance/Thread Affinity Auto-Fix Preview")]
+        private static void WriteAutoFixPreviewFromMenu()
+        {
+            StringBuilder builder = new StringBuilder(2048);
+            int findingCount = ScanAll(builder, includeFixHints: true);
+            if (findingCount <= 0)
+                builder.AppendLine("[ThreadAffinityPrebuildScanner] No forbidden Unity main-thread API use found in background regions.");
+
+            string reportPath = Path.Combine(Directory.GetCurrentDirectory(), AutoFixReportRelativePath);
+            Directory.CreateDirectory(Path.GetDirectoryName(reportPath));
+            File.WriteAllText(reportPath, builder.ToString());
+            Debug.Log("[ThreadAffinityPrebuildScanner] Thread-affinity auto-fix preview written: " + reportPath);
+        }
+
         private static void ScanOrThrow()
+        {
+            StringBuilder builder = new StringBuilder(1024);
+            int findingCount = ScanAll(builder, includeFixHints: false);
+            if (findingCount <= 0)
+                return;
+
+            builder.Insert(0, "[ThreadAffinityPrebuildScanner] Build blocked. Forbidden Unity API used in background execution region.\n");
+            throw new BuildFailedException(builder.ToString());
+        }
+
+        private static int ScanAll(StringBuilder builder, bool includeFixHints)
         {
             string root = Path.Combine(Directory.GetCurrentDirectory(), RuntimeSourceRoot);
             if (!Directory.Exists(root))
-                return;
+                return 0;
 
             string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
-            StringBuilder builder = new StringBuilder(1024);
             int findingCount = 0;
 
             for (int i = 0; i < files.Length; i++)
@@ -68,17 +93,13 @@ namespace Hecton8.Editor.Build
                 if (IsEditorSource(normalized))
                     continue;
 
-                findingCount += ScanFile(file, normalized, builder, findingCount);
+                findingCount += ScanFile(file, normalized, builder, findingCount, includeFixHints);
             }
 
-            if (findingCount <= 0)
-                return;
-
-            builder.Insert(0, "[ThreadAffinityPrebuildScanner] Build blocked. Forbidden Unity API used in background execution region.\n");
-            throw new BuildFailedException(builder.ToString());
+            return findingCount;
         }
 
-        private static int ScanFile(string absolutePath, string assetPath, StringBuilder builder, int priorFindings)
+        private static int ScanFile(string absolutePath, string assetPath, StringBuilder builder, int priorFindings, bool includeFixHints)
         {
             string[] lines = File.ReadAllLines(absolutePath);
             bool backgroundRegion = false;
@@ -100,7 +121,7 @@ namespace Hecton8.Editor.Build
                 }
 
                 if (backgroundRegion)
-                    localFindings += ScanForbiddenNeedles(assetPath, lineIndex + 1, code, builder, priorFindings + localFindings);
+                    localFindings += ScanForbiddenNeedles(assetPath, lineIndex + 1, code, builder, priorFindings + localFindings, includeFixHints);
 
                 braceDepth += CountChar(code, '{') - CountChar(code, '}');
 
@@ -128,7 +149,7 @@ namespace Hecton8.Editor.Build
             return localFindings;
         }
 
-        private static int ScanForbiddenNeedles(string assetPath, int lineNumber, string code, StringBuilder builder, int findingIndex)
+        private static int ScanForbiddenNeedles(string assetPath, int lineNumber, string code, StringBuilder builder, int findingIndex, bool includeFixHints)
         {
             int findings = 0;
             for (int i = 0; i < _forbiddenNeedles.Length; i++)
@@ -138,12 +159,33 @@ namespace Hecton8.Editor.Build
                     continue;
 
                 if (findingIndex + findings < MaxReportedFindings)
+                {
                     builder.Append(assetPath).Append(':').Append(lineNumber).Append(" -> ").Append(needle).Append('\n');
+                    if (includeFixHints)
+                        AppendAutoFixHint(builder, needle);
+                }
 
                 findings++;
             }
 
             return findings;
+        }
+
+        private static void AppendAutoFixHint(StringBuilder builder, string needle)
+        {
+            if (needle == "Time.")
+            {
+                builder.Append("    auto-fix: capture Time.frameCount/Time.unscaledTime on the main thread into a readonly context struct, then pass that struct into the background pipeline.\n");
+                return;
+            }
+
+            if (needle == "UnityEngine.Object.")
+            {
+                builder.Append("    auto-fix: resolve UnityEngine.Object references to instance IDs or immutable DTO fields on the main thread before entering the background region.\n");
+                return;
+            }
+
+            builder.Append("    auto-fix: move logging to the main thread or wrap it in an editor/development-only queue drained after Awaitable.MainThreadAsync.\n");
         }
 
         private static bool ContainsForbiddenNeedle(string code, string needle)

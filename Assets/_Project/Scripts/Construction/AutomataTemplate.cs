@@ -15,21 +15,21 @@ namespace Hecton8.Construction
             GuardianUnit = 2
         }
 
-        [Header("── Identity ──────────────────────────")]
+        [Header("Identity")]
         [SerializeField] private AutomataTier tier = AutomataTier.MkIScrubber;
         [SerializeField] private bool autoPopulatePreset = true;
 
-        [Header("── Mobility ──────────────────────────")]
+        [Header("Mobility")]
         [SerializeField, Min(0.1f)] private float cruiseSpeed = 5f;
         [SerializeField, Min(0.1f)] private float acceleration = 12f;
         [SerializeField, Min(0.1f)] private float batteryCapacityNormalized = 1f;
         [SerializeField, Min(0f)] private float batteryDrainPerSecond = 0.03f;
 
-        [Header("── Service Payload ───────────────────")]
+        [Header("Service Payload")]
         [SerializeField, Min(0)] private int solderCapacityUnits = 12;
         [SerializeField, Min(0f)] private float repairThroughputPerSecond = 12f;
 
-        [Header("── Defense Payload ───────────────────")]
+        [Header("Defense Payload")]
         [SerializeField, Min(0f)] private float guardianPushForce = 0f;
         [SerializeField, Min(0f)] private float guardianThreatRadius = 0f;
 

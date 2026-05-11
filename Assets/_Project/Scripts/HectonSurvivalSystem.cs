@@ -277,6 +277,8 @@ namespace Hecton8.Gameplay
         private float _nitrogenBuildUp;
         private float _nitrogenNarcosis01;
         private float _airPocketNitrogenPauseTimer;
+        private float _decompressionImmediateDamageCooldown;
+        private float _toxicityStaminaMultiplier = 1f;
         private bool _nitrogenLoadWarningIssued;
         private float _nutritionalToxicitySecondsRemaining;
         private float _nutritionalToxicitySeverity01;
@@ -328,6 +330,10 @@ namespace Hecton8.Gameplay
         private const float RapidAscentDamagePerSecond = 1.6f;
         private const float RapidAscentRiskDecayPerSecond = 0.38f;
         private const float RapidAscentDamageThreshold = 0.52f;
+        private const float ImmediateDecompressionDepthMeters = 100f;
+        private const float ImmediateDecompressionAscentMetersPerSecond = 10f;
+        private const float ImmediateDecompressionHealthDamage = 8f;
+        private const float ImmediateDecompressionDamageCooldownSeconds = 0.75f;
         private const float NitrogenAscentRiskDepthMeters = 400f;
         private const float NitrogenAscentRiskMetersPerSecond = 5f;
         private const float NitrogenCriticalBuildUp = 100f;
@@ -336,7 +342,10 @@ namespace Hecton8.Gameplay
         private const float NitrogenBuildUpDepthFullRangeMeters = 400f;
         private const float NitrogenRecoveryPerSecond = 2f;
         private const float NitrogenNarcosisFullRange = 50f;
+        private const float DepthNarcosisStartMeters = 150f;
+        private const float DepthNarcosisFullRangeMeters = 150f;
         private const float NitrogenStaminaPenaltyMultiplier = 0.8f;
+        private const float HypercapniaStaminaPenaltyMultiplier = 0.65f;
         private const float NitrogenAirPocketPauseSeconds = 2f;
         private const float NitrogenAirPocketRecoveryMultiplier = 2.5f;
         private const float NitrogenLoadWarningThreshold01 = 0.5f;
@@ -481,7 +490,7 @@ namespace Hecton8.Gameplay
         /// <summary>Pre-narcosis high-frequency ring intensity used by the helmet DSP layer.</summary>
         public float NitrogenWarningRinging01 => ResolveNitrogenWarningRinging01(_nitrogenBuildUp);
         /// <summary>True when cumulative nitrogen build-up has crossed the sickness threshold.</summary>
-        public bool IsNitrogenNarcosisActive => _nitrogenBuildUp > NitrogenCriticalBuildUp;
+        public bool IsNitrogenNarcosisActive => _nitrogenNarcosis01 > 0.001f;
         /// <summary>Normalized narcosis severity used by visor and movement penalty systems.</summary>
         public float NitrogenNarcosis01 => _nitrogenNarcosis01;
         /// <summary>Normalized blur signal emitted by nitrogen sickness.</summary>
@@ -995,6 +1004,9 @@ namespace Hecton8.Gameplay
             if (deltaTime <= 0f)
                 return;
 
+            _decompressionImmediateDamageCooldown = math.max(
+                0f,
+                _decompressionImmediateDamageCooldown - math.max(0f, deltaTime));
             float trackedDepthBeforeUpdate = _lastTrackedDepthMeters;
             float ascentMeters = math.max(0f, trackedDepthBeforeUpdate - depth);
             _rapidAscentMetersPerSecond = TryResolveSafeReciprocal(deltaTime, out float inverseDeltaTime)
@@ -1004,6 +1016,16 @@ namespace Hecton8.Gameplay
 
             float ascentOriginDepth = math.max(depth, trackedDepthBeforeUpdate);
             TrackNitrogenBuildUp(deltaTime, ascentOriginDepth, _rapidAscentMetersPerSecond);
+            if (ShouldApplyImmediateDecompressionDamage(_rapidAscentMetersPerSecond, ascentOriginDepth))
+            {
+                _decompressionRisk01 = 1f;
+                _nitrogenBuildUp = math.min(
+                    NitrogenBuildUpHardCap,
+                    math.max(_nitrogenBuildUp, NitrogenCriticalBuildUp));
+                RefreshNitrogenNarcosisRuntimeState();
+                TryApplyImmediateDecompressionDamage(ascentOriginDepth, _rapidAscentMetersPerSecond);
+                return;
+            }
 
             if (_playerMovement == null)
             {
@@ -1038,7 +1060,7 @@ namespace Hecton8.Gameplay
                 _airPocketNitrogenPauseTimer = math.max(0f, _airPocketNitrogenPauseTimer - math.max(0f, deltaTime));
                 float recovery = NitrogenRecoveryPerSecond * NitrogenAirPocketRecoveryMultiplier * math.max(0f, deltaTime);
                 _nitrogenBuildUp = math.max(0f, _nitrogenBuildUp - recovery);
-                _nitrogenNarcosis01 = ResolveNitrogenNarcosis01(_nitrogenBuildUp);
+                RefreshNitrogenNarcosisRuntimeState();
                 UpdateNitrogenPreNarcosisWarningState();
                 ApplyNitrogenMovementPenalty();
                 return;
@@ -1058,7 +1080,7 @@ namespace Hecton8.Gameplay
                 _nitrogenBuildUp = math.max(0f, _nitrogenBuildUp - NitrogenRecoveryPerSecond * math.max(0f, deltaTime));
             }
 
-            _nitrogenNarcosis01 = ResolveNitrogenNarcosis01(_nitrogenBuildUp);
+            RefreshNitrogenNarcosisRuntimeState();
             UpdateNitrogenPreNarcosisWarningState();
             ApplyNitrogenMovementPenalty();
         }
@@ -1074,6 +1096,38 @@ namespace Hecton8.Gameplay
         internal static float ResolveNitrogenNarcosis01(float nitrogenBuildUp)
         {
             return SomaticSurvivalMath.ResolveNitrogenNarcosis01(nitrogenBuildUp);
+        }
+
+        internal static bool ShouldApplyImmediateDecompressionDamage(float ascentMetersPerSecond, float ascentOriginDepthMeters)
+        {
+            return math.isfinite(ascentMetersPerSecond) &&
+                   math.isfinite(ascentOriginDepthMeters) &&
+                   ascentMetersPerSecond > ImmediateDecompressionAscentMetersPerSecond &&
+                   ascentOriginDepthMeters > ImmediateDecompressionDepthMeters;
+        }
+
+        internal static float ResolveImmediateDecompressionSeverity01(float ascentMetersPerSecond, float ascentOriginDepthMeters)
+        {
+            if (!ShouldApplyImmediateDecompressionDamage(ascentMetersPerSecond, ascentOriginDepthMeters))
+                return 0f;
+
+            float depthSeverity = math.saturate(
+                (ascentOriginDepthMeters - ImmediateDecompressionDepthMeters) /
+                math.max(0.01f, RapidAscentRiskMaxDepth - ImmediateDecompressionDepthMeters));
+            float ascentSeverity = math.saturate(
+                (ascentMetersPerSecond - ImmediateDecompressionAscentMetersPerSecond) /
+                math.max(0.01f, RapidAscentRiskMaxMetersPerSecond - ImmediateDecompressionAscentMetersPerSecond));
+            return math.max(depthSeverity, ascentSeverity);
+        }
+
+        internal static float ResolveDepthNarcosis01(float depthMeters, bool isHardenedSubmarine)
+        {
+            if (isHardenedSubmarine || !math.isfinite(depthMeters) || depthMeters <= DepthNarcosisStartMeters)
+                return 0f;
+
+            return math.saturate(
+                (depthMeters - DepthNarcosisStartMeters) /
+                math.max(0.01f, DepthNarcosisFullRangeMeters));
         }
 
         internal static float ResolveNitrogenWarningRinging01(float nitrogenBuildUp)
@@ -1092,12 +1146,45 @@ namespace Hecton8.Gameplay
             return SomaticSurvivalMath.ResolveDecompressionVomitSeverity01(nitrogenBuildUp);
         }
 
+        private void RefreshNitrogenNarcosisRuntimeState()
+        {
+            float tissueNarcosis01 = ResolveNitrogenNarcosis01(_nitrogenBuildUp);
+            float depthNarcosis01 = ResolveDepthNarcosis01(depth, IsInHardenedSubmarine());
+            _nitrogenNarcosis01 = math.max(tissueNarcosis01, depthNarcosis01);
+            if (_playerMovement != null)
+                _playerMovement.SetRuntimeNarcosisInputNoise(_nitrogenNarcosis01);
+        }
+
+        private bool IsInHardenedSubmarine()
+        {
+            PlayerTransportPreset transportPreset = ResolveActiveTransportPreset();
+            return transportPreset != null &&
+                   transportPreset.OccupancyMode == PlayerTransportOccupancyMode.EnclosedCabin;
+        }
+
+        private void TryApplyImmediateDecompressionDamage(float ascentOriginDepthMeters, float ascentMetersPerSecond)
+        {
+            if (_decompressionImmediateDamageCooldown > 0f)
+                return;
+
+            if (_playerHealth == null)
+                TryGetComponent(out _playerHealth);
+
+            float severity01 = ResolveImmediateDecompressionSeverity01(ascentMetersPerSecond, ascentOriginDepthMeters);
+            float damage = ImmediateDecompressionHealthDamage * math.max(0.25f, severity01);
+            if (_playerHealth != null && damage > 0f)
+                _playerHealth.TakeDamage(damage, true);
+
+            _decompressionImmediateDamageCooldown = ImmediateDecompressionDamageCooldownSeconds;
+        }
+
         private void ApplyNitrogenMovementPenalty()
         {
             if (_playerMovement == null)
                 return;
 
-            _playerMovement.SetRuntimeStaminaMultiplier(ResolveNitrogenStaminaMultiplier(_nitrogenBuildUp));
+            float nitrogenStaminaMultiplier = math.lerp(1f, NitrogenStaminaPenaltyMultiplier, math.saturate(_nitrogenNarcosis01));
+            _playerMovement.SetRuntimeStaminaMultiplier(math.min(nitrogenStaminaMultiplier, _toxicityStaminaMultiplier));
         }
 
         private void TryApplyLocalizedOxygenPocket()
@@ -1121,7 +1208,7 @@ namespace Hecton8.Gameplay
             _nitrogenBuildUp = math.max(
                 0f,
                 _nitrogenBuildUp - NitrogenRecoveryPerSecond * NitrogenAirPocketRecoveryMultiplier * _slowTickDt);
-            _nitrogenNarcosis01 = ResolveNitrogenNarcosis01(_nitrogenBuildUp);
+            RefreshNitrogenNarcosisRuntimeState();
             UpdateNitrogenPreNarcosisWarningState();
             ApplyNitrogenMovementPenalty();
             ForceDirty(ref lastPubOxygen);
@@ -1253,11 +1340,20 @@ namespace Hecton8.Gameplay
 
         private void HandleToxicity(float dt)
         {
-            if (Hecton8.Core.GlobalRegistry.HazardZones != null)
-                return;
-
             float toxicity = ResolveHazardIntensity(HazardType.Toxicity);
             if (toxicity <= 0.001f)
+            {
+                ClearToxicityStaminaPenalty();
+                return;
+            }
+
+            _toxicityStaminaMultiplier = math.lerp(
+                1f,
+                HypercapniaStaminaPenaltyMultiplier,
+                math.saturate(toxicity));
+            ApplyNitrogenMovementPenalty();
+
+            if (Hecton8.Core.GlobalRegistry.HazardZones != null)
                 return;
 
             float toxicityExposureScale = ResolveTransportRadiationExposureScale();
@@ -1268,6 +1364,15 @@ namespace Hecton8.Gameplay
             float damage = stats.RadiationDamageRate * 0.65f * toxicity * toxicityExposureScale * damageMultiplier * dt;
             integrity = math.max(0f, integrity - damage);
             MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.IntegrityFailure);
+        }
+
+        private void ClearToxicityStaminaPenalty()
+        {
+            if (math.abs(_toxicityStaminaMultiplier - 1f) <= 0.0001f)
+                return;
+
+            _toxicityStaminaMultiplier = 1f;
+            ApplyNitrogenMovementPenalty();
         }
 
         private void HandleNutritionalToxicity(float dt)
@@ -1467,7 +1572,8 @@ namespace Hecton8.Gameplay
             float physiologicalStress = ResolveOxygenStressSeverity01();
             float movementStress = ResolveMovementStressMagnitude01();
             float traumaStress = ResolveTraumaStressMagnitude01();
-            return math.saturate(math.max(physiologicalStress, math.max(movementStress, traumaStress)));
+            float playerStress = _playerHealth != null ? math.saturate(_playerHealth.Stress01) : 0f;
+            return math.saturate(math.max(playerStress, math.max(physiologicalStress, math.max(movementStress, traumaStress))));
         }
 
         internal static float ResolveHeartrateOxygenMultiplier(float stressMagnitude01)
@@ -1759,8 +1865,9 @@ namespace Hecton8.Gameplay
             }
 
             float elapsedGraceSeconds = OxygenGraceDurationSeconds - _oxygenGraceTimer;
-            float gracePhase = Mathf.Clamp01(elapsedGraceSeconds / Mathf.Max(0.01f, OxygenGraceDurationSeconds));
-            _oxygenGraceVisionBlur01 = Mathf.Sin(gracePhase * Mathf.PI);
+            float invGraceDuration = math.rcp(math.max(0.01f, OxygenGraceDurationSeconds));
+            float gracePhase = math.saturate(elapsedGraceSeconds * invGraceDuration);
+            _oxygenGraceVisionBlur01 = CinematicMath.FastSin(gracePhase * math.PI);
 
             if (_playerMovement != null)
                 _playerMovement.SetRuntimeEmergencyMovementMultiplier(OxygenGraceSpeedMultiplier);
@@ -2188,7 +2295,7 @@ namespace Hecton8.Gameplay
             _heatSeverity01 = Mathf.Clamp01(dto.heatStressSeverity01);
             _thermalStressMode = ResolveThermalStressModeFromState();
             _nitrogenBuildUp = Mathf.Clamp(dto.nitrogenBuildUp, 0f, NitrogenBuildUpHardCap);
-            _nitrogenNarcosis01 = ResolveNitrogenNarcosis01(_nitrogenBuildUp);
+            RefreshNitrogenNarcosisRuntimeState();
             ResetOxygenGraceState();
             alive     = integrity > 0f;
             _lastDeathCause = alive ? SurvivalDeathCause.None : ResolveDeathCause();
@@ -2474,11 +2581,18 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             float pressureDamageScale = ResolveTransportPressureDamageScale();
+            float crushAccelerationDamage = ResolveCrushDepthAccelerationDamage(overpressureMeters);
             float pressureDamagePerSecond =
                 stats.PressureDamageRate *
-                (1f + overpressureMeters * stats.PressureScalePerMeter) *
+                (1f + (overpressureMeters + crushAccelerationDamage) * stats.PressureScalePerMeter) *
                 pressureDamageScale;
             return pressureDamagePerSecond * DynamicDifficultyDirector.Current.DamageMultiplier;
+        }
+
+        internal static float ResolveCrushDepthAccelerationDamage(float overDepthMeters)
+        {
+            float overDepth = math.max(0f, math.isfinite(overDepthMeters) ? overDepthMeters : 0f);
+            return overDepth > 0f ? overDepth * overDepth * math.rsqrt(overDepth) : 0f;
         }
 
         private float ResolvePressureExposureSeverity01()
@@ -2533,6 +2647,8 @@ namespace Hecton8.Gameplay
             _rapidAscentMetersPerSecond = 0f;
             _lastTrackedDepthMeters = 0f;
             _airPocketNitrogenPauseTimer = 0f;
+            _decompressionImmediateDamageCooldown = 0f;
+            _toxicityStaminaMultiplier = 1f;
             _nutritionalToxicitySecondsRemaining = 0f;
             _nutritionalToxicitySeverity01 = 0f;
             _decompressionVomitToolDropCooldown = 0f;
@@ -2545,6 +2661,8 @@ namespace Hecton8.Gameplay
             _nitrogenBuildUp = 0f;
             _nitrogenNarcosis01 = 0f;
             _nitrogenLoadWarningIssued = false;
+            if (_playerMovement != null)
+                _playerMovement.SetRuntimeNarcosisInputNoise(0f);
             ApplyNitrogenMovementPenalty();
         }
 

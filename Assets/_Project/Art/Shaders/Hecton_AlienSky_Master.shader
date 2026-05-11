@@ -3,10 +3,10 @@
 // Atmospheric sky dome shader for the exomoon Hecton.
 // Unity 6 | URP 17+ | SRP Batcher Compatible
 //
-// v5.3 — ATMOSPHERIC PERSPECTIVE HORIZON FIX
+// v5.3 -- ATMOSPHERIC PERSPECTIVE HORIZON FIX
 //
 //   [FIX] Replaced v5.2's hard cloud cutoff with atmospheric perspective.
-//         v5.2 used smoothstep to REMOVE clouds near horizon → visible gap.
+//         v5.2 used smoothstep to REMOVE clouds near horizon -> visible gap.
 //         v5.3 keeps clouds visible but blends them into sky/haze color.
 //         At horizon, clouds become a soft uniform layer matching the sky.
 //         This hides UV stretching artifacts naturally without gaps.
@@ -17,21 +17,21 @@
 //         - Cloud detail fades (no mipmap aliasing source)
 //         - Cloud threshold lowers (continuous soft coverage)
 //         - Cloud softness widens (no sharp mask edges)
-//         - Cloud color → sky color (atmospheric perspective)
+//         - Cloud color -> sky color (atmospheric perspective)
 //         - Backlit glow fades (no bright streaks)
 //         - Cirrus fades smoothly
 //
 //   [PERF] One smoothstep + two lerps added. Zero texture samples added.
 //
 // v5.1 PRESERVED:
-//   ✓ Eclipse sky darkening via eclipseVis
-//   ✓ All sunset/golden hour logic
-//   ✓ Belt of Venus
-//   ✓ Star NASA-Punk flicker + elevation fade
-//   ✓ Aegir cloud illumination at night
-//   ✓ Planar ceiling UV, flowmap, dither
-//   ✓ SRP Batcher compatible
-//   ✓ 5 texture samples total
+//   [OK] Eclipse sky darkening via eclipseVis
+//   [OK] All sunset/golden hour logic
+//   [OK] Belt of Venus
+//   [OK] Star NASA-Punk flicker + elevation fade
+//   [OK] Aegir cloud illumination at night
+//   [OK] Planar ceiling UV, flowmap, dither
+//   [OK] SRP Batcher compatible
+//   [OK] 5 texture samples total
 // ============================================================================
 
 Shader "HECTON/Sky/Hecton_AlienSky_Master"
@@ -814,7 +814,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 //
                 // atmosClarity:
                 //   0.0 = at horizon (thick atmosphere, full wash)
-                //   1.0 = above ~17° (clear, full detail)
+                //   1.0 = above about 17 degrees (clear, full detail)
                 // =======================================
                 half atmosClarity = smoothstep(0.05h, 0.30h, horizonFactor);
 
@@ -859,12 +859,12 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half cloudDensity = cloudRG.x;
                 half cloudDetail  = cloudRG.y;
 
-                // v5.3: detail fades at horizon — kills mipmap aliasing source.
+                // v5.3: detail fades at horizon -- kills mipmap aliasing source.
                 // Without fine detail, the stretched UV produces smooth gradients
                 // instead of high-frequency banding.
                 cloudDensity -= cloudDetail * _DetailStrength * atmosClarity;
 
-                // v5.3: at horizon — lower threshold (everything becomes cloud),
+                // v5.3: at horizon -- lower threshold (everything becomes cloud),
                 // wider softness (ultra-smooth edges). Result: continuous soft
                 // layer instead of flickering mask from aliased density values.
                 half adjThreshold = _CloudDensityThreshold * lerp(0.15h, 1.0h, atmosClarity);
@@ -919,15 +919,15 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 half3 cloudColor = cloudBaseColor + backlitGlow;
 
-                // v5.3: ATMOSPHERIC PERSPECTIVE — the key fix.
+                // v5.3: ATMOSPHERIC PERSPECTIVE -- the key fix.
                 // At horizon, cloud color becomes sky color.
-                // lerp(skyColor, cloudColor, 0) = skyColor → no contrast
-                // → no visible aliasing → no barcode → no gap.
-                // Above ~17°: clouds render normally.
+                // lerp(skyColor, cloudColor, 0) = skyColor -> no contrast
+                // -> no visible aliasing -> no barcode -> no gap.
+                // Above about 17 degrees: clouds render normally.
                 cloudColor = lerp(skyColor, cloudColor, atmosClarity);
 
                 // v5.3: gentle height fade. Since cloudColor = skyColor at horizon,
-                // this is cosmetic — lerp(sky, sky, mask) = sky regardless.
+                // this is cosmetic -- lerp(sky, sky, mask) = sky regardless.
                 // Prevents any residual edge at the very bottom of the dome.
                 half finalCloudMask = cloudMask
                                     * saturate(horizonFactor * 4.0h)

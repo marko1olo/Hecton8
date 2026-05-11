@@ -61,6 +61,27 @@ namespace Hecton.Editor
         private const string ATLAS_PNG_PATH =
             "Assets/_Project/Art/Textures/Sky/HectonSkyAtlas_RGBA.png";
 
+        private const int TrigLutSize = 1024;
+        private const int TrigLutMask = TrigLutSize - 1;
+        private const float TwoPi = 6.2831853071795864769f;
+        private const float HalfTrigLutSize = TrigLutSize * 0.5f;
+
+        // COLD ALLOC: float[1024] - editor trig lookup table - owner: HectonSkyTools
+        private static readonly float[] s_sinLut = new float[TrigLutSize];
+        // COLD ALLOC: float[1024] - editor trig lookup table - owner: HectonSkyTools
+        private static readonly float[] s_cosLut = new float[TrigLutSize];
+
+        static HectonSkyTools()
+        {
+            const float step = TwoPi / TrigLutSize;
+            for (int i = 0; i < TrigLutSize; i++)
+            {
+                float angle = i * step;
+                s_sinLut[i] = Mathf.Sin(angle);
+                s_cosLut[i] = Mathf.Cos(angle);
+            }
+        }
+
         // =============================================================
         // UI STATE
         // =============================================================
@@ -229,22 +250,24 @@ namespace Hecton.Editor
             var normals   = new Vector3[vertCount];
             var uvs       = new Vector2[vertCount];
 
+            float invSegments = 1f / segments;
+            float invRings = 1f / rings;
+            float latToLut = HalfTrigLutSize * invRings;
+            float lonToLut = TrigLutSize * invSegments;
+
             int vi = 0;
 
             for (int lat = 0; lat <= rings; lat++)
             {
-                // theta: 0 at north pole (top), PI at south pole (bottom)
-                float theta    = Mathf.PI * lat / rings;
-                float sinTheta = Mathf.Sin(theta);
-                float cosTheta = Mathf.Cos(theta);
+                int thetaIndex = ((int)(lat * latToLut + 0.5f)) & TrigLutMask;
+                float sinTheta = s_sinLut[thetaIndex];
+                float cosTheta = s_cosLut[thetaIndex];
 
                 for (int lon = 0; lon <= segments; lon++)
                 {
-                    // phi: 0 to 2*PI
-                    // lon = segments duplicates lon = 0 position (UV seam)
-                    float phi    = 2f * Mathf.PI * lon / segments;
-                    float sinPhi = Mathf.Sin(phi);
-                    float cosPhi = Mathf.Cos(phi);
+                    int phiIndex = ((int)(lon * lonToLut + 0.5f)) & TrigLutMask;
+                    float sinPhi = s_sinLut[phiIndex];
+                    float cosPhi = s_cosLut[phiIndex];
 
                     // Unit sphere direction
                     float x = sinTheta * cosPhi;
@@ -266,14 +289,14 @@ namespace Hecton.Editor
                     // lon=segments handles the seam. Pole pinching is
                     // minimized because each pole vertex has a unique U,
                     // spreading the texture fan evenly.
-                    float u = (float)lon / segments;
-                    float v = 1f - (float)lat / rings; // 1 at top, 0 at bottom
+                    float u = lon * invSegments;
+                    float v = 1f - lat * invRings; // 1 at top, 0 at bottom
 
                     // For pole rows, center U on the triangle span
                     // to reduce convergence artifacts
                     if (lat == 0 || lat == rings)
                     {
-                        u = (lon + 0.5f) / segments;
+                        u = (lon + 0.5f) * invSegments;
                     }
 
                     uvs[vi] = new Vector2(u, v);
@@ -449,32 +472,49 @@ namespace Hecton.Editor
 
                 int totalPixels = width * height;
                 int progressInterval = Mathf.Max(1, totalPixels / 100);
+                int nextProgressIndex = 0;
+                float invTotalPixels = 1f / totalPixels;
 
                 for (int y = 0; y < height; y++)
                 {
+                    int rowBase = y * width;
+                    int yP = y + 1;
+                    if (yP == height)
+                    {
+                        yP = 0;
+                    }
+
+                    int yN = y == 0 ? height - 1 : y - 1;
+                    int yPBase = yP * width;
+                    int yNBase = yN * width;
+
                     for (int x = 0; x < width; x++)
                     {
-                        int idx = y * width + x;
+                        int idx = rowBase + x;
                         float r = ReadRed01(densityPixels, idx);
                         float g = ReadRed01(detailPixels, idx);
 
-                        int xP = (x + 1) % width;
-                        int xN = (x - 1 + width) % width;
-                        int yP = (y + 1) % height;
-                        int yN = (y - 1 + height) % height;
+                        int xP = x + 1;
+                        if (xP == width)
+                        {
+                            xP = 0;
+                        }
 
-                        float gradX = ReadRed01(densityPixels, y * width + xP) -
-                                      ReadRed01(densityPixels, y * width + xN);
-                        float gradY = ReadRed01(densityPixels, yP * width + x) -
-                                      ReadRed01(densityPixels, yN * width + x);
+                        int xN = x == 0 ? width - 1 : x - 1;
+
+                        float gradX = ReadRed01(densityPixels, rowBase + xP) -
+                                      ReadRed01(densityPixels, rowBase + xN);
+                        float gradY = ReadRed01(densityPixels, yPBase + x) -
+                                      ReadRed01(densityPixels, yNBase + x);
 
                         float curlX = -gradY;
                         float curlY = gradX;
                         float dominant = Mathf.Max(Mathf.Abs(curlX), Mathf.Abs(curlY));
                         if (dominant > 0.0001f)
                         {
-                            curlX /= dominant;
-                            curlY /= dominant;
+                            float invDominant = 1f / dominant;
+                            curlX *= invDominant;
+                            curlY *= invDominant;
                         }
                         else
                         {
@@ -491,12 +531,13 @@ namespace Hecton.Editor
                             Encode01(curlX * 0.5f + 0.5f),
                             Encode01(curlY * 0.5f + 0.5f));
 
-                        if (idx % progressInterval == 0)
+                        if (idx >= nextProgressIndex)
                         {
-                            float progress = (float)idx / totalPixels;
+                            float progress = idx * invTotalPixels;
+                            nextProgressIndex = idx + progressInterval;
                             if (EditorUtility.DisplayCancelableProgressBar(
                                 "Packing Cloud Atlas",
-                                $"Processing pixel {idx}/{totalPixels}",
+                                "Processing pixels",
                                 progress))
                             {
                                 Debug.LogWarning(

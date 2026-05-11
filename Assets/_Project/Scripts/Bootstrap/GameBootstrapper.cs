@@ -2746,32 +2746,36 @@ namespace Hecton8.Bootstrap
             int graphicsMemoryMb = math.max(0, SystemInfo.graphicsMemorySize);
             int systemMemoryMb = math.max(0, SystemInfo.systemMemorySize);
             int processorCount = math.max(1, SystemInfo.processorCount);
-            global::Hecton8.Core.HectonQualityTier qualityTier = graphicsMemoryMb < SuspiciousGraphicsMemoryFallbackThresholdMb
-                ? global::Hecton8.Core.HectonQualityTier.Low
-                : ResolveQualityTier(graphicsMemoryMb, systemMemoryMb, processorCount);
+            double biosPhysicsMillisecondsPerStep = global::Hecton8.Optimization.HardwareProfiler.RunBiosPhysicsBenchmarkMillisecondsPerStep();
+            global::Hecton8.Core.HectonQualityTier qualityTier = ResolveBenchmarkScalabilityTier(
+                graphicsMemoryMb,
+                systemMemoryMb,
+                processorCount,
+                biosPhysicsMillisecondsPerStep);
 
             return new global::Hecton8.Core.HectonHardwareProfile(
                 graphicsMemoryMb,
                 systemMemoryMb,
                 processorCount,
-                qualityTier);
+                qualityTier,
+                biosPhysicsMillisecondsPerStep);
         }
 
-        private static global::Hecton8.Core.HectonQualityTier ResolveQualityTier(int graphicsMemoryMb, int systemMemoryMb, int processorCount)
+        private static global::Hecton8.Core.HectonQualityTier ResolveBenchmarkScalabilityTier(
+            int graphicsMemoryMb,
+            int systemMemoryMb,
+            int processorCount,
+            double biosPhysicsMillisecondsPerStep)
         {
-            if (graphicsMemoryMb < 1500 || systemMemoryMb < 7000 || processorCount <= 4)
+            if (graphicsMemoryMb < SuspiciousGraphicsMemoryFallbackThresholdMb ||
+                systemMemoryMb < 7000 ||
+                processorCount <= 4 ||
+                global::Hecton8.Optimization.HardwareProfiler.ShouldForceLowTier(biosPhysicsMillisecondsPerStep, graphicsMemoryMb))
+            {
                 return global::Hecton8.Core.HectonQualityTier.Low;
+            }
 
-            if (graphicsMemoryMb < 2200)
-                return global::Hecton8.Core.HectonQualityTier.Mx350;
-
-            if (graphicsMemoryMb < 4200)
-                return global::Hecton8.Core.HectonQualityTier.Mid;
-
-            if (graphicsMemoryMb < 8200)
-                return global::Hecton8.Core.HectonQualityTier.High;
-
-            return global::Hecton8.Core.HectonQualityTier.Ultra;
+            return global::Hecton8.Core.HectonQualityTier.High;
         }
 
         private static bool TryRunBootstrapStep(BootstrapStepToken stepToken, string phaseName, Action initializeAction)

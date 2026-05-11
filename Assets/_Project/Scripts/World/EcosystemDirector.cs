@@ -40,6 +40,7 @@ namespace Hecton8.World
         private const float SectorEdgeLengthMeters = 1000f;
         private const float InvSectorEdgeLengthMeters = 1f / SectorEdgeLengthMeters;
         private const float InvStableSectorRandomMask = 1f / 16777215f;
+        private const float InvFoodHeatmapByteMax = 1f / 255f;
         private const float OxygenDieOffThreshold01 = 0.35f;
         private const float InvOxygenDieOffThreshold01 = 1f / OxygenDieOffThreshold01;
         private const float InvAlgaeBloomPreyGrowthDivisor = 0.2f;
@@ -68,7 +69,7 @@ namespace Hecton8.World
         private const float WhaleFallAcousticImpulsePitchScale = 0.52f;
         private const int PredatorSpawnValidationHitCapacity = 64;
         private const int ApexSpawnGateCommandCount = 1;
-        private const int ApexSpawnGateMaxHits = 4;
+        private const int ApexSpawnGateMaxHits = 1;
         private const float ApexSpawnGateCapsuleRadiusMeters = 2.5f;
         private const float ApexSpawnGateCapsuleHalfHeightMeters = 3f;
         private const float ApexSpawnGateSweepDistanceMeters = 0.25f;
@@ -77,6 +78,7 @@ namespace Hecton8.World
         private const int HibernationPopulationSyncsPerColdSolve = 8;
         private const int ApexTerritoryOverlapCandidateCapacity = 16;
         private const int ApexTerritoryOverlapHitCapacity = 64;
+        private const int MigrationTieNoNeighborBucket = 4;
         private const float ApexTerritoryOverlapQueryRadiusMeters = 1400f;
         private const float ApexTerritoryOverlapRetreatThreshold01 = 0.30f;
         private const int FloraPredatorAupBufferCapacity = 32;
@@ -257,6 +259,7 @@ namespace Hecton8.World
             [ReadOnly] public NativeArray<SectorPopulationState> FrontStates;
             [ReadOnly] public NativeArray<int> PreyCounts;
             [ReadOnly] public NativeArray<int> PredatorCounts;
+            [ReadOnly] public NativeArray<byte> FoodDensityHeatmapR8;
             public NativeArray<SectorPopulationState> BackStates;
             public NativeArray<int> PreyBackCounts;
             public NativeArray<int> PredatorBackCounts;
@@ -265,6 +268,7 @@ namespace Hecton8.World
             public NativeArray<byte> HeadlessHunger;
             public NativeArray<int2> HeadlessSectorCoord;
             public NativeArray<int> HeadlessSectorID;
+            public int2 FoodDensityHeatmapSize;
             public float DeltaSeconds;
             public float PreyBirthRate;
             public float PredationRate;
@@ -284,7 +288,13 @@ namespace Hecton8.World
                 SectorPopulationState state = FrontStates[index];
                 float prey = math.max(0f, PreyCounts[index]);
                 float predator = math.max(0f, PredatorCounts[index]);
-                float foodDensity01 = math.saturate(state.FoodDensity01 - (math.saturate(state.HarvestPressure) * 0.35f) - (math.saturate(state.AlgaeBloom01) * 0.45f));
+                float foodDensity01 = ResolveSectorFoodDensity01(
+                    state.SectorCoord,
+                    state.BiomeId,
+                    state.HarvestPressure,
+                    state.AlgaeBloom01,
+                    FoodDensityHeatmapR8,
+                    FoodDensityHeatmapSize);
                 float temperatureScore01 = state.TemperatureScore01;
                 float oxygen01 = state.Oxygen01 <= 0f ? 1f : math.saturate(state.Oxygen01);
                 float bloom01 = math.saturate(state.AlgaeBloom01);
@@ -369,9 +379,11 @@ namespace Hecton8.World
         private struct HeadlessThresholdMigrationJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<SectorPopulationState> States;
+            [ReadOnly] public NativeArray<byte> FoodDensityHeatmapR8;
             public NativeArray<float3> Positions;
             public NativeArray<int2> SectorCoord;
             public NativeArray<int> SectorID;
+            public int2 FoodDensityHeatmapSize;
             public float MigrationFoodThreshold01;
             public int MigrationPredatorTolerance;
 
@@ -391,42 +403,62 @@ namespace Hecton8.World
                     state.FoodDensity01 < math.saturate(MigrationFoodThreshold01) ||
                     state.PredatorPopulationRounded > math.max(0, MigrationPredatorTolerance);
                 if (forcedMove)
-                    coord = ResolveBestFoodNeighbor(coord);
+                    coord = ResolveBestFoodNeighbor(coord, FoodDensityHeatmapR8, FoodDensityHeatmapSize);
 
                 SectorCoord[index] = coord;
                 SectorID[index] = ResolveSectorId(coord);
                 Positions[index] = ResolveSectorCenterPosition(coord);
             }
 
-            private static int2 ResolveBestFoodNeighbor(int2 sectorCoord)
+            private static int2 ResolveBestFoodNeighbor(
+                int2 sectorCoord,
+                NativeArray<byte> foodDensityHeatmapR8,
+                int2 foodDensityHeatmapSize)
             {
                 int2 bestCoord = sectorCoord;
-                float bestFoodScore = ResolveMigrationFoodScore(sectorCoord);
-                EvaluateFoodCandidate(sectorCoord + new int2(1, 0), ref bestCoord, ref bestFoodScore);
-                EvaluateFoodCandidate(sectorCoord + new int2(-1, 0), ref bestCoord, ref bestFoodScore);
-                EvaluateFoodCandidate(sectorCoord + new int2(0, 1), ref bestCoord, ref bestFoodScore);
-                EvaluateFoodCandidate(sectorCoord + new int2(0, -1), ref bestCoord, ref bestFoodScore);
+                float bestFoodScore = ResolveMigrationFoodScore(sectorCoord, foodDensityHeatmapR8, foodDensityHeatmapSize);
+                int bestTieBucket = MigrationTieNoNeighborBucket;
+                EvaluateFoodCandidate(sectorCoord + new int2(1, 0), foodDensityHeatmapR8, foodDensityHeatmapSize, ref bestCoord, ref bestFoodScore, ref bestTieBucket);
+                EvaluateFoodCandidate(sectorCoord + new int2(-1, 0), foodDensityHeatmapR8, foodDensityHeatmapSize, ref bestCoord, ref bestFoodScore, ref bestTieBucket);
+                EvaluateFoodCandidate(sectorCoord + new int2(0, 1), foodDensityHeatmapR8, foodDensityHeatmapSize, ref bestCoord, ref bestFoodScore, ref bestTieBucket);
+                EvaluateFoodCandidate(sectorCoord + new int2(0, -1), foodDensityHeatmapR8, foodDensityHeatmapSize, ref bestCoord, ref bestFoodScore, ref bestTieBucket);
                 return bestCoord;
             }
 
             private static void EvaluateFoodCandidate(
                 int2 candidateCoord,
+                NativeArray<byte> foodDensityHeatmapR8,
+                int2 foodDensityHeatmapSize,
                 ref int2 bestCoord,
-                ref float bestFoodScore)
+                ref float bestFoodScore,
+                ref int bestTieBucket)
             {
-                float foodScore = ResolveMigrationFoodScore(candidateCoord);
-                if (foodScore > bestFoodScore + 0.0001f ||
-                    (math.abs(foodScore - bestFoodScore) <= 0.0001f && ResolveSectorId(candidateCoord) < ResolveSectorId(bestCoord)))
-                {
-                    bestCoord = candidateCoord;
-                    bestFoodScore = foodScore;
-                }
+                float foodScore = ResolveMigrationFoodScore(candidateCoord, foodDensityHeatmapR8, foodDensityHeatmapSize);
+                int candidateTieBucket = ResolveAupMigrationTieBucket(candidateCoord);
+                bool betterFood = foodScore > bestFoodScore + 0.0001f;
+                bool equalFood = math.abs(foodScore - bestFoodScore) <= 0.0001f;
+                bool betterTie = equalFood && candidateTieBucket < bestTieBucket;
+                bool takeCandidate = betterFood || betterTie;
+                bestCoord = math.select(bestCoord, candidateCoord, takeCandidate);
+                bestFoodScore = math.select(bestFoodScore, foodScore, takeCandidate);
+                bestTieBucket = math.select(bestTieBucket, candidateTieBucket, takeCandidate);
             }
 
-            private static float ResolveMigrationFoodScore(int2 sectorCoord)
+            private static float ResolveMigrationFoodScore(
+                int2 sectorCoord,
+                NativeArray<byte> foodDensityHeatmapR8,
+                int2 foodDensityHeatmapSize)
             {
                 int biomeId = ResolveBiomeIdForSector(sectorCoord);
-                return ResolveSectorFoodDensity01(sectorCoord, biomeId, 0f, 0f);
+                return ResolveSectorFoodDensity01(sectorCoord, biomeId, 0f, 0f, foodDensityHeatmapR8, foodDensityHeatmapSize);
+            }
+
+            private static int ResolveAupMigrationTieBucket(int2 candidateCoord)
+            {
+                unchecked
+                {
+                    return ((candidateCoord.x * 73856) + (candidateCoord.y * 19349)) & 3;
+                }
             }
         }
 
@@ -543,6 +575,7 @@ namespace Hecton8.World
         private NativeArray<int> _predatorFrontCounts;
         private NativeArray<int> _predatorBackCounts;
         private HeadlessEntitySoA _headlessEntities;
+        private NativeArray<byte> _sectorFoodHeatmapR8;
         private NativeHashMap<long, int> _sectorIndexByKey;
         private NativeArray<ApexTerritorySample> _apexTerritorySamples;
         private NativeArray<ApexTerritoryOverlapResult> _apexTerritoryOverlapResults;
@@ -588,6 +621,7 @@ namespace Hecton8.World
         private Vector3 _activeWhaleFallAcousticPosition;
         private float _activeWhaleFallAcousticUntilTime;
         private uint _activeWhaleFallAcousticUid;
+        private int2 _sectorFoodHeatmapSize;
 
         /// <summary>
         /// True once the runtime-native state is allocated and registered.
@@ -614,6 +648,40 @@ namespace Hecton8.World
         /// Normalized biome hostility score exposed to UI and pacing systems.
         /// </summary>
         public float BiomeHostility01 => ResolveCombinedHostility01();
+
+        /// <summary>
+        /// Binds a non-owned R8 sector-food heatmap generated by the world geology pass.
+        /// </summary>
+        /// <param name="heatmapR8">One byte per sector sample, 0-255 normalized food capacity.</param>
+        /// <param name="width">Power-of-two heatmap width.</param>
+        /// <param name="height">Power-of-two heatmap height.</param>
+        /// <remarks>
+        /// Caller owns allocation and disposal. Power-of-two dimensions keep Burst sampling on bit masks instead of modulo.
+        /// </remarks>
+        public void BindSectorFoodDensityHeatmap(NativeArray<byte> heatmapR8, int width, int height)
+        {
+            if (!heatmapR8.IsCreated ||
+                width <= 0 ||
+                height <= 0 ||
+                !IsPowerOfTwo(width) ||
+                !IsPowerOfTwo(height))
+            {
+                _sectorFoodHeatmapR8 = default;
+                _sectorFoodHeatmapSize = default;
+                return;
+            }
+
+            long requiredLength = (long)width * height;
+            if (heatmapR8.Length < requiredLength)
+            {
+                _sectorFoodHeatmapR8 = default;
+                _sectorFoodHeatmapSize = default;
+                return;
+            }
+
+            _sectorFoodHeatmapR8 = heatmapR8;
+            _sectorFoodHeatmapSize = new int2(width, height);
+        }
 
         internal FaunaLogicalLodTier ResolveLogicalLodTier(Vector3 observerPosition, Vector3 faunaPosition)
         {
@@ -877,8 +945,7 @@ namespace Hecton8.World
             if (_apexSpawnGateScheduled)
                 return false;
 
-            for (int i = 0; i < _apexSpawnGateHits.Length; i++)
-                _apexSpawnGateHits[i] = default;
+            _apexSpawnGateHits[0] = default;
 
             Vector3 capsuleOffset = Vector3.up * ApexSpawnGateCapsuleHalfHeightMeters;
             Vector3 point1 = worldPosition - capsuleOffset;
@@ -915,15 +982,7 @@ namespace Hecton8.World
             if (!DispatcherJobSwap.TryComplete(ref _apexSpawnGateHandle, forceComplete))
                 return;
 
-            byte blocked = 0;
-            for (int i = 0; i < _apexSpawnGateHits.Length; i++)
-            {
-                if (_apexSpawnGateHits[i].collider != null)
-                {
-                    blocked = 1;
-                    break;
-                }
-            }
+            byte blocked = PackBooleanByte(_apexSpawnGateHits[0].collider != null);
 
             _apexSpawnGateCachedCell = _apexSpawnGatePendingCell;
             _apexSpawnGateCachedBlocked = blocked;
@@ -1269,7 +1328,7 @@ namespace Hecton8.World
                     Fitness = baselineFitness,
                     SpeedMultiplier = 1f,
                     CamouflageIndex = 0f,
-                    FoodDensity01 = ResolveSectorFoodDensity01(saveRecord.SectorCoord, biomeId, 0f, 0f),
+                    FoodDensity01 = ResolveRuntimeSectorFoodDensity01(saveRecord.SectorCoord, biomeId, 0f, 0f),
                     TemperatureScore01 = ResolveSectorTemperatureScore01(saveRecord.SectorCoord, biomeId),
                     Oxygen01 = 1f,
                     AlgaeBloom01 = 0f,
@@ -1864,7 +1923,7 @@ namespace Hecton8.World
             _apexTerritoryOverlapResults = new NativeArray<ApexTerritoryOverlapResult>(ApexTerritoryOverlapCandidateCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<CapsulecastCommand>[1] - non-alloc Apex voxel-wall spawn gate command - owner: EcosystemDirector
             _apexSpawnGateCommands = new NativeArray<CapsulecastCommand>(ApexSpawnGateCommandCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<RaycastHit>[4] - non-alloc Apex voxel-wall spawn gate results - owner: EcosystemDirector
+            // COLD ALLOC: NativeArray<RaycastHit>[1] - non-alloc Apex voxel-wall spawn gate result - owner: EcosystemDirector
             _apexSpawnGateHits = new NativeArray<RaycastHit>(ApexSpawnGateMaxHits, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float4>[32] - global flora predator AUP upload staging buffer - owner: EcosystemDirector
             _floraPredatorAupUpload = new NativeArray<float4>(FloraPredatorAupBufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -1967,6 +2026,8 @@ namespace Hecton8.World
             _predatorFrontCounts = default;
             _predatorBackCounts = default;
             _headlessEntities = default;
+            _sectorFoodHeatmapR8 = default;
+            _sectorFoodHeatmapSize = default;
             _sectorIndexByKey = default;
             _apexTerritorySamples = default;
             _apexTerritoryOverlapResults = default;
@@ -2237,6 +2298,7 @@ namespace Hecton8.World
                 FrontStates = _sectorFrontStates,
                 PreyCounts = _preyFrontCounts,
                 PredatorCounts = _predatorFrontCounts,
+                FoodDensityHeatmapR8 = _sectorFoodHeatmapR8,
                 BackStates = _sectorBackStates,
                 PreyBackCounts = _preyBackCounts,
                 PredatorBackCounts = _predatorBackCounts,
@@ -2245,6 +2307,7 @@ namespace Hecton8.World
                 HeadlessHunger = _headlessEntities.Hunger,
                 HeadlessSectorCoord = _headlessEntities.SectorCoord,
                 HeadlessSectorID = _headlessEntities.SectorID,
+                FoodDensityHeatmapSize = _sectorFoodHeatmapSize,
                 DeltaSeconds = coldTickIntervalSeconds,
                 PreyBirthRate = preyBirthRatePerSecond,
                 PredationRate = predationRatePerSecond,
@@ -2265,9 +2328,11 @@ namespace Hecton8.World
             var migrationJob = new HeadlessThresholdMigrationJob
             {
                 States = _sectorBackStates,
+                FoodDensityHeatmapR8 = _sectorFoodHeatmapR8,
                 Positions = _headlessEntities.Positions,
                 SectorCoord = _headlessEntities.SectorCoord,
                 SectorID = _headlessEntities.SectorID,
+                FoodDensityHeatmapSize = _sectorFoodHeatmapSize,
                 MigrationFoodThreshold01 = migrationFoodThreshold01,
                 MigrationPredatorTolerance = migrationPredatorTolerance
             };
@@ -2631,7 +2696,7 @@ namespace Hecton8.World
             state.Fitness = baselineFitness;
             state.SpeedMultiplier = 1f;
             state.CamouflageIndex = 0f;
-            state.FoodDensity01 = ResolveSectorFoodDensity01(sectorCoord, biomeId, 0f, 0f);
+            state.FoodDensity01 = ResolveRuntimeSectorFoodDensity01(sectorCoord, biomeId, 0f, 0f);
             state.TemperatureScore01 = ResolveSectorTemperatureScore01(sectorCoord, biomeId);
             state.Oxygen01 = 1f;
             state.AlgaeBloom01 = 0f;
@@ -2714,17 +2779,60 @@ namespace Hecton8.World
             predatorPopulation = math.max(0, leviathanPopulationPerSector) * spawnLeviathanMask;
         }
 
+        private float ResolveRuntimeSectorFoodDensity01(int2 sectorCoord, int biomeId, float harvestPressure01, float algaeBloom01)
+        {
+            return ResolveSectorFoodDensity01(
+                sectorCoord,
+                biomeId,
+                harvestPressure01,
+                algaeBloom01,
+                _sectorFoodHeatmapR8,
+                _sectorFoodHeatmapSize);
+        }
+
         private static float ResolveSectorFoodDensity01(int2 sectorCoord, int biomeId, float harvestPressure01, float algaeBloom01)
         {
+            return ResolveSectorFoodDensity01(sectorCoord, biomeId, harvestPressure01, algaeBloom01, default, default);
+        }
+
+        private static float ResolveSectorFoodDensity01(
+            int2 sectorCoord,
+            int biomeId,
+            float harvestPressure01,
+            float algaeBloom01,
+            NativeArray<byte> foodHeatmapR8,
+            int2 foodHeatmapSize)
+        {
+            float baseFood01 = ResolveSectorBaseFoodCapacity01(sectorCoord, biomeId, foodHeatmapR8, foodHeatmapSize);
+            float biomeBias = (math.select(0f, 0.12f, biomeId == 1)) - (math.select(0f, 0.04f, biomeId == 2));
+            return math.saturate(baseFood01 + biomeBias - (math.saturate(harvestPressure01) * 0.35f) - (math.saturate(algaeBloom01) * 0.45f));
+        }
+
+        private static float ResolveSectorBaseFoodCapacity01(
+            int2 sectorCoord,
+            int biomeId,
+            NativeArray<byte> foodHeatmapR8,
+            int2 foodHeatmapSize)
+        {
+            if (foodHeatmapR8.IsCreated &&
+                IsPowerOfTwo(foodHeatmapSize.x) &&
+                IsPowerOfTwo(foodHeatmapSize.y))
+            {
+                int heatmapX = sectorCoord.x & (foodHeatmapSize.x - 1);
+                int heatmapZ = sectorCoord.y & (foodHeatmapSize.y - 1);
+                int heatmapIndex = heatmapZ * foodHeatmapSize.x + heatmapX;
+                if ((uint)heatmapIndex < (uint)foodHeatmapR8.Length)
+                    return foodHeatmapR8[heatmapIndex] * InvFoodHeatmapByteMax;
+            }
+
             float roll01 = StableSectorRandom01(sectorCoord + new int2(17, -31), biomeId);
-            float biomeBias = biomeId == 1 ? 0.12f : biomeId == 2 ? -0.04f : 0f;
-            return math.saturate(0.42f + (roll01 * 0.46f) + biomeBias - (math.saturate(harvestPressure01) * 0.35f) - (math.saturate(algaeBloom01) * 0.45f));
+            return 0.42f + (roll01 * 0.46f);
         }
 
         private static float ResolveSectorTemperatureScore01(int2 sectorCoord, int biomeId)
         {
             float roll01 = StableSectorRandom01(sectorCoord + new int2(-19, 43), biomeId ^ 0x35A);
-            float biomeBias = biomeId == 1 ? 0.22f : biomeId == 2 ? 0.08f : 0f;
+            float biomeBias = (math.select(0f, 0.22f, biomeId == 1)) + (math.select(0f, 0.08f, biomeId == 2));
             return math.saturate(0.28f + (roll01 * 0.48f) + biomeBias);
         }
 
@@ -2754,6 +2862,11 @@ namespace Hecton8.World
                 uint mix = ((uint)sectorX * 73856093u) ^ ((uint)sectorZ * 19349663u);
                 return mix;
             }
+        }
+
+        private static bool IsPowerOfTwo(int value)
+        {
+            return value > 0 && (value & (value - 1)) == 0;
         }
 
         private static bool IsApexInSectorState(in SectorPopulationState state)
@@ -2804,12 +2917,9 @@ namespace Hecton8.World
         {
             uint mix = MixSectorBits(sectorCoord.x, sectorCoord.y);
             uint bucket = mix & 0x0Fu;
-            if (bucket < 3u)
-                return 1;
-            if (bucket < 8u)
-                return 2;
-
-            return 0;
+            int belowEightMask = math.select(0, 1, bucket < 8u);
+            int belowThreeMask = math.select(0, 1, bucket < 3u);
+            return belowEightMask * (2 - belowThreeMask);
         }
 
         private static uint PackPopulationCounts(int preyPopulation, int predatorPopulation)

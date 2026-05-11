@@ -45,6 +45,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using MapMagic.Core;
+using MapMagic.Products;
 using MapMagic.Terrains;
 
 namespace Hecton8.Core

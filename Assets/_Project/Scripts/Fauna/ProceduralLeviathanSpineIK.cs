@@ -26,9 +26,15 @@ namespace Hecton8.AI
         private const float DegreesToRadians = 0.01745329252f;
         private const float InvTau = 0.15915494f;
         private const float HalfPi = 1.57079632679f;
-        private const float DistantIkSolveDistanceMeters = 40f;
-        private const float DistantIkSolveDistanceSqr = DistantIkSolveDistanceMeters * DistantIkSolveDistanceMeters;
-        private const int DistantIkCadenceFrameMask = 3;
+        private const float AdaptiveIkVatDistanceMeters = 20f;
+        private const float AdaptiveIkVatDistanceSqr = AdaptiveIkVatDistanceMeters * AdaptiveIkVatDistanceMeters;
+        private const int HighIkCadenceFrameInterval = 2;
+        private const int LowIkCadenceFrameInterval = 6;
+        private const int AdaptiveIkFrameOffsetMask = 7;
+        private const uint AdaptiveIkLowTierMask =
+            (1u << (int)HectonQualityTier.Unknown) |
+            (1u << (int)HectonQualityTier.Low) |
+            (1u << (int)HectonQualityTier.Mx350);
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct SolveSpineJob : IJobParallelForTransform
@@ -338,8 +344,9 @@ namespace Hecton8.AI
         private bool _wasStrikeActiveLastTick;
         private Transform _cachedPlayerTransform;
         private int _playerTransformCacheFrame = -1;
-        private int _distantIkFrameOffset;
-        private bool _distantIkCadenceActive;
+        private int _adaptiveIkFrameOffset;
+        private int _adaptiveIkCadenceInterval = HighIkCadenceFrameInterval;
+        private int _adaptiveIkCountdown;
         // COLD ALLOC: List<SkinnedMeshRenderer>[8] - skeletal root discovery scratch buffer for leviathan presentation binding - owner: ProceduralLeviathanSpineIK
         private readonly List<SkinnedMeshRenderer> _rendererScratch = new List<SkinnedMeshRenderer>(8);
         // COLD ALLOC: List<Transform>[64] - temporary transform scan buffer for leviathan vertebra auto-resolution - owner: ProceduralLeviathanSpineIK
@@ -350,7 +357,7 @@ namespace Hecton8.AI
         private void Awake()
         {
             int instanceId = unchecked((int)EntityId.ToULong(GetEntityId()));
-            _distantIkFrameOffset = (int)((uint)instanceId & DistantIkCadenceFrameMask);
+            _adaptiveIkFrameOffset = (int)((uint)instanceId & AdaptiveIkFrameOffsetMask);
             _faunaBrain = GetComponent<FaunaBrain>();
             if (_rigidbody == null)
                 TryGetComponent(out _rigidbody);
@@ -443,27 +450,48 @@ namespace Hecton8.AI
             _headLookTargetActive = active;
         }
 
-        private bool ShouldSkipDistantIkSolve()
+        private bool ShouldSkipAdaptiveIkSolve()
         {
-            int frame = Time.frameCount;
-            bool cadenceFrame = (frame & DistantIkCadenceFrameMask) == _distantIkFrameOffset;
-            if (_distantIkCadenceActive && !cadenceFrame)
-                return true;
-
-            if (!cadenceFrame)
+            float viewerDistanceSq = ResolveViewerDistanceSqForAdaptiveIk();
+            int frameInterval = ResolveScalabilityMatrixIkFrameInterval(viewerDistanceSq);
+            if (frameInterval <= 1)
                 return false;
 
+            if (_adaptiveIkCadenceInterval != frameInterval)
+            {
+                _adaptiveIkCadenceInterval = frameInterval;
+                _adaptiveIkCountdown = math.min(_adaptiveIkFrameOffset, frameInterval - 1);
+            }
+
+            if (_adaptiveIkCountdown > 0)
+            {
+                _adaptiveIkCountdown--;
+                return true;
+            }
+
+            _adaptiveIkCountdown = frameInterval - 1;
+            return false;
+        }
+
+        private float ResolveViewerDistanceSqForAdaptiveIk()
+        {
             Transform playerTransform = ResolvePlayerTransformForDistantIk();
             if (playerTransform == null)
-            {
-                _distantIkCadenceActive = false;
-                return false;
-            }
+                return 0f;
 
             Vector3 selfPosition = _rigidbody != null ? _rigidbody.position : transform.position;
             float3 toPlayer = (float3)(playerTransform.position - selfPosition);
-            _distantIkCadenceActive = math.lengthsq(toPlayer) > DistantIkSolveDistanceSqr;
-            return false;
+            return math.lengthsq(toPlayer);
+        }
+
+        private static int ResolveScalabilityMatrixIkFrameInterval(float viewerDistanceSq)
+        {
+            HectonQualityTier tier = GlobalRegistry.QualityTier;
+            int tierIndex = math.clamp((int)tier, 0, 31);
+            uint tierBit = 1u << tierIndex;
+            uint lowTierBit = AdaptiveIkLowTierMask & tierBit;
+            uint distanceBit = math.select(0u, 1u, viewerDistanceSq > AdaptiveIkVatDistanceSqr);
+            return math.select(HighIkCadenceFrameInterval, LowIkCadenceFrameInterval, (lowTierBit | distanceBit) != 0u);
         }
 
         private Transform ResolvePlayerTransformForDistantIk()
@@ -486,7 +514,7 @@ namespace Hecton8.AI
             if (_jobScheduled)
                 return;
 
-            if (ShouldSkipDistantIkSolve())
+            if (ShouldSkipAdaptiveIkSolve())
                 return;
 
             if (!TryResolveHeadPose(out float3 headPosition, out float3 headForward, out float speedNormalized))

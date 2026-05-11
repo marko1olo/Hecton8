@@ -485,13 +485,9 @@ namespace Hecton8.World
 
                     float4 directionData = HeadlightDirectionsWs[headlightIndex];
                     float3 lightDirection = directionData.xyz;
-                    float lightDirectionLenSq = math.lengthsq(lightDirection);
-                    if (!math.isfinite(lightDirectionLenSq) || lightDirectionLenSq <= 0.00000001f)
-                        continue;
-
                     float outerCos = HeadlightConeData[headlightIndex].x;
                     float dotLight = math.dot(lightDirection, toSample);
-                    if (!PassesDotThresholdSq(dotLight, outerCos, sampleDistanceSq * lightDirectionLenSq))
+                    if (!PassesDotThresholdSq(dotLight, outerCos, sampleDistanceSq))
                         continue;
 
                     float invRange = HeadlightConeData[headlightIndex].z;
@@ -1855,7 +1851,7 @@ namespace Hecton8.World
             }
 
             ReleaseGraphicsBuffer(ref _floraSnapFlagBuffer);
-            _floraSnapFlagBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, requiredCapacity, sizeof(uint)); // COLD ALLOC: GraphicsBuffer[visibleCapacity] — persistent GPU-only snapped flora flags — owner: HectonIndirectVegetationRenderer
+            _floraSnapFlagBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, requiredCapacity, sizeof(uint)); // COLD ALLOC: GraphicsBuffer[visibleCapacity] - persistent GPU-only snapped flora flags - owner: HectonIndirectVegetationRenderer
             _floraSnapFlagCapacity = requiredCapacity;
             _floraSnapFlagBufferRequiresClear = true;
         }
@@ -2246,13 +2242,9 @@ namespace Hecton8.World
 
                 Vector4 directionData = _scooterHeadlightDirectionsWs[headlightIndex];
                 float3 lightDirection = new float3(directionData.x, directionData.y, directionData.z);
-                float lightDirectionLenSq = math.lengthsq(lightDirection);
-                if (!math.isfinite(lightDirectionLenSq) || lightDirectionLenSq <= 0.00000001f)
-                    continue;
-
                 float outerCos = _scooterHeadlightConeData[headlightIndex].x;
                 float dotLight = math.dot(lightDirection, toSample);
-                if (!PassesDotThresholdSq(dotLight, outerCos, sampleDistanceSq * lightDirectionLenSq))
+                if (!PassesDotThresholdSq(dotLight, outerCos, sampleDistanceSq))
                     continue;
 
                 float invRange = _scooterHeadlightConeData[headlightIndex].z;

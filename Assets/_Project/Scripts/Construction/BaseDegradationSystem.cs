@@ -5,6 +5,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Power;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -510,7 +511,7 @@ namespace Hecton8.Construction
                 moduleRadius = Mathf.Max(moduleRadius, interiorRadius);
             }
 
-            float massExtent = Mathf.Sqrt(Mathf.Max(0f, addedMassKilograms)) * ParasiteCollapseMassExtentScale;
+            float massExtent = ApproximateSqrtPositive(addedMassKilograms) * ParasiteCollapseMassExtentScale;
             Vector3 halfExtents = new Vector3(
                 Mathf.Max(ParasiteCollapseMinimumHorizontalHalfExtent, moduleRadius * 0.45f + massExtent),
                 Mathf.Max(ParasiteCollapseMinimumVerticalHalfExtent, 1.25f + infectionLevel * 2f + massExtent),
@@ -641,7 +642,7 @@ namespace Hecton8.Construction
             if (outward.sqrMagnitude <= 0.0001f)
                 outward = fallbackForward;
 
-            Quaternion rotation = Quaternion.LookRotation(outward.normalized, Vector3.up);
+            Quaternion rotation = Quaternion.LookRotation(FastDirectionOrFallback(outward, fallbackForward), Vector3.up);
             Vector3 scale = Vector3.one * DefaultDecalScaleMeters;
             return Matrix4x4.TRS(ruptureWorldPosition, rotation, scale);
         }
@@ -660,7 +661,7 @@ namespace Hecton8.Construction
                 worldPosition = localToWorld.MultiplyPoint3x4(new Vector3(socket.LocalPosition.x, socket.LocalPosition.y, socket.LocalPosition.z));
                 Vector3 outward = worldPosition - moduleWorldPosition;
                 if (outward.sqrMagnitude > 0.0001f)
-                    forward = outward.normalized;
+                    forward = FastDirectionOrFallback(outward, forward);
             }
 
             float damage01 = Mathf.Clamp01(1f - baseModule.IntegrityStateNormalized);
@@ -697,7 +698,7 @@ namespace Hecton8.Construction
             decalTransform.gameObject.SetActive(true);
             decalTransform.SetPositionAndRotation(
                 ruptureWorldPosition,
-                Quaternion.LookRotation(forward.normalized, Vector3.up));
+                Quaternion.LookRotation(FastDirectionOrFallback(forward, moduleTransform.forward), Vector3.up));
             decalTransform.localScale = Vector3.one * DefaultDecalScaleMeters;
 
             if (decalTransform.TryGetComponent(out Renderer renderer))
@@ -723,6 +724,22 @@ namespace Hecton8.Construction
         private static int ComposeParasiteSporeHazardId(int moduleRuntimeId)
         {
             return moduleRuntimeId ^ ParasiteSporeHazardIdSalt;
+        }
+
+        private static float ApproximateSqrtPositive(float value)
+        {
+            float safeValue = math.max(0f, value);
+            return safeValue > 0f ? safeValue * math.rsqrt(safeValue) : 0f;
+        }
+
+        private static Vector3 FastDirectionOrFallback(Vector3 value, Vector3 fallback)
+        {
+            float lengthSq = value.sqrMagnitude;
+            if (lengthSq <= 0.000001f || float.IsNaN(lengthSq) || float.IsInfinity(lengthSq))
+                return fallback.sqrMagnitude > 0.000001f ? fallback : Vector3.forward;
+
+            float invLength = math.rsqrt(lengthSq);
+            return new Vector3(value.x * invLength, value.y * invLength, value.z * invLength);
         }
 
         private static int ResolveModuleRuntimeId(GameObject moduleObject)

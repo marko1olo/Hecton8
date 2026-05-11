@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.World;
 using NASAPunk.Visor;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -180,8 +181,9 @@ namespace Hecton8.Gameplay
             if (_meteorFogShadowRemainingSeconds <= 0f)
                 return;
 
-            _meteorFogShadowRemainingSeconds = Mathf.Max(0f, _meteorFogShadowRemainingSeconds - Mathf.Max(0f, deltaTime));
-            PublishMeteorFogShadows(Mathf.Clamp01(_meteorFogShadowRemainingSeconds / Mathf.Max(0.1f, meteorFogShadowDurationSeconds)));
+            _meteorFogShadowRemainingSeconds = math.max(0f, _meteorFogShadowRemainingSeconds - math.max(0f, deltaTime));
+            float invMeteorDuration = math.rcp(math.max(0.1f, meteorFogShadowDurationSeconds));
+            PublishMeteorFogShadows(math.saturate(_meteorFogShadowRemainingSeconds * invMeteorDuration));
         }
 
         private void PublishMeteorFogShadows(float intensity01)

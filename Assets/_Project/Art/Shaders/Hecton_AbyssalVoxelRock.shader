@@ -9,6 +9,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         [NoScaleOffset] _FreshRockAlbedoMap ("Fresh Rock Albedo Map", 2D) = "white" {}
         [NoScaleOffset] _FreshRockNormalMap ("Fresh Rock Normal Map", 2D) = "bump" {}
         [NoScaleOffset] _SiltLayerMap ("Horizontal Silt Layer Map", 2D) = "white" {}
+        [NoScaleOffset] _CavityNoiseRamp ("Cavity AO Depth Noise Ramp", 2D) = "gray" {}
         [NoScaleOffset] _BiomeFamilyTintVolume ("Visual Family 3D Tint Volume", 3D) = "white" {}
         _Instance_Color ("Instance Color", Color) = (1, 1, 1, 1)
         _Tiling ("Tiling", Range(0.01, 4)) = 0.2
@@ -55,6 +56,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         _OrganicDisplacementScale ("Organic World Noise Scale", Range(0.02, 4)) = 0.55
         _OrganicDisplacementFineScale ("Organic Fine Noise Scale", Range(0.05, 12)) = 2.8
         _OrganicDisplacementSeamBoost ("Organic Seam Boost", Range(0, 2)) = 0.65
+        _ScreenSpaceNormalBevelStrength ("Screen Normal Bevel Strength", Range(0, 4)) = 1.35
+        _ScreenSpaceNormalNoiseStrength ("Screen Normal Noise Strength", Range(0, 0.35)) = 0.08
+        _ScreenSpaceNormalNoiseScale ("Screen Normal Noise Scale", Range(0.05, 8)) = 1.25
+        _CavityAoNoiseStrength ("Cavity AO Noise Strength", Range(0, 1)) = 0.32
+        _CavityAoDepthScale ("Cavity AO Depth Scale", Range(0.001, 4)) = 0.19
         _CaveMouthDisplacementStrength ("Cave Mouth GPU Jag Strength", Range(0, 0.35)) = 0.08
         _CaveMouthDisplacementScale ("Cave Mouth GPU Jag Scale", Range(0.05, 4)) = 0.85
         _CaveMouthPhosphorPulseStrength ("Cave Mouth Phosphor Pulse Strength", Range(0, 1)) = 0.18
@@ -152,6 +158,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float _OrganicDisplacementScale;
             float _OrganicDisplacementFineScale;
             float _OrganicDisplacementSeamBoost;
+            float _ScreenSpaceNormalBevelStrength;
+            float _ScreenSpaceNormalNoiseStrength;
+            float _ScreenSpaceNormalNoiseScale;
+            float _CavityAoNoiseStrength;
+            float _CavityAoDepthScale;
             float _CaveMouthDisplacementStrength;
             float _CaveMouthDisplacementScale;
             float _CaveMouthPhosphorPulseStrength;
@@ -181,6 +192,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         float4 _HectonScatterBiomeInfluenceGridOrigin;
         float4 _HectonScatterBiomeInfluenceGridParams;
         float3 _LightDirection;
+        float _HectonMathLodMode;
 
         StructuredBuffer<uint> _HectonScatterBiomeInfluenceGrid;
 
@@ -196,6 +208,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         SAMPLER(sampler_FreshRockNormalMap);
         TEXTURE2D(_SiltLayerMap);
         SAMPLER(sampler_SiltLayerMap);
+        TEXTURE2D(_CavityNoiseRamp);
+        SAMPLER(sampler_CavityNoiseRamp);
         TEXTURE3D(_BiomeFamilyTintVolume);
         SAMPLER(sampler_BiomeFamilyTintVolume);
         TEXTURE2D(_SargassumCutMaskRT);
@@ -256,14 +270,13 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         half3 SafeNormalize3(half3 value)
         {
             half lenSq = dot(value, value);
-            if (lenSq <= 0.0001h)
-                return half3(0.0h, 1.0h, 0.0h);
-
+            half valid = step(0.0001h, lenSq);
             half3 axis = abs(value);
             half maxAxis = max(axis.x, max(axis.y, axis.z));
             half minAxis = min(axis.x, min(axis.y, axis.z));
             half midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
-            return value / max(maxAxis + midAxis * 0.375h + minAxis * 0.25h, 0.0001h);
+            half3 approximate = value * rcp(max(maxAxis + midAxis * 0.375h + minAxis * 0.25h, 0.0001h));
+            return lerp(half3(0.0h, 1.0h, 0.0h), approximate, valid);
         }
 
         half FastVoxelPower01(half value, half exponent)
@@ -548,6 +561,42 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float3 dpdy = ddy(positionWS);
             half3 derivedNormalWS = SafeNormalize3((half3)cross(dpdy, dpdx));
             return dot(derivedNormalWS, fallbackNormalWS) < 0.0h ? -derivedNormalWS : derivedNormalWS;
+        }
+
+        half3 ResolveScreenSpaceSmoothedVoxelNormal(half3 coarseNormalWS, float3 positionWS, float3 absolutePositionWS, half curvature)
+        {
+            if (_HectonMathLodMode < 0.5)
+                return coarseNormalWS;
+
+            float3 dpdx = ddx(positionWS);
+            float3 dpdy = ddy(positionWS);
+            half3 faceNormalWS = SafeNormalize3((half3)cross(dpdy, dpdx));
+            faceNormalWS = dot(faceNormalWS, coarseNormalWS) < 0.0h ? -faceNormalWS : faceNormalWS;
+
+            float3 pixelSpan = abs(dpdx) + abs(dpdy);
+            half bevelMask = saturate((half)((pixelSpan.x + pixelSpan.y + pixelSpan.z) * max(_ScreenSpaceNormalBevelStrength, 0.0)));
+            half cavityWeight = saturate((0.5h - curvature) * 2.0h);
+            float noiseScale = max(_ScreenSpaceNormalNoiseScale, 0.05);
+            half lowNoise = (half)ValueNoise3(absolutePositionWS * noiseScale + 13.7);
+            half highNoise = (half)ValueNoise3(absolutePositionWS * (noiseScale * 2.17) + 47.3);
+            half organicWeight = lerp(0.35h, 0.82h, saturate(lowNoise * 0.65h + highNoise * 0.35h));
+            half3 smoothedNormalWS = SafeNormalize3(lerp(coarseNormalWS, faceNormalWS, bevelMask * organicWeight));
+
+            half3 tangentX = SafeNormalize3((half3)dpdx);
+            half3 tangentY = SafeNormalize3((half3)dpdy);
+            half noiseStrength = (half)_ScreenSpaceNormalNoiseStrength * (0.35h + cavityWeight * 0.65h);
+            return SafeNormalize3(smoothedNormalWS + tangentX * ((lowNoise - 0.5h) * noiseStrength) + tangentY * ((highNoise - 0.5h) * noiseStrength));
+        }
+
+        half ResolveDepthNoiseCavityAo(float3 absolutePositionWS, half bakedAmbientOcclusion)
+        {
+            if (_HectonMathLodMode < 0.5)
+                return bakedAmbientOcclusion;
+
+            float depthU = frac(absolutePositionWS.y * max(_CavityAoDepthScale, 0.001));
+            half rampNoise = SAMPLE_TEXTURE2D(_CavityNoiseRamp, sampler_CavityNoiseRamp, float2(depthU, 0.5)).r;
+            half aoNoise = lerp(1.0h, lerp(0.72h, 1.08h, rampNoise), saturate((half)_CavityAoNoiseStrength));
+            return saturate(bakedAmbientOcclusion * aoNoise);
         }
 
         half3 SampleDominantAxisNormalAtUv(float2 uv, half dominantAxis, half3 baseNormalWS)
@@ -861,10 +910,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 ApplyChunkDissolveFade(input.positionCS);
                 bool xrFullQuality = HectonCoreLitShouldRunXRFullQuality(input.xrFoveatedVector);
                 half skirtCoverage = ResolveSkirtCoverageMask(input.skirtAlpha);
-                half3 baseNormalWS = SafeNormalize3(input.normalWS);
-                baseNormalWS = RecalculateDisplacedNormalWS(input.positionWS, baseNormalWS);
                 float3 samplePositionWS = input.absolutePositionWS;
+                half3 coarseNormalWS = SafeNormalize3(input.normalWS);
+                half3 baseNormalWS = ResolveScreenSpaceSmoothedVoxelNormal(coarseNormalWS, input.positionWS, samplePositionWS, input.curvature);
                 half vertexCaveAo = saturate(dot(input.terrainSplatColor.rgb, half3(0.3333h, 0.3333h, 0.3334h)));
+                half noisyBakedAo = ResolveDepthNoiseCavityAo(samplePositionWS, input.bakedAmbientOcclusion);
                 half3 dominantNormalWS = SampleCinematicTwoAxisNormal(samplePositionWS, baseNormalWS);
 
                 half4 baseSample = SampleCinematicAxisColor(TEXTURE2D_ARGS(_Base_Map, sampler_Base_Map), samplePositionWS, baseNormalWS);
@@ -904,7 +954,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
                 half metallic = decodedMask.metallic;
                 half smoothness = saturate(lerp(decodedMask.smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));
-                half ambientOcclusion = saturate(input.bakedAmbientOcclusion * vertexCaveAo * decodedMask.occlusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength));
+                half ambientOcclusion = saturate(noisyBakedAo * vertexCaveAo * decodedMask.occlusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength));
                 half caveMouthDistanceAo = saturate(max(input.terrainSplatColor.a, input.skirtAlpha));
                 ambientOcclusion *= 1.0h - caveMouthDistanceAo * 0.45h;
                 albedo *= 1.0h - caveMouthDistanceAo * 0.24h;

@@ -117,19 +117,21 @@ Confirmed facts:
 
 | Source line | Fact |
 |---|---|
-| `19` | class is `HectonPlayerHealth : MonoBehaviour, ISaveable, ITickable, IUpdatable` |
-| `66` | publishes `OnDeath` |
-| `69` | publishes `OnDamageTaken` |
-| `75` | publishes `OnMutationFlagsChanged` |
-| `96` | exposes mutation bitmask |
-| `104` | exposes flashlight-bypass mutation flag |
-| `106` | applies radiation exposure |
-| `210` | implements `TakeDamage(float damage, bool ignoreInvulnerability = false)` |
-| `290` | emits `NotificationEvents.PushCritical(...)` for survival-grace branch |
-| `320-321` | emits mutation notifications |
-| `364` | `SavePriority => 100` |
-| `367` | `LoadPriority => 100` |
-| `373` | explicitly says `SaveData` has no dedicated player-health DTO |
+| `22` | class is `HectonPlayerHealth : MonoBehaviour, ISaveable, ITickable, IUpdatable, IDamageReceiver` |
+| `94` | publishes `OnDeath` |
+| `97` | publishes `OnDamageTaken` |
+| `103` | publishes `OnMutationFlagsChanged` |
+| `146` | exposes mutation bitmask |
+| `157` | exposes flashlight-bypass mutation flag |
+| `159` | applies radiation exposure |
+| `407` | implements `TakeDamage(float damage, bool ignoreInvulnerability = false)` |
+| `503` | emits `NotificationEvents.PushCritical(...)` for survival-grace branch |
+| `528` | implements packet-based `ReceiveDamage(in DamagePacket packet)` |
+| `588` | emits mutation notifications |
+| `641` | `SavePriority => 100` |
+| `644` | `LoadPriority => 100` |
+| `648` | explicitly says `SaveData` has no dedicated player-health DTO |
+| `691` | registers the player as a `CombatDamageRuntime` target |
 
 Additional factual boundary:
 
@@ -140,6 +142,7 @@ Current interpretation:
 - `HectonPlayerHealth` is not fake or dead code
 - fauna and tool code reference it directly
 - it owns HP, mutation, invulnerability, radiation-fatigue, and survival-grace behavior
+- it now also receives global damage packets through `IDamageReceiver` and mirrors active HP into `CombatDamageRuntime`
 - but its persistence path is weak because the file itself states there is no dedicated `SaveData` DTO
 
 This is a real architecture smell:
@@ -324,7 +327,7 @@ Prompt-targeted ownership split:
 |---|---|---|---|
 | `HectonSurvivalSystem` | oxygen, pressure, suit integrity, thermal state, survival death cause, survival save state | `HectonSurvivalSystem.cs:184`, `459-510`, `1362`, `1556-1595` | already owns damage-like integrity loss and death semantics |
 | `HazardZoneManager` | hazard volume registry, exposure job, spatial registration, exposure mask, survival damage routing | `HazardZoneManager.cs:47-63`, `291-321`, `514-534`, `654-663`, `716`, `1176`, `1242-1243` | not the source of every hazard; it is the exposure router |
-| `HectonPlayerHealth` | HP, invulnerability, radiation exposure, mutation bitmask, mutation events | `HectonPlayerHealth.cs:66-75`, `106-122`, `210-227`, `303-321`, `364-379` | parallel branch can drift from survival integrity/death logic |
+| `HectonPlayerHealth` | HP, invulnerability, radiation exposure, mutation bitmask, mutation events, packet damage receiver | `HectonPlayerHealth.cs:94-103`, `159-188`, `407-428`, `528-546`, `588`, `641-656`, `691` | parallel branch can drift from survival integrity/death logic |
 
 Operational damage/hazard flow:
 
@@ -337,15 +340,15 @@ Operational damage/hazard flow:
 
 Parallel health/mutation flow:
 
-`radiation / fauna / direct gameplay damage`
--> `HectonPlayerHealth.ApplyRadiationExposure(...)` or `TakeDamage(...)`
+`radiation / fauna / direct gameplay damage / packet-routed combat damage`
+-> `HectonPlayerHealth.ApplyRadiationExposure(...)`, `TakeDamage(...)`, or `ReceiveDamage(in DamagePacket)`
 -> HP and mutation state
 -> `OnDamageTaken`, `OnDeath`, `OnMutationFlagsChanged`
 -> external listeners and presentation logic
 
 Legacy save gap:
 
-- `HectonPlayerHealth.cs:371-379` implements `ISaveable`, but `PopulateSaveData` explicitly documents that `SaveData` has no dedicated player-health DTO.
+- `HectonPlayerHealth.cs:641-656` implements `ISaveable`, but `PopulateSaveData` explicitly documents that `SaveData` has no dedicated player-health DTO.
 - That means the health/mutation branch is not persistence-equal to `HectonSurvivalSystem`, which has concrete save/load implementation at `HectonSurvivalSystem.cs:1559-1595`.
 - Any feature depending on permanent mutation state must treat `HectonPlayerHealth` persistence as incomplete until a dedicated DTO/record is added and load-order validated.
 
@@ -421,12 +424,14 @@ No runtime code was changed in this pass.
 
 `HectonPlayerHealth` remains a parallel HP/mutation branch:
 
-- it implements `ISaveable`, `ITickable`, and `IUpdatable` (`HectonPlayerHealth.cs:19`).
-- it owns radiation exposure and mutation flags (`HectonPlayerHealth.cs:93-106`).
-- direct HP damage routes through `TakeDamage(float damage, bool ignoreInvulnerability = false)` (`HectonPlayerHealth.cs:210-227`).
-- mutation threshold evaluation and notifications are local to health (`HectonPlayerHealth.cs:303-321`).
-- mutation effects can modify survival oxygen capacity through the survival system (`HectonPlayerHealth.cs:325-336`).
-- the save gap is still current: `PopulateSaveData()` intentionally writes nothing because there is no dedicated player-health DTO, and `LoadFromSaveData()` only clamps current health (`HectonPlayerHealth.cs:371-381`).
+- it implements `ISaveable`, `ITickable`, `IUpdatable`, and `IDamageReceiver` (`HectonPlayerHealth.cs:22`).
+- it owns radiation exposure and mutation flags (`HectonPlayerHealth.cs:146-159`).
+- direct HP damage routes through `TakeDamage(float damage, bool ignoreInvulnerability = false)` (`HectonPlayerHealth.cs:407-428`).
+- packet-routed combat damage enters through `ReceiveDamage(in DamagePacket)` (`HectonPlayerHealth.cs:528-546`).
+- active HP is mirrored to `CombatDamageRuntime` through target registration (`HectonPlayerHealth.cs:683-707`).
+- mutation threshold evaluation and notifications are local to health (`HectonPlayerHealth.cs:558-588`).
+- mutation effects can modify survival oxygen capacity through the survival system (`HectonPlayerHealth.cs:592-610`).
+- the save gap is still current: `PopulateSaveData()` intentionally writes nothing because there is no dedicated player-health DTO, and `LoadFromSaveData()` only clamps current health (`HectonPlayerHealth.cs:648-657`).
 
 ### Correct domain split
 

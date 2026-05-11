@@ -1,3 +1,4 @@
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -8,51 +9,72 @@ namespace Hecton8.Core
     /// </summary>
     public static class FrameTimeWatchdog
     {
+        private const int FrameTimeSampleCount = 60;
+        private const float InvFrameTimeSampleCount = 0.0166666675f;
         private const float SpikeThresholdSeconds = 0.01667f;
-        private const float CriticalThresholdSeconds = 0.025f;
-        private const float WarningThresholdSeconds = 0.01667f;
-        private const int DegradationConsecutiveFrames = 180;
+        private const float OptimalAverageThresholdSeconds = 0.014f;
+        private const float CriticalAverageThresholdSeconds = 0.018f;
+        private const float CriticalSustainSeconds = 3f;
+        private const float ScalabilityCooldownSeconds = 10f;
         private const float ThermalParticleSpawnScale = 0.5f;
+        private const float FullParticleSpawnScale = 1f;
         private const uint DefaultSubsystemHash = 0x46545744u;
-        private const uint SustainedFrameWarningHash = 0x4654574Eu; // "FTWN"
+        private const uint SustainedFrameOptimalHash = 0x46544F50u; // "FTOP"
         private const uint SustainedFrameCriticalHash = 0x46544352u; // "FTCR"
         private const uint DegradeDisableDistantFloraMask = 1u << 0;
         private const uint DegradeHalfParticleEmissionMask = 1u << 1;
         private const uint DegradeDisableVoxelAoMask = 1u << 2;
+        private const uint DegradeMathLodHighMask = 1u << 3;
+        private const uint DegradeMathLodLowMask = 1u << 4;
         private const uint DegradeCriticalLevelMask = 1u << 31;
 
+        // COLD ALLOC: float[60] - fixed frame-time ring, no List growth - owner: FrameTimeWatchdog
+        private static readonly float[] _frameTimeSamples = new float[FrameTimeSampleCount];
+
+        private static int _frameTimeSampleIndex;
+        private static int _frameTimeSampleCount;
         private static int _consecutiveSpikeFrames;
-        private static int _consecutiveWarningFrames;
         private static int _lastSpikeReportFrame = -1;
-        private static int _lastDegradationReportFrame = -1;
         private static int _reportedSubsystemFrame = -1;
         private static uint _reportedSubsystemHash;
         private static float _reportedSubsystemCostMs;
         private static int _reportedBrgBatchFrame = -1;
         private static int _reportedBrgBatchCount;
+        private static float _frameTimeSumSeconds;
+        private static float _criticalAverageSeconds;
+        private static float _lastScalabilitySwitchTimeSeconds = -ScalabilityCooldownSeconds;
         private static float _particleEmissionScale = 1f;
+        private static MathLodMode _mathLodMode = MathLodMode.High;
         private static bool _voxelAoEnabled = true;
         private static bool _systemDegradationActive;
+        private static bool _shaderLodPushed;
 
         public static bool IsDistantFloraRenderingEnabled => !_systemDegradationActive;
         public static float ParticleEmissionScale => _particleEmissionScale;
         public static bool IsVoxelAmbientOcclusionEnabled => _voxelAoEnabled;
+        public static MathLodMode CurrentMathLodMode => _mathLodMode;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            Array.Clear(_frameTimeSamples, 0, _frameTimeSamples.Length);
+            _frameTimeSampleIndex = 0;
+            _frameTimeSampleCount = 0;
             _consecutiveSpikeFrames = 0;
-            _consecutiveWarningFrames = 0;
             _lastSpikeReportFrame = -1;
-            _lastDegradationReportFrame = -1;
             _reportedSubsystemFrame = -1;
             _reportedSubsystemHash = 0u;
             _reportedSubsystemCostMs = 0f;
             _reportedBrgBatchFrame = -1;
             _reportedBrgBatchCount = 0;
+            _frameTimeSumSeconds = 0f;
+            _criticalAverageSeconds = 0f;
+            _lastScalabilitySwitchTimeSeconds = -ScalabilityCooldownSeconds;
             _particleEmissionScale = 1f;
+            _mathLodMode = MathLodMode.High;
             _voxelAoEnabled = true;
             _systemDegradationActive = false;
+            _shaderLodPushed = false;
         }
 
         /// <summary>
@@ -106,14 +128,20 @@ namespace Hecton8.Core
         /// </summary>
         public static void Tick()
         {
+            if (!_shaderLodPushed)
+                PushInitialScalabilityFromHardwareTier();
+
+            if (Time.timeScale == 0f)
+                return;
+
             float deltaTime = Time.unscaledDeltaTime;
             if (deltaTime <= 0f)
             {
                 _consecutiveSpikeFrames = 0;
-                _consecutiveWarningFrames = 0;
                 return;
             }
 
+            float averageFrameTimeSeconds = RecordFrameTimeSample(deltaTime);
             if (deltaTime > SpikeThresholdSeconds)
                 _consecutiveSpikeFrames++;
             else
@@ -124,21 +152,8 @@ namespace Hecton8.Core
 
             PublishDrawCallEstimateIfPresent();
 
-            if (deltaTime > WarningThresholdSeconds)
-                _consecutiveWarningFrames++;
-            else
-                _consecutiveWarningFrames = 0;
-
-            if (deltaTime >= CriticalThresholdSeconds)
-            {
-                ActivateSystemDegradation(deltaTime, true);
-                return;
-            }
-
-            if (_consecutiveWarningFrames >= DegradationConsecutiveFrames)
-            {
-                PublishSystemDegradationWarning(deltaTime);
-            }
+            if (_frameTimeSampleCount >= FrameTimeSampleCount)
+                DispatchScalabilityIfNeeded(deltaTime, averageFrameTimeSeconds);
         }
 
         private static void PublishSpike(float deltaTime)
@@ -157,42 +172,112 @@ namespace Hecton8.Core
             CrashTelemetryBuffer.ReportCriticalPerformanceSpike(subsystemHash, frameTimeMilliseconds, DefaultSubsystemHash);
         }
 
-        private static void PublishSystemDegradationWarning(float deltaTime)
+        private static float RecordFrameTimeSample(float deltaTime)
         {
-            int frame = Time.frameCount;
-            if (_lastDegradationReportFrame == frame)
-                return;
+            float previous = 0f;
+            if (_frameTimeSampleCount >= FrameTimeSampleCount)
+            {
+                previous = _frameTimeSamples[_frameTimeSampleIndex];
+            }
+            else
+            {
+                _frameTimeSampleCount++;
+            }
 
-            _lastDegradationReportFrame = frame;
-            float frameTimeMilliseconds = deltaTime * 1000f;
-            PerformanceEvents.RaiseSystemDegradation(
-                frameTimeMilliseconds,
-                WarningThresholdSeconds * 1000f,
-                frame);
-            GlobalTelemetryBus.PublishSystemDegradation(SustainedFrameWarningHash, 0u, frameTimeMilliseconds);
+            _frameTimeSamples[_frameTimeSampleIndex] = deltaTime;
+            _frameTimeSumSeconds += deltaTime - previous;
+            _frameTimeSampleIndex++;
+            if (_frameTimeSampleIndex >= FrameTimeSampleCount)
+                _frameTimeSampleIndex = 0;
+
+            return _frameTimeSumSeconds * InvFrameTimeSampleCount;
         }
 
-        private static void ActivateSystemDegradation(float deltaTime, bool critical)
+        private static void DispatchScalabilityIfNeeded(float deltaTime, float averageFrameTimeSeconds)
         {
-            if (_systemDegradationActive)
+            bool criticalAverage = averageFrameTimeSeconds > CriticalAverageThresholdSeconds;
+            _criticalAverageSeconds = math.select(0f, _criticalAverageSeconds + deltaTime, criticalAverage);
+
+            if (_criticalAverageSeconds >= CriticalSustainSeconds)
+            {
+                TrySwitchScalability(
+                    MathLodMode.Low,
+                    SustainedFrameCriticalHash,
+                    DegradeDisableDistantFloraMask |
+                    DegradeHalfParticleEmissionMask |
+                    DegradeDisableVoxelAoMask |
+                    DegradeMathLodLowMask |
+                    DegradeCriticalLevelMask,
+                    averageFrameTimeSeconds * 1000f,
+                    CriticalAverageThresholdSeconds * 1000f,
+                    SystemDegradationLevel.Critical);
+                return;
+            }
+
+            if (averageFrameTimeSeconds < OptimalAverageThresholdSeconds)
+            {
+                TrySwitchScalability(
+                    MathLodMode.High,
+                    SustainedFrameOptimalHash,
+                    DegradeMathLodHighMask,
+                    averageFrameTimeSeconds * 1000f,
+                    OptimalAverageThresholdSeconds * 1000f,
+                    SystemDegradationLevel.Optimal);
+            }
+        }
+
+        private static void TrySwitchScalability(
+            MathLodMode targetMode,
+            uint reasonHash,
+            uint actionMask,
+            float frameTimeMilliseconds,
+            float thresholdMilliseconds,
+            SystemDegradationLevel degradationLevel)
+        {
+            if (_shaderLodPushed && _mathLodMode == targetMode)
                 return;
 
-            _systemDegradationActive = true;
-            _particleEmissionScale = ThermalParticleSpawnScale;
-            _voxelAoEnabled = false;
+            float now = Time.unscaledTime;
+            if (_shaderLodPushed && now - _lastScalabilitySwitchTimeSeconds < ScalabilityCooldownSeconds)
+                return;
 
-            float frameTimeMilliseconds = deltaTime * 1000f;
-            const uint actionMask =
-                DegradeDisableDistantFloraMask |
-                DegradeHalfParticleEmissionMask |
-                DegradeDisableVoxelAoMask |
-                DegradeCriticalLevelMask;
-
+            bool lowMode = targetMode == MathLodMode.Low;
+            _mathLodMode = targetMode;
+            _shaderLodPushed = true;
+            _lastScalabilitySwitchTimeSeconds = now;
+            _systemDegradationActive = lowMode;
+            _particleEmissionScale = math.select(FullParticleSpawnScale, ThermalParticleSpawnScale, lowMode);
+            _voxelAoEnabled = !lowMode;
+            if (lowMode)
+                GlobalRegistry.BeginMathPrecisionDegradation(Time.frameCount);
+            else
+                GlobalRegistry.RegisterMathPrecisionLevel(MathPrecisionLevel.High);
+            DistanceMath.PushShaderMathLod(targetMode);
             PerformanceEvents.RaiseSystemDegradation(
                 frameTimeMilliseconds,
-                (critical ? CriticalThresholdSeconds : WarningThresholdSeconds) * 1000f,
-                Time.frameCount);
-            GlobalTelemetryBus.PublishSystemDegradation(SustainedFrameCriticalHash, actionMask, frameTimeMilliseconds);
+                thresholdMilliseconds,
+                Time.frameCount,
+                degradationLevel);
+            GlobalTelemetryBus.PublishSystemDegradation(reasonHash, actionMask, frameTimeMilliseconds);
+        }
+
+        private static void PushInitialScalabilityFromHardwareTier()
+        {
+            MathLodMode targetMode = ResolveHardwareMathLodMode();
+            bool lowMode = targetMode == MathLodMode.Low;
+            _mathLodMode = targetMode;
+            _shaderLodPushed = true;
+            _lastScalabilitySwitchTimeSeconds = Time.unscaledTime;
+            _systemDegradationActive = lowMode;
+            _particleEmissionScale = math.select(FullParticleSpawnScale, ThermalParticleSpawnScale, lowMode);
+            _voxelAoEnabled = !lowMode;
+            GlobalRegistry.RegisterMathPrecisionLevel(lowMode ? MathPrecisionLevel.Low : MathPrecisionLevel.High);
+            DistanceMath.PushShaderMathLod(targetMode);
+        }
+
+        private static MathLodMode ResolveHardwareMathLodMode()
+        {
+            return DistanceMath.ResolveMathLodMode(GlobalRegistry.ScalabilityTier);
         }
 
         private static void PublishDrawCallEstimateIfPresent()

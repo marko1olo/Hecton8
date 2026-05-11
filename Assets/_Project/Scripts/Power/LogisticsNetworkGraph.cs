@@ -232,6 +232,9 @@ namespace Hecton8.Power
             public int NodeCount;
             public int EdgeCount;
             public int ConsumerCount;
+            public int SolveStartNode;
+            public int SolveNodeCount;
+            public byte RelaxationSliceOnly;
 
             public NativeArray<LogisticsNode> Nodes;
 
@@ -275,6 +278,15 @@ namespace Hecton8.Power
 
             public void Execute()
             {
+                if (RelaxationSliceOnly != 0)
+                {
+                    int topologyCycleCount = TopologySummaryBuffer.IsCreated && TopologySummaryBuffer.Length > 0
+                        ? TopologySummaryBuffer[0].CycleCount
+                        : 0;
+                    ApplyJacobiPowerRelaxation(topologyCycleCount);
+                    return;
+                }
+
                 TopologySummary topology = new TopologySummary
                 {
                     NodeCount = NodeCount,
@@ -632,13 +644,23 @@ namespace Hecton8.Power
                     return;
                 }
 
-                for (int nodeIndex = 0; nodeIndex < NodeCount; nodeIndex++)
+                bool initializePotentialBuffers = RelaxationSliceOnly == 0;
+                if (initializePotentialBuffers)
                 {
-                    float sourcePotential = NodeSourcePotential[nodeIndex];
-                    PotentialFront[nodeIndex] = sourcePotential > Epsilon
-                        ? math.max(0f, sourcePotential)
-                        : math.max(0f, Nodes[nodeIndex].Potential);
+                    for (int nodeIndex = 0; nodeIndex < NodeCount; nodeIndex++)
+                    {
+                        float sourcePotential = NodeSourcePotential[nodeIndex];
+                        float initialPotential = sourcePotential > Epsilon
+                            ? math.max(0f, sourcePotential)
+                            : math.max(0f, Nodes[nodeIndex].Potential);
+                        PotentialFront[nodeIndex] = initialPotential;
+                        PotentialBack[nodeIndex] = initialPotential;
+                    }
                 }
+
+                ResolveSolveWindow(out int solveStartNode, out int solveEndNode);
+                if (solveEndNode <= solveStartNode)
+                    return;
 
                 NativeArray<float> input = PotentialFront;
                 NativeArray<float> output = PotentialBack;
@@ -647,7 +669,7 @@ namespace Hecton8.Power
                     : RadialJacobiRelaxationIterations;
                 for (int iteration = 0; iteration < iterationBudget; iteration++)
                 {
-                    for (int nodeIndex = 0; nodeIndex < NodeCount; nodeIndex++)
+                    for (int nodeIndex = solveStartNode; nodeIndex < solveEndNode; nodeIndex++)
                     {
                         LogisticsNode node = Nodes[nodeIndex];
                         if ((node.Flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Ruptured)) != 0)
@@ -681,7 +703,11 @@ namespace Hecton8.Power
                         float nextPotential = inverseConductanceSum > 0f
                             ? (weightedNeighborPotential + injectionWatts) * inverseConductanceSum
                             : math.max(0f, injectionWatts);
-                        output[nodeIndex] = math.max(0f, nextPotential);
+                        float currentPotential = math.max(0f, input[nodeIndex]);
+                        float dampedPotential =
+                            (currentPotential * JacobiDampingRetainedPotential) +
+                            (math.max(0f, nextPotential) * JacobiDampingOmega);
+                        output[nodeIndex] = dampedPotential;
                     }
 
                     NativeArray<float> swap = input;
@@ -689,15 +715,17 @@ namespace Hecton8.Power
                     output = swap;
                 }
 
-                for (int nodeIndex = 0; nodeIndex < NodeCount; nodeIndex++)
+                for (int nodeIndex = solveStartNode; nodeIndex < solveEndNode; nodeIndex++)
                 {
                     LogisticsNode node = Nodes[nodeIndex];
                     node.Potential = input[nodeIndex];
                     node.CurrentLoad = math.max(node.CurrentLoad, math.abs(NodeNetInjection[nodeIndex]));
                     Nodes[nodeIndex] = node;
+                    PotentialFront[nodeIndex] = input[nodeIndex];
+                    PotentialBack[nodeIndex] = input[nodeIndex];
                 }
 
-                for (int sourceNodeIndex = 0; sourceNodeIndex < NodeCount; sourceNodeIndex++)
+                for (int sourceNodeIndex = solveStartNode; sourceNodeIndex < solveEndNode; sourceNodeIndex++)
                 {
                     int edgeStart = EdgeOffsets[sourceNodeIndex];
                     int edgeEnd = EdgeOffsets[sourceNodeIndex + 1];
@@ -741,6 +769,21 @@ namespace Hecton8.Power
                         AccumulateNodeLoad(sourceNodeIndex, absFlow);
                         AccumulateNodeLoad(destinationNodeIndex, absFlow);
                     }
+                }
+            }
+
+            private void ResolveSolveWindow(out int solveStartNode, out int solveEndNode)
+            {
+                solveStartNode = math.clamp(SolveStartNode, 0, math.max(0, NodeCount));
+                int requestedNodeCount = SolveNodeCount > 0
+                    ? SolveNodeCount
+                    : NodeCount;
+                requestedNodeCount = math.min(requestedNodeCount, NodeCount);
+                solveEndNode = math.min(NodeCount, solveStartNode + requestedNodeCount);
+                if (solveEndNode <= solveStartNode && NodeCount > 0)
+                {
+                    solveStartNode = 0;
+                    solveEndNode = math.min(NodeCount, requestedNodeCount);
                 }
             }
 
@@ -1021,8 +1064,12 @@ namespace Hecton8.Power
         private const int ParallelNodeBatchSize = 64;
         private const int RadialJacobiRelaxationIterations = 1;
         private const int LoopedJacobiRelaxationIterations = 2;
+        private const int AdaptiveSolveNodeThreshold = 500;
+        private const int AdaptiveSolveNodesPerFrame = 250;
         private const float MinResistance = 0.0001f;
         private const float Epsilon = 0.001f;
+        private const float JacobiDampingOmega = 0.6f;
+        private const float JacobiDampingRetainedPotential = 1f - JacobiDampingOmega;
         private const float RuptureFlowMultiplier = 1.15f;
         private const string NativeMemoryOwner = nameof(LogisticsNetworkGraph);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
@@ -1086,6 +1133,10 @@ namespace Hecton8.Power
         private bool _publishNodeStatesPending;
         private TopologySummary _committedTopologySummary;
         private DistributionSummary _committedDistributionSummary;
+        private int _adaptiveSolveCursor;
+        private int _adaptiveSolveRemainingNodes;
+        private int _scheduledSolveNodeCount;
+        private bool _scheduledAdaptiveSolveSlice;
         private bool _buildOpen;
 
         public LogisticsNetworkGraph(int nodeCapacity = 16, int edgeCapacity = 32, int consumerCapacity = 16)
@@ -1176,6 +1227,7 @@ namespace Hecton8.Power
         public int ConsumerCount => _consumers.IsCreated ? _consumers.Length : 0;
         public bool HasPendingEvaluation => _evaluateGraphPending;
         public bool HasPendingNodeStatePublish => _publishNodeStatesPending;
+        public bool UsesAdaptiveEvaluation => _nodeCount > AdaptiveSolveNodeThreshold;
 
         public NativeArray<byte>.ReadOnly GetEdgeStatesReadOnly()
         {
@@ -1288,6 +1340,10 @@ namespace Hecton8.Power
             _publishNodeStatesJobHandle = default;
             _evaluateGraphPending = false;
             _publishNodeStatesPending = false;
+            _adaptiveSolveCursor = 0;
+            _adaptiveSolveRemainingNodes = 0;
+            _scheduledSolveNodeCount = 0;
+            _scheduledAdaptiveSolveSlice = false;
             _buildOpen = false;
 
             return JobHandle.CombineDependencies(evaluationHandle, publishHandle);
@@ -1609,6 +1665,10 @@ namespace Hecton8.Power
             if (_runtimeConductiveEdgeCount.IsCreated)
                 _runtimeConductiveEdgeCount[0] = _conductiveEdgeCount;
 
+            _adaptiveSolveCursor = 0;
+            _adaptiveSolveRemainingNodes = 0;
+            _scheduledSolveNodeCount = 0;
+            _scheduledAdaptiveSolveSlice = false;
             _buildOpen = false;
         }
 
@@ -1821,6 +1881,10 @@ namespace Hecton8.Power
             if (_evaluateGraphPending)
                 return _evaluateGraphJobHandle;
 
+            _adaptiveSolveRemainingNodes = 0;
+            _scheduledSolveNodeCount = 0;
+            _scheduledAdaptiveSolveSlice = false;
+
             int runtimeConductiveEdgeCount = _runtimeConductiveEdgeCount.IsCreated
                 ? _runtimeConductiveEdgeCount[0]
                 : _conductiveEdgeCount;
@@ -1833,12 +1897,22 @@ namespace Hecton8.Power
             EnsureWorkingCapacity(_nodeCount, ConsumerCount);
             EnsureSummaryBuffers();
 
+            return ScheduleEvaluationSlice(relaxationSliceOnly: false);
+        }
+
+        private JobHandle ScheduleEvaluationSlice(bool relaxationSliceOnly)
+        {
+            ResolveAdaptiveSolveWindow(out int solveStartNode, out int solveNodeCount);
+
             EvaluateGraphJob job = new EvaluateGraphJob
             {
                 NetworkType = _networkType,
                 NodeCount = _nodeCount,
                 EdgeCount = _edgeCount,
                 ConsumerCount = ConsumerCount,
+                SolveStartNode = solveStartNode,
+                SolveNodeCount = solveNodeCount,
+                RelaxationSliceOnly = relaxationSliceOnly ? (byte)1 : (byte)0,
                 Nodes = _nodeBuffer,
                 EdgeOffsets = _edgeOffsets,
                 EdgeDestinations = _edgeDestinations,
@@ -1883,11 +1957,49 @@ namespace Hecton8.Power
             return _evaluateGraphJobHandle;
         }
 
+        private void ResolveAdaptiveSolveWindow(out int solveStartNode, out int solveNodeCount)
+        {
+            solveStartNode = 0;
+            solveNodeCount = _nodeCount;
+            _scheduledAdaptiveSolveSlice = false;
+            _scheduledSolveNodeCount = solveNodeCount;
+
+            if (_nodeCount <= AdaptiveSolveNodeThreshold)
+            {
+                _adaptiveSolveCursor = 0;
+                _adaptiveSolveRemainingNodes = 0;
+                return;
+            }
+
+            if (_adaptiveSolveCursor < 0 || _adaptiveSolveCursor >= _nodeCount)
+                _adaptiveSolveCursor = 0;
+            if (_adaptiveSolveRemainingNodes <= 0 || _adaptiveSolveRemainingNodes > _nodeCount)
+                _adaptiveSolveRemainingNodes = _nodeCount;
+
+            int contiguousNodeCount = _nodeCount - _adaptiveSolveCursor;
+            solveStartNode = _adaptiveSolveCursor;
+            solveNodeCount = math.min(
+                AdaptiveSolveNodesPerFrame,
+                math.min(contiguousNodeCount, _adaptiveSolveRemainingNodes));
+            if (solveNodeCount <= 0)
+            {
+                solveStartNode = 0;
+                solveNodeCount = math.min(AdaptiveSolveNodesPerFrame, _nodeCount);
+            }
+
+            _scheduledAdaptiveSolveSlice = true;
+            _scheduledSolveNodeCount = solveNodeCount;
+        }
+
         private void CommitNoEdgeEvaluation()
         {
             EnsureSummaryBuffers();
             if (_runtimeConductiveEdgeCount.IsCreated)
                 _runtimeConductiveEdgeCount[0] = 0;
+            _adaptiveSolveCursor = 0;
+            _adaptiveSolveRemainingNodes = 0;
+            _scheduledSolveNodeCount = 0;
+            _scheduledAdaptiveSolveSlice = false;
             ResetNoEdgeRuntimeState();
 
             float totalGeneration = ComputeTotalGeneration();
@@ -1974,6 +2086,31 @@ namespace Hecton8.Power
 
             _evaluateGraphJobHandle = default;
             _evaluateGraphPending = false;
+            if (_scheduledAdaptiveSolveSlice)
+            {
+                int completedNodeCount = math.max(0, _scheduledSolveNodeCount);
+                _adaptiveSolveRemainingNodes = math.max(0, _adaptiveSolveRemainingNodes - completedNodeCount);
+                _adaptiveSolveCursor += completedNodeCount;
+                if (_adaptiveSolveCursor >= _nodeCount)
+                    _adaptiveSolveCursor = 0;
+
+                int runtimeConductiveEdgeCount = _runtimeConductiveEdgeCount.IsCreated
+                    ? _runtimeConductiveEdgeCount[0]
+                    : _conductiveEdgeCount;
+                if (runtimeConductiveEdgeCount <= 0)
+                    _adaptiveSolveRemainingNodes = 0;
+
+                if (_adaptiveSolveRemainingNodes > 0 && completedNodeCount > 0)
+                {
+                    ScheduleEvaluationSlice(relaxationSliceOnly: true);
+                    return false;
+                }
+
+                _adaptiveSolveRemainingNodes = 0;
+                _scheduledSolveNodeCount = 0;
+                _scheduledAdaptiveSolveSlice = false;
+            }
+
             CommitScheduledEvaluation();
             return true;
         }

@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Hecton8.Narrative;
+using Hecton8.Core.Contracts;
 using Hecton.Localization;
+using Hecton8.Narrative;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -897,7 +898,10 @@ namespace Hecton8.SaveSystem
         private static bool EnsureConstruction(ref ConstructionDTO dto, int sourceVersion, List<string> steps)
         {
             bool changed = false;
-            if (dto.modules == null || dto.modules.Length < ConstructionDTO.MaxModules)
+            if (dto.modules == null || dto.modules.Length < ConstructionDTO.MaxModules ||
+                dto.graphNodes == null || dto.graphNodes.Length < ConstructionDTO.MaxModules ||
+                dto.graphEdges == null || dto.graphEdges.Length < ConstructionDTO.MaxGraphEdges ||
+                dto.moduleBlitRecords == null || dto.moduleBlitRecords.Length < ConstructionDTO.MaxModules)
             {
                 dto.EnsureCapacity();
                 changed = true;
@@ -910,6 +914,14 @@ namespace Hecton8.SaveSystem
                 dto.moduleCount = clamped;
                 changed = true;
                 steps.Add("construction count clamped");
+            }
+
+            int clampedBlitCount = math.clamp(dto.moduleBlitCount, 0, dto.moduleBlitRecords != null ? dto.moduleBlitRecords.Length : 0);
+            if (clampedBlitCount != dto.moduleBlitCount)
+            {
+                dto.moduleBlitCount = clampedBlitCount;
+                changed = true;
+                steps.Add("construction blit count clamped");
             }
 
             if (sourceVersion < 2 && dto.modules != null)
@@ -929,7 +941,35 @@ namespace Hecton8.SaveSystem
                     steps.Add("legacy construction integrity restored");
             }
 
+            if (sourceVersion < 63 && dto.modules != null)
+            {
+                bool repairedHealth = false;
+                for (int i = 0; i < dto.moduleCount; i++)
+                {
+                    ModuleDTO module = dto.modules[i];
+                    byte health = PackLegacyConstructionHealthByte(module.integrity);
+                    if (module.health != health)
+                    {
+                        module.health = health;
+                        dto.modules[i] = module;
+                        repairedHealth = true;
+                        changed = true;
+                    }
+                }
+
+                if (repairedHealth)
+                    steps.Add("construction health mirror repaired");
+            }
+
             return changed;
+        }
+
+        private static byte PackLegacyConstructionHealthByte(float integrity)
+        {
+            if (!math.isfinite(integrity) || integrity <= 0f)
+                return 0;
+
+            return (byte)math.clamp((int)math.round(math.saturate(integrity * 0.01f) * 255f), 0, 255);
         }
 
         private static bool EnsureProceduralWorldState(ref ProceduralWorldStateDTO dto, List<string> steps)

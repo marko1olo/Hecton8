@@ -169,7 +169,7 @@ Material:
     - _DitherScale: 4
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _EclipseOcclusion: 0
+    - _EclipseOcclusion: 1
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
     - _FlowStrength: 0
@@ -178,17 +178,17 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _HazeFalloff: 2.8996334
-    - _HazeIntensity: 0.4449695
-    - _HazeSunTintStrength: 0.31527716
+    - _HazeFalloff: 3.5110283
+    - _HazeIntensity: 0.36209014
+    - _HazeSunTintStrength: 0.2182706
     - _HighCloudOpacity: 0.82
     - _HighCloudParallaxStrength: 0
     - _HighCloudSpeedMult: 0.08
-    - _HorizonMistShelfHeight: 0.17886211
-    - _HorizonMistShelfIntensity: 0.57051307
-    - _HorizonMistShelfSoftness: 0.106744386
+    - _HorizonMistShelfHeight: 0.17180027
+    - _HorizonMistShelfIntensity: 0.50827193
+    - _HorizonMistShelfSoftness: 0.10300976
     - _Metallic: 0
-    - _NightBlend: 0.5
+    - _NightBlend: 1
     - _OcclusionStrength: 1
     - _OverlayAlpha: 1
     - _OverlayDiscInnerDot: 0.9214169
@@ -202,14 +202,14 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
-    - _StarIntensity: 0.5
+    - _StarIntensity: 1
     - _StarIntensityMax: 2
     - _StarSeed: 99173
     - _StarSkyExposure: 1.5
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.001
-    - _SunElevation: 0
+    - _SunElevation: 0.558503
     - _SunScatterIntensity: 1.1
     - _SunScatterPower: 10.4
     - _SunSize: 0.002
@@ -232,14 +232,14 @@ Material:
     - _CloudTiling: {r: 0.1, g: 0.15, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _HazeColor: {r: 0.7373393, g: 0.42671964, b: 0.32620284, a: 1}
+    - _HazeColor: {r: 0.16132234, g: 0.16296975, b: 0.19198588, a: 1}
     - _HighCloudColor: {r: 0.76, g: 0.78, b: 0.9, a: 1}
     - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
     - _NightCloudColor: {r: 0.0256, g: 0.018000001, b: 0.0528, a: 1}
     - _RotationAxis: {r: 1, g: 0.3, b: 0, a: 0}
-    - _SkyColorHorizon: {r: 0.88314396, g: 0.45295542, b: 0.27099073, a: 1}
-    - _SkyColorNadir: {r: 0.06, g: 0.04, b: 0.1, a: 1}
-    - _SkyColorZenith: {r: 0.24, g: 0.16, b: 0.38, a: 1}
+    - _SkyColorHorizon: {r: 0.08687343, g: 0.06830372, b: 0.11231211, a: 1}
+    - _SkyColorNadir: {r: 0.005, g: 0.003, b: 0.01, a: 1}
+    - _SkyColorZenith: {r: 0.01, g: 0.005, b: 0.03, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _StarColor: {r: 1, g: 1, b: 1, a: 1}
     - _StarTiling: {r: 1, g: 1, b: 0, a: 0}

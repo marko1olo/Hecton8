@@ -3033,7 +3033,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            float inverseSampleDiameter = 1f / (resolvedSampleDistance * 2f);
+            float inverseSampleDiameter = math.rcp(resolvedSampleDistance * 2f);
             float gradientX = (heightPosX - heightNegX) * inverseSampleDiameter;
             float gradientZ = (heightPosZ - heightNegZ) * inverseSampleDiameter;
             float normalLengthSq = 1f + (gradientX * gradientX) + (gradientZ * gradientZ);
@@ -4499,8 +4499,10 @@ namespace Hecton8.World
             if (localX < 0f || localZ < 0f || localX > terrainSize.x || localZ > terrainSize.z)
                 return false;
 
-            float normalizedX = math.saturate(localX / math.max(0.01f, terrainSize.x));
-            float normalizedZ = math.saturate(localZ / math.max(0.01f, terrainSize.z));
+            float terrainSizeInvX = math.rcp(math.max(0.01f, terrainSize.x));
+            float terrainSizeInvZ = math.rcp(math.max(0.01f, terrainSize.z));
+            float normalizedX = math.saturate(localX * terrainSizeInvX);
+            float normalizedZ = math.saturate(localZ * terrainSizeInvZ);
             int alphaX = math.clamp((int)math.floor(normalizedX * alphamapResolution), 0, alphamapResolution - 1);
             int alphaZ = math.clamp((int)math.floor(normalizedZ * alphamapResolution), 0, alphamapResolution - 1);
             int maskIndex = (alphaZ * alphamapResolution) + alphaX;
@@ -4863,8 +4865,9 @@ namespace Hecton8.World
             int x1 = math.min(heightResolution - 1, centerX + 1);
             int z0 = math.max(0, centerZ - 1);
             int z1 = math.min(heightResolution - 1, centerZ + 1);
-            float dx = math.max(0.001f, (x1 - x0) * (terrainSize.x / math.max(1f, heightResolution - 1)));
-            float dz = math.max(0.001f, (z1 - z0) * (terrainSize.z / math.max(1f, heightResolution - 1)));
+            float invHeightResolutionMinusOne = math.rcp(math.max(1f, heightResolution - 1));
+            float dx = math.max(0.001f, (x1 - x0) * terrainSize.x * invHeightResolutionMinusOne);
+            float dz = math.max(0.001f, (z1 - z0) * terrainSize.z * invHeightResolutionMinusOne);
             float heightScale = terrainSize.y * (1f / 65535f);
             float hLeft = heights[(centerZ * heightResolution) + x0] * heightScale;
             float hRight = heights[(centerZ * heightResolution) + x1] * heightScale;
@@ -6268,7 +6271,9 @@ namespace Hecton8.World
 
         private void ReleaseChunkPayloadStorage(ChunkPayload payload)
         {
-            _chunkPayloadUsedBytes = Math.Max(0L, _chunkPayloadUsedBytes - GetChunkPayloadStorageBytes(payload));
+            _chunkPayloadUsedBytes -= GetChunkPayloadStorageBytes(payload);
+            if (_chunkPayloadUsedBytes < 0L)
+                _chunkPayloadUsedBytes = 0L;
 
             FreeChunkSliceForPayload(isSurface: true, payload);
             FreeChunkSliceForPayload(isSurface: false, payload);

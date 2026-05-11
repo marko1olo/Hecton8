@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Win32.SafeHandles;
 using Hecton8.Core;
 using Hecton8.Quest;
@@ -33,6 +34,9 @@ namespace Hecton8.SaveSystem
         private const int DiskFlushQueueCapacity = 32;
         private const int ReadWindowCount = 4;
         private const int ReadWindowSizeBytes = 1024 * 1024;
+        private const int ReadWindowPrefetchThresholdBytes = 256 * 1024;
+        private const int ReadPrefetchQueueCapacity = 16;
+        private const int OsAllocationGranularityBytes = 64 * 1024;
 
         private static readonly object s_flushLock = new object();
         private static readonly AutoResetEvent s_flushSignal = new AutoResetEvent(false);
@@ -45,6 +49,13 @@ namespace Hecton8.SaveSystem
         private static readonly object s_readWindowLock = new object();
         private static readonly CachedReadWindow[] s_readWindows = new CachedReadWindow[ReadWindowCount];
         private static int s_readWindowClock;
+        private static readonly object s_readPrefetchLock = new object();
+        private static readonly AutoResetEvent s_readPrefetchSignal = new AutoResetEvent(false);
+        private static readonly ReadPrefetchRequest[] s_readPrefetchQueue = new ReadPrefetchRequest[ReadPrefetchQueueCapacity];
+        private static int s_readPrefetchReadIndex;
+        private static int s_readPrefetchWriteIndex;
+        private static int s_readPrefetchCount;
+        private static int s_readPrefetchWorkerStarted;
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool DeviceIoControl(
@@ -63,6 +74,13 @@ namespace Hecton8.SaveSystem
             public long ByteCount;
         }
 
+        private struct ReadPrefetchRequest
+        {
+            public string AbsolutePath;
+            public long WindowOffset;
+            public long FileLength;
+        }
+
         private struct CachedReadWindow
         {
             public string AbsolutePath;
@@ -73,6 +91,7 @@ namespace Hecton8.SaveSystem
             public byte* ViewPointer;
             public long WindowOffset;
             public long WindowLength;
+            public long FileLength;
             public int LastUse;
 
             public bool IsCreated => Accessor != null;
@@ -151,6 +170,16 @@ namespace Hecton8.SaveSystem
                     }
                 }
             }
+
+            lock (s_readPrefetchLock)
+            {
+                for (int i = 0; i < s_readPrefetchCount; i++)
+                {
+                    int queueIndex = (s_readPrefetchReadIndex + i) % ReadPrefetchQueueCapacity;
+                    if (string.Equals(s_readPrefetchQueue[queueIndex].AbsolutePath, absolutePath, StringComparison.OrdinalIgnoreCase))
+                        s_readPrefetchQueue[queueIndex] = default;
+                }
+            }
         }
 
         internal static bool TryCopyFromCachedReadWindow(
@@ -170,25 +199,53 @@ namespace Hecton8.SaveSystem
             if (byteCount == 0)
                 return true;
 
+            if (!TryGetFileLength(absolutePath, out long fileLength, out error))
+                return false;
+
+            if (fileLength <= 0L || byteOffset > fileLength || byteCount > fileLength - byteOffset)
+            {
+                error = "Cached MMF read range exceeds file length.";
+                return false;
+            }
+
             lock (s_readWindowLock)
             {
-                int slotIndex = AcquireCachedReadWindowLocked(absolutePath, byteOffset, byteCount, out error);
-                if (slotIndex < 0)
-                    return false;
-
-                CachedReadWindow window = s_readWindows[slotIndex];
-                long sourceOffset = byteOffset - window.WindowOffset;
-                if (sourceOffset < 0L || sourceOffset > int.MaxValue)
+                byte* destinationBytes = (byte*)destination;
+                long sourceCursor = byteOffset;
+                int destinationCursor = 0;
+                int remaining = byteCount;
+                while (remaining > 0)
                 {
-                    error = "Cached MMF read offset exceeds the supported range.";
-                    return false;
-                }
+                    int slotIndex = AcquireCachedReadWindowLocked(absolutePath, sourceCursor, 1, fileLength, out error);
+                    if (slotIndex < 0)
+                        return false;
 
-                if (!UnsafeMemoryCopyGuard.TryMemCpy(destination, byteCount, window.ViewPointer + (int)sourceOffset, byteCount))
-                {
-                    error = "Cached MMF read copy exceeded destination bounds.";
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
-                    return false;
+                    CachedReadWindow window = s_readWindows[slotIndex];
+                    long sourceOffset = sourceCursor - window.WindowOffset;
+                    if (sourceOffset < 0L || sourceOffset > int.MaxValue)
+                    {
+                        error = "Cached MMF read offset exceeds the supported range.";
+                        return false;
+                    }
+
+                    long availableWindowBytes = window.WindowLength - sourceOffset;
+                    int chunkBytes = remaining < availableWindowBytes ? remaining : (int)availableWindowBytes;
+                    if (chunkBytes <= 0)
+                    {
+                        error = "Cached MMF read window produced an empty copy span.";
+                        return false;
+                    }
+
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationBytes + destinationCursor, byteCount - destinationCursor, window.ViewPointer + (int)sourceOffset, chunkBytes))
+                    {
+                        error = "Cached MMF read copy exceeded destination bounds.";
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
+                        return false;
+                    }
+
+                    sourceCursor += chunkBytes;
+                    destinationCursor += chunkBytes;
+                    remaining -= chunkBytes;
                 }
 
                 return true;
@@ -222,38 +279,64 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            lock (s_readWindowLock)
+            if (!TryGetFileLength(absolutePath, out long fileLength, out error))
+                return false;
+
+            if (fileLength <= 0L || byteOffset > fileLength || byteCountLong > fileLength - byteOffset)
             {
-                int slotIndex = AcquireCachedReadWindowLocked(absolutePath, byteOffset, (int)byteCountLong, out error);
-                if (slotIndex < 0)
-                    return false;
+                error = "Cached MMF GPU upload range exceeds file length.";
+                return false;
+            }
 
-                CachedReadWindow window = s_readWindows[slotIndex];
-                long sourceOffset = byteOffset - window.WindowOffset;
-                if (sourceOffset < 0L || sourceOffset > int.MaxValue)
+            NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
+            try
+            {
+                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                long destinationBytes = (long)mapped.Length * elementSize;
+                lock (s_readWindowLock)
                 {
-                    error = "Cached MMF GPU upload offset exceeds the supported range.";
-                    return false;
-                }
-
-                NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
-                try
-                {
-                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                    long destinationBytes = (long)mapped.Length * elementSize;
-                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, window.ViewPointer + (int)sourceOffset, byteCountLong))
+                    long sourceCursor = byteOffset;
+                    long destinationCursor = 0L;
+                    long remaining = byteCountLong;
+                    while (remaining > 0L)
                     {
-                        error = "Cached MMF GPU upload copy exceeded destination bounds.";
-                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
-                        return false;
+                        int slotIndex = AcquireCachedReadWindowLocked(absolutePath, sourceCursor, 1, fileLength, out error);
+                        if (slotIndex < 0)
+                            return false;
+
+                        CachedReadWindow window = s_readWindows[slotIndex];
+                        long sourceOffset = sourceCursor - window.WindowOffset;
+                        if (sourceOffset < 0L || sourceOffset > int.MaxValue)
+                        {
+                            error = "Cached MMF GPU upload offset exceeds the supported range.";
+                            return false;
+                        }
+
+                        long availableWindowBytes = window.WindowLength - sourceOffset;
+                        long chunkBytesLong = remaining < availableWindowBytes ? remaining : availableWindowBytes;
+                        if (chunkBytesLong <= 0L || chunkBytesLong > int.MaxValue)
+                        {
+                            error = "Cached MMF GPU upload window produced an invalid copy span.";
+                            return false;
+                        }
+
+                        if (!UnsafeMemoryCopyGuard.TryMemCpy((byte*)destinationPtr + destinationCursor, destinationBytes - destinationCursor, window.ViewPointer + (int)sourceOffset, chunkBytesLong))
+                        {
+                            error = "Cached MMF GPU upload copy exceeded destination bounds.";
+                            UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
+                            return false;
+                        }
+
+                        sourceCursor += chunkBytesLong;
+                        destinationCursor += chunkBytesLong;
+                        remaining -= chunkBytesLong;
                     }
                 }
-                finally
-                {
-                    destination.UnlockBufferAfterWrite<T>(safeCount);
-                }
-
                 return true;
+            }
+            finally
+            {
+                destination.UnlockBufferAfterWrite<T>(safeCount);
             }
         }
 
@@ -268,6 +351,14 @@ namespace Hecton8.SaveSystem
                 Name = "H8.SaveFlushQueue"
             };
             thread.Start();
+        }
+
+        private static void EnsureReadPrefetchWorker()
+        {
+            if (Interlocked.CompareExchange(ref s_readPrefetchWorkerStarted, 1, 0) != 0)
+                return;
+
+            Task.Run((Action)ReadPrefetchWorkerLoop);
         }
 
         private static void FlushWorkerLoop()
@@ -336,7 +427,53 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static int AcquireCachedReadWindowLocked(string absolutePath, long byteOffset, int byteCount, out string error)
+        private static void ReadPrefetchWorkerLoop()
+        {
+            while (true)
+            {
+                if (!TryDequeueReadPrefetch(out ReadPrefetchRequest request))
+                {
+                    s_readPrefetchSignal.WaitOne();
+                    continue;
+                }
+
+                if (string.IsNullOrEmpty(request.AbsolutePath) ||
+                    request.FileLength <= 0L ||
+                    request.WindowOffset < 0L ||
+                    request.WindowOffset >= request.FileLength)
+                {
+                    continue;
+                }
+
+                lock (s_readWindowLock)
+                {
+                    if (FindCachedReadWindowLocked(request.AbsolutePath, request.WindowOffset, 1) >= 0)
+                        continue;
+
+                    MapCachedReadWindowLocked(request.AbsolutePath, request.WindowOffset, 1, request.FileLength, out _, out _);
+                }
+            }
+        }
+
+        private static bool TryDequeueReadPrefetch(out ReadPrefetchRequest request)
+        {
+            lock (s_readPrefetchLock)
+            {
+                if (s_readPrefetchCount <= 0)
+                {
+                    request = default;
+                    return false;
+                }
+
+                request = s_readPrefetchQueue[s_readPrefetchReadIndex];
+                s_readPrefetchQueue[s_readPrefetchReadIndex] = default;
+                s_readPrefetchReadIndex = (s_readPrefetchReadIndex + 1) % ReadPrefetchQueueCapacity;
+                s_readPrefetchCount--;
+                return true;
+            }
+        }
+
+        private static int AcquireCachedReadWindowLocked(string absolutePath, long byteOffset, int byteCount, long fileLength, out string error)
         {
             error = string.Empty;
             if (byteCount < 0 || byteOffset < 0L)
@@ -345,6 +482,29 @@ namespace Hecton8.SaveSystem
                 return -1;
             }
 
+            if (fileLength <= 0L || byteOffset > fileLength || byteCount > fileLength - byteOffset)
+            {
+                error = "Cached MMF read range exceeds file length.";
+                return -1;
+            }
+
+            int existingSlotIndex = FindCachedReadWindowLocked(absolutePath, byteOffset, byteCount);
+            if (existingSlotIndex >= 0)
+            {
+                CachedReadWindow existingWindow = s_readWindows[existingSlotIndex];
+                QueuePredictiveReadWindowLocked(in existingWindow, byteOffset, byteCount);
+                return existingSlotIndex;
+            }
+
+            int mappedSlotIndex = MapCachedReadWindowLocked(absolutePath, byteOffset, byteCount, fileLength, out _, out error);
+            if (mappedSlotIndex >= 0)
+                QueuePredictiveReadWindowLocked(in s_readWindows[mappedSlotIndex], byteOffset, byteCount);
+
+            return mappedSlotIndex;
+        }
+
+        private static int FindCachedReadWindowLocked(string absolutePath, long byteOffset, int byteCount)
+        {
             for (int i = 0; i < s_readWindows.Length; i++)
             {
                 CachedReadWindow candidate = s_readWindows[i];
@@ -363,20 +523,35 @@ namespace Hecton8.SaveSystem
                 }
             }
 
-            if (!TryGetFileLength(absolutePath, out long fileLength, out error))
-                return -1;
+            return -1;
+        }
 
-            if (fileLength <= 0L || byteOffset > fileLength || byteCount > fileLength - byteOffset)
+        private static int MapCachedReadWindowLocked(
+            string absolutePath,
+            long byteOffset,
+            int byteCount,
+            long fileLength,
+            out long mappedWindowOffset,
+            out string error)
+        {
+            mappedWindowOffset = 0L;
+            error = string.Empty;
+            if (fileLength <= 0L || byteOffset < 0L || byteOffset > fileLength || byteCount < 0 || byteCount > fileLength - byteOffset)
             {
-                error = "Cached MMF read range exceeds file length.";
+                error = "Cached MMF map range exceeds file length.";
                 return -1;
             }
 
-            long windowOffset = (byteOffset / ReadWindowSizeBytes) * ReadWindowSizeBytes;
-            long requiredLength = (byteOffset - windowOffset) + byteCount;
-            long requestedWindowLength = requiredLength > ReadWindowSizeBytes ? requiredLength : ReadWindowSizeBytes;
+            long windowOffset = AlignReadWindowOffset(byteOffset);
             long remainingFileLength = fileLength - windowOffset;
-            long windowLength = requestedWindowLength < remainingFileLength ? requestedWindowLength : remainingFileLength;
+            long windowLength = remainingFileLength < ReadWindowSizeBytes ? remainingFileLength : ReadWindowSizeBytes;
+            if (windowLength <= 0L)
+            {
+                error = "Cached MMF map window is empty.";
+                return -1;
+            }
+
+            mappedWindowOffset = windowOffset;
             int slotIndex = SelectCachedReadWindowSlotLocked();
             DisposeCachedReadWindow(ref s_readWindows[slotIndex]);
 
@@ -386,7 +561,7 @@ namespace Hecton8.SaveSystem
             byte* acquiredPointer = null;
             try
             {
-                fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 4096, FileOptions.RandomAccess);
                 fileMapping = MemoryMappedFile.CreateFromFile(fileStream, null, fileLength, MemoryMappedFileAccess.Read, HandleInheritability.None, true);
                 accessor = fileMapping.CreateViewAccessor(windowOffset, windowLength, MemoryMappedFileAccess.Read);
                 accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref acquiredPointer);
@@ -401,6 +576,7 @@ namespace Hecton8.SaveSystem
                     ViewPointer = acquiredPointer + accessor.PointerOffset,
                     WindowOffset = windowOffset,
                     WindowLength = windowLength,
+                    FileLength = fileLength,
                     LastUse = ++s_readWindowClock
                 };
 
@@ -424,6 +600,68 @@ namespace Hecton8.SaveSystem
                 fileMapping?.Dispose();
                 fileStream?.Dispose();
             }
+        }
+
+        private static long AlignReadWindowOffset(long byteOffset)
+        {
+            long alignedToOs = (byteOffset / OsAllocationGranularityBytes) * OsAllocationGranularityBytes;
+            return (alignedToOs / ReadWindowSizeBytes) * ReadWindowSizeBytes;
+        }
+
+        private static void QueuePredictiveReadWindowLocked(in CachedReadWindow window, long byteOffset, int byteCount)
+        {
+            if (!window.IsCreated || window.FileLength <= 0L || byteCount <= 0)
+                return;
+
+            long requestEnd = byteOffset + byteCount;
+            long windowEnd = window.WindowOffset + window.WindowLength;
+            if (windowEnd >= window.FileLength ||
+                requestEnd < windowEnd - ReadWindowPrefetchThresholdBytes)
+            {
+                return;
+            }
+
+            long nextWindowOffset = AlignReadWindowOffset(windowEnd);
+            if (nextWindowOffset <= window.WindowOffset)
+                nextWindowOffset = window.WindowOffset + ReadWindowSizeBytes;
+
+            if (nextWindowOffset >= window.FileLength ||
+                FindCachedReadWindowLocked(window.AbsolutePath, nextWindowOffset, 1) >= 0)
+            {
+                return;
+            }
+
+            EnsureReadPrefetchWorker();
+            lock (s_readPrefetchLock)
+            {
+                for (int i = 0; i < s_readPrefetchCount; i++)
+                {
+                    int queueIndex = (s_readPrefetchReadIndex + i) % ReadPrefetchQueueCapacity;
+                    ReadPrefetchRequest queued = s_readPrefetchQueue[queueIndex];
+                    if (queued.WindowOffset == nextWindowOffset &&
+                        string.Equals(queued.AbsolutePath, window.AbsolutePath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return;
+                    }
+                }
+
+                if (s_readPrefetchCount == ReadPrefetchQueueCapacity)
+                {
+                    s_readPrefetchReadIndex = (s_readPrefetchReadIndex + 1) % ReadPrefetchQueueCapacity;
+                    s_readPrefetchCount--;
+                }
+
+                s_readPrefetchQueue[s_readPrefetchWriteIndex] = new ReadPrefetchRequest
+                {
+                    AbsolutePath = window.AbsolutePath,
+                    WindowOffset = nextWindowOffset,
+                    FileLength = window.FileLength
+                };
+                s_readPrefetchWriteIndex = (s_readPrefetchWriteIndex + 1) % ReadPrefetchQueueCapacity;
+                s_readPrefetchCount++;
+            }
+
+            s_readPrefetchSignal.Set();
         }
 
         private static int SelectCachedReadWindowSlotLocked()
@@ -547,46 +785,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            FileStream fileStream = null;
-            MemoryMappedFile memoryMappedFile = null;
-            MemoryMappedViewAccessor accessor = null;
-            byte* mappedPointer = null;
-            try
-            {
-                fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                long fileLength = fileStream.Length;
-
-                if (fileLength < byteCount)
-                {
-                    error = $"Native mapped read exceeded file length for '{absolutePath}'.";
-                    return false;
-                }
-
-                memoryMappedFile = MemoryMappedFile.CreateFromFile(fileStream, null, fileLength, MemoryMappedFileAccess.Read, HandleInheritability.None, true);
-                accessor = memoryMappedFile.CreateViewAccessor(0L, byteCount, MemoryMappedFileAccess.Read);
-                accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedPointer);
-                if (!UnsafeMemoryCopyGuard.SafeCopy(buffer, byteCount, mappedPointer + accessor.PointerOffset, byteCount))
-                {
-                    error = "Native mapped read exceeded destination bounds.";
-                    return false;
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                error = $"Memory-mapped read failed for '{absolutePath}': {ex.Message}";
-                return false;
-            }
-            finally
-            {
-                if (accessor != null && mappedPointer != null)
-                    accessor.SafeMemoryMappedViewHandle.ReleasePointer();
-
-                accessor?.Dispose();
-                memoryMappedFile?.Dispose();
-                fileStream?.Dispose();
-            }
+            return TryCopyFromCachedReadWindow(absolutePath, 0L, buffer, byteCount, out error);
         }
 
         internal static bool TryGetFileLength(string absolutePath, out long fileLength, out string error)

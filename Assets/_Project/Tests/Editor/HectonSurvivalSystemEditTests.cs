@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using Hecton8.Atmosphere;
 using Hecton8.Gameplay;
 using NUnit.Framework;
 using UnityEditor;
@@ -66,6 +67,142 @@ public sealed class HectonSurvivalSystemEditTests
         object result = method.Invoke(null, new object[] { 35f, 100f });
 
         Assert.That((float)result, Is.EqualTo(35f / 150f).Within(0.0001f));
+    }
+
+    [Test]
+    public void DaltonPressureSolver_SumsOxygenCarbonDioxideNitrogenAndWaterVapor()
+    {
+        MethodInfo method = GetPrivateStaticMethod(
+            typeof(SubmarineAtmosphereSystem),
+            "ResolveDaltonPressureKPa",
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float).MakeByRefType(),
+            typeof(float).MakeByRefType(),
+            typeof(float).MakeByRefType());
+
+        object[] args =
+        {
+            100f,
+            0.04f,
+            79.006f,
+            0f,
+            10f,
+            10f,
+            20f,
+            101.325f,
+            400f,
+            20f,
+            100f,
+            null,
+            null,
+            null
+        };
+
+        float pressure = (float)method.Invoke(null, args);
+
+        Assert.That(pressure, Is.EqualTo(101.325f).Within(0.01f));
+        Assert.That((float)args[11], Is.EqualTo(21.23f).Within(0.02f));
+        Assert.That((float)args[12], Is.EqualTo(0.0405f).Within(0.001f));
+        Assert.That((float)args[13], Is.EqualTo(80.05f).Within(0.03f));
+    }
+
+    [Test]
+    public void DaltonPressureSolver_CompressesGasWhenFloodVolumeReducesHeadspace()
+    {
+        MethodInfo method = GetPrivateStaticMethod(
+            typeof(SubmarineAtmosphereSystem),
+            "ResolveDaltonPressureKPa",
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float),
+            typeof(float).MakeByRefType(),
+            typeof(float).MakeByRefType(),
+            typeof(float).MakeByRefType());
+
+        object[] args =
+        {
+            100f,
+            0.04f,
+            79.006f,
+            0f,
+            10f,
+            5f,
+            20f,
+            101.325f,
+            400f,
+            20f,
+            100f,
+            null,
+            null,
+            null
+        };
+
+        float pressure = (float)method.Invoke(null, args);
+
+        Assert.That(pressure, Is.EqualTo(202.65f).Within(0.03f));
+        Assert.That((float)args[11], Is.EqualTo(42.46f).Within(0.04f));
+        Assert.That((float)args[12], Is.EqualTo(0.081f).Within(0.002f));
+        Assert.That((float)args[13], Is.EqualTo(160.10f).Within(0.06f));
+    }
+
+    [Test]
+    public void NitrogenTissueLoading_UsesExcessAscentAndDepthScale()
+    {
+        MethodInfo method = GetPrivateStaticMethod(
+            typeof(HectonSurvivalSystem),
+            "ResolveNitrogenBuildUpDelta",
+            typeof(float),
+            typeof(float),
+            typeof(float));
+
+        object result = method.Invoke(null, new object[] { 12f, 600f, 1f });
+
+        Assert.That((float)result, Is.EqualTo(42f).Within(0.0001f));
+    }
+
+    [Test]
+    public void ImmediateDecompressionGate_RequiresHundredMetersAndTenMetersPerSecond()
+    {
+        MethodInfo method = GetPrivateStaticMethod(
+            typeof(HectonSurvivalSystem),
+            "ShouldApplyImmediateDecompressionDamage",
+            typeof(float),
+            typeof(float));
+
+        Assert.That((bool)method.Invoke(null, new object[] { 10.1f, 100.1f }), Is.True);
+        Assert.That((bool)method.Invoke(null, new object[] { 9.9f, 100.1f }), Is.False);
+        Assert.That((bool)method.Invoke(null, new object[] { 10.1f, 99.9f }), Is.False);
+    }
+
+    [Test]
+    public void CrushDepthAccelerationDamage_FollowsPowerOnePointFive()
+    {
+        MethodInfo method = GetPrivateStaticMethod(
+            typeof(HectonSurvivalSystem),
+            "ResolveCrushDepthAccelerationDamage",
+            typeof(float));
+
+        object result = method.Invoke(null, new object[] { 16f });
+
+        Assert.That((float)result, Is.EqualTo(64f).Within(0.0001f));
     }
 
     [Test]

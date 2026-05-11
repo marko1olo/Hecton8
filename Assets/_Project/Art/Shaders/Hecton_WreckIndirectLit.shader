@@ -102,23 +102,14 @@ Shader "Hecton8/World/WreckIndirectLit"
             return (half)saturate(_HectonWreckAges[instanceID]);
         }
 
-        float3 SafeNormalize3(float3 value)
-        {
-            float lenSq = dot(value, value);
-            return lenSq > 0.0001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
-        }
-
         half3 ResolveWreckNormalCheap(float3 value)
         {
-            half3 normal = (half3)value;
-            half3 absNormal = abs(normal);
-            half invDominantAxis = rcp(max(max(absNormal.x, absNormal.y), max(absNormal.z, 0.0001h)));
-            return normal * invDominantAxis;
+            return (half3)HectonCoreLitSafeNormalize(value);
         }
 
         float3 TransformWreckNormal(float4x4 instanceMatrix, float3 normalOS)
         {
-            return SafeNormalize3(mul((float3x3)instanceMatrix, normalOS));
+            return (float3)ResolveWreckNormalCheap(mul((float3x3)instanceMatrix, normalOS));
         }
 
         Varyings Vert(Attributes input)

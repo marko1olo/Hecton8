@@ -25,6 +25,7 @@ using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.Modding;
 using Hecton8.Quest;
@@ -40,73 +41,6 @@ using UnityEditor;
 
 namespace Hecton8.Narrative
 {
-    /// <summary>
-    /// Fixed 1024-bit discovery mask for audio-log save persistence.
-    /// </summary>
-    internal static class AudioLogDiscoveryBitMaskEmbedded
-    {
-        public const int MaxLogCount = 1024;
-        public const int WordCount = 16;
-        public const int ByteCount = 128;
-
-        public static bool HasExpectedCapacity(long[] words)
-        {
-            return words != null && words.Length == WordCount;
-        }
-
-        public static void EnsureCapacity(ref long[] words)
-        {
-            if (HasExpectedCapacity(words))
-                return;
-
-            // COLD ALLOC: long[16] — 1024 packed audio-log discovery flags, exactly 128 bytes — owner: AudioLogDiscoveryBitMask
-            words = new long[WordCount];
-        }
-
-        public static void Clear(long[] words)
-        {
-            if (!HasExpectedCapacity(words))
-                return;
-
-            for (int i = 0; i < WordCount; i++)
-                words[i] = 0L;
-        }
-
-        public static bool HasAnySet(long[] words)
-        {
-            if (!HasExpectedCapacity(words))
-                return false;
-
-            for (int i = 0; i < WordCount; i++)
-            {
-                if (words[i] != 0L)
-                    return true;
-            }
-
-            return false;
-        }
-
-        public static bool IsSet(long[] words, int index)
-        {
-            if (!HasExpectedCapacity(words) || (uint)index >= MaxLogCount)
-                return false;
-
-            int wordIndex = index >> 6;
-            ulong bitMask = 1UL << (index & 63);
-            return (unchecked((ulong)words[wordIndex]) & bitMask) != 0UL;
-        }
-
-        public static void Set(long[] words, int index)
-        {
-            if (!HasExpectedCapacity(words) || (uint)index >= MaxLogCount)
-                return;
-
-            int wordIndex = index >> 6;
-            ulong bitMask = 1UL << (index & 63);
-            words[wordIndex] = unchecked((long)(unchecked((ulong)words[wordIndex]) | bitMask));
-        }
-    }
-
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-140)]
     public sealed class AudioLogSystem : MonoBehaviour, ISaveable, ISlowTickable
@@ -129,7 +63,7 @@ namespace Hecton8.Narrative
 
         private const int PlaybackQueueCapacity = 16;
         private const int EncryptedFragmentStateCapacity = 32;
-        private const int ResolvedLogHashCapacity = AudioLogDiscoveryBitMaskEmbedded.MaxLogCount;
+        private const int ResolvedLogHashCapacity = AudioLogDiscoveryBitMask.MaxLogCount;
         private const uint EncryptedLogCompleteMask = 0xFu;
         // COLD ALLOC: HashSet<uint>[1024] — discovered audio-log hashes per save — owner: AudioLogSystem
         private const string NativeMemoryOwner = nameof(AudioLogSystem);
@@ -1109,8 +1043,8 @@ namespace Hecton8.Narrative
                 data.audioLogDiscoveredIds = new List<string>(math.max(0, maxSavedLogs)); // COLD ALLOC: List<string>[maxSavedLogs] — fallback discovered audio-log save list — owner: AudioLogSystem
             else
                 data.audioLogDiscoveredIds.Clear();
-            AudioLogDiscoveryBitMaskEmbedded.EnsureCapacity(ref data.audioLogDiscoveryBitWords);
-            AudioLogDiscoveryBitMaskEmbedded.Clear(data.audioLogDiscoveryBitWords);
+            AudioLogDiscoveryBitMask.EnsureCapacity(ref data.audioLogDiscoveryBitWords);
+            AudioLogDiscoveryBitMask.Clear(data.audioLogDiscoveryBitWords);
             EnsureSaveEncryptedFragmentArrays(data);
             data.audioLogEncryptedFragmentCount = 0;
             int count = 0;
@@ -1123,7 +1057,7 @@ namespace Hecton8.Narrative
                     continue;
                 }
 
-                AudioLogDiscoveryBitMaskEmbedded.Set(data.audioLogDiscoveryBitWords, i);
+                AudioLogDiscoveryBitMask.Set(data.audioLogDiscoveryBitWords, i);
 
                 if (count < maxSavedLogs &&
                     _logLookupByHash.TryGetValue(logHash, out AudioLogData logData) &&
@@ -1191,16 +1125,16 @@ namespace Hecton8.Narrative
         private bool LoadDiscoveredLogsFromPackedBits(SaveData data)
         {
             if (data == null ||
-                !AudioLogDiscoveryBitMaskEmbedded.HasExpectedCapacity(data.audioLogDiscoveryBitWords) ||
-                !AudioLogDiscoveryBitMaskEmbedded.HasAnySet(data.audioLogDiscoveryBitWords))
+                !AudioLogDiscoveryBitMask.HasExpectedCapacity(data.audioLogDiscoveryBitWords) ||
+                !AudioLogDiscoveryBitMask.HasAnySet(data.audioLogDiscoveryBitWords))
             {
                 return false;
             }
 
-            int count = math.min(_resolvedLogHashCount, AudioLogDiscoveryBitMaskEmbedded.MaxLogCount);
+            int count = math.min(_resolvedLogHashCount, AudioLogDiscoveryBitMask.MaxLogCount);
             for (int i = 0; i < count; i++)
             {
-                if (!AudioLogDiscoveryBitMaskEmbedded.IsSet(data.audioLogDiscoveryBitWords, i))
+                if (!AudioLogDiscoveryBitMask.IsSet(data.audioLogDiscoveryBitWords, i))
                     continue;
 
                 uint logHash = _resolvedLogHashes[i];

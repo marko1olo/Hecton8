@@ -44,7 +44,7 @@ Fix class:
 | ID | Evidence |
 |---|---|
 | E01 | `ProjectSettings/ProjectVersion.txt`: Unity `6000.4.1f1`. |
-| E02 | Installed editor `6000.4.1f1` PlaybackEngines contains only `windowsstandalonesupport`. |
+| E02 | Installed editor `6000.4.1f1` PlaybackEngines contains `windowsstandalonesupport` and `LinuxStandaloneSupport`; Android/Mac/iOS/visionOS/tvOS/UWP/Web modules are not present in the direct filesystem scan. |
 | E03 | `Packages/manifest.json`: Addressables `2.7.6`, Input System `1.19.0`, Memory Profiler `1.1.12`, URP `17.4.0`. |
 | E04 | `Packages/manifest.json`: no `com.unity.xr.management`, no `com.unity.xr.openxr`. |
 | E05 | `ProjectSettings/XRSettings.asset`: only legacy `VR Device Disabled/User Alert` keys. |
@@ -67,18 +67,20 @@ Fix class:
 | E22 | Input action asset has an `XR` control scheme and generic `<XRController>` bindings. |
 | E23 | `InputSystem.inputsettings.asset`: supported devices list is empty; update mode is dynamic update. |
 | E24 | First-party static grep: `Debug.Log` 1750 hits in 419 files; `GetComponent<` 617 hits in 184 files; `.material/.materials` 111 hits in 25 files; `MemoryMappedFiles` 6 hits; `DllImport` 8 hits. Static scan only; runtime impact unproven. |
-| E25 | Latest proof artifact is Core `.NET` compile only, not Unity Console/Play Mode/profiler/player proof. |
+| E25 | Fresh Windows Editor-context Unity proof exists: `CodexArtifacts/2026-05-11_PLATFORM_UNITY_AUDIT_R14_FINAL.log` exited `0`, wrote the platform audit report, and contains no `error CS`, `Burst error`, `BC0101`, `Tundra build failed`, `Scripts have compiler errors`, or `Unhandled Exception` in strict scan. |
 | E26 | `ProjectSettings/MemorySettings.asset`: platform memory settings map is empty/default. |
 | E27 | Burst AOT settings file exists for Standalone Windows only. |
 | E28 | `EditorBuildSettings.asset`: production scene order is `00_BOOTSTRAP`, `01_MAIN_MENU`, `02_HECTON_WORLD`. |
 | E29 | Official Unity 6.4 docs: Windows player floor is Windows 10 21H1 build 19043; macOS player floor is macOS 12; Linux player docs list Ubuntu 22.04/24.04; Android player floor is API 25. |
+| E30 | `CodexArtifacts/2026-05-11_PLATFORM_UNITY_IMPORT_R10_POST_AUDIT.log` exited `0` and logged `Exiting batchmode successfully now!` plus `Application will terminate with return code 0`; strict scan found no compiler/Burst/Tundra/exception failure signals. |
+| E31 | `Docs/Reports/2026-05-11_PLATFORM_COMPATIBILITY_EDITOR_AUDIT.md` is generated from Editor code. The previous generated copy predates the direct Linux module recheck; rerun after Hub changes to refresh module state. |
 
 ## Blocker Register
 
 | ID | Severity | Area | Platforms | Fix Class | Evidence | Required Resolution |
 |---|---:|---|---|---|---|---|
-| PB-001 | P0 | Proof | All | `PROOF` | E25 | Produce Unity import + Console + player build + launch + profiler evidence per target. Static docs do not certify runtime. |
-| PB-002 | P0 | Local modules | Linux/macOS/Android/iOS | `HUB` | E02 | Install exact `6000.4.1f1` build support modules. This only unlocks build attempts. |
+| PB-001 | P0 | Proof | All | `PROOF` | E25, E30, E31 | Windows Editor import/audit proof exists. Still produce player build + launch + profiler + GC + memory evidence per exact target before support claims. |
+| PB-002 | P0 | Local modules | macOS/Android/iOS/visionOS/tvOS/UWP/Web | `HUB` | E02 | Install exact `6000.4.1f1` build support modules only for targets being actively proven. Linux module is already present; Android requires Android Build Support + SDK/NDK + OpenJDK. |
 | PB-003 | P0 | XR provider | PC VR, standalone VR | `UPM/CONFIG` | E04, E05, E06 | Add XR Plugin Management + OpenXR and configure loaders per platform. |
 | PB-004 | P0 | Standalone VR quality | Quest/PICO/Vive XR Android | `CONFIG` | E07, E19, E20 | Create Android/XR quality tier and mobile URP renderer asset. Existing tiers exclude Android/iPhone. |
 | PB-005 | P0 | Addressables project data | All, severe on VR/consoles | `CONFIG/CODE` | E08, E09, E10, E11 | Create Addressables settings/groups/catalogs or remove active runtime dependency. Current state is active code without project data. |
@@ -97,7 +99,7 @@ Fix class:
 | PB-018 | P1 | Production log/hot-path hygiene | All, severe on consoles/VR | `CODE/PROOF` | E24 | Audit runtime `Debug.Log`, `GetComponent`, `.material`, smoke/debug inclusion. Static hits are not all bugs, but they block confidence. |
 | PB-019 | P1 | Third-party package portability | Linux/macOS/Android/consoles | `CONFIG/NATIVE/CERT` | Native inventory from audit | Produce plugin manifest: owner, runtime/editor scope, platform binaries, importer flags, license. |
 | PB-020 | P1 | Addressables memory lifecycle | VR/consoles/low RAM | `CODE/CONFIG/PROOF` | E08, E10, E11 | Prove async load, dependency download, release queue, bundle cache, and no load spikes. |
-| PB-021 | P1 | Linux filesystem/case path risk | Linux/Steam Deck | `CODE/PROOF` | E02, E12, E14 | Build and launch on real Linux; audit path case, native load names, executable permissions, persistent data paths. |
+| PB-021 | P1 | Linux filesystem/case path risk | Linux/Steam Deck | `BUILD/CODE/PROOF` | E02, E12, E14 | Linux module is present. Build and launch on real Linux; audit path case, native load names, executable permissions, persistent data paths. |
 | PB-022 | P1 | macOS signing/native ABI risk | macOS Intel/Apple Silicon | `NATIVE/CERT/PROOF` | E02, E14, E15 | Validate universal/ARM64 native binaries, Metal shaders, signing, notarization. |
 | PB-023 | P1 | Steam Deck is not automatic | Steam Deck | `CONFIG/PROOF` | E02, E19, E21, E23 | Validate native Linux or Proton separately: Steam Input, suspend/resume, shader cache, fullscreen, performance profile. |
 | PB-024 | P1 | Console save/storage model | Consoles | `CODE/VENDOR/CERT` | E12, E13 | Replace raw desktop file assumptions with platform storage APIs once SDK access exists. |
@@ -105,7 +107,7 @@ Fix class:
 | PB-026 | P2 | Audio settings desktop-default | VR/mobile/consoles | `CONFIG/PROOF` | E21 | Define per-platform sample rate/buffer/voice count/spatialization. Empty spatializer cannot pass HRTF mandate. |
 | PB-027 | P2 | Shader variant strategy | All non-Windows | `CONFIG/PROOF` | E19 | Run shader variant counts/build logs per target. URP prefilter flags exist, but no platform build proof. |
 | PB-028 | P2 | Development/smoke code inclusion | Release players | `CONFIG/CODE/PROOF` | E24 and smoke/debug inventory | Confirm smoke testers/debug UI are excluded from non-development builds or compile to inert zero-cost code. |
-| PB-029 | P2 | Old Windows build is stale | Windows | `PROOF` | E25 plus April ledger | Rebuild current source. Old `igra` player cannot certify current worktree. |
+| PB-029 | P2 | Old Windows build is stale | Windows | `PROOF` | E25, E30 plus April ledger | Rebuild current source as a player. Fresh Editor import does not certify the old `igra` player or current runtime. |
 | PB-030 | P2 | Official OS floor | Windows/macOS/Linux/Android | `CONFIG/DOCS` | E29 | Declare supported OS versions explicitly: Windows 10 21H1+, macOS 12+, Ubuntu 22.04/24.04, Android API 25+. |
 
 ## Fix-Class Distribution
@@ -126,7 +128,7 @@ Interpretation: this is not a missing-module problem. The dominant blockers are 
 
 ```text
 Windows 10/11 desktop      PB-001 PB-018 PB-020 PB-027 PB-029
-Linux desktop              PB-001 PB-002 PB-006 PB-007 PB-009 PB-018 PB-019 PB-021 PB-027 PB-030
+Linux desktop              PB-001 PB-006 PB-007 PB-009 PB-018 PB-019 PB-021 PB-027 PB-030
 macOS desktop              PB-001 PB-002 PB-006 PB-007 PB-009 PB-018 PB-019 PB-022 PB-027 PB-030
 PC VR streaming            PB-001 PB-003 PB-011 PB-012 PB-013 PB-017 PB-018 PB-020 PB-027
 Standalone Android VR      PB-001 PB-002 PB-003 PB-004 PB-005 PB-006 PB-007 PB-010 PB-012 PB-013 PB-014 PB-017 PB-020 PB-026 PB-027 PB-030
@@ -229,4 +231,3 @@ Console readiness:             vendor-blocked
 VR readiness:                  blocked
 Release readiness anywhere:    absent by proof standard
 ```
-

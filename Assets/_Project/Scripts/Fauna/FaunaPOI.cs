@@ -10,7 +10,7 @@ namespace Hecton8.AI
     }
 
     // ============================================================================
-    // HECTON-8 — FaunaPOI.cs
+    // HECTON-8 - FaunaPOI.cs
     // Static Point of Interest target for Fauna AI. Requires a trigger collider
     // allowing AI to sample nearby POIs using OverlapSphereNonAlloc without GC.
     // ============================================================================
@@ -23,7 +23,7 @@ namespace Hecton8.AI
         private static int _editorValidateDepth;
 #endif
 
-        [Header("── Configuration ──────────────────────────────────")]
+        [Header("Configuration")]
         [Tooltip("Defines how creatures interpret this POI.")]
         public FaunaPOIType poiType = FaunaPOIType.SafeZone;
 

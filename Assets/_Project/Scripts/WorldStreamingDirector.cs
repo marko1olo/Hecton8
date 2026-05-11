@@ -381,7 +381,7 @@ namespace Hecton8.World
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugDepth = depth;
-            _debugSpeed = math.sqrt(math.max(0f, _smoothedSpeedSq));
+            _debugSpeed = ApproximateSqrtPositive(_smoothedSpeedSq);
             _debugDepthZone = GetDepthZoneLabel(depthZone);
             _debugMotionMode = GetMotionModeLabel(motionMode);
 #endif
@@ -497,6 +497,13 @@ namespace Hecton8.World
                 default:
                     return 65;
             }
+        }
+
+        private static float ApproximateSqrtPositive(float value)
+        {
+            float safeValue = math.max(0f, value);
+            float invSqrt = math.rsqrt(math.max(0.0001f, safeValue));
+            return math.select(0f, safeValue * invSqrt, safeValue > 0f);
         }
 
         private float GetCurrentSpeedSq()

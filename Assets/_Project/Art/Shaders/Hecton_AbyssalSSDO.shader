@@ -65,10 +65,12 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
             return value > 0.00001 ? rcp(value) : 0.0;
         }
 
-        float ResolveInterleavedNoise(float2 screenUV)
+        float ResolveTaaDitherPhaseNoise(float2 screenUV)
         {
             float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
-            return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            uint phaseIndex = _TaaFrameIndex & 3u;
+            float2 taaPhase = float2((float)(phaseIndex & 1u), (float)((phaseIndex >> 1u) & 1u)) * 0.5;
+            return frac(52.9829189 * frac(dot(pixel + taaPhase, float2(0.06711056, 0.00583715))));
         }
 
         float2 ResolveOctantRotation(float noiseValue)
@@ -130,7 +132,7 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
             float radiusMetersSq = radiusMeters * radiusMeters;
             float pixelRadius = _HectonAbyssalSsdoProjectionScale * SafeRcp(max(linearEyeDepth, 0.1));
             float2 uvRadius = pixelRadius * _HectonAbyssalSsdoInputSize.zw;
-            float2 rotation = ResolveOctantRotation(ResolveInterleavedNoise(screenUV));
+            float2 rotation = ResolveOctantRotation(ResolveTaaDitherPhaseNoise(screenUV));
             float2 screenBias = (screenUV - 0.5) * 0.25;
 
             static const float2 kKernel[4] =

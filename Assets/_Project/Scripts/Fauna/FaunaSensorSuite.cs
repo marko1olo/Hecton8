@@ -39,13 +39,19 @@ namespace Hecton8.AI
             PredatorAcousticSightRadiusMeters * PredatorAcousticSightRadiusMeters;
         private const float PredatorAcousticSightThreshold01 = 0.12f;
         private const float PredatorMovementNoiseReferenceSpeedSqr = 72.25f;
+        private const float PredatorMovementNoiseInvReferenceSpeedSqr = 0.0138408304f;
         private const int ForwardObstacleRayIndex = 0;
         private const int LeftObstacleRayIndex = 1;
         private const int RightObstacleRayIndex = 2;
         private const float SideObstacleRayYawDegrees = 45f;
         private const float PlayerFlashlightConeDotThreshold = 0.9f;
         private const float PlayerFlashlightBlindDistanceSq = 400f;
+        private const float PlayerFlashlightBlindInvDistanceSq = 0.0025f;
         private const float PlayerFlashlightBlindDurationSeconds = 0.35f;
+        private const float PlayerFlashlightConeDotThresholdSq =
+            PlayerFlashlightConeDotThreshold * PlayerFlashlightConeDotThreshold;
+        private const float PlayerFlashlightConeInvWidthSq = 5.263158f;
+        private const float DefaultFoveatedTickIntervalSeconds = 0.0166666675f;
         private const float VisionConeLutMinDegrees = 10f;
         private const float VisionConeLutMaxDegrees = 360f;
         private const float VisionConeLutInvStepDegrees = 0.1f;
@@ -53,7 +59,7 @@ namespace Hecton8.AI
         private const float ObstacleRayYawSin45 = 0.70710678f;
         private const float ObstacleRayYawCos45 = 0.70710678f;
 
-        [Header("── Avoidance ──────────────────────────────────")]
+        [Header("Avoidance")]
         public float avoidanceRange = 8f;
         public float lookAheadFactor = 0.5f;
         public float maxRayLength = 15f;
@@ -62,7 +68,7 @@ namespace Hecton8.AI
         public LayerMask obstacleMask = HectonLayerMasks.DefaultRaycastLayerMask;
         public float visionConeAngle = 135f;
 
-        [Header("── Detection ──────────────────────────────────")]
+        [Header("Detection")]
         public float aggroDistance = 25f;
         [FormerlySerializedAs("deaggroDistance")]
         public float deaggroDistance = 35f; 
@@ -75,7 +81,7 @@ namespace Hecton8.AI
         public LayerMask distractorMask;
         public LayerMask territoryMask;
         
-        [Header("── Internal State ─────────────────────────────")]
+        [Header("Internal State")]
         public bool canSeePlayer;
         public bool hasVisualPlayerContact;
         public bool hasNoisePlayerContact;
@@ -98,7 +104,7 @@ namespace Hecton8.AI
         public float playerFlashlightExposure01;
         public Vector3 playerFlashlightThreatPosition;
 
-        [Header("── Flocking ──────────────────────────────────")]
+        [Header("Flocking")]
         public LayerMask flockMask;
         public float flockRadius = 10f;
         [HideInInspector] public Vector3 flockCenter, flockDirection, flockAvoidance;
@@ -106,12 +112,12 @@ namespace Hecton8.AI
         [HideInInspector] public bool isScattering;
         [HideInInspector] public Vector3 scatterDirection;
 
-        [Header("── POI ───────────────────────────────────────")]
+        [Header("POI")]
         public LayerMask poiMask;
         [HideInInspector] public Vector3 currentEscapePOI;
         [HideInInspector] public bool hasEscapePOI;
 
-        [Header("── Ecology ──────────────────────────────────────")]
+        [Header("Ecology")]
         public LayerMask preyMask;
         [HideInInspector] public bool hasCurrentPrey;
         [HideInInspector] public Vector3 currentPreyPosition;
@@ -138,7 +144,7 @@ namespace Hecton8.AI
         private bool _hasDeferredLeftObstacleHit;
         private bool _hasDeferredRightObstacleHit;
         private FoveatedTickRate _foveatedTickRate = FoveatedTickRate.Center60Hz;
-        private float _foveatedTickIntervalSeconds = 1.0f / 60.0f;
+        private float _foveatedTickIntervalSeconds = DefaultFoveatedTickIntervalSeconds;
         private float _foveatedImportanceScore = 1.0f;
         private bool _foveatedInsideFrustum = true;
         private Vector3 _cachedSelfPosition;
@@ -189,7 +195,7 @@ namespace Hecton8.AI
             _hasDeferredLeftObstacleHit = false;
             _hasDeferredRightObstacleHit = false;
             _foveatedTickRate = FoveatedTickRate.Center60Hz;
-            _foveatedTickIntervalSeconds = 1.0f / 60.0f;
+            _foveatedTickIntervalSeconds = DefaultFoveatedTickIntervalSeconds;
             _foveatedImportanceScore = 1.0f;
             _foveatedInsideFrustum = true;
             Vector3 initialForward = Vector3.forward;
@@ -471,13 +477,14 @@ namespace Hecton8.AI
             if (flashlightDotNumerator <= 0f)
                 return;
 
-            float dotThresholdSq = PlayerFlashlightConeDotThreshold * PlayerFlashlightConeDotThreshold;
             float dotNumeratorSq = flashlightDotNumerator * flashlightDotNumerator;
-            if (dotNumeratorSq < dotThresholdSq * distanceSq)
+            if (dotNumeratorSq < PlayerFlashlightConeDotThresholdSq * distanceSq)
                 return;
 
-            float coneSq01 = math.saturate(((dotNumeratorSq / math.max(distanceSq, 0.0001f)) - dotThresholdSq) / math.max(0.001f, 1f - dotThresholdSq));
-            float distance01 = 1f - math.saturate(distanceSq / PlayerFlashlightBlindDistanceSq);
+            float coneSq01 = math.saturate(
+                ((dotNumeratorSq * math.rcp(math.max(distanceSq, 0.0001f))) - PlayerFlashlightConeDotThresholdSq) *
+                PlayerFlashlightConeInvWidthSq);
+            float distance01 = 1f - math.saturate(distanceSq * PlayerFlashlightBlindInvDistanceSq);
             float cone01 = coneSq01 * coneSq01;
             float exposure01 = math.saturate(cone01 * distance01);
             if (exposure01 <= 0.001f)
@@ -540,7 +547,7 @@ namespace Hecton8.AI
 
         private static float ResolvePlayerNoise01(NoiseSystem.PlayerNoiseSignal signal)
         {
-            float movement01 = math.saturate(math.max(0f, signal.MovementSpeedSqr) / PredatorMovementNoiseReferenceSpeedSqr);
+            float movement01 = math.saturate(math.max(0f, signal.MovementSpeedSqr) * PredatorMovementNoiseInvReferenceSpeedSqr);
             float tool01 = math.saturate(signal.ToolUseNoise01);
             float transport01 = math.saturate(signal.TransportBoost01 * math.max(1f, signal.TransportSignature));
             float flashlight01 = signal.FlashlightOn ? 0.2f : 0f;
@@ -894,7 +901,7 @@ namespace Hecton8.AI
                     continue;
 
                 float bleedSeverity = math.max(0.1f, survival.BleedingSeverity01);
-                float weightedDistance = hit.DistanceSqr / bleedSeverity;
+                float weightedDistance = hit.DistanceSqr * math.rcp(bleedSeverity);
                 if (weightedDistance >= bestWeightedDistance)
                     continue;
 
@@ -908,7 +915,7 @@ namespace Hecton8.AI
         internal void SetFoveatedCadence(FoveatedTickRate tickRate, float tickIntervalSeconds, float importanceScore, bool insideFrustum)
         {
             _foveatedTickRate = tickRate;
-            _foveatedTickIntervalSeconds = tickIntervalSeconds > 0f ? tickIntervalSeconds : (1.0f / 60.0f);
+            _foveatedTickIntervalSeconds = tickIntervalSeconds > 0f ? tickIntervalSeconds : DefaultFoveatedTickIntervalSeconds;
             _foveatedImportanceScore = importanceScore;
             _foveatedInsideFrustum = insideFrustum;
         }
@@ -956,7 +963,7 @@ namespace Hecton8.AI
                 return false;
 
             surfaceNormal = _deferredForwardObstacleHit.normal;
-            obstaclePressure01 = 1f - math.saturate(_deferredForwardObstacleHit.distance / math.max(rayLength, 0.001f));
+            obstaclePressure01 = 1f - math.saturate(_deferredForwardObstacleHit.distance * math.rcp(math.max(rayLength, 0.001f)));
             return obstaclePressure01 > 0f && surfaceNormal.sqrMagnitude > 0.0001f;
         }
 
@@ -1067,7 +1074,7 @@ namespace Hecton8.AI
             if (!TrySampleClosedNavGridCell(probePosition))
                 return false;
 
-            pressure01 = math.saturate(1f - (probeDistance / math.max(maxRayLength, 0.001f)));
+            pressure01 = math.saturate(1f - (probeDistance * math.rcp(math.max(maxRayLength, 0.001f))));
             if (pressure01 <= 0.001f)
                 pressure01 = 1f;
             return true;

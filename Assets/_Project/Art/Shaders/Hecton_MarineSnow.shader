@@ -98,21 +98,16 @@ Shader "Hecton8/VFX/MarineSnow"
                 return float2(1.0, -1.0);
             }
 
-            float ApproxLength2(float2 value)
+            float2 DominantAxisDirection2(float2 value)
             {
                 float2 absValue = abs(value);
-                float major = max(absValue.x, absValue.y);
-                float minor = min(absValue.x, absValue.y);
-                return major + minor * 0.375;
-            }
-
-            float2 FastNormalize2Approx(float2 value)
-            {
-                float approxLength = ApproxLength2(value);
-                if (!isfinite(approxLength) || approxLength <= 0.0001)
+                if (absValue.x <= 0.0001 && absValue.y <= 0.0001)
                     return float2(0.0, 1.0);
 
-                return value * rcp(approxLength);
+                if (absValue.x >= absValue.y)
+                    return float2(value.x >= 0.0 ? 1.0 : -1.0, 0.0);
+
+                return float2(0.0, value.y >= 0.0 ? 1.0 : -1.0);
             }
 
             Varyings vert(Attributes input)
@@ -142,7 +137,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 float2 screenMotion = float2(
                     dot(-_MarineSnowCameraVelocity_Stretch.xyz, cameraRight),
                     dot(-_MarineSnowCameraVelocity_Stretch.xyz, cameraUp));
-                float2 stretchAxis = FastNormalize2Approx(screenMotion);
+                float2 stretchAxis = DominantAxisDirection2(screenMotion);
                 float2 crossAxis = float2(-stretchAxis.y, stretchAxis.x);
                 float2 stretchedCorner =
                     stretchAxis * (dot(corner, stretchAxis) * stretchScale) +

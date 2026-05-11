@@ -61,10 +61,12 @@ Shader "Hidden/Hecton8/StochasticSSR"
         #endif
         }
 
-        float ResolveInterleavedNoise(float2 screenUV)
+        float ResolveTaaDitherPhaseNoise(float2 screenUV)
         {
             float2 pixel = floor(screenUV * _HectonSsrInputSize.xy);
-            return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            uint phaseIndex = _TaaFrameIndex & 3u;
+            float2 taaPhase = float2((float)(phaseIndex & 1u), (float)((phaseIndex >> 1u) & 1u)) * 0.5;
+            return frac(52.9829189 * frac(dot(pixel + taaPhase, float2(0.06711056, 0.00583715))));
         }
 
         half4 FragMask(Varyings input) : SV_Target
@@ -79,7 +81,7 @@ Shader "Hidden/Hecton8/StochasticSSR"
             float2 edgeDistance = min(input.screenUV, 1.0 - input.screenUV);
             half edgeMask = (half)saturate(min(edgeDistance.x, edgeDistance.y) * max(_HectonSsrParamsA.w, 1.0));
 
-            half noise = (half)ResolveInterleavedNoise(input.screenUV);
+            half noise = (half)ResolveTaaDitherPhaseNoise(input.screenUV);
             half noiseMask = lerp(1.0h, lerp(0.72h, 1.0h, noise), saturate((half)_HectonSsrParamsB.x));
             half screenSheenMask = (half)saturate((input.screenUV.y - 0.36) * 1.85);
             half reflectionWeight = saturate((half)_HectonSsrParamsA.z * screenSheenMask * depthMask * edgeMask * noiseMask);

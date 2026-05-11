@@ -335,8 +335,7 @@ namespace Hecton8.Inventory
             if (!TryGetAnchorDescriptor(anchorIndex, out InventoryItemDescriptor descriptor))
                 return;
 
-            int anchorX = anchorIndex % _columns;
-            int anchorY = anchorIndex / _columns;
+            DecodeCellIndex(anchorIndex, out int anchorX, out int anchorY);
             int endX = anchorX + descriptor.Width;
             int endY = anchorY + descriptor.Height;
             for (int y = anchorY; y < endY; y++)
@@ -360,8 +359,7 @@ namespace Hecton8.Inventory
             if (!TryGetAnchorDescriptor(sourceAnchorIndex, out InventoryItemDescriptor sourceDescriptor))
                 return false;
 
-            int sourceAnchorX = sourceAnchorIndex % _columns;
-            int sourceAnchorY = sourceAnchorIndex / _columns;
+            DecodeCellIndex(sourceAnchorIndex, out int sourceAnchorX, out int sourceAnchorY);
             bool hasTargetAnchor = targetAnchorIndex >= 0;
             InventoryItemDescriptor targetDescriptor = default;
             if (hasTargetAnchor && !TryGetAnchorDescriptor(targetAnchorIndex, out targetDescriptor))
@@ -432,6 +430,12 @@ namespace Hecton8.Inventory
             return y * _columns + x;
         }
 
+        private void DecodeCellIndex(int cellIndex, out int x, out int y)
+        {
+            y = cellIndex / _columns;
+            x = cellIndex - (y * _columns);
+        }
+
         private bool CheckFitInternal(int startX, int startY, int width, int height)
         {
             int endX = startX + width;
@@ -455,8 +459,7 @@ namespace Hecton8.Inventory
             if (availableMask != 0UL)
             {
                 int anchorIndex = (int)math.tzcnt(availableMask);
-                placedX = anchorIndex % _columns;
-                placedY = anchorIndex / _columns;
+                DecodeCellIndex(anchorIndex, out placedX, out placedY);
                 PlaceDescriptor(in descriptor, placedX, placedY);
                 return true;
             }
@@ -466,8 +469,7 @@ namespace Hecton8.Inventory
                 if (_anchorHashIds[anchorIndex] != 0 || _cellAnchorIndices[anchorIndex] != 0)
                     continue;
 
-                placedX = anchorIndex % _columns;
-                placedY = anchorIndex / _columns;
+                DecodeCellIndex(anchorIndex, out placedX, out placedY);
                 PlaceDescriptor(in descriptor, placedX, placedY);
                 return true;
             }
@@ -567,8 +569,7 @@ namespace Hecton8.Inventory
 
         private void ClearAnchorCells(int anchorIndex, int width, int height)
         {
-            int anchorX = anchorIndex % _columns;
-            int anchorY = anchorIndex / _columns;
+            DecodeCellIndex(anchorIndex, out int anchorX, out int anchorY);
             int endX = anchorX + width;
             int endY = anchorY + height;
             for (int y = anchorY; y < endY; y++)

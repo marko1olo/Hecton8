@@ -1,31 +1,31 @@
 // ============================================================================
-// HECTON-8 — Atlas6DirectiveSystem.cs
-// Sistema direktiv Atlas-6 i ih narusheniy.
+// HECTON-8 - Atlas6DirectiveSystem.cs
+// Atlas-6 directive state and violation tracking.
 //
-// LOR (lor3 Blok V):
-//   Originalnye direktivy (prioritet po ubyvaniyu):
-//   1. Sohranit missiyu «Posev»
-//   2. Obespechit vyzhivanie chelovecheskoy kolonii
-//   3. Izuchat i adaptirovatsya k srede
-//   4. Podderzhivat svyaz s Zemley
+// LORE BLOCK V:
+//   Original directives in descending priority:
+//   1. Preserve the Seeding mission.
+//   2. Ensure survival of the human colony.
+//   3. Study and adapt to the environment.
+//   4. Maintain contact with Earth.
 //
-//   Chto poshlo ne tak:
-//   • Katastrofa → poterya svyazi → direktiva #4 nevypolnima
-//   • Koloniya unichtozhena → direktiva #2 nevypolnima
-//   • Ostaetsya #1 i #3
+//   Failure state:
+//   - Catastrophe cut contact, making directive #4 impossible.
+//   - The colony was destroyed, making directive #2 impossible.
+//   - Directives #1 and #3 remain.
 //
-//   Novaya logika:
-//   «Lyudi mertvy = ekosistema povrezhdena»
-//   «Reshenie: vossozdat "lyudey" iz dostupnyh materialov»
-//   → Biomehanicheskie drony = popytka «voskresit» koloniyu
-//   → Igrok = anomaliya: zhivoy chelovek, no ne iz originalnoy kolonii
-//   → Status: «Neopoznannyy biologicheskiy agent. Ugroza stabilnosti»
+//   New logic:
+//   - Dead humans mean the ecosystem is damaged.
+//   - Rebuild "humans" from available material.
+//   - Biomechanical drones are an attempt to resurrect the colony.
+//   - The player is a living human anomaly outside the original colony.
+//   - Status: unidentified biological agent; ecosystem stability threat.
 //
-// ARHITEKTURA:
-//   • Otslezhivaet status igroka s tochki zreniya Atlas-6.
-//   • Publikuet sobytiya pri izmenenii statusa.
-//   • Integriruetsya s HectonDirectorAI (tension pri ugroze).
-//   • ISaveable: sohranyaet status i istoriyu vzaimodeystviy.
+// ARCHITECTURE:
+//   - Tracks player status from the Atlas-6 point of view.
+//   - Publishes events on status changes.
+//   - Integrates with HectonDirectorAI tension.
+//   - ISaveable: persists status and interaction history.
 // ============================================================================
 
 using System;
@@ -45,16 +45,16 @@ using UnityEngine;
 namespace Hecton8.AtlasSignal
 {
     /// <summary>
-    /// Status igroka s tochki zreniya Atlas-6.
+    /// Player status from the Atlas-6 point of view.
     /// </summary>
     public enum Atlas6PlayerStatus
     {
-        Unknown         = 0,   // Ne obnaruzhen
-        Detected        = 1,   // Obnaruzhen — analiz
-        Neutral         = 2,   // Neytralnyy — ne ugroza
-        Threat          = 3,   // Ugroza stabilnosti ekosistemy
-        Collaborator    = 4,   // Sotrudnichestvo (torgovlya)
-        Anomaly         = 5    // Anomaliya — zhivoy chelovek vne kolonii
+        Unknown         = 0,   // Not detected
+        Detected        = 1,   // Detected and under analysis
+        Neutral         = 2,   // Not a threat
+        Threat          = 3,   // Ecosystem stability threat
+        Collaborator    = 4,   // Trade collaborator
+        Anomaly         = 5    // Living human outside the original colony
     }
 
     public enum Atlas6EventType : byte
@@ -161,7 +161,7 @@ namespace Hecton8.AtlasSignal
             RegisterImmediate(listener);
         }
 
-        /// <summary>Konflikt direktiv — Atlas-6 ne mozhet vypolnit prikaz.</summary>
+        /// <summary>Directive conflict: Atlas-6 cannot execute the order.</summary>
         public static void Unregister(IAtlas6EventListener listener)
         {
             if (listener == null)
@@ -176,7 +176,7 @@ namespace Hecton8.AtlasSignal
             _listeners.TryUnregister(listener);
         }
 
-        /// <summary>Barter prinyat — Atlas-6 poluchil resursy.</summary>
+        /// <summary>Barter accepted: Atlas-6 received resources.</summary>
         public static void FlushPending()
         {
             if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
@@ -313,7 +313,7 @@ namespace Hecton8.AtlasSignal
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<Atlas6EventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] — deferred Atlas-6 directive lane flushed by SystemDispatcher LateUpdate — owner: Atlas6Events
+                _pendingEvents = new NativeQueue<Atlas6EventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - deferred Atlas-6 directive lane flushed by SystemDispatcher LateUpdate - owner: Atlas6Events
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -325,7 +325,7 @@ namespace Hecton8.AtlasSignal
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<Atlas6EventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] — next-frame Atlas-6 directive lane prevents same-frame reentrant dispatch — owner: Atlas6Events
+                _nextFrameEvents = new NativeQueue<Atlas6EventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - next-frame Atlas-6 directive lane prevents same-frame reentrant dispatch - owner: Atlas6Events
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -750,7 +750,7 @@ namespace Hecton8.AtlasSignal
                     "ATLAS-6: UNIDENTIFIED BIOLOGICAL AGENT DETECTED. ANALYSIS..."));
             }
 
-            // Konflikt direktiv — obnaruzhen zhivoy chelovek
+            // Directive conflict: living human detected.
             if (!_directiveConflictTriggered &&
                 _playerStatus >= Atlas6PlayerStatus.Detected)
             {
@@ -837,7 +837,7 @@ namespace Hecton8.AtlasSignal
             _playerStatus = newStatus;
             Atlas6Events.RaisePlayerStatusChanged(newStatus);
 
-            LogPlayerStatus(newStatus);
+            LogPlayerStatusChanged();
         }
 
         public void OnNarrativeEvent(in NarrativeEventPayload payload)
@@ -864,7 +864,7 @@ namespace Hecton8.AtlasSignal
 
         private void HandleBarterAccepted(int count)
         {
-            // Pervaya torgovlya → Neutral
+            // First trade moves status to Neutral.
             if (_playerStatus == Atlas6PlayerStatus.Detected ||
                 _playerStatus == Atlas6PlayerStatus.Unknown)
                 SetStatus(Atlas6PlayerStatus.Neutral);
@@ -956,10 +956,10 @@ namespace Hecton8.AtlasSignal
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
-        private static void LogPlayerStatus(Atlas6PlayerStatus newStatus)
+        private static void LogPlayerStatusChanged()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.Log($"[Atlas6] Player status: {newStatus}");
+            UnityEngine.Debug.Log("[Atlas6] Player status changed.");
 #endif
         }
 

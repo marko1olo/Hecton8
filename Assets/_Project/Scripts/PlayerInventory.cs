@@ -2830,7 +2830,7 @@ namespace Hecton8.Inventory
             if (depthMeters <= PressureCrushDepthMeters)
                 return 0f;
 
-            float depthFactor = math.saturate((depthMeters - PressureCrushDepthMeters) / 1000f);
+            float depthFactor = math.saturate((depthMeters - PressureCrushDepthMeters) * 0.001f);
             return PressureCrushDurabilityPerSecond * SlowTickIntervalSeconds * math.max(1f, depthFactor) * 1000f;
         }
 
@@ -2862,7 +2862,7 @@ namespace Hecton8.Inventory
                 return;
 
             float excess = TotalRadiationSv - threshold;
-            float hazard01 = math.saturate(excess / math.max(0.01f, threshold));
+            float hazard01 = math.saturate(excess * math.rcp(math.max(0.01f, threshold)));
             if (hazard01 <= 0f)
                 return;
 

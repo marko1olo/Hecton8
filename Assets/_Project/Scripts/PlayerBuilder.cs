@@ -238,7 +238,7 @@ namespace Hecton8.Building
         public int ActiveBuildableIndex => _activeBuildableIndex;
         public int BuildableCount => _buildCatalog != null ? _buildCatalog.ViewableCount : 0;
         public bool HasResourcesForActiveBuildable => activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable) && HasResources(activeBuildable);
-        public bool CanPlaceActiveBuildable => activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable) && _currentGhost != null && _currentGhost.CanBuild && _semanticPlacementValid && _integrityPlacementValid;
+        public bool CanPlaceActiveBuildable => activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable) && _currentGhost != null && _currentGhost.CanBuild && _semanticPlacementValid && _terrainSdfPlacementValid && _integrityPlacementValid;
         public bool HasPlacementPreview => _currentGhostObj != null;
         public BuildReadiness ActiveBuildReadiness => GetActiveBuildReadiness();
 
@@ -1728,7 +1728,11 @@ namespace Hecton8.Building
             Transform ghostTransform = _currentGhostObj.transform;
             Vector3 center = ghostTransform.TransformPoint(template.ProxyBoundsCenter);
             Vector3 halfExtents = proxyBoundsSize * 0.5f;
-            int terrainMask = HectonLayerMasks.TerrainLayerMask | HectonLayerMasks.VoxelCaveLayerMask;
+            int terrainMask = HectonLayerMasks.TerrainLayerMask |
+                              HectonLayerMasks.VoxelCaveLayerMask |
+                              HectonLayerMasks.BaseModuleLayerMask |
+                              HectonLayerMasks.VehicleLayerMask |
+                              HectonLayerMasks.DebrisLayerMask;
             int overlapCount = UnityEngine.Physics.OverlapBoxNonAlloc(
                 center,
                 halfExtents,
@@ -1737,17 +1741,32 @@ namespace Hecton8.Building
                 terrainMask,
                 QueryTriggerInteraction.Ignore);
 
+            int blockingCount = 0;
             for (int i = 0; i < overlapCount; i++)
-                _terrainSdfOverlapBuffer[i] = null;
+            {
+                Collider overlap = _terrainSdfOverlapBuffer[i];
+                if (overlap != null && !IsCurrentGhostCollider(overlap))
+                    blockingCount++;
 
-            if (overlapCount <= 0)
+                _terrainSdfOverlapBuffer[i] = null;
+            }
+
+            if (blockingCount <= 0)
                 return AcceptTerrainSdfPlacement();
 
             _terrainSdfPlacementValid = false;
-            _terrainSdfPlacementBlockReason = "TERRAIN SDF OVERLAP";
+            _terrainSdfPlacementBlockReason = "PLACEMENT OBSTACLE";
             TryQueueTerrainSdfBlockHaptic();
             _terrainSdfWasBlocked = true;
             return false;
+        }
+
+        private bool IsCurrentGhostCollider(Collider candidate)
+        {
+            return candidate != null &&
+                   _currentGhostObj != null &&
+                   candidate.transform != null &&
+                   candidate.transform.IsChildOf(_currentGhostObj.transform);
         }
 
         private bool AcceptTerrainSdfPlacement()

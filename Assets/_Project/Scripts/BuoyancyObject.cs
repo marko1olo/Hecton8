@@ -173,10 +173,10 @@ namespace Hecton8.Physics
         private bool _externallySuppressed;
 
         /// <summary>
-        /// Fixed-frame counter for staggered ground checks.
-        /// Incremented in FixedTick (lightweight: just a counter).
+        /// Fixed-tick countdown for staggered ground checks.
+        /// Avoids a per-body modulo in FixedTick.
         /// </summary>
-        private int _frameCounter;
+        private int _groundCheckCountdown;
 
         /// <summary>
         /// Frame offset unique to this instance. Distributes ground checks
@@ -274,7 +274,7 @@ namespace Hecton8.Physics
             }
 
             float resolvedHeight = Mathf.Max(0.1f, height);
-            float footprintArea = Mathf.Max(0.01f, volume / resolvedHeight);
+            float footprintArea = Mathf.Max(0.01f, volume * math.rcp(resolvedHeight));
             float halfWidth = Mathf.Max(0.05f, ApproximateSqrtPositive(footprintArea) * 0.5f);
             center = _cachedTransform != null ? _cachedTransform.position : transform.position;
             extents = new Vector3(halfWidth, resolvedHeight * 0.5f, halfWidth);
@@ -282,8 +282,18 @@ namespace Hecton8.Physics
 
         private static float ApproximateSqrtPositive(float value)
         {
-            float safeValue = math.max(0.0001f, value);
-            return math.asfloat((math.asint(safeValue) >> 1) + 0x1FC00000);
+            float safeValue = math.max(0f, value);
+            float invSqrt = math.rsqrt(math.max(0.0001f, safeValue));
+            return math.select(0f, safeValue * invSqrt, safeValue > 0f);
+        }
+
+        private static float ApproximateCubeRootPositive(float value)
+        {
+            float safeValue = math.max(0f, value);
+            if (safeValue <= 0f)
+                return 0f;
+
+            return math.asfloat((math.asint(safeValue) / 3) + 709921077);
         }
 
         /// <summary>
@@ -379,7 +389,7 @@ namespace Hecton8.Physics
                 : 0.01f;
 
             volume = safeVolumeM3;
-            density = safeMassKg / safeVolumeM3;
+            density = safeMassKg * math.rcp(safeVolumeM3);
             height = float.IsFinite(heightMeters) ? Mathf.Max(0.05f, heightMeters) : 0.05f;
             _runtimeLocalFluidDensityOverrideActive = float.IsFinite(localFluidDensityKgPerM3) && localFluidDensityKgPerM3 > 0.01f;
             _runtimeLocalFluidDensity = _runtimeLocalFluidDensityOverrideActive
@@ -409,7 +419,9 @@ namespace Hecton8.Physics
             // Compute frame offset from entity ID for staggered checks.
             // Abs because the truncated int can be negative.
             int id = unchecked((int)EntityId.ToULong(GetEntityId()));
-            _frameOffset = (id < 0 ? -id : id) % groundCheckInterval;
+            int safeGroundCheckInterval = math.max(1, groundCheckInterval);
+            _frameOffset = (id < 0 ? -id : id) % safeGroundCheckInterval;
+            _groundCheckCountdown = ResolveInitialGroundCheckCountdown(_frameOffset, safeGroundCheckInterval);
         }
 
         private void OnEnable()
@@ -454,7 +466,7 @@ namespace Hecton8.Physics
         ///
         /// Driven by GameTickManager via IFixedTickable so the component
         /// stays inside the centralized physics cadence contract.
-        /// Cost: one integer increment per fixed step plus one raycast
+        /// Cost: one countdown branch per fixed step plus one raycast
         /// every groundCheckInterval frames (amortized).
         ///
         /// Zero-GC: no allocations. Uses cached hit state and a preallocated
@@ -462,13 +474,21 @@ namespace Hecton8.Physics
         /// </summary>
         public void FixedTick(float fixedDeltaTime)
         {
-            _frameCounter++;
-
-            // Staggered check: this instance checks on its designated frame
-            if ((_frameCounter + _frameOffset) % groundCheckInterval != 0)
+            if (_groundCheckCountdown > 0)
+            {
+                _groundCheckCountdown--;
                 return;
+            }
 
             PerformGroundCheck();
+            _groundCheckCountdown = math.max(1, groundCheckInterval) - 1;
+        }
+
+        private static int ResolveInitialGroundCheckCountdown(int frameOffset, int interval)
+        {
+            int safeInterval = math.max(1, interval);
+            int firstProbeTick = safeInterval - math.clamp(frameOffset, 0, safeInterval - 1);
+            return firstProbeTick - 1;
         }
 
         private void TryRegisterToFixedTick()
@@ -594,7 +614,7 @@ namespace Hecton8.Physics
             else
                 Gizmos.color = new Color(1f, 1f, 0f, 0.3f);
 
-            Gizmos.DrawWireSphere(transform.position, Mathf.Pow(volume, 1f / 3f));
+            Gizmos.DrawWireSphere(transform.position, ApproximateCubeRootPositive(volume));
 
             // Draw ground check ray
             Vector3 rayOrigin = transform.position;

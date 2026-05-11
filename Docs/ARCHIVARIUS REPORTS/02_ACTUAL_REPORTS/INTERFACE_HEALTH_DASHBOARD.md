@@ -1,16 +1,16 @@
 # HECTON-8 INTERFACE HEALTH DASHBOARD
 
-Date: 2026-05-07
+Date: 2026-05-11
 Status: PENDING VERIFICATION
-Source basis: `GlobalRegistryContracts.cs` plus direct first-party class declaration scan in `Assets/_Project/Scripts`, with focused checks of `PDALogbookManager`, `UIStateStore`, and `FluidMathCore`
+Source basis: `GlobalRegistryContracts.cs` plus direct first-party class declaration scan in `Assets/_Project/Scripts`, with focused checks of `PDALogbookManager`, `UIStateStore`, `FluidMathCore`, and May 11 `IDamageReceiver` owners
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
 
 ## Executive Summary
 
 | Metric | Count |
 |---|---:|
-| Direct public interfaces in `GlobalRegistryContracts.cs` | 37 |
-| Interfaces with at least one direct implementor found in the May 1 source scan | stale `30/31`; not valid for the current `37` contract count |
+| Direct public interfaces in `GlobalRegistryContracts.cs` | 41 |
+| Interfaces with at least one direct implementor found in the May 1 source scan | stale `30/31`; not valid for the current `41` contract count |
 | Confirmed empty extension seams in current pass | not recounted |
 | Confirmed shadow/conflict cases in current pass | not recounted |
 | Interfaces with only one narrow direct implementor | not recounted in this pass |
@@ -18,7 +18,7 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 Current interface debt is not proven "ghost contracts".
 Current debt is stale documentation, narrow single-owner surfaces, six source-present contract slots not represented in the May 1 owner inventory, and unresolved runtime verification of actual scene registration order.
 
-May 7 correction: this dashboard's detailed inventory below is a May 1 source scan. It remains useful for named owners, but the interface-count/coverage ratio and current source/build boundary are superseded by `Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`.
+May 11 correction: this dashboard's detailed inventory below is not a full fresh `41`-interface coverage audit. It remains useful for named owners, but interface-count/coverage ratios must be recomputed from current source before being used as proof.
 
 ## 2026-05-07 Contract Count Sync
 
@@ -28,25 +28,27 @@ Fresh source count command:
 (Select-String -LiteralPath 'Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs' -Pattern '^\s*public\s+interface\s+([A-Za-z0-9_]+)' | Measure-Object).Count
 ```
 
-Observed result: `37`.
+Observed result: `41`.
 
 Current interface names:
 
 ```text
-IUpdatable, ILateFrameTickable, IPostFixedTickable, IRenderable, IDamageReceiver,
-IDebrisDefinition, IInputService, IProfileService, IPDALogbookService,
-IPhysicsService, IAudioService, ISceneService, ISaveService, IUIService,
+ISystem, IUpdatable, ILateFrameTickable, IPostFixedTickable, IRenderable,
+IDamageReceiver, IDebrisDefinition, IInputService, IProfileService,
+IPDALogbookService, IPhysicsService, IAudioService, ISceneService,
+ISaveService, IUIService, IScannerInterferenceUiSink, IVRSomaticProvider,
 IARWaypointService,
 IPlayerRuntimeContext, IPlayerInventoryService, IModularEquipmentService,
 IPlayerSensoryService, IEnvironmentRuntimeContext, IWeatherService,
 IThermodynamicsService, ILogisticsService, IWorldGenService, IWorldSeedProvider,
-IEncounterDirectorService, IQuestSystem, IFaunaSim, IFluidSim, IServiceHeartbeat,
-IServiceShutdown, IRegistryEventListener, IGlobalRegistryHotSwapListener,
+IEncounterDirectorService, IQuestSystem, IFaunaSim, IFluidSim,
+IModalWindowService, IRegistryEventListener, IGlobalRegistryHotSwapListener,
+IGlobalRegistryHotSwapRefListener, ITerrainProvider,
 IHectonOceanKinematicsService, IInteractionSignalService, IDebrisService,
 IEcosystemDirectorService
 ```
 
-Coverage ratios remain `PENDING VERIFICATION` until the implementor scan is rerun against all `37` names and live registry occupancy is proven from Unity runtime evidence.
+Coverage ratios remain `PENDING VERIFICATION` until the implementor scan is rerun against all `41` names and live registry occupancy is proven from Unity runtime evidence.
 
 ## Inventory
 
@@ -56,7 +58,7 @@ Coverage ratios remain `PENDING VERIFICATION` until the implementor scan is reru
 | 2 | `ILateFrameTickable` | `PhysicsApplySystem`, `DebrisManager`, `HectonSurfaceWeatherDirector`, `HazardZoneManager`, `ToolDurabilitySystem`, `ToolHapticsRuntime`, `VoxelDeltaProcessor`, `LODSystemManager` | LIVE | End-of-frame swap-window contract |
 | 3 | `IPostFixedTickable` | `HectonFluidEngine`, `HectonPlayerMotor`, `SubmarineFluidDynamics` | LIVE | Post-fixed deferred ownership-recovery contract |
 | 4 | `IRenderable` | `HectonUnderwaterVisuals`, `HectonSubmarineOS`, `MissionMarkerSystem` | LIVE | Real render-dispatch hook, not ghost |
-| 5 | `IDamageReceiver` | `HabitatIntegrityManager` | LIVE | Global packet receiver present in current source |
+| 5 | `IDamageReceiver` | `HabitatIntegrityManager`, `HectonPlayerHealth` | LIVE | Global packet receivers present in current source; both register with `CombatDamageRuntime` when active |
 | 6 | `IDebrisDefinition` | `OrganicDebrisProfile` | LIVE | Authoring/runtime debris definition contract |
 | 7 | `IInputService` | `InputDispatcher` | LIVE | Registry-backed input owner |
 | 8 | `IPhysicsService` | `PhysicsApplySystem` | LIVE | Force-routing service owner |
@@ -88,18 +90,18 @@ Coverage ratios remain `PENDING VERIFICATION` until the implementor scan is reru
 
 | Older claim | Current verified state |
 |---|---|
-| `GlobalRegistryContracts.cs` had `19`, `27`, `31`, `33`, `34`, or `36` interfaces | False now. Current file has `37` direct public interfaces. |
+| `GlobalRegistryContracts.cs` had `19`, `27`, `31`, `33`, `34`, `36`, `37`, `38`, `39`, or `40` interfaces | False now. Current file has `41` direct public interfaces. |
 | `IAudioService` had no implementor | False. `SpatialAudioManager` implements `IAudioService` and registers itself. |
 | `IUIService` was fragmented across multiple implementors | False in current source scan. Direct implementor found: `SuitHUDV4CanvasOverlay`. |
 | `IRenderable` had a single owner | False. Current direct implementors include `HectonUnderwaterVisuals`, `HectonSubmarineOS`, and `MissionMarkerSystem`. |
-| `IDamageReceiver` was shadow-conflicted by `HabitatIntegrityManager` | False in current source. `HabitatIntegrityManager` implements `Hecton8.Core.IDamageReceiver`; separate habitat contracts are now `IDamageSignalReceiver` and `IDamageSignalEmitter`. |
+| `IDamageReceiver` was shadow-conflicted by `HabitatIntegrityManager` | False in current source. `HabitatIntegrityManager` and `HectonPlayerHealth` implement `Hecton8.Core.IDamageReceiver`; separate habitat contracts are now `IDamageSignalReceiver` and `IDamageSignalEmitter`. |
 
 ## Primary Findings
 
 ### No Deletion-Safe Ghost Interface In The Current Pass
 
 The previous dashboard is now partially outdated.
-The May 1 direct source scan found at least one implementor for `30/31` interfaces in `GlobalRegistryContracts.cs`; May 7 source count is `37` and coverage has not been recounted.
+The May 1 direct source scan found at least one implementor for `30/31` interfaces in `GlobalRegistryContracts.cs`; May 11 source count is `41` and coverage has not been fully recounted.
 
 `IGlobalRegistryHotSwapListener` currently has no direct implementor in the source scan.
 It is not deletion-safe because `GlobalRegistry` exposes listener registration infrastructure around it.

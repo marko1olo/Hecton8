@@ -40,7 +40,7 @@ namespace Hecton8.World
                 float y = safeHeight * t;
                 float width = Mathf.Lerp(safeBaseWidth, safeTipWidth, t * t);
                 float halfWidth = width * 0.5f;
-                float sweep = Mathf.Sin(t * Mathf.PI) * safeHeight * 0.045f;
+                float sweep = (4f * t * (1f - t)) * safeHeight * 0.045f;
                 int leftIndex = row * 2;
                 int rightIndex = leftIndex + 1;
                 byte tipMask = (byte)Mathf.RoundToInt(t * 255f);

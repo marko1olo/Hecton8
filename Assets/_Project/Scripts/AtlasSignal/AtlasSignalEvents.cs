@@ -45,13 +45,13 @@ namespace Hecton8.AtlasSignal
         private static readonly uint _ListenerContextHash = unchecked((uint)LocHash.Compute("AtlasSignalEvents.Listeners"));
         private static readonly uint _DecodedMessageContextHash = unchecked((uint)LocHash.Compute("AtlasSignalEvents.DecodedMessages"));
 
-        // COLD ALLOC: RegistryBucket<IAtlasSignalEventListener>[16] — Atlas signal listeners drained on dispatcher LateUpdate — owner: AtlasSignalEvents
+        // COLD ALLOC: RegistryBucket<IAtlasSignalEventListener>[16] - Atlas signal listeners drained on dispatcher LateUpdate - owner: AtlasSignalEvents
         private static readonly RegistryBucket<IAtlasSignalEventListener> _listeners = new RegistryBucket<IAtlasSignalEventListener>(ListenerCapacity);
-        // COLD ALLOC: IAtlasSignalEventListener[16] — listener additions deferred while dispatching Atlas signal events — owner: AtlasSignalEvents
+        // COLD ALLOC: IAtlasSignalEventListener[16] - listener additions deferred while dispatching Atlas signal events - owner: AtlasSignalEvents
         private static readonly IAtlasSignalEventListener[] _deferredRegisterListeners = new IAtlasSignalEventListener[ListenerCapacity];
-        // COLD ALLOC: IAtlasSignalEventListener[16] — listener removals deferred while dispatching Atlas signal events — owner: AtlasSignalEvents
+        // COLD ALLOC: IAtlasSignalEventListener[16] - listener removals deferred while dispatching Atlas signal events - owner: AtlasSignalEvents
         private static readonly IAtlasSignalEventListener[] _deferredUnregisterListeners = new IAtlasSignalEventListener[ListenerCapacity];
-        // COLD ALLOC: Dictionary<uint,string>[16] — decoded Atlas message IDs keyed by FNV-1a hash for cold-path listener resolution — owner: AtlasSignalEvents
+        // COLD ALLOC: Dictionary<uint,string>[16] - decoded Atlas message IDs keyed by FNV-1a hash for cold-path listener resolution - owner: AtlasSignalEvents
         private static readonly Dictionary<uint, string> _decodedMessageIdsByHash = new Dictionary<uint, string>(16);
         private static NativeQueue<AtlasSignalEventPayload> _pendingEvents;
         private static NativeQueue<AtlasSignalEventPayload> _nextFrameEvents;
@@ -304,7 +304,7 @@ namespace Hecton8.AtlasSignal
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<AtlasSignalEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AtlasSignalEventPayload>[16] — deferred Atlas signal lane flushed by SystemDispatcher LateUpdate — owner: AtlasSignalEvents
+                _pendingEvents = new NativeQueue<AtlasSignalEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AtlasSignalEventPayload>[16] - deferred Atlas signal lane flushed by SystemDispatcher LateUpdate - owner: AtlasSignalEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -316,7 +316,7 @@ namespace Hecton8.AtlasSignal
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<AtlasSignalEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AtlasSignalEventPayload>[16] — next-frame Atlas signal lane prevents same-frame reentrant dispatch — owner: AtlasSignalEvents
+                _nextFrameEvents = new NativeQueue<AtlasSignalEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AtlasSignalEventPayload>[16] - next-frame Atlas signal lane prevents same-frame reentrant dispatch - owner: AtlasSignalEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,

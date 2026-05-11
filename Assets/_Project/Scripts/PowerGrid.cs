@@ -27,6 +27,7 @@ namespace Hecton8.Power
     public sealed class PowerGrid
     {
         private const float MinEdgeResistance = 0.0001f;
+        private const float MinEdgeResistanceSquared = MinEdgeResistance * MinEdgeResistance;
         private const float RuptureDemandFactor = 0.015f;
         private const float ShortCircuitResistanceMultiplier = 100f;
         private const float BatteryDispatchDeltaTimeSeconds = 0.5f;
@@ -200,6 +201,7 @@ namespace Hecton8.Power
         private bool _isDirty = true;
         private bool _hasEvaluatedAtLeastOnce;
         private bool _slowTickEvaluationPending;
+        private bool _slowTickNodeStatePublishScheduled;
         private bool _splitCheckPending;
         private SlowTickEvaluationPhase _slowTickEvaluationPhase;
 
@@ -423,8 +425,8 @@ namespace Hecton8.Power
 
             if (!_isDirty && _hasEvaluatedAtLeastOnce && !_hasBatteryBanks)
             {
-                JobHandle cachedEvaluationHandle = _logisticsGraph.ScheduleEvaluation();
-                _logisticsGraph.ScheduleNodeStatePublish(cachedEvaluationHandle);
+                _logisticsGraph.ScheduleEvaluation();
+                _slowTickNodeStatePublishScheduled = false;
                 _slowTickEvaluationPending = true;
                 _slowTickEvaluationPhase = SlowTickEvaluationPhase.FinalEvaluation;
                 return;
@@ -451,11 +453,13 @@ namespace Hecton8.Power
                 _logisticsGraph.ClearPublishedNodeStates();
                 _isDirty = false;
                 _hasEvaluatedAtLeastOnce = true;
+                _slowTickNodeStatePublishScheduled = false;
                 _slowTickEvaluationPhase = SlowTickEvaluationPhase.Idle;
                 return;
             }
 
             _logisticsGraph.ScheduleEvaluation();
+            _slowTickNodeStatePublishScheduled = false;
             _slowTickEvaluationPending = true;
             _slowTickEvaluationPhase = SlowTickEvaluationPhase.InitialEvaluation;
             _isDirty = false;
@@ -488,6 +492,12 @@ namespace Hecton8.Power
             {
                 if (!_logisticsGraph.TryCompleteEvaluation())
                     return false;
+
+                if (!_slowTickNodeStatePublishScheduled)
+                {
+                    _logisticsGraph.ScheduleNodeStatePublish();
+                    _slowTickNodeStatePublishScheduled = true;
+                }
 
                 if (!_logisticsGraph.TryCompleteNodeStatePublish())
                     return false;
@@ -525,8 +535,8 @@ namespace Hecton8.Power
 
             if (!BuildGraphSnapshot())
                 return;
-            JobHandle finalEvaluationHandle = _logisticsGraph.ScheduleEvaluation();
-            _logisticsGraph.ScheduleNodeStatePublish(finalEvaluationHandle);
+            _logisticsGraph.ScheduleEvaluation();
+            _slowTickNodeStatePublishScheduled = false;
             _slowTickEvaluationPhase = SlowTickEvaluationPhase.FinalEvaluation;
         }
 
@@ -550,6 +560,7 @@ namespace Hecton8.Power
         private void CompleteSlowTickCommit()
         {
             _slowTickEvaluationPending = false;
+            _slowTickNodeStatePublishScheduled = false;
             _slowTickEvaluationPhase = SlowTickEvaluationPhase.Idle;
             _hasEvaluatedAtLeastOnce = true;
         }
@@ -557,6 +568,7 @@ namespace Hecton8.Power
         private void EvaluateBalanceViaScheduledJob()
         {
             _slowTickEvaluationPending = false;
+            _slowTickNodeStatePublishScheduled = false;
             _slowTickEvaluationPhase = SlowTickEvaluationPhase.Idle;
             ResetBatteryDispatchPlans();
             if (!BuildGraphSnapshot())
@@ -581,6 +593,7 @@ namespace Hecton8.Power
             }
 
             _logisticsGraph.ScheduleEvaluation();
+            _slowTickNodeStatePublishScheduled = false;
             _slowTickEvaluationPending = true;
             _slowTickEvaluationPhase = SlowTickEvaluationPhase.InitialEvaluation;
             EndSlowTickEvaluation();
@@ -1440,7 +1453,10 @@ namespace Hecton8.Power
         private static float ResolveEdgeResistance(PowerNode sourceNode, PowerNode destinationNode)
         {
             Vector3 delta = destinationNode.transform.position - sourceNode.transform.position;
-            float resistance = math.max(MinEdgeResistance, math.length((float3)delta));
+            float distanceSq = delta.sqrMagnitude;
+            float resistance = distanceSq > MinEdgeResistanceSquared && math.isfinite(distanceSq)
+                ? distanceSq * math.rsqrt(distanceSq)
+                : MinEdgeResistance;
             if (sourceNode.IsShortCircuited || destinationNode.IsShortCircuited)
                 resistance *= ShortCircuitResistanceMultiplier;
 

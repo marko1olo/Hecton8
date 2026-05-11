@@ -35,6 +35,26 @@ namespace Hecton.Editor
         private const int MAX_SEGMENTS = 512;
         private const int MIN_RINGS = 8;
         private const int MAX_RINGS = 512;
+        private const int TrigLutSize = 1024;
+        private const int TrigLutMask = TrigLutSize - 1;
+        private const float TwoPi = 6.2831853071795864769f;
+        private const float HalfTrigLutSize = TrigLutSize * 0.5f;
+
+        // COLD ALLOC: float[1024] - editor trig lookup table - owner: HectonSphereGenerator
+        private static readonly float[] s_sinLut = new float[TrigLutSize];
+        // COLD ALLOC: float[1024] - editor trig lookup table - owner: HectonSphereGenerator
+        private static readonly float[] s_cosLut = new float[TrigLutSize];
+
+        static HectonSphereGenerator()
+        {
+            const float step = TwoPi / TrigLutSize;
+            for (int i = 0; i < TrigLutSize; i++)
+            {
+                float angle = i * step;
+                s_sinLut[i] = Mathf.Sin(angle);
+                s_cosLut[i] = Mathf.Cos(angle);
+            }
+        }
 
         // ---------------------------------------------------------
         // MENU ITEM
@@ -168,6 +188,12 @@ namespace Hecton.Editor
 
             // Normal direction multiplier
             float normalSign = invertNormals ? -1f : 1f;
+            float invSegments = 1f / segments;
+            float invRings = 1f / rings;
+            float invRadius = 1f / radius;
+            float normalScale = normalSign * invRadius;
+            float latToLut = HalfTrigLutSize * invRings;
+            float lonToLut = TrigLutSize * invSegments;
 
             // -----------------------------------------
             // VERTICES
@@ -175,35 +201,31 @@ namespace Hecton.Editor
             for (int y = 0; y <= rings; y++)
             {
                 // v goes from 0 (bottom/south pole) to 1 (top/north pole)
-                float v = (float)y / rings;
-
-                // Polar angle: 0 at south pole (bottom), PI at north pole (top)
-                // We go bottom-to-top so the mesh builds upward
-                float polar = Mathf.PI * v;
+                float v = y * invRings;
+                int polarIndex = ((int)(y * latToLut + 0.5f)) & TrigLutMask;
+                float polarSin = s_sinLut[polarIndex];
+                float polarCos = s_cosLut[polarIndex];
 
                 // Y coordinate: -radius at bottom, +radius at top
-                float py = -Mathf.Cos(polar) * radius;
+                float py = -polarCos * radius;
 
                 // Ring radius at this latitude
-                float ringRadius = Mathf.Sin(polar) * radius;
+                float ringRadius = polarSin * radius;
 
                 for (int x = 0; x <= segments; x++)
                 {
-                    float u = (float)x / segments;
+                    float u = x * invSegments;
+                    int azimuthIndex = ((int)(x * lonToLut + 0.5f)) & TrigLutMask;
 
-                    // Azimuthal angle: 0 to 2*PI
-                    float azimuth = 2f * Mathf.PI * u;
-
-                    float px = Mathf.Cos(azimuth) * ringRadius;
-                    float pz = Mathf.Sin(azimuth) * ringRadius;
+                    float px = s_cosLut[azimuthIndex] * ringRadius;
+                    float pz = s_sinLut[azimuthIndex] * ringRadius;
 
                     int idx = y * vertCountX + x;
 
                     vertices[idx] = new Vector3(px, py, pz);
 
-                    // Normal = normalized position (unit sphere direction)
-                    Vector3 normal = new Vector3(px, py, pz).normalized;
-                    normals[idx] = normal * normalSign;
+                    // Radius is constant, so normalized(position) is position * invRadius.
+                    normals[idx] = new Vector3(px * normalScale, py * normalScale, pz * normalScale);
 
                     uvs[idx] = new Vector2(u, v);
                 }

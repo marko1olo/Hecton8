@@ -5,6 +5,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
 #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
+#pragma multi_compile _ _MATH_LOD_HIGH
 
 #define HECTON_CORE_LIT_DECLARE_VERTEX_INPUT_INSTANCE_ID UNITY_VERTEX_INPUT_INSTANCE_ID
 #define HECTON_CORE_LIT_DECLARE_VERTEX_OUTPUT_STEREO UNITY_VERTEX_OUTPUT_STEREO
@@ -35,6 +36,7 @@ float _HectonFlashlightShadowMinStep;
 float _HectonFlashlightShadowBias;
 float _HectonFlashlightShadowFloor;
 float4 _HectonCaveVoxelHalfExtents;
+float4 _HectonCaveVoxelInvDoubleHalfExtents;
 float4x4 _HectonCaveVoxelWorldToLocal;
 float4 _HectonCaveVoxelAoParams;
 float4 _HectonBiolumVolumeHalfExtents;
@@ -94,24 +96,45 @@ float4 _HectonParasiteAnchorParams[HECTON_PARASITE_MAX_ANCHORS];
 float4 _HectonParasiteGlobals;
 float4 _HectonSubmarineCrushCenterRadius;
 float4 _HectonSubmarineCrushDepthParams;
+float4 _HectonHabitatStressCenterRadius; // xyz=center, w=radius
+float4 _HectonHabitatStressParams;       // x=stress, y=max displacement, z=grid scale, w=seed
 float4 _HectonXRFoveatedParams;        // x=active, y=periphery resolve weight, z=reserved, w=refresh Hz
 float4 _HectonXRFoveatedCenterRadius;  // xy=stereo view-space tangent center, z=inner 30-degree proxy, w=outer periphery
 float4 _HectonXRNearClipDitherParams;  // x=active, y=fade start meters, z=fade kill meters, w=dither intensity
 float4 _HectonXROriginShiftState;      // x=XR active, y=origin shift sequence, z=pose refresh marker, w=fixed alpha
 float4 _TotalUniverseOffset;           // xyz=runtime-to-absolute offset used for AUP-stable visual phase
+float _HectonMathLodMode;              // 0=cheap dominant-axis, 1=exact high
+float _HectonMathLodDistanceSq;        // C# scalability bridge debug/readback value
+
+float3 HectonCoreLitDominantAxisOrDefault(float3 value, float3 fallbackValue)
+{
+    if (!all(isfinite(value)))
+        return fallbackValue;
+
+    float3 absValue = abs(value);
+    float maxAxis = max(max(absValue.x, absValue.y), absValue.z);
+    if (maxAxis <= 0.0001)
+        return fallbackValue;
+
+    float3 axisX = float3(value.x < 0.0 ? -1.0 : 1.0, 0.0, 0.0);
+    float3 axisY = float3(0.0, value.y < 0.0 ? -1.0 : 1.0, 0.0);
+    float3 axisZ = float3(0.0, 0.0, value.z < 0.0 ? -1.0 : 1.0);
+    return absValue.x >= absValue.y && absValue.x >= absValue.z
+        ? axisX
+        : (absValue.y >= absValue.z ? axisY : axisZ);
+}
 
 float3 HectonCoreLitSafeNormalize(float3 value)
 {
     float lenSq = dot(value, value);
-    if (lenSq <= 0.0001)
+    if (!isfinite(lenSq) || lenSq <= 0.0001)
         return float3(0.0, 1.0, 0.0);
 
-    float3 a = abs(value);
-    float maxAxis = max(max(a.x, a.y), a.z);
-    float minAxis = min(min(a.x, a.y), a.z);
-    float midAxis = a.x + a.y + a.z - maxAxis - minAxis;
-    float approxLength = max(maxAxis + midAxis * 0.375 + minAxis * 0.1875, 0.0001);
-    return value / approxLength;
+#if defined(_MATH_LOD_HIGH)
+    return normalize(value);
+#else
+    return HectonCoreLitDominantAxisOrDefault(value, float3(0.0, 1.0, 0.0));
+#endif
 }
 
 float HectonCoreLitApproxDistance(float3 delta)
@@ -141,6 +164,17 @@ float3 HectonCoreLitSanitizePositionWS(float3 positionWS)
 float HectonCoreLitInterleavedGradientNoise(float2 pixel)
 {
     return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+}
+
+float2 HectonCoreLitResolveTaaDitherPhasePixel()
+{
+    uint phaseIndex = _TaaFrameIndex & 3u;
+    return float2((float)(phaseIndex & 1u), (float)((phaseIndex >> 1u) & 1u)) * 0.5;
+}
+
+float HectonCoreLitTaaAccumulatedInterleavedGradientNoise(float2 pixel)
+{
+    return HectonCoreLitInterleavedGradientNoise(pixel + HectonCoreLitResolveTaaDitherPhasePixel());
 }
 
 float HectonCoreLitHash12(float2 value)
@@ -330,30 +364,56 @@ float HectonCoreLitSampleSubmarineCrushBuckling(float3 positionWS)
     return saturate(max(cellBreakup, crossBreakup * 0.82) + crease * 0.32);
 }
 
+float3 HectonCoreLitApplyHabitatAnalyticalStress(float3 positionWS, float3 normalWS)
+{
+    float stress01 = saturate(_HectonHabitatStressParams.x);
+    float displacementMax = max(_HectonHabitatStressParams.y, 0.0);
+    if (stress01 <= 0.0001 || displacementMax <= 0.0001)
+        return positionWS;
+
+    float radius = max(_HectonHabitatStressCenterRadius.w, 0.0);
+    float3 radiusDelta = positionWS - _HectonHabitatStressCenterRadius.xyz;
+    float radiusMask = radius > 0.001
+        ? 1.0 - saturate(dot(radiusDelta, radiusDelta) * rcp(max(radius * radius, 0.0001)))
+        : 1.0;
+    if (radiusMask <= 0.0001)
+        return positionWS;
+
+    float gridScale = max(_HectonHabitatStressParams.z, 0.001);
+    float seed = _HectonHabitatStressParams.w * 0.0137;
+    float3 q = floor((positionWS + _TotalUniverseOffset.xyz) * gridScale);
+    float phaseA = dot(q, float3(0.31, 0.47, 0.19)) + seed;
+    float phaseB = dot(q.yzx + 17.0, float3(0.23, 0.11, 0.41)) - seed;
+    float triA = HectonCoreLitTrianglePulse01(phaseA) * 2.0 - 1.0;
+    float triB = HectonCoreLitTrianglePulse01(phaseB) * 2.0 - 1.0;
+    float dent = (triA * 0.68 + triB * 0.32) * displacementMax * stress01 * radiusMask;
+    return HectonCoreLitSanitizePositionWS(positionWS + normalWS * dent);
+}
+
 float3 HectonCoreLitApplySubmarineCrushDepth(float3 positionWS, float3 normalWS)
 {
     positionWS = HectonCoreLitSanitizePositionWS(positionWS);
     normalWS = HectonCoreLitSafeNormalize(normalWS);
     float currentDepth = max(_HectonSubmarineCrushDepthParams.x, 0.0);
     float crushDepth = max(_HectonSubmarineCrushDepthParams.y, 0.001);
-    float depth01 = saturate(currentDepth / crushDepth);
+    float depth01 = saturate(currentDepth * rcp(crushDepth));
     float displacementMax = max(_HectonSubmarineCrushDepthParams.z, 0.0);
     if (depth01 <= 0.0001 || displacementMax <= 0.0001)
-        return positionWS;
+        return HectonCoreLitApplyHabitatAnalyticalStress(positionWS, normalWS);
 
     float radius = max(_HectonSubmarineCrushCenterRadius.w, 0.0);
     float3 radiusDelta = positionWS - _HectonSubmarineCrushCenterRadius.xyz;
     float radiusMask = radius > 0.001
-        ? 1.0 - saturate(dot(radiusDelta, radiusDelta) / max(radius * radius, 0.0001))
+        ? 1.0 - saturate(dot(radiusDelta, radiusDelta) * rcp(max(radius * radius, 0.0001)))
         : 1.0;
     if (radiusMask <= 0.0001)
-        return positionWS;
+        return HectonCoreLitApplyHabitatAnalyticalStress(positionWS, normalWS);
 
     float buckling = HectonCoreLitSampleSubmarineCrushBuckling(positionWS);
     float ridge = buckling * buckling;
     float buckle = (buckling * 2.0 - 1.0) * 0.68 - ridge * 0.32;
     float displacement = buckle * displacementMax * depth01 * radiusMask;
-    return HectonCoreLitSanitizePositionWS(positionWS + normalWS * displacement);
+    return HectonCoreLitApplyHabitatAnalyticalStress(HectonCoreLitSanitizePositionWS(positionWS + normalWS * displacement), normalWS);
 }
 
 float HectonCoreLitSedimentRippleHeight(float2 uv)
@@ -459,7 +519,7 @@ half HectonCoreLitResolveDitheredFadeNoise(float4 positionCS)
     float safeW = max(abs(positionCS.w), 0.0001);
     float2 screenUV = positionCS.xy * rcp(safeW) * 0.5 + 0.5;
     float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
-    return (half)HectonCoreLitInterleavedGradientNoise(pixel);
+    return (half)HectonCoreLitTaaAccumulatedInterleavedGradientNoise(pixel);
 }
 
 void HectonCoreLitClipDitheredTransparencyFade(half fadeAmount, float4 positionCS)
@@ -1145,9 +1205,12 @@ float HectonCoreLitSampleCaveVoxelSignedDistance(float3 positionWS)
     if (_HectonCaveVoxelActive <= 0.5)
         return _HectonCaveVoxelHalfExtents.w;
 
-    float3 halfExtents = max(_HectonCaveVoxelHalfExtents.xyz, float3(0.001, 0.001, 0.001));
+    float3 invDoubleHalfExtents = _HectonCaveVoxelInvDoubleHalfExtents.xyz;
+    if (any(invDoubleHalfExtents <= 0.0))
+        return _HectonCaveVoxelHalfExtents.w;
+
     float3 localPosition = mul(_HectonCaveVoxelWorldToLocal, float4(positionWS, 1.0)).xyz;
-    float3 sampleUv = localPosition / (halfExtents * 2.0) + 0.5;
+    float3 sampleUv = localPosition * invDoubleHalfExtents + 0.5;
     if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
         return _HectonCaveVoxelHalfExtents.w;
 

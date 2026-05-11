@@ -25,7 +25,7 @@ namespace Hecton8.AI
 
             float inverseDistance = math.rsqrt(math.max(distanceSqr, 0.0001f));
             float3 direction = (float3)toListener * inverseDistance;
-            float3 forward = math.normalizesafe((float3)playerTransform.forward, new float3(0f, 0f, 1f));
+            float3 forward = (float3)playerTransform.forward;
             float facing01 = math.saturate(math.dot(forward, direction));
             float heatBoost = math.lerp(0f, 0.08f, math.saturate(flashlight.HeatLevel));
 

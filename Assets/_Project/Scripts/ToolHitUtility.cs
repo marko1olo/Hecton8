@@ -36,7 +36,11 @@ namespace Hecton8.Gameplay
 
             bool applied = false;
 
-            if (hitCollider.TryGetComponent(out ICuttable cuttable))
+            if (TryQueueCentralDamage(hitCollider, damage, hitPoint, forceDirection, impulse))
+            {
+                applied = true;
+            }
+            else if (hitCollider.TryGetComponent(out ICuttable cuttable))
             {
                 cuttable.ApplyCutDamage(damage, hitPoint);
                 applied = true;
@@ -69,6 +73,47 @@ namespace Hecton8.Gameplay
                 ApplyImpulse(hitCollider, forceDirection, impulse);
 
             return applied;
+        }
+
+        private static bool TryQueueCentralDamage(
+            Collider hitCollider,
+            float damage,
+            Vector3 hitPoint,
+            Vector3 forceDirection,
+            float impulse)
+        {
+            IDamageReceiver receiver = hitCollider.GetComponent<IDamageReceiver>();
+            if (receiver == null)
+                receiver = hitCollider.GetComponentInParent<IDamageReceiver>();
+
+            if (!(receiver is Component receiverComponent))
+                return false;
+
+            int targetId = CombatDamageRuntime.ResolveTargetId(receiverComponent.gameObject);
+            if (!CombatDamageRuntime.IsTargetRegistered(targetId))
+                return false;
+
+            Vector3 localPoint = receiverComponent.transform.InverseTransformPoint(hitPoint);
+            CombatDamageSignal signal = new CombatDamageSignal
+            {
+                TargetId = targetId,
+                SourceId = DamageSourceIds.EnvironmentHazard,
+                Amount = damage,
+                ImpulseMagnitude = math.max(0f, impulse),
+                Direction = new float3(forceDirection.x, forceDirection.y, forceDirection.z),
+                PackedMeta = CombatDamageRuntime.PackSignalMeta(
+                    CombatDamageTypes.Impact,
+                    0u,
+                    CombatWeakspotTier.None)
+            };
+            CombatDamageSignalDetail detail = new CombatDamageSignalDetail
+            {
+                LocalPoint = new float3(localPoint.x, localPoint.y, localPoint.z),
+                ArmorNormal = new float3(-forceDirection.x, -forceDirection.y, -forceDirection.z),
+                LocalTemperatureCelsius = 20f,
+                StatusDurationSeconds = 0f
+            };
+            return CombatDamageRuntime.TryQueueDamage(in signal, in detail);
         }
 
         public static bool TryCollectItem(Collider hitCollider, Transform interactor)
@@ -274,7 +319,7 @@ namespace Hecton8.Gameplay
                 LogToolWarning(in messageBuffer);
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private static void LogToolInfo(string message)
         {
             Debug.Log($"[ToolInfo] {message}");

@@ -5,8 +5,6 @@
 RWTexture2D<float> _HectonVoxelSSAOResult;
 Texture2D<float> _HectonVoxelSSAODepth;
 
-float4 _HectonVoxelSSAOInputSize;
-float4 _HectonVoxelSSAOOutputSize;
 float4 _HectonVoxelSSAOParamsA; // x=projection scale, y=radius meters, z=intensity, w=depth sigma
 
 bool IsFiniteScalar(float value)
@@ -79,11 +77,21 @@ int2 ResolveSourcePixel(uint2 outputPixel, uint2 outputSize, int2 fullResSize)
 [numthreads(8, 8, 1)]
 void ResolveVoxelSSAO(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-    uint2 outputSize = (uint2)_HectonVoxelSSAOOutputSize.xy;
+    uint outputWidth;
+    uint outputHeight;
+    uint sourceWidth;
+    uint sourceHeight;
+    _HectonVoxelSSAOResult.GetDimensions(outputWidth, outputHeight);
+    _HectonVoxelSSAODepth.GetDimensions(sourceWidth, sourceHeight);
+
+    if (outputWidth == 0u || outputHeight == 0u || sourceWidth == 0u || sourceHeight == 0u)
+        return;
+
+    uint2 outputSize = uint2(outputWidth, outputHeight);
     if (dispatchThreadId.x >= outputSize.x || dispatchThreadId.y >= outputSize.y)
         return;
 
-    int2 fullResSize = (int2)_HectonVoxelSSAOInputSize.xy;
+    int2 fullResSize = int2(sourceWidth, sourceHeight);
     int2 centerPixel = ResolveSourcePixel(dispatchThreadId.xy, outputSize, fullResSize);
     float centerDepthRaw = _HectonVoxelSSAODepth.Load(int3(centerPixel, 0));
     if (!IsDepthValid(centerDepthRaw))

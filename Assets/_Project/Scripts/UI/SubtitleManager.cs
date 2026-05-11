@@ -149,7 +149,8 @@ namespace Hecton8.UI
             }
         }
 
-        private const int MaxQueuedSubtitles = 8;
+        private const int MaxQueuedSubtitles = 8; // Power-of-two ring capacity; BufferedQueueMask depends on it.
+        private const int BufferedQueueMask = MaxQueuedSubtitles - 1;
         private const int MaxBufferedSubtitleCharacters = CharBufferPool.RequiredVrTextCapacity;
         private const int MaxTimedAudioLogCueCount = 32;
         private const int MaxSubtitleRenderCharacters = 2048;
@@ -691,7 +692,7 @@ namespace Hecton8.UI
 
             request = _bufferedQueue[_bufferedQueueHead];
             _bufferedQueue[_bufferedQueueHead] = default;
-            _bufferedQueueHead = (_bufferedQueueHead + 1) % _bufferedQueue.Length;
+            _bufferedQueueHead = (_bufferedQueueHead + 1) & BufferedQueueMask;
             _bufferedQueueCount--;
             if (_bufferedQueueCount == 0)
                 _bufferedQueueHead = 0;
@@ -711,11 +712,11 @@ namespace Hecton8.UI
             int capacity = Mathf.Clamp(maxQueuedSubtitles, 1, _bufferedQueue.Length);
             if (_bufferedQueueCount >= capacity)
             {
-                _bufferedQueueHead = (_bufferedQueueHead + 1) % _bufferedQueue.Length;
+                _bufferedQueueHead = (_bufferedQueueHead + 1) & BufferedQueueMask;
                 _bufferedQueueCount--;
             }
 
-            int slot = (_bufferedQueueHead + _bufferedQueueCount) % _bufferedQueue.Length;
+            int slot = (_bufferedQueueHead + _bufferedQueueCount) & BufferedQueueMask;
             int safeLength = CopyBuffer(normalized, _bufferedQueueBuffers[slot], normalizedLength);
             _bufferedQueue[slot] = new BufferedSubtitleRequest
             {

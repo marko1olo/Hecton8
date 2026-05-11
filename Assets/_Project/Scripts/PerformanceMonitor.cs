@@ -58,6 +58,13 @@ namespace Hecton8.Core
         SystemDegradation = 3
     }
 
+    public enum SystemDegradationLevel : ushort
+    {
+        Optimal = 1,
+        Warning = 2,
+        Critical = 3
+    }
+
     /// <summary>
     /// Blittable performance event payload drained by <see cref="SystemDispatcher"/> in LateUpdate.
     /// </summary>
@@ -257,7 +264,11 @@ namespace Hecton8.Core
             });
         }
 
-        internal static void RaiseSystemDegradation(float frameTimeMs, float thresholdMs, int frameCount)
+        internal static void RaiseSystemDegradation(
+            float frameTimeMs,
+            float thresholdMs,
+            int frameCount,
+            SystemDegradationLevel level = SystemDegradationLevel.Warning)
         {
             Enqueue(new PerformanceEventPayload
             {
@@ -267,7 +278,7 @@ namespace Hecton8.Core
                 ThresholdValue = thresholdMs,
                 FrameCount = frameCount,
                 EventType = (ushort)PerformanceEventType.SystemDegradation,
-                Reserved = 0
+                Reserved = (ushort)level
             });
         }
 

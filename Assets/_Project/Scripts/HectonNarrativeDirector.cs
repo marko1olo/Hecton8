@@ -242,7 +242,7 @@ namespace Hecton8.Gameplay
 
                 if (!poi.TryGetAupTrigger(
                         out int bitIndex,
-                        out float radiusMeters,
+                        out double radiusSq,
                         out AbsoluteUniversePosition poiAup,
                         out uint discoveryHash))
                 {
@@ -259,7 +259,6 @@ namespace Hecton8.Gameplay
                     continue;
                 }
 
-                double radiusSq = (double)radiusMeters * radiusMeters;
                 if (AbsoluteUniversePosition.DistanceSq(in playerAup, in poiAup) > radiusSq)
                     continue;
 

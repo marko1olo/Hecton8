@@ -681,6 +681,7 @@ namespace Hecton8.World
         {
             _qualityPreset = preset;
             QualitySettings.lodBias = GetLODBias();
+            DistanceMath.PushShaderMathLod(preset == LODQualityPreset.High ? MathLodMode.High : MathLodMode.Low);
 
             GlobalRegistry.DynamicResolution?.SetQualityPreset(preset);
         }

@@ -1,4 +1,4 @@
-using Hecton8.Physics;
+using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -12,7 +12,13 @@ namespace Hecton8.AI
     [System.Serializable]
     public class FaunaSteeringEngine
     {
-        [Header("── Configuration ────────────────────────────────")]
+        private const float ApexSteeringResponseScale = 0.55f;
+        private const float ApexBankResponse = 2.75f;
+        private const float SwarmBankResponse = 5f;
+        private const float MinDirectionSqr = 0.0001f;
+        private const float MinQuaternionLengthSq = 0.000001f;
+
+        [Header("Configuration")]
         public float moveSpeed = 5f;
         [FormerlySerializedAs("maxSpeed")]
         public float maxSpeed = 5f; 
@@ -26,7 +32,7 @@ namespace Hecton8.AI
         public float bankingStrength = 25f;
         public float stopDistance = 0.5f;
 
-        [Header("── State ──────────────────────────────────────")]
+        [Header("State")]
         public Vector3 velocity;
         public Vector3 currentDirection;
         public Vector3 desiredDirection;
@@ -67,30 +73,29 @@ namespace Hecton8.AI
 
             desiredDirection = targetDir;
             float resolvedForceMultiplier = math.max(0.1f, forceMult);
+            bool useApexMathLod = UsesApexSmoothSteering();
             
             // TACTICAL DIRECTION: Predator Retreat (User REQ: Flee strictly from threat)
             if (isRetreating && threatPos != default)
             {
                 Vector3 retreatDirection = _body.position - threatPos;
-                if (retreatDirection.sqrMagnitude > 0.0001f)
-                    desiredDirection = ResolveDominantAxisDirection(retreatDirection, desiredDirection);
+                if (retreatDirection.sqrMagnitude > MinDirectionSqr)
+                    desiredDirection = ResolveMathLodDirection(retreatDirection, desiredDirection, useApexMathLod);
             }
 
-            Vector3 fallbackForward = _smoothedSteerDirection.sqrMagnitude > 0.0001f
-                ? ResolveDominantAxisDirection(_smoothedSteerDirection, Vector3.forward)
+            Vector3 fallbackForward = _smoothedSteerDirection.sqrMagnitude > MinDirectionSqr
+                ? ResolveMathLodDirection(_smoothedSteerDirection, Vector3.forward, useApexMathLod)
                 : (_body.rotation * Vector3.forward);
-            if (fallbackForward.sqrMagnitude <= 0.0001f)
+            if (fallbackForward.sqrMagnitude <= MinDirectionSqr)
                 fallbackForward = Vector3.forward;
 
-            Vector3 steeringTarget = desiredDirection.sqrMagnitude > 0.0001f
-                ? ResolveDominantAxisDirection(desiredDirection, fallbackForward)
-                : ResolveDominantAxisDirection(fallbackForward, Vector3.forward);
+            Vector3 steeringTarget = desiredDirection.sqrMagnitude > MinDirectionSqr
+                ? ResolveMathLodDirection(desiredDirection, fallbackForward, useApexMathLod)
+                : ResolveMathLodDirection(fallbackForward, Vector3.forward, useApexMathLod);
             float steeringSharpness = math.max(0.01f, turnSpeed * math.max(0.1f, turnMult) * resolvedForceMultiplier);
-            _smoothedSteerDirection = (Vector3)HectonContactJob.ResolveSteeringArc(
-                fallbackForward,
-                steeringTarget,
-                fdt,
-                steeringSharpness);
+            _smoothedSteerDirection = useApexMathLod
+                ? ResolveApexSteeringArc(fallbackForward, steeringTarget, fdt, steeringSharpness * ApexSteeringResponseScale)
+                : steeringTarget;
 
             // 1. TACTICAL SPEED: Predator Retreat (User REQ: 1.5x speed)
             float stateMod = isRetreating ? (_speciesProfile != null ? _speciesProfile.retreatSpeedMultiplier : 1.5f) : 1f;
@@ -113,12 +118,13 @@ namespace Hecton8.AI
             float maxVelocityDelta = math.max(0.01f, swimForce * resolvedForceMultiplier * fdt);
             if (_smoothedSteerDirection.sqrMagnitude > 0.01f)
             {
-                Vector3 desiredVelocity = ResolveDominantAxisDirection(_smoothedSteerDirection, steeringTarget) * speedTarget;
-                currentVelocity = MoveTowardsAxis(currentVelocity, desiredVelocity, maxVelocityDelta);
+                Vector3 desiredVelocityDirection = ResolveMathLodDirection(_smoothedSteerDirection, steeringTarget, useApexMathLod);
+                Vector3 desiredVelocity = desiredVelocityDirection * speedTarget;
+                currentVelocity = MoveTowardsMathLod(currentVelocity, desiredVelocity, maxVelocityDelta, useApexMathLod);
             }
             else
             {
-                currentVelocity = MoveTowardsAxis(currentVelocity, Vector3.zero, maxVelocityDelta);
+                currentVelocity = MoveTowardsMathLod(currentVelocity, Vector3.zero, maxVelocityDelta, useApexMathLod);
             }
 
             if (!IsFinite(currentVelocity))
@@ -130,16 +136,22 @@ namespace Hecton8.AI
 
             // 3. DIRECTION & ROTATION
             Vector3 facingDirection = currentVelocity.sqrMagnitude > 0.01f
-                ? ResolveDominantAxisDirection(currentVelocity, currentDirection)
+                ? ResolveMathLodDirection(currentVelocity, currentDirection, useApexMathLod)
                 : currentDirection;
             if (facingDirection.sqrMagnitude > 0.01f)
             {
-                Vector3 lookDir = ResolveDominantAxisDirection(facingDirection, Vector3.forward);
-                Quaternion targetRot = ResolveDominantAxisRotation(lookDir);
+                Vector3 lookDir = ResolveMathLodDirection(facingDirection, Vector3.forward, useApexMathLod);
+                Quaternion targetRot = useApexMathLod
+                    ? ResolveApexRotation(lookDir, _body.rotation)
+                    : ResolveDominantAxisRotation(lookDir);
                 
                 // Rotation Speed multiplier for aggressive/retreat states
                 float rotMod = (isRetreating || speedMult > 1.1f) ? 2.5f * turnMult : turnMult;
-                Quaternion nextRotation = FastNlerp(_body.rotation, targetRot, math.saturate(turnSpeed * rotMod * resolvedForceMultiplier * fdt));
+                float turnResponse = turnSpeed * rotMod * resolvedForceMultiplier * fdt;
+                turnResponse = useApexMathLod
+                    ? SmoothStep01(turnResponse * ApexSteeringResponseScale)
+                    : math.saturate(turnResponse);
+                Quaternion nextRotation = FastNlerp(_body.rotation, targetRot, turnResponse);
 
                 // 4. VISUAL BANKING (User REQ: Fluid aquatic tilt)
                 float lateralTurn = Vector3.Dot(nextRotation * Vector3.right, lookDir);
@@ -147,7 +159,8 @@ namespace Hecton8.AI
                 // Heavy banking for retreats (User REQ)
                 float bankMult = isRetreating ? 2.0f : 1.0f;
                 float targetRoll = -lateralTurn * bankingStrength * bankIntensity * bankMult;
-                _lastBankingRoll = math.lerp(_lastBankingRoll, targetRoll, math.saturate(5f * fdt));
+                float bankResponse = useApexMathLod ? ApexBankResponse : SwarmBankResponse;
+                _lastBankingRoll = math.lerp(_lastBankingRoll, targetRoll, math.saturate(bankResponse * fdt));
 
                 Quaternion bankedRotation = NormalizeQuaternion(nextRotation * ResolveRollApprox(_lastBankingRoll));
                 if (IsFinite(bankedRotation))
@@ -169,7 +182,12 @@ namespace Hecton8.AI
             currentSpeed = 0f;
             velocity = Vector3.zero;
             desiredDirection = Vector3.zero;
-            _smoothedSteerDirection = currentDirection.sqrMagnitude > 0.0001f ? currentDirection : Vector3.forward;
+            _smoothedSteerDirection = currentDirection.sqrMagnitude > MinDirectionSqr ? currentDirection : Vector3.forward;
+        }
+
+        private bool UsesApexSmoothSteering()
+        {
+            return _speciesProfile != null && _speciesProfile.isLeviathan;
         }
 
         private static bool IsFinite(Vector3 value)
@@ -189,10 +207,10 @@ namespace Hecton8.AI
 
         private static Vector3 ResolveDominantAxisDirection(Vector3 direction, Vector3 fallback)
         {
-            if (!IsFinite(direction) || direction.sqrMagnitude <= 0.0001f)
+            if (!IsFinite(direction) || direction.sqrMagnitude <= MinDirectionSqr)
                 direction = fallback;
 
-            if (!IsFinite(direction) || direction.sqrMagnitude <= 0.0001f)
+            if (!IsFinite(direction) || direction.sqrMagnitude <= MinDirectionSqr)
                 return Vector3.forward;
 
             float absX = math.abs(direction.x);
@@ -205,6 +223,25 @@ namespace Hecton8.AI
                 return direction.y < 0f ? Vector3.down : Vector3.up;
 
             return direction.z < 0f ? Vector3.back : Vector3.forward;
+        }
+
+        private static Vector3 ResolveMathLodDirection(Vector3 direction, Vector3 fallback, bool useApexMathLod)
+        {
+            return useApexMathLod
+                ? ResolveApexSmoothDirection(direction, fallback)
+                : ResolveDominantAxisDirection(direction, fallback);
+        }
+
+        private static Vector3 ResolveApexSmoothDirection(Vector3 direction, Vector3 fallback)
+        {
+            if (!IsFinite(direction) || direction.sqrMagnitude <= MinDirectionSqr)
+                direction = fallback;
+
+            float lengthSq = direction.sqrMagnitude;
+            if (!IsFinite(direction) || lengthSq <= MinDirectionSqr)
+                return Vector3.forward;
+
+            return direction * math.rsqrt(lengthSq);
         }
 
         private static float ResolveSpeedBucket(float velocitySqr)
@@ -223,10 +260,25 @@ namespace Hecton8.AI
             Vector3 delta = target - current;
             float distanceSq = delta.sqrMagnitude;
             float maxDeltaSq = maxDelta * maxDelta;
-            if (distanceSq <= maxDeltaSq || distanceSq <= 0.0001f)
+            if (distanceSq <= maxDeltaSq || distanceSq <= MinDirectionSqr)
                 return target;
 
             return current + ResolveDominantAxisDirection(delta, Vector3.zero) * maxDelta;
+        }
+
+        private static Vector3 MoveTowardsMathLod(Vector3 current, Vector3 target, float maxDelta, bool useApexMathLod)
+        {
+            if (!useApexMathLod)
+                return MoveTowardsAxis(current, target, maxDelta);
+
+            Vector3 delta = target - current;
+            float distanceSq = delta.sqrMagnitude;
+            float maxDeltaSq = maxDelta * maxDelta;
+            if (distanceSq <= maxDeltaSq || distanceSq <= MinDirectionSqr || !IsFinite(delta))
+                return target;
+
+            float step01 = math.saturate(maxDelta * math.rsqrt(distanceSq));
+            return current + (delta * step01);
         }
 
         private static Quaternion ResolveDominantAxisRotation(Vector3 axis)
@@ -243,23 +295,39 @@ namespace Hecton8.AI
             return axis.z < 0f ? _BackRotation : _ForwardRotation;
         }
 
+        private static Vector3 ResolveApexSteeringArc(Vector3 currentSteer, Vector3 desiredSteer, float deltaTime, float turnRate)
+        {
+            Vector3 currentSafe = ResolveApexSmoothDirection(currentSteer, Vector3.forward);
+            Vector3 desiredSafe = ResolveApexSmoothDirection(desiredSteer, currentSafe);
+            float x = math.max(0f, deltaTime) * math.max(0f, turnRate);
+            float alpha = SmoothStep01(x * math.rcp(1f + x));
+            quaternion currentRotation = quaternion.LookRotationSafe((float3)currentSafe, new float3(0f, 1f, 0f));
+            quaternion desiredRotation = quaternion.LookRotationSafe((float3)desiredSafe, new float3(0f, 1f, 0f));
+            quaternion smoothedRotation = CinematicMath.FastNlerp(currentRotation, desiredRotation, alpha);
+            float3 forward = math.mul(smoothedRotation, new float3(0f, 0f, 1f));
+            return ResolveApexSmoothDirection(new Vector3(forward.x, forward.y, forward.z), desiredSafe);
+        }
+
+        private static Quaternion ResolveApexRotation(Vector3 direction, Quaternion fallback)
+        {
+            Vector3 fallbackForward = fallback * Vector3.forward;
+            Vector3 safeDirection = ResolveApexSmoothDirection(direction, fallbackForward);
+            quaternion rotation = quaternion.LookRotationSafe((float3)safeDirection, new float3(0f, 1f, 0f));
+            float4 value = rotation.value;
+            if (!math.all(math.isfinite(value)))
+                return fallback;
+
+            return new Quaternion(value.x, value.y, value.z, value.w);
+        }
+
         private static Quaternion FastNlerp(Quaternion from, Quaternion to, float t)
         {
-            float dot = from.x * to.x + from.y * to.y + from.z * to.z + from.w * to.w;
-            if (dot < 0f)
-            {
-                to.x = -to.x;
-                to.y = -to.y;
-                to.z = -to.z;
-                to.w = -to.w;
-            }
-
-            Quaternion blended = new Quaternion(
-                math.lerp(from.x, to.x, t),
-                math.lerp(from.y, to.y, t),
-                math.lerp(from.z, to.z, t),
-                math.lerp(from.w, to.w, t));
-            return NormalizeQuaternion(blended);
+            quaternion blended = CinematicMath.FastNlerp(
+                new quaternion(from.x, from.y, from.z, from.w),
+                new quaternion(to.x, to.y, to.z, to.w),
+                t);
+            float4 value = blended.value;
+            return new Quaternion(value.x, value.y, value.z, value.w);
         }
 
         private static Quaternion ResolveRollApprox(float rollDegrees)
@@ -274,7 +342,7 @@ namespace Hecton8.AI
         private static Quaternion NormalizeQuaternion(Quaternion value)
         {
             float lengthSq = value.x * value.x + value.y * value.y + value.z * value.z + value.w * value.w;
-            if (lengthSq <= 0.000001f || !float.IsFinite(lengthSq))
+            if (lengthSq <= MinQuaternionLengthSq || !float.IsFinite(lengthSq))
                 return _ForwardRotation;
 
             float invLength = math.rcp(math.max(0.0001f, 0.5f + (lengthSq * 0.5f)));
@@ -283,6 +351,12 @@ namespace Hecton8.AI
             value.z *= invLength;
             value.w *= invLength;
             return value;
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float x = math.saturate(value);
+            return x * x * (3f - (2f * x));
         }
     }
 }

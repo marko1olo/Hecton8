@@ -17,7 +17,7 @@ namespace Hecton8.Gameplay
         private const float MinimumCameraFov = 1f;
         private const float MaximumCameraFov = 179f;
         private const float QuaternionUnitLengthSqEpsilon = 0.015625f;
-        private const float MaximumLateFrameKccOffsetMeters = 0.05f;
+        private const float MaximumLateFrameKccOffsetMeters = 0.75f;
 
         [Header("References")]
         [SerializeField, Tooltip("Camera transform driven by the rig.")]
@@ -185,12 +185,10 @@ namespace Hecton8.Gameplay
         {
             float fixedDeltaTime = math.max(MinimumBlendDeltaTime, state.FixedDeltaTime);
             float alpha = math.saturate((Time.time - Time.fixedTime) / fixedDeltaTime);
-            float remainingDeltaTime = (1f - alpha) * fixedDeltaTime;
-            if (remainingDeltaTime <= 0.0001f)
-                return Vector3.zero;
-
-            Vector3 velocity = SanitizeVector3(state.KccLinearVelocity, Vector3.zero);
-            Vector3 worldOffset = velocity * remainingDeltaTime;
+            Vector3 currentFixedPosition = SanitizeVector3(state.CurrentFixedPosition, Vector3.zero);
+            Vector3 previousFixedPosition = SanitizeVector3(state.PreviousFixedPosition, currentFixedPosition);
+            Vector3 interpolatedFixedPosition = previousFixedPosition + ((currentFixedPosition - previousFixedPosition) * alpha);
+            Vector3 worldOffset = interpolatedFixedPosition - currentFixedPosition;
             worldOffset.x = math.clamp(worldOffset.x, -MaximumLateFrameKccOffsetMeters, MaximumLateFrameKccOffsetMeters);
             worldOffset.y = math.clamp(worldOffset.y, -MaximumLateFrameKccOffsetMeters, MaximumLateFrameKccOffsetMeters);
             worldOffset.z = math.clamp(worldOffset.z, -MaximumLateFrameKccOffsetMeters, MaximumLateFrameKccOffsetMeters);

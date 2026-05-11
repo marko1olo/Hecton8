@@ -18,7 +18,7 @@ namespace Hecton8.UI
         private const int HistoryLineCount = 16;
         private const int HistoryLineCapacity = 64;
         private const int PendingEntryCapacity = 12;
-        private const int MetricBufferLength = 64;
+        private const int MetricBufferLength = 112;
         private const int StatusBufferLength = 48;
         private const int RenderBufferLength = (HistoryLineCount * (HistoryLineCapacity + 1)) + HistoryLineCapacity;
         private const float CharactersPerSecond = 42f;
@@ -77,7 +77,7 @@ namespace Hecton8.UI
         private readonly int[] _historyLineLengths = new int[HistoryLineCount]; // COLD ALLOC: int[16] — committed log line lengths — owner: HectonSubmarineOsDisplay
         private readonly char[][] _historyLineStorage = new char[HistoryLineCount][]; // COLD ALLOC: char[][16] — committed submarine OS log ring — owner: HectonSubmarineOsDisplay
         private readonly char[] _typingBuffer = new char[HistoryLineCapacity]; // COLD ALLOC: char[64] — active typed line staging buffer — owner: HectonSubmarineOsDisplay
-        private readonly char[] _metricBuffer = new char[MetricBufferLength]; // COLD ALLOC: char[64] — metrics render buffer — owner: HectonSubmarineOsDisplay
+        private readonly char[] _metricBuffer = new char[MetricBufferLength]; // COLD ALLOC: char[112] — metrics render buffer — owner: HectonSubmarineOsDisplay
         private readonly char[] _statusBuffer = new char[StatusBufferLength]; // COLD ALLOC: char[48] — status render buffer — owner: HectonSubmarineOsDisplay
         private readonly char[] _renderBuffer = new char[RenderBufferLength]; // COLD ALLOC: char[1104] — multiline log render buffer — owner: HectonSubmarineOsDisplay
 
@@ -101,6 +101,10 @@ namespace Hecton8.UI
         private int _renderedOxygenPercent = InvalidCachedMetric;
         private int _renderedPressureKPa = InvalidCachedMetric;
         private int _renderedNativeCopyMegabytes = InvalidCachedMetric;
+        private int _renderedSpeedTenthsKnots = InvalidCachedMetric;
+        private int _renderedEngineHeatPercent = InvalidCachedMetric;
+        private int _renderedSonarContactCount = InvalidCachedMetric;
+        private int _renderedNearestSonarMeters = InvalidCachedMetric;
 
         private bool _typingActive;
         private bool _registeredUpdatable;
@@ -338,11 +342,19 @@ namespace Hecton8.UI
             int powerPercent = ToPercent(_snapshot.PowerNormalized);
             int oxygenPercent = ToPercent(_snapshot.OxygenNormalized);
             int pressureKPa = (int)math.round(_snapshot.MaxPressureKPa);
+            int speedTenthsKnots = (int)math.round(math.max(0f, _snapshot.SpeedKnots) * 10f);
+            int engineHeatPercent = ToPercent(_snapshot.EngineHeat01);
+            int sonarContactCount = math.max(0, _snapshot.SonarContactCount);
+            int nearestSonarMeters = math.max(0, _snapshot.NearestSonarContactMeters);
             long nativeCopyMegabytesRaw = GlobalTelemetryBus.NativeCopyMegabyteCount;
             int nativeCopyMegabytes = nativeCopyMegabytesRaw > int.MaxValue ? int.MaxValue : (int)nativeCopyMegabytesRaw;
             if (powerPercent == _renderedPowerPercent &&
                 oxygenPercent == _renderedOxygenPercent &&
                 pressureKPa == _renderedPressureKPa &&
+                speedTenthsKnots == _renderedSpeedTenthsKnots &&
+                engineHeatPercent == _renderedEngineHeatPercent &&
+                sonarContactCount == _renderedSonarContactCount &&
+                nearestSonarMeters == _renderedNearestSonarMeters &&
                 nativeCopyMegabytes == _renderedNativeCopyMegabytes)
             {
                 return;
@@ -356,6 +368,19 @@ namespace Hecton8.UI
             cursor = AppendLiteral(_metricBuffer, cursor, "  P ");
             cursor = AppendInt(_metricBuffer, cursor, pressureKPa);
             cursor = AppendLiteral(_metricBuffer, cursor, "kPa");
+            cursor = AppendLiteral(_metricBuffer, cursor, "  SPD ");
+            cursor = AppendFixedTenths(_metricBuffer, cursor, speedTenthsKnots);
+            cursor = AppendLiteral(_metricBuffer, cursor, "kt");
+            cursor = AppendLiteral(_metricBuffer, cursor, "  HEAT ");
+            cursor = AppendPercentValue(_metricBuffer, cursor, engineHeatPercent);
+            cursor = AppendLiteral(_metricBuffer, cursor, "  SNR ");
+            cursor = AppendInt(_metricBuffer, cursor, sonarContactCount);
+            cursor = AppendLiteral(_metricBuffer, cursor, "/");
+            if (nearestSonarMeters > 0)
+                cursor = AppendInt(_metricBuffer, cursor, nearestSonarMeters);
+            else
+                cursor = AppendLiteral(_metricBuffer, cursor, "--");
+            cursor = AppendLiteral(_metricBuffer, cursor, "m");
             cursor = AppendLiteral(_metricBuffer, cursor, "  MEM ");
             cursor = AppendInt(_metricBuffer, cursor, nativeCopyMegabytes);
             cursor = AppendLiteral(_metricBuffer, cursor, "MB");
@@ -363,6 +388,10 @@ namespace Hecton8.UI
             _renderedPowerPercent = powerPercent;
             _renderedOxygenPercent = oxygenPercent;
             _renderedPressureKPa = pressureKPa;
+            _renderedSpeedTenthsKnots = speedTenthsKnots;
+            _renderedEngineHeatPercent = engineHeatPercent;
+            _renderedSonarContactCount = sonarContactCount;
+            _renderedNearestSonarMeters = nearestSonarMeters;
             _renderedNativeCopyMegabytes = nativeCopyMegabytes;
         }
 
@@ -476,7 +505,7 @@ namespace Hecton8.UI
             panelImage.raycastTarget = false;
 
             _statusLabel = CreateText("Status", _root, new Vector2(14f, -12f), new Vector2(280f, 24f), 19f);
-            _metricLabel = CreateText("Metrics", _root, new Vector2(14f, -38f), new Vector2(320f, 20f), 16f);
+            _metricLabel = CreateText("Metrics", _root, new Vector2(14f, -38f), new Vector2(492f, 20f), 13f);
             _droneFleetLabel = CreateText("DroneFleet", _root, new Vector2(14f, -60f), new Vector2(320f, 20f), 16f);
             _logLabel = CreateText("Log", _root, new Vector2(14f, -92f), new Vector2(356f, 264f), 15f);
             _logLabel.alignment = TextAlignmentOptions.TopLeft;
@@ -585,6 +614,10 @@ namespace Hecton8.UI
             _renderedPowerPercent = InvalidCachedMetric;
             _renderedOxygenPercent = InvalidCachedMetric;
             _renderedPressureKPa = InvalidCachedMetric;
+            _renderedSpeedTenthsKnots = InvalidCachedMetric;
+            _renderedEngineHeatPercent = InvalidCachedMetric;
+            _renderedSonarContactCount = InvalidCachedMetric;
+            _renderedNearestSonarMeters = InvalidCachedMetric;
             _renderedNativeCopyMegabytes = InvalidCachedMetric;
         }
 
@@ -702,6 +735,19 @@ namespace Hecton8.UI
                 return safeCursor;
 
             return safeCursor + written;
+        }
+
+        private static int AppendFixedTenths(char[] destination, int cursor, int valueTenths)
+        {
+            int whole = valueTenths / 10;
+            int tenths = math.abs(valueTenths % 10);
+            int safeCursor = AppendInt(destination, cursor, whole);
+            if (safeCursor < destination.Length)
+                destination[safeCursor++] = '.';
+            if (safeCursor < destination.Length)
+                destination[safeCursor++] = (char)('0' + tenths);
+
+            return safeCursor;
         }
 
         private static int AppendRange(char[] destination, int cursor, char[] source, int sourceStart, int length)

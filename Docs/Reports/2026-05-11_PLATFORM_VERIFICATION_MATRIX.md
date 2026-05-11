@@ -9,6 +9,17 @@ Related reports:
 
 This matrix defines the proof required before any platform is called supported. Empty proof means unsupported.
 
+## Mandates Applied
+
+- `PROJECT_LTS_Compatibility_Layer.txt`
+- `CTRL_Device_Abstraction_Haptics.txt`
+- `AUDIO_Hrtf_Binaural_Spatialization.txt`
+- `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
+- `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+- `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
+- `VOX_Voxel_SDF_Geometry_MarchingCubes_Pipeline.txt`
+- `VOX_Voxel_World_Logic_Carving_Persistence.txt`
+
 ## Non-Negotiable Gates
 
 No platform support claim is valid unless all gates below pass for that exact target:
@@ -57,18 +68,23 @@ Device lifecycle proof
 Certification/store proof
 ```
 
-Current state stops after static scan plus local Core `.NET` compile. It does not reach Unity import/player proof.
+Current state reaches Windows Editor-context Unity import/audit proof, but still stops before player build, Play Mode, profiler, GC, memory, scene route, XR device, Linux, macOS, Android, and console proof.
+
+Fresh evidence:
+
+- `CodexArtifacts/2026-05-11_PLATFORM_UNITY_AUDIT_R14_FINAL.log`: Unity batch audit exited `0`, wrote `Docs/Reports/2026-05-11_PLATFORM_COMPATIBILITY_EDITOR_AUDIT.md`, and strict scan found no compiler/Burst/Tundra/Unhandled-Exception failure signals.
+- `CodexArtifacts/2026-05-11_PLATFORM_UNITY_IMPORT_R10_POST_AUDIT.log`: Unity batch import exited `0`, with `Exiting batchmode successfully now!` and `Application will terminate with return code 0`.
 
 ## Platform Gates
 
 | Platform | Required OS / device floor | Toolchain gate | Build gate | Runtime gate | Performance gate | Current status |
 |---|---|---|---|---|---|---|
-| Windows desktop | Windows 10 21H1 build 19043+ / Windows 11 | Existing Windows Standalone module | Current-source x64 player build | Launch on Win10 and Win11; boot/menu/world/save/pause | 60 FPS p95 on MX350 target, 0 GC, VRAM <= project cap | `PENDING / NOT PROVEN` |
+| Windows desktop | Windows 10 21H1 build 19043+ / Windows 11 | Existing Windows Standalone module | Current-source x64 player build still pending | Launch on Win10 and Win11; boot/menu/world/save/pause | 60 FPS p95 on MX350 target, 0 GC, VRAM <= project cap | `IMPORT CLEAN / PLAYER PENDING` |
 | Legacy Windows | Windows 7/8/8.1 | Not target | None | None | None | `REJECT / DO NOT TARGET` |
-| Linux desktop | Ubuntu 22.04 and 24.04 x64 | Install Linux Build Support | Linux x64 player build | Launch on real Linux; player log clean; save paths valid | Native graphics/API/profiler proof | `BLOCKED` |
+| Linux desktop | Ubuntu 22.04 and 24.04 x64 | Linux Build Support installed | Linux x64 player build | Launch on real Linux; player log clean; save paths valid | Native graphics/API/profiler proof | `BUILD/PROOF PENDING` |
 | macOS Intel | macOS 12+ | Install Mac Build Support; real Mac for launch/signing | macOS x64/universal build | Launch on Intel Mac; signed path defined | Metal/profile/memory proof | `BLOCKED` |
 | macOS Apple Silicon | macOS 12+ | Mac module plus Apple Silicon target | ARM64/universal build | Launch on Apple Silicon Mac; native libs valid | Metal/profile/memory proof | `BLOCKED` |
-| Steam Deck native | SteamOS/Linux target | Linux module | Linux build | Steam Deck launch, controls, suspend/resume | Steam Deck profile, shader cache, battery/thermal | `BLOCKED` |
+| Steam Deck native | SteamOS/Linux target | Linux module installed | Linux build | Steam Deck launch, controls, suspend/resume | Steam Deck profile, shader cache, battery/thermal | `BUILD/PROOF PENDING` |
 | Steam Deck Proton | Windows build | Windows build plus Steam deployment | Windows player | Proton launch, fullscreen, Steam Input | Proton frame pacing proof | `UNPROVEN` |
 | PC VR streaming | Windows 10/11 host + OpenXR runtime + headset | XR Plugin Management + OpenXR | Windows OpenXR player build | Stereo headset entry, controllers, haptics, recenter, pause UI | 72/80/90/120 Hz target depending runtime; no GC | `BLOCKED` |
 | Quest/PICO standalone | Android API 25+ floor; actual store target likely higher by store policy | Android Build Support + SDK/NDK/JDK + XR packages | APK/AAB build + signing | Stereo Android XR headset launch, controllers, permissions | Device profiler, thermal soak, foveation, memory cap | `BLOCKED` |
@@ -84,8 +100,10 @@ Every row must store an artifact path, exact Unity version, git commit/worktree 
 
 | Build ID | Target | Unity | Module installed | Build artifact | Log | Result |
 |---|---|---|---|---|---|---|
+| UNITY-AUDIT-R14 | Windows Editor audit | 6000.4.1f1 | Windows yes | `Docs/Reports/2026-05-11_PLATFORM_COMPATIBILITY_EDITOR_AUDIT.md` | `CodexArtifacts/2026-05-11_PLATFORM_UNITY_AUDIT_R14_FINAL.log` | `PASS: ExitCode 0, no strict compile/Burst/Tundra failure signals` |
+| UNITY-IMPORT-R10 | Windows Editor import | 6000.4.1f1 | Windows yes | `Library/ScriptAssemblies/Hecton8.Core.dll` updated 2026-05-11 09:39 | `CodexArtifacts/2026-05-11_PLATFORM_UNITY_IMPORT_R10_POST_AUDIT.log` | `PASS: ExitCode 0, batchmode success` |
 | WIN-X64-R1 | Windows x64 | 6000.4.1f1 | yes | `PENDING` | `PENDING` | `PENDING` |
-| LINUX-X64-R1 | Linux x64 | 6000.4.1f1 | no | `BLOCKED` | `BLOCKED` | `BLOCKED` |
+| LINUX-X64-R1 | Linux x64 | 6000.4.1f1 | yes | `PENDING` | `PENDING` | `PENDING` |
 | MAC-UNIVERSAL-R1 | macOS universal | 6000.4.1f1 | no | `BLOCKED` | `BLOCKED` | `BLOCKED` |
 | ANDROID-FLAT-R1 | Android flat | 6000.4.1f1 | no | `BLOCKED` | `BLOCKED` | `BLOCKED` |
 | WIN-OPENXR-R1 | Windows OpenXR | 6000.4.1f1 | Windows yes, XR no | `BLOCKED` | `BLOCKED` | `BLOCKED` |
@@ -253,4 +271,3 @@ PC VR streaming:      BLOCKED
 Standalone VR:        BLOCKED
 Consoles:             VENDOR BLOCKED
 ```
-

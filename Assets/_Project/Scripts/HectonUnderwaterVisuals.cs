@@ -73,7 +73,15 @@ namespace Hecton8.Environment
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)]
-    public sealed class HectonUnderwaterVisuals : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IRenderable, ISoundscapeEventListener, IBiomeMatrixEventListener, IMapMagicBiomeEventListener
+    public sealed class HectonUnderwaterVisuals : MonoBehaviour,
+        Hecton8.Core.ITickable,
+        Hecton8.Core.IUpdatable,
+        Hecton8.Core.ISlowTickable,
+        Hecton8.Core.ILateFrameTickable,
+        Hecton8.Core.IRenderable,
+        Hecton8.World.ISoundscapeEventListener,
+        IBiomeMatrixEventListener,
+        Hecton8.Core.IMapMagicBiomeEventListener
     {
 #if UNITY_EDITOR
         private const string HudFogLuminanceComputeAssetPath = "Assets/_Project/Art/Shaders/HectonHudFogLuminance.compute";
@@ -3615,7 +3623,7 @@ namespace Hecton8.Environment
         {
         }
 
-        void IMapMagicBiomeEventListener.OnMapMagicBiomeChanged(int biomeId)
+        void Hecton8.Core.IMapMagicBiomeEventListener.OnMapMagicBiomeChanged(int biomeId)
         {
             HandleBiomeChanged(biomeId);
         }
@@ -3625,7 +3633,7 @@ namespace Hecton8.Environment
             ApplySoundscapeTierResponse(newTier);
         }
 
-        void ISoundscapeEventListener.OnSoundscapeTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier)
+        void Hecton8.World.ISoundscapeEventListener.OnSoundscapeTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier)
         {
             HandleSoundscapeTierChanged(oldTier, newTier);
         }

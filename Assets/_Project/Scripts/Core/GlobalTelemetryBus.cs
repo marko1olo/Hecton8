@@ -46,7 +46,7 @@ namespace Hecton8.Core
         MemoryBreach = 25
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct TelemetryEvent
     {
         public uint FrameIndex;
@@ -55,6 +55,14 @@ namespace Hecton8.Core
         public uint ContextHash;
         public float ScalarValue;
         public float3 WorldPosition;
+        public uint Reserved0;
+        public uint Reserved1;
+        public uint Reserved2;
+        public uint Reserved3;
+        public uint Reserved4;
+        public uint Reserved5;
+        public uint Reserved6;
+        public uint Reserved7;
     }
 
     public static class GlobalTelemetryBus
@@ -670,7 +678,7 @@ namespace Hecton8.Core
                 if (!_exportScratch.IsCreated)
                 {
                     int exportScratchBytes = (Capacity * UnsafeUtility.SizeOf<TelemetryEvent>()) + BinaryHeaderSizeBytes;
-                    _exportScratch = new NativeArray<byte>(exportScratchBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[32784] — unmanaged binary telemetry export scratch — owner: GlobalTelemetryBus
+                    _exportScratch = new NativeArray<byte>(exportScratchBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[65552] — unmanaged binary telemetry export scratch — owner: GlobalTelemetryBus
                     NativeMemorySentinel.RegisterNativeArray(
                         _exportScratch,
                         nameof(GlobalTelemetryBus),

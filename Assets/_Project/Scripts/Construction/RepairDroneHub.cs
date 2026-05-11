@@ -32,7 +32,7 @@ namespace Hecton8.Construction
             s_ActiveHubs.Clear();
         }
 
-        [Header("── Drone Bay ──────────────────────────")]
+        [Header("Drone Bay")]
         [Tooltip("Optional drone visual source used for headless indirect rendering mesh and material extraction.")]
         [SerializeField] private GameObject dronePrefab;
 
@@ -54,7 +54,7 @@ namespace Hecton8.Construction
         [Tooltip("Repair throughput passed into each drone mission.")]
         [SerializeField, Range(1f, 100f)] private float droneRepairRate = 18f;
 
-        [Header("── Supply Chain ──────────────────────")]
+        [Header("Supply Chain")]
         [Tooltip("Optional explicit storage crates that can feed this hub with repair scrap.")]
         [SerializeField] private StorageCrate[] supplyCrates;
 
@@ -73,7 +73,7 @@ namespace Hecton8.Construction
         [Tooltip("How many scrap units are removed from storage for each sortie.")]
         [SerializeField, Range(1, 8)] private int scrapPerMission = 1;
 
-        [Header("── Power Budget ──────────────────────")]
+        [Header("Power Budget")]
         [Tooltip("Baseline power draw of the powered drone bay.")]
         [SerializeField, Range(0f, 50f)] private float standbyPowerDraw = 2f;
 
@@ -86,7 +86,7 @@ namespace Hecton8.Construction
         [Tooltip("Priority used when the grid starts shedding non-critical loads. Lower is more critical.")]
         [SerializeField, Range(0, 100)] private int powerPriority = 25;
 
-        [Header("── Diagnostics ───────────────────────")]
+        [Header("Diagnostics")]
         [SerializeField] private bool _debugHasPower = true;
         [SerializeField] private int _debugActiveDroneCount;
         [SerializeField] private int _debugSupplyCrateCount;
@@ -94,17 +94,17 @@ namespace Hecton8.Construction
         [SerializeField] private float _debugLastAssignmentScore;
         [SerializeField] private int _debugLastAssignedSupplyUnits;
 
-        // COLD ALLOC: Collider[24] — nearby storage discovery buffer — owner: RepairDroneHub
+        // COLD ALLOC: Collider[24] - nearby storage discovery buffer - owner: RepairDroneHub
         private readonly Collider[] _supplyOverlapBuffer = new Collider[SupplyOverlapCapacity];
-        // COLD ALLOC: StorageCrate[12] — auto-discovered storage endpoints — owner: RepairDroneHub
+        // COLD ALLOC: StorageCrate[12] - auto-discovered storage endpoints - owner: RepairDroneHub
         private readonly StorageCrate[] _discoveredSupplyCrates = new StorageCrate[MaxDiscoveredSupplyCrates];
-        // COLD ALLOC: int[1] — repair-supply hash bridge for logistics reservations — owner: RepairDroneHub
+        // COLD ALLOC: int[1] - repair-supply hash bridge for logistics reservations - owner: RepairDroneHub
         private readonly int[] _repairSupplyHashIds = new int[1];
-        // COLD ALLOC: int[1] — repair-supply quantity bridge for logistics reservations — owner: RepairDroneHub
+        // COLD ALLOC: int[1] - repair-supply quantity bridge for logistics reservations - owner: RepairDroneHub
         private readonly int[] _repairSupplyAmounts = new int[1];
-        // COLD ALLOC: ulong[24] — overlap collider id cache for storage discovery — owner: RepairDroneHub
+        // COLD ALLOC: ulong[24] - overlap collider id cache for storage discovery - owner: RepairDroneHub
         private readonly ulong[] _supplyCrateLookupColliderIds = new ulong[SupplyCrateLookupCacheCapacity];
-        // COLD ALLOC: StorageCrate[24] — overlap collider resolved storage cache — owner: RepairDroneHub
+        // COLD ALLOC: StorageCrate[24] - overlap collider resolved storage cache - owner: RepairDroneHub
         private readonly StorageCrate[] _supplyCrateLookupCrates = new StorageCrate[SupplyCrateLookupCacheCapacity];
 
         private Transform _cachedTransform;
@@ -160,7 +160,7 @@ namespace Hecton8.Construction
 
             int capacity = Mathf.Max(1, maxConcurrentDrones);
             _activeDroneIds = new int[capacity]; // COLD ALLOC: int[capacity] - active headless drone ids by hub slot - owner: RepairDroneHub
-            _activeTargetIds = new int[capacity]; // COLD ALLOC: int[capacity] — claimed target ids by slot — owner: RepairDroneHub
+            _activeTargetIds = new int[capacity]; // COLD ALLOC: int[capacity] - claimed target ids by slot - owner: RepairDroneHub
             DroneFleetManager.ConfigureHeadlessRenderSource(dronePrefab);
             DroneFleetManager.ConfigurePhantomSwarm(phantomDroneCompute, phantomDroneMaterial);
             ResolveRepairSupplyItem();

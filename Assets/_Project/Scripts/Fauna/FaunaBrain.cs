@@ -270,8 +270,10 @@ namespace Hecton8.AI
         private const float LargeCorpseResourceMinHealth = 45f;
         private const float PredatorKillAudioRadiusMeters = 90f;
         private const float PredatorKillAudioRadiusMetersSqr = PredatorKillAudioRadiusMeters * PredatorKillAudioRadiusMeters;
+        private const float PredatorKillAudioInvRadiusMetersSqr = 1f / PredatorKillAudioRadiusMetersSqr;
         private const float PredatorKillAudioDurationSeconds = 0.18f;
         private const float LeviathanAttackTelegraphLeadSeconds = 0.8f;
+        private const float LeviathanAttackTelegraphInvLeadSeconds = 1f / LeviathanAttackTelegraphLeadSeconds;
         private const float LeviathanAttackTelegraphAudioDurationSeconds = 0.42f;
         private const float LeviathanAttackTelegraphLowPassCutoffHz = 320f;
         private const float LeviathanAttackTelegraphPullbackSpeedScale = 0.28f;
@@ -318,6 +320,7 @@ namespace Hecton8.AI
         private const float Tier3LeviathanMinimumPingEnergyJoules = 1500f;
         private const float PredatorDeafenedWanderRadiusMeters = 42f;
         private const double LeviathanSectorScatterEdgeMeters = 1000.0;
+        private const double LeviathanSectorScatterInvEdgeMeters = 1.0 / LeviathanSectorScatterEdgeMeters;
         private const int PredatorPhotophobiaCacheFrameInterval = 10;
         private const float DirectorColdTickIntervalSeconds = 1f;
         private const float DirectorColdTickHoldSeconds = 1.1f;
@@ -325,6 +328,8 @@ namespace Hecton8.AI
         private const float PredatorGuidanceLeadSeconds = 0.65f;
         private const float PredatorLungeCloseDistanceMultiplier = 0.55f;
         private const float PlayerNoiseReferenceSpeedSqr = 72.25f;
+        private const float ByteToUnitScale = 1f / 255f;
+        private const float Random24BitInvScale = 1f / 16777215f;
         private const uint FaunaTickStaggerHashSalt = 0x71C45A6Du;
         private const uint FaunaEggJitterHashSalt = 0x00E66C7u;
         private const uint FaunaDeathSpiralHashSalt = 0x0D34D5A1u;
@@ -346,6 +351,7 @@ namespace Hecton8.AI
         private const float RadiansToDegrees = 57.29578f;
         private const float DeathSpiralFadeDelaySeconds = 60f;
         private const float DeathSpiralFadeDurationSeconds = 8f;
+        private const float DeathSpiralFadeInvDurationSeconds = 1f / DeathSpiralFadeDurationSeconds;
         private const float DeathSpiralTorqueMin = 0.08f;
         private const float DeathSpiralTorqueMax = 0.26f;
         private const float DeathSpiralSteeringDurationSeconds = 2f;
@@ -1370,8 +1376,8 @@ namespace Hecton8.AI
                 return 0f;
 
             float maxConeSq = forwardLenSq * distanceSqFloat;
-            float cone01 = math.saturate((rawDotSq - scaledConeSq) / math.max(0.0001f, maxConeSq - scaledConeSq));
-            float distance01 = 1f - math.saturate((float)(distanceSq / rangeSq));
+            float cone01 = math.saturate((rawDotSq - scaledConeSq) * math.rcp(math.max(0.0001f, maxConeSq - scaledConeSq)));
+            float distance01 = 1f - math.saturate((float)(distanceSq * math.rcp(rangeSq)));
             float exposure01 = math.saturate(cone01 * distance01);
             if (_utilityBrain.IsActivePredator)
             {
@@ -2233,8 +2239,8 @@ namespace Hecton8.AI
                 ? _uniqueInstanceUid
                 : (uint)(ComputeStableSpeciesId() * 73856093);
             seed ^= (uint)(hostBrain != null ? hostBrain.SpeciesId * 19349663 : 0);
-            float radius01 = ((seed >> 8) & 0xFFu) / 255f;
-            float vertical01 = ((seed >> 16) & 0xFFu) / 255f;
+            float radius01 = ((seed >> 8) & 0xFFu) * ByteToUnitScale;
+            float vertical01 = ((seed >> 16) & 0xFFu) * ByteToUnitScale;
             int formationSlot = (int)(seed & 0x7u);
             float radius = math.lerp(CleanerFormationMinRadius, CleanerFormationMaxRadius, radius01);
             float verticalOffset = math.lerp(CleanerVerticalBiasMin, CleanerVerticalBiasMax, vertical01);
@@ -2940,7 +2946,7 @@ namespace Hecton8.AI
             }
 
             float duration = math.max(0.001f, _lungeCheatDuration);
-            float t = math.saturate((_cognitionTimeSeconds - _lungeCheatStartTime) / duration);
+            float t = math.saturate((_cognitionTimeSeconds - _lungeCheatStartTime) * math.rcp(duration));
             float ease = t * t * (3f - 2f * t);
             double3 start = _lungeCheatStartAup.ToAbsoluteDouble3();
             double3 target = _lungeCheatTargetAup.ToAbsoluteDouble3();
@@ -3099,10 +3105,11 @@ namespace Hecton8.AI
 
             float radius = PredatorKillAudioRadiusMeters * 2.5f;
             double distanceSqr = ResolveRuntimeAupDistanceSq(listenerPosition, sourcePosition);
-            if (distanceSqr > (double)radius * radius)
+            double radiusSqr = (double)radius * radius;
+            if (distanceSqr > radiusSqr)
                 return;
 
-            float proximity = 1f - math.saturate((float)(distanceSqr / ((double)radius * radius)));
+            float proximity = 1f - math.saturate((float)(distanceSqr * math.rcp(radiusSqr)));
             float intensity = math.saturate(0.45f + proximity * 0.55f);
             float transmission01 = 1f;
             float lowPassCutoffHz = LeviathanAttackTelegraphLowPassCutoffHz;
@@ -3239,7 +3246,7 @@ namespace Hecton8.AI
             float rawDot = math.dot(lightForward, toPredator);
             float distanceSqrFloat = (float)math.min(distanceSqr, (double)float.MaxValue);
             _cachedPredatorPhotophobiaDot = rawDot > 0f
-                ? (rawDot * rawDot) / math.max(0.0001f, forwardLenSq * distanceSqrFloat)
+                ? (rawDot * rawDot) * math.rcp(math.max(0.0001f, forwardLenSq * distanceSqrFloat))
                 : 0f;
             ApplyPredatorSensoryBits(
                 _cachedPredatorPhotophobiaDot > PredatorPhotophobiaDotThresholdSqr ? PredatorSensoryPhotophobicBit : (byte)0,
@@ -3607,7 +3614,7 @@ namespace Hecton8.AI
                 ? PassiveFlashlightBiolumDimMultiplier
                 : 1f;
             float responseX = math.max(0f, dt) * PassiveFlashlightBiolumResponseSharpness;
-            float alpha = math.saturate(1f - 1f / (1f + responseX + 0.5f * responseX * responseX));
+            float alpha = math.saturate(1f - math.rcp(1f + responseX + 0.5f * responseX * responseX));
             _faunaBiolumDim01 = math.lerp(_faunaBiolumDim01, targetDim, alpha);
             float deathLightFade01 = 1f - math.saturate(_deathDitherFade01);
             ApplyBiolumPresentationLightScale(_faunaBiolumDim01 * deathLightFade01);
@@ -3751,7 +3758,7 @@ namespace Hecton8.AI
             state ^= state << 13;
             state ^= state >> 17;
             state ^= state << 5;
-            return (state & 0x00FFFFFFu) * (1f / 16777215f);
+            return (state & 0x00FFFFFFu) * Random24BitInvScale;
         }
 
         private static float NextSigned01(ref uint state)
@@ -3932,7 +3939,7 @@ namespace Hecton8.AI
             float strikeRange = _speciesProfile != null ? _speciesProfile.attackRadius : math.max(1f, _stateMachine.attackRadius);
             _proceduralLeviathanSpineIk.SetStrikeIntent(strikeTarget, strikeTargetPosition, strikeRange, strikeActive);
             float telegraphBlend = _attackTelegraphActive
-                ? 1f - math.saturate((_attackTelegraphBurstTime - _cognitionTimeSeconds) / LeviathanAttackTelegraphLeadSeconds)
+                ? 1f - math.saturate((_attackTelegraphBurstTime - _cognitionTimeSeconds) * LeviathanAttackTelegraphInvLeadSeconds)
                 : 0f;
             _proceduralLeviathanSpineIk.SetAttackTelegraph(telegraphBlend);
         }
@@ -4010,8 +4017,8 @@ namespace Hecton8.AI
             AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(selfPosition));
             double3 absolutePosition = selfAup.ToAbsoluteDouble3();
             int2 sector = new int2(
-                (int)math.floor(absolutePosition.x / LeviathanSectorScatterEdgeMeters),
-                (int)math.floor(absolutePosition.z / LeviathanSectorScatterEdgeMeters));
+                (int)math.floor(absolutePosition.x * LeviathanSectorScatterInvEdgeMeters),
+                (int)math.floor(absolutePosition.z * LeviathanSectorScatterInvEdgeMeters));
 
             if (_hasLeviathanScatterSector &&
                 _leviathanScatterSector.x == sector.x &&
@@ -4534,7 +4541,7 @@ namespace Hecton8.AI
             if (distanceSqr > PredatorKillAudioRadiusMetersSqr)
                 return;
 
-            float distance01 = math.saturate((float)(distanceSqr / PredatorKillAudioRadiusMetersSqr));
+            float distance01 = math.saturate((float)distanceSqr * PredatorKillAudioInvRadiusMetersSqr);
             float intensity = 1f - distance01;
             if (intensity <= 0.001f)
                 return;
@@ -4675,10 +4682,20 @@ namespace Hecton8.AI
             {
                 TryDispatchEmpAttack(target);
 
-                // Resolve HectonPlayerHealth lookup (Fixed as per REQ)
-                if (target.TryGetComponent<HectonPlayerHealth>(out var playerHealth))
+                Vector3 selfPosition = TryResolveSelfLogicPosition(out Vector3 resolvedSelfPosition)
+                    ? resolvedSelfPosition
+                    : hasTargetLogicPosition ? targetLogicPosition - ResolveSelfLogicForward() : -ResolveSelfLogicForward();
+                Vector3 impactPoint = hasTargetLogicPosition ? targetLogicPosition : target.position;
+                Vector3 impactDir = ResolveDominantAxisDirection(impactPoint - selfPosition);
+
+                bool queuedBiteDamage = TryQueuePredatorBiteDamage(target, damage, impactPoint, impactDir);
+                HectonPlayerHealth playerHealth;
+                if (!queuedBiteDamage && target.TryGetComponent(out playerHealth))
                 {
-                    playerHealth.TakeDamage(damage);
+                    if (IsApexPredator())
+                        playerHealth.TakeLeviathanDamage(damage);
+                    else
+                        playerHealth.TakeDamage(damage);
                 }
 
                 // 3. JUICE (User REQ: Camera Shake + Physical Force)
@@ -4691,11 +4708,6 @@ namespace Hecton8.AI
                     }
                 }
 
-                Vector3 selfPosition = TryResolveSelfLogicPosition(out Vector3 resolvedSelfPosition)
-                    ? resolvedSelfPosition
-                    : hasTargetLogicPosition ? targetLogicPosition - ResolveSelfLogicForward() : -ResolveSelfLogicForward();
-                Vector3 impactPoint = hasTargetLogicPosition ? targetLogicPosition : target.position;
-                Vector3 impactDir = ResolveDominantAxisDirection(impactPoint - selfPosition);
                 DispatchPredatorBiteImpulseToPlayer(target, impactPoint, impactDir);
 
                 if (_speciesProfile != null && _speciesProfile.impactForceToPlayer > 0f)
@@ -4720,6 +4732,58 @@ namespace Hecton8.AI
                     }
                 }
             }
+        }
+
+        private bool TryQueuePredatorBiteDamage(Transform target, float damage, Vector3 impactPoint, Vector3 impactDir)
+        {
+            if (target == null || damage <= 0f)
+                return false;
+
+            if (!target.TryGetComponent<HectonPlayerHealth>(out HectonPlayerHealth playerHealth))
+                return false;
+
+            int targetId = CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject);
+            if (!CombatDamageRuntime.IsTargetRegistered(targetId))
+                return false;
+
+            Vector3 localPoint = playerHealth.transform.InverseTransformPoint(impactPoint);
+            float impulseMagnitude = ResolvePredatorBiteImpulseMagnitude();
+            uint statusBits = IsApexPredator() ? CombatStatusBits.Stunned : 0u;
+            CombatDamageSignal signal = new CombatDamageSignal
+            {
+                TargetId = targetId,
+                SourceId = IsApexPredator() ? DamageSourceIds.FaunaLeviathanBite : DamageSourceIds.FaunaBite,
+                Amount = damage,
+                ImpulseMagnitude = impulseMagnitude,
+                Direction = new float3(impactDir.x, impactDir.y, impactDir.z),
+                PackedMeta = CombatDamageRuntime.PackSignalMeta(
+                    CombatDamageTypes.Impact,
+                    statusBits,
+                    CombatWeakspotTier.None)
+            };
+
+            CombatDamageSignalDetail detail = new CombatDamageSignalDetail
+            {
+                LocalPoint = new float3(localPoint.x, localPoint.y, localPoint.z),
+                ArmorNormal = new float3(-impactDir.x, -impactDir.y, -impactDir.z),
+                LocalTemperatureCelsius = 20f,
+                StatusDurationSeconds = 0f
+            };
+
+            return CombatDamageRuntime.TryQueueDamage(in signal, in detail);
+        }
+
+        private float ResolvePredatorBiteImpulseMagnitude()
+        {
+            float speedApprox = math.max(0f, _steeringEngine.currentSpeed);
+            if (speedApprox <= 0.001f && _rb != null)
+                speedApprox = CinematicMath.ApproximateLength((float3)_rb.linearVelocity);
+
+            if (speedApprox <= 0.001f)
+                speedApprox = math.max(1f, _steeringEngine.maxSpeed);
+
+            float predatorMass = _rb != null ? math.max(1f, _rb.mass) : 1f;
+            return predatorMass * math.max(1f, speedApprox);
         }
 
         private void DispatchPredatorBiteImpulseToPlayer(Transform target, Vector3 impactPoint, Vector3 impactDir)
@@ -4788,7 +4852,7 @@ namespace Hecton8.AI
             if (clampedDamage <= 0f)
                 return;
 
-            float normalizedDamage = _maxHealth > 0.001f ? clampedDamage / _maxHealth : 0f;
+            float normalizedDamage = _maxHealth > 0.001f ? clampedDamage * math.rcp(_maxHealth) : 0f;
             _currentHealth = math.max(0f, _currentHealth - clampedDamage);
 
             Vector3 resolvedSourcePosition = hasDamageSource
@@ -5270,7 +5334,7 @@ namespace Hecton8.AI
 
             if (fadeAge > 0f)
             {
-                _deathDitherFade01 = math.saturate(fadeAge / DeathSpiralFadeDurationSeconds);
+                _deathDitherFade01 = math.saturate(fadeAge * DeathSpiralFadeInvDurationSeconds);
                 ApplyBiolumPresentationLightScale(1f - _deathDitherFade01);
                 ApplyFaunaPresentationShaderState(_faunaBiolumDim01, _deathDitherFade01, 0f);
             }

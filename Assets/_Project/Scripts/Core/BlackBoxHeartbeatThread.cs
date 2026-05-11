@@ -35,7 +35,8 @@ namespace Hecton8.Core
                 _thread = new Thread(Run) // COLD ALLOC: Thread[1] - background main-thread heartbeat monitor - owner: BlackBoxHeartbeatThread
                 {
                     IsBackground = true,
-                    Name = ThreadName
+                    Name = ThreadName,
+                    Priority = ThreadPriority.BelowNormal
                 };
                 _thread.Start();
             }

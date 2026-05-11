@@ -23,8 +23,6 @@ MonoBehaviour:
     depthSigma: 18
     blurDepthThreshold: 0.18
     compositeStrength: 0.52
-    sampleCount: 4
-    ambientDirection: {x: 0.18, y: 0.94, z: 0.26}
 --- !u!114 &-4638680478887311186
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -49,7 +47,9 @@ MonoBehaviour:
     edgeStreakStrength: 0.46
     hullStressContribution: 0.8
     edgeFadeExponent: 1.35
---- !u!114 &5486087973636425633
+    dustStrength: 0.28
+    ambientDustResponse: 1.45
+--- !u!114 &-1708262950445174769
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -58,16 +58,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fd51d08180ac4679bed75a6b4cc8e888, type: 3}
-  m_Name: HectonVRBrownoutFeature
-  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVRBrownoutFeature
+  m_Script: {fileID: 11500000, guid: 83bdec98ea424ebf8838203d765d3278, type: 3}
+  m_Name: HectonRetinaDistortionFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonRetinaDistortionFeature
   m_Active: 1
   settings:
-    shader: {fileID: 4800000, guid: 86f624d8b2fb47b3bed4961b51bf2cbc, type: 3}
+    shader: {fileID: 4800000, guid: 8f4ada24e17a4e82bdd691ad587c4d66, type: 3}
     injectionPoint: 550
-    worldBlurTexelRadius: 1.65
-    scanlineStrength: 0.55
-    ditherStrength: 0.85
+    healthThreshold01: 0.15
+    baseHeartbeatBpm: 54
+    criticalHeartbeatBpm: 124
+    maxChromaticOffset: 0.0038
+    maxDistortionOffset: 0.014
+    maxVignetteStrength: 0.28
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -103,7 +106,9 @@ MonoBehaviour:
   - {fileID: 7019925337659302359}
   - {fileID: -1708262950445174769}
   - {fileID: 5486087973636425633}
-  m_RendererFeatureMap: ad6b866f10d7b46cabf8db7c8ef6cf00a15e49751debe464b188e97609222e1aad5815c36b99ec35bb6a44aeba4fa5b8ae086265ae18a0bfd761f2c4e6c86b610f30c1b7e5074be8a147240bf27f224c
+  - {fileID: 2385897834351203332}
+  - {fileID: 2064814590936465776}
+  m_RendererFeatureMap: ad6b866f10d7b46cabf8db7c8ef6cf00a15e49751debe464b188e97609222e1aad5815c36b99ec35bb6a44aeba4fa5b8ae086265ae18a0bfd761f2c4e6c86b610f30c1b7e5074be8a147240bf27f224c0494e07670691c2170c1cf3beeb1a71c
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -159,6 +164,49 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.ScreenSpaceShadows
   m_Active: 0
   m_Shader: {fileID: 4800000, guid: 0f854b35a0cf61a429bd5dcfea30eddd, type: 3}
+--- !u!114 &2064814590936465776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a16b154c5ef24b0b912cfa65f0bb3a99, type: 3}
+  m_Name: HectonHalfResParticlesFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonHalfResParticlesFeature
+  m_Active: 0
+  settings:
+    compositeShader: {fileID: 0}
+    injectionPoint: 550
+    particleLayerMask:
+      serializedVersion: 2
+      m_Bits: 2
+    renderScale: 0.5
+    compositeStrength: 1
+--- !u!114 &2385897834351203332
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4fb11f57e4be41b596211f9adef4a004, type: 3}
+  m_Name: HectonNoirDepthFogFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonNoirDepthFogFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: d38821027adf58747a75d2048230832c, type: 3}
+    injectionPoint: 450
+    shallowFogColor: {r: 0.025, g: 0.075, b: 0.095, a: 1}
+    abyssFogColor: {r: 0.004, g: 0.01, b: 0.018, a: 1}
+    density: 0.0105
+    startDistanceMeters: 1.5
+    maxDepthMeters: 80
+    ditherStrength: 0.8
 --- !u!114 &3885649266627401901
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -205,10 +253,33 @@ MonoBehaviour:
     lensGhostScale: 0.075
     lensChromaticAberration: 0.005
     lensEdgeWeight: 4.2
+    lensDirtIntensity: 0.24
+    condensationIntensity: 0.18
+    thermalHazeIntensity: 0.0016
+    thermalHazeScale: 2.25
     minEv: -10
     maxEv: 12
     exposureAdaptationRate: 2.4
     evMaxDeltaPerFrame: 0.5
+--- !u!114 &5486087973636425633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd51d08180ac4679bed75a6b4cc8e888, type: 3}
+  m_Name: HectonVRBrownoutFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVRBrownoutFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 86f624d8b2fb47b3bed4961b51bf2cbc, type: 3}
+    injectionPoint: 550
+    worldBlurTexelRadius: 1.65
+    scanlineStrength: 0.55
+    ditherStrength: 0.85
 --- !u!114 &7019925337659302359
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -224,28 +295,6 @@ MonoBehaviour:
   m_Active: 1
   settings:
     injectionPoint: 1000
---- !u!114 &-1708262950445174769
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 83bdec98ea424ebf8838203d765d3278, type: 3}
-  m_Name: HectonRetinaDistortionFeature
-  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonRetinaDistortionFeature
-  m_Active: 1
-  settings:
-    shader: {fileID: 4800000, guid: 8f4ada24e17a4e82bdd691ad587c4d66, type: 3}
-    injectionPoint: 550
-    healthThreshold01: 0.15
-    baseHeartbeatBpm: 54
-    criticalHeartbeatBpm: 124
-    maxChromaticOffset: 0.0038
-    maxDistortionOffset: 0.014
-    maxVignetteStrength: 0.28
 --- !u!114 &7270194210237144737
 MonoBehaviour:
   m_ObjectHideFlags: 0
