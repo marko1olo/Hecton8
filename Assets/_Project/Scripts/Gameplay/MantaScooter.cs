@@ -21,6 +21,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Bootstrap;
     using Hecton8.Core;
     using Hecton8.Input;
+    using Hecton8.Inventory;
     using Hecton8.Items;
     using Hecton8.Tools;
     using Hecton8.UI;
@@ -54,6 +55,9 @@ namespace Hecton8.Gameplay
         [Header("── Propulsion ────────────────────────────────")]
         [Tooltip("Swim speed multiplier when scooter is active.")]
         [SerializeField, Range(1.5f, 4f)] private float speedMultiplier = 2.2f;
+
+        [Tooltip("Drag coefficient multiplier blended in while scooter thrust is active.")]
+        [SerializeField, Range(0.35f, 1.25f)] private float transportDragCoefficientMultiplier = 0.72f;
 
         [Tooltip("Optional shared transport preset. When assigned, propulsion and feel resolve from the preset instead of local fallback values.")]
         [SerializeField] private PlayerTransportPreset transportPreset;
@@ -168,6 +172,9 @@ namespace Hecton8.Gameplay
         private bool _isActive;
         private bool _isMoving;
         private float _driveThrottleCurrent;
+        private float _inventoryConditionDrainAccumulator;
+        private int _inventoryConditionAnchorIndex = -1;
+        private int _inventoryConditionAnchorHashId;
         private bool _registeredTick;
         private bool _hudStateInitialized;
         private bool _lastHudVisible;
@@ -334,6 +341,7 @@ namespace Hecton8.Gameplay
             _batteryItem = null;
             _currentCharge = 0f;
             _hasBattery = false;
+            ResetInventoryConditionDrainCache();
 
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
@@ -540,7 +548,9 @@ namespace Hecton8.Gameplay
             if (_isMoving)
             {
                 // Drain battery while moving
-                _currentCharge = math.max(0f, _currentCharge - ResolveEffectiveBatteryDrainRate() * driveThrottleOutput * deltaTime);
+                float chargeDrain = ResolveEffectiveBatteryDrainRate() * driveThrottleOutput * deltaTime;
+                _currentCharge = math.max(0f, _currentCharge - chargeDrain);
+                DrainInventoryCondition(chargeDrain);
                 UpdatePowerIndicator();
                 UpdateHUD();
 
@@ -719,6 +729,8 @@ namespace Hecton8.Gameplay
             _isActive = false;
             _isMoving = false;
             _driveThrottleCurrent = 0f;
+            _inventoryConditionDrainAccumulator = 0f;
+            ResetInventoryConditionDrainCache();
             _debugActivationState = ActivationStateIdle;
             ResetMisfireState();
 
@@ -792,6 +804,17 @@ namespace Hecton8.Gameplay
         public float GetTransportSpeedMultiplier()
         {
             return GetSpeedMultiplier();
+        }
+
+        /// <summary>
+        /// Resolves transport drag coefficient multiplier for generic transport consumers.
+        /// </summary>
+        public float GetTransportDragCoefficientMultiplier()
+        {
+            if (_isTransportBroken || !_isActive || !_hasBattery || _currentCharge < minChargeToActivate)
+                return 1f;
+
+            return math.lerp(1f, ResolveConfiguredTransportDragCoefficientMultiplier(), ResolveEffectiveDriveThrottleOutput());
         }
 
         /// <summary>
@@ -986,6 +1009,74 @@ namespace Hecton8.Gameplay
                 return math.max(1f, transportPreset.SpeedMultiplier);
 
             return speedMultiplier;
+        }
+
+        private float ResolveConfiguredTransportDragCoefficientMultiplier()
+        {
+            return math.clamp(transportDragCoefficientMultiplier, 0.01f, 4f);
+        }
+
+        private void DrainInventoryCondition(float normalizedDrain)
+        {
+            if (!math.isfinite(normalizedDrain) || normalizedDrain <= 0f)
+                return;
+
+            ItemData itemData = ToolData;
+            int toolHashId = itemData != null ? itemData.PersistentHashId : 0;
+            if (toolHashId == 0)
+                return;
+
+            _inventoryConditionDrainAccumulator += normalizedDrain;
+            if (_inventoryConditionDrainAccumulator < 0.001f)
+                return;
+
+            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            PlayerInventory inventory = inventoryService != null ? inventoryService.Inventory : GlobalRegistry.PlayerInventoryRuntime;
+            if (inventory == null)
+            {
+                _inventoryConditionDrainAccumulator = math.min(_inventoryConditionDrainAccumulator, 0.01f);
+                return;
+            }
+
+            ushort qualityMilli;
+            if (_inventoryConditionAnchorHashId == toolHashId &&
+                _inventoryConditionAnchorIndex >= 0 &&
+                inventory.TryDrainItemConditionAtAnchor(
+                    _inventoryConditionAnchorIndex,
+                    toolHashId,
+                    _inventoryConditionDrainAccumulator,
+                    out qualityMilli))
+            {
+                ApplyInventoryConditionDrainResult(qualityMilli);
+                return;
+            }
+
+            if (inventory.TryDrainItemConditionByHash(
+                    toolHashId,
+                    _inventoryConditionDrainAccumulator,
+                    out int anchorIndex,
+                    out qualityMilli))
+            {
+                _inventoryConditionAnchorIndex = anchorIndex;
+                _inventoryConditionAnchorHashId = toolHashId;
+                ApplyInventoryConditionDrainResult(qualityMilli);
+                return;
+            }
+
+            ResetInventoryConditionDrainCache();
+            _inventoryConditionDrainAccumulator = math.min(_inventoryConditionDrainAccumulator, 0.01f);
+        }
+
+        private void ApplyInventoryConditionDrainResult(ushort qualityMilli)
+        {
+            _currentCharge = math.min(_currentCharge, qualityMilli * 0.001f);
+            _inventoryConditionDrainAccumulator = 0f;
+        }
+
+        private void ResetInventoryConditionDrainCache()
+        {
+            _inventoryConditionAnchorIndex = -1;
+            _inventoryConditionAnchorHashId = 0;
         }
 
         private void BindTransportPresetToFeelContract()

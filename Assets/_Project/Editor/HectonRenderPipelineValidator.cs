@@ -75,8 +75,11 @@ namespace Hecton8.Editor
         private const string NoirDepthFogFeatureTypeName = "Hecton8.Visor.HectonNoirDepthFogFeature";
         private const string StochasticSsrFeatureTypeName = "Hecton8.Visor.HectonStochasticSsrFeature";
         private const string HalfResParticlesFeatureTypeName = "Hecton8.Visor.HectonHalfResParticlesFeature";
+        private const string VisorUberPostFeatureTypeName = "Hecton8.Visor.HectonVisorUberPostFeature";
+        private const string RetinaFeatureTypeName = "Hecton8.Visor.HectonRetinaDistortionFeature";
         private const string VisorFluidFeatureTypeName = "Hecton8.Visor.HectonVisorFluidDistortionFeature";
         private const string AtmosphereSootFeatureTypeName = "Hecton8.Visor.HectonAtmosphereSootFeature";
+        private const string VisorUberPostShaderAssetPath = "Assets/_Project/Art/Shaders/HectonVisorUberPost.shader";
         private const string AtmosphereSootShaderAssetPath = "Assets/_Project/Art/Shaders/Hidden_Hecton_AtmosphereSootOverlay.shader";
 
         [InitializeOnLoadMethod]
@@ -168,6 +171,7 @@ namespace Hecton8.Editor
                 changed |= EnsureRequiredRendererAssetState(rendererData);
             }
 
+            changed |= EnsureDefaultVolumePostDisabled();
             if (changed)
                 AssetDatabase.SaveAssets();
         }
@@ -192,6 +196,7 @@ namespace Hecton8.Editor
             {
                 assetChanged = EnsurePipelineRequirements(urpAsset);
                 assetChanged |= EnsureRequiredRendererFeatures(urpAsset);
+                assetChanged |= EnsureDefaultVolumePostDisabled();
             }
 
             int severeWarningCount = ValidateRendererFeatures(urpAsset);
@@ -322,15 +327,18 @@ namespace Hecton8.Editor
             rendererChanged |= EnsureRequiredRendererFeature<HectonAbyssalSsdoFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonNoirDepthFogFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonScooterVolumetricShaftsFeature>(rendererData);
-            rendererChanged |= EnsureRequiredRendererFeature<HectonVisorFluidDistortionFeature>(rendererData);
+            rendererChanged |= EnsureRequiredRendererFeature<HectonVisorUberPostFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonHalfResParticlesFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonAtmosphereSootFeature>(rendererData);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, SsdoFeatureTypeName, RenderPassEvent.BeforeRenderingTransparents);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, NoirDepthFogFeatureTypeName, RenderPassEvent.BeforeRenderingTransparents);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, VolumetricFeatureTypeName, RenderPassEvent.BeforeRenderingTransparents);
-            rendererChanged |= EnsureRequiredFeatureState(rendererData, VisorFluidFeatureTypeName, RenderPassEvent.BeforeRenderingPostProcessing);
+            rendererChanged |= EnsureRequiredFeatureState(rendererData, VisorUberPostFeatureTypeName, RenderPassEvent.BeforeRenderingPostProcessing);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, HalfResParticlesFeatureTypeName, RenderPassEvent.BeforeRenderingPostProcessing);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, AtmosphereSootFeatureTypeName, RenderPassEvent.BeforeRenderingPostProcessing);
+            rendererChanged |= EnsureFeatureActiveState(rendererData, RetinaFeatureTypeName, active: false);
+            rendererChanged |= EnsureFeatureActiveState(rendererData, VisorFluidFeatureTypeName, active: false);
+            rendererChanged |= EnsureLegacyShaftFullscreenEffectsDisabled(rendererData);
             rendererChanged |= EnsureHalfResolutionParticleLayerIsolation(rendererData);
             if (!rendererChanged)
                 return false;
@@ -523,6 +531,9 @@ namespace Hecton8.Editor
             if (string.Equals(featureTypeName, AtmosphereSootFeatureTypeName, StringComparison.Ordinal))
                 serializedChanged |= EnsureShaderReference(serializedFeature.FindProperty("settings.shader"), AtmosphereSootShaderAssetPath);
 
+            if (string.Equals(featureTypeName, VisorUberPostFeatureTypeName, StringComparison.Ordinal))
+                serializedChanged |= EnsureShaderReference(serializedFeature.FindProperty("settings.shader"), VisorUberPostShaderAssetPath);
+
             if (serializedChanged)
             {
                 serializedFeature.ApplyModifiedPropertiesWithoutUndo();
@@ -532,6 +543,73 @@ namespace Hecton8.Editor
 
             if (changed)
                 EditorUtility.SetDirty(feature);
+
+            return changed;
+        }
+
+        private static bool EnsureFeatureActiveState(UniversalRendererData rendererData, string featureTypeName, bool active)
+        {
+            ScriptableRendererFeature feature = FindRendererFeature(rendererData, featureTypeName);
+            if (feature == null || feature.isActive == active)
+                return false;
+
+            feature.SetActive(active);
+            EditorUtility.SetDirty(feature);
+            return true;
+        }
+
+        private static bool EnsureLegacyShaftFullscreenEffectsDisabled(UniversalRendererData rendererData)
+        {
+            ScriptableRendererFeature feature = FindRendererFeature(rendererData, VolumetricFeatureTypeName);
+            if (feature == null)
+                return false;
+
+            SerializedObject serializedFeature = new SerializedObject(feature);
+            bool changed = false;
+            changed |= EnsureFloat(serializedFeature.FindProperty("settings.lensChromaticAberration"), 0f);
+            changed |= EnsureFloat(serializedFeature.FindProperty("settings.lensDirtIntensity"), 0f);
+            changed |= EnsureFloat(serializedFeature.FindProperty("settings.condensationIntensity"), 0f);
+            changed |= EnsureFloat(serializedFeature.FindProperty("settings.thermalHazeIntensity"), 0f);
+            if (!changed)
+                return false;
+
+            serializedFeature.ApplyModifiedPropertiesWithoutUndo();
+            feature.Create();
+            EditorUtility.SetDirty(feature);
+            return true;
+        }
+
+        private static bool EnsureDefaultVolumePostDisabled()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:VolumeProfile", new[] { "Assets/_Project" });
+            bool changed = false;
+            for (int guidIndex = 0; guidIndex < guids.Length; guidIndex++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[guidIndex]);
+                VolumeProfile profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+                if (profile == null)
+                    continue;
+
+                bool profileChanged = false;
+                if (profile.TryGet(out ChromaticAberration chromaticAberration) && chromaticAberration.active)
+                {
+                    chromaticAberration.active = false;
+                    profileChanged = true;
+                }
+
+                if (profile.TryGet(out LensDistortion lensDistortion) && lensDistortion.active)
+                {
+                    lensDistortion.active = false;
+                    profileChanged = true;
+                }
+
+                if (!profileChanged)
+                    continue;
+
+                EditorUtility.SetDirty(profile);
+                AssetDatabase.SaveAssetIfDirty(profile);
+                changed = true;
+            }
 
             return changed;
         }
@@ -550,7 +628,8 @@ namespace Hecton8.Editor
             {
                 expectedInjectionPoint = RenderPassEvent.BeforeRenderingTransparents;
             }
-            else if (string.Equals(featureTypeName, VisorFluidFeatureTypeName, StringComparison.Ordinal) ||
+            else if (string.Equals(featureTypeName, VisorUberPostFeatureTypeName, StringComparison.Ordinal) ||
+                     string.Equals(featureTypeName, VisorFluidFeatureTypeName, StringComparison.Ordinal) ||
                      string.Equals(featureTypeName, HalfResParticlesFeatureTypeName, StringComparison.Ordinal) ||
                      string.Equals(featureTypeName, AtmosphereSootFeatureTypeName, StringComparison.Ordinal))
             {
@@ -1004,6 +1083,18 @@ namespace Hecton8.Editor
                 return false;
 
             property.objectReferenceValue = material;
+            return true;
+        }
+
+        private static bool EnsureFloat(SerializedProperty property, float value)
+        {
+            if (property == null)
+                return false;
+
+            if (float.IsFinite(property.floatValue) && Mathf.Approximately(property.floatValue, value))
+                return false;
+
+            property.floatValue = value;
             return true;
         }
 

@@ -1,0 +1,56 @@
+# OPT_HECTON_ARENA_ALLOCATOR_2_0.md
+## Transient Native Memory Arena Mandate
+
+Status: PENDING VERIFICATION
+Owner: Core & Memory Infrastructure
+
+---
+
+## Primary Law
+
+[RULE] Use `HectonArenaAllocator` for bounded transient frame scratch that cannot live in a persistent owner buffer.
+[FORBID] Creating new transient allocator systems when `HectonArenaAllocator` or owner-local persistent scratch can satisfy the need.
+
+---
+
+## Current Project Evidence
+
+The project already contains:
+- `Assets/_Project/Scripts/Core/HectonArenaAllocator.cs`
+- `Assets/_Project/Scripts/Core/NativeArenaAllocator.cs`
+- `Assets/_Project/Scripts/Core/UnsafeArenaAllocator.cs`
+- `CharBufferPool.TryAcquireArenaSpan(...)`
+
+[BROKEN IF CLAIMED] "Arena 2.0 missing" is false. The allocator exists. The mandate gap is stricter ownership and telemetry.
+
+---
+
+## Arena 2.0 Requirements
+
+[REQUIRE] 64-byte minimum alignment for cache-line scratch lanes unless caller proves smaller alignment is sufficient.
+[REQUIRE] High-water mark telemetry per frame and per subsystem owner.
+[REQUIRE] Arena reset only in the dispatcher-owned frame boundary after jobs that can touch arena memory are complete.
+[REQUIRE] Failure path returns `false`; it must never allocate managed fallback memory in hot path.
+[REQUIRE] Every span/pointer returned by the arena is frame-lifetime only and must not be stored.
+
+[FORBID] Arena allocations inside Burst jobs.
+[FORBID] Passing arena memory to a job that can outlive the current frame reset boundary.
+[FORBID] Storing `Span<T>`, raw pointer, or arena-backed buffer in fields.
+
+---
+
+## Scalability Matrix
+
+LOW:
+- 16 MB arena cap.
+- UI char spans and small scatter/query scratch only.
+- Overflow disables cosmetic work.
+
+MIDDLE:
+- 32 MB cap.
+- Broader transient staging allowed during streaming.
+
+HIGH / ULTRA:
+- 64 MB cap if profiler proves no memory pressure.
+- Use saved allocation pressure for denser visuals, not unbounded gameplay simulation.
+

@@ -82,6 +82,10 @@ namespace Hecton.Localization
         private const int MadnessChancePercent = 15;
         private const float MadnessRollInterval = 0.5f;
         private const float MadnessBlinkDuration = 2f;
+        private const int GameLanguageCount = (int)GameLanguage.Arabic + 1;
+        private static readonly uint _missingLocalizationWarningHash = unchecked((uint)LocHash.Compute("LocalizationManager.MissingKey"));
+        private static readonly uint _formatStringApiWarningHash = unchecked((uint)LocHash.Compute("LocalizationManager.FormatStringApi"));
+        private static readonly uint _corruptionStringApiWarningHash = unchecked((uint)LocHash.Compute("LocalizationManager.CorruptionStringApi"));
         private static readonly int[] MadnessWhisperKeyHashes =
         {
             LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_01),
@@ -212,9 +216,10 @@ namespace Hecton.Localization
             if (TryGet(CurrentLanguage, key, out string value))
                 return ApplyInterfaceIntrusionIfNeeded(ExpandNarrativeTokens(value));
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning($"[Localization] Missing key: \"{key}\" for {CurrentLanguage}");
-#endif
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _missingLocalizationWarningHash,
+                unchecked((uint)LocHash.Compute(key)),
+                (float)CurrentLanguage);
             return key;
         }
 
@@ -242,21 +247,7 @@ namespace Hecton.Localization
         public string GetFormatted(string key, params object[] args)
         {
             string template = Get(key);
-            if (args == null || args.Length == 0)
-                return template;
-
-            try
-            {
-                return string.Format(template, args);
-            }
-            catch (FormatException)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(
-                    $"[Localization] Format error for key \"{key}\", template: \"{template}\", args count: {args.Length}");
-#endif
-                return template;
-            }
+            return FormatLocalized(template, key, args);
         }
 
         /// <summary>
@@ -583,8 +574,7 @@ namespace Hecton.Localization
         /// </summary>
         public void CycleLanguage()
         {
-            int count = Enum.GetValues(typeof(GameLanguage)).Length;
-            int next = ((int)CurrentLanguage + 1) % count;
+            int next = ((int)CurrentLanguage + 1) % GameLanguageCount;
             SetLanguage((GameLanguage)next);
         }
 
@@ -1234,9 +1224,17 @@ namespace Hecton.Localization
                 if (!lease.IsValid || text.Length > lease.Buffer.Length)
                     return text;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 return TryCorruptVisibleText(text.AsSpan(), intensity, language, lease.Buffer, out int length) && length > 0
                     ? new string(lease.Buffer, 0, length)
                     : text;
+#else
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _corruptionStringApiWarningHash,
+                    unchecked((uint)language),
+                    text.Length);
+                return text;
+#endif
             }
             finally
             {
@@ -1537,6 +1535,7 @@ namespace Hecton.Localization
             if (args == null || args.Length == 0)
                 return template;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             try
             {
                 return string.Format(template, args);
@@ -1549,6 +1548,13 @@ namespace Hecton.Localization
 #endif
                 return template;
             }
+#else
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _formatStringApiWarningHash,
+                unchecked((uint)LocHash.Compute(key)),
+                args.Length);
+            return template;
+#endif
         }
 
         private void LoadBuiltInTables()

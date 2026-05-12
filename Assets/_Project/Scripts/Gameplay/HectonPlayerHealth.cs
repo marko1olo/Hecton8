@@ -19,7 +19,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
     [AddComponentMenu("Hecton8/Gameplay/Player Health")]
-    public sealed class HectonPlayerHealth : MonoBehaviour, ISaveable, ITickable, IUpdatable, IDamageReceiver
+    public sealed class HectonPlayerHealth : MonoBehaviour, ISaveable, ITickable, IUpdatable, IDamageReceiver, ICombatHitProfileSource, ICombatPushbackBodySource
     {
         private const float MinimumRuntimeMaxHealth = 1f;
         private const float SurvivalGraceEligibilityThresholdNormalized = 0.10f;
@@ -33,6 +33,9 @@ namespace Hecton8.Gameplay
         private const float GillsOxygenCapacityMultiplier = 1.25f;
         private const float BioluminescentPredatorVisibilityScale = 2f;
         private const float NutritionalToxicityRegenFloor = 0.35f;
+        private const float HealingReversalToxicityThreshold01 = 0.7f;
+        private const float VitalWarningHealthThreshold01 = 0.20f;
+        private const float VitalWarningHealthReleaseThreshold01 = 0.28f;
         private const float CriticalRadiationAdvisoryThresholdSeconds = 90f;
         private const float RadiationAdvisoryStageOneExposure01 = 0.30f;
         private const float RadiationAdvisoryStageTwoExposure01 = 0.70f;
@@ -86,6 +89,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private AudioClip survivalGraceHeartbeatClip;
         [SerializeField, Range(0f, 1f)] private float survivalGraceHeartbeatVolume = 1f;
         [SerializeField] private HazardMutationProfile hazardMutationProfile;
+        private bool _vitalWarningSignalIssued;
 
         /// <summary>Event fired when health changes.</summary>
         public event System.Action<float, float> OnHealthChanged;
@@ -110,6 +114,17 @@ namespace Hecton8.Gameplay
 
         /// <summary>Gets the health percentage (0-1).</summary>
         public float HealthPercent => currentHealth / Mathf.Max(0.0001f, maxHealth);
+
+        /// <summary>Current forward vector used by directional armor checks.</summary>
+        public Vector3 CombatForward => transform.forward;
+
+        /// <summary>Current body height used by local-space critical-hit fakes.</summary>
+        public float CombatHeight => _combatHitCollider != null
+            ? Mathf.Max(0.0001f, _combatHitCollider.bounds.size.y)
+            : Mathf.Max(0.0001f, Mathf.Abs(transform.lossyScale.y));
+
+        /// <summary>Cached body used by the combat runtime for deferred physical pushback.</summary>
+        public Rigidbody CombatPushbackBody => _combatBody;
 
         /// <summary>Composite panic/stress scalar from health loss and hazardous exposure.</summary>
         public float Stress
@@ -151,7 +166,9 @@ namespace Hecton8.Gameplay
             : 1f;
 
         /// <summary>Runtime natural HP regeneration multiplier after food toxicity suppression.</summary>
-        public float NaturalHealthRegenerationMultiplier => ResolveNaturalHealthRegenerationMultiplier(_nutritionalToxicitySeverity01);
+        public float NaturalHealthRegenerationMultiplier => ResolveNaturalHealthRegenerationMultiplier(BloodToxicity01);
+        /// <summary>Composite blood toxicity scalar used by medical item effects.</summary>
+        public float BloodToxicity01 => Mathf.Clamp01(Mathf.Max(_nutritionalToxicitySeverity01, RadiationExposure));
 
         /// <summary>True when mutation state removes the practical need for a flashlight.</summary>
         public bool FlashlightBypassActive => HasMutation(HazardMutationProfile.BioluminescentSkinBit);
@@ -331,6 +348,8 @@ namespace Hecton8.Gameplay
         private bool _leviathanTraumaAdvisoryIssued;
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
+        private Collider _combatHitCollider;
+        private Rigidbody _combatBody;
         private Vector3 _lastKnownRuntimePosition;
         private int _combatDamageTargetId;
         private bool _combatDamageRegistered;
@@ -347,6 +366,8 @@ namespace Hecton8.Gameplay
                 NotificationEvents.RegisterMessage(MutationDetectedMessage);
                 TryGetComponent(out _survivalSystem);
                 TryGetComponent(out _playerMovement);
+                TryGetComponent(out _combatHitCollider);
+                TryGetComponent(out _combatBody);
                 _combatDamageTargetId = CombatDamageRuntime.ResolveTargetId(gameObject);
                 ApplyMutationRuntimeEffects();
                 _isInitialized = true;
@@ -423,6 +444,7 @@ namespace Hecton8.Gameplay
             OnHealthChanged?.Invoke(oldHealth, currentHealth);
             OnDamageTaken?.Invoke(appliedDamage);
             MarkCombatDamageSyncDirty();
+            TryIssueVitalWarningSignal();
 
             if (currentHealth <= 0)
             {
@@ -450,8 +472,15 @@ namespace Hecton8.Gameplay
         {
             if (!IsAlive) return 0;
 
+            float positiveAmount = Mathf.Max(0f, amount);
+            if (BloodToxicity01 >= HealingReversalToxicityThreshold01 && positiveAmount > 0f)
+            {
+                TakeDamage(positiveAmount, true);
+                return 0f;
+            }
+
             float oldHealth = currentHealth;
-            currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
+            currentHealth = Mathf.Min(maxHealth, currentHealth + positiveAmount);
             float actualHeal = currentHealth - oldHealth;
 
             if (actualHeal > 0)
@@ -459,9 +488,25 @@ namespace Hecton8.Gameplay
                 OnHealthChanged?.Invoke(oldHealth, currentHealth);
                 OnHealed?.Invoke(actualHeal);
                 MarkCombatDamageSyncDirty();
+                RefreshVitalWarningSignalReset();
             }
 
             return actualHeal;
+        }
+
+        private void TryIssueVitalWarningSignal()
+        {
+            if (_vitalWarningSignalIssued || HealthPercent > VitalWarningHealthThreshold01)
+                return;
+
+            _vitalWarningSignalIssued = true;
+            PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(1f, 0.85f, 1f, Mathf.Clamp01(HealthPercent), true));
+        }
+
+        private void RefreshVitalWarningSignalReset()
+        {
+            if (HealthPercent >= VitalWarningHealthReleaseThreshold01)
+                _vitalWarningSignalIssued = false;
         }
 
         /// <summary>Kills the player instantly.</summary>

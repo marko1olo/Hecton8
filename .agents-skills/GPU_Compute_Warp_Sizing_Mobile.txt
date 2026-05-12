@@ -1,0 +1,57 @@
+# GPU_COMPUTE_WARP_SIZING_MOBILE
+
+Status: PENDING VERIFICATION
+Owner: TECH_SCOUT
+Date: 2026-05-11
+
+## Unity 6000 Evidence
+
+Unity compute kernels declare thread-group size in shader code with `numthreads`. C# can query kernel group dimensions with `ComputeShader.GetKernelThreadGroupSizes`.
+
+Official references:
+- https://docs.unity3d.com/Manual/class-ComputeShader.html
+- https://docs.unity3d.com/ScriptReference/ComputeShader.GetKernelThreadGroupSizes.html
+
+## Law
+
+[RULE] Do not hardcode 256-thread assumptions as a universal compute law.
+
+[RULE] Default portable one-dimensional group size for HECTON-8 logic kernels is 64 threads unless a capture proves another size is faster on the target device.
+
+[RULE] Dispatch code must query kernel group size with `GetKernelThreadGroupSizes` when computing group counts. C# constants must not silently diverge from shader `numthreads`.
+
+[RULE] Provide kernel variants for heavy kernels only when the variant count is justified:
+- 32 or 64: Low/mobile/high-register-pressure kernels.
+- 64: MX350/Pascal baseline and portable default.
+- 128: optional mobile/desktop variant after GPU capture.
+- 256: desktop-only candidate after occupancy and register-pressure capture.
+
+[FORBID] Early-returning before `GroupMemoryBarrierWithGroupSync` in a path where other threads in the group still hit the barrier.
+
+[FORBID] Assuming NVIDIA warp size, AMD wave size, or mobile tile behavior from C# gameplay code.
+
+[FORBID] Using larger groups to hide an O(N^2) algorithmic problem. Fix the data layout first.
+
+## DOD
+
+- Kernel source comments match actual `numthreads`.
+- Dispatch group counts are derived from queried group size or shared generated constants.
+- MX350 capture is the floor.
+- Mobile capture is required before a mobile-specific size becomes law.
+- TDR budget remains below 2 ms per individual kernel.
+
+## Scalability
+
+Low: 32/64 groups, smaller dispatch ranges, staggered or FrostTick work.
+
+Middle: 64 groups with capped work and async readback.
+
+High: 128/256 variants only if capture shows better occupancy.
+
+Ultra: wider variants may buy denser visual fields, never gameplay determinism.
+
+## Hardware Impact
+
+Expected gain: avoids occupancy loss and register pressure from oversized groups on small/mobile GPUs.
+
+Claimed microseconds saved: PENDING GPU CAPTURE. No RenderDoc/Profiler capture was produced by this mandate pass.

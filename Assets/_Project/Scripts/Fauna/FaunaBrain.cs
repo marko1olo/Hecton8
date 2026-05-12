@@ -6,6 +6,7 @@ using Hecton8.Caves;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Physics;
@@ -25,7 +26,7 @@ namespace Hecton8.AI
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public partial class FaunaBrain : MonoBehaviour, IUpdatable, ITickable, IFixedTickable, ISlowTickable, ILateFrameTickable, IPoolable, ISerializationCallbackReceiver, ICuttable, IOriginShiftListener
+    public partial class FaunaBrain : MonoBehaviour, IUpdatable, ITickable, IFixedTickable, ISlowTickable, ILateFrameTickable, IPoolable, ISerializationCallbackReceiver, ICuttable, IOriginShiftListener, ICombatMobilityModifierReceiver
     {
         /// <summary>
         /// Global state definition for all fauna.
@@ -208,6 +209,8 @@ namespace Hecton8.AI
         private ScannableTarget _scannableTarget;
         private PredatorPackRole _currentPackRole;
         private bool _flankingManeuverDetected;
+        private float _combatMobilityScale = 1f;
+        private float _combatMobilityUntilTime;
         
         private static readonly int _FaunaBiolumDimShaderId = Shader.PropertyToID("_FaunaBiolumDim");
         private static readonly int _FaunaCamouflageTintShaderId = Shader.PropertyToID("_FaunaCamouflageTint");
@@ -217,6 +220,8 @@ namespace Hecton8.AI
         private static readonly int _CorpseBloatAgeShaderId = Shader.PropertyToID("_CorpseBloatAge01");
         private static readonly int _CorpseBloatStartTimeShaderId = Shader.PropertyToID("_CorpseBloatStartTime");
         private static readonly int _CorpseBloatDurationShaderId = Shader.PropertyToID("_CorpseBloatDuration");
+        private static readonly int _DecayAmountShaderId = Shader.PropertyToID("_DecayAmount");
+        private static readonly int _HitFlashShaderId = Shader.PropertyToID("_HitFlash");
         private const float SlowTickIntervalSeconds = 0.5f;
         private const int MaxSlowTicksPerDispatcherTick = 2;
         private const float AmbientCurrentInfluence = 0.22f;
@@ -246,7 +251,9 @@ namespace Hecton8.AI
         private const float DamageFlinchVelocityMaxMetersPerSecond = 15f;
         private const float DamageMicroFaunaPanicRadiusMeters = 24f;
         private const float DamageMicroFaunaPanicDurationSeconds = 1.25f;
+        private const float HitFlashDecayPerSecond = 9.5f;
         private const float PlayerImpactTraumaWeightPerForce = 0.0015f;
+        private const float PredatorImpactSignalImpulseScale = 0.01f;
         private const float HerbivoreSatedDurationSeconds = 16f;
         private const float CleanerFormationMinRadius = 1.6f;
         private const float CleanerFormationMaxRadius = 4.1f;
@@ -350,6 +357,7 @@ namespace Hecton8.AI
         private const float DegreesToRadians = 0.0174532924f;
         private const float RadiansToDegrees = 57.29578f;
         private const float DeathSpiralFadeDelaySeconds = 60f;
+        private const float WhaleFallDurationSeconds = 7200f;
         private const float DeathSpiralFadeDurationSeconds = 8f;
         private const float DeathSpiralFadeInvDurationSeconds = 1f / DeathSpiralFadeDurationSeconds;
         private const float DeathSpiralTorqueMin = 0.08f;
@@ -362,14 +370,16 @@ namespace Hecton8.AI
         private const float CorpseSinkSpeedMetersPerSecond = 0.5f;
         private const float CorpseFloorSettleOffsetMeters = 0.08f;
         private const int MaxBiolumPresentationLights = 4;
-        private const byte FaunaPresentationBiolumMask = 1;
-        private const byte FaunaPresentationDeathDitherMask = 2;
-        private const byte FaunaPresentationCorpseBloatMask = 4;
-        private const byte FaunaPresentationCorpseBloatTimerMask = 8;
-        private const byte FaunaPresentationCorpseBloatDurationMask = 16;
-        private const byte FaunaPresentationCamouflageTintMask = 32;
-        private const byte FaunaPresentationCamouflageParamsMask = 64;
-        private const byte FaunaPresentationCamouflageStrengthMask = 128;
+        private const ushort FaunaPresentationBiolumMask = 1;
+        private const ushort FaunaPresentationDeathDitherMask = 2;
+        private const ushort FaunaPresentationCorpseBloatMask = 4;
+        private const ushort FaunaPresentationCorpseBloatTimerMask = 8;
+        private const ushort FaunaPresentationCorpseBloatDurationMask = 16;
+        private const ushort FaunaPresentationCamouflageTintMask = 32;
+        private const ushort FaunaPresentationCamouflageParamsMask = 64;
+        private const ushort FaunaPresentationCamouflageStrengthMask = 128;
+        private const ushort FaunaPresentationHitFlashMask = 256;
+        private const ushort FaunaPresentationDecayAmountMask = 512;
         private const float FaunaCamouflageStrength = 0.55f;
         private const float FaunaCamouflageDepthStartMeters = 35f;
         private const float FaunaCamouflageDepthEndMeters = 260f;
@@ -398,6 +408,7 @@ namespace Hecton8.AI
         private bool _lodDisabled;
         private FaunaLogicalLodTier _logicalLodTier = FaunaLogicalLodTier.FullSim;
         private bool _logicalLodPresentationSuppressed;
+        private int _tier1LodProxyHandle;
         private uint _uniqueInstanceUid;
         private Renderer _renderer;
         // COLD ALLOC: List<Collider>[8] - logical LOD collider cache build scratch - owner: FaunaBrain
@@ -435,8 +446,8 @@ namespace Hecton8.AI
         private readonly List<Material> _faunaPresentationOriginalMaterials = new List<Material>(4);
         // COLD ALLOC: List<Material>[4] - owned runtime material instances for shader-side fauna presentation state - owner: FaunaBrain
         private readonly List<Material> _faunaPresentationRuntimeMaterials = new List<Material>(4);
-        // COLD ALLOC: List<byte>[4] - cached shader property support masks for fauna runtime materials - owner: FaunaBrain
-        private readonly List<byte> _faunaPresentationRuntimeMaterialMasks = new List<byte>(4);
+        // COLD ALLOC: List<ushort>[4] - cached shader property support masks for fauna runtime materials - owner: FaunaBrain
+        private readonly List<ushort> _faunaPresentationRuntimeMaterialMasks = new List<ushort>(4);
 
         // --- Event Hooks ---
         public Action<AIState> OnStateChanged;
@@ -527,11 +538,15 @@ namespace Hecton8.AI
         private float _faunaBiolumDim01 = 1f;
         private float _deathDitherFade01;
         private float _corpseBloatAge01;
+        private float _whaleFallDecay01;
+        private float _hitFlash01;
         private int _biolumPresentationLightCount;
         private float _lastAppliedBiolumLightScale01 = 1f;
         private float _lastAppliedFaunaBiolumShader01 = -1f;
         private float _lastAppliedDeathDitherShader01 = -1f;
         private float _lastAppliedCorpseBloatShader01 = -1f;
+        private float _lastAppliedDecayAmountShader01 = -1f;
+        private float _lastAppliedHitFlashShader01 = -1f;
         private uint _latchedCorpseNodeId;
         private Vector3 _corpseLatchOffset;
         private Vector3 _corpseLatchTargetPosition;
@@ -623,7 +638,7 @@ namespace Hecton8.AI
             _renderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
             CacheBiolumPresentationLights();
             EnsureFaunaPresentationMaterials();
-            ApplyFaunaPresentationShaderState(1f, 0f, 0f);
+            ApplyFaunaPresentationShaderState(1f, 0f, 0f, 0f);
             TryGetComponent(out _animator);
             CacheLogicalLodComponents();
             TryGetComponent(out _proceduralLeviathanSpineIk);
@@ -674,6 +689,8 @@ namespace Hecton8.AI
             if (!Application.isPlaying)
                 return;
 
+            UnregisterTier1LodProxy();
+
             if (_dispatcherRegistered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -704,6 +721,7 @@ namespace Hecton8.AI
                 _dispatcherRegistered = false;
             }
 
+            UnregisterTier1LodProxy();
             UnregisterSpatialHandle();
             ClearInfectionHazardRegistration();
             UnregisterOriginShiftListener();
@@ -730,6 +748,8 @@ namespace Hecton8.AI
             _deathCorkscrewPhaseZ = 0f;
             _deathDitherFade01 = 0f;
             _corpseBloatAge01 = 0f;
+            _whaleFallDecay01 = 0f;
+            _hitFlash01 = 0f;
             Vector3 corpseRuntimePosition = _rb != null ? _rb.position : Vector3.zero;
             _corpseSinkAup = AbsoluteUniversePosition.FromRuntimePosition(corpseRuntimePosition);
             _corpseFloorY = corpseRuntimePosition.y;
@@ -744,6 +764,8 @@ namespace Hecton8.AI
             _lastAppliedFaunaBiolumShader01 = -1f;
             _lastAppliedDeathDitherShader01 = -1f;
             _lastAppliedCorpseBloatShader01 = -1f;
+            _lastAppliedDecayAmountShader01 = -1f;
+            _lastAppliedHitFlashShader01 = -1f;
             ClearPredatorDeafening();
             ClearPredatorSquadState();
             ClearDirectorHuntTarget();
@@ -752,11 +774,12 @@ namespace Hecton8.AI
             ClearCorpseLatchState();
             RestoreBaseRigidbodyPresentationState();
             ApplyBiolumPresentationLightScale(1f);
-            ApplyFaunaPresentationShaderState(1f, 0f, 0f);
+            ApplyFaunaPresentationShaderState(1f, 0f, 0f, 0f);
             ResetCorpseBloatShaderTimer();
             _tier2HibernationRecordWritten = false;
             _tier2HibernationHandoffInProgress = false;
             _breachDragBypassUntilTime = 0f;
+            UnregisterTier1LodProxy();
             SetLogicalLodTier(FaunaLogicalLodTier.FullSim);
             _runtimeAggressionScale = 1f;
             ClearGeneticTraits();
@@ -791,12 +814,16 @@ namespace Hecton8.AI
             _deathCorkscrewPhaseZ = 0f;
             _deathDitherFade01 = 0f;
             _corpseBloatAge01 = 0f;
+            _whaleFallDecay01 = 0f;
+            _hitFlash01 = 0f;
             _passiveFlashlightDimUntilTime = 0f;
             _faunaBiolumDim01 = 1f;
             _lastAppliedBiolumLightScale01 = -1f;
             _lastAppliedFaunaBiolumShader01 = -1f;
             _lastAppliedDeathDitherShader01 = -1f;
             _lastAppliedCorpseBloatShader01 = -1f;
+            _lastAppliedDecayAmountShader01 = -1f;
+            _lastAppliedHitFlashShader01 = -1f;
             ClearPredatorDeafening();
             ClearPredatorSquadState();
             ClearDirectorHuntTarget();
@@ -804,12 +831,13 @@ namespace Hecton8.AI
             ClearAttackTelegraphState();
             ClearCorpseLatchState();
             ApplyBiolumPresentationLightScale(1f);
-            ApplyFaunaPresentationShaderState(1f, 0f, 0f);
+            ApplyFaunaPresentationShaderState(1f, 0f, 0f, 0f);
             ResetCorpseBloatShaderTimer();
             _playerNoiseEmitterTransform = null;
             _tier2HibernationHandoffInProgress = false;
             _breachDragBypassUntilTime = 0f;
             RestoreBaseRigidbodyPresentationState();
+            UnregisterTier1LodProxy();
             SetLogicalLodTier(FaunaLogicalLodTier.Hibernating);
             _runtimeAggressionScale = 1f;
             ClearGeneticTraits();
@@ -1006,8 +1034,12 @@ namespace Hecton8.AI
                 AdvanceSlowTickCadence(dt);
                 ClearProceduralStrikeIntent();
                 ClearEcholocationMimicSignal();
-                if (_logicalLodTier == FaunaLogicalLodTier.DataOnly && _rb != null && !_rb.IsSleeping())
-                    _rb.Sleep();
+                if (_logicalLodTier == FaunaLogicalLodTier.DataOnly)
+                {
+                    RefreshTier1LodProxy(FaunaLogicalLodTier.DataOnly);
+                    if (_rb != null && !_rb.IsSleeping())
+                        _rb.Sleep();
+                }
 
                 return;
             }
@@ -2627,6 +2659,7 @@ namespace Hecton8.AI
             float forceMultiplier = _stateMachine.currentForceMultiplier;
             float speedMultiplier = _stateMachine.currentSpeedMultiplier * runtimeSpeedScale;
             speedMultiplier *= ResolveTailSurgeSpeedMultiplier();
+            speedMultiplier *= ResolveCombatMobilitySpeedMultiplier();
             float turnMultiplier = _stateMachine.currentTurnMultiplier;
             if (TryResolveDynamicDodgeDirection(desiredDirection, out Vector3 dodgeDirection))
             {
@@ -2676,6 +2709,28 @@ namespace Hecton8.AI
             float surge01 = TrianglePulse01(_cognitionTimeSeconds, TailSurgeFrequency, seedPhase);
             float surge = surge01 * 2f - 1f;
             return math.max(0.05f, 1f + (surge * TailSurgeAmplitude));
+        }
+
+        public void SetCombatMobilityScale(float speedScale, float durationSeconds)
+        {
+            if (!math.isfinite(speedScale) || !math.isfinite(durationSeconds) || durationSeconds <= 0f)
+                return;
+
+            _combatMobilityScale = math.min(
+                math.clamp(speedScale, 0.05f, 1f),
+                math.clamp(_combatMobilityScale, 0.05f, 1f));
+            _combatMobilityUntilTime = math.max(_combatMobilityUntilTime, Time.time + durationSeconds);
+        }
+
+        private float ResolveCombatMobilitySpeedMultiplier()
+        {
+            if (_combatMobilityUntilTime <= Time.time)
+            {
+                _combatMobilityScale = 1f;
+                return 1f;
+            }
+
+            return math.clamp(_combatMobilityScale, 0.05f, 1f);
         }
 
         public void LateFrameTick()
@@ -3505,7 +3560,7 @@ namespace Hecton8.AI
                 if (sourceMaterial == null)
                     continue;
 
-                byte propertyMask = 0;
+                ushort propertyMask = 0;
                 if (sourceMaterial.HasProperty(_FaunaBiolumDimShaderId))
                     propertyMask |= FaunaPresentationBiolumMask;
                 if (sourceMaterial.HasProperty(_FaunaCamouflageTintShaderId))
@@ -3522,6 +3577,10 @@ namespace Hecton8.AI
                     propertyMask |= FaunaPresentationCorpseBloatTimerMask;
                 if (sourceMaterial.HasProperty(_CorpseBloatDurationShaderId))
                     propertyMask |= FaunaPresentationCorpseBloatDurationMask;
+                if (sourceMaterial.HasProperty(_DecayAmountShaderId))
+                    propertyMask |= FaunaPresentationDecayAmountMask;
+                if (sourceMaterial.HasProperty(_HitFlashShaderId))
+                    propertyMask |= FaunaPresentationHitFlashMask;
                 if (propertyMask == 0)
                     continue;
 
@@ -3542,7 +3601,11 @@ namespace Hecton8.AI
                 if ((propertyMask & FaunaPresentationCorpseBloatTimerMask) != 0)
                     runtimeMaterial.SetFloat(_CorpseBloatStartTimeShaderId, -1f);
                 if ((propertyMask & FaunaPresentationCorpseBloatDurationMask) != 0)
-                    runtimeMaterial.SetFloat(_CorpseBloatDurationShaderId, DeathSpiralFadeDelaySeconds);
+                    runtimeMaterial.SetFloat(_CorpseBloatDurationShaderId, ResolveCorpsePresentationDurationSeconds());
+                if ((propertyMask & FaunaPresentationDecayAmountMask) != 0)
+                    runtimeMaterial.SetFloat(_DecayAmountShaderId, 0f);
+                if ((propertyMask & FaunaPresentationHitFlashMask) != 0)
+                    runtimeMaterial.SetFloat(_HitFlashShaderId, 0f);
 
                 _faunaPresentationMaterialScratch[i] = runtimeMaterial;
                 _faunaPresentationOriginalMaterials.Add(sourceMaterial);
@@ -3606,6 +3669,8 @@ namespace Hecton8.AI
             _lastAppliedFaunaBiolumShader01 = -1f;
             _lastAppliedDeathDitherShader01 = -1f;
             _lastAppliedCorpseBloatShader01 = -1f;
+            _lastAppliedDecayAmountShader01 = -1f;
+            _lastAppliedHitFlashShader01 = -1f;
         }
 
         private void UpdateFaunaBiolumPresentation(float dt)
@@ -3616,12 +3681,13 @@ namespace Hecton8.AI
             float responseX = math.max(0f, dt) * PassiveFlashlightBiolumResponseSharpness;
             float alpha = math.saturate(1f - math.rcp(1f + responseX + 0.5f * responseX * responseX));
             _faunaBiolumDim01 = math.lerp(_faunaBiolumDim01, targetDim, alpha);
+            _hitFlash01 = math.max(0f, _hitFlash01 - (math.max(0f, dt) * HitFlashDecayPerSecond));
             float deathLightFade01 = 1f - math.saturate(_deathDitherFade01);
             ApplyBiolumPresentationLightScale(_faunaBiolumDim01 * deathLightFade01);
-            ApplyFaunaPresentationShaderState(_faunaBiolumDim01, _deathDitherFade01, _corpseBloatAge01);
+            ApplyFaunaPresentationShaderState(_faunaBiolumDim01, _deathDitherFade01, _corpseBloatAge01, _hitFlash01, _whaleFallDecay01);
         }
 
-        private void ApplyFaunaPresentationShaderState(float biolumDim01, float deathDitherFade01, float corpseBloatAge01)
+        private void ApplyFaunaPresentationShaderState(float biolumDim01, float deathDitherFade01, float corpseBloatAge01, float hitFlash01, float decayAmount01 = 0f)
         {
             int runtimeMaterialCount = _faunaPresentationRuntimeMaterials.Count;
             if (runtimeMaterialCount <= 0)
@@ -3630,28 +3696,38 @@ namespace Hecton8.AI
             float resolvedBiolumDim01 = math.saturate(biolumDim01);
             float resolvedDeathDitherFade01 = math.saturate(deathDitherFade01);
             float resolvedCorpseBloatAge01 = math.saturate(corpseBloatAge01);
+            float resolvedDecayAmount01 = math.saturate(decayAmount01);
+            float resolvedHitFlash01 = math.saturate(hitFlash01);
             bool applyBiolum = math.abs(_lastAppliedFaunaBiolumShader01 - resolvedBiolumDim01) >= 0.001f;
             bool applyDeathDither = math.abs(_lastAppliedDeathDitherShader01 - resolvedDeathDitherFade01) >= 0.001f;
             bool applyCorpseBloat = math.abs(_lastAppliedCorpseBloatShader01 - resolvedCorpseBloatAge01) >= 0.001f;
-            if (!applyBiolum && !applyDeathDither && !applyCorpseBloat)
+            bool applyDecayAmount = math.abs(_lastAppliedDecayAmountShader01 - resolvedDecayAmount01) >= 0.001f;
+            bool applyHitFlash = math.abs(_lastAppliedHitFlashShader01 - resolvedHitFlash01) >= 0.001f;
+            if (!applyBiolum && !applyDeathDither && !applyCorpseBloat && !applyDecayAmount && !applyHitFlash)
                 return;
 
             _lastAppliedFaunaBiolumShader01 = resolvedBiolumDim01;
             _lastAppliedDeathDitherShader01 = resolvedDeathDitherFade01;
             _lastAppliedCorpseBloatShader01 = resolvedCorpseBloatAge01;
+            _lastAppliedDecayAmountShader01 = resolvedDecayAmount01;
+            _lastAppliedHitFlashShader01 = resolvedHitFlash01;
             for (int i = 0; i < runtimeMaterialCount; i++)
             {
                 Material runtimeMaterial = _faunaPresentationRuntimeMaterials[i];
                 if (runtimeMaterial == null)
                     continue;
 
-                byte propertyMask = _faunaPresentationRuntimeMaterialMasks[i];
+                ushort propertyMask = _faunaPresentationRuntimeMaterialMasks[i];
                 if (applyBiolum && (propertyMask & FaunaPresentationBiolumMask) != 0)
                     runtimeMaterial.SetFloat(_FaunaBiolumDimShaderId, resolvedBiolumDim01);
                 if (applyDeathDither && (propertyMask & FaunaPresentationDeathDitherMask) != 0)
                     runtimeMaterial.SetFloat(_DeathDitherFadeShaderId, resolvedDeathDitherFade01);
                 if (applyCorpseBloat && (propertyMask & FaunaPresentationCorpseBloatMask) != 0)
                     runtimeMaterial.SetFloat(_CorpseBloatAgeShaderId, resolvedCorpseBloatAge01);
+                if (applyDecayAmount && (propertyMask & FaunaPresentationDecayAmountMask) != 0)
+                    runtimeMaterial.SetFloat(_DecayAmountShaderId, resolvedDecayAmount01);
+                if (applyHitFlash && (propertyMask & FaunaPresentationHitFlashMask) != 0)
+                    runtimeMaterial.SetFloat(_HitFlashShaderId, resolvedHitFlash01);
             }
         }
 
@@ -3677,16 +3753,19 @@ namespace Hecton8.AI
                 if (runtimeMaterial == null)
                     continue;
 
-                byte propertyMask = _faunaPresentationRuntimeMaterialMasks[i];
+                ushort propertyMask = _faunaPresentationRuntimeMaterialMasks[i];
                 if ((propertyMask & FaunaPresentationCorpseBloatMask) != 0)
                     runtimeMaterial.SetFloat(_CorpseBloatAgeShaderId, 0f);
                 if ((propertyMask & FaunaPresentationCorpseBloatTimerMask) != 0)
                     runtimeMaterial.SetFloat(_CorpseBloatStartTimeShaderId, startTimeSeconds);
                 if ((propertyMask & FaunaPresentationCorpseBloatDurationMask) != 0)
-                    runtimeMaterial.SetFloat(_CorpseBloatDurationShaderId, DeathSpiralFadeDelaySeconds);
+                    runtimeMaterial.SetFloat(_CorpseBloatDurationShaderId, ResolveCorpsePresentationDurationSeconds());
+                if ((propertyMask & FaunaPresentationDecayAmountMask) != 0)
+                    runtimeMaterial.SetFloat(_DecayAmountShaderId, 0f);
             }
 
             _lastAppliedCorpseBloatShader01 = 0f;
+            _lastAppliedDecayAmountShader01 = 0f;
         }
 
         private void ApplyBiolumPresentationLightScale(float scale01)
@@ -4600,6 +4679,7 @@ namespace Hecton8.AI
                 // [RULE] Predators entering Sated state after eating
                 float satedDur = _speciesProfile != null ? _speciesProfile.satedDuration : 45f;
                 _utilityBrain.ForceSated(_cognitionTimeSeconds, satedDur);
+                _utilityBrain.SetHunger01(0f);
                 _stateMachine.currentState = AIState.Sated;
                 _currentStateCache = AIState.Sated;
                 
@@ -4643,6 +4723,15 @@ namespace Hecton8.AI
                         10f,
                         0.45f,
                         0.85f);
+                    float biteRangeMeters = _speciesProfile != null
+                        ? math.max(1f, _speciesProfile.attackRadius)
+                        : math.max(1f, _stateMachine.attackRadius);
+                    microFaunaBoids.RegisterPredatorConsumptionBurst(
+                        predatorPosition,
+                        preyPosition,
+                        biteRangeMeters,
+                        _uniqueInstanceUid,
+                        _cognitionTimeSeconds);
                 }
 
                 // Despawn/Pool the prey
@@ -4811,7 +4900,28 @@ namespace Hecton8.AI
             if (impulse.sqrMagnitude <= 0.0001f)
                 return;
 
+            PublishPredatorImpactSignal(impactPoint, impulse);
             PhysicsForceRouter.QueueForceAtPosition(playerBody, impulse, impactPoint, ForceMode.Impulse);
+        }
+
+        private void PublishPredatorImpactSignal(Vector3 impactPoint, Vector3 impulse)
+        {
+            float impulseMagnitude = CinematicMath.ApproximateLength(new float3(impulse.x, impulse.y, impulse.z));
+            if (impulseMagnitude <= 0.001f)
+                return;
+
+            ImpactSignal signal = default;
+            signal.PointAup = AbsoluteUniversePosition.FromRuntimePosition(impactPoint);
+            signal.Force = impulseMagnitude;
+            signal.Intensity = math.saturate(math.log10(1f + (impulseMagnitude * PredatorImpactSignalImpulseScale)));
+            signal.PrimaryBodyId = _uniqueInstanceUid != 0u
+                ? _uniqueInstanceUid
+                : unchecked((uint)EntityId.ToULong(GetEntityId()));
+            signal.WeightClass = IsApexPredator() ? (byte)2 : (byte)1;
+            signal.PrimaryMaterialId = 0;
+            signal.SecondaryMaterialId = 0;
+            signal.Flags = 0;
+            GlobalSignals.Publish(in signal);
         }
 
         private static void ApplyCinematicPlayerImpact(Transform target, Vector3 impactDir, float force)
@@ -4854,6 +4964,7 @@ namespace Hecton8.AI
 
             float normalizedDamage = _maxHealth > 0.001f ? clampedDamage * math.rcp(_maxHealth) : 0f;
             _currentHealth = math.max(0f, _currentHealth - clampedDamage);
+            TriggerHitFlash(normalizedDamage);
 
             Vector3 resolvedSourcePosition = hasDamageSource
                 ? damageSourcePosition
@@ -4876,6 +4987,12 @@ namespace Hecton8.AI
             }
             if (_currentHealth <= 0.001f)
                 Die();
+        }
+
+        private void TriggerHitFlash(float normalizedDamage)
+        {
+            float impactFlash01 = math.saturate(0.28f + (normalizedDamage * 2.5f));
+            _hitFlash01 = math.max(_hitFlash01, impactFlash01);
         }
 
         /// <summary>
@@ -5064,10 +5181,14 @@ namespace Hecton8.AI
             _deathSpiralStartTime = _cognitionTimeSeconds;
             _deathDitherFade01 = 0f;
             _corpseBloatAge01 = 0f;
+            _whaleFallDecay01 = 0f;
+            _hitFlash01 = 0f;
             _passiveFlashlightDimUntilTime = 0f;
             _faunaBiolumDim01 = 1f;
             _lastAppliedBiolumLightScale01 = -1f;
             _lastAppliedCorpseBloatShader01 = -1f;
+            _lastAppliedDecayAmountShader01 = -1f;
+            _lastAppliedHitFlashShader01 = -1f;
             ArmCorpseBloatShaderTimer();
             _deathSpiralTorque = ResolveDeathSpiralTorque();
             ResolveDeathCorkscrewPhases(out _deathCorkscrewPhaseX, out _deathCorkscrewPhaseZ);
@@ -5324,19 +5445,35 @@ namespace Hecton8.AI
             return new float3(offset.x, offset.y, offset.z);
         }
 
+        private bool IsWhaleFallCorpseRuntime()
+        {
+            return IsApexPredator() ||
+                   (_speciesProfile != null && _speciesProfile.isLeviathan) ||
+                   (_archetype != null && _archetype.roleType == CreatureRoleType.Leviathan);
+        }
+
+        private float ResolveCorpsePresentationDurationSeconds()
+        {
+            return IsWhaleFallCorpseRuntime() ? WhaleFallDurationSeconds : DeathSpiralFadeDelaySeconds;
+        }
+
         private void UpdateDeathSpiralPresentation(float dt)
         {
             if (!_deathSpiralActive)
                 return;
 
             float age = math.max(0f, _cognitionTimeSeconds - _deathSpiralStartTime);
-            float fadeAge = age - DeathSpiralFadeDelaySeconds;
+            _whaleFallDecay01 = IsWhaleFallCorpseRuntime()
+                ? math.saturate(age * math.rcp(WhaleFallDurationSeconds))
+                : 0f;
+            ApplyFaunaPresentationShaderState(_faunaBiolumDim01, _deathDitherFade01, _corpseBloatAge01, _hitFlash01, _whaleFallDecay01);
+            float fadeAge = age - ResolveCorpsePresentationDurationSeconds();
 
             if (fadeAge > 0f)
             {
                 _deathDitherFade01 = math.saturate(fadeAge * DeathSpiralFadeInvDurationSeconds);
                 ApplyBiolumPresentationLightScale(1f - _deathDitherFade01);
-                ApplyFaunaPresentationShaderState(_faunaBiolumDim01, _deathDitherFade01, 0f);
+                ApplyFaunaPresentationShaderState(_faunaBiolumDim01, _deathDitherFade01, _corpseBloatAge01, 0f, _whaleFallDecay01);
             }
 
             if (_deathDitherFade01 < 0.999f)
@@ -5419,6 +5556,8 @@ namespace Hecton8.AI
         internal void SetLogicalIdentity(uint uniqueInstanceUid)
         {
             _uniqueInstanceUid = uniqueInstanceUid;
+            if (_logicalLodTier == FaunaLogicalLodTier.DataOnly)
+                RefreshTier1LodProxy(FaunaLogicalLodTier.DataOnly);
         }
 
         internal void ApplyCleanerSymbiosis(float fatigueRelief)
@@ -5469,10 +5608,21 @@ namespace Hecton8.AI
         internal void SetLogicalLodTier(FaunaLogicalLodTier logicalLodTier)
         {
             if (_logicalLodTier == logicalLodTier)
+            {
+                if (logicalLodTier == FaunaLogicalLodTier.DataOnly)
+                    RefreshTier1LodProxy(logicalLodTier);
+                else
+                    UnregisterTier1LodProxy();
+
                 return;
+            }
 
             _logicalLodTier = logicalLodTier;
             ApplyLogicalLodPresentationState(logicalLodTier);
+            if (logicalLodTier == FaunaLogicalLodTier.DataOnly)
+                RefreshTier1LodProxy(logicalLodTier);
+            else
+                UnregisterTier1LodProxy();
         }
 
         private void ResolveLogicalLodTier()
@@ -5504,6 +5654,101 @@ namespace Hecton8.AI
             SetLogicalLodTier(resolvedTier);
             if (resolvedTier == FaunaLogicalLodTier.Hibernating)
                 TryPersistTier2HibernationAndDespawn();
+        }
+
+        private void RefreshTier1LodProxy(FaunaLogicalLodTier logicalLodTier)
+        {
+            if (logicalLodTier != FaunaLogicalLodTier.DataOnly ||
+                _isDead ||
+                !Application.isPlaying ||
+                !TryResolveSelfLogicAup(out AbsoluteUniversePosition selfAup))
+            {
+                UnregisterTier1LodProxy();
+                return;
+            }
+
+            FaunaTier1LodProxyEntry entry = BuildTier1LodProxyEntry(in selfAup);
+            _tier1LodProxyHandle = FaunaTier1LodProxyRegistry.RegisterOrUpdate(_tier1LodProxyHandle, in entry);
+        }
+
+        private void UnregisterTier1LodProxy()
+        {
+            if (!Application.isPlaying)
+            {
+                _tier1LodProxyHandle = 0;
+                return;
+            }
+
+            FaunaTier1LodProxyRegistry.Unregister(ref _tier1LodProxyHandle);
+        }
+
+        private FaunaTier1LodProxyEntry BuildTier1LodProxyEntry(in AbsoluteUniversePosition selfAup)
+        {
+            bool isApex = IsApexPredator();
+            bool isPredator = IsPredatorForHibernation();
+            bool isLargeThreat = ShouldUseProceduralLeviathanPresentation() ||
+                                 isApex ||
+                                 (_speciesProfile != null && _speciesProfile.isLeviathan);
+
+            byte flags = FaunaTier1LodProxyRegistry.FlagDataOnly;
+            if (_isDead)
+                flags |= FaunaTier1LodProxyRegistry.FlagDead;
+            if (isPredator)
+                flags |= FaunaTier1LodProxyRegistry.FlagPredator;
+            if (isApex)
+                flags |= FaunaTier1LodProxyRegistry.FlagApex;
+            if (isLargeThreat)
+                flags |= FaunaTier1LodProxyRegistry.FlagLargeThreat;
+
+            return new FaunaTier1LodProxyEntry
+            {
+                PositionAup = selfAup.ToAlignedBlit(),
+                InstanceUid = _uniqueInstanceUid,
+                SpeciesId = PackTier1SpeciesId(ComputeStableSpeciesId()),
+                Flags = flags,
+                HeadingOctant = ResolveTier1HeadingOctant(),
+                Health01 = PackTier1UnitByte(HealthNormalized),
+                Hunger01 = PackTier1UnitByte(CurrentHunger01),
+                QualityTier = 1,
+                Reserved0 = 0,
+                Reserved1 = 0u
+            };
+        }
+
+        private byte ResolveTier1HeadingOctant()
+        {
+            Vector3 direction = _cachedDesiredDirection;
+            if (direction.sqrMagnitude <= 0.0001f)
+                direction = ResolveSelfLogicForward();
+
+            float absX = math.abs(direction.x);
+            float absZ = math.abs(direction.z);
+            if (absX <= 0.0001f && absZ <= 0.0001f)
+                return 0;
+
+            if (absX > absZ * 2f)
+                return direction.x >= 0f ? (byte)2 : (byte)6;
+
+            if (absZ > absX * 2f)
+                return direction.z >= 0f ? (byte)0 : (byte)4;
+
+            if (direction.x >= 0f)
+                return direction.z >= 0f ? (byte)1 : (byte)3;
+
+            return direction.z >= 0f ? (byte)7 : (byte)5;
+        }
+
+        private static ushort PackTier1SpeciesId(int speciesId)
+        {
+            if (speciesId <= 0)
+                return 0;
+
+            return speciesId >= ushort.MaxValue ? ushort.MaxValue : (ushort)speciesId;
+        }
+
+        private static byte PackTier1UnitByte(float value)
+        {
+            return (byte)math.clamp((int)(math.saturate(value) * 255f + 0.5f), 0, 255);
         }
 
         private void TryPersistTier2HibernationAndDespawn()

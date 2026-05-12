@@ -30,7 +30,7 @@ Shader "Hecton8/UI/IGNDitherDissolve"
         {
             "Queue" = "Overlay"
             "IgnoreProjector" = "True"
-            "RenderType" = "Transparent"
+            "RenderType" = "TransparentCutout"
             "RenderPipeline" = "UniversalPipeline"
             "CanUseSpriteAtlas" = "True"
         }
@@ -39,7 +39,8 @@ Shader "Hecton8/UI/IGNDitherDissolve"
         Lighting Off
         ZWrite Off
         ZTest Always
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend Off
+        AlphaToMask On
 
         Pass
         {
@@ -118,7 +119,6 @@ Shader "Hecton8/UI/IGNDitherDissolve"
                 float2 screenUv = i.screenPos.xy / max(i.screenPos.w, 0.0001);
                 float threshold = InterleavedGradientNoise(floor(screenUv * _ScreenParams.xy));
                 float progress = saturate(_DitherProgress);
-                float ditherAlpha = progress <= 0.0001 ? 0.0 : step(threshold, progress);
                 fixed4 tex = tex2D(_MainTex, i.texcoord);
                 fixed4 color = tex * i.color * _Color;
                 float pulse = FastTrianglePulse01((_Time.y * _SignalPulseRate) + (screenUv.y * 38.0)) * _SignalPulseStrength;
@@ -159,8 +159,8 @@ Shader "Hecton8/UI/IGNDitherDissolve"
                 float brownoutMask = brownoutPulse * (0.35 + (0.65 * edgeMask)) * (0.65 + (0.35 * brownoutScan)) * progress;
                 color.rgb = lerp(color.rgb, (color.rgb * fixed3(1.12, 0.82, 0.55)) + (_SignalWarningColor.rgb * 0.18), brownoutMask);
                 color.a = saturate(color.a + (brownoutPulse * edgeMask * 0.035));
-                color.a *= ditherAlpha;
-                return color;
+                clip(color.a * progress - max(threshold, 0.0005));
+                return fixed4(color.rgb, 1.0);
             }
             ENDCG
         }

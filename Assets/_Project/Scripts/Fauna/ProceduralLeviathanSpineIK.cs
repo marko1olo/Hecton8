@@ -9,7 +9,6 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Jobs;
 
 namespace Hecton8.AI
 {
@@ -37,17 +36,18 @@ namespace Hecton8.AI
             (1u << (int)HectonQualityTier.Mx350);
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct SolveSpineJob : IJobParallelForTransform
+        private struct SolveSpineJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float> NormalizedBoneT;
+            [ReadOnly] public NativeArray<float3> VertebraWorldPositions;
             [ReadOnly] public NativeArray<quaternion> BindWorldRotations;
             [WriteOnly] public NativeArray<quaternion> SolvedWorldRotations;
             // NATIVE SAFETY EXCEPTION: these two one-element buffers are side-channel outputs for the final head bone only.
-            // IJobParallelForTransform cannot express "only index == LastBoneIndex writes element 0", so Unity's default
-            // parallel-for index restriction would reject a deterministic single-writer pattern that the job already guards.
+            // IJobParallelFor cannot express "only index == LastBoneIndex writes element 0", so Unity's default
+            // parallel-for index restriction rejects a deterministic single-writer pattern that the job already guards.
             //
             // The write site is constrained by `if (index == LastBoneIndex)`, and LastBoneIndex is fixed for the scheduled
-            // chain length. Every other transform writes only its own SolvedWorldRotations slot. There is no read/write
+            // chain length. Every other index writes only its own SolvedWorldRotations slot. There is no read/write
             // overlap inside the job, and the main thread only consumes these buffers after the dispatcher swap completes.
             //
             // Lifetime is owned by ProceduralLeviathanSpineIK: buffers are Allocator.Persistent, registered with
@@ -178,9 +178,10 @@ namespace Hecton8.AI
                 return result;
             }
 
-            public void Execute(int index, TransformAccess transform)
+            public void Execute(int index)
             {
-                if (!transform.isValid)
+                float3 sourcePosition = VertebraWorldPositions[index];
+                if (!math.all(math.isfinite(sourcePosition)))
                     return;
 
                 float normalizedT = math.saturate(NormalizedBoneT[index]);
@@ -331,9 +332,9 @@ namespace Hecton8.AI
         private float _strikeRecoveryTimeRemaining;
         private float _strikeRecoveryDistanceNormalized;
         private JobHandle _pendingSpineHandle;
-        private TransformAccessArray _vertebraAccessArray;
         private Transform[] _runtimeChain = Array.Empty<Transform>();
         private NativeArray<float> _normalizedBoneT;
+        private NativeArray<float3> _vertebraWorldPositions;
         private NativeArray<quaternion> _bindWorldRotations;
         private NativeArray<quaternion> _solvedWorldRotations;
         private NativeArray<quaternion> _solvedHeadWorldRotations;
@@ -486,7 +487,7 @@ namespace Hecton8.AI
 
         private static int ResolveScalabilityMatrixIkFrameInterval(float viewerDistanceSq)
         {
-            HectonQualityTier tier = GlobalRegistry.QualityTier;
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
             int tierIndex = math.clamp((int)tier, 0, 31);
             uint tierBit = 1u << tierIndex;
             uint lowTierBit = AdaptiveIkLowTierMask & tierBit;
@@ -508,7 +509,7 @@ namespace Hecton8.AI
 
         public void Tick(float deltaTime)
         {
-            if (deltaTime <= 0f || _faunaBrain == null || _vertebraAccessArray.length <= 0)
+            if (deltaTime <= 0f || _faunaBrain == null || !_normalizedBoneT.IsCreated || _normalizedBoneT.Length <= 0)
                 return;
 
             if (_jobScheduled)
@@ -608,10 +609,12 @@ namespace Hecton8.AI
 
             _strikeTargetWorldPosition = math.lerp(_strikeTargetWorldPosition, resolvedStrikeTargetPosition, strikeBlendAlpha);
             _headLookTargetWorldPosition = math.lerp(_headLookTargetWorldPosition, resolvedHeadLookTarget, headLookBlendAlpha);
+            SnapshotVertebraWorldPositions();
 
             SolveSpineJob job = new SolveSpineJob
             {
                 NormalizedBoneT = _normalizedBoneT,
+                VertebraWorldPositions = _vertebraWorldPositions,
                 BindWorldRotations = _bindWorldRotations,
                 SolvedWorldRotations = _solvedWorldRotations,
                 SolvedHeadWorldRotations = _solvedHeadWorldRotations,
@@ -644,7 +647,7 @@ namespace Hecton8.AI
                 TelegraphJawOpenRadians = math.clamp(telegraphJawOpenDegrees, 0f, 89f) * DegreesToRadians
             };
 
-            _pendingSpineHandle = IJobParallelForTransformExtensions.ScheduleByRef(ref job, _vertebraAccessArray, default);
+            _pendingSpineHandle = job.Schedule(_normalizedBoneT.Length, 8);
             _jobScheduled = true;
         }
 
@@ -970,10 +973,10 @@ namespace Hecton8.AI
                 writeIndex++;
             }
 
-            TransformAccessArray.Allocate(validCount, -1, out _vertebraAccessArray);
-            _vertebraAccessArray.SetTransforms(_runtimeChain);
             // COLD ALLOC: NativeArray<float>[validCount] - normalized vertebra spline coordinates for leviathan presentation job - owner: ProceduralLeviathanSpineIK
             _normalizedBoneT = new NativeArray<float>(validCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            // COLD ALLOC: NativeArray<float3>[validCount] - prebuilt vertebra world positions consumed by the Burst IK job - owner: ProceduralLeviathanSpineIK
+            _vertebraWorldPositions = new NativeArray<float3>(validCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             // COLD ALLOC: NativeArray<quaternion>[validCount] - bind-space world rotations used as the procedural leviathan presentation baseline - owner: ProceduralLeviathanSpineIK
             _bindWorldRotations = new NativeArray<quaternion>(validCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             // COLD ALLOC: NativeArray<quaternion>[validCount] - solved Catmull-Rom world rotations produced by the Burst spine job - owner: ProceduralLeviathanSpineIK
@@ -988,6 +991,9 @@ namespace Hecton8.AI
             for (int i = 0; i < validCount; i++)
             {
                 _normalizedBoneT[i] = i * invDenominator;
+                _vertebraWorldPositions[i] = _runtimeChain[i] != null
+                    ? (float3)_runtimeChain[i].position
+                    : float3.zero;
                 _bindWorldRotations[i] = _runtimeChain[i] != null
                     ? (quaternion)_runtimeChain[i].rotation
                     : quaternion.identity;
@@ -1003,14 +1009,18 @@ namespace Hecton8.AI
         {
             CompletePendingJob();
 
-            if (_vertebraAccessArray.isCreated)
-                _vertebraAccessArray.Dispose();
-
             if (_normalizedBoneT.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_normalizedBoneT);
                 _normalizedBoneT.Dispose();
                 _normalizedBoneT = default;
+            }
+
+            if (_vertebraWorldPositions.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_vertebraWorldPositions);
+                _vertebraWorldPositions.Dispose();
+                _vertebraWorldPositions = default;
             }
 
             if (_bindWorldRotations.IsCreated)
@@ -1047,10 +1057,26 @@ namespace Hecton8.AI
         private void RegisterRuntimeBuffers()
         {
             NativeMemorySentinel.RegisterNativeArray(_normalizedBoneT, NativeMemoryOwner, nameof(_normalizedBoneT), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_vertebraWorldPositions, NativeMemoryOwner, nameof(_vertebraWorldPositions), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_bindWorldRotations, NativeMemoryOwner, nameof(_bindWorldRotations), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_solvedWorldRotations, NativeMemoryOwner, nameof(_solvedWorldRotations), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_solvedHeadWorldRotations, NativeMemoryOwner, nameof(_solvedHeadWorldRotations), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_jawOpenRadians, NativeMemoryOwner, nameof(_jawOpenRadians), NativeMemoryLifetime);
+        }
+
+        private void SnapshotVertebraWorldPositions()
+        {
+            if (!_vertebraWorldPositions.IsCreated || _runtimeChain == null)
+                return;
+
+            int count = math.min(_runtimeChain.Length, _vertebraWorldPositions.Length);
+            for (int i = 0; i < count; i++)
+            {
+                Transform vertebra = _runtimeChain[i];
+                _vertebraWorldPositions[i] = vertebra != null
+                    ? (float3)vertebra.position
+                    : new float3(float.NaN, float.NaN, float.NaN);
+            }
         }
 
         private void ResetSplineState()

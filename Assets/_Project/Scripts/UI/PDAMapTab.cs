@@ -12,6 +12,7 @@ using Hecton8.World;
 using TMPro;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -29,14 +30,25 @@ namespace Hecton8.UI
     {
         private const string SonarMapShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_SonarMap.shader";
         private const string SonarPointCloudShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader";
+        private const string SonarMapComputePath = "Assets/_Project/Art/Shaders/Hecton_SonarMap.compute";
+        private const string SonarMapConstantsBufferName = "HectonSonarMapConstants";
+        private const string SonarPointCloudShaderName = "Hecton8/UI/PDA Sonar Point Cloud";
         private const int MaxThreatPings = 8;
         private const int MaxStatusChars = 64;
         private static readonly bool UseHeadlessCartography = true;
         private const int CartographyTextureSize = 128;
         private const float AcousticOverlayRadiusMeters = 160f;
-        private const int PointCloudAxis = 12;
-        private const int PointCloudCapacity = PointCloudAxis * PointCloudAxis * PointCloudAxis;
-        private const int SonarPointStrideBytes = 32;
+        private const int PointCloudThreadAxis = 8;
+        private const int PointCloudLowAxis = 4;
+        private const int MaxPredatorAupPoints = 16;
+        private const int PointCloudCapacity = (PointCloudThreadAxis * PointCloudThreadAxis * PointCloudThreadAxis) + MaxPredatorAupPoints;
+        private const int SonarPointStrideBytes = 16;
+        private const int SonarIndirectArgsStrideBytes = sizeof(uint) * 5;
+        private const uint SonarQuadIndexCount = 6u;
+        private const float PointCloudPingBandWidth = 0.16f;
+        private const int LowRaymarchSteps = 8;
+        private const int HighRaymarchSteps = 16;
+        private const float PointCloudTierHysteresisSeconds = 2f;
         private const int MaxMarkerVisuals = 64;
         private const int MarkerUpdateQueueCapacity = 128;
         private const int MaxMarkerUiUpdatesPerLateFrame = 10;
@@ -49,11 +61,47 @@ namespace Hecton8.UI
         private static readonly int ThreatPingsId = Shader.PropertyToID("_ThreatPings");
         private static readonly int TimePhaseId = Shader.PropertyToID("_TimePhase");
         private static readonly int SonarPointsId = Shader.PropertyToID("_SonarPoints");
+        private static readonly int SonarPointAppendBufferId = Shader.PropertyToID("_SonarPointAppendBuffer");
+        private static readonly int VoxelSdfTexture3DId = Shader.PropertyToID("_VoxelSdfTexture3D");
+        private static readonly int IndirectArgsId = Shader.PropertyToID("_IndirectArgs");
+        private static readonly int VolumeOriginId = Shader.PropertyToID("_VolumeOrigin");
+        private static readonly int VoxelCellSizeId = Shader.PropertyToID("_VoxelCellSize");
+        private static readonly int PlayerWorldPositionId = Shader.PropertyToID("_PlayerWorldPosition");
+        private static readonly int SonarScalarParamsId = Shader.PropertyToID("_SonarScalarParams");
+        private static readonly int SonarDispatchParamsId = Shader.PropertyToID("_SonarDispatchParams");
+        private static readonly int PredatorAupBufferId = Shader.PropertyToID("_PredatorAUPBuffer");
         private static readonly int PointCloudLocalToWorldId = Shader.PropertyToID("_PointCloudLocalToWorld");
         private static readonly int PointSizeId = Shader.PropertyToID("_PointSize");
         private static readonly int OpacityId = Shader.PropertyToID("_Opacity");
+        private static readonly int AcousticPingSignalId = Shader.PropertyToID("_AcousticPingSignal");
+        private static readonly int HeightColorizationId = Shader.PropertyToID("_HeightColorization");
+        private static readonly int DepthFadeMetersId = Shader.PropertyToID("_DepthFadeMeters");
         private static readonly uint _GhostSignalRejectedWarningHash = unchecked((uint)LocHash.Compute("PDAMapTab.GhostSignalRejected"));
         private static readonly uint _GhostSignalContextHash = unchecked((uint)LocHash.Compute("GhostSignal"));
+        private static readonly Vector3[] SonarQuadVertices =
+        {
+            new Vector3(-1f, -1f, 0f),
+            new Vector3(-1f, 1f, 0f),
+            new Vector3(1f, 1f, 0f),
+            new Vector3(1f, -1f, 0f)
+        }; // COLD ALLOC: Vector3[4] - immutable PDA sonar indirect quad vertices - owner: PDAMapTab
+        private static readonly int[] SonarQuadIndices =
+        {
+            0, 1, 2,
+            0, 2, 3
+        }; // COLD ALLOC: int[6] - immutable PDA sonar indirect quad indices - owner: PDAMapTab
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct SonarMapConstants
+        {
+            public Vector4 GridDimensions;
+            public Vector4 VolumeOrigin;
+            public Vector4 VoxelCellSize;
+            public Vector4 PlayerWorldPosition;
+            public Vector4 ScalarParams;
+            public Vector4 DispatchParams;
+        }
+        private static readonly int SonarMapConstantsStrideBytes = UnsafeUtility.SizeOf<SonarMapConstants>();
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildCartographyTextureJob : IJobParallelFor
@@ -167,85 +215,13 @@ namespace Hecton8.UI
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        private struct SonarPointCloudPoint
-        {
-            public float4 LocalPositionIntensity;
-            public float4 Color;
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct BuildSonarPointCloudJob : IJobParallelFor
-        {
-            [ReadOnly] public NativeArray<byte> Passability;
-            [ReadOnly] public NativeArray<float> AcousticDensity;
-            [WriteOnly] public NativeArray<SonarPointCloudPoint> Points;
-            public int3 VoxelDimensions;
-            public float3 VoxelOrigin;
-            public float VoxelCellSize;
-            public float3 PlayerPosition;
-            public int3 AcousticDimensions;
-            public float AcousticRadiusMeters;
-            public byte SolidCell;
-            public byte HasAcousticDensity;
-
-            public void Execute(int index)
-            {
-                int sx = index % PointCloudAxis;
-                int sy = (index / PointCloudAxis) % PointCloudAxis;
-                int sz = index / (PointCloudAxis * PointCloudAxis);
-                float3 sample01 = new float3(
-                    (sx + 0.5f) / PointCloudAxis,
-                    (sy + 0.5f) / PointCloudAxis,
-                    (sz + 0.5f) / PointCloudAxis);
-
-                int vx = math.clamp((int)math.floor(sample01.x * VoxelDimensions.x), 0, math.max(0, VoxelDimensions.x - 1));
-                int vy = math.clamp((int)math.floor(sample01.y * VoxelDimensions.y), 0, math.max(0, VoxelDimensions.y - 1));
-                int vz = math.clamp((int)math.floor(sample01.z * VoxelDimensions.z), 0, math.max(0, VoxelDimensions.z - 1));
-                int voxelIndex = vx + (vy * VoxelDimensions.x) + (vz * VoxelDimensions.x * VoxelDimensions.y);
-                float3 worldPosition = VoxelOrigin + new float3(vx, vy, vz) * math.max(0.001f, VoxelCellSize);
-                float acoustic = SampleAcoustic(worldPosition);
-                bool solid = (uint)voxelIndex < (uint)Passability.Length && Passability[voxelIndex] == SolidCell;
-                float visibility = solid ? 0.72f : acoustic;
-                if (!solid && acoustic <= 0.01f)
-                    visibility = 0f;
-
-                float3 localPosition = math.clamp((worldPosition - PlayerPosition) / math.max(1f, AcousticRadiusMeters), -0.5f, 0.5f);
-                float3 baseColor = solid
-                    ? new float3(0.22f, 0.95f, 1f)
-                    : new float3(1f, 0.24f, 0.12f);
-                float3 acousticColor = math.lerp(baseColor, new float3(1f, 0.55f, 0.08f), math.saturate(acoustic));
-
-                Points[index] = new SonarPointCloudPoint
-                {
-                    LocalPositionIntensity = new float4(localPosition, visibility),
-                    Color = new float4(acousticColor, math.saturate(visibility))
-                };
-            }
-
-            private float SampleAcoustic(float3 worldPosition)
-            {
-                if (HasAcousticDensity == 0 || AcousticDensity.Length <= 0)
-                    return 0f;
-
-                float radius = math.max(0.001f, AcousticRadiusMeters);
-                float3 normalized = ((worldPosition - PlayerPosition) + new float3(radius, radius, radius)) / (radius * 2f);
-                if (math.any(normalized < 0f) || math.any(normalized > 1f))
-                    return 0f;
-
-                int ax = math.clamp((int)math.floor(normalized.x * AcousticDimensions.x), 0, math.max(0, AcousticDimensions.x - 1));
-                int ay = math.clamp((int)math.floor(normalized.y * AcousticDimensions.y), 0, math.max(0, AcousticDimensions.y - 1));
-                int az = math.clamp((int)math.floor(normalized.z * AcousticDimensions.z), 0, math.max(0, AcousticDimensions.z - 1));
-                int acousticIndex = ax + (ay * AcousticDimensions.x) + (az * AcousticDimensions.x * AcousticDimensions.y);
-                return (uint)acousticIndex < (uint)AcousticDensity.Length ? math.saturate(AcousticDensity[acousticIndex]) : 0f;
-            }
-        }
-
         [Header("References")]
         [SerializeField, Tooltip("Optional explicit raymarched-map shader. Editor fallback resolves the first-party asset path when left null.")]
         private Shader sonarMapShader;
         [SerializeField, Tooltip("Optional explicit GPU point-cloud shader. Editor fallback resolves the first-party asset path when left null.")]
         private Shader sonarPointCloudShader;
+        [SerializeField, Tooltip("Compute shader that raymarches the published cave SDF into the PDA point-cloud append buffer.")]
+        private ComputeShader sonarMapCompute;
         [SerializeField, Tooltip("Optional explicit RawImage target. When null, the component builds its own viewport.")]
         private RawImage mapImage;
         [SerializeField, Tooltip("Optional explicit status label. When null, the component builds its own label.")]
@@ -276,6 +252,8 @@ namespace Hecton8.UI
         private readonly Image[] _markerVisualImages = new Image[MaxMarkerVisuals]; // COLD ALLOC: Image[64] — marker icon tint targets — owner: PDAMapTab
         private readonly uint[] _markerHashByVisualSlot = new uint[MaxMarkerVisuals]; // COLD ALLOC: uint[64] — marker hash to visual slot ownership — owner: PDAMapTab
         private readonly PDAMarkerSnapshot[] _markerUpdateSnapshots = new PDAMarkerSnapshot[MaxMarkerVisuals]; // COLD ALLOC: PDAMarkerSnapshot[64] — bulk marker-dirty expansion scratch — owner: PDAMapTab
+        private readonly Vector4[] _emptyPredatorAupUpload = new Vector4[1]; // COLD ALLOC: Vector4[1] - zero fallback predator AUP buffer upload - owner: PDAMapTab
+        private readonly SonarMapConstants[] _sonarMapConstantsUpload = new SonarMapConstants[1]; // COLD ALLOC: SonarMapConstants[1] - PDA compute constant-buffer upload lane - owner: PDAMapTab
         private bool _registered;
         private bool _registeredLateFrame;
         private bool _pdaEventsRegistered;
@@ -293,22 +271,38 @@ namespace Hecton8.UI
         private NativeArray<Color32> _cartographyPixels;
         private NativeArray<ulong> _emptyExplorationWords;
         private NativeArray<float> _emptyAcousticDensity;
-        private NativeArray<SonarPointCloudPoint> _pointCloudPoints;
         private JobHandle _cartographyJobHandle;
         private JobHandle _nativeDisposeHandle;
         private bool _cartographyJobScheduled;
-        private bool _pointCloudUploadPending;
-        private int _pointCloudVertexCount;
-        private GraphicsBuffer _pointCloudBuffer;
+        private GraphicsBuffer _pointCloudAppendBuffer;
+        private GraphicsBuffer _pointCloudIndirectArgsBuffer;
+        private GraphicsBuffer _sonarMapConstantsBuffer;
+        private GraphicsBuffer _emptyPredatorAupBuffer;
         private Material _pointCloudMaterial;
+        private Mesh _pointCloudQuadMesh;
         private Material _runtimeMapMaterial;
         private HectonVoxelVolume _activeVolume;
+        private Vector3Int _activeSdfGridDimensions;
+        private Vector3 _activeSdfVolumeOrigin;
+        private Vector3 _activeSdfVoxelCellSize = Vector3.one;
+        private float _activeSdfRange = 1f;
+        private int _sonarClearArgsKernel = -1;
+        private int _sonarRaymarchKernel = -1;
+        private int _sonarRaymarchThreadGroupSizeX = PointCloudThreadAxis;
+        private int _sonarRaymarchThreadGroupSizeY = PointCloudThreadAxis;
+        private int _sonarRaymarchThreadGroupSizeZ = PointCloudThreadAxis;
+        private bool _sonarComputeKernelsResolved;
+        private bool _pointCloudAssetLookupAttempted;
+        private bool _pointCloudSdfReady;
+        private bool _pointCloudTierInitialized;
+        private bool _pointCloudLowTierActive;
+        private bool _pointCloudLowTierCandidate;
+        private float _pointCloudLowTierCandidateSince;
         private CharBufferPool.Lease _statusBufferLease;
         private readonly Vector3[] _mapWorldCorners = new Vector3[4]; // COLD ALLOC: Vector3[4] — PDA map point-cloud basis corners — owner: PDAMapTab
         private RectTransform _markerOverlayRoot;
         private int _appliedThreatPingCount = -1;
         private bool _threatPingsDirty = true;
-
         private void Awake()
         {
             EnsureBuilt();
@@ -317,6 +311,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             EnsureBuilt();
+            _pointCloudTierInitialized = false;
             TryAcquireStatusBuffer();
             TryRegisterPDAEvents();
             RegisterToTickManager();
@@ -384,6 +379,32 @@ namespace Hecton8.UI
                 EnqueueMarkerUpdate(payload.MarkerHashID);
             else
                 EnqueueAllMarkerUpdates();
+        }
+
+        internal void ConfigurePointCloudAssets(Shader pointCloudShader, ComputeShader mapCompute)
+        {
+            if (pointCloudShader != null && !ReferenceEquals(sonarPointCloudShader, pointCloudShader))
+            {
+                sonarPointCloudShader = pointCloudShader;
+                _pointCloudAssetLookupAttempted = false;
+                if (_pointCloudMaterial != null)
+                {
+                    Destroy(_pointCloudMaterial);
+                    _pointCloudMaterial = null;
+                }
+            }
+
+            if (mapCompute == null || ReferenceEquals(sonarMapCompute, mapCompute))
+                return;
+
+            sonarMapCompute = mapCompute;
+            _sonarClearArgsKernel = -1;
+            _sonarRaymarchKernel = -1;
+            _sonarRaymarchThreadGroupSizeX = PointCloudThreadAxis;
+            _sonarRaymarchThreadGroupSizeY = PointCloudThreadAxis;
+            _sonarRaymarchThreadGroupSizeZ = PointCloudThreadAxis;
+            _sonarComputeKernelsResolved = false;
+            _pointCloudAssetLookupAttempted = false;
         }
 
         private void RegisterToTickManager()
@@ -584,6 +605,7 @@ namespace Hecton8.UI
             {
                 _activeVolume = null;
                 _activeVolumeVersion = -1;
+                _pointCloudSdfReady = false;
                 _activeThreatPingCount = 0;
                 _threatPingsDirty = true;
                 WriteEmpBlindStatus();
@@ -594,6 +616,7 @@ namespace Hecton8.UI
             {
                 _activeVolume = null;
                 _activeVolumeVersion = -1;
+                _pointCloudSdfReady = false;
                 _activeThreatPingCount = 0;
                 _threatPingsDirty = true;
                 WriteOfflineStatus();
@@ -602,10 +625,16 @@ namespace Hecton8.UI
 
             if (UseHeadlessCartography)
             {
+                _pointCloudSdfReady = RefreshPointCloudSdfPayload(playerPosition, force);
                 if (!ScheduleHeadlessCartography(playerPosition, force))
                 {
-                    _activeVolume = null;
-                    _activeVolumeVersion = -1;
+                    if (_sdfTexture == null)
+                    {
+                        _activeVolume = null;
+                        _activeVolumeVersion = -1;
+                        _pointCloudSdfReady = false;
+                    }
+
                     _activeThreatPingCount = 0;
                     _threatPingsDirty = true;
                     WriteOfflineStatus();
@@ -622,6 +651,7 @@ namespace Hecton8.UI
             {
                 _activeVolume = null;
                 _activeVolumeVersion = -1;
+                _pointCloudSdfReady = false;
                 _activeThreatPingCount = 0;
                 _threatPingsDirty = true;
                 WriteOfflineStatus();
@@ -638,6 +668,7 @@ namespace Hecton8.UI
             {
                 _activeVolume = volume;
                 _activeVolumeVersion = -1;
+                _pointCloudSdfReady = false;
                 _activeThreatPingCount = 0;
                 _threatPingsDirty = true;
                 WriteOfflineStatus();
@@ -648,6 +679,14 @@ namespace Hecton8.UI
                                  !ReferenceEquals(_activeVolume, volume) ||
                                  _activeVolumeVersion != version;
             _activeVolume = volume;
+            _activeSdfGridDimensions = gridDimensions;
+            _activeSdfVolumeOrigin = volumeOrigin;
+            _activeSdfVoxelCellSize = new Vector3(
+                math.max(0.0001f, voxelCellSize.x),
+                math.max(0.0001f, voxelCellSize.y),
+                math.max(0.0001f, voxelCellSize.z));
+            _activeSdfRange = math.max(0.001f, sdfRange);
+            _pointCloudSdfReady = true;
             if (sourceChanged)
             {
                 EnsureSdfTexture(gridDimensions);
@@ -668,6 +707,55 @@ namespace Hecton8.UI
 
             RefreshThreatPings();
             WriteOnlineStatus(gridDimensions);
+        }
+
+        private bool RefreshPointCloudSdfPayload(Vector3 playerPosition, bool force)
+        {
+            HectonVoxelEngine engine = HectonVoxelEngine.ActiveRuntimeInstance;
+            if (engine == null || !engine.TryGetNearestActiveVolume(playerPosition, out HectonVoxelVolume volume))
+            {
+                _pointCloudSdfReady = false;
+                return false;
+            }
+
+            if (!volume.TryGetPublishedSonarSdfPayload(
+                    out NativeArray<byte> encodedSdf,
+                    out Vector3Int gridDimensions,
+                    out Vector3 volumeOrigin,
+                    out Vector3 voxelCellSize,
+                    out float sdfRange,
+                    out int version))
+            {
+                _pointCloudSdfReady = false;
+                return false;
+            }
+
+            bool sourceChanged = force ||
+                                 _sdfTexture == null ||
+                                 !ReferenceEquals(_activeVolume, volume) ||
+                                 _activeVolumeVersion != version ||
+                                 _activeSdfGridDimensions != gridDimensions;
+            _activeVolume = volume;
+            _activeSdfGridDimensions = gridDimensions;
+            _activeSdfVolumeOrigin = volumeOrigin;
+            _activeSdfVoxelCellSize = new Vector3(
+                math.max(0.0001f, voxelCellSize.x),
+                math.max(0.0001f, voxelCellSize.y),
+                math.max(0.0001f, voxelCellSize.z));
+            _activeSdfRange = math.max(0.001f, sdfRange);
+
+            if (!sourceChanged)
+                return true;
+
+            EnsureSdfTexture(gridDimensions);
+            if (_sdfTexture == null)
+                return false;
+
+            _sdfTexture.SetPixelData(encodedSdf, 0);
+            _sdfTexture.Apply(false, false);
+            _activeVolumeVersion = version;
+            _pointCloudSdfReady = true;
+            return true;
         }
 
         private bool ScheduleHeadlessCartography(Vector3 playerPosition, bool force)
@@ -749,28 +837,6 @@ namespace Hecton8.UI
                 HasAcousticDensity = hasAcousticDensity
             }.Schedule(_cartographyPixels.Length, 64);
 
-            EnsurePointCloudResources();
-            if (_pointCloudPoints.IsCreated)
-            {
-                JobHandle pointCloudHandle = new BuildSonarPointCloudJob
-                {
-                    Passability = passability,
-                    AcousticDensity = acousticDensity,
-                    Points = _pointCloudPoints,
-                    VoxelDimensions = voxelDimensions,
-                    VoxelOrigin = voxelOrigin,
-                    VoxelCellSize = math.max(0.001f, voxelCellSize),
-                    PlayerPosition = (float3)playerPosition,
-                    AcousticDimensions = acousticDimensions,
-                    AcousticRadiusMeters = AcousticOverlayRadiusMeters,
-                    SolidCell = VoxelDynamicNavGridRuntime.SolidCell,
-                    HasAcousticDensity = hasAcousticDensity
-                }.Schedule(_pointCloudPoints.Length, 64);
-                _cartographyJobHandle = JobHandle.CombineDependencies(_cartographyJobHandle, pointCloudHandle);
-                _pointCloudVertexCount = _pointCloudPoints.Length;
-                _pointCloudUploadPending = true;
-            }
-
             _cartographyJobScheduled = true;
             return true;
         }
@@ -835,45 +901,123 @@ namespace Hecton8.UI
 
         private void EnsurePointCloudResources()
         {
-            if (!_pointCloudPoints.IsCreated)
+            if (_pointCloudAppendBuffer == null || !_pointCloudAppendBuffer.IsValid())
             {
-                _pointCloudPoints = new NativeArray<SonarPointCloudPoint>(
+                _pointCloudAppendBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Append,
                     PointCloudCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarPointCloudPoint>[1728] — PDA sonar point-cloud upload payload — owner: PDAMapTab
-                NativeMemorySentinel.RegisterNativeArray(
-                    _pointCloudPoints,
-                    nameof(PDAMapTab),
-                    nameof(_pointCloudPoints),
-                    NativeAllocationLifetime.Scene);
+                    SonarPointStrideBytes); // COLD ALLOC: GraphicsBuffer[528 x 16B] — GPU-resident PDA sonar point cloud — owner: PDAMapTab
             }
 
-            if (_pointCloudBuffer == null || !_pointCloudBuffer.IsValid())
+            if (_pointCloudIndirectArgsBuffer == null || !_pointCloudIndirectArgsBuffer.IsValid())
             {
-                _pointCloudBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.Structured,
-                    PointCloudCapacity,
-                    SonarPointStrideBytes); // COLD ALLOC: GraphicsBuffer[1728 x 32B] — GPU-resident PDA sonar point cloud — owner: PDAMapTab
+                _pointCloudIndirectArgsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                    1,
+                    SonarIndirectArgsStrideBytes); // COLD ALLOC: GraphicsBuffer[5 uint] - GPU-written PDA sonar indirect args - owner: PDAMapTab
             }
+
+            if (SystemInfo.supportsSetConstantBuffer &&
+                (_sonarMapConstantsBuffer == null || !_sonarMapConstantsBuffer.IsValid()))
+            {
+                _sonarMapConstantsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    SonarMapConstantsStrideBytes); // COLD ALLOC: GraphicsBuffer[96B] - packed PDA sonar compute constants - owner: PDAMapTab
+            }
+
+            if (_emptyPredatorAupBuffer == null || !_emptyPredatorAupBuffer.IsValid())
+            {
+                _emptyPredatorAupBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(1); // COLD ALLOC: GraphicsBuffer[1 x float4] - zero fallback predator AUP buffer - owner: PDAMapTab
+                GraphicsBufferUploadUtility.UploadArray(_emptyPredatorAupBuffer, _emptyPredatorAupUpload, 1);
+            }
+
+            EnsurePointCloudQuadMesh();
 
             if (_pointCloudMaterial != null)
+            {
                 return;
+            }
 
-#if UNITY_EDITOR
-            if (sonarPointCloudShader == null)
-                sonarPointCloudShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(SonarPointCloudShaderPath);
-#endif
-            if (sonarPointCloudShader == null)
-                sonarPointCloudShader = Shader.Find("Hecton8/UI/PDA Sonar Point Cloud");
-
-            if (sonarPointCloudShader == null)
+            if (!TryResolvePointCloudAssets())
                 return;
 
             _pointCloudMaterial = new Material(sonarPointCloudShader)
             {
                 name = "Runtime_PDASonarPointCloud"
             }; // COLD ALLOC: Material[1] — GPU-resident PDA sonar point-cloud draw material — owner: PDAMapTab
-            _pointCloudMaterial.SetBuffer(SonarPointsId, _pointCloudBuffer);
+            _pointCloudMaterial.SetBuffer(SonarPointsId, _pointCloudAppendBuffer);
+            TryResolveSonarComputeKernels();
+        }
+
+        private bool TryResolvePointCloudAssets()
+        {
+            if (_pointCloudAssetLookupAttempted)
+                return sonarPointCloudShader != null;
+
+            _pointCloudAssetLookupAttempted = true;
+
+#if UNITY_EDITOR
+            if (sonarPointCloudShader == null)
+                sonarPointCloudShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(SonarPointCloudShaderPath);
+            if (sonarMapCompute == null)
+                sonarMapCompute = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>(SonarMapComputePath);
+#endif
+            if (sonarPointCloudShader == null)
+                sonarPointCloudShader = Shader.Find(SonarPointCloudShaderName);
+
+            return sonarPointCloudShader != null;
+        }
+
+        private void EnsurePointCloudQuadMesh()
+        {
+            if (_pointCloudQuadMesh != null)
+                return;
+
+            _pointCloudQuadMesh = new Mesh
+            {
+                name = "__PDASonarPointCloudIndirectQuad",
+                bounds = new Bounds(Vector3.zero, Vector3.one * 2f)
+            }; // COLD ALLOC: Mesh[1] - single quad used by DrawMeshInstancedIndirect PDA sonar point cloud - owner: PDAMapTab
+            _pointCloudQuadMesh.vertices = SonarQuadVertices;
+            _pointCloudQuadMesh.SetIndices(SonarQuadIndices, MeshTopology.Triangles, 0, false);
+            _pointCloudQuadMesh.UploadMeshData(true);
+        }
+
+        private bool TryResolveSonarComputeKernels()
+        {
+            if (_sonarComputeKernelsResolved)
+                return _sonarClearArgsKernel >= 0 && _sonarRaymarchKernel >= 0;
+
+            if (sonarMapCompute == null)
+                return false;
+
+            if (!sonarMapCompute.HasKernel("CSClearArgs") ||
+                !sonarMapCompute.HasKernel("CSRaymarch"))
+            {
+                return false;
+            }
+
+            _sonarClearArgsKernel = sonarMapCompute.FindKernel("CSClearArgs");
+            _sonarRaymarchKernel = sonarMapCompute.FindKernel("CSRaymarch");
+            _sonarComputeKernelsResolved = _sonarClearArgsKernel >= 0 &&
+                                           _sonarRaymarchKernel >= 0 &&
+                                           sonarMapCompute.IsSupported(_sonarClearArgsKernel) &&
+                                           sonarMapCompute.IsSupported(_sonarRaymarchKernel);
+            if (_sonarComputeKernelsResolved)
+            {
+                sonarMapCompute.GetKernelThreadGroupSizes(
+                    _sonarRaymarchKernel,
+                    out uint threadGroupSizeX,
+                    out uint threadGroupSizeY,
+                    out uint threadGroupSizeZ);
+                _sonarRaymarchThreadGroupSizeX = threadGroupSizeX > 0u ? (int)threadGroupSizeX : PointCloudThreadAxis;
+                _sonarRaymarchThreadGroupSizeY = threadGroupSizeY > 0u ? (int)threadGroupSizeY : PointCloudThreadAxis;
+                _sonarRaymarchThreadGroupSizeZ = threadGroupSizeZ > 0u ? (int)threadGroupSizeZ : PointCloudThreadAxis;
+            }
+
+            return _sonarComputeKernelsResolved;
         }
 
         private void CompleteCartographyJobIfNeeded(bool applyTexture)
@@ -896,38 +1040,67 @@ namespace Hecton8.UI
                 mapImage.material = null;
             }
 
-            UploadPointCloudIfNeeded();
-        }
-
-        private void UploadPointCloudIfNeeded()
-        {
-            if (!_pointCloudUploadPending ||
-                _pointCloudBuffer == null ||
-                !_pointCloudBuffer.IsValid() ||
-                !_pointCloudPoints.IsCreated)
-            {
-                return;
-            }
-
-            _pointCloudBuffer.SetData(_pointCloudPoints, 0, 0, _pointCloudPoints.Length);
-            _pointCloudUploadPending = false;
         }
 
         private void RenderPointCloud()
         {
-            if (_pointCloudVertexCount <= 0 ||
-                _pointCloudMaterial == null ||
-                _pointCloudBuffer == null ||
-                !_pointCloudBuffer.IsValid() ||
-                mapImage == null ||
-                !isActiveAndEnabled)
+            if (mapImage == null || !isActiveAndEnabled || _sdfTexture == null || !_pointCloudSdfReady)
+                return;
+
+            EnsurePointCloudResources();
+            if (_pointCloudMaterial == null ||
+                _pointCloudAppendBuffer == null ||
+                !_pointCloudAppendBuffer.IsValid() ||
+                _pointCloudIndirectArgsBuffer == null ||
+                !_pointCloudIndirectArgsBuffer.IsValid() ||
+                _pointCloudQuadMesh == null ||
+                !TryResolveSonarComputeKernels())
             {
                 return;
             }
 
-            RectTransform mapRect = mapImage.rectTransform;
-            if (mapRect == null)
+            if (!TryResolvePlayerRuntimePosition(out Vector3 playerPosition))
                 return;
+
+            if (!TryResolvePointCloudFrame(out Matrix4x4 localToWorld, out Bounds bounds, out Camera renderCamera))
+                return;
+
+            bool lowTier = ResolvePointCloudLowTier();
+            if (!DispatchSonarPointCloud(playerPosition, lowTier))
+                return;
+
+            float pingRadius = math.frac(_animationTime * 0.33f) * 0.62f;
+            _pointCloudMaterial.SetBuffer(SonarPointsId, _pointCloudAppendBuffer);
+            _pointCloudMaterial.SetMatrix(PointCloudLocalToWorldId, localToWorld);
+            _pointCloudMaterial.SetVector(AcousticPingSignalId, new Vector4(pingRadius, PointCloudPingBandWidth, _animationTime, 1f));
+            _pointCloudMaterial.SetFloat(PointSizeId, pointCloudPointSize);
+            _pointCloudMaterial.SetFloat(OpacityId, pointCloudOpacity);
+            _pointCloudMaterial.SetFloat(DepthFadeMetersId, pointCloudDepthMeters);
+            _pointCloudMaterial.SetFloat(HeightColorizationId, lowTier ? 0f : 1f);
+
+            Graphics.DrawMeshInstancedIndirect(
+                _pointCloudQuadMesh,
+                0,
+                _pointCloudMaterial,
+                bounds,
+                _pointCloudIndirectArgsBuffer,
+                0,
+                null,
+                ShadowCastingMode.Off,
+                false,
+                gameObject.layer,
+                renderCamera);
+        }
+
+        private bool TryResolvePointCloudFrame(out Matrix4x4 localToWorld, out Bounds bounds, out Camera renderCamera)
+        {
+            localToWorld = Matrix4x4.identity;
+            bounds = default;
+            renderCamera = null;
+
+            RectTransform mapRect = mapImage != null ? mapImage.rectTransform : null;
+            if (mapRect == null)
+                return false;
 
             mapRect.GetWorldCorners(_mapWorldCorners);
             Vector3 bottomLeft = _mapWorldCorners[0];
@@ -938,44 +1111,230 @@ namespace Hecton8.UI
             Vector3 up = topLeft - bottomLeft;
             Vector3 center = (bottomLeft + topLeft + topRight + bottomRight) * 0.25f;
             Vector3 normal = Vector3.Cross(right, up);
-            if (normal.sqrMagnitude < 0.000001f)
-                return;
+            float normalLengthSq = normal.sqrMagnitude;
+            if (normalLengthSq < 0.000001f)
+                return false;
 
-            normal *= math.rcp(math.max(ApproximateMagnitudeNoSqrt(normal), 0.0001f));
-            Matrix4x4 localToWorld = Matrix4x4.identity;
+            if (!TryResolvePointCloudCamera(out renderCamera) ||
+                !IsPointCloudVisibleToCamera(center, renderCamera))
+            {
+                return false;
+            }
+
+            normal *= math.rsqrt(normalLengthSq);
             localToWorld.SetColumn(0, new Vector4(right.x, right.y, right.z, 0f));
             localToWorld.SetColumn(1, new Vector4(up.x, up.y, up.z, 0f));
-            localToWorld.SetColumn(2, new Vector4(normal.x * pointCloudDepthMeters, normal.y * pointCloudDepthMeters, normal.z * pointCloudDepthMeters, 0f));
+            localToWorld.SetColumn(2, new Vector4(
+                normal.x * pointCloudDepthMeters,
+                normal.y * pointCloudDepthMeters,
+                normal.z * pointCloudDepthMeters,
+                0f));
             localToWorld.SetColumn(3, new Vector4(center.x, center.y, center.z, 1f));
 
-            _pointCloudMaterial.SetBuffer(SonarPointsId, _pointCloudBuffer);
-            _pointCloudMaterial.SetMatrix(PointCloudLocalToWorldId, localToWorld);
-            _pointCloudMaterial.SetFloat(PointSizeId, pointCloudPointSize);
-            _pointCloudMaterial.SetFloat(OpacityId, pointCloudOpacity);
-
-            Bounds bounds = new Bounds(center, new Vector3(
-                ApproximateMagnitudeNoSqrt(right),
-                ApproximateMagnitudeNoSqrt(up),
-                pointCloudDepthMeters + 0.01f));
-            RenderParams renderParams = new RenderParams(_pointCloudMaterial)
-            {
-                worldBounds = bounds,
-                layer = gameObject.layer,
-                shadowCastingMode = ShadowCastingMode.Off,
-                receiveShadows = false
-            };
-            Graphics.RenderPrimitives(renderParams, MeshTopology.Points, _pointCloudVertexCount);
+            float boundsDepth = (pointCloudDepthMeters * 0.5f) + (math.max(pointCloudPointSize, 0.25f) * 0.004f);
+            Vector3 depthOffset = normal * math.max(boundsDepth, 0.01f);
+            bounds = new Bounds(bottomLeft - depthOffset, Vector3.zero);
+            bounds.Encapsulate(bottomLeft + depthOffset);
+            bounds.Encapsulate(topLeft - depthOffset);
+            bounds.Encapsulate(topLeft + depthOffset);
+            bounds.Encapsulate(topRight - depthOffset);
+            bounds.Encapsulate(topRight + depthOffset);
+            bounds.Encapsulate(bottomRight - depthOffset);
+            bounds.Encapsulate(bottomRight + depthOffset);
+            return true;
         }
 
-        private static float ApproximateMagnitudeNoSqrt(Vector3 value)
+        private static int CeilDividePositive(int value, int divisor)
         {
-            float ax = math.abs(value.x);
-            float ay = math.abs(value.y);
-            float az = math.abs(value.z);
-            float maxAxis = math.max(ax, math.max(ay, az));
-            float minAxis = math.min(ax, math.min(ay, az));
-            float midAxis = ax + ay + az - maxAxis - minAxis;
-            return maxAxis + (midAxis * 0.5f) + (minAxis * 0.25f);
+            int safeDivisor = math.max(divisor, 1);
+            return (value + safeDivisor - 1) / safeDivisor;
+        }
+
+        private bool DispatchSonarPointCloud(Vector3 playerPosition, bool lowTier)
+        {
+            if (sonarMapCompute == null ||
+                _pointCloudAppendBuffer == null ||
+                !_pointCloudAppendBuffer.IsValid() ||
+                _pointCloudIndirectArgsBuffer == null ||
+                !_pointCloudIndirectArgsBuffer.IsValid() ||
+                _emptyPredatorAupBuffer == null ||
+                !_emptyPredatorAupBuffer.IsValid() ||
+                _sdfTexture == null ||
+                !SystemInfo.supportsComputeShaders ||
+                !TryResolveSonarComputeKernels())
+            {
+                return false;
+            }
+
+            int dispatchAxis = lowTier ? PointCloudLowAxis : PointCloudThreadAxis;
+            int raymarchSteps = lowTier ? LowRaymarchSteps : HighRaymarchSteps;
+            TryResolvePredatorAupBuffer(out GraphicsBuffer predatorAupBuffer, out int predatorAupCount);
+            _pointCloudAppendBuffer.SetCounterValue(0u);
+            UploadSonarMapConstants(playerPosition, dispatchAxis, raymarchSteps, predatorAupCount);
+
+            sonarMapCompute.SetBuffer(_sonarClearArgsKernel, IndirectArgsId, _pointCloudIndirectArgsBuffer);
+            sonarMapCompute.Dispatch(_sonarClearArgsKernel, 1, 1, 1);
+
+            sonarMapCompute.SetTexture(_sonarRaymarchKernel, VoxelSdfTexture3DId, _sdfTexture);
+            sonarMapCompute.SetBuffer(_sonarRaymarchKernel, SonarPointAppendBufferId, _pointCloudAppendBuffer);
+            sonarMapCompute.SetBuffer(_sonarRaymarchKernel, PredatorAupBufferId, predatorAupBuffer);
+            int groupsX = CeilDividePositive(dispatchAxis, _sonarRaymarchThreadGroupSizeX);
+            int groupsY = CeilDividePositive(dispatchAxis, _sonarRaymarchThreadGroupSizeY);
+            int groupsZ = CeilDividePositive(dispatchAxis, _sonarRaymarchThreadGroupSizeZ);
+            sonarMapCompute.Dispatch(_sonarRaymarchKernel, groupsX, groupsY, groupsZ);
+            GraphicsBuffer.CopyCount(_pointCloudAppendBuffer, _pointCloudIndirectArgsBuffer, sizeof(uint));
+            return true;
+        }
+
+        private void UploadSonarMapConstants(Vector3 playerPosition, int dispatchAxis, int raymarchSteps, int predatorAupCount)
+        {
+            SonarMapConstants constants = new SonarMapConstants
+            {
+                GridDimensions = new Vector4(
+                    _activeSdfGridDimensions.x,
+                    _activeSdfGridDimensions.y,
+                    _activeSdfGridDimensions.z,
+                    0f),
+                VolumeOrigin = new Vector4(
+                    _activeSdfVolumeOrigin.x,
+                    _activeSdfVolumeOrigin.y,
+                    _activeSdfVolumeOrigin.z,
+                    0f),
+                VoxelCellSize = new Vector4(
+                    _activeSdfVoxelCellSize.x,
+                    _activeSdfVoxelCellSize.y,
+                    _activeSdfVoxelCellSize.z,
+                    0f),
+                PlayerWorldPosition = new Vector4(
+                    playerPosition.x,
+                    playerPosition.y,
+                    playerPosition.z,
+                    0f),
+                ScalarParams = new Vector4(
+                    _activeSdfRange,
+                    AcousticOverlayRadiusMeters,
+                    _animationTime,
+                    0f),
+                DispatchParams = new Vector4(
+                    dispatchAxis,
+                    raymarchSteps,
+                    predatorAupCount,
+                    SonarQuadIndexCount)
+            };
+
+            if (SystemInfo.supportsSetConstantBuffer &&
+                _sonarMapConstantsBuffer != null &&
+                _sonarMapConstantsBuffer.IsValid())
+            {
+                _sonarMapConstantsUpload[0] = constants;
+                GraphicsBufferUploadUtility.UploadArray(_sonarMapConstantsBuffer, _sonarMapConstantsUpload, 1);
+                sonarMapCompute.SetConstantBuffer(SonarMapConstantsBufferName, _sonarMapConstantsBuffer, 0, SonarMapConstantsStrideBytes);
+                return;
+            }
+
+            sonarMapCompute.SetVector(GridDimensionsId, constants.GridDimensions);
+            sonarMapCompute.SetVector(VolumeOriginId, constants.VolumeOrigin);
+            sonarMapCompute.SetVector(VoxelCellSizeId, constants.VoxelCellSize);
+            sonarMapCompute.SetVector(PlayerWorldPositionId, constants.PlayerWorldPosition);
+            sonarMapCompute.SetVector(SonarScalarParamsId, constants.ScalarParams);
+            sonarMapCompute.SetVector(SonarDispatchParamsId, constants.DispatchParams);
+        }
+
+        private bool TryResolvePredatorAupBuffer(out GraphicsBuffer predatorAupBuffer, out int predatorAupCount)
+        {
+            predatorAupBuffer = _emptyPredatorAupBuffer;
+            predatorAupCount = 0;
+
+            IEncounterDirectorService encounterDirector = GlobalRegistry.EncounterDirector;
+            if (encounterDirector == null ||
+                !encounterDirector.TryGetPredatorAupGpuBuffer(out GraphicsBuffer runtimeBuffer, out int runtimeCount) ||
+                runtimeBuffer == null ||
+                !runtimeBuffer.IsValid())
+            {
+                return predatorAupBuffer != null && predatorAupBuffer.IsValid();
+            }
+
+            predatorAupBuffer = runtimeBuffer;
+            predatorAupCount = math.clamp(runtimeCount, 0, MaxPredatorAupPoints);
+            return true;
+        }
+
+        private bool TryResolvePointCloudCamera(out Camera renderCamera)
+        {
+            renderCamera = GlobalRenderContext.CurrentCamera;
+            if (renderCamera != null)
+                return true;
+
+            Canvas ownerCanvas = mapImage != null ? mapImage.canvas : null;
+            if (ownerCanvas != null && ownerCanvas.worldCamera != null)
+            {
+                renderCamera = ownerCanvas.worldCamera;
+                return true;
+            }
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            renderCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            return renderCamera != null;
+        }
+
+        private static bool IsPointCloudVisibleToCamera(Vector3 center, Camera renderCamera)
+        {
+            if (renderCamera == null)
+                return false;
+
+            Transform cameraTransform = renderCamera.transform;
+            Vector3 toMap = center - cameraTransform.position;
+            float distanceSq = toMap.sqrMagnitude;
+            if (distanceSq <= 0.0001f)
+                return true;
+
+            float inverseDistance = math.rsqrt(distanceSq);
+            float forwardDot = Vector3.Dot(cameraTransform.forward, toMap) * inverseDistance;
+            return forwardDot > 0.025f;
+        }
+
+        private bool ResolvePointCloudLowTier()
+        {
+            bool requestedLowTier = IsLowMathTierRequested();
+            if (!_pointCloudTierInitialized)
+            {
+                _pointCloudTierInitialized = true;
+                _pointCloudLowTierActive = requestedLowTier;
+                _pointCloudLowTierCandidate = requestedLowTier;
+                _pointCloudLowTierCandidateSince = _animationTime;
+                return _pointCloudLowTierActive;
+            }
+
+            if (requestedLowTier == _pointCloudLowTierActive)
+            {
+                _pointCloudLowTierCandidate = requestedLowTier;
+                _pointCloudLowTierCandidateSince = _animationTime;
+                return _pointCloudLowTierActive;
+            }
+
+            if (requestedLowTier != _pointCloudLowTierCandidate)
+            {
+                _pointCloudLowTierCandidate = requestedLowTier;
+                _pointCloudLowTierCandidateSince = _animationTime;
+                return _pointCloudLowTierActive;
+            }
+
+            if (_animationTime - _pointCloudLowTierCandidateSince >= PointCloudTierHysteresisSeconds)
+            {
+                _pointCloudLowTierActive = requestedLowTier;
+                _pointCloudLowTierCandidateSince = _animationTime;
+            }
+
+            return _pointCloudLowTierActive;
+        }
+
+        private static bool IsLowMathTierRequested()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            return HardwareTierDetector.SharedMemoryModeActive ||
+                   tier == HectonQualityTier.Low ||
+                   tier == HectonQualityTier.Mx350 ||
+                   tier == HectonQualityTier.Unknown;
         }
 
         private void EnqueueMarkerUpdate(uint markerHashId)
@@ -1682,8 +2041,6 @@ namespace Hecton8.UI
             JobHandle disposeDependency = _cartographyJobScheduled ? _cartographyJobHandle : default;
             _cartographyJobScheduled = false;
             _cartographyJobHandle = default;
-            _pointCloudUploadPending = false;
-            _pointCloudVertexCount = 0;
 
             if (_sdfTexture != null)
             {
@@ -1700,13 +2057,36 @@ namespace Hecton8.UI
             disposeDependency = DisposeNativeArray(ref _cartographyPixels, disposeDependency);
             disposeDependency = DisposeNativeArray(ref _emptyExplorationWords, disposeDependency);
             disposeDependency = DisposeNativeArray(ref _emptyAcousticDensity, disposeDependency);
-            disposeDependency = DisposeNativeArray(ref _pointCloudPoints, disposeDependency);
             _nativeDisposeHandle = JobHandle.CombineDependencies(_nativeDisposeHandle, disposeDependency);
 
-            if (_pointCloudBuffer != null)
+            if (_pointCloudAppendBuffer != null)
             {
-                _pointCloudBuffer.Release();
-                _pointCloudBuffer = null;
+                _pointCloudAppendBuffer.Release();
+                _pointCloudAppendBuffer = null;
+            }
+
+            if (_pointCloudIndirectArgsBuffer != null)
+            {
+                _pointCloudIndirectArgsBuffer.Release();
+                _pointCloudIndirectArgsBuffer = null;
+            }
+
+            if (_sonarMapConstantsBuffer != null)
+            {
+                _sonarMapConstantsBuffer.Release();
+                _sonarMapConstantsBuffer = null;
+            }
+
+            if (_emptyPredatorAupBuffer != null)
+            {
+                _emptyPredatorAupBuffer.Release();
+                _emptyPredatorAupBuffer = null;
+            }
+
+            if (_pointCloudQuadMesh != null)
+            {
+                Destroy(_pointCloudQuadMesh);
+                _pointCloudQuadMesh = null;
             }
 
             if (_pointCloudMaterial != null)
@@ -1721,6 +2101,18 @@ namespace Hecton8.UI
                 _runtimeMapMaterial = null;
             }
 
+            _sonarClearArgsKernel = -1;
+            _sonarRaymarchKernel = -1;
+            _sonarRaymarchThreadGroupSizeX = PointCloudThreadAxis;
+            _sonarRaymarchThreadGroupSizeY = PointCloudThreadAxis;
+            _sonarRaymarchThreadGroupSizeZ = PointCloudThreadAxis;
+            _sonarComputeKernelsResolved = false;
+            _pointCloudAssetLookupAttempted = false;
+            _pointCloudSdfReady = false;
+            _pointCloudTierInitialized = false;
+            _pointCloudLowTierActive = false;
+            _pointCloudLowTierCandidate = false;
+            _pointCloudLowTierCandidateSince = 0f;
         }
 
         private static JobHandle DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)

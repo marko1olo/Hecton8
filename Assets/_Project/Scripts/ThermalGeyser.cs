@@ -29,10 +29,6 @@ namespace Hecton8.Caves
         private CurrentVolume currentVolume;
 
         [SerializeField]
-        [Tooltip("Optional eruption particle system toggled by the authored geyser cadence.")]
-        private ParticleSystem eruptionParticles;
-
-        [SerializeField]
         [Tooltip("Optional player override for isolated cave testing without bootstrap.")]
         private Transform playerTransformOverride;
 
@@ -112,7 +108,6 @@ namespace Hecton8.Caves
             _isErupting = !_isErupting;
             _phaseTimer = _isErupting ? _eruptionDuration : _quietDuration;
             ConfigureCurrentVolume(_isErupting);
-            UpdateParticleState(_isErupting);
         }
 
         /// <summary>
@@ -338,22 +333,6 @@ namespace Hecton8.Caves
                 isErupting ? _updraftStrength : 0f,
                 1f,
                 0f);
-        }
-
-        private void UpdateParticleState(bool erupting)
-        {
-            if (eruptionParticles == null)
-                return;
-
-            if (erupting)
-            {
-                if (!eruptionParticles.isPlaying)
-                    eruptionParticles.Play(true);
-            }
-            else if (eruptionParticles.isPlaying)
-            {
-                eruptionParticles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
-            }
         }
 
         private void TryRegister()

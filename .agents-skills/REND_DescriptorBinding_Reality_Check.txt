@@ -1,0 +1,38 @@
+# REND_DESCRIPTOR_BINDING_REALITY_CHECK.md
+## Unity Descriptor Binding Mandate
+
+Status: PENDING VERIFICATION
+Owner: Rendering Lead
+
+---
+
+## Primary Law
+
+[FORBID] `Graphics.SetDescriptorSet` in C# project code.
+
+No official Unity C# API named `Graphics.SetDescriptorSet` was found in the project or Unity ScriptReference search during this scout pass. Do not build a mandate around a non-existent managed API.
+
+---
+
+## Binding Reduction Path
+
+[RULE] Reduce binding overhead through Unity-supported mechanisms:
+- SRP Batcher-compatible materials.
+- One material per object family.
+- `GraphicsBuffer` for instance/dynamic data.
+- `Texture2DArray` or virtual-texture indirection for material families.
+- RenderGraph-declared resources for renderer features.
+- GPU Resident Drawer for compatible MeshRenderer environment.
+
+[FORBID] Per-instance material clones.
+[FORBID] MaterialPropertyBlock on standard world geometry.
+[FORBID] Per-frame texture rebinding for terrain/rock/coral variants.
+
+---
+
+## MX350 Guidance
+
+[RULE] MX350 optimization target is fewer state changes and fewer unique material variants, not native descriptor-set scripting.
+
+Use arrays/atlases and small integer material ids in instance buffers. Treat descriptor-set style binding as a native-render-plugin topic only after a plugin owner proves it works across D3D11/D3D12/Vulkan targets.
+

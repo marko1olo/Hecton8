@@ -1390,7 +1390,7 @@ namespace Hecton8.Core
             return catalog == null || catalog.GetByMatrixIndex(matrixBiomeId) != null;
         }
 
-        public static bool TryResolveBiomeMatrixAlphamapLayer(int matrixBiomeId, out int alphamapLayer)
+        public new static bool TryResolveBiomeMatrixAlphamapLayer(int matrixBiomeId, out int alphamapLayer)
         {
             alphamapLayer = -1;
             if (matrixBiomeId < 1 || matrixBiomeId > BiomeMatrixLayerCount)
@@ -1778,7 +1778,7 @@ namespace Hecton8.Core
         /// Returns true for matrix biomes that belong to the tectonic-spine family.
         /// </summary>
         /// <param name="profile">Biome matrix profile resolved from the 108-entry catalog.</param>
-        public static bool IsTectonicSpineMatrixBiome(HectonBiomeMatrixProfile profile)
+        public new static bool IsTectonicSpineMatrixBiome(HectonBiomeMatrixProfile profile)
         {
             if (profile == null)
                 return false;
@@ -1924,7 +1924,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Builds a positive rim-height overlay around brine basin edges for terrain height and normal-map blending.
         /// </summary>
-        public static JobHandle ScheduleBrineBasinLipRidgeOverlay(
+        public new static JobHandle ScheduleBrineBasinLipRidgeOverlay(
             NativeArray<byte> basinMask,
             NativeArray<float> lipOffsetMeters,
             int width,

@@ -138,6 +138,12 @@ namespace Hecton8.Core
                     Interlocked.Decrement(ref _queuedInvalidNumberCount);
 
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(errorCode);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                DodReplayRecorder.RequestFullStateDump(
+                    DeterministicReplaySeed.MathGuardSubjectHash,
+                    unchecked((uint)errorCode));
+#endif
+                CrashTelemetryBuffer.ReportNanPhysicsRecovery();
                 drainedCount++;
             }
 

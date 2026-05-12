@@ -19,7 +19,7 @@ namespace Hecton8.EditorTools
         private const string MenuPath = "Hecton/Validation/Validate SpaceEngine Research";
         private const string StressMenuPath = "Hecton/Validation/Stress SpaceEngine Research";
         private const string OutputRelativePath = "Library/SpaceEngineResearchSmokeTester.json";
-        private const string SpaceEngineRoot = @"C:\GOG Games\SpaceEngine";
+        private const string SpaceEngineRootEnvironmentVariable = "HECTON_SPACEENGINE_ROOT";
         private const int StressPassCount = 3;
 
         [MenuItem(MenuPath, priority = 262)]
@@ -57,7 +57,8 @@ namespace Hecton8.EditorTools
         public static bool Run(out string json)
         {
             string projectRoot = ResolveProjectRoot();
-            SpaceEngineResearchAuditResult result = SpaceEngineResearchAudit.Execute(projectRoot, SpaceEngineRoot);
+            string spaceEngineRoot = ResolveSpaceEngineRoot();
+            SpaceEngineResearchAuditResult result = SpaceEngineResearchAudit.Execute(projectRoot, spaceEngineRoot);
             SpaceEngineResearchTelemetryReporter.PublishIfFailed(result);
             json = SpaceEngineResearchJsonWriter.Write(result);
             SpaceEngineResearchJsonWriter.TryWriteArtifact(projectRoot, json);
@@ -67,8 +68,9 @@ namespace Hecton8.EditorTools
         public static bool RunStress(out string json)
         {
             string projectRoot = ResolveProjectRoot();
+            string spaceEngineRoot = ResolveSpaceEngineRoot();
             SpaceEngineResearchStressResult result =
-                SpaceEngineResearchStressRunner.Execute(projectRoot, SpaceEngineRoot, StressPassCount);
+                SpaceEngineResearchStressRunner.Execute(projectRoot, spaceEngineRoot, StressPassCount);
 
             SpaceEngineResearchTelemetryReporter.PublishIfFailed(result.FinalAudit);
             json = SpaceEngineResearchJsonWriter.WriteStress(result);
@@ -80,6 +82,19 @@ namespace Hecton8.EditorTools
         {
             DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
             return dataDirectory == null ? Directory.GetCurrentDirectory() : dataDirectory.FullName;
+        }
+
+        private static string ResolveSpaceEngineRoot()
+        {
+            string configuredRoot = global::System.Environment.GetEnvironmentVariable(SpaceEngineRootEnvironmentVariable);
+            if (!string.IsNullOrWhiteSpace(configuredRoot))
+                return configuredRoot;
+
+#if UNITY_EDITOR_WIN
+            return Path.Combine("C:" + Path.DirectorySeparatorChar, "GOG Games", "SpaceEngine");
+#else
+            return string.Empty;
+#endif
         }
 
         internal static string ResolveOutputPath(string projectRoot)
@@ -248,9 +263,9 @@ namespace Hecton8.EditorTools
 
         private static void AuditArchives(string spaceEngineRoot, SpaceEngineResearchAuditResult result)
         {
-            string shaderPak = Path.Combine(spaceEngineRoot, @"data\shaders\Shaders.pak");
-            string atmospherePak = Path.Combine(spaceEngineRoot, @"data\models\atmospheres\Atmospheres.pak");
-            string catalogPak = Path.Combine(spaceEngineRoot, @"data\catalogs\Catalogs.pak");
+            string shaderPak = Path.Combine(spaceEngineRoot, "data", "shaders", "Shaders.pak");
+            string atmospherePak = Path.Combine(spaceEngineRoot, "data", "models", "atmospheres", "Atmospheres.pak");
+            string catalogPak = Path.Combine(spaceEngineRoot, "data", "catalogs", "Catalogs.pak");
 
             result.ShaderPak = SpaceEngineZipCentralDirectoryProbe.Probe(shaderPak, ExpectedShaderEntries);
             result.AtmospherePak = SpaceEngineZipCentralDirectoryProbe.Probe(atmospherePak, ExpectedAtmosphereEntries);

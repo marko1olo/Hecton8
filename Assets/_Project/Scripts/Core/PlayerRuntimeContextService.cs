@@ -506,6 +506,7 @@ namespace Hecton8.Core
 
             if (_playerObject != null)
             {
+                PlayerKinematicsRuntime.EnsureOnPlayerRoot(_playerObject);
                 _playerObject.TryGetComponent(out _playerMovement);
                 _playerObject.TryGetComponent(out _playerRigidbody);
                 _playerObject.TryGetComponent(out _survivalSystem);

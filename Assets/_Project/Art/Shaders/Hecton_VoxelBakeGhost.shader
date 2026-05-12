@@ -18,8 +18,8 @@ Shader "Hecton8/Environment/Hecton_VoxelBakeGhost"
         Tags
         {
             "RenderPipeline" = "UniversalPipeline"
-            "Queue" = "Transparent"
-            "RenderType" = "Transparent"
+            "Queue" = "AlphaTest"
+            "RenderType" = "TransparentCutout"
             "UniversalMaterialType" = "Unlit"
             "ForceNoShadowCasting" = "True"
             "IgnoreProjector" = "True"
@@ -31,9 +31,10 @@ Shader "Hecton8/Environment/Hecton_VoxelBakeGhost"
             Tags { "LightMode" = "UniversalForward" }
 
             Cull Back
-            ZWrite Off
+            ZWrite On
             ZTest LEqual
-            Blend SrcAlpha OneMinusSrcAlpha
+            Blend Off
+            AlphaToMask On
 
             HLSLPROGRAM
             #pragma target 3.5
@@ -135,7 +136,7 @@ Shader "Hecton8/Environment/Hecton_VoxelBakeGhost"
                 half edgeBlend = saturate(fresnel * 0.82h + instability * 0.28h);
                 half3 color = lerp(_BaseColor.rgb, _EdgeColor.rgb, edgeBlend);
                 color += _EmissionColor.rgb * (0.35h + fresnel * 0.65h);
-                return half4(color, alpha);
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }

@@ -512,7 +512,7 @@ namespace Hecton8.Input
             string fileName = string.IsNullOrWhiteSpace(overridesFileName)
                 ? DefaultOverridesFileName
                 : overridesFileName;
-            return Path.Combine(Application.persistentDataPath, fileName);
+            return HectonPersistentPathPolicy.CombineFile(fileName);
         }
 
         private string GetOverridesTempFilePath()
@@ -520,7 +520,7 @@ namespace Hecton8.Input
             string fileName = string.IsNullOrWhiteSpace(overridesTempFileName)
                 ? DefaultOverridesTempFileName
                 : overridesTempFileName;
-            return Path.Combine(Application.persistentDataPath, fileName);
+            return HectonPersistentPathPolicy.CombineFile(fileName);
         }
 
         private static int FindBindingIndexById(InputAction action, string bindingId)

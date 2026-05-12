@@ -109,6 +109,8 @@ namespace Hecton8.Audio.Editor
                 AssertContains(updateCaveReverb, "targetWetMix = insideCaveVolume ? FakeCaveReverbMix01 : FakeOpenWaterReverbMix01", "Cave reverb wet mix is the 0.8/0.2 fake volume switch", builder, ref failureCount);
                 AssertNotContains(updateCaveReverb, "TryGetCachedEnclosureSample", "Cave reverb does not use enclosure raycast fallback", builder, ref failureCount);
                 AssertNotContains(updateCaveReverb, "Raycast", "Cave reverb update has no raycast path", builder, ref failureCount);
+                AssertContains(renderer, "bool nativeReverbActive = parameters.ReverbDspTier != (int)ReverbDspTier.UnityProfileOnly", "Low tier keeps native interior FDN disabled", builder, ref failureCount);
+                AssertContains(renderer, "float interiorFdnSend = nativeReverbActive", "Interior FDN send is gated by native reverb tier", builder, ref failureCount);
 
                 AssertContains(renderBubbleBlock, "ToolCavitationMaximumGain", "Tool cavitation injects into the reusable bubble scratch buffer", builder, ref failureCount);
                 AssertContains(renderBubbleBlock, "XorShiftSigned(sampleIndex, 0x7E5A3C91u)", "Tool cavitation uses deterministic XorShift white noise", builder, ref failureCount);
@@ -119,7 +121,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderTinnitusSample, "ApproximateOneMinusExpNegPositive(TinnitusPlayerStressExponentialSharpness * playerStress)", "O2 tinnitus gain uses Padé exponential approximation", builder, ref failureCount);
                 AssertContains(renderer, "120f - (60f * clamped) + (12f * x2) - x3", "Padé exp(-x) numerator is present", builder, ref failureCount);
 
-                AssertContains(renderer, "BinauralMaximumMicroDelaySeconds = 0.0006f", "Binaural fake ITD caps micro-delay at 0.6 ms", builder, ref failureCount);
+                AssertContains(renderer, "BinauralMaximumMicroDelaySeconds = 0.0007f", "Binaural fake ITD caps micro-delay at 0.7 ms", builder, ref failureCount);
                 AssertContains(renderer, "math.abs(rightDot) * maxDelaySamples", "Renderer derives fake ITD delay from head-right dot", builder, ref failureCount);
 
                 AssertContains(renderer, "_sabineReverbDelay = new NativeArray<float>(SabineReverbDelayCapacity, Allocator.AudioKernel", "Sabine delay cache is persistent native audio memory", builder, ref failureCount);
@@ -136,6 +138,10 @@ namespace Hecton8.Audio.Editor
                 AssertContains(ringBuffer, "public int OverflowDropCount => Volatile.Read(ref _overflowDropCount)", "SPSC bridge exposes overflow diagnostic counter", builder, ref failureCount);
                 AssertNotContains(ringBuffer, "MixInterleavedInto(float[]", "SPSC bridge has no managed float[] consumer", builder, ref failureCount);
                 AssertContains(tryWriteInterleaved, "Interlocked.Increment(ref _overflowDropCount)", "Producer overflow drop is recorded atomically", builder, ref failureCount);
+                AssertContains(tryWriteInterleaved, "sourceChannels < 1 || sourceChannels > 2", "Producer rejects invalid channel counts instead of clamping them", builder, ref failureCount);
+                AssertContains(tryWriteInterleaved, "if (safeChannels == 2)", "Producer has a stereo fast path for the shipped output layout", builder, ref failureCount);
+                AssertContains(tryWriteInterleaved, "((writeIndex + i) & _capacityMask) << 1", "Stereo fast path wraps by ring mask and scales with a shift", builder, ref failureCount);
+                AssertContains(tryWriteInterleaved, "int frameSourceIndex = i << 1", "Stereo source indexing avoids a per-channel inner loop", builder, ref failureCount);
             }
 
             if (bufferJobs.Length > 0)
@@ -163,8 +169,8 @@ namespace Hecton8.Audio.Editor
 
             if (occlusion.Length > 0)
             {
-                AssertContains(occlusion, "VoxelTerrainOcclusionTransmission01 = 0.25118864f", "Cinematic voxel occlusion resolves to -12 dB transmission", builder, ref failureCount);
-                AssertContains(occlusion, "VoxelTerrainOcclusionLowPassHertz = 800f", "Cinematic voxel occlusion resolves to 800 Hz LPF", builder, ref failureCount);
+                AssertContains(occlusion, "SdfOcclusionTransmission01 = 0.18f", "Cinematic SDF occlusion resolves to the authored hard-shadow transmission", builder, ref failureCount);
+                AssertContains(occlusion, "SdfOcclusionLowPassHertz = 800f", "Cinematic SDF occlusion resolves to 800 Hz LPF", builder, ref failureCount);
                 AssertNotContains(occlusion, "RaycastNonAlloc", "Cinematic voxel occlusion has no synchronous physics query", builder, ref failureCount);
             }
 

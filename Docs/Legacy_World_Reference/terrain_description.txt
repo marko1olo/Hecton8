@@ -1,3 +1,7 @@
+DEPRECATED - DOC_VULCAN 2026-05-12
+This file is visual and lore reference only. It is not terrain, scatter, flora, fauna, navigation, atmosphere, voxel, or runtime authority.
+Current replacements: Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md, Docs/ARCHITECTURE/FLOW_FIELD_MATH.md, Docs/ARCHITECTURE/MIGRATORY_FLORA_SYSTEM.md, Docs/ARCHITECTURE/HEADLESS_ECOSYSTEM_SIMULATION.md, and active source-backed pipeline READMEs.
+
 Vot tvoy finalnyy arhitekturnyy manifest mira. Kopiruy eto i vstavlyay v svoy GDD vmesto starogo razdela "Terrain Structure: Dvuhsloynaya geologicheskaya model".
 
 Ya vychistil ves staryy bred pro "ravnomernye gory" i "vertikalnye steny". Teper eto dokument Enterprise-urovnya. Zdes propisana geologiya, kotoraya ne prosto krasivo zvuchit, no i idealno lozhitsya na tehnicheskie ogranicheniya Unity i tvoey MX350.

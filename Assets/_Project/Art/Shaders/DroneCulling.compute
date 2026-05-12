@@ -52,6 +52,8 @@ RWByteAddressBuffer _IndirectArgsBuffer;
 float4 _CameraFrustumPlanes[6];
 int _DroneCount;
 float _DroneCullRadius;
+float3 _CameraPositionWS;
+float _DroneRenderDistanceSq;
 
 [numthreads(1, 1, 1)]
 void CS_ClearArgs(uint3 id : SV_DispatchThreadID)
@@ -82,6 +84,10 @@ void CS_CullDrones(uint3 id : SV_DispatchThreadID)
     HeadlessDroneState drone = _DroneStates[index];
     uint runtimeState = drone.PackedStateFactionCorridor & 0xFFu;
     if (runtimeState == 0u || runtimeState == 8u || runtimeState == 9u)
+        return;
+
+    float3 cameraOffset = drone.Position - _CameraPositionWS;
+    if (dot(cameraOffset, cameraOffset) > _DroneRenderDistanceSq)
         return;
 
     if (!IsSphereVisible(drone.Position, max(0.01, _DroneCullRadius)))

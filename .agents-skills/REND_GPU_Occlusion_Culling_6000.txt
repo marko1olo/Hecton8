@@ -1,0 +1,45 @@
+# HECTON-8 | Unity 6000 URP GPU Occlusion Culling Law
+
+Status: PENDING VERIFICATION
+Authority: TECH_SCOUT
+Date: 2026-05-11
+
+---
+
+## Law
+
+[RULE] GPU occlusion culling is the default candidate for compatible GPU Resident Drawer MeshRenderer environment sets in URP.
+[RULE] The renderer must be URP Forward+ and RenderGraph Compatibility Mode must be disabled before this mandate can be claimed active.
+[RULE] GPU occlusion is accepted only after Rendering Statistics or Rendering Debugger evidence shows a net win for the scene.
+
+[FORBID] Hand-rolled Hi-Z culling for MeshRenderer environment objects before testing Unity's GPU occlusion path.
+[FORBID] Enabling GPU occlusion globally and calling it a win without checking GPU setup cost.
+[FORBID] Using CPU occlusion queries as a per-frame visibility solution on Low tier.
+
+---
+
+## Evidence
+
+[SOURCE] Unity 6000 URP GPU occlusion documentation states GPU occlusion culling uses the GPU to exclude objects hidden behind other objects, and it requires GPU Resident Drawer conditions: Forward+ and compute-shader support.
+https://docs.unity3d.com/6000.0/Manual/urp/gpu-culling.html
+
+[SOURCE] Unity documentation warns that if occlusion culling has little effect on the scene, rendering time can increase because the GPU must do extra setup work.
+https://docs.unity3d.com/6000.0/Manual/urp/gpu-culling.html
+
+---
+
+## Scene Adoption Pattern
+
+Low / MX350:
+- Enable only for dense static geometry zones with real blockers.
+- Keep occluder meshes coarse.
+- Disable for open ocean views and sparse scenes if GPU setup cost wins over culled draw cost.
+
+High:
+- Increase environment density through GRD after culling proof.
+
+Ultra:
+- More decoration and small mesh density allowed if culling/debug captures stay under budget.
+
+[STATUS] Savings are PENDING VERIFICATION until captured per scene.
+

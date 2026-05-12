@@ -230,7 +230,7 @@ Save side branch:
 -> `SaveBinaryStorage.TryCommitModPayloadSubSector(...)`
 -> indexed sector directory entry with `0x4D50` top-bit prefix
 
-## Mod-MMF Paging Path
+## Mod FileStream Paging Path
 
 Source files:
 

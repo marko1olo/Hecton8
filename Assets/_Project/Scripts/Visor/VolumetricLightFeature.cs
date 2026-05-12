@@ -31,7 +31,8 @@ namespace Hecton8.Visor
         [Serializable]
         private sealed class FeatureSettings
         {
-            private const int MaxDitheredConeRaymarchSteps = 7;
+            private const int LowTierRaymarchSteps = 4;
+            private const int HighTierRaymarchSteps = 12;
 
             [Tooltip("Compute shader that owns both the half-res raymarch and full-res bilateral composite.")]
             public ComputeShader computeShader = null;
@@ -49,10 +50,10 @@ namespace Hecton8.Visor
             [Range(0.25f, 1f)] public float renderScale = 0.5f;
 
             [Tooltip("Fallback medium-tier step count used when no emission profile is assigned.")]
-            [Range(1, MaxDitheredConeRaymarchSteps)] public int fallbackSteps = MaxDitheredConeRaymarchSteps;
+            [Range(1, HighTierRaymarchSteps)] public int fallbackSteps = HighTierRaymarchSteps;
 
             [Tooltip("Screen-space shadow raymarch steps. MX350 path is strictly below eight.")]
-            [Range(1, MaxDitheredConeRaymarchSteps)] public int volumetricShadowSteps = 4;
+            [Range(1, HighTierRaymarchSteps)] public int volumetricShadowSteps = LowTierRaymarchSteps;
 
             [Tooltip("Maximum world-space distance for the secondary shadow raymarch toward the light.")]
             [Range(1f, 24f)] public float volumetricShadowDistance = 8f;
@@ -89,21 +90,37 @@ namespace Hecton8.Visor
 
             internal int ResolveRaymarchSteps()
             {
-                int maxStepCount = ResolveMx350SafeStepLimit();
-                if (emissionProfile != null)
-                    return Mathf.Clamp(emissionProfile.GetVolumetricGodRaySteps(hardwareTier), 1, maxStepCount);
+                int maxStepCount = ResolveTierStepLimit();
+                if (ShouldUseLowTierSteps())
+                    return LowTierRaymarchSteps;
 
-                return Mathf.Clamp(fallbackSteps, 1, maxStepCount);
+                if (ShouldUseHighTierSteps())
+                    return HighTierRaymarchSteps;
+
+                if (emissionProfile != null)
+                    return Mathf.Clamp(emissionProfile.GetVolumetricGodRaySteps(hardwareTier), LowTierRaymarchSteps, maxStepCount);
+
+                return Mathf.Clamp(fallbackSteps, LowTierRaymarchSteps, maxStepCount);
             }
 
             internal int ResolveVolumetricShadowSteps()
             {
-                return Mathf.Clamp(volumetricShadowSteps, 1, ResolveMx350SafeStepLimit());
+                return Mathf.Clamp(volumetricShadowSteps, 1, ResolveTierStepLimit());
             }
 
-            private int ResolveMx350SafeStepLimit()
+            private int ResolveTierStepLimit()
             {
-                return MaxDitheredConeRaymarchSteps;
+                return ShouldUseLowTierSteps() ? LowTierRaymarchSteps : HighTierRaymarchSteps;
+            }
+
+            private bool ShouldUseLowTierSteps()
+            {
+                return hardwareTier == VFXEmissionProfile.HardwareTier.Low || Shader.IsKeywordEnabled("_MATH_LOD_LOW");
+            }
+
+            private bool ShouldUseHighTierSteps()
+            {
+                return hardwareTier == VFXEmissionProfile.HardwareTier.High || Shader.IsKeywordEnabled("_MATH_LOD_HIGH");
             }
         }
 

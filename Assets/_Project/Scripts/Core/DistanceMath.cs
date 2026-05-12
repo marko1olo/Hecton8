@@ -27,6 +27,8 @@ namespace Hecton8.Core
         private const string MathLodDistanceSqProperty = "_HectonMathLodDistanceSq";
         private const string MathLodHighKeyword = "_MATH_LOD_HIGH";
         private const string MathLodLowKeyword = "_MATH_LOD_LOW";
+        private static readonly int _mathLodModePropertyId = Shader.PropertyToID(MathLodModeProperty);
+        private static readonly int _mathLodDistanceSqPropertyId = Shader.PropertyToID(MathLodDistanceSqProperty);
         private static MathLodMode _lastPushedShaderMode;
         private static bool _hasPushedShaderMode;
 
@@ -55,7 +57,8 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsHighQualityTier(HectonQualityTier scalabilityTier)
         {
-            return scalabilityTier == HectonQualityTier.High || scalabilityTier == HectonQualityTier.Ultra;
+            uint tierOffset = (uint)((int)scalabilityTier - (int)HectonQualityTier.High);
+            return tierOffset <= (uint)((int)HectonQualityTier.Ultra - (int)HectonQualityTier.High);
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -188,8 +191,8 @@ namespace Hecton8.Core
                 return;
 
             bool high = mode == MathLodMode.High;
-            Shader.SetGlobalFloat(MathLodModeProperty, high ? 1f : 0f);
-            Shader.SetGlobalFloat(MathLodDistanceSqProperty, HighQualityDistanceSq);
+            Shader.SetGlobalFloat(_mathLodModePropertyId, high ? 1f : 0f);
+            Shader.SetGlobalFloat(_mathLodDistanceSqPropertyId, HighQualityDistanceSq);
             _lastPushedShaderMode = mode;
             _hasPushedShaderMode = true;
 

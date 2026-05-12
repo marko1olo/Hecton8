@@ -31,6 +31,19 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Platform-specific input bits appended to the frame input snapshot.
+    /// </summary>
+    [Flags]
+    public enum PlatformInputFlag : uint
+    {
+        None = 0u,
+        SteamDeckGyro = 1u << 0,
+        SteamDeckLeftTrackpad = 1u << 1,
+        SteamDeckRightTrackpad = 1u << 2,
+        SteamDeckEmulatedTrackpads = 1u << 3
+    }
+
+    /// <summary>
     /// OpenXR controller button bits exposed through the frame-cached XR input snapshot.
     /// </summary>
     [Flags]
@@ -75,14 +88,39 @@ namespace Hecton8.Core
         public Vector2 LookDelta;
 
         /// <summary>
+        /// Cached UI scroll delta for diegetic analog controls.
+        /// </summary>
+        public Vector2 ScrollDelta;
+
+        /// <summary>
         /// Cached vertical ascend/descend input for the current frame.
         /// </summary>
         public float VerticalDelta;
 
         /// <summary>
+        /// Steam Deck gyro contribution already folded into <see cref="LookDelta"/>.
+        /// </summary>
+        public Vector2 SteamDeckGyroAimDelta;
+
+        /// <summary>
+        /// Left Steam Deck trackpad axis, or the mapped left-stick proxy when Steam Input is unavailable.
+        /// </summary>
+        public Vector2 SteamDeckLeftTrackpad;
+
+        /// <summary>
+        /// Right Steam Deck trackpad axis, or the mapped right-stick proxy when Steam Input is unavailable.
+        /// </summary>
+        public Vector2 SteamDeckRightTrackpad;
+
+        /// <summary>
         /// Frame-cached action flags for held and latched gameplay actions.
         /// </summary>
         public uint ActionsBitmask;
+
+        /// <summary>
+        /// Platform-specific input flags for Steam Deck and future PAL devices.
+        /// </summary>
+        public uint PlatformInputFlags;
 
         /// <summary>
         /// Returns true when the cached frame snapshot contains the requested action flag.
@@ -92,6 +130,14 @@ namespace Hecton8.Core
         public readonly bool HasAction(PlayerInputAction action)
         {
             return (ActionsBitmask & (uint)action) != 0u;
+        }
+
+        /// <summary>
+        /// Returns true when a platform-specific input flag is set.
+        /// </summary>
+        public readonly bool HasPlatformFlag(PlatformInputFlag flag)
+        {
+            return (PlatformInputFlags & (uint)flag) != 0u;
         }
     }
 

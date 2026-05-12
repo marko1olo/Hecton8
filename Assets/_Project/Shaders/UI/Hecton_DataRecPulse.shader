@@ -16,7 +16,7 @@ Shader "Hecton8/UI/DataRecPulse"
         {
             "Queue"="Overlay"
             "IgnoreProjector"="True"
-            "RenderType"="Transparent"
+            "RenderType"="TransparentCutout"
             "RenderPipeline"="UniversalPipeline"
             "CanUseSpriteAtlas"="True"
         }
@@ -25,7 +25,8 @@ Shader "Hecton8/UI/DataRecPulse"
         Lighting Off
         ZWrite Off
         ZTest Always
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend Off
+        AlphaToMask On
         ColorMask RGB
 
         Pass
@@ -73,6 +74,11 @@ Shader "Hecton8/UI/DataRecPulse"
                 return 1.0h - abs(frac(phase * 0.15915494h + 0.25h) * 2.0h - 1.0h);
             }
 
+            float InterleavedGradientNoise(float2 pixel)
+            {
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             v2f vert(appdata_t input)
             {
                 v2f output;
@@ -101,7 +107,8 @@ Shader "Hecton8/UI/DataRecPulse"
                 half4 color = texel * input.color;
                 color.a *= saturate(pulse + sweep);
                 color.rgb *= lerp(0.72h, 1.35h + sweep, pulse);
-                return color;
+                clip(color.a - max((half)InterleavedGradientNoise(floor(input.vertex.xy)), 0.0005h));
+                return half4(color.rgb, 1.0h);
             }
             ENDHLSL
         }

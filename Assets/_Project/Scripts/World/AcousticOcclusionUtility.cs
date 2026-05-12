@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Caves;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
@@ -73,11 +74,11 @@ namespace Hecton8.World
         }
     }
 
-    internal struct AcousticSurfaceResponse
+    internal readonly struct AcousticSurfaceResponse
     {
-        public float Absorption01;
-        public float Transmission01;
-        public float LowPassCutoffHz;
+        public readonly float Absorption01;
+        public readonly float Transmission01;
+        public readonly float LowPassCutoffHz;
 
         public AcousticSurfaceResponse(float absorption01, float transmission01, float lowPassCutoffHz)
         {
@@ -103,12 +104,10 @@ namespace Hecton8.World
         public const float MinimumLowPassCutoffHertz = 80f;
         public const float DeepShadowTransmissionThreshold = 0.15f;
 
-        private const float DefaultAbsorption01 = 0.50f;
         private const float RockAbsorption01 = 0.98f;
-        private const float MetalAbsorption01 = 0.85f;
-        private const float SedimentAbsorption01 = 0.60f;
         private const float WaterAbsorption01 = 0.05f;
-        private const int MaxQueuedRequests = 48;
+        private const int MaxQueuedRequests = 64;
+        private const int MaxQueuedRequestsMask = MaxQueuedRequests - 1;
         private const int EnclosurePresetFaceCount = 6;
         private const float OcclusionReuseDistanceMeters = 0.5f;
         private const float OcclusionReuseDistanceSqr = OcclusionReuseDistanceMeters * OcclusionReuseDistanceMeters;
@@ -117,6 +116,12 @@ namespace Hecton8.World
         private const float DistanceOcclusionFullMeters = 180f;
         private const float DistanceOcclusionTransmissionFloor = 0.32f;
         private const float DistanceOcclusionLowPassFloorHertz = 900f;
+        private const float SdfOcclusionProbeMaxDistanceMeters = 200f;
+        private const float SdfOcclusionProbeStepMeters = 5f;
+        private const float SdfOcclusionTransmission01 = 0.18f;
+        private const float SdfOcclusionLowPassHertz = 800f;
+        private const float SdfEnclosureProbeDistanceMeters = 200f;
+        private const float SdfEnclosureProbeStepMeters = 5f;
         private const float MinimumEquivalentAbsorptionArea = 0.5f;
         private const float MinimumRt60Seconds = 0.12f;
         private const float MaximumRt60Seconds = 10f;
@@ -143,6 +148,10 @@ namespace Hecton8.World
         private const float FloraScatteringDensityThreshold = 0.08f;
         private const float FloraScatteringTransmissionFloor = 0.18f;
         private const float FloraScatteringLowPassFloorHertz = 220f;
+        private const int MaxQueuedRequestsPowerOfTwoGuard =
+            1 / ((MaxQueuedRequests > 0 &&
+                  (MaxQueuedRequests & (MaxQueuedRequests - 1)) == 0 &&
+                  MaxQueuedRequestsMask == MaxQueuedRequests - 1) ? 1 : 0);
 
         private static int PlayerLayer = -1;
         private static int TriggerZoneLayer = -1;
@@ -197,7 +206,7 @@ namespace Hecton8.World
         private static bool _triggerPresetActive;
         private static AcousticEnclosureResult _triggerPresetResult;
         private static CachedForwardEchoEntry _cachedForwardEchoEntry;
-        // COLD ALLOC: CachedQueryEntry[48] - last resolved acoustic occlusion cache - owner: AcousticOcclusionUtility
+        // COLD ALLOC: CachedQueryEntry[64] - last resolved acoustic occlusion cache - owner: AcousticOcclusionUtility
         private static readonly CachedQueryEntry[] _cachedEntries = new CachedQueryEntry[MaxQueuedRequests];
 
         private static void EnsureLayerCache()
@@ -260,7 +269,6 @@ namespace Hecton8.World
 
             for (int i = 0; i < MaxQueuedRequests; i++)
                 _cachedEntries[i].Valid = false;
-
         }
 
         public static int BuildSensoryMask()
@@ -275,7 +283,7 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Kept as a dispatcher hook; acoustic purge now resolves occlusion through cacheable math only.
+        /// Compatibility hook retained for callers. Acoustic occlusion is SDF-only for this batch.
         /// </summary>
         public static void LateFrameTick()
         {
@@ -303,7 +311,11 @@ namespace Hecton8.World
             if (TryFindCachedResult(queryKey, out _))
                 return;
 
-            StoreCachedResult(queryKey, BuildDistanceOcclusionResult(sourcePosition, listenerPosition));
+            AcousticOcclusionResult fallbackResult = TryBuildSdfOcclusionResult(sourcePosition, listenerPosition, out AcousticOcclusionResult sdfResult)
+                ? sdfResult
+                : BuildDistanceOcclusionResult(sourcePosition, listenerPosition);
+
+            StoreCachedResult(queryKey, fallbackResult);
         }
 
         public static void PrimeForwardEchoSample(
@@ -361,7 +373,9 @@ namespace Hecton8.World
                 return true;
             }
 
-            result = BuildDistanceOcclusionResult(sourcePosition, listenerPosition);
+            result = TryBuildSdfOcclusionResult(sourcePosition, listenerPosition, out AcousticOcclusionResult sdfResult)
+                ? sdfResult
+                : BuildDistanceOcclusionResult(sourcePosition, listenerPosition);
             StoreCachedResult(queryKey, result);
             return true;
         }
@@ -373,13 +387,36 @@ namespace Hecton8.World
             Transform ignoreRoot,
             out AcousticEnclosureResult result)
         {
-            _ = originPosition;
             _ = layerMask;
             _ = ignoreRoot;
-            result = _triggerPresetActive
-                ? _triggerPresetResult
-                : BuildOpenWaterResult(probeDistance);
+            if (_triggerPresetActive)
+            {
+                result = _triggerPresetResult;
+                return true;
+            }
+
+            if (TryBuildSdfEnclosureResult(originPosition, math.max(probeDistance, SdfEnclosureProbeDistanceMeters), out result))
+                return true;
+
+            result = BuildOpenWaterResult(probeDistance);
             return true;
+        }
+
+        public static bool TryGetSdfEnclosureSample(
+            Vector3 originPosition,
+            float probeDistance,
+            out AcousticEnclosureResult result)
+        {
+            if (_triggerPresetActive)
+            {
+                result = _triggerPresetResult;
+                return true;
+            }
+
+            return TryBuildSdfEnclosureResult(
+                originPosition,
+                math.max(probeDistance, SdfEnclosureProbeDistanceMeters),
+                out result);
         }
 
         public static void SetTriggerReverbPreset(AcousticReverbPresetKind preset)
@@ -454,7 +491,7 @@ namespace Hecton8.World
         {
             float clamped = math.max(0f, x);
             float x2 = clamped * clamped;
-            return math.saturate(1f / (1f + clamped + (0.48f * x2) + (0.235f * x2 * clamped)));
+            return math.saturate(math.rcp(1f + clamped + (0.48f * x2) + (0.235f * x2 * clamped)));
         }
 
         public static AcousticOcclusionResult EvaluateOcclusionPath(
@@ -513,13 +550,151 @@ namespace Hecton8.World
                 occludingHitCount);
         }
 
+        private static bool TryBuildSdfOcclusionResult(
+            Vector3 sourcePosition,
+            Vector3 listenerPosition,
+            out AcousticOcclusionResult result)
+        {
+            result = default;
+            float3 delta = (float3)(listenerPosition - sourcePosition);
+            float distanceSq = math.lengthsq(delta);
+            if (distanceSq <= MinimumPathDistanceMeters * MinimumPathDistanceMeters)
+                return false;
+
+            if (TryBuildSdfMidpointOcclusionResult(sourcePosition, listenerPosition, distanceSq, out result))
+                return true;
+
+            float inverseDistance = math.rsqrt(math.max(distanceSq, MinimumPathDistanceMeters * MinimumPathDistanceMeters));
+            float distanceMeters = distanceSq * inverseDistance;
+            float probeDistance = math.min(distanceMeters, SdfOcclusionProbeMaxDistanceMeters);
+            Vector3 direction = (Vector3)(delta * inverseDistance);
+            if (!HectonVoxelVolume.TryRaymarchAnyPublishedSdf(
+                    sourcePosition,
+                    direction,
+                    probeDistance,
+                    SdfOcclusionProbeStepMeters,
+                    out _,
+                    out VoxelSdfRaycastHit hit) ||
+                hit.Hit == 0)
+            {
+                return false;
+            }
+
+            float hitDepth01 = math.saturate(hit.Distance * math.rcp(math.max(probeDistance, MinimumPathDistanceMeters)));
+            float transmission01 = math.lerp(SdfOcclusionTransmission01, SdfOcclusionTransmission01 * 0.55f, hitDepth01);
+            float lowPassCutoffHz = math.lerp(SdfOcclusionLowPassHertz, MinimumLowPassCutoffHertz, hitDepth01 * 0.35f);
+            result = new AcousticOcclusionResult(
+                math.clamp(transmission01, 0f, 1f),
+                math.clamp(lowPassCutoffHz, MinimumLowPassCutoffHertz, OpenLowPassCutoffHertz),
+                2);
+            return true;
+        }
+
+        private static bool TryBuildSdfMidpointOcclusionResult(
+            Vector3 sourcePosition,
+            Vector3 listenerPosition,
+            float distanceSq,
+            out AcousticOcclusionResult result)
+        {
+            result = default;
+            Vector3 midpointRuntime = sourcePosition + (listenerPosition - sourcePosition) * 0.5f;
+            Vector3 midpointAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(midpointRuntime);
+            if (!HectonVoxelVolume.GetSDFDensity((float3)midpointAup, out float density) || !(density > 0f))
+                return false;
+
+            float density01 = math.saturate(density);
+            float distance01 = math.saturate(distanceSq * math.rcp(SdfOcclusionProbeMaxDistanceMeters * SdfOcclusionProbeMaxDistanceMeters));
+            float obstruction01 = math.saturate(math.max(density01, distance01 * 0.35f));
+            float transmission01 = math.lerp(SdfOcclusionTransmission01, SdfOcclusionTransmission01 * 0.5f, obstruction01);
+            float lowPassCutoffHz = math.lerp(SdfOcclusionLowPassHertz, MinimumLowPassCutoffHertz, obstruction01 * 0.35f);
+            result = new AcousticOcclusionResult(
+                math.clamp(transmission01, 0f, 1f),
+                math.clamp(lowPassCutoffHz, MinimumLowPassCutoffHertz, OpenLowPassCutoffHertz),
+                2);
+            return true;
+        }
+
+        private static bool TryBuildSdfEnclosureResult(
+            Vector3 originPosition,
+            float probeDistance,
+            out AcousticEnclosureResult result)
+        {
+            result = default;
+            float safeProbeDistance = math.clamp(probeDistance, 1f, SdfEnclosureProbeDistanceMeters);
+            float up = ResolveSdfCardinalDistance(originPosition, new Vector3(0f, 1f, 0f), safeProbeDistance, out int upHit);
+            float down = ResolveSdfCardinalDistance(originPosition, new Vector3(0f, -1f, 0f), safeProbeDistance, out int downHit);
+            float left = ResolveSdfCardinalDistance(originPosition, new Vector3(-1f, 0f, 0f), safeProbeDistance, out int leftHit);
+            float right = ResolveSdfCardinalDistance(originPosition, new Vector3(1f, 0f, 0f), safeProbeDistance, out int rightHit);
+            float forward = ResolveSdfCardinalDistance(originPosition, new Vector3(0f, 0f, 1f), safeProbeDistance, out int forwardHit);
+            float back = ResolveSdfCardinalDistance(originPosition, new Vector3(0f, 0f, -1f), safeProbeDistance, out int backHit);
+            int hitCount = upHit + downHit + leftHit + rightHit + forwardHit + backHit;
+            if (hitCount <= 0)
+                return false;
+
+            float spanVertical = math.max(MinimumPathDistanceMeters, up + down);
+            float spanHorizontal = math.max(MinimumPathDistanceMeters, left + right);
+            float spanDepth = math.max(MinimumPathDistanceMeters, forward + back);
+            float volumeCubicMeters = math.max(MinimumPathDistanceMeters, spanVertical * spanHorizontal * spanDepth);
+            float areaVerticalHorizontal = spanVertical * spanHorizontal;
+            float areaVerticalDepth = spanVertical * spanDepth;
+            float areaHorizontalDepth = spanHorizontal * spanDepth;
+            float surfaceArea = math.max(
+                MinimumEquivalentAbsorptionArea,
+                2f * (areaVerticalHorizontal + areaVerticalDepth + areaHorizontalDepth));
+            float closure01 = math.saturate(hitCount * 0.16666667f);
+            float meanAbsorption01 = math.lerp(WaterAbsorption01, RockAbsorption01, closure01);
+            float equivalentAbsorptionArea = math.max(MinimumEquivalentAbsorptionArea, surfaceArea * meanAbsorption01);
+            float rt60Seconds = math.clamp(
+                0.161f * volumeCubicMeters * math.rcp(equivalentAbsorptionArea),
+                MinimumRt60Seconds,
+                MaximumRt60Seconds);
+            float wetMix01 = math.lerp(OpenWaterWetMix01, SmallRoomWetMix01, closure01);
+            float openness01 = 1f - closure01;
+
+            result = new AcousticEnclosureResult(
+                spanVertical,
+                spanHorizontal,
+                spanDepth,
+                volumeCubicMeters,
+                meanAbsorption01,
+                equivalentAbsorptionArea,
+                rt60Seconds,
+                wetMix01,
+                openness01,
+                hitCount);
+            return true;
+        }
+
+        private static float ResolveSdfCardinalDistance(
+            Vector3 originPosition,
+            Vector3 direction,
+            float probeDistance,
+            out int hit)
+        {
+            hit = 0;
+            if (HectonVoxelVolume.TryRaymarchAnyPublishedSdf(
+                    originPosition,
+                    direction,
+                    probeDistance,
+                    SdfEnclosureProbeStepMeters,
+                    out _,
+                    out VoxelSdfRaycastHit sdfHit) &&
+                sdfHit.Hit != 0)
+            {
+                hit = 1;
+                return math.max(MinimumPathDistanceMeters, sdfHit.Distance);
+            }
+
+            return probeDistance;
+        }
+
         private static AcousticForwardEchoResult BuildDistanceForwardEchoResult(ForwardEchoKey queryKey)
         {
             float fakeDistanceMeters = math.clamp(
                 queryKey.ProbeDistance * ForwardEchoFakeDistanceRatio,
                 ForwardEchoMinimumFakeDistanceMeters,
                 ForwardEchoMaximumFakeDistanceMeters);
-            float shadow01 = math.saturate(fakeDistanceMeters / ForwardEchoMaximumFakeDistanceMeters);
+            float shadow01 = math.saturate(fakeDistanceMeters * math.rcp(ForwardEchoMaximumFakeDistanceMeters));
             float transmission01 = math.lerp(0.86f, 0.35f, shadow01);
             float lowPassCutoffHz = math.lerp(12000f, 900f, shadow01);
             return new AcousticForwardEchoResult(
@@ -532,8 +707,8 @@ namespace Hecton8.World
         private static float ResolveDistanceShadow01(float distanceMeters)
         {
             float distance01 = math.saturate(
-                (distanceMeters - DistanceOcclusionStartMeters) /
-                math.max(DistanceOcclusionFullMeters - DistanceOcclusionStartMeters, 0.001f));
+                (distanceMeters - DistanceOcclusionStartMeters) *
+                math.rcp(math.max(DistanceOcclusionFullMeters - DistanceOcclusionStartMeters, 0.001f)));
             return distance01 * distance01 * (3f - (2f * distance01));
         }
 
@@ -637,7 +812,7 @@ namespace Hecton8.World
             _cachedEntries[writeIndex].Key = queryKey;
             _cachedEntries[writeIndex].Result = result;
             _cachedEntries[writeIndex].Valid = true;
-            _nextCacheWriteIndex = (writeIndex + 1) % MaxQueuedRequests;
+            _nextCacheWriteIndex = (writeIndex + 1) & MaxQueuedRequestsMask;
         }
 
         private static bool KeysMatch(QueryKey cached, QueryKey current)
@@ -712,51 +887,6 @@ namespace Hecton8.World
                 wetMix01,
                 openness01,
                 EnclosurePresetFaceCount);
-        }
-
-        private static float ResolveAbsorption01(Collider collider)
-        {
-            if (collider == null)
-                return DefaultAbsorption01;
-
-            EnsureLayerCache();
-
-            if (collider.CompareTag("MetalFloor") ||
-                collider.CompareTag("Grate") ||
-                collider.CompareTag("BaseModule") ||
-                collider.CompareTag("Vehicle"))
-            {
-                return MetalAbsorption01;
-            }
-
-            if (collider.CompareTag("Sand") || collider.CompareTag("Wet"))
-                return SedimentAbsorption01;
-
-            if (collider.CompareTag("Rock"))
-                return RockAbsorption01;
-
-            int layer = collider.gameObject.layer;
-            if (layer == WaterLayer)
-                return WaterAbsorption01;
-
-            if (layer == BaseModuleLayer || layer == VehicleLayer)
-                return MetalAbsorption01;
-
-            if (layer == VoxelCaveLayer)
-                return RockAbsorption01;
-
-            return DefaultAbsorption01;
-        }
-
-        internal static AcousticSurfaceResponse ResolveSurfaceResponse(Collider collider)
-        {
-            float absorption01 = math.clamp(ResolveAbsorption01(collider), 0f, 1f);
-            float transmission01 = math.clamp(1f - absorption01, 0f, 1f);
-            float lowPassCutoffHz = math.lerp(
-                MinimumLowPassCutoffHertz,
-                OpenLowPassCutoffHertz,
-                transmission01);
-            return new AcousticSurfaceResponse(absorption01, transmission01, lowPassCutoffHz);
         }
 
         private static ulong ResolveEntityId(Transform target)

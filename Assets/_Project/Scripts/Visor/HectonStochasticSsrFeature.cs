@@ -152,7 +152,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(maskTexture, AccessFlags.Write);
                     builder.SetGlobalTextureAfterPass(maskTexture, ShaderConstants.MaskTextureId);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (MaskPassData data, UnsafeGraphContext context) =>
                     {
@@ -174,7 +173,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(maskTexture, AccessFlags.Read);
                     builder.UseTexture(destinationTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (CompositePassData data, UnsafeGraphContext context) =>
                     {

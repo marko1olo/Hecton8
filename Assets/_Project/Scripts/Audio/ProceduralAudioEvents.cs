@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Collections;
 using UnityEngine;
@@ -109,6 +110,42 @@ namespace Hecton8.Audio
         public float PitchScale { get; }
     }
 
+    public enum AudioEventKind : byte
+    {
+        None = 0,
+        AudioPing = 1,
+        StructuralStress = 2
+    }
+
+    /// <summary>
+    /// Canonical zero-GC procedural audio bridge payload.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct AudioEvent
+    {
+        public AudioEventKind Kind;
+        public AudioPingTriggerInfo AudioPing;
+        public StructuralStressAudioInfo StructuralStress;
+
+        public static AudioEvent FromAudioPing(in AudioPingTriggerInfo info)
+        {
+            return new AudioEvent
+            {
+                Kind = AudioEventKind.AudioPing,
+                AudioPing = info
+            };
+        }
+
+        public static AudioEvent FromStructuralStress(in StructuralStressAudioInfo info)
+        {
+            return new AudioEvent
+            {
+                Kind = AudioEventKind.StructuralStress,
+                StructuralStress = info
+            };
+        }
+    }
+
     /// <summary>
     /// Listener contract for deferred procedural audio notifications.
     /// </summary>
@@ -131,6 +168,7 @@ namespace Hecton8.Audio
         private const int ListenerCapacity = 8;
         private const int PendingAudioPingCapacity = 8;
         private const int PendingStructuralStressCapacity = 8;
+        private const int PendingAudioEventCapacity = PendingAudioPingCapacity + PendingStructuralStressCapacity;
         private static readonly uint _overflowWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralAudioEvents.Overflow"));
         private static readonly uint _audioPingQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralAudioEvents.AudioPing"));
         private static readonly uint _structuralStressQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralAudioEvents.StructuralStress"));
@@ -144,10 +182,10 @@ namespace Hecton8.Audio
         private static readonly IProceduralAudioEventListener[] _deferredRegisterListeners = new IProceduralAudioEventListener[ListenerCapacity];
         // COLD ALLOC: IProceduralAudioEventListener[8] - listener removals deferred while dispatching procedural audio events - owner: ProceduralAudioEvents
         private static readonly IProceduralAudioEventListener[] _deferredUnregisterListeners = new IProceduralAudioEventListener[ListenerCapacity];
-        private static NativeQueue<AudioPingTriggerInfo> _pendingAudioPings;
-        private static NativeQueue<AudioPingTriggerInfo> _nextFrameAudioPings;
-        private static NativeQueue<StructuralStressAudioInfo> _pendingStructuralStress;
-        private static NativeQueue<StructuralStressAudioInfo> _nextFrameStructuralStress;
+        private static NativeQueue<AudioEvent> _pendingAudioEvents;
+        private static NativeQueue<AudioEvent> _nextFrameAudioEvents;
+        private static int _pendingAudioEventCount;
+        private static int _nextFrameAudioEventCount;
         private static int _pendingAudioPingCount;
         private static int _nextFrameAudioPingCount;
         private static int _pendingStructuralStressCount;
@@ -169,10 +207,7 @@ namespace Hecton8.Audio
         {
             get
             {
-                return _pendingAudioPingCount
-                    + _nextFrameAudioPingCount
-                    + _pendingStructuralStressCount
-                    + _nextFrameStructuralStressCount;
+                return _pendingAudioEventCount + _nextFrameAudioEventCount;
             }
         }
 
@@ -185,36 +220,24 @@ namespace Hecton8.Audio
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingAudioPings.IsCreated)
+            if (_pendingAudioEvents.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ProceduralAudioEvents), nameof(_pendingAudioPings));
-                _pendingAudioPings.Dispose();
-                _pendingAudioPings = default;
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ProceduralAudioEvents), nameof(_pendingAudioEvents));
+                _pendingAudioEvents.Dispose();
+                _pendingAudioEvents = default;
             }
 
-            if (_nextFrameAudioPings.IsCreated)
+            if (_nextFrameAudioEvents.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ProceduralAudioEvents), nameof(_nextFrameAudioPings));
-                _nextFrameAudioPings.Dispose();
-                _nextFrameAudioPings = default;
-            }
-
-            if (_pendingStructuralStress.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ProceduralAudioEvents), nameof(_pendingStructuralStress));
-                _pendingStructuralStress.Dispose();
-                _pendingStructuralStress = default;
-            }
-
-            if (_nextFrameStructuralStress.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ProceduralAudioEvents), nameof(_nextFrameStructuralStress));
-                _nextFrameStructuralStress.Dispose();
-                _nextFrameStructuralStress = default;
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ProceduralAudioEvents), nameof(_nextFrameAudioEvents));
+                _nextFrameAudioEvents.Dispose();
+                _nextFrameAudioEvents = default;
             }
 
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
             Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
+            _pendingAudioEventCount = 0;
+            _nextFrameAudioEventCount = 0;
             _pendingAudioPingCount = 0;
             _nextFrameAudioPingCount = 0;
             _pendingStructuralStressCount = 0;
@@ -295,9 +318,7 @@ namespace Hecton8.Audio
                 }
                 else
                 {
-                    completed = FlushAudioPings();
-                    if (completed)
-                        completed = FlushStructuralStress();
+                    completed = FlushAudioEvents();
                 }
             }
             finally
@@ -367,12 +388,14 @@ namespace Hecton8.Audio
         {
             if (_isDispatching)
             {
-                _nextFrameAudioPings.Enqueue(info);
+                _nextFrameAudioEvents.Enqueue(AudioEvent.FromAudioPing(in info));
+                _nextFrameAudioEventCount++;
                 _nextFrameAudioPingCount++;
             }
             else
             {
-                _pendingAudioPings.Enqueue(info);
+                _pendingAudioEvents.Enqueue(AudioEvent.FromAudioPing(in info));
+                _pendingAudioEventCount++;
                 _pendingAudioPingCount++;
             }
         }
@@ -395,64 +418,42 @@ namespace Hecton8.Audio
             StructuralStressAudioInfo info = new StructuralStressAudioInfo(worldPosition, stress01, pitchScale);
             if (_isDispatching)
             {
-                _nextFrameStructuralStress.Enqueue(info);
+                _nextFrameAudioEvents.Enqueue(AudioEvent.FromStructuralStress(in info));
+                _nextFrameAudioEventCount++;
                 _nextFrameStructuralStressCount++;
             }
             else
             {
-                _pendingStructuralStress.Enqueue(info);
+                _pendingAudioEvents.Enqueue(AudioEvent.FromStructuralStress(in info));
+                _pendingAudioEventCount++;
                 _pendingStructuralStressCount++;
             }
         }
 
         private static void EnsureInitialized()
         {
-            if (!_pendingAudioPings.IsCreated)
+            if (!_pendingAudioEvents.IsCreated)
             {
-                _pendingAudioPings = new NativeQueue<AudioPingTriggerInfo>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioPingTriggerInfo>[8] - deferred procedural ping lane - owner: ProceduralAudioEvents
+                _pendingAudioEvents = new NativeQueue<AudioEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioEvent>[16] - deferred procedural audio event lane - owner: ProceduralAudioEvents
                 NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingAudioPings,
-                    PendingAudioPingCapacity,
+                    _pendingAudioEvents,
+                    PendingAudioEventCapacity,
                     nameof(ProceduralAudioEvents),
-                    nameof(_pendingAudioPings),
+                    nameof(_pendingAudioEvents),
                     NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingAudioPings, PendingAudioPingCapacity);
+                PrewarmQueue(ref _pendingAudioEvents, PendingAudioEventCapacity);
             }
 
-            if (!_nextFrameAudioPings.IsCreated)
+            if (!_nextFrameAudioEvents.IsCreated)
             {
-                _nextFrameAudioPings = new NativeQueue<AudioPingTriggerInfo>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioPingTriggerInfo>[8] - next-frame procedural ping lane - owner: ProceduralAudioEvents
+                _nextFrameAudioEvents = new NativeQueue<AudioEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioEvent>[16] - next-frame procedural audio event lane - owner: ProceduralAudioEvents
                 NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameAudioPings,
-                    PendingAudioPingCapacity,
+                    _nextFrameAudioEvents,
+                    PendingAudioEventCapacity,
                     nameof(ProceduralAudioEvents),
-                    nameof(_nextFrameAudioPings),
+                    nameof(_nextFrameAudioEvents),
                     NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameAudioPings, PendingAudioPingCapacity);
-            }
-
-            if (!_pendingStructuralStress.IsCreated)
-            {
-                _pendingStructuralStress = new NativeQueue<StructuralStressAudioInfo>(Allocator.Persistent); // COLD ALLOC: NativeQueue<StructuralStressAudioInfo>[8] - deferred structural stress audio lane - owner: ProceduralAudioEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingStructuralStress,
-                    PendingStructuralStressCapacity,
-                    nameof(ProceduralAudioEvents),
-                    nameof(_pendingStructuralStress),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingStructuralStress, PendingStructuralStressCapacity);
-            }
-
-            if (!_nextFrameStructuralStress.IsCreated)
-            {
-                _nextFrameStructuralStress = new NativeQueue<StructuralStressAudioInfo>(Allocator.Persistent); // COLD ALLOC: NativeQueue<StructuralStressAudioInfo>[8] - next-frame structural stress audio lane - owner: ProceduralAudioEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameStructuralStress,
-                    PendingStructuralStressCapacity,
-                    nameof(ProceduralAudioEvents),
-                    nameof(_nextFrameStructuralStress),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameStructuralStress, PendingStructuralStressCapacity);
+                PrewarmQueue(ref _nextFrameAudioEvents, PendingAudioEventCapacity);
             }
         }
 
@@ -470,21 +471,21 @@ namespace Hecton8.Audio
             }
         }
 
-        private static bool FlushAudioPings()
+        private static bool FlushAudioEvents()
         {
-            if (!_pendingAudioPings.IsCreated)
+            if (!_pendingAudioEvents.IsCreated)
                 return true;
 
-            int scanBudget = _pendingAudioPingCount > 0 ? _pendingAudioPingCount : PendingAudioPingCapacity;
-            while (scanBudget > 0 && !_pendingAudioPings.IsEmpty())
+            int scanBudget = _pendingAudioEventCount > 0 ? _pendingAudioEventCount : PendingAudioEventCapacity;
+            while (scanBudget > 0 && !_pendingAudioEvents.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return false;
 
-                if (!_pendingAudioPings.TryDequeue(out AudioPingTriggerInfo info))
+                if (!_pendingAudioEvents.TryDequeue(out AudioEvent audioEvent))
                     return true;
 
-                _pendingAudioPingCount--;
+                DecrementFrontEventCount(audioEvent.Kind);
                 scanBudget--;
                 IProceduralAudioEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
@@ -494,84 +495,72 @@ namespace Hecton8.Audio
                     if (listener == null || IsDeferredUnregisterPending(listener))
                         continue;
 
-                    DispatchAudioPingToListener(listener, in info);
+                    DispatchAudioEventToListener(listener, in audioEvent);
                 }
             }
 
-            if (_pendingAudioPings.IsEmpty())
+            if (_pendingAudioEvents.IsEmpty())
+            {
+                _pendingAudioEventCount = 0;
                 _pendingAudioPingCount = 0;
+                _pendingStructuralStressCount = 0;
+            }
 
             return true;
         }
 
-        private static bool FlushStructuralStress()
+        private static void DecrementFrontEventCount(AudioEventKind kind)
         {
-            if (!_pendingStructuralStress.IsCreated)
-                return true;
-
-            int scanBudget = _pendingStructuralStressCount > 0 ? _pendingStructuralStressCount : PendingStructuralStressCapacity;
-            while (scanBudget > 0 && !_pendingStructuralStress.IsEmpty())
+            if (_pendingAudioEventCount > 0)
+                _pendingAudioEventCount--;
+            switch (kind)
             {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return false;
-
-                if (!_pendingStructuralStress.TryDequeue(out StructuralStressAudioInfo info))
-                    return true;
-
-                _pendingStructuralStressCount--;
-                scanBudget--;
-                IProceduralAudioEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
-                for (int i = count - 1; i >= 0; i--)
-                {
-                    IProceduralAudioEventListener listener = rawArray[i];
-                    if (listener == null || IsDeferredUnregisterPending(listener))
-                        continue;
-
-                    DispatchStructuralStressToListener(listener, in info);
-                }
+                case AudioEventKind.AudioPing:
+                    if (_pendingAudioPingCount > 0)
+                        _pendingAudioPingCount--;
+                    break;
+                case AudioEventKind.StructuralStress:
+                    if (_pendingStructuralStressCount > 0)
+                        _pendingStructuralStressCount--;
+                    break;
             }
-
-            if (_pendingStructuralStress.IsEmpty())
-                _pendingStructuralStressCount = 0;
-
-            return true;
         }
 
         private static void DropQueuedEvents()
         {
-            if (_pendingAudioPings.IsCreated)
+            if (_pendingAudioEvents.IsCreated)
             {
-                while (_pendingAudioPings.TryDequeue(out _))
+                while (_pendingAudioEvents.TryDequeue(out _))
                 {
                 }
             }
 
-            if (_nextFrameAudioPings.IsCreated)
+            if (_nextFrameAudioEvents.IsCreated)
             {
-                while (_nextFrameAudioPings.TryDequeue(out _))
+                while (_nextFrameAudioEvents.TryDequeue(out _))
                 {
                 }
             }
 
-            if (_pendingStructuralStress.IsCreated)
-            {
-                while (_pendingStructuralStress.TryDequeue(out _))
-                {
-                }
-            }
-
-            if (_nextFrameStructuralStress.IsCreated)
-            {
-                while (_nextFrameStructuralStress.TryDequeue(out _))
-                {
-                }
-            }
-
+            _pendingAudioEventCount = 0;
+            _nextFrameAudioEventCount = 0;
             _pendingAudioPingCount = 0;
             _nextFrameAudioPingCount = 0;
             _pendingStructuralStressCount = 0;
             _nextFrameStructuralStressCount = 0;
+        }
+
+        private static void DispatchAudioEventToListener(IProceduralAudioEventListener listener, in AudioEvent audioEvent)
+        {
+            switch (audioEvent.Kind)
+            {
+                case AudioEventKind.AudioPing:
+                    DispatchAudioPingToListener(listener, in audioEvent.AudioPing);
+                    break;
+                case AudioEventKind.StructuralStress:
+                    DispatchStructuralStressToListener(listener, in audioEvent.StructuralStress);
+                    break;
+            }
         }
 
         private static void DispatchAudioPingToListener(IProceduralAudioEventListener listener, in AudioPingTriggerInfo info)
@@ -763,8 +752,7 @@ namespace Hecton8.Audio
 
         private static bool HasPendingFrontEvents()
         {
-            return (_pendingAudioPings.IsCreated && !_pendingAudioPings.IsEmpty())
-                || (_pendingStructuralStress.IsCreated && !_pendingStructuralStress.IsEmpty());
+            return _pendingAudioEvents.IsCreated && !_pendingAudioEvents.IsEmpty();
         }
 
         private static void ReportAudioPingOverflow()
@@ -781,23 +769,26 @@ namespace Hecton8.Audio
 
         private static void PromoteNextFrameEvents()
         {
-            if (_nextFrameAudioPings.IsCreated)
-            {
-                while (_nextFrameAudioPingCount > 0 && _nextFrameAudioPings.TryDequeue(out AudioPingTriggerInfo info))
-                {
-                    _nextFrameAudioPingCount--;
-                    _pendingAudioPings.Enqueue(info);
-                    _pendingAudioPingCount++;
-                }
-            }
+            if (!_nextFrameAudioEvents.IsCreated)
+                return;
 
-            if (_nextFrameStructuralStress.IsCreated)
+            while (_nextFrameAudioEventCount > 0 && _nextFrameAudioEvents.TryDequeue(out AudioEvent audioEvent))
             {
-                while (_nextFrameStructuralStressCount > 0 && _nextFrameStructuralStress.TryDequeue(out StructuralStressAudioInfo info))
+                _nextFrameAudioEventCount--;
+                _pendingAudioEvents.Enqueue(audioEvent);
+                _pendingAudioEventCount++;
+                switch (audioEvent.Kind)
                 {
-                    _nextFrameStructuralStressCount--;
-                    _pendingStructuralStress.Enqueue(info);
-                    _pendingStructuralStressCount++;
+                    case AudioEventKind.AudioPing:
+                        if (_nextFrameAudioPingCount > 0)
+                            _nextFrameAudioPingCount--;
+                        _pendingAudioPingCount++;
+                        break;
+                    case AudioEventKind.StructuralStress:
+                        if (_nextFrameStructuralStressCount > 0)
+                            _nextFrameStructuralStressCount--;
+                        _pendingStructuralStressCount++;
+                        break;
                 }
             }
         }

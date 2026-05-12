@@ -12,9 +12,6 @@ namespace Hecton8.World
     /// </summary>
     internal sealed class ScatterGPUIBackend : IDisposable
     {
-        private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _argsUpload =
-            new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: IndirectDrawIndexedArgs[1] - indirect scatter args upload cache - owner: ScatterGPUIBackend
-
         private GraphicsBuffer _instanceBuffer;
         private GraphicsBuffer _argsBuffer;
         private int _instanceCapacity;
@@ -86,12 +83,17 @@ namespace Hecton8.World
 
             if (_argsUploadMesh != mesh || _argsUploadInstanceCount != instanceCount)
             {
-                _argsUpload[0].indexCountPerInstance = mesh.GetIndexCount(0);
-                _argsUpload[0].instanceCount = (uint)instanceCount;
-                _argsUpload[0].startIndex = mesh.GetIndexStart(0);
-                _argsUpload[0].baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0));
-                _argsUpload[0].startInstance = 0u;
-                GraphicsBufferUploadUtility.UploadArray(_argsBuffer, _argsUpload, 1);
+                NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
+                    _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                {
+                    indexCountPerInstance = mesh.GetIndexCount(0),
+                    instanceCount = (uint)instanceCount,
+                    startIndex = mesh.GetIndexStart(0),
+                    baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
+                    startInstance = 0u
+                };
+                _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
                 _argsUploadMesh = mesh;
                 _argsUploadInstanceCount = instanceCount;
             }

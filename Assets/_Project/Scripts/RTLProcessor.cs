@@ -3,7 +3,8 @@ using System;
 namespace Hecton.Localization
 {
     /// <summary>
-    /// Zero-allocation RTL visual-order processor for Arabic and Hebrew localized labels.
+    /// Zero-allocation RTL logical text bridge for localized labels.
+    /// TextMeshPro owns bidi shaping through TMP_Text.isRightToLeftText.
     /// </summary>
     public static class RTLProcessor
     {
@@ -13,25 +14,7 @@ namespace Hecton.Localization
 
         public static ReadOnlySpan<char> ToVisualOrder(ReadOnlySpan<char> logical)
         {
-            if (logical.Length == 0)
-                return ReadOnlySpan<char>.Empty;
-
-            char[] buffer = GetBuffer(logical.Length);
-            int writeIndex = 0;
-            int readIndex = logical.Length - 1;
-            while (readIndex >= 0)
-            {
-                int clusterStart = readIndex;
-                while (clusterStart > 0 && IsCombiningMark(logical[clusterStart]))
-                    clusterStart--;
-
-                int clusterLength = readIndex - clusterStart + 1;
-                logical.Slice(clusterStart, clusterLength).CopyTo(buffer.AsSpan(writeIndex, clusterLength));
-                writeIndex += clusterLength;
-                readIndex = clusterStart - 1;
-            }
-
-            return buffer.AsSpan(0, writeIndex);
+            return logical;
         }
 
         public static bool TryGetVisualBuffer(ReadOnlySpan<char> logical, out char[] buffer, out int length)
@@ -43,10 +26,10 @@ namespace Hecton.Localization
                 return true;
             }
 
-            ReadOnlySpan<char> visual = ToVisualOrder(logical);
-            buffer = s_visualBuffer;
-            length = visual.Length;
-            return buffer != null;
+            buffer = GetBuffer(logical.Length);
+            logical.CopyTo(buffer.AsSpan(0, logical.Length));
+            length = logical.Length;
+            return true;
         }
 
         private static char[] GetBuffer(int requiredLength)
@@ -68,26 +51,5 @@ namespace Hecton.Localization
             return buffer;
         }
 
-        private static bool IsCombiningMark(char value)
-        {
-            return IsArabicCombiningMark(value) || IsHebrewCombiningMark(value);
-        }
-
-        private static bool IsArabicCombiningMark(char value)
-        {
-            return (value >= '\u0610' && value <= '\u061A') ||
-                   (value >= '\u064B' && value <= '\u065F') ||
-                   value == '\u0670' ||
-                   (value >= '\u06D6' && value <= '\u06ED');
-        }
-
-        private static bool IsHebrewCombiningMark(char value)
-        {
-            return (value >= '\u0591' && value <= '\u05BD') ||
-                   value == '\u05BF' ||
-                   (value >= '\u05C1' && value <= '\u05C2') ||
-                   (value >= '\u05C4' && value <= '\u05C5') ||
-                   value == '\u05C7';
-        }
     }
 }

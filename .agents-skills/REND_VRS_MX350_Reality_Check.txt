@@ -1,0 +1,51 @@
+# HECTON-8 | Variable Rate Shading | MX350 Reality Check
+
+Status: PENDING VERIFICATION
+Authority: TECH_SCOUT
+Date: 2026-05-11
+
+---
+
+## Law
+
+[RULE] MX350 baseline assumes Variable Rate Shading is unavailable until Unity runtime capability checks prove otherwise on the actual device.
+[RULE] Foveated rendering/VRS is High+ optional only, not a Low/MX350 optimization pillar.
+[RULE] Use render scale, fixed foveated simulation LOD, stencil rejection, GRD occlusion, and shader LOD before VRS on MX350.
+
+[FORBID] Shipping a VRS path without `SystemInfo.foveatedRenderingCaps` or Unity VRS capability evidence.
+[FORBID] Combining VRS/foveated rendering with dynamic resolution without checking Unity's documented incompatibilities.
+[FORBID] Describing MX350 as VRS-capable without a Player hardware capture.
+
+---
+
+## Evidence
+
+[SOURCE] Unity foveated rendering docs state PC standalone XR needs Unity 6+/URP, D3D12 or Vulkan, and a recent GPU such as Nvidia RTX2000+ or AMD RX6000+.
+https://docs.unity.cn/6000.2/Documentation/Manual/xr-foveated-rendering.html
+
+[SOURCE] Unity `SystemInfo.foveatedRenderingCaps` exposes the foveated rendering technique supported by the platform.
+https://docs.unity3d.com/kr/6000.0/ScriptReference/SystemInfo-foveatedRenderingCaps.html
+
+[SOURCE] Unity `CommandBuffer.SetShadingRateImage` and `ShadingRateInfo` are VRS-related APIs in Unity 6.2 alpha docs; adoption must verify availability in the pinned editor/package version before implementation.
+https://docs.unity.cn/6000.2/Documentation/ScriptReference/Rendering.CommandBuffer.SetShadingRateImage.html
+https://docs.unity.cn/6000.2/Documentation/ScriptReference/Rendering.ShadingRateInfo.html
+
+[SOURCE] NVIDIA's VRS material describes VRS as a Turing-era feature and explicitly ties it to Turing GPUs.
+https://developer.nvidia.com/blog/turing-variable-rate-shading-vrworks/
+
+---
+
+## MX350 Decision
+
+Default:
+- VRS OFF.
+- keep dynamic resolution/render scale path.
+- keep stencil/LOD/occlusion/fog fakes.
+
+Promotion gate:
+- actual MX350 Player run reports VRS/foveated caps.
+- Unity version exposes stable VRS APIs used by URP path.
+- GPU capture shows visual artifacts acceptable in VR.
+
+[STATUS] MX350 VRS support is PENDING VERIFICATION and must be treated as unsupported for budgets.
+

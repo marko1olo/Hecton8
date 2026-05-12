@@ -10,6 +10,7 @@ using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Hecton8.Modding;
 using Hecton8.Physics;
 using Hecton8.World;
 using NASAPunk.Visor;
@@ -20,6 +21,32 @@ using UnityEditor;
 
 namespace Hecton8.Atmosphere
 {
+    public readonly struct ThunderAcousticShockEvent
+    {
+        public readonly Vector3 PositionWS;
+        public readonly float RadiusMeters;
+        public readonly float Intensity01;
+        public readonly float LifetimeSeconds;
+        public readonly float CameraShake01;
+        public readonly float AcousticEnergy;
+
+        public ThunderAcousticShockEvent(
+            Vector3 positionWS,
+            float radiusMeters,
+            float intensity01,
+            float lifetimeSeconds,
+            float cameraShake01,
+            float acousticEnergy)
+        {
+            PositionWS = positionWS;
+            RadiusMeters = radiusMeters;
+            Intensity01 = intensity01;
+            LifetimeSeconds = lifetimeSeconds;
+            CameraShake01 = cameraShake01;
+            AcousticEnergy = acousticEnergy;
+        }
+    }
+
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Atmosphere/Surface Weather Director")]
     [DefaultExecutionOrder(-4500)]
@@ -30,6 +57,11 @@ namespace Hecton8.Atmosphere
         private const float ResolveRetryInterval = 2f;
         private const float LightningFlashSeconds = 0.1f;
         private const float SpeedOfSoundMetersPerSecond = 343f;
+        private const float ThunderAcousticShockMinRadiusMeters = 72f;
+        private const float ThunderAcousticShockMaxRadiusMeters = 240f;
+        private const float ThunderAcousticShockLifetimeSeconds = 8f;
+        private const float ThunderAcousticShockEnergyScale = 120000f;
+        private const float ThunderCameraShakeScale = 0.35f;
         private const float ScreenSpaceRainFrameTimeShedMs = 14f;
         private const int SurfaceWeatherPerformanceWarningCooldownFrames = 30;
         private const uint SurfaceWeatherSolveBudgetWarningHash = 0x53574657u;
@@ -803,18 +835,21 @@ namespace Hecton8.Atmosphere
                     stormFlashlightInterferenceRecoverySpeed);
             }
 
-            if (output.shouldTriggerLightning != 0 &&
-                weatherVfxRig != null &&
-                _executionMode == SurfaceExecutionMode.SurfaceActive)
+            if (output.shouldTriggerLightning != 0)
             {
-                weatherVfxRig.TriggerLightningStrike(
-                    ToVector3(output.lightningImpactPosition),
-                    _currentState.windDirection,
-                    _lightningFlashStrength,
-                    output.lightningPhaseA,
-                    output.lightningPhaseB,
-                    output.lightningBoltWidth,
-                    output.lightningLightRange);
+                WeatherEvents.RaiseLightning(math.saturate(_lightningFlashStrength));
+                if (weatherVfxRig != null &&
+                    _executionMode == SurfaceExecutionMode.SurfaceActive)
+                {
+                    weatherVfxRig.TriggerLightningStrike(
+                        ToVector3(output.lightningImpactPosition),
+                        _currentState.windDirection,
+                        _lightningFlashStrength,
+                        output.lightningPhaseA,
+                        output.lightningPhaseB,
+                        output.lightningBoltWidth,
+                        output.lightningLightRange);
+                }
             }
 
             if (output.shouldPlayThunder != 0)
@@ -1072,6 +1107,7 @@ namespace Hecton8.Atmosphere
             _lightningFlashRemaining = flashDuration;
             _lightningFlashStrength = flashBase * flashVariance;
             _lightningCooldown = ResolveNextLightningCooldown(electricalActivity);
+            WeatherEvents.RaiseLightning(math.saturate(_lightningFlashStrength));
             TriggerStormEquipmentPulse(
                 math.lerp(0.58f, 1f, electricalActivity),
                 lightningHudGlitchDuration,
@@ -1093,14 +1129,7 @@ namespace Hecton8.Atmosphere
                     _currentState.lightningLightRangeMultiplier * math.lerp(1f, gustMultiplier, 0.08f));
             }
 
-            if (thunderClips != null && thunderClips.Length > 0)
-            {
-                ConfigurePendingThunder(strikePlan.impactPosition, followPosition, electricalActivity);
-            }
-            else
-            {
-                _pendingThunderDelay = -1f;
-            }
+            ConfigurePendingThunder(strikePlan.impactPosition, followPosition, electricalActivity);
         }
 
         private void UpdateStormEquipmentInterference(float deltaTime)
@@ -1515,14 +1544,16 @@ namespace Hecton8.Atmosphere
                     math.max(0f, bindings.localRainDensityMultiplier),
                     math.max(0.1f, bindings.localRainAreaScale),
                     math.saturate(bindings.localRainExposure)));
-            Shader.SetGlobalFloat(_LightningFlashId, math.saturate(_lightningFlashStrength));
+            if (GlobalRegistry.CelestialEngine == null)
+                Shader.SetGlobalFloat(_LightningFlashId, math.saturate(_lightningFlashStrength));
             _debugScreenSpaceRainShed = shedScreenSpaceRain && surfaceVfxActive;
         }
 
         private static void PublishClearedWeatherShaderGlobals()
         {
             Shader.SetGlobalFloat(_RainIntensityId, 0f);
-            Shader.SetGlobalFloat(_LightningFlashId, 0f);
+            if (GlobalRegistry.CelestialEngine == null)
+                Shader.SetGlobalFloat(_LightningFlashId, 0f);
             Shader.SetGlobalFloat(_ScreenSpaceRainEnabledId, 0f);
             Shader.SetGlobalVector(_ScreenSpaceRainParamsId, Vector4.zero);
         }
@@ -1614,6 +1645,8 @@ namespace Hecton8.Atmosphere
 
         private void PlayThunder()
         {
+            DispatchThunderAcousticShock(_pendingThunderPosition, _pendingThunderVolume);
+
             if (thunderClips == null || thunderClips.Length == 0)
                 return;
 
@@ -1643,6 +1676,38 @@ namespace Hecton8.Atmosphere
                 _pendingThunderVolume,
                 _pendingThunderPitch,
                 audioManager.AmbientGroup);
+        }
+
+        private static void DispatchThunderAcousticShock(Vector3 shockPosition, float thunderVolume01)
+        {
+            float intensity01 = math.saturate(thunderVolume01);
+            if (intensity01 <= 0f)
+                return;
+
+            float radiusMeters = math.lerp(ThunderAcousticShockMinRadiusMeters, ThunderAcousticShockMaxRadiusMeters, intensity01);
+            float acousticEnergy = intensity01 * ThunderAcousticShockEnergyScale;
+            float cameraShake01 = math.saturate(intensity01 * ThunderCameraShakeScale);
+            ThunderAcousticShockEvent shockEvent = new ThunderAcousticShockEvent(
+                shockPosition,
+                radiusMeters,
+                intensity01,
+                ThunderAcousticShockLifetimeSeconds,
+                cameraShake01,
+                acousticEnergy);
+            HectonEventBus.Publish(in shockEvent);
+
+            PhysicsEventBus.NotifyAcousticPing(new AcousticPingEvent(
+                shockPosition,
+                radiusMeters,
+                intensity01,
+                ThunderAcousticShockLifetimeSeconds,
+                FieldTargetRole.HazardProbe,
+                0,
+                acousticEnergy));
+
+            var cameraJuice = GlobalRegistry.CameraJuice;
+            if (cameraJuice != null)
+                cameraJuice.TriggerSubmarineImpactShake(cameraShake01);
         }
 
         private bool TrySelectInitialProfile(out RuntimeWeatherProfile profile)

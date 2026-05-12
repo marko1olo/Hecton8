@@ -1,0 +1,3 @@
+MaterialCount=992
+KeywordBloatCount=3
+TransparentMaterialCount=656

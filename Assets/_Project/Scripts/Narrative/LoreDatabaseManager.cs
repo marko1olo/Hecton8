@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 #endif
 using Hecton.Localization;
 using Hecton8.Core;
@@ -51,7 +53,7 @@ namespace Hecton8.Narrative
             if (HasExpectedCapacity(words))
                 return;
 
-            // COLD ALLOC: long[WordCount] — packed industrial lore discovery persistence — owner: IndustrialLoreBitMask
+            // COLD ALLOC: long[WordCount] - packed industrial lore discovery persistence - owner: IndustrialLoreBitMask
             words = new long[WordCount];
         }
     }
@@ -75,6 +77,9 @@ namespace Hecton8.Narrative
             public readonly char[] TitleFallback;
             public readonly char[] BodyFallback;
             public readonly char[] SpeakerFallback;
+            public readonly int TitleFallbackLength;
+            public readonly int BodyFallbackLength;
+            public readonly int SpeakerFallbackLength;
 
             public LoreSeed(
                 string logId,
@@ -102,9 +107,9 @@ namespace Hecton8.Narrative
                 TitleKeyHash = ComputeLocalizedFieldHash(LogId, "_TITLE");
                 BodyKeyHash = ComputeLocalizedFieldHash(LogId, "_BODY");
                 SpeakerKeyHash = ComputeLocalizedFieldHash(LogId, "_SPEAKER");
-                TitleFallback = (title ?? string.Empty).ToCharArray();
-                BodyFallback = (body ?? string.Empty).ToCharArray();
-                SpeakerFallback = (speaker ?? string.Empty).ToCharArray();
+                TitleFallback = CopyToPowerOfTwoBuffer(title, out TitleFallbackLength);
+                BodyFallback = CopyToPowerOfTwoBuffer(body, out BodyFallbackLength);
+                SpeakerFallback = CopyToPowerOfTwoBuffer(speaker, out SpeakerFallbackLength);
             }
         }
 
@@ -139,7 +144,7 @@ namespace Hecton8.Narrative
             public LoreDeliveryMode DeliveryMode { get; }
         }
 
-        // COLD ALLOC: LoreSeed[50] — fixed industrial lore archive bank from survival spec — owner: LoreDatabaseManager
+        // COLD ALLOC: LoreSeed[50] - fixed industrial lore archive bank from survival spec - owner: LoreDatabaseManager
         private static readonly LoreSeed[] s_records =
         {
             new LoreSeed("industrial_shift_board_a", 0xeb76d1d6u, AudioLogCategory.Personal, "Shift Foreman", LoreDeliveryMode.Text, "Shift Board A - Dry Dock", "Twelve names remain on the rota. Two are crossed out after the ballast pump seized and the replacements never came back up."),
@@ -194,7 +199,7 @@ namespace Hecton8.Narrative
             new LoreSeed("survivor_route_scratch", 0x842c3decu, AudioLogCategory.Emergency, "Unknown Survivor", LoreDeliveryMode.Text, "Survivor Route Scratch", "Arrows carved into paint lead away from every official evacuation line. The last mark is a handprint pointed downward."),
         };
 
-        // COLD ALLOC: Dictionary<uint,int>[64] — hash-to-record lookup for industrial lore — owner: LoreDatabaseManager
+        // COLD ALLOC: Dictionary<uint,int>[64] - hash-to-record lookup for industrial lore - owner: LoreDatabaseManager
         private readonly Dictionary<uint, int> _recordIndexByHash = new Dictionary<uint, int>(64);
 
         private NativeArray<uint> _unlockedWords;
@@ -660,6 +665,7 @@ namespace Hecton8.Narrative
         private static bool TryResolveLocalizedOrFallback(
             int keyHash,
             char[] fallbackBuffer,
+            int fallbackLength,
             out char[] buffer,
             out int length,
             out bool rtl)
@@ -672,9 +678,23 @@ namespace Hecton8.Narrative
                 return true;
 
             buffer = fallbackBuffer ?? Array.Empty<char>();
-            length = buffer.Length;
+            length = Mathf.Clamp(fallbackLength, 0, buffer.Length);
             rtl = false;
             return false;
+        }
+
+        private static char[] CopyToPowerOfTwoBuffer(string value, out int length)
+        {
+            length = string.IsNullOrEmpty(value) ? 0 : value.Length;
+            int capacity = 1;
+            while (capacity < length)
+                capacity <<= 1;
+
+            char[] buffer = new char[capacity]; // COLD ALLOC: power-of-two lore fallback buffer - owner: LoreDatabaseManager
+            for (int i = 0; i < length; i++)
+                buffer[i] = value[i];
+
+            return buffer;
         }
 
         private bool TryGetRecordFieldBuffer(
@@ -696,13 +716,13 @@ namespace Hecton8.Narrative
             switch (fieldKind)
             {
                 case FieldKind.Title:
-                    return TryResolveLocalizedOrFallback(seed.TitleKeyHash, seed.TitleFallback, out buffer, out length, out rtl);
+                    return TryResolveLocalizedOrFallback(seed.TitleKeyHash, seed.TitleFallback, seed.TitleFallbackLength, out buffer, out length, out rtl);
 
                 case FieldKind.Speaker:
-                    return TryResolveLocalizedOrFallback(seed.SpeakerKeyHash, seed.SpeakerFallback, out buffer, out length, out rtl);
+                    return TryResolveLocalizedOrFallback(seed.SpeakerKeyHash, seed.SpeakerFallback, seed.SpeakerFallbackLength, out buffer, out length, out rtl);
 
                 default:
-                    return TryResolveLocalizedOrFallback(seed.BodyKeyHash, seed.BodyFallback, out buffer, out length, out rtl);
+                    return TryResolveLocalizedOrFallback(seed.BodyKeyHash, seed.BodyFallback, seed.BodyFallbackLength, out buffer, out length, out rtl);
             }
         }
 
@@ -817,7 +837,7 @@ namespace Hecton8.Narrative
             _unlockedWords = new NativeArray<uint>(
                 IndustrialLoreBitMask.RuntimeWordCount,
                 Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[2] — industrial lore unlock words — owner: LoreDatabaseManager
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[2] - industrial lore unlock words - owner: LoreDatabaseManager
         }
 
 #if UNITY_EDITOR
@@ -883,10 +903,13 @@ namespace Hecton8.Narrative
             {
                 string filePath = scriptPaths[i];
                 bool containsLoreSeed = false;
-                foreach (string line in File.ReadLines(filePath))
+                using (StreamReader reader = new StreamReader(filePath))
                 {
-                    if (line.IndexOf(LoreSeedPrefix, StringComparison.Ordinal) >= 0)
+                    while (reader.ReadLine() is string line)
                     {
+                        if (line.IndexOf(LoreSeedPrefix, StringComparison.Ordinal) < 0)
+                            continue;
+
                         containsLoreSeed = true;
                         break;
                     }
@@ -904,6 +927,16 @@ namespace Hecton8.Narrative
             }
 
             return sourcePaths;
+        }
+
+        private sealed class LoreHashBuildPreprocessor : IPreprocessBuildWithReport
+        {
+            public int callbackOrder => -2000;
+
+            public void OnPreprocessBuild(BuildReport report)
+            {
+                RebakeLoreHashes();
+            }
         }
 
         private static bool TryRebakeLoreSeedLine(string line, out string rebakedLine)

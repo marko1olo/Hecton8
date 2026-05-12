@@ -15,15 +15,16 @@ Shader "Hecton8/VFX/PhantomDrones"
     {
         Tags
         {
-            "Queue" = "Transparent"
-            "RenderType" = "Transparent"
+            "Queue" = "AlphaTest"
+            "RenderType" = "TransparentCutout"
             "RenderPipeline" = "UniversalPipeline"
             "IgnoreProjector" = "True"
         }
 
-        Blend One One
-        ZWrite Off
+        Blend Off
+        ZWrite On
         Cull Off
+        AlphaToMask On
 
         Pass
         {
@@ -98,6 +99,12 @@ Shader "Hecton8/VFX/PhantomDrones"
                 return lengthSq > 1e-6 ? value * rsqrt(lengthSq) : fallback;
             }
 
+            float HectonDitherCoverage(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -153,9 +160,9 @@ Shader "Hecton8/VFX/PhantomDrones"
                 half rimShaped = lerp(rimBase, rimQuad, saturate(((half)_EdgeBoost - 1.0h) * 0.3333h));
                 half rim = lerp(1.0h, rimShaped, saturate((half)_EdgeBoost));
                 half visibility = saturate(input.color.a);
-                clip(visibility - 0.0005h);
+                clip(visibility - max((half)HectonDitherCoverage(input.positionCS.xy), 0.0005h));
                 half emission = saturate(visibility + (rim + (half)input.signalBand * 0.18h) * visibility);
-                return half4(input.color.rgb * emission, emission);
+                return half4(input.color.rgb * emission, 1.0h);
             }
             ENDHLSL
         }

@@ -379,7 +379,6 @@ namespace Hecton8.Editor
             if (_preview != null) DestroyImmediate(_preview);
             _preview = atlas;
             _previewCh = 0;
-            Resources.UnloadUnusedAssets();
 
             EditorUtility.ClearProgressBar();
 

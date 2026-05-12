@@ -13,16 +13,17 @@ Shader "Hecton/FlexiblePipe"
         Tags
         {
             "RenderPipeline" = "UniversalPipeline"
-            "Queue" = "Transparent"
-            "RenderType" = "Transparent"
+            "Queue" = "AlphaTest"
+            "RenderType" = "TransparentCutout"
         }
 
         Pass
         {
             Name "FlexiblePipeForward"
             Tags { "LightMode" = "UniversalForward" }
-            Blend SrcAlpha OneMinusSrcAlpha
+            Blend Off
             ZWrite On
+            AlphaToMask On
             Cull Back
 
             HLSLPROGRAM
@@ -81,6 +82,12 @@ Shader "Hecton/FlexiblePipe"
             half FastTriangleSine01(half phase)
             {
                 return 1.0h - abs(frac(phase * 0.15915494h + 0.25h) * 2.0h - 1.0h);
+            }
+
+            float HectonDitherCoverage(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
             float FastTriangleSine(float phase)
@@ -180,7 +187,8 @@ Shader "Hecton/FlexiblePipe"
                 half flowPulse = FastTriangleSine01((input.pipeT * 18.0h - _Time.y * 2.4h) * 6.28318h);
                 flowPulse = smoothstep(0.62h, 1.0h, flowPulse) * input.flow01;
                 color += half3(0.0h, 0.52h, 0.82h) * flowPulse * 0.75h;
-                return half4(color, input.color.a);
+                clip(input.color.a - (half)HectonDitherCoverage(input.positionCS.xy));
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }

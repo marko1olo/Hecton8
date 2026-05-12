@@ -34,6 +34,8 @@ Shader "Hidden/Hecton8/VRBrownout"
                 float _HectonWorldBlurTexelRadius;
                 float _HectonVRBrownoutScanlineStrength;
                 float _HectonVRBrownoutDitherStrength;
+                float4 _HectonVrComfortSignals;
+                float4 _HectonVrComfortMotion;
             CBUFFER_END
 
             TEXTURE2D_X(_BlitTexture);
@@ -89,34 +91,54 @@ Shader "Hidden/Hecton8/VRBrownout"
                 float nearCollision = saturate(_HectonVRNearCollisionIntensity);
                 float2 uv = UnityStereoTransformScreenSpaceTex(input.screenUV);
                 float2 eyeStableUv = input.screenUV;
+                float vrComfortEnabled = saturate(_HectonVrComfortSignals.w);
+                float vrComfortTunnel = saturate(max(_HectonVrComfortSignals.x, _HectonVrComfortMotion.z)) * vrComfortEnabled;
+                float vrComfortBlackout = saturate(_HectonVrComfortSignals.y) * vrComfortEnabled;
+                float vrComfortPeripheralBlur = saturate(_HectonVrComfortSignals.z) * vrComfortEnabled;
+                float2 radialOffset = eyeStableUv * 2.0 - 1.0;
+                radialOffset.x *= _ScreenParams.x * rcp(max(_ScreenParams.y, 1.0));
+                float radialMagnitude = saturate(length(radialOffset));
+                float vrComfortEdge = smoothstep(0.36, 1.0, radialMagnitude);
                 [branch]
-                if (brownout <= 0.0001 && worldBlur <= 0.0001 && nearCollision <= 0.0001)
+                if (brownout <= 0.0001 &&
+                    worldBlur <= 0.0001 &&
+                    nearCollision <= 0.0001 &&
+                    vrComfortTunnel <= 0.0001 &&
+                    vrComfortBlackout <= 0.0001 &&
+                    vrComfortPeripheralBlur <= 0.0001)
+                {
                     return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv);
+                }
 
                 float eyeStableSeed = 0.0;
                 float row = 0.0;
                 [branch]
-                if (brownout > 0.0001)
+                if (brownout > 0.0001 || vrComfortTunnel > 0.0001 || vrComfortBlackout > 0.0001)
                 {
                     eyeStableSeed = ResolveEyeStableNoiseSeed();
                     row = floor(eyeStableUv.y * _ScreenParams.y * 0.5);
-                    float rowNoise = Hash21(float2(row, eyeStableSeed));
-                    float rowGate = step(0.62, rowNoise);
-                    uv.x += (rowNoise - 0.5) * brownout * rowGate * 0.0075;
-                    uv = saturate(uv);
+                    [branch]
+                    if (brownout > 0.0001)
+                    {
+                        float rowNoise = Hash21(float2(row, eyeStableSeed));
+                        float rowGate = step(0.62, rowNoise);
+                        uv.x += (rowNoise - 0.5) * brownout * rowGate * 0.0075;
+                        uv = saturate(uv);
+                    }
                 }
 
                 half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv);
                 [branch]
-                if (worldBlur > 0.0001)
+                if (worldBlur > 0.0001 || vrComfortPeripheralBlur > 0.0001)
                 {
-                    float2 blurStep = _BlitTexture_TexelSize.xy * max(0.0, _HectonWorldBlurTexelRadius) * worldBlur;
+                    float blurMix = saturate(max(worldBlur, vrComfortPeripheralBlur * vrComfortEdge));
+                    float2 blurStep = _BlitTexture_TexelSize.xy * max(0.0, _HectonWorldBlurTexelRadius) * blurMix;
                     half4 blurColor = color;
                     blurColor += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(uv + blurStep));
                     blurColor += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(uv - blurStep));
                     blurColor += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(uv + blurStep.yx));
                     blurColor += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(uv - blurStep.yx));
-                    color = lerp(color, blurColor * 0.2h, (half)worldBlur);
+                    color = lerp(color, blurColor * 0.2h, (half)blurMix);
                 }
 
                 [branch]
@@ -152,6 +174,19 @@ Shader "Hidden/Hecton8/VRBrownout"
                         (half3(0.94h, 0.034h, 0.018h) * (half)gate * scan) +
                         half3((half)(crawl * 0.05 * nearCollision), 0.004h, 0.002h);
                     color.rgb = lerp(color.rgb, redStatic, (half)saturate(nearCollision * (0.78 + gate * 0.22)));
+                }
+
+                [branch]
+                if (vrComfortTunnel > 0.0001 || vrComfortBlackout > 0.0001)
+                {
+                    float2 pixel = floor(eyeStableUv * _ScreenParams.xy);
+                    float ign = frac(52.9829189 * frac(dot(pixel + eyeStableSeed * 23.0, float2(0.06711056, 0.00583715))));
+                    float tunnelInner = lerp(0.74, 0.34, vrComfortTunnel);
+                    float tunnelMask = smoothstep(tunnelInner, 1.02, radialMagnitude) * vrComfortTunnel;
+                    float tunnelDither = step(ign, saturate(tunnelMask * 0.86 + vrComfortTunnel * 0.12));
+                    float ditheredTunnel = tunnelMask * lerp(0.58, 1.0, tunnelDither);
+                    half blackAmount = (half)saturate(max(ditheredTunnel, vrComfortBlackout));
+                    color.rgb = lerp(color.rgb, half3(0.0h, 0.0h, 0.0h), blackAmount);
                 }
 
                 return color;

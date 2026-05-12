@@ -18,9 +18,9 @@ Shader "Hecton8/UI/PDA Sonar Map"
     {
         Tags
         {
-            "Queue"="Transparent"
+            "Queue"="AlphaTest"
             "IgnoreProjector"="True"
-            "RenderType"="Transparent"
+            "RenderType"="TransparentCutout"
             "PreviewType"="Plane"
             "CanUseSpriteAtlas"="True"
             "RenderPipeline"="UniversalPipeline"
@@ -29,7 +29,8 @@ Shader "Hecton8/UI/PDA Sonar Map"
         Cull Off
         Lighting Off
         ZWrite Off
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend Off
+        AlphaToMask On
 
         Pass
         {
@@ -112,6 +113,12 @@ Shader "Hecton8/UI/PDA Sonar Map"
                 return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
             }
 
+            float HectonDitherCoverage(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             float FastPow24(float value)
             {
                 float v2 = value * value;
@@ -151,7 +158,10 @@ Shader "Hecton8/UI/PDA Sonar Map"
                 float enterDistance;
                 float exitDistance;
                 if (!TryIntersectVolume(rayOrigin, rayDirection, volumeMin, volumeMax, enterDistance, exitDistance))
-                    return half4(0.0, 0.0, 0.0, 0.0);
+                {
+                    clip(-1.0);
+                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
+                }
 
                 float marchDistance = max(enterDistance, 0.0);
                 float marchLength = max(exitDistance - marchDistance, 0.0);
@@ -209,7 +219,8 @@ Shader "Hecton8/UI/PDA Sonar Map"
                 float threatAlpha = threatGlow * _ThreatTint.a;
                 float3 finalColor = mapColor + (_ThreatTint.rgb * threatGlow);
                 float finalAlpha = saturate(max(mapAlpha, threatAlpha));
-                return half4(finalColor, finalAlpha) * i.color;
+                clip(finalAlpha * i.color.a - max(HectonDitherCoverage(i.vertex.xy), 0.0005));
+                return half4(finalColor * i.color.rgb, 1.0h);
             }
             ENDHLSL
         }

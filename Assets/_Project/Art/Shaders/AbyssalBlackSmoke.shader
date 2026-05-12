@@ -12,14 +12,15 @@ Shader "Hecton8/VFX/AbyssalBlackSmoke"
     {
         Tags
         {
-            "Queue" = "Transparent"
-            "RenderType" = "Transparent"
+            "Queue" = "AlphaTest+30"
+            "RenderType" = "TransparentCutout"
             "RenderPipeline" = "UniversalPipeline"
             "IgnoreProjector" = "True"
         }
 
-        Blend SrcAlpha OneMinusSrcAlpha
-        ZWrite Off
+        Blend Off
+        ZWrite On
+        AlphaToMask On
         Cull Off
 
         Pass
@@ -34,6 +35,7 @@ Shader "Hecton8/VFX/AbyssalBlackSmoke"
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
             struct AshParticleData
             {
@@ -117,6 +119,39 @@ Shader "Hecton8/VFX/AbyssalBlackSmoke"
                 return lerp(radial, radial4, saturate((softness - 1.0) * 0.3333));
             }
 
+            float InterleavedGradientNoise(float2 pixelPosition)
+            {
+                float2 pixel = floor(pixelPosition);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
+            float ResolveSceneDepthCutoutFade(float4 positionCS)
+            {
+                if (positionCS.w <= 0.0001)
+                    return 1.0;
+
+                float2 screenUV = positionCS.xy * rcp(positionCS.w) * 0.5 + 0.5;
+                if (any(screenUV < 0.0) || any(screenUV > 1.0))
+                    return 1.0;
+
+                float sceneRawDepth = SampleSceneDepth(screenUV);
+            #if UNITY_REVERSED_Z
+                float sceneDepthValid = step(0.0001, sceneRawDepth);
+            #else
+                float sceneDepthValid = step(sceneRawDepth, 0.9999);
+            #endif
+                float rawFragmentDepth = saturate(positionCS.z * rcp(positionCS.w));
+                float sceneDepthMeters = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
+                float fragmentDepthMeters = LinearEyeDepth(rawFragmentDepth, _ZBufferParams);
+                float depthFade = saturate((sceneDepthMeters - fragmentDepthMeters) * 2.5);
+                return lerp(1.0, depthFade, sceneDepthValid);
+            }
+
+            void ClipDitheredAlpha(float alpha, float4 positionCS)
+            {
+                clip(alpha * ResolveSceneDepthCutoutFade(positionCS) - InterleavedGradientNoise(positionCS.xy));
+            }
+
             half4 frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
@@ -124,9 +159,12 @@ Shader "Hecton8/VFX/AbyssalBlackSmoke"
                 float2 centered = input.uv * 2.0 - 1.0;
                 float radial = saturate(1.0 - dot(centered, centered));
                 float alpha = FastRadialSoftness(radial, _Softness) * input.color.a;
-                return half4(input.color.rgb, alpha);
+                ClipDitheredAlpha(alpha, input.positionCS);
+                return half4(input.color.rgb, 1.0h);
             }
             ENDHLSL
         }
     }
+
+    FallBack "Hidden/Hecton8/InternalBlackError"
 }

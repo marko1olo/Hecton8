@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -13,10 +14,13 @@ namespace Hecton8.Optimization
     {
         private const int LowVramGraphicsMemoryMbThreshold = 2048;
         private const int HalfResolutionTextureMipLimit = 1;
+        private const int SharedMemoryTextureMipLimit = 2;
         private const float LowVramBoidPopulationScale = 0.5f;
+        private const float SharedMemoryBoidPopulationScale = 0.4f;
 
         private static bool _initialized;
         private static bool _lowVramBudgetActive;
+        private static bool _sharedMemoryBudgetActive;
         private static bool _capturedMipLimit;
         private static int _baselineMipLimit;
 
@@ -34,11 +38,17 @@ namespace Hecton8.Optimization
         /// </summary>
         internal static bool IsLowVramBudgetActive => _lowVramBudgetActive;
 
+        /// <summary>
+        /// Returns whether UMA/shared-memory Deck-style budgeting is active.
+        /// </summary>
+        internal static bool IsSharedMemoryBudgetActive => _sharedMemoryBudgetActive;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _initialized = false;
             _lowVramBudgetActive = false;
+            _sharedMemoryBudgetActive = false;
             _capturedMipLimit = false;
             DetectedGraphicsMemoryMb = 0;
 
@@ -60,8 +70,12 @@ namespace Hecton8.Optimization
                 return;
 
             _initialized = true;
+            HardwareTierDetector.EnsureInitialized();
             DetectedGraphicsMemoryMb = Mathf.Max(0, SystemInfo.graphicsMemorySize);
-            _lowVramBudgetActive = DetectedGraphicsMemoryMb > 0 && DetectedGraphicsMemoryMb <= LowVramGraphicsMemoryMbThreshold;
+            _sharedMemoryBudgetActive = HardwareTierDetector.SharedMemoryModeActive;
+            _lowVramBudgetActive =
+                _sharedMemoryBudgetActive ||
+                (DetectedGraphicsMemoryMb > 0 && DetectedGraphicsMemoryMb <= LowVramGraphicsMemoryMbThreshold);
             if (!_lowVramBudgetActive)
                 return;
 
@@ -85,7 +99,8 @@ namespace Hecton8.Optimization
             if (!_lowVramBudgetActive)
                 return clampedRequested;
 
-            int scaledCount = Mathf.RoundToInt(clampedRequested * LowVramBoidPopulationScale);
+            float scale = _sharedMemoryBudgetActive ? SharedMemoryBoidPopulationScale : LowVramBoidPopulationScale;
+            int scaledCount = Mathf.RoundToInt(clampedRequested * scale);
             return Mathf.Clamp(scaledCount, minimumCount, maximumCount);
         }
 
@@ -100,7 +115,10 @@ namespace Hecton8.Optimization
 
         private static void ApplyTextureBudget()
         {
-            int enforcedMipLimit = Mathf.Max(QualitySettings.globalTextureMipmapLimit, HalfResolutionTextureMipLimit);
+            int minimumMipLimit = _sharedMemoryBudgetActive
+                ? SharedMemoryTextureMipLimit
+                : HalfResolutionTextureMipLimit;
+            int enforcedMipLimit = Mathf.Max(QualitySettings.globalTextureMipmapLimit, minimumMipLimit);
             if (QualitySettings.globalTextureMipmapLimit != enforcedMipLimit)
                 QualitySettings.globalTextureMipmapLimit = enforcedMipLimit;
         }

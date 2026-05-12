@@ -22,12 +22,18 @@ namespace Hecton8.SaveSystem
         public const int ChunkResolution = 32;
         public const int CellCount = ChunkResolution * ChunkResolution * ChunkResolution;
         public const int DirtyMaskWordCount = CellCount / 32;
+        public const byte StorageDense = 0;
+        public const byte StorageUniformSdfRle = 1 << 0;
+        public const int UniformSdfRlePayloadBytes = sizeof(ushort);
 
         public long chunkX;
         public long chunkY;
         public long chunkZ;
         public float voxelSize;
         public int cellCount;
+        public byte storageFlags;
+        public byte reservedStorage;
+        public ushort uniformSdfValueBits;
         public uint[] dirtyMaskWords;
         public ushort[] sdfValueBits;
         public byte[] materialIds;
@@ -38,24 +44,21 @@ namespace Hecton8.SaveSystem
         {
             if (requiredCellCount <= 0)
             {
-                if (dirtyMaskWords == null)
-                    dirtyMaskWords = Array.Empty<uint>();
-
-                if (sdfValueBits == null)
-                    sdfValueBits = Array.Empty<ushort>();
-
-                if (materialIds == null)
-                    materialIds = Array.Empty<byte>();
-
-                if (cellFlags == null)
-                    cellFlags = Array.Empty<byte>();
-
-                if (cells == null)
-                    cells = Array.Empty<VoxelDeltaCellDTO>();
-
+                dirtyMaskWords = Array.Empty<uint>();
+                sdfValueBits = Array.Empty<ushort>();
+                materialIds = Array.Empty<byte>();
+                cellFlags = Array.Empty<byte>();
+                cells = Array.Empty<VoxelDeltaCellDTO>();
                 cellCount = 0;
+                storageFlags = StorageDense;
+                reservedStorage = 0;
+                uniformSdfValueBits = 0;
                 return;
             }
+
+            storageFlags = StorageDense;
+            reservedStorage = 0;
+            uniformSdfValueBits = 0;
 
             if (dirtyMaskWords == null || dirtyMaskWords.Length != DirtyMaskWordCount)
                 dirtyMaskWords = new uint[DirtyMaskWordCount];

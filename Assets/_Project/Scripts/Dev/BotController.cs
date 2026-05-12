@@ -211,8 +211,8 @@ namespace Hecton8.Dev
             _hasFailure = false;
             _hasDriveCommand = _driveScale > 0f;
             _failureReason = FailureNone;
-            _csvDirectoryPath = Application.persistentDataPath;
-            CsvPath = Path.Combine(_csvDirectoryPath, CsvFileName);
+            _csvDirectoryPath = HectonPersistentPathPolicy.RootPath;
+            CsvPath = HectonPersistentPathPolicy.CombineFile(CsvFileName);
             _running = true;
         }
 

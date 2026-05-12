@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.Scavenging;
 using Unity.Burst;
 using Unity.Collections;
@@ -18,6 +19,7 @@ namespace Hecton8.World
     {
         private const float RegrowthDelaySeconds = 4f * 60f * 60f;
         private const float DefaultRegrowthDurationSeconds = 90f;
+        private const float FloraGrowthFrostTickIntervalSeconds = 10f;
         private const int DefaultTrackedRegrowthCapacity = 2048;
         private const float SeedFlightDurationSeconds = 60f;
         private const float SeedSproutDelaySeconds = 2f * 60f * 60f;
@@ -80,6 +82,7 @@ namespace Hecton8.World
             public float HeightScale;
             public float WidthScale;
             public float ExternalShadeOcclusion01;
+            public float RadiationGrowthMultiplier;
             public int TypeId;
             public byte SeenThisScan;
             public byte Reserved0;
@@ -145,7 +148,8 @@ namespace Hecton8.World
                 float durationSeconds = math.max(1f, state.GrowthDurationSeconds);
                 float ageSeconds = math.max(0f, CurrentPlayTimeSeconds - state.SpawnPlayTimeSeconds);
                 float growthRateMultiplier = ResolveSymbioticGrowthMultiplier(state.InstanceUid) *
-                                             math.max(1f, LunarResonanceGrowthMultiplier);
+                                             math.max(1f, LunarResonanceGrowthMultiplier) *
+                                             math.max(1f, state.RadiationGrowthMultiplier);
                 float progress01 = math.saturate((ageSeconds / durationSeconds) * growthRateMultiplier);
                 float maturationMultiplier = ResolveMaturationMultiplier(progress01);
                 float growthMultiplier = ResolveLightStarvationGrowthMultiplier(index, state, progress01);
@@ -155,7 +159,7 @@ namespace Hecton8.World
                     Progress01 = progress01,
                     GrowthMultiplier = growthMultiplier,
                     ScaleMultiplier = maturationMultiplier,
-                    ResourceYieldMultiplier = maturationMultiplier
+                    ResourceYieldMultiplier = progress01
                 };
             }
 
@@ -265,6 +269,7 @@ namespace Hecton8.World
         private bool _maturationJobScheduled;
         private float _lunarResonanceExpirePlayTimeSeconds;
         private float _lunarResonanceGrowthMultiplier = 1f;
+        private float _nextFloraGrowthFrostTickPlayTime;
         private float _lastSeedPlayTime;
         private bool _tickRegistered;
         private bool _slowTickRegistered;
@@ -489,6 +494,7 @@ namespace Hecton8.World
 
                 Vector3 runtimePosition = ExtractTranslation(matrices[i]);
                 float externalShadeOcclusion01 = ResolveMigratorySargassumShadeOcclusion(runtimePosition);
+                float radiationGrowthMultiplier = ResolveRadiationGrowthMultiplier(runtimePosition);
                 float spawnPlayTimeSeconds;
                 if (!registry.TryGetFloraSpawnTimestamp(instanceUid, out spawnPlayTimeSeconds))
                 {
@@ -506,6 +512,7 @@ namespace Hecton8.World
                     state.HeightScale = Mathf.Abs(metadata[i].HeightScale);
                     state.WidthScale = Mathf.Abs(metadata[i].WidthScale);
                     state.ExternalShadeOcclusion01 = externalShadeOcclusion01;
+                    state.RadiationGrowthMultiplier = radiationGrowthMultiplier;
                     state.TypeId = types[i];
                     state.SeenThisScan = 1;
                     _maturationStates[existingIndex] = state;
@@ -526,6 +533,7 @@ namespace Hecton8.World
                     HeightScale = Mathf.Abs(metadata[i].HeightScale),
                     WidthScale = Mathf.Abs(metadata[i].WidthScale),
                     ExternalShadeOcclusion01 = externalShadeOcclusion01,
+                    RadiationGrowthMultiplier = radiationGrowthMultiplier,
                     TypeId = types[i],
                     SeenThisScan = 1,
                     Reserved0 = 0,
@@ -573,6 +581,12 @@ namespace Hecton8.World
             }
 
             return Mathf.Clamp01(occlusion01);
+        }
+
+        private static float ResolveRadiationGrowthMultiplier(Vector3 runtimePosition)
+        {
+            float radiation01 = HectonHazardManager.GetHazardIntensity(runtimePosition, HazardType.Radiation);
+            return radiation01 > 0.0001f ? 3f : 1f;
         }
 
         private void TryRegisterSymbioticFungalNode(in FloraMaturationState state)
@@ -909,6 +923,10 @@ namespace Hecton8.World
                 return;
 
             float currentPlayTime = GetCurrentPlayTimeSeconds();
+            if (currentPlayTime < _nextFloraGrowthFrostTickPlayTime)
+                return;
+
+            _nextFloraGrowthFrostTickPlayTime = currentPlayTime + FloraGrowthFrostTickIntervalSeconds;
             UpdatePendingSeedTimers(registry, currentPlayTime);
             for (int i = 0; i < _regrowthStates.Length; i++)
             {

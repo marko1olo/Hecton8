@@ -6,14 +6,18 @@ Shader "Hecton8/UI/AcousticRadarVoxel"
         _PulseIntensity ("Pulse Intensity", Range(0, 4)) = 1.15
         _VoxelDitherDensity ("Voxel Dither Density", Range(2, 32)) = 9
         _ScanlineDensity ("Scanline Density", Range(4, 64)) = 22
+        _AlphaCutoff ("Alpha Cutoff", Range(0, 1)) = 0.25
+        _StencilRef ("Stencil Reference", Float) = 8
+        _StencilReadMask ("Stencil Read Mask", Float) = 255
+        _StencilComp ("Stencil Comparison", Float) = 3
     }
 
     SubShader
     {
         Tags
         {
-            "RenderType"="Transparent"
-            "Queue"="Transparent"
+            "RenderType"="TransparentCutout"
+            "Queue"="AlphaTest+80"
             "RenderPipeline"="UniversalPipeline"
         }
 
@@ -22,10 +26,17 @@ Shader "Hecton8/UI/AcousticRadarVoxel"
             Name "Forward"
             Tags { "LightMode"="UniversalForward" }
 
-            Blend SrcAlpha One
-            ZWrite Off
+            Blend One Zero
+            ZWrite On
             ZTest LEqual
             Cull Off
+            Stencil
+            {
+                Ref [_StencilRef]
+                ReadMask [_StencilReadMask]
+                Comp [_StencilComp]
+                Pass Keep
+            }
 
             HLSLPROGRAM
             #pragma target 4.5
@@ -58,6 +69,7 @@ Shader "Hecton8/UI/AcousticRadarVoxel"
                 float _PulseIntensity;
                 float _VoxelDitherDensity;
                 float _ScanlineDensity;
+                float _AlphaCutoff;
             CBUFFER_END
 
             float Hash31(float3 p)
@@ -100,8 +112,9 @@ Shader "Hecton8/UI/AcousticRadarVoxel"
                 float scanGlow = scanSq * scanSq * scanBase;
                 half pulse = (half)(0.72 + 0.28 * (FastTrianglePulse01(_Time.y * 7.0 + input.positionWS.x * 13.0) * 2.0 - 1.0));
                 half alpha = saturate(_BaseColor.a * (0.44h + scanGlow * 0.42h + pulse * 0.24h));
+                clip(alpha - (half)_AlphaCutoff);
                 half3 color = _BaseColor.rgb * (0.75h + scanGlow * (half)_PulseIntensity);
-                return half4(color, alpha);
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
@@ -20,7 +21,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-90)]
-    public class HectonIndirectVegetationRenderer : MonoBehaviour, ITickable
+    public class HectonIndirectVegetationRenderer : MonoBehaviour, ITickable, IOriginShiftListener
     {
         /// <summary>Stride of one Matrix4x4 entry expected in the external instance matrix buffer.</summary>
         public const int InstanceMatrixStride = 64;
@@ -40,6 +41,11 @@ namespace Hecton8.World
         private const byte VisibilityMaskNear = 1 << 0;
         private const byte VisibilityMaskFar = 1 << 1;
         private const byte VisibilityMaskShadow = 1 << 2;
+        private const int FloraGrowthTelemetryFrameCount = 300;
+        private const int FloraGrowthTelemetryMaxSamples = 64;
+        private const int FloraGrowthTelemetryDumpVersion = 1;
+        private const uint FloraGrowthTelemetryHashSeed = 2166136261u;
+        private const string FloraGrowthDumpRelativePath = "Docs/AgentLogs/Dump_FLORA_GROWTH_SYSTEM.bin";
 #if UNITY_EDITOR
         private const string ComputeShaderAssetPath = "Assets/_Project/Art/Shaders/FloraCulling.compute";
         private const string AbyssalFlowFieldComputeAssetPath = "Assets/_Project/Art/Shaders/AbyssalFlowField.compute";
@@ -54,6 +60,7 @@ namespace Hecton8.World
         private static readonly int _InstanceMatricesId = Shader.PropertyToID("_HectonInstanceMatrices");
         private static readonly int _InstanceDataId = Shader.PropertyToID("_HectonVegetationInstanceData");
         private static readonly int _FloraPhaseSeedsId = Shader.PropertyToID("_HectonFloraPhaseSeeds");
+        private static readonly int _FloraAges01Id = Shader.PropertyToID("_HectonFloraAges01");
         private static readonly int _FloraSnapFlagsId = Shader.PropertyToID("_HectonFloraSnapFlags");
         private static readonly int _FloraSnapFlagsEnabledId = Shader.PropertyToID("_HectonFloraSnapFlagsEnabled");
         private static readonly int _VisibleInstanceIndicesId = Shader.PropertyToID("_HectonVisibleInstanceIndices");
@@ -226,7 +233,7 @@ namespace Hecton8.World
         [Header("LOD")]
         [SerializeField, Range(10f, 80f)]
         [Tooltip("Near band end distance in meters. Real strip geometry renders only inside this radius.")]
-        private float _nearLodDistance = 50f;
+        private float _nearLodDistance = 20f;
 
         [SerializeField, Range(60f, 180f)]
         [Tooltip("Far band end distance in meters. Billboard cards render only up to this radius.")]
@@ -303,6 +310,7 @@ namespace Hecton8.World
         private Bounds _explicitBounds;
         private bool _hasBoundsOverride;
         private bool _isRegistered;
+        private bool _originShiftRegistered;
         private bool _legacyDataDirty = true;
         private int _instanceCount;
         private Camera _cachedCullCamera;
@@ -364,12 +372,16 @@ namespace Hecton8.World
         private GraphicsBuffer _visibleIndicesLod0Buffer;
         private GraphicsBuffer _visibleIndicesLod1Buffer;
         private GraphicsBuffer _visibleIndicesShadowBuffer;
+        private GraphicsBuffer _floraAgeBuffer;
         private GraphicsBuffer _floraSnapFlagBuffer;
         private GraphicsBuffer _indirectArgsLod0Buffer;
         private GraphicsBuffer _indirectArgsLod1Buffer;
         private GraphicsBuffer _indirectArgsShadowBuffer;
         private int _gpuVisibleIndexCapacity;
+        private int _floraAgeCapacity;
         private int _floraSnapFlagCapacity;
+        private bool _floraAgeBufferDirty = true;
+        private bool _floraAgesAuthoredExternally;
         private bool _floraSnapFlagBufferRequiresClear;
         private int _gpuCullingFrameIndex;
         private bool _hasFarCullingSnapshot;
@@ -386,6 +398,24 @@ namespace Hecton8.World
         private int _depthPyramidDownsampleKernel = -1;
 
         private HectonVegetationInstanceData[] _legacyInstanceData;
+        private NativeArray<float> _floraAges01;
+        private NativeArray<FloraGrowthTelemetryEntry> _floraGrowthTelemetry;
+        private int _floraGrowthTelemetryCursor;
+        private int _lastFloraGrowthTelemetryFrame = -1;
+        private bool _floraGrowthTelemetryDumped;
+
+        private struct FloraGrowthTelemetryEntry
+        {
+            public int FrameIndex;
+            public int InstanceCount;
+            public int SampleCount;
+            public int NegativeAgeCount;
+            public int NanAgeCount;
+            public int DirtyUpload;
+            public float MinAge01;
+            public float MaxAge01;
+            public uint AgeHash;
+        }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildVegetationVisibilityMaskJob : IJobParallelFor
@@ -787,6 +817,66 @@ namespace Hecton8.World
         /// <summary>Current active instance count published into the indirect args payload.</summary>
         public int BoundInstanceCount => _instanceCount;
 
+        /// <summary>Renderer-owned SoA growth lane uploaded as _HectonFloraAges01. Negative entries are harvested/culling sentinels.</summary>
+        public NativeArray<float> FloraAges01 => _floraAges01;
+
+        /// <summary>
+        /// Writes one authored flora age into the renderer-owned SoA lane and schedules a GPU upload.
+        /// </summary>
+        /// <param name="instanceIndex">Active vegetation instance index.</param>
+        /// <param name="age01">Growth age. Negative values mean harvested/culled. Non-finite values become the cull sentinel.</param>
+        /// <returns>True when the age entry was accepted.</returns>
+        public bool TrySetFloraAge01(int instanceIndex, float age01)
+        {
+            if (instanceIndex < 0 || instanceIndex >= _instanceCount)
+                return false;
+
+            EnsureFloraAgeCapacity(_instanceCount);
+            if (!_floraAges01.IsCreated || instanceIndex >= _floraAges01.Length)
+                return false;
+
+            _floraAges01[instanceIndex] = SanitizeFloraAgeForUpload(age01);
+            _floraAgesAuthoredExternally = true;
+            _floraAgeBufferDirty = true;
+            return true;
+        }
+
+        /// <summary>
+        /// Marks externally-mutated <see cref="FloraAges01"/> data for upload without copying or allocating.
+        /// </summary>
+        public void MarkFloraAgesDirty()
+        {
+            if (!_floraAges01.IsCreated)
+                return;
+
+            _floraAgesAuthoredExternally = true;
+            _floraAgeBufferDirty = true;
+        }
+
+        /// <summary>
+        /// Copies an external NativeArray age lane into the renderer-owned SoA buffer for deterministic restore or farming systems.
+        /// </summary>
+        /// <param name="ages01">Source age lane. Negative values are cull sentinels.</param>
+        /// <param name="count">Number of entries to copy.</param>
+        /// <returns>True when the source was valid and at least one active entry was copied.</returns>
+        public bool TryCopyFloraAges01(NativeArray<float> ages01, int count)
+        {
+            if (!ages01.IsCreated || count <= 0 || ages01.Length < count || _instanceCount <= 0)
+                return false;
+
+            int copyCount = math.min(count, _instanceCount);
+            EnsureFloraAgeCapacity(_instanceCount);
+            if (!_floraAges01.IsCreated || _floraAges01.Length < copyCount)
+                return false;
+
+            for (int instanceIndex = 0; instanceIndex < copyCount; instanceIndex++)
+                _floraAges01[instanceIndex] = SanitizeFloraAgeForUpload(ages01[instanceIndex]);
+
+            _floraAgesAuthoredExternally = true;
+            _floraAgeBufferDirty = true;
+            return copyCount > 0;
+        }
+
         /// <summary>Configured distance where full strip geometry stops rendering.</summary>
         public float NearLodDistance => _nearLodDistance;
 
@@ -807,6 +897,7 @@ namespace Hecton8.World
             totalBytes += EstimateGraphicsBufferBytes(_uploadedInstanceMatrixBuffer);
             totalBytes += EstimateGraphicsBufferBytes(_uploadedInstanceDataBuffer);
             totalBytes += EstimateGraphicsBufferBytes(_batchHandleBuffer);
+            totalBytes += EstimateGraphicsBufferBytes(_floraAgeBuffer);
             totalBytes += EstimateGraphicsBufferBytes(_floraSnapFlagBuffer);
             return totalBytes;
         }
@@ -883,10 +974,12 @@ namespace Hecton8.World
         private void OnEnable()
         {
             TryRegister();
+            TryRegisterOriginShiftListener();
         }
 
         private void OnDisable()
         {
+            TryUnregisterOriginShiftListener();
             TryUnregister();
             _hasPreviousMotionCameraPosition = false;
             _previousMotionCamera = null;
@@ -896,11 +989,14 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            TryUnregisterOriginShiftListener();
             TryUnregister();
             ReleaseBatchRendererGroupResources();
             ReleaseGpuIndirectResources();
             ReleaseLegacyInstanceDataBuffer();
             ReleaseUploadedInstanceBuffers();
+            ReleaseFloraAgeResources();
+            ReleaseFloraGrowthTelemetryResources();
             ReleaseAuxiliaryMaterials();
             ReleaseRuntimeMaterial();
             ReleaseCpuCullingData();
@@ -1096,6 +1192,8 @@ namespace Hecton8.World
             _instanceDataBuffer = null;
             _floraPhaseSeedBuffer = null;
             _legacyDataDirty = true;
+            _floraAgesAuthoredExternally = false;
+            _floraAgeBufferDirty = true;
             _floraSnapFlagBufferRequiresClear = true;
         }
 
@@ -1111,6 +1209,9 @@ namespace Hecton8.World
 
             _instanceCount = clampedCount;
             _legacyDataDirty = true;
+            _floraAgeBufferDirty = true;
+            if (clampedCount == 0)
+                _floraAgesAuthoredExternally = false;
             _floraSnapFlagBufferRequiresClear = true;
             _hasFarCullingSnapshot = false;
         }
@@ -1131,6 +1232,26 @@ namespace Hecton8.World
         public void ClearDrawBoundsOverride()
         {
             _hasBoundsOverride = false;
+        }
+
+        /// <inheritdoc />
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            if (shiftOffset.sqrMagnitude <= 0.000001f)
+                return;
+
+            _cachedCullCameraPosition -= shiftOffset;
+            if (_hasPreviousMotionCameraPosition)
+                _previousMotionCameraPosition -= shiftOffset;
+
+            _hasPreviousMotionCameraPosition = false;
+            _previousMotionCamera = null;
+            _hasFarCullingSnapshot = false;
+            _gpuCullingFrameIndex = 0;
+
+            if (_hasBoundsOverride)
+                _explicitBounds.center -= shiftOffset;
         }
 
         /// <summary>
@@ -1399,8 +1520,11 @@ namespace Hecton8.World
                 return;
 
             material.enableInstancing = true;
+            GraphicsBuffer floraAgeBuffer = ResolveFloraAgeBuffer();
             material.SetBuffer(_InstanceMatricesId, _instanceMatrixBuffer);
             material.SetBuffer(_InstanceDataId, activeInstanceDataBuffer);
+            if (floraAgeBuffer != null)
+                material.SetBuffer(_FloraAges01Id, floraAgeBuffer);
             if (_floraPhaseSeedBuffer != null)
                 material.SetBuffer(_FloraPhaseSeedsId, _floraPhaseSeedBuffer);
             if (_floraSnapFlagBuffer != null)
@@ -1579,8 +1703,13 @@ namespace Hecton8.World
                 return;
             }
 
+            GraphicsBuffer floraAgeBuffer = ResolveFloraAgeBuffer();
+            if (floraAgeBuffer == null)
+                return;
+
             _cullingCompute.SetBuffer(_cullFloraKernel, _SourceMatricesId, _instanceMatrixBuffer);
             _cullingCompute.SetBuffer(_cullFloraKernel, _SourceDataId, activeInstanceDataBuffer);
+            _cullingCompute.SetBuffer(_cullFloraKernel, _FloraAges01Id, floraAgeBuffer);
             _cullingCompute.SetBuffer(_cullFloraKernel, _VisibleIndicesLod0Id, _visibleIndicesLod0Buffer);
             if (_visibleIndicesLod1Buffer != null)
                 _cullingCompute.SetBuffer(_cullFloraKernel, _VisibleIndicesLod1Id, _visibleIndicesLod1Buffer);
@@ -1632,6 +1761,7 @@ namespace Hecton8.World
             {
                 _cullingCompute.SetBuffer(_cullFloraShadowKernel, _SourceMatricesId, _instanceMatrixBuffer);
                 _cullingCompute.SetBuffer(_cullFloraShadowKernel, _SourceDataId, activeInstanceDataBuffer);
+                _cullingCompute.SetBuffer(_cullFloraShadowKernel, _FloraAges01Id, floraAgeBuffer);
                 _cullingCompute.SetBuffer(_cullFloraShadowKernel, _VisibleIndicesShadowId, _visibleIndicesShadowBuffer);
                 _cullingCompute.SetInt(_SourceInstanceCountId, _instanceCount);
                 _cullingCompute.SetMatrix(_ViewProjectionId, viewProjection);
@@ -1861,6 +1991,272 @@ namespace Hecton8.World
             ReleaseGraphicsBuffer(ref _floraSnapFlagBuffer);
             _floraSnapFlagCapacity = 0;
             _floraSnapFlagBufferRequiresClear = false;
+        }
+
+        private GraphicsBuffer ResolveFloraAgeBuffer()
+        {
+            if (_instanceCount <= 0)
+                return null;
+
+            EnsureFloraAgeCapacity(_instanceCount);
+            if (_floraAgeBuffer == null || !_floraAges01.IsCreated)
+                return null;
+
+            if (_floraAgeBufferDirty)
+            {
+                if (!_hasCpuCullingData && !_floraAgesAuthoredExternally)
+                    FillDefaultFloraAges(_instanceCount);
+
+                RecordFloraGrowthTelemetry(_instanceCount, true);
+                if (_floraAgesAuthoredExternally)
+                    SanitizeFloraAgeBufferForUpload(_instanceCount);
+                GraphicsBufferUploadUtility.UploadNativeArray(_floraAgeBuffer, _floraAges01, _instanceCount);
+                _floraAgeBufferDirty = false;
+            }
+            else
+            {
+                RecordFloraGrowthTelemetry(_instanceCount, false);
+            }
+
+            return _floraAgeBuffer;
+        }
+
+        private void EnsureFloraAgeCapacity(int requiredCount)
+        {
+            if (requiredCount <= 0)
+                return;
+
+            int requiredCapacity = Mathf.NextPowerOfTwo(Mathf.Max(16, requiredCount));
+            if (_floraAgeBuffer != null &&
+                _floraAgeBuffer.IsValid() &&
+                _floraAgeCapacity >= requiredCapacity &&
+                _floraAges01.IsCreated &&
+                _floraAges01.Length >= requiredCapacity)
+            {
+                return;
+            }
+
+            ReleaseFloraAgeResources();
+            _floraAges01 = new NativeArray<float>(requiredCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[NextPowerOfTwo(instanceCount)] - flora age SoA upload lane - owner: HectonIndirectVegetationRenderer
+            NativeMemorySentinel.RegisterNativeArray(_floraAges01, nameof(HectonIndirectVegetationRenderer), nameof(_floraAges01), NativeAllocationLifetime.Session);
+            _floraAgeBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] - StructuredBuffer<float> flora age lane - owner: HectonIndirectVegetationRenderer
+            _floraAgeCapacity = requiredCapacity;
+            FillDefaultFloraAges(requiredCapacity);
+            _floraAgeBufferDirty = true;
+        }
+
+        private void FillDefaultFloraAges(int count)
+        {
+            if (!_floraAges01.IsCreated)
+                return;
+
+            int safeCount = Mathf.Min(count, _floraAges01.Length);
+            for (int instanceIndex = 0; instanceIndex < safeCount; instanceIndex++)
+                _floraAges01[instanceIndex] = 1f;
+        }
+
+        private void SanitizeFloraAgeBufferForUpload(int count)
+        {
+            if (!_floraAges01.IsCreated)
+                return;
+
+            int safeCount = math.min(count, _floraAges01.Length);
+            for (int instanceIndex = 0; instanceIndex < safeCount; instanceIndex++)
+                _floraAges01[instanceIndex] = SanitizeFloraAgeForUpload(_floraAges01[instanceIndex]);
+        }
+
+        private void ReleaseFloraAgeResources()
+        {
+            ReleaseGraphicsBuffer(ref _floraAgeBuffer);
+            if (_floraAges01.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_floraAges01);
+                _floraAges01.Dispose();
+            }
+
+            _floraAgeCapacity = 0;
+            _floraAgesAuthoredExternally = false;
+            _floraAgeBufferDirty = true;
+        }
+
+        private static float SanitizeFloraAgeForUpload(float age01)
+        {
+            if (!math.isfinite(age01))
+                return -1f;
+
+            if (age01 < 0f)
+                return -1f;
+
+            return math.saturate(age01);
+        }
+
+        private static float ResolveFloraAgeFromMetadata(in HectonVegetationInstanceData metadata)
+        {
+            if (metadata.Reserved0 < 0f)
+                return -1f;
+
+            byte runtimeFlags = HectonVegetationRuntimeFlagEncoding.ExtractPackedFlags(metadata.RuntimeFlags);
+            if ((runtimeFlags & (byte)HectonVegetationRuntimeFlags.Dead) != 0)
+                return -1f;
+
+            if (metadata.Reserved0 > 0.0001f)
+                return Mathf.Clamp01(metadata.Reserved0);
+
+            return 1f;
+        }
+
+        private void EnsureFloraGrowthTelemetry()
+        {
+            if (_floraGrowthTelemetry.IsCreated)
+                return;
+
+            _floraGrowthTelemetry = new NativeArray<FloraGrowthTelemetryEntry>(
+                FloraGrowthTelemetryFrameCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FloraGrowthTelemetryEntry>[300] - flora growth black-box circular telemetry - owner: HectonIndirectVegetationRenderer
+            NativeMemorySentinel.RegisterNativeArray(_floraGrowthTelemetry, nameof(HectonIndirectVegetationRenderer), nameof(_floraGrowthTelemetry), NativeAllocationLifetime.Session);
+        }
+
+        private void ReleaseFloraGrowthTelemetryResources()
+        {
+            if (!_floraGrowthTelemetry.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(_floraGrowthTelemetry);
+            _floraGrowthTelemetry.Dispose();
+            _floraGrowthTelemetryCursor = 0;
+            _lastFloraGrowthTelemetryFrame = -1;
+        }
+
+        private void RecordFloraGrowthTelemetry(int instanceCount, bool fullScan)
+        {
+            if (instanceCount <= 0 || !_floraAges01.IsCreated)
+                return;
+
+            int frameIndex = Time.frameCount;
+            if (_lastFloraGrowthTelemetryFrame == frameIndex)
+                return;
+
+            _lastFloraGrowthTelemetryFrame = frameIndex;
+            EnsureFloraGrowthTelemetry();
+            if (!_floraGrowthTelemetry.IsCreated)
+                return;
+
+            int safeCount = math.min(instanceCount, _floraAges01.Length);
+            int sampleLimit = fullScan ? safeCount : math.min(safeCount, FloraGrowthTelemetryMaxSamples);
+            int stride = sampleLimit > 0 ? math.max(1, (safeCount + sampleLimit - 1) / sampleLimit) : 1;
+            int sampled = 0;
+            int negativeCount = 0;
+            int nanCount = 0;
+            uint ageHash = FloraGrowthTelemetryHashSeed;
+            float minAge = 1f;
+            float maxAge = 0f;
+
+            for (int instanceIndex = 0; instanceIndex < safeCount; instanceIndex += stride)
+            {
+                float age = _floraAges01[instanceIndex];
+                if (!math.isfinite(age))
+                {
+                    nanCount++;
+                    age = -1f;
+                }
+
+                if (age < 0f)
+                {
+                    negativeCount++;
+                }
+                else
+                {
+                    minAge = math.min(minAge, age);
+                    maxAge = math.max(maxAge, age);
+                }
+
+                ageHash = HashFloraGrowthSample(ageHash, instanceIndex, age);
+                sampled++;
+                if (!fullScan && sampled >= FloraGrowthTelemetryMaxSamples)
+                    break;
+            }
+
+            if (sampled == 0)
+            {
+                minAge = 0f;
+                maxAge = 0f;
+            }
+
+            int writeIndex = _floraGrowthTelemetryCursor;
+            _floraGrowthTelemetry[writeIndex] = new FloraGrowthTelemetryEntry
+            {
+                FrameIndex = frameIndex,
+                InstanceCount = safeCount,
+                SampleCount = sampled,
+                NegativeAgeCount = negativeCount,
+                NanAgeCount = nanCount,
+                DirtyUpload = fullScan ? 1 : 0,
+                MinAge01 = minAge,
+                MaxAge01 = maxAge,
+                AgeHash = ageHash
+            };
+            _floraGrowthTelemetryCursor = (_floraGrowthTelemetryCursor + 1) % FloraGrowthTelemetryFrameCount;
+
+            if (nanCount > 0 && !_floraGrowthTelemetryDumped)
+                DumpFloraGrowthTelemetry();
+        }
+
+        private static uint HashFloraGrowthSample(uint hash, int instanceIndex, float age01)
+        {
+            unchecked
+            {
+                hash ^= (uint)instanceIndex + 0x9E3779B9u + (hash << 6) + (hash >> 2);
+                hash ^= math.asuint(age01);
+                hash *= 16777619u;
+                return hash;
+            }
+        }
+
+        private void DumpFloraGrowthTelemetry()
+        {
+            _floraGrowthTelemetryDumped = true;
+            if (!_floraGrowthTelemetry.IsCreated)
+                return;
+
+            try
+            {
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string dumpPath = Path.Combine(projectRoot, FloraGrowthDumpRelativePath);
+                string dumpDirectory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(dumpDirectory))
+                    Directory.CreateDirectory(dumpDirectory);
+
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(FloraGrowthTelemetryDumpVersion);
+                    writer.Write(FloraGrowthTelemetryFrameCount);
+                    writer.Write(_floraGrowthTelemetryCursor);
+                    writer.Write(_instanceCount);
+
+                    for (int offset = 0; offset < FloraGrowthTelemetryFrameCount; offset++)
+                    {
+                        int readIndex = (_floraGrowthTelemetryCursor + offset) % FloraGrowthTelemetryFrameCount;
+                        FloraGrowthTelemetryEntry entry = _floraGrowthTelemetry[readIndex];
+                        writer.Write(entry.FrameIndex);
+                        writer.Write(entry.InstanceCount);
+                        writer.Write(entry.SampleCount);
+                        writer.Write(entry.NegativeAgeCount);
+                        writer.Write(entry.NanAgeCount);
+                        writer.Write(entry.DirtyUpload);
+                        writer.Write(entry.MinAge01);
+                        writer.Write(entry.MaxAge01);
+                        writer.Write(entry.AgeHash);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError($"[HectonIndirectVegetationRenderer] Failed to dump flora growth telemetry: {exception.Message}", this);
+#endif
+            }
         }
 
         private bool ClearIndirectArgsBuffer(GraphicsBuffer argsBuffer, Mesh mesh)
@@ -2149,20 +2545,27 @@ namespace Hecton8.World
             if (instanceMatrices == null || instanceCount <= 0 || instanceMatrices.Length < instanceCount)
             {
                 _hasCpuCullingData = false;
+                _floraAgesAuthoredExternally = false;
+                _floraAgeBufferDirty = true;
                 return;
             }
 
             EnsureCpuCullingCapacity(instanceCount);
+            EnsureFloraAgeCapacity(instanceCount);
             HectonVegetationInstanceData fallbackPayload = CreateLegacyDefaultPayload();
             for (int instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
             {
                 _cpuCullingMatrices[instanceIndex] = instanceMatrices[instanceIndex];
-                _cpuCullingData[instanceIndex] = instanceData != null && instanceData.Length > instanceIndex
+                HectonVegetationInstanceData metadata = instanceData != null && instanceData.Length > instanceIndex
                     ? instanceData[instanceIndex]
                     : fallbackPayload;
+                _cpuCullingData[instanceIndex] = metadata;
+                _floraAges01[instanceIndex] = ResolveFloraAgeFromMetadata(metadata);
             }
 
             _hasCpuCullingData = true;
+            _floraAgesAuthoredExternally = false;
+            _floraAgeBufferDirty = true;
         }
 
         private void CopyCpuCullingPayload(
@@ -2173,13 +2576,20 @@ namespace Hecton8.World
             if (!instanceMatrices.IsCreated || !instanceData.IsCreated || instanceCount <= 0)
             {
                 _hasCpuCullingData = false;
+                _floraAgesAuthoredExternally = false;
+                _floraAgeBufferDirty = true;
                 return;
             }
 
             EnsureCpuCullingCapacity(instanceCount);
+            EnsureFloraAgeCapacity(instanceCount);
             NativeArray<Matrix4x4>.Copy(instanceMatrices, _cpuCullingMatrices, instanceCount);
             NativeArray<HectonVegetationInstanceData>.Copy(instanceData, _cpuCullingData, instanceCount);
+            for (int instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
+                _floraAges01[instanceIndex] = ResolveFloraAgeFromMetadata(instanceData[instanceIndex]);
             _hasCpuCullingData = true;
+            _floraAgesAuthoredExternally = false;
+            _floraAgeBufferDirty = true;
         }
 
         private static void ResolveInstanceShape(
@@ -2844,6 +3254,7 @@ namespace Hecton8.World
                 InvalidateRenderStateForBufferIdentityChange(sourceMatrixBuffer, _instanceDataBuffer, _floraPhaseSeedBuffer);
                 _instanceMatrixBuffer = sourceMatrixBuffer;
                 _hasCpuCullingData = false;
+                _floraAgesAuthoredExternally = false;
             }
 
             if (_instanceDataBuffer != sourceDataBuffer)
@@ -2851,6 +3262,7 @@ namespace Hecton8.World
                 InvalidateRenderStateForBufferIdentityChange(_instanceMatrixBuffer, sourceDataBuffer != null && sourceDataBuffer.count > 0 ? sourceDataBuffer : null, _floraPhaseSeedBuffer);
                 _instanceDataBuffer = sourceDataBuffer != null && sourceDataBuffer.count > 0 ? sourceDataBuffer : null;
                 _hasCpuCullingData = false;
+                _floraAgesAuthoredExternally = false;
             }
 
             SetInstanceCount(sourceInstanceCount);
@@ -2869,6 +3281,8 @@ namespace Hecton8.World
             _floraPhaseSeedBuffer = null;
             _instanceCount = 0;
             _legacyDataDirty = true;
+            _floraAgeBufferDirty = true;
+            _floraAgesAuthoredExternally = false;
             _hasCpuCullingData = false;
         }
 
@@ -2891,6 +3305,7 @@ namespace Hecton8.World
             if (!hadActiveBinding)
                 return;
 
+            _floraAgeBufferDirty = true;
             _hasPreviousMotionCameraPosition = false;
             _previousMotionCamera = null;
             ReleaseBatchRendererGroupResources();
@@ -3341,6 +3756,24 @@ namespace Hecton8.World
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _isRegistered = false;
+        }
+
+        private void TryRegisterOriginShiftListener()
+        {
+            if (_originShiftRegistered)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _originShiftRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
+        }
+
+        private void TryUnregisterOriginShiftListener()
+        {
+            if (!_originShiftRegistered)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _originShiftRegistered = false;
         }
     }
 }

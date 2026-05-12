@@ -1,0 +1,66 @@
+# HECTON-8 | i3 Reciprocal Square Root Law | Burst/SIMD
+
+Status: PENDING VERIFICATION
+Authority: TECH_SCOUT
+Date: 2026-05-11
+
+---
+
+## Law
+
+[RULE] The default hot-path inverse-length form is `math.rsqrt(math.max(dot(v, v), EPSILON))`.
+[RULE] Prefer squared-distance comparisons over any square root when exact distance is not required.
+[RULE] For visual-only direction normalization on Low tier, dominant-axis or L1/Linf approximations are allowed before `rsqrt`.
+[RULE] For gameplay-critical deterministic math, do not depend on approximate `rsqrt` bit identity across CPU/GPU/platforms. Use fixed-point, squared comparisons, or an explicitly replay-tested scalar path.
+
+[FORBID] Quake-style bit hacks.
+[FORBID] Unconditional `math.normalize`, `.normalized`, `math.length`, or `Mathf.Sqrt` in runtime hot paths.
+[FORBID] AVX-512/v512 helper mandates until the project package and target hardware prove support.
+
+---
+
+## i3 Path
+
+Baseline:
+- Burst `math.rsqrt` or SSE/v128 reciprocal square-root approximation.
+- one Newton refinement only when visual error is visible or normal length affects lighting.
+
+High/Ultra:
+- AVX/v256 batch paths only behind Burst/X86 feature checks and benchmark proof.
+
+Rejected:
+- `sqrt(x)` followed by reciprocal.
+- scalar managed helper loops outside Burst.
+- v512 assumptions.
+
+---
+
+## Evidence
+
+[SOURCE] Unity Mathematics exposes `math.rsqrt` as reciprocal square root.
+https://docs.unity.cn/Packages/com.unity.mathematics%401.3/api/Unity.Mathematics.math.rsqrt.html
+
+[SOURCE] Intel reciprocal square-root intrinsics compute approximate reciprocal square roots for packed single-precision values.
+https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#text=rsqrt
+
+[PROJECT] Current scan found multiple existing `math.rsqrt` uses in first-party runtime code and multiple remaining `.normalized` candidates in runtime files. Those candidates are debt unless domain owners prove they are cold/debug/presentation-safe.
+
+---
+
+## Helper Pattern
+
+```
+float lenSq = math.dot(v, v);
+float invLen = math.rsqrt(math.max(lenSq, 1e-8f));
+float3 n = v * invLen;
+```
+
+Low-tier visual fake:
+
+```
+float invApprox = math.rcp(math.max(math.cmax(math.abs(v)), 1e-4f));
+float3 dominant = v * invApprox;
+```
+
+[STATUS] Microsecond savings are PENDING VERIFICATION until Burst Player benchmarks run on the i3 target.
+

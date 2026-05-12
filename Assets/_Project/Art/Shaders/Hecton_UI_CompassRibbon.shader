@@ -14,9 +14,9 @@ Shader "Hecton8/UI/CompassRibbon"
     {
         Tags
         {
-            "Queue" = "Transparent"
+            "Queue" = "AlphaTest"
             "IgnoreProjector" = "True"
-            "RenderType" = "Transparent"
+            "RenderType" = "TransparentCutout"
             "CanUseSpriteAtlas" = "True"
             "RenderPipeline" = "UniversalPipeline"
         }
@@ -25,7 +25,8 @@ Shader "Hecton8/UI/CompassRibbon"
         Lighting Off
         ZWrite Off
         ZTest Always
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend Off
+        AlphaToMask On
 
         Pass
         {
@@ -74,6 +75,12 @@ Shader "Hecton8/UI/CompassRibbon"
                 return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
             }
 
+            float HectonDitherCoverage(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             Varyings vert(Attributes input)
             {
                 Varyings output;
@@ -105,14 +112,18 @@ Shader "Hecton8/UI/CompassRibbon"
                 float sweepDelta = abs(frac((uv.x - sweepCenter) + 0.5) - 0.5);
                 float sweepPulse = (1.0 - smoothstep(0.0, 0.065, sweepDelta)) * centerBand * _PulseStrength;
                 if (max(mask, pulse + sweepPulse) <= 0.0001)
-                    return 0;
+                {
+                    clip(-1.0);
+                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
+                }
 
                 half4 source = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, float2(scrollX, uv.y));
 
                 half3 color = max(source.rgb * source.a * (half)mask, _Color.rgb * (half)mask) * (half)scanline;
                 color = saturate(color + _Color.rgb * (half)(pulse * 0.72 + sweepPulse * 0.55));
                 half alpha = saturate(max(source.a * (half)mask, (half)mask) * _Color.a * input.color.a + (half)((pulse + sweepPulse) * 0.08));
-                return half4(color, alpha);
+                clip(alpha - max((half)HectonDitherCoverage(input.positionCS.xy), 0.0005h));
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }

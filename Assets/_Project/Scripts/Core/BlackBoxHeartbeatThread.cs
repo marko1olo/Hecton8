@@ -12,6 +12,7 @@ namespace Hecton8.Core
         private const int ProbeSleepMilliseconds = 50;
         private const int StopJoinMilliseconds = 100;
         private const string ThreadName = "H8.MainThreadHeartbeat";
+        private static readonly double _stopwatchTicksToMilliseconds = 1000d / Stopwatch.Frequency;
 
         // COLD ALLOC: object[1] - heartbeat thread lifecycle gate - owner: BlackBoxHeartbeatThread
         private static readonly object _gate = new object();
@@ -36,7 +37,7 @@ namespace Hecton8.Core
                 {
                     IsBackground = true,
                     Name = ThreadName,
-                    Priority = ThreadPriority.BelowNormal
+                    Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.Heartbeat)
                 };
                 _thread.Start();
             }
@@ -77,7 +78,7 @@ namespace Hecton8.Core
                 if (lastPing <= 0L)
                     continue;
 
-                long elapsedMilliseconds = ((Stopwatch.GetTimestamp() - lastPing) * 1000L) / Stopwatch.Frequency;
+                long elapsedMilliseconds = (long)((Stopwatch.GetTimestamp() - lastPing) * _stopwatchTicksToMilliseconds);
                 if (elapsedMilliseconds < StallMilliseconds)
                     continue;
 

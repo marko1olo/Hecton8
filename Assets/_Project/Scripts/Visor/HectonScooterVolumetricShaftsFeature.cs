@@ -464,7 +464,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(halfResDepthTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
                     builder.SetGlobalTextureAfterPass(halfResDepthTexture, ShaderConstants.HalfResDepthTextureId);
 
                     builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
@@ -489,7 +488,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(shaftsTexture, AccessFlags.Write);
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
                     {
@@ -512,7 +510,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(blurTexture, AccessFlags.Write);
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
                     {
@@ -535,7 +532,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(shaftsTexture, AccessFlags.Write);
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
-                    builder.AllowGlobalStateModification(true);
                     builder.SetGlobalTextureAfterPass(shaftsTexture, ShaderConstants.ShaftTextureId);
                     builder.SetGlobalTextureAfterPass(shaftsTexture, ShaderConstants.HeadlightVolumetricsTextureId);
 
@@ -563,7 +559,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (CompositePassData data, UnsafeGraphContext context) =>
                     {

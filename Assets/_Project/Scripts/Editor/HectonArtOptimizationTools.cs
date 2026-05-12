@@ -188,7 +188,6 @@ namespace Hecton8.EditorTools
                 remappedMeshes += RemapPrefabUvsToAtlas(prefabPaths[i], textureRectLookup, atlasMaterial);
 
             AssetDatabase.SaveAssets();
-            Resources.UnloadUnusedAssets();
             Debug.Log("[HectonArtOptimizationTools] Atlas=" + atlasPath + ", textures=" + texturePaths.Count + ", remappedMeshes=" + remappedMeshes + ".");
         }
 

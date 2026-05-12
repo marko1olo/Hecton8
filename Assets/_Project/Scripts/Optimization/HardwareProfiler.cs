@@ -14,12 +14,69 @@ namespace Hecton8.Optimization
         public const double LowTierMillisecondsPerStep = 5.0d;
         public const double MaxBenchmarkWallMilliseconds = 500.0d;
         public const int LowTierGraphicsMemoryMegabytes = 3000;
+        public const int LowTierProcessorCount = 6;
 
         private const float FixedStepSeconds = 0.02f;
         private const int GridColumns = 40;
         private const float GridSpacingMeters = 1.75f;
         private const double InvBenchmarkStepCount = 1.0d / BenchmarkStepCount;
         private const string SceneName = "HECTON8_BIOS_HARDWARE_PROFILER";
+
+        /// <summary>
+        /// Immutable BIOS hardware snapshot captured from Unity system facts.
+        /// </summary>
+        public readonly struct HardwareProfilerSnapshot
+        {
+            public HardwareProfilerSnapshot(
+                int graphicsMemoryMegabytes,
+                int systemMemoryMegabytes,
+                int processorCount,
+                int hardwareScore,
+                bool forceLowTier)
+            {
+                GraphicsMemoryMegabytes = graphicsMemoryMegabytes;
+                SystemMemoryMegabytes = systemMemoryMegabytes;
+                ProcessorCount = processorCount;
+                HardwareScore = hardwareScore;
+                ForceLowTier = forceLowTier;
+            }
+
+            /// <summary>Detected graphics memory in megabytes.</summary>
+            public int GraphicsMemoryMegabytes { get; }
+
+            /// <summary>Detected system memory in megabytes.</summary>
+            public int SystemMemoryMegabytes { get; }
+
+            /// <summary>Detected logical CPU core count.</summary>
+            public int ProcessorCount { get; }
+
+            /// <summary>Deterministic 0-100 BIOS hardware score.</summary>
+            public int HardwareScore { get; }
+
+            /// <summary>True when the hardware matrix must lock Low tier and Low math precision.</summary>
+            public bool ForceLowTier { get; }
+        }
+
+        /// <summary>
+        /// Captures immutable Unity system hardware facts for the BIOS boot matrix.
+        /// </summary>
+        public static HardwareProfilerSnapshot CaptureSystemInfoSnapshot()
+        {
+            int graphicsMemoryMb = SystemInfo.graphicsMemorySize > 0 ? SystemInfo.graphicsMemorySize : 0;
+            int systemMemoryMb = SystemInfo.systemMemorySize > 0 ? SystemInfo.systemMemorySize : 0;
+            int processorCount = SystemInfo.processorCount > 0 ? SystemInfo.processorCount : 1;
+            int hardwareScore = ResolveHardwareScore(graphicsMemoryMb, systemMemoryMb, processorCount);
+            bool forceLowTier =
+                (graphicsMemoryMb > 0 && graphicsMemoryMb < LowTierGraphicsMemoryMegabytes) ||
+                processorCount < LowTierProcessorCount;
+
+            return new HardwareProfilerSnapshot(
+                graphicsMemoryMb,
+                systemMemoryMb,
+                processorCount,
+                hardwareScore,
+                forceLowTier);
+        }
 
         /// <summary>
         /// Runs the local PhysicsScene capsule benchmark and returns milliseconds per step.
@@ -43,12 +100,12 @@ namespace Hecton8.Optimization
                 floor.transform.localScale = new Vector3(96f, 1f, 96f);
                 SceneManager.MoveGameObjectToScene(floor, scene);
 
+                int gridX = 0;
+                int gridZ = 0;
                 for (int i = 0; i < BenchmarkCapsuleCount; i++)
                 {
-                    int x = i % GridColumns;
-                    int z = i / GridColumns;
-                    float localX = (x - (GridColumns >> 1)) * GridSpacingMeters;
-                    float localZ = (z - 12) * GridSpacingMeters;
+                    float localX = (gridX - (GridColumns >> 1)) * GridSpacingMeters;
+                    float localZ = (gridZ - 12) * GridSpacingMeters;
                     float localY = 4f + ((i & 7) * 0.125f);
 
                     GameObject capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
@@ -64,6 +121,13 @@ namespace Hecton8.Optimization
                     rigidbody.mass = 1f;
                     SceneManager.MoveGameObjectToScene(capsule, scene);
                     bodies[i] = capsule;
+
+                    gridX++;
+                    if (gridX == GridColumns)
+                    {
+                        gridX = 0;
+                        gridZ++;
+                    }
                 }
 
                 int executedSteps = 0;
@@ -102,10 +166,44 @@ namespace Hecton8.Optimization
         /// </summary>
         public static bool ShouldForceLowTier(double millisecondsPerStep, int graphicsMemoryMegabytes)
         {
-            if (graphicsMemoryMegabytes > 0 && graphicsMemoryMegabytes < LowTierGraphicsMemoryMegabytes)
-                return true;
+            return (graphicsMemoryMegabytes > 0 & graphicsMemoryMegabytes < LowTierGraphicsMemoryMegabytes) |
+                (millisecondsPerStep > LowTierMillisecondsPerStep);
+        }
 
-            return millisecondsPerStep > LowTierMillisecondsPerStep;
+        private static int ResolveHardwareScore(int graphicsMemoryMegabytes, int systemMemoryMegabytes, int processorCount)
+        {
+            int score = 0;
+
+            if (graphicsMemoryMegabytes >= 8200)
+                score += 50;
+            else if (graphicsMemoryMegabytes >= 4200)
+                score += 35;
+            else if (graphicsMemoryMegabytes >= LowTierGraphicsMemoryMegabytes)
+                score += 25;
+            else if (graphicsMemoryMegabytes >= 1800)
+                score += 15;
+            else
+                score += 5;
+
+            if (processorCount >= 12)
+                score += 30;
+            else if (processorCount >= 8)
+                score += 22;
+            else if (processorCount >= LowTierProcessorCount)
+                score += 16;
+            else
+                score += 8;
+
+            if (systemMemoryMegabytes >= 32000)
+                score += 20;
+            else if (systemMemoryMegabytes >= 16000)
+                score += 14;
+            else if (systemMemoryMegabytes >= 8000)
+                score += 8;
+            else
+                score += 4;
+
+            return score > 100 ? 100 : score;
         }
 
         private static void DestroyBenchmarkObject(Object target)

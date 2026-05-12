@@ -22,10 +22,13 @@ using System;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
+using CoreAudioEvent = Hecton8.Core.AudioEvent;
 
 namespace Hecton8.World
 {
@@ -483,6 +486,10 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-60)]
     public sealed class SoundscapeSystem : MonoBehaviour, ISlowTickable, IBiomeMatrixEventListener
     {
+        private const int MaxSignalDrainPerSlowTick = 16;
+        private const int MidSignalDrainPerSlowTick = 8;
+        private const int LowSignalDrainPerSlowTick = 4;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -498,6 +505,18 @@ namespace Hecton8.World
 
         [Header("── References ──────────────────────────────")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
+
+        [Header("Signal Corridor")]
+        [SerializeField, Tooltip("One-based SpatialAudioManager AudioEvent table id for metal impact clang playback.")]
+        private int impactClangAudioEventId = 1;
+        [SerializeField, Range(0f, 1f), Tooltip("Minimum normalized impact intensity required before Soundscape queues a clang.")]
+        private float impactClangMinimumIntensity = 0.08f;
+        [SerializeField, Range(0f, 1f), Tooltip("Volume multiplier applied to impact intensity before queuing clang audio.")]
+        private float impactClangVolumeScale = 0.65f;
+        [SerializeField, Range(0.1f, 3f), Tooltip("Base pitch for impact clang audio events.")]
+        private float impactClangPitchBase = 0.95f;
+        [SerializeField, Range(0f, 1f), Tooltip("Pitch lift applied from normalized impact intensity.")]
+        private float impactClangPitchIntensityScale = 0.2f;
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -633,6 +652,8 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
+            DrainSignals();
+
             if (survivalSystem == null && !ResolveSurvivalSystem())
                 return;
 
@@ -653,6 +674,54 @@ namespace Hecton8.World
         // ══════════════════════════════════════════════════════════
         //  PRIVATE
         // ══════════════════════════════════════════════════════════
+
+        private void DrainSignals()
+        {
+            IAudioService audio = GlobalRegistry.Audio;
+            HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
+            int signalDrainBudget = ResolveSignalDrainBudget(scalabilityTier);
+            bool dynamicPitch = DistanceMath.IsHighQualityTier(scalabilityTier);
+            int drained = 0;
+            while (drained < signalDrainBudget &&
+                   GlobalSignals.TryDequeueImpact(out ImpactSignal signal))
+            {
+                drained++;
+                HandleImpactSignal(in signal, audio, dynamicPitch);
+            }
+        }
+
+        private static int ResolveSignalDrainBudget(HectonQualityTier scalabilityTier)
+        {
+            if (scalabilityTier == HectonQualityTier.High || scalabilityTier == HectonQualityTier.Ultra)
+                return MaxSignalDrainPerSlowTick;
+
+            if (scalabilityTier == HectonQualityTier.Mid)
+                return MidSignalDrainPerSlowTick;
+
+            return LowSignalDrainPerSlowTick;
+        }
+
+        private void HandleImpactSignal(in ImpactSignal signal, IAudioService audio, bool dynamicPitch)
+        {
+            if (impactClangAudioEventId <= 0 || !float.IsFinite(signal.Intensity))
+                return;
+
+            float safeIntensity = math.saturate(signal.Intensity);
+            if (safeIntensity < impactClangMinimumIntensity)
+                return;
+
+            if (audio == null || !audio.IsInitialized)
+                return;
+
+            float3 runtimePosition = signal.PointAup.ToRuntimeFloat3();
+            Vector3 position = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            float volume = math.saturate(safeIntensity * impactClangVolumeScale);
+            float pitch = dynamicPitch
+                ? math.clamp(impactClangPitchBase + safeIntensity * impactClangPitchIntensityScale, 0.1f, 3f)
+                : impactClangPitchBase;
+            CoreAudioEvent audioEvent = new CoreAudioEvent((uint)impactClangAudioEventId, position, volume, pitch);
+            audio.QueueAudioEvent(in audioEvent);
+        }
 
         private SoundscapeTier CalculateTier(float depth, SoundscapeTier currentTier)
         {
@@ -725,7 +794,9 @@ namespace Hecton8.World
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogTierChanged()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[Soundscape] Tier changed.");
+#endif
         }
 
         private bool ResolveSurvivalSystem()

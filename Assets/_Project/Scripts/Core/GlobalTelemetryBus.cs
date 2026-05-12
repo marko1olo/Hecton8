@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using System.IO;
-using System.IO.MemoryMappedFiles;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -43,7 +42,9 @@ namespace Hecton8.Core
         DrawCallEstimate = 22,
         ShaderFallback = 23,
         RegistryHeartbeatStale = 24,
-        MemoryBreach = 25
+        MemoryBreach = 25,
+        DominantAxisTelemetry = 26,
+        UnityLogFault = 27
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 64)]
@@ -74,6 +75,8 @@ namespace Hecton8.Core
         private const int Version = 1;
         private const uint BinaryMagic = 0x4D4C4554u; // "TELM"
         private const uint InputLagWarningHash = 0x494C4147u; // "ILAG"
+        private const uint DominantAxisApproximationHash = 0x44415849u; // "DAXI"
+        private const uint DistanceSquaredHash = 0x44535121u; // "DSQ!"
         private const float DrainIntervalSeconds = 60f;
         private const int SnapshotCopyBudgetPerLateFrame = 128;
         private const string ExportFolderName = "Telemetry";
@@ -411,11 +414,35 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Publishes a threaded Unity log fault as hashed numeric payloads only.
+        /// </summary>
+        public static void PublishUnityLogFault(uint conditionHash, uint stackTraceHash, uint faultFlags)
+        {
+            Publish(TelemetryEventType.UnityLogFault, conditionHash, stackTraceHash, faultFlags, default);
+        }
+
+        /// <summary>
         /// Broadcasts a memory subsystem breach as numeric HUD/black-box payload only.
         /// </summary>
         public static void PublishMemoryBreachEvent(uint contextHash, float currentMegabytes)
         {
             Publish(TelemetryEventType.MemoryBreach, contextHash, 0u, math.max(0f, currentMegabytes), default);
+        }
+
+        /// <summary>
+        /// Publishes bot distance telemetry as numeric payloads only.
+        /// </summary>
+        public static void PublishDominantAxisTelemetry(uint botHash, float distanceOrMagnitudeSq, bool usedDominantAxisApproximation)
+        {
+            float scalarValue = math.isfinite(distanceOrMagnitudeSq)
+                ? math.max(0f, distanceOrMagnitudeSq)
+                : 0f;
+            Publish(
+                TelemetryEventType.DominantAxisTelemetry,
+                botHash,
+                usedDominantAxisApproximation ? DominantAxisApproximationHash : DistanceSquaredHash,
+                scalarValue,
+                default);
         }
 
         /// <summary>
@@ -560,6 +587,20 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Computes a deterministic FNV-1a hash for managed diagnostic text before it enters binary telemetry.
+        /// Raw text is never written to `.h8dump`.
+        /// </summary>
+        /// <param name="value">Diagnostic text to hash.</param>
+        /// <returns>FNV-1a hash, or zero for null/empty/whitespace payloads.</returns>
+        public static uint ComputeContextHash(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return 0u;
+
+            return ComputeFnv1A(value.AsSpan());
+        }
+
+        /// <summary>
         /// Attempts a background-thread raw full-ring dump without touching Unity path APIs.
         /// </summary>
         public static bool TryEmergencyFlushFromBackground()
@@ -687,7 +728,7 @@ namespace Hecton8.Core
                 }
 
                 if (string.IsNullOrEmpty(_pendingTelemetryDirectory))
-                    _pendingTelemetryDirectory = Path.Combine(Application.persistentDataPath, ExportFolderName);
+                    _pendingTelemetryDirectory = HectonPersistentPathPolicy.CombineDirectory(ExportFolderName);
 
                 StartExportThread();
             }
@@ -699,6 +740,21 @@ namespace Hecton8.Core
             return string.IsNullOrWhiteSpace(value)
                 ? 0u
                 : unchecked((uint)LocHash.Compute(value));
+        }
+
+        private static uint ComputeFnv1A(ReadOnlySpan<char> value)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                for (int i = 0; i < value.Length; i++)
+                {
+                    hash ^= value[i];
+                    hash *= 16777619u;
+                }
+
+                return hash;
+            }
         }
 
         private static void BeginSnapshotCopy()
@@ -884,7 +940,7 @@ namespace Hecton8.Core
                     {
                         IsBackground = true,
                         Name = ExportThreadName,
-                        Priority = System.Threading.ThreadPriority.BelowNormal
+                        Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.BackgroundIo)
                     };
                     _exportThread.Start();
                     return true;
@@ -1019,42 +1075,19 @@ namespace Hecton8.Core
 
                 if (!string.IsNullOrEmpty(_pendingBinaryPath))
                 {
-                    using (MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
+                    using (FileStream stream = new FileStream(
                                _pendingBinaryPath,
                                FileMode.Create,
-                               null,
-                               pendingByteCount,
-                               MemoryMappedFileAccess.ReadWrite))
+                               FileAccess.Write,
+                               FileShare.Read))
                     {
-                        using (MemoryMappedViewAccessor mappedView = mappedFile.CreateViewAccessor(
-                                   0L,
-                                   pendingByteCount,
-                                   MemoryMappedFileAccess.Write))
+                        unsafe
                         {
-                            unsafe
-                            {
-                                byte* destination = null;
-                                mappedView.SafeMemoryMappedViewHandle.AcquirePointer(ref destination);
-                                try
-                                {
-                                    if (!UnsafeMemoryCopyGuard.TryMemCpy(
-                                            destination,
-                                            pendingByteCount,
-                                            _exportScratch.GetUnsafeReadOnlyPtr(),
-                                            pendingByteCount))
-                                    {
-                                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(GlobalTelemetryBus));
-                                        return false;
-                                    }
-                                }
-                                finally
-                                {
-                                    mappedView.SafeMemoryMappedViewHandle.ReleasePointer();
-                                }
-                            }
-
-                            mappedView.Flush();
+                            byte* exportPtr = (byte*)_exportScratch.GetUnsafeReadOnlyPtr();
+                            stream.Write(new ReadOnlySpan<byte>(exportPtr, pendingByteCount));
                         }
+
+                        stream.Flush();
                     }
                 }
 

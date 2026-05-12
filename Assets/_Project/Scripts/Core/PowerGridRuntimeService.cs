@@ -1,3 +1,5 @@
+using Unity.Collections;
+
 namespace Hecton8.Core
 {
     /// <summary>
@@ -40,5 +42,10 @@ namespace Hecton8.Core
         /// The request is accounted by the power owner on its next logistics evaluation.
         /// </summary>
         bool TryQueueWirelessToolDrain(float energyWattSeconds, out float grantedEnergyWattSeconds);
+
+        /// <summary>
+        /// Provides a no-copy read-only lane for visor power telemetry.
+        /// </summary>
+        bool TryGetGridPowerPotentialsReadOnly(int gridIndex, out NativeArray<float>.ReadOnly potentials);
     }
 }

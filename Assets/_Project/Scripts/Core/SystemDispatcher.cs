@@ -227,6 +227,7 @@ namespace Hecton8.Core
         private static int _baseStressCascadeBreakerFrame = -1;
         private static int _baseStressCascadeTableOverflowTelemetryFrame = -1;
         private static int _originShiftBootstrapLockCount;
+        private static int _originShiftFrameLockFrame = -1;
 
         internal static float CurrentFrameDeltaTime { get; private set; }
 
@@ -235,6 +236,8 @@ namespace Hecton8.Core
         internal static SystemDispatcher ActiveRuntimeInstance { get; private set; }
 
         internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+
+        internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == Time.frameCount;
 
         /// <inheritdoc />
         public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
@@ -354,6 +357,7 @@ namespace Hecton8.Core
             _visualStaticGlitchActive = false;
             _visualStaticGlitchUntilTime = 0f;
             Volatile.Write(ref _originShiftBootstrapLockCount, 0);
+            Volatile.Write(ref _originShiftFrameLockFrame, -1);
             Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);
             Shader.SetGlobalFloat(_GamePausedId, 0f);
             Shader.SetGlobalFloat(_HectonVisualStaticGlitchId, 0f);
@@ -813,6 +817,11 @@ namespace Hecton8.Core
             Interlocked.Increment(ref _originShiftBootstrapLockCount);
         }
 
+        internal static void RequestOriginShiftFrameLock(int frame)
+        {
+            Volatile.Write(ref _originShiftFrameLockFrame, frame);
+        }
+
         internal static void ReleaseOriginShiftBootstrapLock()
         {
             int current = Volatile.Read(ref _originShiftBootstrapLockCount);
@@ -915,6 +924,9 @@ namespace Hecton8.Core
                         return;
                 }
 
+                if (IsOriginShiftFrameLockedForCurrentFrame)
+                    return;
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
 #endif
@@ -949,6 +961,8 @@ namespace Hecton8.Core
 
                             updatable.Tick(effectiveDeltaTime);
                             _foveatedSimulationManager.NotifyTickCompleted(updatable);
+                            if (IsOriginShiftFrameLockedForCurrentFrame)
+                                return;
                         }
                     }
                 }
@@ -1004,6 +1018,8 @@ namespace Hecton8.Core
             bool dispatcherPhaseTimingStarted = false;
 #endif
             if (IsOriginShiftBootstrapLocked)
+                return;
+            if (IsOriginShiftFrameLockedForCurrentFrame)
                 return;
 
             try
@@ -1105,12 +1121,14 @@ namespace Hecton8.Core
                     Hecton8.Bootstrap.GameBootstrapper.PendingEventCount +
                     ObjectPoolDiagnostics.PendingCount +
                     PerformanceEvents.PendingCount +
+                    ScalabilityEvents.PendingCount +
                     GlobalRegistry.PendingServiceReboundCount);
 
                 BootstrapEvents.FlushPending();
                 Hecton8.Bootstrap.GameBootstrapper.FlushPendingEvents();
                 PerformanceEvents.FlushPending();
                 ObjectPoolDiagnostics.FlushPending();
+                ScalabilityEvents.FlushPending();
                 GlobalRegistry.FlushPendingServiceReboundEvents();
                 Hecton8.Modding.ModRegistryEvents.FlushPending();
                 Hecton.Localization.LocalizationEvents.FlushPending();
@@ -1207,6 +1225,7 @@ namespace Hecton8.Core
                     HectonSubmarineOsEvents.PendingCount +
                     FlashlightEvents.PendingCount +
                     LaserCutterEvents.PendingCount +
+                    SuitMeshUpdateEvents.PendingCount +
                     PlayerSignalEvents.PendingCount +
                     InventoryEvents.PendingCount +
                     PlayerExpressionEvents.PendingCount +
@@ -1215,6 +1234,7 @@ namespace Hecton8.Core
                     Hecton8.UI.PDAIntrusionEvents.PendingCount +
                     pdaPendingBeforeFlush);
 
+                SuitMeshUpdateEvents.FlushPending();
                 PlayerSignalEvents.FlushPending();
                 Hecton8.UI.BaseIntegrityEvents.FlushPending();
                 FlashlightEvents.FlushPending();
@@ -2270,6 +2290,7 @@ namespace Hecton8.Core
 
         private void HandleBeginCameraRendering(ScriptableRenderContext context, Camera camera)
         {
+            HectonFloatingOrigin.PublishCurrentGlobalOffsetsForRenderLoop();
             RestorePendingRenderSettings();
 
             RegistryBucket<IRenderable> renderables = GlobalRegistry.Renderables;

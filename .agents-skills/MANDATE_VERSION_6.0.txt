@@ -1,0 +1,107 @@
+# MANDATE_VERSION_6.0.md
+## Tech Scout Summary - Unity 6000.x
+
+Status: PENDING VERIFICATION
+Date: 2026-05-11
+
+---
+
+## Top Three Unity 6000.x Features To Exploit
+
+1. GPU Resident Drawer + GPU occlusion culling.
+   Use for MeshRenderer-owned static and instanced environment where Forward+ and compute support are available.
+
+2. URP RenderGraph as the only new renderer-feature path.
+   Compatibility Mode is legacy. New features must implement `RecordRenderGraph`.
+
+3. UnityEngine.Awaitable plus explicit async upload budgeting.
+   Use pooled Awaitable for Unity-facing sequencing; keep MMF paging on persistent owned workers; set texture/mesh upload buffer, time slice, and persistent-buffer policy from the Scalability Matrix.
+
+---
+
+## Explicit Corrections
+
+[BROKEN] Burst 2.0/v512 cannot be mandated from current project evidence.
+Project package lock resolves `com.unity.burst` to 1.8.28. Official Burst 1.8 docs expose `v64`, `v128`, and `v256`, not `v512`.
+
+[BROKEN] Runtime renderer path is not fully RenderGraph-clean.
+Static scan still finds `Graphics.Blit` in `Assets/_Project/Scripts/UI/DiegeticPanelController.cs` and camera command buffers in `Assets/_Project/Scripts/Visor/VisorHUDController.cs`.
+
+[BROKEN] Async storage/boot law is not fully converted.
+Static scan still finds `Task.Run` in `GameBootstrapper` and `SaveBinaryStorage`.
+
+[BROKEN] LZ4 dictionary compression is not currently implementable in the save codec.
+Current native bindings expose baseline compress/decompress only. Dictionary APIs are not bound.
+
+[BROKEN] `Graphics.SetDescriptorSet` is not a valid project/managed Unity API from current evidence.
+Use SRP Batcher, GPU Resident Drawer, GraphicsBuffer, Texture2DArray, and RenderGraph resource declaration instead.
+
+[BROKEN] Live `PROJECT_ATLAS.md` was not found at repo root.
+Archived references exist, but they are not authoritative live atlas evidence.
+
+[PENDING] Terrain Streaming Virtual Texturing is not proven active.
+Current static evidence points to MicroSplat/Texture2DArray terrain paths.
+
+[UPDATED] Zero-GC law now explicitly covers `Span<char>`, `ReadOnlySpan<char>`, `TryFormat`, `string.Create`, and stackalloc limits.
+
+[UPDATED] Shader law now allows blue-noise shadow dithering only for fade/contact breakup, not as extra shadow quality cost.
+
+[UPDATED] Linux/Vulkan shader stutter now requires player traversal capture beyond ShaderVariantCollection warmup.
+
+[UPDATED] Arena 2.0 is governance over existing `HectonArenaAllocator`, not a new allocator.
+
+[UPDATED] Haptic spatialization is event-authored motor weighting, not per-frame spatial simulation.
+
+[UPDATED] AUP coordinate wrapping now requires one fixed-point/int64 planet circumference authority. Float modulo and shader-side wrap are forbidden.
+
+[UPDATED] DirectStorage is a native Windows asset-streaming experiment only until an owned plugin or official Unity integration is present. It is not an MMF DTO paging replacement.
+
+[UPDATED] Physics determinism now requires stable entity ordering, ordered reductions, fixed timestep/iteration counts, and a 300-frame telemetry buffer for gameplay-critical solvers.
+
+[UPDATED] Unity 6000 GPU occlusion culling is gated by URP Forward+, GPU Resident Drawer compatibility, RenderGraph enabled state, and scene capture proof.
+
+[UPDATED] Evidence reporting must label evidence class. Text search is never runtime verification.
+
+[UPDATED] i3 inverse-length math now uses `math.rsqrt(max(dot, eps))` or squared comparisons by default. `.normalized` in runtime hot paths is CI debt unless suppressed with proof.
+
+[UPDATED] VR stencil masking is mandatory for visor/HUD paths only when a cheap mask writer rejects expensive hidden fragments before shading.
+
+[UPDATED] `MATH_VIOLATIONS` is a proposed CI gate for runtime `sqrt`, `normalize`, `.normalized`, distance, and nondeterministic random tokens.
+
+[UPDATED] VRS is not a Low/MX350 pillar. Treat MX350 VRS as unsupported until Unity runtime caps and Player capture prove capability.
+
+[UPDATED] Slot-machine RNG is deterministic integer weighted selection with stable seed components and table versioning.
+
+[UPDATED] Async asset upload is now a tiered bootstrap policy. Low/MX350 uses a 64 MB upload buffer and 1 ms time slice; Mid uses 128 MB and 2 ms; High/Ultra uses 256 MB and 4 ms. Persistent upload buffer stays enabled.
+
+[UPDATED] Non-reload scene transitions require explicit global/static reset ownership through SubsystemRegistration and runtime generation-token reset lanes.
+
+[UPDATED] Compute shader group sizing is capture-driven. 64-thread kernels remain MX350/Pascal portable default; 256-thread assumptions are forbidden without target capture.
+
+[BROKEN] "Pentarchy" is an incomplete architecture model. The authoritative project model is 9 echelons / 85 domains in `Docs/Actual Domains of Project.txt`.
+
+---
+
+## Math Benchmark Guidance
+
+`math.sin` vs LUT vs parabolic approximation was not benchmarked in Player in this session.
+
+Default law until measured:
+- Hot visual oscillation on Low: triangle/parabolic approximation.
+- Audio-critical or gameplay-deterministic phase on Low: fixed LUT with integer phase and interpolation if audible.
+- High/Ultra cinematic path: `math.sin` only if under profiler budget or Burst-vectorized batch.
+
+Required benchmark shape:
+- Burst job, FloatMode.Fast.
+- 1M samples.
+- warm cache and cold cache passes.
+- i3/MX350 target machine.
+- report ns/sample and max absolute error.
+
+---
+
+## Status
+
+No runtime profiler, Unity Console, PlayMode, GCMonitor, RenderGraph Viewer, Frame Debugger, or player build evidence was produced in this session.
+
+Final status is PENDING VERIFICATION.

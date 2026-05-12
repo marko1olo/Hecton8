@@ -91,21 +91,30 @@ Shader "NASAPunk/SuitVisor"
     {
         Tags
         {
-            "RenderType" = "Transparent"
-            "Queue" = "Transparent+10"
+            "RenderType" = "TransparentCutout"
+            "Queue" = "AlphaTest+20"
             "RenderPipeline" = "UniversalPipeline"
             "IgnoreProjector" = "True"
         }
 
-        ZWrite Off
+        ZWrite On
         ZTest LEqual
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend Off
+        AlphaToMask On
         Cull Front
 
         Pass
         {
             Name "VisorForward"
             Tags { "LightMode" = "UniversalForward" }
+
+            Stencil
+            {
+                Ref 1
+                Comp Always
+                Pass Replace
+                WriteMask 255
+            }
 
             HLSLPROGRAM
             #pragma vertex VisorVert
@@ -214,7 +223,6 @@ Shader "NASAPunk/SuitVisor"
             float4 _HectonXRFoveatedParams;
             float4 _HectonXRFoveatedCenterRadius;
             float _BreathingPhase;
-            TEXTURE2D(_CameraOpaqueTexture); SAMPLER(sampler_CameraOpaqueTexture);
             float4 _SonarRevealOriginWS;
             float4 _SonarRevealWaveParams;
             float _SonarWaveFront;
@@ -735,7 +743,7 @@ Shader "NASAPunk/SuitVisor"
                     fresnelColor = _FresnelColor.rgb * fresnel;
                 }
 
-                float2 screenUV = IN.screenPos.xy / IN.screenPos.w;
+                float2 screenUV = IN.screenPos.xy * rcp(max(IN.screenPos.w, 0.0001));
 #if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
                 screenUV = UnityStereoTransformScreenSpaceTex(screenUV);
 #endif
@@ -882,8 +890,20 @@ Shader "NASAPunk/SuitVisor"
                     distortionOffset.x += (radiationSceneNoise - 0.5) * hazardRadiation * 0.018 * radiationSceneGate;
                     distortionOffset.y += (Hash21(float2(radiationSceneBand * 1.23, floor(_Time.y * 29.0))) - 0.5) * hazardRadiation * 0.004 * radiationSceneGate;
                 }
-                distortionOffset *= scalableRefractionScale;
-                float2 refractedUV = screenUV + distortionOffset;
+                float2 refractedUV = screenUV;
+                [branch]
+                if (scalableRefractionScale > 0.001)
+                {
+                    distortionOffset *= scalableRefractionScale;
+                    refractedUV = screenUV + distortionOffset;
+                }
+                else
+                {
+                    float2 staticCell = floor(screenUV * _ScaledScreenParams.xy * 0.0625);
+                    float2 staticOffset = float2(Hash21(staticCell), Hash21(staticCell.yx + 17.0)) - 0.5;
+                    refractedUV = screenUV + staticOffset * lerp(0.00035, 0.0011, lowTierDitherScale);
+                }
+
                 float2 hazardSceneSplit = float2(hazardRadiation * 0.006 + hazardGlitch * 0.003, 0.0) * scalableChromaticScale;
                 float2 criticalSceneSplit = float2(_HectonSuitHealthGlitch.w * criticalSpikeGate * (0.5 + radialMagnitude), 0.0) * scalableChromaticScale;
                 float stressHudChromaticRaw = saturate(max(_PlayerStress01, _HectonHudStressChromaticAberration));
@@ -893,7 +913,18 @@ Shader "NASAPunk/SuitVisor"
                 float stressHudChromatic = saturate(stressHudPulse);
                 float chromaStrength = max(_ChromaticAberration * scalableChromaticScale, stressHudChromatic * (0.004 + radialMagnitude * 0.018) * scalableChromaticScale);
                 float2 chromaOffset = radialScreenOffset * chromaStrength + hazardSceneSplit + criticalSceneSplit;
-                float3 sceneColor = SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV).rgb;
+                float sceneSurrogateNoise = Hash21(floor(refractedUV * _ScaledScreenParams.xy * 0.125) + floor(_Time.y * 9.0));
+                float sceneSurrogateEdge = smoothstep(0.18, 1.0, radialMagnitude);
+                float sceneSurrogateGlare = saturate(IN.glareData.x * 0.28 + IN.glareData.y * 0.22 + sceneSurrogateEdge * 0.18);
+                float3 sceneColor =
+                    _BaseColor.rgb * (0.38 + _BaseColor.a * 0.18) +
+                    fresnelColor * (0.05 + sceneSurrogateEdge * 0.08 + runoffMask * 0.035) +
+                    _HUD_Color.rgb * (0.012 + sceneSurrogateEdge * 0.018) +
+                    float3(0.012, 0.020, 0.024);
+                sceneColor += (sceneSurrogateNoise - 0.5) * (0.018 + scalableRefractionScale * 0.014);
+                sceneColor += sceneSurrogateGlare * float3(0.026, 0.034, 0.036);
+                sceneColor = max(sceneColor, float3(0.0015, 0.0022, 0.0030));
+
                 float chromaticConsumer = max(chromaStrength, max(hazardGlitch, criticalHealthGlitch) * scalableChromaticScale);
                 if (chromaticConsumer > 0.0001)
                 {
@@ -1158,7 +1189,7 @@ Shader "NASAPunk/SuitVisor"
                 }
 #endif
 
-                float fragRawDepth = saturate(IN.positionCS.z / IN.positionCS.w);
+                float fragRawDepth = saturate(IN.positionCS.z * rcp(max(IN.positionCS.w, 0.0001)));
                 float sceneRawDepth = SampleSceneDepth(screenUV);
 #if UNITY_REVERSED_Z
                 float sceneDepthValid = step(0.0001, sceneRawDepth);
@@ -1355,6 +1386,9 @@ Shader "NASAPunk/SuitVisor"
                     + lensDirtGlare * 0.08
                     + blueNoiseGrimeMask * 0.04;
                 finalAlpha *= 1.0 - (criticalHypoxiaAlphaDissolve * criticalHypoxiaEdgeVignette * 0.18);
+                float sceneDepthCutoutFade = sceneDepthValid *
+                    saturate((linearSceneDepth - LinearEyeDepth(fragRawDepth, _ZBufferParams)) * rcp(max(_HudCloseOcclusionDistance, 0.01)));
+                finalAlpha *= lerp(1.0, max(sceneDepthCutoutFade, 0.2), sceneDepthValid);
                 finalAlpha = saturate(finalAlpha);
 
                 finalColor = MixFog(finalColor, IN.fogCoord);
@@ -1369,7 +1403,8 @@ Shader "NASAPunk/SuitVisor"
                     finalColor = float3(0.0, biosSceneBit * biosSceneLine * (0.82 + FastTriangleSigned(_Time.y * 2.1) * 0.04), 0.0);
                     finalAlpha = saturate(max(finalAlpha, 0.72));
                 }
-                return float4(finalColor, finalAlpha);
+                clip(finalAlpha - Bayer4x4(IN.positionCS.xy));
+                return float4(finalColor, 1.0);
             }
             ENDHLSL
         }

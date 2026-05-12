@@ -30,6 +30,7 @@ Shader "Hidden/Hecton8/RetinaDistortion"
                 float _HectonRetinaHealth01;
                 float _HectonRetinaCritical01;
                 float _HectonRetinaHeartbeatBpm;
+                float _HectonNarcosisScalar;
                 float _HectonRetinaChromaticOffset;
                 float _HectonRetinaDistortionOffset;
                 float _HectonRetinaVignetteStrength;
@@ -98,8 +99,9 @@ Shader "Hidden/Hecton8/RetinaDistortion"
             half4 Frag(Varyings input) : SV_Target
             {
                 float critical01 = saturate(_HectonRetinaCritical01);
+                float narcosis01 = saturate(_HectonNarcosisScalar);
                 [branch]
-                if (critical01 <= 0.0001)
+                if (max(critical01, narcosis01) <= 0.0001)
                     return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
 
                 float2 centered = input.screenUV * 2.0 - 1.0;
@@ -110,8 +112,9 @@ Shader "Hidden/Hecton8/RetinaDistortion"
                 float pulse01 = HeartbeatPulse(_HectonRetinaHeartbeatBpm);
                 float noise = ValueNoise(input.screenUV * float2(9.0, 7.0) + _Time.y * 0.31) - 0.5;
                 float pulseDrive = critical01 * (0.62 + pulse01 * 0.58);
-                float distortion = _HectonRetinaDistortionOffset * edge01 * pulseDrive * (1.0 + noise * 0.34);
-                float chroma = _HectonRetinaChromaticOffset * edge01 * pulseDrive;
+                float narcosisDrive = narcosis01 * edge01 * (0.64 + abs(noise) * 0.36);
+                float distortion = _HectonRetinaDistortionOffset * edge01 * max(pulseDrive, narcosisDrive * 0.78) * (1.0 + noise * 0.34);
+                float chroma = _HectonRetinaChromaticOffset * edge01 * max(pulseDrive, narcosisDrive);
             #if defined(_QUALITY_MX350)
                 distortion = 0.0;
             #else
@@ -131,10 +134,10 @@ Shader "Hidden/Hecton8/RetinaDistortion"
                 }
 
                 half luminance = dot(color.rgb, half3(0.2126h, 0.7152h, 0.0722h));
-                half desaturate01 = (half)(critical01 * edge01 * 0.12);
+                half desaturate01 = (half)(max(critical01 * 0.12, narcosis01 * 0.18) * edge01);
                 color.rgb = lerp(color.rgb, luminance.xxx * half3(0.82h, 0.94h, 1.08h), desaturate01);
 
-                half vignette = (half)saturate(_HectonRetinaVignetteStrength * edge01 * (0.48 + pulse01 * 0.52));
+                half vignette = (half)saturate(_HectonRetinaVignetteStrength * edge01 * max(0.48 + pulse01 * 0.52, 0.62 + narcosis01 * 0.28));
                 color.rgb *= 1.0h - vignette;
                 color.rgb = max(color.rgb, half3(0.0015h, 0.0023h, 0.0031h));
                 return color;

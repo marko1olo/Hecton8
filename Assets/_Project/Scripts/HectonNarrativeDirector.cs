@@ -13,6 +13,7 @@ using Hecton8.World;
 using UnityEngine;
 using Hecton8.Systems.AI;
 using Hecton8.Interaction;
+using Unity.Mathematics;
 
 namespace Hecton8.Gameplay
 {
@@ -37,6 +38,11 @@ namespace Hecton8.Gameplay
         [SerializeField, Sirenix.OdinInspector.ReadOnly] private int currentDepthTier;
         [SerializeField, Sirenix.OdinInspector.ReadOnly] private ulong narrativeAupTriggeredMask;
 
+        private const float SlowTickDeltaSeconds = 0.5f;
+        private const float HighTierAupScanIntervalSeconds = 0.5f;
+        private const float DefaultAupScanIntervalSeconds = 1f;
+        private const float LowTierAupScanIntervalSeconds = 2f;
+
         // Runtime-only collection for active POIs in the world.
         // COLD ALLOC: 64 for initial capacity (reasonable number of POIs per scene).
         private readonly List<NarrativeDiscovery> _activePOIs = new List<NarrativeDiscovery>(64);
@@ -47,6 +53,8 @@ namespace Hecton8.Gameplay
         private Transform _playerTransform;
         private bool _registeredNarrativeRuntime;
         private bool _registeredSlowTick;
+        private float _aupScanAccumulator = LowTierAupScanIntervalSeconds;
+        private bool _aupScannerDisabledForCurrentPoiSet;
 
         // Flag: Director zaprosil redkuyu nahodku v tekuschem tike
         // Chitaetsya v diagnostike i buduschey sisteme spavna
@@ -80,6 +88,8 @@ namespace Hecton8.Gameplay
         {
             currentDepthTier = data.narrativeDepthTier;
             narrativeAupTriggeredMask = data.narrativeAupTriggeredMask;
+            _aupScannerDisabledForCurrentPoiSet = false;
+            _aupScanAccumulator = LowTierAupScanIntervalSeconds;
             discoveredIds.Clear();
 
             if (data.narrativeDiscoveryIds != null)
@@ -198,7 +208,7 @@ namespace Hecton8.Gameplay
                     continue;
 
                 AbsoluteUniversePosition poiAup = AbsoluteUniversePosition.FromRuntimePosition(poi.transform.position);
-                double sqrDist = AbsoluteUniversePosition.DistanceSq(in poiAup, in centerAup);
+                double sqrDist = DistanceSqAup(in poiAup, in centerAup);
                 if (sqrDist < minSqrDist)
                 {
                     minSqrDist = sqrDist;
@@ -215,7 +225,11 @@ namespace Hecton8.Gameplay
                 return;
 
             AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
-            ScanAupNarrativeTriggers(in playerAup);
+            if (ShouldScanAupNarrativeTriggers() &&
+                !ScanAupNarrativeTriggers(in playerAup))
+            {
+                _aupScannerDisabledForCurrentPoiSet = true;
+            }
 
             float depth = Mathf.Max(0f, (float)-playerAup.ToAbsoluteDouble3().y);
             int newTier = CalculateDepthTier(depth);
@@ -229,11 +243,12 @@ namespace Hecton8.Gameplay
             LogDepthTierReached();
         }
 
-        private void ScanAupNarrativeTriggers(in AbsoluteUniversePosition playerAup)
+        private bool ScanAupNarrativeTriggers(in AbsoluteUniversePosition playerAup)
         {
             if (_activePOIs.Count <= 0)
-                return;
+                return false;
 
+            bool hasPendingTrigger = false;
             for (int i = _activePOIs.Count - 1; i >= 0; i--)
             {
                 NarrativeDiscovery poi = _activePOIs[i];
@@ -259,22 +274,29 @@ namespace Hecton8.Gameplay
                     continue;
                 }
 
-                if (AbsoluteUniversePosition.DistanceSq(in playerAup, in poiAup) > radiusSq)
+                if (!IsWithinAupNarrativeTriggerRange(in playerAup, in poiAup, radiusSq))
+                {
+                    hasPendingTrigger = true;
                     continue;
+                }
 
                 narrativeAupTriggeredMask |= triggerBit;
-                NarrativeEvents.RaiseDiscoveryMade(poi.DiscoveryId);
+                NarrativeEvents.RaiseDiscoveryMade(discoveryHash);
 
                 LoreDatabaseManager loreDatabase = GlobalRegistry.LoreDatabase;
                 if (loreDatabase != null)
                     loreDatabase.TryUnlockByHash(LoreDatabaseManager.ComputeLoreHash(poi.DiscoveryId));
             }
+
+            return hasPendingTrigger;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogDepthTierReached()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[Narrative] New depth tier reached.");
+#endif
         }
 
         public bool HasDiscovery(string id)
@@ -305,7 +327,11 @@ namespace Hecton8.Gameplay
                 return;
 
             if (!_activePOIs.Contains(poi))
+            {
                 _activePOIs.Add(poi);
+                _aupScannerDisabledForCurrentPoiSet = false;
+                _aupScanAccumulator = LowTierAupScanIntervalSeconds;
+            }
 
             RegisterNarrativeNode(poi.DiscoveryId);
         }
@@ -316,6 +342,54 @@ namespace Hecton8.Gameplay
                 return;
 
             _activePOIs.Remove(poi);
+            _aupScannerDisabledForCurrentPoiSet = false;
+        }
+
+        private bool ShouldScanAupNarrativeTriggers()
+        {
+            if (_aupScannerDisabledForCurrentPoiSet || _activePOIs.Count <= 0)
+                return false;
+
+            _aupScanAccumulator += SlowTickDeltaSeconds;
+            float scanInterval = ResolveAupScanIntervalSeconds();
+            if (_aupScanAccumulator < scanInterval)
+                return false;
+
+            _aupScanAccumulator = 0f;
+            return true;
+        }
+
+        private static float ResolveAupScanIntervalSeconds()
+        {
+            switch (GlobalRegistry.ScalabilityTier)
+            {
+                case HectonQualityTier.High:
+                case HectonQualityTier.Ultra:
+                    return HighTierAupScanIntervalSeconds;
+
+                case HectonQualityTier.Low:
+                case HectonQualityTier.Mx350:
+                    return LowTierAupScanIntervalSeconds;
+
+                default:
+                    return DefaultAupScanIntervalSeconds;
+            }
+        }
+
+        private static bool IsWithinAupNarrativeTriggerRange(
+            in AbsoluteUniversePosition playerAup,
+            in AbsoluteUniversePosition poiAup,
+            double radiusSq)
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            if (tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350)
+            {
+                double3 delta = poiAup.ToAbsoluteDouble3() - playerAup.ToAbsoluteDouble3();
+                double dominantAxis = math.cmax(math.abs(delta));
+                return dominantAxis * dominantAxis <= radiusSq;
+            }
+
+            return DistanceSqAup(in playerAup, in poiAup) <= radiusSq;
         }
 
         private int CalculateDepthTier(float depth)
@@ -333,6 +407,15 @@ namespace Hecton8.Gameplay
                 return 1;
 
             return 0;
+        }
+
+        private static double DistanceSqAup(
+            in AbsoluteUniversePosition a,
+            in AbsoluteUniversePosition b)
+        {
+            double3 origin = a.ToAbsoluteDouble3();
+            double3 target = b.ToAbsoluteDouble3();
+            return math.distancesq(origin, target);
         }
 
         private void HandleDiscovery(uint discoveryHash)

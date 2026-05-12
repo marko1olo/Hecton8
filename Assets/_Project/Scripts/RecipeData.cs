@@ -3,6 +3,7 @@ using System.Text;
 using Hecton.Localization;
 using Hecton8.Building;
 using Hecton8.Gameplay;
+using Hecton8.Inventory;
 using Hecton8.Items;
 using UnityEngine;
 
@@ -84,6 +85,7 @@ namespace Hecton8.Crafting
         private string _cachedCostSummary;
         private uint _requiredScanEntryHash;
         private int _requiredAnchoredBiomeFamilyHashId;
+        private ulong _recipeMask;
 
         private void OnEnable()
         {
@@ -159,6 +161,7 @@ namespace Hecton8.Crafting
             : requiredScanEntryId.Trim();
         public uint RequiredScanEntryHash => _requiredScanEntryHash;
         public int RequiredAnchoredBiomeFamilyHashId => _requiredAnchoredBiomeFamilyHashId;
+        public ulong RecipeMask => _recipeMask;
 
         public bool IsUnlocked(ScanLogSystem scanLogSystem)
         {
@@ -248,6 +251,23 @@ namespace Hecton8.Crafting
         {
             _requiredScanEntryHash = ScanEvents.ComputeEntryHash(requiredScanEntryId);
             _requiredAnchoredBiomeFamilyHashId = LocHash.ComputeAsciiLowerInvariant(requiredAnchoredBiomeFamilyId);
+            _recipeMask = BuildRecipeMask();
+        }
+
+        private ulong BuildRecipeMask()
+        {
+            ulong mask = 0UL;
+            int ingredientCount = ingredients != null ? ingredients.Count : 0;
+            for (int ingredientIndex = 0; ingredientIndex < ingredientCount; ingredientIndex++)
+            {
+                InventoryCost cost = ingredients[ingredientIndex];
+                if (cost == null || cost.item == null || cost.amount <= 0)
+                    continue;
+
+                mask |= InventoryMaterialMask.ResolveBit(cost.item.PersistentHashId);
+            }
+
+            return mask;
         }
 
         private string ResolveLocalizedRecipeName(string fallback)

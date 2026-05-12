@@ -23,10 +23,12 @@ Shader "Hidden/Hecton8/HalfResParticleComposite"
 
         CBUFFER_START(UnityPerMaterial)
             float _HectonHalfResParticlesCompositeStrength;
+            float _HectonHalfResParticlesBilateralDepthScale;
         CBUFFER_END
 
         TEXTURE2D_X(_BlitTexture);
         TEXTURE2D_X(_HectonHalfResParticlesTex);
+        float4 _HectonHalfResParticlesTex_TexelSize;
 
         struct Attributes
         {
@@ -50,30 +52,47 @@ Shader "Hidden/Hecton8/HalfResParticleComposite"
             return output;
         }
 
-        float HectonSampleSceneRawDepth(float2 uv)
+        float HectonSampleSceneEyeDepth(float2 uv)
         {
-            return SampleSceneDepth(uv);
+            return LinearEyeDepth(SampleSceneDepth(uv), _ZBufferParams);
         }
 
-        float HectonResolveDepthEdgeFade(float centerRawDepth)
+        float HectonBilateralDepthWeight(float centerDepth, float tapDepth)
         {
-            float edge = abs(ddx(centerRawDepth)) + abs(ddy(centerRawDepth));
-            return saturate(1.0 - edge * 192.0);
+            float depthScale = max(_HectonHalfResParticlesBilateralDepthScale, 0.001);
+            return exp2(-abs(tapDepth - centerDepth) * depthScale);
         }
 
-        half4 HectonSampleParticlesDepthFake(float2 uv)
+        void HectonAccumulateParticleTap(float2 uv, float centerDepth, inout float4 colorAccum, inout float weightAccum)
         {
-            half4 particles = SAMPLE_TEXTURE2D_X(_HectonHalfResParticlesTex, sampler_LinearClamp, uv);
-            float centerRawDepth = HectonSampleSceneRawDepth(uv);
-            half edgeFade = (half)lerp(0.45, 1.0, HectonResolveDepthEdgeFade(centerRawDepth));
-            particles.a *= edgeFade;
-            return particles;
+            float2 clampedUv = saturate(uv);
+            float tapDepth = HectonSampleSceneEyeDepth(clampedUv);
+            float weight = HectonBilateralDepthWeight(centerDepth, tapDepth);
+            colorAccum += (float4)SAMPLE_TEXTURE2D_X(_HectonHalfResParticlesTex, sampler_LinearClamp, clampedUv) * weight;
+            weightAccum += weight;
+        }
+
+        half4 HectonSampleParticlesBilateral(float2 uv)
+        {
+            float2 fallbackTexel = rcp(max(_ScaledScreenParams.xy, float2(1.0, 1.0)));
+            float2 halfResTexel = max(_HectonHalfResParticlesTex_TexelSize.xy, fallbackTexel);
+            float2 tapOffset = halfResTexel * 0.5;
+            float centerDepth = HectonSampleSceneEyeDepth(uv);
+            float4 colorAccum = 0.0;
+            float weightAccum = 0.0;
+
+            HectonAccumulateParticleTap(uv + tapOffset * float2(-1.0, -1.0), centerDepth, colorAccum, weightAccum);
+            HectonAccumulateParticleTap(uv + tapOffset * float2( 1.0, -1.0), centerDepth, colorAccum, weightAccum);
+            HectonAccumulateParticleTap(uv + tapOffset * float2(-1.0,  1.0), centerDepth, colorAccum, weightAccum);
+            HectonAccumulateParticleTap(uv + tapOffset * float2( 1.0,  1.0), centerDepth, colorAccum, weightAccum);
+
+            return (half4)(colorAccum * rcp(max(weightAccum, 0.0001)));
         }
 
         half4 FragComposite(Varyings input) : SV_Target
         {
             half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
-            half4 particles = HectonSampleParticlesDepthFake(input.screenUV);
+            half4 particles = HectonSampleParticlesBilateral(input.screenUV);
             half strength = saturate((half)_HectonHalfResParticlesCompositeStrength);
             half alpha = saturate(particles.a * strength);
             sourceColor.rgb = sourceColor.rgb * (1.0h - alpha) + particles.rgb * strength;
@@ -91,5 +110,5 @@ Shader "Hidden/Hecton8/HalfResParticleComposite"
         }
     }
 
-    FallBack Off
+    FallBack "Hidden/Hecton8/InternalBlackError"
 }

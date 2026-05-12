@@ -20,6 +20,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Stable item hash used for milestone reward and visor hologram proxy lookup.")]
         [SerializeField] private int rewardItemHash;
 
+        [Tooltip("Stable FNV-1a encyclopedia/discovery hash. Zero falls back to rewardItemHash or fragment unlockId.")]
+        [SerializeField] private uint discoveryHash;
+
         /// <summary>
         /// Total scan duration required to complete this research target.
         /// </summary>
@@ -29,6 +32,11 @@ namespace Hecton8.Gameplay
         /// Stable item hash used for reward routing and proxy-mesh lookup.
         /// </summary>
         public int RewardItemHash => rewardItemHash;
+
+        /// <summary>
+        /// Stable encyclopedia/discovery hash used by scanner archaeology.
+        /// </summary>
+        public uint DiscoveryHash => discoveryHash;
 
         /// <summary>
         /// Number of authored lore-unlock milestones in this template.

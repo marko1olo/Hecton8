@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.Narrative;
+using Hecton8.Physics;
 using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
@@ -78,7 +80,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Subtitle Manager")]
-    public sealed class SubtitleManager : MonoBehaviour, ITickable, INotificationEventListener, IAudioLogEventListener
+    public sealed class SubtitleManager : MonoBehaviour, ITickable, ILateFrameTickable, INotificationEventListener, IAudioLogEventListener
     {
         private enum SubtitleSource
         {
@@ -108,6 +110,20 @@ namespace Hecton8.UI
             public float SpeakerIntensity;
             public int StartIndex;
             public int Length;
+        }
+
+        internal readonly struct SubtitleLineSlice
+        {
+            public SubtitleLineSlice(int start, int length, int nextStart)
+            {
+                Start = start;
+                Length = length;
+                NextStart = nextStart;
+            }
+
+            public int Start { get; }
+            public int Length { get; }
+            public int NextStart { get; }
         }
 
         private ref struct SubtitleSpanBuilder
@@ -154,6 +170,14 @@ namespace Hecton8.UI
         private const int MaxBufferedSubtitleCharacters = CharBufferPool.RequiredVrTextCapacity;
         private const int MaxTimedAudioLogCueCount = 32;
         private const int MaxSubtitleRenderCharacters = 2048;
+        private const float AudioLogCueMinimumShakeIntensity = 0.025f;
+        private const float AudioLogCueMinimumImpulseEnergyJoules = 8f;
+        private const float AudioLogCueMaximumImpulseEnergyJoules = 120f;
+        private const float AudioLogCueMinimumImpulseVolume = 0.05f;
+        private const float AudioLogCueMaximumImpulseVolume = 0.22f;
+        private const float AudioLogCueMinimumImpulseRadius = 1.5f;
+        private const float AudioLogCueMaximumImpulseRadius = 5.5f;
+        private const float AudioLogCueMaximumCameraShake = 0.18f;
 
         private static readonly Color BackdropColor = new Color(0.01f, 0.04f, 0.06f, 0.64f);
         private static readonly Color TextColor = new Color(0.86f, 0.96f, 1f, 0.96f);
@@ -171,6 +195,7 @@ namespace Hecton8.UI
         private readonly TimedSubtitleCue[] _timedAudioLogCues = new TimedSubtitleCue[MaxTimedAudioLogCueCount]; // COLD ALLOC: TimedSubtitleCue[32] - parsed timed subtitle cue metadata - owner: SubtitleManager
         private readonly char[] _subtitleRenderBuffer = new char[MaxSubtitleRenderCharacters]; // COLD ALLOC: char[2048] - subtitle TMP render buffer - owner: SubtitleManager
         private readonly char[] _lastRenderedSubtitleBuffer = new char[MaxSubtitleRenderCharacters]; // COLD ALLOC: char[2048] - subtitle change cache - owner: SubtitleManager
+        private readonly char[] _pendingSubtitleSwapBuffer = new char[MaxSubtitleRenderCharacters]; // COLD ALLOC: char[2048] - LateUpdate TMP swap buffer - owner: SubtitleManager
         private readonly char[] _currentBufferedSubtitleBuffer = new char[MaxBufferedSubtitleCharacters]; // COLD ALLOC: char[256] - active zero-GC subtitle source cache - owner: SubtitleManager
         private readonly char[] _lastEnqueuedBufferedSubtitleBuffer = new char[MaxBufferedSubtitleCharacters]; // COLD ALLOC: char[256] - zero-GC repeat suppression cache - owner: SubtitleManager
 
@@ -194,6 +219,7 @@ namespace Hecton8.UI
         private bool _built;
         private bool _isShowing;
         private bool _registeredToTickManager;
+        private bool _registeredLateFrameSwap;
         private bool _serviceRegistered;
         private string _currentMessage;
         private SubtitleSource _currentSource;
@@ -207,6 +233,7 @@ namespace Hecton8.UI
         private bool _currentUsesBufferedSubtitle;
         private int _lastRenderedSubtitleLength = -1;
         private bool _timedAudioLogActive;
+        private bool _subtitleSwapPending;
         private float _timedAudioLogElapsed;
         private float _timedAudioLogTotalDuration;
         private int _timedAudioLogCueCount;
@@ -222,6 +249,7 @@ namespace Hecton8.UI
         private int _timedAudioLogBodyLength;
         private uint _currentAudioLogHash;
         private int _lastStressCorruptionBucket = int.MinValue;
+        private int _pendingSubtitleSwapLength = -1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -287,6 +315,7 @@ namespace Hecton8.UI
             NotificationEvents.Unregister(this);
             AudioLogEvents.Unregister(this);
             UnregisterFromTickManager();
+            UnregisterLateFrameSwap();
             TryUnregisterFromGlobalRegistry();
 
             if (s_activeInstance == this)
@@ -295,6 +324,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            UnregisterLateFrameSwap();
             TryUnregisterFromGlobalRegistry();
 
             if (s_activeInstance == this)
@@ -427,6 +457,18 @@ namespace Hecton8.UI
 
             if (_audioCueGroup != null)
                 _audioCueGroup.alpha = _currentSource == SubtitleSource.AudioLog ? _currentAlpha : 0f;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_subtitleSwapPending)
+            {
+                UnregisterLateFrameSwap();
+                return;
+            }
+
+            FlushPendingSubtitleSwap();
+            UnregisterLateFrameSwap();
         }
 
         public void OnNotificationEvent(in NotificationEventPayload payload)
@@ -989,6 +1031,61 @@ namespace Hecton8.UI
         private void NotifyCueChanged(float duration, char[] textBuffer, int textStart, int textLength, float speakerIntensity)
         {
             OnCueChanged?.Invoke(duration, textBuffer, textStart, textLength, speakerIntensity);
+            EmitAudioLogCueSensoryPulse(duration, speakerIntensity);
+        }
+
+        private void EmitAudioLogCueSensoryPulse(float duration, float speakerIntensity)
+        {
+            if (_currentAudioLogHash == 0u || duration <= 0f)
+                return;
+
+            float intensity = math.saturate(speakerIntensity);
+            if (intensity <= AudioLogCueMinimumShakeIntensity)
+                return;
+
+            ResolveAudioLogCueTransform(out Vector3 runtimePosition, out Vector3 direction);
+            float energyJoules = math.lerp(
+                AudioLogCueMinimumImpulseEnergyJoules,
+                AudioLogCueMaximumImpulseEnergyJoules,
+                intensity);
+            float volume01 = math.lerp(
+                AudioLogCueMinimumImpulseVolume,
+                AudioLogCueMaximumImpulseVolume,
+                intensity);
+            float radiusMeters = math.lerp(
+                AudioLogCueMinimumImpulseRadius,
+                AudioLogCueMaximumImpulseRadius,
+                intensity);
+
+            AcousticImpulseEvent impulseEvent = new AcousticImpulseEvent(
+                runtimePosition,
+                direction,
+                energyJoules,
+                volume01,
+                1f,
+                radiusMeters,
+                0,
+                0,
+                AcousticImpulseFlags.None);
+            PhysicsEventBus.NotifyAcousticImpulse(in impulseEvent);
+
+            if (GlobalRegistry.CameraJuice != null)
+                GlobalRegistry.CameraJuice.TriggerSubmarineImpactShake(math.min(AudioLogCueMaximumCameraShake, intensity * 0.12f));
+        }
+
+        private static void ResolveAudioLogCueTransform(out Vector3 runtimePosition, out Vector3 direction)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform == null)
+            {
+                runtimePosition = Vector3.zero;
+                direction = Vector3.forward;
+                return;
+            }
+
+            runtimePosition = playerTransform.position;
+            direction = playerTransform.forward;
         }
 
         private bool TryParseTimedSubtitleCues(char[] subtitleBuffer, int subtitleLength)
@@ -1116,7 +1213,13 @@ namespace Hecton8.UI
                 _lastRenderedSubtitleBuffer[i] = _subtitleRenderBuffer[i];
 
             _lastRenderedSubtitleLength = safeLength;
-            _subtitleText.SetCharArray(_subtitleRenderBuffer, 0, safeLength);
+            for (int i = 0; i < safeLength; i++)
+                _pendingSubtitleSwapBuffer[i] = _subtitleRenderBuffer[i];
+
+            _pendingSubtitleSwapLength = safeLength;
+            _subtitleSwapPending = true;
+            if (!RegisterLateFrameSwap())
+                FlushPendingSubtitleSwap();
         }
 
         private void RegisterToTickManager()
@@ -1138,6 +1241,40 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = false;
+        }
+
+        private bool RegisterLateFrameSwap()
+        {
+            if (_registeredLateFrameSwap)
+                return true;
+
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return false;
+
+            _registeredLateFrameSwap = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            return _registeredLateFrameSwap;
+        }
+
+        private void UnregisterLateFrameSwap()
+        {
+            if (!_registeredLateFrameSwap)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrameSwap = false;
+        }
+
+        private void FlushPendingSubtitleSwap()
+        {
+            if (!_subtitleSwapPending)
+                return;
+
+            int safeLength = Mathf.Clamp(_pendingSubtitleSwapLength, 0, _pendingSubtitleSwapBuffer.Length);
+            if (_subtitleText != null)
+                _subtitleText.SetCharArray(_pendingSubtitleSwapBuffer, 0, safeLength);
+
+            _pendingSubtitleSwapLength = -1;
+            _subtitleSwapPending = false;
         }
 
         private void EnsureBuilt()
@@ -1287,6 +1424,62 @@ namespace Hecton8.UI
 
             start = safeStart;
             endExclusive = safeEnd;
+        }
+
+        internal static bool TrySliceSubtitleLine(
+            ReadOnlySpan<char> source,
+            int start,
+            int maxCharacters,
+            out SubtitleLineSlice slice)
+        {
+            slice = default;
+            int safeStart = Mathf.Clamp(start, 0, source.Length);
+            int safeMax = Mathf.Max(1, maxCharacters);
+            while (safeStart < source.Length && char.IsWhiteSpace(source[safeStart]))
+                safeStart++;
+
+            if (safeStart >= source.Length)
+                return false;
+
+            int hardEnd = Mathf.Min(source.Length, safeStart + safeMax);
+            int punctuationEnd = -1;
+            int whitespaceEnd = -1;
+            for (int i = safeStart; i < hardEnd; i++)
+            {
+                char value = source[i];
+                if (IsSubtitleSlicePunctuation(value))
+                    punctuationEnd = i + 1;
+                else if (char.IsWhiteSpace(value))
+                    whitespaceEnd = i;
+            }
+
+            int end = hardEnd >= source.Length
+                ? source.Length
+                : punctuationEnd > safeStart
+                    ? punctuationEnd
+                    : whitespaceEnd > safeStart
+                        ? whitespaceEnd
+                        : hardEnd;
+
+            while (end > safeStart && char.IsWhiteSpace(source[end - 1]))
+                end--;
+
+            int nextStart = Mathf.Max(end, safeStart);
+            while (nextStart < source.Length && char.IsWhiteSpace(source[nextStart]))
+                nextStart++;
+
+            slice = new SubtitleLineSlice(safeStart, end - safeStart, nextStart);
+            return slice.Length > 0;
+        }
+
+        private static bool IsSubtitleSlicePunctuation(char value)
+        {
+            return value == '.' ||
+                   value == ',' ||
+                   value == ';' ||
+                   value == ':' ||
+                   value == '!' ||
+                   value == '?';
         }
 
         private static float FastDecayBlend(float speed, float deltaTime)

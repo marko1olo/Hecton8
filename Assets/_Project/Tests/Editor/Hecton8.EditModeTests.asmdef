@@ -4,6 +4,8 @@
     "references":  [
                        "Hecton8.Core",
                        "Hecton8.Editor",
+                       "Unity.Mathematics",
+                       "Unity.Burst",
                        "UnityEngine.TestRunner",
                        "UnityEditor.TestRunner"
                    ],
@@ -13,7 +15,7 @@
     "excludePlatforms":  [
 
                          ],
-    "allowUnsafeCode":  false,
+    "allowUnsafeCode":  true,
     "overrideReferences":  false,
     "precompiledReferences":  [
                                   "nunit.framework.dll"

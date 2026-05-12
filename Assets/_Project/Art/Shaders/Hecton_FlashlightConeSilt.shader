@@ -21,6 +21,7 @@ Shader "Hecton8/VFX/FlashlightConeSilt"
         ZWrite Off
         ZTest LEqual
         Cull Back
+        AlphaToMask Off
 
         Pass
         {
@@ -67,6 +68,12 @@ Shader "Hecton8/VFX/FlashlightConeSilt"
                 return frac(value.x * value.y);
             }
 
+            float HectonDitherCoverage(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -107,6 +114,7 @@ Shader "Hecton8/VFX/FlashlightConeSilt"
                 float silt = step(0.38, siltNoise);
 
                 half alpha = (half)(nearFade * tipFade * edgeFade * axialFade * depthFade * silt * max(_BeamParams.x, 0.0));
+                clip(alpha - max((half)HectonDitherCoverage(input.positionCS.xy), 0.0005h));
                 return half4(_BeamColor.rgb * alpha, alpha);
             }
             ENDHLSL

@@ -29,6 +29,11 @@ namespace Hecton8.Core
     /// </summary>
     public interface ISystem
     {
+        /// <summary>
+        /// Monotonic service liveness counter sampled by bootstrap and RuntimeWatchdog.
+        /// Services with real update lanes should override this with their own counter.
+        /// </summary>
+        int TickCount => global::System.Environment.TickCount;
     }
 
     /// <summary>
@@ -349,7 +354,7 @@ namespace Hecton8.Core
         public WeatherState StateMask;
 
         /// <summary>
-        /// Transition alpha across the active weather-state change.
+        /// Normalized storm/current intensity after active weather-state blending.
         /// </summary>
         public float WeatherIntensity;
 
@@ -1346,7 +1351,7 @@ namespace Hecton8.Core
         Vector3 GlobalWindVector { get; }
 
         /// <summary>
-        /// Transition alpha used by consumers for smooth blending.
+        /// Normalized storm/current intensity used by consumers for macro weather coupling.
         /// </summary>
         float WeatherIntensity { get; }
 
@@ -1374,6 +1379,22 @@ namespace Hecton8.Core
         /// <param name="sample">Resolved flow and cable payload.</param>
         /// <returns>True when any updraft or cable influence is active at the sample point.</returns>
         bool SampleThermalFlow(Vector3 positionWS, float radiusWS, out AbyssalThermalManager.ThermalFlowSample sample);
+
+        /// <summary>
+        /// Samples the latest Celsius heat field without allocating.
+        /// </summary>
+        bool TrySampleTemperatureCelsius(Vector3 positionWS, out float temperatureCelsius);
+
+        /// <summary>
+        /// Exposes the front-buffer coarse thermal map for avoidance/read-only consumers.
+        /// </summary>
+        bool TryGetThermalMapReadback(
+            out NativeArray<float> temperatureCelsius,
+            out int width,
+            out int height,
+            out Vector3 originWS,
+            out float cellSizeMeters,
+            out int version);
     }
 
     /// <summary>
@@ -1482,6 +1503,11 @@ namespace Hecton8.Core
         /// Human-readable current phase name for diagnostics consumers.
         /// </summary>
         string CurrentPhaseName { get; }
+
+        /// <summary>
+        /// Attempts to expose the current predator AUP GPU buffer for decoupled visual consumers.
+        /// </summary>
+        bool TryGetPredatorAupGpuBuffer(out GraphicsBuffer buffer, out int count);
 
         /// <summary>
         /// Forces the next completed encounter tick into the peak phase.
@@ -1628,7 +1654,10 @@ namespace Hecton8.Core
                 processorCount,
                 qualityTier,
                 0d,
-                MathPrecisionLevel.Low)
+                0,
+                qualityTier == HectonQualityTier.High || qualityTier == HectonQualityTier.Ultra
+                    ? MathPrecisionLevel.High
+                    : MathPrecisionLevel.Low)
         {
         }
 
@@ -1647,7 +1676,10 @@ namespace Hecton8.Core
                 processorCount,
                 qualityTier,
                 physicsBenchmarkMillisecondsPerStep,
-                MathPrecisionLevel.Low)
+                0,
+                qualityTier == HectonQualityTier.High || qualityTier == HectonQualityTier.Ultra
+                    ? MathPrecisionLevel.High
+                    : MathPrecisionLevel.Low)
         {
         }
 
@@ -1660,6 +1692,7 @@ namespace Hecton8.Core
             int processorCount,
             HectonQualityTier qualityTier,
             double physicsBenchmarkMillisecondsPerStep,
+            int hardwareScore,
             MathPrecisionLevel mathPrecisionLevel)
         {
             GraphicsMemoryMegabytes = graphicsMemoryMegabytes;
@@ -1667,6 +1700,7 @@ namespace Hecton8.Core
             ProcessorCount = processorCount;
             QualityTier = qualityTier;
             PhysicsBenchmarkMillisecondsPerStep = physicsBenchmarkMillisecondsPerStep;
+            HardwareScore = hardwareScore;
             MathPrecisionLevel = mathPrecisionLevel;
         }
 
@@ -1684,6 +1718,9 @@ namespace Hecton8.Core
 
         /// <summary>Cold BIOS local-physics benchmark cost in milliseconds per 0.02s step.</summary>
         public double PhysicsBenchmarkMillisecondsPerStep { get; }
+
+        /// <summary>Deterministic 0-100 BIOS hardware score captured at boot.</summary>
+        public int HardwareScore { get; }
 
         /// <summary>BIOS-selected math precision level for runtime shader/simulation paths.</summary>
         public MathPrecisionLevel MathPrecisionLevel { get; }

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.World;
@@ -90,6 +91,18 @@ namespace Hecton8.Power
         EmergencyLockdown = 1 << 7
     }
 
+    [Flags]
+    public enum PowerGridNodeFlags : byte
+    {
+        None = 0,
+        Powered = 1 << 0,
+        Overloaded = 1 << 1,
+        Damaged = 1 << 2,
+        Offline = 1 << 3,
+        Flooded = 1 << 4,
+        Source = 1 << 5
+    }
+
     /// <summary>
     /// Native-backed logistics graph kernel used by power and oxygen topologies.
     /// Runtime traversal reads CSR adjacency only: EdgeOffsets + EdgeDestinations + EdgeConductance.
@@ -134,6 +147,27 @@ namespace Hecton8.Power
             public LogisticsBrownoutTier BrownoutTier;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        private struct PowerGridBlackBoxEntry
+        {
+            public uint FrameIndex;
+            public uint StateHash;
+            public uint ReasonFlags;
+            public int NodeCount;
+            public int EdgeCount;
+            public int RuntimeEdgeCount;
+            public int SolveStartNode;
+            public int SolveNodeCount;
+            public float TotalGeneration;
+            public float TotalConsumption;
+            public float SupplyRatio;
+            public float Balance;
+            public float MinPotential;
+            public float MaxPotential;
+            public int BrownoutCount;
+            public int OverloadedCount;
+        }
+
         private struct TopologyEdgeRecord
         {
             public int SourceNodeIndex;
@@ -153,6 +187,116 @@ namespace Hecton8.Power
             public int PowerPriority;
             public byte PriorityTier;
             public LogisticsConsumerFlags Flags;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        public struct JacobiPowerGridSolverJob : IJob
+        {
+            public const int FixedIterationCount = 3;
+            public const float BrownoutPotentialThreshold = 0.2f;
+            public const float FloodedShortCircuitPotentialThreshold = 0.5f;
+
+            public int NodeCount;
+
+            [ReadOnly] public NativeParallelMultiHashMap<int, int> Connections;
+            [ReadOnly] public NativeArray<float> PowerCapacities;
+
+            public NativeArray<float> PowerPotentials;
+            public NativeArray<float> NextPowerPotentials;
+            public NativeArray<byte> NodeFlags;
+
+            public void Execute()
+            {
+                if (NodeCount <= 0 ||
+                    !Connections.IsCreated ||
+                    !PowerCapacities.IsCreated ||
+                    !PowerPotentials.IsCreated ||
+                    !NextPowerPotentials.IsCreated ||
+                    !NodeFlags.IsCreated)
+                {
+                    return;
+                }
+
+                int safeNodeCount = math.min(NodeCount, math.min(PowerPotentials.Length, math.min(NextPowerPotentials.Length, math.min(PowerCapacities.Length, NodeFlags.Length))));
+                if (safeNodeCount <= 0)
+                    return;
+
+                NativeArray<float> input = PowerPotentials;
+                NativeArray<float> output = NextPowerPotentials;
+                for (int iteration = 0; iteration < FixedIterationCount; iteration++)
+                {
+                    for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
+                    {
+                        byte flags = NodeFlags[nodeIndex];
+                        if ((flags & (byte)(PowerGridNodeFlags.Offline | PowerGridNodeFlags.Damaged)) != 0)
+                        {
+                            output[nodeIndex] = 0f;
+                            continue;
+                        }
+
+                        if ((flags & (byte)PowerGridNodeFlags.Source) != 0)
+                        {
+                            output[nodeIndex] = ClampPotential(1f, PowerCapacities[nodeIndex]);
+                            continue;
+                        }
+
+                        float potentialSum = ClampPotential(input[nodeIndex], PowerCapacities[nodeIndex]);
+                        int neighborCount = 0;
+                        if (Connections.TryGetFirstValue(nodeIndex, out int neighborIndex, out NativeParallelMultiHashMapIterator<int> iterator))
+                        {
+                            do
+                            {
+                                if ((uint)neighborIndex >= (uint)safeNodeCount)
+                                    continue;
+
+                                byte neighborFlags = NodeFlags[neighborIndex];
+                                if ((neighborFlags & (byte)(PowerGridNodeFlags.Offline | PowerGridNodeFlags.Damaged)) != 0)
+                                    continue;
+
+                                potentialSum += ClampPotential(input[neighborIndex], PowerCapacities[neighborIndex]);
+                                neighborCount++;
+                            }
+                            while (Connections.TryGetNextValue(out neighborIndex, ref iterator));
+                        }
+
+                        float nextPotential = potentialSum * math.rcp(1 + neighborCount);
+                        output[nodeIndex] = ClampPotential(nextPotential, PowerCapacities[nodeIndex]);
+                    }
+
+                    NativeArray<float> swap = input;
+                    input = output;
+                    output = swap;
+                }
+
+                for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
+                {
+                    float resolvedPotential = ClampPotential(input[nodeIndex], PowerCapacities[nodeIndex]);
+                    byte flags = NodeFlags[nodeIndex];
+                    if (resolvedPotential < BrownoutPotentialThreshold)
+                        flags = (byte)((flags & ~(byte)PowerGridNodeFlags.Powered) | (byte)PowerGridNodeFlags.Offline);
+                    else
+                        flags = (byte)((flags | (byte)PowerGridNodeFlags.Powered) & ~(byte)PowerGridNodeFlags.Offline);
+
+                    if ((flags & (byte)PowerGridNodeFlags.Flooded) != 0 &&
+                        resolvedPotential > FloodedShortCircuitPotentialThreshold)
+                    {
+                        flags |= (byte)PowerGridNodeFlags.Damaged;
+                    }
+
+                    PowerPotentials[nodeIndex] = resolvedPotential;
+                    NextPowerPotentials[nodeIndex] = resolvedPotential;
+                    NodeFlags[nodeIndex] = flags;
+                }
+            }
+
+            private static float ClampPotential(float potential, float capacity)
+            {
+                float safePotential = math.isfinite(potential) ? potential : 0f;
+                if (!math.isfinite(capacity) || capacity <= 0f)
+                    return 0f;
+
+                return math.saturate(safePotential);
+            }
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -262,6 +406,8 @@ namespace Hecton8.Power
             public NativeArray<float> NodeConductanceInverseSum;
             public NativeArray<float> PotentialFront;
             public NativeArray<float> PotentialBack;
+            public NativeArray<float> PowerCapacities;
+            public NativeArray<byte> PowerNodeFlags;
             public NativeArray<float> EdgeFlow;
             public NativeArray<byte> EdgeStates;
             public NativeArray<int> RuntimeConductiveEdgeCount;
@@ -448,6 +594,11 @@ namespace Hecton8.Power
                     node.Flags &= ~(LogisticsNodeFlags.Brownout | LogisticsNodeFlags.Overloaded | LogisticsNodeFlags.Dirty);
                     Nodes[nodeIndex] = node;
 
+                    if (PowerCapacities.IsCreated && nodeIndex < PowerCapacities.Length)
+                        PowerCapacities[nodeIndex] = math.max(Epsilon, node.Capacity);
+                    if (PowerNodeFlags.IsCreated && nodeIndex < PowerNodeFlags.Length)
+                        PowerNodeFlags[nodeIndex] = ResolvePowerGridNodeFlags(node.Flags, node.Reserved);
+
                     NodeNetInjection[nodeIndex] = 0f;
                     NodeServedDemand[nodeIndex] = 0f;
                     NodeVoltageSupplyRatio[nodeIndex] = 1f;
@@ -477,7 +628,9 @@ namespace Hecton8.Power
                     if (ProducerMap.TryGetValue(nodeIndex, out float productionRate))
                     {
                         ComponentGeneration[componentIndex] += productionRate;
-                        NodeSourcePotential[nodeIndex] = productionRate;
+                        NodeSourcePotential[nodeIndex] = 1f;
+                        if (PowerNodeFlags.IsCreated && nodeIndex < PowerNodeFlags.Length)
+                            PowerNodeFlags[nodeIndex] = (byte)(PowerNodeFlags[nodeIndex] | (byte)(PowerGridNodeFlags.Source | PowerGridNodeFlags.Powered));
                     }
                 }
 
@@ -621,6 +774,19 @@ namespace Hecton8.Power
                         node.Flags |= LogisticsNodeFlags.Overloaded;
 
                     Nodes[nodeIndex] = node;
+                    if (PowerCapacities.IsCreated && nodeIndex < PowerCapacities.Length)
+                        PowerCapacities[nodeIndex] = math.max(Epsilon, node.Capacity);
+                    if (PowerNodeFlags.IsCreated && nodeIndex < PowerNodeFlags.Length)
+                    {
+                        byte flags = ResolvePowerGridNodeFlags(node.Flags, node.Reserved);
+                        if (componentPowered)
+                            flags = (byte)((flags | (byte)PowerGridNodeFlags.Powered) & ~(byte)PowerGridNodeFlags.Offline);
+                        else
+                            flags = (byte)((flags | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
+                        if (NodeSourcePotential[nodeIndex] > Epsilon)
+                            flags |= (byte)PowerGridNodeFlags.Source;
+                        PowerNodeFlags[nodeIndex] = flags;
+                    }
                 }
             }
 
@@ -651,8 +817,8 @@ namespace Hecton8.Power
                     {
                         float sourcePotential = NodeSourcePotential[nodeIndex];
                         float initialPotential = sourcePotential > Epsilon
-                            ? math.max(0f, sourcePotential)
-                            : math.max(0f, Nodes[nodeIndex].Potential);
+                            ? 1f
+                            : math.saturate(Nodes[nodeIndex].Potential);
                         PotentialFront[nodeIndex] = initialPotential;
                         PotentialBack[nodeIndex] = initialPotential;
                     }
@@ -681,11 +847,12 @@ namespace Hecton8.Power
                         float sourcePotential = NodeSourcePotential[nodeIndex];
                         if (sourcePotential > Epsilon)
                         {
-                            output[nodeIndex] = math.max(0f, sourcePotential);
+                            output[nodeIndex] = 1f;
                             continue;
                         }
 
-                        float weightedNeighborPotential = 0f;
+                        float potentialSum = math.saturate(input[nodeIndex]);
+                        int neighborCount = 0;
                         int edgeStart = EdgeOffsets[nodeIndex];
                         int edgeEnd = EdgeOffsets[nodeIndex + 1];
                         for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
@@ -694,20 +861,19 @@ namespace Hecton8.Power
                                 continue;
 
                             int destinationNodeIndex = EdgeDestinations[edgeIndex];
-                            float conductance = EdgeConductance[edgeIndex];
-                            weightedNeighborPotential += input[destinationNodeIndex] * conductance;
+                            if ((uint)destinationNodeIndex >= (uint)NodeCount)
+                                continue;
+
+                            LogisticsNode destinationNode = Nodes[destinationNodeIndex];
+                            if ((destinationNode.Flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Ruptured)) != 0)
+                                continue;
+
+                            potentialSum += math.saturate(input[destinationNodeIndex]);
+                            neighborCount++;
                         }
 
-                        float injectionWatts = NodeNetInjection[nodeIndex];
-                        float inverseConductanceSum = NodeConductanceInverseSum[nodeIndex];
-                        float nextPotential = inverseConductanceSum > 0f
-                            ? (weightedNeighborPotential + injectionWatts) * inverseConductanceSum
-                            : math.max(0f, injectionWatts);
-                        float currentPotential = math.max(0f, input[nodeIndex]);
-                        float dampedPotential =
-                            (currentPotential * JacobiDampingRetainedPotential) +
-                            (math.max(0f, nextPotential) * JacobiDampingOmega);
-                        output[nodeIndex] = dampedPotential;
+                        float nextPotential = potentialSum * math.rcp(1 + neighborCount);
+                        output[nodeIndex] = math.isfinite(nextPotential) ? math.saturate(nextPotential) : 0f;
                     }
 
                     NativeArray<float> swap = input;
@@ -718,20 +884,56 @@ namespace Hecton8.Power
                 for (int nodeIndex = solveStartNode; nodeIndex < solveEndNode; nodeIndex++)
                 {
                     LogisticsNode node = Nodes[nodeIndex];
-                    node.Potential = input[nodeIndex];
+                    float resolvedPotential = math.isfinite(input[nodeIndex]) ? math.saturate(input[nodeIndex]) : 0f;
+                    if (NodeSourcePotential[nodeIndex] > Epsilon &&
+                        (node.Flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Ruptured)) == 0)
+                    {
+                        resolvedPotential = 1f;
+                    }
+
+                    node.Potential = resolvedPotential;
                     node.CurrentLoad = math.max(node.CurrentLoad, math.abs(NodeNetInjection[nodeIndex]));
+                    if (resolvedPotential < JacobiPowerGridSolverJob.BrownoutPotentialThreshold)
+                        node.Flags |= LogisticsNodeFlags.Brownout;
                     Nodes[nodeIndex] = node;
-                    PotentialFront[nodeIndex] = input[nodeIndex];
-                    PotentialBack[nodeIndex] = input[nodeIndex];
+                    PotentialFront[nodeIndex] = resolvedPotential;
+                    PotentialBack[nodeIndex] = resolvedPotential;
+                    NodeVoltageSupplyRatio[nodeIndex] = resolvedPotential;
+                    if (PowerCapacities.IsCreated && nodeIndex < PowerCapacities.Length)
+                        PowerCapacities[nodeIndex] = math.max(Epsilon, node.Capacity);
+                    if (PowerNodeFlags.IsCreated && nodeIndex < PowerNodeFlags.Length)
+                    {
+                        byte flags = PowerNodeFlags[nodeIndex];
+                        if (resolvedPotential < JacobiPowerGridSolverJob.BrownoutPotentialThreshold)
+                            flags = (byte)((flags | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
+                        else
+                            flags = (byte)((flags | (byte)PowerGridNodeFlags.Powered) & ~(byte)PowerGridNodeFlags.Offline);
+
+                        if ((flags & (byte)PowerGridNodeFlags.Flooded) != 0 &&
+                            resolvedPotential > JacobiPowerGridSolverJob.FloodedShortCircuitPotentialThreshold)
+                        {
+                            flags |= (byte)PowerGridNodeFlags.Damaged;
+                        }
+
+                        PowerNodeFlags[nodeIndex] = flags;
+                    }
                 }
 
                 for (int sourceNodeIndex = solveStartNode; sourceNodeIndex < solveEndNode; sourceNodeIndex++)
                 {
                     int edgeStart = EdgeOffsets[sourceNodeIndex];
                     int edgeEnd = EdgeOffsets[sourceNodeIndex + 1];
+                    float sourceLoadWatts = math.abs(NodeNetInjection[sourceNodeIndex]);
+                    float sourceConductanceSum = math.max(0f, NodeConductanceSum[sourceNodeIndex]);
                     for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
                     {
                         int destinationNodeIndex = EdgeDestinations[edgeIndex];
+                        if (!IsValidNodeIndex(destinationNodeIndex))
+                        {
+                            EdgeFlow[edgeIndex] = 0f;
+                            continue;
+                        }
+
                         byte edgeState = EdgeStates[edgeIndex];
                         if ((edgeState & (byte)LogisticsEdgeState.Ruptured) != 0)
                         {
@@ -739,21 +941,31 @@ namespace Hecton8.Power
                             continue;
                         }
 
-                        float flow = (input[sourceNodeIndex] - input[destinationNodeIndex]) * EdgeConductance[edgeIndex];
-                        float absFlow = math.abs(flow);
-                        float edgeCapacity = EdgeCapacity[edgeIndex];
+                        float edgeConductance = math.max(0f, EdgeConductance[edgeIndex]);
+                        float flow = (input[sourceNodeIndex] - input[destinationNodeIndex]) * edgeConductance;
+                        float sourceEdgeLoadWatts = sourceConductanceSum > Epsilon
+                            ? sourceLoadWatts * math.saturate(edgeConductance * math.rcp(sourceConductanceSum))
+                            : sourceLoadWatts;
+                        float destinationConductanceSum = math.max(0f, NodeConductanceSum[destinationNodeIndex]);
+                        float destinationLoadWatts = math.abs(NodeNetInjection[destinationNodeIndex]);
+                        float destinationEdgeLoadWatts = destinationConductanceSum > Epsilon
+                            ? destinationLoadWatts * math.saturate(edgeConductance * math.rcp(destinationConductanceSum))
+                            : destinationLoadWatts;
+                        float edgeLoadWatts = math.max(sourceEdgeLoadWatts, destinationEdgeLoadWatts);
+                        float edgeCapacity = math.max(Epsilon, EdgeCapacity[edgeIndex]);
 
-                        if (absFlow > edgeCapacity * RuptureFlowMultiplier)
+                        if (edgeLoadWatts > edgeCapacity * RuptureFlowMultiplier)
                         {
                             edgeState |= (byte)(LogisticsEdgeState.Overloaded | LogisticsEdgeState.Ruptured);
                             flow = 0f;
-                            absFlow = 0f;
-                            RemoveRupturedEdgeFromConductance(sourceNodeIndex, EdgeConductance[edgeIndex]);
+                            edgeLoadWatts = 0f;
+                            RemoveRupturedEdgeFromConductance(sourceNodeIndex, edgeConductance);
+                            sourceConductanceSum = math.max(0f, sourceConductanceSum - edgeConductance);
                             DecrementRuntimeConductiveEdgeCount();
                             MarkNodeOverloaded(sourceNodeIndex);
                             MarkNodeOverloaded(destinationNodeIndex);
                         }
-                        else if (absFlow > edgeCapacity)
+                        else if (edgeLoadWatts > edgeCapacity)
                         {
                             edgeState |= (byte)LogisticsEdgeState.Overloaded;
                             MarkNodeOverloaded(sourceNodeIndex);
@@ -766,8 +978,8 @@ namespace Hecton8.Power
 
                         EdgeStates[edgeIndex] = edgeState;
                         EdgeFlow[edgeIndex] = flow;
-                        AccumulateNodeLoad(sourceNodeIndex, absFlow);
-                        AccumulateNodeLoad(destinationNodeIndex, absFlow);
+                        AccumulateNodeLoad(sourceNodeIndex, edgeLoadWatts);
+                        AccumulateNodeLoad(destinationNodeIndex, edgeLoadWatts);
                     }
                 }
             }
@@ -835,6 +1047,8 @@ namespace Hecton8.Power
                 LogisticsNode node = Nodes[nodeIndex];
                 node.Flags |= LogisticsNodeFlags.Overloaded;
                 Nodes[nodeIndex] = node;
+                if (PowerNodeFlags.IsCreated && nodeIndex < PowerNodeFlags.Length)
+                    PowerNodeFlags[nodeIndex] = (byte)(PowerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Overloaded);
             }
 
             private int TraverseReachableFrom(int startNodeIndex)
@@ -970,6 +1184,8 @@ namespace Hecton8.Power
                 LogisticsNode node = Nodes[nodeIndex];
                 node.Flags |= LogisticsNodeFlags.Brownout;
                 Nodes[nodeIndex] = node;
+                if (PowerNodeFlags.IsCreated && nodeIndex < PowerNodeFlags.Length)
+                    PowerNodeFlags[nodeIndex] = (byte)((PowerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
             }
 
             private bool CanServeConsumer(in ConsumerRecord consumer)
@@ -1062,15 +1278,25 @@ namespace Hecton8.Power
         private const int MaxPriority = 100;
         private const int MaxSearchDepth = 100;
         private const int ParallelNodeBatchSize = 64;
-        private const int RadialJacobiRelaxationIterations = 1;
-        private const int LoopedJacobiRelaxationIterations = 2;
+        private const int RadialJacobiRelaxationIterations = JacobiPowerGridSolverJob.FixedIterationCount;
+        private const int LoopedJacobiRelaxationIterations = JacobiPowerGridSolverJob.FixedIterationCount;
         private const int AdaptiveSolveNodeThreshold = 500;
-        private const int AdaptiveSolveNodesPerFrame = 250;
+        private const int LowAdaptiveSolveNodesPerFrame = 128;
+        private const int Mx350AdaptiveSolveNodesPerFrame = 160;
+        private const int MidAdaptiveSolveNodesPerFrame = 250;
+        private const int HighAdaptiveSolveNodesPerFrame = 500;
+        private const int UltraAdaptiveSolveNodesPerFrame = 1000;
         private const float MinResistance = 0.0001f;
         private const float Epsilon = 0.001f;
-        private const float JacobiDampingOmega = 0.6f;
-        private const float JacobiDampingRetainedPotential = 1f - JacobiDampingOmega;
         private const float RuptureFlowMultiplier = 1.15f;
+        private const int PowerBlackBoxCapacity = 300;
+        private const uint PowerBlackBoxMagic = 0x50475244u; // "PGRD"
+        private const uint PowerBlackBoxVersion = 1u;
+        private const uint PowerBlackBoxNonFiniteFlag = 1u << 0;
+        private const uint PowerBlackBoxNoConductiveEdgesFlag = 1u << 1;
+        private const uint PowerBlackBoxBrownoutFlag = 1u << 2;
+        private const uint PowerBlackBoxOverloadFlag = 1u << 3;
+        private const string PowerBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_LOGI_POWER_ROUTING.bin";
         private const string NativeMemoryOwner = nameof(LogisticsNetworkGraph);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
 
@@ -1106,10 +1332,13 @@ namespace Hecton8.Power
         private NativeArray<float> _nodeConductanceInverseSum;
         private NativeArray<float> _potentialFront;
         private NativeArray<float> _potentialBack;
+        private NativeArray<float> _powerCapacities;
+        private NativeArray<byte> _powerNodeFlags;
         private NativeArray<float> _edgeFlow;
         private NativeArray<byte> _edgeStates;
         private NativeArray<int2> _edgeKeys;
         private NativeArray<int> _runtimeConductiveEdgeCount;
+        private NativeParallelMultiHashMap<int, int> _powerConnections;
         private NativeArray<float> _componentGeneration;
         private NativeArray<float> _componentDemand;
         private NativeArray<float> _componentServedDemand;
@@ -1122,6 +1351,7 @@ namespace Hecton8.Power
         private NativeArray<DistributionSummary> _scheduledDistributionSummary;
         private NativeArray<ushort> _publishedNodeStates;
         private NativeArray<ushort> _publishedNodeStatesBack;
+        private NativeArray<PowerGridBlackBoxEntry> _powerBlackBox;
         private NativeParallelHashMap<uint, ushort> _publishedNodeStateMap;
         private NativeParallelHashMap<uint, ushort> _publishedNodeStateBackMap;
         private NativeQueue<int> _bfsQueue;
@@ -1136,7 +1366,11 @@ namespace Hecton8.Power
         private int _adaptiveSolveCursor;
         private int _adaptiveSolveRemainingNodes;
         private int _scheduledSolveNodeCount;
+        private int _lastPowerBlackBoxSolveStartNode;
+        private int _lastPowerBlackBoxSolveNodeCount;
+        private int _powerBlackBoxCursor;
         private bool _scheduledAdaptiveSolveSlice;
+        private bool _powerBlackBoxDumped;
         private bool _buildOpen;
 
         public LogisticsNetworkGraph(int nodeCapacity = 16, int edgeCapacity = 32, int consumerCapacity = 16)
@@ -1160,7 +1394,7 @@ namespace Hecton8.Power
             RegisterNativeArray(_edgeConductance, nameof(_edgeConductance));
             _edgeCapacity = new NativeArray<float>(safeEdgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[edgeCapacity] - precomputed directed edge capacity - owner: LogisticsNetworkGraph
             RegisterNativeArray(_edgeCapacity, nameof(_edgeCapacity));
-            _edgeFlow = new NativeArray<float>(safeEdgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[edgeCapacity] - Jacobi directed edge flow cache - owner: LogisticsNetworkGraph
+            _edgeFlow = new NativeArray<float>(safeEdgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[edgeCapacity] - normalized visual edge flow cache - owner: LogisticsNetworkGraph
             RegisterNativeArray(_edgeFlow, nameof(_edgeFlow));
             _edgeStates = new NativeArray<byte>(safeEdgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[edgeCapacity] - wire overload/rupture state flags - owner: LogisticsNetworkGraph
             RegisterNativeArray(_edgeStates, nameof(_edgeStates));
@@ -1173,6 +1407,10 @@ namespace Hecton8.Power
             RegisterNativeArray(_potentialFront, nameof(_potentialFront));
             _potentialBack = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[nodeCapacity] - Jacobi potential back buffer - owner: LogisticsNetworkGraph
             RegisterNativeArray(_potentialBack, nameof(_potentialBack));
+            _powerCapacities = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[nodeCapacity] - node SOA capacity lane for Jacobi solver - owner: LogisticsNetworkGraph
+            RegisterNativeArray(_powerCapacities, nameof(_powerCapacities));
+            _powerNodeFlags = new NativeArray<byte>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[nodeCapacity] - packed node state flags for Jacobi solver - owner: LogisticsNetworkGraph
+            RegisterNativeArray(_powerNodeFlags, nameof(_powerNodeFlags));
             _nodeConductanceSum = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[nodeCapacity] - precomputed outgoing conductance sum - owner: LogisticsNetworkGraph
             RegisterNativeArray(_nodeConductanceSum, nameof(_nodeConductanceSum));
             _nodeConductanceInverseSum = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[nodeCapacity] - precomputed inverse outgoing conductance sum - owner: LogisticsNetworkGraph
@@ -1194,12 +1432,16 @@ namespace Hecton8.Power
             // COLD ALLOC: NativeParallelHashMap<int,float>[nodeCapacity] — consumer aggregation map — owner: LogisticsNetworkGraph
             _consumerMap = new NativeParallelHashMap<int, float>(safeNodeCapacity, Allocator.Persistent);
             RegisterNativeParallelHashMap(_consumerMap, nameof(_consumerMap));
+            _powerConnections = new NativeParallelMultiHashMap<int, int>(safeEdgeCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[edgeCapacity] - directed power adjacency fanout - owner: LogisticsNetworkGraph
+            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_powerConnections, NativeMemoryOwner, nameof(_powerConnections), NativeMemoryLifetime);
             // COLD ALLOC: NativeArray<ushort>[nodeCapacity] — published node-state bitmasks — owner: LogisticsNetworkGraph
             _publishedNodeStates = new NativeArray<ushort>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeArray(_publishedNodeStates, nameof(_publishedNodeStates));
             // COLD ALLOC: NativeArray<ushort>[nodeCapacity] — back-buffer node-state bitmasks for async publish — owner: LogisticsNetworkGraph
             _publishedNodeStatesBack = new NativeArray<ushort>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeArray(_publishedNodeStatesBack, nameof(_publishedNodeStatesBack));
+            _powerBlackBox = new NativeArray<PowerGridBlackBoxEntry>(PowerBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PowerGridBlackBoxEntry>[300] - fixed power routing black-box ring - owner: LogisticsNetworkGraph
+            RegisterNativeArray(_powerBlackBox, nameof(_powerBlackBox));
             // COLD ALLOC: NativeParallelHashMap<uint,ushort>[nodeCapacity] — published node-state lookup by stable node id — owner: LogisticsNetworkGraph
             _publishedNodeStateMap = new NativeParallelHashMap<uint, ushort>(safeNodeCapacity, Allocator.Persistent);
             RegisterNativeParallelHashMap(_publishedNodeStateMap, nameof(_publishedNodeStateMap));
@@ -1239,6 +1481,103 @@ namespace Hecton8.Power
         {
             TryCompleteEvaluation();
             return _edgeFlow.IsCreated ? _edgeFlow.AsReadOnly() : default;
+        }
+
+        public NativeArray<float>.ReadOnly GetPowerPotentialsReadOnly()
+        {
+            if (_evaluateGraphPending || !_potentialFront.IsCreated)
+                return default;
+
+            return _potentialFront.AsReadOnly();
+        }
+
+        public NativeArray<float>.ReadOnly GetPowerCapacitiesReadOnly()
+        {
+            if (!_powerCapacities.IsCreated)
+                return default;
+
+            return _powerCapacities.AsReadOnly();
+        }
+
+        public NativeArray<byte>.ReadOnly GetNodeFlagsReadOnly()
+        {
+            if (!_powerNodeFlags.IsCreated)
+                return default;
+
+            return _powerNodeFlags.AsReadOnly();
+        }
+
+        public bool TryGetNodePotential(int nodeIndex, out float potential)
+        {
+            potential = 0f;
+            if (_evaluateGraphPending ||
+                !_potentialFront.IsCreated ||
+                nodeIndex < 0 ||
+                nodeIndex >= _nodeCount)
+            {
+                return false;
+            }
+
+            float rawPotential = _potentialFront[nodeIndex];
+            if (!math.isfinite(rawPotential))
+            {
+                WritePowerBlackBoxSample(PowerBlackBoxNonFiniteFlag);
+                return false;
+            }
+
+            potential = math.saturate(rawPotential);
+            return true;
+        }
+
+        public bool TryConsumeNodePotential(int nodeIndex, float consumption)
+        {
+            if (_evaluateGraphPending ||
+                !_potentialFront.IsCreated ||
+                !_potentialBack.IsCreated ||
+                nodeIndex < 0 ||
+                nodeIndex >= _nodeCount ||
+                !math.isfinite(consumption) ||
+                consumption <= 0f)
+            {
+                return false;
+            }
+
+            float currentPotential = math.isfinite(_potentialFront[nodeIndex])
+                ? math.saturate(_potentialFront[nodeIndex])
+                : 0f;
+            if (!math.isfinite(_potentialFront[nodeIndex]))
+                WritePowerBlackBoxSample(PowerBlackBoxNonFiniteFlag);
+            float nextPotential = math.saturate(currentPotential - consumption);
+            _potentialFront[nodeIndex] = nextPotential;
+            _potentialBack[nodeIndex] = nextPotential;
+            if (_nodeVoltageSupplyRatio.IsCreated && nodeIndex < _nodeVoltageSupplyRatio.Length)
+                _nodeVoltageSupplyRatio[nodeIndex] = nextPotential;
+
+            LogisticsNode node = _nodeBuffer[nodeIndex];
+            node.Potential = nextPotential;
+            if (nextPotential < JacobiPowerGridSolverJob.BrownoutPotentialThreshold)
+            {
+                node.Flags |= LogisticsNodeFlags.Brownout;
+                if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
+                    _powerNodeFlags[nodeIndex] = (byte)((_powerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
+            }
+
+            _nodeBuffer[nodeIndex] = node;
+            return true;
+        }
+
+        public bool TryRemovePowerConnectionBucket(int sourceNodeIndex)
+        {
+            if (_evaluateGraphPending ||
+                !_powerConnections.IsCreated ||
+                sourceNodeIndex < 0 ||
+                sourceNodeIndex >= _nodeCount)
+            {
+                return false;
+            }
+
+            _powerConnections.Remove(sourceNodeIndex);
+            return true;
         }
 
         public bool TryGetDirectedEdgeState(int sourceNodeIndex, int destinationNodeIndex, out LogisticsEdgeState state, out float flow)
@@ -1286,6 +1625,8 @@ namespace Hecton8.Power
             DisposeNativeArray(ref _edgeWriteCursor, disposeDependency);
             DisposeNativeArray(ref _potentialFront, disposeDependency);
             DisposeNativeArray(ref _potentialBack, disposeDependency);
+            DisposeNativeArray(ref _powerCapacities, disposeDependency);
+            DisposeNativeArray(ref _powerNodeFlags, disposeDependency);
             DisposeNativeArray(ref _nodeConductanceSum, disposeDependency);
             DisposeNativeArray(ref _nodeConductanceInverseSum, disposeDependency);
             DisposeNativeArray(ref _runtimeConductiveEdgeCount, disposeDependency);
@@ -1294,6 +1635,7 @@ namespace Hecton8.Power
             DisposeNativeList(ref _consumers, disposeDependency, nameof(_consumers));
             DisposeNativeParallelHashMap(ref _producerMap, disposeDependency, nameof(_producerMap));
             DisposeNativeParallelHashMap(ref _consumerMap, disposeDependency, nameof(_consumerMap));
+            DisposeNativeParallelMultiHashMap(ref _powerConnections, disposeDependency, nameof(_powerConnections));
             DisposeNativeArray(ref _parents, disposeDependency);
             DisposeNativeArray(ref _ranks, disposeDependency);
             DisposeNativeArray(ref _componentIds, disposeDependency);
@@ -1318,6 +1660,7 @@ namespace Hecton8.Power
             DisposeNativeArray(ref _scheduledDistributionSummary, disposeDependency);
             DisposeNativeArray(ref _publishedNodeStates, disposeDependency);
             DisposeNativeArray(ref _publishedNodeStatesBack, disposeDependency);
+            DisposeNativeArray(ref _powerBlackBox, disposeDependency);
             DisposeNativeParallelHashMap(ref _publishedNodeStateMap, disposeDependency, nameof(_publishedNodeStateMap));
             DisposeNativeParallelHashMap(ref _publishedNodeStateBackMap, disposeDependency, nameof(_publishedNodeStateBackMap));
 
@@ -1343,6 +1686,8 @@ namespace Hecton8.Power
             _adaptiveSolveCursor = 0;
             _adaptiveSolveRemainingNodes = 0;
             _scheduledSolveNodeCount = 0;
+            _lastPowerBlackBoxSolveStartNode = 0;
+            _lastPowerBlackBoxSolveNodeCount = 0;
             _scheduledAdaptiveSolveSlice = false;
             _buildOpen = false;
 
@@ -1382,6 +1727,21 @@ namespace Hecton8.Power
                 return;
 
             NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, label);
+            map.Dispose(dependency);
+            map = default;
+        }
+
+        private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(
+            ref NativeParallelMultiHashMap<TKey, TValue> map,
+            JobHandle dependency,
+            string label)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(NativeMemoryOwner, label);
             map.Dispose(dependency);
             map = default;
         }
@@ -1496,6 +1856,7 @@ namespace Hecton8.Power
             _consumers.Clear();
             _producerMap.Clear();
             _consumerMap.Clear();
+            _powerConnections.Clear();
             _bfsQueue.Clear();
         }
 
@@ -1520,6 +1881,8 @@ namespace Hecton8.Power
                 Reserved = reservedState
             };
 
+            _powerCapacities[_nodeCount] = math.max(Epsilon, capacity);
+            _powerNodeFlags[_nodeCount] = ResolvePowerGridNodeFlags(flags, reservedState);
             return _nodeCount++;
         }
 
@@ -1550,11 +1913,15 @@ namespace Hecton8.Power
             if (_producerMap.TryGetValue(nodeIndex, out float currentProduction))
             {
                 _producerMap[nodeIndex] = currentProduction + productionRate;
+                if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
+                    _powerNodeFlags[nodeIndex] = (byte)(_powerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Source | (byte)PowerGridNodeFlags.Powered);
                 return;
             }
 
             _producerMap.Add(nodeIndex, productionRate);
             _producers.Add(new ProducerRecord { NodeIndex = nodeIndex });
+            if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
+                _powerNodeFlags[nodeIndex] = (byte)(_powerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Source | (byte)PowerGridNodeFlags.Powered);
         }
 
         public void AddConsumer(int nodeIndex, float demand, int powerPriority, byte priorityTier, LogisticsConsumerFlags flags)
@@ -1629,6 +1996,8 @@ namespace Hecton8.Power
                 _edgeConductance[writeIndex] = conductance;
                 _edgeCapacity[writeIndex] = ResolveEdgeCapacityForBuild(edge.SourceNodeIndex, edge.DestinationNodeIndex);
                 int2 edgeKey = new int2(edge.SourceNodeIndex, edge.DestinationNodeIndex);
+                if (_powerConnections.IsCreated)
+                    _powerConnections.Add(edge.SourceNodeIndex, edge.DestinationNodeIndex);
                 if (_edgeKeys.IsCreated &&
                     (writeIndex >= _edgeKeys.Length ||
                      _edgeKeys[writeIndex].x != edgeKey.x ||
@@ -1668,6 +2037,8 @@ namespace Hecton8.Power
             _adaptiveSolveCursor = 0;
             _adaptiveSolveRemainingNodes = 0;
             _scheduledSolveNodeCount = 0;
+            _lastPowerBlackBoxSolveStartNode = 0;
+            _lastPowerBlackBoxSolveNodeCount = 0;
             _scheduledAdaptiveSolveSlice = false;
             _buildOpen = false;
         }
@@ -1903,6 +2274,8 @@ namespace Hecton8.Power
         private JobHandle ScheduleEvaluationSlice(bool relaxationSliceOnly)
         {
             ResolveAdaptiveSolveWindow(out int solveStartNode, out int solveNodeCount);
+            _lastPowerBlackBoxSolveStartNode = solveStartNode;
+            _lastPowerBlackBoxSolveNodeCount = solveNodeCount;
 
             EvaluateGraphJob job = new EvaluateGraphJob
             {
@@ -1937,6 +2310,8 @@ namespace Hecton8.Power
                 NodeConductanceInverseSum = _nodeConductanceInverseSum,
                 PotentialFront = _potentialFront,
                 PotentialBack = _potentialBack,
+                PowerCapacities = _powerCapacities,
+                PowerNodeFlags = _powerNodeFlags,
                 EdgeFlow = _edgeFlow,
                 EdgeStates = _edgeStates,
                 RuntimeConductiveEdgeCount = _runtimeConductiveEdgeCount,
@@ -1976,19 +2351,38 @@ namespace Hecton8.Power
             if (_adaptiveSolveRemainingNodes <= 0 || _adaptiveSolveRemainingNodes > _nodeCount)
                 _adaptiveSolveRemainingNodes = _nodeCount;
 
+            int solveBudget = ResolveAdaptiveSolveNodesPerFrame(GlobalRegistry.ScalabilityTier);
             int contiguousNodeCount = _nodeCount - _adaptiveSolveCursor;
             solveStartNode = _adaptiveSolveCursor;
             solveNodeCount = math.min(
-                AdaptiveSolveNodesPerFrame,
+                solveBudget,
                 math.min(contiguousNodeCount, _adaptiveSolveRemainingNodes));
             if (solveNodeCount <= 0)
             {
                 solveStartNode = 0;
-                solveNodeCount = math.min(AdaptiveSolveNodesPerFrame, _nodeCount);
+                solveNodeCount = math.min(solveBudget, _nodeCount);
             }
 
             _scheduledAdaptiveSolveSlice = true;
             _scheduledSolveNodeCount = solveNodeCount;
+        }
+
+        private static int ResolveAdaptiveSolveNodesPerFrame(HectonQualityTier scalabilityTier)
+        {
+            switch (scalabilityTier)
+            {
+                case HectonQualityTier.Low:
+                    return LowAdaptiveSolveNodesPerFrame;
+                case HectonQualityTier.Mx350:
+                case HectonQualityTier.Unknown:
+                    return Mx350AdaptiveSolveNodesPerFrame;
+                case HectonQualityTier.High:
+                    return HighAdaptiveSolveNodesPerFrame;
+                case HectonQualityTier.Ultra:
+                    return UltraAdaptiveSolveNodesPerFrame;
+                default:
+                    return MidAdaptiveSolveNodesPerFrame;
+            }
         }
 
         private void CommitNoEdgeEvaluation()
@@ -2039,6 +2433,17 @@ namespace Hecton8.Power
                 else
                     node.Flags |= LogisticsNodeFlags.Isolated;
                 _nodeBuffer[nodeIndex] = node;
+                if (_powerCapacities.IsCreated && nodeIndex < _powerCapacities.Length)
+                    _powerCapacities[nodeIndex] = math.max(Epsilon, node.Capacity);
+                if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
+                {
+                    byte flags = ResolvePowerGridNodeFlags(node.Flags, node.Reserved);
+                    if (_producerMap.TryGetValue(nodeIndex, out _))
+                        flags |= (byte)(PowerGridNodeFlags.Source | PowerGridNodeFlags.Powered);
+                    else
+                        flags = (byte)((flags | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
+                    _powerNodeFlags[nodeIndex] = flags;
+                }
 
                 if (_nodeNetInjection.IsCreated && (uint)nodeIndex < (uint)_nodeNetInjection.Length)
                     _nodeNetInjection[nodeIndex] = 0f;
@@ -2060,6 +2465,8 @@ namespace Hecton8.Power
                 LogisticsNode node = _nodeBuffer[nodeIndex];
                 node.Flags |= LogisticsNodeFlags.Brownout;
                 _nodeBuffer[nodeIndex] = node;
+                if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
+                    _powerNodeFlags[nodeIndex] = (byte)((_powerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
             }
 
             int safeEdgeCount = math.min(_edgeCount, _edgeFlow.IsCreated ? _edgeFlow.Length : 0);
@@ -2128,6 +2535,202 @@ namespace Hecton8.Power
                     SupplyRatio = 1f,
                     BrownoutTier = LogisticsBrownoutTier.None
                 };
+
+            WritePowerBlackBoxSample(0u);
+        }
+
+        private void WritePowerBlackBoxSample(uint reasonFlags)
+        {
+            if (!_powerBlackBox.IsCreated || _powerBlackBox.Length <= 0)
+                return;
+
+            uint flags = reasonFlags;
+            int runtimeEdgeCount = _runtimeConductiveEdgeCount.IsCreated && _runtimeConductiveEdgeCount.Length > 0
+                ? _runtimeConductiveEdgeCount[0]
+                : _conductiveEdgeCount;
+            if (runtimeEdgeCount <= 0)
+                flags |= PowerBlackBoxNoConductiveEdgesFlag;
+
+            float minPotential = 0f;
+            float maxPotential = 0f;
+            bool hasPotential = false;
+            int brownoutCount = 0;
+            int overloadedCount = 0;
+            uint stateHash = 2166136261u;
+            stateHash = HashPowerBlackBox(stateHash, (uint)_nodeCount);
+            stateHash = HashPowerBlackBox(stateHash, (uint)_edgeCount);
+            stateHash = HashPowerBlackBox(stateHash, (uint)math.max(0, runtimeEdgeCount));
+            stateHash = HashPowerBlackBox(stateHash, QuantizePowerBlackBoxFloat(_committedDistributionSummary.TotalGeneration));
+            stateHash = HashPowerBlackBox(stateHash, QuantizePowerBlackBoxFloat(_committedDistributionSummary.TotalConsumption));
+            stateHash = HashPowerBlackBox(stateHash, QuantizePowerBlackBoxFloat(_committedDistributionSummary.SupplyRatio));
+
+            int safeNodeCount = _nodeBuffer.IsCreated
+                ? math.min(_nodeCount, _nodeBuffer.Length)
+                : 0;
+            for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
+            {
+                LogisticsNode node = _nodeBuffer[nodeIndex];
+                float potential = node.Potential;
+                float netInjection = _nodeNetInjection.IsCreated && nodeIndex < _nodeNetInjection.Length
+                    ? _nodeNetInjection[nodeIndex]
+                    : 0f;
+                float supplyRatio = _nodeVoltageSupplyRatio.IsCreated && nodeIndex < _nodeVoltageSupplyRatio.Length
+                    ? _nodeVoltageSupplyRatio[nodeIndex]
+                    : 0f;
+                byte powerFlags = _powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length
+                    ? _powerNodeFlags[nodeIndex]
+                    : (byte)0;
+
+                if (!math.isfinite(potential) ||
+                    !math.isfinite(netInjection) ||
+                    !math.isfinite(supplyRatio))
+                {
+                    flags |= PowerBlackBoxNonFiniteFlag;
+                    potential = math.isfinite(potential) ? potential : 0f;
+                    netInjection = math.isfinite(netInjection) ? netInjection : 0f;
+                    supplyRatio = math.isfinite(supplyRatio) ? supplyRatio : 0f;
+                }
+
+                if (!hasPotential)
+                {
+                    minPotential = potential;
+                    maxPotential = potential;
+                    hasPotential = true;
+                }
+                else
+                {
+                    minPotential = math.min(minPotential, potential);
+                    maxPotential = math.max(maxPotential, potential);
+                }
+
+                if ((node.Flags & LogisticsNodeFlags.Brownout) != 0 ||
+                    (powerFlags & (byte)PowerGridNodeFlags.Offline) != 0)
+                {
+                    brownoutCount++;
+                }
+
+                if ((node.Flags & LogisticsNodeFlags.Overloaded) != 0 ||
+                    (powerFlags & (byte)PowerGridNodeFlags.Overloaded) != 0)
+                {
+                    overloadedCount++;
+                }
+
+                stateHash = HashPowerBlackBox(stateHash, node.Id);
+                stateHash = HashPowerBlackBox(stateHash, (uint)node.Flags);
+                stateHash = HashPowerBlackBox(stateHash, powerFlags);
+                stateHash = HashPowerBlackBox(stateHash, QuantizePowerBlackBoxFloat(potential));
+                stateHash = HashPowerBlackBox(stateHash, QuantizePowerBlackBoxFloat(netInjection));
+                stateHash = HashPowerBlackBox(stateHash, QuantizePowerBlackBoxFloat(supplyRatio));
+            }
+
+            if (brownoutCount > 0)
+                flags |= PowerBlackBoxBrownoutFlag;
+            if (overloadedCount > 0)
+                flags |= PowerBlackBoxOverloadFlag;
+
+            int cursor = _powerBlackBoxCursor;
+            if ((uint)cursor >= (uint)_powerBlackBox.Length)
+                cursor = 0;
+
+            _powerBlackBox[cursor] = new PowerGridBlackBoxEntry
+            {
+                FrameIndex = (uint)Time.frameCount,
+                StateHash = stateHash,
+                ReasonFlags = flags,
+                NodeCount = _committedTopologySummary.NodeCount,
+                EdgeCount = _committedTopologySummary.EdgeCount,
+                RuntimeEdgeCount = runtimeEdgeCount,
+                SolveStartNode = _lastPowerBlackBoxSolveStartNode,
+                SolveNodeCount = _lastPowerBlackBoxSolveNodeCount,
+                TotalGeneration = _committedDistributionSummary.TotalGeneration,
+                TotalConsumption = _committedDistributionSummary.TotalConsumption,
+                SupplyRatio = _committedDistributionSummary.SupplyRatio,
+                Balance = _committedDistributionSummary.Balance,
+                MinPotential = hasPotential ? minPotential : 0f,
+                MaxPotential = hasPotential ? maxPotential : 0f,
+                BrownoutCount = brownoutCount,
+                OverloadedCount = overloadedCount
+            };
+
+            _powerBlackBoxCursor = (cursor + 1) % _powerBlackBox.Length;
+            if ((flags & PowerBlackBoxNonFiniteFlag) != 0)
+                DumpPowerBlackBoxOnce(flags);
+        }
+
+        private void DumpPowerBlackBoxOnce(uint reasonFlags)
+        {
+            if (_powerBlackBoxDumped || !_powerBlackBox.IsCreated)
+                return;
+
+            _powerBlackBoxDumped = true;
+            DumpPowerBlackBox(reasonFlags);
+        }
+
+        private void DumpPowerBlackBox(uint reasonFlags)
+        {
+            try
+            {
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", PowerBlackBoxDumpRelativePath));
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                {
+                    writer.Write(PowerBlackBoxMagic);
+                    writer.Write(PowerBlackBoxVersion);
+                    writer.Write((uint)PowerBlackBoxCapacity);
+                    writer.Write((uint)Marshal.SizeOf<PowerGridBlackBoxEntry>());
+                    writer.Write((uint)_powerBlackBoxCursor);
+                    writer.Write(reasonFlags);
+                    for (int entryOffset = 0; entryOffset < _powerBlackBox.Length; entryOffset++)
+                    {
+                        int entryIndex = (_powerBlackBoxCursor + entryOffset) % _powerBlackBox.Length;
+                        WritePowerBlackBoxEntry(writer, _powerBlackBox[entryIndex]);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"Power grid black-box dump failed: {exception.Message}");
+            }
+        }
+
+        private static void WritePowerBlackBoxEntry(BinaryWriter writer, PowerGridBlackBoxEntry entry)
+        {
+            writer.Write(entry.FrameIndex);
+            writer.Write(entry.StateHash);
+            writer.Write(entry.ReasonFlags);
+            writer.Write(entry.NodeCount);
+            writer.Write(entry.EdgeCount);
+            writer.Write(entry.RuntimeEdgeCount);
+            writer.Write(entry.SolveStartNode);
+            writer.Write(entry.SolveNodeCount);
+            writer.Write(entry.TotalGeneration);
+            writer.Write(entry.TotalConsumption);
+            writer.Write(entry.SupplyRatio);
+            writer.Write(entry.Balance);
+            writer.Write(entry.MinPotential);
+            writer.Write(entry.MaxPotential);
+            writer.Write(entry.BrownoutCount);
+            writer.Write(entry.OverloadedCount);
+        }
+
+        private static uint QuantizePowerBlackBoxFloat(float value)
+        {
+            if (!math.isfinite(value))
+                return 0x7FC00000u;
+
+            float clamped = math.clamp(value, -1000000f, 1000000f);
+            return (uint)(int)math.round(clamped * 1000f);
+        }
+
+        private static uint HashPowerBlackBox(uint hash, uint value)
+        {
+            unchecked
+            {
+                return (hash ^ value) * 16777619u;
+            }
         }
 
         public TopologySummary GetScheduledTopologySummary()
@@ -2246,6 +2849,10 @@ namespace Hecton8.Power
                 node.Potential = 0f;
                 node.Flags &= ~(LogisticsNodeFlags.Brownout | LogisticsNodeFlags.Overloaded | LogisticsNodeFlags.Dirty);
                 _nodeBuffer[nodeIndex] = node;
+                if (_powerCapacities.IsCreated && nodeIndex < _powerCapacities.Length)
+                    _powerCapacities[nodeIndex] = math.max(Epsilon, node.Capacity);
+                if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
+                    _powerNodeFlags[nodeIndex] = ResolvePowerGridNodeFlags(node.Flags, node.Reserved);
                 _nodeNetInjection[nodeIndex] = 0f;
                 _nodeServedDemand[nodeIndex] = 0f;
                 _nodeVoltageSupplyRatio[nodeIndex] = 1f;
@@ -2275,7 +2882,9 @@ namespace Hecton8.Power
                 if (_producerMap.TryGetValue(nodeIndex, out float productionRate))
                 {
                     _componentGeneration[componentIndex] += productionRate;
-                    _nodeSourcePotential[nodeIndex] = productionRate;
+                    _nodeSourcePotential[nodeIndex] = 1f;
+                    if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
+                        _powerNodeFlags[nodeIndex] = (byte)(_powerNodeFlags[nodeIndex] | (byte)(PowerGridNodeFlags.Source | PowerGridNodeFlags.Powered));
                 }
             }
 
@@ -2424,6 +3033,19 @@ namespace Hecton8.Power
                     node.Flags |= LogisticsNodeFlags.Overloaded;
 
                 _nodeBuffer[nodeIndex] = node;
+                if (_powerCapacities.IsCreated && nodeIndex < _powerCapacities.Length)
+                    _powerCapacities[nodeIndex] = math.max(Epsilon, node.Capacity);
+                if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
+                {
+                    byte flags = ResolvePowerGridNodeFlags(node.Flags, node.Reserved);
+                    if (componentPowered)
+                        flags = (byte)((flags | (byte)PowerGridNodeFlags.Powered) & ~(byte)PowerGridNodeFlags.Offline);
+                    else
+                        flags = (byte)((flags | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
+                    if (_nodeSourcePotential[nodeIndex] > Epsilon)
+                        flags |= (byte)PowerGridNodeFlags.Source;
+                    _powerNodeFlags[nodeIndex] = flags;
+                }
             }
         }
 
@@ -2599,6 +3221,27 @@ namespace Hecton8.Power
             LogisticsNode sourceNode = _nodeBuffer[sourceNodeIndex];
             LogisticsNode destinationNode = _nodeBuffer[destinationNodeIndex];
             return math.max(Epsilon, math.min(sourceNode.Capacity, destinationNode.Capacity));
+        }
+
+        private static byte ResolvePowerGridNodeFlags(LogisticsNodeFlags flags, byte reservedState)
+        {
+            PowerGridNodeFlags nodeFlags = PowerGridNodeFlags.None;
+            LogisticsModuleStatusBits moduleStatus = (LogisticsModuleStatusBits)reservedState;
+
+            if ((moduleStatus & LogisticsModuleStatusBits.Powered) != 0)
+                nodeFlags |= PowerGridNodeFlags.Powered;
+            if ((flags & LogisticsNodeFlags.Overloaded) != 0 ||
+                (moduleStatus & LogisticsModuleStatusBits.Overheating) != 0)
+                nodeFlags |= PowerGridNodeFlags.Overloaded;
+            if ((flags & LogisticsNodeFlags.Ruptured) != 0 ||
+                (moduleStatus & LogisticsModuleStatusBits.Damaged) != 0)
+                nodeFlags |= PowerGridNodeFlags.Damaged;
+            if ((flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Brownout)) != 0)
+                nodeFlags |= PowerGridNodeFlags.Offline;
+            if ((moduleStatus & LogisticsModuleStatusBits.Flooded) != 0)
+                nodeFlags |= PowerGridNodeFlags.Flooded;
+
+            return (byte)nodeFlags;
         }
 
         private bool CanServeConsumer(in ConsumerRecord consumer)
@@ -2783,6 +3426,8 @@ namespace Hecton8.Power
             EnsureIntArrayCapacity(ref _edgeWriteCursor, safeLength, nameof(_edgeWriteCursor));
             EnsureFloatArrayCapacity(ref _potentialFront, safeLength, nameof(_potentialFront));
             EnsureFloatArrayCapacity(ref _potentialBack, safeLength, nameof(_potentialBack));
+            EnsureFloatArrayCapacity(ref _powerCapacities, safeLength, nameof(_powerCapacities));
+            EnsureByteArrayCapacity(ref _powerNodeFlags, safeLength, nameof(_powerNodeFlags));
             EnsureFloatArrayCapacity(ref _nodeConductanceSum, safeLength, nameof(_nodeConductanceSum));
             EnsureFloatArrayCapacity(ref _nodeConductanceInverseSum, safeLength, nameof(_nodeConductanceInverseSum));
         }
@@ -2796,6 +3441,7 @@ namespace Hecton8.Power
             EnsureFloatArrayCapacity(ref _edgeFlow, safeLength, nameof(_edgeFlow));
             EnsureByteArrayCapacity(ref _edgeStates, safeLength, nameof(_edgeStates));
             EnsureInt2ArrayCapacity(ref _edgeKeys, safeLength, nameof(_edgeKeys));
+            EnsurePowerConnectionCapacity(safeLength);
         }
 
         private void EnsureTopologyCapacity(int requiredLength)
@@ -2944,6 +3590,22 @@ namespace Hecton8.Power
 
             map = new NativeParallelHashMap<int, float>(safeLength, Allocator.Persistent);
             RegisterNativeParallelHashMap(map, label);
+        }
+
+        private void EnsurePowerConnectionCapacity(int requiredLength)
+        {
+            int safeLength = math.max(1, requiredLength);
+            if (_powerConnections.IsCreated && _powerConnections.Capacity >= safeLength)
+                return;
+
+            if (_powerConnections.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(NativeMemoryOwner, nameof(_powerConnections));
+                _powerConnections.Dispose();
+            }
+
+            _powerConnections = new NativeParallelMultiHashMap<int, int>(safeLength, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[safeLength] - resized power adjacency fanout - owner: LogisticsNetworkGraph
+            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_powerConnections, NativeMemoryOwner, nameof(_powerConnections), NativeMemoryLifetime);
         }
 
         private static void EnsureUShortMapCapacity(ref NativeParallelHashMap<uint, ushort> map, int requiredLength, string label)

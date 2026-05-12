@@ -1,7 +1,9 @@
+using System.IO;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.VFX;
 using Hecton8.World;
@@ -35,20 +37,47 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
+    /// Repair-tool contract for submarine-local breach patching without exposing structural internals.
+    /// </summary>
+    public interface ISubmarineDamageControlTarget
+    {
+        /// <summary>Queues a repair hit resolved by the RaycastCommand interaction lane.</summary>
+        bool TryQueueRepairHit(Vector3 worldHitPoint, float deltaTime, float repairUnitsPerSecond, float intensity01);
+    }
+
+    /// <summary>
     /// Fixed-step voxelized hull integrity grid with Burst-distributed impact diffusion and double-buffered breach publication.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Submarine Structural Grid")]
-    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, IDamageSignalReceiver, ISubmarineHullBreachReadModel
+    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, ILateFrameTickable, Hecton8.Gameplay.IDamageSignalReceiver, ISubmarineHullBreachReadModel, ISubmarineDamageControlTarget
     {
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.FixedTick");
         private static readonly ProfilerMarker _damageScheduleProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Schedule");
         private static readonly ProfilerMarker _damageConsumeProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Consume");
+        private static readonly ProfilerMarker _breachRepairProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.BreachRepair");
         private static readonly int _ShaderCrushCenterRadiusId = Shader.PropertyToID("_HectonSubmarineCrushCenterRadius");
         private static readonly int _ShaderCrushDepthParamsId = Shader.PropertyToID("_HectonSubmarineCrushDepthParams");
+        private static readonly int _LeakBreachBufferId = Shader.PropertyToID("_BreachBuffer");
+        private static readonly int _LeakParticleBufferId = Shader.PropertyToID("_LeakPlumeParticleBuffer");
+        private static readonly int _LeakBreachCountId = Shader.PropertyToID("_BreachCount");
+        private static readonly int _LeakVisibleBreachCountId = Shader.PropertyToID("_VisibleBreachCount");
+        private static readonly int _LeakDeltaTimeId = Shader.PropertyToID("_DeltaTimeSeconds");
+        private static readonly int _LeakTimeId = Shader.PropertyToID("_TimeSeconds");
+        private static readonly int _LeakParamsId = Shader.PropertyToID("_LeakParams");
+        private static readonly int _LeakUseParticleBufferId = Shader.PropertyToID("_UseLeakParticleBuffer");
+        private static readonly int _LeakParticleSizeId = Shader.PropertyToID("_LeakPlumeParticleSize");
+        private static readonly int _LeakLocalToWorldId = Shader.PropertyToID("_SubmarineLocalToWorld");
+        private static readonly int _LeakCameraRightId = Shader.PropertyToID("_CameraRightWS");
+        private static readonly int _LeakCameraUpId = Shader.PropertyToID("_CameraUpWS");
 
         private const int CompartmentCapacity = 8;
         private const int MaxQueuedImpacts = 16;
+        private const int MaxActiveBreaches = 64;
+        private const int DeferredBreachAddCapacity = 16;
+        private const int LowTierVisibleBreachLimit = 8;
+        private const int LeakPlumeParticleCapacity = MaxActiveBreaches * 4;
+        private const int DamageControlTelemetryCapacity = 300;
         private const byte FullIntegrity = byte.MaxValue;
         private const byte UnmappedCompartment = byte.MaxValue;
         private const float DefaultMinimumImpactRadiusMeters = 0.45f;
@@ -63,7 +92,23 @@ namespace Hecton8.Physics
         private const float DefaultCompressionFullPressureKPa = 60000f;
         private const float DefaultMaximumVolumeCompressionNormalized = 0.15f;
         private const float RecentImpactSeverityDecayPerSecond = 2.8f;
+        private const float BreachMergeRadiusMeters = 0.75f;
+        private const float BreachRepairRadiusMeters = 1f;
+        private const float DefaultPressureToBreachSeverityScale = 0.00025f;
+        private const float DefaultRepairUnitsToBreachSeverityScale = 0.01f;
+        private const float DefaultLeakAudioCadenceSeconds = 0.35f;
+        private const uint CriticalBreachWarningHash = 0x43524B4Cu;
+        private const byte LeakImpactFlags = 0x20;
+        private const float CriticalBreachThreshold = 0.9f;
+        private const float CriticalBreachWarningCadenceSeconds = 1.5f;
+        private const uint DamageControlTelemetryInvalidFlag = 1u;
+        private const uint DamageControlTelemetryRepairJobInFlightFlag = 2u;
+        private const float DefaultLeakPlumeParticleSizeMeters = 0.18f;
+        private const float DefaultLeakPlumeRenderBoundsPaddingMeters = 4f;
         private const float Epsilon = 0.0001f;
+        private const string LeakPlumeComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_LeakPlume.compute";
+        private const string LeakPlumeMaterialAssetPath = "Assets/_Project/Art/Materials/VFX/Mat_LeakPlume.mat";
+        private const string DamageControlDumpPath = "Docs/AgentLogs/Dump_SUBMARINE_DAMAGE_CONTROL.bin";
         private const string NativeMemoryOwner = nameof(SubmarineStructuralGrid);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
@@ -288,6 +333,54 @@ namespace Hecton8.Physics
             public int DamageBytes;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private struct BreachRepairJob : IJob
+        {
+            public NativeArray<float4> Breaches;
+            public NativeArray<float> SeveritySum;
+            public int ActiveCount;
+            public float3 LocalHitPoint;
+            public float RepairDelta;
+            public float RepairRadiusSq;
+
+            public void Execute()
+            {
+                float sum = 0f;
+                int count = math.clamp(ActiveCount, 0, Breaches.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    float4 breach = Breaches[i];
+                    float severity = math.max(0f, breach.w);
+                    if (severity > 0f)
+                    {
+                        if (math.distancesq(new float3(breach.x, breach.y, breach.z), LocalHitPoint) <= RepairRadiusSq)
+                            severity = math.max(0f, severity - RepairDelta);
+
+                        breach.w = severity;
+                        Breaches[i] = breach;
+                    }
+
+                    sum += severity;
+                }
+
+                if (SeveritySum.IsCreated && SeveritySum.Length > 0)
+                    SeveritySum[0] = math.isfinite(sum) ? sum : 0f;
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        private struct DamageControlTelemetryEntry
+        {
+            public float3 FirstBreachLocal;
+            public float SeveritySum;
+            public ushort ActiveBreachCount;
+            public ushort VisibleBreachCount;
+            public uint Frame;
+            public uint Flags;
+            public uint StateHash;
+        }
+
         [Header("â”€â”€ Grid Authoring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Voxel columns along the submarine local X axis.")]
         [SerializeField, Min(1)] private int gridWidth = 16;
@@ -353,6 +446,22 @@ namespace Hecton8.Physics
         [SerializeField] private SubmarineFluidDynamics fluidDynamics;
         [Tooltip("Optional authored atmosphere owner used for pressure-cycle fatigue.")]
         [SerializeField] private SubmarineAtmosphereSystem atmosphereSystem;
+        [Tooltip("Compute kernel that expands the packed hull breach buffer into GPU leak plume particles.")]
+        [SerializeField] private ComputeShader leakPlumeCompute;
+        [Tooltip("Material using HECTON/VFX/LeakPlume. Required to draw GPU leak plume points emitted by the compute kernel.")]
+        [SerializeField] private Material leakPlumeRenderMaterial;
+
+        [Header("Damage Control")]
+        [Tooltip("Pressure-to-severity scalar for packed hull breaches. Local breach logic remains capped at 64 entries.")]
+        [SerializeField, Min(0f)] private float pressureToBreachSeverityScale = DefaultPressureToBreachSeverityScale;
+        [Tooltip("Repair-tool units converted to breach severity reduction per second.")]
+        [SerializeField, Min(0f)] private float repairUnitsToBreachSeverityScale = DefaultRepairUnitsToBreachSeverityScale;
+        [Tooltip("Seconds between water-leak impact/audio signals while any breach remains active.")]
+        [SerializeField, Min(0.05f)] private float leakAudioCadenceSeconds = DefaultLeakAudioCadenceSeconds;
+        [Tooltip("World-space billboard size for each GPU leak plume point.")]
+        [SerializeField, Min(0.01f)] private float leakPlumeParticleSizeMeters = DefaultLeakPlumeParticleSizeMeters;
+        [Tooltip("Extra world-space render-bound padding around the submarine while leak plumes are active.")]
+        [SerializeField, Min(0f)] private float leakPlumeRenderBoundsPaddingMeters = DefaultLeakPlumeRenderBoundsPaddingMeters;
 
         [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Fatigue Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
         [Tooltip("Pressure threshold in kPa that counts as one full pressurization cycle.")]
@@ -380,22 +489,36 @@ namespace Hecton8.Physics
 
         private bool _registered;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrame;
         private bool _damageReceiverRegistered;
         private bool _damageJobRunning;
         private bool _nativeStateReady;
         private int _queuedImpactCount;
         private int _scheduledImpactCount;
         private int _mappedCompartmentCount;
+        private int _activeBreachCount;
+        private int _visibleBreachCount;
+        private int _pendingMappedCompartmentCount;
+        private int _leakPlumeKernelIndex = -1;
+        private int _activeBreachGpuBufferIndex;
+        private int _damageControlTelemetryHead;
+        private int _deferredBreachAddCount;
 
         private float _cellBreachAreaSquareMeters;
         private float _fatiguePeakNormalized;
         private float _recentImpactSeverityNormalized;
+        private float _activeBreachSeveritySum;
+        private float _pendingRepairSeverityDelta;
+        private float3 _pendingRepairLocalPoint;
+        private float _leakAudioTimer;
+        private float _criticalBreachWarningTimer;
         private float _debugCompressionScale = 1f;
         private Vector4 _publishedCrushCenterRadius = new Vector4(float.NaN, 0f, 0f, 0f);
         private Vector4 _publishedCrushDepthParams = new Vector4(float.NaN, 0f, 0f, 0f);
         private JobHandle _damageJobHandle;
         private JobHandle _mappingJobHandle;
         private JobHandle _fatigueJobHandle;
+        private JobHandle _breachRepairJobHandle;
         private IDamageSignalEmitter _damageEmitter;
         private Transform _cachedTransform;
         private Rigidbody _cachedHullRigidbody;
@@ -403,8 +526,12 @@ namespace Hecton8.Physics
         private ParticleSystem _hullImpactSparkParticles;
         private ParticleSystemRenderer _hullImpactSparkRenderer;
         private ParticleSystem.EmitParams _hullImpactSparkEmitParams;
+        private MaterialPropertyBlock _leakPlumeDrawProperties;
         private bool _hullImpactDentDecalPoolWarmed;
         private bool _hullImpactScratchDecalPoolWarmed;
+        private bool _breachRepairJobRunning;
+        private bool _pendingRepairQueued;
+        private bool _breachGpuDirty;
         private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) â€” local component search scratch for interface-only wiring â€” owner: SubmarineStructuralGrid
 
         private NativeArray<byte> _cellIntegrityFront;
@@ -421,9 +548,15 @@ namespace Hecton8.Physics
         private NativeArray<byte> _fatigueCompartmentFlags;
         private NativeArray<float> _fatigueIntegrityLossPerCycle;
         private NativeArray<float> _fatiguePeakResult;
+        private NativeArray<float4> _breaches;
+        private NativeArray<float> _breachSeveritySumResult;
+        private NativeArray<DamageControlTelemetryEntry> _damageControlTelemetry;
+        private readonly float4[] _deferredBreachAdds = new float4[DeferredBreachAddCapacity]; // COLD ALLOC: float4[16] - breach adds deferred while Burst repair owns the NativeArray - owner: SubmarineStructuralGrid
+        private GraphicsBuffer _breachGpuBufferA;
+        private GraphicsBuffer _breachGpuBufferB;
+        private GraphicsBuffer _leakPlumeParticleBuffer;
         private bool _mappingJobRunning;
         private bool _fatigueJobRunning;
-        private int _pendingMappedCompartmentCount;
         // COLD ALLOC: float[8] Ã¢â‚¬â€ previous compartment pressures used to detect fatigue cycles Ã¢â‚¬â€ owner: SubmarineStructuralGrid
         private readonly float[] _previousCompartmentPressuresKPa = new float[CompartmentCapacity];
 
@@ -436,9 +569,26 @@ namespace Hecton8.Physics
         internal float FatiguePeakNormalized => _fatiguePeakNormalized;
         internal float RecentImpactSeverityNormalized => _recentImpactSeverityNormalized;
 
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            pressureToBreachSeverityScale = math.max(0f, pressureToBreachSeverityScale);
+            repairUnitsToBreachSeverityScale = math.max(0f, repairUnitsToBreachSeverityScale);
+            leakAudioCadenceSeconds = math.max(0.05f, leakAudioCadenceSeconds);
+            leakPlumeParticleSizeMeters = math.max(0.01f, leakPlumeParticleSizeMeters);
+            leakPlumeRenderBoundsPaddingMeters = math.max(0f, leakPlumeRenderBoundsPaddingMeters);
+            if (leakPlumeCompute == null)
+                leakPlumeCompute = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>(LeakPlumeComputeAssetPath);
+            if (leakPlumeRenderMaterial == null)
+                leakPlumeRenderMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(LeakPlumeMaterialAssetPath);
+        }
+#endif
+
         private void Awake()
         {
             CacheReferences();
+            // COLD ALLOC: MaterialPropertyBlock[1] - procedural leak plume draw properties for RenderPrimitives - owner: SubmarineStructuralGrid
+            _leakPlumeDrawProperties = new MaterialPropertyBlock();
             ResolveGridBounds();
             EnsureNativeState();
             SeedStructuralState();
@@ -470,6 +620,7 @@ namespace Hecton8.Physics
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
                 GlobalRegistry.UnregisterSubmarineHullBreach(this);
             ResetFakeCrushDepthGlobals();
+            ReleaseLeakPlumeGpuResources();
             DisposeNativeStateDeferred();
         }
 
@@ -483,6 +634,7 @@ namespace Hecton8.Physics
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
                 GlobalRegistry.UnregisterSubmarineHullBreach(this);
             ResetFakeCrushDepthGlobals();
+            ReleaseLeakPlumeGpuResources();
             DisposeNativeStateDeferred();
         }
 
@@ -504,6 +656,9 @@ namespace Hecton8.Physics
                 if (!_damageJobRunning)
                     ApplyPressureCycleFatigue();
 
+                if (!_breachRepairJobRunning && _pendingRepairQueued)
+                    ScheduleBreachRepairJob();
+
                 if (!_damageJobRunning && !_fatigueJobRunning && _queuedImpactCount > 0)
                     ScheduleDamageJob();
             }
@@ -514,6 +669,23 @@ namespace Hecton8.Physics
             ConsumeCompletedMappingJob();
             ConsumeCompletedFatigueJob();
             ConsumeCompletedDamageJob();
+            ConsumeCompletedBreachRepairJob();
+            if (_breachRepairJobRunning)
+            {
+                WriteDamageControlTelemetry(DamageControlTelemetryRepairJobInFlightFlag, false);
+                return;
+            }
+
+            FlushDeferredBreachAdds();
+            CompactInactiveBreaches();
+            PushDamageControlCoupling(fixedDeltaTime);
+            DispatchLeakPlumeCompute(fixedDeltaTime);
+            WriteDamageControlTelemetry(0u);
+        }
+
+        public void LateFrameTick()
+        {
+            RenderLeakPlumeParticles();
         }
 
         public void SlowTick()
@@ -846,7 +1018,49 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public void OnIntegrityChanged(float prev, float next, DamageSignal src)
+        public bool TryQueueRepairHit(Vector3 worldHitPoint, float deltaTime, float repairUnitsPerSecond, float intensity01)
+        {
+            if (!_nativeStateReady ||
+                !_breaches.IsCreated ||
+                _breachRepairJobRunning ||
+                _activeBreachCount <= 0 ||
+                !IsFiniteVector(worldHitPoint))
+            {
+                return false;
+            }
+
+            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
+            _cachedTransform = cachedTransform;
+            Vector3 localVector = cachedTransform.InverseTransformPoint(worldHitPoint);
+            if (!IsFiniteVector(localVector))
+                return false;
+
+            float3 localPoint = new float3(localVector.x, localVector.y, localVector.z);
+            float repairRadiusSq = BreachRepairRadiusMeters * BreachRepairRadiusMeters;
+            int count = math.min(_activeBreachCount, _breaches.Length);
+            for (int i = 0; i < count; i++)
+            {
+                float4 breach = _breaches[i];
+                if (breach.w <= 0f)
+                    continue;
+
+                if (math.distancesq(new float3(breach.x, breach.y, breach.z), localPoint) > repairRadiusSq)
+                    continue;
+
+                _pendingRepairLocalPoint = localPoint;
+                _pendingRepairSeverityDelta = math.max(0f, deltaTime) *
+                                              math.max(0f, repairUnitsPerSecond) *
+                                              math.max(0f, repairUnitsToBreachSeverityScale) *
+                                              math.max(0.1f, math.saturate(intensity01));
+                _pendingRepairQueued = _pendingRepairSeverityDelta > 0f;
+                return _pendingRepairQueued;
+            }
+
+            return false;
+        }
+
+        /// <inheritdoc />
+        public void OnIntegrityChanged(float prev, float next, Hecton8.Gameplay.DamageSignal src)
         {
             float damageDelta = math.max(0f, prev - next);
             if (damageDelta <= 0f)
@@ -856,10 +1070,10 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public void OnPowerChanged(float prev, float next, DamageSignal src) { }
+        public void OnPowerChanged(float prev, float next, Hecton8.Gameplay.DamageSignal src) { }
 
         /// <inheritdoc />
-        public void OnClarityChanged(float prev, float next, DamageSignal src) { }
+        public void OnClarityChanged(float prev, float next, Hecton8.Gameplay.DamageSignal src) { }
 
         /// <inheritdoc />
         public void OnTraumaThresholdCrossed(TraumaLevel level) { }
@@ -868,6 +1082,540 @@ namespace Hecton8.Physics
         public void OnHullBreach(float3 localPoint, float depth, float pressureDelta)
         {
             QueueImpactLocal(localPoint, math.max(pressureDelta, 1f) * 12f, FullIntegrity);
+            AddOrRefreshBreachLocal(localPoint, math.saturate(math.max(pressureDelta, 1f) * pressureToBreachSeverityScale));
+        }
+
+        private void AddOrRefreshBreachLocal(float3 localPoint, float severity01)
+        {
+            if (!_nativeStateReady || !_breaches.IsCreated || !math.all(math.isfinite(localPoint)))
+                return;
+
+            float severity = math.saturate(severity01);
+            if (severity <= 0f)
+                return;
+
+            if (_breachRepairJobRunning)
+            {
+                QueueDeferredBreachAdd(localPoint, severity);
+                return;
+            }
+
+            int count = math.min(_activeBreachCount, _breaches.Length);
+            float mergeRadiusSq = BreachMergeRadiusMeters * BreachMergeRadiusMeters;
+            for (int i = 0; i < count; i++)
+            {
+                float4 breach = _breaches[i];
+                if (math.distancesq(new float3(breach.x, breach.y, breach.z), localPoint) > mergeRadiusSq)
+                    continue;
+
+                _activeBreachSeveritySum -= math.max(0f, breach.w);
+                breach.w = math.saturate(math.max(breach.w, severity));
+                _activeBreachSeveritySum += breach.w;
+                _breaches[i] = breach;
+                _breachGpuDirty = true;
+                RegisterBreachScreenSpaceFeedback(localPoint, breach.w);
+                return;
+            }
+
+            if (count >= _breaches.Length)
+                return;
+
+            _breaches[count] = new float4(localPoint, severity);
+            _activeBreachCount = count + 1;
+            _activeBreachSeveritySum += severity;
+            _breachGpuDirty = true;
+            RegisterBreachScreenSpaceFeedback(localPoint, severity);
+        }
+
+        private void QueueDeferredBreachAdd(float3 localPoint, float severity01)
+        {
+            if (!math.all(math.isfinite(localPoint)))
+                return;
+
+            float severity = math.saturate(severity01);
+            if (severity <= 0f)
+                return;
+
+            float mergeRadiusSq = BreachMergeRadiusMeters * BreachMergeRadiusMeters;
+            for (int i = 0; i < _deferredBreachAddCount; i++)
+            {
+                float4 deferred = _deferredBreachAdds[i];
+                if (math.distancesq(new float3(deferred.x, deferred.y, deferred.z), localPoint) > mergeRadiusSq)
+                    continue;
+
+                deferred.w = math.saturate(math.max(deferred.w, severity));
+                _deferredBreachAdds[i] = deferred;
+                return;
+            }
+
+            if (_deferredBreachAddCount < _deferredBreachAdds.Length)
+            {
+                _deferredBreachAdds[_deferredBreachAddCount] = new float4(localPoint, severity);
+                _deferredBreachAddCount++;
+                return;
+            }
+
+            int weakestIndex = 0;
+            float weakestSeverity = _deferredBreachAdds[0].w;
+            for (int i = 1; i < _deferredBreachAdds.Length; i++)
+            {
+                float candidateSeverity = _deferredBreachAdds[i].w;
+                if (candidateSeverity >= weakestSeverity)
+                    continue;
+
+                weakestSeverity = candidateSeverity;
+                weakestIndex = i;
+            }
+
+            if (severity > weakestSeverity)
+                _deferredBreachAdds[weakestIndex] = new float4(localPoint, severity);
+        }
+
+        private void FlushDeferredBreachAdds()
+        {
+            int count = _deferredBreachAddCount;
+            if (count <= 0 || _breachRepairJobRunning)
+                return;
+
+            _deferredBreachAddCount = 0;
+            for (int i = 0; i < count; i++)
+            {
+                float4 deferred = _deferredBreachAdds[i];
+                _deferredBreachAdds[i] = float4.zero;
+                AddOrRefreshBreachLocal(new float3(deferred.x, deferred.y, deferred.z), deferred.w);
+            }
+        }
+
+        private void RegisterBreachScreenSpaceFeedback(float3 localPoint, float severity01)
+        {
+            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            if (fluidDecals == null)
+                return;
+
+            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
+            _cachedTransform = cachedTransform;
+            Vector3 local = new Vector3(localPoint.x, localPoint.y, localPoint.z);
+            Vector3 worldPoint = cachedTransform.TransformPoint(local);
+            Vector3 inward = cachedTransform.position - worldPoint;
+            if (inward.sqrMagnitude <= Epsilon)
+                inward = -cachedTransform.up;
+
+            fluidDecals.RegisterPressureSpray(worldPoint, ResolveSafeDirection(inward, -cachedTransform.up), math.saturate(severity01));
+        }
+
+        private void ScheduleBreachRepairJob()
+        {
+            if (!_pendingRepairQueued || !_breaches.IsCreated || _activeBreachCount <= 0)
+            {
+                _pendingRepairQueued = false;
+                return;
+            }
+
+            using (_breachRepairProfilerMarker.Auto())
+            {
+                if (_breachSeveritySumResult.IsCreated)
+                    _breachSeveritySumResult[0] = _activeBreachSeveritySum;
+
+                _breachRepairJobHandle = new BreachRepairJob
+                {
+                    Breaches = _breaches,
+                    SeveritySum = _breachSeveritySumResult,
+                    ActiveCount = _activeBreachCount,
+                    LocalHitPoint = _pendingRepairLocalPoint,
+                    RepairDelta = math.max(0f, _pendingRepairSeverityDelta),
+                    RepairRadiusSq = BreachRepairRadiusMeters * BreachRepairRadiusMeters
+                }.Schedule();
+
+                _breachRepairJobRunning = true;
+                _pendingRepairQueued = false;
+            }
+        }
+
+        private void ConsumeCompletedBreachRepairJob()
+        {
+            if (!_breachRepairJobRunning)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _breachRepairJobHandle, false))
+                return;
+
+            _breachRepairJobHandle = default;
+            _breachRepairJobRunning = false;
+            _activeBreachSeveritySum = _breachSeveritySumResult.IsCreated && _breachSeveritySumResult.Length > 0
+                ? math.max(0f, _breachSeveritySumResult[0])
+                : RecalculateBreachSeveritySum();
+            _breachGpuDirty = true;
+        }
+
+        private void CompactInactiveBreaches()
+        {
+            if (!_breaches.IsCreated || _breachRepairJobRunning)
+                return;
+
+            int count = math.min(_activeBreachCount, _breaches.Length);
+            float sum = 0f;
+            bool compacted = false;
+            int i = 0;
+            while (i < count)
+            {
+                float4 breach = _breaches[i];
+                if (breach.w > 0f && math.all(math.isfinite(breach)))
+                {
+                    sum += breach.w;
+                    i++;
+                    continue;
+                }
+
+                int lastIndex = count - 1;
+                _breaches[i] = _breaches[lastIndex];
+                _breaches[lastIndex] = float4.zero;
+                count--;
+                compacted = true;
+            }
+
+            _activeBreachCount = count;
+            _activeBreachSeveritySum = math.isfinite(sum) ? sum : 0f;
+            if (compacted)
+                _breachGpuDirty = true;
+        }
+
+        private float RecalculateBreachSeveritySum()
+        {
+            if (!_breaches.IsCreated)
+                return 0f;
+
+            float sum = 0f;
+            int count = math.min(_activeBreachCount, _breaches.Length);
+            for (int i = 0; i < count; i++)
+                sum += math.max(0f, _breaches[i].w);
+
+            return math.isfinite(sum) ? sum : 0f;
+        }
+
+        private void PushDamageControlCoupling(float fixedDeltaTime)
+        {
+            float severitySum = math.max(0f, _activeBreachSeveritySum);
+            if (severitySum <= 0f)
+                return;
+
+            float ambientPressureKPa = ResolveAmbientPressureKPa();
+            if (fluidDynamics != null)
+                fluidDynamics.ApplyDamageControlLeakMass(severitySum * ambientPressureKPa, fixedDeltaTime);
+
+            float safeDeltaTime = math.max(0f, fixedDeltaTime);
+            _criticalBreachWarningTimer -= safeDeltaTime;
+            if (_criticalBreachWarningTimer <= 0f)
+            {
+                float peakSeverity = ResolvePeakBreachSeverity();
+                if (peakSeverity >= CriticalBreachThreshold)
+                {
+                    PublishCriticalBreachWarning(peakSeverity);
+                    _criticalBreachWarningTimer = CriticalBreachWarningCadenceSeconds;
+                }
+            }
+
+            _leakAudioTimer -= safeDeltaTime;
+            if (_leakAudioTimer > 0f)
+                return;
+
+            PublishLeakImpactSignal(severitySum, ambientPressureKPa);
+            _leakAudioTimer = math.max(0.05f, leakAudioCadenceSeconds);
+        }
+
+        private float ResolveAmbientPressureKPa()
+        {
+            float depthMeters = fluidDynamics != null ? math.max(0f, fluidDynamics.ExternalDepthMeters) : 0f;
+            return (depthMeters * 1025f * 9.80665f * 0.001f) + 101.325f;
+        }
+
+        private void PublishLeakImpactSignal(float severitySum, float ambientPressureKPa)
+        {
+            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
+            _cachedTransform = cachedTransform;
+            Vector3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePosition(cachedTransform.position);
+            Rigidbody hullBody = ResolveHullRigidbody();
+            ImpactSignal signal = new ImpactSignal
+            {
+                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(absolute.x, absolute.y, absolute.z)),
+                Force = math.max(0f, severitySum * ambientPressureKPa),
+                Intensity = math.saturate(severitySum / math.max(1f, MaxActiveBreaches)),
+                PrimaryBodyId = hullBody != null ? unchecked((uint)EntityId.ToULong(hullBody.GetEntityId())) : 0u,
+                WeightClass = 1,
+                PrimaryMaterialId = 0,
+                SecondaryMaterialId = 0,
+                Flags = LeakImpactFlags
+            };
+            GlobalSignals.Publish(in signal);
+        }
+
+        private float ResolvePeakBreachSeverity()
+        {
+            if (!_breaches.IsCreated)
+                return 0f;
+
+            float peak = 0f;
+            int count = math.min(_activeBreachCount, _breaches.Length);
+            for (int i = 0; i < count; i++)
+                peak = math.max(peak, math.max(0f, _breaches[i].w));
+
+            return peak;
+        }
+
+        private void PublishCriticalBreachWarning(float severity01)
+        {
+            Rigidbody hullBody = ResolveHullRigidbody();
+            VocalWarningSignal warning = new VocalWarningSignal
+            {
+                WarningHash = CriticalBreachWarningHash,
+                SourceId = hullBody != null ? unchecked((uint)EntityId.ToULong(hullBody.GetEntityId())) : 0u,
+                Severity01 = math.saturate(severity01),
+                CooldownSeconds = CriticalBreachWarningCadenceSeconds,
+                Priority = 3,
+                Flags = 0
+            };
+            GlobalSignals.Publish(in warning);
+        }
+
+        private void DispatchLeakPlumeCompute(float fixedDeltaTime)
+        {
+            if (!_breaches.IsCreated || leakPlumeCompute == null)
+                return;
+
+            if (!EnsureLeakPlumeGpuResources())
+                return;
+
+            _visibleBreachCount = ResolveVisibleBreachCount();
+            bool uploadedThisFrame = false;
+            if (_breachGpuDirty)
+            {
+                _activeBreachGpuBufferIndex ^= 1;
+                GraphicsBuffer uploadBuffer = ResolveWritableBreachGpuBuffer();
+                if (uploadBuffer == null)
+                    return;
+
+                GraphicsBufferUploadUtility.UploadNativeArray(uploadBuffer, _breaches, math.max(1, _activeBreachCount));
+                _breachGpuDirty = false;
+                uploadedThisFrame = true;
+            }
+
+            GraphicsBuffer breachBuffer = ResolveWritableBreachGpuBuffer();
+            if (breachBuffer == null || _leakPlumeParticleBuffer == null)
+                return;
+
+            if (_visibleBreachCount <= 0 && !uploadedThisFrame)
+            {
+                Shader.SetGlobalBuffer(_LeakParticleBufferId, _leakPlumeParticleBuffer);
+                Shader.SetGlobalInt(_LeakVisibleBreachCountId, 0);
+                return;
+            }
+
+            leakPlumeCompute.SetBuffer(_leakPlumeKernelIndex, _LeakBreachBufferId, breachBuffer);
+            leakPlumeCompute.SetBuffer(_leakPlumeKernelIndex, _LeakParticleBufferId, _leakPlumeParticleBuffer);
+            leakPlumeCompute.SetInt(_LeakBreachCountId, _activeBreachCount);
+            leakPlumeCompute.SetInt(_LeakVisibleBreachCountId, _visibleBreachCount);
+            leakPlumeCompute.SetFloat(_LeakDeltaTimeId, math.max(0f, fixedDeltaTime));
+            leakPlumeCompute.SetFloat(_LeakTimeId, Time.time);
+            leakPlumeCompute.SetVector(_LeakParamsId, new Vector4(LeakPlumeParticleCapacity, MaxActiveBreaches, 0f, 0f));
+            leakPlumeCompute.Dispatch(_leakPlumeKernelIndex, 1, 1, 1);
+            Shader.SetGlobalBuffer(_LeakParticleBufferId, _leakPlumeParticleBuffer);
+            Shader.SetGlobalInt(_LeakVisibleBreachCountId, _visibleBreachCount);
+        }
+
+        private void RenderLeakPlumeParticles()
+        {
+            int instanceCount = math.min(math.max(0, _visibleBreachCount) * 4, LeakPlumeParticleCapacity);
+            if (instanceCount <= 0 ||
+                leakPlumeRenderMaterial == null ||
+                _leakPlumeParticleBuffer == null ||
+                _leakPlumeDrawProperties == null)
+            {
+                return;
+            }
+
+            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
+            _cachedTransform = cachedTransform;
+            Camera viewCamera = ResolvePlayerCamera();
+            Transform cameraTransform = viewCamera != null ? viewCamera.transform : null;
+            Vector3 cameraRight = cameraTransform != null ? cameraTransform.right : Vector3.right;
+            Vector3 cameraUp = cameraTransform != null ? cameraTransform.up : Vector3.up;
+
+            _leakPlumeDrawProperties.Clear();
+            _leakPlumeDrawProperties.SetBuffer(_LeakParticleBufferId, _leakPlumeParticleBuffer);
+            _leakPlumeDrawProperties.SetFloat(_LeakUseParticleBufferId, 1f);
+            _leakPlumeDrawProperties.SetFloat(_LeakParticleSizeId, math.max(0.01f, leakPlumeParticleSizeMeters));
+            _leakPlumeDrawProperties.SetMatrix(_LeakLocalToWorldId, cachedTransform.localToWorldMatrix);
+            _leakPlumeDrawProperties.SetVector(_LeakCameraRightId, cameraRight);
+            _leakPlumeDrawProperties.SetVector(_LeakCameraUpId, cameraUp);
+
+            RenderParams renderParams = new RenderParams(leakPlumeRenderMaterial)
+            {
+                worldBounds = ResolveLeakPlumeRenderBounds(cachedTransform),
+                matProps = _leakPlumeDrawProperties,
+                shadowCastingMode = ShadowCastingMode.Off,
+                receiveShadows = false,
+                layer = gameObject.layer,
+                lightProbeUsage = LightProbeUsage.Off,
+                camera = viewCamera
+            };
+            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, instanceCount);
+        }
+
+        private Bounds ResolveLeakPlumeRenderBounds(Transform cachedTransform)
+        {
+            Bounds bounds = hullCollider != null
+                ? hullCollider.bounds
+                : new Bounds(cachedTransform.position, Vector3.one * 4f);
+            float padding = math.max(0f, leakPlumeRenderBoundsPaddingMeters + leakPlumeParticleSizeMeters);
+            bounds.Expand(padding * 2f);
+            return bounds;
+        }
+
+        private static Camera ResolvePlayerCamera()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            return playerContext != null ? playerContext.PlayerCamera : null;
+        }
+
+        private int ResolveVisibleBreachCount()
+        {
+            int activeCount = math.clamp(_activeBreachCount, 0, MaxActiveBreaches);
+            if (GlobalRegistry.H8_LOW_MEMORY_PROFILE || GlobalRegistry.MathPrecision == MathPrecisionLevel.Low)
+                return math.min(activeCount, LowTierVisibleBreachLimit);
+
+            return activeCount;
+        }
+
+        private bool EnsureLeakPlumeGpuResources()
+        {
+            if (leakPlumeCompute == null)
+                return false;
+
+            if (_leakPlumeKernelIndex < 0)
+            {
+                if (!leakPlumeCompute.HasKernel("CSSpawnLeakParticles"))
+                    return false;
+
+                _leakPlumeKernelIndex = leakPlumeCompute.FindKernel("CSSpawnLeakParticles");
+            }
+
+            if (_breachGpuBufferA == null)
+                _breachGpuBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(MaxActiveBreaches);
+            if (_breachGpuBufferB == null)
+                _breachGpuBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(MaxActiveBreaches);
+            if (_leakPlumeParticleBuffer == null)
+                _leakPlumeParticleBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(LeakPlumeParticleCapacity);
+
+            return _leakPlumeKernelIndex >= 0 &&
+                   _breachGpuBufferA != null &&
+                   _breachGpuBufferB != null &&
+                   _leakPlumeParticleBuffer != null;
+        }
+
+        private GraphicsBuffer ResolveWritableBreachGpuBuffer()
+        {
+            return (_activeBreachGpuBufferIndex & 1) == 0 ? _breachGpuBufferA : _breachGpuBufferB;
+        }
+
+        private void ReleaseLeakPlumeGpuResources()
+        {
+            ReleaseGraphicsBuffer(ref _breachGpuBufferA);
+            ReleaseGraphicsBuffer(ref _breachGpuBufferB);
+            ReleaseGraphicsBuffer(ref _leakPlumeParticleBuffer);
+            _leakPlumeKernelIndex = -1;
+            _activeBreachGpuBufferIndex = 0;
+        }
+
+        private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
+        }
+
+        private void WriteDamageControlTelemetry(uint reasonFlags)
+        {
+            WriteDamageControlTelemetry(reasonFlags, true);
+        }
+
+        private void WriteDamageControlTelemetry(uint reasonFlags, bool allowNativeBreachRead)
+        {
+            if (!_damageControlTelemetry.IsCreated || _damageControlTelemetry.Length <= 0)
+                return;
+
+            int index = _damageControlTelemetryHead % _damageControlTelemetry.Length;
+            float4 first = allowNativeBreachRead && _breaches.IsCreated && _activeBreachCount > 0 ? _breaches[0] : float4.zero;
+            bool invalid = allowNativeBreachRead &&
+                           _activeBreachCount > 0 &&
+                           (!math.all(math.isfinite(first)) || !math.isfinite(_activeBreachSeveritySum));
+            uint flags = reasonFlags | (invalid ? DamageControlTelemetryInvalidFlag : 0u);
+            DamageControlTelemetryEntry entry = new DamageControlTelemetryEntry
+            {
+                FirstBreachLocal = new float3(first.x, first.y, first.z),
+                SeveritySum = math.isfinite(_activeBreachSeveritySum) ? _activeBreachSeveritySum : 0f,
+                ActiveBreachCount = (ushort)math.clamp(_activeBreachCount, 0, ushort.MaxValue),
+                VisibleBreachCount = (ushort)math.clamp(_visibleBreachCount, 0, ushort.MaxValue),
+                Frame = unchecked((uint)Time.frameCount),
+                Flags = flags,
+                StateHash = BuildDamageControlTelemetryHash(first, _activeBreachSeveritySum, _activeBreachCount, flags)
+            };
+            _damageControlTelemetry[index] = entry;
+            _damageControlTelemetryHead = (_damageControlTelemetryHead + 1) % _damageControlTelemetry.Length;
+
+            if (invalid)
+            {
+                DumpDamageControlTelemetry();
+                _activeBreachSeveritySum = RecalculateBreachSeveritySum();
+            }
+        }
+
+        private static uint BuildDamageControlTelemetryHash(float4 first, float severitySum, int activeCount, uint flags)
+        {
+            uint hash = 2166136261u;
+            hash = HashDamageControlTelemetry(hash, (uint)math.round(first.x * 1000f));
+            hash = HashDamageControlTelemetry(hash, (uint)math.round(first.y * 1000f));
+            hash = HashDamageControlTelemetry(hash, (uint)math.round(first.z * 1000f));
+            hash = HashDamageControlTelemetry(hash, (uint)math.round(severitySum * 1000f));
+            hash = HashDamageControlTelemetry(hash, (uint)math.max(0, activeCount));
+            return HashDamageControlTelemetry(hash, flags);
+        }
+
+        private static uint HashDamageControlTelemetry(uint hash, uint value)
+        {
+            hash ^= value;
+            return hash * 16777619u;
+        }
+
+        private void DumpDamageControlTelemetry()
+        {
+            if (!_damageControlTelemetry.IsCreated)
+                return;
+
+            string path = Path.Combine(Application.dataPath, "..", DamageControlDumpPath);
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(_damageControlTelemetry.Length);
+                writer.Write(_damageControlTelemetryHead);
+                for (int i = 0; i < _damageControlTelemetry.Length; i++)
+                {
+                    DamageControlTelemetryEntry entry = _damageControlTelemetry[i];
+                    writer.Write(entry.FirstBreachLocal.x);
+                    writer.Write(entry.FirstBreachLocal.y);
+                    writer.Write(entry.FirstBreachLocal.z);
+                    writer.Write(entry.SeveritySum);
+                    writer.Write(entry.ActiveBreachCount);
+                    writer.Write(entry.VisibleBreachCount);
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.StateHash);
+                }
+            }
         }
 
         private Rigidbody ResolveHullRigidbody()
@@ -909,6 +1657,11 @@ namespace Hecton8.Physics
             return lengthSq > Epsilon
                 ? value * math.rsqrt(lengthSq)
                 : fallback;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
         }
 
         private static float3 NormalizeSafe(float3 value, float3 fallback)
@@ -1096,6 +1849,12 @@ namespace Hecton8.Physics
             _fatigueIntegrityLossPerCycle = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[1] — pressure-fatigue peak metric returned by Burst job — owner: SubmarineStructuralGrid
             _fatiguePeakResult = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float4>[64] - packed hull breach SOA; xyz local point, w severity - owner: SubmarineStructuralGrid
+            _breaches = new NativeArray<float4>(MaxActiveBreaches, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[1] - Burst repair severity sum return lane - owner: SubmarineStructuralGrid
+            _breachSeveritySumResult = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<DamageControlTelemetryEntry>[300] - damage-control black box ring buffer - owner: SubmarineStructuralGrid
+            _damageControlTelemetry = new NativeArray<DamageControlTelemetryEntry>(DamageControlTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeStateMemorySentinel();
 
             _nativeStateReady = true;
@@ -1136,7 +1895,21 @@ namespace Hecton8.Physics
             if (_fatiguePeakResult.IsCreated)
                 _fatiguePeakResult[0] = 0f;
 
+            if (_breaches.IsCreated)
+            {
+                for (int i = 0; i < _breaches.Length; i++)
+                    _breaches[i] = float4.zero;
+            }
+
+            if (_breachSeveritySumResult.IsCreated)
+                _breachSeveritySumResult[0] = 0f;
+
             _recentImpactSeverityNormalized = 0f;
+            _activeBreachCount = 0;
+            _visibleBreachCount = 0;
+            _activeBreachSeveritySum = 0f;
+            _pendingRepairQueued = false;
+            _breachGpuDirty = true;
             _mappedCompartmentCount = 0;
             EnsureCompartmentMappingReady();
             for (int i = 0; i < CompartmentCapacity; i++)
@@ -1351,24 +2124,39 @@ namespace Hecton8.Physics
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
+            if ((_registered && _registeredLateFrame) || !Application.isPlaying)
                 return;
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
-            _registered = SystemDispatcher.GetPostFixedLane(PriorityLayer.Environment).Contains(this);
+            if (!_registered)
+            {
+                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
+                GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
+                _registered = SystemDispatcher.GetPostFixedLane(PriorityLayer.Environment).Contains(this);
+            }
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
+            if (!_registered && !_registeredLateFrame)
                 return;
 
-            GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
-            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
         }
 
         private void TryRegisterSlowTick()
@@ -1415,6 +2203,8 @@ namespace Hecton8.Physics
                 dependency = JobHandle.CombineDependencies(dependency, _mappingJobHandle);
             if (_fatigueJobRunning)
                 dependency = JobHandle.CombineDependencies(dependency, _fatigueJobHandle);
+            if (_breachRepairJobRunning)
+                dependency = JobHandle.CombineDependencies(dependency, _breachRepairJobHandle);
 
             DisposeDeferred(ref _cellIntegrityFront, ref dependency);
             DisposeDeferred(ref _cellIntegrityBack, ref dependency);
@@ -1430,18 +2220,29 @@ namespace Hecton8.Physics
             DisposeDeferred(ref _fatigueCompartmentFlags, ref dependency);
             DisposeDeferred(ref _fatigueIntegrityLossPerCycle, ref dependency);
             DisposeDeferred(ref _fatiguePeakResult, ref dependency);
+            DisposeDeferred(ref _breaches, ref dependency);
+            DisposeDeferred(ref _breachSeveritySumResult, ref dependency);
+            DisposeDeferred(ref _damageControlTelemetry, ref dependency);
             _damageJobHandle = default;
             _mappingJobHandle = default;
             _fatigueJobHandle = default;
+            _breachRepairJobHandle = default;
             _damageJobRunning = false;
             _mappingJobRunning = false;
             _fatigueJobRunning = false;
+            _breachRepairJobRunning = false;
             _nativeStateReady = false;
             _recentImpactSeverityNormalized = 0f;
             _queuedImpactCount = 0;
             _scheduledImpactCount = 0;
             _mappedCompartmentCount = 0;
             _pendingMappedCompartmentCount = 0;
+            _deferredBreachAddCount = 0;
+            _activeBreachCount = 0;
+            _visibleBreachCount = 0;
+            _activeBreachSeveritySum = 0f;
+            _pendingRepairQueued = false;
+            _breachGpuDirty = true;
         }
 
         private int ResolveCellCount()
@@ -1492,6 +2293,9 @@ namespace Hecton8.Physics
             NativeMemorySentinel.RegisterNativeArray(_fatigueCompartmentFlags, NativeMemoryOwner, nameof(_fatigueCompartmentFlags), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_fatigueIntegrityLossPerCycle, NativeMemoryOwner, nameof(_fatigueIntegrityLossPerCycle), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_fatiguePeakResult, NativeMemoryOwner, nameof(_fatiguePeakResult), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_breaches, NativeMemoryOwner, nameof(_breaches), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_breachSeveritySumResult, NativeMemoryOwner, nameof(_breachSeveritySumResult), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_damageControlTelemetry, NativeMemoryOwner, nameof(_damageControlTelemetry), NativeMemoryLifetime);
         }
 
         private sealed class SubmarineHullImpactRelay : MonoBehaviour

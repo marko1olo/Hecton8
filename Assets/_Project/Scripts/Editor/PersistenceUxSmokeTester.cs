@@ -10,7 +10,7 @@ namespace Hecton8.Dev
     public static class PersistenceUxSmokeTester
     {
         private const string ArtifactRelativePath = "CodexArtifacts/persistence-ux-smoke.json";
-        private const string InventoryFullWriteMmfRelativePath = "CodexArtifacts/persistence-ux-inventory-full-write.mmf";
+        private const string InventoryFullWriteFileRelativePath = "CodexArtifacts/persistence-ux-inventory-full-write.bin";
         private const int SectorSizeBytes = 16 * 1024;
         private const int InventorySlotStrideBytes = 16;
         private const int InventorySlotCount = 64;
@@ -88,9 +88,10 @@ namespace Hecton8.Dev
                 ContainsAll(ReadProjectFile("Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs"), "RuntimeWorldGenerationVersionId") &&
                 ContainsAll(ReadProjectFile("Assets/_Project/Scripts/HectonWorldGenerator.cs"), "WorldGenerationAlgorithmVersionId");
 
-            bool inventoryFullWritePass = RunInventoryFullWriteMmfAssert(out int rewrittenOffset, out int rewrittenLength);
-            bool unsafeMappedWritePass =
-                ContainsAll(saveBinaryStorage, "MemoryMappedFile.CreateFromFile", "UnsafeMemoryCopyGuard.SafeCopy") &&
+            bool inventoryFullWritePass = RunInventoryFullWriteFileStreamAssert(out int rewrittenOffset, out int rewrittenLength);
+            bool portableFileStreamWritePass =
+                ContainsAll(saveBinaryStorage, "FileStream", "NativeArray<byte>", "UnsafeMemoryCopyGuard.SafeCopy") &&
+                SourceIndex(saveBinaryStorage, "MemoryMappedFile.CreateFromFile") == int.MaxValue &&
                 ContainsAll(unsafeMemoryCopyGuard, "UnsafeUtility.MemCpy");
 
             bool inventoryShadowBufferPass =
@@ -200,7 +201,7 @@ namespace Hecton8.Dev
                 SourceIndex(saveSlotMaintenanceRecord, "SaveSlotIntegrityState.Empty.ToString()") == int.MaxValue;
 
             bool saveThumbnailSidecarGuardPass =
-                ContainsAll(thumbnailSystem, "ResolveThumbnailFileStem", "SaveManager.ResolveSafeSlotFileStem(slotName)", "Path.Combine(Application.persistentDataPath, ResolveThumbnailFileStem(slotName) + Extension)", "Path.Combine(Application.persistentDataPath, ResolveThumbnailFileStem(slotName) + LegacyExtension)") &&
+                ContainsAll(thumbnailSystem, "ResolveThumbnailFileStem", "SaveManager.ResolveSafeSlotFileStem(slotName)", "HectonPersistentPathPolicy.CombineFile(ResolveThumbnailFileStem(slotName) + Extension)", "HectonPersistentPathPolicy.CombineFile(ResolveThumbnailFileStem(slotName) + LegacyExtension)") &&
                 CountOccurrences(thumbnailSystem, "SaveManager.TryResolveSafeSlotName(slotName, out slotName)") >= 4 &&
                 ContainsAll(thumbnailSystem, "AsyncWriteManager.WriteAll(tempPath, dataPtr, encodedJpg.Length, out string writeError)", "throw new IOException(writeError);", "bool encodedJpgRegistered = false", "encodedJpgRegistered = true", "File.Move(tempPath, path);", "await Awaitable.MainThreadAsync();") &&
                 ContainsAll(saveSidecarStorage, "NativeTempMemoryLifetime = NativeAllocationLifetime.Temp", "RegisterTempBuffer(buffer, \"metadataWriteBuffer\")", "RegisterTempBuffer(buffer, \"metadataReadBuffer\")", "RegisterTempBuffer(buffer, \"maintenanceWriteBuffer\")", "RegisterTempBuffer(buffer, \"maintenanceReadBuffer\")", "NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime)", "NativeMemorySentinel.UnregisterNativeArray(buffer)") &&
@@ -219,7 +220,7 @@ namespace Hecton8.Dev
                         corruptionDialogPass &&
                         seedConsistencyPass &&
                         inventoryFullWritePass &&
-                        unsafeMappedWritePass &&
+                        portableFileStreamWritePass &&
                         inventoryShadowBufferPass &&
                         tombstoneLoadOrderPass &&
                         modPayloadSidecarPass &&
@@ -247,7 +248,7 @@ namespace Hecton8.Dev
                 corruptionDialogPass,
                 seedConsistencyPass,
                 inventoryFullWritePass,
-                unsafeMappedWritePass,
+                portableFileStreamWritePass,
                 inventoryShadowBufferPass,
                 tombstoneLoadOrderPass,
                 modPayloadSidecarPass,
@@ -275,11 +276,11 @@ namespace Hecton8.Dev
             return pass;
         }
 
-        private static bool RunInventoryFullWriteMmfAssert(out int rewrittenOffset, out int rewrittenLength)
+        private static bool RunInventoryFullWriteFileStreamAssert(out int rewrittenOffset, out int rewrittenLength)
         {
             byte[] before = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] — editor-only inventory full-write sector fixture — owner: PersistenceUxSmokeTester
             byte[] after = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] — editor-only inventory full-write sector fixture — owner: PersistenceUxSmokeTester
-            byte[] observed = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] — editor-only MMF full-write verification readback — owner: PersistenceUxSmokeTester
+            byte[] observed = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] — editor-only FileStream full-write verification readback — owner: PersistenceUxSmokeTester
             for (int slot = 0; slot < InventorySlotCount; slot++)
             {
                 int offset = slot * InventorySlotStrideBytes;
@@ -291,20 +292,20 @@ namespace Hecton8.Dev
             int changedSlotOffset = changedSlot * InventorySlotStrideBytes;
             WriteInventorySlot(after, changedSlotOffset, 0u, (ushort)0, (ushort)1);
 
-            string mmfPath = Path.Combine(System.Environment.CurrentDirectory, InventoryFullWriteMmfRelativePath.Replace('/', Path.DirectorySeparatorChar));
-            string directory = Path.GetDirectoryName(mmfPath);
+            string filePath = Path.Combine(System.Environment.CurrentDirectory, InventoryFullWriteFileRelativePath.Replace('/', Path.DirectorySeparatorChar));
+            string directory = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            WriteBytes(mmfPath, before);
-            using (FileStream stream = new FileStream(mmfPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            WriteBytes(filePath, before);
+            using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
                 stream.Position = 0L;
                 stream.Write(after, 0, SectorSizeBytes);
                 stream.Flush(true);
             }
 
-            using (FileStream stream = new FileStream(mmfPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 int read = stream.Read(observed, 0, observed.Length);
                 if (read != observed.Length)
@@ -435,7 +436,7 @@ namespace Hecton8.Dev
             bool corruptionDialogPass,
             bool seedConsistencyPass,
             bool inventoryFullWritePass,
-            bool unsafeMappedWritePass,
+            bool portableFileStreamWritePass,
             bool inventoryShadowBufferPass,
             bool tombstoneLoadOrderPass,
             bool modPayloadSidecarPass,
@@ -472,7 +473,7 @@ namespace Hecton8.Dev
                 .Append("\"corruptionDialogPass\":").Append(corruptionDialogPass ? "true" : "false").Append(',')
                 .Append("\"seedConsistencyPass\":").Append(seedConsistencyPass ? "true" : "false").Append(',')
                 .Append("\"inventoryFullWritePass\":").Append(inventoryFullWritePass ? "true" : "false").Append(',')
-                .Append("\"unsafeMappedWritePass\":").Append(unsafeMappedWritePass ? "true" : "false").Append(',')
+                .Append("\"portableFileStreamWritePass\":").Append(portableFileStreamWritePass ? "true" : "false").Append(',')
                 .Append("\"inventoryShadowBufferPass\":").Append(inventoryShadowBufferPass ? "true" : "false").Append(',')
                 .Append("\"tombstoneLoadOrderPass\":").Append(tombstoneLoadOrderPass ? "true" : "false").Append(',')
                 .Append("\"modPayloadSidecarPass\":").Append(modPayloadSidecarPass ? "true" : "false").Append(',')

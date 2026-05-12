@@ -28,7 +28,7 @@ Headless ecosystem simulation keeps Tier 2 fauna alive, hungry, migrating, repro
 
 - Tier 0, `<40m`: near-field full Unity presentation, physics, cognition, and scanning hooks.
 - Tier 1, `40m-150m`: data-only fauna slot updated by the Burst data-only LOD job, with presentation and colliders disabled.
-- Tier 2, `>150m`: hibernated MMF-sector record. No active `FaunaBrain`, no collider, no animator, no spatial hash runtime entry.
+- Tier 2, `>150m`: hibernated indexed save-sector record. No active `FaunaBrain`, no collider, no animator, no spatial hash runtime entry.
 
 Tier 2 handoff writes the compact hibernation record before destroying the runtime instance. Rehydration consumes the saved record, applies metabolic catch-up, then returns the creature to a Tier 1 slot before it can enter full simulation.
 

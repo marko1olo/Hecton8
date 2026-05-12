@@ -14,6 +14,27 @@ Current-state boundary, 2026-05-11:
 - Current audio service authority is `SpatialAudioManager` plus procedural audio owners; older `UnderwaterAudioProcessor.cs` naming below is a target contract unless source confirms a concrete owner.
 - No line in this document is a zero-GC, Steam, CI, accessibility, or Play Mode verification claim without a fresh runtime/log artifact. Latest completed full Core dependency build in the active documentation boundary is `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`. Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player build, import, scene wiring, frame-time, memory, and visual quality proof remain absent.
 
+2026-05-12 Burst/Zero-GC override:
+
+| Contract | Required Behavior |
+|---|---|
+| hot path allocation | `0` managed allocations; cold allocations must be tagged `COLD ALLOC` in source |
+| event traffic | `GlobalSignals` typed `NativeQueue<T>` lanes or local SPSC ring only |
+| cross-domain calls | `GlobalRegistry` interface/service slot or signal packet |
+| payload shape | unmanaged structs, usually 32 or 64 bytes |
+| I/O | FileStream/native-window source truth; MMF claims require current source proof |
+| replay/black box | fixed-size circular buffers; no unbounded logs in frame lane |
+| math scalability | low/high math LOD path must be explicit when feature cost can scale |
+
+Burst compliance rules:
+
+- no managed references in job payloads
+- no captured lambdas in scheduled hot jobs
+- no `string`, `List<T>`, LINQ, boxing, or reflection in Burst-facing paths
+- no Unity object access from worker jobs
+- no `Complete()` in frame-critical dehydration/simulation lanes unless a documented emergency gate owns the stall
+- no direct singleton reads from Burst-facing systems; consume copied scalars, native arrays, registry snapshots, or signal packets
+
 Visual-realistic-fake doctrine:
 
 - Systems in this file must obey `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`.

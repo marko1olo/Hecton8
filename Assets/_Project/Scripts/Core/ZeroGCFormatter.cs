@@ -24,6 +24,40 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool FastIntToChars(int value, Span<char> destination, ref int cursor)
+        {
+            if (cursor < 0 || cursor > destination.Length)
+                return false;
+
+            if (!value.TryFormat(destination.Slice(cursor), out int written))
+                return false;
+
+            cursor += written;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool FastIntToChars(
+            int value,
+            Span<char> destination,
+            ReadOnlySpan<char> format,
+            ref int cursor)
+        {
+            if (cursor < 0 || cursor > destination.Length)
+                return false;
+
+            Span<char> remaining = destination.Slice(cursor);
+            bool wrote = format.Length == 0
+                ? value.TryFormat(remaining, out int written)
+                : value.TryFormat(remaining, out written, format);
+            if (!wrote)
+                return false;
+
+            cursor += written;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryFormatInt(
             int value,
             Span<char> destination,
@@ -42,6 +76,32 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool FastFloatToChars(float value, Span<char> destination, ref int cursor)
+        {
+            if (cursor < 0 || cursor > destination.Length)
+                return false;
+
+            if (!TryFormatFloat(value, destination.Slice(cursor), out int written))
+                return false;
+
+            cursor += written;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool FastFloatToChars(float value, int precision, Span<char> destination, ref int cursor)
+        {
+            if (cursor < 0 || cursor > destination.Length)
+                return false;
+
+            if (!TryFormatFloat(value, destination.Slice(cursor), precision, out int written))
+                return false;
+
+            cursor += written;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryFormatFloat(float value, Span<char> destination, int precision, out int charsWritten)
         {
             charsWritten = 0;
@@ -56,49 +116,23 @@ namespace Hecton8.Core
             }
 
             int safePrecision = precision < 0 ? 0 : precision > 6 ? 6 : precision;
-            int scale = Pow10(safePrecision);
-            bool negative = value < 0f;
-            float absolute = negative ? -value : value;
-            int scaled = (int)((absolute * scale) + 0.5f);
-            int integerPart = scale > 1 ? scaled / scale : scaled;
-            int fractionPart = scale > 1 ? scaled - (integerPart * scale) : 0;
-
-            int cursor = 0;
-            if (negative)
+            switch (safePrecision)
             {
-                if ((uint)cursor >= (uint)destination.Length)
-                    return false;
-
-                destination[cursor++] = '-';
+                case 0:
+                    return value.TryFormat(destination, out charsWritten, "F0".AsSpan());
+                case 1:
+                    return value.TryFormat(destination, out charsWritten, "F1".AsSpan());
+                case 2:
+                    return value.TryFormat(destination, out charsWritten, "F2".AsSpan());
+                case 3:
+                    return value.TryFormat(destination, out charsWritten, "F3".AsSpan());
+                case 4:
+                    return value.TryFormat(destination, out charsWritten, "F4".AsSpan());
+                case 5:
+                    return value.TryFormat(destination, out charsWritten, "F5".AsSpan());
+                default:
+                    return value.TryFormat(destination, out charsWritten, "F6".AsSpan());
             }
-
-            if (!AppendPositiveIntDigits(integerPart, destination, ref cursor))
-                return false;
-
-            if (safePrecision <= 0)
-            {
-                charsWritten = cursor;
-                return true;
-            }
-
-            if ((uint)cursor >= (uint)destination.Length)
-                return false;
-
-            destination[cursor++] = '.';
-            int divisor = scale / 10;
-            for (int i = 0; i < safePrecision; i++)
-            {
-                if ((uint)cursor >= (uint)destination.Length)
-                    return false;
-
-                int digit = divisor > 0 ? fractionPart / divisor : 0;
-                destination[cursor++] = (char)('0' + digit);
-                fractionPart -= digit * divisor;
-                divisor /= 10;
-            }
-
-            charsWritten = cursor;
-            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -135,58 +169,6 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int Pow10(int power)
-        {
-            switch (power)
-            {
-                case 0:
-                    return 1;
-                case 1:
-                    return 10;
-                case 2:
-                    return 100;
-                case 3:
-                    return 1000;
-                case 4:
-                    return 10000;
-                case 5:
-                    return 100000;
-                default:
-                    return 1000000;
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool AppendPositiveIntDigits(int value, Span<char> destination, ref int cursor)
-        {
-            if (value == 0)
-            {
-                if ((uint)cursor >= (uint)destination.Length)
-                    return false;
-
-                destination[cursor++] = '0';
-                return true;
-            }
-
-            int divisor = 1;
-            while (value / divisor >= 10)
-                divisor *= 10;
-
-            while (divisor > 0)
-            {
-                if ((uint)cursor >= (uint)destination.Length)
-                    return false;
-
-                int digit = value / divisor;
-                destination[cursor++] = (char)('0' + digit);
-                value -= digit * divisor;
-                divisor /= 10;
-            }
-
-            return true;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool AppendChar(char value, Span<char> destination, ref int cursor)
         {
             if ((uint)cursor >= (uint)destination.Length)
@@ -200,15 +182,7 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool AppendInt(int value, Span<char> destination, ref int cursor)
         {
-            if (cursor < 0 || cursor > destination.Length)
-                return false;
-
-            Span<char> remaining = destination.Slice(cursor);
-            if (!TryFormatInt(value, remaining, out int written))
-                return false;
-
-            cursor += written;
-            return true;
+            return FastIntToChars(value, destination, ref cursor);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -218,29 +192,13 @@ namespace Hecton8.Core
             ReadOnlySpan<char> format,
             ref int cursor)
         {
-            if (cursor < 0 || cursor > destination.Length)
-                return false;
-
-            Span<char> remaining = destination.Slice(cursor);
-            if (!TryFormatInt(value, remaining, format, out int written))
-                return false;
-
-            cursor += written;
-            return true;
+            return FastIntToChars(value, destination, format, ref cursor);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool AppendFloat(float value, Span<char> destination, ref int cursor)
         {
-            if (cursor < 0 || cursor > destination.Length)
-                return false;
-
-            Span<char> remaining = destination.Slice(cursor);
-            if (!TryFormatFloat(value, remaining, out int written))
-                return false;
-
-            cursor += written;
-            return true;
+            return FastFloatToChars(value, destination, ref cursor);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

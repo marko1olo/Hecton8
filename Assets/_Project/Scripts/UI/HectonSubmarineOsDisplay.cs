@@ -26,12 +26,17 @@ namespace Hecton8.UI
         private const float RootHeight = 372f;
         private const float IconWidth = 72f;
         private const float IconHeight = 28f;
+        private const float HeatBarWidth = 142f;
+        private const float HeatBarHeight = 5f;
         private const int InvalidCachedMetric = int.MinValue;
         private const byte InvalidCachedStatus = byte.MaxValue;
         private const string RootName = "HectonSubmarineOsDisplay";
-        private static readonly Color s_panelColor = new Color(0f, 0f, 0f, 0.72f);
+        private static readonly Color s_panelColor = new Color(0f, 0f, 0f, 1f);
         private static readonly Color s_onlineColor = new Color(0.92f, 0.96f, 0.96f, 0.98f);
         private static readonly Color s_offlineColor = new Color(0.92f, 0.96f, 0.96f, 0.22f);
+        private static readonly Color s_heatBarBackColor = new Color(0.10f, 0.18f, 0.18f, 1f);
+        private static readonly Color s_heatBarFillColor = new Color(0.92f, 0.96f, 0.62f, 1f);
+        private static readonly Color s_heatBarHotColor = new Color(1f, 0.22f, 0.12f, 1f);
         private static readonly char[] s_emptyChars = System.Array.Empty<char>();
         private static readonly char[] s_statusNominal = "LVL 0 // NOMINAL".ToCharArray();
         private static readonly char[] s_statusCaution = "LVL 1 // CAUTION".ToCharArray();
@@ -86,6 +91,8 @@ namespace Hecton8.UI
         private TMP_Text _metricLabel;
         private TMP_Text _droneFleetLabel;
         private TMP_Text _logLabel;
+        private RectTransform _engineHeatBarFill;
+        private Image _engineHeatBarImage;
         private Image[] _subsystemIconImages;
         private TMP_Text[] _subsystemIconLabels;
         private int _pendingEntryCount;
@@ -99,6 +106,7 @@ namespace Hecton8.UI
         private float _typingAccumulator;
         private int _renderedPowerPercent = InvalidCachedMetric;
         private int _renderedOxygenPercent = InvalidCachedMetric;
+        private int _renderedCarbonDioxidePercent = InvalidCachedMetric;
         private int _renderedPressureKPa = InvalidCachedMetric;
         private int _renderedNativeCopyMegabytes = InvalidCachedMetric;
         private int _renderedSpeedTenthsKnots = InvalidCachedMetric;
@@ -341,6 +349,7 @@ namespace Hecton8.UI
 
             int powerPercent = ToPercent(_snapshot.PowerNormalized);
             int oxygenPercent = ToPercent(_snapshot.OxygenNormalized);
+            int carbonDioxidePercent = ToPercent(_snapshot.CarbonDioxideNormalized);
             int pressureKPa = (int)math.round(_snapshot.MaxPressureKPa);
             int speedTenthsKnots = (int)math.round(math.max(0f, _snapshot.SpeedKnots) * 10f);
             int engineHeatPercent = ToPercent(_snapshot.EngineHeat01);
@@ -350,6 +359,7 @@ namespace Hecton8.UI
             int nativeCopyMegabytes = nativeCopyMegabytesRaw > int.MaxValue ? int.MaxValue : (int)nativeCopyMegabytesRaw;
             if (powerPercent == _renderedPowerPercent &&
                 oxygenPercent == _renderedOxygenPercent &&
+                carbonDioxidePercent == _renderedCarbonDioxidePercent &&
                 pressureKPa == _renderedPressureKPa &&
                 speedTenthsKnots == _renderedSpeedTenthsKnots &&
                 engineHeatPercent == _renderedEngineHeatPercent &&
@@ -365,14 +375,14 @@ namespace Hecton8.UI
             cursor = AppendPercentValue(_metricBuffer, cursor, powerPercent);
             cursor = AppendLiteral(_metricBuffer, cursor, "  O2 ");
             cursor = AppendPercentValue(_metricBuffer, cursor, oxygenPercent);
+            cursor = AppendLiteral(_metricBuffer, cursor, "  CO2 ");
+            cursor = AppendPercentValue(_metricBuffer, cursor, carbonDioxidePercent);
             cursor = AppendLiteral(_metricBuffer, cursor, "  P ");
             cursor = AppendInt(_metricBuffer, cursor, pressureKPa);
             cursor = AppendLiteral(_metricBuffer, cursor, "kPa");
             cursor = AppendLiteral(_metricBuffer, cursor, "  SPD ");
             cursor = AppendFixedTenths(_metricBuffer, cursor, speedTenthsKnots);
             cursor = AppendLiteral(_metricBuffer, cursor, "kt");
-            cursor = AppendLiteral(_metricBuffer, cursor, "  HEAT ");
-            cursor = AppendPercentValue(_metricBuffer, cursor, engineHeatPercent);
             cursor = AppendLiteral(_metricBuffer, cursor, "  SNR ");
             cursor = AppendInt(_metricBuffer, cursor, sonarContactCount);
             cursor = AppendLiteral(_metricBuffer, cursor, "/");
@@ -387,12 +397,24 @@ namespace Hecton8.UI
             _metricLabel.SetCharArray(_metricBuffer, 0, math.max(0, cursor));
             _renderedPowerPercent = powerPercent;
             _renderedOxygenPercent = oxygenPercent;
+            _renderedCarbonDioxidePercent = carbonDioxidePercent;
             _renderedPressureKPa = pressureKPa;
             _renderedSpeedTenthsKnots = speedTenthsKnots;
             _renderedEngineHeatPercent = engineHeatPercent;
             _renderedSonarContactCount = sonarContactCount;
             _renderedNearestSonarMeters = nearestSonarMeters;
             _renderedNativeCopyMegabytes = nativeCopyMegabytes;
+            RefreshEngineHeatBar(engineHeatPercent);
+        }
+
+        private void RefreshEngineHeatBar(int engineHeatPercent)
+        {
+            if (_engineHeatBarFill == null || _engineHeatBarImage == null)
+                return;
+
+            float fill01 = math.saturate(engineHeatPercent * 0.01f);
+            _engineHeatBarFill.sizeDelta = new Vector2(math.round(HeatBarWidth * fill01), HeatBarHeight);
+            _engineHeatBarImage.color = engineHeatPercent >= 75 ? s_heatBarHotColor : s_heatBarFillColor;
         }
 
         private void RefreshDroneFleetLabel()
@@ -506,6 +528,7 @@ namespace Hecton8.UI
 
             _statusLabel = CreateText("Status", _root, new Vector2(14f, -12f), new Vector2(280f, 24f), 19f);
             _metricLabel = CreateText("Metrics", _root, new Vector2(14f, -38f), new Vector2(492f, 20f), 13f);
+            CreateEngineHeatBar(_root);
             _droneFleetLabel = CreateText("DroneFleet", _root, new Vector2(14f, -60f), new Vector2(320f, 20f), 16f);
             _logLabel = CreateText("Log", _root, new Vector2(14f, -92f), new Vector2(356f, 264f), 15f);
             _logLabel.alignment = TextAlignmentOptions.TopLeft;
@@ -549,6 +572,33 @@ namespace Hecton8.UI
             label.alignment = TextAlignmentOptions.Center;
             label.SetCharArray(labelChars, 0, labelChars.Length);
             _subsystemIconLabels[index] = label;
+        }
+
+        private void CreateEngineHeatBar(Transform parent)
+        {
+            GameObject backObject = new GameObject("EngineHeatBar", typeof(RectTransform), typeof(Image)); // COLD ALLOC: GameObject[1] - engine heat 1D opaque bar background - owner: HectonSubmarineOsDisplay
+            backObject.transform.SetParent(parent, false);
+            backObject.TryGetComponent(out RectTransform backRect);
+            backRect.anchorMin = new Vector2(0f, 1f);
+            backRect.anchorMax = new Vector2(0f, 1f);
+            backRect.pivot = new Vector2(0f, 1f);
+            backRect.anchoredPosition = new Vector2(362f, -61f);
+            backRect.sizeDelta = new Vector2(HeatBarWidth, HeatBarHeight);
+            backObject.TryGetComponent(out Image backImage);
+            backImage.color = s_heatBarBackColor;
+            backImage.raycastTarget = false;
+
+            GameObject fillObject = new GameObject("EngineHeatFill", typeof(RectTransform), typeof(Image)); // COLD ALLOC: GameObject[1] - engine heat 1D opaque bar fill - owner: HectonSubmarineOsDisplay
+            fillObject.transform.SetParent(backRect, false);
+            fillObject.TryGetComponent(out _engineHeatBarFill);
+            _engineHeatBarFill.anchorMin = new Vector2(0f, 1f);
+            _engineHeatBarFill.anchorMax = new Vector2(0f, 1f);
+            _engineHeatBarFill.pivot = new Vector2(0f, 1f);
+            _engineHeatBarFill.anchoredPosition = Vector2.zero;
+            _engineHeatBarFill.sizeDelta = new Vector2(0f, HeatBarHeight);
+            fillObject.TryGetComponent(out _engineHeatBarImage);
+            _engineHeatBarImage.color = s_heatBarFillColor;
+            _engineHeatBarImage.raycastTarget = false;
         }
 
         private static TMP_Text CreateText(string name, Transform parent, Vector2 anchoredPosition, Vector2 sizeDelta, float fontSize)
@@ -613,6 +663,7 @@ namespace Hecton8.UI
             _renderedSubsystemStatus = (SubsystemStatus)InvalidCachedStatus;
             _renderedPowerPercent = InvalidCachedMetric;
             _renderedOxygenPercent = InvalidCachedMetric;
+            _renderedCarbonDioxidePercent = InvalidCachedMetric;
             _renderedPressureKPa = InvalidCachedMetric;
             _renderedSpeedTenthsKnots = InvalidCachedMetric;
             _renderedEngineHeatPercent = InvalidCachedMetric;

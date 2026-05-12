@@ -174,19 +174,6 @@ namespace Hecton8.World
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct RebuildAbsolutePositionsJob : IJobParallelFor
-        {
-            [ReadOnly] public NativeArray<float3> RuntimePositions;
-            public float3 CurrentTotalOffset;
-            [WriteOnly] public NativeArray<float3> AbsolutePositions;
-
-            public void Execute(int index)
-            {
-                AbsolutePositions[index] = RuntimePositions[index] + CurrentTotalOffset;
-            }
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct FarUnloadCandidatesJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<double3> AbsolutePositions;
@@ -1105,9 +1092,17 @@ namespace Hecton8.World
 
         internal static void HandleOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 runtimeOffset = -shiftData.ShiftOffset;
+            if (!IsFiniteRuntimePosition(runtimeOffset))
+            {
+                ClearAcousticDensityMapForOriginShift();
+                return;
+            }
+
             if (_nativeHash == null)
             {
                 ClearAcousticDensityMapForOriginShift();
+                RebaseTransientSignalRuntimePositions(runtimeOffset);
                 return;
             }
 
@@ -1122,6 +1117,7 @@ namespace Hecton8.World
             }
 
             int count = _entries.Count;
+            RebaseTransientSignalRuntimePositions(runtimeOffset);
             if (count <= 0)
                 return;
 
@@ -1132,18 +1128,12 @@ namespace Hecton8.World
             {
                 KeyValuePair<int, Entry> pair = enumerator.Current;
                 Entry entry = pair.Value;
-                if (entry.Transform == null || entry.IsResidentInNativeHash == 0)
-                    continue;
                 if (writeIndex >= _originShiftHandles.Length)
                     break;
-
-                Vector3 runtimePosition = entry.Transform.position;
-                if (!IsFiniteRuntimePosition(runtimePosition))
+                if (entry.Transform == null || !IsFiniteRuntimePosition(entry.RuntimePosition))
                     continue;
 
-                entry.RuntimePosition = runtimePosition;
                 _originShiftHandles[writeIndex] = pair.Key;
-                _originShiftRuntimePositions[writeIndex] = runtimePosition;
                 writeIndex++;
             }
 
@@ -1156,18 +1146,15 @@ namespace Hecton8.World
                 if (!_entries.TryGetValue(handle, out Entry entry))
                     continue;
 
-                entry.RuntimePosition = _originShiftRuntimePositions[i];
+                Vector3 shiftedRuntimePosition = entry.RuntimePosition + runtimeOffset;
+                if (!IsFiniteRuntimePosition(shiftedRuntimePosition))
+                    continue;
+
+                entry.RuntimePosition = shiftedRuntimePosition;
                 _entries[handle] = entry;
             }
 
-            _originShiftRefreshHandle = new RebuildAbsolutePositionsJob
-            {
-                RuntimePositions = _originShiftRuntimePositions,
-                CurrentTotalOffset = HectonFloatingOrigin.CurrentTotalOffset,
-                AbsolutePositions = _originShiftAbsolutePositions
-            }.Schedule(writeIndex, 64);
-            _originShiftRefreshScheduled = true;
-            _originShiftRefreshCount = writeIndex;
+            _originShiftRefreshCount = 0;
         }
 
         private static void EnsureInitialized()
@@ -1402,6 +1389,26 @@ namespace Hecton8.World
             }
 
             _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
+        }
+
+        private static void RebaseTransientSignalRuntimePositions(Vector3 runtimeOffset)
+        {
+            for (int i = 0; i < _transientSignals.Length; i++)
+            {
+                TransientSignalEntry signal = _transientSignals[i];
+                if (signal.ExpireTimestamp <= 0d)
+                    continue;
+
+                if (!IsFiniteRuntimePosition(signal.RuntimePosition))
+                    continue;
+
+                Vector3 shiftedRuntimePosition = signal.RuntimePosition + runtimeOffset;
+                if (!IsFiniteRuntimePosition(shiftedRuntimePosition))
+                    continue;
+
+                signal.RuntimePosition = shiftedRuntimePosition;
+                _transientSignals[i] = signal;
+            }
         }
 
         private static int CollectCandidateHandles(Vector3 origin, float radius, SpatialTargetKind kindMask, uint interactionFilter)

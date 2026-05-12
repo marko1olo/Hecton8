@@ -20,6 +20,10 @@
 [FORBID] Built-in Camera.Render() calls inside gameplay loop. Use RenderPipelineManager.beginCameraRendering delegate exclusively.
 [RULE] Single URP ForwardRenderer asset. No stacked cameras except HUD overlay (separate renderer, ClearDepth=true).
 [RULE] DrawCall budget: Opaque=180, Transparent=35, Shadow=80 per frame on MIN spec.
+[RULE] Unity 6000.x renderer features MUST implement `RecordRenderGraph`. Compatibility Mode is legacy debt.
+[FORBID] New runtime `ScriptableRenderPass.Execute`, `Graphics.Blit`, `Camera.AddCommandBuffer`, or `CommandBuffer.Execute` paths.
+[FORBID] `AddUnsafePass` unless the pass owner records a profiler capture proving there is no graph-visible equivalent.
+[SAFE] `CommandBufferHelpers.GetNativeCommandBuffer(context.cmd)` is allowed only inside a RenderGraph `SetRenderFunc` with graph-declared resources.
 
 ---
 
@@ -238,6 +242,10 @@ IN.positionCS.z += _DepthBias * IN.positionCS.w * decalMask;
 [SAFE] Coplanar geometry (grates/grids on hull): offset index 1 via:
   depthOffset = 0.0005 * (1.0 / max(0.001, -viewZ))  // recedes with distance
 
+
+
+
+[FORBID] MaterialPropertyBlock on standard geometry. For dynamic instance data, use only CBUFFER_START (UnityPerMaterial) or GraphicsBuffer (for BRG). MPB is ONLY allowed for older ParticleSystems or UI.
 ---
 
 ## §11 — SHADOW STRATEGY

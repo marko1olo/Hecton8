@@ -25,7 +25,7 @@ namespace Hecton8.World
             new Vector3(0.09f, 1f, -0.25f),
             new Vector3(-0.12f, 1f, -0.18f)
         };
-        [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Runtime Wiring Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
+        [Header("Runtime Wiring")]
         [SerializeField]
         [Tooltip("Cached rigidbody used to drive the falling chunk.")]
         private Rigidbody chunkRigidbody;
@@ -38,7 +38,7 @@ namespace Hecton8.World
         [Tooltip("Pooled physical scrap pickup prefab spawned when the chunk disintegrates into salvage.")]
         private GameObject scrapPickupPrefab;
 
-        [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Defaults Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
+        [Header("Defaults")]
         [SerializeField, Min(0.5f)]
         [Tooltip("Fallback lifetime used when ActivateChunk receives an invalid despawn delay.")]
         private float defaultLifetime = 18f;
@@ -67,7 +67,7 @@ namespace Hecton8.World
         [Tooltip("Downward-speed threshold below which the chunk is considered settled and the muddy trail is forced to stop.")]
         private float siltTrailStopSpeed = 0.18f;
 
-        [Header("── Disintegration ──────────────────")]
+        [Header("Disintegration")]
         [SerializeField, Range(1f, 60f)]
         [Tooltip("How long a snagged chunk can hang before it tears apart into physical scrap.")]
         private float snagDisintegrationDelay = 48f;
@@ -84,7 +84,7 @@ namespace Hecton8.World
         [Tooltip("Initial eject speed applied to released scrap pieces.")]
         private float scrapEjectSpeed = 1.8f;
 
-        [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Snag Joints Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
+        [Header("Snag Joints")]
         [SerializeField]
         [Tooltip("Layers treated as snag targets when a collapse chunk slams into the seabed or surrounding wreckage.")]
         private LayerMask snagLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;

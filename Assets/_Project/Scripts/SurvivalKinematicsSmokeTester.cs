@@ -166,6 +166,11 @@ namespace Hecton8.Dev
             float nitrogenNarcosis01 = HectonSurvivalSystem.ResolveNitrogenNarcosis01(125f);
             float nitrogenStaminaPenalty = HectonSurvivalSystem.ResolveNitrogenStaminaMultiplier(101f);
             float nitrogenSafeStamina = HectonSurvivalSystem.ResolveNitrogenStaminaMultiplier(100f);
+            float nitrogenLoad = HectonSurvivalSystem.ResolveNitrogenTissueLoad(1f, 6f, 0.5f);
+            bool bendsUnsafe = HectonSurvivalSystem.ShouldApplyBendsDamage(10.1f, 11.1f);
+            bool bendsSafeLoad = HectonSurvivalSystem.ShouldApplyBendsDamage(10.1f, 10.9f);
+            float pressureNarcosis01 = HectonSurvivalSystem.ResolvePressureNarcosis01(23.5f);
+            float coldNutritionMultiplier = HectonSurvivalSystem.ResolveColdNutritionDrainMultiplier(8f, 20f, 12f);
             float nitrogenVisorTarget = VisorHUDController.ResolveHypoxiaNarcosisTarget(1f, 0.15f, 0.35f);
             if (math.abs(nitrogenBuildDelta - 120f) > 0.0001f ||
                 shallowNitrogenBuildDelta > 0.0001f ||
@@ -173,6 +178,11 @@ namespace Hecton8.Dev
                 math.abs(nitrogenNarcosis01 - 0.5f) > 0.0001f ||
                 math.abs(nitrogenStaminaPenalty - 0.8f) > 0.0001f ||
                 math.abs(nitrogenSafeStamina - 1f) > 0.0001f ||
+                math.abs(nitrogenLoad - 1.1625f) > 0.0001f ||
+                !bendsUnsafe ||
+                bendsSafeLoad ||
+                math.abs(pressureNarcosis01 - 0.5f) > 0.0001f ||
+                math.abs(coldNutritionMultiplier - 2f) > 0.0001f ||
                 math.abs(nitrogenVisorTarget - 0.35f) > 0.0001f)
             {
                 failureMask |= FailureNitrogenNarcosis;

@@ -912,7 +912,7 @@ namespace Hecton8.Optimization
                 return false;
 
             Shader shader = material.shader;
-            if (shader != null && shader.isSupported)
+            if (!IsFailedShader(shader, out uint shaderHash))
                 return false;
 
             EnsureFallbackAssets();
@@ -920,7 +920,6 @@ namespace Hecton8.Optimization
                 return false;
 
             uint materialHash = unchecked((uint)EntityId.ToULong(material.GetEntityId()));
-            uint shaderHash = shader != null ? unchecked((uint)EntityId.ToULong(shader.GetEntityId())) : 0u;
             if (record.OwnsAssetInstance && !ReferenceEquals(material, _checkerboardMaterial))
                 Destroy(material);
 
@@ -931,6 +930,21 @@ namespace Hecton8.Optimization
             GlobalTelemetryBus.PublishShaderFallback(materialHash, shaderHash, 1f);
             GlobalTelemetryBus.PublishPerformanceWarning(_ShaderFallbackWarningHash, materialHash, 1f);
             return true;
+        }
+
+        private static bool IsFailedShader(Shader shader, out uint shaderHash)
+        {
+            shaderHash = 0u;
+            if (shader == null)
+                return true;
+
+            shaderHash = unchecked((uint)EntityId.ToULong(shader.GetEntityId()));
+            if (!shader.isSupported)
+                return true;
+
+            string shaderName = shader.name;
+            return !string.IsNullOrEmpty(shaderName) &&
+                   shaderName.IndexOf("InternalErrorShader", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void InsertEvictionCandidate(uint key)

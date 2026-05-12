@@ -15,15 +15,16 @@ Shader "Hecton8/Fabrication/ProgressBeam"
         Tags
         {
             "RenderPipeline" = "UniversalPipeline"
-            "RenderType" = "Transparent"
-            "Queue" = "Transparent"
+            "RenderType" = "TransparentCutout"
+            "Queue" = "AlphaTest"
         }
 
         Pass
         {
             Name "FabricatorProgressBeam"
-            Blend SrcAlpha One
-            ZWrite Off
+            Blend Off
+            ZWrite On
+            AlphaToMask On
             ZTest LEqual
             Cull Back
 
@@ -100,8 +101,10 @@ Shader "Hecton8/Fabrication/ProgressBeam"
                 float rimBase = 1.0 - saturate(abs(dot(normalWS, viewDirWS)));
                 float rim = rimBase * rimBase * lerp(1.0, rimBase, 0.4);
                 half alpha = (half)saturate(_BaseColor.a * (0.22 + rim + band * _BandIntensity) * lerp(0.7, 1.15, flicker));
+                half dither = (half)HectonCoreLitTaaAccumulatedInterleavedGradientNoise(floor(input.positionCS.xy));
+                clip(alpha - dither);
                 half3 color = _BaseColor.rgb * (half)(1.0 + band * _BandIntensity + rim * 1.4);
-                return half4(color, alpha);
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }

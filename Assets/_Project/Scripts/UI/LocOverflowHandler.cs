@@ -5,8 +5,7 @@ namespace Hecton8.UI
 {
     /// <summary>
     /// Overflow scaler for localized labels when TMP auto-sizing reaches its floor.
-    /// Unity does not expose a writable RectTransform localMatrix, so the matrix-derived
-    /// XY scale is applied back through localScale on the text rect.
+    /// Keeps RectTransform scale untouched; residual clamp is applied to TMP mesh vertices.
     /// </summary>
     internal static class LocOverflowHandler
     {
@@ -15,25 +14,41 @@ namespace Hecton8.UI
 
         public static void ApplyScale(TMP_Text text, Vector3 baselineScale, float uniformScale)
         {
-            if (text == null || text.rectTransform == null)
+            if (text == null)
                 return;
 
-            RectTransform rect = text.rectTransform;
             float clampedScale = Mathf.Clamp(uniformScale, MinUniformScale, MaxUniformScale);
-            float targetScaleX = baselineScale.x * clampedScale;
-            float targetScaleY = baselineScale.y * clampedScale;
-            Vector3 currentScale = rect.localScale;
-            if (Mathf.Approximately(currentScale.x, targetScaleX) &&
-                Mathf.Approximately(currentScale.y, targetScaleY) &&
-                Mathf.Approximately(currentScale.z, baselineScale.z))
+            text.ForceMeshUpdate(ignoreActiveState: true, forceTextReparsing: false);
+            if (Mathf.Approximately(clampedScale, MaxUniformScale))
             {
+                text.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices);
                 return;
             }
 
-            rect.localScale = new Vector3(
-                targetScaleX,
-                targetScaleY,
-                baselineScale.z);
+            TMP_TextInfo textInfo = text.textInfo;
+            if (textInfo == null)
+                return;
+
+            Bounds bounds = text.bounds;
+            Vector3 pivot = bounds.center;
+            Vector3 scale = new Vector3(clampedScale, clampedScale, 1f);
+            Matrix4x4 scaleMatrix = Matrix4x4.Scale(scale);
+            for (int meshIndex = 0; meshIndex < textInfo.meshInfo.Length; meshIndex++)
+            {
+                TMP_MeshInfo meshInfo = textInfo.meshInfo[meshIndex];
+                Vector3[] vertices = meshInfo.vertices;
+                if (vertices == null)
+                    continue;
+
+                int vertexCount = meshInfo.vertexCount;
+                for (int vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++)
+                {
+                    Vector3 offset = vertices[vertexIndex] - pivot;
+                    vertices[vertexIndex] = pivot + scaleMatrix.MultiplyPoint3x4(offset);
+                }
+            }
+
+            text.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices);
         }
 
         public static float ResolveUniformScale(TMP_Text text)

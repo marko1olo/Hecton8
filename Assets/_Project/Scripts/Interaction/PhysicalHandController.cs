@@ -47,7 +47,7 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/Physical Hand Controller")]
-    public sealed class PhysicalHandController : MonoBehaviour
+    public sealed class PhysicalHandController : MonoBehaviour, IPhysicalHandIkTargetSink
     {
         private const int FingerCount = 5;
         private const int FingerSegmentsPerFinger = 3;
@@ -244,6 +244,7 @@ namespace Hecton8.Interaction
         private float _harvestSnapTimer;
         private float _harvestSnapDuration;
         private bool _harvestSnapActive;
+        private int _terminalSnapSourceId;
 
         /// <summary>True while a heavy rigidbody is actively being held by the physical hand proxy.</summary>
         public bool IsGrabbing => _isGrabbing && _activeBody != null;
@@ -326,7 +327,39 @@ namespace Hecton8.Interaction
             _harvestSnapDuration = ResolveHarvestSnapDuration(durationSeconds);
             _harvestSnapTimer = _harvestSnapDuration;
             _harvestSnapActive = true;
+            _terminalSnapSourceId = 0;
             return true;
+        }
+
+        /// <summary>
+        /// Starts a short physical terminal pose latch consumed by the existing hand snap path.
+        /// </summary>
+        public bool TryBeginPoseSnap(Vector3 worldPosition, Quaternion worldRotation, float durationSeconds, int sourceId)
+        {
+            if (IsGrabbing || !IsFinite(worldPosition) || !IsFinite(worldRotation))
+                return false;
+
+            _harvestSnapPosition = worldPosition;
+            _harvestSnapRotation = worldRotation;
+            _harvestSnapDuration = ResolveHarvestSnapDuration(durationSeconds);
+            _harvestSnapTimer = _harvestSnapDuration;
+            _harvestSnapActive = true;
+            _terminalSnapSourceId = sourceId;
+            return true;
+        }
+
+        public void SetTerminalHandTarget(in PhysicalHandIkTarget target)
+        {
+            TryBeginPoseSnap(target.WorldPosition, target.WorldRotation, target.HoldSeconds, target.SourceId);
+        }
+
+        public void ClearTerminalHandTarget(int sourceId)
+        {
+            if (_terminalSnapSourceId == 0 || _terminalSnapSourceId != sourceId)
+                return;
+
+            CancelHarvestSnap();
+            _terminalSnapSourceId = 0;
         }
 
         /// <summary>
@@ -337,6 +370,7 @@ namespace Hecton8.Interaction
             _harvestSnapActive = false;
             _harvestSnapTimer = 0f;
             _harvestSnapDuration = 0f;
+            _terminalSnapSourceId = 0;
         }
 
         /// <summary>

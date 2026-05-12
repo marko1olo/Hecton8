@@ -122,6 +122,30 @@ MapMagic (terrain, via MapMagicBridge) · Crest (ocean, URP) · Odin Inspector (
 
 ## PRIME DIRECTIVES — VIOLATION = REJECTION
 
+### 0. AUTHORITY SPINE + VISUAL FAKE FIRST
+
+[RULE] Long-lived authority lives in stable project docs, not dated reports:
+1. `AGENTS.md`
+2. `.agents-skills/README.md`
+3. task-relevant `.agents-skills/*`
+4. `Docs/README.md`
+5. `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`
+6. `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`
+7. `Docs/SYSTEMS_CONTRACTS.md`
+8. `Docs/QUALITY_GATES.md`
+9. `Docs/ARCHITECTURE/README.md`
+10. `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
+11. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`
+12. `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md`
+
+[RULE] Dated reports under `Docs/Reports/YYYY-MM-DD_*` are evidence snapshots, counters, and audit trails. They do not become the permanent project brain. If a dated report changes policy, promote the policy into `AGENTS.md`, `.agents-skills`, or a stable `Docs/*.md` authority file.
+
+[RULE] Cinematic Cheat Protocol: any physical simulation of water, light, deformation, pressure, flow, ambience, cable sag, particles, flora motion, or distant motion must first prove that a deterministic visual/audio/haptic/UI/proxy fake cannot preserve player belief and gameplay correctness.
+[RULE] Default path is visual-realistic fake. Physical simulation is allowed only for player-critical collision/control, save-affecting state, combat/damage truth, or gameplay-critical hazards.
+[RULE] Any single runtime system adding more than `0.1ms` to a frame is suspicious until profiler proof, quality-tier gate, and load-shed behavior exist.
+[FORBID] Per-proton, per-droplet, per-bubble, per-cable-segment, or per-flora-blade truth unless the player can interact with that truth and measured budgets accept it.
+[FORBID] Declaring runtime readiness from docs, static scans, or local `dotnet build`. Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality require fresh logs/captures.
+
 ### 1. ZERO GC IN HOT PATHS
 
 Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
@@ -229,6 +253,17 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 [REQ] Memory fix must preserve or improve frame time. Memory drop + CPU spike = REGRESSION.
 ### [RULE] JOBS / BURST
 
+[RULE] EventBus is backed by NativeQueue<T>. Publish() is O(1) and SAFE from Burst Jobs. Subscribe() is Awake-only. Main thread flushes queue in LateUpdate. NO String RPCs.
+
+
+[RULE] NaN/INF VACCINATION
+[REQ] Every write to a NativeArray or float field that feeds into Physics or Rendering MUST be wrapped in math.isfinite().
+[REQ] If a value is non-finite, the agent is OBLIGATED to provide a "Safe Fallback" (e.g., float3.zero or quaternion.identity) and log a numeric error hash to the Telemetry Bus.
+[FORBID] Blind divisions. Use math.rcp() only after math.max(epsilon, value).
+[RULE] NATIVE LIFETIME DISCIPLINE
+[REQ] Every system owning NativeArray/List/HashMap must implement IDisposable.
+[REQ] Use the "Deferred Disposal" pattern: myArray.Dispose(activeJobHandle).
+[FORBID] Calling .Complete() on a JobHandle just to call .Dispose() on the next line. This causes Main Thread stalls. If you can't dispose asynchronously, you are failing the architecture.
 [REQ] Schedule() at frame/SlowTick start. Complete() end of same or next frame.
 [FORBID] Schedule()+Complete() in same Tick/hot path method.
 [EXCEPT] Awake/Start one-time init: allowed with // COLD SYNC JOB + justification.
@@ -304,6 +339,13 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 [REQ] Variety: editor-baked libraries + seeded runtime selection. No full mesh rebuild at start.
 [REQ] Flora motion: global flow first; per-frond simulation only where camera notices.
 [REQ] LOD: cross-fade/dithered — no hard pops, no low-poly silhouette collapse.
+
+[RULE] LOD GROUPS MANDATORY
+[REQ] Any object > 0.5 meters in size MUST have at least 3 LOD levels.
+[REQ] LOD2 and further MUST use the "Silhouette Fake" (Dithered Alpha Test or Impostor).
+[FORBID] LOD0-only assets visible beyond 20 meters.
+[REQ] Vertex animation (VAT) must have a "Static Fallback" for LOD2+.
+
 ### [RULE] LOD GROUPS — MANDATORY
 
 [REQ] Props > 0.5 m: LOD0+LOD1+Cull min. Hero: LOD0+LOD1+LOD2+Cull.
@@ -339,6 +381,8 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 [FORBID] Physics/Find/GetComponent in OnDrawGizmos — visualize cached data only.
 [REQ] DrawWireSphere/DrawLine OK. Mesh generation in Gizmos [FORBID].
 ---
+[RULE] RSQRT OVER SQRT
+[REQ] Any use of math.sqrt() or Vector3.magnitude must be justified. In 99% of cases, you are required to use math.distancesq() or math.rsqrt() (reciprocal square root). HECTON-8 is a game of approximations, not high-school geometry.
 
 ## ARCHITECTURE / OWNERSHIP / COMPLIANCE
 
@@ -394,7 +438,22 @@ XML docs on all public members (summary · param · remarks).
 ---
 
 ## WORKFLOW
+### [RULE] PARALLEL EXECUTION & DECOUPLING
+40+ agents operate simultaneously. You must assume other systems are currently being rewritten.[REQ] Cross-domain communication is strictly limited to `EventBus` (NativeQueue) or `GlobalRegistry.Get<IInterface>()`. 
+[FORBID] Do not write concrete class references to systems outside your immediate domain.
 
+### [RULE] STATE MACHINE CHECKLISTS & LOGGING
+[REQ] Every agent MUST maintain their progress in `Docs/Tasks/Status_[ID].md`. Each tick must include: `[x] Task Name | Justification (Why this DOD pattern?) | Alternatives Rejected`.
+[REQ] Final reports are NEVER chat-only. You MUST append your breakdown (What was wrong -> What was done -> Cinematic Cheats -> Microseconds saved) to `Docs/AgentLogs/LOG_[ID].md`.
+[REQ] You must iterate and fix compiler errors manually until `dotnet build` is green.
+
+### [RULE] PREFAB & YAML MUTATION
+[WARN] Editing `.prefab`, `.unity`, or `.asset` files as raw YAML is highly dangerous and prone to corruption. 
+[REQ] Prefer writing a temporary C# Editor script to mutate prefabs/scenes safely via the Unity API. Raw text edits of YAML are permitted ONLY if you are 100% mathematically certain of the FileID/structure alignment.
+[RULE] PREFAB & YAML SANITY CHECK
+[REQ] If you edit a .prefab, .unity, or .asset file as text, you MUST run a validation command: Get-Content [File] | Select-String "m_RootGameObject" -Quiet.
+[REQ] You must explicitly state in your Rationale log that you verified the YAML structure (FileID, GUID and Property Alignment) after the edit.
+[FORBID] Blind find-and-replace on YAML files is a terminal offense.
 ### [PROTOCOL] MANDATORY PRE-CODE ANALYSIS
 
 Before ANY code generation, output [ANALYSIS] block:
@@ -497,7 +556,7 @@ Document changes + GC delta + reason → Revert → Different approach → Bundl
 [REQ] Static geometry: Contribute GI = On. Cast Shadows = On only if in shadow frustum.
 [REQ] < 0.5 m objects: Cast Shadows = Off (justify if enabled). Flora: Two-Sided only for hero near-field.
 [REQ] Check shadow casters via Frame Debugger → Shadow Map before each art iteration.
-[FORBID] Dynamic objects Cast Shadows = On without justification — use Light Probes + LPPV.
+[FORBID] Dynamic objects Cast Shadows = On without justification - use Light Probes, APV where approved, or cheap probe approximation.
 [REQ] Occlusion Culling baked for caves/modules/corridors. Occludee Static > 1 m³. Occluder Static > 2 m³.
 [FORBID] Occluder Static on dynamic spawned objects. Rebake after cave/module geometry changes.
 [REQ] SRP Batcher — primary for dynamic objects: one material = one shader variant, CBUFFER marked up. Check Frame Debugger.
@@ -510,7 +569,7 @@ Document changes + GC delta + reason → Revert → Different approach → Bundl
 [REQ] Atlases for same material family (rocks/debris/coral). MipMaps On for world, Off for UI.
 [REQ] After new textures: check Texture Memory. > 900 MB = RED.
 [REQ] Baked Lighting for static geo. Realtime GI [FORBID] without justification.
-[REQ] Light Probes for all dynamic objects. LPPV for large dynamic meshes.
+[REQ] Light Probes for dynamic objects. APV/probe approximation for large dynamic meshes only after profiler and memory proof.
 [REQ] Reflection Probes: Baked or Realtime (refresh = Via Scripting). One per logical zone.
 [FORBID] Realtime Reflection Probe refresh = Every Frame (full extra render pass).
 [REQ] After lighting changes: rebake + check Baked Lightmaps memory.
@@ -556,6 +615,34 @@ Response format: What was wrong → What I did → In-game result → What was v
 [FORBID] Resources.Load. OnGUI(). Cross-scene Inspector refs.
 [FORBID] Exceptions in gameplay — LogError + disable + continue. Complex Mesh Collider without justification.
 [FORBID] Guessing/inventing. Unclear → ASK.
+[RULE] VISUAL CURRENCY PROTOCOL
+[REQ] Performance optimization is never the end goal; Immersion is.
+[REQ] Use performance savings to "buy" AAA visuals: If you simplify a math loop, you are MANDATED to increase visual fidelity (e.g., more detailed debris, better light response, smoother IK) in the High-Tier profile.
+[FORBID] "Flat" visuals on Top hardware. If the logic is fast, the shader MUST be heavy.  
+[RULE] BATCH HANDOVER & HYGIENE
+[REQ] Before starting a new Batch, the User or the Chronicler agent MUST move all files from Docs/Tasks/ and Docs/AgentLogs/ to Docs/Archive/Batch_[N-1]/.
+[REQ] Agents are FORBIDDEN from reading logs from previous batches unless explicitly ordered. Context must be fresh.
+[REQ] At the start of a session, an agent MUST verify that their Status_[ID].md is empty. If they see old data, they must report a [HYGIENE_VIOLATION] and wait for a wipe.
+[RULE] STATE HYSTERESIS MANDATE
+[REQ] Any LOD, AI behavior, or Scalability switch MUST have a "Hysteresis Band" (Minimum 3-5 meters or 2-3 seconds).
+[FORBID] Immediate state flipping. An object shouldn't downgrade its math precision and upgrade it back in the same second.
+[GOAL] Visual and physical stability is more important than the 0.001ms saved by flickering states.
+[RULE] BANDWIDTH DISCIPLINE
+[REQ] Use GraphicsBuffer.LockBufferForWrite with UnsafeUtility.MemCpy for all GPU updates.
+[REQ] Double-buffering for all GPU data is MANDATORY. While the GPU reads Buffer A, the CPU writes to Buffer B.
+[FORBID] Uploading data that hasn't changed. Use dirty-flags at the page level. If you waste PCIe bandwidth, you are killing the MX350.
+[RULE] INTERFACE IMMUTABILITY: During a batch run, changing existing public method signatures in Hecton8.Core.Contracts is FORBIDDEN. If a signature change is vital, you must mark it in Rationale.md and implement a Legacy Wrapper. Interfaces can only be expanded, not mutated, until the next batch.
+[RULE] SIGNAL DISCIPLINE: You are FORBIDDEN from creating a new EventID for a single-use interaction. Use GlobalRegistry for direct queries. EventBus is for decoupled BROADCASTS (e.g., "Submarine Exploded", "World Rebased") only.
+[RULE] ATOMIC FILE DELETION
+[REQ] If you delete a .cs, .shader, or .asset file, you are MANDATED to delete its corresponding .meta file in the same command.
+[REQ] After any file deletion, run a directory scan to ensure no "orphaned" .meta files exist.
+
+[ANTI-AMNESIA PROTOCOL]
+Context compression is imminent. Your chat history will degrade. You are MANDATED to treat files on disk as your primary long-term memory.
+Before EVERY response, read Docs/Tasks/Status_[ID].md and Docs/AgentLogs/Rationale_[ID].md.
+Extract your original assignment from CURRENT_BATCH.md using cat/grep every 3 tasks.
+If you feel your technical reasoning (Zero-GC, AUP) is slipping, STOP and re-read the Mandates in .agents-skills/.
+
 ---
 ## FINAL DIRECTIVE
 

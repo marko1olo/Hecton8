@@ -299,7 +299,7 @@ namespace Hecton8.Gameplay
                 float sizePixels = markerBaseSizePixels * math.rcp(math.max(distance * 0.1f, 0.5f));
                 sizePixels = math.clamp(sizePixels, markerMinSizePixels, markerMaxSizePixels);
                 if (marker.timer < FadeDurationSeconds)
-                    sizePixels *= math.saturate(marker.timer / FadeDurationSeconds);
+                    sizePixels *= math.saturate(marker.timer * math.rcp(FadeDurationSeconds));
 
                 float markerScale = math.max(0.0001f, sizePixels * worldPerPixel);
                 Matrix4x4 matrix = Matrix4x4.TRS(markerWorldPosition, cameraTransform.rotation, new Vector3(markerScale, markerScale, markerScale));

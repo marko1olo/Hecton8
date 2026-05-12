@@ -169,7 +169,7 @@ Material:
     - _DitherScale: 4
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _EclipseOcclusion: 1
+    - _EclipseOcclusion: 0.24
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
     - _FlowStrength: 0
@@ -188,7 +188,7 @@ Material:
     - _HorizonMistShelfIntensity: 0.50827193
     - _HorizonMistShelfSoftness: 0.10300976
     - _Metallic: 0
-    - _NightBlend: 1
+    - _NightBlend: 0.22
     - _OcclusionStrength: 1
     - _OverlayAlpha: 1
     - _OverlayDiscInnerDot: 0.9214169
@@ -232,14 +232,14 @@ Material:
     - _CloudTiling: {r: 0.1, g: 0.15, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _HazeColor: {r: 0.16132234, g: 0.16296975, b: 0.19198588, a: 1}
+    - _HazeColor: {r: 0.46412686, g: 0.46597892, b: 0.55449176, a: 1}
     - _HighCloudColor: {r: 0.76, g: 0.78, b: 0.9, a: 1}
     - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
     - _NightCloudColor: {r: 0.0256, g: 0.018000001, b: 0.0528, a: 1}
     - _RotationAxis: {r: 1, g: 0.3, b: 0, a: 0}
-    - _SkyColorHorizon: {r: 0.08687343, g: 0.06830372, b: 0.11231211, a: 1}
-    - _SkyColorNadir: {r: 0.005, g: 0.003, b: 0.01, a: 1}
-    - _SkyColorZenith: {r: 0.01, g: 0.005, b: 0.03, a: 1}
+    - _SkyColorHorizon: {r: 0.5484019, g: 0.49894807, b: 0.6654413, a: 1}
+    - _SkyColorNadir: {r: 0.11, g: 0.165, b: 0.19, a: 1}
+    - _SkyColorZenith: {r: 0.16, g: 0.27, b: 0.3966, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _StarColor: {r: 1, g: 1, b: 1, a: 1}
     - _StarTiling: {r: 1, g: 1, b: 0, a: 0}

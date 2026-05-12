@@ -1,7 +1,9 @@
 using Hecton8.Caves;
+using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -126,6 +128,22 @@ namespace Hecton8.Dev
 
                 _debugLastPhase = "HullImpactDecal";
                 if (!ValidateHullImpactDecalSizing())
+                    return;
+
+                _debugLastPhase = "NativeCarveQueue";
+                if (!ValidateNativeCarveQueue())
+                    return;
+
+                _debugLastPhase = "VoxelBlackBox";
+                if (!ValidateVoxelBlackBox())
+                    return;
+
+                _debugLastPhase = "VoxelChunkModifiedEvent";
+                if (!ValidateVoxelChunkModifiedEvent())
+                    return;
+
+                _debugLastPhase = "AsyncCarveContracts";
+                if (!ValidateAsyncCarveSourceContracts())
                     return;
 
                 _debugLastPhase = "Passed";
@@ -366,6 +384,264 @@ namespace Hecton8.Dev
                 math.abs(severe - 1.5f) < 0.0001f,
                 "Hull impact decal sizing failed.");
         }
+
+        private bool ValidateNativeCarveQueue()
+        {
+            NativeQueue<VoxelCarveEvent> queue = default;
+            try
+            {
+                queue = new NativeQueue<VoxelCarveEvent>(Allocator.TempJob);
+                VoxelCarveEvent first = new VoxelCarveEvent
+                {
+                    VolumeInstanceId = 17ul,
+                    AbsoluteHitPoint = new float3(11f, -23f, 37f),
+                    AbsoluteSegmentEnd = new float3(12f, -23f, 37f),
+                    AbsoluteHalfExtents = new float3(1f, 2f, 3f),
+                    AbsoluteImpulseDirection = new float3(0f, 0f, 1f),
+                    RadiusMeters = 2.5f,
+                    BlendStrengthMeters = 0.75f,
+                    Operation = (byte)VoxelCarveOperationType.Subtract,
+                    Shape = (byte)VoxelCarveShapeType.Sphere,
+                    MaterialId = 9,
+                    SourceFlags = 3
+                };
+                VoxelCarveEvent second = first;
+                second.VolumeInstanceId = 23ul;
+                second.Operation = (byte)VoxelCarveOperationType.Add;
+                second.Shape = (byte)VoxelCarveShapeType.Capsule;
+                second.RadiusMeters = 4f;
+
+                queue.Enqueue(first);
+                queue.Enqueue(second);
+                if (!queue.TryDequeue(out VoxelCarveEvent observedFirst) ||
+                    !queue.TryDequeue(out VoxelCarveEvent observedSecond))
+                {
+                    return Fail("Native carve queue failed FIFO dequeue.");
+                }
+
+                int packetBytes = UnsafeUtility.SizeOf<VoxelCarveEvent>();
+                bool queuePreservedPayload =
+                    observedFirst.VolumeInstanceId == 17ul &&
+                    observedSecond.VolumeInstanceId == 23ul &&
+                    observedFirst.Operation == (byte)VoxelCarveOperationType.Subtract &&
+                    observedSecond.Operation == (byte)VoxelCarveOperationType.Add &&
+                    observedFirst.Shape == (byte)VoxelCarveShapeType.Sphere &&
+                    observedSecond.Shape == (byte)VoxelCarveShapeType.Capsule &&
+                    math.abs(observedFirst.AbsoluteHitPoint.x - 11f) < 0.0001f &&
+                    math.abs(observedFirst.RadiusMeters - 2.5f) < 0.0001f &&
+                    math.abs(observedSecond.RadiusMeters - 4f) < 0.0001f;
+
+                bool lodBudgetValid =
+                    VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(HectonQualityTier.Unknown) == 1 &&
+                    VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(HectonQualityTier.Low) == 1 &&
+                    VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(HectonQualityTier.Mx350) == 1 &&
+                    VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(HectonQualityTier.Mid) == 2 &&
+                    VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(HectonQualityTier.High) == 4 &&
+                    VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(HectonQualityTier.Ultra) == 4;
+
+                return Require(
+                    packetBytes > 0 &&
+                    packetBytes <= 80 &&
+                    queuePreservedPayload &&
+                    lodBudgetValid,
+                    "Native carve queue packet or Math LOD budget failed.");
+            }
+            finally
+            {
+                if (queue.IsCreated)
+                    queue.Dispose();
+                }
+        }
+
+        private bool ValidateVoxelBlackBox()
+        {
+            VoxelCarveEvent valid = new VoxelCarveEvent
+            {
+                AbsoluteHitPoint = new float3(1f, 2f, 3f),
+                AbsoluteSegmentEnd = new float3(2f, 2f, 3f),
+                AbsoluteHalfExtents = new float3(1f, 1f, 1f),
+                AbsoluteImpulseDirection = new float3(0f, 1f, 0f),
+                RadiusMeters = 1.5f,
+                BlendStrengthMeters = 0.5f,
+                Operation = (byte)VoxelCarveOperationType.Subtract,
+                Shape = (byte)VoxelCarveShapeType.Sphere
+            };
+            VoxelCarveEvent invalid = valid;
+            invalid.RadiusMeters = float.NaN;
+
+            bool finiteGateValid =
+                VoxelDeltaProcessor.DebugIsFiniteCarveEvent(in valid) &&
+                !VoxelDeltaProcessor.DebugIsFiniteCarveEvent(in invalid);
+
+#if UNITY_EDITOR
+            string delta = ReadProjectFile("Assets/_Project/Scripts/VoxelDeltaProcessor.cs");
+            bool dumpContract =
+                delta.IndexOf("NativeArray<VoxelCarveTelemetryEntry> _blackBox", System.StringComparison.Ordinal) >= 0 &&
+                delta.IndexOf("Dump_WORLD_VOXEL_CAVING.bin", System.StringComparison.Ordinal) >= 0 &&
+                delta.IndexOf("DumpBlackBoxOnce", System.StringComparison.Ordinal) >= 0 &&
+                delta.IndexOf("WriteBlackBoxSample", System.StringComparison.Ordinal) >= 0;
+#else
+            bool dumpContract = true;
+#endif
+
+            return Require(
+                VoxelDeltaProcessor.DebugVoxelBlackBoxCapacity == 300 &&
+                VoxelDeltaProcessor.DebugVoxelBlackBoxEntryBytes == 64 &&
+                finiteGateValid &&
+                dumpContract,
+                "Voxel black-box telemetry contract failed.");
+        }
+
+        private bool ValidateVoxelChunkModifiedEvent()
+        {
+            DrainVoxelChunkModifiedEvents();
+
+            VoxelChunkModifiedEvent expected = new VoxelChunkModifiedEvent
+            {
+                VolumeInstanceId = 99ul,
+                MinAbsoluteCell = new int3(-2, 3, 5),
+                MaxAbsoluteCell = new int3(4, 9, 11),
+                VoxelSize = 0.5f,
+                Frame = 42u,
+                Operation = (byte)VoxelCarveOperationType.Subtract,
+                Shape = (byte)VoxelCarveShapeType.Sphere,
+                Flags = 7,
+                StateHash = 0xBADC0DEu
+            };
+
+            bool published = VoxelChunkModifiedEvents.TryPublish(in expected);
+
+            bool dequeued = VoxelChunkModifiedEvents.TryDequeue(out VoxelChunkModifiedEvent observed);
+            bool noTail = !VoxelChunkModifiedEvents.TryDequeue(out _);
+            bool payloadValid =
+                published &&
+                dequeued &&
+                noTail &&
+                VoxelChunkModifiedEvents.PendingCount == 0 &&
+                observed.VolumeInstanceId == expected.VolumeInstanceId &&
+                math.all(observed.MinAbsoluteCell == expected.MinAbsoluteCell) &&
+                math.all(observed.MaxAbsoluteCell == expected.MaxAbsoluteCell) &&
+                math.abs(observed.VoxelSize - expected.VoxelSize) < 0.0001f &&
+                observed.Frame == expected.Frame &&
+                observed.Operation == expected.Operation &&
+                observed.Shape == expected.Shape &&
+                observed.Flags == expected.Flags &&
+                observed.StateHash == expected.StateHash;
+
+            VoxelChunkModifiedEvent invalid = expected;
+            invalid.VoxelSize = float.NaN;
+            invalid.StateHash = 0xBADF00Du;
+            int rejectedBefore = VoxelChunkModifiedEvents.DebugRejectedCount;
+            bool invalidRejected =
+                !VoxelChunkModifiedEvents.TryPublish(in invalid) &&
+                VoxelChunkModifiedEvents.DebugRejectedCount == rejectedBefore + 1 &&
+                VoxelChunkModifiedEvents.DebugLastRejectedStateHash == invalid.StateHash;
+
+            DrainVoxelChunkModifiedEvents();
+            int droppedBefore = VoxelChunkModifiedEvents.DebugDroppedCount;
+            const uint OverflowBaseHash = 0xABC00000u;
+            for (int i = 0; i <= VoxelChunkModifiedEvents.DebugCapacity; i++)
+            {
+                expected.Frame = (uint)i;
+                expected.StateHash = OverflowBaseHash + (uint)i;
+                if (!VoxelChunkModifiedEvents.TryPublish(in expected))
+                    return Fail("Voxel chunk modified event overflow publish rejected.");
+            }
+
+            bool overflowDequeued = VoxelChunkModifiedEvents.TryDequeue(out VoxelChunkModifiedEvent overflowObserved);
+            bool overflowValid =
+                overflowDequeued &&
+                overflowObserved.StateHash == OverflowBaseHash + 1u &&
+                VoxelChunkModifiedEvents.DebugDroppedCount == droppedBefore + 1 &&
+                VoxelChunkModifiedEvents.DebugLastDroppedStateHash == OverflowBaseHash;
+            DrainVoxelChunkModifiedEvents();
+
+#if UNITY_EDITOR
+            string delta = ReadProjectFile("Assets/_Project/Scripts/VoxelDeltaProcessor.cs");
+            string eventsSource = ReadProjectFile("Assets/_Project/Scripts/VoxelChunkModifiedEvents.cs");
+            bool sourceContract =
+                delta.IndexOf("PublishVoxelChunkModifiedEvent(volume, voxelSize)", System.StringComparison.Ordinal) >= 0 &&
+                delta.IndexOf("VoxelChunkModifiedEvents.Publish(in modifiedEvent)", System.StringComparison.Ordinal) >= 0 &&
+                eventsSource.IndexOf("public static bool TryPublish", System.StringComparison.Ordinal) >= 0 &&
+                eventsSource.IndexOf("DebugRejectedCount", System.StringComparison.Ordinal) >= 0 &&
+                eventsSource.IndexOf("DebugDroppedCount", System.StringComparison.Ordinal) >= 0 &&
+                eventsSource.IndexOf("NativeQueue<VoxelChunkModifiedEvent> _events", System.StringComparison.Ordinal) >= 0 &&
+                eventsSource.IndexOf("NativeMemorySentinel.RegisterNativeQueue", System.StringComparison.Ordinal) >= 0 &&
+                eventsSource.IndexOf("private const int Capacity = 64", System.StringComparison.Ordinal) >= 0;
+#else
+            bool sourceContract = true;
+#endif
+
+            return Require(
+                VoxelChunkModifiedEvents.DebugCapacity == 64 &&
+                VoxelChunkModifiedEvents.DebugEventBytes == 64 &&
+                VoxelChunkModifiedEvents.PendingCount == 0 &&
+                payloadValid &&
+                invalidRejected &&
+                overflowValid &&
+                sourceContract,
+                "Voxel chunk modified event contract failed.");
+        }
+
+        private bool ValidateAsyncCarveSourceContracts()
+        {
+#if UNITY_EDITOR
+            string delta = ReadProjectFile("Assets/_Project/Scripts/VoxelDeltaProcessor.cs");
+            string chunkEvents = ReadProjectFile("Assets/_Project/Scripts/VoxelChunkModifiedEvents.cs");
+            string engine = ReadProjectFile("Assets/_Project/Scripts/HectonVoxelEngine.cs");
+            string shader = ReadProjectFile("Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader");
+            return RequireContains(delta, "NativeQueue<VoxelCarveEvent> _queuedCarveEvents", "Missing bounded NativeQueue carve ingress.") &&
+                   RequireContains(delta, "public bool TryQueueCarveEvent(HectonVoxelVolume volume, in VoxelCarveEvent carveEvent)", "Missing public carve event enqueue contract.") &&
+                   RequireContains(delta, "private static int ResolveQueuedCarveDrainBudget()", "Missing Math LOD carve drain resolver.") &&
+                   RequireContains(delta, "case HectonQualityTier.High:", "High tier carve drain case missing.") &&
+                   RequireContains(delta, "return 4;", "High/Ultra carve drain budget is not four per frame.") &&
+                   RequireContains(delta, "private unsafe struct CarveSdfJob : IJobParallelFor", "Missing Burst-scheduled parallel carve job.") &&
+                   RequireContains(delta, "AxisWeightedLengthApprox", "Axis-weighted carve distance approximation missing.") &&
+                   RequireContains(delta, "WriteDirtySparseRleNativeSnapshotChunk", "Dirty sparse RLE snapshot writer missing.") &&
+                   RequireContains(delta, "WriteCompactedSparseRleNativeSnapshotChunk", "Compacted sparse RLE snapshot writer missing.") &&
+                   RequireContains(delta, "VoxelDynamicNavGridRuntime.QueueLocalizedSdfPatch", "Localized nav-grid patch emission missing.") &&
+                   RequireContains(delta, "VoxelChunkModifiedEvents.Publish(in modifiedEvent)", "Voxel chunk modified event publish missing.") &&
+                   RequireContains(chunkEvents, "public struct VoxelChunkModifiedEvent", "Voxel chunk modified event payload missing.") &&
+                   RequireContains(chunkEvents, "public static bool TryPublish", "Voxel chunk modified event validated publish path missing.") &&
+                   RequireContains(chunkEvents, "DebugDroppedCount", "Voxel chunk modified overflow telemetry missing.") &&
+                   RequireContains(chunkEvents, "DebugRejectedCount", "Voxel chunk modified rejection telemetry missing.") &&
+                   RequireContains(chunkEvents, "NativeQueue<VoxelChunkModifiedEvent>", "Voxel chunk modified event native queue missing.") &&
+                   RequireContains(delta, "PublishDebrisSpawnSignal(in request, radius)", "Immediate dust/debris signal dispatch missing.") &&
+                   RequireNotContains(delta, "DecalProjector", "Voxel laser burn path must not depend on DecalProjector.") &&
+                   RequireContains(engine, "Physics.BakeMesh(MeshId, false)", "Worker PhysX bake job missing.") &&
+                   RequireContains(engine, "modifiedCells = data.ModifiedCells", "Modified-cell map is not fed into vertex color job.") &&
+                   RequireContains(engine, "colorPayload.x = 1f", "Vertex color R burn write missing.") &&
+                   RequireContains(shader, "vertexBurnMask", "Shader vertex burn mask missing.") &&
+                   RequireContains(shader, "terrainSplatColor.r", "Shader does not read vertex color R for burn.");
+#else
+            return true;
+#endif
+        }
+
+        private static void DrainVoxelChunkModifiedEvents()
+        {
+            int limit = VoxelChunkModifiedEvents.DebugCapacity + 4;
+            for (int i = 0; i < limit && VoxelChunkModifiedEvents.TryDequeue(out _); i++)
+            {
+            }
+        }
+
+#if UNITY_EDITOR
+        private static string ReadProjectFile(string relativePath)
+        {
+            return File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), relativePath));
+        }
+
+        private bool RequireContains(string source, string needle, string issue)
+        {
+            return Require(source.IndexOf(needle, System.StringComparison.Ordinal) >= 0, issue);
+        }
+
+        private bool RequireNotContains(string source, string needle, string issue)
+        {
+            return Require(source.IndexOf(needle, System.StringComparison.Ordinal) < 0, issue);
+        }
+#endif
 
         private bool Require(bool condition, string issue)
         {

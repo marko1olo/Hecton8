@@ -1,0 +1,1691 @@
+using System;
+using System.IO;
+using System.Runtime.CompilerServices;
+using Hecton8.Core;
+using Hecton8.Core.Signals;
+using Hecton8.Narrative;
+using Hecton8.SaveSystem;
+using Hecton8.Tools;
+using Hecton8.World;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Rendering;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+namespace Hecton8.Gameplay
+{
+    /// <summary>
+    /// Fixed 1024-bit discovery mask for scanner archaeology state.
+    /// </summary>
+    public static class DataArchaeologyDiscoveryBitMask
+    {
+        /// <summary>Total supported discovery slots.</summary>
+        public const int MaxDiscoveryCount = 1024;
+
+        /// <summary>Number of 64-bit words required for 1024 discovery bits.</summary>
+        public const int WordCount = MaxDiscoveryCount / 64;
+
+        /// <summary>Exact byte payload used by discovery flags in the save stream.</summary>
+        public const int ByteCount = WordCount * sizeof(long);
+
+        /// <summary>
+        /// Ensures the caller-owned backing array is exactly sized for 1024 discovery bits.
+        /// </summary>
+        public static void EnsureCapacity(ref long[] words)
+        {
+            if (HasExpectedCapacity(words))
+                return;
+
+            words = new long[WordCount]; // COLD ALLOC: long[16] - 128-byte archaeology discovery save mask - owner: SaveData/DataArchaeologyRuntime
+        }
+
+        /// <summary>
+        /// Returns true when the backing array contains the exact archaeology bit payload.
+        /// </summary>
+        public static bool HasExpectedCapacity(long[] words)
+        {
+            return words != null && words.Length == WordCount;
+        }
+
+        /// <summary>
+        /// Clears every discovery bit.
+        /// </summary>
+        public static void Clear(long[] words)
+        {
+            if (words == null)
+                return;
+
+            int count = math.min(words.Length, WordCount);
+            for (int i = 0; i < count; i++)
+                words[i] = 0L;
+        }
+
+        /// <summary>
+        /// Resolves a stable 0-1023 discovery bit from a uint content hash.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveBitIndex(uint hash)
+        {
+            return (int)(hash & (MaxDiscoveryCount - 1u));
+        }
+
+        /// <summary>
+        /// Checks one discovery bit.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsSet(long[] words, int bitIndex)
+        {
+            if (!HasExpectedCapacity(words) || (uint)bitIndex >= MaxDiscoveryCount)
+                return false;
+
+            int wordIndex = bitIndex >> 6;
+            ulong bit = 1UL << (bitIndex & 63);
+            return (((ulong)words[wordIndex]) & bit) != 0UL;
+        }
+
+        /// <summary>
+        /// Sets one discovery bit and returns true only when the bit changed.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TrySet(long[] words, int bitIndex)
+        {
+            if (!HasExpectedCapacity(words) || (uint)bitIndex >= MaxDiscoveryCount)
+                return false;
+
+            int wordIndex = bitIndex >> 6;
+            ulong bit = 1UL << (bitIndex & 63);
+            ulong word = (ulong)words[wordIndex];
+            bool changed = (word & bit) == 0UL;
+            words[wordIndex] = (long)(word | bit);
+            return changed;
+        }
+    }
+
+    /// <summary>
+    /// Burst-compatible input packet for scanner frequency tuning.
+    /// </summary>
+    public struct DataArchaeologyFrequencyInput
+    {
+        public uint ArtifactHash;
+        public float SignalPhase01;
+        public float NoisePhase01;
+        public float Threshold;
+        public float Interference01;
+        public float Battery01;
+        public float DeltaTime;
+    }
+
+    /// <summary>
+    /// Burst-compatible scanner tuning result.
+    /// </summary>
+    public struct DataArchaeologyFrequencyResult
+    {
+        public float Signal;
+        public float Noise;
+        public float Difference;
+        public float Match01;
+        public float ProgressDeltaSeconds;
+        public float FeedbackPitchScale;
+        public float FeedbackFrequency01;
+        public byte Matched;
+    }
+
+    /// <summary>
+    /// Zero-allocation notification payload for HUD/PDA consumers.
+    /// </summary>
+    public struct DataArchaeologyNotification
+    {
+        public uint EntryHash;
+        public ushort ProgressPermille;
+        public byte Kind;
+        public byte Flags;
+    }
+
+    internal struct DataArchaeologyTelemetryEntry
+    {
+        public uint Frame;
+        public uint Hash;
+        public float3 Position;
+        public float Match01;
+        public byte Flags;
+        public byte Reserved0;
+        public ushort ProgressPermille;
+    }
+
+    /// <summary>
+    /// Burst math for scanner signal/noise matching.
+    /// </summary>
+    public static class DataArchaeologyFrequencyKernel
+    {
+        private const uint LcgA = 1664525u;
+        private const uint LcgC = 1013904223u;
+        private const float UIntToUnit = 2.3283064e-10f;
+
+        /// <summary>
+        /// Evaluates a deterministic frequency match. The authored sine pair is rendered with a parabolic proxy.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DataArchaeologyFrequencyResult Evaluate(in DataArchaeologyFrequencyInput input)
+        {
+            uint seed = NextLcg(input.ArtifactHash ^ 0xA7C15EEDu);
+            float stableOffset = (seed & 1023u) * 0.0009765625f;
+            float signal = FastParabolicSineSigned(input.SignalPhase01 + stableOffset);
+            float noise = FastParabolicSineSigned(input.NoisePhase01 + (input.Interference01 * 0.25f));
+            float threshold = math.max(0.0001f, input.Threshold);
+            float difference = math.abs(signal - noise);
+            byte matched = (byte)math.select(0, 1, difference < threshold);
+            float match01 = math.saturate(1f - (difference * math.rcp(threshold)));
+            float progressScale = math.select(0f, 1f + (match01 * 0.5f), matched != 0);
+            float batteryScale = 0.65f + (math.saturate(input.Battery01) * 0.35f);
+
+            return new DataArchaeologyFrequencyResult
+            {
+                Signal = signal,
+                Noise = noise,
+                Difference = difference,
+                Match01 = match01,
+                ProgressDeltaSeconds = math.max(0f, input.DeltaTime) * progressScale * batteryScale,
+                FeedbackPitchScale = 0.9f + (match01 * 0.35f),
+                FeedbackFrequency01 = match01,
+                Matched = matched
+            };
+        }
+
+        /// <summary>
+        /// One Jacobi relaxation step used by corrupted data recovery widgets.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float4 RecoverCorruptedDataJacobi4(float4 current, float4 left, float4 right, float4 source, float relaxation01)
+        {
+            float4 average = (left + right + source) * 0.33333334f;
+            return math.lerp(current, average, math.saturate(relaxation01));
+        }
+
+        /// <summary>
+        /// Branch-cheap UI color ramp for match/progress indication.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 ResolveProgressColorRgb(float match01)
+        {
+            return math.select(new float3(1f, 0.24f, 0.08f), new float3(0.08f, 0.86f, 1f), match01 >= 0.5f);
+        }
+
+        /// <summary>
+        /// Deterministic LCG used for artifact interference seeding.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint NextLcg(uint state)
+        {
+            return (state * LcgA) + LcgC;
+        }
+
+        /// <summary>
+        /// Converts deterministic LCG state to [0,1).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float LcgToUnit(uint state)
+        {
+            return state * UIntToUnit;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastParabolicSineSigned(float phase01)
+        {
+            float wrapped = phase01 - math.floor(phase01);
+            float triangle = 1f - math.abs((wrapped * 2f) - 1f);
+            float signed = (triangle * 2f) - 1f;
+            return signed * (1.5f - (0.5f * math.abs(signed)));
+        }
+    }
+
+    /// <summary>
+    /// Burst wrapper for scanner frequency tuning batch tests.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+    public struct DataArchaeologyFrequencyTuningJob : IJob
+    {
+        public DataArchaeologyFrequencyInput Input;
+        public NativeArray<DataArchaeologyFrequencyResult> Output;
+
+        /// <inheritdoc />
+        public void Execute()
+        {
+            if (!Output.IsCreated || Output.Length == 0)
+                return;
+
+            Output[0] = DataArchaeologyFrequencyKernel.Evaluate(in Input);
+        }
+    }
+
+    /// <summary>
+        /// Scanner-owned archaeology runtime: tuning state, discovery bits, fragment positions, persisted text reads, and hologram draw batches.
+    /// </summary>
+    [DisallowMultipleComponent]
+    public sealed class DataArchaeologyRuntime : MonoBehaviour, ISaveable, IRenderable, ILateFrameTickable, IOriginShiftListener, IDisposable
+    {
+        public const int MaxDiscoveryCount = DataArchaeologyDiscoveryBitMask.MaxDiscoveryCount;
+        public const int DiscoveryWordCount = DataArchaeologyDiscoveryBitMask.WordCount;
+        public const int DiscoveryByteCount = DataArchaeologyDiscoveryBitMask.ByteCount;
+        public const int MaxPartialScanCount = 256;
+        public const int NotificationCapacity = 32;
+        public const int HologramInstanceCapacity = 64;
+        public const int TelemetryCapacity = 300;
+
+        internal const string WireShaderPath = "Assets/_Project/Art/Shaders/Hecton_BlueprintWireInstanced.shader";
+
+        private const string NativeMemoryOwner = nameof(DataArchaeologyRuntime);
+        private const int MmfHeaderBytes = 16;
+        private const int MmfFragmentRecordBytes = 16;
+        private const int MmfPartialRecordBytes = 8;
+        private const float MmfPartialFlushCadenceSeconds = 4f;
+        private const float MmfUrgentFlushDelaySeconds = 0.25f;
+        private const uint MmfMagic = 0x41443848u; // H8DA
+        private const uint MmfVersion = 1u;
+        private const byte NotificationKindDiscovery = 1;
+        private const byte NotificationKindProgress = 2;
+        private const byte TelemetryFlagMatched = 1 << 0;
+        private const byte TelemetryFlagCompleted = 1 << 1;
+        private const byte ScanStateUnscanned = 0;
+        private const byte ScanStateScanning = 1;
+        private const byte ScanStateScanned = 2;
+        private const byte ToolAcousticStateScanning = 1;
+        private const byte HudSeverityInfo = 1;
+        private const int ScannerShaderPointCapacity = 4;
+        private static readonly int _HectonScannerPointsId = Shader.PropertyToID("_HectonScannerPoints");
+        private static readonly int _HectonScannerPointCountId = Shader.PropertyToID("_HectonScannerPointCount");
+        private static readonly uint _scannerToolHash = Hecton.Localization.LocHash.ComputeAscii("tool.scanner");
+
+        [Header("Data Archaeology")]
+        [Tooltip("Signal/noise difference allowed for a successful archaeology scan tick.")]
+        [SerializeField, Range(0.02f, 0.5f)] private float tuningThreshold = 0.14f;
+
+        [Tooltip("Environmental electromagnetic interference scalar added to the noise wave.")]
+        [SerializeField, Range(0f, 1f)] private float signalInterference01;
+
+        [Tooltip("Fallback wireframe mesh used when a completed fragment has no MeshFilter.")]
+        [SerializeField] private Mesh reconstructionMesh;
+
+        [Tooltip("Instanced wireframe material. If empty in editor, loaded from the project wire shader.")]
+        [SerializeField] private Material reconstructionMaterial;
+
+        [Tooltip("Optional shader used to create the cold runtime reconstruction material.")]
+        [SerializeField] private Shader reconstructionShader;
+
+        [Tooltip("PDA encyclopedia MMF index path. Text loads only when TryLoadLoreTextOnRead is called.")]
+        [SerializeField] private string loreIndexPath;
+
+        [Tooltip("PDA encyclopedia MMF payload path. Text loads only when TryLoadLoreTextOnRead is called.")]
+        [SerializeField] private string lorePayloadPath;
+
+        [Tooltip("When enabled, discovered fragment positions and partial scans are mirrored to a fixed binary sidecar.")]
+        [SerializeField] private bool enableMmfPersistence = true;
+
+        [Tooltip("Fixed binary sidecar filename under Application.persistentDataPath.")]
+        [SerializeField] private string mmfFileName = "data_archaeology.mmf";
+
+        private readonly long[] _discoveryWords = new long[DiscoveryWordCount]; // COLD ALLOC: long[16] - active 128-byte discovery bit mask - owner: DataArchaeologyRuntime
+        private readonly uint[] _partialHashes = new uint[MaxPartialScanCount]; // COLD ALLOC: uint[256] - partial scan hash slots - owner: DataArchaeologyRuntime
+        private readonly ushort[] _partialProgressPermille = new ushort[MaxPartialScanCount]; // COLD ALLOC: ushort[256] - partial scan progress slots - owner: DataArchaeologyRuntime
+        private readonly uint[] _fragmentHashes = new uint[MaxDiscoveryCount]; // COLD ALLOC: uint[1024] - persisted fragment hash mirror - owner: DataArchaeologyRuntime
+        private readonly Vector3[] _fragmentPositionsMirror = new Vector3[MaxDiscoveryCount]; // COLD ALLOC: Vector3[1024] - persisted fragment position mirror - owner: DataArchaeologyRuntime
+        private readonly Matrix4x4[] _hologramMatrices = new Matrix4x4[HologramInstanceCapacity]; // COLD ALLOC: Matrix4x4[64] - instanced hologram draw buffer - owner: DataArchaeologyRuntime
+        private readonly Vector4[] _scannerShaderPoints = new Vector4[ScannerShaderPointCapacity]; // COLD ALLOC: Vector4[4] - scanner emissive mask shader point payload - owner: DataArchaeologyRuntime
+
+        private NativeParallelHashMap<uint, float3> _fragmentPositions;
+        private NativeParallelHashMap<int, byte> _scanStates;
+        private NativeArray<ulong> _unlockedLoreWords;
+        private NativeArray<DataArchaeologyNotification> _notifications;
+        private NativeArray<DataArchaeologyTelemetryEntry> _telemetryRing;
+        private LoreMmfEncyclopedia _loreMmf;
+        private Material _runtimeMaterial;
+        private Mesh _resolvedReconstructionMesh;
+        private int _partialCount;
+        private int _fragmentCount;
+        private int _hologramCount;
+        private int _notificationRead;
+        private int _notificationWrite;
+        private int _notificationCount;
+        private int _telemetryCursor;
+        private float _tuningPhase01;
+        private float _manualTune01 = 0.5f;
+        private float _nextSensoryFeedbackTime;
+        private float3 _lastScannerShaderPoint = new float3(float.NaN);
+        private float _lastScannerShaderProgress = -1f;
+        private bool _registeredSave;
+        private bool _registeredRenderable;
+        private bool _registeredLateFrame;
+        private bool _registeredOriginShift;
+        private bool _mmfDirty;
+        private float _nextMmfFlushTime = float.PositiveInfinity;
+        private bool _disposed;
+
+        /// <inheritdoc />
+        public int SavePriority => 206;
+
+        /// <inheritdoc />
+        public int LoadPriority => 206;
+
+        /// <summary>
+        /// Resolves scanner range from base range and battery level.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveScannerRange(float baseRange, float battery01)
+        {
+            return math.max(0f, baseRange) * (1f + math.saturate(battery01));
+        }
+
+        /// <summary>
+        /// Sets manual tune phase supplied by future scanner/PDA controls.
+        /// </summary>
+        public void SetManualTune01(float tune01)
+        {
+            _manualTune01 = math.saturate(tune01);
+        }
+
+        /// <summary>
+        /// Evaluates one focused archaeology scan tick for a fragment.
+        /// </summary>
+        public bool TryEvaluateFocusedScan(
+            ScannableFragment fragment,
+            float3 fragmentPosition,
+            float heldDeltaTime,
+            float battery01,
+            out DataArchaeologyFrequencyResult result)
+        {
+            result = default;
+            if (fragment == null || heldDeltaTime <= 0f)
+                return false;
+
+            uint hash = fragment.DiscoveryHash;
+            if (hash == 0u)
+                return false;
+
+            if (!math.all(math.isfinite(new float4(fragmentPosition, heldDeltaTime))))
+            {
+                RecordTelemetry(hash, 0, float3.zero, 0f, 0);
+                DumpTelemetryCold();
+                return false;
+            }
+
+            SetScanState(hash, ScanStateScanning);
+            _tuningPhase01 = Wrap01(_tuningPhase01 + (heldDeltaTime * (0.18f + (math.saturate(battery01) * 0.08f))));
+            uint seed = BuildAupArtifactSeed(hash, fragmentPosition);
+            float signalPhase = DataArchaeologyFrequencyKernel.LcgToUnit(seed);
+            float noisePhase = Wrap01(_manualTune01 + _tuningPhase01 + DataArchaeologyFrequencyKernel.LcgToUnit(DataArchaeologyFrequencyKernel.NextLcg(seed)) * 0.125f);
+
+            DataArchaeologyFrequencyInput input = new DataArchaeologyFrequencyInput
+            {
+                ArtifactHash = hash,
+                SignalPhase01 = signalPhase,
+                NoisePhase01 = noisePhase,
+                Threshold = tuningThreshold,
+                Interference01 = signalInterference01,
+                Battery01 = battery01,
+                DeltaTime = heldDeltaTime
+            };
+
+            result = DataArchaeologyFrequencyKernel.Evaluate(in input);
+            EmitSensoryFeedback(in result);
+            PublishToolAcoustic(hash, fragment.ProgressNormalized, result.FeedbackPitchScale, math.saturate(result.Match01));
+            PublishScannerShaderPoint(fragmentPosition, fragment.ProgressNormalized);
+            byte flags = result.Matched != 0 ? TelemetryFlagMatched : (byte)0;
+            RecordTelemetry(hash, flags, fragmentPosition, result.Match01, ToPermille(fragment.ProgressNormalized));
+            return true;
+        }
+
+        /// <summary>
+        /// Registers a raycast-scanned target hash and seeds its zero-GC scan state.
+        /// </summary>
+        public bool RegisterRaycastTarget(uint entityHash, float3 hitPosition)
+        {
+            if (entityHash == 0u)
+                return false;
+
+            if (TryGetScanState(entityHash, out byte state) && state == ScanStateScanned)
+                return false;
+
+            if (state == ScanStateUnscanned)
+                SetScanState(entityHash, ScanStateScanning);
+
+            RegisterFragmentPosition(entityHash, hitPosition);
+            PublishScannerShaderPoint(hitPosition, 0f);
+            return true;
+        }
+
+        /// <summary>
+        /// Updates a held raycast target scan using caller-owned local progress seconds.
+        /// </summary>
+        public bool UpdateRaycastTargetProgress(uint entityHash, float3 hitPosition, float progressSeconds, out bool completed)
+        {
+            completed = false;
+            if (entityHash == 0u)
+                return false;
+
+            float progress01 = math.saturate(progressSeconds);
+            if (!math.all(math.isfinite(new float4(hitPosition, progress01))))
+            {
+                RecordTelemetry(entityHash, 0, float3.zero, 0f, ToPermille(progress01));
+                DumpTelemetryCold();
+                return false;
+            }
+
+            if (TryGetScanState(entityHash, out byte previousState) && previousState == ScanStateScanned)
+                return false;
+
+            if (progressSeconds > 1f)
+            {
+                RemovePartial(entityHash);
+                SetScanState(entityHash, ScanStateScanned);
+                SetNativeLoreBit(DataArchaeologyDiscoveryBitMask.ResolveBitIndex(entityHash));
+                RegisterFragmentPosition(entityHash, hitPosition);
+                if (GlobalRegistry.LoreDatabase != null)
+                    GlobalRegistry.LoreDatabase.TryUnlockByHash(entityHash);
+
+                PublishCompletionSignals(entityHash, hitPosition);
+                EnqueueNotification(entityHash, 1000, NotificationKindDiscovery, 0);
+                RecordTelemetry(entityHash, TelemetryFlagCompleted, hitPosition, 1f, 1000);
+                MarkMmfDirty(true);
+                completed = true;
+                return true;
+            }
+
+            SetScanState(entityHash, ScanStateScanning);
+            UpsertPartial(entityHash, ToPermille(progress01));
+            PublishScannerShaderPoint(hitPosition, progress01);
+            PublishToolAcoustic(entityHash, progress01, 0.8f + (progress01 * 0.42f), 0.2f + (progress01 * 0.8f));
+            RecordTelemetry(entityHash, TelemetryFlagMatched, hitPosition, progress01, ToPermille(progress01));
+            return true;
+        }
+
+        /// <summary>
+        /// Restores persisted target progress for a hash-only scan target.
+        /// </summary>
+        public bool TryGetTargetProgress01(uint entityHash, out float progress01)
+        {
+            progress01 = 0f;
+            if (entityHash == 0u || !TryFindPartial(entityHash, out int index))
+                return false;
+
+            progress01 = _partialProgressPermille[index] * 0.001f;
+            return true;
+        }
+
+        /// <summary>
+        /// Applies persisted partial progress to a fragment when scanner focus reacquires it.
+        /// </summary>
+        public void TryApplyPersistedProgress(ScannableFragment fragment)
+        {
+            if (fragment == null || fragment.IsCompleted)
+                return;
+
+            uint hash = fragment.DiscoveryHash;
+            if (hash == 0u || !TryFindPartial(hash, out int index))
+                return;
+
+            fragment.RestoreProgressNormalized(_partialProgressPermille[index] * 0.001f);
+        }
+
+        /// <summary>
+        /// Records fragment scan progress in fixed arrays for binary/MMF persistence.
+        /// </summary>
+        public void RecordPartialProgress(ScannableFragment fragment)
+        {
+            if (fragment == null)
+                return;
+
+            uint hash = fragment.DiscoveryHash;
+            if (hash == 0u)
+                return;
+
+            ushort progress = ToPermille(fragment.ProgressNormalized);
+            if (progress >= 1000)
+            {
+                SetScanState(hash, ScanStateScanned);
+                RemovePartial(hash);
+                return;
+            }
+
+            SetScanState(hash, ScanStateScanning);
+            if (UpsertPartial(hash, progress))
+                EnqueueNotification(hash, progress, NotificationKindProgress, 0);
+        }
+
+        /// <summary>
+        /// Records completed archaeology fragment discovery and queues hologram reconstruction.
+        /// </summary>
+        public void NotifyFragmentCompleted(ScannableFragment fragment, float3 fragmentPosition)
+        {
+            if (fragment == null)
+                return;
+
+            uint hash = fragment.DiscoveryHash;
+            if (hash == 0u)
+                return;
+
+            RemovePartial(hash);
+            int bitIndex = DataArchaeologyDiscoveryBitMask.ResolveBitIndex(hash);
+            bool changed = DataArchaeologyDiscoveryBitMask.TrySet(_discoveryWords, bitIndex);
+            SetNativeLoreBit(bitIndex);
+            SetScanState(hash, ScanStateScanned);
+            bool hasKnownPosition = _fragmentPositions.IsCreated && _fragmentPositions.ContainsKey(hash);
+            if (!changed && hasKnownPosition)
+                return;
+
+            if (changed && GlobalRegistry.LoreDatabase != null)
+                GlobalRegistry.LoreDatabase.TryUnlockByHash(hash);
+
+            RegisterFragmentPosition(hash, fragmentPosition);
+            RegisterHologram(fragment, fragmentPosition);
+            ScanEvents.RaiseEntryDiscovered(hash, 0u, 0u, 0u, ScanEntryKind.Scannable);
+            PublishCompletionSignals(hash, fragmentPosition);
+            EnqueueNotification(hash, 1000, NotificationKindDiscovery, 0);
+            RecordTelemetry(hash, TelemetryFlagCompleted, fragmentPosition, 1f, 1000);
+            MarkMmfDirty(true);
+        }
+
+        /// <summary>
+        /// Resets partial scan progress to the previous 25% milestone after an interruption.
+        /// </summary>
+        public void InterruptScan(uint hash)
+        {
+            if (hash == 0u || !TryFindPartial(hash, out int index))
+                return;
+
+            ushort current = _partialProgressPermille[index];
+            ushort milestone = (ushort)((current / 250) * 250);
+            _partialProgressPermille[index] = milestone;
+            MarkMmfDirty(true);
+        }
+
+        /// <summary>
+        /// Attempts to dequeue one fixed-ring HUD notification.
+        /// </summary>
+        public bool TryDequeueNotification(out DataArchaeologyNotification notification)
+        {
+            notification = default;
+            if (!_notifications.IsCreated || _notificationCount <= 0)
+                return false;
+
+            notification = _notifications[_notificationRead];
+            _notificationRead = (_notificationRead + 1) & (NotificationCapacity - 1);
+            _notificationCount--;
+            return true;
+        }
+
+        /// <summary>
+        /// Loads PDA text from the MMF only when the caller explicitly requests a read.
+        /// </summary>
+        public LoreMmfLoadStatus TryLoadLoreTextOnRead(uint hash, char[] destination, out int charsWritten)
+        {
+            charsWritten = 0;
+            if (hash == 0u)
+                return LoreMmfLoadStatus.MissingEntry;
+
+            if (destination == null || destination.Length == 0)
+                return LoreMmfLoadStatus.DestinationTooSmall;
+
+            if (_loreMmf == null)
+                _loreMmf = new LoreMmfEncyclopedia(); // COLD ALLOC: LoreMmfEncyclopedia[1] - read-on-demand PDA MMF view - owner: DataArchaeologyRuntime
+
+            if (!_loreMmf.IsOpen)
+            {
+                LoreMmfLoadStatus openStatus = _loreMmf.TryOpen(loreIndexPath, lorePayloadPath);
+                if (openStatus != LoreMmfLoadStatus.Ok)
+                    return openStatus;
+            }
+
+            return _loreMmf.TryLoadEntryUtf16(hash, destination, out charsWritten);
+        }
+
+        /// <inheritdoc />
+        public void PopulateSaveData(SaveData data)
+        {
+            if (data == null)
+                return;
+
+            EnsureNativeState();
+            SyncNativeLoreToManaged();
+            DataArchaeologyDiscoveryBitMask.EnsureCapacity(ref data.dataArchaeologyDiscoveryBitWords);
+            for (int i = 0; i < DiscoveryWordCount; i++)
+                data.dataArchaeologyDiscoveryBitWords[i] = _discoveryWords[i];
+
+            EnsurePartialSaveArrays(data);
+            int safeCount = math.min(_partialCount, MaxPartialScanCount);
+            data.dataArchaeologyPartialScanCount = safeCount;
+            for (int i = 0; i < safeCount; i++)
+            {
+                data.dataArchaeologyPartialScanHashes[i] = _partialHashes[i];
+                data.dataArchaeologyPartialScanProgressPermille[i] = _partialProgressPermille[i];
+            }
+
+            for (int i = safeCount; i < MaxPartialScanCount; i++)
+            {
+                data.dataArchaeologyPartialScanHashes[i] = 0u;
+                data.dataArchaeologyPartialScanProgressPermille[i] = 0;
+            }
+
+            PopulateScanStateSaveData(data);
+            PersistMmfCold();
+        }
+
+        /// <inheritdoc />
+        public void LoadFromSaveData(SaveData data)
+        {
+            EnsureNativeState();
+            DataArchaeologyDiscoveryBitMask.Clear(_discoveryWords);
+            _partialCount = 0;
+            ClearNativeLoreWords();
+            if (_scanStates.IsCreated)
+                _scanStates.Clear();
+
+            if (data != null)
+            {
+                DataArchaeologyDiscoveryBitMask.EnsureCapacity(ref data.dataArchaeologyDiscoveryBitWords);
+                for (int i = 0; i < DiscoveryWordCount; i++)
+                    _discoveryWords[i] = data.dataArchaeologyDiscoveryBitWords[i];
+                SyncManagedLoreToNative();
+
+                EnsurePartialSaveArrays(data);
+                int safeCount = math.clamp(
+                    data.dataArchaeologyPartialScanCount,
+                    0,
+                    math.min(MaxPartialScanCount, math.min(data.dataArchaeologyPartialScanHashes.Length, data.dataArchaeologyPartialScanProgressPermille.Length)));
+
+                for (int i = 0; i < safeCount; i++)
+                {
+                    uint hash = data.dataArchaeologyPartialScanHashes[i];
+                    ushort progress = data.dataArchaeologyPartialScanProgressPermille[i];
+                    if (hash == 0u || progress >= 1000)
+                        continue;
+
+                    InsertOrUpgradePartialCold(hash, progress);
+                    SetScanState(hash, ScanStateScanning);
+                }
+
+                LoadScanStateSaveData(data);
+                RemoveNonScanningPartials(markDirty: false);
+            }
+
+            TryLoadMmfCold();
+        }
+
+        /// <inheritdoc />
+        public void Render(float deltaTime)
+        {
+            if (_hologramCount <= 0)
+                return;
+
+            EnsureReconstructionResources();
+            Mesh mesh = _resolvedReconstructionMesh != null ? _resolvedReconstructionMesh : reconstructionMesh;
+            Material material = reconstructionMaterial != null ? reconstructionMaterial : _runtimeMaterial;
+            if (mesh == null || material == null)
+                return;
+
+            Graphics.DrawMeshInstanced(
+                mesh,
+                0,
+                material,
+                _hologramMatrices,
+                _hologramCount,
+                null,
+                ShadowCastingMode.Off,
+                false,
+                gameObject.layer,
+                null,
+                LightProbeUsage.Off,
+                null);
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            if (_mmfDirty && Time.unscaledTime >= _nextMmfFlushTime)
+                PersistMmfCold();
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            PersistMmfCold();
+            UnregisterRuntime();
+            _disposed = true;
+
+            _loreMmf?.Dispose();
+            _loreMmf = null;
+
+            if (_fragmentPositions.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, nameof(_fragmentPositions));
+                _fragmentPositions.Dispose();
+                _fragmentPositions = default;
+            }
+
+            if (_scanStates.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, nameof(_scanStates));
+                _scanStates.Dispose();
+                _scanStates = default;
+            }
+
+            if (_unlockedLoreWords.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_unlockedLoreWords);
+                _unlockedLoreWords.Dispose();
+                _unlockedLoreWords = default;
+            }
+
+            if (_notifications.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_notifications);
+                _notifications.Dispose();
+                _notifications = default;
+            }
+
+            if (_telemetryRing.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_telemetryRing);
+                _telemetryRing.Dispose();
+                _telemetryRing = default;
+            }
+
+            if (_runtimeMaterial != null)
+            {
+                Destroy(_runtimeMaterial);
+                _runtimeMaterial = null;
+            }
+        }
+
+        private void Awake()
+        {
+            EnsureNativeState();
+            EnsureReconstructionResources();
+        }
+
+        private void OnEnable()
+        {
+            EnsureNativeState();
+            RegisterOriginShiftListener();
+            TryRegisterRuntime();
+            TryLoadMmfCold();
+        }
+
+        private void Start()
+        {
+            TryRegisterRuntime();
+        }
+
+        private void OnDisable()
+        {
+            PersistMmfCold();
+            UnregisterRuntime();
+        }
+
+        private void UnregisterRuntime()
+        {
+            UnregisterOriginShiftListener();
+            if (_registeredRenderable)
+            {
+                GlobalRegistry.Renderables.Unregister(this);
+                _registeredRenderable = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
+
+            if (_registeredSave)
+            {
+                GlobalRegistry.SaveRuntime?.Unregister(this);
+                _registeredSave = false;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            Dispose();
+        }
+
+        private void TryRegisterRuntime()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (!_registeredRenderable)
+                _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+
+            if (!_registeredSave && GlobalRegistry.SaveRuntime != null)
+            {
+                GlobalRegistry.SaveRuntime.Register(this);
+                _registeredSave = true;
+            }
+        }
+
+        /// <inheritdoc />
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                return;
+
+            float3 runtimeDelta = -(float3)shiftData.ShiftOffset;
+            RebaseRuntimePositions(runtimeDelta);
+        }
+
+        private void RegisterOriginShiftListener()
+        {
+            if (_registeredOriginShift)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _registeredOriginShift = true;
+        }
+
+        private void UnregisterOriginShiftListener()
+        {
+            if (!_registeredOriginShift)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _registeredOriginShift = false;
+        }
+
+        private void EnsureNativeState()
+        {
+            if (!_fragmentPositions.IsCreated)
+            {
+                _fragmentPositions = new NativeParallelHashMap<uint, float3>(MaxDiscoveryCount, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<uint,float3>[1024] - fragment position hash table - owner: DataArchaeologyRuntime
+                NativeMemorySentinel.RegisterNativeParallelHashMap(_fragmentPositions, NativeMemoryOwner, nameof(_fragmentPositions), NativeAllocationLifetime.Scene);
+            }
+
+            if (!_scanStates.IsCreated)
+            {
+                _scanStates = new NativeParallelHashMap<int, byte>(MaxDiscoveryCount, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<int,byte>[1024] - scanner AUP/entity scan state table - owner: DataArchaeologyRuntime
+                NativeMemorySentinel.RegisterNativeParallelHashMap(_scanStates, NativeMemoryOwner, nameof(_scanStates), NativeAllocationLifetime.Scene);
+            }
+
+            if (!_unlockedLoreWords.IsCreated)
+            {
+                _unlockedLoreWords = new NativeArray<ulong>(DiscoveryWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ulong>[16] - SOA lore unlock bitmask - owner: DataArchaeologyRuntime
+                NativeMemorySentinel.RegisterNativeArray(_unlockedLoreWords, NativeMemoryOwner, nameof(_unlockedLoreWords), NativeAllocationLifetime.Scene);
+                SyncManagedLoreToNative();
+            }
+
+            if (!_notifications.IsCreated)
+            {
+                _notifications = new NativeArray<DataArchaeologyNotification>(NotificationCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DataArchaeologyNotification>[32] - HUD notification ring - owner: DataArchaeologyRuntime
+                NativeMemorySentinel.RegisterNativeArray(_notifications, NativeMemoryOwner, nameof(_notifications), NativeAllocationLifetime.Scene);
+            }
+
+            if (!_telemetryRing.IsCreated)
+            {
+                _telemetryRing = new NativeArray<DataArchaeologyTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DataArchaeologyTelemetryEntry>[300] - black-box scan telemetry - owner: DataArchaeologyRuntime
+                NativeMemorySentinel.RegisterNativeArray(_telemetryRing, NativeMemoryOwner, nameof(_telemetryRing), NativeAllocationLifetime.Scene);
+            }
+        }
+
+        private void EnsureReconstructionResources()
+        {
+            _resolvedReconstructionMesh = _resolvedReconstructionMesh != null ? _resolvedReconstructionMesh : reconstructionMesh;
+
+#if UNITY_EDITOR
+            if (reconstructionShader == null)
+                reconstructionShader = AssetDatabase.LoadAssetAtPath<Shader>(WireShaderPath);
+#endif
+
+            if (reconstructionMaterial == null && _runtimeMaterial == null && reconstructionShader != null)
+            {
+                _runtimeMaterial = new Material(reconstructionShader)
+                {
+                    enableInstancing = true
+                }; // COLD ALLOC: Material[1] - scanner reconstruction wire material - owner: DataArchaeologyRuntime
+            }
+
+            if (reconstructionMaterial != null)
+                reconstructionMaterial.enableInstancing = true;
+        }
+
+        private bool TryGetScanState(uint hash, out byte state)
+        {
+            state = ScanStateUnscanned;
+            return hash != 0u &&
+                   _scanStates.IsCreated &&
+                   _scanStates.TryGetValue(unchecked((int)hash), out state);
+        }
+
+        private void SetScanState(uint hash, byte state)
+        {
+            if (hash == 0u || !_scanStates.IsCreated)
+                return;
+
+            int key = unchecked((int)hash);
+            if (state == ScanStateUnscanned)
+            {
+                _scanStates.Remove(key);
+                return;
+            }
+
+            if (_scanStates.ContainsKey(key))
+            {
+                _scanStates[key] = state;
+                return;
+            }
+
+            _scanStates.TryAdd(key, state);
+        }
+
+        private void SetNativeLoreBit(int bitIndex)
+        {
+            if (!_unlockedLoreWords.IsCreated || (uint)bitIndex >= MaxDiscoveryCount)
+                return;
+
+            int word = bitIndex >> 6;
+            int bit = bitIndex & 63;
+            _unlockedLoreWords[word] = _unlockedLoreWords[word] | (1UL << bit);
+            _discoveryWords[word] = (long)_unlockedLoreWords[word];
+        }
+
+        private void SyncManagedLoreToNative()
+        {
+            if (!_unlockedLoreWords.IsCreated)
+                return;
+
+            for (int i = 0; i < DiscoveryWordCount; i++)
+                _unlockedLoreWords[i] = unchecked((ulong)_discoveryWords[i]);
+        }
+
+        private void SyncNativeLoreToManaged()
+        {
+            if (!_unlockedLoreWords.IsCreated)
+                return;
+
+            for (int i = 0; i < DiscoveryWordCount; i++)
+                _discoveryWords[i] = unchecked((long)_unlockedLoreWords[i]);
+        }
+
+        private void ClearNativeLoreWords()
+        {
+            if (!_unlockedLoreWords.IsCreated)
+                return;
+
+            for (int i = 0; i < DiscoveryWordCount; i++)
+                _unlockedLoreWords[i] = 0UL;
+        }
+
+        private void PublishCompletionSignals(uint hash, float3 position)
+        {
+            if (hash == 0u || !math.all(math.isfinite(new float4(position, 1f))))
+                return;
+
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(position.x, position.y, position.z));
+            uint frame = unchecked((uint)Time.frameCount);
+            GlobalSignals.Publish(new ScanCompleteSignal
+            {
+                PositionAup = aup,
+                EntryHash = hash,
+                ScanId = hash,
+                SourceId = _scannerToolHash,
+                ReconKind = (byte)ScanEntryKind.Scannable,
+                Flags = 0
+            });
+            GlobalSignals.Publish(new BlueprintUnlockedSignal
+            {
+                EntityHash = hash,
+                BlueprintHash = hash,
+                SourceId = _scannerToolHash,
+                Frame = frame,
+                Category = 0,
+                Flags = 0
+            });
+            GlobalSignals.Publish(new HUDNotificationSignal
+            {
+                MessageHash = hash,
+                ContextHash = hash,
+                SourceId = _scannerToolHash,
+                Frame = frame,
+                Severity = HudSeverityInfo,
+                Flags = 0
+            });
+        }
+
+        private static bool IsLowPresentationTier()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            return tier == HectonQualityTier.Unknown ||
+                   tier == HectonQualityTier.Low ||
+                   tier == HectonQualityTier.Mx350;
+        }
+
+        private void PublishScannerShaderPoint(float3 runtimePosition, float progress01)
+        {
+            if (IsLowPresentationTier() || !math.all(math.isfinite(new float4(runtimePosition, progress01))))
+                return;
+
+            float clampedProgress = math.saturate(progress01);
+            if (math.all(math.isfinite(new float4(_lastScannerShaderPoint, _lastScannerShaderProgress))) &&
+                math.lengthsq(runtimePosition - _lastScannerShaderPoint) <= 0.0001f &&
+                math.abs(clampedProgress - _lastScannerShaderProgress) < 0.01f)
+                return;
+
+            float3 absolutePosition = runtimePosition + (float3)HectonFloatingOrigin.CurrentTotalOffset;
+            _scannerShaderPoints[0] = new Vector4(absolutePosition.x, absolutePosition.y, absolutePosition.z, clampedProgress);
+            _lastScannerShaderPoint = runtimePosition;
+            _lastScannerShaderProgress = clampedProgress;
+            Shader.SetGlobalInt(_HectonScannerPointCountId, 1);
+            Shader.SetGlobalVectorArray(_HectonScannerPointsId, _scannerShaderPoints);
+        }
+
+        private void PublishToolAcoustic(uint hash, float progress01, float pitchScale, float intensity01)
+        {
+            if (hash == 0u)
+                return;
+
+            GlobalSignals.Publish(new ToolAcousticSignal
+            {
+                ToolHash = _scannerToolHash,
+                TargetHash = hash,
+                Progress01 = math.saturate(progress01),
+                PitchScale = math.max(0.1f, pitchScale),
+                Intensity01 = math.saturate(intensity01),
+                Frame = unchecked((uint)Time.frameCount),
+                State = ToolAcousticStateScanning,
+                Flags = 0
+            });
+        }
+
+        private void RebaseRuntimePositions(float3 runtimeDelta)
+        {
+            if (!math.all(math.isfinite(new float4(runtimeDelta, 1f))))
+                return;
+
+            bool persistedPositionsChanged = false;
+            for (int i = 0; i < _fragmentCount; i++)
+            {
+                uint hash = _fragmentHashes[i];
+                if (hash == 0u)
+                    continue;
+
+                Vector3 position = _fragmentPositionsMirror[i];
+                position += new Vector3(runtimeDelta.x, runtimeDelta.y, runtimeDelta.z);
+                _fragmentPositionsMirror[i] = position;
+                if (_fragmentPositions.IsCreated && _fragmentPositions.ContainsKey(hash))
+                    _fragmentPositions[hash] = new float3(position.x, position.y, position.z);
+                persistedPositionsChanged = true;
+            }
+
+            for (int i = 0; i < _hologramCount; i++)
+            {
+                Matrix4x4 matrix = _hologramMatrices[i];
+                matrix.m03 += runtimeDelta.x;
+                matrix.m13 += runtimeDelta.y;
+                matrix.m23 += runtimeDelta.z;
+                _hologramMatrices[i] = matrix;
+            }
+
+            if (math.all(math.isfinite(new float4(_lastScannerShaderPoint, _lastScannerShaderProgress))))
+                _lastScannerShaderPoint += runtimeDelta;
+
+            if (persistedPositionsChanged)
+                MarkMmfDirty(false);
+        }
+
+        private void RegisterFragmentPosition(uint hash, float3 position)
+        {
+            if (!_fragmentPositions.IsCreated || hash == 0u || !math.all(math.isfinite(new float4(position, 1f))))
+                return;
+
+            if (_fragmentPositions.ContainsKey(hash))
+            {
+                _fragmentPositions[hash] = position;
+                int mirrorIndex = FindFragmentMirror(hash);
+                if (mirrorIndex >= 0)
+                    _fragmentPositionsMirror[mirrorIndex] = new Vector3(position.x, position.y, position.z);
+                return;
+            }
+
+            if (!_fragmentPositions.TryAdd(hash, position))
+                return;
+
+            if (_fragmentCount < MaxDiscoveryCount)
+            {
+                _fragmentHashes[_fragmentCount] = hash;
+                _fragmentPositionsMirror[_fragmentCount] = new Vector3(position.x, position.y, position.z);
+                _fragmentCount++;
+            }
+        }
+
+        private void RegisterHologram(ScannableFragment fragment, float3 position)
+        {
+            if (_hologramCount >= HologramInstanceCapacity || !math.all(math.isfinite(new float4(position, 1f))))
+                return;
+
+            if (_resolvedReconstructionMesh == null)
+                _resolvedReconstructionMesh = TryResolveFragmentMesh(fragment);
+
+            _hologramMatrices[_hologramCount] = Matrix4x4.TRS(
+                new Vector3(position.x, position.y, position.z),
+                Quaternion.identity,
+                Vector3.one);
+            _hologramCount++;
+        }
+
+        private static Mesh TryResolveFragmentMesh(ScannableFragment fragment)
+        {
+            if (fragment == null)
+                return null;
+
+            if (fragment.TryGetComponent(out MeshFilter meshFilter))
+                return meshFilter.sharedMesh;
+
+            return null;
+        }
+
+        private void EnqueueNotification(uint hash, ushort progressPermille, byte kind, byte flags)
+        {
+            if (!_notifications.IsCreated)
+                return;
+
+            DataArchaeologyNotification notification = new DataArchaeologyNotification
+            {
+                EntryHash = hash,
+                ProgressPermille = progressPermille,
+                Kind = kind,
+                Flags = flags
+            };
+
+            _notifications[_notificationWrite] = notification;
+            _notificationWrite = (_notificationWrite + 1) & (NotificationCapacity - 1);
+            if (_notificationCount < NotificationCapacity)
+            {
+                _notificationCount++;
+                return;
+            }
+
+            _notificationRead = (_notificationRead + 1) & (NotificationCapacity - 1);
+        }
+
+        private bool UpsertPartial(uint hash, ushort progressPermille)
+        {
+            if (TryFindPartial(hash, out int index))
+            {
+                if (progressPermille > _partialProgressPermille[index])
+                {
+                    _partialProgressPermille[index] = progressPermille;
+                    MarkMmfDirty(false);
+                    return true;
+                }
+                return false;
+            }
+
+            if (_partialCount >= MaxPartialScanCount)
+                return false;
+
+            _partialHashes[_partialCount] = hash;
+            _partialProgressPermille[_partialCount] = progressPermille;
+            _partialCount++;
+            MarkMmfDirty(false);
+            return true;
+        }
+
+        private void InsertOrUpgradePartialCold(uint hash, ushort progressPermille)
+        {
+            if (hash == 0u || progressPermille >= 1000)
+                return;
+
+            if (TryFindPartial(hash, out int index))
+            {
+                if (progressPermille > _partialProgressPermille[index])
+                    _partialProgressPermille[index] = progressPermille;
+                return;
+            }
+
+            if (_partialCount >= MaxPartialScanCount)
+                return;
+
+            _partialHashes[_partialCount] = hash;
+            _partialProgressPermille[_partialCount] = progressPermille;
+            _partialCount++;
+        }
+
+        private bool TryFindPartial(uint hash, out int index)
+        {
+            for (int i = 0; i < _partialCount; i++)
+            {
+                if (_partialHashes[i] == hash)
+                {
+                    index = i;
+                    return true;
+                }
+            }
+
+            index = -1;
+            return false;
+        }
+
+        private void RemovePartial(uint hash)
+        {
+            if (!TryFindPartial(hash, out int index))
+                return;
+
+            RemovePartialAt(index);
+            MarkMmfDirty(true);
+        }
+
+        private void RemoveNonScanningPartials(bool markDirty)
+        {
+            bool changed = false;
+            for (int i = _partialCount - 1; i >= 0; i--)
+            {
+                uint hash = _partialHashes[i];
+                if (hash == 0u || (TryGetScanState(hash, out byte state) && state != ScanStateScanning))
+                {
+                    RemovePartialAt(i);
+                    changed = true;
+                }
+            }
+
+            if (changed && markDirty)
+                MarkMmfDirty(true);
+        }
+
+        private void RemovePartialAt(int index)
+        {
+            if ((uint)index >= (uint)_partialCount)
+                return;
+
+            int last = _partialCount - 1;
+            _partialHashes[index] = _partialHashes[last];
+            _partialProgressPermille[index] = _partialProgressPermille[last];
+            _partialHashes[last] = 0u;
+            _partialProgressPermille[last] = 0;
+            _partialCount = last;
+        }
+
+        private void MarkMmfDirty(bool urgent)
+        {
+            _mmfDirty = true;
+            float now = Application.isPlaying ? Time.unscaledTime : 0f;
+            float delay = urgent ? MmfUrgentFlushDelaySeconds : MmfPartialFlushCadenceSeconds;
+            float target = now + delay;
+            if (!math.isfinite(_nextMmfFlushTime) || target < _nextMmfFlushTime)
+                _nextMmfFlushTime = target;
+        }
+
+        private int FindFragmentMirror(uint hash)
+        {
+            for (int i = 0; i < _fragmentCount; i++)
+            {
+                if (_fragmentHashes[i] == hash)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void RecordTelemetry(uint hash, byte flags, float3 position, float match01, ushort progressPermille)
+        {
+            if (!_telemetryRing.IsCreated)
+                return;
+
+            if (!math.all(math.isfinite(new float4(position, match01))))
+            {
+                DumpTelemetryCold();
+                return;
+            }
+
+            _telemetryRing[_telemetryCursor] = new DataArchaeologyTelemetryEntry
+            {
+                Frame = (uint)Time.frameCount,
+                Hash = hash,
+                Position = position,
+                Match01 = match01,
+                Flags = flags,
+                Reserved0 = 0,
+                ProgressPermille = progressPermille
+            };
+            _telemetryCursor++;
+            if (_telemetryCursor >= TelemetryCapacity)
+                _telemetryCursor = 0;
+        }
+
+        private void EmitSensoryFeedback(in DataArchaeologyFrequencyResult result)
+        {
+            if (result.Match01 <= 0.01f || Time.time < _nextSensoryFeedbackTime)
+                return;
+
+            float intensity = math.saturate(result.Match01);
+            PlayerSignalEvents.RaiseInteractionSignal(new InteractionSignal(
+                0f,
+                intensity,
+                result.FeedbackPitchScale,
+                result.FeedbackFrequency01));
+            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+                intensity * 0.18f,
+                intensity * 0.32f,
+                0.07f,
+                28f + (result.Match01 * 42f),
+                2,
+                0x03);
+            _nextSensoryFeedbackTime = Time.time + 0.1f;
+        }
+
+        private static ushort ToPermille(float progress01)
+        {
+            return (ushort)math.clamp((int)math.round(math.saturate(progress01) * 1000f), 0, 1000);
+        }
+
+        private static uint BuildAupArtifactSeed(uint hash, float3 position)
+        {
+            int3 sector = (int3)math.floor(position * 0.02f);
+            uint seed = hash ^ (uint)sector.x * 73856093u ^ (uint)sector.y * 19349663u ^ (uint)sector.z * 83492791u;
+            return DataArchaeologyFrequencyKernel.NextLcg(seed != 0u ? seed : 1u);
+        }
+
+        private static float Wrap01(float value)
+        {
+            return value - math.floor(value);
+        }
+
+        private static void EnsurePartialSaveArrays(SaveData data)
+        {
+            if (data.dataArchaeologyPartialScanHashes == null ||
+                data.dataArchaeologyPartialScanHashes.Length < MaxPartialScanCount)
+            {
+                data.dataArchaeologyPartialScanHashes = new uint[MaxPartialScanCount]; // COLD ALLOC: uint[256] - archaeology partial scan save hashes - owner: SaveData
+                data.dataArchaeologyPartialScanCount = 0;
+            }
+
+            if (data.dataArchaeologyPartialScanProgressPermille == null ||
+                data.dataArchaeologyPartialScanProgressPermille.Length < MaxPartialScanCount)
+            {
+                data.dataArchaeologyPartialScanProgressPermille = new ushort[MaxPartialScanCount]; // COLD ALLOC: ushort[256] - archaeology partial scan save progress - owner: SaveData
+                data.dataArchaeologyPartialScanCount = 0;
+            }
+        }
+
+        private static void EnsureScanStateSaveArrays(SaveData data)
+        {
+            if (data.dataArchaeologyScanStateKeys == null ||
+                data.dataArchaeologyScanStateKeys.Length < MaxDiscoveryCount)
+            {
+                data.dataArchaeologyScanStateKeys = new int[MaxDiscoveryCount]; // COLD ALLOC: int[1024] - explicit data archaeology scan state save keys - owner: SaveData
+                data.dataArchaeologyScanStateCount = 0;
+            }
+
+            if (data.dataArchaeologyScanStateValues == null ||
+                data.dataArchaeologyScanStateValues.Length < MaxDiscoveryCount)
+            {
+                data.dataArchaeologyScanStateValues = new byte[MaxDiscoveryCount]; // COLD ALLOC: byte[1024] - explicit data archaeology scan state save values - owner: SaveData
+                data.dataArchaeologyScanStateCount = 0;
+            }
+        }
+
+        private void PopulateScanStateSaveData(SaveData data)
+        {
+            EnsureScanStateSaveArrays(data);
+            data.dataArchaeologyScanStateCount = 0;
+            if (!_scanStates.IsCreated)
+                return;
+
+            int safeCount = 0;
+            NativeParallelHashMap<int, byte>.Enumerator scanStateEnumerator = _scanStates.GetEnumerator();
+            while (scanStateEnumerator.MoveNext())
+            {
+                var pair = scanStateEnumerator.Current;
+                if (safeCount >= SaveData.MaxDataArchaeologyScanStates)
+                    break;
+
+                data.dataArchaeologyScanStateKeys[safeCount] = pair.Key;
+                data.dataArchaeologyScanStateValues[safeCount] = pair.Value;
+                safeCount++;
+            }
+
+            for (int i = safeCount; i < SaveData.MaxDataArchaeologyScanStates; i++)
+            {
+                data.dataArchaeologyScanStateKeys[i] = 0;
+                data.dataArchaeologyScanStateValues[i] = ScanStateUnscanned;
+            }
+
+            data.dataArchaeologyScanStateCount = safeCount;
+        }
+
+        private void LoadScanStateSaveData(SaveData data)
+        {
+            EnsureScanStateSaveArrays(data);
+            int safeCount = math.clamp(
+                data.dataArchaeologyScanStateCount,
+                0,
+                math.min(MaxDiscoveryCount, math.min(data.dataArchaeologyScanStateKeys.Length, data.dataArchaeologyScanStateValues.Length)));
+            for (int i = 0; i < safeCount; i++)
+            {
+                int key = data.dataArchaeologyScanStateKeys[i];
+                if (key == 0)
+                    continue;
+
+                byte state = data.dataArchaeologyScanStateValues[i];
+                if (state > ScanStateScanned)
+                    state = ScanStateUnscanned;
+
+                if (_scanStates.ContainsKey(key))
+                    _scanStates[key] = state;
+                else
+                    _scanStates.TryAdd(key, state);
+            }
+        }
+
+        private void TryLoadMmfCold()
+        {
+#if !UNITY_WEBGL
+            if (!enableMmfPersistence)
+                return;
+
+            string path = ResolveMmfPath();
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return;
+
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (BinaryReader reader = new BinaryReader(stream))
+                {
+                    if (stream.Length < MmfHeaderBytes)
+                        return;
+
+                    uint magic = reader.ReadUInt32();
+                    uint version = reader.ReadUInt32();
+                    if (magic != MmfMagic || version != MmfVersion)
+                        return;
+
+                    int fragmentCount = reader.ReadInt32();
+                    int partialCount = reader.ReadInt32();
+                    int safeFragmentCount = math.clamp(fragmentCount, 0, MaxDiscoveryCount);
+                    int safePartialCount = math.clamp(partialCount, 0, MaxPartialScanCount);
+
+                    _fragmentPositions.Clear();
+                    _fragmentCount = 0;
+                    for (int i = 0; i < MaxDiscoveryCount; i++)
+                    {
+                        if (stream.Position + MmfFragmentRecordBytes > stream.Length)
+                            return;
+
+                        uint hash = reader.ReadUInt32();
+                        float x = reader.ReadSingle();
+                        float y = reader.ReadSingle();
+                        float z = reader.ReadSingle();
+
+                        if (i >= safeFragmentCount || hash == 0u)
+                            continue;
+
+                        RegisterFragmentPosition(hash, new float3(x, y, z));
+                        SetNativeLoreBit(DataArchaeologyDiscoveryBitMask.ResolveBitIndex(hash));
+                        SetScanState(hash, ScanStateScanned);
+                    }
+
+                    _partialCount = 0;
+                    for (int i = 0; i < MaxPartialScanCount; i++)
+                    {
+                        if (stream.Position + MmfPartialRecordBytes > stream.Length)
+                            return;
+
+                        uint hash = reader.ReadUInt32();
+                        ushort progress = reader.ReadUInt16();
+                        reader.ReadUInt16();
+
+                        if (i >= safePartialCount || hash == 0u || progress >= 1000)
+                            continue;
+
+                        if (TryGetScanState(hash, out byte state) && state == ScanStateScanned)
+                            continue;
+
+                        InsertOrUpgradePartialCold(hash, progress);
+                        SetScanState(hash, ScanStateScanning);
+                    }
+                }
+
+                ClearMmfDirty();
+            }
+            catch (Exception)
+            {
+                ClearMmfDirty();
+            }
+#endif
+        }
+
+        private void PersistMmfCold()
+        {
+            if (!_mmfDirty)
+                return;
+
+#if !UNITY_WEBGL
+            if (!enableMmfPersistence)
+            {
+                ClearMmfDirty();
+                return;
+            }
+
+            string path = ResolveMmfPath();
+            if (string.IsNullOrEmpty(path))
+            {
+                ClearMmfDirty();
+                return;
+            }
+
+            try
+            {
+                long byteCount = MmfHeaderBytes +
+                                 ((long)MaxDiscoveryCount * MmfFragmentRecordBytes) +
+                                 ((long)MaxPartialScanCount * MmfPartialRecordBytes);
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(MmfMagic);
+                    writer.Write(MmfVersion);
+                    writer.Write(_fragmentCount);
+                    writer.Write(_partialCount);
+
+                    for (int i = 0; i < MaxDiscoveryCount; i++)
+                    {
+                        uint hash = i < _fragmentCount ? _fragmentHashes[i] : 0u;
+                        Vector3 position = i < _fragmentCount ? _fragmentPositionsMirror[i] : Vector3.zero;
+                        writer.Write(hash);
+                        writer.Write(position.x);
+                        writer.Write(position.y);
+                        writer.Write(position.z);
+                    }
+
+                    for (int i = 0; i < MaxPartialScanCount; i++)
+                    {
+                        uint hash = i < _partialCount ? _partialHashes[i] : 0u;
+                        ushort progress = i < _partialCount ? _partialProgressPermille[i] : (ushort)0;
+                        writer.Write(hash);
+                        writer.Write(progress);
+                        writer.Write((ushort)0);
+                    }
+
+                    stream.SetLength(byteCount);
+                }
+
+                ClearMmfDirty();
+            }
+            catch (Exception)
+            {
+                ClearMmfDirty();
+            }
+#else
+            ClearMmfDirty();
+#endif
+        }
+
+        private void ClearMmfDirty()
+        {
+            _mmfDirty = false;
+            _nextMmfFlushTime = float.PositiveInfinity;
+        }
+
+        private string ResolveMmfPath()
+        {
+            if (string.IsNullOrEmpty(mmfFileName))
+                return string.Empty;
+
+            return HectonPersistentPathPolicy.CombineFile(mmfFileName);
+        }
+
+        private void DumpTelemetryCold()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_telemetryRing.IsCreated)
+                return;
+
+            try
+            {
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "../../Docs/AgentLogs/Dump_DATA_ARCHAEOLOGY.bin"));
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    for (int i = 0; i < TelemetryCapacity; i++)
+                    {
+                        DataArchaeologyTelemetryEntry entry = _telemetryRing[i];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.Hash);
+                        writer.Write(entry.Position.x);
+                        writer.Write(entry.Position.y);
+                        writer.Write(entry.Position.z);
+                        writer.Write(entry.Match01);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.Reserved0);
+                        writer.Write(entry.ProgressPermille);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+#endif
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (tuningThreshold < 0.0001f)
+                tuningThreshold = 0.0001f;
+
+            signalInterference01 = math.saturate(signalInterference01);
+        }
+#endif
+    }
+}

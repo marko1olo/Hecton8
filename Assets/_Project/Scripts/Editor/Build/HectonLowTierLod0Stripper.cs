@@ -53,7 +53,7 @@ namespace Hecton8.Editor.Build
             if (HasLowTierCommandLineArgument())
                 return true;
 
-            string tier = Environment.GetEnvironmentVariable(BuildTierEnvironmentVariable);
+            string tier = System.Environment.GetEnvironmentVariable(BuildTierEnvironmentVariable);
             if (!string.IsNullOrEmpty(tier) && IsLowTierToken(tier))
                 return true;
 
@@ -77,7 +77,7 @@ namespace Hecton8.Editor.Build
                     continue;
 
                 s_LodGroupScratch.Clear();
-                root.GetComponentsInChildren(true, s_LodGroupScratch);
+                root.GetComponentsInChildren<LODGroup>(true, s_LodGroupScratch);
                 for (int groupIndex = 0; groupIndex < s_LodGroupScratch.Count; groupIndex++)
                 {
                     if (StripLod0(s_LodGroupScratch[groupIndex]))
@@ -161,7 +161,7 @@ namespace Hecton8.Editor.Build
 
         private static bool HasLowTierCommandLineArgument()
         {
-            string[] args = Environment.GetCommandLineArgs();
+            string[] args = System.Environment.GetCommandLineArgs();
             for (int i = 0; i < args.Length; i++)
             {
                 if (string.Equals(args[i], LowTierArgument, StringComparison.OrdinalIgnoreCase) ||

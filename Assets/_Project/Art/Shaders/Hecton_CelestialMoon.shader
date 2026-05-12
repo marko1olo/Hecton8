@@ -28,6 +28,10 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
         _DayDiskLift ("Day Disk Lift", Range(0, 1)) = 0.18
         _DayShadowSkyLift ("Day Shadow Sky Lift", Range(0, 1)) = 0.32
 
+        [Header(Phase Atlas)]
+        _HectonMoonPhaseTextureIndex ("Phase Texture Index", Range(0, 7)) = 0
+        _HectonMoonPhase01 ("Phase 01", Range(0, 1)) = 0
+
         [Header(Atmosphere)]
         _AtmosphereTransmittanceWeight ("Atmosphere Transmittance Weight", Range(0, 1.5)) = 1.0
         _AtmosphereInscatterWeight ("Atmosphere Inscatter Weight", Range(0, 2.0)) = 1.0
@@ -90,6 +94,8 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
                 half _DayShadowSkyLift;
                 half _AtmosphereTransmittanceWeight;
                 half _AtmosphereInscatterWeight;
+                half _HectonMoonPhaseTextureIndex;
+                half _HectonMoonPhase01;
             CBUFFER_END
 
             float4 _SunDirection;

@@ -1646,7 +1646,7 @@ namespace Hecton8.SaveSystem
 
             results.Clear();
 
-            string persistentPath = Application.persistentDataPath;
+            string persistentPath = HectonPersistentPathPolicy.RootPath;
             if (!Directory.Exists(persistentPath))
                 return;
 
@@ -1679,7 +1679,7 @@ namespace Hecton8.SaveSystem
             if (results == null || results.Length <= 0)
                 return 0;
 
-            string persistentPath = Application.persistentDataPath;
+            string persistentPath = HectonPersistentPathPolicy.RootPath;
             if (!Directory.Exists(persistentPath))
                 return 0;
 
@@ -1784,17 +1784,17 @@ namespace Hecton8.SaveSystem
             string root = s_persistentDataPathRoot;
             if (string.IsNullOrEmpty(root))
             {
-                root = Application.persistentDataPath;
+                root = HectonPersistentPathPolicy.RootPath;
                 s_persistentDataPathRoot = root;
                 SaveSidecarStorage.SetPersistentDataPathRoot(root);
             }
 
-            return Path.Combine(root, relativePath);
+            return HectonPersistentPathPolicy.CombineFile(relativePath);
         }
 
         private static void CachePersistentDataPathRoot()
         {
-            string root = Application.persistentDataPath;
+            string root = HectonPersistentPathPolicy.RootPath;
             if (string.IsNullOrEmpty(root))
                 return;
 
@@ -2582,13 +2582,18 @@ namespace Hecton8.SaveSystem
             indexedBackupRecoveryUsed = false;
             errorMessage = string.Empty;
 
-            AcquireReadBuffer(out NativeArray<byte> readBuffer, out bool ownsReadBuffer);
+            AcquireWriteBuffers(
+                out NativeArray<byte> readBuffer,
+                out bool ownsReadBuffer,
+                out NativeArray<byte> compressedReadBuffer,
+                out bool ownsCompressedReadBuffer);
             try
             {
                 if (!SaveBinaryStorage.TryLoadSaveData(
                     GetPersistentAbsolutePath(GetCandidateSavePath(slotName, candidate)),
                     slotName,
                     readBuffer,
+                    compressedReadBuffer,
                     out data,
                     out packedQuestHeader,
                     out packedQuestStateWords,
@@ -2614,6 +2619,7 @@ namespace Hecton8.SaveSystem
             finally
             {
                 ReleaseBuffer(readBuffer, ownsReadBuffer);
+                ReleaseBuffer(compressedReadBuffer, ownsCompressedReadBuffer);
             }
         }
 
@@ -2634,14 +2640,19 @@ namespace Hecton8.SaveSystem
             string absolutePath = GetPersistentAbsolutePath(candidateSavePath);
             if (SaveBinaryStorage.IsBinaryContainer(absolutePath))
             {
-                AcquireReadBuffer(out NativeArray<byte> readBuffer, out bool ownsReadBuffer);
+                AcquireWriteBuffers(
+                    out NativeArray<byte> readBuffer,
+                    out bool ownsReadBuffer,
+                    out NativeArray<byte> compressedReadBuffer,
+                    out bool ownsCompressedReadBuffer);
                 try
                 {
-                    return SaveBinaryStorage.TryReadMetadata(absolutePath, slotName, readBuffer, out metadata, out detectedVersion, out errorMessage);
+                    return SaveBinaryStorage.TryReadMetadata(absolutePath, slotName, readBuffer, compressedReadBuffer, out metadata, out detectedVersion, out errorMessage);
                 }
                 finally
                 {
                     ReleaseBuffer(readBuffer, ownsReadBuffer);
+                    ReleaseBuffer(compressedReadBuffer, ownsCompressedReadBuffer);
                 }
             }
 
@@ -3095,7 +3106,7 @@ namespace Hecton8.SaveSystem
             if (string.IsNullOrEmpty(relativeFileName))
                 return 0L;
 
-            string fullPath = Path.Combine(Application.persistentDataPath, relativeFileName);
+            string fullPath = GetPersistentAbsolutePath(relativeFileName);
             if (!File.Exists(fullPath))
                 return 0L;
 
@@ -3107,7 +3118,7 @@ namespace Hecton8.SaveSystem
             if (string.IsNullOrEmpty(relativeFileName))
                 return;
 
-            string fullPath = Path.Combine(Application.persistentDataPath, relativeFileName);
+            string fullPath = GetPersistentAbsolutePath(relativeFileName);
             if (!File.Exists(fullPath))
                 return;
 

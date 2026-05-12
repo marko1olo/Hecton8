@@ -20,6 +20,7 @@ namespace Hecton8.Interaction
         private const float HalfPi = 1.57079637f;
         private const float Pi = 3.14159274f;
         private const float TwoPi = 6.28318548f;
+        private const float InvTwoPi = 0.159154943f;
         private const byte LeftMotorMask = 0b0001;
         private const byte RightMotorMask = 0b0010;
         private const byte CriticalPriority = 3;
@@ -52,6 +53,16 @@ namespace Hecton8.Interaction
         private LayerMask leftHandSourceLayers;
         [SerializeField, Tooltip("Optional layers treated as right-hand finger sources before falling back to the authored hand side.")]
         private LayerMask rightHandSourceLayers;
+
+        [Header("Diegetic Audio")]
+        [SerializeField, Tooltip("Routes switch snaps into the central NativeQueue-backed audio drain when an event id is authored.")]
+        private bool emitSnapAudio = true;
+        [SerializeField, Tooltip("One-based authored audio event id for mechanical switch clicks. Zero disables audio.")]
+        private uint snapAudioEventId;
+        [SerializeField, Range(0f, 1f), Tooltip("Linear volume for mechanical switch clicks.")]
+        private float snapAudioVolume = 0.32f;
+        [SerializeField, Range(0.25f, 2.5f), Tooltip("Pitch for mechanical switch clicks.")]
+        private float snapAudioPitch = 1f;
 
         private Quaternion _baseLocalRotation;
         private Quaternion _offLocalRotation;
@@ -90,6 +101,7 @@ namespace Hecton8.Interaction
             TryRegister();
             PublishSwitchSignal(handPosition, handForward, interactionSignals);
             EnqueueClickHaptic(handSourceCollider, fallbackHandSide);
+            QueueSnapAudio(handPosition);
             return true;
         }
 
@@ -237,7 +249,7 @@ namespace Hecton8.Interaction
             float onAngle = ResolveSafeOnAngleDegrees();
             float span = onAngle - offAngle;
             float blend = math.abs(span) > MinimumAngleSpanDegrees
-                ? math.saturate((angleDegrees - offAngle) / span)
+                ? math.saturate((angleDegrees - offAngle) * math.rcp(span))
                 : (_isOn ? 1f : 0f);
             leverTransform.localRotation = ApproximateNlerpNoSqrt(_offLocalRotation, _onLocalRotation, blend);
         }
@@ -355,7 +367,7 @@ namespace Hecton8.Interaction
 
         private static void ApproximateSinCosFullNoTrig(float radians, out float sin, out float cos)
         {
-            float x = radians - (TwoPi * math.round(radians / TwoPi));
+            float x = radians - (TwoPi * math.round(radians * InvTwoPi));
             float cosSign = 1f;
             if (x > HalfPi)
             {
@@ -420,6 +432,24 @@ namespace Hecton8.Interaction
                 ResolveHapticMotorMask(handSourceCollider, fallbackHandSide));
         }
 
+        private void QueueSnapAudio(Vector3 handPosition)
+        {
+            IAudioService audio = GlobalRegistry.Audio;
+            if (!emitSnapAudio || snapAudioEventId == 0u || audio == null || !audio.IsInitialized)
+                return;
+
+            Vector3 sourcePosition = leverTransform != null ? leverTransform.position : handPosition;
+            if (!IsFiniteVector(sourcePosition))
+                return;
+
+            AudioEvent audioEvent = new AudioEvent(
+                snapAudioEventId,
+                sourcePosition,
+                math.saturate(snapAudioVolume),
+                math.clamp(snapAudioPitch, 0.25f, 2.5f));
+            audio.QueueAudioEvent(in audioEvent);
+        }
+
         private byte ResolveHapticMotorMask(Collider handSourceCollider, PhysicalHandSide fallbackHandSide)
         {
             if (handSourceCollider != null)
@@ -453,6 +483,8 @@ namespace Hecton8.Interaction
                 snapSpeed = 36f;
             if (!math.isfinite(snapCooldownSeconds))
                 snapCooldownSeconds = 0.08f;
+            snapAudioVolume = math.saturate(snapAudioVolume);
+            snapAudioPitch = math.clamp(snapAudioPitch, 0.25f, 2.5f);
 
             CacheSnapRotations();
         }

@@ -102,6 +102,9 @@ namespace Hecton8.Editor.Build
                 if (inHotMember && line.IndexOf("Mathf.", StringComparison.Ordinal) >= 0)
                     local += AppendFinding(findings, priorCount + local, assetPath, lineIndex + 1, "Mathf used inside hot member; use Unity.Mathematics math.");
 
+                if (inHotMember && ContainsHotPathStringAllocation(line))
+                    local += AppendFinding(findings, priorCount + local, assetPath, lineIndex + 1, "String formatting/conversion inside hot member; use fixed char buffers or editor-only reporting.");
+
                 if (IsGameplaySource(assetPath) &&
                     line.IndexOf("foreach", StringComparison.Ordinal) >= 0 &&
                     (line.IndexOf("Dictionary", StringComparison.Ordinal) >= 0 || line.IndexOf("KeyValuePair", StringComparison.Ordinal) >= 0))
@@ -115,6 +118,13 @@ namespace Hecton8.Editor.Build
             }
 
             return local;
+        }
+
+        private static bool ContainsHotPathStringAllocation(string line)
+        {
+            return line.IndexOf("$\"", StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("string.Format", StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf(".ToString(", StringComparison.Ordinal) >= 0;
         }
 
         private static bool HasPaddedStructLayout(string[] lines, int structLineIndex)

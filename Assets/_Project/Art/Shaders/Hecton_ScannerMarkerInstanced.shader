@@ -15,8 +15,8 @@ Shader "HECTON/Scanner/MarkerInstanced"
     {
         Tags
         {
-            "RenderType"="Transparent"
-            "Queue"="Transparent+20"
+            "RenderType"="TransparentCutout"
+            "Queue"="AlphaTest+20"
             "RenderPipeline"="UniversalPipeline"
         }
 
@@ -24,10 +24,11 @@ Shader "HECTON/Scanner/MarkerInstanced"
         {
             Name "OccludedResource"
             Tags { "LightMode"="UniversalForward" }
-            Blend SrcAlpha One
+            Blend Off
             ZWrite Off
             ZTest Greater
             Cull Off
+            AlphaToMask On
 
             HLSLPROGRAM
             #pragma vertex Vert
@@ -74,6 +75,12 @@ Shader "HECTON/Scanner/MarkerInstanced"
                 hash *= hash + 33.33;
                 hash *= hash + hash;
                 return frac(hash);
+            }
+
+            float HectonDitherCoverage(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
             Varyings Vert(Attributes input)
@@ -101,8 +108,8 @@ Shader "HECTON/Scanner/MarkerInstanced"
                 float flicker01 = HectonTemporalFlicker01(_Time.y, _FlickerFrequency, dot(input.uv, float2(7.17, 13.31)));
                 float flicker = 1.0 - (_FlickerIntensity * 2.0) + (_FlickerIntensity * 2.0 * flicker01);
                 float alpha = saturate((border + fill) * _OccludedColor.a * flicker * _OccludedBoost * instanceAlpha);
-                clip(alpha - 0.0005);
-                return half4(_OccludedColor.rgb * alpha, alpha);
+                clip(alpha - max(HectonDitherCoverage(input.positionCS.xy), 0.0005));
+                return half4(_OccludedColor.rgb * alpha, 1.0h);
             }
             ENDHLSL
         }
@@ -111,10 +118,11 @@ Shader "HECTON/Scanner/MarkerInstanced"
         {
             Name "Forward"
             Tags { "LightMode"="UniversalForward" }
-            Blend SrcAlpha One
-            ZWrite Off
+            Blend Off
+            ZWrite On
             ZTest LEqual
             Cull Off
+            AlphaToMask On
 
             HLSLPROGRAM
             #pragma vertex Vert
@@ -163,6 +171,12 @@ Shader "HECTON/Scanner/MarkerInstanced"
                 return frac(hash);
             }
 
+            float HectonDitherCoverage(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -188,8 +202,8 @@ Shader "HECTON/Scanner/MarkerInstanced"
                 float flicker01 = HectonTemporalFlicker01(_Time.y, _FlickerFrequency, dot(input.uv, float2(7.17, 13.31)));
                 float flicker = 1.0 - (_FlickerIntensity * 2.0) + (_FlickerIntensity * 2.0 * flicker01);
                 float alpha = saturate((border + fill) * _BaseColor.a * flicker * instanceAlpha);
-                clip(alpha - 0.0005);
-                return half4(_BaseColor.rgb * alpha, alpha);
+                clip(alpha - max(HectonDitherCoverage(input.positionCS.xy), 0.0005));
+                return half4(_BaseColor.rgb * alpha, 1.0h);
             }
             ENDHLSL
         }

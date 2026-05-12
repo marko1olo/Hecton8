@@ -257,7 +257,9 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         float ResolveInterleavedGradientNoise(float2 screenUV)
         {
             float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
-            return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            float frameIndex = floor(_Time.y * 60.0);
+            float2 temporalPhase = float2(fmod(frameIndex, 2.0), fmod(floor(frameIndex * 0.5), 2.0)) * 0.5;
+            return frac(52.9829189 * frac(dot(pixel + temporalPhase, float2(0.06711056, 0.00583715))));
         }
 
         float Hash21(float2 p)

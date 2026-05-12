@@ -76,21 +76,34 @@ namespace Hecton8.Building
 
         internal static ModuleSocketDirection QuantizeDirection(Vector3 localPosition)
         {
-            Vector3 normalized = localPosition.sqrMagnitude > 0.0001f
-                ? localPosition.normalized
-                : Vector3.forward;
+            if (float.IsNaN(localPosition.x) ||
+                float.IsNaN(localPosition.y) ||
+                float.IsNaN(localPosition.z) ||
+                float.IsInfinity(localPosition.x) ||
+                float.IsInfinity(localPosition.y) ||
+                float.IsInfinity(localPosition.z))
+            {
+                localPosition = Vector3.forward;
+            }
 
-            float absX = Mathf.Abs(normalized.x);
-            float absY = Mathf.Abs(normalized.y);
-            float absZ = Mathf.Abs(normalized.z);
+            float absX = Mathf.Abs(localPosition.x);
+            float absY = Mathf.Abs(localPosition.y);
+            float absZ = Mathf.Abs(localPosition.z);
+            if ((absX + absY + absZ) <= 0.0001f)
+            {
+                localPosition = Vector3.forward;
+                absX = 0f;
+                absY = 0f;
+                absZ = 1f;
+            }
 
             if (absX >= absY && absX >= absZ)
-                return normalized.x >= 0f ? ModuleSocketDirection.East : ModuleSocketDirection.West;
+                return localPosition.x >= 0f ? ModuleSocketDirection.East : ModuleSocketDirection.West;
 
             if (absY >= absX && absY >= absZ)
-                return normalized.y >= 0f ? ModuleSocketDirection.Top : ModuleSocketDirection.Bottom;
+                return localPosition.y >= 0f ? ModuleSocketDirection.Top : ModuleSocketDirection.Bottom;
 
-            return normalized.z >= 0f ? ModuleSocketDirection.North : ModuleSocketDirection.South;
+            return localPosition.z >= 0f ? ModuleSocketDirection.North : ModuleSocketDirection.South;
         }
 
         internal static Quaternion RotationFromDirection(ModuleSocketDirection direction)

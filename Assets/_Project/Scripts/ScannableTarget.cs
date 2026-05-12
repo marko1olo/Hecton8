@@ -1,4 +1,5 @@
 using UnityEngine;
+using Hecton8.Data;
 using Hecton8.World;
 
 namespace Hecton8.Gameplay
@@ -18,6 +19,7 @@ namespace Hecton8.Gameplay
         private string _resolvedEntryTitle;
         private string _resolvedEntryCategory;
         private string _resolvedEntrySummary;
+        private uint _entityHash;
 
         public string EntryId
         {
@@ -52,6 +54,26 @@ namespace Hecton8.Gameplay
             {
                 EnsureResolvedStrings();
                 return _resolvedEntrySummary;
+            }
+        }
+
+        /// <summary>Stable FNV-1a entity hash used by zero-GC scanner paths.</summary>
+        public uint EntityHash
+        {
+            get
+            {
+                EnsureResolvedStrings();
+                return _entityHash;
+            }
+        }
+
+        /// <summary>Signed form of <see cref="EntityHash"/> for native hash maps keyed by int.</summary>
+        public int EntityHash32
+        {
+            get
+            {
+                EnsureResolvedStrings();
+                return unchecked((int)_entityHash);
             }
         }
 
@@ -139,6 +161,7 @@ namespace Hecton8.Gameplay
             _resolvedEntrySummary = string.IsNullOrWhiteSpace(entrySummary)
                 ? "Passive scan profile has been captured."
                 : entrySummary.Trim();
+            _entityHash = H8DataHash.ComputeFnv1A32(_resolvedEntryId);
         }
 
         private static string CachedToUpperInvariant(string input)

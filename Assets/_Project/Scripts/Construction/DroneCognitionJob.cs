@@ -105,6 +105,82 @@ namespace Hecton8.Construction
         public float3 Position;
     }
 
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    internal struct DroneFleetOriginShiftJob : IJobParallelFor
+    {
+        public NativeArray<HeadlessDroneState> DroneStates;
+        public NativeArray<HeadlessDroneState> DroneStateBackBuffer;
+        public NativeArray<float4x4> RenderMatrices;
+        public NativeArray<float4x4> RenderMatrixBackBuffer;
+        public NativeArray<float3> DronePositions;
+        public float3 RuntimeOffset;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)DroneStates.Length)
+                return;
+
+            HeadlessDroneState drone = DroneStates[index];
+            if (drone.State == (byte)HeadlessDroneRuntimeState.Empty)
+                return;
+
+            drone.Position += RuntimeOffset;
+            drone.HomePosition += RuntimeOffset;
+            drone.TargetPosition += RuntimeOffset;
+            drone.SupplyPosition += RuntimeOffset;
+            drone.DockStartPosition += RuntimeOffset;
+            DroneStates[index] = drone;
+
+            if (DroneStateBackBuffer.IsCreated && index < DroneStateBackBuffer.Length)
+                DroneStateBackBuffer[index] = drone;
+
+            if (DronePositions.IsCreated && index < DronePositions.Length)
+                DronePositions[index] = drone.Position;
+
+            if (RenderMatrices.IsCreated && index < RenderMatrices.Length)
+            {
+                float4x4 matrix = RenderMatrices[index];
+                matrix.c3.xyz += RuntimeOffset;
+                RenderMatrices[index] = matrix;
+            }
+
+            if (RenderMatrixBackBuffer.IsCreated && index < RenderMatrixBackBuffer.Length)
+            {
+                float4x4 matrix = RenderMatrixBackBuffer[index];
+                matrix.c3.xyz += RuntimeOffset;
+                RenderMatrixBackBuffer[index] = matrix;
+            }
+        }
+    }
+
+    internal enum DroneFleetSoaState : byte
+    {
+        Idle = 0,
+        Mining = 1,
+        Repairing = 2,
+        Returning = 3
+    }
+
+    internal enum DroneServiceCommandKind : byte
+    {
+        None = 0,
+        Repair = 1,
+        Attack = 2
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct DroneServiceCommand
+    {
+        public int Slot;
+        public int DroneId;
+        public byte Kind;
+        public byte State;
+        public ushort Reserved;
+        public float DeltaTime;
+        public float3 Position;
+        public float3 TargetPosition;
+    }
+
     [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     [StructLayout(LayoutKind.Sequential, Pack = 16)]
     internal unsafe struct DroneCognitionJob : IJobParallelFor
@@ -129,6 +205,7 @@ namespace Hecton8.Construction
         private const float DockingDurationSeconds = 1f;
         private const float RebootDurationSeconds = 2f;
         private const float SpatialCellSize = 2f;
+        private const float SpatialCellSizeInv = 0.5f;
         private const float SpatialBoundsMin = -512f;
         private const int SpatialGridResolution = 512;
         private const int EmptyTaskIndex = -1;
@@ -144,6 +221,8 @@ namespace Hecton8.Construction
         [ReadOnly] public NativeArray<HeadlessDroneState> ReadDrones;
         public NativeArray<HeadlessDroneState> Drones;
         public NativeArray<float4x4> RenderMatrices;
+        [NativeDisableParallelForRestriction] public NativeArray<float3> DronePositions;
+        [NativeDisableParallelForRestriction] public NativeArray<byte> DroneStates;
 
         [ReadOnly] public NativeParallelMultiHashMap<int, HeadlessDroneTask> TasksByGrid;
         [ReadOnly] public NativeParallelMultiHashMap<int, int> DroneSpatialHash;
@@ -151,8 +230,10 @@ namespace Hecton8.Construction
 
         [NativeDisableParallelForRestriction] public NativeArray<int> TaskClaimOwners;
         [NativeDisableParallelForRestriction] public NativeArray<int> TelemetryAccumulator;
+        public NativeQueue<DroneServiceCommand>.ParallelWriter ServiceCommands;
 
         public float DeltaTime;
+        public int ServiceQueueEnabled;
         public float3 PlayerPosition;
         public int PlayerPositionValid;
         public int EmergencyOverclock;
@@ -186,8 +267,7 @@ namespace Hecton8.Construction
                 drone.State == (byte)HeadlessDroneRuntimeState.Sacrificed ||
                 drone.State == (byte)HeadlessDroneRuntimeState.Completed)
             {
-                Drones[index] = drone;
-                RenderMatrices[index] = float4x4.zero;
+                WriteOutputs(index, in drone, float4x4.zero);
                 return;
             }
 
@@ -199,16 +279,14 @@ namespace Hecton8.Construction
             {
                 drone.State = (byte)HeadlessDroneRuntimeState.Stasis;
                 drone.Velocity = float3.zero;
-                Drones[index] = drone;
-                RenderMatrices[index] = BuildRenderMatrix(in drone);
+                WriteOutputs(index, in drone, BuildRenderMatrix(in drone));
                 return;
             }
 
             if (drone.State == (byte)HeadlessDroneRuntimeState.Reboot)
             {
                 TickReboot(ref drone);
-                Drones[index] = drone;
-                RenderMatrices[index] = BuildRenderMatrix(in drone);
+                WriteOutputs(index, in drone, BuildRenderMatrix(in drone));
                 return;
             }
 
@@ -228,10 +306,9 @@ namespace Hecton8.Construction
             if (drone.State == (byte)HeadlessDroneRuntimeState.Docking)
             {
                 TickDocking(ref drone);
-                Drones[index] = drone;
-                RenderMatrices[index] = drone.State == (byte)HeadlessDroneRuntimeState.Completed
+                WriteOutputs(index, in drone, drone.State == (byte)HeadlessDroneRuntimeState.Completed
                     ? float4x4.zero
-                    : BuildRenderMatrix(in drone);
+                    : BuildRenderMatrix(in drone));
                 return;
             }
 
@@ -242,8 +319,13 @@ namespace Hecton8.Construction
                 drone.State == (byte)HeadlessDroneRuntimeState.ResupplyCommitPending)
             {
                 drone.Velocity = float3.zero;
-                Drones[index] = drone;
-                RenderMatrices[index] = BuildRenderMatrix(in drone);
+                if (drone.State == (byte)HeadlessDroneRuntimeState.Repair ||
+                    drone.State == (byte)HeadlessDroneRuntimeState.Attack)
+                {
+                    EnqueueServiceCommand(index, in drone);
+                }
+
+                WriteOutputs(index, in drone, BuildRenderMatrix(in drone));
                 return;
             }
 
@@ -254,10 +336,9 @@ namespace Hecton8.Construction
             {
                 BeginDocking(ref drone);
                 TickDocking(ref drone);
-                Drones[index] = drone;
-                RenderMatrices[index] = drone.State == (byte)HeadlessDroneRuntimeState.Completed
+                WriteOutputs(index, in drone, drone.State == (byte)HeadlessDroneRuntimeState.Completed
                     ? float4x4.zero
-                    : BuildRenderMatrix(in drone);
+                    : BuildRenderMatrix(in drone));
                 return;
             }
 
@@ -265,8 +346,7 @@ namespace Hecton8.Construction
             if (distanceSq <= serviceRadius * serviceRadius)
             {
                 ResolveArrival(ref drone);
-                Drones[index] = drone;
-                RenderMatrices[index] = BuildRenderMatrix(in drone);
+                WriteOutputs(index, in drone, BuildRenderMatrix(in drone));
                 return;
             }
 
@@ -287,8 +367,59 @@ namespace Hecton8.Construction
             if (math.lengthsq(drone.Velocity) > MinimumVectorLengthSq)
                 drone.Rotation = quaternion.LookRotationSafe(SafeNormalize(drone.Velocity, routeDirection), math.up());
 
+            WriteOutputs(index, in drone, BuildRenderMatrix(in drone));
+        }
+
+        private void WriteOutputs(int index, in HeadlessDroneState drone, float4x4 renderMatrix)
+        {
             Drones[index] = drone;
-            RenderMatrices[index] = BuildRenderMatrix(in drone);
+            RenderMatrices[index] = renderMatrix;
+
+            if (DronePositions.IsCreated && index < DronePositions.Length)
+                DronePositions[index] = drone.Position;
+
+            if (DroneStates.IsCreated && index < DroneStates.Length)
+                DroneStates[index] = ResolveSoaState(in drone);
+        }
+
+        private void EnqueueServiceCommand(int index, in HeadlessDroneState drone)
+        {
+            if (ServiceQueueEnabled == 0)
+                return;
+
+            ServiceCommands.Enqueue(new DroneServiceCommand
+            {
+                Slot = index,
+                DroneId = drone.DroneId,
+                Kind = drone.FactionBit == (byte)HeadlessDroneFactionBit.Hostile
+                    ? (byte)DroneServiceCommandKind.Attack
+                    : (byte)DroneServiceCommandKind.Repair,
+                State = drone.State,
+                Reserved = 0,
+                DeltaTime = math.max(0f, DeltaTime),
+                Position = drone.Position,
+                TargetPosition = drone.TargetPosition
+            });
+        }
+
+        private static byte ResolveSoaState(in HeadlessDroneState drone)
+        {
+            if (drone.State == (byte)HeadlessDroneRuntimeState.Repair ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Attack)
+            {
+                return (byte)DroneFleetSoaState.Repairing;
+            }
+
+            if (drone.State == (byte)HeadlessDroneRuntimeState.Return ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Docking ||
+                drone.State == (byte)HeadlessDroneRuntimeState.ResupplyTravel ||
+                drone.State == (byte)HeadlessDroneRuntimeState.ResupplyDocked ||
+                drone.State == (byte)HeadlessDroneRuntimeState.ResupplyCommitPending)
+            {
+                return (byte)DroneFleetSoaState.Returning;
+            }
+
+            return (byte)DroneFleetSoaState.Idle;
         }
 
         private bool TryApplyFormationMode(int index, ref HeadlessDroneState drone)
@@ -343,7 +474,7 @@ namespace Hecton8.Construction
                     continue;
 
                 float distanceSq = math.max(MinimumScoreDistanceSq, math.lengthsq(task.Position - drone.Position));
-                float score = (task.Criticality / distanceSq) * math.saturate(drone.BatteryPercent * 0.01f);
+                float score = (task.Criticality * math.rcp(distanceSq)) * math.saturate(drone.BatteryPercent * 0.01f);
                 InsertTaskCandidate(
                     in task,
                     score,
@@ -425,7 +556,7 @@ namespace Hecton8.Construction
                                 continue;
 
                             neighborCount++;
-                            separation += SafeNormalize(offset) / math.max(0.04f, distanceSq);
+                            separation += SafeNormalize(offset) * math.rcp(math.max(0.04f, distanceSq));
                             alignment += other.Velocity;
                             cohesion += other.Position;
                         }
@@ -437,7 +568,7 @@ namespace Hecton8.Construction
             float3 force = routeDirection + (separation * SeparationWeight);
             if (neighborCount > 0)
             {
-                float invCount = 1f / neighborCount;
+                float invCount = math.rcp((float)neighborCount);
                 force += (SafeNormalize(alignment * invCount, routeDirection) - SafeNormalize(drone.Velocity, routeDirection)) * AlignmentWeight;
                 float cohesionWeight = ResolveCohesionWeight(in drone);
                 force += SafeNormalize((cohesion * invCount) - drone.Position) * cohesionWeight;
@@ -448,7 +579,7 @@ namespace Hecton8.Construction
                 float3 playerOffset = drone.Position - PlayerPosition;
                 float playerDistanceSq = math.lengthsq(playerOffset);
                 if (playerDistanceSq <= PlayerSeparationRadiusSq)
-                    force += SafeNormalize(playerOffset) * (SeparationWeight * 3f / math.max(0.04f, playerDistanceSq));
+                    force += SafeNormalize(playerOffset) * (SeparationWeight * 3f * math.rcp(math.max(0.04f, playerDistanceSq)));
             }
 
             float forceLengthSq = math.lengthsq(force);
@@ -561,7 +692,7 @@ namespace Hecton8.Construction
         private void TickDocking(ref HeadlessDroneState drone)
         {
             float elapsed = math.min(DockingDurationSeconds, drone.DockingElapsed + math.max(0f, DeltaTime));
-            float t = math.saturate(elapsed / DockingDurationSeconds);
+            float t = math.saturate(elapsed * math.rcp(DockingDurationSeconds));
             quaternion targetRotation = ResolveSafeRotation(drone.HomeRotation);
             drone.DockingElapsed = elapsed;
             drone.Position = math.lerp(drone.DockStartPosition, drone.HomePosition, t);
@@ -652,9 +783,11 @@ namespace Hecton8.Construction
             }
 
             float clampedY = math.clamp(position.y, minY, maxY);
-            float normalizedX = math.clamp((position.x - minX) / AbyssalFlowHorizontalCellSize, 0f, AbyssalFlowResolutionXZ - 1);
-            float normalizedZ = math.clamp((position.z - minZ) / AbyssalFlowHorizontalCellSize, 0f, AbyssalFlowResolutionXZ - 1);
-            float normalizedY = math.clamp((maxY - clampedY) / AbyssalFlowVerticalCellSize, 0f, AbyssalFlowResolutionY - 1);
+            float horizontalCellSizeInv = math.rcp(AbyssalFlowHorizontalCellSize);
+            float verticalCellSizeInv = math.rcp(AbyssalFlowVerticalCellSize);
+            float normalizedX = math.clamp((position.x - minX) * horizontalCellSizeInv, 0f, AbyssalFlowResolutionXZ - 1);
+            float normalizedZ = math.clamp((position.z - minZ) * horizontalCellSizeInv, 0f, AbyssalFlowResolutionXZ - 1);
+            float normalizedY = math.clamp((maxY - clampedY) * verticalCellSizeInv, 0f, AbyssalFlowResolutionY - 1);
             int x0 = math.clamp((int)math.floor(normalizedX), 0, AbyssalFlowResolutionXZ - 1);
             int z0 = math.clamp((int)math.floor(normalizedZ), 0, AbyssalFlowResolutionXZ - 1);
             int y0 = math.clamp((int)math.floor(normalizedY), 0, AbyssalFlowResolutionY - 1);
@@ -874,9 +1007,9 @@ namespace Hecton8.Construction
 
         private static int3 ResolveSpatialCell(float3 position)
         {
-            int x = math.clamp((int)math.floor((position.x - SpatialBoundsMin) / SpatialCellSize), 0, SpatialGridResolution - 1);
-            int y = math.clamp((int)math.floor((position.y - SpatialBoundsMin) / SpatialCellSize), 0, SpatialGridResolution - 1);
-            int z = math.clamp((int)math.floor((position.z - SpatialBoundsMin) / SpatialCellSize), 0, SpatialGridResolution - 1);
+            int x = math.clamp((int)math.floor((position.x - SpatialBoundsMin) * SpatialCellSizeInv), 0, SpatialGridResolution - 1);
+            int y = math.clamp((int)math.floor((position.y - SpatialBoundsMin) * SpatialCellSizeInv), 0, SpatialGridResolution - 1);
+            int z = math.clamp((int)math.floor((position.z - SpatialBoundsMin) * SpatialCellSizeInv), 0, SpatialGridResolution - 1);
             return new int3(x, y, z);
         }
 

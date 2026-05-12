@@ -44,16 +44,25 @@ namespace Hecton8.Visor
 
         private readonly struct RuntimeState
         {
-            public RuntimeState(float brownoutIntensity, float worldFocusBlur, float nearCollisionIntensity)
+            public RuntimeState(
+                float brownoutIntensity,
+                float worldFocusBlur,
+                float nearCollisionIntensity,
+                Vector4 vrComfortSignals,
+                Vector4 vrComfortMotion)
             {
                 BrownoutIntensity = brownoutIntensity;
                 WorldFocusBlur = worldFocusBlur;
                 NearCollisionIntensity = nearCollisionIntensity;
+                VrComfortSignals = vrComfortSignals;
+                VrComfortMotion = vrComfortMotion;
             }
 
             public float BrownoutIntensity { get; }
             public float WorldFocusBlur { get; }
             public float NearCollisionIntensity { get; }
+            public Vector4 VrComfortSignals { get; }
+            public Vector4 VrComfortMotion { get; }
         }
 
         private sealed class BrownoutPass : ScriptableRenderPass
@@ -78,6 +87,8 @@ namespace Hecton8.Visor
             private float _lastWorldBlurTexelRadius = float.PositiveInfinity;
             private float _lastScanlineStrength = float.PositiveInfinity;
             private float _lastDitherStrength = float.PositiveInfinity;
+            private Vector4 _lastVrComfortSignals = Vector4.positiveInfinity;
+            private Vector4 _lastVrComfortMotion = Vector4.positiveInfinity;
             private bool _materialDirty = true;
 
             public BrownoutPass()
@@ -102,7 +113,8 @@ namespace Hecton8.Visor
                     _material == null ||
                     (_runtimeState.BrownoutIntensity <= 0.001f &&
                      _runtimeState.WorldFocusBlur <= 0.001f &&
-                     _runtimeState.NearCollisionIntensity <= 0.001f))
+                     _runtimeState.NearCollisionIntensity <= 0.001f &&
+                     !HectonVRBrownoutFeature.HasVrComfortWork(_runtimeState.VrComfortSignals, _runtimeState.VrComfortMotion)))
                 {
                     return;
                 }
@@ -145,7 +157,6 @@ namespace Hecton8.Visor
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(destinationTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
                     {
@@ -202,6 +213,16 @@ namespace Hecton8.Visor
                     ShaderConstants.DitherStrengthId,
                     HectonVRBrownoutFeature.Sanitize01(settings.ditherStrength),
                     ref _lastDitherStrength);
+                SetMaterialVectorIfChanged(
+                    material,
+                    ShaderConstants.VrComfortSignalsId,
+                    SanitizeVrComfortSignals(runtimeState.VrComfortSignals),
+                    ref _lastVrComfortSignals);
+                SetMaterialVectorIfChanged(
+                    material,
+                    ShaderConstants.VrComfortMotionId,
+                    SanitizeVrComfortMotion(runtimeState.VrComfortMotion),
+                    ref _lastVrComfortMotion);
                 _materialDirty = false;
             }
 
@@ -213,6 +234,8 @@ namespace Hecton8.Visor
                 _lastWorldBlurTexelRadius = float.PositiveInfinity;
                 _lastScanlineStrength = float.PositiveInfinity;
                 _lastDitherStrength = float.PositiveInfinity;
+                _lastVrComfortSignals = Vector4.positiveInfinity;
+                _lastVrComfortMotion = Vector4.positiveInfinity;
                 _materialDirty = true;
             }
 
@@ -222,6 +245,21 @@ namespace Hecton8.Visor
                     return;
 
                 material.SetFloat(shaderId, value);
+                cachedValue = value;
+            }
+
+            private void SetMaterialVectorIfChanged(Material material, int shaderId, Vector4 value, ref Vector4 cachedValue)
+            {
+                if (!_materialDirty &&
+                    math.abs(cachedValue.x - value.x) <= MaterialFloatEpsilon &&
+                    math.abs(cachedValue.y - value.y) <= MaterialFloatEpsilon &&
+                    math.abs(cachedValue.z - value.z) <= MaterialFloatEpsilon &&
+                    math.abs(cachedValue.w - value.w) <= MaterialFloatEpsilon)
+                {
+                    return;
+                }
+
+                material.SetVector(shaderId, value);
                 cachedValue = value;
             }
         }
@@ -234,6 +272,8 @@ namespace Hecton8.Visor
             internal static readonly int WorldBlurTexelRadiusId = Shader.PropertyToID("_HectonWorldBlurTexelRadius");
             internal static readonly int ScanlineStrengthId = Shader.PropertyToID("_HectonVRBrownoutScanlineStrength");
             internal static readonly int DitherStrengthId = Shader.PropertyToID("_HectonVRBrownoutDitherStrength");
+            internal static readonly int VrComfortSignalsId = Shader.PropertyToID("_HectonVrComfortSignals");
+            internal static readonly int VrComfortMotionId = Shader.PropertyToID("_HectonVrComfortMotion");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -304,10 +344,22 @@ namespace Hecton8.Visor
             float brownoutIntensity = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.BrownoutIntensityId));
             float worldFocusBlur = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.WorldFocusBlurId));
             float nearCollisionIntensity = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.NearCollisionIntensityId));
-            if (brownoutIntensity <= 0.001f && worldFocusBlur <= 0.001f && nearCollisionIntensity <= 0.001f)
+            Vector4 vrComfortSignals = SanitizeVrComfortSignals(Shader.GetGlobalVector(ShaderConstants.VrComfortSignalsId));
+            Vector4 vrComfortMotion = SanitizeVrComfortMotion(Shader.GetGlobalVector(ShaderConstants.VrComfortMotionId));
+            if (brownoutIntensity <= 0.001f &&
+                worldFocusBlur <= 0.001f &&
+                nearCollisionIntensity <= 0.001f &&
+                !HasVrComfortWork(vrComfortSignals, vrComfortMotion))
+            {
                 return false;
+            }
 
-            runtimeState = new RuntimeState(brownoutIntensity, worldFocusBlur, nearCollisionIntensity);
+            runtimeState = new RuntimeState(
+                brownoutIntensity,
+                worldFocusBlur,
+                nearCollisionIntensity,
+                vrComfortSignals,
+                vrComfortMotion);
             return true;
         }
 
@@ -321,6 +373,36 @@ namespace Hecton8.Visor
         private static float SanitizeRange(float value, float minimum, float maximum)
         {
             return math.isfinite(value) ? math.clamp(value, minimum, maximum) : minimum;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector4 SanitizeVrComfortSignals(Vector4 value)
+        {
+            return new Vector4(
+                Sanitize01(value.x),
+                Sanitize01(value.y),
+                Sanitize01(value.z),
+                Sanitize01(value.w));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector4 SanitizeVrComfortMotion(Vector4 value)
+        {
+            return new Vector4(
+                math.isfinite(value.x) ? math.clamp(value.x, -1f, 1f) : 0f,
+                math.isfinite(value.y) ? math.clamp(value.y, -1f, 1f) : 0f,
+                Sanitize01(value.z),
+                Sanitize01(value.w));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool HasVrComfortWork(Vector4 signals, Vector4 motion)
+        {
+            if (signals.w <= 0.001f)
+                return false;
+
+            float strongestSignal = math.max(math.max(signals.x, signals.y), math.max(signals.z, motion.z));
+            return strongestSignal > 0.001f;
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

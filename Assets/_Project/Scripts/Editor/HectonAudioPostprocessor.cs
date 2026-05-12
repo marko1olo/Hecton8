@@ -37,8 +37,16 @@ namespace Hecton8.Editor
         private const string ReimportGuardPrefix = "HectonAudioPostprocessor.ReimportGuard.";
         private const int TargetSampleRateHertz = 22050;
         private const int TargetMusicSampleRateHertz = 44100;
-        private const float ShortSfxThresholdSeconds = 0.5f;
         private const float TargetVorbisQuality = 0.7f;
+        private const string LogReimportedManagedSfx = "[HectonAudioPostprocessor:0xA11D5001] Reimported managed SFX clips.";
+        private const string LogReimportedManagedAudio = "[HectonAudioPostprocessor:0xA11D5002] Reimported managed audio clips.";
+        private const string LogManagedSfxPolicyDrift = "[HectonAudioPostprocessor:0xA11D5003] Managed SFX importer policy drift.";
+        private const string LogManagedSfxValidated = "[HectonAudioPostprocessor:0xA11D5004] Managed SFX clips validated. No importer drift detected.";
+        private const string LogManagedSfxDriftFound = "[HectonAudioPostprocessor:0xA11D5005] Managed SFX clips have importer drift.";
+        private const string LogManagedAudioPolicyDrift = "[HectonAudioPostprocessor:0xA11D5006] Managed audio importer policy drift.";
+        private const string LogManagedAudioValidated = "[HectonAudioPostprocessor:0xA11D5007] Managed audio clips validated. No importer drift detected.";
+        private const string LogManagedAudioDriftFound = "[HectonAudioPostprocessor:0xA11D5008] Managed audio clips have importer drift.";
+        private const string LogImportSettingsUnstable = "[HectonAudioPostprocessor:0xA11D5009] Import settings remained unstable after reimport.";
 
         [MenuItem("Hecton/Validation/Asset Pipeline/Reimport Managed SFX", priority = 183)]
         private static void ReimportManagedSfx()
@@ -62,7 +70,7 @@ namespace Hecton8.Editor
                 EditorUtility.ClearProgressBar();
             }
 
-            Debug.Log($"[HectonAudioPostprocessor] Reimported {clipPaths.Count} managed SFX clips.");
+            Debug.Log(LogReimportedManagedSfx);
         }
 
         [MenuItem("Hecton/Validation/Asset Pipeline/Reimport Managed Audio", priority = 185)]
@@ -87,7 +95,7 @@ namespace Hecton8.Editor
                 EditorUtility.ClearProgressBar();
             }
 
-            Debug.Log($"[HectonAudioPostprocessor] Reimported {clipPaths.Count} managed audio clips.");
+            Debug.Log(LogReimportedManagedAudio);
         }
 
         [MenuItem("Hecton/Validation/Asset Pipeline/Validate Managed SFX", priority = 184)]
@@ -102,17 +110,17 @@ namespace Hecton8.Editor
                 if (!ImporterMatchesManagedSfxPolicy(importer))
                 {
                     mismatchCount++;
-                    Debug.LogError($"[HectonAudioPostprocessor] Managed SFX importer policy drift: '{clipPaths[i]}'.");
+                    Debug.LogError(LogManagedSfxPolicyDrift);
                 }
             }
 
             if (mismatchCount <= 0)
             {
-                Debug.Log($"[HectonAudioPostprocessor] Validated {clipPaths.Count} managed SFX clips. No importer drift detected.");
+                Debug.Log(LogManagedSfxValidated);
                 return;
             }
 
-            Debug.LogError($"[HectonAudioPostprocessor] Found {mismatchCount} managed SFX clips with importer drift.");
+            Debug.LogError(LogManagedSfxDriftFound);
         }
 
         [MenuItem("Hecton/Validation/Asset Pipeline/Validate Managed Audio", priority = 186)]
@@ -132,16 +140,16 @@ namespace Hecton8.Editor
                     continue;
 
                 mismatchCount++;
-                Debug.LogError($"[HectonAudioPostprocessor] Managed audio importer policy drift: '{clipPath}'.");
+                Debug.LogError(LogManagedAudioPolicyDrift);
             }
 
             if (mismatchCount <= 0)
             {
-                Debug.Log($"[HectonAudioPostprocessor] Validated {clipPaths.Count} managed audio clips. No importer drift detected.");
+                Debug.Log(LogManagedAudioValidated);
                 return;
             }
 
-            Debug.LogError($"[HectonAudioPostprocessor] Found {mismatchCount} managed audio clips with importer drift.");
+            Debug.LogError(LogManagedAudioDriftFound);
         }
 
         internal static List<string> CollectManagedSfxPaths()
@@ -230,8 +238,7 @@ namespace Hecton8.Editor
             if (guardArmed)
             {
                 SessionState.SetBool(guardKey, false);
-                Debug.LogError(
-                    $"[HectonAudioPostprocessor] Import settings remained unstable after reimport: '{assetPath}'.");
+                Debug.LogError(LogImportSettingsUnstable);
                 return;
             }
 
@@ -350,9 +357,8 @@ namespace Hecton8.Editor
 
         private static AudioClipLoadType ResolveSfxLoadType(float clipLengthSeconds)
         {
-            return clipLengthSeconds >= 0f && clipLengthSeconds < ShortSfxThresholdSeconds
-                ? AudioClipLoadType.DecompressOnLoad
-                : AudioClipLoadType.CompressedInMemory;
+            _ = clipLengthSeconds;
+            return AudioClipLoadType.DecompressOnLoad;
         }
 
         private static float ResolveClipLengthSeconds(AudioImporter importer)

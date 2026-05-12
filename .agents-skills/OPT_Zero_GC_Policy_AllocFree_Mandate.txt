@@ -215,6 +215,23 @@ Exception: `.ToString()` is permitted in `Awake()`, `Start()`, `OnEnable()`, `On
 
 ---
 
+### 3.5 `Span<char>` / `ReadOnlySpan<char>` Law
+
+[RULE] `Span<char>` is the default formatting surface for hot UI text and localization assembly.
+[RULE] Use `value.TryFormat(span, out written, format)` or `ZeroGCFormatter` into preallocated `char[]`, `FixedCharBuffer`, or arena-backed frame-local spans.
+[RULE] `ReadOnlySpan<char>` is the default parser/templating input for localization, save diagnostics, and UI label composition.
+
+[FORBID] `new string(span)` in hot paths.
+[FORBID] `string.Create(...)` in hot paths. It still creates a managed string.
+[FORBID] storing `Span<T>` in fields, captured lambdas, async methods, iterator methods, or job structs.
+[FORBID] `stackalloc` above 256 bytes in gameplay frame paths. Larger scratch uses `CharBufferPool` or `HectonArenaAllocator`.
+[FORBID] culture-sensitive `TryFormat` in hot paths unless the culture object is static/cached and the call is proven allocation-free.
+
+[SAFE] `Span<T>` may wrap a persistent `char[]` field, a pooled buffer lease, or a frame-local arena allocation.
+[SAFE] Burst jobs use `FixedString32Bytes`, `FixedString64Bytes`, or `FixedString128Bytes`; they do not use `Span<char>`.
+
+---
+
 ## SECTION 4: REGISTRY PATTERN — REPLACE FIND OPERATIONS
 
 ### 4.1 Problem with Unity's Find APIs

@@ -228,6 +228,7 @@ namespace Hecton8.AI
         IsApexPredator = 1 << 13,
         IsAmbusher = 1 << 14,
         HasPackTarget = 1 << 15,
+        HighTierSmoothSteering = 1 << 16,
     }
 
     [System.Flags]
@@ -274,6 +275,7 @@ namespace Hecton8.AI
         private const float MinimumAttackCooldown = 0.35f;
         private const float MinimumScoreThreshold = 0.01f;
         private const float WanderTargetRefreshSeconds = 4.5f;
+        private const float WanderHashUshortInvScale = 1f / 65535f;
         private const float MaximumWanderVerticalOffset = 6f;
         private const float OverrideScoreBias = 1000f;
         private const float AttackStateBias = 1.25f;
@@ -327,6 +329,8 @@ namespace Hecton8.AI
         private const byte SignedDistanceSolidThreshold = 128;
         private const float QuantizedByteScale = 255f;
         private const float QuantizedByteInvScale = 1f / QuantizedByteScale;
+        private const float HungerMobilityPenaltyThreshold01 = 200f * QuantizedByteInvScale;
+        private const float HungerMobilityPenaltySpeedScale = 0.7f;
         private const float DdaEpsilon = 0.000001f;
         private const float FlockCountInvSoftCap = 1f / 6f;
         private const float PlayerFacingBaitThreshold = 0.45f;
@@ -337,6 +341,14 @@ namespace Hecton8.AI
         private const float BaseSiegeDistractorForwardOffsetMeters = 8f;
         private const float BaseSiegeLoiterRadiusMeters = 10f;
         private const float BaseSiegeUtilityBias = 0.35f;
+        private const float ApexSCurveFrequency = 0.42f;
+        private const float ApexSCurvePhaseStep = 0.0625f;
+        private const float ApexSCurveLateralWeight = 0.38f;
+        private const float ApexSCurveNlerpStalk = 0.18f;
+        private const float ApexSCurveNlerpAttack = 0.28f;
+        private const float ApexSCurveMaxDistanceMeters = 80f;
+        private const float ApexSCurveInvMaxDistanceSqr =
+            1f / (ApexSCurveMaxDistanceMeters * ApexSCurveMaxDistanceMeters);
         private const float VortexProbeDistanceMeters = 4f;
         private const float VortexSteeringBlend = 0.72f;
         private const float AmbushSdfProbeDistanceMeters = 4f;
@@ -1921,6 +1933,7 @@ namespace Hecton8.AI
                 bool isFlocking = (input.Flags & (int)CognitionInputFlags.IsFlocking) != 0;
                 bool hasVisualPlayerHint = (input.Flags & (int)CognitionInputFlags.HasVisualPlayerHint) != 0;
                 bool isApexPredator = (input.Flags & (int)CognitionInputFlags.IsApexPredator) != 0;
+                bool useHighTierSmoothSteering = (input.Flags & (int)CognitionInputFlags.HighTierSmoothSteering) != 0;
 
                 bool playerVisible = hasPlayerTarget && hasVisualPlayerHint && ResolveThreatVisibility(resolvedInput.Position, resolvedInput.PlayerPosition, resolvedInput.ImportanceScore);
                 bool threatVisible = hasThreatTarget && ResolveThreatVisibility(resolvedInput.Position, resolvedInput.ThreatPosition, resolvedInput.ImportanceScore);
@@ -1937,7 +1950,7 @@ namespace Hecton8.AI
                 fear = math.max(fear, math.max(rawFear, fearPheromoneSignal * FearPheromoneContagionShare));
 
                 PackedCognitionOutput output = isPredator
-                    ? EvaluatePredator(slot, ref core, ref control, in resolvedInput, fallbackForward, canFlee, hasPlayerTarget, playerVisible, threatVisible, rivalApexVisible, preyVisible, scavengeVisible, aggression, ref hunger, ref fatigue, ref fear, ref threatLevel)
+                    ? EvaluatePredator(slot, ref core, ref control, in resolvedInput, fallbackForward, canFlee, hasPlayerTarget, playerVisible, threatVisible, rivalApexVisible, preyVisible, scavengeVisible, useHighTierSmoothSteering, aggression, ref hunger, ref fatigue, ref fear, ref threatLevel)
                     : EvaluatePassive(slot, ref control, in resolvedInput, fallbackForward, canFlee, hasPlayerTarget, playerVisible, threatVisible, useHomeTerritory, isFlocking, ref hunger, ref fatigue, ref fear, ref threatLevel);
 
                 core.StateFlags = PackWorldStateFlags((FaunaBrain.AIState)output.LegacyState);
@@ -1967,6 +1980,7 @@ namespace Hecton8.AI
                 bool rivalApexVisible,
                 bool preyVisible,
                 bool scavengeVisible,
+                bool useHighTierSmoothSteering,
                 float aggression,
                 ref float hunger,
                 ref float fatigue,
@@ -1995,7 +2009,7 @@ namespace Hecton8.AI
                     : 0f;
                 bool acousticSight = hasPlayerTarget &&
                                       input.AcousticPingStrength01 > PredatorAcousticSightNoiseThreshold01 &&
-                                      math.lengthsq(input.PlayerPosition - input.Position) < PredatorAcousticSightRangeSqr;
+                                      math.distancesq(input.PlayerPosition, input.Position) < PredatorAcousticSightRangeSqr;
                 if (acousticSight)
                     directAcousticScore = math.max(directAcousticScore, input.AcousticPingStrength01);
 
@@ -2296,7 +2310,11 @@ namespace Hecton8.AI
                 fleeingScore += math.select(0f, OverrideScoreBias, overrideActive && control.OverrideStateFlags == (uint)PredatorUtilityState.Fleeing);
                 prowlingScore += math.select(0f, OverrideScoreBias, satedActive);
 
-                float4 stateScores = new float4(prowlingScore, stalkingScore, attackingScore, fleeingScore);
+                float4 stateScores = new float4(
+                    SquareActionScore(prowlingScore),
+                    SquareActionScore(stalkingScore),
+                    SquareActionScore(attackingScore),
+                    SquareActionScore(fleeingScore));
                 float winningScore = math.cmax(stateScores);
                 int winningMask = BuildWinningStateMask(stateScores, winningScore);
                 int stateCode = DecodePredatorStateCode(winningMask);
@@ -2337,7 +2355,7 @@ namespace Hecton8.AI
                     }
                 }
 
-                float3 desiredDirection = ResolvePredatorDirection(stateMask, input.Position, targetPosition, fallbackForward, input.CurrentTime, control);
+                float3 desiredDirection = ResolvePredatorDirection(slot, stateMask, input.Position, targetPosition, fallbackForward, input.CurrentTime, control, isApexPredator, useHighTierSmoothSteering);
                 PackedCognitionOutput output = default;
                 output.DesiredDirection = desiredDirection;
                 output.PackedScores = PackScoreTriplet(hungerScore, aggressionWeight, fearScore);
@@ -2402,6 +2420,9 @@ namespace Hecton8.AI
                     output.SpeedMultiplier = 0f;
                     output.TurnMultiplier = 0.35f;
                 }
+
+                if (hunger > HungerMobilityPenaltyThreshold01)
+                    output.SpeedMultiplier *= HungerMobilityPenaltySpeedScale;
 
                 if (packRole == PredatorPackRole.Bait)
                     output.OutputFlags |= (uint)CognitionOutputFlags.PackRoleBait;
@@ -3013,6 +3034,12 @@ namespace Hecton8.AI
                 return 1f - (inverse * inverse);
             }
 
+            private static float SquareActionScore(float score)
+            {
+                float safeScore = math.max(0f, score);
+                return safeScore * safeScore;
+            }
+
             private static float3 ResolveDominantAxis(float3 direction, float3 fallback)
             {
                 if (math.lengthsq(direction) <= DdaEpsilon)
@@ -3088,12 +3115,12 @@ namespace Hecton8.AI
                     return;
                 }
 
-                float sequence = control.WanderSequence;
-                int octant = (int)math.min(7f, math.frac((sequence + currentTime) * 0.31830988618f) * 8f);
+                uint wanderHash = HashWanderSeed(control.WanderSequence, center);
+                int octant = (int)(wanderHash & 7u);
                 float3 direction = ResolveOctantDirectionXZ(octant);
-                float radiusT = math.frac(sequence * 0.61803398875f);
+                float radiusT = ((wanderHash >> 8) & 0xFFFFu) * WanderHashUshortInvScale;
                 float wanderRadius = math.max(1f, radius) * math.lerp(0.45f, 1f, radiusT);
-                float verticalT = math.frac(sequence * 0.41421356f) - 0.5f;
+                float verticalT = (((wanderHash >> 24) & 0xFFu) * QuantizedByteInvScale) - 0.5f;
                 control.WanderTarget = center + new float3(
                     direction.x * wanderRadius,
                     verticalT * MaximumWanderVerticalOffset,
@@ -3101,6 +3128,21 @@ namespace Hecton8.AI
                 control.WanderSequence++;
                 control.NextWanderTargetRefreshTime = currentTime + WanderTargetRefreshSeconds;
                 control.Flags |= (int)CognitionControlFlags.HasWanderTarget;
+            }
+
+            private static uint HashWanderSeed(int sequence, float3 center)
+            {
+                unchecked
+                {
+                    uint state = ((uint)sequence + 1u) * 1664525u + 1013904223u;
+                    state ^= math.asuint(center.x) * 0x85EBCA6Bu;
+                    state = (state * 1664525u) + 1013904223u;
+                    state ^= math.asuint(center.y) * 0x27D4EB2Du;
+                    state = (state * 1664525u) + 1013904223u;
+                    state ^= math.asuint(center.z) * 0xC2B2AE35u;
+                    state = (state * 1664525u) + 1013904223u;
+                    return state ^ (state >> 16);
+                }
             }
 
             private static float3 ResolveOctantDirectionXZ(int octant)
@@ -3146,12 +3188,15 @@ namespace Hecton8.AI
             }
 
             private float3 ResolvePredatorDirection(
+                int slot,
                 PredatorUtilityState stateMask,
                 float3 selfPosition,
                 float3 targetPosition,
                 float3 fallbackForward,
                 float currentTime,
-                CognitionControl control)
+                CognitionControl control,
+                bool isApexPredator,
+                bool useHighTierSmoothSteering)
             {
                 if (stateMask == PredatorUtilityState.Fleeing)
                 {
@@ -3160,22 +3205,57 @@ namespace Hecton8.AI
                         ? control.OverrideThreatPosition
                         : targetPosition;
                     float3 fleeDirection = ResolveDominantAxis(selfPosition - fleeFrom, -fallbackForward);
-                    return ApplyVortexSteering(selfPosition, fleeDirection, -fallbackForward);
+                    return SanitizeSteeringVector(ApplyVortexSteering(selfPosition, fleeDirection, -fallbackForward, false), -fallbackForward);
                 }
 
-                float3 desiredDirection = ResolveDominantAxis(targetPosition - selfPosition, fallbackForward);
-                return ApplyVortexSteering(selfPosition, desiredDirection, fallbackForward);
+                bool useApexSCurve =
+                    isApexPredator &&
+                    useHighTierSmoothSteering &&
+                    (stateMask == PredatorUtilityState.Stalking || stateMask == PredatorUtilityState.Attacking);
+                float3 desiredDirection = useApexSCurve
+                    ? ResolveApexSCurveDirection(slot, stateMask, selfPosition, targetPosition, fallbackForward, currentTime)
+                    : ResolveDominantAxis(targetPosition - selfPosition, fallbackForward);
+                return SanitizeSteeringVector(ApplyVortexSteering(selfPosition, desiredDirection, fallbackForward, useApexSCurve), fallbackForward);
             }
 
-            private float3 ApplyVortexSteering(float3 selfPosition, float3 desiredDirection, float3 fallbackForward)
+            private float3 ApplyVortexSteering(float3 selfPosition, float3 desiredDirection, float3 fallbackForward, bool smoothSteering)
             {
-                float3 forward = ResolveSteeringAxis(desiredDirection, fallbackForward);
+                float3 forward = ResolveSteeringAxis(desiredDirection, fallbackForward, smoothSteering);
                 if (!TryResolveVortexAvoidance(selfPosition, forward, out float3 avoidDir, out float pressure01))
                     return forward;
 
                 return ResolveSteeringAxis(
                     math.lerp(forward, avoidDir, math.saturate(pressure01 * VortexSteeringBlend)),
-                    forward);
+                    forward,
+                    smoothSteering);
+            }
+
+            private static float3 ResolveApexSCurveDirection(
+                int slot,
+                PredatorUtilityState stateMask,
+                float3 selfPosition,
+                float3 targetPosition,
+                float3 fallbackForward,
+                float currentTime)
+            {
+                float3 currentForward = ResolveRsqrtDirection(fallbackForward, new float3(0f, 0f, 1f));
+                float3 toTarget = targetPosition - selfPosition;
+                if (math.lengthsq(toTarget) <= DdaEpsilon)
+                    return currentForward;
+
+                float3 desiredForward = ResolveRsqrtDirection(toTarget, currentForward);
+                float3 up = new float3(0f, 1f, 0f);
+                float3 lateral = ResolveRsqrtDirection(math.cross(up, desiredForward), math.cross(new float3(0f, 0f, 1f), desiredForward));
+                float attackWeight = math.select(0.62f, 1f, stateMask == PredatorUtilityState.Attacking);
+                float distanceWeight = math.saturate(math.lengthsq(toTarget) * ApexSCurveInvMaxDistanceSqr);
+                float phase = (currentTime * ApexSCurveFrequency) + ((slot & 15) * ApexSCurvePhaseStep);
+                float curve = CinematicMath.FastTriangleWaveSigned(phase) * ApexSCurveLateralWeight * attackWeight * distanceWeight;
+                float3 curvedForward = ResolveRsqrtDirection(desiredForward + (lateral * curve), desiredForward);
+                quaternion fromRotation = quaternion.LookRotationSafe(currentForward, up);
+                quaternion toRotation = quaternion.LookRotationSafe(curvedForward, up);
+                float turnBlend = math.select(ApexSCurveNlerpStalk, ApexSCurveNlerpAttack, stateMask == PredatorUtilityState.Attacking);
+                quaternion blendedRotation = CinematicMath.FastNlerp(fromRotation, toRotation, turnBlend);
+                return ResolveRsqrtDirection(math.mul(blendedRotation, new float3(0f, 0f, 1f)), currentForward);
             }
 
             private bool TryResolveVortexAvoidance(float3 selfPosition, float3 forward, out float3 avoidDir, out float pressure01)
@@ -3196,7 +3276,7 @@ namespace Hecton8.AI
                 if (math.lengthsq(avoidDir) <= DdaEpsilon)
                     avoidDir = math.cross(new float3(0f, 0f, 1f), up);
 
-                avoidDir = ResolveSteeringAxis(avoidDir, forward);
+                avoidDir = ResolveSteeringAxis(avoidDir, forward, false);
                 if (math.dot(avoidDir, forward) < 0f)
                     avoidDir = -avoidDir;
 
@@ -3218,7 +3298,7 @@ namespace Hecton8.AI
                 if (!TryResolveThreatVoxelGradient(selfPosition, out float3 gradient))
                     return false;
 
-                float3 creviceDirection = ResolveSteeringAxis(gradient, fallbackForward);
+                float3 creviceDirection = ResolveSteeringAxis(gradient, fallbackForward, false);
                 targetPosition = selfPosition + (creviceDirection * AmbushSdfProbeDistanceMeters);
                 return !IsThreatVoxelSolidOrOutOfBounds(targetPosition);
             }
@@ -3263,9 +3343,31 @@ namespace Hecton8.AI
                 return IsThreatVoxelSolid(sample) ? 0f : 1f;
             }
 
-            private static float3 ResolveSteeringAxis(float3 direction, float3 fallback)
+            private static float3 ResolveSteeringAxis(float3 direction, float3 fallback, bool smoothSteering)
             {
-                return ResolveDominantAxis(direction, fallback);
+                return smoothSteering
+                    ? ResolveRsqrtDirection(direction, fallback)
+                    : ResolveDominantAxis(direction, fallback);
+            }
+
+            private static float3 ResolveRsqrtDirection(float3 direction, float3 fallback)
+            {
+                if (!MathGuard.IsFinite(direction) || math.lengthsq(direction) <= DdaEpsilon)
+                    direction = fallback;
+
+                float lengthSq = math.lengthsq(direction);
+                if (!MathGuard.IsFinite(direction) || lengthSq <= DdaEpsilon)
+                    return new float3(0f, 0f, 1f);
+
+                return direction * math.rsqrt(math.max(lengthSq, DdaEpsilon));
+            }
+
+            private static float3 SanitizeSteeringVector(float3 direction, float3 fallback)
+            {
+                if (MathGuard.IsFinite(direction) && math.lengthsq(direction) > DdaEpsilon)
+                    return direction;
+
+                return ResolveDominantAxis(fallback, new float3(0f, 0f, 1f));
             }
 
             private static float3 ResolveDominantHorizontalAxis(float3 direction, float3 fallback)

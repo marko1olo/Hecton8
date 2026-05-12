@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.World;
+using System.Threading;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -15,6 +16,7 @@ namespace Hecton8.Gameplay
     {
         private const float PositionHoldEpsilonMetersSq = 0.000001f;
         private const float RotationHoldDotThreshold = 0.9999995f;
+        private const float AutoLevelPlanarForwardEpsilonSq = 0.0001f;
 
         [Header("Station Keeping")]
         [Tooltip("When enabled at runtime, the controller holds the current hull pose until released or retargeted.")]
@@ -160,6 +162,37 @@ namespace Hecton8.Gameplay
             _stationKeepingSpeedMetersPerSecond = 0f;
         }
 
+        /// <summary>
+        /// Arms a pitch/roll correction while retaining current yaw and position. Call after player controls are released.
+        /// </summary>
+        public async Awaitable AutoLevelWhenControlsReleasedAsync(CancellationToken cancellationToken = default)
+        {
+            ArmAutoLevelAtCurrentPosition();
+            while (!cancellationToken.IsCancellationRequested &&
+                   isActiveAndEnabled &&
+                   _stationKeepingEnabled &&
+                   _hullRigidbody != null &&
+                   !IsRotationClose(_hullRigidbody.rotation, _targetRotation))
+            {
+                await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// Arms the no-allocation fixed-step auto-level path for control owners that cannot await completion.
+        /// </summary>
+        public void ArmAutoLevelAtCurrentPosition()
+        {
+            CacheReferences();
+            if (_hullRigidbody == null)
+                return;
+
+            _targetAbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(_hullRigidbody.worldCenterOfMass).ToAbsoluteDouble3();
+            _targetRotation = ResolveAutoLevelRotation(_hullRigidbody.rotation);
+            _stationKeepingSpeedMetersPerSecond = 0f;
+            _stationKeepingEnabled = true;
+        }
+
         private void CacheReferences()
         {
             if (_submarineCore == null)
@@ -262,6 +295,19 @@ namespace Hecton8.Gameplay
                 angularDelta.y * inverseDeltaTime,
                 angularDelta.z * inverseDeltaTime);
             return IsFinite(angularVelocity) ? angularVelocity : Vector3.zero;
+        }
+
+        private static Quaternion ResolveAutoLevelRotation(Quaternion currentRotation)
+        {
+            Vector3 forward = currentRotation * Vector3.forward;
+            Vector3 planarForward = new Vector3(forward.x, 0f, forward.z);
+            float planarForwardSq = planarForward.sqrMagnitude;
+            if (!IsFinite(planarForward) || planarForwardSq <= AutoLevelPlanarForwardEpsilonSq)
+                planarForward = Vector3.forward;
+            else
+                planarForward *= math.rsqrt(planarForwardSq);
+
+            return Quaternion.LookRotation(planarForward, Vector3.up);
         }
 
         private static float4 NormalizeQuaternionNoSqrt(float4 value)

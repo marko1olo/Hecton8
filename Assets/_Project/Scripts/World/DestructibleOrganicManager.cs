@@ -1643,7 +1643,7 @@ namespace Hecton8.World
                 {
                     float maturationScale = ResolveMaturationScaleMultiplier(instanceUid);
                     if (maturationScale < 0.9999f)
-                        ApplyMaturationVisualToLaneInstance(underwater, i, instanceUid, maturationScale);
+                        ApplyMaturationVisualToLaneInstance(underwater, i, instanceUid, ResolveMaturationYieldMultiplier(instanceUid), maturationScale);
                 }
             }
 
@@ -2388,6 +2388,7 @@ namespace Hecton8.World
             if (_pendingWiltEndTimeByInstanceUid.IsCreated)
                 _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
 
+            float parentMassKg = ResolveParentMassKg(underwater, activeIndex, materialClass, templateIndex);
             ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
             ApplyDecompositionToLaneInstance(underwater, activeIndex, instanceUid, 0f);
 
@@ -2399,7 +2400,7 @@ namespace Hecton8.World
                 instanceUid,
                 templateIndex,
                 materialClass,
-                ResolveParentMassKg(underwater, activeIndex, materialClass, templateIndex),
+                parentMassKg,
                 1f,
                 hasNavObstacleBounds ? navObstacleCenter : float3.zero,
                 hasNavObstacleBounds ? navObstacleExtents : float3.zero);
@@ -2442,6 +2443,7 @@ namespace Hecton8.World
 
             PrimeDecompositionState(instanceUid, Time.time);
             SetLaneHealth(underwater, activeIndex, 0f);
+            float parentMassKg = ResolveParentMassKg(underwater, activeIndex, materialClass, templateIndex);
             ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
             ApplyDecompositionToLaneInstance(underwater, activeIndex, instanceUid, 0f);
 
@@ -2457,9 +2459,9 @@ namespace Hecton8.World
                 instancePosition,
                 0.1f,
                 instanceUid,
-                -1,
+                templateIndex,
                 materialClass,
-                0.05f,
+                parentMassKg,
                 0f,
                 hasNavObstacleBounds ? navObstacleCenter : float3.zero,
                 hasNavObstacleBounds ? navObstacleExtents : float3.zero);
@@ -2513,7 +2515,7 @@ namespace Hecton8.World
                 NavObstacleCenter = navObstacleCenter,
                 NavObstacleExtents = navObstacleExtents,
                 ToolPower = Mathf.Max(0.1f, normalizedPower),
-                ParentMassKg = Mathf.Max(0.05f, parentMassKg),
+                ParentMassKg = parentMassKg <= 0.0001f ? 0f : Mathf.Max(0.05f, parentMassKg),
                 Damage01 = Mathf.Clamp01(damage01),
                 InstanceUid = instanceUid,
                 TemplateIndex = templateIndex,
@@ -3566,6 +3568,7 @@ namespace Hecton8.World
             hiddenMetadata.RuntimeState = HectonVegetationInstanceData.RuntimeStateIdle;
             hiddenMetadata.RuntimeFlags = 0f;
             hiddenMetadata.HealthNormalized = 0f;
+            hiddenMetadata.Reserved0 = -1f;
             metadata[activeIndex] = hiddenMetadata;
         }
 
@@ -3607,6 +3610,7 @@ namespace Hecton8.World
             decompositionMetadata.WidthScale = -Mathf.Max(0.001f, decompositionStartTime);
             decompositionMetadata.RuntimeState = HectonVegetationInstanceData.RuntimeStateDying;
             decompositionMetadata.HealthNormalized = math.lerp(1f, 0f, smoothEntropy);
+            decompositionMetadata.Reserved0 = -1f;
             metadata[activeIndex] = decompositionMetadata;
         }
 
@@ -3806,7 +3810,7 @@ namespace Hecton8.World
         internal bool TrySetMaturationProgress(uint instanceUid, float progress01)
         {
             float multiplier = EvaluateMaturationScaleMultiplier(progress01);
-            return TrySetMaturationProgress(instanceUid, progress01, multiplier, multiplier);
+            return TrySetMaturationProgress(instanceUid, progress01, multiplier, Mathf.Clamp01(progress01));
         }
 
         internal bool TrySetMaturationProgress(uint instanceUid, float progress01, float scaleMultiplier, float resourceYieldMultiplier)
@@ -3814,8 +3818,9 @@ namespace Hecton8.World
             if (instanceUid == 0u || !_maturationScaleByInstanceUid.IsCreated)
                 return false;
 
+            float clampedProgress = Mathf.Clamp01(progress01);
             scaleMultiplier = Mathf.Clamp(scaleMultiplier, 0.1f, 1f);
-            resourceYieldMultiplier = Mathf.Clamp(resourceYieldMultiplier, 0.1f, 1f);
+            resourceYieldMultiplier = clampedProgress < 0.2f ? 0f : Mathf.Clamp01(resourceYieldMultiplier);
             _maturationScaleByInstanceUid.Remove(instanceUid);
             if (scaleMultiplier < 0.9999f)
                 _maturationScaleByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)scaleMultiplier);
@@ -3829,12 +3834,12 @@ namespace Hecton8.World
 
             if (TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
             {
-                ApplyMaturationVisualToLaneInstance(underwater, activeIndex, instanceUid, scaleMultiplier);
-                TryDispatchMatureSporeAcoustic(instanceUid, progress01, underwater, activeIndex, templateIndex, Time.time);
-                if (progress01 >= TitanRootMoundMatureThreshold01)
+                ApplyMaturationVisualToLaneInstance(underwater, activeIndex, instanceUid, clampedProgress, scaleMultiplier);
+                TryDispatchMatureSporeAcoustic(instanceUid, clampedProgress, underwater, activeIndex, templateIndex, Time.time);
+                if (clampedProgress >= TitanRootMoundMatureThreshold01)
                     TryApplyTitanRootMound(underwater, activeIndex, instanceUid);
             }
-            else if (progress01 < MatureSporeGrowthThreshold01 && _nextSporeAcousticTimeByInstanceUid.IsCreated)
+            else if (clampedProgress < MatureSporeGrowthThreshold01 && _nextSporeAcousticTimeByInstanceUid.IsCreated)
             {
                 _nextSporeAcousticTimeByInstanceUid.Remove(instanceUid);
             }
@@ -4170,10 +4175,10 @@ namespace Hecton8.World
                 return ResolveMaturationScaleMultiplier(instanceUid);
             }
 
-            return Mathf.Clamp((float)storedYield, 0.1f, 1f);
+            return Mathf.Clamp01((float)storedYield);
         }
 
-        private void ApplyMaturationVisualToLaneInstance(bool underwater, int activeIndex, uint instanceUid, float scaleMultiplier)
+        private void ApplyMaturationVisualToLaneInstance(bool underwater, int activeIndex, uint instanceUid, float progress01, float scaleMultiplier)
         {
             NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
             NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
@@ -4194,7 +4199,7 @@ namespace Hecton8.World
             maturationMetadata.Type = types[activeIndex];
             maturationMetadata.HeightScale = baseScale.x * clampedScale;
             maturationMetadata.WidthScale = baseScale.y * clampedScale;
-            maturationMetadata.Reserved0 = clampedScale;
+            maturationMetadata.Reserved0 = EncodeAuthoredGrowthAge01(progress01);
             metadata[activeIndex] = maturationMetadata;
         }
 
@@ -4236,7 +4241,7 @@ namespace Hecton8.World
                 ? HectonVegetationInstanceData.RuntimeStateIdle
                 : HectonVegetationInstanceData.RuntimeStateAgitated;
             regrowthMetadata.HealthNormalized = Mathf.Clamp01(progress01);
-            regrowthMetadata.Reserved0 = Mathf.Clamp01(progress01);
+            regrowthMetadata.Reserved0 = EncodeAuthoredGrowthAge01(progress01);
             metadata[activeIndex] = regrowthMetadata;
         }
 
@@ -4298,19 +4303,22 @@ namespace Hecton8.World
                 : 1f;
             float height01 = 1f;
             float width01 = 1f;
+            float metadataAge01 = 1f;
             NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
             if (metadata.IsCreated && activeIndex >= 0 && activeIndex < metadata.Length)
             {
                 HectonVegetationInstanceData instanceData = metadata[activeIndex];
                 height01 = Mathf.Clamp01(Mathf.Abs(instanceData.HeightScale));
                 width01 = Mathf.Clamp01(instanceData.WidthScale);
+                metadataAge01 = ResolveHarvestAge01(instanceData);
             }
 
-            float maturationMultiplier = ResolveMaturationYieldMultiplier(_underwaterInstanceUids.IsCreated || _surfaceInstanceUids.IsCreated
+            uint instanceUid = _underwaterInstanceUids.IsCreated || _surfaceInstanceUids.IsCreated
                 ? (underwater && activeIndex >= 0 && activeIndex < _underwaterCount ? _underwaterInstanceUids[activeIndex] :
                    !underwater && activeIndex >= 0 && activeIndex < _surfaceCount ? _surfaceInstanceUids[activeIndex] :
                    0u)
-                : 0u);
+                : 0u;
+            float maturationMultiplier = ResolveMaturationYieldMultiplier(instanceUid);
 
             float resolvedMassKg = materialClass switch
             {
@@ -4321,7 +4329,28 @@ namespace Hecton8.World
                 _ => Mathf.Max(1f, baseHealth * 0.4f)
             };
 
-            return Mathf.Max(0.05f, resolvedMassKg * maturationMultiplier);
+            float harvestAge01 = metadataAge01 < 0.999f ? metadataAge01 : maturationMultiplier;
+            if (harvestAge01 < 0.2f)
+                return 0f;
+
+            return resolvedMassKg * harvestAge01;
+        }
+
+        private static float ResolveHarvestAge01(in HectonVegetationInstanceData instanceData)
+        {
+            if (instanceData.Reserved0 < 0f)
+                return -1f;
+
+            if (instanceData.Reserved0 > 0.0001f)
+                return Mathf.Clamp01(instanceData.Reserved0);
+
+            return 1f;
+        }
+
+        private static float EncodeAuthoredGrowthAge01(float progress01)
+        {
+            float clampedProgress = Mathf.Clamp01(progress01);
+            return clampedProgress <= 0.0001f ? 0.0002f : clampedProgress;
         }
 
         private static HarvestableTemplate.MaterialClass ResolveMaterialClass(int typeId, int semanticType)

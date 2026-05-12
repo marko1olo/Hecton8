@@ -413,7 +413,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 return output;
             }
 
-            half3 EvaluateLighting(float3 positionWS, half3 normalWS, half3 viewDirWS, half3 albedo, half metallic, half smoothness, half occlusion)
+            half3 EvaluateLighting(float3 positionWS, float4 positionCS, half3 normalWS, half3 viewDirWS, half3 albedo, half metallic, half smoothness, half occlusion)
             {
                 half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
                 half3 color = SampleSH(normalWS) * albedo * occlusion * caveAmbientFactor;
@@ -432,7 +432,8 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     if (specularBase > 0.0001h)
                         specular = HectonFastSpecularLobe(specularBase, smoothness) * specularEnergy;
                 }
-                color += (albedo * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainLight.shadowAttenuation);
+                half mainShadow = HectonCoreLitResolveMx350ShadowDither((half)mainLight.shadowAttenuation, positionCS);
+                color += (albedo * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainShadow);
 
                 #if defined(_ADDITIONAL_LIGHTS)
                 uint lightCount = GetAdditionalLightsCount();
@@ -517,6 +518,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 }
                 half3 litColor = EvaluateLighting(
                     input.positionWS,
+                    input.positionCS,
                     normalWS,
                     SafeNormalize3(input.viewDirWS),
                     albedo,

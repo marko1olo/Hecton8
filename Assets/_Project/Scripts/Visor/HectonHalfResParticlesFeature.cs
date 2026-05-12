@@ -24,10 +24,6 @@ namespace Hecton8.Visor
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_HalfResParticleComposite.shader";
 #endif
 
-        private static readonly ShaderTagId UniversalForwardTag = new ShaderTagId("UniversalForward");
-        private static readonly ShaderTagId UniversalForwardOnlyTag = new ShaderTagId("UniversalForwardOnly");
-        private static readonly ShaderTagId SrpDefaultUnlitTag = new ShaderTagId("SRPDefaultUnlit");
-
         private static bool IsUnsupportedCameraType(CameraType cameraType)
         {
             return cameraType == CameraType.Preview ||
@@ -52,6 +48,9 @@ namespace Hecton8.Visor
 
             [Tooltip("Composite strength for the half-resolution transparent FX buffer.")]
             [Range(0f, 1f)] public float compositeStrength = 1f;
+
+            [Tooltip("Depth rejection scale used by the half-resolution bilateral upsample.")]
+            [Range(0f, 128f)] public float bilateralDepthScale = 24f;
         }
 
         private sealed class HalfResParticlesPass : ScriptableRenderPass
@@ -71,16 +70,24 @@ namespace Hecton8.Visor
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Half-Res Particles");
+            private readonly ShaderTagId _universalForwardTag;
+            private readonly ShaderTagId _universalForwardOnlyTag;
+            private readonly ShaderTagId _srpDefaultUnlitTag;
             private FeatureSettings _settings;
             private Material _compositeMaterial;
             private Material _lastUploadedCompositeMaterial;
             private bool _hasCompositeStrength;
+            private bool _hasBilateralDepthScale;
             private float _lastCompositeStrength;
+            private float _lastBilateralDepthScale;
 
             public HalfResParticlesPass()
             {
                 profilingSampler = _profilingSampler;
                 requiresIntermediateTexture = true;
+                _universalForwardTag = new ShaderTagId("UniversalForward");
+                _universalForwardOnlyTag = new ShaderTagId("UniversalForwardOnly");
+                _srpDefaultUnlitTag = new ShaderTagId("SRPDefaultUnlit");
             }
 
             public void Setup(FeatureSettings settings, Material compositeMaterial)
@@ -125,17 +132,17 @@ namespace Hecton8.Visor
                 UniversalLightData lightData = frameData.Get<UniversalLightData>();
                 UniversalRenderingData renderingData = frameData.Get<UniversalRenderingData>();
                 DrawingSettings drawingSettings = CreateDrawingSettings(
-                    UniversalForwardTag,
+                    _universalForwardTag,
                     renderingData,
                     cameraData,
                     lightData,
                     SortingCriteria.CommonTransparent);
-                drawingSettings.SetShaderPassName(1, UniversalForwardOnlyTag);
-                drawingSettings.SetShaderPassName(2, SrpDefaultUnlitTag);
+                drawingSettings.SetShaderPassName(1, _universalForwardOnlyTag);
+                drawingSettings.SetShaderPassName(2, _srpDefaultUnlitTag);
 
                 int sanitizedLayerMask = HectonLayerMasks.SanitizeAuthoringLayerMask(_settings.particleLayerMask.value);
                 FilteringSettings filteringSettings = new FilteringSettings(
-                    RenderQueueRange.transparent,
+                    RenderQueueRange.all,
                     sanitizedLayerMask,
                     HectonLayerMasks.AllDefinedProjectRenderingLayerMaskValue);
                 RendererListParams rendererListParams = new RendererListParams(renderingData.cullResults, drawingSettings, filteringSettings);
@@ -168,7 +175,10 @@ namespace Hecton8.Visor
 
                 TextureHandle particlesTexture = renderGraph.CreateTexture(particlesDesc);
                 TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
-                UpdateCompositeMaterial(_compositeMaterial, math.saturate(_settings.compositeStrength));
+                UpdateCompositeMaterial(
+                    _compositeMaterial,
+                    math.saturate(_settings.compositeStrength),
+                    math.max(0f, _settings.bilateralDepthScale));
                 SetGlobalActive(1f);
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<DrawPassData>(
@@ -205,7 +215,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(particlesTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (CompositePassData data, UnsafeGraphContext context) =>
                     {
@@ -221,26 +230,35 @@ namespace Hecton8.Visor
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private void UpdateCompositeMaterial(Material material, float compositeStrength)
+            private void UpdateCompositeMaterial(Material material, float compositeStrength, float bilateralDepthScale)
             {
                 if (_lastUploadedCompositeMaterial != material)
                 {
                     _lastUploadedCompositeMaterial = material;
                     _hasCompositeStrength = false;
+                    _hasBilateralDepthScale = false;
                 }
 
-                if (_hasCompositeStrength && math.abs(_lastCompositeStrength - compositeStrength) <= 0.000001f)
+                if (!_hasCompositeStrength || math.abs(_lastCompositeStrength - compositeStrength) > 0.000001f)
+                {
+                    material.SetFloat(ShaderConstants.CompositeStrengthId, compositeStrength);
+                    _lastCompositeStrength = compositeStrength;
+                    _hasCompositeStrength = true;
+                }
+
+                if (_hasBilateralDepthScale && math.abs(_lastBilateralDepthScale - bilateralDepthScale) <= 0.000001f)
                     return;
 
-                material.SetFloat(ShaderConstants.CompositeStrengthId, compositeStrength);
-                _lastCompositeStrength = compositeStrength;
-                _hasCompositeStrength = true;
+                material.SetFloat(ShaderConstants.BilateralDepthScaleId, bilateralDepthScale);
+                _lastBilateralDepthScale = bilateralDepthScale;
+                _hasBilateralDepthScale = true;
             }
         }
 
         private static class ShaderConstants
         {
             internal static readonly int CompositeStrengthId = Shader.PropertyToID("_HectonHalfResParticlesCompositeStrength");
+            internal static readonly int BilateralDepthScaleId = Shader.PropertyToID("_HectonHalfResParticlesBilateralDepthScale");
             internal static readonly int ParticlesTextureId = Shader.PropertyToID("_HectonHalfResParticlesTex");
             internal static readonly int ActiveId = Shader.PropertyToID("_HectonHalfResParticlesActive");
         }

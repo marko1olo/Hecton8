@@ -20,6 +20,11 @@ Shader "Hecton8/World/WreckIndirectLit"
         _WreckRustStrength("Wreck Rust Strength", Range(0, 1)) = 0.82
         _WreckSiltTint("Wreck Silt Tint", Color) = (0.23, 0.28, 0.26, 1)
         _WreckRustTint("Heavy Orange Rust", Color) = (0.86, 0.28, 0.055, 1)
+        _WreckVertexRustInfluence("Vertex Rust Influence", Range(0, 1)) = 1.0
+        _WreckVertexAlgaeInfluence("Vertex Algae Influence", Range(0, 1)) = 0.65
+        _WreckAlgaeTint("Algae Tint", Color) = (0.16, 0.34, 0.22, 1)
+        _WreckSwayAmplitude("Boneless Debris Sway", Range(0, 0.08)) = 0.018
+        _WreckSwaySpeed("Boneless Debris Sway Speed", Range(0, 4)) = 0.85
     }
 
     SubShader
@@ -48,6 +53,8 @@ Shader "Hecton8/World/WreckIndirectLit"
 
         StructuredBuffer<float4x4> _HectonWreckMatrices;
         StructuredBuffer<float> _HectonWreckAges;
+        float _HectonWreckEmergencyFlicker;
+        float _HectonWreckEmergencyPhase;
         TEXTURE2D(_BaseMap);
         SAMPLER(sampler_BaseMap);
         TEXTURE2D(_MaskMap);
@@ -71,6 +78,11 @@ Shader "Hecton8/World/WreckIndirectLit"
             float _WreckRustStrength;
             float4 _WreckSiltTint;
             float4 _WreckRustTint;
+            float _WreckVertexRustInfluence;
+            float _WreckVertexAlgaeInfluence;
+            float4 _WreckAlgaeTint;
+            float _WreckSwayAmplitude;
+            float _WreckSwaySpeed;
         CBUFFER_END
 
         struct Attributes
@@ -78,6 +90,7 @@ Shader "Hecton8/World/WreckIndirectLit"
             float4 positionOS : POSITION;
             float3 normalOS : NORMAL;
             float2 uv : TEXCOORD0;
+            half4 color : COLOR;
             uint instanceID : SV_InstanceID;
         };
 
@@ -89,6 +102,7 @@ Shader "Hecton8/World/WreckIndirectLit"
             float2 uv : TEXCOORD2;
             half fogFactor : TEXCOORD3;
             half age01 : TEXCOORD4;
+            half4 vertexColor : TEXCOORD5;
             UNITY_VERTEX_OUTPUT_STEREO
         };
 
@@ -112,6 +126,21 @@ Shader "Hecton8/World/WreckIndirectLit"
             return (float3)ResolveWreckNormalCheap(mul((float3x3)instanceMatrix, normalOS));
         }
 
+        half ResolveWreckTriangle01(float phase)
+        {
+            return (half)saturate(abs(frac(phase) - 0.5) * 2.0);
+        }
+
+        float3 ApplyBonelessDebrisSway(float3 positionWS, float3 normalWS, half4 vertexColor, half age01)
+        {
+            half freeEdgeMask = saturate((1.0h - abs((half)normalWS.y)) + vertexColor.r * 0.45h + vertexColor.g * 0.25h);
+            half swayMask = saturate(freeEdgeMask * (half)_WreckSwayAmplitude);
+            float phase = dot(positionWS.xz, float2(0.071, 0.043)) + _Time.y * _WreckSwaySpeed + age01 * 3.17 + _HectonWreckEmergencyPhase;
+            half waveA = ResolveWreckTriangle01(phase) * 2.0h - 1.0h;
+            half waveB = ResolveWreckTriangle01(phase * 0.73 + 0.31) * 2.0h - 1.0h;
+            return positionWS + float3(waveA * swayMask, waveB * swayMask * 0.25h, waveB * swayMask * 0.45h);
+        }
+
         Varyings Vert(Attributes input)
         {
             Varyings output;
@@ -126,11 +155,13 @@ Shader "Hecton8/World/WreckIndirectLit"
             output.normalWS = TransformWreckNormal(instanceMatrix, input.normalOS);
             output.positionWS = HectonCoreLitApplySubmarineCrushDepth(positionWS.xyz, output.normalWS);
             output.positionWS = HectonCoreLitApplyStormRainDripVertexRipple(output.positionWS, output.normalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
+            output.age01 = ResolveWreckAge(instanceID);
+            output.vertexColor = saturate(input.color);
+            output.positionWS = ApplyBonelessDebrisSway(output.positionWS, output.normalWS, output.vertexColor, output.age01);
             output.positionCS = TransformWorldToHClip(output.positionWS);
             output.positionCS = HectonCoreLitApplyClipSpaceDepthBias(output.positionCS, _DepthBias, 1.0);
             output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
-            output.age01 = ResolveWreckAge(instanceID);
             return output;
         }
 
@@ -146,6 +177,7 @@ Shader "Hecton8/World/WreckIndirectLit"
 
         half3 EvaluateWreckLighting(
             float3 positionWS,
+            float4 positionCS,
             half3 normalWS,
             half3 albedo,
             half metallic,
@@ -167,7 +199,8 @@ Shader "Hecton8/World/WreckIndirectLit"
             half specularMask = step(0.0001h, nDotL * specularEnergy);
             half specular = (broadSpecular + (tightSpecular - broadSpecular) * smoothness) * specularEnergy * specularMask;
             half contactShadow = (half)HectonCoreLitEvaluateMainLightContactShadowFromDirection(positionWS, normalWS, mainLight.direction);
-            color += (albedo * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainLight.shadowAttenuation * contactShadow);
+            half mainShadow = HectonCoreLitResolveMx350ShadowDither((half)mainLight.shadowAttenuation, positionCS);
+            color += (albedo * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainShadow * contactShadow);
 
             color += HectonCoreLitEvaluateProjectedCausticsScattering(positionWS, normalWS) * albedo;
             return color;
@@ -191,13 +224,17 @@ Shader "Hecton8/World/WreckIndirectLit"
             half3 normalWS = ResolveWreckNormalCheap(input.normalWS);
             half3 albedo = surface.rgb;
             HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
-            half edgeWearMask = saturate((1.0h - ambientOcclusion) * 0.7h + (1.0h - smoothness) * 0.35h);
+            half vertexMask = 1.0h - saturate(input.vertexColor.b);
+            half vertexRust = saturate(input.vertexColor.r * (half)_WreckVertexRustInfluence * vertexMask);
+            half vertexAlgae = saturate(input.vertexColor.g * (half)_WreckVertexAlgaeInfluence * vertexMask);
+            half edgeWearMask = saturate((1.0h - ambientOcclusion) * 0.7h + (1.0h - smoothness) * 0.35h + vertexRust);
+            half rustAge = saturate(input.age01 + vertexRust * 0.35h);
             HectonCoreLitApplyProceduralRustSilt(
                 input.positionWS,
                 normalWS,
                 normalWS,
                 edgeWearMask,
-                input.age01,
+                rustAge,
                 (half)_WreckSiltStrength,
                 (half)_WreckRustStrength,
                 half3(_WreckSiltTint.rgb),
@@ -205,15 +242,20 @@ Shader "Hecton8/World/WreckIndirectLit"
                 albedo,
                 metallic,
                 smoothness);
+            albedo = lerp(albedo, albedo * half3(_WreckAlgaeTint.rgb), vertexAlgae);
+            ambientOcclusion = lerp(ambientOcclusion, ambientOcclusion * 0.82h, vertexAlgae);
+            smoothness = lerp(smoothness, smoothness * 0.72h, vertexAlgae);
             HectonCoreLitApplyEnvironmentalWear(input.positionWS, normalWS, (half)_EnvironmentalWear, (half3)_RustSaltColor.rgb, albedo, metallic, smoothness);
             half3 litColor = EvaluateWreckLighting(
                 input.positionWS,
+                input.positionCS,
                 normalWS,
                 albedo,
                 metallic,
                 smoothness,
                 ambientOcclusion);
-            half3 emission = _EmissionColor.rgb * emissionMask;
+            half emergencyPulse = saturate((half)_HectonWreckEmergencyFlicker * (0.35h + ResolveWreckTriangle01(_Time.y * 3.7 + _HectonWreckEmergencyPhase) * 0.65h));
+            half3 emission = _EmissionColor.rgb * emissionMask * emergencyPulse;
             half3 finalColor = HectonCoreLitApplyNoirFog(litColor + emission, input.fogFactor, input.positionWS);
             return half4(finalColor, 1.0h);
         }
@@ -224,6 +266,7 @@ Shader "Hecton8/World/WreckIndirectLit"
             float4 positionWS = mul(instanceMatrix, float4(HectonCoreLitSanitizePositionOS(input.positionOS.xyz), 1.0));
             float3 normalWS = TransformWreckNormal(instanceMatrix, input.normalOS);
             positionWS.xyz = HectonCoreLitApplyStormRainDripVertexRipple(positionWS.xyz, normalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
+            positionWS.xyz = ApplyBonelessDebrisSway(positionWS.xyz, normalWS, saturate(input.color), ResolveWreckAge(instanceID));
             float3 lightDirectionWS = _MainLightPosition.xyz;
             float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS.xyz, normalWS, lightDirectionWS));
         #if UNITY_REVERSED_Z

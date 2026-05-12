@@ -11,18 +11,19 @@ Shader "HECTON/World/LaserCutRadianceDecal"
     {
         Tags
         {
-            "RenderType" = "Transparent"
-            "Queue" = "Transparent+20"
+            "RenderType" = "TransparentCutout"
+            "Queue" = "AlphaTest+20"
             "RenderPipeline" = "UniversalPipeline"
         }
 
         Pass
         {
             Name "LaserCutRadiance"
-            Blend One One
+            Blend Off
             ZWrite Off
             ZTest LEqual
             Cull Off
+            AlphaToMask On
 
             HLSLPROGRAM
             #pragma vertex Vert
@@ -61,6 +62,12 @@ Shader "HECTON/World/LaserCutRadianceDecal"
                 return saturate((half)dot(zAxis, zAxis));
             }
 
+            float HectonDitherCoverage(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -82,8 +89,8 @@ Shader "HECTON/World/LaserCutRadianceDecal"
                 half core = smoothstep(_CoreRadius, 1.0h, radialSq);
                 half edge = radialSq * radialSq;
                 half alpha = saturate((core + edge) * input.fade);
-                clip(alpha - 0.0005h);
-                return half4(_Color.rgb * (_Intensity * alpha), alpha);
+                clip(alpha - max((half)HectonDitherCoverage(input.positionCS.xy), 0.0005h));
+                return half4(_Color.rgb * (_Intensity * alpha), 1.0h);
             }
             ENDHLSL
         }

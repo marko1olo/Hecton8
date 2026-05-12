@@ -1,0 +1,49 @@
+# ARCH_PENTARCHY_AUDIT
+
+Status: PENDING VERIFICATION
+Owner: TECH_SCOUT
+Date: 2026-05-11
+
+## Finding
+
+[BROKEN] A five-pillar "Pentarchy" model is no longer sufficient for HECTON-8 architecture.
+
+Local authority file `Docs/Actual Domains of Project.txt` defines 9 echelons and 85 domains. Any current document that claims a complete five-pillar architecture is stale unless it maps the missing enforcement pillars explicitly.
+
+## Missing Pillars
+
+The five-pillar model usually covers world, simulation, rendering, gameplay, and UX. It misses mandatory HECTON-8 enforcement systems:
+
+1. Evidence / Telemetry / Blackbox.
+2. Scalability / Math LOD / hardware dictatorship.
+3. Streaming / residency / VRAM budget authority.
+4. Determinism / replay / stable ordering.
+5. Third-party isolation / anti-corruption boundaries.
+
+## Law
+
+[RULE] Use the 9-echelons / 85-domains authority map for domain ownership.
+
+[RULE] If "Pentarchy" appears in new docs, it must be labeled as a legacy shorthand and must link to the 9-echelons authority map.
+
+[FORBID] Treating any five-pillar summary as architectural coverage for compile gates, ownership decisions, or cross-domain edits.
+
+## DOD
+
+- New status files reference their actual echelon/domain.
+- New mandate files do not reduce architecture to five pillars unless they list the enforcement pillars above.
+- Integrator review flags undocumented cross-domain edits even if the edit fits a legacy pillar label.
+
+## Scalability
+
+Low: enforcement pillars protect cheap hardware from hidden work.
+
+Middle: domain boundaries keep systems decoupled and measurable.
+
+High: saved headroom buys visual overkill without collapsing determinism or memory budgets.
+
+Ultra: richer systems remain optional overlays on the same enforcement spine.
+
+## Hardware Impact
+
+Process gain only. Runtime microseconds saved: 0 claimed.

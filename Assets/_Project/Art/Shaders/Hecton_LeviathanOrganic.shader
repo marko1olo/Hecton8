@@ -22,8 +22,12 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         _DeathDitherFade("Death Dither Fade", Range(0, 1)) = 0.0
         _CorpseBloatAge01("Corpse Bloat Age 01", Range(0, 1)) = 0.0
         _CorpseBloatStartTime("Corpse Bloat Start Time", Float) = -1.0
-        _CorpseBloatDuration("Corpse Bloat Duration", Range(1, 120)) = 60.0
+        _CorpseBloatDuration("Corpse Bloat Duration", Range(1, 7200)) = 60.0
         _CorpseBloatStrength("Corpse Bloat Strength", Range(0, 0.35)) = 0.08
+        _DecayAmount("Decay Amount", Range(0, 1)) = 0.0
+        _HitFlash("Hit Flash", Range(0, 1)) = 0.0
+        _HitFlashBloatStrength("Hit Flash Bloat Strength", Range(0, 0.12)) = 0.035
+        [HDR] _HitFlashEmissionColor("Hit Flash Emission Color", Color) = (1.2, 0.12, 0.04, 1)
         _TailSwayStrength("Tail Sway Strength", Range(0, 0.35)) = 0.045
         _TailSwaySpeed("Tail Sway Speed", Range(0, 16)) = 4.6
         _TailSwayPhase("Tail Sway World-Y Phase", Range(0, 8)) = 1.35
@@ -77,6 +81,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float4 _WetnessVelocityWS;
             float4 _FaunaCamouflageTint;
             float4 _FaunaCamouflageParams;
+            float4 _HitFlashEmissionColor;
             float _NormalScale;
             float _Metallic;
             float _Smoothness;
@@ -89,6 +94,9 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float _CorpseBloatStartTime;
             float _CorpseBloatDuration;
             float _CorpseBloatStrength;
+            float _DecayAmount;
+            float _HitFlash;
+            float _HitFlashBloatStrength;
             float _TailSwayStrength;
             float _TailSwaySpeed;
             float _TailSwayPhase;
@@ -138,6 +146,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float3 viewDirWS : TEXCOORD3;
             float2 uv : TEXCOORD4;
             half fogFactor : TEXCOORD5;
+            half3 ambientSH : TEXCOORD7;
         };
 
         float ApproximateMagnitude3D(float3 value)
@@ -158,6 +167,11 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         {
             float t = frac(phase * 0.15915494 + 0.25);
             return 1.0 - abs(t * 2.0 - 1.0) * 2.0;
+        }
+
+        float ResolveHitFlash01()
+        {
+            return smoothstep(0.0, 1.0, saturate(_HitFlash));
         }
 
         float3x3 BuildTangentToWorld(float3 normalWS, float4 tangentWS)
@@ -193,7 +207,10 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
 
             float timedBloat01 = saturate((_Time.y - _CorpseBloatStartTime) * rcp(max(_CorpseBloatDuration, 0.001))) * step(0.0, _CorpseBloatStartTime);
             float bloat01 = max(saturate(_CorpseBloatAge01), timedBloat01);
-            positionOS += normalOS * (bloat01 * bloat01 * _CorpseBloatStrength);
+            float decay01 = saturate(_DecayAmount);
+            positionOS += normalOS * ((bloat01 * bloat01 * _CorpseBloatStrength) - (decay01 * decay01 * 0.035));
+            float hitFlash01 = ResolveHitFlash01();
+            positionOS += normalOS * (hitFlash01 * _HitFlashBloatStrength);
             return positionOS;
         }
 
@@ -325,6 +342,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             output.viewDirWS = NormalizeApprox3D(GetWorldSpaceViewDir(positionInputs.positionWS));
             output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
+            output.ambientSH = SampleSH(output.normalWS);
             return output;
         }
 
@@ -345,14 +363,23 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half3 normalWS = NormalizeApprox3D(TransformTangentToWorld(tangentNormal, tangentToWorld));
             float wetnessVelocityMagnitudeSq = dot(_WetnessVelocityWS.xyz, _WetnessVelocityWS.xyz);
             normalWS = ApplyWetnessNormalWobble(normalWS, input.positionWS, wetnessVelocityMagnitudeSq);
-            half3 ambientSh = SampleSH(normalWS);
+            half3 ambientSh = input.ambientSH;
             surface.rgb = ApplyFaunaCamouflage(surface.rgb, input.positionWS, ambientSh);
+            half decay01 = saturate((half)_DecayAmount);
+            half boneReveal01 = smoothstep(0.55h, 1.0h, decay01);
+            half3 rotColor = surface.rgb * half3(0.25h, 0.19h, 0.13h);
+            half3 boneColor = half3(0.70h, 0.66h, 0.55h);
+            surface.rgb = lerp(surface.rgb, lerp(rotColor, boneColor, boneReveal01), decay01 * 0.88h);
+            half crawlNoise = saturate((half)(CheapSignedWave(_Time.y * 0.85 + input.positionWS.x * 0.31 + input.positionWS.z * 0.23) * 0.5 + 0.5));
+            surface.rgb *= lerp(1.0h, 0.76h + crawlNoise * 0.18h, decay01 * (1.0h - boneReveal01));
 
             HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, (half)_Metallic, (half)_OcclusionStrength, (half)_Smoothness);
             half metallic = decodedMask.metallic;
             half ambientOcclusion = decodedMask.occlusion;
             half smoothness = decodedMask.smoothness;
             half emissionMask = decodedMask.emissionMask;
+            smoothness = saturate(smoothness * (1.0h - decay01 * 0.75h));
+            emissionMask = saturate(emissionMask * (1.0h - decay01));
             half3 viewDirWS = NormalizeApprox3D(input.viewDirWS);
             half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(input.positionWS, normalWS);
             half2 woundMasks = EvaluateWoundMask(input.positionWS);
@@ -388,7 +415,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
                 specular = lerp(specularLow, specularHigh, smoothness) * specularEnergy;
             }
             half contactShadow = (half)HectonCoreLitEvaluateMainLightContactShadowFromDirection(input.positionWS, normalWS, mainLight.direction);
-            color += (surface.rgb * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainLight.shadowAttenuation * contactShadow);
+            half mainShadow = HectonCoreLitResolveMx350ShadowDither((half)mainLight.shadowAttenuation, input.positionCS);
+            color += (surface.rgb * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainShadow * contactShadow);
 
             half3 sss = HectonCoreLitEvaluateOrganicSss(
                 viewDirWS,
@@ -407,6 +435,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half3 panicEmissionColor = lerp(_EmissionColor.rgb, _GlobalOceanPanicColor.rgb, oceanPanic);
             half panicBlink = lerp(1.0h, lerp(0.35h, 1.45h, (half)step(0.5, frac(_Time.y * 7.0 + input.positionWS.y * 0.03))), oceanPanic);
             half3 emission = ((panicEmissionColor * (_EmissionStrength * emissionMask) * panicBlink) + biolum) * faunaBiolumDim + woundEmission;
+            half hitFlash01 = (half)ResolveHitFlash01();
+            emission = lerp(emission, emission + half3(_HitFlashEmissionColor.rgb) * (half)_HitFlashEmissionColor.a, hitFlash01);
             half sonarFresnelBase = saturate(1.0h - dot(normalWS, viewDirWS));
             half sonarFresnel = sonarFresnelBase * sonarFresnelBase;
             emission += half3(_HectonSonarColor.rgb) * ((half)sonarReveal * (0.65h + sonarFresnel * 1.8h));
@@ -441,7 +471,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
-            #pragma skip_variants _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
+            #pragma skip_variants POINT POINT_COOKIE POINT_LIGHTS _POINT _POINT_LIGHTS _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
             ENDHLSL
         }
 

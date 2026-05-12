@@ -17,7 +17,7 @@ Shader "Hecton8/UI/RetinaStressPulse"
         {
             "Queue" = "Overlay"
             "IgnoreProjector" = "True"
-            "RenderType" = "Transparent"
+            "RenderType" = "TransparentCutout"
             "CanUseSpriteAtlas" = "False"
         }
 
@@ -25,7 +25,8 @@ Shader "Hecton8/UI/RetinaStressPulse"
         Lighting Off
         ZWrite Off
         ZTest Always
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend Off
+        AlphaToMask On
 
         Pass
         {
@@ -74,6 +75,11 @@ Shader "Hecton8/UI/RetinaStressPulse"
                 return frac((p.x + p.y) * p.x);
             }
 
+            float InterleavedGradientNoise(float2 pixel)
+            {
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             fixed4 frag(v2f i) : SV_Target
             {
                 float2 screenUv = i.screenPos.xy / max(i.screenPos.w, 0.0001);
@@ -104,7 +110,8 @@ Shader "Hecton8/UI/RetinaStressPulse"
                 float chromaticStress = edgeMask * beat * _ChromaticStress;
                 pressureTint = lerp(pressureTint, pressureTint.gbr * fixed3(1.08, 0.94, 1.12), chromaticStress);
 
-                return fixed4(pressureTint * (1.0 + glitchAlpha * 0.65), alpha);
+                clip(alpha - max(InterleavedGradientNoise(floor(screenUv * _ScreenParams.xy)), 0.0005));
+                return fixed4(pressureTint * (1.0 + glitchAlpha * 0.65), 1.0);
             }
             ENDCG
         }

@@ -51,26 +51,15 @@ namespace Hecton8.Core
         public bool AppendInt(int value)
         {
             if (_buffer == null) return false;
-            if (value.TryFormat(_buffer.AsSpan(_cursor), out int written))
-            {
-                _cursor += written;
-                return true;
-            }
-            return false;
+
+            return ZeroGCFormatter.FastIntToChars(value, _buffer.AsSpan(), ref _cursor);
         }
 
         public bool AppendFloat(float value, int decimals = 1)
         {
             if (_buffer == null) return false;
-            
-            // Simple float formatting helper for zero-GC
-            string format = decimals == 0 ? "F0" : (decimals == 1 ? "F1" : "F2");
-            if (value.TryFormat(_buffer.AsSpan(_cursor), out int written, format))
-            {
-                _cursor += written;
-                return true;
-            }
-            return false;
+
+            return ZeroGCFormatter.FastFloatToChars(value, decimals, _buffer.AsSpan(), ref _cursor);
         }
 
         public bool AppendTemplate(ReadOnlySpan<char> template, LocNumericArg arg0)

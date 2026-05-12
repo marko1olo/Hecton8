@@ -7,13 +7,14 @@ namespace Hecton8.Optimization
 {
     /// <summary>
     /// RenderTexture pooling system for temporary RT reuse.
-    /// O(1) lookup via Dictionary keyed by hash(width, height, format).
+    /// O(1) lookup via Dictionary keyed by hash(width, height, format, depth).
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7998)]
     public sealed class RenderTexturePool : MonoBehaviour
     {
         private const string PooledRenderTextureName = "Pooled_RT";
+        private const int DynamicBucketCapacity = 4;
 
         // ── REGISTRY CACHE ─────────────────────────────────────────────────────────
         
@@ -110,8 +111,19 @@ namespace Hecton8.Optimization
         /// <returns>RenderTexture instance (pooled or new).</returns>
         public RenderTexture Rent(int width, int height, RenderTextureFormat format, Component owner)
         {
+            return Rent(width, height, format, owner, 0);
+        }
+
+        /// <summary>
+        /// Rents a RenderTexture from the pool or allocates a new one, preserving depth-buffer class.
+        /// </summary>
+        public RenderTexture Rent(int width, int height, RenderTextureFormat format, Component owner, int depthBits)
+        {
             DefragForCurrentScreenIfNeeded();
-            ulong key = CalculateRTKey(width, height, format);
+            int safeWidth = Mathf.Max(1, width);
+            int safeHeight = Mathf.Max(1, height);
+            int safeDepthBits = Mathf.Clamp(depthBits, 0, 255);
+            ulong key = CalculateRTKey(safeWidth, safeHeight, format, safeDepthBits);
             Dictionary<ulong, Queue<RenderTexture>> pool = GetPoolForFormat(format);
             
             _totalRentCalls++;
@@ -124,7 +136,7 @@ namespace Hecton8.Optimization
                     if (rt == null)
                         continue;
 
-                    if (rt.width == width && rt.height == height && rt.format == format)
+                    if (rt.width == safeWidth && rt.height == safeHeight && rt.format == format && rt.depth == safeDepthBits)
                     {
                         _totalReuseCount++;
 
@@ -144,7 +156,7 @@ namespace Hecton8.Optimization
             }
             
             // Pool miss - allocate new RT
-            RenderTexture newRT = new RenderTexture(width, height, 0, format);
+            RenderTexture newRT = new RenderTexture(safeWidth, safeHeight, safeDepthBits, format);
             newRT.name = PooledRenderTextureName;
             
             RenderTextureLifecycleTracker lifecycle = GlobalRegistry.RenderTextureLifecycle;
@@ -175,29 +187,13 @@ namespace Hecton8.Optimization
             }
 
             DefragForCurrentScreenIfNeeded();
-            if (rt.width != _lastScreenWidth || rt.height != _lastScreenHeight)
-            {
-                RenderTextureLifecycleTracker mismatchLifecycle = GlobalRegistry.RenderTextureLifecycle;
-                if (mismatchLifecycle != null)
-                    mismatchLifecycle.RegisterDisposal(rt);
-
-                rt.Release();
-                Destroy(rt);
-                return;
-            }
-            
-            ulong key = CalculateRTKey(rt.width, rt.height, rt.format);
+            ulong key = CalculateRTKey(rt.width, rt.height, rt.format, rt.depth);
             Dictionary<ulong, Queue<RenderTexture>> pool = GetPoolForFormat(rt.format);
             
             if (!pool.TryGetValue(key, out Queue<RenderTexture> queue))
             {
-                RenderTextureLifecycleTracker unpooledLifecycle = GlobalRegistry.RenderTextureLifecycle;
-                if (unpooledLifecycle != null)
-                    unpooledLifecycle.RegisterDisposal(rt);
-
-                rt.Release();
-                Destroy(rt);
-                return;
+                queue = new Queue<RenderTexture>(DynamicBucketCapacity);
+                pool.Add(key, queue);
             }
             
             if (queue.Count >= 16)
@@ -248,10 +244,16 @@ namespace Hecton8.Optimization
         
         private static ulong CalculateRTKey(int width, int height, RenderTextureFormat format)
         {
-            uint safeWidth = width > 0 ? (uint)Mathf.Min(width, 0xFFFFFF) : 0u;
-            uint safeHeight = height > 0 ? (uint)Mathf.Min(height, 0xFFFFFF) : 0u;
+            return CalculateRTKey(width, height, format, 0);
+        }
+
+        private static ulong CalculateRTKey(int width, int height, RenderTextureFormat format, int depthBits)
+        {
+            uint safeWidth = width > 0 ? (uint)Mathf.Min(width, 0xFFFFF) : 0u;
+            uint safeHeight = height > 0 ? (uint)Mathf.Min(height, 0xFFFFF) : 0u;
             uint safeFormat = (uint)((int)format & 0xFFFF);
-            return ((ulong)safeWidth << 40) | ((ulong)safeHeight << 16) | safeFormat;
+            uint safeDepth = (uint)Mathf.Clamp(depthBits, 0, 0xFF);
+            return ((ulong)safeWidth << 44) | ((ulong)safeHeight << 24) | ((ulong)safeFormat << 8) | safeDepth;
         }
         
         private Dictionary<ulong, Queue<RenderTexture>> GetPoolForFormat(RenderTextureFormat format)

@@ -287,11 +287,7 @@ namespace Hecton8.UI
 
         private static bool IsScreenOverlayAllowed()
         {
-#if UNITY_EDITOR
-            return true;
-#else
             return false;
-#endif
         }
 
         private readonly struct FixedCharBuffer
@@ -2066,12 +2062,13 @@ namespace Hecton8.UI
 
         private float ResolveProjectionPlaneDistance()
         {
+            float authoredDistance = math.max(ProjectionNearClipSafetyPaddingMeters, projectionPlaneDistance);
             if (projectionCamera == null)
-                return math.max(ProjectionNearClipSafetyPaddingMeters, projectionPlaneDistance);
+                return authoredDistance;
 
             return math.max(
                 projectionCamera.nearClipPlane + ProjectionNearClipSafetyPaddingMeters,
-                ProjectionNearClipSafetyPaddingMeters);
+                authoredDistance);
         }
 
         private static bool IsProjectionCanvasLayerValid(GameObject canvasObject, Camera targetCamera)
@@ -3301,6 +3298,8 @@ namespace Hecton8.UI
             if (_root == null)
                 return;
 
+            EnsureGraphicCanvasRenderers(_root);
+
             if (_rootScissorMask == null)
                 _root.TryGetComponent(out _rootScissorMask);
 
@@ -3329,10 +3328,40 @@ namespace Hecton8.UI
             return canvasGroup;
         }
 
+        private static void EnsureGraphicCanvasRenderers(RectTransform root)
+        {
+            if (root == null)
+                return;
+
+            EnsureGraphicCanvasRenderer(root);
+
+            int childCount = root.childCount;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
+            {
+                if (root.GetChild(childIndex) is RectTransform childRect)
+                    EnsureGraphicCanvasRenderers(childRect);
+            }
+        }
+
+        private static void EnsureGraphicCanvasRenderer(RectTransform target)
+        {
+            if (target == null)
+                return;
+
+            if (!target.TryGetComponent(out Graphic graphic) || graphic == null)
+                return;
+
+            if (!target.TryGetComponent(out CanvasRenderer canvasRenderer) || canvasRenderer == null)
+                // COLD ALLOC: CanvasRenderer[1] - repairs authored/generated HUD Graphics before masks and isolated canvases touch them - owner: SuitHUDV4CanvasOverlay
+                target.gameObject.AddComponent<CanvasRenderer>();
+        }
+
         private static Canvas EnsureIsolatedDynamicCanvas(RectTransform target, DynamicCanvasCadenceBucket cadenceBucket)
         {
             if (target == null)
                 return null;
+
+            EnsureGraphicCanvasRenderers(target);
 
             target.TryGetComponent(out Canvas canvas);
             if (canvas == null)
@@ -3554,11 +3583,11 @@ namespace Hecton8.UI
             float health = FiniteSaturate01(ReadHeadlessUIValue(UIValueSlotId.Health01, healthFallback), healthFallback);
             health = math.min(health, FiniteSaturate01(_traumaHullIntegrity01, health));
             float depth = FiniteNonNegative(ReadHeadlessUIValue(UIValueSlotId.DepthMeters, _depthMeters), _depthMeters);
-            float pressureFallback = survival != null ? FiniteAtLeast(survival.Pressure, 1f, 1f) : 1f + depth / 10f;
+            float pressureFallback = survival != null ? FiniteAtLeast(survival.Pressure, 1f, 1f) : 1f + depth * 0.1f;
             float pressure = FiniteAtLeast(ReadHeadlessUIValue(UIValueSlotId.PressureAtm, pressureFallback), pressureFallback, 1f);
             float rawHeading = playerMovement != null ? playerMovement.CameraYaw : 0f;
             rawHeading = math.isfinite(rawHeading) ? rawHeading : 0f;
-            float heading = rawHeading - (math.floor(rawHeading / 360f) * 360f);
+            float heading = rawHeading - (math.floor(rawHeading * 0.00277777778f) * 360f);
             float safeDepthFallback = hasSurvivalStats ? FiniteAtLeast(survival.Stats.SafeDepth, 50f, 1f) : 50f;
             float safeDepth = FiniteAtLeast(ReadHeadlessUIValue(UIValueSlotId.SafeDepthMeters, safeDepthFallback), safeDepthFallback, 1f);
             float safeDepthNormalized = ResolveSafeDepthNormalized(depth, safeDepth);
@@ -3568,6 +3597,7 @@ namespace Hecton8.UI
             float oxygenCurrent = FiniteNonNegative(ReadHeadlessUIValue(UIValueSlotId.OxygenCurrent, oxygenCurrentFallback), oxygenCurrentFallback);
             float energyCurrent = FiniteNonNegative(ReadHeadlessUIValue(UIValueSlotId.EnergyCurrent, energyCurrentFallback), energyCurrentFallback);
             float healthCurrent = FiniteNonNegative(ReadHeadlessUIValue(UIValueSlotId.IntegrityCurrent, healthCurrentFallback), healthCurrentFallback);
+            uint survivalStatusMask = ReadHeadlessSurvivalStatusMask(survival);
             float stressPulse = _biosRecoveryMode ? 0f : UpdateStressPulse(dt);
             Color pulsedPrimary = ResolveStressPulseColor(primary, warning, stressPulse, stressPulseBrightnessBoost, stressPulseWarningBlend);
             Color pulsedDim = ResolveStressPulseColor(dim, warning, stressPulse, stressPulseBrightnessBoost * 0.45f, stressPulseWarningBlend * 0.38f);
@@ -3760,7 +3790,7 @@ namespace Hecton8.UI
             else
             {
                 _appliedStatusWhisperVersion = int.MinValue;
-                int statusKeyHash = ResolveStatusKeyHash(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta);
+                int statusKeyHash = ResolveStatusKeyHash(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta, survivalStatusMask);
                 if (statusKeyHash == _StatusOxygenReserveLowKeyHash)
                     statusColor = Alpha(statusColor, statusColor.a * ResolveOxygenWarningBlinkAlpha());
 
@@ -3891,7 +3921,7 @@ namespace Hecton8.UI
                 : 200f;
             float fallbackLoad01 = playerMovement != null
                 ? FiniteSaturate01(playerMovement.InventoryLoad01, 0f)
-                : FiniteSaturate01(fallbackMassKg / fallbackCapacityKg, 0f);
+                : FiniteSaturate01(fallbackMassKg * math.rcp(fallbackCapacityKg), 0f);
 
             totalMassKg = FiniteNonNegative(ReadHeadlessUIValue(UIValueSlotId.InventoryMassKg, fallbackMassKg), fallbackMassKg);
             carryCapacityKg = FiniteAtLeast(ReadHeadlessUIValue(UIValueSlotId.CarryCapacityKg, fallbackCapacityKg), fallbackCapacityKg, 0.01f);
@@ -3905,6 +3935,20 @@ namespace Hecton8.UI
                 return fallback;
 
             return math.isfinite(valueSlot.Value) ? valueSlot.Value : fallback;
+        }
+
+        private static uint ReadHeadlessSurvivalStatusMask(HectonSurvivalSystem survival)
+        {
+            uint fallback = survival != null ? survival.StatusMask : 0u;
+            if (!UIStateStore.TryReadValue(UIValueSlotId.SurvivalStatusMask, out UIValueSlot valueSlot) ||
+                !math.isfinite(valueSlot.Value) ||
+                valueSlot.Value <= 0f)
+            {
+                return fallback;
+            }
+
+            uint mask = (uint)valueSlot.Value;
+            return mask > 0xFFFFu ? 0xFFFFu : mask;
         }
 
         private static float ResolveAtmosphereRoomOxygen01(float fallback)
@@ -4300,7 +4344,7 @@ namespace Hecton8.UI
 
         private float EstimateTemperature(float depth)
         {
-            float depth01 = math.saturate(depth / 1450f);
+            float depth01 = math.saturate(depth * 0.000689655172f);
             float estimated = math.lerp(13.5f, 2.4f, depth01 * depth01 * (3f - 2f * depth01));
             if (underwaterVisuals != null)
                 estimated -= (1f - underwaterVisuals.CurrentLightFactor) * 0.8f;
@@ -4346,12 +4390,15 @@ namespace Hecton8.UI
             return "W";
         }
 
-        private int ResolveStatusKeyHash(float oxygen, float power, float health, float safeDepthNormalized, float depth, float safeDepth, float depthDelta)
+        private int ResolveStatusKeyHash(float oxygen, float power, float health, float safeDepthNormalized, float depth, float safeDepth, float depthDelta, uint survivalStatusMask)
         {
             if (safeDepthNormalized <= 0.08f || depth >= safeDepth)
                 return _StatusPressureLimitExceededKeyHash;
             if (safeDepthNormalized <= 0.22f)
                 return _StatusApproachingSafeDepthKeyHash;
+            int physiologyStatusHash = ResolvePhysiologyStatusKeyHash(survivalStatusMask);
+            if (physiologyStatusHash != 0)
+                return physiologyStatusHash;
             if (health <= 0.2f)
                 return _StatusSuitDamageCriticalKeyHash;
             if (oxygen <= 0.2f)
@@ -4368,6 +4415,34 @@ namespace Hecton8.UI
             if (depthDelta < -0.04f)
                 return _StatusLifeSupportNominalAscendingKeyHash;
             return _StatusLifeSupportNominalStableKeyHash;
+        }
+
+        private int ResolvePhysiologyStatusKeyHash(uint survivalStatusMask)
+        {
+            if (survivalStatusMask == 0u)
+                return 0;
+
+            int bitIndex = math.tzcnt(survivalStatusMask);
+            switch (bitIndex)
+            {
+                case 0:
+                case 6:
+                    return _StatusPressureLimitExceededKeyHash;
+
+                case 1:
+                    return _StatusLampThermalLimitKeyHash;
+
+                case 2:
+                case 3:
+                case 5:
+                    return _StatusSuitDamageCriticalKeyHash;
+
+                case 4:
+                    return _StatusApproachingSafeDepthKeyHash;
+
+                default:
+                    return 0;
+            }
         }
 
         private void RebuildLocalizationCache()
@@ -4415,7 +4490,7 @@ namespace Hecton8.UI
             if (safeDepth <= 0.01f)
                 return 1f;
 
-            return 1f - math.saturate(depth / safeDepth);
+            return 1f - math.saturate(depth * math.rcp(safeDepth));
         }
 
         private static void UpdateGauge(
@@ -4617,7 +4692,7 @@ namespace Hecton8.UI
             refs.Icon.raycastTarget = false;
 
             float resolvedRingSize = math.max(gaugeRingSize, 50f);
-            float resolvedRingThicknessScale = math.clamp(gaugeRingThickness / resolvedRingSize, 0.02f, 0.45f);
+            float resolvedRingThicknessScale = math.clamp(gaugeRingThickness * math.rcp(resolvedRingSize), 0.02f, 0.45f);
             float resolvedFrameThicknessScale = math.clamp(resolvedRingThicknessScale * 0.35f, 0.01f, 0.24f);
             float resolvedValueOffsetY = math.clamp(gaugeValueOffsetY, -4f, 4f);
             float resolvedLabelOffsetY = math.clamp(gaugeLabelOffsetY, -42f, -24f);

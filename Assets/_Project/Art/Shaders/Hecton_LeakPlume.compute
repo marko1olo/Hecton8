@@ -1,0 +1,58 @@
+// HECTON-8 - Hecton_LeakPlume.compute
+// One-dispatch visual cheat for submarine hull leaks.
+
+#pragma kernel CSSpawnLeakParticles
+
+StructuredBuffer<float4> _BreachBuffer;          // xyz = submarine-local position, w = severity
+RWStructuredBuffer<float4> _LeakPlumeParticleBuffer; // xyz = local particle point, w = opacity/severity
+
+int _BreachCount;
+int _VisibleBreachCount;
+float _DeltaTimeSeconds;
+float _TimeSeconds;
+float4 _LeakParams; // x = particle capacity, y = max breaches
+
+float Hash01(uint state)
+{
+    state ^= state >> 16;
+    state *= 0x7feb352du;
+    state ^= state >> 15;
+    state *= 0x846ca68bu;
+    state ^= state >> 16;
+    return (float)(state & 0x00FFFFFFu) * (1.0 / 16777216.0);
+}
+
+float Triangle01(float value)
+{
+    return abs(frac(value) * 2.0 - 1.0);
+}
+
+[numthreads(64, 1, 1)]
+void CSSpawnLeakParticles(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint breachIndex = dispatchThreadId.x;
+    if (breachIndex >= 64)
+        return;
+
+    bool visible = breachIndex < (uint)max(0, _VisibleBreachCount) &&
+                   breachIndex < (uint)max(0, _BreachCount);
+
+    float4 breach = visible ? _BreachBuffer[breachIndex] : 0.0;
+    float severity = saturate(breach.w);
+    uint particleBase = breachIndex * 4;
+    uint seedBase = breachIndex * 747796405u + 2891336453u;
+
+    [unroll]
+    for (uint i = 0; i < 4; i++)
+    {
+        uint seed = seedBase ^ (i * 1013904223u);
+        float seedA = Hash01(seed ^ 0x68bc21ebu);
+        float seedB = Hash01(seed ^ 0x02e5be93u);
+        float wobbleA = Triangle01(_TimeSeconds * (0.31 + severity * 0.11) + seedA) * 2.0 - 1.0;
+        float wobbleB = Triangle01(_TimeSeconds * (0.23 + severity * 0.13) + seedB) * 2.0 - 1.0;
+        float rise = frac(_TimeSeconds * (0.19 + severity * 0.09) + seedA + i * 0.17) * (0.18 + severity * 0.55);
+        float3 offset = float3(wobbleA, rise, wobbleB) * (0.03 + severity * 0.12);
+        float alpha = visible ? severity * (1.0 - i * 0.18) : 0.0;
+        _LeakPlumeParticleBuffer[particleBase + i] = float4(breach.xyz + offset, saturate(alpha));
+    }
+}

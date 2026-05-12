@@ -945,12 +945,12 @@ namespace Hecton8.Meta
 
         private static string GetProfileFilePath()
         {
-            return Path.Combine(Application.persistentDataPath, ProfileDirectoryName, ProfileFileName);
+            return HectonPersistentPathPolicy.CombineFile(Path.Combine(ProfileDirectoryName, ProfileFileName));
         }
 
         private static string GetProfileTempFilePath()
         {
-            return Path.Combine(Application.persistentDataPath, ProfileDirectoryName, ProfileTempFileName);
+            return HectonPersistentPathPolicy.CombineFile(Path.Combine(ProfileDirectoryName, ProfileTempFileName));
         }
 
         private void TryRegisterWithTickManager()

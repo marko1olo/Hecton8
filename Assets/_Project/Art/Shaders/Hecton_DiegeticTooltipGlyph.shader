@@ -12,13 +12,14 @@ Shader "Hecton8/UI/DiegeticTooltipGlyph"
         Tags
         {
             "RenderPipeline" = "UniversalPipeline"
-            "Queue" = "Transparent"
-            "RenderType" = "Transparent"
+            "Queue" = "AlphaTest"
+            "RenderType" = "TransparentCutout"
         }
 
-        ZWrite Off
+        ZWrite On
         Cull Off
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend Off
+        AlphaToMask On
 
         Pass
         {
@@ -48,6 +49,12 @@ Shader "Hecton8/UI/DiegeticTooltipGlyph"
                 UNITY_DEFINE_INSTANCED_PROP(float4, _GlyphUvRect)
                 UNITY_DEFINE_INSTANCED_PROP(float4, _GlyphTint)
             UNITY_INSTANCING_BUFFER_END(PerInstance)
+
+            float HectonDitherCoverage(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
 
             struct Attributes
             {
@@ -86,7 +93,8 @@ Shader "Hecton8/UI/DiegeticTooltipGlyph"
 
                 float sdf = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv).a;
                 float alpha = saturate((sdf - 0.5 + _FaceDilate) * _GradientScale + 0.5);
-                return half4(input.tint.rgb, input.tint.a * alpha);
+                clip(input.tint.a * alpha - HectonDitherCoverage(input.positionCS.xy));
+                return half4(input.tint.rgb, 1.0h);
             }
             ENDHLSL
         }

@@ -7,9 +7,9 @@ namespace Hecton8.SaveSystem
 {
     public static class HydrationScheduler
     {
-        public const double FrameBudgetMilliseconds = 4.0d;
+        public const double FrameBudgetMilliseconds = 2.0d;
 
-        public static readonly long FrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L);
+        public static readonly long FrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
 
         public static long CreateDeadlineTicks()
         {

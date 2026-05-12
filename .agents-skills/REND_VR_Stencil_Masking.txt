@@ -1,0 +1,45 @@
+# HECTON-8 | VR Stencil Masking | Fragment Rejection Law
+
+Status: PENDING VERIFICATION
+Authority: TECH_SCOUT
+Date: 2026-05-11
+
+---
+
+## Law
+
+[RULE] VR visor/HUD masking should use stencil when it rejects expensive fragments before they shade.
+[RULE] The mask writer must be cheap: `ColorMask 0`, no texture sampling, no lighting, no transparent blending.
+[RULE] The masked pass must use `Stencil Comp Equal` or equivalent and must not write stencil unless explicitly required.
+[RULE] XR camera ordering must prove the stencil buffer is preserved between the mask writer and the HUD/visor draw.
+
+[FORBID] Stencil masking as a blanket feature if the writer costs more than the rejected pixels.
+[FORBID] Overlay camera clears that erase the stencil before the consuming pass.
+[FORBID] Alpha-blended hidden HUD fragments in VR when a stencil/cutout gate can reject them.
+
+---
+
+## Evidence
+
+[SOURCE] Unity ShaderLab stencil documentation states the stencil buffer is an 8-bit per-pixel mask and that failed stencil tests skip the remaining processing for that pixel.
+https://docs.unity.cn/Manual/SL-Stencil.html
+
+[PROJECT] `Docs/AgentLogs/LOG_FILL-RATE_DICTATOR.md` already records a visor stencil writer and HUD stencil Equal path with estimated GPU savings, but the savings remain PENDING VERIFICATION.
+
+---
+
+## Scalability
+
+Low / MX350 VR:
+- stencil mask for visor/HUD only.
+- no nested portal-style stencil effects.
+- no transparent blend HUD overdraw behind the helmet shell.
+
+High:
+- additional stencil regions allowed for instruments and cockpit glass if Frame Debugger proves ordering.
+
+Ultra:
+- per-eye richer visor layers allowed after GPU capture.
+
+[STATUS] Target savings remain PENDING VERIFICATION until XR Frame Debugger/GPU capture.
+

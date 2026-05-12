@@ -126,6 +126,48 @@ namespace Hecton8.Gameplay
             return math.saturate((nitrogenBuildUp - NitrogenCriticalBuildUp) / math.max(0.01f, NitrogenNarcosisFullRange));
         }
 
+        internal static float ResolveNitrogenTissueLoad(
+            float currentLoad,
+            float ambientPressure,
+            float deltaTime,
+            float absorptionRate)
+        {
+            float safeCurrent = math.select(1f, currentLoad, math.isfinite(currentLoad) && currentLoad > 0f);
+            float safeAmbient = math.select(1f, ambientPressure, math.isfinite(ambientPressure) && ambientPressure > 0f);
+            float alpha = math.saturate(math.max(0f, deltaTime) * math.max(0f, absorptionRate));
+            return math.lerp(safeCurrent, safeAmbient, alpha);
+        }
+
+        internal static float ResolvePressureNarcosis01(
+            float ambientPressure,
+            float narcosisThreshold,
+            float narcosisFullRange)
+        {
+            if (!math.isfinite(ambientPressure) ||
+                !math.isfinite(narcosisThreshold) ||
+                ambientPressure <= narcosisThreshold)
+            {
+                return 0f;
+            }
+
+            float invFullRange = math.rcp(math.max(0.01f, narcosisFullRange));
+            return math.saturate((ambientPressure - narcosisThreshold) * invFullRange);
+        }
+
+        internal static bool ShouldApplyBendsDamage(
+            float verticalSpeed,
+            float nitrogenLoad,
+            float safeAscentRate,
+            float nitrogenLoadThreshold)
+        {
+            return math.isfinite(verticalSpeed) &&
+                   math.isfinite(nitrogenLoad) &&
+                   math.isfinite(safeAscentRate) &&
+                   math.isfinite(nitrogenLoadThreshold) &&
+                   verticalSpeed > safeAscentRate &&
+                   nitrogenLoad > nitrogenLoadThreshold;
+        }
+
         internal static float ResolveNitrogenStaminaMultiplier(float nitrogenBuildUp)
         {
             return nitrogenBuildUp > NitrogenCriticalBuildUp ? NitrogenStaminaPenaltyMultiplier : 1f;

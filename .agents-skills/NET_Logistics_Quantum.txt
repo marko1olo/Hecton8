@@ -1,0 +1,48 @@
+# NET_LOGISTICS_QUANTUM.md
+## Instant Long-Distance Power Sync Mandate
+
+Status: PENDING VERIFICATION
+Owner: Logistics Lead
+
+---
+
+## Primary Law
+
+[FORBID] Simulating cable signal propagation, electrons, plasma, or per-meter power waves.
+[RULE] "Quantum" logistics sync is a deterministic graph-delta protocol, not a physical model.
+
+---
+
+## Architecture
+
+Long-distance power state is synchronized by dirty graph components:
+- Graph topology changes mark affected NetworkID dirty.
+- LogisticsTick solves authoritative power on the owning worker job.
+- Replication/sync sends compact deltas: NetworkID, node id, potential/load quantized fields, flags, and topology revision.
+- Remote visual proxies interpolate locally; they do not own gameplay state.
+
+[RULE] Same-zone gameplay reads authoritative `LogisticsNode` state.
+[RULE] Long-distance/nonresident zones store compressed network summaries only.
+[RULE] Rehydration on load reconstructs CSR/DSU from edge list and applies last compact summary.
+
+---
+
+## Cinematic Cheat
+
+Instant sync is allowed because player-facing power behavior is binary/low-frequency:
+- powered
+- brownout
+- overloaded
+- ruptured
+- isolated
+
+The visual travel of sparks, pulsing cables, and panel flicker is shader-time noise driven by a deterministic event timestamp. It is not a simulated signal.
+
+---
+
+## Performance Gate
+
+[REQUIRE] No logistics sync path may run every frame.
+[REQUIRE] Dirty summaries flush on LogisticsTick/FrostTick only.
+[REQUIRE] Long-distance summaries must be fixed-size or upper-bounded.
+

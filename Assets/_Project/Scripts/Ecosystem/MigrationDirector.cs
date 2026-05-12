@@ -25,7 +25,7 @@ namespace Hecton8.Ecosystem
         private const float DefaultMigrationDistanceMeters = 320f;
         private const float DefaultColdTickIntervalSeconds = 5f;
         private const float GlobalMigrationCellSizeMeters = 100f;
-        private const float BloodCloudPoiLifetimeGameSeconds = 3600f;
+        private const float BloodCloudPoiLifetimeGameSeconds = 7200f;
         private const float MigrationSwarmStateLifetimeGameSeconds = 30f;
         private const float MigrationSwarmStateFutureToleranceGameSeconds = 2f;
         private const float VrSwarmPopulationScale = 0.6f;
@@ -105,8 +105,8 @@ namespace Hecton8.Ecosystem
         [SerializeField, Min(10f)] private float bloodCloudPoiRadiusMeters = 520f;
         [Tooltip("Attraction strength applied by kill-site blood clouds to local migration vectors.")]
         [SerializeField, Range(0f, 4f)] private float bloodCloudPoiStrength = 2.35f;
-        [Tooltip("Population multiplier applied to scavenger swarms near whale-fall POIs for one game-time hour.")]
-        [SerializeField, Range(1f, 8f)] private float whaleFallScavengerPopulationMultiplier = 2.4f;
+        [Tooltip("Population multiplier applied to scavenger swarms near whale-fall POIs for two game-time hours.")]
+        [SerializeField, Range(1f, 50f)] private float whaleFallScavengerPopulationMultiplier = 50f;
         [Tooltip("Optional species ids eligible for whale-fall density boost. Empty means every migration swarm species can scavenge.")]
         [SerializeField] private int[] scavengerMigrationSpeciesIds;
 
@@ -1269,7 +1269,7 @@ namespace Hecton8.Ecosystem
             migrationVerticalFlowWeight = Mathf.Clamp(migrationVerticalFlowWeight, 0f, 0.35f);
             bloodCloudPoiRadiusMeters = Mathf.Max(10f, bloodCloudPoiRadiusMeters);
             bloodCloudPoiStrength = Mathf.Clamp(bloodCloudPoiStrength, 0f, 4f);
-            whaleFallScavengerPopulationMultiplier = Mathf.Clamp(whaleFallScavengerPopulationMultiplier, 1f, 8f);
+            whaleFallScavengerPopulationMultiplier = Mathf.Clamp(whaleFallScavengerPopulationMultiplier, 1f, 50f);
             vrVatSwayAmplitudeScale = Mathf.Clamp(vrVatSwayAmplitudeScale, 1f, 2f);
         }
 

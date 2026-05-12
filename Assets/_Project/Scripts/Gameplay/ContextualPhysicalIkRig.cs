@@ -93,6 +93,7 @@ namespace Hecton8.Gameplay
     internal struct ContextualPhysicalIkApplyJob : IAnimationJob
     {
         public const int PelvisHandleIndex = 0;
+        private const float SpineSlopeLeanShare = 0.35f;
 
         [ReadOnly] public NativeArray<ContextualPhysicalIkTargetFrame> TargetFrames;
         [ReadOnly] public NativeArray<TransformStreamHandle> StreamHandles;
@@ -155,7 +156,7 @@ namespace Hecton8.Gameplay
             if (SpineChains.IsCreated && SpineTargets.IsCreated)
             {
                 for (int i = 0; i < SpineChains.Length; i++)
-                    ProcessSpine(stream, SpineChains[i]);
+                    ProcessSpine(stream, SpineChains[i], in frame);
             }
 
             if (SecondaryChains.IsCreated && SecondaryStates.IsCreated)
@@ -331,7 +332,7 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void ProcessSpine(AnimationStream stream, in ContextualPhysicalIkSpineChainRuntime chain)
+        private void ProcessSpine(AnimationStream stream, in ContextualPhysicalIkSpineChainRuntime chain, in ContextualPhysicalIkTargetFrame frame)
         {
             if (chain.BoneCount < 5 || !StreamHandles.IsCreated || !SpineTargets.IsCreated)
                 return;
@@ -349,6 +350,9 @@ namespace Hecton8.Gameplay
             float3 rootPosition = ContextualPhysicalIkMath.ToFloat3(StreamHandles[chain.FirstBoneHandleIndex].GetPosition(stream));
             float3 headForward = ContextualPhysicalIkMath.SafeNormalize(headForwardReference - headTarget, new float3(0.0f, 0.0f, 1.0f));
             float invBoneSpan = math.rcp(math.max(1.0f, chain.BoneCount - 1.0f));
+            quaternion slopeLeanRotation = ApproximateSmallEulerXzNoTrig(
+                frame.ComLeanRadians.x * SpineSlopeLeanShare,
+                frame.ComLeanRadians.y * SpineSlopeLeanShare);
 
             for (int boneIndex = 0; boneIndex < chain.BoneCount; boneIndex++)
             {
@@ -405,6 +409,8 @@ namespace Hecton8.Gameplay
                 quaternion desiredWorldRotation = NormalizeQuaternionNoSqrt(math.mul(
                     ContextualPhysicalIkMath.FastDirectionDeltaNoTrig(currentDirection, desiredDirection),
                     currentWorldRotation));
+                quaternion leanedDesiredWorldRotation = NormalizeQuaternionNoSqrt(math.mul(slopeLeanRotation, desiredWorldRotation));
+                desiredWorldRotation = ApproximateNlerpNoSqrt(desiredWorldRotation, leanedDesiredWorldRotation, normalizedT * weight);
                 quaternion desiredLocalRotation = NormalizeQuaternionNoSqrt(math.mul(math.inverse(previousWorldRotation), desiredWorldRotation));
                 quaternion blendedLocalRotation = ApproximateNlerpNoSqrt(currentLocalRotation, desiredLocalRotation, weight);
                 boneHandle.SetLocalPosition(stream, ContextualPhysicalIkMath.ToUnityVector3(blendedLocalPosition));
@@ -534,14 +540,7 @@ namespace Hecton8.Gameplay
 
         private static quaternion ApproximateNlerpNoSqrt(quaternion from, quaternion to, float t)
         {
-            float4 fromValue = from.value;
-            float4 toValue = to.value;
-            toValue = math.select(toValue, -toValue, math.dot(fromValue, toValue) < 0.0f);
-
-            float4 blended = math.lerp(fromValue, toValue, math.saturate(t));
-            float lenSq = math.max(math.dot(blended, blended), 0.000001f);
-            blended *= 1.5f - (0.5f * lenSq);
-            return new quaternion(blended);
+            return CinematicMath.FastNlerp(from, to, t);
         }
 
         private static quaternion NormalizeQuaternionNoSqrt(quaternion value)
@@ -604,7 +603,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Animator))]
     [AddComponentMenu("Hecton8/Gameplay/Contextual Physical IK Rig")]
-    public sealed class ContextualPhysicalIkRig : MonoBehaviour, IOriginShiftListener
+    public sealed class ContextualPhysicalIkRig : MonoBehaviour, IOriginShiftListener, IPhysicalHandIkTargetSink
     {
         private const int PelvisHandleIndex = 0;
         private const int LeftLegUpperHandleIndex = 1;
@@ -633,6 +632,7 @@ namespace Hecton8.Gameplay
         private const float PredictiveRepairLatchDistanceSq = PredictiveRepairLatchDistance * PredictiveRepairLatchDistance;
         private const float UpperArmVisibilityProxyRadius = 0.35f;
         private const float UpperArmVisibilityProxyRadiusSq = UpperArmVisibilityProxyRadius * UpperArmVisibilityProxyRadius;
+        private const float ColdShiverPhaseWrap = 1024.0f;
         private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRig);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly float3 HeadToChestSocketLocalOffset = new float3(0.0f, -0.32f, -0.08f);
@@ -927,6 +927,62 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Base blend applied to hand-brace limbs.")]
         [SerializeField, Range(0.0f, 1.0f)] private float handLimbBlend = 1.0f;
+
+        [Header("Tool Hand IK")]
+        [Tooltip("Enables short camera-forward collision rays that retract the hands before the held tool clips into geometry.")]
+        [SerializeField] private bool enableToolRetraction = true;
+
+        [Tooltip("If enabled, low/MX350/unknown tiers keep tool retraction but skip wall-touch hand bracing.")]
+        [SerializeField] private bool disableWallTouchOnLowTier = true;
+
+        [Tooltip("Left palm can brace against walls only while the left hand is empty.")]
+        [SerializeField] private bool leftHandEmptyForWallTouch = true;
+
+        [Tooltip("Horizontal camera-space offset for each hand collision ray.")]
+        [SerializeField, Range(0.0f, 0.4f)] private float cameraHandLateralOffset = 0.12f;
+
+        [Tooltip("Vertical camera-space offset for each hand collision ray.")]
+        [SerializeField, Range(-0.2f, 0.3f)] private float cameraHandVerticalOffset = -0.08f;
+
+        [Tooltip("Maximum distance for the two short tool collision rays.")]
+        [SerializeField, Range(0.1f, 0.8f)] private float toolCollisionDistance = 0.5f;
+
+        [Tooltip("Backward hand retraction applied at full blockage.")]
+        [SerializeField, Range(0.0f, 0.5f)] private float toolRetractionBackDistance = 0.22f;
+
+        [Tooltip("Upward hand lift applied at full blockage.")]
+        [SerializeField, Range(0.0f, 0.3f)] private float toolRetractionLiftDistance = 0.1f;
+
+        [Tooltip("Blend cap for collision-driven tool retraction.")]
+        [SerializeField, Range(0.0f, 1.0f)] private float toolRetractionBlend = 1.0f;
+
+        [Tooltip("Reciprocal decay sharpness for additive tool recoil offsets.")]
+        [SerializeField, Range(1.0f, 64.0f)] private float toolRecoilDecaySharpness = 18.0f;
+
+        [Tooltip("Hard cap for additive tool recoil offsets before they enter the IK job.")]
+        [SerializeField, Range(0.0f, 0.4f)] private float toolRecoilMaxOffsetMeters = 0.16f;
+
+        [Tooltip("Blend sharpness for dashboard/terminal hand snaps.")]
+        [SerializeField, Range(1.0f, 48.0f)] private float terminalSnapBlendSharpness = 24.0f;
+
+        [Tooltip("Adds a small deterministic hand tremor when the survival environment is below the cold threshold.")]
+        [SerializeField] private bool enableColdShiver = true;
+
+        [Tooltip("Environment temperature below which cold shiver starts.")]
+        [SerializeField, Range(-20.0f, 20.0f)] private float coldShiverTemperatureThresholdCelsius = 5.0f;
+
+        [Tooltip("Temperature drop needed to reach full cold shiver blend.")]
+        [SerializeField, Range(1.0f, 25.0f)] private float coldShiverFullDeltaCelsius = 10.0f;
+
+        [Tooltip("Maximum cold shiver target offset in meters.")]
+        [SerializeField, Range(0.0f, 0.03f)] private float coldShiverAmplitudeMeters = 0.006f;
+
+        [Tooltip("Cold shiver triangle-wave frequency.")]
+        [SerializeField, Range(4.0f, 32.0f)] private float coldShiverFrequencyHz = 18.0f;
+
+        [Tooltip("Blend sharpness for entering or leaving cold shiver.")]
+        [SerializeField, Range(1.0f, 24.0f)] private float coldShiverBlendSharpness = 7.0f;
+
         [SerializeField, Range(0.0f, 30.0f)] private float overExtensionResistanceDegrees = 12.0f;
         [SerializeField] private Renderer muscleBulgeRenderer;
         [SerializeField, Min(0)] private int muscleBulgeMaterialSlot;
@@ -965,8 +1021,25 @@ namespace Hecton8.Gameplay
         private Vector3 _predictiveRightHandPosition;
         private Vector3 _predictiveLeftHandNormal = Vector3.up;
         private Vector3 _predictiveRightHandNormal = Vector3.up;
+        private Vector3 _externalWallLeftHandPosition;
+        private Vector3 _externalWallRightHandPosition;
+        private Vector3 _externalWallLeftHandNormal = Vector3.up;
+        private Vector3 _externalWallRightHandNormal = Vector3.up;
+        private Vector3 _leftToolRecoilOffset;
+        private Vector3 _rightToolRecoilOffset;
+        private Vector3 _terminalRightHandPosition;
+        private Vector3 _terminalRightHandNormal = Vector3.up;
         private float _predictiveLeftHandBlend;
         private float _predictiveRightHandBlend;
+        private float _externalWallLeftHandBlend;
+        private float _externalWallRightHandBlend;
+        private float _externalWallLeftHandHoldTimer;
+        private float _externalWallRightHandHoldTimer;
+        private float _terminalRightHandBlend;
+        private float _terminalRightHandTargetBlend;
+        private float _terminalRightHandHoldTimer;
+        private float _coldShiverBlend;
+        private float _coldShiverPhase;
         private float _upperArmCullTimer;
         private Material _muscleBulgeMaterialInstance;
         private Material[] _muscleBulgeSharedMaterials;
@@ -978,6 +1051,7 @@ namespace Hecton8.Gameplay
         private float _cachedRightArmReach;
 
         private int _entitySlot = -1;
+        private int _terminalRightHandSourceId;
         private int _spineHandleStartIndex = BaseHandleCount;
         private int _secondaryHandleStartIndex = BaseHandleCount;
         private bool _runtimeInitialized;
@@ -988,6 +1062,7 @@ namespace Hecton8.Gameplay
         private bool _attemptedMuscleBulgeRendererResolve;
         private bool _hasPreviousLeftPredictiveControllerPose;
         private bool _hasPreviousRightPredictiveControllerPose;
+        private bool _terminalRightHandActive;
         private bool _upperArmRenderersVisible = true;
 
         private void OnEnable()
@@ -1038,6 +1113,56 @@ namespace Hecton8.Gameplay
         }
 #endif
 
+        public void AddRecoil(float3 impulse)
+        {
+            if (!math.all(math.isfinite(impulse)))
+                return;
+
+            float recoilCap = math.max(0.0f, toolRecoilMaxOffsetMeters);
+            _rightToolRecoilOffset = ClampVectorNoSqrt(
+                _rightToolRecoilOffset + ContextualPhysicalIkMath.ToUnityVector3(impulse),
+                recoilCap);
+            _leftToolRecoilOffset = ClampVectorNoSqrt(
+                _leftToolRecoilOffset + ContextualPhysicalIkMath.ToUnityVector3(impulse * 0.45f),
+                recoilCap);
+        }
+
+        public void SetLeftHandEmptyForWallTouch(bool isEmpty)
+        {
+            leftHandEmptyForWallTouch = isEmpty;
+        }
+
+        public void SetTerminalHandTarget(in PhysicalHandIkTarget target)
+        {
+            if (target.HandSide != PhysicalHandSide.Right ||
+                !IsFiniteVector(target.WorldPosition) ||
+                !IsFiniteQuaternion(target.WorldRotation))
+            {
+                return;
+            }
+
+            _terminalRightHandSourceId = target.SourceId;
+            _terminalRightHandPosition = target.WorldPosition;
+            _terminalRightHandNormal = target.WorldRotation * Vector3.up;
+            if (!IsFiniteVector(_terminalRightHandNormal) || _terminalRightHandNormal.sqrMagnitude <= 0.0001f)
+                _terminalRightHandNormal = Vector3.up;
+            else
+                _terminalRightHandNormal = NormalizeVectorNoSqrt(_terminalRightHandNormal, Vector3.up);
+
+            _terminalRightHandHoldTimer = math.max(0.0f, target.HoldSeconds);
+            _terminalRightHandTargetBlend = math.saturate(target.Blend);
+            _terminalRightHandActive = true;
+        }
+
+        public void ClearTerminalHandTarget(int sourceId)
+        {
+            if (!_terminalRightHandActive || sourceId != _terminalRightHandSourceId)
+                return;
+
+            _terminalRightHandHoldTimer = 0.0f;
+            _terminalRightHandTargetBlend = 0.0f;
+        }
+
         internal void AssignEntitySlot(int entitySlot, NativeArray<ContextualPhysicalIkTargetFrame> targetFrames)
         {
             _entitySlot = entitySlot;
@@ -1051,10 +1176,42 @@ namespace Hecton8.Gameplay
             UpdateJobDataTargetFrames();
         }
 
+        internal void ApplyExternalWallHandTargets(in PlayerKinematicsHandTarget leftTarget, in PlayerKinematicsHandTarget rightTarget)
+        {
+            if (leftTarget.Hit != 0 && math.all(math.isfinite(leftTarget.Position)))
+            {
+                _externalWallLeftHandPosition = ContextualPhysicalIkMath.ToUnityVector3(leftTarget.Position);
+                _externalWallLeftHandNormal = ContextualPhysicalIkMath.ToUnityVector3(
+                    ContextualPhysicalIkMath.SafeNormalize(leftTarget.Normal, new float3(0.0f, 1.0f, 0.0f)));
+                _externalWallLeftHandBlend = math.saturate(leftTarget.Blend);
+                _externalWallLeftHandHoldTimer = 0.12f;
+            }
+            else
+            {
+                _externalWallLeftHandHoldTimer = 0.0f;
+            }
+
+            if (rightTarget.Hit != 0 && math.all(math.isfinite(rightTarget.Position)))
+            {
+                _externalWallRightHandPosition = ContextualPhysicalIkMath.ToUnityVector3(rightTarget.Position);
+                _externalWallRightHandNormal = ContextualPhysicalIkMath.ToUnityVector3(
+                    ContextualPhysicalIkMath.SafeNormalize(rightTarget.Normal, new float3(0.0f, 1.0f, 0.0f)));
+                _externalWallRightHandBlend = math.saturate(rightTarget.Blend);
+                _externalWallRightHandHoldTimer = 0.12f;
+            }
+            else
+            {
+                _externalWallRightHandHoldTimer = 0.0f;
+            }
+        }
+
         internal bool CaptureScheduledState(
             float deltaTime,
             uint frameIndex,
             float3 viewerPosition,
+            float3 viewerForward,
+            float3 viewerUp,
+            float3 viewerRight,
             bool hasViewerPosition,
             ref ContextualPhysicalIkEntityState entityState)
         {
@@ -1070,24 +1227,40 @@ namespace Hecton8.Gameplay
             if (_entitySlot < 0)
                 return false;
 
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            bool lowTier = IsLowTier(tier);
+            bool wallTouchEnabled = enableHandBracing && (!disableWallTouchOnLowTier || !lowTier);
+
             CaptureSpineTargets();
             CaptureAppendageTargets();
             ApplyMuscleBulgeSignal(deltaTime);
-            CapturePredictiveRepairLatch(deltaTime);
+            CapturePredictiveRepairLatch(deltaTime, wallTouchEnabled);
+            TickToolHandTransientState(deltaTime);
             TickUpperArmFovCulling(deltaTime);
 
             float3 rootPosition = ContextualPhysicalIkMath.ToFloat3(characterRoot.position);
+            quaternion rootRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(characterRoot.rotation);
+            float3 rootRight = ContextualPhysicalIkMath.SafeNormalize(
+                math.mul(rootRotation, new float3(1.0f, 0.0f, 0.0f)),
+                new float3(1.0f, 0.0f, 0.0f));
+            float3 rootUp = ContextualPhysicalIkMath.SafeNormalize(
+                math.mul(rootRotation, new float3(0.0f, 1.0f, 0.0f)),
+                new float3(0.0f, 1.0f, 0.0f));
+            ResolveColdShiverOffsets(rootRight, rootUp, out float3 leftColdShiverOffset, out float3 rightColdShiverOffset);
             float viewerDistanceSq = hasViewerPosition
                 ? math.lengthsq(rootPosition - viewerPosition)
                 : 0.0f;
             ResolveThrottleState(frameIndex, _entitySlot, viewerDistanceSq, out int updateThisFrame, out byte throttleTier, out uint updateBitfield);
-
             entityState.IsActive = 1;
             entityState.EnableFootPlacement = enableFootPlacement ? 1 : 0;
             entityState.EnableHandBracing = enableHandBracing ? 1 : 0;
+            entityState.EnableWallTouch = wallTouchEnabled ? 1 : 0;
+            entityState.LeftHandEmpty = leftHandEmptyForWallTouch ? 1 : 0;
+            entityState.EnableToolRetraction = enableToolRetraction ? 1 : 0;
+            entityState.HasCameraPose = hasViewerPosition ? 1 : 0;
             entityState.DeltaTime = deltaTime;
             entityState.RootPosition = rootPosition;
-            entityState.RootRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(characterRoot.rotation);
+            entityState.RootRotation = rootRotation;
             entityState.PelvisPosition = pelvis != null ? ContextualPhysicalIkMath.ToFloat3(pelvis.position) : entityState.RootPosition;
             entityState.LeftFootProbeOrigin = leftFootProbe != null ? ContextualPhysicalIkMath.ToFloat3(leftFootProbe.position) : entityState.RootPosition;
             entityState.RightFootProbeOrigin = rightFootProbe != null ? ContextualPhysicalIkMath.ToFloat3(rightFootProbe.position) : entityState.RootPosition;
@@ -1097,12 +1270,31 @@ namespace Hecton8.Gameplay
             entityState.PredictiveRightHandPosition = ContextualPhysicalIkMath.ToFloat3(_predictiveRightHandPosition);
             entityState.PredictiveLeftHandNormal = ContextualPhysicalIkMath.ToFloat3(_predictiveLeftHandNormal);
             entityState.PredictiveRightHandNormal = ContextualPhysicalIkMath.ToFloat3(_predictiveRightHandNormal);
+            entityState.CameraPosition = viewerPosition;
+            entityState.CameraForward = viewerForward;
+            entityState.CameraUp = viewerUp;
+            entityState.CameraRight = viewerRight;
+            entityState.LeftToolRecoilOffset = ContextualPhysicalIkMath.ToFloat3(_leftToolRecoilOffset);
+            entityState.RightToolRecoilOffset = ContextualPhysicalIkMath.ToFloat3(_rightToolRecoilOffset);
+            entityState.LeftColdShiverOffset = leftColdShiverOffset;
+            entityState.RightColdShiverOffset = rightColdShiverOffset;
+            entityState.DashboardRightHandPosition = ContextualPhysicalIkMath.ToFloat3(_terminalRightHandPosition);
+            entityState.DashboardRightHandNormal = ContextualPhysicalIkMath.ToFloat3(_terminalRightHandNormal);
             entityState.LeftLegReach = _cachedLeftLegReach;
             entityState.RightLegReach = _cachedRightLegReach;
             entityState.LeftArmReach = _cachedLeftArmReach;
             entityState.RightArmReach = _cachedRightArmReach;
             entityState.PredictiveLeftHandBlend = _predictiveLeftHandBlend;
             entityState.PredictiveRightHandBlend = _predictiveRightHandBlend;
+            entityState.CameraHandLateralOffset = cameraHandLateralOffset;
+            entityState.CameraHandVerticalOffset = cameraHandVerticalOffset;
+            entityState.ToolCollisionDistance = toolCollisionDistance;
+            entityState.ToolRetractionBackDistance = toolRetractionBackDistance;
+            entityState.ToolRetractionLiftDistance = toolRetractionLiftDistance;
+            entityState.ToolRetractionBlend = toolRetractionBlend;
+            entityState.ToolRecoilMaxOffset = toolRecoilMaxOffsetMeters;
+            entityState.DashboardRightHandBlend = _terminalRightHandBlend;
+            entityState.ColdShiverBlend = _coldShiverBlend;
             entityState.FootContactOffset = footContactOffset;
             entityState.HandContactOffset = handContactOffset;
             entityState.FootProbeDistanceScale = footProbeDistanceScale;
@@ -1131,7 +1323,94 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private void CapturePredictiveRepairLatch(float deltaTime)
+        private void TickToolHandTransientState(float deltaTime)
+        {
+            float safeDeltaTime = math.max(0.0001f, deltaTime);
+            float recoilDecay = math.rcp(1.0f + (math.max(0.0f, toolRecoilDecaySharpness) * safeDeltaTime));
+            _leftToolRecoilOffset *= recoilDecay;
+            _rightToolRecoilOffset *= recoilDecay;
+            TickColdShiverState(safeDeltaTime);
+
+            if (_terminalRightHandActive)
+            {
+                _terminalRightHandHoldTimer = math.max(0.0f, _terminalRightHandHoldTimer - safeDeltaTime);
+                if (_terminalRightHandHoldTimer <= 0.0f)
+                    _terminalRightHandTargetBlend = 0.0f;
+            }
+
+            _terminalRightHandBlend = ContextualPhysicalIkMath.SmoothScalar(
+                _terminalRightHandBlend,
+                _terminalRightHandActive ? _terminalRightHandTargetBlend : 0.0f,
+                terminalSnapBlendSharpness,
+                safeDeltaTime);
+
+            if (_terminalRightHandActive &&
+                _terminalRightHandHoldTimer <= 0.0f &&
+                _terminalRightHandBlend <= 0.0001f)
+            {
+                _terminalRightHandActive = false;
+                _terminalRightHandSourceId = 0;
+            }
+        }
+
+        private void TickColdShiverState(float deltaTime)
+        {
+            float targetBlend = ResolveColdShiverTargetBlend();
+            _coldShiverBlend = ContextualPhysicalIkMath.SmoothScalar(
+                _coldShiverBlend,
+                targetBlend,
+                coldShiverBlendSharpness,
+                deltaTime);
+
+            if (_coldShiverBlend <= 0.0001f)
+                return;
+
+            _coldShiverPhase += math.max(0.0f, coldShiverFrequencyHz) * deltaTime;
+            if (_coldShiverPhase >= ColdShiverPhaseWrap)
+                _coldShiverPhase -= ColdShiverPhaseWrap;
+        }
+
+        private float ResolveColdShiverTargetBlend()
+        {
+            if (!enableColdShiver)
+                return 0.0f;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            HectonSurvivalSystem survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+            if (survivalSystem == null)
+                return 0.0f;
+
+            float environmentTemperature = survivalSystem.EnvironmentTemperature;
+            if (!math.isfinite(environmentTemperature))
+                return 0.0f;
+
+            float coldByEnvironment = math.saturate(
+                (coldShiverTemperatureThresholdCelsius - environmentTemperature) *
+                math.rcp(math.max(1.0f, coldShiverFullDeltaCelsius)));
+            float coldByPhysiology = math.saturate(survivalSystem.ColdStressSeverity01);
+            return math.max(coldByEnvironment, coldByPhysiology);
+        }
+
+        private void ResolveColdShiverOffsets(float3 rootRight, float3 rootUp, out float3 leftOffset, out float3 rightOffset)
+        {
+            leftOffset = float3.zero;
+            rightOffset = float3.zero;
+
+            float amplitude = math.max(0.0f, coldShiverAmplitudeMeters);
+            if (amplitude <= 0.000001f || _coldShiverBlend <= 0.0001f)
+                return;
+
+            float phase = _coldShiverPhase;
+            float leftLateral = CinematicMath.FastTriangleWaveSigned(phase) * amplitude;
+            float leftVertical = CinematicMath.FastTriangleWaveSigned((phase * 1.733f) + 0.23f) * amplitude * 0.45f;
+            float rightLateral = CinematicMath.FastTriangleWaveSigned(phase + 0.41f) * amplitude;
+            float rightVertical = CinematicMath.FastTriangleWaveSigned((phase * 1.619f) + 0.67f) * amplitude * 0.45f;
+
+            leftOffset = (rootRight * leftLateral) + (rootUp * leftVertical);
+            rightOffset = (rootRight * -rightLateral) + (rootUp * rightVertical);
+        }
+
+        private void CapturePredictiveRepairLatch(float deltaTime, bool wallTouchEnabled)
         {
             Transform leftSource = leftControllerProbe != null ? leftControllerProbe : leftHandProbe;
             Transform rightSource = rightControllerProbe != null ? rightControllerProbe : rightHandProbe;
@@ -1198,6 +1477,50 @@ namespace Hecton8.Gameplay
                 _predictiveRightHandBlend = ContextualPhysicalIkMath.SmoothScalar(_predictiveRightHandBlend, 0.0f, predictiveRepairBlendSharpness, safeDeltaTime);
             }
 
+            ApplyExternalWallHandTargetsToPredictiveLatch(safeDeltaTime, wallTouchEnabled);
+        }
+
+        private void ApplyExternalWallHandTargetsToPredictiveLatch(float deltaTime, bool wallTouchEnabled)
+        {
+            if (!wallTouchEnabled)
+            {
+                _externalWallLeftHandBlend = ContextualPhysicalIkMath.SmoothScalar(_externalWallLeftHandBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                _externalWallRightHandBlend = ContextualPhysicalIkMath.SmoothScalar(_externalWallRightHandBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                _externalWallLeftHandHoldTimer = 0.0f;
+                _externalWallRightHandHoldTimer = 0.0f;
+                return;
+            }
+
+            if (_externalWallLeftHandHoldTimer <= 0.0f || !leftHandEmptyForWallTouch)
+            {
+                _externalWallLeftHandBlend = ContextualPhysicalIkMath.SmoothScalar(_externalWallLeftHandBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                _externalWallLeftHandHoldTimer = 0.0f;
+            }
+            else
+            {
+                _externalWallLeftHandHoldTimer = math.max(0.0f, _externalWallLeftHandHoldTimer - math.max(0.0f, deltaTime));
+                if (_externalWallLeftHandBlend > _predictiveLeftHandBlend && IsFiniteVector(_externalWallLeftHandPosition))
+                {
+                    _predictiveLeftHandPosition = _externalWallLeftHandPosition;
+                    _predictiveLeftHandNormal = NormalizeVectorNoSqrt(_externalWallLeftHandNormal, Vector3.up);
+                    _predictiveLeftHandBlend = _externalWallLeftHandBlend;
+                }
+            }
+
+            if (_externalWallRightHandHoldTimer <= 0.0f)
+            {
+                _externalWallRightHandBlend = ContextualPhysicalIkMath.SmoothScalar(_externalWallRightHandBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+            }
+            else
+            {
+                _externalWallRightHandHoldTimer = math.max(0.0f, _externalWallRightHandHoldTimer - math.max(0.0f, deltaTime));
+                if (_externalWallRightHandBlend > _predictiveRightHandBlend && IsFiniteVector(_externalWallRightHandPosition))
+                {
+                    _predictiveRightHandPosition = _externalWallRightHandPosition;
+                    _predictiveRightHandNormal = NormalizeVectorNoSqrt(_externalWallRightHandNormal, Vector3.up);
+                    _predictiveRightHandBlend = _externalWallRightHandBlend;
+                }
+            }
         }
 
         private void ResolvePredictiveRepairLatch(
@@ -1961,6 +2284,16 @@ namespace Hecton8.Gameplay
             _cachedRightArmReach = 0.0f;
             _predictiveLeftHandBlend = 0.0f;
             _predictiveRightHandBlend = 0.0f;
+            _leftToolRecoilOffset = Vector3.zero;
+            _rightToolRecoilOffset = Vector3.zero;
+            _terminalRightHandBlend = 0.0f;
+            _terminalRightHandTargetBlend = 0.0f;
+            _terminalRightHandHoldTimer = 0.0f;
+            _terminalRightHandActive = false;
+            _externalWallLeftHandBlend = 0.0f;
+            _externalWallRightHandBlend = 0.0f;
+            _externalWallLeftHandHoldTimer = 0.0f;
+            _externalWallRightHandHoldTimer = 0.0f;
             _hasPreviousLeftPredictiveControllerPose = false;
             _hasPreviousRightPredictiveControllerPose = false;
             ReleaseMuscleBulgeMaterial();
@@ -2014,6 +2347,9 @@ namespace Hecton8.Gameplay
             RebaseSecondaryStates(_secondaryStates, offset);
             _predictiveLeftHandPosition -= shiftOffset;
             _predictiveRightHandPosition -= shiftOffset;
+            _externalWallLeftHandPosition -= shiftOffset;
+            _externalWallRightHandPosition -= shiftOffset;
+            _terminalRightHandPosition -= shiftOffset;
         }
 
         private static void RebaseWorldSpaceFloat3Array(NativeArray<float3> values, float3 shiftOffset)
@@ -2353,6 +2689,47 @@ namespace Hecton8.Gameplay
         {
             return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) ||
                      float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z));
+        }
+
+        private static bool IsFiniteQuaternion(Quaternion value)
+        {
+            return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) || float.IsNaN(value.w) ||
+                     float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z) || float.IsInfinity(value.w));
+        }
+
+        private static bool IsLowTier(HectonQualityTier tier)
+        {
+            return tier == HectonQualityTier.Unknown ||
+                   tier == HectonQualityTier.Low ||
+                   tier == HectonQualityTier.Mx350;
+        }
+
+        private static Vector3 NormalizeVectorNoSqrt(Vector3 value, Vector3 fallback)
+        {
+            float3 v = ContextualPhysicalIkMath.ToFloat3(value);
+            float lengthSq = math.lengthsq(v);
+            if (lengthSq <= 0.000001f || !math.all(math.isfinite(v)))
+                return fallback;
+
+            return ContextualPhysicalIkMath.ToUnityVector3(v * math.rsqrt(lengthSq));
+        }
+
+        private static Vector3 ClampVectorNoSqrt(Vector3 value, float maxLength)
+        {
+            if (!IsFiniteVector(value))
+                return Vector3.zero;
+
+            float safeMaxLength = math.max(0.0f, maxLength);
+            if (safeMaxLength <= 0.000001f)
+                return Vector3.zero;
+
+            float3 v = ContextualPhysicalIkMath.ToFloat3(value);
+            float lengthSq = math.lengthsq(v);
+            float maxLengthSq = safeMaxLength * safeMaxLength;
+            if (lengthSq <= maxLengthSq)
+                return value;
+
+            return ContextualPhysicalIkMath.ToUnityVector3(v * (safeMaxLength * math.rsqrt(math.max(lengthSq, 0.000001f))));
         }
 
         private static float3 ComputeLocalPoleOffset(Transform parent, Transform poleHint, Transform fallbackJoint)

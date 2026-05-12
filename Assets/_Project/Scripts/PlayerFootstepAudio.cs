@@ -7,13 +7,13 @@
 //   [NEW] Dual detection system for procedural + handcrafted worlds:
 //
 //     TERRAIN PATH (MapMagic 2):
-//       Raycast hits object on Terrain layer (or tagged "Terrain").
+//       KCC batched footstep hit lands on Terrain layer (or tagged "Terrain").
 //       → MapMagicBridge.TryGetBiomeIndex(hitPoint) → biome index.
 //       → Match against SurfaceSoundSet.mapMagicBiomeIndex.
 //       This handles procedural ground where all terrain shares one tag.
 //
 //     OBJECT PATH (Base Modules, Props):
-//       Raycast hits object NOT on Terrain layer.
+//       KCC batched footstep hit lands on object NOT on Terrain layer.
 //       → CompareTag against SurfaceSoundSet.surfaceTag.
 //       This handles handcrafted objects with explicit tags.
 //
@@ -54,8 +54,8 @@ namespace Hecton8.Audio
     /// Maps a surface (by tag OR MapMagic biome index) to footstep AudioClips.
     ///
     /// MATCHING RULES:
-    ///   • mapMagicBiomeIndex >= 0: used when raycast hits Terrain layer.
-    ///   • surfaceTag not empty: used when raycast hits non-Terrain object.
+    ///   • mapMagicBiomeIndex >= 0: used when batched footstep hit lands on Terrain layer.
+    ///   • surfaceTag not empty: used when batched footstep hit lands on non-Terrain object.
     ///   • Both can be set on same entry (matched independently by path).
     ///   • mapMagicBiomeIndex = -1 means "ignore biome matching for this entry".
     /// </summary>
@@ -73,7 +73,7 @@ namespace Hecton8.Audio
 
         [Tooltip("GameObject tag for non-terrain surfaces (base modules, props).\n" +
                  "Empty = this entry does NOT match by tag.\n" +
-                 "Used when raycast hits objects NOT on the Terrain layer.")]
+                 "Used when the batched footstep hit lands on objects NOT on the Terrain layer.")]
         public string surfaceTag;
 
         [Tooltip("Footstep clips for this surface. 3-6 variations recommended.")]
@@ -98,7 +98,7 @@ namespace Hecton8.Audio
 
         [Header("── Default Footsteps ─────────────────────────")]
         [Tooltip("Fallback footstep clips when no surface match is found.\n" +
-                 "Also used if surface detection raycast misses entirely.")]
+                 "Also used if the batched surface hit misses entirely.")]
         [SerializeField] private AudioClip[] defaultFootstepClips;
 
         [Header("── Surface-Specific Footsteps ────────────────")]
@@ -122,15 +122,15 @@ namespace Hecton8.Audio
         private float minStepInterval = 0.15f;
 
         [Header("── Surface Detection ─────────────────────────")]
-        [Tooltip("Enable raycast-based surface detection.\n" +
+        [Tooltip("Enable batched-KCC-hit surface detection.\n" +
                  "When off, always uses default clips.")]
         [SerializeField] private bool enableSurfaceDetection = true;
 
-        [Tooltip("Raycast distance downward for surface detection.")]
+        [Tooltip("Maximum accepted distance for cached batched surface detection.")]
         [SerializeField, Range(0.5f, 3f)]
         private float surfaceRayDistance = 1.5f;
 
-        [Tooltip("Layers to raycast against for surface detection.")]
+        [Tooltip("Layers accepted from the batched KCC surface hit.")]
         [SerializeField] private LayerMask surfaceLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Tooltip("Layer index for Terrain objects.\n" +
@@ -174,7 +174,6 @@ namespace Hecton8.Audio
         private Rigidbody _playerRb;
         private float _lastStepTime;
         private RaycastHit _surfaceHit;
-        private readonly RaycastHit[] _surfaceHits = new RaycastHit[1]; // COLD ALLOC: footsteps read only the nearest surface under the player.
         private bool _surfaceHitValid;
         private int _lastClipIndex = -1;
         private uint _footstepRandomState;
@@ -294,7 +293,7 @@ namespace Hecton8.Audio
                     ? playerMovement.CurrentSuit.maxWalkSpeed
                     : 6f;
                 float speedFactor = maxSpeed > 0f
-                    ? math.clamp(hSpeed / maxSpeed, 0f, 1f)
+                    ? math.clamp(hSpeed * math.rcp(maxSpeed), 0f, 1f)
                     : 1f;
                 float speedVolume = math.lerp(minSpeedVolumeScale, 1f, speedFactor);
                 finalVolume *= speedVolume;
@@ -343,7 +342,7 @@ namespace Hecton8.Audio
         //
         //  Decision tree:
         //
-        //  Raycast down
+        //  Batched ground hit
         //    │
         //    ├── Miss → return (use defaults)
         //    │
@@ -374,12 +373,10 @@ namespace Hecton8.Audio
         {
             _surfaceHitValid = false;
 
-            Vector3 origin = transform.position + Vector3.up * 0.1f;
-
-            // ── Raycast down ──
-            if (!TryGetSurfaceHit(origin, out _surfaceHit))
+            // Reuse the movement controller's previous-frame batched ground hit.
+            if (!TryGetSurfaceHit(out _surfaceHit))
             {
-                UpdateSurfaceDiagnostics("raycast miss", -1, false);
+                UpdateSurfaceDiagnostics("batched miss", -1, false);
                 return;
             }
 
@@ -486,19 +483,11 @@ namespace Hecton8.Audio
         //  DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
 
-        private bool TryGetSurfaceHit(Vector3 origin, out RaycastHit hit)
+        private bool TryGetSurfaceHit(out RaycastHit hit)
         {
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                origin,
-                Vector3.down,
-                _surfaceHits,
-                surfaceRayDistance,
-                surfaceLayers,
-                QueryTriggerInteraction.Ignore);
-
-            if (hitCount > 0)
+            if (playerMovement != null &&
+                playerMovement.TryGetRecentFootstepSurfaceHit(surfaceRayDistance, surfaceLayers, out hit))
             {
-                hit = _surfaceHits[0];
                 return true;
             }
 

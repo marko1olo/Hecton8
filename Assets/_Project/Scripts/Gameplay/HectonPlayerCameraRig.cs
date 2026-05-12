@@ -124,7 +124,14 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            _originShiftTrackingLockFrame = shiftData.Frame + 1;
+            if (cameraTransform != null)
+            {
+                _lastAppliedLocalPosition = cameraTransform.localPosition;
+                _lastAppliedWorldRotation = cameraTransform.rotation;
+                _hasLastAppliedTrackingState = true;
+            }
+
+            _originShiftTrackingLockFrame = Time.frameCount;
         }
 
         private void ApplyCameraState(in HectonCameraState state)

@@ -72,7 +72,11 @@ namespace Hecton8.Core
         public float HeatStressSeverity01;
         public float RapidAscentRisk01;
         public float NitrogenBuildUp01;
+        public float NitrogenLoad01;
         public float NitrogenNarcosis01;
+        public float Toxicity01;
+        public float CoreTemperatureCelsius;
+        public uint StatusMask;
         public uint Flags;
     }
 

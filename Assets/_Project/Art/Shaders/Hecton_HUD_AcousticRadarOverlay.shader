@@ -12,15 +12,17 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
         _PulseFrequency ("Pulse Frequency", Range(0, 16)) = 3.2
         _GlitchAmount ("Glitch Amount", Range(0, 1)) = 0.2
         _RadarIntensity ("Radar Intensity", Range(0, 1)) = 0
+        _StencilRef ("Visor Stencil Ref", Float) = 1
+        _DitherCoverageBias ("Dither Coverage Bias", Range(-0.25, 0.25)) = 0
     }
 
     SubShader
     {
         Tags
         {
-            "Queue" = "Transparent"
+            "Queue" = "AlphaTest+90"
             "IgnoreProjector" = "True"
-            "RenderType" = "Transparent"
+            "RenderType" = "TransparentCutout"
             "CanUseSpriteAtlas" = "True"
             "RenderPipeline" = "UniversalPipeline"
         }
@@ -29,11 +31,20 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
         Lighting Off
         ZWrite Off
         ZTest Always
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend Off
+        AlphaToMask On
 
         Pass
         {
             Name "AcousticRadarOverlay"
+
+            Stencil
+            {
+                Ref [_StencilRef]
+                Comp Equal
+                Pass Keep
+                ReadMask 255
+            }
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -72,6 +83,8 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 float _PulseFrequency;
                 float _GlitchAmount;
                 float _RadarIntensity;
+                float _StencilRef;
+                float _DitherCoverageBias;
             CBUFFER_END
 
             TEXTURE2D(_AcousticRadarTex);
@@ -108,6 +121,40 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
             }
 
+            float Bayer4x4(float2 pixelPosition)
+            {
+                float2 cell = floor(frac(pixelPosition * 0.25) * 4.0);
+
+                if (cell.y < 0.5)
+                {
+                    if (cell.x < 0.5) return 0.0 / 16.0;
+                    if (cell.x < 1.5) return 8.0 / 16.0;
+                    if (cell.x < 2.5) return 2.0 / 16.0;
+                    return 10.0 / 16.0;
+                }
+
+                if (cell.y < 1.5)
+                {
+                    if (cell.x < 0.5) return 12.0 / 16.0;
+                    if (cell.x < 1.5) return 4.0 / 16.0;
+                    if (cell.x < 2.5) return 14.0 / 16.0;
+                    return 6.0 / 16.0;
+                }
+
+                if (cell.y < 2.5)
+                {
+                    if (cell.x < 0.5) return 3.0 / 16.0;
+                    if (cell.x < 1.5) return 11.0 / 16.0;
+                    if (cell.x < 2.5) return 1.0 / 16.0;
+                    return 9.0 / 16.0;
+                }
+
+                if (cell.x < 0.5) return 15.0 / 16.0;
+                if (cell.x < 1.5) return 7.0 / 16.0;
+                if (cell.x < 2.5) return 13.0 / 16.0;
+                return 5.0 / 16.0;
+            }
+
             float ApproximateAngle01(float2 centered)
             {
                 float ax = abs(centered.x);
@@ -138,7 +185,7 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 float innerCullSqr = SquareSaturate(max(0.0, _InnerEdge - 0.025));
                 float outerCullSqr = SquareSaturate(min(0.999, _InnerEdge + _BandThickness + 0.32));
                 if (radialSqr < innerCullSqr || radialSqr > outerCullSqr)
-                    return 0;
+                    clip(-1.0);
 
                 float angle01 = ApproximateAngle01(centered);
                 float intensity = SAMPLE_TEXTURE2D(_AcousticRadarTex, sampler_AcousticRadarTex, float2(angle01, 0.5)).r;
@@ -153,7 +200,7 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 float edgeMask = smoothstep(innerEdgeSqr, SquareSaturate(_InnerEdge + 0.04), radialSqr) *
                                  (1.0 - smoothstep(outerEdgeSqr, SquareSaturate(min(0.999, outerEdge + 0.14 + intensity * 0.05)), radialSqr));
                 if (edgeMask <= 0.0001)
-                    return 0;
+                    clip(-1.0);
 
                 float timeValue = _Time.y;
                 float wave = FastTriangleSine01((angle01 * TWO_PI * 10.0) + (timeValue * _PulseFrequency * TWO_PI));
@@ -175,7 +222,8 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 float3 color = lerp(_PrimaryColor.rgb, _WarningColor.rgb, saturate(intensity * 1.35 + glitch * 0.4));
                 float alpha = saturate(_OverlayOpacity * edgeMask * blip * (0.82 + intensity * 0.85)) * input.color.a;
                 float glow = 0.55 + (intensity * 1.55) + (sweep * 0.18) + (glitch * 0.35);
-                return half4(color * glow, alpha);
+                clip(saturate(alpha + _DitherCoverageBias) - Bayer4x4(input.positionCS.xy));
+                return half4(color * glow, 1.0h);
             }
             ENDHLSL
         }

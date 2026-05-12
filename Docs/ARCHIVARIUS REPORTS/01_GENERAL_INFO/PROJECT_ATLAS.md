@@ -20,6 +20,34 @@ It answers four narrow questions:
 
 ## 2. Workspace Snapshot
 
+2026-05-12 DOC_CHRONOS source snapshot:
+
+| Surface | Current Value |
+|---|---:|
+| first-party C# files under `Assets/_Project` | 1,383 |
+| first-party C# physical lines under `Assets/_Project` | 824,799 |
+| first-party non-test C# files | 1,373 |
+| first-party non-test C# physical lines | 822,060 |
+| interface declaration hits under `Assets/_Project` | 189 |
+| source/domain ids in `Docs/Actual Domains of Project.txt` | 85 |
+| first-party asmdefs under `Assets/_Project` | 13 |
+
+Current first-party asmdefs:
+
+- `Assets/_Project/Input/Hecton8.Input.Generated.asmdef`
+- `Assets/_Project/Scripts/Core/BootstrapContracts/Hecton8.Bootstrap.Contracts.asmdef`
+- `Assets/_Project/Scripts/Editor/Hecton8.Editor.asmdef`
+- `Assets/_Project/Scripts/Hecton8.Core.asmdef`
+- `Assets/_Project/Scripts/Input/Hecton8.Input.asmdef`
+- `Assets/_Project/Scripts/Optimization/Editor/Hecton8.Optimization.Editor.asmdef`
+- `Assets/_Project/Scripts/Plugins/Hecton8.Plugins.asmdef`
+- `Assets/_Project/Scripts/UI/Editor/Hecton8.UI.Editor.asmdef`
+- `Assets/_Project/Scripts/World/Contracts/Hecton8.World.Contracts.asmdef`
+- `Assets/_Project/Scripts/World/Dots/Hecton8.World.Dots.asmdef`
+- `Assets/_Project/Scripts/World/SpaceEngine098/Hecton8.SpaceEngine098Terrain.asmdef`
+- `Assets/_Project/Tests/Editor/Hecton8.EditModeTests.asmdef`
+- `Assets/_Project/Tests/PlayMode/Hecton8.PlayModeTests.asmdef`
+
 Repository root observed on 2026-05-11 contains these top-level entries of interest:
 
 - `.agents-skills`

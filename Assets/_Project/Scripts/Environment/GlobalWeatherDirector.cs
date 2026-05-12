@@ -11,7 +11,7 @@ namespace Hecton8.Environment
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Environment/Global Weather Director")]
     [DefaultExecutionOrder(-4550)]
-    public sealed class GlobalWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IWeatherService
+    public sealed class GlobalWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IFrostTickable, IWeatherService
     {
         private const float ExponentialBlendCompletion = 0.99f;
         private const float ExponentialBlendRateScale = 4.6051702f;
@@ -21,6 +21,8 @@ namespace Hecton8.Environment
         private const float WeatherLutChangeEpsilon = 0.01f;
         private const float VectorNormalizeEpsilon = 0.0001f;
         private const float Lcg24BitToUnit = 1f / 16777216f;
+        private const float AtmosphericBridgeFlowSurgeScale = 0.5f;
+        private const float AtmosphericBridgeWaveReferenceEpsilon = 0.0001f;
         private const int NoirFogLutRowCount = 1;
         private const int MaxRuntimeNoirFogLutResolution = 64;
 #if UNITY_EDITOR
@@ -93,6 +95,17 @@ namespace Hecton8.Environment
         private static readonly int _NoirFogLutBlendId = Shader.PropertyToID("_HectonNoirFogLutBlend");
         private static readonly int _NoirFogStratificationId = Shader.PropertyToID("_HectonNoirFogStratification");
         private static readonly int _BiolumeSurgeThresholdId = Shader.PropertyToID("_HectonBiolumeSurgeThreshold");
+        private static readonly int _AbyssalFogDensityId = Shader.PropertyToID("_AbyssalFogDensity");
+        private static readonly int _MarineSnowOpacityId = Shader.PropertyToID("_MarineSnowOpacity");
+        private static readonly int _AtmosphericBridgeParamsId = Shader.PropertyToID("_HectonAtmosphericBridgeParams");
+        private static readonly int _AtmosphericBridgeParams2Id = Shader.PropertyToID("_HectonAtmosphericBridgeParams2");
+        private static readonly int _GlobalFlowMagnitudeMultiplierId = Shader.PropertyToID("_HectonGlobalFlowMagnitudeMultiplier");
+        private static readonly int _GodRayIntensityId = Shader.PropertyToID("_HectonGodRayIntensity");
+        private static readonly int _GlobalWindDirectionId = Shader.PropertyToID("_HectonGlobalWindDirection");
+        private static readonly int _ShadowCascadeFadeId = Shader.PropertyToID("_HectonShadowCascadeFade");
+        private static readonly int _UnderwaterRainVolumeId = Shader.PropertyToID("_HectonUnderwaterRainVolume");
+        private static readonly int _BiolumEmissionMultiplierId = Shader.PropertyToID("_HectonBiolumEmissionMultiplier");
+        private static readonly int _RadiationStormId = Shader.PropertyToID("_HectonRadiationStorm");
 
         [Header("References")]
         [Tooltip("Optional explicit fluid-engine reference. If empty, the runtime singleton is used.")]
@@ -205,6 +218,26 @@ namespace Hecton8.Environment
         [Tooltip("Additional density multiplier applied inside the thermocline band.")]
         [SerializeField, Min(0f)] private float thermoclineAbyssalBoost = 0.8f;
 
+        [Header("Atmospheric Bridge")]
+        [Tooltip("Abyssal fog density published when macro weather is calm.")]
+        [SerializeField, Range(0f, 1f)] private float clearAbyssalFogDensity = 0.18f;
+        [Tooltip("Abyssal fog density published when storm/current weather is at full force.")]
+        [SerializeField, Range(0f, 1f)] private float stormAbyssalFogDensity = 0.92f;
+        [Tooltip("Marine snow opacity published when macro weather is calm.")]
+        [SerializeField, Range(0f, 1f)] private float clearMarineSnowOpacity = 0.25f;
+        [Tooltip("Marine snow opacity published when storm/current weather is at full force.")]
+        [SerializeField, Range(0f, 1f)] private float stormMarineSnowOpacity = 1f;
+        [Tooltip("Base scalar for shader-side god-ray shafts before lunar and wave modulation.")]
+        [SerializeField, Range(0f, 2f)] private float baseGodRayIntensity = 0.55f;
+        [Tooltip("Wave height that maps to full god-ray wave modulation.")]
+        [SerializeField, Min(0.01f)] private float godRayWaveReferenceMeters = 2f;
+        [Tooltip("Strength of deterministic triangle-wave cloud occlusion applied during storms.")]
+        [SerializeField, Range(0f, 1f)] private float godRayCloudFlickerStrength = 0.35f;
+        [Tooltip("Shadow cascade fade scalar at maximum fog density.")]
+        [SerializeField, Range(0f, 1f)] private float shadowCascadeFadeAtMaxFog = 0.65f;
+        [Tooltip("Underwater rain rumble volume published when weather intensity is one.")]
+        [SerializeField, Range(0f, 1f)] private float underwaterRainVolumeAtStorm = 0.85f;
+
         [Header("Diagnostics")]
         [SerializeField] private WeatherPhase _debugActivePhase = WeatherPhase.Calm;
         [SerializeField] private WeatherPhase _debugTargetPhase = WeatherPhase.Calm;
@@ -216,6 +249,7 @@ namespace Hecton8.Environment
         [SerializeField] private Vector3 _debugWindVector;
 
         private bool _registeredToTickManager;
+        private bool _registeredToFrostTickManager;
         private bool _initialized;
         private bool _transitioning;
         private float _phaseHoldTimer;
@@ -269,7 +303,7 @@ namespace Hecton8.Environment
             _runtimeSnapshot.GlobalWindVector.z);
 
         /// <summary>
-        /// Transition alpha across the active weather-state change.
+        /// Normalized storm/current intensity after active weather-state blending.
         /// </summary>
         public float WeatherIntensity => _runtimeSnapshot.WeatherIntensity;
 
@@ -280,6 +314,7 @@ namespace Hecton8.Environment
             InitializeRuntimeStateIfNeeded();
             UpdateBiomeLutState(transitionDurationSeconds, true);
             PublishSnapshot();
+            PublishAtmosphericBridgeShaderState();
         }
 
         private void OnEnable()
@@ -290,6 +325,7 @@ namespace Hecton8.Environment
             UpdateBiomeLutState(transitionDurationSeconds, true);
             GlobalRegistry.RegisterWeatherService(this);
             PublishSnapshot();
+            PublishAtmosphericBridgeShaderState();
         }
 
         private void Start()
@@ -313,6 +349,7 @@ namespace Hecton8.Environment
             Shader.SetGlobalFloat(_NoirFogLutBlendId, 0f);
             Shader.SetGlobalVector(_NoirFogStratificationId, Vector4.zero);
             Shader.SetGlobalFloat(_BiolumeSurgeThresholdId, 0f);
+            ClearAtmosphericBridgeShaderState();
             _hasPublishedWeatherEvent = false;
         }
 
@@ -382,6 +419,18 @@ namespace Hecton8.Environment
         }
 
         /// <summary>
+        /// Publishes low-cadence visual bridge parameters for abyssal fog, snow, god-rays, and rain rumble.
+        /// </summary>
+        public void FrostTick()
+        {
+            InitializeRuntimeStateIfNeeded();
+            if (!_initialized)
+                return;
+
+            PublishAtmosphericBridgeShaderState();
+        }
+
+        /// <summary>
         /// Returns the current zero-allocation runtime snapshot for downstream systems.
         /// </summary>
         /// <returns>Weather state, vectors, current metadata, and fallback-wave data.</returns>
@@ -401,30 +450,43 @@ namespace Hecton8.Environment
 
         private void TryRegisterTickManager()
         {
-            if (_registeredToTickManager || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this) ||
-                                       GlobalRegistry.SlowTickables.Contains(this);
+            if (!_registeredToTickManager)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredToTickManager = GlobalRegistry.Updatables.Contains(this) ||
+                                           GlobalRegistry.SlowTickables.Contains(this);
+            }
+
+            if (!_registeredToFrostTickManager)
+            {
+                GlobalRegistry.RegisterFrostTickable(this, PriorityLayer.Environment);
+                _registeredToFrostTickManager = GlobalRegistry.FrostTickables.Contains(this);
+            }
         }
 
         private void TryUnregisterTickManager()
         {
-            if (!_registeredToTickManager)
-                return;
+            if (_registeredToTickManager)
+            {
+                if (GlobalRegistry.Updatables.Contains(this))
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
-            if (GlobalRegistry.Updatables.Contains(this))
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                if (GlobalRegistry.SlowTickables.Contains(this))
+                    GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            }
 
-            if (GlobalRegistry.SlowTickables.Contains(this))
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (_registeredToFrostTickManager && GlobalRegistry.FrostTickables.Contains(this))
+                GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
+            _registeredToFrostTickManager = false;
         }
 
         private void ResolveDependencies()
@@ -505,6 +567,7 @@ namespace Hecton8.Environment
             WeatherProfile fromWeatherProfile = GetWeatherProfile(_transitioning ? _sourcePhase : _activePhase);
             WeatherProfile toWeatherProfile = GetWeatherProfile(_targetPhase);
             float blend = _transitioning ? _weatherIntensity : 1f;
+            float weatherIntensity01 = ResolveWeatherIntensity01(blend);
 
             float3 currentVector = math.lerp(
                 ResolveDirectionalVector(fromProfile.currentDirection, fromProfile.currentSpeed),
@@ -540,13 +603,15 @@ namespace Hecton8.Environment
                 thermalIntensity *= math.max(0f, authoredTurbulenceMultiplier);
             }
 
+            currentVector *= ResolveWeatherFlowMagnitudeMultiplier(weatherIntensity01);
+
             CurrentMeta currentMeta = _runtimeSnapshot.CurrentMeta;
             currentMeta.GlobalBaseVector = NormalizeSafe(currentVector, new float3(0f, 0f, 1f));
             currentMeta.GlobalScale = ApproximateMagnitude(currentVector);
             currentMeta.ThermalIntensity = math.max(0f, thermalIntensity);
 
             _runtimeSnapshot.StateMask = ResolvePublishedMask();
-            _runtimeSnapshot.WeatherIntensity = _weatherIntensity;
+            _runtimeSnapshot.WeatherIntensity = weatherIntensity01;
             _runtimeSnapshot.GlobalCurrentVector = currentVector;
             _runtimeSnapshot.GlobalWindVector = windVector;
             _runtimeSnapshot.CurrentMeta = currentMeta;
@@ -559,7 +624,7 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(_GlobalCurrentVectorId, new Vector4(currentVectorManaged.x, currentVectorManaged.y, currentVectorManaged.z, 0f));
             Shader.SetGlobalVector(_GlobalWindVectorId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, 0f));
             Shader.SetGlobalVector(_GlobalWindId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, ApproximateMagnitude(windVector)));
-            Shader.SetGlobalFloat(_WeatherIntensityId, _weatherIntensity);
+            Shader.SetGlobalFloat(_WeatherIntensityId, weatherIntensity01);
             Shader.SetGlobalInt(_WeatherStateMaskId, (int)_runtimeSnapshot.StateMask);
             PublishNoirFogShaderState();
 
@@ -801,6 +866,118 @@ namespace Hecton8.Environment
                     math.max(0f, thermoclineAbyssalBoost),
                     math.max(0.0001f, RenderSettings.fogDensity)));
             Shader.SetGlobalFloat(_BiolumeSurgeThresholdId, _publishedBiolumeSurgeThreshold);
+        }
+
+        private void PublishAtmosphericBridgeShaderState()
+        {
+            CelestialRuntimeSnapshot celestialSnapshot = GlobalRegistry.CelestialRuntimeSnapshot;
+            float weatherIntensity01 = math.saturate(_runtimeSnapshot.WeatherIntensity);
+            float abyssalFogDensity = math.lerp(
+                math.saturate(clearAbyssalFogDensity),
+                math.saturate(stormAbyssalFogDensity),
+                weatherIntensity01);
+            float marineSnowOpacity = math.lerp(
+                math.saturate(clearMarineSnowOpacity),
+                math.saturate(stormMarineSnowOpacity),
+                weatherIntensity01);
+            float waveHeightMeters = ResolvePublishedWaveHeightMeters(in _runtimeSnapshot);
+            float waveHeight01 = math.saturate(waveHeightMeters * math.rcp(math.max(AtmosphericBridgeWaveReferenceEpsilon, godRayWaveReferenceMeters)));
+            float moonPhase01 = math.saturate(math.max(celestialSnapshot.Moon0Phase01, celestialSnapshot.Moon1Phase01));
+            float cloudTriangle = math.lerp(0.55f, 1f, ResolveTriangleWave01(ResolveAtmosphericBridgeTimePhase(weatherIntensity01)));
+            float cloudOcclusion = math.lerp(1f, cloudTriangle, math.saturate(godRayCloudFlickerStrength) * weatherIntensity01);
+            float godRayIntensity = math.max(0f, baseGodRayIntensity) *
+                                    math.lerp(0.35f, 1f, moonPhase01) *
+                                    math.lerp(0.75f, 1.15f, waveHeight01) *
+                                    cloudOcclusion;
+            float globalFlowMultiplier = ResolveWeatherFlowMagnitudeMultiplier(weatherIntensity01);
+            float shadowCascadeFade = abyssalFogDensity * math.saturate(shadowCascadeFadeAtMaxFog);
+            float underwaterRainVolume = weatherIntensity01 * math.saturate(underwaterRainVolumeAtStorm);
+            float windMagnitude = ApproximateMagnitude(_runtimeSnapshot.GlobalWindVector);
+            float3 windDirection = NormalizeSafe(_runtimeSnapshot.GlobalWindVector, new float3(0f, 0f, 1f));
+            float radiationStorm01 = math.saturate(celestialSnapshot.RadiationStorm01);
+            float biolumEmissionMultiplier = ResolveBiolumEmissionMultiplier(in celestialSnapshot);
+
+            Shader.SetGlobalFloat(_AbyssalFogDensityId, abyssalFogDensity);
+            Shader.SetGlobalFloat(_MarineSnowOpacityId, marineSnowOpacity);
+            Shader.SetGlobalFloat(_GlobalFlowMagnitudeMultiplierId, globalFlowMultiplier);
+            Shader.SetGlobalFloat(_GodRayIntensityId, godRayIntensity);
+            Shader.SetGlobalFloat(_ShadowCascadeFadeId, shadowCascadeFade);
+            Shader.SetGlobalFloat(_UnderwaterRainVolumeId, underwaterRainVolume);
+            Shader.SetGlobalFloat(_BiolumEmissionMultiplierId, biolumEmissionMultiplier);
+            Shader.SetGlobalFloat(_RadiationStormId, radiationStorm01);
+            Shader.SetGlobalVector(
+                _AtmosphericBridgeParamsId,
+                new Vector4(weatherIntensity01, abyssalFogDensity, marineSnowOpacity, globalFlowMultiplier));
+            Shader.SetGlobalVector(
+                _AtmosphericBridgeParams2Id,
+                new Vector4(godRayIntensity, waveHeightMeters, moonPhase01, radiationStorm01));
+            Shader.SetGlobalVector(
+                _GlobalWindDirectionId,
+                new Vector4(windDirection.x, windDirection.y, windDirection.z, windMagnitude));
+        }
+
+        private static void ClearAtmosphericBridgeShaderState()
+        {
+            Shader.SetGlobalFloat(_AbyssalFogDensityId, 0f);
+            Shader.SetGlobalFloat(_MarineSnowOpacityId, 0f);
+            Shader.SetGlobalFloat(_GlobalFlowMagnitudeMultiplierId, 1f);
+            Shader.SetGlobalFloat(_GodRayIntensityId, 0f);
+            Shader.SetGlobalFloat(_ShadowCascadeFadeId, 0f);
+            Shader.SetGlobalFloat(_UnderwaterRainVolumeId, 0f);
+            Shader.SetGlobalFloat(_BiolumEmissionMultiplierId, 1f);
+            Shader.SetGlobalFloat(_RadiationStormId, 0f);
+            Shader.SetGlobalVector(_AtmosphericBridgeParamsId, new Vector4(0f, 0f, 0f, 1f));
+            Shader.SetGlobalVector(_AtmosphericBridgeParams2Id, Vector4.zero);
+            Shader.SetGlobalVector(_GlobalWindDirectionId, Vector4.zero);
+        }
+
+        private float ResolveWeatherIntensity01(float transitionBlend)
+        {
+            if (!_transitioning)
+                return IsIntenseWeatherPhase(_activePhase) ? 1f : 0f;
+
+            float sourceIntensity = IsIntenseWeatherPhase(_sourcePhase) ? 1f : 0f;
+            float targetIntensity = IsIntenseWeatherPhase(_targetPhase) ? 1f : 0f;
+            return math.lerp(sourceIntensity, targetIntensity, math.saturate(transitionBlend));
+        }
+
+        private static bool IsIntenseWeatherPhase(WeatherPhase phase)
+        {
+            return phase == WeatherPhase.Storm || phase == WeatherPhase.CurrentSurge;
+        }
+
+        private static float ResolveWeatherFlowMagnitudeMultiplier(float weatherIntensity01)
+        {
+            return 1f + math.saturate(weatherIntensity01) * AtmosphericBridgeFlowSurgeScale;
+        }
+
+        private static float ResolvePublishedWaveHeightMeters(in WeatherRuntimeSnapshot snapshot)
+        {
+            return math.max(0f, snapshot.Wave0.Amplitude) +
+                   math.max(0f, snapshot.Wave1.Amplitude) +
+                   math.max(0f, snapshot.Wave2.Amplitude);
+        }
+
+        private static float ResolveBiolumEmissionMultiplier(in CelestialRuntimeSnapshot celestialSnapshot)
+        {
+            float authoredMultiplier = math.max(0f, celestialSnapshot.GlobalBiolumMultiplier);
+            return authoredMultiplier > 0f ? authoredMultiplier : 1f;
+        }
+
+        private static float ResolveAtmosphericBridgeTimePhase(float weatherIntensity01)
+        {
+            double universeTime = GlobalRegistry.AbsoluteUniverseTime;
+            if (!math.isfinite(universeTime))
+                return weatherIntensity01 * 0.37f;
+
+            double wrappedTime = universeTime - math.floor(universeTime * 0.000244140625d) * 4096d;
+            return (float)wrappedTime * 0.07f + weatherIntensity01 * 0.37f;
+        }
+
+        private static float ResolveTriangleWave01(float phase)
+        {
+            float wrapped = phase - math.floor(phase);
+            return 1f - math.abs(wrapped * 2f - 1f);
         }
 
         private static float ResolveProfileDepthCenter(WeatherProfile profile, float fallbackCenter)

@@ -58,6 +58,8 @@ namespace Hecton8.Gameplay
             DenormalVelocityFlushThresholdMetersPerSecond * DenormalVelocityFlushThresholdMetersPerSecond;
         private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
         private const float WakeSiltEmissionSpeedThresholdMetersPerSecond = 4.5f;
+        private const float WakeSiltEmissionSpeedThresholdMetersPerSecondSq =
+            WakeSiltEmissionSpeedThresholdMetersPerSecond * WakeSiltEmissionSpeedThresholdMetersPerSecond;
         private const float WakeSiltEmissionCooldownSeconds = 0.35f;
         private const float HydrodynamicMinimumEffectiveMassKg = 0.001f;
         private const float HydrodynamicAddedMassAccelerationScale = 0.45f;
@@ -1184,8 +1186,7 @@ namespace Hecton8.Gameplay
 
             Vector3 velocity = SafeVelocity(_body.linearVelocity);
             float speedSq = velocity.sqrMagnitude;
-            float thresholdSq = WakeSiltEmissionSpeedThresholdMetersPerSecond * WakeSiltEmissionSpeedThresholdMetersPerSecond;
-            if (speedSq <= thresholdSq)
+            if (speedSq <= WakeSiltEmissionSpeedThresholdMetersPerSecondSq)
                 return;
 
             Vector3 emitPosition = _body.worldCenterOfMass;

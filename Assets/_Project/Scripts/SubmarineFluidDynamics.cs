@@ -1,11 +1,16 @@
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
+using Hecton8.Audio;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
+using Hecton8.Inventory;
+using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -45,7 +50,7 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton/Physics/Submarine Fluid Dynamics")]
-    public sealed class SubmarineFluidDynamics : MonoBehaviour, IFixedTickable, IPostFixedTickable, IOriginShiftListener
+    public sealed class SubmarineFluidDynamics : MonoBehaviour, IFixedTickable, IPostFixedTickable, IOriginShiftListener, IInventoryEventListener
     {
         private const int CompartmentCapacity = 8;
         private const int BulkheadCapacity = 7;
@@ -90,6 +95,17 @@ namespace Hecton8.Physics
         private const int EngineCompartmentIndex = 3;
         private const uint HydrodynamicsResetWarningHash = 0x48445253u;
         private const uint SubmarineFluidDynamicsContextHash = 0x53464459u;
+        private const int HydroBlackBoxCapacity = 300;
+        private const uint HydroBlackBoxMagic = 0x4844524Fu;
+        private const uint HydroBlackBoxFlagHullImplosion = 1u << 0;
+        private const uint HydroBlackBoxFlagBallastBlow = 1u << 1;
+        private const uint HydroBlackBoxFlagTowingTension = 1u << 2;
+        private const uint HydroBlackBoxFlagCavitation = 1u << 3;
+        private const uint HydroBlackBoxFlagInvalidOutput = 1u << 4;
+        private const uint HydroBlackBoxFlagInvalidVelocity = 1u << 5;
+        private const uint HydroBlackBoxFlagInvalidBuoyancy = 1u << 6;
+        private const uint HydroBlackBoxFlagEmergencyReset = 1u << 7;
+        private const string HydroBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_KINEMATICS_HYDRO_DRAG.bin";
         private const float DefaultHydraulicLeakRateCubicMetersPerSecond = 0.006f;
         private const float DefaultMaximumHydraulicViscosity = 1f;
         private const float DefaultViscositySloshDampingScale = 0.85f;
@@ -98,6 +114,27 @@ namespace Hecton8.Physics
         private const float DefaultFloraCenterOfMassDownshiftMeters = 0.35f;
         private const float DefaultExteriorBuoyancyForceClampScale = 1.15f;
         private const float DefaultExteriorBuoyancyTorqueClampScale = 1.25f;
+        private const float DefaultMaxCargoMassKilograms = 12000f;
+        private const float DefaultDamageControlLeakMassKilogramsPerKpaSecond = 0.025f;
+        private const float DefaultCargoDraftMetersPer1000Kg = 0.18f;
+        private const float DefaultMaxCargoDraftOffsetMeters = 1.2f;
+        private const float DefaultCrushDepthBuoyancyScale = 0.85f;
+        private const float DefaultForwardHydroDragCoefficient = 0.04f;
+        private const float DefaultLateralHydroDragMultiplier = 5f;
+        private const float DefaultVerticalHydroDragCoefficient = 0.08f;
+        private const float DefaultAngularHydroDragCoefficient = 14f;
+        private const float DefaultRightingTorqueCoefficient = 18f;
+        private const float DefaultHydroSolverMaxAcceleration = 45f;
+        private const float DefaultHydroSolverMaxTorque = 85000f;
+        private const float DefaultCompressedAirUnits = 6f;
+        private const float DefaultBallastBlowAirCost = 1f;
+        private const float DefaultBallastBlowDurationSeconds = 1.75f;
+        private const float DefaultBallastBlowUpAcceleration = 2.8f;
+        private const float DefaultTowingTensionHoldSeconds = 0.12f;
+        private const float DefaultSurfacingBreachSpeedMetersPerSecond = 15f;
+        private const float DefaultCavitationThrottleThreshold = 0.98f;
+        private const float DefaultCavitationStallSpeedMetersPerSecond = 2f;
+        private const float DefaultCavitationCooldownSeconds = 0.35f;
         private const int ExteriorBuoyancySampleCount = 8;
         private const int MaxQueuedSplashEvents = 32;
         private const int ExteriorThermalAnomalyCapacity = 8;
@@ -169,7 +206,8 @@ namespace Hecton8.Physics
             public float doorAreaSquareMeters;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
+        // 64-byte stride keeps the gas mix and flood scalar on a 32-byte multiple without dropping partial pressures.
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
         private struct CompartmentState
         {
             public float currentVolume;
@@ -327,6 +365,74 @@ namespace Hecton8.Physics
         [Tooltip("Safety clamp multiplier applied against the theoretical buoyancy torque from the furthest sample lever arm.")]
         [SerializeField, Range(1f, 3f)] private float exteriorBuoyancyTorqueClampScale = DefaultExteriorBuoyancyTorqueClampScale;
 
+        [Header("-- Payload Buoyancy --")]
+        [Tooltip("When true, listens to the SOA inventory event lane and mirrors the latest cached mass scalar into submarine cargo mass.")]
+        [SerializeField] private bool syncCargoMassFromInventoryEvents = true;
+
+        [Tooltip("Maximum cargo mass that can affect buoyancy and draft.")]
+        [SerializeField, Min(0f)] private float maxCargoMassKilograms = DefaultMaxCargoMassKilograms;
+        [Tooltip("Damage-control leak severity-pressure converted into added sinking mass per second.")]
+        [SerializeField, Min(0f)] private float damageControlLeakMassKilogramsPerKpaSecond = DefaultDamageControlLeakMassKilogramsPerKpaSecond;
+
+        [Tooltip("Visual draft offset per 1000 kg of cargo. Positive values make the hull settle lower before Archimedes lift catches it.")]
+        [SerializeField, Min(0f)] private float cargoDraftMetersPer1000Kg = DefaultCargoDraftMetersPer1000Kg;
+
+        [Tooltip("Upper clamp for the mass-driven draft offset applied to waterline samples.")]
+        [SerializeField, Min(0f)] private float maxCargoDraftOffsetMeters = DefaultMaxCargoDraftOffsetMeters;
+
+        [Tooltip("Certified operating depth used for the abyss mass penalty. Zero resolves from the active SubmarineCoreDirector.")]
+        [SerializeField, Min(0f)] private float safeCrushDepthMeters;
+
+        [Tooltip("Buoyancy multiplier below safe depth. 0.85 means the abyss removes 15 percent lift.")]
+        [SerializeField, Range(0.5f, 1f)] private float crushDepthBuoyancyScale = DefaultCrushDepthBuoyancyScale;
+
+        [Header("-- Directional Hydro Drag --")]
+        [Tooltip("Forward quadratic drag coefficient. Lateral drag is derived independently from local X.")]
+        [SerializeField, Min(0f)] private float forwardHydroDragCoefficient = DefaultForwardHydroDragCoefficient;
+
+        [Tooltip("Multiplier applied to forward drag for local-X broadside movement.")]
+        [SerializeField, Min(1f)] private float lateralHydroDragMultiplier = DefaultLateralHydroDragMultiplier;
+
+        [Tooltip("Vertical quadratic drag coefficient for rise/sink control.")]
+        [SerializeField, Min(0f)] private float verticalHydroDragCoefficient = DefaultVerticalHydroDragCoefficient;
+
+        [Tooltip("Counter-torque coefficient. Burst solver applies -angularVelocity * coefficient * waterDensity.")]
+        [SerializeField, Min(0f)] private float angularHydroDragCoefficient = DefaultAngularHydroDragCoefficient;
+
+        [Tooltip("Righting torque coefficient that lets the hull recover pitch and roll without rigidbody angular damping.")]
+        [SerializeField, Min(0f)] private float pitchRollRightingTorqueCoefficient = DefaultRightingTorqueCoefficient;
+
+        [Tooltip("Safety clamp for custom hydrodynamic acceleration packets.")]
+        [SerializeField, Min(0f)] private float hydroSolverMaxAcceleration = DefaultHydroSolverMaxAcceleration;
+
+        [Tooltip("Safety clamp for custom hydrodynamic torque packets.")]
+        [SerializeField, Min(0f)] private float hydroSolverMaxTorque = DefaultHydroSolverMaxTorque;
+
+        [Header("-- Ballast And Breach Feedback --")]
+        [Tooltip("Fallback compressed-air reserve until the logistics owner exposes a typed air tank contract.")]
+        [SerializeField, Min(0f)] private float compressedAirUnits = DefaultCompressedAirUnits;
+
+        [Tooltip("Compressed-air units consumed by one ballast blow command.")]
+        [SerializeField, Min(0f)] private float ballastBlowAirCost = DefaultBallastBlowAirCost;
+
+        [Tooltip("Duration of the positive buoyancy pulse after a blow ballast command.")]
+        [SerializeField, Min(0.05f)] private float ballastBlowDurationSeconds = DefaultBallastBlowDurationSeconds;
+
+        [Tooltip("Upward acceleration bias during ballast blow.")]
+        [SerializeField, Min(0f)] private float ballastBlowUpAcceleration = DefaultBallastBlowUpAcceleration;
+
+        [Tooltip("Upward velocity threshold for a surfacing breach impact signal.")]
+        [SerializeField, Min(0f)] private float surfacingBreachSpeedMetersPerSecond = DefaultSurfacingBreachSpeedMetersPerSecond;
+
+        [Tooltip("Throttle fraction considered full thrust for cavitation rumble.")]
+        [SerializeField, Range(0f, 1f)] private float cavitationThrottleThreshold = DefaultCavitationThrottleThreshold;
+
+        [Tooltip("Speed below which full thrust is considered stalled.")]
+        [SerializeField, Min(0f)] private float cavitationStallSpeedMetersPerSecond = DefaultCavitationStallSpeedMetersPerSecond;
+
+        [Tooltip("Minimum time between cavitation rumble packets.")]
+        [SerializeField, Min(0f)] private float cavitationCooldownSeconds = DefaultCavitationCooldownSeconds;
+
         [Header("â”€â”€ Diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private int _debugConfiguredCompartmentCount;
         [SerializeField] private int _debugConfiguredBulkheadCount;
@@ -351,6 +457,21 @@ namespace Hecton8.Physics
         [SerializeField] private float _debugCompressionScale = 1f;
         [SerializeField] private float _debugFloraDragDensity;
         [SerializeField] private float _debugFloraAddedMassKilograms;
+        [SerializeField] private float _debugTotalCargoMassKilograms;
+        [SerializeField] private float _debugDockedExternalMassKilograms;
+        [SerializeField] private float _debugDamageControlLeakAddedMassKilograms;
+        [SerializeField] private float _debugCargoMassScalar;
+        [SerializeField] private float _debugCargoDraftOffsetMeters;
+        [SerializeField] private float _debugCrushBuoyancyScale = 1f;
+        [SerializeField] private float _debugTargetBuoyancyBias01;
+        [SerializeField] private float _debugCompressedAirUnits;
+        [SerializeField] private float _debugHydroForwardSpeed;
+        [SerializeField] private float _debugHydroLateralSpeed;
+        [SerializeField] private float _debugHydroVerticalSpeed;
+        [SerializeField] private Vector3 _debugHydroDragAcceleration;
+        [SerializeField] private Vector3 _debugHydroTorque;
+        [SerializeField] private Vector3 _debugTowingTensionVector;
+        [SerializeField] private bool _debugCavitationActive;
         [SerializeField] private Vector3 _debugLastThermalAnomalyCenter;
         [SerializeField] private float _debugLastThermalAnomalyTemperature;
         [SerializeField] private float _debugLastThermalAnomalyDepth;
@@ -387,6 +508,20 @@ namespace Hecton8.Physics
         private float _externalSubmergedVolumeCubicMeters;
         private float _exteriorBuoyancyMaxLeverArm = 1f;
         private float _submersionFactor;
+        private float _totalCargoMassKilograms;
+        private float _dockedExternalMassKilograms;
+        private float _damageControlLeakAddedMassKilograms;
+        private float _cargoMassScalar;
+        private float _lastResolvedCargoMassKilograms = -1f;
+        private float _lastResolvedCargoScalar = -1f;
+        private float _ballastBlowTimer;
+        private float _targetBuoyancyBias01;
+        private float _thrustInput01;
+        private float _cavitationCooldownTimer;
+        private float _towingTensionHoldTimer;
+        private bool _registeredInventoryEvents;
+        private bool _hydroKinematicJobRunning;
+        private bool _hydroKinematicOutputReady;
         private Vector3 _reportedFloodCenterOfMassLocal;
         private Vector3 _appliedCenterOfMassLocal;
         private Vector3 _currentFloodCenterOfMassLocal;
@@ -396,16 +531,20 @@ namespace Hecton8.Physics
         private Vector3 _lastSloshTorqueLocal;
         private Vector3 _lastExternalBuoyancyForce;
         private Vector3 _lastExternalBuoyancyTorque;
+        private Vector3 _pendingTowingTensionVector;
         private float _currentHydrodynamicLinearInertiaScale = 1f;
         private float _currentHydrodynamicAngularInertiaScale = 1f;
         private JobHandle _disposeHandle;
         private JobHandle _fluidJobHandle;
         private JobHandle _massPropertiesJobHandle;
+        private JobHandle _hydroKinematicJobHandle;
         private bool _baselineDampingCached;
         private bool _baselineMassCached;
         private bool _massPropertiesJobRunning;
         private bool _hullImplosionActive;
         private int _queuedSplashEventCount;
+        private int _hydroBlackBoxCursor;
+        private bool _hydroBlackBoxDumped;
         private CompartmentState[] _compartmentStates;
         private SubmarineAtmosphereSystem _atmosphereSystem;
         private ISubmarineHullBreachReadModel _structuralBreachReadModel;
@@ -448,10 +587,149 @@ namespace Hecton8.Physics
         private NativeArray<float> _jobFloodVolumes;
         private NativeArray<uint> _jobCompartmentFlags;
         private NativeArray<float> _bulkheadTransferDeltas;
+        private NativeArray<HydroKinematicJobInput> _hydroKinematicInput;
+        private NativeArray<HydroKinematicJobOutput> _hydroKinematicOutput;
+        private NativeArray<HydroBlackBoxEntry> _hydroBlackBox;
         private NativeQueue<SplashEvent> _splashEventQueue;
         private string _splashEventQueueSentinelLabel;
         private FluidMathCore _fluidMathCore;
         private bool _fluidSimulationRegistered;
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        private struct HydroKinematicJobInput
+        {
+            public float3 Velocity;
+            public float3 AngularVelocity;
+            public float3 Forward;
+            public float3 Right;
+            public float3 Up;
+            public float3 WorldUp;
+            public float3 TowingAcceleration;
+            public float3 FlowVelocityWS;
+            public float MassKilograms;
+            public float AddedMassKilograms;
+            public float WaterDensity;
+            public float SubmersionFactor;
+            public float ForwardDragCoefficient;
+            public float LateralDragCoefficient;
+            public float VerticalDragCoefficient;
+            public float AngularDragCoefficient;
+            public float RightingTorqueCoefficient;
+            public float BallastUpAcceleration;
+            public float MaxAcceleration;
+            public float MaxTorque;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        private struct HydroKinematicJobOutput
+        {
+            public float3 DragAcceleration;
+            public float3 Torque;
+            public float ForwardSpeed;
+            public float LateralSpeed;
+            public float VerticalSpeed;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        private struct HydroBlackBoxEntry
+        {
+            public int Frame;
+            public float FixedTime;
+            public float3 Position;
+            public float3 Velocity;
+            public float3 AngularVelocity;
+            public float MassKilograms;
+            public float CargoMassKilograms;
+            public float CargoMassScalar;
+            public float SubmersionFactor;
+            public float DepthMeters;
+            public float FloodRatio;
+            public float BallastBias01;
+            public float3 HydroAcceleration;
+            public float3 HydroTorque;
+            public float3 TowingTension;
+            public uint Flags;
+            public uint StateHash;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct HydroKinematicDragJob : IJob
+        {
+            [ReadOnly] public NativeArray<HydroKinematicJobInput> Input;
+            public NativeArray<HydroKinematicJobOutput> Output;
+
+            public void Execute()
+            {
+                HydroKinematicJobInput input = Input[0];
+                float3 velocity = SelectFinite(input.Velocity, float3.zero);
+                float3 flowVelocity = SelectFinite(input.FlowVelocityWS, float3.zero);
+                float3 relativeVelocity = velocity - flowVelocity;
+                float3 angularVelocity = SelectFinite(input.AngularVelocity, float3.zero);
+                float3 forward = SelectFinite(input.Forward, new float3(0f, 0f, 1f));
+                float3 right = SelectFinite(input.Right, new float3(1f, 0f, 0f));
+                float3 up = SelectFinite(input.Up, new float3(0f, 1f, 0f));
+                float3 worldUp = SelectFinite(input.WorldUp, new float3(0f, 1f, 0f));
+
+                float submersion = math.saturate(input.SubmersionFactor);
+                float waterDensity = math.max(0f, input.WaterDensity);
+                float mass = math.max(Epsilon, input.MassKilograms + math.max(0f, input.AddedMassKilograms));
+                float forwardSpeed = math.dot(relativeVelocity, forward);
+                float lateralSpeed = math.dot(relativeVelocity, right);
+                float verticalSpeed = math.dot(relativeVelocity, up);
+
+                float3 dragForce =
+                    (-forward * forwardSpeed * math.abs(forwardSpeed) * math.max(0f, input.ForwardDragCoefficient)) +
+                    (-right * lateralSpeed * math.abs(lateralSpeed) * math.max(0f, input.LateralDragCoefficient)) +
+                    (-up * verticalSpeed * math.abs(verticalSpeed) * math.max(0f, input.VerticalDragCoefficient));
+                dragForce *= waterDensity * submersion;
+
+                float3 acceleration = dragForce * math.rcp(mass);
+                acceleration += SelectFinite(input.TowingAcceleration, float3.zero);
+                acceleration += worldUp * (math.max(0f, input.BallastUpAcceleration) * submersion);
+                acceleration = ClampFiniteMagnitude(acceleration, math.max(0f, input.MaxAcceleration));
+
+                float3 torque = -angularVelocity * math.max(0f, input.AngularDragCoefficient) * waterDensity * submersion;
+                float3 rightingAxis = math.cross(up, worldUp);
+                float rightingAxisLengthSq = math.lengthsq(rightingAxis);
+                if (rightingAxisLengthSq > 0.000001f)
+                {
+                    torque += rightingAxis * (math.max(0f, input.RightingTorqueCoefficient) * mass * submersion);
+                }
+
+                torque = ClampFiniteMagnitude(torque, math.max(0f, input.MaxTorque));
+                Output[0] = new HydroKinematicJobOutput
+                {
+                    DragAcceleration = acceleration,
+                    Torque = torque,
+                    ForwardSpeed = forwardSpeed,
+                    LateralSpeed = lateralSpeed,
+                    VerticalSpeed = verticalSpeed
+                };
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float3 SelectFinite(float3 value, float3 fallback)
+            {
+                return math.all(math.isfinite(value)) && !math.any(math.isnan(value)) ? value : fallback;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float3 ClampFiniteMagnitude(float3 value, float maxMagnitude)
+            {
+                if (!math.all(math.isfinite(value)) || math.any(math.isnan(value)))
+                    return float3.zero;
+
+                if (maxMagnitude <= 0f)
+                    return value;
+
+                float lengthSq = math.lengthsq(value);
+                float maxSq = maxMagnitude * maxMagnitude;
+                if (!math.isfinite(lengthSq) || math.isnan(lengthSq))
+                    return float3.zero;
+
+                return lengthSq > maxSq ? value * (maxMagnitude * math.rsqrt(lengthSq)) : value;
+            }
+        }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential)]
@@ -752,9 +1030,11 @@ namespace Hecton8.Physics
             {
                 TryRegister();
                 TryRegisterOriginShiftListener();
+                TryRegisterInventoryEventListener();
             }
             else
             {
+                TryUnregisterInventoryEventListener();
                 TryUnregisterOriginShiftListener();
                 TryUnregister();
             }
@@ -765,6 +1045,7 @@ namespace Hecton8.Physics
         private void OnDisable()
         {
             TryUnregisterFluidSimulationService();
+            TryUnregisterInventoryEventListener();
             TryUnregisterOriginShiftListener();
             TryUnregister();
             ClearExteriorThermalAnomalies();
@@ -775,6 +1056,7 @@ namespace Hecton8.Physics
         private void OnDestroy()
         {
             TryUnregisterFluidSimulationService();
+            TryUnregisterInventoryEventListener();
             TryUnregisterOriginShiftListener();
             TryUnregister();
             ClearExteriorThermalAnomalies();
@@ -796,7 +1078,11 @@ namespace Hecton8.Physics
 
             _skipHydrodynamicsForCurrentFixedTick = false;
             _currentFixedDeltaTime = fixedDeltaTime;
+            RefreshCargoMassScalarFromGlobalCache();
+            UpdateHydroRuntimeState(fixedDeltaTime);
+            ApplyCompletedHydroKinematicOutput();
             float depthMeters = ResolveExternalDepthMeters();
+            WriteHydroBlackBoxSample(depthMeters, 0u);
             if (ShouldAbortHydrodynamicsFixedTick())
                 return;
 
@@ -853,6 +1139,7 @@ namespace Hecton8.Physics
             if (ShouldAbortHydrodynamicsFixedTick())
                 return;
 
+            ScheduleHydroKinematicJob(fixedDeltaTime);
             ScheduleFloodMassPropertiesJob();
             ScheduleFluidTransferJob(depthMeters, fixedDeltaTime);
             RefreshDebugState();
@@ -861,6 +1148,7 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public void PostFixedTick(float fixedDeltaTime)
         {
+            CompleteHydroKinematicJobInPostFixedSwapWindow();
             CompleteFluidTransferInPostFixedSwapWindow();
             CompleteFloodMassPropertiesInPostFixedSwapWindow();
         }
@@ -882,6 +1170,136 @@ namespace Hecton8.Physics
         public void SetCompartmentCompressionScale(float compressionScale)
         {
             _dynamicCompressionScale = math.clamp(compressionScale, 1f - math.saturate(maximumCompressionNormalized), 1f);
+        }
+
+        /// <summary>Total cargo mass currently coupled into hull mass and draft.</summary>
+        public float TotalCargoMassKg => _totalCargoMassKilograms;
+
+        /// <summary>Damage-control leak mass currently coupled into hull sinking weight.</summary>
+        public float DamageControlLeakAddedMassKg => _damageControlLeakAddedMassKilograms;
+
+        /// <summary>Cached 0-1 cargo mass scalar used by low-tier math LOD consumers.</summary>
+        public float CargoMassScalar => _cargoMassScalar;
+
+        /// <summary>
+        /// Adds bounded sinking mass from packed submarine breach severity multiplied by ambient pressure.
+        /// </summary>
+        public void ApplyDamageControlLeakMass(float severityPressureKPa, float fixedDeltaTime)
+        {
+            if (!math.isfinite(severityPressureKPa) || !math.isfinite(fixedDeltaTime))
+                return;
+
+            float deltaKg = math.max(0f, severityPressureKPa) *
+                            math.max(0f, damageControlLeakMassKilogramsPerKpaSecond) *
+                            math.max(0f, fixedDeltaTime);
+            if (deltaKg <= 0f)
+                return;
+
+            float maxLeakMass = math.max(0f, ResolveExteriorDisplacementVolumeCubicMeters()) * WaterDensityKgPerCubicMeter;
+            if (maxLeakMass <= Epsilon)
+                maxLeakMass = math.max(_dryRigidbodyMass, Epsilon);
+
+            _damageControlLeakAddedMassKilograms = math.min(maxLeakMass, _damageControlLeakAddedMassKilograms + deltaKg);
+            _debugDamageControlLeakAddedMassKilograms = _damageControlLeakAddedMassKilograms;
+            ApplyFloodMassPropertiesToRigidbody(force: false);
+        }
+
+        /// <summary>
+        /// Receives SOA inventory mass from the event lane. Future submarine storage owners can drive the same scalar
+        /// through <see cref="SetCargoMassScalar"/> without taking a hard dependency on this component.
+        /// </summary>
+        public void OnInventoryEvent(in InventoryEventPayload payload)
+        {
+            if (!syncCargoMassFromInventoryEvents)
+                return;
+
+            ushort eventType = payload.EventType;
+            if (eventType != (ushort)InventoryEventType.EncumbranceChanged &&
+                eventType != (ushort)InventoryEventType.InventoryChanged)
+            {
+                return;
+            }
+
+            float massKg = eventType == (ushort)InventoryEventType.EncumbranceChanged
+                ? payload.TotalMassKg
+                : GlobalRegistry.PlayerInventoryMassKg;
+            SetCargoMassScalar(massKg);
+        }
+
+        /// <summary>
+        /// External storage or logistics systems can publish total cargo mass here without linking concrete inventory code.
+        /// </summary>
+        public void SetCargoMassScalar(float totalCargoMassKg)
+        {
+            float safeMaxCargo = math.max(0f, maxCargoMassKilograms);
+            float safeMass = math.isfinite(totalCargoMassKg) ? math.max(0f, totalCargoMassKg) : 0f;
+            _totalCargoMassKilograms = safeMaxCargo > 0f ? math.min(safeMass, safeMaxCargo) : safeMass;
+            _cargoMassScalar = safeMaxCargo > Epsilon
+                ? math.saturate(_totalCargoMassKilograms * math.rcp(safeMaxCargo))
+                : 0f;
+        }
+
+        /// <summary>Compatibility alias for submarine storage systems that speak in kilograms.</summary>
+        public void SetSubmarineCargoMassKilograms(float totalCargoMassKg)
+        {
+            SetCargoMassScalar(totalCargoMassKg);
+        }
+
+        public void SetDockedExternalMassKilograms(float massKg)
+        {
+            _dockedExternalMassKilograms = math.isfinite(massKg) ? math.max(0f, massKg) : 0f;
+        }
+
+        /// <summary>Updates a cached thrust input used to detect stalled full-power cavitation.</summary>
+        public void SetThrustInput01(float thrustInput01)
+        {
+            _thrustInput01 = math.saturate(math.isfinite(thrustInput01) ? thrustInput01 : 0f);
+        }
+
+        /// <summary>Injects external tether tension into the next submarine velocity-solver packet.</summary>
+        public void SetTowingTensionVector(Vector3 tensionVector)
+        {
+            if (!IsFiniteVector(tensionVector))
+                return;
+
+            _pendingTowingTensionVector = tensionVector;
+            _towingTensionHoldTimer = DefaultTowingTensionHoldSeconds;
+        }
+
+        /// <summary>Authoritative logistics bridge for compressed-air reserves.</summary>
+        public void SetCompressedAirUnits(float units)
+        {
+            compressedAirUnits = math.max(0f, math.isfinite(units) ? units : 0f);
+        }
+
+        /// <summary>Command entry point for controls/UI: burns compressed air and applies a temporary positive buoyancy bias.</summary>
+        public bool BlowBallast()
+        {
+            return TryBlowBallast(ballastBlowDurationSeconds);
+        }
+
+        /// <summary>Command entry point with explicit duration for scripted emergency procedures.</summary>
+        public bool TryBlowBallast(float durationSeconds)
+        {
+            float cost = math.max(0f, ballastBlowAirCost);
+            if (compressedAirUnits < cost)
+                return false;
+
+            compressedAirUnits = math.max(0f, compressedAirUnits - cost);
+            _ballastBlowTimer = math.max(0.05f, math.isfinite(durationSeconds) ? durationSeconds : ballastBlowDurationSeconds);
+            _targetBuoyancyBias01 = 1f;
+
+            VocalWarningSignal warning = new VocalWarningSignal
+            {
+                WarningHash = 0x424C5354u,
+                SourceId = _rigidbody != null ? unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())) : 0u,
+                Severity01 = 0.85f,
+                CooldownSeconds = 0.6f,
+                Priority = 2,
+                Flags = 0
+            };
+            GlobalSignals.Publish(in warning);
+            return true;
         }
 
         internal float HullPressureRatingKPa => math.max(1f, hullPressureRatingKPa);
@@ -1131,6 +1549,8 @@ namespace Hecton8.Physics
 
             ResetSloshHistoryForOriginShift();
             ResetSplashDetectionState(clearQueuedEvents: true);
+            _pendingTowingTensionVector = Vector3.zero;
+            _towingTensionHoldTimer = 0f;
         }
 
         /// <summary>
@@ -1304,8 +1724,10 @@ namespace Hecton8.Physics
 
             if (_rigidbody != null && !_baselineDampingCached)
             {
-                _baseLinearDamping = math.max(0f, _rigidbody.linearDamping);
-                _baseAngularDamping = math.max(0f, _rigidbody.angularDamping);
+                _baseLinearDamping = 0f;
+                _baseAngularDamping = 0f;
+                _rigidbody.linearDamping = 0f;
+                _rigidbody.angularDamping = 0f;
                 _lastAppliedLinearDamping = _baseLinearDamping;
                 _lastAppliedAngularDamping = _baseAngularDamping;
                 _baselineDampingCached = true;
@@ -1368,6 +1790,12 @@ namespace Hecton8.Physics
             _jobCompartmentFlags = new NativeArray<uint>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[7] Ã¢â‚¬â€ per-bulkhead transfer delta scratch Ã¢â‚¬â€ owner: SubmarineFluidDynamics
             _bulkheadTransferDeltas = new NativeArray<float>(BulkheadCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<HydroKinematicJobInput>[1] - submarine true-buoyancy and custom drag input packet - owner: SubmarineFluidDynamics
+            _hydroKinematicInput = new NativeArray<HydroKinematicJobInput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<HydroKinematicJobOutput>[1] - one-frame-late custom drag force/torque packet - owner: SubmarineFluidDynamics
+            _hydroKinematicOutput = new NativeArray<HydroKinematicJobOutput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<HydroBlackBoxEntry>[300] - fixed hydro crash telemetry ring - owner: SubmarineFluidDynamics
+            _hydroBlackBox = new NativeArray<HydroBlackBoxEntry>(HydroBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeStateBuffers();
             // COLD ALLOC: NativeQueue<SplashEvent>(Persistent) â€” deferred exterior splash payload queue for VFX consumers â€” owner: SubmarineFluidDynamics
             _splashEventQueue = new NativeQueue<SplashEvent>(Allocator.Persistent);
@@ -1502,6 +1930,11 @@ namespace Hecton8.Physics
             _fluidJobRunning = false;
             _massPropertiesJobHandle = default;
             _massPropertiesJobRunning = false;
+            _hydroKinematicJobHandle = default;
+            _hydroKinematicJobRunning = false;
+            _hydroKinematicOutputReady = false;
+            _hydroBlackBoxCursor = 0;
+            _hydroBlackBoxDumped = false;
             Vector3 safeDryCenter = SanitizeCenterOfMass(dryCenterOfMassLocal, Vector3.zero);
             _reportedFloodCenterOfMassLocal = safeDryCenter;
             _appliedCenterOfMassLocal = safeDryCenter;
@@ -1509,6 +1942,10 @@ namespace Hecton8.Physics
             _lastAppliedInertiaTensor = _resolvedDryInertiaTensor;
             _externalSubmergedVolumeCubicMeters = 0f;
             _submersionFactor = 0f;
+            _targetBuoyancyBias01 = 0f;
+            _ballastBlowTimer = 0f;
+            _towingTensionHoldTimer = 0f;
+            _pendingTowingTensionVector = Vector3.zero;
             _lastExternalBuoyancyForce = Vector3.zero;
             _lastExternalBuoyancyTorque = Vector3.zero;
 
@@ -1535,6 +1972,14 @@ namespace Hecton8.Physics
                 _massPropertiesJobRunning = false;
             }
 
+            if (_hydroKinematicJobRunning)
+            {
+                _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, _hydroKinematicJobHandle);
+                _hydroKinematicJobHandle = default;
+                _hydroKinematicJobRunning = false;
+                _hydroKinematicOutputReady = false;
+            }
+
             DisposeDeferred(ref _compartmentFloodVolumes);
             DisposeDeferred(ref _compartmentViscosity01);
             DisposeDeferred(ref _compartmentBaseMaxVolumes);
@@ -1554,6 +1999,9 @@ namespace Hecton8.Physics
             DisposeDeferred(ref _jobFloodVolumes);
             DisposeDeferred(ref _jobCompartmentFlags);
             DisposeDeferred(ref _bulkheadTransferDeltas);
+            DisposeDeferred(ref _hydroKinematicInput);
+            DisposeDeferred(ref _hydroKinematicOutput);
+            DisposeDeferred(ref _hydroBlackBox);
             DispatcherJobSwap.TryComplete(ref _disposeHandle, true);
 
             if (_splashEventQueue.IsCreated)
@@ -1574,8 +2022,8 @@ namespace Hecton8.Physics
 
             Vector3 safeDryCenter = SanitizeCenterOfMass(dryCenterOfMassLocal, Vector3.zero);
             Vector3 safeDryTensor = SanitizeTensor(_resolvedDryInertiaTensor);
-            float safeLinearDamping = math.isfinite(_baseLinearDamping) ? math.max(0f, _baseLinearDamping) : 0f;
-            float safeAngularDamping = math.isfinite(_baseAngularDamping) ? math.max(0f, _baseAngularDamping) : 0f;
+            float safeLinearDamping = 0f;
+            float safeAngularDamping = 0f;
             _rigidbody.centerOfMass = safeDryCenter;
             _rigidbody.inertiaTensor = safeDryTensor;
             _rigidbody.mass = math.max(_dryRigidbodyMass, Epsilon);
@@ -1589,6 +2037,10 @@ namespace Hecton8.Physics
             _currentFloraDragDensity01 = 0f;
             _currentFloraAddedMassKilograms = 0f;
             _hullImplosionActive = false;
+            _targetBuoyancyBias01 = 0f;
+            _ballastBlowTimer = 0f;
+            _pendingTowingTensionVector = Vector3.zero;
+            _towingTensionHoldTimer = 0f;
             _lastExternalBuoyancyForce = Vector3.zero;
             _lastExternalBuoyancyTorque = Vector3.zero;
         }
@@ -1621,6 +2073,15 @@ namespace Hecton8.Physics
             _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
+        private void TryRegisterInventoryEventListener()
+        {
+            if (_registeredInventoryEvents || !syncCargoMassFromInventoryEvents || !Application.isPlaying)
+                return;
+
+            InventoryEvents.Register(this);
+            _registeredInventoryEvents = true;
+        }
+
         private void TryUnregister()
         {
             if (!_registered)
@@ -1647,6 +2108,15 @@ namespace Hecton8.Physics
 
             HectonFloatingOrigin.UnregisterListener(this);
             _registeredOriginShiftListener = false;
+        }
+
+        private void TryUnregisterInventoryEventListener()
+        {
+            if (!_registeredInventoryEvents)
+                return;
+
+            InventoryEvents.Unregister(this);
+            _registeredInventoryEvents = false;
         }
 
         private void ResetSloshHistoryForOriginShift()
@@ -1752,6 +2222,225 @@ namespace Hecton8.Physics
             NativeArray<float3> accumulatorFrontBuffer = _comAccumulatorFront;
             _comAccumulatorFront = _comAccumulatorBack;
             _comAccumulatorBack = accumulatorFrontBuffer;
+        }
+
+        private void CompleteHydroKinematicJobInPostFixedSwapWindow()
+        {
+            if (!_hydroKinematicJobRunning || !_hydroKinematicOutput.IsCreated)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _hydroKinematicJobHandle, false))
+                return;
+
+            _hydroKinematicJobHandle = default;
+            _hydroKinematicJobRunning = false;
+            _hydroKinematicOutputReady = true;
+        }
+
+        private void ApplyCompletedHydroKinematicOutput()
+        {
+            if (!_hydroKinematicOutputReady || !_hydroKinematicOutput.IsCreated || _rigidbody == null)
+                return;
+
+            HydroKinematicJobOutput output = _hydroKinematicOutput[0];
+            Vector3 acceleration = new Vector3(output.DragAcceleration.x, output.DragAcceleration.y, output.DragAcceleration.z);
+            Vector3 torque = new Vector3(output.Torque.x, output.Torque.y, output.Torque.z);
+
+            bool invalidOutput = false;
+            if (!IsFiniteVector(acceleration))
+            {
+                acceleration = Vector3.zero;
+                invalidOutput = true;
+            }
+
+            if (!IsFiniteVector(torque))
+            {
+                torque = Vector3.zero;
+                invalidOutput = true;
+            }
+
+            if (invalidOutput)
+                DumpHydroBlackBoxOnce(HydroBlackBoxFlagInvalidOutput);
+
+            if (acceleration.sqrMagnitude > Epsilon)
+                PhysicsForceRouter.QueueAmbientForce(_rigidbody, acceleration, ForceMode.Acceleration);
+
+            if (torque.sqrMagnitude > Epsilon)
+                PhysicsForceRouter.QueueAmbientTorque(_rigidbody, torque, ForceMode.Force);
+
+            _debugHydroDragAcceleration = acceleration;
+            _debugHydroTorque = torque;
+            _debugHydroForwardSpeed = output.ForwardSpeed;
+            _debugHydroLateralSpeed = output.LateralSpeed;
+            _debugHydroVerticalSpeed = output.VerticalSpeed;
+            _hydroKinematicOutputReady = false;
+        }
+
+        private void ScheduleHydroKinematicJob(float fixedDeltaTime)
+        {
+            if (_hydroKinematicJobRunning ||
+                !_hydroKinematicInput.IsCreated ||
+                !_hydroKinematicOutput.IsCreated ||
+                _rigidbody == null ||
+                _cachedTransform == null)
+            {
+                return;
+            }
+
+            Vector3 velocity = _rigidbody.linearVelocity;
+            Vector3 angularVelocity = _rigidbody.angularVelocity;
+            if (!IsFiniteVector(velocity) || !IsFiniteVector(angularVelocity))
+            {
+                DumpHydroBlackBoxOnce(HydroBlackBoxFlagInvalidVelocity | HydroBlackBoxFlagEmergencyReset);
+                EmergencyResetHydrodynamics();
+                return;
+            }
+
+            float mass = math.isfinite(_rigidbody.mass) ? math.max(_rigidbody.mass, Epsilon) : Epsilon;
+            float lateralCoefficient = math.max(0f, forwardHydroDragCoefficient) * math.max(1f, lateralHydroDragMultiplier);
+            float3 velocityFloat = new float3(velocity.x, velocity.y, velocity.z);
+            float3 localFlowVelocity = ResolveAnalyticalFlowVelocity(_rigidbody.worldCenterOfMass);
+            _hydroKinematicInput[0] = new HydroKinematicJobInput
+            {
+                Velocity = velocityFloat,
+                AngularVelocity = new float3(angularVelocity.x, angularVelocity.y, angularVelocity.z),
+                Forward = new float3(_cachedTransform.forward.x, _cachedTransform.forward.y, _cachedTransform.forward.z),
+                Right = new float3(_cachedTransform.right.x, _cachedTransform.right.y, _cachedTransform.right.z),
+                Up = new float3(_cachedTransform.up.x, _cachedTransform.up.y, _cachedTransform.up.z),
+                WorldUp = new float3(0f, 1f, 0f),
+                TowingAcceleration = ResolveTowingAcceleration(mass),
+                FlowVelocityWS = localFlowVelocity,
+                MassKilograms = mass,
+                AddedMassKilograms = 0f,
+                WaterDensity = WaterDensityKgPerCubicMeter,
+                SubmersionFactor = math.saturate(_submersionFactor),
+                ForwardDragCoefficient = forwardHydroDragCoefficient,
+                LateralDragCoefficient = lateralCoefficient,
+                VerticalDragCoefficient = verticalHydroDragCoefficient,
+                AngularDragCoefficient = angularHydroDragCoefficient,
+                RightingTorqueCoefficient = pitchRollRightingTorqueCoefficient,
+                BallastUpAcceleration = ResolveBallastUpAcceleration(),
+                MaxAcceleration = hydroSolverMaxAcceleration,
+                MaxTorque = hydroSolverMaxTorque
+            };
+
+            PublishCavitationRumbleIfNeeded(math.length(velocityFloat), fixedDeltaTime);
+            _hydroKinematicJobHandle = new HydroKinematicDragJob
+            {
+                Input = _hydroKinematicInput,
+                Output = _hydroKinematicOutput
+            }.Schedule();
+            _hydroKinematicJobRunning = true;
+        }
+
+        private static float3 ResolveAnalyticalFlowVelocity(Vector3 samplePosition)
+        {
+            if (!IsFiniteVector(samplePosition))
+                return float3.zero;
+
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            if (fluidEngine == null)
+                return float3.zero;
+
+            float3 flow = fluidEngine.GetFlowAtPosition(new float3(samplePosition.x, samplePosition.y, samplePosition.z));
+            return math.all(math.isfinite(flow)) ? flow : float3.zero;
+        }
+
+        private void RefreshCargoMassScalarFromGlobalCache()
+        {
+            if (!syncCargoMassFromInventoryEvents)
+                return;
+
+            float cachedMass = GlobalRegistry.PlayerInventoryMassKg;
+            if (!math.isfinite(cachedMass))
+                cachedMass = 0f;
+
+            if (math.abs(cachedMass - _lastResolvedCargoMassKilograms) <= 0.05f &&
+                math.abs(_cargoMassScalar - _lastResolvedCargoScalar) <= 0.0001f)
+            {
+                return;
+            }
+
+            SetCargoMassScalar(cachedMass);
+            _lastResolvedCargoMassKilograms = _totalCargoMassKilograms;
+            _lastResolvedCargoScalar = _cargoMassScalar;
+        }
+
+        private void UpdateHydroRuntimeState(float fixedDeltaTime)
+        {
+            float safeDeltaTime = math.max(0f, math.isfinite(fixedDeltaTime) ? fixedDeltaTime : 0f);
+            if (_ballastBlowTimer > 0f)
+            {
+                _ballastBlowTimer = math.max(0f, _ballastBlowTimer - safeDeltaTime);
+                float duration = math.max(0.05f, ballastBlowDurationSeconds);
+                _targetBuoyancyBias01 = math.saturate(_ballastBlowTimer * math.rcp(duration));
+            }
+            else
+            {
+                _targetBuoyancyBias01 = 0f;
+            }
+
+            if (_cavitationCooldownTimer > 0f)
+                _cavitationCooldownTimer = math.max(0f, _cavitationCooldownTimer - safeDeltaTime);
+
+            if (_towingTensionHoldTimer > 0f)
+            {
+                _towingTensionHoldTimer = math.max(0f, _towingTensionHoldTimer - safeDeltaTime);
+            }
+            else
+            {
+                _pendingTowingTensionVector = Vector3.zero;
+                _debugTowingTensionVector = Vector3.zero;
+            }
+        }
+
+        private float3 ResolveTowingAcceleration(float mass)
+        {
+            if (!IsFiniteVector(_pendingTowingTensionVector) || _pendingTowingTensionVector.sqrMagnitude <= Epsilon)
+                return float3.zero;
+
+            float inverseMass = math.rcp(math.max(mass, Epsilon));
+            Vector3 acceleration = _pendingTowingTensionVector * inverseMass;
+            acceleration = ClampMagnitude(acceleration, math.max(0f, hydroSolverMaxAcceleration));
+            _debugTowingTensionVector = _pendingTowingTensionVector;
+            return new float3(acceleration.x, acceleration.y, acceleration.z);
+        }
+
+        private float ResolveBallastUpAcceleration()
+        {
+            return math.max(0f, ballastBlowUpAcceleration) * math.saturate(_targetBuoyancyBias01);
+        }
+
+        private void PublishCavitationRumbleIfNeeded(float speedMetersPerSecond, float fixedDeltaTime)
+        {
+            bool active = _thrustInput01 >= math.saturate(cavitationThrottleThreshold) &&
+                          speedMetersPerSecond < math.max(0f, cavitationStallSpeedMetersPerSecond);
+            _debugCavitationActive = active;
+            if (!active || _cavitationCooldownTimer > 0f)
+                return;
+
+            float intensity = math.saturate(1f - (speedMetersPerSecond * math.rcp(math.max(0.01f, cavitationStallSpeedMetersPerSecond))));
+            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+                intensity * 0.55f,
+                intensity * 0.25f,
+                0.18f,
+                24f,
+                ToolHapticsRuntime.PriorityCritical,
+                0b0011);
+
+            Vector3 source = _rigidbody != null ? _rigidbody.worldCenterOfMass : (_cachedTransform != null ? _cachedTransform.position : Vector3.zero);
+            if (IsFiniteVector(source))
+            {
+                ProceduralAudioEvents.RaiseAudioPingTriggered(
+                    source,
+                    intensity,
+                    0.11f,
+                    1f,
+                    3200f,
+                    ProceduralAudioPingKind.MechanicalWhirr);
+            }
+
+            _cavitationCooldownTimer = math.max(cavitationCooldownSeconds, fixedDeltaTime);
         }
 
         private void ScheduleFluidTransferJob(float depthMeters, float fixedDeltaTime)
@@ -2645,9 +3334,21 @@ namespace Hecton8.Physics
             _currentFloraAddedMassKilograms = math.max(0f, floraDragAddedMassAtFullDensityKilograms) *
                                               math.saturate(_currentFloraDragDensity01);
             float maxFloodMass = math.max(0f, ResolveTotalCapacityCubicMeters()) * WaterDensityKgPerCubicMeter;
+            float damageControlLeakMass = math.max(0f, _damageControlLeakAddedMassKilograms);
+            floodMass = math.min(maxFloodMass, floodMass + damageControlLeakMass);
+            float cargoMass = math.max(0f, _totalCargoMassKilograms);
+            float dockedExternalMass = math.max(0f, _dockedExternalMassKilograms);
             float maxFloraMass = math.max(0f, floraDragAddedMassAtFullDensityKilograms);
-            float targetMass = math.clamp(dryMass + floodMass + _currentFloraAddedMassKilograms, dryMass, dryMass + maxFloodMass + maxFloraMass);
+            float maxCargoMass = math.max(0f, maxCargoMassKilograms);
+            float targetMass = math.clamp(
+                dryMass + cargoMass + dockedExternalMass + floodMass + _currentFloraAddedMassKilograms,
+                dryMass,
+                dryMass + maxCargoMass + dockedExternalMass + maxFloodMass + maxFloraMass);
             _debugFloraAddedMassKilograms = _currentFloraAddedMassKilograms;
+            _debugTotalCargoMassKilograms = cargoMass;
+            _debugDockedExternalMassKilograms = dockedExternalMass;
+            _debugDamageControlLeakAddedMassKilograms = damageControlLeakMass;
+            _debugCargoMassScalar = _cargoMassScalar;
             if (!math.isfinite(targetMass))
             {
                 EmergencyResetHydrodynamics();
@@ -2935,6 +3636,8 @@ namespace Hecton8.Physics
 
             float safeDepthMeters = float.IsFinite(depthMeters) ? math.max(0f, depthMeters) : 0f;
             float fallbackSurfaceY = _cachedTransform.position.y + safeDepthMeters;
+            float cargoDraftOffsetMeters = ResolveCargoDraftOffsetMeters();
+            float crushBuoyancyScale = ResolveCrushDepthBuoyancyScale(safeDepthMeters);
             Vector3 centerOfMassWorld = _rigidbody.worldCenterOfMass;
             float3 centerOfMassWorldFloat = new float3(centerOfMassWorld.x, centerOfMassWorld.y, centerOfMassWorld.z);
             if (math.any(math.isnan(centerOfMassWorldFloat)) || !math.all(math.isfinite(centerOfMassWorldFloat)))
@@ -2966,7 +3669,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            float perSampleForceMagnitude = WaterDensityKgPerCubicMeter * sampleVolume * GravityMetersPerSecondSquared;
+            float perSampleForceMagnitude = WaterDensityKgPerCubicMeter * sampleVolume * GravityMetersPerSecondSquared * crushBuoyancyScale;
             float rigidbodyMass = math.isfinite(_rigidbody.mass) ? math.max(_rigidbody.mass, Epsilon) : Epsilon;
             if (!TryResolveSafeQuotient(rigidbodyMass, ExteriorBuoyancySampleCount, out float sampleHullMass))
             {
@@ -3012,7 +3715,7 @@ namespace Hecton8.Physics
                     continue;
 
                 float sampleSurfaceY = ResolveSurfaceHeightAtSample(worldPoint, fallbackSurfaceY, oceanKinematics);
-                float submersionFactor = ResolveSurfaceSubmersionFactor(worldPoint.y - sampleSurfaceY);
+                float submersionFactor = ResolveSurfaceSubmersionFactor((worldPoint.y + cargoDraftOffsetMeters) - sampleSurfaceY);
                 QueueExteriorSplashEventIfNeeded(i, worldPoint, submersionFactor, sampleHullMass);
                 if (submersionFactor <= Epsilon)
                     continue;
@@ -3063,6 +3766,7 @@ namespace Hecton8.Physics
             _externalSubmergedVolumeCubicMeters = math.clamp(submergedVolume, 0f, displacementVolume);
             if (!TryResolveSafeNormalizedRatio(_externalSubmergedVolumeCubicMeters, displacementVolume, out _submersionFactor))
             {
+                DumpHydroBlackBoxOnce(HydroBlackBoxFlagInvalidBuoyancy | HydroBlackBoxFlagEmergencyReset);
                 EmergencyResetHydrodynamics();
                 _externalSubmergedVolumeCubicMeters = 0f;
                 _submersionFactor = 0f;
@@ -3086,6 +3790,7 @@ namespace Hecton8.Physics
             if (math.any(math.isnan(totalForceFloat)) || math.any(math.isnan(totalTorqueFloat)) ||
                 !math.all(math.isfinite(totalForceFloat)) || !math.all(math.isfinite(totalTorqueFloat)))
             {
+                DumpHydroBlackBoxOnce(HydroBlackBoxFlagInvalidBuoyancy | HydroBlackBoxFlagEmergencyReset);
                 EmergencyResetHydrodynamics();
                 totalEquivalentForce = Vector3.zero;
                 totalEquivalentTorque = Vector3.zero;
@@ -3138,30 +3843,22 @@ namespace Hecton8.Physics
                 return;
             }
 
-            float targetLinearDamping = _baseLinearDamping * (1f + (linearScale * dampingSubmersion)) * floraLinearMultiplier;
-            float targetAngularDamping = _baseAngularDamping * (1f + (angularScale * dampingSubmersion)) * floraAngularMultiplier;
-            if (_hullImplosionActive)
-                targetLinearDamping += math.max(0f, implosionDragBonus);
-
-            if (!float.IsFinite(targetLinearDamping) || !float.IsFinite(targetAngularDamping))
-            {
-                EmergencyResetHydrodynamics();
-                return;
-            }
-
             _currentHydrodynamicLinearInertiaScale = math.max(1f, (1f + (linearScale * dampingSubmersion)) * floraLinearMultiplier);
             _currentHydrodynamicAngularInertiaScale = math.max(1f, (1f + (angularScale * dampingSubmersion)) * floraAngularMultiplier);
 
-            if (math.abs(_lastAppliedLinearDamping - targetLinearDamping) > 0.0005f)
+            if (_hullImplosionActive)
+                _currentHydrodynamicLinearInertiaScale += math.max(0f, implosionDragBonus) * 0.02f;
+
+            if (math.abs(_lastAppliedLinearDamping) > 0.0005f || _rigidbody.linearDamping != 0f)
             {
-                _rigidbody.linearDamping = targetLinearDamping;
-                _lastAppliedLinearDamping = targetLinearDamping;
+                _rigidbody.linearDamping = 0f;
+                _lastAppliedLinearDamping = 0f;
             }
 
-            if (math.abs(_lastAppliedAngularDamping - targetAngularDamping) > 0.0005f)
+            if (math.abs(_lastAppliedAngularDamping) > 0.0005f || _rigidbody.angularDamping != 0f)
             {
-                _rigidbody.angularDamping = targetAngularDamping;
-                _lastAppliedAngularDamping = targetAngularDamping;
+                _rigidbody.angularDamping = 0f;
+                _lastAppliedAngularDamping = 0f;
             }
         }
 
@@ -3563,17 +4260,27 @@ namespace Hecton8.Physics
             {
                 _rigidbody.linearVelocity = Vector3.zero;
                 _rigidbody.angularVelocity = Vector3.zero;
+                _rigidbody.linearDamping = 0f;
+                _rigidbody.angularDamping = 0f;
             }
 
             _externalSubmergedVolumeCubicMeters = 0f;
             _submersionFactor = 0f;
             _currentFloraDragDensity01 = 0f;
             _currentFloraAddedMassKilograms = 0f;
+            _damageControlLeakAddedMassKilograms = 0f;
             _lastSloshTorqueLocal = Vector3.zero;
             _lastExternalBuoyancyForce = Vector3.zero;
             _lastExternalBuoyancyTorque = Vector3.zero;
+            _pendingTowingTensionVector = Vector3.zero;
+            _targetBuoyancyBias01 = 0f;
+            _ballastBlowTimer = 0f;
             _debugDelayedSloshAngularVelocityLocal = Vector3.zero;
             _debugLastSloshTorqueLocal = Vector3.zero;
+            _debugHydroDragAcceleration = Vector3.zero;
+            _debugHydroTorque = Vector3.zero;
+            _debugTowingTensionVector = Vector3.zero;
+            _debugCavitationActive = false;
             _debugExternalSubmergedVolumeCubicMeters = 0f;
             _debugSubmersionFactor = 0f;
             _currentHydrodynamicLinearInertiaScale = 1f;
@@ -3627,6 +4334,9 @@ namespace Hecton8.Physics
             currentSubmersionFactor = math.saturate(currentSubmersionFactor);
             _previousExteriorSampleSubmersionFactors[sampleIndex] = currentSubmersionFactor;
 
+            if (previousSubmersionFactor >= SplashSubmersionThreshold && currentSubmersionFactor <= Epsilon)
+                QueueSurfacingBreachSignalIfNeeded(worldPoint, sampleHullMass);
+
             if (previousSubmersionFactor > Epsilon || currentSubmersionFactor <= SplashSubmersionThreshold)
                 return;
 
@@ -3650,6 +4360,10 @@ namespace Hecton8.Physics
             if (!IsFiniteVector(absoluteUniversePosition))
                 return;
 
+            uint splashHash = ResolveSplashLcgHash(absoluteUniversePosition, sampleIndex);
+            float deterministicGain = 0.9f + ((splashHash & 1023u) * (0.2f / 1023f));
+            kineticEnergyJoules *= deterministicGain;
+
             SplashEvent splashEvent = new SplashEvent
             {
                 RuntimePosition = new float3(worldPoint.x, worldPoint.y, worldPoint.z),
@@ -3664,6 +4378,76 @@ namespace Hecton8.Physics
             _splashEventQueue.Enqueue(splashEvent);
             _queuedSplashEventCount++;
             FluidFeedbackEvents.PublishSplashQueued(in splashEvent);
+
+            ImpactSignal impactSignal = new ImpactSignal
+            {
+                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(
+                    new double3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z)),
+                Force = impactSpeedMetersPerSecond * effectiveSampleMass,
+                Intensity = math.saturate(kineticEnergyJoules * 0.0005f),
+                PrimaryBodyId = _rigidbody != null ? unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())) : 0u,
+                WeightClass = ResolveSplashWeightClass(kineticEnergyJoules),
+                PrimaryMaterialId = 0,
+                SecondaryMaterialId = 0,
+                Flags = 1
+            };
+            GlobalSignals.Publish(in impactSignal);
+        }
+
+        private void QueueSurfacingBreachSignalIfNeeded(Vector3 worldPoint, float sampleHullMass)
+        {
+            if (_rigidbody == null)
+                return;
+
+            Vector3 pointVelocity = _rigidbody.GetPointVelocity(worldPoint);
+            if (!IsFiniteVector(pointVelocity))
+                return;
+
+            float upwardSpeedMetersPerSecond = math.max(0f, Vector3.Dot(pointVelocity, Vector3.up));
+            if (upwardSpeedMetersPerSecond < math.max(0f, surfacingBreachSpeedMetersPerSecond))
+                return;
+
+            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPoint);
+            if (!IsFiniteVector(absoluteUniversePosition))
+                return;
+
+            float effectiveSampleMass = math.max(sampleHullMass, Epsilon);
+            float kineticEnergyJoules = 0.5f * effectiveSampleMass * upwardSpeedMetersPerSecond * upwardSpeedMetersPerSecond;
+            ImpactSignal impactSignal = new ImpactSignal
+            {
+                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(
+                    new double3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z)),
+                Force = upwardSpeedMetersPerSecond * effectiveSampleMass,
+                Intensity = math.saturate(kineticEnergyJoules * 0.00035f),
+                PrimaryBodyId = unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())),
+                WeightClass = ResolveSplashWeightClass(kineticEnergyJoules),
+                PrimaryMaterialId = 0,
+                SecondaryMaterialId = 0,
+                Flags = 2
+            };
+            GlobalSignals.Publish(in impactSignal);
+        }
+
+        private static uint ResolveSplashLcgHash(Vector3 absoluteUniversePosition, int sampleIndex)
+        {
+            unchecked
+            {
+                uint state = 2166136261u;
+                state = (state ^ (uint)math.floor(absoluteUniversePosition.x * 16f)) * 1664525u + 1013904223u;
+                state = (state ^ (uint)math.floor(absoluteUniversePosition.y * 16f)) * 1664525u + 1013904223u;
+                state = (state ^ (uint)math.floor(absoluteUniversePosition.z * 16f)) * 1664525u + 1013904223u;
+                state = (state ^ (uint)sampleIndex) * 1664525u + 1013904223u;
+                return state;
+            }
+        }
+
+        private static byte ResolveSplashWeightClass(float kineticEnergyJoules)
+        {
+            if (kineticEnergyJoules >= 2500f)
+                return 2;
+            if (kineticEnergyJoules >= 450f)
+                return 1;
+            return 0;
         }
 
         private void PrewarmSplashEventQueue()
@@ -3790,6 +4574,38 @@ namespace Hecton8.Physics
             }
 
             return 0f;
+        }
+
+        private float ResolveCargoDraftOffsetMeters()
+        {
+            float perThousandKg = math.max(0f, cargoDraftMetersPer1000Kg);
+            float massThousands = math.max(0f, _totalCargoMassKilograms) * 0.001f;
+            float draft = massThousands * perThousandKg;
+            float clampedDraft = math.clamp(draft, 0f, math.max(0f, maxCargoDraftOffsetMeters));
+            _debugCargoDraftOffsetMeters = math.isfinite(clampedDraft) ? clampedDraft : 0f;
+            return _debugCargoDraftOffsetMeters;
+        }
+
+        private float ResolveCrushDepthBuoyancyScale(float depthMeters)
+        {
+            float safeDepth = ResolveSafeCrushDepthMeters();
+            float scale = depthMeters > safeDepth
+                ? math.clamp(crushDepthBuoyancyScale, 0.5f, 1f)
+                : 1f;
+            _debugCrushBuoyancyScale = scale;
+            return scale;
+        }
+
+        private float ResolveSafeCrushDepthMeters()
+        {
+            if (safeCrushDepthMeters > Epsilon)
+                return safeCrushDepthMeters;
+
+            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            if (submarine is SubmarineCoreDirector director)
+                return math.max(Epsilon, director.MaxDepth);
+
+            return math.max(Epsilon, hullImplosionDepthThresholdMeters);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3942,6 +4758,12 @@ namespace Hecton8.Physics
             _debugExternalPressureKPa = ResolveExternalPressureKPa(_externalDepthMeters);
             _debugFloraDragDensity = _currentFloraDragDensity01;
             _debugFloraAddedMassKilograms = _currentFloraAddedMassKilograms;
+            _debugTotalCargoMassKilograms = _totalCargoMassKilograms;
+            _debugDockedExternalMassKilograms = _dockedExternalMassKilograms;
+            _debugDamageControlLeakAddedMassKilograms = _damageControlLeakAddedMassKilograms;
+            _debugCargoMassScalar = _cargoMassScalar;
+            _debugTargetBuoyancyBias01 = _targetBuoyancyBias01;
+            _debugCompressedAirUnits = compressedAirUnits;
         }
 
         private void SeedFloodMassPropertiesBuffers(float3 targetFloodCenter, float floodMassRatio)
@@ -4196,6 +5018,27 @@ namespace Hecton8.Physics
             exteriorDisplacementVolumeCubicMeters = math.max(0f, exteriorDisplacementVolumeCubicMeters);
             exteriorBuoyancyForceClampScale = math.clamp(exteriorBuoyancyForceClampScale, 1f, 2f);
             exteriorBuoyancyTorqueClampScale = math.clamp(exteriorBuoyancyTorqueClampScale, 1f, 3f);
+            maxCargoMassKilograms = math.max(0f, maxCargoMassKilograms);
+            damageControlLeakMassKilogramsPerKpaSecond = math.max(0f, damageControlLeakMassKilogramsPerKpaSecond);
+            cargoDraftMetersPer1000Kg = math.max(0f, cargoDraftMetersPer1000Kg);
+            maxCargoDraftOffsetMeters = math.max(0f, maxCargoDraftOffsetMeters);
+            safeCrushDepthMeters = math.max(0f, safeCrushDepthMeters);
+            crushDepthBuoyancyScale = math.clamp(crushDepthBuoyancyScale, 0.5f, 1f);
+            forwardHydroDragCoefficient = math.max(0f, forwardHydroDragCoefficient);
+            lateralHydroDragMultiplier = math.max(1f, lateralHydroDragMultiplier);
+            verticalHydroDragCoefficient = math.max(0f, verticalHydroDragCoefficient);
+            angularHydroDragCoefficient = math.max(0f, angularHydroDragCoefficient);
+            pitchRollRightingTorqueCoefficient = math.max(0f, pitchRollRightingTorqueCoefficient);
+            hydroSolverMaxAcceleration = math.max(0f, hydroSolverMaxAcceleration);
+            hydroSolverMaxTorque = math.max(0f, hydroSolverMaxTorque);
+            compressedAirUnits = math.max(0f, compressedAirUnits);
+            ballastBlowAirCost = math.max(0f, ballastBlowAirCost);
+            ballastBlowDurationSeconds = math.max(0.05f, ballastBlowDurationSeconds);
+            ballastBlowUpAcceleration = math.max(0f, ballastBlowUpAcceleration);
+            surfacingBreachSpeedMetersPerSecond = math.max(0f, surfacingBreachSpeedMetersPerSecond);
+            cavitationThrottleThreshold = math.saturate(cavitationThrottleThreshold);
+            cavitationStallSpeedMetersPerSecond = math.max(0f, cavitationStallSpeedMetersPerSecond);
+            cavitationCooldownSeconds = math.max(0f, cavitationCooldownSeconds);
             hullImplosionDepthThresholdMeters = math.max(0f, hullImplosionDepthThresholdMeters);
             hullPressureRatingKPa = math.max(1f, hullPressureRatingKPa);
             hullImplosionBreachAreaNormalized = math.saturate(hullImplosionBreachAreaNormalized);
@@ -4212,6 +5055,175 @@ namespace Hecton8.Physics
             }
         }
 #endif
+
+        private void WriteHydroBlackBoxSample(float depthMeters, uint reasonFlags)
+        {
+            if (!_hydroBlackBox.IsCreated)
+                return;
+
+            int index = _hydroBlackBoxCursor;
+            if ((uint)index >= (uint)_hydroBlackBox.Length)
+                index = 0;
+
+            Vector3 position = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
+            Vector3 velocity = _rigidbody != null && IsFiniteVector(_rigidbody.linearVelocity) ? _rigidbody.linearVelocity : Vector3.zero;
+            Vector3 angularVelocity = _rigidbody != null && IsFiniteVector(_rigidbody.angularVelocity) ? _rigidbody.angularVelocity : Vector3.zero;
+            float mass = _rigidbody != null && math.isfinite(_rigidbody.mass) ? math.max(Epsilon, _rigidbody.mass) : 0f;
+            uint flags = ResolveHydroBlackBoxRuntimeFlags(reasonFlags);
+            uint stateHash = BuildHydroBlackBoxHash(position, velocity, angularVelocity, mass, depthMeters, flags);
+
+            _hydroBlackBox[index] = new HydroBlackBoxEntry
+            {
+                Frame = Time.frameCount,
+                FixedTime = Time.fixedTime,
+                Position = ToFloat3(position),
+                Velocity = ToFloat3(velocity),
+                AngularVelocity = ToFloat3(angularVelocity),
+                MassKilograms = mass,
+                CargoMassKilograms = _totalCargoMassKilograms,
+                CargoMassScalar = _cargoMassScalar,
+                SubmersionFactor = _submersionFactor,
+                DepthMeters = math.isfinite(depthMeters) ? math.max(0f, depthMeters) : 0f,
+                FloodRatio = _floodFillRatio,
+                BallastBias01 = _targetBuoyancyBias01,
+                HydroAcceleration = ToFloat3(_debugHydroDragAcceleration),
+                HydroTorque = ToFloat3(_debugHydroTorque),
+                TowingTension = ToFloat3(_pendingTowingTensionVector),
+                Flags = flags,
+                StateHash = stateHash
+            };
+
+            _hydroBlackBoxCursor = (index + 1) % _hydroBlackBox.Length;
+        }
+
+        private uint ResolveHydroBlackBoxRuntimeFlags(uint reasonFlags)
+        {
+            uint flags = reasonFlags;
+            if (_hullImplosionActive)
+                flags |= HydroBlackBoxFlagHullImplosion;
+            if (_ballastBlowTimer > Epsilon || _targetBuoyancyBias01 > Epsilon)
+                flags |= HydroBlackBoxFlagBallastBlow;
+            if (_towingTensionHoldTimer > Epsilon || (_pendingTowingTensionVector.sqrMagnitude > Epsilon && IsFiniteVector(_pendingTowingTensionVector)))
+                flags |= HydroBlackBoxFlagTowingTension;
+            if (_debugCavitationActive)
+                flags |= HydroBlackBoxFlagCavitation;
+
+            return flags;
+        }
+
+        private uint BuildHydroBlackBoxHash(Vector3 position, Vector3 velocity, Vector3 angularVelocity, float mass, float depthMeters, uint flags)
+        {
+            uint hash = 2166136261u;
+            hash = HashHydroBlackBox(hash, (uint)Time.frameCount);
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(position.x));
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(position.y));
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(position.z));
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(velocity.x));
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(velocity.y));
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(velocity.z));
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(angularVelocity.x));
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(angularVelocity.y));
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(angularVelocity.z));
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(mass));
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(depthMeters));
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(_submersionFactor));
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(_floodFillRatio));
+            hash = HashHydroBlackBox(hash, flags);
+            return hash;
+        }
+
+        private void DumpHydroBlackBoxOnce(uint reasonFlags)
+        {
+            if (_hydroBlackBoxDumped || !_hydroBlackBox.IsCreated)
+                return;
+
+            _hydroBlackBoxDumped = true;
+            WriteHydroBlackBoxSample(ResolveExternalDepthMeters(), reasonFlags);
+            DumpHydroBlackBox(reasonFlags);
+        }
+
+        private void DumpHydroBlackBox(uint reasonFlags)
+        {
+            if (!_hydroBlackBox.IsCreated)
+                return;
+
+            try
+            {
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string dumpPath = Path.Combine(projectRoot, HydroBlackBoxDumpRelativePath);
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(HydroBlackBoxMagic);
+                    writer.Write((uint)HydroBlackBoxCapacity);
+                    writer.Write((uint)_hydroBlackBoxCursor);
+                    writer.Write(reasonFlags);
+
+                    for (int i = 0; i < _hydroBlackBox.Length; i++)
+                    {
+                        int index = (_hydroBlackBoxCursor + i) % _hydroBlackBox.Length;
+                        WriteHydroBlackBoxEntry(writer, _hydroBlackBox[index]);
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError("Submarine hydro black box dump failed: " + ex.Message);
+            }
+        }
+
+        private static void WriteHydroBlackBoxEntry(BinaryWriter writer, HydroBlackBoxEntry entry)
+        {
+            writer.Write(entry.Frame);
+            writer.Write(entry.FixedTime);
+            WriteFloat3(writer, entry.Position);
+            WriteFloat3(writer, entry.Velocity);
+            WriteFloat3(writer, entry.AngularVelocity);
+            writer.Write(entry.MassKilograms);
+            writer.Write(entry.CargoMassKilograms);
+            writer.Write(entry.CargoMassScalar);
+            writer.Write(entry.SubmersionFactor);
+            writer.Write(entry.DepthMeters);
+            writer.Write(entry.FloodRatio);
+            writer.Write(entry.BallastBias01);
+            WriteFloat3(writer, entry.HydroAcceleration);
+            WriteFloat3(writer, entry.HydroTorque);
+            WriteFloat3(writer, entry.TowingTension);
+            writer.Write(entry.Flags);
+            writer.Write(entry.StateHash);
+        }
+
+        private static void WriteFloat3(BinaryWriter writer, float3 value)
+        {
+            writer.Write(value.x);
+            writer.Write(value.y);
+            writer.Write(value.z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ToFloat3(Vector3 value)
+        {
+            return IsFiniteVector(value) ? new float3(value.x, value.y, value.z) : float3.zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint QuantizeHydroBlackBox(float value)
+        {
+            if (!math.isfinite(value) || math.isnan(value))
+                return 0u;
+
+            return unchecked((uint)(int)math.round(value * 1000f));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint HashHydroBlackBox(uint hash, uint value)
+        {
+            return unchecked((hash ^ value) * 16777619u);
+        }
 
         private void RegisterNativeStateBuffers()
         {
@@ -4234,6 +5246,9 @@ namespace Hecton8.Physics
             RegisterNativeArray(_jobFloodVolumes, nameof(_jobFloodVolumes));
             RegisterNativeArray(_jobCompartmentFlags, nameof(_jobCompartmentFlags));
             RegisterNativeArray(_bulkheadTransferDeltas, nameof(_bulkheadTransferDeltas));
+            RegisterNativeArray(_hydroKinematicInput, nameof(_hydroKinematicInput));
+            RegisterNativeArray(_hydroKinematicOutput, nameof(_hydroKinematicOutput));
+            RegisterNativeArray(_hydroBlackBox, nameof(_hydroBlackBox));
         }
 
         private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct

@@ -34,6 +34,10 @@ Authoritative owner: `ModularEquipmentEngine`
 Hot-path storage:
 - `NativeArray<ToolState> _toolStates`
 - `NativeArray<ToolRuntimeStats> _toolStats`
+- `NativeArray<byte> _toolTypes`
+- `NativeArray<float> _currentHeat`
+- `NativeArray<float> _batteryCharge`
+- `NativeArray<uint> _statusMasks`
 - `NativeHashMap<uint,int> _toolIndexById`
 
 Lookup path is O(1):
@@ -48,13 +52,18 @@ No gameplay system should read mutable tool state from MonoBehaviour fields in h
 Definition:
 
 ```csharp
-[StructLayout(LayoutKind.Sequential, Size = 16)]
+[StructLayout(LayoutKind.Sequential, Size = 32)]
 public struct ToolState
 {
     public float CurrentBattery;
     public float InternalHeat;
     public float Durability;
     public uint UpgradeBitmask;
+    public uint StatusMask;
+    public byte ToolTypeId;
+    public byte ModuleSlotCount;
+    public ushort Reserved0;
+    public ulong Reserved1;
 }
 ```
 
@@ -63,16 +72,24 @@ Byte layout:
 - `4-7` `InternalHeat`
 - `8-11` `Durability`
 - `12-15` `UpgradeBitmask`
+- `16-19` `StatusMask`
+- `20` `ToolTypeId`
+- `21` `ModuleSlotCount`
+- `22-23` `Reserved0`
+- `24-31` `Reserved1`
 
 Proof:
-- `4 + 4 + 4 + 4 = 16 bytes`
-- no hidden tail padding because explicit `Size = 16`
+- `4 + 4 + 4 + 4 + 4 + 1 + 1 + 2 + 8 = 32 bytes`
+- no hidden tail padding because explicit `Size = 32`
 
 Semantics:
 - `CurrentBattery`: absolute runtime charge units already scaled by compiled battery capacity
 - `InternalHeat`: runtime heat scalar. Nominal operating band is `[0..1]`. Overcharge is allowed to push beyond `1.0`; `> 1.5` is catastrophic.
 - `Durability`: normalized `[0..1]`
 - `UpgradeBitmask`: compiled active module flags
+- `StatusMask`: runtime disabled/low-power/overheat/broken/depth-failure flags
+- `ToolTypeId`: byte SOA tool type derived from the stable runtime hash ID
+- `ModuleSlotCount`: active hardware slots mirrored for hot-path consumers
 
 ## Upgrade Bitmask Legend
 
@@ -86,6 +103,21 @@ Semantics:
 - Bit `5` `0x00000020` = `CoolingSink`
 - Bit `6` `0x00000040` = `KineticAccelerator`
 - Bit `7` `0x00000080` = `StandardBattery`
+- Bit `8` `0x00000100` = `ThermalShield`
+- Bit `9` `0x00000200` = `DepthHardened`
+- Bit `10` `0x00000400` = `OxygenRebreather`
+
+## Runtime Status Mask Legend
+
+`ToolRuntimeStatusMasks : uint`
+
+- Bit `0` `0x00000001` = `Active`
+- Bit `1` `0x00000002` = `Disabled`
+- Bit `2` `0x00000004` = `LowPower`
+- Bit `3` `0x00000008` = `Overheated`
+- Bit `4` `0x00000010` = `Broken`
+- Bit `5` `0x00000020` = `DepthFailed`
+- Bit `6` `0x00000040` = `HeatWarningHapticQueued`
 
 Composite modules are allowed. Example:
 - `ToolModule_HighCapCell.asset` currently compiles `HighCapacityCell | WirelessCharging`

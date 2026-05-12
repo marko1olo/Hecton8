@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
+using Hecton8.Gameplay;
 using Hecton8.Narrative;
 using Hecton8.World;
 using Unity.Collections;
@@ -48,7 +49,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
-        public const int CurrentVersion = 63; // v63: construction module health mirror and 64-byte MMF blit records.
+        public const int CurrentVersion = 66; // v66: explicit data-archaeology scan-state payload.
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -123,6 +124,27 @@ namespace Hecton8.SaveSystem
         /// <summary>Packed industrial-lore discovery words for the fixed 50-record archive bank.</summary>
         public long[] industrialLoreUnlockWords;
 
+        /// <summary>Packed 1024-bit data-archaeology discovery mask. Exactly 128 bytes of flag payload. v64 DISCOVERY.</summary>
+        public long[] dataArchaeologyDiscoveryBitWords;
+
+        /// <summary>Number of partial archaeology scan records persisted in fixed arrays. v64 DISCOVERY.</summary>
+        public int dataArchaeologyPartialScanCount;
+
+        /// <summary>Stable archaeology hashes for partial scan progress. v64 DISCOVERY.</summary>
+        public uint[] dataArchaeologyPartialScanHashes;
+
+        /// <summary>Partial archaeology scan progress in permille. v64 DISCOVERY.</summary>
+        public ushort[] dataArchaeologyPartialScanProgressPermille;
+
+        /// <summary>Number of explicit data-archaeology scan-state records. v66 DISCOVERY.</summary>
+        public int dataArchaeologyScanStateCount;
+
+        /// <summary>Signed FNV/AUP hashes for explicit scanner state records. v66 DISCOVERY.</summary>
+        public int[] dataArchaeologyScanStateKeys;
+
+        /// <summary>Scanner state byte per hash: 0=Unscanned, 1=Scanning, 2=Scanned. v66 DISCOVERY.</summary>
+        public byte[] dataArchaeologyScanStateValues;
+
         /// <summary>Aktivnye kvesty. v4.0 QUEST</summary>
         public List<string> questActiveIds = new List<string>();
 
@@ -146,6 +168,9 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Slomannye, no ustanovlennye apgreydy skafandra. v33 WIPEOUT</summary>
         public List<string> suitBrokenUpgradeIds = new List<string>();
+
+        /// <summary>Packed suit upgrade runtime mask. v65 UPGRADES.</summary>
+        public ulong suitUpgradeMask;
 
         /// <summary>ÐÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¹ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑŒ ÑÐ°Ð¼Ð¾Ð²Ñ‹Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ Ð¸Ð³Ñ€Ð¾ÐºÐ°. v4.9 EXPRESSION</summary>
         public string playerExpressionProfileId = string.Empty;
@@ -255,6 +280,18 @@ namespace Hecton8.SaveSystem
                 audioLogEncryptedFragmentBits = new uint[MaxEncryptedAudioLogFragments],
                 // COLD ALLOC: long[IndustrialLoreBitMask.WordCount] — packed industrial lore discovery persistence — owner: SaveData
                 industrialLoreUnlockWords = new long[IndustrialLoreBitMask.WordCount],
+                // COLD ALLOC: long[DataArchaeologyDiscoveryBitMask.WordCount] - packed archaeology discovery persistence - owner: SaveData
+                dataArchaeologyDiscoveryBitWords = new long[DataArchaeologyDiscoveryBitMask.WordCount],
+                dataArchaeologyPartialScanCount = 0,
+                // COLD ALLOC: uint[DataArchaeologyRuntime.MaxPartialScanCount] - partial archaeology hashes - owner: SaveData
+                dataArchaeologyPartialScanHashes = new uint[DataArchaeologyRuntime.MaxPartialScanCount],
+                // COLD ALLOC: ushort[DataArchaeologyRuntime.MaxPartialScanCount] - partial archaeology progress - owner: SaveData
+                dataArchaeologyPartialScanProgressPermille = new ushort[DataArchaeologyRuntime.MaxPartialScanCount],
+                dataArchaeologyScanStateCount = 0,
+                // COLD ALLOC: int[DataArchaeologyRuntime.MaxDiscoveryCount] - data archaeology scan state keys - owner: SaveData
+                dataArchaeologyScanStateKeys = new int[DataArchaeologyRuntime.MaxDiscoveryCount],
+                // COLD ALLOC: byte[DataArchaeologyRuntime.MaxDiscoveryCount] - data archaeology scan state values - owner: SaveData
+                dataArchaeologyScanStateValues = new byte[DataArchaeologyRuntime.MaxDiscoveryCount],
                 questActiveIds = new List<string>(),
                 questCompletedIds = new List<string>(),
                 atlasSignalDetected = false,
@@ -264,6 +301,7 @@ namespace Hecton8.SaveSystem
                 suitInstalledUpgradeIds = new List<string>(),
                 suitUnlockedBlueprintIds = new List<string>(),
                 suitBrokenUpgradeIds = new List<string>(),
+                suitUpgradeMask = 0UL,
                 playerExpressionProfileId = string.Empty,
                 atlas6PlayerStatus = 0,
                 atlas6BarterCount = 0,
@@ -289,6 +327,12 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Maximum persisted partial encrypted audio-log recovery records. v61 LORE.</summary>
         public const int MaxEncryptedAudioLogFragments = 32;
+
+        /// <summary>Maximum persisted partial archaeology scan records. v64 DISCOVERY.</summary>
+        public const int MaxDataArchaeologyPartialScans = DataArchaeologyRuntime.MaxPartialScanCount;
+
+        /// <summary>Maximum explicit scanner state records. v66 DISCOVERY.</summary>
+        public const int MaxDataArchaeologyScanStates = DataArchaeologyRuntime.MaxDiscoveryCount;
     }
 
     // ══════════════════════════════════════════════════════════════════

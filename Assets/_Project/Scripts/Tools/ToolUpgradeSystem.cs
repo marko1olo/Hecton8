@@ -19,19 +19,40 @@ namespace Hecton8.Tools
         CoolingSink = 1u << 5,
         KineticAccelerator = 1u << 6,
         StandardBattery = 1u << 7,
-        ThermalShield = 1u << 8
+        ThermalShield = 1u << 8,
+        DepthHardened = 1u << 9,
+        OxygenRebreather = 1u << 10
+    }
+
+    /// <summary>
+    /// Runtime equipment status bits mirrored into native SOA storage.
+    /// </summary>
+    public static class ToolRuntimeStatusMasks
+    {
+        public const uint Active = 1u << 0;
+        public const uint Disabled = 1u << 1;
+        public const uint LowPower = 1u << 2;
+        public const uint Overheated = 1u << 3;
+        public const uint Broken = 1u << 4;
+        public const uint DepthFailed = 1u << 5;
+        public const uint HeatWarningHapticQueued = 1u << 6;
     }
 
     /// <summary>
     /// Mutable per-tool runtime state stored in contiguous native memory.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct ToolState
     {
         public float CurrentBattery;
         public float InternalHeat;
         public float Durability;
         public uint UpgradeBitmask;
+        public uint StatusMask;
+        public byte ToolTypeId;
+        public byte ModuleSlotCount;
+        public ushort Reserved0;
+        public ulong Reserved1;
     }
 
     /// <summary>
@@ -90,6 +111,8 @@ namespace Hecton8.Tools
         public static bool HasCoolingSink(uint mask) => (mask & (uint)ToolUpgradeBits.CoolingSink) != 0u;
         public static bool HasKineticAccelerator(uint mask) => (mask & (uint)ToolUpgradeBits.KineticAccelerator) != 0u;
         public static bool HasThermalShield(uint mask) => (mask & (uint)ToolUpgradeBits.ThermalShield) != 0u;
+        public static bool HasDepthHardened(uint mask) => (mask & (uint)ToolUpgradeBits.DepthHardened) != 0u;
+        public static bool HasOxygenRebreather(uint mask) => (mask & (uint)ToolUpgradeBits.OxygenRebreather) != 0u;
 
         /// <summary>
         /// Applies a branchless upgrade bonus to one compiled stat.

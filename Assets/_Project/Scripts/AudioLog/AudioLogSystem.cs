@@ -15,7 +15,7 @@
 //
 // SAVE:
 //   - LoadPriority 6 after NarrativeDirector (5).
-//   - Persists discovered log IDs into SaveData.
+//   - Persists discovered logs as a fixed 1024-bit mask.
 // ============================================================================
 
 using System;
@@ -91,6 +91,8 @@ namespace Hecton8.Narrative
         private static readonly uint _EncryptedFragmentStateFullWarningHash = unchecked((uint)LocHash.Compute("AudioLogSystem.EncryptedFragmentStateFull"));
         private static readonly uint _EncryptedVoiceRouteMissingWarningHash = unchecked((uint)LocHash.Compute("AudioLogSystem.EncryptedVoiceRouteMissing"));
         private static readonly uint _NarrativeQueueContextHash = unchecked((uint)LocHash.Compute("NarrativeQueue"));
+        private const float NarrativeRadioDeepStartDepthMeters = 450f;
+        private const float NarrativeRadioDeepFullDepthMeters = 1800f;
         private uint _fallbackDiscoveryNotificationHash;
 
         private AudioLogData _currentLog;
@@ -353,6 +355,7 @@ namespace Hecton8.Narrative
             AudioClip playbackClip = data.ResolvedAudioClip;
             if (playbackClip != null)
             {
+                ApplyNarrativeRadioInterference();
                 if (Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audioManager)
                 {
                     audioManager.PlayStatic2D(playbackClip, playbackVolume);
@@ -389,6 +392,7 @@ namespace Hecton8.Narrative
             if (playbackClip == null)
                 return;
 
+            ApplyNarrativeRadioInterference();
             bool bitCrushRouteActive = false;
             if (Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
             {
@@ -416,6 +420,28 @@ namespace Hecton8.Narrative
             _currentPlaybackBitCrushed = bitCrushRouteActive;
 
             AudioLogEvents.RaisePlaybackStarted(_currentLogHash, _playbackTimer, data);
+        }
+
+        private void ApplyNarrativeRadioInterference()
+        {
+            if (!(Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager))
+                return;
+
+            spatialAudioManager.SetNarrativeRadioInterference(ResolveNarrativeRadioInterference01());
+        }
+
+        private static float ResolveNarrativeRadioInterference01()
+        {
+            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+            HectonSurvivalSystem survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+            float depthMeters = survivalSystem != null ? math.max(0f, survivalSystem.Depth) : 0f;
+            float depth01 = math.saturate(
+                (depthMeters - NarrativeRadioDeepStartDepthMeters) /
+                math.max(1f, NarrativeRadioDeepFullDepthMeters - NarrativeRadioDeepStartDepthMeters));
+
+            TraumaDispatcher traumaDispatcher = playerContext != null ? playerContext.TraumaDispatcher : null;
+            float radiation01 = traumaDispatcher != null ? math.saturate(traumaDispatcher.HazardRadiationSignal01) : 0f;
+            return math.max(depth01, radiation01);
         }
 
         public void NotifyAtmosphericWarningStarted(float durationSeconds)
@@ -1047,7 +1073,6 @@ namespace Hecton8.Narrative
             AudioLogDiscoveryBitMask.Clear(data.audioLogDiscoveryBitWords);
             EnsureSaveEncryptedFragmentArrays(data);
             data.audioLogEncryptedFragmentCount = 0;
-            int count = 0;
 
             for (int i = 0; i < _resolvedLogHashCount; i++)
             {
@@ -1058,15 +1083,6 @@ namespace Hecton8.Narrative
                 }
 
                 AudioLogDiscoveryBitMask.Set(data.audioLogDiscoveryBitWords, i);
-
-                if (count < maxSavedLogs &&
-                    _logLookupByHash.TryGetValue(logHash, out AudioLogData logData) &&
-                    logData != null &&
-                    !string.IsNullOrWhiteSpace(logData.logId))
-                {
-                    data.audioLogDiscoveredIds.Add(logData.logId);
-                    count++;
-                }
             }
 
             int partialCount = 0;
@@ -1132,18 +1148,21 @@ namespace Hecton8.Narrative
             }
 
             int count = math.min(_resolvedLogHashCount, AudioLogDiscoveryBitMask.MaxLogCount);
-            for (int i = 0; i < count; i++)
+            int nextIndex = 0;
+            while (AudioLogDiscoveryBitMask.TryGetNextSetIndex(data.audioLogDiscoveryBitWords, nextIndex, count, out int i))
             {
-                if (!AudioLogDiscoveryBitMask.IsSet(data.audioLogDiscoveryBitWords, i))
-                    continue;
-
                 uint logHash = _resolvedLogHashes[i];
                 if (logHash == 0u)
+                {
+                    nextIndex = i + 1;
                     continue;
+                }
 
                 _discoveredLogHashes.Add(logHash);
                 if (_logLookupByHash.TryGetValue(logHash, out AudioLogData logData) && logData != null)
                     CacheDiscoveryNotificationHash(logHash, logData);
+
+                nextIndex = i + 1;
             }
 
             return true;

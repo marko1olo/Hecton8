@@ -60,10 +60,10 @@ namespace Hecton8.World
         private const float CorpseSpawnInfluenceRadiusMeters = 500f;
         private const float MinimumCorpseDietInfluence01 = 0.001f;
         private const float CorpseSpawnSelectionScale = 2.6f;
-        private const float WhaleFallScavengerSpawnMultiplier = 10f;
+        private const float WhaleFallScavengerSpawnMultiplier = 50f;
         private const float HighPlayerStressThreshold01 = 0.8f;
         private const float InvHighPlayerStressRange01 = 1f / (1f - HighPlayerStressThreshold01);
-        private const float WhaleFallAcousticImpulseLifetimeSeconds = 600f;
+        private const float WhaleFallAcousticImpulseLifetimeSeconds = 7200f;
         private const float WhaleFallAcousticImpulseEnergyJoules = 28000f;
         private const float WhaleFallAcousticImpulseVolume01 = 0.42f;
         private const float WhaleFallAcousticImpulsePitchScale = 0.52f;
@@ -1247,6 +1247,10 @@ namespace Hecton8.World
             }
 
             MigrationDirector.RegisterPredatorKillPoi(uniqueInstanceUid, worldPosition, Time.time);
+            SargassumMicroFaunaBoids microFaunaBoids = GlobalRegistry.SargassumMicroFauna;
+            if (microFaunaBoids != null)
+                microFaunaBoids.RegisterWhaleFallScavengerBurst(worldPosition, uniqueInstanceUid, Time.time);
+
             _activeWhaleFallAcousticPosition = worldPosition;
             _activeWhaleFallAcousticUid = uniqueInstanceUid;
             _activeWhaleFallAcousticUntilTime = Time.time + WhaleFallAcousticImpulseLifetimeSeconds;
@@ -2440,7 +2444,7 @@ namespace Hecton8.World
             if (count <= 64)
                 return 8;
 
-            return 16;
+            return 64;
         }
 
         private static int ResolveApexTerritoryBatchSize(int count)

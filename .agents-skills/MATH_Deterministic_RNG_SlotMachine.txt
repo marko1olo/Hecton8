@@ -1,0 +1,53 @@
+# HECTON-8 | Deterministic RNG | Slot Machine Law
+
+Status: PENDING VERIFICATION
+Authority: TECH_SCOUT
+Date: 2026-05-11
+
+---
+
+## Law
+
+[RULE] "Slot machine" means deterministic weighted selection from an authored table, not Unity random.
+[RULE] Every roll is derived from:
+- world seed or save seed.
+- stable entity/chunk/AUP ID.
+- table version.
+- roll index.
+- explicit salt.
+
+[RULE] Selection uses integer weights and integer threshold compare. Floating cumulative weights are forbidden for gameplay authority.
+[RULE] The result, seed inputs, table version, and roll index must be replay-loggable.
+
+[FORBID] `UnityEngine.Random`, `Random.Range`, `System.Random`, wall-clock time, frame time, object instance ID, or Transform position as authority seeds.
+[FORBID] changing table order without version bump.
+[FORBID] modulo bias for non-power-of-two weighted tables unless rejection sampling or multiply-high mapping is used.
+
+---
+
+## Pattern
+
+```
+uint h = Hash32(worldSeed ^ stableId ^ tableVersion ^ rollIndex ^ salt);
+uint threshold = MultiplyHighToRange(h, totalWeight);
+for (int i = 0; i < entryCount; i++)
+{
+    uint next = cumulativeWeight[i];
+    if (threshold < next)
+        return entryId[i];
+}
+return fallbackEntryId;
+```
+
+Low:
+- 8-bit or 16-bit integer weights.
+- table prepacked into contiguous arrays.
+
+High:
+- larger tables, still integer cumulative.
+
+Ultra:
+- richer visual/audio variation after the deterministic gameplay result is chosen.
+
+[STATUS] Current broad scan found deterministic hash patterns in world systems and existing bans on `Random.Range`, but the slot-machine rule was not explicit before this mandate.
+

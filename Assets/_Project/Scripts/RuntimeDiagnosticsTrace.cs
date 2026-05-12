@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Dev
@@ -77,7 +78,7 @@ namespace Hecton8.Dev
                 foreach (char invalidChar in Path.GetInvalidFileNameChars())
                     safeLabel = safeLabel.Replace(invalidChar, '_');
 
-                string directory = Path.Combine(Application.persistentDataPath, "Diagnostics");
+                string directory = HectonPersistentPathPolicy.CombineDirectory("Diagnostics");
                 Directory.CreateDirectory(directory);
 
                 string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");

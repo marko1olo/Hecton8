@@ -95,7 +95,7 @@ namespace Hecton8.Core
                 _ownerHashes[i] = 0u;
                 _payloadBytes[i] = 0L;
                 long total = Interlocked.Add(ref _estimatedBytes, -previousBytes);
-                if (total < WarningThresholdBytes)
+                if (total < ResolveWarningThresholdBytes())
                     Volatile.Write(ref _warningIssued, 0);
 
                 return true;
@@ -106,7 +106,7 @@ namespace Hecton8.Core
 
         private static void CheckWarning(long totalBytes)
         {
-            if (totalBytes <= WarningThresholdBytes)
+            if (totalBytes <= ResolveWarningThresholdBytes())
             {
                 Volatile.Write(ref _warningIssued, 0);
                 return;
@@ -114,6 +114,13 @@ namespace Hecton8.Core
 
             if (Interlocked.CompareExchange(ref _warningIssued, 1, 0) == 0)
                 GlobalTelemetryBus.PublishVRAMWarningEvent(totalBytes);
+        }
+
+        private static long ResolveWarningThresholdBytes()
+        {
+            return HardwareTierDetector.SharedMemoryModeActive
+                ? HardwareTierDetector.RecommendedVramBudgetBytes
+                : WarningThresholdBytes;
         }
     }
 }

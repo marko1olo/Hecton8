@@ -1821,79 +1821,21 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!playerInventory.TryRemoveOneItemWithState(
-                    _selectedX,
-                    _selectedY,
-                    out int droppedHashId,
-                    out _,
-                    out ulong geneticsMask,
-                    out ushort qualityMilli))
-            {
-                return;
-            }
-
-            ItemData dropped = ResolveInventoryItem(droppedHashId);
-            if (dropped == null)
-            {
-                playerInventory.TryAddItemWithState(droppedHashId, geneticsMask, qualityMilli);
-                return;
-            }
-
             Vector3 spawnPos = dropOrigin.position
                 + dropOrigin.forward * 2.5f
                 + Vector3.down * 0.3f;
 
-            bool dropCommitted = false;
-            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            if (persistentWorldRegistry != null)
+            if (!playerInventory.TryDropOneItemToWorldSignal(
+                    _selectedX,
+                    _selectedY,
+                    spawnPos,
+                    Vector3.zero,
+                    dropOrigin,
+                    out _))
             {
-                dropCommitted = persistentWorldRegistry.TryRegisterDroppedItemWithState(dropped, 1, spawnPos, geneticsMask, qualityMilli);
-                if (!dropCommitted)
-                {
-                    playerInventory.TryAddItemWithState(droppedHashId, geneticsMask, qualityMilli);
-                    NotifyWarning("DROP BLOCKED - PERSISTENT REGISTRY REJECTED ITEM");
-                    return;
-                }
-            }
-
-            if (!dropCommitted)
-            {
-                if (dropped.worldPrefab != null)
-                {
-                    ObjectPoolManager pool = GlobalRegistry.ObjectPool;
-                    if (pool != null)
-                    {
-                        GameObject instance = pool.Spawn(dropped.worldPrefab, spawnPos, Quaternion.identity);
-                        if (instance != null)
-                        {
-                            if (instance.TryGetComponent(out PickupItem pickupItem))
-                                pickupItem.Configure(dropped, 1, geneticsMask, qualityMilli);
-                            else if (instance.TryGetComponent(out HectonItem hectonItem))
-                                hectonItem.SetItemData(dropped, 1, geneticsMask, qualityMilli);
-
-                            dropCommitted = true;
-                        }
-                    }
-                }
-            }
-
-            if (!dropCommitted)
-            {
-                playerInventory.TryAddItemWithState(droppedHashId, geneticsMask, qualityMilli);
                 NotifyWarning("DROP BLOCKED - WORLD SPAWN FAILED");
                 return;
             }
-
-            bool hasInteractorPosition = dropOrigin != null;
-            ulong interactorEntityId = hasInteractorPosition ? EntityId.ToULong(dropOrigin.GetEntityId()) : 0ul;
-            Vector3 interactorPosition = hasInteractorPosition ? dropOrigin.position : Vector3.zero;
-            InteractionEvents.RaiseItemLost(dropped, 1, dropOrigin);
-            HectonEventBus.Publish(new ItemDiscardedEvent(
-                dropped,
-                1,
-                interactorEntityId,
-                interactorPosition,
-                hasInteractorPosition));
 
             // Proveryaem ostalsya li predmet na etoy pozitsii
             int remainingHashId = playerInventory.GetItemHashAt(_selectedX, _selectedY);

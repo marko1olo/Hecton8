@@ -64,16 +64,18 @@ namespace Hecton8.Visor
 
         private readonly struct RuntimeState
         {
-            public RuntimeState(float health01, float critical01, float heartbeatBpm)
+            public RuntimeState(float health01, float critical01, float heartbeatBpm, float narcosis01)
             {
                 Health01 = health01;
                 Critical01 = critical01;
                 HeartbeatBpm = heartbeatBpm;
+                Narcosis01 = narcosis01;
             }
 
             public float Health01 { get; }
             public float Critical01 { get; }
             public float HeartbeatBpm { get; }
+            public float Narcosis01 { get; }
         }
 
         private sealed class RetinaDistortionPass : ScriptableRenderPass
@@ -95,6 +97,7 @@ namespace Hecton8.Visor
             private float _lastHealth01 = float.PositiveInfinity;
             private float _lastCritical01 = float.PositiveInfinity;
             private float _lastHeartbeatBpm = float.PositiveInfinity;
+            private float _lastNarcosis01 = float.PositiveInfinity;
             private float _lastChromaticOffset = float.PositiveInfinity;
             private float _lastDistortionOffset = float.PositiveInfinity;
             private float _lastVignetteStrength = float.PositiveInfinity;
@@ -120,8 +123,12 @@ namespace Hecton8.Visor
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                if (_settings == null || _material == null || _runtimeState.Critical01 <= 0.001f)
+                if (_settings == null ||
+                    _material == null ||
+                    math.max(_runtimeState.Critical01, _runtimeState.Narcosis01) <= 0.001f)
+                {
                     return;
+                }
 
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
                 if (resourceData.isActiveTargetBackBuffer)
@@ -161,7 +168,6 @@ namespace Hecton8.Visor
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(destinationTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
                     {
@@ -189,20 +195,23 @@ namespace Hecton8.Visor
                 }
 
                 float critical01 = math.saturate(runtimeState.Critical01);
+                float narcosis01 = math.saturate(runtimeState.Narcosis01);
+                float drive01 = math.max(critical01, narcosis01);
                 float health01 = math.saturate(runtimeState.Health01);
                 float heartbeatBpm = math.max(1f, runtimeState.HeartbeatBpm);
                 RetinaOffsetBudget offsetBudget = ResolveRetinaOffsetBudget(
                     math.max(0f, settings.maxChromaticOffset),
                     math.max(0f, settings.maxDistortionOffset),
-                    critical01,
+                    drive01,
                     SystemInfo.graphicsMemorySize);
                 bool mx350Tier = SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= 2048;
-                float vignetteStrength = math.saturate(settings.maxVignetteStrength) * critical01;
+                float vignetteStrength = math.saturate(settings.maxVignetteStrength) * math.max(critical01, narcosis01 * 0.62f);
 
                 SetMx350KeywordIfChanged(material, mx350Tier);
                 SetMaterialFloatIfChanged(material, ShaderConstants.HealthId, health01, ref _lastHealth01);
                 SetMaterialFloatIfChanged(material, ShaderConstants.CriticalId, critical01, ref _lastCritical01);
                 SetMaterialFloatIfChanged(material, ShaderConstants.HeartbeatBpmId, heartbeatBpm, ref _lastHeartbeatBpm);
+                SetMaterialFloatIfChanged(material, ShaderConstants.NarcosisId, narcosis01, ref _lastNarcosis01);
                 SetMaterialFloatIfChanged(
                     material,
                     ShaderConstants.ChromaticOffsetId,
@@ -226,6 +235,7 @@ namespace Hecton8.Visor
                 _lastHealth01 = float.PositiveInfinity;
                 _lastCritical01 = float.PositiveInfinity;
                 _lastHeartbeatBpm = float.PositiveInfinity;
+                _lastNarcosis01 = float.PositiveInfinity;
                 _lastChromaticOffset = float.PositiveInfinity;
                 _lastDistortionOffset = float.PositiveInfinity;
                 _lastVignetteStrength = float.PositiveInfinity;
@@ -262,6 +272,7 @@ namespace Hecton8.Visor
             internal static readonly int HealthId = Shader.PropertyToID("_HectonRetinaHealth01");
             internal static readonly int CriticalId = Shader.PropertyToID("_HectonRetinaCritical01");
             internal static readonly int HeartbeatBpmId = Shader.PropertyToID("_HectonRetinaHeartbeatBpm");
+            internal static readonly int NarcosisId = Shader.PropertyToID("_HectonNarcosisScalar");
             internal static readonly int ChromaticOffsetId = Shader.PropertyToID("_HectonRetinaChromaticOffset");
             internal static readonly int DistortionOffsetId = Shader.PropertyToID("_HectonRetinaDistortionOffset");
             internal static readonly int VignetteStrengthId = Shader.PropertyToID("_HectonRetinaVignetteStrength");
@@ -328,19 +339,20 @@ namespace Hecton8.Visor
             if (playerCamera == null || !ReferenceEquals(renderCamera, playerCamera))
                 return false;
 
-            if (!UIStateStore.TryReadValue(UIValueSlotId.Health01, out UIValueSlot healthSlot))
-                return false;
-
+            float narcosis01 = math.saturate(Shader.GetGlobalFloat(ShaderConstants.NarcosisId));
             float threshold = math.clamp(settings.healthThreshold01, 0.01f, 0.35f);
-            float health01 = math.saturate(healthSlot.Value);
-            if (health01 >= threshold)
+            bool hasHealth = UIStateStore.TryReadValue(UIValueSlotId.Health01, out UIValueSlot healthSlot);
+            float health01 = hasHealth ? math.saturate(healthSlot.Value) : 1f;
+            float critical01 = hasHealth && health01 < threshold
+                ? math.saturate((threshold - health01) * math.rcp(threshold))
+                : 0f;
+            if (math.max(critical01, narcosis01) <= 0.001f)
                 return false;
 
-            float critical01 = math.saturate((threshold - health01) / threshold);
             float drive01 = critical01 * critical01 * (3f - 2f * critical01);
             float baseBpm = math.max(1f, settings.baseHeartbeatBpm);
             float criticalBpm = math.max(baseBpm, settings.criticalHeartbeatBpm);
-            runtimeState = new RuntimeState(health01, drive01, math.lerp(baseBpm, criticalBpm, drive01));
+            runtimeState = new RuntimeState(health01, drive01, math.lerp(baseBpm, criticalBpm, drive01), narcosis01);
             return true;
         }
 

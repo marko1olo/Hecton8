@@ -1,0 +1,53 @@
+# REND_TERRAIN_VIRTUAL_TEXTURING.md
+## Terrain Virtual Texturing Mandate
+
+Status: PENDING VERIFICATION
+Owner: Geology Master / Rendering Lead
+
+---
+
+## Primary Law
+
+[RULE] Terrain/albedo/detail material variety must use texture arrays or virtual texturing only after platform validation.
+[FORBID] Increasing terrain material variety by adding more independent sampled Texture2D bindings per terrain shader.
+
+---
+
+## Unity 6000 Scout Result
+
+Unity documents Streaming Virtual Texturing as a way to stream only visible texture tiles, but adoption must be validated against the active render pipeline, target platforms, shader authoring path, and build settings.
+
+Reference:
+https://docs.unity3d.com/Manual/svt-streaming-virtual-texturing.html
+
+[BROKEN IF CLAIMED] This project does not currently prove active terrain SVT use. Static scan showed MicroSplat/Texture2DArray terrain paths, not a verified SVT configuration.
+
+---
+
+## Decision Matrix
+
+LOW / MX350:
+- Prefer 512 px terrain texture arrays.
+- Channel-pack masks.
+- Use mip bias and distance-based material simplification.
+- Avoid SVT unless profiler proves lower VRAM and no page-cache hitching.
+
+MIDDLE:
+- Texture arrays remain default.
+- SVT allowed for broad terrain megatextures if page misses are invisible.
+
+HIGH / ULTRA:
+- SVT allowed for hero terrain variety and geology inspection surfaces.
+- Spend saved VRAM on stronger silhouettes, not more invisible material layers.
+
+---
+
+## Verification
+
+[REQUIRE] Before enabling SVT:
+- GPU memory capture.
+- page-cache miss/hitch capture while moving fast.
+- terrain shader variant count.
+- visual comparison at 10m, 50m, 150m.
+- MX350 or equivalent low-tier capture.
+

@@ -12,11 +12,13 @@ Material:
   m_Parent: {fileID: 2100000, guid: 9def92ac79181fe41b238e91663f0fad, type: 2}
   m_ModifiedSerializedProperties: 4
   m_ValidKeywords:
+  - _ALBEDO_ON
   - _APPLYNORMALMAPPING_ON
+  - _CLIPUNDERTERRAIN_ON
   - _FLOW_ON
-  - _FOAM3DLIGHTING_ON
   - _FOAM_ON
   - _PLANARREFLECTIONS_ON
+  - _PROCEDURALSKY_ON
   - _SHADOWS_ON
   - _SUBSURFACESCATTERING_ON
   - _SUBSURFACESHALLOWCOLOUR_ON

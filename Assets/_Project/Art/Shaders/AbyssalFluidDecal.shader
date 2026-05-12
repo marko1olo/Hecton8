@@ -15,8 +15,8 @@ Shader "HECTON/World/AbyssalFluidDecal"
     {
         Tags
         {
-            "Queue" = "Transparent"
-            "RenderType" = "Transparent"
+            "Queue" = "AlphaTest+40"
+            "RenderType" = "TransparentCutout"
             "RenderPipeline" = "UniversalPipeline"
             "IgnoreProjector" = "True"
             "PreviewType" = "Plane"
@@ -24,8 +24,9 @@ Shader "HECTON/World/AbyssalFluidDecal"
         }
 
         Cull Off
-        ZWrite Off
-        Blend SrcAlpha OneMinusSrcAlpha
+        ZWrite On
+        Blend Off
+        AlphaToMask On
 
         Pass
         {
@@ -100,6 +101,11 @@ Shader "HECTON/World/AbyssalFluidDecal"
                 return SAMPLE_TEXTURE2D(_HectonShallowWaterFieldRT, sampler_HectonShallowWaterFieldRT, uv).b;
             }
 
+            void ClipDitheredAlpha(half alpha, float4 positionCS)
+            {
+                clip((float)alpha - InterleavedGradientNoise(positionCS.xy));
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
@@ -108,21 +114,22 @@ Shader "HECTON/World/AbyssalFluidDecal"
                 float wakeCenter = SampleWakeTrail(worldXZ);
                 float wakeOffsetX = SampleWakeTrail(worldXZ + float2(0.8, 0.0)) - SampleWakeTrail(worldXZ + float2(-0.8, 0.0));
                 float wakeOffsetZ = SampleWakeTrail(worldXZ + float2(0.0, 0.8)) - SampleWakeTrail(worldXZ + float2(0.0, -0.8));
-                float wakeMask = saturate((wakeCenter - _WakeThreshold) / max(0.001, 1.0 - _WakeThreshold));
+                float wakeMask = saturate((wakeCenter - _WakeThreshold) * rcp(max(0.001, 1.0 - _WakeThreshold)));
                 float2 distortedUv = input.uv + float2(wakeOffsetX, wakeOffsetZ) * (_WakeDistortion * wakeMask);
                 half2 radialAbs = abs(half2(distortedUv.x, distortedUv.y));
                 half radial = max(radialAbs.x, radialAbs.y) + min(radialAbs.x, radialAbs.y) * 0.375h;
                 half edge = saturate(1.0h - smoothstep(max(0.0h, 1.0h - _Softness), 1.0h, radial));
                 half centerBoost = saturate(1.0h - radial * 0.82h);
                 half tearMask = saturate(1.0h - wakeMask * _WakeTearStrength);
-                float2 screenUV = input.positionCS.xy / _ScaledScreenParams.xy;
+                float2 screenUV = input.positionCS.xy * rcp(max(_ScaledScreenParams.xy, float2(1.0, 1.0)));
                 float sceneRawDepth = SampleSceneDepth(screenUV);
                 float sceneEyeDepth = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
                 float fragmentEyeDepth = LinearEyeDepth(input.positionCS.z, _ZBufferParams);
-                half depthFade = saturate((half)((sceneEyeDepth - fragmentEyeDepth) / max(_DepthFadeDistance, 0.001h)));
+                half depthFade = saturate((half)((sceneEyeDepth - fragmentEyeDepth) * rcp(max(_DepthFadeDistance, 0.001h))));
                 half alpha = saturate(edge * tearMask * depthFade * _TintColor.a * lerp(0.72h, 1.0h, centerBoost));
                 half3 color = _TintColor.rgb * lerp(0.86h, 1.08h, centerBoost) * lerp(1.0h, 1.12h, wakeMask * 0.25h);
-                return half4(color, alpha);
+                ClipDitheredAlpha(alpha, input.positionCS);
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }

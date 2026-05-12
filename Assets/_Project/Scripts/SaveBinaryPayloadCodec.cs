@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Gameplay;
 using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections;
@@ -33,6 +34,7 @@ namespace Hecton8.SaveSystem
         private const float BiologicalReferenceTemperatureCelsius = 4f;
         private const float BiologicalDecayRatePerSecond = 0.001f;
         private const int NullCollectionCount = -1;
+        private const int SuitUpgradeMaskSaveVersion = 65;
 
         internal static ulong BuildSectorEntitySpatialSortKey(in AbsoluteUniversePosition position, int chunkSizeMeters)
         {
@@ -163,11 +165,13 @@ namespace Hecton8.SaveSystem
                 && WriteAudioLogDiscoveryBitWords(ref writer, data)
                 && WriteEncryptedAudioLogFragments(ref writer, data)
                 && writer.WriteStructArray(data.industrialLoreUnlockWords)
+                && WriteDataArchaeology(ref writer, data)
                 && WriteStringList(ref writer, data.questActiveIds)
                 && WriteStringList(ref writer, data.questCompletedIds)
                 && writer.WriteBool(data.atlasSignalDetected)
                 && writer.WriteFloat(data.atlasSignalPulseTimer)
                 && writer.WriteInt(data.atlasSignalRevealStage)
+                && writer.WriteStruct(data.suitUpgradeMask)
                 && WriteStringList(ref writer, data.suitInstalledUpgradeIds)
                 && WriteStringList(ref writer, data.suitUnlockedBlueprintIds)
                 && WriteStringList(ref writer, data.suitBrokenUpgradeIds)
@@ -229,11 +233,13 @@ namespace Hecton8.SaveSystem
                 || !ReadAudioLogDiscoveryBitWords(ref reader, data.version, data)
                 || !ReadEncryptedAudioLogFragments(ref reader, data.version, data)
                 || !reader.ReadStructArray(out data.industrialLoreUnlockWords)
+                || !ReadDataArchaeology(ref reader, data.version, data)
                 || !ReadStringList(ref reader, out data.questActiveIds)
                 || !ReadStringList(ref reader, out data.questCompletedIds)
                 || !reader.ReadBool(out data.atlasSignalDetected)
                 || !reader.ReadFloat(out data.atlasSignalPulseTimer)
                 || !reader.ReadInt(out data.atlasSignalRevealStage)
+                || !ReadSuitUpgradeMask(ref reader, data.version, out data.suitUpgradeMask)
                 || !ReadStringList(ref reader, out data.suitInstalledUpgradeIds)
                 || !ReadStringList(ref reader, out data.suitUnlockedBlueprintIds)
                 || !ReadStringList(ref reader, out data.suitBrokenUpgradeIds)
@@ -266,6 +272,8 @@ namespace Hecton8.SaveSystem
 
         private const int EncryptedAudioLogFragmentSaveVersion = 61;
         private const int PackedNarrativeLoreSaveVersion = 62;
+        private const int DataArchaeologySaveVersion = 64;
+        private const int DataArchaeologyScanStateSaveVersion = 66;
 
         private static bool ReadNarrativeAupTriggeredMask(
             ref BufferReader reader,
@@ -275,6 +283,151 @@ namespace Hecton8.SaveSystem
             triggeredMask = 0UL;
             return saveDataVersion < PackedNarrativeLoreSaveVersion ||
                    reader.ReadStruct(out triggeredMask);
+        }
+
+        private static bool ReadSuitUpgradeMask(
+            ref BufferReader reader,
+            int saveDataVersion,
+            out ulong upgradeMask)
+        {
+            upgradeMask = 0UL;
+            return saveDataVersion < SuitUpgradeMaskSaveVersion ||
+                   reader.ReadStruct(out upgradeMask);
+        }
+
+        private static bool WriteDataArchaeology(ref BufferWriter writer, SaveData data)
+        {
+            long[] words = data != null ? data.dataArchaeologyDiscoveryBitWords : null;
+            if (!DataArchaeologyDiscoveryBitMask.HasExpectedCapacity(words))
+            {
+                for (int i = 0; i < DataArchaeologyDiscoveryBitMask.WordCount; i++)
+                {
+                    if (!writer.WriteLong(0L))
+                        return false;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < DataArchaeologyDiscoveryBitMask.WordCount; i++)
+                {
+                    if (!writer.WriteLong(words[i]))
+                        return false;
+                }
+            }
+
+            int safeCount = 0;
+            if (data != null)
+            {
+                safeCount = Math.Clamp(
+                    data.dataArchaeologyPartialScanCount,
+                    0,
+                    Math.Min(
+                        SaveData.MaxDataArchaeologyPartialScans,
+                        Math.Min(
+                            data.dataArchaeologyPartialScanHashes != null ? data.dataArchaeologyPartialScanHashes.Length : 0,
+                            data.dataArchaeologyPartialScanProgressPermille != null ? data.dataArchaeologyPartialScanProgressPermille.Length : 0)));
+            }
+
+            return writer.WriteInt(safeCount)
+                && writer.WriteStructArraySlice(data != null ? data.dataArchaeologyPartialScanHashes : null, safeCount)
+                && writer.WriteStructArraySlice(data != null ? data.dataArchaeologyPartialScanProgressPermille : null, safeCount)
+                && WriteDataArchaeologyScanStates(ref writer, data);
+        }
+
+        private static bool ReadDataArchaeology(ref BufferReader reader, int saveDataVersion, SaveData data)
+        {
+            if (data == null)
+                return false;
+
+            DataArchaeologyDiscoveryBitMask.EnsureCapacity(ref data.dataArchaeologyDiscoveryBitWords);
+            DataArchaeologyDiscoveryBitMask.Clear(data.dataArchaeologyDiscoveryBitWords);
+            data.dataArchaeologyPartialScanCount = 0;
+            data.dataArchaeologyPartialScanHashes = new uint[SaveData.MaxDataArchaeologyPartialScans];
+            data.dataArchaeologyPartialScanProgressPermille = new ushort[SaveData.MaxDataArchaeologyPartialScans];
+            data.dataArchaeologyScanStateCount = 0;
+            data.dataArchaeologyScanStateKeys = new int[SaveData.MaxDataArchaeologyScanStates];
+            data.dataArchaeologyScanStateValues = new byte[SaveData.MaxDataArchaeologyScanStates];
+
+            if (saveDataVersion < DataArchaeologySaveVersion)
+                return true;
+
+            for (int i = 0; i < DataArchaeologyDiscoveryBitMask.WordCount; i++)
+            {
+                if (!reader.ReadLong(out data.dataArchaeologyDiscoveryBitWords[i]))
+                    return false;
+            }
+
+            if (!reader.ReadInt(out int count) ||
+                !reader.ReadStructArray(out uint[] partialHashes) ||
+                !reader.ReadStructArray(out ushort[] partialProgress))
+            {
+                return false;
+            }
+
+            int safeCount = Math.Clamp(
+                count,
+                0,
+                Math.Min(
+                    SaveData.MaxDataArchaeologyPartialScans,
+                    Math.Min(partialHashes != null ? partialHashes.Length : 0, partialProgress != null ? partialProgress.Length : 0)));
+
+            data.dataArchaeologyPartialScanCount = safeCount;
+            for (int i = 0; i < safeCount; i++)
+            {
+                data.dataArchaeologyPartialScanHashes[i] = partialHashes[i];
+                data.dataArchaeologyPartialScanProgressPermille[i] = partialProgress[i];
+            }
+
+            return ReadDataArchaeologyScanStates(ref reader, saveDataVersion, data);
+        }
+
+        private static bool WriteDataArchaeologyScanStates(ref BufferWriter writer, SaveData data)
+        {
+            int safeCount = 0;
+            if (data != null)
+            {
+                safeCount = Math.Clamp(
+                    data.dataArchaeologyScanStateCount,
+                    0,
+                    Math.Min(
+                        SaveData.MaxDataArchaeologyScanStates,
+                        Math.Min(
+                            data.dataArchaeologyScanStateKeys != null ? data.dataArchaeologyScanStateKeys.Length : 0,
+                            data.dataArchaeologyScanStateValues != null ? data.dataArchaeologyScanStateValues.Length : 0)));
+            }
+
+            return writer.WriteInt(safeCount)
+                && writer.WriteStructArraySlice(data != null ? data.dataArchaeologyScanStateKeys : null, safeCount)
+                && writer.WriteStructArraySlice(data != null ? data.dataArchaeologyScanStateValues : null, safeCount);
+        }
+
+        private static bool ReadDataArchaeologyScanStates(ref BufferReader reader, int saveDataVersion, SaveData data)
+        {
+            if (saveDataVersion < DataArchaeologyScanStateSaveVersion)
+                return true;
+
+            if (!reader.ReadInt(out int count) ||
+                !reader.ReadStructArray(out int[] keys) ||
+                !reader.ReadStructArray(out byte[] values))
+            {
+                return false;
+            }
+
+            int safeCount = Math.Clamp(
+                count,
+                0,
+                Math.Min(
+                    SaveData.MaxDataArchaeologyScanStates,
+                    Math.Min(keys != null ? keys.Length : 0, values != null ? values.Length : 0)));
+
+            data.dataArchaeologyScanStateCount = safeCount;
+            for (int i = 0; i < safeCount; i++)
+            {
+                data.dataArchaeologyScanStateKeys[i] = keys[i];
+                data.dataArchaeologyScanStateValues[i] = values[i];
+            }
+
+            return true;
         }
 
         private static bool WriteAudioLogDiscoveryBitWords(ref BufferWriter writer, SaveData data)

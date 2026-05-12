@@ -1,0 +1,45 @@
+# HECTON-8 | DirectStorage Reality Check | MMF Paging Boundary
+
+Status: PENDING VERIFICATION
+Authority: TECH_SCOUT
+Date: 2026-05-11
+
+---
+
+## Law
+
+[RULE] DirectStorage is a native Windows/GDK asset-streaming API candidate, not a Unity-managed MMF paging replacement until an owned native plugin or official Unity integration exists in the project.
+[RULE] Current MMF save/module paging remains on the persistent worker standard in `STRM_Async_Standard.txt`.
+[RULE] DirectStorage evaluation is limited to Windows asset payloads that benefit from batched IO, direct destination buffers, and GPU/CPU decompression queues.
+
+[FORBID] Claiming DirectStorage improves `MemoryMappedFile` DTO reads without a native integration benchmark.
+[FORBID] Moving compressed gameplay state decompression to the GPU on MX350 without proving render-frame compute headroom.
+[FORBID] Runtime adoption without a fallback path for non-Windows, Linux/Vulkan, and editor workflows.
+
+---
+
+## Evidence Boundary
+
+[SOURCE] Microsoft DirectStorage documentation describes queued batched IO, lock-free queues, direct title-provided destination buffers, fence/event completion, and decompression support.
+https://learn.microsoft.com/en-us/gaming/gdk/docs/features/console/storage/directstorage/directstorage-overview
+
+[SOURCE] Microsoft DirectX developer materials publish DirectStorage SDK/API samples outside Unity's managed API surface.
+https://devblogs.microsoft.com/directx/directstorage-api-downloads/
+
+[PROJECT] Static scout pass found no Unity project DirectStorage wrapper and no official Unity C# API usage.
+
+---
+
+## Adoption Gate
+
+1. Build a native Windows plugin prototype isolated from gameplay.
+2. Stream a representative texture/mesh bundle, not save DTOs.
+3. Measure:
+   - CPU time per 1,000 requests.
+   - wall-clock latency.
+   - GPU decompression cost during an active render frame.
+   - VRAM staging pressure on MX350 2GB.
+4. Keep MMF + LZ4 worker as default until the native path wins in Player.
+
+[STATUS] Any DirectStorage saving is PENDING VERIFICATION.
+

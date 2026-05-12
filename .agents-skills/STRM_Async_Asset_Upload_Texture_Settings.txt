@@ -1,0 +1,53 @@
+# STRM_ASYNC_ASSET_UPLOAD_TEXTURE_SETTINGS
+
+Status: PENDING VERIFICATION
+Owner: TECH_SCOUT
+Date: 2026-05-11
+
+## Unity 6000 Evidence
+
+Unity exposes the asynchronous upload pipeline through QualitySettings controls for buffer size, time slice, and persistent buffer behavior.
+
+Official references:
+- https://docs.unity3d.com/Manual/configure-asynchronous-upload-pipeline.html
+- https://docs.unity3d.com/ScriptReference/QualitySettings-asyncUploadBufferSize.html
+- https://docs.unity3d.com/ScriptReference/QualitySettings-asyncUploadTimeSlice.html
+- https://docs.unity3d.com/ScriptReference/QualitySettings-asyncUploadPersistentBuffer.html
+
+## Law
+
+[RULE] Async texture/mesh upload settings are part of the Scalability Matrix, not ad hoc project settings.
+
+[RULE] Set upload budget during bootstrap after hardware tier resolution:
+- Low / MX350: 64 MB upload buffer, 1 ms upload time slice.
+- Mid: 128 MB upload buffer, 2 ms upload time slice.
+- High / Ultra: 256 MB upload buffer, 4 ms upload time slice.
+
+[RULE] `QualitySettings.asyncUploadPersistentBuffer` stays enabled during gameplay so Unity does not repeatedly allocate/release the upload ring under stream pressure.
+
+[FORBID] Changing async upload buffer/time-slice every frame.
+
+[FORBID] Treating a larger upload buffer as free performance. On 2 GB VRAM / 8 GB RAM machines, larger upload buffers compete with texture residency and OS pressure.
+
+## DOD
+
+- Bootstrap writes buffer size, time slice, and persistent-buffer state once per tier decision.
+- Texture import and Addressables groups do not bypass the global upload budget.
+- PlayMode capture includes upload spikes, texture memory, and reserved memory.
+- Player capture on MX350 proves no frame exceeds the streaming spike budget before marking VERIFIED.
+
+## Scalability
+
+Low: 64 MB / 1 ms. Prefer smaller streamed mips and visible fade-in over upload spikes.
+
+Middle: 128 MB / 2 ms. Allows moderate streaming while protecting frame cadence.
+
+High: 256 MB / 4 ms. Buys faster hero-area texture residency after the renderer has spare time.
+
+Ultra: 256 MB / 4 ms unless a Player capture proves more headroom.
+
+## Hardware Impact
+
+Expected gain: lower texture upload hitches and fewer upload-buffer resize events on i3/MX350.
+
+Claimed microseconds saved: PENDING PLAYER PROFILER. No runtime capture was produced by this mandate pass.

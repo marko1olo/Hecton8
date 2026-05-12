@@ -277,7 +277,6 @@ namespace Hecton8.Visor
 
                     builder.UseTexture(blurTexture, AccessFlags.Read);
                     builder.UseTexture(occlusionTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
                     builder.SetGlobalTextureAfterPass(occlusionTexture, ShaderConstants.SsdoTextureId);
 
                     builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>

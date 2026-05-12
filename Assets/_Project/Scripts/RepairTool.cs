@@ -25,14 +25,18 @@
 // ============================================================================
 
 using System;
+using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Items;
+using Hecton8.Physics;
 using Hecton8.Tools;
 using Hecton8.UI;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -50,6 +54,8 @@ namespace Hecton8.Gameplay
         private const string RepairToolPatchingHeadline = "PATCHING";
         private const string RepairToolCategory = "REPAIR";
         private const string RepairToolModuleLabel = "BASE MODULE";
+        private const uint RepairSparksSignalHash = 0x44525350u;
+        private const byte RepairSparkDebrisKind = 1;
         private static readonly char[] s_integrityDiagnosticPrefixChars = "INTEGRITY ".ToCharArray();
         private static FixedCharBuffer s_hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - repair tool HUD staging buffer - owner: RepairTool
 
@@ -110,6 +116,9 @@ namespace Hecton8.Gameplay
         private HectonVoxelVolume _cachedServiceTargetVoxelVolume;
         private Collider _cachedAirlockTargetCollider;
         private BaseAirlock _cachedServiceTargetAirlock;
+        private Collider _cachedSubmarineDamageTargetCollider;
+        private ISubmarineDamageControlTarget _cachedSubmarineDamageTarget;
+        private readonly List<MonoBehaviour> _submarineDamageTargetSearchBuffer = new List<MonoBehaviour>(16); // COLD ALLOC: List<MonoBehaviour>(16) - interface lookup scratch for submarine damage-control targets - owner: RepairTool
         private readonly char[] _integrityDiagnosticBuffer = new char[24]; // COLD ALLOC: char[24] — repair-tool floating integrity diagnostic buffer — owner: RepairTool
 
         // ══════════════════════════════════════════════════════════
@@ -347,6 +356,13 @@ namespace Hecton8.Gameplay
             if (airlock != null && airlock.TryApplyWeldOverride(deltaTime, _hit.point))
             {
                 UpdateBeamHit(_hit.point, _hit.normal);
+                ClearIntegrityDiagnostic();
+                InvalidateDiagnosisCache();
+                return;
+            }
+
+            if (TryHandleSubmarineDamageControlHit(deltaTime))
+            {
                 ClearIntegrityDiagnostic();
                 InvalidateDiagnosisCache();
                 return;
@@ -604,9 +620,6 @@ namespace Hecton8.Gameplay
                 Transform t = sparksVFX.transform;
                 t.position = hitPoint;
                 t.rotation = Quaternion.LookRotation(hitNormal);
-
-                if (!sparksVFX.isPlaying)
-                    sparksVFX.Play();
             }
 
             if (weldLight != null)
@@ -742,6 +755,71 @@ namespace Hecton8.Gameplay
             }
 
             return _cachedServiceTargetAirlock;
+        }
+
+        private bool TryHandleSubmarineDamageControlHit(float deltaTime)
+        {
+            ISubmarineDamageControlTarget damageTarget = ResolveSubmarineDamageControlTarget(_hit.collider);
+            if (damageTarget == null)
+                return false;
+
+            float repairPowerPerSecond = ResolveRuntimeRepairPowerPerSecond();
+            float intensity01 = ResolveRuntimeRepairPowerNormalized();
+            if (!damageTarget.TryQueueRepairHit(_hit.point, deltaTime, repairPowerPerSecond, intensity01))
+                return false;
+
+            UpdateBeamHit(_hit.point, _hit.normal);
+            PublishRepairSparkSignal(_hit.point, intensity01);
+            QueueToolHapticFeedback(repairPowerPerSecond, math.max(1f, repairSpeed));
+
+            if (!_activeRepairReportedThisUse)
+            {
+                PublishActiveRepairInfo(RepairToolPatchingHeadline);
+                _activeRepairReportedThisUse = true;
+            }
+
+            return true;
+        }
+
+        private ISubmarineDamageControlTarget ResolveSubmarineDamageControlTarget(Collider collider)
+        {
+            if (collider == null)
+                return null;
+
+            if (!ReferenceEquals(_cachedSubmarineDamageTargetCollider, collider))
+            {
+                _cachedSubmarineDamageTargetCollider = collider;
+                _cachedSubmarineDamageTarget = null;
+
+                _submarineDamageTargetSearchBuffer.Clear();
+                collider.GetComponentsInParent(false, _submarineDamageTargetSearchBuffer);
+                for (int i = 0; i < _submarineDamageTargetSearchBuffer.Count; i++)
+                {
+                    MonoBehaviour component = _submarineDamageTargetSearchBuffer[i];
+                    if (component is ISubmarineDamageControlTarget target)
+                    {
+                        _cachedSubmarineDamageTarget = target;
+                        break;
+                    }
+                }
+            }
+
+            return _cachedSubmarineDamageTarget;
+        }
+
+        private void PublishRepairSparkSignal(Vector3 worldPoint, float intensity01)
+        {
+            Vector3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPoint);
+            DebrisSpawnSignal signal = new DebrisSpawnSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(absolute.x, absolute.y, absolute.z)),
+                SpeciesHash = RepairSparksSignalHash,
+                SourceEntityId = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId())),
+                Intensity01 = math.saturate(intensity01),
+                DebrisKind = RepairSparkDebrisKind,
+                Flags = 0
+            };
+            GlobalSignals.Publish(in signal);
         }
 
         private void PublishIntegrityDiagnostic(BaseModule module, Vector3 hitPoint, Vector3 hitNormal)

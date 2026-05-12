@@ -23,6 +23,37 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Blittable source descriptor for deterministic replay snapshot capture.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NativeAllocationSnapshotSource
+    {
+        /// <summary>Raw pointer to a stable pointer-backed native allocation.</summary>
+        public ulong Pointer;
+
+        /// <summary>Allocation byte count.</summary>
+        public long Bytes;
+
+        /// <summary>Stable owner hash.</summary>
+        public uint OwnerHash;
+
+        /// <summary>Stable label hash.</summary>
+        public uint LabelHash;
+
+        /// <summary>Frame where the allocation was registered.</summary>
+        public int AllocationFrame;
+
+        /// <summary>Stored <see cref="NativeAllocationLifetime"/> value.</summary>
+        public byte Lifetime;
+
+        /// <summary>Stored <see cref="Allocator"/> value.</summary>
+        public byte Allocator;
+
+        /// <summary>Reserved padding for fixed 32-byte layout.</summary>
+        public ushort Reserved;
+    }
+
+    /// <summary>
     /// Central cold-path registry for persistent native allocations.
     /// </summary>
     public static unsafe class NativeMemorySentinel
@@ -61,6 +92,8 @@ namespace Hecton8.Core
             public int AllocationFrame;
             public NativeAllocationLifetime Lifetime;
             public Allocator Allocator;
+            public uint OwnerHash;
+            public uint LabelHash;
             public bool LeakReported;
             public string Owner;
             public string Label;
@@ -101,6 +134,45 @@ namespace Hecton8.Core
 
         /// <summary>Scene lifetime leak violation count reported by the sentinel.</summary>
         public static int SceneLeakViolationCount => Volatile.Read(ref _sceneLeakViolationCount);
+
+        /// <summary>
+        /// Computes the same stable numeric hash used by native allocation records.
+        /// </summary>
+        public static uint ComputeSnapshotHash(string value)
+        {
+            return ComputeStableHash(value);
+        }
+
+        /// <summary>
+        /// Copies pointer-backed replay snapshot sources into a caller-owned native buffer.
+        /// </summary>
+        public static int CopySnapshotSources(NativeArray<NativeAllocationSnapshotSource> destination, uint excludedOwnerHash = 0u)
+        {
+            if (!destination.IsCreated)
+                return 0;
+
+            int writeIndex = 0;
+            int count = Volatile.Read(ref _count);
+            for (int i = 0; i < count && writeIndex < destination.Length; i++)
+            {
+                NativeAllocationRecord record = _records[i];
+                if (!CanCopySnapshotSource(in record, excludedOwnerHash))
+                    continue;
+
+                destination[writeIndex++] = new NativeAllocationSnapshotSource
+                {
+                    Pointer = unchecked((ulong)record.Pointer.ToInt64()),
+                    Bytes = record.Bytes,
+                    OwnerHash = record.OwnerHash,
+                    LabelHash = record.LabelHash,
+                    AllocationFrame = record.AllocationFrame,
+                    Lifetime = (byte)record.Lifetime,
+                    Allocator = (byte)record.Allocator
+                };
+            }
+
+            return writeIndex;
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -395,6 +467,8 @@ namespace Hecton8.Core
                 return 0;
 
             IntPtr pointerValue = (IntPtr)pointer;
+            uint ownerHash = ComputeStableHash(owner);
+            uint labelHash = ComputeStableHash(label);
             for (int i = 0; i < _count; i++)
             {
                 NativeAllocationRecord existing = _records[i];
@@ -435,6 +509,13 @@ namespace Hecton8.Core
                         recordChanged = true;
                     }
 
+                    if (existing.OwnerHash != ownerHash || existing.LabelHash != labelHash)
+                    {
+                        existing.OwnerHash = ownerHash;
+                        existing.LabelHash = labelHash;
+                        recordChanged = true;
+                    }
+
                     if (recordChanged)
                         _records[i] = existing;
 
@@ -465,6 +546,8 @@ namespace Hecton8.Core
                 AllocationFrame = ResolveCurrentFrame(0),
                 Lifetime = lifetime,
                 Allocator = ResolveAllocator(lifetime),
+                OwnerHash = ownerHash,
+                LabelHash = labelHash,
                 Owner = owner,
                 Label = label,
                 StackTrace = CaptureStackTrace(lifetime)
@@ -953,6 +1036,28 @@ namespace Hecton8.Core
                     return Allocator.TempJob;
                 default:
                     return Allocator.Persistent;
+            }
+        }
+
+        private static bool CanCopySnapshotSource(in NativeAllocationRecord record, uint excludedOwnerHash)
+        {
+            if (record.Pointer == IntPtr.Zero ||
+                record.Bytes <= 0L ||
+                record.LeakReported ||
+                (excludedOwnerHash != 0u && record.OwnerHash == excludedOwnerHash))
+            {
+                return false;
+            }
+
+            switch (record.Lifetime)
+            {
+                case NativeAllocationLifetime.Scene:
+                case NativeAllocationLifetime.Session:
+                case NativeAllocationLifetime.Permanent:
+                case NativeAllocationLifetime.TransientArena:
+                    return true;
+                default:
+                    return false;
             }
         }
 

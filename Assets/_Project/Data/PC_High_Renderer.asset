@@ -1,5 +1,60 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-8819836769844018346
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83bdec98ea424ebf8838203d765d3278, type: 3}
+  m_Name: HectonRetinaDistortionFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonRetinaDistortionFeature
+  m_Active: 0
+  settings:
+    shader: {fileID: 4800000, guid: 8f4ada24e17a4e82bdd691ad587c4d66, type: 3}
+    injectionPoint: 550
+    healthThreshold01: 0.15
+    baseHeartbeatBpm: 54
+    criticalHeartbeatBpm: 124
+    maxChromaticOffset: 0.0038
+    maxDistortionOffset: 0.014
+    maxVignetteStrength: 0.28
+--- !u!114 &-5081531551300358816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f02d0cdd5984f14aa977a16a396c84d, type: 3}
+  m_Name: HectonVisorUberPostFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVisorUberPostFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 6a291e321bfc47340ae08d76a1fee749, type: 3}
+    crackTexture: {fileID: 0}
+    lensDirtTexture: {fileID: 0}
+    blueNoiseTexture: {fileID: 0}
+    injectionPoint: 550
+    chromaticStrength: 0.34
+    hypoxiaDesaturationStrength: 0.72
+    pressureWarpStrength: 0.035
+    crackStrength: 0.82
+    pressureInvRange: 0.045
+    temperatureScale: 0.018
+    crackUvStrength: 0.0024
+    lensDirtAndBloodStrength: 0.26
+    heatHazeFrequency: 38
+    heatHazeSpeed: 0.62
+    heatHazeAmplitude: 0.0017
+    damageVignetteStrength: 0.24
+    lowTierVideoMemoryMb: 2048
+    hypoxiaSafeOxygen01: 0.22
 --- !u!114 &-4438276556181502662
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23,8 +78,6 @@ MonoBehaviour:
     depthSigma: 18
     blurDepthThreshold: 0.18
     compositeStrength: 0.52
-    sampleCount: 4
-    ambientDirection: {x: 0.18, y: 0.94, z: 0.26}
 --- !u!114 &-4082171063289172997
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69,12 +122,60 @@ MonoBehaviour:
     noirLiftColor: {r: 0.0038, g: 0.0056, b: 0.0078, a: 1}
     lensGhostIntensity: 0.34
     lensGhostScale: 0.075
-    lensChromaticAberration: 0.005
+    lensChromaticAberration: 0
     lensEdgeWeight: 4.2
+    lensDirtIntensity: 0
+    condensationIntensity: 0
+    thermalHazeIntensity: 0
+    thermalHazeScale: 2.25
     minEv: -10
     maxEv: 12
     exposureAdaptationRate: 2.4
     evMaxDeltaPerFrame: 0.5
+--- !u!114 &-3471827618286992026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a16b154c5ef24b0b912cfa65f0bb3a99, type: 3}
+  m_Name: HectonHalfResParticlesFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonHalfResParticlesFeature
+  m_Active: 1
+  settings:
+    compositeShader: {fileID: 4800000, guid: 0e6e90a46f3b4ad7a8d58ce80e785f15, type: 3}
+    injectionPoint: 550
+    particleLayerMask:
+      serializedVersion: 2
+      m_Bits: 2
+    renderScale: 0.5
+    compositeStrength: 1
+    bilateralDepthScale: 24
+--- !u!114 &-2039857032782672258
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4fb11f57e4be41b596211f9adef4a004, type: 3}
+  m_Name: HectonNoirDepthFogFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonNoirDepthFogFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: d38821027adf58747a75d2048230832c, type: 3}
+    injectionPoint: 450
+    shallowFogColor: {r: 0.025, g: 0.075, b: 0.095, a: 1}
+    abyssFogColor: {r: 0.004, g: 0.01, b: 0.018, a: 1}
+    density: 0.0105
+    startDistanceMeters: 1.5
+    maxDepthMeters: 80
+    ditherStrength: 0.8
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -100,7 +201,6 @@ MonoBehaviour:
     probeSamplingDebugTexture: {fileID: 2800000, guid: 24ec0e140fb444a44ab96ee80844e18e, type: 3}
     probeVolumeBlendStatesCS: {fileID: 7200000, guid: b9a23f869c4fd45f19c5ada54dd82176, type: 3}
   m_RendererFeatures:
-  - {fileID: 7833122117494664109}
   - {fileID: 58536412019685547}
   - {fileID: 7270194210237144737}
   - {fileID: 1886482717959882929}
@@ -109,7 +209,11 @@ MonoBehaviour:
   - {fileID: 5318849925799663161}
   - {fileID: -8819836769844018346}
   - {fileID: 8465884984933540169}
-  m_RendererFeatureMap: ad6b866f10d7b46cabf8db7c8ef6cf00a15e49751debe464b188e97609222e1afb2b45d40b3759c73a85dbb5fc1268c239d6e6b8d359d04956c384f42fa5998549e146248add7c75
+  - {fileID: -2039857032782672258}
+  - {fileID: -3471827618286992026}
+  - {fileID: 5943226787261363979}
+  - {fileID: -5081531551300358816}
+  m_RendererFeatureMap: abf8db7c8ef6cf00a15e49751debe464b188e97609222e1afb2b45d40b3759c73a85dbb5fc1268c239d6e6b8d359d04956c384f42fa5998549e146248add7c757e0e6818d6f8b0e366059dfa2c97d1cf0bb74c4246957a52606dcd29fac57ab9
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -122,7 +226,7 @@ MonoBehaviour:
     m_Bits: 1048575
   m_TransparentLayerMask:
     serializedVersion: 2
-    m_Bits: 1048575
+    m_Bits: 1048573
   m_DefaultStencilState:
     overrideStencilState: 0
     stencilReference: 1
@@ -177,7 +281,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39f4fd68884d4898abef15d91c4984c0, type: 3}
   m_Name: HectonVisorFluidDistortionFeature
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVisorFluidDistortionFeature
-  m_Active: 1
+  m_Active: 0
   settings:
     shader: {fileID: 4800000, guid: 2f16f2dbb7e64be8b2e781182e8fd8f7, type: 3}
     injectionPoint: 550
@@ -189,7 +293,9 @@ MonoBehaviour:
     edgeStreakStrength: 0.46
     hullStressContribution: 0.8
     edgeFadeExponent: 1.35
---- !u!114 &8465884984933540169
+    dustStrength: 0.28
+    ambientDustResponse: 1.45
+--- !u!114 &5943226787261363979
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -198,38 +304,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fd51d08180ac4679bed75a6b4cc8e888, type: 3}
-  m_Name: HectonVRBrownoutFeature
-  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVRBrownoutFeature
+  m_Script: {fileID: 11500000, guid: 7b70f95c7e7e49c4bb61dfcdfac4fa01, type: 3}
+  m_Name: HectonAtmosphereSootFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonAtmosphereSootFeature
   m_Active: 1
   settings:
-    shader: {fileID: 4800000, guid: 86f624d8b2fb47b3bed4961b51bf2cbc, type: 3}
+    shader: {fileID: 4800000, guid: 5e29a614e3f04bd5b7be4a2d213e6c0b, type: 3}
     injectionPoint: 550
-    worldBlurTexelRadius: 1.65
-    scanlineStrength: 0.55
-    ditherStrength: 0.85
---- !u!114 &-8819836769844018346
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 83bdec98ea424ebf8838203d765d3278, type: 3}
-  m_Name: HectonRetinaDistortionFeature
-  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonRetinaDistortionFeature
-  m_Active: 1
-  settings:
-    shader: {fileID: 4800000, guid: 8f4ada24e17a4e82bdd691ad587c4d66, type: 3}
-    injectionPoint: 550
-    healthThreshold01: 0.15
-    baseHeartbeatBpm: 54
-    criticalHeartbeatBpm: 124
-    maxChromaticOffset: 0.0038
-    maxDistortionOffset: 0.014
-    maxVignetteStrength: 0.28
+    maximumRadius: 0.82
 --- !u!114 &7270194210237144737
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -251,7 +333,7 @@ MonoBehaviour:
       surfaceData: 2
     screenSpaceSettings:
       normalBlend: 0
---- !u!114 &7833122117494664109
+--- !u!114 &8465884984933540169
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -260,20 +342,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f62c9c65cf3354c93be831c8bc075510, type: 3}
-  m_Name: ScreenSpaceAmbientOcclusion
-  m_EditorClassIdentifier: 
-  m_Active: 0
-  m_Settings:
-    AOMethod: 0
-    Downsample: 1
-    AfterOpaque: 1
-    Source: 1
-    NormalSamples: 1
-    Intensity: 0.4
-    DirectLightingStrength: 0.25
-    Radius: 0.3
-    Samples: 1
-    BlurQuality: 0
-    Falloff: 100
-    SampleCount: -1
+  m_Script: {fileID: 11500000, guid: fd51d08180ac4679bed75a6b4cc8e888, type: 3}
+  m_Name: HectonVRBrownoutFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVRBrownoutFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 86f624d8b2fb47b3bed4961b51bf2cbc, type: 3}
+    injectionPoint: 550
+    worldBlurTexelRadius: 1.65
+    scanlineStrength: 0.55
+    ditherStrength: 0.85

@@ -74,6 +74,22 @@ UI canvas renders to separate `_UIRenderTexture` (Overlay camera, UNORM8 target)
 Dither blit pass: skip pixels where `stencil_ui_bit == 1`.
 Stencil layer reserved: bit 7 (`0x80`) → UI geometry writes this bit, dither pass reads & discards.
 
+### 2.5 Blue Noise Shadow Dithering
+
+[RULE] Shadow dithering is allowed only as a visual fake for fade/crossfade/contact breakup, not as a replacement for real occluder logic.
+[RULE] Use the same R8 blue-noise asset family as the post dither path. No extra shadow-noise texture family without VRAM approval.
+[RULE] LOW tier may use Bayer 4x4 for alpha-shadow fades; MED+ may use blue noise if shimmer is lower in capture.
+
+Shadow caster alpha fade pattern:
+```
+threshold = SAMPLE_TEXTURE2D(_BlueNoiseTex, point_repeat, screenUV + frameR2).r;
+clip(shadowAlpha - threshold);
+```
+
+[FORBID] Random-per-frame hash noise in shadow casters. It shimmers in VR and turns into compression noise in video capture.
+[FORBID] Blue-noise shadow samples on opaque non-fading geometry.
+[FORBID] Additional PCF taps on MX350 to hide dithering. Fade quality is bought with noise distribution, not more shadow samples.
+
 ---
 
 ## §3 — FOG SYSTEM: EXPONENTIAL NOIR REMAP

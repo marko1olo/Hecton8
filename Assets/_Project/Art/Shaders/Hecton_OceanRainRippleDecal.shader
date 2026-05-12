@@ -13,17 +13,18 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
         Tags
         {
             "RenderPipeline" = "UniversalPipeline"
-            "RenderType" = "Transparent"
-            "Queue" = "Transparent"
+            "RenderType" = "TransparentCutout"
+            "Queue" = "AlphaTest"
         }
 
         Pass
         {
             Name "OceanRainRippleDecal"
-            Blend SrcAlpha OneMinusSrcAlpha
+            Blend Off
             Cull Off
             ZWrite Off
             ZTest LEqual
+            AlphaToMask On
 
             HLSLPROGRAM
             #pragma target 4.5
@@ -84,6 +85,12 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
                 return saturate((ring * 0.78 + core * 0.35) * dropGate);
             }
 
+            float HectonDitherCoverage(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -130,8 +137,8 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
                 float telemetryGlitch = step(0.992, frac(dot(input.positionWS.xz, float2(0.071, 0.113)) + _Time.y * 23.0)) * impulseLife;
                 float ripple = saturate(cellRipple * rain * surfaceFade + impulseRipple + telemetryGlitch * 0.16 * surfaceFade);
                 half alpha = (half)(ripple * _RippleTint.a * _RippleStrength);
-                clip(alpha - 0.0005h);
-                return half4(_RippleTint.rgb * (half)(ripple * _RippleStrength), alpha);
+                clip(alpha - max((half)HectonDitherCoverage(input.positionCS.xy), 0.0005h));
+                return half4(_RippleTint.rgb * (half)(ripple * _RippleStrength), 1.0h);
             }
             ENDHLSL
         }

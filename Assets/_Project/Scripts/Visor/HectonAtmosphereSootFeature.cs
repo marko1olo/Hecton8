@@ -141,7 +141,6 @@ namespace Hecton8.Visor
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(destinationTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
                     {

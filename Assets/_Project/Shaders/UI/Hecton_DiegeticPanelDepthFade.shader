@@ -13,8 +13,8 @@ Shader "Hecton8/UI/Diegetic Panel Depth Fade"
     {
         Tags
         {
-            "Queue" = "Transparent+10"
-            "RenderType" = "Transparent"
+            "Queue" = "AlphaTest+10"
+            "RenderType" = "TransparentCutout"
             "RenderPipeline" = "UniversalPipeline"
         }
 
@@ -23,9 +23,10 @@ Shader "Hecton8/UI/Diegetic Panel Depth Fade"
             Name "Forward"
             Tags { "LightMode" = "UniversalForward" }
             Cull Off
-            ZWrite Off
+            ZWrite On
             ZTest LEqual
-            Blend SrcAlpha OneMinusSrcAlpha
+            Blend Off
+            AlphaToMask On
 
             HLSLPROGRAM
             #pragma target 4.5
@@ -115,8 +116,8 @@ Shader "Hecton8/UI/Diegetic Panel Depth Fade"
                     baseColor.a *= occlusionFactor;
                 }
 
-                clip(baseColor.a - 0.001h);
-                return baseColor;
+                clip(baseColor.a - max(ResolveBayerThreshold(screenUV), 0.001));
+                return half4(baseColor.rgb, 1.0h);
             }
             ENDHLSL
         }

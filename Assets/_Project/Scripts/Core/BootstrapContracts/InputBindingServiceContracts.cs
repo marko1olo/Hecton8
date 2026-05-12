@@ -52,6 +52,87 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Named shutdown facade used by the BIOS reverse-order disposal orchestrator.
+    /// </summary>
+    public static class ServiceShutdownExtensions
+    {
+        /// <summary>
+        /// Runs the service-owned disposal path.
+        /// </summary>
+        /// <param name="service">Registry-owned service to shut down.</param>
+        public static void DisposeAll(this IServiceShutdown service)
+        {
+            service?.OnServiceShutdown();
+        }
+    }
+
+    /// <summary>
+    /// Fixed two-tier scalability profile used by platform/settings integration.
+    /// </summary>
+    public static class ScalabilityTierProfiles
+    {
+        public const byte LowMx350 = 0;
+        public const byte HighRtx = 1;
+
+        public static byte Normalize(byte tier)
+        {
+            return tier == LowMx350 ? LowMx350 : HighRtx;
+        }
+    }
+
+    /// <summary>
+    /// Platform integration seam owned by contracts. Concrete services may live in leaf assemblies.
+    /// </summary>
+    public interface IPlatformIntegration
+    {
+        /// <summary>Persisted profile byte: 0 = Low/MX350, 1 = High/RTX.</summary>
+        byte ScalabilityTier { get; }
+
+        /// <summary>Persists and broadcasts a runtime scalability profile change.</summary>
+        /// <param name="tier">Profile byte: 0 = Low/MX350, 1 = High/RTX. Other values clamp to High/RTX.</param>
+        void SetScalabilityTier(byte tier);
+    }
+
+    /// <summary>
+    /// Narrow bridge for leaf assemblies that cannot reference Core but must apply platform settings.
+    /// </summary>
+    public static class PlatformIntegrationBridge
+    {
+        private static Func<byte> s_resolveCurrentScalabilityTier;
+        private static Action<byte> s_applyScalabilityTier;
+        private static Action<byte, byte> s_publishScalabilityChanged;
+
+        public static void Configure(
+            Func<byte> resolveCurrentScalabilityTier,
+            Action<byte> applyScalabilityTier,
+            Action<byte, byte> publishScalabilityChanged)
+        {
+            s_resolveCurrentScalabilityTier = resolveCurrentScalabilityTier;
+            s_applyScalabilityTier = applyScalabilityTier;
+            s_publishScalabilityChanged = publishScalabilityChanged;
+        }
+
+        public static byte ResolveCurrentScalabilityTier(byte fallbackTier)
+        {
+            return s_resolveCurrentScalabilityTier != null
+                ? ScalabilityTierProfiles.Normalize(s_resolveCurrentScalabilityTier())
+                : ScalabilityTierProfiles.Normalize(fallbackTier);
+        }
+
+        public static void ApplyScalabilityTier(byte tier)
+        {
+            s_applyScalabilityTier?.Invoke(ScalabilityTierProfiles.Normalize(tier));
+        }
+
+        public static void PublishScalabilityChanged(byte previousTier, byte currentTier)
+        {
+            s_publishScalabilityChanged?.Invoke(
+                ScalabilityTierProfiles.Normalize(previousTier),
+                ScalabilityTierProfiles.Normalize(currentTier));
+        }
+    }
+
+    /// <summary>
     /// Registry slots exposed to leaf assemblies that cannot reference the Core runtime assembly.
     /// </summary>
     public enum BootstrapRegistryBridgeSlot : byte

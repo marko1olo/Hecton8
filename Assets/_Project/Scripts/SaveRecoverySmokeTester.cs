@@ -7,12 +7,10 @@
 
 using System;
 using System.IO;
-using System.IO.MemoryMappedFiles;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -26,6 +24,10 @@ namespace Hecton8.Dev
     [AddComponentMenu("Hecton8/Dev/Save Recovery Smoke Tester")]
     public sealed class SaveRecoverySmokeTester : MonoBehaviour
     {
+        private const int FileHashBufferSize = 64 * 1024;
+        private const ulong Fnv1A64Offset = 14695981039346656037UL;
+        private const ulong Fnv1A64Prime = 1099511628211UL;
+
         [Header("References")]
         [SerializeField]
         [Tooltip("Save runtime owner. Auto-resolves from GlobalRegistry when empty.")]
@@ -203,9 +205,9 @@ namespace Hecton8.Dev
 
         private async Awaitable<bool> RunRecoveryScenarioAsync(string slotName, RecoveryCorruptionMode corruptionMode)
         {
-            string primaryAbsolutePath = Path.Combine(Application.persistentDataPath, SaveManager.GetPrimarySaveFilePath(slotName));
-            string backupAbsolutePath = Path.Combine(Application.persistentDataPath, SaveManager.GetBackupSaveFilePath(slotName, 1));
-            string tempAbsolutePath = Path.Combine(Application.persistentDataPath, SaveManager.GetTempSaveFilePath(slotName));
+            string primaryAbsolutePath = HectonPersistentPathPolicy.CombineFile(SaveManager.GetPrimarySaveFilePath(slotName));
+            string backupAbsolutePath = HectonPersistentPathPolicy.CombineFile(SaveManager.GetBackupSaveFilePath(slotName, 1));
+            string tempAbsolutePath = HectonPersistentPathPolicy.CombineFile(SaveManager.GetTempSaveFilePath(slotName));
 
             _debugLastCorruptionMode = corruptionMode.ToString();
             _debugLastPhase = "WriteSyntheticIndexedSave";
@@ -444,9 +446,9 @@ namespace Hecton8.Dev
             return PersistentWorldDeltaRecord.CreateDeletedTombstone(in record, SyntheticChunkSizeMeters);
         }
 
-        private static unsafe bool TryComputeFileHash64(string absolutePath, out ulong hash, out string error)
+        private static bool TryComputeFileHash64(string absolutePath, out ulong hash, out string error)
         {
-            hash = 0UL;
+            hash = Fnv1A64Offset;
             error = string.Empty;
             if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
             {
@@ -454,39 +456,35 @@ namespace Hecton8.Dev
                 return false;
             }
 
-            FileStream fileStream = null;
-            MemoryMappedFile fileMapping = null;
-            MemoryMappedViewAccessor accessor = null;
-            byte* filePtr = null;
             try
             {
-                fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using FileStream fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 if (fileStream.Length <= 0L)
                 {
                     error = "Hash target file is empty.";
                     return false;
                 }
 
-                fileMapping = MemoryMappedFile.CreateFromFile(fileStream, null, fileStream.Length, MemoryMappedFileAccess.Read, HandleInheritability.None, false);
-                accessor = fileMapping.CreateViewAccessor(0L, fileStream.Length, MemoryMappedFileAccess.Read);
-                accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref filePtr);
-                byte* mappedFilePtr = filePtr + accessor.PointerOffset;
-                hash = SaveBinaryStorage.Hash64(mappedFilePtr, fileStream.Length);
+                byte[] buffer = new byte[FileHashBufferSize]; // COLD ALLOC: dev-only recovery smoke file hash buffer - owner: SaveRecoverySmokeTester
+                int read;
+                while ((read = fileStream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    for (int i = 0; i < read; i++)
+                    {
+                        hash ^= buffer[i];
+                        hash *= Fnv1A64Prime;
+                    }
+                }
+
+                if (hash == 0UL)
+                    hash = 1UL;
+
                 return true;
             }
             catch (Exception ex)
             {
                 error = $"File hash failed for '{absolutePath}': {ex.Message}";
                 return false;
-            }
-            finally
-            {
-                if (accessor != null && filePtr != null)
-                    accessor.SafeMemoryMappedViewHandle.ReleasePointer();
-
-                accessor?.Dispose();
-                fileMapping?.Dispose();
-                fileStream?.Dispose();
             }
         }
 

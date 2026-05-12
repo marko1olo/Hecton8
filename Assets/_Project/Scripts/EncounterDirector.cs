@@ -1,9 +1,15 @@
 using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using Hecton8.Data;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
+using Hecton8.Environment;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -33,9 +39,11 @@ namespace Hecton8.Systems.AI
         LoadSheddingActive = 1 << 0,
         SpawnSuspended = 1 << 1,
         EmergencyRecall = 1 << 2,
-        RegenBlocked = 1 << 3
+        RegenBlocked = 1 << 3,
+        DespairModeActive = 1 << 4
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     internal struct EncounterDirectorState
     {
         public float StressLevel;
@@ -50,8 +58,11 @@ namespace Hecton8.Systems.AI
         public float4 PlayerPosition;
         public float4 PlayerVelocity;
         public uint SpawnSequence;
+        public uint Padding0;
+        public uint Padding1;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     internal struct EncounterEnemyToken
     {
         public int EntityId;
@@ -62,6 +73,46 @@ namespace Hecton8.Systems.AI
         public int ThreatClass;
         public float DespawnPriority;
         public float3 Position;
+        public uint Padding0;
+        public uint Padding1;
+    }
+
+    [Flags]
+    internal enum HeadlessEntityFlags : byte
+    {
+        None = 0,
+        Active = 1 << 0,
+        Predator = 1 << 1,
+        Apex = 1 << 2
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    internal struct HeadlessEntity
+    {
+        public int EntityId;
+        public int ThreatClass;
+        public float TokenCost;
+        public float3 Position;
+        public AbsoluteUniversePositionBlit PositionAup;
+        public uint SpawnSeed;
+        public byte BiomeByte;
+        public byte Flags;
+        public ushort AgeColdTicks;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    internal struct EncounterDirectorBlackBoxEntry
+    {
+        public uint FrameIndex;
+        public uint DirectorStateHash;
+        public uint ActiveThreatCount;
+        public uint Flags;
+        public float Stress01;
+        public float Intensity01;
+        public float SpawnCredits;
+        public float PlayerSpeed;
+        public float3 PlayerPosition;
+        public uint Padding0;
     }
 
     internal struct EncounterFrameContext
@@ -100,6 +151,15 @@ namespace Hecton8.Systems.AI
         public int NewPhase;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    internal struct EncounterSpawnRequest
+    {
+        public int ThreatClass;
+        public float3 Position;
+        public uint VariantSeed;
+        public uint SquadStateBits;
+    }
+
     internal struct EncounterDebugEvent
     {
         public float Timestamp;
@@ -136,19 +196,32 @@ namespace Hecton8.Systems.AI
     {
         internal const int FrustumPlaneCount = 6;
         private const int DebugEventRingCapacity = 256;
+        private const int DirectorBlackBoxCapacity = 300;
         private const int DebugEventCodePhaseChange = 0x04;
+        private const int HeadlessEntityCapacity = 1024;
+        private const int HeadlessSpawnRequestCapacity = 16;
+        private const int HeadlessDespawnRequestCapacity = 16;
+        private const int BiomeHeatmapResolution = 256;
+        private const int PredatorAupBufferCapacity = 16;
+        private const int HeadlessEntityIdBase = 0x68000000;
+        private const float PredictiveSpawnLeadMeters = 200f;
+        private const float StationaryVelocitySq = 0.25f;
+        private const float HeadlessDespawnDistanceSq = 400f * 400f;
+        private const ulong DirectorTelemetryDumpMagic = 0x0038444148454850UL;
+        private const string DirectorTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_AI_ENCOUNTER_DIRECTOR.bin";
 
         private const int MaxActiveEnemies = 32;
         private const int BaseCandidateCount = 16;
         private const int HighCandidateCount = 32;
         private const float ColdTickIntervalSeconds = 1f;
-        private const float MaxTokenBudget = 100f;
+        private const float MaxTokenBudget = 1000f;
         private const float MinSpawnRadius = 50f;
         private const float MaxSpawnRadius = 150f;
         private const float SpawnClusterRadiusSq = 15f * 15f;
         private const float DespawnKeepDistanceSq = 25f * 25f;
         private const float FrustumRejectPadding = 3f;
         private const float SafeIdleStressDecayPerTick = 0.06f;
+        private const float InvHash24Max = 1f / 16777215f;
 
         private NativeArray<EncounterDirectorState> _frontState;
         private NativeArray<EncounterDirectorState> _backState;
@@ -156,8 +229,20 @@ namespace Hecton8.Systems.AI
         private NativeArray<float4> _frustumPlanes;
         private NativeArray<float3> _candidateDirections;
         private NativeArray<EncounterJobOutput> _jobOutput;
+        private NativeArray<EncounterSpawnRequest> _spawnRequests;
+        private NativeArray<int> _despawnRequests;
         private NativeArray<EncounterDebugEvent> _debugEventRing;
         private NativeArray<int> _debugEventHead;
+        private NativeList<HeadlessEntity> _headlessEntities;
+        private NativeArray<float4> _predatorAupUpload;
+        private NativeArray<EncounterDirectorBlackBoxEntry> _blackBox;
+        private NativeArray<int> _blackBoxHead;
+        private GraphicsBuffer _predatorAupBufferA;
+        private GraphicsBuffer _predatorAupBufferB;
+        private GraphicsBuffer _predatorAupPublishedBuffer;
+        private static readonly int _PredatorAUPBufferId = Shader.PropertyToID("_PredatorAUPBuffer");
+        private static readonly int _PredatorAUPCountId = Shader.PropertyToID("_PredatorAUPCount");
+        private static readonly int _PredatorAUPParamsId = Shader.PropertyToID("_PredatorAUPParams");
         // COLD ALLOC: Transform[32] — tracked live encounter proxies for token refresh — owner: EncounterDirector
         private readonly Transform[] _trackedTransforms;
         // COLD ALLOC: int[32] — tracked live encounter entity ids — owner: EncounterDirector
@@ -170,8 +255,15 @@ namespace Hecton8.Systems.AI
 
         private JobHandle _activeJobHandle;
         private bool _jobScheduled;
+        private bool _blackBoxDumpedThisActivation;
+        private bool _predatorAupGlobalsDirty = true;
         private float _coldTickAccumulator;
         private int _frameIndex;
+        private uint _blackBoxFrameSequence;
+        private int _nextHeadlessEntitySequence;
+        private int _headlessFreeSearchCursor;
+        private int _lastPublishedPredatorAupCount = -1;
+        private bool _predatorAupWriteToA = true;
         private readonly int _candidateCount;
         private int _pendingPhaseOverride = -1;
         private bool _pendingReset;
@@ -186,8 +278,18 @@ namespace Hecton8.Systems.AI
             _frustumPlanes = new NativeArray<float4>(FrustumPlaneCount, Allocator.Persistent);
             _candidateDirections = new NativeArray<float3>(HighCandidateCount, Allocator.Persistent);
             _jobOutput = new NativeArray<EncounterJobOutput>(1, Allocator.Persistent);
+            _spawnRequests = new NativeArray<EncounterSpawnRequest>(HeadlessSpawnRequestCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _despawnRequests = new NativeArray<int>(HeadlessDespawnRequestCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _debugEventRing = new NativeArray<EncounterDebugEvent>(DebugEventRingCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _debugEventHead = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _headlessEntities = new NativeList<HeadlessEntity>(HeadlessEntityCapacity, Allocator.Persistent);
+            // COLD ALLOC: HeadlessEntity[1024] - data-only encounter threat slots, no GameObject hydration - owner: EncounterDirector
+            for (int i = 0; i < HeadlessEntityCapacity; i++)
+                _headlessEntities.Add(default);
+
+            _predatorAupUpload = new NativeArray<float4>(PredatorAupBufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _blackBox = new NativeArray<EncounterDirectorBlackBoxEntry>(DirectorBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _blackBoxHead = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeMemorySentinel();
             _trackedTransforms = new Transform[MaxActiveEnemies];
             _trackedEntityIds = new int[MaxActiveEnemies];
@@ -211,6 +313,7 @@ namespace Hecton8.Systems.AI
         internal int ActiveEnemyCount => _frontState[0].ActiveEnemyCount;
         internal int FrameIndex => _frameIndex;
         internal EncounterPhase CurrentPhase => (EncounterPhase)_frontState[0].ActivePhase;
+        internal bool CanProcessEntityDeathSignals => !_jobScheduled;
 
         internal string CurrentPhaseName
         {
@@ -238,17 +341,32 @@ namespace Hecton8.Systems.AI
             _frontState[0] = state;
             _backState[0] = state;
             _jobOutput[0] = default;
+            ClearSpawnRequests();
+            ClearDespawnRequests();
             _coldTickAccumulator = 0f;
             _frameIndex = 0;
+            _blackBoxFrameSequence = 0u;
             _pendingPhaseOverride = -1;
             _pendingReset = false;
             _pendingForcedThreatClass = -1;
             _pendingForcedThreatCount = 0;
             if (_debugEventHead.IsCreated && _debugEventHead.Length > 0)
                 _debugEventHead[0] = 0;
+            if (_blackBoxHead.IsCreated && _blackBoxHead.Length > 0)
+                _blackBoxHead[0] = 0;
 
             for (int i = 0; i < MaxActiveEnemies; i++)
                 ClearTrackedSlot(i);
+
+            ClearHeadlessEntities();
+            _blackBoxDumpedThisActivation = false;
+            _predatorAupGlobalsDirty = true;
+            _lastPublishedPredatorAupCount = -1;
+            _predatorAupPublishedBuffer = null;
+            _predatorAupWriteToA = true;
+            _nextHeadlessEntitySequence = 0;
+            _headlessFreeSearchCursor = 0;
+            PublishPredatorAupBuffer();
         }
 
         internal void RequestPhaseOverride(EncounterPhase phase)
@@ -285,14 +403,11 @@ namespace Hecton8.Systems.AI
 
         internal void Advance(EncounterFrameContext frameContext, FaunaDirector faunaDirector, HectonDirectorAI bridge)
         {
-            if (_jobScheduled && _activeJobHandle.IsCompleted)
+            if (_jobScheduled)
             {
-                if (!DispatcherJobSwap.TryComplete(ref _activeJobHandle, false))
-                    return;
-
-                _jobScheduled = false;
-                _frontState[0] = _backState[0];
-                ApplyCompletedOutput(faunaDirector, bridge);
+                RecordBlackBox(BuildTelemetryState(in frameContext));
+                _coldTickAccumulator += frameContext.DeltaTime;
+                return;
             }
 
             if (_pendingReset)
@@ -307,22 +422,50 @@ namespace Hecton8.Systems.AI
                 _pendingPhaseOverride = -1;
             }
 
-            RefreshTrackedEnemies(frameContext.PlayerPosition);
+            RecordBlackBox(BuildTelemetryState(in frameContext));
 
             _coldTickAccumulator += frameContext.DeltaTime;
             if (_jobScheduled || _coldTickAccumulator < ColdTickIntervalSeconds)
                 return;
 
             _coldTickAccumulator -= ColdTickIntervalSeconds;
+            RefreshTrackedEnemies(frameContext.PlayerPosition);
             ScheduleColdTick(frameContext);
+        }
+
+        internal void CompleteReadyOutput(FaunaDirector faunaDirector, HectonDirectorAI bridge, bool forceComplete)
+        {
+            if (!_jobScheduled)
+                return;
+
+            if (!forceComplete && !_activeJobHandle.IsCompleted)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _activeJobHandle, forceComplete))
+                return;
+
+            _jobScheduled = false;
+            _frontState[0] = _backState[0];
+            ApplyCompletedOutput(faunaDirector, bridge);
+        }
+
+        internal void ForceStopAndReset()
+        {
+            ForceCompleteActiveJobForTeardown();
+            Reset();
         }
 
         internal static float HashToUnit01(uint hash)
         {
-            return (hash & 0x00FFFFFFu) / 16777215f;
+            return (hash & 0x00FFFFFFu) * InvHash24Max;
         }
 
         internal static uint BuildDeterministicSeed(Vector3 position, int sequenceSalt, int phase, int activeEnemyCount)
+        {
+            return BuildDeterministicSeed(new float3(position.x, position.y, position.z), sequenceSalt, phase, activeEnemyCount);
+        }
+
+        internal static uint BuildDeterministicSeed(float3 position, int sequenceSalt, int phase, int activeEnemyCount)
         {
             int3 grid = new int3(
                 (int)math.floor(position.x),
@@ -395,7 +538,7 @@ namespace Hecton8.Systems.AI
             float x3 = x2 * clamped;
             float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
             float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
-            return math.saturate(numerator / math.max(denominator, 0.0001f));
+            return math.saturate(numerator * math.rcp(math.max(denominator, 0.0001f)));
         }
 
         public void Dispose()
@@ -414,8 +557,15 @@ namespace Hecton8.Systems.AI
             DisposeNativeArray(ref _frustumPlanes, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _candidateDirections, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _jobOutput, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _spawnRequests, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _despawnRequests, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _debugEventRing, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _debugEventHead, ref disposeHandle, ref hasDependency);
+            DisposeNativeList(ref _headlessEntities, nameof(_headlessEntities), ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _predatorAupUpload, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _blackBox, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _blackBoxHead, ref disposeHandle, ref hasDependency);
+            ReleasePredatorAupBuffer();
         }
 
         private void RegisterNativeMemorySentinel()
@@ -426,25 +576,103 @@ namespace Hecton8.Systems.AI
             NativeMemorySentinel.RegisterNativeArray(_frustumPlanes, nameof(EncounterDirector), nameof(_frustumPlanes), NativeAllocationLifetime.Scene);
             NativeMemorySentinel.RegisterNativeArray(_candidateDirections, nameof(EncounterDirector), nameof(_candidateDirections), NativeAllocationLifetime.Scene);
             NativeMemorySentinel.RegisterNativeArray(_jobOutput, nameof(EncounterDirector), nameof(_jobOutput), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_spawnRequests, nameof(EncounterDirector), nameof(_spawnRequests), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_despawnRequests, nameof(EncounterDirector), nameof(_despawnRequests), NativeAllocationLifetime.Scene);
             NativeMemorySentinel.RegisterNativeArray(_debugEventRing, nameof(EncounterDirector), nameof(_debugEventRing), NativeAllocationLifetime.Scene);
             NativeMemorySentinel.RegisterNativeArray(_debugEventHead, nameof(EncounterDirector), nameof(_debugEventHead), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeList(_headlessEntities, nameof(EncounterDirector), nameof(_headlessEntities), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_predatorAupUpload, nameof(EncounterDirector), nameof(_predatorAupUpload), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_blackBox, nameof(EncounterDirector), nameof(_blackBox), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_blackBoxHead, nameof(EncounterDirector), nameof(_blackBoxHead), NativeAllocationLifetime.Scene);
+        }
+
+        internal void EnsureGpuResources()
+        {
+            if (_predatorAupBufferA != null && _predatorAupBufferB != null)
+                return;
+
+            if (_predatorAupBufferA == null)
+                _predatorAupBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(PredatorAupBufferCapacity); // COLD ALLOC: GraphicsBuffer[16] - predator AUP upload buffer A for GPU/CPU double-buffering - owner: EncounterDirector
+            if (_predatorAupBufferB == null)
+                _predatorAupBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(PredatorAupBufferCapacity); // COLD ALLOC: GraphicsBuffer[16] - predator AUP upload buffer B for GPU/CPU double-buffering - owner: EncounterDirector
+            _predatorAupGlobalsDirty = true;
+        }
+
+        internal bool TryGetPredatorAupGpuBuffer(out GraphicsBuffer buffer, out int count)
+        {
+            buffer = _predatorAupPublishedBuffer;
+            count = math.clamp(_lastPublishedPredatorAupCount, 0, PredatorAupBufferCapacity);
+            return buffer != null && buffer.IsValid() && count > 0;
+        }
+
+        internal void ForceCompleteActiveJobForTeardown()
+        {
+            if (!_jobScheduled)
+                return;
+
+            DispatcherJobSwap.TryComplete(ref _activeJobHandle, true);
+            _jobScheduled = false;
+            if (_frontState.IsCreated && _backState.IsCreated)
+                _frontState[0] = _backState[0];
+        }
+
+        internal void ClearPredatorAupPublication()
+        {
+            _lastPublishedPredatorAupCount = 0;
+            _predatorAupPublishedBuffer = null;
+            _predatorAupGlobalsDirty = true;
+            Shader.SetGlobalInt(_PredatorAUPCountId, 0);
+        }
+
+        internal void HandleEntityDeathSignal(in EntityDeathSignal signal)
+        {
+            int entityId = unchecked((int)signal.EntityHash);
+            if (entityId == 0)
+                return;
+
+            if (TryReleaseHeadlessEntity(entityId, refundHalfCost: true, decrementActiveCount: true, out bool releasedPredator))
+            {
+                if (releasedPredator)
+                    PublishPredatorAupBuffer();
+                return;
+            }
+
+            int trackedSlot = FindTrackedSlot(entityId);
+            if (trackedSlot < 0)
+                return;
+
+            EncounterDirectorState state = _frontState[0];
+            state.TokenBudget = math.clamp(state.TokenBudget + _trackedTokenCosts[trackedSlot] * 0.5f, 0f, MaxTokenBudget);
+            state.ActiveEnemyCount = math.max(0, state.ActiveEnemyCount - 1);
+            _frontState[0] = state;
+            _backState[0] = state;
+            bool trackedPredator = WritesPredatorAup(_trackedThreatClasses[trackedSlot]);
+            ClearTrackedSlot(trackedSlot);
+            if (trackedPredator)
+                PublishPredatorAupBuffer();
         }
 
         private void RefreshTrackedEnemies(float3 playerPosition)
         {
             for (int i = 0; i < MaxActiveEnemies; i++)
+                _enemyTokens[i] = default;
+
+            int tokenSlot = 0;
+            RefreshHeadlessEnemyTokens(playerPosition, ref tokenSlot);
+
+            for (int i = 0; i < MaxActiveEnemies && tokenSlot < MaxActiveEnemies; i++)
             {
                 int entityId = _trackedEntityIds[i];
                 if (entityId == 0)
-                {
-                    _enemyTokens[i] = default;
                     continue;
-                }
 
                 Transform trackedTransform = _trackedTransforms[i];
                 if (trackedTransform == null || !trackedTransform.gameObject.activeInHierarchy)
                 {
+                    bool releasedPredator = WritesPredatorAup(_trackedThreatClasses[i]);
                     ClearTrackedSlot(i);
+                    if (releasedPredator)
+                        PublishPredatorAupBuffer();
                     continue;
                 }
 
@@ -458,7 +686,40 @@ namespace Hecton8.Systems.AI
                 token.DistSqToPlayer = math.lengthsq(position - playerPosition);
                 token.VisibilityFlags = 0;
                 token.DespawnPriority = ResolveDespawnPriorityBias(_trackedThreatClasses[i], _threatAuthoring);
-                _enemyTokens[i] = token;
+                _enemyTokens[tokenSlot] = token;
+                tokenSlot++;
+            }
+        }
+
+        private void RefreshHeadlessEnemyTokens(float3 playerPosition, ref int tokenSlot)
+        {
+            if (!_headlessEntities.IsCreated)
+                return;
+
+            int length = _headlessEntities.Length;
+            for (int i = 0; i < length && tokenSlot < MaxActiveEnemies; i++)
+            {
+                HeadlessEntity entity = _headlessEntities[i];
+                if ((entity.Flags & (byte)HeadlessEntityFlags.Active) == 0)
+                    continue;
+
+                entity.AgeColdTicks++;
+                _headlessEntities[i] = entity;
+
+                EncounterThreatClass threatClass = (EncounterThreatClass)entity.ThreatClass;
+                float3 position = entity.Position;
+                _enemyTokens[tokenSlot] = new EncounterEnemyToken
+                {
+                    EntityId = entity.EntityId,
+                    TokenCost = entity.TokenCost,
+                    DistSqToPlayer = math.lengthsq(position - playerPosition),
+                    VisibilityFlags = 0,
+                    DepthPosition = position.y,
+                    ThreatClass = entity.ThreatClass,
+                    DespawnPriority = ResolveDespawnPriorityBias(threatClass, _threatAuthoring),
+                    Position = position
+                };
+                tokenSlot++;
             }
         }
 
@@ -488,11 +749,15 @@ namespace Hecton8.Systems.AI
                 ForcedThreatClass = _pendingForcedThreatClass,
                 ForcedThreatCount = _pendingForcedThreatCount,
                 ThreatAuthoring = _threatAuthoring,
+                SpawnRequests = _spawnRequests,
+                DespawnRequests = _despawnRequests,
                 Output = _jobOutput
             };
 
             _frameIndex++;
             _jobOutput[0] = default;
+            ClearSpawnRequests();
+            ClearDespawnRequests();
             _activeJobHandle = job.Schedule(1, 1);
             _jobScheduled = true;
         }
@@ -507,12 +772,13 @@ namespace Hecton8.Systems.AI
                 bridge.HandleEncounterPhaseChanged((EncounterPhase)output.PreviousPhase, (EncounterPhase)output.NewPhase);
             }
 
-            if (output.DespawnRequestCount > 0 && faunaDirector != null)
-                ApplyDespawnRequests(output, faunaDirector);
+            bool predatorAupDirty = false;
+            if (output.DespawnRequestCount > 0)
+                predatorAupDirty |= ApplyDespawnRequests(output, faunaDirector);
 
             int forcedSpawnConsumed = 0;
-            if (output.SpawnRequestCount > 0 && faunaDirector != null)
-                forcedSpawnConsumed = ApplySpawnRequests(output, faunaDirector, bridge);
+            if (output.SpawnRequestCount > 0)
+                forcedSpawnConsumed = ApplySpawnRequests(output, bridge, ref predatorAupDirty);
 
             if (forcedSpawnConsumed > 0 && _pendingForcedThreatCount > 0)
             {
@@ -520,32 +786,35 @@ namespace Hecton8.Systems.AI
                 if (_pendingForcedThreatCount <= 0)
                     _pendingForcedThreatClass = -1;
             }
+
+            if (predatorAupDirty)
+                PublishPredatorAupBuffer();
         }
 
-        private int ApplySpawnRequests(EncounterJobOutput output, FaunaDirector faunaDirector, HectonDirectorAI bridge)
+        private int ApplySpawnRequests(EncounterJobOutput output, HectonDirectorAI bridge, ref bool predatorAupDirty)
         {
-            EncounterThreatClass threatClass = (EncounterThreatClass)output.SpawnThreatClass;
-            int requestCount = math.min(output.SpawnRequestCount, EncounterDirectorJob.MaxSpawnRequestsPerTick);
+            int requestCount = math.min(
+                output.SpawnRequestCount,
+                _spawnRequests.IsCreated ? _spawnRequests.Length : EncounterDirectorJob.LegacySpawnSlotCount);
             int forcedConsumed = 0;
             for (int i = 0; i < requestCount; i++)
             {
-                Vector3 spawnPosition = GetSpawnRequestPosition(output, i);
-                uint spawnSeed = GetSpawnRequestSeed(output, i);
-                if (!faunaDirector.TrySpawnEncounterThreat(
-                        threatClass,
-                        spawnPosition,
-                        spawnSeed,
-                        output.SpawnSquadStateBits,
-                        i,
-                        out GameObject spawnedInstance))
+                if (!TryGetSpawnRequest(output, i, out EncounterSpawnRequest request))
                 {
-                    if (output.ForcedSpawnConsumed == 0)
-                        RefundFailedSpawn(threatClass);
+                    RollbackUnappliedSpawn();
                     continue;
                 }
 
-                RegisterTrackedEntity(spawnedInstance, threatClass);
+                EncounterThreatClass threatClass = (EncounterThreatClass)request.ThreatClass;
+                Vector3 spawnPosition = new Vector3(request.Position.x, request.Position.y, request.Position.z);
+                if (!TryAllocateHeadlessEntity(threatClass, spawnPosition, request.VariantSeed, request.SquadStateBits, i))
+                {
+                    RollbackFailedSpawn(threatClass, refundTokenCost: output.ForcedSpawnConsumed == 0);
+                    continue;
+                }
+
                 bridge.HandleThreatSpawned(threatClass, spawnPosition);
+                predatorAupDirty |= WritesPredatorAup(threatClass);
                 if (output.ForcedSpawnConsumed != 0)
                     forcedConsumed++;
             }
@@ -553,14 +822,35 @@ namespace Hecton8.Systems.AI
             return forcedConsumed;
         }
 
-        private static Vector3 GetSpawnRequestPosition(EncounterJobOutput output, int index)
+        private bool TryGetSpawnRequest(EncounterJobOutput output, int index, out EncounterSpawnRequest request)
         {
-            float3 position = index == 1
+            request = default;
+            if (_spawnRequests.IsCreated)
+            {
+                if (index < 0 || index >= _spawnRequests.Length)
+                    return false;
+
+                request = _spawnRequests[index];
+                return IsValidThreatClass(request.ThreatClass);
+            }
+
+            request = new EncounterSpawnRequest
+            {
+                ThreatClass = output.SpawnThreatClass,
+                Position = GetSpawnRequestPosition(output, index),
+                VariantSeed = GetSpawnRequestSeed(output, index),
+                SquadStateBits = output.SpawnSquadStateBits
+            };
+            return IsValidThreatClass(request.ThreatClass);
+        }
+
+        private static float3 GetSpawnRequestPosition(EncounterJobOutput output, int index)
+        {
+            return index == 1
                 ? output.SpawnPosition1
                 : index == 2
                     ? output.SpawnPosition2
                     : output.SpawnPosition;
-            return new Vector3(position.x, position.y, position.z);
         }
 
         private static uint GetSpawnRequestSeed(EncounterJobOutput output, int index)
@@ -572,15 +862,27 @@ namespace Hecton8.Systems.AI
                     : output.SpawnVariantSeed;
         }
 
-        private void ApplyDespawnRequests(EncounterJobOutput output, FaunaDirector faunaDirector)
+        private bool ApplyDespawnRequests(EncounterJobOutput output, FaunaDirector faunaDirector)
         {
-            int requestCount = math.min(output.DespawnRequestCount, 3);
-            if (requestCount > 0)
-                ApplyDespawnRequestEntity(output.DespawnEntityId0, faunaDirector);
-            if (requestCount > 1)
-                ApplyDespawnRequestEntity(output.DespawnEntityId1, faunaDirector);
-            if (requestCount > 2)
-                ApplyDespawnRequestEntity(output.DespawnEntityId2, faunaDirector);
+            bool predatorAupDirty = false;
+            if (_despawnRequests.IsCreated)
+            {
+                int nativeRequestCount = math.min(output.DespawnRequestCount, _despawnRequests.Length);
+                for (int i = 0; i < nativeRequestCount; i++)
+                    predatorAupDirty |= ApplyDespawnRequestEntity(_despawnRequests[i], faunaDirector);
+
+                return predatorAupDirty;
+            }
+
+            int legacyRequestCount = math.min(output.DespawnRequestCount, EncounterDirectorJob.LegacyDespawnSlotCount);
+            if (legacyRequestCount > 0)
+                predatorAupDirty |= ApplyDespawnRequestEntity(output.DespawnEntityId0, faunaDirector);
+            if (legacyRequestCount > 1)
+                predatorAupDirty |= ApplyDespawnRequestEntity(output.DespawnEntityId1, faunaDirector);
+            if (legacyRequestCount > 2)
+                predatorAupDirty |= ApplyDespawnRequestEntity(output.DespawnEntityId2, faunaDirector);
+
+            return predatorAupDirty;
         }
 
         private void ApplyPhaseOverride(EncounterPhase phase, HectonDirectorAI bridge)
@@ -600,22 +902,146 @@ namespace Hecton8.Systems.AI
             }
         }
 
-        private void ApplyDespawnRequestEntity(int entityId, FaunaDirector faunaDirector)
+        private bool ApplyDespawnRequestEntity(int entityId, FaunaDirector faunaDirector)
         {
             if (entityId == 0)
-                return;
+                return false;
+
+            if (TryReleaseHeadlessEntity(entityId, refundHalfCost: false, decrementActiveCount: false, out bool releasedPredator))
+                return releasedPredator;
 
             float refund = ResolveTrackedTokenCost(entityId) * 0.5f;
-            if (faunaDirector.TryRecallEncounterThreat(entityId))
+            if (faunaDirector != null && faunaDirector.TryRecallEncounterThreat(entityId))
             {
-                UntrackEntity(entityId);
-                return;
+                return UntrackEntity(entityId);
             }
 
             EncounterDirectorState state = _frontState[0];
             state.TokenBudget = math.clamp(state.TokenBudget - refund, 0f, MaxTokenBudget);
+            state.ActiveEnemyCount = math.min(MaxActiveEnemies, state.ActiveEnemyCount + 1);
             _frontState[0] = state;
             _backState[0] = state;
+            return false;
+        }
+
+        private EncounterDirectorState BuildTelemetryState(in EncounterFrameContext frameContext)
+        {
+            EncounterDirectorState state = _frontState[0];
+            state.PlayerPosition = new float4(frameContext.PlayerPosition, frameContext.PlayerDepth);
+            state.PlayerVelocity = new float4(frameContext.PlayerVelocity, EstimateLength(frameContext.PlayerVelocity));
+            return state;
+        }
+
+        private void RecordBlackBox(in EncounterDirectorState state)
+        {
+            if (!_blackBox.IsCreated || !_blackBoxHead.IsCreated || _blackBoxHead.Length <= 0)
+                return;
+
+            uint stateHash = ComputeDirectorStateHash(in state);
+            int head = _blackBoxHead[0];
+            int slot = head % DirectorBlackBoxCapacity;
+            uint frameSequence = _blackBoxFrameSequence++;
+            _blackBox[slot] = new EncounterDirectorBlackBoxEntry
+            {
+                FrameIndex = frameSequence,
+                DirectorStateHash = stateHash,
+                ActiveThreatCount = unchecked((uint)math.max(0, state.ActiveEnemyCount)),
+                Flags = unchecked((uint)state.BudgetFlags),
+                Stress01 = state.StressLevel,
+                Intensity01 = state.IntensityLevel,
+                SpawnCredits = state.TokenBudget,
+                PlayerSpeed = state.PlayerVelocity.w,
+                PlayerPosition = state.PlayerPosition.xyz,
+                Padding0 = 0u
+            };
+            _blackBoxHead[0] = head + 1;
+
+            if (!math.isfinite(state.StressLevel) ||
+                !math.isfinite(state.IntensityLevel) ||
+                !math.isfinite(state.TokenBudget) ||
+                !math.all(math.isfinite(state.PlayerPosition)) ||
+                !math.all(math.isfinite(state.PlayerVelocity)))
+            {
+                DumpBlackBoxOnce();
+            }
+        }
+
+        private static uint ComputeDirectorStateHash(in EncounterDirectorState state)
+        {
+            uint hash = 2166136261u;
+            hash = (hash ^ math.asuint(state.StressLevel)) * 16777619u;
+            hash = (hash ^ math.asuint(state.IntensityLevel)) * 16777619u;
+            hash = (hash ^ math.asuint(state.TokenBudget)) * 16777619u;
+            hash = (hash ^ unchecked((uint)state.ActiveEnemyCount)) * 16777619u;
+            hash = (hash ^ unchecked((uint)state.BudgetFlags)) * 16777619u;
+            hash = (hash ^ unchecked((uint)state.ActivePhase)) * 16777619u;
+            hash = (hash ^ math.asuint(state.PlayerVelocity.w)) * 16777619u;
+            hash = (hash ^ math.asuint(state.PlayerPosition.x)) * 16777619u;
+            hash = (hash ^ math.asuint(state.PlayerPosition.y)) * 16777619u;
+            hash = (hash ^ math.asuint(state.PlayerPosition.z)) * 16777619u;
+            return hash == 0u ? 1u : hash;
+        }
+
+        private void DumpBlackBoxOnce()
+        {
+            if (_blackBoxDumpedThisActivation || !_blackBox.IsCreated || !_blackBoxHead.IsCreated)
+                return;
+
+            _blackBoxDumpedThisActivation = true;
+            try
+            {
+                string root = Application.dataPath;
+                DirectoryInfo directory = Directory.GetParent(root);
+                if (directory == null)
+                    return;
+
+                string path = Path.Combine(
+                    directory.FullName,
+                    DirectorTelemetryDumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                string parent = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(parent))
+                    Directory.CreateDirectory(parent);
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(DirectorTelemetryDumpMagic);
+                    writer.Write((uint)DirectorBlackBoxCapacity);
+                    writer.Write((uint)48);
+                    int head = _blackBoxHead[0];
+                    int count = math.min(DirectorBlackBoxCapacity, math.max(0, head));
+                    for (int i = 0; i < count; i++)
+                    {
+                        int index = (head - count + i) % DirectorBlackBoxCapacity;
+                        if (index < 0)
+                            index += DirectorBlackBoxCapacity;
+
+                        EncounterDirectorBlackBoxEntry entry = _blackBox[index];
+                        writer.Write(entry.FrameIndex);
+                        writer.Write(entry.DirectorStateHash);
+                        writer.Write(entry.ActiveThreatCount);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.Stress01);
+                        writer.Write(entry.Intensity01);
+                        writer.Write(entry.SpawnCredits);
+                        writer.Write(entry.PlayerSpeed);
+                        writer.Write(entry.PlayerPosition.x);
+                        writer.Write(entry.PlayerPosition.y);
+                        writer.Write(entry.PlayerPosition.z);
+                        writer.Write(entry.Padding0);
+                    }
+                }
+            }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            catch (Exception exception)
+            {
+                Debug.LogError(exception);
+            }
+#else
+            catch (Exception)
+            {
+            }
+#endif
         }
 
         private void WriteDebugEvent(int code, float context, float auxiliary)
@@ -635,6 +1061,289 @@ namespace Hecton8.Systems.AI
             _debugEventHead[0] = head + 1;
         }
 
+        private bool TryAllocateHeadlessEntity(
+            EncounterThreatClass threatClass,
+            Vector3 spawnPosition,
+            uint spawnSeed,
+            uint squadStateBits,
+            int squadOrdinal)
+        {
+            if (!_headlessEntities.IsCreated)
+                return false;
+
+            float3 position = new float3(spawnPosition.x, spawnPosition.y, spawnPosition.z);
+            byte biomeByte = ResolveBiomeByte(position);
+            if (!IsThreatAllowedInBiome(threatClass, biomeByte, position.y))
+                return false;
+
+            int slot = FindFreeHeadlessSlot();
+            if (slot < 0)
+                return false;
+
+            _nextHeadlessEntitySequence = (_nextHeadlessEntitySequence + 1) & 0x00FFFFFF;
+            if (_nextHeadlessEntitySequence == 0)
+                _nextHeadlessEntitySequence = 1;
+
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);
+            HeadlessEntity entity = default;
+            entity.EntityId = HeadlessEntityIdBase | _nextHeadlessEntitySequence;
+            entity.ThreatClass = (int)threatClass;
+            entity.TokenCost = ResolveTokenCost(threatClass, _threatAuthoring);
+            entity.Position = position;
+            entity.PositionAup = AbsoluteUniversePositionBlit.FromAup(in aup);
+            entity.SpawnSeed = spawnSeed ^ (squadStateBits + (uint)squadOrdinal * 0x9E3779B9u);
+            entity.BiomeByte = biomeByte;
+            entity.Flags = (byte)(HeadlessEntityFlags.Active | ResolveHeadlessPredatorFlags(threatClass));
+            entity.AgeColdTicks = 0;
+            _headlessEntities[slot] = entity;
+            return true;
+        }
+
+        private bool TryReleaseHeadlessEntity(int entityId, bool refundHalfCost, bool decrementActiveCount, out bool releasedPredator)
+        {
+            releasedPredator = false;
+            if (!_headlessEntities.IsCreated || entityId == 0)
+                return false;
+
+            int length = _headlessEntities.Length;
+            for (int i = 0; i < length; i++)
+            {
+                HeadlessEntity entity = _headlessEntities[i];
+                if ((entity.Flags & (byte)HeadlessEntityFlags.Active) == 0 || entity.EntityId != entityId)
+                    continue;
+
+                releasedPredator = (entity.Flags & (byte)HeadlessEntityFlags.Predator) != 0;
+                EncounterDirectorState state = _frontState[0];
+                if (refundHalfCost)
+                    state.TokenBudget = math.clamp(state.TokenBudget + entity.TokenCost * 0.5f, 0f, MaxTokenBudget);
+
+                if (decrementActiveCount)
+                    state.ActiveEnemyCount = math.max(0, state.ActiveEnemyCount - 1);
+
+                _frontState[0] = state;
+                _backState[0] = state;
+                _headlessEntities[i] = default;
+                _headlessFreeSearchCursor = math.min(_headlessFreeSearchCursor, i);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ClearHeadlessEntities()
+        {
+            if (!_headlessEntities.IsCreated)
+                return;
+
+            int length = _headlessEntities.Length;
+            for (int i = 0; i < length; i++)
+                _headlessEntities[i] = default;
+            _headlessFreeSearchCursor = 0;
+        }
+
+        private void ClearSpawnRequests()
+        {
+            if (!_spawnRequests.IsCreated)
+                return;
+
+            int length = _spawnRequests.Length;
+            for (int i = 0; i < length; i++)
+                _spawnRequests[i] = new EncounterSpawnRequest { ThreatClass = -1 };
+        }
+
+        private void ClearDespawnRequests()
+        {
+            if (!_despawnRequests.IsCreated)
+                return;
+
+            int length = _despawnRequests.Length;
+            for (int i = 0; i < length; i++)
+                _despawnRequests[i] = 0;
+        }
+
+        private int FindFreeHeadlessSlot()
+        {
+            int length = _headlessEntities.Length;
+            if (length <= 0)
+                return -1;
+
+            int start = math.clamp(_headlessFreeSearchCursor, 0, length - 1);
+            for (int offset = 0; offset < length; offset++)
+            {
+                int i = start + offset;
+                if (i >= length)
+                    i -= length;
+
+                if ((_headlessEntities[i].Flags & (byte)HeadlessEntityFlags.Active) == 0)
+                {
+                    _headlessFreeSearchCursor = i + 1;
+                    if (_headlessFreeSearchCursor >= length)
+                        _headlessFreeSearchCursor = 0;
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private static HeadlessEntityFlags ResolveHeadlessPredatorFlags(EncounterThreatClass threatClass)
+        {
+            if (threatClass == EncounterThreatClass.Leviathan)
+                return HeadlessEntityFlags.Predator | HeadlessEntityFlags.Apex;
+
+            return threatClass == EncounterThreatClass.Stalker || threatClass == EncounterThreatClass.Swarm
+                ? HeadlessEntityFlags.Predator
+                : HeadlessEntityFlags.None;
+        }
+
+        private static bool WritesPredatorAup(EncounterThreatClass threatClass)
+        {
+            return threatClass == EncounterThreatClass.Stalker ||
+                   threatClass == EncounterThreatClass.Swarm ||
+                   threatClass == EncounterThreatClass.Leviathan;
+        }
+
+        private static byte ResolveBiomeByte(float3 position)
+        {
+            if (TryResolveBiomeHashFromActiveTerrain(position, out uint activeTerrainBiomeHash))
+                return FoldBiomeHashToByte(activeTerrainBiomeHash);
+
+            int heatmapX = ((int)math.floor(position.x)) & 255;
+            int heatmapY = ((int)math.floor(position.z)) & 255;
+            if (H8StaticDataArena.TryGetBiomeHeatmapCell(heatmapX, heatmapY, out uint biomeHash))
+                return FoldBiomeHashToByte(biomeHash);
+
+            BiomeMatrixDirector director = BiomeMatrixDirector.ActiveRuntimeInstance;
+            HectonBiomeMatrixProfile profile = director != null ? director.CurrentProfile : null;
+            int matrixIndex = profile != null ? profile.matrixIndex : 0;
+            return (byte)math.clamp(matrixIndex, 0, 255);
+        }
+
+        private static bool TryResolveBiomeHashFromActiveTerrain(float3 position, out uint biomeHash)
+        {
+            biomeHash = 0u;
+            if (!H8StaticDataArena.IsLoaded)
+                return false;
+
+            HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (bridge == null || !bridge.TryGetActiveHeightTexturePayload(out HectonMapMagicVegetationBridge.TerrainHeightTexturePayload payload))
+                return false;
+
+            Vector3 terrainSize = payload.TerrainSize;
+            float u = (position.x - payload.TerrainPosition.x) * math.rcp(math.max(terrainSize.x, 0.001f));
+            float v = (position.z - payload.TerrainPosition.z) * math.rcp(math.max(terrainSize.z, 0.001f));
+            if (!math.isfinite(u) || !math.isfinite(v) || u < 0f || u > 1f || v < 0f || v > 1f)
+                return false;
+
+            int heatmapX = math.clamp((int)(u * (BiomeHeatmapResolution - 1) + 0.5f), 0, BiomeHeatmapResolution - 1);
+            int heatmapY = math.clamp((int)(v * (BiomeHeatmapResolution - 1) + 0.5f), 0, BiomeHeatmapResolution - 1);
+            return H8StaticDataArena.TryGetBiomeHeatmapCell(heatmapX, heatmapY, out biomeHash);
+        }
+
+        private static byte FoldBiomeHashToByte(uint biomeHash)
+        {
+            return (byte)((biomeHash ^ (biomeHash >> 8) ^ (biomeHash >> 16) ^ (biomeHash >> 24)) & 0xFFu);
+        }
+
+        private static bool IsThreatAllowedInBiome(EncounterThreatClass threatClass, byte biomeByte, float positionY)
+        {
+            if (threatClass == EncounterThreatClass.Drone)
+                return true;
+
+            byte depthBucket = (byte)(biomeByte & 0x0F);
+            switch (threatClass)
+            {
+                case EncounterThreatClass.Leviathan:
+                    return biomeByte >= 32 || positionY <= -180f;
+                case EncounterThreatClass.Stalker:
+                    return depthBucket >= 2 || positionY <= -60f;
+                case EncounterThreatClass.Swarm:
+                    return (biomeByte & 0x03) != 1;
+                default:
+                    return true;
+            }
+        }
+
+        private void PublishPredatorAupBuffer()
+        {
+            if (!_predatorAupUpload.IsCreated)
+                return;
+
+            int uploadCount = 0;
+            int length = _headlessEntities.IsCreated ? _headlessEntities.Length : 0;
+            for (int i = 0; i < length && uploadCount < PredatorAupBufferCapacity; i++)
+            {
+                HeadlessEntity entity = _headlessEntities[i];
+                if ((entity.Flags & (byte)HeadlessEntityFlags.Active) == 0 ||
+                    (entity.Flags & (byte)HeadlessEntityFlags.Predator) == 0)
+                {
+                    continue;
+                }
+
+                float radius = ResolvePredatorAupRadius((EncounterThreatClass)entity.ThreatClass);
+                _predatorAupUpload[uploadCount] = new float4(entity.Position.x, entity.Position.y, entity.Position.z, radius);
+                uploadCount++;
+            }
+            AppendTrackedPredatorAupEntries(ref uploadCount);
+
+            GraphicsBuffer writeBuffer = ResolvePredatorAupWriteBuffer();
+            if (writeBuffer != null && uploadCount > 0)
+            {
+                GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _predatorAupUpload, uploadCount);
+                _predatorAupPublishedBuffer = writeBuffer;
+                _predatorAupWriteToA = !_predatorAupWriteToA;
+            }
+
+            if (_predatorAupPublishedBuffer != null)
+            {
+                Shader.SetGlobalBuffer(_PredatorAUPBufferId, _predatorAupPublishedBuffer);
+                if (_predatorAupGlobalsDirty)
+                {
+                    Shader.SetGlobalVector(_PredatorAUPParamsId, new Vector4(120f, 1f, 0f, 0f));
+                    _predatorAupGlobalsDirty = false;
+                }
+            }
+
+            if (_lastPublishedPredatorAupCount == uploadCount)
+                return;
+
+            _lastPublishedPredatorAupCount = uploadCount;
+            Shader.SetGlobalInt(_PredatorAUPCountId, uploadCount);
+        }
+
+        private void AppendTrackedPredatorAupEntries(ref int uploadCount)
+        {
+            for (int i = 0; i < MaxActiveEnemies && uploadCount < PredatorAupBufferCapacity; i++)
+            {
+                if (_trackedEntityIds[i] == 0 || !WritesPredatorAup(_trackedThreatClasses[i]))
+                    continue;
+
+                Transform trackedTransform = _trackedTransforms[i];
+                if (trackedTransform == null || !trackedTransform.gameObject.activeInHierarchy)
+                    continue;
+
+                Vector3 position = trackedTransform.position;
+                float radius = ResolvePredatorAupRadius(_trackedThreatClasses[i]);
+                _predatorAupUpload[uploadCount] = new float4(position.x, position.y, position.z, radius);
+                uploadCount++;
+            }
+        }
+
+        private static float ResolvePredatorAupRadius(EncounterThreatClass threatClass)
+        {
+            return threatClass == EncounterThreatClass.Leviathan ? 120f : 55f;
+        }
+
+        private GraphicsBuffer ResolvePredatorAupWriteBuffer()
+        {
+            GraphicsBuffer preferred = _predatorAupWriteToA ? _predatorAupBufferA : _predatorAupBufferB;
+            if (preferred != null && preferred.IsValid())
+                return preferred;
+
+            GraphicsBuffer fallback = _predatorAupWriteToA ? _predatorAupBufferB : _predatorAupBufferA;
+            return fallback != null && fallback.IsValid() ? fallback : null;
+        }
+
         private void RegisterTrackedEntity(GameObject spawnedInstance, EncounterThreatClass threatClass)
         {
             if (spawnedInstance == null)
@@ -651,13 +1360,19 @@ namespace Hecton8.Systems.AI
             _trackedTransforms[slot] = spawnedInstance.transform;
             _trackedThreatClasses[slot] = threatClass;
             _trackedTokenCosts[slot] = ResolveTokenCost(threatClass, _threatAuthoring);
+            if (WritesPredatorAup(threatClass))
+                PublishPredatorAupBuffer();
         }
 
-        private void UntrackEntity(int entityId)
+        private bool UntrackEntity(int entityId)
         {
             int slot = FindTrackedSlot(entityId);
-            if (slot >= 0)
-                ClearTrackedSlot(slot);
+            if (slot < 0)
+                return false;
+
+            bool releasedPredator = WritesPredatorAup(_trackedThreatClasses[slot]);
+            ClearTrackedSlot(slot);
+            return releasedPredator;
         }
 
         private void ClearTrackedSlot(int slot)
@@ -697,12 +1412,34 @@ namespace Hecton8.Systems.AI
             return slot >= 0 ? _trackedTokenCosts[slot] : 0f;
         }
 
-        private void RefundFailedSpawn(EncounterThreatClass threatClass)
+        private void RollbackFailedSpawn(EncounterThreatClass threatClass, bool refundTokenCost)
         {
             EncounterDirectorState state = _frontState[0];
-            state.TokenBudget = math.clamp(state.TokenBudget + ResolveTokenCost(threatClass, _threatAuthoring), 0f, MaxTokenBudget);
+            if (refundTokenCost)
+                state.TokenBudget = math.clamp(state.TokenBudget + ResolveTokenCost(threatClass, _threatAuthoring), 0f, MaxTokenBudget);
+
+            RollbackUnappliedSpawn(ref state);
             _frontState[0] = state;
             _backState[0] = state;
+        }
+
+        private void RollbackUnappliedSpawn()
+        {
+            EncounterDirectorState state = _frontState[0];
+            RollbackUnappliedSpawn(ref state);
+            _frontState[0] = state;
+            _backState[0] = state;
+        }
+
+        private static void RollbackUnappliedSpawn(ref EncounterDirectorState state)
+        {
+            state.ActiveEnemyCount = math.max(0, state.ActiveEnemyCount - 1);
+        }
+
+        private static bool IsValidThreatClass(int threatClass)
+        {
+            return threatClass >= (int)EncounterThreatClass.Drone &&
+                   threatClass <= (int)EncounterThreatClass.Leviathan;
         }
 
         private void PrecomputeCandidateDirections()
@@ -808,6 +1545,7 @@ namespace Hecton8.Systems.AI
                 ApplyThreatCostDefinition(threatCostTable, EncounterThreatClass.Leviathan, ref snapshot.LeviathanTokenCost, ref snapshot.LeviathanMaxSimultaneous, ref snapshot.LeviathanDespawnPriorityBias);
             }
 
+            ApplyCanonicalThreatCosts(ref snapshot);
             return snapshot;
         }
 
@@ -818,10 +1556,10 @@ namespace Hecton8.Systems.AI
             snapshot.SwarmMinIntensity = 0.25f;
             snapshot.StalkerMinIntensity = 0.55f;
             snapshot.LeviathanMinIntensity = 0.85f;
-            snapshot.DroneTokenCost = 10f;
-            snapshot.SwarmTokenCost = 20f;
-            snapshot.StalkerTokenCost = 35f;
-            snapshot.LeviathanTokenCost = 80f;
+            snapshot.DroneTokenCost = 5f;
+            snapshot.SwarmTokenCost = 5f;
+            snapshot.StalkerTokenCost = 50f;
+            snapshot.LeviathanTokenCost = 500f;
             snapshot.DroneDespawnPriorityBias = 1.25f;
             snapshot.SwarmDespawnPriorityBias = 1f;
             snapshot.StalkerDespawnPriorityBias = 0.55f;
@@ -835,6 +1573,14 @@ namespace Hecton8.Systems.AI
             snapshot.StalkerAllowCriticalHealth = 0;
             snapshot.LeviathanAllowCriticalHealth = 0;
             return snapshot;
+        }
+
+        private static void ApplyCanonicalThreatCosts(ref EncounterThreatAuthoringSnapshot snapshot)
+        {
+            snapshot.DroneTokenCost = 5f;
+            snapshot.SwarmTokenCost = 5f;
+            snapshot.StalkerTokenCost = 50f;
+            snapshot.LeviathanTokenCost = 500f;
         }
 
         private static void ApplyThreatCostDefinition(
@@ -886,6 +1632,7 @@ namespace Hecton8.Systems.AI
             if (hasDependency)
             {
                 handle = array.Dispose(handle);
+                hasDependency = true;
             }
             else
             {
@@ -893,7 +1640,46 @@ namespace Hecton8.Systems.AI
             }
 
             array = default;
-            hasDependency = true;
+        }
+
+        private static void DisposeNativeList<T>(ref NativeList<T> list, string label, ref JobHandle handle, ref bool hasDependency) where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeList(nameof(EncounterDirector), label);
+            if (hasDependency)
+            {
+                handle = list.Dispose(handle);
+                hasDependency = true;
+            }
+            else
+            {
+                list.Dispose();
+            }
+
+            list = default;
+        }
+
+        private void ReleasePredatorAupBuffer()
+        {
+            if (_predatorAupBufferA != null)
+            {
+                _predatorAupBufferA.Release();
+                _predatorAupBufferA = null;
+            }
+
+            if (_predatorAupBufferB != null)
+            {
+                _predatorAupBufferB.Release();
+                _predatorAupBufferB = null;
+            }
+
+            _predatorAupPublishedBuffer = null;
+            _predatorAupWriteToA = true;
+            _lastPublishedPredatorAupCount = 0;
+            _predatorAupGlobalsDirty = true;
+            Shader.SetGlobalInt(_PredatorAUPCountId, 0);
         }
     }
 
@@ -912,19 +1698,31 @@ namespace Hecton8.Systems.AI
         private const float DecayMaxSeconds = 40f;
         private const float RelaxMinSeconds = 30f;
         private const float RelaxMaxSeconds = 60f;
-        private const float MaxTokenBudget = 100f;
+        private const float MaxTokenBudget = 1000f;
         private const float FrustumRejectPadding = 3f;
         private const float CriticalHealthSpawnSuppressionThreshold = 0.15f;
         private const float SpawnClusterRadiusSq = 15f * 15f;
         private const float MinSpawnRadius = 50f;
         private const float MaxSpawnRadius = 150f;
         private const float DespawnKeepDistanceSq = 25f * 25f;
+        private const float HeadlessDespawnDistanceSq = 400f * 400f;
+        private const float PredictiveSpawnLeadMeters = 200f;
+        private const float StationaryVelocitySq = 0.25f;
+        private const float ForwardFrustumDotReject = 0.9f;
+        private const float DespairModeBudgetCap = 20f;
         private const float ThreatStressRadiusSq = 50f * 50f;
         private const float InvThreatStressRadiusSq = 1f / ThreatStressRadiusSq;
+        private const float InvMaxDepthStressMeters = 1f / 4000f;
+        private const float InvVelocityStressMetersPerSecond = 1f / 12f;
+        private const float InvSafeIdleVelocityMetersPerSecond = 1f / 1.25f;
+        private const float InvLowStressCreditThreshold = 1f / 0.35f;
         private const float SafeIdleStressDecayPerTick = 0.06f;
         private const float SelectionEpsilon = 0.0001f;
         private const int HunterSquadOverrideMinSimultaneous = 3;
-        internal const int MaxSpawnRequestsPerTick = 3;
+        internal const int LegacySpawnSlotCount = 3;
+        internal const int LegacyDespawnSlotCount = 3;
+        internal const int MaxSpawnRequestsPerTick = 16;
+        internal const int MaxDespawnRequestsPerTick = 16;
         private const uint HunterSquadHuntingFlankStateBits = (1u << 0) | (1u << 2);
 
         public EncounterDirectorState CurrentState;
@@ -945,6 +1743,28 @@ namespace Hecton8.Systems.AI
         public int ForcedThreatClass;
         public int ForcedThreatCount;
         public EncounterThreatAuthoringSnapshot ThreatAuthoring;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: Unity's parallel-for safety guard cannot infer that this director is a
+        // single-lane job. The guard sees writes to request indices unrelated to Execute(index), but Schedule(1, 1)
+        // creates exactly one writer and Execute returns immediately for any index other than zero.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: Manual legacy fields were rejected because they capped the director at
+        // three spawns and left budget stranded. A managed list was rejected for zero-GC. A NativeQueue was rejected
+        // because this job has one producer and a fixed maximum, so an indexed window is cheaper and easier to audit.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: The invariant is: main thread clears this buffer before scheduling,
+        // the scheduled job owns indices [0, MaxSpawnRequestsPerTick), and main thread reads only after the job
+        // completed through DispatcherJobSwap. Future multi-lane scheduling must partition this buffer first.
+        [NativeDisableParallelForRestriction]
+        public NativeArray<EncounterSpawnRequest> SpawnRequests;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: Same single-lane director invariant as SpawnRequests. The safety system
+        // cannot prove that Execute(0) is the sole writer when despawn request indices are compacted independently
+        // from the parallel-for index, so this field needs the same explicit ownership proof.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: Keeping only three legacy integer fields was rejected because dense
+        // headless scenes could need multiple cold ticks to free entities beyond 400m. A dynamic container was
+        // rejected because the output count is bounded and gameplay tick paths must not allocate or grow storage.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: The invariant is: main thread clears this fixed int window before
+        // scheduling, the job writes each entity id at most once in [0, MaxDespawnRequestsPerTick), and completed
+        // output is consumed once on the main thread before the next schedule.
+        [NativeDisableParallelForRestriction]
+        public NativeArray<int> DespawnRequests;
         public NativeArray<EncounterJobOutput> Output;
 
         public void Execute(int index)
@@ -969,6 +1789,7 @@ namespace Hecton8.Systems.AI
             float bestCost0 = 0f;
             float bestCost1 = 0f;
             float bestCost2 = 0f;
+            float3 frustumRejectExtents = new float3(FrustumRejectPadding);
 
             for (int i = 0; i < ActiveEnemies.Length; i++)
             {
@@ -981,7 +1802,16 @@ namespace Hecton8.Systems.AI
                 if (distSq < nearestThreatDistanceSq)
                     nearestThreatDistanceSq = distSq;
 
-                bool insideOrIntersectingFrustum = TestPlanesAABB(token.Position, new float3(FrustumRejectPadding));
+                if (distSq > HeadlessDespawnDistanceSq)
+                {
+                    if (TryWriteDespawnSlot(ref output, token.EntityId))
+                    {
+                        state.TokenBudget = math.clamp(state.TokenBudget + token.TokenCost * 0.5f, 0f, MaxTokenBudget);
+                        continue;
+                    }
+                }
+
+                bool insideOrIntersectingFrustum = TestPlanesAABB(token.Position, frustumRejectExtents);
                 float visibilityFactor = insideOrIntersectingFrustum ? 0f : 1f;
                 float priority = distSq * visibilityFactor * math.max(token.DespawnPriority, 0f);
 
@@ -1021,8 +1851,8 @@ namespace Hecton8.Systems.AI
             float proximityStress = nearestThreatDistanceSq < float.MaxValue
                 ? math.saturate(1f - nearestThreatDistanceSq * InvThreatStressRadiusSq)
                 : 0f;
-            float depthStress = math.saturate(PlayerPosition.w / 4000f) * 0.4f;
-            float velocityStress = math.saturate(PlayerVelocity.w / 12f) * 0.15f;
+            float depthStress = math.saturate(PlayerPosition.w * InvMaxDepthStressMeters) * 0.4f;
+            float velocityStress = math.saturate(PlayerVelocity.w * InvVelocityStressMetersPerSecond) * 0.15f;
             float healthStress = 1f - PlayerHealthNormalized;
             float oxygenStress = 1f - PlayerOxygenNormalized;
             float acousticStress = math.saturate(AcousticThreatLevel);
@@ -1037,7 +1867,7 @@ namespace Hecton8.Systems.AI
                 math.min(
                     1f - proximityStress,
                     math.min(
-                        1f - math.saturate(PlayerVelocity.w / 1.25f),
+                        1f - math.saturate(PlayerVelocity.w * InvSafeIdleVelocityMetersPerSecond),
                         1f - math.max(acousticStress, PlayerInternalStress)))));
             rawStress *= math.lerp(1f, 0.25f, safeIdleRecovery);
             float alpha = ApproximateOneMinusExpNegPositive(1f / StressTau);
@@ -1086,9 +1916,14 @@ namespace Hecton8.Systems.AI
                 state.RecoveryTimer = 0f;
             }
 
+            bool criticalHealthSuppressed = PlayerHealthNormalized <= CriticalHealthSpawnSuppressionThreshold;
+            if (criticalHealthSuppressed)
+                budgetFlags |= EncounterBudgetFlags.DespairModeActive;
+            else
+                budgetFlags &= ~EncounterBudgetFlags.DespairModeActive;
+
             state.BudgetFlags = (int)budgetFlags;
 
-            bool criticalHealthSuppressed = PlayerHealthNormalized <= CriticalHealthSpawnSuppressionThreshold;
             if (((EncounterBudgetFlags)state.BudgetFlags & EncounterBudgetFlags.RegenBlocked) != 0)
             {
                 state.TokenRegenRate = 0f;
@@ -1096,14 +1931,17 @@ namespace Hecton8.Systems.AI
             else if (criticalHealthSuppressed)
             {
                 state.TokenRegenRate = 0f;
-                state.TokenBudget = 0f;
+                state.TokenBudget = math.min(state.TokenBudget, DespairModeBudgetCap);
             }
             else
             {
-                float lowStressCredit01 = math.saturate(1f - (state.StressLevel / 0.35f));
+                float lowStressCredit01 = math.saturate(1f - (state.StressLevel * InvLowStressCreditThreshold));
                 float lowStressRegen = lowStressCredit01 > 0f ? math.lerp(4f, 10f, lowStressCredit01) : 0f;
+                float buildupRegen = (EncounterPhase)state.ActivePhase == EncounterPhase.BuildUp
+                    ? math.lerp(5f, 14f, math.saturate(state.IntensityLevel + state.StressLevel * 0.5f))
+                    : 0f;
                 float relaxRegen = (EncounterPhase)state.ActivePhase == EncounterPhase.Relax ? 8f : 0f;
-                state.TokenRegenRate = math.max(relaxRegen, lowStressRegen);
+                state.TokenRegenRate = math.max(math.max(relaxRegen, lowStressRegen), buildupRegen);
             }
 
             state.TokenBudget = math.clamp(state.TokenBudget + state.TokenRegenRate, 0f, MaxTokenBudget);
@@ -1113,34 +1951,37 @@ namespace Hecton8.Systems.AI
                 int shedCount = AvgFrameTimeMs > EmergencyThresholdMs ? 3 : 1;
                 if (bestEntity0 != 0 && shedCount > 0)
                 {
-                    output.DespawnRequestCount++;
-                    output.DespawnEntityId0 = bestEntity0;
-                    state.TokenBudget = math.clamp(state.TokenBudget + bestCost0 * 0.5f, 0f, MaxTokenBudget);
-                    activeEnemyCount--;
-                    DecrementThreatClassCount(ref threatClassCounts, bestEntity0, ActiveEnemies);
+                    if (TryWriteDespawnSlot(ref output, bestEntity0))
+                    {
+                        state.TokenBudget = math.clamp(state.TokenBudget + bestCost0 * 0.5f, 0f, MaxTokenBudget);
+                        activeEnemyCount--;
+                        DecrementThreatClassCount(ref threatClassCounts, bestEntity0, ActiveEnemies);
+                    }
                 }
 
                 if (bestEntity1 != 0 && shedCount > 1)
                 {
-                    output.DespawnRequestCount++;
-                    output.DespawnEntityId1 = bestEntity1;
-                    state.TokenBudget = math.clamp(state.TokenBudget + bestCost1 * 0.5f, 0f, MaxTokenBudget);
-                    activeEnemyCount--;
-                    DecrementThreatClassCount(ref threatClassCounts, bestEntity1, ActiveEnemies);
+                    if (TryWriteDespawnSlot(ref output, bestEntity1))
+                    {
+                        state.TokenBudget = math.clamp(state.TokenBudget + bestCost1 * 0.5f, 0f, MaxTokenBudget);
+                        activeEnemyCount--;
+                        DecrementThreatClassCount(ref threatClassCounts, bestEntity1, ActiveEnemies);
+                    }
                 }
 
                 if (bestEntity2 != 0 && shedCount > 2)
                 {
-                    output.DespawnRequestCount++;
-                    output.DespawnEntityId2 = bestEntity2;
-                    state.TokenBudget = math.clamp(state.TokenBudget + bestCost2 * 0.5f, 0f, MaxTokenBudget);
-                    activeEnemyCount--;
-                    DecrementThreatClassCount(ref threatClassCounts, bestEntity2, ActiveEnemies);
+                    if (TryWriteDespawnSlot(ref output, bestEntity2))
+                    {
+                        state.TokenBudget = math.clamp(state.TokenBudget + bestCost2 * 0.5f, 0f, MaxTokenBudget);
+                        activeEnemyCount--;
+                        DecrementThreatClassCount(ref threatClassCounts, bestEntity2, ActiveEnemies);
+                    }
                 }
             }
 
             if (criticalHealthSuppressed)
-                state.TokenBudget = 0f;
+                state.TokenBudget = math.min(state.TokenBudget, DespairModeBudgetCap);
 
             bool forceSpawn = !criticalHealthSuppressed && ForcedThreatCount > 0 && ForcedThreatClass >= 0;
             bool spawnCadenceOpen = forceSpawn || !criticalHealthSuppressed || ((((int)state.PacingPhaseTimer) & 0x3) == 0);
@@ -1149,12 +1990,17 @@ namespace Hecton8.Systems.AI
                 activeEnemyCount < 32 &&
                 spawnCadenceOpen)
             {
-                EncounterThreatClass threatClass;
-                bool resolvedThreatClass = forceSpawn
-                    ? TryResolveForcedThreatClass(ForcedThreatClass, threatClassCounts, ThreatAuthoring, out threatClass)
-                    : TryResolveDesiredThreatClass(state.IntensityLevel, state.TokenBudget, criticalHealthSuppressed, threatClassCounts, ThreatAuthoring, out threatClass);
-                if (resolvedThreatClass)
+                int maxRequestSlots = math.min(MaxSpawnRequestsPerTick, SpawnRequests.IsCreated ? SpawnRequests.Length : LegacySpawnSlotCount);
+                int maxForcedRequests = forceSpawn ? math.min(ForcedThreatCount, maxRequestSlots) : maxRequestSlots;
+                for (int spawnIndex = 0; spawnIndex < maxForcedRequests && activeEnemyCount < 32; spawnIndex++)
                 {
+                    EncounterThreatClass threatClass;
+                    bool resolvedThreatClass = forceSpawn
+                        ? TryResolveForcedThreatClass(ForcedThreatClass, threatClassCounts, ThreatAuthoring, out threatClass)
+                        : TryResolveDesiredThreatClass(state.IntensityLevel, state.TokenBudget, criticalHealthSuppressed, threatClassCounts, ThreatAuthoring, out threatClass);
+                    if (!resolvedThreatClass)
+                        break;
+
                     float spawnCost = ResolveTokenCost(threatClass, ThreatAuthoring);
                     int maxSimultaneous = ResolveMaxSimultaneous(threatClass, ThreatAuthoring);
                     if (forceSpawn && threatClass == EncounterThreatClass.Stalker)
@@ -1162,45 +2008,41 @@ namespace Hecton8.Systems.AI
 
                     int availableThreatSlots = math.max(0, maxSimultaneous - ResolveThreatClassCount(threatClass, threatClassCounts));
                     int availableEnemySlots = math.max(0, 32 - activeEnemyCount);
-                    int requestedSpawnCount = forceSpawn
-                        ? math.min(math.min(ForcedThreatCount, HunterSquadOverrideMinSimultaneous), MaxSpawnRequestsPerTick)
-                        : 1;
-                    requestedSpawnCount = math.min(requestedSpawnCount, math.min(availableThreatSlots, availableEnemySlots));
-                    float3 reserved0 = default;
-                    float3 reserved1 = default;
-                    int reservedCount = 0;
-                    for (int spawnIndex = 0; spawnIndex < requestedSpawnCount; spawnIndex++)
-                    {
-                        if (!TryResolveSpawnCandidate(playerPosition, playerForward, forceSpawn, reservedCount, reserved0, reserved1, out float3 spawnPosition))
-                            break;
+                    if (availableThreatSlots <= 0 || availableEnemySlots <= 0)
+                        break;
 
-                        uint spawnSequence = state.SpawnSequence + 1u;
-                        uint spawnSeed = EncounterDirector.BuildDeterministicSeed(
-                            new Vector3(playerPosition.x, playerPosition.y, playerPosition.z),
-                            unchecked((int)spawnSequence),
-                            state.ActivePhase,
-                            activeEnemyCount + spawnIndex);
-                        WriteSpawnSlot(ref output, spawnIndex, spawnPosition, spawnSeed);
-                        state.SpawnSequence = spawnSequence;
-                        if (!forceSpawn)
-                            state.TokenBudget = math.clamp(state.TokenBudget - spawnCost, 0f, MaxTokenBudget);
-                        activeEnemyCount++;
-                        IncrementThreatClassCount(ref threatClassCounts, threatClass);
-                        if (reservedCount == 0)
-                            reserved0 = spawnPosition;
-                        else if (reservedCount == 1)
-                            reserved1 = spawnPosition;
-                        reservedCount++;
-                    }
+                    if (!forceSpawn && spawnCost > SelectionEpsilon && state.TokenBudget + SelectionEpsilon < spawnCost)
+                        break;
 
-                    if (reservedCount > 0)
+                    if (!TryResolveSpawnCandidate(playerPosition, PlayerVelocity.xyz, playerForward, forceSpawn, output.SpawnRequestCount, out float3 spawnPosition))
+                        break;
+
+                    uint spawnSequence = state.SpawnSequence + 1u;
+                    uint spawnSeed = EncounterDirector.BuildDeterministicSeed(
+                        playerPosition,
+                        unchecked((int)spawnSequence),
+                        state.ActivePhase,
+                        activeEnemyCount + spawnIndex);
+                    uint squadBits = forceSpawn && threatClass == EncounterThreatClass.Stalker
+                        ? HunterSquadHuntingFlankStateBits
+                        : 0u;
+                    WriteSpawnSlot(ref output, output.SpawnRequestCount, threatClass, spawnPosition, spawnSeed, squadBits);
+                    output.SpawnRequestCount++;
+                    output.SpawnThreatClass = (int)threatClass;
+                    if (output.SpawnRequestCount == 1)
+                        output.SpawnSquadStateBits = squadBits;
+                    state.SpawnSequence = spawnSequence;
+                    if (!forceSpawn)
+                        state.TokenBudget = math.clamp(state.TokenBudget - spawnCost, 0f, MaxTokenBudget);
+                    else
+                        output.ForcedSpawnConsumed++;
+
+                    activeEnemyCount++;
+                    IncrementThreatClassCount(ref threatClassCounts, threatClass);
+
+                    if (!forceSpawn && state.TokenBudget + SelectionEpsilon < ResolveCheapestAllowedCost(state.IntensityLevel, criticalHealthSuppressed, threatClassCounts, ThreatAuthoring))
                     {
-                        output.SpawnRequestCount = reservedCount;
-                        output.SpawnThreatClass = (int)threatClass;
-                        output.ForcedSpawnConsumed = forceSpawn ? reservedCount : 0;
-                        output.SpawnSquadStateBits = forceSpawn && threatClass == EncounterThreatClass.Stalker
-                            ? HunterSquadHuntingFlankStateBits
-                            : 0u;
+                        break;
                     }
                 }
             }
@@ -1232,52 +2074,66 @@ namespace Hecton8.Systems.AI
             float x3 = x2 * clamped;
             float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
             float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
-            return math.saturate(numerator / math.max(denominator, 0.0001f));
+            return math.saturate(numerator * math.rcp(math.max(denominator, 0.0001f)));
         }
 
         private bool TryResolveSpawnCandidate(
             float3 playerPosition,
+            float3 playerVelocity,
             float3 playerForward,
             bool preferFarEdge,
             int reservedCount,
-            float3 reserved0,
-            float3 reserved1,
             out float3 spawnPosition)
         {
             spawnPosition = float3.zero;
             float bestScore = float.MinValue;
             bool found = false;
+            float velocitySq = math.lengthsq(playerVelocity);
+            bool usePredictiveLead = velocitySq > StationaryVelocitySq;
+            float3 velocityDirection = usePredictiveLead
+                ? playerVelocity * math.rsqrt(velocitySq)
+                : playerForward;
+            float3 spawnAnchor = usePredictiveLead
+                ? playerPosition + velocityDirection * PredictiveSpawnLeadMeters
+                : playerPosition;
+            float3 frustumRejectExtents = new float3(FrustumRejectPadding);
 
             int directionCount = math.min(CandidateCount, CandidateDirections.Length);
+            float invDirectionDenominator = directionCount > 1
+                ? math.rcp((float)(directionCount - 1))
+                : 0f;
             for (int i = 0; i < directionCount; i++)
             {
-                float normalizedIndex = directionCount > 1 ? (float)i / (directionCount - 1) : 0f;
+                float normalizedIndex = i * invDirectionDenominator;
                 if (preferFarEdge && normalizedIndex < 0.65f)
                     continue;
 
                 float radius = preferFarEdge
                     ? MaxSpawnRadius
                     : math.lerp(MinSpawnRadius, MaxSpawnRadius, normalizedIndex);
-                float3 candidate = playerPosition + CandidateDirections[i] * radius;
+                float3 candidate = spawnAnchor + CandidateDirections[i] * radius;
+                if (usePredictiveLead && math.dot(candidate - playerPosition, velocityDirection) < 0f)
+                    continue;
 
                 if (candidate.y > SurfaceWorldY - 2f)
                     continue;
 
-                if (TestPlanesAABB(candidate, new float3(FrustumRejectPadding)))
+                float3 candidateOffset = candidate - playerPosition;
+                float candidateDistSq = math.lengthsq(candidateOffset);
+                float3 toCandidate = NormalizeSafe(candidateOffset, playerForward);
+                if (candidateDistSq <= HeadlessDespawnDistanceSq && math.dot(playerForward, toCandidate) > ForwardFrustumDotReject)
+                    continue;
+
+                if (TestPlanesAABB(candidate, frustumRejectExtents))
                     continue;
 
                 if (!HasEnemyClearance(candidate))
                     continue;
 
-                if (reservedCount > 0 && math.lengthsq(candidate - reserved0) < SpawnClusterRadiusSq)
+                if (!HasReservedSpawnClearance(candidate, reservedCount))
                     continue;
 
-                if (reservedCount > 1 && math.lengthsq(candidate - reserved1) < SpawnClusterRadiusSq)
-                    continue;
-
-                float3 toCandidate = NormalizeSafe(candidate - playerPosition, playerForward);
-                float score = math.lengthsq(candidate - playerPosition) +
-                              500f * (1f - math.dot(playerForward, toCandidate));
+                float score = candidateDistSq + 500f * (1f - math.dot(playerForward, toCandidate));
                 if (score <= bestScore)
                     continue;
 
@@ -1289,8 +2145,25 @@ namespace Hecton8.Systems.AI
             return found;
         }
 
-        private static void WriteSpawnSlot(ref EncounterJobOutput output, int index, float3 position, uint seed)
+        private void WriteSpawnSlot(
+            ref EncounterJobOutput output,
+            int index,
+            EncounterThreatClass threatClass,
+            float3 position,
+            uint seed,
+            uint squadStateBits)
         {
+            if (SpawnRequests.IsCreated && index >= 0 && index < SpawnRequests.Length)
+            {
+                SpawnRequests[index] = new EncounterSpawnRequest
+                {
+                    ThreatClass = (int)threatClass,
+                    Position = position,
+                    VariantSeed = seed,
+                    SquadStateBits = squadStateBits
+                };
+            }
+
             if (index == 1)
             {
                 output.SpawnPosition1 = position;
@@ -1309,6 +2182,45 @@ namespace Hecton8.Systems.AI
             output.SpawnVariantSeed = seed;
         }
 
+        private bool TryWriteDespawnSlot(ref EncounterJobOutput output, int entityId)
+        {
+            if (entityId == 0)
+                return false;
+
+            int maxSlots = math.min(MaxDespawnRequestsPerTick, DespawnRequests.IsCreated ? DespawnRequests.Length : LegacyDespawnSlotCount);
+            if (output.DespawnRequestCount >= maxSlots)
+                return false;
+
+            int existingCount = math.min(output.DespawnRequestCount, maxSlots);
+            if (DespawnRequests.IsCreated)
+            {
+                for (int i = 0; i < existingCount; i++)
+                {
+                    if (DespawnRequests[i] == entityId)
+                        return false;
+                }
+            }
+            else if (output.DespawnEntityId0 == entityId ||
+                     output.DespawnEntityId1 == entityId ||
+                     output.DespawnEntityId2 == entityId)
+            {
+                return false;
+            }
+
+            if (DespawnRequests.IsCreated)
+                DespawnRequests[output.DespawnRequestCount] = entityId;
+
+            if (output.DespawnRequestCount == 0)
+                output.DespawnEntityId0 = entityId;
+            else if (output.DespawnRequestCount == 1)
+                output.DespawnEntityId1 = entityId;
+            else if (output.DespawnRequestCount == 2)
+                output.DespawnEntityId2 = entityId;
+
+            output.DespawnRequestCount++;
+            return true;
+        }
+
         private static bool TryResolveForcedThreatClass(
             int forcedThreatClass,
             int4 threatClassCounts,
@@ -1316,8 +2228,11 @@ namespace Hecton8.Systems.AI
             out EncounterThreatClass threatClass)
         {
             threatClass = (EncounterThreatClass)forcedThreatClass;
-            if (forcedThreatClass < 0)
+            if (forcedThreatClass < (int)EncounterThreatClass.Drone ||
+                forcedThreatClass > (int)EncounterThreatClass.Leviathan)
+            {
                 return false;
+            }
 
             int maxSimultaneous = ResolveMaxSimultaneous(threatClass, authoring);
             if (threatClass == EncounterThreatClass.Stalker)
@@ -1341,13 +2256,18 @@ namespace Hecton8.Systems.AI
             return true;
         }
 
-        private static bool HasReservedSpawnClearance(float3 candidate, int reservedCount, float3 reserved0, float3 reserved1)
+        private bool HasReservedSpawnClearance(float3 candidate, int reservedCount)
         {
-            if (reservedCount > 0 && math.lengthsq(candidate - reserved0) < SpawnClusterRadiusSq)
-                return false;
+            int count = math.min(reservedCount, SpawnRequests.IsCreated ? SpawnRequests.Length : 0);
+            for (int i = 0; i < count; i++)
+            {
+                EncounterSpawnRequest request = SpawnRequests[i];
+                if (request.ThreatClass < 0)
+                    continue;
 
-            if (reservedCount > 1 && math.lengthsq(candidate - reserved1) < SpawnClusterRadiusSq)
-                return false;
+                if (math.lengthsq(candidate - request.Position) < SpawnClusterRadiusSq)
+                    return false;
+            }
 
             return true;
         }
@@ -1423,6 +2343,25 @@ namespace Hecton8.Systems.AI
                 return false;
 
             return ResolveThreatClassCount(threatClass, threatClassCounts) < ResolveMaxSimultaneous(threatClass, authoring);
+        }
+
+        private static float ResolveCheapestAllowedCost(
+            float intensityLevel,
+            bool criticalHealthSuppressed,
+            int4 threatClassCounts,
+            EncounterThreatAuthoringSnapshot authoring)
+        {
+            float cheapest = float.MaxValue;
+            if (CanSpawnThreatClass(EncounterThreatClass.Drone, intensityLevel, float.MaxValue, criticalHealthSuppressed, threatClassCounts, authoring))
+                cheapest = math.min(cheapest, ResolveTokenCost(EncounterThreatClass.Drone, authoring));
+            if (CanSpawnThreatClass(EncounterThreatClass.Swarm, intensityLevel, float.MaxValue, criticalHealthSuppressed, threatClassCounts, authoring))
+                cheapest = math.min(cheapest, ResolveTokenCost(EncounterThreatClass.Swarm, authoring));
+            if (CanSpawnThreatClass(EncounterThreatClass.Stalker, intensityLevel, float.MaxValue, criticalHealthSuppressed, threatClassCounts, authoring))
+                cheapest = math.min(cheapest, ResolveTokenCost(EncounterThreatClass.Stalker, authoring));
+            if (CanSpawnThreatClass(EncounterThreatClass.Leviathan, intensityLevel, float.MaxValue, criticalHealthSuppressed, threatClassCounts, authoring))
+                cheapest = math.min(cheapest, ResolveTokenCost(EncounterThreatClass.Leviathan, authoring));
+
+            return cheapest;
         }
 
         private static float ResolveMinimumIntensity(EncounterThreatClass threatClass, EncounterThreatAuthoringSnapshot authoring)
@@ -1568,13 +2507,13 @@ namespace Hecton8.Systems.AI
             switch (phase)
             {
                 case EncounterPhase.BuildUp:
-                    return Smooth01(normalizedTime) * normalizedTime;
+                    return math.pow(math.sin(1.57079637f * normalizedTime), 1.5f);
                 case EncounterPhase.Peak:
-                    return 1f - 0.1f * TriangleSigned(normalizedTime);
+                    return 1f - 0.1f * math.sin(6.28318531f * normalizedTime);
                 case EncounterPhase.Decay:
-                    return 1f - Smooth01(normalizedTime);
+                    return math.pow(math.max(0f, math.cos(1.57079637f * normalizedTime)), 0.7f);
                 default:
-                    return 0.05f + 0.05f * Triangle01(normalizedTime);
+                    return 0.05f + 0.05f * math.sin(3.14159265f * normalizedTime);
             }
         }
 

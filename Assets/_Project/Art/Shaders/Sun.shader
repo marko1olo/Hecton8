@@ -16,8 +16,8 @@ Shader "Hecton/Celestial/Sun"
     {
         Tags
         {
-            "RenderType" = "Transparent"
-            "Queue" = "Transparent+100"
+            "RenderType" = "TransparentCutout"
+            "Queue" = "AlphaTest+100"
             "RenderPipeline" = "UniversalPipeline"
             "IgnoreProjector" = "True"
         }
@@ -27,7 +27,7 @@ Shader "Hecton/Celestial/Sun"
             Name "SunUnlit"
             Tags { "LightMode" = "UniversalForward" }
 
-            Blend One One
+            Blend Off
             ZWrite Off
             ZTest LEqual
             Cull Back

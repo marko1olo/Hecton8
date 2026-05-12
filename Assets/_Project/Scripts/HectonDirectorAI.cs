@@ -1,6 +1,7 @@
 using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.Visor;
@@ -534,6 +535,7 @@ namespace Hecton8.Systems.AI
         private const double DirectorSolveBudgetMilliseconds = 0.2d;
         private const float DirectorSolveWarningCooldownSeconds = 1f;
         private const float DirectorFrustumPlaneRefreshIntervalSeconds = 0.1f;
+        private const int EntityDeathSignalDrainLimit = 16;
         private const int EventOffsetDirectionLutSize = 64;
         private const int EventOffsetDirectionLutMask = EventOffsetDirectionLutSize - 1;
         private const int EventOffsetDistanceBucketCount = 16;
@@ -612,6 +614,12 @@ namespace Hecton8.Systems.AI
         /// </summary>
         public bool IsInitialized => ReferenceEquals(GlobalRegistry.EncounterDirector, this);
 
+        /// <inheritdoc />
+        public bool TryGetPredatorAupGpuBuffer(out GraphicsBuffer buffer, out int count)
+        {
+            return _encounterDirector.TryGetPredatorAupGpuBuffer(out buffer, out count);
+        }
+
         private void Awake()
         {
             _encounterDirector.ApplyAuthoring(encounterProfile, threatCostTable);
@@ -623,27 +631,9 @@ namespace Hecton8.Systems.AI
             if (!Application.isPlaying)
                 return;
 
-            if (!_encounterDirectorServiceRegistered)
-            {
-                GlobalRegistry.RegisterEncounterDirectorService(this);
-                _encounterDirectorServiceRegistered = ReferenceEquals(GlobalRegistry.EncounterDirector, this);
-            }
-
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            if (!_dispatcherRegistered)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                _dispatcherRegistered = GlobalRegistry.Updatables.Contains(this);
-            }
-
-            if (!_lateFrameRegistered)
-            {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
-                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Core).Contains(this);
-            }
-
+            EnsureEncounterDirectorServiceRegistered();
+            TryRegisterDispatcherLanes();
+            _encounterDirector.EnsureGpuResources();
             _encounterDirector.Reset();
             _frustumPlaneRefreshTimer = 0f;
             _frustumPlanesInitialized = false;
@@ -660,6 +650,42 @@ namespace Hecton8.Systems.AI
             SpectrumEvents.RegisterSonarPingListener(this);
             SubscribeAcousticPingEvents();
             PublishPredatorPressure(true);
+        }
+
+        private void Start()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            EnsureEncounterDirectorServiceRegistered();
+            TryRegisterDispatcherLanes();
+        }
+
+        private void EnsureEncounterDirectorServiceRegistered()
+        {
+            if (_encounterDirectorServiceRegistered)
+                return;
+
+            GlobalRegistry.RegisterEncounterDirectorService(this);
+            _encounterDirectorServiceRegistered = ReferenceEquals(GlobalRegistry.EncounterDirector, this);
+        }
+
+        private void TryRegisterDispatcherLanes()
+        {
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_dispatcherRegistered)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+                _dispatcherRegistered = GlobalRegistry.Updatables.Contains(this);
+            }
+
+            if (!_lateFrameRegistered)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
+                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Core).Contains(this);
+            }
         }
 
         private void OnDisable()
@@ -689,6 +715,7 @@ namespace Hecton8.Systems.AI
             UnsubscribeAcousticPingEvents();
             CompletePredatorSightBatch(forceComplete: true);
             CompletePredatorSpatialHashBuild(forceComplete: true);
+            _encounterDirector.ForceStopAndReset();
             _recentSonarStress = 0f;
             _externalPeakPressure01 = 0f;
             _externalPeakHoldSeconds = 0f;
@@ -725,10 +752,18 @@ namespace Hecton8.Systems.AI
                 _lateFrameRegistered = false;
             }
 
+            if (_dispatcherRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+                _dispatcherRegistered = false;
+            }
+
             CompletePredatorSightBatch(forceComplete: true);
             ReleasePredatorSightBuffers();
             CompletePredatorSpatialHashBuild(forceComplete: true);
             ReleasePredatorSpatialHashBuffers();
+            _encounterDirector.ForceCompleteActiveJobForTeardown();
+            _encounterDirector.ClearPredatorAupPublication();
             _encounterDirector.Dispose();
         }
 
@@ -743,6 +778,7 @@ namespace Hecton8.Systems.AI
 
             long solveStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             ResolveDependencies(force: false);
+            DrainEntityDeathSignals();
             if (playerTransform == null)
                 return;
 
@@ -804,8 +840,19 @@ namespace Hecton8.Systems.AI
             PublishDirectorSolveBudgetIfNeeded(solveStartTicks);
         }
 
+        private void DrainEntityDeathSignals()
+        {
+            if (!_encounterDirector.CanProcessEntityDeathSignals)
+                return;
+
+            int drainBudget = EntityDeathSignalDrainLimit;
+            while (drainBudget-- > 0 && GlobalSignals.TryDequeueEntityDeath(out EntityDeathSignal signal))
+                _encounterDirector.HandleEntityDeathSignal(in signal);
+        }
+
         public void LateFrameTick()
         {
+            _encounterDirector.CompleteReadyOutput(faunaDirector, this, forceComplete: false);
             CompletePredatorSightBatch(forceComplete: false);
         }
 
@@ -1242,7 +1289,7 @@ namespace Hecton8.Systems.AI
                     continue;
 
                 RaycastHit hit = _predatorSightHits[i];
-                bool hasLineOfSight = hit.collider != null;
+                bool hasLineOfSight = hit.collider == null;
                 brain.ApplyDirectorLineOfSight(
                     hasLineOfSight,
                     _predatorSightPlayerPositions[i],

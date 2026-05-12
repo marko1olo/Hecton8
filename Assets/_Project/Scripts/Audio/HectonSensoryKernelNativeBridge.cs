@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 
 namespace Hecton8.Audio
 {
@@ -84,7 +85,7 @@ namespace Hecton8.Audio
             return status == NativeAudioKernelBridgeStatus.Active;
         }
 
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN || UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
         private const string PluginName = "HectonAudioKernel";
 
         [DllImport(PluginName, EntryPoint = "HectonSensoryKernel_RegisterSharedRingBuffer")]
@@ -98,16 +99,16 @@ namespace Hecton8.Audio
 
         public static NativeAudioKernelBridgeStatus GetStatus()
         {
+            if (!HectonNativeBridge.IsAvailable(HectonNativeLibrary.AudioKernel))
+                return NativeAudioKernelBridgeStatus.PluginUnavailable;
+
             try
             {
                 return (NativeAudioKernelBridgeStatus)GetSharedRingBufferStatusNative();
             }
-            catch (DllNotFoundException)
+            catch (Exception exception) when (HectonNativeBridge.IsNativeLoadFailure(exception))
             {
-                return NativeAudioKernelBridgeStatus.PluginUnavailable;
-            }
-            catch (EntryPointNotFoundException)
-            {
+                HectonNativeBridge.MarkUnavailableFromException(HectonNativeLibrary.AudioKernel, exception);
                 return NativeAudioKernelBridgeStatus.PluginUnavailable;
             }
         }
@@ -122,19 +123,21 @@ namespace Hecton8.Audio
             if (!IsDescriptorValid(in descriptor, out status))
                 return false;
 
+            if (!HectonNativeBridge.IsAvailable(HectonNativeLibrary.AudioKernel))
+            {
+                status = NativeAudioKernelBridgeStatus.PluginUnavailable;
+                return false;
+            }
+
             try
             {
                 RegisterSharedRingBuffer(ref descriptor);
                 status = GetStatus();
                 return (status & NativeAudioKernelBridgeStatus.Active) != 0;
             }
-            catch (DllNotFoundException)
+            catch (Exception exception) when (HectonNativeBridge.IsNativeLoadFailure(exception))
             {
-                status = NativeAudioKernelBridgeStatus.PluginUnavailable;
-                return false;
-            }
-            catch (EntryPointNotFoundException)
-            {
+                HectonNativeBridge.MarkUnavailableFromException(HectonNativeLibrary.AudioKernel, exception);
                 status = NativeAudioKernelBridgeStatus.PluginUnavailable;
                 return false;
             }
@@ -147,19 +150,21 @@ namespace Hecton8.Audio
 
         public static bool TryClear(out NativeAudioKernelBridgeStatus status)
         {
+            if (!HectonNativeBridge.IsAvailable(HectonNativeLibrary.AudioKernel))
+            {
+                status = NativeAudioKernelBridgeStatus.PluginUnavailable;
+                return false;
+            }
+
             try
             {
                 ClearSharedRingBuffer();
                 status = GetStatus();
                 return (status & NativeAudioKernelBridgeStatus.Active) == 0;
             }
-            catch (DllNotFoundException)
+            catch (Exception exception) when (HectonNativeBridge.IsNativeLoadFailure(exception))
             {
-                status = NativeAudioKernelBridgeStatus.PluginUnavailable;
-                return false;
-            }
-            catch (EntryPointNotFoundException)
-            {
+                HectonNativeBridge.MarkUnavailableFromException(HectonNativeLibrary.AudioKernel, exception);
                 status = NativeAudioKernelBridgeStatus.PluginUnavailable;
                 return false;
             }

@@ -459,3 +459,36 @@ void UniverseToWorldBatch(
         StoreWorldPositions(world, i, positions);
     }
 }
+
+---
+
+## VI. PLANETARY CIRCUMFERENCE WRAP LAW
+
+Status: PENDING VERIFICATION
+Authority: TECH_SCOUT
+Date: 2026-05-11
+
+[RULE] Coordinate wrapping is disabled until the project defines one authored `PlanetCircumferenceMeters` constant in a shared numeric registry.
+[RULE] The value must be stored as fixed-point or integer millimeters/meters; no float circumference authority.
+[RULE] Wrapping applies only to horizontal planetary axes selected by the world model. Depth/Y does not wrap.
+[RULE] AUP wrap happens at sector/hash boundaries, not inside Transform-space math.
+[RULE] Use signed int64 modulo helpers that preserve local offset and stable entity hashes.
+
+[FORBID] Shader-side modulo for world coordinates.
+[FORBID] `float % circumference` for authority, physics, save/load, navigation, or streaming.
+[FORBID] Physics queries across a wrap boundary in a single query. Split into two AUP queries and merge deterministically.
+[FORBID] Wrapping noise, geology, or biome seeds after local origin rebasing. Seeds derive from wrapped AUP sector IDs.
+
+Low:
+- No seamless far-horizon wrap. Hide horizon discontinuity with fog, depth darkness, and chunk fade.
+
+Middle:
+- Wrap streaming sectors only. Physics and nav use split-query guards near the seam.
+
+High:
+- Seam prefetch on both sides of the circumference, still AUP-authoritative.
+
+Ultra:
+- Dual-side render prewarm for cinematic continuity. Gameplay authority remains one wrapped AUP coordinate.
+
+[BROKEN] No live `PlanetCircumferenceMeters` authority was found in this scout pass. Any existing "planet wrap" claim is PENDING VERIFICATION.

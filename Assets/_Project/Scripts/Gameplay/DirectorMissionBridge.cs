@@ -103,7 +103,7 @@ namespace Hecton8.Gameplay
             MissionManager mm = GlobalRegistry.Missions;
             if (mm == null) return;
 
-            // Tsiklicheski aktiviruem missii
+            // Cycle through configured missions.
             for (int i = 0; i < directorMissionIds.Length; i++)
             {
                 int idx = (_lastMissionIndex + i) % directorMissionIds.Length;

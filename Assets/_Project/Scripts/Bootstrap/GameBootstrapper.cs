@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.AI;
 using Hecton8.Atmosphere;
@@ -27,6 +27,7 @@ using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Jobs.LowLevel.Unsafe;
 using Unity.Mathematics;
 using Unity.Profiling;
 using Unity.Profiling.LowLevel.Unsafe;
@@ -38,6 +39,7 @@ using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using CoreAudioEvent = Hecton8.Core.AudioEvent;
 
 namespace Hecton8.Bootstrap
 {
@@ -79,11 +81,22 @@ namespace Hecton8.Bootstrap
         private const string CrashTelemetryRuntimeName = "[CrashTelemetryBuffer]";
         private const string RuntimeWatchdogRuntimeName = "[RuntimeWatchdog]";
         private const string GCMonitorRuntimeName = "[GCMonitor]";
+        private const string PluginsAssemblyName = "Hecton8.Plugins";
         private const string DontDestroyOnLoadSceneName = "DontDestroyOnLoad";
         private const string HeadlessCommandLineArg = "-headless";
+        private const string MathLodLowKeyword = "_MATH_LOD_LOW";
+        private const string MathLodHighKeyword = "_MATH_LOD_HIGH";
+        private const string TierLowAddressableLabel = "Tier_Low";
+        private const string TierHighAddressableLabel = "Tier_High";
         private const int OptionalServiceTimeoutMilliseconds = 5000;
         private const int ShaderWarmupTimeoutMilliseconds = 5000;
         private const int SuspiciousGraphicsMemoryFallbackThresholdMb = 256;
+        private const int LowTierGraphicsMemoryMb = 3000;
+        private const int LowTierProcessorCount = 6;
+        private const int MidTierGraphicsMemoryMb = 4200;
+        private const int HighTierGraphicsMemoryMb = 8200;
+        private const int HighTierProcessorCount = 8;
+        private const int UltraTierProcessorCount = 12;
         private const double ObjectPoolWarmupFrameBudgetMilliseconds = 8.0d;
         private const int FatalBootCrashLogBufferBytes = 24576;
         private const int BootStateRecordBytes = 32;
@@ -102,7 +115,20 @@ namespace Hecton8.Bootstrap
         private const float BytesPerMegabyte = 1024f * 1024f;
         private const int LowMemorySystemThresholdMb = 8192;
         private const int LowMemoryVramThresholdMb = 2048;
+        private const int MinimalTierTargetFrameRate = 30;
+        private const int DefaultTargetFrameRate = 60;
+        private const int BackgroundDomainHandshakeIdle = 0;
+        private const int BackgroundDomainHandshakeRunning = 1;
+        private const int BackgroundDomainHandshakeComplete = 2;
+        private const int BackgroundDomainHandshakeFailed = 3;
+        private const int LowTierAsyncUploadBufferMb = 64;
+        private const int MidTierAsyncUploadBufferMb = 128;
+        private const int HighTierAsyncUploadBufferMb = 256;
+        private const int LowTierAsyncUploadTimeSliceMs = 1;
+        private const int MidTierAsyncUploadTimeSliceMs = 2;
+        private const int HighTierAsyncUploadTimeSliceMs = 4;
         private const int HeartbeatFreezeSlowTickLimit = 3;
+        private const double ServiceHeartbeatPollIntervalSeconds = 60.0d;
         private const double BootstrapSceneLoadWatchdogSeconds = 10.0d;
         private const double BootstrapJobWaitWatchdogSeconds = 10.0d;
         private const int BootstrapSceneRootScratchCapacity = 256;
@@ -121,6 +147,8 @@ namespace Hecton8.Bootstrap
         private static readonly StringBuilder _biosErrorMessageBuilder = new StringBuilder(256);
         // COLD ALLOC: StringBuilder[128] - fatal boot overlay formatter without string.Format params array - owner: GameBootstrapper
         private static readonly StringBuilder _fatalOverlayMessageBuilder = new StringBuilder(128);
+        // COLD ALLOC: StringBuilder[1024] - fatal boot crash log formatter reused across boot failures - owner: GameBootstrapper
+        private static readonly StringBuilder _fatalCrashMessageBuilder = new StringBuilder(1024);
         // COLD ALLOC: RegistryBucket<IGameBootstrapperEventListener>[12] - bootstrap listeners drained on dispatcher LateUpdate - owner: GameBootstrapper
         private static readonly RegistryBucket<IGameBootstrapperEventListener> _listeners =
             new RegistryBucket<IGameBootstrapperEventListener>(PendingEventCapacity);
@@ -298,9 +326,11 @@ namespace Hecton8.Bootstrap
         private bool _sceneActivationStarted;
         private ulong _sceneActivationSceneHandle = ulong.MaxValue;
         private bool _isLoadingSave;
+        private double _nextServiceHeartbeatPollTime;
         private WorldProceduralScatterDirector _worldProceduralScatterDirector;
-        private Task _backgroundDomainHandshakeTask;
+        private int _backgroundDomainHandshakeState;
         private string _backgroundDomainHandshakePath;
+        private string _backgroundDomainHandshakeError;
         private readonly RaycastHit[] _groundCheckHits = new RaycastHit[1]; // COLD ALLOC: bootstrap ground-ready probe only needs nearest collider.
         private readonly List<GameObject> _shippingCleanupRootObjects = new List<GameObject>(64); // COLD ALLOC: List<GameObject>[64] - root cache for one-shot shipping scene cleanup - owner: GameBootstrapper
         private readonly List<Transform> _shippingCleanupTraversalStack = new List<Transform>(256); // COLD ALLOC: List<Transform>[256] - traversal stack for one-shot shipping scene cleanup - owner: GameBootstrapper
@@ -769,6 +799,7 @@ namespace Hecton8.Bootstrap
 
         private void OnEnable()
         {
+            _nextServiceHeartbeatPollTime = 0d;
             if (Application.isPlaying)
                 GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
@@ -804,14 +835,29 @@ namespace Hecton8.Bootstrap
             if (!_isBootstrapComplete || _bootstrapExecutionOrderCount <= 0)
                 return;
 
+            double now = Time.realtimeSinceStartupAsDouble;
+            if (now < _nextServiceHeartbeatPollTime)
+                return;
+
+            _nextServiceHeartbeatPollTime = now + ServiceHeartbeatPollIntervalSeconds;
             for (int index = 0; index < _bootstrapExecutionOrderCount; index++)
             {
                 BootstrapDependencyNode node = _bootstrapExecutionOrder[index];
                 object service = ResolveBootstrapDependencyService(node);
-                if (service is not IServiceHeartbeat heartbeat || !heartbeat.IsServiceReady)
+                IServiceHeartbeat heartbeat = service as IServiceHeartbeat;
+                ISystem system = service as ISystem;
+                if (heartbeat == null && system == null)
                     continue;
 
-                int tickCount = heartbeat.TickCount;
+                if (heartbeat != null &&
+                    (!heartbeat.IsServiceReady ||
+                     heartbeat.HeartbeatState == ServiceHeartbeatState.Failed ||
+                     heartbeat.HeartbeatState == ServiceHeartbeatState.Shutdown))
+                {
+                    continue;
+                }
+
+                int tickCount = system != null ? system.TickCount : heartbeat.TickCount;
                 if (tickCount != _heartbeatTickSamples[index])
                 {
                     _heartbeatTickSamples[index] = tickCount;
@@ -835,6 +881,7 @@ namespace Hecton8.Bootstrap
                         _ServiceHeartbeatFreezeHash,
                         _GameBootstrapperContextHash,
                         tickCount);
+                    CrashTelemetryBuffer.ReportRuntimeWatchdogStall((uint)index, unchecked((uint)tickCount));
                 }
             }
         }
@@ -857,8 +904,10 @@ namespace Hecton8.Bootstrap
             Hecton8.Interaction.InteractionEvents.ResetStaticState();
             Hecton8.Crafting.CraftingEvents.ResetStaticState();
             Hecton8.Power.PowerGridTelemetryEvents.ResetStaticState();
+            GlobalSignals.DisposeAllQueues();
             LogisticsPipeTransportScheduler.Shutdown();
             WorldSpatialHashGrid.ClearRuntimeState();
+            global::Hecton8.Data.H8StaticDataArena.Shutdown();
             PreInitAssetIdMap.Shutdown();
             NativeArenaAllocator.Shutdown();
             GlobalRegistry.DisposeServiceReboundQueuesForShutdown();
@@ -978,6 +1027,7 @@ namespace Hecton8.Bootstrap
 
                 WriteBootStateRecord(BootStateMarker.CoreReady, BootstrapPhase.CoreServices, GlobalRegistryServiceSlot.Unknown);
                 BootstrapBiosErrorOverlay.Hide();
+                DisableGarbageCollectorAfterCoreReady();
                 BootstrapEvents.NotifyBootstrapComplete();
 
                 if (!await RunBootstrapPhaseAsync(BootstrapPhase.SceneActivate, BootstrapStepToken.SceneActivate, InitializeSceneActivatePhaseAsync, ct))
@@ -1102,6 +1152,8 @@ namespace Hecton8.Bootstrap
                 global::Hecton8.Core.HectonHardwareProfile hardwareProfile = CaptureHardwareProfile();
                 GlobalRegistry.RegisterHardwareProfile(in hardwareProfile);
                 ApplyMemoryGate(in hardwareProfile);
+                ApplyScalabilityMatrix(in hardwareProfile);
+                ValidateOceanKinematicsPluginContract();
                 StartBackgroundDomainHandshake();
 
                 Scene activeScene = SceneManager.GetActiveScene();
@@ -1129,16 +1181,42 @@ namespace Hecton8.Bootstrap
             try
             {
                 _preWarmAssetsReady = false;
-                NativeArenaAllocator.Initialize();
-                PreInitAssetIdMap.Initialize();
-                GlobalTelemetryBus.Initialize();
+                InitializeBootstrapAllocators();
+                InitializeBootstrapEventBuses();
+                InitializeBootstrapMmfStorage();
+                uint appVersionHash = global::Hecton8.Data.H8DataHash.ComputeFnv1A32(Application.version.AsSpan());
+                if (!InitializeBootstrapDataMonolith(appVersionHash))
+                {
+                    Debug.LogError("[GameBootstrapper] Data Monolith boot validation failed.");
+                    return false;
+                }
+
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+        }
+
+        private async Awaitable<bool> InitializePresentationBootstrapAsync(CancellationToken ct)
+        {
+            try
+            {
                 if (!_headlessBootMode)
                 {
+                    WarmMathLodShaderKeywords();
                     VRAMEnforcer.InitializeRuntimeBudget();
                     VRAMOptimizationBootstrap.EnsureRuntimeManagers();
                     SceneInstantiationGate gate = SceneInstantiationGate.EnsureRuntimeInstance();
                     PersistRuntimeService(gate);
                 }
+
+#if UNITY_ADDRESSABLES_EXIST
+                if (!_headlessBootMode && !await PreWarmTierAddressableTextureGroupAsync(ct))
+                    return false;
+#endif
 
                 if (!await WarmConfiguredShaderVariantCollectionsAsync(ct))
                     return false;
@@ -1153,6 +1231,28 @@ namespace Hecton8.Bootstrap
             }
         }
 
+        private static void InitializeBootstrapAllocators()
+        {
+            NativeArenaAllocator.Initialize();
+        }
+
+        private static void InitializeBootstrapEventBuses()
+        {
+            GlobalTelemetryBus.Initialize();
+            GlobalSignals.InitializeAllQueues();
+        }
+
+        private static void InitializeBootstrapMmfStorage()
+        {
+            PreInitAssetIdMap.Initialize();
+        }
+
+        private static bool InitializeBootstrapDataMonolith(uint appVersionHash)
+        {
+            return global::Hecton8.Data.H8StaticDataArena.TryInitializeFromStreamingAssets(0u, appVersionHash, false, out global::Hecton8.Data.H8DataBlobLoadStatus dataStatus) ||
+                dataStatus == global::Hecton8.Data.H8DataBlobLoadStatus.Missing;
+        }
+
         private async Awaitable<bool> InitializeCoreServicesPhaseAsync(CancellationToken ct)
         {
             try
@@ -1162,6 +1262,8 @@ namespace Hecton8.Bootstrap
 
                 bool initialized = await InitializeCoreLayerAsync(ct);
                 if (initialized && !await WarmObjectPoolPresetsAsync(ct))
+                    return false;
+                if (initialized && !await InitializePresentationBootstrapAsync(ct))
                     return false;
 
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
@@ -1607,6 +1709,34 @@ namespace Hecton8.Bootstrap
         }
 
 #if UNITY_ADDRESSABLES_EXIST
+        private static async Awaitable<bool> PreWarmTierAddressableTextureGroupAsync(CancellationToken ct)
+        {
+            string label = ResolveTierAddressableTextureLabel();
+            AsyncOperationHandle handle = Addressables.DownloadDependenciesAsync(label, false);
+            while (!handle.IsDone)
+            {
+                ct.ThrowIfCancellationRequested();
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+            }
+
+            bool succeeded = handle.Status == AsyncOperationStatus.Succeeded;
+            if (succeeded)
+                PublishAddressableDependencyGroupLoaded(-1, label, handle);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            else
+                Debug.LogError("[GameBootstrapper] Tier Addressables prewarm failed: " + label);
+#endif
+            Addressables.Release(handle);
+            return succeeded;
+        }
+
+        private static string ResolveTierAddressableTextureLabel()
+        {
+            return GlobalRegistry.MathPrecision == MathPrecisionLevel.High
+                ? TierHighAddressableLabel
+                : TierLowAddressableLabel;
+        }
+
         private async Awaitable<bool> LoadAddressableDependencyChainAsync(CancellationToken ct)
         {
             int groupCount = addressableDependencyGroups != null ? addressableDependencyGroups.Length : 0;
@@ -1716,6 +1846,22 @@ namespace Hecton8.Bootstrap
             {
                 return false;
             }
+        }
+
+        private static void WarmMathLodShaderKeywords()
+        {
+            if (GlobalRegistry.MathPrecision == MathPrecisionLevel.High)
+            {
+                Shader.DisableKeyword(MathLodLowKeyword);
+                Shader.EnableKeyword(MathLodHighKeyword);
+                DistanceMath.PushShaderMathLod(MathLodMode.High);
+                return;
+            }
+
+            Shader.EnableKeyword(MathLodLowKeyword);
+            Shader.DisableKeyword(MathLodHighKeyword);
+            DistanceMath.PushShaderMathLod(
+                DistanceMath.ResolveMathLodMode(GlobalRegistry.ScalabilityTier));
         }
 
         private static bool AreBootstrapActivationGatesReady()
@@ -2741,24 +2887,82 @@ namespace Hecton8.Bootstrap
             return false;
         }
 
+        private static void ValidateOceanKinematicsPluginContract()
+        {
+            Type oceanKinematicsContract = typeof(IOceanKinematics);
+            Assembly pluginsAssembly = null;
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (int i = 0; i < assemblies.Length; i++)
+            {
+                Assembly assembly = assemblies[i];
+                AssemblyName assemblyName = assembly.GetName();
+                if (assemblyName != null && string.Equals(assemblyName.Name, PluginsAssemblyName, StringComparison.Ordinal))
+                {
+                    pluginsAssembly = assembly;
+                    break;
+                }
+            }
+
+            if (pluginsAssembly == null)
+                throw new InvalidOperationException("[GameBootstrapper] Hecton8.Plugins assembly missing; IOceanKinematics provider validation cannot continue.");
+
+            Type[] pluginTypes;
+            try
+            {
+                pluginTypes = pluginsAssembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException exception)
+            {
+                pluginTypes = exception.Types;
+            }
+
+            if (pluginTypes == null)
+                throw new InvalidOperationException("[GameBootstrapper] Hecton8.Plugins type table missing; IOceanKinematics provider validation cannot continue.");
+
+            for (int i = 0; i < pluginTypes.Length; i++)
+            {
+                Type pluginType = pluginTypes[i];
+                if (pluginType == null ||
+                    pluginType.IsInterface ||
+                    pluginType.IsAbstract ||
+                    !oceanKinematicsContract.IsAssignableFrom(pluginType))
+                {
+                    continue;
+                }
+
+                return;
+            }
+
+            throw new InvalidOperationException("[GameBootstrapper] No Hecton8.Plugins IOceanKinematics implementation found. World load is blocked.");
+        }
+
         private static global::Hecton8.Core.HectonHardwareProfile CaptureHardwareProfile()
         {
-            int graphicsMemoryMb = math.max(0, SystemInfo.graphicsMemorySize);
-            int systemMemoryMb = math.max(0, SystemInfo.systemMemorySize);
-            int processorCount = math.max(1, SystemInfo.processorCount);
+            global::Hecton8.Optimization.HardwareProfiler.HardwareProfilerSnapshot snapshot =
+                global::Hecton8.Optimization.HardwareProfiler.CaptureSystemInfoSnapshot();
+            int graphicsMemoryMb = snapshot.GraphicsMemoryMegabytes;
+            int systemMemoryMb = snapshot.SystemMemoryMegabytes;
+            int processorCount = snapshot.ProcessorCount;
             double biosPhysicsMillisecondsPerStep = global::Hecton8.Optimization.HardwareProfiler.RunBiosPhysicsBenchmarkMillisecondsPerStep();
             global::Hecton8.Core.HectonQualityTier qualityTier = ResolveBenchmarkScalabilityTier(
                 graphicsMemoryMb,
                 systemMemoryMb,
                 processorCount,
                 biosPhysicsMillisecondsPerStep);
+            global::Hecton8.Core.MathPrecisionLevel mathPrecisionLevel = ResolveMathPrecisionLevel(
+                graphicsMemoryMb,
+                systemMemoryMb,
+                processorCount,
+                qualityTier);
 
             return new global::Hecton8.Core.HectonHardwareProfile(
                 graphicsMemoryMb,
                 systemMemoryMb,
                 processorCount,
                 qualityTier,
-                biosPhysicsMillisecondsPerStep);
+                biosPhysicsMillisecondsPerStep,
+                snapshot.HardwareScore,
+                mathPrecisionLevel);
         }
 
         private static global::Hecton8.Core.HectonQualityTier ResolveBenchmarkScalabilityTier(
@@ -2768,14 +2972,132 @@ namespace Hecton8.Bootstrap
             double biosPhysicsMillisecondsPerStep)
         {
             if (graphicsMemoryMb < SuspiciousGraphicsMemoryFallbackThresholdMb ||
+                graphicsMemoryMb < LowTierGraphicsMemoryMb ||
                 systemMemoryMb < 7000 ||
-                processorCount <= 4 ||
+                processorCount < LowTierProcessorCount ||
                 global::Hecton8.Optimization.HardwareProfiler.ShouldForceLowTier(biosPhysicsMillisecondsPerStep, graphicsMemoryMb))
             {
                 return global::Hecton8.Core.HectonQualityTier.Low;
             }
 
-            return global::Hecton8.Core.HectonQualityTier.High;
+            if (graphicsMemoryMb < MidTierGraphicsMemoryMb)
+                return global::Hecton8.Core.HectonQualityTier.Mx350;
+
+            if (graphicsMemoryMb < HighTierGraphicsMemoryMb || processorCount <= HighTierProcessorCount)
+                return global::Hecton8.Core.HectonQualityTier.Mid;
+
+            return processorCount > UltraTierProcessorCount && systemMemoryMb >= 32000
+                ? global::Hecton8.Core.HectonQualityTier.Ultra
+                : global::Hecton8.Core.HectonQualityTier.High;
+        }
+
+        private static global::Hecton8.Core.MathPrecisionLevel ResolveMathPrecisionLevel(
+            int graphicsMemoryMb,
+            int systemMemoryMb,
+            int processorCount,
+            global::Hecton8.Core.HectonQualityTier qualityTier)
+        {
+            if (graphicsMemoryMb < LowTierGraphicsMemoryMb || processorCount < LowTierProcessorCount)
+                return global::Hecton8.Core.MathPrecisionLevel.Low;
+
+            if (qualityTier == global::Hecton8.Core.HectonQualityTier.High ||
+                qualityTier == global::Hecton8.Core.HectonQualityTier.Ultra)
+            {
+                return global::Hecton8.Core.MathPrecisionLevel.High;
+            }
+
+            return graphicsMemoryMb >= 4200 && systemMemoryMb >= 12000 && processorCount > 4
+                ? global::Hecton8.Core.MathPrecisionLevel.High
+                : global::Hecton8.Core.MathPrecisionLevel.Low;
+        }
+
+        private static void ApplyScalabilityMatrix(in HectonHardwareProfile hardwareProfile)
+        {
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = ResolveTargetFrameRate(in hardwareProfile);
+            QualitySettings.maximumLODLevel = ResolveMaximumLodLevel(in hardwareProfile);
+            QualitySettings.streamingMipmapsMemoryBudget = ResolveStreamingMipBudgetMb(in hardwareProfile);
+            QualitySettings.asyncUploadBufferSize = ResolveAsyncUploadBufferSizeMb(in hardwareProfile);
+            QualitySettings.asyncUploadTimeSlice = ResolveAsyncUploadTimeSliceMs(in hardwareProfile);
+            QualitySettings.asyncUploadPersistentBuffer = true;
+            ConfigureJobWorkerThreads(hardwareProfile.ProcessorCount);
+        }
+
+        private static void DisableGarbageCollectorAfterCoreReady()
+        {
+            if (UnityEngine.Scripting.GarbageCollector.GCMode == UnityEngine.Scripting.GarbageCollector.Mode.Disabled)
+                return;
+
+            UnityEngine.Scripting.GarbageCollector.GCMode = UnityEngine.Scripting.GarbageCollector.Mode.Disabled;
+        }
+
+        private static int ResolveTargetFrameRate(in HectonHardwareProfile hardwareProfile)
+        {
+            return DefaultTargetFrameRate;
+        }
+
+        private static int ResolveMaximumLodLevel(in HectonHardwareProfile hardwareProfile)
+        {
+            switch (hardwareProfile.QualityTier)
+            {
+                case HectonQualityTier.Low:
+                    return 2;
+                case HectonQualityTier.Mx350:
+                    return 1;
+                default:
+                    return 0;
+            }
+        }
+
+        private static float ResolveStreamingMipBudgetMb(in HectonHardwareProfile hardwareProfile)
+        {
+            switch (hardwareProfile.QualityTier)
+            {
+                case HectonQualityTier.Ultra:
+                    return 2048f;
+                case HectonQualityTier.High:
+                    return 1536f;
+                case HectonQualityTier.Mid:
+                    return 1024f;
+                case HectonQualityTier.Mx350:
+                    return 768f;
+                default:
+                    return 512f;
+            }
+        }
+
+        private static int ResolveAsyncUploadBufferSizeMb(in HectonHardwareProfile hardwareProfile)
+        {
+            switch (hardwareProfile.QualityTier)
+            {
+                case HectonQualityTier.Low:
+                case HectonQualityTier.Mx350:
+                    return LowTierAsyncUploadBufferMb;
+                case HectonQualityTier.Mid:
+                    return MidTierAsyncUploadBufferMb;
+                default:
+                    return HighTierAsyncUploadBufferMb;
+            }
+        }
+
+        private static int ResolveAsyncUploadTimeSliceMs(in HectonHardwareProfile hardwareProfile)
+        {
+            switch (hardwareProfile.QualityTier)
+            {
+                case HectonQualityTier.Low:
+                case HectonQualityTier.Mx350:
+                    return LowTierAsyncUploadTimeSliceMs;
+                case HectonQualityTier.Mid:
+                    return MidTierAsyncUploadTimeSliceMs;
+                default:
+                    return HighTierAsyncUploadTimeSliceMs;
+            }
+        }
+
+        private static void ConfigureJobWorkerThreads(int processorCount)
+        {
+            int requestedWorkerCount = math.max(1, processorCount - 1);
+            JobsUtility.JobWorkerCount = math.min(requestedWorkerCount, JobsUtility.JobWorkerMaximumCount);
         }
 
         private static bool TryRunBootstrapStep(BootstrapStepToken stepToken, string phaseName, Action initializeAction)
@@ -3733,42 +4055,64 @@ namespace Hecton8.Bootstrap
 
         private void StartBackgroundDomainHandshake()
         {
-            if (_backgroundDomainHandshakeTask != null)
+            if (Volatile.Read(ref _backgroundDomainHandshakeState) != BackgroundDomainHandshakeIdle)
                 return;
 
-            _backgroundDomainHandshakePath = Application.persistentDataPath;
+            _backgroundDomainHandshakePath = HectonPersistentPathPolicy.CombineDirectory("Telemetry");
+            _backgroundDomainHandshakeError = null;
             string capturedPath = _backgroundDomainHandshakePath;
-            _backgroundDomainHandshakeTask = Task.Run(() => PrepareBackgroundDomainHandshake(capturedPath));
+            Volatile.Write(ref _backgroundDomainHandshakeState, BackgroundDomainHandshakeRunning);
+            _ = RunBackgroundDomainHandshakeAsync(capturedPath);
         }
 
-        private static void PrepareBackgroundDomainHandshake(string persistentDataPath)
+        private async Awaitable RunBackgroundDomainHandshakeAsync(string telemetryPath)
         {
-            if (string.IsNullOrEmpty(persistentDataPath))
+            string error = null;
+            int finalState = BackgroundDomainHandshakeComplete;
+            try
+            {
+                await Awaitable.BackgroundThreadAsync();
+                PrepareBackgroundDomainHandshake(telemetryPath);
+            }
+            catch (Exception exception)
+            {
+                error = exception.Message;
+                finalState = BackgroundDomainHandshakeFailed;
+            }
+
+            await Awaitable.MainThreadAsync();
+            _backgroundDomainHandshakeError = error;
+            Volatile.Write(ref _backgroundDomainHandshakeState, finalState);
+        }
+
+        private static void PrepareBackgroundDomainHandshake(string telemetryPath)
+        {
+            if (string.IsNullOrEmpty(telemetryPath))
                 return;
 
-            string telemetryPath = Path.Combine(persistentDataPath, "Telemetry");
             Directory.CreateDirectory(telemetryPath);
         }
 
         private async Awaitable<bool> JoinBackgroundDomainHandshakeAsync(CancellationToken ct)
         {
-            Task task = _backgroundDomainHandshakeTask;
-            if (task == null)
+            int state = Volatile.Read(ref _backgroundDomainHandshakeState);
+            if (state == BackgroundDomainHandshakeIdle)
                 return true;
 
-            while (!task.IsCompleted)
+            while (state == BackgroundDomainHandshakeRunning)
             {
                 ct.ThrowIfCancellationRequested();
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+                state = Volatile.Read(ref _backgroundDomainHandshakeState);
             }
 
-            if (task.IsFaulted)
+            if (state == BackgroundDomainHandshakeFailed)
             {
-                Debug.LogError("[GameBootstrapper] Background domain handshake failed: " + task.Exception);
+                Debug.LogError("[GameBootstrapper] Background domain handshake failed: " + _backgroundDomainHandshakeError);
                 return false;
             }
 
-            return !task.IsCanceled;
+            return true;
         }
 
         private static void ApplyMemoryGate(in HectonHardwareProfile hardwareProfile)
@@ -3782,11 +4126,7 @@ namespace Hecton8.Bootstrap
 
         private static void InspectPreviousBootState()
         {
-            string persistentDataPath = Application.persistentDataPath;
-            if (string.IsNullOrEmpty(persistentDataPath))
-                return;
-
-            string path = Path.Combine(persistentDataPath, BootStateFileName);
+            string path = HectonPersistentPathPolicy.CombineFile(BootStateFileName);
             if (!File.Exists(path))
                 return;
 
@@ -3838,11 +4178,8 @@ namespace Hecton8.Bootstrap
             BootstrapPhase phase,
             GlobalRegistryServiceSlot serviceSlot)
         {
-            string persistentDataPath = Application.persistentDataPath;
-            if (string.IsNullOrEmpty(persistentDataPath))
-                return;
-
-            string absolutePath = Path.Combine(persistentDataPath, BootStateFileName);
+            string absolutePath = HectonPersistentPathPolicy.CombineFile(BootStateFileName);
+            HectonPersistentPathPolicy.EnsureParentDirectory(absolutePath);
             NativeArray<byte> record = new NativeArray<byte>(
                 BootStateRecordBytes,
                 Allocator.Temp,
@@ -4170,7 +4507,8 @@ namespace Hecton8.Bootstrap
         private static string BuildFatalBootstrapMessage(string phaseName, Exception exception)
         {
             Scene activeScene = SceneManager.GetActiveScene();
-            StringBuilder builder = new StringBuilder(1024);
+            StringBuilder builder = _fatalCrashMessageBuilder;
+            builder.Length = 0;
             builder.Append("HECTON-8 FATAL BOOT CRASH").Append('\n')
                 .Append("UTC: ").Append(DateTime.UtcNow.ToString("O")).Append('\n')
                 .Append("PHASE: ").Append(string.IsNullOrEmpty(phaseName) ? "Unknown" : phaseName).Append('\n')
@@ -4187,10 +4525,6 @@ namespace Hecton8.Bootstrap
             if (string.IsNullOrEmpty(message))
                 return;
 
-            string persistentDataPath = Application.persistentDataPath;
-            if (string.IsNullOrEmpty(persistentDataPath))
-                return;
-
             string truncatedMessage = message;
             int requiredBytes = _fatalBootCrashEncoding.GetByteCount(truncatedMessage);
             while (requiredBytes > FatalBootCrashLogBufferBytes && truncatedMessage.Length > 1)
@@ -4202,7 +4536,8 @@ namespace Hecton8.Bootstrap
             if (requiredBytes <= 0)
                 return;
 
-            string absolutePath = Path.Combine(persistentDataPath, FatalBootCrashFileName);
+            string absolutePath = HectonPersistentPathPolicy.CombineFile(FatalBootCrashFileName);
+            HectonPersistentPathPolicy.EnsureParentDirectory(absolutePath);
             NativeArray<byte> scratch = new NativeArray<byte>(requiredBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[fatal boot crash payload bytes] - bootstrap fatal log staging - owner: GameBootstrapper
             try
             {
@@ -4257,7 +4592,7 @@ namespace Hecton8.Bootstrap
         }
 
         /// <inheritdoc />
-        public bool QueueAudioEvent(in AudioEvent audioEvent)
+        public bool QueueAudioEvent(in CoreAudioEvent audioEvent)
         {
             return false;
         }

@@ -30,9 +30,9 @@ This replaces older flat / 2D interpretations that only survived in historical a
 
 1. `GlobalWeatherDirector` publishes `WeatherRuntimeSnapshot`.
 2. `HectonFluidEngine.FixedTick` consumes that snapshot and dispatches the GPU abyssal flow kernels.
-3. `AbyssalFlowField.compute` updates a 3D velocity field and performs surge detection on the GPU.
-4. `AsyncGPUReadback` returns only the aggregate bitmask, not the full field.
-5. `GlobalWeatherDirector.RegisterBiolumeSurge(4f)` latches `WeatherState.BiolumeSurge` when the GPU reports bit 5.
+3. `AbyssalFlowField.compute` updates the legacy structured diagnostic field and the 32x32x32 3D wake texture.
+4. High-tier dispatches inject submarine wake, thermal updrafts, and optional bounded vortex impulses into the texture.
+5. CPU consumers use analytical current sampling; no abyssal flow texture readback is performed.
 
 ## Data Layout
 
@@ -53,23 +53,25 @@ Maximum concurrent sources: `8`.
 - `xyz`: world-space flow vector
 - `w`: turbulence-weighted magnitude snapshot for diagnostics and downstream consumers
 
-### Aggregate Mask
+### 3D Flow Texture
 
-`RWByteAddressBuffer _AbyssalAggregateMask`
+`RWTexture3D<float4> _AbyssalFlowTextureWrite`
 
-- byte offset `0`: packed weather/surge bitmask
-- bit `5`: `WeatherState.BiolumeSurge`
+- `xyz`: world-space velocity, stored in `GraphicsFormat.R16G16B16A16_SFloat`
+- `w`: bounded turbulence magnitude
+- resolution: `32x32x32`
+- world coverage: `100 m` around the current observer
 
 ## Dispatch Topology
 
-Kernel order per dispatch:
+Kernel order per fixed-step dispatch:
 
-1. `ResetAbyssalFlowAggregate`
-2. `UpdateAbyssalFlowField`
-3. `DetectBiolumeSurge`
-4. `AsyncGPUReadback.Request(_gpuAbyssalAggregateBuffer)`
+1. `UpdateAbyssalFlowField` writes the legacy structured buffer for older GPU consumers.
+2. `UpdateAbyssalFlowTexture` writes base curl noise and decay into the ping-pong 3D texture.
+3. `InjectAbyssalWakeTexture` runs on High/Ultra when a valid submarine wake payload exists.
+4. `InjectAbyssalVortexTexture` runs on High/Ultra for queued large-body vortex impulses.
 
-Readback uses a 3-slot ring in `HectonFluidEngine`. The CPU never blocks on `GetData`; it only consumes requests after `request.done`.
+Low tier skips wake, geyser, and vortex injection; it overwrites the texture with base curl only.
 
 ## 3D Flow Volume Math
 
@@ -173,28 +175,28 @@ Interpretation:
 
 This is the layered-ocean barrier that traps rising plumes and pushes motion sideways across the boundary.
 
-## 3x3x3 Pressure-Wave Detection
+## Removed 3x3x3 Pressure-Wave Detection
 
-The surge pass is fully 3D. For every node:
+`DetectBiolumeSurge` and the raw aggregate mask are no longer part of the live abyssal flow shader or `HectonFluidEngine` path. If this weather feature is revived, it must be reintroduced as a separate contract with explicit verification and without violating the no-readback abyssal wake contract.
+
+Historical math:
 
 1. Read the center velocity.
 2. Visit all `26` neighbors in the surrounding `3x3x3` cluster.
 3. Compute delta velocity against the center.
 4. If any neighbor exceeds the threshold, atomically OR bit 5 into the aggregate mask.
 
-Live math:
-
-```text
-deltaVelocity = neighborVelocity - centerVelocity
-if dot(deltaVelocity, deltaVelocity) > 64.0:
-    InterlockedOr(bitmask, BIOLUME_SURGE)
-```
-
-Why squared distance:
+Why the historical path used squared distance:
 
 - avoids `sqrt` in the innermost loop
 - matches the project mandate to prefer squared comparisons
-- keeps the threshold equivalent to `length(deltaVelocity) > 8.0`
+- kept the threshold equivalent to `length(deltaVelocity) > 8.0`
+
+Live replacement:
+
+- visible turbulence is carried by the 3D flow texture through curl, geyser, wake, and vortex passes
+- no aggregate mask is allocated
+- no aggregate readback is allowed from this abyssal wake path
 
 ## CPU Readback Contract
 
@@ -202,11 +204,11 @@ Why squared distance:
 
 CPU-visible path:
 
-1. GPU writes the aggregate mask.
-2. `AsyncGPUReadback.Request(_gpuAbyssalAggregateBuffer)` is queued into a 3-slot ring.
-4. If bit 5 is present, `GlobalWeatherDirector.RegisterBiolumeSurge(4f)` is called.
+1. `HectonFluidEngine.TrySampleModAbyssalFlow` resolves weather, authored current, and giant-wake current analytically.
+2. `SubmarineFluidDynamics` feeds that vector into the drag job as fluid-relative velocity.
+3. GPU consumers sample `_AbyssalFlowFieldTexture` or the legacy structured buffer directly on the GPU.
 
-This keeps audio/VFX signaling asynchronous and avoids a main-thread stall.
+There is no CPU readback for the 3D texture or full flow field. Existing non-flow GPU readbacks in other systems are outside this contract.
 
 ## Historical Status
 

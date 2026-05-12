@@ -11,15 +11,16 @@ Shader "Hecton8/VFX/SeamGapDitherIndirect"
     {
         Tags
         {
-            "Queue" = "Transparent"
-            "RenderType" = "Transparent"
+            "Queue" = "AlphaTest"
+            "RenderType" = "TransparentCutout"
             "RenderPipeline" = "UniversalPipeline"
             "IgnoreProjector" = "True"
         }
 
-        Blend One One
+        Blend Off
         ZWrite Off
         Cull Off
+        AlphaToMask On
 
         Pass
         {
@@ -94,6 +95,12 @@ Shader "Hecton8/VFX/SeamGapDitherIndirect"
                 return lerp(radial, radial4, saturate((softness - 1.0) * 0.3333));
             }
 
+            float HectonDitherCoverage(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
@@ -101,8 +108,8 @@ Shader "Hecton8/VFX/SeamGapDitherIndirect"
                 float2 centered = input.uv * 2.0 - 1.0;
                 float radial = saturate(1.0 - dot(centered, centered));
                 float alpha = FastRadialSoftness(radial, _Softness) * input.color.a;
-                clip(alpha - 0.0005);
-                return half4(input.color.rgb * alpha, alpha);
+                clip(alpha - max(HectonDitherCoverage(input.positionCS.xy), 0.0005));
+                return half4(input.color.rgb * alpha, 1.0h);
             }
             ENDHLSL
         }

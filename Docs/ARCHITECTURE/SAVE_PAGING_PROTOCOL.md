@@ -16,7 +16,7 @@ Historical 2026-05-04 boundary:
 
 - This is the save paging protocol contract, not evidence that every sector path has been stress-tested.
 - Historical project-state orientation previously started at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, then `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
-- Dirty-sector commit, `.sectmp` recovery, `.bak` fallback, and MMF offset correctness must be verified with runtime save/load/corruption tests before status can improve.
+- Dirty-sector commit, `.sectmp` recovery, `.bak` fallback, and FileStream/native-window offset correctness must be verified with runtime save/load/corruption tests before status can improve.
 
 ## Scope
 
@@ -27,7 +27,7 @@ Owner files:
 
 Container version: `0x0008`
 
-This document defines dirty-sector commit behavior for the fixed-slot `4096` entry MMF save container.
+This document defines dirty-sector commit behavior for the fixed-slot `4096` entry FileStream/native-window save container.
 
 ## Dirty Sector Rule
 
@@ -36,7 +36,7 @@ The save system does **not** rewrite the entire file when a single persistent-wo
 Dirty sector commit path:
 
 1. registry writes one temp sector override block (`.sectmp`)
-2. storage opens the main `.sav` via MMF
+2. storage opens the main `.sav` through `SaveBinaryStorage.AsyncWriteManager`
 3. storage resolves the sector slot by `SectorHash`
 4. storage reuses the old slot in-place if the new compressed block fits
 5. storage appends to EOF only when the new block exceeds the existing slot
@@ -46,7 +46,7 @@ Dirty sector commit path:
 
 Sector paging integrity path:
 
-1. storage reads one indexed sector block via MMF offset
+1. storage reads one indexed sector block through cached native read windows
 2. block codec decompresses protected `16 KB` sub-blocks independently
 3. each sub-block verifies a stored low-32-of-`XXHash3-64` checksum
 4. if any protected sub-block fails, storage rejects the primary sector block
@@ -177,7 +177,7 @@ HashPayload64   = metadataHash64 ^ directoryHash64
 HashHeader64    = XXHash3-64(header-with-HashHeader64-zeroed)
 ```
 
-4. flush MMF view
+4. queue/throttle FileStream flush for the changed file range
 
 This preserves metadata block bytes and updates only:
 
@@ -207,7 +207,7 @@ Result:
 
 Binary block relocation/overwrite path uses:
 
-- MMF view pointers
+- FileStream-backed native read windows
 - `UnsafeUtility.MemCpy`
 - `UnsafeUtility.MemClear`
 - native temporary staging (`NativeArray<byte>`)
@@ -231,12 +231,12 @@ Rules:
 
 ## Mod Payload Sidecar Sectors
 
-Mod save payloads are stored as isolated `16 KB` sub-sector records under the `MODP` sector hash prefix. The main save metadata still carries a hashed fallback key, but the MMF sidecar is the authoritative large-payload path.
+Mod save payloads are stored as isolated `16 KB` sub-sector records under the `MODP` sector hash prefix. The main save metadata still carries a hashed fallback key, but the FileStream/native-window sidecar is the authoritative large-payload path.
 
 Batch load path:
 
 1. storage opens and validates the `.sav` once
-2. storage streams the fixed `4096` `SectorEntry` slots directly from the MMF view
+2. storage streams the fixed `4096` `SectorEntry` slots through cached native read windows
 3. storage rejects entries whose byte ranges overlap metadata or exceed file bounds
 4. storage decompresses only `MODP` sectors into native scratch
 5. each `MODP` sector verifies the sector checksum and payload checksum
@@ -245,7 +245,7 @@ Batch load path:
 Rules:
 
 - do not allocate `SectorEntry[4096]` for mod payload scans
-- do not reopen the MMF once per mod payload
+- do not reopen the save file once per mod payload
 - payload strings are UTF-16; odd payload byte lengths are corruption and must be rejected
 - mod payload failure is isolated from player-world save load, but editor/development builds must report the failure
 
@@ -285,7 +285,7 @@ Tick:
         do nothing
     else:
         TryCompleteIndexedSectorEntityStateOverrideWrite(ref handle)
-        write compressed temp block to MMF-backed temp path
+        write compressed temp block to FileStream-backed temp path
         dispose TempJob buffers
 ```
 

@@ -608,6 +608,12 @@ namespace Hecton8.UI
         [Tooltip("HectonSurvivalSystem dlya battery drain. Optsionalno.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
 
+        [Tooltip("Shader forwarded into runtime-created PDA spectrum/map tabs for GPU sonar point-cloud rendering.")]
+        [SerializeField] private Shader pdaSonarPointCloudShader;
+
+        [Tooltip("Compute shader forwarded into runtime-created PDA spectrum/map tabs for GPU sonar point-cloud rendering.")]
+        [SerializeField] private ComputeShader pdaSonarMapCompute;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SETTINGS
         // ══════════════════════════════════════════════════════════
@@ -874,9 +880,21 @@ namespace Hecton8.UI
             if (construction != null) tabs[2] = construction;
             if (barter != null)      tabs[3] = barter;
             if (dataLog != null)     tabs[4] = dataLog;
-            if (spectrum != null)    tabs[5] = spectrum;
+            if (spectrum != null)
+            {
+                ConfigureSpectrumRuntimeAssets(spectrum);
+                tabs[5] = spectrum;
+            }
             if (atlasSignal != null) tabs[6] = atlasSignal;
             if (diagnostics != null) tabs[7] = diagnostics;
+        }
+
+        private void ConfigureSpectrumRuntimeAssets(GameObject spectrum)
+        {
+            if (spectrum == null || !spectrum.TryGetComponent(out PDASpectrumTab spectrumTab))
+                return;
+
+            spectrumTab.ConfigureMapRuntimeAssets(pdaSonarPointCloudShader, pdaSonarMapCompute);
         }
 
         private static GameObject EnsureRuntimeTab(Transform root, string name, Type tabComponentType)

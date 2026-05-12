@@ -24,8 +24,8 @@ Shader "HECTON/UI/FabricatorHologram"
     {
         Tags
         {
-            "RenderType"="Transparent"
-            "Queue"="Transparent"
+            "RenderType"="TransparentCutout"
+            "Queue"="AlphaTest"
             "RenderPipeline"="UniversalPipeline"
         }
 
@@ -34,8 +34,9 @@ Shader "HECTON/UI/FabricatorHologram"
             Name "Forward"
             Tags { "LightMode"="UniversalForward" }
 
-            Blend SrcAlpha One
-            ZWrite Off
+            Blend Off
+            ZWrite On
+            AlphaToMask On
             Cull Off
 
             HLSLPROGRAM
@@ -108,6 +109,12 @@ Shader "HECTON/UI/FabricatorHologram"
                 return HectonFastTriangleSine01(phase) * 2.0 - 1.0;
             }
 
+            float HectonDitherCoverage(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -168,8 +175,9 @@ Shader "HECTON/UI/FabricatorHologram"
                 float revealEdge = saturate(1.0 - abs(reveal - 0.08) * 12.0);
                 float voxelEdge = saturate(1.0 - abs(voxelGate - 0.04) * 18.0) * _VoxelEdgeEmission;
                 half alpha = saturate((_BaseColor.a + fresnel * 0.45 + scanlineGlow * 0.18 + revealEdge * 0.24 + voxelEdge * 0.16) * pulse * (0.35 + reveal * 0.65));
+                clip(alpha - (half)HectonDitherCoverage(input.positionCS.xy));
                 half3 color = (_BaseColor.rgb * (0.85 + fresnel * 0.75)) + (_BaseColor.rgb * scanlineGlow) + (_BaseColor.rgb * (revealEdge + voxelEdge) * (1.2 + (_GlitchAmount * 0.4)));
-                return half4(color, alpha);
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }

@@ -1,0 +1,55 @@
+# HECTON-8 | CI Gate | MATH_VIOLATIONS
+
+Status: PENDING VERIFICATION
+Authority: TECH_SCOUT
+Date: 2026-05-11
+
+---
+
+## Law
+
+[RULE] CI must fail runtime code that introduces unreviewed math hot-path violations.
+[RULE] The gate name is `MATH_VIOLATIONS`.
+[RULE] The gate scans first-party runtime source, excluding `Editor/`, `*SmokeTester.cs`, generated files, comments, and documented cold paths.
+
+Initial banned runtime tokens:
+- `math.sqrt(`
+- `Mathf.Sqrt(`
+- `Vector3.Distance(`
+- `math.length(`
+- `math.normalize(`
+- `.normalized`
+- `Random.Range`
+- `UnityEngine.Random`
+
+[RULE] Allowed exceptions require a local suppression comment with owner, reason, tier, and profiler/replay artifact path.
+[FORBID] Suppressing a token because "it is probably cheap."
+[FORBID] Allowing `.normalized` in a hot loop when `rsqrt`, squared math, dominant-axis, LUT, or an authored direction table works.
+
+---
+
+## Static Scout Result
+
+[PROJECT] No existing `MATH_VIOLATIONS` gate was found in the repository scan.
+[PROJECT] Runtime candidates were found in files including:
+- `Assets/_Project/Scripts/DemoFirstPersonController.cs`
+- `Assets/_Project/Scripts/Construction/DroneFleetManager.cs`
+- `Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs`
+- `Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs`
+- `Assets/_Project/Scripts/ObserverRelativeCelestialBody.cs`
+
+These are not fixed by TECH_SCOUT because they are outside the mandate-evolution ownership boundary and are likely owned by active domain agents.
+
+---
+
+## Required CI Output
+
+Each violation line must emit:
+- file path.
+- line number.
+- token.
+- owner/suppression status.
+- suggested replacement class: squared-distance, rsqrt, LUT, dominant-axis, deterministic hash, or editor-only.
+
+[STATUS] Gate is proposed and PENDING IMPLEMENTATION by CI owner.
+

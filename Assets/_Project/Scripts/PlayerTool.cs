@@ -530,6 +530,12 @@ namespace Hecton8.Gameplay
             if (_toolMetadata == null || !TryGetModularEquipment(out IModularEquipmentService service) || !_runtimeToolRegistered)
                 return false;
 
+            if (service.TryGetToolState(_runtimeToolId, out ToolState runtimeState) &&
+                (runtimeState.StatusMask & ToolRuntimeStatusMasks.Disabled) != 0u)
+            {
+                return false;
+            }
+
             float safeDeltaTime = math.max(0f, deltaTime);
             float requestedDrain = GetEnergyConsumption() * safeDeltaTime;
             if (requestedDrain <= 0f)
@@ -604,6 +610,14 @@ namespace Hecton8.Gameplay
             if (IsBroken)
             {
                 OnToolBrokenWhileUsing();
+                return false;
+            }
+
+            if (_runtimeToolRegistered &&
+                TryGetModularEquipment(out IModularEquipmentService service) &&
+                service.TryGetToolState(_runtimeToolId, out ToolState runtimeState) &&
+                (runtimeState.StatusMask & ToolRuntimeStatusMasks.Disabled) != 0u)
+            {
                 return false;
             }
 

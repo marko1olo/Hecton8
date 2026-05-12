@@ -1160,11 +1160,17 @@ namespace Hecton8.Physics
         // COLD ALLOC: Collider[64] - static implosion overlap query buffer for zero-GC radius impulse dispatch - owner: PhysicsApplySystem
         private static readonly Collider[] s_implosionOverlapBuffer = new Collider[ImplosionOverlapCapacity];
 
+        [StructLayout(LayoutKind.Sequential, Size = 48)]
         private struct DeferredSubmarineImpactSignal
         {
+            public float3 LocalPoint;
+            public float Magnitude;
+            public float Depth;
+            public uint DamageType;
             public float PreviousIntegrityNormalized;
             public float NextIntegrityNormalized;
-            public DamageSignal Signal;
+            public ushort SourceId;
+            public byte IntegrityDelta;
             public TraumaLevel TraumaLevel;
         }
 
@@ -2660,19 +2666,16 @@ namespace Hecton8.Physics
             if (!_submarineImpactSignals.IsCreated || _submarineImpactSignalCount >= MaxQueuedSubmarineImpactSignals)
                 return;
 
-            DamageSignal signal = default;
-            signal.magnitude = math.max(0f, impactSpeedMetersPerSecond);
-            signal.localPoint = localPoint;
-            signal.damageType = (uint)DamageTypeMask.Impact;
-            signal.integrityDelta = integrityDelta;
-            signal.depth = math.max(0f, depthMeters);
-            signal.sourceID = DamageSourceIds.SubmarineImpact;
-
             _submarineImpactSignals.Enqueue(new DeferredSubmarineImpactSignal
             {
+                LocalPoint = localPoint,
+                Magnitude = math.max(0f, impactSpeedMetersPerSecond),
+                Depth = math.max(0f, depthMeters),
+                DamageType = (uint)DamageTypeMask.Impact,
                 PreviousIntegrityNormalized = 1f,
                 NextIntegrityNormalized = math.saturate(1f - severity01),
-                Signal = signal,
+                SourceId = DamageSourceIds.SubmarineImpact,
+                IntegrityDelta = integrityDelta,
                 TraumaLevel = ResolveSubmarineTraumaLevel(severity01)
             });
             _submarineImpactSignalCount++;
@@ -2700,10 +2703,19 @@ namespace Hecton8.Physics
                 if (_submarineImpactSignalCount > 0)
                     _submarineImpactSignalCount--;
                 scanBudget--;
+
+                Hecton8.Gameplay.DamageSignal signal = default;
+                signal.magnitude = queuedSignal.Magnitude;
+                signal.localPoint = queuedSignal.LocalPoint;
+                signal.damageType = queuedSignal.DamageType;
+                signal.integrityDelta = queuedSignal.IntegrityDelta;
+                signal.depth = queuedSignal.Depth;
+                signal.sourceID = queuedSignal.SourceId;
+
                 traumaDispatcher.OnIntegrityChanged(
                     queuedSignal.PreviousIntegrityNormalized,
                     queuedSignal.NextIntegrityNormalized,
-                    queuedSignal.Signal);
+                    signal);
                 traumaDispatcher.OnTraumaThresholdCrossed(queuedSignal.TraumaLevel);
             }
 

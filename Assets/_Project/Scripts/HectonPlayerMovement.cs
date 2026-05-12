@@ -19,6 +19,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Audio;
 using Hecton8.Environment;
 using Hecton8.Interaction;
@@ -33,8 +34,10 @@ using Hecton8.Inventory;
 using Hecton.Localization;
 using NASAPunk.Visor;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
+using Unity.Jobs;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -50,9 +53,23 @@ namespace Hecton8.Gameplay
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.FixedTick");
         private static readonly int _kccNanErrorCode = unchecked((int)LocHash.Compute("NAN_ERROR_HASH_KCC"));
         private const float InventoryLoadMinimumMovementMultiplier = 0.5f;
+        private const float InventoryUpwardSwimMinimumMultiplier = 0.6f;
         private const float CriticalEncumbranceRatio = 1.5f;
         private const float CriticalStaminaFailureThreshold01 = 0.1f;
         private const float CriticalStaminaFailureDurationSeconds = 2f;
+        private const float HeavyInventoryItemMassThresholdKg = 12f;
+        private const float HeavyInventoryDragPerMaskBit = 0.08f;
+        private const float InventoryLoadDragMultiplierMax = 0.35f;
+        private const int LastValidAupRingCapacity = 16;
+        private const float MovementAcousticMinVelocitySq = 0.0001f;
+        private const float MovementAcousticVolumeScale = 0.04f;
+        private const float MovementStaminaDrainMultiplier = 0.15f;
+        private static readonly uint _playerKinematicsSourceId = unchecked((uint)LocHash.Compute("PLAYER_KINEMATICS"));
+        private static readonly uint _playerKinematicsNaNHash = unchecked((uint)LocHash.Compute("PLAYER_KINEMATICS_NAN"));
+        private static readonly uint _playerKinematicsNoClipHash = unchecked((uint)LocHash.Compute("PLAYER_KINEMATICS_NOCLIP"));
+        private static ulong s_heavyInventoryDragMask;
+        private static int s_heavyInventoryDragTemplateCount = -1;
+        private static uint s_heavyInventoryDragRegistryRevision;
         private const float MovementProbeCachePositionEpsilonSq = 0.000001f;
         private const float MovementProbeCacheScalarEpsilon = 0.0001f;
         private const float CinematicCenterSupportNormalY = 0.92f;
@@ -66,6 +83,7 @@ namespace Hecton8.Gameplay
         private const float HydrostaticExitDownwardVelocityKick = 1.35f;
         private const int BatchedLadderProbeMaxPhysicsFrameAge = 2;
         private const int SpeculativeHoverFixedTicksAfterAupShift = 1;
+        private const float SpeculativeHoverBaseHeightMeters = 0.025f;
         private float _runtimeSwimSpeedMultiplier = 1f;
         private float _runtimeVoxelBackpressureSwimSpeedMultiplier = 1f;
         private float _runtimeInjurySwimSpeedMultiplier = 1f;
@@ -73,6 +91,7 @@ namespace Hecton8.Gameplay
         private float _runtimeStaminaMultiplier = 1f;
         private float _criticalStaminaFailureTimer;
         private float _runtimeInventoryLoadMovementMultiplier = 1f;
+        private float _runtimeInventoryUpwardSwimMultiplier = 1f;
         private float _runtimeInventoryLoad01;
         private float _runtimeInventoryLoadRatio;
         private float _runtimeInventoryTotalMassKg;
@@ -771,6 +790,8 @@ namespace Hecton8.Gameplay
         private float vrSnapTurnThreshold = 0.72f;
         [SerializeField, Range(0.01f, 0.6f)]
         private float vrSnapTurnRearmThreshold = 0.28f;
+        [SerializeField, Range(0.05f, 0.2f)]
+        private float vrSnapTurnFadeSeconds = 0.1f;
         [SerializeField, Range(15f, 180f)]
         private float vrSmoothTurnDegreesPerSecond = 90f;
         [SerializeField, Range(0f, 0.35f)]
@@ -787,8 +808,8 @@ namespace Hecton8.Gameplay
         private float vrComfortVignetteSharpness = 8f;
         [SerializeField, Range(0.5f, 20f)]
         private float vrComfortVisualDecaySharpness = 10f;
-        [SerializeField, Range(0.25f, 12f)]
-        private float vrComfortHighSpeedMetersPerSecond = 5.25f;
+        [SerializeField, Range(0.25f, 25f)]
+        private float vrComfortHighSpeedMetersPerSecond = 15f;
         [SerializeField, Range(15f, 360f)]
         private float vrComfortYawRateReference = 120f;
 
@@ -860,6 +881,10 @@ namespace Hecton8.Gameplay
         private const float ExosuitJumpJetNoiseVectorScale = 0.055f;
         private const float RuntimeNarcosisInputNoiseScale = 0.22f;
         private const float RuntimeNarcosisInputNoiseFrequency = 1.37f;
+        private const float RuntimeNarcosisLookNoiseScale = 0.09f;
+        private const float RuntimeNarcosisLowTierLookScaleFloor = 0.72f;
+        private const uint RuntimeNarcosisLcgMultiplier = 1664525u;
+        private const uint RuntimeNarcosisLcgIncrement = 1013904223u;
 
         [Header("Exosuit Locomotion")]
         [Tooltip("Extra grounded walk force multiplier while an exosuit transport owns locomotion.")]
@@ -1083,6 +1108,15 @@ namespace Hecton8.Gameplay
         private SargassumMovementInfluence _sargassumMovementInfluence;
         private HectonSurvivalSystem _survivalSystem;
         private PlayerInventory _inventoryLoadSource;
+        private PlayerKinematicsNativeState _playerKinematicsNativeState;
+        private bool _playerKinematicsTelemetryDumpedThisFault;
+        private float3 _lastPlayerKinematicsIntendedMovement;
+        private float3 _lastPlayerKinematicsBurstDragVelocity;
+        private float _lastPlayerKinematicsDragCoefficient;
+        private float _lastPlayerKinematicsWaterDensityScale = 1f;
+        private readonly AbsoluteUniversePosition[] _lastValidAupRing = new AbsoluteUniversePosition[LastValidAupRingCapacity]; // COLD ALLOC: AbsoluteUniversePosition[16] - no-clip recovery ring - owner: HectonPlayerMovement
+        private int _lastValidAupWriteIndex;
+        private int _lastValidAupCount;
         private HectonUnderwaterVisuals _underwaterVisuals;
         private bool _resolvedInputManager;
         private bool _resolvedPlayerToolManager;
@@ -1173,6 +1207,7 @@ namespace Hecton8.Gameplay
         private float _cachedVerticalInput;
         private float _currentRenderDeltaTime = 0.0166667f;
         private bool _vrSnapTurnArmed = true;
+        private float _vrSnapTurnFadeTimer;
         private float _vrComfortVignette01;
         private float _vrComfortVisualBounce01;
         private float _vrComfortPeripheralBlur01;
@@ -1269,6 +1304,7 @@ namespace Hecton8.Gameplay
         private float _externalEnvironmentalDragHoldTimer;
         private bool _externalEnvironmentalDragRequestedThisStep;
         private float _runtimeNarcosisInputNoise01;
+        private bool _runtimeNarcosisLowTierStaticLookOnly;
         private Vector3 _cuttingTensionAnchorRequestedWS = Vector3.zero;
         private Vector3 _cuttingTensionAnchorCurrentWS = Vector3.zero;
         private Vector3 _cuttingTensionAnchorNormalRequestedWS = Vector3.up;
@@ -1288,6 +1324,7 @@ namespace Hecton8.Gameplay
         private float _transportCavitationEfficiency = 1f;
         private float _heavyTowCameraPitchOffset;
         private float _heavyTowCameraRollOffset;
+        private float _kinematicInertiaCameraRollOffset;
         private Vector3 _heavyTowCameraLocalOffset;
         private Vector3 _heavyTowCenterOfMassOffset;
         private float _previousTransportForwardVelocity;
@@ -1337,6 +1374,7 @@ namespace Hecton8.Gameplay
         private bool _ladderSplineSnapActive;
         private Vector3 _ladderSplineSnapAxisWorld = Vector3.zero;
         private int _aupSpeculativeHoverTicks;
+        private float _aupSpeculativeHoverHeightMeters;
         private int _lastProcessedKccSlideFeedbackFrame = -1;
         private int _parasiteLatchedRequestedCount;
         private int _parasiteLatchedCurrentCount;
@@ -1593,19 +1631,29 @@ namespace Hecton8.Gameplay
             if (inputIntent <= 0.001f)
                 return;
 
-            float phase = _currentTimer * RuntimeNarcosisInputNoiseFrequency + _instanceId * 0.00137f;
+            uint timeTick = (uint)math.max(0, (int)math.min(2147483647f, _currentTimer * 60f));
+            uint narcosisSeed = AdvanceRuntimeNarcosisLcg(unchecked((uint)_instanceId) ^ timeTick);
+            float phase = _currentTimer * RuntimeNarcosisInputNoiseFrequency +
+                ((narcosisSeed & 0xFFFFu) * 0.000015259022f) * TwoPi;
             inputH = math.clamp(
                 inputH + SignedTriangleRadians(phase) * RuntimeNarcosisInputNoiseScale * severity01,
                 -1f,
                 1f);
+            narcosisSeed = AdvanceRuntimeNarcosisLcg(narcosisSeed);
             inputV = math.clamp(
-                inputV + SignedTriangleRadians(phase * 1.618f + 1.1f) * RuntimeNarcosisInputNoiseScale * 0.5f * severity01,
+                inputV + SignedTriangleRadians(phase * 1.618f + ((narcosisSeed & 0xFFFFu) * 0.000015259022f) * TwoPi) * RuntimeNarcosisInputNoiseScale * 0.5f * severity01,
                 -1f,
                 1f);
+            narcosisSeed = AdvanceRuntimeNarcosisLcg(narcosisSeed);
             inputVertical = math.clamp(
-                inputVertical + SignedTriangleRadians(phase * 1.231f + 2.7f) * RuntimeNarcosisInputNoiseScale * 0.35f * severity01,
+                inputVertical + SignedTriangleRadians(phase * 1.231f + ((narcosisSeed & 0xFFFFu) * 0.000015259022f) * TwoPi) * RuntimeNarcosisInputNoiseScale * 0.35f * severity01,
                 -1f,
                 1f);
+        }
+
+        private static uint AdvanceRuntimeNarcosisLcg(uint state)
+        {
+            return state * RuntimeNarcosisLcgMultiplier + RuntimeNarcosisLcgIncrement;
         }
 
         /// <summary>
@@ -1624,6 +1672,7 @@ namespace Hecton8.Gameplay
             _runtimeInventoryTotalMassKg = math.max(0f, totalMassKg);
             _runtimeInventoryLoadRatio = ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg);
             _runtimeInventoryLoad01 = math.saturate(_runtimeInventoryLoadRatio);
+            _runtimeInventoryUpwardSwimMultiplier = ResolveInventoryUpwardSwimMultiplierFromLoad(_runtimeInventoryLoad01);
             SetRuntimeInventoryLoadMovementMultiplier(ResolveInventoryLoadMovementMultiplier(totalMassKg, carryCapacityKg));
         }
 
@@ -1632,6 +1681,7 @@ namespace Hecton8.Gameplay
             _runtimeInventoryTotalMassKg = math.max(0f, totalMassKg);
             _runtimeInventoryLoadRatio = ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg);
             _runtimeInventoryLoad01 = math.saturate(cachedLoad01);
+            _runtimeInventoryUpwardSwimMultiplier = ResolveInventoryUpwardSwimMultiplierFromLoad(_runtimeInventoryLoad01);
             SetRuntimeInventoryLoadMovementMultiplier(cachedMovementMultiplier);
         }
 
@@ -1656,6 +1706,29 @@ namespace Hecton8.Gameplay
         public bool IsWalking => _isWalking;
         /// <summary>Resolved locomotion mode for movement, camera, audio, and VFX consumers.</summary>
         public PlayerLocomotionMode CurrentLocomotionMode => _currentLocomotionMode;
+        /// <summary>Returns a recent async KCC surface hit for footstep audio without issuing a new physics query.</summary>
+        public bool TryGetRecentFootstepSurfaceHit(float maxDistance, LayerMask layerMask, out RaycastHit hit)
+        {
+            hit = default;
+            float safeMaxDistance = math.max(0.01f, maxDistance);
+
+            if (_playerMotor != null &&
+                _playerMotor.TryGetRecentBatchedFootstepHit(BatchedGroundProbeMaxPhysicsFrameAge + 1, out RaycastHit motorHit) &&
+                IsReusableFootstepSurfaceHit(in motorHit, safeMaxDistance, layerMask))
+            {
+                hit = motorHit;
+                return true;
+            }
+
+            if (_isGrounded && IsReusableFootstepSurfaceHit(in _groundHit, safeMaxDistance, layerMask))
+            {
+                hit = _groundHit;
+                return true;
+            }
+
+            return false;
+        }
+
         /// <summary>Current camera roll angle in degrees driven by juice effects.</summary>
         public float CurrentRoll => _juiceProcessor != null ? _juiceProcessor.CurrentRoll : 0f;
         /// <summary>Render-interpolated body yaw in degrees. Falls back to physics yaw when interpolation is not initialized.</summary>
@@ -1781,6 +1854,11 @@ namespace Hecton8.Gameplay
             }
 
             _externalEnvironmentalDragHoldTimer = externalEnvironmentalDragHoldTime;
+        }
+
+        internal void RequestKinematicInertiaRoll(float signedRollDegrees)
+        {
+            _kinematicInertiaCameraRollOffset = math.clamp(signedRollDegrees, -12f, 12f);
         }
 
         /// <summary>
@@ -2408,6 +2486,363 @@ namespace Hecton8.Gameplay
             _rb.MoveRotation(rotation);
         }
 
+        private void EnsurePlayerKinematicsNativeState()
+        {
+            _playerKinematicsNativeState.EnsureCreated();
+        }
+
+        private float3 ResolveRawInputIntentVector()
+        {
+            return new float3(_inputH, _inputVertical, _inputV);
+        }
+
+        private void WritePlayerKinematicsSnapshot(Vector3 position, Vector3 velocity, float3 intendedMovement)
+        {
+            EnsurePlayerKinematicsNativeState();
+            float3 position3 = new float3(position.x, position.y, position.z);
+            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
+            if (!math.all(math.isfinite(position3)) ||
+                !math.all(math.isfinite(velocity3)) ||
+                !math.all(math.isfinite(intendedMovement)))
+            {
+                DumpPlayerKinematicsBlackBox(_playerKinematicsNaNHash);
+                return;
+            }
+
+            _playerKinematicsNativeState.WriteKinematicSnapshot(position3, velocity3, intendedMovement);
+        }
+
+        private Vector3 ResolvePlayerKinematicsBurstDragVelocity(
+            Vector3 velocity,
+            float3 intendedMovement,
+            float dragCoefficient,
+            float waterDensityScale,
+            float fixedDeltaTime)
+        {
+            if (fixedDeltaTime <= 0f)
+                return velocity;
+
+            EnsurePlayerKinematicsNativeState();
+            WritePlayerKinematicsSnapshot(_rb != null ? _rb.position : Vector3.zero, velocity, intendedMovement);
+            if (!_playerKinematicsNativeState.DragSolvedVelocities.IsCreated)
+                return velocity;
+
+            new PlayerKinematicsLinearDragJob
+            {
+                Velocities = _playerKinematicsNativeState.Velocities,
+                SolvedVelocities = _playerKinematicsNativeState.DragSolvedVelocities,
+                DragCoefficient = dragCoefficient,
+                WaterDensityScale = waterDensityScale,
+                DeltaTime = fixedDeltaTime
+            }.Run();
+
+            float3 solvedVelocity = _playerKinematicsNativeState.DragSolvedVelocities[0];
+            if (!math.all(math.isfinite(solvedVelocity)))
+            {
+                DumpPlayerKinematicsBlackBox(_playerKinematicsNaNHash);
+                return HectonPlayerMotor.SafeVelocity(velocity);
+            }
+
+            _lastPlayerKinematicsBurstDragVelocity = solvedVelocity;
+            return HectonPlayerMotor.SafeVelocity(
+                new Vector3(solvedVelocity.x, solvedVelocity.y, solvedVelocity.z),
+                velocity);
+        }
+
+        private uint ResolvePlayerKinematicsTelemetryFlags()
+        {
+            uint flags = 0u;
+            flags |= math.select(0u, 1u, !_isWalking);
+            flags |= math.select(0u, 2u, _waterImmersionRatio > 0.01f);
+            flags |= math.select(0u, 4u, _lastPlayerKinematicsDragCoefficient > 0f && _waterImmersionRatio > 0.01f);
+            flags |= math.select(0u, 8u, _ladderSplineSnapActive);
+            flags |= math.select(0u, 16u, _isSurfaceSwimming);
+            return flags;
+        }
+
+        private void PublishMovementAcousticSignal(Vector3 velocity)
+        {
+            float velocitySq = velocity.sqrMagnitude;
+            if (velocitySq <= MovementAcousticMinVelocitySq)
+                return;
+
+            MovementAcousticSignal signal = default;
+            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(_rb != null ? _rb.position : ResolvePlayerAupRuntimePosition());
+            signal.Volume = math.saturate(velocitySq * MovementAcousticVolumeScale);
+            signal.VelocitySq = velocitySq;
+            signal.SourceId = _playerKinematicsSourceId;
+            signal.LocomotionMode = (byte)_currentLocomotionMode;
+            signal.SurfaceMode = (byte)math.select(0, 1, _isSurfaceSwimming);
+            signal.Flags = (byte)(ResolvePlayerKinematicsTelemetryFlags() & 0xFFu);
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void SyncSwimVatSpeedScalar(Vector3 velocity, SuitData suit)
+        {
+            ResolveSwimPresentationController();
+            if (_swimPresentationController == null || suit == null)
+                return;
+
+            float maxSpeed = math.max(0.01f, suit.maxSwimSpeed);
+            float speedScalar = math.saturate(ApproximateVectorMagnitude(velocity) / maxSpeed);
+            _swimPresentationController.SyncGpuVatSwimSpeedScalar(speedScalar);
+        }
+
+        private void PushMovementStaminaBurnInput()
+        {
+            if (_survivalSystem == null)
+                return;
+
+            float intendedLengthSq = math.lengthsq(_lastPlayerKinematicsIntendedMovement);
+            _survivalSystem.SetMovementStaminaBurnInput(intendedLengthSq, MovementStaminaDrainMultiplier);
+        }
+
+        private float ResolveEquipmentDragCoefficientMultiplier()
+        {
+            ulong inventoryMask = _inventoryLoadSource != null ? _inventoryLoadSource.CurrentInventoryMask : 0UL;
+            ulong heavyMask = inventoryMask & ResolveHeavyInventoryDragMask();
+            int heavyBitCount = CountSetBits64(heavyMask);
+            float maskDrag = math.min(0.65f, heavyBitCount * HeavyInventoryDragPerMaskBit);
+            float loadDrag = _runtimeInventoryLoad01 * InventoryLoadDragMultiplierMax;
+            return 1f + maskDrag + loadDrag;
+        }
+
+        private static ulong ResolveHeavyInventoryDragMask()
+        {
+            if (!ItemTemplateRegistry.IsInitialized)
+            {
+                s_heavyInventoryDragMask = 0UL;
+                s_heavyInventoryDragTemplateCount = -1;
+                s_heavyInventoryDragRegistryRevision = ItemTemplateRegistry.Revision;
+                return 0UL;
+            }
+
+            int templateCount = ItemTemplateRegistry.Count;
+            uint registryRevision = ItemTemplateRegistry.Revision;
+            if (s_heavyInventoryDragTemplateCount == templateCount &&
+                s_heavyInventoryDragRegistryRevision == registryRevision)
+                return s_heavyInventoryDragMask;
+
+            ulong mask = 0UL;
+            System.ReadOnlySpan<ItemTemplate> templates = ItemTemplateRegistry.Templates;
+            int count = math.min(templateCount, templates.Length);
+            for (int i = 0; i < count; i++)
+            {
+                ItemTemplate template = templates[i];
+                if (template.IsValid && template.MassKg >= HeavyInventoryItemMassThresholdKg)
+                    mask |= InventoryMaterialMask.ResolveBit(template.HashID);
+            }
+
+            s_heavyInventoryDragMask = mask;
+            s_heavyInventoryDragTemplateCount = templateCount;
+            s_heavyInventoryDragRegistryRevision = registryRevision;
+            return mask;
+        }
+
+        private static int CountSetBits64(ulong value)
+        {
+            return math.countbits((uint)value) + math.countbits((uint)(value >> 32));
+        }
+
+        private void ResolveVoxelNoClipFailsafe()
+        {
+            if (_rb == null)
+                return;
+
+            Vector3 runtimePosition = _rb.position;
+            float3 position3 = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(position3)))
+            {
+                RecoverPlayerKinematicsToLastValidAup(_playerKinematicsNaNHash);
+                return;
+            }
+
+            bool solidNavGrid =
+                VoxelDynamicNavGridRuntime.TrySampleHybridNavigation(position3, out VoxelDynamicNavGridRuntime.HybridNavigationSample sample) &&
+                sample.Mode == VoxelDynamicNavGridRuntime.HybridNavigationMode.SolidVoxel;
+            bool solidSdf = !solidNavGrid && TrySampleActiveVoxelSdfSolid(runtimePosition);
+            if (!solidNavGrid && !solidSdf)
+            {
+                RecordLastValidAup(AbsoluteUniversePosition.FromRuntimePosition(runtimePosition));
+                _playerKinematicsTelemetryDumpedThisFault = false;
+                return;
+            }
+
+            Vector3 safeRuntimePosition;
+            if (!TryResolveLastValidAupRuntimePosition(out safeRuntimePosition) &&
+                !VoxelDynamicNavGridRuntime.TryResolveNearestSafeNode(runtimePosition, out safeRuntimePosition))
+            {
+                DumpPlayerKinematicsBlackBox(_playerKinematicsNoClipHash);
+                return;
+            }
+
+            if (!IsFiniteVector(safeRuntimePosition))
+            {
+                DumpPlayerKinematicsBlackBox(_playerKinematicsNoClipHash);
+                return;
+            }
+
+            MoveMotorPosition(safeRuntimePosition);
+            ApplyMotorLinearVelocity(Vector3.zero);
+            _playerState.SyncKinematic(safeRuntimePosition, Vector3.zero);
+            WritePlayerKinematicsSnapshot(safeRuntimePosition, Vector3.zero, float3.zero);
+            DumpPlayerKinematicsBlackBox(_playerKinematicsNoClipHash);
+        }
+
+        private void RecoverPlayerKinematicsToLastValidAup(uint anomalyHash)
+        {
+            if (TryResolveLastValidAupRuntimePosition(out Vector3 safeRuntimePosition) &&
+                IsFiniteVector(safeRuntimePosition))
+            {
+                MoveMotorPosition(safeRuntimePosition);
+                ApplyMotorLinearVelocity(Vector3.zero);
+                _playerState.SyncKinematic(safeRuntimePosition, Vector3.zero);
+                WritePlayerKinematicsSnapshot(safeRuntimePosition, Vector3.zero, float3.zero);
+            }
+
+            DumpPlayerKinematicsBlackBox(anomalyHash);
+        }
+
+        private static bool TrySampleActiveVoxelSdfSolid(Vector3 runtimePosition)
+        {
+            HectonVoxelEngine voxelEngine = GlobalRegistry.VoxelEngine;
+            if (voxelEngine == null || voxelEngine.ActiveVolumeCount <= 0)
+                return false;
+
+            if (!voxelEngine.TryGetNearestActiveVolume(runtimePosition, out Hecton8.Caves.HectonVoxelVolume volume) ||
+                volume == null)
+            {
+                return false;
+            }
+
+            if (!IsInsidePublishedVoxelSdfBounds(volume, runtimePosition))
+                return false;
+
+            return volume.TrySampleDensity(runtimePosition, out float density, out float density01) &&
+                   (density > 0f || density01 >= 0.5f);
+        }
+
+        private static bool IsInsidePublishedVoxelSdfBounds(Hecton8.Caves.HectonVoxelVolume volume, Vector3 runtimePosition)
+        {
+            if (volume == null ||
+                !volume.TryGetPublishedSonarSdfPayload(
+                    out Unity.Collections.NativeArray<byte> _,
+                    out Vector3Int gridDimensions,
+                    out Vector3 volumeOrigin,
+                    out Vector3 voxelCellSize,
+                    out float _,
+                    out int _) ||
+                gridDimensions.x <= 1 ||
+                gridDimensions.y <= 1 ||
+                gridDimensions.z <= 1)
+            {
+                return false;
+            }
+
+            float3 sample = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            float3 origin = new float3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z);
+            float3 cellSize = new float3(
+                math.max(0.0001f, math.abs(voxelCellSize.x)),
+                math.max(0.0001f, math.abs(voxelCellSize.y)),
+                math.max(0.0001f, math.abs(voxelCellSize.z)));
+
+            if (!math.all(math.isfinite(sample)) ||
+                !math.all(math.isfinite(origin)) ||
+                !math.all(math.isfinite(cellSize)))
+            {
+                return false;
+            }
+
+            float3 min = origin - cellSize * 0.5f;
+            float3 max = origin + cellSize * new float3(
+                gridDimensions.x - 0.5f,
+                gridDimensions.y - 0.5f,
+                gridDimensions.z - 0.5f);
+
+            return sample.x >= min.x && sample.x <= max.x &&
+                   sample.y >= min.y && sample.y <= max.y &&
+                   sample.z >= min.z && sample.z <= max.z;
+        }
+
+        private void RecordLastValidAup(AbsoluteUniversePosition aup)
+        {
+            _lastValidAupRing[_lastValidAupWriteIndex] = aup;
+            _lastValidAupWriteIndex = (_lastValidAupWriteIndex + 1) % LastValidAupRingCapacity;
+            if (_lastValidAupCount < LastValidAupRingCapacity)
+                _lastValidAupCount++;
+        }
+
+        private void RebaseLastValidAupRuntimeRing(Vector3 shiftOffset)
+        {
+            // Last-valid recovery stores AUPs, not runtime-space vectors. The origin shift
+            // changes their runtime projection automatically through HectonFloatingOrigin.
+            _ = shiftOffset;
+        }
+
+        private bool TryResolveLastValidAupRuntimePosition(out Vector3 runtimePosition)
+        {
+            runtimePosition = Vector3.zero;
+            if (_lastValidAupCount <= 0)
+                return false;
+
+            int index = _lastValidAupWriteIndex - 1;
+            if (index < 0)
+                index = LastValidAupRingCapacity - 1;
+
+            float3 runtime = _lastValidAupRing[index].ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtime)))
+                return false;
+
+            runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+            return true;
+        }
+
+        private void DumpPlayerKinematicsBlackBox(uint anomalyHash)
+        {
+            if (_playerKinematicsTelemetryDumpedThisFault || !_playerKinematicsNativeState.TelemetryRing.IsCreated)
+                return;
+
+            _playerKinematicsTelemetryDumpedThisFault = true;
+            TelemetryAnomalySignal anomaly = default;
+            anomaly.SystemHash = _playerKinematicsSourceId;
+            anomaly.AnomalyHash = anomalyHash;
+            anomaly.Scalar = _playerKinematicsNativeState.TelemetryFrameSequence;
+            anomaly.Frame = (uint)Time.frameCount;
+            anomaly.Severity = 2;
+            GlobalSignals.Publish(in anomaly);
+
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            if (string.IsNullOrEmpty(projectRoot))
+                return;
+
+            string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
+            Directory.CreateDirectory(logDirectory);
+            string dumpPath = Path.Combine(logDirectory, "Dump_PLAYER_KINEMATICS.bin");
+            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(_playerKinematicsNativeState.TelemetryFrameSequence);
+                writer.Write(_playerKinematicsNativeState.TelemetryWriteIndex);
+                for (int i = 0; i < _playerKinematicsNativeState.TelemetryRing.Length; i++)
+                {
+                    PlayerKinematicsTelemetryEntry entry = _playerKinematicsNativeState.TelemetryRing[i];
+                    writer.Write(entry.Position.x);
+                    writer.Write(entry.Position.y);
+                    writer.Write(entry.Position.z);
+                    writer.Write(entry.Velocity.x);
+                    writer.Write(entry.Velocity.y);
+                    writer.Write(entry.Velocity.z);
+                    writer.Write(entry.IntendedMovement.x);
+                    writer.Write(entry.IntendedMovement.y);
+                    writer.Write(entry.IntendedMovement.z);
+                    writer.Write(entry.DragCoefficient);
+                    writer.Write(entry.WaterDensityScale);
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.Flags);
+                }
+            }
+        }
+
         private int ResolveKccSweepLayerMask()
         {
             return groundLayers.value | HectonLayerMasks.VoxelProxyLayerMask;
@@ -2890,6 +3325,35 @@ namespace Hecton8.Gameplay
             return planarDistanceSq <= horizontalSlack * horizontalSlack;
         }
 
+        private static bool IsReusableFootstepSurfaceHit(in RaycastHit hit, float maxDistance, LayerMask layerMask)
+        {
+            Collider hitCollider = hit.collider;
+            if (hitCollider == null)
+                return false;
+
+            int layerMaskValue = layerMask.value;
+            int layerBit = 1 << hitCollider.gameObject.layer;
+            if ((layerMaskValue & layerBit) == 0)
+                return false;
+
+            if (!math.isfinite(hit.distance) ||
+                hit.distance < 0f ||
+                hit.distance > maxDistance + GroundCheckSkin)
+            {
+                return false;
+            }
+
+            Vector3 normal = hit.normal;
+            if (!math.isfinite(normal.x) || !math.isfinite(normal.y) || !math.isfinite(normal.z))
+                return false;
+
+            if (normal.y < ReusableGroundProbeMinNormalY)
+                return false;
+
+            Vector3 point = hit.point;
+            return math.isfinite(point.x) && math.isfinite(point.y) && math.isfinite(point.z);
+        }
+
         private static bool IsFiniteReusableGroundProbeHit(in RaycastHit hit, float distance)
         {
             if (!math.isfinite(hit.distance) ||
@@ -3113,6 +3577,7 @@ namespace Hecton8.Gameplay
             TryGetComponent(out _capsuleCollider);
             _playerColliderInstanceId = _capsuleCollider != null ? unchecked((int)EntityId.ToULong(_capsuleCollider.GetEntityId())) : 0;
             _instanceId = ResolveStableEntitySeed32(gameObject);
+            _runtimeNarcosisLowTierStaticLookOnly = SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= 2048;
             TryGetComponent(out _buoyancy);
             TryGetComponent(out _swimPresentationController);
             TryGetComponent(out _physicalInteractionHandler);
@@ -3146,6 +3611,8 @@ namespace Hecton8.Gameplay
             _lastAppliedCenterOfMass = _baseCenterOfMass;
             _playerState.SyncKinematic(_rb.position, HectonPlayerMotor.SafeVelocity(_rb.linearVelocity));
             _playerState.SyncEncumbrance(_runtimeInventoryLoad01, _runtimeInventoryLoadMovementMultiplier);
+            EnsurePlayerKinematicsNativeState();
+            RecordLastValidAup(_playerState.AbsolutePosition);
 
             // Cache camera component for FOV manipulation
             if (playerCamera != null)
@@ -3321,6 +3788,7 @@ namespace Hecton8.Gameplay
             _ladderSplineSnapActive = false;
             _ladderSplineSnapAxisWorld = Vector3.zero;
             _aupSpeculativeHoverTicks = 0;
+            _aupSpeculativeHoverHeightMeters = 0f;
             _lastProcessedKccSlideFeedbackFrame = -1;
             _thermalUpdraftTraumaCooldownTimer = 0f;
             _vegetationDensityLinearDamping = 0f;
@@ -3375,6 +3843,10 @@ namespace Hecton8.Gameplay
             ResolveSwimPresentationController();
             ResolveInputManagerBinding();
             EnsurePlayerRuntimeSubsystems();
+            EnsurePlayerKinematicsNativeState();
+            _playerKinematicsTelemetryDumpedThisFault = false;
+            if (_rb != null)
+                RecordLastValidAup(AbsoluteUniversePosition.FromRuntimePosition(_rb.position));
             if (_cameraRig != null)
                 _cameraRig.Bind(playerCamera, _cameraComponent);
             ToggleBuoyancy(true);
@@ -3517,6 +3989,7 @@ namespace Hecton8.Gameplay
             _ladderSplineSnapActive = false;
             _ladderSplineSnapAxisWorld = Vector3.zero;
             _aupSpeculativeHoverTicks = 0;
+            _aupSpeculativeHoverHeightMeters = 0f;
             _lastProcessedKccSlideFeedbackFrame = -1;
             _thermalUpdraftTraumaCooldownTimer = 0f;
             _vegetationDensityLinearDamping = 0f;
@@ -3566,6 +4039,10 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
                 _registeredFixedTick = false;
             }
+
+            _playerKinematicsNativeState.Dispose();
+            _lastValidAupWriteIndex = 0;
+            _lastValidAupCount = 0;
         }
 
         private void BindInventoryLoadSource()
@@ -3597,6 +4074,7 @@ namespace Hecton8.Gameplay
             _runtimeInventoryTotalMassKg = 0f;
             _runtimeInventoryLoadRatio = 0f;
             _runtimeInventoryLoad01 = 0f;
+            _runtimeInventoryUpwardSwimMultiplier = 1f;
             SetRuntimeInventoryLoadMovementMultiplier(1f);
         }
 
@@ -3681,6 +4159,11 @@ namespace Hecton8.Gameplay
             return math.lerp(1f, InventoryLoadMinimumMovementMultiplier, math.saturate(load01));
         }
 
+        internal static float ResolveInventoryUpwardSwimMultiplierFromLoad(float load01)
+        {
+            return math.lerp(1f, InventoryUpwardSwimMinimumMultiplier, math.saturate(load01));
+        }
+
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
@@ -3692,6 +4175,9 @@ namespace Hecton8.Gameplay
             _ladderSplineSnapActive = false;
             _ladderSplineSnapAxisWorld = Vector3.zero;
             _aupSpeculativeHoverTicks = SpeculativeHoverFixedTicksAfterAupShift;
+            _aupSpeculativeHoverHeightMeters = GlobalPhysicsStateManager.ResolveSpeculativeHoverHeightMeters(
+                SpeculativeHoverBaseHeightMeters,
+                _currentTimer);
 
             _lastTransportPlatformPosition -= shiftOffset;
             _currentTransportPlatformPosition -= shiftOffset;
@@ -3702,6 +4188,8 @@ namespace Hecton8.Gameplay
             _surfaceLockTargetY -= shiftOffset.y;
             _fallbackWaterSurfaceY -= shiftOffset.y;
             _dynamicWaterSurfaceY -= shiftOffset.y;
+            float3 shiftOffset3 = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            _playerKinematicsNativeState.ApplyOriginShift(shiftOffset3);
 
             if (_abyssalThermalFlowSample.IsCableZone)
                 _abyssalThermalFlowSample.CableAnchorWS -= shiftOffset;
@@ -3751,6 +4239,7 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
                 _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
             }
+
         }
 
         private void ResolvePlayerToolManager()
@@ -4204,6 +4693,18 @@ namespace Hecton8.Gameplay
             IPlayerTransportSource transportSource = ResolveActiveTransportSource();
             return transportSource != null
                 ? math.max(0.01f, transportSource.GetTransportSpeedMultiplier())
+                : 1f;
+        }
+
+        private float ResolveActiveTransportDragCoefficientMultiplier()
+        {
+            ResolvePlayerTransportCoordinator();
+            if (_playerTransportCoordinator != null)
+                return _playerTransportCoordinator.ResolveTransportDragCoefficientMultiplier();
+
+            IPlayerTransportSource transportSource = ResolveActiveTransportSource();
+            return transportSource != null
+                ? math.max(0.01f, transportSource.GetTransportDragCoefficientMultiplier())
                 : 1f;
         }
 
@@ -5298,6 +5799,7 @@ namespace Hecton8.Gameplay
                 _queuedCollisionCount--;
 
                 float relSpeed = collisionEvent.RelativeSpeed;
+                GlobalPhysicsStateManager.RequestKinematicHitStop(relSpeed);
                 if (_juiceProcessor != null && currentSuitData.enableCollisionShake)
                     _juiceProcessor.RegisterCollisionImpulse(relSpeed, currentSuitData);
 
@@ -6060,6 +6562,7 @@ namespace Hecton8.Gameplay
             _ladderSplineSnapActive = false;
             _ladderSplineSnapAxisWorld = Vector3.zero;
             _aupSpeculativeHoverTicks = 0;
+            _aupSpeculativeHoverHeightMeters = 0f;
             _velocity = Vector3.zero;
             _feedbackVelocity = Vector3.zero;
             _lastKinematicRepairProbe = default;
@@ -6144,8 +6647,37 @@ namespace Hecton8.Gameplay
             return HectonPlayerInputHandler.ResolveVerticalInput(in _currentInputState);
         }
 
+        private Vector2 ResolveRuntimeNarcosisLookDelta(Vector2 lookDelta)
+        {
+            float severity01 = math.saturate(_runtimeNarcosisInputNoise01);
+            if (severity01 <= 0f)
+                return lookDelta;
+
+            float lookScale = math.lerp(1f, RuntimeNarcosisLowTierLookScaleFloor, severity01);
+            Vector2 scaledLookDelta = lookDelta * lookScale;
+            if (_runtimeNarcosisLowTierStaticLookOnly)
+                return scaledLookDelta;
+
+            float lookIntent = math.max(math.abs(lookDelta.x), math.abs(lookDelta.y));
+            if (lookIntent <= 0.001f)
+                return scaledLookDelta;
+
+            uint timeTick = (uint)math.max(0, (int)math.min(2147483647f, _currentTimer * 60f));
+            uint narcosisSeed = AdvanceRuntimeNarcosisLcg(unchecked((uint)_instanceId) ^ timeTick ^ 0x9E3779B9u);
+            float phase = _currentTimer * RuntimeNarcosisInputNoiseFrequency +
+                ((narcosisSeed & 0xFFFFu) * 0.000015259022f) * TwoPi;
+            float driftX = SignedTriangleRadians(phase) * RuntimeNarcosisLookNoiseScale * severity01;
+            narcosisSeed = AdvanceRuntimeNarcosisLcg(narcosisSeed);
+            float driftY = SignedTriangleRadians(phase * 1.4142f + ((narcosisSeed & 0xFFFFu) * 0.000015259022f) * TwoPi) *
+                RuntimeNarcosisLookNoiseScale *
+                0.45f *
+                severity01;
+            return new Vector2(scaledLookDelta.x + driftX, scaledLookDelta.y + driftY);
+        }
+
         private void ApplyLookInput(Vector2 lookDelta)
         {
+            lookDelta = ResolveRuntimeNarcosisLookDelta(lookDelta);
             float squeeze01 = ResolveFatalPressureSqueeze01();
             float lookSensitivityScale = math.lerp(1f, fatalPressureLookSensitivityFloor, squeeze01);
             float scaledLookY = lookDelta.y * mouseSensitivity * lookSensitivityScale;
@@ -6182,7 +6714,8 @@ namespace Hecton8.Gameplay
                     ApplyCameraYawDelta(yawDelta);
                     _mouseXDelta = yawDelta;
                     _vrSnapTurnArmed = false;
-                    _vrComfortKickSignal01 = math.max(_vrComfortKickSignal01, 0.55f);
+                    _vrSnapTurnFadeTimer = math.max(0.01f, vrSnapTurnFadeSeconds);
+                    RegisterVrComfortVisualBounce(1f);
                 }
                 else
                 {
@@ -6463,6 +6996,7 @@ namespace Hecton8.Gameplay
 
             if (!active)
             {
+                _vrSnapTurnFadeTimer = 0f;
                 _vrComfortVignette01 = math.lerp(_vrComfortVignette01, 0f, settleT);
                 _vrComfortVisualBounce01 = math.lerp(_vrComfortVisualBounce01, 0f, settleT);
                 _vrComfortPeripheralBlur01 = math.lerp(_vrComfortPeripheralBlur01, 0f, settleT);
@@ -6496,11 +7030,18 @@ namespace Hecton8.Gameplay
             float targetVignette = _vrComfortVignetteEnabledCached
                 ? math.max(_vrComfortKickSignal01, math.max(velocitySq01, math.max(yawRate01, targetBlur * 0.85f)))
                 : 0f;
+            float snapFade01 = 0f;
+            if (_vrSnapTurnFadeTimer > 0f)
+            {
+                float snapFadeSeconds = math.max(0.01f, vrSnapTurnFadeSeconds);
+                snapFade01 = math.saturate(_vrSnapTurnFadeTimer / snapFadeSeconds);
+                _vrSnapTurnFadeTimer = math.max(0f, _vrSnapTurnFadeTimer - safeDeltaTime);
+            }
 
             float vignetteT = ResolveLinearBlendT(math.max(1f, vrComfortVignetteSharpness), safeDeltaTime);
             _vrComfortVignette01 = math.lerp(_vrComfortVignette01, targetVignette, vignetteT);
             _vrComfortPeripheralBlur01 = math.lerp(_vrComfortPeripheralBlur01, targetBlur, vignetteT);
-            _vrComfortVisualBounce01 = math.lerp(_vrComfortVisualBounce01, 0f, settleT);
+            _vrComfortVisualBounce01 = math.max(math.lerp(_vrComfortVisualBounce01, 0f, settleT), snapFade01);
             _vrComfortKickSignal01 = math.lerp(_vrComfortKickSignal01, 0f, settleT);
             _vrComfortVelocitySq01 = math.lerp(_vrComfortVelocitySq01, velocitySq01, vignetteT);
 
@@ -6618,14 +7159,18 @@ namespace Hecton8.Gameplay
             float finalPitch = _cameraPitch + somaticPitchOffset + _juiceOutput.pitchOffset + sargassumPitchOffset + _heavyTowCameraPitchOffset;
             finalPitch = math.clamp(finalPitch, pitchMin - 5f, pitchMax + 5f);
             float finalYaw = CameraYaw + somaticYawOffset;
-            float finalRoll = _juiceOutput.rollOffset + sargassumRollOffset + _heavyTowCameraRollOffset;
+            float finalRoll = _juiceOutput.rollOffset + sargassumRollOffset + _heavyTowCameraRollOffset + _kinematicInertiaCameraRollOffset;
             bool horizonLockActive = ShouldVrHorizonLockRoll();
             finalRoll = ResolveVrHorizonRoll(finalRoll, horizonLockActive, _currentRenderDeltaTime);
 
             if (_activeTransportPlatform != null && _activeTransportPlatform.InheritPlatformRotation && TryGetActiveTransportPlatformTransform(out _))
             {
+                Quaternion platformBasisRotation = ResolveTransportPlatformBasisRotation();
                 float platformLocalYaw = ResolveYawRelativeToTransportPlatform(finalYaw);
-                _cameraWorldRotation = ResolveTransportPlatformBasisRotation() * ComposeAxisAngleDegrees(finalPitch, platformLocalYaw, finalRoll);
+                if (horizonLockActive)
+                    platformBasisRotation = ResolveVrHorizonLockedTransportBasis(platformBasisRotation);
+
+                _cameraWorldRotation = platformBasisRotation * ComposeAxisAngleDegrees(finalPitch, platformLocalYaw, finalRoll);
             }
             else
             {
@@ -6663,6 +7208,19 @@ namespace Hecton8.Gameplay
 
             _cameraRig.SetAupAnchor(ResolveVrAupAnchor());
             _cameraRig.SetLocomotionState(cameraState);
+        }
+
+        private static Quaternion ResolveVrHorizonLockedTransportBasis(Quaternion platformBasisRotation)
+        {
+            Vector3 platformForward = platformBasisRotation * Vector3.forward;
+            Vector3 yawOnlyForward = ProjectOnPlaneFast(platformForward, Vector3.up);
+            if (yawOnlyForward.sqrMagnitude <= 0.0001f)
+                yawOnlyForward = ProjectOnPlaneFast(platformBasisRotation * Vector3.right, Vector3.up);
+            if (yawOnlyForward.sqrMagnitude <= 0.0001f)
+                return Quaternion.identity;
+
+            yawOnlyForward = NormalizeVectorRsqrt(yawOnlyForward, Vector3.forward);
+            return Quaternion.LookRotation(yawOnlyForward, Vector3.up);
         }
 
         private Transform ResolveVrAupAnchor()
@@ -6816,6 +7374,9 @@ namespace Hecton8.Gameplay
                 _currentFixedDeltaTime = fixedDeltaTime;
                 RefreshActiveGravity(fixedDeltaTime);
                 _playerState.SyncKinematic(_rb.position, HectonPlayerMotor.SafeVelocity(_rb.linearVelocity));
+                EnsurePlayerKinematicsNativeState();
+                _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
+                WritePlayerKinematicsSnapshot(_rb.position, _rb.linearVelocity, _lastPlayerKinematicsIntendedMovement);
                 _useFixedFrameSpatialCache = true;
                 PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
                 ProcessQueuedCollisionEvents();
@@ -7186,8 +7747,17 @@ namespace Hecton8.Gameplay
             ApplyProceduralLinearDamping(fixedDeltaTime);
             ClampVelocity(suit);
             SanitizeKccFiniteState();
-            CaptureFixedInterpolationState();
             Vector3 safeVelocity = HectonPlayerMotor.SafeVelocity(_rb.linearVelocity);
+            WritePlayerKinematicsSnapshot(_rb.position, safeVelocity, _lastPlayerKinematicsIntendedMovement);
+            _playerKinematicsNativeState.WriteTelemetry(
+                _lastPlayerKinematicsDragCoefficient,
+                _lastPlayerKinematicsWaterDensityScale,
+                ResolvePlayerKinematicsTelemetryFlags());
+            PublishMovementAcousticSignal(safeVelocity);
+            SyncSwimVatSpeedScalar(safeVelocity, suit);
+            PushMovementStaminaBurnInput();
+            ResolveVoxelNoClipFailsafe();
+            CaptureFixedInterpolationState();
             UIStateStore.WriteValue(UIValueSlotId.MovementSpeed, ApproximateVectorMagnitude(safeVelocity), Time.unscaledTime);
             UpdateGroundDiagnostics();
             _useFixedFrameSpatialCache = false;
@@ -8241,10 +8811,25 @@ namespace Hecton8.Gameplay
                 0.25f);
             horizontalBias.x += phantomCurrent.x;
             horizontalBias.z += phantomCurrent.z;
+            horizontalBias += ResolveGpuAbyssalFlowVelocity(worldPosition);
             if (TryResolveVegetationBridge(out HectonMapMagicVegetationBridge bridge))
                 horizontalBias = bridge.ApplyAbyssalFlowNoise(horizontalBias, worldPosition);
 
             return horizontalBias;
+        }
+
+        private static Vector3 ResolveGpuAbyssalFlowVelocity(Vector3 worldPosition)
+        {
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            if (fluidEngine == null ||
+                !fluidEngine.TryGetGpuAbyssalFlowFieldBuffer(out _, out _, out _, out _) ||
+                !fluidEngine.TrySampleModAbyssalFlow(worldPosition, out float3 flowVector) ||
+                !math.all(math.isfinite(flowVector)))
+            {
+                return Vector3.zero;
+            }
+
+            return new Vector3(flowVector.x, flowVector.y, flowVector.z);
         }
 
         private void ApplyAbyssalFlowBoundaryTurbulence(Vector3 noisyFlow, float depthT, PlayerTransportPreset transportPreset)
@@ -9136,10 +9721,17 @@ namespace Hecton8.Gameplay
 
             bool speculativeHoverAllowed = _aupSpeculativeHoverTicks > 0 && _isGrounded;
             Vector3 speculativeHoverNormal = _smoothedGroundNormal;
+            float speculativeHoverHeight = speculativeHoverAllowed
+                ? math.max(
+                    GroundCheckSkin,
+                    GlobalPhysicsStateManager.ResolveSpeculativeHoverHeightMeters(
+                        math.max(_aupSpeculativeHoverHeightMeters, SpeculativeHoverBaseHeightMeters),
+                        _currentTimer))
+                : 0f;
             _isGrounded = false;
             float bestDistance = float.MaxValue;
             float bestNormalY = requiredGroundNormalY;
-            float maxGroundDistance = groundCheckDistance + GroundCheckSkin;
+            float maxGroundDistance = groundCheckDistance + GroundCheckSkin + speculativeHoverHeight;
 
             for (int i = 0; i < _fixedGroundSweepHitCount; i++)
             {
@@ -9221,6 +9813,7 @@ namespace Hecton8.Gameplay
                         ? NormalizeVectorRsqrt(speculativeHoverNormal, Vector3.up)
                         : Vector3.up;
                     _aupSpeculativeHoverTicks = 0;
+                    _aupSpeculativeHoverHeightMeters = 0f;
                 }
                 else
                 {
@@ -9231,6 +9824,7 @@ namespace Hecton8.Gameplay
 
             if (_aupSpeculativeHoverTicks > 0)
                 _aupSpeculativeHoverTicks = 0;
+            _aupSpeculativeHoverHeightMeters = 0f;
             _isAirborne = !_isGrounded;
         }
 
@@ -10371,18 +10965,20 @@ namespace Hecton8.Gameplay
             float externalEnvironmentalThrustMultiplier = ResolveExternalEnvironmentalThrustMultiplier();
             effectiveDragCoeff *= sargassumDragMultiplier;
             effectiveDragCoeff *= externalEnvironmentalDragMultiplier;
+            effectiveDragCoeff *= ResolveActiveTransportDragCoefficientMultiplier();
             effectiveDragCoeff *= math.lerp(1f, crushDepthDragMultiplier, _hullStressIntensity);
-
-            // Ã¢â€â‚¬Ã¢â€â‚¬ Quadratic drag Ã¢â€â‚¬Ã¢â€â‚¬
+            effectiveDragCoeff *= ResolveEquipmentDragCoefficientMultiplier();
+            _lastPlayerKinematicsDragCoefficient = effectiveDragCoeff;
+            _lastPlayerKinematicsWaterDensityScale = 1f;
+            // Burst scalar water drag: presentation sells turbulence, authority stays replayable.
             if (speedSq > 0.0001f && _surfaceBreachFluidDragBypassTimer <= 0f)
             {
-                Vector3 bodyForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
-                Vector3 dampedVelocity = PlayerSwimMotor.ApplyAnalyticalDrag(
+                Vector3 dampedVelocity = ResolvePlayerKinematicsBurstDragVelocity(
                     _velocity,
+                    _lastPlayerKinematicsIntendedMovement,
                     effectiveDragCoeff,
-                    fixedDeltaTime,
-                    bodyForward,
-                    1f);
+                    1f,
+                    fixedDeltaTime);
                 ApplyMotorVelocityChange(dampedVelocity - _velocity);
                 _velocity = dampedVelocity;
             }
@@ -10397,6 +10993,7 @@ namespace Hecton8.Gameplay
             float gatedInputV = IsCriticalStaminaFailureActive ? 0f : _inputV;
             float gatedInputVertical = IsCriticalStaminaFailureActive ? 0f : _inputVertical;
             ApplyRuntimeNarcosisInputNoise(ref gatedInputH, ref gatedInputV, ref gatedInputVertical);
+            _lastPlayerKinematicsIntendedMovement = new float3(gatedInputH, gatedInputVertical, gatedInputV);
             bool hasInput = gatedInputH != 0f || gatedInputV != 0f || gatedInputVertical != 0f;
             bool surfaceDiveAssistActive = _surfaceDiveAssistTimer > 0f;
             if (!hasInput && rawTransportPropulsionForce <= 0f && !surfaceDiveAssistActive)
@@ -10414,6 +11011,7 @@ namespace Hecton8.Gameplay
             float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeStaminaMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier();
             float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
+            effectiveVerticalForce *= _runtimeInventoryUpwardSwimMultiplier;
             float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
             effectiveSwimForce *= heavyCarryForceMultiplier;
             effectiveVerticalForce *= heavyCarryForceMultiplier;
@@ -10538,6 +11136,8 @@ namespace Hecton8.Gameplay
                 dirZ = transformedInputWorld.z;
                 verticalInput = 0f;
             }
+
+            _lastPlayerKinematicsIntendedMovement = new float3(dirX, dirY + verticalInput, dirZ);
 
             _forceVector.x = dirX * effectiveSwimForce;
             _forceVector.y = dirY * effectiveSwimForce;
@@ -10727,6 +11327,8 @@ namespace Hecton8.Gameplay
                     _moveDirection.z = move3.z;
                 }
             }
+
+            _lastPlayerKinematicsIntendedMovement = new float3(_moveDirection.x, 0f, _moveDirection.z);
 
             if (_isGrounded)
             {
@@ -11230,6 +11832,7 @@ namespace Hecton8.Gameplay
             vrSnapTurnRearmThreshold = math.clamp(vrSnapTurnRearmThreshold, 0.01f, 0.6f);
             if (vrSnapTurnRearmThreshold >= vrSnapTurnThreshold)
                 vrSnapTurnRearmThreshold = math.max(0.01f, vrSnapTurnThreshold * 0.5f);
+            vrSnapTurnFadeSeconds = math.clamp(vrSnapTurnFadeSeconds, 0.05f, 0.2f);
             vrSmoothTurnDegreesPerSecond = math.clamp(vrSmoothTurnDegreesPerSecond, 15f, 180f);
             vrSmoothTurnDeadzone = math.clamp(vrSmoothTurnDeadzone, 0f, 0.35f);
             vrHeadRelativeSwimBiasDefault = math.saturate(vrHeadRelativeSwimBiasDefault);
@@ -11237,7 +11840,7 @@ namespace Hecton8.Gameplay
             vrCameraLocalMotionSuppression = math.saturate(vrCameraLocalMotionSuppression);
             vrComfortVignetteSharpness = math.clamp(vrComfortVignetteSharpness, 1f, 20f);
             vrComfortVisualDecaySharpness = math.clamp(vrComfortVisualDecaySharpness, 0.5f, 20f);
-            vrComfortHighSpeedMetersPerSecond = math.clamp(vrComfortHighSpeedMetersPerSecond, 0.25f, 12f);
+            vrComfortHighSpeedMetersPerSecond = math.clamp(vrComfortHighSpeedMetersPerSecond, 0.25f, 25f);
             vrComfortYawRateReference = math.clamp(vrComfortYawRateReference, 15f, 360f);
             if (playerHeight < 0.5f) playerHeight = 0.5f;
             if (baseFov < 30f) baseFov = 30f;

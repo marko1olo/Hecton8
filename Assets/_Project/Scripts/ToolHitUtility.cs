@@ -1,10 +1,12 @@
 using Hecton8.Bootstrap;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.UI;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -50,6 +52,7 @@ namespace Hecton8.Gameplay
                 ai.TakeDamage(damage);
                 if (ai.TryGetComponent(out Hecton8.AI.CreatureDamageManager damageManager))
                     damageManager.RegisterWoundWS(hitPoint, damage);
+                TryApplyLocalizedMobility(hitCollider, ai);
                 applied = true;
             }
             else if (hitCollider.TryGetComponent(out HectonSurvivalSystem survival))
@@ -65,12 +68,13 @@ namespace Hecton8.Gameplay
                     aiParent.TakeDamage(damage);
                     if (aiParent.TryGetComponent(out Hecton8.AI.CreatureDamageManager damageManager))
                         damageManager.RegisterWoundWS(hitPoint, damage);
+                    TryApplyLocalizedMobility(hitCollider, aiParent);
                     applied = true;
                 }
             }
 
             if (impulse > 0f)
-                ApplyImpulse(hitCollider, forceDirection, impulse);
+                ApplyImpulse(hitCollider, forceDirection, impulse, hitPoint);
 
             return applied;
         }
@@ -93,6 +97,7 @@ namespace Hecton8.Gameplay
             if (!CombatDamageRuntime.IsTargetRegistered(targetId))
                 return false;
 
+            CombatDamageRuntime.ResolveLocalizedHit(hitCollider, out CombatWeakspotTier weakspotTier, out uint statusBits);
             Vector3 localPoint = receiverComponent.transform.InverseTransformPoint(hitPoint);
             CombatDamageSignal signal = new CombatDamageSignal
             {
@@ -103,8 +108,8 @@ namespace Hecton8.Gameplay
                 Direction = new float3(forceDirection.x, forceDirection.y, forceDirection.z),
                 PackedMeta = CombatDamageRuntime.PackSignalMeta(
                     CombatDamageTypes.Impact,
-                    0u,
-                    CombatWeakspotTier.None)
+                    statusBits,
+                    weakspotTier)
             };
             CombatDamageSignalDetail detail = new CombatDamageSignalDetail
             {
@@ -198,12 +203,19 @@ namespace Hecton8.Gameplay
 
         public static void ApplyImpulse(Collider hitCollider, Vector3 direction, float impulse)
         {
+            Vector3 hitPoint = hitCollider != null ? hitCollider.bounds.center : Vector3.zero;
+            ApplyImpulse(hitCollider, direction, impulse, hitPoint);
+        }
+
+        public static void ApplyImpulse(Collider hitCollider, Vector3 direction, float impulse, Vector3 hitPoint)
+        {
             if (impulse <= 0f || !TryGetRigidbody(hitCollider, out Rigidbody body))
                 return;
 
             Vector3 normalizedDirection = NormalizeOrForward(direction);
             PhysicsForceRouter.QueueForce(body, normalizedDirection * impulse, ForceMode.Impulse);
             TryApplyRelativeCarrierImpulse(normalizedDirection, impulse);
+            PublishImpactSignal(hitCollider, body, hitPoint, normalizedDirection, impulse);
         }
 
         internal static bool TryApplyRelativeCarrierImpulse(Vector3 direction, float impulse)
@@ -221,6 +233,66 @@ namespace Hecton8.Gameplay
             Vector3 normalizedDirection = NormalizeOrForward(direction);
             PhysicsForceRouter.QueueForce(carrierBody, -normalizedDirection * impulse, ForceMode.Impulse);
             return true;
+        }
+
+        private static void TryApplyLocalizedMobility(Collider hitCollider, Component targetComponent)
+        {
+            CombatDamageRuntime.ResolveLocalizedHit(hitCollider, out _, out uint statusBits);
+            if ((statusBits & CombatStatusBits.Crippled) == 0u)
+                return;
+
+            ICombatMobilityModifierReceiver mobilityReceiver = targetComponent as ICombatMobilityModifierReceiver;
+            if (mobilityReceiver == null && hitCollider != null)
+                mobilityReceiver = hitCollider.GetComponentInParent<ICombatMobilityModifierReceiver>();
+            mobilityReceiver?.SetCombatMobilityScale(
+                CombatDamageRuntime.CrippledMobilitySpeedScale,
+                CombatDamageRuntime.CrippledMobilityDurationSeconds);
+        }
+
+        private static void PublishImpactSignal(
+            Collider hitCollider,
+            Rigidbody body,
+            Vector3 hitPoint,
+            Vector3 normalizedDirection,
+            float impulse)
+        {
+            if (impulse <= 0f)
+                return;
+
+            if (!math.all(math.isfinite(new float3(hitPoint.x, hitPoint.y, hitPoint.z))))
+                hitPoint = body != null ? body.position : hitCollider.bounds.center;
+
+            ImpactSignal signal = default;
+            signal.PointAup = AbsoluteUniversePosition.FromRuntimePosition(hitPoint);
+            signal.Force = impulse;
+            signal.Intensity = math.saturate(math.log10(1f + (impulse * 0.01f)));
+            signal.PrimaryBodyId = ResolveImpactBodyId(hitCollider, body);
+            signal.WeightClass = ResolveImpactWeightClass(body);
+            signal.Flags = normalizedDirection.y > 0.35f ? (byte)1 : (byte)0;
+            GlobalSignals.Publish(in signal);
+        }
+
+        private static byte ResolveImpactWeightClass(Rigidbody body)
+        {
+            if (body == null)
+                return 0;
+
+            float mass = math.max(0f, body.mass);
+            if (mass >= 250f)
+                return 2;
+            if (mass >= 40f)
+                return 1;
+            return 0;
+        }
+
+        private static uint ResolveImpactBodyId(Collider hitCollider, Rigidbody body)
+        {
+            GameObject owner = body != null
+                ? body.gameObject
+                : hitCollider != null ? hitCollider.gameObject : null;
+            return owner != null
+                ? unchecked((uint)EntityId.ToULong(owner.GetEntityId()))
+                : 0u;
         }
 
         private static Vector3 NormalizeOrForward(Vector3 direction)

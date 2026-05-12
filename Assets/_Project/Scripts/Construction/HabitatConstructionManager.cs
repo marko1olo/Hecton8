@@ -24,7 +24,7 @@ namespace Hecton8.Construction
         internal const string UnsupportedReason = "NO STRUCTURAL SUPPORT PATH";
         internal const string IntegrityFailureReason = "STRUCTURAL INTEGRITY EXCEEDED";
 
-        private const float DefaultGridSize = 2.5f;
+        private const float DefaultGridSize = 4f;
         private const float DefaultSocketQuantization = 0.05f;
         private const float DefaultDepthPenalty = 0.75f;
         private const float DefaultIntegrityBudget = 240f;
@@ -112,7 +112,45 @@ namespace Hecton8.Construction
         public float3 SnapWorldPosition(float3 worldPosition, float gridSize)
         {
             float snappedGrid = gridSize > 0f ? gridSize : DefaultGridSize;
-            return math.round(worldPosition / snappedGrid) * snappedGrid;
+            int gridMillimeters = ResolveGridMillimeters(snappedGrid);
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(
+                new Vector3(worldPosition.x, worldPosition.y, worldPosition.z));
+            Vector3 snappedAbsolutePosition = new Vector3(
+                SnapMeterToGridMillimeters(absolutePosition.x, gridMillimeters),
+                SnapMeterToGridMillimeters(absolutePosition.y, gridMillimeters),
+                SnapMeterToGridMillimeters(absolutePosition.z, gridMillimeters));
+            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(snappedAbsolutePosition);
+            return new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+        }
+
+        private static int ResolveGridMillimeters(float gridSize)
+        {
+            float safeGrid = gridSize > 0.001f && float.IsFinite(gridSize) ? gridSize : DefaultGridSize;
+            int millimeters = Mathf.RoundToInt(safeGrid * 1000f);
+            return Mathf.Max(1, millimeters);
+        }
+
+        private static float SnapMeterToGridMillimeters(float meters, int gridMillimeters)
+        {
+            if (!float.IsFinite(meters))
+                return 0f;
+
+            double millimetersDouble = meters * 1000.0;
+            long millimeters = millimetersDouble >= 0.0
+                ? (long)(millimetersDouble + 0.5)
+                : (long)(millimetersDouble - 0.5);
+            long snappedMillimeters = SnapIntegerToGrid(millimeters, gridMillimeters);
+            return (float)(snappedMillimeters * 0.001);
+        }
+
+        private static long SnapIntegerToGrid(long value, int grid)
+        {
+            long safeGrid = grid > 0 ? grid : 1;
+            long halfGrid = safeGrid >> 1;
+            if (value >= 0)
+                return ((value + halfGrid) / safeGrid) * safeGrid;
+
+            return ((value - halfGrid) / safeGrid) * safeGrid;
         }
 
         public bool TryResolveSocketAlignment(
@@ -120,6 +158,26 @@ namespace Hecton8.Construction
             List<ModuleSocket> ghostSockets,
             ModuleSocket targetSocket,
             float yawOffsetDegrees,
+            out Vector3 alignedPosition,
+            out Quaternion alignedRotation,
+            out ModuleSocket alignedGhostSocket)
+        {
+            int yawStep = (int)math.floor(yawOffsetDegrees * 0.011111111f + 0.5f);
+            return TryResolveSocketAlignment(
+                ghostRoot,
+                ghostSockets,
+                targetSocket,
+                yawStep,
+                out alignedPosition,
+                out alignedRotation,
+                out alignedGhostSocket);
+        }
+
+        public bool TryResolveSocketAlignment(
+            Transform ghostRoot,
+            List<ModuleSocket> ghostSockets,
+            ModuleSocket targetSocket,
+            int yawStep,
             out Vector3 alignedPosition,
             out Quaternion alignedRotation,
             out ModuleSocket alignedGhostSocket)
@@ -132,6 +190,11 @@ namespace Hecton8.Construction
                 return false;
 
             Transform targetTransform = targetSocket.transform;
+            Quaternion socketYawRotation = ResolveSocketYawRotation(yawStep);
+            Quaternion desiredSocketRotation = targetTransform.rotation * socketYawRotation;
+            Vector3 targetPosition = targetTransform.position;
+            Quaternion inverseGhostRotation = Quaternion.Inverse(ghostRoot.rotation);
+            Vector3 ghostPosition = ghostRoot.position;
             float bestScore = float.MaxValue;
 
             for (int i = 0; i < ghostSockets.Count; i++)
@@ -140,16 +203,19 @@ namespace Hecton8.Construction
                 if (candidate == null)
                     continue;
 
+                if (!candidate.isActiveAndEnabled)
+                    continue;
+
                 if (!candidate.CanConnectTo(targetSocket))
                     continue;
 
-                Quaternion desiredSocketRotation = targetTransform.rotation * Quaternion.Euler(0f, 180f + yawOffsetDegrees, 0f);
-                Quaternion localSocketRotation = Quaternion.Inverse(ghostRoot.rotation) * candidate.transform.rotation;
-                Vector3 localSocketPosition = ghostRoot.InverseTransformPoint(candidate.transform.position);
+                Transform candidateTransform = candidate.transform;
+                Quaternion localSocketRotation = inverseGhostRotation * candidateTransform.rotation;
+                Vector3 localSocketPosition = ghostRoot.InverseTransformPoint(candidateTransform.position);
                 Quaternion candidateRotation = desiredSocketRotation * Quaternion.Inverse(localSocketRotation);
                 Vector3 rotatedLocalOffset = candidateRotation * localSocketPosition;
-                Vector3 candidatePosition = targetTransform.position - rotatedLocalOffset;
-                float score = Vector3.SqrMagnitude(candidatePosition - ghostRoot.position);
+                Vector3 candidatePosition = targetPosition - rotatedLocalOffset;
+                float score = Vector3.SqrMagnitude(candidatePosition - ghostPosition);
 
                 if (score >= bestScore)
                     continue;
@@ -378,7 +444,7 @@ namespace Hecton8.Construction
             _connectionBuffer.Clear();
             _socketLookup.Clear();
 
-            int validationGridSize = math.max(1, (int)math.round(math.max(DefaultGridSize, gridSize) / DefaultSocketQuantization));
+            int validationGridSize = math.max(1, (int)math.floor(math.max(DefaultGridSize, gridSize) * math.rcp(DefaultSocketQuantization) + 0.5f));
             if (constructionManager != null && constructionManager.SpawnedModules != null)
             {
                 IReadOnlyList<GameObject> modules = constructionManager.SpawnedModules;
@@ -411,6 +477,9 @@ namespace Hecton8.Construction
             {
                 ModuleSocket socket = _moduleSocketBuffer[i];
                 if (socket == null)
+                    continue;
+
+                if (!socket.isActiveAndEnabled)
                     continue;
 
                 Transform socketTransform = socket.transform;
@@ -483,20 +552,42 @@ namespace Hecton8.Construction
             return moduleObject.TryGetComponent(out ModuleMarker marker) ? marker.Data : null;
         }
 
+        private static Quaternion ResolveSocketYawRotation(int yawStep)
+        {
+            const float halfSqrt = 0.7071067811865476f;
+            switch (yawStep & 3)
+            {
+                case 0: return new Quaternion(0f, 1f, 0f, 0f);
+                case 1: return new Quaternion(0f, -halfSqrt, 0f, halfSqrt);
+                case 2: return Quaternion.identity;
+                default: return new Quaternion(0f, halfSqrt, 0f, halfSqrt);
+            }
+        }
+
         private static int QuantizeAxis(Vector3 direction)
         {
-            float3 normalized = math.normalizesafe((float3)direction, new float3(0f, 0f, 1f));
-            float absX = math.abs(normalized.x);
-            float absY = math.abs(normalized.y);
-            float absZ = math.abs(normalized.z);
+            float3 raw = (float3)direction;
+            if (!math.all(math.isfinite(raw)))
+                raw = new float3(0f, 0f, 1f);
+
+            float absX = math.abs(raw.x);
+            float absY = math.abs(raw.y);
+            float absZ = math.abs(raw.z);
+            if ((absX + absY + absZ) <= 0.0001f)
+            {
+                raw = new float3(0f, 0f, 1f);
+                absX = 0f;
+                absY = 0f;
+                absZ = 1f;
+            }
 
             if (absX >= absY && absX >= absZ)
-                return normalized.x >= 0f ? 0 : 1;
+                return raw.x >= 0f ? 0 : 1;
 
             if (absY >= absX && absY >= absZ)
-                return normalized.y >= 0f ? 2 : 3;
+                return raw.y >= 0f ? 2 : 3;
 
-            return normalized.z >= 0f ? 4 : 5;
+            return raw.z >= 0f ? 4 : 5;
         }
 
         private static int OppositeAxis(int axis)
@@ -715,7 +806,7 @@ namespace Hecton8.Construction
             {
                 float scale = validationGridSize > 0 ? validationGridSize : 1;
                 float3 scaledPosition = (float3)position * scale;
-                int3 quantizedPosition = (int3)math.round(scaledPosition);
+                int3 quantizedPosition = (int3)math.floor(scaledPosition + new float3(0.5f));
                 return new SocketKey(
                     quantizedPosition.x,
                     quantizedPosition.y,

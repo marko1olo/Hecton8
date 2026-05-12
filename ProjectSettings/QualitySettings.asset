@@ -59,7 +59,6 @@ QualitySettings:
     terrainFadeLength: 5
     terrainMaxTrees: 50
     excludedTargetPlatforms:
-    - Android
     - iPhone
   - serializedVersion: 5
     name: Abyss (Low)
@@ -114,7 +113,6 @@ QualitySettings:
     terrainFadeLength: 5
     terrainMaxTrees: 50
     excludedTargetPlatforms:
-    - Android
     - iPhone
   - serializedVersion: 5
     name: Orbit (High)
@@ -169,8 +167,8 @@ QualitySettings:
     terrainFadeLength: 5
     terrainMaxTrees: 50
     excludedTargetPlatforms:
-    - Android
     - iPhone
   m_TextureMipmapLimitGroupNames: []
   m_PerPlatformDefaultQuality:
+    Android: 1
     Nintendo Switch 2: 2

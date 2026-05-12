@@ -1,0 +1,6 @@
+ScenePath=Assets/_Project/Scenes/02_HECTON_WORLD.unity
+SceneTextureDependencyCount=100
+Scene02EstimatedTextureMB=404.714
+SceneTextureVRAMCrimeCount=4
+SceneOversizedTextureCount=7
+SceneNoMipTextureCount=9

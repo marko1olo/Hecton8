@@ -78,6 +78,8 @@ namespace Hecton8.World
         [SerializeField, Tooltip("Min render scale")]
         private float _minRenderScale = 0.5f;
 
+        private float _qualityPresetMinimumRenderScale = 0.8f;
+
         [SerializeField, Tooltip("Max render scale")]
         private float _maxRenderScale = 1.0f;
 
@@ -125,6 +127,8 @@ namespace Hecton8.World
         private float _smoothedFrameTimeMs;
         private float _peakFrameTimeMs;
         private RenderPressureState _pressureState = RenderPressureState.Stable;
+        private bool _platformPressureRenderScaleActive;
+        private float _platformPressureMinimumRenderScale = 0.7f;
 
         private UniversalRenderPipelineAsset _urpAsset;
 
@@ -145,6 +149,10 @@ namespace Hecton8.World
         private bool _debugRenderScaleOverrideActive;
         [SerializeField, Tooltip("Development-only direct render-scale override value.")]
         private float _debugRenderScaleOverrideValue;
+        [SerializeField, Tooltip("Platform pressure has lowered the render-scale floor.")]
+        private bool _debugPlatformPressureRenderScaleActive;
+        [SerializeField, Tooltip("Effective render-scale floor after quality preset and platform pressure.")]
+        private float _debugEffectiveMinimumRenderScale;
 
         private enum RenderPressureState
         {
@@ -167,6 +175,16 @@ namespace Hecton8.World
         /// Whether dynamic resolution scaling is enabled.
         /// </summary>
         public bool Enabled => _enabled;
+
+        /// <summary>
+        /// True when platform policy has lowered the minimum render scale for pressure recovery.
+        /// </summary>
+        public bool PlatformPressureRenderScaleActive => _platformPressureRenderScaleActive;
+
+        /// <summary>
+        /// Effective minimum render scale after quality preset and platform pressure.
+        /// </summary>
+        public float EffectiveMinimumRenderScale => _minRenderScale;
 
         internal string DebugPressureStateLabel => _debugPressureState;
 
@@ -212,7 +230,8 @@ namespace Hecton8.World
                 _defaultRenderScale = _urpAsset.renderScale;
             }
 
-            _minRenderScale = GetMinimumRenderScaleForPreset(_qualityPreset);
+            _qualityPresetMinimumRenderScale = GetMinimumRenderScaleForPreset(_qualityPreset);
+            RefreshMinimumRenderScale();
             _currentRenderScale = Mathf.Clamp(_defaultRenderScale, _minRenderScale, _maxRenderScale);
             _startupGraceRemainingSeconds = Mathf.Max(0f, _startupGraceSeconds);
             _smoothedFrameTimeMs = _targetFrameTime;
@@ -461,10 +480,55 @@ namespace Hecton8.World
         public void SetQualityPreset(LODQualityPreset preset)
         {
             _qualityPreset = preset;
-            _minRenderScale = GetMinimumRenderScaleForPreset(preset);
+            _qualityPresetMinimumRenderScale = GetMinimumRenderScaleForPreset(preset);
+            RefreshMinimumRenderScale();
 
             // Clamp current scale to new minimum
             if (_currentRenderScale < _minRenderScale)
+            {
+                _currentRenderScale = _minRenderScale;
+                ApplyRenderScale();
+            }
+
+            UpdatePressureDiagnostics();
+        }
+
+        /// <summary>
+        /// Applies platform-level pressure without using the debug override path.
+        /// </summary>
+        /// <param name="active">Whether the pressure floor is active.</param>
+        /// <param name="minimumRenderScale">Lowest render scale allowed while pressured.</param>
+        /// <param name="targetRenderScale">Immediate target ceiling for the current render scale.</param>
+        public void SetPlatformPressureRenderScale(bool active, float minimumRenderScale, float targetRenderScale)
+        {
+            bool wasActive = _platformPressureRenderScaleActive;
+            _platformPressureRenderScaleActive = active;
+            if (active)
+                _platformPressureMinimumRenderScale = Mathf.Clamp(minimumRenderScale, 0.1f, _maxRenderScale);
+
+            RefreshMinimumRenderScale();
+
+            if (_urpAsset == null)
+            {
+                UpdatePressureDiagnostics();
+                return;
+            }
+
+            if (active)
+            {
+                float pressuredTarget = Mathf.Clamp(targetRenderScale, _minRenderScale, _maxRenderScale);
+                if (_currentRenderScale > pressuredTarget + 0.0001f)
+                {
+                    _currentRenderScale = pressuredTarget;
+                    ApplyRenderScale();
+                }
+
+                _recoveryHoldFramesRemaining = Mathf.Max(_recoveryHoldFramesRemaining, _recoveryHoldFrames);
+                UpdatePressureDiagnostics();
+                return;
+            }
+
+            if (wasActive && _currentRenderScale < _minRenderScale)
             {
                 _currentRenderScale = _minRenderScale;
                 ApplyRenderScale();
@@ -611,6 +675,8 @@ namespace Hecton8.World
             _debugPeakFrameTimeMs = _peakFrameTimeMs;
             _debugPressureState = ResolvePressureStateLabel(_pressureState);
             _debugRecoveryHoldFramesRemaining = _recoveryHoldFramesRemaining;
+            _debugPlatformPressureRenderScaleActive = _platformPressureRenderScaleActive;
+            _debugEffectiveMinimumRenderScale = _minRenderScale;
         }
 
         private static string ResolvePressureStateLabel(RenderPressureState state)
@@ -641,6 +707,14 @@ namespace Hecton8.World
                 default:
                     return 0.8f;
             }
+        }
+
+        private void RefreshMinimumRenderScale()
+        {
+            float presetMinimum = Mathf.Clamp(_qualityPresetMinimumRenderScale, 0.1f, _maxRenderScale);
+            _minRenderScale = _platformPressureRenderScaleActive
+                ? Mathf.Min(presetMinimum, _platformPressureMinimumRenderScale)
+                : presetMinimum;
         }
 
         private void RestoreDefaultRenderScale()

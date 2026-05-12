@@ -9,8 +9,12 @@ namespace Hecton8.Audio
 {
     internal unsafe sealed class AudioFrameSpscRingBuffer : IDisposable
     {
+        internal const int AudioBufferCapacity = 65536;
         private const int MinimumCapacityFrames = 256;
         private const int MaximumCapacityFrames = 1 << 30;
+        private const int AudioBufferCapacityPowerOfTwoGuard =
+            1 / ((AudioBufferCapacity > 1 &&
+                  (AudioBufferCapacity & (AudioBufferCapacity - 1)) == 0) ? 1 : 0);
 
         private NativeArray<float> _frames;
         private NativeArray<int> _sharedState;
@@ -32,15 +36,20 @@ namespace Hecton8.Audio
                 if (!IsCreated)
                     return 0;
 
-                int writeIndex = ReadSharedIndex(NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
-                int readIndex = ReadSharedIndex(NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
+                if (!HasValidPowerOfTwoState())
+                    return 0;
+
+                int writeIndex = ReadSharedFrameIndex(NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
+                int readIndex = ReadSharedFrameIndex(NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
                 return (writeIndex - readIndex) & _capacityMask;
             }
         }
 
         public int WritableFrames => !IsCreated
             ? 0
-            : math.max(0, _capacityFrames - BufferedFrames - 1);
+            : HasValidPowerOfTwoState()
+                ? math.max(0, _capacityFrames - BufferedFrames - 1)
+                : 0;
 
         public void GetState(out int bufferedFrames, out int writableFrames)
         {
@@ -51,16 +60,22 @@ namespace Hecton8.Audio
                 return;
             }
 
-            int writeIndex = ReadSharedIndex(NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
-            int readIndex = ReadSharedIndex(NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
+            if (!HasValidPowerOfTwoState())
+            {
+                bufferedFrames = 0;
+                writableFrames = 0;
+                return;
+            }
+
+            int writeIndex = ReadSharedFrameIndex(NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
+            int readIndex = ReadSharedFrameIndex(NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
             bufferedFrames = (writeIndex - readIndex) & _capacityMask;
             writableFrames = _capacityFrames - bufferedFrames - 1;
         }
 
         public void Initialize(int capacityFrames, int sourceChannels = 1)
         {
-            int resolvedCapacity = math.max(MinimumCapacityFrames, NextPowerOfTwo(capacityFrames));
-            AssertPowerOfTwoCapacity(resolvedCapacity, resolvedCapacity - 1);
+            int resolvedCapacity = ResolvePowerOfTwoCapacity(capacityFrames);
             int resolvedChannels = math.clamp(sourceChannels, 1, 2);
             if (IsCreated && _capacityFrames == resolvedCapacity && _sourceChannels == resolvedChannels)
             {
@@ -103,16 +118,22 @@ namespace Hecton8.Audio
             if (!IsCreated || !source.IsCreated || frameCount <= 0)
                 return false;
 
-            int safeChannels = math.clamp(sourceChannels, 1, 2);
+            if (!HasValidPowerOfTwoState())
+                return false;
+
+            if (sourceChannels < 1 || sourceChannels > 2)
+                return false;
+
+            int safeChannels = sourceChannels;
             if (safeChannels != _sourceChannels)
                 return false;
 
             int safeFrameCount = math.min(frameCount, source.Length / safeChannels);
-            if (safeFrameCount <= 0)
+            if (safeFrameCount != frameCount || safeFrameCount <= 0)
                 return false;
 
-            int readIndex = ReadSharedIndex(NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
-            int writeIndex = ReadSharedIndex(NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
+            int readIndex = ReadSharedFrameIndex(NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
+            int writeIndex = ReadSharedFrameIndex(NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
             int availableFrames = (writeIndex - readIndex) & _capacityMask;
             int freeFrames = _capacityFrames - availableFrames - 1;
             if (safeFrameCount > freeFrames)
@@ -133,12 +154,20 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            for (int i = 0; i < safeFrameCount; i++)
+            if (safeChannels == 2)
             {
-                int frameWriteIndex = ((writeIndex + i) & _capacityMask) * _sourceChannels;
-                int frameSourceIndex = i * safeChannels;
-                for (int channelIndex = 0; channelIndex < safeChannels; channelIndex++)
-                    _frames[frameWriteIndex + channelIndex] = source[frameSourceIndex + channelIndex];
+                for (int i = 0; i < safeFrameCount; i++)
+                {
+                    int frameWriteIndex = ((writeIndex + i) & _capacityMask) << 1;
+                    int frameSourceIndex = i << 1;
+                    _frames[frameWriteIndex] = source[frameSourceIndex];
+                    _frames[frameWriteIndex + 1] = source[frameSourceIndex + 1];
+                }
+            }
+            else
+            {
+                for (int i = 0; i < safeFrameCount; i++)
+                    _frames[(writeIndex + i) & _capacityMask] = source[i];
             }
 
             WriteSharedIndex(
@@ -187,6 +216,13 @@ namespace Hecton8.Audio
             return HectonSensoryKernelNativeBridge.IsDescriptorValid(in descriptor, out status);
         }
 
+        internal static int ResolvePowerOfTwoCapacity(int capacityFrames)
+        {
+            int resolvedCapacity = math.max(MinimumCapacityFrames, NextPowerOfTwo(capacityFrames));
+            AssertPowerOfTwoCapacity(resolvedCapacity, resolvedCapacity - 1);
+            return resolvedCapacity;
+        }
+
         public void Dispose()
         {
             if (_frames.IsCreated)
@@ -215,6 +251,11 @@ namespace Hecton8.Audio
             return Volatile.Read(ref sharedStatePtr[slot]);
         }
 
+        private int ReadSharedFrameIndex(int slot)
+        {
+            return ReadSharedIndex(slot) & _capacityMask;
+        }
+
         private void WriteSharedIndex(int slot, int value)
         {
             int* sharedStatePtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(_sharedState);
@@ -232,6 +273,11 @@ namespace Hecton8.Audio
             WriteSharedIndex(
                 NativeAudioKernelRingBufferDescriptor.GuardValueSlotB,
                 NativeAudioKernelRingBufferDescriptor.SharedStateGuardValueB);
+        }
+
+        private bool HasValidPowerOfTwoState()
+        {
+            return HasPowerOfTwoCapacity(_capacityFrames, _capacityMask);
         }
 
         private static int NextPowerOfTwo(int value)

@@ -461,6 +461,9 @@ namespace Hecton8.AI
             PredatorAcousticSightRadiusMeters * PredatorAcousticSightRadiusMeters;
         private const float PredatorAcousticSightThreshold01 = 0.12f;
         private const float PlayerNoiseReferenceSpeedSqr = 72.25f;
+        private const uint HighTierApexCognitionSteeringMask =
+            (1u << (int)HectonQualityTier.High) |
+            (1u << (int)HectonQualityTier.Ultra);
 
         private CreatureArchetypeData _archetype;
         private FaunaSpeciesProfile _speciesProfile;
@@ -769,6 +772,8 @@ namespace Hecton8.AI
                 input.Flags |= (int)CognitionInputFlags.HasVisualPlayerHint;
             if (context.IsApexPredator)
                 input.Flags |= (int)CognitionInputFlags.IsApexPredator;
+            if (UsesHighTierApexCognitionSteering(context.IsApexPredator))
+                input.Flags |= (int)CognitionInputFlags.HighTierSmoothSteering;
             if ((_speciesProfile != null && _speciesProfile.isAmbusher) ||
                 (_dataTemplate != null && _dataTemplate.CanBurrowAmbush))
             {
@@ -824,6 +829,16 @@ namespace Hecton8.AI
                 output.EmitThreatPulse != 0,
                 output.PackRoleCode,
                 output.FlankingManeuverDetected != 0);
+        }
+
+        private static bool UsesHighTierApexCognitionSteering(bool isApexPredator)
+        {
+            if (!isApexPredator)
+                return false;
+
+            uint tierBit = 1u << (int)GlobalRegistry.ScalabilityTier;
+            return (HighTierApexCognitionSteeringMask & tierBit) != 0u &&
+                   GlobalRegistry.TargetMathPrecision == MathPrecisionLevel.High;
         }
 
         public void Dispose()

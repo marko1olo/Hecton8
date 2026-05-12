@@ -27,6 +27,11 @@
       "status": "PENDING VERIFICATION"
     },
     {
+      "path": "Docs/Reports/2026-05-11_STEAM_DECK_POSIX_PREFLIGHT.md",
+      "role": "strict Steam Deck/POSIX preflight: native plugin parity, MMF pointer blockers, path/case audit, shader risk scan",
+      "status": "PENDING VERIFICATION"
+    },
+    {
       "path": "Docs/Reports/2026-05-11_PLATFORM_COMPATIBILITY_EDITOR_AUDIT.md",
       "role": "Unity-generated editor audit of local build target support, packages, settings, and native plugin parity",
       "status": "PENDING VERIFICATION"
@@ -47,6 +52,11 @@
       "path": "CodexArtifacts/2026-05-11_PLATFORM_UNITY_AUDIT_R5.log through R8, plus R11 through R13",
       "result": "SUPERSEDED",
       "notes": "Earlier attempts were inconclusive or failed due Bee/ILPP orchestration interruption or concurrent Unity project lock before stable R14 evidence."
+    },
+    {
+      "path": "Logs/SteamDeckPosixPreflight.log",
+      "result": "EXPECTED_FAIL",
+      "notes": "Unity batch compiled and generated strict preflight; process exited 1 because 31 blockers remain."
     }
   ],
   "currentClassification": {
@@ -66,6 +76,8 @@
     "missing XR Plugin Management and OpenXR provider",
     "missing Addressables project data despite active runtime code",
     "Windows-heavy save/telemetry/native compression path",
+    "missing Linux native binaries: liblz4.so, HectonAudioKernel.so/libHectonAudioKernel.so, libsteam_api.so",
+    "unsafe MemoryMappedFile pointer acquisition requires Linux player soak and mmap/alignment proof",
     "no Android/XR quality tier",
     "native plugin/importer platform matrix absent",
     "vendor SDK/dev-kit/certification absence for consoles"

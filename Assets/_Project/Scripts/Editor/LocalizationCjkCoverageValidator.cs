@@ -13,16 +13,15 @@ namespace Hecton8.Editor
     /// </summary>
     public static class LocalizationCjkCoverageValidator
     {
-        private const string PrimaryTextAssetPath = "Assets/_Project/Art/Materials/Fonts/tekst SDF.asset";
+        private const string PrimaryTextAssetPath = "Assets/_Project/Art/Materials/Fonts/tekst_SDF.asset";
         private const string ChineseLocalizationPath = "Assets/_Project/Scripts/ChineseSimplified.json";
-        private const string PrimaryTextAssetPathUtf = "Assets/_Project/Art/Materials/Fonts/\u0442\u0435\u043a\u0441\u0442 SDF.asset";
         private const string JapaneseLocalizationPath = "Assets/_Project/Scripts/Japanese.json";
         private const int MissingPreviewLimit = 24;
 
         [MenuItem("Hecton8/Localization/Validate CJK Fallback Coverage")]
         public static void Validate()
         {
-            TMP_FontAsset primaryFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(PrimaryTextAssetPathUtf);
+            TMP_FontAsset primaryFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(PrimaryTextAssetPath);
             if (primaryFont == null)
                 throw new System.InvalidOperationException("Primary PDA text font asset is missing.");
 

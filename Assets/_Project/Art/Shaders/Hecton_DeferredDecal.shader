@@ -5,8 +5,8 @@ Shader "Hidden/Hecton8/DeferredDecal"
         Tags
         {
             "RenderPipeline" = "UniversalPipeline"
-            "Queue" = "Transparent"
-            "RenderType" = "Transparent"
+            "Queue" = "Geometry"
+            "RenderType" = "Opaque"
         }
 
         Cull Off
@@ -44,6 +44,7 @@ Shader "Hidden/Hecton8/DeferredDecal"
                 float4 Row2;
                 float4 Row3;
                 float4 AtlasRect;
+                float4 Tint;
             };
 
             TEXTURE2D_X(_BlitTexture);
@@ -103,7 +104,8 @@ Shader "Hidden/Hecton8/DeferredDecal"
                     float2 atlasUv = decal.AtlasRect.xy + projectorUv * decal.AtlasRect.zw;
                     half4 decalSample = SAMPLE_TEXTURE2D(_HectonDeferredDecalAtlas, sampler_HectonDeferredDecalAtlas, atlasUv);
                     half depthFade = saturate(1.0h - abs(localPosition.z) * 2.0h);
-                    accumulated += decalSample.rgb * (decalSample.a * depthFade * _HectonDeferredDecalAtlasParams.z) * _HectonDeferredDecalTint.rgb;
+                    half4 decalTint = half4(decal.Tint);
+                    accumulated += decalSample.rgb * decalTint.rgb * (decalSample.a * decalTint.a * depthFade * _HectonDeferredDecalAtlasParams.z);
                 }
 
                 return accumulated;

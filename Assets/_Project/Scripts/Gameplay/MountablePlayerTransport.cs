@@ -567,6 +567,12 @@ namespace Hecton8.Gameplay
             return math.lerp(1f, preset.SpeedMultiplier, ResolveThrottleOutput(_currentThrottle));
         }
 
+        /// <summary>Current swim drag coefficient multiplier contributed by this transport.</summary>
+        public float GetTransportDragCoefficientMultiplier()
+        {
+            return 1f;
+        }
+
         /// <summary>Current normalized transport boost used by shared presentation/audio consumers.</summary>
         public float GetTransportBoost01()
         {

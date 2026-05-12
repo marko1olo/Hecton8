@@ -22,11 +22,26 @@ namespace Hecton8.Construction
     internal static class ConstructionRuntimeProxyFactory
     {
         private const float DefaultSocketTriggerRadius = 0.15f;
+        private const int MaxRuntimeGhostSockets = 6;
         private static Material s_validGhostMaterial;
         private static Material s_invalidGhostMaterial;
         private static Material s_finalProxyMaterial;
         private static Mesh s_wireBoxMesh;
         private static int s_socketLayer = int.MinValue;
+        private static GameObject s_ghostProxyRoot;
+        private static Transform s_ghostProxyTransform;
+        private static Transform s_ghostProxyVisual;
+        private static ModuleMarker s_ghostProxyMarker;
+        private static BoxCollider s_ghostProxyCollider;
+        private static PlacementGhost s_ghostPlacementGhost;
+        private static MeshFilter s_ghostProxyMeshFilter;
+        private static MeshRenderer s_ghostProxyRenderer;
+        // COLD ALLOC: ModuleSocket[6] - fixed reusable socket slots for generated ghost proxy - owner: ConstructionRuntimeProxyFactory
+        private static readonly ModuleSocket[] s_ghostSockets = new ModuleSocket[MaxRuntimeGhostSockets];
+        // COLD ALLOC: Transform[6] - fixed reusable socket transforms for generated ghost proxy - owner: ConstructionRuntimeProxyFactory
+        private static readonly Transform[] s_ghostSocketTransforms = new Transform[MaxRuntimeGhostSockets];
+        // COLD ALLOC: SphereCollider[6] - fixed reusable socket trigger colliders for generated ghost proxy - owner: ConstructionRuntimeProxyFactory
+        private static readonly SphereCollider[] s_ghostSocketColliders = new SphereCollider[MaxRuntimeGhostSockets];
         // COLD ALLOC: Vector3[8] - shared unit wire box vertices for generated module proxies - owner: ConstructionRuntimeProxyFactory
         private static readonly Vector3[] s_wireBoxVertices =
         {
@@ -50,22 +65,58 @@ namespace Hecton8.Construction
 
         internal static bool TryCreateGhostProxy(BuildableData data, Vector3 position, Quaternion rotation, LayerMask blockingMask, out GameObject proxyRoot)
         {
+            return TryAcquireGhostProxy(data, position, rotation, blockingMask, out proxyRoot);
+        }
+
+        internal static bool TryAcquireGhostProxy(BuildableData data, Vector3 position, Quaternion rotation, LayerMask blockingMask, out GameObject proxyRoot)
+        {
             proxyRoot = null;
             if (data == null || data.ModuleTemplate == null)
                 return false;
 
             EnsureSharedMaterials();
-            proxyRoot = CreateProxyRoot(data, position, rotation, true);
-            if (proxyRoot == null)
+            EnsureReusableGhostProxy();
+            if (s_ghostProxyRoot == null)
                 return false;
 
-            PlacementGhost ghost = proxyRoot.AddComponent<PlacementGhost>();
-            ghost.ConfigureRuntimeProxy(
+            BaseModuleTemplate template = data.ModuleTemplate;
+            s_ghostProxyTransform.SetPositionAndRotation(position, rotation);
+            s_ghostProxyMarker.Initialize(data);
+            s_ghostProxyCollider.center = template.ProxyBoundsCenter;
+            s_ghostProxyCollider.size = template.ProxyBoundsSize;
+            s_ghostProxyVisual.localPosition = template.ProxyBoundsCenter;
+            s_ghostProxyVisual.localRotation = Quaternion.identity;
+            s_ghostProxyVisual.localScale = template.ProxyBoundsSize;
+            s_ghostProxyMeshFilter.sharedMesh = EnsureWireBoxMesh();
+            s_ghostProxyRenderer.sharedMaterial = s_validGhostMaterial;
+
+            ConfigureReusableGhostSockets(template.SocketDefinitions);
+            s_ghostPlacementGhost.ConfigureRuntimeProxy(
                 s_validGhostMaterial,
                 s_invalidGhostMaterial,
-                data.ModuleTemplate.ProxyBoundsSize * 0.5f,
-                data.ModuleTemplate.ProxyBoundsCenter,
+                template.ProxyBoundsSize * 0.5f,
+                template.ProxyBoundsCenter,
                 blockingMask);
+            s_ghostPlacementGhost.OnSpawn();
+            s_ghostProxyRoot.SetActive(true);
+            proxyRoot = s_ghostProxyRoot;
+            return true;
+        }
+
+        internal static bool ReleaseGhostProxy(GameObject proxyRoot)
+        {
+            if (s_ghostProxyRoot == null || s_ghostPlacementGhost == null || !ReferenceEquals(proxyRoot, s_ghostProxyRoot))
+                return false;
+
+            s_ghostPlacementGhost.OnDespawn();
+            for (int i = 0; i < MaxRuntimeGhostSockets; i++)
+            {
+                ModuleSocket socket = s_ghostSockets[i];
+                if (socket != null)
+                    socket.SetOccupied(false);
+            }
+
+            s_ghostProxyRoot.SetActive(false);
             return true;
         }
 
@@ -133,6 +184,97 @@ namespace Hecton8.Construction
 
             CreateSockets(root.transform, template.SocketDefinitions);
             return root;
+        }
+
+        private static void EnsureReusableGhostProxy()
+        {
+            if (s_ghostProxyRoot != null)
+                return;
+
+            EnsureSocketLayer();
+            GameObject root = new GameObject("H8_RuntimeGhostProxy");
+            root.SetActive(false);
+            s_ghostProxyRoot = root;
+            s_ghostProxyTransform = root.transform;
+
+            ConstructionRuntimeProxyTag proxyTag = root.AddComponent<ConstructionRuntimeProxyTag>();
+            proxyTag.Configure(true);
+
+            s_ghostProxyMarker = root.AddComponent<ModuleMarker>();
+            s_ghostProxyCollider = root.AddComponent<BoxCollider>();
+            s_ghostProxyCollider.isTrigger = true;
+
+            GameObject visual = new GameObject("ProxyVisual");
+            s_ghostProxyVisual = visual.transform;
+            s_ghostProxyVisual.SetParent(s_ghostProxyTransform, false);
+            s_ghostProxyVisual.localPosition = Vector3.zero;
+            s_ghostProxyVisual.localRotation = Quaternion.identity;
+            s_ghostProxyVisual.localScale = Vector3.one;
+            s_ghostProxyMeshFilter = visual.AddComponent<MeshFilter>();
+            s_ghostProxyMeshFilter.sharedMesh = EnsureWireBoxMesh();
+            s_ghostProxyRenderer = visual.AddComponent<MeshRenderer>();
+            s_ghostProxyRenderer.sharedMaterial = s_validGhostMaterial;
+
+            for (int i = 0; i < MaxRuntimeGhostSockets; i++)
+            {
+                GameObject socketObject = new GameObject(ResolveSocketSlotName(i));
+                socketObject.SetActive(false);
+                Transform socketTransform = socketObject.transform;
+                socketTransform.SetParent(s_ghostProxyTransform, false);
+                socketTransform.localPosition = Vector3.zero;
+                socketTransform.localRotation = Quaternion.identity;
+                if (s_socketLayer >= 0)
+                    socketObject.layer = s_socketLayer;
+
+                ModuleSocket socket = socketObject.AddComponent<ModuleSocket>();
+                socket.ConfigureRuntime(string.Empty, ModuleSocketDirection.North);
+                SphereCollider socketCollider = socketObject.AddComponent<SphereCollider>();
+                socketCollider.radius = DefaultSocketTriggerRadius;
+                socketCollider.isTrigger = true;
+
+                s_ghostSockets[i] = socket;
+                s_ghostSocketTransforms[i] = socketTransform;
+                s_ghostSocketColliders[i] = socketCollider;
+            }
+
+            s_ghostPlacementGhost = root.AddComponent<PlacementGhost>();
+        }
+
+        private static void ConfigureReusableGhostSockets(BaseModuleTemplate.SocketDefinition[] socketDefinitions)
+        {
+            int definitionCount = socketDefinitions != null ? socketDefinitions.Length : 0;
+            int activeCount = Mathf.Min(definitionCount, MaxRuntimeGhostSockets);
+            for (int i = 0; i < MaxRuntimeGhostSockets; i++)
+            {
+                GameObject socketObject = s_ghostSocketTransforms[i].gameObject;
+                if (i >= activeCount)
+                {
+                    s_ghostSockets[i].SetOccupied(false);
+                    socketObject.SetActive(false);
+                    continue;
+                }
+
+                BaseModuleTemplate.SocketDefinition definition = socketDefinitions[i];
+                Transform socketTransform = s_ghostSocketTransforms[i];
+                socketTransform.localPosition = definition.LocalPosition;
+                socketTransform.localRotation = ModuleSocketTopology.RotationFromDirection(definition.Direction);
+                s_ghostSockets[i].ConfigureRuntime(definition.CompatibleType, definition.Direction);
+                s_ghostSocketColliders[i].radius = DefaultSocketTriggerRadius;
+                socketObject.SetActive(true);
+            }
+        }
+
+        private static string ResolveSocketSlotName(int index)
+        {
+            switch (index)
+            {
+                case 0: return "Socket_0";
+                case 1: return "Socket_1";
+                case 2: return "Socket_2";
+                case 3: return "Socket_3";
+                case 4: return "Socket_4";
+                default: return "Socket_5";
+            }
         }
 
         private static BoxCollider CreateInteriorTrigger(Transform root, BaseModuleTemplate template)

@@ -88,7 +88,6 @@ namespace Hecton8.SaveSystem
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(captureTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
                     {

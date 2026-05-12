@@ -3,11 +3,13 @@ using Hecton.Localization;
 using Hecton8.Caves;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
 using Hecton8.World;
+using System.IO;
 using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -395,17 +397,23 @@ namespace Hecton8.Construction
     internal static class DroneFleetManager
     {
         private const int InitialTaskCapacity = 64;
-        private const int HeadlessDroneCapacity = 8;
+        private const int HeadlessDroneCapacity = 64;
         private const int PhantomDroneCount = 500;
+        private const int LowTierPhantomDroneCount = 0;
+        private const int MidTierPhantomDroneCount = 192;
+        private const int HighTierPhantomDroneCount = 384;
         private const int PhantomDroneThreadGroupSize = 64;
         private const int HeadlessTaskCapacity = 64;
         private const int HeadlessPendingLaunchCapacity = HeadlessDroneCapacity;
+        private const int DroneServiceCommandCapacity = HeadlessDroneCapacity * 2;
+        private const int DroneFleetBlackBoxFrameCapacity = 300;
         private const int MaxMainThreadTaskScanCount = 64;
         private const int MaxMainThreadHubScanCount = 8;
         private const int DefaultMaxClaimsPerTarget = 2;
         private const int InvalidHubId = 0;
         private const int EmptyTaskIndex = -1;
         private const string NativeMemoryOwner = nameof(DroneFleetManager);
+        private const string DroneFleetBlackBoxDumpPath = "Docs/AgentLogs/Dump_VEHICLE_DRONE_FLEET.bin";
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const float MinimumScoreDistanceMeters = 0.75f;
         private const float MinimumScoreDistanceMetersSq = MinimumScoreDistanceMeters * MinimumScoreDistanceMeters;
@@ -420,9 +428,11 @@ namespace Hecton8.Construction
         private const float HeadlessTaskRebuildIntervalSeconds = 0.5f;
         private const float HeadlessDefaultSpeedMetersPerSecond = 6.5f;
         private const float HeadlessBatteryDrainPercentPerSecond = 2.5f;
-        private const float HeadlessServiceRadiusMeters = 0.9f;
+        private const float HeadlessServiceRadiusMeters = 1f;
         private const float HeadlessWeldPowerNormalized = 0.75f;
         private const float HeadlessWeldRangeMeters = 1.25f;
+        private const uint DroneRepairSparksSignalHash = 0x44525350u;
+        private const byte DroneRepairSparkDebrisKind = 1;
         private const float SolderIntegrityUnitsPerPack = 10f;
         private const float OrphanWanderDistanceMeters = 4f;
         private const float DroneFlowDragCoefficient = 0.85f;
@@ -431,6 +441,9 @@ namespace Hecton8.Construction
         private const string PhantomDronesComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_PhantomDrones.compute";
         private const string PhantomDronesShaderName = "Hecton8/VFX/PhantomDrones";
         private const float DroneCullRadiusMeters = 1.25f;
+        private const float LowTierDroneRenderDistanceMeters = 50f;
+        private const float MidTierDroneRenderDistanceMeters = 100f;
+        private const float HighTierDroneRenderDistanceMeters = 150f;
         private const float PhantomDroneOrbitRadiusMeters = 20f;
         private const float PhantomDroneVerticalAmplitudeMeters = 4.5f;
         private const float PhantomDroneScaleMeters = 0.18f;
@@ -474,6 +487,19 @@ namespace Hecton8.Construction
             public int LoadedSolderUnits;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        private struct DroneFleetBlackBoxEntry
+        {
+            public int Frame;
+            public int ActiveCount;
+            public int StateHash;
+            public int Flags;
+            public float DeltaTime;
+            public float3 FirstPosition;
+            public float3 BoundsCenter;
+            public float3 BoundsExtents;
+        }
+
         private sealed class HeadlessFleetDriver : IUpdatable, ILateFrameTickable, IRenderable
         {
             public void Tick(float deltaTime)
@@ -504,10 +530,14 @@ namespace Hecton8.Construction
         private static NativeArray<float4x4> s_DroneRenderMatrices;
         private static NativeArray<float4x4> s_DroneRenderMatrixBackBuffer;
         private static NativeArray<DroneRenderInstance> s_DroneRenderInstances;
+        private static NativeArray<float3> s_DronePositionsSoA;
+        private static NativeArray<byte> s_DroneStateBytes;
+        private static NativeArray<DroneFleetBlackBoxEntry> s_DroneBlackBox;
         private static NativeArray<int> s_HeadlessTaskClaimOwners;
         private static NativeArray<int> s_FleetTelemetryAccumulator;
         private static NativeParallelMultiHashMap<int, HeadlessDroneTask> s_HeadlessTasksByHub;
         private static NativeParallelMultiHashMap<int, int> s_HeadlessDroneSpatialHash;
+        private static NativeQueue<DroneServiceCommand> s_DroneServiceCommands;
         private static RepairDroneHub[] s_DroneHubs;
         private static int[] s_DroneSlotDroneIds;
         private static bool[] s_DroneSlotDestroyed;
@@ -559,9 +589,12 @@ namespace Hecton8.Construction
         private static float s_HeadlessTaskRebuildTimer;
         private static float s_LastHeadlessDeltaTime;
         private static float s_PhantomDronePhaseSeconds;
+        private static int s_PhantomDroneLastDrawCount;
         private static int s_DroneMatrixUploadBufferIndex;
         private static int s_FleetTelemetryFrameCounter;
         private static int s_LogicLeechHijackCount;
+        private static int s_DroneBlackBoxCursor;
+        private static int s_LastDroneBlackBoxDumpFrame;
         private static DroneFleetFormationMode s_FleetFormationMode;
         private static bool s_DroneCullingKernelsResolved;
         private static bool s_PhantomDroneKernelResolved;
@@ -580,6 +613,8 @@ namespace Hecton8.Construction
         private static int CameraFrustumPlanesPropertyId => s_CameraFrustumPlanesPropertyId != 0 ? s_CameraFrustumPlanesPropertyId : (s_CameraFrustumPlanesPropertyId = Shader.PropertyToID("_CameraFrustumPlanes"));
         private static int DroneCountPropertyId => s_DroneCountPropertyId != 0 ? s_DroneCountPropertyId : (s_DroneCountPropertyId = Shader.PropertyToID("_DroneCount"));
         private static int DroneCullRadiusPropertyId => s_DroneCullRadiusPropertyId != 0 ? s_DroneCullRadiusPropertyId : (s_DroneCullRadiusPropertyId = Shader.PropertyToID("_DroneCullRadius"));
+        private static int CameraPositionPropertyId => s_CameraPositionPropertyId != 0 ? s_CameraPositionPropertyId : (s_CameraPositionPropertyId = Shader.PropertyToID("_CameraPositionWS"));
+        private static int DroneRenderDistanceSqPropertyId => s_DroneRenderDistanceSqPropertyId != 0 ? s_DroneRenderDistanceSqPropertyId : (s_DroneRenderDistanceSqPropertyId = Shader.PropertyToID("_DroneRenderDistanceSq"));
         private static int PhantomMatricesPropertyId => s_PhantomMatricesPropertyId != 0 ? s_PhantomMatricesPropertyId : (s_PhantomMatricesPropertyId = Shader.PropertyToID("_PhantomMatrices"));
         private static int PhantomColorsPropertyId => s_PhantomColorsPropertyId != 0 ? s_PhantomColorsPropertyId : (s_PhantomColorsPropertyId = Shader.PropertyToID("_PhantomColors"));
         private static int PhantomAnchorPropertyId => s_PhantomAnchorPropertyId != 0 ? s_PhantomAnchorPropertyId : (s_PhantomAnchorPropertyId = Shader.PropertyToID("_PhantomAnchorWS"));
@@ -598,6 +633,8 @@ namespace Hecton8.Construction
         private static int s_CameraFrustumPlanesPropertyId;
         private static int s_DroneCountPropertyId;
         private static int s_DroneCullRadiusPropertyId;
+        private static int s_CameraPositionPropertyId;
+        private static int s_DroneRenderDistanceSqPropertyId;
         private static int s_PhantomMatricesPropertyId;
         private static int s_PhantomColorsPropertyId;
         private static int s_PhantomAnchorPropertyId;
@@ -670,9 +707,12 @@ namespace Hecton8.Construction
             s_HeadlessTaskRebuildTimer = 0f;
             s_LastHeadlessDeltaTime = 0f;
             s_PhantomDronePhaseSeconds = 0f;
+            s_PhantomDroneLastDrawCount = -1;
             s_DroneMatrixUploadBufferIndex = 0;
             s_FleetTelemetryFrameCounter = 0;
             s_LogicLeechHijackCount = 0;
+            s_DroneBlackBoxCursor = 0;
+            s_LastDroneBlackBoxDumpFrame = -1;
             s_FleetFormationMode = DroneFleetFormationMode.Repair;
             s_DroneCullingCompute = null;
             s_DroneCullingKernelsResolved = false;
@@ -691,6 +731,8 @@ namespace Hecton8.Construction
             s_CameraFrustumPlanesPropertyId = 0;
             s_DroneCountPropertyId = 0;
             s_DroneCullRadiusPropertyId = 0;
+            s_CameraPositionPropertyId = 0;
+            s_DroneRenderDistanceSqPropertyId = 0;
             s_PhantomMatricesPropertyId = 0;
             s_PhantomColorsPropertyId = 0;
             s_PhantomAnchorPropertyId = 0;
@@ -764,6 +806,7 @@ namespace Hecton8.Construction
                 s_DroneRenderMaterial = renderer.sharedMaterial;
 
             s_DroneRenderLayer = dronePrefab.layer;
+            s_PhantomDroneLastDrawCount = -1;
             EnsureRenderBuffers();
         }
 
@@ -1032,7 +1075,7 @@ namespace Hecton8.Construction
         public static float ComputeTaskAssignmentScore(float distanceMeters, float criticalityWeight)
         {
             float clampedDistance = Mathf.Max(MinimumScoreDistanceMeters, distanceMeters);
-            return (1f / clampedDistance) * Mathf.Max(0.1f, criticalityWeight);
+            return math.rcp(clampedDistance) * Mathf.Max(0.1f, criticalityWeight);
         }
 
         private static float ComputeTaskAssignmentScoreFromDistanceSq(float distanceSq, float criticalityWeight)
@@ -1060,40 +1103,49 @@ namespace Hecton8.Construction
 
         private static void AllocateHeadlessNativeMemory()
         {
-            s_DroneStates = new NativeArray<HeadlessDroneState>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HeadlessDroneState>[8] - authoritative real headless drone state pool - owner: DroneFleetManager
-            s_DroneStateBackBuffer = new NativeArray<HeadlessDroneState>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HeadlessDroneState>[8] - real headless drone write buffer for Burst double buffering - owner: DroneFleetManager
-            s_DroneRenderMatrices = new NativeArray<float4x4>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[8] - indirect real drone render front matrices consumed by renderer - owner: DroneFleetManager
-            s_DroneRenderMatrixBackBuffer = new NativeArray<float4x4>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[8] - indirect real drone render back matrices written by Burst - owner: DroneFleetManager
-            s_DroneRenderInstances = new NativeArray<DroneRenderInstance>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DroneRenderInstance>[8] - real drone matrix and transaction-progress upload staging - owner: DroneFleetManager
+            s_DroneStates = new NativeArray<HeadlessDroneState>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HeadlessDroneState>[64] - authoritative real headless drone state pool - owner: DroneFleetManager
+            s_DroneStateBackBuffer = new NativeArray<HeadlessDroneState>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HeadlessDroneState>[64] - real headless drone write buffer for Burst double buffering - owner: DroneFleetManager
+            s_DroneRenderMatrices = new NativeArray<float4x4>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[64] - indirect real drone render front matrices consumed by renderer - owner: DroneFleetManager
+            s_DroneRenderMatrixBackBuffer = new NativeArray<float4x4>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[64] - indirect real drone render back matrices written by Burst - owner: DroneFleetManager
+            s_DroneRenderInstances = new NativeArray<DroneRenderInstance>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DroneRenderInstance>[64] - real drone matrix and transaction-progress upload staging - owner: DroneFleetManager
+            s_DronePositionsSoA = new NativeArray<float3>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[64] - SoA drone positions for Burst fleet state - owner: DroneFleetManager
+            s_DroneStateBytes = new NativeArray<byte>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[64] - SoA drone state byte stream, 0 idle / 1 mining / 2 repairing / 3 returning - owner: DroneFleetManager
+            s_DroneBlackBox = new NativeArray<DroneFleetBlackBoxEntry>(DroneFleetBlackBoxFrameCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DroneFleetBlackBoxEntry>[300] - fixed fleet black-box ring buffer - owner: DroneFleetManager
             s_HeadlessTaskClaimOwners = new NativeArray<int>(HeadlessTaskCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[64] - atomic task claim owners for Burst arbitration - owner: DroneFleetManager
             s_FleetTelemetryAccumulator = new NativeArray<int>((int)DroneFleetTelemetryAccumulatorSlot.Count, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[5] - Burst fleet telemetry accumulator - owner: DroneFleetManager
             s_HeadlessTasksByHub = new NativeParallelMultiHashMap<int, HeadlessDroneTask>(HeadlessTaskCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,HeadlessDroneTask>[64] - hub-keyed drone task fanout - owner: DroneFleetManager
-            s_HeadlessDroneSpatialHash = new NativeParallelMultiHashMap<int, int>(HeadlessDroneCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[8] - real drone boid spatial hash - owner: DroneFleetManager
+            s_HeadlessDroneSpatialHash = new NativeParallelMultiHashMap<int, int>(HeadlessDroneCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[64] - real drone boid spatial hash - owner: DroneFleetManager
+            s_DroneServiceCommands = new NativeQueue<DroneServiceCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DroneServiceCommand>[128] - Burst drone service command lane drained on late-frame owner thread - owner: DroneFleetManager
             RegisterNativeArray(s_DroneStates, nameof(s_DroneStates));
             RegisterNativeArray(s_DroneStateBackBuffer, nameof(s_DroneStateBackBuffer));
             RegisterNativeArray(s_DroneRenderMatrices, nameof(s_DroneRenderMatrices));
             RegisterNativeArray(s_DroneRenderMatrixBackBuffer, nameof(s_DroneRenderMatrixBackBuffer));
             RegisterNativeArray(s_DroneRenderInstances, nameof(s_DroneRenderInstances));
+            RegisterNativeArray(s_DronePositionsSoA, nameof(s_DronePositionsSoA));
+            RegisterNativeArray(s_DroneStateBytes, nameof(s_DroneStateBytes));
+            RegisterNativeArray(s_DroneBlackBox, nameof(s_DroneBlackBox));
             RegisterNativeArray(s_HeadlessTaskClaimOwners, nameof(s_HeadlessTaskClaimOwners));
             RegisterNativeArray(s_FleetTelemetryAccumulator, nameof(s_FleetTelemetryAccumulator));
             RegisterNativeParallelMultiHashMap(s_HeadlessTasksByHub, nameof(s_HeadlessTasksByHub));
             RegisterNativeParallelMultiHashMap(s_HeadlessDroneSpatialHash, nameof(s_HeadlessDroneSpatialHash));
-            s_DroneHubs = new RepairDroneHub[HeadlessDroneCapacity]; // COLD ALLOC: RepairDroneHub[8] - managed hub owner lookup for late-frame service commits - owner: DroneFleetManager
-            s_DroneSlotDroneIds = new int[HeadlessDroneCapacity]; // COLD ALLOC: int[8] - managed active drone id slots safe during job execution - owner: DroneFleetManager
-            s_DroneSlotDestroyed = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[8] - permanently consumed suicide-weld slots - owner: DroneFleetManager
-            s_PendingAbortBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[8] - deferred abort control flags - owner: DroneFleetManager
-            s_PendingReleaseBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[8] - deferred release control flags - owner: DroneFleetManager
-            s_PendingHostileBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[8] - deferred Logic-Leech hijack flags - owner: DroneFleetManager
-            s_PendingResupplyGrantBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[8] - command-queue storage commit success acks - owner: DroneFleetManager
-            s_PendingResupplyFailureBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[8] - command-queue storage commit failure acks - owner: DroneFleetManager
-            s_TargetModulesByDroneSlot = new BaseModule[HeadlessDroneCapacity]; // COLD ALLOC: BaseModule[8] - managed target lookup for late-frame repair application - owner: DroneFleetManager
-            s_TargetVoxelVolumesByDroneSlot = new HectonVoxelVolume[HeadlessDroneCapacity]; // COLD ALLOC: HectonVoxelVolume[8] - managed voxel target lookup for weld/carve commits - owner: DroneFleetManager
-            s_DroneTaskKindsBySlot = new DroneFleetTaskKind[HeadlessDroneCapacity]; // COLD ALLOC: DroneFleetTaskKind[8] - managed task kind mirror for service application - owner: DroneFleetManager
-            s_DronePositions = new Vector3[HeadlessDroneCapacity]; // COLD ALLOC: Vector3[8] - last completed drone positions for non-job contact queries - owner: DroneFleetManager
+            RegisterNativeQueue(s_DroneServiceCommands, DroneServiceCommandCapacity, nameof(s_DroneServiceCommands));
+            PrewarmQueue(ref s_DroneServiceCommands, DroneServiceCommandCapacity);
+            s_DroneHubs = new RepairDroneHub[HeadlessDroneCapacity]; // COLD ALLOC: RepairDroneHub[64] - managed hub owner lookup for late-frame service commits - owner: DroneFleetManager
+            s_DroneSlotDroneIds = new int[HeadlessDroneCapacity]; // COLD ALLOC: int[64] - managed active drone id slots safe during job execution - owner: DroneFleetManager
+            s_DroneSlotDestroyed = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[64] - permanently consumed suicide-weld slots - owner: DroneFleetManager
+            s_PendingAbortBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[64] - deferred abort control flags - owner: DroneFleetManager
+            s_PendingReleaseBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[64] - deferred release control flags - owner: DroneFleetManager
+            s_PendingHostileBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[64] - deferred Logic-Leech hijack flags - owner: DroneFleetManager
+            s_PendingResupplyGrantBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[64] - command-queue storage commit success acks - owner: DroneFleetManager
+            s_PendingResupplyFailureBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[64] - command-queue storage commit failure acks - owner: DroneFleetManager
+            s_TargetModulesByDroneSlot = new BaseModule[HeadlessDroneCapacity]; // COLD ALLOC: BaseModule[64] - managed target lookup for late-frame repair application - owner: DroneFleetManager
+            s_TargetVoxelVolumesByDroneSlot = new HectonVoxelVolume[HeadlessDroneCapacity]; // COLD ALLOC: HectonVoxelVolume[64] - managed voxel target lookup for weld/carve commits - owner: DroneFleetManager
+            s_DroneTaskKindsBySlot = new DroneFleetTaskKind[HeadlessDroneCapacity]; // COLD ALLOC: DroneFleetTaskKind[64] - managed task kind mirror for service application - owner: DroneFleetManager
+            s_DronePositions = new Vector3[HeadlessDroneCapacity]; // COLD ALLOC: Vector3[64] - last completed drone positions for non-job contact queries - owner: DroneFleetManager
             s_TaskModuleRefs = new BaseModule[HeadlessTaskCapacity]; // COLD ALLOC: BaseModule[64] - native task index to managed module lookup - owner: DroneFleetManager
             s_TaskVoxelVolumeRefs = new HectonVoxelVolume[HeadlessTaskCapacity]; // COLD ALLOC: HectonVoxelVolume[64] - native task index to managed voxel lookup - owner: DroneFleetManager
             s_TaskKinds = new DroneFleetTaskKind[HeadlessTaskCapacity]; // COLD ALLOC: DroneFleetTaskKind[64] - native task index to managed task kind lookup - owner: DroneFleetManager
-            s_PendingLaunches = new PendingDroneLaunch[HeadlessPendingLaunchCapacity]; // COLD ALLOC: PendingDroneLaunch[8] - slow-tick launch queue applied after job completion - owner: DroneFleetManager
+            s_PendingLaunches = new PendingDroneLaunch[HeadlessPendingLaunchCapacity]; // COLD ALLOC: PendingDroneLaunch[64] - slow-tick launch queue applied after job completion - owner: DroneFleetManager
         }
 
         private static void ReleaseHeadlessNativeMemory()
@@ -1103,10 +1155,14 @@ namespace Hecton8.Construction
             DisposeNativeArray(ref s_DroneRenderMatrices);
             DisposeNativeArray(ref s_DroneRenderMatrixBackBuffer);
             DisposeNativeArray(ref s_DroneRenderInstances);
+            DisposeNativeArray(ref s_DronePositionsSoA);
+            DisposeNativeArray(ref s_DroneStateBytes);
+            DisposeNativeArray(ref s_DroneBlackBox);
             DisposeNativeArray(ref s_HeadlessTaskClaimOwners);
             DisposeNativeArray(ref s_FleetTelemetryAccumulator);
             DisposeNativeParallelMultiHashMap(ref s_HeadlessTasksByHub, nameof(s_HeadlessTasksByHub));
             DisposeNativeParallelMultiHashMap(ref s_HeadlessDroneSpatialHash, nameof(s_HeadlessDroneSpatialHash));
+            DisposeNativeQueue(ref s_DroneServiceCommands, nameof(s_DroneServiceCommands));
 
             s_DroneHubs = null;
             s_DroneSlotDroneIds = null;
@@ -1186,12 +1242,16 @@ namespace Hecton8.Construction
             job.ReadDrones = s_DroneStates;
             job.Drones = s_DroneStateBackBuffer;
             job.RenderMatrices = s_DroneRenderMatrixBackBuffer;
+            job.DronePositions = s_DronePositionsSoA;
+            job.DroneStates = s_DroneStateBytes;
             job.TasksByGrid = s_HeadlessTasksByHub;
             job.DroneSpatialHash = s_HeadlessDroneSpatialHash;
             job.AbyssalFlowVolume = abyssalFlowVolume;
             job.TaskClaimOwners = s_HeadlessTaskClaimOwners;
             job.TelemetryAccumulator = s_FleetTelemetryAccumulator;
+            job.ServiceCommands = s_DroneServiceCommands.AsParallelWriter();
             job.DeltaTime = s_LastHeadlessDeltaTime;
+            job.ServiceQueueEnabled = s_DroneServiceCommands.IsCreated ? 1 : 0;
             job.PlayerPosition = ToFloat3(playerPosition);
             job.PlayerPositionValid = hasPlayer ? 1 : 0;
             job.EmergencyOverclock = IsEmergencyOverclockActive ? 1 : 0;
@@ -1242,9 +1302,11 @@ namespace Hecton8.Construction
 
             ApplyPendingControls();
             ApplyCompletedHeadlessServices();
+            DrainDroneServiceCommandQueue();
             ApplyPendingLaunches();
             RefreshHeadlessCounters();
             UpdateDrawBounds();
+            CaptureFleetBlackBoxFrame();
             PublishSnapshot();
             PublishFleetTelemetryIfDue();
         }
@@ -1256,6 +1318,52 @@ namespace Hecton8.Construction
 
             DispatcherJobSwap.TryComplete(ref s_HeadlessJobHandle, true);
             s_HeadlessJobScheduled = false;
+        }
+
+        internal static void ApplyOriginShift(Vector3 shiftOffset)
+        {
+            if (!IsFiniteVector(shiftOffset) || shiftOffset.sqrMagnitude <= 0.000001f)
+                return;
+
+            EnsureInitialized();
+            if (!s_DroneStates.IsCreated || !s_DroneRenderMatrices.IsCreated)
+                return;
+
+            CompletePendingHeadlessJobForReset();
+            float3 runtimeOffset = -ToFloat3(shiftOffset);
+            DroneFleetOriginShiftJob job = new DroneFleetOriginShiftJob
+            {
+                DroneStates = s_DroneStates,
+                DroneStateBackBuffer = s_DroneStateBackBuffer,
+                RenderMatrices = s_DroneRenderMatrices,
+                RenderMatrixBackBuffer = s_DroneRenderMatrixBackBuffer,
+                DronePositions = s_DronePositionsSoA,
+                RuntimeOffset = runtimeOffset
+            };
+            JobHandle handle = job.Schedule(HeadlessDroneCapacity, HeadlessDroneCapacity);
+            DispatcherJobSwap.TryComplete(ref handle, true);
+
+            if (s_DronePositions != null)
+            {
+                Vector3 managedOffset = new Vector3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z);
+                for (int slot = 0; slot < s_DronePositions.Length; slot++)
+                    s_DronePositions[slot] += managedOffset;
+
+                for (int launchIndex = 0; launchIndex < s_PendingLaunchCount && launchIndex < s_PendingLaunches.Length; launchIndex++)
+                {
+                    PendingDroneLaunch launch = s_PendingLaunches[launchIndex];
+                    if (!launch.Active)
+                        continue;
+
+                    launch.HomePosition += managedOffset;
+                    DroneFleetTask task = launch.Task;
+                    task = new DroneFleetTask(task.Kind, task.Module, task.Position + managedOffset, task.Radius);
+                    launch.Task = task;
+                    s_PendingLaunches[launchIndex] = launch;
+                }
+            }
+
+            UpdateDrawBounds();
         }
 
         private static void ApplyPendingControls()
@@ -1333,7 +1441,6 @@ namespace Hecton8.Construction
 
         private static void ApplyCompletedHeadlessServices()
         {
-            float serviceDt = Mathf.Max(0f, s_LastHeadlessDeltaTime);
             for (int slot = 0; slot < HeadlessDroneCapacity; slot++)
             {
                 int droneId = s_DroneSlotDroneIds[slot];
@@ -1383,15 +1490,57 @@ namespace Hecton8.Construction
                         continue;
                     }
 
-                    if (drone.FactionBit == (byte)HeadlessDroneFactionBit.Hostile)
-                        ApplyHostileHijackService(slot, ref drone, serviceDt);
-                    else if (s_DroneTaskKindsBySlot[slot] == DroneFleetTaskKind.CutParasite)
-                        ApplyParasiteAttackService(slot, ref drone, serviceDt);
-                    else
-                        ApplyFriendlyRepairService(slot, ref drone, serviceDt);
-
                     s_DroneStates[slot] = drone;
                 }
+            }
+        }
+
+        private static void DrainDroneServiceCommandQueue()
+        {
+            if (!s_DroneServiceCommands.IsCreated)
+                return;
+
+            while (s_DroneServiceCommands.TryDequeue(out DroneServiceCommand command))
+            {
+                int slot = command.Slot;
+                if (slot < 0 || slot >= HeadlessDroneCapacity || s_DroneSlotDroneIds == null)
+                    continue;
+
+                if (command.DroneId <= 0 || s_DroneSlotDroneIds[slot] != command.DroneId)
+                    continue;
+
+                HeadlessDroneState drone = s_DroneStates[slot];
+                if (drone.DroneId != command.DroneId ||
+                    (drone.State != (byte)HeadlessDroneRuntimeState.Repair &&
+                     drone.State != (byte)HeadlessDroneRuntimeState.Attack))
+                {
+                    continue;
+                }
+
+                if (TryBeginHijackRebootIfSourceGone(slot, ref drone))
+                {
+                    s_DroneStates[slot] = drone;
+                    MirrorDroneSoA(slot, in drone);
+                    continue;
+                }
+
+                float serviceDt = Mathf.Max(0f, command.DeltaTime);
+                if (command.Kind == (byte)DroneServiceCommandKind.Attack ||
+                    drone.FactionBit == (byte)HeadlessDroneFactionBit.Hostile)
+                {
+                    ApplyHostileHijackService(slot, ref drone, serviceDt);
+                }
+                else if (s_DroneTaskKindsBySlot[slot] == DroneFleetTaskKind.CutParasite)
+                {
+                    ApplyParasiteAttackService(slot, ref drone, serviceDt);
+                }
+                else
+                {
+                    ApplyFriendlyRepairService(slot, ref drone, serviceDt);
+                }
+
+                s_DroneStates[slot] = drone;
+                MirrorDroneSoA(slot, in drone);
             }
         }
 
@@ -1595,10 +1744,11 @@ namespace Hecton8.Construction
             Vector3 hitPoint = ToVector3(drone.TargetPosition);
             Vector3 dronePosition = ToVector3(drone.Position);
             Vector3 direction = hitPoint - dronePosition;
+            float directionDistanceSq = direction.sqrMagnitude;
             float deliveredDamage = Mathf.Max(0.1f, drone.RepairRatePerSecond * dt);
             floraInteractionManager.TryApplyDroneParasiteCut(
                 hitPoint,
-                direction.sqrMagnitude > SeparationDistanceEpsilon ? direction.normalized : Vector3.down,
+                directionDistanceSq > SeparationDistanceEpsilon ? direction * math.rsqrt(directionDistanceSq) : Vector3.down,
                 deliveredDamage,
                 drone.WeldPowerNormalized);
 
@@ -1652,9 +1802,10 @@ namespace Hecton8.Construction
 
             drone.RepairAccumulator += workAmount;
             float safeUnitsPerSolder = Mathf.Max(1f, unitsPerSolder);
+            float safeUnitsPerSolderInv = math.rcp(safeUnitsPerSolder);
             int consumedUnits = Mathf.Min(
                 drone.SolderUnits,
-                Mathf.FloorToInt(drone.RepairAccumulator / safeUnitsPerSolder));
+                Mathf.FloorToInt(drone.RepairAccumulator * safeUnitsPerSolderInv));
             if (consumedUnits <= 0)
                 return;
 
@@ -1692,15 +1843,18 @@ namespace Hecton8.Construction
             Vector3 dronePosition = ToVector3(drone.Position);
             Vector3 targetPosition = target.transform.position;
             Vector3 weldDirection = targetPosition - dronePosition;
-            if (weldDirection.sqrMagnitude <= SeparationDistanceEpsilon)
+            float weldDistanceSq = weldDirection.sqrMagnitude;
+            if (weldDistanceSq <= SeparationDistanceEpsilon)
                 return;
 
-            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(dronePosition + (weldDirection.normalized * 0.35f));
+            Vector3 normalizedWeldDirection = weldDirection * math.rsqrt(weldDistanceSq);
+            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(dronePosition + (normalizedWeldDirection * 0.35f));
             volume.ApplyRepairWeldDda(
                 absoluteHitPoint,
-                weldDirection.normalized,
+                normalizedWeldDirection,
                 drone.WeldPowerNormalized,
                 drone.WeldRangeMeters);
+            PublishDroneRepairSparks(absoluteHitPoint, drone.DroneId, drone.WeldPowerNormalized);
         }
 
         private static void DispatchPlasmaCut(int slot, in HeadlessDroneState drone, BaseModule target)
@@ -1712,15 +1866,34 @@ namespace Hecton8.Construction
             Vector3 dronePosition = ToVector3(drone.Position);
             Vector3 targetPosition = target.transform.position;
             Vector3 cutDirection = targetPosition - dronePosition;
-            if (cutDirection.sqrMagnitude <= SeparationDistanceEpsilon)
+            float cutDistanceSq = cutDirection.sqrMagnitude;
+            if (cutDistanceSq <= SeparationDistanceEpsilon)
                 return;
 
-            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(dronePosition + (cutDirection.normalized * 0.35f));
+            Vector3 normalizedCutDirection = cutDirection * math.rsqrt(cutDistanceSq);
+            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(dronePosition + (normalizedCutDirection * 0.35f));
             volume.ApplyPlasmaCutDda(
                 absoluteHitPoint,
-                cutDirection.normalized,
+                normalizedCutDirection,
                 drone.WeldPowerNormalized,
                 drone.WeldRangeMeters);
+        }
+
+        private static void PublishDroneRepairSparks(Vector3 absoluteHitPoint, int droneId, float intensity01)
+        {
+            DebrisSpawnSignal signal = new DebrisSpawnSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                    absoluteHitPoint.x,
+                    absoluteHitPoint.y,
+                    absoluteHitPoint.z)),
+                SpeciesHash = DroneRepairSparksSignalHash,
+                SourceEntityId = (uint)Mathf.Max(0, droneId),
+                Intensity01 = Mathf.Clamp01(intensity01),
+                DebrisKind = DroneRepairSparkDebrisKind,
+                Flags = 0
+            };
+            GlobalSignals.Publish(in signal);
         }
 
         private static void ApplyPendingLaunches()
@@ -1792,6 +1965,7 @@ namespace Hecton8.Construction
                 s_DroneStateBackBuffer[slot] = state;
                 s_DroneRenderMatrices[slot] = float4x4.TRS(state.Position, state.Rotation, new float3(1f, 1f, 1f));
                 s_DroneRenderMatrixBackBuffer[slot] = s_DroneRenderMatrices[slot];
+                MirrorDroneSoA(slot, in state);
                 s_PendingLaunches[i] = default;
             }
 
@@ -1827,7 +2001,9 @@ namespace Hecton8.Construction
             s_TargetVoxelVolumesByDroneSlot[slot] = null;
             s_DroneTaskKindsBySlot[slot] = DroneFleetTaskKind.None;
             s_DronePositions[slot] = Vector3.zero;
-            s_DroneStates[slot] = default;
+            HeadlessDroneState clearedState = default;
+            s_DroneStates[slot] = clearedState;
+            MirrorDroneSoA(slot, in clearedState);
             if (s_DroneStateBackBuffer.IsCreated)
                 s_DroneStateBackBuffer[slot] = default;
             s_DroneRenderMatrices[slot] = float4x4.zero;
@@ -1855,6 +2031,38 @@ namespace Hecton8.Construction
             }
 
             return -1;
+        }
+
+        private static void MirrorDroneSoA(int slot, in HeadlessDroneState drone)
+        {
+            if (slot < 0 || slot >= HeadlessDroneCapacity)
+                return;
+
+            if (s_DronePositionsSoA.IsCreated)
+                s_DronePositionsSoA[slot] = drone.Position;
+
+            if (s_DroneStateBytes.IsCreated)
+                s_DroneStateBytes[slot] = ResolveDroneSoAState(in drone);
+        }
+
+        private static byte ResolveDroneSoAState(in HeadlessDroneState drone)
+        {
+            if (drone.State == (byte)HeadlessDroneRuntimeState.Repair ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Attack)
+            {
+                return (byte)DroneFleetSoaState.Repairing;
+            }
+
+            if (drone.State == (byte)HeadlessDroneRuntimeState.Return ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Docking ||
+                drone.State == (byte)HeadlessDroneRuntimeState.ResupplyTravel ||
+                drone.State == (byte)HeadlessDroneRuntimeState.ResupplyDocked ||
+                drone.State == (byte)HeadlessDroneRuntimeState.ResupplyCommitPending)
+            {
+                return (byte)DroneFleetSoaState.Returning;
+            }
+
+            return (byte)DroneFleetSoaState.Idle;
         }
 
         private static int ResolveHeadlessSlot(int droneId)
@@ -2070,7 +2278,7 @@ namespace Hecton8.Construction
             int activeCount = s_FleetTelemetryAccumulator[(int)DroneFleetTelemetryAccumulatorSlot.ActiveCount];
             int batteryMilliPercent = s_FleetTelemetryAccumulator[(int)DroneFleetTelemetryAccumulatorSlot.BatteryMilliPercent];
             float averageBattery = activeCount > 0
-                ? Mathf.Clamp(batteryMilliPercent / (activeCount * 1000f), 0f, 100f)
+                ? Mathf.Clamp(batteryMilliPercent * math.rcp(activeCount * 1000f), 0f, 100f)
                 : 0f;
             FleetStatusSnapshot snapshot = new FleetStatusSnapshot(
                 activeCount,
@@ -2086,6 +2294,7 @@ namespace Hecton8.Construction
                 snapshot.SolderReserve,
                 snapshot.LostUnits,
                 snapshot.HostileUnits);
+            PublishDominantAxisDroneTelemetryIfPresent();
             TryRelayLeviathanPing();
             PublishSnapshot();
         }
@@ -2167,6 +2376,47 @@ namespace Hecton8.Construction
                 PhysicsEventBus.NotifyAcousticPing(in pingEvent);
                 return;
             }
+        }
+
+        private static void PublishDominantAxisDroneTelemetryIfPresent()
+        {
+            if (s_DroneSlotDroneIds == null || !s_DroneStates.IsCreated || !TryResolveFormationAnchor(out Vector3 anchorPosition))
+                return;
+
+            float3 anchor = ToFloat3(anchorPosition);
+            bool useHighPrecisionDistance = DistanceMath.IsHighQualityTier(GlobalRegistry.ScalabilityTier);
+            for (int slot = 0; slot < s_DroneSlotDroneIds.Length; slot++)
+            {
+                int droneId = s_DroneSlotDroneIds[slot];
+                if (droneId <= 0)
+                    continue;
+
+                HeadlessDroneState drone = s_DroneStates[slot];
+                if (drone.State == (byte)HeadlessDroneRuntimeState.Empty ||
+                    drone.State == (byte)HeadlessDroneRuntimeState.Sacrificed ||
+                    drone.State == (byte)HeadlessDroneRuntimeState.Completed)
+                {
+                    continue;
+                }
+
+                float distanceMetricSq = useHighPrecisionDistance
+                    ? math.distancesq(drone.Position, anchor)
+                    : DominantAxisMagnitudeSq(drone.Position - anchor);
+                GlobalTelemetryBus.PublishDominantAxisTelemetry(
+                    unchecked((uint)droneId),
+                    distanceMetricSq,
+                    !useHighPrecisionDistance);
+            }
+        }
+
+        private static float DominantAxisMagnitudeSq(float3 value)
+        {
+            if (!math.all(math.isfinite(value)))
+                return 0f;
+
+            float3 absValue = math.abs(value);
+            float dominantMagnitude = math.cmax(absValue);
+            return dominantMagnitude * dominantMagnitude;
         }
 
         private static bool TryResolveRelayLeviathan(Vector3 dronePosition, out SpatialQueryHit hit)
@@ -2294,25 +2544,25 @@ namespace Hecton8.Construction
                 return;
 
             if (s_DroneMatrixBuffer == null)
-                s_DroneMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[8] - real headless drone matrix upload buffer - owner: DroneFleetManager
+                s_DroneMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[64] - real headless drone matrix upload buffer - owner: DroneFleetManager
 
             if (s_DroneMatrixBufferBackBuffer == null)
-                s_DroneMatrixBufferBackBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[8] - alternate real drone matrix upload buffer for GPU/CPU double-buffering - owner: DroneFleetManager
+                s_DroneMatrixBufferBackBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[64] - alternate real drone matrix upload buffer for GPU/CPU double-buffering - owner: DroneFleetManager
 
             if (s_DroneStateGpuBuffer == null)
-                s_DroneStateGpuBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<HeadlessDroneState>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[8] - real headless drone state upload buffer for GPU culling - owner: DroneFleetManager
+                s_DroneStateGpuBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<HeadlessDroneState>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[64] - real headless drone state upload buffer for GPU culling - owner: DroneFleetManager
 
             if (s_DroneRenderInstanceBuffer == null)
-                s_DroneRenderInstanceBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<DroneRenderInstance>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[8] - real drone render instance upload buffer for VAT transaction parameters - owner: DroneFleetManager
+                s_DroneRenderInstanceBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<DroneRenderInstance>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[64] - real drone render instance upload buffer for VAT transaction parameters - owner: DroneFleetManager
 
             if (s_DroneVisibleMatrixBuffer == null)
-                s_DroneVisibleMatrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, HeadlessDroneCapacity, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[8] - GPU-compacted visible real drone matrices - owner: DroneFleetManager
+                s_DroneVisibleMatrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, HeadlessDroneCapacity, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[64] - GPU-compacted visible real drone matrices - owner: DroneFleetManager
 
             if (s_DroneVisibleInstanceBuffer == null)
-                s_DroneVisibleInstanceBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, HeadlessDroneCapacity, UnsafeUtility.SizeOf<DroneRenderInstance>()); // COLD ALLOC: GraphicsBuffer[8] - GPU-compacted visible real drone VAT instance data - owner: DroneFleetManager
+                s_DroneVisibleInstanceBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, HeadlessDroneCapacity, UnsafeUtility.SizeOf<DroneRenderInstance>()); // COLD ALLOC: GraphicsBuffer[64] - GPU-compacted visible real drone VAT instance data - owner: DroneFleetManager
 
             if (s_DroneVisibleIndexBuffer == null)
-                s_DroneVisibleIndexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, HeadlessDroneCapacity, sizeof(int)); // COLD ALLOC: GraphicsBuffer[8] - visible real drone index append buffer for shader indirection/debug - owner: DroneFleetManager
+                s_DroneVisibleIndexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, HeadlessDroneCapacity, sizeof(int)); // COLD ALLOC: GraphicsBuffer[64] - visible real drone index append buffer for shader indirection/debug - owner: DroneFleetManager
 
             if (s_DroneArgsBuffer == null)
                 s_DroneArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - headless drone indirect indexed draw arguments - owner: DroneFleetManager
@@ -2388,14 +2638,11 @@ namespace Hecton8.Construction
                 s_PhantomDroneColorBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, PhantomDroneCount, UnsafeUtility.SizeOf<float4>()); // COLD ALLOC: GraphicsBuffer[500] - GPU-authored phantom drone emissive colors - owner: DroneFleetManager
 
             if (s_PhantomDroneArgsBuffer == null)
+            {
                 s_PhantomDroneArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - phantom drone indirect indexed draw arguments - owner: DroneFleetManager
+                s_PhantomDroneLastDrawCount = -1;
+            }
 
-            s_PhantomDroneArgsUpload[0].indexCountPerInstance = s_DroneRenderMesh.GetIndexCount(0);
-            s_PhantomDroneArgsUpload[0].instanceCount = PhantomDroneCount;
-            s_PhantomDroneArgsUpload[0].startIndex = s_DroneRenderMesh.GetIndexStart(0);
-            s_PhantomDroneArgsUpload[0].baseVertexIndex = (uint)Mathf.Max(0, s_DroneRenderMesh.GetBaseVertex(0));
-            s_PhantomDroneArgsUpload[0].startInstance = 0u;
-            s_PhantomDroneArgsBuffer.SetData(s_PhantomDroneArgsUpload);
             return true;
         }
 
@@ -2441,6 +2688,40 @@ namespace Hecton8.Construction
                 DestroyRuntimeObject(s_PhantomDroneMaterial);
 
             s_PhantomDroneMaterial = null;
+            s_PhantomDroneLastDrawCount = -1;
+        }
+
+        private static int ResolvePhantomDroneDrawCount()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            if (tier == HectonQualityTier.Ultra)
+                return PhantomDroneCount;
+
+            if (tier == HectonQualityTier.High)
+                return HighTierPhantomDroneCount;
+
+            if (tier == HectonQualityTier.Mid)
+                return MidTierPhantomDroneCount;
+
+            return LowTierPhantomDroneCount;
+        }
+
+        private static void UpdatePhantomDroneArgs(int drawCount)
+        {
+            if (s_PhantomDroneArgsBuffer == null || s_DroneRenderMesh == null)
+                return;
+
+            int safeDrawCount = Mathf.Clamp(drawCount, 0, PhantomDroneCount);
+            if (s_PhantomDroneLastDrawCount == safeDrawCount)
+                return;
+
+            s_PhantomDroneArgsUpload[0].indexCountPerInstance = s_DroneRenderMesh.GetIndexCount(0);
+            s_PhantomDroneArgsUpload[0].instanceCount = (uint)safeDrawCount;
+            s_PhantomDroneArgsUpload[0].startIndex = s_DroneRenderMesh.GetIndexStart(0);
+            s_PhantomDroneArgsUpload[0].baseVertexIndex = (uint)Mathf.Max(0, s_DroneRenderMesh.GetBaseVertex(0));
+            s_PhantomDroneArgsUpload[0].startInstance = 0u;
+            s_PhantomDroneArgsBuffer.SetData(s_PhantomDroneArgsUpload);
+            s_PhantomDroneLastDrawCount = safeDrawCount;
         }
 
         private static void DestroyRuntimeObject(UnityEngine.Object target)
@@ -2569,9 +2850,15 @@ namespace Hecton8.Construction
 
         private static void RenderPhantomSwarm(float deltaTime)
         {
+            int phantomDrawCount = ResolvePhantomDroneDrawCount();
+            if (phantomDrawCount <= 0)
+                return;
+
             if (!TryResolvePhantomAnchor(out Vector3 anchor) || !EnsurePhantomRenderResources())
                 return;
 
+            phantomDrawCount = Mathf.Min(phantomDrawCount, PhantomDroneCount);
+            UpdatePhantomDroneArgs(phantomDrawCount);
             s_PhantomDronePhaseSeconds += Mathf.Max(0f, deltaTime);
             if (s_PhantomDronePhaseSeconds >= PhantomDronePhaseWrapSeconds)
                 s_PhantomDronePhaseSeconds = Mathf.Repeat(s_PhantomDronePhaseSeconds, PhantomDronePhaseWrapSeconds);
@@ -2583,7 +2870,7 @@ namespace Hecton8.Construction
                     PhantomDroneBoundsDiameterMeters,
                     PhantomDroneBoundsDiameterMeters));
 
-            s_PhantomDronesCompute.SetInt(PhantomCountPropertyId, PhantomDroneCount);
+            s_PhantomDronesCompute.SetInt(PhantomCountPropertyId, phantomDrawCount);
             s_PhantomDronesCompute.SetVector(PhantomAnchorPropertyId, new Vector4(anchor.x, anchor.y, anchor.z, 0f));
             s_PhantomDronesCompute.SetFloat(PhantomTimePropertyId, s_PhantomDronePhaseSeconds);
             s_PhantomDronesCompute.SetFloat(PhantomBaseRadiusPropertyId, PhantomDroneOrbitRadiusMeters);
@@ -2593,7 +2880,7 @@ namespace Hecton8.Construction
             s_PhantomDronesCompute.SetBuffer(s_PhantomDroneKernel, PhantomColorsPropertyId, s_PhantomDroneColorBuffer);
             s_PhantomDronesCompute.Dispatch(
                 s_PhantomDroneKernel,
-                (PhantomDroneCount + PhantomDroneThreadGroupSize - 1) / PhantomDroneThreadGroupSize,
+                (phantomDrawCount + PhantomDroneThreadGroupSize - 1) / PhantomDroneThreadGroupSize,
                 1,
                 1);
 
@@ -2684,6 +2971,14 @@ namespace Hecton8.Construction
 
             s_DroneCullingCompute.SetInt(DroneCountPropertyId, HeadlessDroneCapacity);
             s_DroneCullingCompute.SetFloat(DroneCullRadiusPropertyId, DroneCullRadiusMeters);
+            Vector3 cameraPosition = camera.transform.position;
+            float droneRenderDistanceMeters = ResolveDroneRenderDistanceMeters();
+            s_DroneCullingCompute.SetVector(
+                CameraPositionPropertyId,
+                new Vector4(cameraPosition.x, cameraPosition.y, cameraPosition.z, 0f));
+            s_DroneCullingCompute.SetFloat(
+                DroneRenderDistanceSqPropertyId,
+                droneRenderDistanceMeters * droneRenderDistanceMeters);
             s_DroneCullingCompute.SetVectorArray(CameraFrustumPlanesPropertyId, s_CullingPlaneVectors);
             s_DroneCullingCompute.SetBuffer(s_DroneCullKernel, DroneStatesPropertyId, s_DroneStateGpuBuffer);
             s_DroneCullingCompute.SetBuffer(s_DroneCullKernel, DroneMatricesPropertyId, matrixBuffer);
@@ -2691,7 +2986,7 @@ namespace Hecton8.Construction
             s_DroneCullingCompute.SetBuffer(s_DroneCullKernel, DroneVisibleInstancesPropertyId, s_DroneVisibleInstanceBuffer);
             s_DroneCullingCompute.SetBuffer(s_DroneCullKernel, DroneVisibleIndicesPropertyId, s_DroneVisibleIndexBuffer);
             s_DroneCullingCompute.SetBuffer(s_DroneCullKernel, InstanceMatricesPropertyId, s_DroneVisibleMatrixBuffer);
-            int groups = Mathf.CeilToInt(HeadlessDroneCapacity / 64f);
+            int groups = (HeadlessDroneCapacity + 63) >> 6;
             s_DroneCullingCompute.Dispatch(s_DroneCullKernel, groups, 1, 1);
             GraphicsBuffer.CopyCount(s_DroneVisibleMatrixBuffer, s_DroneArgsBuffer, 4);
 
@@ -2710,6 +3005,18 @@ namespace Hecton8.Construction
             };
             Graphics.RenderMeshIndirect(renderParams, s_DroneRenderMesh, s_DroneArgsBuffer, 1, 0);
             return true;
+        }
+
+        private static float ResolveDroneRenderDistanceMeters()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            if (tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra)
+                return HighTierDroneRenderDistanceMeters;
+
+            if (tier == HectonQualityTier.Mid)
+                return MidTierDroneRenderDistanceMeters;
+
+            return LowTierDroneRenderDistanceMeters;
         }
 
         private static void UpdateDrawBounds()
@@ -2746,6 +3053,114 @@ namespace Hecton8.Construction
             s_DroneDrawBounds = new Bounds(center, size);
         }
 
+        private static void CaptureFleetBlackBoxFrame()
+        {
+            if (!s_DroneBlackBox.IsCreated || s_DroneSlotDroneIds == null || !s_DroneStates.IsCreated)
+                return;
+
+            int activeCount = 0;
+            int stateHash = 17;
+            int flags = 0;
+            float3 firstPosition = float3.zero;
+            for (int slot = 0; slot < HeadlessDroneCapacity; slot++)
+            {
+                int droneId = s_DroneSlotDroneIds[slot];
+                if (droneId <= 0)
+                    continue;
+
+                HeadlessDroneState drone = s_DroneStates[slot];
+                if (activeCount == 0)
+                    firstPosition = drone.Position;
+
+                activeCount++;
+                stateHash = unchecked((stateHash * 31) ^ droneId);
+                stateHash = unchecked((stateHash * 31) ^ drone.State);
+                stateHash = unchecked((stateHash * 31) ^ (int)math.hash(drone.Position));
+                stateHash = unchecked((stateHash * 31) ^ (int)math.hash(drone.TargetPosition));
+
+                if (!IsFiniteFloat3(drone.Position) ||
+                    !IsFiniteFloat3(drone.TargetPosition) ||
+                    !IsFiniteFloat3(drone.Velocity))
+                {
+                    flags |= 1;
+                }
+            }
+
+            int index = s_DroneBlackBoxCursor;
+            if ((uint)index >= (uint)s_DroneBlackBox.Length)
+                index = 0;
+
+            s_DroneBlackBox[index] = new DroneFleetBlackBoxEntry
+            {
+                Frame = Time.frameCount,
+                ActiveCount = activeCount,
+                StateHash = stateHash,
+                Flags = flags,
+                DeltaTime = s_LastHeadlessDeltaTime,
+                FirstPosition = firstPosition,
+                BoundsCenter = ToFloat3(s_DroneDrawBounds.center),
+                BoundsExtents = ToFloat3(s_DroneDrawBounds.extents)
+            };
+            s_DroneBlackBoxCursor = (index + 1) % s_DroneBlackBox.Length;
+
+            if ((flags & 1) != 0)
+                DumpDroneBlackBoxOncePerFrame();
+        }
+
+        private static void DumpDroneBlackBoxOncePerFrame()
+        {
+            int frame = Time.frameCount;
+            if (s_LastDroneBlackBoxDumpFrame == frame)
+                return;
+
+            s_LastDroneBlackBoxDumpFrame = frame;
+            TryDumpDroneBlackBox();
+        }
+
+        private static void TryDumpDroneBlackBox()
+        {
+            if (!s_DroneBlackBox.IsCreated)
+                return;
+
+            try
+            {
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string dumpPath = Path.Combine(projectRoot, DroneFleetBlackBoxDumpPath);
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+                using BinaryWriter writer = new BinaryWriter(stream);
+                writer.Write(DroneFleetBlackBoxFrameCapacity);
+                writer.Write(s_DroneBlackBoxCursor);
+                for (int i = 0; i < s_DroneBlackBox.Length; i++)
+                    WriteBlackBoxEntry(writer, s_DroneBlackBox[i]);
+            }
+            catch (System.Exception)
+            {
+            }
+        }
+
+        private static void WriteBlackBoxEntry(BinaryWriter writer, in DroneFleetBlackBoxEntry entry)
+        {
+            writer.Write(entry.Frame);
+            writer.Write(entry.ActiveCount);
+            writer.Write(entry.StateHash);
+            writer.Write(entry.Flags);
+            writer.Write(entry.DeltaTime);
+            WriteFloat3(writer, entry.FirstPosition);
+            WriteFloat3(writer, entry.BoundsCenter);
+            WriteFloat3(writer, entry.BoundsExtents);
+        }
+
+        private static void WriteFloat3(BinaryWriter writer, float3 value)
+        {
+            writer.Write(value.x);
+            writer.Write(value.y);
+            writer.Write(value.z);
+        }
+
         private static void HandleSubmarineSnapshotUpdated(in HectonSubmarineOsSnapshot snapshot)
         {
             s_EmergencyLevel = snapshot.EmergencyLevel;
@@ -2779,7 +3194,7 @@ namespace Hecton8.Construction
                 return false;
 
             float recoverableIntegrity = Mathf.Max(1f, module.MaxRecoverableIntegrity);
-            float integrity01 = Mathf.Clamp01(module.CurrentIntegrity / recoverableIntegrity);
+            float integrity01 = Mathf.Clamp01(module.CurrentIntegrity * math.rcp(recoverableIntegrity));
             bool graphRuptured = BaseDegradationSystem.IsModuleRuptured(module);
             bool belowThreshold = integrity01 < dispatchIntegrityThreshold;
 
@@ -2807,7 +3222,7 @@ namespace Hecton8.Construction
         private static float ResolveCriticalityWeight(BaseModule module)
         {
             float recoverableIntegrity = Mathf.Max(1f, module.MaxRecoverableIntegrity);
-            float integrity01 = Mathf.Clamp01(module.CurrentIntegrity / recoverableIntegrity);
+            float integrity01 = Mathf.Clamp01(module.CurrentIntegrity * math.rcp(recoverableIntegrity));
             float integrityDeficit01 = 1f - integrity01;
             float weight = 1f + (integrityDeficit01 * 4f);
 
@@ -2873,6 +3288,37 @@ namespace Hecton8.Construction
             NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
             array = default;
+        }
+
+        private static void RegisterNativeQueue<T>(NativeQueue<T> queue, int capacity, string label)
+            where T : unmanaged
+        {
+            NativeMemorySentinel.RegisterNativeQueue(queue, capacity, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
+        private static void DisposeNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, label);
+            queue.Dispose();
+            queue = default;
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
         }
 
         private static void RegisterNativeParallelMultiHashMap<TKey, TValue>(NativeParallelMultiHashMap<TKey, TValue> map, string label)
@@ -3032,6 +3478,20 @@ namespace Hecton8.Construction
         private static float3 ToFloat3(Vector3 value)
         {
             return new float3(value.x, value.y, value.z);
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private static bool IsFiniteFloat3(float3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
         }
 
         private static Vector3 ToVector3(float3 value)

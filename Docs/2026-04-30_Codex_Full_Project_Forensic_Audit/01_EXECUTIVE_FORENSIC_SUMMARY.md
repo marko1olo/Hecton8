@@ -3,18 +3,37 @@
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
+## 2026-05-12 Current Status Override
+
+HECTON-8 has moved from MMF documentation claims to FileStream/native-window source truth for save I/O.
+
+Code truth:
+
+| Surface | Current Source Truth |
+|---|---|
+| Save persistence | `SaveBinaryStorage.AsyncWriteManager` uses `FileStream`, cached native read windows, throttled flush, and portable sequential/random access flags |
+| MMF | no first-party `MemoryMappedFile` source hit was found in the current save path |
+| Data Monolith | `.h8bin` runtime load still uses boot-only `File.ReadAllBytes` staging before native blit |
+| Event bus | `GlobalSignals.cs` owns 33 typed NativeQueue lanes, not the old prose-only five-artery model |
+| Registry | `GlobalRegistry` remains the service locator; singleton self-sovereignty is still architectural debt |
+
+This audit is documentation-verified, not runtime-certified. Unity import, Console, Play Mode, profiler, GCMonitor, and player-build proof remain `PENDING VERIFICATION`.
+
 ## Bottom Line
 
 HECTON-8 is not fake. There is real engineering depth, real subsystem ownership work, real native memory work, real Jobs/Burst adoption, real HUD optimization work, and real custom platform intent.
 
 It is also not stable enough to be called production-clean.
 
-The current project state is best described as:
-- ambitious
-- partially industrialized
-- heavily overgrown
-- integration-fragile
-- documentation-rich but not documentation-trustworthy by default
+Current state:
+
+| Axis | Status |
+|---|---|
+| subsystem count | high |
+| native/Burst adoption | real but uneven |
+| ownership discipline | split authority and direct-reference debt |
+| compile confidence | blocked by unresolved external symbol families |
+| documentation trust | must be source-verified before use |
 
 The strongest reality is not polish. It is subsystem ambition.
 The weakest reality is not visuals. It is ownership discipline and integration hygiene.
@@ -40,7 +59,7 @@ These are evidence-based readiness estimates, not marketing numbers.
 - `SystemDispatcher` is real and acts as a genuine cadence owner for update lanes and deferred event flushing.
 - `SaveManager` is serious, custom, and substantially beyond prototype quality in intent and surface.
 - `PlayerCriticalProceduralAudioRenderer` shows real DSP/native/job-minded engineering, not placeholder audio scripting.
-- `SuitHUDV4CanvasOverlay` contains visible zero-GC HUD discipline, including char-buffer formatting instead of naÃ¯ve string churn.
+- `SuitHUDV4CanvasOverlay` contains visible zero-GC HUD discipline, including char-buffer formatting instead of naive string churn.
 - The project has large-scale native collection and Burst adoption across world, fluid, fauna, and procedural systems.
 
 ## What Is Actually Bad
@@ -82,14 +101,15 @@ The main risk is that too much exists without enough ownership compression, veri
 
 ## Player Verdict
 
-From a player perspective, the project likely already has strong atmosphere, systemic density, and â€œserious gameâ€ texture.
+Player-facing risk table:
 
-From the same player perspective, the likely visible problems are:
-- inconsistency
-- weird edge-case behavior
-- unstable pacing
-- system collisions between old and new architecture
-- polish debt leaking into the play session
+| Surface | Current Evidence |
+|---|---|
+| atmosphere/system density | source shows large custom runtime surfaces |
+| consistency | ownership drift and compile blockers remain |
+| pacing | not runtime-verified in Play Mode |
+| systemic collision risk | old singleton/direct-reference paths coexist with registry/signals |
+| polish | cannot be certified without fresh Unity import, Console, profiler, and playtest logs |
 
 ## Regression Model
 

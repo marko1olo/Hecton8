@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Ecosystem;
 using Hecton8.Physics;
 using Hecton8.Environment;
@@ -71,6 +73,34 @@ namespace Hecton8.World
             public Vector3 Velocity;
             public float Panic;
             public uint StateFlags;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
+        internal struct BoidKillSignal
+        {
+            public float3 KillPositionWS;
+            public float3 PredatorPositionWS;
+            public int BoidId;
+            public uint PredatorId;
+            public float FearRadiusMeters;
+            public float FearAmount;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        private struct FoodChainTelemetryEntry
+        {
+            public uint FrameIndex;
+            public uint StateHash;
+            public uint SourceHash;
+            public uint Flags;
+            public int ActiveBoidCount;
+            public int ConsumedBoidCount;
+            public int PendingKillJob;
+            public int LodTier;
+            public float3 FieldCenterWS;
+            public float3 EventPositionWS;
+            public uint AnomalyHash;
+            public float SimulationTime;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
@@ -152,6 +182,49 @@ namespace Hecton8.World
             Consumed = 1u << 3,
             AggressiveMutation = 1u << 4,
             VisualMutationResolved = 1u << 5
+        }
+
+        [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = false)]
+        private struct PredatorBoidConsumptionJob : IJob
+        {
+            [ReadOnly] public NativeArray<BoidData> Boids;
+            public NativeQueue<BoidKillSignal>.ParallelWriter KillSignals;
+            public float3 PredatorPositionWS;
+            public float3 BiteCenterWS;
+            public float BiteRangeSq;
+            public float FearRadiusMeters;
+            public float FearAmount;
+            public uint PredatorId;
+            public int ActiveBoidCount;
+            public int MaxKills;
+
+            public void Execute()
+            {
+                int safeCount = math.clamp(ActiveBoidCount, 0, Boids.Length);
+                int emitted = 0;
+                for (int i = 0; i < safeCount && emitted < MaxKills; i++)
+                {
+                    BoidData boid = Boids[i];
+                    if ((boid.StateFlags & ConsumedBoidStateFlag) != 0u)
+                        continue;
+
+                    float3 boidPosition = new float3(boid.Position.x, boid.Position.y, boid.Position.z);
+                    float3 delta = boidPosition - BiteCenterWS;
+                    if (math.lengthsq(delta) > BiteRangeSq)
+                        continue;
+
+                    KillSignals.Enqueue(new BoidKillSignal
+                    {
+                        KillPositionWS = boidPosition,
+                        PredatorPositionWS = PredatorPositionWS,
+                        BoidId = i,
+                        PredatorId = PredatorId,
+                        FearRadiusMeters = FearRadiusMeters,
+                        FearAmount = FearAmount
+                    });
+                    emitted++;
+                }
+            }
         }
 
         [Flags]
@@ -500,6 +573,38 @@ namespace Hecton8.World
         private const int SpatialGridMaxBoidsPerCell = 32;
         private const float ThreatVoxelCellEpsilon = 0.001f;
         private const uint DefaultBoidStateFlags = (uint)(BoidStateFlags.Active | BoidStateFlags.Hunting);
+        private const uint ConsumedBoidStateFlag = (uint)BoidStateFlags.Consumed;
+        private const uint BoidVisualMutationMask = (uint)(BoidStateFlags.AggressiveMutation | BoidStateFlags.VisualMutationResolved);
+        private const int PredatorKillSignalDrainLimit = 8;
+        private const float PredatorKillDefaultFearRadiusMeters = 10f;
+        private const float PredatorKillFearDurationSeconds = 0.55f;
+        private const float PredatorKillFearAmount = 100f;
+        private const byte PredatorKillBloodDebrisKind = 2;
+        private const byte PredatorKillDebrisFlags = 1;
+        private const float PredatorKillFluidDecalRadiusScale = 0.28f;
+        private const float PredatorKillSignalDrainLimitInv = 1f / PredatorKillSignalDrainLimit;
+        private const float FeedingFrenzyWindowSeconds = 1f;
+        private const int FeedingFrenzyKillThreshold = 5;
+        private const byte FeedingFrenzyAcousticChannel = 5;
+        private const byte FeedingFrenzyAcousticFlags = 1;
+        private const float FeedingFrenzyAcousticRadiusMeters = 36f;
+        private const int WhaleFallScavengerVisualCount = 96;
+        private const float WhaleFallScavengerRadiusMeters = 14f;
+        private const float WhaleFallScavengerGroundOffsetMeters = 0.08f;
+        private const float WhaleFallScavengerTangentSpeedMetersPerSecond = 0.65f;
+        private const float WhaleFallScavengerRadiusHashInv = 1f / 1023f;
+        private const float WhaleFallScavengerAngleHashInv = 1f / 255f;
+        private const int FoodChainTelemetryCapacity = 300;
+        private const int FoodChainTelemetryEntrySizeBytes = 64;
+        private const uint FoodChainTelemetryMagicLow = 0x48454354u;
+        private const uint FoodChainTelemetryMagicHigh = 0x4643484Eu;
+        private const uint FoodChainTelemetryFlagTick = 1u << 0;
+        private const uint FoodChainTelemetryFlagKillJobScheduled = 1u << 1;
+        private const uint FoodChainTelemetryFlagKillJobCompleted = 1u << 2;
+        private const uint FoodChainTelemetryFlagKillDrained = 1u << 3;
+        private const uint FoodChainTelemetryFlagWhaleFall = 1u << 4;
+        private const uint FoodChainTelemetryFlagNonFinite = 1u << 31;
+        private const uint FoodChainTelemetryAnomalyNonFinite = 0xEFC00001u;
         private const int LatchStatsLatchedCountIndex = 0;
         private const int LatchStatsLatchedSumXIndex = 1;
         private const int LatchStatsLatchedSumYIndex = 2;
@@ -673,6 +778,11 @@ namespace Hecton8.World
         private static readonly int _SpatialGridCountsId = Shader.PropertyToID("_SpatialGridCounts");
         private static readonly int _SpatialGridCellsId = Shader.PropertyToID("_SpatialGridCells");
         private static readonly int _SimulationFrameBufferId = Shader.PropertyToID("_SargassumSimulationFrame");
+        private static readonly int _AbyssalFlowFieldTextureId = Shader.PropertyToID("_AbyssalFlowFieldTexture");
+        private static readonly int _AbyssalFlowCenterId = Shader.PropertyToID("_AbyssalFlowCenter");
+        private static readonly int _AbyssalFlowSpacingId = Shader.PropertyToID("_AbyssalFlowSpacing");
+        private static readonly int _AbyssalFlowActiveId = Shader.PropertyToID("_AbyssalFlowActive");
+        private static readonly int _AbyssalFlowWeightId = Shader.PropertyToID("_AbyssalFlowWeight");
 
         [Header("â”€â”€ Runtime Wiring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField]
@@ -1320,9 +1430,14 @@ namespace Hecton8.World
         [Tooltip("Current active-sonar scatter strength uploaded to the compute shader.")]
         private float _debugSonarScatter01;
 
+        [SerializeField]
+        [Tooltip("CPU-side consumed GPU boid count emitted by predator bite jobs this session.")]
+        private int _debugConsumedBoidCount;
+
         private MaterialPropertyBlock _materialPropertyBlock;
 
         private BoidData[] _spawnData;
+        private BoidData[] _singleBoidUpload;
         private GrazingAnchorData[] _grazingAnchors;
         private MassiveThreatData[] _massiveThreats;
         private FormationBeaconData[] _formationBeacons;
@@ -1332,6 +1447,9 @@ namespace Hecton8.World
         private BeaconNetworkSystem.BeaconSnapshot[] _formationBeaconSnapshots;
         private Collider[] _formationObstacleColliders;
         private NativeArray<StaticObstacleData> _staticObstacleCache;
+        private NativeArray<BoidData> _boidStateNative;
+        private NativeQueue<BoidKillSignal> _killSignals;
+        private NativeArray<FoodChainTelemetryEntry> _foodChainTelemetryRing;
         private NativeArray<float3> _leviathanPathScratchNative;
         private NativeArray<LeviathanNodeData> _leviathanNodeFrontNative;
         private NativeArray<LeviathanNodeData> _leviathanNodeBackNative;
@@ -1390,6 +1508,8 @@ namespace Hecton8.World
         private bool _computeDispatchDisabled;
         private Texture _boundComputeDensityTexture;
         private Texture _boundComputeCutMaskTexture;
+        private Texture _boundAbyssalFlowTexture;
+        private Texture3D _fallbackAbyssalFlowTexture;
         private Vector3 _fieldCenter;
         private Vector3 _fieldExtents;
         private Vector3 _previousDriftOffset;
@@ -1400,6 +1520,13 @@ namespace Hecton8.World
         private float _simulationTime;
         private float _simulationPhaseOffset;
         private float _cachedVatSwayAmplitudeScale = 1f;
+        private float _feedingFrenzyWindowStartTime = -1f;
+        private int _feedingFrenzyKillCount;
+        private JobHandle _predatorConsumptionHandle;
+        private bool _predatorConsumptionJobPending;
+        private bool _foodChainTelemetryDumped;
+        private float _pendingPredatorConsumptionTimeSeconds;
+        private int _foodChainTelemetryCursor;
         private Vector3 _hitFlashOriginWS;
         private float _hitFlashStartTime = -1000f;
         private float _hitFlashRuntimeRadius;
@@ -1671,6 +1798,8 @@ namespace Hecton8.World
         /// <param name="dt">Frame delta supplied by GameTickManager.</param>
         public void Tick(float dt)
         {
+            RecordFoodChainTelemetry(FoodChainTelemetryFlagTick, _fieldCenter, 0u, 0u);
+
             if (_statisticalPopulationActive)
             {
                 _debugVisible = false;
@@ -1830,6 +1959,7 @@ namespace Hecton8.World
         {
             CompletePendingLeviathanNodeBuild(forceComplete: false);
             CompletePendingFoveatedSimulationDecision(forceComplete: false);
+            CompletePendingPredatorConsumption(forceComplete: false);
         }
 
         /// <summary>
@@ -2066,6 +2196,12 @@ namespace Hecton8.World
                 _spawnData = new BoidData[boidCount];
             }
 
+            if (_singleBoidUpload == null || _singleBoidUpload.Length != 1)
+            {
+                // COLD ALLOC: BoidData[1] - single-index consumed boid GPU patch upload cache - owner: SargassumMicroFaunaBoids
+                _singleBoidUpload = new BoidData[1];
+            }
+
             if (_grazingAnchors == null || _grazingAnchors.Length != grazingAnchorCount)
             {
                 // COLD ALLOC: GrazingAnchorData[grazingAnchorCount] - CPU staging array for deterministic grazing anchors - owner: SargassumMicroFaunaBoids
@@ -2131,9 +2267,11 @@ namespace Hecton8.World
             buffersChanged |= EnsureRawBuffer(ref _spatialGridCountBuffer, ref _spatialGridCountBufferRawTarget, SpatialGridMaxCellCount, SpatialGridCountStride);
             buffersChanged |= EnsureBuffer(ref _spatialGridCellBuffer, SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell, SpatialGridCellEntryStride);
             buffersChanged |= EnsureBuffer(ref _simulationFrameBuffer, 1, SimulationFrameConstantsStride);
+            EnsureFallbackAbyssalFlowTexture();
             if (buffersChanged)
                 _computeStaticBuffersBound = false;
             EnsureNativeArrayCapacity(ref _staticObstacleCache, math.max(formationObstacleCapacity * 8, formationObstacleCapacity), nameof(_staticObstacleCache));
+            EnsureNativeArrayCapacity(ref _boidStateNative, boidCount, nameof(_boidStateNative));
             EnsureNativeArrayCapacity(ref _leviathanNodeFrontNative, leviathanNodeCapacity, nameof(_leviathanNodeFrontNative));
             EnsureNativeArrayCapacity(ref _leviathanNodeBackNative, leviathanNodeCapacity, nameof(_leviathanNodeBackNative));
             EnsureNativeArrayCapacity(ref _leviathanNodeCountNative, 1, nameof(_leviathanNodeCountNative));
@@ -2141,8 +2279,20 @@ namespace Hecton8.World
             EnsureNativeArrayCapacity(ref _foveatedSimulationFrontNative, 1, nameof(_foveatedSimulationFrontNative));
             EnsureNativeArrayCapacity(ref _foveatedSimulationBackNative, 1, nameof(_foveatedSimulationBackNative));
             EnsureNativeArrayCapacity(ref _simulationFrameNative, 1, nameof(_simulationFrameNative));
+            EnsureNativeArrayCapacity(ref _foodChainTelemetryRing, FoodChainTelemetryCapacity, nameof(_foodChainTelemetryRing));
             _inactiveStatisticalSwarmRing.EnsureCapacity(InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmRing));
             _inactiveStatisticalSwarmCenterRing.EnsureCapacity(InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmCenterRing));
+            if (!_killSignals.IsCreated)
+            {
+                _killSignals = new NativeQueue<BoidKillSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BoidKillSignal>[8] - predator bite job lane drained in late-frame swap - owner: SargassumMicroFaunaBoids
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _killSignals,
+                    PredatorKillSignalDrainLimit,
+                    NativeMemoryOwner,
+                    nameof(_killSignals),
+                    NativeAllocationLifetime.Scene);
+                PrewarmQueue(ref _killSignals, PredatorKillSignalDrainLimit);
+            }
 
             if (!ValidateGpuStructLayouts())
                 return;
@@ -2204,6 +2354,21 @@ namespace Hecton8.World
 
             GraphicsBufferUploadUtility.UploadArray(_boidsBufferA, _spawnData, safeUploadCount);
             GraphicsBufferUploadUtility.UploadArray(_boidsBufferB, _spawnData, safeUploadCount);
+            SyncBoidStateNativeFromSpawnData(safeUploadCount);
+        }
+
+        private void SyncBoidStateNativeFromSpawnData(int uploadCount)
+        {
+            if (!_boidStateNative.IsCreated || _spawnData == null)
+                return;
+
+            int safeUploadCount = math.clamp(uploadCount, 0, math.min(_spawnData.Length, _boidStateNative.Length));
+            for (int i = 0; i < safeUploadCount; i++)
+                _boidStateNative[i] = _spawnData[i];
+
+            _debugConsumedBoidCount = 0;
+            _feedingFrenzyWindowStartTime = -1f;
+            _feedingFrenzyKillCount = 0;
         }
 
         private int ResolveTargetGrazingAnchorCount(int boidPopulation)
@@ -3664,6 +3829,23 @@ namespace Hecton8.World
             boundTexture = texture;
         }
 
+        private void EnsureFallbackAbyssalFlowTexture()
+        {
+            if (_fallbackAbyssalFlowTexture != null)
+                return;
+
+            _fallbackAbyssalFlowTexture = new Texture3D(1, 1, 1, TextureFormat.RGBAHalf, false)
+            {
+                name = "__HectonSargassumEmptyAbyssalFlow",
+                hideFlags = HideFlags.HideAndDontSave,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Point,
+                anisoLevel = 0
+            }; // COLD ALLOC: Texture3D[1] - zero fallback abyssal-flow volume for swarm compute binding - owner: SargassumMicroFaunaBoids
+            _fallbackAbyssalFlowTexture.SetPixel(0, 0, 0, Color.clear);
+            _fallbackAbyssalFlowTexture.Apply(false, true);
+        }
+
         private bool BindSimulationUniforms(
             float simulationDt,
             Vector3 driftOffset,
@@ -3717,6 +3899,23 @@ namespace Hecton8.World
                 fluidRuntime.TrySampleModAbyssalFlow(_fieldCenter, out float3 resolvedAbyssalFlow))
             {
                 abyssalFlowWeatherCurrent = new Vector3(resolvedAbyssalFlow.x, resolvedAbyssalFlow.y, resolvedAbyssalFlow.z);
+            }
+
+            Texture abyssalFlowTexture = _fallbackAbyssalFlowTexture;
+            Vector4 abyssalFlowCenter = Vector4.zero;
+            Vector4 abyssalFlowSpacing = Vector4.zero;
+            float abyssalFlowActive = 0f;
+            if (fluidRuntime != null &&
+                fluidRuntime.TryGetGpuAbyssalFlowFieldTexture(
+                    out Texture publishedAbyssalFlowTexture,
+                    out _,
+                    out Vector4 publishedAbyssalFlowCenter,
+                    out Vector4 publishedAbyssalFlowSpacing))
+            {
+                abyssalFlowTexture = publishedAbyssalFlowTexture;
+                abyssalFlowCenter = publishedAbyssalFlowCenter;
+                abyssalFlowSpacing = publishedAbyssalFlowSpacing;
+                abyssalFlowActive = 1f;
             }
 
             float transportCapsuleRadius = 0f;
@@ -3934,6 +4133,11 @@ namespace Hecton8.World
 
                 SetMainKernelTextureIfChanged(_DensityTexId, densityTexture, ref _boundComputeDensityTexture);
                 SetMainKernelTextureIfChanged(_CutMaskTexId, activeCutMaskTexture, ref _boundComputeCutMaskTexture);
+                SetMainKernelTextureIfChanged(_AbyssalFlowFieldTextureId, abyssalFlowTexture, ref _boundAbyssalFlowTexture);
+                boidCompute.SetVector(_AbyssalFlowCenterId, abyssalFlowCenter);
+                boidCompute.SetVector(_AbyssalFlowSpacingId, abyssalFlowSpacing);
+                boidCompute.SetFloat(_AbyssalFlowActiveId, abyssalFlowActive);
+                boidCompute.SetFloat(_AbyssalFlowWeightId, 1f);
 
                 boidCompute.SetBuffer(_buildSpatialGridKernelIndex, _BoidsBufferReadId, readBuffer);
 
@@ -4263,6 +4467,398 @@ namespace Hecton8.World
 
             RecalculateMassiveThreatCount();
             UploadMassiveThreats();
+        }
+
+        internal int RegisterPredatorConsumptionBurst(
+            Vector3 predatorPositionWS,
+            Vector3 biteCenterWS,
+            float biteRangeMeters,
+            uint predatorId,
+            float currentTimeSeconds)
+        {
+            if (!_boidStateNative.IsCreated ||
+                !_killSignals.IsCreated ||
+                _spawnData == null ||
+                _singleBoidUpload == null ||
+                _activeBoidCount <= 0)
+            {
+                return 0;
+            }
+
+            if (_predatorConsumptionJobPending)
+            {
+                if (DispatcherJobSwap.TryFinalizeCompleted(ref _predatorConsumptionHandle))
+                {
+                    _predatorConsumptionJobPending = false;
+                    int finalizedDrainCount = DrainPredatorKillSignals(_pendingPredatorConsumptionTimeSeconds);
+                    RecordFoodChainTelemetry(
+                        FoodChainTelemetryFlagKillJobCompleted | (finalizedDrainCount > 0 ? FoodChainTelemetryFlagKillDrained : 0u),
+                        biteCenterWS,
+                        predatorId,
+                        0u);
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+
+            float safeBiteRange = math.max(0.05f, biteRangeMeters);
+            while (_killSignals.TryDequeue(out _))
+            {
+            }
+
+            var killJob = new PredatorBoidConsumptionJob
+            {
+                Boids = _boidStateNative,
+                KillSignals = _killSignals.AsParallelWriter(),
+                PredatorPositionWS = new float3(predatorPositionWS.x, predatorPositionWS.y, predatorPositionWS.z),
+                BiteCenterWS = new float3(biteCenterWS.x, biteCenterWS.y, biteCenterWS.z),
+                BiteRangeSq = safeBiteRange * safeBiteRange,
+                FearRadiusMeters = PredatorKillDefaultFearRadiusMeters,
+                FearAmount = PredatorKillFearAmount,
+                PredatorId = predatorId,
+                ActiveBoidCount = _activeBoidCount,
+                MaxKills = PredatorKillSignalDrainLimit
+            };
+
+            _predatorConsumptionHandle = killJob.Schedule();
+            _predatorConsumptionJobPending = true;
+            _pendingPredatorConsumptionTimeSeconds = currentTimeSeconds;
+            JobHandle.ScheduleBatchedJobs();
+            RecordFoodChainTelemetry(
+                FoodChainTelemetryFlagKillJobScheduled,
+                biteCenterWS,
+                predatorId,
+                0u);
+            return 0;
+        }
+
+        private int CompletePendingPredatorConsumption(bool forceComplete)
+        {
+            if (!_predatorConsumptionJobPending)
+                return 0;
+
+            if (!DispatcherJobSwap.TryComplete(ref _predatorConsumptionHandle, forceComplete))
+                return 0;
+
+            _predatorConsumptionJobPending = false;
+            int drainedCount = DrainPredatorKillSignals(_pendingPredatorConsumptionTimeSeconds);
+            RecordFoodChainTelemetry(
+                FoodChainTelemetryFlagKillJobCompleted | (drainedCount > 0 ? FoodChainTelemetryFlagKillDrained : 0u),
+                _fieldCenter,
+                unchecked((uint)math.max(0, drainedCount)),
+                0u);
+            return drainedCount;
+        }
+
+        private int DrainPredatorKillSignals(float currentTimeSeconds)
+        {
+            int drainedCount = 0;
+            Vector3 frenzyCentroid = Vector3.zero;
+            while (_killSignals.TryDequeue(out BoidKillSignal killSignal))
+            {
+                int boidId = killSignal.BoidId;
+                if (boidId < 0 ||
+                    boidId >= _activeBoidCount ||
+                    boidId >= _boidStateNative.Length ||
+                    boidId >= _spawnData.Length)
+                {
+                    continue;
+                }
+
+                BoidData boid = _boidStateNative[boidId];
+                if ((boid.StateFlags & ConsumedBoidStateFlag) != 0u)
+                    continue;
+
+                Vector3 killPositionWS = new Vector3(killSignal.KillPositionWS.x, killSignal.KillPositionWS.y, killSignal.KillPositionWS.z);
+                if (!float.IsFinite(killPositionWS.x) ||
+                    !float.IsFinite(killPositionWS.y) ||
+                    !float.IsFinite(killPositionWS.z))
+                {
+                    continue;
+                }
+
+                boid.Panic = 0f;
+                boid.Velocity = Vector3.zero;
+                boid.StateFlags = (boid.StateFlags & BoidVisualMutationMask) | ConsumedBoidStateFlag;
+                _boidStateNative[boidId] = boid;
+                _spawnData[boidId] = boid;
+                _singleBoidUpload[0] = boid;
+                UploadSingleBoidToLiveBuffers(boidId);
+
+                PublishPredatorKillDebris(in killSignal, killPositionWS, boidId);
+                RecordFoodChainTelemetry(
+                    FoodChainTelemetryFlagKillDrained,
+                    killPositionWS,
+                    killSignal.PredatorId,
+                    0u);
+                RegisterPredatorFearBurst(
+                    killPositionWS,
+                    killPositionWS - new Vector3(killSignal.PredatorPositionWS.x, killSignal.PredatorPositionWS.y, killSignal.PredatorPositionWS.z),
+                    math.max(3f, killSignal.FearRadiusMeters),
+                    PredatorKillFearDurationSeconds,
+                    math.saturate(killSignal.FearAmount * 0.01f));
+
+                frenzyCentroid += killPositionWS;
+                drainedCount++;
+                _debugConsumedBoidCount++;
+            }
+
+            if (drainedCount > 0)
+                TryPublishFeedingFrenzyAcousticPing(frenzyCentroid * math.rcp((float)drainedCount), currentTimeSeconds, drainedCount);
+
+            return drainedCount;
+        }
+
+        private static void PublishPredatorKillDebris(in BoidKillSignal killSignal, Vector3 killPositionWS, int boidId)
+        {
+            uint sourceId = killSignal.PredatorId != 0u
+                ? killSignal.PredatorId
+                : (uint)math.hash(new int2(boidId, (int)Time.frameCount));
+            DebrisSpawnSignal debrisSignal = new DebrisSpawnSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(killPositionWS),
+                SpeciesHash = (uint)math.hash(new int2(boidId, (int)(sourceId & 0x7FFFFFFFu))),
+                SourceEntityId = sourceId,
+                Intensity01 = 1f,
+                DebrisKind = PredatorKillBloodDebrisKind,
+                Flags = PredatorKillDebrisFlags
+            };
+            GlobalSignals.Publish(in debrisSignal);
+
+            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            if (fluidDecals != null)
+                fluidDecals.RegisterRuptureFluid(killPositionWS, PredatorKillFluidDecalRadiusScale);
+        }
+
+        private void TryPublishFeedingFrenzyAcousticPing(Vector3 centroidWS, float currentTimeSeconds, int killCount)
+        {
+            float safeTime = math.max(0f, currentTimeSeconds);
+            if (_feedingFrenzyWindowStartTime < 0f ||
+                safeTime - _feedingFrenzyWindowStartTime > FeedingFrenzyWindowSeconds)
+            {
+                _feedingFrenzyWindowStartTime = safeTime;
+                _feedingFrenzyKillCount = 0;
+            }
+
+            _feedingFrenzyKillCount += math.max(0, killCount);
+            if (_feedingFrenzyKillCount <= FeedingFrenzyKillThreshold)
+                return;
+
+            AcousticPingSignal acousticPingSignal = new AcousticPingSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(centroidWS),
+                RadiusMeters = FeedingFrenzyAcousticRadiusMeters,
+                Intensity01 = math.saturate(_feedingFrenzyKillCount * PredatorKillSignalDrainLimitInv),
+                SourceId = math.hash(new float3(centroidWS.x, centroidWS.y, centroidWS.z)),
+                Channel = FeedingFrenzyAcousticChannel,
+                Flags = FeedingFrenzyAcousticFlags
+            };
+            GlobalSignals.Publish(in acousticPingSignal);
+            _feedingFrenzyKillCount = 0;
+            _feedingFrenzyWindowStartTime = safeTime;
+        }
+
+        internal int RegisterWhaleFallScavengerBurst(Vector3 centerWS, uint sourceId, float currentTimeSeconds)
+        {
+            if (!_boidStateNative.IsCreated ||
+                _spawnData == null ||
+                _singleBoidUpload == null ||
+                _activeBoidCount <= 0 ||
+                _lastSimulationLodTier != SimulationLodTier.Full)
+            {
+                RegisterPredatorFearBurst(centerWS, Vector3.forward, WhaleFallScavengerRadiusMeters, 4f, 0.35f);
+                RecordFoodChainTelemetry(FoodChainTelemetryFlagWhaleFall, centerWS, sourceId, 0u);
+                return 0;
+            }
+
+            int safeActiveCount = math.min(math.min(_activeBoidCount, _boidStateNative.Length), _spawnData.Length);
+            int visualCount = math.clamp(WhaleFallScavengerVisualCount, 0, safeActiveCount);
+            if (visualCount <= 0)
+                return 0;
+
+            uint safeSourceId = sourceId != 0u ? sourceId : math.hash(new float3(centerWS.x, centerWS.y, centerWS.z));
+            int startIndex = (int)(safeSourceId % (uint)safeActiveCount);
+            for (int i = 0; i < visualCount; i++)
+            {
+                int boidId = (startIndex + i) % safeActiveCount;
+                uint ringHash = math.hash(new int2((int)(safeSourceId & 0x7FFFFFFFu), i));
+                float radius01 = ((ringHash >> 8) & 1023u) * WhaleFallScavengerRadiusHashInv;
+                float angle = (i + ((ringHash & 255u) * WhaleFallScavengerAngleHashInv)) * StatisticalFibonacciGoldenAngle;
+                float radius = math.lerp(2f, WhaleFallScavengerRadiusMeters, radius01 * radius01);
+                Vector3 radial = new Vector3(CheapCosSigned(angle), 0f, CheapSinSigned(angle));
+                Vector3 tangent = new Vector3(-radial.z, 0f, radial.x);
+                Vector3 positionWS = centerWS + radial * radius;
+                positionWS = ResolveWhaleFallGroundHuggingPosition(positionWS);
+
+                BoidData boid = _boidStateNative[boidId];
+                boid.Position = positionWS;
+                boid.Velocity = tangent * WhaleFallScavengerTangentSpeedMetersPerSecond;
+                boid.Panic = 0f;
+                boid.StateFlags = (boid.StateFlags & BoidVisualMutationMask) | DefaultBoidStateFlags;
+                _boidStateNative[boidId] = boid;
+                _spawnData[boidId] = boid;
+                _singleBoidUpload[0] = boid;
+                UploadSingleBoidToLiveBuffers(boidId);
+            }
+
+            _fieldCenter = centerWS;
+            _fieldExtents = new Vector3(WhaleFallScavengerRadiusMeters * 1.35f, 2f, WhaleFallScavengerRadiusMeters * 1.35f);
+            _renderBounds = new Bounds(_fieldCenter, _fieldExtents * 2f);
+            _debugRenderBounds = _renderBounds;
+            RegisterPredatorFearBurst(centerWS, Vector3.forward, WhaleFallScavengerRadiusMeters, 2f, 0.2f);
+            RecordFoodChainTelemetry(FoodChainTelemetryFlagWhaleFall, centerWS, safeSourceId, 0u);
+            return visualCount;
+        }
+
+        private Vector3 ResolveWhaleFallGroundHuggingPosition(Vector3 positionWS)
+        {
+            HectonMapMagicVegetationBridge vegetationBridge = _mapMagicVegetationBridge != null
+                ? _mapMagicVegetationBridge
+                : HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge != null &&
+                vegetationBridge.TryGetCachedTerrainHeight(positionWS.x, positionWS.z, out float terrainHeight))
+            {
+                positionWS.y = terrainHeight + WhaleFallScavengerGroundOffsetMeters;
+                _mapMagicVegetationBridge = vegetationBridge;
+                return positionWS;
+            }
+
+            positionWS.y += WhaleFallScavengerGroundOffsetMeters;
+            return positionWS;
+        }
+
+        private void UploadSingleBoidToLiveBuffers(int boidId)
+        {
+            if (_singleBoidUpload == null || boidId < 0)
+                return;
+
+            UploadSingleBoidToBuffer(_boidsBufferA, _singleBoidUpload, boidId);
+            UploadSingleBoidToBuffer(_boidsBufferB, _singleBoidUpload, boidId);
+        }
+
+        private static void UploadSingleBoidToBuffer(GraphicsBuffer buffer, BoidData[] source, int boidId)
+        {
+            if (buffer == null ||
+                source == null ||
+                source.Length <= 0 ||
+                boidId < 0 ||
+                boidId >= buffer.count)
+            {
+                return;
+            }
+
+            NativeArray<BoidData> mapped = buffer.LockBufferForWrite<BoidData>(boidId, 1);
+            mapped[0] = source[0];
+            buffer.UnlockBufferAfterWrite<BoidData>(1);
+        }
+
+        private void RecordFoodChainTelemetry(uint flags, Vector3 eventPositionWS, uint sourceHash, uint anomalyHash)
+        {
+            if (!_foodChainTelemetryRing.IsCreated)
+                return;
+
+            Vector3 safeFieldCenter = _fieldCenter;
+            Vector3 safeEventPosition = eventPositionWS;
+            if (!IsFiniteVector3(safeFieldCenter))
+            {
+                safeFieldCenter = Vector3.zero;
+                anomalyHash = FoodChainTelemetryAnomalyNonFinite;
+                flags |= FoodChainTelemetryFlagNonFinite;
+            }
+
+            if (!IsFiniteVector3(safeEventPosition))
+            {
+                safeEventPosition = safeFieldCenter;
+                anomalyHash = FoodChainTelemetryAnomalyNonFinite;
+                flags |= FoodChainTelemetryFlagNonFinite;
+            }
+
+            int writeIndex = _foodChainTelemetryCursor;
+            int nextCursor = writeIndex + 1;
+            if (nextCursor >= FoodChainTelemetryCapacity)
+                nextCursor = 0;
+
+            _foodChainTelemetryRing[writeIndex] = new FoodChainTelemetryEntry
+            {
+                FrameIndex = unchecked((uint)Time.frameCount),
+                StateHash = math.hash(new uint4(
+                    unchecked((uint)math.max(0, _activeBoidCount)),
+                    unchecked((uint)math.max(0, _debugConsumedBoidCount)),
+                    unchecked((uint)_lastSimulationLodTier),
+                    flags)),
+                SourceHash = sourceHash,
+                Flags = flags,
+                ActiveBoidCount = _activeBoidCount,
+                ConsumedBoidCount = _debugConsumedBoidCount,
+                PendingKillJob = _predatorConsumptionJobPending ? 1 : 0,
+                LodTier = (int)_lastSimulationLodTier,
+                FieldCenterWS = new float3(safeFieldCenter.x, safeFieldCenter.y, safeFieldCenter.z),
+                EventPositionWS = new float3(safeEventPosition.x, safeEventPosition.y, safeEventPosition.z),
+                AnomalyHash = anomalyHash,
+                SimulationTime = _simulationTime
+            };
+            _foodChainTelemetryCursor = nextCursor;
+
+            if (anomalyHash != 0u)
+                TryDumpFoodChainTelemetry(anomalyHash);
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private void TryDumpFoodChainTelemetry(uint anomalyHash)
+        {
+            if (_foodChainTelemetryDumped || !_foodChainTelemetryRing.IsCreated)
+                return;
+
+            _foodChainTelemetryDumped = true;
+            string dumpPath = Path.Combine(
+                Application.dataPath,
+                "..",
+                "Docs",
+                "AgentLogs",
+                "Dump_ECOSYSTEM_FOOD_CHAIN.bin");
+            string directory = Path.GetDirectoryName(dumpPath);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(FoodChainTelemetryMagicLow);
+                writer.Write(FoodChainTelemetryMagicHigh);
+                writer.Write((uint)FoodChainTelemetryCapacity);
+                writer.Write((uint)FoodChainTelemetryEntrySizeBytes);
+                writer.Write((uint)_foodChainTelemetryCursor);
+                writer.Write(anomalyHash);
+
+                for (int i = 0; i < FoodChainTelemetryCapacity; i++)
+                    WriteFoodChainTelemetryEntry(writer, _foodChainTelemetryRing[i]);
+            }
+        }
+
+        private static void WriteFoodChainTelemetryEntry(BinaryWriter writer, in FoodChainTelemetryEntry entry)
+        {
+            writer.Write(entry.FrameIndex);
+            writer.Write(entry.StateHash);
+            writer.Write(entry.SourceHash);
+            writer.Write(entry.Flags);
+            writer.Write(entry.ActiveBoidCount);
+            writer.Write(entry.ConsumedBoidCount);
+            writer.Write(entry.PendingKillJob);
+            writer.Write(entry.LodTier);
+            writer.Write(entry.FieldCenterWS.x);
+            writer.Write(entry.FieldCenterWS.y);
+            writer.Write(entry.FieldCenterWS.z);
+            writer.Write(entry.EventPositionWS.x);
+            writer.Write(entry.EventPositionWS.y);
+            writer.Write(entry.EventPositionWS.z);
+            writer.Write(entry.AnomalyHash);
+            writer.Write(entry.SimulationTime);
         }
 
         /// <summary>
@@ -5224,12 +5820,19 @@ namespace Hecton8.World
             _renderPropertiesBoidBuffer = null;
             _renderPropertiesVatPositionTexture = null;
             _renderPropertiesVatNormalTexture = null;
+            if (_fallbackAbyssalFlowTexture != null)
+            {
+                Destroy(_fallbackAbyssalFlowTexture);
+                _fallbackAbyssalFlowTexture = null;
+                _boundAbyssalFlowTexture = null;
+            }
             _renderPropertiesDirty = true;
             _hitFlashPropertiesDirty = true;
         }
 
         private void CompletePendingReadbackAndReleaseBuffers()
         {
+            CompletePendingPredatorConsumption(forceComplete: true);
             JobHandle disposeDependency = CancelPendingLeviathanNodeBuildForDispose();
             if (_parasiteLatchReadbackPending)
             {
@@ -5242,6 +5845,7 @@ namespace Hecton8.World
             ResetComputeKernelBindings();
             _boundBoidCompute = null;
             DisposeNativeArrayDeferred(ref _staticObstacleCache, disposeDependency);
+            DisposeNativeArrayDeferred(ref _boidStateNative, disposeDependency);
             DisposeNativeArrayDeferred(ref _leviathanPathScratchNative, disposeDependency);
             DisposeNativeArrayDeferred(ref _leviathanNodeFrontNative, disposeDependency);
             DisposeNativeArrayDeferred(ref _leviathanNodeBackNative, disposeDependency);
@@ -5252,8 +5856,23 @@ namespace Hecton8.World
             ResetThreatGridSnapshot();
             ResetThreatVoxelSnapshot();
             DisposeNativeArrayDeferred(ref _simulationFrameNative, disposeDependency);
+            DisposeNativeArrayDeferred(ref _foodChainTelemetryRing, disposeDependency);
             _inactiveStatisticalSwarmRing.Dispose(disposeDependency);
             _inactiveStatisticalSwarmCenterRing.Dispose(disposeDependency);
+            if (_killSignals.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(_killSignals));
+                _killSignals.Dispose();
+                _killSignals = default;
+            }
+
+            _singleBoidUpload = null;
+            _feedingFrenzyWindowStartTime = -1f;
+            _feedingFrenzyKillCount = 0;
+            _foodChainTelemetryCursor = 0;
+            _foodChainTelemetryDumped = false;
+            _pendingPredatorConsumptionTimeSeconds = 0f;
+            _debugConsumedBoidCount = 0;
             JobHandle.ScheduleBatchedJobs();
         }
 
@@ -5572,6 +6191,20 @@ namespace Hecton8.World
             array = default;
         }
 
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
+        }
+
         private bool ValidateGpuStructLayouts()
         {
             if (UnsafeUtility.SizeOf<BoidData>() != BoidDataStrideBytes ||
@@ -5705,6 +6338,7 @@ namespace Hecton8.World
             _computeStaticBuffersBound = false;
             _boundComputeDensityTexture = null;
             _boundComputeCutMaskTexture = null;
+            _boundAbyssalFlowTexture = null;
         }
 
         private void DisableComputeDispatch(int reasonCode)

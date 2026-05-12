@@ -11,14 +11,16 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
         _EdgeFade ("Panel Edge Fade", Range(0, 0.5)) = 0.06
         _FrameAlpha ("Physical Frame Alpha", Range(0, 0.5)) = 0.12
         _PanelPowerLevel ("Panel Power", Range(0, 1)) = 1
+        _StencilRef ("Visor Stencil Ref", Float) = 1
+        _DitherCoverageBias ("Dither Coverage Bias", Range(-0.25, 0.25)) = 0
     }
 
     SubShader
     {
         Tags
         {
-            "RenderType" = "Transparent"
-            "Queue" = "Transparent+80"
+            "RenderType" = "TransparentCutout"
+            "Queue" = "AlphaTest+80"
             "RenderPipeline" = "UniversalPipeline"
             "IgnoreProjector" = "True"
         }
@@ -26,12 +28,21 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
         Cull Off
         ZWrite Off
         ZTest Always
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend Off
+        AlphaToMask On
 
         Pass
         {
             Name "HUDDiegeticProjection"
             Tags { "LightMode" = "UniversalForward" }
+
+            Stencil
+            {
+                Ref [_StencilRef]
+                Comp Equal
+                Pass Keep
+                ReadMask 255
+            }
 
             HLSLPROGRAM
             #pragma vertex Vert
@@ -62,6 +73,8 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
                 float _EdgeFade;
                 float _FrameAlpha;
                 float _PanelPowerLevel;
+                float _StencilRef;
+                float _DitherCoverageBias;
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
@@ -111,6 +124,12 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
                 return 5.0 / 16.0;
             }
 
+            void ClipDitheredCoverage(float coverage, float2 positionCS)
+            {
+                float threshold = Bayer4x4(positionCS);
+                clip(saturate(coverage + _DitherCoverageBias) - threshold);
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 float2 centerUv = abs(input.uv - 0.5) * 2.0;
@@ -123,7 +142,8 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
                     float dither = Bayer4x4(floor(input.positionCS.xy));
                     float phosphorBit = step(dither, 0.375);
                     float ditherAlpha = saturate((phosphorBit * 0.58 + frameMask * 0.42) * edgeFade * _Color.a);
-                    return half4(0.02h, 0.92h, 0.24h, (half)ditherAlpha);
+                    ClipDitheredCoverage(ditherAlpha, input.positionCS.xy);
+                    return half4(0.02h, 0.92h, 0.24h, 1.0h);
                 }
 
                 half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
@@ -137,11 +157,12 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
                 color += _Color.rgb * frameMask * _FrameAlpha;
                 alpha = max(alpha, frameMask * _FrameAlpha);
 
-                return half4(color, alpha);
+                ClipDitheredCoverage(alpha, input.positionCS.xy);
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }
     }
 
-    FallBack Off
+    FallBack "Hidden/Hecton8/InternalBlackError"
 }

@@ -1,0 +1,1606 @@
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using Hecton8.Audio;
+using Hecton8.Core;
+using Hecton8.Gameplay;
+using Hecton8.Optimization;
+using Hecton8.Power;
+using Hecton8.World;
+using TMPro;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+namespace Hecton8.UI
+{
+    /// <summary>
+    /// Dispatcher-owned diegetic submarine cockpit bridge: analytical controls, off-screen screens, and GPU sonar radar.
+    /// </summary>
+    [DisallowMultipleComponent]
+    public sealed class VehicleSubOsCockpitRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, ISubmarineOsEventListener, IPowerGridTelemetryListener
+    {
+        private const int MaxRadarPoints = 4096;
+        private const int MidRadarPoints = 2048;
+        private const int LowRadarPoints = 512;
+        private const int HighRadarPointsPerTap = 256;
+        private const int MidRadarPointsPerTap = 128;
+        private const int LowRadarPointsPerTap = 32;
+        private const int MaxButtons = 32;
+        private const int MinUiRenderTextureWidth = 256;
+        private const int MinUiRenderTextureHeight = 128;
+        private const int LowUiRenderTextureMaxWidth = 512;
+        private const int LowUiRenderTextureMaxHeight = 256;
+        private const int MinExternalRenderTextureWidth = 256;
+        private const int MinExternalRenderTextureHeight = 144;
+        private const int TelemetryCapacity = 300;
+        private const int TextBufferCapacity = 96;
+        private const float ButtonTravelSeconds = 0.1f;
+        private const float ButtonTravelSecondsInv = 1f / ButtonTravelSeconds;
+        private const float RadarPowerCutoff = 0.2f;
+        private const float RadarRedispatchPowerEpsilon = 0.01f;
+        private const float RadarRedispatchFlickerEpsilon = 0.01f;
+        private const float DefaultMaxSonarDelaySeconds = 6.75f;
+        private const string ComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_CockpitHoloRadar.compute";
+        private const uint TelemetryContextHash = 0x56534F53u; // VSOS
+        private const uint RadarActiveHash = 0x52414452u; // RADR
+        private const uint InteractionHash = 0x42544E53u; // BTNS
+        private const int InvalidDisplayBucket = int.MinValue;
+        private const int StatusModeInternalBus = 0;
+        private const int StatusModeExternalLive = 1;
+        private const int StatusModeLowStatic = 2;
+        private const int StatusModeLowLocked = 3;
+
+        private static readonly int SonarTapsId = Shader.PropertyToID("_SonarEchoTaps");
+        private static readonly int RadarBlipsId = Shader.PropertyToID("_RadarBlips");
+        private static readonly int InputTapCountId = Shader.PropertyToID("_InputTapCount");
+        private static readonly int OutputPointCountId = Shader.PropertyToID("_OutputPointCount");
+        private static readonly int OutputCapacityId = Shader.PropertyToID("_OutputCapacity");
+        private static readonly int SequenceId = Shader.PropertyToID("_Sequence");
+        private static readonly int RadarRadiusMetersId = Shader.PropertyToID("_RadarRadiusMeters");
+        private static readonly int MaxDelaySecondsId = Shader.PropertyToID("_MaxDelaySeconds");
+        private static readonly int PowerLevelId = Shader.PropertyToID("_PowerLevel");
+        private static readonly int DamageFlickerId = Shader.PropertyToID("_DamageFlicker");
+        private static readonly int HectonRadarBlipsId = Shader.PropertyToID("_HectonRadarBlips");
+        private static readonly int HectonRadarLocalToWorldId = Shader.PropertyToID("_HectonRadarLocalToWorld");
+        private static readonly int HectonRadarProceduralId = Shader.PropertyToID("_HectonRadarProcedural");
+        private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
+        private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int PanelPowerLevelId = Shader.PropertyToID("_PanelPowerLevel");
+        private static readonly int ExternalFeedBlendId = Shader.PropertyToID("_ExternalFeedBlend");
+        private static readonly Vector3[] RadarQuadVertices =
+        {
+            new Vector3(-0.5f, -0.5f, 0f),
+            new Vector3(0.5f, -0.5f, 0f),
+            new Vector3(0.5f, 0.5f, 0f),
+            new Vector3(-0.5f, 0.5f, 0f)
+        }; // COLD ALLOC: Vector3[4] - immutable cockpit radar billboard quad vertices - owner: VehicleSubOsCockpitRuntime
+        private static readonly Vector2[] RadarQuadUvs =
+        {
+            new Vector2(0f, 0f),
+            new Vector2(1f, 0f),
+            new Vector2(1f, 1f),
+            new Vector2(0f, 1f)
+        }; // COLD ALLOC: Vector2[4] - immutable cockpit radar billboard quad UVs - owner: VehicleSubOsCockpitRuntime
+        private static readonly int[] RadarQuadIndices =
+        {
+            0, 1, 2,
+            0, 2, 3
+        }; // COLD ALLOC: int[6] - immutable cockpit radar billboard quad indices - owner: VehicleSubOsCockpitRuntime
+
+        [Header("Radar")]
+        [SerializeField] private Transform radarDomeAnchor;
+        [SerializeField] private ComputeShader radarCompute;
+        [SerializeField] private Material radarBlipMaterial;
+        [SerializeField] private Mesh radarBlipMesh;
+        [SerializeField] private float radarRadiusMeters = 0.42f;
+        [SerializeField] private float radarBoundsSizeMeters = 1.2f;
+        [SerializeField] private int radarLayer;
+
+        [Header("Physical Panel")]
+        [SerializeField] private Transform dashboardPanelPlane;
+        [SerializeField] private Vector2 panelHalfExtents = new Vector2(0.72f, 0.36f);
+        [SerializeField] private int buttonColumns = 4;
+        [SerializeField] private int buttonRows = 2;
+        [SerializeField] private int buttonCount = 8;
+        [SerializeField] private int externalFeedLeverButtonIndex = 7;
+        [SerializeField] private float buttonPressedLocalZ = -0.035f;
+        [SerializeField] private Transform[] buttonTransforms = Array.Empty<Transform>();
+
+        [Header("Screen Render Targets")]
+        [SerializeField] private Camera offscreenUiCamera;
+        [SerializeField] private Camera exteriorFeedCamera;
+        [SerializeField] private Renderer centralScreenRenderer;
+        [SerializeField] private Texture staticExternalNoiseTexture;
+        [SerializeField] private int uiRenderTextureWidth = 1024;
+        [SerializeField] private int uiRenderTextureHeight = 512;
+        [SerializeField] private int externalRenderTextureWidth = 768;
+        [SerializeField] private int externalRenderTextureHeight = 432;
+
+        [Header("Off-screen Text")]
+        [SerializeField] private TMP_Text powerLabel;
+        [SerializeField] private TMP_Text oxygenLabel;
+        [SerializeField] private TMP_Text sonarLabel;
+        [SerializeField] private TMP_Text statusLabel;
+
+        [Header("Power Node")]
+        [SerializeField] private int submarinePowerGridIndex;
+        [SerializeField] private int submarineNodeVoltageIndex;
+
+        private readonly char[] _powerTextBuffer = new char[TextBufferCapacity];
+        private readonly char[] _oxygenTextBuffer = new char[TextBufferCapacity];
+        private readonly char[] _sonarTextBuffer = new char[TextBufferCapacity];
+        private readonly char[] _statusTextBuffer = new char[TextBufferCapacity];
+
+        private NativeArray<byte> _buttonStates;
+        private NativeArray<byte> _buttonTargets;
+        private NativeArray<float> _buttonProgress;
+        private NativeArray<float> _buttonOffsets;
+        private NativeArray<float3> _buttonBaseLocalPositions;
+        private NativeArray<float4x4> _buttonMatrices;
+        private NativeArray<CockpitTelemetryEntry> _telemetryRing;
+
+        private GraphicsBuffer _sonarTapBuffer;
+        private GraphicsBuffer _radarBlipBuffer;
+        private GraphicsBuffer _radarArgsBuffer;
+        private GraphicsBuffer _buttonMatrixBuffer;
+        private Material _radarRuntimeMaterial;
+        private Mesh _runtimeRadarQuad;
+        private readonly MaterialPropertyBlock _screenPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - cockpit screen per-renderer properties - owner: VehicleSubOsCockpitRuntime
+        private RenderTexture _uiRenderTexture;
+        private RenderTexture _externalRenderTexture;
+
+        private JobHandle _buttonJobHandle;
+        private bool _buttonJobScheduled;
+        private bool _registeredUpdate;
+        private bool _registeredLateFrame;
+        private bool _registeredRenderable;
+        private bool _externalFeedRequested;
+        private bool _externalFeedActive;
+        private bool _lastExternalFeedActive;
+        private bool _lowTier;
+        private bool _radarPowered;
+        private bool _screenDirty = true;
+        private bool _offscreenUiCameraRenderRequested = true;
+        private bool _buttonAnimationActive = true;
+        private bool _buttonUploadDirty = true;
+        private bool _buttonBasesInitialized;
+        private bool _resourcesReady;
+        private bool _radarResourcesReady;
+        private bool _radarMaterialBufferBound;
+        private HectonQualityTier _lastScalabilityTier = HectonQualityTier.Unknown;
+        private RenderTextureFormat _uiRenderTextureFormat = RenderTextureFormat.ARGB32;
+        private int _radarKernel = -1;
+        private int _radarCapacity;
+        private int _radarPointsPerTap = LowRadarPointsPerTap;
+        private int _radarActivePoints;
+        private int _lastSonarSequence = -1;
+        private int _lastRadarDispatchSequence = -1;
+        private int _lastRadarDispatchVisualPointCount;
+        private int _lastRadarArgsInstanceCount = -1;
+        private int _telemetryCursor;
+        private int _telemetryWriteIndex;
+        private int _telemetryPublishFrame;
+        private int _lastPowerDisplayPercent = InvalidDisplayBucket;
+        private int _lastOxygenDisplayPercent = InvalidDisplayBucket;
+        private int _lastSonarDisplayPoints = InvalidDisplayBucket;
+        private int _lastSonarDisplayPowered = InvalidDisplayBucket;
+        private int _lastStatusDisplayMode = InvalidDisplayBucket;
+        private Mesh _lastRadarArgsMesh;
+        private int _nanDumped;
+        private int _cockpitInteractions;
+        private float _latestPowerRatio = 1f;
+        private float _nodeVoltageSupplyRatio = 1f;
+        private float _lastScreenPower = -1f;
+        private float _latestOxygenNormalized = 1f;
+        private float _latestCarbonDioxideNormalized;
+        private float _latestSpeedKnots;
+        private float _damageFlicker;
+        private float _lastRadarDispatchPower = -1f;
+        private float _lastRadarDispatchFlicker = -1f;
+        private float _screenUpdateAccumulator;
+        private Texture _lastScreenTexture;
+        private GraphicsBuffer _lastRadarMaterialBlipBuffer;
+
+        /// <summary>
+        /// GPU matrix buffer for cockpit button presentation consumers.
+        /// </summary>
+        public GraphicsBuffer ButtonMatrixBuffer => _buttonMatrixBuffer;
+
+        /// <summary>
+        /// Number of currently drawable holographic radar points after tier clamping.
+        /// </summary>
+        public int RadarActivePoints => _radarActivePoints;
+
+        /// <summary>
+        /// Total cockpit button interactions recorded by this runtime instance.
+        /// </summary>
+        public int CockpitInteractions => _cockpitInteractions;
+
+        private void Awake()
+        {
+            InvalidateOffscreenTextCache();
+            ResolveColdAssetReferences();
+            ResolveScalabilityTier();
+            EnsureNativeResources();
+            EnsureGraphicsResources();
+            EnsureRenderTargets();
+        }
+
+        private void OnEnable()
+        {
+            InvalidateOffscreenTextCache();
+            ResolveColdAssetReferences();
+            ResolveScalabilityTier();
+            EnsureNativeResources();
+            EnsureGraphicsResources();
+            EnsureRenderTargets();
+            HectonSubmarineOsEvents.Register(this);
+            PowerGridTelemetryEvents.Register(this);
+            TryRegisterRuntime();
+            ApplyScreenMaterial();
+            ApplyOffscreenUiCameraState();
+        }
+
+        private void OnDisable()
+        {
+            CompleteButtonJobForTeardown();
+            HectonSubmarineOsEvents.Unregister(this);
+            PowerGridTelemetryEvents.Unregister(this);
+            UnregisterRuntime();
+            ReleaseExternalRenderTexture();
+            if (offscreenUiCamera != null)
+                offscreenUiCamera.enabled = false;
+            _offscreenUiCameraRenderRequested = true;
+        }
+
+        private void OnDestroy()
+        {
+            CompleteButtonJobForTeardown();
+            ReleaseExternalRenderTexture();
+            DisposeGraphicsResources();
+            DisposeNativeResources();
+            ReleaseUiRenderTexture();
+            if (_radarRuntimeMaterial != null)
+            {
+                Destroy(_radarRuntimeMaterial);
+                _radarRuntimeMaterial = null;
+            }
+
+            if (_runtimeRadarQuad != null)
+            {
+                Destroy(_runtimeRadarQuad);
+                _runtimeRadarQuad = null;
+            }
+        }
+
+        public void Tick(float deltaTime)
+        {
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
+            if (!_resourcesReady)
+            {
+                EnsureNativeResources();
+                EnsureRenderTargets();
+                if (!_resourcesReady)
+                    return;
+            }
+
+            ResolveScalabilityTier();
+            if (ShouldRetryRadarGraphicsResources())
+                EnsureGraphicsResources();
+            EnsureRenderTargets();
+            _nodeVoltageSupplyRatio = ResolveNodeVoltageSupplyRatio();
+            _radarPowered = _nodeVoltageSupplyRatio >= RadarPowerCutoff;
+            _damageFlicker = math.isfinite(_damageFlicker) ? math.max(0f, _damageFlicker - safeDeltaTime * 0.8f) : 0f;
+
+            UpdateExternalFeedState();
+            UploadSonarTapsAndDispatchRadar();
+            if (UpdateOffscreenText(safeDeltaTime))
+                RequestOffscreenUiRender();
+            ScheduleButtonJob(safeDeltaTime);
+            RecordTelemetry();
+            ApplyScreenMaterial();
+            ApplyOffscreenUiCameraState();
+        }
+
+        public void LateFrameTick()
+        {
+            if (_buttonJobScheduled && DispatcherJobSwap.TryFinalizeCompleted(ref _buttonJobHandle))
+            {
+                _buttonJobScheduled = false;
+                UploadButtonMatrices();
+                ApplyButtonTransforms();
+                _buttonAnimationActive = HasButtonTransitions();
+                _buttonUploadDirty = false;
+            }
+        }
+
+        public void Render(float deltaTime)
+        {
+            RenderRadarPointCloud();
+        }
+
+        /// <summary>
+        /// Attempts to resolve and press one cockpit button from a world-space aim ray.
+        /// </summary>
+        public bool TryPressFromRay(Vector3 rayOrigin, Vector3 rayDirection)
+        {
+            if (!TryResolvePanelHit(rayOrigin, rayDirection, out int buttonIndex))
+                return false;
+
+            PressCockpitButton(buttonIndex);
+            return true;
+        }
+
+        /// <summary>
+        /// Converts a world-space aim ray into the fixed physical button grid without broadphase physics.
+        /// </summary>
+        public bool TryResolvePanelHit(Vector3 rayOrigin, Vector3 rayDirection, out int buttonIndex)
+        {
+            buttonIndex = -1;
+            if (!IsFinite(rayOrigin) || !IsFinite(rayDirection))
+                return false;
+
+            Transform panel = dashboardPanelPlane != null ? dashboardPanelPlane : transform;
+            Matrix4x4 worldToLocal = panel.worldToLocalMatrix;
+            Vector3 localOrigin = worldToLocal.MultiplyPoint3x4(rayOrigin);
+            Vector3 localDirection = worldToLocal.MultiplyVector(rayDirection);
+            if (!IsFinite(localOrigin) || !IsFinite(localDirection))
+                return false;
+
+            if (math.abs(localDirection.z) < 0.0001f)
+                return false;
+
+            float hitT = -localOrigin.z * math.rcp(localDirection.z);
+            if (!math.isfinite(hitT) || hitT < 0f)
+                return false;
+
+            Vector3 localHit = localOrigin + localDirection * hitT;
+            if (!IsFinite(localHit))
+                return false;
+
+            float2 halfExtents = ResolvePanelHalfExtents();
+            if (math.abs(localHit.x) > halfExtents.x || math.abs(localHit.y) > halfExtents.y)
+                return false;
+
+            int columns = ResolveButtonColumns();
+            int rows = ResolveButtonRows();
+            float invPanelWidth = math.rcp(math.max(0.0001f, halfExtents.x * 2f));
+            float invPanelHeight = math.rcp(math.max(0.0001f, halfExtents.y * 2f));
+            float normalizedX = math.saturate((localHit.x + halfExtents.x) * invPanelWidth);
+            float normalizedY = math.saturate((halfExtents.y - localHit.y) * invPanelHeight);
+            int column = math.min(columns - 1, (int)math.floor(normalizedX * columns));
+            int row = math.min(rows - 1, (int)math.floor(normalizedY * rows));
+            int index = row * columns + column;
+            int safeButtonCount = ResolveButtonCount();
+            if ((uint)index >= (uint)safeButtonCount)
+                return false;
+
+            buttonIndex = index;
+            return true;
+        }
+
+        /// <summary>
+        /// Raises the radar damage flicker scalar; decay is handled by the dispatcher tick.
+        /// </summary>
+        public void SetDamageFlicker(float intensity)
+        {
+            if (!math.isfinite(intensity))
+                return;
+
+            _damageFlicker = math.max(_damageFlicker, math.saturate(intensity));
+        }
+
+        /// <summary>
+        /// Writes the current cockpit telemetry ring to the VEHICLE_SUB_OS binary dump.
+        /// </summary>
+        public void RequestBlackboxDump()
+        {
+            DumpBlackbox();
+        }
+
+        void ISubmarineOsEventListener.OnSubmarineOsEvent(in SubmarineOsEventPayload payload)
+        {
+            if (payload.EventType != (ushort)SubmarineOsEventType.SnapshotUpdated)
+                return;
+
+            _latestPowerRatio = SaturateFinite(payload.PowerNormalized, _latestPowerRatio);
+            _latestOxygenNormalized = SaturateFinite(payload.OxygenNormalized, _latestOxygenNormalized);
+            _latestCarbonDioxideNormalized = SaturateFinite(payload.CarbonDioxideNormalized, _latestCarbonDioxideNormalized);
+            _latestSpeedKnots = math.isfinite(payload.SpeedKnots) ? math.max(0f, payload.SpeedKnots) : 0f;
+            _screenDirty = true;
+        }
+
+        void IPowerGridTelemetryListener.OnPowerGridTelemetryUpdated(in PowerGridTelemetrySnapshot snapshot)
+        {
+            _latestPowerRatio = SaturateFinite(snapshot.SupplyRatio, _latestPowerRatio);
+            _screenDirty = true;
+        }
+
+        private void TryRegisterRuntime()
+        {
+            if (!_registeredUpdate)
+                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            if (!_registeredRenderable)
+                _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
+        }
+
+        private void UnregisterRuntime()
+        {
+            if (_registeredUpdate)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registeredUpdate = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
+
+            if (_registeredRenderable)
+            {
+                GlobalRegistry.Renderables.Unregister(this);
+                _registeredRenderable = false;
+            }
+        }
+
+        private void ResolveColdAssetReferences()
+        {
+#if UNITY_EDITOR
+            if (radarCompute == null)
+                radarCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(ComputeAssetPath);
+#endif
+        }
+
+        private void ResolveScalabilityTier()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            if (tier == _lastScalabilityTier && _radarCapacity > 0)
+                return;
+
+            _lowTier = tier == HectonQualityTier.Low ||
+                       tier == HectonQualityTier.Mx350 ||
+                       tier == HectonQualityTier.Unknown;
+            int capacity = _lowTier
+                ? LowRadarPoints
+                : tier == HectonQualityTier.Mid
+                    ? MidRadarPoints
+                    : MaxRadarPoints;
+            _radarPointsPerTap = _lowTier
+                ? LowRadarPointsPerTap
+                : tier == HectonQualityTier.Mid
+                    ? MidRadarPointsPerTap
+                    : HighRadarPointsPerTap;
+            _uiRenderTextureFormat = ResolveUiRenderTextureFormat(_lowTier);
+            _lastScalabilityTier = tier;
+            _screenDirty = true;
+            if (capacity != _radarCapacity)
+            {
+                _radarCapacity = capacity;
+                _radarResourcesReady = false;
+                DisposeGraphicsResources();
+                EnsureGraphicsResources();
+                InvalidateRadarDispatchCache();
+                _buttonUploadDirty = true;
+                _buttonAnimationActive = true;
+            }
+        }
+
+        private void EnsureNativeResources()
+        {
+            int safeButtonCount = ResolveButtonCount();
+            bool allocated = false;
+            if (!_buttonStates.IsCreated)
+            {
+                _buttonStates = new NativeArray<byte>(MaxButtons, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _buttonTargets = new NativeArray<byte>(MaxButtons, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _buttonProgress = new NativeArray<float>(MaxButtons, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _buttonOffsets = new NativeArray<float>(MaxButtons, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _buttonBaseLocalPositions = new NativeArray<float3>(MaxButtons, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _buttonMatrices = new NativeArray<float4x4>(MaxButtons, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _telemetryRing = new NativeArray<CockpitTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_buttonStates, nameof(VehicleSubOsCockpitRuntime), nameof(_buttonStates), NativeAllocationLifetime.Session);
+                NativeMemorySentinel.RegisterNativeArray(_buttonTargets, nameof(VehicleSubOsCockpitRuntime), nameof(_buttonTargets), NativeAllocationLifetime.Session);
+                NativeMemorySentinel.RegisterNativeArray(_buttonProgress, nameof(VehicleSubOsCockpitRuntime), nameof(_buttonProgress), NativeAllocationLifetime.Session);
+                NativeMemorySentinel.RegisterNativeArray(_buttonOffsets, nameof(VehicleSubOsCockpitRuntime), nameof(_buttonOffsets), NativeAllocationLifetime.Session);
+                NativeMemorySentinel.RegisterNativeArray(_buttonBaseLocalPositions, nameof(VehicleSubOsCockpitRuntime), nameof(_buttonBaseLocalPositions), NativeAllocationLifetime.Session);
+                NativeMemorySentinel.RegisterNativeArray(_buttonMatrices, nameof(VehicleSubOsCockpitRuntime), nameof(_buttonMatrices), NativeAllocationLifetime.Session);
+                NativeMemorySentinel.RegisterNativeArray(_telemetryRing, nameof(VehicleSubOsCockpitRuntime), nameof(_telemetryRing), NativeAllocationLifetime.Session);
+                allocated = true;
+            }
+
+            if (allocated || !_buttonBasesInitialized)
+            {
+                for (int i = 0; i < safeButtonCount; i++)
+                {
+                    Transform button = buttonTransforms != null && i < buttonTransforms.Length ? buttonTransforms[i] : null;
+                    float3 fallbackPosition = ResolveButtonGridLocalPosition(i);
+                    Vector3 baseVector = button != null
+                        ? button.localPosition
+                        : new Vector3(fallbackPosition.x, fallbackPosition.y, fallbackPosition.z);
+                    float3 basePosition = IsFinite(baseVector) ? new float3(baseVector.x, baseVector.y, baseVector.z) : fallbackPosition;
+                    _buttonBaseLocalPositions[i] = basePosition;
+                    _buttonMatrices[i] = float4x4.TRS(basePosition, quaternion.identity, new float3(1f));
+                }
+
+                _buttonBasesInitialized = true;
+                _buttonUploadDirty = true;
+                _buttonAnimationActive = true;
+            }
+
+            _resourcesReady = _buttonStates.IsCreated &&
+                              _buttonTargets.IsCreated &&
+                              _buttonProgress.IsCreated &&
+                              _buttonOffsets.IsCreated &&
+                              _buttonBaseLocalPositions.IsCreated &&
+                              _buttonMatrices.IsCreated &&
+                              _telemetryRing.IsCreated;
+        }
+
+        private void DisposeNativeResources()
+        {
+            DisposeNativeArray(ref _buttonStates);
+            DisposeNativeArray(ref _buttonTargets);
+            DisposeNativeArray(ref _buttonProgress);
+            DisposeNativeArray(ref _buttonOffsets);
+            DisposeNativeArray(ref _buttonBaseLocalPositions);
+            DisposeNativeArray(ref _buttonMatrices);
+            DisposeNativeArray(ref _telemetryRing);
+            _buttonBasesInitialized = false;
+            _resourcesReady = false;
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
+        }
+
+        private void EnsureGraphicsResources()
+        {
+            _radarCapacity = math.clamp(_radarCapacity <= 0 ? (_lowTier ? LowRadarPoints : MaxRadarPoints) : _radarCapacity, LowRadarPoints, MaxRadarPoints);
+            if (_buttonMatrixBuffer == null)
+                _buttonMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(MaxButtons); // COLD ALLOC: GraphicsBuffer[32] - kinematic dashboard matrix bridge - owner: VehicleSubOsCockpitRuntime
+            if (radarCompute == null)
+            {
+                _radarResourcesReady = false;
+                return;
+            }
+
+            if (_sonarTapBuffer == null)
+                _sonarTapBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<SonarEchoTap>(_radarCapacity); // COLD ALLOC: GraphicsBuffer[radarCapacity] - sonar tap upload bridge - owner: VehicleSubOsCockpitRuntime
+            if (_radarBlipBuffer == null)
+                _radarBlipBuffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<RadarBlipGpuData>(_radarCapacity); // COLD ALLOC: GraphicsBuffer[radarCapacity] - compute-written radar blips - owner: VehicleSubOsCockpitRuntime
+            bool radarArgsBufferCreated = false;
+            if (_radarArgsBuffer == null)
+            {
+                _radarArgsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - radar indirect draw args - owner: VehicleSubOsCockpitRuntime
+                radarArgsBufferCreated = true;
+            }
+
+            if (_radarRuntimeMaterial == null && radarBlipMaterial != null)
+                _radarRuntimeMaterial = new Material(radarBlipMaterial); // COLD ALLOC: material instance prevents shared radar shader state bleed.
+            if (radarBlipMesh == null && _runtimeRadarQuad == null)
+                _runtimeRadarQuad = CreateRadarQuadMesh();
+            if (radarArgsBufferCreated)
+            {
+                InvalidateRadarArgsCache();
+                UpdateRadarArgs(0);
+            }
+            if (radarCompute != null && _radarKernel < 0)
+                _radarKernel = radarCompute.FindKernel("KTranslateSonarTaps");
+
+            _radarResourcesReady = _sonarTapBuffer != null &&
+                                   _radarBlipBuffer != null &&
+                                   _radarArgsBuffer != null &&
+                                   radarCompute != null &&
+                                   _radarKernel >= 0;
+        }
+
+        private void DisposeGraphicsResources()
+        {
+            ReleaseBuffer(ref _sonarTapBuffer);
+            ReleaseBuffer(ref _radarBlipBuffer);
+            ReleaseBuffer(ref _radarArgsBuffer);
+            ReleaseBuffer(ref _buttonMatrixBuffer);
+            _radarKernel = -1;
+            _radarResourcesReady = false;
+            InvalidateRadarDispatchCache();
+            InvalidateRadarArgsCache();
+            InvalidateRadarMaterialBinding();
+        }
+
+        private static void ReleaseBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
+        }
+
+        private bool ShouldRetryRadarGraphicsResources()
+        {
+            if (radarCompute == null)
+                return false;
+
+            return !_radarResourcesReady ||
+                   (_radarRuntimeMaterial == null && radarBlipMaterial != null) ||
+                   (radarBlipMesh == null && _runtimeRadarQuad == null);
+        }
+
+        private void EnsureRenderTargets()
+        {
+            int width = ResolveUiWidth();
+            int height = ResolveUiHeight();
+            RenderTextureFormat format = _uiRenderTextureFormat;
+            if (_uiRenderTexture == null ||
+                _uiRenderTexture.width != width ||
+                _uiRenderTexture.height != height ||
+                _uiRenderTexture.format != format)
+            {
+                ReleaseUiRenderTexture();
+                _uiRenderTexture = CreateRenderTexture(width, height, format, "VSOS_UI_RT");
+                _lastScreenTexture = null;
+                _screenDirty = true;
+                RequestOffscreenUiRender();
+            }
+
+            if (offscreenUiCamera != null)
+            {
+                if (!offscreenUiCamera.orthographic)
+                    offscreenUiCamera.orthographic = true;
+                if (math.abs(offscreenUiCamera.depth + 100f) > 0.0001f)
+                    offscreenUiCamera.depth = -100f;
+                if (offscreenUiCamera.allowHDR)
+                    offscreenUiCamera.allowHDR = false;
+                if (offscreenUiCamera.allowMSAA)
+                    offscreenUiCamera.allowMSAA = false;
+                if (!ReferenceEquals(offscreenUiCamera.targetTexture, _uiRenderTexture))
+                {
+                    offscreenUiCamera.targetTexture = _uiRenderTexture;
+                    RequestOffscreenUiRender();
+                }
+            }
+        }
+
+        private int ResolveUiWidth()
+        {
+            return _lowTier
+                ? math.clamp(uiRenderTextureWidth, MinUiRenderTextureWidth, LowUiRenderTextureMaxWidth)
+                : math.max(MinUiRenderTextureWidth, uiRenderTextureWidth);
+        }
+
+        private int ResolveUiHeight()
+        {
+            return _lowTier
+                ? math.clamp(uiRenderTextureHeight, MinUiRenderTextureHeight, LowUiRenderTextureMaxHeight)
+                : math.max(MinUiRenderTextureHeight, uiRenderTextureHeight);
+        }
+
+        private static RenderTextureFormat ResolveUiRenderTextureFormat(bool lowTier)
+        {
+            if (!lowTier)
+                return RenderTextureFormat.ARGB32;
+
+            return SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RGB565)
+                ? RenderTextureFormat.RGB565
+                : RenderTextureFormat.ARGB32;
+        }
+
+        private static RenderTexture CreateRenderTexture(int width, int height, RenderTextureFormat format, string name)
+        {
+            RenderTexture rt = new RenderTexture(math.max(16, width), math.max(16, height), 16, format)
+            {
+                name = name,
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+                useMipMap = false,
+                autoGenerateMips = false,
+                antiAliasing = 1
+            };
+            rt.Create();
+            return rt;
+        }
+
+        private void UpdateExternalFeedState()
+        {
+            if (_lowTier)
+            {
+                ReleaseExternalRenderTexture();
+                _externalFeedActive = false;
+                return;
+            }
+
+            if (_externalFeedRequested)
+            {
+                AcquireExternalRenderTexture();
+                _externalFeedActive = _externalRenderTexture != null;
+                return;
+            }
+
+            ReleaseExternalRenderTexture();
+            _externalFeedActive = false;
+        }
+
+        private void AcquireExternalRenderTexture()
+        {
+            if (_externalRenderTexture == null)
+            {
+                int width = math.max(MinExternalRenderTextureWidth, externalRenderTextureWidth);
+                int height = math.max(MinExternalRenderTextureHeight, externalRenderTextureHeight);
+                RenderTexturePool pool = GlobalRegistry.RenderTexturePool;
+                _externalRenderTexture = pool != null
+                    ? pool.Rent(width, height, RenderTextureFormat.ARGB32, this, 16)
+                    : CreateRenderTexture(width, height, RenderTextureFormat.ARGB32, "VSOS_EXTCAM_RT");
+                if (_externalRenderTexture != null)
+                {
+                    _externalRenderTexture.name = "VSOS_EXTCAM_RT";
+                    _externalRenderTexture.filterMode = FilterMode.Bilinear;
+                    _externalRenderTexture.wrapMode = TextureWrapMode.Clamp;
+                    if (!_externalRenderTexture.IsCreated())
+                        _externalRenderTexture.Create();
+                }
+            }
+
+            if (exteriorFeedCamera != null)
+            {
+                if (!ReferenceEquals(exteriorFeedCamera.targetTexture, _externalRenderTexture))
+                    exteriorFeedCamera.targetTexture = _externalRenderTexture;
+                if (!exteriorFeedCamera.enabled)
+                    exteriorFeedCamera.enabled = true;
+            }
+        }
+
+        private void ReleaseExternalRenderTexture()
+        {
+            if (exteriorFeedCamera != null)
+            {
+                if (exteriorFeedCamera.enabled)
+                    exteriorFeedCamera.enabled = false;
+                if (ReferenceEquals(exteriorFeedCamera.targetTexture, _externalRenderTexture))
+                    exteriorFeedCamera.targetTexture = null;
+            }
+
+            if (_externalRenderTexture == null)
+                return;
+
+            RenderTexture released = _externalRenderTexture;
+            _externalRenderTexture = null;
+
+            RenderTexturePool pool = GlobalRegistry.RenderTexturePool;
+            if (pool != null)
+                pool.Return(released);
+            else
+                DestroyRenderTexture(ref released);
+        }
+
+        private void ReleaseUiRenderTexture()
+        {
+            if (offscreenUiCamera != null && ReferenceEquals(offscreenUiCamera.targetTexture, _uiRenderTexture))
+                offscreenUiCamera.targetTexture = null;
+
+            DestroyRenderTexture(ref _uiRenderTexture);
+        }
+
+        private static void DestroyRenderTexture(ref RenderTexture rt)
+        {
+            if (rt == null)
+                return;
+
+            rt.Release();
+            Destroy(rt);
+            rt = null;
+        }
+
+        private bool UpdateOffscreenText(float deltaTime)
+        {
+            _screenUpdateAccumulator = math.min(_screenUpdateAccumulator + math.max(0f, deltaTime), 0.1f);
+            if (!_screenDirty && _screenUpdateAccumulator < 0.1f)
+                return false;
+            if (!IsOffscreenUiVisible())
+                return false;
+
+            _screenUpdateAccumulator = 0f;
+            _screenDirty = false;
+            bool wrote = false;
+
+            int powerPercent = ResolvePercentDisplayBucket(_nodeVoltageSupplyRatio);
+            if (powerPercent != _lastPowerDisplayPercent &&
+                WriteMetricLine(powerLabel, _powerTextBuffer, "PWR ".AsSpan(), powerPercent, "%".AsSpan()))
+            {
+                _lastPowerDisplayPercent = powerPercent;
+                wrote = true;
+            }
+
+            int oxygenPercent = ResolvePercentDisplayBucket(_latestOxygenNormalized);
+            if (oxygenPercent != _lastOxygenDisplayPercent &&
+                WriteMetricLine(oxygenLabel, _oxygenTextBuffer, "O2  ".AsSpan(), oxygenPercent, "%".AsSpan()))
+            {
+                _lastOxygenDisplayPercent = oxygenPercent;
+                wrote = true;
+            }
+
+            int sonarPowered = _radarPowered ? 1 : 0;
+            if ((_radarActivePoints != _lastSonarDisplayPoints || sonarPowered != _lastSonarDisplayPowered) &&
+                WriteSonarLine(_radarActivePoints, _radarPowered))
+            {
+                _lastSonarDisplayPoints = _radarActivePoints;
+                _lastSonarDisplayPowered = sonarPowered;
+                wrote = true;
+            }
+
+            int statusMode = ResolveStatusDisplayMode();
+            if (statusMode != _lastStatusDisplayMode && WriteStatusLine(statusMode))
+            {
+                _lastStatusDisplayMode = statusMode;
+                wrote = true;
+            }
+
+            return wrote;
+        }
+
+        private void RequestOffscreenUiRender()
+        {
+            _offscreenUiCameraRenderRequested = true;
+        }
+
+        private void ApplyOffscreenUiCameraState()
+        {
+            if (offscreenUiCamera == null)
+                return;
+
+            bool shouldRender = _offscreenUiCameraRenderRequested && _uiRenderTexture != null && IsOffscreenUiVisible();
+            if (offscreenUiCamera.enabled != shouldRender)
+                offscreenUiCamera.enabled = shouldRender;
+            if (shouldRender)
+                _offscreenUiCameraRenderRequested = false;
+        }
+
+        private bool IsOffscreenUiVisible()
+        {
+            if (_externalFeedActive && _externalRenderTexture != null)
+                return false;
+            if (_lowTier && _externalFeedRequested && staticExternalNoiseTexture != null)
+                return false;
+            return true;
+        }
+
+        private int ResolveStatusDisplayMode()
+        {
+            if (_lowTier && _externalFeedRequested)
+                return staticExternalNoiseTexture != null ? StatusModeLowStatic : StatusModeLowLocked;
+            if (_externalFeedActive)
+                return StatusModeExternalLive;
+            return StatusModeInternalBus;
+        }
+
+        private static int ResolvePercentDisplayBucket(float normalized)
+        {
+            return math.clamp((int)math.round(SaturateFinite(normalized, 0f) * 100f), 0, 100);
+        }
+
+        private void InvalidateOffscreenTextCache()
+        {
+            _lastPowerDisplayPercent = InvalidDisplayBucket;
+            _lastOxygenDisplayPercent = InvalidDisplayBucket;
+            _lastSonarDisplayPoints = InvalidDisplayBucket;
+            _lastSonarDisplayPowered = InvalidDisplayBucket;
+            _lastStatusDisplayMode = InvalidDisplayBucket;
+            _screenDirty = true;
+        }
+
+        private static bool WriteMetricLine(TMP_Text label, char[] buffer, ReadOnlySpan<char> prefix, int value, ReadOnlySpan<char> suffix)
+        {
+            if (label == null || buffer == null)
+                return false;
+
+            Span<char> span = buffer.AsSpan();
+            int cursor = 0;
+            ZeroGCFormatter.AppendToSpan(prefix, span, ref cursor);
+            ZeroGCFormatter.AppendInt(math.max(0, value), span, ref cursor);
+            ZeroGCFormatter.AppendToSpan(suffix, span, ref cursor);
+            label.SetCharArray(buffer, 0, math.max(0, cursor));
+            return true;
+        }
+
+        private bool WriteSonarLine(int activePoints, bool powered)
+        {
+            if (sonarLabel == null)
+                return false;
+
+            Span<char> span = _sonarTextBuffer.AsSpan();
+            int cursor = 0;
+            ZeroGCFormatter.AppendToSpan("SONAR ".AsSpan(), span, ref cursor);
+            ZeroGCFormatter.AppendInt(math.max(0, activePoints), span, ref cursor);
+            ZeroGCFormatter.AppendToSpan(powered ? " ACTIVE".AsSpan() : " DARK".AsSpan(), span, ref cursor);
+            sonarLabel.SetCharArray(_sonarTextBuffer, 0, math.max(0, cursor));
+            return true;
+        }
+
+        private bool WriteStatusLine(int statusMode)
+        {
+            if (statusLabel == null)
+                return false;
+
+            Span<char> span = _statusTextBuffer.AsSpan();
+            int cursor = 0;
+            switch (statusMode)
+            {
+                case StatusModeExternalLive:
+                    ZeroGCFormatter.AppendToSpan("EXT CAM LIVE".AsSpan(), span, ref cursor);
+                    break;
+                case StatusModeLowStatic:
+                    ZeroGCFormatter.AppendToSpan("EXT STATIC / LOW LOD".AsSpan(), span, ref cursor);
+                    break;
+                case StatusModeLowLocked:
+                    ZeroGCFormatter.AppendToSpan("EXT LOCKED / LOW LOD".AsSpan(), span, ref cursor);
+                    break;
+                default:
+                    ZeroGCFormatter.AppendToSpan("INTERNAL BUS".AsSpan(), span, ref cursor);
+                    break;
+            }
+
+            statusLabel.SetCharArray(_statusTextBuffer, 0, math.max(0, cursor));
+            return true;
+        }
+
+        private void UploadSonarTapsAndDispatchRadar()
+        {
+            _radarActivePoints = 0;
+            if (!_radarResourcesReady || !_radarPowered || radarCompute == null || _radarKernel < 0 || !IsRadarDrawableReady())
+            {
+                ClearRadarDrawState();
+                return;
+            }
+
+            PlayerCriticalProceduralAudioRenderer audioRuntime = GlobalRegistry.PlayerCriticalAudio;
+            if (audioRuntime == null ||
+                !audioRuntime.TryGetCockpitSonarEchoTaps(out NativeArray<SonarEchoTap>.ReadOnly taps, out int tapCount, out int sequence))
+            {
+                ClearRadarDrawState();
+                return;
+            }
+
+            int safeCount = math.clamp(tapCount, 0, math.min(_radarCapacity, taps.Length));
+            if (safeCount <= 0)
+            {
+                ClearRadarDrawState();
+                return;
+            }
+
+            int visualPointCount = ResolveRadarVisualPointCount(safeCount);
+            if (visualPointCount <= 0)
+            {
+                ClearRadarDrawState();
+                return;
+            }
+
+            if (sequence != _lastSonarSequence)
+            {
+                _lastSonarSequence = sequence;
+                _screenDirty = true;
+            }
+
+            bool dispatchDirty = IsRadarDispatchDirty(sequence, visualPointCount);
+            _radarActivePoints = visualPointCount;
+            if (!dispatchDirty)
+                return;
+
+            NativeArray<SonarEchoTap> mapped = _sonarTapBuffer.LockBufferForWrite<SonarEchoTap>(0, safeCount);
+            for (int i = 0; i < safeCount; i++)
+                mapped[i] = taps[i];
+            _sonarTapBuffer.UnlockBufferAfterWrite<SonarEchoTap>(safeCount);
+
+            radarCompute.SetBuffer(_radarKernel, SonarTapsId, _sonarTapBuffer);
+            radarCompute.SetBuffer(_radarKernel, RadarBlipsId, _radarBlipBuffer);
+            radarCompute.SetInt(InputTapCountId, safeCount);
+            radarCompute.SetInt(OutputPointCountId, visualPointCount);
+            radarCompute.SetInt(OutputCapacityId, _radarCapacity);
+            radarCompute.SetInt(SequenceId, sequence);
+            radarCompute.SetFloat(RadarRadiusMetersId, ResolveRadarRadiusMeters());
+            radarCompute.SetFloat(MaxDelaySecondsId, DefaultMaxSonarDelaySeconds);
+            radarCompute.SetFloat(PowerLevelId, _nodeVoltageSupplyRatio);
+            radarCompute.SetFloat(DamageFlickerId, _damageFlicker);
+            radarCompute.Dispatch(_radarKernel, (visualPointCount + 63) >> 6, 1, 1);
+
+            CacheRadarDispatchState(sequence, visualPointCount);
+            UpdateRadarArgs(visualPointCount);
+        }
+
+        private bool IsRadarDispatchDirty(int sequence, int visualPointCount)
+        {
+            return sequence != _lastRadarDispatchSequence ||
+                   visualPointCount != _lastRadarDispatchVisualPointCount ||
+                   math.abs(_nodeVoltageSupplyRatio - _lastRadarDispatchPower) > RadarRedispatchPowerEpsilon ||
+                   math.abs(_damageFlicker - _lastRadarDispatchFlicker) > RadarRedispatchFlickerEpsilon;
+        }
+
+        private void CacheRadarDispatchState(int sequence, int visualPointCount)
+        {
+            _lastRadarDispatchSequence = sequence;
+            _lastRadarDispatchVisualPointCount = visualPointCount;
+            _lastRadarDispatchPower = _nodeVoltageSupplyRatio;
+            _lastRadarDispatchFlicker = _damageFlicker;
+        }
+
+        private void InvalidateRadarDispatchCache()
+        {
+            _lastRadarDispatchSequence = -1;
+            _lastRadarDispatchVisualPointCount = 0;
+            _lastRadarDispatchPower = -1f;
+            _lastRadarDispatchFlicker = -1f;
+        }
+
+        private void ClearRadarDrawState()
+        {
+            UpdateRadarArgs(0);
+            InvalidateRadarDispatchCache();
+        }
+
+        private int ResolveRadarVisualPointCount(int tapCount)
+        {
+            int safeTapCount = math.max(0, tapCount);
+            if (safeTapCount <= 0 || _radarCapacity <= 0)
+                return 0;
+
+            long requested = (long)safeTapCount * math.max(1, _radarPointsPerTap);
+            return (int)math.min(_radarCapacity, requested);
+        }
+
+        private void UpdateRadarArgs(int instanceCount)
+        {
+            Mesh mesh = ResolveRadarMesh();
+            if (_radarArgsBuffer == null || mesh == null)
+                return;
+
+            int safeInstanceCount = math.max(0, instanceCount);
+            if (safeInstanceCount == _lastRadarArgsInstanceCount && ReferenceEquals(mesh, _lastRadarArgsMesh))
+                return;
+
+            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
+                _radarArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            {
+                indexCountPerInstance = mesh.GetIndexCount(0),
+                instanceCount = (uint)safeInstanceCount,
+                startIndex = mesh.GetIndexStart(0),
+                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
+                startInstance = 0u
+            };
+            _radarArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            _lastRadarArgsInstanceCount = safeInstanceCount;
+            _lastRadarArgsMesh = mesh;
+        }
+
+        private void InvalidateRadarArgsCache()
+        {
+            _lastRadarArgsInstanceCount = -1;
+            _lastRadarArgsMesh = null;
+        }
+
+        private void InvalidateRadarMaterialBinding()
+        {
+            _radarMaterialBufferBound = false;
+            _lastRadarMaterialBlipBuffer = null;
+        }
+
+        private void RenderRadarPointCloud()
+        {
+            if (_radarActivePoints <= 0 ||
+                !_radarPowered ||
+                !_radarResourcesReady ||
+                _radarRuntimeMaterial == null ||
+                _radarBlipBuffer == null ||
+                _radarArgsBuffer == null)
+            {
+                return;
+            }
+
+            Mesh mesh = ResolveRadarMesh();
+            if (mesh == null)
+                return;
+
+            Transform anchor = radarDomeAnchor != null ? radarDomeAnchor : transform;
+            Matrix4x4 radarLocalToWorld = anchor.localToWorldMatrix;
+            if (!IsFinite(radarLocalToWorld))
+                return;
+            Vector4 anchorColumn = radarLocalToWorld.GetColumn(3);
+            Vector3 anchorPosition = new Vector3(anchorColumn.x, anchorColumn.y, anchorColumn.z);
+
+            if (!_radarMaterialBufferBound || !ReferenceEquals(_lastRadarMaterialBlipBuffer, _radarBlipBuffer))
+            {
+                _radarRuntimeMaterial.SetBuffer(HectonRadarBlipsId, _radarBlipBuffer);
+                _radarRuntimeMaterial.SetFloat(HectonRadarProceduralId, 1f);
+                _lastRadarMaterialBlipBuffer = _radarBlipBuffer;
+                _radarMaterialBufferBound = true;
+            }
+
+            _radarRuntimeMaterial.SetMatrix(HectonRadarLocalToWorldId, radarLocalToWorld);
+
+            Bounds bounds = new Bounds(anchorPosition, Vector3.one * ResolveRadarBoundsSize());
+            RenderParams renderParams = new RenderParams(_radarRuntimeMaterial)
+            {
+                worldBounds = bounds,
+                layer = radarLayer,
+                shadowCastingMode = ShadowCastingMode.Off,
+                receiveShadows = false,
+                motionVectorMode = MotionVectorGenerationMode.ForceNoMotion
+            };
+            Graphics.RenderMeshIndirect(renderParams, mesh, _radarArgsBuffer, 1, 0);
+        }
+
+        private Mesh ResolveRadarMesh()
+        {
+            return radarBlipMesh != null ? radarBlipMesh : _runtimeRadarQuad;
+        }
+
+        private bool IsRadarDrawableReady()
+        {
+            return _radarRuntimeMaterial != null && ResolveRadarMesh() != null;
+        }
+
+        private static Mesh CreateRadarQuadMesh()
+        {
+            Mesh mesh = new Mesh
+            {
+                name = "VSOS_RadarBlipQuad"
+            };
+            mesh.SetVertices(RadarQuadVertices);
+            mesh.SetUVs(0, RadarQuadUvs);
+            mesh.SetIndices(RadarQuadIndices, MeshTopology.Triangles, 0);
+            mesh.RecalculateBounds();
+            mesh.UploadMeshData(true);
+            return mesh;
+        }
+
+        private void ScheduleButtonJob(float deltaTime)
+        {
+            if (_buttonJobScheduled || !_buttonStates.IsCreated || (!_buttonAnimationActive && !_buttonUploadDirty))
+                return;
+
+            ButtonKinematicJob job = new ButtonKinematicJob
+            {
+                States = _buttonStates,
+                Targets = _buttonTargets,
+                Progress = _buttonProgress,
+                Offsets = _buttonOffsets,
+                BaseLocalPositions = _buttonBaseLocalPositions,
+                Matrices = _buttonMatrices,
+                DeltaTime = math.max(0f, deltaTime),
+                TravelSecondsInv = ButtonTravelSecondsInv,
+                PressedLocalZ = ResolvePressedLocalZ(),
+                ButtonScale = new float3(1f)
+            };
+            _buttonJobHandle = job.Schedule(ResolveButtonCount(), 8);
+            _buttonJobScheduled = true;
+        }
+
+        private void UploadButtonMatrices()
+        {
+            if (_buttonMatrixBuffer == null || !_buttonMatrices.IsCreated)
+                return;
+
+            GraphicsBufferUploadUtility.UploadNativeArray(_buttonMatrixBuffer, _buttonMatrices, ResolveButtonCount());
+        }
+
+        private void ApplyButtonTransforms()
+        {
+            int safeButtonCount = ResolveButtonCount();
+            if (buttonTransforms == null)
+                return;
+
+            int transformCount = math.min(safeButtonCount, buttonTransforms.Length);
+            for (int i = 0; i < transformCount; i++)
+            {
+                Transform button = buttonTransforms[i];
+                if (button == null)
+                    continue;
+
+                float3 basePosition = _buttonBaseLocalPositions[i];
+                basePosition.z += _buttonOffsets[i];
+                button.localPosition = (Vector3)basePosition;
+            }
+        }
+
+        private void PressCockpitButton(int buttonIndex)
+        {
+            int safeButtonCount = ResolveButtonCount();
+            if ((uint)buttonIndex >= (uint)safeButtonCount || !_buttonStates.IsCreated)
+                return;
+
+            byte state = _buttonStates[buttonIndex];
+            byte target = _buttonTargets[buttonIndex];
+            byte desired = state == 2 || (state == 1 && target == 2) ? (byte)0 : (byte)2;
+            _buttonTargets[buttonIndex] = desired;
+            _buttonStates[buttonIndex] = 1;
+            _buttonAnimationActive = true;
+            _buttonUploadDirty = true;
+            _cockpitInteractions++;
+            _screenDirty = true;
+
+            if (buttonIndex == externalFeedLeverButtonIndex)
+            {
+                _externalFeedRequested = desired == 2;
+                RequestOffscreenUiRender();
+            }
+
+            GlobalTelemetryBus.PublishPerformanceWarning(InteractionHash, TelemetryContextHash, _cockpitInteractions);
+        }
+
+        private int ResolveButtonCount()
+        {
+            int gridCapacity = math.min(MaxButtons, ResolveButtonColumns() * ResolveButtonRows());
+            return math.clamp(buttonCount <= 0 ? gridCapacity : buttonCount, 1, MaxButtons);
+        }
+
+        private float3 ResolveButtonGridLocalPosition(int index)
+        {
+            int columns = ResolveButtonColumns();
+            int rows = ResolveButtonRows();
+            int column = index % columns;
+            int row = index / columns;
+            float2 halfExtents = ResolvePanelHalfExtents();
+            float x = columns > 1 ? math.lerp(-halfExtents.x, halfExtents.x, column / (float)(columns - 1)) : 0f;
+            float y = rows > 1 ? math.lerp(halfExtents.y, -halfExtents.y, row / (float)(rows - 1)) : 0f;
+            return new float3(x, y, 0f);
+        }
+
+        private int ResolveButtonColumns()
+        {
+            return math.clamp(buttonColumns, 1, MaxButtons);
+        }
+
+        private int ResolveButtonRows()
+        {
+            return math.clamp(buttonRows, 1, MaxButtons);
+        }
+
+        private float ResolveNodeVoltageSupplyRatio()
+        {
+            IPowerGridService powerGrid = GlobalRegistry.PowerGrid;
+            if (powerGrid != null &&
+                powerGrid.TryGetGridPowerPotentialsReadOnly(math.max(0, submarinePowerGridIndex), out NativeArray<float>.ReadOnly potentials) &&
+                (uint)submarineNodeVoltageIndex < (uint)potentials.Length)
+            {
+                return SaturateFinite(potentials[submarineNodeVoltageIndex], _latestPowerRatio);
+            }
+
+            return SaturateFinite(_latestPowerRatio, 1f);
+        }
+
+        private void ApplyScreenMaterial()
+        {
+            if (centralScreenRenderer == null)
+                return;
+
+            Texture activeTexture = ResolveActiveScreenTexture();
+            float power = SaturateFinite(_nodeVoltageSupplyRatio, 0f);
+            if (ReferenceEquals(activeTexture, _lastScreenTexture) &&
+                math.abs(power - _lastScreenPower) < 0.005f &&
+                _lastExternalFeedActive == _externalFeedActive)
+            {
+                return;
+            }
+
+            centralScreenRenderer.GetPropertyBlock(_screenPropertyBlock);
+            if (activeTexture != null)
+            {
+                _screenPropertyBlock.SetTexture(MainTexId, activeTexture);
+                _screenPropertyBlock.SetTexture(BaseMapId, activeTexture);
+            }
+
+            float dim = math.lerp(0.04f, 1f, power);
+            _screenPropertyBlock.SetColor(BaseColorId, new Color(dim, dim, dim, 1f));
+            _screenPropertyBlock.SetFloat(PanelPowerLevelId, power);
+            _screenPropertyBlock.SetFloat(ExternalFeedBlendId, _externalFeedActive ? 1f : 0f);
+            centralScreenRenderer.SetPropertyBlock(_screenPropertyBlock);
+            _lastScreenTexture = activeTexture;
+            _lastScreenPower = power;
+            _lastExternalFeedActive = _externalFeedActive;
+        }
+
+        private Texture ResolveActiveScreenTexture()
+        {
+            if (_lowTier && _externalFeedRequested && staticExternalNoiseTexture != null)
+                return staticExternalNoiseTexture;
+            if (_externalFeedActive && _externalRenderTexture != null)
+                return _externalRenderTexture;
+            return _uiRenderTexture;
+        }
+
+        private void RecordTelemetry()
+        {
+            if (!_telemetryRing.IsCreated)
+                return;
+
+            Transform anchor = radarDomeAnchor != null ? radarDomeAnchor : transform;
+            Vector3 position = anchor.position;
+            bool positionFinite = IsFinite(position);
+            bool finite = positionFinite &&
+                          math.isfinite(_nodeVoltageSupplyRatio) &&
+                          math.isfinite(_latestOxygenNormalized) &&
+                          math.isfinite(_latestCarbonDioxideNormalized) &&
+                          math.isfinite(_latestSpeedKnots);
+            Vector3 safePosition = positionFinite ? position : Vector3.zero;
+            int slot = _telemetryWriteIndex;
+            _telemetryRing[slot] = new CockpitTelemetryEntry
+            {
+                Frame = Time.frameCount,
+                RadarActivePoints = _radarActivePoints,
+                CockpitInteractions = _cockpitInteractions,
+                Flags = BuildTelemetryFlags(finite),
+                Power = SaturateFinite(_nodeVoltageSupplyRatio, 0f),
+                Oxygen = SaturateFinite(_latestOxygenNormalized, 0f),
+                Co2 = SaturateFinite(_latestCarbonDioxideNormalized, 0f),
+                SpeedKnots = math.isfinite(_latestSpeedKnots) ? _latestSpeedKnots : 0f,
+                AnchorPosition = safePosition
+            };
+            _telemetryCursor++;
+            _telemetryWriteIndex++;
+            if (_telemetryWriteIndex >= TelemetryCapacity)
+                _telemetryWriteIndex = 0;
+
+            if (!finite && _nanDumped == 0)
+            {
+                _nanDumped = 1;
+                DumpBlackbox();
+            }
+
+            if (Time.frameCount >= _telemetryPublishFrame)
+            {
+                _telemetryPublishFrame = Time.frameCount + 30;
+                GlobalTelemetryBus.PublishPerformanceWarning(RadarActiveHash, TelemetryContextHash, _radarActivePoints);
+            }
+        }
+
+        private uint BuildTelemetryFlags(bool finite)
+        {
+            uint flags = 0u;
+            if (_radarPowered)
+                flags |= 1u;
+            if (_externalFeedActive)
+                flags |= 2u;
+            if (_lowTier)
+                flags |= 4u;
+            if (!finite)
+                flags |= 0x80000000u;
+            return flags;
+        }
+
+        private void DumpBlackbox()
+        {
+            if (!_telemetryRing.IsCreated)
+                return;
+
+            try
+            {
+                string root = Directory.GetParent(Application.dataPath)?.FullName;
+                if (string.IsNullOrEmpty(root))
+                    return;
+
+                string directory = Path.Combine(root, "Docs", "AgentLogs");
+                Directory.CreateDirectory(directory);
+                string path = Path.Combine(directory, "Dump_VEHICLE_SUB_OS.bin");
+                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+                using BinaryWriter writer = new BinaryWriter(stream);
+                writer.Write(TelemetryContextHash);
+                writer.Write(_telemetryCursor);
+                writer.Write(_telemetryWriteIndex);
+                int entryCount = math.min(_telemetryCursor, TelemetryCapacity);
+                writer.Write(entryCount);
+                int readIndex = _telemetryCursor >= TelemetryCapacity ? _telemetryWriteIndex : 0;
+                for (int i = 0; i < entryCount; i++)
+                {
+                    int slot = readIndex + i;
+                    if (slot >= TelemetryCapacity)
+                        slot -= TelemetryCapacity;
+
+                    CockpitTelemetryEntry entry = _telemetryRing[slot];
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.RadarActivePoints);
+                    writer.Write(entry.CockpitInteractions);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.Power);
+                    writer.Write(entry.Oxygen);
+                    writer.Write(entry.Co2);
+                    writer.Write(entry.SpeedKnots);
+                    writer.Write(entry.AnchorPosition.x);
+                    writer.Write(entry.AnchorPosition.y);
+                    writer.Write(entry.AnchorPosition.z);
+                }
+            }
+            catch (Exception)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x44554D50u, TelemetryContextHash, 1f);
+            }
+        }
+
+        private bool HasButtonTransitions()
+        {
+            if (!_buttonStates.IsCreated)
+                return false;
+
+            int safeButtonCount = ResolveButtonCount();
+            for (int i = 0; i < safeButtonCount; i++)
+            {
+                if (_buttonStates[i] == 1)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void CompleteButtonJobForTeardown()
+        {
+            if (!_buttonJobScheduled)
+                return;
+
+            DispatcherJobSwap.TryComplete(ref _buttonJobHandle, forceComplete: true);
+            _buttonJobScheduled = false;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private static bool IsFinite(Vector4 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z) &&
+                   math.isfinite(value.w);
+        }
+
+        private static bool IsFinite(Matrix4x4 value)
+        {
+            return IsFinite(value.GetColumn(0)) &&
+                   IsFinite(value.GetColumn(1)) &&
+                   IsFinite(value.GetColumn(2)) &&
+                   IsFinite(value.GetColumn(3));
+        }
+
+        private static float SaturateFinite(float value, float fallback)
+        {
+            return math.isfinite(value) ? math.saturate(value) : math.isfinite(fallback) ? math.saturate(fallback) : 0f;
+        }
+
+        private float2 ResolvePanelHalfExtents()
+        {
+            float x = math.isfinite(panelHalfExtents.x) ? math.max(0.001f, panelHalfExtents.x) : 0.72f;
+            float y = math.isfinite(panelHalfExtents.y) ? math.max(0.001f, panelHalfExtents.y) : 0.36f;
+            return new float2(x, y);
+        }
+
+        private float ResolvePressedLocalZ()
+        {
+            return math.isfinite(buttonPressedLocalZ) ? math.clamp(buttonPressedLocalZ, -0.08f, 0.02f) : -0.035f;
+        }
+
+        private float ResolveRadarRadiusMeters()
+        {
+            return math.isfinite(radarRadiusMeters) ? math.max(0.001f, radarRadiusMeters) : 0.42f;
+        }
+
+        private float ResolveRadarBoundsSize()
+        {
+            return math.isfinite(radarBoundsSizeMeters) ? math.max(0.1f, radarBoundsSizeMeters) : 1.2f;
+        }
+
+        private void OnValidate()
+        {
+            buttonColumns = ResolveButtonColumns();
+            buttonRows = ResolveButtonRows();
+            buttonCount = math.clamp(buttonCount, 1, MaxButtons);
+            externalFeedLeverButtonIndex = math.clamp(externalFeedLeverButtonIndex, 0, ResolveButtonCount() - 1);
+            float2 extents = ResolvePanelHalfExtents();
+            panelHalfExtents.x = extents.x;
+            panelHalfExtents.y = extents.y;
+            buttonPressedLocalZ = ResolvePressedLocalZ();
+            radarRadiusMeters = ResolveRadarRadiusMeters();
+            radarBoundsSizeMeters = ResolveRadarBoundsSize();
+            uiRenderTextureWidth = math.max(MinUiRenderTextureWidth, uiRenderTextureWidth);
+            uiRenderTextureHeight = math.max(MinUiRenderTextureHeight, uiRenderTextureHeight);
+            externalRenderTextureWidth = math.max(MinExternalRenderTextureWidth, externalRenderTextureWidth);
+            externalRenderTextureHeight = math.max(MinExternalRenderTextureHeight, externalRenderTextureHeight);
+            _buttonBasesInitialized = false;
+        }
+
+        [BurstCompile]
+        private struct ButtonKinematicJob : IJobParallelFor
+        {
+            public NativeArray<byte> States;
+            public NativeArray<byte> Targets;
+            public NativeArray<float> Progress;
+            public NativeArray<float> Offsets;
+            [ReadOnly] public NativeArray<float3> BaseLocalPositions;
+            public NativeArray<float4x4> Matrices;
+            public float DeltaTime;
+            public float TravelSecondsInv;
+            public float PressedLocalZ;
+            public float3 ButtonScale;
+
+            public void Execute(int index)
+            {
+                byte state = States[index];
+                float progressValue = Progress[index];
+                float progress = math.isfinite(progressValue) ? math.saturate(progressValue) : 0f;
+                float pressedLocalZ = math.isfinite(PressedLocalZ) ? PressedLocalZ : -0.035f;
+                if (state == 1)
+                {
+                    float target = Targets[index] == 2 ? 1f : 0f;
+                    float step = math.max(0f, DeltaTime) * math.max(0f, TravelSecondsInv);
+                    progress = MoveTowards(progress, target, step);
+                    if (math.abs(progress - target) <= 0.0001f)
+                    {
+                        progress = target;
+                        States[index] = Targets[index];
+                    }
+                }
+                else
+                {
+                    progress = state == 2 ? 1f : 0f;
+                }
+
+                Progress[index] = progress;
+                float offset = progress * pressedLocalZ;
+                Offsets[index] = offset;
+                float3 position = BaseLocalPositions[index];
+                position.z += offset;
+                Matrices[index] = float4x4.TRS(position, quaternion.identity, ButtonScale);
+            }
+
+            private static float MoveTowards(float current, float target, float maxDelta)
+            {
+                float delta = target - current;
+                if (math.abs(delta) <= maxDelta)
+                    return target;
+                return current + math.sign(delta) * maxDelta;
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RadarBlipGpuData
+        {
+            public float4 LocalPositionSize;
+            public float4 ColorAlpha;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        private struct CockpitTelemetryEntry
+        {
+            public int Frame;
+            public int RadarActivePoints;
+            public int CockpitInteractions;
+            public uint Flags;
+            public float Power;
+            public float Oxygen;
+            public float Co2;
+            public float SpeedKnots;
+            public Vector3 AnchorPosition;
+        }
+    }
+}

@@ -1,0 +1,58 @@
+# CORE_GLOBAL_STATE_RESET_NONRELOAD_TRANSITIONS
+
+Status: PENDING VERIFICATION
+Owner: TECH_SCOUT
+Date: 2026-05-11
+
+## Unity 6000 Evidence
+
+Unity domain-reload-disabled Play Mode preserves static fields and static event handlers unless the project resets them manually.
+
+Official references:
+- https://docs.unity3d.com/Manual/DomainReloading.html
+- https://docs.unity3d.com/ScriptReference/RuntimeInitializeOnLoadMethodAttribute.html
+- https://docs.unity3d.com/ScriptReference/RuntimeInitializeLoadType.SubsystemRegistration.html
+
+## Law
+
+[RULE] Every critical global/static runtime owner must provide a deterministic reset path for non-reload scene transitions.
+
+[RULE] Static state resets use `RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)` for domain-reload-disabled Editor entry and a runtime transition reset lane for non-reload scene transitions.
+
+[RULE] Reset order is:
+1. Stop new event ingress with a generation token.
+2. Drain NativeQueue/EventBus lanes without dispatch.
+3. Complete or cancel outstanding JobHandles.
+4. Dispose owned NativeContainers and GraphicsBuffers.
+5. Clear GlobalRegistry/service references.
+6. Reset deterministic RNG seeds and replay counters.
+7. Reopen service registration for the new scene generation.
+
+[RULE] Async callbacks must carry a generation id. Stale callbacks from a previous scene generation are ignored without touching live state.
+
+[FORBID] Relying on `OnDestroy`, domain reload, or scene unload order as the only reset mechanism.
+
+[FORBID] Static C# events, cached delegates, pooled GameObjects, shader globals, global material property blocks, and NativeQueue lanes without a reset owner.
+
+## DOD
+
+- Each critical static owner has an explicit reset method.
+- Reset is idempotent.
+- Reset leaves no live NativeContainer, GraphicsBuffer, or stale event listener.
+- A 300-frame blackbox/replay smoke test proves the second non-reload transition matches the first transition hash.
+
+## Scalability
+
+Low: reset drops cosmetic queues and clears transient presentation buffers first.
+
+Middle: reset preserves only validated cross-scene caches.
+
+High: reset can retain warmed assets after generation tokens prove ownership.
+
+Ultra: reset may retain richer renderer caches, but only if memory and generation counters are verified.
+
+## Hardware Impact
+
+Expected gain: fewer scene-transition leaks, fewer first-frame spikes, and fewer stale callback crashes.
+
+Claimed microseconds saved: PENDING TRANSITION PROFILER. No runtime capture was produced by this mandate pass.

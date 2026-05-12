@@ -198,6 +198,7 @@ namespace Hecton8.Caves
         private const byte DefaultDeltaMaterialId = 0;
         private const byte SedimentDeltaMaterialId = 1;
         private const byte MagmaDeltaMaterialId = 2;
+        private const byte DefaultPublishedSonarAudioMaterialId = 2;
         private static readonly int _CollapseImpulseLayerMask = HectonLayerMasks.MountedSweepLayerMask;
         private const float OrganicRootMoundMinimumOverlapMeters = 0.25f;
         private const float OrganicRootMoundSeabedProbeStepMeters = 0.5f;
@@ -244,6 +245,7 @@ namespace Hecton8.Caves
         private MeshCollider _rootMeshCollider;
         private VoxelBakeState _bakeState;
         private NativeArray<byte> _publishedSonarSdf;
+        private NativeArray<byte> _publishedSonarAudioMaterialIds;
         private Vector3Int _publishedSonarGridDimensions;
         private Vector3 _publishedSonarOrigin;
         private Vector3 _publishedSonarCellSize;
@@ -547,6 +549,41 @@ namespace Hecton8.Caves
         public bool TrySampleDensity(Vector3 worldPosition, out float density)
         {
             return TrySampleDensity(worldPosition, out density, out _);
+        }
+
+        /// <summary>
+        /// Samples the published sonar material atlas at the nearest runtime-space SDF node.
+        /// </summary>
+        public bool TrySamplePublishedSonarAudioMaterialId(Vector3 worldPosition, out byte audioMaterialId)
+        {
+            audioMaterialId = DefaultPublishedSonarAudioMaterialId;
+            if (!_runtimeDataReady ||
+                !_publishedSonarAudioMaterialIds.IsCreated ||
+                _publishedSonarGridDimensions.x <= 1 ||
+                _publishedSonarGridDimensions.y <= 1 ||
+                _publishedSonarGridDimensions.z <= 1)
+            {
+                return false;
+            }
+
+            float cellSizeX = Mathf.Max(0.0001f, _publishedSonarCellSize.x);
+            float cellSizeY = Mathf.Max(0.0001f, _publishedSonarCellSize.y);
+            float cellSizeZ = Mathf.Max(0.0001f, _publishedSonarCellSize.z);
+            float invCellSizeX = math.rcp(cellSizeX);
+            float invCellSizeY = math.rcp(cellSizeY);
+            float invCellSizeZ = math.rcp(cellSizeZ);
+            int maxX = _publishedSonarGridDimensions.x - 1;
+            int maxY = _publishedSonarGridDimensions.y - 1;
+            int maxZ = _publishedSonarGridDimensions.z - 1;
+            int x = Mathf.Clamp((int)(((worldPosition.x - _publishedSonarOrigin.x) * invCellSizeX) + 0.5f), 0, maxX);
+            int y = Mathf.Clamp((int)(((worldPosition.y - _publishedSonarOrigin.y) * invCellSizeY) + 0.5f), 0, maxY);
+            int z = Mathf.Clamp((int)(((worldPosition.z - _publishedSonarOrigin.z) * invCellSizeZ) + 0.5f), 0, maxZ);
+            int index = x + (_publishedSonarGridDimensions.x * (y + (_publishedSonarGridDimensions.y * z)));
+            if ((uint)index >= (uint)_publishedSonarAudioMaterialIds.Length)
+                return false;
+
+            audioMaterialId = _publishedSonarAudioMaterialIds[index];
+            return true;
         }
 
         /// <summary>
@@ -974,6 +1011,27 @@ namespace Hecton8.Caves
                    _colliderChunkBakeMeshes[index] != null;
         }
 
+        internal Mesh GetColliderChunkBakeMesh(int index)
+        {
+            if (index < 0 || index >= _colliderChunkBakeMeshes.Length)
+                return null;
+
+            return _colliderChunkBakeMeshes[index];
+        }
+
+        internal bool AssignColliderChunkBakeMesh(int index, Mesh mesh)
+        {
+            if (mesh == null || index < 0 || index >= _colliderChunkBakeMeshes.Length)
+                return false;
+
+            Mesh existingMesh = _colliderChunkBakeMeshes[index];
+            if (existingMesh != null)
+                return ReferenceEquals(existingMesh, mesh);
+
+            _colliderChunkBakeMeshes[index] = mesh;
+            return true;
+        }
+
         /// <summary>
         /// Disables the temporary PhysX bake proxy for one collider chunk.
         /// </summary>
@@ -1012,7 +1070,7 @@ namespace Hecton8.Caves
             if (mesh != null)
                 return mesh;
 
-            mesh = global::HectonVoxelEngine.AcquireVoxelPhysicsBakeMesh(name, index);
+            mesh = global::HectonVoxelEngine.AcquireVoxelPhysicsBakeMesh();
             if (mesh == null)
                 return null;
 
@@ -1033,7 +1091,7 @@ namespace Hecton8.Caves
             if (mesh != null)
                 return mesh;
 
-            mesh = global::HectonVoxelEngine.AcquireVoxelPhysicsBakeMesh(name, index);
+            mesh = global::HectonVoxelEngine.AcquireVoxelPhysicsBakeMesh();
             if (mesh == null)
                 return null;
 
@@ -1044,23 +1102,26 @@ namespace Hecton8.Caves
         /// <summary>
         /// Queues a staged collider mesh upload for the requested chunk. The actual sharedMesh write is late-frame throttled.
         /// </summary>
-        internal void PublishColliderChunkMesh(int index)
+        internal bool PublishColliderChunkMesh(int index)
         {
             if (index < 0 ||
                 index >= _colliderChunkColliders.Length ||
                 index >= _colliderChunkMeshes.Length ||
                 index >= _colliderChunkBakeMeshes.Length)
             {
-                return;
+                return false;
             }
 
             MeshCollider collider = _colliderChunkColliders[index];
             Mesh stagedMesh = _colliderChunkBakeMeshes[index];
             if (collider == null || stagedMesh == null)
-                return;
+                return false;
 
-            if (!global::HectonVoxelEngine.EnqueueDeferredVoxelColliderUpload(this, index))
+            bool enqueued = global::HectonVoxelEngine.EnqueueDeferredVoxelColliderUpload(this, index);
+            if (!enqueued)
                 DisableColliderChunkBakeProxy(index);
+
+            return enqueued;
         }
 
         /// <summary>
@@ -1359,6 +1420,7 @@ namespace Hecton8.Caves
                 float normalized = Mathf.Clamp(smoothDensityField[i] * inverseRange, -1f, 1f);
                 float encoded = (normalized * 0.5f + 0.5f) * 255f;
                 _publishedSonarSdf[i] = (byte)Mathf.Clamp((int)(encoded + 0.5f), 0, 255);
+                _publishedSonarAudioMaterialIds[i] = DefaultPublishedSonarAudioMaterialId;
             }
 
             _publishedSonarVersion++;
@@ -2370,13 +2432,22 @@ namespace Hecton8.Caves
 
         private void EnsurePublishedSonarCapacity(int totalPointCount)
         {
-            if (_publishedSonarSdf.IsCreated && _publishedSonarSdf.Length == totalPointCount)
+            if (_publishedSonarSdf.IsCreated &&
+                _publishedSonarAudioMaterialIds.IsCreated &&
+                _publishedSonarSdf.Length == totalPointCount &&
+                _publishedSonarAudioMaterialIds.Length == totalPointCount)
                 return;
 
             if (_publishedSonarSdf.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_publishedSonarSdf);
                 _publishedSonarSdf.Dispose(default);
+            }
+
+            if (_publishedSonarAudioMaterialIds.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_publishedSonarAudioMaterialIds);
+                _publishedSonarAudioMaterialIds.Dispose(default);
             }
 
             _publishedSonarSdf = new NativeArray<byte>(
@@ -2388,6 +2459,15 @@ namespace Hecton8.Caves
                 NativeMemoryOwner,
                 nameof(_publishedSonarSdf),
                 NativeAllocationLifetime.Scene);
+            _publishedSonarAudioMaterialIds = new NativeArray<byte>(
+                totalPointCount,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[totalPointCount] - published sonar audio material atlas - owner: HectonVoxelVolume
+            NativeMemorySentinel.RegisterNativeArray(
+                _publishedSonarAudioMaterialIds,
+                NativeMemoryOwner,
+                nameof(_publishedSonarAudioMaterialIds),
+                NativeAllocationLifetime.Scene);
         }
 
         private void ClearPublishedSonarSdf()
@@ -2398,7 +2478,14 @@ namespace Hecton8.Caves
                 _publishedSonarSdf.Dispose(default);
             }
 
+            if (_publishedSonarAudioMaterialIds.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_publishedSonarAudioMaterialIds);
+                _publishedSonarAudioMaterialIds.Dispose(default);
+            }
+
             _publishedSonarSdf = default;
+            _publishedSonarAudioMaterialIds = default;
             _publishedSonarGridDimensions = default;
             _publishedSonarOrigin = Vector3.zero;
             _publishedSonarCellSize = Vector3.zero;

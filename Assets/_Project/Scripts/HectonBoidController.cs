@@ -10,7 +10,7 @@
 //
 // ÐÐ Ð¥Ð˜Ð¢Ð•ÐšÐ¢Ð£Ð Ð:
 //   â€¢ ITickable â€” Ð¸Ð½Ñ‚ÐµÐ³Ñ€Ð°Ñ†Ð¸Ñ Ñ GameTickManager. ÐÐµÑ‚ Update().
-//   â€¢ Graphics.RenderMeshPrimitives (Unity 6) â€” Ð¾Ð´Ð¸Ð½ draw call Ð½Ð° 5000 Ñ€Ñ‹Ð±.
+//   â€¢ Graphics.RenderMeshIndirect (Unity 6) â€” one GPU-visible draw call.
 //   â€¢ Ping-Pong GraphicsBuffer â€” Ð´Ð²Ð° Ð±ÑƒÑ„ÐµÑ€Ð°, swap ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€, zero race conditions.
 //   â€¢ MaterialPropertyBlock â€” zero GC per-frame (reuse).
 //
@@ -54,7 +54,7 @@
 //   â€¢ BoidData â€” struct (blittable, no GC pressure).
 //   â€¢ MaterialPropertyBlock.SetBuffer â€” zero GC (reuse).
 //   â€¢ ComputeShader.SetFloat/SetVector/SetInt â€” zero GC.
-//   â€¢ Graphics.RenderMeshPrimitives â€” zero GC.
+//   â€¢ Graphics.RenderMeshIndirect â€” zero GC.
 //   â€¢ GeometryUtility.TestPlanesAABB â€” zero GC (struct arrays).
 //   â€¢ Ping-Pong swap â€” integer increment, zero allocation.
 // ============================================================================
@@ -70,7 +70,7 @@ using UnityEngine.Rendering;
 namespace Hecton8.AI.GPU
 {
     [DisallowMultipleComponent]
-    public sealed class HectonBoidController : MonoBehaviour, ITickable, IUpdatable
+    public sealed class HectonBoidController : MonoBehaviour, ITickable, IUpdatable, Hecton8.Physics.IAcousticPingEventListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  BOID DATA â€” must match compute shader struct exactly
@@ -78,6 +78,13 @@ namespace Hecton8.AI.GPU
 
         /// <summary>Stride of BoidData in bytes. Must match GPU struct.</summary>
         private const int BoidStride = 32; // 8 Ã— sizeof(float)
+        private const int SpatialGridMaxAxisResolution = 32;
+        private const int SpatialGridMaxCellCount = SpatialGridMaxAxisResolution * SpatialGridMaxAxisResolution * SpatialGridMaxAxisResolution;
+        private const int SpatialGridMaxBoidsPerCell = 32;
+        private const int SpatialGridCounterStride = 4;
+        private const int SpatialGridCellEntryStride = 4;
+        private const int MaxPredatorAupPositions = 16;
+        private const float DefaultBoidCullingRadiusScale = 2.25f;
 
         /// <summary>
         /// GPU-compatible boid data structure.
@@ -90,8 +97,8 @@ namespace Hecton8.AI.GPU
         {
             public Vector3 position;  // 12 bytes
             public Vector3 velocity;  // 12 bytes
-            public float   pad0;      // 4 bytes  (alignment)
-            public float   pad1;      // 4 bytes  (alignment)
+            public float   panic;     // 4 bytes
+            public uint    stateFlags;// 4 bytes
             // TOTAL: 32 bytes
         }
 
@@ -175,6 +182,18 @@ namespace Hecton8.AI.GPU
         [Tooltip("Ð£Ñ€Ð¾Ð²ÐµÐ½ÑŒ Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚Ð¸ Ð²Ð¾Ð´Ñ‹ (Ð¼Ð¸Ñ€Ð¾Ð²Ð°Ñ Y).")]
         [SerializeField] private float waterSurfaceY = 0f;
 
+        [Header("GPU Ecosystem Inputs")]
+        [SerializeField] private bool enableVoxelSdfAvoidance = true;
+        [SerializeField] private HectonCaveVoxelLightingVolume caveSdfOverride;
+        [SerializeField] private float voxelSdfWeight = 1.35f;
+        [SerializeField] private bool enableAbyssalFlowAdvection = true;
+        [SerializeField] private float abyssalFlowWeight = 0.35f;
+        [SerializeField] private float predatorPanicRadius = 18f;
+        [SerializeField] private float predatorEvasionWeight = 1f;
+        [SerializeField] private float acousticPingShockwaveWeight = 1f;
+        [SerializeField] private float panicDecayPerSecond = 2.5f;
+        [SerializeField] private float panicAccelerationThreshold = 14f;
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR â€” RENDERING
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -207,13 +226,26 @@ namespace Hecton8.AI.GPU
             // â”€â”€ Buffers (Compute Shader â€” Ping-Pong) â”€â”€
             public static readonly int BoidsBufferRead  = Shader.PropertyToID("_BoidsBufferRead");
             public static readonly int BoidsBufferWrite = Shader.PropertyToID("_BoidsBufferWrite");
+            public static readonly int SpatialGridCounts = Shader.PropertyToID("_SpatialGridCounts");
+            public static readonly int SpatialGridCells  = Shader.PropertyToID("_SpatialGridCells");
 
             // â”€â”€ Buffer (Material / Vertex Shader) â”€â”€
             public static readonly int BoidsBuffer = Shader.PropertyToID("_BoidsBuffer");
+            public static readonly int VisibleBoidIndices = Shader.PropertyToID("_VisibleBoidIndices");
+            public static readonly int BoidUseVisibleIndices = Shader.PropertyToID("_BoidUseVisibleIndices");
 
             // â”€â”€ Simulation â”€â”€
             public static readonly int BoidCount = Shader.PropertyToID("_BoidCount");
             public static readonly int DeltaTime = Shader.PropertyToID("_DeltaTime");
+            public static readonly int SpatialGridOrigin = Shader.PropertyToID("_SpatialGridOrigin");
+            public static readonly int SpatialGridResolution = Shader.PropertyToID("_SpatialGridResolution");
+            public static readonly int SpatialGridCellSize = Shader.PropertyToID("_SpatialGridCellSize");
+            public static readonly int SpatialGridMaxBoidsPerCell = Shader.PropertyToID("_SpatialGridMaxBoidsPerCell");
+            public static readonly int BoidMathLodMode = Shader.PropertyToID("_BoidMathLodMode");
+            public static readonly int VisibleIndirectArgs = Shader.PropertyToID("_VisibleIndirectArgs");
+            public static readonly int CameraFrustumPlanes = Shader.PropertyToID("_CameraFrustumPlanes");
+            public static readonly int BoidCullingRadius = Shader.PropertyToID("_BoidCullingRadius");
+            public static readonly int GpuFrustumCullingActive = Shader.PropertyToID("_GpuFrustumCullingActive");
 
             // â”€â”€ Weights â”€â”€
             public static readonly int SeparationWeight = Shader.PropertyToID("_SeparationWeight");
@@ -245,6 +277,30 @@ namespace Hecton8.AI.GPU
             public static readonly int WorldSize       = Shader.PropertyToID("_WorldSize");
             public static readonly int HeightScaleProp = Shader.PropertyToID("_HeightScale");
             public static readonly int WaterSurfaceY   = Shader.PropertyToID("_WaterSurfaceY");
+
+            public static readonly int CaveVoxelSdfTex = Shader.PropertyToID("_HectonCaveVoxelSdfTex");
+            public static readonly int CaveVoxelWorldToLocal = Shader.PropertyToID("_HectonCaveVoxelWorldToLocal");
+            public static readonly int CaveVoxelHalfExtents = Shader.PropertyToID("_HectonCaveVoxelHalfExtents");
+            public static readonly int CaveVoxelInvDoubleHalfExtents = Shader.PropertyToID("_HectonCaveVoxelInvDoubleHalfExtents");
+            public static readonly int CaveVoxelActive = Shader.PropertyToID("_HectonCaveVoxelActive");
+            public static readonly int CaveVoxelWeight = Shader.PropertyToID("_HectonCaveVoxelWeight");
+
+            public static readonly int AbyssalFlowFieldResult = Shader.PropertyToID("_AbyssalFlowFieldResult");
+            public static readonly int AbyssalFlowFieldTexture = Shader.PropertyToID("_AbyssalFlowFieldTexture");
+            public static readonly int AbyssalGridResolution = Shader.PropertyToID("_AbyssalGridResolution");
+            public static readonly int AbyssalFlowCenter = Shader.PropertyToID("_AbyssalFlowCenter");
+            public static readonly int AbyssalFlowSpacing = Shader.PropertyToID("_AbyssalFlowSpacing");
+            public static readonly int AbyssalFlowActive = Shader.PropertyToID("_AbyssalFlowActive");
+            public static readonly int AbyssalFlowWeight = Shader.PropertyToID("_AbyssalFlowWeight");
+
+            public static readonly int PredatorAupPositions = Shader.PropertyToID("_PredatorAupPositions");
+            public static readonly int PredatorCount = Shader.PropertyToID("_PredatorCount");
+            public static readonly int PredatorPanicRadiusSq = Shader.PropertyToID("_PredatorPanicRadiusSq");
+            public static readonly int PredatorWeight = Shader.PropertyToID("_PredatorWeight");
+            public static readonly int AcousticPingAupRadius = Shader.PropertyToID("_AcousticPingAupRadius");
+            public static readonly int AcousticPingParams = Shader.PropertyToID("_AcousticPingParams");
+            public static readonly int PanicDecay = Shader.PropertyToID("_PanicDecay");
+            public static readonly int PanicAccelerationThresholdSq = Shader.PropertyToID("_PanicAccelerationThresholdSq");
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -262,6 +318,23 @@ namespace Hecton8.AI.GPU
         /// Created in InitializeBuffers, released in ReleaseBuffers.
         /// </summary>
         private GraphicsBuffer _boidsBufferB;
+        private GraphicsBuffer _spatialGridCountBuffer;
+        private GraphicsBuffer _spatialGridCellBuffer;
+        private GraphicsBuffer _fallbackFlowFieldBuffer;
+        private GraphicsBuffer _visibleBoidIndexBuffer;
+        private GraphicsBuffer _visibleIndirectArgsBuffer;
+        private Texture3D _fallbackVoxelSdfTexture;
+        private Texture3D _fallbackAbyssalFlowTexture;
+        private readonly Vector4[] _fallbackFlowFieldData = { Vector4.zero };
+        private readonly Vector4[] _cameraFrustumPlaneUpload = new Vector4[6];
+        private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _indirectArgsUpload =
+            new GraphicsBuffer.IndirectDrawIndexedArgs[1];
+        private Mesh _indirectArgsMesh;
+        private readonly Vector4[] _predatorAupPositions = new Vector4[MaxPredatorAupPositions];
+        private int _predatorAupCount;
+        private Vector4 _activeAcousticPingAupRadius;
+        private Vector4 _activeAcousticPingParams;
+        private bool _acousticPingSubscribed;
 
         /// <summary>
         /// Frame counter for Ping-Pong buffer swap.
@@ -269,6 +342,9 @@ namespace Hecton8.AI.GPU
         /// Zero allocation swap â€” only integer arithmetic.
         /// </summary>
         private int _frameIndex;
+        private Vector3 _spatialGridOrigin;
+        private Vector3Int _spatialGridResolution = Vector3Int.one;
+        private float _spatialGridCellSize = 1f;
 
         /// <summary>
         /// GPU draw state.
@@ -282,12 +358,17 @@ namespace Hecton8.AI.GPU
 
         /// <summary>Kernel index for CSMain.</summary>
         private int _kernelCSMain;
+        private int _kernelClearSpatialGrid;
+        private int _kernelBuildSpatialGrid;
+        private int _kernelClearVisibleIndirectArgs;
+        private int _kernelCullVisibleBoids;
 
         /// <summary>Thread group size X (read from shader).</summary>
         private int _threadGroupSizeX;
 
         /// <summary>Number of dispatch groups = ceil(boidCount / threadGroupSize).</summary>
         private int _dispatchGroupCount;
+        private int _clearSpatialGridGroupCount = 1;
 
         /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ð¹ Transform Ð¸Ð³Ñ€Ð¾ÐºÐ°.</summary>
         private Transform _playerTransform;
@@ -318,7 +399,7 @@ namespace Hecton8.AI.GPU
         private bool _initialized;
 
         /// <summary>
-        /// RenderParams Ð´Ð»Ñ Graphics.RenderMeshPrimitives (Unity 6).
+        /// RenderParams for Graphics.RenderMeshIndirect (Unity 6).
         /// Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ñ‚ÑÑ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð·.
         /// </summary>
         private RenderParams _renderParams;
@@ -404,6 +485,8 @@ namespace Hecton8.AI.GPU
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            Hecton8.Physics.PhysicsEventBus.Register((Hecton8.Physics.IAcousticPingEventListener)this);
+            _acousticPingSubscribed = true;
 
             if (_playerTransform == null)
                 FindPlayer();
@@ -416,10 +499,22 @@ namespace Hecton8.AI.GPU
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredToTickManager = false;
             }
+
+            if (_acousticPingSubscribed)
+            {
+                Hecton8.Physics.PhysicsEventBus.Unregister((Hecton8.Physics.IAcousticPingEventListener)this);
+                _acousticPingSubscribed = false;
+            }
         }
 
         private void OnDestroy()
         {
+            if (_acousticPingSubscribed)
+            {
+                Hecton8.Physics.PhysicsEventBus.Unregister((Hecton8.Physics.IAcousticPingEventListener)this);
+                _acousticPingSubscribed = false;
+            }
+
             ReleaseBuffers();
         }
 
@@ -453,6 +548,7 @@ namespace Hecton8.AI.GPU
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             UpdateTarget();
+            UpdateSpatialGridLayout();
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  2. SET UNIFORMS (includes Ping-Pong buffer binding)
@@ -468,6 +564,7 @@ namespace Hecton8.AI.GPU
             float t0 = Time.realtimeSinceStartup;
 #endif
 
+            DispatchSpatialGridBuild();
             boidShader.Dispatch(_kernelCSMain, _dispatchGroupCount, 1, 1);
 
 #if UNITY_EDITOR
@@ -484,7 +581,9 @@ namespace Hecton8.AI.GPU
             //  5. FRUSTUM CULLING
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-            bool isVisible = CheckFrustumVisibility();
+            GraphicsBuffer currentDataBuffer = (_frameIndex % 2 == 0) ? _boidsBufferA : _boidsBufferB;
+            DispatchComputeFrustumCulling(currentDataBuffer);
+            bool isVisible = true;
 
 #if UNITY_EDITOR
             _debugIsVisible = isVisible;
@@ -494,10 +593,7 @@ namespace Hecton8.AI.GPU
             //  6. RENDER (if visible)
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-            if (isVisible)
-            {
-                RenderBoids();
-            }
+            RenderBoids();
             }
         }
 
@@ -511,13 +607,17 @@ namespace Hecton8.AI.GPU
         private void InitializeCompute()
         {
             _kernelCSMain = boidShader.FindKernel("CSMain");
+            _kernelClearSpatialGrid = boidShader.FindKernel("ClearSpatialGrid");
+            _kernelBuildSpatialGrid = boidShader.FindKernel("BuildSpatialGrid");
+            _kernelClearVisibleIndirectArgs = boidShader.FindKernel("ClearVisibleIndirectArgs");
+            _kernelCullVisibleBoids = boidShader.FindKernel("CullVisibleBoids");
 
             uint threadX, threadY, threadZ;
             boidShader.GetKernelThreadGroupSizes(_kernelCSMain, out threadX, out threadY, out threadZ);
             _threadGroupSizeX = (int)threadX;
 
-            // Ceil division
-            _dispatchGroupCount = (boidCount + _threadGroupSizeX - 1) / _threadGroupSizeX;
+            _dispatchGroupCount = Mathf.Max(1, CeilDivPositive(boidCount, _threadGroupSizeX));
+            _clearSpatialGridGroupCount = Mathf.Max(1, CeilDivPositive(SpatialGridMaxCellCount, _threadGroupSizeX));
 
 #if UNITY_EDITOR
             _debugDispatchGroups = _dispatchGroupCount;
@@ -529,12 +629,19 @@ namespace Hecton8.AI.GPU
             bool requiresReallocation =
                 _boidsBufferA == null ||
                 _boidsBufferB == null ||
+                _spatialGridCountBuffer == null ||
+                _spatialGridCellBuffer == null ||
+                _visibleBoidIndexBuffer == null ||
+                _visibleIndirectArgsBuffer == null ||
                 _boidsBufferA.count != boidCount ||
-                _boidsBufferB.count != boidCount;
+                _boidsBufferB.count != boidCount ||
+                _spatialGridCountBuffer.count != SpatialGridMaxCellCount ||
+                _spatialGridCellBuffer.count != SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell ||
+                _visibleBoidIndexBuffer.count != boidCount;
             if (!requiresReallocation)
                 return;
 
-            _dispatchGroupCount = (boidCount + _threadGroupSizeX - 1) / _threadGroupSizeX;
+            _dispatchGroupCount = Mathf.Max(1, CeilDivPositive(boidCount, _threadGroupSizeX));
             InitializeBuffers();
             InitializeRendering();
             _simulationBounds = new Bounds(boundsCenter, boundsSize * 2f);
@@ -594,6 +701,50 @@ namespace Hecton8.AI.GPU
                 _boidsBufferB = null;
             }
 
+            if (_spatialGridCountBuffer != null)
+            {
+                _spatialGridCountBuffer.Release();
+                _spatialGridCountBuffer = null;
+            }
+
+            if (_spatialGridCellBuffer != null)
+            {
+                _spatialGridCellBuffer.Release();
+                _spatialGridCellBuffer = null;
+            }
+
+            if (_fallbackFlowFieldBuffer != null)
+            {
+                _fallbackFlowFieldBuffer.Release();
+                _fallbackFlowFieldBuffer = null;
+            }
+
+            if (_visibleBoidIndexBuffer != null)
+            {
+                _visibleBoidIndexBuffer.Release();
+                _visibleBoidIndexBuffer = null;
+            }
+
+            if (_visibleIndirectArgsBuffer != null)
+            {
+                _visibleIndirectArgsBuffer.Release();
+                _visibleIndirectArgsBuffer = null;
+            }
+
+            _indirectArgsMesh = null;
+
+            if (_fallbackVoxelSdfTexture != null)
+            {
+                Destroy(_fallbackVoxelSdfTexture);
+                _fallbackVoxelSdfTexture = null;
+            }
+
+            if (_fallbackAbyssalFlowTexture != null)
+            {
+                Destroy(_fallbackAbyssalFlowTexture);
+                _fallbackAbyssalFlowTexture = null;
+            }
+
             // â”€â”€ Release old args buffer â”€â”€
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  STEP 2: Create Ping-Pong boids buffers
@@ -601,6 +752,25 @@ namespace Hecton8.AI.GPU
 
             _boidsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<BoidData>(boidCount);
             _boidsBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<BoidData>(boidCount);
+            _spatialGridCountBuffer = new GraphicsBuffer(
+                GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                SpatialGridMaxCellCount,
+                SpatialGridCounterStride);
+            _spatialGridCellBuffer = new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell,
+                SpatialGridCellEntryStride);
+            _fallbackFlowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(1);
+            GraphicsBufferUploadUtility.UploadArray(_fallbackFlowFieldBuffer, _fallbackFlowFieldData, 1);
+            _visibleBoidIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(boidCount);
+            _visibleIndirectArgsBuffer = new GraphicsBuffer(
+                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                1,
+                GraphicsBuffer.IndirectDrawIndexedArgs.size);
+            UploadIndirectArgsStaticMeshData();
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  STEP 3: Fill initial data
@@ -629,8 +799,8 @@ namespace Hecton8.AI.GPU
                 {
                     position = randomPos,
                     velocity = randomVel,
-                    pad0     = 0f,
-                    pad1     = 0f
+                    panic = 0f,
+                    stateFlags = 0u
                 };
             }
 
@@ -686,9 +856,12 @@ namespace Hecton8.AI.GPU
             }
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            //  STEP 6: Args buffer for RenderMeshPrimitives
+            //  STEP 6: Args buffer for RenderMeshIndirect
             //  (old buffer already released in STEP 1)
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+            EnsureFallbackVoxelSdfTexture();
+            EnsureFallbackAbyssalFlowTexture();
 
             // GraphicsBuffer.IndirectDrawIndexedArgs: 5 uints = 20 bytes
         }
@@ -696,6 +869,64 @@ namespace Hecton8.AI.GPU
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INITIALIZATION â€” RENDERING
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+        private void EnsureFallbackVoxelSdfTexture()
+        {
+            if (_fallbackVoxelSdfTexture != null)
+                return;
+
+            _fallbackVoxelSdfTexture = new Texture3D(2, 2, 2, TextureFormat.R8, false)
+            {
+                name = "[HectonBoid] FallbackCaveSdf",
+                hideFlags = HideFlags.HideAndDontSave,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
+
+            for (int z = 0; z < 2; z++)
+            {
+                for (int y = 0; y < 2; y++)
+                {
+                    for (int x = 0; x < 2; x++)
+                        _fallbackVoxelSdfTexture.SetPixel(x, y, z, Color.white);
+                }
+            }
+
+            _fallbackVoxelSdfTexture.Apply(false, false);
+        }
+
+        private void EnsureFallbackAbyssalFlowTexture()
+        {
+            if (_fallbackAbyssalFlowTexture != null)
+                return;
+
+            _fallbackAbyssalFlowTexture = new Texture3D(1, 1, 1, TextureFormat.RGBAHalf, false)
+            {
+                name = "[HectonBoid] FallbackAbyssalFlow",
+                hideFlags = HideFlags.HideAndDontSave,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            }; // COLD ALLOC: Texture3D[1] - zero fallback abyssal-flow volume for boid compute binding - owner: HectonBoidController
+            _fallbackAbyssalFlowTexture.SetPixel(0, 0, 0, Color.clear);
+            _fallbackAbyssalFlowTexture.Apply(false, true);
+        }
+
+        private void UploadIndirectArgsStaticMeshData()
+        {
+            if (_visibleIndirectArgsBuffer == null || fishMesh == null || ReferenceEquals(_indirectArgsMesh, fishMesh))
+                return;
+
+            _indirectArgsUpload[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            {
+                indexCountPerInstance = fishMesh.GetIndexCount(0),
+                instanceCount = 0u,
+                startIndex = fishMesh.GetIndexStart(0),
+                baseVertexIndex = (uint)Mathf.Max(0, fishMesh.GetBaseVertex(0)),
+                startInstance = 0u
+            };
+            GraphicsBufferUploadUtility.UploadArray(_visibleIndirectArgsBuffer, _indirectArgsUpload, 1);
+            _indirectArgsMesh = fishMesh;
+        }
 
         /// <summary>
         /// Sets up MaterialPropertyBlock and RenderParams.
@@ -708,6 +939,8 @@ namespace Hecton8.AI.GPU
 
             // Frame 0: Read=A, Write=B â†’ after dispatch, fresh data is in B
             _materialProps.SetBuffer(ShaderProps.BoidsBuffer, _boidsBufferB);
+            _materialProps.SetBuffer(ShaderProps.VisibleBoidIndices, _visibleBoidIndexBuffer);
+            _materialProps.SetFloat(ShaderProps.BoidUseVisibleIndices, 1f);
             _materialProps.SetFloat("_FishScale", fishScale);
 
             _renderParams = new RenderParams(fishMaterial)
@@ -752,10 +985,54 @@ namespace Hecton8.AI.GPU
                 _boidsBufferB = null;
             }
 
+            if (_spatialGridCountBuffer != null)
+            {
+                _spatialGridCountBuffer.Release();
+                _spatialGridCountBuffer = null;
+            }
+
+            if (_spatialGridCellBuffer != null)
+            {
+                _spatialGridCellBuffer.Release();
+                _spatialGridCellBuffer = null;
+            }
+
+            if (_fallbackFlowFieldBuffer != null)
+            {
+                _fallbackFlowFieldBuffer.Release();
+                _fallbackFlowFieldBuffer = null;
+            }
+
+            if (_visibleBoidIndexBuffer != null)
+            {
+                _visibleBoidIndexBuffer.Release();
+                _visibleBoidIndexBuffer = null;
+            }
+
+            if (_visibleIndirectArgsBuffer != null)
+            {
+                _visibleIndirectArgsBuffer.Release();
+                _visibleIndirectArgsBuffer = null;
+            }
+
+            _indirectArgsMesh = null;
+
             if (_fallbackHeightMap != null)
             {
                 Destroy(_fallbackHeightMap);
                 _fallbackHeightMap = null;
+            }
+
+            if (_fallbackVoxelSdfTexture != null)
+            {
+                Destroy(_fallbackVoxelSdfTexture);
+                _fallbackVoxelSdfTexture = null;
+            }
+
+            if (_fallbackAbyssalFlowTexture != null)
+            {
+                Destroy(_fallbackAbyssalFlowTexture);
+                _fallbackAbyssalFlowTexture = null;
             }
         }
 
@@ -786,10 +1063,24 @@ namespace Hecton8.AI.GPU
 
             cs.SetBuffer(kernel, ShaderProps.BoidsBufferRead, readBuffer);
             cs.SetBuffer(kernel, ShaderProps.BoidsBufferWrite, writeBuffer);
+            cs.SetBuffer(kernel, ShaderProps.SpatialGridCounts, _spatialGridCountBuffer);
+            cs.SetBuffer(kernel, ShaderProps.SpatialGridCells, _spatialGridCellBuffer);
+            cs.SetBuffer(_kernelBuildSpatialGrid, ShaderProps.BoidsBufferRead, readBuffer);
+            cs.SetBuffer(_kernelBuildSpatialGrid, ShaderProps.SpatialGridCounts, _spatialGridCountBuffer);
+            cs.SetBuffer(_kernelBuildSpatialGrid, ShaderProps.SpatialGridCells, _spatialGridCellBuffer);
+            cs.SetBuffer(_kernelClearSpatialGrid, ShaderProps.SpatialGridCounts, _spatialGridCountBuffer);
 
             // â”€â”€ Simulation â”€â”€
             cs.SetInt(ShaderProps.BoidCount, boidCount);
             cs.SetFloat(ShaderProps.DeltaTime, dt);
+            cs.SetVector(ShaderProps.SpatialGridOrigin,
+                new Vector4(_spatialGridOrigin.x, _spatialGridOrigin.y, _spatialGridOrigin.z, 0f));
+            cs.SetVector(ShaderProps.SpatialGridResolution,
+                new Vector4(_spatialGridResolution.x, _spatialGridResolution.y, _spatialGridResolution.z, 0f));
+            cs.SetFloat(ShaderProps.SpatialGridCellSize, _spatialGridCellSize);
+            cs.SetInt(ShaderProps.SpatialGridMaxBoidsPerCell, SpatialGridMaxBoidsPerCell);
+            cs.SetInt(ShaderProps.BoidMathLodMode,
+                DistanceMath.ResolveMathLodMode(GlobalRegistry.ScalabilityTier) == MathLodMode.High ? 1 : 0);
 
             // â”€â”€ Weights â”€â”€
             cs.SetFloat(ShaderProps.SeparationWeight, separationWeight);
@@ -827,6 +1118,184 @@ namespace Hecton8.AI.GPU
                 new Vector4(worldSize.x, worldSize.y, 0f, 0f));
             cs.SetFloat(ShaderProps.HeightScaleProp, heightScale);
             cs.SetFloat(ShaderProps.WaterSurfaceY, waterSurfaceY);
+
+            BindCaveSdfPayload(cs, kernel);
+            BindAbyssalFlowPayload(cs, kernel);
+            BindPanicPayload(cs);
+        }
+
+        private void BindCaveSdfPayload(ComputeShader cs, int kernel)
+        {
+            Texture3D sdfTexture = _fallbackVoxelSdfTexture;
+            Matrix4x4 worldToLocal = Matrix4x4.identity;
+            Vector4 halfExtentsAndRange = new Vector4(1f, 1f, 1f, 1f);
+            Vector4 invDoubleHalfExtents = Vector4.zero;
+            float active = 0f;
+
+            HectonCaveVoxelLightingVolume caveVolume = caveSdfOverride != null
+                ? caveSdfOverride
+                : HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
+
+            if (enableVoxelSdfAvoidance &&
+                caveVolume != null &&
+                caveVolume.TryGetPublishedGpuSdfPayload(
+                    out Texture3D publishedTexture,
+                    out Matrix4x4 publishedWorldToLocal,
+                    out Vector4 publishedHalfExtentsAndRange,
+                    out Vector4 publishedInvDoubleHalfExtents))
+            {
+                sdfTexture = publishedTexture;
+                worldToLocal = publishedWorldToLocal;
+                halfExtentsAndRange = publishedHalfExtentsAndRange;
+                invDoubleHalfExtents = publishedInvDoubleHalfExtents;
+                active = 1f;
+            }
+
+            cs.SetTexture(kernel, ShaderProps.CaveVoxelSdfTex, sdfTexture);
+            cs.SetMatrix(ShaderProps.CaveVoxelWorldToLocal, worldToLocal);
+            cs.SetVector(ShaderProps.CaveVoxelHalfExtents, halfExtentsAndRange);
+            cs.SetVector(ShaderProps.CaveVoxelInvDoubleHalfExtents, invDoubleHalfExtents);
+            cs.SetFloat(ShaderProps.CaveVoxelActive, active);
+            cs.SetFloat(ShaderProps.CaveVoxelWeight, Mathf.Max(0f, voxelSdfWeight));
+        }
+
+        private void BindAbyssalFlowPayload(ComputeShader cs, int kernel)
+        {
+            GraphicsBuffer flowBuffer = _fallbackFlowFieldBuffer;
+            Texture flowTexture = _fallbackAbyssalFlowTexture;
+            Vector4 gridResolution = Vector4.zero;
+            Vector4 flowCenter = Vector4.zero;
+            Vector4 flowSpacing = Vector4.zero;
+            float active = 0f;
+
+            var fluid = GlobalRegistry.Fluid;
+            if (enableAbyssalFlowAdvection && fluid != null)
+            {
+                if (fluid.TryGetGpuAbyssalFlowFieldTexture(
+                    out Texture publishedFlowTexture,
+                    out Vector4 publishedTextureGridResolution,
+                    out Vector4 publishedTextureFlowCenter,
+                    out Vector4 publishedTextureFlowSpacing))
+                {
+                    flowTexture = publishedFlowTexture;
+                    gridResolution = publishedTextureGridResolution;
+                    flowCenter = publishedTextureFlowCenter;
+                    flowSpacing = publishedTextureFlowSpacing;
+                    active = 1f;
+                }
+
+                if (fluid.TryGetGpuAbyssalFlowFieldBuffer(
+                    out GraphicsBuffer publishedFlowBuffer,
+                    out Vector4 publishedGridResolution,
+                    out Vector4 publishedFlowCenter,
+                    out Vector4 publishedFlowSpacing))
+                {
+                    flowBuffer = publishedFlowBuffer;
+                    if (active <= 0f)
+                    {
+                        gridResolution = publishedGridResolution;
+                        flowCenter = publishedFlowCenter;
+                        flowSpacing = publishedFlowSpacing;
+                        flowSpacing.w = 0f;
+                        active = 1f;
+                    }
+                }
+            }
+
+            cs.SetBuffer(kernel, ShaderProps.AbyssalFlowFieldResult, flowBuffer);
+            cs.SetTexture(kernel, ShaderProps.AbyssalFlowFieldTexture, flowTexture);
+            cs.SetVector(ShaderProps.AbyssalGridResolution, gridResolution);
+            cs.SetVector(ShaderProps.AbyssalFlowCenter, flowCenter);
+            cs.SetVector(ShaderProps.AbyssalFlowSpacing, flowSpacing);
+            cs.SetFloat(ShaderProps.AbyssalFlowActive, active);
+            cs.SetFloat(ShaderProps.AbyssalFlowWeight, Mathf.Max(0f, abyssalFlowWeight));
+        }
+
+        private void BindPanicPayload(ComputeShader cs)
+        {
+            float predatorRadius = Mathf.Max(0.001f, predatorPanicRadius);
+            cs.SetVectorArray(ShaderProps.PredatorAupPositions, _predatorAupPositions);
+            cs.SetInt(ShaderProps.PredatorCount, Mathf.Clamp(_predatorAupCount, 0, MaxPredatorAupPositions));
+            cs.SetFloat(ShaderProps.PredatorPanicRadiusSq, predatorRadius * predatorRadius);
+            cs.SetFloat(ShaderProps.PredatorWeight, Mathf.Max(0f, predatorEvasionWeight));
+
+            float pingActive = _activeAcousticPingParams.x > 0.0001f && Time.time <= _activeAcousticPingParams.z ? 1f : 0f;
+            _activeAcousticPingParams.w = pingActive;
+            cs.SetVector(ShaderProps.AcousticPingAupRadius, _activeAcousticPingAupRadius);
+            cs.SetVector(ShaderProps.AcousticPingParams, _activeAcousticPingParams);
+            cs.SetFloat(ShaderProps.PanicDecay, Mathf.Max(0f, panicDecayPerSecond));
+            float accelerationThreshold = Mathf.Max(0.001f, panicAccelerationThreshold);
+            cs.SetFloat(ShaderProps.PanicAccelerationThresholdSq, accelerationThreshold * accelerationThreshold);
+        }
+
+        private void DispatchSpatialGridBuild()
+        {
+            boidShader.Dispatch(_kernelClearSpatialGrid, _clearSpatialGridGroupCount, 1, 1);
+            boidShader.Dispatch(_kernelBuildSpatialGrid, _dispatchGroupCount, 1, 1);
+        }
+
+        private bool PopulateGpuFrustumPlanes()
+        {
+            if (!TryResolveViewCamera())
+                return false;
+
+            GeometryUtility.CalculateFrustumPlanes(_mainCamera, _frustumPlanes);
+            for (int i = 0; i < 6; i++)
+            {
+                Plane plane = _frustumPlanes[i];
+                Vector3 normal = plane.normal;
+                _cameraFrustumPlaneUpload[i] = new Vector4(normal.x, normal.y, normal.z, plane.distance);
+            }
+
+            return true;
+        }
+
+        private void DispatchComputeFrustumCulling(GraphicsBuffer currentDataBuffer)
+        {
+            if (currentDataBuffer == null || _visibleBoidIndexBuffer == null || _visibleIndirectArgsBuffer == null)
+                return;
+
+            UploadIndirectArgsStaticMeshData();
+            bool hasCameraFrustum = PopulateGpuFrustumPlanes();
+            boidShader.SetBuffer(_kernelClearVisibleIndirectArgs, ShaderProps.VisibleIndirectArgs, _visibleIndirectArgsBuffer);
+            boidShader.SetBuffer(_kernelCullVisibleBoids, ShaderProps.BoidsBufferRead, currentDataBuffer);
+            boidShader.SetBuffer(_kernelCullVisibleBoids, ShaderProps.VisibleBoidIndices, _visibleBoidIndexBuffer);
+            boidShader.SetBuffer(_kernelCullVisibleBoids, ShaderProps.VisibleIndirectArgs, _visibleIndirectArgsBuffer);
+            boidShader.SetInt(ShaderProps.BoidCount, boidCount);
+            boidShader.SetVectorArray(ShaderProps.CameraFrustumPlanes, _cameraFrustumPlaneUpload);
+            boidShader.SetFloat(ShaderProps.BoidCullingRadius, Mathf.Max(0.01f, fishScale * DefaultBoidCullingRadiusScale));
+            boidShader.SetInt(ShaderProps.GpuFrustumCullingActive, hasCameraFrustum ? 1 : 0);
+            boidShader.Dispatch(_kernelClearVisibleIndirectArgs, 1, 1, 1);
+            boidShader.Dispatch(_kernelCullVisibleBoids, _dispatchGroupCount, 1, 1);
+        }
+
+        private void UpdateSpatialGridLayout()
+        {
+            float baseCellSize = Mathf.Max(Mathf.Max(perceptionRadius, separationRadius), 0.001f);
+            Vector3 doubledExtents = boundsSize * 2f;
+            Vector3 fieldSize = new Vector3(
+                Mathf.Max(doubledExtents.x, baseCellSize),
+                Mathf.Max(doubledExtents.y, baseCellSize),
+                Mathf.Max(doubledExtents.z, baseCellSize));
+            float axisClampCellSize = Mathf.Max(
+                fieldSize.x / SpatialGridMaxAxisResolution,
+                Mathf.Max(fieldSize.y / SpatialGridMaxAxisResolution, fieldSize.z / SpatialGridMaxAxisResolution));
+            _spatialGridCellSize = Mathf.Max(baseCellSize, axisClampCellSize);
+
+            Vector3 fieldMin = boundsCenter - boundsSize;
+            Vector3 fieldMax = boundsCenter + boundsSize;
+            _spatialGridOrigin = new Vector3(
+                FloorToMultiple(fieldMin.x, _spatialGridCellSize),
+                FloorToMultiple(fieldMin.y, _spatialGridCellSize),
+                FloorToMultiple(fieldMin.z, _spatialGridCellSize));
+
+            int resolutionX = Mathf.Clamp(CeilToIntPositive((fieldMax.x - _spatialGridOrigin.x) / _spatialGridCellSize), 1, SpatialGridMaxAxisResolution);
+            int resolutionY = Mathf.Clamp(CeilToIntPositive((fieldMax.y - _spatialGridOrigin.y) / _spatialGridCellSize), 1, SpatialGridMaxAxisResolution);
+            int resolutionZ = Mathf.Clamp(CeilToIntPositive((fieldMax.z - _spatialGridOrigin.z) / _spatialGridCellSize), 1, SpatialGridMaxAxisResolution);
+            _spatialGridResolution = new Vector3Int(resolutionX, resolutionY, resolutionZ);
+
+            int cellCount = resolutionX * resolutionY * resolutionZ;
+            _clearSpatialGridGroupCount = Mathf.Max(1, CeilDivPositive(cellCount, _threadGroupSizeX));
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -846,9 +1315,9 @@ namespace Hecton8.AI.GPU
         ///     currentData = (_frameIndex % 2 == 0) ? B : A
         ///   This correctly points to the buffer that was just written.
         ///
-        /// Graphics.RenderMeshPrimitives (Unity 6):
-        ///   - Reads instance count from args buffer (GPU â†’ GPU, no readback).
-        ///   - Vertex shader reads BoidData via SV_InstanceID.
+        /// Graphics.RenderMeshIndirect (Unity 6):
+        ///   - Reads visible instance count from GPU-written args buffer.
+        ///   - Vertex shader maps SV_InstanceID through _VisibleBoidIndices.
         ///   - Zero CPU overhead for transforms.
         ///
         /// The fish material's vertex shader must:
@@ -859,18 +1328,20 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private void RenderBoids()
         {
-            if (fishMesh == null || fishMaterial == null)
+            if (fishMesh == null || fishMaterial == null || _visibleIndirectArgsBuffer == null || _visibleBoidIndexBuffer == null)
                 return;
 
             GraphicsBuffer currentDataBuffer = (_frameIndex % 2 == 0) ? _boidsBufferA : _boidsBufferB;
 
             _materialProps.SetBuffer(ShaderProps.BoidsBuffer, currentDataBuffer);
+            _materialProps.SetBuffer(ShaderProps.VisibleBoidIndices, _visibleBoidIndexBuffer);
+            _materialProps.SetFloat(ShaderProps.BoidUseVisibleIndices, 1f);
             _renderParams.matProps = _materialProps;
 
             // Update world bounds in case center moved
             _renderParams.worldBounds = _simulationBounds;
 
-            Graphics.RenderMeshPrimitives(_renderParams, fishMesh, 0, boidCount);
+            Graphics.RenderMeshIndirect(_renderParams, fishMesh, _visibleIndirectArgsBuffer, 1, 0);
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -886,15 +1357,7 @@ namespace Hecton8.AI.GPU
         ///
         /// If camera is not found â€” assumes visible (safety).
         /// </summary>
-        private bool CheckFrustumVisibility()
-        {
-            if (!TryResolveViewCamera())
-                return true; // No camera â€” assume visible
 
-            GeometryUtility.CalculateFrustumPlanes(_mainCamera, _frustumPlanes);
-
-            return GeometryUtility.TestPlanesAABB(_frustumPlanes, _simulationBounds);
-        }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  TARGET TRACKING
@@ -974,6 +1437,25 @@ namespace Hecton8.AI.GPU
             return _mainCamera != null;
         }
 
+        private static int CeilDivPositive(int numerator, int denominator)
+        {
+            if (numerator <= 0)
+                return 0;
+
+            int safeDenominator = Mathf.Max(1, denominator);
+            return 1 + ((numerator - 1) / safeDenominator);
+        }
+
+        private static int CeilToIntPositive(float value)
+        {
+            return value > 0f ? Mathf.CeilToInt(value) : 0;
+        }
+
+        private static float FloorToMultiple(float value, float multiple)
+        {
+            return multiple > 0f ? Mathf.Floor(value / multiple) * multiple : value;
+        }
+
         private static Vector3 ResolveDeterministicScatterVector(int index, Vector3 center, uint salt)
         {
             uint state = BuildDeterministicBoidSeed(index, center, salt);
@@ -1049,6 +1531,52 @@ namespace Hecton8.AI.GPU
             heightScale = maxHeight;
         }
 
+        public void ClearPredatorAupPositions()
+        {
+            _predatorAupCount = 0;
+        }
+
+        public bool SetPredatorAupPosition(int index, Vector3 aupPosition)
+        {
+            if ((uint)index >= MaxPredatorAupPositions)
+                return false;
+
+            _predatorAupPositions[index] = new Vector4(aupPosition.x, aupPosition.y, aupPosition.z, 1f);
+            if (index + 1 > _predatorAupCount)
+                _predatorAupCount = index + 1;
+
+            return true;
+        }
+
+        public void SetPredatorAupCount(int count)
+        {
+            _predatorAupCount = Mathf.Clamp(count, 0, MaxPredatorAupPositions);
+        }
+
+        public void OnAcousticPing(in Hecton8.Physics.AcousticPingEvent pingEvent)
+        {
+            RegisterAcousticPing(
+                pingEvent.RuntimePosition,
+                pingEvent.RadiusMeters,
+                pingEvent.Intensity01,
+                pingEvent.LifetimeSeconds);
+        }
+
+        public void RegisterAcousticPing(Vector3 aupPosition, float radiusMeters, float intensity01, float lifetimeSeconds)
+        {
+            float radius = Mathf.Max(0.001f, radiusMeters);
+            float intensity = Mathf.Clamp01(intensity01) * Mathf.Max(0f, acousticPingShockwaveWeight);
+            if (intensity <= 0.0001f)
+                return;
+
+            _activeAcousticPingAupRadius = new Vector4(aupPosition.x, aupPosition.y, aupPosition.z, radius);
+            _activeAcousticPingParams = new Vector4(
+                intensity,
+                radius * radius,
+                Time.time + Mathf.Max(0.001f, lifetimeSeconds),
+                1f);
+        }
+
         /// <summary>
         /// Ð¡Ð±Ñ€Ð°ÑÑ‹Ð²Ð°ÐµÑ‚ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ Ð²ÑÐµÑ… Ð±Ð¾Ð¹Ð´Ð¾Ð² Ð² Ñ†ÐµÐ½Ñ‚Ñ€.
         /// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐ¹ Ð¿Ñ€Ð¸ Ñ‚ÐµÐ»ÐµÐ¿Ð¾Ñ€Ñ‚Ðµ Ð¸Ð³Ñ€Ð¾ÐºÐ°.
@@ -1078,8 +1606,8 @@ namespace Hecton8.AI.GPU
                 {
                     position = pos,
                     velocity = ResolveDeterministicScatterVector(i, center, 0xB01D5A7Eu) * minSpeed,
-                    pad0     = 0f,
-                    pad1     = 0f
+                    panic = 0f,
+                    stateFlags = 0u
                 };
             }
 

@@ -4,7 +4,13 @@ Date: 2026-05-07
 Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
+> [DEPRECATED - DOC_VULCAN 2026-05-12]
+> This file is visual and lore reference only. It is not terrain, scatter, flora, fauna, navigation, atmosphere, voxel, or runtime authority.
+> Current replacements: `Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`, active source-backed pipeline READMEs, and the compute/shader/runtime files named there.
+
 This is the definitive lore and geological specification for the 15km vertical terrain of Hecton8. It details 108 unique biomes across 27 depth tiers, distributed into four cardinal regions (North, South, East, West).
+
+[DEPRECATED CLAIM] The sentence above is historical prose. Do not treat it as current runtime authority.
 
 ---
 

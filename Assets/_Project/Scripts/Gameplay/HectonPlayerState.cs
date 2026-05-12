@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.World;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -59,6 +60,200 @@ namespace Hecton8.Gameplay
         {
             ExternalAcceleration = float3.zero;
             ExternalVelocityChange = float3.zero;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    internal struct PlayerKinematicsHandTarget
+    {
+        public float3 Position;
+        public float3 Normal;
+        public float Blend;
+        public float ElbowCosine;
+        public byte Hit;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+    internal struct PlayerKinematicsTelemetryEntry
+    {
+        public float3 Position;
+        public float3 Velocity;
+        public float3 IntendedMovement;
+        public float DragCoefficient;
+        public float WaterDensityScale;
+        public uint Frame;
+        public uint Flags;
+        public uint Padding0;
+        public uint Padding1;
+        public uint Padding2;
+    }
+
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct PlayerKinematicsLinearDragJob : IJob
+    {
+        [ReadOnly] public NativeArray<float3> Velocities;
+        public NativeArray<float3> SolvedVelocities;
+        public float DragCoefficient;
+        public float WaterDensityScale;
+        public float DeltaTime;
+
+        public void Execute()
+        {
+            if (!Velocities.IsCreated || !SolvedVelocities.IsCreated)
+                return;
+
+            float3 velocity = Velocities[0];
+            if (!math.all(math.isfinite(velocity)))
+            {
+                SolvedVelocities[0] = float3.zero;
+                return;
+            }
+
+            float dragFactor = math.saturate(
+                math.max(0f, DragCoefficient) *
+                math.max(0f, WaterDensityScale) *
+                math.max(0f, DeltaTime));
+            SolvedVelocities[0] = velocity - (velocity * dragFactor);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 16)]
+    internal struct PlayerKinematicsNativeState : IDisposable
+    {
+        public const int KinematicCapacity = 1;
+        public const int TelemetryFrameCapacity = 300;
+
+        public NativeArray<float3> Positions;
+        public NativeArray<float3> Velocities;
+        public NativeArray<float3> IntendedMovements;
+        public NativeArray<float3> DragSolvedVelocities;
+        public NativeArray<PlayerKinematicsTelemetryEntry> TelemetryRing;
+        public int TelemetryWriteIndex;
+        public uint TelemetryFrameSequence;
+
+        private const string NativeMemoryOwner = nameof(PlayerKinematicsNativeState);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+
+        public bool IsCreated =>
+            Positions.IsCreated &&
+            Velocities.IsCreated &&
+            IntendedMovements.IsCreated &&
+            DragSolvedVelocities.IsCreated &&
+            TelemetryRing.IsCreated;
+
+        public void EnsureCreated()
+        {
+            EnsureFloat3Array(ref Positions, KinematicCapacity, nameof(Positions));
+            EnsureFloat3Array(ref Velocities, KinematicCapacity, nameof(Velocities));
+            EnsureFloat3Array(ref IntendedMovements, KinematicCapacity, nameof(IntendedMovements));
+            EnsureFloat3Array(ref DragSolvedVelocities, KinematicCapacity, nameof(DragSolvedVelocities));
+
+            if (!TelemetryRing.IsCreated)
+            {
+                TelemetryRing = new NativeArray<PlayerKinematicsTelemetryEntry>(
+                    TelemetryFrameCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PlayerKinematicsTelemetryEntry>[300] - fixed player kinematics black-box ring - owner: PlayerKinematicsNativeState
+                NativeMemorySentinel.RegisterNativeArray(
+                    TelemetryRing,
+                    NativeMemoryOwner,
+                    nameof(TelemetryRing),
+                    NativeMemoryLifetime);
+            }
+        }
+
+        public void WriteKinematicSnapshot(float3 position, float3 velocity, float3 intendedMovement)
+        {
+            if (!IsCreated)
+                return;
+
+            Positions[0] = position;
+            Velocities[0] = velocity;
+            IntendedMovements[0] = intendedMovement;
+        }
+
+        public void WriteTelemetry(float dragCoefficient, float waterDensityScale, uint flags)
+        {
+            if (!TelemetryRing.IsCreated || !Positions.IsCreated || !Velocities.IsCreated || !IntendedMovements.IsCreated)
+                return;
+
+            int index = TelemetryWriteIndex;
+            TelemetryRing[index] = new PlayerKinematicsTelemetryEntry
+            {
+                Position = Positions[0],
+                Velocity = Velocities[0],
+                IntendedMovement = IntendedMovements[0],
+                DragCoefficient = dragCoefficient,
+                WaterDensityScale = waterDensityScale,
+                Frame = TelemetryFrameSequence,
+                Flags = flags
+            };
+
+            TelemetryFrameSequence++;
+            TelemetryWriteIndex = (index + 1) % TelemetryFrameCapacity;
+        }
+
+        public void ApplyOriginShift(float3 shiftOffset)
+        {
+            if (!math.all(math.isfinite(shiftOffset)) || math.lengthsq(shiftOffset) <= 0.000001f)
+                return;
+
+            if (Positions.IsCreated)
+                Positions[0] -= shiftOffset;
+
+            if (TelemetryRing.IsCreated)
+            {
+                for (int i = 0; i < TelemetryRing.Length; i++)
+                {
+                    PlayerKinematicsTelemetryEntry entry = TelemetryRing[i];
+                    entry.Position -= shiftOffset;
+                    TelemetryRing[i] = entry;
+                }
+            }
+        }
+
+        private static void EnsureFloat3Array(ref NativeArray<float3> array, int count, string label)
+        {
+            if (array.IsCreated)
+                return;
+
+            array = new NativeArray<float3>(
+                math.max(1, count),
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[count] - player kinematic S.O.A. lane - owner: PlayerKinematicsNativeState
+            NativeMemorySentinel.RegisterNativeArray(
+                array,
+                NativeMemoryOwner,
+                label,
+                NativeMemoryLifetime);
+        }
+
+        public void Dispose()
+        {
+            DisposeArray(ref Positions, nameof(Positions));
+            DisposeArray(ref Velocities, nameof(Velocities));
+            DisposeArray(ref IntendedMovements, nameof(IntendedMovements));
+            DisposeArray(ref DragSolvedVelocities, nameof(DragSolvedVelocities));
+            if (TelemetryRing.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(TelemetryRing);
+                TelemetryRing.Dispose();
+                TelemetryRing = default;
+            }
+
+            TelemetryWriteIndex = 0;
+            TelemetryFrameSequence = 0u;
+        }
+
+        private static void DisposeArray(ref NativeArray<float3> array, string label)
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
     }
 

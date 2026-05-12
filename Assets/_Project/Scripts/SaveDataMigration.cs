@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Core.Contracts;
+using Hecton8.Gameplay;
 using Hecton.Localization;
 using Hecton8.Narrative;
 using Unity.Mathematics;
@@ -352,8 +353,10 @@ namespace Hecton8.SaveSystem
             for (int i = 0; i < dto.chunkCount; i++)
             {
                 VoxelDeltaChunkDTO chunk = dto.chunks[i];
+                bool hasUniformSdfRleStorage = (chunk.storageFlags & VoxelDeltaChunkDTO.StorageUniformSdfRle) != 0;
 
                 bool hasDenseStorage =
+                    !hasUniformSdfRleStorage &&
                     chunk.dirtyMaskWords != null &&
                     chunk.dirtyMaskWords.Length == VoxelDeltaChunkDTO.DirtyMaskWordCount &&
                     chunk.sdfValueBits != null &&
@@ -391,12 +394,41 @@ namespace Hecton8.SaveSystem
                     changed = true;
                 }
 
+                if (hasUniformSdfRleStorage)
+                {
+                    if (chunk.dirtyMaskWords.Length != 0)
+                    {
+                        chunk.dirtyMaskWords = Array.Empty<uint>();
+                        changed = true;
+                    }
+
+                    if (chunk.sdfValueBits.Length != 0)
+                    {
+                        chunk.sdfValueBits = Array.Empty<ushort>();
+                        changed = true;
+                    }
+
+                    if (chunk.materialIds.Length != 0)
+                    {
+                        chunk.materialIds = Array.Empty<byte>();
+                        changed = true;
+                    }
+
+                    if (chunk.cellFlags.Length != 0)
+                    {
+                        chunk.cellFlags = Array.Empty<byte>();
+                        changed = true;
+                    }
+                }
+
                 int cellCapacity = chunk.cells != null ? chunk.cells.Length : 0;
-                int legacyCellCount = math.clamp(chunk.cellCount, 0, cellCapacity);
+                int legacyCellCount = hasUniformSdfRleStorage ? 0 : math.clamp(chunk.cellCount, 0, cellCapacity);
                 int denseCellCount = hasDenseStorage ? CountDirtyMaskBits(chunk.dirtyMaskWords) : 0;
-                int clampedCellCount = hasDenseStorage
-                    ? math.max(denseCellCount, legacyCellCount)
-                    : legacyCellCount;
+                int clampedCellCount = hasUniformSdfRleStorage
+                    ? VoxelDeltaChunkDTO.CellCount
+                    : hasDenseStorage
+                        ? math.max(denseCellCount, legacyCellCount)
+                        : legacyCellCount;
                 if (clampedCellCount != chunk.cellCount)
                 {
                     chunk.cellCount = clampedCellCount;
@@ -404,6 +436,11 @@ namespace Hecton8.SaveSystem
                 }
 
                 if (chunk.cells == null)
+                {
+                    chunk.cells = Array.Empty<VoxelDeltaCellDTO>();
+                    changed = true;
+                }
+                else if (hasUniformSdfRleStorage && chunk.cells.Length != 0)
                 {
                     chunk.cells = Array.Empty<VoxelDeltaCellDTO>();
                     changed = true;
@@ -1214,6 +1251,63 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("industrial lore bit words created");
             }
+
+            if (!DataArchaeologyDiscoveryBitMask.HasExpectedCapacity(data.dataArchaeologyDiscoveryBitWords))
+            {
+                DataArchaeologyDiscoveryBitMask.EnsureCapacity(ref data.dataArchaeologyDiscoveryBitWords);
+                changed = true;
+                steps.Add("data archaeology bit words created");
+            }
+
+            if (data.dataArchaeologyPartialScanHashes == null ||
+                data.dataArchaeologyPartialScanHashes.Length < SaveData.MaxDataArchaeologyPartialScans)
+            {
+                data.dataArchaeologyPartialScanHashes = new uint[SaveData.MaxDataArchaeologyPartialScans];
+                data.dataArchaeologyPartialScanCount = 0;
+                changed = true;
+                steps.Add("data archaeology partial hashes created");
+            }
+
+            if (data.dataArchaeologyPartialScanProgressPermille == null ||
+                data.dataArchaeologyPartialScanProgressPermille.Length < SaveData.MaxDataArchaeologyPartialScans)
+            {
+                data.dataArchaeologyPartialScanProgressPermille = new ushort[SaveData.MaxDataArchaeologyPartialScans];
+                data.dataArchaeologyPartialScanCount = 0;
+                changed = true;
+                steps.Add("data archaeology partial progress created");
+            }
+
+            data.dataArchaeologyPartialScanCount = math.clamp(
+                data.dataArchaeologyPartialScanCount,
+                0,
+                math.min(
+                    SaveData.MaxDataArchaeologyPartialScans,
+                    math.min(data.dataArchaeologyPartialScanHashes.Length, data.dataArchaeologyPartialScanProgressPermille.Length)));
+
+            if (data.dataArchaeologyScanStateKeys == null ||
+                data.dataArchaeologyScanStateKeys.Length < SaveData.MaxDataArchaeologyScanStates)
+            {
+                data.dataArchaeologyScanStateKeys = new int[SaveData.MaxDataArchaeologyScanStates];
+                data.dataArchaeologyScanStateCount = 0;
+                changed = true;
+                steps.Add("data archaeology scan-state keys created");
+            }
+
+            if (data.dataArchaeologyScanStateValues == null ||
+                data.dataArchaeologyScanStateValues.Length < SaveData.MaxDataArchaeologyScanStates)
+            {
+                data.dataArchaeologyScanStateValues = new byte[SaveData.MaxDataArchaeologyScanStates];
+                data.dataArchaeologyScanStateCount = 0;
+                changed = true;
+                steps.Add("data archaeology scan-state values created");
+            }
+
+            data.dataArchaeologyScanStateCount = math.clamp(
+                data.dataArchaeologyScanStateCount,
+                0,
+                math.min(
+                    SaveData.MaxDataArchaeologyScanStates,
+                    math.min(data.dataArchaeologyScanStateKeys.Length, data.dataArchaeologyScanStateValues.Length)));
 
             if (data.questActiveIds == null)
             {

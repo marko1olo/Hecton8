@@ -1,0 +1,415 @@
+# RECON_JANITOR_NAMING
+
+Evidence Class: STATIC_SOURCE
+Scope: Assets/_Project first-party assets only
+Non-compliant first-party asset names: 410
+- Assets\_Project\Art\Materials\Mat_AegirHazeOverlay.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Mat_GasGiant.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Mat_HectonSky.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Mat_HectonSky_CloudOverlay.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Mat_Shelf.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Mat_Skybox_Final.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Mat_Sun.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Mat_Terrain.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Mat_TriplanarRock.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Mat_Visor_Glass.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Mat_Water.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\red.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Sand.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Skybox.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Snow.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\terrain 1.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\terrain 2.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\terrain.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_BuildGhost_Invalid.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_BuildGhost_Valid.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_LeakWetSheen.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_Module_Corridor.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_Module_CurrentTurbine.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_Module_Foundation.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_Module_Pylon.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_Module_ServicePump.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_RuinSeepSheen.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_ToolTrial_Anchor.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_ToolTrial_Cargo.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_ToolTrial_Combat.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_ToolTrial_Dark.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_ToolTrial_Dormant.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_ToolTrial_Heavy.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Construction\Mat_ToolTrial_Scan.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Nature\ProceduralOrganicMisc\Mat_Organic_EggNest.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Nature\ProceduralOrganicMisc\Mat_Organic_EggShell.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Nature\ProceduralOrganicMisc\Mat_Organic_PlantBud.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Nature\ProceduralOrganicMisc\Mat_Organic_PlantCanopy.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Nature\ProceduralOrganicMisc\Mat_Organic_PlantStem.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Resources\Mat_Resource_Copper.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Resources\Mat_Resource_Fiber.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Resources\Mat_Resource_Membrane.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Resources\Mat_Resource_Resin.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Resources\Mat_Resource_Scrap.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Resources\Mat_Resource_Silica.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Resources\Mat_Resource_Silver.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Resources\Mat_Resource_Sulfur.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Tools\Mat_Tool_BeaconDeployer_Placeholder.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Tools\Mat_Tool_Builder_Placeholder.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Tools\Mat_Tool_EnvAnalyzer_Placeholder.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Tools\Mat_Tool_Flashlight_Placeholder.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Tools\Mat_Tool_HarpoonLauncher_Placeholder.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Tools\Mat_Tool_Knife_Placeholder.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Tools\Mat_Tool_LaserCutter_Placeholder.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Tools\Mat_Tool_Propulsion_Placeholder.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Tools\Mat_Tool_Repair_Placeholder.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Tools\Mat_Tool_SalvageSampler_Placeholder.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Tools\Mat_Tool_Scanner_Placeholder.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\Tools\Mat_Tool_StunPistol_Placeholder.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\VFX\Mat_LeakPlume.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\WorldSupport\Mat_Support_AbyssApex.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\WorldSupport\Mat_Support_CreaturePassive.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\WorldSupport\Mat_Support_CreaturePredator.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\WorldSupport\Mat_Support_HazardPocket.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\WorldSupport\Mat_Support_ReefApex.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\WorldSupport\Mat_Support_ResourcePocket.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\WorldSupport\Mat_Support_RuinApex.mat | expected prefix: MAT_
+- Assets\_Project\Art\Materials\WorldSupport\Mat_Support_SafePocket.mat | expected prefix: MAT_
+- Assets\_Project\Art\Models\Baked\PILLAR1 MESH.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Art\Models\Rocks\Rock 5\River_Rock_FBX.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Art\Models\Rocks\Rock 6\Mossy_Forest_Rock_vimrfjsaw_Mid.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Art\Models\Rocks\Rock 6\rock6\Mossy_Forest_Rock_vimrfjsaw_Mid_2K_AO.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock 6\rock6\Mossy_Forest_Rock_vimrfjsaw_Mid_2K_BaseColor.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock 6\rock6\Mossy_Forest_Rock_vimrfjsaw_Mid_2K_Normal.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock 6\rock6\rock_6.mat | expected prefix: MAT_
+- Assets\_Project\Art\Models\Rocks\Rock 7\SAMMPLE.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Art\Models\Rocks\Rock 7\Materials\2.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock 7\Materials\2.mat | expected prefix: MAT_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\Nordic_Beach_Rock_vbumba2fa_Mid.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\mat_Rock2.mat | expected prefix: MAT_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\mat_Rock_Shared.mat | expected prefix: MAT_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\Rock012_2K-JPG_AmbientOcclusion.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\Rock012_2K-JPG_Color.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\Rock012_2K-JPG_NormalGL.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\Rock037_2K-JPG_AmbientOcclusion.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\Rock037_2K-JPG_Color.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\Rock037_2K-JPG_NormalGL.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\Rock063_2K-JPG_AmbientOcclusion.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\Rock063_2K-JPG_Color.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\Rock063_2K-JPG_NormalGL.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\TOP1Rock028_2K-JPG_AmbientOcclusion.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\TOP1Rock028_2K-JPG_Color.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Rocks\Rock_4_-_UNIVERSALNYY_VYBOR\UNIVERSALNYY_VYBOR_(TEKSTURY)\TOP1Rock028_2K-JPG_NormalGL.jpg | expected prefix: TX_
+- Assets\_Project\Art\Models\Sandbox\Coral_Albedo.png | expected prefix: TX_
+- Assets\_Project\Art\Models\Sandbox\Coral_Normal.png | expected prefix: TX_
+- Assets\_Project\Art\Shaders\AbyssalBlackSmoke.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\AbyssalFluidDecal.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Crest_SargassumFoamDamping.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Crest_SargassumOilFilm.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Crest_SargassumWaveDamping.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\HectonVisorUberPost.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_AbyssalSSDO.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_AbyssalVoxelRock.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_AcousticRadarVoxel.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_AegirHazeOverlay.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_AlienSky_Master.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_BiolumSSGIComposite.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_BlueprintWireInstanced.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_CelestialMoon.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_CollapseScavengerIndirect.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_CoralMaster.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_CoralMaster_GPUI.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_DeferredDecal.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_DiegeticPanelUnlit.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_DiegeticTooltipGlyph.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_DistantLandmarkSilhouette.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_DryVolumeRestore.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_DryVolumeStencil.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_DryVolumeStencilClear.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_DryZoneLit.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_FabricatorHologram.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_FabricatorProgressBeam.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_FillrateDepthOnly.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_FlashlightConeSilt.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_FlexiblePipe.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_GeologyImpostorBillboard.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_HalfResParticleComposite.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_HLODUnlitFog.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_HolographicEdge.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_HUD_AcousticRadarOverlay.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_HUD_DiegeticProjectionUnlit.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_IndirectVegetation.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_IndirectVegetationDepthOnly.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_IndirectVegetationMotionVectors.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_IndirectVegetationShadow.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_InternalBlackError.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_KelpMaster.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_KelpMaster_GPUI.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_LaserCutRadianceDecal.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_LeakPlume.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_LeviathanOrganic.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_MarineSnow.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_NoirDepthFog.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_OceanRainRippleDecal.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_OverdrawHeatmap.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_PDA_SonarMap.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_PDA_SonarPointCloud.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_PhantomDrones.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_RadarBlipInstanced.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_RetinaDistortion.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_RuinSeepSheen.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_SargassumCutMaskStamp.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_SargassumMaster.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_ScannerMarkerInstanced.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_ScannerPulseInstanced.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_ScatterIndirectLit.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_ScooterVolumetricShafts.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_SeamGapDitherIndirect.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_SedimentCapture.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_StochasticSSR.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_SubmarineCockpitGlassStencil.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_SubmarineMonitorOpaqueStencil.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_SubmarineSonarHoloMapStencil.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_TetherLineStrip.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_UI_CompassRibbon.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_VegetationWakeTrailStamp.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_VisorFluidDistortion.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_VisorStencilMask.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_VoxelBakeGhost.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hecton_WreckIndirectLit.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hidden_Hecton_AtmosphereSootOverlay.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hidden_Hecton_BiosDiagnostic.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hidden_Hecton_PDA_PhosphorDecay.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hidden_Hecton_ScannerDepthProjection.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hidden_Hecton_VRBrownout.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Hidden_SargassumDampingFacadeCopy.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\SG_GasGiant.shadergraph | expected prefix: SH_
+- Assets\_Project\Art\Shaders\SG_GasGiant_Master.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\SG_Rock_Triplanar.shadergraph | expected prefix: SH_
+- Assets\_Project\Art\Shaders\SG_Water.shadergraph | expected prefix: SH_
+- Assets\_Project\Art\Shaders\SkyboxBlend.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\SonarGridOverlay.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\SuitVisor.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\Sun.shader | expected prefix: SH_
+- Assets\_Project\Art\Shaders\TerrainMaster.shader | expected prefix: SH_
+- Assets\_Project\Art\Skyboxes\Mat_Skybox_Day.mat | expected prefix: MAT_
+- Assets\_Project\Art\Skyboxes\Mat_Skybox_Night.mat | expected prefix: MAT_
+- Assets\_Project\Art\Skyboxes\Mat_Skybox_Storm.mat | expected prefix: MAT_
+- Assets\_Project\Art\Skyboxes\panorama_den.png | expected prefix: TX_
+- Assets\_Project\Art\Skyboxes\panorama_noch.png | expected prefix: TX_
+- Assets\_Project\Art\Skyboxes\panorama_shtorm.png | expected prefix: TX_
+- Assets\_Project\Art\Sprites\cardiogram.png | expected prefix: TX_
+- Assets\_Project\Art\Sprites\oxygen-tank.png | expected prefix: TX_
+- Assets\_Project\Art\Sprites\ring.png | expected prefix: TX_
+- Assets\_Project\Art\Sprites\thunder.png | expected prefix: TX_
+- Assets\_Project\Art\Sprites\ui\BATTERY.png | expected prefix: TX_
+- Assets\_Project\Art\Sprites\ui\COPPER.png | expected prefix: TX_
+- Assets\_Project\Art\Sprites\ui\CUTTER.png | expected prefix: TX_
+- Assets\_Project\Art\Sprites\ui\MICRO.png | expected prefix: TX_
+- Assets\_Project\Art\Sprites\ui\OXYGEN.png | expected prefix: TX_
+- Assets\_Project\Art\Sprites\ui\TITANIUM.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Aegir_storms.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\clouds.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\clouds0_diff.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\FLOOR.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\FLOOR1.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\foam.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\gameart.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\menuview.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Meshy_AI_Alien_barnacles_clust_0301230506_texture.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\ORGANIC.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\terrain.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Detali\bubble vent atlas - bad - redo.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Detali\mineral seep mask - looks seamless.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Detali\Mineral Seep Mask - second try.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Detali\Soft Plume Noise - second try.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Detali\soft_plume_noise_-_kakoy_to_seryy_nu_norm.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Detali\visor droplet mask.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Detali\visor runoff normal.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Sky\bo2.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Sky\bo3.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Sky\clod1.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Sky\clod2.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Sky\eb2.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Sky\oblaka!.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Sky\oblakajip.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\2rock\Rocks007_1K-JPG_AmbientOcclusion.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\2rock\Rocks007_1K-JPG_Color.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\2rock\Rocks007_1K-JPG_NormalGL.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\basalt\Rock031_1K-JPG_Color.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\basalt\Rock031_1K-JPG_NormalGL.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\gravel\Gravel020_1K-JPG_AmbientOcclusion.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\gravel\Gravel020_1K-JPG_Color.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\gravel\Gravel020_1K-JPG_NormalGL.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\moss\Ground047_1K-JPG_AmbientOcclusion.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\moss\Ground047_1K-JPG_Color.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\moss\Ground047_1K-JPG_NormalGL.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\mud\Ground051_1K-JPG_AmbientOcclusion.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\mud\Ground051_1K-JPG_Color.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\mud\Ground051_1K-JPG_NormalGL.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\rocks\Rocks019_1K-JPG_AmbientOcclusion.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\rocks\Rocks019_1K-JPG_Color.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\rocks\Rocks019_1K-JPG_NormalGL.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\sand\Ground079S_1K-PNG_Color.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\sand\NORMAL.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\sand +green\Ground074_1K-JPG_AmbientOcclusion.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\sand +green\Ground074_1K-JPG_Color.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\Terrain Textures\sand +green\Ground074_1K-JPG_NormalGL.jpg | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.branching\albedo___family.coral.branching.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.branching\detail___family.coral.branching.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.branching\mask___family.coral.branching.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.branching\normal___family.coral.branching.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.branching.v2\albedo___family.coral.branching.v2.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.branching.v2\detail___family.coral.branching.v2.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.branching.v2\mask___family.coral.branching.v2.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.branching.v2\normal___family.coral.branching.v2.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.brittle\albedo___family.coral.brittle.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.brittle\detail___family.coral.brittle.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.brittle\mask___family.coral.brittle.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.brittle\normal___family.coral.brittle.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.low\albedo___family.coral.low.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.low\detail___family.coral.low.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.low\mask___family.coral.low.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.low\normal___family.coral.low.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.massive\albedo___family.coral.massive.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.massive\detail___family.coral.massive.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.massive\mask___family.coral.massive.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.massive\normal___family.coral.massive.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.massive.2\albedo___family.coral.massive.2.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.massive.2\detail___family.coral.massive.2.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.massive.2\mask___family.coral.massive.2.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.massive.2\normal___family.coral.massive.2.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.plate\albedo___family.coral.plate.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.plate\detail___family.coral.plate.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.plate\mask___family.coral.plate.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.coral.plate\normal___family.coral.plate.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.abyssal\albedo___family.kelp.abyssal.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.abyssal\detail___family.kelp.abyssal.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.abyssal\mask___family.kelp.abyssal.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.abyssal\normal___family.kelp.abyssal.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.canopy\albedo___family.kelp.canopy.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.canopy\detail___family.kelp.canopy.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.canopy\mask___family.kelp.canopy.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.canopy\normal___family.kelp.canopy.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.patch.dense\albedo___family.kelp.patch.dense.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.patch.dense\detail___family.kelp.patch.dense.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.patch.dense\mask___family.kelp.patch.dense.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.patch.dense\normal___family.kelp.patch.dense.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.tall\albedo___family.kelp.tall.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.tall\detail___family.kelp.tall.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.tall\mask___family.kelp.tall.png | expected prefix: TX_
+- Assets\_Project\Art\TEXTURES\WorldProceduralFlora\Imported\family.kelp.tall\normal___family.kelp.tall.png | expected prefix: TX_
+- Assets\_Project\Data\AI\GeneratedProxies\Materials\Mat_DroneProxy.mat | expected prefix: MAT_
+- Assets\_Project\Data\AI\GeneratedProxies\Materials\Mat_HeavyHunterProxy.mat | expected prefix: MAT_
+- Assets\_Project\Data\AI\GeneratedProxies\Materials\Mat_HunterProxy.mat | expected prefix: MAT_
+- Assets\_Project\Data\AI\GeneratedProxies\Materials\Mat_LeviathanProxy.mat | expected prefix: MAT_
+- Assets\_Project\Data\AI\GeneratedProxies\Materials\Mat_SmallPassiveProxy.mat | expected prefix: MAT_
+- Assets\_Project\Data\AI\GeneratedProxies\Materials\Mat_TerritorialProxy.mat | expected prefix: MAT_
+- Assets\_Project\Data\AI\GeneratedProxies\Prefabs\DroneProxy.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Data\AI\GeneratedProxies\Prefabs\HeavyHunterProxy.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Data\AI\GeneratedProxies\Prefabs\HunterProxy.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Data\AI\GeneratedProxies\Prefabs\LeviathanProxy.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Data\AI\GeneratedProxies\Prefabs\SmallPassiveProxy.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Data\AI\GeneratedProxies\Prefabs\TerritorialProxy.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Directional Light.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\GasGiant_Aegir.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\GEOGRAPHY.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Hecton Ocean.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\HUD_Internal.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Item_Titanium.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Mesh_Arch_010.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Objects.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Ocean_Crest.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Player.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\PROPS.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Sky_System.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\STRUCTURES 1.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\STRUCTURES.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Suit_HUD_Canvas.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\TECH_DEBRIS.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\VoxelChunk.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\WorldGenerator.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\[FAUNA_DIRECTOR].prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\[LOOT_MANAGER].prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Buildings\Cube.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Items\Tools\Item_Tool_BeaconDeployer_World.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Items\Tools\Item_Tool_Builder_World.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Items\Tools\Item_Tool_EnvAnalyzer_World.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Items\Tools\Item_Tool_Flashlight_World.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Items\Tools\Item_Tool_HarpoonLauncher_World.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Items\Tools\Item_Tool_Knife_World.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Items\Tools\Item_Tool_LaserCutter_World.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Items\Tools\Item_Tool_Propulsion_World.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Items\Tools\Item_Tool_Repair_World.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Items\Tools\Item_Tool_SalvageSampler_World.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Items\Tools\Item_Tool_Scanner_World.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Items\Tools\Item_Tool_StunPistol_World.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_arka1.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_arka2.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_Arka_1_stonhenzh.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_blin_plosk_5_na_5_.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_bolder_1.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_Bolder_2.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_bolshaya_gorizontalnaya.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_donnaya_kucha.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_Kamen_baz_4-4-2_m.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_Kamen_baz_6-4-4m.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_Kam_s_kuchk_3-3-1.5_.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_krugovaya.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_kucha1.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_kucha2.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_kucha_3_bold.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_Kuchka_3_5-5-2.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_Kuchka_4_5-5.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_Kuchka_5_5-5-2.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_kuchka_melka_1.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_Ogromennaya_skala.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_Ogrom_skala.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_PILLAR1.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_pillar2.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_Skala2.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\GOTOVYE_PREFABY_KAMNEY\ENV_skala_bolshaya.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\Rocks\Forest_Rock_Shelf.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\Rocks\Mossy_Forest_Rock.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\Rocks\Nordic_Beach_Rock.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\Rocks\Nordic_Beach_Rock_Formation.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\Rocks\Rock_Skala.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\Rocks\Baked\Baked_Kucha_01.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\Rocks\Metki_dlya_narostov\Socket_Side.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\Rocks\Metki_dlya_narostov\Socket_Top.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Nature\Rocks\Metki_dlya_narostov\Socket_Under.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Tools\Held\Tool_BeaconDeployer_Held.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Tools\Held\Tool_Builder_Held.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Tools\Held\Tool_EnvAnalyzer_Held.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Tools\Held\Tool_Flashlight_Held.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Tools\Held\Tool_HarpoonLauncher_Held.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Tools\Held\Tool_Knife_Held.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Tools\Held\Tool_LaserCutter_Held.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Tools\Held\Tool_Propulsion_Held.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Tools\Held\Tool_Repair_Held.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Tools\Held\Tool_SalvageSampler_Held.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Tools\Held\Tool_Scanner_Held.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Prefabs\Tools\Held\Tool_StunPistol_Held.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\Scenes\02_HECTON_WORLD\ReflectionProbe-0.exr | expected prefix: TX_
+- Assets\_Project\Scripts\BoidFishInstanced.shader | expected prefix: SH_
+- Assets\_Project\Scripts\HectonBiolumMaster.shader | expected prefix: SH_
+- Assets\_Project\Shaders\Hecton_Item_Highlight.shader | expected prefix: SH_
+- Assets\_Project\Shaders\UI\Hecton_DataRecPulse.shader | expected prefix: SH_
+- Assets\_Project\Shaders\UI\Hecton_DiegeticPanelDepthFade.shader | expected prefix: SH_
+- Assets\_Project\Shaders\UI\Hecton_DiegeticVisorCurvedHUD.shader | expected prefix: SH_
+- Assets\_Project\Shaders\UI\Hecton_IGNDitherDissolve.shader | expected prefix: SH_
+- Assets\_Project\Shaders\UI\Hecton_IGNDitheredBackground.shader | expected prefix: SH_
+- Assets\_Project\Shaders\UI\Hecton_RetinaStressPulse.shader | expected prefix: SH_
+- Assets\_Project\_Archive\HectonOcean.shader | expected prefix: SH_
+- Assets\_Project\_Archive\Mat_Ocean.mat | expected prefix: MAT_
+- Assets\_Project\_PROLOGUE_CONTENT\Prefabs\GasGiant_Aegir.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\_PROLOGUE_CONTENT\Prefabs\Hecton8_Surface.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\_PROLOGUE_CONTENT\Prefabs\oblaka_gekton8.prefab | expected prefix: PFB_ or GEN_
+- Assets\_Project\_PROLOGUE_CONTENT\Textures\Planets\Clouds\GASgIANT\Aegir_storms.png | expected prefix: TX_
+- Assets\_Project\_PROLOGUE_CONTENT\Textures\Planets\Clouds\GASgIANT\clouds.png | expected prefix: TX_
+- Assets\_Project\_PROLOGUE_CONTENT\Textures\Planets\Clouds\GASgIANT\clouds0_diff.png | expected prefix: TX_
+- Assets\_Project\_PROLOGUE_CONTENT\Textures\Planets\pLANET\clouds0_diff.png | expected prefix: TX_
+- Assets\_Project\_PROLOGUE_CONTENT\Textures\Planets\pLANET\Mat_HectonClouds.mat | expected prefix: MAT_
+- Assets\_Project\_PROLOGUE_CONTENT\Textures\Planets\pLANET\Mat_HectonSurface.mat | expected prefix: MAT_
+- Assets\_Project\_PROLOGUE_CONTENT\Textures\Planets\pLANET\surface_bump.png | expected prefix: TX_
+- Assets\_Project\_PROLOGUE_CONTENT\Textures\Planets\pLANET\surface_diff.png | expected prefix: TX_
+- Assets\_Project\_PROLOGUE_CONTENT\Textures\Planets\pLANET\surface_norm.png | expected prefix: TX_
+- Assets\_Project\_PROLOGUE_CONTENT\Textures\Planets\pLANET\surface_spec.png | expected prefix: TX_
+- Assets\_Project\_PROLOGUE_CONTENT\Textures\Planets\pLANET\Materials\clouds0_diff.mat | expected prefix: MAT_

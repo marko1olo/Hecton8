@@ -22,12 +22,12 @@
 //
 //   [2] TILE-BASED SHARED MEMORY (LDS) NEIGHBOR SEARCH
 //       The O(N²) brute-force neighbor scan is restructured into tiles
-//       of size THREAD_GROUP_SIZE (256). Each tile:
-//         a) Cooperatively loads 256 boids into groupshared LDS.
+//       of size THREAD_GROUP_SIZE (64 on MX350/Pascal). Each tile:
+//         a) Cooperatively loads 64 boids into groupshared LDS.
 //         b) Synchronizes via GroupMemoryBarrierWithGroupSync().
 //         c) Each thread scans the 256 LDS entries (fast L1 access).
 //         d) Synchronizes again before loading the next tile.
-//       Net effect: global memory reads reduced from N² to N²/256.
+//       Net effect: global memory reads reduced from N² to N²/64.
 //       On MX350 (64 GB/s bandwidth), this is the difference between
 //       feasible and infeasible at 5000 boids.
 //
@@ -36,7 +36,7 @@
 //       step() and saturate() intrinsics instead of if-statements.
 //       This guarantees uniform warp execution across all 32 lanes.
 //       Branch divergence cost on Pascal: ~2x slowdown per divergent
-//       branch. With 256 iterations per tile, this matters.
+//       branch. With 64 iterations per tile, this matters.
 //
 //   [4] BRANCHLESS SPEED CLAMPING & FORCE NORMALIZATION
 //       Final velocity integration uses lerp + step combinations
@@ -50,8 +50,8 @@
 //   ------  ----   -----
 //   0       12     float3 position   — world-space position (meters)
 //   12      12     float3 velocity   — world-space velocity (m/s)
-//   24      4      float  pad0       — alignment padding (reserved)
-//   28      4      float  pad1       — alignment padding (reserved)
+//   24      4      float  panic      — panic scalar for render/VFX
+//   28      4      uint   stateFlags — render/VFX bitfield
 //   ------  ----
 //   TOTAL:  32 bytes per boid
 //
@@ -83,6 +83,10 @@
 //
 // ============================================================================
 
+#pragma kernel ClearSpatialGrid
+#pragma kernel BuildSpatialGrid
+#pragma kernel ClearVisibleIndirectArgs
+#pragma kernel CullVisibleBoids
 #pragma kernel CSMain
 
 // ============================================================================
@@ -93,8 +97,8 @@ struct BoidData
 {
     float3 position;    // World-space position              [12 bytes]
     float3 velocity;    // World-space velocity              [12 bytes]
-    float  pad0;        // Alignment padding (reserved)      [ 4 bytes]
-    float  pad1;        // Alignment padding (reserved)      [ 4 bytes]
+    float  panic;       // Panic scalar for render/VFX       [ 4 bytes]
+    uint   stateFlags;  // Bitfield for render/VFX           [ 4 bytes]
 };                      //                            TOTAL: [32 bytes]
 
 // ============================================================================
@@ -114,6 +118,10 @@ struct BoidData
 
 StructuredBuffer<BoidData>   _BoidsBufferRead;   // SOURCE: previous frame state (READ-ONLY)
 RWStructuredBuffer<BoidData> _BoidsBufferWrite;  // DESTINATION: current frame state (WRITE-ONLY)
+RWByteAddressBuffer          _SpatialGridCounts;  // 4-byte counter per active grid cell
+RWStructuredBuffer<uint>     _SpatialGridCells;   // cell-major boid indices, fixed slots per cell
+RWStructuredBuffer<uint>     _VisibleBoidIndices; // compacted visible boid IDs for indirect draw
+RWByteAddressBuffer          _VisibleIndirectArgs; // GraphicsBuffer.IndirectDrawIndexedArgs raw layout
 
 // ============================================================================
 // SECTION 3: UNIFORM PARAMETERS — Set from C# MonoBehaviour each frame
@@ -122,6 +130,16 @@ RWStructuredBuffer<BoidData> _BoidsBufferWrite;  // DESTINATION: current frame s
 // ── Simulation Control ──────────────────────────────────────────────────────
 uint   _BoidCount;                  // Total number of active boids
 float  _DeltaTime;                  // Frame delta time (seconds)
+
+// Spatial hash grid. Resolution is uploaded as float3 to avoid per-frame int-array allocation in C#.
+float3 _SpatialGridOrigin;
+float3 _SpatialGridResolution;
+float  _SpatialGridCellSize;
+uint   _SpatialGridMaxBoidsPerCell;
+uint   _BoidMathLodMode;
+float4 _CameraFrustumPlanes[6];
+float  _BoidCullingRadius;
+uint   _GpuFrustumCullingActive;
 
 // ── Boid Rule Weights ───────────────────────────────────────────────────────
 float  _SeparationWeight;           // Weight: collision avoidance force
@@ -155,6 +173,34 @@ float2 _WorldSize;                  // Terrain world-space extent (XZ plane)
 float  _HeightScale;                // Terrain maximum height (Y axis multiplier)
 float  _WaterSurfaceY;              // Water surface Y coordinate
 
+Texture3D<float> _HectonCaveVoxelSdfTex;
+SamplerState sampler_HectonCaveVoxelSdfTex;
+float4x4 _HectonCaveVoxelWorldToLocal;
+float4 _HectonCaveVoxelHalfExtents;
+float4 _HectonCaveVoxelInvDoubleHalfExtents;
+float _HectonCaveVoxelActive;
+float _HectonCaveVoxelWeight;
+
+StructuredBuffer<float4> _AbyssalFlowFieldResult;
+Texture3D<float4> _AbyssalFlowFieldTexture;
+SamplerState sampler_AbyssalFlowFieldTexture;
+float4 _AbyssalGridResolution;
+float4 _AbyssalFlowCenter;
+float4 _AbyssalFlowSpacing;
+float _AbyssalFlowActive;
+float _AbyssalFlowWeight;
+
+float4 _PredatorAupPositions[16];
+uint _PredatorCount;
+float _PredatorPanicRadiusSq;
+float _PredatorWeight;
+
+float4 _AcousticPingAupRadius;
+float4 _AcousticPingParams;
+
+float _PanicDecay;
+float _PanicAccelerationThresholdSq;
+
 // ============================================================================
 // SECTION 4: THREAD CONFIGURATION
 // ============================================================================
@@ -162,6 +208,9 @@ float  _WaterSurfaceY;              // Water surface Y coordinate
 #define THREAD_GROUP_SIZE 64         // MX350/Pascal baseline: one 64-thread group per wave pair
                                      // Chosen for: LDS budget (8KB), MX350 occupancy,
                                      // warp alignment (256 = 8 warps of 32)
+#define SPATIAL_GRID_COUNTER_STRIDE 4
+#define SPATIAL_GRID_MAX_CELLS 32768
+#define SPATIAL_GRID_HARD_MAX_BOIDS_PER_CELL 32
 
 // ============================================================================
 // SECTION 5: SHARED MEMORY (LDS) — TILE CACHE
@@ -175,6 +224,7 @@ float  _WaterSurfaceY;              // Water surface Y coordinate
 // ============================================================================
 
 groupshared BoidData sharedBoids[THREAD_GROUP_SIZE];
+groupshared uint sharedSpatialIndices[SPATIAL_GRID_HARD_MAX_BOIDS_PER_CELL];
 
 // ============================================================================
 // SECTION 6: NUMERICAL SAFETY CONSTANTS
@@ -265,6 +315,306 @@ float3 SafeNormalize(float3 v)
     return v * valid / (len + (1.0 - valid));       // Avoid /0 when valid=0: denom becomes 1.0
 }
 
+float SampleCaveSignedDistance(float3 positionWS)
+{
+    if (_HectonCaveVoxelActive <= 0.5)
+        return _HectonCaveVoxelHalfExtents.w;
+
+    float3 invDoubleHalfExtents = _HectonCaveVoxelInvDoubleHalfExtents.xyz;
+    if (any(invDoubleHalfExtents <= float3(0.0, 0.0, 0.0)))
+        return _HectonCaveVoxelHalfExtents.w;
+
+    float3 localPosition = mul(_HectonCaveVoxelWorldToLocal, float4(positionWS, 1.0)).xyz;
+    float3 sampleUv = (localPosition * invDoubleHalfExtents) + 0.5;
+    if (any(sampleUv < float3(0.0, 0.0, 0.0)) || any(sampleUv > float3(1.0, 1.0, 1.0)))
+        return _HectonCaveVoxelHalfExtents.w;
+
+    float encoded = _HectonCaveVoxelSdfTex.SampleLevel(sampler_HectonCaveVoxelSdfTex, sampleUv, 0.0).r;
+    return lerp(-_HectonCaveVoxelHalfExtents.w, _HectonCaveVoxelHalfExtents.w, encoded);
+}
+
+float3 SampleCaveSdfNormal(float3 positionWS)
+{
+    float3 probeStep = max(_HectonCaveVoxelHalfExtents.xyz * 0.025, float3(0.10, 0.10, 0.10));
+    float dx = SampleCaveSignedDistance(positionWS + float3(probeStep.x, 0.0, 0.0)) -
+               SampleCaveSignedDistance(positionWS - float3(probeStep.x, 0.0, 0.0));
+    float dy = SampleCaveSignedDistance(positionWS + float3(0.0, probeStep.y, 0.0)) -
+               SampleCaveSignedDistance(positionWS - float3(0.0, probeStep.y, 0.0));
+    float dz = SampleCaveSignedDistance(positionWS + float3(0.0, 0.0, probeStep.z)) -
+               SampleCaveSignedDistance(positionWS - float3(0.0, 0.0, probeStep.z));
+    return SafeNormalize(float3(dx, dy, dz));
+}
+
+float3 ComputeCaveSdfRepulsion(float3 positionWS)
+{
+    float signedDistance = SampleCaveSignedDistance(positionWS);
+    float range = max(_ObstacleAvoidRadius, 0.001);
+    float nearSurface = 1.0 - saturate(signedDistance / range);
+    float insideSolid = 1.0 - step(0.0, signedDistance);
+    float weight = saturate(max(nearSurface, insideSolid)) * _HectonCaveVoxelActive;
+    float3 normalWS = SampleCaveSdfNormal(positionWS);
+    normalWS = lerp(SafeNormalize(positionWS - _BoundsCenter), normalWS, step(NORM_EPSILON, dot(normalWS, normalWS)));
+    return normalWS * _MaxSpeed * (weight + insideSolid * 2.0) * _HectonCaveVoxelWeight;
+}
+
+uint FlattenAbyssalFlowCell(int3 coord, int3 resolution)
+{
+    return (uint)((coord.y * resolution.x * resolution.z) + (coord.z * resolution.x) + coord.x);
+}
+
+float3 SampleAbyssalFlowField(float3 positionWS)
+{
+    if (_AbyssalFlowActive <= 0.5)
+        return float3(0.0, 0.0, 0.0);
+
+    if (_AbyssalFlowSpacing.w > 0.001)
+    {
+        float3 uvw = (positionWS - _AbyssalFlowCenter.xyz) * _AbyssalFlowSpacing.w + 0.5;
+        if (all(uvw >= float3(0.0, 0.0, 0.0)) && all(uvw <= float3(1.0, 1.0, 1.0)))
+        {
+            float3 textureFlow = float3(0.0, 0.0, 0.0);
+            textureFlow = _AbyssalFlowFieldTexture.SampleLevel(sampler_AbyssalFlowFieldTexture, uvw, 0).xyz;
+            if (dot(textureFlow, textureFlow) < 1.0e32)
+                return textureFlow * _AbyssalFlowWeight;
+
+            return float3(0.0, 0.0, 0.0);
+        }
+    }
+
+    int3 resolution = max((int3)_AbyssalGridResolution.xyz, int3(1, 1, 1));
+    float horizontalSpacing = max(_AbyssalFlowSpacing.x, 0.001);
+    float verticalSpacing = max(_AbyssalFlowSpacing.y, 0.001);
+    int3 halfExtent = int3(resolution.x >> 1, resolution.y >> 1, resolution.z >> 1);
+    float3 local = positionWS - _AbyssalFlowCenter.xyz;
+    int3 coord = int3(
+        (int)round(local.x / horizontalSpacing) + halfExtent.x,
+        (int)round(local.y / verticalSpacing) + halfExtent.y,
+        (int)round(local.z / horizontalSpacing) + halfExtent.z);
+
+    if (any(coord < int3(0, 0, 0)) || any(coord >= resolution))
+        return float3(0.0, 0.0, 0.0);
+
+    uint flatIndex = FlattenAbyssalFlowCell(coord, resolution);
+    if (flatIndex >= (uint)_AbyssalGridResolution.w)
+        return float3(0.0, 0.0, 0.0);
+
+    float3 flow = _AbyssalFlowFieldResult[flatIndex].xyz;
+    return dot(flow, flow) < 1.0e32 ? flow * max(_AbyssalFlowWeight, 0.0) : float3(0.0, 0.0, 0.0);
+}
+
+float3 ComputePredatorEscapeDirection(float3 positionWS, out float panic01)
+{
+    panic01 = 0.0;
+    float3 escape = float3(0.0, 0.0, 0.0);
+    uint predatorCount = min(_PredatorCount, 16u);
+    float panicRadiusSq = max(_PredatorPanicRadiusSq, 0.001);
+
+    [loop]
+    for (uint predatorIndex = 0; predatorIndex < predatorCount; predatorIndex++)
+    {
+        float4 predator = _PredatorAupPositions[predatorIndex];
+        float3 away = positionWS - predator.xyz;
+        float distSq = dot(away, away);
+        float active = step(0.5, predator.w);
+        float inside = active * (1.0 - step(panicRadiusSq, distSq));
+        float falloff = inside * (1.0 - saturate(distSq / panicRadiusSq));
+        escape += SafeNormalize(away) * falloff;
+        panic01 = max(panic01, falloff);
+    }
+
+    return SafeNormalize(escape);
+}
+
+float3 ComputeAcousticPingKick(float3 positionWS, out float panic01)
+{
+    panic01 = 0.0;
+    float active = step(0.5, _AcousticPingParams.w);
+    float radiusSq = max(_AcousticPingParams.y, 0.001);
+    float3 away = positionWS - _AcousticPingAupRadius.xyz;
+    float distSq = dot(away, away);
+    float inside = active * (1.0 - step(radiusSq, distSq));
+    float falloff = inside * (1.0 - saturate(distSq / radiusSq));
+    falloff *= falloff;
+    panic01 = falloff;
+    return SafeNormalize(away) * (_MaxSpeed * max(_AcousticPingParams.x, 0.0) * falloff);
+}
+
+bool IsFiniteFloat3(float3 v)
+{
+    return all(v == v) && all(abs(v) < float3(1.0e20, 1.0e20, 1.0e20));
+}
+
+uint ResolveSpatialGridMaxBoidsPerCell()
+{
+    return min(max(_SpatialGridMaxBoidsPerCell, 1u), SPATIAL_GRID_HARD_MAX_BOIDS_PER_CELL);
+}
+
+int3 ResolveSpatialGridResolution()
+{
+    return max((int3)_SpatialGridResolution, int3(1, 1, 1));
+}
+
+uint ResolveSpatialGridCellCount()
+{
+    int3 resolution = ResolveSpatialGridResolution();
+    uint cellCount = (uint)(resolution.x * resolution.y * resolution.z);
+    return min(cellCount, (uint)SPATIAL_GRID_MAX_CELLS);
+}
+
+uint FlattenSpatialGridCell(uint3 cell, uint3 resolution)
+{
+    return (cell.z * resolution.y + cell.y) * resolution.x + cell.x;
+}
+
+bool TryResolveSpatialGridCell(float3 position, out uint3 cell, out uint flatCell)
+{
+    int3 resolution = ResolveSpatialGridResolution();
+    float cellSize = max(_SpatialGridCellSize, 0.001);
+    int3 rawCell = (int3)floor((position - _SpatialGridOrigin) / cellSize);
+    bool inside = all(rawCell >= int3(0, 0, 0)) && all(rawCell < resolution);
+
+    int3 clampedCell = clamp(rawCell, int3(0, 0, 0), resolution - int3(1, 1, 1));
+    uint3 resolvedCell = (uint3)clampedCell;
+    cell = resolvedCell;
+    flatCell = FlattenSpatialGridCell(resolvedCell, (uint3)resolution);
+    return inside;
+}
+
+uint LoadSpatialGridCount(uint flatCell)
+{
+    return _SpatialGridCounts.Load(flatCell * SPATIAL_GRID_COUNTER_STRIDE);
+}
+
+void AccumulateSpatialNeighbor(
+    uint otherIndex,
+    float3 pos,
+    float3 vel,
+    float perceptionSqr,
+    float separationSqr,
+    float socialMask,
+    inout float3 separationForce,
+    inout float3 alignmentSum,
+    inout float3 cohesionSum,
+    inout float separationCount,
+    inout float neighbourCount)
+{
+    if (otherIndex >= _BoidCount)
+        return;
+
+    BoidData otherBoid = _BoidsBufferRead[otherIndex];
+    float finiteMask = IsFiniteFloat3(otherBoid.position) ? 1.0 : 0.0;
+
+    float3 otherPos = otherBoid.position;
+    float3 otherVel = otherBoid.velocity;
+    float3 diff = pos - otherPos;
+    float distSqr = dot(diff, diff);
+
+    float notSelf = step(EPSILON, distSqr) * finiteMask;
+    float inSeparation = notSelf * (1.0 - step(separationSqr, distSqr));
+    float inPerception = notSelf * (1.0 - step(perceptionSqr, distSqr));
+
+    separationForce += (diff / (distSqr + SOFTENING)) * inSeparation;
+    separationCount += inSeparation;
+    alignmentSum += otherVel * inPerception * socialMask;
+    cohesionSum += otherPos * inPerception * socialMask;
+    neighbourCount += inPerception * socialMask;
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void ClearSpatialGrid(uint3 id : SV_DispatchThreadID)
+{
+    uint flatCell = id.x;
+    if (flatCell >= ResolveSpatialGridCellCount())
+        return;
+
+    _SpatialGridCounts.Store(flatCell * SPATIAL_GRID_COUNTER_STRIDE, 0u);
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void BuildSpatialGrid(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (index >= _BoidCount)
+        return;
+
+    BoidData boid = _BoidsBufferRead[index];
+    if (!IsFiniteFloat3(boid.position))
+        return;
+
+    uint3 cell;
+    uint flatCell;
+    if (!TryResolveSpatialGridCell(boid.position, cell, flatCell))
+        return;
+
+    uint maxBoidsPerCell = ResolveSpatialGridMaxBoidsPerCell();
+    uint slot;
+    _SpatialGridCounts.InterlockedAdd(flatCell * SPATIAL_GRID_COUNTER_STRIDE, 1u, slot);
+    if (slot < maxBoidsPerCell)
+    {
+        _SpatialGridCells[(flatCell * maxBoidsPerCell) + slot] = index;
+    }
+    else
+    {
+        uint ignored;
+        _SpatialGridCounts.InterlockedAdd(flatCell * SPATIAL_GRID_COUNTER_STRIDE, 0xffffffffu, ignored);
+    }
+}
+
+bool IsInsideGpuFrustum(float3 positionWS, float radius)
+{
+    if (_GpuFrustumCullingActive == 0u)
+        return true;
+
+    [unroll]
+    for (uint planeIndex = 0u; planeIndex < 6u; planeIndex++)
+    {
+        float4 plane = _CameraFrustumPlanes[planeIndex];
+        float signedDistance = dot(plane.xyz, positionWS) + plane.w;
+        if (signedDistance < -radius)
+            return false;
+    }
+
+    return true;
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void ClearVisibleIndirectArgs(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x != 0u)
+        return;
+
+    // Preserve mesh topology fields uploaded by C#; reset only GPU-owned instance count.
+    _VisibleIndirectArgs.Store(4, 0u);
+    _VisibleIndirectArgs.Store(16, 0u);
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void CullVisibleBoids(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (index >= _BoidCount)
+        return;
+
+    BoidData boid = _BoidsBufferRead[index];
+    if (!IsFiniteFloat3(boid.position))
+        return;
+
+    if (!IsInsideGpuFrustum(boid.position, max(_BoidCullingRadius, 0.001)))
+        return;
+
+    uint visibleIndex;
+    _VisibleIndirectArgs.InterlockedAdd(4, 1u, visibleIndex);
+    if (visibleIndex < _BoidCount)
+    {
+        _VisibleBoidIndices[visibleIndex] = index;
+    }
+    else
+    {
+        uint ignored;
+        _VisibleIndirectArgs.InterlockedAdd(4, 0xffffffffu, ignored);
+    }
+}
+
 // ============================================================================
 // SECTION 8: MAIN KERNEL
 // ============================================================================
@@ -338,11 +688,71 @@ void CSMain(
     // ── Pre-squared radii (avoid sqrt in inner loop where possible) ─────────
     float perceptionSqr = _PerceptionRadius * _PerceptionRadius;
     float separationSqr = _SeparationRadius * _SeparationRadius;
+    float socialLodMask = step(0.5, (float)_BoidMathLodMode);
+
+    uint3 selfCell = uint3(0, 0, 0);
+    uint selfFlatCell;
+    bool hasCell = false;
+    if (isValid > 0.5)
+    {
+        hasCell = TryResolveSpatialGridCell(pos, selfCell, selfFlatCell);
+    }
+    int3 resolution = ResolveSpatialGridResolution();
+    uint maxBoidsPerCell = ResolveSpatialGridMaxBoidsPerCell();
+
+    [loop]
+    for (int z = -1; z <= 1; z++)
+    {
+        [loop]
+        for (int y = -1; y <= 1; y++)
+        {
+            [loop]
+            for (int x = -1; x <= 1; x++)
+            {
+                int3 neighborCell = (int3)selfCell + int3(x, y, z);
+                bool insideGrid = hasCell && all(neighborCell >= int3(0, 0, 0)) && all(neighborCell < resolution);
+                uint flatCell = insideGrid ? FlattenSpatialGridCell((uint3)neighborCell, (uint3)resolution) : 0u;
+                uint cellCount = insideGrid ? min(LoadSpatialGridCount(flatCell), maxBoidsPerCell) : 0u;
+
+                if (GI < SPATIAL_GRID_HARD_MAX_BOIDS_PER_CELL)
+                {
+                    sharedSpatialIndices[GI] = GI < cellCount
+                        ? _SpatialGridCells[(flatCell * maxBoidsPerCell) + GI]
+                        : 0xffffffffu;
+                }
+
+                GroupMemoryBarrierWithGroupSync();
+
+                if (insideGrid)
+                {
+                    [loop]
+                    for (uint slot = 0; slot < cellCount; slot++)
+                    {
+                        AccumulateSpatialNeighbor(
+                            sharedSpatialIndices[slot],
+                            pos,
+                            vel,
+                            perceptionSqr,
+                            separationSqr,
+                            socialLodMask,
+                            separationForce,
+                            alignmentSum,
+                            cohesionSum,
+                            separationCount,
+                            neighbourCount);
+                    }
+                }
+
+                GroupMemoryBarrierWithGroupSync();
+            }
+        }
+    }
 
     // ── Tile count ──────────────────────────────────────────────────────────
     // Number of tiles needed to cover all boids.
     // Last tile may be partially filled — handled by clamping.
-    uint tileCount = (_BoidCount + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE;
+#if 0
+    uint tileCount = 0;
 
     // ────────────────────────────────────────────────────────────────────────
     // OUTER LOOP: Iterate over tiles
@@ -467,7 +877,15 @@ void CSMain(
     // and we multiply by step(0.5, count) to zero-out when no neighbors.
     // ════════════════════════════════════════════════════════════════════════
 
+#endif
+
     float3 acceleration = float3(0.0, 0.0, 0.0);
+    float panic01 = max(selfBoid.panic - max(_PanicDecay, 0.0) * _DeltaTime, 0.0);
+    float predatorPanic01;
+    float3 predatorEscapeDirection = ComputePredatorEscapeDirection(pos, predatorPanic01);
+    float acousticPanic01;
+    float3 acousticPingKick = ComputeAcousticPingKick(pos, acousticPanic01);
+    panic01 = max(panic01, max(predatorPanic01, acousticPanic01));
 
     // ── Safe reciprocals (branchless divide-by-count) ───────────────────────
     float hasNeighbours  = step(0.5, neighbourCount);    // 1.0 if any neighbor found
@@ -585,6 +1003,12 @@ void CSMain(
         acceleration += surfaceForce * _ObstacleWeight;
     }
 
+    // GPU cave SDF: negative signed distance is solid. Repel along the SDF normal.
+    acceleration += ComputeCaveSdfRepulsion(pos) * _ObstacleWeight;
+
+    // Abyssal flow is an environmental drift vector, not a CPU-authored target.
+    acceleration += SampleAbyssalFlowField(pos);
+
     // ── 6. BOUNDS FORCE ────────────────────────────────────────────────────
     //
     // Soft containment within the simulation volume.
@@ -606,7 +1030,12 @@ void CSMain(
     // Speed clamping is fully branchless using clamp + SafeNormalize.
     // ════════════════════════════════════════════════════════════════════════
 
-    vel += acceleration * _DeltaTime;
+    float accelerationSq = dot(acceleration, acceleration);
+    float3 integratedVelocity = vel + acceleration * _DeltaTime;
+    float predatorOverride = saturate(predatorPanic01 * max(_PredatorWeight, 0.0));
+    vel = lerp(integratedVelocity, SafeNormalize(predatorEscapeDirection) * _MaxSpeed, predatorOverride);
+    vel += acousticPingKick;
+    panic01 = max(panic01, step(max(_PanicAccelerationThresholdSq, 0.001), accelerationSq));
 
     // ── Branchless Speed Clamping ───────────────────────────────────────────
     //
@@ -644,8 +1073,9 @@ void CSMain(
         BoidData result;
         result.position = pos;
         result.velocity = vel;
-        result.pad0     = selfBoid.pad0;    // Preserve padding data (may carry metadata)
-        result.pad1     = selfBoid.pad1;    // Preserve padding data (may carry metadata)
+        result.panic = saturate(panic01);
+        uint panicFlag = result.panic > 0.01 ? 1u : 0u;
+        result.stateFlags = (selfBoid.stateFlags & 0xfffffffeu) | panicFlag;
 
         _BoidsBufferWrite[index] = result;
     }

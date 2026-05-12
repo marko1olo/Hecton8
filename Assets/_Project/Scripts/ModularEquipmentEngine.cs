@@ -3,6 +3,7 @@ namespace Hecton8.Tools
     using Hecton8.Core;
     using Hecton8.Gameplay;
     using Hecton8.Power;
+    using Hecton8.World;
     using Unity.Collections;
     using Unity.Mathematics;
     using UnityEngine;
@@ -26,6 +27,16 @@ namespace Hecton8.Tools
         private const float InvTau = 0.15915494f;
         private const float WirelessBrownoutPulseCycles = 18f * InvTau;
         private const float ToolBrownoutPulseCycles = 8f * InvTau;
+        private const float ActiveToolHeatWindowSeconds = 0.075f;
+        private const float MinimumCoolingDenominator = 0.125f;
+        private const float DepthCoolingScale = 0.0025f;
+        private const float ThermalVentHeatScale = 0.35f;
+        private const float ThermalProbeRadiusMeters = 1.25f;
+        private const float StandardDepthFailureMeters = 500f;
+        private const float HeatWarningThreshold = 0.90f;
+        private const float HeatWarningResetThreshold = 0.85f;
+        private const float OverheatRecoveryThreshold = 0.15f;
+        private const int ThermalProbeFrameMask = 0x03;
 
         // COLD ALLOC: PlayerTool[16] — managed owner mirror for native tool slots — owner: ModularEquipmentEngine
         private readonly PlayerTool[] _toolOwners = new PlayerTool[MaxTrackedTools];
@@ -38,6 +49,11 @@ namespace Hecton8.Tools
 
         private NativeArray<ToolState> _toolStates;
         private NativeArray<ToolRuntimeStats> _toolStats;
+        private NativeArray<byte> _toolTypes;
+        private NativeArray<float> _currentHeat;
+        private NativeArray<float> _batteryCharge;
+        private NativeArray<uint> _statusMasks;
+        private NativeArray<float> _environmentHeat01;
         private NativeArray<float> _batteryDrainRates;
         private NativeArray<float> _batteryDrainDeltaSeconds;
         private NativeHashMap<uint, int> _toolIndexById;
@@ -47,6 +63,7 @@ namespace Hecton8.Tools
         private bool _registeredLateFrame;
         private bool _telemetrySubscribed;
         private uint _pendingBatteryDrainMask;
+        private int _thermalProbeFrameIndex;
         private float _latestSupplyRatio = 1f;
         private bool _wirelessBrownoutActive;
         private float _brownoutPulseTime;
@@ -59,6 +76,11 @@ namespace Hecton8.Tools
             ReferenceEquals(GlobalRegistry.ModularEquipment, this) &&
             _toolStates.IsCreated &&
             _toolStats.IsCreated &&
+            _toolTypes.IsCreated &&
+            _currentHeat.IsCreated &&
+            _batteryCharge.IsCreated &&
+            _statusMasks.IsCreated &&
+            _environmentHeat01.IsCreated &&
             _toolIndexById.IsCreated &&
             _batteryDrainRates.IsCreated &&
             _batteryDrainDeltaSeconds.IsCreated;
@@ -117,6 +139,61 @@ namespace Hecton8.Tools
                     NativeAllocationLifetime.Scene);
             }
 
+            if (!_toolTypes.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<byte>[16] - SOA tool type ids mirrored by active equipment slot - owner: ModularEquipmentEngine
+                _toolTypes = new NativeArray<byte>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _toolTypes,
+                    nameof(ModularEquipmentEngine),
+                    nameof(_toolTypes),
+                    NativeAllocationLifetime.Scene);
+            }
+
+            if (!_currentHeat.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<float>[16] - SOA current heat values mirrored by active equipment slot - owner: ModularEquipmentEngine
+                _currentHeat = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _currentHeat,
+                    nameof(ModularEquipmentEngine),
+                    nameof(_currentHeat),
+                    NativeAllocationLifetime.Scene);
+            }
+
+            if (!_batteryCharge.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<float>[16] - SOA absolute battery charge values mirrored by active equipment slot - owner: ModularEquipmentEngine
+                _batteryCharge = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _batteryCharge,
+                    nameof(ModularEquipmentEngine),
+                    nameof(_batteryCharge),
+                    NativeAllocationLifetime.Scene);
+            }
+
+            if (!_statusMasks.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<uint>[16] - SOA runtime status masks mirrored by active equipment slot - owner: ModularEquipmentEngine
+                _statusMasks = new NativeArray<uint>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _statusMasks,
+                    nameof(ModularEquipmentEngine),
+                    nameof(_statusMasks),
+                    NativeAllocationLifetime.Scene);
+            }
+
+            if (!_environmentHeat01.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<float>[16] - SOA thermal vent heat cache sampled at tier-gated cadence - owner: ModularEquipmentEngine
+                _environmentHeat01 = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _environmentHeat01,
+                    nameof(ModularEquipmentEngine),
+                    nameof(_environmentHeat01),
+                    NativeAllocationLifetime.Scene);
+            }
+
             if (!_toolIndexById.IsCreated)
             {
                 // COLD ALLOC: NativeHashMap<uint,int>[16] — tool-id to slot index table — owner: ModularEquipmentEngine
@@ -164,30 +241,38 @@ namespace Hecton8.Tools
             if (!_isInitialized)
                 return;
 
+            float safeDeltaTime = math.max(0f, deltaTime);
             if (_wirelessBrownoutActive)
-                _brownoutPulseTime += math.max(0f, deltaTime);
+                _brownoutPulseTime += safeDeltaTime;
+
+            _thermalProbeFrameIndex++;
+            HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
 
             for (int i = 0; i < MaxTrackedTools; i++)
             {
-                if (!_slotUsed[i] || _toolOwners[i] == null)
+                PlayerTool owner = _toolOwners[i];
+                if (!_slotUsed[i] || owner == null)
                     continue;
 
                 ToolState state = _toolStates[i];
-                state.Durability = math.saturate(_toolOwners[i].DurabilityNormalized);
+                state.Durability = math.saturate(owner.DurabilityNormalized);
                 if (IsOverchargeRequested(i))
                 {
                     float runtimeHeatRate = math.max(0.05f, _toolStats[i].HeatGenerationRate);
                     float heatGrowth = EstimateOverchargeHeatGrowth(state.InternalHeat);
-                    state.InternalHeat = math.max(0f, state.InternalHeat + (runtimeHeatRate * OverchargeHeatScale * heatGrowth * math.max(0f, deltaTime)));
+                    state.InternalHeat = math.max(0f, state.InternalHeat + (runtimeHeatRate * OverchargeHeatScale * heatGrowth * safeDeltaTime));
                     if (state.InternalHeat > OverchargeExplosionHeatThreshold)
                     {
+                        state.StatusMask |= ToolRuntimeStatusMasks.Disabled | ToolRuntimeStatusMasks.Overheated;
                         _toolStates[i] = state;
+                        WriteSlotMirrors(i, in state);
                         TriggerOverchargeExplosion(i);
                         continue;
                     }
                 }
 
                 _toolStates[i] = state;
+                ApplyRuntimeHeatAndStatus(i, owner, safeDeltaTime, scalabilityTier);
             }
         }
 
@@ -235,6 +320,11 @@ namespace Hecton8.Tools
             nextState.InternalHeat = math.max(0f, tool.ResolveModularHeatNormalized());
             nextState.Durability = math.saturate(tool.DurabilityNormalized);
             nextState.UpgradeBitmask = upgradeMask;
+            nextState.StatusMask = ResolveStatusMask(0u, in nextState, in compiledStats, ResolveDepthMeters(tool), false);
+            nextState.ToolTypeId = ResolveToolTypeId(profile.ToolId);
+            nextState.ModuleSlotCount = (byte)math.clamp(moduleSlotCount, 0, ToolUpgradeSystem.MaxModuleSlots);
+            nextState.Reserved0 = 0;
+            nextState.Reserved1 = 0ul;
 
             _toolOwners[slotIndex] = tool;
             _slotUsed[slotIndex] = true;
@@ -243,6 +333,7 @@ namespace Hecton8.Tools
             _toolIndexById[profile.ToolId] = slotIndex;
             WriteModuleMirror(slotIndex, _registrationModules, moduleSlotCount);
             SetBatteryAbsolute(slotIndex, nextState.CurrentBattery);
+            WriteSlotMirrors(slotIndex, in nextState);
             return profile.ToolId;
         }
 
@@ -262,6 +353,7 @@ namespace Hecton8.Tools
             _slotUsed[slotIndex] = false;
             _toolStates[slotIndex] = default;
             _toolStats[slotIndex] = default;
+            ClearSlotMirrors(slotIndex);
             ClearModuleMirror(slotIndex);
         }
 
@@ -440,7 +532,15 @@ namespace Hecton8.Tools
             state.InternalHeat = IsOverchargeRequested(slotIndex)
                 ? math.max(state.InternalHeat, sanitizedHeat)
                 : sanitizedHeat;
+            ToolRuntimeStats stats = _toolStats[slotIndex];
+            state.StatusMask = ResolveStatusMask(
+                state.StatusMask,
+                in state,
+                in stats,
+                ResolveDepthMeters(_toolOwners[slotIndex]),
+                (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
             _toolStates[slotIndex] = state;
+            WriteSlotMirrors(slotIndex, in state);
         }
 
         public void SetDurability(uint toolId, float normalizedDurability)
@@ -450,7 +550,15 @@ namespace Hecton8.Tools
 
             ToolState state = _toolStates[slotIndex];
             state.Durability = math.saturate(normalizedDurability);
+            ToolRuntimeStats stats = _toolStats[slotIndex];
+            state.StatusMask = ResolveStatusMask(
+                state.StatusMask,
+                in state,
+                in stats,
+                ResolveDepthMeters(_toolOwners[slotIndex]),
+                (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
             _toolStates[slotIndex] = state;
+            WriteSlotMirrors(slotIndex, in state);
         }
 
         private void OnEnable()
@@ -565,7 +673,15 @@ namespace Hecton8.Tools
 
             ToolState state = _toolStates[slotIndex];
             state.CurrentBattery = math.max(0f, absoluteBattery);
+            ToolRuntimeStats stats = _toolStats[slotIndex];
+            state.StatusMask = ResolveStatusMask(
+                state.StatusMask,
+                in state,
+                in stats,
+                ResolveDepthMeters(_toolOwners[slotIndex]),
+                (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
             _toolStates[slotIndex] = state;
+            WriteSlotMirrors(slotIndex, in state);
         }
 
         private void ConsumeBatteryAbsolute(int slotIndex, float absoluteBatteryDrainRate, float deltaSeconds)
@@ -597,9 +713,171 @@ namespace Hecton8.Tools
             ToolRuntimeStats compiledStats = ToolUpgradeSystem.CompileRuntimeStats(profile, _registrationModules, slotCount, out upgradeMask);
             state.CurrentBattery *= math.max(0.1f, compiledStats.BatteryCapacity);
             state.UpgradeBitmask = upgradeMask;
+            state.ToolTypeId = ResolveToolTypeId(profile.ToolId);
+            state.ModuleSlotCount = (byte)math.clamp(slotCount, 0, ToolUpgradeSystem.MaxModuleSlots);
+            state.StatusMask = ResolveStatusMask(
+                state.StatusMask,
+                in state,
+                in compiledStats,
+                ResolveDepthMeters(owner),
+                (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
             _toolStats[slotIndex] = compiledStats;
             _toolStates[slotIndex] = state;
             SetBatteryAbsolute(slotIndex, state.CurrentBattery);
+            WriteSlotMirrors(slotIndex, in state);
+        }
+
+        private void ApplyRuntimeHeatAndStatus(int slotIndex, PlayerTool owner, float deltaTime, HectonQualityTier scalabilityTier)
+        {
+            if ((uint)slotIndex >= MaxTrackedTools || owner == null)
+                return;
+
+            ToolState state = _toolStates[slotIndex];
+            ToolRuntimeStats stats = _toolStats[slotIndex];
+            float depthMeters = ResolveDepthMeters(owner);
+            bool active = owner.WasRecentlyUsed(ActiveToolHeatWindowSeconds);
+            float activePower = active ? math.max(0f, stats.HeatGenerationRate * stats.PowerScalar) : 0f;
+            float coolingDenominator = ResolveCoolingDenominator(depthMeters);
+            float ambientCooling = math.max(0f, stats.CooldownRate) * math.rcp(coolingDenominator);
+            float environmentHeat01 = ResolveEnvironmentHeat01(slotIndex, owner, depthMeters, scalabilityTier);
+            _environmentHeat01[slotIndex] = environmentHeat01;
+            float ventHeat = environmentHeat01 * ThermalVentHeatScale * math.max(0.05f, stats.HeatGenerationRate);
+            float nextHeat = state.InternalHeat + ((activePower + ventHeat - ambientCooling) * deltaTime);
+            state.InternalHeat = math.isfinite(nextHeat) ? math.max(0f, nextHeat) : 0f;
+            state.StatusMask = ResolveStatusMask(state.StatusMask, in state, in stats, depthMeters, active);
+            state.StatusMask = ResolveHeatWarningHaptic(state.StatusMask, state.InternalHeat);
+            _toolStates[slotIndex] = state;
+            WriteSlotMirrors(slotIndex, in state);
+        }
+
+        private static uint ResolveStatusMask(uint currentStatus, in ToolState state, in ToolRuntimeStats stats, float depthMeters, bool active)
+        {
+            uint status = currentStatus & ToolRuntimeStatusMasks.HeatWarningHapticQueued;
+            if (active)
+                status |= ToolRuntimeStatusMasks.Active;
+
+            if (state.CurrentBattery <= 0.0001f || stats.BatteryCapacity <= 0.0001f)
+                status |= ToolRuntimeStatusMasks.LowPower;
+
+            if (state.InternalHeat >= 1f ||
+                ((currentStatus & ToolRuntimeStatusMasks.Overheated) != 0u && state.InternalHeat > OverheatRecoveryThreshold))
+            {
+                status |= ToolRuntimeStatusMasks.Overheated;
+            }
+
+            if (state.Durability <= 0.0001f)
+                status |= ToolRuntimeStatusMasks.Broken;
+
+            bool standardToolBelowLimit = depthMeters > StandardDepthFailureMeters &&
+                (state.UpgradeBitmask & ((uint)ToolUpgradeBits.DepthHardened | (uint)ToolUpgradeBits.ThermalShield)) == 0u;
+            if (standardToolBelowLimit)
+                status |= ToolRuntimeStatusMasks.DepthFailed;
+
+            uint disablingBits = ToolRuntimeStatusMasks.LowPower |
+                                  ToolRuntimeStatusMasks.Overheated |
+                                  ToolRuntimeStatusMasks.Broken |
+                                  ToolRuntimeStatusMasks.DepthFailed;
+            if ((status & disablingBits) != 0u)
+            {
+                status |= ToolRuntimeStatusMasks.Disabled;
+                status &= ~ToolRuntimeStatusMasks.Active;
+            }
+
+            return status;
+        }
+
+        private static uint ResolveHeatWarningHaptic(uint status, float heat)
+        {
+            if (heat >= HeatWarningThreshold && (status & ToolRuntimeStatusMasks.HeatWarningHapticQueued) == 0u)
+            {
+                ToolHapticsRuntime.EnqueueSinusoidalCommand(
+                    0f,
+                    0.82f,
+                    0.12f,
+                    28f,
+                    ToolHapticsRuntime.PriorityCritical,
+                    0b0010);
+                return status | ToolRuntimeStatusMasks.HeatWarningHapticQueued;
+            }
+
+            if (heat <= HeatWarningResetThreshold)
+                return status & ~ToolRuntimeStatusMasks.HeatWarningHapticQueued;
+
+            return status;
+        }
+
+        private float ResolveEnvironmentHeat01(int slotIndex, PlayerTool owner, float depthMeters, HectonQualityTier scalabilityTier)
+        {
+            if (!DistanceMath.IsHighQualityTier(scalabilityTier))
+            {
+                float depth01 = math.saturate((depthMeters - 450f) * 0.00125f);
+                return depth01 * depth01 * (3f - 2f * depth01) * 0.25f;
+            }
+
+            if (((_thermalProbeFrameIndex + slotIndex) & ThermalProbeFrameMask) != 0)
+                return _environmentHeat01[slotIndex];
+
+            AbyssalThermalManager thermodynamics = GlobalRegistry.Thermodynamics;
+            if (thermodynamics == null || owner == null)
+                return 0f;
+
+            if (!thermodynamics.SampleThermalFlow(owner.transform.position, ThermalProbeRadiusMeters, out AbyssalThermalManager.ThermalFlowSample sample))
+                return 0f;
+
+            return math.saturate(sample.Heat01);
+        }
+
+        private static float ResolveCoolingDenominator(float depthMeters)
+        {
+            float inverseDepthCooling = math.rcp(1f + math.max(0f, depthMeters) * DepthCoolingScale);
+            return math.max(MinimumCoolingDenominator, inverseDepthCooling);
+        }
+
+        private static float ResolveDepthMeters(PlayerTool owner)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+            {
+                HectonSurvivalSystem survivalSystem = playerContext.SurvivalSystem;
+                if (survivalSystem != null)
+                    return math.max(0f, survivalSystem.Depth);
+
+                HectonPlayerMovement movement = playerContext.PlayerMovement;
+                if (movement != null)
+                    return math.max(0f, movement.CurrentDepth);
+            }
+
+            return owner != null ? math.max(0f, -owner.transform.position.y) : 0f;
+        }
+
+        private static byte ResolveToolTypeId(uint toolId)
+        {
+            byte typeId = (byte)(toolId ^ (toolId >> 8) ^ (toolId >> 16) ^ (toolId >> 24));
+            return typeId != 0 ? typeId : (byte)1;
+        }
+
+        private void WriteSlotMirrors(int slotIndex, in ToolState state)
+        {
+            if ((uint)slotIndex >= MaxTrackedTools)
+                return;
+
+            _toolTypes[slotIndex] = state.ToolTypeId;
+            _currentHeat[slotIndex] = state.InternalHeat;
+            _batteryCharge[slotIndex] = state.CurrentBattery;
+            _statusMasks[slotIndex] = state.StatusMask;
+            _environmentHeat01[slotIndex] = math.saturate(_environmentHeat01[slotIndex]);
+        }
+
+        private void ClearSlotMirrors(int slotIndex)
+        {
+            if ((uint)slotIndex >= MaxTrackedTools)
+                return;
+
+            _toolTypes[slotIndex] = 0;
+            _currentHeat[slotIndex] = 0f;
+            _batteryCharge[slotIndex] = 0f;
+            _statusMasks[slotIndex] = 0u;
+            _environmentHeat01[slotIndex] = 0f;
         }
 
         private void TryRegisterService()
@@ -771,6 +1049,7 @@ namespace Hecton8.Tools
             _slotUsed[slotIndex] = false;
             _toolStates[slotIndex] = default;
             _toolStats[slotIndex] = default;
+            ClearSlotMirrors(slotIndex);
             ClearModuleMirror(slotIndex);
         }
 
@@ -797,6 +1076,36 @@ namespace Hecton8.Tools
                 _toolStats.Dispose();
             }
 
+            if (_toolTypes.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_toolTypes);
+                _toolTypes.Dispose();
+            }
+
+            if (_currentHeat.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_currentHeat);
+                _currentHeat.Dispose();
+            }
+
+            if (_batteryCharge.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_batteryCharge);
+                _batteryCharge.Dispose();
+            }
+
+            if (_statusMasks.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_statusMasks);
+                _statusMasks.Dispose();
+            }
+
+            if (_environmentHeat01.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_environmentHeat01);
+                _environmentHeat01.Dispose();
+            }
+
             if (_toolIndexById.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeHashMap(nameof(ModularEquipmentEngine), nameof(_toolIndexById));
@@ -818,10 +1127,16 @@ namespace Hecton8.Tools
             _isInitialized = false;
             _toolStates = default;
             _toolStats = default;
+            _toolTypes = default;
+            _currentHeat = default;
+            _batteryCharge = default;
+            _statusMasks = default;
+            _environmentHeat01 = default;
             _toolIndexById = default;
             _batteryDrainRates = default;
             _batteryDrainDeltaSeconds = default;
             _pendingBatteryDrainMask = 0u;
+            _thermalProbeFrameIndex = 0;
         }
 
         private static float EstimateOverchargeHeatGrowth(float internalHeat)
@@ -849,7 +1164,15 @@ namespace Hecton8.Tools
                 {
                     ToolState state = _toolStates[i];
                     state.CurrentBattery = math.max(0f, state.CurrentBattery - drainAmount);
+                    ToolRuntimeStats stats = _toolStats[i];
+                    state.StatusMask = ResolveStatusMask(
+                        state.StatusMask,
+                        in state,
+                        in stats,
+                        ResolveDepthMeters(_toolOwners[i]),
+                        (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
                     _toolStates[i] = state;
+                    WriteSlotMirrors(i, in state);
                 }
 
                 _batteryDrainRates[i] = 0f;

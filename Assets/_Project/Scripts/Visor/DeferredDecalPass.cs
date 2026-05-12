@@ -52,10 +52,13 @@ namespace Hecton8.Visor
             public Vector4 Row2;
             public Vector4 Row3;
             public Vector4 AtlasRect;
+            public Vector4 Tint;
         }
 
         private sealed class DeferredDecalCompositePass : ScriptableRenderPass, IDisposable
         {
+            private const int MaxFluidScreenSpaceDecals = 32;
+
             private sealed class CompositePassData
             {
                 internal TextureHandle source;
@@ -66,6 +69,8 @@ namespace Hecton8.Visor
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Deferred Decals");
             private readonly DecalGpuData[] _decalUpload = new DecalGpuData[256]; // COLD ALLOC: DecalGpuData[256] - deferred decal upload cache for global crack matrices - owner: DeferredDecalPass
+            private readonly Matrix4x4[] _fluidDecalMatrices = new Matrix4x4[MaxFluidScreenSpaceDecals]; // COLD ALLOC: Matrix4x4[32] - screen-space fluid decal matrix scratch - owner: DeferredDecalPass
+            private readonly Color[] _fluidDecalColors = new Color[MaxFluidScreenSpaceDecals]; // COLD ALLOC: Color[32] - screen-space fluid decal tint scratch - owner: DeferredDecalPass
 
             private FeatureSettings _settings;
             private Material _material;
@@ -147,7 +152,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (CompositePassData data, UnsafeGraphContext context) =>
                     {
@@ -167,34 +171,76 @@ namespace Hecton8.Visor
 
                 var matrices = BaseDegradationSystem.GlobalCrackDecalMatrices;
                 var atlasIndices = BaseDegradationSystem.GlobalCrackDecalAtlasIndices;
-                int safeCount = Mathf.Min(safeCapacity, matrices.Count, atlasIndices.Count);
-                if (safeCount <= 0)
-                    return 0;
-
                 int atlasColumns = Mathf.Max(1, _settings.atlasColumns);
                 int atlasRows = Mathf.Max(1, _settings.atlasRows);
-                float invColumns = 1f / atlasColumns;
-                float invRows = 1f / atlasRows;
+                int uploadCount = 0;
+                int structuralDecalCount = Mathf.Min(safeCapacity, matrices.Count, atlasIndices.Count);
 
-                for (int decalIndex = 0; decalIndex < safeCount; decalIndex++)
+                for (int decalIndex = 0; decalIndex < structuralDecalCount; decalIndex++)
                 {
                     Matrix4x4 worldToDecal = matrices[decalIndex].inverse;
                     int atlasIndex = Mathf.Max(0, atlasIndices[decalIndex]);
-                    int atlasX = atlasIndex % atlasColumns;
-                    int atlasY = (atlasIndex / atlasColumns) % atlasRows;
 
-                    _decalUpload[decalIndex] = new DecalGpuData
+                    _decalUpload[uploadCount] = new DecalGpuData
                     {
                         Row0 = worldToDecal.GetRow(0),
                         Row1 = worldToDecal.GetRow(1),
                         Row2 = worldToDecal.GetRow(2),
                         Row3 = worldToDecal.GetRow(3),
-                        AtlasRect = new Vector4(atlasX * invColumns, atlasY * invRows, invColumns, invRows)
+                        AtlasRect = ResolveAtlasRect(atlasIndex, atlasColumns, atlasRows),
+                        Tint = new Vector4(_settings.decalTint.r, _settings.decalTint.g, _settings.decalTint.b, _settings.decalTint.a)
                     };
+                    uploadCount++;
                 }
 
-                GraphicsBufferUploadUtility.UploadArray(_decalBuffer, _decalUpload, safeCount);
-                return safeCount;
+                uploadCount = AppendFluidScreenSpaceDecals(uploadCount, safeCapacity, atlasColumns, atlasRows);
+                if (uploadCount <= 0)
+                    return 0;
+
+                GraphicsBufferUploadUtility.UploadArray(_decalBuffer, _decalUpload, uploadCount);
+                return uploadCount;
+            }
+
+            private int AppendFluidScreenSpaceDecals(int uploadCount, int safeCapacity, int atlasColumns, int atlasRows)
+            {
+                if (uploadCount >= safeCapacity || GlobalRegistry.AbyssalFluidDecals == null)
+                    return uploadCount;
+
+                int remainingCapacity = Mathf.Min(MaxFluidScreenSpaceDecals, safeCapacity - uploadCount);
+                int fluidDecalCount = GlobalRegistry.AbyssalFluidDecals.CopyScreenSpaceDecals(
+                    _fluidDecalMatrices,
+                    _fluidDecalColors,
+                    remainingCapacity);
+                if (fluidDecalCount <= 0)
+                    return uploadCount;
+
+                Vector4 fullAtlasRect = ResolveAtlasRect(0, atlasColumns, atlasRows);
+                for (int decalIndex = 0; decalIndex < fluidDecalCount && uploadCount < safeCapacity; decalIndex++)
+                {
+                    Matrix4x4 worldToDecal = _fluidDecalMatrices[decalIndex].inverse;
+                    Color tint = _fluidDecalColors[decalIndex];
+                    _decalUpload[uploadCount] = new DecalGpuData
+                    {
+                        Row0 = worldToDecal.GetRow(0),
+                        Row1 = worldToDecal.GetRow(1),
+                        Row2 = worldToDecal.GetRow(2),
+                        Row3 = worldToDecal.GetRow(3),
+                        AtlasRect = fullAtlasRect,
+                        Tint = new Vector4(tint.r, tint.g, tint.b, tint.a)
+                    };
+                    uploadCount++;
+                }
+
+                return uploadCount;
+            }
+
+            private static Vector4 ResolveAtlasRect(int atlasIndex, int atlasColumns, int atlasRows)
+            {
+                float invColumns = 1f / atlasColumns;
+                float invRows = 1f / atlasRows;
+                int atlasX = atlasIndex % atlasColumns;
+                int atlasY = (atlasIndex / atlasColumns) % atlasRows;
+                return new Vector4(atlasX * invColumns, atlasY * invRows, invColumns, invRows);
             }
 
             private void EnsureDecalBuffer(int requiredCapacity)

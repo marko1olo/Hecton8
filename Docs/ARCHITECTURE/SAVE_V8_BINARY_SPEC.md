@@ -23,7 +23,7 @@ Historical 2026-05-04 boundary:
 HECTON-8 save container `0x0008` (`SaveBinaryStorage.CurrentVersion`).
 Owner: `Assets/_Project/Scripts/SaveBinaryStorage.cs`.
 
-This document describes the indexed-block storage container used for MMF-backed random access to persistent-world sectors.
+This document describes the indexed-block storage container used for FileStream/native-window random access to persistent-world sectors. Older memory-mapped wording in this file is stale unless explicitly marked historical.
 
 ## Top-Level Layout
 
@@ -35,7 +35,7 @@ File order:
 4. compressed metadata block
 5. compressed sector blocks
 
-The file is memory-mapped and treated as:
+The file is treated as a binary layout addressed by offsets:
 
 ```text
 [SaveFileHeader]
@@ -188,14 +188,14 @@ Flags:
 
 To page a sector:
 
-1. memory-map the file
+1. open/read the file through `SaveBinaryStorage.AsyncWriteManager`
 2. validate `SaveFileHeader`
 3. validate indexed v8 requirement:
    - `Flags & FlagIndexedSectorBlocks`
    - `Version == 0x0008`
 4. read `IndexedSectorDirectoryHeader`
 5. hash-probe `SectorEntry[4096]` by `SectorHash`
-6. create `MemoryMappedViewStream(ByteOffset, CompressedSize)`
+6. copy only the required byte window through cached native read windows
 7. read only that block
 8. decompress block
 9. verify sector checksum

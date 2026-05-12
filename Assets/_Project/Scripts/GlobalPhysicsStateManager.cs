@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Collections;
@@ -351,6 +352,11 @@ namespace Hecton8.Physics
         private const float AupJitterThresholdMetersSq = AupJitterThresholdMeters * AupJitterThresholdMeters;
         private const int AupJitterSentinelFrameInterval = 60;
         private const int SafeTeleportSpeculativeFixedTickHold = 3;
+        private const float KinematicHitStopImpactSpeedMetersPerSecond = 20f;
+        private const float KinematicHitStopTimeScale = 0.05f;
+        private const float KinematicHitStopDurationSeconds = 0.1f;
+        private const float SpeculativeHoverTideMinScale = 0.75f;
+        private const float SpeculativeHoverTideMaxScale = 1.25f;
         private const double FarKinematicSleepDistanceSq = FarKinematicSleepDistanceMeters * FarKinematicSleepDistanceMeters;
         private const double ColliderLodCompoundToSimpleDistanceSq = ColliderLodCompoundToSimpleDistanceMeters * ColliderLodCompoundToSimpleDistanceMeters;
         private const double ColliderLodSimpleToCompoundDistanceSq = ColliderLodSimpleToCompoundDistanceMeters * ColliderLodSimpleToCompoundDistanceMeters;
@@ -384,7 +390,10 @@ namespace Hecton8.Physics
         private bool _connectionCapacityOverflowReported;
         private bool _trackedBodyCapacityOverflowReported;
         private float _lastFixedDeltaTime = PhysicsFixedStepSeconds;
+        private float _hitStopRemainingUnscaledSeconds;
+        private float _hitStopRestoreTimeScale = 1f;
         private int _lastKineticAnomalyFrame = -1;
+        private bool _hitStopActive;
         private static int _cachedWaterLevelFrame = -1;
         private static float _cachedWaterLevelBaseY;
         private static float _cachedWaterLevelAmplitude;
@@ -442,7 +451,8 @@ namespace Hecton8.Physics
             float resolvedWaterLevelY = baseWaterLevelY;
             if (tidesEnabled && safeAmplitude > 0f)
             {
-                float combinedWave = ResolveSignedTriangleWave(timeSeconds) + ResolveSignedTriangleWave(timeSeconds * 0.5f);
+                float tideTimeSeconds = ResolveAbsoluteUniverseTideTimeSeconds(timeSeconds, in celestialSnapshot);
+                float combinedWave = ResolveSignedTriangleWave(tideTimeSeconds) + ResolveSignedTriangleWave(tideTimeSeconds * 0.5f);
                 resolvedWaterLevelY += combinedWave * safeAmplitude;
             }
 
@@ -463,6 +473,34 @@ namespace Hecton8.Physics
             float phase = (radians * InverseTwoPi) - 0.25f;
             phase -= math.floor(phase);
             return (2f * math.abs((2f * phase) - 1f)) - 1f;
+        }
+
+        private static float ResolveAbsoluteUniverseTideTimeSeconds(
+            float fallbackTimeSeconds,
+            in CelestialRuntimeSnapshot celestialSnapshot)
+        {
+            double universeTime = (celestialSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u
+                ? celestialSnapshot.AbsoluteUniverseTime
+                : GlobalRegistry.AbsoluteUniverseTime;
+            if (double.IsNaN(universeTime) || double.IsInfinity(universeTime))
+                return fallbackTimeSeconds;
+
+            double wrappedTime = universeTime % 4096d;
+            return (float)wrappedTime;
+        }
+
+        internal static float ResolveSpeculativeHoverHeightMeters(float baseHeightMeters, float timeSeconds)
+        {
+            float safeBaseHeight = math.max(0f, baseHeightMeters);
+            if (safeBaseHeight <= 0f)
+                return 0f;
+
+            CelestialRuntimeSnapshot celestialSnapshot = GlobalRegistry.CelestialRuntimeSnapshot;
+            bool hasCelestialTide = (celestialSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u;
+            float tide01 = hasCelestialTide
+                ? math.saturate(celestialSnapshot.TideHigh01)
+                : math.saturate(0.5f + (0.5f * ResolveSignedTriangleWave(timeSeconds)));
+            return safeBaseHeight * math.lerp(SpeculativeHoverTideMinScale, SpeculativeHoverTideMaxScale, tide01);
         }
 
         internal static void RegisterTrackedBody(Rigidbody body)
@@ -556,6 +594,14 @@ namespace Hecton8.Physics
                 return;
 
             manager.QueueKinematicImpactInternal(primaryBody, secondaryBody, point, normal, impactSpeedMetersPerSecond);
+        }
+
+        internal static void RequestKinematicHitStop(float impactSpeedMetersPerSecond)
+        {
+            if (!TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
+                return;
+
+            manager.RequestKinematicHitStopInternal(impactSpeedMetersPerSecond);
         }
 
         internal static void RegisterTetherConnection(UnityEngine.Object owner, Rigidbody anchorBody, Rigidbody payloadBody)
@@ -667,6 +713,7 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            TickKinematicHitStopGate();
             FlushImpactEvents();
         }
 
@@ -735,6 +782,7 @@ namespace Hecton8.Physics
 
         private void ShutdownServiceState()
         {
+            RestoreKinematicHitStopGate(forceRestore: true);
             UnregisterRuntimeHooks();
             UnsubscribeSceneEvents();
             ClearRuntimeState();
@@ -1185,6 +1233,59 @@ namespace Hecton8.Physics
             }
         }
 
+        private void RequestKinematicHitStopInternal(float impactSpeedMetersPerSecond)
+        {
+            if (!math.isfinite(impactSpeedMetersPerSecond) ||
+                impactSpeedMetersPerSecond < KinematicHitStopImpactSpeedMetersPerSecond)
+            {
+                return;
+            }
+
+            float currentScale = Time.timeScale;
+            if (!math.isfinite(currentScale) || currentScale <= 0.0001f)
+                return;
+
+            if (!_hitStopActive)
+                _hitStopRestoreTimeScale = currentScale;
+
+            _hitStopActive = true;
+            _hitStopRemainingUnscaledSeconds = math.max(_hitStopRemainingUnscaledSeconds, KinematicHitStopDurationSeconds);
+            if (currentScale > KinematicHitStopTimeScale)
+                Time.timeScale = KinematicHitStopTimeScale;
+        }
+
+        private void TickKinematicHitStopGate()
+        {
+            if (!_hitStopActive)
+                return;
+
+            float unscaledDelta = Time.unscaledDeltaTime;
+            _hitStopRemainingUnscaledSeconds -= math.isfinite(unscaledDelta) && unscaledDelta > 0f
+                ? unscaledDelta
+                : PhysicsFixedStepSeconds;
+            if (_hitStopRemainingUnscaledSeconds > 0f)
+                return;
+
+            RestoreKinematicHitStopGate(forceRestore: false);
+        }
+
+        private void RestoreKinematicHitStopGate(bool forceRestore)
+        {
+            if (!_hitStopActive)
+                return;
+
+            float currentScale = Time.timeScale;
+            bool ownsScale = math.isfinite(currentScale) &&
+                currentScale > 0.0001f &&
+                (forceRestore || currentScale <= KinematicHitStopTimeScale + 0.0001f);
+            if (ownsScale)
+                Time.timeScale = math.max(0.0001f, _hitStopRestoreTimeScale);
+
+            _hitStopActive = false;
+            _hitStopRemainingUnscaledSeconds = 0f;
+            _hitStopRestoreTimeScale = 1f;
+        }
+
         private void RegisterTrackedBodyInternal(Rigidbody body)
         {
             if (body == null)
@@ -1270,7 +1371,6 @@ namespace Hecton8.Physics
         private void QueueImpactInternal(Rigidbody primaryBody, Rigidbody secondaryBody, Collision collision)
         {
             if (primaryBody == null ||
-                !PhysicsEvents.HasImpactListeners ||
                 HectonFloatingOrigin.IsShiftInProgress ||
                 !_impactQueue.IsCreated ||
                 _queuedImpactCount >= MaxQueuedImpactEvents)
@@ -1332,7 +1432,6 @@ namespace Hecton8.Physics
             float impactSpeedMetersPerSecond)
         {
             if (primaryBody == null ||
-                !PhysicsEvents.HasImpactListeners ||
                 HectonFloatingOrigin.IsShiftInProgress ||
                 !_impactQueue.IsCreated ||
                 _queuedImpactCount >= MaxQueuedImpactEvents)
@@ -1402,6 +1501,18 @@ namespace Hecton8.Physics
                 processedCount++;
                 Vector3 impactPoint = new Vector3(impactEvent.Point.x, impactEvent.Point.y, impactEvent.Point.z);
                 Vector3 impactNormal = new Vector3(impactEvent.Normal.x, impactEvent.Normal.y, impactEvent.Normal.z);
+                ImpactSignal corridorSignal = new ImpactSignal
+                {
+                    PointAup = impactEvent.PointAup,
+                    Force = impactEvent.Force,
+                    Intensity = impactEvent.Intensity,
+                    PrimaryBodyId = unchecked((uint)impactEvent.PrimaryBodyId),
+                    WeightClass = (byte)impactEvent.WeightClass,
+                    PrimaryMaterialId = impactEvent.PrimaryAudioMaterialId,
+                    SecondaryMaterialId = impactEvent.SecondaryAudioMaterialId,
+                    Flags = 0
+                };
+                GlobalSignals.Publish(in corridorSignal);
                 PhysicsEvents.RaiseImpact(new PhysicsImpactSignal(
                     impactEvent.PrimaryBodyId,
                     impactEvent.SecondaryBodyId,
@@ -1773,6 +1884,10 @@ namespace Hecton8.Physics
             bool wasDetectingCollisions = body.detectCollisions;
             body.isKinematic = true;
             body.detectCollisions = false;
+            body.ResetCenterOfMass();
+            body.ResetInertiaTensor();
+            body.position = targetPosition;
+            body.rotation = targetRotation;
             body.transform.SetPositionAndRotation(targetPosition, targetRotation);
             body.PublishTransform();
             body.isKinematic = wasKinematic;
@@ -1825,9 +1940,10 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                bool shouldSleep = AbsoluteUniversePosition.DistanceSq(in bodyAup, in playerAup) > FarKinematicSleepDistanceSq;
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in bodyAup, in playerAup);
+                bool shouldSleep = distanceSq > FarKinematicSleepDistanceSq;
                 if (shouldSleep)
-                    ApplyDistanceKinematicSleep(body, ref bodyState);
+                    ApplyDistanceKinematicSleep(body, ref bodyState, in bodyAup, distanceSq);
                 else if (bodyState.DistanceKinematicSleepActive)
                     RestoreDistanceKinematicSleep(body, ref bodyState);
 
@@ -1893,7 +2009,11 @@ namespace Hecton8.Physics
             }
         }
 
-        private void ApplyDistanceKinematicSleep(Rigidbody body, ref RigidbodyState bodyState)
+        private void ApplyDistanceKinematicSleep(
+            Rigidbody body,
+            ref RigidbodyState bodyState,
+            in AbsoluteUniversePosition bodyAup,
+            double distanceSq)
         {
             if (bodyState.DistanceKinematicSleepActive)
                 return;
@@ -1910,6 +2030,7 @@ namespace Hecton8.Physics
             body.detectCollisions = false;
             body.Sleep();
             bodyState.DistanceKinematicSleepActive = true;
+            PublishRigidbodySleepSignal(in bodyState, in bodyAup, distanceSq, 1);
         }
 
         private void RestoreDistanceKinematicSleep(Rigidbody body, ref RigidbodyState bodyState)
@@ -1929,6 +2050,40 @@ namespace Hecton8.Physics
             bodyState.WasSleepingBeforeDistanceSleep = false;
             bodyState.StateMask &= ~PhysicsStateMask.WasAsleep;
             bodyState.DistanceKinematicSleepActive = false;
+            PublishRigidbodySleepSignal(in bodyState, body != null ? body.position : Vector3.zero, 0d, 0);
+        }
+
+        private static void PublishRigidbodySleepSignal(
+            in RigidbodyState bodyState,
+            in AbsoluteUniversePosition bodyAup,
+            double distanceSq,
+            byte sleepState)
+        {
+            double safeDistanceSq = math.max(0.0, distanceSq);
+            float distanceMeters = safeDistanceSq > 0.0
+                ? (float)math.min(1000000.0, safeDistanceSq * math.rsqrt(safeDistanceSq))
+                : 0f;
+            RigidbodySleepSignal signal = new RigidbodySleepSignal
+            {
+                PositionAup = bodyAup,
+                BodyId = unchecked((uint)bodyState.EntityId),
+                DistanceMeters = distanceMeters,
+                SleepState = sleepState,
+                Flags = bodyState.DistanceKinematicSleepActive ? (byte)1 : (byte)0
+            };
+            GlobalSignals.Publish(in signal);
+        }
+
+        private static void PublishRigidbodySleepSignal(
+            in RigidbodyState bodyState,
+            Vector3 runtimePosition,
+            double distanceSq,
+            byte sleepState)
+        {
+            AbsoluteUniversePosition bodyAup = bodyState.HasLastValidAup
+                ? bodyState.LastValidAup
+                : AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            PublishRigidbodySleepSignal(in bodyState, in bodyAup, distanceSq, sleepState);
         }
 
         private void ApplyAddedMassTensorState()

@@ -1,23 +1,23 @@
 // ============================================================================
 // HECTON-8 — PlayerInteraction.cs
 // Core player interaction component. Attach to the Player prefab root.
-// Performs throttled raycasts, manages hover state, dispatches interactions.
+// Queues throttled async raycasts, manages hover state, dispatches interactions.
 //
 // PERFORMANCE NOTES:
-//   - Raycasts throttled to 0.05s (20 checks/sec) — smooth hover, low CPU.
+//   - Async raycasts throttled to 0.05s (20 checks/sec) — smooth hover, low CPU.
 //   - LayerMask MUST be set to 'Interactable' layer — no full-scene sweeps.
 //   - Zero GC allocations in Tick loop.
-//   - Uses Physics.RaycastNonAlloc with QueryTriggerInteraction.Ignore.
+//   - Uses dispatcher-owned RaycastCommand with QueryTriggerInteraction.Ignore.
 //   - Component caching via TryGetComponent (no GetComponent alloc on hit).
 //   - ReferenceEquals for hover comparison — no boxing, no vtable dispatch.
 //
 // ARCHITECTURE:
 //   - Integrated with GameTickManager via ITickable — native Update() is PROHIBITED.
-//   - Raycast tick (throttled) → updates _currentHovered target.
+//   - Async raycast tick (throttled) → updates _currentHovered from a late-frame result.
 //   - Input poll (every tick) → reads _currentHovered, fires Interact().
 //   - These two paths are fully decoupled: input is never gated by raycast timer.
 //   - UI State Guard: interaction input is blocked when any menu is open,
-//     but raycasts continue so the hover prompt is immediately visible on close.
+//     but async raycasts continue so the hover prompt is refreshed immediately on close.
 //
 // AUDIO FEEDBACK:
 //   - Hover transition → SpatialAudioManager.PlayStatic2D(hoverSound, 0.3f)
@@ -54,7 +54,7 @@ namespace Hecton8.Interaction
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player Interaction")]
-    public sealed class PlayerInteraction : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class PlayerInteraction : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener, IDispatcherRaycastReceiver
     {
         // ====================================================================
         // SERIALIZED CONFIGURATION
@@ -122,15 +122,15 @@ namespace Hecton8.Interaction
         private IInputService _subscribedInputService;
         private QueryCacheContext _playerLookQueryCache;
         private Ray           _ray;
-        private RaycastHit    _hitInfo;
-        // COLD ALLOC: RaycastHit[4] - bounded interaction probe buffer - owner: PlayerInteraction
-        private const int MaxRaycastHits = 4;
-        private readonly RaycastHit[] _raycastHits = new RaycastHit[MaxRaycastHits];
+        private Ray           _pendingRaycastRay;
+        private float         _pendingRaycastReach;
+        private int           _pendingRaycastMask;
+        private int           _raycastRequestSequence;
+        private int           _pendingRaycastRequestId;
+        private bool          _raycastPending;
+        private QueryTriggerInteraction _pendingRaycastTriggerMode;
         private static readonly int _DefaultInteractableLayerMask = HectonLayerMasks.InteractableLayerMask;
         private static string _activeInteractKey = "E";
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private bool _raycastBufferSaturationLogged;
-#endif
 
         /// <summary>
         /// Tracks whether this component successfully registered
@@ -261,6 +261,8 @@ namespace Hecton8.Interaction
 
             TryUnregisterHotSwapListener();
             UnsubscribeInputService();
+            _raycastPending = false;
+            _pendingRaycastRequestId = 0;
 
             // Clean up hover state if disabled mid-hover.
             ClearHover();
@@ -373,7 +375,7 @@ namespace Hecton8.Interaction
         /// Phase 2: Input poll (every tick) — action execution.
         ///          Blocked by UI state (HectonFabricatorUI.IsMenuOpen).
         ///
-        /// Zero GC: Physics.RaycastNonAlloc, TryGetComponent,
+        /// Zero GC: dispatcher RaycastCommand, TryGetComponent,
         ///          ReferenceEquals, Input.GetKeyDown — all allocation-free.
         /// </summary>
         public void Tick(float deltaTime)
@@ -428,33 +430,100 @@ namespace Hecton8.Interaction
             _playerLookQueryCache = cache;
             int resolvedInteractableMask = ResolveInteractableLayerMask();
             const QueryTriggerInteraction triggerMode = QueryTriggerInteraction.Ignore;
-            if (!cache.TryGet(_ray, effectiveReach, resolvedInteractableMask, triggerMode, out QueryResult qResult))
+            if (cache.TryGet(_ray, effectiveReach, resolvedInteractableMask, triggerMode, out QueryResult qResult))
             {
-                int hitCount = Physics.RaycastNonAlloc(
-                    _ray,
-                    _raycastHits,
-                    effectiveReach,
-                    resolvedInteractableMask,
-                    triggerMode);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (hitCount >= _raycastHits.Length && !_raycastBufferSaturationLogged)
-                {
-                    _raycastBufferSaturationLogged = true;
-                    Debug.LogWarning(
-                        "[PlayerInteraction] Interaction raycast buffer saturated. " +
-                        "Increase MaxRaycastHits or narrow interactableMask.", this);
-                }
-#endif
-
-                bool hit = TryResolveNearestRegisteredRaycastHit(hitCount, out _hitInfo);
-                qResult = new QueryResult { hasHit = hit, hit = hit ? _hitInfo : default };
-                cache.Set(_ray, effectiveReach, resolvedInteractableMask, triggerMode, qResult);
-            }
-            else
-            {
-                _hitInfo = qResult.hit;
+                ApplyInteractionQueryResult(in qResult);
+                return;
             }
 
+            QueueInteractionRaycast(in _ray, effectiveReach, resolvedInteractableMask, triggerMode);
+        }
+
+        private void QueueInteractionRaycast(
+            in Ray ray,
+            float effectiveReach,
+            int resolvedInteractableMask,
+            QueryTriggerInteraction triggerMode)
+        {
+            if (_raycastPending)
+                return;
+
+            RaycastCommand command = default;
+            command.from = ray.origin;
+            command.direction = ray.direction;
+            command.distance = effectiveReach;
+            command.queryParameters = new QueryParameters(resolvedInteractableMask, false, triggerMode);
+
+            int requestId = NextRaycastRequestId();
+            if (SystemDispatcher.QueueDispatcherRaycast(this, requestId, in command))
+            {
+                _raycastPending = true;
+                _pendingRaycastRequestId = requestId;
+                _pendingRaycastRay = ray;
+                _pendingRaycastReach = effectiveReach;
+                _pendingRaycastMask = resolvedInteractableMask;
+                _pendingRaycastTriggerMode = triggerMode;
+                return;
+            }
+
+            if (_currentHovered != null)
+                ClearHover();
+        }
+
+        private int NextRaycastRequestId()
+        {
+            unchecked
+            {
+                _raycastRequestSequence++;
+                if (_raycastRequestSequence == 0)
+                    _raycastRequestSequence = 1;
+            }
+
+            return _raycastRequestSequence;
+        }
+
+        void IDispatcherRaycastReceiver.ConsumeDispatcherRaycastHit(int requestId, in RaycastHit hit)
+        {
+            if (!_raycastPending || requestId != _pendingRaycastRequestId)
+                return;
+
+            _raycastPending = false;
+            _pendingRaycastRequestId = 0;
+
+            bool resolved = TryResolveRegisteredRaycastHit(in hit, out RaycastHit resolvedHit);
+            QueryResult qResult = new QueryResult
+            {
+                hasHit = resolved,
+                hit = resolved ? resolvedHit : default
+            };
+
+            QueryCacheContext cache = _playerLookQueryCache ?? GlobalQueryCacheManager.PlayerLook;
+            _playerLookQueryCache = cache;
+            cache.Set(_pendingRaycastRay, _pendingRaycastReach, _pendingRaycastMask, _pendingRaycastTriggerMode, qResult);
+
+            if (isActiveAndEnabled)
+                ApplyInteractionQueryResult(in qResult);
+        }
+
+        private static bool TryResolveRegisteredRaycastHit(in RaycastHit candidate, out RaycastHit registeredHit)
+        {
+            registeredHit = default;
+            Collider candidateCollider = candidate.collider;
+            if (candidateCollider == null ||
+                !math.isfinite(candidate.distance) ||
+                candidate.distance < 0f ||
+                !InteractableRegistry.TryResolve(candidateCollider, out InteractableRegistry.TargetInfo targetInfo) ||
+                targetInfo.Interactable == null)
+            {
+                return false;
+            }
+
+            registeredHit = candidate;
+            return true;
+        }
+
+        private void ApplyInteractionQueryResult(in QueryResult qResult)
+        {
             if (qResult.hasHit)
             {
                 Collider hitCollider = qResult.hit.collider;
@@ -472,34 +541,7 @@ namespace Hecton8.Interaction
             }
 
             if (_currentHovered != null)
-            {
                 ClearHover();
-            }
-        }
-
-        private bool TryResolveNearestRegisteredRaycastHit(int hitCount, out RaycastHit nearestHit)
-        {
-            nearestHit = default;
-            float nearestDistance = float.MaxValue;
-            int count = math.min(hitCount, _raycastHits.Length);
-            for (int i = 0; i < count; i++)
-            {
-                RaycastHit candidate = _raycastHits[i];
-                _raycastHits[i] = default;
-                Collider candidateCollider = candidate.collider;
-                if (candidateCollider == null ||
-                    candidate.distance >= nearestDistance ||
-                    !InteractableRegistry.TryResolve(candidateCollider, out InteractableRegistry.TargetInfo targetInfo) ||
-                    targetInfo.Interactable == null)
-                {
-                    continue;
-                }
-
-                nearestDistance = candidate.distance;
-                nearestHit = candidate;
-            }
-
-            return nearestDistance < float.MaxValue;
         }
 
         private int ResolveInteractableLayerMask()

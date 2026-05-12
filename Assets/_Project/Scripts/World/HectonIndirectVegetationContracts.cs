@@ -1,6 +1,8 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -51,6 +53,199 @@ namespace Hecton8.World
         Sargassum = 2
     }
 
+    public enum HectonFloraSporeEventKind : byte
+    {
+        MatureToxic = 1,
+        DefensiveBurst = 2
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    public struct HectonFloraSporeEvent
+    {
+        public AbsoluteUniversePositionBlit PositionAup;
+        public float3 RuntimePosition;
+        public float RadiusMeters;
+        public float Intensity01;
+        public float Age01;
+        public int TemplateIndex;
+        public int ActivePayloadIndex;
+        public uint FrameIndex;
+        public HectonFloraSporeEventKind Kind;
+        public byte Underwater;
+        public ushort Reserved0;
+    }
+
+    /// <summary>
+    /// NativeQueue-backed flora spore handoff for fog/scatter consumers.
+    /// </summary>
+    public static class HectonFloraSporeEvents
+    {
+        public const int PendingEventCapacity = 64;
+
+        private static NativeQueue<HectonFloraSporeEvent> _pendingEvents;
+        private static int _pendingEventCount;
+        private static int _droppedEventCount;
+
+        public static int PendingCount => _pendingEventCount;
+        public static int DroppedEventCount => _droppedEventCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(HectonFloraSporeEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _pendingEventCount = 0;
+            _droppedEventCount = 0;
+        }
+
+        public static bool EnqueueMatureToxicSpore(
+            Vector3 runtimePosition,
+            float radiusMeters,
+            float intensity01,
+            float age01,
+            int templateIndex,
+            int activePayloadIndex,
+            bool underwater)
+        {
+            return Enqueue(
+                runtimePosition,
+                radiusMeters,
+                intensity01,
+                age01,
+                templateIndex,
+                activePayloadIndex,
+                underwater,
+                HectonFloraSporeEventKind.MatureToxic);
+        }
+
+        public static bool EnqueueDefensiveSporeBurst(
+            Vector3 runtimePosition,
+            float radiusMeters,
+            float intensity01)
+        {
+            return Enqueue(
+                runtimePosition,
+                radiusMeters,
+                intensity01,
+                1f,
+                -1,
+                -1,
+                true,
+                HectonFloraSporeEventKind.DefensiveBurst);
+        }
+
+        public static bool TryDequeue(out HectonFloraSporeEvent sporeEvent)
+        {
+            if (!_pendingEvents.IsCreated || !_pendingEvents.TryDequeue(out sporeEvent))
+            {
+                sporeEvent = default;
+                return false;
+            }
+
+            if (_pendingEventCount > 0)
+                _pendingEventCount--;
+
+            return true;
+        }
+
+        public static void Clear()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            while (_pendingEvents.TryDequeue(out _))
+            {
+            }
+
+            _pendingEventCount = 0;
+        }
+
+        private static bool Enqueue(
+            Vector3 runtimePosition,
+            float radiusMeters,
+            float intensity01,
+            float age01,
+            int templateIndex,
+            int activePayloadIndex,
+            bool underwater,
+            HectonFloraSporeEventKind kind)
+        {
+            if (!IsFinite(runtimePosition) ||
+                !math.isfinite(radiusMeters) ||
+                !math.isfinite(intensity01) ||
+                !math.isfinite(age01) ||
+                radiusMeters <= 0f ||
+                intensity01 <= 0f)
+            {
+                return false;
+            }
+
+            if (_pendingEventCount >= PendingEventCapacity)
+            {
+                _droppedEventCount++;
+                return false;
+            }
+
+            EnsureInitialized();
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            _pendingEvents.Enqueue(new HectonFloraSporeEvent
+            {
+                PositionAup = AbsoluteUniversePositionBlit.FromAup(in positionAup),
+                RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
+                RadiusMeters = Mathf.Max(0.01f, radiusMeters),
+                Intensity01 = Mathf.Clamp01(intensity01),
+                Age01 = Mathf.Clamp01(age01),
+                TemplateIndex = templateIndex,
+                ActivePayloadIndex = activePayloadIndex,
+                FrameIndex = unchecked((uint)Mathf.Max(0, Time.frameCount)),
+                Kind = kind,
+                Underwater = underwater ? (byte)1 : (byte)0,
+                Reserved0 = 0
+            });
+            _pendingEventCount++;
+            return true;
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (_pendingEvents.IsCreated)
+                return;
+
+            _pendingEvents = new NativeQueue<HectonFloraSporeEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<HectonFloraSporeEvent>[64] - flora spore event handoff lane for GPU fog/scatter consumers - owner: HectonFloraSporeEvents
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingEvents,
+                PendingEventCapacity,
+                nameof(HectonFloraSporeEvents),
+                nameof(_pendingEvents),
+                NativeAllocationLifetime.Session);
+            PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+        }
+    }
+
     /// <summary>
     /// Per-instance metadata payload consumed by the indirect vegetation shader.
     /// </summary>
@@ -59,6 +254,8 @@ namespace Hecton8.World
     {
         /// <summary>Exact GPU stride in bytes.</summary>
         public const int Stride = 64;
+        public const float PackedPresentationValueMax = 65535f;
+        public const float PackedPresentationByteMax = 255f;
         public const float RuntimeStateIdle = (float)HectonVegetationRuntimeState.Idle;
         public const float RuntimeStateAgitated = (float)HectonVegetationRuntimeState.Agitated;
         public const float RuntimeStateDying = (float)HectonVegetationRuntimeState.Dying;
@@ -91,7 +288,7 @@ namespace Hecton8.World
         /// <summary>Per-instance bioluminescence pulse frequency in Hertz.</summary>
         public float PulseFrequency;
 
-        /// <summary>Per-instance bioluminescence color in linear space. Alpha stores emission intensity.</summary>
+        /// <summary>Per-instance bioluminescence color in linear space. Alpha packs emission intensity and damage state.</summary>
         public Vector4 BioluminescenceColor;
 
         /// <summary>Per-instance VAT sway speed multiplier stamped from flora authoring.</summary>
@@ -103,7 +300,7 @@ namespace Hecton8.World
         /// <summary>Normalized health lane consumed by harvest visuals and emissive dimming.</summary>
         public float HealthNormalized;
 
-        /// <summary>Optional cultivation growth lane. Zero means legacy/default mature when no cultivation data is authored.</summary>
+        /// <summary>Optional cultivation growth lane. Negative means culled/harvested; zero means legacy/default mature when no cultivation data is authored.</summary>
         public float Reserved0;
 
         /// <summary>
@@ -135,12 +332,35 @@ namespace Hecton8.World
             TemplateIndex = templateIndex;
             RuntimeState = runtimeState;
             RuntimeFlags = runtimeFlags;
+            float sanitizedHealth = Mathf.Clamp01(healthNormalized);
             PulseFrequency = Mathf.Max(0.01f, pulseFrequency);
-            BioluminescenceColor = bioluminescenceColor;
+            BioluminescenceColor = PackPresentationPayload(bioluminescenceColor, 1f - sanitizedHealth);
             SwaySpeed = swaySpeed;
             BendAmplitude = bendAmplitude;
-            HealthNormalized = Mathf.Clamp01(healthNormalized);
-            Reserved0 = Mathf.Clamp(reserved0, 0f, 1f);
+            HealthNormalized = sanitizedHealth;
+            Reserved0 = Mathf.Clamp(reserved0, -1f, 1f);
+        }
+
+        public static Vector4 PackPresentationPayload(Vector4 colorAndIntensity, float damageState)
+        {
+            return new Vector4(
+                Mathf.Clamp01(colorAndIntensity.x),
+                Mathf.Clamp01(colorAndIntensity.y),
+                Mathf.Clamp01(colorAndIntensity.z),
+                PackBiolumDamage(colorAndIntensity.w, damageState));
+        }
+
+        public static float PackBiolumDamage(float biolumIntensity, float damageState)
+        {
+            int biolumByte = Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(biolumIntensity) * PackedPresentationByteMax), 0, 255);
+            int damageByte = Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(damageState) * PackedPresentationByteMax), 0, 255);
+            return (biolumByte + damageByte * 256f) / PackedPresentationValueMax;
+        }
+
+        public static float UnpackBiolumIntensity(float packedPresentationAlpha)
+        {
+            int packedValue = Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(packedPresentationAlpha) * PackedPresentationValueMax), 0, 65535);
+            return (packedValue & 0xFF) / PackedPresentationByteMax;
         }
 
         /// <summary>

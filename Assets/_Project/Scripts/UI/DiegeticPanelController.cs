@@ -78,6 +78,11 @@ namespace Hecton8.UI
         public float2 CanvasHitPoint;
 
         /// <summary>
+        /// Analog delta forwarded for terminal dials and lever drags.
+        /// </summary>
+        public float2 AnalogDelta;
+
+        /// <summary>
         /// Event-type bitmask.
         /// </summary>
         public DiegeticPanelInputEventType EventType;
@@ -108,6 +113,9 @@ namespace Hecton8.UI
 
         /// <summary>Cursor moved across the panel without a press transition.</summary>
         Hover = 1 << 3,
+
+        /// <summary>Analog scroll or drag delta resolved through the platform input snapshot.</summary>
+        Scroll = 1 << 4,
     }
 
     /// <summary>
@@ -116,16 +124,19 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Panel Controller")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver
+    public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver, IDamageReceiver
     {
         private const string WorldGeometrySortingLayer = "WorldGeometry";
         private const string PhosphorDecayShaderPath = "Assets/_Project/Art/Shaders/Hidden_Hecton_PDA_PhosphorDecay.shader";
         private const float MinCanvasExtent = 0.0001f;
+        private const float MaximumInteractionReachMeters = 2f;
+        private const float DamageGlitchDecaySharpness = 16f;
         private const float MatrixRefreshInterval = 0.25f;
         private const float FarPanelDistanceSq = 25f;
         private const float MediumPanelDistanceSq = 4f;
         private const float NearPanelDistanceSq = 0.64f;
-        private const float InvTwoPi = 1f / (math.PI * 2f);
+        private const float InvTwoPi = 0.159154943f;
+        private const float InvByteMax = 0.00392156862f;
         private const int MaxInputEventsPerTick = 4;
         private const int InputEventCapacity = 16;
         private const int InputEventMask = InputEventCapacity - 1;
@@ -151,6 +162,8 @@ namespace Hecton8.UI
         private static readonly int _DepthFadeRangeId = Shader.PropertyToID("_DepthFadeRange");
         private static readonly int _OcclusionActiveId = Shader.PropertyToID("_OcclusionActive");
         private static readonly int _PanelPowerLevelId = Shader.PropertyToID("_PanelPowerLevel");
+        private static readonly int _TerminalDamageGlitchId = Shader.PropertyToID("_TerminalDamageGlitch");
+        private static readonly int _FlashlightGlareId = Shader.PropertyToID("_FlashlightGlare");
         private static readonly int _PreviousTexId = Shader.PropertyToID("_PreviousTex");
         private static readonly int _CurrentTexId = Shader.PropertyToID("_CurrentTex");
         private static readonly int _DecayId = Shader.PropertyToID("_Decay");
@@ -272,6 +285,12 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("RenderTexture filter mode applied to the panel surface.")]
         private FilterMode renderTextureFilterMode = FilterMode.Bilinear;
 
+        [SerializeField, Tooltip("Render Lead-owned texture assigned to the panel surface. This path never enables a panel camera.")]
+        private RenderTexture externallyOwnedRenderTexture;
+
+        [SerializeField, Tooltip("Legacy compatibility only. Keep disabled for production submarine terminals; secondary panel cameras are forbidden.")]
+        private bool allowLegacyPanelCameraRenderTexture;
+
         [SerializeField, Tooltip("Maintains a persistent PDA/panel phosphor history RT: previous frame * decay + current frame.")]
         private bool enablePhosphorDecay;
 
@@ -287,6 +306,13 @@ namespace Hecton8.UI
 
         [SerializeField, Tooltip("World-space depth fade band used by the panel surface shader.")]
         private float depthFadeRange = 0.05f;
+
+        [Header("Terminal Effects")]
+        [SerializeField, Range(0f, 1f), Tooltip("Normalized glare applied when an external flashlight hits terminal glass.")]
+        private float flashlightGlare;
+
+        [SerializeField, Range(0.02f, 1f), Tooltip("Seconds a received damage packet keeps the CRT glitch active.")]
+        private float damageGlitchDurationSeconds = 0.22f;
 
         [SerializeField, Tooltip("Layer assigned to the world-space canvas hierarchy when RT presentation is active.")]
         private int panelCanvasLayer = 5;
@@ -336,6 +362,12 @@ namespace Hecton8.UI
         private float _cameraRetryTimer;
         private float _appliedDepthFadeRange = -1f;
         private float _appliedPowerLevel = -1f;
+        private float _terminalDamageGlitch;
+        private float _terminalDamageGlitchPeak;
+        private float _terminalDamageGlitchRemaining;
+        private float _terminalDamageGlitchDuration = 0.22f;
+        private float _appliedTerminalDamageGlitch = -1f;
+        private float _appliedFlashlightGlare = -1f;
         private bool _tickRegistered;
         private bool _lateFrameRegistered;
         private bool _renderPipelineHookRegistered;
@@ -347,6 +379,7 @@ namespace Hecton8.UI
         private bool _matrixStateInitialized;
         private bool _canvasSettingsApplied;
         private bool _isMx350Tier;
+        private bool _ownsPanelRenderTexture;
         private int _inputEventHead;
         private int _inputEventTail;
         private int _inputEventCount;
@@ -438,6 +471,7 @@ namespace Hecton8.UI
             RefreshDistanceAndRenderTexture(deltaTime);
             ApplyPowerLevel();
             UpdateProxyLightRegistration();
+            UpdateTerminalEffectState(deltaTime);
 
             if (TryResolveFingerInteraction(
                     out float2 fingerCanvasPos,
@@ -480,7 +514,7 @@ namespace Hecton8.UI
             if (!TryProjectRayToPanel(
                     rayOriginWs,
                     rayDirectionWs,
-                    maxInteractionDistance,
+                    ResolveEffectiveInteractionDistance(),
                     rayDirectionIsNormalized: true,
                     out float2 canvasPos,
                     out float3 localHit,
@@ -523,6 +557,44 @@ namespace Hecton8.UI
             ApplyMaterialState(forceTextureRefresh: false, forceDepthRefresh: true);
         }
 
+        /// <inheritdoc />
+        public void ReceiveDamage(in DamagePacket packet)
+        {
+            float channelDelta = math.abs(packet.NextValue - packet.PreviousValue);
+            float integrityDelta = packet.IntegrityDelta * InvByteMax;
+            float magnitude = math.max(math.abs(packet.Magnitude), math.max(channelDelta, integrityDelta));
+            TriggerDamageGlitch(magnitude, damageGlitchDurationSeconds);
+        }
+
+        /// <summary>
+        /// Drives the CRT damage-glitch shader channel without depending on combat concrete types.
+        /// </summary>
+        public void TriggerDamageGlitch(float magnitude01, float durationSeconds)
+        {
+            float safeMagnitude = math.saturate(math.isfinite(magnitude01) ? magnitude01 : 0f);
+            if (safeMagnitude <= 0.0001f)
+                return;
+
+            _terminalDamageGlitchPeak = math.max(_terminalDamageGlitchPeak, safeMagnitude);
+            _terminalDamageGlitchRemaining = math.max(_terminalDamageGlitchRemaining, math.max(0.02f, durationSeconds));
+            _terminalDamageGlitchDuration = math.max(0.02f, _terminalDamageGlitchRemaining);
+            _terminalDamageGlitch = math.max(_terminalDamageGlitch, safeMagnitude);
+            ApplyMaterialState(forceTextureRefresh: false, forceDepthRefresh: false);
+        }
+
+        /// <summary>
+        /// Applies normalized flashlight glare from an external light-probe owner.
+        /// </summary>
+        public void SetFlashlightGlare(float glare01)
+        {
+            float safeGlare = math.saturate(math.isfinite(glare01) ? glare01 : 0f);
+            if (math.abs(flashlightGlare - safeGlare) <= 0.0001f)
+                return;
+
+            flashlightGlare = safeGlare;
+            ApplyMaterialState(forceTextureRefresh: false, forceDepthRefresh: false);
+        }
+
         /// <summary>
         /// Forces one immediate RT rebuild using the current panel distance.
         /// </summary>
@@ -547,9 +619,10 @@ namespace Hecton8.UI
 
             float referenceWidth = math.max(1, _panelData.ReferenceWidth);
             float referenceHeight = math.max(1, _panelData.ReferenceHeight);
+            float2 invReferenceResolution = math.rcp(new float2(referenceWidth, referenceHeight));
             float2 uv = new float2(
-                math.clamp(canvasPosition.x / referenceWidth, 0f, 1f),
-                math.clamp(canvasPosition.y / referenceHeight, 0f, 1f));
+                math.clamp(canvasPosition.x * invReferenceResolution.x, 0f, 1f),
+                math.clamp(canvasPosition.y * invReferenceResolution.y, 0f, 1f));
 
             float2 localXY = new float2(
                 (uv.x * _panelData.CanvasSize.x) - _panelData.HalfSize.x,
@@ -627,8 +700,8 @@ namespace Hecton8.UI
         {
             RefreshPanelData(forceRefresh: false);
 
-            float xStep = _panelData.ReferenceWidth > 0 ? _panelData.CanvasSize.x / _panelData.ReferenceWidth : 0f;
-            float yStep = _panelData.ReferenceHeight > 0 ? _panelData.CanvasSize.y / _panelData.ReferenceHeight : 0f;
+            float xStep = _panelData.ReferenceWidth > 0 ? _panelData.CanvasSize.x * math.rcp(_panelData.ReferenceWidth) : 0f;
+            float yStep = _panelData.ReferenceHeight > 0 ? _panelData.CanvasSize.y * math.rcp(_panelData.ReferenceHeight) : 0f;
             worldRightPerPixel = (Vector3)(_panelData.LocalToWorld.c0.xyz * xStep);
             worldUpPerPixel = (Vector3)(_panelData.LocalToWorld.c1.xyz * yStep);
             return xStep > 0f && yStep > 0f;
@@ -743,7 +816,7 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            maxInteractionDistance = math.max(0.1f, maxInteractionDistance);
+            maxInteractionDistance = math.min(MaximumInteractionReachMeters, math.max(0.1f, maxInteractionDistance));
             referenceResolution.x = math.max(1, referenceResolution.x);
             referenceResolution.y = math.max(1, referenceResolution.y);
             cursorMargin.x = math.max(0f, cursorMargin.x);
@@ -755,6 +828,8 @@ namespace Hecton8.UI
             fingerReleaseDistance = math.max(fingerPressDistance, fingerReleaseDistance);
             fingerHoverDistance = math.max(fingerReleaseDistance, fingerHoverDistance);
             depthFadeRange = math.max(0.001f, depthFadeRange);
+            flashlightGlare = math.saturate(flashlightGlare);
+            damageGlitchDurationSeconds = math.clamp(damageGlitchDurationSeconds, 0.02f, 1f);
 
             RefreshFingertipBindingMask();
             ResolveSerializedReferences(resolveGraphicRaycaster: true);
@@ -962,10 +1037,47 @@ namespace Hecton8.UI
 
         private void EnsureRenderTexture(bool forceRefresh)
         {
-            if (!enableRenderTexturePresentation || panelCamera == null || _presentationPausedByOwner)
+            if (!enableRenderTexturePresentation || _presentationPausedByOwner)
             {
                 if (panelCamera != null && panelCamera.enabled)
                     panelCamera.enabled = false;
+                if (!enableRenderTexturePresentation && _panelRenderTexture != null)
+                    ReleaseRenderTexture();
+                RefreshLateFrameRegistration();
+                return;
+            }
+
+            if (externallyOwnedRenderTexture != null)
+            {
+                if (panelCamera != null && panelCamera.enabled)
+                    panelCamera.enabled = false;
+
+                if (_panelRenderTexture != externallyOwnedRenderTexture)
+                {
+                    ReleaseRenderTexture();
+                    _panelRenderTexture = externallyOwnedRenderTexture;
+                    _ownsPanelRenderTexture = false;
+                    _activeRenderResolution = new int2(
+                        math.max(1, externallyOwnedRenderTexture.width),
+                        math.max(1, externallyOwnedRenderTexture.height));
+                    ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: true);
+                }
+                else if (forceRefresh)
+                {
+                    ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: true);
+                }
+
+                EnsurePhosphorResources();
+                RefreshLateFrameRegistration();
+                return;
+            }
+
+            if (!allowLegacyPanelCameraRenderTexture || panelCamera == null)
+            {
+                if (panelCamera != null && panelCamera.enabled)
+                    panelCamera.enabled = false;
+                if (_panelRenderTexture != null)
+                    ReleaseRenderTexture();
                 RefreshLateFrameRegistration();
                 return;
             }
@@ -1001,6 +1113,7 @@ namespace Hecton8.UI
                 filterMode = renderTextureFilterMode
             };
             _panelRenderTexture.Create();
+            _ownsPanelRenderTexture = true;
             panelCamera.targetTexture = _panelRenderTexture;
             panelCamera.enabled = true;
             _activeRenderResolution = requiredResolution;
@@ -1049,9 +1162,14 @@ namespace Hecton8.UI
                 return;
             }
 
-            _panelRenderTexture.Release();
-            Destroy(_panelRenderTexture);
+            if (_ownsPanelRenderTexture)
+            {
+                _panelRenderTexture.Release();
+                Destroy(_panelRenderTexture);
+            }
+
             _panelRenderTexture = null;
+            _ownsPanelRenderTexture = false;
             _activeRenderResolution = int2.zero;
             RefreshLateFrameRegistration();
         }
@@ -1205,6 +1323,43 @@ namespace Hecton8.UI
 
             if (panelOutputMaterial.HasProperty(_PanelPowerLevelId))
                 panelOutputMaterial.SetFloat(_PanelPowerLevelId, math.max(0f, _appliedPowerLevel));
+
+            if (math.abs(_appliedTerminalDamageGlitch - _terminalDamageGlitch) > 0.0001f)
+            {
+                _appliedTerminalDamageGlitch = _terminalDamageGlitch;
+                if (panelOutputMaterial.HasProperty(_TerminalDamageGlitchId))
+                    panelOutputMaterial.SetFloat(_TerminalDamageGlitchId, math.saturate(_terminalDamageGlitch));
+            }
+
+            if (math.abs(_appliedFlashlightGlare - flashlightGlare) > 0.0001f)
+            {
+                _appliedFlashlightGlare = flashlightGlare;
+                if (panelOutputMaterial.HasProperty(_FlashlightGlareId))
+                    panelOutputMaterial.SetFloat(_FlashlightGlareId, math.saturate(flashlightGlare));
+            }
+        }
+
+        private void UpdateTerminalEffectState(float deltaTime)
+        {
+            float previousGlitch = _terminalDamageGlitch;
+            if (_terminalDamageGlitchRemaining > 0f)
+            {
+                _terminalDamageGlitchRemaining = math.max(0f, _terminalDamageGlitchRemaining - math.max(0f, deltaTime));
+                float life01 = _terminalDamageGlitchRemaining * math.rcp(math.max(0.02f, _terminalDamageGlitchDuration));
+                _terminalDamageGlitch = _terminalDamageGlitchPeak * math.saturate(life01);
+                if (_terminalDamageGlitchRemaining <= 0f)
+                    _terminalDamageGlitchPeak = 0f;
+            }
+            else if (_terminalDamageGlitch > 0f)
+            {
+                float decay = FastDecayBlend(DamageGlitchDecaySharpness, deltaTime);
+                _terminalDamageGlitch = math.lerp(_terminalDamageGlitch, 0f, decay);
+                if (_terminalDamageGlitch <= 0.0001f)
+                    _terminalDamageGlitch = 0f;
+            }
+
+            if (math.abs(previousGlitch - _terminalDamageGlitch) > 0.0001f)
+                ApplyMaterialState(forceTextureRefresh: false, forceDepthRefresh: false);
         }
 
         private void UpdateProxyLightRegistration()
@@ -1286,10 +1441,15 @@ namespace Hecton8.UI
 
         private bool IsRayOriginWithinAupInteractionRange(float3 rayOriginWs)
         {
-            float maxDistance = math.max(0.001f, maxInteractionDistance);
+            float maxDistance = ResolveEffectiveInteractionDistance();
             double maxDistanceSq = (double)maxDistance * maxDistance;
             Vector3 panelOrigin = (Vector3)_panelData.LocalToWorld.c3.xyz;
             return ResolveAupDistanceSq((Vector3)rayOriginWs, panelOrigin) <= maxDistanceSq;
+        }
+
+        private float ResolveEffectiveInteractionDistance()
+        {
+            return math.min(MaximumInteractionReachMeters, math.max(0.001f, maxInteractionDistance));
         }
 
         private static float ResolveAupDistanceSqClamped(Vector3 runtimePositionA, Vector3 runtimePositionB)
@@ -1332,7 +1492,7 @@ namespace Hecton8.UI
             if (math.abs(denom) < 0.01f)
                 return false;
 
-            float planeDistance = math.dot(panelOrigin - rayOriginWs, panelNormal) / denom;
+            float planeDistance = math.dot(panelOrigin - rayOriginWs, panelNormal) * math.rcp(denom);
             float maxDistanceSafe = math.max(0.001f, maxDistance);
             float planeDistanceSq = planeDistance * planeDistance;
             float travelDistanceSq = rayDirectionIsNormalized ? planeDistanceSq : planeDistanceSq * directionLengthSq;
@@ -1347,9 +1507,10 @@ namespace Hecton8.UI
         private bool TryProjectLocalHitToCanvas(float3 localHit, out float2 canvasPos)
         {
             float2 safeCanvasSize = math.max(_panelData.CanvasSize, new float2(MinCanvasExtent, MinCanvasExtent));
+            float2 invCanvasSize = math.rcp(safeCanvasSize);
             float2 uv = new float2(
-                (localHit.x + _panelData.HalfSize.x) / safeCanvasSize.x,
-                (localHit.y + _panelData.HalfSize.y) / safeCanvasSize.y);
+                (localHit.x + _panelData.HalfSize.x) * invCanvasSize.x,
+                (localHit.y + _panelData.HalfSize.y) * invCanvasSize.y);
 
             if (uv.x < 0f || uv.x > 1f || uv.y < 0f || uv.y > 1f)
             {
@@ -1512,12 +1673,13 @@ namespace Hecton8.UI
             if (x >= 3.5f)
                 return 1f;
 
-            return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
+            return math.saturate((12f * x) * math.rcp(12f + (6f * x) + (x * x)));
         }
 
         private void QueueInputEventsFromInputState(float2 canvasPos)
         {
             DiegeticPanelInputEventType eventType = DiegeticPanelInputEventType.Hover;
+            float2 analogDelta = float2.zero;
 
             if (_input != null && _input.IsInitialized)
             {
@@ -1532,16 +1694,24 @@ namespace Hecton8.UI
                     eventType = DiegeticPanelInputEventType.Up;
 
                 _wasPressedLastFrame = isPressed;
+                analogDelta = new float2(state.ScrollDelta.x, state.ScrollDelta.y);
+                if (math.lengthsq(analogDelta) > 0.000001f)
+                    eventType |= DiegeticPanelInputEventType.Scroll;
             }
             else
             {
                 _wasPressedLastFrame = false;
             }
 
-            QueueInputEvent(canvasPos, eventType);
+            QueueInputEvent(canvasPos, eventType, analogDelta);
         }
 
         private void QueueInputEvent(float2 canvasPos, DiegeticPanelInputEventType eventType)
+        {
+            QueueInputEvent(canvasPos, eventType, float2.zero);
+        }
+
+        private void QueueInputEvent(float2 canvasPos, DiegeticPanelInputEventType eventType, float2 analogDelta)
         {
             if (eventType == DiegeticPanelInputEventType.None)
                 return;
@@ -1550,6 +1720,7 @@ namespace Hecton8.UI
             {
                 PanelId = panelId,
                 CanvasHitPoint = canvasPos,
+                AnalogDelta = analogDelta,
                 EventType = eventType,
                 Timestamp = Time.unscaledTime
             });
@@ -1712,6 +1883,8 @@ namespace Hecton8.UI
             bool shouldRegisterLateFrame =
                 enablePhosphorDecay &&
                 _panelRenderTexture != null &&
+                _ownsPanelRenderTexture &&
+                panelCamera != null &&
                 !_presentationPausedByOwner &&
                 isActiveAndEnabled &&
                 Application.isPlaying &&

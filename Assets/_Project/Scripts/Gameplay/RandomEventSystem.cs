@@ -780,6 +780,7 @@ namespace Hecton8.Gameplay
 
         [Header("Solar EMP Flare")]
         [SerializeField, Range(0f, 1f)] private float solarFlareIntensity = 1f;
+        [SerializeField, Range(0f, 4f)] private float solarFlareRadiationExposurePerSecond = 1.25f;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -887,6 +888,8 @@ namespace Hecton8.Gameplay
             // Proveryaem usloviya dlya novyh sobytiy
             if (IsEventActive(RandomEventType.MeteorShower))
                 TickMeteorShowerEvent(dt);
+            if (IsEventActive(RandomEventType.SolarFlare))
+                ApplySolarFlareRadiation(dt);
 
             TryTriggerBiolumStorm(depth);
             TryTriggerThermalEruption(depth);
@@ -1174,9 +1177,48 @@ namespace Hecton8.Gameplay
 
         private void BeginMeteorShower()
         {
-            _meteorSeed = NextEventRandomRange(1, 16777215);
+            _meteorSeed = ResolveMeteorAupTimeSeed();
             _meteorLastBoomIndex = -1;
             PublishMeteorShowerGlobals(0f, math.saturate(meteorShowerIntensity), 1f);
+        }
+
+        private static int ResolveMeteorAupTimeSeed()
+        {
+            uint aupSeed = 0u;
+            if (TryResolvePlayerEventFrame(out _, out AbsoluteUniversePosition observerAup))
+                aupSeed = ResolveAupSeed(in observerAup);
+
+            double universeTime = GlobalRegistry.AbsoluteUniverseTime;
+            if (!math.isfinite(universeTime) || universeTime < 0d)
+                universeTime = 0d;
+
+            uint timeSeed = unchecked((uint)(long)math.floor(universeTime * 0.25d) * 747796405u);
+            uint state = NextMeteorLcg(timeSeed ^ aupSeed ^ 0x4D45544Fu);
+            return (int)((state & 0x00FFFFFFu) + 1u);
+        }
+
+        private static uint ResolveAupSeed(in AbsoluteUniversePosition aup)
+        {
+            unchecked
+            {
+                uint state = (uint)aup.GridX * 2246822519u;
+                state ^= (uint)aup.GridY * 3266489917u;
+                state ^= (uint)aup.GridZ * 668265263u;
+                state ^= (uint)(int)math.round(aup.LocalX * 4f) * 374761393u;
+                state ^= (uint)(int)math.round(aup.LocalY * 4f) * 1103515245u;
+                state ^= (uint)(int)math.round(aup.LocalZ * 4f) * 1274126177u;
+                state ^= state >> 16;
+                state *= 2246822519u;
+                state ^= state >> 13;
+                state *= 3266489917u;
+                state ^= state >> 16;
+                return state;
+            }
+        }
+
+        private static uint NextMeteorLcg(uint state)
+        {
+            return unchecked((state * 1664525u) + 1013904223u);
         }
 
         private void PublishMeteorShowerMegaBus()
@@ -1312,11 +1354,36 @@ namespace Hecton8.Gameplay
             PublishMeteorWaterImpactGlobals(impactPosition, radius, duration, impactEnvelope);
             PublishMeteorSplashFeedback(impactPosition, radius, impactEnvelope);
             SpawnMeteorWaterSplashPrefab(impactPosition);
+            TryApplyMeteorVoxelImpact(impactPosition, radius, impactEnvelope);
             QueueMeteorWaterBoom(impactPosition, in observerAup, impactEnvelope);
 
             SargassumGlobalDragManager sargassumDrag = GlobalRegistry.SargassumDrag;
             if (sargassumDrag != null)
                 sargassumDrag.RegisterMassiveDisplacement(impactPosition, radius, duration);
+        }
+
+        private void TryApplyMeteorVoxelImpact(Vector3 impactPosition, float waterImpactRadius, float intensity)
+        {
+            if (voxelEngine == null)
+                voxelEngine = GlobalRegistry.VoxelEngine;
+            if (voxelEngine == null)
+                return;
+            if (!voxelEngine.TryGetNearestActiveVolume(impactPosition, out HectonVoxelVolume targetVolume) ||
+                targetVolume == null)
+            {
+                return;
+            }
+
+            float craterRadius = ResolveMeteorVoxelCraterRadius(waterImpactRadius, intensity);
+            targetVolume.TryApplyExtraterrestrialImpactCrater(impactPosition, craterRadius);
+        }
+
+        private static float ResolveMeteorVoxelCraterRadius(float waterImpactRadius, float intensity)
+        {
+            float horizontalAxis = math.max(2f, waterImpactRadius);
+            float verticalAxis = horizontalAxis * 0.45f;
+            float axisWeightedRadius = horizontalAxis + horizontalAxis * 0.375f + verticalAxis * 0.25f;
+            return math.max(2f, axisWeightedRadius * math.lerp(0.08f, 0.18f, math.saturate(intensity)));
         }
 
         private static void PublishMeteorSplashFeedback(Vector3 impactPosition, float radius, float intensity)
@@ -1433,6 +1500,22 @@ namespace Hecton8.Gameplay
             return false;
         }
 
+        private void ApplySolarFlareRadiation(float dt)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            HectonPlayerHealth playerHealth = playerContext != null ? playerContext.PlayerHealth : null;
+            if (playerHealth == null)
+                return;
+
+            float exposureStep = math.max(0f, dt) *
+                                 math.saturate(solarFlareIntensity) *
+                                 math.max(0f, solarFlareRadiationExposurePerSecond);
+            if (exposureStep <= 0f)
+                return;
+
+            playerHealth.ApplyRadiationExposure(playerHealth.RadiationExposureSeconds + exposureStep);
+        }
+
         private void ClearPendingMeteorWaterBoom()
         {
             _pendingMeteorWaterBoom = false;
@@ -1536,7 +1619,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             int stampCount = NextEventRandomRange(settings.stampCountMin, settings.stampCountMax + 1);
-            uint stableSeed = unchecked(((uint)Time.frameCount * 2654435761u) ^ (uint)targetVolume.RuntimeStamp);
+            uint stableSeed = ResolveAupTimelineSeed(playerPosition, targetVolume.RuntimeStamp);
             if (!targetVolume.TryApplySeismicShockwave(
                     playerPosition,
                     stampCount,
@@ -1562,6 +1645,32 @@ namespace Hecton8.Gameplay
                 epicenterAup - trenchDirection * halfTrenchLength,
                 epicenterAup + trenchDirection * halfTrenchLength);
             return true;
+        }
+
+        private static uint ResolveAupTimelineSeed(Vector3 runtimePosition, int runtimeStamp)
+        {
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            double universeTime = GlobalRegistry.AbsoluteUniverseTime;
+            if (!math.isfinite(universeTime) || universeTime < 0d)
+                universeTime = 0d;
+
+            long timelineSlot = (long)math.floor(universeTime * 2d);
+            unchecked
+            {
+                uint state = (uint)timelineSlot * 2654435761u;
+                state ^= (uint)aup.GridX * 2246822519u;
+                state ^= (uint)aup.GridY * 3266489917u;
+                state ^= (uint)aup.GridZ * 668265263u;
+                state ^= (uint)(int)math.round(aup.LocalX * 4f) * 374761393u;
+                state ^= (uint)(int)math.round(aup.LocalZ * 4f) * 1274126177u;
+                state ^= (uint)runtimeStamp * 2891336453u;
+                state ^= state >> 16;
+                state *= 2246822519u;
+                state ^= state >> 13;
+                state *= 3266489917u;
+                state ^= state >> 16;
+                return state != 0u ? state : 0x9E3779B9u;
+            }
         }
 
         private static Vector3 ResolveSeismicEventLineDirection(Vector3 absoluteEpicenter, uint stableSeed)

@@ -65,6 +65,7 @@ namespace Hecton8.Crafting
         private static readonly int _interactUseFabricatorLocalizationHash = LocHash.Compute(LocalizationKeys.INTERACT_USE_FABRICATOR);
         private static bool s_emergencyPowerLockActive;
         private const int InteractTextBufferCapacity = 96;
+        private const float ExothermicRunningHeatDeltaCelsius = 20f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -208,6 +209,7 @@ namespace Hecton8.Crafting
 
         // ── Craft State ──
         private bool       _isCrafting;
+        private bool       _runningExothermicHeatInjected;
         private RecipeData _activeRecipe;
         private float      _craftTimer;
         private float      _lastPublishedProgress;
@@ -641,6 +643,7 @@ namespace Hecton8.Crafting
             _activeCraftPowerMultiplier = ResolveCraftPowerMultiplier(this, recipe);
             _craftTimer   = 0f;
             _isCrafting   = true;
+            _runningExothermicHeatInjected = false;
             _lastPublishedProgress = -1f;
             EnqueueCraftingTask(recipe, _activeCraftPowerMultiplier, safeMultiplier);
             SetFabricationSparksActive(true);
@@ -773,6 +776,7 @@ namespace Hecton8.Crafting
 
             _activeCraftPowerMultiplier = Mathf.Max(1f, task.PowerMultiplier);
             SetFabricationSparksActive(true);
+            ApplyRunningExothermicHeatIfNeeded();
             float previousProgress = task.Progress;
             bool craftCompleted = AdvanceCraftingTask(
                 ref task,
@@ -892,6 +896,7 @@ namespace Hecton8.Crafting
                 }
 
                 _isCrafting = false;
+                _runningExothermicHeatInjected = false;
                 _craftTimer = 0f;
                 _lastPublishedProgress = 0f;
                 _activeCraftPowerMultiplier = 1f;
@@ -908,6 +913,7 @@ namespace Hecton8.Crafting
             float craftTemperatureDelta = ResolveCraftTemperatureDeltaCelsius() * craftMultiplier;
 
             _isCrafting   = false;
+            _runningExothermicHeatInjected = false;
             _activeRecipe = null;
             _craftTimer   = 0f;
             _activeCraftPowerMultiplier = 1f;
@@ -1123,6 +1129,15 @@ namespace Hecton8.Crafting
             return hostRoomTemperatureCelsius > ThermalThrottleTemperatureCelsius
                 ? ThermalThrottleProgressMultiplier
                 : 1f;
+        }
+
+        private void ApplyRunningExothermicHeatIfNeeded()
+        {
+            if (_runningExothermicHeatInjected)
+                return;
+
+            ApplyCraftingThermodynamics(ExothermicRunningHeatDeltaCelsius);
+            _runningExothermicHeatInjected = true;
         }
 
         private void ApplyCraftingThermodynamics(float deltaCelsius)

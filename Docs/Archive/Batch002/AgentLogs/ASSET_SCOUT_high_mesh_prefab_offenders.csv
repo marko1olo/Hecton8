@@ -1,0 +1,2 @@
+PrefabPath,ObjectPath,RendererType,MeshName,Triangles,HasLODGroup,Flags
+"Assets/_Project/Prefabs/Hecton Ocean.prefab","Hecton Ocean","MeshRenderer","HectonWaterMesh",80000,False,"HIGH_POLY_NO_LODGROUP"

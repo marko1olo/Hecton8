@@ -129,6 +129,7 @@ namespace Hecton.Localization
     public static class LocRegistry
     {
         private const string MissingKeyLiteral = "[ERR_MISSING_KEY]";
+        private static readonly uint _missingKeyWarningHash = unchecked((uint)LocHash.Compute("LocRegistry.MissingKey"));
 
         // COLD ALLOC: Dictionary[512] — core localization pool keyed by FNV-1a hash — owner: LocRegistry
         private static readonly LocPool _core = new LocPool(512);
@@ -206,6 +207,24 @@ namespace Hecton.Localization
         }
 
         /// <summary>
+        /// Returns the localized text length for a key without allocating a string.
+        /// </summary>
+        public static int GetLength(int keyHash)
+        {
+            return TryResolveEntry(keyHash, out LocEntry entry)
+                ? entry.RawLength
+                : _missingKeyChars.Length;
+        }
+
+        /// <summary>
+        /// Returns the localized text length for a uint FNV key without allocating a string.
+        /// </summary>
+        public static int GetLength(uint keyHash)
+        {
+            return GetLength(unchecked((int)keyHash));
+        }
+
+        /// <summary>
         /// Resolve a raw char buffer for TMP SetCharArray without heap allocation.
         /// </summary>
         public static bool TryGetRawBuffer(int keyHash, out char[] buffer, out int length)
@@ -230,6 +249,7 @@ namespace Hecton.Localization
         {
             if (!TryResolveEntry(keyHash, out LocEntry entry))
             {
+                LogMissingKeyOnce(keyHash);
                 buffer = _missingKeyChars;
                 length = _missingKeyChars.Length;
                 return false;
@@ -335,7 +355,10 @@ namespace Hecton.Localization
             if (!_missingKeysLogged.Add(keyHash))
                 return;
 
-            Debug.LogWarning($"[LOC-REGISTRY] Missing localization hash 0x{keyHash:X8} for {_activeLanguage}.");
+            Hecton8.Core.GlobalTelemetryBus.PublishPerformanceWarning(
+                _missingKeyWarningHash,
+                unchecked((uint)keyHash),
+                (float)_activeLanguage);
         }
 
         private readonly struct LocEntry

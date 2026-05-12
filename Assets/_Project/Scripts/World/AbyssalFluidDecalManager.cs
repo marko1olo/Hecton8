@@ -63,6 +63,10 @@ namespace Hecton8.World
         [Tooltip("Authored fluid decal material. Runtime material creation is forbidden for this draw path.")]
         private Material decalMaterial;
 
+        [SerializeField]
+        [Tooltip("Routes fluid aftermath decals through the fullscreen deferred decal pass; mesh draw remains only as an explicit fallback.")]
+        private bool screenSpaceFluidDecals = true;
+
         [Header("── Decal Simulation ─────────────────")]
         [SerializeField, Range(1, 32)]
         [Tooltip("Hard cap for simultaneous abyssal fluid decals.")]
@@ -391,7 +395,8 @@ namespace Hecton8.World
                 decal.PositionWS += driftDelta + decal.DriftVelocityWS * (ambientCurrentInfluence * deltaTime);
                 decal.Radius = MoveTowardsFast(decal.Radius, decal.TargetRadius, spreadSpeed * deltaTime);
                 _decalStates[i] = decal;
-                DrawDecal(decal);
+                if (!screenSpaceFluidDecals)
+                    DrawDecal(decal);
             }
 
             TickPressureSprays(deltaTime, driftDelta);
@@ -697,17 +702,8 @@ namespace Hecton8.World
             if (_drawPropertyBlock == null)
                 return;
 
-            float alphaT = decal.TotalLifetime > 0.0001f ? Mathf.Clamp01(decal.RemainingLifetime / decal.TotalLifetime) : 0f;
-            Color drawColor = decal.Color;
-            drawColor.a *= alphaT;
-            if (drawColor.a <= 0.0001f)
+            if (!TryBuildFluidDecalDrawData(in decal, out Matrix4x4 matrix, out Color drawColor))
                 return;
-
-            Quaternion rotation = Quaternion.Euler(90f, decal.RotationDegrees, 0f);
-            Matrix4x4 matrix = Matrix4x4.TRS(
-                decal.PositionWS + Vector3.up * 0.03f,
-                rotation,
-                new Vector3(decal.Radius * 2f, decal.Radius * 2f, 1f));
 
             _drawPropertyBlock.Clear();
             _drawPropertyBlock.SetColor(_TintColorId, drawColor);
@@ -730,6 +726,54 @@ namespace Hecton8.World
                 null,
                 LightProbeUsage.Off,
                 null);
+        }
+
+        internal int CopyScreenSpaceDecals(Matrix4x4[] matrices, Color[] colors, int capacity)
+        {
+            if (!screenSpaceFluidDecals ||
+                _decalStates == null ||
+                matrices == null ||
+                colors == null ||
+                capacity <= 0)
+            {
+                return 0;
+            }
+
+            int safeCapacity = Mathf.Min(capacity, matrices.Length, colors.Length);
+            int count = 0;
+            for (int i = 0; i < _decalStates.Length && count < safeCapacity; i++)
+            {
+                if (!_decalStates[i].Active)
+                    continue;
+
+                if (!TryBuildFluidDecalDrawData(in _decalStates[i], out Matrix4x4 matrix, out Color drawColor))
+                    continue;
+
+                matrices[count] = matrix;
+                colors[count] = drawColor;
+                count++;
+            }
+
+            return count;
+        }
+
+        private static bool TryBuildFluidDecalDrawData(in FluidDecalState decal, out Matrix4x4 matrix, out Color drawColor)
+        {
+            float alphaT = decal.TotalLifetime > 0.0001f ? Mathf.Clamp01(decal.RemainingLifetime / decal.TotalLifetime) : 0f;
+            drawColor = decal.Color;
+            drawColor.a *= alphaT;
+            if (drawColor.a <= 0.0001f)
+            {
+                matrix = Matrix4x4.identity;
+                return false;
+            }
+
+            Quaternion rotation = Quaternion.Euler(90f, decal.RotationDegrees, 0f);
+            matrix = Matrix4x4.TRS(
+                decal.PositionWS + Vector3.up * 0.03f,
+                rotation,
+                new Vector3(decal.Radius * 2f, decal.Radius * 2f, 1f));
+            return true;
         }
 
         private void EnsureStorage()

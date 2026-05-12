@@ -64,6 +64,7 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
+using CoreAudioEvent = Hecton8.Core.AudioEvent;
 
 namespace Hecton8.Audio
 {
@@ -138,6 +139,8 @@ namespace Hecton8.Audio
         private const float RearHemisphereLowPassMinimumCutoffHertz = 3200f;
         private const float RearHemisphereLowPassCutoffRangeInv = 0.00006756757f;
         private const float BinauralWaterBlendSharpness = 7f;
+        private const float BinauralMinimumItdSeconds = 0.0001f;
+        private const float BinauralMaximumItdSeconds = 0.0007f;
         private const float ThreatBusDuckMaximumDb = -12f;
         private const float ThreatBusDuckAttackSeconds = 0.05f;
         private const float ThreatBusDuckReleaseSeconds = 0.3f;
@@ -180,6 +183,10 @@ namespace Hecton8.Audio
         private const float SabineOpenVolumeScale = 0.75f;
         private const float SabineClosedSurfaceScale = 1.35f;
         private const float SabineOpenSurfaceScale = 0.85f;
+        private const int SabineReverbDecayLutSize = 64;
+        private const int SabineReverbDecayLutMaxIndex = SabineReverbDecayLutSize - 1;
+        private const float SabineReverbDepthReferenceMeters = 6000f;
+        private const float SabineReverbModuleVolumeReferenceCubicMeters = 6000f;
 
         private enum AudioLodTier : byte
         {
@@ -338,6 +345,12 @@ namespace Hecton8.Audio
         [Tooltip("Exposed mixer parameter for the organic squelch ambient layer gain in dB.")]
         [SerializeField] private string _parasiteOrganicLayerGainParameter = "ParasiteOrganicLayerGainDb";
 
+        [Tooltip("Exposed mixer parameter for narrative radio low-pass cutoff while deep or irradiated.")]
+        [SerializeField] private string _narrativeRadioLowPassCutoffParameter = "NarrativeRadioLowPassCutoffHz";
+
+        [SerializeField, Range(400f, 22000f)] private float _narrativeRadioOpenCutoffHz = 22000f;
+        [SerializeField, Range(120f, 6000f)] private float _narrativeRadioMuffledCutoffHz = 900f;
+
         [Tooltip("Low-pass cutoff for a clean powered room.")]
         [SerializeField, Range(1000f, 22000f)] private float _parasiteRoomHealthyCutoffHz = 18000f;
 
@@ -419,6 +432,7 @@ namespace Hecton8.Audio
         private bool _registeredUpdatable;
         private bool _registeredSlowTickable;
         private bool _registeredLateFrameTickable;
+        private bool _acousticOcclusionRuntimeAcquired;
         private Transform _listenerTransform;
         private Vector3 _previousListenerAbsolutePosition;
         private bool _hasPreviousListenerAbsolutePosition;
@@ -459,6 +473,7 @@ namespace Hecton8.Audio
         private float _parasiteRoomSmoothed01;
         private float _lastParasiteRoomLowPassCutoffHz = -1f;
         private float _lastParasiteOrganicLayerGainDb = float.PositiveInfinity;
+        private float _lastNarrativeRadioLowPassCutoffHz = -1f;
         private int _parasiteRoomAcousticCount;
         private float _worldDroneCrossfadeStartDb = -40f;
         private float _worldDroneCrossfadeTargetDb = -5f;
@@ -468,6 +483,7 @@ namespace Hecton8.Audio
         private bool _hasWorldDroneVolumeDbParameter;
         private bool _hasParasiteRoomLowPassCutoffParameter;
         private bool _hasParasiteOrganicLayerGainParameter;
+        private bool _hasNarrativeRadioLowPassCutoffParameter;
         private float _nextWorldPoolFullEditorLogTime;
         private float _nextHelmetPoolFullEditorLogTime;
         private float _nextPlayAtPointNullClipLogTime;
@@ -488,7 +504,7 @@ namespace Hecton8.Audio
         private NativeList<DelayedAudioEvent> _pendingDelayedAudioEvents;
         private int _audioEventQueueCount;
         private int _audioEventQueueDroppedCount;
-        private NativeQueue<AudioEvent> _audioEventQueue;
+        private NativeQueue<CoreAudioEvent> _audioEventQueue;
         private bool _isInitialized;
         private bool _runtimeResourcesInitialized;
         private bool _eventsSubscribed;
@@ -511,6 +527,11 @@ namespace Hecton8.Audio
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
+            if (!_acousticOcclusionRuntimeAcquired)
+            {
+                AcousticOcclusionUtility.AcquireRuntime();
+                _acousticOcclusionRuntimeAcquired = true;
+            }
 
             if (_isInitialized)
                 TrySubscribeAudioEvents();
@@ -574,6 +595,11 @@ namespace Hecton8.Audio
             ApplyThreatBusDucking(0f, 0f);
             ApplyParasiteRoomAcousticState(0f);
             _radarDecayAccumulator = 0f;
+            if (_acousticOcclusionRuntimeAcquired)
+            {
+                AcousticOcclusionUtility.ReleaseRuntime();
+                _acousticOcclusionRuntimeAcquired = false;
+            }
 
             if (releaseRuntimeResources)
             {
@@ -850,6 +876,7 @@ namespace Hecton8.Audio
         /// </summary>
         public void LateFrameTick()
         {
+            AcousticOcclusionUtility.LateFrameTick();
             DrainAudioEventQueue();
         }
 
@@ -1224,7 +1251,7 @@ namespace Hecton8.Audio
             MarkWorldSourceActive(index);
         }
 
-        public bool QueueAudioEvent(in AudioEvent audioEvent)
+        public bool QueueAudioEvent(in CoreAudioEvent audioEvent)
         {
             if (!_audioEventQueue.IsCreated ||
                 _audioEventQueueCount >= MaxQueuedAudioEvents ||
@@ -1260,7 +1287,7 @@ namespace Hecton8.Audio
             if (!_audioEventQueue.IsCreated || _audioEventQueueCount <= 0)
                 return;
 
-            while (_audioEventQueueCount > 0 && _audioEventQueue.TryDequeue(out AudioEvent audioEvent))
+            while (_audioEventQueueCount > 0 && _audioEventQueue.TryDequeue(out CoreAudioEvent audioEvent))
             {
                 _audioEventQueueCount--;
                 DispatchQueuedAudioEvent(in audioEvent);
@@ -1270,7 +1297,7 @@ namespace Hecton8.Audio
                 _audioEventQueueCount = 0;
         }
 
-        private void DispatchQueuedAudioEvent(in AudioEvent audioEvent)
+        private void DispatchQueuedAudioEvent(in CoreAudioEvent audioEvent)
         {
             if (!TryResolveAudioEventClip(audioEvent.EventID, out AudioClip clip))
                 return;
@@ -1456,6 +1483,26 @@ namespace Hecton8.Audio
             bool hasEncryptedVoiceRoute = _encryptedVoiceGroup != null;
             PlayStatic2D(clip, volume, hasEncryptedVoiceRoute ? _encryptedVoiceGroup : _interfaceGroup);
             return clip != null && hasEncryptedVoiceRoute;
+        }
+
+        public void SetNarrativeRadioInterference(float interference01)
+        {
+            if (!_hasNarrativeRadioLowPassCutoffParameter)
+                return;
+
+            AudioMixer mixer = ResolveNarrativeRadioMixer();
+            if (mixer == null)
+                return;
+
+            float cutoffHz = math.lerp(
+                math.max(20f, _narrativeRadioOpenCutoffHz),
+                math.max(20f, _narrativeRadioMuffledCutoffHz),
+                math.saturate(interference01));
+            if (math.abs(cutoffHz - _lastNarrativeRadioLowPassCutoffHz) <= 1f)
+                return;
+
+            mixer.SetFloat(_narrativeRadioLowPassCutoffParameter, cutoffHz);
+            _lastNarrativeRadioLowPassCutoffHz = cutoffHz;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1662,16 +1709,17 @@ namespace Hecton8.Audio
             if (distanceSqr <= 0.0001f)
                 return;
 
-            float maxDistance = math.max(_maxDistance, 0.01f);
-            float maxDistanceSq = maxDistance * maxDistance;
-            float distance01Sq = math.saturate(distanceSqr * math.rcp(maxDistanceSq));
-            float energy = amplitude * (1f - distance01Sq);
+            float distanceSquaredGain = math.rcp(1f + distanceSqr);
+            float energy = amplitude * distanceSquaredGain;
             if (!(energy > bestScore))
                 return;
 
             float3 sourceDirection = ResolveDominantAxisDirection(runtimeDelta);
             float earAxisDot = math.clamp(math.dot(listenerRight, sourceDirection), -1f, 1f);
             float absSin = math.abs(earAxisDot);
+            float itdSeconds = absSin > 0.001f
+                ? math.lerp(BinauralMinimumItdSeconds, BinauralMaximumItdSeconds, absSin)
+                : 0f;
             float waterDensityMul = math.saturate(_listenerWaterDensityMul);
             float airShadowCutoff = math.lerp(8000f, 1200f, absSin);
             float waterShadowCutoff = math.lerp(8000f, 3000f, absSin);
@@ -1689,10 +1737,10 @@ namespace Hecton8.Audio
             _dominantBinauralEmitter = new BinauralEmitterTelemetry
             {
                 Position = sourcePosition,
-                DistanceMeters = maxDistance * distance01Sq,
+                DistanceMeters = runtimeDistanceSq * math.rsqrt(math.max(runtimeDistanceSq, 0.0001f)),
                 AzimuthRadians = earAxisDot,
                 RightDot = earAxisDot,
-                ItdSeconds = 0f,
+                ItdSeconds = itdSeconds,
                 ShadowAmount01 = shadowAmount,
                 ShadowCutoffHertz = shadowCutoff,
                 Energy = energy,
@@ -3210,8 +3258,8 @@ namespace Hecton8.Audio
                 return false;
 
             float rear01 = math.saturate(
-                (forwardDot - RearHemisphereLowPassStartDot) /
-                math.max(RearHemisphereLowPassFullDot - RearHemisphereLowPassStartDot, 0.0001f));
+                (forwardDot - RearHemisphereLowPassStartDot) *
+                math.rcp(math.max(RearHemisphereLowPassFullDot - RearHemisphereLowPassStartDot, 0.0001f)));
             cutoffFrequency = math.lerp(
                 RearHemisphereLowPassMaximumCutoffHertz,
                 RearHemisphereLowPassMinimumCutoffHertz,
@@ -3282,7 +3330,7 @@ namespace Hecton8.Audio
 
             if (!_audioEventQueue.IsCreated)
             {
-                _audioEventQueue = new NativeQueue<AudioEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioEvent>[32] - zero-GC gameplay audio ingress drained by SpatialAudioManager LateFrameTick - owner: SpatialAudioManager
+                _audioEventQueue = new NativeQueue<CoreAudioEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<CoreAudioEvent>[32] - zero-GC gameplay audio ingress drained by SpatialAudioManager LateFrameTick - owner: SpatialAudioManager
                 NativeMemorySentinel.RegisterNativeQueue(
                     _audioEventQueue,
                     MaxQueuedAudioEvents,
@@ -3780,12 +3828,27 @@ namespace Hecton8.Audio
             return _ambientGroup != null ? _ambientGroup.audioMixer : null;
         }
 
+        private AudioMixer ResolveNarrativeRadioMixer()
+        {
+            if (_routingMixer != null)
+                return _routingMixer;
+
+            if (_encryptedVoiceGroup != null && _encryptedVoiceGroup.audioMixer != null)
+                return _encryptedVoiceGroup.audioMixer;
+
+            if (_interfaceGroup != null && _interfaceGroup.audioMixer != null)
+                return _interfaceGroup.audioMixer;
+
+            return _ambientGroup != null ? _ambientGroup.audioMixer : null;
+        }
+
         private void RefreshMixerParameterAvailability()
         {
             _hasBedDuckDbParameter = !string.IsNullOrWhiteSpace(_bedDuckDbParameter);
             _hasWorldDroneVolumeDbParameter = !string.IsNullOrWhiteSpace(_worldDroneVolumeDbParameter);
             _hasParasiteRoomLowPassCutoffParameter = !string.IsNullOrWhiteSpace(_parasiteRoomLowPassCutoffParameter);
             _hasParasiteOrganicLayerGainParameter = !string.IsNullOrWhiteSpace(_parasiteOrganicLayerGainParameter);
+            _hasNarrativeRadioLowPassCutoffParameter = !string.IsNullOrWhiteSpace(_narrativeRadioLowPassCutoffParameter);
         }
 
         private byte ResolveClipRouteFlags(AudioClip clip)
@@ -4476,14 +4539,8 @@ namespace Hecton8.Audio
                     relativeVelocity,
                     -SoundSpeedWaterMetersPerSecond * 0.9f,
                     SoundSpeedWaterMetersPerSecond * 0.9f);
-                float numerator = math.max(
-                    SoundSpeedWaterMetersPerSecond + clampedRelativeVelocity,
-                    ManualDopplerMinimumDenominatorMetersPerSecond);
-                float denominator = math.max(
-                    SoundSpeedWaterMetersPerSecond - clampedRelativeVelocity,
-                    ManualDopplerMinimumDenominatorMetersPerSecond);
                 targetRatio = math.clamp(
-                    numerator * math.rcp(denominator),
+                    1f + (clampedRelativeVelocity * math.rcp(SoundSpeedWaterMetersPerSecond)),
                     ManualDopplerMaximumRatioInv,
                     ManualDopplerMaximumRatio);
 
@@ -4584,11 +4641,47 @@ namespace Hecton8.Audio
             surfaceAreaSquareMeters = math.max(
                 SabineMinimumSurfaceAreaSquareMeters,
                 2f * (xy + xz + yz) * surfaceScale);
-            rt60Seconds = math.clamp(
+            float sabineEquationRt60Seconds = math.clamp(
                 SabineEquationConstant * (roomVolumeCubicMeters * math.rcp(surfaceAreaSquareMeters)),
                 SabineMinimumRt60Seconds,
                 SabineMaximumRt60Seconds);
+            float lutRt60Seconds = SampleSabineReverbDecayLut(
+                volumeTransform != null ? volumeTransform.position.y : 0f,
+                roomVolumeCubicMeters,
+                interior01);
+            rt60Seconds = math.clamp(
+                math.lerp(sabineEquationRt60Seconds, lutRt60Seconds, interior01 * 0.35f),
+                SabineMinimumRt60Seconds,
+                SabineMaximumRt60Seconds);
             return true;
+        }
+
+        private static float SampleSabineReverbDecayLut(
+            float worldY,
+            float roomVolumeCubicMeters,
+            float caveInterior01)
+        {
+            float depth01 = math.saturate((-worldY) * math.rcp(SabineReverbDepthReferenceMeters));
+            float volume01 = math.saturate(roomVolumeCubicMeters * math.rcp(SabineReverbModuleVolumeReferenceCubicMeters));
+            float coordinate = math.saturate((depth01 * 0.45f) + (volume01 * 0.45f) + (math.saturate(caveInterior01) * 0.1f));
+            float scaledIndex = coordinate * SabineReverbDecayLutMaxIndex;
+            int lowIndex = math.clamp((int)scaledIndex, 0, SabineReverbDecayLutMaxIndex);
+            int highIndex = math.min(lowIndex + 1, SabineReverbDecayLutMaxIndex);
+            return math.lerp(
+                ResolveSabineReverbDecayLutValue(lowIndex),
+                ResolveSabineReverbDecayLutValue(highIndex),
+                scaledIndex - lowIndex);
+        }
+
+        private static float ResolveSabineReverbDecayLutValue(int index)
+        {
+            float t = math.saturate(index * math.rcp((float)SabineReverbDecayLutMaxIndex));
+            float depthBoost = 1f + t * t * 1.65f;
+            float volumeBoost = 0.35f + t * 0.75f;
+            return math.clamp(
+                SabineMinimumRt60Seconds + depthBoost * volumeBoost,
+                SabineMinimumRt60Seconds,
+                SabineMaximumRt60Seconds);
         }
 
         private static bool TryResolveCaveInteriorFactor(

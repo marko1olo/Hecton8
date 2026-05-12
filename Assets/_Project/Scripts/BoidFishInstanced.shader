@@ -154,6 +154,7 @@ Shader "Hecton8/BoidFishInstanced"
             // ══════════════════════════════════════════════════════
 
             StructuredBuffer<BoidData> _BoidsBuffer;
+            StructuredBuffer<uint> _VisibleBoidIndices;
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
@@ -179,6 +180,7 @@ Shader "Hecton8/BoidFishInstanced"
                 float  _VatSpeedReference;
                 float  _Phase;
                 float  _FinStretchStrength;
+                float  _BoidUseVisibleIndices;
 
                 float  _HitFlashStartTime;
                 float  _HitFlashDuration;
@@ -419,7 +421,8 @@ Shader "Hecton8/BoidFishInstanced"
                 //  1. READ BOID DATA
                 // ══════════════════════════════════════════════════
 
-                BoidData boid = _BoidsBuffer[instanceID];
+                uint boidIndex = _BoidUseVisibleIndices > 0.5 ? _VisibleBoidIndices[instanceID] : instanceID;
+                BoidData boid = _BoidsBuffer[boidIndex];
                 float3 boidPos = boid.position;
                 float3 boidAup = boidPos + _TotalUniverseOffset.xyz;
                 float3 boidVel = boid.velocity * saturate(_VelocitySleepScale);

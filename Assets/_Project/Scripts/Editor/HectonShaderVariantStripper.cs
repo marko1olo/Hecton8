@@ -19,6 +19,7 @@ namespace Hecton8.EditorTools
     {
         private const string MenuPath = "Hecton/Validation/Asset Pipeline/Log Shader Variant Strip Policy";
         private const string WorldSceneName = "02_HECTON_WORLD";
+        private const string Mx350ShaderStripEnvironmentVariable = "HECTON_MX350_SHADER_STRIP";
         private static readonly string[] UrpAssetRoots = { "Assets/_Project/Data" };
         private static VariantStripPolicy s_CachedPolicy;
         private static bool s_HasCachedPolicy;
@@ -75,6 +76,9 @@ namespace Hecton8.EditorTools
                 .Append(", StripAdditionalLightShadows=").Append(Bool01(policy.StripAdditionalLightShadows))
                 .Append(", StripSoftShadows=").Append(Bool01(policy.StripSoftShadows))
                 .Append(", StripMixedLighting=").Append(Bool01(policy.StripMixedLighting))
+                .Append(", StripPointLights=").Append(Bool01(policy.StripPointLights))
+                .Append(", StripSpotLights=").Append(Bool01(policy.StripSpotLights))
+                .Append(", StripMathLodHigh=").Append(Bool01(policy.StripMathLodHigh))
                 .Append(", StrippedSoFar=").Append(s_StrippedVariantCount)
                 .Append(", Evidence=").Append(policy.Evidence);
             return builder.ToString();
@@ -92,6 +96,7 @@ namespace Hecton8.EditorTools
             bool supportsMixedLighting = false;
             HashSet<string> usedMaterialKeywords = new HashSet<string>(StringComparer.Ordinal);
             int materialAssetCount = CollectWorldSceneMaterialKeywords(usedMaterialKeywords, out string materialEvidence);
+            bool stripMx350LightVariants = ShouldStripMx350LightVariants();
 
             string[] guids = AssetDatabase.FindAssets("t:UniversalRenderPipelineAsset", UrpAssetRoots);
             List<string> assetPaths = new List<string>(guids.Length);
@@ -137,9 +142,14 @@ namespace Hecton8.EditorTools
                 stripAdditionalLightShadows: !supportsAdditionalLightShadows,
                 stripSoftShadows: !supportsSoftShadows,
                 stripMixedLighting: !supportsMixedLighting,
+                stripPointLights: stripMx350LightVariants,
+                stripSpotLights: stripMx350LightVariants,
+                stripMathLodHigh: stripMx350LightVariants,
                 materialAssetCount: materialAssetCount,
                 usedMaterialKeywords: usedMaterialKeywords,
-                evidence: evidence.Append(" | materialScope=").Append(materialEvidence).ToString());
+                evidence: evidence.Append(" | materialScope=").Append(materialEvidence)
+                    .Append(" | mx350StripEnv=").Append(global::System.Environment.GetEnvironmentVariable(Mx350ShaderStripEnvironmentVariable) ?? "<unset>")
+                    .ToString());
             s_HasCachedPolicy = true;
             return s_CachedPolicy;
         }
@@ -154,7 +164,10 @@ namespace Hecton8.EditorTools
                     || (policy.StripAdditionalLights && IsAdditionalLightKeyword(keywordName))
                     || (policy.StripAdditionalLightShadows && IsAdditionalLightShadowKeyword(keywordName))
                     || (policy.StripSoftShadows && IsSoftShadowKeyword(keywordName))
-                    || (policy.StripMixedLighting && IsMixedLightingKeyword(keywordName)))
+                    || (policy.StripMixedLighting && IsMixedLightingKeyword(keywordName))
+                    || (policy.StripPointLights && IsPointLightKeyword(keywordName))
+                    || (policy.StripSpotLights && IsSpotLightKeyword(keywordName))
+                    || (policy.StripMathLodHigh && IsMathLodHighKeyword(keywordName)))
                 {
                     return true;
                 }
@@ -275,6 +288,12 @@ namespace Hecton8.EditorTools
                    keywordName.Contains("HECTON");
         }
 
+        private static bool ShouldStripMx350LightVariants()
+        {
+            string value = global::System.Environment.GetEnvironmentVariable(Mx350ShaderStripEnvironmentVariable);
+            return !string.Equals(value, "0", StringComparison.Ordinal);
+        }
+
         private static bool IsMixedLightingKeyword(string keywordName)
         {
             switch (keywordName)
@@ -317,6 +336,41 @@ namespace Hecton8.EditorTools
         private static bool IsAdditionalLightShadowKeyword(string keywordName)
         {
             return string.Equals(keywordName, "_ADDITIONAL_LIGHT_SHADOWS", StringComparison.Ordinal);
+        }
+
+        private static bool IsPointLightKeyword(string keywordName)
+        {
+            switch (keywordName)
+            {
+                case "POINT":
+                case "POINT_COOKIE":
+                case "POINT_LIGHTS":
+                case "_POINT":
+                case "_POINT_LIGHTS":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsSpotLightKeyword(string keywordName)
+        {
+            switch (keywordName)
+            {
+                case "SPOT":
+                case "SPOT_COOKIE":
+                case "SPOT_LIGHTS":
+                case "_SPOT":
+                case "_SPOT_LIGHTS":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsMathLodHighKeyword(string keywordName)
+        {
+            return string.Equals(keywordName, "_MATH_LOD_HIGH", StringComparison.Ordinal);
         }
 
         private static bool IsSoftShadowKeyword(string keywordName)
@@ -377,6 +431,9 @@ namespace Hecton8.EditorTools
                 bool stripAdditionalLightShadows,
                 bool stripSoftShadows,
                 bool stripMixedLighting,
+                bool stripPointLights,
+                bool stripSpotLights,
+                bool stripMathLodHigh,
                 int materialAssetCount,
                 HashSet<string> usedMaterialKeywords,
                 string evidence)
@@ -387,6 +444,9 @@ namespace Hecton8.EditorTools
                 StripAdditionalLightShadows = stripAdditionalLightShadows;
                 StripSoftShadows = stripSoftShadows;
                 StripMixedLighting = stripMixedLighting;
+                StripPointLights = stripPointLights;
+                StripSpotLights = stripSpotLights;
+                StripMathLodHigh = stripMathLodHigh;
                 MaterialAssetCount = materialAssetCount;
                 UsedMaterialKeywords = usedMaterialKeywords ?? new HashSet<string>(StringComparer.Ordinal);
                 Evidence = evidence ?? string.Empty;
@@ -399,6 +459,9 @@ namespace Hecton8.EditorTools
             internal bool StripAdditionalLightShadows { get; }
             internal bool StripSoftShadows { get; }
             internal bool StripMixedLighting { get; }
+            internal bool StripPointLights { get; }
+            internal bool StripSpotLights { get; }
+            internal bool StripMathLodHigh { get; }
             internal HashSet<string> UsedMaterialKeywords { get; }
             internal bool HasMaterialKeywordPolicy => UsedMaterialKeywords.Count > 0;
             internal string Evidence { get; }
@@ -408,6 +471,9 @@ namespace Hecton8.EditorTools
                 || StripAdditionalLightShadows
                 || StripSoftShadows
                 || StripMixedLighting
+                || StripPointLights
+                || StripSpotLights
+                || StripMathLodHigh
                 || HasMaterialKeywordPolicy;
         }
     }

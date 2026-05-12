@@ -27,6 +27,7 @@ struct HectonVegetationInstanceGpuData
 };
 
 StructuredBuffer<HectonVegetationInstanceGpuData> _HectonSourceVegetationInstanceData;
+StructuredBuffer<float> _HectonFloraAges01;
 AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesLOD0;
 AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesLOD1;
 AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesShadow;
@@ -121,6 +122,12 @@ void ResolveInstanceShape(float instanceType, float heightScale, float widthScal
 
     instanceHeight = lerp(0.75, 2.4, saturate(heightScale));
     instanceWidth = lerp(0.75, 1.35, saturate(widthScale));
+}
+
+float ResolveFloraAge01(uint instanceIndex)
+{
+    float age01 = _HectonFloraAges01[instanceIndex];
+    return IsFiniteScalar(age01) ? age01 : -1.0;
 }
 
 bool IsSphereVisibleInFrustumSq(float3 centerWS, float radiusSq)
@@ -441,11 +448,18 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
 
     HectonVegetationInstanceGpuData instanceData = _HectonSourceVegetationInstanceData[instanceIndex];
+    float age01 = ResolveFloraAge01(instanceIndex);
+    if (age01 < 0.0)
+        return;
+
+    age01 = saturate(age01);
     float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
 
     float instanceHeight;
     float instanceWidth;
     ResolveInstanceShape(instanceType, instanceData.HeightScale, instanceData.WidthScale, instanceHeight, instanceWidth);
+    instanceHeight *= age01;
+    instanceWidth *= sqrt(max(age01, 0.0));
 
     float3 centerWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight * 0.5, 0.0)));
     float3 topWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight, 0.0)));
@@ -503,11 +517,18 @@ void CullFloraShadowInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     float4x4 instanceMatrix = _HectonSourceInstanceMatrices[instanceIndex];
     HectonVegetationInstanceGpuData instanceData = _HectonSourceVegetationInstanceData[instanceIndex];
+    float age01 = ResolveFloraAge01(instanceIndex);
+    if (age01 < 0.0)
+        return;
+
+    age01 = saturate(age01);
     float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
 
     float instanceHeight;
     float instanceWidth;
     ResolveInstanceShape(instanceType, instanceData.HeightScale, instanceData.WidthScale, instanceHeight, instanceWidth);
+    instanceHeight *= age01;
+    instanceWidth *= sqrt(max(age01, 0.0));
 
     float3 rootWS = ResolveShiftedWorldPosition(ResolveInstanceOrigin(instanceMatrix));
     float3 centerWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight * 0.5, 0.0)));

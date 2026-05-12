@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.MemoryMappedFiles;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Win32.SafeHandles;
 using Hecton8.Core;
 using Hecton8.Quest;
 using Hecton8.World;
@@ -22,14 +20,11 @@ namespace Hecton8.SaveSystem
     {
         internal struct ReadOnlyMapping
         {
-            public FileStream FileStream;
-            public MemoryMappedFile FileMapping;
-            public MemoryMappedViewAccessor Accessor;
+            public NativeArray<byte> Bytes;
             public IntPtr View;
             public long Length;
         }
 
-        private const uint FsctlSetSparse = 0x000900C4;
         private const long DiskFlushThrottleBytesPerSecond = 10L * 1024L * 1024L;
         private const int DiskFlushQueueCapacity = 32;
         private const int ReadWindowCount = 4;
@@ -37,6 +32,8 @@ namespace Hecton8.SaveSystem
         private const int ReadWindowPrefetchThresholdBytes = 256 * 1024;
         private const int ReadPrefetchQueueCapacity = 16;
         private const int OsAllocationGranularityBytes = 64 * 1024;
+        private const int FileWriteScratchBytes = 64 * 1024;
+        private const int FileReadScratchBytes = 64 * 1024;
 
         private static readonly object s_flushLock = new object();
         private static readonly AutoResetEvent s_flushSignal = new AutoResetEvent(false);
@@ -56,17 +53,10 @@ namespace Hecton8.SaveSystem
         private static int s_readPrefetchWriteIndex;
         private static int s_readPrefetchCount;
         private static int s_readPrefetchWorkerStarted;
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool DeviceIoControl(
-            SafeFileHandle hDevice,
-            uint dwIoControlCode,
-            IntPtr lpInBuffer,
-            int nInBufferSize,
-            IntPtr lpOutBuffer,
-            int nOutBufferSize,
-            out int lpBytesReturned,
-            IntPtr lpOverlapped);
+        private static readonly object s_fileWriteScratchLock = new object();
+        private static readonly byte[] s_fileWriteScratch = new byte[FileWriteScratchBytes];
+        private static readonly object s_fileReadScratchLock = new object();
+        private static readonly byte[] s_fileReadScratch = new byte[FileReadScratchBytes];
 
         private struct DiskFlushRequest
         {
@@ -84,43 +74,19 @@ namespace Hecton8.SaveSystem
         private struct CachedReadWindow
         {
             public string AbsolutePath;
-            public FileStream FileStream;
-            public MemoryMappedFile FileMapping;
-            public MemoryMappedViewAccessor Accessor;
-            public byte* AcquiredPointer;
+            public NativeArray<byte> Bytes;
             public byte* ViewPointer;
             public long WindowOffset;
             public long WindowLength;
             public long FileLength;
             public int LastUse;
 
-            public bool IsCreated => Accessor != null;
+            public bool IsCreated => Bytes.IsCreated;
         }
 
         internal static bool TryEnableSparseFile(FileStream fileStream)
         {
-            if (fileStream == null ||
-                !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return false;
-            }
-
-            try
-            {
-                return DeviceIoControl(
-                    fileStream.SafeFileHandle,
-                    FsctlSetSparse,
-                    IntPtr.Zero,
-                    0,
-                    IntPtr.Zero,
-                    0,
-                    out _,
-                    IntPtr.Zero);
-            }
-            catch
-            {
-                return false;
-            }
+            return false;
         }
 
         internal static bool QueueThrottledFlush(string absolutePath, long byteCount, out string error)
@@ -192,7 +158,7 @@ namespace Hecton8.SaveSystem
             error = string.Empty;
             if (string.IsNullOrEmpty(absolutePath) || destination == null || byteOffset < 0L || byteCount < 0)
             {
-                error = "Cached MMF read request is invalid.";
+                error = "Cached file read request is invalid.";
                 return false;
             }
 
@@ -204,7 +170,7 @@ namespace Hecton8.SaveSystem
 
             if (fileLength <= 0L || byteOffset > fileLength || byteCount > fileLength - byteOffset)
             {
-                error = "Cached MMF read range exceeds file length.";
+                error = "Cached file read range exceeds file length.";
                 return false;
             }
 
@@ -224,7 +190,7 @@ namespace Hecton8.SaveSystem
                     long sourceOffset = sourceCursor - window.WindowOffset;
                     if (sourceOffset < 0L || sourceOffset > int.MaxValue)
                     {
-                        error = "Cached MMF read offset exceeds the supported range.";
+                        error = "Cached file read offset exceeds the supported range.";
                         return false;
                     }
 
@@ -232,13 +198,13 @@ namespace Hecton8.SaveSystem
                     int chunkBytes = remaining < availableWindowBytes ? remaining : (int)availableWindowBytes;
                     if (chunkBytes <= 0)
                     {
-                        error = "Cached MMF read window produced an empty copy span.";
+                        error = "Cached file read window produced an empty copy span.";
                         return false;
                     }
 
                     if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationBytes + destinationCursor, byteCount - destinationCursor, window.ViewPointer + (int)sourceOffset, chunkBytes))
                     {
-                        error = "Cached MMF read copy exceeded destination bounds.";
+                        error = "Cached file read copy exceeded destination bounds.";
                         UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
                         return false;
                     }
@@ -263,7 +229,7 @@ namespace Hecton8.SaveSystem
             error = string.Empty;
             if (string.IsNullOrEmpty(absolutePath) || destination == null || byteOffset < 0L || elementCount < 0)
             {
-                error = "Cached MMF GPU upload request is invalid.";
+                error = "Cached file GPU upload request is invalid.";
                 return false;
             }
 
@@ -275,7 +241,7 @@ namespace Hecton8.SaveSystem
             long byteCountLong = (long)safeCount * elementSize;
             if (byteCountLong > int.MaxValue)
             {
-                error = "Cached MMF GPU upload exceeds the supported range.";
+                error = "Cached file GPU upload exceeds the supported range.";
                 return false;
             }
 
@@ -284,7 +250,7 @@ namespace Hecton8.SaveSystem
 
             if (fileLength <= 0L || byteOffset > fileLength || byteCountLong > fileLength - byteOffset)
             {
-                error = "Cached MMF GPU upload range exceeds file length.";
+                error = "Cached file GPU upload range exceeds file length.";
                 return false;
             }
 
@@ -308,7 +274,7 @@ namespace Hecton8.SaveSystem
                         long sourceOffset = sourceCursor - window.WindowOffset;
                         if (sourceOffset < 0L || sourceOffset > int.MaxValue)
                         {
-                            error = "Cached MMF GPU upload offset exceeds the supported range.";
+                            error = "Cached file GPU upload offset exceeds the supported range.";
                             return false;
                         }
 
@@ -316,13 +282,13 @@ namespace Hecton8.SaveSystem
                         long chunkBytesLong = remaining < availableWindowBytes ? remaining : availableWindowBytes;
                         if (chunkBytesLong <= 0L || chunkBytesLong > int.MaxValue)
                         {
-                            error = "Cached MMF GPU upload window produced an invalid copy span.";
+                            error = "Cached file GPU upload window produced an invalid copy span.";
                             return false;
                         }
 
                         if (!UnsafeMemoryCopyGuard.TryMemCpy((byte*)destinationPtr + destinationCursor, destinationBytes - destinationCursor, window.ViewPointer + (int)sourceOffset, chunkBytesLong))
                         {
-                            error = "Cached MMF GPU upload copy exceeded destination bounds.";
+                            error = "Cached file GPU upload copy exceeded destination bounds.";
                             UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
                             return false;
                         }
@@ -358,7 +324,12 @@ namespace Hecton8.SaveSystem
             if (Interlocked.CompareExchange(ref s_readPrefetchWorkerStarted, 1, 0) != 0)
                 return;
 
-            Task.Run((Action)ReadPrefetchWorkerLoop);
+            Thread thread = new Thread(ReadPrefetchWorkerLoop)
+            {
+                IsBackground = true,
+                Name = "H8.FileReadPrefetch"
+            };
+            thread.Start();
         }
 
         private static void FlushWorkerLoop()
@@ -449,8 +420,20 @@ namespace Hecton8.SaveSystem
                 {
                     if (FindCachedReadWindowLocked(request.AbsolutePath, request.WindowOffset, 1) >= 0)
                         continue;
+                }
 
-                    MapCachedReadWindowLocked(request.AbsolutePath, request.WindowOffset, 1, request.FileLength, out _, out _);
+                if (!TryCreateCachedReadWindow(request.AbsolutePath, request.WindowOffset, 1, request.FileLength, out CachedReadWindow prefetchedWindow, out _))
+                    continue;
+
+                lock (s_readWindowLock)
+                {
+                    if (FindCachedReadWindowLocked(request.AbsolutePath, request.WindowOffset, 1) >= 0)
+                    {
+                        DisposeCachedReadWindow(ref prefetchedWindow);
+                        continue;
+                    }
+
+                    InsertCachedReadWindowLocked(ref prefetchedWindow);
                 }
             }
         }
@@ -478,13 +461,13 @@ namespace Hecton8.SaveSystem
             error = string.Empty;
             if (byteCount < 0 || byteOffset < 0L)
             {
-                error = "Cached MMF read range is invalid.";
+                error = "Cached file read range is invalid.";
                 return -1;
             }
 
             if (fileLength <= 0L || byteOffset > fileLength || byteCount > fileLength - byteOffset)
             {
-                error = "Cached MMF read range exceeds file length.";
+                error = "Cached file read range exceeds file length.";
                 return -1;
             }
 
@@ -538,8 +521,31 @@ namespace Hecton8.SaveSystem
             error = string.Empty;
             if (fileLength <= 0L || byteOffset < 0L || byteOffset > fileLength || byteCount < 0 || byteCount > fileLength - byteOffset)
             {
-                error = "Cached MMF map range exceeds file length.";
+                error = "Cached file window range exceeds file length.";
                 return -1;
+            }
+
+            if (!TryCreateCachedReadWindow(absolutePath, byteOffset, byteCount, fileLength, out CachedReadWindow mappedWindow, out error))
+                return -1;
+
+            mappedWindowOffset = mappedWindow.WindowOffset;
+            return InsertCachedReadWindowLocked(ref mappedWindow);
+        }
+
+        private static bool TryCreateCachedReadWindow(
+            string absolutePath,
+            long byteOffset,
+            int byteCount,
+            long fileLength,
+            out CachedReadWindow window,
+            out string error)
+        {
+            window = default;
+            error = string.Empty;
+            if (fileLength <= 0L || byteOffset < 0L || byteOffset > fileLength || byteCount < 0 || byteCount > fileLength - byteOffset)
+            {
+                error = "Cached file window range exceeds file length.";
+                return false;
             }
 
             long windowOffset = AlignReadWindowOffset(byteOffset);
@@ -547,59 +553,63 @@ namespace Hecton8.SaveSystem
             long windowLength = remainingFileLength < ReadWindowSizeBytes ? remainingFileLength : ReadWindowSizeBytes;
             if (windowLength <= 0L)
             {
-                error = "Cached MMF map window is empty.";
-                return -1;
+                error = "Cached file window is empty.";
+                return false;
             }
 
-            mappedWindowOffset = windowOffset;
-            int slotIndex = SelectCachedReadWindowSlotLocked();
-            DisposeCachedReadWindow(ref s_readWindows[slotIndex]);
+            if (windowLength > int.MaxValue)
+            {
+                error = "Cached file read window exceeds the supported native buffer range.";
+                return false;
+            }
 
             FileStream fileStream = null;
-            MemoryMappedFile fileMapping = null;
-            MemoryMappedViewAccessor accessor = null;
-            byte* acquiredPointer = null;
+            NativeArray<byte> windowBytes = default;
             try
             {
                 fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 4096, FileOptions.RandomAccess);
-                fileMapping = MemoryMappedFile.CreateFromFile(fileStream, null, fileLength, MemoryMappedFileAccess.Read, HandleInheritability.None, true);
-                accessor = fileMapping.CreateViewAccessor(windowOffset, windowLength, MemoryMappedFileAccess.Read);
-                accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref acquiredPointer);
+                // COLD ALLOC: NativeArray<byte>[windowLength] - portable cached save read window - owner: AsyncWriteManager
+                windowBytes = new NativeArray<byte>((int)windowLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                byte* windowPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(windowBytes);
+                if (!TryReadFileRangeToNativeBuffer(fileStream, windowOffset, windowPtr, (int)windowLength, out error))
+                    return false;
 
-                s_readWindows[slotIndex] = new CachedReadWindow
+                window = new CachedReadWindow
                 {
                     AbsolutePath = absolutePath,
-                    FileStream = fileStream,
-                    FileMapping = fileMapping,
-                    Accessor = accessor,
-                    AcquiredPointer = acquiredPointer,
-                    ViewPointer = acquiredPointer + accessor.PointerOffset,
+                    Bytes = windowBytes,
+                    ViewPointer = windowPtr,
                     WindowOffset = windowOffset,
                     WindowLength = windowLength,
                     FileLength = fileLength,
-                    LastUse = ++s_readWindowClock
+                    LastUse = 0
                 };
 
-                fileStream = null;
-                fileMapping = null;
-                accessor = null;
-                acquiredPointer = null;
-                return slotIndex;
+                windowBytes = default;
+                return true;
             }
             catch (Exception ex)
             {
-                error = $"Cached MMF read-window mapping failed for '{absolutePath}': {ex.Message}";
-                return -1;
+                error = $"Cached file read-window load failed for '{absolutePath}': {ex.Message}";
+                return false;
             }
             finally
             {
-                if (accessor != null && acquiredPointer != null)
-                    accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                if (windowBytes.IsCreated)
+                    windowBytes.Dispose();
 
-                accessor?.Dispose();
-                fileMapping?.Dispose();
                 fileStream?.Dispose();
             }
+        }
+
+        private static int InsertCachedReadWindowLocked(ref CachedReadWindow window)
+        {
+            int slotIndex = SelectCachedReadWindowSlotLocked();
+            DisposeCachedReadWindow(ref s_readWindows[slotIndex]);
+            window.LastUse = ++s_readWindowClock;
+            s_readWindows[slotIndex] = window;
+            window = default;
+            return slotIndex;
         }
 
         private static long AlignReadWindowOffset(long byteOffset)
@@ -685,12 +695,9 @@ namespace Hecton8.SaveSystem
 
         private static void DisposeCachedReadWindow(ref CachedReadWindow window)
         {
-            if (window.Accessor != null && window.AcquiredPointer != null)
-                window.Accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+            if (window.Bytes.IsCreated)
+                window.Bytes.Dispose();
 
-            window.Accessor?.Dispose();
-            window.FileMapping?.Dispose();
-            window.FileStream?.Dispose();
             window = default;
         }
 
@@ -722,38 +729,18 @@ namespace Hecton8.SaveSystem
             }
 
             FileStream fileStream = null;
-            MemoryMappedFile memoryMappedFile = null;
-            MemoryMappedViewAccessor accessor = null;
-            byte* mappedPointer = null;
             try
             {
                 InvalidateCachedReadWindows(absolutePath);
-                fileStream = new FileStream(absolutePath, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+                fileStream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.None, FileWriteScratchBytes, FileOptions.SequentialScan);
                 TryEnableSparseFile(fileStream);
                 fileStream.SetLength(totalBytes);
-                memoryMappedFile = MemoryMappedFile.CreateFromFile(fileStream, null, totalBytes, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, true);
-                accessor = memoryMappedFile.CreateViewAccessor(0L, totalBytes, MemoryMappedFileAccess.Write);
-                accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedPointer);
-                byte* destination = mappedPointer + accessor.PointerOffset;
 
-                if (firstBuffer != null && firstByteCount > 0)
-                {
-                    if (!UnsafeMemoryCopyGuard.SafeCopy(destination, totalBytes, firstBuffer, firstByteCount))
-                    {
-                        error = "Native mapped write first segment exceeded destination bounds.";
-                        return false;
-                    }
-                }
+                if (!TryWritePointerSegment(fileStream, firstBuffer, firstByteCount, out error))
+                    return false;
 
-                if (secondBuffer != null && secondByteCount > 0)
-                {
-                    int secondOffset = math.max(firstByteCount, 0);
-                    if (!UnsafeMemoryCopyGuard.SafeCopy(destination + secondOffset, totalBytes - secondOffset, secondBuffer, secondByteCount))
-                    {
-                        error = "Native mapped write second segment exceeded destination bounds.";
-                        return false;
-                    }
-                }
+                if (!TryWritePointerSegment(fileStream, secondBuffer, secondByteCount, out error))
+                    return false;
 
                 if (!QueueThrottledFlush(absolutePath, totalBytes, out error))
                     return false;
@@ -762,17 +749,151 @@ namespace Hecton8.SaveSystem
             }
             catch (Exception ex)
             {
-                error = $"Memory-mapped write failed for '{absolutePath}': {ex.Message}";
+                error = $"Sequential native write failed for '{absolutePath}': {ex.Message}";
                 return false;
             }
             finally
             {
-                if (accessor != null && mappedPointer != null)
-                    accessor.SafeMemoryMappedViewHandle.ReleasePointer();
-
-                accessor?.Dispose();
-                memoryMappedFile?.Dispose();
                 fileStream?.Dispose();
+            }
+        }
+
+        internal static bool OverwriteAll(string absolutePath, void* buffer, int byteCount, out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(absolutePath) || buffer == null || byteCount <= 0)
+            {
+                error = "Native overwrite request is invalid.";
+                return false;
+            }
+
+            FileStream fileStream = null;
+            try
+            {
+                InvalidateCachedReadWindows(absolutePath);
+                fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None, FileWriteScratchBytes, FileOptions.SequentialScan);
+                TryEnableSparseFile(fileStream);
+                fileStream.SetLength(byteCount);
+                fileStream.Position = 0L;
+
+                if (!TryWritePointerSegment(fileStream, buffer, byteCount, out error))
+                    return false;
+
+                if (!QueueThrottledFlush(absolutePath, byteCount, out error))
+                    return false;
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = $"Sequential native overwrite failed for '{absolutePath}': {ex.Message}";
+                return false;
+            }
+            finally
+            {
+                fileStream?.Dispose();
+            }
+        }
+
+        private static bool TryWritePointerSegment(FileStream stream, void* source, int byteCount, out string error)
+        {
+            error = string.Empty;
+            if (stream == null)
+            {
+                error = "Native write stream is invalid.";
+                return false;
+            }
+
+            if (byteCount <= 0)
+                return true;
+
+            if (source == null)
+            {
+                stream.Position += byteCount;
+                return true;
+            }
+
+            lock (s_fileWriteScratchLock)
+            {
+                byte* sourceBytes = (byte*)source;
+                int writtenBytes = 0;
+                while (writtenBytes < byteCount)
+                {
+                    int chunkBytes = byteCount - writtenBytes;
+                    if (chunkBytes > s_fileWriteScratch.Length)
+                        chunkBytes = s_fileWriteScratch.Length;
+
+                    Marshal.Copy((IntPtr)(sourceBytes + writtenBytes), s_fileWriteScratch, 0, chunkBytes);
+                    stream.Write(s_fileWriteScratch, 0, chunkBytes);
+                    writtenBytes += chunkBytes;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool TryReadFileRangeToNativeBuffer(
+            FileStream stream,
+            long byteOffset,
+            byte* destination,
+            int byteCount,
+            out string error)
+        {
+            error = string.Empty;
+            if (stream == null || byteOffset < 0L || byteCount < 0)
+            {
+                error = "Native file read request is invalid.";
+                return false;
+            }
+
+            if (byteCount == 0)
+                return true;
+
+            if (destination == null)
+            {
+                error = "Native file read destination is null.";
+                return false;
+            }
+
+            try
+            {
+                stream.Position = byteOffset;
+                int totalRead = 0;
+                lock (s_fileReadScratchLock)
+                {
+                    fixed (byte* scratchPtr = s_fileReadScratch)
+                    {
+                        while (totalRead < byteCount)
+                        {
+                            int chunkBytes = byteCount - totalRead;
+                            if (chunkBytes > s_fileReadScratch.Length)
+                                chunkBytes = s_fileReadScratch.Length;
+
+                            int read = stream.Read(s_fileReadScratch, 0, chunkBytes);
+                            if (read <= 0)
+                            {
+                                error = "Native file read ended before the requested byte count.";
+                                return false;
+                            }
+
+                            if (!UnsafeMemoryCopyGuard.TryMemCpy(destination + totalRead, byteCount - totalRead, scratchPtr, read))
+                            {
+                                error = "Native file read copy exceeded destination bounds.";
+                                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
+                                return false;
+                            }
+
+                            totalRead += read;
+                        }
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = $"Native file read failed: {ex.Message}";
+                return false;
             }
         }
 
@@ -786,6 +907,31 @@ namespace Hecton8.SaveSystem
             }
 
             return TryCopyFromCachedReadWindow(absolutePath, 0L, buffer, byteCount, out error);
+        }
+
+        internal static bool TryCopyFileRangeToNativeArray(
+            string absolutePath,
+            long byteOffset,
+            NativeArray<byte> destination,
+            int byteCount,
+            out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(absolutePath) ||
+                byteOffset < 0L ||
+                !destination.IsCreated ||
+                byteCount < 0 ||
+                byteCount > destination.Length)
+            {
+                error = "Cached file native range copy request is invalid.";
+                return false;
+            }
+
+            byte* destinationPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(destination);
+            if (byteCount > 0)
+                UnsafeUtility.MemClear(destinationPtr, byteCount);
+
+            return TryCopyFromCachedReadWindow(absolutePath, byteOffset, destinationPtr, byteCount, out error);
         }
 
         internal static bool TryGetFileLength(string absolutePath, out long fileLength, out string error)
@@ -821,9 +967,7 @@ namespace Hecton8.SaveSystem
             }
 
             FileStream fileStream = null;
-            MemoryMappedFile memoryMappedFile = null;
-            MemoryMappedViewAccessor accessor = null;
-            byte* mappedPointer = null;
+            NativeArray<byte> fileBytes = default;
             try
             {
                 fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -831,60 +975,60 @@ namespace Hecton8.SaveSystem
 
                 if (fileLength <= 0L)
                 {
-                    error = $"Mapped read requested an empty file for '{absolutePath}'.";
+                    error = $"Portable read requested an empty file for '{absolutePath}'.";
                     return false;
                 }
 
-                memoryMappedFile = MemoryMappedFile.CreateFromFile(fileStream, null, fileLength, MemoryMappedFileAccess.Read, HandleInheritability.None, true);
-                accessor = memoryMappedFile.CreateViewAccessor(0L, fileLength, MemoryMappedFileAccess.Read);
-                accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedPointer);
-                IntPtr mappedView = (IntPtr)(mappedPointer + accessor.PointerOffset);
+                if (fileLength > int.MaxValue)
+                {
+                    error = $"Portable read exceeds the supported native buffer range for '{absolutePath}'.";
+                    return false;
+                }
+
+                // COLD ALLOC: NativeArray<byte>[fileLength] - portable read-only save snapshot - owner: AsyncWriteManager
+                fileBytes = new NativeArray<byte>((int)fileLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
+                if (!TryReadFileRangeToNativeBuffer(fileStream, 0L, filePtr, (int)fileLength, out error))
+                    return false;
 
                 mapping = new ReadOnlyMapping
                 {
-                    FileStream = fileStream,
-                    FileMapping = memoryMappedFile,
-                    Accessor = accessor,
-                    View = mappedView,
+                    Bytes = fileBytes,
+                    View = (IntPtr)filePtr,
                     Length = fileLength
                 };
 
-                fileStream = null;
-                memoryMappedFile = null;
-                accessor = null;
-                mappedPointer = null;
+                fileBytes = default;
                 return true;
             }
             catch (Exception ex)
             {
-                error = $"Memory-mapped open failed for '{absolutePath}': {ex.Message}";
+                error = $"Portable read-only open failed for '{absolutePath}': {ex.Message}";
                 return false;
             }
             finally
             {
-                if (accessor != null && mappedPointer != null)
-                    accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                if (fileBytes.IsCreated)
+                    fileBytes.Dispose();
 
-                accessor?.Dispose();
-                memoryMappedFile?.Dispose();
                 fileStream?.Dispose();
             }
         }
 
         internal static void CloseReadOnlyMapping(ref ReadOnlyMapping mapping)
         {
-            if (mapping.Accessor != null)
-                mapping.Accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+            if (mapping.Bytes.IsCreated)
+                mapping.Bytes.Dispose();
 
-            mapping.Accessor?.Dispose();
-            mapping.FileMapping?.Dispose();
-            mapping.FileStream?.Dispose();
             mapping = default;
         }
     }
     internal static unsafe class SaveBinaryStorage
     {
         internal const uint Magic = 0x48454354u;
+        internal const int ErrorCodeNone = 0;
+        internal const int ErrorCodeHeaderReadFailed = unchecked((int)0x48385244);
+        internal const int ErrorCodeMagicMismatch = unchecked((int)0x48384D47);
         internal const ushort CurrentVersion = 0x0009;
         internal const uint ExplorationMortonBuildSalt32 = 0x48384D4Fu;
         internal const int ExplorationMortonMaskAlignmentBytes = 64;
@@ -926,6 +1070,8 @@ namespace Hecton8.SaveSystem
         private const int StandardCompressedBlockHeaderBytes = 8;
         private const int ProtectedCompressedBlockHeaderBytes = 64;
         private const uint ProtectedCompressedBlockMagic = 0x4C423848u; // "H8BL"
+        private const int ManagedDeflateBlockLengthFlag = 1 << 30;
+        private const int CompressedBlockLengthMask = ManagedDeflateBlockLengthFlag - 1;
         internal const int ModPayloadSubBlockSizeBytes = SaveBinaryPayloadCodec.ProtectedLz4BlockSizeBytes;
         internal const int ModPayloadHeaderSizeBytes = 32;
         internal const int ModPayloadMaxBytes = ModPayloadSubBlockSizeBytes - ModPayloadHeaderSizeBytes;
@@ -941,6 +1087,7 @@ namespace Hecton8.SaveSystem
         private const ulong ModPayloadSectorMask = 0xFFFF000000000000UL;
         private const int ProtectedLz4BlockSizeShift = 14;
         private const int ProtectedLz4BlockSizeMask = ModPayloadSubBlockSizeBytes - 1;
+        private const int ManagedCompressionScratchBytes = 64 * 1024;
         internal const int IndexedSectorQuarantineHashCapacity = 16;
         private const string Lz4DllName = "liblz4";
         private const string NativeMemoryOwner = nameof(SaveBinaryStorage);
@@ -952,6 +1099,9 @@ namespace Hecton8.SaveSystem
         private const string EntityStateWriteResultLengthLabel = "indexedSectorEntityStateResultLength";
         private const string EntityStateWriteRadixCountsLabel = "indexedSectorEntityStateRadixCounts";
         private const string EntityStateWriteRadixOffsetsLabel = "indexedSectorEntityStateRadixOffsets";
+        private static readonly WaitCallback s_indexedSectorDefragmentationCallback = RunIndexedPersistentWorldDefragmentation;
+        private static string s_indexedSectorDefragmentationPath;
+        private static int s_indexedSectorDefragmentationQueued;
         private const string EntityStateWriteCompactStatesLabel = "indexedSectorEntityStateCompact16";
         private const string PristineResetEmptySectorRecordsLabel = "indexedSectorPristineResetEmptyRecords";
         private const uint SectorEntityStateCompact16Magic = 0xFA160016u;
@@ -971,8 +1121,15 @@ namespace Hecton8.SaveSystem
         private static readonly long[] s_indexedSectorQuarantineHashes = new long[IndexedSectorQuarantineHashCapacity];
         // COLD ALLOC: object[1] - quarantine hash queue lock for background paging workers - owner: SaveBinaryStorage
         private static readonly object s_indexedSectorQuarantineLock = new object();
+        // COLD ALLOC: object[1] - serialized managed compression fallback scratch guard - owner: SaveBinaryStorage
+        private static readonly object s_managedCompressionLock = new object();
+        // COLD ALLOC: byte[65536] - managed Deflate fallback stream copy scratch for non-Windows builds without liblz4 - owner: SaveBinaryStorage
+        private static readonly byte[] s_managedCompressionScratch = new byte[ManagedCompressionScratchBytes];
         private static int s_indexedSectorQuarantineHashCount;
         private static readonly uint _indexedSectorQuarantineWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Save.IndexedSectorQuarantine"));
+        private static int s_lastReadErrorCode;
+
+        internal static int LastReadErrorCode => Volatile.Read(ref s_lastReadErrorCode);
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = TokenizedPayloadHeaderSize)]
         private struct TokenizedPayloadHeader
@@ -1033,6 +1190,7 @@ namespace Hecton8.SaveSystem
         {
             internal bool IsCreated;
             internal string AbsolutePath;
+            internal long SectorHash;
             internal JobHandle Handle;
             public NativeArray<EntityDataRecord> SourceStates;
             public NativeArray<SectorEntityStateSortEntry> SortEntries;
@@ -1276,8 +1434,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private unsafe struct CompressSectorEntityStateJob : IJob
+        private struct CompressSectorEntityStateJob : IJob
         {
             [ReadOnly] public NativeArray<SectorCompactEntityStateRecord16> CompactStates;
             public NativeArray<byte> FileBytes;
@@ -1286,37 +1443,7 @@ namespace Hecton8.SaveSystem
 
             public void Execute()
             {
-                int recordCount = CompactStates.Length;
-                if (recordCount <= 0 || !FileBytes.IsCreated || FileBytes.Length <= UnsafeUtility.SizeOf<SectorEntityStateFileHeader>())
-                {
-                    ResultLength[0] = 0;
-                    return;
-                }
-
-                byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(FileBytes);
-                byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(CompactStates);
-                int rawByteLength = recordCount * UnsafeUtility.SizeOf<SectorCompactEntityStateRecord16>();
-                int compressedLength = SaveBinaryStorage.Lz4BlockCompress(
-                    rawPtr,
-                    rawByteLength,
-                    filePtr + UnsafeUtility.SizeOf<SectorEntityStateFileHeader>(),
-                    FileBytes.Length - UnsafeUtility.SizeOf<SectorEntityStateFileHeader>());
-                if (compressedLength <= 0)
-                {
-                    ResultLength[0] = 0;
-                    return;
-                }
-
-                SectorEntityStateFileHeader header = new SectorEntityStateFileHeader
-                {
-                    SectorHash = SectorHash,
-                    CompressedSize = compressedLength,
-                    DecompressedSize = rawByteLength,
-                    RecordCount = (uint)recordCount,
-                    Checksum = SectorEntityStateCompact16Magic
-                };
-                UnsafeUtility.CopyStructureToPtr(ref header, filePtr);
-                ResultLength[0] = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>() + compressedLength;
+                ResultLength[0] = 0;
             }
         }
 
@@ -1809,14 +1936,42 @@ namespace Hecton8.SaveSystem
                 return false;
 
             if (!AsyncWriteManager.TryGetFileLength(absolutePath, out long fileLength, out _)
-                || fileLength < sizeof(uint))
+                || fileLength < SaveFileHeaderPrefixSize)
             {
                 return false;
             }
 
-            uint headerValue = 0u;
-            return AsyncWriteManager.TryReadAll(absolutePath, &headerValue, sizeof(uint), out _)
-                && headerValue == Magic;
+            return TryReadHeaderPrefixFastFail(absolutePath, out _, out _);
+        }
+
+        private static void SetReadErrorCode(int errorCode)
+        {
+            Volatile.Write(ref s_lastReadErrorCode, errorCode);
+        }
+
+        private static bool TryReadHeaderPrefixFastFail(
+            string absolutePath,
+            out SaveFileHeaderPrefix prefix,
+            out string error)
+        {
+            prefix = default;
+            SaveFileHeaderPrefix prefixScratch = default;
+            if (!AsyncWriteManager.TryReadAll(absolutePath, &prefixScratch, SaveFileHeaderPrefixSize, out error))
+            {
+                SetReadErrorCode(ErrorCodeHeaderReadFailed);
+                return false;
+            }
+
+            prefix = prefixScratch;
+            if (prefix.MagicValue != Magic)
+            {
+                error = "Save file magic mismatch.";
+                SetReadErrorCode(ErrorCodeMagicMismatch);
+                return false;
+            }
+
+            SetReadErrorCode(ErrorCodeNone);
+            return true;
         }
 
         internal static bool TryWriteSaveFile(
@@ -1855,6 +2010,7 @@ namespace Hecton8.SaveSystem
             string absolutePath,
             string slotName,
             NativeArray<byte> rawBuffer,
+            NativeArray<byte> compressedBuffer,
             out SaveMetadata metadata,
             out int detectedVersion,
             out string error)
@@ -1882,7 +2038,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            if (!TryReadPayload(absolutePath, rawBuffer, out SaveFileHeader header, out PayloadPrefixInfo prefix, out byte* rawPtr, out int rawPayloadLength, out string readError))
+            if (!TryReadPayload(absolutePath, rawBuffer, compressedBuffer, out SaveFileHeader header, out PayloadPrefixInfo prefix, out byte* rawPtr, out int rawPayloadLength, out string readError))
             {
                 error = readError;
                 return false;
@@ -2238,6 +2394,16 @@ namespace Hecton8.SaveSystem
             headerSizeBytes = 0;
             error = string.Empty;
 
+            if (!TryReadHeaderPrefixFastFail(absolutePath, out SaveFileHeaderPrefix fastPrefix, out error))
+                return false;
+
+            headerSizeBytes = ResolveHeaderSize(fastPrefix.Version);
+            if (headerSizeBytes <= 0)
+            {
+                error = "Unsupported save header version.";
+                return false;
+            }
+
             if (!AsyncWriteManager.TryOpenReadOnlyMapping(absolutePath, out mapping, out error))
                 return false;
 
@@ -2255,6 +2421,7 @@ namespace Hecton8.SaveSystem
                 if (headerPrefix.MagicValue != Magic)
                 {
                     error = "Save file magic mismatch.";
+                    SetReadErrorCode(ErrorCodeMagicMismatch);
                     return false;
                 }
 
@@ -2325,8 +2492,11 @@ namespace Hecton8.SaveSystem
             if (prefix.MagicValue != Magic)
             {
                 error = "Cloud metadata header magic mismatch.";
+                SetReadErrorCode(ErrorCodeMagicMismatch);
                 return false;
             }
+
+            SetReadErrorCode(ErrorCodeNone);
 
             int headerSize = ResolveHeaderSize(prefix.Version);
             if (headerSize <= 0 || headerSize > bytesToRead)
@@ -3372,31 +3542,58 @@ namespace Hecton8.SaveSystem
             }
 
             FileStream fileStream = null;
-            MemoryMappedFile fileMapping = null;
-            MemoryMappedViewAccessor accessor = null;
-            byte* filePtr = null;
             try
             {
                 fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-                fileMapping = MemoryMappedFile.CreateFromFile(fileStream, null, fileStream.Length, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, true);
-                accessor = fileMapping.CreateViewAccessor(0L, fileStream.Length, MemoryMappedFileAccess.ReadWrite);
-                accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref filePtr);
-                byte* mappedFilePtr = filePtr + accessor.PointerOffset;
+                long fileLength = fileStream.Length;
+                if (selectedEntry.ByteOffset < 0L || selectedEntry.ByteOffset > fileLength - IndexedSectorBlockHeaderSize)
+                {
+                    error = "Smoke corruption block header offset exceeded the file length.";
+                    return false;
+                }
 
-                IndexedSectorBlockHeader blockHeader = UnsafeUtility.ReadArrayElement<IndexedSectorBlockHeader>(mappedFilePtr + selectedEntry.ByteOffset, 0);
-                int subBlockHeaderBytes = (blockHeader.Flags & FlagProtectedLz4Blocks) != 0
+                byte[] blockHeaderBytes = new byte[IndexedSectorBlockHeaderSize];
+                fileStream.Position = selectedEntry.ByteOffset;
+                int readBytes = 0;
+                while (readBytes < blockHeaderBytes.Length)
+                {
+                    int justRead = fileStream.Read(blockHeaderBytes, readBytes, blockHeaderBytes.Length - readBytes);
+                    if (justRead <= 0)
+                    {
+                        error = "Smoke corruption block header read ended early.";
+                        return false;
+                    }
+
+                    readBytes += justRead;
+                }
+
+                uint blockFlags =
+                    (uint)blockHeaderBytes[0] |
+                    ((uint)blockHeaderBytes[1] << 8) |
+                    ((uint)blockHeaderBytes[2] << 16) |
+                    ((uint)blockHeaderBytes[3] << 24);
+                int subBlockHeaderBytes = (blockFlags & FlagProtectedLz4Blocks) != 0
                     ? ProtectedCompressedBlockHeaderBytes
                     : StandardCompressedBlockHeaderBytes;
                 long payloadOffset = selectedEntry.ByteOffset + IndexedSectorBlockHeaderSize + subBlockHeaderBytes;
-                if (payloadOffset >= fileStream.Length)
+                if (payloadOffset >= fileLength)
                 {
                     error = "Smoke corruption payload offset exceeded the file length.";
                     return false;
                 }
 
-                byte storedByte = UnsafeUtility.ReadArrayElement<byte>(mappedFilePtr + payloadOffset, 0);
-                UnsafeUtility.WriteArrayElement(mappedFilePtr + payloadOffset, 0, (byte)(storedByte ^ 0x5Au));
-                AsyncWriteManager.QueueThrottledFlush(absolutePath, fileStream.Length, out _);
+                fileStream.Position = payloadOffset;
+                int storedByte = fileStream.ReadByte();
+                if (storedByte < 0)
+                {
+                    error = "Smoke corruption payload read ended early.";
+                    return false;
+                }
+
+                fileStream.Position = payloadOffset;
+                fileStream.WriteByte((byte)(storedByte ^ 0x5Au));
+                fileStream.Flush();
+                AsyncWriteManager.QueueThrottledFlush(absolutePath, fileLength, out _);
                 sectorHash = selectedEntry.SectorHash;
                 return true;
             }
@@ -3407,11 +3604,6 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (accessor != null && filePtr != null)
-                    accessor.SafeMemoryMappedViewHandle.ReleasePointer();
-
-                accessor?.Dispose();
-                fileMapping?.Dispose();
                 fileStream?.Dispose();
             }
         }
@@ -3850,6 +4042,7 @@ namespace Hecton8.SaveSystem
             {
                 writeHandle.IsCreated = true;
                 writeHandle.AbsolutePath = absolutePath;
+                writeHandle.SectorHash = sectorHash;
                 writeHandle.SourceStates = new NativeArray<EntityDataRecord>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 writeHandle.SortEntries = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 writeHandle.RadixScratch = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -3942,6 +4135,9 @@ namespace Hecton8.SaveSystem
 
             int fileLength = writeHandle.ResultLength[0];
             if (fileLength <= UnsafeUtility.SizeOf<SectorEntityStateFileHeader>())
+                fileLength = TryBuildSectorEntityStateManagedFallback(ref writeHandle);
+
+            if (fileLength <= UnsafeUtility.SizeOf<SectorEntityStateFileHeader>())
             {
                 error = "Sector entity-state LZ4 compression failed.";
                 writeHandle.Dispose();
@@ -3952,6 +4148,39 @@ namespace Hecton8.SaveSystem
             bool written = AsyncWriteManager.WriteAll(writeHandle.AbsolutePath, filePtr, fileLength, out error);
             writeHandle.Dispose();
             return written;
+        }
+
+        private static unsafe int TryBuildSectorEntityStateManagedFallback(ref IndexedSectorEntityStateWriteHandle writeHandle)
+        {
+            int recordCount = writeHandle.CompactStates.IsCreated ? writeHandle.CompactStates.Length : 0;
+            if (recordCount <= 0 || !writeHandle.FileBytes.IsCreated)
+                return 0;
+
+            int headerSize = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>();
+            if (writeHandle.FileBytes.Length <= headerSize)
+                return 0;
+
+            byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writeHandle.FileBytes);
+            byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writeHandle.CompactStates);
+            int rawByteLength = recordCount * UnsafeUtility.SizeOf<SectorCompactEntityStateRecord16>();
+            int compressedLength = Lz4BlockCompressStandardManagedFallback(
+                rawPtr,
+                rawByteLength,
+                filePtr + headerSize,
+                writeHandle.FileBytes.Length - headerSize);
+            if (compressedLength <= 0)
+                return 0;
+
+            SectorEntityStateFileHeader header = new SectorEntityStateFileHeader
+            {
+                SectorHash = writeHandle.SectorHash,
+                CompressedSize = compressedLength,
+                DecompressedSize = rawByteLength,
+                RecordCount = (uint)recordCount,
+                Checksum = SectorEntityStateCompact16Magic
+            };
+            UnsafeUtility.CopyStructureToPtr(ref header, filePtr);
+            return headerSize + compressedLength;
         }
 
         internal static void DisposeIndexedSectorEntityStateOverrideWrite(ref IndexedSectorEntityStateWriteHandle writeHandle)
@@ -4720,6 +4949,176 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        internal static bool TryCompactIndexedPersistentWorldSectors(string absolutePath, out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(absolutePath))
+            {
+                error = "Indexed sector compaction path is invalid.";
+                return false;
+            }
+
+            if (!TryReadValidatedHeader(absolutePath, out AsyncWriteManager.ReadOnlyMapping mapping, out SaveFileHeader header, out _, out error))
+                return false;
+
+            NativeArray<byte> compactBytes = default;
+            int compactLength = 0;
+            bool writePrepared = false;
+            try
+            {
+                if (!TryReadIndexedDirectory(in header, ref mapping, out IndexedSectorDirectoryHeader directoryHeader, out SectorEntry[] sectorEntries, out error))
+                    return false;
+
+                int headerSizeBytes = ResolveExpectedHeaderSize(header.Version);
+                int sectorEntrySize = UnsafeUtility.SizeOf<SectorEntry>();
+                int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * sectorEntrySize);
+                long metadataOffset = header.PlayerOffset;
+                long metadataEndOffset = metadataOffset + directoryHeader.MetadataCompressedSize;
+                if (metadataOffset < headerSizeBytes + directoryBytes ||
+                    metadataEndOffset < metadataOffset ||
+                    metadataEndOffset > mapping.Length)
+                {
+                    error = "Indexed sector compaction metadata range is invalid.";
+                    return false;
+                }
+
+                long compactLengthLong = metadataEndOffset;
+                int populatedSectorCount = 0;
+                for (int i = 0; i < sectorEntries.Length; i++)
+                {
+                    SectorEntry entry = sectorEntries[i];
+                    if (!IsIndexedSectorEntryPopulated(in entry))
+                        continue;
+
+                    populatedSectorCount++;
+                    compactLengthLong += entry.CompressedSize;
+                    if (compactLengthLong > int.MaxValue)
+                    {
+                        error = "Indexed sector compaction exceeds the portable native buffer range.";
+                        return false;
+                    }
+                }
+
+                if (populatedSectorCount != (int)directoryHeader.SectorCount)
+                {
+                    error = "Indexed sector compaction directory count mismatch.";
+                    return false;
+                }
+
+                if (compactLengthLong >= mapping.Length)
+                    return true;
+
+                byte* mappedFilePtr = (byte*)mapping.View;
+                byte* directoryPtr = mappedFilePtr + headerSizeBytes;
+                if (!TryRecoverCachedIndexedMetadataHashLow32(
+                        in header,
+                        directoryPtr,
+                        directoryBytes,
+                        sectorEntries,
+                        out ulong metadataHash64))
+                {
+                    error = "Indexed sector compaction metadata hash recovery failed.";
+                    return false;
+                }
+
+                compactLength = (int)compactLengthLong;
+                compactBytes = new NativeArray<byte>(compactLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                byte* compactPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compactBytes);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(compactPtr, compactLength, mappedFilePtr, metadataEndOffset))
+                {
+                    error = "Indexed sector compaction metadata copy exceeded bounds.";
+                    return false;
+                }
+
+                long writeCursor = metadataEndOffset;
+                int directoryEntryCursor = headerSizeBytes + IndexedSectorDirectoryHeaderSize;
+                for (int i = 0; i < sectorEntries.Length; i++)
+                {
+                    SectorEntry entry = sectorEntries[i];
+                    if (!IsIndexedSectorEntryPopulated(in entry))
+                    {
+                        directoryEntryCursor += sectorEntrySize;
+                        continue;
+                    }
+
+                    if (!UnsafeMemoryCopyGuard.SafeCopy(
+                            compactPtr + writeCursor,
+                            compactLength - writeCursor,
+                            mappedFilePtr + entry.ByteOffset,
+                            entry.CompressedSize))
+                    {
+                        error = "Indexed sector compaction sector copy exceeded bounds.";
+                        return false;
+                    }
+
+                    entry.ByteOffset = writeCursor;
+                    sectorEntries[i] = entry;
+                    UnsafeUtility.CopyStructureToPtr(ref entry, compactPtr + directoryEntryCursor);
+                    directoryEntryCursor += sectorEntrySize;
+                    writeCursor += entry.CompressedSize;
+                }
+
+                SaveFileHeader updatedHeader = ReadVersionedSaveFileHeader(compactPtr, header.Version);
+                ulong directoryHash64 = updatedHeader.PlayerOffset > headerSizeBytes
+                    ? Hash64(compactPtr + headerSizeBytes, (int)(updatedHeader.PlayerOffset - headerSizeBytes))
+                    : 0UL;
+                updatedHeader.HashPayload64 = metadataHash64 ^ directoryHash64;
+                updatedHeader.Checksum = ComputeIndexedChecksumRoot(unchecked((uint)metadataHash64), sectorEntries);
+                updatedHeader.HashHeader64 = 0UL;
+                updatedHeader.HashHeader64 = ComputeHeaderHash(ref updatedHeader);
+                WriteVersionedSaveFileHeader(compactPtr, ref updatedHeader);
+                writePrepared = true;
+            }
+            finally
+            {
+                AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
+                if (!writePrepared && compactBytes.IsCreated)
+                    compactBytes.Dispose();
+            }
+
+            try
+            {
+                byte* compactPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compactBytes);
+                return AsyncWriteManager.OverwriteAll(absolutePath, compactPtr, compactLength, out error);
+            }
+            finally
+            {
+                if (compactBytes.IsCreated)
+                    compactBytes.Dispose();
+            }
+        }
+
+        private static void QueueIndexedPersistentWorldDefragmentation(string absolutePath)
+        {
+            if (string.IsNullOrEmpty(absolutePath) ||
+                Interlocked.CompareExchange(ref s_indexedSectorDefragmentationQueued, 1, 0) != 0)
+            {
+                return;
+            }
+
+            s_indexedSectorDefragmentationPath = absolutePath;
+            if (!ThreadPool.QueueUserWorkItem(s_indexedSectorDefragmentationCallback))
+            {
+                s_indexedSectorDefragmentationPath = null;
+                Interlocked.Exchange(ref s_indexedSectorDefragmentationQueued, 0);
+            }
+        }
+
+        private static void RunIndexedPersistentWorldDefragmentation(object state)
+        {
+            string queuedPath = s_indexedSectorDefragmentationPath;
+            try
+            {
+                if (!string.IsNullOrEmpty(queuedPath))
+                    TryCompactIndexedPersistentWorldSectors(queuedPath, out _);
+            }
+            finally
+            {
+                s_indexedSectorDefragmentationPath = null;
+                Interlocked.Exchange(ref s_indexedSectorDefragmentationQueued, 0);
+            }
+        }
+
         internal static bool TryCommitIndexedPersistentWorldSectorOverride(
             string absoluteSavePath,
             string sectorOverridePath,
@@ -4793,22 +5192,35 @@ namespace Hecton8.SaveSystem
             ulong metadataHash64;
             IndexedSectorCommitTarget commitTarget;
             int sectorCountDelta;
+            long originalSaveLength = saveMapping.Length;
             try
             {
                 if (!TryReadIndexedDirectory(in saveHeader, ref saveMapping, out directoryHeader, out sectorEntries, out error))
                     return false;
 
                 int headerSizeBytes = ResolveExpectedHeaderSize(saveHeader.Version);
-                ulong directoryHash64 = saveHeader.PlayerOffset > headerSizeBytes
-                    ? Hash64((byte*)saveMapping.View + headerSizeBytes, (int)(saveHeader.PlayerOffset - headerSizeBytes))
-                    : 0UL;
-                metadataHash64 = saveHeader.HashPayload64 ^ directoryHash64;
+                int directoryBytes = saveHeader.PlayerOffset > headerSizeBytes
+                    ? checked((int)(saveHeader.PlayerOffset - headerSizeBytes))
+                    : 0;
+                byte* directoryPtr = directoryBytes > 0
+                    ? (byte*)saveMapping.View + headerSizeBytes
+                    : null;
+                if (!TryRecoverCachedIndexedMetadataHashLow32(
+                        in saveHeader,
+                        directoryPtr,
+                        directoryBytes,
+                        sectorEntries,
+                        out metadataHash64))
+                {
+                    error = "Cached indexed metadata hash low32 failed checksum-root validation.";
+                    return false;
+                }
 
                 if (!TryResolveIndexedSectorCommitTarget(
                         sectorEntries,
                         sectorHash,
                         overrideCompressedSize,
-                        saveMapping.Length,
+                        originalSaveLength,
                         out commitTarget,
                         out sectorCountDelta,
                         out error))
@@ -4824,21 +5236,27 @@ namespace Hecton8.SaveSystem
             if (!TryPrepareIndexedSectorCommitBackup(absoluteSavePath, out error))
                 return false;
 
-            FileStream fileStream = null;
-            MemoryMappedFile fileMapping = null;
-            MemoryMappedViewAccessor accessor = null;
-            byte* filePtr = null;
+            NativeArray<byte> commitBytes = default;
             try
             {
                 long newLength = commitTarget.NewFileLength;
+                if (newLength <= 0L || newLength > int.MaxValue)
+                {
+                    error = "Sector override commit exceeds the portable native buffer range.";
+                    return false;
+                }
+
                 AsyncWriteManager.InvalidateCachedReadWindows(absoluteSavePath);
-                fileStream = new FileStream(absoluteSavePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-                AsyncWriteManager.TryEnableSparseFile(fileStream);
-                fileStream.SetLength(newLength);
-                fileMapping = MemoryMappedFile.CreateFromFile(fileStream, null, newLength, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, true);
-                accessor = fileMapping.CreateViewAccessor(0L, newLength, MemoryMappedFileAccess.ReadWrite);
-                accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref filePtr);
-                byte* mappedFilePtr = filePtr + accessor.PointerOffset;
+                // COLD ALLOC: NativeArray<byte>[newLength] - portable indexed-sector commit buffer - owner: SaveBinaryStorage
+                commitBytes = new NativeArray<byte>((int)newLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                byte* mappedFilePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(commitBytes);
+                UnsafeUtility.MemClear(mappedFilePtr, newLength);
+                int bytesToCopy = (int)(originalSaveLength < newLength ? originalSaveLength : newLength);
+                if (bytesToCopy > 0 &&
+                    !AsyncWriteManager.TryCopyFromCachedReadWindow(absoluteSavePath, 0L, mappedFilePtr, bytesToCopy, out error))
+                {
+                    return false;
+                }
 
                 byte* overrideBlockPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(overrideBlockBytes);
                 if (!UnsafeMemoryCopyGuard.SafeCopy(mappedFilePtr + commitTarget.WriteOffset, newLength - commitTarget.WriteOffset, overrideBlockPtr, overrideCompressedSize))
@@ -4883,7 +5301,8 @@ namespace Hecton8.SaveSystem
                 updatedHeader.HashHeader64 = 0UL;
                 updatedHeader.HashHeader64 = ComputeHeaderHash(ref updatedHeader);
                 WriteVersionedSaveFileHeader(mappedFilePtr, ref updatedHeader);
-                AsyncWriteManager.QueueThrottledFlush(absoluteSavePath, newLength, out _);
+                if (!AsyncWriteManager.OverwriteAll(absoluteSavePath, mappedFilePtr, (int)newLength, out error))
+                    return false;
             }
             catch (Exception ex)
             {
@@ -4892,17 +5311,14 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (accessor != null && filePtr != null)
-                    accessor.SafeMemoryMappedViewHandle.ReleasePointer();
-
-                accessor?.Dispose();
-                fileMapping?.Dispose();
-                fileStream?.Dispose();
+                if (commitBytes.IsCreated)
+                    commitBytes.Dispose();
                 if (overrideBlockBytes.IsCreated)
                     overrideBlockBytes.Dispose();
             }
 
             File.Delete(sectorOverridePath);
+            QueueIndexedPersistentWorldDefragmentation(absoluteSavePath);
             return true;
         }
 
@@ -4910,6 +5326,7 @@ namespace Hecton8.SaveSystem
             string absolutePath,
             string slotName,
             NativeArray<byte> rawBuffer,
+            NativeArray<byte> compressedBuffer,
             out SaveData data,
             out QuestSaveHeader packedQuestHeader,
             out uint[] packedQuestStateWords,
@@ -4972,7 +5389,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            if (!TryReadPayload(absolutePath, rawBuffer, out SaveFileHeader header, out PayloadPrefixInfo prefix, out byte* rawPtr, out rawPayloadLength, out string readError))
+            if (!TryReadPayload(absolutePath, rawBuffer, compressedBuffer, out SaveFileHeader header, out PayloadPrefixInfo prefix, out byte* rawPtr, out rawPayloadLength, out string readError))
             {
                 error = readError;
                 return false;
@@ -5117,6 +5534,27 @@ namespace Hecton8.SaveSystem
                 return true;
 
             return ComputeIndexedChecksumRootLegacyHash(metadataChecksum, sectorEntries) == expectedChecksum;
+        }
+
+        private static bool TryRecoverCachedIndexedMetadataHashLow32(
+            in SaveFileHeader header,
+            byte* directoryPtr,
+            int directoryBytes,
+            SectorEntry[] sectorEntries,
+            out ulong metadataHash64)
+        {
+            metadataHash64 = 0UL;
+            if (directoryBytes < 0 || (directoryBytes > 0 && directoryPtr == null))
+                return false;
+
+            ulong directoryHash64 = directoryBytes > 0
+                ? Hash64(directoryPtr, directoryBytes)
+                : 0UL;
+            metadataHash64 = header.HashPayload64 ^ directoryHash64;
+            if (header.Version < HeaderChecksumVersion)
+                return true;
+
+            return IsIndexedChecksumRootValid(unchecked((uint)metadataHash64), sectorEntries, header.Checksum);
         }
 
         private static bool IsIndexedChecksumRootValid(
@@ -5670,11 +6108,68 @@ namespace Hecton8.SaveSystem
                 byte* rawBlockSource = source + sourceOffset;
                 byte* blockDestination = destination + destinationOffset + StandardCompressedBlockHeaderBytes;
                 int blockDestinationCapacity = destinationCapacity - destinationOffset - StandardCompressedBlockHeaderBytes;
-                int blockCompressedLength = LZ4Compress(rawBlockSource, blockDestination, rawBlockLength, blockDestinationCapacity);
-                if (blockCompressedLength <= 0)
+                if (!TryCompressBlockNativeOnly(
+                        rawBlockSource,
+                        rawBlockLength,
+                        blockDestination,
+                        blockDestinationCapacity,
+                        out int blockCompressedLength))
+                {
+                    return 0;
+                }
+
+                int encodedBlockCompressedLength = EncodeCompressedBlockLength(blockCompressedLength, usedManagedFallback: false);
+                if (encodedBlockCompressedLength == 0)
                     return 0;
 
-                UnsafeUtility.WriteArrayElement(destination + destinationOffset, 0, blockCompressedLength);
+                UnsafeUtility.WriteArrayElement(destination + destinationOffset, 0, encodedBlockCompressedLength);
+                UnsafeUtility.WriteArrayElement(destination + destinationOffset + 4, 0, rawBlockLength);
+
+                sourceOffset += rawBlockLength;
+                destinationOffset += StandardCompressedBlockHeaderBytes + blockCompressedLength;
+            }
+
+            return destinationOffset;
+        }
+
+        private static int Lz4BlockCompressStandardManagedFallback(
+            byte* source,
+            int sourceLength,
+            byte* destination,
+            int destinationCapacity)
+        {
+            if (source == null || destination == null || sourceLength <= 0 || destinationCapacity <= 8)
+                return 0;
+
+            int blockCount = (sourceLength + BlockSizeBytes - 1) / BlockSizeBytes;
+            int sourceOffset = 0;
+            int destinationOffset = 0;
+
+            for (int blockIndex = 0; blockIndex < blockCount; blockIndex++)
+            {
+                int rawBlockLength = math.min(BlockSizeBytes, sourceLength - sourceOffset);
+                if (destinationOffset + StandardCompressedBlockHeaderBytes > destinationCapacity)
+                    return 0;
+
+                byte* rawBlockSource = source + sourceOffset;
+                byte* blockDestination = destination + destinationOffset + StandardCompressedBlockHeaderBytes;
+                int blockDestinationCapacity = destinationCapacity - destinationOffset - StandardCompressedBlockHeaderBytes;
+                if (!TryCompressBlock(
+                        rawBlockSource,
+                        rawBlockLength,
+                        blockDestination,
+                        blockDestinationCapacity,
+                        out int blockCompressedLength,
+                        out bool usedManagedFallback))
+                {
+                    return 0;
+                }
+
+                int encodedBlockCompressedLength = EncodeCompressedBlockLength(blockCompressedLength, usedManagedFallback);
+                if (encodedBlockCompressedLength == 0)
+                    return 0;
+
+                UnsafeUtility.WriteArrayElement(destination + destinationOffset, 0, encodedBlockCompressedLength);
                 UnsafeUtility.WriteArrayElement(destination + destinationOffset + 4, 0, rawBlockLength);
 
                 sourceOffset += rawBlockLength;
@@ -5716,13 +6211,24 @@ namespace Hecton8.SaveSystem
                 byte* rawBlockSource = source + sourceOffset;
                 byte* blockDestination = destination + destinationOffset + ProtectedCompressedBlockHeaderBytes;
                 int blockDestinationCapacity = destinationCapacity - destinationOffset - ProtectedCompressedBlockHeaderBytes;
-                int blockCompressedLength = LZ4Compress(rawBlockSource, blockDestination, rawBlockLength, blockDestinationCapacity);
-                if (blockCompressedLength <= 0)
+                if (!TryCompressBlock(
+                        rawBlockSource,
+                        rawBlockLength,
+                        blockDestination,
+                        blockDestinationCapacity,
+                        out int blockCompressedLength,
+                        out bool usedManagedFallback))
+                {
+                    return 0;
+                }
+
+                int encodedBlockCompressedLength = EncodeCompressedBlockLength(blockCompressedLength, usedManagedFallback);
+                if (encodedBlockCompressedLength == 0)
                     return 0;
 
                 ProtectedCompressedBlockHeader blockHeader = new ProtectedCompressedBlockHeader
                 {
-                    CompressedLength = blockCompressedLength,
+                    CompressedLength = encodedBlockCompressedLength,
                     RawLength = rawBlockLength,
                     RawChecksumLow32 = Hash32(rawBlockSource, rawBlockLength),
                     Magic = ProtectedCompressedBlockMagic
@@ -5760,30 +6266,39 @@ namespace Hecton8.SaveSystem
                     return 0;
 
                 ProtectedCompressedBlockHeader blockHeader = UnsafeUtility.ReadArrayElement<ProtectedCompressedBlockHeader>(source + sourceOffset, 0);
+                int blockCompressedLength = DecodeCompressedBlockLength(blockHeader.CompressedLength);
+                bool isManagedDeflateBlock = IsManagedDeflateBlock(blockHeader.CompressedLength);
                 if (blockHeader.Magic != ProtectedCompressedBlockMagic ||
-                    blockHeader.CompressedLength <= 0 ||
+                    blockCompressedLength <= 0 ||
                     blockHeader.RawLength <= 0 ||
                     blockHeader.RawLength > ModPayloadSubBlockSizeBytes)
+                {
                     return 0;
+                }
 
                 sourceOffset += ProtectedCompressedBlockHeaderBytes;
-                if (sourceOffset > compressedLength - blockHeader.CompressedLength ||
+                if (sourceOffset > compressedLength - blockCompressedLength ||
                     destinationOffset > destinationCapacity - blockHeader.RawLength)
+                {
                     return 0;
+                }
 
-                int actualLength = LZ4Decompress(
-                    source + sourceOffset,
-                    destination + destinationOffset,
-                    blockHeader.CompressedLength,
-                    blockHeader.RawLength);
-                if (actualLength != blockHeader.RawLength)
+                if (!TryDecompressBlock(
+                        source + sourceOffset,
+                        blockCompressedLength,
+                        destination + destinationOffset,
+                        blockHeader.RawLength,
+                        isManagedDeflateBlock,
+                        out _))
+                {
                     return 0;
+                }
 
                 uint computedChecksum = Hash32(destination + destinationOffset, blockHeader.RawLength);
                 if (computedChecksum != blockHeader.RawChecksumLow32)
                     return 0;
 
-                sourceOffset += blockHeader.CompressedLength;
+                sourceOffset += blockCompressedLength;
                 destinationOffset += blockHeader.RawLength;
             }
 
@@ -5793,6 +6308,7 @@ namespace Hecton8.SaveSystem
         private static bool TryReadPayload(
             string absolutePath,
             NativeArray<byte> rawBuffer,
+            NativeArray<byte> compressedBuffer,
             out SaveFileHeader header,
             out PayloadPrefixInfo prefix,
             out byte* rawPtr,
@@ -5814,6 +6330,12 @@ namespace Hecton8.SaveSystem
             if (!rawBuffer.IsCreated)
             {
                 error = "Native raw save buffer is not initialized.";
+                return false;
+            }
+
+            if (!compressedBuffer.IsCreated)
+            {
+                error = "Native compressed save buffer is not initialized.";
                 return false;
             }
 
@@ -5839,180 +6361,165 @@ namespace Hecton8.SaveSystem
             }
 
             rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBuffer);
-            // MMF path: decompression reads directly from the mapped view into the persistent raw payload buffer.
-            AsyncWriteManager.ReadOnlyMapping readMapping = default;
-            try
+            byte* compressedPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compressedBuffer);
+
+            if (!TryReadHeaderPrefixFastFail(absolutePath, out SaveFileHeaderPrefix headerPrefix, out error))
+                return false;
+
+            int headerSizeBytes = ResolveHeaderSize(headerPrefix.Version);
+            if (headerSizeBytes <= 0)
             {
-                if (!AsyncWriteManager.TryOpenReadOnlyMapping(absolutePath, out readMapping, out error))
-                    return false;
-
-                if (readMapping.Length != fileLength)
-                {
-                    error = "Mapped save length changed during payload read.";
-                    return false;
-                }
-
-                byte* filePtr = (byte*)readMapping.View;
-
-                SaveFileHeaderPrefix headerPrefix = UnsafeUtility.ReadArrayElement<SaveFileHeaderPrefix>(filePtr, 0);
-                if (headerPrefix.MagicValue != Magic)
-                {
-                    error = "Save magic mismatch.";
-                    return false;
-                }
-
-                int headerSizeBytes = ResolveHeaderSize(headerPrefix.Version);
-                if (headerSizeBytes <= 0)
-                {
-                    error = $"Unsupported save header version {headerPrefix.Version}.";
-                    return false;
-                }
-
-                if (fileLength < headerSizeBytes)
-                {
-                    error = "Save file is truncated inside the fixed header.";
-                    return false;
-                }
-
-                bool isCurrentHeader = headerPrefix.Version >= First64BitHashVersion;
-                if (isCurrentHeader)
-                {
-                    header = ReadVersionedSaveFileHeader(filePtr, headerPrefix.Version);
-                    ulong computedHeaderHash = ComputeHeaderHash(ref header);
-                    if (computedHeaderHash != header.HashHeader64)
-                    {
-                        error = "Header checksum mismatch.";
-                        return false;
-                    }
-                }
-                else
-                {
-                    LegacySaveFileHeader legacyHeader = UnsafeUtility.ReadArrayElement<LegacySaveFileHeader>(filePtr, 0);
-                    uint computedHeaderHash = Hash32(filePtr, LegacyHeaderHashSizeBytes);
-                    if (computedHeaderHash != legacyHeader.HashHeader32)
-                    {
-                        error = "Header checksum mismatch.";
-                        return false;
-                    }
-
-                    header = ConvertLegacyHeader(in legacyHeader);
-                }
-
-                if (!TryValidateHeader(header, out error))
-                    return false;
-
-                int compressedPayloadLength = (int)readMapping.Length - headerSizeBytes;
-                if (compressedPayloadLength <= 0)
-                {
-                    error = "Save payload is missing.";
-                    return false;
-                }
-
-                if (compressedPayloadLength > MaxCompressedPayloadBytes)
-                {
-                    error = "Compressed save payload exceeds the supported decoder budget.";
-                    return false;
-                }
-
-                rawPayloadLength = Lz4BlockDecompress(
-                    AddByteOffset(filePtr, headerSizeBytes),
-                    compressedPayloadLength,
-                    rawPtr,
-                    rawBuffer.Length,
-                    out _);
-                if (rawPayloadLength <= 0)
-                {
-                    error = "LZ4 block decompression failed.";
-                    return false;
-                }
-
-                if ((header.Flags & FlagTokenSubstitution) != 0)
-                {
-                    if (!TryExpandTokenizedPayloadInPlace(rawPtr, rawPayloadLength, rawBuffer.Length, out rawPayloadLength, out error))
-                        return false;
-                }
-
-                if (rawPayloadLength > RawPayloadCapacityBytes || rawPayloadLength > rawBuffer.Length)
-                {
-                    error = "Decompressed save payload exceeded the decoder budget.";
-                    return false;
-                }
-
-                if (isCurrentHeader)
-                {
-                    ulong computedPayloadHash = Hash64(rawPtr, rawPayloadLength);
-                    if (computedPayloadHash != header.HashPayload64)
-                    {
-                        error = "Payload checksum mismatch.";
-                        return false;
-                    }
-                }
-                else
-                {
-                    uint computedPayloadHash = Hash32(rawPtr, rawPayloadLength);
-                    if (computedPayloadHash != (uint)header.HashPayload64)
-                    {
-                        error = "Payload checksum mismatch.";
-                        return false;
-                    }
-                }
-
-                if (header.Version < SaveDataMigration_AupV8.AupV8Version)
-                {
-                    if (!SaveDataMigration_AupV8.TryMigratePayloadToV8(
-                            rawPtr,
-                            rawPayloadLength,
-                            rawBuffer.Length,
-                            out prefix,
-                            out rawPayloadLength,
-                            out int payloadByteShift,
-                            out error))
-                    {
-                        return false;
-                    }
-
-                    header.DeltaOffset = checked((uint)((int)header.DeltaOffset + payloadByteShift));
-                    header.EntityOffset = checked((uint)((int)header.EntityOffset + payloadByteShift));
-                    header.HashPayload64 = Hash64(rawPtr, rawPayloadLength);
-                }
-                else if (!SaveDataMigration_AupV8.TryReadPayloadPrefix(rawPtr, rawPayloadLength, header.Version, out prefix, out error))
-                {
-                    return false;
-                }
-
-                int metadataBytes = prefix.PrefixSizeBytes + prefix.SceneNameByteLength + prefix.GameVersionByteLength;
-                if (metadataBytes > rawPayloadLength)
-                {
-                    error = "Payload prefix string lengths exceed the decompressed payload length.";
-                    return false;
-                }
-
-                int playerPayloadLength = metadataBytes + checked((int)prefix.SaveDataByteLength);
-                if (playerPayloadLength > rawPayloadLength)
-                {
-                    error = "Serialized save data exceeds the decompressed payload length.";
-                    return false;
-                }
-
-                int payloadBaseOffset = ResolvePayloadBaseOffset(in header);
-                int deltaSectionOffset = checked((int)header.DeltaOffset) - payloadBaseOffset;
-                int entitySectionOffset = checked((int)header.EntityOffset) - payloadBaseOffset;
-                if (deltaSectionOffset < playerPayloadLength || deltaSectionOffset > rawPayloadLength)
-                {
-                    error = "Packed quest-state offset exceeds the decompressed payload bounds.";
-                    return false;
-                }
-
-                if (entitySectionOffset < deltaSectionOffset || entitySectionOffset > rawPayloadLength)
-                {
-                    error = "Entity payload offset exceeds the decompressed payload bounds.";
-                    return false;
-                }
-
+                error = $"Unsupported save header version {headerPrefix.Version}.";
+                return false;
             }
-            finally
+
+            if (fileLength < headerSizeBytes)
             {
-                AsyncWriteManager.CloseReadOnlyMapping(ref readMapping);
+                error = "Save file is truncated inside the fixed header.";
+                return false;
+            }
+
+            byte* headerBytes = stackalloc byte[CurrentHeaderSize];
+            UnsafeUtility.MemClear(headerBytes, CurrentHeaderSize);
+            if (!AsyncWriteManager.TryCopyFromCachedReadWindow(absolutePath, 0L, headerBytes, headerSizeBytes, out error))
+                return false;
+
+            bool isCurrentHeader = headerPrefix.Version >= First64BitHashVersion;
+            if (isCurrentHeader)
+            {
+                header = ReadVersionedSaveFileHeader(headerBytes, headerPrefix.Version);
+                ulong computedHeaderHash = ComputeHeaderHash(ref header);
+                if (computedHeaderHash != header.HashHeader64)
+                {
+                    error = "Header checksum mismatch.";
+                    return false;
+                }
+            }
+            else
+            {
+                LegacySaveFileHeader legacyHeader = UnsafeUtility.ReadArrayElement<LegacySaveFileHeader>(headerBytes, 0);
+                uint computedHeaderHash = Hash32(headerBytes, LegacyHeaderHashSizeBytes);
+                if (computedHeaderHash != legacyHeader.HashHeader32)
+                {
+                    error = "Header checksum mismatch.";
+                    return false;
+                }
+
+                header = ConvertLegacyHeader(in legacyHeader);
+            }
+
+            if (!TryValidateHeader(header, out error))
+                return false;
+
+            int compressedPayloadLength = checked((int)fileLength - headerSizeBytes);
+            if (compressedPayloadLength <= 0)
+            {
+                error = "Save payload is missing.";
+                return false;
+            }
+
+            if (compressedPayloadLength > MaxCompressedPayloadBytes || compressedPayloadLength > compressedBuffer.Length)
+            {
+                error = "Compressed save payload exceeds the supported decoder budget.";
+                return false;
+            }
+
+            if (!AsyncWriteManager.TryCopyFileRangeToNativeArray(absolutePath, headerSizeBytes, compressedBuffer, compressedPayloadLength, out error))
+                return false;
+
+            rawPayloadLength = Lz4BlockDecompress(
+                compressedPtr,
+                compressedPayloadLength,
+                rawPtr,
+                rawBuffer.Length,
+                out _);
+            if (rawPayloadLength <= 0)
+            {
+                error = "LZ4 block decompression failed.";
+                return false;
+            }
+
+            if ((header.Flags & FlagTokenSubstitution) != 0)
+            {
+                if (!TryExpandTokenizedPayloadInPlace(rawPtr, rawPayloadLength, rawBuffer.Length, out rawPayloadLength, out error))
+                    return false;
+            }
+
+            if (rawPayloadLength > RawPayloadCapacityBytes || rawPayloadLength > rawBuffer.Length)
+            {
+                error = "Decompressed save payload exceeded the decoder budget.";
+                return false;
+            }
+
+            if (isCurrentHeader)
+            {
+                ulong computedPayloadHash = Hash64(rawPtr, rawPayloadLength);
+                if (computedPayloadHash != header.HashPayload64)
+                {
+                    error = "Payload checksum mismatch.";
+                    return false;
+                }
+            }
+            else
+            {
+                uint computedPayloadHash = Hash32(rawPtr, rawPayloadLength);
+                if (computedPayloadHash != (uint)header.HashPayload64)
+                {
+                    error = "Payload checksum mismatch.";
+                    return false;
+                }
+            }
+
+            if (header.Version < SaveDataMigration_AupV8.AupV8Version)
+            {
+                if (!SaveDataMigration_AupV8.TryMigratePayloadToV8(
+                        rawPtr,
+                        rawPayloadLength,
+                        rawBuffer.Length,
+                        out prefix,
+                        out rawPayloadLength,
+                        out int payloadByteShift,
+                        out error))
+                {
+                    return false;
+                }
+
+                header.DeltaOffset = checked((uint)((int)header.DeltaOffset + payloadByteShift));
+                header.EntityOffset = checked((uint)((int)header.EntityOffset + payloadByteShift));
+                header.HashPayload64 = Hash64(rawPtr, rawPayloadLength);
+            }
+            else if (!SaveDataMigration_AupV8.TryReadPayloadPrefix(rawPtr, rawPayloadLength, header.Version, out prefix, out error))
+            {
+                return false;
+            }
+
+            int metadataBytes = prefix.PrefixSizeBytes + prefix.SceneNameByteLength + prefix.GameVersionByteLength;
+            if (metadataBytes > rawPayloadLength)
+            {
+                error = "Payload prefix string lengths exceed the decompressed payload length.";
+                return false;
+            }
+
+            int playerPayloadLength = metadataBytes + checked((int)prefix.SaveDataByteLength);
+            if (playerPayloadLength > rawPayloadLength)
+            {
+                error = "Serialized save data exceeds the decompressed payload length.";
+                return false;
+            }
+
+            int payloadBaseOffset = ResolvePayloadBaseOffset(in header);
+            int deltaSectionOffset = checked((int)header.DeltaOffset) - payloadBaseOffset;
+            int entitySectionOffset = checked((int)header.EntityOffset) - payloadBaseOffset;
+            if (deltaSectionOffset < playerPayloadLength || deltaSectionOffset > rawPayloadLength)
+            {
+                error = "Packed quest-state offset exceeds the decompressed payload bounds.";
+                return false;
+            }
+
+            if (entitySectionOffset < deltaSectionOffset || entitySectionOffset > rawPayloadLength)
+            {
+                error = "Entity payload offset exceeds the decompressed payload bounds.";
+                return false;
             }
 
             return true;
@@ -7338,7 +7845,9 @@ namespace Hecton8.SaveSystem
                 if (sourceOffset + blockHeaderBytes > compressedLength)
                     return 0;
 
-                int blockCompressedLength = UnsafeUtility.ReadArrayElement<int>(source + sourceOffset, 0);
+                int encodedBlockCompressedLength = UnsafeUtility.ReadArrayElement<int>(source + sourceOffset, 0);
+                int blockCompressedLength = DecodeCompressedBlockLength(encodedBlockCompressedLength);
+                bool isManagedDeflateBlock = IsManagedDeflateBlock(encodedBlockCompressedLength);
                 int blockRawLength = UnsafeUtility.ReadArrayElement<int>(source + sourceOffset + 4, 0);
                 if (blockCompressedLength <= 0 || blockRawLength <= 0)
                     return 0;
@@ -7353,8 +7862,13 @@ namespace Hecton8.SaveSystem
                 if (destinationOffset + blockRawLength > destinationCapacity)
                     return 0;
 
-                int actualLength = LZ4Decompress(source + sourceOffset, destination + destinationOffset, blockCompressedLength, blockRawLength);
-                if (actualLength != blockRawLength)
+                if (!TryDecompressBlock(
+                        source + sourceOffset,
+                        blockCompressedLength,
+                        destination + destinationOffset,
+                        blockRawLength,
+                        isManagedDeflateBlock,
+                        out _))
                     return 0;
 
                 sourceOffset += blockCompressedLength;
@@ -7365,6 +7879,207 @@ namespace Hecton8.SaveSystem
                 return 0;
 
             return destinationOffset;
+        }
+
+        private static bool TryCompressBlock(
+            byte* source,
+            int sourceLength,
+            byte* destination,
+            int destinationCapacity,
+            out int compressedLength,
+            out bool usedManagedFallback)
+        {
+            compressedLength = 0;
+            usedManagedFallback = false;
+            if (source == null || destination == null || sourceLength <= 0 || destinationCapacity <= 0)
+                return false;
+
+            if (HectonNativeBridge.IsAvailable(HectonNativeLibrary.Lz4))
+            {
+                try
+                {
+                    compressedLength = LZ4Compress(source, destination, sourceLength, destinationCapacity);
+                    if (compressedLength > 0)
+                        return true;
+                }
+                catch (Exception exception)
+                {
+                    if (HectonNativeBridge.IsNativeLoadFailure(exception))
+                        HectonNativeBridge.MarkUnavailableFromException(HectonNativeLibrary.Lz4, exception);
+                    else
+                        throw;
+                }
+            }
+
+            compressedLength = DeflateBlockCompressManaged(source, sourceLength, destination, destinationCapacity);
+            usedManagedFallback = compressedLength > 0;
+            return compressedLength > 0;
+        }
+
+        private static bool TryCompressBlockNativeOnly(
+            byte* source,
+            int sourceLength,
+            byte* destination,
+            int destinationCapacity,
+            out int compressedLength)
+        {
+            compressedLength = 0;
+            if (source == null || destination == null || sourceLength <= 0 || destinationCapacity <= 0)
+                return false;
+
+            if (!HectonNativeBridge.IsAvailable(HectonNativeLibrary.Lz4))
+                return false;
+
+            compressedLength = LZ4Compress(source, destination, sourceLength, destinationCapacity);
+            return compressedLength > 0;
+        }
+
+        private static bool TryDecompressBlock(
+            byte* source,
+            int compressedLength,
+            byte* destination,
+            int rawLength,
+            bool forceManagedDeflate,
+            out int actualLength)
+        {
+            actualLength = 0;
+            if (source == null || destination == null || compressedLength <= 0 || rawLength <= 0)
+                return false;
+
+            if (!forceManagedDeflate && HectonNativeBridge.IsAvailable(HectonNativeLibrary.Lz4))
+            {
+                try
+                {
+                    actualLength = LZ4Decompress(source, destination, compressedLength, rawLength);
+                    if (actualLength == rawLength)
+                        return true;
+                }
+                catch (Exception exception)
+                {
+                    if (HectonNativeBridge.IsNativeLoadFailure(exception))
+                        HectonNativeBridge.MarkUnavailableFromException(HectonNativeLibrary.Lz4, exception);
+                    else
+                        throw;
+                }
+            }
+
+            actualLength = DeflateBlockDecompressManaged(source, compressedLength, destination, rawLength);
+            return actualLength == rawLength;
+        }
+
+        private static int EncodeCompressedBlockLength(int compressedLength, bool usedManagedFallback)
+        {
+            if (compressedLength <= 0 || compressedLength > CompressedBlockLengthMask)
+                return 0;
+
+            return usedManagedFallback
+                ? compressedLength | ManagedDeflateBlockLengthFlag
+                : compressedLength;
+        }
+
+        private static int DecodeCompressedBlockLength(int encodedCompressedLength)
+        {
+            return encodedCompressedLength & CompressedBlockLengthMask;
+        }
+
+        private static bool IsManagedDeflateBlock(int encodedCompressedLength)
+        {
+            return (encodedCompressedLength & ManagedDeflateBlockLengthFlag) != 0;
+        }
+
+        private static int DeflateBlockCompressManaged(
+            byte* source,
+            int sourceLength,
+            byte* destination,
+            int destinationCapacity)
+        {
+            try
+            {
+                lock (s_managedCompressionLock)
+                {
+                    using (UnmanagedMemoryStream input = new UnmanagedMemoryStream(source, sourceLength))
+                    using (UnmanagedMemoryStream output = new UnmanagedMemoryStream(destination, destinationCapacity, destinationCapacity, FileAccess.Write))
+                    {
+                        using (DeflateStream deflate = new DeflateStream(output, System.IO.Compression.CompressionLevel.Fastest, true))
+                        {
+                            CopyStreamWithManagedCompressionScratch(input, deflate);
+                        }
+
+                        long written = output.Position;
+                        return written > 0L && written <= destinationCapacity ? (int)written : 0;
+                    }
+                }
+            }
+            catch (InvalidDataException)
+            {
+                return 0;
+            }
+            catch (IOException)
+            {
+                return 0;
+            }
+            catch (ArgumentException)
+            {
+                return 0;
+            }
+            catch (NotSupportedException)
+            {
+                return 0;
+            }
+            catch (ObjectDisposedException)
+            {
+                return 0;
+            }
+        }
+
+        private static int DeflateBlockDecompressManaged(
+            byte* source,
+            int compressedLength,
+            byte* destination,
+            int rawLength)
+        {
+            try
+            {
+                lock (s_managedCompressionLock)
+                {
+                    using (UnmanagedMemoryStream input = new UnmanagedMemoryStream(source, compressedLength))
+                    using (DeflateStream inflate = new DeflateStream(input, CompressionMode.Decompress, true))
+                    using (UnmanagedMemoryStream output = new UnmanagedMemoryStream(destination, rawLength, rawLength, FileAccess.Write))
+                    {
+                        CopyStreamWithManagedCompressionScratch(inflate, output);
+                        long written = output.Position;
+                        return written == rawLength ? (int)written : 0;
+                    }
+                }
+            }
+            catch (InvalidDataException)
+            {
+                return 0;
+            }
+            catch (IOException)
+            {
+                return 0;
+            }
+            catch (ArgumentException)
+            {
+                return 0;
+            }
+            catch (NotSupportedException)
+            {
+                return 0;
+            }
+            catch (ObjectDisposedException)
+            {
+                return 0;
+            }
+        }
+
+        private static void CopyStreamWithManagedCompressionScratch(Stream source, Stream destination)
+        {
+            byte[] scratch = s_managedCompressionScratch;
+            int bytesRead;
+            while ((bytesRead = source.Read(scratch, 0, scratch.Length)) > 0)
+                destination.Write(scratch, 0, bytesRead);
         }
 
         [DllImport(Lz4DllName, EntryPoint = "LZ4_compress_default")]

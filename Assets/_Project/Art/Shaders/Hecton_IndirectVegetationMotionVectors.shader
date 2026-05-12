@@ -73,6 +73,7 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
 
             StructuredBuffer<float4x4> _HectonInstanceMatrices;
             StructuredBuffer<HectonVegetationInstanceGpuData> _HectonVegetationInstanceData;
+            StructuredBuffer<float> _HectonFloraAges01;
             StructuredBuffer<uint> _HectonVisibleInstanceIndices;
             StructuredBuffer<float2> _MarineSnowFlowField;
             float4 _ChunkWorldOffset;
@@ -451,12 +452,27 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 return float2(agitated, dying);
             }
 
-            float ResolveGrowth01(float encodedGrowth01)
+            float ResolveMetadataGrowth01(float encodedGrowth01)
             {
+                if (encodedGrowth01 < 0.0)
+                    return -1.0;
+
                 return encodedGrowth01 > 0.0001 ? saturate(encodedGrowth01) : 1.0;
             }
 
-            float3 AnimatePositionWS(float3 localPosition, float3 normalOS, float2 uv, float4x4 instanceMatrix, HectonVegetationInstanceGpuData instanceData, float timeValue, float3 cameraPositionWS)
+            float ResolveGrowth01(uint sourceInstanceIndex, float encodedGrowth01)
+            {
+                float soaAge01 = _HectonFloraAges01[sourceInstanceIndex];
+                if (soaAge01 < 0.0)
+                    return -1.0;
+
+                if (soaAge01 > 0.0001 || encodedGrowth01 <= 0.0001)
+                    return saturate(soaAge01);
+
+                return ResolveMetadataGrowth01(encodedGrowth01);
+            }
+
+            float3 AnimatePositionWS(float3 localPosition, float3 normalOS, float2 uv, float4x4 instanceMatrix, HectonVegetationInstanceGpuData instanceData, uint sourceInstanceIndex, float timeValue, float3 cameraPositionWS)
             {
                 float3 originWS = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0)) + _GlobalFloatingOffset.xyz;
                 float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
@@ -475,7 +491,9 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 float instanceHeight;
                 float instanceWidth;
                 ResolveInstanceShape(instanceType, heightScale, widthScale, instanceHeight, instanceWidth);
-                instanceHeight *= ResolveGrowth01(instanceData.Reserved0);
+                float growthHeightScale = saturate(ResolveGrowth01(sourceInstanceIndex, instanceData.Reserved0));
+                float growthWidthScale = sqrt(max(growthHeightScale, 0.0));
+                instanceHeight *= growthHeightScale;
 
                 if (instanceType < 0.5)
                 {
@@ -493,6 +511,7 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                     localPosition.x *= instanceWidth * lerp(1.0, 0.30, heightMask);
                 }
 
+                localPosition.xz *= growthWidthScale;
                 float3 baseNormalWS = TransformDirection(instanceMatrix, normalOS);
                 float3 driftOffsetWS = instanceType > 1.5 ? _SargassumGlobalDriftOffset.xyz : float3(0.0, 0.0, 0.0);
                 float3 basePositionWS = TransformPoint(instanceMatrix, localPosition) + driftOffsetWS + _GlobalFloatingOffset.xyz;
@@ -566,9 +585,9 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 float4x4 instanceMatrix = _HectonInstanceMatrices[sourceInstanceIndex];
                 HectonVegetationInstanceGpuData instanceData = _HectonVegetationInstanceData[sourceInstanceIndex];
 
-                float3 currentPositionWS = AnimatePositionWS(input.positionOS.xyz, input.normalOS, input.uv, instanceMatrix, instanceData, _Time.y, _WorldSpaceCameraPos);
+                float3 currentPositionWS = AnimatePositionWS(input.positionOS.xyz, input.normalOS, input.uv, instanceMatrix, instanceData, sourceInstanceIndex, _Time.y, _WorldSpaceCameraPos);
                 float previousTime = _Time.y - unity_DeltaTime.x;
-                float3 previousPositionWS = AnimatePositionWS(input.positionOS.xyz, input.normalOS, input.uv, instanceMatrix, instanceData, previousTime, _HectonPreviousCameraPosition);
+                float3 previousPositionWS = AnimatePositionWS(input.positionOS.xyz, input.normalOS, input.uv, instanceMatrix, instanceData, sourceInstanceIndex, previousTime, _HectonPreviousCameraPosition);
                 output.positionWS = currentPositionWS;
                 output.vegetationData = float2(clamp(round(instanceData.Type), 0.0, 2.0), saturate(input.uv.y));
 

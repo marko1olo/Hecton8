@@ -18,14 +18,17 @@ StructuredBuffer<float3> _GpuBuoyancyPositions;
 StructuredBuffer<GpuBuoyancyObjectData> _GpuBuoyancyObjectData;
 RWStructuredBuffer<float4> _GpuBuoyancyResults;
 
-int _GpuBuoyancyObjectCount;
-float4 _GpuBuoyancyWaterParams;
-float4 _GpuBuoyancyWave0A;
-float4 _GpuBuoyancyWave0B;
-float4 _GpuBuoyancyWave1A;
-float4 _GpuBuoyancyWave1B;
-float4 _GpuBuoyancyWave2A;
-float4 _GpuBuoyancyWave2B;
+cbuffer HectonGpuBuoyancyConstants
+{
+    int _GpuBuoyancyObjectCount;
+    float4 _GpuBuoyancyWaterParams;
+    float4 _GpuBuoyancyWave0A;
+    float4 _GpuBuoyancyWave0B;
+    float4 _GpuBuoyancyWave1A;
+    float4 _GpuBuoyancyWave1B;
+    float4 _GpuBuoyancyWave2A;
+    float4 _GpuBuoyancyWave2B;
+};
 
 static const float TwoPi = 6.28318530718;
 static const float CinematicPhaseSpeedBase = 0.85;
@@ -112,7 +115,7 @@ void EvaluateBuoyancy(uint3 dispatchThreadId : SV_DispatchThreadID)
     float timeSeconds = _GpuBuoyancyWaterParams.w;
     float baseDepth = _GpuBuoyancyWaterParams.x - positionWS.y;
     float maxWaveEnvelope = abs(_GpuBuoyancyWave0A.z) + abs(_GpuBuoyancyWave1A.z) + abs(_GpuBuoyancyWave2A.z);
-    if (baseDepth > max(objectData.Height, 0.01) + maxWaveEnvelope + 0.5)
+    if (baseDepth > max(objectData.Height, 0.01) + maxWaveEnvelope + 5.0)
     {
         float buoyancyForceY = _GpuBuoyancyWaterParams.y * objectData.Volume * _GpuBuoyancyWaterParams.z;
         _GpuBuoyancyResults[instanceIndex] = float4(0.0, buoyancyForceY, 0.0, 0.0);

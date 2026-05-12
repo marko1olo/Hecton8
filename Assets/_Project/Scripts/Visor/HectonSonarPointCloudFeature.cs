@@ -197,7 +197,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(historyReadTexture, AccessFlags.Read);
                     builder.UseTexture(historyWriteTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
                     builder.SetGlobalTextureAfterPass(historyWriteTexture, ShaderConstants.HistoryTextureId);
                     builder.SetGlobalTextureAfterPass(historyWriteTexture, ShaderConstants.PointCloudTextureId);
 
@@ -224,7 +223,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(worldHistoryReadTexture, AccessFlags.Read);
                     builder.UseTexture(worldHistoryWriteTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
                     builder.SetGlobalTextureAfterPass(worldHistoryWriteTexture, ShaderConstants.WorldHistoryTextureId);
                     builder.SetGlobalTextureAfterPass(worldHistoryWriteTexture, ShaderConstants.WorldPointCloudTextureId);
 
@@ -251,7 +249,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(historyWriteTexture, AccessFlags.Read);
                     builder.UseTexture(worldHistoryWriteTexture, AccessFlags.Read);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
-                    builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
                     {

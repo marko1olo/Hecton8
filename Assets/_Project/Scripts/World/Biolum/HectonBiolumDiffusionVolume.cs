@@ -16,6 +16,17 @@ namespace Hecton8.Biolum
         private const int DefaultResolution = 64;
         private const int ThreadGroupSize = 4;
         private const int MaxTrackedZones = 32;
+        private const int MaxGlowShaderPoints = 16;
+        private const float GlowPositionHashScale = 20f;
+        private const float GlowRangeHashScale = 16f;
+        private const float GlowColorHashScale = 255f;
+        private const float GlowIntensityHashScale = 128f;
+        private const float GlowPointSonarPulseGain = 2.5f;
+        private const float HashClampMin = -2147483000f;
+        private const float HashClampMax = 2147483000f;
+        private const uint FnvOffsetBasis = 2166136261u;
+        private const uint FnvPrime = 16777619u;
+        private const int GlowPointInvalidNumberHash = unchecked((int)0x474C4F57); // "GLOW"
         private static readonly int _VolumeOutputId = Shader.PropertyToID("_HectonBiolumVolumeOutput");
         private static readonly int _VolumeInputId = Shader.PropertyToID("_HectonBiolumVolumeInput");
         private static readonly int _PointBufferId = Shader.PropertyToID("_HectonBiolumPoints");
@@ -27,6 +38,9 @@ namespace Hecton8.Biolum
         private static readonly int _TexelSizeId = Shader.PropertyToID("_HectonBiolumVolumeTexelSize");
         private static readonly int _GlobalTextureId = Shader.PropertyToID("_HectonBiolumVolumeTex");
         private static readonly int _GlobalActiveId = Shader.PropertyToID("_HectonBiolumVolumeActive");
+        private static readonly int _GlowPointPositionRangeId = Shader.PropertyToID("_HectonGlowPointPositionRange");
+        private static readonly int _GlowPointColorIntensityId = Shader.PropertyToID("_HectonGlowPointColorIntensity");
+        private static readonly int _GlowPointParamsId = Shader.PropertyToID("_HectonGlowPointParams");
 
         private struct BiolumPointGpuData
         {
@@ -88,10 +102,19 @@ namespace Hecton8.Biolum
         private Transform _playerTransform;
         private HectonBiolumManager _biolumManager;
         private Vector3 _lastVolumeCenter;
+        private int _lastUploadedPointCount = -1;
+        private int _lastPublishedGlowCount = -1;
+        private int _lastInvalidGlowTelemetryFrame = -1;
+        private uint _pendingPointUploadHash;
+        private uint _lastUploadedPointHash;
+        private uint _pendingGlowHash;
+        private uint _lastPublishedGlowHash;
         private RenderTexture _volumeA;
         private RenderTexture _volumeB;
         private GraphicsBuffer _pointBuffer;
         private readonly BiolumPointGpuData[] _pointUpload = new BiolumPointGpuData[MaxTrackedZones]; // COLD ALLOC: BiolumPointGpuData[32] — persistent GPU upload staging for biolum diffusion emitters — owner: HectonBiolumDiffusionVolume
+        private readonly Vector4[] _glowPointPositionRangeUpload = new Vector4[MaxGlowShaderPoints]; // COLD ALLOC: Vector4[16] - shader-global glow point positions/ranges - owner: HectonBiolumDiffusionVolume
+        private readonly Vector4[] _glowPointColorIntensityUpload = new Vector4[MaxGlowShaderPoints]; // COLD ALLOC: Vector4[16] - shader-global glow point colors/intensities - owner: HectonBiolumDiffusionVolume
         private readonly HectonBiolumZone[] _nearbyZones = new HectonBiolumZone[MaxTrackedZones]; // COLD ALLOC: HectonBiolumZone[32] — nearby biolum zone cache for diffusion volume injection — owner: HectonBiolumDiffusionVolume
         private readonly float[] _nearbyZoneWeights = new float[MaxTrackedZones]; // COLD ALLOC: float[32] — zone-weight scratch paired with nearby biolum zone cache — owner: HectonBiolumDiffusionVolume
 
@@ -117,6 +140,7 @@ namespace Hecton8.Biolum
             TryUnregister();
             ReleaseResources();
             Shader.SetGlobalFloat(_GlobalActiveId, 0f);
+            PublishGlowPointGlobals(0, force: true);
         }
 
         private void OnDestroy()
@@ -124,6 +148,7 @@ namespace Hecton8.Biolum
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
             ReleaseResources();
+            PublishGlowPointGlobals(0, force: true);
         }
 
         /// <inheritdoc />
@@ -137,6 +162,7 @@ namespace Hecton8.Biolum
             _lastVolumeCenter = default;
             _debugPointCount = 0;
             Shader.SetGlobalFloat(_GlobalActiveId, 0f);
+            PublishGlowPointGlobals(0, force: true);
         }
 
         /// <summary>
@@ -152,6 +178,7 @@ namespace Hecton8.Biolum
             if (_playerTransform == null || _biolumManager == null || _volumeA == null || _volumeB == null || _pointBuffer == null)
             {
                 Shader.SetGlobalFloat(_GlobalActiveId, 0f);
+                PublishGlowPointGlobals(0, force: true);
                 return;
             }
 
@@ -160,6 +187,7 @@ namespace Hecton8.Biolum
 
             int pointCount = CollectNearbyPoints(volumeCenter);
             _debugPointCount = pointCount;
+            PublishGlowPointGlobals(pointCount);
 
             float worldTexelSize = volumeWorldSize / math.max(1, volumeResolution);
             Vector3 centerOffset = _hasLastVolumeCenter ? volumeCenter - _lastVolumeCenter : Vector3.zero;
@@ -200,7 +228,7 @@ namespace Hecton8.Biolum
                 _needsClear = false;
             }
 
-            if (pointCount > 0)
+            if (pointCount > 0 && ShouldUploadPointBuffer(pointCount))
                 GraphicsBufferUploadUtility.UploadArray(_pointBuffer, _pointUpload, pointCount);
 
             BindSharedParameters(_diffuseKernel, halfExtents, worldToLocal, volumeParams, cascadeParams, texelSize, pointCount);
@@ -291,28 +319,142 @@ namespace Hecton8.Biolum
         private int CollectNearbyPoints(Vector3 volumeCenter)
         {
             if (_biolumManager == null)
+            {
+                _pendingPointUploadHash = 0u;
+                _pendingGlowHash = 0u;
                 return 0;
+            }
 
             int count = _biolumManager.CopyNearbyZonesNonAlloc(volumeCenter, zoneGatherRadius, _nearbyZones, _nearbyZoneWeights, includeOcean: true, includeFloor: true);
             int safeCount = math.min(count, MaxTrackedZones);
+            int writeCount = 0;
+            uint pointHash = FnvOffsetBasis;
+            uint glowHash = FnvOffsetBasis;
             for (int i = 0; i < safeCount; i++)
             {
                 HectonBiolumZone zone = _nearbyZones[i];
                 if (zone == null)
                     continue;
 
-                Color zoneColor = zone.SampleZoneColor().linear;
-                float zoneIntensity = math.max(0f, zone.SampleZoneIntensity());
-                float zoneRange = math.max(0.5f, zone.SampleZoneRange());
-                float weight = math.max(0f, _nearbyZoneWeights[i]);
-                _pointUpload[i] = new BiolumPointGpuData
+                Vector3 zonePosition = zone.GetZonePosition();
+                if (!MathGuard.IsFinite(zonePosition))
                 {
-                    PositionRange = new Vector4(zone.GetZonePosition().x, zone.GetZonePosition().y, zone.GetZonePosition().z, zoneRange),
-                    ColorIntensity = new Vector4(zoneColor.r, zoneColor.g, zoneColor.b, zoneIntensity * weight)
+                    ReportInvalidGlowInput();
+                    continue;
+                }
+
+                Color zoneColor = zone.SampleZoneColor().linear;
+                float zoneIntensity = SanitizeGlowNonNegative(zone.SampleZoneIntensity());
+                float zoneRange = math.max(0.5f, SanitizeGlowNonNegative(zone.SampleZoneRange(), 0.5f));
+                float weight = SanitizeGlowNonNegative(_nearbyZoneWeights[i]);
+                float weightedIntensity = zoneIntensity * weight;
+                Vector4 positionRange = new Vector4(zonePosition.x, zonePosition.y, zonePosition.z, zoneRange);
+                Vector4 colorIntensity = new Vector4(
+                    SanitizeGlowNonNegative(zoneColor.r),
+                    SanitizeGlowNonNegative(zoneColor.g),
+                    SanitizeGlowNonNegative(zoneColor.b),
+                    weightedIntensity);
+
+                _pointUpload[writeCount] = new BiolumPointGpuData
+                {
+                    PositionRange = positionRange,
+                    ColorIntensity = colorIntensity
                 };
+                pointHash = MixGlowPointHash(pointHash, positionRange, colorIntensity);
+
+                if (writeCount < MaxGlowShaderPoints)
+                {
+                    _glowPointPositionRangeUpload[writeCount] = positionRange;
+                    _glowPointColorIntensityUpload[writeCount] = colorIntensity;
+                    glowHash = MixGlowPointHash(glowHash, positionRange, colorIntensity);
+                }
+
+                writeCount++;
             }
 
-            return safeCount;
+            _pendingPointUploadHash = writeCount > 0 ? pointHash : 0u;
+            _pendingGlowHash = writeCount > 0 ? glowHash : 0u;
+            return writeCount;
+        }
+
+        private bool ShouldUploadPointBuffer(int pointCount)
+        {
+            int safeCount = math.min(math.max(pointCount, 0), MaxTrackedZones);
+            uint pointHash = safeCount > 0 ? _pendingPointUploadHash : 0u;
+            if (_lastUploadedPointCount == safeCount && _lastUploadedPointHash == pointHash)
+                return false;
+
+            _lastUploadedPointCount = safeCount;
+            _lastUploadedPointHash = pointHash;
+            return safeCount > 0;
+        }
+
+        private void PublishGlowPointGlobals(int pointCount, bool force = false)
+        {
+            int glowCount = Mathf.Clamp(pointCount, 0, MaxGlowShaderPoints);
+            uint glowHash = glowCount > 0 ? _pendingGlowHash : 0u;
+            if (!force && _lastPublishedGlowCount == glowCount && _lastPublishedGlowHash == glowHash)
+                return;
+
+            if (glowCount > 0 && (force || _lastPublishedGlowHash != glowHash))
+            {
+                Shader.SetGlobalVectorArray(_GlowPointPositionRangeId, _glowPointPositionRangeUpload);
+                Shader.SetGlobalVectorArray(_GlowPointColorIntensityId, _glowPointColorIntensityUpload);
+            }
+
+            Shader.SetGlobalVector(_GlowPointParamsId, new Vector4(glowCount, GlowPointSonarPulseGain, 0f, 0f));
+            _lastPublishedGlowCount = glowCount;
+            _lastPublishedGlowHash = glowHash;
+        }
+
+        private void ReportInvalidGlowInput()
+        {
+            int frame = Time.frameCount;
+            if (_lastInvalidGlowTelemetryFrame == frame)
+                return;
+
+            _lastInvalidGlowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishMathGuardInvalidNumber(GlowPointInvalidNumberHash);
+        }
+
+        private float SanitizeGlowNonNegative(float value, float fallback = 0f)
+        {
+            if (math.isfinite(value))
+                return math.max(0f, value);
+
+            ReportInvalidGlowInput();
+            return math.max(0f, fallback);
+        }
+
+        private static uint MixGlowPointHash(uint hash, Vector4 positionRange, Vector4 colorIntensity)
+        {
+            hash = MixHash(hash, QuantizeHashComponent(positionRange.x, GlowPositionHashScale));
+            hash = MixHash(hash, QuantizeHashComponent(positionRange.y, GlowPositionHashScale));
+            hash = MixHash(hash, QuantizeHashComponent(positionRange.z, GlowPositionHashScale));
+            hash = MixHash(hash, QuantizeHashComponent(positionRange.w, GlowRangeHashScale));
+            hash = MixHash(hash, QuantizeHashComponent(colorIntensity.x, GlowColorHashScale));
+            hash = MixHash(hash, QuantizeHashComponent(colorIntensity.y, GlowColorHashScale));
+            hash = MixHash(hash, QuantizeHashComponent(colorIntensity.z, GlowColorHashScale));
+            hash = MixHash(hash, QuantizeHashComponent(colorIntensity.w, GlowIntensityHashScale));
+            return hash;
+        }
+
+        private static int QuantizeHashComponent(float value, float scale)
+        {
+            if (!math.isfinite(value))
+                return 0;
+
+            float scaled = math.clamp(value * scale, HashClampMin, HashClampMax);
+            return (int)math.round(scaled);
+        }
+
+        private static uint MixHash(uint hash, int value)
+        {
+            unchecked
+            {
+                hash ^= (uint)value;
+                return hash * FnvPrime;
+            }
         }
 
         private void BindSharedParameters(
@@ -383,6 +525,8 @@ namespace Hecton8.Biolum
                 _pointBuffer = null;
             }
 
+            _lastUploadedPointCount = -1;
+            _lastUploadedPointHash = 0u;
             _hasLastVolumeCenter = false;
             _lastVolumeCenter = default;
         }

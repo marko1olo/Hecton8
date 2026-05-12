@@ -206,19 +206,43 @@ namespace Hecton8.Crafting
                 !complexRawCostCount.IsCreated ||
                 complexRawCostCount.Length == 0 ||
                 !complexGraphStatus.IsCreated ||
-                complexGraphStatus.Length == 0 ||
-                !inventory.TryCopyAvailableItemCountsNonAlloc(availableItemCounts, out _, out ulong localAvailableResourceMask))
+                complexGraphStatus.Length == 0)
             {
                 return false;
             }
 
             int safeMultiplier = math.max(1, recipeMultiplier);
-            if (!TryBuildRecipeCostBuffer(recipe, fabricator, recipeCosts, out int recipeCostCount, safeMultiplier))
+            ulong recipeResourceMask = recipe.RecipeMask;
+            bool recipeCostsBuilt = false;
+            int recipeCostCount = 0;
+
+            if (recipeResourceMask == 0UL)
+            {
+                if (!TryBuildRecipeCostBuffer(recipe, fabricator, recipeCosts, out recipeCostCount, safeMultiplier))
+                    return false;
+
+                recipeResourceMask = BuildRecipeResourceMask(recipeCosts, recipeCostCount);
+                recipeCostsBuilt = true;
+            }
+
+            if (!InventorySoAUtility.CanCraftFast(inventory.CurrentInventoryMask, recipeResourceMask) &&
+                fabricator.CurrentPowerGrid == null)
+            {
+                return false;
+            }
+
+            if (!recipeCostsBuilt &&
+                !TryBuildRecipeCostBuffer(recipe, fabricator, recipeCosts, out recipeCostCount, safeMultiplier))
+            {
+                return false;
+            }
+
+            if (!inventory.TryCopyAvailableItemCountsNonAlloc(availableItemCounts, out _, out ulong localAvailableResourceMask))
                 return false;
 
             ulong availableResourceMask = localAvailableResourceMask;
             MergeAccessibleNetworkCounts(fabricator, availableItemCounts, recipeCosts, recipeCostCount, ref availableResourceMask);
-            ulong recipeResourceMask = BuildRecipeResourceMask(recipeCosts, recipeCostCount);
+            recipeResourceMask = recipeResourceMask != 0UL ? recipeResourceMask : BuildRecipeResourceMask(recipeCosts, recipeCostCount);
 
             if ((availableResourceMask & recipeResourceMask) != recipeResourceMask)
             {
@@ -615,8 +639,7 @@ namespace Hecton8.Crafting
                 if (itemHashId == 0 || quantity <= 0)
                     continue;
 
-                ulong resourceBit = 1UL << ResolveResourceMaskBit(itemHashId);
-                recipeMask |= resourceBit;
+                recipeMask |= InventoryMaterialMask.ResolveBit(itemHashId);
             }
 
             return recipeMask;
@@ -624,7 +647,7 @@ namespace Hecton8.Crafting
 
         private static int ResolveResourceMaskBit(int itemHashId)
         {
-            return itemHashId & 63;
+            return InventoryMaterialMask.ResolveBitIndex(itemHashId);
         }
 
         private static void MergeAccessibleNetworkCounts(
@@ -648,7 +671,7 @@ namespace Hecton8.Crafting
                 if (networkCount <= 0)
                     continue;
 
-                availableResourceMask |= 1UL << ResolveResourceMaskBit(cost.x);
+                availableResourceMask |= InventoryMaterialMask.ResolveBit(cost.x);
 
                 if (availableItemCounts.TryGetValue(cost.x, out int localCount))
                     availableItemCounts[cost.x] = localCount + networkCount;

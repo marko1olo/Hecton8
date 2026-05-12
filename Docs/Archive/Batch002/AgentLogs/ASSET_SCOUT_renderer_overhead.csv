@@ -1,0 +1,4 @@
+PrefabPath,ObjectPath,RendererType,Flags
+"Assets/Feel/MMFeedbacks/MMFeedbacks/MMFloatingText/Prefabs/MMFloatingText.prefab","MMFloatingText/MovingContainer/Billboard/TextMesh","MeshRenderer","MESH_RENDERER_WITHOUT_MESHFILTER"
+"Assets/Feel/MMFeedbacks/MMFeedbacks/MMFloatingText/Prefabs/MMFloatingTextPixel.prefab","MMFloatingTextPixel/MovingContainer/Billboard/TextMesh","MeshRenderer","MESH_RENDERER_WITHOUT_MESHFILTER"
+"Assets/Feel/MMFeedbacks/MMFeedbacksForThirdParty/TextMeshPro/MMFloatingText/Prefabs/MMFloatingTextMeshPro.prefab","MMFloatingTextMeshPro/MovingContainer/Billboard/Text (TMP)","MeshRenderer","MESH_RENDERER_WITHOUT_MESHFILTER"

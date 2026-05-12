@@ -511,6 +511,7 @@ namespace Hecton8.Core
         private static RuntimePerformanceProfiler _runtimePerformanceProfilerRuntime;
         private static ConnectionSplineBatchRenderer _connectionSplineBatchRendererRuntime;
         private static HectonHardwareProfile _hardwareProfile;
+        private static int _scalabilityTierOverride = -1;
         private static bool _hasHardwareProfile;
         private static bool _dispatcherRegistrationErrorLogged;
         private static bool _inputFallbackWarningPublished;
@@ -536,6 +537,21 @@ namespace Hecton8.Core
                 ResolveBootstrapRegistryBridgeService,
                 RegisterBootstrapRegistryBridgeService,
                 UnregisterBootstrapRegistryBridgeService);
+            PlatformIntegrationBridge.Configure(
+                ResolveCurrentScalabilityTierProfileByte,
+                RegisterScalabilityTierOverride,
+                PublishScalabilityChangedEvent);
+        }
+
+        private static byte ResolveCurrentScalabilityTierProfileByte()
+        {
+            return ScalabilityTierProfileByte;
+        }
+
+        private static void PublishScalabilityChangedEvent(byte previousTier, byte currentTier)
+        {
+            ScalabilityChangedEvent payload = new ScalabilityChangedEvent(previousTier, currentTier);
+            ScalabilityEvents.Raise(in payload);
         }
 
         private static object ResolveBootstrapRegistryBridgeService(BootstrapRegistryBridgeSlot slot)
@@ -1582,9 +1598,23 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// System-steward scalability tier alias resolved from the BIOS hardware profile.
+        /// System-steward scalability tier resolved from the persisted override when present, otherwise the BIOS hardware profile.
         /// </summary>
-        public static HectonQualityTier ScalabilityTier => QualityTier;
+        public static HectonQualityTier ScalabilityTier
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                int overrideTier = Volatile.Read(ref _scalabilityTierOverride);
+                return overrideTier >= 0 ? (HectonQualityTier)overrideTier : QualityTier;
+            }
+        }
+
+        /// <summary>
+        /// Persisted two-tier scalability profile byte: 0 = Low/MX350, 1 = High/RTX.
+        /// </summary>
+        public static byte ScalabilityTierProfileByte =>
+            ScalabilityTierRuntime.FromQualityTier(ScalabilityTier);
 
         /// <summary>
         /// Count of persistent native allocations registered with the memory sentinel.
@@ -1875,6 +1905,7 @@ namespace Hecton8.Core
             _runtimePerformanceProfilerRuntime = null;
             _connectionSplineBatchRendererRuntime = null;
             _hardwareProfile = default;
+            _scalabilityTierOverride = -1;
             _hasHardwareProfile = false;
             _dispatcherRegistrationErrorLogged = false;
             _inputFallbackWarningPublished = false;
@@ -1929,6 +1960,25 @@ namespace Hecton8.Core
             _hardwareProfile = profile;
             _hasHardwareProfile = true;
             SetMathPrecisionLevelImmediate(profile.MathPrecisionLevel);
+        }
+
+        /// <summary>
+        /// Applies a persisted scalability profile override without mutating immutable hardware facts.
+        /// </summary>
+        /// <param name="tier">Profile byte: 0 = Low/MX350, 1 = High/RTX.</param>
+        public static void RegisterScalabilityTierOverride(byte tier)
+        {
+            Volatile.Write(ref _scalabilityTierOverride, (int)ScalabilityTierRuntime.ToQualityTier(tier));
+            SetMathPrecisionLevelImmediate(ScalabilityTierRuntime.ToMathPrecisionLevel(tier));
+        }
+
+        /// <summary>
+        /// Clears a persisted scalability override and returns to the boot hardware profile.
+        /// </summary>
+        public static void ClearScalabilityTierOverride()
+        {
+            Volatile.Write(ref _scalabilityTierOverride, -1);
+            SetMathPrecisionLevelImmediate(_hasHardwareProfile ? _hardwareProfile.MathPrecisionLevel : MathPrecisionLevel.Low);
         }
 
         /// <summary>
@@ -5740,6 +5790,11 @@ namespace Hecton8.Core
 
         public static void ShutdownRegisteredServicesInReverseSlotOrder()
         {
+            DisposeAllRegisteredServices();
+        }
+
+        public static void DisposeAllRegisteredServices()
+        {
             for (int slot = (int)GlobalRegistryServiceSlot.Unknown - 1; slot >= 0; slot--)
                 ShutdownRegisteredServiceSlot((GlobalRegistryServiceSlot)slot);
         }
@@ -5765,7 +5820,7 @@ namespace Hecton8.Core
         {
             try
             {
-                shutdown.OnServiceShutdown();
+                shutdown.DisposeAll();
             }
             catch (Exception exception)
             {

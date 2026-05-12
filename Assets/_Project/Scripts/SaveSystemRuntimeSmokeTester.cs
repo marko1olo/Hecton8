@@ -155,7 +155,7 @@ namespace Hecton8.Dev
                     return;
                 }
 
-                string primaryAbsolutePath = Path.Combine(Application.persistentDataPath, SaveManager.GetPrimarySaveFilePath(currentSlot));
+                string primaryAbsolutePath = HectonPersistentPathPolicy.CombineFile(SaveManager.GetPrimarySaveFilePath(currentSlot));
                 string backupAbsolutePath = $"{primaryAbsolutePath}.bak";
                 if (!File.Exists(primaryAbsolutePath) || !File.Exists(backupAbsolutePath))
                 {

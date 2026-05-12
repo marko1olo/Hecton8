@@ -168,6 +168,20 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
+        /// Resolves current transport drag coefficient multiplier.
+        /// </summary>
+        public float ResolveTransportDragCoefficientMultiplier()
+        {
+            if (!TryResolveTransportSource(out IPlayerTransportSource source))
+                return 1f;
+
+            if (source is IKinematicVehicleTransportSource kinematicVehicleSource && kinematicVehicleSource.IsVehicleMotionAuthoritative)
+                return 1f;
+
+            return Mathf.Max(0.01f, source.GetTransportDragCoefficientMultiplier());
+        }
+
+        /// <summary>
         /// Resolves current normalized transport boost.
         /// </summary>
         public float ResolveTransportBoost01()

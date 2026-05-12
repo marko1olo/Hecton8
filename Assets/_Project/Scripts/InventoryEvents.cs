@@ -61,6 +61,22 @@ namespace Hecton8.Inventory
     }
 
     /// <summary>
+    /// Unmanaged physical-drop request emitted by inventory owners after persistence accepts the drop.
+    /// World/presentation layers own hydration and prefab visuals.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct InventoryPhysicalDropRequestPayload
+    {
+        public Vector3 RuntimePosition;
+        public Vector3 InitialImpulse;
+        public ulong GeneticsMask;
+        public uint ItemHashId;
+        public int Quantity;
+        public ushort QualityMilli;
+        public ushort Reserved;
+    }
+
+    /// <summary>
     /// Listener contract for inventory events drained from <see cref="SystemDispatcher"/>.
     /// </summary>
     public interface IInventoryEventListener

@@ -14,15 +14,16 @@ Shader "Hecton8/Fabrication/BlueprintWireInstanced"
         Tags
         {
             "RenderPipeline" = "UniversalPipeline"
-            "RenderType" = "Transparent"
-            "Queue" = "Transparent"
+            "RenderType" = "TransparentCutout"
+            "Queue" = "AlphaTest"
         }
 
         Pass
         {
             Name "BlueprintWire"
-            Blend SrcAlpha One
-            ZWrite Off
+            Blend Off
+            ZWrite On
+            AlphaToMask On
             ZTest LEqual
             Cull Back
 
@@ -98,7 +99,9 @@ Shader "Hecton8/Fabrication/BlueprintWireInstanced"
                 float fresnel = fresnelBase * fresnelBase * lerp(1.0, fresnelBase, 0.2);
                 float crawl = HectonCoreLitTrianglePulse01(_Time.y * _FlickerSpeed + dot(floor(input.positionCS.xy), float2(0.017, 0.031)));
                 half alpha = (half)saturate(_BaseColor.a * (wire + fresnel * 0.55) * lerp(0.62, 1.15, crawl));
-                return half4(_BaseColor.rgb * (half)(1.0 + fresnel * 2.4), alpha);
+                half dither = (half)HectonCoreLitTaaAccumulatedInterleavedGradientNoise(floor(input.positionCS.xy));
+                clip(alpha - dither);
+                return half4(_BaseColor.rgb * (half)(1.0 + fresnel * 2.4), 1.0h);
             }
             ENDHLSL
         }

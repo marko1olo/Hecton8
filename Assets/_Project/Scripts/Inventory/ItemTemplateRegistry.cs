@@ -22,6 +22,34 @@ namespace Hecton8.Inventory
     }
 
     /// <summary>
+    /// Resolves item hashes into the 64-bit inventory/crafting material mask lane.
+    /// </summary>
+    public static class InventoryMaterialMask
+    {
+        public const int BitCount = 64;
+
+        public static int ResolveBitIndex(int itemHashId)
+        {
+            return itemHashId & (BitCount - 1);
+        }
+
+        public static int ResolveBitIndex(uint itemHashId)
+        {
+            return (int)(itemHashId & (BitCount - 1));
+        }
+
+        public static ulong ResolveBit(int itemHashId)
+        {
+            return itemHashId == 0 ? 0UL : 1UL << ResolveBitIndex(itemHashId);
+        }
+
+        public static ulong ResolveBit(uint itemHashId)
+        {
+            return itemHashId == 0u ? 0UL : 1UL << ResolveBitIndex(itemHashId);
+        }
+    }
+
+    /// <summary>
     /// Immutable item-template record used by SOA inventory/runtime systems.
     /// </summary>
     [Serializable]
@@ -122,10 +150,12 @@ namespace Hecton8.Inventory
     {
         private static NativeHashMap<uint, int> s_hashToIndex;
         private static ItemTemplate[] s_templates = Array.Empty<ItemTemplate>();
+        private static uint s_revision;
 
         public static bool IsInitialized => s_hashToIndex.IsCreated && s_templates.Length > 0;
         public static int Count => s_templates.Length;
         public static ReadOnlySpan<ItemTemplate> Templates => s_templates;
+        public static uint Revision => s_revision;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -225,6 +255,10 @@ namespace Hecton8.Inventory
             }
 
             s_templates = Array.Empty<ItemTemplate>();
+            unchecked
+            {
+                s_revision++;
+            }
         }
     }
 }

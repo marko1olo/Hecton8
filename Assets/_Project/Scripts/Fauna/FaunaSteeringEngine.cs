@@ -17,6 +17,9 @@ namespace Hecton8.AI
         private const float SwarmBankResponse = 5f;
         private const float MinDirectionSqr = 0.0001f;
         private const float MinQuaternionLengthSq = 0.000001f;
+        private const uint ApexSmoothSteeringTierMask =
+            (1u << (int)HectonQualityTier.High) |
+            (1u << (int)HectonQualityTier.Ultra);
 
         [Header("Configuration")]
         public float moveSpeed = 5f;
@@ -187,7 +190,12 @@ namespace Hecton8.AI
 
         private bool UsesApexSmoothSteering()
         {
-            return _speciesProfile != null && _speciesProfile.isLeviathan;
+            if (_speciesProfile == null || !_speciesProfile.isLeviathan)
+                return false;
+
+            uint tierBit = 1u << (int)GlobalRegistry.ScalabilityTier;
+            return (ApexSmoothSteeringTierMask & tierBit) != 0u &&
+                   GlobalRegistry.TargetMathPrecision == MathPrecisionLevel.High;
         }
 
         private static bool IsFinite(Vector3 value)

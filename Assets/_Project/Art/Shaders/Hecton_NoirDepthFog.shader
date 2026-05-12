@@ -5,8 +5,8 @@ Shader "Hidden/Hecton8/NoirDepthFog"
         Tags
         {
             "RenderPipeline" = "UniversalPipeline"
-            "RenderType" = "Transparent"
-            "Queue" = "Transparent"
+            "RenderType" = "Opaque"
+            "Queue" = "Geometry"
         }
 
         Cull Off
@@ -67,7 +67,8 @@ Shader "Hidden/Hecton8/NoirDepthFog"
         float ResolveTaaDitherPhaseNoise(float2 screenUV)
         {
             float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
-            uint phaseIndex = _TaaFrameIndex & 3u;
+            uint2 pixelParity = (uint2)pixel & 1u;
+            uint phaseIndex = pixelParity.x | (pixelParity.y << 1u);
             float2 taaPhase = float2((float)(phaseIndex & 1u), (float)((phaseIndex >> 1u) & 1u)) * 0.5;
             return frac(52.9829189 * frac(dot(pixel + taaPhase, float2(0.06711056, 0.00583715))));
         }
@@ -90,6 +91,13 @@ Shader "Hidden/Hecton8/NoirDepthFog"
             return saturate(decodedDensity * _HectonMarineSnowFogDensityParams.x);
         }
 
+        float FastNegativeExp(float value)
+        {
+            value = max(value, 0.0);
+            float valueSq = value * value;
+            return rcp(1.0 + value + 0.48 * valueSq + 0.235 * valueSq * value);
+        }
+
         half4 Frag(Varyings input) : SV_Target
         {
             half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
@@ -105,13 +113,16 @@ Shader "Hidden/Hecton8/NoirDepthFog"
             if (depth01 <= 0.0001h)
                 return sourceColor;
 
+            float fogDepthMeters = max(0.0, linearEyeDepth - fogStartMeters);
+            float visualDensity = max(_HectonNoirDepthFogParamsA.x, 0.000001);
+            half fogRaw = (half)(1.0 - FastNegativeExp(fogDepthMeters * visualDensity));
+            half fogFactor = fogRaw * fogRaw * (0.82h + fogRaw * 0.18h);
             half depthSq = depth01 * depth01;
-            half filmRamp = depthSq * (3.0h - 2.0h * depth01);
-            half densityGain = saturate((half)_HectonNoirDepthFogParamsA.x * 96.0h);
-            half fogFactor = saturate(filmRamp * lerp(0.42h, 1.16h, densityGain));
+            fogFactor = saturate(fogFactor * lerp(0.62h, 1.08h, depth01));
             fogFactor = saturate(fogFactor + (half)SampleMarineSnowFogDensity(input.screenUV));
 
-            half dither = (half)(ResolveTaaDitherPhaseNoise(input.screenUV) - 0.5) * saturate((half)_HectonNoirDepthFogParamsB.w) * 0.0039215686h;
+            half transitionEdge = saturate(1.0h - abs(fogFactor - 0.5h) * 2.0h);
+            half dither = (half)(ResolveTaaDitherPhaseNoise(input.screenUV) - 0.5) * saturate((half)_HectonNoirDepthFogParamsB.w) * lerp(0.0039215686h, 0.015625h, transitionEdge);
             fogFactor = saturate(fogFactor + dither);
 
             half3 fogColor = (half3)lerp(

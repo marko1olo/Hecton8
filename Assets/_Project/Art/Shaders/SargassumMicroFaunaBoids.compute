@@ -85,6 +85,14 @@ SamplerState sampler_DensityTex;
 Texture2D<float4> _CutMaskTex;
 SamplerState sampler_CutMaskTex;
 
+Texture3D<float4> _AbyssalFlowFieldTexture;
+SamplerState sampler_AbyssalFlowFieldTexture;
+float4 _AbyssalGridResolution;
+float4 _AbyssalFlowCenter;
+float4 _AbyssalFlowSpacing;
+float _AbyssalFlowActive;
+float _AbyssalFlowWeight;
+
 struct SargassumSimulationFrameData
 {
     float4 Simulation0;
@@ -385,6 +393,19 @@ float ValueNoise2(float2 value)
     return lerp(nx0, nx1, smoothValue.y);
 }
 
+float3 SampleAbyssalFlowTexture(float3 positionWS)
+{
+    if (_AbyssalFlowActive <= 0.5 || _AbyssalFlowSpacing.z <= EPSILON || _AbyssalFlowSpacing.w <= EPSILON)
+        return float3(0.0, 0.0, 0.0);
+
+    float3 uvw = (positionWS - _AbyssalFlowCenter.xyz) * _AbyssalFlowSpacing.w + 0.5;
+    if (!all(uvw >= float3(0.0, 0.0, 0.0)) || !all(uvw <= float3(1.0, 1.0, 1.0)))
+        return float3(0.0, 0.0, 0.0);
+
+    float3 flow = _AbyssalFlowFieldTexture.SampleLevel(sampler_AbyssalFlowFieldTexture, uvw, 0).xyz;
+    return dot(flow, flow) < 1.0e+32 ? flow * max(_AbyssalFlowWeight, 0.0) : float3(0.0, 0.0, 0.0);
+}
+
 float3 ResolveFlowField(float3 positionWS, float phaseTime)
 {
     float time = phaseTime * 0.12;
@@ -402,7 +423,7 @@ float3 ResolveFlowField(float3 positionWS, float phaseTime)
     float driftSpeed01 = saturate(driftSpeedSq * (1.0 / 64.0));
     float driftStrengthFake = driftSpeed01 * (2.0 - driftSpeed01) * 4.0;
     float proceduralStrength = max(driftStrengthFake, max(_CruiseSpeed * 0.18, 0.22));
-    return driftVelocity + weatherCurrent + float3(nx, ny, nz) * proceduralStrength;
+    return driftVelocity + weatherCurrent + float3(nx, ny, nz) * proceduralStrength + SampleAbyssalFlowTexture(positionWS);
 }
 
 float3 ResolveFlowTurbulence(float3 positionWS, float phaseTime)

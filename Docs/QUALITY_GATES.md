@@ -16,6 +16,22 @@ Performance tooling: SYSTEMS_CONTRACTS.md (BenchmarkRunner.cs)
 - Current completed full Core dependency build in the active documentation boundary is `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`.
 - Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, scene/prefab gameplay, player build, import, frame-time, memory, and visual quality proof remain absent.
 
+2026-05-12 permanent build gate protocol:
+
+| Gate | Rule |
+|---|---|
+| build command | `dotnet build <target> --no-restore -m:2 /nr:false` |
+| shared servers | run `dotnet build-server shutdown` after build attempts |
+| host assumption | i5-1135G7 class 4C/8T; never saturate all cores |
+| queue discipline | one active compile owner per target; do not launch parallel full builds |
+| failure classification | distinguish C# diagnostics from SDK/restore/environment failures |
+| proof | record command, target, exit code, warning/error count, and blocker class |
+| forbidden | reporting compile success from stale logs |
+
+Known historical blocker:
+
+- `Hecton8.Editor.csproj` previously failed before C# with `NETSDK1004` because `Temp/obj/Hecton8.Editor/project.assets.json` was missing. That is not a C# diagnostic.
+
 ---
 
 ## WHEN TO USE THIS DOCUMENT

@@ -225,6 +225,16 @@ namespace Hecton8.Input
         public InputActionAsset InputActionsAsset => _runtimeInputActionAsset;
         internal InputAction UiSubmitAction => _submitAction;
 
+        public bool TryReadUiScrollWheel(out Vector2 scrollDelta)
+        {
+            scrollDelta = Vector2.zero;
+            if (_uiScrollWheelAction == null || !TryGetActionMapEnabled(_uiActionMap))
+                return false;
+
+            scrollDelta = _uiScrollWheelAction.ReadValue<Vector2>();
+            return scrollDelta.sqrMagnitude > 0.000001f;
+        }
+
         public bool TryValidateRuntimeActions(out string message)
         {
             if (!EnsureInputActionsInitialized())

@@ -25,7 +25,7 @@ using UnityEditor;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class ScannerTool : PlayerTool, IBatteryTool
+    public sealed class ScannerTool : PlayerTool, IBatteryTool, IDispatcherRaycastReceiver
     {
         internal const string ScannerMarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         internal const string ScannerPulseShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerPulseInstanced.shader";
@@ -41,6 +41,7 @@ namespace Hecton8.Gameplay
         private const float BearingDeadzoneTanSq = 0.031091204f; // tan(10 degrees)^2
         private const int OperationalStringCacheHz = 10;
         private const int PrefixedScannerStringCacheSize = 128;
+        private const int ScientificRaycastRequestSalt = 0x5DA70000;
         private const string ItemEntryPrefix = "item.";
         private const string ModuleEntryPrefix = "module.";
         private const string ConstructionCategoryPrefix = "Construction/";
@@ -515,11 +516,19 @@ namespace Hecton8.Gameplay
         private ScannableFragment _activeScientificFragment;
         private HectonVoxelVolume _activeScientificVoxelVolume;
         private ScientificScanSnapshot _scientificSnapshot;
+        private DataArchaeologyRuntime _dataArchaeology;
         private HectonSurvivalSystem _cachedSurvivalSystem;
         private float _scientificNextResampleAt;
         private float _scientificLastContactTime = float.NegativeInfinity;
+        private float3 _activeScientificProbePosition;
+        private float3 _activeScientificEntityProbePosition;
+        private uint _activeScientificEntityHash;
+        private float _activeScientificEntityProgress;
+        private int _scientificRaycastRequestSequence;
+        private int _scientificRaycastPendingRequestId;
         private float _heldPrimaryDeltaTime;
         private bool _heldPrimaryThisFrame;
+        private bool _scientificRaycastPending;
         private float _cachedFocusedConeAngleDegrees = -1f;
         private float _cachedFocusedConeTanSq;
 
@@ -659,6 +668,9 @@ namespace Hecton8.Gameplay
 
             if (markerSystem != null)
                 markerSystem.Initialize(scannerMarkerShader);
+
+            if (!TryGetComponent(out _dataArchaeology))
+                _dataArchaeology = gameObject.AddComponent<DataArchaeologyRuntime>(); // COLD ALLOC: DataArchaeologyRuntime[1] - scanner archaeology owner - owner: ScannerTool
 
             if (!TryGetComponent(out ScannerPulseDrawer _))
             {
@@ -855,10 +867,10 @@ namespace Hecton8.Gameplay
                     salinityRounded,
                     toxicityPercent);
                 if (_scientificSnapshot.HasAttractantTrace)
-                    return string.Concat(summary, BuildScientificScentVectorSuffix(_scientificSnapshot));
+                    return ConcatCold(summary, BuildScientificScentVectorSuffix(_scientificSnapshot));
 
                 return _scientificSnapshot.OrganicBlood01 > ScientificAttractantTraceThreshold01
-                    ? string.Concat(summary, " // TRACES OF ORGANIC BLOOD DETECTED")
+                    ? ConcatCold(summary, " // TRACES OF ORGANIC BLOOD DETECTED")
                     : summary;
             }
 
@@ -1293,11 +1305,12 @@ namespace Hecton8.Gameplay
 
         private float ResolveEffectiveScanRadius()
         {
+            float batteryScaledRange = DataArchaeologyRuntime.ResolveScannerRange(scanRadius, BatteryCharge);
             float conditionScale = GetConditionPerformanceScale();
             if (conditionScale >= 0.999f)
-                return scanRadius;
+                return batteryScaledRange;
 
-            return scanRadius * math.lerp(0.72f, 1f, conditionScale);
+            return batteryScaledRange * math.lerp(0.72f, 1f, conditionScale);
         }
 
         private ScanResultSummary PerformScan(Unity.Mathematics.float3 origin, ScanMode mode, float effectiveScanRadius)
@@ -2138,6 +2151,7 @@ namespace Hecton8.Gameplay
                 if (_activeScientificFragment != null)
                     StopScientificFragmentScan();
 
+                StopScientificRaycastTargetScan();
                 ClearScientificSnapshot();
                 return;
             }
@@ -2147,8 +2161,50 @@ namespace Hecton8.Gameplay
                 Time.time - _scientificLastContactTime <= holdTimeout &&
                 heldDeltaTime > 0f)
             {
-                _activeScientificFragment.OnScan(heldDeltaTime);
+                float fragmentProgressDelta = heldDeltaTime;
+                if (_dataArchaeology != null &&
+                    _dataArchaeology.TryEvaluateFocusedScan(
+                        _activeScientificFragment,
+                        _activeScientificProbePosition,
+                        heldDeltaTime,
+                        BatteryCharge,
+                        out DataArchaeologyFrequencyResult tuningResult))
+                {
+                    fragmentProgressDelta = tuningResult.ProgressDeltaSeconds;
+                }
+
+                if (fragmentProgressDelta > 0f)
+                    _activeScientificFragment.OnScan(fragmentProgressDelta);
+
+                if (_dataArchaeology != null)
+                {
+                    _dataArchaeology.RecordPartialProgress(_activeScientificFragment);
+                    if (_activeScientificFragment.IsCompleted)
+                    {
+                        _dataArchaeology.NotifyFragmentCompleted(_activeScientificFragment, _activeScientificProbePosition);
+                        _activeScientificFragment = null;
+                    }
+                }
+
                 RefreshScientificSnapshotProgress();
+            }
+            else if (_activeScientificEntityHash != 0u &&
+                     Time.time - _scientificLastContactTime <= holdTimeout &&
+                     heldDeltaTime > 0f)
+            {
+                _activeScientificEntityProgress += heldDeltaTime;
+                if (_dataArchaeology != null &&
+                    _dataArchaeology.UpdateRaycastTargetProgress(
+                        _activeScientificEntityHash,
+                        _activeScientificEntityProbePosition,
+                        _activeScientificEntityProgress,
+                        out bool completed) &&
+                    completed)
+                {
+                    _activeScientificEntityHash = 0u;
+                    _activeScientificEntityProgress = 0f;
+                    _activeScientificEntityProbePosition = float3.zero;
+                }
             }
 
             if (Time.time >= _scientificNextResampleAt)
@@ -2169,6 +2225,8 @@ namespace Hecton8.Gameplay
                 return;
             float coneTanSq = ResolveFocusedConeTanSq(coneAngle);
 
+            QueueScientificRaycast(origin, forward, range);
+
             if (HectonVoxelVolume.TryRaymarchAnyPublishedSdf(
                     origin,
                     forward,
@@ -2185,6 +2243,88 @@ namespace Hecton8.Gameplay
             }
 
             _scientificNextResampleAt = Time.time + math.max(0.05f, focusedScanResampleInterval);
+        }
+
+        private void QueueScientificRaycast(Vector3 origin, Vector3 forward, float range)
+        {
+            if (_scientificRaycastPending)
+                return;
+
+            Vector3 safeForward = ResolveSafeDirection(forward, Vector3.forward);
+            RaycastCommand command = default;
+            command.from = origin;
+            command.direction = safeForward;
+            command.distance = range;
+            command.queryParameters = new QueryParameters
+            {
+                layerMask = scanLayerMask.value,
+                hitTriggers = QueryTriggerInteraction.Collide,
+                hitBackfaces = false,
+                hitMultipleFaces = false
+            };
+
+            int requestId = NextScientificRaycastRequestId();
+            if (!SystemDispatcher.QueueDispatcherRaycast(this, requestId, in command))
+                return;
+
+            _scientificRaycastPending = true;
+            _scientificRaycastPendingRequestId = requestId;
+        }
+
+        public void ConsumeDispatcherRaycastHit(int requestId, in RaycastHit hit)
+        {
+            if (!_scientificRaycastPending || requestId != _scientificRaycastPendingRequestId)
+                return;
+
+            _scientificRaycastPending = false;
+            _scientificRaycastPendingRequestId = 0;
+            ConsumeScientificRaycastHit(in hit);
+        }
+
+        private void ConsumeScientificRaycastHit(in RaycastHit hit)
+        {
+            Collider hitCollider = hit.collider;
+            if (hitCollider == null || !MatchesScanLayer(hitCollider.gameObject.layer))
+                return;
+
+            Transform hitTransform = hitCollider.transform;
+            if (hitTransform == null || !hitTransform.TryGetComponent(out ScannableTarget scannable))
+                return;
+
+            uint entityHash = scannable.EntityHash;
+            if (entityHash == 0u)
+                return;
+
+            float3 hitPoint = hit.point;
+            if (_dataArchaeology == null || !_dataArchaeology.RegisterRaycastTarget(entityHash, hitPoint))
+                return;
+
+            _scientificLastContactTime = Time.time;
+            if (_activeScientificFragment != null)
+                return;
+
+            if (_activeScientificEntityHash != entityHash)
+            {
+                _activeScientificEntityHash = entityHash;
+                _activeScientificEntityProgress = _dataArchaeology != null &&
+                                                  _dataArchaeology.TryGetTargetProgress01(entityHash, out float progress01)
+                    ? progress01
+                    : 0f;
+            }
+
+            _activeScientificEntityProbePosition = hitPoint;
+        }
+
+        private int NextScientificRaycastRequestId()
+        {
+            unchecked
+            {
+                _scientificRaycastRequestSequence++;
+                if (_scientificRaycastRequestSequence <= 0)
+                    _scientificRaycastRequestSequence = 1;
+
+                return ScientificRaycastRequestSalt ^ _scientificRaycastRequestSequence;
+            }
         }
 
         private bool TryResolveScientificSpatialContact(
@@ -2428,10 +2568,15 @@ namespace Hecton8.Gameplay
             if (!ReferenceEquals(_activeScientificFragment, resolvedFragment))
             {
                 StopScientificFragmentScan();
+                if (resolvedFragment != null)
+                    StopScientificRaycastTargetScan();
                 _activeScientificFragment = resolvedFragment;
+                if (_dataArchaeology != null)
+                    _dataArchaeology.TryApplyPersistedProgress(_activeScientificFragment);
             }
 
             _activeScientificVoxelVolume = resolvedVolume;
+            _activeScientificProbePosition = probePosition;
             ScientificMaterialClass materialClass = ClassifyScientificMaterial(density01);
             _scientificLastContactTime = Time.time;
 
@@ -2593,17 +2738,42 @@ namespace Hecton8.Gameplay
         private void StopScientificFragmentScan()
         {
             if (_activeScientificFragment != null)
+            {
+                if (_dataArchaeology != null)
+                    _dataArchaeology.RecordPartialProgress(_activeScientificFragment);
+
                 _activeScientificFragment.StopScanning();
+            }
 
             _activeScientificFragment = null;
+        }
+
+        private void StopScientificRaycastTargetScan()
+        {
+            if (_activeScientificEntityHash != 0u && _dataArchaeology != null && _activeScientificEntityProgress > 0f)
+            {
+                _dataArchaeology.UpdateRaycastTargetProgress(
+                    _activeScientificEntityHash,
+                    _activeScientificEntityProbePosition,
+                    _activeScientificEntityProgress,
+                    out _);
+            }
+
+            _activeScientificEntityHash = 0u;
+            _activeScientificEntityProgress = 0f;
+            _activeScientificEntityProbePosition = float3.zero;
         }
 
         private void ResetScientificFocus()
         {
             StopScientificFragmentScan();
+            StopScientificRaycastTargetScan();
             _activeScientificVoxelVolume = null;
             _heldPrimaryThisFrame = false;
             _heldPrimaryDeltaTime = 0f;
+            _activeScientificProbePosition = float3.zero;
+            _scientificRaycastPending = false;
+            _scientificRaycastPendingRequestId = 0;
             _scientificNextResampleAt = 0f;
             _scientificLastContactTime = float.NegativeInfinity;
             ClearScientificSnapshot();
@@ -2667,6 +2837,17 @@ namespace Hecton8.Gameplay
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static string ConcatCold(string left, string right)
+        {
+            left ??= string.Empty;
+            right ??= string.Empty;
+            return string.Create(left.Length + right.Length, (left, right), static (span, state) =>
+            {
+                state.left.AsSpan().CopyTo(span);
+                state.right.AsSpan().CopyTo(span.Slice(state.left.Length));
+            });
+        }
+
         private static string BuildScientificScentVectorSuffix(ScientificScanSnapshot snapshot)
         {
             Vector3 direction = snapshot.ScentDirection;

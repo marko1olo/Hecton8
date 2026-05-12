@@ -13,8 +13,10 @@ namespace Hecton8.EditorTools
     {
         private const string TextureRoot = "Assets/_Project/Art/Textures/WorldProceduralFlora";
         private const string ImportedTextureRoot = TextureRoot + "/Imported";
+        private const string SeaGrassAtlasAssetPath = TextureRoot + "/TX_SeaGrass_Albedo_BC7_Atlas.png";
         private const string TextureLibraryReportFileName = "PROCEDURAL_FLORA_TEXTURE_LIBRARY_REPORT.md";
         private const string TextureRequestPacketFileName = "PROCEDURAL_FLORA_TEXTURE_REQUEST_PACKET.md";
+        private const int SeaGrassAtlasSize = 1024;
         private const string FamilyKelpTall = "family.kelp.tall";
         private const string FamilyKelpPatchDense = "family.kelp.patch.dense";
         private const string FamilyKelpCanopy = "family.kelp.canopy";
@@ -35,6 +37,13 @@ namespace Hecton8.EditorTools
             FamilyCoralMassive,
             FamilyCoralPlate,
             FamilyCoralBrittle
+        };
+        private static readonly string[] SeaGrassFamilyIds =
+        {
+            FamilyKelpTall,
+            FamilyKelpPatchDense,
+            FamilyKelpCanopy,
+            FamilyKelpAbyssal
         };
         private static readonly string[] RequiredMapTokens = { "albedo", "detail", "normal", "mask" };
         private const double TextureMemoryRedThresholdMb = 900.0;
@@ -128,6 +137,8 @@ namespace Hecton8.EditorTools
                     continue;
                 }
 
+                string familyId = ResolveFamilyIdFromImportedPath(path);
+                int resolvedMaxTextureSize = ResolveImportedMaxTextureSize(familyId, mapToken);
                 importer.wrapMode = TextureWrapMode.Repeat;
                 importer.mipmapEnabled = true;
                 importer.isReadable = false;
@@ -139,22 +150,22 @@ namespace Hecton8.EditorTools
                     case "albedo":
                         importer.textureType = TextureImporterType.Default;
                         importer.sRGBTexture = true;
-                        importer.maxTextureSize = 2048;
+                        importer.maxTextureSize = resolvedMaxTextureSize;
                         break;
                     case "detail":
                         importer.textureType = TextureImporterType.Default;
                         importer.sRGBTexture = false;
-                        importer.maxTextureSize = 1024;
+                        importer.maxTextureSize = resolvedMaxTextureSize;
                         break;
                     case "normal":
                         importer.textureType = TextureImporterType.NormalMap;
                         importer.sRGBTexture = false;
-                        importer.maxTextureSize = 2048;
+                        importer.maxTextureSize = resolvedMaxTextureSize;
                         break;
                     case "mask":
                         importer.textureType = TextureImporterType.Default;
                         importer.sRGBTexture = false;
-                        importer.maxTextureSize = 2048;
+                        importer.maxTextureSize = resolvedMaxTextureSize;
                         break;
                 }
 
@@ -163,7 +174,7 @@ namespace Hecton8.EditorTools
                 standalone.format = string.Equals(mapToken, "normal", System.StringComparison.Ordinal)
                     ? TextureImporterFormat.BC5
                     : TextureImporterFormat.BC7;
-                standalone.maxTextureSize = importer.maxTextureSize;
+                standalone.maxTextureSize = resolvedMaxTextureSize;
                 standalone.textureCompression = TextureImporterCompression.Compressed;
                 standalone.crunchedCompression = false;
                 importer.SetPlatformTextureSettings(standalone);
@@ -173,6 +184,57 @@ namespace Hecton8.EditorTools
             }
 
             Debug.Log($"[WorldProceduralFloraTextureAuthoring] Fixed imported texture import settings. Updated={updated}, Skipped={skipped}.");
+        }
+
+        [MenuItem("Hecton/Validation/Build Sea-Grass 1024 BC7 Atlas", priority = 274)]
+        public static void BuildSeaGrassBc7Atlas()
+        {
+            EnsureFolder("Assets/_Project/Art");
+            EnsureFolder("Assets/_Project/Art/Textures");
+            EnsureFolder(TextureRoot);
+
+            string[] sourcePaths = new string[SeaGrassFamilyIds.Length];
+            bool[] restoreReadability = new bool[SeaGrassFamilyIds.Length];
+            Texture2D[] sourceTextures = new Texture2D[SeaGrassFamilyIds.Length];
+
+            for (int i = 0; i < SeaGrassFamilyIds.Length; i++)
+            {
+                sourcePaths[i] = ResolveBaseTexturePath(SeaGrassFamilyIds[i]);
+                sourceTextures[i] = AssetDatabase.LoadAssetAtPath<Texture2D>(sourcePaths[i]);
+                if (sourceTextures[i] == null)
+                {
+                    Debug.LogError($"[WorldProceduralFloraTextureAuthoring] Missing sea-grass atlas source '{sourcePaths[i]}'.");
+                    return;
+                }
+
+                if (!TrySetTextureReadable(sourcePaths[i], true, out restoreReadability[i]))
+                    return;
+
+                sourceTextures[i] = AssetDatabase.LoadAssetAtPath<Texture2D>(sourcePaths[i]);
+            }
+
+            Texture2D atlas = new Texture2D(SeaGrassAtlasSize, SeaGrassAtlasSize, TextureFormat.RGBA32, true, false)
+            {
+                name = "TX_SeaGrass_Albedo_BC7_Atlas"
+            };
+
+            Rect[] rects = atlas.PackTextures(sourceTextures, 0, SeaGrassAtlasSize, makeNoLongerReadable: false);
+            if (rects == null || rects.Length != sourceTextures.Length)
+            {
+                UnityEngine.Object.DestroyImmediate(atlas);
+                RestoreTextureReadability(sourcePaths, restoreReadability);
+                Debug.LogError("[WorldProceduralFloraTextureAuthoring] Sea-grass atlas pack failed.");
+                return;
+            }
+
+            File.WriteAllBytes(SeaGrassAtlasAssetPath, atlas.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(atlas);
+            RestoreTextureReadability(sourcePaths, restoreReadability);
+            AssetDatabase.ImportAsset(SeaGrassAtlasAssetPath, ImportAssetOptions.ForceUpdate);
+            ConfigureSeaGrassAtlasImporter();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"[WorldProceduralFloraTextureAuthoring] Built sea-grass atlas '{SeaGrassAtlasAssetPath}' at {SeaGrassAtlasSize}x{SeaGrassAtlasSize} BC7.");
         }
 
         [MenuItem("Hecton/Validation/Scaffold Missing Flora Texture Import Folders", priority = 269)]
@@ -346,7 +408,9 @@ namespace Hecton8.EditorTools
             markdown.AppendLine($"- Texture red threshold reference: `{TextureMemoryRedThresholdMb:0} MB`");
             markdown.AppendLine($"- Imported root: `{ImportedTextureRoot}`");
             markdown.AppendLine($"- Request packet: `{TextureRequestPacketFileName}`");
-            markdown.AppendLine($"- Atlas note: `defer atlas merge until at least one full clean texture set exists for every target family; current family-level tiling workflow is cheaper to iterate and safer for MX350.`");
+            Texture2D seaGrassAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>(SeaGrassAtlasAssetPath);
+            markdown.AppendLine($"- Sea-grass atlas: `{SeaGrassAtlasAssetPath}` => `{(seaGrassAtlas != null ? "present" : "missing; run Hecton/Validation/Build Sea-Grass 1024 BC7 Atlas")}`");
+            markdown.AppendLine($"- Sea-grass import contract: kelp-family maps capped to `{SeaGrassAtlasSize}`; non-normal maps use `BC7`; normal maps retain `BC5`.");
 
             string reportPath = Path.Combine(Directory.GetCurrentDirectory(), TextureLibraryReportFileName);
             File.WriteAllText(reportPath, markdown.ToString(), Encoding.UTF8);
@@ -480,6 +544,8 @@ namespace Hecton8.EditorTools
                 return true;
             }
 
+            int expectedMaxTextureSize = ResolveImportedMaxTextureSize(familyId, mapToken);
+
             if (importer.wrapMode != TextureWrapMode.Repeat)
             {
                 failureLabel = "wrap-not-repeat";
@@ -513,7 +579,7 @@ namespace Hecton8.EditorTools
                         return true;
                     }
 
-                    if (importer.maxTextureSize > 2048)
+                    if (importer.maxTextureSize > expectedMaxTextureSize)
                     {
                         failureLabel = "albedo-maxsize-too-high";
                         return true;
@@ -534,7 +600,7 @@ namespace Hecton8.EditorTools
                         return true;
                     }
 
-                    if (importer.maxTextureSize > 1024)
+                    if (importer.maxTextureSize > expectedMaxTextureSize)
                     {
                         failureLabel = "detail-maxsize-too-high";
                         return true;
@@ -555,7 +621,7 @@ namespace Hecton8.EditorTools
                         return true;
                     }
 
-                    if (importer.maxTextureSize > 2048)
+                    if (importer.maxTextureSize > expectedMaxTextureSize)
                     {
                         failureLabel = "normal-maxsize-too-high";
                         return true;
@@ -576,7 +642,7 @@ namespace Hecton8.EditorTools
                         return true;
                     }
 
-                    if (importer.maxTextureSize > 2048)
+                    if (importer.maxTextureSize > expectedMaxTextureSize)
                     {
                         failureLabel = "mask-maxsize-too-high";
                         return true;
@@ -644,6 +710,102 @@ namespace Hecton8.EditorTools
                 || string.Equals(mapToken, "detail", System.StringComparison.Ordinal)
                 || string.Equals(mapToken, "normal", System.StringComparison.Ordinal)
                 || string.Equals(mapToken, "mask", System.StringComparison.Ordinal);
+        }
+
+        private static bool IsSeaGrassFamily(string familyId)
+        {
+            for (int i = 0; i < SeaGrassFamilyIds.Length; i++)
+            {
+                if (string.Equals(familyId, SeaGrassFamilyIds[i], System.StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static int ResolveImportedMaxTextureSize(string familyId, string mapToken)
+        {
+            if (IsSeaGrassFamily(familyId))
+                return SeaGrassAtlasSize;
+
+            return string.Equals(mapToken, "detail", System.StringComparison.Ordinal) ? 1024 : 2048;
+        }
+
+        private static string ResolveFamilyIdFromImportedPath(string assetPath)
+        {
+            if (string.IsNullOrWhiteSpace(assetPath))
+                return string.Empty;
+
+            string normalizedPath = assetPath.Replace('\\', '/');
+            int fileSlash = normalizedPath.LastIndexOf('/');
+            if (fileSlash <= 0)
+                return string.Empty;
+
+            int folderSlash = normalizedPath.LastIndexOf('/', fileSlash - 1);
+            return folderSlash >= 0
+                ? normalizedPath.Substring(folderSlash + 1, fileSlash - folderSlash - 1)
+                : string.Empty;
+        }
+
+        private static bool TrySetTextureReadable(string assetPath, bool readable, out bool restoreReadability)
+        {
+            restoreReadability = false;
+            TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+            if (importer == null)
+            {
+                Debug.LogError($"[WorldProceduralFloraTextureAuthoring] Missing texture importer for '{assetPath}'.");
+                return false;
+            }
+
+            if (importer.isReadable == readable)
+                return true;
+
+            restoreReadability = !importer.isReadable;
+            importer.isReadable = readable;
+            importer.SaveAndReimport();
+            return true;
+        }
+
+        private static void RestoreTextureReadability(string[] assetPaths, bool[] restoreReadability)
+        {
+            int count = Mathf.Min(assetPaths != null ? assetPaths.Length : 0, restoreReadability != null ? restoreReadability.Length : 0);
+            for (int i = 0; i < count; i++)
+            {
+                if (!restoreReadability[i])
+                    continue;
+
+                TextureImporter importer = AssetImporter.GetAtPath(assetPaths[i]) as TextureImporter;
+                if (importer == null)
+                    continue;
+
+                importer.isReadable = false;
+                importer.SaveAndReimport();
+            }
+        }
+
+        private static void ConfigureSeaGrassAtlasImporter()
+        {
+            TextureImporter importer = AssetImporter.GetAtPath(SeaGrassAtlasAssetPath) as TextureImporter;
+            if (importer == null)
+                return;
+
+            importer.textureType = TextureImporterType.Default;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.mipmapEnabled = true;
+            importer.isReadable = false;
+            importer.sRGBTexture = true;
+            importer.maxTextureSize = SeaGrassAtlasSize;
+            importer.textureCompression = TextureImporterCompression.Compressed;
+            importer.crunchedCompression = false;
+
+            TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
+            standalone.overridden = true;
+            standalone.maxTextureSize = SeaGrassAtlasSize;
+            standalone.format = TextureImporterFormat.BC7;
+            standalone.textureCompression = TextureImporterCompression.Compressed;
+            standalone.crunchedCompression = false;
+            importer.SetPlatformTextureSettings(standalone);
+            importer.SaveAndReimport();
         }
 
         private static void CountTextureSource(Texture texture, ref int importedCount, ref int generatedCount, ref int managedCount, ref int assignedCount)

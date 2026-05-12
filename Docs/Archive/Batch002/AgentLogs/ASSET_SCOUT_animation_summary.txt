@@ -1,0 +1,4 @@
+﻿AnimationAssetCount=313
+AnimationOffenderCount=13
+AnimationCompressionOffCount=0
+StandaloneAnimationUnverifiedCount=13

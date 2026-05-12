@@ -20,27 +20,26 @@ namespace Hecton8.Editor
         private const string AssetScPath = "Assets/_Project/Art/Materials/Fonts/NotoSansCJKsc-Regular SDF.asset";
         private const string AssetJpPath = "Assets/_Project/Art/Materials/Fonts/NotoSansCJKjp-Regular SDF.asset";
         private const string AssetArabicPrimePath = "Assets/_Project/Art/Materials/Fonts/NotoSansArabic-Prime SDF.asset";
-        private const string PrimaryTextAssetPath = "Assets/_Project/Art/Materials/Fonts/tekst SDF.asset";
-        private const string NumericTextAssetPath = "Assets/_Project/Art/Materials/Fonts/Ñ†Ð¸Ñ„Ñ€Ñ‹ SDF.asset";
+        private const string PrimaryTextAssetPath = "Assets/_Project/Art/Materials/Fonts/tekst_SDF.asset";
+        private const string NumericTextAssetPath = "Assets/_Project/Art/Materials/Fonts/tsifry_SDF.asset";
         private const string LiberationSansAssetPath = "Assets/_Project/Data/LiberationSans SDF.asset";
         private const string ChineseLocalizationPath = "Assets/_Project/Scripts/ChineseSimplified.json";
         private const string JapaneseLocalizationPath = "Assets/_Project/Scripts/Japanese.json";
         private const string ArabicLocalizationPath = "Assets/_Project/Scripts/Arabic.json";
-        private const string PrimaryTextAssetPathUtf = "Assets/_Project/Art/Materials/Fonts/\u0442\u0435\u043a\u0441\u0442 SDF.asset";
-        private const string NumericTextAssetPathUtf = "Assets/_Project/Art/Materials/Fonts/\u0446\u0438\u0444\u0440\u044b SDF.asset";
+        private const string PrimaryTextAssetPathUtf = PrimaryTextAssetPath;
+        private const string NumericTextAssetPathUtf = NumericTextAssetPath;
         private const int SamplingPointSize = 90;
         private const int AtlasPadding = 9;
         private const int AtlasWidth = 2048;
         private const int AtlasHeight = 2048;
-        private const int DefaultDynamicAtlasSize = 1024;
         private const string PrimeScCharacters = "氧压深海看着你不要玻璃名字";
         private const string PrimeJpCharacters = "再生中圧力見るな息深海ガラス";
         private const string PrimeArabicCharacters = "ابتداءضغطتحذيرمراقبةتنفس";
 
         private static readonly string[] TargetFontAssetPaths =
         {
-            "Assets/_Project/Art/Materials/Fonts/tekst SDF.asset",
-            "Assets/_Project/Art/Materials/Fonts/tsifry SDF.asset",
+            PrimaryTextAssetPath,
+            NumericTextAssetPath,
             "Assets/_Project/Art/Materials/Fonts/NotoSans-Regular SDF.asset",
             "Assets/_Project/Art/Materials/Fonts/NotoSansArabic-Regular SDF.asset",
             "Assets/_Project/Data/LiberationSans SDF.asset",
@@ -271,10 +270,12 @@ namespace Hecton8.Editor
             if (fontAsset == null || string.IsNullOrEmpty(authoredCharacters))
                 return;
 
+            fontAsset.atlasPopulationMode = AtlasPopulationMode.Dynamic;
             EnsureDynamicAtlasReady(fontAsset);
             fontAsset.TryAddCharacters(authoredCharacters, out _);
             SetClearDynamicDataOnBuild(fontAsset, false);
             EnsureAtlasReadable(fontAsset);
+            ApplyStaticRuntimePolicy(fontAsset);
 
             if (fontAsset.material != null)
                 fontAsset.material.SetTexture(ShaderUtilities.ID_MainTex, ResolveAtlasTexture(fontAsset));
@@ -289,28 +290,19 @@ namespace Hecton8.Editor
             if (fontAsset == null)
                 return;
 
-            fontAsset.atlasPopulationMode = AtlasPopulationMode.Dynamic;
+            ApplyStaticRuntimePolicy(fontAsset);
+        }
 
-            bool isBoundedPrimaryFont =
-                string.Equals(assetPath, LiberationSansAssetPath, System.StringComparison.Ordinal) ||
-                string.Equals(assetPath, PrimaryTextAssetPathUtf, System.StringComparison.Ordinal) ||
-                string.Equals(assetPath, NumericTextAssetPathUtf, System.StringComparison.Ordinal);
-            fontAsset.isMultiAtlasTexturesEnabled = !isBoundedPrimaryFont;
-            SetClearDynamicDataOnBuild(fontAsset, false);
-            if (!isBoundedPrimaryFont)
+        private static void ApplyStaticRuntimePolicy(TMP_FontAsset fontAsset)
+        {
+            if (fontAsset == null)
                 return;
 
-            SerializedObject serializedFontAsset = new SerializedObject(fontAsset);
-            SerializedProperty atlasWidthProperty = serializedFontAsset.FindProperty("m_AtlasWidth");
-            SerializedProperty atlasHeightProperty = serializedFontAsset.FindProperty("m_AtlasHeight");
-            if (atlasWidthProperty != null)
-                atlasWidthProperty.intValue = DefaultDynamicAtlasSize;
-
-            if (atlasHeightProperty != null)
-                atlasHeightProperty.intValue = DefaultDynamicAtlasSize;
-
-            serializedFontAsset.ApplyModifiedPropertiesWithoutUndo();
+            fontAsset.atlasPopulationMode = AtlasPopulationMode.Static;
+            fontAsset.isMultiAtlasTexturesEnabled = false;
+            SetClearDynamicDataOnBuild(fontAsset, false);
             EnsureAtlasReadable(fontAsset);
+            EditorUtility.SetDirty(fontAsset);
         }
 
         private static string BuildLocalizedCharacterSeed(string tableAssetPath, string authoredSeed)

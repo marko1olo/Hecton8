@@ -1,0 +1,122 @@
+#pragma kernel CSClearArgs
+#pragma kernel CSRaymarch
+#pragma target 4.5
+
+Texture3D<float> _VoxelSdfTexture3D;
+SamplerState sampler_linear_clamp;
+
+AppendStructuredBuffer<float4> _SonarPointAppendBuffer;
+StructuredBuffer<float4> _PredatorAUPBuffer;
+RWByteAddressBuffer _IndirectArgs;
+
+cbuffer HectonSonarMapConstants
+{
+    float4 _GridDimensions;
+    float4 _VolumeOrigin;
+    float4 _VoxelCellSize;
+    float4 _PlayerWorldPosition;
+    float4 _SonarScalarParams;   // x: SDF range, y: sample radius meters, z: time phase
+    float4 _SonarDispatchParams; // x: dispatch axis, y: raymarch steps, z: predator count, w: quad index count
+};
+
+static const float kSurfaceEpsilon = 0.0001f;
+
+bool IsFinite3(float3 value)
+{
+    return all(abs(value) < 3.402823466e+38f);
+}
+
+float SampleSdfWorld(float3 worldPosition)
+{
+    float3 safeCellSize = max(_VoxelCellSize.xyz, float3(0.001f, 0.001f, 0.001f));
+    float3 safeDimensions = max(_GridDimensions.xyz, float3(2.0f, 2.0f, 2.0f));
+    float3 voxel = (worldPosition - _VolumeOrigin.xyz) * rcp(safeCellSize);
+    float3 uvw = voxel * rcp(max(safeDimensions - 1.0f, float3(1.0f, 1.0f, 1.0f)));
+
+    if (any(uvw < 0.0f) || any(uvw > 1.0f))
+        return 0.0f;
+
+    float encoded = _VoxelSdfTexture3D.SampleLevel(sampler_linear_clamp, uvw, 0.0f);
+    return ((encoded * 2.0f) - 1.0f) * max(_SonarScalarParams.x, 0.001f);
+}
+
+float3 ResolveLocalPdaPosition(float3 worldPosition)
+{
+    float radius = max(_SonarScalarParams.y, 1.0f);
+    return clamp((worldPosition - _PlayerWorldPosition.xyz) * rcp(radius * 2.0f), -0.5f, 0.5f);
+}
+
+[numthreads(1, 1, 1)]
+void CSClearArgs(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    _IndirectArgs.Store(0, (uint)max(_SonarDispatchParams.w, 0.0f));
+    _IndirectArgs.Store(4, 0u);
+    _IndirectArgs.Store(8, 0u);
+    _IndirectArgs.Store(12, 0u);
+    _IndirectArgs.Store(16, 0u);
+}
+
+[numthreads(8, 8, 8)]
+void CSRaymarch(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint predatorSlot = dispatchThreadId.x + dispatchThreadId.y * 8u;
+    if (dispatchThreadId.z == 0u && predatorSlot < (uint)min((int)_SonarDispatchParams.z, 16))
+    {
+        float4 predatorAup = _PredatorAUPBuffer[predatorSlot];
+        float3 predatorLocal = ResolveLocalPdaPosition(predatorAup.xyz);
+        if (IsFinite3(predatorLocal) && all(abs(predatorLocal) <= 0.5f))
+        {
+            float trianglePulse = abs(frac(_SonarScalarParams.z * 0.85f + (float)predatorSlot * 0.137f) * 2.0f - 1.0f);
+            float predatorAlpha = saturate((predatorAup.w * 0.008333333f) * (0.55f + trianglePulse * 0.45f));
+            _SonarPointAppendBuffer.Append(float4(predatorLocal, -max(predatorAlpha, 0.25f)));
+        }
+    }
+
+    uint axis = (uint)max((int)_SonarDispatchParams.x, 1);
+    if (dispatchThreadId.x >= axis || dispatchThreadId.y >= axis || dispatchThreadId.z >= axis)
+        return;
+
+    float axisF = max((float)axis, 1.0f);
+    float invAxis = rcp(axisF);
+    float3 sample01 = ((float3)dispatchThreadId + 0.5f) * invAxis;
+    float3 localTarget = sample01 - 0.5f;
+    float targetLengthSq = dot(localTarget, localTarget);
+    if (targetLengthSq < 0.000001f)
+        localTarget = float3(0.0f, 0.0f, 0.5f);
+
+    float3 targetWorld = _PlayerWorldPosition.xyz + (localTarget * (max(_SonarScalarParams.y, 1.0f) * 2.0f));
+    float3 rayDelta = targetWorld - _PlayerWorldPosition.xyz;
+    int steps = clamp((int)_SonarDispatchParams.y, 2, 32);
+    float invSteps = rcp((float)steps);
+
+    float3 previousWorld = _PlayerWorldPosition.xyz;
+    float previousDensity = SampleSdfWorld(previousWorld);
+
+    [loop]
+    for (int step = 1; step <= steps; step++)
+    {
+        float t = (float)step * invSteps;
+        float3 currentWorld = _PlayerWorldPosition.xyz + rayDelta * t;
+        float currentDensity = SampleSdfWorld(currentWorld);
+        bool crossed = (previousDensity < -kSurfaceEpsilon && currentDensity >= kSurfaceEpsilon) ||
+                       (previousDensity > kSurfaceEpsilon && currentDensity <= -kSurfaceEpsilon);
+
+        if (crossed)
+        {
+            float denom = max(abs(previousDensity - currentDensity), kSurfaceEpsilon);
+            float crossT = saturate(abs(previousDensity) * rcp(denom));
+            float3 hitWorld = lerp(previousWorld, currentWorld, crossT);
+            float3 localPda = ResolveLocalPdaPosition(hitWorld);
+            if (IsFinite3(localPda))
+            {
+                float intensity = saturate(0.42f + (1.0f - ((float)step * invSteps)) * 0.58f);
+                _SonarPointAppendBuffer.Append(float4(localPda, intensity));
+            }
+
+            return;
+        }
+
+        previousWorld = currentWorld;
+        previousDensity = currentDensity;
+    }
+}

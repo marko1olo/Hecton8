@@ -43,6 +43,10 @@ namespace Hecton8.UI
         [Header("── Font ─────────────────────────────────────")]
         [Tooltip("Shrift s kirillitsey. Esli null — ispolzuetsya TMP default.")]
         [SerializeField] private TMPro.TMP_FontAsset _labelFont;
+        [SerializeField, Tooltip("GPU point-cloud shader forwarded to the runtime-created PDA map tab.")]
+        private Shader pdaSonarPointCloudShader;
+        [SerializeField, Tooltip("Compute shader forwarded to the runtime-created PDA map tab.")]
+        private ComputeShader pdaSonarMapCompute;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -185,6 +189,17 @@ namespace Hecton8.UI
         //  BUILD UI
         // ══════════════════════════════════════════════════════════
 
+        internal void ConfigureMapRuntimeAssets(Shader pointCloudShader, ComputeShader mapCompute)
+        {
+            if (pointCloudShader != null)
+                pdaSonarPointCloudShader = pointCloudShader;
+            if (mapCompute != null)
+                pdaSonarMapCompute = mapCompute;
+
+            if (_mapTab != null)
+                _mapTab.ConfigurePointCloudAssets(pdaSonarPointCloudShader, pdaSonarMapCompute);
+        }
+
         private void EnsureBuilt()
         {
             if (_built) return;
@@ -292,6 +307,7 @@ namespace Hecton8.UI
             _mapTab = mapViewport.gameObject.GetComponent<PDAMapTab>();
             if (_mapTab == null)
                 _mapTab = mapViewport.gameObject.AddComponent<PDAMapTab>();
+            _mapTab.ConfigurePointCloudAssets(pdaSonarPointCloudShader, pdaSonarMapCompute);
 
             _currentModeLabel = CreateText("CurrentMode", panel, 11f, colorAccent, TextAlignmentOptions.TopLeft);
             _currentModeLabel.fontStyle = FontStyles.Bold;

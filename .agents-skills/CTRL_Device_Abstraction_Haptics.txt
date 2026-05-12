@@ -501,4 +501,18 @@ cmd.MotorMask = 0b0011
 // Result: player physically feels which side hull was hit.
 // Cost: 1 InverseTransformDirection call per collision event (cold path). Zero per frame.
 ```
+
+### VIF. Haptic Spatialization 2026 Law
+
+```
+[RULE] Spatial haptics are event-authored, not per-frame simulated.
+[RULE] Directional hull/collision/tool impulses must enter the fixed HapticCommand buffer as local-space left/right/trigger weights.
+[RULE] LOW uses dominant-axis left/right split only.
+[RULE] HIGH adds distance attenuation and priority blending.
+[RULE] ULTRA may use device-specific trigger resistance only through cached platform abstraction.
+
+[FORBID] Per-frame world-to-local transforms for ambient haptics.
+[FORBID] Audio-rate haptic modulation from gameplay thread.
+[FORBID] string-keyed haptic effect lookup at dispatch.
+```
 ```

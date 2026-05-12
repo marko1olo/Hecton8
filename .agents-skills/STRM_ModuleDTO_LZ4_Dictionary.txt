@@ -1,0 +1,61 @@
+# STRM_MODULEDTO_LZ4_DICTIONARY.md
+## Save DTO Compression Dictionary Mandate
+
+Status: PENDING VERIFICATION
+Owner: Data Archivist
+
+---
+
+## Primary Law
+
+[RULE] LZ4 dictionaries may be used only after an offline corpus benchmark proves a win on real `ModuleDTO`/sector payloads.
+[FORBID] Claiming ">90 percent compression ratio" for LZ4 dictionaries without corpus proof.
+[FORBID] Adding dictionary compression to runtime save code unless the native LZ4 dictionary APIs are explicitly bound and version-pinned.
+
+---
+
+## Current Project Reality
+
+`SaveBinaryStorage` currently P/Invokes:
+- `LZ4_compress_default`
+- `LZ4_decompress_safe`
+
+It does not bind dictionary APIs such as `LZ4_loadDict`, `LZ4_compress_fast_continue`, or `LZ4_decompress_safe_usingDict`.
+
+[BROKEN] A "pre-trained LZ4 dictionary" mandate cannot be implemented with the current binding surface.
+
+---
+
+## Compression Architecture
+
+[RULE] Precondition data before LZ4:
+- Sort by stable key.
+- Delta-pack monotonic fields.
+- Quantize floats to fixed-point when visually acceptable.
+- Split hot repeated enums/flags into byte planes.
+- RLE all-zero and repeated planes before LZ4.
+
+[RULE] LZ4 dictionary is second-stage compression, not the primary ratio source.
+
+Recommended pipeline:
+1. Offline collect 10k+ representative DTO payloads.
+2. Train static dictionary outside Unity.
+3. Version dictionary with save format header.
+4. Compress with dictionary only for small blocks where baseline LZ4 ratio is weak.
+5. Store dictionary id/hash in each protected block header.
+
+---
+
+## Success Gate
+
+[REQUIRE] Benchmark table before adoption:
+- raw bytes
+- packed bytes before LZ4
+- baseline LZ4 bytes
+- dictionary LZ4 bytes
+- encode/decode microseconds
+- max tail latency
+- corrupted dictionary fallback behavior
+
+[RULE] If target is true 10:1 on heterogeneous DTOs, investigate Zstandard dictionary mode for cold/offline saves instead of forcing LZ4 beyond its design center.
+

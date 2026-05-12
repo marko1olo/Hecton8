@@ -1,0 +1,26 @@
+Locomotion Engineer: "System Override. Agent Identity: LOCOMOTION_ENGINEER | Prompt ID: PLAYER_KINEMATICS. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Execute tasks 1-15 and the Omega Polish. No excuses."
+Apex Director: "System Override. Agent Identity: APEX_DIRECTOR | Prompt ID: AI_ENCOUNTER_DIRECTOR. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Build the predictive spawner."
+DSP Acoustic Lead: "System Override. Agent Identity: DSP_ACOUSTIC_LEAD | Prompt ID: AUDIO_SPATIALIZATION. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Build the binaural fake."
+Habitat Architect: "System Override. Agent Identity: HABITAT_ARCHITECT | Prompt ID: HABITAT_INTEGRITY. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Fix the flooding math."
+Voxel Surgeon: "System Override. Agent Identity: VOXEL_SURGEON | Prompt ID: VOXEL_MESH_PIPELINE. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Offload meshing to Awaitables."
+Fluid Mechanic: "System Override. Agent Identity: FLUID_MECHANIC | Prompt ID: ABYSSAL_FLOW_FIELD. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Inject the wake turbulence."
+UX Engineer: "System Override. Agent Identity: UX_ENGINEER | Prompt ID: VEHICLE_SUB_OS. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Build the diegetic cockpit."
+Streaming Architect: "System Override. Agent Identity: STREAMING_ARCHITECT | Prompt ID: ASSET_STREAMING_PREDICTIVE. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Implement predictive loading."
+
+Locomotion Engineer: System Override. Agent Identity: LOCOMOTION_ENGINEER | Prompt ID: PLAYER_KINEMATICS. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Build the physical hands and water drag. Obey the Anti-Amnesia Protocol.
+Encounter Director: System Override. Agent Identity: APEX_DIRECTOR | Prompt ID: AI_ENCOUNTER_DIRECTOR. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Build the L4D-style predictive spawner.
+Acoustics Lead: System Override. Agent Identity: DSP_ACOUSTIC_LEAD | Prompt ID: AUDIO_SPATIALIZATION. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Build the binaural voxel acoustics.
+Habitat Architect: System Override. Agent Identity: HABITAT_ARCHITECT | Prompt ID: HABITAT_INTEGRITY. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Build the water propagation graph.
+Voxel Surgeon: System Override. Agent Identity: VOXEL_SURGEON | Prompt ID: VOXEL_MESH_PIPELINE. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Stitch the seams and make meshing Awaitable.
+Fluid Mechanic: System Override. Agent Identity: FLUID_MECHANIC | Prompt ID: ABYSSAL_FLOW_FIELD. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Build the 3D wake turbulence.
+UX Engineer (Cockpit): System Override. Agent Identity: UX_ENGINEER | Prompt ID: VEHICLE_SUB_OS. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Build the diegetic cockpit and holo-radar.
+Streaming Architect: System Override. Agent Identity: STREAMING_ARCHITECT | Prompt ID: ASSET_STREAMING_PREDICTIVE. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Build the velocity-predictive streaming.
+
+Ocean Surface: System Override. Agent Identity: HYDRO_MECHANIC | Prompt ID: OCEAN_SURFACE_KINEMATICS. Open CURRENT_BATCH.md, extract your XML tag. Build the Burst Gerstner waves. Zero GC.
+Player Tool IK: System Override. Agent Identity: ANIMATION_LEAD | Prompt ID: PLAYER_TOOL_IK. Open CURRENT_BATCH.md, extract your XML tag. Build the 2-bone analytical IK for hands.
+Celestial Mechanics: System Override. Agent Identity: LIGHTING_TECH | Prompt ID: CELESTIAL_MECHANICS. Open CURRENT_BATCH.md, extract your XML tag. Build the SlowTick orbital fake.
+Suit Upgrades: System Override. Agent Identity: QUARTERMASTER | Prompt ID: SUIT_UPGRADE_SYSTEM. Open CURRENT_BATCH.md, extract your XML tag. Build the bitmask upgrade resolver.
+Data Archaeology: System Override. Agent Identity: UX_ENGINEER | Prompt ID: DATA_ARCHAEOLOGY. Open CURRENT_BATCH.md, extract your XML tag. Build the Zero-GC scanner UI.
+Damage Control: System Override. Agent Identity: HABITAT_ARCHITECT | Prompt ID: SUBMARINE_DAMAGE_CONTROL. Open CURRENT_BATCH.md, extract your XML tag. Build the GPU leak particles and Burst repair.
+Leviathan Tentacles: System Override. Agent Identity: MOTION_ENGINEER | Prompt ID: LEVIATHAN_TENTACLE_IK. Open CURRENT_BATCH.md, extract your XML tag. Build the Verlet tentacle solver.
+Sonar Point Cloud: System Override. Agent Identity: VFX_TECHNICAL_ARTIST | Prompt ID: SONAR_POINT_CLOUD. Open CURRENT_BATCH.md, extract your XML tag. Build the Compute Shader holo-map.

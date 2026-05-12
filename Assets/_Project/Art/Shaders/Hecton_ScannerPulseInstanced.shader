@@ -12,8 +12,8 @@ Shader "HECTON/Scanner/PulseInstanced"
     {
         Tags
         {
-            "RenderType"="Transparent"
-            "Queue"="Transparent+10"
+            "RenderType"="TransparentCutout"
+            "Queue"="AlphaTest+10"
             "RenderPipeline"="UniversalPipeline"
         }
 
@@ -21,10 +21,11 @@ Shader "HECTON/Scanner/PulseInstanced"
         {
             Name "Forward"
             Tags { "LightMode"="UniversalForward" }
-            Blend SrcAlpha One
-            ZWrite Off
+            Blend Off
+            ZWrite On
             ZTest LEqual
             Cull Off
+            AlphaToMask On
 
             HLSLPROGRAM
             #pragma vertex Vert
@@ -87,6 +88,12 @@ Shader "HECTON/Scanner/PulseInstanced"
                 return value * invRadius;
             }
 
+            float HectonDitherCoverage(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
@@ -113,10 +120,10 @@ Shader "HECTON/Scanner/PulseInstanced"
                 float sweepFlicker = TemporalFlicker01(_Time.y, 24.0, band * 0.173 + noise * 5.13);
                 float sweepGlow = sweepLine * sweepFlicker * _SweepInterferenceStrength;
                 alpha = saturate(alpha + sweepGlow * outer * _BaseColor.a);
-                clip(alpha - 0.0005);
+                clip(alpha - max(HectonDitherCoverage(input.positionCS.xy), 0.0005));
                 float3 color = _BaseColor.rgb + float3(chromaBias * 0.15, chromaBias * 0.05, -chromaBias * 0.08);
                 color += _BaseColor.rgb * sweepGlow * 0.6;
-                return half4(saturate(color) * alpha, alpha);
+                return half4(saturate(color), 1.0h);
             }
             ENDHLSL
         }

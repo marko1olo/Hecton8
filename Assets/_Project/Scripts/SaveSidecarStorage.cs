@@ -388,11 +388,11 @@ namespace Hecton8.SaveSystem
             string root = s_persistentDataPathRoot;
             if (string.IsNullOrEmpty(root))
             {
-                root = Application.persistentDataPath;
+                root = HectonPersistentPathPolicy.RootPath;
                 s_persistentDataPathRoot = root;
             }
 
-            return Path.Combine(root, relativePath);
+            return HectonPersistentPathPolicy.CombineFile(relativePath);
         }
 
         private struct SidecarWriter

@@ -96,7 +96,7 @@ namespace Hecton8.Building
         [Tooltip("Sloy poverhnosti dlya razmescheniya (Terrain, Default)")]
         [SerializeField] private LayerMask surfaceMask = HectonLayerMasks.ConstructionSurfaceLayerMask;
         [Tooltip("Rigid world-space grid size used for free placement positions.")]
-        [SerializeField] private float constructionGridSize = 2.5f;
+        [SerializeField] private float constructionGridSize = 4f;
         [Tooltip("Total structural integrity budget available to the current habitat graph.")]
         [SerializeField] private float structuralIntegrityBudget = 240f;
         [Tooltip("Integrity penalty applied for every BFS depth step away from the support root.")]
@@ -117,12 +117,12 @@ namespace Hecton8.Building
         [Header("── Socket Snap (v3.0) ────────────────────────")]
         [Tooltip("Radius obnaruzheniya soketov vokrug tochki lucha (metry).\n" +
                  "Kogda hitPoint ≤ snapRadius ot svobodnogo soketa → snap.")]
-        [SerializeField] private float snapRadius = 2f;
+        [SerializeField] private float snapRadius = 1f;
 
         [Tooltip("Radius otryva ot soketa (metry).\n" +
                  "Dolzhen byt > snapRadius dlya gisterezisa.\n" +
                  "Kogda hitPoint > unsnapRadius ot snapnutogo soketa → unsnap.")]
-        [SerializeField] private float unsnapRadius = 2.5f;
+        [SerializeField] private float unsnapRadius = 1.25f;
 
         [Tooltip("Sloy soketov dlya OverlapSphereNonAlloc.\n" +
                  "Sozday Layer 'Sockets' v Project Settings → Tags & Layers.\n" +
@@ -154,10 +154,13 @@ namespace Hecton8.Building
         private bool _currentGhostUsesRuntimeProxy;
         private RaycastHit _hit;
         private readonly RaycastHit[] _buildHits = new RaycastHit[1]; // COLD ALLOC: single surface probe for build targeting.
-        private const float StructuralPlacementGridMeters = 0.5f;
+        private const float StructuralPlacementGridMeters = 4f;
+        private const float StructuralPlacementGridInv = 0.25f;
         private const float StructuralRotationStepDegrees = 90f;
+        private const float StructuralSnapRadiusMeters = 1f;
+        private const float StructuralUnsnapRadiusMeters = 1.25f;
         private readonly Collider[] _terrainSdfOverlapBuffer = new Collider[16];
-        private float _ghostYawOffset;
+        private int _ghostYawStep;
         private const int BuildGhostProjectionInstanceCount = 1;
         private readonly Matrix4x4[] _buildGhostProjectionMatrices = new Matrix4x4[BuildGhostProjectionInstanceCount];
         private Mesh _buildGhostProjectionMesh;
@@ -634,10 +637,7 @@ namespace Hecton8.Building
         {
             if (!IsEquipped) return;
 
-            _ghostYawOffset += rotationStep;
-            if (_ghostYawOffset >= 360f)
-                _ghostYawOffset -= 360f;
-
+            _ghostYawStep = (_ghostYawStep + (rotationStep >= 0f ? 1 : 3)) & 3;
             _integrityValidationDirty = true;
             PlaySound(rotateSound);
         }
@@ -707,7 +707,7 @@ namespace Hecton8.Building
 
         private void ResetBuilderState()
         {
-            _ghostYawOffset      = 0f;
+            _ghostYawStep        = 0;
             _isSnapped           = false;
             _wasSnapped          = false;
             _snappedSocketTransform = null;
@@ -754,7 +754,7 @@ namespace Hecton8.Building
 
             if (activeBuildable.ghostPrefab == null)
             {
-                if (!ConstructionRuntimeProxyFactory.TryCreateGhostProxy(
+                if (!ConstructionRuntimeProxyFactory.TryAcquireGhostProxy(
                         activeBuildable,
                         spawnPos,
                         Quaternion.identity,
@@ -799,7 +799,7 @@ namespace Hecton8.Building
 
             if (_currentGhostUsesRuntimeProxy)
             {
-                UnityEngine.Object.Destroy(_currentGhostObj);
+                ConstructionRuntimeProxyFactory.ReleaseGhostProxy(_currentGhostObj);
             }
             else
             {
@@ -873,6 +873,12 @@ namespace Hecton8.Building
             float activeGridSize = ResolveActiveGridSize();
             float3 snappedFreePosition = _habitatConstructionManager.SnapWorldPosition(rawTargetPoint, activeGridSize);
             Vector3 freePlacementPosition = new Vector3(snappedFreePosition.x, snappedFreePosition.y, snappedFreePosition.z);
+            bool isStructuralPreview = IsStructuralBuildable(activeBuildable);
+            float activeSnapRadius = ResolveActiveSnapRadius(isStructuralPreview);
+            float activeUnsnapRadius = ResolveActiveUnsnapRadius(isStructuralPreview, activeSnapRadius);
+            float activeSnapRadiusSq = activeSnapRadius * activeSnapRadius;
+            float activeUnsnapRadiusSq = activeUnsnapRadius * activeUnsnapRadius;
+            Quaternion yawRotation = ResolveGhostYawRotation(_ghostYawStep);
 
             // ═══════════════════════════════════════════════════
             //  SOCKET SEARCH (v3.0)
@@ -885,7 +891,7 @@ namespace Hecton8.Building
             //  Fakticheskaya proverka snap/unsnap — po distantsii nizhe.
             // ═══════════════════════════════════════════════════
 
-            float searchRadius = unsnapRadius; // ischem v bolshem radiuse
+            float searchRadius = activeUnsnapRadius;
             int resolvedSocketMask = ResolveSocketMask();
             int socketCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 rawTargetPoint,
@@ -921,7 +927,7 @@ namespace Hecton8.Building
                         _currentGhostObj.transform,
                         _ghostSocketBuffer,
                         socket,
-                        _ghostYawOffset,
+                        _ghostYawStep,
                         out Vector3 alignedPosition,
                         out Quaternion alignedRotation,
                         out ModuleSocket alignedGhostSocket))
@@ -965,7 +971,7 @@ namespace Hecton8.Building
             if (_isSnapped)
             {
                 // ── Seychas snapnut: proveryaem uslovie OTRYVA ──
-                if (bestTransform == null || bestDist > (unsnapRadius * unsnapRadius))
+                if (bestTransform == null || bestDist > activeUnsnapRadiusSq)
                 {
                     // Otryvaemsya: net soketov poblizosti ILI slishkom daleko
                     _isSnapped = false;
@@ -985,7 +991,7 @@ namespace Hecton8.Building
             else
             {
                 // ── Seychas NE snapnut: proveryaem uslovie PRILIPANIYa ──
-                if (bestTransform != null && bestDist <= (snapRadius * snapRadius))
+                if (bestTransform != null && bestDist <= activeSnapRadiusSq)
                 {
                     _isSnapped = true;
                     _snappedSocketTransform = bestTransform;
@@ -1020,9 +1026,15 @@ namespace Hecton8.Building
                 // ── SURFACE MODE: obychnoe povedenie (raycast) ──
                 targetPos = freePlacementPosition;
 
-                Quaternion surfaceRot = Quaternion.FromToRotation(Vector3.up, _hit.normal);
-                Quaternion yawRot     = Quaternion.Euler(0f, _ghostYawOffset, 0f);
-                targetRot = surfaceRot * yawRot;
+                if (isStructuralPreview)
+                {
+                    targetRot = yawRotation;
+                }
+                else
+                {
+                    Quaternion surfaceRot = Quaternion.FromToRotation(Vector3.up, _hit.normal);
+                    targetRot = surfaceRot * yawRotation;
+                }
             }
             else
             {
@@ -1031,12 +1043,12 @@ namespace Hecton8.Building
                 {
                     float3 snappedAnchorPosition = _habitatConstructionManager.SnapWorldPosition(buildAnchor.position, activeGridSize);
                     targetPos = new Vector3(snappedAnchorPosition.x, snappedAnchorPosition.y, snappedAnchorPosition.z);
-                    targetRot = buildAnchor.rotation * Quaternion.Euler(0f, _ghostYawOffset, 0f);
+                    targetRot = buildAnchor.rotation * yawRotation;
                 }
                 else
                 {
                     targetPos = freePlacementPosition;
-                    targetRot = Quaternion.Euler(0f, _ghostYawOffset, 0f);
+                    targetRot = yawRotation;
                 }
             }
 
@@ -1050,7 +1062,7 @@ namespace Hecton8.Building
             //  Cheap cinematic smoothing: x/(1+x) avoids exp() in the placement tick.
             // ═══════════════════════════════════════════════════
 
-            if (IsStructuralBuildable(activeBuildable))
+            if (isStructuralPreview)
             {
                 targetPos = QuantizePosition(targetPos, StructuralPlacementGridMeters);
                 targetRot = QuantizeRotation(targetRot, StructuralRotationStepDegrees);
@@ -1059,11 +1071,17 @@ namespace Hecton8.Building
             Transform t = _currentGhostObj.transform;
             Vector3 previousPosition = t.position;
             Quaternion previousRotation = t.rotation;
-            float speed = _isSnapped ? snapSpeed : ghostFollowSpeed;
-            float lerpFactor = ResolveDecayBlend(speed, dt);
 
-            t.position = Vector3.Lerp(previousPosition, targetPos, lerpFactor);
-            t.rotation = Quaternion.Slerp(previousRotation, targetRot, lerpFactor);
+            if (_isSnapped)
+            {
+                t.SetPositionAndRotation(targetPos, targetRot);
+            }
+            else
+            {
+                float lerpFactor = ResolveDecayBlend(ghostFollowSpeed, dt);
+                t.position = Vector3.Lerp(previousPosition, targetPos, lerpFactor);
+                t.rotation = NlerpRotation(previousRotation, targetRot, lerpFactor);
+            }
 
             if (previousSnapState != _isSnapped ||
                 !ReferenceEquals(previousSocket, _snappedSocket) ||
@@ -1471,7 +1489,22 @@ namespace Hecton8.Building
         {
             return IsStructuralBuildable(activeBuildable)
                 ? StructuralPlacementGridMeters
-                : constructionGridSize;
+                : math.max(0.001f, constructionGridSize);
+        }
+
+        private float ResolveActiveSnapRadius(bool isStructuralPreview)
+        {
+            return isStructuralPreview
+                ? StructuralSnapRadiusMeters
+                : math.max(0.1f, snapRadius);
+        }
+
+        private float ResolveActiveUnsnapRadius(bool isStructuralPreview, float activeSnapRadius)
+        {
+            float authoredUnsnapRadius = isStructuralPreview
+                ? StructuralUnsnapRadiusMeters
+                : math.max(activeSnapRadius, unsnapRadius);
+            return math.max(activeSnapRadius + 0.01f, authoredUnsnapRadius);
         }
 
         private int ResolveSocketMask()
@@ -1492,21 +1525,66 @@ namespace Hecton8.Building
 
         private static Vector3 QuantizePosition(Vector3 position, float gridSize)
         {
-            float safeGrid = Mathf.Max(0.001f, gridSize);
-            return new Vector3(
-                Mathf.Round(position.x / safeGrid) * safeGrid,
-                Mathf.Round(position.y / safeGrid) * safeGrid,
-                Mathf.Round(position.z / safeGrid) * safeGrid);
+            float safeGrid = math.max(0.001f, gridSize);
+            float invGrid = math.abs(safeGrid - StructuralPlacementGridMeters) <= 0.0001f
+                ? StructuralPlacementGridInv
+                : math.rcp(safeGrid);
+            float3 snapped = math.floor((float3)position * invGrid + new float3(0.5f)) * safeGrid;
+            return new Vector3(snapped.x, snapped.y, snapped.z);
         }
 
         private static Quaternion QuantizeRotation(Quaternion rotation, float stepDegrees)
         {
-            float safeStep = Mathf.Max(1f, stepDegrees);
+            float safeStep = math.max(1f, stepDegrees);
+            float invStep = math.rcp(safeStep);
             Vector3 euler = rotation.eulerAngles;
+            float3 snapped = math.floor((float3)euler * invStep + new float3(0.5f)) * safeStep;
             return Quaternion.Euler(
-                Mathf.Round(euler.x / safeStep) * safeStep,
-                Mathf.Round(euler.y / safeStep) * safeStep,
-                Mathf.Round(euler.z / safeStep) * safeStep);
+                snapped.x,
+                snapped.y,
+                snapped.z);
+        }
+
+        private static Quaternion ResolveGhostYawRotation(int yawStep)
+        {
+            const float halfSqrt = 0.7071067811865476f;
+            switch (yawStep & 3)
+            {
+                case 1: return new Quaternion(0f, halfSqrt, 0f, halfSqrt);
+                case 2: return new Quaternion(0f, 1f, 0f, 0f);
+                case 3: return new Quaternion(0f, -halfSqrt, 0f, halfSqrt);
+                default: return Quaternion.identity;
+            }
+        }
+
+        private static Quaternion NlerpRotation(Quaternion from, Quaternion to, float t)
+        {
+            if (Quaternion.Dot(from, to) < 0f)
+            {
+                to.x = -to.x;
+                to.y = -to.y;
+                to.z = -to.z;
+                to.w = -to.w;
+            }
+
+            float clampedT = math.saturate(t);
+            Quaternion blended = new Quaternion(
+                math.lerp(from.x, to.x, clampedT),
+                math.lerp(from.y, to.y, clampedT),
+                math.lerp(from.z, to.z, clampedT),
+                math.lerp(from.w, to.w, clampedT));
+
+            float lengthSq =
+                blended.x * blended.x +
+                blended.y * blended.y +
+                blended.z * blended.z +
+                blended.w * blended.w;
+            float invLength = math.rsqrt(math.max(lengthSq, 0.00000001f));
+            return new Quaternion(
+                blended.x * invLength,
+                blended.y * invLength,
+                blended.z * invLength,
+                blended.w * invLength);
         }
 
         private static bool IsStructuralBuildable(BuildableData data)
@@ -1531,7 +1609,7 @@ namespace Hecton8.Building
                     _currentGhostObj.transform,
                     _ghostSocketBuffer,
                     _snappedSocket,
-                    _ghostYawOffset,
+                    _ghostYawStep,
                     out Vector3 alignedPosition,
                     out Quaternion alignedRotation,
                     out ModuleSocket alignedGhostSocket))
@@ -1541,6 +1619,7 @@ namespace Hecton8.Building
 
             placePos = alignedPosition;
             placeRot = alignedRotation;
+            ApplyStructuralPlacementQuantization(ref placePos, ref placeRot);
             _snappedGhostSocket = alignedGhostSocket;
             _currentGhostObj.transform.SetPositionAndRotation(placePos, placeRot);
             return true;
@@ -2250,12 +2329,12 @@ namespace Hecton8.Building
 #endif
             if (buildDistance     < 1f) buildDistance     = 1f;
             if (ghostFollowSpeed < 1f) ghostFollowSpeed = 1f;
-            if (rotationStep     < 1f) rotationStep     = 1f;
-            if (constructionGridSize < 0.25f) constructionGridSize = 0.25f;
+            if (rotationStep     != StructuralRotationStepDegrees) rotationStep = StructuralRotationStepDegrees;
+            if (constructionGridSize < StructuralPlacementGridMeters) constructionGridSize = StructuralPlacementGridMeters;
             if (structuralIntegrityBudget < 1f) structuralIntegrityBudget = 1f;
             if (structuralDepthPenalty < 0.01f) structuralDepthPenalty = 0.01f;
-            if (snapRadius       < 0.1f) snapRadius     = 0.1f;
-            if (unsnapRadius     <= snapRadius) unsnapRadius = snapRadius + 0.5f;
+            if (snapRadius       != StructuralSnapRadiusMeters) snapRadius = StructuralSnapRadiusMeters;
+            if (unsnapRadius     < StructuralUnsnapRadiusMeters) unsnapRadius = StructuralUnsnapRadiusMeters;
             if (snapSpeed        < 1f) snapSpeed        = 1f;
         }
 

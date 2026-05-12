@@ -18,8 +18,8 @@ Shader "Hecton/HectonOcean"
     {
         Tags
         {
-            "RenderType"       = "Transparent"
-            "Queue"            = "Transparent"
+            "RenderType"       = "TransparentCutout"
+            "Queue"            = "AlphaTest"
             "RenderPipeline"   = "UniversalPipeline"
             "IgnoreProjector"  = "True"
         }
@@ -248,8 +248,9 @@ Shader "Hecton/HectonOcean"
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
 
-            Blend SrcAlpha OneMinusSrcAlpha
+            Blend Off
             ZWrite On
+            AlphaToMask On
             Cull [_Cull]
 
             HLSLPROGRAM

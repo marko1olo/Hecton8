@@ -55,6 +55,7 @@ namespace Hecton8.Editor.Build
             AppendHubInstallGuidance(report, projectRoot);
             AppendPackageAndSettingsMatrix(report, projectRoot);
             AppendNativePluginMatrix(report, projectRoot);
+            AppendRuntimeAdaptationMatrix(report, projectRoot);
             AppendPortabilityRiskMatrix(report, projectRoot);
             AppendActionList(report);
             AppendRegressionModel(report);
@@ -183,7 +184,11 @@ namespace Hecton8.Editor.Build
             bool androidExcluded = FileContains(projectRoot, "ProjectSettings/QualitySettings.asset", "- Android");
             bool iosExcluded = FileContains(projectRoot, "ProjectSettings/QualitySettings.asset", "- iPhone");
             bool androidTemplateId = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "com.UnityTechnologies.com.unity.template.urpblank");
+            bool androidTargetSdkAutomatic = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "AndroidTargetSdkVersion: 0");
             bool noBuildTargetVrSettings = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "m_BuildTargetVRSettings: []");
+            bool hasAndroidVrManifest = HasRelativeFile(projectRoot, "Assets/Plugins/Android/AndroidManifest.xml");
+            bool hasAndroidVrHeadtracking = FileContains(projectRoot, "Assets/Plugins/Android/AndroidManifest.xml", "android.hardware.vr.headtracking");
+            bool hasAndroidVibratePermission = FileContains(projectRoot, "Assets/Plugins/Android/AndroidManifest.xml", "android.permission.VIBRATE");
 
             report.AppendLine("## Package And Settings Matrix");
             report.AppendLine();
@@ -198,6 +203,8 @@ namespace Hecton8.Editor.Build
             AppendRow(report, "Modern XR loader list", noBuildTargetVrSettings ? "BLOCKED" : "PASS", noBuildTargetVrSettings ? "m_BuildTargetVRSettings is empty" : "build-target XR settings are present");
             AppendRow(report, "Android quality inclusion", androidExcluded ? "BLOCKED" : "PASS", androidExcluded ? "QualitySettings excludes Android" : "QualitySettings does not exclude Android");
             AppendRow(report, "Android package identity", androidTemplateId ? "BLOCKED" : "PASS", androidTemplateId ? "ProjectSettings still uses Unity template Android identifier" : "Android identifier is not the Unity template id");
+            AppendRow(report, "Android target SDK policy", androidTargetSdkAutomatic ? "BLOCKED" : "PASS", androidTargetSdkAutomatic ? "AndroidTargetSdkVersion is automatic (0)" : "AndroidTargetSdkVersion is explicit");
+            AppendRow(report, "Android VR manifest", hasAndroidVrManifest && hasAndroidVrHeadtracking && hasAndroidVibratePermission ? "PASS" : "BLOCKED", hasAndroidVrManifest ? "manifest present; headtracking=" + hasAndroidVrHeadtracking + ", vibrate=" + hasAndroidVibratePermission : "Assets/Plugins/Android/AndroidManifest.xml missing");
             AppendRow(report, "iOS quality inclusion", iosExcluded ? "WARN" : "PASS", iosExcluded ? "QualitySettings excludes iPhone" : "QualitySettings does not exclude iPhone");
             report.AppendLine();
         }
@@ -220,12 +227,35 @@ namespace Hecton8.Editor.Build
             report.AppendLine();
         }
 
+        private static void AppendRuntimeAdaptationMatrix(StringBuilder report, string projectRoot)
+        {
+            bool nativeBridge = HasRelativeFile(projectRoot, "Assets/_Project/Scripts/Core/HectonNativeBridge.cs");
+            bool hardwareTier = HasRelativeFile(projectRoot, "Assets/_Project/Scripts/Core/HardwareTierDetector.cs");
+            bool pathPal = HasRelativeFile(projectRoot, "Assets/_Project/Scripts/Core/HectonPersistentPathPolicy.cs");
+            bool adaptiveGovernor = HasRelativeFile(projectRoot, "Assets/_Project/Scripts/Core/PlatformAdaptiveBudgetGovernor.cs");
+            bool batteryWatchdog = HasRelativeFile(projectRoot, "Assets/_Project/Scripts/Core/PlatformBatteryWatchdog.cs");
+            bool threadPolicy = HasRelativeFile(projectRoot, "Assets/_Project/Scripts/Core/HectonThreadPriorityPolicy.cs");
+            bool dynamicResolutionHook = FileContains(projectRoot, "Assets/_Project/Scripts/World/DynamicResolutionScaler.cs", "SetPlatformPressureRenderScale");
+
+            report.AppendLine("## Runtime Adaptation Matrix");
+            report.AppendLine();
+            report.AppendLine("| Runtime guard | Status | Evidence |");
+            report.AppendLine("|---|---:|---|");
+            AppendRow(report, "Native bridge fallback", nativeBridge ? "PASS" : "BLOCKED", nativeBridge ? "HectonNativeBridge.cs present" : "HectonNativeBridge.cs missing");
+            AppendRow(report, "Graphics/backend hardware tier", hardwareTier ? "PASS" : "BLOCKED", hardwareTier ? "HardwareTierDetector.cs present" : "HardwareTierDetector.cs missing");
+            AppendRow(report, "Persistent path PAL", pathPal ? "PASS" : "BLOCKED", pathPal ? "HectonPersistentPathPolicy.cs present" : "HectonPersistentPathPolicy.cs missing");
+            AppendRow(report, "Adaptive platform pressure", adaptiveGovernor && dynamicResolutionHook ? "PASS" : "BLOCKED", adaptiveGovernor && dynamicResolutionHook ? "PlatformAdaptiveBudgetGovernor + dynamic resolution pressure hook present" : "Runtime pressure governor/hook missing");
+            AppendRow(report, "Battery watchdog", batteryWatchdog ? "PASS" : "BLOCKED", batteryWatchdog ? "PlatformBatteryWatchdog.cs present" : "PlatformBatteryWatchdog.cs missing");
+            AppendRow(report, "POSIX thread priority policy", threadPolicy ? "PASS" : "BLOCKED", threadPolicy ? "HectonThreadPriorityPolicy.cs present" : "HectonThreadPriorityPolicy.cs missing");
+            report.AppendLine();
+        }
+
         private static void AppendPortabilityRiskMatrix(StringBuilder report, string projectRoot)
         {
-            int dllImportHits = CountTextHits(projectRoot, "Assets/_Project/Scripts", "[DllImport(");
-            int memoryMappedHits = CountTextHits(projectRoot, "Assets/_Project/Scripts", "System.IO.MemoryMappedFiles");
-            int windowsKernelHits = CountTextHits(projectRoot, "Assets/_Project/Scripts", "kernel32.dll");
-            int standaloneWinGuardHits = CountTextHits(projectRoot, "Assets/_Project/Scripts", "UNITY_STANDALONE_WIN");
+            int dllImportHits = CountRuntimeTextHits(projectRoot, "Assets/_Project/Scripts", "[DllImport(");
+            int memoryMappedHits = CountRuntimeTextHits(projectRoot, "Assets/_Project/Scripts", "System.IO.MemoryMappedFiles");
+            int windowsKernelHits = CountRuntimeTextHits(projectRoot, "Assets/_Project/Scripts", "kernel32.dll");
+            int standaloneWinGuardHits = CountRuntimeTextHits(projectRoot, "Assets/_Project/Scripts", "UNITY_STANDALONE_WIN");
             int nonAsciiProjectPaths = CountNonAsciiPathEntries(projectRoot, "Assets/_Project");
             bool lz4MetaIsMinimal = IsMinimalMeta(projectRoot, "Assets/_Project/Plugins/Windows/x86_64/liblz4.dll.meta");
             bool audioMetaIsMinimal = IsMinimalMeta(projectRoot, "Assets/Plugins/x86_64/HectonAudioKernel.dll.meta");
@@ -325,6 +355,12 @@ namespace Hecton8.Editor.Build
             return File.ReadAllText(path).Contains(needle);
         }
 
+        private static bool HasRelativeFile(string projectRoot, string relativePath)
+        {
+            string path = Path.Combine(projectRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            return File.Exists(path);
+        }
+
         private static int CountTextHits(string projectRoot, string relativeRoot, string needle)
         {
             string root = Path.Combine(projectRoot, relativeRoot.Replace('/', Path.DirectorySeparatorChar));
@@ -345,6 +381,37 @@ namespace Hecton8.Editor.Build
             }
 
             return count;
+        }
+
+        private static int CountRuntimeTextHits(string projectRoot, string relativeRoot, string needle)
+        {
+            string root = Path.Combine(projectRoot, relativeRoot.Replace('/', Path.DirectorySeparatorChar));
+            if (!Directory.Exists(root))
+                return 0;
+
+            int count = 0;
+            string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
+            for (int i = 0; i < files.Length; i++)
+            {
+                if (IsEditorScriptFile(files[i]))
+                    continue;
+
+                string text = File.ReadAllText(files[i]);
+                int index = 0;
+                while ((index = text.IndexOf(needle, index, StringComparison.Ordinal)) >= 0)
+                {
+                    count++;
+                    index += needle.Length;
+                }
+            }
+
+            return count;
+        }
+
+        private static bool IsEditorScriptFile(string absolutePath)
+        {
+            string normalized = absolutePath.Replace('\\', '/');
+            return normalized.IndexOf("/Editor/", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static int CountNonAsciiPathEntries(string projectRoot, string relativeRoot)

@@ -24,6 +24,7 @@
 using System.Collections.Generic;
 using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -36,9 +37,15 @@ namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IGlobalRegistryHotSwapListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IGlobalRegistryHotSwapListener, IServiceHeartbeat, IServiceShutdown, IOriginShiftListener, IRandomEventListener
     {
         private const float SlowTickDeltaTime = 0.1f;
+        private const int InitialJointRecoveryCapacity = 64;
+        private const int InitialJointBodyRecoveryCapacity = 128;
+        private const byte HabitatConstructionOperationPlaced = 1;
+        private const byte HabitatConstructionOperationRemoved = 2;
+        private const byte HabitatConstructionFlagSmokeVfx = 1 << 0;
+        private const byte HabitatConstructionFlagGraphDirty = 1 << 1;
 
         internal static ConstructionManager ActiveRuntimeInstance { get; private set; }
 
@@ -88,12 +95,18 @@ namespace Hecton8.Construction
         private bool _lateFrameTickRegistered;
         private bool _logisticsServiceRegistered;
         private bool _hotSwapListenerRegistered;
+        private bool _originShiftListenerRegistered;
+        private bool _randomEventListenerRegistered;
         private ISaveService _registeredSaveService;
         private bool _isInitialized;
         private bool _habitatGraphDirty;
         private float _slowTickAccumulator;
         private float _ambientAccidentTimer;
         private int _ambientAccidentCursor;
+        private List<Joint> _jointRecoveryBuffer;
+        private Rigidbody[] _jointRecoveryBodies;
+        private Vector3[] _jointRecoveryLinearVelocities;
+        private Vector3[] _jointRecoveryAngularVelocities;
 
         // CONSTANTS - DEFAULT MODULE STATE
 
@@ -152,6 +165,8 @@ namespace Hecton8.Construction
             TryRegisterLateFrameTick();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
+            TryRegisterOriginShiftListener();
+            TryRegisterRandomEventListener();
         }
 
         // -----------------------------------------------------------------------------
@@ -177,6 +192,18 @@ namespace Hecton8.Construction
 
             if (_habitatGraphManager == null)
                 _habitatGraphManager = new HabitatGraphManager(capacity); // COLD ALLOC: HabitatGraphManager[1] - persistent placed-module CSR adjacency owner - owner: ConstructionManager
+
+            int jointCapacity = Mathf.Max(InitialJointRecoveryCapacity, capacity);
+            if (_jointRecoveryBuffer == null)
+                _jointRecoveryBuffer = new List<Joint>(jointCapacity); // COLD ALLOC: List<Joint>[capacity] - AUP shift joint re-anchor staging - owner: ConstructionManager
+
+            int bodyCapacity = Mathf.Max(InitialJointBodyRecoveryCapacity, capacity * 2);
+            if (_jointRecoveryBodies == null || _jointRecoveryBodies.Length < bodyCapacity)
+            {
+                _jointRecoveryBodies = new Rigidbody[bodyCapacity]; // COLD ALLOC: Rigidbody[capacity*2] - AUP joint velocity restore cache - owner: ConstructionManager
+                _jointRecoveryLinearVelocities = new Vector3[bodyCapacity]; // COLD ALLOC: Vector3[capacity*2] - AUP joint linear velocity restore cache - owner: ConstructionManager
+                _jointRecoveryAngularVelocities = new Vector3[bodyCapacity]; // COLD ALLOC: Vector3[capacity*2] - AUP joint angular velocity restore cache - owner: ConstructionManager
+            }
         }
 
         private void OnEnable()
@@ -192,6 +219,8 @@ namespace Hecton8.Construction
             TryRegisterLateFrameTick();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
+            TryRegisterOriginShiftListener();
+            TryRegisterRandomEventListener();
         }
 
         private void Start()
@@ -201,6 +230,8 @@ namespace Hecton8.Construction
 
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
+            TryRegisterOriginShiftListener();
+            TryRegisterRandomEventListener();
         }
 
         private void OnDisable()
@@ -242,6 +273,8 @@ namespace Hecton8.Construction
             _slowTickAccumulator = 0f;
             TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
+            TryUnregisterOriginShiftListener();
+            TryUnregisterRandomEventListener();
         }
 
         public void Tick(float deltaTime)
@@ -308,6 +341,10 @@ namespace Hecton8.Construction
                 _spawnedBaseModules.Add(baseModule);
 
             RefreshHabitatGraph();
+            PublishHabitatConstructionSignal(
+                module,
+                HabitatConstructionOperationPlaced,
+                HabitatConstructionFlagGraphDirty | HabitatConstructionFlagSmokeVfx);
             if (module.TryGetComponent(out BaseModuleNavModifier navModifier))
                 navModifier.RefreshVegetationExclusion();
 
@@ -352,6 +389,10 @@ namespace Hecton8.Construction
         {
             if (module == null) return;
 
+            PublishHabitatConstructionSignal(
+                module,
+                HabitatConstructionOperationRemoved,
+                HabitatConstructionFlagGraphDirty);
             SwapRemove(module);
             RemoveBaseModule(module);
             RefreshHabitatGraph();
@@ -421,6 +462,46 @@ namespace Hecton8.Construction
                 marker.Data != null)
             {
                 return marker.Data.ModuleHashId;
+            }
+
+            return 0;
+        }
+
+        private void PublishHabitatConstructionSignal(GameObject module, byte operation, byte flags)
+        {
+            if (module == null || !Application.isPlaying)
+                return;
+
+            uint moduleHash = 0u;
+            if (module.TryGetComponent(out ModuleMarker marker) &&
+                marker != null &&
+                marker.Data != null)
+            {
+                moduleHash = unchecked((uint)marker.Data.ModuleHashId);
+            }
+
+            int moduleIndex = ResolveRegisteredModuleIndex(module);
+            GlobalSignals.Publish(new HabitatConstructionSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(module.transform.position),
+                ModuleHash = moduleHash,
+                GraphId = (uint)Mathf.Max(0, _habitatGraphManager != null ? _habitatGraphManager.NodeCount : 0),
+                NodeId = (ushort)Mathf.Clamp(moduleIndex, 0, ushort.MaxValue),
+                Operation = operation,
+                Flags = flags
+            });
+        }
+
+        private int ResolveRegisteredModuleIndex(GameObject module)
+        {
+            if (module == null || _spawnedModules == null)
+                return 0;
+
+            int count = _spawnedModules.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (ReferenceEquals(_spawnedModules[i], module))
+                    return i;
             }
 
             return 0;
@@ -1189,6 +1270,42 @@ namespace Hecton8.Construction
             _hotSwapListenerRegistered = false;
         }
 
+        private void TryRegisterOriginShiftListener()
+        {
+            if (_originShiftListenerRegistered || !Application.isPlaying)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _originShiftListenerRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
+        }
+
+        private void TryUnregisterOriginShiftListener()
+        {
+            if (!_originShiftListenerRegistered)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _originShiftListenerRegistered = false;
+        }
+
+        private void TryRegisterRandomEventListener()
+        {
+            if (_randomEventListenerRegistered || !Application.isPlaying)
+                return;
+
+            RandomEventEvents.Register(this);
+            _randomEventListenerRegistered = true;
+        }
+
+        private void TryUnregisterRandomEventListener()
+        {
+            if (!_randomEventListenerRegistered)
+                return;
+
+            RandomEventEvents.Unregister(this);
+            _randomEventListenerRegistered = false;
+        }
+
         private void TryUnregisterLogisticsService()
         {
             if (!_logisticsServiceRegistered)
@@ -1196,6 +1313,116 @@ namespace Hecton8.Construction
 
             GlobalRegistry.UnregisterLogisticsService(this);
             _logisticsServiceRegistered = false;
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            BaseDegradationSystem.ApplyOriginShift(in shiftData);
+            DroneFleetManager.ApplyOriginShift(shiftData.ShiftOffset);
+            RecoverHabitatJointsAfterOriginShift(in shiftData);
+        }
+
+        public void OnRandomEventStarted(RandomEventType type, float intensity)
+        {
+        }
+
+        public void OnRandomEventEnded(RandomEventType type)
+        {
+        }
+
+        public void OnSeismicShockwave(in SeismicShockwaveEvent payload)
+        {
+            _habitatGraphManager?.RegisterSeismicVibration(
+                payload.EpicenterWS,
+                payload.ImpulseRadiusMeters,
+                payload.ImpulseMagnitude);
+        }
+
+        private void RecoverHabitatJointsAfterOriginShift(in OriginShiftEventData shiftData)
+        {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            if (!IsFiniteVector(shiftOffset) || shiftOffset.sqrMagnitude <= 0.000001f)
+                return;
+
+            EnsureRuntimeStorage();
+            PurgeNullEntries();
+
+            int capturedBodyCount = 0;
+            bool capacityOverflow = false;
+            int moduleCount = _spawnedModules.Count;
+            for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
+            {
+                GameObject module = _spawnedModules[moduleIndex];
+                if (module == null)
+                    continue;
+
+                _jointRecoveryBuffer.Clear();
+                module.GetComponentsInChildren(true, _jointRecoveryBuffer);
+                int jointCount = _jointRecoveryBuffer.Count;
+                for (int jointIndex = 0; jointIndex < jointCount; jointIndex++)
+                {
+                    Joint joint = _jointRecoveryBuffer[jointIndex];
+                    if (joint == null)
+                        continue;
+
+                    if (joint.TryGetComponent(out Rigidbody ownerBody))
+                        capacityOverflow |= !TryCaptureJointBodyVelocity(ownerBody, ref capturedBodyCount);
+                    capacityOverflow |= !TryCaptureJointBodyVelocity(joint.connectedBody, ref capturedBodyCount);
+
+                    if (joint.connectedBody == null && !joint.autoConfigureConnectedAnchor)
+                        joint.connectedAnchor -= shiftOffset;
+                }
+            }
+
+            RestoreCapturedJointBodyVelocities(capturedBodyCount);
+            UnityEngine.Physics.SyncTransforms();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (capacityOverflow)
+                Debug.LogWarning("[ConstructionManager] AUP joint recovery body cache exhausted; increase initialCapacity.", this);
+#endif
+        }
+
+        private bool TryCaptureJointBodyVelocity(Rigidbody body, ref int capturedBodyCount)
+        {
+            if (body == null)
+                return true;
+
+            for (int i = 0; i < capturedBodyCount; i++)
+            {
+                if (ReferenceEquals(_jointRecoveryBodies[i], body))
+                    return true;
+            }
+
+            if (_jointRecoveryBodies == null || capturedBodyCount >= _jointRecoveryBodies.Length)
+                return false;
+
+            _jointRecoveryBodies[capturedBodyCount] = body;
+            _jointRecoveryLinearVelocities[capturedBodyCount] = body.linearVelocity;
+            _jointRecoveryAngularVelocities[capturedBodyCount] = body.angularVelocity;
+            capturedBodyCount++;
+            return true;
+        }
+
+        private void RestoreCapturedJointBodyVelocities(int capturedBodyCount)
+        {
+            for (int i = 0; i < capturedBodyCount; i++)
+            {
+                Rigidbody body = _jointRecoveryBodies[i];
+                if (body != null)
+                {
+                    body.linearVelocity = _jointRecoveryLinearVelocities[i];
+                    body.angularVelocity = _jointRecoveryAngularVelocities[i];
+                }
+
+                _jointRecoveryBodies[i] = null;
+                _jointRecoveryLinearVelocities[i] = Vector3.zero;
+                _jointRecoveryAngularVelocities[i] = Vector3.zero;
+            }
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
         private void TryTriggerAmbientAccident()

@@ -33,7 +33,7 @@ namespace Hecton8.World
             public uint IndexCount;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
         internal struct ModuleDefinition
         {
             public ushort NorthSocket;

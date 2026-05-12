@@ -34,13 +34,14 @@ namespace Hecton8.World
 
         private static FloraInteractionManager s_ActiveRuntimeInstance;
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         private struct FloraInteractionPointGpuData
         {
             public Vector4 PositionRadius;
             public Vector4 VelocitySpeed;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         private struct WakeTrailStampCommand
         {
             public Vector4 UvEllipse;
@@ -60,7 +61,7 @@ namespace Hecton8.World
             public int ParasiteCount;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
         private struct ParasiteNode
         {
             public float3 PositionWS;
@@ -99,21 +100,26 @@ namespace Hecton8.World
             public float CriticalityWeight { get; }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         private struct FloraCascadeEventPayload
         {
             public float3 Center;
             public float StartTimeSeconds;
             public float RadiusMeters;
-            public float Padding;
+            public float Padding0;
+            public float Padding1;
+            public float Padding2;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         private struct DefensiveSporeBurstState
         {
             public Vector3 PositionWS;
             public float Radius;
             public float Intensity;
             public float ExpireTimeSeconds;
+            public float Padding0;
+            public float Padding1;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -305,6 +311,10 @@ namespace Hecton8.World
         private const int ReactiveFloraKindMask = 1;
         private const float InactiveCascadeSeed = -100000f;
         private const int ToxicSporeHazardSourceId = unchecked((int)0x6B13A7F1);
+        private const float ToxicSporePoisonMinimumExposure = 0.08f;
+        private const float ToxicSporePoisonDurationSeconds = 5f;
+        private const float MatureToxicSporeEventIntervalSeconds = 10f;
+        private const float MatureToxicSporeAgeThreshold01 = 0.999f;
         private const int DefensiveSporeHazardSourceId = unchecked((int)0x52F1063A);
         private const float MinimumAllelopathicToxicity01 = 0.005f;
         private const float ParasiteSlowTickDeltaSeconds = 0.5f;
@@ -314,6 +324,8 @@ namespace Hecton8.World
         private const float MinimumParasiteScale = 0.1f;
         private const byte ParasiteNodeStateAlive = 1;
         private const byte ParasiteNodeStateDead = 2;
+        private const float DamageReactionDurationSeconds = 0.55f;
+        private const float DamageReactionDurationReciprocal = 1.8181819f;
         private const string NativeMemoryOwner = nameof(FloraInteractionManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 #if UNITY_EDITOR
@@ -345,10 +357,13 @@ namespace Hecton8.World
         private static readonly int _FloraPredatorThreatPositionRadiusId = Shader.PropertyToID("_HectonFloraPredatorThreatPositionRadius");
         private static readonly int _FloraLifecycleParamsId = Shader.PropertyToID("_HectonFloraLifecycleParams");
         private static readonly int _FloraCascadeParamsId = Shader.PropertyToID("_HectonFloraCascadeParams");
+        private static readonly int _FloraDamageReactionId = Shader.PropertyToID("_HectonFloraDamageReaction");
+        private static readonly int _CelestialRadiationStormId = Shader.PropertyToID("_HectonCelestialRadiationStorm");
         private static readonly int _SeasonCycleId = Shader.PropertyToID("_HectonSeasonCycle");
         private static readonly int _SeasonCycleAliasId = Shader.PropertyToID("_SeasonCycle");
         private static readonly int _SubmarineWashSphereId = Shader.PropertyToID("_HectonSubmarineWashSphere");
         private static readonly int _SubmarineWashVelocityId = Shader.PropertyToID("_HectonSubmarineWashVelocity");
+        private static readonly int _SubmarinePropwashId = Shader.PropertyToID("SubmarinePropwash");
         private static readonly int _SubmarineWashAupGridId = Shader.PropertyToID("_HectonSubmarineWashAupGrid");
         private static readonly int _SubmarineWashAupLocalId = Shader.PropertyToID("_HectonSubmarineWashAupLocal");
         private static readonly int _WakeTrailTextureId = Shader.PropertyToID("_HectonVegetationWakeTrailRT");
@@ -602,6 +617,10 @@ namespace Hecton8.World
         [Tooltip("Extra visor glitch bias forwarded into the hazard runtime for toxic-spore interference.")]
         private float _toxicSporeVisorGlitchBias = 1.25f;
 
+        [SerializeField, Range(8, 512)]
+        [Tooltip("Maximum mature toxic flora instances sampled per lane during one 10s spore FrostTick.")]
+        private int _matureToxicSporeEventScanBudget = 96;
+
         [Header("Base Parasitism")]
         [SerializeField, Range(0.1f, 5f)]
         [Tooltip("How often the flora runtime rescans active module parasites and thermophilic growth state.")]
@@ -825,6 +844,9 @@ namespace Hecton8.World
         private bool _isLateFrameRegistered;
         private int _lastPublishedInteractionCount;
         private int _externalInteractionCount;
+        private Vector3 _damageReactionPositionWS;
+        private float _damageReactionStrength;
+        private float _damageReactionRemainingSeconds;
 
         private FloraInteractionPointGpuData[] _interactionPoints;
         private FloraInteractionPointGpuData[] _externalInteractionPoints;
@@ -868,7 +890,10 @@ namespace Hecton8.World
         private int _ghostWeedAllelopathyStableHashId;
         private int _cachedAllelopathicTemplateCount = -1;
         private float _toxicSporeScanTimer;
+        private float _nextMatureToxicSporeEventTime;
         private float _lastToxicSporeExposure01;
+        private int _surfaceMatureToxicSporeScanCursor;
+        private int _underwaterMatureToxicSporeScanCursor;
         private float _moduleParasiteScanTimer;
         private SpatialQueryHit[] _moduleQueryHits;
         private SpatialQueryHit[] _predatorThreatQueryHits;
@@ -990,6 +1015,7 @@ namespace Hecton8.World
             _toxicSporeHazardIntensity = Mathf.Clamp01(_toxicSporeHazardIntensity);
             _toxicSporeDragMultiplier = Mathf.Max(1f, _toxicSporeDragMultiplier);
             _toxicSporeVisorGlitchBias = Mathf.Max(0f, _toxicSporeVisorGlitchBias);
+            _matureToxicSporeEventScanBudget = Mathf.Clamp(_matureToxicSporeEventScanBudget, 8, 512);
             _moduleParasiteScanIntervalSeconds = Mathf.Max(0.1f, _moduleParasiteScanIntervalSeconds);
             _moduleParasiteAttachmentRadius = Mathf.Max(0.5f, _moduleParasiteAttachmentRadius);
             _matureParasiteRootDrainMultiplier = Mathf.Max(1f, _matureParasiteRootDrainMultiplier);
@@ -1155,6 +1181,7 @@ namespace Hecton8.World
             Vector3 targetPosition = runtimePlayerTransform != null ? runtimePlayerTransform.position : Vector3.zero;
             PublishEnvironmentGlobals(targetPosition);
             PublishSubmarineWashGlobals();
+            PublishDamageReactionGlobal(deltaTime);
             RefreshFlowFieldGlobals(deltaTime);
             if (runtimePlayerTransform == null)
             {
@@ -1244,7 +1271,13 @@ namespace Hecton8.World
             if (_destructibleOrganicManager == null)
                 _destructibleOrganicManager = ResolveDestructibleOrganicManager();
 
-            if (_vegetationBridge == null || _destructibleOrganicManager == null)
+            if (_vegetationBridge == null)
+                return;
+
+            RefreshToxicSporeTemplateMask(force: false);
+            QueueMatureToxicSporeEventsIfDue(GetCurrentSimulationTimeSeconds());
+
+            if (_destructibleOrganicManager == null)
                 return;
 
             RefreshAllelopathicTemplateMasks(force: false);
@@ -1393,7 +1426,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            reciprocal = 1f / value;
+            reciprocal = math.rcp(value);
             return float.IsFinite(reciprocal);
         }
 
@@ -1705,7 +1738,7 @@ namespace Hecton8.World
             _sedimentEmitParams.velocity = planarVelocity * Mathf.Min(speed * (0.16f + _sedimentBurstRadius * 0.015f), 3.2f) + Vector3.up * (scooterBurst ? 0.38f : 0.22f);
             float sedimentSpeedEnd = _scooterSedimentMinSpeed * 2f;
             float sedimentSpeed01 = sedimentSpeedEnd > _playerSedimentMinSpeed
-                ? math.saturate((speed - _playerSedimentMinSpeed) / (sedimentSpeedEnd - _playerSedimentMinSpeed))
+                ? math.saturate((speed - _playerSedimentMinSpeed) * math.rcp(sedimentSpeedEnd - _playerSedimentMinSpeed))
                 : 0f;
             _sedimentEmitParams.startSize = math.lerp(0.08f, 0.24f, sedimentSpeed01) * burstRadiusScale;
             _sedimentEmitParams.startLifetime = math.lerp(1.0f, 2.0f, sedimentSpeed01);
@@ -1821,6 +1854,10 @@ namespace Hecton8.World
                 bloomWeight = Mathf.Clamp01(bloomWeight * 0.7f);
             }
 
+            float radiationDecayWeight = Mathf.Clamp01(Shader.GetGlobalFloat(_CelestialRadiationStormId));
+            if (radiationDecayWeight > 0.0001f)
+                decayWeight = Mathf.Clamp01(decayWeight + radiationDecayWeight * 0.65f);
+
             Shader.SetGlobalVector(
                 _FloraLifecycleParamsId,
                 new Vector4(
@@ -1863,8 +1900,7 @@ namespace Hecton8.World
         private static float ResolveLifecycleWindowWeight(float cyclePhase, float centerNormalized, float halfWidthNormalized)
         {
             float wrappedDelta = Mathf.Abs(Mathf.DeltaAngle(cyclePhase * 360f, Mathf.Repeat(centerNormalized, 1f) * 360f)) / 360f;
-            float normalized = Mathf.Clamp01(1f - (wrappedDelta / Mathf.Max(0.001f, halfWidthNormalized)));
-            return normalized * normalized * (3f - (2f * normalized));
+            return math.saturate(1f - wrappedDelta * math.rcp(math.max(0.001f, halfWidthNormalized)));
         }
 
         private void PublishSubmarineWashGlobals()
@@ -1875,6 +1911,7 @@ namespace Hecton8.World
             {
                 Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
                 Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarinePropwashId, Vector4.zero);
                 Shader.SetGlobalVector(_SubmarineWashAupGridId, Vector4.zero);
                 Shader.SetGlobalVector(_SubmarineWashAupLocalId, Vector4.zero);
                 return;
@@ -1887,6 +1924,7 @@ namespace Hecton8.World
             {
                 Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
                 Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarinePropwashId, Vector4.zero);
                 Shader.SetGlobalVector(_SubmarineWashAupGridId, Vector4.zero);
                 Shader.SetGlobalVector(_SubmarineWashAupLocalId, Vector4.zero);
                 return;
@@ -1897,6 +1935,7 @@ namespace Hecton8.World
             {
                 Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
                 Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarinePropwashId, Vector4.zero);
                 Shader.SetGlobalVector(_SubmarineWashAupGridId, Vector4.zero);
                 Shader.SetGlobalVector(_SubmarineWashAupLocalId, Vector4.zero);
                 return;
@@ -1905,6 +1944,8 @@ namespace Hecton8.World
             Vector3 worldCenterOfMass = submarineHull.worldCenterOfMass;
             AbsoluteUniversePosition submarineAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenterOfMass);
             float3 safeVelocityDirection = velocityVector * math.rsqrt(math.max(speedSq, 0.000001f));
+            float normalizedPropwashStrength = math.saturate(
+                (speed - _wakeTrailSubmarineMinSpeed) * math.rcp(math.max(_wakeTrailSubmarineRadius, 0.001f)));
             float radius = Mathf.Clamp(
                 _wakeTrailSubmarineRadius + speed * 0.16f,
                 _wakeTrailSubmarineRadius,
@@ -1923,6 +1964,13 @@ namespace Hecton8.World
                     safeVelocityDirection.y,
                     safeVelocityDirection.z,
                     speed));
+            Shader.SetGlobalVector(
+                _SubmarinePropwashId,
+                new Vector4(
+                    -safeVelocityDirection.x,
+                    -safeVelocityDirection.y,
+                    -safeVelocityDirection.z,
+                    normalizedPropwashStrength));
             Shader.SetGlobalVector(
                 _SubmarineWashAupGridId,
                 new Vector4(
@@ -1958,20 +2006,31 @@ namespace Hecton8.World
 
             float exposure01 = 0f;
             Vector3 hazardPosition = Vector3.zero;
+            int hazardTemplateIndex = -1;
+            int hazardPayloadIndex = -1;
+            float hazardAge01 = 1f;
+            bool hazardUnderwater = true;
             TryResolveNearestToxicSporeEmitter(
                 playerPositionWS,
                 Mathf.Max(1f, _toxicSporeDetectionRadius),
                 ref exposure01,
                 ref hazardPosition,
+                ref hazardTemplateIndex,
+                ref hazardPayloadIndex,
+                ref hazardAge01,
                 underwater: true);
 
             if (exposure01 <= 0f)
             {
+                hazardUnderwater = false;
                 TryResolveNearestToxicSporeEmitter(
                     playerPositionWS,
                     Mathf.Max(1f, _toxicSporeDetectionRadius),
                     ref exposure01,
                     ref hazardPosition,
+                    ref hazardTemplateIndex,
+                    ref hazardPayloadIndex,
+                    ref hazardAge01,
                     underwater: false);
             }
 
@@ -1982,6 +2041,7 @@ namespace Hecton8.World
             }
 
             _lastToxicSporeExposure01 = exposure01;
+            TryApplyToxicSporePoisonStatus(hazardPosition, exposure01);
             HectonHazardManager.Register(
                 ToxicSporeHazardSourceId,
                 hazardPosition,
@@ -1989,6 +2049,58 @@ namespace Hecton8.World
                 _toxicSporeHazardRadius,
                 HazardType.Toxicity,
                 _toxicSporeVisorGlitchBias);
+            HectonFloraSporeEvents.EnqueueMatureToxicSpore(
+                hazardPosition,
+                _toxicSporeHazardRadius,
+                exposure01,
+                hazardAge01,
+                hazardTemplateIndex,
+                hazardPayloadIndex,
+                hazardUnderwater);
+        }
+
+        private void TryApplyToxicSporePoisonStatus(Vector3 hazardPositionWS, float exposure01)
+        {
+            if (exposure01 < ToxicSporePoisonMinimumExposure)
+                return;
+
+            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+            HectonPlayerHealth playerHealth = playerContext != null ? playerContext.PlayerHealth : null;
+            if (playerHealth == null)
+                return;
+
+            int targetId = CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject);
+            if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
+                return;
+
+            float3 playerPositionWS = _playerTransform != null
+                ? (float3)_playerTransform.position
+                : (float3)playerHealth.transform.position;
+            float3 direction = playerPositionWS - (float3)hazardPositionWS;
+            direction *= math.rsqrt(math.max(0.0001f, math.lengthsq(direction)));
+
+            CombatDamageSignal signal = new CombatDamageSignal
+            {
+                TargetId = targetId,
+                SourceId = ToxicSporeHazardSourceId,
+                Amount = 0f,
+                ImpulseMagnitude = 0f,
+                Direction = direction,
+                PackedMeta = CombatDamageRuntime.PackSignalMeta(
+                    CombatDamageTypes.Toxic,
+                    CombatStatusBits.Poisoned,
+                    CombatWeakspotTier.None)
+            };
+
+            CombatDamageSignalDetail detail = new CombatDamageSignalDetail
+            {
+                LocalPoint = float3.zero,
+                ArmorNormal = -direction,
+                LocalTemperatureCelsius = 0f,
+                StatusDurationSeconds = ToxicSporePoisonDurationSeconds * Mathf.Clamp01(exposure01)
+            };
+
+            CombatDamageRuntime.TryQueueDamage(in signal, in detail);
         }
 
         private void TryResolveNearestToxicSporeEmitter(
@@ -1996,9 +2108,12 @@ namespace Hecton8.World
             float detectionRadius,
             ref float bestExposure01,
             ref Vector3 bestPositionWS,
+            ref int bestTemplateIndex,
+            ref int bestPayloadIndex,
+            ref float bestAge01,
             bool underwater)
         {
-            if (_vegetationBridge == null || _toxicSporeTemplateMask == null || _toxicSporeTemplateMask.Length == 0)
+            if (_vegetationBridge == null)
                 return;
 
             NativeArray<Matrix4x4> matrices;
@@ -2012,6 +2127,7 @@ namespace Hecton8.World
                 return;
 
             float detectionRadiusSq = detectionRadius * detectionRadius;
+            float invDetectionRadiusSq = math.rcp(math.max(detectionRadiusSq, 0.0001f));
             int safeCount = math.min(count, math.min(matrices.Length, metadata.Length));
             for (int i = 0; i < safeCount; i++)
             {
@@ -2022,8 +2138,11 @@ namespace Hecton8.World
                     continue;
                 }
 
+                if (!IsMatureFloraGrowth(in instanceData, out float age01))
+                    continue;
+
                 int templateIndex = Mathf.RoundToInt(instanceData.TemplateIndex);
-                if (templateIndex < 0 || templateIndex >= _toxicSporeTemplateMask.Length || !_toxicSporeTemplateMask[templateIndex])
+                if (!IsToxicSporeEmitter(in instanceData, templateIndex))
                     continue;
 
                 Vector3 instancePositionWS = ExtractTranslation(matrices[i]);
@@ -2031,12 +2150,15 @@ namespace Hecton8.World
                 if (distanceSq > detectionRadiusSq)
                     continue;
 
-                float exposure01 = 1f - math.saturate(distanceSq / detectionRadiusSq);
+                float exposure01 = 1f - math.saturate(distanceSq * invDetectionRadiusSq);
                 if (exposure01 <= bestExposure01)
                     continue;
 
                 bestExposure01 = exposure01;
                 bestPositionWS = instancePositionWS;
+                bestTemplateIndex = templateIndex;
+                bestPayloadIndex = i;
+                bestAge01 = age01;
             }
         }
 
@@ -2084,6 +2206,70 @@ namespace Hecton8.World
         {
             _lastToxicSporeExposure01 = 0f;
             HectonHazardManager.Unregister(ToxicSporeHazardSourceId);
+        }
+
+        private void QueueMatureToxicSporeEventsIfDue(float simulationTime)
+        {
+            if (simulationTime < _nextMatureToxicSporeEventTime)
+                return;
+
+            _nextMatureToxicSporeEventTime = simulationTime + MatureToxicSporeEventIntervalSeconds;
+            QueueMatureToxicSporeEventsInLane(underwater: true, ref _underwaterMatureToxicSporeScanCursor);
+            QueueMatureToxicSporeEventsInLane(underwater: false, ref _surfaceMatureToxicSporeScanCursor);
+        }
+
+        private void QueueMatureToxicSporeEventsInLane(bool underwater, ref int scanCursor)
+        {
+            if (_vegetationBridge == null)
+                return;
+
+            NativeArray<Matrix4x4> matrices;
+            NativeArray<HectonVegetationInstanceData> metadata;
+            NativeArray<int> types;
+            int count;
+            bool hasPayload = underwater
+                ? _vegetationBridge.TryGetActiveUnderwaterNativePayload(out matrices, out metadata, out types, out count)
+                : _vegetationBridge.TryGetActiveSurfaceNativePayload(out matrices, out metadata, out types, out count);
+            if (!hasPayload || !matrices.IsCreated || !metadata.IsCreated || count <= 0)
+                return;
+
+            int safeCount = math.min(count, math.min(matrices.Length, metadata.Length));
+            if (safeCount <= 0)
+                return;
+
+            int budget = math.min(Mathf.Max(1, _matureToxicSporeEventScanBudget), safeCount);
+            int startCursor = scanCursor >= 0 && scanCursor < safeCount ? scanCursor : 0;
+            int nextCursor = startCursor;
+            for (int scanOffset = 0; scanOffset < budget; scanOffset++)
+            {
+                if (HectonFloraSporeEvents.PendingCount >= HectonFloraSporeEvents.PendingEventCapacity)
+                    break;
+
+                int payloadIndex = (startCursor + scanOffset) % safeCount;
+                nextCursor = (payloadIndex + 1) % safeCount;
+                HectonVegetationInstanceData instanceData = metadata[payloadIndex];
+                if (!IsLiveFloraInstance(instanceData) ||
+                    !IsMatureFloraGrowth(in instanceData, out float age01))
+                {
+                    continue;
+                }
+
+                int templateIndex = Mathf.RoundToInt(instanceData.TemplateIndex);
+                if (!IsToxicSporeEmitter(in instanceData, templateIndex))
+                    continue;
+
+                Vector3 positionWS = ExtractTranslation(matrices[payloadIndex]);
+                HectonFloraSporeEvents.EnqueueMatureToxicSpore(
+                    positionWS,
+                    _toxicSporeHazardRadius,
+                    _toxicSporeHazardIntensity,
+                    age01,
+                    templateIndex,
+                    payloadIndex,
+                    underwater);
+            }
+
+            scanCursor = nextCursor;
         }
 
         private void EmitAllelopathicToxinsAndSuppressLane(bool underwater)
@@ -2213,6 +2399,35 @@ namespace Hecton8.World
             return templateIndex >= 0 &&
                    templateIndex < templateMask.Length &&
                    templateMask[templateIndex] != 0;
+        }
+
+        private bool IsToxicSporeEmitter(in HectonVegetationInstanceData instanceData, int templateIndex)
+        {
+            bool stableTemplateMatch = _toxicSporeTemplateMask != null &&
+                                       templateIndex >= 0 &&
+                                       templateIndex < _toxicSporeTemplateMask.Length &&
+                                       _toxicSporeTemplateMask[templateIndex];
+            return stableTemplateMatch ||
+                   HectonVegetationRuntimeFlagEncoding.HasGeneticTrait(
+                       instanceData.RuntimeFlags,
+                       HectonVegetationGeneticTraits.Poisonous);
+        }
+
+        private static bool IsMatureFloraGrowth(in HectonVegetationInstanceData instanceData, out float age01)
+        {
+            age01 = ResolveFloraGrowthAge01(in instanceData);
+            return age01 >= MatureToxicSporeAgeThreshold01;
+        }
+
+        private static float ResolveFloraGrowthAge01(in HectonVegetationInstanceData instanceData)
+        {
+            if (instanceData.Reserved0 < 0f)
+                return -1f;
+
+            if (instanceData.Reserved0 > 0.0001f)
+                return math.saturate(instanceData.Reserved0);
+
+            return 1f;
         }
 
         private void RefreshModuleParasiteState(float deltaTime)
@@ -2718,9 +2933,38 @@ namespace Hecton8.World
                 toolCapabilityMask);
 
             if (applied)
+            {
+                RegisterFloraDamageReaction(hitPoint, deliveredDamage, normalizedPower);
                 RequestModuleParasiteRescan();
+            }
 
             return applied;
+        }
+
+        private void RegisterFloraDamageReaction(Vector3 positionWS, float deliveredDamage, float normalizedPower)
+        {
+            _damageReactionPositionWS = positionWS;
+            _damageReactionStrength = math.saturate(Mathf.Max(0.1f, deliveredDamage) * 0.22f + Mathf.Clamp01(normalizedPower) * 0.78f);
+            _damageReactionRemainingSeconds = DamageReactionDurationSeconds;
+            PublishDamageReactionGlobal(0f);
+        }
+
+        private void PublishDamageReactionGlobal(float deltaTime)
+        {
+            if (_damageReactionRemainingSeconds <= 0f || _damageReactionStrength <= 0f)
+            {
+                _damageReactionRemainingSeconds = 0f;
+                _damageReactionStrength = 0f;
+                Shader.SetGlobalVector(_FloraDamageReactionId, Vector4.zero);
+                return;
+            }
+
+            _damageReactionRemainingSeconds = math.max(0f, _damageReactionRemainingSeconds - math.max(0f, deltaTime));
+            float fade01 = math.saturate(_damageReactionRemainingSeconds * DamageReactionDurationReciprocal);
+            float strength = _damageReactionStrength * fade01;
+            Shader.SetGlobalVector(
+                _FloraDamageReactionId,
+                new Vector4(_damageReactionPositionWS.x, _damageReactionPositionWS.y, _damageReactionPositionWS.z, strength));
         }
 
         internal void RequestModuleParasiteRescan()
@@ -3083,6 +3327,10 @@ namespace Hecton8.World
             float clampedIntensity = Mathf.Max(0.1f, intensity01);
             ChemicalInfluenceGrid.QueueToxicityBurst(positionWS, _defensiveSporeBurstDose * clampedIntensity);
             ChemicalInfluenceGrid.QueueFearPheromone(positionWS, Mathf.Clamp01(clampedIntensity));
+            HectonFloraSporeEvents.EnqueueDefensiveSporeBurst(
+                positionWS,
+                _defensiveSporeBurstRadius,
+                clampedIntensity);
 
             if (_defensiveSporeBursts == null || _defensiveSporeBursts.Length == 0)
                 return;
@@ -3426,7 +3674,9 @@ namespace Hecton8.World
                 Center = new float3(centerWS.x, centerWS.y, centerWS.z),
                 StartTimeSeconds = simulationTime,
                 RadiusMeters = _cascadePropagationRadius,
-                Padding = 0f
+                Padding0 = 0f,
+                Padding1 = 0f,
+                Padding2 = 0f
             };
 
             eventCount = Mathf.Min(cascadeEvents.Length, Mathf.Max(eventCount, writeIndex + 1));
@@ -3993,7 +4243,8 @@ namespace Hecton8.World
                         continue;
 
                     bestDistanceSqr = hit.DistanceSqr;
-                    aggressiveBioformThreat = 1f - math.saturate(hit.DistanceSqr / (predatorDimRadius * predatorDimRadius));
+                    float predatorDimRadiusSq = predatorDimRadius * predatorDimRadius;
+                    aggressiveBioformThreat = 1f - math.saturate(hit.DistanceSqr * math.rcp(math.max(0.001f, predatorDimRadiusSq)));
                     predatorThreatPositionRadius = new Vector4(hit.Position.x, hit.Position.y, hit.Position.z, predatorDimRadius);
                 }
             }
@@ -4277,11 +4528,12 @@ namespace Hecton8.World
             _wakeTrailCenterXZ = desiredCenterXZ;
             _wakeTrailRuntimeWorldSize = desiredWorldSize;
             float halfSize = desiredWorldSize * 0.5f;
+            float wakeTrailInvWorldSize = math.rcp(Mathf.Max(desiredWorldSize, 0.001f));
             _wakeTrailWorldRect = new Vector4(
                 desiredCenterXZ.x - halfSize,
                 desiredCenterXZ.y - halfSize,
-                1f / Mathf.Max(desiredWorldSize, 0.001f),
-                1f / Mathf.Max(desiredWorldSize, 0.001f));
+                wakeTrailInvWorldSize,
+                wakeTrailInvWorldSize);
 
             if (mustClear)
             {
@@ -4349,15 +4601,16 @@ namespace Hecton8.World
             _wakeTrailSimulationCompute.SetFloat(_WakeTrailDampingId, _wakeTrailWaveDamping);
             _wakeTrailSimulationCompute.SetFloat(_WakeTrailCurlStrengthId, _wakeTrailCurlStrength);
             _wakeTrailSimulationCompute.SetFloat(_WakeTrailSimulationTimeId, Time.unscaledTime);
+            float wakeTrailInvResolution = math.rcp(Mathf.Max(_wakeTrailRuntimeResolution, 1));
             _wakeTrailSimulationCompute.SetVector(
                 _WakeTrailTexelSizeId,
                 new Vector4(
-                    1f / Mathf.Max(_wakeTrailRuntimeResolution, 1),
-                    1f / Mathf.Max(_wakeTrailRuntimeResolution, 1),
+                    wakeTrailInvResolution,
+                    wakeTrailInvResolution,
                     _wakeTrailRuntimeResolution,
                     _wakeTrailRuntimeResolution));
 
-            int groupCount = Mathf.CeilToInt(_wakeTrailRuntimeResolution / (float)WakeTrailThreadGroupSize);
+            int groupCount = (_wakeTrailRuntimeResolution + WakeTrailThreadGroupSize - 1) / WakeTrailThreadGroupSize;
             _wakeTrailSimulationCompute.Dispatch(_wakeTrailSimulationKernel, Mathf.Max(1, groupCount), Mathf.Max(1, groupCount), 1);
 
             RenderTexture temp = _wakeTrailRead;
@@ -4416,11 +4669,12 @@ namespace Hecton8.World
             Shader.SetGlobalTexture(_ShallowWaterFieldTextureId, _wakeTrailRead);
             Shader.SetGlobalVector(_ShallowWaterFieldWorldRectId, _wakeTrailWorldRect);
             Shader.SetGlobalFloat(_ShallowWaterFieldActiveId, _wakeTrailRuntimeWorldSize > 0f ? 1f : 0f);
+            float wakeTrailInvResolution = math.rcp(Mathf.Max(_wakeTrailRuntimeResolution, 1));
             Shader.SetGlobalVector(
                 _ShallowWaterFieldTexelSizeId,
                 new Vector4(
-                    1f / Mathf.Max(_wakeTrailRuntimeResolution, 1),
-                    1f / Mathf.Max(_wakeTrailRuntimeResolution, 1),
+                    wakeTrailInvResolution,
+                    wakeTrailInvResolution,
                     _wakeTrailRuntimeResolution,
                     _wakeTrailRuntimeResolution));
         }
@@ -4453,7 +4707,7 @@ namespace Hecton8.World
 
         private float ResolveWakeTrailSnapStride(float worldSize)
         {
-            float pixelWorldSize = worldSize / Mathf.Max(_wakeTrailRuntimeResolution, 1);
+            float pixelWorldSize = worldSize * math.rcp(Mathf.Max(_wakeTrailRuntimeResolution, 1));
             return pixelWorldSize * Mathf.Max(0.1f, _wakeTrailCenterSnapPixelStride);
         }
 
@@ -4494,6 +4748,9 @@ namespace Hecton8.World
 
             if (_hasActiveSubmarineWake)
                 _lastPublishedSubmarineWakePosition += runtimeOffset;
+
+            if (_damageReactionRemainingSeconds > 0f)
+                _damageReactionPositionWS += runtimeOffset;
 
             if (_interactionPoints != null &&
                 _interactionBuffer != null &&
@@ -4569,10 +4826,12 @@ namespace Hecton8.World
             Shader.SetGlobalVector(_FloraPredatorThreatParamsId, Vector4.zero);
             Shader.SetGlobalVector(_FloraPredatorThreatPositionRadiusId, Vector4.zero);
             Shader.SetGlobalVector(_FloraLifecycleParamsId, new Vector4(0f, 0f, 1f, 0f));
+            Shader.SetGlobalVector(_FloraDamageReactionId, Vector4.zero);
             Shader.SetGlobalFloat(_SeasonCycleId, 0f);
             Shader.SetGlobalFloat(_SeasonCycleAliasId, 0f);
             Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
             Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
+            Shader.SetGlobalVector(_SubmarinePropwashId, Vector4.zero);
             Shader.SetGlobalVector(_SubmarineWashAupGridId, Vector4.zero);
             Shader.SetGlobalVector(_SubmarineWashAupLocalId, Vector4.zero);
             Shader.SetGlobalVector(_MarineSnowFlowFieldCenterCellSizeId, Vector4.zero);
@@ -4585,6 +4844,9 @@ namespace Hecton8.World
             _smoothedPlayerVelocity = Vector3.zero;
             _smoothedPlayerVelocityDamp = Vector3.zero;
             _smoothedScooterVelocity = Vector3.zero;
+            _damageReactionPositionWS = Vector3.zero;
+            _damageReactionStrength = 0f;
+            _damageReactionRemainingSeconds = 0f;
             _smoothedScooterVelocityDamp = Vector3.zero;
             _smoothedScooterPositionDamp = Vector3.zero;
             _hasSmoothedScooterPosition = false;

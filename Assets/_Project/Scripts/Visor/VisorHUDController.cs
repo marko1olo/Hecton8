@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.Physics;
@@ -29,12 +30,15 @@ namespace NASAPunk.Visor
     public class VisorHUDController : MonoBehaviour, ITickable, IUpdatable, ISubmarineOsEventListener
     {
         private const float BiosRecoveryClarityThreshold = 0.1f;
-        private const float LowPowerBiosThreshold = 0.1f;
+        private const float LowPowerBiosThreshold = 0.15f;
+        private const float InvGlitchMantissaScale = 1.1920928955078125e-7f;
+        private const int MaxBrownoutSignalsPerTick = 4;
         private const int RuntimeHudCompositeMaxWidth = 1280;
         private const int RuntimeHudCompositeMaxHeight = 720;
         private const float HelmetScissorNormalizedInsetX = 0.045f;
         private const float HelmetScissorNormalizedInsetY = 0.04f;
         private const string HudPhosphorKeyword = "_HUD_PHOSPHOR_MODE";
+        private const float MinimumProjectedHudIntensity = 1.25f;
         private const float RadiationFatigueMinimumScale = 0.65f;
         private const float RadiationFatigueScalePerSecond = 0.005f;
         private const float RadiationFatigueCriticalExposureSeconds = (1f - RadiationFatigueMinimumScale) / RadiationFatigueScalePerSecond;
@@ -545,6 +549,7 @@ namespace NASAPunk.Visor
         public void Tick(float deltaTime)
         {
             AutoResolveReferences(force: false);
+            DrainBrownoutSignals();
             SyncProjectionPose();
             RefreshAdaptiveRuntimeProjection();
             UpdateGlitchState(deltaTime);
@@ -572,7 +577,7 @@ namespace NASAPunk.Visor
             _glitchRngState ^= _glitchRngState << 13;
             _glitchRngState ^= _glitchRngState >> 17;
             _glitchRngState ^= _glitchRngState << 5;
-            return (_glitchRngState & 0x7FFFFF) / (float)0x800000;
+            return (_glitchRngState & 0x7FFFFF) * InvGlitchMantissaScale;
         }
 
         private static float FastDecayBlend(float speed, float deltaTime)
@@ -581,7 +586,7 @@ namespace NASAPunk.Visor
             if (x >= 3.5f)
                 return 1f;
 
-            return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
+            return math.saturate((12f * x) * math.rcp(12f + (6f * x) + (x * x)));
         }
 
         private static bool NearlyEqual(float lhs, float rhs)
@@ -774,7 +779,7 @@ namespace NASAPunk.Visor
             float biosRecoverySwitch = _biosRecoveryModeBlend >= 0.5f ? 1f : 0f;
             ApplyHudPhosphorKeyword(biosRecoverySwitch > 0.5f || (_hasSubmarinePowerSnapshot && _submarinePowerNormalized < LowPowerBiosThreshold));
             ApplyVRBrownoutState(biosRecoverySwitch);
-            float compositeHudIntensity = biosRecoverySwitch > 0.5f ? _biosRecoveryHudIntensity : _hudIntensity;
+            float compositeHudIntensity = ResolveCompositeHudIntensity(biosRecoverySwitch);
             Color compositeHudTint = biosRecoverySwitch > 0.5f ? _biosRecoveryHudTint : _hudTint;
             float compositeChromaticAberration = biosRecoverySwitch > 0.5f
                 ? 0f
@@ -831,6 +836,16 @@ namespace NASAPunk.Visor
             }
 
             _materialPropertiesDirty = false;
+        }
+
+        private float ResolveCompositeHudIntensity(float biosRecoverySwitch)
+        {
+            if (biosRecoverySwitch > 0.5f)
+                return _biosRecoveryHudIntensity;
+
+            return _projectionMode != ProjectionMode.Disabled
+                ? Mathf.Max(_hudIntensity, MinimumProjectedHudIntensity)
+                : _hudIntensity;
         }
 
         private void ApplyHudMotionVectorStabilization()
@@ -1017,7 +1032,7 @@ namespace NASAPunk.Visor
             if (_hasSubmarinePowerSnapshot)
             {
                 float threshold = Mathf.Max(0.001f, LowPowerBiosThreshold);
-                powerBrownout = Mathf.Clamp01((threshold - _submarinePowerNormalized) / threshold);
+                powerBrownout = Mathf.Clamp01((threshold - _submarinePowerNormalized) * math.rcp(threshold));
             }
 
             float brownoutIntensity = Mathf.Max(Mathf.Clamp01(biosRecoverySwitch), powerBrownout);
@@ -1026,6 +1041,21 @@ namespace NASAPunk.Visor
 
             _appliedVRBrownoutIntensity = brownoutIntensity;
             Shader.SetGlobalFloat(ID_HectonVRBrownoutIntensity, brownoutIntensity);
+        }
+
+        private void DrainBrownoutSignals()
+        {
+            int drained = 0;
+            while (drained < MaxBrownoutSignalsPerTick && GlobalSignals.TryDequeueBrownout(out BrownoutSignal signal))
+            {
+                drained++;
+                float supplyRatio = math.saturate(signal.SupplyRatio);
+                if (signal.Severity01 > 0f)
+                    supplyRatio = math.min(supplyRatio, math.saturate(1f - signal.Severity01));
+
+                _submarinePowerNormalized = supplyRatio;
+                _hasSubmarinePowerSnapshot = true;
+            }
         }
 
         private Vector3 ResolveVisorCameraForward()
@@ -1087,7 +1117,7 @@ namespace NASAPunk.Visor
             {
                 float lifetime = Mathf.Max(0.1f, _surfaceBreakRunoffMinimumLifetime);
                 _dropletFadeTimer = Mathf.Max(0f, _dropletFadeTimer - Mathf.Max(0f, deltaTime));
-                float nextDropletAlpha = Mathf.Clamp01(_dropletFadeTimer / lifetime);
+                float nextDropletAlpha = Mathf.Clamp01(_dropletFadeTimer * math.rcp(lifetime));
                 if (!NearlyEqual(nextDropletAlpha, _dropletAlpha))
                 {
                     _dropletAlpha = nextDropletAlpha;
@@ -1200,7 +1230,7 @@ namespace NASAPunk.Visor
             {
                 float delta = Mathf.Abs(temperature - _lastTemperatureSample);
                 if (delta >= _temperatureShockThreshold)
-                    TriggerCondensationShock(delta / Mathf.Max(0.01f, _temperatureShockThreshold));
+                    TriggerCondensationShock(delta * math.rcp(Mathf.Max(0.01f, _temperatureShockThreshold)));
 
                 if (ShouldTriggerThermalShockBiosRecovery(
                     temperature,
@@ -1248,7 +1278,7 @@ namespace NASAPunk.Visor
             {
                 float delta = Mathf.Abs(pressure - _lastPressureSample);
                 if (delta >= _pressureShockThreshold)
-                    TriggerCondensationShock(delta / Mathf.Max(0.01f, _pressureShockThreshold));
+                    TriggerCondensationShock(delta * math.rcp(Mathf.Max(0.01f, _pressureShockThreshold)));
             }
 
             _lastPressureSample = pressure;
@@ -1257,8 +1287,8 @@ namespace NASAPunk.Visor
             float target = 0f;
             if (_subscribedSurvivalSystem != null && _subscribedSurvivalSystem.Stats != null)
             {
-                float safeDepth = Mathf.Max(0.01f, _subscribedSurvivalSystem.Stats.SafeDepth);
-                float pressureFactor = pressure / safeDepth;
+                float invSafeDepth = math.rcp(math.max(0.01f, _subscribedSurvivalSystem.Stats.SafeDepth));
+                float pressureFactor = pressure * invSafeDepth;
                 float pressureT = FastInverseLerp01(
                     _criticalPressureStartFactor,
                     Mathf.Max(_criticalPressureStartFactor + 0.01f, _criticalPressureFullFactor),
@@ -1515,7 +1545,7 @@ namespace NASAPunk.Visor
         {
             float safe = Mathf.Clamp(safeThreshold, 0.01f, 1f);
             float hypoxia = oxygenNormalized < safe
-                ? 1f - Mathf.Clamp01(oxygenNormalized / safe)
+                ? 1f - Mathf.Clamp01(oxygenNormalized * math.rcp(safe))
                 : 0f;
             return Mathf.Max(hypoxia, Mathf.Clamp01(nitrogenVisionBlur01));
         }
@@ -1536,8 +1566,8 @@ namespace NASAPunk.Visor
         {
             float depth = ResolvePlayerDepthMeters();
             float startDepth = Mathf.Max(0f, _pressureLensCrackStartDepthMeters);
-            float range = Mathf.Max(1f, _pressureLensCrackFullDepthRangeMeters);
-            float targetCrack = Mathf.Clamp01((depth - startDepth) / range);
+            float invRange = math.rcp(math.max(1f, _pressureLensCrackFullDepthRangeMeters));
+            float targetCrack = Mathf.Clamp01((depth - startDepth) * invRange);
             targetCrack = targetCrack * targetCrack * (3f - 2f * targetCrack);
             float blendT = FastDecayBlend(_pressureLensCrackBlendSharpness, deltaTime);
             if (UpdateSmoothedVisualChannel(ref _pressureLensCrackIntensity, targetCrack, blendT))
@@ -1585,7 +1615,7 @@ namespace NASAPunk.Visor
             if (math.abs(range) <= 0.00001f)
                 return 0f;
 
-            return math.saturate((value - from) / range);
+            return math.saturate((value - from) * math.rcp(range));
         }
 
         private float ResolveColdCondensation01(float temperature)
@@ -1807,7 +1837,7 @@ namespace NASAPunk.Visor
         private float QuantizeAdaptiveScale(float scale)
         {
             float quantizationStep = Mathf.Max(0.01f, _adaptiveScaleQuantizationStep);
-            return Mathf.Round(scale / quantizationStep) * quantizationStep;
+            return Mathf.Round(scale * math.rcp(quantizationStep)) * quantizationStep;
         }
 
         private void RebuildProjection()
@@ -1916,6 +1946,12 @@ namespace NASAPunk.Visor
 
         private void ConfigureHudScissorCommandBuffers()
         {
+            if (IsScriptableRenderPipelineActive())
+            {
+                ClearHudScissorCommandBufferState();
+                return;
+            }
+
             if (_hudCamera == null || _projectionMode == ProjectionMode.Disabled || _hudRT == null)
             {
                 ReleaseHudScissorCommandBuffers();
@@ -1961,9 +1997,21 @@ namespace NASAPunk.Visor
             return new Rect(insetX, insetY, scissorWidth, scissorHeight);
         }
 
+        private static bool IsScriptableRenderPipelineActive()
+        {
+            return GraphicsSettings.currentRenderPipeline != null || GraphicsSettings.defaultRenderPipeline != null;
+        }
+
+        private void ClearHudScissorCommandBufferState()
+        {
+            _hudScissorCamera = null;
+            _hudScissorWidth = -1;
+            _hudScissorHeight = -1;
+        }
+
         private void ReleaseHudScissorCommandBuffers()
         {
-            if (_hudScissorCamera != null)
+            if (_hudScissorCamera != null && !IsScriptableRenderPipelineActive())
             {
                 if (_hudScissorBeginCommandBuffer != null)
                     _hudScissorCamera.RemoveCommandBuffer(CameraEvent.BeforeForwardOpaque, _hudScissorBeginCommandBuffer);
@@ -1972,9 +2020,7 @@ namespace NASAPunk.Visor
                     _hudScissorCamera.RemoveCommandBuffer(CameraEvent.AfterEverything, _hudScissorEndCommandBuffer);
             }
 
-            _hudScissorCamera = null;
-            _hudScissorWidth = -1;
-            _hudScissorHeight = -1;
+            ClearHudScissorCommandBufferState();
         }
 
         private void DisposeHudScissorCommandBuffers()
@@ -2466,7 +2512,7 @@ namespace NASAPunk.Visor
             if (remainingRecoveryWindow > 0.05f)
             {
                 // Exponential decay reaches ~1% after ~4.6 / speed seconds.
-                float maximumRecoverySpeed = 4.6f / remainingRecoveryWindow;
+                float maximumRecoverySpeed = 4.6f * math.rcp(remainingRecoveryWindow);
                 recoverySpeed = Mathf.Min(recoverySpeed, Mathf.Max(0.1f, maximumRecoverySpeed));
             }
 

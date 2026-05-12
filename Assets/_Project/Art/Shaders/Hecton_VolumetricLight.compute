@@ -2,10 +2,21 @@
 #pragma kernel CompositeVolumetricLight
 #pragma target 5.0
 #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+#pragma multi_compile _ _MATH_LOD_LOW _MATH_LOD_HIGH
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+
+#ifndef HECTON_VOLUMETRIC_LIGHT_MAX_STEPS
+#define HECTON_VOLUMETRIC_LIGHT_MAX_STEPS 12
+#endif
+
+#if defined(_MATH_LOD_LOW)
+#define HECTON_VOLUMETRIC_LIGHT_TIER_STEP_CAP 4
+#else
+#define HECTON_VOLUMETRIC_LIGHT_TIER_STEP_CAP HECTON_VOLUMETRIC_LIGHT_MAX_STEPS
+#endif
 
 // Compute kernels sample the bound depth texture directly; DeclareDepthTexture maps incorrectly on cs_5_0.
 TEXTURE2D_X(_HectonVolumetricSourceColor);
@@ -142,7 +153,9 @@ float Fbm3(float3 samplePosition)
 float ResolveInterleavedGradientNoise(float2 screenUv)
 {
     float2 pixel = floor(screenUv * _HectonVolumetricFullSize.xy);
-    return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+    float frameIndex = floor(_Time.y * 60.0);
+    float2 temporalPhase = float2(fmod(frameIndex, 2.0), fmod(floor(frameIndex * 0.5), 2.0)) * 0.5;
+    return frac(52.9829189 * frac(dot(pixel + temporalPhase, float2(0.06711056, 0.00583715))));
 }
 
 float PhaseHG(float cosTheta, float anisotropy)
@@ -236,7 +249,7 @@ float ResolveVolumetricShadowRaymarch(float3 samplePositionWS, float3 lightDirec
     if (strength <= 0.0001 || density <= 0.0001)
         return 1.0;
 
-    int stepCount = clamp((int)round(_HectonVolumetricShadowParams.x), 1, 7);
+    int stepCount = min(clamp((int)round(_HectonVolumetricShadowParams.x), 1, HECTON_VOLUMETRIC_LIGHT_MAX_STEPS), HECTON_VOLUMETRIC_LIGHT_TIER_STEP_CAP);
     float marchDistance = max(_HectonVolumetricShadowParams.y, 0.1);
     float depthBias = max(_HectonVolumetricShadowParams.z, 0.001);
     float stepLength = marchDistance * SafeRcp((float)stepCount);
@@ -244,7 +257,7 @@ float ResolveVolumetricShadowRaymarch(float3 samplePositionWS, float3 lightDirec
     float transmittance = 1.0;
 
     [loop]
-    for (int stepIndex = 0; stepIndex < 7; stepIndex++)
+    for (int stepIndex = 0; stepIndex < HECTON_VOLUMETRIC_LIGHT_MAX_STEPS; stepIndex++)
     {
         if (stepIndex >= stepCount)
             break;
@@ -325,7 +338,7 @@ void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     float invRayLength = rsqrt(rayLengthSq);
     float rayLength = min(rayLengthSq * invRayLength, max(_HectonVolumetricMarchParams.x, 0.1));
-    int stepCount = clamp((int)round(_HectonVolumetricMarchParams.y), 1, 7);
+    int stepCount = min(clamp((int)round(_HectonVolumetricMarchParams.y), 1, HECTON_VOLUMETRIC_LIGHT_MAX_STEPS), HECTON_VOLUMETRIC_LIGHT_TIER_STEP_CAP);
     float stepSize = rayLength * SafeRcp((float)stepCount);
     float jitter = ResolveInterleavedGradientNoise(screenUv) * stepSize * saturate(_HectonVolumetricMarchParams.z);
     float3 rayDirectionWS = rayVectorWS * invRayLength;
@@ -339,7 +352,7 @@ void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
     float3 accumulatedLight = 0.0;
 
     [loop]
-    for (int stepIndex = 0; stepIndex < 7; stepIndex++)
+    for (int stepIndex = 0; stepIndex < HECTON_VOLUMETRIC_LIGHT_MAX_STEPS; stepIndex++)
     {
         if (stepIndex >= stepCount)
             break;

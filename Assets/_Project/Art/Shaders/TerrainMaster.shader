@@ -24,6 +24,7 @@ Shader "HECTON/Terrain/TerrainMaster"
 
         [Header(Biome)]
         _BiomeTint      ("Biome Tint", Color) = (0.15, 0.12, 0.1, 1)
+        [NoScaleOffset] _HectonBiomeGroundArray ("Biome Ground Texture Array", 2DArray) = "" {}
         _BiomeEdgeBleedScale ("Biome Edge Bleed Scale", Float) = 0.018
         _BiomeEdgeBleedStrength ("Biome Edge Bleed Strength", Range(0,1)) = 0.38
         _BiomeTransitionNoiseStrength ("Biome Transition Noise", Range(0,1)) = 0.42
@@ -115,9 +116,14 @@ Shader "HECTON/Terrain/TerrainMaster"
         TEXTURE2D(_RockTex);    SAMPLER(sampler_RockTex);
         TEXTURE2D(_TerrainControlRGBA); SAMPLER(sampler_TerrainControlRGBA);
         TEXTURE2D(_FlowNormal); SAMPLER(sampler_FlowNormal);
+        TEXTURE2D(_HectonBiomeHeatmapTex); SAMPLER(sampler_HectonBiomeHeatmapTex);
+        TEXTURE2D_ARRAY(_HectonBiomeGroundArray); SAMPLER(sampler_HectonBiomeGroundArray);
         TEXTURE2D(_HectonDistantTerrainShadowMask); SAMPLER(sampler_HectonDistantTerrainShadowMask);
         float4 _SargassumCanopyShadowParams;
         float4 _SargassumCanopyLightingParams;
+        float4 _HectonBiomeHeatmapRect;
+        float4 _HectonBiomeTextureParams;
+        float4 _CurrentBiomeColor;
         float4 _HectonTerrainFadeParams;
         float4 _HectonTerrainFadeRuntimeOrigin;
         float4 _HectonTerrainFadeAupOrigin;
@@ -250,6 +256,44 @@ Shader "HECTON/Terrain/TerrainMaster"
             half bleed = (edgeNoise - 0.5h) * transitionMask * (half)_BiomeEdgeBleedStrength;
             half gradientDither = (edgeNoise - 0.5h) * transitionMask * (half)_BiomeTransitionNoiseStrength;
             return saturate(biome + bleed + gradientDither);
+        }
+
+        half HectonLoadBiomeHeatmapId(int2 pixel)
+        {
+            int maxPixel = (int)max(_HectonBiomeTextureParams.z, 1.0);
+            int2 safePixel = clamp(pixel, int2(0, 0), int2(maxPixel, maxPixel));
+            return _HectonBiomeHeatmapTex.Load(int3(safePixel, 0)).r;
+        }
+
+        half HectonSelectBiomeIdByIgn(half b00, half b10, half b01, half b11, float2 fracPart, half ign01)
+        {
+            half2 f = saturate((half2)fracPart);
+            half w00 = (1.0h - f.x) * (1.0h - f.y);
+            half w10 = f.x * (1.0h - f.y);
+            half w01 = (1.0h - f.x) * f.y;
+            half c00 = w00;
+            half c10 = c00 + w10;
+            half c01 = c10 + w01;
+            return ign01 < c00 ? b00 : (ign01 < c10 ? b10 : (ign01 < c01 ? b01 : b11));
+        }
+
+        half4 HectonSampleDitheredBiomeArray(float3 positionWS, float4 positionCS, float2 jitterOffset, out uint selectedSlice)
+        {
+            float2 heatUv = saturate((positionWS.xz - _HectonBiomeHeatmapRect.xy) * _HectonBiomeHeatmapRect.zw);
+            float heatmapMaxPixel = max(_HectonBiomeTextureParams.z, 1.0);
+            float2 heatCoord = heatUv * heatmapMaxPixel;
+            int2 pixel00 = (int2)floor(heatCoord);
+            int2 pixel11 = min(pixel00 + int2(1, 1), int2((int)heatmapMaxPixel, (int)heatmapMaxPixel));
+            half b00 = HectonLoadBiomeHeatmapId(pixel00);
+            half b10 = HectonLoadBiomeHeatmapId(int2(pixel11.x, pixel00.y));
+            half b01 = HectonLoadBiomeHeatmapId(int2(pixel00.x, pixel11.y));
+            half b11 = HectonLoadBiomeHeatmapId(pixel11);
+            half chosen = HectonSelectBiomeIdByIgn(b00, b10, b01, b11, frac(heatCoord), HectonInterleavedGradientNoise(positionCS.xy));
+            uint maxSlice = (uint)max(_HectonBiomeTextureParams.y - 1.0, 0.0);
+            uint encodedBiomeId = (uint)(chosen * 255.0h + 0.5h);
+            selectedSlice = encodedBiomeId > 0u ? min(encodedBiomeId - 1u, maxSlice) : 0u;
+            float2 biomeUv = positionWS.xz * max(_HectonBiomeTextureParams.x, 0.0001) + jitterOffset;
+            return SAMPLE_TEXTURE2D_ARRAY(_HectonBiomeGroundArray, sampler_HectonBiomeGroundArray, biomeUv, selectedSlice);
         }
 
         ENDHLSL
@@ -391,8 +435,25 @@ Shader "HECTON/Terrain/TerrainMaster"
                 float2 microBumpOffset = HectonResolveMicroBumpOffset(IN.positionWS, viewDirectionWS, rockWeight, steepMask);
                 sandUv += microBumpOffset * 0.35;
                 rockUv += microBumpOffset;
-                half4 sandSample = HectonSampleStochastic2D(TEXTURE2D_ARGS(_SandTex, sampler_SandTex), sandUv, stochasticJitter);
-                half4 rockSample = HectonSampleStochastic2D(TEXTURE2D_ARGS(_RockTex, sampler_RockTex), rockUv, stochasticJitter);
+                half useBiomeArray = step(0.5h, (half)_HectonBiomeTextureParams.w);
+                uint selectedBiomeSlice = 0u;
+                half4 biomeArraySample = half4(1.0h, 1.0h, 1.0h, 0.5h);
+                half4 sandSample = half4(1.0h, 1.0h, 1.0h, 0.5h);
+                half4 rockSample = half4(1.0h, 1.0h, 1.0h, 0.5h);
+                [branch]
+                if (useBiomeArray > 0.0h)
+                {
+                    biomeArraySample = HectonSampleDitheredBiomeArray(IN.positionWS, IN.positionCS, stochasticJitter, selectedBiomeSlice);
+                    sandSample = biomeArraySample;
+                    rockSample = biomeArraySample;
+                    rockWeight = 0.0h;
+                    sandWeight = 1.0h;
+                }
+                else
+                {
+                    sandSample = HectonSampleStochastic2D(TEXTURE2D_ARGS(_SandTex, sampler_SandTex), sandUv, stochasticJitter);
+                    rockSample = HectonSampleStochastic2D(TEXTURE2D_ARGS(_RockTex, sampler_RockTex), rockUv, stochasticJitter);
+                }
 
                 half taaMicroBump = (screenIgn - 0.5h) * steepMask * 0.035h;
                 #if defined(_MATH_LOD_LOW)
@@ -400,20 +461,21 @@ Shader "HECTON/Terrain/TerrainMaster"
                 #else
                 half sandLuma = dot(sandSample.rgb, half3(0.25h, 0.5h, 0.25h));
                 half rockLuma = dot(rockSample.rgb, half3(0.25h, 0.5h, 0.25h));
-                half materialLuma = lerp(sandLuma, rockLuma, rockWeight);
-                half materialDetailStrength = lerp((half)_SandNormalStr, (half)_RockNormalStr, rockWeight) * 0.16h;
+                half materialLuma = useBiomeArray > 0.0h ? dot(biomeArraySample.rgb, half3(0.25h, 0.5h, 0.25h)) : lerp(sandLuma, rockLuma, rockWeight);
+                half materialDetailStrength = (useBiomeArray > 0.0h ? (half)_SandNormalStr : lerp((half)_SandNormalStr, (half)_RockNormalStr, rockWeight)) * 0.16h;
                 half2 materialRgOffset = half2(ddx(materialLuma), ddy(materialLuma)) * materialDetailStrength;
                 materialRgOffset += half2(taaMicroBump, -taaMicroBump);
                 #endif
                 half3 blendedNormalOffset = half3(materialRgOffset.x, 0.0h, materialRgOffset.y);
-                half3 sandAlbedo = sandSample.rgb * _SandColor.rgb;
-                half3 rockAlbedo = rockSample.rgb * _RockColor.rgb;
-                half3 albedo = sandAlbedo * sandWeight + rockAlbedo * rockWeight;
-                half smoothness = lerp(sandSample.a, rockSample.a, rockWeight) * _BaseSmooth;
+                half3 sandAlbedo = useBiomeArray > 0.0h ? biomeArraySample.rgb : sandSample.rgb * _SandColor.rgb;
+                half3 rockAlbedo = useBiomeArray > 0.0h ? biomeArraySample.rgb : rockSample.rgb * _RockColor.rgb;
+                half3 albedo = useBiomeArray > 0.0h ? biomeArraySample.rgb : sandAlbedo * sandWeight + rockAlbedo * rockWeight;
+                half smoothness = (useBiomeArray > 0.0h ? biomeArraySample.a : lerp(sandSample.a, rockSample.a, rockWeight)) * _BaseSmooth;
 
                 // ---- Biome tint ----
                 half biomeBleed = ResolveBiomeEdgeBleed(IN.positionWS, biome);
-                albedo = lerp(albedo, albedo * _BiomeTint.rgb, biomeBleed);
+                half3 biomeTint = lerp(_BiomeTint.rgb, (half3)_CurrentBiomeColor.rgb, useBiomeArray * saturate((half)_CurrentBiomeColor.a));
+                albedo = lerp(albedo, albedo * biomeTint, biomeBleed);
 
                 // ---- Depth darkening ----
                 half depthFactor = HectonCheapSharp01(depth, _DarkenPower);

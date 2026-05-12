@@ -54,11 +54,11 @@ Fix class:
 | E09 | `Assets/_Project/Scripts/Hecton8.Core.asmdef`: `UNITY_ADDRESSABLES_EXIST` via Addressables version define. |
 | E10 | Runtime code uses Addressables in `GameBootstrapper`, `ItemCatalog`, and `AssetLifecycleGovernor`. |
 | E11 | `AsyncLoadHelper` states runtime Resources/Addressables loading is disabled and fails requests. |
-| E12 | Save/telemetry paths use `System.IO.MemoryMappedFiles` and unsafe mapped pointers. |
-| E13 | `SaveBinaryStorage` imports `kernel32.dll` and `liblz4`. |
+| E12 | Save/telemetry paths still use `System.IO.MemoryMappedFiles`; latest strict preflight leaves 8 unsafe mapped-pointer blocker rows in `SaveBinaryStorage`. |
+| E13 | First-party runtime `kernel32.dll` P/Invoke has been removed; `SaveBinaryStorage` still imports `liblz4`. |
 | E14 | Only `Assets/_Project/Plugins/Windows/x86_64/liblz4.dll` was found for LZ4. |
 | E15 | `Assets/Plugins/x86_64/HectonAudioKernel.dll` and `Assets/_Project/Plugins/Windows/x86_64/liblz4.dll` have minimal GUID-only `.meta` files, no visible explicit PluginImporter matrix. |
-| E16 | `HectonSensoryKernelNativeBridge` imports `HectonAudioKernel` only under Windows/editor defines. |
+| E16 | `HectonSensoryKernelNativeBridge` has platform-gated native calls, but only the Windows `HectonAudioKernel.dll` binary is present locally. |
 | E17 | Player scripting defines: Standalone has Crest/MapMagic/MicroSplat/GPUInstancer/Bakery/VLB symbols; Android/iPhone/consoles are much smaller. |
 | E18 | Android package id is still Unity template. Android target SDK is automatic, release minify is off, no signing proof was found. |
 | E19 | URP PC assets require depth and opaque textures, HDR on, additional light shadows on, shadow distance 30, render scale 1/0.85/1. |
@@ -66,7 +66,7 @@ Fix class:
 | E21 | AudioManager spatializer and ambisonic decoder plugin fields are empty. |
 | E22 | Input action asset has an `XR` control scheme and generic `<XRController>` bindings. |
 | E23 | `InputSystem.inputsettings.asset`: supported devices list is empty; update mode is dynamic update. |
-| E24 | First-party static grep: `Debug.Log` 1750 hits in 419 files; `GetComponent<` 617 hits in 184 files; `.material/.materials` 111 hits in 25 files; `MemoryMappedFiles` 6 hits; `DllImport` 8 hits. Static scan only; runtime impact unproven. |
+| E24 | First-party static grep remains high-risk: `Debug.Log` 1785 hits in 428 files; `GetComponent<` 621 hits in 187 files; `.material/.materials` 111 hits in 25 files; MMF and `DllImport` surfaces remain. Static scan only; runtime impact unproven. |
 | E25 | Fresh Windows Editor-context Unity proof exists: `CodexArtifacts/2026-05-11_PLATFORM_UNITY_AUDIT_R14_FINAL.log` exited `0`, wrote the platform audit report, and contains no `error CS`, `Burst error`, `BC0101`, `Tundra build failed`, `Scripts have compiler errors`, or `Unhandled Exception` in strict scan. |
 | E26 | `ProjectSettings/MemorySettings.asset`: platform memory settings map is empty/default. |
 | E27 | Burst AOT settings file exists for Standalone Windows only. |
@@ -74,12 +74,13 @@ Fix class:
 | E29 | Official Unity 6.4 docs: Windows player floor is Windows 10 21H1 build 19043; macOS player floor is macOS 12; Linux player docs list Ubuntu 22.04/24.04; Android player floor is API 25. |
 | E30 | `CodexArtifacts/2026-05-11_PLATFORM_UNITY_IMPORT_R10_POST_AUDIT.log` exited `0` and logged `Exiting batchmode successfully now!` plus `Application will terminate with return code 0`; strict scan found no compiler/Burst/Tundra/exception failure signals. |
 | E31 | `Docs/Reports/2026-05-11_PLATFORM_COMPATIBILITY_EDITOR_AUDIT.md` is generated from Editor code. The previous generated copy predates the direct Linux module recheck; rerun after Hub changes to refresh module state. |
+| E32 | `Docs/Reports/2026-05-11_STEAM_DECK_POSIX_PREFLIGHT.md` generated at 18:32:56 reports 11 blockers and 294 warnings. |
 
 ## Blocker Register
 
 | ID | Severity | Area | Platforms | Fix Class | Evidence | Required Resolution |
 |---|---:|---|---|---|---|---|
-| PB-001 | P0 | Proof | All | `PROOF` | E25, E30, E31 | Windows Editor import/audit proof exists. Still produce player build + launch + profiler + GC + memory evidence per exact target before support claims. |
+| PB-001 | P0 | Proof | All | `PROOF` | E25, E30, E31, E32 | Windows Editor import/audit proof exists. Steam Deck POSIX preflight exists and is still blocked. Still produce player build + launch + profiler + GC + memory evidence per exact target before support claims. |
 | PB-002 | P0 | Local modules | macOS/Android/iOS/visionOS/tvOS/UWP/Web | `HUB` | E02 | Install exact `6000.4.1f1` build support modules only for targets being actively proven. Linux module is already present; Android requires Android Build Support + SDK/NDK + OpenJDK. |
 | PB-003 | P0 | XR provider | PC VR, standalone VR | `UPM/CONFIG` | E04, E05, E06 | Add XR Plugin Management + OpenXR and configure loaders per platform. |
 | PB-004 | P0 | Standalone VR quality | Quest/PICO/Vive XR Android | `CONFIG` | E07, E19, E20 | Create Android/XR quality tier and mobile URP renderer asset. Existing tiers exclude Android/iPhone. |
@@ -231,3 +232,81 @@ Console readiness:             vendor-blocked
 VR readiness:                  blocked
 Release readiness anywhere:    absent by proof standard
 ```
+
+## 2026-05-11 17:58-18:33 - Steam Deck / POSIX Continuation
+
+Status: PENDING VERIFICATION. This is a Windows-editor static and Unity batch preflight result, not a Linux/Steam Deck runtime pass.
+
+Generated evidence:
+- Strict preflight report: `Docs/Reports/2026-05-11_STEAM_DECK_POSIX_PREFLIGHT.md`
+- Unity batch method: `Hecton8.Editor.Build.SteamDeckPosixPreflightScanner.RunBatchAudit`
+- Latest strict result: 11 blockers, 294 warnings.
+
+Resolved in this pass:
+- Removed first-party runtime `kernel32.dll` P/Invoke from watchdog/crash telemetry/file sparse hint paths.
+- Added Steam Deck/POSIX preflight scanner with case-sensitive asset path logic, native plugin parity checks, MMF pointer blockers, shader barrier/noise scan, thread priority warnings, and non-ASCII filename scan.
+- Added Roslyn analyzer scaffold for hardcoded backslash literals, `Path.Combine` review, forbidden namespaces, and Windows-only `DllImport`.
+- Fixed Unity importer blockers in `ScannableFragment` hashing and `HectonShaderVariantStripper` environment lookup.
+- Replaced editor-only Windows path literals in Unity reload summary and SpaceEngine research validation.
+- Removed low-risk MMF pointer usage from lore index reads, recovery hashing, replay export, global telemetry export, crash telemetry export/write path, save smoke corruption, and primary save writes.
+- Replaced primary save writes with sequential `FileStream` copying from unmanaged buffers through a fixed 64 KB scratch buffer.
+
+Hard blockers remaining:
+- `liblz4.dll` exists, but `liblz4.so` is absent. Linux/Steam Deck save compression is not proven.
+- `HectonAudioKernel.dll` exists, but `HectonAudioKernel.so` or `libHectonAudioKernel.so` is absent. Linux native audio bridge is not proven.
+- `SteamManager.cs` exists, but `libsteam_api.so` evidence is absent. Steam Deck overlay/cloud/callback runtime is not proven.
+- 8 unsafe MMF pointer blocker rows remain in `SaveBinaryStorage` read windows/read-only mapping/sector override commit. These require Linux player soak, alignment proof, and per-process mmap budget verification before any Steam Deck readiness claim.
+
+Unity Hub can help with:
+- Android Build Support + OpenJDK + Android SDK & NDK Tools for standalone Android VR headsets.
+- Mac Build Support (Mono) for compile/export coverage from this Windows editor.
+- Linux Dedicated Server Build Support only if headless QA/build target is required.
+
+Unity Hub cannot fix:
+- Missing `.so`/`.dylib` native binaries.
+- Steamworks Linux runtime library and SteamInput action layer.
+- MMF pointer/alignment runtime proof.
+- Vulkan shader correctness or shader compilation stutter on Deck hardware.
+- Case-sensitive Linux filesystem defects found after runtime asset loading.
+
+Blocker graph:
+
+```mermaid
+flowchart LR
+    Hub[Unity Hub Modules] --> Builds[Build Export Coverage]
+    Builds --> Verify[Device/Player Verification]
+    Native[Native Binaries: lz4/audio/steam_api] --> Verify
+    MMF[MMF + unsafe pointers] --> Verify
+    Vulkan[Vulkan shaders + warmup] --> Verify
+    SteamInput[SteamInput gyro/trackpad/haptics] --> Verify
+    Verify --> DeckTier[Steam Deck Tier-1 Claim]
+```
+
+## 2026-05-11 21:55-22:15 - MMF Purge Continuation
+
+Status: PENDING VERIFICATION. This supersedes only the MMF blocker part of the older strict preflight. It does not supersede native plugin, shader, path-case, SteamInput, XR, or device-proof blockers.
+
+New evidence:
+- Static scan found no runtime hits for `System.IO.MemoryMappedFiles`, `MemoryMappedFile`, `MemoryMappedViewAccessor`, `CreateFromFile`, `AcquirePointer`, or `ReleasePointer` under `Assets/_Project/Scripts` outside Editor.
+- `dotnet build Hecton8.Core.csproj -clp:ErrorsOnly` succeeded with 0 errors and 0 warnings.
+- Full `Assembly-CSharp.csproj` build timed out after 184 seconds; no full-project green claim.
+- Unity preflight rerun was attempted, but the Unity process hung before scanner output and was stopped. The old generated preflight file still contains stale MMF rows.
+- Continuation report: `Docs/Reports/2026-05-11_STEAM_DECK_POSIX_MMF_PURGE_CONTINUATION.md`.
+
+Blocker delta:
+
+```text
+Runtime MMF API blockers: 8 -> 0 by static scan
+Native binary blockers:   unchanged
+Steam Deck runtime proof: unchanged
+Vulkan proof:             unchanged
+```
+
+Current hard blockers after the MMF purge:
+
+| ID | Severity | Area | Platforms | Fix Class | Required Resolution |
+|---|---:|---|---|---|---|
+| PB-006A | P0 | LZ4 native parity | Linux/macOS/Steam Deck | `NATIVE` | Provide and import `liblz4.so`/`.dylib` or implement measured managed/Burst fallback. |
+| PB-007A | P0 | Native audio parity | Linux/macOS/Steam Deck | `NATIVE` | Provide `HectonAudioKernel.so`/`.dylib` or route to a verified non-native fallback. |
+| PB-023A | P0 | Steamworks Linux runtime | Steam Deck | `NATIVE/STEAM/PROOF` | Provide `libsteam_api.so`, Steam runtime packaging, SteamInput actions, and launch proof. |
+| PB-001A | P0 | Device proof | Linux/Steam Deck | `PROOF` | Build and launch a Linux player on real Linux/Steam Deck with logs, profiler, GC, memory, Vulkan, suspend/resume, and controller proof. |

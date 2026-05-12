@@ -53,7 +53,7 @@ Current state:
 - All three configured quality tiers exclude Android and iPhone.
 - Addressables package is installed, but no `Assets/AddressableAssetsData` directory exists.
 - Runtime loading policy is internally split: `AsyncLoadHelper` says runtime Resources/Addressables loading is disabled, while `GameBootstrapper`, `ItemCatalog`, and `AssetLifecycleGovernor` contain Addressables-dependent runtime paths.
-- Save/telemetry systems use `System.IO.MemoryMappedFiles`, unsafe mapped pointers, Windows `kernel32.dll` paths, and a Windows-only `liblz4.dll`.
+- Save/telemetry systems still use `System.IO.MemoryMappedFiles` in selected paths and 8 strict unsafe mapped-pointer blocker rows remain in `SaveBinaryStorage`; first-party runtime `kernel32.dll` P/Invoke has been removed. LZ4 is still Windows-binary-only locally.
 - Native plugin inventory contains Windows-only or editor/native third-party binaries. Platform metadata for `liblz4.dll` and `HectonAudioKernel.dll` is minimal GUID-only `.meta`, not an explicit per-platform PluginImporter config.
 - Fresh Unity compile/import evidence now exists for the Windows Editor context:
   - `CodexArtifacts/2026-05-11_PLATFORM_UNITY_AUDIT_R14_FINAL.log`: Unity batch audit exited `0`, report written, no `error CS`, no `Burst error`, no `BC0101`, no `Tundra build failed`, no `Scripts have compiler errors`, no `Unhandled Exception`; remaining diagnostics are editor obsolete API warnings, a Unity Licensing access-token warning, and MCP shutdown info because no MCP server was listening on port 8088.
@@ -218,16 +218,16 @@ Required work:
 
 Evidence:
 
-- `SaveBinaryStorage`, `CrashTelemetryBuffer`, `GlobalTelemetryBus`, and `UserOptionsPersistence` use `System.IO.MemoryMappedFiles`.
-- Save path uses unsafe mapped pointers via `SafeMemoryMappedViewHandle.AcquirePointer`.
-- `SaveBinaryStorage` imports `kernel32.dll`.
+- `SaveBinaryStorage`, `CrashTelemetryBuffer`, `Gameplay/DataArchaeologyRuntime`, and `UserOptionsPersistence` still use `System.IO.MemoryMappedFiles` or MMF view types in selected paths.
+- Latest strict POSIX preflight leaves 8 unsafe mapped-pointer blocker rows in `SaveBinaryStorage`: cached read windows, read-only full-file mapping, and sector override commit.
+- First-party runtime `kernel32.dll` P/Invoke has been removed from watchdog, crash telemetry file probing, and save sparse-file hints.
 - `SaveBinaryStorage` imports `liblz4`.
 - Only `Assets/_Project/Plugins/Windows/x86_64/liblz4.dll` is present for LZ4.
-- `HectonSensoryKernelNativeBridge` imports `HectonAudioKernel` only under `UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN`.
+- `HectonSensoryKernelNativeBridge` now compiles platform-gated native attempts, but Linux/macOS audio kernel binaries are absent.
 
 Interpretation:
 
-Windows desktop can plausibly run this with the shipped DLLs. Linux/macOS/Android/consoles cannot be assumed. MemoryMappedFiles, unsafe view handles, native compression DLL loading, platform storage sandboxes, and console file APIs need explicit platform adapters or unsupported-platform gates.
+Windows desktop can plausibly run this with the shipped DLLs. Linux/macOS/Android/consoles cannot be assumed. Remaining MemoryMappedFiles, unsafe view handles, native compression DLL loading, platform storage sandboxes, and console file APIs need explicit platform adapters or unsupported-platform gates.
 
 Required work:
 
@@ -541,3 +541,27 @@ Consoles                       Vendor-blocked major port
 ```
 
 No target is release-ready by current evidence.
+
+## 2026-05-11 17:58-18:33 Steam Deck / POSIX Delta
+
+Status remains `PENDING VERIFICATION`.
+
+Verification performed:
+- `dotnet build Hecton8.Editor.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false` passed after restore.
+- Unity batch `Hecton8.Editor.Build.SteamDeckPosixPreflightScanner.RunBatchAudit` compiled and generated `Docs/Reports/2026-05-11_STEAM_DECK_POSIX_PREFLIGHT.md`.
+- Strict preflight generated a blocking report because blockers remain.
+
+Current blocker count from latest strict preflight: 11 blockers, 294 warnings.
+
+Resolved since the first POSIX delta:
+- Removed low-risk MMF pointer use from lore index reads, recovery hashing, replay export, global telemetry export, crash telemetry export/write path, save smoke corruption, and primary save writes.
+- Replaced primary save writes with sequential `FileStream` copying from unmanaged buffers through a fixed 64 KB scratch buffer.
+- Kept the remaining `SaveBinaryStorage` read-window/read-only mapping/sector-override `AcquirePointer` sites blocked instead of rewriting save integrity code without Linux replay proof.
+
+Important correction: Unity Hub modules expand build export coverage only. They do not solve native Linux binaries, Steamworks Linux runtime, unsafe MMF pointer proof, Vulkan shader proof, Steam Deck input/haptics, or runtime thermals.
+
+Install priority from the current Hub screen:
+- Install Android Build Support with OpenJDK and Android SDK & NDK Tools for standalone VR targets.
+- Install Mac Build Support (Mono) if macOS export/compile coverage is required from this workstation.
+- Install Linux Dedicated Server Build Support only if automated headless Linux QA is being added now.
+- Do not spend disk on iOS/tvOS/visionOS/UWP/Web until those targets become explicit product targets; they add export buttons, not readiness.

@@ -25,11 +25,7 @@ namespace Hecton8.EditorTools
         [MenuItem("Hecton/Validation/Log Unity Reload Summary")]
         public static void LogSummary()
         {
-            string logPath = Path.Combine(
-                System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
-                "Unity",
-                "Editor",
-                "Editor.log");
+            string logPath = Application.consoleLogPath;
 
             if (!File.Exists(logPath))
             {

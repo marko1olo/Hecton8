@@ -293,6 +293,7 @@ namespace Hecton8.Core
         private void ClearCachedInputDevices()
         {
             _cachedGamepad = null;
+            SteamDeckInputPal.BindGamepad(null);
             ClearCachedXRControllers();
         }
 
@@ -544,7 +545,10 @@ namespace Hecton8.Core
                 case InputDeviceChange.ConfigurationChanged:
                 case InputDeviceChange.UsageChanged:
                     if (_cachedGamepad == null)
+                    {
                         _cachedGamepad = gamepad;
+                        SteamDeckInputPal.BindGamepad(_cachedGamepad);
+                    }
                     break;
 
                 case InputDeviceChange.Removed:
@@ -554,6 +558,7 @@ namespace Hecton8.Core
                     {
                         ResetGamepadHaptics();
                         _cachedGamepad = null;
+                        SteamDeckInputPal.BindGamepad(null);
                         ResolveCachedGamepad();
                     }
                     break;
@@ -563,7 +568,10 @@ namespace Hecton8.Core
         private void ResolveCachedGamepad()
         {
             if (_cachedGamepad != null && _cachedGamepad.added)
+            {
+                SteamDeckInputPal.BindGamepad(_cachedGamepad);
                 return;
+            }
 
             _cachedGamepad = null;
             var gamepads = Gamepad.all;
@@ -576,6 +584,8 @@ namespace Hecton8.Core
                 _cachedGamepad = gamepad;
                 break;
             }
+
+            SteamDeckInputPal.BindGamepad(_cachedGamepad);
         }
 
         private void HandleXRDeviceChange(XRController controller, InputDeviceChange change)
@@ -870,9 +880,12 @@ namespace Hecton8.Core
 
                 state.MoveDelta = inputManager.MoveInput;
                 state.LookDelta = lookDelta;
+                if (inputManager.TryReadUiScrollWheel(out Vector2 scrollDelta))
+                    state.ScrollDelta = scrollDelta;
                 state.VerticalDelta = math.clamp(inputManager.VerticalMovementInput, -1f, 1f);
                 state.ActionsBitmask = actionBits;
-                _lastDeliveredLookDelta = lookDelta;
+                SteamDeckInputPal.Capture(ref state, deltaTime);
+                _lastDeliveredLookDelta = state.LookDelta;
             }
 
             _currentState = state;
@@ -1767,6 +1780,16 @@ namespace Hecton8.Core
         public static float SampleCompletedLatencyMs()
         {
             return _lastCompletedLatencyMs;
+        }
+
+        public static float SampleInputSystemClockDeltaMs()
+        {
+            double inputTimestamp = InputState.currentTime;
+            double renderTimestamp = Time.unscaledTimeAsDouble;
+            if (inputTimestamp <= 0d || renderTimestamp <= 0d)
+                return 0f;
+
+            return (float)(math.abs(inputTimestamp - renderTimestamp) * 1000d);
         }
     }
 

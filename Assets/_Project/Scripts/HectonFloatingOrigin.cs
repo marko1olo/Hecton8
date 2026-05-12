@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Hecton8.Bootstrap;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.Physics;
@@ -25,7 +26,6 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-10000)]
     public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct OriginShiftTranslateJob : IJobParallelForTransform
         {
             public Vector3 ShiftOffset;
@@ -75,6 +75,7 @@ namespace Hecton8.Core
 
         private static readonly int _HectonFloatingOriginOffsetId = Shader.PropertyToID("_HectonFloatingOriginOffset");
         private static readonly int _TotalUniverseOffsetId = Shader.PropertyToID("_TotalUniverseOffset");
+        private static readonly int _AupJitterMaskId = Shader.PropertyToID("_AupJitterMask");
         private const int OriginShiftListenerCapacity = 128;
         private static readonly RegistryBucket<IOriginShiftListener> _originShiftListeners = new RegistryBucket<IOriginShiftListener>(OriginShiftListenerCapacity);
         private const int PrecisionWatchdogIntervalFrames = 300;
@@ -85,16 +86,25 @@ namespace Hecton8.Core
         private const float ShiftDeadzoneReleaseMeters = 4500f;
         private const float OutwardMotionSpeedEpsilon = 0.05f;
         private const int DriftCheckEntityCapacity = 2;
+        private const int OriginShiftParticleBufferCapacity = 16384;
+        private const int ShiftSceneRootCapacity = 1024;
+        private const int ShiftParticleSystemCapacity = 4096;
         private const float DriftCheckThresholdMeters = 0.001f;
         private const double DriftCheckThresholdSq = (double)DriftCheckThresholdMeters * DriftCheckThresholdMeters;
         private const int PostShiftUnloadUnusedAssetsMinimumFrames = 300;
 
         private static OriginShiftEventData _lastShiftEvent;
 
-        private readonly List<GameObject> _sceneRootObjects = new List<GameObject>(256);
+        // COLD ALLOC: List<GameObject>[1024] - scene root staging for shift target and particle rebases - owner: HectonFloatingOrigin
+        private readonly List<GameObject> _sceneRootObjects = new List<GameObject>(ShiftSceneRootCapacity);
         private readonly List<Scene> _pendingLoadedScenes = new List<Scene>(8);
-        private readonly List<Transform> _shiftTargetTransforms = new List<Transform>(256);
+        // COLD ALLOC: List<Transform>[1024] - root transform staging for TransformAccessArray rebuilds - owner: HectonFloatingOrigin
+        private readonly List<Transform> _shiftTargetTransforms = new List<Transform>(ShiftSceneRootCapacity);
         private readonly List<MonoBehaviour> _sceneComponentScratch = new List<MonoBehaviour>(512);
+        // COLD ALLOC: List<ParticleSystem>[4096] - shift-frame particle system discovery staging - owner: HectonFloatingOrigin
+        private readonly List<ParticleSystem> _sceneParticleSystemScratch = new List<ParticleSystem>(ShiftParticleSystemCapacity);
+        // COLD ALLOC: ParticleSystem.Particle[16384] - shift-frame world-space particle rebase scratch - owner: HectonFloatingOrigin
+        private readonly ParticleSystem.Particle[] _originShiftParticleScratch = new ParticleSystem.Particle[OriginShiftParticleBufferCapacity];
 
         private TransformAccessArray _shiftTargetAccessArray;
         private Transform[] _shiftTargetArray = Array.Empty<Transform>();
@@ -102,6 +112,7 @@ namespace Hecton8.Core
         private bool _isRegistered;
         private bool _sceneEventsSubscribed;
         private bool _isShiftInProgress;
+        private bool _hasPendingShift;
         private bool _physicsPauseActive;
         private bool _shiftDeadzoneArmed = true;
         private bool _hasPreviousAnchorPosition;
@@ -110,6 +121,8 @@ namespace Hecton8.Core
         private SimulationMode _physicsSimulationModeBeforeShift = SimulationMode.FixedUpdate;
         private bool _driftCheckScheduled;
         private int _physicsResumeFrame = -1;
+        private int _pendingShiftFrame = -1;
+        private int _aupJitterMaskReleaseFrame = -1;
         private int _lastPostShiftUnloadUnusedAssetsFrame = -PostShiftUnloadUnusedAssetsMinimumFrames;
         private float _thresholdSqr;
         private float _anchorResolveTimer;
@@ -118,6 +131,7 @@ namespace Hecton8.Core
         private int _lastShiftSceneReadyCount;
         private int _lastShiftSceneTotal;
         private Vector3 _previousAnchorPosition;
+        private Vector3 _pendingShiftOffset;
         private Rigidbody _anchorRigidbody;
         private CriticalAupTracker _playerDriftTracker;
         private CriticalAupTracker _submarineDriftTracker;
@@ -252,6 +266,7 @@ namespace Hecton8.Core
             _originShiftListeners.Clear();
             Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, Vector4.zero);
             Shader.SetGlobalVector(_TotalUniverseOffsetId, Vector4.zero);
+            Shader.SetGlobalFloat(_AupJitterMaskId, 0f);
             HectonXRRuntimeState.ResetShaderGlobals();
         }
 
@@ -492,6 +507,7 @@ namespace Hecton8.Core
         /// <param name="deltaTime">Scaled tick delta supplied by the tick manager.</param>
         public void Tick(float deltaTime)
         {
+            UpdateAupJitterMaskRelease();
             if (_isShiftInProgress)
                 return;
 
@@ -505,6 +521,20 @@ namespace Hecton8.Core
 
             if (_shiftTargetsDirty || _pendingLoadedScenes.Count > 0)
                 ProcessPendingSceneSynchronization();
+
+            if (_hasPendingShift)
+            {
+                if (Time.frameCount >= _pendingShiftFrame)
+                {
+                    Vector3 pendingShiftOffset = _pendingShiftOffset;
+                    _pendingShiftOffset = Vector3.zero;
+                    _pendingShiftFrame = -1;
+                    _hasPendingShift = false;
+                    BeginShiftWorldImmediate(pendingShiftOffset);
+                }
+
+                return;
+            }
 
             if (_driftCheckScheduled && ConsumeCompletedDriftCheck())
                 return;
@@ -561,6 +591,29 @@ namespace Hecton8.Core
             if (_isShiftInProgress)
                 return;
 
+            if (_hasPendingShift)
+                return;
+
+            _pendingShiftOffset = shiftOffset;
+            _pendingShiftFrame = Time.frameCount + 1;
+            _hasPendingShift = true;
+            PublishAupPreShiftSignal(shiftOffset, _shiftSequence + 1u);
+        }
+
+        private void BeginShiftWorldImmediate(Vector3 shiftOffset)
+        {
+            if (!IsFiniteVector(shiftOffset))
+            {
+                CrashTelemetryBuffer.ReportNanPhysicsRecovery(shiftOffset, Vector3.zero);
+                return;
+            }
+
+            if (VectorLengthSq(shiftOffset) <= 0.0001f)
+                return;
+
+            if (_isShiftInProgress)
+                return;
+
             _isShiftInProgress = true;
             _ = ShiftWorldAsync(shiftOffset, destroyCancellationToken);
         }
@@ -575,6 +628,7 @@ namespace Hecton8.Core
             }
 
             _isShiftInProgress = true;
+            SystemDispatcher.RequestOriginShiftFrameLock(Time.frameCount);
             bool trackedBodiesPrepared = false;
             bool trackedBodiesFinalized = false;
             bool xrPoseLockActive = false;
@@ -616,6 +670,9 @@ namespace Hecton8.Core
                     Time.frameCount,
                     fixedInterpolationAlpha);
 
+                ArmAupJitterMask(Time.frameCount);
+                RebaseParticleSystemsForOriginShift(in _lastShiftEvent);
+                PublishAupShiftSignal(in _lastShiftEvent);
                 CrashTelemetryBuffer.ReportOriginShift(shiftOffset, _shiftSequence);
                 PublishGlobalOffsets();
                 HectonXRRuntimeState.EndOriginShiftPoseLock(_shiftSequence, fixedInterpolationAlpha);
@@ -657,6 +714,56 @@ namespace Hecton8.Core
             if (trackedBodiesFinalized)
                 Debug.Log("[FloatingOrigin] shift committed.");
 #endif
+        }
+
+        private static void PublishAupShiftSignal(in OriginShiftEventData shiftData)
+        {
+            int3 sectorDelta = ResolveAupSectorDelta(shiftData.PreviousTotalOffset, shiftData.NewTotalOffset);
+            AupShiftSignal signal = new AupShiftSignal
+            {
+                ShiftMeters = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z),
+                ShiftFrameId = shiftData.Sequence,
+                SectorDelta = sectorDelta,
+                Flags = shiftData.IsSafeTeleport ? 1u : 0u
+            };
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void PublishAupPreShiftSignal(Vector3 shiftOffset, uint nextShiftSequence)
+        {
+            Vector3 previousOffset = TotalOffset;
+            Vector3 newOffset = previousOffset + shiftOffset;
+            AupPreShiftSignal signal = new AupPreShiftSignal
+            {
+                ShiftMeters = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z),
+                ShiftFrameId = nextShiftSequence,
+                SectorDelta = ResolveAupSectorDelta(previousOffset, newOffset),
+                Flags = 0u
+            };
+            GlobalSignals.Publish(in signal);
+        }
+
+        private static int3 ResolveAupSectorDelta(Vector3 previousOffset, Vector3 newOffset)
+        {
+            AbsoluteUniversePosition previousAup = AbsoluteUniversePosition.FromAbsolutePosition(
+                new double3(previousOffset.x, previousOffset.y, previousOffset.z));
+            AbsoluteUniversePosition newAup = AbsoluteUniversePosition.FromAbsolutePosition(
+                new double3(newOffset.x, newOffset.y, newOffset.z));
+
+            return new int3(
+                ClampLongToInt(newAup.GridX - previousAup.GridX),
+                ClampLongToInt(newAup.GridY - previousAup.GridY),
+                ClampLongToInt(newAup.GridZ - previousAup.GridZ));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ClampLongToInt(long value)
+        {
+            if (value > int.MaxValue)
+                return int.MaxValue;
+            if (value < int.MinValue)
+                return int.MinValue;
+            return (int)value;
         }
 
         private async Awaitable RunPostShiftUnusedAssetUnloadGuardAsync(
@@ -837,6 +944,76 @@ namespace Hecton8.Core
 
             _sceneComponentScratch.Clear();
             _sceneRootObjects.Clear();
+        }
+
+        private void RebaseParticleSystemsForOriginShift(in OriginShiftEventData shiftData)
+        {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            if (!IsFiniteVector(shiftOffset) || VectorLengthSq(shiftOffset) <= 0.0001f)
+                return;
+
+            int sceneCount = SceneManager.sceneCount;
+            for (int sceneIndex = 0; sceneIndex < sceneCount; sceneIndex++)
+            {
+                Scene scene = SceneManager.GetSceneAt(sceneIndex);
+                if (!scene.IsValid() || !scene.isLoaded)
+                    continue;
+
+                _sceneRootObjects.Clear();
+                scene.GetRootGameObjects(_sceneRootObjects);
+                for (int rootIndex = 0; rootIndex < _sceneRootObjects.Count; rootIndex++)
+                {
+                    GameObject rootObject = _sceneRootObjects[rootIndex];
+                    if (rootObject == null)
+                        continue;
+
+                    _sceneParticleSystemScratch.Clear();
+                    rootObject.GetComponentsInChildren(true, _sceneParticleSystemScratch);
+                    int particleSystemCount = _sceneParticleSystemScratch.Count;
+                    for (int particleSystemIndex = 0; particleSystemIndex < particleSystemCount; particleSystemIndex++)
+                        RebaseParticleSystemForOriginShift(_sceneParticleSystemScratch[particleSystemIndex], shiftOffset);
+                }
+            }
+
+            _sceneParticleSystemScratch.Clear();
+            _sceneRootObjects.Clear();
+        }
+
+        private void RebaseParticleSystemForOriginShift(ParticleSystem particleSystem, Vector3 shiftOffset)
+        {
+            if (particleSystem == null)
+                return;
+
+            ParticleSystem.MainModule mainModule = particleSystem.main;
+            if (mainModule.simulationSpace != ParticleSystemSimulationSpace.World)
+            {
+                particleSystem.Simulate(0f, false, false);
+                return;
+            }
+
+            int totalParticles = particleSystem.particleCount;
+            int offset = 0;
+            while (offset < totalParticles)
+            {
+                int requestedCount = math.min(_originShiftParticleScratch.Length, totalParticles - offset);
+                int particleCount = particleSystem.GetParticles(_originShiftParticleScratch, requestedCount, offset);
+                if (particleCount <= 0)
+                    break;
+
+                for (int particleIndex = 0; particleIndex < particleCount; particleIndex++)
+                {
+                    ParticleSystem.Particle particle = _originShiftParticleScratch[particleIndex];
+                    Vector3 rebasedPosition = particle.position - shiftOffset;
+                    if (IsFiniteVector(rebasedPosition))
+                        particle.position = rebasedPosition;
+                    _originShiftParticleScratch[particleIndex] = particle;
+                }
+
+                particleSystem.SetParticles(_originShiftParticleScratch, particleCount, offset);
+                offset += particleCount;
+            }
+
+            particleSystem.Simulate(0f, false, false);
         }
 
         private static async Awaitable DispatchOriginShiftListenerAsync(
@@ -1273,7 +1450,43 @@ namespace Hecton8.Core
             Vector4 offset = new Vector4(TotalOffset.x, TotalOffset.y, TotalOffset.z, 0f);
             Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, offset);
             Shader.SetGlobalVector(_TotalUniverseOffsetId, offset);
+            Shader.SetGlobalFloat(_AupJitterMaskId, ResolveAupJitterMask());
             HectonXRRuntimeState.PublishOriginShiftState(_shiftSequence, ResolveFixedInterpolationAlpha());
+        }
+
+        internal static void PublishCurrentGlobalOffsetsForRenderLoop()
+        {
+            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            if (origin != null)
+            {
+                origin.PublishGlobalOffsets();
+                return;
+            }
+
+            Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, Vector4.zero);
+            Shader.SetGlobalVector(_TotalUniverseOffsetId, Vector4.zero);
+            Shader.SetGlobalFloat(_AupJitterMaskId, 0f);
+            HectonXRRuntimeState.PublishOriginShiftState(0u, 0f);
+        }
+
+        private void ArmAupJitterMask(int frame)
+        {
+            _aupJitterMaskReleaseFrame = frame + 1;
+            Shader.SetGlobalFloat(_AupJitterMaskId, 1f);
+        }
+
+        private void UpdateAupJitterMaskRelease()
+        {
+            if (_aupJitterMaskReleaseFrame < 0 || Time.frameCount <= _aupJitterMaskReleaseFrame)
+                return;
+
+            _aupJitterMaskReleaseFrame = -1;
+            Shader.SetGlobalFloat(_AupJitterMaskId, 0f);
+        }
+
+        private float ResolveAupJitterMask()
+        {
+            return _aupJitterMaskReleaseFrame >= 0 && Time.frameCount <= _aupJitterMaskReleaseFrame ? 1f : 0f;
         }
 
         private void TryRegister()

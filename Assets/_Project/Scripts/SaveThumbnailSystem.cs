@@ -90,7 +90,7 @@ namespace Hecton8.SaveSystem
 
         public static string GetThumbnailPath(string slotName)
         {
-            return Path.Combine(Application.persistentDataPath, ResolveThumbnailFileStem(slotName) + Extension);
+            return HectonPersistentPathPolicy.CombineFile(ResolveThumbnailFileStem(slotName) + Extension);
         }
 
         public static string GetTempThumbnailPath(string slotName)
@@ -453,7 +453,7 @@ namespace Hecton8.SaveSystem
 
         private static string GetLegacyThumbnailPath(string slotName)
         {
-            return Path.Combine(Application.persistentDataPath, ResolveThumbnailFileStem(slotName) + LegacyExtension);
+            return HectonPersistentPathPolicy.CombineFile(ResolveThumbnailFileStem(slotName) + LegacyExtension);
         }
 
         private static string ResolveThumbnailFileStem(string slotName)

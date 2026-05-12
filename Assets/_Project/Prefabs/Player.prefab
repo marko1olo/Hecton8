@@ -1504,6 +1504,8 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   survivalSystem: {fileID: 9217988090672240742}
+  pdaSonarPointCloudShader: {fileID: 4800000, guid: 534bedadf69d41343b2dcf2900bbc44c, type: 3}
+  pdaSonarMapCompute: {fileID: 7200000, guid: 7d9f06381d803794a9ceb6ae78e2aa79, type: 3}
   defaultTab: 0
   fadeSpeed: 5
   enableBatteryDrain: 1
@@ -2727,7 +2729,7 @@ MonoBehaviour:
   _adaptiveVRAMWarningScale: 0.82
   _adaptiveVRAMCriticalScale: 0.68
   _adaptiveScaleQuantizationStep: 0.05
-  _hudIntensity: 0
+  _hudIntensity: 1.65
   _hudTint: {r: 0.82, g: 0.96, b: 1, a: 0.14}
   _scratchBleed: 0.12
   _distortion: 0.004
@@ -3507,7 +3509,7 @@ MonoBehaviour:
   preferCanvasProjectionSource: 1
   syncProjectionLayoutFromOverlay: 0
   fitDiegeticProjectionToCamera: 1
-  diegeticProjectionViewportFill: 0.96
+  diegeticProjectionViewportFill: 0.78
   debugAppliedModeLabel: ModernProjectedSharedRT -> FallbackOverlay
   debugModernEnabled: 0
   debugProjectedModeActive: 0

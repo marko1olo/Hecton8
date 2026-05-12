@@ -298,7 +298,6 @@ namespace Hecton8.Core
         public void Tick(float deltaTime)
         {
             EnsureInitialized();
-            HectonArenaAllocator.Reset();
 
             float dt = deltaTime;
             float slowTickDt = dt;

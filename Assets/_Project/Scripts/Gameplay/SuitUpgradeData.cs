@@ -32,14 +32,14 @@ namespace Hecton8.Gameplay
     [CreateAssetMenu(fileName = "SuitUpgrade_", menuName = "Hecton8/Gameplay/Suit Upgrade Data", order = 30)]
     public sealed class SuitUpgradeData : ScriptableObject
     {
-        [Header("── Identity ─────────────────────────────")]
+        [Header("Identity")]
         [SerializeField] public string upgradeId;
         [SerializeField] public string displayName = "SUIT UPGRADE";
         [SerializeField] private LocalizedTextReference localizedDisplayName;
         [SerializeField] public SuitUpgradeCategory category = SuitUpgradeCategory.Hull;
         [SerializeField, Range(0, 4)] public int tier;
 
-        [Header("── Stat Deltas ─────────────────────────")]
+        [Header("Stat Deltas")]
         [SerializeField] public float deltaMaxOxygen;
         [SerializeField] public float deltaMaxEnergy;
         [SerializeField] public float deltaSafeDepth;
@@ -48,11 +48,11 @@ namespace Hecton8.Gameplay
         [SerializeField] public float deltaMaxSafeTemp;
         [SerializeField] public float deltaRadiationThreshold;
 
-        [Header("── Requirements ────────────────────────")]
+        [Header("Requirements")]
         [SerializeField] public SuitUpgradeRequirement[] requirements = new SuitUpgradeRequirement[0];
         [SerializeField] public string requiredBlueprintId;
 
-        [Header("── Description ─────────────────────────")]
+        [Header("Description")]
         [SerializeField, TextArea(2, 4)] public string description;
         [SerializeField] private LocalizedTextReference localizedDescription;
 

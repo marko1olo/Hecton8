@@ -57,8 +57,8 @@ namespace NASAPunk.Visor
         [Header("Diegetic Projection Fit")]
         [SerializeField, Tooltip("Fits the physical HUD projection surface to the active camera frustum so the 16:9 HUD occupies the Game View instead of a small center patch.")]
         private bool fitDiegeticProjectionToCamera = true;
-        [SerializeField, Range(0.9f, 1.05f), Tooltip("Viewport fill for the physical HUD projection surface. 1.0 fills the camera frustum at the surface distance.")]
-        private float diegeticProjectionViewportFill = 1f;
+        [SerializeField, Range(0.55f, 0.82f), Tooltip("Viewport fill for the physical HUD projection surface. Capped below full frustum so the diegetic panel stays inside the visor frame.")]
+        private float diegeticProjectionViewportFill = 0.82f;
 
         [Header("Diagnostics")]
         [SerializeField] private string debugAppliedModeLabel;
@@ -551,7 +551,7 @@ namespace NASAPunk.Visor
 
             float height = 2f * distance * ExactPrimaryHudTanPositive(fitCamera.fieldOfView * DegreesToHalfRadians);
             float width = height * fitCamera.aspect;
-            float fill = Mathf.Max(0.01f, diegeticProjectionViewportFill);
+            float fill = Mathf.Clamp(diegeticProjectionViewportFill, 0.55f, 0.82f);
             Vector3 targetScale = new Vector3(width * fill, height * fill, surface.localScale.z);
 
             if ((surface.localScale - targetScale).sqrMagnitude > 0.000001f)
@@ -828,11 +828,7 @@ namespace NASAPunk.Visor
 
         private static bool IsScreenOverlayFallbackAllowed()
         {
-#if UNITY_EDITOR
-            return true;
-#else
             return false;
-#endif
         }
 
         private static float ExactPrimaryHudTanPositive(float radians)

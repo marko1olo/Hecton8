@@ -50,8 +50,6 @@ namespace Hecton8.UI
         {
             CacheTextComponent();
             EnsureRuntimeHierarchyHash();
-            if (isActiveAndEnabled)
-                TMP_TextRegistry.Register(this);
         }
 
         private void OnEnable()

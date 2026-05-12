@@ -1,0 +1,78 @@
+# REND_GPU_SOVEREIGNTY.md
+## Unity 6000.x GPU Resident Drawer Mandate
+
+Status: PENDING VERIFICATION
+Owner: Tech Researcher / Rendering Lead
+Target: Unity 6000.x, URP 17.x, MX350 2GB floor
+
+---
+
+## Primary Law
+
+[RULE] Static and instanced environment rendering must be GPU-sovereign by default.
+
+Environment meshes that meet Unity GPU Resident Drawer constraints must ship as regular `MeshRenderer` GameObjects using the GPU Resident Drawer path, not hand-written CPU culling, not per-frame material mutation, and not raw `DrawMeshInstancedIndirect`.
+
+[SOURCE] Unity 6000 GPU Resident Drawer documentation states that URP GPU Resident Drawer automatically uses `BatchRendererGroup` for GPU instancing, and requires Forward+, a compute-shader-capable graphics API/platform, and Mesh Renderer GameObjects.
+
+Reference:
+https://docs.unity3d.com/6000.0/Manual/urp/gpu-resident-drawer.html
+
+---
+
+## Compatibility Gate
+
+[REQUIRE] Forward+ rendering path for GPU Resident Drawer scenes.
+[REQUIRE] Compute-shader-capable graphics API. OpenGL ES is excluded from the GPU Resident Drawer target path.
+[REQUIRE] `MeshRenderer` ownership for static environment props, wreckage modules, non-skinned coral, rocks, panels, pipes, and HLOD shell geometry.
+[REQUIRE] SRP Batcher-compatible materials with `CBUFFER_START(UnityPerMaterial)`.
+[FORBID] `MaterialPropertyBlock` on standard environment geometry.
+[FORBID] Per-object material clones for instance data.
+[FORBID] Runtime `Renderer.material` mutation.
+[FORBID] Raw `DrawMeshInstancedIndirect` unless the object family is explicitly not representable as GPU Resident Drawer GameObjects and has a measured custom-culling win.
+
+---
+
+## What Cannot Be Claimed As 100 Percent
+
+[BROKEN IF CLAIMED] "100 percent of environment can move to GPU Resident Drawer" is false unless audited against object type.
+
+The following require separate ownership:
+- Skinned fauna, VAT creatures, deforming cables, and physics-driven equipment: use their domain renderer path.
+- Terrain details/third-party vegetation: must be validated in Unity Frame Debugger/Rendering Stats before claiming residency.
+- Procedural compute scatter without GameObjects: use manual BRG + compute culling, not GPU Resident Drawer.
+- UI/visor/panel rendering: RenderGraph renderer-feature domain, not GPU Resident Drawer.
+
+---
+
+## Submission Architecture
+
+[RULE] Use exactly one of these paths per object family:
+
+1. GPU Resident Drawer GameObject path
+   - Author as Mesh Renderer GameObjects.
+   - No MPB.
+   - No dynamic material mutation.
+   - Let Unity own GPU culling/instancing.
+
+2. Manual BRG path
+   - Use only for generated data that never exists as stable GameObjects.
+   - Instance data lives in `GraphicsBuffer`.
+   - Culling happens in compute with bounds-clamped dispatch.
+   - RenderGraph consumes a renderer list or explicit raster pass.
+
+[FORBID] Mixing GPU Resident Drawer and manual BRG ownership for the same rendered object family.
+
+---
+
+## Verification
+
+[REQUIRE] Rendering Statistics and Frame Debugger capture per target scene:
+- SetPass count before/after.
+- Batch count before/after.
+- GPU Resident Drawer active path confirmation.
+- GPU occlusion culling active path confirmation where used.
+- MX350/Low-tier fallback capture.
+
+[STATUS] Until captures exist, all savings are estimates and must be reported as PENDING VERIFICATION.
+

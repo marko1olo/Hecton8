@@ -1,4 +1,4 @@
-using System;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -9,8 +9,9 @@ namespace Hecton8.Core
     /// </summary>
     public static class FrameTimeWatchdog
     {
-        private const int FrameTimeSampleCount = 60;
-        private const float InvFrameTimeSampleCount = 0.0166666675f;
+        private const int FrameTimeSampleCount = 64;
+        private const int FrameTimeSampleMask = FrameTimeSampleCount - 1;
+        private const float InvFrameTimeSampleCount = 0.015625f;
         private const float SpikeThresholdSeconds = 0.01667f;
         private const float OptimalAverageThresholdSeconds = 0.014f;
         private const float CriticalAverageThresholdSeconds = 0.018f;
@@ -28,10 +29,8 @@ namespace Hecton8.Core
         private const uint DegradeMathLodLowMask = 1u << 4;
         private const uint DegradeCriticalLevelMask = 1u << 31;
 
-        // COLD ALLOC: float[60] - fixed frame-time ring, no List growth - owner: FrameTimeWatchdog
-        private static readonly float[] _frameTimeSamples = new float[FrameTimeSampleCount];
+        private static NativeRingBuffer<float> _frameTimeSamples;
 
-        private static int _frameTimeSampleIndex;
         private static int _frameTimeSampleCount;
         private static int _consecutiveSpikeFrames;
         private static int _lastSpikeReportFrame = -1;
@@ -57,8 +56,7 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            Array.Clear(_frameTimeSamples, 0, _frameTimeSamples.Length);
-            _frameTimeSampleIndex = 0;
+            DisposeFrameTimeSamples();
             _frameTimeSampleCount = 0;
             _consecutiveSpikeFrames = 0;
             _lastSpikeReportFrame = -1;
@@ -128,6 +126,8 @@ namespace Hecton8.Core
         /// </summary>
         public static void Tick()
         {
+            EnsureFrameTimeSamples();
+
             if (!_shaderLodPushed)
                 PushInitialScalabilityFromHardwareTier();
 
@@ -174,23 +174,47 @@ namespace Hecton8.Core
 
         private static float RecordFrameTimeSample(float deltaTime)
         {
+            EnsureFrameTimeSamples();
+
+            long writeCursor = _frameTimeSamples.TotalWrites;
+            int writeSlot = (int)writeCursor & FrameTimeSampleMask;
             float previous = 0f;
             if (_frameTimeSampleCount >= FrameTimeSampleCount)
             {
-                previous = _frameTimeSamples[_frameTimeSampleIndex];
+                previous = _frameTimeSamples[writeSlot];
             }
             else
             {
                 _frameTimeSampleCount++;
             }
 
-            _frameTimeSamples[_frameTimeSampleIndex] = deltaTime;
+            _frameTimeSamples.Write(deltaTime);
             _frameTimeSumSeconds += deltaTime - previous;
-            _frameTimeSampleIndex++;
-            if (_frameTimeSampleIndex >= FrameTimeSampleCount)
-                _frameTimeSampleIndex = 0;
 
             return _frameTimeSumSeconds * InvFrameTimeSampleCount;
+        }
+
+        private static void EnsureFrameTimeSamples()
+        {
+            if (_frameTimeSamples.IsCreated)
+                return;
+
+            _frameTimeSamples = new NativeRingBuffer<float>(FrameTimeSampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<float>[64] - fixed frame pacing average, no managed List/array growth - owner: FrameTimeWatchdog
+            NativeMemorySentinel.RegisterNativeArray(
+                _frameTimeSamples.RawArray,
+                nameof(FrameTimeWatchdog),
+                nameof(_frameTimeSamples),
+                NativeAllocationLifetime.Session);
+        }
+
+        private static void DisposeFrameTimeSamples()
+        {
+            if (!_frameTimeSamples.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(_frameTimeSamples.RawArray);
+            _frameTimeSamples.Dispose();
+            _frameTimeSamples = default;
         }
 
         private static void DispatchScalabilityIfNeeded(float deltaTime, float averageFrameTimeSeconds)

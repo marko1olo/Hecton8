@@ -1,8 +1,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
+using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
@@ -14,6 +16,8 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using ScanEntryKind = Hecton8.Gameplay.ScanEntryKind;
+using ScanEvents = Hecton8.Gameplay.ScanEvents;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -53,6 +57,23 @@ namespace Hecton8.World
         Baking = 1,
         Ready = 2,
         Failed = 3
+    }
+
+    public enum WreckIntegrityState : byte
+    {
+        Open = 0,
+        Sealed = 1,
+        Ruptured = 2
+    }
+
+    [Flags]
+    internal enum WreckDebrisFlags : byte
+    {
+        None = 0,
+        Pickable = 1 << 0,
+        ActivePickup = 1 << 1,
+        Harvested = 1 << 2,
+        DotOnly = 1 << 3
     }
 
     internal enum WreckSolveTermination : byte
@@ -105,6 +126,20 @@ namespace Hecton8.World
 
         [Tooltip("True when this module acts as the universal contradiction fallback. Slot 0 is forced to behave this way.")]
         public bool UniversalConnector;
+
+        [Tooltip("Integrity state used by gameplay routing. Sealed modules require a laser/plasma-cut interaction signal before opening.")]
+        public WreckIntegrityState IntegrityState;
+
+        [Tooltip("True when this sealed module accepts only the Laser Cutter / plasma-cut capability mask.")]
+        public bool RequiresLaserCutter;
+
+        [Tooltip("Optional loot table slot resolved against the native wreck loot SOA.")]
+        [Range(0, 15)]
+        public byte LootTableIndex;
+
+        [Tooltip("Seeded chance, in permille, that this module contributes a lore fragment hash.")]
+        [Range(0, 1000)]
+        public ushort LoreFragmentChancePermille;
     }
 
     /// <summary>
@@ -218,7 +253,7 @@ namespace Hecton8.World
         private uint _reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     internal struct WreckModuleRuntimeDefinition
     {
         public ushort NorthSocket;
@@ -233,9 +268,15 @@ namespace Hecton8.World
         public byte EmitsGeometry;
         public byte EmitsNavProxy;
         public byte UniversalConnector;
+        public byte IntegrityState;
+        public byte RequiresLaserCutter;
+        public byte LootTableIndex;
+        private byte _runtimeReserved0;
+        public ushort LoreFragmentChancePermille;
+        private ushort _runtimeReserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     internal struct WreckModulePlacement
     {
         public float3 Position;
@@ -245,15 +286,128 @@ namespace Hecton8.World
         public int MortonIndex;
         public byte ModuleId;
         public byte DrawPriority;
-        private ushort _reserved;
+        public byte IntegrityState;
+        public byte ModuleFlags;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct WreckMergedVertex
     {
         public float3 Position;
         public float3 Normal;
         public float2 UV;
+        public uint Color;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    internal struct WreckLootRecord
+    {
+        public int ItemHashId;
+        public ushort MinQuantity;
+        public ushort MaxQuantity;
+        public uint StableDropHash;
+        public uint Flags;
+        private ulong _reserved0;
+        private ulong _reserved1;
+        private ulong _reserved2;
+        private ulong _reserved3;
+        private ulong _reserved4;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    internal struct WreckDebrisRecord
+    {
+        public float3 Position;
+        public float InitialY;
+        public float TerrainY;
+        public int SpatialHashKey;
+        public int ClusterIndex;
+        public int ItemHashId;
+        public ushort Quantity;
+        public byte Flags;
+        public byte LootTableIndex;
+        public uint StableId;
+        public float SinkMetersPerSlowTick;
+        public float PickupRadiusSq;
+        public uint Reserved0;
+        public ulong Reserved1;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    internal struct WreckDebrisCluster
+    {
+        public float3 Center;
+        public float3 Extents;
+        public int ClusterKey;
+        public int DebrisCount;
+        public byte Visible;
+        private byte _reserved0;
+        private ushort _reserved1;
+        private uint _reserved2;
+        private ulong _reserved3;
+        private ulong _reserved4;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    internal struct WreckArtifactRecord
+    {
+        public uint EntryHash;
+        public float3 Position;
+        public int ModuleIndex;
+        public byte State;
+        public byte ModuleId;
+        public ushort ChancePermille;
+        public uint StableId;
+        public float DiscoveryRadiusSq;
+        private ulong _reserved0;
+        private ulong _reserved1;
+        private ulong _reserved2;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    internal struct WreckScorchDecalRecord
+    {
+        public float3 Position;
+        public float3 Normal;
+        public float Radius;
+        public float Intensity;
+        public uint StableId;
+        public byte ModuleId;
+        private byte _reserved0;
+        private ushort _reserved1;
+        private ulong _reserved2;
+        private ulong _reserved3;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    internal struct WreckBurialCutRecord
+    {
+        public float3 AbsoluteCenter;
+        public float3 HalfExtents;
+        public float BlendStrength;
+        public byte MaterialId;
+        public byte Applied;
+        private ushort _reserved0;
+        public uint StableId;
+        private ulong _reserved1;
+        private ulong _reserved2;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    internal struct WreckTelemetryEntry
+    {
+        public uint FrameIndex;
+        public uint EventHash;
+        public uint Seed;
+        public uint Flags;
+        public float3 Position;
+        public int DebrisCount;
+        public int ArtifactCount;
+        public int SealedCount;
+        public int RupturedCount;
+        public float Value0;
+        public float Value1;
+        private uint _reserved0;
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -293,9 +447,11 @@ namespace Hecton8.World
         public int PositionStream;
         public int NormalStream;
         public int UvStream;
+        public int ColorStream;
         public int SubMeshCount;
         public bool HasNormals;
         public bool HasUvs;
+        public bool HasColors;
         public float4x4 LocalToWreck;
         public quaternion Rotation;
 
@@ -307,6 +463,9 @@ namespace Hecton8.World
                 : default;
             NativeArray<Vector2> sourceUvs = HasUvs
                 ? SourceMeshData.GetVertexData<Vector2>(UvStream)
+                : default;
+            NativeArray<Color32> sourceColors = HasColors
+                ? SourceMeshData.GetVertexData<Color32>(ColorStream)
                 : default;
 
             int vertexCount = SourceMeshData.vertexCount;
@@ -336,11 +495,16 @@ namespace Hecton8.World
                     uv = new float2(sourceUv.x, sourceUv.y);
                 }
 
+                uint packedColor = HasColors
+                    ? PackColor(sourceColors[vertexIndex])
+                    : ResolveProceduralRustAlgaeColor(transformedPosition, transformedNormal, vertexIndex);
+
                 DestinationVertices[VertexOffset + vertexIndex] = new WreckMergedVertex
                 {
                     Position = transformedPosition,
                     Normal = transformedNormal,
-                    UV = uv
+                    UV = uv,
+                    Color = packedColor
                 };
             }
 
@@ -367,6 +531,43 @@ namespace Hecton8.World
                         DestinationIndices[writeIndex++] = (uint)(sourceIndices[sourceIndex] + VertexOffset);
                 }
             }
+        }
+
+        private static uint ResolveProceduralRustAlgaeColor(float3 position, float3 normal, int vertexIndex)
+        {
+            uint hash = Mix(math.asuint(position.x) ^ (math.asuint(position.y) * 747796405u) ^ (math.asuint(position.z) * 2891336453u) ^ (uint)vertexIndex);
+            float rustNoise = (hash & 0xFFu) * (1f / 255f);
+            float algaeNoise = ((hash >> 8) & 0xFFu) * (1f / 255f);
+            float verticalRust = 1f - math.abs(normal.y);
+            float upFacingAlgae = math.max(0f, normal.y);
+            byte rust = QuantizeByte(0.18f + verticalRust * 0.35f + rustNoise * 0.47f);
+            byte algae = QuantizeByte(upFacingAlgae * 0.45f + algaeNoise * 0.25f);
+            return PackColor(rust, algae, 0, 255);
+        }
+
+        private static uint PackColor(Color32 color)
+        {
+            return PackColor(color.r, color.g, color.b, color.a);
+        }
+
+        private static uint PackColor(byte r, byte g, byte b, byte a)
+        {
+            return (uint)r | ((uint)g << 8) | ((uint)b << 16) | ((uint)a << 24);
+        }
+
+        private static byte QuantizeByte(float value)
+        {
+            return (byte)math.clamp((int)(math.saturate(value) * 255f + 0.5f), 0, 255);
+        }
+
+        private static uint Mix(uint value)
+        {
+            value ^= value >> 16;
+            value *= 2246822519u;
+            value ^= value >> 13;
+            value *= 3266489917u;
+            value ^= value >> 16;
+            return value;
         }
     }
 
@@ -723,7 +924,7 @@ namespace Hecton8.World
     /// Deterministic wave-function-collapse wreck generator operating in absolute-universe space.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ProceduralWreckGenerator : MonoBehaviour, IProceduralGenerator, IUpdatable
+    public sealed class ProceduralWreckGenerator : MonoBehaviour, IProceduralGenerator, IUpdatable, ISlowTickable
     {
         private const int MaxModuleDefinitions = 16;
         private const byte UncollapsedModuleId = byte.MaxValue;
@@ -742,6 +943,23 @@ namespace Hecton8.World
         private const double AsyncGenerationStageMainThreadBudgetSeconds = 0.0015d;
         private const double AsyncMeshBuildMainThreadBudgetSeconds = 0.0045d;
         private const int MaxEditorPreviewCellBudget = 256;
+        private const int MaxDebrisRecords = 10000;
+        private const int MaxDebrisClusters = 512;
+        private const int MaxLootRecords = 16;
+        private const int MaxWreckBlackBoxFrames = 300;
+        private const float DebrisActivationDistanceMeters = 5f;
+        private const float DebrisActivationDistanceSq = DebrisActivationDistanceMeters * DebrisActivationDistanceMeters;
+        private const float DebrisSpatialCellSizeMeters = 5f;
+        private const float DebrisSpatialCellSizeMetersInv = 1f / DebrisSpatialCellSizeMeters;
+        private const float DebrisClusterSizeMeters = 50f;
+        private const float DebrisClusterSizeMetersInv = 1f / DebrisClusterSizeMeters;
+        private const float ArtifactDiscoveryDistanceSq = 36f;
+        private const uint LoreFragmentSalt = 0x4C465247u; // LFRG
+        private const uint DebrisFieldSalt = 0x44534252u; // DSBR
+        private const uint ScorchDecalSalt = 0x53434852u; // SCHR
+        private const uint WreckTelemetryGenerationHash = 0x5747454Eu; // WGEN
+        private const uint WreckTelemetryInteractionHash = 0x57494E54u; // WINT
+        private const uint WreckTelemetryNanHash = 0x574E414Eu; // WNAN
         private const uint FallbackSectionSalt = 0xA511E9B3u;
         private const float WreckSolveTelemetryThresholdMs = 0.2f;
         private const int MaxPendingLootSpawns = 8;
@@ -749,6 +967,9 @@ namespace Hecton8.World
         private const uint WreckBrgContextHash = 0x57425247u; // WBRG
         private const string GeneratedMergedMeshName = "ProceduralWreckGenerator_Merged";
         private const string GeneratedProxyMeshName = "ProceduralWreckGenerator_Proxy";
+        private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_WORLD_WRECKAGE.bin";
+        private static readonly int _wreckEmergencyFlickerId = Shader.PropertyToID("_HectonWreckEmergencyFlicker");
+        private static readonly int _wreckEmergencyPhaseId = Shader.PropertyToID("_HectonWreckEmergencyPhase");
         private static readonly WreckSiteVoronoiGateParameters DefaultWreckSiteGateParameters =
             new WreckSiteVoronoiGateParameters
             {
@@ -791,6 +1012,15 @@ namespace Hecton8.World
         [SerializeField]
         [Tooltip("Additional deterministic salt mixed into the AUP hash to separate generation revisions.")]
         private uint worldGenerationVersionSalt = 1u;
+
+        [Header("Terrain Snap")]
+        [SerializeField]
+        [Tooltip("If enabled, generated wreck anchors perform one MapMagicBridge AUP height sample and snap to terrain during world generation.")]
+        private bool snapToMapMagicTerrainHeight = true;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Small vertical lift applied after MapMagic terrain snapping to keep proxy bounds out of terrain z-fighting.")]
+        private float terrainSnapVerticalOffsetMeters = 0.05f;
 
         [Header("Safety")]
         [SerializeField, Min(1)]
@@ -902,6 +1132,23 @@ namespace Hecton8.World
         [Tooltip("XZ scatter radius for the small interactable loot set.")]
         private float lootSpawnRadiusMeters = 18f;
 
+        [Header("Wreck Gameplay Data")]
+        [SerializeField]
+        [Tooltip("Optional voxel volume that receives subtractive box cuts for partially buried wreck interiors.")]
+        private HectonVoxelVolume wreckVoxelCutVolume;
+
+        [SerializeField, Range(0, MaxDebrisRecords)]
+        [Tooltip("Upper bound for deterministic pickable scrap records. Quality tier clamps this at generation time.")]
+        private int maxDebrisRecords = MaxDebrisRecords;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Fraction of structural module bounds treated as buried and carved from voxel terrain.")]
+        private float buriedWreckCutFraction = 0.32f;
+
+        [SerializeField, Min(0.01f)]
+        [Tooltip("Half-height used for cheap SDF box cuts inside buried wreck interiors.")]
+        private float wreckInteriorCutHalfHeight = 2.5f;
+
         [Header("Collision Proxy")]
         [SerializeField]
         [Tooltip("Prewarmed pooled prefab with exactly one BoxCollider trigger covering the wreck center.")]
@@ -938,6 +1185,14 @@ namespace Hecton8.World
         private NativeList<WreckModulePlacement> _allPlacements;
         private NativeList<WreckModulePlacement> _filteredPlacements;
         private NativeArray<WreckModuleRuntimeDefinition> _runtimeDefinitions;
+        private NativeArray<WreckLootRecord> _lootRecords;
+        private NativeArray<WreckDebrisRecord> _debrisRecords;
+        private NativeParallelMultiHashMap<int, int> _debrisSpatialHash;
+        private NativeArray<WreckDebrisCluster> _debrisClusters;
+        private NativeArray<WreckArtifactRecord> _artifactRecords;
+        private NativeArray<WreckScorchDecalRecord> _scorchDecalRecords;
+        private NativeArray<WreckBurialCutRecord> _burialCutRecords;
+        private NativeArray<WreckTelemetryEntry> _telemetryEntries;
         private string _propagationQueueSentinelLabel;
         private string _allPlacementsSentinelLabel;
         private string _filteredPlacementsSentinelLabel;
@@ -945,12 +1200,33 @@ namespace Hecton8.World
         private Mesh.MeshDataArray[] _readOnlyMeshSnapshots;
         private JobHandle[] _copyHandles;
         private readonly PendingWreckLootSpawn[] _pendingLootSpawns = new PendingWreckLootSpawn[MaxPendingLootSpawns]; // COLD ALLOC: PendingWreckLootSpawn[8] - one-per-frame wreck loot spawn queue - owner: ProceduralWreckGenerator
+        private readonly BoxCollider[] _navGridBoxColliderScratch = new BoxCollider[1]; // COLD ALLOC: BoxCollider[1] - navgrid obstacle registration scratch - owner: ProceduralWreckGenerator
+        private static readonly CapsuleCollider[] s_EmptyCapsuleColliders = Array.Empty<CapsuleCollider>();
         private GameObject _activeCollisionProxy;
         private Collider _activeCollisionCollider;
+        private int _activeNavGridObstacleId;
         private int _pendingLootReadIndex;
         private int _pendingLootCount;
         private bool _registeredLootTick;
+        private bool _registeredWreckSlowTick;
         private bool _initialized;
+        private int _activeGridResolution;
+        private int _activePlacementLimit;
+        private int _lootRecordCount;
+        private int _debrisRecordCount;
+        private int _debrisClusterCount;
+        private int _artifactRecordCount;
+        private int _scorchDecalCount;
+        private int _burialCutRecordCount;
+        private int _sealedModuleCount;
+        private int _openedSealedModuleCount;
+        private int _rupturedModuleCount;
+        private int _telemetryCursor;
+        private int _debrisGravityCursor;
+        private uint _activeGenerationSeed;
+        private Bounds _activeWorldBounds;
+        private Vector3 _activeRuntimeOrigin;
+        private AbsoluteUniversePosition _activeCenterAup;
 
         private void Awake()
         {
@@ -961,6 +1237,7 @@ namespace Hecton8.World
         {
             ClearPendingLootQueue();
             TryUnregisterLootTick();
+            TryUnregisterWreckSlowTick();
             DespawnActiveCollisionProxy();
         }
 
@@ -982,11 +1259,20 @@ namespace Hecton8.World
                 TryUnregisterLootTick();
         }
 
+        public void SlowTick()
+        {
+            ProcessNearFieldDebris();
+            ProcessArtifactDiscovery();
+            UpdateDebrisGravityStateless();
+            ValidateBlackBoxState();
+        }
+
         private void OnValidate()
         {
             gridResolution = ClampPowerOfTwo(gridResolution, 4, 32);
             cellSizeMeters = Mathf.Max(1f, cellSizeMeters);
             maxPlacements = Mathf.Max(1, maxPlacements);
+            terrainSnapVerticalOffsetMeters = Mathf.Max(0f, terrainSnapVerticalOffsetMeters);
             collapseWatchdogPerCell = Mathf.Max(1, collapseWatchdogPerCell);
             propagationWatchdogPerCell = Mathf.Max(1, propagationWatchdogPerCell);
             maxContradictionsBeforeFallback = Mathf.Max(0, maxContradictionsBeforeFallback);
@@ -1007,6 +1293,9 @@ namespace Hecton8.World
             minLootCount = Mathf.Clamp(minLootCount, 0, 8);
             maxLootCount = Mathf.Clamp(Mathf.Max(minLootCount, maxLootCount), 0, 8);
             lootSpawnRadiusMeters = Mathf.Max(0.5f, lootSpawnRadiusMeters);
+            maxDebrisRecords = Mathf.Clamp(maxDebrisRecords, 0, MaxDebrisRecords);
+            buriedWreckCutFraction = math.saturate(buriedWreckCutFraction);
+            wreckInteriorCutHalfHeight = Mathf.Max(0.01f, wreckInteriorCutHalfHeight);
             wreckSiteGateParameters = ResolveWreckSiteParameters();
         }
 
@@ -1081,8 +1370,9 @@ namespace Hecton8.World
         public WreckageData Generate(int3 chunkAup, uint seed)
         {
             Initialize();
+            ApplyGenerationScalability();
 
-            double spanMeters = gridResolution * cellSizeMeters;
+            double spanMeters = ResolveActiveGridResolution() * cellSizeMeters;
             double3 absoluteOrigin = new double3(
                 chunkAup.x * spanMeters,
                 chunkAup.y * spanMeters,
@@ -1100,6 +1390,7 @@ namespace Hecton8.World
                 return default;
             }
 
+            SnapOriginToTerrainHeight(ref aup, ref runtimeOrigin);
             return GenerateInternal(in aup, runtimeOrigin, resolvedSeed);
         }
 
@@ -1114,8 +1405,9 @@ namespace Hecton8.World
         public async Awaitable<WreckageData> GenerateAsync(int3 chunkAup, uint seed)
         {
             Initialize();
+            ApplyGenerationScalability();
 
-            double spanMeters = gridResolution * cellSizeMeters;
+            double spanMeters = ResolveActiveGridResolution() * cellSizeMeters;
             double3 absoluteOrigin = new double3(
                 chunkAup.x * spanMeters,
                 chunkAup.y * spanMeters,
@@ -1133,6 +1425,7 @@ namespace Hecton8.World
                 return default;
             }
 
+            SnapOriginToTerrainHeight(ref aup, ref runtimeOrigin);
             return await GenerateInternalAsync(aup, runtimeOrigin, resolvedSeed);
         }
 
@@ -1144,6 +1437,7 @@ namespace Hecton8.World
         public WreckageData Generate(in HectonMapMagicVegetationBridge.MegaWreckStreamSection section)
         {
             Initialize();
+            ApplyGenerationScalability();
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(section.WorldCenter);
             uint resolvedSeed = ComputeGenerationSeed(in aup, (uint)section.SectionSeed ^ worldGenerationVersionSalt);
             if (!CanGenerateAtVoronoiWreckSite(in aup))
@@ -1152,7 +1446,9 @@ namespace Hecton8.World
                 return default;
             }
 
-            return GenerateInternal(in aup, section.WorldCenter, resolvedSeed);
+            Vector3 runtimeOrigin = section.WorldCenter;
+            SnapOriginToTerrainHeight(ref aup, ref runtimeOrigin);
+            return GenerateInternal(in aup, runtimeOrigin, resolvedSeed);
         }
 
         /// <summary>
@@ -1164,6 +1460,7 @@ namespace Hecton8.World
         public async Awaitable<WreckageData> GenerateAsync(HectonMapMagicVegetationBridge.MegaWreckStreamSection section)
         {
             Initialize();
+            ApplyGenerationScalability();
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(section.WorldCenter);
             uint resolvedSeed = ComputeGenerationSeed(in aup, (uint)section.SectionSeed ^ worldGenerationVersionSalt);
             if (!CanGenerateAtVoronoiWreckSite(in aup))
@@ -1172,7 +1469,9 @@ namespace Hecton8.World
                 return default;
             }
 
-            return await GenerateInternalAsync(aup, section.WorldCenter, resolvedSeed);
+            Vector3 runtimeOrigin = section.WorldCenter;
+            SnapOriginToTerrainHeight(ref aup, ref runtimeOrigin);
+            return await GenerateInternalAsync(aup, runtimeOrigin, resolvedSeed);
         }
 
         /// <summary>
@@ -1182,6 +1481,7 @@ namespace Hecton8.World
         {
             ClearPendingLootQueue();
             TryUnregisterLootTick();
+            TryUnregisterWreckSlowTick();
             DespawnActiveCollisionProxy();
 
             if (_activeNavigationHandles != null)
@@ -1223,6 +1523,54 @@ namespace Hecton8.World
                 _runtimeDefinitions.Dispose();
             }
 
+            if (_lootRecords.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_lootRecords);
+                _lootRecords.Dispose();
+            }
+
+            if (_debrisRecords.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_debrisRecords);
+                _debrisRecords.Dispose();
+            }
+
+            if (_debrisSpatialHash.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(nameof(ProceduralWreckGenerator), nameof(_debrisSpatialHash));
+                _debrisSpatialHash.Dispose();
+            }
+
+            if (_debrisClusters.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_debrisClusters);
+                _debrisClusters.Dispose();
+            }
+
+            if (_artifactRecords.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_artifactRecords);
+                _artifactRecords.Dispose();
+            }
+
+            if (_scorchDecalRecords.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_scorchDecalRecords);
+                _scorchDecalRecords.Dispose();
+            }
+
+            if (_burialCutRecords.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_burialCutRecords);
+                _burialCutRecords.Dispose();
+            }
+
+            if (_telemetryEntries.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_telemetryEntries);
+                _telemetryEntries.Dispose();
+            }
+
             _initialized = false;
         }
 
@@ -1245,6 +1593,67 @@ namespace Hecton8.World
                 (localZ * 3266489917u);
 
             return (hash ^ (hash >> 16)) ^ salt;
+        }
+
+        private void ApplyGenerationScalability()
+        {
+            int authoredGridResolution = ClampPowerOfTwo(gridResolution, 4, 32);
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            bool highTier = tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
+            _activeGridResolution = highTier
+                ? authoredGridResolution
+                : math.min(authoredGridResolution, 16);
+
+            int tierPlacementCap = ResolveScalabilityPlacementCap(tier);
+            int storageCapacity = _allPlacements.IsCreated ? _allPlacements.Capacity : maxPlacements;
+            _activePlacementLimit = math.max(1, math.min(math.min(maxPlacements, tierPlacementCap), storageCapacity));
+        }
+
+        private int ResolveActiveGridResolution()
+        {
+            return _activeGridResolution > 0 ? _activeGridResolution : gridResolution;
+        }
+
+        private int ResolveActivePlacementLimit()
+        {
+            int storageCapacity = _allPlacements.IsCreated ? _allPlacements.Capacity : maxPlacements;
+            int resolved = _activePlacementLimit > 0 ? _activePlacementLimit : maxPlacements;
+            return math.max(1, math.min(resolved, storageCapacity));
+        }
+
+        private static int ResolveScalabilityPlacementCap(HectonQualityTier tier)
+        {
+            switch (tier)
+            {
+                case HectonQualityTier.Ultra:
+                    return 250;
+                case HectonQualityTier.High:
+                    return 120;
+                case HectonQualityTier.Mid:
+                    return 80;
+                default:
+                    return 50;
+            }
+        }
+
+        private void SnapOriginToTerrainHeight(ref AbsoluteUniversePosition aup, ref Vector3 runtimeOrigin)
+        {
+            if (!snapToMapMagicTerrainHeight)
+                return;
+
+            MapMagicBridge bridge = MapMagicBridge.Instance;
+            if (bridge == null || !bridge.IsAvailable)
+                return;
+
+            double3 absolute = aup.ToAbsoluteDouble3();
+            Vector3 absolutePosition = new Vector3((float)absolute.x, (float)absolute.y, (float)absolute.z);
+            if (!bridge.TryGetHeightAUP(absolutePosition, out float terrainHeight) || !math.isfinite(terrainHeight))
+                return;
+
+            float snappedY = terrainHeight + terrainSnapVerticalOffsetMeters;
+            aup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(absolute.x, snappedY, absolute.z));
+            float3 snappedRuntime = aup.ToRuntimeFloat3();
+            runtimeOrigin = new Vector3(snappedRuntime.x, snappedRuntime.y, snappedRuntime.z);
         }
 
         private bool CanGenerateAtVoronoiWreckSite(in AbsoluteUniversePosition aup)
@@ -1376,14 +1785,41 @@ namespace Hecton8.World
             // COLD ALLOC: NativeArray<WreckModuleRuntimeDefinition>[16] - native WFC module table - owner: ProceduralWreckGenerator
             _runtimeDefinitions = new NativeArray<WreckModuleRuntimeDefinition>(MaxModuleDefinitions, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_runtimeDefinitions, nameof(ProceduralWreckGenerator), nameof(_runtimeDefinitions), NativeAllocationLifetime.Scene);
+            // COLD ALLOC: NativeArray<WreckLootRecord>[16] - SOA loot table for wreck salvage drops - owner: ProceduralWreckGenerator
+            _lootRecords = new NativeArray<WreckLootRecord>(MaxLootRecords, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_lootRecords, nameof(ProceduralWreckGenerator), nameof(_lootRecords), NativeAllocationLifetime.Scene);
+            // COLD ALLOC: NativeArray<WreckDebrisRecord>[10000] - deterministic pickable scrap records, dots until near field - owner: ProceduralWreckGenerator
+            _debrisRecords = new NativeArray<WreckDebrisRecord>(MaxDebrisRecords, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_debrisRecords, nameof(ProceduralWreckGenerator), nameof(_debrisRecords), NativeAllocationLifetime.Scene);
+            // COLD ALLOC: NativeParallelMultiHashMap<int,int>[10000] - O(1) debris cell occupancy - owner: ProceduralWreckGenerator
+            _debrisSpatialHash = new NativeParallelMultiHashMap<int, int>(MaxDebrisRecords, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_debrisSpatialHash, nameof(ProceduralWreckGenerator), nameof(_debrisSpatialHash), NativeAllocationLifetime.Scene);
+            // COLD ALLOC: NativeArray<WreckDebrisCluster>[512] - 50m cluster metadata for culling sidecars - owner: ProceduralWreckGenerator
+            _debrisClusters = new NativeArray<WreckDebrisCluster>(MaxDebrisClusters, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_debrisClusters, nameof(ProceduralWreckGenerator), nameof(_debrisClusters), NativeAllocationLifetime.Scene);
+            // COLD ALLOC: NativeArray<WreckArtifactRecord>[maxPlacements] - seeded lore fragment discovery records - owner: ProceduralWreckGenerator
+            _artifactRecords = new NativeArray<WreckArtifactRecord>(maxPlacements, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_artifactRecords, nameof(ProceduralWreckGenerator), nameof(_artifactRecords), NativeAllocationLifetime.Scene);
+            // COLD ALLOC: NativeArray<WreckScorchDecalRecord>[maxPlacements] - procedural breach scorch decals - owner: ProceduralWreckGenerator
+            _scorchDecalRecords = new NativeArray<WreckScorchDecalRecord>(maxPlacements, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_scorchDecalRecords, nameof(ProceduralWreckGenerator), nameof(_scorchDecalRecords), NativeAllocationLifetime.Scene);
+            // COLD ALLOC: NativeArray<WreckBurialCutRecord>[maxPlacements] - voxel surgeon SDF box cut records - owner: ProceduralWreckGenerator
+            _burialCutRecords = new NativeArray<WreckBurialCutRecord>(maxPlacements, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_burialCutRecords, nameof(ProceduralWreckGenerator), nameof(_burialCutRecords), NativeAllocationLifetime.Scene);
+            // COLD ALLOC: NativeArray<WreckTelemetryEntry>[300] - fixed black-box circular buffer - owner: ProceduralWreckGenerator
+            _telemetryEntries = new NativeArray<WreckTelemetryEntry>(MaxWreckBlackBoxFrames, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_telemetryEntries, nameof(ProceduralWreckGenerator), nameof(_telemetryEntries), NativeAllocationLifetime.Scene);
             buildAsyncNavigationBake = false;
             _activeNavigationHandles = null;
             // COLD ALLOC: Mesh.MeshDataArray[maxPlacements] - scheduled read-only source snapshots - owner: ProceduralWreckGenerator
             _readOnlyMeshSnapshots = new Mesh.MeshDataArray[maxPlacements];
             // COLD ALLOC: JobHandle[maxPlacements] - scheduled mesh copy handles - owner: ProceduralWreckGenerator
             _copyHandles = new JobHandle[maxPlacements];
+            _activeGridResolution = gridResolution;
+            _activePlacementLimit = maxPlacements;
 
             RefreshRuntimeDefinitions();
+            RefreshLootRecords();
             _initialized = true;
         }
 
@@ -1396,10 +1832,11 @@ namespace Hecton8.World
             if (moduleCount <= 0)
                 return default;
 
-            if (ShouldUseBrgOnlyWreckPath())
+            if (ShouldUseBrgOnlyWreckPath(moduleCount))
                 return GenerateBrgWreckOnly(in centerAup, runtimeOrigin, seed, moduleCount, generationStartTime);
 
-            int cellCount = gridResolution * gridResolution * gridResolution;
+            int activeGridResolution = ResolveActiveGridResolution();
+            int cellCount = activeGridResolution * activeGridResolution * activeGridResolution;
             ushort initialMask = ResolveInitialMask(moduleCount);
             InitializeGrid(cellCount, initialMask);
 
@@ -1407,11 +1844,15 @@ namespace Hecton8.World
             CollapseGrid(cellCount, moduleCount, ref rng);
             BuildPlacements(cellCount, seed);
             Mesh combinedMesh = wreckMaterialRegistry != null ? null : BuildMergedMesh(_allPlacements);
+            Mesh essentialMesh = wreckMaterialRegistry != null ? null : BuildMergedMeshForTier((byte)WreckLodTier.Essential);
+            Mesh detailMesh = wreckMaterialRegistry != null ? null : BuildMergedMeshForTier((byte)WreckLodTier.Detail);
+            Mesh clutterMesh = wreckMaterialRegistry != null ? null : BuildMergedMeshForTier((byte)WreckLodTier.Clutter);
             Mesh proxyMesh = ResolveNavigationProxyMesh();
 
             Bounds localBounds = CalculateLocalBounds(_allPlacements);
             Bounds worldBounds = TranslateBounds(localBounds, runtimeOrigin);
             Bounds renderWorldBounds = ExpandBoundsForBrgScatter(worldBounds);
+            PrepareWreckWorldState(in centerAup, runtimeOrigin, renderWorldBounds, seed, moduleCount, 0);
             PublishWreckRenderPayload(in centerAup, runtimeOrigin, renderWorldBounds, seed);
             PublishCollisionProxy(worldBounds);
             SpawnWreckLoot(renderWorldBounds, seed);
@@ -1434,9 +1875,9 @@ namespace Hecton8.World
             return new WreckageData
             {
                 CombinedMesh = combinedMesh,
-                EssentialMesh = null,
-                DetailMesh = null,
-                ClutterMesh = null,
+                EssentialMesh = essentialMesh,
+                DetailMesh = detailMesh,
+                ClutterMesh = clutterMesh,
                 ProxyMesh = proxyMesh,
                 Navigation = navigationData,
                 NavigationBuild = navigationOperation,
@@ -1456,10 +1897,11 @@ namespace Hecton8.World
             if (moduleCount <= 0)
                 return default;
 
-            if (ShouldUseBrgOnlyWreckPath())
+            if (ShouldUseBrgOnlyWreckPath(moduleCount))
                 return await GenerateBrgWreckOnlyAsync(centerAup, runtimeOrigin, seed, moduleCount);
 
-            int cellCount = gridResolution * gridResolution * gridResolution;
+            int activeGridResolution = ResolveActiveGridResolution();
+            int cellCount = activeGridResolution * activeGridResolution * activeGridResolution;
             ushort initialMask = ResolveInitialMask(moduleCount);
 
             double stageStartTime = Time.realtimeSinceStartupAsDouble;
@@ -1468,6 +1910,9 @@ namespace Hecton8.World
 
             stageStartTime = Time.realtimeSinceStartupAsDouble;
             Mesh combinedMesh = wreckMaterialRegistry != null ? null : await BuildMergedMeshAsync(_allPlacements);
+            Mesh essentialMesh = wreckMaterialRegistry != null ? null : await BuildMergedMeshForTierAsync((byte)WreckLodTier.Essential);
+            Mesh detailMesh = wreckMaterialRegistry != null ? null : await BuildMergedMeshForTierAsync((byte)WreckLodTier.Detail);
+            Mesh clutterMesh = wreckMaterialRegistry != null ? null : await BuildMergedMeshForTierAsync((byte)WreckLodTier.Clutter);
             await YieldAfterGenerationStageAsync(stageStartTime);
 
             stageStartTime = Time.realtimeSinceStartupAsDouble;
@@ -1475,6 +1920,7 @@ namespace Hecton8.World
             Bounds localBounds = CalculateLocalBounds(_allPlacements);
             Bounds worldBounds = TranslateBounds(localBounds, runtimeOrigin);
             Bounds renderWorldBounds = ExpandBoundsForBrgScatter(worldBounds);
+            PrepareWreckWorldState(in centerAup, runtimeOrigin, renderWorldBounds, seed, moduleCount, 0);
             PublishWreckRenderPayload(in centerAup, runtimeOrigin, renderWorldBounds, seed);
             PublishCollisionProxy(worldBounds);
             SpawnWreckLoot(renderWorldBounds, seed);
@@ -1497,9 +1943,9 @@ namespace Hecton8.World
             return new WreckageData
             {
                 CombinedMesh = combinedMesh,
-                EssentialMesh = null,
-                DetailMesh = null,
-                ClutterMesh = null,
+                EssentialMesh = essentialMesh,
+                DetailMesh = detailMesh,
+                ClutterMesh = clutterMesh,
                 ProxyMesh = proxyMesh,
                 Navigation = navigationData,
                 NavigationBuild = navigationOperation,
@@ -1511,9 +1957,22 @@ namespace Hecton8.World
             };
         }
 
-        private bool ShouldUseBrgOnlyWreckPath()
+        private bool ShouldUseBrgOnlyWreckPath(int moduleCount)
         {
-            return wreckMaterialRegistry != null;
+            return wreckMaterialRegistry != null && !HasWfcRenderableModule(moduleCount);
+        }
+
+        private bool HasWfcRenderableModule(int moduleCount)
+        {
+            int safeCount = math.min(moduleCount, _runtimeDefinitions.IsCreated ? _runtimeDefinitions.Length : 0);
+            for (int i = 0; i < safeCount; i++)
+            {
+                WreckModuleRuntimeDefinition definition = _runtimeDefinitions[i];
+                if ((definition.EmitsGeometry | definition.EmitsNavProxy) != 0)
+                    return true;
+            }
+
+            return false;
         }
 
         private WreckageData GenerateBrgWreckOnly(
@@ -1526,6 +1985,7 @@ namespace Hecton8.World
             int fragmentCount = ResolveBrgFragmentCount(seed);
             Bounds worldBounds = CalculateBrgWreckWorldBounds(runtimeOrigin);
 
+            PrepareWreckWorldState(in centerAup, runtimeOrigin, worldBounds, seed, moduleCount, fragmentCount);
             PublishBrgScatterPayload(centerAup, runtimeOrigin, worldBounds, seed, fragmentCount, moduleCount);
             PublishCollisionProxy(worldBounds);
             SpawnWreckLoot(worldBounds, seed);
@@ -1571,6 +2031,7 @@ namespace Hecton8.World
             int fragmentCount = ResolveBrgFragmentCount(seed);
             Bounds worldBounds = CalculateBrgWreckWorldBounds(runtimeOrigin);
 
+            PrepareWreckWorldState(in centerAup, runtimeOrigin, worldBounds, seed, moduleCount, fragmentCount);
             PublishBrgScatterPayload(centerAup, runtimeOrigin, worldBounds, seed, fragmentCount, moduleCount);
             PublishCollisionProxy(worldBounds);
             SpawnWreckLoot(worldBounds, seed);
@@ -1687,13 +2148,29 @@ namespace Hecton8.World
 
         private int ResolveBrgFragmentCount(uint seed)
         {
-            int minCount = math.clamp(brgMinFragmentCount, 50, 200);
-            int maxCount = math.clamp(math.max(minCount, brgMaxFragmentCount), 50, 200);
+            int scalabilityCap = ResolveScalabilityBrgFragmentCap(GlobalRegistry.ScalabilityTier);
+            int minCount = math.min(math.clamp(brgMinFragmentCount, 50, 200), scalabilityCap);
+            int maxCount = math.min(math.clamp(math.max(minCount, brgMaxFragmentCount), 50, 200), scalabilityCap);
             if (minCount == maxCount)
                 return minCount;
 
             uint hash = MixFragmentSeed(seed ^ worldGenerationVersionSalt ^ 0x57425247u);
             return minCount + (int)(hash % (uint)(maxCount - minCount + 1));
+        }
+
+        private static int ResolveScalabilityBrgFragmentCap(HectonQualityTier tier)
+        {
+            switch (tier)
+            {
+                case HectonQualityTier.Ultra:
+                    return 200;
+                case HectonQualityTier.High:
+                    return 160;
+                case HectonQualityTier.Mid:
+                    return 120;
+                default:
+                    return 80;
+            }
         }
 
         private static uint MixFragmentSeed(uint value)
@@ -1801,6 +2278,22 @@ namespace Hecton8.World
             primitiveCollider.enabled = true;
             _activeCollisionProxy = instance;
             _activeCollisionCollider = primitiveCollider;
+            ConfigureIntegrityProxy(instance);
+            PublishNavGridObstacle(primitiveCollider);
+        }
+
+        private void PublishNavGridObstacle(BoxCollider primitiveCollider)
+        {
+            if (primitiveCollider == null)
+                return;
+
+            int obstacleId = unchecked((int)EntityId.ToULong(GetEntityId()));
+            if (obstacleId == 0)
+                obstacleId = unchecked((int)EntityId.ToULong(primitiveCollider.GetEntityId()));
+
+            _navGridBoxColliderScratch[0] = primitiveCollider;
+            VoxelDynamicNavGridRuntime.RegisterModuleObstacle(obstacleId, _navGridBoxColliderScratch, s_EmptyCapsuleColliders);
+            _activeNavGridObstacleId = obstacleId;
         }
 
         private static BoxCollider ResolvePrimitiveCollisionProxy(GameObject instance)
@@ -1839,6 +2332,8 @@ namespace Hecton8.World
 
         private void DespawnActiveCollisionProxy()
         {
+            UnregisterNavGridObstacle();
+
             if (_activeCollisionProxy == null)
             {
                 _activeCollisionCollider = null;
@@ -1856,11 +2351,20 @@ namespace Hecton8.World
                 proxy.SetActive(false);
         }
 
+        private void UnregisterNavGridObstacle()
+        {
+            if (_activeNavGridObstacleId == 0)
+                return;
+
+            VoxelDynamicNavGridRuntime.UnregisterModuleObstacle(_activeNavGridObstacleId);
+            _activeNavGridObstacleId = 0;
+            _navGridBoxColliderScratch[0] = null;
+        }
+
         private void SpawnWreckLoot(Bounds worldBounds, uint seed)
         {
             if (itemCatalog == null ||
-                wreckLootItemHashes == null ||
-                wreckLootItemHashes.Length <= 0 ||
+                _lootRecordCount <= 0 ||
                 maxLootCount <= 0 ||
                 !IsFiniteBounds(worldBounds))
             {
@@ -1876,7 +2380,7 @@ namespace Hecton8.World
             int desiredCount = desiredMin == desiredMax
                 ? desiredMin
                 : desiredMin + (int)(rng.NextUInt() % (uint)(desiredMax - desiredMin + 1));
-            int hashCount = wreckLootItemHashes.Length;
+            int hashCount = _lootRecordCount;
             int maxAttempts = math.max(hashCount * 2, desiredCount);
             int spawnedCount = 0;
             Vector3 center = worldBounds.center;
@@ -1887,7 +2391,8 @@ namespace Hecton8.World
             for (int attempt = 0; attempt < maxAttempts && spawnedCount < desiredCount; attempt++)
             {
                 int hashIndex = (int)(rng.NextUInt() % (uint)hashCount);
-                uint hashId = wreckLootItemHashes[hashIndex];
+                WreckLootRecord lootRecord = _lootRecords[hashIndex];
+                uint hashId = unchecked((uint)lootRecord.ItemHashId);
                 if (hashId == 0u || !ItemTemplateRegistry.TryGetTemplate(hashId, out ItemTemplate template))
                     continue;
 
@@ -1908,7 +2413,7 @@ namespace Hecton8.World
                 float height = ResolveLootHeightBand(rng.NextUInt());
                 Vector3 position = center + new Vector3(horizontalX, height, horizontalZ);
                 Quaternion rotation = ResolveCardinalLootRotation(rng.NextUInt());
-                int quantity = math.max(1, math.min(3, (int)template.MaxStackSize));
+                int quantity = ResolveLootQuantity(in lootRecord, rng.NextUInt(), (int)template.MaxStackSize);
                 if (!QueueWreckLootSpawn(prefab, itemData, quantity, position, rotation))
                     continue;
 
@@ -1918,17 +2423,8 @@ namespace Hecton8.World
 
         private static float ResolveLootHeightBand(uint state)
         {
-            switch (state & 3u)
-            {
-                case 0u:
-                    return -0.35f;
-                case 1u:
-                    return 0.1f;
-                case 2u:
-                    return 0.55f;
-                default:
-                    return 1.1f;
-            }
+            uint band = state & 3u;
+            return -0.35f + (band * 0.45f) + math.select(0f, 0.1f, band == 3u);
         }
 
         private static Quaternion ResolveCardinalLootRotation(uint state)
@@ -2025,6 +2521,741 @@ namespace Hecton8.World
             }
 
             pool.Despawn(instance);
+        }
+
+        private void RefreshLootRecords()
+        {
+            _lootRecordCount = 0;
+            if (!_lootRecords.IsCreated)
+                return;
+
+            for (int i = 0; i < _lootRecords.Length; i++)
+                _lootRecords[i] = default;
+
+            int sourceCount = math.min(wreckLootItemHashes != null ? wreckLootItemHashes.Length : 0, _lootRecords.Length);
+            for (int sourceIndex = 0; sourceIndex < sourceCount; sourceIndex++)
+            {
+                uint hashId = wreckLootItemHashes[sourceIndex];
+                if (hashId == 0u)
+                    continue;
+
+                ushort maxQuantity = 1;
+                if (ItemTemplateRegistry.TryGetTemplate(hashId, out ItemTemplate template))
+                    maxQuantity = (ushort)math.clamp((int)template.MaxStackSize, 1, ushort.MaxValue);
+
+                _lootRecords[_lootRecordCount++] = new WreckLootRecord
+                {
+                    ItemHashId = unchecked((int)hashId),
+                    MinQuantity = 1,
+                    MaxQuantity = (ushort)math.max(1, math.min(3, maxQuantity)),
+                    StableDropHash = MixFragmentSeed(hashId ^ worldGenerationVersionSalt),
+                    Flags = 0u
+                };
+            }
+        }
+
+        private static int ResolveLootQuantity(in WreckLootRecord record, uint randomState, int templateMaxStack)
+        {
+            int minQuantity = math.max(1, record.MinQuantity);
+            int maxQuantity = math.max(minQuantity, math.min(math.max(1, templateMaxStack), record.MaxQuantity));
+            int range = math.max(1, maxQuantity - minQuantity + 1);
+            int randomized = minQuantity + (int)(randomState % (uint)range);
+            return math.select(minQuantity, randomized, maxQuantity > minQuantity);
+        }
+
+        private void PrepareWreckWorldState(
+            in AbsoluteUniversePosition centerAup,
+            Vector3 runtimeOrigin,
+            Bounds worldBounds,
+            uint seed,
+            int moduleCount,
+            int brgFragmentCount)
+        {
+            RefreshLootRecords();
+            ResetWreckWorldState();
+
+            _activeCenterAup = centerAup;
+            _activeRuntimeOrigin = runtimeOrigin;
+            _activeWorldBounds = worldBounds;
+            _activeGenerationSeed = seed;
+
+            ResolveIntegrityCounters(moduleCount);
+            BuildDebrisSpatialHash(worldBounds, seed);
+            BuildArtifactFragmentHash(runtimeOrigin, worldBounds, seed, moduleCount, brgFragmentCount);
+            BuildScorchDecalRecords(runtimeOrigin, worldBounds, seed, moduleCount);
+            BuildBurialCutRecords(runtimeOrigin, worldBounds, seed);
+            ApplyBurialCutsToVoxelSurgeon();
+            PublishWreckLightingGlobals(worldBounds, seed);
+            TryRegisterWreckSlowTick();
+            WriteBlackBoxTelemetry(WreckTelemetryGenerationHash, runtimeOrigin, 0u, 0f, 0f);
+            ValidateBlackBoxState();
+        }
+
+        private void ResetWreckWorldState()
+        {
+            _debrisRecordCount = 0;
+            _debrisClusterCount = 0;
+            _artifactRecordCount = 0;
+            _scorchDecalCount = 0;
+            _burialCutRecordCount = 0;
+            _sealedModuleCount = 0;
+            _openedSealedModuleCount = 0;
+            _rupturedModuleCount = 0;
+            _debrisGravityCursor = 0;
+            if (_debrisSpatialHash.IsCreated)
+                _debrisSpatialHash.Clear();
+        }
+
+        private void ResolveIntegrityCounters(int moduleCount)
+        {
+            if (_allPlacements.IsCreated && _allPlacements.Length > 0)
+            {
+                int placementCount = _allPlacements.Length;
+                for (int i = 0; i < placementCount; i++)
+                    AccumulateIntegrityState(_allPlacements[i].IntegrityState);
+                return;
+            }
+
+            int safeModuleCount = math.min(moduleCount, _runtimeDefinitions.IsCreated ? _runtimeDefinitions.Length : 0);
+            for (int i = 0; i < safeModuleCount; i++)
+                AccumulateIntegrityState(_runtimeDefinitions[i].IntegrityState);
+        }
+
+        private void AccumulateIntegrityState(byte state)
+        {
+            if (state == (byte)WreckIntegrityState.Sealed)
+                _sealedModuleCount++;
+            else if (state == (byte)WreckIntegrityState.Ruptured)
+                _rupturedModuleCount++;
+        }
+
+        private void BuildDebrisSpatialHash(Bounds worldBounds, uint seed)
+        {
+            if (!_debrisRecords.IsCreated || !_debrisSpatialHash.IsCreated || !IsFiniteBounds(worldBounds))
+                return;
+
+            int budget = math.min(math.min(maxDebrisRecords, MaxDebrisRecords), ResolveDebrisBudget(GlobalRegistry.ScalabilityTier));
+            if (budget <= 0 || _lootRecordCount <= 0)
+                return;
+
+            XorShift32State rng = new XorShift32State(seed ^ DebrisFieldSalt);
+            Vector3 center = worldBounds.center;
+            Vector3 extents = worldBounds.extents;
+            float horizontalX = math.max(1f, extents.x);
+            float horizontalZ = math.max(1f, extents.z);
+            float vertical = math.max(0.25f, extents.y);
+
+            for (int i = 0; i < budget; i++)
+            {
+                uint stableId = MixFragmentSeed(seed ^ DebrisFieldSalt ^ (uint)(i + 1));
+                float x = ((stableId & 0xFFu) * (1f / 255f) * 2f - 1f) * horizontalX;
+                stableId = MixFragmentSeed(stableId ^ 0x9E3779B9u);
+                float z = ((stableId & 0xFFu) * (1f / 255f) * 2f - 1f) * horizontalZ;
+                stableId = MixFragmentSeed(stableId ^ 0xBB67AE85u);
+                float y = center.y + (((stableId & 0xFFu) * (1f / 255f) * 2f - 1f) * vertical * 0.25f);
+                Vector3 position = new Vector3(center.x + x, y, center.z + z);
+                float terrainY = ResolveTerrainHeightForRuntimePosition(position, position.y - 0.35f);
+                int lootIndex = _lootRecordCount > 0 ? (int)(rng.NextUInt() % (uint)_lootRecordCount) : 0;
+                WreckLootRecord lootRecord = _lootRecords[lootIndex];
+                int quantity = ResolveLootQuantity(in lootRecord, rng.NextUInt(), 3);
+                int spatialKey = ResolveDebrisSpatialHashKey(position);
+                int clusterKey = ResolveDebrisClusterKey(position);
+                int clusterIndex = ResolveDebrisClusterIndex(clusterKey, position);
+
+                _debrisRecords[i] = new WreckDebrisRecord
+                {
+                    Position = new float3(position.x, position.y, position.z),
+                    InitialY = position.y,
+                    TerrainY = terrainY,
+                    SpatialHashKey = spatialKey,
+                    ClusterIndex = clusterIndex,
+                    ItemHashId = lootRecord.ItemHashId,
+                    Quantity = (ushort)math.max(1, math.min(quantity, ushort.MaxValue)),
+                    Flags = (byte)(WreckDebrisFlags.Pickable | WreckDebrisFlags.DotOnly),
+                    LootTableIndex = (byte)lootIndex,
+                    StableId = stableId,
+                    SinkMetersPerSlowTick = 0.04f + ((stableId & 7u) * 0.01f),
+                    PickupRadiusSq = DebrisActivationDistanceSq
+                };
+                _debrisSpatialHash.Add(spatialKey, i);
+            }
+
+            _debrisRecordCount = budget;
+        }
+
+        private int ResolveDebrisClusterIndex(int clusterKey, Vector3 position)
+        {
+            int clusterIndex = math.abs(clusterKey) % MaxDebrisClusters;
+            WreckDebrisCluster cluster = _debrisClusters[clusterIndex];
+            if (cluster.DebrisCount <= 0)
+            {
+                cluster.Center = new float3(position.x, position.y, position.z);
+                cluster.Extents = new float3(DebrisClusterSizeMeters * 0.5f, math.max(1f, brgScatterVerticalMeters + 1f), DebrisClusterSizeMeters * 0.5f);
+                cluster.ClusterKey = clusterKey;
+                cluster.Visible = 1;
+                _debrisClusterCount = math.min(MaxDebrisClusters, _debrisClusterCount + 1);
+            }
+
+            cluster.DebrisCount = math.min(cluster.DebrisCount + 1, int.MaxValue);
+            _debrisClusters[clusterIndex] = cluster;
+            return clusterIndex;
+        }
+
+        private void BuildArtifactFragmentHash(
+            Vector3 runtimeOrigin,
+            Bounds worldBounds,
+            uint seed,
+            int moduleCount,
+            int brgFragmentCount)
+        {
+            if (!_artifactRecords.IsCreated)
+                return;
+
+            int capacity = _artifactRecords.Length;
+            if (capacity <= 0)
+                return;
+
+            if (_allPlacements.IsCreated && _allPlacements.Length > 0)
+            {
+                int placementCount = math.min(_allPlacements.Length, capacity);
+                for (int i = 0; i < placementCount; i++)
+                {
+                    WreckModulePlacement placement = _allPlacements[i];
+                    if (!TryBuildArtifactRecord(runtimeOrigin + ToVector3(placement.Position), seed, i, placement.ModuleId, placement.MortonIndex, out WreckArtifactRecord record))
+                        continue;
+
+                    _artifactRecords[_artifactRecordCount++] = record;
+                    if (_artifactRecordCount >= capacity)
+                        break;
+                }
+                return;
+            }
+
+            int fallbackCount = math.min(math.max(moduleCount, brgFragmentCount > 0 ? moduleCount : 0), capacity);
+            for (int i = 0; i < fallbackCount; i++)
+            {
+                byte moduleId = (byte)math.min(i, math.max(0, moduleCount - 1));
+                Vector3 position = ResolveDeterministicPointInBounds(worldBounds, seed ^ LoreFragmentSalt ^ (uint)(i + 1));
+                if (!TryBuildArtifactRecord(position, seed, i, moduleId, i, out WreckArtifactRecord record))
+                    continue;
+
+                _artifactRecords[_artifactRecordCount++] = record;
+                if (_artifactRecordCount >= capacity)
+                    break;
+            }
+        }
+
+        private bool TryBuildArtifactRecord(
+            Vector3 position,
+            uint seed,
+            int moduleIndex,
+            byte moduleId,
+            int salt,
+            out WreckArtifactRecord record)
+        {
+            record = default;
+            if (!_runtimeDefinitions.IsCreated || moduleId >= _runtimeDefinitions.Length)
+                return false;
+
+            WreckModuleRuntimeDefinition definition = _runtimeDefinitions[moduleId];
+            ushort chance = definition.LoreFragmentChancePermille;
+            if (chance == 0)
+                return false;
+
+            uint stableId = MixFragmentSeed(seed ^ LoreFragmentSalt ^ unchecked((uint)(salt + 1)) ^ ((uint)moduleId << 16));
+            if ((stableId % 1000u) >= chance)
+                return false;
+
+            record = new WreckArtifactRecord
+            {
+                EntryHash = MixFragmentSeed(stableId ^ 0x41524348u),
+                Position = new float3(position.x, position.y, position.z),
+                ModuleIndex = moduleIndex,
+                State = 0,
+                ModuleId = moduleId,
+                ChancePermille = chance,
+                StableId = stableId,
+                DiscoveryRadiusSq = ArtifactDiscoveryDistanceSq
+            };
+            return true;
+        }
+
+        private void BuildScorchDecalRecords(Vector3 runtimeOrigin, Bounds worldBounds, uint seed, int moduleCount)
+        {
+            if (!_scorchDecalRecords.IsCreated)
+                return;
+
+            int capacity = _scorchDecalRecords.Length;
+            if (capacity <= 0)
+                return;
+
+            if (_allPlacements.IsCreated && _allPlacements.Length > 0)
+            {
+                int placementCount = _allPlacements.Length;
+                for (int i = 0; i < placementCount && _scorchDecalCount < capacity; i++)
+                {
+                    WreckModulePlacement placement = _allPlacements[i];
+                    if (placement.IntegrityState != (byte)WreckIntegrityState.Ruptured)
+                        continue;
+
+                    Vector3 position = runtimeOrigin + ToVector3(placement.Position + placement.BoundsCenter);
+                    _scorchDecalRecords[_scorchDecalCount++] = CreateScorchDecalRecord(position, placement.ModuleId, seed, i);
+                }
+                return;
+            }
+
+            int safeModuleCount = math.min(moduleCount, _runtimeDefinitions.IsCreated ? _runtimeDefinitions.Length : 0);
+            for (int i = 0; i < safeModuleCount && _scorchDecalCount < capacity; i++)
+            {
+                if (_runtimeDefinitions[i].IntegrityState != (byte)WreckIntegrityState.Ruptured)
+                    continue;
+
+                Vector3 position = ResolveDeterministicPointInBounds(worldBounds, seed ^ ScorchDecalSalt ^ (uint)(i + 1));
+                _scorchDecalRecords[_scorchDecalCount++] = CreateScorchDecalRecord(position, (byte)i, seed, i);
+            }
+        }
+
+        private static WreckScorchDecalRecord CreateScorchDecalRecord(Vector3 position, byte moduleId, uint seed, int index)
+        {
+            uint stableId = MixFragmentSeed(seed ^ ScorchDecalSalt ^ unchecked((uint)(index + 1)));
+            float radius = 0.45f + ((stableId & 7u) * 0.09f);
+            return new WreckScorchDecalRecord
+            {
+                Position = new float3(position.x, position.y, position.z),
+                Normal = new float3(0f, 1f, 0f),
+                Radius = radius,
+                Intensity = 0.62f + ((stableId & 3u) * 0.08f),
+                StableId = stableId,
+                ModuleId = moduleId
+            };
+        }
+
+        private void BuildBurialCutRecords(Vector3 runtimeOrigin, Bounds worldBounds, uint seed)
+        {
+            if (!_burialCutRecords.IsCreated || buriedWreckCutFraction <= 0f)
+                return;
+
+            int capacity = _burialCutRecords.Length;
+            int placementCount = _allPlacements.IsCreated ? math.min(_allPlacements.Length, capacity) : 0;
+            for (int i = 0; i < placementCount; i++)
+            {
+                WreckModulePlacement placement = _allPlacements[i];
+                float burialHash = (MixFragmentSeed(seed ^ unchecked((uint)(placement.MortonIndex + 1))) & 0xFFu) * (1f / 255f);
+                if (burialHash > buriedWreckCutFraction)
+                    continue;
+
+                float3 localCenter = placement.Position + placement.BoundsCenter;
+                Vector3 runtimeCenter = runtimeOrigin + ToVector3(localCenter);
+                Vector3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeCenter);
+                float3 halfExtents = SanitizeBoundsSize(placement.BoundsSize) * 0.5f;
+                halfExtents.y = math.max(0.05f, math.min(halfExtents.y, wreckInteriorCutHalfHeight));
+                _burialCutRecords[_burialCutRecordCount++] = new WreckBurialCutRecord
+                {
+                    AbsoluteCenter = new float3(absoluteCenter.x, absoluteCenter.y, absoluteCenter.z),
+                    HalfExtents = halfExtents,
+                    BlendStrength = math.max(0.25f, math.cmin(halfExtents) * 0.35f),
+                    MaterialId = 0,
+                    Applied = 0,
+                    StableId = MixFragmentSeed(seed ^ unchecked((uint)(i + 1)) ^ 0x43565442u)
+                };
+
+                if (_burialCutRecordCount >= capacity)
+                    break;
+            }
+
+            if (_burialCutRecordCount == 0 && IsFiniteBounds(worldBounds) && capacity > 0)
+            {
+                Vector3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldBounds.center);
+                Vector3 halfExtents = worldBounds.extents;
+                _burialCutRecords[0] = new WreckBurialCutRecord
+                {
+                    AbsoluteCenter = new float3(absoluteCenter.x, absoluteCenter.y, absoluteCenter.z),
+                    HalfExtents = new float3(math.max(1f, halfExtents.x * 0.25f), wreckInteriorCutHalfHeight, math.max(1f, halfExtents.z * 0.25f)),
+                    BlendStrength = math.max(0.25f, wreckInteriorCutHalfHeight * 0.35f),
+                    MaterialId = 0,
+                    Applied = 0,
+                    StableId = MixFragmentSeed(seed ^ 0x43565442u)
+                };
+                _burialCutRecordCount = 1;
+            }
+        }
+
+        private void ApplyBurialCutsToVoxelSurgeon()
+        {
+            if (wreckVoxelCutVolume == null || _burialCutRecordCount <= 0)
+                return;
+
+            HectonVoxelEngine engine = GlobalRegistry.VoxelEngine;
+            if (engine == null || engine.DeltaProcessor == null)
+                return;
+
+            int count = math.min(_burialCutRecordCount, _burialCutRecords.Length);
+            for (int i = 0; i < count; i++)
+            {
+                WreckBurialCutRecord record = _burialCutRecords[i];
+                if (record.Applied != 0)
+                    continue;
+
+                Vector3 absoluteCenter = new Vector3(record.AbsoluteCenter.x, record.AbsoluteCenter.y, record.AbsoluteCenter.z);
+                Vector3 halfExtents = new Vector3(record.HalfExtents.x, record.HalfExtents.y, record.HalfExtents.z);
+                engine.DeltaProcessor.ApplyImmediateAbsoluteBoxCrater(wreckVoxelCutVolume, absoluteCenter, halfExtents, record.MaterialId);
+                record.Applied = 1;
+                _burialCutRecords[i] = record;
+            }
+        }
+
+        private void PublishWreckLightingGlobals(Bounds worldBounds, uint seed)
+        {
+            if (!IsFiniteBounds(worldBounds))
+                return;
+
+            uint flickerHash = MixFragmentSeed(seed ^ 0x454D5247u);
+            float flicker = 0.45f + ((flickerHash & 0xFFu) * (1f / 255f) * 0.55f);
+            Shader.SetGlobalFloat(_wreckEmergencyFlickerId, flicker);
+            Shader.SetGlobalFloat(_wreckEmergencyPhaseId, (flickerHash >> 8) * (1f / 16777215f));
+        }
+
+        private void ProcessNearFieldDebris()
+        {
+            if (_debrisRecordCount <= 0 || !_debrisSpatialHash.IsCreated || !_debrisRecords.IsCreated)
+                return;
+
+            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            Transform playerTransform = player != null ? player.PlayerTransform : null;
+            if (playerTransform == null)
+                return;
+
+            Vector3 playerPosition = playerTransform.position;
+            int2 playerCell = ResolveDebrisSpatialCell(playerPosition);
+            for (int dz = -1; dz <= 1; dz++)
+            {
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    int key = ResolveDebrisSpatialHashKey(playerCell + new int2(dx, dz));
+                    NativeParallelMultiHashMapIterator<int> iterator;
+                    if (!_debrisSpatialHash.TryGetFirstValue(key, out int debrisIndex, out iterator))
+                        continue;
+
+                    do
+                    {
+                        if ((uint)debrisIndex >= (uint)_debrisRecordCount)
+                            continue;
+
+                        WreckDebrisRecord record = _debrisRecords[debrisIndex];
+                        if ((record.Flags & (byte)(WreckDebrisFlags.Harvested | WreckDebrisFlags.ActivePickup)) != 0)
+                            continue;
+
+                        float3 delta = record.Position - new float3(playerPosition.x, playerPosition.y, playerPosition.z);
+                        if (math.lengthsq(delta) > record.PickupRadiusSq)
+                            continue;
+
+                        if (TryQueueDebrisPickup(ref record))
+                        {
+                            record.Flags = (byte)((record.Flags | (byte)WreckDebrisFlags.ActivePickup) & ~(byte)WreckDebrisFlags.DotOnly);
+                            _debrisRecords[debrisIndex] = record;
+                            return;
+                        }
+                    }
+                    while (_debrisSpatialHash.TryGetNextValue(out debrisIndex, ref iterator));
+                }
+            }
+        }
+
+        private bool TryQueueDebrisPickup(ref WreckDebrisRecord record)
+        {
+            if (itemCatalog == null || record.ItemHashId == 0)
+                return false;
+
+            Hecton8.Items.ItemData itemData = itemCatalog.FindByHash(record.ItemHashId);
+            if (itemData == null)
+                return false;
+
+            if (!itemCatalog.TryGetLoadedWorldPrefab(record.ItemHashId, out GameObject prefab) || prefab == null)
+            {
+                itemCatalog.QueueWorldPrefabPrewarm(record.ItemHashId);
+                return false;
+            }
+
+            Vector3 position = new Vector3(record.Position.x, record.Position.y, record.Position.z);
+            return QueueWreckLootSpawn(prefab, itemData, math.max(1, record.Quantity), position, ResolveCardinalLootRotation(record.StableId));
+        }
+
+        private void ProcessArtifactDiscovery()
+        {
+            if (_artifactRecordCount <= 0 || !_artifactRecords.IsCreated)
+                return;
+
+            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            Transform playerTransform = player != null ? player.PlayerTransform : null;
+            if (playerTransform == null)
+                return;
+
+            float3 playerPosition = new float3(playerTransform.position.x, playerTransform.position.y, playerTransform.position.z);
+            int count = math.min(_artifactRecordCount, _artifactRecords.Length);
+            for (int i = 0; i < count; i++)
+            {
+                WreckArtifactRecord record = _artifactRecords[i];
+                if (record.State != 0 || record.EntryHash == 0u)
+                    continue;
+
+                if (math.lengthsq(record.Position - playerPosition) > record.DiscoveryRadiusSq)
+                    continue;
+
+                if (!ScanEvents.RaiseEntryDiscovered(record.EntryHash, 0u, 0u, 0u, ScanEntryKind.Scannable))
+                    continue;
+
+                record.State = 1;
+                _artifactRecords[i] = record;
+                WriteBlackBoxTelemetry(WreckTelemetryGenerationHash, ToVector3(record.Position), record.EntryHash, 1f, 0f);
+                return;
+            }
+        }
+
+        private void UpdateDebrisGravityStateless()
+        {
+            if (_debrisRecordCount <= 0 || !_debrisRecords.IsCreated)
+                return;
+
+            int count = math.min(_debrisRecordCount, _debrisRecords.Length);
+            int sliceCount = math.min(count, ResolveDebrisGravitySlice(GlobalRegistry.ScalabilityTier));
+            int frameBucket = Time.frameCount & 4095;
+            for (int processed = 0; processed < sliceCount; processed++)
+            {
+                int i = (_debrisGravityCursor + processed) % count;
+                WreckDebrisRecord record = _debrisRecords[i];
+                if ((record.Flags & (byte)WreckDebrisFlags.Harvested) != 0)
+                    continue;
+
+                float nextY = ResolveStatelessDebrisGravityY(record.InitialY, record.TerrainY, record.StableId, frameBucket, record.SinkMetersPerSlowTick);
+                if (math.abs(nextY - record.Position.y) <= 0.001f)
+                    continue;
+
+                record.Position.y = nextY;
+                _debrisRecords[i] = record;
+            }
+
+            _debrisGravityCursor = (_debrisGravityCursor + sliceCount) % count;
+        }
+
+        private static float ResolveStatelessDebrisGravityY(float initialY, float terrainY, uint stableId, int frameBucket, float sinkMetersPerSlowTick)
+        {
+            float phaseOffset = (stableId & 31u) * 0.03f;
+            float sink = (frameBucket * math.max(0.001f, sinkMetersPerSlowTick) * 0.05f) + phaseOffset;
+            return math.max(terrainY, initialY - sink);
+        }
+
+        private void ConfigureIntegrityProxy(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            if (!instance.TryGetComponent(out WreckIntegritySignalProxy proxy) || proxy == null)
+                return;
+
+            proxy.Configure(this, unchecked((int)EntityId.ToULong(GetEntityId())));
+        }
+
+        internal void ApplyWreckInteractionSignal(in InteractionSignal signal, Vector3 runtimeHitPoint)
+        {
+            uint capabilityMask = ToolCapabilityMasks.ResolveCapabilityMask((InteractionEffectType)signal.EffectType);
+            if ((capabilityMask & ToolCapabilityMasks.Laser) == 0)
+                return;
+
+            if (_openedSealedModuleCount >= _sealedModuleCount)
+                return;
+
+            _openedSealedModuleCount++;
+            ScanEvents.RaiseWreckSignalPing(new float3(runtimeHitPoint.x, runtimeHitPoint.y, runtimeHitPoint.z), 6f);
+            WriteBlackBoxTelemetry(WreckTelemetryInteractionHash, runtimeHitPoint, capabilityMask, signal.PowerDelivered, _openedSealedModuleCount);
+        }
+
+        private void TryRegisterWreckSlowTick()
+        {
+            if (_registeredWreckSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (_debrisRecordCount <= 0 && _artifactRecordCount <= 0)
+                return;
+
+            _registeredWreckSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterWreckSlowTick()
+        {
+            if (!_registeredWreckSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredWreckSlowTick = false;
+        }
+
+        private void ValidateBlackBoxState()
+        {
+            if (!IsFiniteBounds(_activeWorldBounds))
+            {
+                WriteBlackBoxTelemetry(WreckTelemetryNanHash, _activeRuntimeOrigin, 1u, 0f, 0f);
+                DumpBlackBox();
+                return;
+            }
+
+            float3 runtime = new float3(_activeRuntimeOrigin.x, _activeRuntimeOrigin.y, _activeRuntimeOrigin.z);
+            if (!math.all(math.isfinite(runtime)))
+            {
+                WriteBlackBoxTelemetry(WreckTelemetryNanHash, Vector3.zero, 2u, 0f, 0f);
+                DumpBlackBox();
+            }
+        }
+
+        private void WriteBlackBoxTelemetry(uint eventHash, Vector3 position, uint flags, float value0, float value1)
+        {
+            if (!_telemetryEntries.IsCreated || _telemetryEntries.Length <= 0)
+                return;
+
+            int index = _telemetryCursor % _telemetryEntries.Length;
+            _telemetryEntries[index] = new WreckTelemetryEntry
+            {
+                FrameIndex = (uint)math.max(0, Time.frameCount),
+                EventHash = eventHash,
+                Seed = _activeGenerationSeed,
+                Flags = flags,
+                Position = new float3(position.x, position.y, position.z),
+                DebrisCount = _debrisRecordCount,
+                ArtifactCount = _artifactRecordCount,
+                SealedCount = _sealedModuleCount - _openedSealedModuleCount,
+                RupturedCount = _rupturedModuleCount,
+                Value0 = value0,
+                Value1 = value1
+            };
+            _telemetryCursor = (_telemetryCursor + 1) % _telemetryEntries.Length;
+        }
+
+        private void DumpBlackBox()
+        {
+            if (!_telemetryEntries.IsCreated || _telemetryEntries.Length <= 0)
+                return;
+
+            try
+            {
+                string fullPath = Path.Combine(Application.dataPath, "..", BlackBoxDumpPath);
+                string directory = Path.GetDirectoryName(fullPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using FileStream stream = File.Open(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+                using BinaryWriter writer = new BinaryWriter(stream);
+                int count = _telemetryEntries.Length;
+                for (int i = 0; i < count; i++)
+                {
+                    WreckTelemetryEntry entry = _telemetryEntries[i];
+                    writer.Write(entry.FrameIndex);
+                    writer.Write(entry.EventHash);
+                    writer.Write(entry.Seed);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.Position.x);
+                    writer.Write(entry.Position.y);
+                    writer.Write(entry.Position.z);
+                    writer.Write(entry.DebrisCount);
+                    writer.Write(entry.ArtifactCount);
+                    writer.Write(entry.SealedCount);
+                    writer.Write(entry.RupturedCount);
+                    writer.Write(entry.Value0);
+                    writer.Write(entry.Value1);
+                }
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError($"[ProceduralWreckGenerator] Black-box dump failed: {exception.Message}", this);
+#endif
+            }
+        }
+
+        private static int ResolveDebrisBudget(HectonQualityTier tier)
+        {
+            switch (tier)
+            {
+                case HectonQualityTier.Ultra:
+                    return MaxDebrisRecords;
+                case HectonQualityTier.High:
+                    return 8000;
+                case HectonQualityTier.Mid:
+                    return 5000;
+                default:
+                    return 2500;
+            }
+        }
+
+        private static int ResolveDebrisGravitySlice(HectonQualityTier tier)
+        {
+            switch (tier)
+            {
+                case HectonQualityTier.Ultra:
+                    return 2048;
+                case HectonQualityTier.High:
+                    return 1024;
+                case HectonQualityTier.Mid:
+                    return 512;
+                default:
+                    return 256;
+            }
+        }
+
+        private static int2 ResolveDebrisSpatialCell(Vector3 position)
+        {
+            return new int2(
+                (int)math.floor(position.x * DebrisSpatialCellSizeMetersInv),
+                (int)math.floor(position.z * DebrisSpatialCellSizeMetersInv));
+        }
+
+        private static int ResolveDebrisSpatialHashKey(Vector3 position)
+        {
+            return ResolveDebrisSpatialHashKey(ResolveDebrisSpatialCell(position));
+        }
+
+        private static int ResolveDebrisSpatialHashKey(int2 cell)
+        {
+            unchecked
+            {
+                return (cell.x * 73856093) ^ (cell.y * 19349663);
+            }
+        }
+
+        private static int ResolveDebrisClusterKey(Vector3 position)
+        {
+            int x = (int)math.floor(position.x * DebrisClusterSizeMetersInv);
+            int z = (int)math.floor(position.z * DebrisClusterSizeMetersInv);
+            unchecked
+            {
+                return (x * 83492791) ^ (z * 265443576);
+            }
+        }
+
+        private static Vector3 ResolveDeterministicPointInBounds(Bounds bounds, uint seed)
+        {
+            uint hash = MixFragmentSeed(seed);
+            float x = ((hash & 0xFFu) * (1f / 255f) * 2f - 1f) * bounds.extents.x;
+            hash = MixFragmentSeed(hash ^ 0x9E3779B9u);
+            float y = ((hash & 0xFFu) * (1f / 255f) * 2f - 1f) * bounds.extents.y;
+            hash = MixFragmentSeed(hash ^ 0xBB67AE85u);
+            float z = ((hash & 0xFFu) * (1f / 255f) * 2f - 1f) * bounds.extents.z;
+            return bounds.center + new Vector3(x, y, z);
+        }
+
+        private static float ResolveTerrainHeightForRuntimePosition(Vector3 runtimePosition, float fallbackY)
+        {
+            MapMagicBridge bridge = MapMagicBridge.Instance;
+            if (bridge == null || !bridge.IsAvailable)
+                return fallbackY;
+
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+            return bridge.TryGetHeightAUP(absolutePosition, out float terrainHeight) && math.isfinite(terrainHeight)
+                ? terrainHeight
+                : fallbackY;
+        }
+
+        private static Vector3 ToVector3(float3 value)
+        {
+            return new Vector3(value.x, value.y, value.z);
         }
 
         private async Awaitable SolveGridAsync(int cellCount, ushort initialMask, int moduleCount, uint seed)
@@ -2150,7 +3381,11 @@ namespace Hecton8.World
                     DrawCallPriority = (byte)math.clamp((int)source.DrawCallPriority, 0, 2),
                     EmitsGeometry = (byte)((source.EmitsGeometry && source.StructuralMesh != null) ? 1 : 0),
                     EmitsNavProxy = (byte)(source.EmitsNavProxy ? 1 : 0),
-                    UniversalConnector = (byte)(isFallbackConnector ? 1 : 0)
+                    UniversalConnector = (byte)(isFallbackConnector ? 1 : 0),
+                    IntegrityState = (byte)math.clamp((int)source.IntegrityState, 0, 2),
+                    RequiresLaserCutter = (byte)(source.RequiresLaserCutter ? 1 : 0),
+                    LootTableIndex = (byte)math.clamp(source.LootTableIndex, 0, MaxLootRecords - 1),
+                    LoreFragmentChancePermille = (ushort)math.clamp(source.LoreFragmentChancePermille, 0, 1000)
                 };
             }
         }
@@ -2405,7 +3640,9 @@ namespace Hecton8.World
         {
             _allPlacements.Clear();
 
-            float halfSpan = (gridResolution * cellSizeMeters) * 0.5f;
+            int activeGridResolution = ResolveActiveGridResolution();
+            int activePlacementLimit = ResolveActivePlacementLimit();
+            float halfSpan = (activeGridResolution * cellSizeMeters) * 0.5f;
             float halfCell = cellSizeMeters * 0.5f;
 
             for (int mortonIndex = 0; mortonIndex < cellCount; mortonIndex++)
@@ -2419,7 +3656,7 @@ namespace Hecton8.World
                 if (runtimeDefinition.EmitsGeometry == 0 && runtimeDefinition.EmitsNavProxy == 0)
                     continue;
 
-                if (_allPlacements.Length >= _allPlacements.Capacity)
+                if (_allPlacements.Length >= activePlacementLimit)
                     break;
 
                 int3 coord = DecodeMorton3(mortonIndex);
@@ -2444,7 +3681,9 @@ namespace Hecton8.World
                     BoundsSize = boundsSize,
                     MortonIndex = mortonIndex,
                     ModuleId = (byte)moduleId,
-                    DrawPriority = runtimeDefinition.DrawCallPriority
+                    DrawPriority = runtimeDefinition.DrawCallPriority,
+                    IntegrityState = runtimeDefinition.IntegrityState,
+                    ModuleFlags = runtimeDefinition.RequiresLaserCutter
                 });
             }
         }
@@ -2518,7 +3757,8 @@ namespace Hecton8.World
                 totalVertexCount,
                 new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
                 new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
-                new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2));
+                new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2),
+                new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4));
             meshData.SetIndexBufferParams(totalIndexCount, IndexFormat.UInt32);
 
             NativeArray<WreckMergedVertex> destinationVertices = meshData.GetVertexData<WreckMergedVertex>();
@@ -2553,9 +3793,13 @@ namespace Hecton8.World
                     UvStream = sourceData.HasVertexAttribute(VertexAttribute.TexCoord0)
                         ? sourceData.GetVertexAttributeStream(VertexAttribute.TexCoord0)
                         : -1,
+                    ColorStream = HasCompatibleVertexColorLayout(sourceData)
+                        ? sourceData.GetVertexAttributeStream(VertexAttribute.Color)
+                        : -1,
                     SubMeshCount = subMeshCount,
                     HasNormals = sourceData.HasVertexAttribute(VertexAttribute.Normal),
                     HasUvs = sourceData.HasVertexAttribute(VertexAttribute.TexCoord0),
+                    HasColors = HasCompatibleVertexColorLayout(sourceData),
                     LocalToWreck = float4x4.TRS(placement.Position, placement.Rotation, new float3(1f)),
                     Rotation = placement.Rotation
                 };
@@ -2642,7 +3886,8 @@ namespace Hecton8.World
                     totalVertexCount,
                     new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
                     new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
-                    new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2));
+                    new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2),
+                    new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4));
                 meshData.SetIndexBufferParams(totalIndexCount, IndexFormat.UInt32);
 
                 NativeArray<WreckMergedVertex> destinationVertices = meshData.GetVertexData<WreckMergedVertex>();
@@ -2677,9 +3922,13 @@ namespace Hecton8.World
                         UvStream = sourceData.HasVertexAttribute(VertexAttribute.TexCoord0)
                             ? sourceData.GetVertexAttributeStream(VertexAttribute.TexCoord0)
                             : -1,
+                        ColorStream = HasCompatibleVertexColorLayout(sourceData)
+                            ? sourceData.GetVertexAttributeStream(VertexAttribute.Color)
+                            : -1,
                         SubMeshCount = sourceData.subMeshCount,
                         HasNormals = sourceData.HasVertexAttribute(VertexAttribute.Normal),
                         HasUvs = sourceData.HasVertexAttribute(VertexAttribute.TexCoord0),
+                        HasColors = HasCompatibleVertexColorLayout(sourceData),
                         LocalToWreck = float4x4.TRS(placement.Position, placement.Rotation, new float3(1f)),
                         Rotation = placement.Rotation
                     };
@@ -2975,6 +4224,12 @@ namespace Hecton8.World
             return true;
         }
 
+        private static bool HasCompatibleVertexColorLayout(Mesh.MeshData sourceData)
+        {
+            return sourceData.HasVertexAttribute(VertexAttribute.Color) &&
+                   ValidateAttributeLayout(sourceData, VertexAttribute.Color, UnsafeUtility.SizeOf<Color32>());
+        }
+
         private static bool ValidateAttributeLayout(Mesh.MeshData sourceData, VertexAttribute attribute, int expectedStride)
         {
             if (!sourceData.HasVertexAttribute(attribute))
@@ -3204,7 +4459,7 @@ namespace Hecton8.World
         {
             int3 coord = DecodeMorton3(mortonIndex);
             byte constraints = 0;
-            int boundary = gridResolution - 1;
+            int boundary = ResolveActiveGridResolution() - 1;
 
             if (coord.z >= boundary)
                 constraints |= (byte)(1 << DirectionNorth);
@@ -3236,8 +4491,9 @@ namespace Hecton8.World
             };
 
             int3 next = coord + offset;
+            int activeGridResolution = ResolveActiveGridResolution();
             if (next.x < 0 || next.y < 0 || next.z < 0 ||
-                next.x >= gridResolution || next.y >= gridResolution || next.z >= gridResolution)
+                next.x >= activeGridResolution || next.y >= activeGridResolution || next.z >= activeGridResolution)
             {
                 neighborIndex = -1;
                 return false;
@@ -3414,6 +4670,39 @@ namespace Hecton8.World
             x = (x ^ (x >> 8)) & 0xFF0000FFu;
             x = (x ^ (x >> 16)) & 0x000003FFu;
             return (int)x;
+        }
+    }
+
+    [DisallowMultipleComponent]
+    public sealed class WreckIntegritySignalProxy : MonoBehaviour, IInteractionSignalConsumer, IInteractionVulnerabilitySource, IPoolable
+    {
+        private ProceduralWreckGenerator _owner;
+        private int _wreckId;
+
+        public uint VulnerabilityMask => ToolCapabilityMasks.PlasmaCut;
+
+        internal void Configure(ProceduralWreckGenerator owner, int wreckId)
+        {
+            _owner = owner;
+            _wreckId = wreckId;
+        }
+
+        public void ApplyInteractionSignal(in InteractionSignal signal, Vector3 runtimeHitPoint)
+        {
+            if (_owner == null || _wreckId == 0)
+                return;
+
+            _owner.ApplyWreckInteractionSignal(in signal, runtimeHitPoint);
+        }
+
+        public void OnSpawn()
+        {
+        }
+
+        public void OnDespawn()
+        {
+            _owner = null;
+            _wreckId = 0;
         }
     }
 

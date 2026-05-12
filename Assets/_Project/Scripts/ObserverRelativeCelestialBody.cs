@@ -20,7 +20,7 @@ namespace Hecton8.Celestial
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(2000)]
-    public sealed class ObserverRelativeCelestialBody : MonoBehaviour, ITickable
+    public sealed class ObserverRelativeCelestialBody : MonoBehaviour, ITickable, IOriginShiftListener
     {
         /// <summary>
         /// Placement solve mode for this body.
@@ -182,6 +182,16 @@ namespace Hecton8.Celestial
         /// <param name="dt">Unused tick delta. The body resolves against the shared owner time.</param>
         public void Tick(float dt)
         {
+            ApplyPlacement();
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!Application.isPlaying)
+                return;
+            if (shiftData.ShiftOffset.sqrMagnitude <= DirectionEpsilon)
+                return;
+
             ApplyPlacement();
         }
 

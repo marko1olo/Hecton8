@@ -73,11 +73,14 @@ namespace Hecton8.Building
             blockingMask = runtimeBlockingMask;
             checkShrink = runtimeShrink;
 
-            _cachedTransform = transform;
+            if (_cachedTransform == null)
+                _cachedTransform = transform;
             // COLD ALLOC: Renderer[][child renderer count] — runtime placement ghost renderer cache — owner: PlacementGhost
-            _renderers = GetComponentsInChildren<Renderer>(true);
+            if (_renderers == null || _renderers.Length == 0)
+                _renderers = GetComponentsInChildren<Renderer>(true);
             // COLD ALLOC: Collider[][child collider count] — runtime placement ghost own-collider cache — owner: PlacementGhost
-            _ownColliders = GetComponentsInChildren<Collider>(true);
+            if (_ownColliders == null || _ownColliders.Length == 0)
+                _ownColliders = GetComponentsInChildren<Collider>(true);
             RefreshBuildState();
             ApplyMaterial(_canBuild ? validMaterial : invalidMaterial);
         }

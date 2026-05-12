@@ -194,10 +194,7 @@ namespace Hecton8.Tools
         private static float ResolveHapticTriangleWave(float elapsedSeconds, float frequencyHz)
         {
             float safeFrequencyHz = math.min(ClampFiniteNonNegative(frequencyHz), MaxCommandFrequencyHz);
-            float phase = ClampFiniteNonNegative(elapsedSeconds) * safeFrequencyHz;
-            float shiftedPhase = phase + 0.25f;
-            float cycle = shiftedPhase - math.floor(shiftedPhase);
-            return 1f - math.abs((cycle * 2f) - 1f);
+            return HapticWaveformLibrary.EvaluateTriangle01(ClampFiniteNonNegative(elapsedSeconds), safeFrequencyHz);
         }
 
         public void LateFrameTick()

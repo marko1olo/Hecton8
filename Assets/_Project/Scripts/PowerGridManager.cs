@@ -6,6 +6,8 @@
 
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -54,6 +56,8 @@ namespace Hecton8.Power
         private bool _serviceRegistered;
         private bool _slowTickFinalizationPending;
         private float _pendingWirelessToolDemandWattSeconds;
+        private float _nextPowerColdTickTime;
+        private const float PowerGridColdTickSeconds = 1f;
         private const float MaxPendingWirelessToolDemandWattSeconds = 4096f;
 
         /// <inheritdoc />
@@ -152,6 +156,7 @@ namespace Hecton8.Power
             _pendingWirelessToolDemandWattSeconds = 0f;
             _debugPendingWirelessToolDemandWattSeconds = 0f;
             _slowTickFinalizationPending = false;
+            _nextPowerColdTickTime = 0f;
         }
 
         private void UnregisterRuntimeHooks()
@@ -172,6 +177,12 @@ namespace Hecton8.Power
 
             if (_slowTickFinalizationPending)
                 return;
+
+            float now = Time.unscaledTime;
+            if (now + 0.0001f < _nextPowerColdTickTime)
+                return;
+
+            _nextPowerColdTickTime = now + PowerGridColdTickSeconds;
 
             for (int gridIndex = _allGrids.Count - 1; gridIndex >= 0; gridIndex--)
             {
@@ -323,6 +334,20 @@ namespace Hecton8.Power
         public int GridCount => _allGrids != null ? _allGrids.Count : 0;
         public float TotalGeneration => _debugTotalGeneration;
         public float TotalConsumption => _debugTotalConsumption;
+
+        public bool TryGetGridPowerPotentialsReadOnly(int gridIndex, out NativeArray<float>.ReadOnly potentials)
+        {
+            potentials = default;
+            if (_allGrids == null || gridIndex < 0 || gridIndex >= _allGrids.Count)
+                return false;
+
+            PowerGrid grid = _allGrids[gridIndex];
+            if (grid == null)
+                return false;
+
+            potentials = grid.GetPowerPotentialsReadOnly();
+            return potentials.Length > 0;
+        }
 
         private static void EnsureStorage()
         {
@@ -499,6 +524,36 @@ namespace Hecton8.Power
                 deficitCount > 0,
                 emergencyReserveGridCount > 0);
             PowerGridTelemetryEvents.Raise(in telemetrySnapshot);
+            PublishBrownoutSignal(in telemetrySnapshot);
+        }
+
+        private static void PublishBrownoutSignal(in PowerGridTelemetrySnapshot snapshot)
+        {
+            byte flags = 0;
+            if (snapshot.HasPowerDeficit)
+                flags |= 1;
+            if (snapshot.EmergencyReserveActive)
+                flags |= 1 << 1;
+
+            float severity01 = snapshot.HighestBrownoutTier != LogisticsBrownoutTier.None ||
+                               snapshot.HasPowerDeficit ||
+                               snapshot.EmergencyReserveActive
+                ? math.saturate(1f - snapshot.SupplyRatio)
+                : 0f;
+            if (snapshot.EmergencyReserveActive)
+                severity01 = math.max(severity01, 0.75f);
+
+            BrownoutSignal signal = new BrownoutSignal
+            {
+                NetworkId = unchecked((uint)math.max(0, snapshot.GridCount)),
+                NodeId = unchecked((uint)math.max(0, snapshot.DeficitGridCount)),
+                SupplyRatio = math.saturate(snapshot.SupplyRatio),
+                Severity01 = severity01,
+                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                Priority = (byte)snapshot.HighestBrownoutTier,
+                Flags = flags
+            };
+            GlobalSignals.Publish(in signal);
         }
 
         private void TryRegister()

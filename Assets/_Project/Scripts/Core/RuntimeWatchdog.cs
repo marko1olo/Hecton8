@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton.Localization;
 using Hecton8.AI;
@@ -42,20 +41,6 @@ namespace Hecton8.Core
             Worker7 = 23,
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        private struct Win32FileAttributeData
-        {
-            public uint FileAttributes;
-            public uint CreationTimeLow;
-            public uint CreationTimeHigh;
-            public uint LastAccessTimeLow;
-            public uint LastAccessTimeHigh;
-            public uint LastWriteTimeLow;
-            public uint LastWriteTimeHigh;
-            public uint FileSizeHigh;
-            public uint FileSizeLow;
-        }
-
         public const int TargetFPS = 60;
         public const int VrTargetFPS = 72;
 
@@ -81,9 +66,9 @@ namespace Hecton8.Core
         private const long DefaultRuntimeMemorySafeBoundBytes = 3L * 1024L * 1024L * 1024L;
         private const int MemorySpikeSampleIntervalFrames = 12;
         private const int MemorySubsystemBreachCooldownFrames = 300;
+        private const int InputLagAnalyzerCooldownFrames = 30;
         private const long InvalidMmfSectorHash = long.MinValue;
         private const int RegistryHeartbeatSlotCount = (int)GlobalRegistryServiceSlot.Unknown;
-        private const int GetFileExInfoStandard = 0;
         private const uint WatchdogStateFrameBudgetWarningSent = 1u << 0;
         private const uint WatchdogDegradationActionMask = 1u << 30;
 
@@ -140,14 +125,6 @@ namespace Hecton8.Core
         private static long _runtimeMemorySafeBoundBytes;
         private static long _runtimeMemoryBreachBoundBytes;
 
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern bool GetFileAttributesEx(
-            string lpFileName,
-            int fInfoLevelId,
-            out Win32FileAttributeData fileData);
-#endif
-
         private bool _registeredUpdatable;
         private bool _registeredLateFrameTick;
         private uint _watchdogStateFlags;
@@ -160,6 +137,7 @@ namespace Hecton8.Core
         private int _lastMemorySpikeFrame = -1;
         private int _nextMemorySpikeSampleFrame;
         private int _lastMemoryBreachFrame = -1;
+        private int _lastInputClockSkewFrame = -1;
         private int _steadyStateGcGen0CollectionsDelta;
         private float _gcSteadyStateWarmupRemaining = GcSteadyStateWarmupSeconds;
         private bool _gcSteadyStateActive;
@@ -222,6 +200,17 @@ namespace Hecton8.Core
 
             _activeLanes[laneIndex] = true;
             Interlocked.Increment(ref _heartbeatCounters[laneIndex]);
+        }
+
+        /// <summary>
+        /// Returns conservative memory headroom in bytes for streaming load gates.
+        /// </summary>
+        public static long GetAvailableMemory()
+        {
+            CacheRuntimeMemorySafeBoundBytes();
+            long safeBoundBytes = Volatile.Read(ref _runtimeMemorySafeBoundBytes);
+            long reservedBytes = Profiler.GetTotalReservedMemoryLong();
+            return math.max(0L, safeBoundBytes - reservedBytes);
         }
 
         /// <summary>
@@ -411,6 +400,7 @@ namespace Hecton8.Core
             _lastMmfSectorHash = InvalidMmfSectorHash;
             _nextRegistryHeartbeatGuardTime = 0d;
             _lastMemoryBreachFrame = -1;
+            _lastInputClockSkewFrame = -1;
             ResetGcCollectionSentinel();
             ResetMemorySpikeTracker();
         }
@@ -657,6 +647,7 @@ namespace Hecton8.Core
             Signal(RuntimeWatchdogLane.DispatcherLateFrame);
             BlackBoxHeartbeatThread.Ping();
             MathGuard.DrainInvalidNumberErrors();
+            ReportInputClockSkewIfUnsafe(Time.frameCount);
 
             uint latencySequence = InputLatencyTracker.CompletedSequence;
             if (latencySequence == _lastInputLatencySequence)
@@ -671,6 +662,25 @@ namespace Hecton8.Core
             CrashTelemetryBuffer.ReportLatencyCrime(
                 AwaitableDebtMonitor.PendingNextFrameContinuations,
                 latencyMs);
+        }
+
+        private void ReportInputClockSkewIfUnsafe(int frame)
+        {
+            if (_lastInputClockSkewFrame >= 0 &&
+                frame - _lastInputClockSkewFrame < InputLagAnalyzerCooldownFrames)
+            {
+                return;
+            }
+
+            float clockDeltaMs = InputLatencyTracker.SampleInputSystemClockDeltaMs();
+            if (clockDeltaMs <= AwaitableDebtMonitor.LatencyCrimeThreshold)
+                return;
+
+            _lastInputClockSkewFrame = frame;
+            GlobalTelemetryBus.PublishInputLagWarning(clockDeltaMs);
+            CrashTelemetryBuffer.ReportLatencyCrime(
+                AwaitableDebtMonitor.PendingNextFrameContinuations,
+                clockDeltaMs);
         }
 
         private static void ForceFaunaEmergencyColdTick(float elapsedMilliseconds)
@@ -785,21 +795,31 @@ namespace Hecton8.Core
             for (int slot = 0; slot < RegistryHeartbeatSlotCount; slot++)
             {
                 object service = GlobalRegistry.ResolveRegisteredServiceForHeartbeat((GlobalRegistryServiceSlot)slot);
-                if (!(service is IServiceHeartbeat heartbeat) ||
-                    !heartbeat.IsServiceReady ||
-                    heartbeat.HeartbeatState == ServiceHeartbeatState.Failed ||
-                    heartbeat.HeartbeatState == ServiceHeartbeatState.Shutdown)
+                IServiceHeartbeat heartbeat = service as IServiceHeartbeat;
+                ISystem system = service as ISystem;
+                if (heartbeat == null && system == null)
                 {
                     _registryHeartbeatActive[slot] = 0;
                     _registryHeartbeatTicks[slot] = 0;
                     continue;
                 }
 
-                int tickCount = heartbeat.TickCount;
+                if (heartbeat != null &&
+                    (!heartbeat.IsServiceReady ||
+                     heartbeat.HeartbeatState == ServiceHeartbeatState.Failed ||
+                     heartbeat.HeartbeatState == ServiceHeartbeatState.Shutdown))
+                {
+                    _registryHeartbeatActive[slot] = 0;
+                    _registryHeartbeatTicks[slot] = 0;
+                    continue;
+                }
+
+                int tickCount = system != null ? system.TickCount : heartbeat.TickCount;
                 if (_registryHeartbeatActive[slot] != 0 && _registryHeartbeatTicks[slot] == tickCount)
                 {
                     GlobalTelemetryBus.PublishRegistryHeartbeatStale((uint)slot, unchecked((uint)tickCount));
                     PublishPerformanceWarningNoThrow(_registryHeartbeatStaleHash, (uint)slot, 1f);
+                    CrashTelemetryBuffer.ReportRuntimeWatchdogStall((uint)slot, unchecked((uint)tickCount));
                 }
 
                 _registryHeartbeatTicks[slot] = tickCount;
@@ -910,29 +930,16 @@ namespace Hecton8.Core
 
         private static bool TryGetFileLength(string path, out long bytes)
         {
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
-            if (GetFileAttributesEx(path, GetFileExInfoStandard, out Win32FileAttributeData data))
-            {
-                bytes = ((long)data.FileSizeHigh << 32) | data.FileSizeLow;
-                return true;
-            }
-
             bytes = -1L;
-            return false;
-#else
-            FileStream stream = null;
-            try
-            {
-                stream = File.OpenRead(path);
-                bytes = stream.Length;
-            }
-            finally
-            {
-                stream?.Dispose();
-            }
+            if (string.IsNullOrEmpty(path))
+                return false;
 
+            FileInfo info = new FileInfo(path);
+            if (!info.Exists)
+                return false;
+
+            bytes = info.Length;
             return true;
-#endif
         }
 
         private void ConsumeMmfHealthResult()

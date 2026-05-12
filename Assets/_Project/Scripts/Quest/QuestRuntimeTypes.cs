@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using Unity.Burst;
 using Unity.Mathematics;
 
 namespace Hecton8.Quest
@@ -163,7 +162,6 @@ namespace Hecton8.Quest
         }
     }
 
-    [BurstCompile]
     internal static unsafe class QuestFlagHashKernel
     {
         public static uint ComputeStableHash(string value)
@@ -182,7 +180,6 @@ namespace Hecton8.Quest
                 return ComputeStableHash((ushort*)valuePtr, value.Length);
         }
 
-        [BurstCompile]
         public static uint ComputeStableHash(ushort* value, int length)
         {
             if (value == null || length <= 0)

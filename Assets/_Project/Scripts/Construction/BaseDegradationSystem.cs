@@ -85,6 +85,8 @@ namespace Hecton8.Construction
         private static readonly Dictionary<int, bool> _integritySocketStates = new Dictionary<int, bool>(64);
         // COLD ALLOC: Dictionary<Int32,IntegrityDecalState>[64] - degraded-module deferred decal cache keyed by runtime module id - owner: BaseDegradationSystem
         private static readonly Dictionary<int, IntegrityDecalState> _integrityDecalStates = new Dictionary<int, IntegrityDecalState>(64);
+        // COLD ALLOC: List<Int32>[64] - integrity decal keys shifted during AUP rebases - owner: BaseDegradationSystem
+        private static readonly List<int> _integrityDecalShiftKeys = new List<int>(64);
         // COLD ALLOC: Dictionary<Int32,Boolean>[64] - rupture-state mirror keyed by runtime module id for fleet arbitration - owner: BaseDegradationSystem
         private static readonly Dictionary<int, bool> _moduleRuptureStates = new Dictionary<int, bool>(64);
         // COLD ALLOC: Dictionary<Int32,ParasiteSporeHazardState>[32] - active parasite spore room hazards keyed by runtime module id - owner: BaseDegradationSystem
@@ -105,6 +107,7 @@ namespace Hecton8.Construction
             _globalCrackDecalAtlasIndices.Clear();
             _integritySocketStates.Clear();
             _integrityDecalStates.Clear();
+            _integrityDecalShiftKeys.Clear();
             _moduleRuptureStates.Clear();
             _parasiteSporeHazards.Clear();
             _pressureCompressionStates.Clear();
@@ -120,6 +123,49 @@ namespace Hecton8.Construction
                 RebuildGlobalDecalBufferIfDirty();
                 return _globalCrackDecalMatrices;
             }
+        }
+
+        internal static void ApplyOriginShift(in OriginShiftEventData shiftData)
+        {
+            Vector3 runtimeOffset = -shiftData.ShiftOffset;
+            if (!IsFiniteVector(runtimeOffset) || runtimeOffset.sqrMagnitude <= 0.000001f)
+                return;
+
+            _staleNodeIds.Clear();
+            Dictionary<uint, RuptureNodeState>.Enumerator ruptureEnumerator = _ruptureStates.GetEnumerator();
+            while (ruptureEnumerator.MoveNext())
+                _staleNodeIds.Add(ruptureEnumerator.Current.Key);
+
+            int ruptureCount = _staleNodeIds.Count;
+            for (int keyIndex = 0; keyIndex < ruptureCount; keyIndex++)
+            {
+                uint nodeId = _staleNodeIds[keyIndex];
+                if (!_ruptureStates.TryGetValue(nodeId, out RuptureNodeState state))
+                    continue;
+
+                state.DecalMatrix = RebaseDecalMatrix(state.DecalMatrix, runtimeOffset);
+                _ruptureStates[nodeId] = state;
+            }
+
+            _integrityDecalShiftKeys.Clear();
+            Dictionary<int, IntegrityDecalState>.Enumerator integrityEnumerator = _integrityDecalStates.GetEnumerator();
+            while (integrityEnumerator.MoveNext())
+                _integrityDecalShiftKeys.Add(integrityEnumerator.Current.Key);
+
+            int integrityCount = _integrityDecalShiftKeys.Count;
+            for (int keyIndex = 0; keyIndex < integrityCount; keyIndex++)
+            {
+                int moduleRuntimeId = _integrityDecalShiftKeys[keyIndex];
+                if (!_integrityDecalStates.TryGetValue(moduleRuntimeId, out IntegrityDecalState state))
+                    continue;
+
+                state.DecalMatrix = RebaseDecalMatrix(state.DecalMatrix, runtimeOffset);
+                _integrityDecalStates[moduleRuntimeId] = state;
+            }
+
+            _staleNodeIds.Clear();
+            _integrityDecalShiftKeys.Clear();
+            MarkGlobalDecalBufferDirty();
         }
 
         internal static IReadOnlyList<int> GlobalCrackDecalAtlasIndices
@@ -624,6 +670,13 @@ namespace Hecton8.Construction
             return true;
         }
 
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
         private static Matrix4x4 BuildCrackDecalMatrix(GameObject moduleObject, Vector3 ruptureWorldPosition)
         {
             Vector3 outward = Vector3.forward;
@@ -645,6 +698,16 @@ namespace Hecton8.Construction
             Quaternion rotation = Quaternion.LookRotation(FastDirectionOrFallback(outward, fallbackForward), Vector3.up);
             Vector3 scale = Vector3.one * DefaultDecalScaleMeters;
             return Matrix4x4.TRS(ruptureWorldPosition, rotation, scale);
+        }
+
+        private static Matrix4x4 RebaseDecalMatrix(Matrix4x4 matrix, Vector3 runtimeOffset)
+        {
+            Vector4 position = matrix.GetColumn(3);
+            position.x += runtimeOffset.x;
+            position.y += runtimeOffset.y;
+            position.z += runtimeOffset.z;
+            matrix.SetColumn(3, position);
+            return matrix;
         }
 
         private static Matrix4x4 BuildIntegrityDecalMatrix(BaseModule baseModule, float parasiteVisual01)

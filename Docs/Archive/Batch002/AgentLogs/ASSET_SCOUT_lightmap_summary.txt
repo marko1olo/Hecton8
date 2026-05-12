@@ -1,0 +1,3 @@
+﻿LightmapFileCount=0
+LightmapTotalSourceMB=0.000
+LightmapOverBudgetCount=0

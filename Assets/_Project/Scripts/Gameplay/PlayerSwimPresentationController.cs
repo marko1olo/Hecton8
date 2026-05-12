@@ -38,6 +38,7 @@ namespace Hecton8.Gameplay
         private static readonly int _WaveLeanWeightHash = Animator.StringToHash("WaveLeanWeight");
         private static readonly int _ImmersionDepthHash = Animator.StringToHash("ImmersionDepth");
         private static readonly int _BreathingPhaseShaderId = Shader.PropertyToID("_BreathingPhase");
+        private static readonly int _SwimVatSpeedScalarShaderId = Shader.PropertyToID("_HectonSwimVatSpeedScalar");
 
         private static readonly string[] s_modeLabels =
         {
@@ -657,6 +658,8 @@ namespace Hecton8.Gameplay
         private int _lastDrivenFrame = -1;
         private int _nextReferenceResolveFrame = -1;
         private int _lastBreathingPhaseShaderByte = int.MinValue;
+        private int _lastSwimVatSpeedScalarByte = int.MinValue;
+        private float _swimVatSpeedScalar;
         private bool _hasInitializedActiveBlend;
         private bool _cameraYawInitialized;
         private bool _poseStateInitialized;
@@ -740,6 +743,21 @@ namespace Hecton8.Gameplay
         /// <summary>Current normalized equipped-tool blend suppressing swim presentation.</summary>
         public float CurrentToolBlend => _equippedToolBlendCurrent;
 
+        /// <summary>Current quantized swim-speed scalar exported to the third-person VAT shader lane.</summary>
+        public float CurrentSwimVatSpeedScalar => _swimVatSpeedScalar;
+
+        internal void SyncGpuVatSwimSpeedScalar(float speedScalar)
+        {
+            float clamped = math.saturate(speedScalar);
+            int quantized = (int)math.round(clamped * 255f);
+            if (quantized == _lastSwimVatSpeedScalarByte)
+                return;
+
+            _lastSwimVatSpeedScalarByte = quantized;
+            _swimVatSpeedScalar = quantized * 0.00392156862f;
+            Shader.SetGlobalFloat(_SwimVatSpeedScalarShaderId, _swimVatSpeedScalar);
+        }
+
         private void Awake()
         {
             AutoResolveReferences();
@@ -794,6 +812,9 @@ namespace Hecton8.Gameplay
 
             Shader.SetGlobalFloat(_BreathingPhaseShaderId, 0f);
             _lastBreathingPhaseShaderByte = int.MinValue;
+            Shader.SetGlobalFloat(_SwimVatSpeedScalarShaderId, 0f);
+            _lastSwimVatSpeedScalarByte = int.MinValue;
+            _swimVatSpeedScalar = 0f;
             TryUnregister();
         }
 
@@ -801,6 +822,9 @@ namespace Hecton8.Gameplay
         {
             Shader.SetGlobalFloat(_BreathingPhaseShaderId, 0f);
             _lastBreathingPhaseShaderByte = int.MinValue;
+            Shader.SetGlobalFloat(_SwimVatSpeedScalarShaderId, 0f);
+            _lastSwimVatSpeedScalarByte = int.MinValue;
+            _swimVatSpeedScalar = 0f;
             TryUnregister();
         }
 

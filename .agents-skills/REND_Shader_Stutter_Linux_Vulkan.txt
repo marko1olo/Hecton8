@@ -1,0 +1,58 @@
+# REND_SHADER_STUTTER_LINUX_VULKAN.md
+## Shader Stutter Control Mandate
+
+Status: PENDING VERIFICATION
+Owner: Rendering Lead / Build Engineer
+Target: Linux + Vulkan, Windows + Vulkan fallback, Unity 6000.x
+
+---
+
+## Primary Law
+
+[RULE] Shader stutter is build debt, not a runtime surprise.
+[FORBID] `Shader.WarmupAllShaders()` during gameplay.
+[FORBID] First-use shader compilation in combat, streaming, visor activation, or biome entry.
+
+---
+
+## Required Pipeline
+
+1. Build-time variant stripping.
+2. Curated `ShaderVariantCollection` assets per renderer feature group.
+3. BIOS/loading-screen warmup of configured collections.
+4. Offscreen material/mesh pre-touch for shader variants that require exact vertex layout/render state.
+5. Linux/Vulkan player smoke test that enters each biome, toggles each visor mode, and records frame spikes.
+
+Reference:
+https://docs.unity3d.com/6000.0/Manual/shader-loading.html
+
+---
+
+## Current Project Evidence
+
+`GameBootstrapper` already exposes configured `ShaderVariantCollection[]` and warms them before player activation.
+
+[BROKEN] This does not prove Linux/Vulkan stutter is solved. ShaderVariantCollection warmup is necessary but not sufficient for every platform/render-state combination.
+
+---
+
+## Vulkan-Specific Rules
+
+[RULE] Any runtime-generated material path must register its variant before build.
+[RULE] GPUI/GPU Resident Drawer/BRG material variants must be represented in a warmup scene or collection.
+[RULE] Loading-screen warmup must be cancelled only by fatal bootstrap cancellation, not by ordinary frame budget pressure.
+[REQUIRE] Linux/Vulkan stutter report includes p95, p99, and max frame time during first-use traversal.
+
+---
+
+## Low-Tier Policy
+
+LOW strips features first:
+- no bloom variants
+- no full volumetric variants
+- no high cascade variants
+- no optional caustic shadow mask variants
+- no high-tier haptic/visor decorative shader paths
+
+Stutter prevention starts by owning fewer variants.
+

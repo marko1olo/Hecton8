@@ -175,6 +175,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             StructuredBuffer<float4x4> _HectonInstanceMatrices;
             StructuredBuffer<HectonVegetationInstanceData> _HectonVegetationInstanceData;
             StructuredBuffer<float> _HectonFloraPhaseSeeds;
+            StructuredBuffer<float> _HectonFloraAges01;
             StructuredBuffer<uint> _HectonVisibleInstanceIndices;
             StructuredBuffer<uint> _HectonFloraSnapFlags;
             StructuredBuffer<float2> _MarineSnowFlowField;
@@ -190,6 +191,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _HectonVegetationAmbientColor;
             float4 _HectonVegetationCurrentVector;
             float4 _GlobalOceanFlow;
+            float4 _HectonOceanSurfaceWave0A;
+            float4 _HectonOceanSurfaceWave0B;
+            float4 _HectonOceanSurfaceWave1A;
+            float4 _HectonOceanSurfaceWave1B;
+            float4 _HectonOceanSurfaceWave2A;
+            float4 _HectonOceanSurfaceWave2B;
+            float4 _HectonOceanSurfaceWaveMeta;
             float4 _HectonFloatingOriginOffset;
             float4 _SargassumGlobalDriftOffset;
             float4 _SargassumCutMaskWorldRect;
@@ -211,6 +219,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _AbyssalGridResolution;
             float4 _AbyssalFlowCenter;
             float4 _AbyssalFlowSpacing;
+            float4 _AbyssalFlowTextureParams;
+            float _AbyssalFlowTextureActive;
             float _HectonSeasonCycle;
             float _SeasonCycle;
             float _HectonVegetationDepth;
@@ -233,6 +243,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             SAMPLER(sampler_SargassumCutMaskRT);
             TEXTURE2D(_HectonShallowWaterFieldRT);
             SAMPLER(sampler_HectonShallowWaterFieldRT);
+            TEXTURE3D(_AbyssalFlowFieldTexture);
+            SAMPLER(sampler_AbyssalFlowFieldTexture);
 
             struct Attributes
             {
@@ -272,6 +284,14 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half geneticTraits : TEXCOORD20;
                 half spatialPulseOffset : TEXCOORD21;
             };
+
+            float2 HectonDecodePackedPresentation(float packedPresentationAlpha)
+            {
+                float packedValue = round(saturate(packedPresentationAlpha) * 65535.0);
+                float biolumByte = fmod(packedValue, 256.0);
+                float damageByte = floor(packedValue * 0.00390625);
+                return float2(biolumByte, damageByte) * 0.0039215686;
+            }
 
             uint MathHashUint3(uint3 value)
             {
@@ -400,6 +420,17 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             float3 ResolveAbyssalFlowField(float3 positionWS)
             {
+                if (_AbyssalFlowTextureActive > 0.5 && _AbyssalFlowTextureParams.y > 0.001)
+                {
+                    float3 uvw = (positionWS - _AbyssalFlowCenter.xyz) * rcp(_AbyssalFlowTextureParams.y) + 0.5;
+                    if (all(uvw >= float3(0.0, 0.0, 0.0)) && all(uvw <= float3(1.0, 1.0, 1.0)))
+                    {
+                        float3 textureFlow = _AbyssalFlowFieldTexture.SampleLevel(sampler_AbyssalFlowFieldTexture, uvw, 0).xyz;
+                        if (dot(textureFlow, textureFlow) < 1.0e+32)
+                            return textureFlow;
+                    }
+                }
+
                 int resolutionX = (int)max(_AbyssalGridResolution.x, 0.0);
                 int resolutionY = (int)max(_AbyssalGridResolution.y, 0.0);
                 int resolutionZ = (int)max(_AbyssalGridResolution.z, 0.0);
@@ -415,13 +446,15 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     localPosition.x / horizontalCellSize,
                     localPosition.y / verticalCellSize,
                     localPosition.z / horizontalCellSize))) + halfExtent;
-                coord = clamp(coord, int3(0, 0, 0), int3(resolutionX - 1, resolutionY - 1, resolutionZ - 1));
+                if (coord.x < 0 || coord.y < 0 || coord.z < 0 || coord.x >= resolutionX || coord.y >= resolutionY || coord.z >= resolutionZ)
+                    return float3(0.0, 0.0, 0.0);
 
                 int index = coord.y * resolutionX * resolutionZ + coord.z * resolutionX + coord.x;
                 if (index < 0 || index >= nodeCount)
                     return float3(0.0, 0.0, 0.0);
 
-                return _AbyssalFlowFieldResult[index].xyz;
+                float3 flow = _AbyssalFlowFieldResult[index].xyz;
+                return dot(flow, flow) < 1.0e+32 ? flow : float3(0.0, 0.0, 0.0);
             }
 
             float3 SafeNormalize3(float3 value);
@@ -491,6 +524,11 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return InterleavedGradientNoise(pixel);
             }
 
+            float LinearStep01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) * rcp(max(edge1 - edge0, 0.0001)));
+            }
+
             half ResolveLodDitherCoverage(half ignNoise, float lodAlpha)
             {
                 return (half)step(ignNoise, saturate(lodAlpha));
@@ -498,7 +536,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             half ResolveVegetationVisibilityGate(half signal, half threshold, half feather)
             {
-                return saturate((signal - threshold) / max(feather, 0.0001h));
+                return saturate((signal - threshold) * rcp(max(feather, 0.0001h)));
             }
 
             float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
@@ -514,6 +552,32 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float ResolveWaterLevel()
             {
                 return _HectonVegetationWaterLevel > 0.01 ? _HectonVegetationWaterLevel : _SurfaceWaterLevelFallback;
+            }
+
+            float EvaluateOceanGerstnerLift(float2 worldXZ, float4 waveA, float4 waveB, float timeSeconds)
+            {
+                if (waveB.w < 0.5 || waveA.z <= 0.0 || waveA.w <= 0.01)
+                    return 0.0;
+
+                float directionLenSq = dot(waveA.xy, waveA.xy);
+                float2 direction = directionLenSq > 0.0001 ? waveA.xy * rsqrt(max(directionLenSq, 0.0001)) : float2(1.0, 0.0);
+                float waveNumber = 6.28318530718 * rcp(max(0.01, waveA.w));
+                float phaseVelocity = (0.85 + waveA.w * 0.23) * max(0.01, waveB.z);
+                float phase = waveNumber * dot(direction, worldXZ) - phaseVelocity * waveNumber * timeSeconds + waveB.y;
+                return FastCosApprox(phase) * waveA.z;
+            }
+
+            float EvaluateOceanSurfaceLift(float2 worldXZ)
+            {
+                if (_HectonOceanSurfaceWaveMeta.x < 0.5)
+                    return 0.0;
+
+                float timeSeconds = _HectonOceanSurfaceWaveMeta.y > 0.0 ? _HectonOceanSurfaceWaveMeta.y : _Time.y;
+                float lift = 0.0;
+                lift += EvaluateOceanGerstnerLift(worldXZ, _HectonOceanSurfaceWave0A, _HectonOceanSurfaceWave0B, timeSeconds);
+                lift += EvaluateOceanGerstnerLift(worldXZ, _HectonOceanSurfaceWave1A, _HectonOceanSurfaceWave1B, timeSeconds);
+                lift += EvaluateOceanGerstnerLift(worldXZ, _HectonOceanSurfaceWave2A, _HectonOceanSurfaceWave2B, timeSeconds);
+                return lift;
             }
 
             float ResolveWaterDepth(float3 positionWS)
@@ -555,8 +619,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 if (waterDepth <= HECTON_ABYSS_LIGHT_EXTINCTION_START_DEPTH)
                     return 1.0;
 
-                float normalizedDepth = saturate((waterDepth - HECTON_ABYSS_LIGHT_EXTINCTION_START_DEPTH) /
-                    (HECTON_ABYSS_LIGHT_EXTINCTION_FULL_DEPTH - HECTON_ABYSS_LIGHT_EXTINCTION_START_DEPTH));
+                float normalizedDepth = saturate((waterDepth - HECTON_ABYSS_LIGHT_EXTINCTION_START_DEPTH) *
+                    rcp(max(HECTON_ABYSS_LIGHT_EXTINCTION_FULL_DEPTH - HECTON_ABYSS_LIGHT_EXTINCTION_START_DEPTH, 0.001)));
                 float extinction = lerp(0.0, 0.026, normalizedDepth * normalizedDepth);
                 float cameraDistanceProxy = min(cameraDistanceSq * 0.01, 220.0);
                 return exp2(-cameraDistanceProxy * extinction);
@@ -566,7 +630,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             {
                 float k = anisotropy * 0.5;
                 float denominator = max(1.0 - k * cosTheta, 0.08);
-                return (1.0 - k * k) / (12.56637 * denominator * denominator);
+                return (1.0 - k * k) * rcp(12.56637 * denominator * denominator);
             }
 
             float ApproxMagnitude2(float2 value)
@@ -1134,9 +1198,24 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 dyingWeight = saturate(1.0 - abs(runtimeState - 2.0));
             }
 
-            float ResolveGrowth01(float encodedGrowth01)
+            float ResolveMetadataGrowth01(float encodedGrowth01)
             {
+                if (encodedGrowth01 < 0.0)
+                    return -1.0;
+
                 return encodedGrowth01 > 0.0001 ? saturate(encodedGrowth01) : 1.0;
+            }
+
+            float ResolveGrowth01(uint sourceInstanceIndex, float encodedGrowth01)
+            {
+                float soaAge01 = _HectonFloraAges01[sourceInstanceIndex];
+                if (soaAge01 < 0.0)
+                    return -1.0;
+
+                if (soaAge01 > 0.0001 || encodedGrowth01 <= 0.0001)
+                    return saturate(soaAge01);
+
+                return ResolveMetadataGrowth01(encodedGrowth01);
             }
 
             half ResolveBiolumPredatorDim(float3 positionWS)
@@ -1153,7 +1232,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     {
                         float3 predatorDelta = positionWS - predatorThreat.xyz;
                         float dimRadiusSq = dimRadius * dimRadius;
-                        predatorProximity = (half)(1.0 - smoothstep(0.0, dimRadiusSq, dot(predatorDelta, predatorDelta)));
+                        predatorProximity = (half)(1.0 - LinearStep01(0.0, dimRadiusSq, dot(predatorDelta, predatorDelta)));
                     }
                     legacyDim = saturate(1.0h - (threatExposure * predatorProximity * dimStrength));
                 }
@@ -1175,7 +1254,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     float dimRadius = max(max(predatorAup.w, baseRadius), 15.0);
                     float3 predatorDelta = positionWS - predatorAup.xyz;
                     float dimRadiusSq = dimRadius * dimRadius;
-                    float gate = 1.0 - smoothstep(dimRadiusSq * 0.3025, dimRadiusSq, dot(predatorDelta, predatorDelta));
+                    float gate = 1.0 - LinearStep01(dimRadiusSq * 0.3025, dimRadiusSq, dot(predatorDelta, predatorDelta));
                     predatorGate = max(predatorGate, (half)gate);
                 }
 
@@ -1193,8 +1272,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float radius = max(0.1, _BiolumFlashBangAUP.w);
                 float3 flashDelta = positionWS - _BiolumFlashBangAUP.xyz;
                 float radiusSq = radius * radius;
-                half distanceGate = (half)(1.0 - smoothstep(radiusSq * 0.4225, radiusSq, dot(flashDelta, flashDelta)));
-                half timeGate = 1.0h - smoothstep(duration * 0.45h, duration, age);
+                half distanceGate = (half)(1.0 - LinearStep01(radiusSq * 0.4225, radiusSq, dot(flashDelta, flashDelta)));
+                half timeGate = (half)(1.0 - LinearStep01(duration * 0.45h, duration, age));
                 half flashStrength = max(0.0h, (half)_BiolumFlashBangParams.z);
                 return 1.0h + distanceGate * timeGate * flashStrength;
             }
@@ -1219,9 +1298,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 if (age < 0.0h || age > releaseDuration)
                     return 0.0h;
 
-                half rise = smoothstep(0.0h, pulseDuration * 0.18h, age);
-                half crest = 1.0h - smoothstep(pulseDuration * 0.52h, pulseDuration, age);
-                half tail = 1.0h - smoothstep(pulseDuration, releaseDuration, age);
+                half rise = (half)LinearStep01(0.0h, pulseDuration * 0.18h, age);
+                half crest = (half)(1.0 - LinearStep01(pulseDuration * 0.52h, pulseDuration, age));
+                half tail = (half)(1.0 - LinearStep01(pulseDuration, releaseDuration, age));
                 return rise * max(crest, tail * 0.55h) * emissionBoost;
             }
 
@@ -1257,13 +1336,28 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             half ResolveDistanceBiolumDimming(float cameraDistanceSq)
             {
-                return lerp(1.0h, 0.12h, (half)smoothstep(2500.0, 12100.0, cameraDistanceSq));
+                return lerp(1.0h, 0.12h, (half)LinearStep01(2500.0, 12100.0, cameraDistanceSq));
             }
 
             half ResolveDistanceBiolumPixelGate(float cameraDistanceSq, float4 positionCS)
             {
-                half pixelCoverage = lerp(1.0h, 0.22h, (half)smoothstep(2500.0, 8100.0, cameraDistanceSq));
+                half pixelCoverage = lerp(1.0h, 0.22h, (half)LinearStep01(2500.0, 8100.0, cameraDistanceSq));
                 return step((half)InterleavedGradientNoise(positionCS.xy), pixelCoverage);
+            }
+
+            half3 ResolveBiolumSporeEmission(Varyings input, half sourceEnergy)
+            {
+                half energy = saturate(sourceEnergy * saturate(input.growth01) * saturate(input.health01));
+                if (energy <= 0.0001h)
+                    return half3(0.0h, 0.0h, 0.0h);
+
+                float3 sporeCell = floor(input.positionWS * 2.25 + float3(0.0, _Time.y * 0.85, 0.0));
+                half sporeSeed = (half)Hash31(sporeCell + input.spatialPulseOffset);
+                half screenSeed = (half)InterleavedGradientNoise(input.positionCS.xy + sporeSeed * 43.0h);
+                half sparkleGate = step(0.965h, sporeSeed) * step(0.58h, screenSeed);
+                half pulse = 0.45h + 0.55h * (0.5h + 0.5h * (half)FastSinApprox(_Time.y * 4.7h + sporeSeed * 6.28318h));
+                half edgeLaunchMask = saturate(input.edgeMask * 1.35h + input.heightMask * 0.35h);
+                return input.biolumColor.rgb * (sparkleGate * pulse * edgeLaunchMask * energy * 0.42h);
             }
 
             Varyings Vert(Attributes input)
@@ -1289,14 +1383,16 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float3 cameraDelta = originWS - _WorldSpaceCameraPos;
                 float cameraDistanceSq = dot(cameraDelta, cameraDelta);
                 float lodAlpha = ResolveLodAlpha(cameraDistanceSq, _HectonLodPassMode);
+                float2 packedPresentation = HectonDecodePackedPresentation(instanceData.BioluminescenceColor.a);
 
                 float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
                 float encodedHeightScale = instanceData.HeightScale;
                 float encodedWidthScale = instanceData.WidthScale;
                 float authoredSwaySpeed = max(instanceData.SwaySpeed, 0.05);
                 float authoredBendAmplitude = max(instanceData.BendAmplitude, 0.0);
-                float normalizedHealth = saturate(instanceData.HealthNormalized);
-                float growth01 = ResolveGrowth01(instanceData.Reserved0);
+                float normalizedHealth = saturate(min(instanceData.HealthNormalized, 1.0 - packedPresentation.y));
+                float growth01 = ResolveGrowth01(sourceInstanceIndex, instanceData.Reserved0);
+                float visibleGrowth01 = saturate(growth01);
                 float timeValue = _Time.y * authoredSwaySpeed;
                 float entropyProgress = ResolveOrganicEntropyProgress(encodedHeightScale, encodedWidthScale, timeValue);
                 float parasiteMask = ResolveParasiteMask(instanceData.RuntimeFlags);
@@ -1337,7 +1433,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float3 baseNormalWS = TransformDirection(instanceMatrix, input.normalOS);
                 float3 driftOffsetWS = instanceType > 1.5 ? _SargassumGlobalDriftOffset.xyz : float3(0.0, 0.0, 0.0);
                 float3 renderOriginWS = originWS + driftOffsetWS;
-                float growthHeightScale = growth01;
+                float growthHeightScale = visibleGrowth01;
+                float growthWidthScale = sqrt(max(visibleGrowth01, 0.0));
 
                 if (instanceType < 0.5)
                 {
@@ -1357,6 +1454,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 }
 
                 localPosition.y *= growthHeightScale;
+                localPosition.xz *= growthWidthScale;
                 localPosition.xz += aupLeanDirection * (aupLeanMeters * heightMask * heightMask * growthHeightScale);
 
                 float3 basePositionWS = TransformPoint(instanceMatrix, localPosition) + driftOffsetWS + floatingOriginOffsetWS;
@@ -1435,7 +1533,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                             dot(originXZ, float2(_SargassumWaveFrequency * 0.2, _SargassumWaveFrequency * 0.16));
                         float organicDensity = EvaluateSargassumOrganicDensity(renderOriginWS.xz);
                         float edgePulse = saturate(1.0 - abs(organicDensity * 2.0 - 1.0));
-                        float waveLift = FastSinApprox(phase) * (_SargassumWaveAmplitude * lerp(0.35, 1.0, authoredBendAmplitude));
+                        float oceanLift = EvaluateOceanSurfaceLift(renderOriginWS.xz);
+                        float oceanLiftBlend = saturate(_HectonOceanSurfaceWaveMeta.x);
+                        float localLiftScale = lerp(1.0, 0.28, oceanLiftBlend);
+                        float waveLift = oceanLift + FastSinApprox(phase) * (_SargassumWaveAmplitude * localLiftScale * lerp(0.35, 1.0, authoredBendAmplitude));
                         float bob = FastCosApprox(phase * 1.31 + aupGeneticHash.y * 6.0) * (_SargassumWaveAmplitude * 0.18 * lerp(0.35, 1.0, authoredBendAmplitude));
                         float verticalFromRoot = basePositionWS.y - renderOriginWS.y;
                         renderOriginWS.y = resolvedWaterLevel + driftOffsetWS.y + waveLift;
@@ -1472,7 +1573,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
                     if (instanceType > 1.5)
                     {
-                        renderOriginWS.y = resolvedWaterLevel + driftOffsetWS.y + FastSinApprox(farPhase) * (_SargassumWaveAmplitude * 0.9);
+                        float oceanLift = EvaluateOceanSurfaceLift(renderOriginWS.xz);
+                        float oceanLiftBlend = saturate(_HectonOceanSurfaceWaveMeta.x);
+                        renderOriginWS.y = resolvedWaterLevel + driftOffsetWS.y + oceanLift +
+                            FastSinApprox(farPhase) * (_SargassumWaveAmplitude * lerp(0.9, 0.24, oceanLiftBlend));
                     }
 
                     animatedPositionWS = ResolveBillboardPositionWS(renderOriginWS, localPosition, instanceHeight, instanceWidth, heightMask);
@@ -1555,7 +1659,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 }
 
                 float kelpDepthBelowWater = max(0.0, resolvedWaterLevel - renderOriginWS.y);
-                float kelpDepthFade = saturate((kelpDepthBelowWater - HECTON_KELP_FADE_START_DEPTH) / (HECTON_KELP_FADE_END_DEPTH - HECTON_KELP_FADE_START_DEPTH));
+                float kelpDepthFade = saturate((kelpDepthBelowWater - HECTON_KELP_FADE_START_DEPTH) *
+                    rcp(max(HECTON_KELP_FADE_END_DEPTH - HECTON_KELP_FADE_START_DEPTH, 0.001)));
 
                 output.positionWS = animatedPositionWS;
                 output.originWS = renderOriginWS;
@@ -1572,7 +1677,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 output.parasiteMask = parasiteMask;
                 output.runtimeState = instanceData.RuntimeState;
                 output.pulseFrequency = max(0.01, instanceData.PulseFrequency);
-                output.biolumColor = half4(instanceData.BioluminescenceColor.rgb, instanceData.BioluminescenceColor.a);
+                output.biolumColor = half4(instanceData.BioluminescenceColor.rgb, packedPresentation.x);
                 output.flowMagnitude = flowMagnitude;
                 output.biomeLayer = biomeLayer;
                 output.cascadeSeed = _HectonFloraPhaseSeeds[sourceInstanceIndex];
@@ -1587,6 +1692,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                clip(input.growth01 + 0.0001h);
                 half screenIgn = (half)ResolveVegetationIgn(input.positionCS);
                 half cutMask = ResolveVegetationCutMask(input.instanceType, input.positionWS);
                 half coverageVisibility = ResolveVegetationVisibilityGate(0.08h - cutMask, 0.0h, 0.025h);
@@ -1633,7 +1739,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 }
 
                 half3 gradientColor = lerp(baseColor, tipColor, input.heightMask);
-                gradientColor = lerp(_SeedlingColor.rgb, gradientColor, input.growth01);
+                half growthVisible01 = saturate(input.growth01);
+                gradientColor = lerp(_SeedlingColor.rgb, gradientColor, growthVisible01);
                 gradientColor = ResolveSeasonalColorDrift(gradientColor, input.biomeLayer, input.positionWS);
                 half traitBytePresent = step(0.5h, input.geneticTraits);
                 half poisonousTrait = HasGeneticTrait(input.geneticTraits, 1.0h) * traitBytePresent;
@@ -1725,8 +1832,11 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 finalColor += edgeBloom * mainLight.color * (1.45h * sunVisibility);
                 half agitatedWeight = saturate(1.0h - abs(input.runtimeState - 1.0h));
                 half dyingWeight = saturate(1.0h - abs(input.runtimeState - 2.0h));
-                half pulsePhase = (_Time.y * max(0.01h, input.pulseFrequency) * 6.28318h) + input.spatialPulseOffset + input.heightMask * 3.1h;
-                half pulseStrength = lerp(0.68h, 1.34h, 0.5h + 0.5h * (half)FastSinApprox(pulsePhase));
+                half agePulseSpeed = lerp(2.65h, 0.72h, growthVisible01);
+                half pulsePhase = (_Time.y * max(0.01h, input.pulseFrequency) * agePulseSpeed * 6.28318h) + input.spatialPulseOffset + input.heightMask * 3.1h;
+                half seedlingPulse = lerp(0.68h, 1.34h, 0.5h + 0.5h * (half)FastSinApprox(pulsePhase));
+                half maturePulse = lerp(0.84h, 1.22h, 0.5h + 0.5h * (half)FastSinApprox(pulsePhase * 0.42h));
+                half pulseStrength = lerp(seedlingPulse, maturePulse, smoothstep(0.58h, 1.0h, growthVisible01));
                 half stateEmissionScale = lerp(1.0h, 1.18h, agitatedWeight);
                 stateEmissionScale = lerp(stateEmissionScale, 0.28h, dyingWeight);
                 half predatorDim = ResolveBiolumPredatorDim(input.positionWS);
@@ -1747,10 +1857,14 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half geneticEmissionGate = lerp(1.0h, emitsLightTrait, traitBytePresent);
                 half3 biolumEmission = input.biolumColor.rgb *
                     (input.biolumColor.a * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility * flowReactiveBoost * distanceBiolumDimming * distanceBiolumPixelGate * seasonalBloomScale * seasonalDecaySuppression * cascadeEmissionScale * flashBangScale * flashlightPhotophobia * geneticEmissionGate);
-                biolumEmission *= saturate(input.growth01) * saturate(input.health01);
+                half ageEmissionScale = lerp(0.35h, 1.18h, smoothstep(0.12h, 1.0h, growthVisible01));
+                biolumEmission *= ageEmissionScale * growthVisible01 * saturate(input.health01);
+                half sporeSourceEnergy = input.biolumColor.a * biolumVisibility * seasonalBloomScale * cascadeEmissionScale * flashlightPhotophobia * geneticEmissionGate;
+                half3 sporeEmission = ResolveBiolumSporeEmission(input, sporeSourceEnergy);
                 half3 decayTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(0.92h, 0.84h, 0.68h), decaySeasonWeight * 0.22h);
                 finalColor *= decayTint;
                 finalColor += biolumEmission;
+                finalColor += sporeEmission;
 
                 #ifdef _ADDITIONAL_LIGHTS
                 uint addLightCount = GetAdditionalLightsCount();

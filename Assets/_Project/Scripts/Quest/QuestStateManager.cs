@@ -1230,7 +1230,7 @@ namespace Hecton8.Quest
             try
             {
                 double timestamp = signal.Timestamp > 0d ? signal.Timestamp : Time.timeAsDouble;
-                string path = Path.Combine(Application.persistentDataPath, QuestAuditLogFileName);
+                string path = HectonPersistentPathPolicy.CombineFile(QuestAuditLogFileName);
                 File.AppendAllText(
                     path,
                     $"[{timestamp:F3}] Quest 0x{_questHashesByQuestIndex[questIndex]:X8} -> {state}\n");

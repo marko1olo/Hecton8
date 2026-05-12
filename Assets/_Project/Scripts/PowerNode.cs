@@ -165,6 +165,8 @@ namespace Hecton8.Power
 
             _isRuptured = ruptured;
             _topologyRevision++;
+            if (ruptured)
+                InvalidateRuntimePowerConnectionsForSnap();
         }
 
         internal void SetShortCircuited(bool shortCircuited)
@@ -449,6 +451,23 @@ namespace Hecton8.Power
 
             if (topologyChanged)
                 _topologyRevision++;
+        }
+
+        private void InvalidateRuntimePowerConnectionsForSnap()
+        {
+            if (_grid == null || _graphScratchIndex < 0)
+                return;
+
+            _grid.TryRemovePowerConnectionBucket(_graphScratchIndex);
+            int neighborCount = _neighbors != null ? _neighbors.Count : 0;
+            for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
+            {
+                PowerNode neighbor = _neighbors[neighborIndex];
+                if (neighbor == null || !ReferenceEquals(neighbor.Grid, _grid) || neighbor.GraphScratchIndex < 0)
+                    continue;
+
+                _grid.TryRemovePowerConnectionBucket(neighbor.GraphScratchIndex);
+            }
         }
 
         // ══════════════════════════════════════════════════════════

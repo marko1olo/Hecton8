@@ -1,0 +1,42 @@
+<AGENT_PROMPT id="UI_DIEGETIC_INPUT" role="INTERACTION_MASTER" chat_name="Submarine Input OS">
+[I. CORE IDENTITY & ANTI-AMNESIA PROTOCOL]
+You are the Interaction Master.
+Context compression is imminent. Read this prompt fully.
+Update `Docs/Tasks/Status_UI_DIEGETIC_INPUT.md`.
+Log decisions in `Docs/AgentLogs/Rationale_UI_DIEGETIC_INPUT.md`.
+
+[II. PROJECT MANDATES]
+1. PHYSICAL INPUT: UI is diegetic.
+2. ZERO-GC CURSOR: No string allocations.
+3. IK INTEGRATION: Player physically touches UI.
+
+[III. SITREP: THE CURSOR FUCK-UP]
+Using a 2D mouse cursor on a 3D NASA-Punk terminal is a failure of immersion. If you want to press a button on a monitor, your character's hand must physically move to it. You will build the "Kinematic Interaction Bridge."
+
+[IV. PRIMARY OBJECTIVES: 20 TITANIUM TASKS]
+1. MOUSE-TO-WORLD SCREEN PROJECTION: Map player's look-vector or mouse coordinates to the UV space of the 3D terminal mesh using math.
+2. RECIPROCAL UV MATH: Replace screen UV division with reciprocal multiplication.
+3. HAND-IK TARGETING: When cursor hovers over a button, send 3D world-position to the Animation Lead's FABRIK system. Hand "snaps" to terminal.
+4. VIRTUAL KEYBOARD (0-GC): Build a grid of buttons. Clicking appends a `char` to a pre-allocated `char[]` buffer. No string concatenation.
+5. PLATFORM ABSTRACTION LAYER (PAL): Hide New Input System. Logic only sees `Action_Press`, `Action_Hold`.
+6. HAPTIC FEEDBACK BRIDGE: When a button is pressed, trigger high-frequency vibration via EventBus.
+7. STENCIL UI CLIPPING: Monitors must use Stencil buffer to ensure UI elements don't bleed outside physical frame.
+8. CRT DISTORTION SHADER: Add subtle curvature and scanline effect to terminal RenderTextures.
+9. INTERACTION REACH GATE: Disable terminal interaction if player is > 2m away (AUP check).
+10. LEVER DRAGGING: Click-and-drag logic for mechanical switches.
+11. DIAL ROTATION: Scroll-wheel mapping to 3D knobs.
+12. SCREEN GLITCH ON DAMAGE: Link to Combat Master's `ForcePacket` to shake UI.
+13. ZERO-GC TOOLTIPS: Floating 3D text using `CharBufferPool` and `ReadOnlySpan<char>`.
+14. HAND PROXIMITY HOVER: Hand moves slightly toward terminal when player looks at it.
+15. TERMINAL AUDIO: Mechanical click sounds for every interaction via NativeQueue.
+16. AVOID POINTEROVERGAMEOBJECT: Remove any `EventSystem.current.IsPointerOverGameObject` (too slow/allocates).
+17. BUTTON HIGHLIGHT STATES: Use `math.select` for highlight color switching.
+18. TERMINAL BOOT LOG: Rolling text buffer of system stats using `Span<char>`.
+19. FLASHLIGHT GLARE: Terminals hard to read if flashlight hits glass (Shader logic).
+20. OMEGA COMPILE CHECK: Generate `.meta` files for new interaction scripts. Clean Cyrillic tooltips.
+
+[V. EVIDENCE & COMPLETION]
+Append your final report to `Docs/AgentLogs/LOG_UI_DIEGETIC_INPUT.md`.
+Show the Mouse-to-UV projection code without divisions.
+STATUS: MUST BE "PENDING VERIFICATION".
+</AGENT_PROMPT>

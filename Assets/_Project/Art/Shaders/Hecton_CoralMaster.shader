@@ -138,6 +138,11 @@ Shader "Hecton8/Flora/CoralMaster"
             half4 _HectonFloorBiolumColor;
             half _HectonFloorBiolumStrength;
             float _GlobalBiolumPhase;
+            float _HectonCelestialBiolumMultiplier;
+            float4 _HectonFloraLifecycleParams; // x: growth, y: decay, z: bloom scale, w: reserved
+            float4 _HectonPlayerRuntimePosition; // xyz: player/KCC position, w: interaction radius
+            float4 _HectonPlayerFloraInteractionParams; // x: speed, y: force, z: scooter, w: active
+            float4 _HectonFloraDamageReaction; // xyz: latest organic hit position, w: decaying impulse
 
             struct Attributes
             {
@@ -229,6 +234,53 @@ Shader "Hecton8/Flora/CoralMaster"
                 return (half)(1.0 - abs(frac(phase01) * 2.0 - 1.0));
             }
 
+            float ResolveCoralFlashlightReaction(float3 positionWS)
+            {
+                if (_HectonFlashlightActive <= 0.5)
+                    return 0.0;
+
+                float lightEnergy = saturate(_HectonFlashlightColor.w * 0.12);
+                if (lightEnergy <= 0.0001)
+                    return 0.0;
+
+                float lightRange = max(_HectonFlashlightPositionWS.w, 0.1);
+                float3 toSampleWS = positionWS - _HectonFlashlightPositionWS.xyz;
+                float sampleDistanceSq = dot(toSampleWS, toSampleWS);
+                float rangeInvSq = rcp(max(lightRange * lightRange, 0.0001));
+                float rangeMask = saturate(1.0 - sampleDistanceSq * rangeInvSq);
+                float3 sampleDirectionWS = HectonCoreLitSafeNormalize(toSampleWS);
+                float3 lightDirectionWS = HectonCoreLitSafeNormalize(_HectonFlashlightDirectionWS.xyz);
+                float innerCos = _HectonFlashlightDirectionWS.w;
+                float outerCos = _HectonFlashlightConeData.x;
+                float coneMask = saturate((dot(lightDirectionWS, sampleDirectionWS) - outerCos) * rcp(max(innerCos - outerCos, 0.0001)));
+                return saturate(coneMask * rangeMask * rangeMask * lightEnergy);
+            }
+
+            float ResolveCoralPlayerReaction(float3 positionWS)
+            {
+                float playerRadius = _HectonPlayerRuntimePosition.w;
+                if (playerRadius <= 0.001 || _HectonPlayerFloraInteractionParams.w <= 0.001)
+                    return 0.0;
+
+                float3 delta = positionWS - _HectonPlayerRuntimePosition.xyz;
+                float distSq = dot(delta, delta);
+                float invRadiusSq = rcp(max(playerRadius * playerRadius, 0.0001));
+                return saturate(1.0 - distSq * invRadiusSq) *
+                    saturate(_HectonPlayerFloraInteractionParams.x * 0.18 + _HectonPlayerFloraInteractionParams.y);
+            }
+
+            float ResolveCoralDamageReaction(float3 positionWS)
+            {
+                float impulse = saturate(_HectonFloraDamageReaction.w);
+                if (impulse <= 0.0001)
+                    return 0.0;
+
+                float3 delta = positionWS - _HectonFloraDamageReaction.xyz;
+                float distSq = dot(delta, delta);
+                float radiusSq = 16.0;
+                return saturate(1.0 - distSq * rcp(radiusSq)) * impulse;
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -237,6 +289,15 @@ Shader "Hecton8/Flora/CoralMaster"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 float3 safePositionOS = HectonCoreLitSanitizePositionOS(input.positionOS.xyz);
+                float3 reactionPositionWS = GetVertexPositionInputs(safePositionOS).positionWS;
+                float reaction01 = saturate(
+                    ResolveCoralFlashlightReaction(reactionPositionWS) +
+                    ResolveCoralPlayerReaction(reactionPositionWS) +
+                    ResolveCoralDamageReaction(reactionPositionWS));
+                float reactiveMask = saturate(input.color.a + input.color.r * 0.35);
+                float retract = reaction01 * reactiveMask;
+                safePositionOS -= input.normalOS * (retract * 0.12);
+                safePositionOS.y *= 1.0 - retract * 0.08;
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(safePositionOS);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
                 output.positionCS = positionInputs.positionCS;
@@ -312,11 +373,18 @@ Shader "Hecton8/Flora/CoralMaster"
                 half3 moistureTint = lerp(half3(1.0h, 1.0h, 1.0h), _AccentColor.rgb, wetness * 0.48h);
                 half3 ageTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(1.0h - _AgeDarkening, 1.0h - _AgeDarkening, 1.0h - _AgeDarkening), age);
                 half3 albedo = accent * baseTex * moistureTint * ageTint;
+                float3 biomeAup = samplePositionWS + _TotalUniverseOffset.xyz;
+                half biomeHash = (half)HectonCoreLitHash12(floor(biomeAup.xz * 0.03125));
+                half3 biomeTint = lerp(half3(0.94h, 1.01h, 1.04h), half3(1.05h, 0.97h, 0.91h), biomeHash);
+                half decay01 = saturate((half)_HectonFloraLifecycleParams.y);
+                half luma = dot(albedo, half3(0.2126h, 0.7152h, 0.0722h));
+                albedo = lerp(albedo * biomeTint, half3(luma, luma, luma) * half3(0.72h, 0.68h, 0.57h), decay01);
                 albedo *= lerp(1.0h, detailSample, _DetailStrength);
                 albedo = lerp(albedo, albedo * 0.78h, cavity * 0.22h);
 
                 half3 ambient = SampleSH(normalWS) * (_AmbientStrength + wetness * 0.1h);
-                half3 diffuse = albedo * (ambient + mainLight.color * wrapDiffuse);
+                half vertexAO = lerp(0.72h, 1.0h, saturate(input.color.a));
+                half3 diffuse = albedo * (ambient + mainLight.color * wrapDiffuse) * vertexAO;
                 diffuse *= (1.0h - cavity * _CavityStrength * 0.5h);
 
                 half3 subsurface = _SubsurfaceColor.rgb * (wrapDiffuse * _SubsurfaceStrength * causticMask);
@@ -331,11 +399,12 @@ Shader "Hecton8/Flora/CoralMaster"
                 [branch]
                 if (_BiolumStrength > 0.0001h)
                 {
-                    float spatialPhaseScale = max((float)_BiolumPulseFrequency, 0.001);
-                    float pulsePhase = frac(_GlobalBiolumPhase + (samplePositionWS.x * 0.011 + samplePositionWS.z * 0.008 + detailSample * 0.38) * spatialPhaseScale);
+                    float pulsePhase = frac(_Time.y * max((float)_BiolumPulseFrequency, 0.001) + samplePositionWS.x * 0.011 + samplePositionWS.z * 0.008 + input.uv.y * 0.38);
                     half pulse = 1.0h + (CoralTrianglePulse01(pulsePhase) * 2.0h - 1.0h) * _BiolumPulseAmplitude;
-                    half biolumMask = saturate((cavity * 0.42h + maskSample.a * 0.28h + maskSample.b * 0.24h + detailSample * 0.18h) * _BiolumMaskStrength);
-                    half authoredBiolumEnergy = _BiolumStrength * (1.0h + zoneBiolumStrength * 0.76h) * biolumMask * pulse;
+                    half proceduralBiolumMask = (half)CoralTrianglePulse01(frac(samplePositionWS.x * 0.019 + samplePositionWS.z * 0.031 + input.uv.x * 0.47));
+                    half biolumMask = saturate((cavity * 0.46h + thickness * 0.32h + proceduralBiolumMask * 0.22h) * _BiolumMaskStrength);
+                    half celestialBiolum = max((half)_HectonCelestialBiolumMultiplier, 1.0h);
+                    half authoredBiolumEnergy = _BiolumStrength * celestialBiolum * (1.0h + zoneBiolumStrength * 0.76h) * biolumMask * pulse;
                     [branch]
                     if (authoredBiolumEnergy > 0.0001h)
                     {

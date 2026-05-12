@@ -9,7 +9,8 @@ namespace Hecton8.Environment
 {
     public enum WeatherEventType : byte
     {
-        SnapshotUpdated = 0
+        SnapshotUpdated = 0,
+        Lightning = 1
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -177,12 +178,6 @@ namespace Hecton8.Environment
         public static void RaiseSnapshotUpdated(in WeatherRuntimeSnapshot snapshot)
         {
             EnsureInitialized();
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-            {
-                ReportEventOverflow();
-                return;
-            }
-
             WeatherEventPayload payload = new WeatherEventPayload
             {
                 GlobalCurrentVector = snapshot.GlobalCurrentVector,
@@ -193,6 +188,34 @@ namespace Hecton8.Environment
                 EventType = (ushort)WeatherEventType.SnapshotUpdated,
                 Reserved = 0
             };
+
+            EnqueuePayload(in payload);
+        }
+
+        public static void RaiseLightning(float flashIntensity01)
+        {
+            EnsureInitialized();
+            WeatherEventPayload payload = new WeatherEventPayload
+            {
+                GlobalCurrentVector = default,
+                GlobalWindVector = default,
+                CurrentMeta = default,
+                StateMask = (uint)WeatherState.Storm,
+                WeatherIntensity = math.saturate(flashIntensity01),
+                EventType = (ushort)WeatherEventType.Lightning,
+                Reserved = 0
+            };
+
+            EnqueuePayload(in payload);
+        }
+
+        private static void EnqueuePayload(in WeatherEventPayload payload)
+        {
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReportEventOverflow();
+                return;
+            }
 
             if (_isDispatching)
             {

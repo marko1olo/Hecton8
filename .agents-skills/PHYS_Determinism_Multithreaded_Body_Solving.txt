@@ -1,0 +1,64 @@
+# HECTON-8 | Physics Determinism | Multithreaded Body Solving Law
+
+Status: PENDING VERIFICATION
+Authority: TECH_SCOUT
+Date: 2026-05-11
+
+---
+
+## Law
+
+[RULE] Unity PhysX is presentation physics unless a system owner proves deterministic replay on the target matrix.
+[RULE] Gameplay-authoritative multi-body solving must use an owned fixed-step solver with deterministic ordering:
+- stable entity ID sort before solve.
+- fixed timestep.
+- fixed iteration count.
+- explicit broadphase input snapshot.
+- no unordered parallel reductions.
+- deterministic tie-breaks for equal priority contacts.
+
+[RULE] Parallel jobs may compute independent force coefficients, candidate contacts, or constraints, but final accumulation order is stable and replayable.
+[RULE] Unity `Rigidbody` application remains a presentation/application stage through the existing force-packet authority.
+
+[FORBID] Treating worker-thread execution order as deterministic.
+[FORBID] Reading collision callback order as gameplay authority.
+[FORBID] `UnityEngine.Random` in physics, turbulence, buoyancy jitter, debris impulses, or solver tie-breaks.
+[FORBID] `Schedule().Complete()` inside body control hot paths.
+
+---
+
+## Black Box Requirement
+
+[RULE] Every gameplay-critical solver owns a 300-frame fixed-size native circular telemetry buffer.
+[RULE] Telemetry stores:
+- frame index.
+- entity ID hash.
+- position hash.
+- velocity hash.
+- contact count.
+- solver flags.
+- NaN/budget flags.
+
+[RULE] On NaN, divergent replay hash, or illegal energy spike, dump to `Docs/AgentLogs/Dump_PHYS_DETERMINISM.bin`.
+
+---
+
+## Scalability
+
+Low:
+- Primitive colliders.
+- fewer solver iterations.
+- dominant-axis drag and buoyancy cheats.
+
+Middle:
+- limited compound primitives.
+- deterministic force-packet accumulation.
+
+High:
+- richer contact sampling, still stable ordered.
+
+Ultra:
+- extra presentation jiggle, debris, and secondary motion only after deterministic authority is complete.
+
+[STATUS] Determinism is PENDING VERIFICATION until a 300-frame replay hash test passes.
+

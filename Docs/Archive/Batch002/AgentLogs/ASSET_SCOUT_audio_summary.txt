@@ -1,0 +1,5 @@
+AudioCount=294
+AudioOffenderCount=186
+AudioDecompressOnLoadGT1MB=14
+AmbienceNotVorbis=5
+SfxNotADPCM=171

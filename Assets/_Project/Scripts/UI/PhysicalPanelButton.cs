@@ -5,6 +5,7 @@ using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
+using CoreAudioEvent = Hecton8.Core.AudioEvent;
 
 namespace Hecton8.UI
 {
@@ -83,6 +84,8 @@ namespace Hecton8.UI
         private float pressHapticFrequencyHz = 54f;
 
         [Header("Diegetic Audio")]
+        [SerializeField, Tooltip("One-based authored NativeQueue audio event id for mechanical clicks. Zero falls back to the optional AudioClip path.")]
+        private uint pressAudioEventId;
         [SerializeField, Tooltip("Optional short mechanical click routed through the world-space audio pool.")]
         private AudioClip pressClickSound;
         [SerializeField, Range(0f, 1f), Tooltip("Linear volume for the physical panel click.")]
@@ -415,7 +418,8 @@ namespace Hecton8.UI
 
         private void PlayDiegeticClick(Vector3 runtimeHitPoint)
         {
-            if (pressClickSound == null || GlobalRegistry.Audio == null)
+            IAudioService audio = GlobalRegistry.Audio;
+            if (audio == null)
                 return;
 
             Vector3 sourcePosition = clickAudioOrigin != null
@@ -423,6 +427,20 @@ namespace Hecton8.UI
                 : runtimeHitPoint;
             if (!IsFinite(sourcePosition))
                 sourcePosition = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
+
+            if (pressAudioEventId != 0u && audio.IsInitialized)
+            {
+                CoreAudioEvent audioEvent = new CoreAudioEvent(
+                    pressAudioEventId,
+                    sourcePosition,
+                    _resolvedClickVolume,
+                    _resolvedClickPitch);
+                audio.QueueAudioEvent(in audioEvent);
+                return;
+            }
+
+            if (pressClickSound == null)
+                return;
 
             Transform listenerTransform = ResolveListenerTransform();
             Vector3 listenerPosition = listenerTransform != null ? listenerTransform.position : sourcePosition;
@@ -449,7 +467,7 @@ namespace Hecton8.UI
                 }
             }
 
-            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudio)
+            if (audio is SpatialAudioManager spatialAudio)
             {
                 spatialAudio.PlayAtPointWithLowPass(
                     pressClickSound,
@@ -461,7 +479,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            GlobalRegistry.Audio.PlayAtPoint(pressClickSound, sourcePosition, resolvedVolume, _resolvedClickPitch);
+            audio.PlayAtPoint(pressClickSound, sourcePosition, resolvedVolume, _resolvedClickPitch);
         }
 
         private static Transform ResolveListenerTransform()

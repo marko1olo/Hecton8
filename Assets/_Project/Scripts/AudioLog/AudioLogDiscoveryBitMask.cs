@@ -1,3 +1,5 @@
+using Unity.Mathematics;
+
 namespace Hecton8.Core.Contracts
 {
     /// <summary>
@@ -41,6 +43,100 @@ namespace Hecton8.Core.Contracts
             {
                 if (words[i] != 0L)
                     return true;
+            }
+
+            return false;
+        }
+
+        public static bool HasAllSet(long[] words, int maxExclusive)
+        {
+            if (!HasExpectedCapacity(words))
+                return false;
+
+            int safeMax = math.clamp(maxExclusive, 0, MaxLogCount);
+            int fullWords = safeMax >> 6;
+            int remainderBits = safeMax & 63;
+
+            for (int i = 0; i < fullWords; i++)
+            {
+                if (unchecked((ulong)words[i]) != ulong.MaxValue)
+                    return false;
+            }
+
+            if (remainderBits <= 0)
+                return true;
+
+            ulong remainderMask = (1UL << remainderBits) - 1UL;
+            return (unchecked((ulong)words[fullWords]) & remainderMask) == remainderMask;
+        }
+
+        public static bool TryGetNextSetIndex(long[] words, int startIndex, int maxExclusive, out int index)
+        {
+            index = -1;
+            if (!HasExpectedCapacity(words))
+                return false;
+
+            int safeMax = math.clamp(maxExclusive, 0, MaxLogCount);
+            int safeStart = math.clamp(startIndex, 0, safeMax);
+            if (safeStart >= safeMax)
+                return false;
+
+            int wordIndex = safeStart >> 6;
+            int bitOffset = safeStart & 63;
+            ulong word = unchecked((ulong)words[wordIndex]) & (ulong.MaxValue << bitOffset);
+
+            while (wordIndex < WordCount)
+            {
+                if (word != 0UL)
+                {
+                    int candidate = (wordIndex << 6) + math.tzcnt(word);
+                    if (candidate < safeMax)
+                    {
+                        index = candidate;
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                wordIndex++;
+                word = wordIndex < WordCount ? unchecked((ulong)words[wordIndex]) : 0UL;
+            }
+
+            return false;
+        }
+
+        public static bool TryGetNextUnsetIndex(long[] words, int startIndex, int maxExclusive, out int index)
+        {
+            index = -1;
+            if (!HasExpectedCapacity(words))
+                return false;
+
+            int safeMax = math.clamp(maxExclusive, 0, MaxLogCount);
+            int safeStart = math.clamp(startIndex, 0, safeMax);
+            if (safeStart >= safeMax)
+                return false;
+
+            int wordIndex = safeStart >> 6;
+            int bitOffset = safeStart & 63;
+            ulong word = ~unchecked((ulong)words[wordIndex]) & (ulong.MaxValue << bitOffset);
+
+            while (wordIndex < WordCount)
+            {
+                if (word != 0UL)
+                {
+                    int candidate = (wordIndex << 6) + math.tzcnt(word);
+                    if (candidate < safeMax)
+                    {
+                        index = candidate;
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                wordIndex++;
+                word = wordIndex < WordCount ? ~unchecked((ulong)words[wordIndex]) : 0UL;
             }
 
             return false;

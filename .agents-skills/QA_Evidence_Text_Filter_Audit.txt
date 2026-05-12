@@ -1,0 +1,52 @@
+# HECTON-8 | Evidence Reporting | Text Filter Anti-Lie Law
+
+Status: PENDING VERIFICATION
+Authority: TECH_SCOUT
+Date: 2026-05-11
+
+---
+
+## Law
+
+[RULE] Static text search is evidence of text presence only. It is not compile proof, runtime proof, profiler proof, RenderGraph proof, GC proof, or scene wiring proof.
+[RULE] Reports must label each claim by evidence class:
+- STATIC_SOURCE
+- STATIC_DOC
+- PACKAGE_LOCK
+- CLI_COMPILE
+- UNITY_CONSOLE
+- PLAYMODE
+- PROFILER
+- FRAME_DEBUGGER
+- PLAYER_BUILD
+
+[RULE] Any claim above its evidence class must be downgraded to `PENDING VERIFICATION`.
+[RULE] "Verified", "complete", "master grade", "0 GC", "0 errors", and timing claims require artifact paths, command lines, timestamps, and target hardware.
+
+[FORBID] Using `rg`/`Select-String` hits as proof that a system is integrated or runtime-clean.
+[FORBID] Claiming Unity Editor status from generated project compile alone.
+[FORBID] Reporting microseconds saved without profiler sample context.
+[FORBID] Reporting "all agents audited" without listing scanned files and unresolved files.
+
+---
+
+## Required Report Shape
+
+For every non-trivial claim:
+- Claim:
+- Evidence Class:
+- Artifact:
+- Command or Unity tool:
+- Date:
+- Residual risk:
+
+Reports missing this shape are process debt, not verification.
+
+---
+
+## Current Scout Audit
+
+This pass scanned active TECH_SCOUT logs/status and broad `Docs/Tasks` / `Docs/AgentLogs` text for verification language. The scan found large historical archive debt and many correct `PENDING VERIFICATION` markers. It did not prove every agent honest because active agents can write concurrently.
+
+[STATUS] Global evidence audit remains PENDING VERIFICATION.
+

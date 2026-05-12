@@ -24,6 +24,7 @@
 using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Data;
 using Hecton8.Interaction;
 using Hecton8.Narrative;
 using Hecton8.World;
@@ -166,6 +167,7 @@ namespace Hecton8.Gameplay
         /// Pre-cached interaction text to avoid runtime allocations.
         /// </summary>
         private string _cachedInteractText;
+        private uint _discoveryHash;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -205,6 +207,12 @@ namespace Hecton8.Gameplay
         /// <summary>Proxy mesh index resolved from the authored research reward hash.</summary>
         public int HologramProxyMeshIndex => researchData != null ? researchData.HologramProxyMeshIndex : -1;
 
+        /// <summary>Stable uint hash used by archaeology and encyclopedia unlocks.</summary>
+        public uint DiscoveryHash => _discoveryHash;
+
+        /// <summary>Resolved scan duration in seconds.</summary>
+        public float ScanDurationSeconds => ResolveScanDuration();
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -212,6 +220,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _transform = transform;
+            RefreshDiscoveryHash();
 
             // COLD ALLOC: MaterialPropertyBlock[1] - scan progress VFX - owner: ScannableFragment
             _mpb = new MaterialPropertyBlock();
@@ -230,6 +239,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             LocalizationEvents.RegisterLanguageListener(this);
+            RefreshDiscoveryHash();
             RebuildLocalizedTextCache();
             ResetState();
             RegisterSpatialContact();
@@ -359,6 +369,23 @@ namespace Hecton8.Gameplay
         public void ResetFragment()
         {
             ResetState();
+        }
+
+        internal void RestoreProgressNormalized(float progress01)
+        {
+            if (_state == FragmentState.Completed || _state == FragmentState.Locked)
+                return;
+
+            float previousProgressNormalized = ProgressNormalized;
+            float duration = ResolveScanDuration();
+            float restoredProgress = math.saturate(progress01) * duration;
+            if (restoredProgress <= _currentProgress)
+                return;
+
+            _currentProgress = math.min(restoredProgress, duration);
+            TryUnlockLoreStages(previousProgressNormalized, ProgressNormalized);
+            UpdateScanVisuals(AdvanceScanPulse(0f));
+            OnProgressChanged?.Invoke(ProgressNormalized);
         }
 
         /// <summary>
@@ -547,6 +574,7 @@ namespace Hecton8.Gameplay
                 scanTime = 1f;
             }
 
+            RefreshDiscoveryHash();
             RebuildLocalizedTextCache();
         }
 
@@ -597,6 +625,13 @@ namespace Hecton8.Gameplay
 
         private void EmitResearchDiscoveryEvent()
         {
+            if (_discoveryHash != 0u)
+            {
+                ScanEvents.RaiseEntryDiscovered(_discoveryHash, 0u, 0u, 0u, ScanEntryKind.Scannable);
+                return;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             string entryId = !string.IsNullOrWhiteSpace(unlockId)
                 ? unlockId.Trim()
                 : researchData != null && researchData.RewardItemHash != 0
@@ -615,11 +650,31 @@ namespace Hecton8.Gameplay
                 DefaultResearchCategory,
                 DefaultResearchSummary,
                 ScanEntryKind.Scannable);
+#endif
         }
 
         private float ResolveScanDuration()
         {
             return researchData != null ? researchData.ScanDuration : Mathf.Max(0.5f, scanTime);
+        }
+
+        private void RefreshDiscoveryHash()
+        {
+            if (researchData != null && researchData.DiscoveryHash != 0u)
+            {
+                _discoveryHash = researchData.DiscoveryHash;
+                return;
+            }
+
+            if (researchData != null && researchData.RewardItemHash != 0)
+            {
+                _discoveryHash = unchecked((uint)researchData.RewardItemHash);
+                return;
+            }
+
+            _discoveryHash = string.IsNullOrWhiteSpace(unlockId)
+                ? 0u
+                : H8DataHash.ComputeFnv1A32(unlockId);
         }
 
         private void TryUnlockLoreStages(float previousProgressNormalized, float currentProgressNormalized)

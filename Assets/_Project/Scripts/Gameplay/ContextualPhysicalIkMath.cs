@@ -224,7 +224,9 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float targetDistance = math.max(MinimumDistance, ApproximateLengthNoSqrt(toTarget));
+            float targetDistance = math.max(
+                MinimumDistance,
+                targetDistanceSq * math.rsqrt(math.max(targetDistanceSq, MinimumLengthSq)));
             float inverseTargetDistance = math.rcp(targetDistance);
             float minReach = math.abs(upperLength - lowerLength) + 0.001f;
             float safeReachMargin = math.max(0.02f, reachSafetyMargin);
@@ -245,7 +247,7 @@ namespace Hecton8.Gameplay
 
             float bendCos = upperCos;
             float bendSinSq = math.saturate(1.0f - (bendCos * bendCos));
-            float bendSin = bendSinSq;
+            float bendSin = bendSinSq * math.rsqrt(math.max(bendSinSq, MinimumLengthSq));
             bendSin = math.select(bendSin, 0.0f, bendSinSq <= MinimumLengthSq || !math.isfinite(bendSin));
 
             float3 desiredUpperDirection = SafeNormalize((targetDirection * bendCos) + (bendDirection * bendSin), targetDirection);

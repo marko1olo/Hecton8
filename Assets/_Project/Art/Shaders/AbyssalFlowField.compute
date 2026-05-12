@@ -1,10 +1,15 @@
-#pragma kernel ResetAbyssalFlowAggregate
 #pragma kernel UpdateAbyssalFlowField
-#pragma kernel DetectBiolumeSurge
+#pragma kernel UpdateAbyssalFlowTexture
+#pragma kernel InjectAbyssalWakeTexture
+#pragma kernel InjectAbyssalVortexTexture
 #pragma kernel ClearFloraSnapFlags
 #pragma kernel FlagSnappedFlora
 
 #define HECTON_THREADS_PER_GROUP 64
+#define HECTON_FLOW_TEXTURE_THREADS_X 4
+#define HECTON_FLOW_TEXTURE_THREADS_Y 4
+#define HECTON_FLOW_TEXTURE_THREADS_Z 4
+#define HECTON_ABYSSAL_HEAT_SOURCE_CAPACITY 8
 
 struct GpuHeatSourceData
 {
@@ -16,7 +21,9 @@ struct GpuHeatSourceData
 
 StructuredBuffer<GpuHeatSourceData> _AbyssalHeatSources;
 RWStructuredBuffer<float4> _AbyssalFlowFieldResult;
-RWByteAddressBuffer _AbyssalAggregateMask;
+Texture3D<float4> _AbyssalFlowTextureRead;
+RWTexture3D<float4> _AbyssalFlowTextureWrite;
+RWTexture3D<float4> _AbyssalFlowTextureRW;
 
 struct HectonVegetationInstanceGpuData
 {
@@ -49,6 +56,12 @@ float _AbyssalFlowSurfaceY;
 float _AbyssalFlowThermoclineY;
 int _AbyssalFlowHeatSourceCount;
 int _AbyssalFlowWeatherStateMask;
+float4 _AbyssalFlowTextureParams;      // x: resolution, y: world size, z: dt, w: high-tier enabled
+float4 _AbyssalFlowNoiseOffset;        // xyz: absolute-universe offset, w: origin-shift sequence
+float4 _AbyssalFlowWakeSphere;         // xyz: submarine center, w: radius
+float4 _AbyssalFlowWakeVelocity;       // xyz: velocity, w: speed
+float4 _AbyssalFlowVortexSphere;       // xyz: impulse center, w: radius
+float4 _AbyssalFlowVortexAxisStrength; // xyz: vortex axis, w: signed tangential strength
 uint _HectonSourceInstanceCount;
 float4 _GlobalFloatingOffset;
 float4 _HectonSubmarineWashSphere;
@@ -57,7 +70,6 @@ float4 _HectonSubmarineWashVelocity;
 static const uint WeatherStateStorm = 1u << 1;
 static const uint WeatherStateThermoclineActive = 1u << 3;
 static const uint WeatherStateHaloclineActive = 1u << 4;
-static const uint WeatherStateBiolumeSurge = 1u << 5;
 static const float Epsilon = 0.0001;
 static const float ThermoclineHalfBandMeters = 8.0;
 static const float ThermoclineVerticalAttenuation = 0.1;
@@ -69,8 +81,13 @@ static const float PressureWaveTemporalBaseSpeed = 0.35;
 static const float PressureWaveWaveHeightAmplitude = 0.18;
 static const float PressureWaveWindAmplitude = 0.035;
 static const float StormWindBiasScale = 0.05;
-static const float PressureWaveVelocityThreshold = 8.0;
-static const float PressureWaveVelocityThresholdSq = PressureWaveVelocityThreshold * PressureWaveVelocityThreshold;
+static const float FlowTextureDecayPerSecond = 3.0;
+static const float FlowTextureNoiseScale = 0.028;
+static const float FlowTextureCurlStep = 0.73;
+static const float FlowTextureCurlStrength = 1.35;
+static const float FlowTextureGeyserThreshold = 0.80;
+static const float FlowTextureGeyserUpdraftScale = 7.5;
+static const float FlowTextureWakeStrength = 0.82;
 
 float3 SafeNormalize(float3 value, float3 fallbackValue)
 {
@@ -127,10 +144,126 @@ float3 ResolveNodeWorldPosition(int3 coord)
     return _AbyssalFlowCenter.xyz + offset;
 }
 
-[numthreads(1, 1, 1)]
-void ResetAbyssalFlowAggregate(uint3 dispatchThreadId : SV_DispatchThreadID)
+uint HashUint3(uint3 value)
 {
-    _AbyssalAggregateMask.Store(0, 0u);
+    value ^= value.yzx * uint3(0x9E3779B9u, 0x85EBCA6Bu, 0xC2B2AE35u);
+    value = (value ^ (value >> 16)) * uint3(0x85EBCA6Bu, 0xC2B2AE35u, 0x27D4EB2Fu);
+    value ^= value.zxy * uint3(0x165667B1u, 0xD3A2646Cu, 0x9E3779B9u);
+    value ^= value >> 13;
+    return value.x ^ value.y ^ value.z;
+}
+
+float Hash01(float3 value)
+{
+    int3 quantized = (int3)floor(value);
+    uint3 seed = (uint3)(quantized + int3(1048576, 1048576, 1048576));
+    return (float)(HashUint3(seed) & 0x00FFFFFFu) * (1.0 / 16777215.0);
+}
+
+float ValueNoise3D(float3 samplePosition)
+{
+    float3 cell = floor(samplePosition);
+    float3 fracPart = frac(samplePosition);
+    float3 smoothPart = fracPart * fracPart * (3.0 - 2.0 * fracPart);
+
+    float n000 = Hash01(cell + float3(0.0, 0.0, 0.0));
+    float n100 = Hash01(cell + float3(1.0, 0.0, 0.0));
+    float n010 = Hash01(cell + float3(0.0, 1.0, 0.0));
+    float n110 = Hash01(cell + float3(1.0, 1.0, 0.0));
+    float n001 = Hash01(cell + float3(0.0, 0.0, 1.0));
+    float n101 = Hash01(cell + float3(1.0, 0.0, 1.0));
+    float n011 = Hash01(cell + float3(0.0, 1.0, 1.0));
+    float n111 = Hash01(cell + float3(1.0, 1.0, 1.0));
+
+    float nx00 = lerp(n000, n100, smoothPart.x);
+    float nx10 = lerp(n010, n110, smoothPart.x);
+    float nx01 = lerp(n001, n101, smoothPart.x);
+    float nx11 = lerp(n011, n111, smoothPart.x);
+    float nxy0 = lerp(nx00, nx10, smoothPart.y);
+    float nxy1 = lerp(nx01, nx11, smoothPart.y);
+    return lerp(nxy0, nxy1, smoothPart.z) * 2.0 - 1.0;
+}
+
+float3 NoiseVector3(float3 samplePosition)
+{
+    return float3(
+        ValueNoise3D(samplePosition + float3(17.0, 3.0, 11.0)),
+        ValueNoise3D(samplePosition + float3(7.0, 19.0, 29.0)),
+        ValueNoise3D(samplePosition + float3(23.0, 5.0, 13.0)));
+}
+
+float3 CurlNoise3D(float3 samplePosition)
+{
+    float3 dx = float3(FlowTextureCurlStep, 0.0, 0.0);
+    float3 dy = float3(0.0, FlowTextureCurlStep, 0.0);
+    float3 dz = float3(0.0, 0.0, FlowTextureCurlStep);
+
+    float3 px0 = NoiseVector3(samplePosition - dx);
+    float3 px1 = NoiseVector3(samplePosition + dx);
+    float3 py0 = NoiseVector3(samplePosition - dy);
+    float3 py1 = NoiseVector3(samplePosition + dy);
+    float3 pz0 = NoiseVector3(samplePosition - dz);
+    float3 pz1 = NoiseVector3(samplePosition + dz);
+
+    float invStep = 0.5 / FlowTextureCurlStep;
+    float dFzDy = (py1.z - py0.z) * invStep;
+    float dFyDz = (pz1.y - pz0.y) * invStep;
+    float dFxDz = (pz1.x - pz0.x) * invStep;
+    float dFzDx = (px1.z - px0.z) * invStep;
+    float dFyDx = (px1.y - px0.y) * invStep;
+    float dFxDy = (py1.x - py0.x) * invStep;
+    return float3(dFzDy - dFyDz, dFxDz - dFzDx, dFyDx - dFxDy);
+}
+
+float3 ResolveFlowTextureWorldPosition(uint3 coord)
+{
+    float resolution = max(_AbyssalFlowTextureParams.x, 1.0);
+    float worldSize = max(_AbyssalFlowTextureParams.y, 1.0);
+    float3 uvw = ((float3)coord + 0.5) * rcp(resolution);
+    return _AbyssalFlowCenter.xyz + (uvw - 0.5) * worldSize;
+}
+
+float3 ResolveBaseFlowTextureVelocity(float3 nodeWorldPos)
+{
+    float3 absoluteSample = (nodeWorldPos + _AbyssalFlowNoiseOffset.xyz) * FlowTextureNoiseScale;
+    absoluteSample += _AbyssalFlowWeatherParams.w * float3(0.017, 0.011, 0.013);
+    float3 flow = CurlNoise3D(absoluteSample) * FlowTextureCurlStrength;
+    flow += _AbyssalFlowWeatherCurrent.xyz;
+
+    float windIntensity = max(_AbyssalFlowWeatherParams.y, 0.0);
+    if (windIntensity > 0.0001)
+    {
+        float3 windDirection = SafeNormalize(_AbyssalFlowWeatherWind.xyz, float3(0.0, 0.0, 1.0));
+        float phase = dot((nodeWorldPos + _AbyssalFlowNoiseOffset.xyz).xz, windDirection.xz) * PressureWaveSpatialFrequency;
+        phase += _AbyssalFlowWeatherParams.w * PressureWaveTemporalBaseSpeed;
+        flow += windDirection * (FastSinApprox(phase) * windIntensity * 0.04);
+    }
+
+    if (_AbyssalFlowTextureParams.w > 0.5)
+    {
+        int heatSourceCount = clamp(_AbyssalFlowHeatSourceCount, 0, HECTON_ABYSSAL_HEAT_SOURCE_CAPACITY);
+        [loop]
+        for (int heatIndex = 0; heatIndex < heatSourceCount; heatIndex++)
+        {
+            GpuHeatSourceData heat = _AbyssalHeatSources[heatIndex];
+            if (heat.Intensity < FlowTextureGeyserThreshold)
+                continue;
+
+            float3 delta = nodeWorldPos - heat.PositionWS;
+            float radius = max(heat.Radius, 0.1);
+            float radiusSq = radius * radius;
+            float distSq = dot(delta, delta);
+            if (distSq >= radiusSq)
+                continue;
+
+            float falloff = 1.0 - smoothstep(0.0, radiusSq, distSq);
+            float3 radial = SafeNormalize(delta, float3(0.0, 1.0, 0.0));
+            float3 tangent = SafeNormalize(cross(float3(0.0, 1.0, 0.0), radial), float3(1.0, 0.0, 0.0));
+            flow += float3(tangent.x * 0.35, 1.0, tangent.z * 0.35) * (falloff * heat.Intensity * FlowTextureGeyserUpdraftScale);
+        }
+    }
+
+    return dot(flow, flow) < 1.0e32 ? flow : float3(0.0, 0.0, 0.0);
 }
 
 [numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
@@ -165,8 +298,9 @@ void UpdateAbyssalFlowField(uint3 dispatchThreadId : SV_DispatchThreadID)
         turbulenceScalar = stormTurbulence * (1.0 + abs(pressureWave));
     }
 
+    int structuredHeatSourceCount = clamp(_AbyssalFlowHeatSourceCount, 0, HECTON_ABYSSAL_HEAT_SOURCE_CAPACITY);
     [loop]
-    for (int heatIndex = 0; heatIndex < _AbyssalFlowHeatSourceCount; heatIndex++)
+    for (int heatIndex = 0; heatIndex < structuredHeatSourceCount; heatIndex++)
     {
         GpuHeatSourceData heat = _AbyssalHeatSources[heatIndex];
         float3 toSourceVector = heat.PositionWS - nodeWorldPos;
@@ -197,49 +331,98 @@ void UpdateAbyssalFlowField(uint3 dispatchThreadId : SV_DispatchThreadID)
     _AbyssalFlowFieldResult[nodeIndex] = float4(flow, flowEnergy * turbulenceScalar);
 }
 
-[numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
-void DetectBiolumeSurge(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(HECTON_FLOW_TEXTURE_THREADS_X, HECTON_FLOW_TEXTURE_THREADS_Y, HECTON_FLOW_TEXTURE_THREADS_Z)]
+void UpdateAbyssalFlowTexture(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-    uint nodeIndex = dispatchThreadId.x;
-    if (nodeIndex >= (uint)_AbyssalGridResolution.w)
+    uint resolution = (uint)max(_AbyssalFlowTextureParams.x, 1.0);
+    if (dispatchThreadId.x >= resolution || dispatchThreadId.y >= resolution || dispatchThreadId.z >= resolution)
         return;
 
-    int3 coord = ResolveGridCoord(nodeIndex);
-    float3 centerVelocity = _AbyssalFlowFieldResult[nodeIndex].xyz;
+    int3 coord = int3(dispatchThreadId.xyz);
+    float3 nodeWorldPos = ResolveFlowTextureWorldPosition(dispatchThreadId);
+    float3 baseFlow = ResolveBaseFlowTextureVelocity(nodeWorldPos);
+    float3 previousFlow = _AbyssalFlowTextureRead.Load(int4(coord, 0)).xyz;
+    previousFlow = dot(previousFlow, previousFlow) < 1.0e32 ? previousFlow : baseFlow;
+    float blend = saturate(max(_AbyssalFlowTextureParams.z, 0.0) * FlowTextureDecayPerSecond);
+    float3 resolvedFlow = lerp(previousFlow, baseFlow, blend);
+    float turbulence = min(dot(resolvedFlow, resolvedFlow), 64.0);
+    _AbyssalFlowTextureWrite[coord] = float4(resolvedFlow, turbulence);
+}
 
-    [loop]
-    for (int dz = -1; dz <= 1; dz++)
-    {
-        [loop]
-        for (int dy = -1; dy <= 1; dy++)
-        {
-            [loop]
-            for (int dx = -1; dx <= 1; dx++)
-            {
-                if (dx == 0 && dy == 0 && dz == 0)
-                    continue;
+[numthreads(HECTON_FLOW_TEXTURE_THREADS_X, HECTON_FLOW_TEXTURE_THREADS_Y, HECTON_FLOW_TEXTURE_THREADS_Z)]
+void InjectAbyssalWakeTexture(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint resolution = (uint)max(_AbyssalFlowTextureParams.x, 1.0);
+    if (dispatchThreadId.x >= resolution || dispatchThreadId.y >= resolution || dispatchThreadId.z >= resolution)
+        return;
 
-                int3 neighborCoord = coord + int3(dx, dy, dz);
-                if (neighborCoord.x < 0 || neighborCoord.y < 0 || neighborCoord.z < 0 ||
-                    neighborCoord.x >= _AbyssalGridResolution.x ||
-                    neighborCoord.y >= _AbyssalGridResolution.y ||
-                    neighborCoord.z >= _AbyssalGridResolution.z)
-                {
-                    continue;
-                }
+    float radius = max(_AbyssalFlowWakeSphere.w, 0.05);
+    float speed = max(_AbyssalFlowWakeVelocity.w, 0.0);
+    if (_AbyssalFlowTextureParams.w <= 0.5 || speed <= 0.05 || radius <= 0.05)
+        return;
 
-                uint neighborIndex = ResolveFlatIndex(neighborCoord);
-                float3 neighborVelocity = _AbyssalFlowFieldResult[neighborIndex].xyz;
-                float3 deltaVelocity = neighborVelocity - centerVelocity;
-                if (dot(deltaVelocity, deltaVelocity) > PressureWaveVelocityThresholdSq)
-                {
-                    uint previousValue;
-                    _AbyssalAggregateMask.InterlockedOr(0, WeatherStateBiolumeSurge, previousValue);
-                    return;
-                }
-            }
-        }
-    }
+    int3 coord = int3(dispatchThreadId.xyz);
+    float3 nodeWorldPos = ResolveFlowTextureWorldPosition(dispatchThreadId);
+    float3 delta = nodeWorldPos - _AbyssalFlowWakeSphere.xyz;
+    delta.y *= 0.45;
+    float radiusSq = radius * radius;
+    float distSq = dot(delta, delta);
+    if (distSq >= radiusSq)
+        return;
+
+    float falloff = 1.0 - smoothstep(0.0, radiusSq, distSq);
+    float3 velocityDirection = SafeNormalize(_AbyssalFlowWakeVelocity.xyz, float3(0.0, 0.0, 1.0));
+    float3 radialDirection = SafeNormalize(delta, velocityDirection);
+    float trailingGate = saturate(dot(radialDirection, -velocityDirection) * 0.5 + 0.5);
+    float lateralPulse = falloff * (0.35 + trailingGate * 0.65);
+    float3 injectedVelocity =
+        (radialDirection * (speed * 0.30 * lateralPulse)) -
+        (velocityDirection * (speed * FlowTextureWakeStrength * falloff));
+
+    float4 current = _AbyssalFlowTextureRW[coord];
+    float3 resolved = current.xyz + injectedVelocity;
+    resolved = clamp(resolved, float3(-16.0, -16.0, -16.0), float3(16.0, 16.0, 16.0));
+    _AbyssalFlowTextureRW[coord] = float4(resolved, min(dot(resolved, resolved), 96.0));
+}
+
+[numthreads(HECTON_FLOW_TEXTURE_THREADS_X, HECTON_FLOW_TEXTURE_THREADS_Y, HECTON_FLOW_TEXTURE_THREADS_Z)]
+void InjectAbyssalVortexTexture(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint resolution = (uint)max(_AbyssalFlowTextureParams.x, 1.0);
+    if (dispatchThreadId.x >= resolution || dispatchThreadId.y >= resolution || dispatchThreadId.z >= resolution)
+        return;
+
+    if (_AbyssalFlowTextureParams.w <= 0.5)
+        return;
+
+    float radius = max(_AbyssalFlowVortexSphere.w, 0.05);
+    float strength = _AbyssalFlowVortexAxisStrength.w;
+    if (abs(strength) <= 0.001)
+        return;
+
+    int3 coord = int3(dispatchThreadId.xyz);
+    float3 nodeWorldPos = ResolveFlowTextureWorldPosition(dispatchThreadId);
+    float3 delta = nodeWorldPos - _AbyssalFlowVortexSphere.xyz;
+    float radiusSq = radius * radius;
+    float distSq = dot(delta, delta);
+    if (distSq >= radiusSq)
+        return;
+
+    float3 axis = SafeNormalize(_AbyssalFlowVortexAxisStrength.xyz, float3(0.0, 1.0, 0.0));
+    float axialDistance = dot(delta, axis);
+    float3 radial = delta - axis * axialDistance;
+    float radialSq = dot(radial, radial);
+    radial = radialSq > Epsilon ? radial * rsqrt(radialSq) : SafeNormalize(cross(axis, float3(0.0, 0.0, 1.0)), float3(1.0, 0.0, 0.0));
+    float3 tangent = SafeNormalize(cross(axis, radial), float3(1.0, 0.0, 0.0));
+    float falloff = 1.0 - smoothstep(0.0, radiusSq, distSq);
+    float columnGate = 1.0 - saturate(abs(axialDistance) / max(radius * 0.75, 0.001));
+    float swirl = falloff * (0.35 + columnGate * 0.65);
+    float3 injectedVelocity = (tangent * strength + radial * (strength * 0.14)) * swirl;
+
+    float4 current = _AbyssalFlowTextureRW[coord];
+    float3 resolved = current.xyz + injectedVelocity;
+    resolved = clamp(resolved, float3(-16.0, -16.0, -16.0), float3(16.0, 16.0, 16.0));
+    _AbyssalFlowTextureRW[coord] = float4(resolved, min(dot(resolved, resolved), 96.0));
 }
 
 [numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]

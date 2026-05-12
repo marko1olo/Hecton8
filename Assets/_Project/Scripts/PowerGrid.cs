@@ -47,6 +47,8 @@ namespace Hecton8.Power
         private const float MinimumSubmergedOverloadHeatJoules = 3200f;
         private const float HydrogenPocketUnitsPerMegajoule = 0.04f;
         private const float OxygenPocketUnitsPerMegajoule = 0.02f;
+        private const float BrownoutPotentialThreshold = LogisticsNetworkGraph.JacobiPowerGridSolverJob.BrownoutPotentialThreshold;
+        private const float FloodedShortCircuitPotentialThreshold = LogisticsNetworkGraph.JacobiPowerGridSolverJob.FloodedShortCircuitPotentialThreshold;
         private const string NativeMemoryOwner = nameof(PowerGrid);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private static readonly uint ThermalDissipationDeferredWarningHash =
@@ -163,6 +165,7 @@ namespace Hecton8.Power
 
         private readonly HashSet<PowerNode> _nodes;
         private readonly List<IPowerComponent> _consumerRefs;
+        private readonly List<uint> _consumerNodeIds;
         private readonly List<BatteryBankModule> _batteryRefs;
         private readonly List<PowerNode> _topologyNodes;
         private readonly List<OverloadThermalBinding> _overloadThermalBindings;
@@ -293,6 +296,8 @@ namespace Hecton8.Power
             _nodes = new HashSet<PowerNode>(safeCapacity);
             // COLD ALLOC: List<IPowerComponent>[initialCapacity] — consumer reference cache — owner: PowerGrid
             _consumerRefs = new List<IPowerComponent>(safeCapacity);
+            // COLD ALLOC: List<uint>[initialCapacity] - stable node ids parallel to consumer references - owner: PowerGrid
+            _consumerNodeIds = new List<uint>(safeCapacity);
             _batteryRefs = new List<BatteryBankModule>(safeCapacity);
             // COLD ALLOC: List<PowerNode>[initialCapacity] — topology node snapshot — owner: PowerGrid
             _topologyNodes = new List<PowerNode>(safeCapacity);
@@ -548,6 +553,7 @@ namespace Hecton8.Power
                 _logisticsGraph.GetScheduledDistributionSummary());
             ApplyConsumerStates();
             ApplyOverloadThermalDamage();
+            ApplyFloodedShortCircuitDamage();
             if (ScheduleCableThermalSharing())
             {
                 _slowTickEvaluationPhase = SlowTickEvaluationPhase.ThermalDissipation;
@@ -611,12 +617,41 @@ namespace Hecton8.Power
             return _logisticsGraph.GetComponentSize(componentIndex);
         }
 
+        internal NativeArray<float>.ReadOnly GetPowerPotentialsReadOnly()
+        {
+            return _logisticsGraph.GetPowerPotentialsReadOnly();
+        }
+
+        internal NativeArray<byte>.ReadOnly GetNodeFlagsReadOnly()
+        {
+            return _logisticsGraph.GetNodeFlagsReadOnly();
+        }
+
+        internal bool TryGetNodePotential(int nodeIndex, out float potential)
+        {
+            return _logisticsGraph.TryGetNodePotential(nodeIndex, out potential);
+        }
+
+        internal bool TryConsumeNodePotential(int nodeIndex, float potentialCost)
+        {
+            return _logisticsGraph.TryConsumeNodePotential(nodeIndex, potentialCost);
+        }
+
+        internal bool TryRemovePowerConnectionBucket(int sourceNodeIndex)
+        {
+            bool removed = _logisticsGraph.TryRemovePowerConnectionBucket(sourceNodeIndex);
+            if (removed)
+                _isDirty = true;
+            return removed;
+        }
+
         private bool BuildGraphSnapshot()
         {
             if (_logisticsGraph.HasPendingEvaluation || _logisticsGraph.HasPendingNodeStatePublish)
                 return false;
 
             _consumerRefs.Clear();
+            _consumerNodeIds.Clear();
             _batteryRefs.Clear();
             _topologyNodes.Clear();
             _overloadThermalBindings.Clear();
@@ -706,9 +741,10 @@ namespace Hecton8.Power
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
                 PowerNode node = _topologyNodes[nodeIndex];
+                uint nodeId = unchecked((uint)EntityId.ToULong(node.GetEntityId()));
                 byte statusBits = ResolveNodeStatusBits(node);
                 _logisticsGraph.AddNode(
-                    unchecked((uint)EntityId.ToULong(node.GetEntityId())),
+                    nodeId,
                     ResolveNodeCapacity(node),
                     1f,
                     ResolveNodePriorityTier(node),
@@ -719,6 +755,7 @@ namespace Hecton8.Power
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
                 PowerNode node = _topologyNodes[nodeIndex];
+                uint nodeId = unchecked((uint)EntityId.ToULong(node.GetEntityId()));
                 OverloadThermalBinding overloadBinding = default;
                 bool overloadBindingResolved = false;
 
@@ -762,6 +799,7 @@ namespace Hecton8.Power
                             continue;
 
                         _consumerRefs.Add(component);
+                        _consumerNodeIds.Add(nodeId);
                         _logisticsGraph.AddConsumer(
                             nodeIndex,
                             -rating,
@@ -777,6 +815,7 @@ namespace Hecton8.Power
                     if (ruptureDemand > 0f)
                     {
                         _consumerRefs.Add(null);
+                        _consumerNodeIds.Add(nodeId);
                         _logisticsGraph.AddConsumer(
                             nodeIndex,
                             ruptureDemand,
@@ -828,16 +867,27 @@ namespace Hecton8.Power
                 if (!consumerVoltageResolved)
                     consumerVoltageSupplyRatio = _supplyRatio;
 
+                bool voltageBrownout = consumerVoltageSupplyRatio < BrownoutPotentialThreshold;
                 if (consumer is BaseModule baseModule)
                     baseModule.SetAmbientPowerVisualState(
                         ambientLightsBrownedOut || consumerVoltageSupplyRatio < 0.80f,
                         consumerVoltageSupplyRatio);
 
                 bool shouldHavePower = _logisticsGraph.IsConsumerPowered(consumerIndex);
+                if (voltageBrownout)
+                    shouldHavePower = false;
                 if (_batteryEmergencyReserveActive && !ShouldRemainPoweredDuringBatteryReserve(consumer))
                     shouldHavePower = false;
                 if (consumer.HasPower != shouldHavePower)
+                {
+                    bool wasPowered = consumer.HasPower;
                     consumer.OnPowerStatusChanged(shouldHavePower);
+                    if (wasPowered && !shouldHavePower)
+                    {
+                        uint nodeId = consumerIndex < _consumerNodeIds.Count ? _consumerNodeIds[consumerIndex] : 0u;
+                        PublishNodeBrownoutSignal(nodeId, consumerVoltageSupplyRatio, consumer.PowerPriority);
+                    }
+                }
             }
         }
 
@@ -883,6 +933,66 @@ namespace Hecton8.Power
                     roomTemperature,
                     math.max(accumulatedThermalDamage, roomTemperature));
             }
+        }
+
+        private void ApplyFloodedShortCircuitDamage()
+        {
+            int nodeCount = math.min(_topologyNodes.Count, _overloadThermalBindings.Count);
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+            {
+                PowerNode node = _topologyNodes[nodeIndex];
+                if (node == null)
+                    continue;
+
+                OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
+                if (binding.BaseModule == null || !binding.BaseModule.IsFlooded)
+                    continue;
+
+                if (!_logisticsGraph.TryGetNodePotential(nodeIndex, out float potential) ||
+                    potential <= FloodedShortCircuitPotentialThreshold)
+                {
+                    continue;
+                }
+
+                node.SetShortCircuited(true);
+                _logisticsGraph.TryConsumeNodePotential(nodeIndex, potential);
+                PublishElectricShortCircuitDamageSignal(node, potential);
+            }
+        }
+
+        private void PublishElectricShortCircuitDamageSignal(PowerNode node, float potential)
+        {
+            if (node == null)
+                return;
+
+            uint nodeId = unchecked((uint)EntityId.ToULong(node.GetEntityId()));
+            Hecton8.Core.Signals.DamageSignal signal = new Hecton8.Core.Signals.DamageSignal
+            {
+                Magnitude = math.max(0.01f, potential),
+                LocalPoint = float3.zero,
+                DamageType = (uint)DamageTypeMask.Emp,
+                SubjectHash = nodeId,
+                SourceId = 0,
+                IntegrityDelta = 0,
+                Channel = (byte)DamageChannel.Power,
+                TargetId = nodeId
+            };
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void PublishNodeBrownoutSignal(uint nodeId, float supplyRatio, int priority)
+        {
+            Hecton8.Core.Signals.BrownoutSignal signal = new Hecton8.Core.Signals.BrownoutSignal
+            {
+                NetworkId = unchecked((uint)math.max(0, Id)),
+                NodeId = nodeId,
+                SupplyRatio = math.saturate(supplyRatio),
+                Severity01 = math.saturate(1f - supplyRatio),
+                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                Priority = (byte)math.clamp(priority, 0, byte.MaxValue),
+                Flags = 1
+            };
+            GlobalSignals.Publish(in signal);
         }
 
         private static void ApplySubmergedOverloadFluidHeating(in OverloadThermalBinding binding, float overloadHeatWatts)

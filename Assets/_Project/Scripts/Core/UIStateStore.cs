@@ -66,7 +66,8 @@ namespace Hecton8.Core
         FrostIntensity01 = 14,
         WaterSurfaceY = 15,
         RoomOxygen01 = 16,
-        Count = 17
+        SurvivalStatusMask = 17,
+        Count = 18
     }
 
     /// <summary>
@@ -364,6 +365,11 @@ namespace Hecton8.Core
         public static void WriteFrostIntensity(float frostIntensity01, float unscaledTimeSeconds)
         {
             WriteValue(UIValueSlotId.FrostIntensity01, FiniteSaturate01(frostIntensity01), unscaledTimeSeconds);
+        }
+
+        public static void WriteSurvivalStatusMask(uint statusMask, float unscaledTimeSeconds)
+        {
+            WriteValue(UIValueSlotId.SurvivalStatusMask, statusMask, unscaledTimeSeconds);
         }
 
         /// <summary>

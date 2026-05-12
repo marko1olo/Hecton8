@@ -1,0 +1,5 @@
+﻿AddressablesDataPresent=False
+AddressableGroupFileCount=0
+AddressableEntries=0
+DuplicateAddressableAssetCount=0
+Status=BLOCKED_NO_ADDRESSABLES_DATA

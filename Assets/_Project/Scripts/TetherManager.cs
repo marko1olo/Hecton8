@@ -18,8 +18,13 @@ namespace Hecton8.Physics
     {
         private const string RuntimeShaderName = "Hecton8/Physics/TetherLineStrip";
         private static readonly int _TetherPositionsId = Shader.PropertyToID("_TetherPositions");
+        private static readonly int _TetherSegmentTensionsId = Shader.PropertyToID("_TetherSegmentTensions");
         private static readonly int _TetherColorId = Shader.PropertyToID("_TetherColor");
+        private static readonly int _TetherStressColorId = Shader.PropertyToID("_TetherStressColor");
+        private static readonly int _TetherStress01Id = Shader.PropertyToID("_TetherStress01");
+        private static readonly int _TetherSegmentStressScaleId = Shader.PropertyToID("_TetherSegmentStressScale");
         private static readonly int _TetherPointCountId = Shader.PropertyToID("_TetherPointCount");
+        private static readonly int _TetherRadiusId = Shader.PropertyToID("_TetherRadius");
 
         [Header("Tether Rendering")]
         [Tooltip("Optional explicit material for tether line rendering. When omitted the manager creates a runtime material from the built-in tether shader.")]
@@ -27,6 +32,15 @@ namespace Hecton8.Physics
 
         [Tooltip("Fallback tether line tint used by the procedural line-strip renderer.")]
         [SerializeField] private Color tetherRenderColor = new Color(0.22f, 0.92f, 0.96f, 0.92f);
+
+        [Tooltip("Cheap visual overdrive tint blended in as cable tension and stress rise.")]
+        [SerializeField] private Color tetherStressColor = new Color(1f, 0.38f, 0.12f, 0.96f);
+
+        [Tooltip("Maps per-segment constraint delta into localized stress glow.")]
+        [SerializeField, Range(0.1f, 8f)] private float tetherSegmentStressScale = 2.5f;
+
+        [Tooltip("World-space half-width used by the procedural tube impostor shader.")]
+        [SerializeField, Range(0.01f, 0.35f)] private float tetherRenderRadius = 0.045f;
 
         [Tooltip("Padding applied around per-tether bounds before the procedural draw is submitted.")]
         [SerializeField, Range(0f, 4f)] private float tetherBoundsPadding = 1.2f;
@@ -59,6 +73,8 @@ namespace Hecton8.Physics
 
         private void Awake()
         {
+            TetherSignals.EnsureInitialized();
+
             if (renderCamera == null)
             {
                 Camera childCamera = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(transform);
@@ -236,6 +252,12 @@ namespace Hecton8.Physics
                     continue;
 
                 instance.RebaseManagedRuntimeState(shiftOffset);
+                if (instance.RebaseVerletRuntime(shiftOffsetF3))
+                {
+                    instance.CommitVisualRebaseUpload();
+                    continue;
+                }
+
                 NativeArray<float3> visualPoints = instance.VisualSegmentPositions;
                 if (!visualPoints.IsCreated || visualPoints.Length == 0)
                     continue;
@@ -305,10 +327,15 @@ namespace Hecton8.Physics
 
                 _renderPropertyBlock.Clear();
                 _renderPropertyBlock.SetBuffer(_TetherPositionsId, instance.VisualSegmentBuffer);
+                _renderPropertyBlock.SetBuffer(_TetherSegmentTensionsId, instance.VisualSegmentTensionBuffer);
                 _renderPropertyBlock.SetColor(_TetherColorId, tetherRenderColor);
+                _renderPropertyBlock.SetColor(_TetherStressColorId, tetherStressColor);
+                _renderPropertyBlock.SetFloat(_TetherStress01Id, instance.VisualStress01);
+                _renderPropertyBlock.SetFloat(_TetherSegmentStressScaleId, tetherSegmentStressScale);
                 _renderPropertyBlock.SetInt(_TetherPointCountId, instance.VisualPointCount);
+                _renderPropertyBlock.SetFloat(_TetherRadiusId, tetherRenderRadius);
                 renderParams.worldBounds = instance.GetVisualBounds(tetherBoundsPadding);
-                Graphics.RenderPrimitives(renderParams, MeshTopology.LineStrip, instance.VisualPointCount, 1);
+                Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, math.max(0, instance.VisualPointCount - 1) * 6, 1);
             }
         }
 
@@ -328,7 +355,7 @@ namespace Hecton8.Physics
                 }
             }
 
-            GameObject tetherObject = new GameObject($"TetherInstance_{_activeInstances.Count + _pooledInstances.Count:D2}");
+            GameObject tetherObject = new GameObject("TetherInstance");
             tetherObject.transform.SetParent(transform, false);
             tetherObject.transform.localPosition = Vector3.zero;
             tetherObject.transform.localRotation = Quaternion.identity;

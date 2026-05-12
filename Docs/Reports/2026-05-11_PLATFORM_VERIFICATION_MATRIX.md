@@ -74,6 +74,7 @@ Fresh evidence:
 
 - `CodexArtifacts/2026-05-11_PLATFORM_UNITY_AUDIT_R14_FINAL.log`: Unity batch audit exited `0`, wrote `Docs/Reports/2026-05-11_PLATFORM_COMPATIBILITY_EDITOR_AUDIT.md`, and strict scan found no compiler/Burst/Tundra/Unhandled-Exception failure signals.
 - `CodexArtifacts/2026-05-11_PLATFORM_UNITY_IMPORT_R10_POST_AUDIT.log`: Unity batch import exited `0`, with `Exiting batchmode successfully now!` and `Application will terminate with return code 0`.
+- `Docs/Reports/2026-05-11_STEAM_DECK_POSIX_PREFLIGHT.md`: Unity batch POSIX preflight generated at 18:32:56 with 11 blockers and 294 warnings.
 
 ## Platform Gates
 
@@ -102,6 +103,7 @@ Every row must store an artifact path, exact Unity version, git commit/worktree 
 |---|---|---|---|---|---|---|
 | UNITY-AUDIT-R14 | Windows Editor audit | 6000.4.1f1 | Windows yes | `Docs/Reports/2026-05-11_PLATFORM_COMPATIBILITY_EDITOR_AUDIT.md` | `CodexArtifacts/2026-05-11_PLATFORM_UNITY_AUDIT_R14_FINAL.log` | `PASS: ExitCode 0, no strict compile/Burst/Tundra failure signals` |
 | UNITY-IMPORT-R10 | Windows Editor import | 6000.4.1f1 | Windows yes | `Library/ScriptAssemblies/Hecton8.Core.dll` updated 2026-05-11 09:39 | `CodexArtifacts/2026-05-11_PLATFORM_UNITY_IMPORT_R10_POST_AUDIT.log` | `PASS: ExitCode 0, batchmode success` |
+| STEAM-DECK-POSIX-R2 | Steam Deck POSIX static preflight | 6000.4.1f1 | Linux yes | `Docs/Reports/2026-05-11_STEAM_DECK_POSIX_PREFLIGHT.md` | `Logs/steam_deck_posix_preflight.log` | `BLOCKED: 11 blockers, 294 warnings` |
 | WIN-X64-R1 | Windows x64 | 6000.4.1f1 | yes | `PENDING` | `PENDING` | `PENDING` |
 | LINUX-X64-R1 | Linux x64 | 6000.4.1f1 | yes | `PENDING` | `PENDING` | `PENDING` |
 | MAC-UNIVERSAL-R1 | macOS universal | 6000.4.1f1 | no | `BLOCKED` | `BLOCKED` | `BLOCKED` |
@@ -153,7 +155,7 @@ Platform adjustments:
 | Plugin / binary | Current evidence | Windows | Linux | macOS | Android | Console | Required action |
 |---|---|---:|---:|---:|---:|---:|---|
 | `liblz4.dll` | Windows x86_64 only found | `PENDING` | `MISSING` | `MISSING` | `MISSING` | `MISSING` | Add platform binaries or replace with portable compression path. |
-| `HectonAudioKernel.dll` | Windows x86_64 only; bridge Windows/editor gated | `PENDING` | `MISSING` | `MISSING` | `MISSING` | `MISSING` | Add fallback or per-platform native kernel. |
+| `HectonAudioKernel.dll` | Windows x86_64 only; bridge has platform gates but Linux/macOS binaries are absent | `PENDING` | `MISSING` | `MISSING` | `MISSING` | `MISSING` | Add fallback or per-platform native kernel. |
 | MapMagic native plugins | Windows plus Mac bundle found, importer needs audit | `PENDING` | `PENDING` | `PENDING` | `UNKNOWN` | `UNKNOWN` | Explicit runtime/editor scope and target matrix. |
 | Mantis LOD plugins | Windows/Linux/Mac editor-style inventory | `UNKNOWN` | `UNKNOWN` | `UNKNOWN` | `UNKNOWN` | `UNKNOWN` | Confirm editor-only or runtime exclusion. |
 | NiceVibrations AAR | Android AAR present | `N/A` | `N/A` | `N/A` | `PENDING` | `N/A` | Confirm runtime use, permissions, haptics, store compatibility. |
@@ -271,3 +273,15 @@ PC VR streaming:      BLOCKED
 Standalone VR:        BLOCKED
 Consoles:             VENDOR BLOCKED
 ```
+
+## 2026-05-11 17:58-18:33 Steam Deck / POSIX Matrix Delta
+
+| Area | Evidence now | Status | Next proof required |
+|---|---|---|---|
+| Windows editor compile | `dotnet build Hecton8.Editor.csproj` passes after restore | PASS WITH THIRD-PARTY WARNINGS | Unity Editor domain reload in normal interactive session |
+| Steam Deck POSIX static preflight | `2026-05-11_STEAM_DECK_POSIX_PREFLIGHT.md` generated at 18:32:56 | BLOCKED | Clear 11 blockers or document accepted platform gates |
+| Linux native plugins | `liblz4.so`, `HectonAudioKernel.so`, `libsteam_api.so` absent | BLOCKED | Add binaries/importer metadata or managed fallback |
+| MMF storage/telemetry | 8 unsafe `AcquirePointer`/release blocker rows remain in `SaveBinaryStorage` | BLOCKED | Linux player soak, alignment audit, mmap budget |
+| Android standalone VR export | Hub modules not installed in screenshot | INSTALL REQUIRED | Android Build Support + OpenJDK + SDK/NDK, then OpenXR/device test |
+| macOS export | Hub module not installed in screenshot | OPTIONAL INSTALL | Mac Build Support (Mono), then Mac compile/player launch |
+| Headless Linux QA | Dedicated server module not installed | OPTIONAL INSTALL | Linux Dedicated Server module, CI build target |

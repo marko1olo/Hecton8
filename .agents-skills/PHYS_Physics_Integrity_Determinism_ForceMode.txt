@@ -225,6 +225,11 @@ private static float SubmersionFactor(float distToSurface) =>
 - [RULE] Compute pressure as `P = P_atm + ρ * g * depth`. Expose as `float PhysicsEnvironment.GetPressure(float depth)`.
 - [RULE] Crush threshold per-object defined in `StructuralIntegrity` component. Crossing threshold triggers `OnCrushEvent`. No inline calculation.
 - [SENIOR_INJECT] Pressure affects drag coefficient. Deep water = higher effective viscosity. Scale `k_drag` by `math.log(1f + depth / 100f)` (diminishing returns, asymptotic).
+
+
+
+
+[RULE] Single Source of Truth for Physics Accumulation. Only the GlobalPhysicsStateManager is authorized to calculate delta time. All other systems receive fixedDeltaTime as a constant. No local counters in object scripts.
 ---
 ## 4. HARDWARE & SCALABILITY
 ### 4.1 Sweep Gating — Mandatory MovePosition Protocol

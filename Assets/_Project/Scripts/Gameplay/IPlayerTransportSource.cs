@@ -25,6 +25,11 @@ namespace Hecton8.Gameplay
         float GetTransportSpeedMultiplier();
 
         /// <summary>
+        /// Current swim drag coefficient multiplier contributed by this transport.
+        /// </summary>
+        float GetTransportDragCoefficientMultiplier();
+
+        /// <summary>
         /// Current normalized 0-1 feel boost used by presentation, audio, and AI.
         /// </summary>
         float GetTransportBoost01();

@@ -15,15 +15,16 @@ Shader "Hecton8/Visor/HolographicEdge"
         Tags
         {
             "RenderPipeline" = "UniversalPipeline"
-            "RenderType" = "Transparent"
-            "Queue" = "Transparent"
+            "RenderType" = "TransparentCutout"
+            "Queue" = "AlphaTest"
         }
 
         Pass
         {
             Name "HolographicEdge"
-            Blend SrcAlpha One
-            ZWrite Off
+            Blend Off
+            ZWrite On
+            AlphaToMask On
             ZTest LEqual
             Cull Front
 
@@ -96,8 +97,10 @@ Shader "Hecton8/Visor/HolographicEdge"
                 float scanline = lerp(1.0, 0.45 + 0.55 * step(0.48, frac(row + _Time.y * 18.0)), saturate(_ScanlineStrength));
                 float crawl = HectonCoreLitTrianglePulse01(_Time.y * _FlickerSpeed + row * 0.071);
                 half alpha = (half)saturate(_BaseColor.a * (0.18 + edge * 1.4) * scanline * lerp(0.62, 1.18, crawl));
+                half dither = (half)HectonCoreLitTaaAccumulatedInterleavedGradientNoise(floor(input.positionCS.xy));
+                clip(alpha - dither);
                 half3 color = _BaseColor.rgb * (half)(1.2 + edge * 2.8);
-                return half4(color, alpha);
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }

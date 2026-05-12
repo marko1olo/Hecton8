@@ -491,7 +491,9 @@ namespace Hecton8.Inventory
         [SerializeField, Min(0f)] private float radiationTraumaThresholdSv = 0.5f;
 
         private InventoryGrid _grid;
+        private NativeArray<uint> _itemHashes;
         private NativeArray<ushort> _stackCounts;
+        private NativeArray<float> _itemCondition;
         private NativeArray<ushort> _craftLockedCounts;
         private NativeArray<ushort> _anchorStateFlags;
         private NativeArray<ushort> _itemStateFlags;
@@ -550,6 +552,7 @@ namespace Hecton8.Inventory
         public float TotalRadiationSv { get; private set; }
         public float CachedInventoryLoad01 { get; private set; }
         public float CachedMaxSwimSpeedMultiplier { get; private set; } = 1f;
+        public ulong CurrentInventoryMask { get; private set; }
         public bool HasPressurizedContainerProtection => _pressurizedContainerProtectionCount > 0;
         public InventoryGrid Grid => _grid;
         public ItemCatalog ItemCatalog => itemCatalog;
@@ -590,8 +593,12 @@ namespace Hecton8.Inventory
         private void Awake()
         {
             _grid = new InventoryGrid(columns, rows);
+            // COLD ALLOC: uint[columns * rows] - hash-only SOA mirror for zero-GC crafting/UI reads - owner: PlayerInventory
+            _itemHashes = new NativeArray<uint>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: ushort[columns * rows] — anchor stack counts — owner: PlayerInventory
             _stackCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: float[columns * rows] - normalized item condition SOA mirror for FrostTick decay/UI reads - owner: PlayerInventory
+            _itemCondition = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: ushort[columns * rows] — craft reservations per anchor — owner: PlayerInventory
             _craftLockedCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: ushort[columns * rows] — per-anchor state flags — owner: PlayerInventory
@@ -660,7 +667,9 @@ namespace Hecton8.Inventory
                 _grid = null;
             }
 
+            DisposeNativeArray(ref _itemHashes);
             DisposeNativeArray(ref _stackCounts);
+            DisposeNativeArray(ref _itemCondition);
             DisposeNativeArray(ref _craftLockedCounts);
             DisposeNativeArray(ref _anchorStateFlags);
             DisposeNativeArray(ref _itemStateFlags);
@@ -690,7 +699,9 @@ namespace Hecton8.Inventory
 
         private void RegisterNativeMemorySentinel()
         {
+            NativeMemorySentinel.RegisterNativeArray(_itemHashes, NativeMemoryOwner, nameof(_itemHashes), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_stackCounts, NativeMemoryOwner, nameof(_stackCounts), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_itemCondition, NativeMemoryOwner, nameof(_itemCondition), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_craftLockedCounts, NativeMemoryOwner, nameof(_craftLockedCounts), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_anchorStateFlags, NativeMemoryOwner, nameof(_anchorStateFlags), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_itemStateFlags, NativeMemoryOwner, nameof(_itemStateFlags), NativeMemoryLifetime);
@@ -837,6 +848,68 @@ namespace Hecton8.Inventory
             return true;
         }
 
+        public bool TryDropOneItemToWorldSignal(
+            int anchorX,
+            int anchorY,
+            Vector3 runtimePosition,
+            Vector3 initialImpulse,
+            Transform interactor,
+            out int droppedHashId)
+        {
+            droppedHashId = 0;
+            if (!TryRemoveOneItemWithState(
+                    anchorX,
+                    anchorY,
+                    out int itemHashId,
+                    out _,
+                    out ulong geneticsMask,
+                    out ushort qualityMilli))
+            {
+                return false;
+            }
+
+            ItemData droppedItem = itemCatalog != null ? itemCatalog.FindByHash(itemHashId) : null;
+            if (droppedItem == null)
+            {
+                TryAddItemWithState(itemHashId, geneticsMask, qualityMilli);
+                return false;
+            }
+
+            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            if (persistentWorldRegistry == null ||
+                !persistentWorldRegistry.TryRegisterDroppedItemWithState(droppedItem, 1, runtimePosition, geneticsMask, qualityMilli))
+            {
+                TryAddItemWithState(itemHashId, geneticsMask, qualityMilli);
+                return false;
+            }
+
+            InventoryPhysicalDropRequestPayload payload = new InventoryPhysicalDropRequestPayload
+            {
+                RuntimePosition = runtimePosition,
+                InitialImpulse = initialImpulse,
+                GeneticsMask = geneticsMask,
+                ItemHashId = unchecked((uint)itemHashId),
+                Quantity = 1,
+                QualityMilli = qualityMilli,
+                Reserved = 0
+            };
+            HectonEventBus.Publish(in payload);
+
+            bool hasInteractorPosition = interactor != null;
+            ulong interactorEntityId = hasInteractorPosition ? EntityId.ToULong(interactor.GetEntityId()) : 0ul;
+            Vector3 interactorPosition = hasInteractorPosition ? interactor.position : Vector3.zero;
+            InteractionEvents.RaiseItemLost(droppedItem, 1, interactor);
+            HectonEventBus.Publish(new ItemDiscardedEvent(
+                droppedItem,
+                1,
+                interactorEntityId,
+                interactorPosition,
+                hasInteractorPosition));
+
+            droppedHashId = itemHashId;
+            return true;
+        }
+
         public bool ConsumeOneItem(int anchorX, int anchorY)
         {
             if (_grid == null)
@@ -957,6 +1030,89 @@ namespace Hecton8.Inventory
             return RemoveOneItem(anchorX, anchorY) != 0;
         }
 
+        public bool TryDrainItemConditionByHash(
+            int itemHashId,
+            float normalizedDrain,
+            out int anchorIndex,
+            out ushort qualityMilli)
+        {
+            anchorIndex = -1;
+            qualityMilli = 0;
+            if (itemHashId == 0 ||
+                !math.isfinite(normalizedDrain) ||
+                normalizedDrain <= 0f ||
+                !TryFindFirstAnchorByHash(itemHashId, out anchorIndex))
+            {
+                return false;
+            }
+
+            return TryDrainItemConditionAtAnchorUnchecked(anchorIndex, normalizedDrain, out qualityMilli);
+        }
+
+        public bool TryDrainItemConditionAtAnchor(
+            int anchorIndex,
+            int itemHashId,
+            float normalizedDrain,
+            out ushort qualityMilli)
+        {
+            qualityMilli = 0;
+            if (itemHashId == 0 ||
+                !math.isfinite(normalizedDrain) ||
+                normalizedDrain <= 0f ||
+                _grid == null ||
+                !_stackCounts.IsCreated ||
+                (uint)anchorIndex >= (uint)_stackCounts.Length ||
+                !_grid.HasAnchor(anchorIndex) ||
+                _grid.GetAnchorHashId(anchorIndex) != itemHashId)
+            {
+                return false;
+            }
+
+            int stackCount = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+            if (GetReservedCraftCount(anchorIndex) >= stackCount)
+                return false;
+
+            return TryDrainItemConditionAtAnchorUnchecked(anchorIndex, normalizedDrain, out qualityMilli);
+        }
+
+        private bool TryDrainItemConditionAtAnchorUnchecked(int anchorIndex, float normalizedDrain, out ushort qualityMilli)
+        {
+            qualityMilli = 0;
+            if (!math.isfinite(normalizedDrain) ||
+                normalizedDrain <= 0f ||
+                !_qualityMilli.IsCreated ||
+                !_durabilities.IsCreated ||
+                !_itemStateFlags.IsCreated ||
+                (uint)anchorIndex >= (uint)_qualityMilli.Length ||
+                (uint)anchorIndex >= (uint)_itemStateFlags.Length)
+            {
+                return false;
+            }
+
+            ushort currentQualityMilli = _qualityMilli[anchorIndex] > 0
+                ? _qualityMilli[anchorIndex]
+                : DefaultQualityMilli;
+            int drainMilli = math.clamp((int)math.ceil(normalizedDrain * DefaultQualityMilli), 1, DefaultQualityMilli);
+            int nextQuality = math.max(0, currentQualityMilli - drainMilli);
+            if (nextQuality == currentQualityMilli)
+            {
+                qualityMilli = currentQualityMilli;
+                return false;
+            }
+
+            qualityMilli = (ushort)nextQuality;
+            _qualityMilli[anchorIndex] = qualityMilli;
+            if ((uint)anchorIndex < (uint)_durabilities.Length)
+                _durabilities[anchorIndex] = (byte)math.clamp((qualityMilli + 5) / 10, 0, 100);
+
+            if (qualityMilli < DegradedQualityMilliThreshold)
+                _itemStateFlags[anchorIndex] |= DegradedItemStateMask;
+
+            _durabilitySnapshotDirty = true;
+            NotifyInventoryChanged();
+            return true;
+        }
+
         public void AddWeight(float amount)
         {
             TotalWeight = Mathf.Max(0f, TotalWeight + amount);
@@ -1046,7 +1202,7 @@ namespace Hecton8.Inventory
                 if (availableCount <= 0)
                     continue;
 
-                availableResourceMask |= 1UL << (itemHashId & 63);
+                availableResourceMask |= InventoryMaterialMask.ResolveBit(itemHashId);
 
                 if (destination.TryGetValue(itemHashId, out int existingCount))
                 {
@@ -1815,6 +1971,21 @@ namespace Hecton8.Inventory
             return _stackCounts.IsCreated ? _stackCounts.AsReadOnly() : default;
         }
 
+        public NativeArray<uint>.ReadOnly GetItemHashesReadOnly()
+        {
+            return _itemHashes.IsCreated ? _itemHashes.AsReadOnly() : default;
+        }
+
+        public NativeArray<ushort>.ReadOnly GetItemCountsReadOnly()
+        {
+            return GetStackCountsReadOnly();
+        }
+
+        public NativeArray<float>.ReadOnly GetItemConditionReadOnly()
+        {
+            return _itemCondition.IsCreated ? _itemCondition.AsReadOnly() : default;
+        }
+
         public NativeArray<int>.ReadOnly GetItemIDsReadOnly()
         {
             return _grid != null ? _grid.AnchorHashIds : default;
@@ -1829,6 +2000,24 @@ namespace Hecton8.Inventory
             }
 
             return _grid.GetAnchorHashIdsUnsafeReadOnlyPtr(out length);
+        }
+
+        public unsafe void* GetItemHashesUnsafeReadOnlyPtr(out int length)
+        {
+            length = _itemHashes.IsCreated ? _itemHashes.Length : 0;
+            return length > 0 ? NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_itemHashes) : null;
+        }
+
+        public unsafe void* GetItemCountsUnsafeReadOnlyPtr(out int length)
+        {
+            length = _stackCounts.IsCreated ? _stackCounts.Length : 0;
+            return length > 0 ? NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_stackCounts) : null;
+        }
+
+        public unsafe void* GetItemConditionUnsafeReadOnlyPtr(out int length)
+        {
+            length = _itemCondition.IsCreated ? _itemCondition.Length : 0;
+            return length > 0 ? NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_itemCondition) : null;
         }
 
         public NativeArray<ushort>.ReadOnly GetQuantitiesReadOnly()
@@ -1851,6 +2040,19 @@ namespace Hecton8.Inventory
             quantities = GetQuantitiesReadOnly();
             durabilities = GetDurabilitiesReadOnly();
             return _grid != null && _stackCounts.IsCreated && _durabilities.IsCreated;
+        }
+
+        public bool TryGetInventorySoA(
+            out NativeArray<uint>.ReadOnly itemHashes,
+            out NativeArray<ushort>.ReadOnly itemCounts,
+            out NativeArray<float>.ReadOnly itemCondition,
+            out ulong currentInventoryMask)
+        {
+            itemHashes = GetItemHashesReadOnly();
+            itemCounts = GetItemCountsReadOnly();
+            itemCondition = GetItemConditionReadOnly();
+            currentInventoryMask = CurrentInventoryMask;
+            return _itemHashes.IsCreated && _stackCounts.IsCreated && _itemCondition.IsCreated;
         }
 
         public NativeArray<ushort>.ReadOnly GetCraftLockedCountsReadOnly()
@@ -1970,8 +2172,15 @@ namespace Hecton8.Inventory
                 if (stackCount >= maxStack)
                     continue;
 
-                int transfer = math.min(maxStack - stackCount, remainingQuantity);
-                _stackCounts[anchorIndex] = (ushort)(stackCount + transfer);
+                ushort nextStackCount = InventorySoAUtility.ResolveStackInsert(
+                    (ushort)math.min(stackCount, ushort.MaxValue),
+                    (ushort)math.min(remainingQuantity, ushort.MaxValue),
+                    (ushort)math.min(maxStack, ushort.MaxValue),
+                    out ushort transfer);
+                if (transfer == 0)
+                    continue;
+
+                _stackCounts[anchorIndex] = nextStackCount;
                 _itemStateFlags[anchorIndex] = itemStateFlags;
                 _itemGenetics[anchorIndex] = geneticsMask;
                 _qualityMilli[anchorIndex] = qualityMilli;
@@ -2015,9 +2224,15 @@ namespace Hecton8.Inventory
                     if (stackCount >= descriptor.MaxStack)
                         continue;
 
-                    int stackCapacity = descriptor.MaxStack - stackCount;
-                    int transfer = math.min(stackCapacity, remaining);
-                    _scavengeSimStackCounts[anchorIndex] = (ushort)(stackCount + transfer);
+                    ushort nextStackCount = InventorySoAUtility.ResolveStackInsert(
+                        (ushort)math.min(stackCount, ushort.MaxValue),
+                        (ushort)math.min(remaining, ushort.MaxValue),
+                        descriptor.MaxStack,
+                        out ushort transfer);
+                    if (transfer == 0)
+                        continue;
+
+                    _scavengeSimStackCounts[anchorIndex] = nextStackCount;
                     remaining -= transfer;
                 }
             }
@@ -2251,6 +2466,8 @@ namespace Hecton8.Inventory
 
         private void NotifyInventoryChanged(bool markDirty = true, bool massDirty = true)
         {
+            RefreshInventorySoAMirrorsAndMask();
+
             if (markDirty)
             {
                 MarkInventoryDirty();
@@ -2268,6 +2485,54 @@ namespace Hecton8.Inventory
             InventoryVersion++;
             InventoryEvents.NotifyInventoryChanged();
             InventoryChanged?.Invoke();
+        }
+
+        private void RefreshInventorySoAMirrorsAndMask()
+        {
+            if (_grid == null ||
+                !_itemHashes.IsCreated ||
+                !_stackCounts.IsCreated ||
+                !_itemCondition.IsCreated ||
+                !_qualityMilli.IsCreated)
+            {
+                CurrentInventoryMask = 0UL;
+                return;
+            }
+
+            ulong inventoryMask = 0UL;
+            int count = math.min(math.min(_itemHashes.Length, _stackCounts.Length), math.min(_itemCondition.Length, _qualityMilli.Length));
+            for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
+            {
+                if (!_grid.HasAnchor(anchorIndex))
+                {
+                    _itemHashes[anchorIndex] = 0u;
+                    _stackCounts[anchorIndex] = 0;
+                    _itemCondition[anchorIndex] = 0f;
+                    continue;
+                }
+
+                int itemHashId = _grid.GetAnchorHashId(anchorIndex);
+                ushort stackCount = _stackCounts[anchorIndex];
+                if (itemHashId == 0)
+                {
+                    _itemHashes[anchorIndex] = 0u;
+                    _stackCounts[anchorIndex] = 0;
+                    _itemCondition[anchorIndex] = 0f;
+                    continue;
+                }
+
+                if (stackCount == 0)
+                {
+                    stackCount = 1;
+                    _stackCounts[anchorIndex] = 1;
+                }
+
+                _itemHashes[anchorIndex] = unchecked((uint)itemHashId);
+                _itemCondition[anchorIndex] = math.saturate((_qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli) * 0.001f);
+                inventoryMask |= InventoryMaterialMask.ResolveBit(itemHashId);
+            }
+
+            CurrentInventoryMask = inventoryMask;
         }
 
         private void MarkInventoryDirty()
@@ -2760,7 +3025,7 @@ namespace Hecton8.Inventory
             if (survival != null)
                 survival.TakeDamage(damage);
 
-            DamageSignal signal = new DamageSignal
+            global::Hecton8.Gameplay.DamageSignal signal = new global::Hecton8.Gameplay.DamageSignal
             {
                 magnitude = damage,
                 localPoint = float3.zero,
@@ -2866,7 +3131,7 @@ namespace Hecton8.Inventory
             if (hazard01 <= 0f)
                 return;
 
-            DamageSignal signal = new DamageSignal
+            global::Hecton8.Gameplay.DamageSignal signal = new global::Hecton8.Gameplay.DamageSignal
             {
                 magnitude = hazard01,
                 localPoint = float3.zero,
