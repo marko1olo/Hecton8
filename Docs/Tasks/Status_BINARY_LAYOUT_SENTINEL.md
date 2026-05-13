@@ -25,9 +25,12 @@ Status: PENDING VERIFICATION
 - [x] Task 16. Blackbox dump on manifest failure | Justification: manifest failure writes `Docs/AgentLogs/Dump_BINARY_LAYOUT_SENTINEL.bin` with struct name, expected, observed | Alternative rejected: console-only report | Estimate: failure path only
 - [x] Task 17. Voxel RLE delta exact 5-byte layout | Justification: added `SaveVoxelDeltaRun5` as exact `ushort, byte, ushort` / 5-byte DTO; retained rich 8-byte voxel run for material/flag payload safety | Alternative rejected: deleting material/flag data from active rich voxel RLE format | Estimate: saves 3 bytes per SDF-only run when adopted
 - [x] Task 18. Telemetry record explicit 32/64-byte layout | Justification: `VRSomaticBlackBoxEntry` forced to 64; `DamageControlTelemetryEntry` confirmed at 32 | Alternative rejected: implicit pack defaults | Estimate: no frame cost
-- [ ] Task 19. Omega compile check | Justification pending | Alternative pending | Estimate pending
+- [x] Task 19. Omega compile check [BLOCKED BY DEPENDENCY] | Justification: edited scripts passed script-level validation before the final signal marker patch; second compile attempt timed out after 244 seconds and Unity MCP is currently unavailable, so TypeLoadException verification cannot be completed in this pass | Alternative rejected: claiming clean compile without Unity/Bee completion | Estimate: 0 us runtime impact from blocker
 
 ## Iteration Log
 
 - 2026-05-13: Prompt extracted from CURRENT_BATCH.md. Initial state created. No code touched yet.
 - 2026-05-13: Loop 1 implemented marker asmdef, DTO annotations, manifest, MemoryInquisitor gate, bootstrap call, and RECON log. Script-level validation passed for edited scripts. Full Unity compile is blocked by unrelated current errors in `SaveManager`, `GlobalSignals` PowerDrainSignal, `EcosystemDirector`, and `HectonPlayerMovement`.
+- 2026-05-13: Loop 2 re-read prompt and self-reviewed manifest membership. Fixed missing `[BinaryBlittableSafe]` on `ComplianceViolationSignal`; without that marker the cold-boot manifest would fail its own failure-signal lane.
+- 2026-05-13: Loop 3 ran `LayoutKind.Auto` sweep across task-owned Core/SaveSystem/World targets. No banned `LayoutKind.Auto` usage found.
+- 2026-05-13: Loop 4 attempted `dotnet build Assembly-CSharp.csproj --no-restore`; build timed out after 244 seconds. Unity MCP validation is blocked by `no_unity_session`.

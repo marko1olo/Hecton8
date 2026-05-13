@@ -1468,10 +1468,13 @@ namespace Hecton8.World
                 return;
 
             _saveSnapshotSectors.Clear();
+            if (_saveSnapshotBiomassRuns.IsCreated)
+                _saveSnapshotBiomassRuns.Clear();
             if (!IsInitialized)
                 return;
 
             CompleteScheduledSimulation(forceComplete: true);
+            ApplyPendingBiomassImpacts();
             SyncPendingHibernatedFaunaPopulationRecords();
             for (int sectorIndex = 0; sectorIndex < _activeSectorCount; sectorIndex++)
             {
@@ -1483,11 +1486,23 @@ namespace Hecton8.World
                     PackedAdaptation = PackAdaptationTraits(state.Fitness, state.SpeedMultiplier, state.CamouflageIndex, maximumSpeedMultiplier)
                 });
             }
+
+            CaptureBiomassSaveRuns();
+            if (_saveSnapshotBiomassRuns.IsCreated)
+            {
+                for (int runIndex = 0; runIndex < _saveSnapshotBiomassRuns.Length && _saveSnapshotSectors.Length < _saveSnapshotSectors.Capacity; runIndex++)
+                    _saveSnapshotSectors.AddNoResize(PackBiomassRunAsSectorRecord(_saveSnapshotBiomassRuns[runIndex]));
+            }
         }
 
         internal NativeArray<EcosystemSectorSaveRecord> GetSaveSnapshotArray()
         {
             return _saveSnapshotSectors.IsCreated ? _saveSnapshotSectors.AsArray() : default;
+        }
+
+        internal NativeArray<EcosystemBiomassSaveRun> GetBiomassSaveSnapshotArray()
+        {
+            return _saveSnapshotBiomassRuns.IsCreated ? _saveSnapshotBiomassRuns.AsArray() : default;
         }
 
         internal unsafe void RestoreFromLoadedRecords(EcosystemSectorSaveRecord[] loadedRecords)
@@ -1497,6 +1512,7 @@ namespace Hecton8.World
 
             CompleteScheduledSimulation(forceComplete: true);
             _sectorIndexByKey.Clear();
+            _biomassIndexByKey.Clear();
             _coldTickAccumulator = 0f;
             _solveScheduled = false;
             _scheduledSolveHandle = default;
@@ -1514,29 +1530,39 @@ namespace Hecton8.World
             }
 
             ClearHeadlessRuntimeState();
+            ClearBiomassRuntimeState();
 
-            int recordCount = loadedRecords != null ? math.min(loadedRecords.Length, _sectorFrontStates.Length) : 0;
+            int recordCount = loadedRecords != null ? loadedRecords.Length : 0;
             _activeSectorCount = 0;
-            for (int sectorIndex = 0; sectorIndex < recordCount; sectorIndex++)
+            for (int recordIndex = 0; recordIndex < recordCount; recordIndex++)
             {
-                EcosystemSectorSaveRecord saveRecord = loadedRecords[sectorIndex];
+                EcosystemSectorSaveRecord saveRecord = loadedRecords[recordIndex];
+                if (IsBiomassSaveRecord(in saveRecord))
+                {
+                    RestoreBiomassSaveRun(in saveRecord);
+                    continue;
+                }
+
+                if (_activeSectorCount >= _sectorFrontStates.Length)
+                    continue;
+
                 int biomeId = ResolveBiomeIdForSector(saveRecord.SectorCoord);
-                ResolveBucketTablePopulation(
-                    saveRecord.SectorCoord,
-                    apexSectorBucketCutoff,
-                    grazerPopulationPerSector,
-                    leviathanPopulationPerSector,
-                    out int preyPopulation,
-                    out int predatorPopulation);
+                UnpackPopulationCounts(saveRecord.PackedPopulations, out int preyPopulation, out int predatorPopulation);
+                UnpackAdaptationTraits(
+                    saveRecord.PackedAdaptation,
+                    maximumSpeedMultiplier,
+                    out float fitness,
+                    out float speedMultiplier,
+                    out float camouflageIndex);
                 SectorPopulationState restoredState = new SectorPopulationState
                 {
                     SectorCoord = saveRecord.SectorCoord,
                     PreyPopulation = preyPopulation,
                     PredatorPopulation = predatorPopulation,
                     HarvestPressure = 0f,
-                    Fitness = baselineFitness,
-                    SpeedMultiplier = 1f,
-                    CamouflageIndex = 0f,
+                    Fitness = fitness,
+                    SpeedMultiplier = speedMultiplier,
+                    CamouflageIndex = camouflageIndex,
                     FoodDensity01 = ResolveRuntimeSectorFoodDensity01(saveRecord.SectorCoord, biomeId, 0f, 0f),
                     TemperatureScore01 = ResolveSectorTemperatureScore01(saveRecord.SectorCoord, biomeId),
                     Oxygen01 = 1f,
@@ -1547,12 +1573,15 @@ namespace Hecton8.World
                     ApexInSector = PackBooleanByte(predatorPopulation > 0)
                 };
 
+                int sectorIndex = _activeSectorCount;
                 _sectorFrontStates[sectorIndex] = restoredState;
                 _sectorBackStates[sectorIndex] = restoredState;
                 WriteHeadlessSlot(sectorIndex, in restoredState);
                 _sectorIndexByKey.TryAdd(PackSectorKey(saveRecord.SectorCoord), sectorIndex);
                 _activeSectorCount++;
             }
+
+            PublishBiomassTelemetryAndEvents();
         }
 
         private void Awake()
@@ -3151,6 +3180,393 @@ namespace Hecton8.World
             state.BiomeId = biomeId;
             state.ApexInSector = PackBooleanByte(predatorPopulation > 0);
             return state;
+        }
+
+        private int ResolveOrCreateBiomassCellSlot(int2 macroCellCoord, bool seedWithBaseline = true)
+        {
+            long packedKey = PackBiomassCellKey(macroCellCoord);
+            if (_biomassIndexByKey.TryGetValue(packedKey, out int existingSlot))
+                return existingSlot;
+
+            if (_activeBiomassCellCount >= _preyBiomassFront.Length)
+                return -1;
+
+            int slotIndex = _activeBiomassCellCount;
+            _activeBiomassCellCount++;
+            _biomassIndexByKey.TryAdd(packedKey, slotIndex);
+            _biomassMacroCellCoords[slotIndex] = macroCellCoord;
+
+            float carryingCapacity01 = ResolveBiomassCarryingCapacity01(macroCellCoord);
+            float seedScale = seedWithBaseline ? 1f : 0.5f;
+            float prey = math.clamp(defaultPreyBiomass01 * carryingCapacity01 * seedScale, 0f, carryingCapacity01);
+            float predator = math.clamp(defaultPredatorBiomass01 * carryingCapacity01 * seedScale, 0f, carryingCapacity01);
+            _preyBiomassFront[slotIndex] = prey;
+            _preyBiomassBack[slotIndex] = prey;
+            _predatorBiomassFront[slotIndex] = predator;
+            _predatorBiomassBack[slotIndex] = predator;
+            _biomassCarryingCapacity[slotIndex] = carryingCapacity01;
+            _biomassSumScratch[slotIndex] = prey + predator;
+            _biomassCellFlags[slotIndex] = 0;
+            return slotIndex;
+        }
+
+        private float ResolveBiomassCarryingCapacity01(int2 macroCellCoord)
+        {
+            int2 sectorCoord = new int2(
+                FloorDiv(macroCellCoord.x, (int)(SectorEdgeLengthMeters * InvBiomassMacroCellSizeMeters)),
+                FloorDiv(macroCellCoord.y, (int)(SectorEdgeLengthMeters * InvBiomassMacroCellSizeMeters)));
+            int biomeId = ResolveBiomeIdForSector(sectorCoord);
+            float food01 = ResolveRuntimeSectorFoodDensity01(sectorCoord, biomeId, 0f, 0f);
+            float biomeCapacityBias = (math.select(0f, 0.08f, biomeId == 1)) - (math.select(0f, 0.05f, biomeId == 2));
+            return math.clamp(food01 + biomeCapacityBias, 0.1f, 1f);
+        }
+
+        private static int FloorDiv(int value, int divisor)
+        {
+            divisor = math.max(1, divisor);
+            int quotient = value / divisor;
+            int remainder = value % divisor;
+            return quotient - math.select(0, 1, remainder != 0 && ((remainder < 0) != (divisor < 0)));
+        }
+
+        private void QueueOrApplyBiomassImpact(Vector3 worldPosition, byte kind, float amount)
+        {
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            QueueOrApplyBiomassImpact(in aup, kind, amount);
+        }
+
+        private void QueueOrApplyBiomassImpact(in AbsoluteUniversePosition positionAup, byte kind, float amount)
+        {
+            if (!math.isfinite(amount) || amount <= 0f)
+                return;
+
+            QueueOrApplyBiomassImpact(QuantizeBiomassMacroCell(in positionAup), kind, amount);
+        }
+
+        private void QueueOrApplyBiomassImpact(int2 macroCellCoord, byte kind, float amount)
+        {
+            if (!IsInitialized || !math.isfinite(amount) || amount <= 0f)
+                return;
+
+            if (HasPendingSimulationJob())
+            {
+                if (_pendingBiomassImpactCount >= _pendingBiomassImpacts.Length)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        _BiomassTelemetryHash,
+                        _EcosystemDirectorContextHash,
+                        _pendingBiomassImpactCount);
+                    return;
+                }
+
+                _pendingBiomassImpacts[_pendingBiomassImpactCount++] = new BiomassImpactEvent
+                {
+                    MacroCellCoord = macroCellCoord,
+                    Amount = math.saturate(amount),
+                    Kind = kind
+                };
+                return;
+            }
+
+            ApplyBiomassImpact(macroCellCoord, kind, amount);
+        }
+
+        private void ApplyPendingBiomassImpacts()
+        {
+            int count = math.min(_pendingBiomassImpactCount, _pendingBiomassImpacts.IsCreated ? _pendingBiomassImpacts.Length : 0);
+            _pendingBiomassImpactCount = 0;
+            for (int i = 0; i < count; i++)
+            {
+                BiomassImpactEvent impact = _pendingBiomassImpacts[i];
+                ApplyBiomassImpact(impact.MacroCellCoord, impact.Kind, impact.Amount);
+                _pendingBiomassImpacts[i] = default;
+            }
+        }
+
+        private void ApplyBiomassImpact(int2 macroCellCoord, byte kind, float amount)
+        {
+            int slotIndex = ResolveOrCreateBiomassCellSlot(macroCellCoord, seedWithBaseline: true);
+            if (slotIndex < 0)
+                return;
+
+            float capacity = math.max(0.0001f, _biomassCarryingCapacity[slotIndex]);
+            float prey = math.clamp(_preyBiomassFront[slotIndex], 0f, capacity);
+            float predator = math.clamp(_predatorBiomassFront[slotIndex], 0f, capacity);
+            float impact = math.saturate(amount) * capacity;
+
+            switch (kind)
+            {
+                case BiomassImpactKindFishing:
+                    prey = math.max(0f, prey - impact);
+                    break;
+                case BiomassImpactKindApexKill:
+                    predator = math.max(0f, predator - math.max(impact, capacity));
+                    break;
+                case BiomassImpactKindPredation:
+                    prey = math.max(0f, prey - impact);
+                    predator = math.min(capacity, predator + (impact * 0.1f));
+                    break;
+                default:
+                    if (predator > 0.001f)
+                        predator = math.max(0f, predator - impact);
+                    else
+                        prey = math.max(0f, prey - (impact * 0.5f));
+                    break;
+            }
+
+            _preyBiomassFront[slotIndex] = prey;
+            _preyBiomassBack[slotIndex] = prey;
+            _predatorBiomassFront[slotIndex] = predator;
+            _predatorBiomassBack[slotIndex] = predator;
+            _biomassSumScratch[slotIndex] = prey + predator;
+        }
+
+        private void DrainBiomassSignalSnapshots()
+        {
+            int frame = Time.frameCount;
+            if (_lastBiomassSignalDrainFrame == frame)
+                return;
+
+            _lastBiomassSignalDrainFrame = frame;
+
+            ReadOnlySpan<EntityDeathSignal> deathSignals = SignalBus<EntityDeathSignal>.GetFrameSnapshot();
+            for (int i = 0; i < deathSignals.Length; i++)
+            {
+                EntityDeathSignal signal = deathSignals[i];
+                if (signal.EntityHash == 0u)
+                    continue;
+
+                float amount = math.max(0.01f, entityDeathBiomassPenalty01 * math.max(0.1f, signal.Intensity01));
+                QueueOrApplyBiomassImpact(in signal.PositionAup, BiomassImpactKindDeath, amount);
+            }
+
+            ReadOnlySpan<ItemAcquiredSignal> itemSignals = SignalBus<ItemAcquiredSignal>.GetFrameSnapshot();
+            for (int i = 0; i < itemSignals.Length; i++)
+            {
+                ItemAcquiredSignal signal = itemSignals[i];
+                if (!IsFishItemHash(signal.ItemHash))
+                    continue;
+
+                float quantity = math.max(1f, signal.Quantity);
+                QueueOrApplyBiomassImpact(
+                    in signal.PositionAup,
+                    BiomassImpactKindFishing,
+                    fishAcquisitionPreyPenalty01 * quantity);
+            }
+        }
+
+        private void PublishScannerEcologyWarningIfNeeded()
+        {
+            if (Time.frameCount - _lastScannerWarningFrame < 120)
+                return;
+
+            if (!GlobalSignals.TryGetLatestScannerToolActiveSignal(out ScannerToolActiveSignal scannerSignal, out _) ||
+                scannerSignal.Active == 0)
+            {
+                return;
+            }
+
+            if (!TryResolvePlayerRuntimePosition(out Vector3 playerPosition) ||
+                !TryGetBiomassAvailability(playerPosition, out float preyBiomass01, out float predatorBiomass01, out _))
+            {
+                return;
+            }
+
+            if (preyBiomass01 > 0.05f || predatorBiomass01 > 0.05f)
+                return;
+
+            _lastScannerWarningFrame = Time.frameCount;
+            GlobalSignals.Publish(new HUDNotificationSignal
+            {
+                MessageHash = _EcologicalCollapseWarningHash,
+                ContextHash = _EcosystemDirectorContextHash,
+                SourceId = _BiomassTelemetryHash,
+                Frame = unchecked((uint)Time.frameCount),
+                Severity = 3,
+                Flags = 0
+            });
+        }
+
+        private void PublishBiomassTelemetryAndEvents()
+        {
+            float preySum = 0f;
+            float predatorSum = 0f;
+            int invalidFlag = 0;
+            for (int i = 0; i < _activeBiomassCellCount; i++)
+            {
+                float capacity = math.max(0.0001f, _biomassCarryingCapacity[i]);
+                float prey = math.clamp(_preyBiomassFront[i], 0f, capacity);
+                float predator = math.clamp(_predatorBiomassFront[i], 0f, capacity);
+                if (!math.isfinite(prey) || !math.isfinite(predator))
+                {
+                    invalidFlag = 1;
+                    prey = 0f;
+                    predator = 0f;
+                    _preyBiomassFront[i] = 0f;
+                    _preyBiomassBack[i] = 0f;
+                    _predatorBiomassFront[i] = 0f;
+                    _predatorBiomassBack[i] = 0f;
+                }
+
+                preySum += prey;
+                predatorSum += predator;
+                byte flags = _biomassCellFlags[i];
+                bool predatorCleared = predator <= 0.0001f;
+                if (predatorCleared && (flags & BiomassCellFlagSectorClearedPublished) == 0)
+                {
+                    PublishPredatorClearedEvent(_biomassMacroCellCoords[i]);
+                    flags |= BiomassCellFlagSectorClearedPublished;
+                }
+                else if (!predatorCleared && predator > 0.05f)
+                {
+                    flags = (byte)(flags & ~BiomassCellFlagSectorClearedPublished);
+                }
+
+                _biomassCellFlags[i] = flags;
+            }
+
+            float globalSum = preySum + predatorSum;
+            float overgrowth01 = ResolveGlobalFloraOvergrowth01(preySum);
+            _debugPreyBiomassSum = preySum;
+            _debugPredatorBiomassSum = predatorSum;
+            _debugGlobalBiomassSum = globalSum;
+            _debugFloraOvergrowth01 = overgrowth01;
+            _debugBiomassCellCount = _activeBiomassCellCount;
+            Shader.SetGlobalFloat(_BiomassOvergrowthId, overgrowth01);
+            PushBiomassBlackBox(globalSum, preySum, predatorSum, overgrowth01, invalidFlag);
+            GlobalTelemetryBus.PublishPerformanceWarning(_BiomassTelemetryHash, _EcosystemDirectorContextHash, globalSum);
+            if (invalidFlag != 0)
+                DumpBiomassBlackBox();
+        }
+
+        private void PublishPredatorClearedEvent(int2 macroCellCoord)
+        {
+            AbsoluteUniversePosition centerAup = ResolveBiomassMacroCellCenterAup(macroCellCoord);
+            GlobalSignals.Publish(new ProgressionEventSignal
+            {
+                PositionAup = centerAup,
+                PoiHash = _SectorClearedEventHash,
+                QuestHash = 0u,
+                Frame = unchecked((uint)Time.frameCount),
+                Source = 3,
+                Flags = 0
+            });
+        }
+
+        private void PushBiomassBlackBox(
+            float globalSum,
+            float preySum,
+            float predatorSum,
+            float overgrowth01,
+            int flags)
+        {
+            if (!_biomassBlackBox.IsCreated || _biomassBlackBox.Length <= 0)
+                return;
+
+            int index = _biomassBlackBoxCursor % _biomassBlackBox.Length;
+            _biomassBlackBox[index] = new BiomassTelemetryEntry
+            {
+                FrameIndex = unchecked((uint)Time.frameCount),
+                StateHash = MixBiomassStateHash(globalSum, preySum, predatorSum, _activeBiomassCellCount),
+                ActiveCellCount = _activeBiomassCellCount,
+                Flags = flags,
+                GlobalBiomassSum = globalSum,
+                PreyBiomassSum = preySum,
+                PredatorBiomassSum = predatorSum,
+                FloraOvergrowth01 = overgrowth01
+            };
+            _biomassBlackBoxCursor++;
+        }
+
+        private unsafe void DumpBiomassBlackBox()
+        {
+            if (!_biomassBlackBox.IsCreated)
+                return;
+
+            try
+            {
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string dumpPath = Path.Combine(projectRoot, BiomassTelemetryDumpRelativePath);
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                {
+                    byte* headerPtr = stackalloc byte[sizeof(ulong)];
+                    UnsafeUtility.WriteArrayElement(headerPtr, 0, BiomassTelemetryDumpMagic);
+                    stream.Write(new ReadOnlySpan<byte>(headerPtr, sizeof(ulong)));
+                    byte* dataPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_biomassBlackBox);
+                    int dataBytes = _biomassBlackBox.Length * UnsafeUtility.SizeOf<BiomassTelemetryEntry>();
+                    stream.Write(new ReadOnlySpan<byte>(dataPtr, dataBytes));
+                }
+            }
+            catch (Exception)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)_BiomassTelemetryHash));
+            }
+        }
+
+        private static uint MixBiomassStateHash(float globalSum, float preySum, float predatorSum, int activeCellCount)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = (hash ^ (uint)math.asint(globalSum)) * 16777619u;
+                hash = (hash ^ (uint)math.asint(preySum)) * 16777619u;
+                hash = (hash ^ (uint)math.asint(predatorSum)) * 16777619u;
+                hash = (hash ^ (uint)activeCellCount) * 16777619u;
+                return hash;
+            }
+        }
+
+        private static bool IsFishItemHash(uint itemHash)
+        {
+            return itemHash == _ItemCuredFishNameHash ||
+                   itemHash == _ItemRawFishNameHash ||
+                   itemHash == _ItemCookedFishNameHash;
+        }
+
+        private static float ResolveFloraOvergrowth01(float preyBiomass01)
+        {
+            return math.saturate((0.35f - math.saturate(preyBiomass01)) * math.rcp(0.35f));
+        }
+
+        private float ResolveGlobalFloraOvergrowth01(float preySum)
+        {
+            if (_activeBiomassCellCount <= 0)
+                return 0f;
+
+            float avgPrey01 = preySum * math.rcp(math.max(1f, _activeBiomassCellCount));
+            return ResolveFloraOvergrowth01(avgPrey01);
+        }
+
+        private static AbsoluteUniversePosition ResolveBiomassMacroCellCenterAup(int2 macroCellCoord)
+        {
+            double3 absolutePosition = new double3(
+                ((double)macroCellCoord.x + 0.5d) * BiomassMacroCellSizeMeters,
+                0d,
+                ((double)macroCellCoord.y + 0.5d) * BiomassMacroCellSizeMeters);
+            return AbsoluteUniversePosition.FromAbsolutePosition(absolutePosition);
+        }
+
+        private static int2 QuantizeBiomassMacroCell(Vector3 worldPosition)
+        {
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            return QuantizeBiomassMacroCell(in aup);
+        }
+
+        private static int2 QuantizeBiomassMacroCell(in AbsoluteUniversePosition position)
+        {
+            double3 absolutePosition = position.ToAbsoluteDouble3();
+            return new int2(
+                (int)math.floor(absolutePosition.x * InvBiomassMacroCellSizeMeters),
+                (int)math.floor(absolutePosition.z * InvBiomassMacroCellSizeMeters));
+        }
+
+        private static bool ResolveBiomassDiffusionEnabled()
+        {
+            return GlobalRegistry.ScalabilityTierProfileByte > 0;
         }
 
         private void ClearHeadlessRuntimeState()

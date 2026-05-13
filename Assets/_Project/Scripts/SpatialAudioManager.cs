@@ -63,6 +63,7 @@ using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;

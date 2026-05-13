@@ -52,11 +52,12 @@ Runtime proof: PENDING VERIFICATION
 ## Iteration Evidence
 
 - Loop 1 compile: BLOCKED BY BASELINE DEPENDENCY. `dotnet build Hecton8.Core.csproj` still fails on unrelated scheduling/memory/audio asmdef gaps; filtered rebuild after fix shows no touched-file errors for `HectonPlayerMovement.cs`, `GlobalSignals.cs`, `CinematicMath.cs`, or `HectonNarrativeDirector.cs`.
-- Loop 2 compile: PENDING.
-- Loop 3 compile: PENDING.
-- Loop 4 compile: PENDING.
-- Strict reread pass 1: PENDING.
-- Strict reread pass 2: PENDING.
-- Strict reread pass 3: PENDING.
-- Strict reread pass 4: PENDING.
-- Strict reread pass 5: PENDING.
+- Loop 2 compile: BLOCKED BY BASELINE DEPENDENCY. `dotnet build Hecton8.Core.csproj` timed out after 120s on pre-existing missing `Hecton8.Core.Scheduling`, `Hecton8.Core.Memory.Layout`, `Hecton8.Audio.Propagation`, `IGroundRadarService`, `IInertialNavigationService`, `BinaryBlittableSafe`, `TetherFiredSignal`, and acoustic contract errors.
+- Loop 3 compile: BLOCKED BY BASELINE DEPENDENCY. Unity MCP `validate_script` returned `no_unity_session` for every touched script, so editor-level syntax proof is unavailable in this session.
+- Loop 4 compile: BLOCKED BY BASELINE DEPENDENCY. Static audits show implemented focus path uses `CinematicMath.FastNlerp`, no `Quaternion.Slerp`, no `Vector3.Distance`, and no hot-path string subtitle projection.
+- Strict reread pass 1: Re-read `CURRENT_BATCH.md` lines 612-655 cover-to-cover after core task completion; task count remains 19 and status remains PENDING VERIFICATION.
+- Strict reread pass 2: `rg` check over touched focus files found no `Vector3.Distance`; only unrelated method names containing `Distance` remain.
+- Strict reread pass 3: `rg` check found `CinematicMath.FastNlerp` at `HectonPlayerMovement.cs:7529`; no `Quaternion.Slerp` in touched focus files.
+- Strict reread pass 4: Zero-GC scan found no `string.Format`, `.ToString()`, LINQ, or managed collection iteration in the focus hot path; dump path uses cold/fault-only file IO.
+- Strict reread pass 5: Dependency scan found BRG infrastructure and TMP world sign components, but no `UI_LOCALIZATION_BABEL` BRG text quad owner and no public fauna head-pose contract; tasks 9 and 11 remain dependency-blocked by design.
+- Omega polish: PENDING DUE GLOBAL COMPILE/UNITY SESSION BLOCK. Dear-lie audit kept AUP squared-distance fade, rsqrt/nlerp math, bitmask flags, tier/VR FOV gates, NativeQueue edge signals, and fixed NativeArray black box.

@@ -41,3 +41,17 @@ Solution: Manifest failures publish `ComplianceViolationSignal` and dump `Dump_B
 Rejected Alternatives: `Debug.LogError` only was rejected because release/dev boot needs binary evidence.
 Scalability potential: Same behavior across tiers; higher tiers can add richer sidecar tools without changing the failure ABI.
 Hardware Impact: Failure path only; no gameplay cost.
+
+## Loop 2 Decisions
+
+Problem: The manifest asserted `ComplianceViolationSignal` through the same `[BinaryBlittableSafe]` gate used by persistence DTOs, but the signal was missing the marker during the first pass.
+Solution: Added the marker to the existing explicit 32-byte signal and imported the no-engine layout assembly in `GlobalSignals`.
+Rejected Alternatives: Special-casing signals in `MemoryInquisitor` was rejected because the gate must be uniform; skipping signal validation was rejected because boot failures need deterministic binary evidence.
+Scalability potential: Low/Middle/High/Ultra all share the same 32-byte signal lane; Ultra can add richer sidecar dump readers without changing the signal ABI.
+Hardware Impact: 0 us/frame on i3/MX350; cold failure path can enqueue one fixed-size native signal.
+
+Problem: Full compile verification could not be completed after the final marker patch.
+Solution: Attempted a direct `dotnet build` with no restore and single worker; stopped only the child MSBuild nodes created by that timed-out command. Unity MCP validation returned `no_unity_session`.
+Rejected Alternatives: Reporting a clean compile without Unity/Bee completion was rejected. Reverting unrelated active work by other agents was rejected.
+Scalability potential: Blocker is integration-state only; runtime layout design still scales from low-end cold checks to high-end manifest expansion.
+Hardware Impact: No runtime impact. Verification wall cost was editor/build-machine time only.

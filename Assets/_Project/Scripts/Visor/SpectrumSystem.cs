@@ -2430,6 +2430,29 @@ namespace Hecton8.Visor
             return (int)(result < 0 ? result + modulus : result);
         }
 
+        private static bool IsFinite(Vector4 value)
+        {
+            return IsFinite(value.x) &&
+                   IsFinite(value.y) &&
+                   IsFinite(value.z) &&
+                   IsFinite(value.w);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct ActiveSonarGeoTelemetryEntry
+        {
+            public uint Frame;
+            public int ActiveRingCount;
+            public float PrimaryRadius;
+            public float3 PrimaryCenter;
+            public uint Flags;
+        }
+
         private static bool NearlyEqual(float a, float b, float epsilon)
         {
             return math.abs(a - b) <= epsilon;
@@ -2588,6 +2611,331 @@ namespace Hecton8.Visor
             }
 
             return runtimeContext.TraumaDispatcher.IsEmpSensorBlindActive;
+        }
+
+        private void UpdateActiveSonarGeoIllumination(float deltaTime, float now)
+        {
+            ApplyActiveSonarGeoAupShifts();
+            ConsumeLatestActiveSonarAcousticPing(now);
+            StepActiveSonarGeoPings(deltaTime, now);
+            PublishActiveSonarGeoGlobals(false);
+            WriteActiveSonarGeoTelemetry();
+        }
+
+        private void ConsumeLatestActiveSonarAcousticPing(float now)
+        {
+            if (!GlobalSignals.TryGetLatestAcousticPingSignal(out AcousticPingSignal signal, out int sequence) ||
+                sequence == _lastConsumedActiveSonarAcousticSequence)
+            {
+                return;
+            }
+
+            _lastConsumedActiveSonarAcousticSequence = sequence;
+            if (signal.Channel != AcousticPingSignal.ChannelActiveSonar ||
+                (signal.Flags & AcousticPingSignal.FlagActiveSonar) == 0)
+            {
+                return;
+            }
+
+            SubmitActiveSonarGeoPing(in signal, now, 0f);
+        }
+
+        private void SubmitActiveSonarGeoPing(in AcousticPingSignal signal, float now, float audioDelaySeconds)
+        {
+            float intensity = math.saturate(signal.Intensity01);
+            float maxRange = math.clamp(signal.RadiusMeters, 1f, ActiveSonarGeoMaxRangeMeters);
+            if (intensity <= 0.0001f || maxRange <= 0.0001f)
+                return;
+
+            float3 center = signal.PositionAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(center)))
+            {
+                HandleActiveSonarGeoNonFinite();
+                return;
+            }
+
+            int insertIndex = ResolveActiveSonarGeoInsertIndex();
+            _activeSonarGeoCentersRadius[insertIndex] = new Vector4(center.x, center.y, center.z, 0f);
+            _activeSonarGeoParams[insertIndex] = new Vector4(
+                intensity,
+                now + math.max(0f, audioDelaySeconds),
+                maxRange,
+                signal.Flags);
+
+            if (_activeSonarGeoPingCount < ActiveSonarGeoPingCapacity)
+                _activeSonarGeoPingCount++;
+
+            _activeSonarGeoGlobalsDirty = true;
+        }
+
+        private int ResolveActiveSonarGeoInsertIndex()
+        {
+            if (_activeSonarGeoPingCount < ActiveSonarGeoPingCapacity)
+                return _activeSonarGeoPingCount;
+
+            int oldestIndex = 0;
+            float oldestStartTime = _activeSonarGeoParams[0].y;
+            for (int i = 1; i < ActiveSonarGeoPingCapacity; i++)
+            {
+                float startTime = _activeSonarGeoParams[i].y;
+                if (startTime < oldestStartTime)
+                {
+                    oldestStartTime = startTime;
+                    oldestIndex = i;
+                }
+            }
+
+            return oldestIndex;
+        }
+
+        private void StepActiveSonarGeoPings(float deltaTime, float now)
+        {
+            if (_activeSonarGeoPingCount <= 0)
+                return;
+
+            float dt = math.max(0f, deltaTime);
+            int writeIndex = 0;
+            for (int readIndex = 0; readIndex < _activeSonarGeoPingCount; readIndex++)
+            {
+                Vector4 centerRadius = _activeSonarGeoCentersRadius[readIndex];
+                Vector4 parameters = _activeSonarGeoParams[readIndex];
+                float maxRange = math.clamp(parameters.z, 1f, ActiveSonarGeoMaxRangeMeters);
+                float radius = centerRadius.w;
+                if (now >= parameters.y)
+                    radius += dt * ActiveSonarGeoSpeedMetersPerSecond;
+
+                centerRadius.w = radius;
+                if (!IsFinite(centerRadius) || !IsFinite(parameters))
+                {
+                    HandleActiveSonarGeoNonFinite();
+                    return;
+                }
+
+                if (radius >= maxRange)
+                {
+                    _activeSonarGeoGlobalsDirty = true;
+                    continue;
+                }
+
+                if (writeIndex != readIndex)
+                {
+                    _activeSonarGeoCentersRadius[writeIndex] = centerRadius;
+                    _activeSonarGeoParams[writeIndex] = parameters;
+                    _activeSonarGeoGlobalsDirty = true;
+                }
+                else if (!NearlyEqual(_activeSonarGeoCentersRadius[writeIndex], centerRadius, ShaderVectorPublishEpsilon))
+                {
+                    _activeSonarGeoGlobalsDirty = true;
+                }
+
+                writeIndex++;
+            }
+
+            for (int i = writeIndex; i < _activeSonarGeoPingCount; i++)
+            {
+                _activeSonarGeoCentersRadius[i] = Vector4.zero;
+                _activeSonarGeoParams[i] = Vector4.zero;
+            }
+
+            if (writeIndex != _activeSonarGeoPingCount)
+            {
+                _activeSonarGeoPingCount = writeIndex;
+                _activeSonarGeoGlobalsDirty = true;
+            }
+        }
+
+        private void ApplyActiveSonarGeoAupShifts()
+        {
+            if (_activeSonarGeoPingCount <= 0)
+                return;
+
+            ReadOnlySpan<AupShiftSignal> shifts = SignalBus<AupShiftSignal>.GetFrameSnapshot();
+            if (shifts.Length == 0)
+                return;
+
+            for (int shiftIndex = 0; shiftIndex < shifts.Length; shiftIndex++)
+            {
+                float3 shiftMeters = shifts[shiftIndex].ShiftMeters;
+                if (!math.all(math.isfinite(shiftMeters)))
+                {
+                    HandleActiveSonarGeoNonFinite();
+                    return;
+                }
+
+                for (int pingIndex = 0; pingIndex < _activeSonarGeoPingCount; pingIndex++)
+                {
+                    Vector4 centerRadius = _activeSonarGeoCentersRadius[pingIndex];
+                    centerRadius.x -= shiftMeters.x;
+                    centerRadius.y -= shiftMeters.y;
+                    centerRadius.z -= shiftMeters.z;
+                    _activeSonarGeoCentersRadius[pingIndex] = centerRadius;
+                }
+            }
+
+            _activeSonarGeoGlobalsDirty = true;
+        }
+
+        private void PublishActiveSonarGeoGlobals(bool force)
+        {
+            float primaryRadius = _activeSonarGeoPingCount > 0 ? math.max(0f, _activeSonarGeoCentersRadius[0].w) : 0f;
+            Vector4 primaryCenter = _activeSonarGeoPingCount > 0
+                ? new Vector4(
+                    _activeSonarGeoCentersRadius[0].x,
+                    _activeSonarGeoCentersRadius[0].y,
+                    _activeSonarGeoCentersRadius[0].z,
+                    primaryRadius)
+                : Vector4.zero;
+            Vector4 state = new Vector4(
+                _activeSonarGeoPingCount,
+                ActiveSonarGeoMaxRangeMeters,
+                GlobalRegistry.ScalabilityTierProfileByte == 0 ? 0f : 1f,
+                ActiveSonarGeoSpeedMetersPerSecond);
+
+            if (force || _activeSonarGeoGlobalsDirty)
+            {
+                Shader.SetGlobalVector(_ShaderActiveSonarCenterAup, primaryCenter);
+                Shader.SetGlobalVectorArray(_ShaderActiveSonarCentersRadius, _activeSonarGeoCentersRadius);
+                Shader.SetGlobalVectorArray(_ShaderActiveSonarParams, _activeSonarGeoParams);
+            }
+
+            if (force ||
+                _activeSonarGeoGlobalsDirty ||
+                _lastPublishedActiveSonarGeoCount != _activeSonarGeoPingCount ||
+                !NearlyEqual(_lastPublishedActiveSonarGeoRadius, primaryRadius, ShaderScalarPublishEpsilon))
+            {
+                Shader.SetGlobalFloat(_ShaderActiveSonarRadius, primaryRadius);
+                _lastPublishedActiveSonarGeoRadius = primaryRadius;
+                _lastPublishedActiveSonarGeoCount = _activeSonarGeoPingCount;
+            }
+
+            if (force || _activeSonarGeoGlobalsDirty || !NearlyEqual(_lastPublishedActiveSonarGeoState, state, ShaderVectorPublishEpsilon))
+            {
+                Shader.SetGlobalVector(_ShaderActiveSonarGeoParams, state);
+                _lastPublishedActiveSonarGeoState = state;
+            }
+
+            PublishActiveSonarGeoRingCountTelemetry();
+            _activeSonarGeoGlobalsDirty = false;
+        }
+
+        private void PublishActiveSonarGeoRingCountTelemetry()
+        {
+            if (_lastTelemetryPublishedActiveSonarGeoCount == _activeSonarGeoPingCount)
+                return;
+
+            GlobalTelemetryBus.PublishModTelemetry(
+                _ActiveSonarGeoSystemHash,
+                _ActiveSonarGeoRingCountHash,
+                _activeSonarGeoPingCount);
+            _lastTelemetryPublishedActiveSonarGeoCount = _activeSonarGeoPingCount;
+        }
+
+        private void ClearActiveSonarGeoGlobals()
+        {
+            _activeSonarGeoPingCount = 0;
+            for (int i = 0; i < ActiveSonarGeoPingCapacity; i++)
+            {
+                _activeSonarGeoCentersRadius[i] = Vector4.zero;
+                _activeSonarGeoParams[i] = Vector4.zero;
+            }
+
+            _activeSonarGeoGlobalsDirty = true;
+            Shader.SetGlobalVector(_ShaderActiveSonarCenterAup, Vector4.zero);
+            Shader.SetGlobalFloat(_ShaderActiveSonarRadius, 0f);
+            Shader.SetGlobalVectorArray(_ShaderActiveSonarCentersRadius, _activeSonarGeoCentersRadius);
+            Shader.SetGlobalVectorArray(_ShaderActiveSonarParams, _activeSonarGeoParams);
+            Shader.SetGlobalVector(_ShaderActiveSonarGeoParams, Vector4.zero);
+            _lastPublishedActiveSonarGeoCount = 0;
+            _lastPublishedActiveSonarGeoRadius = 0f;
+            _lastPublishedActiveSonarGeoState = Vector4.zero;
+        }
+
+        private void EnsureActiveSonarGeoTelemetryRing()
+        {
+            if (!Application.isPlaying || _activeSonarGeoTelemetryRing.IsCreated)
+                return;
+
+            _activeSonarGeoTelemetryRing = new NativeArray<ActiveSonarGeoTelemetryEntry>(
+                ActiveSonarGeoTelemetryCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ActiveSonarGeoTelemetryEntry>[300] - active sonar geo blackbox ring - owner: SpectrumSystem
+            NativeMemorySentinel.RegisterNativeArray(
+                _activeSonarGeoTelemetryRing,
+                nameof(SpectrumSystem),
+                nameof(_activeSonarGeoTelemetryRing),
+                NativeAllocationLifetime.Scene);
+        }
+
+        private void DisposeActiveSonarGeoTelemetryRing()
+        {
+            if (!_activeSonarGeoTelemetryRing.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(_activeSonarGeoTelemetryRing);
+            _activeSonarGeoTelemetryRing.Dispose();
+            _activeSonarGeoTelemetryRing = default;
+            _activeSonarGeoTelemetryWriteIndex = 0;
+        }
+
+        private void WriteActiveSonarGeoTelemetry()
+        {
+            if (!_activeSonarGeoTelemetryRing.IsCreated)
+                return;
+
+            int index = _activeSonarGeoTelemetryWriteIndex;
+            _activeSonarGeoTelemetryWriteIndex = (_activeSonarGeoTelemetryWriteIndex + 1) % ActiveSonarGeoTelemetryCapacity;
+            Vector4 primary = _activeSonarGeoPingCount > 0 ? _activeSonarGeoCentersRadius[0] : Vector4.zero;
+            _activeSonarGeoTelemetryRing[index] = new ActiveSonarGeoTelemetryEntry
+            {
+                Frame = unchecked((uint)Time.frameCount),
+                ActiveRingCount = _activeSonarGeoPingCount,
+                PrimaryRadius = primary.w,
+                PrimaryCenter = new float3(primary.x, primary.y, primary.z),
+                Flags = (uint)(GlobalRegistry.ScalabilityTierProfileByte == 0 ? 1 : 0)
+            };
+        }
+
+        private void HandleActiveSonarGeoNonFinite()
+        {
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _ActiveSonarGeoNaNHash,
+                _ActiveSonarGeoSystemHash,
+                _activeSonarGeoPingCount);
+            DumpActiveSonarGeoTelemetry();
+            ClearActiveSonarGeoGlobals();
+        }
+
+        private void DumpActiveSonarGeoTelemetry()
+        {
+            if (!_activeSonarGeoTelemetryRing.IsCreated)
+                return;
+
+            try
+            {
+                string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs"));
+                Directory.CreateDirectory(directory);
+                string path = Path.Combine(directory, "Dump_ACTIVE_SONAR_ILLUMINATION.bin");
+                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+                using BinaryWriter writer = new BinaryWriter(stream);
+                for (int i = 0; i < _activeSonarGeoTelemetryRing.Length; i++)
+                {
+                    ActiveSonarGeoTelemetryEntry entry = _activeSonarGeoTelemetryRing[i];
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.ActiveRingCount);
+                    writer.Write(entry.PrimaryRadius);
+                    writer.Write(entry.PrimaryCenter.x);
+                    writer.Write(entry.PrimaryCenter.y);
+                    writer.Write(entry.PrimaryCenter.z);
+                    writer.Write(entry.Flags);
+                }
+            }
+            catch (Exception)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _ActiveSonarGeoDumpFailureHash,
+                    _ActiveSonarGeoSystemHash,
+                    1f);
+            }
         }
 
         private void PublishSonarReveal(

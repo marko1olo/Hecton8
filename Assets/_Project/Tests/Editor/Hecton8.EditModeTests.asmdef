@@ -7,6 +7,8 @@
                        "Hecton8.Editor",
                        "Unity.Mathematics",
                        "Unity.Burst",
+                       "Unity.Collections",
+                       "Unity.Jobs",
                        "UnityEngine.TestRunner",
                        "UnityEditor.TestRunner"
                    ],

@@ -59,3 +59,17 @@ Rejected Alternatives: Direct AudioMixer edits, string telemetry, `Debug.Log` st
 Scalability potential: Low keeps audio/camera state changes edge-triggered; Middle consumes mixer ducking; High/Ultra can add layered ambient mix or focus bloom consumers without changing the signal contract.
 
 Hardware Impact: Focus edges enqueue two small signals. Runtime telemetry cost is one fixed struct write per active frame. Expected low-end cost remains under 10 microseconds/frame for one focus. STATUS: PENDING VERIFICATION.
+
+## OMEGA POLISH CHANGES
+
+Problem: Anti-bloat audit required proof that the focus implementation did not use expensive honest simulation, hot allocations, or cross-domain shortcuts.
+
+Solution: Kept the system as a visual fake: one AUP direction, nlerp rotation bias, scalar FOV bias, squared-distance subtitle alpha, bitmask flags, edge-triggered mixer/focus signals, and fixed-size NativeArray black box. Low tier disables FOV narrowing; VR exits before any focus rotation/FOV mutation. Fault dumps are binary and cold path only.
+
+Rejected Alternatives: `math.normalize`, `Quaternion.Slerp`, `Vector3.Distance`, managed world subtitles, camera-side creature transform search, direct AudioMixer writes, and Cinemachine tracks were rejected. Existing BRG and fauna code were not modified because no public `UI_LOCALIZATION_BABEL` BRG text or head-bone AUP provider exists.
+
+Scalability potential: Low = nlerp pull only and no FOV; Middle = nlerp plus squared-distance subtitle alpha for a future BRG renderer; High = BRG spatial glyph material response; Ultra = richer artifact/creature visual overkill driven by the same signal contract.
+
+Hardware Impact: Low-end estimate remains under 10 microseconds per active focus frame. Exact cheats used: rsqrt-backed nlerp, squared-distance fade, bitmask flags, NativeQueue decoupling, edge-only audio ducking, and fixed ring telemetry. `dotnet build Hecton8.Core.csproj` remains blocked by global baseline contract errors; Unity MCP validation is blocked by `no_unity_session`. STATUS: PENDING DUE GLOBAL COMPILE DEPENDENCIES.
+
+Final Git Diff: Current task footprint is `Assets/_Project/Scripts/HectonPlayerMovement.cs`, `Assets/_Project/Scripts/Core/GlobalSignals.cs`, `Assets/_Project/Scripts/Core/CinematicMath.cs`, `Assets/_Project/Scripts/HectonNarrativeDirector.cs`, `Assets/_Project/Scripts/Hecton8.Core.asmdef`, `Assets/_Project/Scripts/Narrative/Camera/CinematicMath.cs`, `Assets/_Project/Scripts/Narrative/Camera/Hecton8.Narrative.Camera.asmdef`, `Docs/Tasks/Status_CINEMATIC_FRAMER.md`, and `Docs/AgentLogs/Rationale_CINEMATIC_FRAMER.md`. `git diff --name-only` returned no pending local diff in the current workspace snapshot.

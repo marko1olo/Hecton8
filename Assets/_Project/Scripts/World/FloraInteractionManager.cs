@@ -29,7 +29,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-105)]
-    public sealed class FloraInteractionManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IProceduralSwayDirector
+    public sealed class FloraInteractionManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IProceduralSwayDirector, IGlobalRegistryHotSwapListener
     {
         private const int MaxModuleParentResolveDepth = 16;
 
@@ -418,6 +418,8 @@ namespace Hecton8.World
         private static readonly int _ProceduralWakeBufferId = Shader.PropertyToID("_HectonFloraWakeBuffer");
         private static readonly int _ProceduralWakeCountId = Shader.PropertyToID("_HectonFloraWakeCount");
         private static readonly int _ProceduralWakeParamsId = Shader.PropertyToID("_HectonFloraWakeParams");
+        private static readonly int _CulledFloraVisibleInstancesId = Shader.PropertyToID("_HectonCulledFloraVisibleInstances");
+        private static readonly int _CulledFloraVisibleCountId = Shader.PropertyToID("_HectonCulledFloraVisibleCount");
         private static readonly int _ShearFoamAmountId = Shader.PropertyToID("_ShearFoamAmount");
         private static readonly int _ParasiteAnchorDataId = Shader.PropertyToID("_HectonParasiteAnchorData");
         private static readonly int _ParasiteAnchorParamsId = Shader.PropertyToID("_HectonParasiteAnchorParams");
@@ -891,6 +893,8 @@ namespace Hecton8.World
         private GraphicsBuffer _interactionBuffer;
         private GraphicsBuffer _flowFieldBuffer;
         private GraphicsBuffer _wakeTrailStampCommandBuffer;
+        private IInstanceCullingService _instanceCullingService;
+        private bool _cullingHotSwapRegistered;
         private RenderTexture _wakeTrailRead;
         private RenderTexture _wakeTrailWrite;
         private Vector4 _wakeTrailWorldRect;
@@ -1145,6 +1149,8 @@ namespace Hecton8.World
 
             HectonFloatingOrigin.RegisterListener(this);
             GlobalRegistry.RegisterProceduralSwayDirector(this);
+            RefreshInstanceCullingService();
+            TryRegisterCullingHotSwapListener();
             RefreshCachedSubmarineContext();
             PublishFlowFieldGlobals();
             PublishWakeTrailGlobals();
@@ -1160,6 +1166,8 @@ namespace Hecton8.World
 
             HectonFloatingOrigin.UnregisterListener(this);
             GlobalRegistry.UnregisterProceduralSwayDirector(this);
+            TryUnregisterCullingHotSwapListener();
+            _instanceCullingService = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
             TryUnregister();
@@ -1178,6 +1186,8 @@ namespace Hecton8.World
 
             HectonFloatingOrigin.UnregisterListener(this);
             GlobalRegistry.UnregisterProceduralSwayDirector(this);
+            TryUnregisterCullingHotSwapListener();
+            _instanceCullingService = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
             TryUnregister();
@@ -4805,6 +4815,34 @@ namespace Hecton8.World
                 _MarineSnowFlowFieldCenterCellSizeId,
                 new Vector4(_flowFieldCenterWS.x, _flowFieldCenterWS.y, _flowFieldCenterWS.z, _flowFieldCellSize));
             Shader.SetGlobalInt(_FloraFlowFieldResolutionId, _flowFieldResolution);
+            PublishCulledFloraGlobals();
+        }
+
+        private void PublishCulledFloraGlobals()
+        {
+            if (TryGetCulledFloraVisibleBuffer(out GraphicsBuffer visibleInstancesBuffer, out int visibleInstanceCount))
+            {
+                Shader.SetGlobalBuffer(_CulledFloraVisibleInstancesId, visibleInstancesBuffer);
+                Shader.SetGlobalInt(_CulledFloraVisibleCountId, visibleInstanceCount);
+                return;
+            }
+
+            Shader.SetGlobalInt(_CulledFloraVisibleCountId, 0);
+        }
+
+        public bool TryGetCulledFloraVisibleBuffer(out GraphicsBuffer visibleInstancesBuffer, out int visibleInstanceCount)
+        {
+            IInstanceCullingService instanceCulling = _instanceCullingService;
+            if (instanceCulling != null && instanceCulling.VisibleInstancesBuffer != null)
+            {
+                visibleInstancesBuffer = instanceCulling.VisibleInstancesBuffer;
+                visibleInstanceCount = math.max(0, instanceCulling.LastVisibleInstanceCount);
+                return true;
+            }
+
+            visibleInstancesBuffer = null;
+            visibleInstanceCount = 0;
+            return false;
         }
 
         private void PublishPlayerRuntimePosition(
@@ -5392,6 +5430,7 @@ namespace Hecton8.World
             Shader.SetGlobalVector(_SubmarineWashAupLocalId, Vector4.zero);
             Shader.SetGlobalVector(_MarineSnowFlowFieldCenterCellSizeId, Vector4.zero);
             Shader.SetGlobalInt(_FloraFlowFieldResolutionId, 0);
+            Shader.SetGlobalInt(_CulledFloraVisibleCountId, 0);
             Shader.SetGlobalVector(_ParasiteGlobalsId, Vector4.zero);
             _lastPublishedInteractionCount = 0;
             _lastPublishedPlayerVelocity = Vector3.zero;
@@ -5429,6 +5468,40 @@ namespace Hecton8.World
             _submarineHullRigidbody = _submarineRuntimeContext != null
                 ? _submarineRuntimeContext.HullRigidbody
                 : null;
+        }
+
+        private void RefreshInstanceCullingService()
+        {
+            _instanceCullingService = GlobalRegistry.InstanceCulling;
+        }
+
+        private void TryRegisterCullingHotSwapListener()
+        {
+            if (_cullingHotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _cullingHotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterCullingHotSwapListener()
+        {
+            if (!_cullingHotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _cullingHotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.InstanceCullingRuntime)
+                return;
+
+            _instanceCullingService = currentService as IInstanceCullingService;
+            PublishCulledFloraGlobals();
         }
 
         private void ReleaseFlowFieldBuffer()
