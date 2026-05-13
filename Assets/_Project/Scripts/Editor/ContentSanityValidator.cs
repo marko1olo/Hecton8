@@ -10,6 +10,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.Scavenging;
+using Hecton8.UI;
 using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
@@ -24,6 +25,7 @@ namespace Hecton8.Editor.Validation
     {
         private const string MenuPath = "Hecton-8/Validate Content";
         private const string DataRoot = "Assets/_Project/Data";
+        private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Player.prefab";
         private const string ItemCatalogPath = DataRoot + "/Items/ItemCatalog.asset";
         private const string GeneratedRoot = DataRoot + "/Diagnostics/Generated/ContentSanity";
         private const string GeneratedMeshPath = GeneratedRoot + "/MESH_ContentSanityWireCube.asset";
@@ -35,6 +37,7 @@ namespace Hecton8.Editor.Validation
         private sealed class ValidationResult
         {
             public readonly Dictionary<uint, string> HashOwners = new Dictionary<uint, string>(256);
+            public readonly Dictionary<string, string> ItemPersistentIdOwners = new Dictionary<string, string>(256, StringComparer.Ordinal);
             public readonly List<string> Errors = new List<string>(128);
             public readonly List<string> Warnings = new List<string>(128);
             public readonly List<string> AutoFixes = new List<string>(128);
@@ -51,10 +54,17 @@ namespace Hecton8.Editor.Validation
             public int GeneratedFloraProxyCount;
             public int MeshColliderViolationCount;
             public int HashCollisionCount;
+            public int ItemDataDuplicatePersistentIdCount;
+            public int ItemCatalogNullEntryCount;
+            public int ItemCatalogDuplicateHashCount;
+            public int ItemCatalogMissingRuntimeDescriptorCount;
+            public int ItemCatalogLookupAmbiguityCount;
             public int AudioMaterialViolationCount;
             public int ResourceNodeYieldMissingWorldPrefabCount;
             public int ResourceNodeYieldNotCatalogedCount;
             public int ResourceNodeYieldInvalidWorldPrefabContractCount;
+            public int PlayerPdaHeadlessOpenRiskCount;
+            public int PlayerPdaBridgeWarningCount;
         }
 
         [MenuItem(MenuPath, priority = 141)]
@@ -70,10 +80,12 @@ namespace Hecton8.Editor.Validation
 
             ScanDataFolderPrefabs(result, wireMesh, wireMaterial);
             ValidateItemTemplates(result, wireMesh, wireMaterial);
+            ValidateItemCatalog(result);
             ValidateFloraTemplates(result, wireMesh, wireMaterial);
             ValidateFaunaTemplates(result, wireMesh, wireMaterial);
             ValidateResourceNodeTemplates(result);
             ValidateBaseModuleTemplates(result);
+            ValidatePlayerPdaShell(result);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -113,6 +125,7 @@ namespace Hecton8.Editor.Validation
 
                 result.ItemCount++;
                 string persistentId = item.PersistentId ?? string.Empty;
+                RegisterItemPersistentId(result, persistentId, assetPath);
                 int hashId = string.IsNullOrWhiteSpace(persistentId) ? 0 : LocHash.Compute(persistentId);
                 RegisterHash(result, unchecked((uint)hashId), $"ItemData:{persistentId}", assetPath);
 
@@ -136,6 +149,83 @@ namespace Hecton8.Editor.Validation
                     wireMesh,
                     wireMaterial,
                     allowMeshCollider: false);
+            }
+        }
+
+        private static void ValidateItemCatalog(ValidationResult result)
+        {
+            ItemCatalog itemCatalog = AssetDatabase.LoadAssetAtPath<ItemCatalog>(ItemCatalogPath);
+            if (itemCatalog == null)
+            {
+                result.Errors.Add($"{ItemCatalogPath}: ItemCatalog asset is missing; catalog validation cannot run.");
+                return;
+            }
+
+            SerializedObject serializedCatalog = new SerializedObject(itemCatalog);
+            SerializedProperty allItemsProperty = serializedCatalog.FindProperty("allItems");
+            if (allItemsProperty == null || !allItemsProperty.isArray)
+            {
+                result.Errors.Add($"{ItemCatalogPath}: ItemCatalog.allItems is missing or not serialized as an array.");
+                return;
+            }
+
+            Dictionary<int, string> catalogHashOwners = new Dictionary<int, string>(allItemsProperty.arraySize);
+            for (int i = 0; i < allItemsProperty.arraySize; i++)
+            {
+                SerializedProperty itemProperty = allItemsProperty.GetArrayElementAtIndex(i);
+                if (itemProperty == null || itemProperty.objectReferenceValue == null)
+                {
+                    result.ItemCatalogNullEntryCount++;
+                    result.Errors.Add($"{ItemCatalogPath}: allItems[{i}] is null.");
+                    continue;
+                }
+
+                if (!(itemProperty.objectReferenceValue is ItemData item))
+                {
+                    result.Errors.Add($"{ItemCatalogPath}: allItems[{i}] is not ItemData.");
+                    continue;
+                }
+
+                string itemPath = AssetDatabase.GetAssetPath(item);
+                if (string.IsNullOrWhiteSpace(itemPath))
+                    result.Errors.Add($"{ItemCatalogPath}: allItems[{i}] '{item.name}' has no valid asset path.");
+
+                string persistentId = item.PersistentId;
+                if (string.IsNullOrWhiteSpace(persistentId))
+                {
+                    result.Errors.Add($"{ItemCatalogPath}: allItems[{i}] '{item.name}' has empty PersistentId.");
+                    continue;
+                }
+
+                int hashId = LocHash.Compute(persistentId);
+                if (hashId == 0)
+                {
+                    result.Errors.Add($"{ItemCatalogPath}: allItems[{i}] '{item.name}' PersistentId '{persistentId}' resolves to hash 0.");
+                    continue;
+                }
+
+                if (catalogHashOwners.TryGetValue(hashId, out string existingPath))
+                {
+                    result.ItemCatalogDuplicateHashCount++;
+                    result.Errors.Add(
+                        $"{ItemCatalogPath}: duplicate ItemCatalog hash 0x{hashId:X8} / PersistentId '{persistentId}' between '{existingPath}' and '{itemPath}'.");
+                }
+                else
+                {
+                    catalogHashOwners.Add(hashId, string.IsNullOrWhiteSpace(itemPath) ? item.name : itemPath);
+                }
+
+                if (!itemCatalog.TryGetRuntimeDescriptor(hashId, out ItemCatalog.ItemRuntimeDescriptor descriptor) || !descriptor.IsValid)
+                {
+                    result.ItemCatalogMissingRuntimeDescriptorCount++;
+                    result.Errors.Add($"{ItemCatalogPath}: allItems[{i}] '{item.name}' has no valid runtime descriptor for hash 0x{hashId:X8}.");
+                }
+            }
+
+            if (itemCatalog.HasLookupAmbiguity)
+            {
+                result.ItemCatalogLookupAmbiguityCount++;
+                result.Errors.Add($"{ItemCatalogPath}: ItemCatalog lookup ambiguity: {itemCatalog.LookupAmbiguitySummary}");
             }
         }
 
@@ -419,6 +509,58 @@ namespace Hecton8.Editor.Validation
             }
         }
 
+        private static void ValidatePlayerPdaShell(ValidationResult result)
+        {
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
+            if (prefabRoot == null)
+            {
+                result.PlayerPdaHeadlessOpenRiskCount++;
+                result.Errors.Add($"{PlayerPrefabPath}: failed to load prefab contents for PDA shell validation.");
+                return;
+            }
+
+            try
+            {
+                PlayerPDA playerPda = prefabRoot.GetComponentInChildren<PlayerPDA>(true);
+                if (playerPda == null)
+                    return;
+
+                DiegeticPDAController diegeticPda = prefabRoot.GetComponentInChildren<DiegeticPDAController>(true);
+                if (playerPda.PanelRoot == null && diegeticPda == null)
+                {
+                    result.PlayerPdaHeadlessOpenRiskCount++;
+                    result.Errors.Add($"{PlayerPrefabPath}: PlayerPDA has no serialized panel and no DiegeticPDAController bridge; opening PDA can become a headless input lock.");
+                    return;
+                }
+
+                if (diegeticPda == null)
+                    return;
+
+                SerializedObject serializedBridge = new SerializedObject(diegeticPda);
+                WarnIfMissingObjectReference(result, serializedBridge, "diegeticPanelRoot", $"{PlayerPrefabPath}: DiegeticPDAController.diegeticPanelRoot is not serialized; runtime auto-resolve must prove the shell.");
+                WarnIfMissingObjectReference(result, serializedBridge, "diegeticPanelCanvasGroup", $"{PlayerPrefabPath}: DiegeticPDAController.diegeticPanelCanvasGroup is not serialized; runtime auto-resolve must prove fade/input gating.");
+                WarnIfMissingObjectReference(result, serializedBridge, "tabletRoot", $"{PlayerPrefabPath}: DiegeticPDAController.tabletRoot is not serialized; PDA may have UI backend without a physical tablet presentation.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        private static void WarnIfMissingObjectReference(
+            ValidationResult result,
+            SerializedObject serializedObject,
+            string propertyName,
+            string message)
+        {
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null || property.objectReferenceValue != null)
+                return;
+
+            result.PlayerPdaBridgeWarningCount++;
+            result.Warnings.Add(message);
+        }
+
         private static void ValidateBaseModuleTemplates(ValidationResult result)
         {
             string[] moduleGuids = AssetDatabase.FindAssets("t:BaseModuleTemplate", DataRoots);
@@ -488,6 +630,25 @@ namespace Hecton8.Editor.Validation
             }
 
             result.HashOwners.Add(hash, ownerLabel);
+        }
+
+        private static void RegisterItemPersistentId(ValidationResult result, string persistentId, string assetPath)
+        {
+            if (string.IsNullOrWhiteSpace(persistentId))
+            {
+                result.Errors.Add($"{assetPath}: ItemData.PersistentId is empty.");
+                return;
+            }
+
+            if (result.ItemPersistentIdOwners.TryGetValue(persistentId, out string existingPath))
+            {
+                result.ItemDataDuplicatePersistentIdCount++;
+                result.Errors.Add(
+                    $"{assetPath}: DUPLICATE ItemData.PersistentId '{persistentId}' already authored by '{existingPath}'.");
+                return;
+            }
+
+            result.ItemPersistentIdOwners.Add(persistentId, assetPath);
         }
 
         private static void ValidatePrefabAsset(
@@ -942,10 +1103,17 @@ namespace Hecton8.Editor.Validation
                 $"ResourceNodes={result.ResourceNodeCount}, BaseModules={result.BaseModuleCount}, " +
                 $"InjectedProxyCount={result.InjectedProxyCount}, GeneratedFloraProxyCount={result.GeneratedFloraProxyCount}, " +
                 $"MeshColliderViolations={result.MeshColliderViolationCount}, HashCollisions={result.HashCollisionCount}, " +
+                $"ItemDataDuplicatePersistentId={result.ItemDataDuplicatePersistentIdCount}, " +
+                $"ItemCatalogNullEntries={result.ItemCatalogNullEntryCount}, " +
+                $"ItemCatalogDuplicateHashes={result.ItemCatalogDuplicateHashCount}, " +
+                $"ItemCatalogMissingRuntimeDescriptors={result.ItemCatalogMissingRuntimeDescriptorCount}, " +
+                $"ItemCatalogLookupAmbiguities={result.ItemCatalogLookupAmbiguityCount}, " +
                 $"AudioMaterialViolations={result.AudioMaterialViolationCount}, " +
                 $"ResourceNodeYieldMissingWorldPrefab={result.ResourceNodeYieldMissingWorldPrefabCount}, " +
                 $"ResourceNodeYieldNotCataloged={result.ResourceNodeYieldNotCatalogedCount}, " +
                 $"ResourceNodeYieldInvalidWorldPrefabContract={result.ResourceNodeYieldInvalidWorldPrefabContractCount}, " +
+                $"PlayerPdaHeadlessOpenRisk={result.PlayerPdaHeadlessOpenRiskCount}, " +
+                $"PlayerPdaBridgeWarnings={result.PlayerPdaBridgeWarningCount}, " +
                 $"Errors={result.Errors.Count}, Warnings={result.Warnings.Count}.";
 
             if (result.Errors.Count > 0)

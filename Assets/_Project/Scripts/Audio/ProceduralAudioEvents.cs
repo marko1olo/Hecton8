@@ -87,6 +87,44 @@ namespace Hecton8.Audio
     }
 
     /// <summary>
+    /// Zero-allocation habitat pressure impulse consumed by structural granular synthesis.
+    /// </summary>
+    public readonly struct HullStressSignal
+    {
+        /// <summary>
+        /// Creates a hull stress signal from a pressure derivative snapshot.
+        /// </summary>
+        public HullStressSignal(Vector3 worldPosition, float stress01, float pressureDelta, float depthMeters, float pitchScale)
+        {
+            WorldPosition = worldPosition;
+            Stress01 = Mathf.Clamp01(stress01);
+            PressureDelta = SanitizeFinite(pressureDelta);
+            DepthMeters = Mathf.Max(0f, SanitizeFinite(depthMeters));
+            PitchScale = Mathf.Max(0.1f, SanitizeFinite(pitchScale));
+        }
+
+        /// <summary>World-space origin for portal routing and AUP conversion.</summary>
+        public Vector3 WorldPosition { get; }
+
+        /// <summary>Normalized structural stress in the [0..1] range.</summary>
+        public float Stress01 { get; }
+
+        /// <summary>Signed pressure derivative or compression delta that excited the hull.</summary>
+        public float PressureDelta { get; }
+
+        /// <summary>Depth in meters used for pitch and density cheats.</summary>
+        public float DepthMeters { get; }
+
+        /// <summary>Pitch multiplier consumed by the fallback clip or granular renderer.</summary>
+        public float PitchScale { get; }
+
+        private static float SanitizeFinite(float value)
+        {
+            return float.IsNaN(value) || float.IsInfinity(value) ? 0f : value;
+        }
+    }
+
+    /// <summary>
     /// Zero-allocation payload for habitat structural stress groan synthesis.
     /// </summary>
     public readonly struct StructuralStressAudioInfo
@@ -99,6 +137,20 @@ namespace Hecton8.Audio
             WorldPosition = worldPosition;
             Stress01 = Mathf.Clamp01(stress01);
             PitchScale = Mathf.Max(0.1f, pitchScale);
+            PressureDelta = 0f;
+            DepthMeters = 0f;
+        }
+
+        /// <summary>
+        /// Creates a structural stress audio payload from the canonical pressure signal.
+        /// </summary>
+        public StructuralStressAudioInfo(in HullStressSignal signal)
+        {
+            WorldPosition = signal.WorldPosition;
+            Stress01 = signal.Stress01;
+            PitchScale = signal.PitchScale;
+            PressureDelta = signal.PressureDelta;
+            DepthMeters = signal.DepthMeters;
         }
 
         /// <summary>World-space origin for spatial routing.</summary>
@@ -109,6 +161,12 @@ namespace Hecton8.Audio
 
         /// <summary>Pitch multiplier consumed by the renderer.</summary>
         public float PitchScale { get; }
+
+        /// <summary>Signed pressure derivative that triggered the structural sound.</summary>
+        public float PressureDelta { get; }
+
+        /// <summary>Depth snapshot in meters used for low-cost pitch/density cheats.</summary>
+        public float DepthMeters { get; }
     }
 
     public enum AudioEventKind : byte
@@ -406,6 +464,24 @@ namespace Hecton8.Audio
         /// </summary>
         public static void RaiseStructuralStressTriggered(Vector3 worldPosition, float stress01, float pitchScale)
         {
+            StructuralStressAudioInfo info = new StructuralStressAudioInfo(worldPosition, stress01, pitchScale);
+            RaiseStructuralStressTriggered(in info);
+        }
+
+        /// <summary>
+        /// Queues a pressure-derived hull stress signal on the main thread.
+        /// </summary>
+        public static void RaiseHullStressSignal(in HullStressSignal signal)
+        {
+            StructuralStressAudioInfo info = new StructuralStressAudioInfo(in signal);
+            RaiseStructuralStressTriggered(in info);
+        }
+
+        /// <summary>
+        /// Queues a habitat structural stress groan notification on the main thread.
+        /// </summary>
+        public static void RaiseStructuralStressTriggered(in StructuralStressAudioInfo info)
+        {
             if (_listeners.Count <= 0)
                 return;
 
@@ -416,7 +492,6 @@ namespace Hecton8.Audio
                 return;
             }
 
-            StructuralStressAudioInfo info = new StructuralStressAudioInfo(worldPosition, stress01, pitchScale);
             if (_isDispatching)
             {
                 _nextFrameAudioEvents.Enqueue(AudioEvent.FromStructuralStress(in info));

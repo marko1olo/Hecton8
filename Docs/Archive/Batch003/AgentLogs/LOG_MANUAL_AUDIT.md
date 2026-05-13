@@ -268,3 +268,66 @@ Exact Microseconds saved:
 Remaining risk:
 - The switch is env/startup controlled, not a live admin toggle. Changing it requires process restart.
 - There is still no per-mode timing telemetry in production snapshots.
+
+## 2026-05-13 14:05 - Loop 34 `/b/` Recipient Truth And Queue Stall
+
+What was wrong:
+- The user saw `/b/` delivery lines like `91/91` and feared that the old `~630` recipients were deleted.
+- The number was real, but it was only `delivery_phase=priority`, not the full board fanout.
+- Around `2026-05-13 12:59-13:02`, `/b/` did show a real stall: runtime logs had queue waits above 100 seconds while smaller boards still delivered.
+- My first restart attempt after the new guard patch exposed an import-order bug: `anime_media_gate` was initialized before `ANIME_MEDIA_CONCURRENCY`, so `import main` failed before `main()` could update `bot.lock`.
+
+What was done:
+- Verified SQLite readonly:
+  - `quick_check=ok`
+  - `/b/ active Telegram users=625`
+  - `/b/ banned Telegram users=1`
+  - `/b/ active site guests=3359`
+  - `Posts=150427`
+  - `PostCopies=1311219`
+- Added explicit recipient truth:
+  - `phase_recipients`
+  - `original_recipients`
+  - `deferred_recipients`
+  - runtime `recipients.telegram_active_by_board`
+  - `/queues` Telegram recipient count
+- Added `/b/ backpressure controls:
+  - `BOT_PRIORITY_PASSIVE_MEDIA_SLICE_SIZE=40`
+  - `BOT_PASSIVE_MAX_PREEMPTIONS=3`
+  - `BOT_DELIVERY_SLOW_PHASE_SEC=10`
+  - `BOT_B_MAX_STACKED_ANIME_IMAGES=4`
+  - `BOT_ANIME_MEDIA_CONCURRENCY=1`
+- Fixed import order by moving `anime_media_gate = asyncio.Semaphore(ANIME_MEDIA_CONCURRENCY)` after the constant assignment.
+- Patched `start_bot.bat` to run `python -u main.py` through `Tee-Object` and append stdout/stderr to `logs\bot_stdout.log`.
+- Updated `BOT_ARCHITECTURE.md`, `OPERATIONS_RUNBOOK.md`, and `AUDIT_2026-05-12.md`.
+
+Verification:
+- `python -c "import main; print('import ok')"` exits `0`.
+- `python -m py_compile main.py common\config.py common\database.py help_text.py new_modes.py mode_punchup.py` exits `0`.
+- Watchdog recovered to chain `71864 -> 49008 -> 19792`.
+- `bot.lock=19792`.
+- Healthcheck on port `8080` returns HTTP `200`.
+- Runtime snapshot PID `19792`:
+  - `private_mb=513.22`
+  - queues total `0`
+  - `recipients.telegram_active_by_board.b=625`
+  - `recipients.telegram_active_total=1967`
+  - `delivery_priority.passive_media_slice_size=40`
+  - `delivery_priority.passive_max_preemptions=3`
+  - `anime_media.concurrency=1`
+  - `anime_media.b_max_stacked_images=4`
+- Live delivery proof after restart: `/b/ #375478` logged `original_recipients=624` and phases `91`, `120`, `120`, `120`, `120`, `53`.
+
+Cinematic Cheats used:
+- Phase truth instead of pretending one console number describes the whole system.
+- Smaller media slices and passive preemption buy responsiveness without increasing worker count or changing Telegram ordering guarantees too aggressively.
+- Anime media gate uses serialization, not a broad rewrite, to stop media fetch/download bursts from starving fanout.
+
+Exact Microseconds saved:
+- No direct CPU speedup claimed.
+- Avoided cost is operational: preventing a 10-image `/b/` anime request and 120-recipient media passive slices from compounding into multi-minute perceived stall.
+- Added telemetry cost is negligible versus Telegram IO: integer counts and JSON fields per delivery.
+
+Remaining risk:
+- Fanout queue is still process-local RAM. A hard kill during backlog can still lose unsent queued phases.
+- The correct next reliability step is durable fanout jobs with per-recipient progress and resume.

@@ -17,7 +17,11 @@ namespace Hecton8.Core
         [NativeDisableUnsafePtrRestriction]
         [NoAlias]
         private void* _buffer;
-        private int _length;
+        internal int m_Length;
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+        internal int m_MinIndex;
+        internal int m_MaxIndex;
+#endif
         private int _byteCount;
         private int _arenaIndex;
         private int _slabIndex;
@@ -25,11 +29,9 @@ namespace Hecton8.Core
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
         internal AtomicSafetyHandle m_Safety;
-        internal int m_MinIndex;
-        internal int m_MaxIndex;
 #endif
 
-        public int Length => _length;
+        public int Length => m_Length;
         public bool IsCreated => _buffer != null;
         public int ByteCount => _byteCount;
         public int ArenaIndex => _arenaIndex;
@@ -75,10 +77,10 @@ namespace Hecton8.Core
 
         public NativeArray<T> AsNativeArray()
         {
-            if (_buffer == null || _length <= 0)
+            if (_buffer == null || m_Length <= 0)
                 return default;
 
-            NativeArray<T> array = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>(_buffer, _length, Allocator.None);
+            NativeArray<T> array = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>(_buffer, m_Length, Allocator.None);
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref array, m_Safety);
 #endif
@@ -105,7 +107,7 @@ namespace Hecton8.Core
             NativeArenaArray<T> array = new NativeArenaArray<T>
             {
                 _buffer = ptr,
-                _length = length,
+                m_Length = length,
                 _byteCount = byteCount,
                 _arenaIndex = arenaIndex,
                 _slabIndex = slabIndex,
@@ -124,7 +126,7 @@ namespace Hecton8.Core
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             AtomicSafetyHandle.CheckReadAndThrow(m_Safety);
-            if ((uint)index >= (uint)_length || index < m_MinIndex || index > m_MaxIndex)
+            if ((uint)index >= (uint)m_Length || index < m_MinIndex || index > m_MaxIndex)
                 ThrowIndexOutOfRange(index);
 #endif
         }
@@ -134,7 +136,7 @@ namespace Hecton8.Core
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             AtomicSafetyHandle.CheckWriteAndThrow(m_Safety);
-            if ((uint)index >= (uint)_length || index < m_MinIndex || index > m_MaxIndex)
+            if ((uint)index >= (uint)m_Length || index < m_MinIndex || index > m_MaxIndex)
                 ThrowIndexOutOfRange(index);
 #endif
         }

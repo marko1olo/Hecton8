@@ -893,6 +893,11 @@ namespace Hecton8.Core
         bool QueueSoundEmissionSignal(in SoundEmissionSignal signal);
 
         /// <summary>
+        /// Queues one pressure-derived hull stress signal for structural granular synthesis.
+        /// </summary>
+        bool QueueHullStressSignal(in HullStressSignal signal);
+
+        /// <summary>
         /// Queues one world-space audio event for the central NativeQueue-backed audio drain.
         /// </summary>
         /// <param name="audioEvent">Blittable event payload. EventID is one-based into the authored audio event table.</param>

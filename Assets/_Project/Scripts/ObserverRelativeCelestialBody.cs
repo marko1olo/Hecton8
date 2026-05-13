@@ -541,6 +541,9 @@ namespace Hecton8.Celestial
 
         private Vector3 ResolveObserverWorldPosition()
         {
+            if (observerTransform != null)
+                return observerTransform.position;
+
 #if UNITY_EDITOR
             if (!Application.isPlaying)
             {
@@ -550,14 +553,11 @@ namespace Hecton8.Celestial
             }
 #endif
 
-            if (observerTransform == null)
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
-                if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
-                {
-                    Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
-                    if (playerCamera != null)
-                        observerTransform = playerCamera.transform;
-                }
+                Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
+                if (playerCamera != null)
+                    observerTransform = playerCamera.transform;
             }
 
             return observerTransform != null

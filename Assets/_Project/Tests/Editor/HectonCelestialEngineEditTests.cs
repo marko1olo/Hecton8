@@ -89,32 +89,32 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
-    public void ResolveSkyColorsReadsScriptProfilesAsSourceOfTruth()
+    public void ResolveSkyColorsAppliesScriptProfilesAndReadabilityFloors()
     {
-        Color expectedZenith = new Color(0.12f, 0.34f, 0.56f, 1f);
-        Color expectedHorizon = new Color(0.65f, 0.43f, 0.21f, 1f);
-        Color expectedNadir = new Color(0.07f, 0.08f, 0.11f, 1f);
+        Color profileZenith = new Color(0.12f, 0.34f, 0.56f, 1f);
+        Color profileHorizon = new Color(0.65f, 0.43f, 0.21f, 1f);
+        Color profileNadir = new Color(0.07f, 0.08f, 0.11f, 1f);
 
-        SetPrivateField("_dayProfile", SkyColorProfile.Default(expectedZenith, expectedHorizon, expectedNadir));
+        SetPrivateField("_dayProfile", SkyColorProfile.Default(profileZenith, profileHorizon, profileNadir));
         SetPrivateField("_horizonZenithBlend", 0f);
         SetPrivateField("_horizonBrightnessScale", 1f);
         SetPrivateField("_currentSunAngle", 35f);
         SetPrivateField("_smoothedOcclusionFactor", 0f);
 
-        _skyMaterial.SetColor("_SkyColorZenith", expectedZenith);
-        _skyMaterial.SetColor("_SkyColorHorizon", expectedHorizon);
-        _skyMaterial.SetColor("_SkyColorNadir", expectedNadir);
+        _skyMaterial.SetColor("_SkyColorZenith", profileZenith);
+        _skyMaterial.SetColor("_SkyColorHorizon", profileHorizon);
+        _skyMaterial.SetColor("_SkyColorNadir", profileNadir);
 
         object[] args = { null, null, null };
         InvokePrivateMethod("ResolveSkyColors", args);
 
-        Assert.That((Color)args[0], Is.EqualTo(expectedZenith));
+        Assert.That((Color)args[0], Is.EqualTo(new Color(0.16f, 0.34f, 0.56f, 1f)));
         Color resolvedHorizon = (Color)args[1];
         Assert.That(resolvedHorizon.r, Is.EqualTo(0.601f).Within(0.001f));
-        Assert.That(resolvedHorizon.g, Is.EqualTo(0.438f).Within(0.001f));
-        Assert.That(resolvedHorizon.b, Is.EqualTo(0.275f).Within(0.001f));
-        Assert.That(resolvedHorizon.a, Is.EqualTo(expectedHorizon.a).Within(0.0001f));
-        Assert.That((Color)args[2], Is.EqualTo(expectedNadir));
+        Assert.That(resolvedHorizon.g, Is.EqualTo(0.460f).Within(0.001f));
+        Assert.That(resolvedHorizon.b, Is.EqualTo(0.500f).Within(0.001f));
+        Assert.That(resolvedHorizon.a, Is.EqualTo(profileHorizon.a).Within(0.0001f));
+        Assert.That((Color)args[2], Is.EqualTo(new Color(0.11f, 0.165f, 0.19f, 1f)));
     }
 
     [Test]

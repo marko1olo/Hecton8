@@ -695,6 +695,8 @@ namespace Hecton8.UI
         private bool _registered;
         private bool _craftingEventsRegistered;
         private bool _inputSubscribed;
+        private bool _missingUiShellReported;
+        private bool _missingInputServiceReported;
         private uint _observedUIStateCommandSequence;
         private IInputService _subscribedInputManager;
 
@@ -782,7 +784,8 @@ namespace Hecton8.UI
                     "[PlayerPDA] PDA dispatcher registration failed at Start(). PDA tick loop will not run.");
             }
 
-            if (!GlobalRegistry.Input.IsInitialized)
+            IInputService inputManager = GlobalRegistry.Input;
+            if (inputManager == null || !inputManager.IsInitialized)
             {
                 Debug.LogError(
                     "[PlayerPDA] GlobalRegistry.Input is not initialized at Start(). " +
@@ -1163,14 +1166,16 @@ namespace Hecton8.UI
         {
             if (IsOpen) return;
 
-            PrepareRuntimeVisibility();
+            if (!TryPrepareRenderableShell())
+                return;
+
             IsOpen = true;
             _openStartTime = Time.time;
             _batteryDrainAccumulator = 0f;
             _lowBatteryWarningPlayed = false;
 
             // Switch to UI input map
-            GlobalRegistry.Input.SwitchToUIInput();
+            SwitchToUIInputIfAvailable();
             SystemDispatcher.RequestPdaDepthOfField(true);
 
             Cursor.lockState = CursorLockMode.None;
@@ -1203,7 +1208,7 @@ namespace Hecton8.UI
             SystemDispatcher.RequestPdaDepthOfField(false);
 
             // Switch back to Player input map
-            GlobalRegistry.Input.SwitchToPlayerInput();
+            SwitchToPlayerInputIfAvailable();
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = false;
@@ -1270,7 +1275,7 @@ namespace Hecton8.UI
             }
 
             // Switch back to Player input map on force close
-            GlobalRegistry.Input.SwitchToPlayerInput();
+            SwitchToPlayerInputIfAvailable();
 
             PDAEvents.RaiseClosed(duration);
             ReclaimPdaRenderTextures();
@@ -1285,6 +1290,7 @@ namespace Hecton8.UI
             pdaPanel = panelRoot;
             pdaCanvasGroup = panelCanvasGroup;
             tabs = configuredTabs ?? Array.Empty<GameObject>();
+            _missingUiShellReported = false;
 
             if (pdaCanvasGroup != null && !IsOpen)
             {
@@ -1299,6 +1305,89 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
         //  PRIVATE — FADE ANIMATION
         // ══════════════════════════════════════════════════════════
+
+        private bool TryPrepareRenderableShell()
+        {
+            PrepareRuntimeVisibility();
+
+            if (pdaPanel == null)
+            {
+                ReportMissingUiShellOnce();
+                return false;
+            }
+
+            if (!HasAnyResolvedTab())
+            {
+                ResolveTabReferences(createMissingTabs: false);
+                if (!HasAnyResolvedTab())
+                {
+                    ReportMissingUiShellOnce();
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool HasAnyResolvedTab()
+        {
+            if (tabs == null)
+                return false;
+
+            for (int i = 0; i < tabs.Length; i++)
+            {
+                if (tabs[i] != null)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void SwitchToUIInputIfAvailable()
+        {
+            IInputService inputManager = GlobalRegistry.Input;
+            if (inputManager != null && inputManager.IsInitialized)
+            {
+                inputManager.SwitchToUIInput();
+                return;
+            }
+
+            ReportMissingInputServiceOnce();
+        }
+
+        private void SwitchToPlayerInputIfAvailable()
+        {
+            IInputService inputManager = GlobalRegistry.Input;
+            if (inputManager != null && inputManager.IsInitialized)
+            {
+                inputManager.SwitchToPlayerInput();
+                return;
+            }
+
+            ReportMissingInputServiceOnce();
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void ReportMissingUiShellOnce()
+        {
+            if (_missingUiShellReported)
+                return;
+
+            _missingUiShellReported = true;
+            Debug.LogError("[PlayerPDA] Refusing to open: no configured PDA panel/tabs or DiegeticPDAController bridge has configured the shell.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void ReportMissingInputServiceOnce()
+        {
+            if (_missingInputServiceReported)
+                return;
+
+            _missingInputServiceReported = true;
+            Debug.LogError("[PlayerPDA] GlobalRegistry.Input is missing or not initialized; PDA input-map switch skipped.");
+        }
 
         private static void ReclaimPdaRenderTextures()
         {

@@ -388,6 +388,25 @@ Remaining boundary:
 
 - This is still static proof only. Unity import, Addressables catalog behavior, ObjectPool hydration, pickup interaction, inventory acceptance, quest completion, save/load, profiler, and player-build proof remain `PENDING VERIFICATION`.
 
+## Continuation R22 - 2026-05-13
+
+Item identity / catalog validator hardening:
+
+- Active DOC_AUDIT state files had been archived under `Docs/Archive/Batch004/`; active R22 status/rationale/log were recreated with Batch004 as historical memory.
+- Static YAML scan found exactly one duplicate `ItemData.PersistentId` group under `Assets/_Project/Data`: root `Assets/_Project/Data/Items/Data_Copper.asset` and cataloged raw `Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset` both author `Data_Copper`.
+- `ContentSanityValidator` now reports duplicate `ItemData.PersistentId` across data assets.
+- `ContentSanityValidator` now validates `ItemCatalog.allItems` for null entries, duplicate hash / `PersistentId` entries, missing runtime descriptors, and `ItemCatalog.HasLookupAmbiguity`.
+- The validator summary now includes `ItemDataDuplicatePersistentId`, `ItemCatalogNullEntries`, `ItemCatalogDuplicateHashes`, `ItemCatalogMissingRuntimeDescriptors`, and `ItemCatalogLookupAmbiguities`.
+
+Action:
+
+- Patched `Assets/_Project/Scripts/Editor/ContentSanityValidator.cs`.
+- Promoted the R22 validator boundary into stable docs.
+
+Remaining boundary:
+
+- This is static source proof only. The Unity editor validator menu was not run, no Console output was captured, and no compile/import/player route proof exists in this pass.
+
 ## Broken Evidence References
 
 The stable docs and May 11 report cite:
