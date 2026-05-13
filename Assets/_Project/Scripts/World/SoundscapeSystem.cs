@@ -484,7 +484,12 @@ namespace Hecton8.World
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-60)]
-    public sealed class SoundscapeSystem : MonoBehaviour, ISlowTickable, IBiomeMatrixEventListener
+    public sealed class SoundscapeSystem : MonoBehaviour,
+        ISlowTickable,
+        IBiomeMatrixEventListener,
+        IScalabilityChangedEventListener,
+        IGlobalRegistryHotSwapListener,
+        IGlobalRegistryHotSwapRefListener
     {
         private const int MaxSignalDrainPerSlowTick = 16;
         private const int MidSignalDrainPerSlowTick = 8;
@@ -532,6 +537,10 @@ namespace Hecton8.World
         private bool _registered;
         private bool _serviceRegistered;
         private bool _biomeMatrixRegistered;
+        private bool _hotSwapRegistered;
+        private bool _scalabilityEventsRegistered;
+        private IAudioService _audioService;
+        private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
         private HectonMusicDirector _musicDirector;
         private int _lastMatrixBiomeId;
         private HectonMusicBiomeProfile _lastMatrixMusicProfile;
@@ -561,9 +570,13 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            CacheAudioService(GlobalRegistry.Audio);
+            RefreshCachedScalabilityTier();
             TryRegisterService();
             TryRegister();
             TryRegisterBiomeMatrixEvents();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityEvents();
 
             ResolveSurvivalSystem();
 
@@ -572,16 +585,22 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            TryUnregisterScalabilityEvents();
+            TryUnregisterHotSwapListener();
             TryUnregisterBiomeMatrixEvents();
             TryUnregister();
             TryUnregisterService();
+            _audioService = null;
         }
 
         private void OnDestroy()
         {
+            TryUnregisterScalabilityEvents();
+            TryUnregisterHotSwapListener();
             TryUnregisterBiomeMatrixEvents();
             TryUnregister();
             TryUnregisterService();
+            _audioService = null;
         }
 
         private void TryRegister()
@@ -646,6 +665,41 @@ namespace Hecton8.World
             _biomeMatrixRegistered = false;
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterScalabilityEvents()
+        {
+            if (_scalabilityEventsRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityEventsRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityEvents()
+        {
+            if (!_scalabilityEventsRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityEventsRegistered = false;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  ISlowTickable
         // ══════════════════════════════════════════════════════════
@@ -677,8 +731,8 @@ namespace Hecton8.World
 
         private void DrainSignals()
         {
-            IAudioService audio = GlobalRegistry.Audio;
-            HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
+            IAudioService audio = _audioService;
+            HectonQualityTier scalabilityTier = _cachedScalabilityTier;
             int signalDrainBudget = ResolveSignalDrainBudget(scalabilityTier);
             bool dynamicPitch = DistanceMath.IsHighQualityTier(scalabilityTier);
             ReadOnlySpan<ImpactSignal> signals = SignalBus<ImpactSignal>.GetFrameSnapshot();
@@ -840,6 +894,28 @@ namespace Hecton8.World
             _lastMatrixMusicProfile = director.ActiveMatrixBiomeMusicProfile;
         }
 
+        void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _cachedScalabilityTier = payload.CurrentQualityTier;
+        }
+
+        void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+                CacheAudioService(currentService as IAudioService);
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+                CacheAudioService(currentService as IAudioService);
+        }
+
         private bool TryResolveMusicDirector(out HectonMusicDirector director)
         {
             if (_musicDirector != null)
@@ -854,6 +930,16 @@ namespace Hecton8.World
 
             _musicDirector = director;
             return _musicDirector != null;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = audioService;
+        }
+
+        private void RefreshCachedScalabilityTier()
+        {
+            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
         }
     }
 }

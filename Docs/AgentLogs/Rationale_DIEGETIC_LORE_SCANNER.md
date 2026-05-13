@@ -61,3 +61,29 @@ Solution: Ran generated Core build and Unity refresh. Core build fails before sc
 Rejected Alternatives: Reporting green compile without evidence; reverting scanner changes for unrelated dependency failures.
 Scalability potential: None; this is build infrastructure state.
 Hardware Impact: No runtime impact.
+
+## Loop 3 - Tasks 11-15
+
+Problem: Scanner targeting must survive floating origin and AUP shifts.
+Solution: Lore targets are stored as `AbsoluteUniversePosition` in DataVault and compared to the camera with `AbsoluteUniversePosition.ToCameraRelativeFloat3` inside the candidate job.
+Rejected Alternatives: Treating `transform.position` as authoritative range data; caching world-space vectors across shifts.
+Scalability potential: Low/Middle/High/Ultra share the same stable authority path; visual layers can scale independently from coordinate precision.
+Hardware Impact: One AUP-relative conversion per registered lore node during resample; expected cost remains below the removed broad ray work, exact microseconds PENDING VERIFICATION.
+
+Problem: Low-tier hardware cannot spend budget on scanner glyph theater.
+Solution: Low/Unknown/MX350 paths bypass title scrambling and write percentage-only text through `ZeroGCFormatter.FastIntToChars`.
+Rejected Alternatives: One uniform scramble path across all tiers; managed formatted percentage strings.
+Scalability potential: Low uses numeric status. Middle uses deterministic title scramble. High/Ultra can raise decode density and visual noise while preserving the same zero-GC staging buffers.
+Hardware Impact: Expected i3/MX350 gain is removal of per-character scramble work on low tier; exact microseconds PENDING VERIFICATION.
+
+Problem: Scanner acquisition and UI presentation needed deterministic phase separation.
+Solution: Acquisition runs in `IFastTickable` on the Player lane; scanner state publication runs through `ILateFrameTickable` on the UI lane; tool RT display consumes signals in the existing dispatcher path.
+Rejected Alternatives: Unity `Update()` loops in scanner/UI; direct UI calls from acquisition.
+Scalability potential: Simulation remains stable while UI refresh rate/effects scale by tier.
+Hardware Impact: Phase split prevents UI work from feeding back into acquisition; exact profiler numbers unavailable.
+
+Problem: Required compile proof for `Span<char>` no boxing is unavailable.
+Solution: Static audit confirms scanner/UI span writes use stackalloc or fixed char arrays and TMP `SetCharArray`; project compile is dependency-blocked before scanner proof can be produced.
+Rejected Alternatives: Marking Task 15 complete without compiler evidence; replacing span path with strings to appease unverifiable build state.
+Scalability potential: Once build infrastructure is restored, this path should validate without changing runtime design.
+Hardware Impact: No runtime impact from the blocked proof itself.

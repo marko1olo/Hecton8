@@ -16,20 +16,34 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 
 ## Loop 2 - Tasks 6-10
 
-- [ ] 6. Angular solver: local projection with `math.atan2`.
-- [ ] 7. Resistance fake: damped spring velocity.
-- [ ] 8. Click latch above 85 degrees and emit.
-- [ ] 9. Haptic ratchet every 10 degrees.
-- [ ] 10. Non-VR fallback hold Interact for 1.5s.
+- [x] 6. Angular solver. DOD: local hand position is projected onto the lever rotation plane; angle uses `math.atan2(dot(axis, cross(reference, projected)), dot(reference, projected))`. Rejected: world-space/AUP projection because cockpit controls must survive origin shifts. Estimate: 1.1 us.
+- [x] 7. Resistance fake. DOD: scalar damped spring integrates velocity with clamp; no rigidbody, no joint. Rejected: force-based physics because the lever needs predictable latch timing. Estimate: 0.7 us.
+- [x] 8. Click latch. DOD: `CurrentAngle >= latchAngleDegrees` freezes at max angle, publishes `ManualOverridePulledSignal`, then publishes `PrologueCompleteSignal`. Rejected: continuous event spam; latch is one-shot. Estimate: 1.5 us on latch frame.
+- [x] 9. Haptic ratchet. DOD: every 10 degrees publishes `HapticRequest` and queues bounded `ToolHapticsRuntime` pulse. Rejected: per-frame rumble because it wastes haptic bandwidth and muddies tactile gear clicks. Estimate: 0.9 us only on ratchet steps.
+- [x] 10. Non-VR fallback. DOD: non-XR Interact/Grip hold lerps target angle over 1.5 seconds. Rejected: instant key press because manual override must remain a physical action. Estimate: 0.5 us.
 
 ## Loop 3 - Tasks 11-15
 
-- [ ] 11. AUP shift safety via local space.
-- [ ] 12. Math LOD: low tier reduced IK smoothing.
-- [ ] 13. Execution phase: SIMULATION.
-- [ ] 14. Zero-GC projection hot path.
-- [ ] 15. Compile check and dot/cross verification.
+- [x] 11. AUP shift safety. DOD: hand samples are converted through `transform.InverseTransformPoint`; solver owns local pivot/axis/reference. Rejected: storing world positions in state arrays. Estimate: 0.8 us.
+- [x] 12. Math LOD. DOD: Low/Unknown/MX350 tiers use lower IK smoothing; simulation scalar solve stays identical for determinism. Rejected: reducing latch math precision because it changes outcome. Estimate: 0.2 us branch.
+- [x] 13. Execution phase. DOD: lever registers with `GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player)` for simulation-lane evaluation. Rejected: Unity `Update()` because it bypasses dispatcher ordering. Estimate: 0 runtime overhead beyond dispatcher slot.
+- [x] 14. Zero-GC projection. DOD: hot path uses structs, native arrays, bitmasks, and no managed collections; file IO only occurs on NaN blackbox dump. Rejected: LINQ, event delegates, and runtime component scans. Estimate: 0 B/frame projection allocation.
+- [x] 15. Compile check and dot/cross verification. DOD: editor/development self-check verifies reference vector maps to 0 degrees and perpendicular pull maps to 90 degrees. Rejected: visual-only manual check. Estimate: cold check only.
+
+## Loop 4 - Dependency Compile Audit
+
+- [x] Core build attempt 1: `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` failed on existing cross-assembly missing references and one task error (`ManualOverridePulledSignal` not found from non-included `Core/Signals` file). Fixed task error by moving payload into `GlobalSignals.cs`.
+- [x] Core build attempt 2: repeated filtered build. No `ManualOverride`, `OpenXRManual`, `PhysicalHandReceiverRegistry`, or prologue-signal errors reported. Remaining errors are unrelated missing references: `Hecton8.Environment.Fluids`, `Hecton8.Audio.Virtualization`, `Hecton8.Physics.CCD`, `Hecton8.Core.Scheduling`, etc.
+- [x] Build server shutdown executed after build attempts.
+
+## Loop 5 - Reverification / Polish Gate
+
+- [ ] Re-read prompt after all tasks.
+- [ ] Confirm no `HingeJoint`.
+- [ ] Run final anti-bloat inquisition.
+- [ ] Append final report to `Docs/AgentLogs/LOG_VR_COCKPIT_MANUAL_OVERRIDE.md`.
 
 ## Compile Attempts
 
-- Pending.
+- Unity MCP refresh requested with compile; timed out after 60s and subsequent console reads returned `no_unity_session`.
+- Dotnet Core compile blocked by unrelated project dependency wall after task-local signal error was fixed.

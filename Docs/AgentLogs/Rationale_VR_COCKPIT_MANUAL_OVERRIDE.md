@@ -35,3 +35,27 @@ Rejected Alternatives: direct scene transition or hard reference to prologue dir
 Scalability potential: Low consumers can listen only for prologue completion. High/Ultra systems can consume angle, velocity, and hand side for overkill cockpit feedback.
 
 Hardware Impact: fixed lane capacity 8; estimated publish cost under 1 us, no managed event fanout.
+
+## Decision 4 - Dot/cross self-check instead of visual-only verification
+
+Problem: a lever can look correct while the plane projection sign is inverted, causing the player to pull the handle and drive the angle negative or clamp at zero.
+
+Solution: add an editor/development cold-path verifier: reference vector equals 0 degrees, perpendicular pull vector equals 90 degrees under `atan2(dot(axis, cross(reference, projected)), dot(reference, projected))`.
+
+Rejected Alternatives: scene-only manual testing or relying on Quaternion visual rotation; neither proves the solver orientation.
+
+Scalability potential: Low/Middle/High/Ultra share identical latch math, so the same verification protects all tiers.
+
+Hardware Impact: zero player-frame impact in release; cold editor check only.
+
+## Decision 5 - Core compile wall handling
+
+Problem: `Hecton8.Core.csproj` fails before task code on missing references from unrelated domains (`Environment.Fluids`, `Audio.Virtualization`, `Physics.CCD`, `Core.Scheduling`, etc.). First attempt also exposed a real task-local placement error for `ManualOverridePulledSignal`.
+
+Solution: fix the task-local signal placement by moving the payload into the compiled `GlobalSignals.cs` signal region. Re-run filtered build to confirm no remaining task-name errors.
+
+Rejected Alternatives: editing unrelated asmdefs or dependency systems to make the Core project build; that is outside UX_ENGINEER domain and would risk sabotaging parallel agents.
+
+Scalability potential: Manual override stays on a fixed typed lane; unrelated compile debt is isolated for integrator follow-up.
+
+Hardware Impact: no runtime impact. Build verification narrowed from 134 broad errors to no task-local errors in the filtered pass.

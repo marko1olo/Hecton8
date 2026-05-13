@@ -679,6 +679,7 @@ namespace Hecton8.World
 
         [Tooltip("Last observed AUP shift frame id.")]
         [SerializeField] private uint _debugLastAupShiftFrameId;
+        private uint _lastAppliedAupShiftFrameId;
 
         [Tooltip("0..1 pressure metric for Streamer Stress UI. No string formatting in hot path.")]
         [SerializeField, Range(0f, 1f)] private float _debugStreamerStress01;
@@ -3244,21 +3245,38 @@ namespace Hecton8.World
 
             bool sawShift = false;
             float3 totalShift = default;
-            uint lastShiftFrame = 0u;
-            while (GlobalSignals.TryDequeueAupShift(out AupShiftSignal signal))
+            uint lastShiftFrame = _lastAppliedAupShiftFrameId;
+            ReadOnlySpan<AupShiftSignal> shiftSignals = SignalBus<AupShiftSignal>.GetFrameSnapshot();
+            for (int i = 0; i < shiftSignals.Length; i++)
             {
+                AupShiftSignal signal = shiftSignals[i];
+                if (!IsNewAupShift(signal.ShiftFrameId, _lastAppliedAupShiftFrameId) ||
+                    !math.all(math.isfinite(signal.ShiftMeters)))
+                {
+                    continue;
+                }
+
                 _debugLastAupShiftFrameId = signal.ShiftFrameId;
                 totalShift += signal.ShiftMeters;
-                lastShiftFrame = signal.ShiftFrameId;
+                if (IsNewAupShift(signal.ShiftFrameId, lastShiftFrame))
+                    lastShiftFrame = signal.ShiftFrameId;
                 sawShift = true;
             }
 
             if (sawShift)
             {
                 ApplyActiveImpostorAupShift(totalShift, lastShiftFrame);
+                _lastAppliedAupShiftFrameId = lastShiftFrame;
                 _forceResidencyEvaluation = true;
                 WriteTelemetrySample(0L, TelemetryShiftFlag);
             }
+        }
+
+        private static bool IsNewAupShift(uint shiftFrameId, uint lastAppliedFrameId)
+        {
+            return shiftFrameId != 0u &&
+                   shiftFrameId != lastAppliedFrameId &&
+                   unchecked(shiftFrameId - lastAppliedFrameId) < 0x80000000u;
         }
 
         private void UpdateChunkFade(float deltaTime)

@@ -214,7 +214,7 @@ namespace Hecton8.UI.VR
             _grabbed = false;
             if (gripHeld)
             {
-                _nonVrHold01 = math.saturate(_nonVrHold01 + (dt / math.max(0.05f, nonVrPullSeconds)));
+                _nonVrHold01 = math.saturate(_nonVrHold01 + dt * math.rcp(math.max(0.05f, nonVrPullSeconds)));
                 _leverTargets[0] = math.lerp(minAngleDegrees, maxAngleDegrees, _nonVrHold01);
                 _latchedHandSide = ManualOverridePulledSignal.HandUnknown;
             }
@@ -576,7 +576,7 @@ namespace Hecton8.UI.VR
 
         private float ResolveNormalized01(float angleDegrees)
         {
-            return math.saturate((angleDegrees - minAngleDegrees) / math.max(0.001f, maxAngleDegrees - minAngleDegrees));
+            return math.saturate((angleDegrees - minAngleDegrees) * math.rcp(math.max(0.001f, maxAngleDegrees - minAngleDegrees)));
         }
 
         private float3 WorldToLocal(Vector3 world)
@@ -594,10 +594,11 @@ namespace Hecton8.UI.VR
         {
             float3 fromPivot = handLocal - pivotLocal;
             float3 projected = fromPivot - axisLocal * math.dot(fromPivot, axisLocal);
-            if (math.lengthsq(projected) < MinAxisLengthSq)
+            float projectedLengthSq = math.lengthsq(projected);
+            if (projectedLengthSq < MinAxisLengthSq)
                 return minimum;
 
-            projected = math.normalize(projected);
+            projected *= math.rsqrt(projectedLengthSq);
             float signed = math.atan2(math.dot(axisLocal, math.cross(referenceLocal, projected)), math.dot(referenceLocal, projected)) * DegreesPerRadian;
             return math.clamp(signed, minimum, maximum);
         }

@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
 using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
@@ -57,6 +56,9 @@ namespace Hecton8.Core.Memory
 
         /// <summary>Total number of compaction slices that breached the watchdog.</summary>
         int CompactionWatchdogBreachCount { get; }
+
+        /// <summary>Global vault generation for black-box telemetry and stale-handle audits.</summary>
+        uint VaultGenerationID { get; }
 
         /// <summary>Relocation records emitted by the most recent defrag slice.</summary>
         int LastRelocationRecordCount { get; }
@@ -204,6 +206,7 @@ namespace Hecton8.Core.Memory
     internal struct MemoryDefragTelemetryEntry
     {
         public uint Sequence;
+        public uint VaultGenerationID;
         public int BlockCount;
         public long TotalFreeSpaceBytes;
         public long LargestContiguousBlockBytes;
@@ -267,22 +270,6 @@ namespace Hecton8.Core.Memory
         }
     }
 
-    [BurstCompile]
-    internal unsafe struct VaultMemMoveJob : IJob
-    {
-        [NativeDisableUnsafePtrRestriction] public void* Destination;
-        [NativeDisableUnsafePtrRestriction] public void* Source;
-        public long Bytes;
-
-        public void Execute()
-        {
-            if (Destination == null || Source == null || Bytes <= 0L)
-                return;
-
-            UnsafeUtility.MemMove(Destination, Source, Bytes);
-        }
-    }
-
     /// <summary>
     /// Persistent raw-memory authority for cross-system buffers.
     /// </summary>
@@ -292,8 +279,6 @@ namespace Hecton8.Core.Memory
         internal const int VaultBlockAlignment = 64;
         private const long DefaultArenaBytes = 128L * 1024L * 1024L;
         private const float FragmentationRatioThreshold = 0.15f;
-        private const float CompactionStressThreshold = 0.5f;
-        private const double CompactionSliceBudgetMilliseconds = 1.0d;
         private const long MassiveMoveThresholdBytes = 50L * 1024L * 1024L;
         private const int RelocationRecordCapacity = 64;
         internal const byte BlockStateFree = 0;
@@ -302,12 +287,9 @@ namespace Hecton8.Core.Memory
         private const byte BlockFlagLocked = 1 << 1;
         private const byte DefragFlagFragmented = 1 << 0;
         private const byte DefragFlagStressBlocked = 1 << 1;
-        private const byte DefragFlagMoved = 1 << 2;
         private const byte DefragFlagMassiveMovePending = 1 << 3;
         private const byte DefragFlagFault = 1 << 4;
-        private const byte DefragFlagLockedSkipped = 1 << 5;
         private const byte DefragFlagUnaligned = 1 << 6;
-        private const byte DefragFlagWatchdog = 1 << 7;
         private const int DefragBlackBoxFrameCount = 300;
         private const string DefragDumpPath = "Docs/AgentLogs/Dump_VAULT_MEMORY_RELOCATOR.bin";
         private const string PhiVodDumpPath = "Docs/AgentLogs/Dump_PHI_VOD.bin";
@@ -334,6 +316,7 @@ namespace Hecton8.Core.Memory
         private int _compactionWatchdogBreachCount;
         private long _totalDefragMovedBytes;
         private uint _defragTickSequence;
+        private uint _vaultGenerationId;
         private bool _defragDumpWritten;
         private bool _phiVodDumpWritten;
         private bool _initialized;
@@ -379,6 +362,9 @@ namespace Hecton8.Core.Memory
 
         /// <inheritdoc />
         public int CompactionWatchdogBreachCount => _compactionWatchdogBreachCount;
+
+        /// <inheritdoc />
+        public uint VaultGenerationID => _vaultGenerationId;
 
         /// <inheritdoc />
         public int LastRelocationRecordCount => _lastRelocationRecordCount;

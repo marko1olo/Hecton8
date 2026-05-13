@@ -29,11 +29,11 @@ Mandates read:
 - [x] Task 8 - Progress accumulator while trigger held | DOD: active lore entity hash accumulates `_activeScientificEntityProgress` from held trigger delta and commits through archaeology runtime | Rejected: coroutine progress and managed event loops | Estimate: 2400 us
 - [x] Task 9 - Span scrambling display on scanner RT | DOD: `ToolDiegeticDisplayController` writes scanner target text into the 256 RT TMP buffers via `Span<char>`/`SetCharArray`; active scanner summary also uses stackalloc span | Rejected: `.text` string assignment and heap-built decryption strings | Estimate: 8200 us
 - [x] Task 10 - Unlock commit + Meta Campaign DAG | DOD: completion publishes `LoreFragmentScannedSignal`, `ScanCompleteSignal`, `BlueprintUnlockedSignal`, `HUDNotificationSignal`, and `ProgressionEventSignal` for MetaCampaign DAG consumption | Rejected: direct service call to campaign singleton | Estimate: 5100 us
-- [ ] Task 11 - AUP shift safety | Justification pending | Alternatives pending | Estimate pending
-- [ ] Task 12 - Math LOD Low Tier disables scrambling | Justification pending | Alternatives pending | Estimate pending
-- [ ] Task 13 - Execution phase split: SIMULATION / VISUAL_SYNC | Justification pending | Alternatives pending | Estimate pending
-- [ ] Task 14 - Zero-GC stringless Burst spatial loop | Justification pending | Alternatives pending | Estimate pending
-- [ ] Task 15 - Omega compile check: Span<char> no boxing | Justification pending | Alternatives pending | Estimate pending
+- [x] Task 11 - AUP shift safety | DOD: lore nodes store `AbsoluteUniversePosition`; dot job converts lore AUPs against camera AUP with `ToCameraRelativeFloat3` before scoring | Rejected: raw runtime `Vector3` distance as authoritative target math | Estimate: 4900 us
+- [x] Task 12 - Math LOD Low Tier disables scrambling | DOD: Low/Unknown/MX350 paths skip scramble and write `SCAN N%` / `DECRYPT N%` via `ZeroGCFormatter.FastIntToChars` | Rejected: equal visual cost across tiers | Estimate: 2900 us
+- [x] Task 13 - Execution phase split: SIMULATION / VISUAL_SYNC | DOD: acquisition runs through `IFastTickable` Player lane; scanner signal publication is late-frame UI lane; RT display already uses dispatcher UI lane | Rejected: Unity `Update()` in scanner/UI | Estimate: 3600 us
+- [x] Task 14 - Zero-GC stringless Burst spatial loop | DOD: target loop is Burst `IJob` over NativeArray SOA; UI uses fixed char arrays, `Span<char>`, stackalloc, and TMP `SetCharArray` | Rejected: `StringBuilder`, `.text`, managed lists, per-frame allocation | Estimate: 6500 us
+- [ ] Task 15 - Omega compile check: Span<char> no boxing | BLOCKED BY DEPENDENCY: static audit found no boxing path in scanner/UI span writes, but compiler proof is blocked by unrelated project refs and Unity session loss | Estimate: blocked
 
 ## Verification
 

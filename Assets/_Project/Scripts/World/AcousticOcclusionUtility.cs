@@ -714,9 +714,17 @@ namespace Hecton8.World
 
         private static float ResolveAupDistanceMeters(Vector3 sourcePosition, Vector3 listenerPosition)
         {
-            Vector3 sourceAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(sourcePosition);
-            Vector3 listenerAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(listenerPosition);
-            return ApproximateMagnitude3D((float3)(listenerAup - sourceAup));
+            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
+            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listenerPosition);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in sourceAup, in listenerAup);
+            if (distanceSq <= 0d)
+                return 0f;
+
+            if (!math.isfinite(distanceSq))
+                return float.MaxValue;
+
+            double distanceMeters = distanceSq * math.rsqrt(distanceSq);
+            return distanceMeters >= float.MaxValue ? float.MaxValue : (float)distanceMeters;
         }
 
         private static void ApplyFloraScattering(

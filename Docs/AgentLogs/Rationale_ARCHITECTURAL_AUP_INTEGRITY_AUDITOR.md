@@ -55,3 +55,27 @@ Solution: Record the failure as a project-reference dependency wall after three 
 Rejected Alternatives: Editing asmdefs/project references across unrelated domains or reverting unrelated existing changes in touched files.
 Scalability potential: Runtime unaffected; process risk is contained for Low/Middle/High/Ultra because no fake green report is generated.
 Hardware Impact: 0 us runtime gain; prevents high-cost integration churn on low-end development machines.
+
+## Decision 7 - Non-Destructive AUP Shift Consumption
+
+Problem: `WorldChunkResidencyManager` consumed `AupShiftSignal` through `GlobalSignals.TryDequeueAupShift`, a destructive queue path inconsistent with the frame-snapshot consumers used by fluid, ore, GPR, foveated simulation, and thermal systems.
+Solution: Switched residency to `SignalBus<AupShiftSignal>.GetFrameSnapshot()` and added `_lastAppliedAupShiftFrameId` so repeated snapshots do not double-apply a shift.
+Rejected Alternatives: Keeping the direct queue drain because it currently had no other queue consumers. That assumption fails under the stated 20+ agent parallel execution model.
+Scalability potential: Low/Middle/High/Ultra all receive the same atomic shift view; high tiers can add more listeners without starving older consumers.
+Hardware Impact: Expected i3/MX350 benefit is 2-8 us on shift frames by avoiding missed residency re-evaluation and later correction churn; normal frames pay no extra work.
+
+## Decision 8 - Acoustic AUP Distance
+
+Problem: Acoustic occlusion distance converted both endpoints to `Vector3` absolute positions and subtracted in float before distance estimation.
+Solution: Convert endpoints to `AbsoluteUniversePosition`, use `AbsoluteUniversePosition.DistanceSq`, compute distance from double squared length with `math.rsqrt`, and only then return float for audio shaping.
+Rejected Alternatives: Keeping `ApproximateMagnitude3D(float3(listenerAup - sourceAup))`; it is cheaper but not authoritative for long-session coordinates.
+Scalability potential: Low still receives one float acoustic scalar; High/Ultra keep precise far-field occlusion and can spend saved stability budget on richer echo fakes.
+Hardware Impact: Expected i3/MX350 cost is sub-1 us per acoustic distance query; benefit is removing jittery occlusion thresholds after origin drift.
+
+## Decision 9 - Task 6-10 Scope Control
+
+Problem: The scans exposed many float world/presentation paths, but only some are AUP authority. Patching every `Vector3 universe` lane would cross graphics, vegetation, voxel, and UI ownership.
+Solution: Fix authority/shared math paths now; log presentation lanes as residual findings. KCC snap and `/ dt` scans are complete for AUP/KCC files; Math LOD is accepted only where explicit tier gates already exist.
+Rejected Alternatives: Global replacement of presentation offsets or shader-space data with double/AUP structs. Unity rendering and GPU buffers consume floats by design.
+Scalability potential: Low uses cheap presentation lanes with explicit tier gates; Middle/High/Ultra keep double authority and can increase visual overkill without corrupting AUP state.
+Hardware Impact: Expected i3/MX350 gain is indirect: fewer rebase misses and less acoustic/AI threshold flicker; no GC introduced.

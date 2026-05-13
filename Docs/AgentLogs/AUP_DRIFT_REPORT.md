@@ -27,10 +27,14 @@ Status: LOOP 1 COMPLETE - PRECISION PATCHED, COMPILE BLOCKED BY PROJECT REFERENC
 - `Assets/_Project/Scripts/World/AUPMath.cs`: `AUPDirection` now computes length in double and uses `math.rsqrt` before the final float3 output.
 - `Assets/_Project/Scripts/HectonFloatingOrigin.cs`: drift watchdog reports max AUP/runtime error and uses `math.rcp` for anchor velocity fallback.
 - `Assets/_Project/Scripts/CrashTelemetryBuffer.cs`: added `ReportAupMaxDriftError` and ring-buffer write path.
+- `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs`: AUP shift consumption now uses non-destructive SignalBus snapshots and a local applied shift sequence.
+- `Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs`: acoustic AUP distance now subtracts through `AbsoluteUniversePosition.DistanceSq` before final float audio scalar.
 
 ## Verification
 
 - Re-ran mandatory AUP scan; remaining float AUP offset hits are primarily presentation/shader fluid/scatter lanes and are recorded for later domain owners.
+- Scoped `/ dt` scan over AUP/origin/KCC/acoustic/residency files found no remaining AUP integration division after the reciprocal patch.
+- `GlobalSignals.TryDequeueAupShift` now has no runtime consumers; it remains an available compatibility API only.
 - `dotnet build Hecton8.Core.csproj`: failed with 131 existing missing-reference errors, including `Hecton8.Environment.Fluids`, `Hecton8.Audio.Virtualization`, `Hecton8.Physics.CCD`, and `Hecton8.Core.Scheduling`.
 - `dotnet build Assembly-CSharp.csproj`: timed out after 120s; timed-out build process and MSBuild servers were stopped.
 - Unity MCP script validation: unavailable (`no_unity_session`).
