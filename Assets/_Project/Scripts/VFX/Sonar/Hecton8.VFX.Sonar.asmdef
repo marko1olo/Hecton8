@@ -1,12 +1,8 @@
 {
-    "name": "Hecton8.Graphics.Culling",
-    "rootNamespace": "Hecton8.Graphics.Culling",
+    "name": "Hecton8.VFX.Sonar",
+    "rootNamespace": "Hecton8.VFX.Sonar",
     "references": [
-        "Hecton8.World.Contracts",
-        "Unity.Burst",
-        "Unity.Collections",
-        "Unity.Jobs",
-        "Unity.Mathematics"
+        "Hecton8.Core.Contracts"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

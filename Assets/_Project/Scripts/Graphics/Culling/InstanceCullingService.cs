@@ -135,6 +135,12 @@ namespace Hecton8.Graphics.Culling
                 Configure(_computeShader, _capacity);
         }
 
+        private void OnEnable()
+        {
+            if (_visibleInstancesBuffer == null && _activeComputeShader != null)
+                Configure(_activeComputeShader, _capacity);
+        }
+
         private void OnDisable()
         {
             ReleaseResources();

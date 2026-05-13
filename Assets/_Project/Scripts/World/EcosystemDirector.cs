@@ -3569,6 +3569,143 @@ namespace Hecton8.World
             return GlobalRegistry.ScalabilityTierProfileByte > 0;
         }
 
+        private void CaptureBiomassSaveRuns()
+        {
+            if (!_saveSnapshotBiomassRuns.IsCreated)
+                return;
+
+            _saveSnapshotBiomassRuns.Clear();
+            int runLength = 0;
+            int2 runStart = int2.zero;
+            int2 previousCoord = int2.zero;
+            sbyte runPrey = 0;
+            sbyte runPredator = 0;
+            sbyte runCapacity = 0;
+            for (int i = 0; i < _activeBiomassCellCount; i++)
+            {
+                int2 coord = _biomassMacroCellCoords[i];
+                sbyte preyQ = QuantizeBiomass01(_preyBiomassFront[i]);
+                sbyte predatorQ = QuantizeBiomass01(_predatorBiomassFront[i]);
+                sbyte capacityQ = QuantizeBiomass01(_biomassCarryingCapacity[i]);
+                bool canExtend =
+                    runLength > 0 &&
+                    runLength < byte.MaxValue &&
+                    coord.y == previousCoord.y &&
+                    coord.x == previousCoord.x + 1 &&
+                    preyQ == runPrey &&
+                    predatorQ == runPredator &&
+                    capacityQ == runCapacity;
+                if (!canExtend)
+                {
+                    FlushBiomassSaveRun(runStart, runPrey, runPredator, runCapacity, runLength);
+                    runStart = coord;
+                    runLength = 1;
+                    runPrey = preyQ;
+                    runPredator = predatorQ;
+                    runCapacity = capacityQ;
+                }
+                else
+                {
+                    runLength++;
+                }
+
+                previousCoord = coord;
+            }
+
+            FlushBiomassSaveRun(runStart, runPrey, runPredator, runCapacity, runLength);
+        }
+
+        private void FlushBiomassSaveRun(
+            int2 start,
+            sbyte preyQ,
+            sbyte predatorQ,
+            sbyte capacityQ,
+            int runLength)
+        {
+            if (runLength <= 0 ||
+                !_saveSnapshotBiomassRuns.IsCreated ||
+                _saveSnapshotBiomassRuns.Length >= _saveSnapshotBiomassRuns.Capacity)
+            {
+                return;
+            }
+
+            _saveSnapshotBiomassRuns.AddNoResize(new EcosystemBiomassSaveRun
+            {
+                StartMacroCell = start,
+                PreyBiomassQ = preyQ,
+                PredatorBiomassQ = predatorQ,
+                CarryingCapacityQ = capacityQ,
+                RunLength = (byte)math.clamp(runLength, 1, byte.MaxValue)
+            });
+        }
+
+        private void RestoreBiomassSaveRun(in EcosystemSectorSaveRecord saveRecord)
+        {
+            if (!UnpackBiomassRun(saveRecord, out EcosystemBiomassSaveRun run))
+                return;
+
+            int count = math.max(1, run.RunLength);
+            float capacity = math.max(0.1f, DequantizeBiomassQ(run.CarryingCapacityQ));
+            float prey = math.clamp(DequantizeBiomassQ(run.PreyBiomassQ), 0f, capacity);
+            float predator = math.clamp(DequantizeBiomassQ(run.PredatorBiomassQ), 0f, capacity);
+            for (int offset = 0; offset < count && _activeBiomassCellCount < _preyBiomassFront.Length; offset++)
+            {
+                int2 coord = run.StartMacroCell + new int2(offset, 0);
+                int slotIndex = ResolveOrCreateBiomassCellSlot(coord, seedWithBaseline: false);
+                if (slotIndex < 0)
+                    break;
+
+                _biomassCarryingCapacity[slotIndex] = capacity;
+                _preyBiomassFront[slotIndex] = prey;
+                _preyBiomassBack[slotIndex] = prey;
+                _predatorBiomassFront[slotIndex] = predator;
+                _predatorBiomassBack[slotIndex] = predator;
+                _biomassSumScratch[slotIndex] = prey + predator;
+            }
+        }
+
+        private void ClearBiomassRuntimeState()
+        {
+            if (_biomassIndexByKey.IsCreated)
+                _biomassIndexByKey.Clear();
+
+            int capacity = _preyBiomassFront.IsCreated ? _preyBiomassFront.Length : 0;
+            for (int i = 0; i < capacity; i++)
+            {
+                if (_preyBiomassFront.IsCreated)
+                    _preyBiomassFront[i] = 0f;
+                if (_preyBiomassBack.IsCreated)
+                    _preyBiomassBack[i] = 0f;
+                if (_predatorBiomassFront.IsCreated)
+                    _predatorBiomassFront[i] = 0f;
+                if (_predatorBiomassBack.IsCreated)
+                    _predatorBiomassBack[i] = 0f;
+                if (_biomassCarryingCapacity.IsCreated)
+                    _biomassCarryingCapacity[i] = 0f;
+                if (_biomassSumScratch.IsCreated)
+                    _biomassSumScratch[i] = 0f;
+                if (_biomassMacroCellCoords.IsCreated)
+                    _biomassMacroCellCoords[i] = int2.zero;
+                if (_biomassCellFlags.IsCreated)
+                    _biomassCellFlags[i] = 0;
+            }
+
+            if (_pendingBiomassImpacts.IsCreated)
+            {
+                for (int i = 0; i < _pendingBiomassImpacts.Length; i++)
+                    _pendingBiomassImpacts[i] = default;
+            }
+
+            _activeBiomassCellCount = 0;
+            _pendingBiomassImpactCount = 0;
+            _debugBiomassCellCount = 0;
+            _debugGlobalBiomassSum = 0f;
+            _debugPreyBiomassSum = 0f;
+            _debugPredatorBiomassSum = 0f;
+            _debugFloraOvergrowth01 = 0f;
+            Shader.SetGlobalFloat(_BiomassOvergrowthId, 0f);
+        }
+
         private void ClearHeadlessRuntimeState()
         {
             int capacity = _sectorFrontStates.IsCreated ? _sectorFrontStates.Length : 0;
