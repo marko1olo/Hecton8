@@ -1,7 +1,8 @@
 {
     "generatedDate":  "2026-05-09",
     "generatedLocalTime":  "2026-05-09 19:39:00 +04:00",
-    "status":  "PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)",
+    "status":  "HISTORICAL SNAPSHOT / SUPERSEDED BY DOC_AUDIT R13",
+    "originalSnapshotStatus":  "PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)",
     "docAuditR13Boundary":  {
                                 "date":  "2026-05-13",
                                 "status":  "HISTORICAL SNAPSHOT / SUPERSEDED",

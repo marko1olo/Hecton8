@@ -58,6 +58,9 @@ namespace Hecton8.UI
         private static readonly int PointSizeId = Shader.PropertyToID("_PointSize");
         private static readonly int OpacityId = Shader.PropertyToID("_Opacity");
         private static readonly int AcousticPingSignalId = Shader.PropertyToID("_AcousticPingSignal");
+        private static readonly int ActiveSonarRadiusId = Shader.PropertyToID("_ActiveSonarRadius");
+        private static readonly int ActiveSonarMaxRangeId = Shader.PropertyToID("_ActiveSonarMaxRange");
+        private static readonly int ActiveSonarGeoParamsId = Shader.PropertyToID("_ActiveSonarGeoParams");
         private static readonly int HeightColorizationId = Shader.PropertyToID("_HeightColorization");
         private static readonly int DepthFadeMetersId = Shader.PropertyToID("_DepthFadeMeters");
         private static readonly uint _GhostSignalRejectedWarningHash = unchecked((uint)LocHash.Compute("PDAMapTab.GhostSignalRejected"));
@@ -690,10 +693,18 @@ namespace Hecton8.UI
             if (!DispatchSonarPointCloud(in playerAup, playerPosition, lowTier))
                 return;
 
-            float pingRadius = math.frac(_animationTime * 0.33f) * 0.62f;
+            Vector4 activeSonarGeoParams = Shader.GetGlobalVector(ActiveSonarGeoParamsId);
+            float activeSonarRadiusMeters = math.max(0f, Shader.GetGlobalFloat(ActiveSonarRadiusId));
+            float activeSonarMaxRangeMeters = math.max(1f, activeSonarGeoParams.y);
+            float pingRadius = activeSonarGeoParams.x > 0.5f
+                ? math.saturate(activeSonarRadiusMeters * math.rcp(activeSonarMaxRangeMeters))
+                : math.frac(_animationTime * 0.33f) * 0.62f;
+            float pingActive = activeSonarGeoParams.x > 0.5f ? 1f : 0f;
             _pointCloudMaterial.SetBuffer(SonarPointsId, _pointCloudAppendBuffer);
             _pointCloudMaterial.SetMatrix(PointCloudLocalToWorldId, localToWorld);
-            _pointCloudMaterial.SetVector(AcousticPingSignalId, new Vector4(pingRadius, PointCloudPingBandWidth, _animationTime, 1f));
+            _pointCloudMaterial.SetVector(AcousticPingSignalId, new Vector4(pingRadius, PointCloudPingBandWidth, _animationTime, pingActive));
+            _pointCloudMaterial.SetFloat(ActiveSonarRadiusId, activeSonarRadiusMeters);
+            _pointCloudMaterial.SetFloat(ActiveSonarMaxRangeId, activeSonarMaxRangeMeters);
             _pointCloudMaterial.SetFloat(PointSizeId, pointCloudPointSize);
             _pointCloudMaterial.SetFloat(OpacityId, pointCloudOpacity);
             _pointCloudMaterial.SetFloat(DepthFadeMetersId, pointCloudDepthMeters);

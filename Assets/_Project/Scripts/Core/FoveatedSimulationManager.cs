@@ -924,6 +924,216 @@ namespace Hecton8.Core
             WriteTelemetryFrame(cameraPosition, cameraForward);
         }
 
+        private void AccumulateTierCount(FoveatedSimulationTier tier)
+        {
+            switch (tier)
+            {
+                case FoveatedSimulationTier.Active:
+                    _tier0Count++;
+                    return;
+                case FoveatedSimulationTier.Peripheral:
+                    _tier1Count++;
+                    return;
+                default:
+                    _tier2Count++;
+                    _frozenEntityCount++;
+                    return;
+            }
+        }
+
+        private void ApplyCombatDamageSignals()
+        {
+            ReadOnlySpan<CombatDamageSignal> damageSignals = SignalBus<CombatDamageSignal>.GetFrameSnapshot();
+            for (int signalIndex = 0; signalIndex < damageSignals.Length; signalIndex++)
+            {
+                CombatDamageSignal signal = damageSignals[signalIndex];
+                if (signal.TargetHash == 0u && signal.TargetId == 0)
+                    continue;
+
+                LockTier0(signal.TargetHash, signal.TargetId, Tier0CombatLockSeconds);
+            }
+        }
+
+        private void ConsumeCameraSignals()
+        {
+            ReadOnlySpan<CameraPositionSignal> positionSignals = SignalBus<CameraPositionSignal>.GetFrameSnapshot();
+            for (int i = 0; i < positionSignals.Length; i++)
+            {
+                CameraPositionSignal signal = positionSignals[i];
+                if (!IsFinite(signal.Position))
+                    continue;
+
+                _signalCameraPosition = ToVector3(signal.Position);
+                if (IsFinite(signal.Forward) && math.lengthsq(signal.Forward) > MinimumDirectionLength)
+                    _signalCameraForward = ToVector3(math.normalizesafe(signal.Forward, new float3(0f, 0f, 1f)));
+                _hasSignalCameraPose = true;
+            }
+
+            ReadOnlySpan<CameraFrustumSignal> frustumSignals = SignalBus<CameraFrustumSignal>.GetFrameSnapshot();
+            for (int i = 0; i < frustumSignals.Length; i++)
+            {
+                CameraFrustumSignal signal = frustumSignals[i];
+                if (!IsFinite(signal.Position))
+                    continue;
+
+                _signalCameraPosition = ToVector3(signal.Position);
+                if (IsFinite(signal.Forward) && math.lengthsq(signal.Forward) > MinimumDirectionLength)
+                    _signalCameraForward = ToVector3(math.normalizesafe(signal.Forward, new float3(0f, 0f, 1f)));
+                if (IsFinite(signal.Up) && math.lengthsq(signal.Up) > MinimumDirectionLength)
+                    _signalCameraUp = ToVector3(math.normalizesafe(signal.Up, new float3(0f, 1f, 0f)));
+                _hasSignalCameraPose = true;
+            }
+        }
+
+        private bool TryResolveScoringCamera(out Vector3 cameraPosition, out Vector3 cameraForward, out Vector3 cameraUp)
+        {
+            if (_hasSignalCameraPose)
+            {
+                cameraPosition = _signalCameraPosition;
+                cameraForward = _signalCameraForward.sqrMagnitude > MinimumDirectionLength ? _signalCameraForward : Vector3.forward;
+                cameraUp = _signalCameraUp.sqrMagnitude > MinimumDirectionLength ? _signalCameraUp : Vector3.up;
+                return true;
+            }
+
+            if (_cameraTransform == null)
+            {
+                cameraPosition = Vector3.zero;
+                cameraForward = Vector3.forward;
+                cameraUp = Vector3.up;
+                return false;
+            }
+
+            cameraPosition = _cameraTransform.position;
+            cameraForward = _cameraTransform.forward;
+            cameraUp = _cameraTransform.up;
+            return true;
+        }
+
+        private void ResolveScalabilityThresholds(out float activeDistance, out float frozenDistance)
+        {
+            HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
+            if (qualityTier == HectonQualityTier.Low || qualityTier == HectonQualityTier.Mx350)
+            {
+                activeDistance = LowActiveDistanceMeters;
+                frozenDistance = LowFrozenDistanceMeters;
+                return;
+            }
+
+            activeDistance = DefaultActiveDistanceMeters;
+            frozenDistance = DefaultFrozenDistanceMeters;
+        }
+
+        private static FoveatedSimulationTier ResolveTierForPosition(
+            Vector3 runtimePosition,
+            Vector3 cameraPosition,
+            Vector3 cameraForward,
+            float activeDistance,
+            float frozenDistance)
+        {
+            Vector3 toTarget = runtimePosition - cameraPosition;
+            float distanceSq = toTarget.sqrMagnitude;
+            if (distanceSq > frozenDistance * frozenDistance)
+                return FoveatedSimulationTier.Frozen;
+
+            if (distanceSq <= MinimumDirectionLength)
+                return FoveatedSimulationTier.Active;
+
+            Vector3 direction = toTarget * (1.0f / Mathf.Sqrt(distanceSq));
+            Vector3 forward = cameraForward.sqrMagnitude > MinimumDirectionLength ? cameraForward.normalized : Vector3.forward;
+            bool insideFrustum = Vector3.Dot(direction, forward) >= FrustumForwardDotThreshold;
+            if (!insideFrustum || distanceSq >= activeDistance * activeDistance)
+                return FoveatedSimulationTier.Peripheral;
+
+            return FoveatedSimulationTier.Active;
+        }
+
+        private void WriteTelemetryFrame(Vector3 cameraPosition, Vector3 cameraForward)
+        {
+            if (!_telemetryRing.IsCreated)
+                return;
+
+            int cursor = _telemetryCursor;
+            _telemetryRing[cursor] = new FoveatedSimulationTelemetryEntry
+            {
+                Frame = Time.frameCount,
+                TargetCount = _targetCount,
+                FrozenEntityCount = _frozenEntityCount,
+                Tier0Count = _tier0Count,
+                Tier1Count = _tier1Count,
+                Tier2Count = _tier2Count,
+                CameraPosition = cameraPosition,
+                CameraForward = cameraForward,
+                Flags = _forceImmediateImportanceRefresh ? 1u : 0u,
+                StateHash = ComputeStateHash()
+            };
+
+            _telemetryCursor = cursor + 1 >= TelemetryCapacity ? 0 : cursor + 1;
+        }
+
+        private uint ComputeStateHash()
+        {
+            uint hash = 2166136261u;
+            hash = (hash ^ (uint)_targetCount) * 16777619u;
+            hash = (hash ^ (uint)_frozenEntityCount) * 16777619u;
+            hash = (hash ^ (uint)_tier0Count) * 16777619u;
+            hash = (hash ^ (uint)_tier1Count) * 16777619u;
+            hash = (hash ^ (uint)_tier2Count) * 16777619u;
+            return hash == 0u ? 1u : hash;
+        }
+
+        private void DumpTelemetryBlackBoxOnce()
+        {
+            if (_blackBoxDumped || !_telemetryRing.IsCreated)
+                return;
+
+            _blackBoxDumped = true;
+            try
+            {
+                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string directory = Path.Combine(root, "Docs", "AgentLogs");
+                Directory.CreateDirectory(directory);
+                string path = Path.Combine(directory, BlackBoxDumpFileName);
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(TelemetryMagic);
+                    writer.Write(TelemetryCapacity);
+                    writer.Write(_telemetryCursor);
+                    for (int i = 0; i < TelemetryCapacity; i++)
+                    {
+                        FoveatedSimulationTelemetryEntry entry = _telemetryRing[i];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.TargetCount);
+                        writer.Write(entry.FrozenEntityCount);
+                        writer.Write(entry.Tier0Count);
+                        writer.Write(entry.Tier1Count);
+                        writer.Write(entry.Tier2Count);
+                        writer.Write(entry.CameraPosition.x);
+                        writer.Write(entry.CameraPosition.y);
+                        writer.Write(entry.CameraPosition.z);
+                        writer.Write(entry.CameraForward.x);
+                        writer.Write(entry.CameraForward.y);
+                        writer.Write(entry.CameraForward.z);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.StateHash);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private static bool IsFinite(float3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static Vector3 ToVector3(float3 value)
+        {
+            return new Vector3(value.x, value.y, value.z);
+        }
+
         private void UpdateDopplerProtection()
         {
             if (_listenerTransform == null)
@@ -1039,6 +1249,11 @@ namespace Hecton8.Core
                 _jobScorePositions = new NativeArray<float3>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float3>[512] - simulation positions for Burst cadence scoring - owner: FoveatedSimulationManager
             }
 
+            if (!_jobEntityAups.IsCreated)
+            {
+                _jobEntityAups = new NativeArray<float3>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float3>[512] - entity AUP/runtime positions for foveated tiering - owner: FoveatedSimulationManager
+            }
+
             if (!_jobImportanceScores.IsCreated)
             {
                 _jobImportanceScores = new NativeArray<float>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float>[512] - Burst importance score output buffer - owner: FoveatedSimulationManager
@@ -1053,6 +1268,17 @@ namespace Hecton8.Core
             {
                 _jobInsideFrustumFlags = new NativeArray<byte>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<byte>[512] - Burst front hemisphere visibility flags - owner: FoveatedSimulationManager
             }
+
+            if (!_jobEntitySimTiers.IsCreated)
+            {
+                _jobEntitySimTiers = new NativeArray<byte>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<byte>[512] - Burst foveated tier output buffer - owner: FoveatedSimulationManager
+            }
+
+            if (!_jobDistancesMeters.IsCreated)
+            {
+                _jobDistancesMeters = new NativeArray<float>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float>[512] - distance output buffer for wrap policy - owner: FoveatedSimulationManager
+            }
+
             if (!_jobFromPositions.IsCreated)
             {
                 _jobFromPositions = new NativeArray<float3>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float3>[512] — interpolation source positions — owner: FoveatedSimulationManager
@@ -1088,6 +1314,11 @@ namespace Hecton8.Core
                 _deferredRaycastResults = new NativeArray<RaycastHit>(MaxDeferredRaycastCommands, Allocator.Persistent); // COLD ALLOC: NativeArray<RaycastHit>[256] — deferred throttled-entity raycast hits — owner: FoveatedSimulationManager
             }
 
+            if (!_telemetryRing.IsCreated)
+            {
+                _telemetryRing = new NativeArray<FoveatedSimulationTelemetryEntry>(TelemetryCapacity, Allocator.Persistent); // COLD ALLOC: NativeArray<FoveatedSimulationTelemetryEntry>[300] - fixed black-box tier telemetry - owner: FoveatedSimulationManager
+            }
+
             if (!_nativeMemorySentinelRegistered)
                 RegisterNativeMemorySentinel();
 
@@ -1098,9 +1329,12 @@ namespace Hecton8.Core
         private void RegisterNativeMemorySentinel()
         {
             NativeMemorySentinel.RegisterNativeArray(_jobScorePositions, nameof(FoveatedSimulationManager), nameof(_jobScorePositions), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_jobEntityAups, nameof(FoveatedSimulationManager), nameof(_jobEntityAups), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_jobImportanceScores, nameof(FoveatedSimulationManager), nameof(_jobImportanceScores), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_jobTickRateCodes, nameof(FoveatedSimulationManager), nameof(_jobTickRateCodes), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_jobInsideFrustumFlags, nameof(FoveatedSimulationManager), nameof(_jobInsideFrustumFlags), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_jobEntitySimTiers, nameof(FoveatedSimulationManager), nameof(_jobEntitySimTiers), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_jobDistancesMeters, nameof(FoveatedSimulationManager), nameof(_jobDistancesMeters), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_jobFromPositions, nameof(FoveatedSimulationManager), nameof(_jobFromPositions), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_jobToPositions, nameof(FoveatedSimulationManager), nameof(_jobToPositions), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_jobAlphas, nameof(FoveatedSimulationManager), nameof(_jobAlphas), NativeAllocationLifetime.Session);
@@ -1108,6 +1342,7 @@ namespace Hecton8.Core
             NativeMemorySentinel.RegisterNativeArray(_pendingDeferredRaycastCommandIndices, nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommandIndices), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeList(_deferredRaycastCommands, nameof(FoveatedSimulationManager), nameof(_deferredRaycastCommands), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_deferredRaycastResults, nameof(FoveatedSimulationManager), nameof(_deferredRaycastResults), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_telemetryRing, nameof(FoveatedSimulationManager), nameof(_telemetryRing), NativeAllocationLifetime.Session);
             _nativeMemorySentinelRegistered = true;
         }
 

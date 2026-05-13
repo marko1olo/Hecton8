@@ -256,6 +256,7 @@ Shader "Hecton8/World/WreckIndirectLit"
                 ambientOcclusion);
             half emergencyPulse = saturate((half)_HectonWreckEmergencyFlicker * (0.35h + ResolveWreckTriangle01(_Time.y * 3.7 + _HectonWreckEmergencyPhase) * 0.65h));
             half3 emission = _EmissionColor.rgb * emissionMask * emergencyPulse;
+            emission += (half3)HectonCoreLitEvaluateActiveSonarGeoEmission(input.positionWS);
             half3 finalColor = HectonCoreLitApplyNoirFog(litColor + emission, input.fogFactor, input.positionWS);
             return half4(finalColor, 1.0h);
         }

@@ -52,7 +52,7 @@ Evidence class remains STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK. R
 - `Reports/2026-05-13_DOC_AUDIT_XRAY.md` - current documentation reality override; demotes missing May 11 build artifacts, root/doc surface drift, source-count drift, stale `Current compile-only evidence` lines, interface-count drift, Archivarius path drift, asmdef count drift, package/player-settings drift, world/scatter wiring proof gaps, root mirror/atlas scope confusion, stale manifest authority, and gameplay resource-loop proof gaps.
 - `PROJECT_STATE_STATIC_XRAY.md` - current durable static audit anchor for runtime-spine, large-file, scatter, Addressables, audio-memory, third-party contamination, gameplay economy/resource acquisition, test-depth, and verification-gap findings.
 - `Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` - historical May 11 documentation/data boundary; superseded by the May 13 X-Ray for current counters and missing-artifact evidence.
-- `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` - latest machine-readable active documentation manifest; numeric counters are historical where the May 13 X-Ray supersedes them.
+- `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` - latest historical machine-readable active documentation manifest snapshot; its counters, authority list, and build-state fields are not current authority after the May 13 X-Ray.
 - `Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` - latest `.agents-skills` actuality pass for the visual-realistic-fake doctrine; supersedes conflicting simulate-first mandate wording where 2026-05-11 overrides were added.
 - `Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` - previous documentation continuation sync; superseded by the May 11 current-data continuation for compile/counter freshness.
 - `Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json` - previous machine-readable active documentation manifest.
@@ -130,7 +130,7 @@ Evidence class remains STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK. R
 Current-state rule:
 
 - use `Reports/2026-05-13_DOC_AUDIT_XRAY.md` as the latest documentation counter/status override
-- use `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` as the latest machine-readable active documentation manifest, but treat its numeric counters as historical where the May 13 X-Ray provides newer static counts
+- use `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` only as the latest historical machine-readable active documentation manifest snapshot; do not use its counters, authority list, or build-state fields as current proof
 - use `Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` as historical May 11 documentation/data evidence, not the latest counter/status boundary
 - use `Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` as the latest `.agents-skills` visual-fake doctrine boundary; it is documentation-only and does not certify runtime behavior
 - use `Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` as the previous R186 documentation/build boundary when May 11 docs do not cover the question

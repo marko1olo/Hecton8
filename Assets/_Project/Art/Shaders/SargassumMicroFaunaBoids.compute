@@ -550,7 +550,7 @@ float3 ResolvePredatorAupScatter(float3 positionWS, out float panic01)
         if (!IsFiniteFloat(distSq) || distSq >= radiusSq)
             continue;
 
-        float gate = 1.0 - saturate(distSq / radiusSq);
+        float gate = 1.0 - saturate(distSq * rcp(radiusSq));
         gate *= gate;
         scatterWS += SafeNormalizeRsqrt(awayFromThreat, float3(0.0, 0.0, 1.0)) * gate;
         panic01 = max(panic01, gate);

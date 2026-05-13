@@ -128,7 +128,8 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 float3 normalWS = HectonCoreLitSafeNormalize(input.normalWS);
                 float3 viewDirWS = HectonCoreLitSafeNormalize(GetCameraPositionWS() - input.positionWS);
                 float fresnelBase = 1.0 - saturate(dot(normalWS, viewDirWS));
-                float fresnel = pow(fresnelBase, max(0.5, _FresnelPower));
+                float fresnelSq = fresnelBase * fresnelBase;
+                float fresnel = lerp(fresnelSq, fresnelSq * fresnelBase, saturate((_FresnelPower - 2.0) * 0.25));
                 float wire = HectonAssemblyGridLine(input.positionOS.xz, _WireDensity);
                 float pausePulse = saturate(_PowerPause01) *
                     (0.55 + 0.45 * HectonCoreLitTrianglePulse01(_Time.y * max(0.001, _PulseSpeed) + input.height01 * 7.0));

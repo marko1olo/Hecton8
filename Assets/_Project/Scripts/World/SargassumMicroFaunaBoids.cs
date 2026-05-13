@@ -5113,8 +5113,8 @@ namespace Hecton8.World
                 if (!math.all(math.isfinite(runtimePosition)))
                     continue;
 
-                float speed = math.sqrt(math.max(0f, signal.VelocitySq));
-                float radius = math.clamp(10f + speed * 1.5f, 10f, 42f);
+                float velocityGate = math.saturate(signal.VelocitySq * (1f / 144f));
+                float radius = math.lerp(10f, 42f, velocityGate);
                 RegisterAcousticPanicBurst(
                     ToVector3(runtimePosition),
                     radius,

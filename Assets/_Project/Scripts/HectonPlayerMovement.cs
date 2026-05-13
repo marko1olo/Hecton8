@@ -6810,16 +6810,18 @@ namespace Hecton8.Gameplay
 
         private void DrainNarrativeFocusSignals()
         {
-            if (!cinematicFocusEnabled)
-                return;
-
             int drained = 0;
             while (drained < CinematicFocusSignalDrainBudget &&
                    GlobalSignals.TryDequeueNarrativeFocus(out NarrativeFocusSignal signal))
             {
-                ApplyNarrativeFocusSignal(in signal);
+                if (cinematicFocusEnabled)
+                    ApplyNarrativeFocusSignal(in signal);
+
                 drained++;
             }
+
+            if (!cinematicFocusEnabled && _cinematicFocusActive)
+                ClearCinematicFocus(true);
         }
 
         private void ApplyNarrativeFocusSignal(in NarrativeFocusSignal signal)
@@ -7543,7 +7545,7 @@ namespace Hecton8.Gameplay
             out float distanceSq,
             out AbsoluteUniversePosition playerAup)
         {
-            playerAup = AbsoluteUniversePosition.FromRuntimePosition(_rb != null ? _rb.position : ResolvePlayerAupRuntimePosition());
+            playerAup = _playerState.AbsolutePosition;
             double3 player = playerAup.ToAbsoluteDouble3();
             double3 target = _cinematicFocusTargetAup.ToAbsoluteDouble3();
             double3 delta = target - player;

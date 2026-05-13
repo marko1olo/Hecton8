@@ -7,7 +7,6 @@
         "Hecton8.Core.Scheduling",
         "Hecton8.Core.Memory",
         "Hecton8.Core.Memory.Layout",
-        "Hecton8.Narrative.Camera",
         "Hecton8.Bootstrap.Contracts",
         "Hecton8.Environment.Fluids",
         "Hecton8.Environment.Fluids.Contracts",

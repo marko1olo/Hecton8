@@ -74,9 +74,9 @@ namespace Hecton8.World
         private const byte BiomassCellFlagSectorClearedPublished = 1 << 0;
         private const uint BiomassSaveRecordMarker = 0x80000000u;
         private const uint BiomassSaveRunLengthMask = 0x000000FFu;
-        private const uint BiomassSavePreyShift = 8;
-        private const uint BiomassSavePredatorShift = 16;
-        private const uint BiomassSaveCapacityShift = 24;
+        private const int BiomassSavePreyShift = 8;
+        private const int BiomassSavePredatorShift = 16;
+        private const int BiomassSaveCapacityShift = 24;
         private const float DefaultHostilityPeakHoldSeconds = 18f;
         private const float LogicalLodFullSimDistanceMeters = 50f;
         private const float LogicalLodDataOnlyDistanceMeters = 150f;
@@ -3912,6 +3912,11 @@ namespace Hecton8.World
             return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
         }
 
+        private static long PackBiomassCellKey(int2 macroCellCoord)
+        {
+            return ((long)macroCellCoord.x << 32) | (uint)macroCellCoord.y;
+        }
+
         private static int ResolveBiomeIdForSector(int2 sectorCoord)
         {
             uint mix = MixSectorBits(sectorCoord.x, sectorCoord.y);
@@ -3928,6 +3933,12 @@ namespace Hecton8.World
             return packedPrey | (packedPredator << 16);
         }
 
+        private static void UnpackPopulationCounts(uint packed, out int preyPopulation, out int predatorPopulation)
+        {
+            preyPopulation = (ushort)(packed & 0x0000FFFFu);
+            predatorPopulation = (ushort)((packed >> 16) & 0x0000FFFFu);
+        }
+
         private static uint PackAdaptationTraits(float fitness, float speedMultiplier, float camouflageIndex, float maximumSpeedMultiplier)
         {
             uint packedFitness = PackUnitByte(fitness);
@@ -3936,6 +3947,67 @@ namespace Hecton8.World
             uint packedSpeed = PackUnitByte(speed01);
             uint packedCamouflage = PackUnitByte(camouflageIndex);
             return packedFitness | (packedSpeed << 8) | (packedCamouflage << 16);
+        }
+
+        private static void UnpackAdaptationTraits(
+            uint packed,
+            float maximumSpeedMultiplier,
+            out float fitness,
+            out float speedMultiplier,
+            out float camouflageIndex)
+        {
+            fitness = ((packed >> 0) & 0xFFu) * math.rcp(255f);
+            float speed01 = ((packed >> 8) & 0xFFu) * math.rcp(255f);
+            camouflageIndex = ((packed >> 16) & 0xFFu) * math.rcp(255f);
+            speedMultiplier = 1f + (math.saturate(speed01) * math.max(0f, maximumSpeedMultiplier - 1f));
+        }
+
+        private static EcosystemSectorSaveRecord PackBiomassRunAsSectorRecord(in EcosystemBiomassSaveRun run)
+        {
+            uint runLength = math.clamp(run.RunLength, (byte)1, byte.MaxValue);
+            uint preyQ = (uint)(byte)math.clamp(run.PreyBiomassQ, (sbyte)0, (sbyte)100);
+            uint predatorQ = (uint)(byte)math.clamp(run.PredatorBiomassQ, (sbyte)0, (sbyte)100);
+            uint capacityQ = (uint)(byte)math.clamp(run.CarryingCapacityQ, (sbyte)0, (sbyte)100);
+            return new EcosystemSectorSaveRecord
+            {
+                SectorCoord = run.StartMacroCell,
+                PackedPopulations = BiomassSaveRecordMarker |
+                                    (runLength & BiomassSaveRunLengthMask) |
+                                    (preyQ << (int)BiomassSavePreyShift) |
+                                    (predatorQ << (int)BiomassSavePredatorShift) |
+                                    (capacityQ << (int)BiomassSaveCapacityShift),
+                PackedAdaptation = 0u
+            };
+        }
+
+        private static bool IsBiomassSaveRecord(in EcosystemSectorSaveRecord saveRecord)
+        {
+            return (saveRecord.PackedPopulations & BiomassSaveRecordMarker) != 0u;
+        }
+
+        private static bool UnpackBiomassRun(in EcosystemSectorSaveRecord saveRecord, out EcosystemBiomassSaveRun run)
+        {
+            run = default;
+            if (!IsBiomassSaveRecord(in saveRecord))
+                return false;
+
+            uint packed = saveRecord.PackedPopulations;
+            run.StartMacroCell = saveRecord.SectorCoord;
+            run.RunLength = (byte)math.max(1u, packed & BiomassSaveRunLengthMask);
+            run.PreyBiomassQ = (sbyte)math.clamp((int)((packed >> (int)BiomassSavePreyShift) & 0xFFu), 0, 100);
+            run.PredatorBiomassQ = (sbyte)math.clamp((int)((packed >> (int)BiomassSavePredatorShift) & 0xFFu), 0, 100);
+            run.CarryingCapacityQ = (sbyte)math.clamp((int)((packed >> (int)BiomassSaveCapacityShift) & 0x7Fu), 0, 100);
+            return true;
+        }
+
+        private static sbyte QuantizeBiomass01(float value)
+        {
+            return (sbyte)math.clamp(RoundPositiveToInt(math.saturate(value) * 100f), 0, 100);
+        }
+
+        private static float DequantizeBiomassQ(sbyte value)
+        {
+            return math.clamp(value, (sbyte)0, (sbyte)100) * 0.01f;
         }
 
         private static int RoundPositiveToInt(float value)

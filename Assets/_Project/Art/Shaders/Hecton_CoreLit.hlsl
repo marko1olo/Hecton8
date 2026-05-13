@@ -74,6 +74,11 @@ float4 _HectonPhotophobiaFieldOriginScale;
 float4 _HectonPhotophobiaFieldState;
 float4 _SonarRevealOriginWS;
 float4 _SonarRevealWaveParams;
+float4 _ActiveSonarCenterAUP;
+float _ActiveSonarRadius;
+float4 _ActiveSonarCentersRadius[HECTON_ACTIVE_SONAR_MAX_PINGS];
+float4 _ActiveSonarParams[HECTON_ACTIVE_SONAR_MAX_PINGS];
+float4 _ActiveSonarGeoParams; // x=count, y=max range, z=grid enabled, w=speed
 float _HectonContactShadowStrength;
 float _HectonContactShadowSteps;
 float _HectonContactShadowBias;
@@ -1362,6 +1367,69 @@ half3 HectonCoreLitEvaluateOrganicSss(
     return sssColor * HectonCoreLitEvaluateOrganicSssScalar(viewDirWS, lightDirWS, normalWS, distortion, power, scale);
 }
 
+float HectonCoreLitEvaluateActiveSonarTriplanarGrid(float3 positionWS, float gridEnabled)
+{
+#if defined(_MATH_LOD_LOW)
+    return 1.0;
+#else
+    if (gridEnabled <= 0.5)
+        return 1.0;
+
+    float3 stablePosition = positionWS + _TotalUniverseOffset.xyz;
+    float2 uvXY = stablePosition.xy * 0.085 + float2(13.7, 29.1);
+    float2 uvYZ = stablePosition.yz * 0.085 + float2(41.3, 7.9);
+    float2 uvZX = stablePosition.zx * 0.085 + float2(19.5, 53.2);
+    float2 cellXY = abs(frac(uvXY) - 0.5);
+    float2 cellYZ = abs(frac(uvYZ) - 0.5);
+    float2 cellZX = abs(frac(uvZX) - 0.5);
+    float gridXY = 1.0 - saturate(min(cellXY.x, cellXY.y) * 26.0);
+    float gridYZ = 1.0 - saturate(min(cellYZ.x, cellYZ.y) * 26.0);
+    float gridZX = 1.0 - saturate(min(cellZX.x, cellZX.y) * 26.0);
+    float grid = max(max(gridXY, gridYZ), gridZX);
+    float noise = HectonCoreLitValueNoise2(stablePosition.xz * 0.037 + stablePosition.y * 0.011);
+    return saturate(0.62 + grid * 0.55 + (noise - 0.5) * 0.18);
+#endif
+}
+
+float HectonCoreLitEvaluateActiveSonarGeoRing(float3 positionWS)
+{
+    int pingCount = clamp((int)round(_ActiveSonarGeoParams.x), 0, HECTON_ACTIVE_SONAR_MAX_PINGS);
+    if (pingCount <= 0)
+        return 0.0;
+
+    float maxRange = max(_ActiveSonarGeoParams.y, 1.0);
+    float gridEnabled = saturate(_ActiveSonarGeoParams.z);
+    float ringAccum = 0.0;
+    [unroll]
+    for (int pingIndex = 0; pingIndex < HECTON_ACTIVE_SONAR_MAX_PINGS; pingIndex++)
+    {
+        if (pingIndex >= pingCount)
+            break;
+
+        float4 centerRadius = _ActiveSonarCentersRadius[pingIndex];
+        float radius = max(centerRadius.w, 0.0);
+        if (radius <= 0.0001 || radius >= maxRange)
+            continue;
+
+        float3 delta = positionWS - centerRadius.xyz;
+        float distSq = dot(delta, delta);
+        float radiusSq = radius * radius;
+        float ring = 1.0 - saturate(abs(distSq - radiusSq) * 0.05);
+        float fade = 1.0 - saturate(radius * rcp(maxRange));
+        float intensity = saturate(_ActiveSonarParams[pingIndex].x);
+        float grid = HectonCoreLitEvaluateActiveSonarTriplanarGrid(positionWS, gridEnabled);
+        ringAccum = max(ringAccum, ring * grid * fade * intensity);
+    }
+
+    return saturate(ringAccum);
+}
+
+float3 HectonCoreLitEvaluateActiveSonarGeoEmission(float3 positionWS)
+{
+    float ring = HectonCoreLitEvaluateActiveSonarGeoRing(positionWS);
+    return float3(0.03, 1.25, 1.65) * ring;
+}
+
 float HectonCoreLitEvaluateSonarReactiveBiolumBoost(float3 positionWS)
 {
     if (_Time.y > _SonarRevealExpireTime)
@@ -1396,9 +1464,10 @@ float HectonCoreLitEvaluateSonarReactiveBiolumBoost(float3 positionWS)
 
 float3 HectonCoreLitEvaluateGlowPointRadiance(float3 positionWS)
 {
+    float3 activeSonarGeoEmission = HectonCoreLitEvaluateActiveSonarGeoEmission(positionWS);
     int glowCount = clamp((int)round(_HectonGlowPointParams.x), 0, HECTON_GLOW_POINT_MAX);
     if (glowCount <= 0)
-        return 0.0;
+        return activeSonarGeoEmission;
 
     float3 radiance = 0.0;
     [unroll]
@@ -1421,7 +1490,7 @@ float3 HectonCoreLitEvaluateGlowPointRadiance(float3 positionWS)
     }
 
     float sonarReactiveBoost = HectonCoreLitEvaluateSonarReactiveBiolumBoost(positionWS);
-    return radiance * (1.0 + sonarReactiveBoost * max(_HectonGlowPointParams.y, 0.0));
+    return activeSonarGeoEmission + radiance * (1.0 + sonarReactiveBoost * max(_HectonGlowPointParams.y, 0.0));
 }
 
 float HectonCoreLitSampleCaveVoxelSignedDistance(float3 positionWS)

@@ -10,6 +10,7 @@ using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Physics;
+using Hecton8.Physics.CCD;
 using Hecton8.VFX;
 using Hecton8.World;
 using Unity.Burst;
@@ -288,6 +289,9 @@ namespace Hecton8.AI
         private const float LeviathanAttackBurstDurationSeconds = 0.5f;
         private const float LeviathanAttackBurstMultiplier = 2.35f;
         private const float PredatorLungeCheatDistanceMultiplier = 1.35f;
+        private const float PredatorLungeCcdSkinWidth = 0.08f;
+        private const float PredatorLungeCcdFallbackRadius = 1.25f;
+        private const int PredatorLungeCcdMaxHits = 8;
         private const double PredatorLungeVerticalSlopeAbortRatioSq = 1.8225d;
         private const double PredatorLungeVerticalStepAbortMetersSq = 12.25d;
         private const float PredatorPhotophobiaDotThreshold = 0.95f;
@@ -341,6 +345,7 @@ namespace Hecton8.AI
         private const uint FaunaEggJitterHashSalt = 0x00E66C7u;
         private const uint FaunaDeathSpiralHashSalt = 0x0D34D5A1u;
         private const uint FaunaDeathCorkscrewHashSalt = 0xB5297A4Du;
+        private const uint FaunaLeviathanBiteHashSalt = 0xB17ECCD1u;
         private const float AmbientWanderNoiseWeight = 0.18f;
         private const float AmbientWanderNoiseFrequency = 0.42f;
         private const float AmbientWanderNoiseSpatialScale = 0.013f;
@@ -414,6 +419,10 @@ namespace Hecton8.AI
         // COLD ALLOC: List<Collider>[8] - logical LOD collider cache build scratch - owner: FaunaBrain
         private readonly List<Collider> _logicalLodColliderScratch = new List<Collider>(8);
         private Collider[] _logicalLodColliders = Array.Empty<Collider>();
+        // COLD ALLOC: RaycastHit[8] - leviathan lunge CCD scratch buffer - owner: FaunaBrain
+        private readonly RaycastHit[] _predatorLungeCcdHits = new RaycastHit[PredatorLungeCcdMaxHits];
+        private CapsuleCollider _predatorLungeCcdCapsule;
+        private SphereCollider _predatorLungeCcdSphere;
         private int _tickStaggerShift;
         private Vector3 _cachedDesiredDirection;
         private AIState _currentStateCache;
@@ -3075,11 +3084,205 @@ namespace Hecton8.AI
             Vector3 nextPosition = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             if (_rb != null)
             {
+                if (_lungeCheatActive && TryResolvePredatorLungeCcdPosition(nextPosition, out Vector3 ccdPosition))
+                    nextPosition = ccdPosition;
+
                 ApplyIsolatedRigidbodyTeleport(nextPosition);
                 return;
             }
 
             transform.SetPositionAndRotation(nextPosition, transform.rotation);
+        }
+
+        private bool TryResolvePredatorLungeCcdPosition(Vector3 targetPosition, out Vector3 resolvedPosition)
+        {
+            resolvedPosition = targetPosition;
+            if (_rb == null)
+                return false;
+
+            Vector3 startPosition = _rb.position;
+            Vector3 displacement = targetPosition - startPosition;
+            float displacementSq = displacement.sqrMagnitude;
+            if (!math.isfinite(displacementSq) || displacementSq <= 0.000001f)
+                return false;
+
+            float fixedDeltaTime = math.max(Time.fixedDeltaTime, 0.0001f);
+            Vector3 impliedVelocity = displacement * math.rcp(fixedDeltaTime);
+            if (!KinematicCcdMath.ShouldSchedule(new float3(impliedVelocity.x, impliedVelocity.y, impliedVelocity.z)))
+                return false;
+
+            float inverseDistance = math.rsqrt(displacementSq);
+            float distance = displacementSq * inverseDistance;
+            Vector3 direction = displacement * inverseDistance;
+            ResolvePredatorLungeCcdCapsule(out Vector3 point1, out Vector3 point2, out float radius);
+
+            for (int i = 0; i < _predatorLungeCcdHits.Length; i++)
+                _predatorLungeCcdHits[i] = default;
+
+            int hitCount = UnityEngine.Physics.CapsuleCastNonAlloc(
+                point1,
+                point2,
+                radius,
+                direction,
+                _predatorLungeCcdHits,
+                distance + PredatorLungeCcdSkinWidth,
+                HectonLayerMasks.DefaultRaycastLayerMask,
+                QueryTriggerInteraction.Ignore);
+            if (hitCount <= 0)
+                return false;
+
+            int nearestIndex = -1;
+            float nearestDistance = float.MaxValue;
+            int clampedHitCount = math.min(hitCount, _predatorLungeCcdHits.Length);
+            for (int i = 0; i < clampedHitCount; i++)
+            {
+                RaycastHit hit = _predatorLungeCcdHits[i];
+                if (hit.collider == null ||
+                    hit.collider.transform.IsChildOf(transform) ||
+                    !math.isfinite(hit.distance) ||
+                    hit.distance < 0f)
+                {
+                    continue;
+                }
+
+                if (hit.distance < nearestDistance)
+                {
+                    nearestDistance = hit.distance;
+                    nearestIndex = i;
+                }
+            }
+
+            if (nearestIndex < 0)
+                return false;
+
+            RaycastHit nearestHit = _predatorLungeCcdHits[nearestIndex];
+            float3 normal3 = KinematicCcdMath.NormalizeOrFallback(
+                new float3(nearestHit.normal.x, nearestHit.normal.y, nearestHit.normal.z),
+                new float3(-direction.x, -direction.y, -direction.z));
+            Vector3 safeNormal = new Vector3(normal3.x, normal3.y, normal3.z);
+            bool lowTierStop = KinematicCcdMath.IsLowTier(GlobalRegistry.ScalabilityTierProfileByte);
+            bool cornerHalt = !lowTierStop && HasPredatorLungeCornerHit(nearestIndex, clampedHitCount, safeNormal, nearestDistance);
+            float safeDistance = KinematicCcdMath.ResolveRollbackDistance(
+                nearestHit.distance,
+                distance,
+                PredatorLungeCcdSkinWidth);
+            Vector3 resolvedDisplacement = direction * safeDistance;
+            if (!lowTierStop && !cornerHalt)
+            {
+                Vector3 slide = displacement - safeNormal * Vector3.Dot(displacement, safeNormal);
+                float slideSq = slide.sqrMagnitude;
+                float remainingDistance = math.max(0f, distance - safeDistance);
+                if (math.isfinite(slideSq) && slideSq > 0.000001f && remainingDistance > 0f)
+                    resolvedDisplacement += slide * (remainingDistance * math.rsqrt(slideSq));
+            }
+
+            resolvedPosition = startPosition + resolvedDisplacement;
+            _lungeCheatTargetAup = AbsoluteUniversePosition.FromRuntimePosition(resolvedPosition);
+            EmitPredatorLungeCcdImpact(in nearestHit, safeNormal, impliedVelocity, lowTierStop, cornerHalt);
+            return true;
+        }
+
+        private void ResolvePredatorLungeCcdCapsule(out Vector3 point1, out Vector3 point2, out float radius)
+        {
+            if (_predatorLungeCcdCapsule != null)
+            {
+                Transform capsuleTransform = _predatorLungeCcdCapsule.transform;
+                Vector3 center = capsuleTransform.TransformPoint(_predatorLungeCcdCapsule.center);
+                Vector3 axis = _predatorLungeCcdCapsule.direction == 0
+                    ? capsuleTransform.right
+                    : _predatorLungeCcdCapsule.direction == 2 ? capsuleTransform.forward : capsuleTransform.up;
+                Vector3 scale = capsuleTransform.lossyScale;
+                float maxScale = math.max(math.abs(scale.x), math.max(math.abs(scale.y), math.abs(scale.z)));
+                radius = math.max(0.01f, _predatorLungeCcdCapsule.radius * maxScale);
+                float scaledHeight = math.max(_predatorLungeCcdCapsule.height * maxScale, radius * 2f);
+                float offset = math.max(0f, scaledHeight * 0.5f - radius);
+                point1 = center + axis * offset;
+                point2 = center - axis * offset;
+                return;
+            }
+
+            if (_predatorLungeCcdSphere != null)
+            {
+                Transform sphereTransform = _predatorLungeCcdSphere.transform;
+                Vector3 center = sphereTransform.TransformPoint(_predatorLungeCcdSphere.center);
+                Vector3 scale = sphereTransform.lossyScale;
+                float maxScale = math.max(math.abs(scale.x), math.max(math.abs(scale.y), math.abs(scale.z)));
+                radius = math.max(0.01f, _predatorLungeCcdSphere.radius * maxScale);
+                point1 = center + transform.up * 0.01f;
+                point2 = center - transform.up * 0.01f;
+                return;
+            }
+
+            radius = PredatorLungeCcdFallbackRadius;
+            point1 = _rb.position + transform.up * radius;
+            point2 = _rb.position - transform.up * radius;
+        }
+
+        private bool HasPredatorLungeCornerHit(int nearestIndex, int hitCount, Vector3 primaryNormal, float nearestDistance)
+        {
+            for (int i = 0; i < hitCount; i++)
+            {
+                if (i == nearestIndex)
+                    continue;
+
+                RaycastHit hit = _predatorLungeCcdHits[i];
+                if (hit.collider == null ||
+                    hit.collider.transform.IsChildOf(transform) ||
+                    !math.isfinite(hit.distance) ||
+                    hit.distance < 0f ||
+                    math.abs(hit.distance - nearestDistance) > PredatorLungeCcdSkinWidth + 0.15f)
+                {
+                    continue;
+                }
+
+                if (KinematicCcdMath.IsCornerNormal((float3)primaryNormal, (float3)hit.normal))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void EmitPredatorLungeCcdImpact(
+            in RaycastHit hit,
+            Vector3 safeNormal,
+            Vector3 impliedVelocity,
+            bool lowTierStop,
+            bool cornerHalt)
+        {
+            Vector3 point = hit.point;
+            if (!math.isfinite(point.x) || !math.isfinite(point.y) || !math.isfinite(point.z))
+                point = _rb != null ? _rb.position : transform.position;
+
+            float speedSq = impliedVelocity.sqrMagnitude;
+            float lostKineticEnergy = KinematicCcdMath.KineticEnergy(_rb != null ? _rb.mass : 1f, speedSq);
+            byte flags = 0;
+            if (cornerHalt)
+                flags |= HighSpeedImpactSignal.FlagCornerHalt;
+            if (lowTierStop)
+                flags |= HighSpeedImpactSignal.FlagLowTierStop;
+
+            AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(point);
+            HighSpeedImpactSignal signal = default;
+            signal.PointAup = pointAup;
+            signal.Normal = new float3(safeNormal.x, safeNormal.y, safeNormal.z);
+            signal.LostKineticEnergy = lostKineticEnergy;
+            signal.ImpactSpeed = math.sqrt(math.max(0f, speedSq));
+            signal.SourceHash = ResolveStableFaunaHash(FaunaLeviathanBiteHashSalt, 0u);
+            signal.TargetHash = hit.collider != null ? unchecked((uint)hit.collider.GetInstanceID()) : 0u;
+            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.SourceKind = HighSpeedImpactSignal.SourceLeviathan;
+            signal.Flags = flags;
+            GlobalSignals.Publish(in signal);
+
+            DebrisSpawnSignal debris = default;
+            debris.PositionAup = pointAup;
+            debris.SourceEntityId = signal.SourceHash;
+            debris.Intensity01 = math.saturate(lostKineticEnergy * 0.00004f);
+            debris.DebrisKind = 1;
+            debris.Flags = flags;
+            GlobalSignals.Publish(in debris);
+
+            GlobalPhysicsStateManager.ReportKinematicCcdIntervention();
         }
 
         private void ApplyIsolatedRigidbodyTeleport(Vector3 nextPosition)
@@ -6112,6 +6315,8 @@ namespace Hecton8.AI
 
             CapsuleCollider capsuleCollider = GetComponentInChildren<CapsuleCollider>(true);
             SphereCollider sphereCollider = GetComponentInChildren<SphereCollider>(true);
+            _predatorLungeCcdCapsule = capsuleCollider;
+            _predatorLungeCcdSphere = sphereCollider;
             if (capsuleCollider == null && sphereCollider == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

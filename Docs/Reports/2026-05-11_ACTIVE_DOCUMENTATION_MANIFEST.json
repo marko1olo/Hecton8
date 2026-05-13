@@ -1,7 +1,8 @@
 ﻿{
     "generatedDate":  "2026-05-11",
     "generatedLocalTime":  "2026-05-11 05:21:04 +04:00",
-    "status":  "PENDING FINAL UNITY PROOF (DOCS CONTINUATION CORE BUILD PASSED / UNITY MCP NOT RUN)",
+    "status":  "HISTORICAL SNAPSHOT / SUPERSEDED BY DOC_AUDIT R13",
+    "originalSnapshotStatus":  "PENDING FINAL UNITY PROOF (DOCS CONTINUATION CORE BUILD PASSED / UNITY MCP NOT RUN)",
     "docAuditR13Boundary":  {
                                 "date":  "2026-05-13",
                                 "status":  "HISTORICAL SNAPSHOT / SUPERSEDED",

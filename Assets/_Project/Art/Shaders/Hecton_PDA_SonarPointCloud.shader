@@ -51,6 +51,8 @@ Shader "Hecton8/UI/PDA Sonar Point Cloud"
                 float _Opacity;
                 float _DepthFadeMeters;
                 float _HeightColorization;
+                float _ActiveSonarRadius;
+                float _ActiveSonarMaxRange;
             CBUFFER_END
 
             struct Attributes
@@ -95,7 +97,8 @@ Shader "Hecton8/UI/PDA Sonar Point Cloud"
                 float3 worldPosition = worldCenter + (cameraRight * input.positionOS.x + cameraUp * input.positionOS.y) * quadScale;
 
                 float localDistance = max(max(abs(localCenter.x), abs(localCenter.y)), abs(localCenter.z));
-                float pingRadius = saturate(_AcousticPingSignal.x);
+                float activeRadius01 = saturate(_ActiveSonarRadius * rcp(max(_ActiveSonarMaxRange, 0.001f)));
+                float pingRadius = _AcousticPingSignal.w > 0.5f ? activeRadius01 : saturate(_AcousticPingSignal.x);
                 float pingWidth = max(_AcousticPingSignal.y, 0.001f);
                 float insidePing = _AcousticPingSignal.w > 0.5f ? step(localDistance, pingRadius) : 1.0f;
                 float pingBand = 1.0f - saturate(abs(localDistance - pingRadius) * rcp(pingWidth));

@@ -1960,7 +1960,7 @@ namespace Hecton8.World
             _thermalMapTextureDirty = false;
             if (!UsesThermalGrid() ||
                 _activeVentCount <= 0 ||
-                !_thermalMapReadCelsius.IsCreated)
+                !_thermalMapVisualCelsius.IsCreated)
             {
                 BindInactiveThermalMapTexture();
                 return;
@@ -1976,7 +1976,7 @@ namespace Hecton8.World
                 return;
             }
 
-            _thermalMapTexture.SetPixelData(_thermalMapReadCelsius, 0);
+            _thermalMapTexture.SetPixelData(_thermalMapVisualCelsius, 0);
             _thermalMapTexture.Apply(false, false);
             Shader.SetGlobalTexture(_ThermalMapTextureId, _thermalMapTexture);
             _thermalMapTextureUploadedVersion = _thermalMapVersion;
@@ -2023,6 +2023,103 @@ namespace Hecton8.World
 
             int graphicsMemoryMb = SystemInfo.graphicsMemorySize;
             return graphicsMemoryMb <= 0 || graphicsMemoryMb > 2048;
+        }
+
+        private static float ResolveVoxelInsulation01(Vector3 runtimePosition)
+        {
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+            float density = HectonVoxelVolume.GetSDFDensity(new float3(
+                absolutePosition.x,
+                absolutePosition.y,
+                absolutePosition.z));
+            return density > 0f ? math.saturate(density) : 0f;
+        }
+
+        private void BuildThermalMapVisualProjection()
+        {
+            if (!_thermalMapVisualCelsius.IsCreated || !_thermalMapReadCelsius.IsCreated)
+                return;
+
+            int centerY = ThermalGridResolution >> 1;
+            for (int z = 0; z < ThermalGridResolution; z++)
+            {
+                for (int x = 0; x < ThermalGridResolution; x++)
+                    _thermalMapVisualCelsius[(z * ThermalMapResolution) + x] = _thermalMapReadCelsius[ToThermalGridIndex(x, centerY, z)];
+            }
+        }
+
+        private void StageThermalGridRleDelta()
+        {
+            _thermalGridRleRunCount = 0;
+            _thermalGridRleByteCount = 0;
+            _thermalGridRleChecksum = 0u;
+            if (!_thermalGridRleRuns.IsCreated || !_thermalMapReadCelsius.IsCreated)
+                return;
+
+            int index = 0;
+            while (index < _thermalMapReadCelsius.Length && _thermalGridRleRunCount < _thermalGridRleRuns.Length)
+            {
+                float ambient = ResolveAmbientTemperatureCelsius(GridIndexToWorldPosition(index));
+                float temperature = _thermalMapReadCelsius[index];
+                if (math.abs(temperature - ambient) <= 0.05f)
+                {
+                    index++;
+                    continue;
+                }
+
+                int runStart = index;
+                int runCount = 1;
+                while (index + runCount < _thermalMapReadCelsius.Length &&
+                       runCount < ushort.MaxValue &&
+                       _thermalGridRleRunCount < _thermalGridRleRuns.Length &&
+                       math.abs(_thermalMapReadCelsius[index + runCount] - temperature) <= 0.05f)
+                {
+                    runCount++;
+                }
+
+                _thermalGridRleRuns[_thermalGridRleRunCount++] = new SaveBinaryStorage.ThermalGridRleRun
+                {
+                    StartIndex = (ushort)math.min(runStart, ushort.MaxValue),
+                    Count = (ushort)math.min(runCount, ushort.MaxValue),
+                    TemperatureCelsius = temperature
+                };
+                index += runCount;
+            }
+
+            SaveBinaryStorage.TryStageThermalGridRleDelta(
+                _thermalGridRleRuns,
+                _thermalGridRleRunCount,
+                out _thermalGridRleByteCount,
+                out _thermalGridRleChecksum);
+        }
+
+        private Vector3 GridIndexToWorldPosition(int index)
+        {
+            int xy = ThermalGridResolution * ThermalGridResolution;
+            int y = index / xy;
+            int remainder = index - (y * xy);
+            int z = remainder / ThermalGridResolution;
+            int x = remainder - (z * ThermalGridResolution);
+            return _thermalMapOriginWS + new Vector3(
+                (x + 0.5f) * _thermalMapCellSizeMeters,
+                (y + 0.5f) * _thermalMapCellSizeMeters,
+                (z + 0.5f) * _thermalMapCellSizeMeters);
+        }
+
+        private void ConsumeAupShiftSignals()
+        {
+            System.ReadOnlySpan<AupShiftSignal> shifts = SignalBus<AupShiftSignal>.GetFrameSnapshot();
+            for (int i = 0; i < shifts.Length; i++)
+            {
+                AupShiftSignal signal = shifts[i];
+                if (signal.ShiftFrameId == 0u || signal.ShiftFrameId == _lastProcessedAupShiftFrameId)
+                    continue;
+
+                _lastProcessedAupShiftFrameId = signal.ShiftFrameId;
+                Vector3 runtimeOffset = new Vector3(-signal.ShiftMeters.x, -signal.ShiftMeters.y, -signal.ShiftMeters.z);
+                _thermalMapOriginWS += runtimeOffset;
+                MarkThermalMapTextureDirty();
+            }
         }
 
         private static void FillThermalMap(NativeArray<float> map, float value)
@@ -2141,7 +2238,7 @@ namespace Hecton8.World
         {
             if (!_thermalMapReadCelsius.IsCreated)
             {
-                // COLD ALLOC: NativeArray<float>[256] - front thermal Celsius map for fauna/UI sampling - owner: AbyssalThermalManager
+                // COLD ALLOC: NativeArray<float>[32768] - front 32x32x32 thermal Celsius grid for gameplay sampling - owner: AbyssalThermalManager
                 _thermalMapReadCelsius = new NativeArray<float>(
                     ThermalMapCellCount,
                     Allocator.Persistent,
@@ -2152,7 +2249,7 @@ namespace Hecton8.World
 
             if (!_thermalMapWriteCelsius.IsCreated)
             {
-                // COLD ALLOC: NativeArray<float>[256] - back thermal Celsius map written by Jacobi diffusion job - owner: AbyssalThermalManager
+                // COLD ALLOC: NativeArray<float>[32768] - back 32x32x32 thermal Celsius grid written by Jacobi diffusion job - owner: AbyssalThermalManager
                 _thermalMapWriteCelsius = new NativeArray<float>(
                     ThermalMapCellCount,
                     Allocator.Persistent,
@@ -2163,13 +2260,44 @@ namespace Hecton8.World
 
             if (!_thermalMapSourceCelsius.IsCreated)
             {
-                // COLD ALLOC: NativeArray<float>[256] - deterministic vent source heat field for ColdTick Jacobi solve - owner: AbyssalThermalManager
+                // COLD ALLOC: NativeArray<float>[32768] - deterministic vent source heat field for ColdTick Jacobi solve - owner: AbyssalThermalManager
                 _thermalMapSourceCelsius = new NativeArray<float>(
                     ThermalMapCellCount,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory);
                 NativeMemorySentinel.RegisterNativeArray(_thermalMapSourceCelsius, NativeMemoryOwner, nameof(_thermalMapSourceCelsius), NativeMemoryLifetime);
                 FillThermalMap(_thermalMapSourceCelsius, ambientWaterTemperatureCelsius);
+            }
+
+            if (!_thermalMapInsulation01.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<float>[32768] - voxel-SDF insulation field; positive density damps diffusion - owner: AbyssalThermalManager
+                _thermalMapInsulation01 = new NativeArray<float>(
+                    ThermalMapCellCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_thermalMapInsulation01, NativeMemoryOwner, nameof(_thermalMapInsulation01), NativeMemoryLifetime);
+            }
+
+            if (!_thermalMapVisualCelsius.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<float>[1024] - center-slice thermal map projection for GPU/VFX readback - owner: AbyssalThermalManager
+                _thermalMapVisualCelsius = new NativeArray<float>(
+                    ThermalMapPlaneCellCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_thermalMapVisualCelsius, NativeMemoryOwner, nameof(_thermalMapVisualCelsius), NativeMemoryLifetime);
+                FillThermalMap(_thermalMapVisualCelsius, ambientWaterTemperatureCelsius);
+            }
+
+            if (!_thermalGridRleRuns.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<ThermalGridRleRun>[32768] - worst-case non-ambient RLE staging for SaveBinaryStorage - owner: AbyssalThermalManager
+                _thermalGridRleRuns = new NativeArray<SaveBinaryStorage.ThermalGridRleRun>(
+                    ThermalGridSaveRleCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_thermalGridRleRuns, NativeMemoryOwner, nameof(_thermalGridRleRuns), NativeMemoryLifetime);
             }
         }
 

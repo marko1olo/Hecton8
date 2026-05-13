@@ -34,7 +34,7 @@ STATUS: PENDING VERIFICATION
 - [x] 16. TELEMETRY | DOD: `FoodChainTelemetryFlagBoidsScattered` writes to 300-frame ring on scatter | Rejected: Debug.Log telemetry | Estimate: fixed ring write only
 - [x] 17. EVENT BUS | DOD: `SwarmDispersedSignal` published through typed `SignalBus` | Rejected: cross-domain direct predator call | Estimate: no allocation, decoupled consumers
 - [x] 18. CROSS-DOMAIN AUDIT | DOD: `ResolveFlowField`/flow turbulence path remains after flee math | Rejected: replacing advection with panic-only velocity | Estimate: no immersion regression
-- [ ] 19. OMEGA COMPILE CHECK | DOD: pending full Unity/import or project build; MCP refresh timed out and dotnet build timed out | Rejected: chat-only verification | Estimate: PENDING
+- [BLOCKED BY DEPENDENCY] 19. OMEGA COMPILE CHECK | DOD: `dotnet build Hecton8.Core.csproj --no-restore` fails on unrelated missing scheduling/layout/audio/CCD/crafting/tether dependencies; Unity MCP session unavailable | Rejected: pretending compile passed | Estimate: PENDING
 
 ## Loop Log
 - Loop 0: Prompt extracted, domain resolved, status/rationale files initialized. No code edited.
@@ -42,4 +42,4 @@ STATUS: PENDING VERIFICATION
 - Loop 2: Tasks 6-10 implemented in EncounterDirector, Sargassum binding, and HLSL scatter kernel. Prompt re-extracted after third-task boundary.
 - Loop 3: Tasks 11-13 implemented. Acoustic ping shockwave, AUP runtime conversion, and low-tier cap added.
 - Loop 4: Tasks 14-18 implemented. No CPU boid loop, no boid buffer growth, telemetry/event bus added, fluid advection retained.
-- Loop 5: Task 19 remains open pending compile/import. Unity MCP timed out; dotnet project build exceeded 120 s.
+- Loop 5: Task 19 blocked by dependency. Unity MCP timed out/unavailable; project build reports 111 pre-existing dependency/contract errors outside this task surface.

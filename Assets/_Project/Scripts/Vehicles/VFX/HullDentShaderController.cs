@@ -121,8 +121,8 @@ namespace Hecton8.Vehicles.VFX
         private void ResolveBreachReadModel()
         {
             _breachReadModel = breachReadModelSource as ISubmarineHullBreachReadModel;
-            if (_breachReadModel == null && TryGetComponent(out ISubmarineHullBreachReadModel localReadModel))
-                _breachReadModel = localReadModel;
+            if (_breachReadModel == null)
+                _breachReadModel = GetComponent(typeof(ISubmarineHullBreachReadModel)) as ISubmarineHullBreachReadModel;
         }
 
         private void RefreshQualityTier(bool force)

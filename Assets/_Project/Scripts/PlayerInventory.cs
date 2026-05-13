@@ -1308,6 +1308,7 @@ namespace Hecton8.Inventory
 
         public void LateFrameTick()
         {
+            ConsumeInventoryCommandSignals();
             CompleteInventoryMassRecomputeJob(forceComplete: false);
         }
 
@@ -1882,53 +1883,149 @@ namespace Hecton8.Inventory
             NotifyInventoryChanged(markDirty: false);
         }
 
+        public void RequestSortInventory()
+        {
+            int frame = Mathf.Max(0, Time.frameCount);
+            SignalBus<InventoryCommandSignal>.Push(new InventoryCommandSignal
+            {
+                InventoryHash = ResolveInventorySignalHash(),
+                Frame = unchecked((uint)frame),
+                Sequence = unchecked((uint)InventoryVersion),
+                Command = InventoryCommandSignalCommands.Sort,
+                Flags = 0
+            });
+            _lastInventorySortCommandFrame = frame;
+            SortInventory();
+        }
+
         public void SortInventory()
         {
             if (HasCraftReservations())
                 return;
 
-            int count = GetPlacements(_sortBuffer);
+            int count = PopulateInventoryDefragBuffers();
             if (count <= 0)
                 return;
 
-            if (!TryValidateRadixSortBuffers(count))
-                return;
-
-            NativeArray<InventorySortEntry> sortEntries = default;
-            NativeArray<InventorySortEntry> sortScratch = default;
-            NativeArray<int> sortCounts = default;
-            try
+            long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            using (_defragProfilerMarker.Auto())
             {
-                sortEntries = new NativeArray<InventorySortEntry>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                sortScratch = new NativeArray<InventorySortEntry>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                sortCounts = new NativeArray<int>(256, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                RegisterTempJobArray(sortEntries, RadixSortEntriesTempLabel);
-                RegisterTempJobArray(sortScratch, RadixSortScratchTempLabel);
-                RegisterTempJobArray(sortCounts, RadixSortCountsTempLabel);
-
-                for (int i = 0; i < count; i++)
-                    sortEntries[i] = BuildInventorySortEntry(in _sortBuffer[i], i);
-
-                JobHandle sortHandle = new InventoryRadixSortJob
+                JobHandle sortHandle = new InventoryDefragJob
                 {
-                    Entries = sortEntries,
-                    Scratch = sortScratch,
-                    Counts = sortCounts,
-                    Count = count
+                    ItemHashes = _defragItemHashes,
+                    ItemCounts = _defragItemCounts,
+                    ItemCategories = _defragCategories,
+                    MaxStackSizes = _defragMaxStacks,
+                    ItemRarities = _defragRarities,
+                    ItemWidths = _defragWidths,
+                    ItemHeights = _defragHeights,
+                    ItemFlags = _defragFlags,
+                    ItemStateFlags = _defragStateFlags,
+                    ItemGenetics = _defragGenetics,
+                    QualityMilli = _defragQualityMilli,
+                    Durabilities = _defragDurabilities,
+                    LastUpdateUnixSeconds = _defragLastUpdateUnixSeconds,
+                    UnitMassKg = _defragUnitMassKg,
+                    UnitVolumeM3 = _defragUnitVolumeM3,
+                    UnitRadiationSv = _defragUnitRadiationSv,
+                    Result = _defragResult,
+                    SlotCount = count
                 }.Schedule();
 
                 // COLD SYNC JOB: explicit user sort command; no Tick/SlowTick barrier.
                 DispatcherJobSwap.TryComplete(ref sortHandle, forceComplete: true);
+            }
 
-                for (int i = 0; i < count; i++)
-                    _sortedPlacements[i] = _sortBuffer[sortEntries[i].OriginalIndex];
-            }
-            finally
+            int sortedCount = _defragResult.IsCreated && _defragResult.Length > InventoryDefragResultSlots.OccupiedCount
+                ? _defragResult[InventoryDefragResultSlots.OccupiedCount]
+                : count;
+            if (!TryApplyDefraggedNativeStream(sortedCount))
+                return;
+
+            _lastDefragTimeMicroseconds = ResolveElapsedMicroseconds(startTimestamp);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _InventoryDefragTimeMsHash,
+                _InventoryDefragContextHash,
+                _lastDefragTimeMicroseconds * 0.001f);
+            PublishInventorySortAcousticSignal();
+
+            NotifyInventoryChanged(massDirty: false);
+        }
+
+        private void ConsumeInventoryCommandSignals()
+        {
+            ReadOnlySpan<InventoryCommandSignal> commands = SignalBus<InventoryCommandSignal>.GetFrameSnapshot();
+            uint inventoryHash = ResolveInventorySignalHash();
+            for (int index = 0; index < commands.Length; index++)
             {
-                DisposeTempJobArray(ref sortCounts);
-                DisposeTempJobArray(ref sortScratch);
-                DisposeTempJobArray(ref sortEntries);
+                InventoryCommandSignal command = commands[index];
+                if (command.Command != InventoryCommandSignalCommands.Sort)
+                    continue;
+
+                if (command.InventoryHash != 0u && command.InventoryHash != inventoryHash)
+                    continue;
+
+                int commandFrame = unchecked((int)command.Frame);
+                if (commandFrame <= _lastInventorySortCommandFrame)
+                    continue;
+
+                _lastInventorySortCommandFrame = commandFrame;
+                SortInventory();
+                return;
             }
+        }
+
+        private int PopulateInventoryDefragBuffers()
+        {
+            if (_grid == null ||
+                !_stackCounts.IsCreated ||
+                !_defragItemHashes.IsCreated ||
+                !_defragItemCounts.IsCreated)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            int capacity = math.min(_defragItemHashes.Length, _defragItemCounts.Length);
+            int sourceCount = math.min(_grid.TotalCells, _stackCounts.Length);
+            for (int anchorIndex = 0; anchorIndex < sourceCount && count < capacity; anchorIndex++)
+            {
+                if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor))
+                    continue;
+
+                int hash = descriptor.HashId;
+                ushort stackCount = (ushort)math.max(1, (int)_stackCounts[anchorIndex]);
+                if (hash == 0 || stackCount == 0)
+                    continue;
+
+                _defragItemHashes[count] = hash;
+                _defragItemCounts[count] = stackCount;
+                _defragCategories[count] = descriptor.CategoryId;
+                _defragMaxStacks[count] = descriptor.MaxStack;
+                _defragRarities[count] = descriptor.Rarity;
+                _defragWidths[count] = descriptor.Width;
+                _defragHeights[count] = descriptor.Height;
+                _defragFlags[count] = descriptor.Stackable ? (byte)0x01 : (byte)0x00;
+                _defragStateFlags[count] = _itemStateFlags.IsCreated ? _itemStateFlags[anchorIndex] : (ushort)0;
+                _defragGenetics[count] = _itemGenetics.IsCreated ? _itemGenetics[anchorIndex] : (byte)0;
+                _defragQualityMilli[count] = _qualityMilli.IsCreated && _qualityMilli[anchorIndex] > 0
+                    ? _qualityMilli[anchorIndex]
+                    : DefaultQualityMilli;
+                _defragDurabilities[count] = _durabilities.IsCreated ? _durabilities[anchorIndex] : (byte)100;
+                _defragLastUpdateUnixSeconds[count] = _lastUpdateUnixSeconds.IsCreated ? _lastUpdateUnixSeconds[anchorIndex] : 0u;
+                _defragUnitMassKg[count] = _anchorUnitMassKg.IsCreated ? _anchorUnitMassKg[anchorIndex] : descriptor.Weight;
+                _defragUnitVolumeM3[count] = _anchorUnitVolumeM3.IsCreated ? _anchorUnitVolumeM3[anchorIndex] : 0f;
+                _defragUnitRadiationSv[count] = _anchorUnitRadiationSv.IsCreated ? _anchorUnitRadiationSv[anchorIndex] : 0f;
+                count++;
+            }
+
+            return count;
+        }
+
+        private bool TryApplyDefraggedNativeStream(int sortedCount)
+        {
+            if (_grid == null || sortedCount < 0 || !TryValidateDefragNativePlacement(sortedCount))
+                return false;
 
             _grid.Clear();
             ClearNativeArray(_stackCounts);
@@ -1943,25 +2040,104 @@ namespace Hecton8.Inventory
             ClearNativeArray(_anchorUnitRadiationSv);
             TotalWeight = 0f;
 
-            for (int i = 0; i < count; i++)
+            for (int index = 0; index < sortedCount; index++)
             {
-                ItemPlacement placement = _sortedPlacements[i];
-                InventoryGrid.InventoryItemDescriptor descriptor = placement.Descriptor;
-                if (_grid.TryAddItem(in descriptor, out int px, out int py))
-                {
-                    int anchorIndex = AnchorIndex(px, py);
-                    _stackCounts[anchorIndex] = placement.stackCount;
-                    _itemStateFlags[anchorIndex] = placement.stateFlags;
-                    _itemGenetics[anchorIndex] = SanitizeItemGeneticsFlags(placement.geneticsMask);
-                    _qualityMilli[anchorIndex] = placement.qualityMilli;
-                    _durabilities[anchorIndex] = (byte)math.clamp((placement.qualityMilli + 5) / 10, 0, 100);
-                    _lastUpdateUnixSeconds[anchorIndex] = placement.lastUpdateUnixSeconds;
-                    SyncAnchorPhysicalMetadata(anchorIndex, placement.itemHashId);
-                    TotalWeight += placement.weight * placement.stackCount;
-                }
+                if (!TryBuildDefragDescriptor(index, out InventoryGrid.InventoryItemDescriptor descriptor))
+                    continue;
+
+                if (!_grid.TryAddItem(in descriptor, out int placedX, out int placedY))
+                    return false;
+
+                int anchorIndex = AnchorIndex(placedX, placedY);
+                ushort stackCount = (ushort)math.max(1, (int)_defragItemCounts[index]);
+                _stackCounts[anchorIndex] = stackCount;
+                _itemStateFlags[anchorIndex] = _defragStateFlags[index];
+                _itemGenetics[anchorIndex] = SanitizeItemGeneticsFlags(_defragGenetics[index]);
+                _qualityMilli[anchorIndex] = _defragQualityMilli[index] > 0 ? _defragQualityMilli[index] : DefaultQualityMilli;
+                _durabilities[anchorIndex] = _defragDurabilities[index] > 0
+                    ? _defragDurabilities[index]
+                    : (byte)math.clamp((_qualityMilli[anchorIndex] + 5) / 10, 0, 100);
+                _lastUpdateUnixSeconds[anchorIndex] = _defragLastUpdateUnixSeconds[index];
+                SetAnchorPhysicalMetadata(
+                    anchorIndex,
+                    math.max(0f, _defragUnitMassKg[index]),
+                    math.max(0f, _defragUnitVolumeM3[index]),
+                    math.max(0f, _defragUnitRadiationSv[index]));
+                TotalWeight += math.max(0f, _defragUnitMassKg[index]) * stackCount;
             }
 
-            NotifyInventoryChanged(massDirty: false);
+            RefreshInventorySoAMirrorsAndMask();
+            return true;
+        }
+
+        private bool TryValidateDefragNativePlacement(int sortedCount)
+        {
+            if (!_simulationOccupiedCells.IsCreated)
+                return false;
+
+            ClearNativeArray(_simulationOccupiedCells);
+            for (int index = 0; index < sortedCount; index++)
+            {
+                if (!TryBuildDefragDescriptor(index, out InventoryGrid.InventoryItemDescriptor descriptor))
+                    continue;
+
+                if (!TryReservePlacementInSimulation(in descriptor))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool TryBuildDefragDescriptor(int index, out InventoryGrid.InventoryItemDescriptor descriptor)
+        {
+            descriptor = default;
+            if (!_defragItemHashes.IsCreated ||
+                !_defragItemCounts.IsCreated ||
+                (uint)index >= (uint)_defragItemHashes.Length ||
+                _defragItemHashes[index] == 0 ||
+                _defragItemCounts[index] == 0)
+            {
+                return false;
+            }
+
+            byte width = (byte)math.max(1, _defragWidths[index]);
+            byte height = (byte)math.max(1, _defragHeights[index]);
+            ushort maxStack = _defragMaxStacks[index] == 0 ? (ushort)1 : _defragMaxStacks[index];
+            descriptor = new InventoryGrid.InventoryItemDescriptor(
+                _defragItemHashes[index],
+                width,
+                height,
+                maxStack,
+                math.max(0f, _defragUnitMassKg[index]),
+                _defragCategories[index],
+                _defragRarities[index],
+                (_defragFlags[index] & 0x01) != 0);
+            return descriptor.IsValid;
+        }
+
+        private static int ResolveElapsedMicroseconds(long startTimestamp)
+        {
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+            if (elapsedTicks <= 0)
+                return 0;
+
+            long microseconds = (elapsedTicks * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+            return (int)math.min(int.MaxValue, math.max(0L, microseconds));
+        }
+
+        private void PublishInventorySortAcousticSignal()
+        {
+            GlobalSignals.Publish(new ToolAcousticSignal
+            {
+                ToolHash = _InventorySortToolHash,
+                TargetHash = _InventoryUiClickHash,
+                Progress01 = 1f,
+                PitchScale = 1f,
+                Intensity01 = 0.55f,
+                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                State = 1,
+                Flags = 0
+            });
         }
 
         private bool TryValidateRadixSortBuffers(int itemCount)
@@ -3197,6 +3373,14 @@ namespace Hecton8.Inventory
             PublishEncumbranceChanged();
             InventoryVersion++;
             InventoryEvents.NotifyInventoryChanged();
+            SignalBus<InventoryChangedSignal>.Push(new InventoryChangedSignal
+            {
+                InventoryHash = ResolveInventorySignalHash(),
+                Revision = unchecked((uint)InventoryVersion),
+                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                OccupiedCells = _grid != null ? (ushort)math.clamp(_grid.OccupiedCells, 0, ushort.MaxValue) : (ushort)0,
+                Flags = 0
+            });
             InventoryChanged?.Invoke();
         }
 
@@ -3273,6 +3457,11 @@ namespace Hecton8.Inventory
                 TotalMassKg,
                 carryCapacityKg,
                 CachedInventoryLoad01));
+        }
+
+        private uint ResolveInventorySignalHash()
+        {
+            return gameObject != null ? unchecked((uint)gameObject.GetInstanceID()) : 0u;
         }
 
         private float ResolveCarryCapacityKilograms()

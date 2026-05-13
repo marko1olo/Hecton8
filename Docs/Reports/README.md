@@ -88,8 +88,8 @@ DOC_AUDIT R14 adds a gameplay-economy boundary: source/data proves a real item->
 It claimed R186 supersession with `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but the May 13 DOC_AUDIT filesystem check did not find that summary or raw log. Treat the May 11 compile-success line as stale report text until artifacts are restored or replaced. The May 11 report recorded counters: `Docs/**/*.md` `449`, active markdown `236`, direct `Docs/Reports/*.md` `70`, active JSON `15`, `Assets/_Project/**/*.cs` `1306`, `Assets/_Project/Scripts/**/*.cs` `1262`, project physical lines `770577`, script physical lines `753858`, and `GlobalRegistryContracts.cs` direct public interfaces `40`. Those counters are historical and source/doc only, not Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof.
 The same pass records an official Unity release-page check: Unity `6000.4.6f1` exists with release date `2026-05-05`, newer than the local project pin `6000.4.1f1`. This is version drift only, not upgrade approval.
 
-`2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` is the latest machine-readable active documentation manifest, but its numeric counters are historical where the May 13 DOC_AUDIT X-Ray reports newer filesystem/source counts.
-It lists active markdown files with parsed `Date`, `Status`, title, byte-size, and `requiresRuntimeProof` fields. It supersedes the May 8 manifest structure, not the May 13 missing-artifact override.
+`2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` is the latest historical machine-readable active documentation manifest snapshot. Its counters, authority list, build-state fields, and entries are not current authority after the May 13 DOC_AUDIT X-Ray.
+It lists active markdown files with parsed `Date`, `Status`, title, byte-size, and `requiresRuntimeProof` fields as May 11 snapshot data. It supersedes the May 8 manifest structure only as historical manifest format, not the May 13 missing-artifact/status override.
 
 `2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` is the current `.agents-skills` visual-fake doctrine boundary.
 It records that the registry was not fully current for the current production direction: several physical/visual realism mandates still pushed simulate-first, Unity Joint, broad flow/lighting, or default HRTF paths. It adds `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt` and override blocks to the affected mandates. This is documentation-only. It does not prove Unity import, Play Mode, profiler, GCMonitor, player build, frame time, memory retention, or visual quality.
@@ -97,8 +97,8 @@ It records that the registry was not fully current for the current production di
 `2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` is the previous documentation synchronization counter boundary with a 2026-05-09 R186 addendum.
 It superseded conflicting May 7/May 8 source-count and build-blocker statements at the R186 boundary. It recorded then-current counters: `Assets/_Project/**/*.cs` `1292`, `Assets/_Project/Scripts/**/*.cs` `1248`, project physical lines `759122`, script physical lines `742892`, and `GlobalRegistryContracts.cs` direct public interfaces `40`. The then-latest full Core dependency build was `CodexArtifacts/2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, `CS_WRITES_AFTER_END=0`. This is historical local `dotnet` compile evidence only.
 
-`2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json` is the previous machine-readable active documentation manifest.
-It remains historical R186 evidence only where the May 11 manifest does not cover a field.
+`2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json` is the previous historical machine-readable active documentation manifest snapshot.
+It remains historical R186 snapshot evidence only where the May 11 historical manifest does not cover a field, and it is not current compile/runtime proof.
 
 `2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md` is the previous main documentation synchronization boundary.
 It is historical for counters and compile status. Use the May 11 continuation, May 11 manifest, and May 8/R186 continuation before citing any May 7 numeric or build-state claim.
@@ -118,14 +118,14 @@ It remains useful for Project Atlas/source-count methodology, but its numeric so
 `2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md` is the current static documentation integrity report.
 It records the earlier May 7 static documentation integrity sweep. Its numeric counters are superseded by `2026-05-07_LIVE_CHURN_CONTINUATION_SYNC.md` when they conflict. It remains authority for hallucination-pattern scan results, deprecated stub state, cinematic-cheat ledger inclusion, five-artery Mega-Bus synchronization, zero-GC UI doctrine, native collection leak/lifecycle audit status, and the diff artifact path. It is not Play Mode, profiler, console-clean compile, current-source whole-project build, or runtime leak proof.
 
-`2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json` is the machine-readable active documentation manifest.
-It lists `230` active markdown files with parsed `Date`, `Status`, title, byte-size, and `requiresRuntimeProof` fields. Its source count fields were restamped by the main documentation refresh and remain compile-only evidence, not Unity runtime proof.
+`2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json` is a historical machine-readable active documentation manifest snapshot.
+It lists `230` active markdown files with parsed `Date`, `Status`, title, byte-size, and `requiresRuntimeProof` fields as May 7 snapshot data. Its source count fields are historical only and are not current compile/runtime proof.
 
 `2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` is the previous broad documentation synchronization report.
 Read the May 8 synchronization report first for current counters. The May 6 report remains historical editor-state/source-documentation evidence.
 
-`2026-05-06_ACTIVE_DOCUMENTATION_MANIFEST.json` is a previous machine-readable active documentation manifest.
-It is superseded by `2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+`2026-05-06_ACTIVE_DOCUMENTATION_MANIFEST.json` is a previous historical machine-readable active documentation manifest snapshot.
+It is superseded by later historical manifests and by the May 13 DOC_AUDIT X-Ray for current status/counter authority.
 
 `2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` is the latest documentation sorting and authority classification map.
 It records root text handling, active `Docs/` bundle classes, first-read reports, historical/evidence-only reports, the original dirty-worktree boundary, the follow-up relocation of repository-root logs into a deprecated evidence bundle, and the 2026-05-05 documentation influx count boundary. Read the May 6 synchronization report first for current counters.

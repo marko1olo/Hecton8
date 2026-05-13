@@ -1184,6 +1184,7 @@ namespace Hecton8.Core
             ValidateSignalSize<SaveRequestSignal>(32);
             ValidateSignalSize<SaveCompletedSignal>(32);
             ValidateSignalSize<SaveStatusSignal>(32);
+            ValidateSignalSize<SaveMetadataReadySignal>(32);
             ValidateSignalSize<CpuStarvationSignal>(32);
             ValidateSignalSize<StorageDebtSignal>(32);
             ValidateSignalSize<StreamingTurbulenceSignal>(32);
@@ -2193,6 +2194,8 @@ namespace Hecton8.Core
             SignalBus<SaveCompletedSignal>.EnsureInitialized();
             SignalBus<SaveStatusSignal>.Configure(SaveLifecycleSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SaveStatusSignal)));
             SignalBus<SaveStatusSignal>.EnsureInitialized();
+            SignalBus<SaveMetadataReadySignal>.Configure(SaveLifecycleSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SaveMetadataReadySignal)));
+            SignalBus<SaveMetadataReadySignal>.EnsureInitialized();
             SignalBus<CpuStarvationSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(CpuStarvationSignal)));
             SignalBus<CpuStarvationSignal>.EnsureInitialized();
             SignalBus<StorageDebtSignal>.Configure(StorageDebtSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(StorageDebtSignal)));
@@ -3297,6 +3300,29 @@ namespace Hecton8.Core.Signals
         [FieldOffset(12)] public uint Frame;
         [FieldOffset(16)] public byte State;
         [FieldOffset(17)] public byte Flags;
+    }
+
+    /// <summary>Save metadata screenshot completion payload. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct SaveMetadataReadySignal : ISignal
+    {
+        public const byte Completed = 1;
+        public const byte SkippedLowTier = 2;
+        public const byte Failed = 3;
+        public const byte TimedOut = 4;
+        public const byte ReusedExisting = 5;
+
+        public const byte LowTierFlag = 1 << 0;
+        public const byte FailureFlag = 1 << 1;
+        public const byte ReusedExistingFlag = 1 << 2;
+
+        [FieldOffset(0)] public uint SlotHash;
+        [FieldOffset(4)] public uint OperationId;
+        [FieldOffset(8)] public uint ScreenshotBytes;
+        [FieldOffset(12)] public uint ScreenshotHash;
+        [FieldOffset(16)] public uint Frame;
+        [FieldOffset(20)] public byte Result;
+        [FieldOffset(21)] public byte Flags;
     }
 
     /// <summary>Compliance violation signal. Size: 32 bytes.</summary>

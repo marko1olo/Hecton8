@@ -4357,6 +4357,9 @@ namespace Hecton8.Physics
         [ReadOnly] public NativeArray<BuoyancyParams> objParams;
         [ReadOnly] public NativeArray<float>          waveOffsets;
         [ReadOnly] public NativeArray<float>          gpuBuoyancyForcesY;
+        [ReadOnly] public NativeArray<float>          brineHeights;
+        [ReadOnly] public NativeArray<float>          brineDensityMultipliers;
+        [ReadOnly] public NativeArray<byte>           brineFlags;
         [ReadOnly] public NativeArray<ActiveThrusterFlow> activeThrusters;
         [ReadOnly] public NativeArray<WhirlpoolFlow> activeWhirlpools;
         [ReadOnly] public NativeArray<FluidViscosityRegion> activeViscosityRegions;
@@ -4405,6 +4408,7 @@ namespace Hecton8.Physics
         public float  currentVerticalFactor;
         public float  phantomCurrentStrength;
         public float3 vectorNoiseAupOffset;
+        public float  brineShiftOffsetY;
         public float  vectorNoiseInvCellSize;
         public byte   enablePrebakedVectorNoise;
         public float  vectorNoiseTriangleModulation;
@@ -4493,6 +4497,22 @@ namespace Hecton8.Physics
             float resolvedWaterDensity = p.useLocalFluidDensityOverride != 0
                 ? math.max(0.01f, p.localFluidDensity)
                 : waterDensity;
+            byte brineSubmerged = 0;
+            if (brineFlags.IsCreated &&
+                brineHeights.IsCreated &&
+                brineDensityMultipliers.IsCreated &&
+                i < brineFlags.Length &&
+                i < brineHeights.Length &&
+                i < brineDensityMultipliers.Length &&
+                (brineFlags[i] & BrineLayerConstants.SampleValidFlag) != 0)
+            {
+                float brineRuntimeHeightY = BrineLayerMath.ResolveRuntimeHeightY(brineHeights[i], brineShiftOffsetY);
+                if (math.isfinite(brineRuntimeHeightY) && pos.y < brineRuntimeHeightY)
+                {
+                    resolvedWaterDensity *= math.max(1f, brineDensityMultipliers[i]);
+                    brineSubmerged = 1;
+                }
+            }
             float denseLayer01 = 0f;
             if (enableAnalyticalFlowField != 0)
             {
@@ -4515,6 +4535,11 @@ namespace Hecton8.Physics
             }
 
             buoyancyMagnitude *= math.max(0.05f, p.buoyancyMultiplier);
+            if (brineSubmerged != 0)
+            {
+                float brineForceCap = math.max(0.01f, p.mass) * gravity * 9f;
+                buoyancyMagnitude = math.min(buoyancyMagnitude, brineForceCap);
+            }
 
             float3 buoyancyForce = new float3(0f, buoyancyMagnitude, 0f);
 

@@ -1,6 +1,7 @@
 ﻿{
     "generatedLocal":  "2026-05-06T18:45:42+04:00",
-    "status":  "PENDING VERIFICATION",
+    "status":  "HISTORICAL SNAPSHOT / SUPERSEDED BY DOC_AUDIT R13",
+    "originalSnapshotStatus":  "PENDING VERIFICATION",
     "docAuditR13Boundary":  {
                                 "date":  "2026-05-13",
                                 "status":  "HISTORICAL SNAPSHOT / SUPERSEDED",
