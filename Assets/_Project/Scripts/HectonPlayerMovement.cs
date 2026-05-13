@@ -12505,8 +12505,6 @@ namespace Hecton8.Gameplay
             if (wipeoutReboundImpulse < 0f) wipeoutReboundImpulse = 0f;
             if (wipeoutTransportDamageScale < 1f) wipeoutTransportDamageScale = 1f;
             if (wipeoutBreachLandingGraceTime < 0.1f) wipeoutBreachLandingGraceTime = 0.1f;
-            if (wipeoutSweepSpeedThreshold < 0f) wipeoutSweepSpeedThreshold = 0f;
-            if (wipeoutSweepSpeedThreshold > 60f) wipeoutSweepSpeedThreshold = 60f;
             if (wipeoutSweepSkinWidth < 0.005f) wipeoutSweepSkinWidth = 0.005f;
             if (wipeoutSweepSkinWidth > 0.25f) wipeoutSweepSkinWidth = 0.25f;
             if (wipeoutSweepCapsuleInset < 0f) wipeoutSweepCapsuleInset = 0f;

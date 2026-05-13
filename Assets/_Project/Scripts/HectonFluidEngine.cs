@@ -43,6 +43,7 @@ using Hecton8.Core.Signals;
 using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Environment;
+using Hecton8.Environment.Fluids;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
@@ -950,6 +951,10 @@ namespace Hecton8.Physics
         private NativeArray<int> _impactEventFlags;
         private NativeArray<GpuBuoyancyObjectData> _gpuBuoyancyObjectDataUpload;
         private NativeArray<float4> _gpuBuoyancyReadback;
+        private NativeArray<float> _brineHeights;
+        private NativeArray<float> _brineDensityMultipliers;
+        private NativeArray<int2> _brineCartographySectors;
+        private NativeArray<byte> _brineFlags;
         private NativeArray<GpuHeatSourceData> _gpuAbyssalHeatSourceUpload;
         private NativeArray<ActiveThrusterFlow> _activeThrusterFlows;
         private NativeArray<WhirlpoolFlow> _activeWhirlpools;
@@ -1441,6 +1446,34 @@ namespace Hecton8.Physics
             {
                 _sleepMask[destination] = _sleepMask[source];
                 _sleepMask[source] = 0;
+            }
+
+            if (_brineHeights.IsCreated && source < _brineHeights.Length && destination < _brineHeights.Length)
+            {
+                _brineHeights[destination] = _brineHeights[source];
+                _brineHeights[source] = 0f;
+            }
+
+            if (_brineDensityMultipliers.IsCreated &&
+                source < _brineDensityMultipliers.Length &&
+                destination < _brineDensityMultipliers.Length)
+            {
+                _brineDensityMultipliers[destination] = _brineDensityMultipliers[source];
+                _brineDensityMultipliers[source] = 1f;
+            }
+
+            if (_brineCartographySectors.IsCreated &&
+                source < _brineCartographySectors.Length &&
+                destination < _brineCartographySectors.Length)
+            {
+                _brineCartographySectors[destination] = _brineCartographySectors[source];
+                _brineCartographySectors[source] = default;
+            }
+
+            if (_brineFlags.IsCreated && source < _brineFlags.Length && destination < _brineFlags.Length)
+            {
+                _brineFlags[destination] = _brineFlags[source];
+                _brineFlags[source] = 0;
             }
         }
 
@@ -1949,6 +1982,9 @@ namespace Hecton8.Physics
                 objParams        = _params,
                 waveOffsets      = _waveOffsets,
                 gpuBuoyancyForcesY = _gpuBuoyancyForcesY,
+                brineHeights = _brineHeights,
+                brineDensityMultipliers = _brineDensityMultipliers,
+                brineFlags = _brineFlags,
                 activeThrusters = _activeThrusterFlows,
                 activeWhirlpools = _activeWhirlpools,
                 activeViscosityRegions = _activeViscosityRegions,
@@ -2000,6 +2036,7 @@ namespace Hecton8.Physics
                 currentVerticalFactor = currentVerticalFactor,
                 phantomCurrentStrength = phantomCurrentStrength,
                 vectorNoiseAupOffset = new float3(vectorNoiseAupOffset.x, vectorNoiseAupOffset.y, vectorNoiseAupOffset.z),
+                brineShiftOffsetY = math.isfinite(vectorNoiseAupOffset.y) ? vectorNoiseAupOffset.y : 0f,
                 vectorNoiseInvCellSize = math.rcp(math.max(0.25f, prebakedVectorNoiseCellSizeMeters)),
                 enablePrebakedVectorNoise = enablePrebakedVectorNoise ? (byte)1 : (byte)0,
                 vectorNoiseTriangleModulation = prebakedVectorNoiseTriangleModulation,
@@ -2078,6 +2115,7 @@ namespace Hecton8.Physics
                 ? GlobalRegistry.ProceduralFieldSampler
                 : null;
             SargassumGlobalDragManager sargassumDrag = GlobalRegistry.SargassumDrag;
+            ResourceDistributionDirector brineDirector = GlobalRegistry.ResourceDistribution;
             int sleepCount = 0;
 
             for (int i = _objects.Count - 1; i >= 0; i--)
@@ -2251,15 +2289,21 @@ namespace Hecton8.Physics
                     alignmentPadding = obj.AllowDistanceLod ? 0u : BuoyancyParams.ExactSurfaceNormalFlag
                 };
 
-                ResourceDistributionDirector brineDirector = GlobalRegistry.ResourceDistribution;
-                if (brineDirector != null &&
-                    brineDirector.TrySampleBrineFluidDensity(com, out float localFluidDensity) &&
-                    localFluidDensity > waterDensity + 0.01f)
+                if (_brineFlags.IsCreated && i < _brineFlags.Length)
                 {
-                    BuoyancyParams parameters = _params[i];
-                    parameters.localFluidDensity = localFluidDensity;
-                    parameters.useLocalFluidDensityOverride = 1;
-                    _params[i] = parameters;
+                    _brineFlags[i] = 0;
+                    _brineHeights[i] = 0f;
+                    _brineDensityMultipliers[i] = 1f;
+                    _brineCartographySectors[i] = default;
+                    if (brineDirector != null &&
+                        brineDirector.TrySampleBrineLayer(com, out BrineLayerSample brineSample) &&
+                        math.isfinite(brineSample.AbsoluteHeightY))
+                    {
+                        _brineHeights[i] = brineSample.AbsoluteHeightY;
+                        _brineDensityMultipliers[i] = math.max(1f, brineSample.DensityMultiplier);
+                        _brineCartographySectors[i] = brineSample.CartographySector;
+                        _brineFlags[i] = brineSample.Flags;
+                    }
                 }
             }
             _lastOceanSleepCount = sleepCount;
@@ -2620,6 +2664,14 @@ namespace Hecton8.Physics
                                  NativeArrayOptions.UninitializedMemory);
             _gpuBuoyancyReadback = new NativeArray<float4>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
+            _brineHeights = new NativeArray<float>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[capacity] - absolute brine plane heights per buoyancy lane - owner: HectonFluidEngine
+            _brineDensityMultipliers = new NativeArray<float>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[capacity] - brine density multipliers per buoyancy lane - owner: HectonFluidEngine
+            _brineCartographySectors = new NativeArray<int2>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int2>[capacity] - 50m brine sector id per buoyancy lane - owner: HectonFluidEngine
+            _brineFlags = new NativeArray<byte>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[capacity] - brine validity flags per buoyancy lane - owner: HectonFluidEngine
             EnsureAbyssalFlowNativeState();
             _activeThrusterFlows = new NativeArray<ActiveThrusterFlow>(MaxAnalyticalThrusterCount, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
@@ -2665,6 +2717,10 @@ namespace Hecton8.Physics
             DisposeNativeArray(ref _impactEventFlags, dependency);
             DisposeNativeArray(ref _gpuBuoyancyObjectDataUpload, dependency);
             DisposeNativeArray(ref _gpuBuoyancyReadback, dependency);
+            DisposeNativeArray(ref _brineHeights, dependency);
+            DisposeNativeArray(ref _brineDensityMultipliers, dependency);
+            DisposeNativeArray(ref _brineCartographySectors, dependency);
+            DisposeNativeArray(ref _brineFlags, dependency);
             if (releaseAbyssalFlow)
             {
                 DisposeNativeArray(ref _gpuAbyssalHeatSourceUpload, dependency);
@@ -2718,6 +2774,10 @@ namespace Hecton8.Physics
             NativeMemorySentinel.RegisterNativeArray(_impactEventFlags, NativeMemoryOwner, nameof(_impactEventFlags), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_gpuBuoyancyObjectDataUpload, NativeMemoryOwner, nameof(_gpuBuoyancyObjectDataUpload), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_gpuBuoyancyReadback, NativeMemoryOwner, nameof(_gpuBuoyancyReadback), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_brineHeights, NativeMemoryOwner, nameof(_brineHeights), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_brineDensityMultipliers, NativeMemoryOwner, nameof(_brineDensityMultipliers), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_brineCartographySectors, NativeMemoryOwner, nameof(_brineCartographySectors), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_brineFlags, NativeMemoryOwner, nameof(_brineFlags), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_gpuAbyssalHeatSourceUpload, NativeMemoryOwner, nameof(_gpuAbyssalHeatSourceUpload), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_abyssalFlowTelemetry, NativeMemoryOwner, nameof(_abyssalFlowTelemetry), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_activeThrusterFlows, NativeMemoryOwner, nameof(_activeThrusterFlows), NativeMemoryLifetime);

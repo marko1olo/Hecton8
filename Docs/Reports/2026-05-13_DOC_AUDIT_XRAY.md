@@ -231,6 +231,25 @@ Action:
 - Added a top-level `docAuditR13Boundary` object to all four active manifest JSON files.
 - Current manifest authority is this X-Ray report plus `Docs/Reports/README.md`; the historical JSON manifests remain usable only as dated audit trail.
 
+## Continuation R14 - 2026-05-13
+
+Gameplay economy / resource-loop findings:
+
+- Item/catalog data is real, not placeholder-only: `73` ItemData assets excluding `ItemCatalog.asset`, `69` unique catalog refs, `41` recipe assets, and `27` resource-node templates.
+- Recipe data is internally coherent in the static parse: `149` non-script recipe item refs resolve to current item assets, and no recipe ref points outside the catalog.
+- Resource-node data has a hard break candidate: `23 / 27` template harvest items have `worldPrefab: {fileID: 0}`.
+- `ResourceNode.TrySpawnLoot()` returns success early for template-driven extractor items, so legacy pooled loot is skipped. Incremental yield calls `PersistentWorldRegistry.TryRegisterDroppedItem(itemData, ...)`, and that path rejects null `worldPrefab`.
+- Result: static source/data evidence supports "many resource nodes can take damage/deplete while pickup emission fails" until proven otherwise in Unity.
+- Copper is split across two ItemData assets with the same `stableId: Data_Copper`: root `Assets/_Project/Data/Items/Data_Copper.asset` is used by `ResourceNodeTemplate_CopperVein` / barter and is not in `ItemCatalog`; raw `Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset` is cataloged and used by recipes.
+- PlayerInventory is substantial and load-bearing, not a toy list: native SOA mirrors, grid anchors, stack counts, condition, craft locks, genetics/quality, mass/volume/radiation caches, degradation, pressure crush, reactive chemistry, and save shadow state.
+- Crafting/fabricator code is substantial: bounded native recipe evaluation, scan locks, power/scarcity hooks, physical output emission, and scene string evidence for `Forward_Fabricator`, `Trial_Fabricator`, `HectonFabricatorUI`, and starter resource nodes.
+- Resource scarcity is runtime-installed by `EconomyRuntimeInstaller`, but authored scarcity directives are not proven populated. `ResourceDistributionDirector`, `ProceduralOreSpawner`, and `FluidPipeGraphRuntime` contain serious code, but static scans do not prove scene placement or bootstrap creation for the production route.
+
+Action:
+
+- Promoted this to `Docs/PROJECT_STATE_STATIC_XRAY.md` as the stable gameplay-economy addendum.
+- Current verdict: the gameplay economy spine is real, but first-hour resource-loop readiness is `PENDING VERIFICATION` and likely blocked by authored data consistency before any GameObject polish matters.
+
 ## Broken Evidence References
 
 The stable docs and May 11 report cite:

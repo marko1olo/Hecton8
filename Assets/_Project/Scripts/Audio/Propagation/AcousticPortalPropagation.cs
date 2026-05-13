@@ -330,12 +330,13 @@ namespace Hecton8.Audio.Propagation
                     if ((uint)next >= (uint)nodeCount || States[next] == 2)
                         continue;
 
-                    if ((Nodes[next].Flags & AcousticPortalFlags.Solid) != 0)
+                    AcousticPortalNode nextNode = Nodes[next];
+                    if ((nextNode.Flags & AcousticPortalFlags.Solid) != 0)
                         continue;
 
                     float edgeDistance = edge.DistanceMeters;
                     if (!math.isfinite(edgeDistance) || edgeDistance <= 0.001f)
-                        edgeDistance = math.max(0.001f, AcousticAup.DistanceMeters(in node.Position, in Nodes[next].Position));
+                        edgeDistance = math.max(0.001f, AcousticAup.DistanceMeters(in node.Position, in nextNode.Position));
 
                     float nextCost = Costs[current] + edgeDistance;
                     if (nextCost >= Costs[next])
@@ -409,7 +410,7 @@ namespace Hecton8.Audio.Propagation
             int pathNode = listenerNode;
             int pathNodeCount = 1;
             int lastPortalIndex = listenerNode;
-            int sealed = 0;
+            int sealedBulkhead = 0;
             uint stateHash = 2166136261u;
 
             int predecessor = CameFrom[listenerNode];
@@ -425,7 +426,7 @@ namespace Hecton8.Audio.Propagation
                 if (TryFindEdge(previous, pathNode, out AcousticPortalEdge edge) &&
                     (edge.Flags & AcousticPortalFlags.SealedBulkhead) != 0)
                 {
-                    sealed = 1;
+                    sealedBulkhead = 1;
                 }
 
                 stateHash = (stateHash ^ (uint)(pathNode + 1)) * 16777619u;
@@ -434,26 +435,28 @@ namespace Hecton8.Audio.Propagation
             }
 
             int corners = math.max(0, pathNodeCount - 2);
+            AcousticPortalNode sourcePortalNode = Nodes[sourceNode];
+            AcousticPortalNode listenerPortalNode = Nodes[listenerNode];
             float distance = Costs[listenerNode] +
-                AcousticAup.DistanceMeters(in Query.SourceAup, in Nodes[sourceNode].Position) +
-                AcousticAup.DistanceMeters(in Query.ListenerAup, in Nodes[listenerNode].Position);
+                AcousticAup.DistanceMeters(in Query.SourceAup, in sourcePortalNode.Position) +
+                AcousticAup.DistanceMeters(in Query.ListenerAup, in listenerPortalNode.Position);
             distance = math.max(0.001f, distance);
 
             float delay = distance * math.rcp(AcousticPortalConstants.SoundSpeedWaterMetersPerSecond);
-            if (sealed != 0)
+            if (sealedBulkhead != 0)
                 delay += AcousticPortalConstants.SealedBulkheadDelaySeconds;
 
             float transmission = 1f;
             for (int i = 0; i < corners; i++)
                 transmission *= AcousticPortalConstants.CornerGain;
-            if (sealed != 0)
+            if (sealedBulkhead != 0)
                 transmission *= 0.55f;
             transmission = math.saturate(transmission);
 
             float cutoff = AcousticPortalConstants.OpenLowPassCutoffHertz;
             if (corners > 0)
                 cutoff = math.min(cutoff, AcousticPortalConstants.CornerLowPassHertz * math.rcp(corners));
-            if (sealed != 0)
+            if (sealedBulkhead != 0)
                 cutoff = math.min(cutoff, AcousticPortalConstants.SealedBulkheadLowPassHertz);
             cutoff = math.clamp(
                 cutoff,
@@ -494,7 +497,7 @@ namespace Hecton8.Audio.Propagation
             {
                 Status = AcousticPathStatus.PathFound,
                 UsedPortalPath = 1,
-                UsedSealedBulkhead = (byte)sealed,
+                UsedSealedBulkhead = (byte)sealedBulkhead,
                 UsedReprojectionCache = 0,
                 NodeCount = pathNodeCount,
                 CornerCount = corners,

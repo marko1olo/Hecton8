@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Environment.Fluids;
 using Hecton8.Gameplay;
 using Hecton8.Scavenging;
 using Unity.Burst;
@@ -1859,6 +1860,53 @@ namespace Hecton8.World
 
                     fluidDensityKgPerCubicMeter = brinePool.FluidDensityKgPerCubicMeter;
                     return fluidDensityKgPerCubicMeter > 0f;
+                }
+            }
+
+            return false;
+        }
+
+        internal bool TrySampleBrineLayer(Vector3 runtimePosition, out BrineLayerSample sample)
+        {
+            sample = default;
+            if (_residentSectors == null || _residentSectors.Count == 0 || !IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            int2 sector = QuantizeSector(in aup);
+            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            float3 runtime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            float3 shift = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+
+            for (int offsetX = -1; offsetX <= 1; offsetX++)
+            {
+                for (int offsetY = -1; offsetY <= 1; offsetY++)
+                {
+                    int2 candidateSector = new int2(sector.x + offsetX, sector.y + offsetY);
+                    if (!_residentSectors.TryGetValue(ComposeSectorKey(candidateSector), out SectorState state))
+                        continue;
+
+                    BrinePoolState brinePool = state.BrinePool;
+                    if (!brinePool.IsValid || !IsInsideBrinePool(in brinePool, runtimePosition))
+                        continue;
+
+                    float absoluteHeightY = brinePool.SurfaceHeight + shift.y;
+                    if (!math.isfinite(absoluteHeightY))
+                        continue;
+
+                    int2 cartographySector = BrineLayerMath.ResolveCartographySector(runtime, shift);
+                    sample = new BrineLayerSample
+                    {
+                        CartographySector = cartographySector,
+                        AbsoluteHeightY = absoluteHeightY,
+                        RuntimeHeightY = brinePool.SurfaceHeight,
+                        DensityMultiplier = BrineLayerConstants.DensityMultiplier,
+                        Toxicity01 = brinePool.ToxicityIntensity,
+                        Flags = BrineLayerConstants.SampleValidFlag,
+                        Reserved0 = 0,
+                        SectorHash = BrineLayerMath.ResolveSectorHash(cartographySector)
+                    };
+                    return true;
                 }
             }
 

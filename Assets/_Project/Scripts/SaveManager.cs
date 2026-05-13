@@ -807,6 +807,7 @@ namespace Hecton8.SaveSystem
             if (!_saveTelemetryRing.IsCreated)
                 return;
 
+            uint slotHash = ComputeSlotHash(slotName);
             int index = _saveTelemetryWriteIndex;
             _saveTelemetryRing[index] = new AsyncPersistenceTelemetryEntry
             {
@@ -816,7 +817,7 @@ namespace Hecton8.SaveSystem
                 CompressedSizeBytes = SaturateToUInt(compressedSizeBytes),
                 RawPayloadBytes = SaturateToUInt(rawPayloadBytes),
                 Flags = flags,
-                SlotHash = ComputeSlotHash(slotName),
+                SlotHash = slotHash,
                 Reserved = 0u
             };
 
@@ -825,8 +826,10 @@ namespace Hecton8.SaveSystem
                 index = 0;
             _saveTelemetryWriteIndex = index;
 
-            GlobalTelemetryBus.PublishPerformanceWarning(SaveDurationTelemetryHash, ComputeSlotHash(slotName), math.max(1, (int)math.min(durationMs, int.MaxValue)));
-            GlobalTelemetryBus.PublishPerformanceWarning(SaveCompressedSizeTelemetryHash, ComputeSlotHash(slotName), math.max(1, (int)math.min(compressedSizeBytes, int.MaxValue)));
+            float durationScalar = durationMs > 0L ? (float)math.min(durationMs, int.MaxValue) : 0f;
+            float compressedScalar = compressedSizeBytes > 0L ? (float)math.min(compressedSizeBytes, int.MaxValue) : 0f;
+            GlobalTelemetryBus.PublishPerformanceWarning(SaveDurationTelemetryHash, slotHash, durationScalar);
+            GlobalTelemetryBus.PublishPerformanceWarning(SaveCompressedSizeTelemetryHash, slotHash, compressedScalar);
         }
 
         private void DumpSaveBlackBox()

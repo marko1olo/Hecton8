@@ -702,6 +702,7 @@ namespace Hecton8.Crafting
             PublishFabricatorActiveCountBlackBox();
 
             CraftingEvents.RaiseCraftStarted(recipe);
+            PublishCraftingStartedSignal(recipe, safeMultiplier);
             CraftingEvents.RaiseCraftProgressUpdated(0f);
             PlaySound(craftStartSound);
 
@@ -1056,7 +1057,10 @@ namespace Hecton8.Crafting
             CraftingEvents.RaiseCraftProgressUpdated(1f);
 
             if (result != null)
+            {
+                PublishCraftingCompletedSignal(recipe, result, deliveredQuantity);
                 CraftingEvents.RaiseCraftCompleted(result);
+            }
 
             PublishFabricatorActiveCountBlackBox();
             PlaySound(craftCompleteSound);
@@ -2068,6 +2072,32 @@ namespace Hecton8.Crafting
             });
         }
 
+        private void PublishCraftingStartedSignal(RecipeData recipe, int multiplier)
+        {
+            GlobalSignals.Publish(new CraftingStartedSignal
+            {
+                FabricatorHash = ResolveFabricatorSignalHash(),
+                RecipeHash = ComputeRecipeSignalHash(recipe),
+                ResultItemHash = recipe != null ? unchecked((uint)ComputeItemHash(recipe.resultItem)) : 0u,
+                Frame = unchecked((uint)Time.frameCount),
+                Multiplier = (ushort)math.min(math.max(1, multiplier), ushort.MaxValue),
+                Flags = 0
+            });
+        }
+
+        private void PublishCraftingCompletedSignal(RecipeData recipe, ItemData item, int quantity)
+        {
+            GlobalSignals.Publish(new CraftingCompletedSignal
+            {
+                FabricatorHash = ResolveFabricatorSignalHash(),
+                RecipeHash = ComputeRecipeSignalHash(recipe),
+                ResultItemHash = unchecked((uint)ComputeItemHash(item)),
+                Frame = unchecked((uint)Time.frameCount),
+                Quantity = (ushort)math.min(math.max(0, quantity), ushort.MaxValue),
+                Flags = 0
+            });
+        }
+
         private void PublishCraftItemAcquiredSignal(ItemData item, int quantity)
         {
             int itemHash = ComputeItemHash(item);
@@ -2090,6 +2120,13 @@ namespace Hecton8.Crafting
         private uint ResolveFabricatorSignalHash()
         {
             return unchecked((uint)EntityId.ToULong(GetEntityId()));
+        }
+
+        private static uint ComputeRecipeSignalHash(RecipeData recipe)
+        {
+            return recipe != null && !string.IsNullOrWhiteSpace(recipe.name)
+                ? unchecked((uint)LocHash.Compute(recipe.name))
+                : 0u;
         }
 
         private static void PublishFabricatorActiveCountBlackBox()

@@ -1,7 +1,7 @@
 ﻿# Reports
 
 Date: 2026-05-13
-Status: PENDING VERIFICATION (DOC_AUDIT R13 STATIC OVERRIDE / UNITY RUNTIME PROOF ABSENT)
+Status: PENDING VERIFICATION (DOC_AUDIT R14 STATIC OVERRIDE / UNITY RUNTIME PROOF ABSENT)
 
 Purpose: canonical drop zone for reports, audits, counters, and validation writeups.
 
@@ -17,9 +17,11 @@ It found the May 11 build artifacts cited by stable docs absent from the current
 
 Therefore May 11 compile-success claims remain dated report text, not current artifact-backed proof, until those files are restored or a new build artifact is captured.
 
-R2/R3/R4/R5/R6/R7/R8/R9/R10/R11/R12/R13 static refresh also found active non-report docs still calling that missing file `Current compile-only evidence`, stale interface-count claims, Archivarius path drift, an inflated active-doc counter that included `Docs/Archive`, package-surface wording that confused clean UPM manifest state with physical legacy asset contamination, primary `AGENTS` authority drift around Low URP mapping / Easy Save 3 wording, world/scatter runtime-wiring proof gaps, root mirror/atlas scope confusion, active root anchors still promoting the missing May 11 artifact as current evidence, SpaceEngine research proof/path drift, Omega smoke artifact drift, and active documentation manifest JSON files whose count/build-state surfaces needed historical snapshot boundaries. Those lines were demoted or corrected. Current static counters after concurrent churn: `918` markdown files under `Docs`, `283` active markdown, `203` active non-`Docs/Reports` markdown, `80` active direct report markdown, `10` docs JSON, `1411` project C# files, `1365` script C# files, `869871` project source lines, `852315` script source lines, `215` interface declaration hits, `51` direct public interfaces in `GlobalRegistryContracts.cs`, and `24` first-party asmdefs.
+R2/R3/R4/R5/R6/R7/R8/R9/R10/R11/R12/R13/R14 static refresh also found active non-report docs still calling that missing file `Current compile-only evidence`, stale interface-count claims, Archivarius path drift, an inflated active-doc counter that included `Docs/Archive`, package-surface wording that confused clean UPM manifest state with physical legacy asset contamination, primary `AGENTS` authority drift around Low URP mapping / Easy Save 3 wording, world/scatter runtime-wiring proof gaps, root mirror/atlas scope confusion, active root anchors still promoting the missing May 11 artifact as current evidence, SpaceEngine research proof/path drift, Omega smoke artifact drift, active documentation manifest JSON files whose count/build-state surfaces needed historical snapshot boundaries, and a gameplay resource-loop break candidate where most resource-node harvest items lack world prefabs while the drop registry rejects null prefabs. Those lines were demoted or corrected. Current static counters after concurrent churn: `918` markdown files under `Docs`, `283` active markdown, `203` active non-`Docs/Reports` markdown, `80` active direct report markdown, `10` docs JSON, `1411` project C# files, `1365` script C# files, `869871` project source lines, `852315` script source lines, `215` interface declaration hits, `51` direct public interfaces in `GlobalRegistryContracts.cs`, and `24` first-party asmdefs.
 
 `Docs/Reports/*ACTIVE_DOCUMENTATION_MANIFEST.json` files are historical generated snapshots. DOC_AUDIT R13 added top-level boundaries to the May 6, May 7, May 9, and May 11 manifests; their counts, `sourceCounts`, `currentAuthority*`, `buildState`, and `entries` are not current authority after later workspace churn.
+
+DOC_AUDIT R14 adds a gameplay-economy boundary: source/data proves a real item->inventory->crafting->fabricator spine, but first-hour resource-loop readiness remains pending because `23 / 27` resource-node harvest items lack `worldPrefab`, template-driven `ResourceNode` drops depend on a registry path that rejects null prefabs, and duplicate `Data_Copper` assets split node/barter data from catalog/recipe data.
 
 ## Naming
 

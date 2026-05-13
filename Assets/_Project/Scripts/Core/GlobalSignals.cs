@@ -540,6 +540,7 @@ namespace Hecton8.Core
         private const int InteractionUiSignalCapacity = 128;
         private const int UIRescaleRequestSignalCapacity = 64;
         private const int FluidIncursionSignalCapacity = 64;
+        private const int FluidDensityChangedSignalCapacity = 64;
         private const int PipeRuptureSignalCapacity = 64;
         private const int SpectrumScanSignalCapacity = 128;
         private const int RigidbodySleepSignalCapacity = 128;
@@ -618,6 +619,7 @@ namespace Hecton8.Core
         private static NativeQueue<InteractionUiSignal> _interactionUiSignals;
         private static NativeQueue<UIRescaleRequestSignal> _uiRescaleRequestSignals;
         private static NativeQueue<FluidIncursionSignal> _fluidIncursionSignals;
+        private static NativeQueue<FluidDensityChangedSignal> _fluidDensityChangedSignals;
         private static NativeQueue<PipeRuptureSignal> _pipeRuptureSignals;
         private static NativeQueue<SpectrumScanSignal> _spectrumScanSignals;
         private static NativeQueue<RigidbodySleepSignal> _rigidbodySleepSignals;
@@ -661,6 +663,7 @@ namespace Hecton8.Core
         private static bool _initialized;
         private static DamageSignal _latestDamageSignal;
         private static AcousticPingSignal _latestAcousticPingSignal;
+        private static FluidDensityChangedSignal _latestFluidDensityChangedSignal;
         private static LightLevelSignal _latestLightLevelSignal;
         private static PhysiologyStateSignal _latestPhysiologyStateSignal;
         private static PlayerStressSignal _latestPlayerStressSignal;
@@ -671,6 +674,7 @@ namespace Hecton8.Core
         private static int _latestStorageDebtSequence;
         private static int _latestDamageSignalSequence;
         private static int _latestAcousticPingSignalSequence;
+        private static int _latestFluidDensityChangedSignalSequence;
         private static int _latestLightLevelSignalSequence;
         private static int _latestPhysiologyStateSignalSequence;
         private static int _latestPlayerStressSignalSequence;
@@ -1052,12 +1056,15 @@ namespace Hecton8.Core
             CreateQueue(ref _interactionUiSignals, InteractionUiSignalCapacity, nameof(_interactionUiSignals));
             CreateQueue(ref _uiRescaleRequestSignals, UIRescaleRequestSignalCapacity, nameof(_uiRescaleRequestSignals));
             CreateQueue(ref _fluidIncursionSignals, FluidIncursionSignalCapacity, nameof(_fluidIncursionSignals));
+            CreateQueue(ref _fluidDensityChangedSignals, FluidDensityChangedSignalCapacity, nameof(_fluidDensityChangedSignals));
             CreateQueue(ref _pipeRuptureSignals, PipeRuptureSignalCapacity, nameof(_pipeRuptureSignals));
             CreateQueue(ref _spectrumScanSignals, SpectrumScanSignalCapacity, nameof(_spectrumScanSignals));
             CreateQueue(ref _rigidbodySleepSignals, RigidbodySleepSignalCapacity, nameof(_rigidbodySleepSignals));
             CreateQueue(ref _scannerToolActiveSignals, ScannerToolActiveSignalCapacity, nameof(_scannerToolActiveSignals));
             CreateQueue(ref _scanCompleteSignals, ScanCompleteSignalCapacity, nameof(_scanCompleteSignals));
             CreateQueue(ref _blueprintUnlockedSignals, BlueprintUnlockedSignalCapacity, nameof(_blueprintUnlockedSignals));
+            CreateQueue(ref _craftingStartedSignals, CraftingStartedSignalCapacity, nameof(_craftingStartedSignals));
+            CreateQueue(ref _craftingCompletedSignals, CraftingCompletedSignalCapacity, nameof(_craftingCompletedSignals));
             CreateQueue(ref _toolAcousticSignals, ToolAcousticSignalCapacity, nameof(_toolAcousticSignals));
             CreateQueue(ref _powerDrainSignals, PowerDrainSignalCapacity, nameof(_powerDrainSignals));
             CreateQueue(ref _toolTriggerSignals, ToolTriggerSignalCapacity, nameof(_toolTriggerSignals));
@@ -1127,12 +1134,15 @@ namespace Hecton8.Core
             ValidateSignalSize<InteractionUiSignal>(64);
             ValidateSignalSize<UIRescaleRequestSignal>(32);
             ValidateSignalSize<FluidIncursionSignal>(64);
+            ValidateSignalSize<FluidDensityChangedSignal>(64);
             ValidateSignalSize<PipeRuptureSignal>(64);
             ValidateSignalSize<SpectrumScanSignal>(32);
             ValidateSignalSize<RigidbodySleepSignal>(64);
             ValidateSignalSize<ScannerToolActiveSignal>(32);
             ValidateSignalPayload<ScanCompleteSignal>(64);
             ValidateSignalSize<BlueprintUnlockedSignal>(32);
+            ValidateSignalSize<CraftingStartedSignal>(32);
+            ValidateSignalSize<CraftingCompletedSignal>(32);
             ValidateSignalSize<ToolAcousticSignal>(32);
             ValidateSignalSize<PowerDrainSignal>(32);
             ValidateSignalSize<ToolTriggerSignal>(32);
@@ -1217,12 +1227,15 @@ namespace Hecton8.Core
             DisposeQueue(ref _interactionUiSignals, nameof(_interactionUiSignals));
             DisposeQueue(ref _uiRescaleRequestSignals, nameof(_uiRescaleRequestSignals));
             DisposeQueue(ref _fluidIncursionSignals, nameof(_fluidIncursionSignals));
+            DisposeQueue(ref _fluidDensityChangedSignals, nameof(_fluidDensityChangedSignals));
             DisposeQueue(ref _pipeRuptureSignals, nameof(_pipeRuptureSignals));
             DisposeQueue(ref _spectrumScanSignals, nameof(_spectrumScanSignals));
             DisposeQueue(ref _rigidbodySleepSignals, nameof(_rigidbodySleepSignals));
             DisposeQueue(ref _scannerToolActiveSignals, nameof(_scannerToolActiveSignals));
             DisposeQueue(ref _scanCompleteSignals, nameof(_scanCompleteSignals));
             DisposeQueue(ref _blueprintUnlockedSignals, nameof(_blueprintUnlockedSignals));
+            DisposeQueue(ref _craftingStartedSignals, nameof(_craftingStartedSignals));
+            DisposeQueue(ref _craftingCompletedSignals, nameof(_craftingCompletedSignals));
             DisposeQueue(ref _toolAcousticSignals, nameof(_toolAcousticSignals));
             DisposeQueue(ref _powerDrainSignals, nameof(_powerDrainSignals));
             DisposeQueue(ref _toolTriggerSignals, nameof(_toolTriggerSignals));
@@ -1566,6 +1579,15 @@ namespace Hecton8.Core
             _fluidIncursionSignals.Enqueue(signal);
         }
 
+        /// <summary>Queues one fluid-density transition packet from the main thread.</summary>
+        public static void Publish(in FluidDensityChangedSignal signal)
+        {
+            EnsureInitialized();
+            _latestFluidDensityChangedSignal = signal;
+            AdvanceSignalSequence(ref _latestFluidDensityChangedSignalSequence);
+            _fluidDensityChangedSignals.Enqueue(signal);
+        }
+
         /// <summary>Queues one fluid pipe rupture packet from the main thread.</summary>
         public static void Publish(in PipeRuptureSignal signal)
         {
@@ -1608,6 +1630,20 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             _blueprintUnlockedSignals.Enqueue(signal);
+        }
+
+        /// <summary>Queues one crafting-started packet from the main thread.</summary>
+        public static void Publish(in CraftingStartedSignal signal)
+        {
+            EnsureInitialized();
+            _craftingStartedSignals.Enqueue(signal);
+        }
+
+        /// <summary>Queues one crafting-completed packet from the main thread.</summary>
+        public static void Publish(in CraftingCompletedSignal signal)
+        {
+            EnsureInitialized();
+            _craftingCompletedSignals.Enqueue(signal);
         }
 
         /// <summary>Queues one tool acoustic packet from the main thread.</summary>
@@ -1923,12 +1959,15 @@ namespace Hecton8.Core
         public static bool TryDequeueInteractionUi(out InteractionUiSignal signal) => TryDequeue(ref _interactionUiSignals, out signal);
         public static bool TryDequeueUIRescaleRequest(out UIRescaleRequestSignal signal) => TryDequeue(ref _uiRescaleRequestSignals, out signal);
         public static bool TryDequeueFluidIncursion(out FluidIncursionSignal signal) => TryDequeue(ref _fluidIncursionSignals, out signal);
+        public static bool TryDequeueFluidDensityChanged(out FluidDensityChangedSignal signal) => TryDequeue(ref _fluidDensityChangedSignals, out signal);
         public static bool TryDequeuePipeRupture(out PipeRuptureSignal signal) => TryDequeue(ref _pipeRuptureSignals, out signal);
         public static bool TryDequeueSpectrumScan(out SpectrumScanSignal signal) => TryDequeue(ref _spectrumScanSignals, out signal);
         public static bool TryDequeueRigidbodySleep(out RigidbodySleepSignal signal) => TryDequeue(ref _rigidbodySleepSignals, out signal);
         public static bool TryDequeueScannerToolActive(out ScannerToolActiveSignal signal) => TryDequeue(ref _scannerToolActiveSignals, out signal);
         public static bool TryDequeueScanComplete(out ScanCompleteSignal signal) => TryDequeue(ref _scanCompleteSignals, out signal);
         public static bool TryDequeueBlueprintUnlocked(out BlueprintUnlockedSignal signal) => TryDequeue(ref _blueprintUnlockedSignals, out signal);
+        public static bool TryDequeueCraftingStarted(out CraftingStartedSignal signal) => TryDequeue(ref _craftingStartedSignals, out signal);
+        public static bool TryDequeueCraftingCompleted(out CraftingCompletedSignal signal) => TryDequeue(ref _craftingCompletedSignals, out signal);
         public static bool TryDequeueToolAcoustic(out ToolAcousticSignal signal) => TryDequeue(ref _toolAcousticSignals, out signal);
         public static bool TryDequeuePowerDrain(out PowerDrainSignal signal) => TryDequeue(ref _powerDrainSignals, out signal);
         public static bool TryDequeueToolTrigger(out ToolTriggerSignal signal) => TryDequeue(ref _toolTriggerSignals, out signal);
@@ -1975,6 +2014,13 @@ namespace Hecton8.Core
         {
             sequence = Volatile.Read(ref _latestAcousticPingSignalSequence);
             signal = _latestAcousticPingSignal;
+            return sequence != 0;
+        }
+
+        public static bool TryGetLatestFluidDensityChangedSignal(out FluidDensityChangedSignal signal, out int sequence)
+        {
+            sequence = Volatile.Read(ref _latestFluidDensityChangedSignalSequence);
+            signal = _latestFluidDensityChangedSignal;
             return sequence != 0;
         }
 
@@ -2179,6 +2225,7 @@ namespace Hecton8.Core
         {
             _latestDamageSignal = default;
             _latestAcousticPingSignal = default;
+            _latestFluidDensityChangedSignal = default;
             _latestLightLevelSignal = default;
             _latestPhysiologyStateSignal = default;
             _latestPlayerStressSignal = default;
@@ -2189,6 +2236,7 @@ namespace Hecton8.Core
             Volatile.Write(ref _latestStorageDebtSequence, 0);
             Volatile.Write(ref _latestDamageSignalSequence, 0);
             Volatile.Write(ref _latestAcousticPingSignalSequence, 0);
+            Volatile.Write(ref _latestFluidDensityChangedSignalSequence, 0);
             Volatile.Write(ref _latestLightLevelSignalSequence, 0);
             Volatile.Write(ref _latestPhysiologyStateSignalSequence, 0);
             Volatile.Write(ref _latestPlayerStressSignalSequence, 0);
@@ -2988,6 +3036,19 @@ namespace Hecton8.Core.Signals
         [FieldOffset(60)] public byte Flags;
     }
 
+    /// <summary>Fluid density transition signal. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct FluidDensityChangedSignal : ISignal
+    {
+        [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(48)] public float DensityMultiplier;
+        [FieldOffset(52)] public float BrineHeightY;
+        [FieldOffset(56)] public float SubmersionSeconds;
+        [FieldOffset(60)] public byte Flags;
+        [FieldOffset(61)] public byte FluidKind;
+        [FieldOffset(62)] public ushort SectorHash;
+    }
+
     /// <summary>Fluid pipe rupture signal. Size: 64 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct PipeRuptureSignal : ISignal
@@ -3062,6 +3123,30 @@ namespace Hecton8.Core.Signals
         [FieldOffset(12)] public uint Frame;
         [FieldOffset(16)] public byte Category;
         [FieldOffset(17)] public byte Flags;
+    }
+
+    /// <summary>Crafting start signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct CraftingStartedSignal : ISignal
+    {
+        [FieldOffset(0)] public uint FabricatorHash;
+        [FieldOffset(4)] public uint RecipeHash;
+        [FieldOffset(8)] public uint ResultItemHash;
+        [FieldOffset(12)] public uint Frame;
+        [FieldOffset(16)] public ushort Multiplier;
+        [FieldOffset(18)] public byte Flags;
+    }
+
+    /// <summary>Crafting completion signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct CraftingCompletedSignal : ISignal
+    {
+        [FieldOffset(0)] public uint FabricatorHash;
+        [FieldOffset(4)] public uint RecipeHash;
+        [FieldOffset(8)] public uint ResultItemHash;
+        [FieldOffset(12)] public uint Frame;
+        [FieldOffset(16)] public ushort Quantity;
+        [FieldOffset(18)] public byte Flags;
     }
 
     /// <summary>Tool acoustic state signal. Size: 32 bytes.</summary>

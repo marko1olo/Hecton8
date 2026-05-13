@@ -11,8 +11,10 @@ namespace Hecton8.Inventory
     using Hecton.Localization;
     using Hecton8.Audio;
     using Hecton8.Core;
+    using Hecton8.Core.Signals;
     using Hecton8.Gameplay;
     using Hecton8.Interaction;
+    using Hecton8.Inventory.Algorithms;
     using Hecton8.Items;
     using Hecton8.Modding;
     using Hecton8.Physics;
@@ -86,9 +88,14 @@ namespace Hecton8.Inventory
         private static readonly int _DepletedLeadHashId = LocHash.Compute("Data_DepletedLead");
         private static readonly uint _InventoryBulkTransferToolHash = unchecked((uint)LocHash.Compute("InventoryBulkTransfer"));
         private static readonly uint _HeavyThudTargetHash = unchecked((uint)LocHash.Compute("HeavyThud"));
+        private static readonly uint _InventorySortToolHash = unchecked((uint)LocHash.Compute("InventorySort"));
+        private static readonly uint _InventoryUiClickHash = unchecked((uint)LocHash.Compute("UI_Click"));
+        private static readonly uint _InventoryDefragTimeMsHash = unchecked((uint)LocHash.Compute("InventoryDefragTimeMs"));
+        private static readonly uint _InventoryDefragContextHash = unchecked((uint)LocHash.Compute("PlayerInventoryDefrag"));
         private static readonly ProfilerMarker _slowTickProfilerMarker = new ProfilerMarker("H8.Inventory.PlayerInventory.SlowTick");
         private static readonly ProfilerMarker _radioactiveHalfLifeProfilerMarker = new ProfilerMarker("H8.Inventory.PlayerInventory.RadioactiveHalfLife");
         private static readonly ProfilerMarker _reactiveChemistryProfilerMarker = new ProfilerMarker("H8.Inventory.PlayerInventory.ReactiveChemistry");
+        private static readonly ProfilerMarker _defragProfilerMarker = new ProfilerMarker("H8.Inventory.PlayerInventory.DefragSort");
 
         [Flags]
         public enum ItemGeneticFlags : byte
@@ -125,7 +132,7 @@ namespace Hecton8.Inventory
             [FieldOffset(48)] public float RadiationSv;
             [FieldOffset(52)] public int Columns;
             [FieldOffset(56)] public int Rows;
-            [FieldOffset(60)] public int Reserved;
+            [FieldOffset(60)] public int DefragTimeMicroseconds;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -555,6 +562,23 @@ namespace Hecton8.Inventory
         private NativeArray<int> _thermalRunawayCounters;
         private NativeArray<byte> _inventoryShadowBuffer;
         private NativeArray<InventoryTelemetryEntry> _inventoryBlackBox;
+        private NativeArray<int> _defragItemHashes;
+        private NativeArray<ushort> _defragItemCounts;
+        private NativeArray<byte> _defragCategories;
+        private NativeArray<ushort> _defragMaxStacks;
+        private NativeArray<byte> _defragRarities;
+        private NativeArray<byte> _defragWidths;
+        private NativeArray<byte> _defragHeights;
+        private NativeArray<byte> _defragFlags;
+        private NativeArray<ushort> _defragStateFlags;
+        private NativeArray<byte> _defragGenetics;
+        private NativeArray<ushort> _defragQualityMilli;
+        private NativeArray<byte> _defragDurabilities;
+        private NativeArray<uint> _defragLastUpdateUnixSeconds;
+        private NativeArray<float> _defragUnitMassKg;
+        private NativeArray<float> _defragUnitVolumeM3;
+        private NativeArray<float> _defragUnitRadiationSv;
+        private NativeArray<int> _defragResult;
         private ItemPlacement[] _sortBuffer;
         private ItemPlacement[] _sortedPlacements;
         private JobHandle _massVolumeJobHandle;
@@ -584,6 +608,8 @@ namespace Hecton8.Inventory
         private byte _coldDurabilityTickPhase;
         private int _inventoryBlackBoxCursor;
         private byte _inventoryBlackBoxDumped;
+        private int _lastInventorySortCommandFrame = -1;
+        private int _lastDefragTimeMicroseconds;
         private float _currentWeightKg;
         private float _currentVolumeLiters;
 
@@ -677,6 +703,23 @@ namespace Hecton8.Inventory
             _thermalRunawayCounters = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[2] — reactive chemistry pair/change counters — owner: PlayerInventory
             _inventoryShadowBuffer = new NativeArray<byte>(InventoryShadowBufferBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[16KB] - persistent inventory dehydration shadow payload - owner: PlayerInventory
             _inventoryBlackBox = new NativeArray<InventoryTelemetryEntry>(InventoryBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: InventoryTelemetryEntry[300] - fixed inventory black-box ring - owner: PlayerInventory
+            _defragItemHashes = new NativeArray<int>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[columns * rows] - native defrag hash stream - owner: PlayerInventory
+            _defragItemCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: ushort[columns * rows] - native defrag count stream - owner: PlayerInventory
+            _defragCategories = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag category stream - owner: PlayerInventory
+            _defragMaxStacks = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: ushort[columns * rows] - native defrag max-stack stream - owner: PlayerInventory
+            _defragRarities = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag rarity stream - owner: PlayerInventory
+            _defragWidths = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag width stream - owner: PlayerInventory
+            _defragHeights = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag height stream - owner: PlayerInventory
+            _defragFlags = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag flags stream - owner: PlayerInventory
+            _defragStateFlags = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: ushort[columns * rows] - native defrag state stream - owner: PlayerInventory
+            _defragGenetics = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag genetics stream - owner: PlayerInventory
+            _defragQualityMilli = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: ushort[columns * rows] - native defrag quality stream - owner: PlayerInventory
+            _defragDurabilities = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag durability stream - owner: PlayerInventory
+            _defragLastUpdateUnixSeconds = new NativeArray<uint>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: uint[columns * rows] - native defrag timestamp stream - owner: PlayerInventory
+            _defragUnitMassKg = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - native defrag mass stream - owner: PlayerInventory
+            _defragUnitVolumeM3 = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - native defrag volume stream - owner: PlayerInventory
+            _defragUnitRadiationSv = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - native defrag radiation stream - owner: PlayerInventory
+            _defragResult = new NativeArray<int>(InventoryDefragResultSlots.RequiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[4] - native defrag result scratch - owner: PlayerInventory
             RegisterNativeMemorySentinel();
             _sortBuffer = new ItemPlacement[columns * rows];
             // COLD ALLOC: ItemPlacement[columns * rows] — placement reorder buffer — owner: PlayerInventory
@@ -741,6 +784,23 @@ namespace Hecton8.Inventory
             DisposeNativeArray(ref _thermalRunawayCounters);
             DisposeNativeArray(ref _inventoryShadowBuffer);
             DisposeNativeArray(ref _inventoryBlackBox);
+            DisposeNativeArray(ref _defragItemHashes);
+            DisposeNativeArray(ref _defragItemCounts);
+            DisposeNativeArray(ref _defragCategories);
+            DisposeNativeArray(ref _defragMaxStacks);
+            DisposeNativeArray(ref _defragRarities);
+            DisposeNativeArray(ref _defragWidths);
+            DisposeNativeArray(ref _defragHeights);
+            DisposeNativeArray(ref _defragFlags);
+            DisposeNativeArray(ref _defragStateFlags);
+            DisposeNativeArray(ref _defragGenetics);
+            DisposeNativeArray(ref _defragQualityMilli);
+            DisposeNativeArray(ref _defragDurabilities);
+            DisposeNativeArray(ref _defragLastUpdateUnixSeconds);
+            DisposeNativeArray(ref _defragUnitMassKg);
+            DisposeNativeArray(ref _defragUnitVolumeM3);
+            DisposeNativeArray(ref _defragUnitRadiationSv);
+            DisposeNativeArray(ref _defragResult);
 
         }
 
@@ -774,6 +834,23 @@ namespace Hecton8.Inventory
             NativeMemorySentinel.RegisterNativeArray(_thermalRunawayCounters, NativeMemoryOwner, nameof(_thermalRunawayCounters), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_inventoryShadowBuffer, NativeMemoryOwner, nameof(_inventoryShadowBuffer), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_inventoryBlackBox, NativeMemoryOwner, nameof(_inventoryBlackBox), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragItemHashes, NativeMemoryOwner, nameof(_defragItemHashes), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragItemCounts, NativeMemoryOwner, nameof(_defragItemCounts), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragCategories, NativeMemoryOwner, nameof(_defragCategories), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragMaxStacks, NativeMemoryOwner, nameof(_defragMaxStacks), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragRarities, NativeMemoryOwner, nameof(_defragRarities), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragWidths, NativeMemoryOwner, nameof(_defragWidths), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragHeights, NativeMemoryOwner, nameof(_defragHeights), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragFlags, NativeMemoryOwner, nameof(_defragFlags), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragStateFlags, NativeMemoryOwner, nameof(_defragStateFlags), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragGenetics, NativeMemoryOwner, nameof(_defragGenetics), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragQualityMilli, NativeMemoryOwner, nameof(_defragQualityMilli), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragDurabilities, NativeMemoryOwner, nameof(_defragDurabilities), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragLastUpdateUnixSeconds, NativeMemoryOwner, nameof(_defragLastUpdateUnixSeconds), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragUnitMassKg, NativeMemoryOwner, nameof(_defragUnitMassKg), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragUnitVolumeM3, NativeMemoryOwner, nameof(_defragUnitVolumeM3), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragUnitRadiationSv, NativeMemoryOwner, nameof(_defragUnitRadiationSv), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_defragResult, NativeMemoryOwner, nameof(_defragResult), NativeMemoryLifetime);
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
@@ -3358,7 +3435,7 @@ namespace Hecton8.Inventory
                 RadiationSv = TotalRadiationSv,
                 Columns = _grid != null ? _grid.Columns : columns,
                 Rows = _grid != null ? _grid.Rows : rows,
-                Reserved = 0
+                DefragTimeMicroseconds = _lastDefragTimeMicroseconds
             };
 
             _inventoryBlackBoxCursor = index + 1;
@@ -3402,7 +3479,7 @@ namespace Hecton8.Inventory
                     writer.Write(entry.RadiationSv);
                     writer.Write(entry.Columns);
                     writer.Write(entry.Rows);
-                    writer.Write(entry.Reserved);
+                    writer.Write(entry.DefragTimeMicroseconds);
                 }
             }
         }

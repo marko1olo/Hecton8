@@ -74,9 +74,23 @@ namespace Hecton8.Modding
                 return;
 
             _bootstrapped = true;
-            InstallHooks();
-            DiscoverAndLoadMods();
-            ModLocalizationBridge.FlushPendingInjections();
+            _ = LoadMods();
+        }
+
+        private static async Awaitable LoadMods()
+        {
+            try
+            {
+                InstallHooks();
+                await Awaitable.NextFrameAsync();
+                DiscoverAndLoadMods();
+                await Awaitable.NextFrameAsync();
+                ModLocalizationBridge.FlushPendingInjections();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[ModLoader] LoadMods failed: {ex.Message}");
+            }
         }
 
         internal static void CollectRuntimeInfo(List<ModRuntimeInfo> destination)
@@ -129,8 +143,8 @@ namespace Hecton8.Modding
                 return;
 
             SaveEvents.Register(_saveEventListener);
-            HectonEventBus.InstallNativeQueueBindings();
             ModCommandDispatcher.Initialize();
+            ModEventProjectionBridge.InstallGlobal();
             ModResourceRegistry.Initialize();
             GameBootstrapper.Register(_bootstrapEventListener);
             Application.quitting += HandleApplicationQuitting;
@@ -144,7 +158,7 @@ namespace Hecton8.Modding
                 return;
 
             SaveEvents.Unregister(_saveEventListener);
-            HectonEventBus.UninstallNativeQueueBindings();
+            ModEventProjectionBridge.ShutdownGlobal();
             GameBootstrapper.Unregister(_bootstrapEventListener);
             Application.quitting -= HandleApplicationQuitting;
             SceneManager.sceneLoaded -= HandleSceneLoaded;

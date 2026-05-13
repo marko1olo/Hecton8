@@ -282,5 +282,34 @@ Exact Microseconds saved:
 
 Verification:
 
-- Pending JSON parse, readback, and diff check at time of entry creation.
+- Completed static readback: `docAuditR13Boundary` is present in all four active manifest JSON files and R13 is promoted to the current report/indexes.
+- `git diff --check` will be run after the R14 documentation pass.
+- No Unity, `dotnet`, Play Mode, profiler, GCMonitor, or player build was run.
+
+## 2026-05-13 - Gameplay Economy / Resource Loop X-Ray
+
+What was wrong:
+
+- The project had real gameplay-economy code, but no durable doc separated "systems exist" from "the first-hour resource loop is proven".
+- Static data shows `23 / 27` resource-node harvest items lack `worldPrefab`.
+- `ResourceNode` skips legacy loot for template-driven extractor items, while `PersistentWorldRegistry.TryRegisterDroppedItem` refuses null `worldPrefab`; this is a concrete "node can deplete but pickup emission can fail" candidate.
+- Copper has split authority: root `Data_Copper.asset` is used by resource nodes/barter and is not in `ItemCatalog`; raw `Resources/Raw/Data_Copper.asset` is cataloged and used by recipes. Both share `stableId: Data_Copper`.
+
+What was done:
+
+- Audited ItemData, ItemCatalog, recipes, resource-node templates, inventory, crafting, fabricator, scarcity, resource distribution, construction/logistics, and pipe-runtime surfaces statically.
+- Promoted the resource acquisition seam, duplicate copper authority, and unproven procedural/pipe scene wiring to stable/current docs.
+- Kept the verdict bounded: gameplay economy is real source architecture, but resource-loop readiness remains `PENDING VERIFICATION`.
+
+Cinematic Cheats used:
+
+- Recommended a cheap canonical pickup route before visual/object polish: generic raw-resource pickup prefab or explicit inventory-grant path, then richer pickup variants only after progression is proven.
+
+Exact Microseconds saved:
+
+- 0 us/frame. No runtime code changed.
+
+Verification:
+
+- Static only: file/YAML/source/string evidence. Required later runtime route is mine copper -> item collected event -> inventory contains `Data_Copper` -> `quest_copper_sample` completes -> craft `Copper Wire` -> save/load.
 - No Unity, `dotnet`, Play Mode, profiler, GCMonitor, or player build was run.

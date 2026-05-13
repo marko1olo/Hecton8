@@ -25,6 +25,7 @@ Current static audit facts:
 - R11 SpaceEngine research cleanup: `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` now uses the current MapMagic node path and marks its compile/smoke data as historical until the current Unity smoke harness is rerun
 - R12 Omega smoke artifact drift: current `Library/OmegaAutonomySmokeTester.json` reads `FAIL` on `nativeSentinelBalance` (`allocationDelta=2`, `trackedByteDelta=2560`); older saved PASS / OMEGA smoke artifacts remain scoped historical evidence only
 - R13 active documentation manifest boundary: `Docs/Reports/*ACTIVE_DOCUMENTATION_MANIFEST.json` files are dated generated snapshots only; their counts/build states/authority lists are superseded by `Docs/Reports/README.md` and `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`
+- R14 gameplay/resource-loop scan: item/catalog/recipe/fabricator/inventory/scarcity/logistics code is real, but `23 / 27` resource-node harvest items lack `worldPrefab`, template-driven `ResourceNode` drops rely on a registry path that rejects null prefabs, and duplicate `Data_Copper` authority makes first-hour copper progression `PENDING VERIFICATION`
 
 Evidence class remains STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK. Runtime proof remains absent.
 
@@ -48,8 +49,8 @@ Evidence class remains STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK. R
 
 ## Current Evidence Snapshots
 
-- `Reports/2026-05-13_DOC_AUDIT_XRAY.md` - current documentation reality override; demotes missing May 11 build artifacts, root/doc surface drift, source-count drift, stale `Current compile-only evidence` lines, interface-count drift, Archivarius path drift, asmdef count drift, package/player-settings drift, world/scatter wiring proof gaps, and root mirror/atlas scope confusion.
-- `PROJECT_STATE_STATIC_XRAY.md` - current durable static audit anchor for runtime-spine, large-file, scatter, Addressables, audio-memory, third-party contamination, test-depth, and verification-gap findings.
+- `Reports/2026-05-13_DOC_AUDIT_XRAY.md` - current documentation reality override; demotes missing May 11 build artifacts, root/doc surface drift, source-count drift, stale `Current compile-only evidence` lines, interface-count drift, Archivarius path drift, asmdef count drift, package/player-settings drift, world/scatter wiring proof gaps, root mirror/atlas scope confusion, stale manifest authority, and gameplay resource-loop proof gaps.
+- `PROJECT_STATE_STATIC_XRAY.md` - current durable static audit anchor for runtime-spine, large-file, scatter, Addressables, audio-memory, third-party contamination, gameplay economy/resource acquisition, test-depth, and verification-gap findings.
 - `Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` - historical May 11 documentation/data boundary; superseded by the May 13 X-Ray for current counters and missing-artifact evidence.
 - `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` - latest machine-readable active documentation manifest; numeric counters are historical where the May 13 X-Ray supersedes them.
 - `Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` - latest `.agents-skills` actuality pass for the visual-realistic-fake doctrine; supersedes conflicting simulate-first mandate wording where 2026-05-11 overrides were added.

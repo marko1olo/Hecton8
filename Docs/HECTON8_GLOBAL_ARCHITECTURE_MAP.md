@@ -19,6 +19,7 @@ Current static audit corrections:
 - R7 authority correction: `AGENTS.md` and `.codexrules/AGENTS.md` now carry the same Low mapping and no-new-ES3 wording
 - R8 world/scatter correction: world runtime code and data are substantial, but `GameBootstrapper` only creates `PersistentWorldRegistry`; scatter/field/chunk/MapMagic/vegetation/streaming managers still require scene/editor-authoring proof and runtime validation
 - R9 root/atlas correction: root authority is only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`; root `PROJECT_ATLAS.md` is a compatibility mirror and atlas data is asmdef graph evidence only, not package/config/runtime proof
+- R14 gameplay/economy correction: item/catalog/recipe/inventory/fabricator/scarcity/logistics code is real, but resource acquisition is not proven; `23 / 27` resource-node harvest items lack `worldPrefab`, template-driven `ResourceNode` drops depend on a registry path that rejects null prefabs, and duplicate `Data_Copper` assets split node/barter data from catalog/recipe data
 - source counts are volatile during active multi-agent work; exact counts are snapshot data, not permanent truth
 - runtime proof remains absent
 

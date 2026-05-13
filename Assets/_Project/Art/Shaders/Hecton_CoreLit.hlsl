@@ -30,6 +30,10 @@
 #define HECTON_HULL_DENT_MAX 16
 #endif
 
+#ifndef HECTON_ACTIVE_SONAR_MAX_PINGS
+#define HECTON_ACTIVE_SONAR_MAX_PINGS 4
+#endif
+
 float4 _HectonFlashlightPositionWS;
 float4 _HectonFlashlightDirectionWS;
 float4 _HectonFlashlightColor;

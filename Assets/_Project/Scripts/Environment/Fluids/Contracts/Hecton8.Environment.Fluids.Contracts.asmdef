@@ -1,16 +1,13 @@
 {
-    "name": "Hecton8.World.GPR",
-    "rootNamespace": "Hecton8.World.GPR",
+    "name": "Hecton8.Environment.Fluids.Contracts",
+    "rootNamespace": "Hecton8.Environment.Fluids",
     "references": [
-        "Hecton8.World.Contracts",
-        "Unity.Burst",
-        "Unity.Collections",
-        "Unity.Jobs",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "Unity.Collections"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": false,
+    "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,

@@ -1371,6 +1371,7 @@ namespace Hecton8.Core
                     GlobalRegistry.ScalabilityTierProfileByte,
                     unscaledDeltaTime,
                     previousFrameMissedBudget);
+                Hecton8.Modding.ModCommandDispatcher.DrainPreSimulation();
                 DrainSimulationPauseSignals();
                 float deltaTime = unscaledDeltaTime * ResolveFrameTimeDilationScalar();
                 CurrentFrameDeltaTime = deltaTime;
@@ -1444,6 +1445,7 @@ namespace Hecton8.Core
                 RunColdTick(deltaTime, blockGameplayLanes);
                 RunFrostTick(deltaTime, blockGameplayLanes);
                 ScheduleDispatcherRaycasts();
+                GlobalRegistry.ModdingBridge?.ProjectPostSimulation();
                 double tickOverheadMilliseconds =
                     (System.Diagnostics.Stopwatch.GetTimestamp() - dispatcherTickStartTimestamp) * 1000.0 /
                     System.Diagnostics.Stopwatch.Frequency;

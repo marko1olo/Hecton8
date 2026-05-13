@@ -9,6 +9,8 @@
         "Hecton8.Core.Memory.Layout",
         "Hecton8.Narrative.Camera",
         "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Environment.Fluids",
+        "Hecton8.Environment.Fluids.Contracts",
         "Hecton8.World.Contracts",
         "Hecton8.World.GPR",
         "Hecton8.Physics.Determinism",

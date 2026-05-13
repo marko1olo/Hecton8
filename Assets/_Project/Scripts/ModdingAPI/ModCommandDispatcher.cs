@@ -204,6 +204,7 @@ namespace Hecton8.Modding
         private const int AupCellSizeMeters = 5000;
         private const double SpawnConflictEpsilonSq = 0.25d;
         private const long ModHeapQuotaBytes = 16L * 1024L * 1024L;
+        private const long ModHeapFrameQuotaBytes = 1L * 1024L * 1024L;
         private const float MaxModVoxelModifyRadiusMeters = 8f;
 
         private const byte ModStateActive = 1;
@@ -216,6 +217,8 @@ namespace Hecton8.Modding
             public int CommandsThisFrame;
             public int Priority;
             public long TrackedHeapBytes;
+            public long FrameHeapBytes;
+            public int LastHeapFrame;
             public byte State;
             public byte Reserved0;
             public ushort Reserved1;
@@ -432,6 +435,8 @@ namespace Hecton8.Modding
                 CommandsThisFrame = 0,
                 Priority = priority,
                 TrackedHeapBytes = 0L,
+                FrameHeapBytes = 0L,
+                LastHeapFrame = -1,
                 State = ModStateActive,
                 Reserved0 = 0,
                 Reserved1 = 0
@@ -498,15 +503,35 @@ namespace Hecton8.Modding
             if (!_modStatesByHash.TryGetValue(modHash, out ModCommandModState state))
                 return;
 
+            int frame = Time.frameCount;
+            if (state.LastHeapFrame != frame)
+            {
+                state.LastHeapFrame = frame;
+                state.FrameHeapBytes = 0L;
+            }
+
+            state.FrameHeapBytes = long.MaxValue - state.FrameHeapBytes < allocatedBytes
+                ? long.MaxValue
+                : state.FrameHeapBytes + allocatedBytes;
             state.TrackedHeapBytes = long.MaxValue - state.TrackedHeapBytes < allocatedBytes
                 ? long.MaxValue
                 : state.TrackedHeapBytes + allocatedBytes;
             _modStatesByHash[modHash] = state;
+            if (state.FrameHeapBytes > ModHeapFrameQuotaBytes)
+            {
+                GlobalTelemetryBus.PublishModCriticalMemoryEviction(modHash, state.FrameHeapBytes, ModHeapFrameQuotaBytes);
+                EnqueueMemoryEvictionEvent(modHash, state.FrameHeapBytes, ModHeapFrameQuotaBytes);
+                QuarantineMod(modHash);
+                if (TryGetModId(modHash, out string modIdForFrameQuota))
+                    ModLoader.DisableManagedMod(modIdForFrameQuota, "CRITICAL_MEMORY_EVICTION: managed allocation frame quota exceeded.");
+                return;
+            }
+
             if (state.TrackedHeapBytes <= ModHeapQuotaBytes)
                 return;
 
             GlobalTelemetryBus.PublishModCriticalMemoryEviction(modHash, state.TrackedHeapBytes, ModHeapQuotaBytes);
-            EnqueueMemoryEvictionEvent(modHash, state.TrackedHeapBytes);
+            EnqueueMemoryEvictionEvent(modHash, state.TrackedHeapBytes, ModHeapQuotaBytes);
             QuarantineMod(modHash);
             if (TryGetModId(modHash, out string modId))
                 ModLoader.DisableManagedMod(modId, "CRITICAL_MEMORY_EVICTION: tracked managed allocation quota exceeded.");
@@ -662,9 +687,16 @@ namespace Hecton8.Modding
         internal static void DrainLateFrame()
         {
             FlushDeferredEventQueues();
+            DrainRenderCommands();
+        }
+
+        /// <summary>
+        /// Pre-simulation command drain. Called only after GlobalSignals pre-sim flush and before gameplay ticks.
+        /// </summary>
+        internal static void DrainPreSimulation()
+        {
             DrainAupCommands();
             DrainStandardCommands();
-            DrainRenderCommands();
         }
 
         private static void DrainAupCommands()
@@ -1227,17 +1259,20 @@ namespace Hecton8.Modding
             _queuedRejectEventCount++;
         }
 
-        private static void EnqueueMemoryEvictionEvent(uint modHash, long trackedHeapBytes)
+        private static void EnqueueMemoryEvictionEvent(uint modHash, long trackedHeapBytes, long limitBytes)
         {
             if (!_pendingMemoryEvictionEvents.IsCreated ||
                 _queuedMemoryEvictionEventCount >= MaxMemoryEvictionEventsPerLateFrame)
                 return;
 
+            long clampedLimitBytes = limitBytes < 0L
+                ? 0L
+                : (limitBytes > uint.MaxValue ? uint.MaxValue : limitBytes);
             _pendingMemoryEvictionEvents.Enqueue(new ModCriticalMemoryEvictionPayload
             {
                 ModHash = modHash,
                 TrackedHeapBytes = unchecked((ulong)(trackedHeapBytes > 0L ? trackedHeapBytes : 0L)),
-                LimitBytes = unchecked((uint)ModHeapQuotaBytes),
+                LimitBytes = unchecked((uint)clampedLimitBytes),
                 Reason = (uint)ModCommandRejectReason.HeapQuotaExceeded
             });
             _queuedMemoryEvictionEventCount++;

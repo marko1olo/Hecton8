@@ -234,6 +234,10 @@ namespace Hecton8.Core
         private readonly float[] _lastTickDeltas = new float[MaxTargets];
         // COLD ALLOC: FoveatedTickRate[512] — current rate classification cache — owner: FoveatedSimulationManager
         private readonly FoveatedTickRate[] _tickRates = new FoveatedTickRate[MaxTargets];
+        private readonly FoveatedSimulationTier[] _simTiers = new FoveatedSimulationTier[MaxTargets];
+        private readonly uint[] _entityHashes = new uint[MaxTargets];
+        private readonly ushort[] _entityIds = new ushort[MaxTargets];
+        private readonly float[] _tier0LockUntilTimes = new float[MaxTargets];
         private readonly int[] _framesSinceTickRateChange = new int[MaxTargets];
         // COLD ALLOC: int[512] — compact target-to-visual-transform mapping — owner: FoveatedSimulationManager
         private readonly int[] _visualTargetIndices = new int[MaxTargets];
@@ -247,12 +251,16 @@ namespace Hecton8.Core
         private TransformAccessArray _visualTransformAccessArray;
         private Transform[] _visualTransformArray = Array.Empty<Transform>();
         private NativeArray<float3> _jobScorePositions;
+        private NativeArray<float3> _jobEntityAups;
         private NativeArray<float> _jobImportanceScores;
         private NativeArray<byte> _jobTickRateCodes;
         private NativeArray<byte> _jobInsideFrustumFlags;
+        private NativeArray<byte> _jobEntitySimTiers;
+        private NativeArray<float> _jobDistancesMeters;
         private NativeArray<float3> _jobFromPositions;
         private NativeArray<float3> _jobToPositions;
         private NativeArray<float> _jobAlphas;
+        private NativeArray<FoveatedSimulationTelemetryEntry> _telemetryRing;
         private NativeArray<RaycastCommand> _pendingDeferredRaycastCommands;
         private NativeArray<int> _pendingDeferredRaycastCommandIndices;
         private NativeList<RaycastCommand> _deferredRaycastCommands;
@@ -281,11 +289,27 @@ namespace Hecton8.Core
         private bool _nativeMemorySentinelRegistered;
         private bool _nativeMemoryBudgetRegistered;
         private bool _voxelTeardownBackpressureActive;
+        private bool _forceImmediateImportanceRefresh;
+        private bool _hasSignalCameraPose;
+        private bool _blackBoxDumped;
         private int _voxelTeardownBackpressurePendingCount;
         private int _queuedDeferredRaycastCount;
         private int _pendingDeferredRaycastHead;
         private int _pendingDeferredRaycastTail;
         private int _lastDeferredRaycastScheduleFrame = -1;
+        private int _frozenEntityCount;
+        private int _tier0Count;
+        private int _tier1Count;
+        private int _tier2Count;
+        private int _telemetryCursor;
+        private float _importanceAccumulator;
+        private float _activeDistanceMeters = DefaultActiveDistanceMeters;
+        private float _frozenDistanceMeters = DefaultFrozenDistanceMeters;
+        private Vector3 _signalCameraPosition;
+        private Vector3 _signalCameraForward = Vector3.forward;
+        private Vector3 _signalCameraUp = Vector3.up;
+
+        public int FrozenEntityCount => _frozenEntityCount;
 
         public void InitializeRuntime()
         {
@@ -294,6 +318,47 @@ namespace Hecton8.Core
 
             HectonFloatingOrigin.RegisterListener(this);
             _originShiftListenerRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
+            GlobalRegistry.RegisterFoveatedSimulationDirector(this);
+        }
+
+        public bool TryGetEntityTier(int targetIndex, out FoveatedSimulationTier tier)
+        {
+            if ((uint)targetIndex >= (uint)_targetCount)
+            {
+                tier = FoveatedSimulationTier.Active;
+                return false;
+            }
+
+            tier = _simTiers[targetIndex];
+            return true;
+        }
+
+        public FoveatedSimulationTier ResolveTierForPosition(Vector3 runtimePosition)
+        {
+            ResolveScalabilityThresholds(out float activeDistance, out float frozenDistance);
+            if (!TryResolveScoringCamera(out Vector3 cameraPosition, out Vector3 cameraForward, out _))
+                return FoveatedSimulationTier.Active;
+
+            return ResolveTierForPosition(runtimePosition, cameraPosition, cameraForward, activeDistance, frozenDistance);
+        }
+
+        public void LockTier0(uint entityHash, ushort entityId, float seconds)
+        {
+            float lockUntil = Time.time + math.max(seconds, Tier0CombatLockSeconds);
+            for (int i = 0; i < _targetCount; i++)
+            {
+                bool hashMatch = entityHash != 0u && _entityHashes[i] == entityHash;
+                bool idMatch = entityId != 0 && _entityIds[i] == entityId;
+                if (!hashMatch && !idMatch)
+                    continue;
+
+                _tier0LockUntilTimes[i] = math.max(_tier0LockUntilTimes[i], lockUntil);
+                _simTiers[i] = FoveatedSimulationTier.Active;
+                _tickRates[i] = FoveatedTickRate.Center60Hz;
+                _tickIntervals[i] = CenterTickIntervalSeconds;
+                _tickAccumulators[i] = CenterTickIntervalSeconds;
+                _forceImmediateImportanceRefresh = true;
+            }
         }
 
         public void RegisterTarget(IFoveatedSimulationTarget target)
@@ -321,6 +386,10 @@ namespace Hecton8.Core
             _dopplerAudioSources[index] = target.DopplerAudioSource;
             _tickIntervals[index] = CenterTickIntervalSeconds;
             _tickRates[index] = FoveatedTickRate.Center60Hz;
+            _simTiers[index] = FoveatedSimulationTier.Active;
+            _entityHashes[index] = target.FoveatedEntityHash;
+            _entityIds[index] = target.FoveatedEntityId;
+            _tier0LockUntilTimes[index] = 0.0f;
             _tickAccumulators[index] = CenterTickIntervalSeconds;
             _lastTickDeltas[index] = CenterTickIntervalSeconds;
             _importanceScores[index] = 1.0f;
@@ -337,6 +406,8 @@ namespace Hecton8.Core
                 audioSource.dopplerLevel = 0.0f;
 
             target.OnFoveatedCadenceResolved(FoveatedTickRate.Center60Hz, CenterTickIntervalSeconds, 1.0f, true);
+            target.OnFoveatedTierResolved(FoveatedSimulationTier.Active, 0.0f, false);
+            _forceImmediateImportanceRefresh = true;
             _visualTargetCacheDirty = true;
             EnsureNativeBuffersAllocated();
         }
@@ -368,6 +439,10 @@ namespace Hecton8.Core
                 _tickIntervals[removedIndex] = _tickIntervals[lastIndex];
                 _lastTickDeltas[removedIndex] = _lastTickDeltas[lastIndex];
                 _tickRates[removedIndex] = _tickRates[lastIndex];
+                _simTiers[removedIndex] = _simTiers[lastIndex];
+                _entityHashes[removedIndex] = _entityHashes[lastIndex];
+                _entityIds[removedIndex] = _entityIds[lastIndex];
+                _tier0LockUntilTimes[removedIndex] = _tier0LockUntilTimes[lastIndex];
                 _framesSinceTickRateChange[removedIndex] = _framesSinceTickRateChange[lastIndex];
 
                 if (swappedTarget != null)
@@ -377,6 +452,7 @@ namespace Hecton8.Core
             ClearSlot(lastIndex);
             _targetCount = lastIndex;
             target.FoveatedTargetIndex = -1;
+            _forceImmediateImportanceRefresh = true;
             _visualTargetCacheDirty = true;
         }
 
@@ -384,11 +460,13 @@ namespace Hecton8.Core
         {
             TryCompleteFrameJobsInternal(true, forceComplete: false);
             EnsureNativeBuffersAllocated();
+            ConsumeCameraSignals();
+            _importanceAccumulator += math.max(frameDeltaTime, 0.0f);
 
             if (!_deferredRaycastScheduled && _deferredRaycastCommands.IsCreated)
                 _deferredRaycastCommands.Clear();
 
-            if (!TryResolveViewCamera(frameDeltaTime))
+            if (!TryResolveViewCamera(frameDeltaTime) && !_hasSignalCameraPose)
                 return;
 
             TryResolveListener(frameDeltaTime);
@@ -524,7 +602,10 @@ namespace Hecton8.Core
                 }
             }
 
-            if (!_importanceScheduled)
+            ApplyCombatDamageSignals();
+            bool shouldRefreshImportance = _forceImmediateImportanceRefresh ||
+                                           _importanceAccumulator >= ImportanceEvaluationIntervalSeconds;
+            if (!_importanceScheduled && shouldRefreshImportance)
                 ScheduleImportanceScoringJob();
         }
 
@@ -635,6 +716,10 @@ namespace Hecton8.Core
             Array.Clear(_tickIntervals, 0, _tickIntervals.Length);
             Array.Clear(_lastTickDeltas, 0, _lastTickDeltas.Length);
             Array.Clear(_tickRates, 0, _tickRates.Length);
+            Array.Clear(_simTiers, 0, _simTiers.Length);
+            Array.Clear(_entityHashes, 0, _entityHashes.Length);
+            Array.Clear(_entityIds, 0, _entityIds.Length);
+            Array.Clear(_tier0LockUntilTimes, 0, _tier0LockUntilTimes.Length);
             Array.Clear(_framesSinceTickRateChange, 0, _framesSinceTickRateChange.Length);
             Array.Clear(_visualTargetIndices, 0, _visualTargetIndices.Length);
             Array.Clear(_deferredRaycastOwners, 0, _deferredRaycastOwners.Length);
@@ -659,6 +744,20 @@ namespace Hecton8.Core
             _lastDeferredRaycastScheduleFrame = -1;
             _voxelTeardownBackpressureActive = false;
             _voxelTeardownBackpressurePendingCount = 0;
+            _forceImmediateImportanceRefresh = false;
+            _hasSignalCameraPose = false;
+            _blackBoxDumped = false;
+            _frozenEntityCount = 0;
+            _tier0Count = 0;
+            _tier1Count = 0;
+            _tier2Count = 0;
+            _telemetryCursor = 0;
+            _importanceAccumulator = 0.0f;
+            _activeDistanceMeters = DefaultActiveDistanceMeters;
+            _frozenDistanceMeters = DefaultFrozenDistanceMeters;
+            _signalCameraPosition = Vector3.zero;
+            _signalCameraForward = Vector3.forward;
+            _signalCameraUp = Vector3.up;
             _visualTransformArray = Array.Empty<Transform>();
         }
 
@@ -679,10 +778,18 @@ namespace Hecton8.Core
                 _lastListenerPosition -= shiftOffset;
 
             _visualTargetCacheDirty = true;
+            _forceImmediateImportanceRefresh = true;
+            _importanceAccumulator = ImportanceEvaluationIntervalSeconds;
+            if (_targetCount > 0 && !_importanceScheduled && TryResolveScoringCamera(out _, out _, out _))
+            {
+                ScheduleImportanceScoringJob();
+                TryCompleteFrameJobsInternal(false, forceComplete: true);
+            }
         }
 
         public void Dispose()
         {
+            GlobalRegistry.UnregisterFoveatedSimulationDirector(this);
             if (_originShiftListenerRegistered)
             {
                 HectonFloatingOrigin.UnregisterListener(this);
@@ -714,10 +821,11 @@ namespace Hecton8.Core
 
         private void ScheduleImportanceScoringJob()
         {
-            if (_cameraTransform == null || _targetCount <= 0)
+            if (_targetCount <= 0 || !TryResolveScoringCamera(out Vector3 cameraPosition, out Vector3 cameraForward, out Vector3 cameraUp))
                 return;
 
             EnsureNativeBuffersAllocated();
+            ResolveScalabilityThresholds(out _activeDistanceMeters, out _frozenDistanceMeters);
 
             for (int i = 0; i < _targetCount; i++)
             {
@@ -730,20 +838,34 @@ namespace Hecton8.Core
             ImportanceScoringJob scoringJob = new ImportanceScoringJob
             {
                 Positions = _jobScorePositions,
+                EntityAups = _jobEntityAups,
                 ImportanceScores = _jobImportanceScores,
                 TickRateCodes = _jobTickRateCodes,
                 InsideFrustumFlags = _jobInsideFrustumFlags,
-                CameraPosition = _cameraTransform.position,
-                CameraForward = _cameraTransform.forward,
-                CameraUp = _cameraTransform.up,
+                EntitySimTiers = _jobEntitySimTiers,
+                DistancesMeters = _jobDistancesMeters,
+                CameraPosition = cameraPosition,
+                CameraForward = cameraForward,
+                CameraUp = cameraUp,
+                ActiveDistanceMeters = _activeDistanceMeters,
+                FrozenDistanceMeters = _frozenDistanceMeters,
+                FrustumForwardDotThreshold = FrustumForwardDotThreshold,
             };
 
             _importanceHandle = scoringJob.Schedule(_targetCount, ImportanceScoreBatchSize);
             _importanceScheduled = true;
+            _importanceAccumulator = 0.0f;
+            _forceImmediateImportanceRefresh = false;
         }
 
         private void ApplyImportanceResults()
         {
+            _tier0Count = 0;
+            _tier1Count = 0;
+            _tier2Count = 0;
+            _frozenEntityCount = 0;
+            TryResolveScoringCamera(out Vector3 cameraPosition, out Vector3 cameraForward, out _);
+            float now = Time.time;
             for (int i = 0; i < _targetCount; i++)
             {
                 IFoveatedSimulationTarget target = _targets[i];
@@ -752,14 +874,26 @@ namespace Hecton8.Core
 
                 float importanceScore = _jobImportanceScores[i];
                 FoveatedTickRate resolvedTickRate = (FoveatedTickRate)_jobTickRateCodes[i];
+                FoveatedSimulationTier resolvedTier = (FoveatedSimulationTier)_jobEntitySimTiers[i];
+                float distanceMeters = _jobDistancesMeters[i];
+                bool tier0Locked = _tier0LockUntilTimes[i] > now;
+                if (tier0Locked)
+                {
+                    resolvedTier = FoveatedSimulationTier.Active;
+                    resolvedTickRate = FoveatedTickRate.Center60Hz;
+                    importanceScore = 1.0f;
+                }
+
                 FoveatedTickRate currentTickRate = _tickRates[i];
-                bool immediateRearDemotion = _jobInsideFrustumFlags[i] == 0 &&
-                                             (int)resolvedTickRate >= (int)FoveatedTickRate.Rear5Hz;
-                if (!immediateRearDemotion &&
+                bool freezeTransition = resolvedTier == FoveatedSimulationTier.Frozen ||
+                                        _simTiers[i] == FoveatedSimulationTier.Frozen;
+                if (!tier0Locked &&
+                    !freezeTransition &&
                     math.abs((int)resolvedTickRate - (int)currentTickRate) == 1 &&
                     _framesSinceTickRateChange[i] < CadenceHysteresisFrames)
                 {
                     resolvedTickRate = currentTickRate;
+                    resolvedTier = _simTiers[i];
                 }
 
                 if (resolvedTickRate != currentTickRate)
@@ -772,11 +906,22 @@ namespace Hecton8.Core
                     _framesSinceTickRateChange[i]++;
                 }
 
+                _simTiers[i] = resolvedTier;
                 _importanceScores[i] = importanceScore;
                 _tickIntervals[i] = ResolveTickInterval(_tickRates[i]);
                 _tickAccumulators[i] = math.min(_tickAccumulators[i], _tickIntervals[i]);
                 target.OnFoveatedCadenceResolved(_tickRates[i], _tickIntervals[i], importanceScore, _jobInsideFrustumFlags[i] != 0);
+                target.OnFoveatedTierResolved(resolvedTier, distanceMeters, tier0Locked);
+                AccumulateTierCount(resolvedTier);
+                if (resolvedTier == FoveatedSimulationTier.Frozen &&
+                    distanceMeters > FrozenWrapDistanceMeters &&
+                    target.TryHandleFoveatedFrozenWrap(cameraPosition, cameraForward, distanceMeters))
+                {
+                    _forceImmediateImportanceRefresh = true;
+                }
             }
+
+            WriteTelemetryFrame(cameraPosition, cameraForward);
         }
 
         private void UpdateDopplerProtection()
