@@ -886,6 +886,7 @@ Static inventory:
 - Binary scene string scans found PDA tab component strings in `02_HECTON_WORLD.unity` and `03_HECTON_WORLD_CREST5.unity`.
 - `DiegeticPDAController.cs` calls `PlayerPDA.ConfigureUI(...)`, but static scene/prefab scans did not find the `DiegeticPDAController` class string or MonoScript GUID `8f05da9f4a7a4158a04d6cc0e0f9d8c2` in `_Project` scenes/prefabs.
 - `ProgressionRuntimeInstaller` boot-adds `HectonOSBootManager`; `PDARuntimeInstaller` boot-adds exploration/logbook/marker/intrusion systems. Neither installer adds `DiegeticPDAController`.
+- R22 source guard: `PlayerPDA.Open()` now refuses to set `IsOpen` or switch input unless a PDA panel and at least one tab are configured. `ContentSanityValidator` now reports `PlayerPdaHeadlessOpenRisk` when `Player.prefab` has a `PlayerPDA` with no serialized panel and no `DiegeticPDAController` bridge.
 - `Player.prefab` still contains multiple dev/smoke components with `runOnStart: 0`. That is lower risk than active provisioning, but it is production-prefab contamination.
 - `WorldShippingContentFilter` suppresses trial/staging scene hierarchies such as `Tool_Staging`, `Fabrication_Trial`, and `Tool_TrialRange`; static source does not show it stripping player-attached `ToolLoadoutProvisioner` or smoke components.
 
@@ -906,7 +907,7 @@ Risk:
 - R18 removed the immediate hidden-startup-grant defect from `Player.prefab`; static source/prefab proof now shows startup flags `0` and release-build provisioning guard.
 - Remaining provisioning risk is boundary hygiene, not current startup mutation: `ToolLoadoutProvisioner` is still serialized on the canonical player prefab, still carries direct tool/material references, and still allows explicit provisioning in editor/development builds.
 - Shipping cleanup does not strip player-attached `ToolLoadoutProvisioner`; it suppresses named scene hierarchies. That is acceptable after R18 for release mutation risk, but prefab dependency pollution remains.
-- PDA backend and tab content exist, but the bridge is not proven. `PlayerPDA.Open()` can switch to UI input, cursor, depth of field, sound, and events even when `pdaPanel`/tabs are null. Without a mounted/configured shell before input, this is an input/UI trap risk, not a verified PDA UX.
+- PDA backend and tab content exist, but the bridge is not proven. Before R22, `PlayerPDA.Open()` could switch to UI input, cursor, depth of field, sound, and events even when `pdaPanel`/tabs were null. R22 now fails closed instead of opening headless, but visible PDA UX is still not proven.
 - Scene tab strings are positive evidence for authored PDA UI objects, but they do not prove that `PlayerPDA` is connected to them.
 - `LogicSpanner` is partial content: source and metadata exist, but no player acquisition or prefab path was found.
 - Dev/smoke components with `runOnStart: 0` are not hot by default, but they still pollute production-prefab verification and increase the chance of false positives in future smoke/readiness claims.
@@ -917,7 +918,7 @@ Decision:
 - Do not classify the first-hour route as proven from the static fix. R18 removes hidden dev startup grants, but runtime route proof is still absent.
 - Do not call PDA absent; call PDA shell wiring `PENDING VERIFICATION`. The backend, tabs, and installers exist, but the `DiegeticPDAController` bridge placement was not proven statically.
 - Next fix direction should be route proof, not GameObject polish: prove one clean route from empty-ish start -> acquire resource -> unlock/craft/equip scanner -> visible PDA/scan/log/quest update.
-- Add editor validators later for player-prefab dev provisioning, PDA shell bridge presence, `LogicSpanner` orphan content, duplicate/cross-catalog starter materials, and low-tier shared pickup shells that still need high-tier per-resource presentation. R21 covers resource-node yield catalog/worldPrefab/contract gaps in `ContentSanityValidator`.
+- Add editor validators later for player-prefab dev provisioning, `LogicSpanner` orphan content, duplicate/cross-catalog starter materials, and low-tier shared pickup shells that still need high-tier per-resource presentation. R21 covers resource-node yield catalog/worldPrefab/contract gaps in `ContentSanityValidator`; R22 covers the headless `PlayerPDA` shell/bridge tripwire.
 
 ## AI / Fauna Data vs Runtime Wiring Addendum
 

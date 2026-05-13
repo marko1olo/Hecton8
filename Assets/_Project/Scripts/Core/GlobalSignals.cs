@@ -1135,6 +1135,8 @@ namespace Hecton8.Core
             ValidateSignalPayload<AcousticPingSignal>(64);
             ValidateSignalPayload<MovementAcousticSignal>(64);
             ValidateSignalPayload<SwarmDispersedSignal>(64);
+            ValidateSignalSize<SectorHydratedSignal>(64);
+            ValidateSignalSize<SectorDehydratedSignal>(64);
             ValidateSignalSize<SonarPingSignal>(64);
             ValidateSignalPayload<HypoxiaSignal>(32);
             ValidateSignalSize<OxygenCriticalSignal>(32);
@@ -2222,6 +2224,10 @@ namespace Hecton8.Core
             SignalBus<StreamingTurbulenceSignal>.EnsureInitialized();
             SignalBus<SwarmDispersedSignal>.Configure(SwarmDispersedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SwarmDispersedSignal)));
             SignalBus<SwarmDispersedSignal>.EnsureInitialized();
+            SignalBus<SectorHydratedSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(SectorHydratedSignal)));
+            SignalBus<SectorHydratedSignal>.EnsureInitialized();
+            SignalBus<SectorDehydratedSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(SectorDehydratedSignal)));
+            SignalBus<SectorDehydratedSignal>.EnsureInitialized();
             SignalBus<InventoryCommandSignal>.Configure(InventoryCommandSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(InventoryCommandSignal)));
             SignalBus<InventoryCommandSignal>.EnsureInitialized();
             SignalBus<InventoryChangedSignal>.Configure(InventoryChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(InventoryChangedSignal)));

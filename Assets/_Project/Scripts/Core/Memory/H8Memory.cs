@@ -51,7 +51,31 @@ namespace Hecton8.Core.Memory
         Raw = 1 << 1,
         Vault = 1 << 2,
         Alias = 1 << 3,
-        Freed = 1 << 4
+        Freed = 1 << 4,
+        Relocatable = 1 << 5
+    }
+
+    public enum H8BlockState : byte
+    {
+        Free = 0,
+        Occupied = 1
+    }
+
+    /// <summary>
+    /// Native memory-map descriptor for occupied/free regions owned by <see cref="H8Memory"/>.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BlockDescriptor
+    {
+        public IntPtr BasePointer;
+        public long OffsetBytes;
+        public long Bytes;
+        public int OwnerKey;
+        public int Generation;
+        public SystemID Owner;
+        public ushort Flags;
+        public byte State;
+        public byte Reserved;
     }
 
     /// <summary>
@@ -85,6 +109,7 @@ namespace Hecton8.Core.Memory
         private static NativeParallelHashMap<long, SystemID> _allocationOwners;
         private static NativeArray<H8AllocationRecord> _records;
         private static NativeArray<long> _ownerBytes;
+        private static NativeList<BlockDescriptor> _blockDescriptors;
         private static int _recordCount;
         private static long _totalBytes;
         private static long _poolCapBytes = LowTierPoolCapBytes;
@@ -101,6 +126,9 @@ namespace Hecton8.Core.Memory
 
         /// <summary>Total tracked bytes.</summary>
         public static long TotalBytes => _totalBytes;
+
+        /// <summary>Tracked memory-map descriptor count.</summary>
+        public static int BlockDescriptorCount => _blockDescriptors.IsCreated ? _blockDescriptors.Length : 0;
 
         /// <summary>Configured native pool cap in bytes.</summary>
         public static long PoolCapBytes => _poolCapBytes;
@@ -134,6 +162,7 @@ namespace Hecton8.Core.Memory
             _allocationOwners = new NativeParallelHashMap<long, SystemID>(safeCapacity, Allocator.Persistent);
             _records = new NativeArray<H8AllocationRecord>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _ownerBytes = new NativeArray<long>(OwnerByteSlots, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _blockDescriptors = new NativeList<BlockDescriptor>(safeCapacity, Allocator.Persistent);
             _recordCount = 0;
             _totalBytes = 0L;
             _poolCapBytes = poolCapBytes > 0L ? poolCapBytes : LowTierPoolCapBytes;
@@ -377,6 +406,40 @@ namespace Hecton8.Core.Memory
         }
 
         /// <summary>
+        /// Registers or reuses a memory-map descriptor slot. Cold path only.
+        /// </summary>
+        public static int RegisterBlockDescriptor(in BlockDescriptor descriptor)
+        {
+            EnsureInitialized();
+            return RegisterBlockDescriptorNoInit(in descriptor);
+        }
+
+        /// <summary>
+        /// Updates a memory-map descriptor in-place.
+        /// </summary>
+        public static bool TryUpdateBlockDescriptor(int index, in BlockDescriptor descriptor)
+        {
+            if (!_initialized || !_blockDescriptors.IsCreated || (uint)index >= (uint)_blockDescriptors.Length)
+                return false;
+
+            _blockDescriptors[index] = descriptor;
+            return true;
+        }
+
+        /// <summary>
+        /// Reads a memory-map descriptor without allocation.
+        /// </summary>
+        public static bool TryGetBlockDescriptor(int index, out BlockDescriptor descriptor)
+        {
+            descriptor = default;
+            if (!_initialized || !_blockDescriptors.IsCreated || (uint)index >= (uint)_blockDescriptors.Length)
+                return false;
+
+            descriptor = _blockDescriptors[index];
+            return true;
+        }
+
+        /// <summary>
         /// Shuts down tracking tables. Only call from service shutdown after users released their buffers.
         /// </summary>
         public static void Shutdown()
@@ -399,6 +462,8 @@ namespace Hecton8.Core.Memory
                 _records.Dispose();
             if (_ownerBytes.IsCreated)
                 _ownerBytes.Dispose();
+            if (_blockDescriptors.IsCreated)
+                _blockDescriptors.Dispose();
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (_aliasSafetyHandleCreated)
             {
@@ -472,6 +537,7 @@ namespace Hecton8.Core.Memory
 
             _records = newRecords;
             _allocationOwners = newOwners;
+            EnsureBlockDescriptorCapacity(newCapacity);
             return true;
         }
 
@@ -508,6 +574,18 @@ namespace Hecton8.Core.Memory
             int ownerIndex = (int)owner;
             if ((uint)ownerIndex < (uint)_ownerBytes.Length)
                 _ownerBytes[ownerIndex] += bytes;
+
+            RegisterBlockDescriptorNoInit(new BlockDescriptor
+            {
+                BasePointer = pointerValue,
+                OffsetBytes = 0L,
+                Bytes = bytes,
+                OwnerKey = record.AllocationIndex,
+                Generation = 1,
+                Owner = owner,
+                Flags = (ushort)flags,
+                State = (byte)H8BlockState.Occupied
+            });
         }
 
         private static void UnregisterPointer(void* pointer)
@@ -530,6 +608,7 @@ namespace Hecton8.Core.Memory
         {
             H8AllocationRecord record = _records[index];
             _allocationOwners.Remove(record.Pointer.ToInt64());
+            MarkBlockDescriptorFree(record.Pointer, 0L);
             _totalBytes -= record.Bytes;
             int ownerIndex = (int)record.Owner;
             if ((uint)ownerIndex < (uint)_ownerBytes.Length)
@@ -544,6 +623,56 @@ namespace Hecton8.Core.Memory
             }
 
             _records[_recordCount] = default;
+        }
+
+        private static int RegisterBlockDescriptorNoInit(in BlockDescriptor descriptor)
+        {
+            if (!_blockDescriptors.IsCreated)
+                return -1;
+
+            for (int i = 0; i < _blockDescriptors.Length; i++)
+            {
+                BlockDescriptor existing = _blockDescriptors[i];
+                if (existing.Bytes != 0L)
+                    continue;
+
+                _blockDescriptors[i] = descriptor;
+                return i;
+            }
+
+            if (_blockDescriptors.Length >= _blockDescriptors.Capacity)
+                return -1;
+
+            int index = _blockDescriptors.Length;
+            _blockDescriptors.AddNoResize(descriptor);
+            return index;
+        }
+
+        private static void EnsureBlockDescriptorCapacity(int requiredCapacity)
+        {
+            if (!_blockDescriptors.IsCreated || requiredCapacity <= _blockDescriptors.Capacity)
+                return;
+
+            _blockDescriptors.Capacity = requiredCapacity;
+        }
+
+        private static void MarkBlockDescriptorFree(IntPtr basePointer, long offsetBytes)
+        {
+            if (!_blockDescriptors.IsCreated || basePointer == IntPtr.Zero)
+                return;
+
+            for (int i = _blockDescriptors.Length - 1; i >= 0; i--)
+            {
+                BlockDescriptor descriptor = _blockDescriptors[i];
+                if (descriptor.BasePointer != basePointer || descriptor.OffsetBytes != offsetBytes)
+                    continue;
+
+                descriptor.State = (byte)H8BlockState.Free;
+                descriptor.Flags |= (ushort)H8AllocationFlags.Freed;
+                descriptor.Generation++;
+                _blockDescriptors[i] = descriptor;
+                return;
+            }
         }
     }
 }

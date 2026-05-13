@@ -4848,6 +4848,12 @@ namespace Hecton8.Bootstrap
         }
 
         /// <inheritdoc />
+        public bool QueueHullStressSignal(in HullStressSignal signal)
+        {
+            return false;
+        }
+
+        /// <inheritdoc />
         public void PlayStatic2D(AudioClip clip, float volume = 1f)
         {
         }

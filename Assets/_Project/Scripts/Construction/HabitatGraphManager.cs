@@ -790,15 +790,80 @@ namespace Hecton8.Construction
             _nextAnalyticalLowTierFeedbackTime = now + AnalyticalLowTierFeedbackCooldownSeconds;
             Vector3 worldPosition = new Vector3(center.x, center.y, center.z);
             float safeStress = math.saturate(stress01);
-            ProceduralAudioEvents.RaiseStructuralStressTriggered(
+            float pressureDelta = safeStress;
+            float depthMeters = 0f;
+            if (TryResolveMostStressedRoomPosition(out Vector3 stressedRoomPosition, out float roomStress01, out float roomDepthMeters))
+            {
+                worldPosition = stressedRoomPosition;
+                safeStress = math.max(safeStress, roomStress01);
+                pressureDelta = math.max(pressureDelta, roomStress01);
+                depthMeters = roomDepthMeters;
+            }
+
+            PublishHullStressSignal(
                 worldPosition,
                 safeStress,
+                pressureDelta,
+                depthMeters,
                 1f + (safeStress * StructuralGroanPitchRange));
 
             CameraJuiceSignals.PublishImpact(
                 math.saturate(safeStress * 0.35f),
                 worldPosition,
                 Vector3.zero);
+        }
+
+        private bool TryResolveMostStressedRoomPosition(out Vector3 position, out float stress01, out float depthMeters)
+        {
+            position = default;
+            stress01 = 0f;
+            depthMeters = 0f;
+            if (_moduleBuffer == null || _moduleBuffer.Count <= 0)
+                return false;
+
+            int moduleCount = math.min(math.max(0, _nodeCount), _moduleBuffer.Count);
+            for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
+            {
+                ModuleRecord module = _moduleBuffer[nodeIndex];
+                BaseModule baseModule = module.BaseModule;
+                if (baseModule == null || !baseModule.isActiveAndEnabled)
+                    continue;
+
+                float jointStress01 = math.saturate(baseModule.JointShearStress01);
+                float compressionStress01 = math.saturate(baseModule.PressureCompressionAlpha01);
+                float floodStress01 = _roomWaterLevels.IsCreated && nodeIndex < _roomWaterLevels.Length
+                    ? math.saturate(_roomWaterLevels[nodeIndex])
+                    : 0f;
+                float candidateStress01 = math.max(jointStress01, math.max(compressionStress01, floodStress01));
+                if (!math.isfinite(candidateStress01) || candidateStress01 <= stress01)
+                    continue;
+
+                stress01 = candidateStress01;
+                position = new Vector3(module.Position.x, module.Position.y, module.Position.z);
+                depthMeters = ResolveAnalyticalModuleDepthMeters(module, baseModule);
+            }
+
+            return stress01 > 0f;
+        }
+
+        private static void PublishHullStressSignal(
+            Vector3 worldPosition,
+            float stress01,
+            float pressureDelta,
+            float depthMeters,
+            float pitchScale)
+        {
+            HullStressSignal signal = new HullStressSignal(
+                worldPosition,
+                stress01,
+                pressureDelta,
+                depthMeters,
+                pitchScale);
+            IAudioService audioService = GlobalRegistry.Audio;
+            if (audioService != null && audioService.QueueHullStressSignal(in signal))
+                return;
+
+            ProceduralAudioEvents.RaiseHullStressSignal(in signal);
         }
 
         private void TryFlagAnalyticalIntegrityLeak(int moduleCount, float stress)
@@ -1889,9 +1954,14 @@ namespace Hecton8.Construction
                 Vector3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.StartSocketPosition);
                 Vector3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.EndSocketPosition);
                 Vector3 midpoint = HectonFloatingOrigin.ToRuntimePosition((startAup + endAup) * 0.5f);
-                ProceduralAudioEvents.RaiseStructuralStressTriggered(
+                float depthMeters = math.max(
+                    ResolveAnalyticalModuleDepthMeters(_moduleBuffer[edge.SourceIndex], sourceModule),
+                    ResolveAnalyticalModuleDepthMeters(_moduleBuffer[edge.DestinationIndex], destinationModule));
+                PublishHullStressSignal(
                     midpoint,
                     stress01,
+                    compressionDelta,
+                    depthMeters,
                     1f + (math.saturate(stress01) * StructuralGroanPitchRange));
             }
 

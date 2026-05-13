@@ -1,29 +1,27 @@
-# DOC_AUDIT Log
+# LOG_DOC_AUDIT
 
-## 2026-05-13 - Item Identity / Catalog Validator Hardening
+Agent ID: DOC_AUDIT
+Domain: Documentation + Project Reality Audit
+Status: PENDING VERIFICATION
+
+Previous DOC_AUDIT log history is archived under `Docs/Archive/Batch004/AgentLogs/LOG_DOC_AUDIT.md`.
+
+## 2026-05-13 - PDA Headless Open Guard
 
 What was wrong:
-
-- Active DOC_AUDIT status/rationale/log had been archived into `Docs/Archive/Batch004/`, leaving no active DOC_AUDIT disk memory for new continuation work.
-- R21 closed the static resource-node primary harvest gaps to `0 / 27` missing `worldPrefab` and `0 / 27` non-catalog, but one identity contamination remained: root `Assets/_Project/Data/Items/Data_Copper.asset` and cataloged raw `Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset` both author `stableId: Data_Copper`.
-- Existing docs said a separate duplicate-stable-id validator was still needed.
+- `Player.prefab` still serializes `PlayerPDA` with no panel, no CanvasGroup, and no tab refs.
+- Static scans still did not find `DiegeticPDAController` in `_Project` scenes/prefabs.
+- `PlayerPDA.Open()` could enter PDA-open global state and switch input even when no visible PDA shell existed.
 
 What was done:
+- `PlayerPDA.Open()` now refuses to open unless the PDA has a panel and at least one resolved tab.
+- PDA input-map switches now guard missing/uninitialized `GlobalRegistry.Input`.
+- `ContentSanityValidator` now validates `Player.prefab` for headless PDA risk and reports `PlayerPdaHeadlessOpenRisk` plus bridge warnings.
+- Stable docs were updated to record that this is a static guard, not runtime PDA proof.
 
-- Restarted active DOC_AUDIT status/rationale/log as R22, with Batch004 recorded as archived memory.
-- Patched `Assets/_Project/Scripts/Editor/ContentSanityValidator.cs`.
-- Added validator counters and errors for duplicate `ItemData.PersistentId`, null `ItemCatalog.allItems` entries, duplicate catalog hashes, missing runtime descriptors, and `ItemCatalog` lookup ambiguity.
-- Promoted the new validator boundary to stable/current docs.
+Cinematic cheats used:
+- No new physical UI hierarchy was invented by YAML. The existing diegetic bridge remains the intended physical-presentation route.
+- Missing shell now fails closed instead of pretending a backend state is a visible interface.
 
-Cinematic Cheats used:
-
-- None. This is authored-data validation, not visual simulation.
-
-Exact Microseconds saved:
-
-- 0 us/frame. The changed code is editor-only validation under `#if UNITY_EDITOR`.
-
-Verification:
-
-- Static only: source readback, YAML duplicate scan, and diff checks.
-- No Unity menu execution, Unity import, Console proof, Play Mode, profiler, Addressables build, player build, or runtime route proof was run.
+Exact microseconds saved:
+- 0 us/frame expected hot-path impact. The guard runs only on PDA open/close paths; validator is editor-only. No profiler run was executed.

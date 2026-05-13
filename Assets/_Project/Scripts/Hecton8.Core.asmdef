@@ -14,6 +14,7 @@
         "Hecton8.Environment.Fluids.Contracts",
         "Hecton8.World.Contracts",
         "Hecton8.World.GPR",
+        "Hecton8.AI.Ecology.Migration",
         "Hecton8.Physics.Determinism",
         "Hecton8.Physics.CCD",
         "Hecton8.Physics.Tethers.Contracts",

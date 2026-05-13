@@ -1,0 +1,20 @@
+{
+    "name": "Hecton8.AI.Ecology.Migration",
+    "rootNamespace": "Hecton8.AI.Ecology.Migration",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.World.Contracts",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

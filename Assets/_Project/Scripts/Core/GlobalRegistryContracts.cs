@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Hecton8.AI.Ecology.Migration;
 using Hecton8.Interaction;
 using Hecton8.SaveSystem;
 using Hecton8.Construction;
@@ -3004,6 +3005,11 @@ namespace Hecton8.Core
         float BiomeHostility01 { get; }
 
         /// <summary>
+        /// Number of abstract macro swarms currently moving biomass through unloaded or data-only sectors.
+        /// </summary>
+        int ActiveMacroSwarmCount { get; }
+
+        /// <summary>
         /// Resolves the sector population sample for the supplied world position.
         /// </summary>
         /// <param name="worldPosition">Runtime-space world position to classify into a 1 km sector.</param>
@@ -3015,6 +3021,16 @@ namespace Hecton8.Core
         /// Resolves normalized 50 m biomass availability used by encounter pacing and flora presentation.
         /// </summary>
         bool TryGetBiomassAvailability(Vector3 worldPosition, out float preyBiomass01, out float predatorBiomass01, out float carryingCapacity01);
+
+        /// <summary>
+        /// Copies active macro swarms into caller-owned native storage for save, radar, and diagnostics consumers.
+        /// </summary>
+        bool TryCopyMacroSwarms(NativeArray<MacroSwarm> destination, out int copiedCount);
+
+        /// <summary>
+        /// Projects active macro swarms into radar ping payloads without exposing ecology storage ownership.
+        /// </summary>
+        bool TryCopyMacroSwarmRadarPings(NativeArray<float4> destination, float3 probeOrigin, float radiusMeters, out int copiedCount);
 
         /// <summary>
         /// Resolves the deterministic apex-presence flag for the sector containing the supplied world position.

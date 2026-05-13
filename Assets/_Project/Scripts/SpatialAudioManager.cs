@@ -1371,6 +1371,22 @@ namespace Hecton8.Audio
             return true;
         }
 
+        public bool QueueHullStressSignal(in HullStressSignal signal)
+        {
+            if (!IsInitialized ||
+                !IsFinite(signal.WorldPosition) ||
+                !math.isfinite(signal.Stress01) ||
+                !math.isfinite(signal.PressureDelta) ||
+                !math.isfinite(signal.DepthMeters) ||
+                math.max(signal.Stress01, math.abs(signal.PressureDelta)) <= 0f)
+            {
+                return false;
+            }
+
+            ProceduralAudioEvents.RaiseHullStressSignal(in signal);
+            return true;
+        }
+
         private bool TryResolveAudioEventClip(uint eventID, out AudioClip clip)
         {
             clip = null;
