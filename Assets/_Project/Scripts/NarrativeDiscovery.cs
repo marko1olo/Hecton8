@@ -51,6 +51,19 @@ namespace Hecton8.Interaction
         [Tooltip("AUP distance radius in meters for automatic narrative discovery.")]
         [SerializeField, Min(0.1f)] private float aupTriggerRadiusMeters = 50f;
 
+        [Header("Spatial Trigger Coupling")]
+        [Tooltip("Optional quest id that must be active before this POI publishes a HUD breadcrumb.")]
+        [SerializeField] private string activeQuestId;
+
+        [Tooltip("Optional biome id emitted as a hash when this POI is triggered.")]
+        [SerializeField] private string biomeSignalId;
+
+        [Tooltip("Optional soundscape profile id emitted as a hash when this POI is triggered.")]
+        [SerializeField] private string soundscapeProfileId;
+
+        [Tooltip("When enabled, this POI can push a diegetic waypoint while its quest is active.")]
+        [SerializeField] private bool publishHudBreadcrumb;
+
         [Tooltip("Disables this object after direct interaction discovery.")]
         [SerializeField] private bool disableAfterDiscovery = true;
 
@@ -61,6 +74,10 @@ namespace Hecton8.Interaction
         private AbsoluteUniversePosition _cachedAup;
         private double _cachedAupTriggerRadiusSq;
         private uint _cachedDiscoveryHash;
+        private uint _cachedQuestHash;
+        private uint _cachedBiomeHash;
+        private uint _cachedSoundscapeHash;
+        private NarrativeSpatialTriggerFlags _cachedSpatialFlags;
         private bool _registeredLifecycle;
         private static int _activeDiscoveryCount;
 
@@ -201,6 +218,34 @@ namespace Hecton8.Interaction
                    radiusSq > 0d;
         }
 
+        internal bool TryGetSpatialTrigger(out NarrativeSpatialTriggerAuthoring trigger)
+        {
+            if (!triggerWhenAupWithinRadius ||
+                !HasValidDiscoveryId ||
+                _cachedDiscoveryHash == 0u ||
+                (uint)aupTriggerBitIndex >= 64u ||
+                _cachedAupTriggerRadiusSq <= 0d)
+            {
+                trigger = default;
+                return false;
+            }
+
+            trigger = new NarrativeSpatialTriggerAuthoring
+            {
+                PositionAup = _cachedAup,
+                RadiusMeters = aupTriggerRadiusMeters,
+                RadiusSq = (float)_cachedAupTriggerRadiusSq,
+                PoiHash = _cachedDiscoveryHash,
+                QuestHash = _cachedQuestHash,
+                BiomeHash = _cachedBiomeHash,
+                SoundscapeHash = _cachedSoundscapeHash,
+                LoreHash = LoreDatabaseManager.ComputeLoreHash(discoveryId),
+                BitIndex = aupTriggerBitIndex,
+                Flags = _cachedSpatialFlags
+            };
+            return true;
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -290,6 +335,40 @@ namespace Hecton8.Interaction
             float safeRadiusMeters = aupTriggerRadiusMeters > 0f ? aupTriggerRadiusMeters : 0f;
             _cachedAupTriggerRadiusSq = (double)safeRadiusMeters * safeRadiusMeters;
             _cachedAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            _cachedQuestHash = ComputeQuestHash(activeQuestId);
+            _cachedBiomeHash = ComputeStableHash(biomeSignalId);
+            _cachedSoundscapeHash = ComputeStableHash(soundscapeProfileId);
+            _cachedSpatialFlags = publishHudBreadcrumb
+                ? NarrativeSpatialTriggerFlags.HudBreadcrumb
+                : NarrativeSpatialTriggerFlags.None;
+        }
+
+        private static uint ComputeQuestHash(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return 0u;
+
+            unchecked
+            {
+                uint hash = LocHash.FnvOffsetBasis;
+                for (int i = 0; i < value.Length; i++)
+                {
+                    ushort current = value[i];
+                    hash ^= (byte)current;
+                    hash *= LocHash.FnvPrime;
+                    hash ^= (byte)(current >> 8);
+                    hash *= LocHash.FnvPrime;
+                }
+
+                return hash;
+            }
+        }
+
+        private static uint ComputeStableHash(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(value));
         }
     }
 }

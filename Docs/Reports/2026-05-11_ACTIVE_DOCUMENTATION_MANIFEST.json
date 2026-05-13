@@ -2,6 +2,12 @@
     "generatedDate":  "2026-05-11",
     "generatedLocalTime":  "2026-05-11 05:21:04 +04:00",
     "status":  "PENDING FINAL UNITY PROOF (DOCS CONTINUATION CORE BUILD PASSED / UNITY MCP NOT RUN)",
+    "docAuditR13Boundary":  {
+                                "date":  "2026-05-13",
+                                "status":  "HISTORICAL SNAPSHOT / SUPERSEDED",
+                                "note":  "Generated manifest preserved for audit trail. May 11 buildState, currentAuthorityReports, counts, sourceCounts, and entries are historical snapshot data only. Earlier DOC_AUDIT checks found the referenced May 11 CodexArtifacts summary/log absent in the current filesystem, so this file must not be used as current compile proof.",
+                                "runtimeProof":  "ABSENT in this manifest; DOC_AUDIT R13 does not promote Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof from this file."
+                            },
     "currentAuthorityReports":  [
                                     "AGENTS.md",
                                     ".agents-skills/README.md",

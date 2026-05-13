@@ -955,6 +955,9 @@ namespace Hecton8.Core
             if (!Application.isPlaying)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core) ? 1 : 0;
         }
 

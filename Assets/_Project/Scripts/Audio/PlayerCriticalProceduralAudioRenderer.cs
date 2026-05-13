@@ -6,6 +6,7 @@ using Hecton8.AI;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Physics;
@@ -108,6 +109,10 @@ namespace Hecton8.Audio
         private const float MinimumMixerWetMixDb = -80f;
         private const float MinimumFilterWetMixDb = -10000f;
         private const float BiquadDenormalBias = 1e-15f;
+        private const int VwsClipSampleCapacity = 262144;
+        private const float VwsPreemptFadeSeconds = 0.05f;
+        private const float VwsRadioLowPassCutoffHertz = 2400f;
+        private const int VwsBitCrushHoldSamples = 5;
         private const float PressureCreakDepthReferenceMeters = 4000f;
         private const float PressureCreakDepthReferenceMetersInv = 0.00025f;
         private const float StructuralBreachAreaReferenceSquareMeters = 12f;
@@ -665,6 +670,23 @@ namespace Hecton8.Audio
         private NativeArray<float> _granularVoiceGain;
         // COLD ALLOC: NativeArray<GranularAudioTelemetryEntry>[300] - granular DSP black-box ring - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<GranularAudioTelemetryEntry> _granularTelemetryRing;
+        // COLD ALLOC: NativeArray<float>[262144] - double-buffered VWS PCM clip lane A - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeArray<float> _vwsClipSamplesA;
+        // COLD ALLOC: NativeArray<float>[262144] - double-buffered VWS PCM clip lane B - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeArray<float> _vwsClipSamplesB;
+        private float[] _vwsClipManagedScratch;
+        private VwsPlaybackState _vwsPlaybackState;
+        private int _vwsPendingBufferIndex = -1;
+        private int _vwsPendingLengthSamples;
+        private int _vwsPendingChannels;
+        private int _vwsPendingWarningId;
+        private int _vwsPendingForcePreempt;
+        private int _vwsPendingRadioDegrade;
+        private int _vwsCancelRequested;
+        private int _vwsCurrentBufferIndex;
+        private int _vwsActive;
+        private int _vwsCurrentWarningId;
+        private float _vwsPendingGain;
         private int _granularTelemetryCursor;
         private int _granularTelemetryDumpRequested;
         private int _granularTelemetryDumped;
@@ -723,6 +745,7 @@ namespace Hecton8.Audio
         private float _thrusterAccelerationTickValue;
         private float _thrusterHeavyCarryTickValue;
         private float _thrusterDiveTickValue;
+        private float _psychoMetricsStressTickValue;
         private float _heartbeatStressTickValue;
         private float _heartbeatOxygenDangerTickValue;
         private float _structuralSnapTickValue;
@@ -830,6 +853,7 @@ namespace Hecton8.Audio
         private int _sabineDelaySamplesC;
         private int _sabineDelaySamplesD;
         private bool _apexHeartbeatThreatActive;
+        private int _lastPlayerStressSignalSequence;
 
         private volatile float _targetHullStressValue;
         private volatile float _targetStructuralHullStressValue;
@@ -1183,6 +1207,23 @@ namespace Hecton8.Audio
             public float Gain;
         }
 
+        private struct VwsPlaybackState
+        {
+            public int Active;
+            public int BufferIndex;
+            public int CursorSample;
+            public int LengthSamples;
+            public int Channels;
+            public int WarningId;
+            public int FadeRemainingSamples;
+            public int FadeTotalSamples;
+            public int RadioDegrade;
+            public int BitCrushHoldCounter;
+            public float Gain;
+            public float RadioLowPassState;
+            public float BitCrushHeldSample;
+        }
+
         private struct TinnitusSynthesisState
         {
             public double Phase;
@@ -1273,6 +1314,92 @@ namespace Hecton8.Audio
         /// True while the player-owned procedural critical-audio renderer is active.
         /// </summary>
         public static bool IsRuntimeInstalled => GlobalRegistry.PlayerCriticalAudio != null;
+
+        /// <summary>
+        /// True when a vocal warning is active in the producer DSP state or pending activation.
+        /// </summary>
+        public bool IsVocalWarningPlaying =>
+            Volatile.Read(ref _vwsActive) != 0 || Volatile.Read(ref _vwsPendingBufferIndex) >= 0;
+
+        /// <summary>
+        /// Current vocal warning byte ID published by the producer DSP path.
+        /// </summary>
+        public byte CurrentVocalWarningId => (byte)math.clamp(Volatile.Read(ref _vwsCurrentWarningId), 0, 255);
+
+        /// <summary>
+        /// Requests an audio-thread-safe cancellation of active and pending vocal warning playback.
+        /// </summary>
+        public void CancelVocalWarningPlayback()
+        {
+            Interlocked.Exchange(ref _vwsPendingBufferIndex, -1);
+            Interlocked.Exchange(ref _vwsCancelRequested, 1);
+        }
+
+        /// <summary>
+        /// Copies one warning clip into the double-buffered procedural VWS PCM lane.
+        /// </summary>
+        /// <param name="warningId">Priority warning byte ID.</param>
+        /// <param name="clip">Source voice clip.</param>
+        /// <param name="gain">Linear voice gain, sanitized to [0, 1].</param>
+        /// <param name="forcePreempt">True when this clip must interrupt the active warning.</param>
+        /// <param name="radioDegrade">True to apply the failing-speaker fake in the DSP path.</param>
+        /// <param name="durationSeconds">Resolved clip duration accepted by the VWS lane.</param>
+        /// <returns>True when the clip was accepted for the producer DSP path.</returns>
+        public bool TrySubmitVocalWarningClip(
+            byte warningId,
+            AudioClip clip,
+            float gain,
+            bool forcePreempt,
+            bool radioDegrade,
+            out float durationSeconds)
+        {
+            durationSeconds = 0f;
+            if (clip == null ||
+                !_buffersInitialized ||
+                !_vwsClipSamplesA.IsCreated ||
+                !_vwsClipSamplesB.IsCreated)
+            {
+                return false;
+            }
+
+            int channelCount = math.max(1, clip.channels);
+            int sourceFrames = math.max(0, clip.samples);
+            long requestedSamples = (long)sourceFrames * channelCount;
+            int totalSamples = requestedSamples > VwsClipSampleCapacity
+                ? VwsClipSampleCapacity
+                : requestedSamples > 0L ? (int)requestedSamples : 0;
+            if (totalSamples <= 0)
+                return false;
+
+            if (!forcePreempt && Volatile.Read(ref _vwsPendingBufferIndex) >= 0)
+                return false;
+
+            _vwsClipManagedScratch ??= new float[VwsClipSampleCapacity]; // COLD ALLOC: float[262144] - VWS Unity AudioClip PCM staging - owner: PlayerCriticalProceduralAudioRenderer
+            if (!clip.GetData(_vwsClipManagedScratch, 0))
+                return false;
+
+            int activeBuffer = Volatile.Read(ref _vwsCurrentBufferIndex);
+            int targetBufferIndex = activeBuffer == 0 ? 1 : 0;
+            NativeArray<float> target = targetBufferIndex == 0 ? _vwsClipSamplesA : _vwsClipSamplesB;
+            if (!target.IsCreated || target.Length < totalSamples)
+                return false;
+
+            for (int i = 0; i < totalSamples; i++)
+                target[i] = _vwsClipManagedScratch[i];
+
+            _vwsPendingLengthSamples = totalSamples;
+            _vwsPendingChannels = channelCount;
+            _vwsPendingWarningId = warningId;
+            _vwsPendingGain = math.isfinite(gain) ? math.saturate(gain) : 0f;
+            _vwsPendingForcePreempt = forcePreempt ? 1 : 0;
+            _vwsPendingRadioDegrade = radioDegrade ? 1 : 0;
+            Interlocked.Exchange(ref _vwsCancelRequested, 0);
+            Interlocked.Exchange(ref _vwsPendingBufferIndex, targetBufferIndex);
+            SignalAudioProducerThread();
+
+            durationSeconds = totalSamples * math.rcp((float)math.max(1, channelCount) * math.max(1, clip.frequency));
+            return true;
+        }
 
         /// <summary>
         /// Exposes the current main-thread sonar tap publish buffer for diegetic cockpit presentation.
@@ -1690,6 +1817,7 @@ namespace Hecton8.Audio
         public void SlowTick()
         {
             TryBindFromBootstrap();
+            UpdatePsychoMetricsHeartbeatCache();
             UpdateApexHeartbeatThreatCache();
 
             if (_boundPlayerTransform == null || playerMovement == null || !playerMovement.IsPlayerSubmerged)
@@ -2001,7 +2129,9 @@ namespace Hecton8.Audio
                    _lowPassOutputHistory1.Length > 0 &&
                    _lowPassOutputHistory2.IsCreated &&
                    _lowPassOutputHistory2.Length > 0 &&
-                   _metallicGrainBank.IsCreated;
+                   _metallicGrainBank.IsCreated &&
+                   _vwsClipSamplesA.IsCreated &&
+                   _vwsClipSamplesB.IsCreated;
         }
 
         private static int ResolveActiveDspVoiceCount(
@@ -3421,7 +3551,8 @@ namespace Hecton8.Audio
                 HandlePredatorKillAudioPing(in info);
             else if (info.Kind == ProceduralAudioPingKind.MeteorBoom)
                 HandleMeteorBoomAudioPing(in info);
-            else if (info.Kind == ProceduralAudioPingKind.MechanicalWhirr)
+            else if (info.Kind == ProceduralAudioPingKind.MechanicalWhirr ||
+                     info.Kind == ProceduralAudioPingKind.AirRelease)
                 HandleMechanicalWhirrAudioPing(in info);
             else if (info.Kind == ProceduralAudioPingKind.LeviathanRoar)
                 HandleLeviathanRoarAudioPing(in info);
@@ -3994,6 +4125,9 @@ namespace Hecton8.Audio
             _granularVoicePlaybackRate = new NativeArray<float>(GranularVoiceCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[16] - SOA granular voice pitch scalars - owner: PlayerCriticalProceduralAudioRenderer
             _granularVoiceGain = new NativeArray<float>(GranularVoiceCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[16] - SOA granular voice gains - owner: PlayerCriticalProceduralAudioRenderer
             _granularTelemetryRing = new NativeArray<GranularAudioTelemetryEntry>(GranularTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<GranularAudioTelemetryEntry>[300] - fixed granular DSP black-box ring - owner: PlayerCriticalProceduralAudioRenderer
+            _vwsClipSamplesA = new NativeArray<float>(VwsClipSampleCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[262144] - VWS PCM clip lane A - owner: PlayerCriticalProceduralAudioRenderer
+            _vwsClipSamplesB = new NativeArray<float>(VwsClipSampleCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[262144] - VWS PCM clip lane B - owner: PlayerCriticalProceduralAudioRenderer
+            _vwsClipManagedScratch ??= new float[VwsClipSampleCapacity]; // COLD ALLOC: float[262144] - VWS AudioClip PCM staging - owner: PlayerCriticalProceduralAudioRenderer
             RegisterNativeBuffers(registerSabineReverbDelay: !retainedSabineReverbDelay);
             BakeCaveConvolutionImpulseResponse(_caveConvolutionImpulse);
             PlayerCriticalMetallicGrainBank.Generate(_metallicGrainBank);
@@ -4028,6 +4162,12 @@ namespace Hecton8.Audio
             _tinnitusSynthesisState = default;
             _leviathanGranularSynthesisState = default;
             _criticalSidechainCompressorState = new CriticalSidechainCompressorState { Gain = 1f };
+            _vwsPlaybackState = default;
+            Interlocked.Exchange(ref _vwsPendingBufferIndex, -1);
+            Interlocked.Exchange(ref _vwsCancelRequested, 0);
+            Volatile.Write(ref _vwsActive, 0);
+            Volatile.Write(ref _vwsCurrentWarningId, 0);
+            Volatile.Write(ref _vwsCurrentBufferIndex, 0);
             _binauralDelayWriteIndex = 0;
             ResetSonarPhaseState(0);
             _buffersInitialized = true;
@@ -4083,6 +4223,8 @@ namespace Hecton8.Audio
             NativeMemorySentinel.RegisterNativeArray(_granularVoicePlaybackRate, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularVoicePlaybackRate), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_granularVoiceGain, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularVoiceGain), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_granularTelemetryRing, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularTelemetryRing), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_vwsClipSamplesA, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_vwsClipSamplesA), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_vwsClipSamplesB, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_vwsClipSamplesB), NativeAllocationLifetime.Session);
         }
 
         private void UnregisterNativeBuffers(bool unregisterSabineReverbDelay)
@@ -4136,6 +4278,8 @@ namespace Hecton8.Audio
             NativeMemorySentinel.UnregisterNativeArray(_granularVoicePlaybackRate);
             NativeMemorySentinel.UnregisterNativeArray(_granularVoiceGain);
             NativeMemorySentinel.UnregisterNativeArray(_granularTelemetryRing);
+            NativeMemorySentinel.UnregisterNativeArray(_vwsClipSamplesA);
+            NativeMemorySentinel.UnregisterNativeArray(_vwsClipSamplesB);
         }
 
         private void DisposeBuffers(bool disposeSabineReverbDelay)
@@ -4237,6 +4381,10 @@ namespace Hecton8.Audio
                 _granularVoiceGain.Dispose();
             if (_granularTelemetryRing.IsCreated)
                 _granularTelemetryRing.Dispose();
+            if (_vwsClipSamplesA.IsCreated)
+                _vwsClipSamplesA.Dispose();
+            if (_vwsClipSamplesB.IsCreated)
+                _vwsClipSamplesB.Dispose();
 
             _hullScratch = default;
             _sonarScratch = default;
@@ -4285,6 +4433,14 @@ namespace Hecton8.Audio
             _granularVoicePlaybackRate = default;
             _granularVoiceGain = default;
             _granularTelemetryRing = default;
+            _vwsClipSamplesA = default;
+            _vwsClipSamplesB = default;
+            _vwsPlaybackState = default;
+            Interlocked.Exchange(ref _vwsPendingBufferIndex, -1);
+            Interlocked.Exchange(ref _vwsCancelRequested, 0);
+            Volatile.Write(ref _vwsActive, 0);
+            Volatile.Write(ref _vwsCurrentWarningId, 0);
+            Volatile.Write(ref _vwsCurrentBufferIndex, 0);
             _granularTelemetryCursor = 0;
             Interlocked.Exchange(ref _granularTelemetryDumpRequested, 0);
             Interlocked.Exchange(ref _granularTelemetryDumped, 0);
@@ -4390,6 +4546,12 @@ namespace Hecton8.Audio
             _tinnitusSynthesisState = default;
             _leviathanGranularSynthesisState = default;
             _criticalSidechainCompressorState = new CriticalSidechainCompressorState { Gain = 1f };
+            _vwsPlaybackState = default;
+            Interlocked.Exchange(ref _vwsPendingBufferIndex, -1);
+            Interlocked.Exchange(ref _vwsCancelRequested, 0);
+            Volatile.Write(ref _vwsActive, 0);
+            Volatile.Write(ref _vwsCurrentWarningId, 0);
+            Volatile.Write(ref _vwsCurrentBufferIndex, 0);
             _audioImpactStressValue = 0f;
             _audioImpactMetallicValue = 0f;
             _audioTinnitusOxygenStressValue = 0f;
@@ -4849,6 +5011,7 @@ namespace Hecton8.Audio
             InteriorFdnReverbSynthesisState interiorFdnState = _interiorFdnReverbSynthesisState;
             TinnitusSynthesisState tinnitusState = _tinnitusSynthesisState;
             LeviathanGranularSynthesisState leviathanState = _leviathanGranularSynthesisState;
+            VwsPlaybackState vwsState = _vwsPlaybackState;
             float enclosureDensityTarget = math.saturate(parameters.EnclosureDensityIndex);
             bool nativeReverbActive = parameters.ReverbDspTier != (int)ReverbDspTier.UnityProfileOnly;
             float sabineFdnSend = parameters.ReverbDspTier == (int)ReverbDspTier.NativeSabine
@@ -4902,8 +5065,10 @@ namespace Hecton8.Audio
                     leviathanLfeAlpha);
                 leviathanState.LfeBypassState = leviathanLfe;
                 float leviathanLfeBypass = leviathanLfe * LeviathanLfeBypassGain * math.saturate(leviathanAggro);
+                float vwsSample = RenderVocalWarningSample(ref vwsState);
                 float criticalSidechain = math.max(math.abs(_hullScratch[frameIndex]), math.abs(_impactEchoScratch[frameIndex]));
                 criticalSidechain = math.max(criticalSidechain, math.abs(_sonarScratch[frameIndex]) * 0.45f);
+                criticalSidechain = math.max(criticalSidechain, math.abs(vwsSample));
                 criticalSidechain = math.max(criticalSidechain, structuralSidechainDrive);
                 float envelopeBlend = criticalSidechain > sidechainState.Envelope
                     ? sidechainAttackBlend
@@ -4914,8 +5079,8 @@ namespace Hecton8.Audio
                     ? sidechainAttackBlend
                     : sidechainReleaseBlend;
                 sidechainState.Gain = math.lerp(sidechainState.Gain, duckGainTarget, gainBlend);
-                float duckedAmbientCurrent = ambientCurrent * sidechainState.Gain;
-                float mixedDry =
+                float duckedAmbientCurrent = ambientCurrent * sidechainState.Gain * (vwsState.Active != 0 ? 0.5f : 1f);
+                float proceduralDry =
                     (_hullScratch[frameIndex] +
                      _sonarScratch[frameIndex] +
                      _impactEchoScratch[frameIndex] +
@@ -4923,6 +5088,7 @@ namespace Hecton8.Audio
                      duckedAmbientCurrent +
                      _bubbleScratch[frameIndex] +
                      leviathanRoar) * _heartbeatDuckScratch[frameIndex];
+                float mixedDry = proceduralDry + vwsSample;
                 float tinnitus =
                     RenderTinnitusSample(ref tinnitusState, tinnitusStress, panicAmbientDull, invSampleRate) +
                     RenderEardrumRuptureTinnitusSample(ref tinnitusState, eardrumRupture, invSampleRate);
@@ -4993,6 +5159,10 @@ namespace Hecton8.Audio
             _interiorFdnReverbSynthesisState = interiorFdnState;
             _tinnitusSynthesisState = tinnitusState;
             _leviathanGranularSynthesisState = leviathanState;
+            _vwsPlaybackState = vwsState;
+            Volatile.Write(ref _vwsActive, vwsState.Active);
+            Volatile.Write(ref _vwsCurrentWarningId, vwsState.WarningId);
+            Volatile.Write(ref _vwsCurrentBufferIndex, vwsState.BufferIndex);
             _criticalSidechainCompressorState = sidechainState;
             _audioAbyssalLowPassMix = endMix;
             _audioAbsoluteDepthMeters = endAbsoluteDepthMeters;
@@ -5000,6 +5170,138 @@ namespace Hecton8.Audio
             _audioEardrumRuptureTinnitusValue = endEardrumRupture;
             _audioLeviathanRoarAggroValue = endLeviathanAggro;
             _audioLeviathanRoarPitchScale = endLeviathanPitchScale;
+        }
+
+        private float RenderVocalWarningSample(ref VwsPlaybackState state)
+        {
+            if (Volatile.Read(ref _vwsCancelRequested) != 0)
+            {
+                Interlocked.Exchange(ref _vwsCancelRequested, 0);
+                Interlocked.Exchange(ref _vwsPendingBufferIndex, -1);
+                state = default;
+                Volatile.Write(ref _vwsActive, 0);
+                Volatile.Write(ref _vwsCurrentWarningId, 0);
+                Volatile.Write(ref _vwsCurrentBufferIndex, 0);
+                return 0f;
+            }
+
+            if (state.Active == 0)
+            {
+                TryActivatePendingVocalWarning(ref state);
+                if (state.Active == 0)
+                    return 0f;
+            }
+            else if (Volatile.Read(ref _vwsPendingBufferIndex) >= 0 &&
+                     Volatile.Read(ref _vwsPendingForcePreempt) != 0 &&
+                     state.FadeRemainingSamples <= 0)
+            {
+                int fadeSamples = math.max(1, (int)(VwsPreemptFadeSeconds * math.max(1, _sampleRate) + 0.5f));
+                state.FadeTotalSamples = fadeSamples;
+                state.FadeRemainingSamples = fadeSamples;
+            }
+
+            if (state.CursorSample >= state.LengthSamples)
+            {
+                state = default;
+                TryActivatePendingVocalWarning(ref state);
+                if (state.Active == 0)
+                    return 0f;
+            }
+
+            NativeArray<float> source = ResolveVwsBuffer(state.BufferIndex);
+            if (!source.IsCreated || state.LengthSamples <= 0)
+            {
+                state = default;
+                return 0f;
+            }
+
+            int channelCount = math.max(1, state.Channels);
+            int baseSample = math.clamp(state.CursorSample, 0, math.min(state.LengthSamples - 1, source.Length - 1));
+            float sample = 0f;
+            int availableChannels = math.min(channelCount, math.min(source.Length - baseSample, state.LengthSamples - baseSample));
+            for (int channel = 0; channel < availableChannels; channel++)
+                sample += source[baseSample + channel];
+
+            sample *= math.rcp((float)math.max(1, availableChannels));
+            sample = math.isfinite(sample) ? sample : 0f;
+            state.CursorSample += channelCount;
+
+            if (state.RadioDegrade != 0)
+                sample = ApplyVwsRadioDegradation(ref state, sample);
+
+            float envelope = 1f;
+            float outputGain = math.isfinite(state.Gain) ? math.saturate(state.Gain) : 0f;
+            bool fadeCompleted = false;
+            if (state.FadeRemainingSamples > 0)
+            {
+                envelope = state.FadeRemainingSamples * math.rcp((float)math.max(1, state.FadeTotalSamples));
+                state.FadeRemainingSamples--;
+                fadeCompleted = state.FadeRemainingSamples <= 0;
+            }
+
+            float output = FastSoftClip(sample * outputGain * envelope);
+            if (fadeCompleted)
+            {
+                state = default;
+                TryActivatePendingVocalWarning(ref state);
+            }
+
+            return output;
+        }
+
+        private bool TryActivatePendingVocalWarning(ref VwsPlaybackState state)
+        {
+            int pendingBuffer = Interlocked.Exchange(ref _vwsPendingBufferIndex, -1);
+            if (pendingBuffer < 0)
+                return false;
+
+            int lengthSamples = math.min(math.max(0, _vwsPendingLengthSamples), VwsClipSampleCapacity);
+            int channels = math.max(1, _vwsPendingChannels);
+            if (lengthSamples <= 0)
+            {
+                state = default;
+                return false;
+            }
+
+            state = new VwsPlaybackState
+            {
+                Active = 1,
+                BufferIndex = pendingBuffer == 0 ? 0 : 1,
+                CursorSample = 0,
+                LengthSamples = lengthSamples,
+                Channels = channels,
+                WarningId = math.clamp(_vwsPendingWarningId, 0, 255),
+                Gain = math.saturate(_vwsPendingGain),
+                RadioDegrade = Volatile.Read(ref _vwsPendingRadioDegrade),
+                FadeRemainingSamples = 0,
+                FadeTotalSamples = 0
+            };
+
+            Volatile.Write(ref _vwsActive, 1);
+            Volatile.Write(ref _vwsCurrentWarningId, state.WarningId);
+            Volatile.Write(ref _vwsCurrentBufferIndex, state.BufferIndex);
+            return true;
+        }
+
+        private NativeArray<float> ResolveVwsBuffer(int bufferIndex)
+        {
+            return bufferIndex == 0 ? _vwsClipSamplesA : _vwsClipSamplesB;
+        }
+
+        private float ApplyVwsRadioDegradation(ref VwsPlaybackState state, float sample)
+        {
+            float alpha = ResolveOnePoleLowPassCoefficient(VwsRadioLowPassCutoffHertz, _sampleRate);
+            float filtered = ApplyOnePoleLowPass(sample, state.RadioLowPassState + BiquadDenormalBias, alpha);
+            state.RadioLowPassState = filtered;
+
+            state.BitCrushHoldCounter--;
+            if (state.BitCrushHoldCounter <= 0)
+            {
+                state.BitCrushHoldCounter = VwsBitCrushHoldSamples;
+                state.BitCrushHeldSample = math.round(filtered * 32f) * 0.03125f;
+            }
+
+            return state.BitCrushHeldSample;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -5631,20 +5933,22 @@ namespace Hecton8.Audio
         private void UpdateSurvivalTargets(float deltaTime)
         {
             float oxygenNormalized = _playerSurvivalSystem != null
-                ? math.saturate(_playerSurvivalSystem.OxygenNormalized)
+                ? math.saturate(FiniteOrDefault(_playerSurvivalSystem.OxygenNormalized, 1f))
                 : 1f;
             float nitrogenWarningRing = _playerSurvivalSystem != null
-                ? math.saturate(_playerSurvivalSystem.NitrogenWarningRinging01)
+                ? math.saturate(FiniteOrZero(_playerSurvivalSystem.NitrogenWarningRinging01))
                 : 0f;
             float nitrogenNarcosis = _playerSurvivalSystem != null
-                ? math.saturate(_playerSurvivalSystem.NitrogenNarcosis01)
+                ? math.saturate(FiniteOrZero(_playerSurvivalSystem.NitrogenNarcosis01))
                 : 0f;
-            float healthStress = _playerHealth != null ? math.saturate(_playerHealth.Stress) : 0f;
+            float healthStress = _playerHealth != null ? math.saturate(FiniteOrZero(_playerHealth.Stress)) : 0f;
             float healthPanicStress = ResolveAscendingNormalized01(
                 healthStress,
                 PanicHeartbeatStressThreshold01,
                 1f);
-            float panicStress = math.max(healthPanicStress, _apexHeartbeatThreatActive ? 1f : 0f);
+            float panicStress = math.max(
+                _psychoMetricsStressTickValue,
+                math.max(healthPanicStress, _apexHeartbeatThreatActive ? 1f : 0f));
             if (oxygenNormalized > HeartbeatBypassOxygenThreshold &&
                 panicStress <= HullNoiseFloor &&
                 nitrogenWarningRing <= HullNoiseFloor &&
@@ -5665,19 +5969,21 @@ namespace Hecton8.Audio
                 HeartbeatCriticalOxygenThreshold,
                 HeartbeatTerminalOxygenThreshold);
             float pressureStress = _playerSurvivalSystem != null
-                ? math.saturate(_playerSurvivalSystem.PressureExposureSeverity01)
+                ? math.saturate(FiniteOrZero(_playerSurvivalSystem.PressureExposureSeverity01))
                 : 0f;
             float thermalStress = _playerSurvivalSystem != null
-                ? math.saturate(_playerSurvivalSystem.ThermalStressSeverity01)
+                ? math.saturate(FiniteOrZero(_playerSurvivalSystem.ThermalStressSeverity01))
                 : 0f;
             float underwaterStress = playerMovement != null
-                ? math.saturate(playerMovement.CurrentUnderwaterStressIntensity01)
+                ? math.saturate(FiniteOrZero(playerMovement.CurrentUnderwaterStressIntensity01))
                 : 0f;
-            float fatalPressure = playerMovement != null ? math.saturate(playerMovement.CurrentFatalPressureSequence01) : 0f;
+            float fatalPressure = playerMovement != null ? math.saturate(FiniteOrZero(playerMovement.CurrentFatalPressureSequence01)) : 0f;
             float stressTarget = math.saturate(math.max(
                 oxygenDanger,
                 math.max(pressureStress, math.max(thermalStress, math.max(underwaterStress, math.max(fatalPressure, panicStress))))));
             float survivalBlendT = ApproximateOneMinusExpNegPositive(6f * math.max(0f, deltaTime));
+            _heartbeatStressTickValue = math.saturate(FiniteOrZero(_heartbeatStressTickValue));
+            _heartbeatOxygenDangerTickValue = math.saturate(FiniteOrZero(_heartbeatOxygenDangerTickValue));
             _heartbeatStressTickValue = math.lerp(_heartbeatStressTickValue, stressTarget, survivalBlendT);
             _heartbeatOxygenDangerTickValue = math.lerp(_heartbeatOxygenDangerTickValue, oxygenDanger, survivalBlendT);
             _targetHeartbeatStressValue = _heartbeatStressTickValue;
@@ -5691,6 +5997,18 @@ namespace Hecton8.Audio
                 nitrogenWarningRing * NitrogenWarningTinnitusGainScale));
             _targetNarcosisChorusValue = nitrogenNarcosis;
             _targetHeartbeatActive = 1;
+        }
+
+        private void UpdatePsychoMetricsHeartbeatCache()
+        {
+            if (!GlobalSignals.TryGetLatestPlayerStressSignal(out PlayerStressSignal signal, out int sequence) ||
+                sequence == _lastPlayerStressSignalSequence)
+            {
+                return;
+            }
+
+            _lastPlayerStressSignalSequence = sequence;
+            _psychoMetricsStressTickValue = math.saturate(FiniteOrZero(signal.Stress01));
         }
 
         private void UpdateApexHeartbeatThreatCache()

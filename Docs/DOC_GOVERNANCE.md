@@ -1,17 +1,27 @@
 ﻿# Documentation Governance
 
-Date: 2026-05-11
+Date: 2026-05-13
 Status: PENDING VERIFICATION
 
 Purpose: prevent workspace documentation from collapsing back into root-level noise.
 
 Current-state boundary:
 
+- 2026-05-13 DOC_AUDIT override: read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using May 11 counters or build-artifact links as current proof.
+- The May 11 `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.*` proof files cited by several docs are absent from the current filesystem. Treat those references as stale until restored or replaced.
+- Current root text scan sees `6` root `.md`, `3` root `.log`, and `3` root `.json` files. Only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md` are active root authority.
+- Current non-anchor root markdown files are not authority: `BROKEN_PREFABS.md` is a generated snapshot, `PROJECT_ATLAS.md` is a compatibility mirror for `Docs/PROJECT_ATLAS.md`, and `TERRAIN_AND_BIOME_REALITY_MAP.md` is a compatibility mirror / stale legacy surface for `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
+- `PROJECT_ATLAS.md` and `Docs/PROJECT_ATLAS.md` are static first-party asmdef graph snapshots only. They are not package/config/runtime authority.
+- 2026-05-13 DOC_AUDIT R7 patched `AGENTS.md` and `.codexrules/AGENTS.md` to current Low URP reality: `URP_Low` uses `Mobile_Renderer` at render scale `0.85`.
+- 2026-05-13 package/player-settings drift is documented in `Docs/PROJECT_STATE_STATIC_XRAY.md` and `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`; manifest cleanliness does not mean asset-tree or PlayerSettings cleanliness.
+- `Docs/не откр.md` was a stale batch-prompt dump and was moved to `Docs/DEPRECATED/Root_Stale_Batch_Prompt_Dumps_2026-05-13/`.
+- Current first-party asmdef scan sees `24` asmdefs under `Assets/_Project`; older `13`, `22`, and `23` asmdef atlas statements are stale.
+- `Docs/PROJECT_STATE_STATIC_XRAY.md` is now a direct `Docs/` root static risk register. It is evidence-guiding documentation, not runtime proof.
 - This file defines documentation placement and authority order only.
 - It is not runtime proof and does not certify that every listed document is current by itself.
 - Long-lived project authority lives in stable docs first. Dated reports are evidence snapshots and counters.
 - Current `.agents-skills` visual-fake doctrine is promoted into `../AGENTS.md`, `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`; `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` is supporting evidence.
-- Current documentation synchronization counters are evidence in `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` and `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`; they do not replace the stable docs.
+- Current documentation synchronization counters are overridden by `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`; `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` and `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` remain historical May 11 evidence and manifest structure, not current numeric truth where May 13 conflicts.
 - Current documentation sorting authority starts at this file plus `Docs/README.md`. `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` and later synchronization reports are evidence for why the sorting changed.
 - Current project truth starts at `../AGENTS.md`, `.agents-skills/README.md`, task-relevant `.agents-skills/*`, `Docs/README.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`, `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`, current source files, and fresh verification logs. Dated reports support these files; they do not outrank them.
 - Current warning-cleanup evidence starts at `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`; current Omega build warning classification is scoped in `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`.
@@ -23,24 +33,25 @@ Current-state boundary:
 3. task-relevant `.agents-skills/*` mandates
 4. `Docs/README.md`
 5. `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`
-6. `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`
-7. `Docs/SYSTEMS_CONTRACTS.md`
-8. `Docs/QUALITY_GATES.md`
-9. `Docs/ARCHITECTURE/README.md`
-10. `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
-11. `Docs/DOC_GOVERNANCE.md`
-12. `Docs/ROOT_DOCS_REFERENCE.md`
-13. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`
-14. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md`
-15. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
-16. current source files
-17. fresh verification logs and artifacts
-18. `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md`
-19. dated reports under `Docs/Reports/` and `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/`
-20. active execution docs under `Docs/`
-21. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
-22. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
-23. archive bundles under `Docs/_Archive/`
+6. `Docs/PROJECT_STATE_STATIC_XRAY.md`
+7. `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`
+8. `Docs/SYSTEMS_CONTRACTS.md`
+9. `Docs/QUALITY_GATES.md`
+10. `Docs/ARCHITECTURE/README.md`
+11. `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
+12. `Docs/DOC_GOVERNANCE.md`
+13. `Docs/ROOT_DOCS_REFERENCE.md`
+14. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`
+15. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md`
+16. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
+17. current source files
+18. fresh verification logs and artifacts
+19. `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md`
+20. dated reports under `Docs/Reports/` and `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/`
+21. active execution docs under `Docs/`
+22. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
+23. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
+24. archive bundles under `Docs/_Archive/`
 
 ## What Belongs In Root
 

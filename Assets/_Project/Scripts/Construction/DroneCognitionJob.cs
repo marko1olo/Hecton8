@@ -44,7 +44,8 @@ namespace Hecton8.Construction
         SolderReserve = 2,
         HostileCount = 3,
         LostToHijack = 4,
-        Count = 5
+        DockingAborts = 5,
+        Count = 6
     }
 
     internal enum HeadlessDroneFactionBit : byte
@@ -88,6 +89,16 @@ namespace Hecton8.Construction
         public quaternion Rotation;
         public quaternion HomeRotation;
         public quaternion DockStartRotation;
+        public float DockingPathLengthMeters;
+        public uint DockingRequestId;
+        public byte DockingFlags;
+        public byte DockingReserved0;
+        public byte DockingReserved1;
+        public byte DockingReserved2;
+        public float3 DockControlP0;
+        public float3 DockControlP1;
+        public float3 DockControlP2;
+        public float3 DockControlP3;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -129,6 +140,10 @@ namespace Hecton8.Construction
             drone.TargetPosition += RuntimeOffset;
             drone.SupplyPosition += RuntimeOffset;
             drone.DockStartPosition += RuntimeOffset;
+            drone.DockControlP0 += RuntimeOffset;
+            drone.DockControlP1 += RuntimeOffset;
+            drone.DockControlP2 += RuntimeOffset;
+            drone.DockControlP3 += RuntimeOffset;
             DroneStates[index] = drone;
 
             if (DroneStateBackBuffer.IsCreated && index < DroneStateBackBuffer.Length)
@@ -165,7 +180,8 @@ namespace Hecton8.Construction
     {
         None = 0,
         Repair = 1,
-        Attack = 2
+        Attack = 2,
+        DockingHatchOpen = 3
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -202,7 +218,14 @@ namespace Hecton8.Construction
         private const float EmergencyBatteryDrainMultiplier = 5f;
         private const float DockingStartDistanceMeters = 2f;
         private const float DockingStartDistanceSq = DockingStartDistanceMeters * DockingStartDistanceMeters;
-        private const float DockingDurationSeconds = 1f;
+        private const float DockingStartForwardMeters = 10f;
+        private const float DockingAirlockForwardMeters = 20f;
+        private const float DockingArrivalSpeedMetersPerSecond = 0.5f;
+        private const float DockingMinimumPathLengthMeters = 1f;
+        private const float DockingHatchOpenT = 0.8f;
+        private const float DockingVisualSlipWeight = 0.25f;
+        private const byte DockingFlagHatchOpenQueued = 1 << 0;
+        private const byte DockingFlagCompleted = 1 << 1;
         private const float RebootDurationSeconds = 2f;
         private const float SpatialCellSize = 2f;
         private const float SpatialCellSizeInv = 0.5f;
@@ -259,6 +282,7 @@ namespace Hecton8.Construction
         public float PhantomFlowVerticalFactor;
         public int PhantomFlowEnabled;
         public float FlowDragCoefficient;
+        public int CrossCurrentVisualSlipEnabled;
 
         public void Execute(int index)
         {
@@ -305,7 +329,7 @@ namespace Hecton8.Construction
 
             if (drone.State == (byte)HeadlessDroneRuntimeState.Docking)
             {
-                TickDocking(ref drone);
+                TickDocking(index, ref drone);
                 WriteOutputs(index, in drone, drone.State == (byte)HeadlessDroneRuntimeState.Completed
                     ? float4x4.zero
                     : BuildRenderMatrix(in drone));
@@ -335,7 +359,7 @@ namespace Hecton8.Construction
             if (drone.State == (byte)HeadlessDroneRuntimeState.Return && distanceSq <= DockingStartDistanceSq)
             {
                 BeginDocking(ref drone);
-                TickDocking(ref drone);
+                TickDocking(index, ref drone);
                 WriteOutputs(index, in drone, drone.State == (byte)HeadlessDroneRuntimeState.Completed
                     ? float4x4.zero
                     : BuildRenderMatrix(in drone));
@@ -689,31 +713,137 @@ namespace Hecton8.Construction
                 : (byte)HeadlessDroneRuntimeState.Wander;
         }
 
-        private void TickDocking(ref HeadlessDroneState drone)
+        private void TickDocking(int index, ref HeadlessDroneState drone)
         {
-            float elapsed = math.min(DockingDurationSeconds, drone.DockingElapsed + math.max(0f, DeltaTime));
-            float t = math.saturate(elapsed * math.rcp(DockingDurationSeconds));
-            quaternion targetRotation = ResolveSafeRotation(drone.HomeRotation);
-            drone.DockingElapsed = elapsed;
-            drone.Position = math.lerp(drone.DockStartPosition, drone.HomePosition, t);
-            drone.Rotation = CinematicMath.FastNlerp(ResolveSafeRotation(drone.DockStartRotation), targetRotation, t);
-            drone.Velocity = float3.zero;
+            if (drone.DockingPathLengthMeters < DockingMinimumPathLengthMeters ||
+                !IsFinite(drone.DockControlP0) ||
+                !IsFinite(drone.DockControlP1) ||
+                !IsFinite(drone.DockControlP2) ||
+                !IsFinite(drone.DockControlP3))
+            {
+                PrepareDockingSpline(ref drone);
+            }
+
+            float progress = math.saturate(drone.DockingElapsed);
+            float cubicT = progress * progress * progress;
+            float speed = math.lerp(
+                math.max(DockingArrivalSpeedMetersPerSecond, drone.MaxSpeed),
+                DockingArrivalSpeedMetersPerSecond,
+                cubicT);
+            float pathLength = math.max(DockingMinimumPathLengthMeters, drone.DockingPathLengthMeters);
+            float t = math.saturate(progress + (math.max(0f, DeltaTime) * speed * math.rcp(pathLength)));
+            EvaluateDockingBezier(in drone, t, out float3 targetPosition, out float3 tangent);
+
+            drone.DockingElapsed = t;
+            drone.Position = targetPosition;
+            drone.Velocity = tangent * speed;
+            drone.Rotation = ResolveDockingVisualRotation(in drone, tangent, targetPosition);
+
+            if (t >= DockingHatchOpenT && (drone.DockingFlags & DockingFlagHatchOpenQueued) == 0)
+            {
+                EnqueueDockingHatchOpenCommand(index, in drone, t);
+                drone.DockingFlags |= DockingFlagHatchOpenQueued;
+            }
 
             if (t < 1f)
                 return;
 
             drone.Position = drone.HomePosition;
-            drone.Rotation = targetRotation;
+            drone.Rotation = ResolveSafeRotation(drone.HomeRotation);
+            drone.Velocity = float3.zero;
+            drone.DockingElapsed = 1f;
+            drone.DockingFlags |= DockingFlagCompleted;
             drone.State = (byte)HeadlessDroneRuntimeState.Completed;
         }
 
-        private static void BeginDocking(ref HeadlessDroneState drone)
+        internal static void BeginDocking(ref HeadlessDroneState drone)
         {
             drone.DockingElapsed = 0f;
             drone.DockStartPosition = drone.Position;
             drone.DockStartRotation = ResolveSafeRotation(drone.Rotation);
+            drone.DockingFlags = 0;
+            PrepareDockingSpline(ref drone);
             drone.Velocity = float3.zero;
             drone.State = (byte)HeadlessDroneRuntimeState.Docking;
+        }
+
+        internal static void PrepareDockingSpline(ref HeadlessDroneState drone)
+        {
+            quaternion startRotation = ResolveSafeRotation(drone.DockStartRotation);
+            quaternion targetRotation = ResolveSafeRotation(drone.HomeRotation);
+            float3 startForward = SafeNormalize(math.mul(startRotation, new float3(0f, 0f, 1f)), new float3(0f, 0f, 1f));
+            float3 airlockForward = SafeNormalize(math.mul(targetRotation, new float3(0f, 0f, 1f)), new float3(0f, 0f, 1f));
+
+            drone.DockControlP0 = IsFinite(drone.DockStartPosition) ? drone.DockStartPosition : drone.Position;
+            drone.DockControlP1 = drone.DockControlP0 + (startForward * DockingStartForwardMeters);
+            drone.DockControlP2 = drone.HomePosition + (airlockForward * DockingAirlockForwardMeters);
+            drone.DockControlP3 = drone.HomePosition;
+
+            float estimate =
+                math.distance(drone.DockControlP0, drone.DockControlP1) +
+                math.distance(drone.DockControlP1, drone.DockControlP2) +
+                math.distance(drone.DockControlP2, drone.DockControlP3);
+            drone.DockingPathLengthMeters = math.max(DockingMinimumPathLengthMeters, estimate);
+        }
+
+        private void EnqueueDockingHatchOpenCommand(int index, in HeadlessDroneState drone, float t)
+        {
+            if (ServiceQueueEnabled == 0)
+                return;
+
+            ServiceCommands.Enqueue(new DroneServiceCommand
+            {
+                Slot = index,
+                DroneId = drone.DroneId,
+                Kind = (byte)DroneServiceCommandKind.DockingHatchOpen,
+                State = drone.State,
+                Reserved = 0,
+                DeltaTime = t,
+                Position = drone.Position,
+                TargetPosition = drone.HomePosition
+            });
+        }
+
+        private quaternion ResolveDockingVisualRotation(in HeadlessDroneState drone, float3 tangent, float3 position)
+        {
+            float3 visualForward = tangent;
+            if (CrossCurrentVisualSlipEnabled != 0)
+            {
+                float3 flowVelocity = ResolveFlowVelocity(position);
+                float3 crossCurrent = flowVelocity - (tangent * math.dot(flowVelocity, tangent));
+                float crossLengthSq = math.lengthsq(crossCurrent);
+                if (math.isfinite(crossLengthSq) && crossLengthSq > MinimumVectorLengthSq)
+                {
+                    float slip = math.saturate(math.sqrt(crossLengthSq) * DockingVisualSlipWeight);
+                    visualForward = SafeNormalize(tangent + (SafeNormalize(crossCurrent, tangent) * slip), tangent);
+                }
+            }
+
+            return quaternion.LookRotationSafe(visualForward, math.up());
+        }
+
+        private static void EvaluateDockingBezier(in HeadlessDroneState drone, float t, out float3 position, out float3 tangent)
+        {
+            float clampedT = math.saturate(t);
+            float oneMinusT = 1f - clampedT;
+            float oneMinusT2 = oneMinusT * oneMinusT;
+            float t2 = clampedT * clampedT;
+            float3 p0 = drone.DockControlP0;
+            float3 p1 = drone.DockControlP1;
+            float3 p2 = drone.DockControlP2;
+            float3 p3 = drone.DockControlP3;
+
+            position =
+                (oneMinusT2 * oneMinusT * p0) +
+                (3f * oneMinusT2 * clampedT * p1) +
+                (3f * oneMinusT * t2 * p2) +
+                (t2 * clampedT * p3);
+
+            float3 derivative =
+                (3f * oneMinusT2 * (p1 - p0)) +
+                (6f * oneMinusT * clampedT * (p2 - p1)) +
+                (3f * t2 * (p3 - p2));
+            tangent = SafeNormalize(derivative, SafeNormalize(drone.HomePosition - drone.DockStartPosition, new float3(0f, 0f, 1f)));
         }
 
         private static float4x4 BuildRenderMatrix(in HeadlessDroneState drone)

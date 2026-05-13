@@ -2,6 +2,17 @@
 
 ## [Tools v1] — Tool System ENTERPRISE v1.0
 
+## CURRENT STATUS OVERRIDE - 2026-05-13 DOC_AUDIT R5
+
+This file is a historical short changelog, not current source authority.
+
+- `SaveData.CurrentVersion` is `68`, not `2`.
+- `toolDurabilityMap` and `toolBrokenMap` are plain `Dictionary<string, float>` / `Dictionary<string, bool>` fields in `Assets/_Project/Scripts/SaveData.cs`.
+- Save serialization goes through `SaveBinaryPayloadCodec`; the current source scan found no ES3 dictionary wrapper type.
+- `ToolDurabilitySystem` exists under `Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs` and mirrors durability into those save dictionaries.
+- `ToolHUDPanel.cs` was not found under `Assets/_Project/Scripts` in the R5 path scan; treat the old HUD entry below as historical until a current UI owner is verified.
+- Easy Save 3 is forbidden as a current backend. Its physical plugin folder still exists under `Assets/Plugins/Easy Save 3` and is asset contamination, not approved usage.
+
 ### ToolHUDPanel.cs v2.0 ENTERPRISE (novyy)
 - **Durability bar:** vizualnaya shkala iznosa s tsvetovoy indikatsiey (good/warning/critical/broken)
 - **Upgrade slots display:** pokazyvaet ustanovlennye uluchsheniya (do 3 slotov, ikonki)
@@ -41,10 +52,11 @@
 - **Save/Load:** SavePriority=20, sohranyaet durability i broken maps
 - **Zero GC:** pre-allocated dictionaries (capacity 32), cached references
 
-### SaveData v2.0 ENTERPRISE
-- **Tool persistence:** toolDurabilityMap (ES3SerializableDictionary<string, float>)
-- **Broken tools:** toolBrokenMap (ES3SerializableDictionary<string, bool>)
-- **Version:** CurrentVersion = 2 (inkrementirovan dlya migratsii)
+### SaveData current reality - DOC_AUDIT R5
+- **Tool persistence:** `toolDurabilityMap` (`Dictionary<string, float>`)
+- **Broken tools:** `toolBrokenMap` (`Dictionary<string, bool>`)
+- **Version:** `CurrentVersion = 68`
+- **Serialization:** `SaveBinaryPayloadCodec`, not ES3
 
 **Kak ispolzovat:**
 1. Sozdat ToolMetadata asset: Assets → Create → Hecton8 → Tools → Tool Metadata

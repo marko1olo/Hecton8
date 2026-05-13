@@ -64,7 +64,7 @@ If you change a field in `AbsoluteUniversePosition` (e.g., `CellSizeMeters`, pac
 
 | # | System | File | Dependency Type | Failure Mode if AUP Changes |
 |---|--------|------|-----------------|---------------------------|
-| 25 | **KinematicGhostDebugger** | `Editor/KinematicGhostDebugger.cs` | `ToAbsoluteUniversePosition()` for ghost trail history. | Editor debug visualization shows wrong trail â†’ misleading physics debug. |
+| 25 | **KinematicGhostDebugger** | `Assets/_Project/Scripts/Editor/KinematicGhostDebugger.cs` | `ToAbsoluteUniversePosition()` for ghost trail history. | Editor debug visualization shows wrong trail â†’ misleading physics debug. |
 | 26 | **HectonCrestOceanDepthCacheBootstrap** | `HectonCrestOceanDepthCacheBootstrap.cs` | `ResolveAbsoluteUniversePoint()` for ocean depth sampling. | Depth cache samples wrong world points â†’ underwater fog/visibility incorrect. |
 | 27 | **SargassumGlobalDragManager** | `SargassumGlobalDragManager.cs` | `FromRuntimePosition()` for external scavenger site AUP. | External sites quantize to wrong chunks â†’ POI markers drift. |
 

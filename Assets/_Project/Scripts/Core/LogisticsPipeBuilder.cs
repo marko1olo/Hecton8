@@ -8,7 +8,8 @@ namespace Hecton8.Core
     internal enum PipeRenderFlags : byte
     {
         None = 0,
-        MaskRuptured = 1 << 0
+        MaskRuptured = 1 << 0,
+        MaskHasFluidFlow = 1 << 1
     }
 
     internal enum PipeVisualLod : byte
@@ -27,6 +28,7 @@ namespace Hecton8.Core
         public float3 EndForward;
         public float Radius;
         public float RuptureStartTimeSeconds;
+        public float FlowScalar;
         public PipeRenderFlags Flags;
     }
 
@@ -52,6 +54,7 @@ namespace Hecton8.Core
                 EndForward = -chordDirection,
                 Radius = math.max(0.001f, radius),
                 RuptureStartTimeSeconds = 0f,
+                FlowScalar = 0f,
                 Flags = flags
             };
         }
@@ -73,6 +76,7 @@ namespace Hecton8.Core
                 EndForward = SafeNormalize(endForward, -chordDirection),
                 Radius = math.max(0.001f, radius),
                 RuptureStartTimeSeconds = 0f,
+                FlowScalar = 0f,
                 Flags = flags
             };
         }

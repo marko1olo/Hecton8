@@ -51,3 +51,14 @@ Ultra: 256 MB / 4 ms unless a Player capture proves more headroom.
 Expected gain: lower texture upload hitches and fewer upload-buffer resize events on i3/MX350.
 
 Claimed microseconds saved: PENDING PLAYER PROFILER. No runtime capture was produced by this mandate pass.
+
+---
+
+## Engineering Data
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| Hot path | 0 B GC, no unbounded main-thread work | Profiler/GCMonitor/static scan |
+| MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
+| Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
+| Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |

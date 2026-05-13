@@ -33,6 +33,7 @@ namespace Hecton8.Modding
         private bool _serviceRegistered;
         private bool _serviceShuttingDown;
         private bool _serviceShutdownComplete;
+        private bool _bootstrapListenerRegistered;
 
         /// <summary>
         /// Save order for mod world payloads.
@@ -71,7 +72,12 @@ namespace Hecton8.Modding
                 return;
 
             SceneManager.sceneLoaded += HandleSceneLoaded;
-            GameBootstrapper.Register(this);
+            if (!_bootstrapListenerRegistered)
+            {
+                GameBootstrapper.Register(this);
+                _bootstrapListenerRegistered = true;
+            }
+
             SaveEvents.Register(this);
             InitializeService();
         }
@@ -79,7 +85,12 @@ namespace Hecton8.Modding
         private void OnDisable()
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
-            GameBootstrapper.Unregister(this);
+            if (_bootstrapListenerRegistered)
+            {
+                GameBootstrapper.Unregister(this);
+                _bootstrapListenerRegistered = false;
+            }
+
             SaveEvents.Unregister(this);
             UnregisterFromSaveManager();
             if (_serviceRegistered && !_serviceShuttingDown)
@@ -115,7 +126,12 @@ namespace Hecton8.Modding
 
             _serviceShuttingDown = true;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
-            GameBootstrapper.Unregister(this);
+            if (_bootstrapListenerRegistered)
+            {
+                GameBootstrapper.Unregister(this);
+                _bootstrapListenerRegistered = false;
+            }
+
             SaveEvents.Unregister(this);
             UnregisterFromSaveManager();
             _records.Clear();

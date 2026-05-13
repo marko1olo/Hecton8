@@ -1180,7 +1180,7 @@ namespace Hecton8.World
             {
                 _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
                 UnityEngine.Debug.Log(
-                        $"[WorldScatterRuntime] bootstrap-ready registered={_lifecycleRuntimeState.RegisteredToTickManager} timeScale={Time.timeScale:0.###}",
+                        $"[WorldScatterRuntime] bootstrap-ready registered={_lifecycleRuntimeState.RegisteredToTickManager} dilation={GlobalSignals.TimeDilationScalar:0.###}",
                     this);
             }
 #endif
@@ -1232,7 +1232,7 @@ namespace Hecton8.World
             {
                 _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
                 UnityEngine.Debug.Log(
-                        $"[WorldScatterRuntime] bootstrap-failed registered={_lifecycleRuntimeState.RegisteredToTickManager} timeScale={Time.timeScale:0.###}",
+                        $"[WorldScatterRuntime] bootstrap-failed registered={_lifecycleRuntimeState.RegisteredToTickManager} dilation={GlobalSignals.TimeDilationScalar:0.###}",
                     this);
             }
 #endif

@@ -1,7 +1,10 @@
 using System.Collections.Generic;
+using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Logistics;
 using Hecton8.Power;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -19,6 +22,10 @@ namespace Hecton8.Construction
         [SerializeField, Min(0f)] private float powerDrawWatts = 2400f;
         [SerializeField, Range(0, 100)] private int powerPriority = 8;
 
+        [Header("Pipe Graph")]
+        [SerializeField, Min(0.001f)] private float pipeCapacityM3 = 2f;
+        [SerializeField, Min(0.1f)] private float pipeMaxPressureKPa = 160f;
+
         [Header("Diagnostics")]
         [SerializeField] private bool _debugHasPower = true;
         [SerializeField] private float _debugLastDrainBudgetM3;
@@ -27,8 +34,13 @@ namespace Hecton8.Construction
         private static readonly List<WaterPumpModule> s_activePumps = new List<WaterPumpModule>(InitialPumpCapacity);
 
         private BaseModule _hostModule;
+        private SubmarineAtmosphereSystem _atmosphereSystem;
+        private IFluidPipeGraphService _pipeGraphService;
         private bool _hasPower = true;
         private bool _registered;
+        private int _waterPipeNodeIndex = -1;
+        private int _waterPipeOutletNodeIndex = -1;
+        private bool _waterPipeOutletConnected;
 
         public float PowerRating => -math.max(0f, powerDrawWatts);
         public int PowerPriority => powerPriority;
@@ -44,10 +56,7 @@ namespace Hecton8.Construction
 
         private void Awake()
         {
-            if (_hostModule == null)
-                TryGetComponent(out _hostModule);
-            if (_hostModule == null)
-                _hostModule = GetComponentInParent<BaseModule>();
+            CacheColdReferences();
         }
 
         private void OnEnable()
@@ -57,11 +66,13 @@ namespace Hecton8.Construction
 
         private void OnDisable()
         {
+            DisableWaterPipeNode(forgetNode: false);
             Unregister();
         }
 
         private void OnDestroy()
         {
+            DisableWaterPipeNode(forgetNode: true);
             Unregister();
         }
 
@@ -74,6 +85,7 @@ namespace Hecton8.Construction
 
         public void OnDespawn()
         {
+            DisableWaterPipeNode(forgetNode: true);
             Unregister();
             _hasPower = true;
             _debugHasPower = true;
@@ -100,6 +112,82 @@ namespace Hecton8.Construction
             return budget;
         }
 
+        internal bool TryEnsureWaterPipeNode(IFluidPipeGraphService graph, out int nodeIndex)
+        {
+            nodeIndex = -1;
+            if (graph == null || !graph.IsInitialized)
+                return false;
+
+            if (!ReferenceEquals(_pipeGraphService, graph))
+            {
+                _pipeGraphService = graph;
+                _waterPipeNodeIndex = -1;
+                _waterPipeOutletNodeIndex = -1;
+                _waterPipeOutletConnected = false;
+            }
+
+            int networkId = ResolvePipeNetworkId();
+            if (_waterPipeNodeIndex >= 0 &&
+                graph.TryReadPipeNode(_waterPipeNodeIndex, out _, out _, out byte cachedFlags))
+            {
+                byte requiredFlags = (byte)(FluidPipeFlags.Active | FluidPipeFlags.PumpIngress | FluidPipeFlags.RoomCoupled);
+                if ((cachedFlags & (byte)FluidPipeFlags.Disabled) == 0 &&
+                    (cachedFlags & (byte)FluidPipeFlags.Ruptured) == 0 &&
+                    (cachedFlags & requiredFlags) == requiredFlags)
+                {
+                    if (TryConnectDefaultOutlet(graph, networkId, _waterPipeNodeIndex))
+                    {
+                        nodeIndex = _waterPipeNodeIndex;
+                        return true;
+                    }
+
+                    DisableWaterPipeNode(forgetNode: false);
+                    return false;
+                }
+
+                if ((cachedFlags & (byte)FluidPipeFlags.Ruptured) == 0 &&
+                    graph.TrySetPipeNodeFlags(
+                        _waterPipeNodeIndex,
+                        requiredFlags,
+                        (byte)FluidPipeFlags.Disabled))
+                {
+                    if (TryConnectDefaultOutlet(graph, networkId, _waterPipeNodeIndex))
+                    {
+                        nodeIndex = _waterPipeNodeIndex;
+                        return true;
+                    }
+
+                    DisableWaterPipeNode(forgetNode: false);
+                    return false;
+                }
+            }
+
+            AbsoluteUniversePosition nodeAup = AbsoluteUniversePosition.FromRuntimePosition(ResolvePipeRuntimePosition());
+            if (!graph.TryRegisterPipeNode(
+                    networkId,
+                    ResolvePipeRoomIndex(),
+                    (byte)FluidPipeContentKind.Water,
+                    nodeAup,
+                    math.max(0.001f, pipeCapacityM3),
+                    math.max(0.1f, pipeMaxPressureKPa),
+                    out nodeIndex))
+            {
+                return false;
+            }
+
+            _waterPipeNodeIndex = nodeIndex;
+            graph.TrySetPipeNodeFlags(
+                nodeIndex,
+                (byte)(FluidPipeFlags.Active | FluidPipeFlags.PumpIngress | FluidPipeFlags.RoomCoupled),
+                (byte)FluidPipeFlags.Disabled);
+            if (TryConnectDefaultOutlet(graph, networkId, nodeIndex))
+                return true;
+
+            DisableWaterPipeNode(forgetNode: false);
+            nodeIndex = -1;
+            return false;
+        }
+
         internal static float CalculatePumpDrainVolumeM3(float rateM3PerSecond, float powerSupplyRatio, float deltaTime)
         {
             if (rateM3PerSecond <= 0f || powerSupplyRatio <= 0f || deltaTime <= 0f)
@@ -114,8 +202,7 @@ namespace Hecton8.Construction
             if (_registered)
                 return;
 
-            if (_hostModule == null)
-                TryGetComponent(out _hostModule);
+            CacheColdReferences();
 
             s_activePumps.Add(this);
             _registered = true;
@@ -133,6 +220,147 @@ namespace Hecton8.Construction
             }
 
             _registered = false;
+        }
+
+        private void DisableWaterPipeNode(bool forgetNode)
+        {
+            _waterPipeOutletConnected = false;
+            if (_pipeGraphService != null && _waterPipeNodeIndex >= 0)
+            {
+                _pipeGraphService.TrySetPipeDemandRate(_waterPipeNodeIndex, 0f);
+                _pipeGraphService.TrySetPipeSourceRate(_waterPipeNodeIndex, 0f);
+                _pipeGraphService.TrySetPipeNodeFlags(
+                    _waterPipeNodeIndex,
+                    (byte)FluidPipeFlags.Disabled,
+                    (byte)(FluidPipeFlags.PumpIngress | FluidPipeFlags.RoomCoupled));
+            }
+
+            if (_pipeGraphService != null && _waterPipeOutletNodeIndex >= 0)
+            {
+                _pipeGraphService.TrySetPipeDemandRate(_waterPipeOutletNodeIndex, 0f);
+                _pipeGraphService.TrySetPipeSourceRate(_waterPipeOutletNodeIndex, 0f);
+                _pipeGraphService.TrySetPipeNodeFlags(
+                    _waterPipeOutletNodeIndex,
+                    (byte)FluidPipeFlags.Disabled,
+                    (byte)FluidPipeFlags.Outside);
+            }
+
+            if (forgetNode)
+            {
+                _pipeGraphService = null;
+                _waterPipeNodeIndex = -1;
+                _waterPipeOutletNodeIndex = -1;
+                _waterPipeOutletConnected = false;
+            }
+        }
+
+        private void CacheColdReferences()
+        {
+            if (_hostModule == null)
+                TryGetComponent(out _hostModule);
+            if (_hostModule == null)
+                _hostModule = GetComponentInParent<BaseModule>();
+            if (_atmosphereSystem == null)
+                _atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+        }
+
+        private bool TryConnectDefaultOutlet(IFluidPipeGraphService graph, int networkId, int ingressNodeIndex)
+        {
+            if (graph == null || ingressNodeIndex < 0 || _waterPipeOutletConnected)
+                return _waterPipeOutletConnected;
+
+            if (!TryEnsureWaterOutletPipeNode(graph, networkId, out int outletNodeIndex))
+                return false;
+
+            _waterPipeOutletConnected = graph.TryConnectPipeNodes(ingressNodeIndex, outletNodeIndex);
+            return _waterPipeOutletConnected;
+        }
+
+        private bool TryEnsureWaterOutletPipeNode(IFluidPipeGraphService graph, int networkId, out int nodeIndex)
+        {
+            nodeIndex = -1;
+            if (graph == null || !graph.IsInitialized)
+                return false;
+
+            if (_waterPipeOutletNodeIndex >= 0 &&
+                graph.TryReadPipeNode(_waterPipeOutletNodeIndex, out _, out _, out byte cachedFlags))
+            {
+                byte requiredFlags = (byte)(FluidPipeFlags.Active | FluidPipeFlags.Outside);
+                if ((cachedFlags & (byte)FluidPipeFlags.Disabled) == 0 &&
+                    (cachedFlags & (byte)FluidPipeFlags.Ruptured) == 0 &&
+                    (cachedFlags & requiredFlags) == requiredFlags)
+                {
+                    nodeIndex = _waterPipeOutletNodeIndex;
+                    return true;
+                }
+
+                if ((cachedFlags & (byte)FluidPipeFlags.Ruptured) == 0 &&
+                    graph.TrySetPipeNodeFlags(
+                        _waterPipeOutletNodeIndex,
+                        requiredFlags,
+                        (byte)FluidPipeFlags.Disabled))
+                {
+                    nodeIndex = _waterPipeOutletNodeIndex;
+                    return true;
+                }
+            }
+
+            AbsoluteUniversePosition nodeAup = AbsoluteUniversePosition.FromRuntimePosition(ResolvePipeOutletRuntimePosition());
+            if (!graph.TryRegisterPipeNode(
+                    networkId,
+                    -1,
+                    (byte)FluidPipeContentKind.Water,
+                    nodeAup,
+                    math.max(0.001f, pipeCapacityM3),
+                    math.max(0.1f, pipeMaxPressureKPa),
+                    out nodeIndex))
+            {
+                return false;
+            }
+
+            _waterPipeOutletNodeIndex = nodeIndex;
+            _waterPipeOutletConnected = false;
+            graph.TrySetPipeNodeFlags(
+                nodeIndex,
+                (byte)(FluidPipeFlags.Active | FluidPipeFlags.Outside),
+                (byte)FluidPipeFlags.Disabled);
+            return true;
+        }
+
+        private Vector3 ResolvePipeRuntimePosition()
+        {
+            if (_hostModule != null &&
+                _hostModule.TryGetInteriorAabbBounds(out Vector3 center, out Vector3 halfExtents) &&
+                halfExtents.sqrMagnitude > 0.0001f)
+            {
+                return center;
+            }
+
+            return transform.position;
+        }
+
+        private int ResolvePipeRoomIndex()
+        {
+            return _atmosphereSystem != null
+                ? _atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(ResolvePipeRuntimePosition())
+                : -1;
+        }
+
+        private Vector3 ResolvePipeOutletRuntimePosition()
+        {
+            Vector3 origin = ResolvePipeRuntimePosition();
+            Transform pumpTransform = transform;
+            return pumpTransform != null ? origin + (pumpTransform.up * 0.5f) : origin;
+        }
+
+        private int ResolvePipeNetworkId()
+        {
+            if (_atmosphereSystem != null)
+                return unchecked((int)EntityId.ToULong(_atmosphereSystem.GetEntityId()));
+            if (_hostModule != null)
+                return unchecked((int)EntityId.ToULong(_hostModule.GetEntityId()));
+
+            return unchecked((int)EntityId.ToULong(GetEntityId()));
         }
     }
 }

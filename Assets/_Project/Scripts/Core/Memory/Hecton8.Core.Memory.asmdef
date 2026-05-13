@@ -1,0 +1,16 @@
+{
+    "name": "Hecton8.Core.Memory",
+    "rootNamespace": "Hecton8.Core.Memory",
+    "references": [
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

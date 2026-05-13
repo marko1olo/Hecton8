@@ -33,8 +33,6 @@ namespace Hecton8.Interaction
 
         private const float LooseCurrentVelocityInfluence = 0.45f;
         private const float LooseCurrentSpinInfluence = 0.12f;
-        private const float CurrentSimulationCullDistance = 100f;
-        private const float CurrentSimulationCullDistanceSqr = CurrentSimulationCullDistance * CurrentSimulationCullDistance;
         private const float OverflowScatterImpulse = 2.5f;
         private const float OverflowScatterLiftImpulse = 1.2f;
         private const float OverflowScatterTorqueImpulse = 0.35f;
@@ -72,7 +70,6 @@ namespace Hecton8.Interaction
         private long _worldStatePersistenceKey;
         private long _worldStateChunkKey;
         private Vector3 _worldStateAnchorPosition;
-        private Transform _playerTransform;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private int _persistentWorldRecordIndex = -1;
         private bool _registeredToWorldStateRegistry;
@@ -250,21 +247,8 @@ namespace Hecton8.Interaction
             if (_rigidbody == null || _rigidbody.isKinematic || fdt <= 0f)
                 return;
 
-            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
-            if (_playerTransform != null)
-            {
-                Vector3 toPlayer = _playerTransform.position - _rigidbody.worldCenterOfMass;
-                if (toPlayer.sqrMagnitude > CurrentSimulationCullDistanceSqr)
-                {
-                    if (!_rigidbody.IsSleeping())
-                        _rigidbody.Sleep();
-
-                    return;
-                }
-
-                if (_rigidbody.IsSleeping())
-                    _rigidbody.WakeUp();
-            }
+            if (_rigidbody.IsSleeping())
+                return;
 
             if (!ResolveSubmergedState())
             {
@@ -283,17 +267,18 @@ namespace Hecton8.Interaction
                 ? math.min(6f, currentLength) / currentLength
                 : 0f;
             Vector3 velocityChange = sampledCurrent * (currentScale * LooseCurrentVelocityInfluence * fdt);
-            PhysicsForceRouter.QueueForce(_rigidbody, velocityChange, ForceMode.VelocityChange);
+            PhysicsForceRouter.QueueAmbientForce(_rigidbody, velocityChange, ForceMode.VelocityChange, wake: false);
 
             Vector3 spinAxis = Vector3.Cross(Vector3.up, sampledCurrent);
             float spinAxisLength = EstimateLength3D(spinAxis);
             if (spinAxisLength > 0.0001f)
             {
                 float velocityLength = EstimateLength3D(velocityChange);
-                PhysicsForceRouter.QueueTorque(
+                PhysicsForceRouter.QueueAmbientTorque(
                     _rigidbody,
                     spinAxis * ((LooseCurrentSpinInfluence * velocityLength) / spinAxisLength),
-                    ForceMode.VelocityChange);
+                    ForceMode.VelocityChange,
+                    wake: false);
             }
 
             if (_spatialHandle != 0)

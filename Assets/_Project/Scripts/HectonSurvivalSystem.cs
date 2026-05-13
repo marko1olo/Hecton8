@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Items;
 using Hecton8.Meta;
 using Hecton8.Modding;
@@ -386,6 +387,8 @@ namespace Hecton8.Gameplay
         private const float ColdNutritionFullBoostRangeCelsius = 12f;
         private const float OxygenMovementScaleCeiling = 1.55f;
         private const float OxygenStressScaleCeilingBonus = 0.50f;
+        private const float PsychoMetricsOxygenDrainScaleCeiling = 2.5f;
+        private const uint PsychoMetricsOxygenSignalFreshFrames = 240u;
         private const float OxygenLeakScaleCeilingBonus = 0.70f;
         private const float OxygenCarryMassGraceKg = 18f;
         private const float OxygenCarryMassScaleCeilingBonus = 0.22f;
@@ -679,6 +682,9 @@ namespace Hecton8.Gameplay
                 DefaultInternalTemperatureCelsius,
                 _internalTemperature,
                 math.isfinite(_internalTemperature));
+            survivalState.RadiationDose = math.max(0f, _runtimeContext.RadiationDose);
+            survivalState.RadiationIntensity01 = math.saturate(_runtimeContext.RadiationIntensity01);
+            survivalState.RadiationMaxHealthPenalty01 = math.saturate(_runtimeContext.RadiationMaxHealthPenalty01);
             survivalState.StatusMask = _statusMask;
             survivalState.Flags = flags;
             _runtimeContext.PublishSurvivalState(in survivalState);
@@ -896,6 +902,7 @@ namespace Hecton8.Gameplay
             status |= math.select(0u, SurvivalStatusMasks.Narcosis, _nitrogenNarcosis01 > 0.0001f);
             status |= math.select(0u, SurvivalStatusMasks.Toxicity, _toxicity01 > 0.0001f);
             status |= math.select(0u, SurvivalStatusMasks.CrushWarning, PressureExposureSeverity01 > 0.0001f);
+            status |= math.select(0u, SurvivalStatusMasks.RadiationPenalty, _runtimeContext.RadiationMaxHealthPenalty01 > 0.0001f);
             _statusMask = status;
         }
 
@@ -1488,10 +1495,15 @@ namespace Hecton8.Gameplay
             if (_radGraceTimer < HazardGraceDuration) return;
 
             float excess = currentRad - stats.RadiationThreshold;
-            float damage = excess * stats.RadiationDamageRate * radiationExposureScale * dt;
+            float dose = excess * stats.RadiationDamageRate * radiationExposureScale * dt;
+            _runtimeContext.RadiationDose = math.max(0f, _runtimeContext.RadiationDose + dose);
+            _runtimeContext.RadiationIntensity01 = math.saturate(currentRad);
+            _runtimeContext.RadiationMaxHealthPenalty01 = math.saturate(
+                1f - HectonPlayerHealth.ResolveRadiationFatigueScale(_runtimeContext.RadiationDose));
+            if (_playerHealth != null)
+                _playerHealth.SetRadiationExposure(_runtimeContext.RadiationDose);
 
-            integrity = math.max(0f, integrity - damage);
-            MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.RadiationExposure);
+            RadiationHazardGrid.ReportExternalDose(dose, math.saturate(currentRad), ResolveSurvivalRuntimePosition());
         }
 
         private void HandleToxicity(float dt)
@@ -1724,7 +1736,24 @@ namespace Hecton8.Gameplay
 
         private float ResolveOxygenStressScale()
         {
-            return ResolveHeartrateOxygenMultiplier(ResolveOxygenStressMagnitude01());
+            float survivalStressScale = ResolveHeartrateOxygenMultiplier(ResolveOxygenStressMagnitude01());
+            float psychoMetricsScale = ResolvePsychoMetricsOxygenDrainScale();
+            return math.max(survivalStressScale, psychoMetricsScale);
+        }
+
+        private static float ResolvePsychoMetricsOxygenDrainScale()
+        {
+            if (!GlobalSignals.TryGetLatestPhysiologyStateSignal(out PhysiologyStateSignal signal, out _))
+                return 1f;
+
+            uint frameDelta = unchecked((uint)Time.frameCount - signal.Frame);
+            if (frameDelta > PsychoMetricsOxygenSignalFreshFrames)
+                return 1f;
+
+            float multiplier = signal.O2DrainMultiplier;
+            return math.isfinite(multiplier)
+                ? math.clamp(multiplier, 1f, PsychoMetricsOxygenDrainScaleCeiling)
+                : 1f;
         }
 
         private float ResolveOxygenLeakScale()
@@ -1994,7 +2023,9 @@ namespace Hecton8.Gameplay
 
             // Radiation Publishing (Atmosphere + Local)
             float baseRad = atmosphere != null ? atmosphere.CurrentRadiation : 0f;
-            float totalRad = baseRad + ResolveHazardIntensity(HazardType.Radiation);
+            float legacyRad = baseRad + ResolveHazardIntensity(HazardType.Radiation);
+            float gridRad = math.select(0f, _runtimeContext.RadiationIntensity01, math.isfinite(_runtimeContext.RadiationIntensity01));
+            float totalRad = math.max(legacyRad, gridRad);
             if (math.abs(totalRad - lastPubRad) > Epsilon)
             {
                 lastPubRad = totalRad;

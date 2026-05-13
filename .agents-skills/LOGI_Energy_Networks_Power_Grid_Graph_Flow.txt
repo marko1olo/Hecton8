@@ -131,7 +131,10 @@ CONVERGENCE_DELTA = 0.01
 
 for i in 0..MAX_ITERATIONS:
     max_delta = 0
-    for each edge(A,B):
+    for edgeIndex = 0; edgeIndex < EdgeCount; edgeIndex++:
+        edge = EdgeList[edgeIndex]
+        A = edge.A
+        B = edge.B
         old_flow = EdgeFlow[edge]
 // [FORBID] Edge-based relaxation for closed loops. 
 // You MUST relax Node Potentials iteratively, then derive edge flow.
@@ -143,7 +146,8 @@ for i in 0..MAX_ITERATIONS:
 Sort ConsumerList by Priority byte ASC (insertion-sort safe at ≤512 consumers, stable)
 
 remaining = Σ_Production
-for each consumer in sorted list:
+for consumerIndex = 0; consumerIndex < SortedConsumerCount; consumerIndex++:
+    consumer = SortedConsumers[consumerIndex]
     alloc = min(ConsumerMap[consumer.ID], remaining)
     CurrentLoad[consumer.ID] = alloc
     remaining -= alloc
@@ -257,7 +261,8 @@ ON RUPTURED flag set on node N:
 
 if node RUPTURED and NetworkType == FLUID_PRESSURE:
     backpropagate pressure drop:
-        foreach upstream neighbor U:
+        for upstreamIndex = 0; upstreamIndex < UpstreamCount[N]; upstreamIndex++:
+            U = UpstreamNeighbors[N][upstreamIndex]
             Potential[U] -= RupturePressureLoss * (1 / Resistance(U→N))
             if Potential[U] < MinOperatingPressure:
                 set BROWNOUT on U
@@ -269,7 +274,8 @@ if node RUPTURED and NetworkType == FLUID_PRESSURE:
 ### 6.1 LogisticsTick Architecture
 
 FixedRate: 5Hz (200ms interval)
-Execution: Burst-compiled IJob (NOT main thread)
+Graph solve: Burst-compiled IJob (NOT main thread)
+Main-thread cadence may only schedule/consume jobs and touch Unity-owned objects/signals.
 
 Tick N:   Networks 0,2,4,6... (even NetworkIDs)
 Tick N+1: Networks 1,3,5,7... (odd NetworkIDs)
@@ -289,6 +295,20 @@ i3-10gen @ 5Hz tick:
     DSU full rebuild (on event): <0.5ms (event-only, not per-tick)
     Priority sort + distribution:<0.1ms
     Total LogisticsTick ceiling:  1.0ms per 200ms window → <0.5% CPU budget
+
+### 6.4 Current Source Alignment - Pipe Runtime Adapter Boundary
+
+[RULE] `LogisticsTick` means the authoritative graph/math solve, not every Unity API touch around it.
+[RULE] Graph/pressure solve runs in Burst jobs over NativeArray/NativeQueue/NativeParallel* buffers.
+[RULE] Main-thread orchestration is allowed only for Unity object integration: pump drain/injection, service registration, job schedule/consume gates, signal publishing, and visual proxy dirty updates.
+[RULE] `ISlowTickable` may be the cadence entrypoint; `ILateFrameTickable` may consume completed job outputs. Neither may contain per-frame `Update`, coroutine, physics callback, or allocation-driven simulation.
+[RULE] Authoring endpoint MonoBehaviours such as pipe nodes and pump modules are adapters. They register into a shared scheduler and must not own per-segment simulation loops.
+[RULE] Runtime state of record is NativeArray/CSR/queue data, not component fields, except debug mirrors and inspector authoring data.
+[RULE] Pipe Black Box capacity is 300 frames. Current dump target: `Docs/AgentLogs/Dump_PIPE_LOGISTICS_ARCHITECT.bin`.
+
+[FORBID] Treating the presence of `LogisticsPipeNode`, `WaterPumpModule`, or `FluidPipeGraphRuntime` MonoBehaviours as a mandate violation when they are cold adapters with shared scheduler ownership.
+[FORBID] One MonoBehaviour `Update`/`FixedUpdate` per pipe/cable segment.
+[FORBID] Pump/flood/logistics truth in physics callbacks.
 
 ---
 
@@ -319,6 +339,28 @@ Total logistics visual budget: <2MB VRAM
 ---
 
 ## §8 — RESOURCE TYPE EXTENSIONS
+
+### 8.0 Logistics / Thermodynamics Boundary
+
+[RULE] Logistics owns transport capacity, graph connectivity, pressure/load/potential, brownout, rupture flags, and resource availability.
+[RULE] Thermodynamics owns heat storage, ambient exchange, cooling/heating rates, tissue/suit/compartment temperature, and visual heat cues.
+[RULE] Logistics may carry a `THERMAL_COOLANT` channel, but it transports heat capacity as a resource; it does not solve temperature diffusion or physiology.
+[RULE] Thermodynamics may read logistics `THERMAL_COOLANT` availability through a read-only contract or queued event, then solve heat locally.
+[RULE] Cross-domain exchange is a fixed-rate summary: node id, coolant availability ratio, temperature delta request, and flags. No per-frame polling.
+
+[FORBID] Logistics directly mutating temperature fields.
+[FORBID] Thermodynamics mutating `LogisticsNode`, graph edges, DSU/CSR topology, or resource potential.
+[FORBID] Using `GlobalRegistry.Get<T>()` for continuous thermal state updates.
+
+## Engineering Data
+
+| Quantity | Owning Domain | Shared As | Cadence |
+|---|---|---|---|
+| Node potential/load | Logistics | read-only summary | LogisticsTick |
+| Coolant availability | Logistics | ratio + flags | 5 Hz / dirty only |
+| Temperature delta | Thermodynamics | event/request packet | SlowTick |
+| Heat damage | Thermodynamics / Damage owner | event packet | threshold only |
+| Visual pipe glow | Presentation | shader proxy | dirty change only |
 
 ### 8.1 Supported Network Types (NetworkType enum, uint8)
 
@@ -375,7 +417,7 @@ ASSERT: Resistance[edge] > 0 before division. Clamp min: 0.0001.
 ASSERT: Capacity[node] > 0 at node creation.
 ASSERT: NetworkID < 16 (4-bit field constraint).
 ASSERT: BFS visited count <= 4096 (overflow = graph corruption).
-GUARD:  LogisticsTick never runs on main thread. Jobify or Assert(IsWorkerThread).
+GUARD:  Logistics graph solve never runs on main thread. Main-thread cadence may only schedule/consume jobs and touch Unity-owned objects/signals.
 GUARD:  TopologyEdgeList writes locked behind topology-change mutex. CSR snapshot is read-only during tick.
 GUARD:  If DSU_Parent rebuild exceeds 2ms wall clock → log warning, skip tick, force next-frame.
 
@@ -404,7 +446,7 @@ ULTRA:
 
 ## §12 — FORBIDDEN PATTERNS (ENFORCEMENT)
 
-[FORBID] MonoBehaviour per pipe/cable segment
+[FORBID] Per-segment MonoBehaviour simulation/update. Endpoint MonoBehaviours are cold adapters only; shared scheduler/job owns transport truth.
 [FORBID] Physics.Raycast or Rigidbody in any logistics path
 [FORBID] Recursive graph traversal (stack overflow risk on 4096-node dense graphs)
 [FORBID] Allocating List<T> or Dictionary<K,V> inside LogisticsTick job

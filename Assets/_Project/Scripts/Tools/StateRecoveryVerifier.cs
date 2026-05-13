@@ -393,7 +393,7 @@ namespace Hecton8.Tools
             return _pauseMenu != null &&
                    _pauseMenu.IsOpen &&
                    VerificationRuntimeProbe.IsPauseMenuVisible(_pauseMenu) &&
-                   Mathf.Approximately(Time.timeScale, 0f) &&
+                   IsSimulationPaused() &&
                    IsPauseInputModeValid();
         }
 
@@ -402,9 +402,15 @@ namespace Hecton8.Tools
             ResolvePauseMenu();
             return (_pauseMenu == null || !_pauseMenu.IsOpen) &&
                    !VerificationRuntimeProbe.IsPauseMenuVisible(_pauseMenu) &&
-                   Time.timeScale > 0f &&
+                   !IsSimulationPaused() &&
                    !Cursor.visible &&
                    IsGameplayInputModeValid();
+        }
+
+        private static bool IsSimulationPaused()
+        {
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            return dispatcher != null ? dispatcher.SimulationPaused : GlobalSignals.SimulationPaused;
         }
 
         private bool IsMainMenuStateValid()

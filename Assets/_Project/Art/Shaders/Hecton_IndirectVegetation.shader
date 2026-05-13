@@ -85,6 +85,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
 
             #define HECTON_MAX_INTERACTION_POINTS 12
+            #define HECTON_MAX_PROCEDURAL_WAKE_POINTS 32
             #define HECTON_MAX_IMPACT_SPHERES 8
             #define HECTON_KELP_FADE_START_DEPTH 150.0
             #define HECTON_KELP_FADE_END_DEPTH 200.0
@@ -185,6 +186,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _GlobalFloatingOffset;
             StructuredBuffer<FloraInteractionPointGpuData> _HectonFloraInteractionPoints;
             StructuredBuffer<float4> _HectonImpactSpheres;
+            float4 _HectonFloraWakeBuffer[HECTON_MAX_PROCEDURAL_WAKE_POINTS];
 
             float4 _MarineSnowFlowFieldCenterCellSize;
             float4 _HectonVegetationFogColor;
@@ -216,6 +218,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _HectonSubmarineWashAupGrid;
             float4 _HectonSubmarineWashAupLocal;
             float4 _HectonFlowSynchronyParams;
+            float4 _HectonFloraWakeParams;
             float4 _AbyssalGridResolution;
             float4 _AbyssalFlowCenter;
             float4 _AbyssalFlowSpacing;
@@ -234,8 +237,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float _HectonFloraSnapFlagsEnabled;
             float _SargassumCutMaskActive;
             float _HectonShallowWaterFieldActive;
+            float _ShearFoamAmount;
             int _HectonFloraFlowFieldResolution;
             int _HectonFloraInteractionCount;
+            int _HectonFloraWakeCount;
             int _HectonImpactSphereCount;
             int _PredatorAUPCount;
 
@@ -660,6 +665,54 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             {
                 float approxLen = ApproxMagnitude3(value);
                 return approxLen > 0.0001 ? value * rcp(approxLen) : float3(0.0, 1.0, 0.0);
+            }
+
+            void DecodeProceduralWakePacked(float packedRadiusIntensity, out float radius, out float intensity)
+            {
+                float packedValue = max(0.0, packedRadiusIntensity);
+                float radiusQuantized = floor(packedValue * 0.0009765625);
+                float intensityQuantized = packedValue - radiusQuantized * 1024.0;
+                radius = max(radiusQuantized * 0.0625, 0.001);
+                intensity = saturate(intensityQuantized * 0.0009775171);
+            }
+
+            float3 ResolveProceduralWakeOffset(
+                float3 positionWS,
+                half bendMask,
+                half heightMask,
+                float instanceType,
+                out float wakeShear)
+            {
+                wakeShear = 0.0;
+#if !defined(_MATH_LOD_LOW)
+                float3 wakeOffset = float3(0.0, 0.0, 0.0);
+                int wakeCount = min(_HectonFloraWakeCount, HECTON_MAX_PROCEDURAL_WAKE_POINTS);
+                UNITY_LOOP
+                for (int wakeIndex = 0; wakeIndex < wakeCount; wakeIndex++)
+                {
+                    float4 wake = _HectonFloraWakeBuffer[wakeIndex];
+                    float radius;
+                    float intensity;
+                    DecodeProceduralWakePacked(wake.w, radius, intensity);
+                    float3 worldPos = positionWS;
+                    float3 wakeDelta = worldPos - wake.xyz;
+                    float distanceSq = dot(worldPos - wake.xyz, worldPos - wake.xyz);
+                    float radiusSq = max(radius * radius, 0.001);
+                    float influence = saturate(1.0 - distanceSq * rcp(radiusSq));
+                    influence = influence * influence * (3.0 - 2.0 * influence);
+                    float2 radialDirection = SafeNormalize2(wakeDelta.xz + float2(0.001, -0.001));
+                    float typeScale = instanceType < 0.5 ? 0.55 : (instanceType < 1.5 ? 1.35 : 0.72);
+                    float rootPinnedHeight = bendMask * lerp(0.22, 1.15, heightMask);
+                    float bendStrength = influence * intensity * rootPinnedHeight * typeScale;
+                    wakeOffset.xz += radialDirection * (bendStrength * radius * 0.22);
+                    wakeOffset.y += bendStrength * (instanceType < 1.5 ? 0.08 : 0.025);
+                    wakeShear = max(wakeShear, influence * intensity);
+                }
+
+                return wakeOffset;
+#else
+                return float3(0.0, 0.0, 0.0);
+#endif
             }
 
             half FastVegetationPower01(half value, half exponent)
@@ -1471,6 +1524,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float3 animatedPositionWS = basePositionWS;
                 float3 wakeTrailOffset = ResolveWakeTrailOffset(basePositionWS, baseNormalWS, bendMask, heightMask, instanceType);
                 float3 submarineWashOffset = ResolveSubmarineWashOffset(basePositionWS, baseNormalWS, bendMask, heightMask, instanceType);
+                float proceduralWakeShear;
+                float3 proceduralWakeOffset = ResolveProceduralWakeOffset(basePositionWS, bendMask, heightMask, instanceType, proceduralWakeShear);
                 float3 flowSynchronyOffset = ResolveFlowSynchronyOffset(basePositionWS, bendMask, instanceType, instanceNoise);
 
                 if (_HectonLodPassMode < 0.5)
@@ -1495,11 +1550,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                         float phase = timeValue * _GrassWindSpeed + instanceNoise * 6.28318 +
                             originXZ.x * (_GrassWindFrequency * 0.35) +
                             originXZ.y * (_GrassWindFrequency * 0.28);
-                        float2 grassWind = SafeNormalize2(float2(
+                        float2 flowDrivenGrass = sampledCurrentSq > 0.0001 ? sampledCurrentVector : currentDirection;
+                        float2 grassWind = SafeNormalize2(flowDrivenGrass + float2(
                             FastSinApprox(phase),
-                            FastCosApprox(phase * 1.37 + heightMask * _GrassWindFrequency)));
+                            FastCosApprox(phase * 1.37 + heightMask * _GrassWindFrequency)) * 0.18);
                         animatedPositionWS += wakeTrailOffset;
                         animatedPositionWS += submarineWashOffset;
+                        animatedPositionWS += proceduralWakeOffset;
                         animatedPositionWS += flowSynchronyOffset;
                         animatedPositionWS += currentOffset * (0.85 * detailAmplitude);
                         animatedPositionWS.xz += grassWind * (_GrassWindAmplitude * bendMask * detailAmplitude);
@@ -1510,9 +1567,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                         float phase = timeValue * (_KelpCurrentSpeed + _HectonVegetationCurrentTimeScale) +
                             (originXZ.x + originXZ.y) * max(_HectonVegetationCurrentNoiseScale, 0.001) +
                             instanceNoise * 7.0;
-                        float2 noiseFlow = float2(
+                        float2 abyssalKelpFlow = sampledCurrentSq > 0.0001 ? sampledCurrentVector : currentVector;
+                        float2 noiseFlow = abyssalKelpFlow + float2(
                             FastSinApprox(phase),
-                            FastCosApprox(phase * 0.71 + heightMask * _KelpCurrentFrequency));
+                            FastCosApprox(phase * 0.71 + heightMask * _KelpCurrentFrequency)) * (currentStrength * 0.18);
                         float2 kelpFlow = ResolvePlanarOceanFlowDirection(currentVector + noiseFlow * currentStrength);
                         float kelpAmplitude = _KelpCurrentAmplitude * lerp(0.45, 1.0, authoredBendAmplitude);
                         #if defined(_QUALITY_MX350)
@@ -1520,6 +1578,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                         #endif
                         animatedPositionWS += wakeTrailOffset * 1.1;
                         animatedPositionWS += submarineWashOffset * 1.15;
+                        animatedPositionWS += proceduralWakeOffset * 1.18;
                         animatedPositionWS += flowSynchronyOffset;
                         animatedPositionWS += currentOffset * (1.15 * detailAmplitude);
                         animatedPositionWS.xz += kelpFlow * (kelpAmplitude * bendMask * detailAmplitude);
@@ -1548,6 +1607,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                         float2 radialWS = SafeNormalize2(animatedPositionWS.xz - renderOriginWS.xz + float2(0.001, 0.001));
                         animatedPositionWS += wakeTrailOffset * 0.45;
                         animatedPositionWS += submarineWashOffset * 0.72;
+                        animatedPositionWS += proceduralWakeOffset * 0.62;
                         animatedPositionWS += flowSynchronyOffset;
                         animatedPositionWS.xz += currentOffset.xz * (0.5 * detailAmplitude);
                         animatedPositionWS.y += currentOffset.y * (0.18 * detailAmplitude);
@@ -1586,6 +1646,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     float farSwayStrength = (instanceType < 0.5 ? _GrassWindAmplitude * 0.55 : _KelpCurrentAmplitude * 0.42) * wiltSuppression * farStateSwayScale * lerp(0.35, 1.0, authoredBendAmplitude) * lerp(0.35, 1.0, normalizedHealth);
                     animatedPositionWS += wakeTrailOffset * 0.8;
                     animatedPositionWS += submarineWashOffset * 0.75;
+                    animatedPositionWS += proceduralWakeOffset * 0.42;
                     animatedPositionWS += flowSynchronyOffset * 0.85;
                     animatedPositionWS.xz += farFlow * (farSwayStrength * bendMask * lodAlpha);
                     animatedPositionWS += farCurrentOffset * 0.65;
@@ -1650,6 +1711,11 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
                 float3 swayOffset = animatedPositionWS - basePositionWS;
                 float3 normalWS = SafeNormalize3(baseNormalWS - swayOffset * (_NormalResponse * bendMask));
+                if (proceduralWakeShear > 0.0001)
+                {
+                    float3 cameraLeanNormal = SafeNormalize3(_WorldSpaceCameraPos - animatedPositionWS);
+                    normalWS = SafeNormalize3(lerp(normalWS, cameraLeanNormal, saturate(proceduralWakeShear * lerp(0.16, 0.38, heightMask))));
+                }
 
                 if (_HectonLodPassMode >= 0.5)
                 {
@@ -1790,6 +1856,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     gradientColor *= lerp(1.0h, 0.72h, turbidity);
                     gradientColor *= lerp(0.38h, 1.0h, lightFactor);
                 }
+
+                half shearFoam = saturate(_ShearFoamAmount) * saturate(input.heightMask * 0.72h + input.edgeMask * 0.28h);
+                half shearFloraMask = input.instanceType > 0.5h ? 1.0h : 0.35h;
+                gradientColor = lerp(gradientColor, half3(0.56h, 0.82h, 0.88h), shearFoam * shearFloraMask * 0.32h);
 
                 half3 ambient = lerp(_HectonVegetationAmbientColor.rgb, SampleSH(normalWS), 0.55h) * (_AmbientStrength * ambientVisibility);
                 half3 diffuse = gradientColor * ambient;

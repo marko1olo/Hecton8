@@ -5,6 +5,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
         _HectonVisorCrackTex ("Packed Crack Normal Alpha", 2D) = "black" {}
         _HectonLensDirtTex ("Lens Dirt", 2D) = "white" {}
         _HectonBlueNoiseTex ("Blue Noise", 2D) = "gray" {}
+        _HectonVRComfortMaskTex ("VR Comfort Low Tier Mask", 2D) = "gray" {}
     }
 
     SubShader
@@ -43,10 +44,12 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float _HectonUberHullStress01;
                 float _HectonUberAupShiftFrame;
                 float _HectonUberLowTier;
+                float _VRComfortVignette01;
                 float4 _HectonUberStrengths0;
                 float4 _HectonUberStrengths1;
                 float4 _HectonUberWaveParams;
                 float4 _HectonUberTextureFlags;
+                float4 _HectonVRComfortJerkState;
             CBUFFER_END
 
             TEXTURE2D_X(_BlitTexture);
@@ -57,6 +60,8 @@ Shader "Hidden/Hecton8/VisorUberPost"
             SAMPLER(sampler_HectonLensDirtTex);
             TEXTURE2D(_HectonBlueNoiseTex);
             SAMPLER(sampler_HectonBlueNoiseTex);
+            TEXTURE2D(_HectonVRComfortMaskTex);
+            SAMPLER(sampler_HectonVRComfortMaskTex);
 
             struct Attributes
             {
@@ -250,7 +255,18 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 half3 hypoxiaLuma = half3(luma, luma, luma);
                 color.rgb = lerp(color.rgb, hypoxiaLuma * half3(0.78h, 0.91h, 1.05h), (half)(hypoxia01 * _HectonUberStrengths0.y));
 
-                float vignette = saturate(edge01 * stress01 * _HectonUberStrengths1.w + edge01 * damageDrive * _HectonUberWaveParams.w);
+                float comfortVignette01 = saturate(max(_VRComfortVignette01, _HectonVRComfortJerkState.x * _HectonVRComfortJerkState.w));
+                float comfortEdgeProcedural = smoothstep(0.16, 1.0, edge01);
+                float comfortEdgeLowTier = step(0.42, edge01);
+                float comfortLowTier01 = step(0.5, _HectonUberLowTier);
+                [branch]
+                if (comfortLowTier01 > 0.5 && _HectonUberTextureFlags.w > 0.5)
+                    comfortEdgeLowTier = SAMPLE_TEXTURE2D(_HectonVRComfortMaskTex, sampler_HectonVRComfortMaskTex, uv).r;
+                float comfortEdge = lerp(comfortEdgeProcedural, comfortEdgeLowTier, comfortLowTier01);
+                float vignette = saturate(
+                    edge01 * stress01 * _HectonUberStrengths1.w +
+                    edge01 * damageDrive * _HectonUberWaveParams.w +
+                    comfortEdge * comfortVignette01 * 0.92);
                 color.rgb *= 1.0h - (half)vignette;
 
                 float bleeding = saturate(_HectonUberBleeding01);

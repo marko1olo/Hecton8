@@ -127,6 +127,8 @@ namespace Hecton8.Core
             BlackBoxExportDropped = 1u << 27,
             BlackBoxExportSuppressed = 1u << 28,
             RuntimeMemorySpike = 1u << 29,
+            PhysiologyNan = 1u << 30,
+            JobAdmissionStarvation = 1u << 31,
         }
 
         [Flags]
@@ -144,6 +146,11 @@ namespace Hecton8.Core
             Audio = 1u << 8,
             Input = 1u << 9,
             Memory = 1u << 10,
+            Physiology = 1u << 11,
+            TimeDilation = 1u << 12,
+            Scheduler = 1u << 13,
+            Vfx = 1u << 14,
+            WorldStreaming = 1u << 15,
         }
 
         private enum ExportReason : uint
@@ -174,6 +181,9 @@ namespace Hecton8.Core
             BlackBoxExportDropped = 23u,
             BlackBoxExportSuppressed = 24u,
             RuntimeMemorySpike = 25u,
+            PeakStressEvent = 26u,
+            PhysiologyNan = 27u,
+            JobAdmissionStarvation = 28u,
         }
 
         private const uint ExportInternalFaultMask =
@@ -186,6 +196,8 @@ namespace Hecton8.Core
             (uint)ErrorBits.CriticalPerformanceSpike |
             (uint)ErrorBits.CriticalMemoryPressure |
             (uint)ErrorBits.RuntimeMemorySpike |
+            (uint)ErrorBits.PhysiologyNan |
+            (uint)ErrorBits.JobAdmissionStarvation |
             (uint)ErrorBits.RuntimeWatchdogStall |
             (uint)ErrorBits.BootstrapSafeHalt;
 
@@ -469,6 +481,37 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Records a player physiology peak-stress event into the fixed black-box ring.
+        /// </summary>
+        public static void ReportPeakStressEvent(float stress01, float o2DrainMultiplier, uint peakEventCount)
+        {
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WritePeakStressEventTelemetry(stress01, o2DrainMultiplier, peakEventCount);
+        }
+
+        /// <summary>
+        /// Records non-finite player physiology state and queues a black-box export.
+        /// </summary>
+        public static void ReportPhysiologyNan(float stress01, float o2DrainMultiplier, uint contextHash)
+        {
+            uint flags = (uint)ErrorBits.PhysiologyNan;
+            OrRuntimeFaultFlags(unchecked((int)flags));
+
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WritePhysiologyNanTelemetry(stress01, o2DrainMultiplier, contextHash);
+            instance.TryExportSnapshot(
+                ExportReason.PhysiologyNan,
+                flags,
+                bypassCooldown: true);
+        }
+
+        /// <summary>
         /// Reports a dropped event payload caused by recursive cascade protection.
         /// </summary>
         public static void ReportEventCascadeWarning()
@@ -485,6 +528,18 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Records dispatcher time-dilation state and tick overhead into the black-box ring.
+        /// </summary>
+        public static void ReportTimeDilationState(float scalar, double tickOverheadMilliseconds)
+        {
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteTimeDilationTelemetry(scalar, tickOverheadMilliseconds);
+        }
+
+        /// <summary>
         /// Reports a NativeQueue event bus that exceeded its frame budget for consecutive frames.
         /// </summary>
         /// <param name="queueHash">Stable queue identifier hash.</param>
@@ -498,6 +553,77 @@ namespace Hecton8.Core
                 return;
 
             instance.WriteBusCongestionTelemetry(queueHash, pendingCount, entityCount);
+        }
+
+        /// <summary>
+        /// Records typed signal-lane counts into the black-box ring.
+        /// </summary>
+        /// <param name="laneHash">Stable lane identifier hash.</param>
+        /// <param name="queuedBeforeFlush">Payloads pending before the pre-simulation flush.</param>
+        /// <param name="snapshotCount">Payloads copied into the contiguous frame snapshot.</param>
+        /// <param name="droppedCount">Payloads discarded by lane overflow protection.</param>
+        public static void ReportSignalLaneStats(uint laneHash, int queuedBeforeFlush, int snapshotCount, int droppedCount)
+        {
+            if (droppedCount > 0)
+                OrRuntimeFaultFlags((int)ErrorBits.BusCongestionWarning);
+
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteSignalLaneTelemetry(laneHash, queuedBeforeFlush, snapshotCount, droppedCount);
+        }
+
+        /// <summary>
+        /// Records active hull dent presentation state into the black-box ring.
+        /// </summary>
+        public static void ReportHullDentState(uint dentBufferHash, int activeHullDents, uint packedFlags)
+        {
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteHullDentTelemetry(dentBufferHash, activeHullDents, packedFlags);
+        }
+
+        /// <summary>
+        /// Records one denied job admission into the scheduler black-box lane.
+        /// </summary>
+        public static void ReportJobAdmissionState(byte lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, int criticalDebtFrames, byte flags)
+        {
+            OrRuntimeFaultFlags(unchecked((int)ErrorBits.JobAdmissionStarvation));
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteJobAdmissionTelemetry(lane, jobHash, estimatedCostMs, remainingBudgetMs, criticalDebtFrames, flags);
+        }
+
+        /// <summary>
+        /// Records periodic finite lane state for scheduler debt diagnostics.
+        /// </summary>
+        public static void ReportJobAdmissionLaneState(byte lane, float budgetMs, float refillMs, int criticalDebtFrames, uint killSwitchMask)
+        {
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteJobAdmissionLaneTelemetry(lane, budgetMs, refillMs, criticalDebtFrames, killSwitchMask);
+        }
+
+        /// <summary>
+        /// Records non-finite scheduler state and forces an immediate black-box export.
+        /// </summary>
+        public static void ReportJobAdmissionNonFinite(byte lane, uint jobHash, float value)
+        {
+            uint flags = (uint)ErrorBits.JobAdmissionStarvation;
+            OrRuntimeFaultFlags(unchecked((int)flags));
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteJobAdmissionTelemetry(lane, jobHash, 0f, value, 0, 2);
+            instance.TryExportSnapshot(ExportReason.JobAdmissionStarvation, flags, bypassCooldown: true);
         }
 
         /// <summary>
@@ -587,6 +713,18 @@ namespace Hecton8.Core
                 ExportReason.LatencyCrime,
                 flags,
                 bypassCooldown: false);
+        }
+
+        /// <summary>
+        /// Records world-streaming IO backpressure scalars into the fixed crash telemetry ring.
+        /// </summary>
+        public static void ReportStreamingBackpressureFrame(float debt01, double latencyEwmaMs, double oldestPendingMs, int pendingLoads)
+        {
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteStreamingBackpressureTelemetry(debt01, latencyEwmaMs, oldestPendingMs, pendingLoads);
         }
 
         /// <summary>
@@ -995,6 +1133,10 @@ namespace Hecton8.Core
                 return ExportReason.NativeTransientLeak;
             if ((errorFlags & (uint)ErrorBits.RuntimeMemorySpike) != 0u)
                 return ExportReason.RuntimeMemorySpike;
+            if ((errorFlags & (uint)ErrorBits.PhysiologyNan) != 0u)
+                return ExportReason.PhysiologyNan;
+            if ((errorFlags & (uint)ErrorBits.JobAdmissionStarvation) != 0u)
+                return ExportReason.JobAdmissionStarvation;
             if ((errorFlags & (uint)ErrorBits.CriticalMemoryPressure) != 0u)
                 return ExportReason.CriticalMemoryPressure;
             if ((errorFlags & (uint)ErrorBits.RuntimeWatchdogStall) != 0u)
@@ -1108,6 +1250,119 @@ namespace Hecton8.Core
             entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
             _ringBuffer[writeIndex] = entry;
             TryExportSnapshot(ExportReason.BusCongestionWarning, (uint)ErrorBits.BusCongestionWarning, bypassCooldown: false);
+        }
+
+        private void WriteSignalLaneTelemetry(uint laneHash, int queuedBeforeFlush, int snapshotCount, int droppedCount)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = ReserveTelemetryWriteIndex();
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+            uint errorFlags = droppedCount > 0 ? (uint)ErrorBits.BusCongestionWarning : 0u;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.EventBus;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
+            entry.GpuFrameTime = 0f;
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = unchecked((uint)Math.Max(0, queuedBeforeFlush));
+            entry.ErrorFlags = errorFlags;
+            entry.ExportReason = errorFlags != 0u ? (uint)ExportReason.BusCongestionWarning : (uint)ExportReason.None;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = laneHash;
+            entry.SubsystemHeatPacked = PackSignalLaneCounts(snapshotCount, droppedCount);
+            entry.LastOriginShiftFrame = unchecked((uint)Math.Max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+
+            if (errorFlags != 0u)
+                TryExportSnapshot(ExportReason.BusCongestionWarning, errorFlags, bypassCooldown: false);
+        }
+
+        private void WriteHullDentTelemetry(uint dentBufferHash, int activeHullDents, uint packedFlags)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = ReserveTelemetryWriteIndex();
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Vfx;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
+            entry.GpuFrameTime = 0f;
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = unchecked((uint)Math.Max(0, activeHullDents));
+            entry.ErrorFlags = 0u;
+            entry.ExportReason = (uint)ExportReason.None;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = dentBufferHash;
+            entry.SubsystemHeatPacked = packedFlags;
+            entry.LastOriginShiftFrame = unchecked((uint)Math.Max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+        }
+
+        private static uint PackSignalLaneCounts(int snapshotCount, int droppedCount)
+        {
+            uint snapshot = unchecked((uint)Math.Min(Math.Max(0, snapshotCount), ushort.MaxValue));
+            uint dropped = unchecked((uint)Math.Min(Math.Max(0, droppedCount), ushort.MaxValue));
+            return snapshot | (dropped << 16);
+        }
+
+        private static uint PackJobAdmissionState(int criticalDebtFrames, byte flags)
+        {
+            uint debt = unchecked((uint)Math.Min(Math.Max(0, criticalDebtFrames), 0x00FFFFFF));
+            return debt | ((uint)flags << 24);
+        }
+
+        private void WriteJobAdmissionTelemetry(byte lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, int criticalDebtFrames, byte flags)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = ReserveTelemetryWriteIndex();
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Scheduler;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = estimatedCostMs;
+            entry.GpuFrameTime = remainingBudgetMs;
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = lane;
+            entry.ErrorFlags = (uint)ErrorBits.JobAdmissionStarvation;
+            entry.ExportReason = (uint)ExportReason.JobAdmissionStarvation;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = jobHash;
+            entry.SubsystemHeatPacked = PackJobAdmissionState(criticalDebtFrames, flags);
+            entry.LastOriginShiftFrame = unchecked((uint)Math.Max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+        }
+
+        private void WriteJobAdmissionLaneTelemetry(byte lane, float budgetMs, float refillMs, int criticalDebtFrames, uint killSwitchMask)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = ReserveTelemetryWriteIndex();
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Scheduler;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = budgetMs;
+            entry.GpuFrameTime = refillMs;
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = lane;
+            entry.ErrorFlags = 0u;
+            entry.ExportReason = (uint)ExportReason.None;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = killSwitchMask;
+            entry.SubsystemHeatPacked = PackJobAdmissionState(criticalDebtFrames, 0);
+            entry.LastOriginShiftFrame = unchecked((uint)Math.Max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
         }
 
         private void WriteKineticAnomalyTelemetry(Vector3 runtimePosition, Vector3 deltaVelocity, float accelerationMetersPerSecondSq)
@@ -1247,6 +1502,32 @@ namespace Hecton8.Core
             entry.AupShiftSequence = shiftEvent.Sequence;
             entry.AiStatePacked = unchecked((uint)math.max(0, pendingContinuationCount));
             entry.SubsystemHeatPacked = PackFloatToMilliseconds(latencyMs);
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+        }
+
+        private void WriteStreamingBackpressureTelemetry(float debt01, double latencyEwmaMs, double oldestPendingMs, int pendingLoads)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = ReserveTelemetryWriteIndex();
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.WorldStreaming;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            float latencyMs = math.isfinite((float)latencyEwmaMs) ? (float)math.max(0d, latencyEwmaMs) : 0f;
+            float pendingMs = math.isfinite((float)oldestPendingMs) ? (float)math.max(0d, oldestPendingMs) : 0f;
+            entry.LatencyMs = latencyMs;
+            entry.GpuFrameTime = pendingMs;
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = unchecked((uint)math.max(0, pendingLoads));
+            entry.ErrorFlags = 0u;
+            entry.ExportReason = (uint)ExportReason.None;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = PackFloatToMilliseconds(pendingMs);
+            entry.SubsystemHeatPacked = unchecked((uint)math.round(math.saturate(debt01) * 1000f));
             entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
             _ringBuffer[writeIndex] = entry;
         }
@@ -1548,6 +1829,58 @@ namespace Hecton8.Core
             _ringBuffer[writeIndex] = entry;
         }
 
+        private void WritePeakStressEventTelemetry(float stress01, float o2DrainMultiplier, uint peakEventCount)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = ReserveTelemetryWriteIndex();
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+            float safeStress = math.isfinite(stress01) ? math.saturate(stress01) : 0f;
+            float safeO2Drain = math.isfinite(o2DrainMultiplier) ? math.saturate(o2DrainMultiplier * 0.4f) : 0f;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Physiology;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
+            entry.GpuFrameTime = safeStress;
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = 0u;
+            entry.ExportReason = (uint)ExportReason.PeakStressEvent;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = PackTwoUnitFloats(safeStress, safeO2Drain);
+            entry.SubsystemHeatPacked = peakEventCount;
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+        }
+
+        private void WritePhysiologyNanTelemetry(float stress01, float o2DrainMultiplier, uint contextHash)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = ReserveTelemetryWriteIndex();
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+            float safeStress = math.isfinite(stress01) ? math.saturate(stress01) : 0f;
+            float safeO2Drain = math.isfinite(o2DrainMultiplier) ? math.saturate(o2DrainMultiplier * 0.4f) : 0f;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Physiology;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
+            entry.GpuFrameTime = safeStress;
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = (uint)ErrorBits.PhysiologyNan;
+            entry.ExportReason = (uint)ExportReason.PhysiologyNan;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = PackTwoUnitFloats(safeStress, safeO2Drain);
+            entry.SubsystemHeatPacked = contextHash;
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+        }
+
         private void WriteAupJitterCorrectionTelemetry(Vector3 runtimePosition, float correctionMeters)
         {
             uint frameIndex = unchecked((uint)Time.frameCount);
@@ -1572,6 +1905,34 @@ namespace Hecton8.Core
             _ringBuffer[writeIndex] = entry;
         }
 
+        private void WriteTimeDilationTelemetry(float scalar, double tickOverheadMilliseconds)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = ReserveTelemetryWriteIndex();
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+            float safeScalar = math.isfinite(scalar) ? math.max(0f, scalar) : 1f;
+            float safeOverhead = tickOverheadMilliseconds > float.MaxValue
+                ? float.MaxValue
+                : SanitizeMilliseconds((float)tickOverheadMilliseconds);
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.TimeDilation;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameDeltaTime;
+            entry.LatencyMs = safeOverhead;
+            entry.GpuFrameTime = safeScalar;
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = 0u;
+            entry.ExportReason = (uint)ExportReason.None;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = PackTwoUnitFloats(math.saturate(safeScalar), GlobalSignals.BulletTimeVisualIntensity01);
+            entry.SubsystemHeatPacked = PackFloatToMilliseconds(safeOverhead);
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+        }
+
         private static uint PackBytesToMegabytes(long bytes)
         {
             if (bytes <= 0L)
@@ -1579,6 +1940,13 @@ namespace Hecton8.Core
 
             long megabytes = bytes >> 20;
             return megabytes >= uint.MaxValue ? uint.MaxValue : (uint)megabytes;
+        }
+
+        private static uint PackTwoUnitFloats(float lhs01, float rhs01)
+        {
+            uint lhs = (uint)math.round(math.saturate(lhs01) * ushort.MaxValue);
+            uint rhs = (uint)math.round(math.saturate(rhs01) * ushort.MaxValue);
+            return lhs | (rhs << 16);
         }
 
         private static uint PackFloatToMilliseconds(float milliseconds)
@@ -2514,7 +2882,7 @@ namespace Hecton8.Core
 
             if (Interlocked.CompareExchange(ref _exportState, ExportStateQueued, ExportStateIdle) != ExportStateIdle)
             {
-                if ((exportFlags & (uint)ErrorBits.NanPhysics) != 0u)
+                if ((exportFlags & ((uint)ErrorBits.NanPhysics | (uint)ErrorBits.PhysiologyNan)) != 0u)
                     OrRuntimeFaultFlags(unchecked((int)exportFlags));
 
                 RecordBlackBoxExportDropped();

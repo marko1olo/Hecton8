@@ -1,11 +1,25 @@
 ﻿# Reports
 
-Date: 2026-05-11
-Status: PENDING FINAL UNITY PROOF (DOCS CONTINUATION CORE BUILD PASSED / UNITY MCP NOT RUN)
+Date: 2026-05-13
+Status: PENDING VERIFICATION (DOC_AUDIT R13 STATIC OVERRIDE / UNITY RUNTIME PROOF ABSENT)
 
 Purpose: canonical drop zone for reports, audits, counters, and validation writeups.
 
 Dated reports are evidence snapshots. Durable project policy belongs in `AGENTS.md`, `.agents-skills/README.md`, task-relevant `.agents-skills/*`, and stable docs such as `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`.
+
+## 2026-05-13 Evidence Override
+
+`2026-05-13_DOC_AUDIT_XRAY.md` is the current documentation-reality override.
+It found the May 11 build artifacts cited by stable docs absent from the current filesystem:
+
+- `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`
+- `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.log`
+
+Therefore May 11 compile-success claims remain dated report text, not current artifact-backed proof, until those files are restored or a new build artifact is captured.
+
+R2/R3/R4/R5/R6/R7/R8/R9/R10/R11/R12/R13 static refresh also found active non-report docs still calling that missing file `Current compile-only evidence`, stale interface-count claims, Archivarius path drift, an inflated active-doc counter that included `Docs/Archive`, package-surface wording that confused clean UPM manifest state with physical legacy asset contamination, primary `AGENTS` authority drift around Low URP mapping / Easy Save 3 wording, world/scatter runtime-wiring proof gaps, root mirror/atlas scope confusion, active root anchors still promoting the missing May 11 artifact as current evidence, SpaceEngine research proof/path drift, Omega smoke artifact drift, and active documentation manifest JSON files whose count/build-state surfaces needed historical snapshot boundaries. Those lines were demoted or corrected. Current static counters after concurrent churn: `918` markdown files under `Docs`, `283` active markdown, `203` active non-`Docs/Reports` markdown, `80` active direct report markdown, `10` docs JSON, `1411` project C# files, `1365` script C# files, `869871` project source lines, `852315` script source lines, `215` interface declaration hits, `51` direct public interfaces in `GlobalRegistryContracts.cs`, and `24` first-party asmdefs.
+
+`Docs/Reports/*ACTIVE_DOCUMENTATION_MANIFEST.json` files are historical generated snapshots. DOC_AUDIT R13 added top-level boundaries to the May 6, May 7, May 9, and May 11 manifests; their counts, `sourceCounts`, `currentAuthority*`, `buildState`, and `entries` are not current authority after later workspace churn.
 
 ## Naming
 
@@ -20,6 +34,7 @@ Dated reports are evidence snapshots. Durable project policy belongs in `AGENTS.
 
 ## Current Evidence Snapshots
 
+- `2026-05-13_DOC_AUDIT_XRAY.md`
 - `2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`
 - `2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`
 - `2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`
@@ -67,12 +82,12 @@ Dated reports are evidence snapshots. Durable project policy belongs in `AGENTS.
 - `AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
 - `DOOMSDAY_FLAW_REPORT.md`
 
-`2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` is the current documentation/data boundary.
-It supersedes R186 as latest compile-only evidence with `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`. It records current counters: `Docs/**/*.md` `449`, active markdown `236`, direct `Docs/Reports/*.md` `70`, active JSON `15`, `Assets/_Project/**/*.cs` `1306`, `Assets/_Project/Scripts/**/*.cs` `1262`, project physical lines `770577`, script physical lines `753858`, and `GlobalRegistryContracts.cs` direct public interfaces `40`. This is local filesystem and `dotnet` evidence only, not Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof.
+`2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` is historical May 11 documentation/data evidence; `2026-05-13_DOC_AUDIT_XRAY.md` is the current static override for counters and missing-artifact evidence.
+It claimed R186 supersession with `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but the May 13 DOC_AUDIT filesystem check did not find that summary or raw log. Treat the May 11 compile-success line as stale report text until artifacts are restored or replaced. The May 11 report recorded counters: `Docs/**/*.md` `449`, active markdown `236`, direct `Docs/Reports/*.md` `70`, active JSON `15`, `Assets/_Project/**/*.cs` `1306`, `Assets/_Project/Scripts/**/*.cs` `1262`, project physical lines `770577`, script physical lines `753858`, and `GlobalRegistryContracts.cs` direct public interfaces `40`. Those counters are historical and source/doc only, not Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof.
 The same pass records an official Unity release-page check: Unity `6000.4.6f1` exists with release date `2026-05-05`, newer than the local project pin `6000.4.1f1`. This is version drift only, not upgrade approval.
 
-`2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` is the current machine-readable active documentation manifest.
-It lists active markdown files with parsed `Date`, `Status`, title, byte-size, and `requiresRuntimeProof` fields. It supersedes the May 8 manifest for counts and current compile artifact.
+`2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` is the latest machine-readable active documentation manifest, but its numeric counters are historical where the May 13 DOC_AUDIT X-Ray reports newer filesystem/source counts.
+It lists active markdown files with parsed `Date`, `Status`, title, byte-size, and `requiresRuntimeProof` fields. It supersedes the May 8 manifest structure, not the May 13 missing-artifact override.
 
 `2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` is the current `.agents-skills` visual-fake doctrine boundary.
 It records that the registry was not fully current for the current production direction: several physical/visual realism mandates still pushed simulate-first, Unity Joint, broad flow/lighting, or default HRTF paths. It adds `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt` and override blocks to the affected mandates. This is documentation-only. It does not prove Unity import, Play Mode, profiler, GCMonitor, player build, frame time, memory retention, or visual quality.
@@ -114,7 +129,7 @@ It is superseded by `2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json`.
 It records root text handling, active `Docs/` bundle classes, first-read reports, historical/evidence-only reports, the original dirty-worktree boundary, the follow-up relocation of repository-root logs into a deprecated evidence bundle, and the 2026-05-05 documentation influx count boundary. Read the May 6 synchronization report first for current counters.
 
 `2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md` is a bounded Omega-autonomy hardening evidence report.
-It records the PowerGrid native-sentinel and job-barrier telemetry changes, BaseLogisticsNetwork route BFS `.Run()` removal, procedural audio overflow telemetry, the explicit-EventSystem `MainMenuInputRoutingGuard` smoke fix, repair telemetry code/dedupe proof, runtime-watchdog registry hijack smoke, `HectonWorldGenerator.ActiveRuntimeInstance` compile-blocker cleanup through `GlobalRegistry.WorldSeedProvider`, scoped no-`IJob.Run()`/`JobHandle.Complete()` scan, scoped native-memory registration scan, `Hecton8.Core` build evidence, and final `OmegaAutonomySmokeTester` JSON `PASS` covering route edge cases, procedural audio overflow/reentry, main-menu input repair, runtime-watchdog registry ownership, registry hijack blocking, Burst clear native allocation delta, and construction logistics automation. The latest serial Omega Core build in that report is `Build succeeded`, `0 Warning(s)`, `0 Error(s)`; the last warning-bearing Omega baseline had `48 Warning(s)` owned by dependency/vendor code and `0` first-party `Assets/_Project/Scripts` warning matches. Current authority status remains `PENDING VERIFICATION`; the smoke `PASS` is scoped evidence only, not Play Mode/profiler/GCMonitor/player-build proof.
+It records the PowerGrid native-sentinel and job-barrier telemetry changes, BaseLogisticsNetwork route BFS `.Run()` removal, procedural audio overflow telemetry, the explicit-EventSystem `MainMenuInputRoutingGuard` smoke fix, repair telemetry code/dedupe proof, runtime-watchdog registry hijack smoke, `HectonWorldGenerator.ActiveRuntimeInstance` compile-blocker cleanup through `GlobalRegistry.WorldSeedProvider`, scoped no-`IJob.Run()`/`JobHandle.Complete()` scan, scoped native-memory registration scan, `Hecton8.Core` build evidence, and an older scoped `OmegaAutonomySmokeTester` JSON `PASS`. DOC_AUDIT R12 found current `Library/OmegaAutonomySmokeTester.json` reads `FAIL` on `nativeSentinelBalance` (`allocationDelta=2`, `trackedByteDelta=2560`), so the older smoke `PASS` is historical scoped evidence only. The latest serial Omega Core build in that report is `Build succeeded`, `0 Warning(s)`, `0 Error(s)`; the last warning-bearing Omega baseline had `48 Warning(s)` owned by dependency/vendor code and `0` first-party `Assets/_Project/Scripts` warning matches. Current authority status remains `PENDING VERIFICATION`; no Play Mode/profiler/GCMonitor/player-build proof is claimed.
 
 `2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` is the current structural cleanup queue.
 It previously recorded `41` active markdown files still missing `Date:`; the May 6 synchronization pass closed that debt and then normalized the remaining `_Archive`, `Reports`, and `DEPRECATED` markdown provenance headers. Current full `Docs/**/*.md` header debt is `0`. It also notes that repository-root `.log` evidence artifacts have been moved to dated `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_*` bundles and keeps archive/deprecated move candidates queued for a separate pass. It also records the editor-only documentation authority smoke guard, its three-pass stress runner, failed-audit telemetry hook, CI-facing `RunBatchAll` entrypoint, direct Roslyn compile evidence, and the current Unity licensing/project-lock blocker that prevents claiming batch smoke proof.

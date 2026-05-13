@@ -1,0 +1,133 @@
+#pragma kernel CSClearArgs
+#pragma kernel CSBuildMapPoints
+#pragma target 4.5
+
+AppendStructuredBuffer<float4> _SonarPointAppendBuffer;
+StructuredBuffer<uint2> _DiscoveredSectors;
+StructuredBuffer<float4> _PredatorAUPBuffer;
+RWByteAddressBuffer _IndirectArgs;
+
+cbuffer HectonSonarMapConstants
+{
+    float4 _GridDimensions;      // x: axis length, y: origin offset, z: cell size meters, w: word count
+    float4 _VolumeOrigin;        // xyz: player macro cell
+    float4 _PlayerWorldPosition; // xyz: player runtime position
+    float4 _SonarScalarParams;   // x: view radius meters, y: word stride, z: time phase, w: point capacity
+    float4 _SonarDispatchParams; // x: word count, y: max bits per word, z: predator count, w: quad index count
+};
+
+bool IsWordBitSet(uint2 packedWord, uint bitOffset)
+{
+    if (bitOffset < 32u)
+        return (packedWord.x & (1u << bitOffset)) != 0u;
+
+    return (packedWord.y & (1u << (bitOffset - 32u))) != 0u;
+}
+
+int3 DecodeMacroCell(uint bitIndex, uint axisLength, int originOffset)
+{
+    uint localX = bitIndex % axisLength;
+    uint yz = bitIndex / axisLength;
+    uint localY = yz % axisLength;
+    uint localZ = yz / axisLength;
+    return int3(
+        (int)localX - originOffset,
+        (int)localY - originOffset,
+        (int)localZ - originOffset);
+}
+
+int ResolveNearestMacroAxis(int wrappedAxis, int anchorAxis, int axisLength)
+{
+    int safeAxis = max(axisLength, 1);
+    int delta = anchorAxis - wrappedAxis;
+    int halfAxis = safeAxis >> 1;
+    int periods = delta >= 0 ? (delta + halfAxis) / safeAxis : (delta - halfAxis) / safeAxis;
+    return wrappedAxis + periods * safeAxis;
+}
+
+int3 ResolveNearestMacroCell(int3 wrappedCell, int3 anchorCell, int axisLength)
+{
+    return int3(
+        ResolveNearestMacroAxis(wrappedCell.x, anchorCell.x, axisLength),
+        ResolveNearestMacroAxis(wrappedCell.y, anchorCell.y, axisLength),
+        ResolveNearestMacroAxis(wrappedCell.z, anchorCell.z, axisLength));
+}
+
+float3 ResolveLocalPdaPosition(float3 deltaMeters, float viewRadius)
+{
+    float invDiameter = rcp(max(viewRadius * 2.0f, 1.0f));
+    return clamp(
+        float3(deltaMeters.x * invDiameter, deltaMeters.z * invDiameter, deltaMeters.y * invDiameter),
+        -0.5f,
+        0.5f);
+}
+
+[numthreads(1, 1, 1)]
+void CSClearArgs(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    _IndirectArgs.Store(0, (uint)max(_SonarDispatchParams.w, 0.0f));
+    _IndirectArgs.Store(4, 0u);
+    _IndirectArgs.Store(8, 0u);
+    _IndirectArgs.Store(12, 0u);
+    _IndirectArgs.Store(16, 0u);
+}
+
+[numthreads(64, 1, 1)]
+void CSBuildMapPoints(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint wordCount = (uint)max((int)_SonarDispatchParams.x, 0);
+    uint wordStride = (uint)max((int)_SonarScalarParams.y, 1);
+    uint wordIndex = dispatchThreadId.x * wordStride;
+    if (wordIndex >= wordCount)
+        return;
+
+    float viewRadius = max(_SonarScalarParams.x, 1.0f);
+    float radiusSq = viewRadius * viewRadius;
+    uint axisLength = (uint)max((int)_GridDimensions.x, 1);
+    uint originOffset = (uint)max((int)_GridDimensions.y, 0);
+    float cellSize = max(_GridDimensions.z, 1.0f);
+    uint maxBitsPerWord = (uint)max((int)_SonarDispatchParams.y, 1);
+    int3 playerMacroCell = (int3)round(_VolumeOrigin.xyz);
+
+    if (wordIndex == 0u)
+    {
+        uint predatorCount = (uint)min((int)_SonarDispatchParams.z, 16);
+        for (uint predatorIndex = 0u; predatorIndex < predatorCount; predatorIndex++)
+        {
+            float4 predatorAup = _PredatorAUPBuffer[predatorIndex];
+            float3 predatorDelta = predatorAup.xyz - _PlayerWorldPosition.xyz;
+            if (dot(predatorDelta, predatorDelta) > radiusSq)
+                continue;
+
+            float pulse = abs(frac(_SonarScalarParams.z * 0.85f + (float)predatorIndex * 0.137f) * 2.0f - 1.0f);
+            float alpha = saturate((predatorAup.w * 0.008333333f) * (0.55f + pulse * 0.45f));
+            _SonarPointAppendBuffer.Append(float4(ResolveLocalPdaPosition(predatorDelta, viewRadius), -max(alpha, 0.25f)));
+        }
+    }
+
+    uint2 packedWord = _DiscoveredSectors[wordIndex];
+    if ((packedWord.x | packedWord.y) == 0u)
+        return;
+
+    uint emitted = 0u;
+    for (uint bitOffset = 0u; bitOffset < 64u; bitOffset++)
+    {
+        if (!IsWordBitSet(packedWord, bitOffset))
+            continue;
+
+        uint bitIndex = (wordIndex * 64u) + bitOffset;
+        int3 wrappedMacroCell = DecodeMacroCell(bitIndex, axisLength, (int)originOffset);
+        int3 macroCell = ResolveNearestMacroCell(wrappedMacroCell, playerMacroCell, (int)axisLength);
+        int3 cellDelta = macroCell - playerMacroCell;
+        float3 deltaMeters = float3((float)cellDelta.x, (float)cellDelta.y, (float)cellDelta.z) * cellSize;
+        if (dot(deltaMeters, deltaMeters) > radiusSq)
+            continue;
+
+        float distanceSq01 = saturate(dot(deltaMeters.xz, deltaMeters.xz) * rcp(radiusSq));
+        float intensity = saturate(0.9f - distanceSq01 * 0.45f);
+        _SonarPointAppendBuffer.Append(float4(ResolveLocalPdaPosition(deltaMeters, viewRadius), intensity));
+        emitted++;
+        if (emitted >= maxBitsPerWord)
+            return;
+    }
+}

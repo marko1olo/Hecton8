@@ -12,7 +12,8 @@ namespace Hecton8.Audio
         PredatorKill = 1,
         MeteorBoom = 2,
         MechanicalWhirr = 3,
-        LeviathanRoar = 4
+        LeviathanRoar = 4,
+        AirRelease = 5
     }
 
     /// <summary>

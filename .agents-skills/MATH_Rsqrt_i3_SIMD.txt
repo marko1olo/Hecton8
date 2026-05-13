@@ -33,6 +33,36 @@ Rejected:
 - scalar managed helper loops outside Burst.
 - v512 assumptions.
 
+## Burst 1.8.x SIMD / Intrinsics Law
+
+[PROJECT] Package lock resolves `com.unity.burst` to 1.8.28. This mandate is bound to Burst 1.8.x until the lock changes and a Player benchmark is recorded.
+
+[RULE] Default i3 SIMD path is Burst auto-vectorized loops over `NativeArray<T>` with SoA memory and `math.rsqrt`, squared comparisons, `math.rcp`, and branch-reduced masks.
+[RULE] Explicit intrinsics may use `Unity.Burst.Intrinsics.v64`, `v128`, and `v256` only when guarded by the matching `IsXXXSupported` check and covered by a scalar fallback.
+[RULE] `v128` is the baseline hand-written SIMD target for i3-class x86 where auto-vectorization fails and Burst Inspector proves scalar code.
+[RULE] `v256` is High/Ultra only, guarded by AVX/AVX2 feature checks and benchmark proof on target hardware.
+[RULE] Processor intrinsics inside `FloatMode.Deterministic` require bit-level equivalent behavior on every supported target architecture or are forbidden.
+
+[FORBID] `v512`, AVX-512, or "Burst 2.0" mandates from current project evidence.
+[FORBID] Using x86 intrinsics without `IsXXXSupported` guards.
+[FORBID] Using hand-written intrinsics before checking Burst Inspector output for auto-vectorization.
+[FORBID] Platform-deterministic gameplay authority that depends on approximate reciprocal-square-root bit identity.
+
+## Engineering Data
+
+| Tier | SIMD Path | Allowed Width | Evidence Required |
+|---|---|---|---|
+| Low/i3 | Burst auto-vectorized SoA loops | compiler-selected / v128 fallback | Burst Inspector + Player microbench |
+| Middle | auto-vectorized + guarded v128 helpers | v128 | ns/sample and max error |
+| High | guarded AVX path for batch jobs | v256 | AVX feature check + target capture |
+| Ultra | v256 plus richer visual batch math | v256 | Player profiler and visual benefit |
+
+Benchmark shape:
+- 1M samples, warm and cold cache.
+- Compare scalar, Burst auto-vectorized, v128, and v256 where available.
+- Record ns/sample, max absolute error, branch count, and GC bytes.
+- If improvement is below 5 percent, keep auto-vectorized code.
+
 ---
 
 ## Evidence
@@ -63,4 +93,3 @@ float3 dominant = v * invApprox;
 ```
 
 [STATUS] Microsecond savings are PENDING VERIFICATION until Burst Player benchmarks run on the i3 target.
-

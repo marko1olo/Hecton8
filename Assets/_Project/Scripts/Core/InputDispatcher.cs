@@ -1,4 +1,6 @@
 using Hecton8.Input;
+using Hecton8.Core.Signals;
+using Hecton8.Physics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Tools;
@@ -47,10 +49,14 @@ namespace Hecton8.Core
         private const float XRHapticMotorWriteEpsilon = 0.015f;
         private const float XRHapticImpulseDurationSeconds = 0.045f;
         private const float XRHapticRefreshIntervalSeconds = 0.033f;
+        private const float XRToolTriggerPressThreshold = 0.5f;
+        private const float XRToolTriggerPublishEpsilon = 0.01f;
         private const byte HapticLowMotorMask = 0b0001;
         private const byte HapticHighMotorMask = 0b0010;
         private const byte HapticBlendOverride = 0;
         private const byte HapticBlendAdditive = 1;
+        private const byte ToolTriggerFlagPrimaryPressed = 1 << 0;
+        private const byte ToolTriggerFlagSecondaryPressed = 1 << 1;
         private const uint XRRuntimeFlagLookAtRayCommandEnabled = 1u << 0;
         private const uint XRRuntimeFlagInputSnapshotActive = 1u << 1;
         private const uint XRRuntimeFlagsAny = XRRuntimeFlagLookAtRayCommandEnabled | XRRuntimeFlagInputSnapshotActive;
@@ -114,7 +120,13 @@ namespace Hecton8.Core
         private float _nextLeftXRHapticWriteTime;
         private float _nextRightXRHapticWriteTime;
         private float _lookBlendElapsed;
+        private float _lastPublishedXRToolTriggerStrength = -1f;
+        private float _lastPublishedXRSecondaryTriggerStrength = -1f;
+        private uint _lastPublishedXRToolTriggerMask;
         private uint _xrRuntimeFlags;
+        private ushort _toolTriggerSequence;
+        private byte _lastPublishedXRToolTriggerFlags;
+        private byte _lastPublishedXRToolDominantController;
         private bool _lookBlendActive;
         private Vector2 _lookBlendFrom;
         private Vector2 _lastDeliveredLookDelta;
@@ -861,10 +873,11 @@ namespace Hecton8.Core
             _lastCapturedFrame = currentFrame;
 
             PlayerInputState state = default;
+            uint actionBits = 0u;
             InputManager inputManager = _nativeInputManager;
             if (inputManager != null && inputManager.IsPlayerInputEnabled)
             {
-                uint actionBits = _latchedActionBits;
+                actionBits = _latchedActionBits;
                 if (inputManager.IsJumping)
                     actionBits |= (uint)PlayerInputAction.Jump;
                 if (inputManager.IsPrimaryActionHeld)
@@ -883,23 +896,51 @@ namespace Hecton8.Core
                 if (inputManager.TryReadUiScrollWheel(out Vector2 scrollDelta))
                     state.ScrollDelta = scrollDelta;
                 state.VerticalDelta = math.clamp(inputManager.VerticalMovementInput, -1f, 1f);
-                state.ActionsBitmask = actionBits;
                 SteamDeckInputPal.Capture(ref state, deltaTime);
                 _lastDeliveredLookDelta = state.LookDelta;
             }
 
-            _currentState = state;
             _pendingLookDelta = Vector2.zero;
             _latchedActionBits = 0u;
             if (HectonXRRuntimeState.IsXRActive)
             {
                 RefreshXRInputSnapshot();
+                actionBits |= ResolveXRToolActionBitsAndPublishSignal(currentFrame);
                 StageXRLookAtRayCommand();
             }
             else
             {
+                PublishXRToolTriggerReleaseIfNeeded(currentFrame);
                 ClearXRRuntimeFrameStateIfActive();
             }
+
+            state.ActionsBitmask = actionBits;
+            bool automationOverrideApplied = ApplyAutomationOverride(ref state, (uint)currentFrame);
+            if (automationOverrideApplied)
+                _lastDeliveredLookDelta = state.LookDelta;
+
+            byte inputSignalFlags = automationOverrideApplied
+                ? PhysicsDeterminismSignals.InputSignalFlagAutomationOverride
+                : (byte)0;
+            _currentState = state;
+            PhysicsDeterminismSignals.PublishInput(in state, (uint)currentFrame, inputSignalFlags);
+        }
+
+        private static bool ApplyAutomationOverride(ref PlayerInputState state, uint currentFrame)
+        {
+            if (!PhysicsDeterminismSignals.TryConsumeLatestInputOverride(currentFrame, 2u, out InputSignal overrideSignal))
+                return false;
+
+            state.MoveDelta = new Vector2(overrideSignal.MoveDelta.x, overrideSignal.MoveDelta.y);
+            state.LookDelta = new Vector2(overrideSignal.LookDelta.x, overrideSignal.LookDelta.y);
+            state.ScrollDelta = Vector2.zero;
+            state.VerticalDelta = math.clamp(overrideSignal.VerticalDelta, -1f, 1f);
+            state.SteamDeckGyroAimDelta = Vector2.zero;
+            state.SteamDeckLeftTrackpad = Vector2.zero;
+            state.SteamDeckRightTrackpad = Vector2.zero;
+            state.ActionsBitmask = overrideSignal.ActionsBitmask;
+            state.PlatformInputFlags = 0u;
+            return true;
         }
 
         private void RefreshXRNativeBufferState()
@@ -1030,6 +1071,82 @@ namespace Hecton8.Core
             _xrRuntimeFlags |= XRRuntimeFlagInputSnapshotActive;
         }
 
+        private uint ResolveXRToolActionBitsAndPublishSignal(int frame)
+        {
+            if (!_xrInputStates.IsCreated)
+                return 0u;
+
+            XRInputState left = _xrInputStates[0];
+            XRInputState right = _xrInputStates[1];
+            float leftTrigger = left.Trigger;
+            float rightTrigger = right.Trigger;
+            float leftGrip = left.Grip;
+            float rightGrip = right.Grip;
+            float primaryStrength = math.max(leftTrigger, rightTrigger);
+            float secondaryStrength = math.max(leftGrip, rightGrip);
+            byte flags = 0;
+            flags |= primaryStrength >= XRToolTriggerPressThreshold ? ToolTriggerFlagPrimaryPressed : (byte)0;
+            flags |= secondaryStrength >= XRToolTriggerPressThreshold ? ToolTriggerFlagSecondaryPressed : (byte)0;
+            uint actionBits = 0u;
+            actionBits |= (flags & ToolTriggerFlagPrimaryPressed) != 0 ? (uint)PlayerInputAction.PrimaryFire : 0u;
+            actionBits |= (flags & ToolTriggerFlagSecondaryPressed) != 0 ? (uint)PlayerInputAction.SecondaryFire : 0u;
+
+            uint controllerMask = left.ActiveMask | right.ActiveMask;
+            float leftDominance = math.max(leftTrigger, leftGrip);
+            float rightDominance = math.max(rightTrigger, rightGrip);
+            byte dominantController = rightDominance > leftDominance ? (byte)1 : (byte)0;
+            PublishXRToolTriggerIfChanged(primaryStrength, secondaryStrength, controllerMask, dominantController, flags, frame);
+            return actionBits;
+        }
+
+        private void PublishXRToolTriggerIfChanged(
+            float strength,
+            float secondaryStrength,
+            uint controllerMask,
+            byte dominantController,
+            byte flags,
+            int frame)
+        {
+            if (math.abs(strength - _lastPublishedXRToolTriggerStrength) < XRToolTriggerPublishEpsilon &&
+                math.abs(secondaryStrength - _lastPublishedXRSecondaryTriggerStrength) < XRToolTriggerPublishEpsilon &&
+                controllerMask == _lastPublishedXRToolTriggerMask &&
+                dominantController == _lastPublishedXRToolDominantController &&
+                flags == _lastPublishedXRToolTriggerFlags)
+            {
+                return;
+            }
+
+            ToolTriggerSignal signal = default;
+            signal.Strength = strength;
+            signal.SecondaryStrength = secondaryStrength;
+            signal.Frame = (uint)frame;
+            signal.ControllerMask = controllerMask;
+            signal.Sequence = ++_toolTriggerSequence;
+            signal.DominantController = dominantController;
+            signal.Flags = flags;
+            GlobalSignals.Publish(in signal);
+
+            _lastPublishedXRToolTriggerStrength = strength;
+            _lastPublishedXRSecondaryTriggerStrength = secondaryStrength;
+            _lastPublishedXRToolTriggerMask = controllerMask;
+            _lastPublishedXRToolDominantController = dominantController;
+            _lastPublishedXRToolTriggerFlags = flags;
+        }
+
+        private void PublishXRToolTriggerReleaseIfNeeded(int frame)
+        {
+            if (_lastPublishedXRToolTriggerStrength <= 0f &&
+                _lastPublishedXRSecondaryTriggerStrength <= 0f &&
+                _lastPublishedXRToolTriggerMask == 0u &&
+                _lastPublishedXRToolDominantController == 0 &&
+                _lastPublishedXRToolTriggerFlags == 0)
+            {
+                return;
+            }
+
+            PublishXRToolTriggerIfChanged(0f, 0f, 0u, 0, 0, frame);
+        }
+
         private void ClearXRInputSnapshotIfActive(bool forceWrite = false)
         {
             if (!_xrInputStates.IsCreated)
@@ -1070,9 +1187,15 @@ namespace Hecton8.Core
             state.Joystick = ApplyXRJoystickNoiseFloor(joystick);
             Vector3 position = controller.devicePosition != null ? controller.devicePosition.ReadValue() : Vector3.zero;
             Quaternion rotation = controller.deviceRotation != null ? controller.deviceRotation.ReadValue() : Quaternion.identity;
+            bool positionValid = IsFinite(position);
+            bool rotationValid = IsFinite(rotation);
+            if (!positionValid)
+                position = Vector3.zero;
+            if (!rotationValid)
+                rotation = Quaternion.identity;
             state.GripPositionWS = new float3(position.x, position.y, position.z);
             state.GripRotationWS = new quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
-            bool tracked = controller.isTracked != null && controller.isTracked.isPressed;
+            bool tracked = controller.isTracked != null && controller.isTracked.isPressed && positionValid && rotationValid;
             state.IsTracked = tracked ? (byte)1 : (byte)0;
 
             bool triggerActive = IsPressed(triggerButton, state.Trigger);
@@ -1118,13 +1241,18 @@ namespace Hecton8.Core
 
         private static float ApplyXRAnalogNoiseFloor(float value)
         {
+            if (!math.isfinite(value))
+                return 0f;
+
             float normalized = math.saturate(value);
             return normalized < XRAnalogNoiseFloor ? 0f : normalized;
         }
 
         private static float2 ApplyXRJoystickNoiseFloor(Vector2 value)
         {
-            float2 joystick = new float2(value.x, value.y);
+            float2 joystick = new float2(
+                math.isfinite(value.x) ? math.clamp(value.x, -1f, 1f) : 0f,
+                math.isfinite(value.y) ? math.clamp(value.y, -1f, 1f) : 0f);
             return math.lengthsq(joystick) < XRAnalogNoiseFloorSq ? float2.zero : joystick;
         }
 
@@ -1279,6 +1407,21 @@ namespace Hecton8.Core
             return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
                    !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
                    !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+        }
+
+        private static bool IsFinite(Quaternion value)
+        {
+            float lengthSq =
+                (value.x * value.x) +
+                (value.y * value.y) +
+                (value.z * value.z) +
+                (value.w * value.w);
+            return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+                   !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+                   !float.IsNaN(value.z) && !float.IsInfinity(value.z) &&
+                   !float.IsNaN(value.w) && !float.IsInfinity(value.w) &&
+                   !float.IsNaN(lengthSq) && !float.IsInfinity(lengthSq) &&
+                   lengthSq > 0.000001f;
         }
 
         private static AbsoluteUniversePosition OffsetAupLocal(in AbsoluteUniversePosition anchorAup, Vector3 runtimeOffset)

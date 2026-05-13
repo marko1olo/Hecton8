@@ -395,3 +395,14 @@ POOL_TILE_CACHE_BYTES =   134_217_728   // 128 MB
 POOL_HLOD_BYTES       =   268_435_456   // 256 MB
 VRAM_EVICT_THRESHOLD  = 1_887_436_800   // 1.8 GB
 VRAM_RESUME_THRESHOLD = 1_610_612_736   // 1.5 GB
+
+---
+
+## Engineering Data
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| Hot path | 0 B GC, no unbounded main-thread work | Profiler/GCMonitor/static scan |
+| MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
+| Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
+| Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |

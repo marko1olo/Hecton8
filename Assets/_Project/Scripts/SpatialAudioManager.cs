@@ -50,10 +50,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Atmosphere;
+using Hecton8.Audio.Propagation;
 using Hecton8.Caves;
 using Hecton8.Construction;
 using Hecton8.Core;
@@ -79,6 +81,7 @@ namespace Hecton8.Audio
         private const float MassiveDistanceFixedAudioDelayMeters = 740f;
         private const float MassiveDistanceFixedAudioDelaySeconds = 0.5f;
         private const float ThermalShimmerMaximumPitchRatio = 0.018f;
+        private const float TimeDilationAudioMinimumPitchRatio = 0.72f;
         private const float InverseTwoPi = 0.15915494309f;
         private const float HaasArrivalWindowSeconds = 0.035f;
         private const float HaasReleaseThresholdSeconds = 0.04f;
@@ -173,6 +176,14 @@ namespace Hecton8.Audio
         private const float PoolFullEditorLogIntervalSeconds = 5f;
         private const float NullClipEditorLogIntervalSeconds = 5f;
         private const int MaxQueuedAudioEvents = 32;
+        private const int MaxQueuedSoundEmissionSignals = 32;
+        private const int AcousticPortalMaxNodes = AcousticPortalConstants.MaxPathNodes;
+        private const int AcousticPortalMaxEdges = AcousticPortalConstants.MaxPathEdges;
+        private const int AcousticPortalCacheCapacity = 16;
+        private const float AcousticPortalCacheReuseDistanceMeters = 1f;
+        private const float AcousticPortalHabitatAssociationMaxDistanceMeters = 45f;
+        private const float AcousticPortalMaximumPlayDelaySeconds = 1.25f;
+        private const string AcousticPortalDumpRelativePath = "Docs/AgentLogs/Dump_ACOUSTIC_PORTAL_PROPAGATION.bin";
         private const uint FirstAudioEventId = 1u;
         private const float SabineEquationConstant = 0.161f;
         private const float SabineMinimumRoomVolumeCubicMeters = 0.01f;
@@ -246,6 +257,16 @@ namespace Hecton8.Audio
             public float TraumaRangeMeters;
             public float TraumaImpulse;
             public float TraumaWeight;
+        }
+
+        private struct AcousticPortalCacheEntry
+        {
+            public int Key;
+            public int Frame;
+            public byte Valid;
+            public AcousticAup SourceAup;
+            public AcousticAup ListenerAup;
+            public AcousticPathResult Result;
         }
 
         [StructLayout(LayoutKind.Sequential, Size = 80)]
@@ -496,6 +517,7 @@ namespace Hecton8.Audio
         private float _stormRoarShedCurrent01;
         private float _eclipseAcousticPitchShiftCents;
         private float _eclipseAcousticPitchRatio = 1f;
+        private float _timeDilationWorldPitchRatio = 1f;
         private float _listenerWaterDensityMul;
         private float _radarDecayAccumulator;
         private HectonPlayerMovement _listenerPlayerMovement;
@@ -505,6 +527,23 @@ namespace Hecton8.Audio
         private int _audioEventQueueCount;
         private int _audioEventQueueDroppedCount;
         private NativeQueue<CoreAudioEvent> _audioEventQueue;
+        private int _soundEmissionSignalQueueCount;
+        private int _soundEmissionSignalDroppedCount;
+        private NativeQueue<SoundEmissionSignal> _soundEmissionSignals;
+        private NativeArray<AcousticPortalNode> _acousticPortalNodes;
+        private NativeArray<AcousticPortalEdge> _acousticPortalEdges;
+        private NativeArray<AcousticPathResult> _acousticPortalResult;
+        private NativeArray<float> _acousticPortalCosts;
+        private NativeArray<int> _acousticPortalCameFrom;
+        private NativeArray<byte> _acousticPortalStates;
+        private NativeList<int> _acousticPortalOpenSet;
+        private NativeList<int> _acousticPortalClosedSet;
+        private NativeArray<AcousticTelemetryEntry> _acousticPortalBlackBox;
+        private int _acousticPortalBlackBoxCursor;
+        private Vector3[] _acousticPortalWaypointScratch;
+        private int[] _acousticHabitatNodeMap;
+        private int[] _acousticHabitatQueue;
+        private AcousticPortalCacheEntry[] _acousticPortalCache;
         private bool _isInitialized;
         private bool _runtimeResourcesInitialized;
         private bool _eventsSubscribed;
@@ -768,6 +807,7 @@ namespace Hecton8.Audio
             UpdateListenerWaterDensityMul(safeDeltaTime);
             UpdateStormRoarShedder(safeDeltaTime);
             UpdateGlobalWindHowl(safeDeltaTime);
+            UpdateTimeDilationPitchScalar();
             float threatActivity = 0f;
             DecayImpactEmitters(now);
             AdvanceAcousticRadarDecayCadence(safeDeltaTime);
@@ -877,6 +917,7 @@ namespace Hecton8.Audio
         public void LateFrameTick()
         {
             AcousticOcclusionUtility.LateFrameTick();
+            DrainSoundEmissionSignals();
             DrainAudioEventQueue();
         }
 
@@ -1196,8 +1237,26 @@ namespace Hecton8.Audio
             ResolveListenerBasis(listener, out float3 listenerRight, out _, out float3 listenerForward);
             float3 listenerAcousticForward = listenerForward;
             ResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition);
+            Vector3 audiblePosition = position;
+            Vector3 audibleAbsolutePosition = sourceAbsolutePosition;
+            AbsoluteUniversePosition audibleAup = sourceAup;
+            bool hasAcousticPortalPath = hasListener &&
+                TryResolveAcousticPortalPath(
+                    position,
+                    listenerRuntimePosition,
+                    listenerRight,
+                    in sourceAup,
+                    in listenerAup,
+                    out AcousticPathResult acousticPortalResult);
+            if (hasAcousticPortalPath)
+            {
+                audibleAup = ToAbsoluteUniversePosition(in acousticPortalResult.LastPortalAup);
+                audiblePosition = ToRuntimeVector3(in audibleAup);
+                audibleAbsolutePosition = ToAbsoluteVector3(in audibleAup);
+            }
+
             AudioLodTier lodTier = hasListener
-                ? ResolveAudioLodTier(in sourceAup, in listenerAup)
+                ? ResolveAudioLodTier(in audibleAup, in listenerAup)
                 : AudioLodTier.Tier0Full;
             if (lodTier == AudioLodTier.Tier2Culled)
                 return;
@@ -1229,9 +1288,9 @@ namespace Hecton8.Audio
             UpdateWorldSourceAudioLod(
                 index,
                 source,
-                position,
-                sourceAbsolutePosition,
-                in sourceAup,
+                audiblePosition,
+                audibleAbsolutePosition,
+                in audibleAup,
                 listener,
                 in listenerAup,
                 listenerRuntimePosition,
@@ -1240,14 +1299,16 @@ namespace Hecton8.Audio
                 listenerAbsolutePosition,
                 now,
                 true);
-            ApplyHaasMask(index, in sourceAup, hasListener, in listenerAup, now);
+            if (hasAcousticPortalPath)
+                ApplyAcousticPortalPresentation(index, source, in acousticPortalResult);
+            ApplyHaasMask(index, in audibleAup, hasListener, in listenerAup, now);
             source.spatialBlend = ResolveTargetSpatialBlend(index, now);
 
             // â”€â”€ Ð—Ð°Ð¿ÑƒÑÐº â”€â”€
-            source.Play();
+            PlayAcousticSource(source, hasAcousticPortalPath ? acousticPortalResult.DelaySeconds : 0f);
             _startTimes[index] = now;
-            CacheActiveWorldRuntimePosition(index, position, currentFrame);
-            CacheActiveWorldAup(index, in sourceAup, currentFrame);
+            CacheActiveWorldRuntimePosition(index, audiblePosition, currentFrame);
+            CacheActiveWorldAup(index, in audibleAup, currentFrame);
             MarkWorldSourceActive(index);
         }
 
@@ -1264,6 +1325,23 @@ namespace Hecton8.Audio
 
             _audioEventQueue.Enqueue(audioEvent);
             _audioEventQueueCount++;
+            return true;
+        }
+
+        public bool QueueSoundEmissionSignal(in SoundEmissionSignal signal)
+        {
+            if (!_soundEmissionSignals.IsCreated ||
+                _soundEmissionSignalQueueCount >= MaxQueuedSoundEmissionSignals ||
+                !TryResolveAudioEventClip(signal.EventID, out _) ||
+                !AcousticAup.IsFinite(in signal.SourceAup))
+            {
+                if (_soundEmissionSignals.IsCreated && _soundEmissionSignalQueueCount >= MaxQueuedSoundEmissionSignals)
+                    _soundEmissionSignalDroppedCount++;
+                return false;
+            }
+
+            _soundEmissionSignals.Enqueue(signal);
+            _soundEmissionSignalQueueCount++;
             return true;
         }
 
@@ -1295,6 +1373,36 @@ namespace Hecton8.Audio
 
             if (_audioEventQueueCount < 0)
                 _audioEventQueueCount = 0;
+        }
+
+        private void DrainSoundEmissionSignals()
+        {
+            if (!_soundEmissionSignals.IsCreated || _soundEmissionSignalQueueCount <= 0)
+                return;
+
+            while (_soundEmissionSignalQueueCount > 0 && _soundEmissionSignals.TryDequeue(out SoundEmissionSignal signal))
+            {
+                _soundEmissionSignalQueueCount--;
+                DispatchSoundEmissionSignal(in signal);
+            }
+
+            if (_soundEmissionSignalQueueCount < 0)
+                _soundEmissionSignalQueueCount = 0;
+        }
+
+        private void DispatchSoundEmissionSignal(in SoundEmissionSignal signal)
+        {
+            if (!TryResolveAudioEventClip(signal.EventID, out AudioClip clip))
+                return;
+
+            AbsoluteUniversePosition sourceAup = ToAbsoluteUniversePosition(in signal.SourceAup);
+            Vector3 runtimePosition = ToRuntimeVector3(in sourceAup);
+            PlayAtPoint(
+                clip,
+                runtimePosition,
+                signal.Volume,
+                signal.Pitch,
+                ResolvedDefaultWorldMixerGroup);
         }
 
         private void DispatchQueuedAudioEvent(in CoreAudioEvent audioEvent)
@@ -1341,8 +1449,26 @@ namespace Hecton8.Audio
             ResolveListenerBasis(listener, out float3 listenerRight, out _, out float3 listenerForward);
             float3 listenerAcousticForward = listenerForward;
             ResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition);
+            Vector3 audiblePosition = position;
+            Vector3 audibleAbsolutePosition = sourceAbsolutePosition;
+            AbsoluteUniversePosition audibleAup = sourceAup;
+            bool hasAcousticPortalPath = hasListener &&
+                TryResolveAcousticPortalPath(
+                    position,
+                    listenerRuntimePosition,
+                    listenerRight,
+                    in sourceAup,
+                    in listenerAup,
+                    out AcousticPathResult acousticPortalResult);
+            if (hasAcousticPortalPath)
+            {
+                audibleAup = ToAbsoluteUniversePosition(in acousticPortalResult.LastPortalAup);
+                audiblePosition = ToRuntimeVector3(in audibleAup);
+                audibleAbsolutePosition = ToAbsoluteVector3(in audibleAup);
+            }
+
             AudioLodTier lodTier = hasListener
-                ? ResolveAudioLodTier(in sourceAup, in listenerAup)
+                ? ResolveAudioLodTier(in audibleAup, in listenerAup)
                 : AudioLodTier.Tier0Full;
             if (lodTier == AudioLodTier.Tier2Culled)
                 return;
@@ -1354,9 +1480,11 @@ namespace Hecton8.Audio
             AudioSource source = _pool[index];
             ResetWorldSourceState(index, true);
             source.enabled = true;
-            source.transform.position = position;
+            source.transform.position = audiblePosition;
             source.clip = clip;
             float clampedVolume = math.saturate(volume);
+            if (hasAcousticPortalPath)
+                clampedVolume *= acousticPortalResult.Transmission01;
             source.volume = clampedVolume;
             float clampedPitch = math.clamp(pitch, 0.1f, 3f);
             _baseVolumes[index] = clampedVolume;
@@ -1370,9 +1498,9 @@ namespace Hecton8.Audio
             UpdateWorldSourceAudioLod(
                 index,
                 source,
-                position,
-                sourceAbsolutePosition,
-                in sourceAup,
+                audiblePosition,
+                audibleAbsolutePosition,
+                in audibleAup,
                 listener,
                 in listenerAup,
                 listenerRuntimePosition,
@@ -1385,17 +1513,21 @@ namespace Hecton8.Audio
                 lowPassCutoffHz,
                 AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
                 AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+            if (hasAcousticPortalPath)
+                cutoff = math.min(cutoff, acousticPortalResult.LowPassCutoffHz);
             if (_sourceCinematicMuffleLowPassCutoffs != null && index >= 0 && index < _sourceCinematicMuffleLowPassCutoffs.Length)
                 cutoff = math.min(cutoff, _sourceCinematicMuffleLowPassCutoffs[index]);
             if (cutoff < AcousticOcclusionUtility.OpenLowPassCutoffHertz - 1f)
                 ApplyLowPassFilter(index, true, cutoff);
 
-            ApplyHaasMask(index, in sourceAup, hasListener, in listenerAup, now);
+            if (hasAcousticPortalPath)
+                ApplyAcousticPortalPresentation(index, source, in acousticPortalResult);
+            ApplyHaasMask(index, in audibleAup, hasListener, in listenerAup, now);
             source.spatialBlend = ResolveTargetSpatialBlend(index, now);
-            source.Play();
+            PlayAcousticSource(source, hasAcousticPortalPath ? acousticPortalResult.DelaySeconds : 0f);
             _startTimes[index] = now;
-            CacheActiveWorldRuntimePosition(index, position, currentFrame);
-            CacheActiveWorldAup(index, in sourceAup, currentFrame);
+            CacheActiveWorldRuntimePosition(index, audiblePosition, currentFrame);
+            CacheActiveWorldAup(index, in audibleAup, currentFrame);
             MarkWorldSourceActive(index);
         }
 
@@ -1942,9 +2074,11 @@ namespace Hecton8.Audio
             AudioSource source = _pool[index];
             ResetWorldSourceState(index, true);
             source.enabled = true;
-            source.transform.position = position;
+            source.transform.position = audiblePosition;
             source.clip = clip;
             float clampedVolume = math.saturate(volume);
+            if (hasAcousticPortalPath)
+                clampedVolume *= acousticPortalResult.Transmission01;
             source.volume = clampedVolume;
             float clampedPitch = math.clamp(pitch, 0.1f, 3f);
             _baseVolumes[index] = clampedVolume;
@@ -2416,6 +2550,15 @@ namespace Hecton8.Audio
             }
 
             _audioEventQueueCount = 0;
+            if (_soundEmissionSignals.IsCreated)
+            {
+                while (_soundEmissionSignals.TryDequeue(out _))
+                {
+                }
+            }
+
+            _soundEmissionSignalQueueCount = 0;
+            _soundEmissionSignalDroppedCount = 0;
         }
 
         private void ApplyHaasMask(
@@ -2569,6 +2712,28 @@ namespace Hecton8.Audio
         {
             float3 runtime = aup.ToRuntimeFloat3();
             return new Vector3(runtime.x, runtime.y, runtime.z);
+        }
+
+        private static AcousticAup ToAcousticAup(in AbsoluteUniversePosition aup)
+        {
+            return new AcousticAup(
+                aup.GridX,
+                aup.GridY,
+                aup.GridZ,
+                new float3(aup.LocalX, aup.LocalY, aup.LocalZ));
+        }
+
+        private static AbsoluteUniversePosition ToAbsoluteUniversePosition(in AcousticAup aup)
+        {
+            return new AbsoluteUniversePosition
+            {
+                GridX = aup.GridX,
+                GridY = aup.GridY,
+                GridZ = aup.GridZ,
+                LocalX = aup.Local.x,
+                LocalY = aup.Local.y,
+                LocalZ = aup.Local.z
+            };
         }
 
         private static bool TryResolvePlayerListenerAup(
@@ -3200,6 +3365,581 @@ namespace Hecton8.Audio
             lowPassFilter.cutoffFrequency = cutoffFrequency;
         }
 
+        private static void PlayAcousticSource(AudioSource source, float delaySeconds)
+        {
+            if (source == null)
+                return;
+
+            float delay = math.clamp(delaySeconds, 0f, AcousticPortalMaximumPlayDelaySeconds);
+            if (delay > 0.001f)
+                source.PlayDelayed(delay);
+            else
+                source.Play();
+        }
+
+        private void ApplyAcousticPortalPresentation(
+            int sourceIndex,
+            AudioSource source,
+            in AcousticPathResult result)
+        {
+            if (source == null || result.UsedPortalPath == 0)
+                return;
+
+            float cutoff = math.clamp(
+                result.LowPassCutoffHz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+            if (_lowPassFilters != null && sourceIndex >= 0 && sourceIndex < _lowPassFilters.Length)
+            {
+                AudioLowPassFilter lowPass = _lowPassFilters[sourceIndex];
+                if (lowPass != null && lowPass.enabled)
+                    cutoff = math.min(cutoff, lowPass.cutoffFrequency);
+            }
+
+            if (cutoff < AcousticOcclusionUtility.OpenLowPassCutoffHertz - 1f)
+                ApplyLowPassFilter(sourceIndex, true, cutoff);
+
+            if (math.abs(result.ItdSeconds) > 0.00001f)
+            {
+                float panOffset = result.ItdSeconds * math.rcp(AcousticPortalConstants.MaximumItdSeconds);
+                if (math.isfinite(panOffset))
+                    source.panStereo = math.clamp(source.panStereo + panOffset, -1f, 1f);
+            }
+
+            if (result.RoomVolumeCubicMeters > SabineMinimumRoomVolumeCubicMeters)
+                source.reverbZoneMix = math.max(source.reverbZoneMix, ResolveAcousticPortalReverbMix(result.RoomVolumeCubicMeters));
+        }
+
+        private static float ResolveAcousticPortalReverbMix(float roomVolumeCubicMeters)
+        {
+            float volume01 = math.saturate(roomVolumeCubicMeters * math.rcp(SabineReverbModuleVolumeReferenceCubicMeters));
+            return math.clamp(0.12f + math.sqrt(volume01) * 0.68f, 0f, 1.1f);
+        }
+
+        private bool TryResolveAcousticPortalPath(
+            Vector3 sourceRuntimePosition,
+            Vector3 listenerRuntimePosition,
+            float3 listenerRight,
+            in AbsoluteUniversePosition sourceAup,
+            in AbsoluteUniversePosition listenerAup,
+            out AcousticPathResult result)
+        {
+            result = default;
+            if (!ShouldUseAcousticPortalPath() ||
+                !_acousticPortalNodes.IsCreated ||
+                !_acousticPortalEdges.IsCreated ||
+                !_acousticPortalResult.IsCreated ||
+                !_acousticPortalOpenSet.IsCreated ||
+                !_acousticPortalClosedSet.IsCreated)
+            {
+                return false;
+            }
+
+            AcousticAup acousticSource = ToAcousticAup(in sourceAup);
+            AcousticAup acousticListener = ToAcousticAup(in listenerAup);
+            int cacheKey = ComputeAcousticPortalCacheKey(in acousticSource, in acousticListener);
+            if (TryReadAcousticPortalCache(cacheKey, in acousticSource, in acousticListener, out result))
+            {
+                WriteAcousticPortalBlackBox(in result, Time.frameCount);
+                return result.Status == AcousticPathStatus.PathFound && result.UsedPortalPath != 0;
+            }
+
+            if (!TryBuildAcousticPortalGraph(sourceRuntimePosition, listenerRuntimePosition, out int nodeCount, out int edgeCount))
+                return false;
+
+            AcousticPathQuery query = new AcousticPathQuery
+            {
+                SourceAup = acousticSource,
+                ListenerAup = acousticListener,
+                ListenerRight = listenerRight,
+                NodeCount = nodeCount,
+                EdgeCount = edgeCount,
+                MaxNodeExpansions = AcousticPortalMaxNodes,
+                QualityTier = (byte)GlobalRegistry.ScalabilityTier,
+                DisablePortalPath = 0
+            };
+
+            double start = Time.realtimeSinceStartupAsDouble;
+            new AcousticPathJob
+            {
+                Nodes = _acousticPortalNodes,
+                Edges = _acousticPortalEdges,
+                OpenSet = _acousticPortalOpenSet,
+                ClosedSet = _acousticPortalClosedSet,
+                Costs = _acousticPortalCosts,
+                CameFrom = _acousticPortalCameFrom,
+                States = _acousticPortalStates,
+                Result = _acousticPortalResult,
+                Query = query
+            }.Run();
+
+            result = _acousticPortalResult[0];
+            result.PathfindingMs = (float)((Time.realtimeSinceStartupAsDouble - start) * 1000.0);
+            WriteAcousticPortalBlackBox(in result, Time.frameCount);
+            if (result.Status == AcousticPathStatus.PathFound && result.UsedPortalPath != 0)
+            {
+                WriteAcousticPortalCache(cacheKey, in acousticSource, in acousticListener, in result);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ShouldUseAcousticPortalPath()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            return tier != HectonQualityTier.Unknown &&
+                   tier != HectonQualityTier.Low &&
+                   tier != HectonQualityTier.Mx350;
+        }
+
+        private bool TryBuildAcousticPortalGraph(
+            Vector3 sourceRuntimePosition,
+            Vector3 listenerRuntimePosition,
+            out int nodeCount,
+            out int edgeCount)
+        {
+            if (TryBuildHabitatAcousticPortalGraph(sourceRuntimePosition, listenerRuntimePosition, out nodeCount, out edgeCount))
+                return true;
+
+            return TryBuildVoxelAcousticPortalGraph(sourceRuntimePosition, listenerRuntimePosition, out nodeCount, out edgeCount);
+        }
+
+        private bool TryBuildVoxelAcousticPortalGraph(
+            Vector3 sourceRuntimePosition,
+            Vector3 listenerRuntimePosition,
+            out int nodeCount,
+            out int edgeCount)
+        {
+            nodeCount = 0;
+            edgeCount = 0;
+            if (_acousticPortalWaypointScratch == null ||
+                !VoxelDynamicNavGridRuntime.TryBuildMacroPortalRouteNonAlloc(
+                    (float3)sourceRuntimePosition,
+                    (float3)listenerRuntimePosition,
+                    _acousticPortalWaypointScratch,
+                    out int waypointCount) ||
+                waypointCount < 2)
+            {
+                return false;
+            }
+
+            nodeCount = math.min(waypointCount, AcousticPortalMaxNodes);
+            for (int i = 0; i < nodeCount; i++)
+            {
+                AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(_acousticPortalWaypointScratch[i]);
+                _acousticPortalNodes[i] = new AcousticPortalNode
+                {
+                    Position = ToAcousticAup(in aup),
+                    FirstEdge = edgeCount,
+                    EdgeCount = 0,
+                    RoomVolumeCubicMeters = 0f,
+                    Flags = AcousticPortalFlags.Voxel
+                };
+
+                int startEdge = edgeCount;
+                if (i > 0 && edgeCount < AcousticPortalMaxEdges)
+                {
+                    _acousticPortalEdges[edgeCount++] = new AcousticPortalEdge
+                    {
+                        ToNode = i - 1,
+                        DistanceMeters = Vector3.Distance(_acousticPortalWaypointScratch[i], _acousticPortalWaypointScratch[i - 1]),
+                        Flags = AcousticPortalFlags.Voxel
+                    };
+                }
+
+                if (i + 1 < nodeCount && edgeCount < AcousticPortalMaxEdges)
+                {
+                    _acousticPortalEdges[edgeCount++] = new AcousticPortalEdge
+                    {
+                        ToNode = i + 1,
+                        DistanceMeters = Vector3.Distance(_acousticPortalWaypointScratch[i], _acousticPortalWaypointScratch[i + 1]),
+                        Flags = AcousticPortalFlags.Voxel
+                    };
+                }
+
+                AcousticPortalNode node = _acousticPortalNodes[i];
+                node.FirstEdge = startEdge;
+                node.EdgeCount = edgeCount - startEdge;
+                _acousticPortalNodes[i] = node;
+            }
+
+            return nodeCount >= 2 && edgeCount > 0;
+        }
+
+        private bool TryBuildHabitatAcousticPortalGraph(
+            Vector3 sourceRuntimePosition,
+            Vector3 listenerRuntimePosition,
+            out int nodeCount,
+            out int edgeCount)
+        {
+            nodeCount = 0;
+            edgeCount = 0;
+            ConstructionManager constructionManager = GlobalRegistry.ConstructionRuntime;
+            if (constructionManager == null ||
+                !constructionManager.TryGetHabitatAcousticGraph(out HabitatGraphManager graph) ||
+                _acousticHabitatNodeMap == null ||
+                _acousticHabitatQueue == null ||
+                graph.NodeCount < 2)
+            {
+                return false;
+            }
+
+            if (!TryFindNearestHabitatNode(graph, (float3)sourceRuntimePosition, out int sourceNode, out float sourceDistanceSq) ||
+                !TryFindNearestHabitatNode(graph, (float3)listenerRuntimePosition, out int listenerNode, out float listenerDistanceSq))
+            {
+                return false;
+            }
+
+            float maxAssociationSq = AcousticPortalHabitatAssociationMaxDistanceMeters * AcousticPortalHabitatAssociationMaxDistanceMeters;
+            if (sourceDistanceSq > maxAssociationSq || listenerDistanceSq > maxAssociationSq)
+                return false;
+
+            for (int i = 0; i < _acousticHabitatNodeMap.Length; i++)
+                _acousticHabitatNodeMap[i] = -1;
+
+            int queueRead = 0;
+            int queueWrite = 0;
+            MapHabitatNode(sourceNode, ref nodeCount, ref queueWrite);
+            MapHabitatNode(listenerNode, ref nodeCount, ref queueWrite);
+
+            NativeArray<int> edgeOffsets = graph.EdgeOffsets;
+            NativeArray<int> edgeDestinations = graph.EdgeDestinations;
+            while (queueRead < queueWrite && nodeCount < AcousticPortalMaxNodes)
+            {
+                int globalNode = _acousticHabitatQueue[queueRead++];
+                if ((uint)globalNode >= (uint)graph.NodeCount || globalNode + 1 >= edgeOffsets.Length)
+                    continue;
+
+                int start = math.clamp(edgeOffsets[globalNode], 0, graph.EdgeCount);
+                int end = math.clamp(edgeOffsets[globalNode + 1], start, graph.EdgeCount);
+                for (int edgeIndex = start; edgeIndex < end && nodeCount < AcousticPortalMaxNodes; edgeIndex++)
+                {
+                    if ((uint)edgeIndex >= (uint)edgeDestinations.Length)
+                        break;
+
+                    int destination = edgeDestinations[edgeIndex];
+                    if ((uint)destination < (uint)graph.NodeCount)
+                        MapHabitatNode(destination, ref nodeCount, ref queueWrite);
+                }
+            }
+
+            for (int localIndex = 0; localIndex < nodeCount; localIndex++)
+            {
+                int globalIndex = _acousticHabitatNodeMap[localIndex];
+                if (!graph.TryGetAcousticNodePosition(globalIndex, out float3 nodePosition))
+                    return false;
+
+                AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(nodePosition.x, nodePosition.y, nodePosition.z));
+                float roomVolume = 0f;
+                NativeArray<float> roomVolumes = graph.RoomVolumes;
+                if (roomVolumes.IsCreated && (uint)globalIndex < (uint)roomVolumes.Length)
+                    roomVolume = math.max(0f, roomVolumes[globalIndex]);
+
+                _acousticPortalNodes[localIndex] = new AcousticPortalNode
+                {
+                    Position = ToAcousticAup(in aup),
+                    FirstEdge = 0,
+                    EdgeCount = 0,
+                    RoomVolumeCubicMeters = roomVolume,
+                    Flags = AcousticPortalFlags.Habitat
+                };
+            }
+
+            NativeArray<byte> edgeFlags = graph.EdgeFlags;
+            NativeArray<float> edgeResistance = graph.EdgeResistance;
+            for (int localIndex = 0; localIndex < nodeCount && edgeCount < AcousticPortalMaxEdges; localIndex++)
+            {
+                int globalNode = _acousticHabitatNodeMap[localIndex];
+                if ((uint)globalNode >= (uint)graph.NodeCount || globalNode + 1 >= edgeOffsets.Length)
+                    continue;
+
+                int startEdge = edgeCount;
+                int start = math.clamp(edgeOffsets[globalNode], 0, graph.EdgeCount);
+                int end = math.clamp(edgeOffsets[globalNode + 1], start, graph.EdgeCount);
+                for (int graphEdgeIndex = start; graphEdgeIndex < end && edgeCount < AcousticPortalMaxEdges; graphEdgeIndex++)
+                {
+                    if ((uint)graphEdgeIndex >= (uint)edgeDestinations.Length)
+                        break;
+
+                    int destinationGlobal = edgeDestinations[graphEdgeIndex];
+                    int destinationLocal = FindMappedHabitatNode(destinationGlobal, nodeCount);
+                    if (destinationLocal < 0)
+                        continue;
+
+                    AcousticPortalFlags flags = AcousticPortalFlags.Habitat;
+                    if (edgeFlags.IsCreated &&
+                        (uint)graphEdgeIndex < (uint)edgeFlags.Length &&
+                        (edgeFlags[graphEdgeIndex] & (byte)HabitatEdgeFloodFlags.Sealed) != 0)
+                    {
+                        flags |= AcousticPortalFlags.SealedBulkhead;
+                    }
+
+                    float distance = AcousticAup.DistanceMeters(
+                        in _acousticPortalNodes[localIndex].Position,
+                        in _acousticPortalNodes[destinationLocal].Position);
+                    if ((!math.isfinite(distance) || distance <= 0.001f) &&
+                        edgeResistance.IsCreated &&
+                        (uint)graphEdgeIndex < (uint)edgeResistance.Length)
+                    {
+                        distance = math.max(1f, edgeResistance[graphEdgeIndex] * 20f);
+                    }
+
+                    _acousticPortalEdges[edgeCount++] = new AcousticPortalEdge
+                    {
+                        ToNode = destinationLocal,
+                        DistanceMeters = math.max(0.001f, distance),
+                        Flags = flags
+                    };
+                }
+
+                AcousticPortalNode node = _acousticPortalNodes[localIndex];
+                node.FirstEdge = startEdge;
+                node.EdgeCount = edgeCount - startEdge;
+                _acousticPortalNodes[localIndex] = node;
+            }
+
+            return nodeCount >= 2 && edgeCount > 0;
+        }
+
+        private bool TryFindNearestHabitatNode(
+            HabitatGraphManager graph,
+            float3 runtimePosition,
+            out int nodeIndex,
+            out float distanceSq)
+        {
+            nodeIndex = -1;
+            distanceSq = float.PositiveInfinity;
+            int count = graph != null ? graph.NodeCount : 0;
+            for (int i = 0; i < count; i++)
+            {
+                if (!graph.TryGetAcousticNodePosition(i, out float3 nodePosition))
+                    continue;
+
+                float candidateDistanceSq = math.lengthsq(nodePosition - runtimePosition);
+                if (candidateDistanceSq < distanceSq)
+                {
+                    distanceSq = candidateDistanceSq;
+                    nodeIndex = i;
+                }
+            }
+
+            return nodeIndex >= 0 && math.isfinite(distanceSq);
+        }
+
+        private int MapHabitatNode(int globalNode, ref int mappedCount, ref int queueWrite)
+        {
+            int existing = FindMappedHabitatNode(globalNode, mappedCount);
+            if (existing >= 0)
+                return existing;
+
+            if (mappedCount >= AcousticPortalMaxNodes || queueWrite >= _acousticHabitatQueue.Length)
+                return -1;
+
+            int localIndex = mappedCount++;
+            _acousticHabitatNodeMap[localIndex] = globalNode;
+            _acousticHabitatQueue[queueWrite++] = globalNode;
+            return localIndex;
+        }
+
+        private int FindMappedHabitatNode(int globalNode, int mappedCount)
+        {
+            if (_acousticHabitatNodeMap == null)
+                return -1;
+
+            int count = math.min(mappedCount, _acousticHabitatNodeMap.Length);
+            for (int i = 0; i < count; i++)
+            {
+                if (_acousticHabitatNodeMap[i] == globalNode)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private bool TryReadAcousticPortalCache(
+            int key,
+            in AcousticAup sourceAup,
+            in AcousticAup listenerAup,
+            out AcousticPathResult result)
+        {
+            result = default;
+            if (_acousticPortalCache == null)
+                return false;
+
+            for (int i = 0; i < _acousticPortalCache.Length; i++)
+            {
+                AcousticPortalCacheEntry entry = _acousticPortalCache[i];
+                if (entry.Valid == 0 || entry.Key != key)
+                    continue;
+
+                if (AcousticAup.DistanceMeters(in entry.SourceAup, in sourceAup) > AcousticPortalCacheReuseDistanceMeters ||
+                    AcousticAup.DistanceMeters(in entry.ListenerAup, in listenerAup) > AcousticPortalCacheReuseDistanceMeters)
+                {
+                    continue;
+                }
+
+                result = entry.Result;
+                result.UsedReprojectionCache = 1;
+                result.PathfindingMs = 0f;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void WriteAcousticPortalCache(
+            int key,
+            in AcousticAup sourceAup,
+            in AcousticAup listenerAup,
+            in AcousticPathResult result)
+        {
+            if (_acousticPortalCache == null || _acousticPortalCache.Length == 0)
+                return;
+
+            int frame = Time.frameCount;
+            int writeIndex = 0;
+            int oldestFrame = int.MaxValue;
+            for (int i = 0; i < _acousticPortalCache.Length; i++)
+            {
+                if (_acousticPortalCache[i].Valid == 0)
+                {
+                    writeIndex = i;
+                    oldestFrame = int.MinValue;
+                    break;
+                }
+
+                if (_acousticPortalCache[i].Frame < oldestFrame)
+                {
+                    oldestFrame = _acousticPortalCache[i].Frame;
+                    writeIndex = i;
+                }
+            }
+
+            _acousticPortalCache[writeIndex] = new AcousticPortalCacheEntry
+            {
+                Key = key,
+                Frame = frame,
+                Valid = 1,
+                SourceAup = sourceAup,
+                ListenerAup = listenerAup,
+                Result = result
+            };
+        }
+
+        private static int ComputeAcousticPortalCacheKey(in AcousticAup sourceAup, in AcousticAup listenerAup)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = HashAcousticAup(hash, in sourceAup);
+                hash = HashAcousticAup(hash, in listenerAup);
+                return (int)hash;
+            }
+        }
+
+        private static uint HashAcousticAup(uint hash, in AcousticAup aup)
+        {
+            unchecked
+            {
+                hash = (hash ^ (uint)aup.GridX) * 16777619u;
+                hash = (hash ^ (uint)(aup.GridX >> 32)) * 16777619u;
+                hash = (hash ^ (uint)aup.GridY) * 16777619u;
+                hash = (hash ^ (uint)(aup.GridY >> 32)) * 16777619u;
+                hash = (hash ^ (uint)aup.GridZ) * 16777619u;
+                hash = (hash ^ (uint)(aup.GridZ >> 32)) * 16777619u;
+                hash = (hash ^ (uint)math.round(aup.Local.x)) * 16777619u;
+                hash = (hash ^ (uint)math.round(aup.Local.y)) * 16777619u;
+                hash = (hash ^ (uint)math.round(aup.Local.z)) * 16777619u;
+                return hash;
+            }
+        }
+
+        private void WriteAcousticPortalBlackBox(in AcousticPathResult result, int frame)
+        {
+            if (!_acousticPortalBlackBox.IsCreated)
+                return;
+
+            uint flags = 0u;
+            if (result.UsedPortalPath != 0)
+                flags |= 1u;
+            if (result.UsedSealedBulkhead != 0)
+                flags |= 2u;
+            if (result.UsedReprojectionCache != 0)
+                flags |= 4u;
+
+            int index = _acousticPortalBlackBoxCursor % _acousticPortalBlackBox.Length;
+            _acousticPortalBlackBox[index] = new AcousticTelemetryEntry
+            {
+                Frame = frame,
+                NodeCount = result.NodeCount,
+                CornerCount = result.CornerCount,
+                ExpandedNodeCount = result.ExpandedNodeCount,
+                PathfindingMs = result.PathfindingMs,
+                TrueDistanceMeters = result.TrueDistanceMeters,
+                DelaySeconds = result.DelaySeconds,
+                LowPassCutoffHz = result.LowPassCutoffHz,
+                Flags = flags,
+                StateHash = result.StateHash
+            };
+            _acousticPortalBlackBoxCursor = (index + 1) % _acousticPortalBlackBox.Length;
+
+            if (!IsAcousticPathResultFinite(in result))
+                DumpAcousticPortalBlackBox();
+        }
+
+        private static bool IsAcousticPathResultFinite(in AcousticPathResult result)
+        {
+            return math.isfinite(result.PathfindingMs) &&
+                   math.isfinite(result.TrueDistanceMeters) &&
+                   math.isfinite(result.DelaySeconds) &&
+                   math.isfinite(result.LowPassCutoffHz) &&
+                   math.isfinite(result.Transmission01) &&
+                   math.isfinite(result.ItdSeconds);
+        }
+
+        private void DumpAcousticPortalBlackBox()
+        {
+            if (!_acousticPortalBlackBox.IsCreated)
+                return;
+
+            try
+            {
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string dumpPath = Path.GetFullPath(Path.Combine(projectRoot, AcousticPortalDumpRelativePath));
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(_acousticPortalBlackBox.Length);
+                    writer.Write(_acousticPortalBlackBoxCursor);
+                    for (int i = 0; i < _acousticPortalBlackBox.Length; i++)
+                    {
+                        AcousticTelemetryEntry entry = _acousticPortalBlackBox[i];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.NodeCount);
+                        writer.Write(entry.CornerCount);
+                        writer.Write(entry.ExpandedNodeCount);
+                        writer.Write(entry.PathfindingMs);
+                        writer.Write(entry.TrueDistanceMeters);
+                        writer.Write(entry.DelaySeconds);
+                        writer.Write(entry.LowPassCutoffHz);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.StateHash);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError($"[SpatialAudioManager] Failed to dump acoustic portal blackbox: {exception.Message}", this);
+#endif
+            }
+        }
+
         private float ResolveTargetSpatialBlend(int sourceIndex, float now)
         {
             float baseBlend = ResolveBaseSpatialBlend(_audioLodTiers[sourceIndex]);
@@ -3349,6 +4089,84 @@ namespace Hecton8.Audio
                     nameof(_pendingDelayedAudioEvents),
                 NativeAllocationLifetime.Session);
             }
+
+            if (!_soundEmissionSignals.IsCreated)
+            {
+                _soundEmissionSignals = new NativeQueue<SoundEmissionSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SoundEmissionSignal>[32] - AUP acoustic emission ingress - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _soundEmissionSignals,
+                    MaxQueuedSoundEmissionSignals,
+                    nameof(SpatialAudioManager),
+                    nameof(_soundEmissionSignals),
+                    NativeAllocationLifetime.Session);
+                PrewarmSoundEmissionSignalQueue();
+            }
+
+            if (!_acousticPortalNodes.IsCreated)
+            {
+                _acousticPortalNodes = new NativeArray<AcousticPortalNode>(AcousticPortalMaxNodes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AcousticPortalNode>[30] - acoustic portal route nodes - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeArray(_acousticPortalNodes, nameof(SpatialAudioManager), nameof(_acousticPortalNodes), NativeAllocationLifetime.Session);
+            }
+
+            if (!_acousticPortalEdges.IsCreated)
+            {
+                _acousticPortalEdges = new NativeArray<AcousticPortalEdge>(AcousticPortalMaxEdges, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AcousticPortalEdge>[60] - acoustic portal route edges - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeArray(_acousticPortalEdges, nameof(SpatialAudioManager), nameof(_acousticPortalEdges), NativeAllocationLifetime.Session);
+            }
+
+            if (!_acousticPortalResult.IsCreated)
+            {
+                _acousticPortalResult = new NativeArray<AcousticPathResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AcousticPathResult>[1] - acoustic portal Burst result slot - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeArray(_acousticPortalResult, nameof(SpatialAudioManager), nameof(_acousticPortalResult), NativeAllocationLifetime.Session);
+            }
+
+            if (!_acousticPortalCosts.IsCreated)
+            {
+                _acousticPortalCosts = new NativeArray<float>(AcousticPortalMaxNodes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[30] - acoustic path Dijkstra cost scratch - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeArray(_acousticPortalCosts, nameof(SpatialAudioManager), nameof(_acousticPortalCosts), NativeAllocationLifetime.Session);
+            }
+
+            if (!_acousticPortalCameFrom.IsCreated)
+            {
+                _acousticPortalCameFrom = new NativeArray<int>(AcousticPortalMaxNodes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[30] - acoustic path predecessor scratch - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeArray(_acousticPortalCameFrom, nameof(SpatialAudioManager), nameof(_acousticPortalCameFrom), NativeAllocationLifetime.Session);
+            }
+
+            if (!_acousticPortalStates.IsCreated)
+            {
+                _acousticPortalStates = new NativeArray<byte>(AcousticPortalMaxNodes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[30] - acoustic path open/closed state scratch - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeArray(_acousticPortalStates, nameof(SpatialAudioManager), nameof(_acousticPortalStates), NativeAllocationLifetime.Session);
+            }
+
+            if (!_acousticPortalOpenSet.IsCreated)
+            {
+                _acousticPortalOpenSet = new NativeList<int>(AcousticPortalMaxNodes, Allocator.Persistent); // COLD ALLOC: NativeList<int>[30] - acoustic path open set - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeList(_acousticPortalOpenSet, nameof(SpatialAudioManager), nameof(_acousticPortalOpenSet), NativeAllocationLifetime.Session);
+            }
+
+            if (!_acousticPortalClosedSet.IsCreated)
+            {
+                _acousticPortalClosedSet = new NativeList<int>(AcousticPortalMaxNodes, Allocator.Persistent); // COLD ALLOC: NativeList<int>[30] - acoustic path closed set - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeList(_acousticPortalClosedSet, nameof(SpatialAudioManager), nameof(_acousticPortalClosedSet), NativeAllocationLifetime.Session);
+            }
+
+            if (!_acousticPortalBlackBox.IsCreated)
+            {
+                _acousticPortalBlackBox = new NativeArray<AcousticTelemetryEntry>(AcousticPortalConstants.TelemetryFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AcousticTelemetryEntry>[300] - acoustic portal blackbox - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeArray(_acousticPortalBlackBox, nameof(SpatialAudioManager), nameof(_acousticPortalBlackBox), NativeAllocationLifetime.Session);
+            }
+
+            if (_acousticPortalWaypointScratch == null || _acousticPortalWaypointScratch.Length != AcousticPortalMaxNodes)
+                _acousticPortalWaypointScratch = new Vector3[AcousticPortalMaxNodes]; // COLD ALLOC: Vector3[30] - voxel macro portal waypoint scratch - owner: SpatialAudioManager
+
+            if (_acousticHabitatNodeMap == null || _acousticHabitatNodeMap.Length != AcousticPortalMaxNodes)
+                _acousticHabitatNodeMap = new int[AcousticPortalMaxNodes]; // COLD ALLOC: int[30] - habitat acoustic global-to-local node map - owner: SpatialAudioManager
+
+            if (_acousticHabitatQueue == null || _acousticHabitatQueue.Length != AcousticPortalMaxNodes)
+                _acousticHabitatQueue = new int[AcousticPortalMaxNodes]; // COLD ALLOC: int[30] - habitat acoustic BFS queue - owner: SpatialAudioManager
+
+            if (_acousticPortalCache == null || _acousticPortalCache.Length != AcousticPortalCacheCapacity)
+                _acousticPortalCache = new AcousticPortalCacheEntry[AcousticPortalCacheCapacity]; // COLD ALLOC: AcousticPortalCacheEntry[16] - stationary emitter acoustic reprojection cache - owner: SpatialAudioManager
         }
 
         private void PrewarmDelayedAudioIngressQueue()
@@ -3380,6 +4198,22 @@ namespace Hecton8.Audio
 
             _audioEventQueueCount = 0;
             _audioEventQueueDroppedCount = 0;
+        }
+
+        private void PrewarmSoundEmissionSignalQueue()
+        {
+            if (!_soundEmissionSignals.IsCreated)
+                return;
+
+            for (int i = 0; i < MaxQueuedSoundEmissionSignals; i++)
+                _soundEmissionSignals.Enqueue(default);
+
+            while (_soundEmissionSignals.TryDequeue(out _))
+            {
+            }
+
+            _soundEmissionSignalQueueCount = 0;
+            _soundEmissionSignalDroppedCount = 0;
         }
 
         private void ReleaseTelemetryCaches()
@@ -3425,9 +4259,82 @@ namespace Hecton8.Audio
                 _pendingDelayedAudioEvents = default;
             }
 
+            if (_soundEmissionSignals.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SpatialAudioManager), nameof(_soundEmissionSignals));
+                _soundEmissionSignals.Dispose();
+                _soundEmissionSignals = default;
+            }
+
+            if (_acousticPortalNodes.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalNodes);
+                _acousticPortalNodes.Dispose();
+                _acousticPortalNodes = default;
+            }
+
+            if (_acousticPortalEdges.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalEdges);
+                _acousticPortalEdges.Dispose();
+                _acousticPortalEdges = default;
+            }
+
+            if (_acousticPortalResult.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalResult);
+                _acousticPortalResult.Dispose();
+                _acousticPortalResult = default;
+            }
+
+            if (_acousticPortalCosts.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalCosts);
+                _acousticPortalCosts.Dispose();
+                _acousticPortalCosts = default;
+            }
+
+            if (_acousticPortalCameFrom.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalCameFrom);
+                _acousticPortalCameFrom.Dispose();
+                _acousticPortalCameFrom = default;
+            }
+
+            if (_acousticPortalStates.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalStates);
+                _acousticPortalStates.Dispose();
+                _acousticPortalStates = default;
+            }
+
+            if (_acousticPortalOpenSet.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeList(nameof(SpatialAudioManager), nameof(_acousticPortalOpenSet));
+                _acousticPortalOpenSet.Dispose();
+                _acousticPortalOpenSet = default;
+            }
+
+            if (_acousticPortalClosedSet.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeList(nameof(SpatialAudioManager), nameof(_acousticPortalClosedSet));
+                _acousticPortalClosedSet.Dispose();
+                _acousticPortalClosedSet = default;
+            }
+
+            if (_acousticPortalBlackBox.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalBlackBox);
+                _acousticPortalBlackBox.Dispose();
+                _acousticPortalBlackBox = default;
+            }
+
             _delayedAudioIngressCount = 0;
             _audioEventQueueCount = 0;
             _audioEventQueueDroppedCount = 0;
+            _soundEmissionSignalQueueCount = 0;
+            _soundEmissionSignalDroppedCount = 0;
+            _acousticPortalBlackBoxCursor = 0;
         }
 
         private AudioMixerGroup ResolvedDefaultWorldMixerGroup => _sfxGroup != null ? _sfxGroup : ResolvedBedBusGroup;
@@ -3508,7 +4415,20 @@ namespace Hecton8.Audio
                 return 1f;
 
             float eclipseRatio = ResolveEclipseAcousticPitchRatio(sourceIndex);
-            return math.clamp(_basePitches[sourceIndex] * dopplerRatio * eclipseRatio, 0.1f, 3f);
+            return math.clamp(_basePitches[sourceIndex] * dopplerRatio * eclipseRatio * _timeDilationWorldPitchRatio, 0.1f, 3f);
+        }
+
+        private void UpdateTimeDilationPitchScalar()
+        {
+            float scalar = GlobalSignals.TimeDilationScalar;
+            float saturatedScalar = math.saturate(scalar);
+            float easedScalar = saturatedScalar * (2f - saturatedScalar);
+            float targetRatio = math.lerp(TimeDilationAudioMinimumPitchRatio, 1f, easedScalar);
+            if (math.abs(_timeDilationWorldPitchRatio - targetRatio) <= 0.001f)
+                return;
+
+            _timeDilationWorldPitchRatio = targetRatio;
+            ApplyEclipsePitchShiftToActiveWorldSources();
         }
 
         private float ResolveEclipseAcousticPitchRatio(int sourceIndex)

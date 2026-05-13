@@ -151,11 +151,13 @@ namespace Hecton8.Physics
                     float distance = lenSq * invLength;
                     float restLength = math.max(0.0001f, SegmentRestLengths[segmentIndex]);
                     float delta = distance - restLength;
-                    float absDelta = math.abs(delta);
-                    peakDelta = math.max(peakDelta, absDelta);
-                    SegmentTensions[segmentIndex] = absDelta;
+                    float stretch = math.max(0f, delta);
+                    peakDelta = math.max(peakDelta, stretch);
+                    SegmentTensions[segmentIndex] = stretch;
+                    if (stretch <= 0f)
+                        continue;
 
-                    float3 offset = dir * (delta * invLength * 0.5f);
+                    float3 offset = dir * (stretch * invLength * 0.5f);
                     bool pinA = IsPinned(a);
                     bool pinB = IsPinned(b);
                     if (pinA && pinB)

@@ -18,6 +18,12 @@ namespace Hecton8.Data
     {
         private const long MaxBlobBytes = 256L * 1024L * 1024L;
         private const int MissingUtf8Offset = -1;
+        private const int StaticLocalizationItemsSection = 0;
+        private const int StaticLocalizationCreaturesSection = 1;
+        private const int StaticLocalizationBiomesSection = 2;
+        private const int StaticLocalizationGhostModulesSection = 3;
+        private const int StaticLocalizationSopErrorsSection = 4;
+        private const int StaticLocalizationSectionCount = 5;
 
         private static NativeArray<byte> _arena;
         private static H8DataBlobHeader _header;
@@ -688,6 +694,303 @@ namespace Hecton8.Data
             ReadOnlySpan<byte> utf8 = new ReadOnlySpan<byte>(locPtr + utf8Offset, byteLength);
             int charsWritten = Encoding.UTF8.GetChars(utf8, destination);
             text = destination.Slice(0, charsWritten);
+            return true;
+        }
+
+        /// <summary>
+        /// Returns the full resident LocData UTF-8 byte block without decoding or allocation.
+        /// </summary>
+        public static bool TryGetLocalizedUtf8Block(out ReadOnlySpan<byte> utf8Bytes)
+        {
+            utf8Bytes = default;
+            if (!IsLoaded || !_arena.IsCreated || _directory.LocalizationBytes == 0)
+                return false;
+
+            byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_arena);
+            utf8Bytes = new ReadOnlySpan<byte>(basePtr + _directory.LocalizationOffset, (int)_directory.LocalizationBytes);
+            return true;
+        }
+
+        /// <summary>
+        /// Returns a bounded UTF-8 localization slice without decoding or allocation.
+        /// </summary>
+        public static bool TryGetLocalizedUtf8Span(int utf8Offset, int byteLength, out ReadOnlySpan<byte> utf8Bytes)
+        {
+            utf8Bytes = default;
+            if (!IsLoaded ||
+                !_arena.IsCreated ||
+                utf8Offset == MissingUtf8Offset ||
+                byteLength < 0 ||
+                _directory.LocalizationBytes == 0)
+            {
+                return false;
+            }
+
+            if ((uint)utf8Offset >= _directory.LocalizationBytes ||
+                (uint)byteLength > _directory.LocalizationBytes - (uint)utf8Offset)
+            {
+                return false;
+            }
+
+            byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_arena);
+            byte* locPtr = basePtr + _directory.LocalizationOffset;
+            utf8Bytes = new ReadOnlySpan<byte>(locPtr + utf8Offset, byteLength);
+            return true;
+        }
+
+        /// <summary>
+        /// Returns one null-terminated UTF-8 localization slice without decoding or allocation.
+        /// </summary>
+        public static bool TryGetLocalizedUtf8Span(int utf8Offset, out ReadOnlySpan<byte> utf8Bytes)
+        {
+            utf8Bytes = default;
+            if (!IsLoaded || !_arena.IsCreated || utf8Offset == MissingUtf8Offset || _directory.LocalizationBytes == 0)
+                return false;
+
+            if ((uint)utf8Offset >= _directory.LocalizationBytes)
+                return false;
+
+            byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_arena);
+            byte* locPtr = basePtr + _directory.LocalizationOffset;
+            int maxBytes = (int)_directory.LocalizationBytes - utf8Offset;
+            int byteLength = 0;
+            while (byteLength < maxBytes && locPtr[utf8Offset + byteLength] != 0)
+                byteLength++;
+
+            if (byteLength <= 0)
+                return false;
+
+            utf8Bytes = new ReadOnlySpan<byte>(locPtr + utf8Offset, byteLength);
+            return true;
+        }
+
+        /// <summary>
+        /// Counts primary static-data hash aliases that resolve to LocData slices.
+        /// </summary>
+        public static int GetStaticLocalizationReferenceCount()
+        {
+            if (!IsLoaded || !_arena.IsCreated || _directory.LocalizationBytes == 0)
+                return 0;
+
+            int count = 0;
+            H8StaticLocalizationCursor cursor = default;
+            while (TryGetNextStaticLocalizationReference(ref cursor, out _))
+            {
+                if (count == int.MaxValue)
+                    return count;
+
+                count++;
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Advances a caller-owned cursor over static-data hash aliases without rescanning prior records.
+        /// </summary>
+        public static bool TryGetNextStaticLocalizationReference(
+            ref H8StaticLocalizationCursor cursor,
+            out H8StaticLocalizationReference reference)
+        {
+            reference = default;
+            if (!IsLoaded || !_arena.IsCreated || _directory.LocalizationBytes == 0)
+                return false;
+
+            if (cursor.Section < 0)
+                cursor.Section = 0;
+
+            if (cursor.RecordIndex < 0)
+                cursor.RecordIndex = 0;
+
+            while (cursor.Section < StaticLocalizationSectionCount)
+            {
+                bool found;
+                switch (cursor.Section)
+                {
+                    case StaticLocalizationItemsSection:
+                        found = TryGetNextItemLocalizationReference(ref cursor.RecordIndex, out reference);
+                        break;
+
+                    case StaticLocalizationCreaturesSection:
+                        found = TryGetNextCreatureLocalizationReference(ref cursor.RecordIndex, out reference);
+                        break;
+
+                    case StaticLocalizationBiomesSection:
+                        found = TryGetNextBiomeLocalizationReference(ref cursor.RecordIndex, out reference);
+                        break;
+
+                    case StaticLocalizationGhostModulesSection:
+                        found = TryGetNextGhostModuleLocalizationReference(ref cursor.RecordIndex, out reference);
+                        break;
+
+                    case StaticLocalizationSopErrorsSection:
+                        found = TryGetNextSopErrorLocalizationReference(ref cursor.RecordIndex, out reference);
+                        break;
+
+                    default:
+                        return false;
+                }
+
+                if (found)
+                    return true;
+
+                cursor.Section++;
+                cursor.RecordIndex = 0;
+            }
+
+            reference = default;
+            return false;
+        }
+
+        private static bool TryGetNextItemLocalizationReference(
+            ref int recordIndex,
+            out H8StaticLocalizationReference reference)
+        {
+            H8ItemRecord* records = (H8ItemRecord*)GetSectionDataPointer(
+                H8DataSectionId.Items,
+                H8DataLayoutConstants.ItemRecordSize,
+                out int recordCount);
+
+            if (records == null || recordCount <= 0)
+            {
+                reference = default;
+                return false;
+            }
+
+            while (recordIndex < recordCount)
+            {
+                int index = recordIndex++;
+                if (TryBuildStaticLocalizationReference(records[index].HashId, records[index].NameUtf8Offset, out reference))
+                    return true;
+            }
+
+            reference = default;
+            return false;
+        }
+
+        private static bool TryGetNextCreatureLocalizationReference(
+            ref int recordIndex,
+            out H8StaticLocalizationReference reference)
+        {
+            H8CreatureTraitRecord* records = (H8CreatureTraitRecord*)GetSectionDataPointer(
+                H8DataSectionId.Creatures,
+                H8DataLayoutConstants.CreatureTraitRecordSize,
+                out int recordCount);
+
+            if (records == null || recordCount <= 0)
+            {
+                reference = default;
+                return false;
+            }
+
+            while (recordIndex < recordCount)
+            {
+                int index = recordIndex++;
+                if (TryBuildStaticLocalizationReference(records[index].SpeciesHash, records[index].DisplayNameUtf8Offset, out reference))
+                    return true;
+            }
+
+            reference = default;
+            return false;
+        }
+
+        private static bool TryGetNextBiomeLocalizationReference(
+            ref int recordIndex,
+            out H8StaticLocalizationReference reference)
+        {
+            H8BiomeRecord* records = (H8BiomeRecord*)GetSectionDataPointer(
+                H8DataSectionId.Biomes,
+                H8DataLayoutConstants.BiomeRecordSize,
+                out int recordCount);
+
+            if (records == null || recordCount <= 0)
+            {
+                reference = default;
+                return false;
+            }
+
+            while (recordIndex < recordCount)
+            {
+                int index = recordIndex++;
+                if (TryBuildStaticLocalizationReference(records[index].BiomeHash, records[index].DisplayNameUtf8Offset, out reference))
+                    return true;
+            }
+
+            reference = default;
+            return false;
+        }
+
+        private static bool TryGetNextGhostModuleLocalizationReference(
+            ref int recordIndex,
+            out H8StaticLocalizationReference reference)
+        {
+            H8GhostModuleRecord* records = (H8GhostModuleRecord*)GetSectionDataPointer(
+                H8DataSectionId.GhostModules,
+                UnsafeUtility.SizeOf<H8GhostModuleRecord>(),
+                out int recordCount);
+
+            if (records == null || recordCount <= 0)
+            {
+                reference = default;
+                return false;
+            }
+
+            while (recordIndex < recordCount)
+            {
+                int index = recordIndex++;
+                if (TryBuildStaticLocalizationReference(records[index].ModuleHash, records[index].DisplayNameUtf8Offset, out reference))
+                    return true;
+            }
+
+            reference = default;
+            return false;
+        }
+
+        private static bool TryGetNextSopErrorLocalizationReference(
+            ref int recordIndex,
+            out H8StaticLocalizationReference reference)
+        {
+            H8SopErrorRecord* records = (H8SopErrorRecord*)GetSectionDataPointer(
+                H8DataSectionId.SopErrors,
+                UnsafeUtility.SizeOf<H8SopErrorRecord>(),
+                out int recordCount);
+
+            if (records == null || recordCount <= 0)
+            {
+                reference = default;
+                return false;
+            }
+
+            while (recordIndex < recordCount)
+            {
+                int index = recordIndex++;
+                if (TryBuildStaticLocalizationReference(records[index].ErrorHash, records[index].MessageUtf8Offset, out reference))
+                    return true;
+            }
+
+            reference = default;
+            return false;
+        }
+
+        private static bool TryBuildStaticLocalizationReference(
+            uint keyHash,
+            int utf8Offset,
+            out H8StaticLocalizationReference reference)
+        {
+            reference = default;
+            if (keyHash == 0u ||
+                !TryGetLocalizedUtf8Span(utf8Offset, out ReadOnlySpan<byte> utf8Bytes) ||
+                utf8Bytes.Length <= 0)
+            {
+                return false;
+            }
+
+            reference = new H8StaticLocalizationReference
+            {
+                KeyHash = keyHash,
+                Utf8Offset = utf8Offset,
+                ByteLength = utf8Bytes.Length
+            };
             return true;
         }
 

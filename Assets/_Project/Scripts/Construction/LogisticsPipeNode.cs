@@ -1,5 +1,6 @@
 using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Modding;
@@ -607,15 +608,44 @@ namespace Hecton8.Construction
                 leakedItemHashId);
             HectonEventBus.Publish(in leakEvent);
 
-            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
-            if (fluidDecals != null)
-            {
-                float radiusScale = math.saturate(_overpressureStress / math.max(0.1f, ruptureStressThreshold));
-                fluidDecals.RegisterRuptureFluid(rupturePosition, radiusScale);
-            }
+            PublishRuptureSignals(rupturePosition);
 
             ResolveInFlightLossToWorldOrRollback(rupturePosition);
             NotifyGridBalanceChanged();
+        }
+
+        private void PublishRuptureSignals(Vector3 rupturePosition)
+        {
+            float ruptureSeverity = math.saturate(_overpressureStress / math.max(0.1f, ruptureStressThreshold));
+            AbsoluteUniversePosition ruptureAup = AbsoluteUniversePosition.FromRuntimePosition(rupturePosition);
+            uint leftNodeId = (uint)(_pipeLinkId >> 32);
+            uint rightNodeId = unchecked((uint)_pipeLinkId);
+
+            PipeRuptureSignal ruptureSignal = new PipeRuptureSignal
+            {
+                RuptureAup = ruptureAup,
+                NetworkId = 0u,
+                NodeId = rightNodeId,
+                PressureKPa = _overpressureStress,
+                ContentKind = 0,
+                Flags = 1,
+                RoomIndex = (short)math.clamp(_cachedRoomIndex, short.MinValue, short.MaxValue)
+            };
+            GlobalSignals.Publish(in ruptureSignal);
+
+            ImpactSignal impactSignal = new ImpactSignal
+            {
+                PointAup = ruptureAup,
+                Force = _overpressureStress,
+                Intensity = ruptureSeverity,
+                MaterialHash = 0x50495045u,
+                WeightClass = 1,
+                Flags = 1
+            };
+            GlobalSignals.Publish(in impactSignal);
+
+            ConnectionSplineBatchRenderer.SetPipeNodeRuptured(leftNodeId, true);
+            ConnectionSplineBatchRenderer.SetPipeNodeRuptured(rightNodeId, true);
         }
 
         internal void TriggerExternalRupture()

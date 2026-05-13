@@ -15,6 +15,24 @@
 [FORBID] `new T[]` or `List<T>` during chunk streaming. Use pre-warmed `NativeArray` pools.
 [FORBID] `GraphicsBuffer.GetData` per frame (CPU stall). Read-back only for debug builds behind `#if UNITY_EDITOR`.
 
+## I.A Unity 6000 GPU Resident Drawer Selection
+
+[RULE] Flora that exists as authored GameObjects with `MeshRenderer` components uses Unity 6 GPU Resident Drawer first.
+[RULE] Procedural flora emitted as pure data uses manual BRG only when there is no stable MeshRenderer ownership.
+[RULE] GPU occlusion is enabled only with RenderGraph enabled, Forward+ active, compute shader support confirmed, and profiler proof that culling setup cost is lower than saved draw/vertex cost.
+
+[FORBID] Maintaining a custom HiZ append-buffer culler for MeshRenderer-owned flora.
+[FORBID] Uploading instance data for unchanged flora pages; page dirty flags are mandatory.
+[FORBID] Static Batching on objects intended for GPU Resident Drawer batching.
+
+## Engineering Data
+
+| Ownership | Draw Path | Culling Owner | MX350 Rule |
+|---|---|---|---|
+| Authored MeshRenderer flora | GPU Resident Drawer | Unity GPU occlusion when proven | Use only for repeated meshes and occlusion-heavy zones |
+| Procedural SoA flora | Manual BRG + custom compute cull | Flora system | Keep group size 64 until target capture proves otherwise |
+| HLOD cards | GPU Resident Drawer where MeshRenderer-owned | Unity GPU occlusion | Prefer silhouette card over shader-heavy distant flora |
+
 ---
 
 ## II. DATA ARCHITECTURE

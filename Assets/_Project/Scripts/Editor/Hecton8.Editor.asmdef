@@ -22,8 +22,7 @@
         "WaveHarmonic.Crest",
         "WaveHarmonic.Crest.Shared",
         "ShapesRuntime",
-        "EasySave3",
-        "VolumetricLightBeam"
+        "EasySave3"
     ],
     "includePlatforms": [
         "Editor"

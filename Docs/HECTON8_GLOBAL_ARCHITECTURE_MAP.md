@@ -1,8 +1,26 @@
 # HECTON-8 Global Architecture Map
 
-Date: 2026-05-11
+Date: 2026-05-13
 Status: PENDING VERIFICATION
 Scope: source-backed architecture map only, not a profiler capture and not a build-certification report
+
+## 2026-05-13 DOC_AUDIT X-Ray Override
+
+Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before trusting older numeric counters in this file.
+
+Current static audit corrections:
+
+- first-party asmdefs under `Assets/_Project`: `24`
+- previously unindexed current asmdefs include `Hecton8.Core.Memory` and `Hecton8.Physics.Determinism`
+- cited May 11 build artifacts `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` and `.log` are absent from the current filesystem
+- latest R4 static source counters: `1411` project C# files, `1365` script C# files, `1401` non-test C# files, `869871` project physical lines, `852315` script physical lines, `867132` non-test physical lines, `215` interface declaration hits, and `51` direct public interfaces in `GlobalRegistryContracts.cs`
+- latest R5/R6 package/config scan: Unity pin `6000.4.1f1`; URP `17.4.0`; Addressables `2.7.6`; Input System `1.19.0`; AI Navigation `2.0.11`; forbidden UPM IDs absent; physical Astar/Easy Save/Demigiant/DarkTonic folders still present; live `DOTWEEN` and heavy Standalone vendor scripting defines remain contamination; embedded Crest/MicroSplat/ShaderGraph package drift needs import/build proof
+- R5 URP mapping correction: Low quality uses `URP_Low` with `Mobile_Renderer`, not `PC_Renderer`
+- R7 authority correction: `AGENTS.md` and `.codexrules/AGENTS.md` now carry the same Low mapping and no-new-ES3 wording
+- R8 world/scatter correction: world runtime code and data are substantial, but `GameBootstrapper` only creates `PersistentWorldRegistry`; scatter/field/chunk/MapMagic/vegetation/streaming managers still require scene/editor-authoring proof and runtime validation
+- R9 root/atlas correction: root authority is only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`; root `PROJECT_ATLAS.md` is a compatibility mirror and atlas data is asmdef graph evidence only, not package/config/runtime proof
+- source counts are volatile during active multi-agent work; exact counts are snapshot data, not permanent truth
+- runtime proof remains absent
 
 Mandates followed:
 - `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
@@ -13,22 +31,23 @@ Mandates followed:
 - `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 - `AGENTS.md`
 
-## 2026-05-12 DOC_CHRONOS Override
+## 2026-05-13 DOC_AUDIT R5 Override
 
 This section supersedes older numeric and bus-model claims in this file.
 
 | Scan | Current Value |
 |---|---:|
-| first-party C# files under `Assets/_Project` | 1,383 |
-| first-party C# physical lines under `Assets/_Project` | 824,799 |
-| first-party non-test C# files | 1,373 |
-| first-party non-test C# physical lines | 822,060 |
-| interface declaration hits under `Assets/_Project` | 189 |
+| first-party C# files under `Assets/_Project` | 1,411 |
+| first-party C# physical lines under `Assets/_Project` | 869,871 |
+| first-party non-test C# files | 1,401 |
+| first-party non-test C# physical lines | 867,132 |
+| interface declaration hits under `Assets/_Project` | 215 |
+| direct public interfaces in `GlobalRegistryContracts.cs` | 51 |
 | authoritative domain ids | 85 |
 | `GlobalSignals` typed lanes | 33 |
 | `GlobalSignals` `ParallelWriter` lanes | 13 |
 | `[StructLayout(... Size = 32/64/128)]` hits | 127 |
-| first-party asmdefs under `Assets/_Project` | 13 |
+| first-party asmdefs under `Assets/_Project` | 24 |
 
 Current architecture authority addenda:
 
@@ -133,28 +152,28 @@ The project is not an 80-domain system. `Docs/Actual Domains of Project.txt` def
 | 84 | QA Watchdog Bot | long-run validation |
 | 85 | Tech Researcher | mandate evolution |
 
-## 2026-05-11 Current-State Boundary
+## 2026-05-13 Current-State Boundary
 
 - This stable map is the architecture authority. Dated reports are evidence/counter snapshots only.
-- Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`, and then the May 11 evidence reports before using this map as current project truth.
+- Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older dated evidence reports before using this map as current project truth.
 - This map is source-backed architecture orientation, not Play Mode proof, profiler proof, console certification, or scene/prefab wiring proof.
 - Line counts and interface counts are orientation data only; source files and fresh verification logs win.
 
 ## 1. Scope
 
 - Audit target: `Assets/_Project/**/*.cs`
-- Current first-party `.cs` inventory under `Assets/_Project`: `1383`
-- Current first-party `.cs` inventory under `Assets/_Project/Scripts`: `1337`
-- Current project physical line count under `Assets/_Project` by `System.IO.ReadLines()` count: `824799`
-- Current script physical line count under `Assets/_Project/Scripts` by `System.IO.ReadLines()` count: `808233`
-- Average physical lines per script from the May 12 `System.IO.ReadLines()` snapshot: `596.38`
+- Current first-party `.cs` inventory under `Assets/_Project`: `1411`
+- Current first-party `.cs` inventory under `Assets/_Project/Scripts`: `1365`
+- Current project physical line count under `Assets/_Project` by .NET `File.ReadLines` count: `869871`
+- Current script physical line count under `Assets/_Project/Scripts` by .NET `File.ReadLines` count: `852315`
+- Average physical lines per script from the May 13 R4 snapshot: `624.41`
 - Scripts still living directly in `Assets/_Project/Scripts` root: `336`
 
 This file replaces the older generated map whose `808`-script snapshot and some interface conclusions are no longer true.
 
-2026-05-12 correction:
+2026-05-13 R4 correction:
 - Counts above supersede the April 30 `1038/998/444135`, earlier May 1 `1060/1020/466768`, May 1 `1020/544728`, earlier May 2 `489893`, May 2 `1087/1047/571562/317`, May 6 `651121/552119`, and earlier May 7 `651253/559502`, `651810/560025`, `652238/560372`, `652787/560848`, `655363/563210`, and `667771` snapshots.
-- Current full first-party source scan found `189` interface declaration hits. `GlobalRegistryContracts.cs` direct public interface count remains a narrower owner-file metric, not the whole interface surface.
+- Current full first-party source scan found `215` interface declaration hits. `GlobalRegistryContracts.cs` direct public interface count remains a narrower owner-file metric, not the whole interface surface.
 - Older interface coverage ratios in this document are stale orientation only; re-open `GlobalRegistryContracts.cs` and implementors before making interface-completion claims.
 - The May 11 green Core dependency build is historical evidence only. The May 12 DOC_CHRONOS compile gate failed with `111` C# errors and `3` warnings in external platform/native/voxel missing-symbol families; current build status is `[BLOCKED BY DEPENDENCY]`.
 - Current Unity MCP proof was not run in the May 11 continuation; older MCP readbacks are historical only.
@@ -250,18 +269,19 @@ Current rule:
 
 Current documentation pass status:
 
-- `Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` is the latest documentation counter/build synchronization boundary
-- `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` is the latest machine-readable active documentation manifest
+- `Reports/2026-05-13_DOC_AUDIT_XRAY.md` is the latest documentation counter/missing-artifact override
+- `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` is the latest machine-readable active documentation manifest, but its counters are historical where the May 13 X-Ray supersedes them
 - `Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` is the latest `.agents-skills` visual-fake doctrine boundary
+- `Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` is historical May 11 documentation/build synchronization evidence
 - `Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` is the previous R186 documentation/build synchronization boundary
 - `Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` is the latest documentation sorting and authority map, amended by the May 6 synchronization pass
 - `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` is the latest broad documentation/build/guard actuality sweep before the May 6 sync layer
 - `Reports/2026-05-04_WARNING_CLEANUP.md` is the latest first-party warning cleanup and post-refresh console-readback addendum
 - `Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` is the latest foundation guard repair addendum
 - `Reports/2026-05-01_CURRENT_PROJECT_STATE.md` remains the stable conceptual state anchor
-- May 11 local full Core dependency build returned `0 Warning(s)` / `0 Error(s)` with no observed C# writes after build start/end
+- May 11 report text claimed a local full Core dependency build returned `0 Warning(s)` / `0 Error(s)`, but the May 13 DOC_AUDIT filesystem check did not find the cited summary or raw log artifact
 - earlier DOTS/PlayModeTests/foundation-guard/MCP readbacks are historical unless refreshed by a newer report
-- no fresh Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player-build, import, scene-wiring, or visual-quality proof was captured in the May 11 documentation continuation
+- no fresh Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player-build, import, scene-wiring, or visual-quality proof was captured in the May 11 documentation continuation or DOC_AUDIT R5
 
 Historical Unity Editor readback from older rechecks:
 

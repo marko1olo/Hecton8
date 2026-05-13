@@ -5,8 +5,13 @@
 
 ## §0. DOMAIN SCOPE
 
-Governs all intersection logic between MapMagic2 terrain surface and Voxel (Digger/Density-based) cave volumes.
+Governs all intersection logic between MapMagic2 terrain surface and first-party Hecton voxel cave volumes.
 Covers: seam geometry, normal-space unification, collision arbitration, raycasting unification, LOD synchronization, floating-origin safety.
+
+2026-05-13 source boundary:
+- Current first-party voxel runtime is `Assets/_Project/Scripts/HectonVoxelEngine.cs`.
+- Do not introduce Digger/VoxelPro assumptions into first-party code unless the Integrator explicitly selects that backend.
+- Seam work must target current Marching Cubes cave volumes, terrain-hole handles, AUP offsets, and isolated bake proxies.
 
 ---
 
@@ -286,7 +291,7 @@ DRIFT_CHECK (every 600 frames):
 
 REQUIRES:
   MapMagic2           ≥ 2.1.9   (TerrainHoleAPI stable)
-  Digger/VoxelPro     ≥ 3.x     (Burst-compatible mesh output)
+  HectonVoxelEngine   current first-party Marching Cubes pipeline with Burst/Jobs mesh output
   Unity.Collections   ≥ 1.4     (NativeParallelHashMap)
   Unity.Burst         ≥ 1.8     (unmanaged job math)
   Unity.Jobs          ≥ 0.70    (IJobParallelFor batch raycast)
@@ -315,3 +320,14 @@ INCOMPATIBLE:
 
 [DEBT-05] slerp at t=0 and t=1 numerically unstable if N_terrain == N_voxel (parallel).
           Guard: if dot(N_terrain, N_voxel) > 0.9999 → skip slerp, use N_terrain.
+
+---
+
+## Engineering Data
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| Hot path | 0 B GC, no unbounded main-thread work | Profiler/GCMonitor/static scan |
+| MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
+| Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
+| Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |

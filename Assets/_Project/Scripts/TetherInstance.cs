@@ -39,6 +39,8 @@ namespace Hecton8.Physics
         private const int VerletLowIterationCount = 2;
         private const int VerletMidIterationCount = 3;
         private const int VerletHighIterationCount = 5;
+        private const int VerletLowSegmentCount = 3;
+        private const int VerletDefaultSegmentCount = 10;
         private const float VerletLowVelocityDamping = 0.965f;
         private const float VerletMidVelocityDamping = 0.975f;
         private const float VerletHighVelocityDamping = 0.985f;
@@ -214,6 +216,9 @@ namespace Hecton8.Physics
         /// <summary>Active payload rigidbody resolved by this tether.</summary>
         internal Rigidbody PayloadBody => _payloadBody;
 
+        /// <summary>Last peak tether tension sampled by the fixed-step solver.</summary>
+        internal float CurrentPeakTension => _primaryConstraintForceMagnitude;
+
         /// <summary>
         /// Assigns the owning tether manager for pooled runtime instances.
         /// </summary>
@@ -264,7 +269,7 @@ namespace Hecton8.Physics
             _bioCableHoldTime = owner != null ? owner.ResolveBioCableHoldTime() : 0f;
             _bioCableBlendSharpness = owner != null ? owner.ResolveBioCableBlendSharpness() : 1f;
             _restLength = owner != null ? owner.ResolveTowRestLength(initialDistance) : math.max(1f, initialDistance);
-            _visualSegmentCount = Mathf.Clamp(_visualSegmentCount, MinVisualSegmentCount, MaxVisualSegmentCount);
+            _visualSegmentCount = ResolveVerletPointCount();
             _visualSegmentSmoothSpeed = math.max(1f, _visualSegmentSmoothSpeed);
             _payloadMass = _payloadBody != null ? _payloadBody.mass : 0f;
             _payloadMass01 = owner != null ? owner.ResolvePayloadMass01(_payloadMass) : 0f;
@@ -384,6 +389,7 @@ namespace Hecton8.Physics
             }
 
             RefreshKinematicAnchorCompensationState(forceRecalculateDamping: false);
+            RefreshTargetLengthFromOwner();
 
             ResolveSolverReferenceFrame();
             AdvanceExternalCableSnare(fixedDeltaTime);
@@ -409,6 +415,7 @@ namespace Hecton8.Physics
 
             UpdateTowDirectionResponse();
             UpdateTowDrag();
+            PublishTowLoadLimitIfNeeded(peakTension);
 
             if (UpdateStressAndSnap(peakTension, fixedDeltaTime))
                 return TetherLifecycleState.Snapped;
@@ -854,7 +861,7 @@ namespace Hecton8.Physics
                 NodeRadius = VerletNodeRadius
             };
 
-            JobHandle handle = integrationJob.Schedule(_verletPositions.Length, 8);
+            integrationJob.Run(_verletPositions.Length);
             var constraintJob = new TetherVerletJacobiConstraintJob
             {
                 Positions = _verletPositions,
@@ -872,7 +879,7 @@ namespace Hecton8.Physics
                 FloorY = VerletFloorY,
                 NodeRadius = VerletNodeRadius
             };
-            handle = constraintJob.Schedule(handle);
+            constraintJob.Run();
             var telemetryJob = new TetherVerletTelemetryJob
             {
                 TelemetryRing = _verletTelemetryRing,
@@ -886,8 +893,7 @@ namespace Hecton8.Physics
                 PayloadPosition = payload,
                 Flags = 0u
             };
-            handle = telemetryJob.Schedule(handle);
-            handle.Complete();
+            telemetryJob.Run();
 
             _lastVerletPeakDelta = _verletSolverStats.IsCreated && _verletSolverStats.Length > 0 ? _verletSolverStats[0] : 0f;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1048,15 +1054,24 @@ namespace Hecton8.Physics
                 return;
 
             Vector3 direction = separation * math.rsqrt(distanceSq);
-            float safeReducedMass = math.max(_reducedMass, 0.0001f);
-            float maxForce = math.max(0f, _maxCableAcceleration) * safeReducedMass;
-            float clampedForce = math.min(peakTension, maxForce);
-            Vector3 payloadAcceleration = -direction * (clampedForce * math.rcp(safeReducedMass));
-            ApplyClampedAcceleration(_payloadBody, payloadAcceleration, _maxCableAcceleration);
+            float playerMass = _playerRigidbody != null ? math.max(_playerRigidbody.mass, 0.0001f) : 1f;
+            float payloadMass = _payloadBody != null ? math.max(_payloadBody.mass, 0.0001f) : 1f;
+            float massRatioScale = playerMass * math.rcp(math.max(playerMass + payloadMass, 0.0001f));
+            float maxPayloadForce = math.max(0f, _maxCableAcceleration) * payloadMass;
+            float scaledForce = math.min(peakTension * massRatioScale, maxPayloadForce);
+            if (scaledForce <= MinDistance || !math.isfinite(scaledForce))
+                return;
+
+            Vector3 payloadForce = -direction * scaledForce;
+            PhysicsForceRouter.QueueForceAtPosition(
+                _payloadBody,
+                payloadForce,
+                payloadPosition,
+                ForceMode.Force);
 
             if (!_playerRigidbody.isKinematic)
             {
-                Vector3 reaction = direction * clampedForce;
+                Vector3 reaction = -payloadForce;
                 PhysicsForceRouter.QueueForceAtPosition(
                     _playerRigidbody,
                     reaction,
@@ -1098,6 +1113,28 @@ namespace Hecton8.Physics
                     return VerletHighIterationCount;
                 default:
                     return VerletLowIterationCount;
+            }
+        }
+
+        private static int ResolveVerletPointCount()
+        {
+            return ResolveVerletSegmentCount() + 1;
+        }
+
+        private static int ResolveVerletSegmentCount()
+        {
+            switch (GlobalRegistry.ScalabilityTier)
+            {
+                case HectonQualityTier.Low:
+                case HectonQualityTier.Mx350:
+                case HectonQualityTier.Unknown:
+                    return VerletLowSegmentCount;
+                case HectonQualityTier.Mid:
+                case HectonQualityTier.High:
+                case HectonQualityTier.Ultra:
+                    return VerletDefaultSegmentCount;
+                default:
+                    return VerletLowSegmentCount;
             }
         }
 
@@ -1828,9 +1865,48 @@ namespace Hecton8.Physics
                 PinnedPositions = _verletPinnedPositions,
                 ShiftOffset = shiftOffset
             };
-            JobHandle handle = shiftJob.Schedule(_verletPositions.Length, 8);
-            handle.Complete();
+            shiftJob.Run(_verletPositions.Length);
             return true;
+        }
+
+        private void RefreshTargetLengthFromOwner()
+        {
+            if (_owner == null)
+                return;
+
+            float targetLength = _owner.TargetLength;
+            if (targetLength <= MinDistance || !math.isfinite(targetLength))
+                return;
+
+            float clamped = math.max(1.25f, targetLength);
+            if (math.abs(clamped - _restLength) <= 0.001f)
+                return;
+
+            _restLength = clamped;
+            _segmentRestLengthsDirty = true;
+        }
+
+        private void PublishTowLoadLimitIfNeeded(float peakTension)
+        {
+            if (_payloadBody == null || _playerRigidbody == null || _payloadMass01 < 0.75f || peakTension <= 0f)
+                return;
+
+            float threshold = ResolveSnapTensionThreshold();
+            float load01 = math.saturate(peakTension * math.rcp(math.max(threshold, 1f)));
+            if (load01 < 0.65f)
+                return;
+
+            VehicleCommandSignal signal = new VehicleCommandSignal
+            {
+                TargetInstanceId = unchecked((int)EntityId.ToULong(_playerRigidbody.GetEntityId())),
+                Pitch = 0f,
+                Yaw = 0f,
+                Throttle = math.lerp(0.65f, 0.25f, load01),
+                BallastDelta = 0f,
+                Sequence = 0u,
+                Flags = (byte)(VehicleCommandSignalFlags.ManualThrottle | VehicleCommandSignalFlags.TowLoadLimit)
+            };
+            VehicleCommandSignalBus.Publish(in signal);
         }
 
         internal void CommitVisualRebaseUpload()

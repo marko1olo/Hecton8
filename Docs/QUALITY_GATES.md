@@ -5,16 +5,18 @@ Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 Apply only after production result exists.
 Source of truth for asset specs: PROCEDURAL_ASSET_PIPELINE.md
-Performance tooling: SYSTEMS_CONTRACTS.md (BenchmarkRunner.cs)
+Performance tooling: SYSTEMS_CONTRACTS.md source x-ray. `BenchmarkRunner.cs` is a target-contract label and is absent in current first-party source.
 
-2026-05-11 current-state boundary:
+2026-05-13 current-state boundary:
 
+- 2026-05-13 DOC_AUDIT override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` found the cited May 11 build artifacts absent from the current filesystem. Do not use those paths as current proof until restored or replaced.
 - This stable file is the acceptance-gate authority. Dated reports are evidence/counter snapshots only.
 - This is a gate/checklist contract, not evidence that any asset passed.
 - Do not fill or cite this document as proof without a real prefab/material/scatter profile and fresh validation output.
-- Current project truth starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, and then May 11 evidence reports.
-- Current completed full Core dependency build in the active documentation boundary is `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`.
+- Current project truth starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older evidence reports.
+- May 11 report text claimed historical Core dependency build evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but the May 13 DOC_AUDIT filesystem check did not find that summary or raw log. This is not current compile proof and is not artifact-backed in the current workspace.
 - Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, scene/prefab gameplay, player build, import, frame-time, memory, and visual quality proof remain absent.
+- 2026-05-13 TECH_RESEARCHER static review: later `Hecton8.Core.csproj` dry-run evidence was not green due global C# dependency errors outside mandate-document edits. Current compile status remains `PENDING VERIFICATION`; do not cite the 2026-05-11 artifact as current source health.
 
 2026-05-12 permanent build gate protocol:
 
@@ -98,13 +100,41 @@ Tool: existing AssetValidator.cs if present.
 Run before merge to main.
 Tooling: BenchmarkRunner.cs defined in SYSTEMS_CONTRACTS.md.
 
+### MX350 HARD BUDGET GATE
+
+These budgets are hard gates for the minimum supported machine. They do not prove quality; they only prevent known bad submissions from entering main.
+
+| Domain | MX350/i3 Limit | Blocks merge | Evidence |
+|---|---:|---|---|
+| Total frame time | <= 16.67ms p95 | Yes | 60s Player capture |
+| Main thread | <= 12.0ms p95 | Yes | Unity Profiler |
+| Gameplay physics total | <= 2.0ms p95 planning gate; <= 5.0ms absolute spike ceiling | Yes above 5.0ms; above 2.0ms requires load-shed/fake plan | Profiler markers, FixedStep capture |
+| Single runtime system | <= 0.1ms unless cold/amortized | Yes | Profiler marker proof |
+| GC hot path | 0 B/frame | Yes | GC Alloc column / GCMonitor |
+| VRAM used | <= 1.6GB guard, <= 1.8GB hard | Yes at hard; guard breach requires load-shed evidence | Memory Profiler / platform counter |
+| Texture memory | <= 900MB | Yes | Memory Profiler |
+| Render targets + depth | <= 320MB | Yes | Memory Profiler / RenderDoc |
+| SetPass | <= 600 target, <= 800 hard | Yes at hard | Frame Debugger / Stats |
+| Batches | <= 1800 hard | Yes | Frame Debugger / Stats |
+| Native persistent memory | flat over 10 min idle | Yes | NativeMemorySentinel + Memory Profiler |
+
+Load-shed requirement:
+
+| Trigger | Required Response |
+|---|---|
+| usedVRAM / totalVRAM > 0.90 | request mip downgrade, drain release queue, reduce non-primary RTs |
+| frame_time > 25ms for 3 frames | reduce raymarch/post/boid/rigidbody budgets by tier order |
+| physics p95 > 2.0ms | disable noncritical dynamic bodies, reduce solver scope, or replace with visual fake before accepting merge risk |
+| GC hot path > 0 B | block merge until allocation source is removed |
+
 ### Thresholds (MX350)
 | Metric     | Limit      | Blocks merge |
 |------------|------------|--------------|
 | Frame Time | <= 16.67ms | Yes          |
 | Per-system tick | <= 0.1ms | Yes          |
-| VRAM       | <= 1.6GB   | Yes          |
-| Half-Res VRAM cap | <= 1.6GB | Yes          |
+| VRAM guard | <= 1.6GB | Risk marker; merge requires load-shed proof if exceeded |
+| VRAM hard ceiling | <= 1.8GB | Yes |
+| Half-Res VRAM guard | <= 1.6GB | Risk marker; half-res does not buy extra VRAM |
 | SetPass    | <= 800     | Yes          |
 | GC Alloc   | 0          | Yes          |
 | Draw Calls | <= 1/type  | Yes          |
@@ -112,7 +142,7 @@ Tooling: BenchmarkRunner.cs defined in SYSTEMS_CONTRACTS.md.
 CTO hard rules:
 
 - Any single runtime system tick above `0.1ms` is suspicious and blocks merge until a profiler trace proves the cost is cold, amortized, or moved out of the frame-critical lane.
-- Half-Res rendering modes do not get a larger memory budget; VRAM remains capped at `1.6GB`.
+- Half-Res rendering modes do not get a larger memory budget. The guard remains `1.6GB`; the hard ceiling remains `1.8GB` on MX350.
 - Synchronous `Physics.BakeMesh(...)` on the main thread is forbidden. Mesh baking must be asynchronous/job-bound or replaced by a cinematic collider fake for noncritical/distant geometry.
 - Any water/light/flow/pressure/deformation/cable/particle/ambience feature must document why the visual fake path is insufficient before adding runtime simulation.
 - No manual checklist can override profiler, console, or PlayMode evidence.

@@ -71,6 +71,7 @@ StructuredBuffer<FormationBeaconData> _FormationBeacons;
 StructuredBuffer<FormationObstacleData> _FormationObstacles;
 StructuredBuffer<LeviathanNodeData> _LeviathanNodes;
 StructuredBuffer<MassiveThreatData> _MassiveThreats;
+StructuredBuffer<float4> _PredatorAUPBuffer;
 StructuredBuffer<uint> _ThreatGrid2D;
 StructuredBuffer<uint> _ThreatVoxelGrid;
 RWByteAddressBuffer _LatchStats;
@@ -210,6 +211,8 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define _PlayerForwardWS (_SargassumSimulationFrame[0].PlayerForward.xyz)
 #define _HeadlightPanic (_SargassumSimulationFrame[0].PlayerForward.w)
 #define _PlayerDirectionWS (_SargassumSimulationFrame[0].PlayerDirection.xyz)
+#define _PredatorAUPCount ((uint)max(_SargassumSimulationFrame[0].PlayerDirection.w, 0.0))
+#define _PredatorAUPLoopCap ((uint)max(_SargassumSimulationFrame[0].AbyssalFlowWeatherCurrent.w, 0.0))
 #define _CameraAvoidPositionWS (_SargassumSimulationFrame[0].CameraAvoidPosition.xyz)
 #define _CameraAvoidRadius (_SargassumSimulationFrame[0].CameraAvoidPosition.w)
 #define _CameraAvoidWeight (_SargassumSimulationFrame[0].CameraAvoidData.x)
@@ -299,6 +302,9 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define DENSITY_CAP_MAX_BOIDS 8.0
 #define DENSITY_CAP_RADIUS_SQ 4.0
 #define SCHOOL_LEADER_FOLLOWER_COUNT 50u
+#define PREDATOR_AUP_MAX_THREATS 16u
+#define PREDATOR_AUP_FLEE_SPEED_SCALE 2.75
+#define PREDATOR_AUP_COHESION_BREAK 0.10
 #define BOID_FLAG_ACTIVE 1u
 #define BOID_FLAG_HUNTING 2u
 #define BOID_FLAG_FLEEING 4u
@@ -508,6 +514,49 @@ float3 CheapNormalizeL1(float3 value, float3 fallback)
         return fallback;
 
     return value / lengthL1;
+}
+
+float3 SafeNormalizeRsqrt(float3 value, float3 fallback)
+{
+    if (!IsFiniteFloat3(value))
+        return fallback;
+
+    float lengthSq = dot(value, value);
+    if (!IsFiniteFloat(lengthSq) || lengthSq <= EPSILON)
+        return fallback;
+
+    return value * rsqrt(max(lengthSq, EPSILON));
+}
+
+float3 ResolvePredatorAupScatter(float3 positionWS, out float panic01)
+{
+    panic01 = 0.0;
+    float3 scatterWS = float3(0.0, 0.0, 0.0);
+    uint threatCount = min(min(_PredatorAUPCount, _PredatorAUPLoopCap), PREDATOR_AUP_MAX_THREATS);
+    [loop]
+    for (uint threatIndex = 0u; threatIndex < threatCount; threatIndex++)
+    {
+        float4 threat = _PredatorAUPBuffer[threatIndex];
+        float radius = max(threat.w, 0.0);
+        if (radius <= EPSILON)
+            continue;
+
+        float3 awayFromThreat = positionWS - threat.xyz;
+        if (!IsFiniteFloat3(awayFromThreat))
+            continue;
+
+        float distSq = dot(awayFromThreat, awayFromThreat);
+        float radiusSq = max(radius * radius, EPSILON);
+        if (!IsFiniteFloat(distSq) || distSq >= radiusSq)
+            continue;
+
+        float gate = 1.0 - saturate(distSq / radiusSq);
+        gate *= gate;
+        scatterWS += SafeNormalizeRsqrt(awayFromThreat, float3(0.0, 0.0, 1.0)) * gate;
+        panic01 = max(panic01, gate);
+    }
+
+    return scatterWS;
 }
 
 float3 ClosestPointOnSegment(float3 samplePosition, float3 start, float3 end)
@@ -1411,9 +1460,11 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float leviathanHuntPulse = 0.0;
     float panicFromSonar = 0.0;
     float panicFromAcoustic = 0.0;
+    float panicFromPredatorAup = 0.0;
     float3 bloomImpulse = float3(0.0, 0.0, 0.0);
     float3 collapseImpulse = float3(0.0, 0.0, 0.0);
     float3 fleeFromMassive = float3(0.0, 0.0, 0.0);
+    float3 predatorAupScatterDirectionWS = ResolvePredatorAupScatter(positionWS, panicFromPredatorAup);
     float3 sonarScatterDirectionWS = float3(0.0, 0.0, 0.0);
     float3 acousticPanicDirectionWS = ResolveAcousticPanicChaos(positionWS, index, panicFromAcoustic);
     if (_SonarScatterStrength > 0.001)
@@ -1504,7 +1555,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
     }
 
-    float sourcePanic = saturate(max(panic, max(max(max(max(max(max(panicFromCut, panicFromPlayer), panicFromMassive), panicFromSonar), panicFromAcoustic), threatGridPanic), leviathanHuntPulse)));
+    float sourcePanic = saturate(max(panic, max(max(max(max(max(max(max(panicFromCut, panicFromPlayer), panicFromMassive), panicFromSonar), panicFromAcoustic), panicFromPredatorAup), threatGridPanic), leviathanHuntPulse)));
     panic = saturate(sourcePanic + panicContagion);
     stateFlags = max(panic, leviathanHuntPulse) >= 0.05 ? BuildFleeStateFlags() : BuildAliveStateFlags();
 
@@ -1546,9 +1597,16 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         velocity += acousticPanicDirectionWS * (_MaxSpeed * panicFromAcoustic * _DeltaTime);
     }
 
+    if (panicFromPredatorAup > 0.0 && dot(predatorAupScatterDirectionWS, predatorAupScatterDirectionWS) > EPSILON)
+    {
+        float3 predatorAupDirectionWS = SafeNormalizeRsqrt(predatorAupScatterDirectionWS, float3(0.0, 0.0, 1.0));
+        acceleration += predatorAupDirectionWS * (_PanicWeight * PREDATOR_AUP_FLEE_SPEED_SCALE * panicFromPredatorAup);
+        velocity += predatorAupDirectionWS * (_MaxSpeed * PREDATOR_AUP_FLEE_SPEED_SCALE * panicFromPredatorAup * _DeltaTime);
+    }
+
     bool fleeState = IsFleeState(stateFlags);
     float separationWeight = _SeparationWeight * (fleeState ? 2.0 : 1.0);
-    float fleeMaxSpeedMultiplier = fleeState ? 2.0 : 1.0;
+    float fleeMaxSpeedMultiplier = fleeState ? lerp(2.0, 2.8, saturate(panicFromPredatorAup)) : 1.0;
     if (separationCount > 0.0)
     {
         float3 separationForce = separationSum / separationCount;
@@ -1568,8 +1626,9 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float3 averagePosition = cohesionSum / neighbourCount;
         float3 alignmentForce = SafeNormalize(averageVelocity);
         float3 cohesionForce = SafeNormalize(averagePosition - position);
+        float cohesionBreak = fleeState ? PREDATOR_AUP_COHESION_BREAK : 1.0;
         acceleration += alignmentForce * _AlignmentWeight;
-        acceleration += cohesionForce * _CohesionWeight;
+        acceleration += cohesionForce * (_CohesionWeight * cohesionBreak);
     }
 
     float densityDeficit = _DeepMode > 0.5 ? 0.0 : saturate((_DensityThreshold - effectiveDensity) / max(_DensityThreshold, 0.001));
@@ -1827,19 +1886,22 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             : max(panicFromPlayer, _HeadlightPanic);
         float threatGridPanicWeight = threatGridPanic;
         float massivePanicWeight = panicFromMassive;
+        float predatorAupPanicWeight = panicFromPredatorAup;
         float3 fleeFromCut = SafeNormalize(float3(-cutGradient.x, 0.0, -cutGradient.y));
         float3 fleeFromPlayer = SafeNormalize(position - playerPositionCR);
         float3 fleeFromThreatGrid = SafeNormalize(float3(-threatGridGradient.x, 0.0, -threatGridGradient.y));
+        float3 fleeFromPredatorAup = SafeNormalizeRsqrt(predatorAupScatterDirectionWS, float3(0.0, 0.0, 0.0));
         float3 fleeForce = fleeFromCut * cutPanicWeight +
                            fleeFromPlayer * playerPanicWeight +
                            fleeFromThreatGrid * threatGridPanicWeight +
+                           fleeFromPredatorAup * predatorAupPanicWeight +
                            SafeNormalize(fleeFromMassive) * massivePanicWeight;
         if (dot(fleeForce, fleeForce) <= EPSILON)
             fleeForce = SafeNormalize(float3(position.x - fieldCenterCR.x, 0.0, position.z - fieldCenterCR.z));
         else
             fleeForce = SafeNormalize(fleeForce);
 
-        float panicWeight = lerp(_PanicWeight, _MassiveThreatWeight, saturate(massivePanicWeight));
+        float panicWeight = lerp(_PanicWeight, _MassiveThreatWeight, saturate(max(massivePanicWeight, predatorAupPanicWeight)));
         acceleration += fleeForce * panic * panicWeight;
     }
 

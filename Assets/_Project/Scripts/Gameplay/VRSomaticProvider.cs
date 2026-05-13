@@ -16,14 +16,17 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9915)]
     [AddComponentMenu("Hecton8/Gameplay/VR Somatic Provider")]
-    public sealed class VRSomaticProvider : MonoBehaviour, IVRSomaticProvider, IUpdatable, ILateFrameTickable
+    public sealed class VRSomaticProvider : MonoBehaviour, IVRSomaticProvider, IUpdatable, ILateFrameTickable, IOriginShiftListener
     {
         private const int HeadCollisionCommandCount = 6;
         private const int HeadCollisionMaxHitsPerCommand = 1;
+        private const int HandCount = 2;
         private const float Pi = 3.14159265359f;
         private const float TwoPi = 6.28318530718f;
         private const float HalfPi = 1.57079632679f;
         private const float DegreesToRadians = 0.01745329252f;
+        private const float HorizonLockStartSinSq = 0.0669873f;
+        private const float HorizonLockMaxCorrectionRadians = 0.2617994f;
         private const float MinimumDeltaTime = 0.0001f;
         private const float ShaderPublishEpsilon = 0.0001f;
         private const float AudioPublishEpsilon = 0.001f;
@@ -43,6 +46,8 @@ namespace Hecton8.Gameplay
         private const float HeadTrackingJumpAngularRadians = 1.35f;
         private const float MaxSomaticHeadLinearSpeedMetersPerSecond = 12f;
         private const float MaxSomaticHeadAngularSpeedRadiansPerSecond = 18f;
+        private const float MaxSomaticHeadAngularJerkRadiansPerSecondCubed = 1440f;
+        private const byte HapticPriorityComfort = 2;
         private const byte LeftMotorMask = 0b0001;
         private const byte RightMotorMask = 0b0010;
         private const byte BothMotorMask = LeftMotorMask | RightMotorMask;
@@ -50,6 +55,24 @@ namespace Hecton8.Gameplay
         private const byte HapticBlendAdditive = ToolHapticsRuntime.BlendModeAdditive;
         private const float AupCellSizeMeters = 5000f;
         private const float HapticSideThreshold = 0.2f;
+        private const float JerkEventDebounceSeconds = 0.2f;
+        private const float VrComfortTelemetryStep01 = 0.05f;
+        private const uint VrComfortTelemetryContextHash = 0x56524346u; // VRCF
+        private const uint VrComfortJerkEventHash = 0x4A524B31u; // JRK1
+        private const uint VrComfortMaxVignetteHash = 0x4D565231u; // MVR1
+        private const uint BlackBoxMagic = 0x5652534Du; // VRSM
+        private const uint BlackBoxVersion = 1u;
+        private const int BlackBoxFrameCapacity = 300;
+        private const ushort BlackBoxFlagActive = 1 << 0;
+        private const ushort BlackBoxFlagNonFinite = 1 << 1;
+        private const ushort BlackBoxFlagLeftGhost = 1 << 2;
+        private const ushort BlackBoxFlagRightGhost = 1 << 3;
+        private const ushort BlackBoxFlagRootJobScheduled = 1 << 4;
+        private const ushort BlackBoxFlagHandJobScheduled = 1 << 5;
+        private const ushort BlackBoxFlagNearCollision = 1 << 6;
+        private const ushort BlackBoxFlagAupShiftSeen = 1 << 7;
+        private const ushort BlackBoxFlagLowTier = 1 << 8;
+        private const string BlackBoxDumpFileName = "Dump_VR_SOMATIC_ENGINEER.bin";
         private const uint StateHeadCollisionScheduled = 1u << 0;
         private const uint StateRegisteredService = 1u << 1;
         private const uint StateRegisteredUpdate = 1u << 2;
@@ -59,10 +82,16 @@ namespace Hecton8.Gameplay
         private const uint StateBreathingAudioStaticApplied = 1u << 6;
         private const uint StateBreathingLowPassStaticApplied = 1u << 7;
         private const uint StateBreathingSourcePlaying = 1u << 8;
+        private const uint StateRootSyncScheduled = 1u << 9;
+        private const uint StateHandKinematicsScheduled = 1u << 10;
+        private const uint StateHandsInitialized = 1u << 11;
+        private const uint StateRootInitialized = 1u << 12;
 
         private static readonly int NearCollisionIntensityId = Shader.PropertyToID("_HectonVRNearCollisionIntensity");
         private static readonly int SomaticCondensationId = Shader.PropertyToID("_HectonVRSomaticCondensation");
         private static readonly int SomaticStateId = Shader.PropertyToID("_HectonVRSomaticState");
+        private static readonly int VrComfortJerkStateId = Shader.PropertyToID("_HectonVRComfortJerkState");
+        private static readonly int VrComfortVignetteId = Shader.PropertyToID("_VRComfortVignette");
 
         [Header("Rig")]
         [SerializeField] private Transform hmdTransform;
@@ -92,12 +121,39 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool applyVisorHudHeadLag = true;
         [SerializeField, Range(0f, 1f)] private float visorLagMaximumBlend = 0.62f;
         [SerializeField, Range(0.25f, 12f)] private float visorLagAngularSpeedForFull = 5.25f;
+        [SerializeField, Range(30f, 960f), Tooltip("Angular jerk where VR comfort clamps visor HUD response.")]
+        private float rotationJerkLimitRadiansPerSecondCubed = 320f;
+        [SerializeField, Range(0f, 1f), Tooltip("Maximum extra visor HUD blend used to cull rotation jerk.")]
+        private float rotationJerkCullMaximumBlend = 0.42f;
+        [SerializeField, Range(1f, 40f), Tooltip("Smoothing sharpness for rotation jerk comfort culling.")]
+        private float rotationJerkCullSharpness = 18f;
+        [SerializeField, Range(0f, 1f), Tooltip("Extra vignette contributed by severe rotation jerk.")]
+        private float rotationJerkVignetteContribution = 0.28f;
+        [SerializeField, Range(2f, 40f), Tooltip("Smoothing sharpness for the decoupled somatic root.")]
+        private float rootRotationSmoothingSharpness = 14f;
+        [SerializeField, Range(0.25f, 12f), Tooltip("Head angular speed where the comfort vignette begins.")]
+        private float comfortVignetteAngularSpeedStart = 2.6f;
+        [SerializeField, Range(1f, 18f), Tooltip("Head angular speed where the comfort vignette reaches full value.")]
+        private float comfortVignetteAngularSpeedFull = 8f;
+        [SerializeField, Range(0f, 1f), Tooltip("Maximum scalar written to the VR comfort vignette globals.")]
+        private float comfortVignetteMaximum = 0.46f;
 
         [Header("Chest Sockets")]
         [SerializeField] private Vector3 pdaChestOffset = new Vector3(-0.18f, -0.34f, 0.22f);
         [SerializeField] private Vector3 pdaChestRotationEuler = new Vector3(8f, -12f, -6f);
         [SerializeField] private Vector3 flareToolChestOffset = new Vector3(0.18f, -0.36f, 0.19f);
         [SerializeField] private Vector3 flareToolChestRotationEuler = new Vector3(10f, 14f, 8f);
+        [SerializeField, Range(3f, 12f), Tooltip("Head speed where a short somatic haptic anchor begins.")]
+        private float velocityHapticThresholdMetersPerSecond = 5f;
+        [SerializeField, Range(0.03f, 0.25f), Tooltip("Minimum seconds between velocity haptic anchors.")]
+        private float velocityHapticIntervalSeconds = 0.12f;
+        [SerializeField, Range(0.01f, 0.2f), Tooltip("Duration of each velocity haptic anchor pulse.")]
+        private float velocityHapticDurationSeconds = 0.075f;
+
+        [Header("Physical Hands")]
+        [SerializeField, Range(2f, 80f)] private float handSpringForce = 24f;
+        [SerializeField, Range(0.08f, 0.5f)] private float ghostHandDistanceMeters = 0.2f;
+        [SerializeField] private bool disableGhostHandsOnLowTier = true;
 
         [Header("Breathing Audio")]
         [SerializeField] private AudioSource breathingSource;
@@ -112,7 +168,14 @@ namespace Hecton8.Gameplay
         private NativeArray<CapsulecastCommand> _headCollisionCommands;
         private NativeArray<RaycastHit> _headCollisionHits;
         private NativeArray<HeadCastSample> _headCollisionSamples;
+        private NativeArray<VRSomaticRootSyncInput> _rootSyncInput;
+        private NativeArray<VRSomaticRootSyncOutput> _rootSyncOutput;
+        private NativeArray<float3> HandTargets;
+        private NativeArray<float3> HandPhysicalPositions;
+        private NativeArray<VRSomaticBlackBoxEntry> _blackBox;
         private JobHandle _headCollisionHandle;
+        private JobHandle _rootSyncHandle;
+        private JobHandle _handKinematicsHandle;
         private JobHandle _headCollisionDisposeHandle;
         private uint _stateFlags;
         private Vector3 _previousHeadPosition;
@@ -123,9 +186,22 @@ namespace Hecton8.Gameplay
         private Quaternion _torsoRotation = Quaternion.identity;
         private Quaternion _pdaSocketLocalRotation = Quaternion.identity;
         private Quaternion _flareSocketLocalRotation = Quaternion.identity;
+        private quaternion _lastRootRotation = quaternion.identity;
         private Transform _fallbackHmdTransform;
+        private Transform _decoupledRootTransform;
         private float _headLinearSpeedMetersPerSecond;
         private float _headAngularSpeedRadiansPerSecond;
+        private float3 _previousHeadAngularVelocityRadiansPerSecond;
+        private float3 _previousHeadAngularAccelerationRadiansPerSecondSq;
+        private float _headAngularJerkRadiansPerSecondCubed;
+        private float _headAngularJerk01;
+        private float _jerkCullBlend01;
+        private uint _jerkEventCount;
+        private uint _lastTelemetryJerkEventCount;
+        private float _jerkEventCooldownRemaining;
+        private float _maxSomaticComfortVignetteTelemetry01;
+        private float _lastSomaticComfortVignetteTelemetry01;
+        private float _velocityHapticCooldownRemaining;
         private float _lastTickDeltaTime;
         private float _impactHapticCooldownRemaining;
         private float _nearFieldCollision01;
@@ -139,8 +215,15 @@ namespace Hecton8.Gameplay
         private float _lastPublishedBreathingPitch = float.PositiveInfinity;
         private float _lastPublishedBreathingLowPassHz = float.PositiveInfinity;
         private float _lastPublishedBreathingLowPassQ = float.PositiveInfinity;
+        private float _lastPublishedComfortVignette01 = float.PositiveInfinity;
         private float _playerSignalSampleRemaining;
         private Vector4 _lastPublishedSomaticState = Vector4.positiveInfinity;
+        private Vector4 _lastPublishedJerkState = Vector4.positiveInfinity;
+        private uint _lastObservedAupShiftSequence;
+        private uint _handGhostMask;
+        private int _blackBoxCursor;
+        private int _blackBoxLastRecordedFrame = -1;
+        private bool _blackBoxDumped;
         private VRSomaticChestSocketPose _pdaSocketPose;
         private VRSomaticChestSocketPose _flareSocketPose;
         private VRSomaticCollisionState _collisionState;
@@ -148,6 +231,7 @@ namespace Hecton8.Gameplay
 
         public bool IsActive => _snapshot.IsActive;
         public VRSomaticSnapshot CurrentSnapshot => _snapshot;
+        public uint HandGhostMask => _handGhostMask;
 
         public void BindRig(
             Transform hmdTransform,
@@ -186,6 +270,12 @@ namespace Hecton8.Gameplay
                 ResetBreathingAudioPublishCache();
         }
 
+        public void BindDecoupledRoot(Transform vrRootTransform)
+        {
+            _decoupledRootTransform = vrRootTransform;
+            _lastObservedAupShiftSequence = 0u;
+        }
+
         public bool TryGetChestSocket(VRSomaticChestSocketId socketId, out VRSomaticChestSocketPose socketPose)
         {
             if (!_snapshot.IsActive)
@@ -200,10 +290,72 @@ namespace Hecton8.Gameplay
             return true;
         }
 
+        public bool TryGetHandPose(byte handIndex, out VRSomaticHandPose handPose)
+        {
+            handPose = default;
+            if (!_snapshot.IsActive ||
+                handIndex >= HandCount ||
+                !HandTargets.IsCreated ||
+                !HandPhysicalPositions.IsCreated ||
+                (_stateFlags & StateHandKinematicsScheduled) != 0u)
+            {
+                return false;
+            }
+
+            float3 target = HandTargets[handIndex];
+            float3 physical = HandPhysicalPositions[handIndex];
+            float3 separation = target - physical;
+            float separationSq = math.lengthsq(separation);
+            if (!IsFiniteFloat3(target) || !IsFiniteFloat3(physical) || !math.isfinite(separationSq))
+                return false;
+
+            InputDispatcher dispatcher = InputDispatcher.ActiveRuntimeInstance;
+            bool hasTracking = dispatcher != null &&
+                               dispatcher.TryGetXRInputState(handIndex, out XRInputState state) &&
+                               state.IsTracked != 0;
+            bool ghostVisible = (_handGhostMask & (1u << handIndex)) != 0u;
+            handPose = new VRSomaticHandPose(
+                handIndex,
+                hasTracking,
+                ghostVisible,
+                ToVector3(target),
+                ToVector3(physical),
+                separationSq);
+            return true;
+        }
+
         public bool TryGetNearFieldCollision(out VRSomaticCollisionState collisionState)
         {
             collisionState = _collisionState;
             return _snapshot.IsActive && _collisionState.HasContact && _collisionState.Intensity01 > 0.001f;
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            DispatcherJobSwap.TryComplete(ref _headCollisionHandle, true);
+            DispatcherJobSwap.TryComplete(ref _rootSyncHandle, true);
+            DispatcherJobSwap.TryComplete(ref _handKinematicsHandle, true);
+            _stateFlags &= ~(StateHeadCollisionScheduled | StateRootSyncScheduled | StateHandKinematicsScheduled | StateHasPreviousHeadPose | StateRootInitialized);
+            _lastObservedAupShiftSequence = shiftData.Sequence;
+            _headLinearSpeedMetersPerSecond = 0f;
+            _headAngularSpeedRadiansPerSecond = 0f;
+            _previousHeadAngularVelocityRadiansPerSecond = float3.zero;
+            _previousHeadAngularAccelerationRadiansPerSecondSq = float3.zero;
+            _headAngularJerkRadiansPerSecondCubed = 0f;
+            _headAngularJerk01 = 0f;
+            _jerkCullBlend01 = 0f;
+            _jerkEventCooldownRemaining = 0f;
+            _nearFieldCollision01 = 0f;
+            _collisionState = default;
+            _lastPublishedNearCollision01 = float.PositiveInfinity;
+
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            if (!IsFiniteVector(shiftOffset))
+                return;
+
+            float3 shift = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            RebaseHandArray(HandTargets, shift);
+            RebaseHandArray(HandPhysicalPositions, shift);
         }
 
         public void Tick(float deltaTime)
@@ -220,17 +372,24 @@ namespace Hecton8.Gameplay
             }
 
             activeHmd.GetPositionAndRotation(out Vector3 headPosition, out Quaternion headRotation);
-            if (!IsFiniteVector(headPosition) || !TrySanitizeQuaternion(headRotation, out headRotation))
+            bool hasFiniteHeadPosition = IsFiniteVector(headPosition);
+            bool hasFiniteHeadRotation = TrySanitizeQuaternion(headRotation, out Quaternion sanitizedHeadRotation);
+            if (!hasFiniteHeadPosition || !hasFiniteHeadRotation)
             {
+                RecordBlackBoxFrame(headPosition, hasFiniteHeadRotation ? sanitizedHeadRotation : headRotation, BlackBoxFlagNonFinite);
                 ApplyInactiveState(safeDeltaTime);
                 RefreshLateFrameRegistration();
                 return;
             }
 
+            headRotation = sanitizedHeadRotation;
             AbsoluteUniversePosition headAup = HectonXRRuntimeState.TryResolveCachedHeadAup(headPosition, out AbsoluteUniversePosition cachedHeadAup)
                 ? cachedHeadAup
                 : AbsoluteUniversePosition.FromRuntimePosition(headPosition);
+            ResetHeadMotionIfAupShifted(headPosition, headRotation);
             UpdateHeadMotion(headPosition, headRotation, safeDeltaTime);
+            ScheduleRootSync(headPosition, headRotation, safeDeltaTime);
+            ScheduleHandKinematics(headPosition, headRotation, safeDeltaTime);
             RefreshPlayerSignalsIfDue();
             UpdateChestSockets(in headAup, headRotation);
             Quaternion visorRotation = ResolveVisorHudRotation(headPosition, headRotation);
@@ -239,11 +398,17 @@ namespace Hecton8.Gameplay
             UpdateCondensation();
             PublishSnapshot(in headAup, headPosition, headRotation, visorRotation);
             PublishShaderState();
+            TryEmitVelocityAnchorHaptics();
+            PublishComfortTelemetry();
             ScheduleHeadCollisionBatch(headPosition, headRotation);
+            RecordBlackBoxFrame(headPosition, headRotation, 0);
         }
 
         public void LateFrameTick()
         {
+            CompleteRootSyncIfReady();
+            CompleteHandKinematicsIfReady();
+
             if ((_stateFlags & StateHeadCollisionScheduled) == 0u)
             {
                 RefreshLateFrameRegistration();
@@ -280,6 +445,7 @@ namespace Hecton8.Gameplay
         {
             CacheSocketRotations();
             TrySubscribeXRRuntime();
+            HectonFloatingOrigin.RegisterListener(this);
             RefreshRuntimeRegistration(IsVRSomaticRuntimeActive());
         }
 
@@ -303,6 +469,7 @@ namespace Hecton8.Gameplay
 
             bool hadRuntimeState = HasRuntimeRegistrationOrActiveSnapshot();
             TryUnsubscribeXRRuntime();
+            HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterLateFrame();
             TryUnregisterUpdate();
             TryUnregisterService();
@@ -427,7 +594,7 @@ namespace Hecton8.Gameplay
 
         private bool ShouldKeepLateFrameRegistered()
         {
-            return (_stateFlags & StateHeadCollisionScheduled) != 0u ||
+            return (_stateFlags & (StateHeadCollisionScheduled | StateRootSyncScheduled | StateHandKinematicsScheduled)) != 0u ||
                    (_snapshot.IsActive && CanRunHeadCollisionQuery());
         }
 
@@ -435,6 +602,8 @@ namespace Hecton8.Gameplay
         {
             const uint runtimeMask =
                 StateHeadCollisionScheduled |
+                StateRootSyncScheduled |
+                StateHandKinematicsScheduled |
                 StateRegisteredService |
                 StateRegisteredUpdate |
                 StateRegisteredLateFrame;
@@ -513,6 +682,7 @@ namespace Hecton8.Gameplay
             }
 
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(deltaTime, MinimumDeltaTime) : MinimumDeltaTime;
+            float invSafeDeltaTime = math.rcp(safeDeltaTime);
             Vector3 headDelta = headPosition - _previousHeadPosition;
             float headDeltaSq =
                 (headDelta.x * headDelta.x) +
@@ -528,11 +698,24 @@ namespace Hecton8.Gameplay
             }
 
             _headLinearSpeedMetersPerSecond = math.min(
-                ApproximateMagnitudeNoSqrt(headDelta) / safeDeltaTime,
+                ApproximateMagnitudeNoSqrt(headDelta) * invSafeDeltaTime,
                 MaxSomaticHeadLinearSpeedMetersPerSecond);
-            _headAngularSpeedRadiansPerSecond = math.min(
-                angularDelta / safeDeltaTime,
-                MaxSomaticHeadAngularSpeedRadiansPerSecond);
+
+            float3 headAngularVelocity = ResolveAngularVelocityRadiansPerSecond(
+                _previousHeadRotation,
+                headRotation,
+                angularDelta,
+                invSafeDeltaTime);
+            float angularSpeed = ApproximateMagnitudeNoSqrt(headAngularVelocity);
+            if (angularSpeed > MaxSomaticHeadAngularSpeedRadiansPerSecond)
+            {
+                float clampScale = MaxSomaticHeadAngularSpeedRadiansPerSecond * math.rcp(math.max(angularSpeed, 0.0001f));
+                headAngularVelocity *= clampScale;
+                angularSpeed = MaxSomaticHeadAngularSpeedRadiansPerSecond;
+            }
+
+            _headAngularSpeedRadiansPerSecond = angularSpeed;
+            UpdateRotationJerkState(safeDeltaTime, headAngularVelocity);
 
             _headRotationFrame3 = _headRotationFrame2;
             _headRotationFrame2 = _headRotationFrame1;
@@ -551,6 +734,50 @@ namespace Hecton8.Gameplay
             _stateFlags |= StateHasPreviousHeadPose;
             _headLinearSpeedMetersPerSecond = 0f;
             _headAngularSpeedRadiansPerSecond = 0f;
+            _previousHeadAngularVelocityRadiansPerSecond = float3.zero;
+            _previousHeadAngularAccelerationRadiansPerSecondSq = float3.zero;
+            _headAngularJerkRadiansPerSecondCubed = 0f;
+            _headAngularJerk01 = 0f;
+            _jerkCullBlend01 = 0f;
+        }
+
+        private void ResetHeadMotionIfAupShifted(Vector3 headPosition, Quaternion headRotation)
+        {
+            uint currentShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            if (_lastObservedAupShiftSequence == currentShiftSequence)
+                return;
+
+            _lastObservedAupShiftSequence = currentShiftSequence;
+            ResetHeadMotionHistory(headPosition, headRotation);
+        }
+
+        private void UpdateRotationJerkState(float deltaTime, float3 headAngularVelocityRadiansPerSecond)
+        {
+            float safeDeltaTime = math.max(deltaTime, MinimumDeltaTime);
+            float invSafeDeltaTime = math.rcp(safeDeltaTime);
+            float3 angularVelocity = SanitizeFiniteFloat3(headAngularVelocityRadiansPerSecond);
+            float3 angularAcceleration = (angularVelocity - _previousHeadAngularVelocityRadiansPerSecond) * invSafeDeltaTime;
+            if (!IsFiniteFloat3(angularAcceleration))
+                angularAcceleration = float3.zero;
+
+            float3 angularJerkVector = (angularAcceleration - _previousHeadAngularAccelerationRadiansPerSecondSq) * invSafeDeltaTime;
+            float angularJerk = ApproximateMagnitudeNoSqrt(angularJerkVector);
+            if (!math.isfinite(angularJerk))
+                angularJerk = 0f;
+
+            _headAngularJerkRadiansPerSecondCubed = math.min(angularJerk, MaxSomaticHeadAngularJerkRadiansPerSecondCubed);
+            float jerkLimit = SanitizeMinimum(rotationJerkLimitRadiansPerSecondCubed, 1f);
+            float targetJerk01 = math.saturate(_headAngularJerkRadiansPerSecondCubed * math.rcp(jerkLimit));
+            float blend = ResolveCinematicBlendApprox(SanitizeMinimum(rotationJerkCullSharpness, 1f), safeDeltaTime);
+            _headAngularJerk01 = math.lerp(_headAngularJerk01, targetJerk01, blend);
+            if (targetJerk01 >= 1f && _jerkEventCooldownRemaining <= 0f)
+            {
+                _jerkEventCount++;
+                _jerkEventCooldownRemaining = JerkEventDebounceSeconds;
+            }
+
+            _previousHeadAngularVelocityRadiansPerSecond = angularVelocity;
+            _previousHeadAngularAccelerationRadiansPerSecondSq = angularAcceleration;
         }
 
         private void RefreshPlayerSignalsIfDue()
@@ -571,6 +798,10 @@ namespace Hecton8.Gameplay
                 _playerSignalSampleRemaining = math.max(0f, _playerSignalSampleRemaining - deltaTime);
             if (_impactHapticCooldownRemaining > 0f)
                 _impactHapticCooldownRemaining = math.max(0f, _impactHapticCooldownRemaining - deltaTime);
+            if (_jerkEventCooldownRemaining > 0f)
+                _jerkEventCooldownRemaining = math.max(0f, _jerkEventCooldownRemaining - deltaTime);
+            if (_velocityHapticCooldownRemaining > 0f)
+                _velocityHapticCooldownRemaining = math.max(0f, _velocityHapticCooldownRemaining - deltaTime);
         }
 
         private void ResolvePlayerSignals(out float stress01, out float oxygen01, out float depthMeters)
@@ -669,6 +900,14 @@ namespace Hecton8.Gameplay
                 float lagBlend = math.saturate(angular01 * Sanitize01(visorLagMaximumBlend, 0f));
                 laggedRotation = ApproximateNlerpNoSqrt(headRotation, _headRotationFrame3, lagBlend);
             }
+
+            float jerkCull01 = math.saturate(_headAngularJerk01 * Sanitize01(rotationJerkCullMaximumBlend, 0f));
+            _jerkCullBlend01 = math.lerp(
+                _jerkCullBlend01,
+                jerkCull01,
+                ResolveCinematicBlendApprox(SanitizeMinimum(rotationJerkCullSharpness, 1f), _lastTickDeltaTime));
+            if (_jerkCullBlend01 > 0.001f)
+                laggedRotation = ApproximateNlerpNoSqrt(laggedRotation, _headRotationFrame3, _jerkCullBlend01);
 
             if (visorHudRoot != null)
                 visorHudRoot.SetPositionAndRotation(headPosition, laggedRotation);
@@ -771,6 +1010,175 @@ namespace Hecton8.Gameplay
                 _depthMeters,
                 _nearFieldCollision01,
                 _condensation01);
+        }
+
+        private void ScheduleRootSync(Vector3 headPosition, Quaternion headRotation, float deltaTime)
+        {
+            if (_decoupledRootTransform == null || (_stateFlags & StateRootSyncScheduled) != 0u)
+                return;
+
+            if (!_rootSyncInput.IsCreated || !_rootSyncOutput.IsCreated)
+                EnsureNativeBuffers();
+            if (!_rootSyncInput.IsCreated || !_rootSyncOutput.IsCreated)
+                return;
+
+            quaternion sanitizedHeadRotation = (quaternion)headRotation;
+            quaternion previousRootRotation = (_stateFlags & StateRootInitialized) != 0u
+                ? _lastRootRotation
+                : sanitizedHeadRotation;
+            _rootSyncInput[0] = new VRSomaticRootSyncInput
+            {
+                HeadPosition = new float3(headPosition.x, headPosition.y, headPosition.z),
+                HeadRotation = sanitizedHeadRotation,
+                PreviousRootRotation = previousRootRotation,
+                DeltaTime = math.max(deltaTime, MinimumDeltaTime),
+                HeadAngularSpeed = SanitizeNonNegative(_headAngularSpeedRadiansPerSecond),
+                RootRotationSharpness = SanitizeMinimum(rootRotationSmoothingSharpness, 1f),
+                VignetteAngularSpeedStart = SanitizeMinimum(comfortVignetteAngularSpeedStart, 0.01f),
+                VignetteAngularSpeedFull = SanitizeMinimum(comfortVignetteAngularSpeedFull, 0.02f),
+                VignetteMaximum = Sanitize01(comfortVignetteMaximum, 0f)
+            };
+
+            VRSomaticRootSyncJob job = new VRSomaticRootSyncJob
+            {
+                Input = _rootSyncInput,
+                Output = _rootSyncOutput
+            };
+            _rootSyncHandle = job.Schedule();
+            _stateFlags |= StateRootSyncScheduled;
+            TryRegisterLateFrame();
+        }
+
+        private void CompleteRootSyncIfReady()
+        {
+            if ((_stateFlags & StateRootSyncScheduled) == 0u)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _rootSyncHandle, false))
+                return;
+
+            _stateFlags &= ~StateRootSyncScheduled;
+            if (!_rootSyncOutput.IsCreated)
+                return;
+
+            VRSomaticRootSyncOutput output = _rootSyncOutput[0];
+            if (!math.all(math.isfinite(output.RootPosition)) || !IsFiniteQuaternion(output.RootRotation))
+            {
+                RecordBlackBoxFrame(_previousHeadPosition, _previousHeadRotation, BlackBoxFlagNonFinite);
+                return;
+            }
+
+            _lastRootRotation = output.RootRotation;
+            _stateFlags |= StateRootInitialized;
+            if (_decoupledRootTransform != null)
+                _decoupledRootTransform.SetPositionAndRotation(ToVector3(output.RootPosition), ToQuaternion(output.RootRotation.value));
+
+            PublishComfortVignette(output.ComfortVignette01);
+        }
+
+        private void ScheduleHandKinematics(Vector3 headPosition, Quaternion headRotation, float deltaTime)
+        {
+            if ((_stateFlags & StateHandKinematicsScheduled) != 0u)
+                return;
+
+            if (!HandTargets.IsCreated || !HandPhysicalPositions.IsCreated)
+                EnsureNativeBuffers();
+            if (!HandTargets.IsCreated || !HandPhysicalPositions.IsCreated)
+                return;
+
+            CaptureHandTargets(headPosition, headRotation);
+            if ((_stateFlags & StateHandsInitialized) == 0u)
+            {
+                for (int i = 0; i < HandCount; i++)
+                    HandPhysicalPositions[i] = HandTargets[i];
+
+                _stateFlags |= StateHandsInitialized;
+            }
+
+            VRSomaticHandKinematicsJob job = new VRSomaticHandKinematicsJob
+            {
+                DeltaTime = math.max(deltaTime, MinimumDeltaTime),
+                SpringForce = SanitizeMinimum(handSpringForce, 1f),
+                HandTargets = HandTargets,
+                HandPhysicalPositions = HandPhysicalPositions
+            };
+            _handKinematicsHandle = job.Schedule(HandCount, 1);
+            _stateFlags |= StateHandKinematicsScheduled;
+            TryRegisterLateFrame();
+        }
+
+        private void CompleteHandKinematicsIfReady()
+        {
+            if ((_stateFlags & StateHandKinematicsScheduled) == 0u)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _handKinematicsHandle, false))
+                return;
+
+            _stateFlags &= ~StateHandKinematicsScheduled;
+            _handGhostMask = ResolveHandGhostMask();
+            RecordBlackBoxFrame(_previousHeadPosition, _previousHeadRotation, 0);
+        }
+
+        private void CaptureHandTargets(Vector3 headPosition, Quaternion headRotation)
+        {
+            InputDispatcher dispatcher = InputDispatcher.ActiveRuntimeInstance;
+            HandTargets[0] = ResolveHandTarget(dispatcher, 0, headPosition, headRotation, -0.22f);
+            HandTargets[1] = ResolveHandTarget(dispatcher, 1, headPosition, headRotation, 0.22f);
+        }
+
+        private float3 ResolveHandTarget(
+            InputDispatcher dispatcher,
+            byte handIndex,
+            Vector3 headPosition,
+            Quaternion headRotation,
+            float lateralOffset)
+        {
+            if (dispatcher != null &&
+                dispatcher.TryGetXRInputState(handIndex, out XRInputState state) &&
+                IsFiniteFloat3(state.GripPositionWS))
+            {
+                return state.GripPositionWS;
+            }
+
+            if ((_stateFlags & StateHandsInitialized) != 0u &&
+                HandTargets.IsCreated &&
+                handIndex < HandTargets.Length &&
+                IsFiniteFloat3(HandTargets[handIndex]))
+            {
+                return HandTargets[handIndex];
+            }
+
+            return ResolveFallbackHandTarget(headPosition, headRotation, lateralOffset);
+        }
+
+        private uint ResolveHandGhostMask()
+        {
+            if (!HandTargets.IsCreated || !HandPhysicalPositions.IsCreated)
+                return 0u;
+
+            if (disableGhostHandsOnLowTier && IsLowTier(GlobalRegistry.ScalabilityTier))
+                return 0u;
+
+            float threshold = SanitizeMinimum(ghostHandDistanceMeters, 0.01f);
+            float thresholdSq = threshold * threshold;
+            uint mask = 0u;
+            for (int i = 0; i < HandCount; i++)
+            {
+                float3 delta = HandTargets[i] - HandPhysicalPositions[i];
+                float distanceSq = math.lengthsq(delta);
+                if (math.isfinite(distanceSq) && distanceSq > thresholdSq)
+                    mask |= 1u << i;
+            }
+
+            return mask;
+        }
+
+        private static float3 ResolveFallbackHandTarget(Vector3 headPosition, Quaternion headRotation, float lateralOffset)
+        {
+            float3 offset = new float3(lateralOffset, -0.32f, 0.42f);
+            float3 rotated = math.rotate((quaternion)headRotation, offset);
+            return new float3(headPosition.x, headPosition.y, headPosition.z) + rotated;
         }
 
         private void ScheduleHeadCollisionBatch(Vector3 headPosition, Quaternion headRotation)
@@ -967,12 +1375,21 @@ namespace Hecton8.Gameplay
             _depthMeters = 0f;
             _headLinearSpeedMetersPerSecond = 0f;
             _headAngularSpeedRadiansPerSecond = 0f;
+            _previousHeadAngularVelocityRadiansPerSecond = float3.zero;
+            _previousHeadAngularAccelerationRadiansPerSecondSq = float3.zero;
+            _headAngularJerkRadiansPerSecondCubed = 0f;
+            _headAngularJerk01 = 0f;
+            _jerkCullBlend01 = 0f;
+            _jerkEventCooldownRemaining = 0f;
             _playerSignalSampleRemaining = 0f;
             _impactHapticCooldownRemaining = 0f;
+            _velocityHapticCooldownRemaining = 0f;
             _fallbackHmdTransform = null;
+            _handGhostMask = 0u;
             _collisionState = default;
             _snapshot = VRSomaticSnapshot.Inactive;
-            _stateFlags &= ~StateHasPreviousHeadPose;
+            _stateFlags &= ~(StateHasPreviousHeadPose | StateHandsInitialized | StateRootInitialized);
+            PublishComfortVignette(0f);
             if (breathingSource != null)
             {
                 if ((_stateFlags & StateBreathingSourcePlaying) != 0u)
@@ -993,13 +1410,18 @@ namespace Hecton8.Gameplay
             }
             if (publishShaderState)
                 PublishShaderState();
+
+            if (_blackBox.IsCreated)
+                RecordBlackBoxFrame(Vector3.zero, Quaternion.identity, 0);
         }
 
         private void InvalidateShaderPublishCache()
         {
             _lastPublishedNearCollision01 = float.PositiveInfinity;
             _lastPublishedCondensation01 = float.PositiveInfinity;
+            _lastPublishedComfortVignette01 = float.PositiveInfinity;
             _lastPublishedSomaticState = Vector4.positiveInfinity;
+            _lastPublishedJerkState = Vector4.positiveInfinity;
         }
 
         private void ResetBreathingAudioPublishCache()
@@ -1037,6 +1459,256 @@ namespace Hecton8.Gameplay
                 Shader.SetGlobalVector(SomaticStateId, somaticState);
                 _lastPublishedSomaticState = somaticState;
             }
+
+            Vector4 jerkState = new Vector4(
+                Sanitize01(_headAngularJerk01, 0f),
+                Sanitize01(_jerkCullBlend01, 0f),
+                SanitizeNonNegative(_headAngularJerkRadiansPerSecondCubed),
+                Sanitize01(rotationJerkVignetteContribution, 0f));
+            if (!Approximately(in jerkState, in _lastPublishedJerkState))
+            {
+                Shader.SetGlobalVector(VrComfortJerkStateId, jerkState);
+                _lastPublishedJerkState = jerkState;
+            }
+        }
+
+        private void PublishComfortVignette(float vignette01)
+        {
+            float sanitized = Sanitize01(vignette01, 0f);
+            if (math.abs(sanitized - _lastPublishedComfortVignette01) <= ShaderPublishEpsilon)
+                return;
+
+            Shader.SetGlobalFloat(VrComfortVignetteId, sanitized);
+            _lastPublishedComfortVignette01 = sanitized;
+            PublishSomaticComfortVignetteTelemetry(sanitized);
+        }
+
+        private void PublishSomaticComfortVignetteTelemetry(float vignette01)
+        {
+            float sanitized = Sanitize01(vignette01, 0f);
+            if (sanitized <= _maxSomaticComfortVignetteTelemetry01)
+                return;
+
+            _maxSomaticComfortVignetteTelemetry01 = sanitized;
+            if (_maxSomaticComfortVignetteTelemetry01 - _lastSomaticComfortVignetteTelemetry01 < VrComfortTelemetryStep01)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                VrComfortMaxVignetteHash,
+                VrComfortTelemetryContextHash,
+                _maxSomaticComfortVignetteTelemetry01);
+            _lastSomaticComfortVignetteTelemetry01 = _maxSomaticComfortVignetteTelemetry01;
+        }
+
+        private void TryEmitVelocityAnchorHaptics()
+        {
+            float threshold = SanitizeMinimum(velocityHapticThresholdMetersPerSecond, 0.01f);
+            if (_headLinearSpeedMetersPerSecond < threshold || _velocityHapticCooldownRemaining > 0f)
+                return;
+
+            float speed01 = math.saturate((_headLinearSpeedMetersPerSecond - threshold) * math.rcp(math.max(threshold, 0.25f)));
+            float lowFrequency = math.lerp(0.035f, 0.16f, speed01);
+            float highFrequency = math.lerp(0.015f, 0.09f, speed01);
+            ToolHapticsRuntime.EnqueueCommand(
+                lowFrequency,
+                highFrequency,
+                SanitizeMinimum(velocityHapticDurationSeconds, 0.01f),
+                0f,
+                HapticPriorityComfort,
+                BothMotorMask,
+                HapticBlendAdditive);
+            _velocityHapticCooldownRemaining = SanitizeMinimum(velocityHapticIntervalSeconds, 0.03f);
+        }
+
+        private void PublishComfortTelemetry()
+        {
+            if (_jerkEventCount != _lastTelemetryJerkEventCount)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    VrComfortJerkEventHash,
+                    VrComfortTelemetryContextHash,
+                    _jerkEventCount);
+                _lastTelemetryJerkEventCount = _jerkEventCount;
+            }
+        }
+
+        private void RecordBlackBoxFrame(Vector3 headPosition, Quaternion headRotation, ushort extraFlags)
+        {
+            if (!_blackBox.IsCreated)
+            {
+                DispatcherJobSwap.TryFinalizeCompleted(ref _headCollisionDisposeHandle);
+                if (!_headCollisionDisposeHandle.IsCompleted || !Application.isPlaying)
+                    return;
+
+                EnsureBlackBoxBuffer();
+            }
+
+            float4 headRotationValue = new float4(headRotation.x, headRotation.y, headRotation.z, headRotation.w);
+            bool hasFiniteRotation = math.all(math.isfinite(headRotationValue));
+            float rotationLengthSq = math.lengthsq(headRotationValue);
+            bool hasValidRotationLength = math.isfinite(rotationLengthSq) &&
+                                          rotationLengthSq >= QuaternionLengthSqMinimum &&
+                                          rotationLengthSq <= QuaternionLengthSqMaximum;
+            ushort flags = ResolveBlackBoxFlags(extraFlags);
+            if (!IsFiniteVector(headPosition) || !hasFiniteRotation || !hasValidRotationLength)
+                flags |= BlackBoxFlagNonFinite;
+
+            float leftHandSeparationSq = ResolveHandSeparationSq(0);
+            float rightHandSeparationSq = ResolveHandSeparationSq(1);
+            int frame = Time.frameCount;
+            int index;
+            if (_blackBoxCursor > 0 && _blackBoxLastRecordedFrame == frame)
+            {
+                index = (_blackBoxCursor - 1) % BlackBoxFrameCapacity;
+                flags |= _blackBox[index].Flags;
+            }
+            else
+            {
+                index = _blackBoxCursor % BlackBoxFrameCapacity;
+                _blackBoxCursor++;
+                _blackBoxLastRecordedFrame = frame;
+            }
+
+            VRSomaticBlackBoxEntry entry = new VRSomaticBlackBoxEntry
+            {
+                Frame = frame,
+                StateHash = ResolveBlackBoxStateHash(headPosition, headRotationValue, leftHandSeparationSq, rightHandSeparationSq, flags),
+                Flags = flags,
+                HandGhostMask = (ushort)(_handGhostMask & 0xFFFFu),
+                HeadPosition = new float3(headPosition.x, headPosition.y, headPosition.z),
+                HeadRotation = headRotationValue,
+                NearCollision01 = Sanitize01(_nearFieldCollision01, 0f),
+                ComfortVignette01 = Sanitize01(_lastPublishedComfortVignette01, 0f),
+                LeftHandSeparationSq = leftHandSeparationSq,
+                RightHandSeparationSq = rightHandSeparationSq,
+                HeadAngularSpeedRadiansPerSecond = SanitizeNonNegative(_headAngularSpeedRadiansPerSecond),
+                AupShiftSequence = _lastObservedAupShiftSequence
+            };
+
+            _blackBox[index] = entry;
+            if ((flags & BlackBoxFlagNonFinite) != 0)
+                DumpBlackBoxOnce();
+        }
+
+        private ushort ResolveBlackBoxFlags(ushort extraFlags)
+        {
+            uint flags = extraFlags;
+            if (_snapshot.IsActive)
+                flags |= BlackBoxFlagActive;
+            if ((_handGhostMask & 1u) != 0u)
+                flags |= BlackBoxFlagLeftGhost;
+            if ((_handGhostMask & 2u) != 0u)
+                flags |= BlackBoxFlagRightGhost;
+            if ((_stateFlags & StateRootSyncScheduled) != 0u)
+                flags |= BlackBoxFlagRootJobScheduled;
+            if ((_stateFlags & StateHandKinematicsScheduled) != 0u)
+                flags |= BlackBoxFlagHandJobScheduled;
+            if (_collisionState.HasContact || _nearFieldCollision01 > 0.001f)
+                flags |= BlackBoxFlagNearCollision;
+            if (_lastObservedAupShiftSequence != 0u)
+                flags |= BlackBoxFlagAupShiftSeen;
+            if (IsLowTier(GlobalRegistry.ScalabilityTier))
+                flags |= BlackBoxFlagLowTier;
+
+            return (ushort)(flags & 0xFFFFu);
+        }
+
+        private float ResolveHandSeparationSq(int index)
+        {
+            if ((_stateFlags & StateHandKinematicsScheduled) != 0u ||
+                !HandTargets.IsCreated ||
+                !HandPhysicalPositions.IsCreated ||
+                index < 0 ||
+                index >= HandCount)
+            {
+                return 0f;
+            }
+
+            float3 delta = HandTargets[index] - HandPhysicalPositions[index];
+            float distanceSq = math.lengthsq(delta);
+            return math.isfinite(distanceSq) ? distanceSq : 0f;
+        }
+
+        private static uint ResolveBlackBoxStateHash(
+            Vector3 headPosition,
+            float4 headRotation,
+            float leftHandSeparationSq,
+            float rightHandSeparationSq,
+            ushort flags)
+        {
+            uint hash = 2166136261u;
+            hash = MixHash(hash, math.asuint(headPosition.x));
+            hash = MixHash(hash, math.asuint(headPosition.y));
+            hash = MixHash(hash, math.asuint(headPosition.z));
+            hash = MixHash(hash, math.asuint(headRotation.x));
+            hash = MixHash(hash, math.asuint(headRotation.y));
+            hash = MixHash(hash, math.asuint(headRotation.z));
+            hash = MixHash(hash, math.asuint(headRotation.w));
+            hash = MixHash(hash, math.asuint(leftHandSeparationSq));
+            hash = MixHash(hash, math.asuint(rightHandSeparationSq));
+            return MixHash(hash, flags);
+        }
+
+        private static uint MixHash(uint hash, uint value)
+        {
+            unchecked
+            {
+                return (hash ^ value) * 16777619u;
+            }
+        }
+
+        private void DumpBlackBoxOnce()
+        {
+            if (_blackBoxDumped || !_blackBox.IsCreated)
+                return;
+
+            _blackBoxDumped = true;
+            try
+            {
+                string path = System.IO.Path.GetFullPath(System.IO.Path.Combine(
+                    Application.dataPath,
+                    "..",
+                    "Docs",
+                    "AgentLogs",
+                    BlackBoxDumpFileName));
+                using (System.IO.FileStream stream = new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
+                using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
+                {
+                    int count = math.min(_blackBoxCursor, BlackBoxFrameCapacity);
+                    int start = _blackBoxCursor - count;
+                    writer.Write(BlackBoxMagic);
+                    writer.Write(BlackBoxVersion);
+                    writer.Write(BlackBoxFrameCapacity);
+                    writer.Write(count);
+                    for (int i = 0; i < count; i++)
+                    {
+                        VRSomaticBlackBoxEntry entry = _blackBox[(start + i) % BlackBoxFrameCapacity];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.StateHash);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.HandGhostMask);
+                        writer.Write(entry.HeadPosition.x);
+                        writer.Write(entry.HeadPosition.y);
+                        writer.Write(entry.HeadPosition.z);
+                        writer.Write(entry.HeadRotation.x);
+                        writer.Write(entry.HeadRotation.y);
+                        writer.Write(entry.HeadRotation.z);
+                        writer.Write(entry.HeadRotation.w);
+                        writer.Write(entry.NearCollision01);
+                        writer.Write(entry.ComfortVignette01);
+                        writer.Write(entry.LeftHandSeparationSq);
+                        writer.Write(entry.RightHandSeparationSq);
+                        writer.Write(entry.HeadAngularSpeedRadiansPerSecond);
+                        writer.Write(entry.AupShiftSequence);
+                    }
+                }
+            }
+            catch (System.Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[VRSomaticProvider] Black box dump failed: " + exception.Message);
+#endif
+            }
         }
 
         private static float Sanitize01(float value, float fallback)
@@ -1065,6 +1737,48 @@ namespace Hecton8.Gameplay
                    math.abs(left.y - right.y) <= ShaderPublishEpsilon &&
                    math.abs(left.z - right.z) <= ShaderPublishEpsilon &&
                    math.abs(left.w - right.w) <= ShaderPublishEpsilon;
+        }
+
+        private static bool IsFiniteFloat3(float3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static float3 SanitizeFiniteFloat3(float3 value)
+        {
+            return IsFiniteFloat3(value) ? value : float3.zero;
+        }
+
+        private static bool IsFiniteQuaternion(quaternion value)
+        {
+            float4 q = value.value;
+            float lengthSq = math.lengthsq(q);
+            return math.all(math.isfinite(q)) &&
+                   math.isfinite(lengthSq) &&
+                   lengthSq >= QuaternionLengthSqMinimum &&
+                   lengthSq <= QuaternionLengthSqMaximum;
+        }
+
+        private static Vector3 ToVector3(float3 value)
+        {
+            return new Vector3(value.x, value.y, value.z);
+        }
+
+        private static bool IsLowTier(HectonQualityTier tier)
+        {
+            return tier == HectonQualityTier.Low ||
+                   tier == HectonQualityTier.Mx350 ||
+                   tier == HectonQualityTier.Unknown ||
+                   GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+        }
+
+        private static void RebaseHandArray(NativeArray<float3> array, float3 shift)
+        {
+            if (!array.IsCreated || !math.all(math.isfinite(shift)))
+                return;
+
+            for (int i = 0; i < array.Length; i++)
+                array[i] -= shift;
         }
 
         private void CacheSocketRotations()
@@ -1147,6 +1861,50 @@ namespace Hecton8.Gameplay
             float smallest = math.cmin(absValue);
             float middle = absValue.x + absValue.y + absValue.z - largest - smallest;
             return largest + (middle * 0.375f) + (smallest * 0.125f);
+        }
+
+        private static float ApproximateMagnitudeNoSqrt(float3 value)
+        {
+            float3 absValue = math.abs(value);
+            float largest = math.cmax(absValue);
+            float smallest = math.cmin(absValue);
+            float middle = absValue.x + absValue.y + absValue.z - largest - smallest;
+            return largest + (middle * 0.375f) + (smallest * 0.125f);
+        }
+
+        private static float3 ResolveAngularVelocityRadiansPerSecond(
+            Quaternion previousRotation,
+            Quaternion currentRotation,
+            float angularDeltaRadians,
+            float invDeltaTime)
+        {
+            if (!math.isfinite(angularDeltaRadians) ||
+                angularDeltaRadians <= 0.000001f ||
+                !math.isfinite(invDeltaTime) ||
+                invDeltaTime <= 0f)
+            {
+                return float3.zero;
+            }
+
+            float4 previous = ((quaternion)previousRotation).value;
+            float4 current = ((quaternion)currentRotation).value;
+            if (math.dot(previous, current) < 0f)
+                current = -current;
+
+            float4 inversePrevious = new float4(-previous.x, -previous.y, -previous.z, previous.w);
+            float4 delta = MulQuaternionNoSqrt(current, inversePrevious);
+            if (delta.w < 0f)
+                delta = -delta;
+
+            float3 deltaVector = new float3(delta.x, delta.y, delta.z);
+            if (!IsFiniteFloat3(deltaVector))
+                return float3.zero;
+
+            float deltaVectorMagnitude = ApproximateMagnitudeNoSqrt(deltaVector);
+            if (deltaVectorMagnitude <= 0.000001f)
+                return float3.zero;
+
+            return deltaVector * (angularDeltaRadians * math.rcp(deltaVectorMagnitude) * invDeltaTime);
         }
 
         private static float ApproximateAngularDeltaRadiansNoAcos(Quaternion previousRotation, Quaternion currentRotation)
@@ -1257,47 +2015,89 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void EnsureBlackBoxBuffer()
+        {
+            if (_blackBox.IsCreated)
+                return;
+
+            _blackBox = new NativeArray<VRSomaticBlackBoxEntry>(
+                BlackBoxFrameCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VRSomaticBlackBoxEntry>[300] - VR somatic postmortem black box - owner: VRSomaticProvider
+            NativeMemorySentinel.RegisterNativeArray(_blackBox, nameof(VRSomaticProvider), nameof(_blackBox), NativeAllocationLifetime.Scene);
+        }
+
         private void EnsureNativeBuffers()
         {
             DispatcherJobSwap.TryFinalizeCompleted(ref _headCollisionDisposeHandle);
             if (!_headCollisionDisposeHandle.IsCompleted)
                 return;
 
-            if (_headCollisionCommands.IsCreated)
-                return;
+            EnsureBlackBoxBuffer();
 
-            _headCollisionCommands = new NativeArray<CapsulecastCommand>(
-                HeadCollisionCommandCount,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<CapsulecastCommand>[6] - VR somatic head near-field sweep commands - owner: VRSomaticProvider
-            _headCollisionHits = new NativeArray<RaycastHit>(
-                HeadCollisionCommandCount * HeadCollisionMaxHitsPerCommand,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[6] - VR somatic head near-field sweep hits - owner: VRSomaticProvider
-            _headCollisionSamples = new NativeArray<HeadCastSample>(
-                HeadCollisionCommandCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HeadCastSample>[6] - VR somatic processed contact samples - owner: VRSomaticProvider
+            if (!_headCollisionCommands.IsCreated)
+            {
+                _headCollisionCommands = new NativeArray<CapsulecastCommand>(
+                    HeadCollisionCommandCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<CapsulecastCommand>[6] - VR somatic head near-field sweep commands - owner: VRSomaticProvider
+                _headCollisionHits = new NativeArray<RaycastHit>(
+                    HeadCollisionCommandCount * HeadCollisionMaxHitsPerCommand,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[6] - VR somatic head near-field sweep hits - owner: VRSomaticProvider
+                _headCollisionSamples = new NativeArray<HeadCastSample>(
+                    HeadCollisionCommandCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HeadCastSample>[6] - VR somatic processed contact samples - owner: VRSomaticProvider
 
-            NativeMemorySentinel.RegisterNativeArray(_headCollisionCommands, nameof(VRSomaticProvider), nameof(_headCollisionCommands), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_headCollisionHits, nameof(VRSomaticProvider), nameof(_headCollisionHits), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_headCollisionSamples, nameof(VRSomaticProvider), nameof(_headCollisionSamples), NativeAllocationLifetime.Scene);
+                NativeMemorySentinel.RegisterNativeArray(_headCollisionCommands, nameof(VRSomaticProvider), nameof(_headCollisionCommands), NativeAllocationLifetime.Scene);
+                NativeMemorySentinel.RegisterNativeArray(_headCollisionHits, nameof(VRSomaticProvider), nameof(_headCollisionHits), NativeAllocationLifetime.Scene);
+                NativeMemorySentinel.RegisterNativeArray(_headCollisionSamples, nameof(VRSomaticProvider), nameof(_headCollisionSamples), NativeAllocationLifetime.Scene);
+            }
+
+            if (!_rootSyncInput.IsCreated)
+            {
+                _rootSyncInput = new NativeArray<VRSomaticRootSyncInput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VRSomaticRootSyncInput>[1] - decoupled VR root sync input - owner: VRSomaticProvider
+                _rootSyncOutput = new NativeArray<VRSomaticRootSyncOutput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VRSomaticRootSyncOutput>[1] - decoupled VR root sync output - owner: VRSomaticProvider
+                NativeMemorySentinel.RegisterNativeArray(_rootSyncInput, nameof(VRSomaticProvider), nameof(_rootSyncInput), NativeAllocationLifetime.Scene);
+                NativeMemorySentinel.RegisterNativeArray(_rootSyncOutput, nameof(VRSomaticProvider), nameof(_rootSyncOutput), NativeAllocationLifetime.Scene);
+            }
+
+            if (!HandTargets.IsCreated)
+            {
+                HandTargets = new NativeArray<float3>(HandCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[2] - OpenXR hand targets - owner: VRSomaticProvider
+                HandPhysicalPositions = new NativeArray<float3>(HandCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[2] - spring-driven physical hand positions - owner: VRSomaticProvider
+                NativeMemorySentinel.RegisterNativeArray(HandTargets, nameof(VRSomaticProvider), nameof(HandTargets), NativeAllocationLifetime.Scene);
+                NativeMemorySentinel.RegisterNativeArray(HandPhysicalPositions, nameof(VRSomaticProvider), nameof(HandPhysicalPositions), NativeAllocationLifetime.Scene);
+            }
         }
 
         private void DisposeNativeBuffers()
         {
             DispatcherJobSwap.TryFinalizeCompleted(ref _headCollisionDisposeHandle);
             bool hasPendingDispose = !_headCollisionDisposeHandle.IsCompleted;
+            JobHandle activeJobs = JobHandle.CombineDependencies(
+                _headCollisionHandle,
+                JobHandle.CombineDependencies(_rootSyncHandle, _handKinematicsHandle));
             JobHandle disposeHandle = hasPendingDispose
-                ? JobHandle.CombineDependencies(_headCollisionDisposeHandle, _headCollisionHandle)
-                : _headCollisionHandle;
+                ? JobHandle.CombineDependencies(_headCollisionDisposeHandle, activeJobs)
+                : activeJobs;
             bool scheduledDispose = false;
 
             DisposeNativeArray(ref _headCollisionCommands, ref disposeHandle, ref scheduledDispose);
             DisposeNativeArray(ref _headCollisionHits, ref disposeHandle, ref scheduledDispose);
             DisposeNativeArray(ref _headCollisionSamples, ref disposeHandle, ref scheduledDispose);
+            DisposeNativeArray(ref _rootSyncInput, ref disposeHandle, ref scheduledDispose);
+            DisposeNativeArray(ref _rootSyncOutput, ref disposeHandle, ref scheduledDispose);
+            DisposeNativeArray(ref HandTargets, ref disposeHandle, ref scheduledDispose);
+            DisposeNativeArray(ref HandPhysicalPositions, ref disposeHandle, ref scheduledDispose);
+            DisposeNativeArray(ref _blackBox, ref disposeHandle, ref scheduledDispose);
             _headCollisionHandle = default;
-            _stateFlags &= ~StateHeadCollisionScheduled;
+            _rootSyncHandle = default;
+            _handKinematicsHandle = default;
+            _blackBoxCursor = 0;
+            _blackBoxLastRecordedFrame = -1;
+            _stateFlags &= ~(StateHeadCollisionScheduled | StateRootSyncScheduled | StateHandKinematicsScheduled | StateHandsInitialized | StateRootInitialized);
 
             if (!scheduledDispose)
                 return;
@@ -1318,7 +2118,143 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        private struct VRSomaticRootSyncJob : IJob
+        {
+            [ReadOnly] public NativeArray<VRSomaticRootSyncInput> Input;
+            [WriteOnly] public NativeArray<VRSomaticRootSyncOutput> Output;
+
+            public void Execute()
+            {
+                VRSomaticRootSyncInput input = Input[0];
+                quaternion headRotation = SanitizeQuaternion(input.HeadRotation, quaternion.identity);
+                quaternion previousRootRotation = SanitizeQuaternion(input.PreviousRootRotation, headRotation);
+                float3 worldUp = new float3(0f, 1f, 0f);
+                float3 headUp = math.rotate(headRotation, worldUp);
+                if (!math.all(math.isfinite(headUp)))
+                    headUp = worldUp;
+
+                float3 correctionAxis = math.cross(headUp, worldUp);
+                float axisLenSq = math.lengthsq(correctionAxis);
+                quaternion horizonCorrection = quaternion.identity;
+                if (math.isfinite(axisLenSq) && axisLenSq > HorizonLockStartSinSq)
+                {
+                    float3 axis = correctionAxis * math.rsqrt(math.max(axisLenSq, 0.000001f));
+                    float correctionRcp = math.rcp(math.max(0.000001f, 1f - HorizonLockStartSinSq));
+                    float correction01 = math.saturate((axisLenSq - HorizonLockStartSinSq) * correctionRcp);
+                    horizonCorrection = quaternion.AxisAngle(axis, HorizonLockMaxCorrectionRadians * correction01);
+                }
+
+                quaternion desiredRootRotation = SanitizeQuaternion(math.mul(horizonCorrection, headRotation), headRotation);
+                float blend = ResolveJobBlend(input.RootRotationSharpness, input.DeltaTime);
+                quaternion rootRotation = Nlerp(previousRootRotation, desiredRootRotation, blend);
+                float speedStart = math.max(0.01f, input.VignetteAngularSpeedStart);
+                float speedFull = math.max(speedStart + 0.01f, input.VignetteAngularSpeedFull);
+                float speedSpanRcp = math.rcp(speedFull - speedStart);
+                float vignette01 = math.saturate((input.HeadAngularSpeed - speedStart) * speedSpanRcp);
+                vignette01 *= math.saturate(input.VignetteMaximum);
+
+                Output[0] = new VRSomaticRootSyncOutput
+                {
+                    RootPosition = math.all(math.isfinite(input.HeadPosition)) ? input.HeadPosition : float3.zero,
+                    RootRotation = rootRotation,
+                    ComfortVignette01 = vignette01
+                };
+            }
+
+            private static float ResolveJobBlend(float sharpness, float deltaTime)
+            {
+                float x = math.min(math.max(sharpness, 0f) * math.max(deltaTime, MinimumDeltaTime), 32f);
+                return math.saturate(x * math.rcp(1f + x));
+            }
+
+            private static quaternion Nlerp(quaternion fromRotation, quaternion toRotation, float blend01)
+            {
+                float4 from = fromRotation.value;
+                float4 to = toRotation.value;
+                if (math.dot(from, to) < 0f)
+                    to = -to;
+
+                float4 blended = math.lerp(from, to, math.saturate(blend01));
+                return SanitizeQuaternion(new quaternion(blended), toRotation);
+            }
+
+            private static quaternion SanitizeQuaternion(quaternion value, quaternion fallback)
+            {
+                float4 q = value.value;
+                float lengthSq = math.lengthsq(q);
+                if (!math.all(math.isfinite(q)) || !math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+                    return fallback;
+
+                return new quaternion(q * math.rsqrt(lengthSq));
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        private struct VRSomaticHandKinematicsJob : IJobParallelFor
+        {
+            public float DeltaTime;
+            public float SpringForce;
+            [ReadOnly] public NativeArray<float3> HandTargets;
+            public NativeArray<float3> HandPhysicalPositions;
+
+            public void Execute(int index)
+            {
+                float3 target = HandTargets[index];
+                float3 physical = HandPhysicalPositions[index];
+                if (!math.all(math.isfinite(target)))
+                    target = physical;
+                if (!math.all(math.isfinite(physical)))
+                    physical = target;
+
+                float3 velocity = (target - physical) * math.max(0f, SpringForce);
+                float3 next = physical + (velocity * math.max(DeltaTime, MinimumDeltaTime));
+                HandPhysicalPositions[index] = math.all(math.isfinite(next)) ? next : target;
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        private struct VRSomaticBlackBoxEntry
+        {
+            public int Frame;
+            public uint StateHash;
+            public ushort Flags;
+            public ushort HandGhostMask;
+            public float3 HeadPosition;
+            public float4 HeadRotation;
+            public float NearCollision01;
+            public float ComfortVignette01;
+            public float LeftHandSeparationSq;
+            public float RightHandSeparationSq;
+            public float HeadAngularSpeedRadiansPerSecond;
+            public uint AupShiftSequence;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        private struct VRSomaticRootSyncInput
+        {
+            public float3 HeadPosition;
+            public quaternion HeadRotation;
+            public quaternion PreviousRootRotation;
+            public float DeltaTime;
+            public float HeadAngularSpeed;
+            public float RootRotationSharpness;
+            public float VignetteAngularSpeedStart;
+            public float VignetteAngularSpeedFull;
+            public float VignetteMaximum;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        private struct VRSomaticRootSyncOutput
+        {
+            public float3 RootPosition;
+            public quaternion RootRotation;
+            public float ComfortVignette01;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
         private struct BuildHeadCapsulecastCommandsJob : IJobParallelFor
         {
             public float3 HeadPosition;
@@ -1363,7 +2299,7 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
         private struct ProcessHeadCapsulecastHitsJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<RaycastHit> Hits;

@@ -22,6 +22,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Building;
     using Hecton8.Construction;
     using Hecton8.Core;
+    using Hecton8.Core.Signals;
     using Hecton8.Interaction;
     using Hecton8.Inventory;
     using Hecton8.Input;
@@ -634,9 +635,6 @@ namespace Hecton8.Gameplay
         private FixedCharBuffer _diagnosisSummary = new FixedCharBuffer(256);
         private FixedCharBuffer _telemetryBuffer = new FixedCharBuffer(512);
         private FixedCharBuffer _recoveryFeedbackBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - cutter recovery HUD feedback scratch - owner: LaserCutter
-        // COLD ALLOC: char[256] — scan archive text construction scratch — owner: LaserCutter
-        private static FixedCharBuffer s_archiveStringBuffer = new FixedCharBuffer(256);
-
         private bool _secondaryLatched;
         private bool _deconstructStartReported;
         private bool _deconstructBlockedReported;
@@ -689,18 +687,20 @@ namespace Hecton8.Gameplay
                 return false;
 
             EnsurePlayerInventory();
-            module.Deconstruct(_cachedInventory);
-            ArchiveRecoveredModule(module);
-            PublishInfoMessage(ResolveLocalized(LocalizationKeys.LASER_HUD_MODULE_RECOVERED, "LASER CUTTER - MODULE RECOVERED"));
+            Vector3 modulePosition = module.transform.position;
+            if (!TryRequestModuleDeconstruction(module, modulePosition + Vector3.up, Vector3.down, 0f, 2))
+                return false;
+
+            PublishInfoMessage("LASER CUTTER - RECOVERY QUEUED");
             
             _telemetryBuffer.Clear();
-            _telemetryBuffer.Append(ResolveLocalized(LocalizationKeys.LASER_LOG_MODULE_RECOVERY_MESSAGE_PREFIX, "Laser-assisted deconstruction completed on "));
+            _telemetryBuffer.Append("Laser-assisted deconstruction queued for habitat rollback validation on ");
             _telemetryBuffer.Append(module.name);
             _telemetryBuffer.Append(".");
 
             FieldOperationLogSystem.RecordOperation(
                 ResolveLocalized(LocalizationKeys.LASER_CATEGORY, CutterCategory),
-                ResolveLocalized(LocalizationKeys.LASER_LOG_MODULE_RECOVERY_TITLE, "MODULE RECOVERY COMPLETED"),
+                "MODULE RECOVERY QUEUED",
                 _telemetryBuffer,
                 "INFO");
             ResetDeconstructState();
@@ -1229,10 +1229,14 @@ namespace Hecton8.Gameplay
 
             if (targetId != _cachedDeconstructTargetId)
             {
+                SetCachedDeconstructionPreview(false);
                 _deconstructProgress = 0f;
                 _cachedDeconstructTargetId = targetId;
                 if (!_hitInfo.collider.TryGetComponent(out _cachedDeconstructModule))
                     _cachedDeconstructModule = _hitInfo.collider.GetComponentInParent<BaseModule>();
+
+                if (_cachedDeconstructModule != null && _cachedDeconstructModule.CanDeconstruct())
+                    SetCachedDeconstructionPreview(true);
             }
 
             float hitNormalSqrMagnitude = _hitInfo.normal.sqrMagnitude;
@@ -1254,6 +1258,7 @@ namespace Hecton8.Gameplay
 
             if (!_cachedDeconstructModule.CanDeconstruct())
             {
+                SetCachedDeconstructionPreview(false);
                 if (!_deconstructBlockedReported)
                 {
                     PublishWarningMessage(ResolveLocalized(LocalizationKeys.LASER_HUD_RECOVERY_MODULE_LOCKED, "RECOVERY MODE - MODULE LOCKED"));
@@ -1305,18 +1310,29 @@ namespace Hecton8.Gameplay
             if (_deconstructProgress >= deconstructThreshold)
             {
                 EnsurePlayerInventory();
-                _cachedDeconstructModule.Deconstruct(_cachedInventory);
-                ArchiveRecoveredModule(_cachedDeconstructModule);
-                PublishInfoMessage(ResolveLocalized(LocalizationKeys.LASER_HUD_MODULE_RECOVERED, "LASER CUTTER - MODULE RECOVERED"));
+                BaseModule recoveredModule = _cachedDeconstructModule;
+                if (!TryRequestModuleDeconstruction(
+                        recoveredModule,
+                        _cachedTransform != null ? _cachedTransform.position : transform.position,
+                        _cachedTransform != null ? _cachedTransform.forward : transform.forward,
+                        GetRuntimeMaxRange(maxRange),
+                        2))
+                {
+                    PublishWarningMessage(ResolveLocalized(LocalizationKeys.LASER_HUD_RECOVERY_MODULE_LOCKED, "RECOVERY MODE - MODULE LOCKED"));
+                    ResetDeconstructState();
+                    return;
+                }
+
+                PublishInfoMessage("LASER CUTTER - RECOVERY QUEUED");
                 
                 _telemetryBuffer.Clear();
-                _telemetryBuffer.Append(ResolveLocalized(LocalizationKeys.LASER_LOG_MODULE_RECOVERY_MESSAGE_PREFIX, "Laser-assisted deconstruction completed on "));
-                _telemetryBuffer.Append(_cachedDeconstructModule.name);
+                _telemetryBuffer.Append("Laser-assisted deconstruction queued for habitat rollback validation on ");
+                _telemetryBuffer.Append(recoveredModule.name);
                 _telemetryBuffer.Append(".");
 
                 FieldOperationLogSystem.RecordOperation(
                     ResolveLocalized(LocalizationKeys.LASER_CATEGORY, CutterCategory),
-                    ResolveLocalized(LocalizationKeys.LASER_LOG_MODULE_RECOVERY_TITLE, "MODULE RECOVERY COMPLETED"),
+                    "MODULE RECOVERY QUEUED",
                     _telemetryBuffer,
                     "INFO");
                 ResetDeconstructState();
@@ -1325,6 +1341,8 @@ namespace Hecton8.Gameplay
 
         private void ResetDeconstructState()
         {
+            SetCachedDeconstructionPreview(false);
+
             if (_cachedPlayerMovement != null)
                 _cachedPlayerMovement.ClearCuttingTensionAnchor();
 
@@ -1336,6 +1354,56 @@ namespace Hecton8.Gameplay
             _nextProgressFeedbackAt = 0f;
             _cachedDeconstructAnchorPoint = Vector3.zero;
             _cachedDeconstructAnchorNormal = Vector3.up;
+        }
+
+        private void SetCachedDeconstructionPreview(bool enabled)
+        {
+            if (_cachedDeconstructModule == null)
+                return;
+
+            IHabitatDeconstructionSystem deconstructionSystem = GlobalRegistry.HabitatDeconstruction;
+            if (deconstructionSystem == null || !deconstructionSystem.IsInitialized)
+                return;
+
+            uint targetEntityId = unchecked((uint)EntityId.ToULong(_cachedDeconstructModule.gameObject.GetEntityId()));
+            deconstructionSystem.TrySetDeconstructionPreview(targetEntityId, enabled);
+        }
+
+        private bool TryRequestModuleDeconstruction(
+            BaseModule module,
+            Vector3 rayOrigin,
+            Vector3 rayDirection,
+            float maxDistance,
+            byte toolKind)
+        {
+            if (module == null)
+                return false;
+
+            IHabitatDeconstructionSystem deconstructionSystem = GlobalRegistry.HabitatDeconstruction;
+            if (deconstructionSystem == null || !deconstructionSystem.IsInitialized)
+                return false;
+
+            float directionLengthSq = rayDirection.sqrMagnitude;
+            if (directionLengthSq <= 0.0001f)
+                rayDirection = Vector3.down;
+            else
+                rayDirection *= math.rsqrt(directionLengthSq);
+
+            Vector3 modulePosition = module.transform.position;
+            DeconstructRequestSignal request = new DeconstructRequestSignal
+            {
+                TargetAup = AbsoluteUniversePosition.FromRuntimePosition(modulePosition),
+                RayOriginAup = AbsoluteUniversePosition.FromRuntimePosition(rayOrigin),
+                TargetEntityId = unchecked((uint)EntityId.ToULong(module.gameObject.GetEntityId())),
+                RequesterEntityId = unchecked((uint)_raycastRequesterId),
+                MaxDistance = Mathf.Max(0f, maxDistance),
+                RayDirection = new float3(rayDirection.x, rayDirection.y, rayDirection.z),
+                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                ToolKind = toolKind,
+                Flags = 0
+            };
+
+            return deconstructionSystem.EnqueueDeconstruction(in request);
         }
 
         private void ShowRecoveryPullBackFeedback(int tensionPercent, int pullPercent)
@@ -1387,33 +1455,6 @@ namespace Hecton8.Gameplay
         private static string BuildStringFromBuffer(in FixedCharBuffer buffer)
         {
             return buffer.Length > 0 ? new string(buffer.Buffer, 0, buffer.Length) : string.Empty;
-        }
-
-        private static string BuildTextTemplateString(string template, string value, ref FixedCharBuffer buffer)
-        {
-            buffer.Clear();
-            AppendTemplateValue(template, value, ref buffer);
-            return BuildStringFromBuffer(in buffer);
-        }
-
-        private static void AppendTemplateValue(string template, string value, ref FixedCharBuffer buffer)
-        {
-            if (string.IsNullOrEmpty(template))
-                return;
-
-            int tokenIndex = template.IndexOf("{0}", StringComparison.Ordinal);
-            if (tokenIndex < 0)
-            {
-                buffer.Append(template);
-                return;
-            }
-
-            buffer.Append(template.AsSpan(0, tokenIndex));
-            if (!string.IsNullOrEmpty(value))
-                buffer.Append(value);
-            int suffixIndex = tokenIndex + 3;
-            if (suffixIndex < template.Length)
-                buffer.Append(template.AsSpan(suffixIndex));
         }
 
         private void EnsurePlayerInventory()
@@ -1518,35 +1559,6 @@ namespace Hecton8.Gameplay
             awayFromAnchor = _cachedPlayerTransform.position - anchorPoint;
             awayFromAnchor.y = 0f;
             return true;
-        }
-
-        private static void ArchiveRecoveredModule(BaseModule module)
-        {
-            if (module == null || Hecton8.Core.GlobalRegistry.ScanLog == null)
-                return;
-
-            module.TryGetComponent(out ModuleMarker marker);
-            BuildableData data = marker != null ? marker.Data : null;
-            if (data == null)
-                return;
-
-            string moduleId = data.PersistentId;
-            if (string.IsNullOrWhiteSpace(moduleId))
-                return;
-
-            string entryId = string.Concat("recovery.module.", moduleId).ToLowerInvariant();
-            string title = BuildTextTemplateString(
-                ResolveLocalized(LocalizationKeys.LASER_ARCHIVE_RECOVERY_TITLE, "{0} RECOVERY"),
-                data.moduleName,
-                ref s_archiveStringBuffer);
-            string category = ResolveLocalized(LocalizationKeys.LASER_ARCHIVE_CATEGORY, "Construction");
-            string summary = BuildTextTemplateString(
-                ResolveLocalized(
-                    LocalizationKeys.LASER_ARCHIVE_RECOVERY_SUMMARY,
-                    "Laser-assisted recovery completed for {0}. Structural blueprint and salvage profile archived."),
-                data.moduleName,
-                ref s_archiveStringBuffer);
-            Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(entryId, title, category, summary);
         }
 
         // ══════════════════════════════════════════════════════════

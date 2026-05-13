@@ -21,7 +21,10 @@
 // - BaseModule integrity and flood state are persisted here.
 // ============================================================================
 
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
 using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Core.Signals;
@@ -31,13 +34,14 @@ using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IGlobalRegistryHotSwapListener, IServiceHeartbeat, IServiceShutdown, IOriginShiftListener, IRandomEventListener
+    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IHabitatDeconstructionSystem, IGlobalRegistryHotSwapListener, IServiceHeartbeat, IServiceShutdown, IOriginShiftListener, IRandomEventListener
     {
         private const float SlowTickDeltaTime = 0.1f;
         private const int InitialJointRecoveryCapacity = 64;
@@ -46,6 +50,42 @@ namespace Hecton8.Construction
         private const byte HabitatConstructionOperationRemoved = 2;
         private const byte HabitatConstructionFlagSmokeVfx = 1 << 0;
         private const byte HabitatConstructionFlagGraphDirty = 1 << 1;
+        private const byte DeconstructResultRejected = 0;
+        private const byte DeconstructResultAccepted = 1;
+        private const byte DeconstructReasonNone = 0;
+        private const byte DeconstructReasonNoTarget = 1;
+        private const byte DeconstructReasonRayMismatch = 2;
+        private const byte DeconstructReasonGraphRejected = 3;
+        private const byte DeconstructReasonInventoryFull = 4;
+        private const byte DeconstructReasonPoolUnavailable = 5;
+        private const byte DeconstructReasonAlreadyActive = 6;
+        private const byte ModuleDeconstructOperationDeleteMarker = 1;
+        private const byte ModuleDeconstructFlagForcePowerColdTick = 1 << 0;
+        private const byte ModuleDeconstructFlagDfsSkippedLowTier = 1 << 1;
+        private const byte DeconstructionDebrisKindDisintegrate = 10;
+        private const int DeconstructionDfsResultLength = 4;
+        private const int DeconstructionBlackBoxCapacity = 300;
+        private const string DeconstructionDumpRelativePath = "Docs/AgentLogs/Dump_BASE_DECONSTRUCTION_SYS.bin";
+        private const string NativeMemoryOwner = nameof(ConstructionManager);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+
+        // COLD ALLOC: RaycastHit[4] - synchronous deconstruction ownership confirmation buffer - owner: ConstructionManager
+        private static readonly RaycastHit[] s_deconstructionRaycastHits = new RaycastHit[4];
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        private struct HabitatDeconstructionTelemetryEntry
+        {
+            public uint Frame;
+            public uint TargetEntityId;
+            public uint RequesterEntityId;
+            public float DistanceMeters;
+            public ushort DfsVisitedCount;
+            public ushort DfsExpectedCount;
+            public byte Result;
+            public byte Reason;
+            public byte Flags;
+            public byte Reserved;
+        }
 
         internal static ConstructionManager ActiveRuntimeInstance { get; private set; }
 
@@ -94,6 +134,7 @@ namespace Hecton8.Construction
         private bool _tickRegistered;
         private bool _lateFrameTickRegistered;
         private bool _logisticsServiceRegistered;
+        private bool _habitatDeconstructionServiceRegistered;
         private bool _hotSwapListenerRegistered;
         private bool _originShiftListenerRegistered;
         private bool _randomEventListenerRegistered;
@@ -107,6 +148,11 @@ namespace Hecton8.Construction
         private Rigidbody[] _jointRecoveryBodies;
         private Vector3[] _jointRecoveryLinearVelocities;
         private Vector3[] _jointRecoveryAngularVelocities;
+        private NativeList<long> _deconstructionDfsStack;
+        private NativeParallelHashSet<long> _deconstructionDfsVisited;
+        private NativeArray<int> _deconstructionDfsResult;
+        private NativeArray<HabitatDeconstructionTelemetryEntry> _deconstructionBlackBox;
+        private int _deconstructionBlackBoxCursor;
 
         // CONSTANTS - DEFAULT MODULE STATE
 
@@ -121,6 +167,12 @@ namespace Hecton8.Construction
         private const byte ModuleBlitFlagInteriorReef = 1 << 1;
 
         // PUBLIC API - QUERIES
+
+        internal bool TryGetHabitatAcousticGraph(out HabitatGraphManager graph)
+        {
+            graph = _habitatGraphManager;
+            return graph != null && graph.NodeCount > 0;
+        }
 
         /// <summary>Number of placed modules.</summary>
         public int ModuleCount => _spawnedModules != null ? _spawnedModules.Count : 0;
@@ -161,6 +213,7 @@ namespace Hecton8.Construction
             EnsureRuntimeStorage();
             _isInitialized = true;
             TryRegisterLogisticsService();
+            TryRegisterHabitatDeconstructionService();
             TryRegisterTick();
             TryRegisterLateFrameTick();
             TryRegisterHotSwapListener();
@@ -193,6 +246,8 @@ namespace Hecton8.Construction
             if (_habitatGraphManager == null)
                 _habitatGraphManager = new HabitatGraphManager(capacity); // COLD ALLOC: HabitatGraphManager[1] - persistent placed-module CSR adjacency owner - owner: ConstructionManager
 
+            EnsureDeconstructionNativeBuffers(capacity);
+
             int jointCapacity = Mathf.Max(InitialJointRecoveryCapacity, capacity);
             if (_jointRecoveryBuffer == null)
                 _jointRecoveryBuffer = new List<Joint>(jointCapacity); // COLD ALLOC: List<Joint>[capacity] - AUP shift joint re-anchor staging - owner: ConstructionManager
@@ -215,6 +270,7 @@ namespace Hecton8.Construction
                 return;
 
             TryRegisterLogisticsService();
+            TryRegisterHabitatDeconstructionService();
             TryRegisterTick();
             TryRegisterLateFrameTick();
             TryRegisterHotSwapListener();
@@ -260,6 +316,7 @@ namespace Hecton8.Construction
                 _habitatGraphManager.Dispose();
                 _habitatGraphManager = null;
             }
+            DisposeDeconstructionNativeBuffers();
         }
 
         private void UnregisterRuntimeHooks()
@@ -269,6 +326,7 @@ namespace Hecton8.Construction
 
             TryUnregisterTick();
             TryUnregisterLateFrameTick();
+            TryUnregisterHabitatDeconstructionService();
             TryUnregisterLogisticsService();
             _slowTickAccumulator = 0f;
             TryUnregisterSaveParticipant();
@@ -295,10 +353,10 @@ namespace Hecton8.Construction
 
         public void LateFrameTick()
         {
-            if (!_habitatGraphDirty)
-                return;
+            if (_habitatGraphDirty)
+                RefreshHabitatGraph();
 
-            RefreshHabitatGraph();
+            DrainDeconstructionRequests();
         }
 
         public void SlowTick()
@@ -414,6 +472,118 @@ namespace Hecton8.Construction
             DespawnOrDestroyModuleInstance(module, pool);
         }
 
+        /// <inheritdoc />
+        public bool EnqueueDeconstruction(in DeconstructRequestSignal signal)
+        {
+            if (!_isInitialized || !Application.isPlaying)
+                return false;
+
+            GlobalSignals.Publish(in signal);
+            return true;
+        }
+
+        /// <inheritdoc />
+        public bool TrySetDeconstructionPreview(uint targetEntityId, bool enabled)
+        {
+            if (!_isInitialized || !Application.isPlaying)
+                return false;
+
+            BaseModule module = ResolveBaseModuleByEntityId(targetEntityId);
+            if (module == null)
+                return false;
+
+            module.SetDeconstructionPreview(enabled);
+            return true;
+        }
+
+        private void DrainDeconstructionRequests()
+        {
+            while (GlobalSignals.TryDequeueDeconstructRequest(out DeconstructRequestSignal request))
+                ProcessDeconstructionRequest(in request);
+        }
+
+        private void ProcessDeconstructionRequest(in DeconstructRequestSignal request)
+        {
+            BaseModule module = ResolveBaseModuleByEntityId(request.TargetEntityId);
+            if (module == null)
+            {
+                RejectDeconstruction(in request, DeconstructReasonNoTarget, 0, 0, 0);
+                return;
+            }
+
+            if (!ValidateAupTarget(in request, module))
+            {
+                DumpDeconstructionBlackBox();
+                RejectDeconstruction(in request, DeconstructReasonNoTarget, 0, 0, 0);
+                return;
+            }
+
+            if (!ValidateRayOwnership(in request, module))
+            {
+                RejectDeconstruction(in request, DeconstructReasonRayMismatch, 0, 0, 0);
+                return;
+            }
+
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (pool == null || !pool.CanDespawnWithoutDestroy(module.gameObject))
+            {
+                RejectDeconstruction(in request, DeconstructReasonPoolUnavailable, 0, 0, 0);
+                return;
+            }
+
+            if (_habitatGraphDirty)
+                RefreshHabitatGraph();
+
+            bool skipDfs = ShouldSkipDeconstructionDfsForTier();
+            EnsureDeconstructionNativeBuffers(Mathf.Max(initialCapacity, ModuleCount));
+            if (_habitatGraphManager != null &&
+                !_habitatGraphManager.TryValidateDeconstructionRollback(
+                    module,
+                    skipDfs,
+                    _deconstructionDfsStack,
+                    _deconstructionDfsVisited,
+                    _deconstructionDfsResult,
+                    out byte graphRejectReason))
+            {
+                RejectDeconstruction(in request, DeconstructReasonGraphRejected, graphRejectReason, ReadDfsVisitedCount(), ReadDfsExpectedCount());
+                return;
+            }
+
+            PlayerInventory inventory = ResolvePlayerInventory();
+            BuildableData buildData = ResolveBuildData(module);
+            if (!CanRefundToInventory(buildData, inventory, out ushort refundItemCount))
+            {
+                RejectDeconstruction(in request, DeconstructReasonInventoryFull, 0, ReadDfsVisitedCount(), ReadDfsExpectedCount());
+                PublishDeconstructionHudNotification(request.TargetEntityId, DeconstructReasonInventoryFull);
+                return;
+            }
+
+            if (!module.TryBeginAuthoritativeDeconstruction())
+            {
+                RejectDeconstruction(in request, DeconstructReasonAlreadyActive, 0, ReadDfsVisitedCount(), ReadDfsExpectedCount());
+                return;
+            }
+
+            if (!ApplyInventoryRefund(in request, buildData, inventory, out refundItemCount))
+            {
+                module.CancelAuthoritativeDeconstruction();
+                RejectDeconstruction(in request, DeconstructReasonInventoryFull, 0, ReadDfsVisitedCount(), ReadDfsExpectedCount());
+                PublishDeconstructionHudNotification(request.TargetEntityId, DeconstructReasonInventoryFull);
+                return;
+            }
+
+            uint moduleHash = unchecked((uint)ResolveModuleHashId(module));
+            ushort nodeId = (ushort)Mathf.Clamp(ResolveRegisteredModuleIndex(module.gameObject), 0, ushort.MaxValue);
+
+            PublishDeconstructionVfx(in request);
+            module.EjectHostedContentsForDeconstruction(inventory, pool);
+            module.PrepareForDeconstructionPoolReturn();
+            UnregisterModule(module.gameObject);
+            PublishModuleDeconstructSignal(moduleHash, nodeId, in request, skipDfs);
+            pool.Despawn(module.gameObject);
+            AcceptDeconstruction(in request, refundItemCount, skipDfs);
+        }
+
         /// <summary>
         /// Inserts a temporary external bypass cable between two placed habitat modules and rebuilds the runtime graph.
         /// </summary>
@@ -490,6 +660,493 @@ namespace Hecton8.Construction
                 Operation = operation,
                 Flags = flags
             });
+        }
+
+        private static void PublishModuleDeconstructSignal(
+            uint moduleHash,
+            ushort nodeId,
+            in DeconstructRequestSignal request,
+            bool dfsSkipped)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            byte flags = ModuleDeconstructFlagForcePowerColdTick;
+            if (dfsSkipped)
+                flags |= ModuleDeconstructFlagDfsSkippedLowTier;
+
+            GlobalSignals.Publish(new ModuleDeconstructSignal
+            {
+                PositionAup = request.TargetAup,
+                ModuleHash = moduleHash,
+                TargetEntityId = request.TargetEntityId,
+                NodeId = nodeId,
+                Operation = ModuleDeconstructOperationDeleteMarker,
+                Flags = flags,
+                Frame = (uint)Mathf.Max(0, Time.frameCount)
+            });
+        }
+
+        private void PublishDeconstructionVfx(in DeconstructRequestSignal request)
+        {
+            GlobalSignals.Publish(new DebrisSpawnSignal
+            {
+                PositionAup = request.TargetAup,
+                SpeciesHash = 0u,
+                SourceEntityId = request.TargetEntityId,
+                Intensity01 = 1f,
+                DebrisKind = DeconstructionDebrisKindDisintegrate,
+                Flags = 0
+            });
+        }
+
+        private void AcceptDeconstruction(in DeconstructRequestSignal request, ushort refundItemCount, bool dfsSkipped)
+        {
+            byte reason = dfsSkipped ? ModuleDeconstructFlagDfsSkippedLowTier : DeconstructReasonNone;
+            PublishDeconstructionResult(in request, DeconstructResultAccepted, reason, refundItemCount);
+            WriteDeconstructionBlackBoxSample(in request, DeconstructResultAccepted, reason, ReadDfsVisitedCount(), ReadDfsExpectedCount());
+        }
+
+        private void RejectDeconstruction(
+            in DeconstructRequestSignal request,
+            byte reason,
+            int graphDetail,
+            int visitedCount,
+            int expectedCount)
+        {
+            PublishDeconstructionResult(in request, DeconstructResultRejected, reason, 0);
+            WriteDeconstructionBlackBoxSample(in request, DeconstructResultRejected, reason, visitedCount, expectedCount + graphDetail);
+        }
+
+        private static void PublishDeconstructionResult(
+            in DeconstructRequestSignal request,
+            byte result,
+            byte reason,
+            ushort refundItemCount)
+        {
+            GlobalSignals.Publish(new DeconstructResultSignal
+            {
+                TargetAup = request.TargetAup,
+                TargetEntityId = request.TargetEntityId,
+                RequesterEntityId = request.RequesterEntityId,
+                RefundItemCount = refundItemCount,
+                Result = result,
+                Reason = reason,
+                Frame = (uint)Mathf.Max(0, Time.frameCount)
+            });
+        }
+
+        private static void PublishDeconstructionHudNotification(uint sourceId, byte reason)
+        {
+            GlobalSignals.Publish(new HUDNotificationSignal
+            {
+                MessageHash = 0xD3C04A11u,
+                ContextHash = reason,
+                SourceId = sourceId,
+                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                Severity = 2,
+                Flags = 0
+            });
+        }
+
+        private BaseModule ResolveBaseModuleByEntityId(uint targetEntityId)
+        {
+            if (targetEntityId == 0u || _spawnedBaseModules == null)
+                return null;
+
+            int count = _spawnedBaseModules.Count;
+            for (int i = 0; i < count; i++)
+            {
+                BaseModule module = _spawnedBaseModules[i];
+                if (module == null)
+                    continue;
+
+                uint entityId = unchecked((uint)EntityId.ToULong(module.GetEntityId()));
+                if (entityId == targetEntityId)
+                    return module;
+            }
+
+            return null;
+        }
+
+        private static bool ValidateAupTarget(in DeconstructRequestSignal request, BaseModule module)
+        {
+            if (module == null)
+                return false;
+
+            float3 targetRuntime = request.TargetAup.ToRuntimeFloat3();
+            Vector3 modulePosition = module.transform.position;
+            float3 moduleRuntime = new float3(modulePosition.x, modulePosition.y, modulePosition.z);
+            if (!math.all(math.isfinite(targetRuntime)) || !math.all(math.isfinite(moduleRuntime)))
+                return false;
+
+            float distanceSq = math.lengthsq(targetRuntime - moduleRuntime);
+            return distanceSq <= 9f;
+        }
+
+        private static bool ValidateRayOwnership(in DeconstructRequestSignal request, BaseModule module)
+        {
+            if (module == null)
+                return false;
+
+            if (request.MaxDistance <= 0f)
+                return true;
+
+            float3 direction = request.RayDirection;
+            float directionLengthSq = math.lengthsq(direction);
+            if (!math.all(math.isfinite(direction)) || directionLengthSq <= 0.0001f)
+                return false;
+
+            direction *= math.rsqrt(directionLengthSq);
+            float3 origin3 = request.RayOriginAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(origin3)))
+                return false;
+
+            Vector3 origin = new Vector3(origin3.x, origin3.y, origin3.z);
+            Vector3 rayDirection = new Vector3(direction.x, direction.y, direction.z);
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                origin,
+                rayDirection,
+                s_deconstructionRaycastHits,
+                request.MaxDistance,
+                HectonLayerMasks.ConstructionSurfaceLayerMask,
+                QueryTriggerInteraction.Ignore);
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider hitCollider = s_deconstructionRaycastHits[i].collider;
+                if (hitCollider == null)
+                    continue;
+
+                BaseModule hitModule = hitCollider.GetComponentInParent<BaseModule>();
+                if (ReferenceEquals(hitModule, module))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool ShouldSkipDeconstructionDfsForTier()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            return tier == HectonQualityTier.Unknown ||
+                   tier == HectonQualityTier.Low ||
+                   tier == HectonQualityTier.Mx350;
+        }
+
+        private static PlayerInventory ResolvePlayerInventory()
+        {
+            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            return inventoryService != null ? inventoryService.Inventory : null;
+        }
+
+        private BuildableData ResolveBuildData(BaseModule module)
+        {
+            if (module == null)
+                return null;
+
+            if (module.TryGetComponent(out ModuleMarker marker) &&
+                marker != null &&
+                marker.Data != null)
+            {
+                return marker.Data;
+            }
+
+            int moduleHashId = ResolveModuleHashId(module);
+            if (moduleHashId == 0 && module.ModuleTemplate != null)
+                moduleHashId = Hecton.Localization.LocHash.Compute(module.ModuleTemplate.PersistentId);
+
+            return catalog != null ? catalog.FindDataByHashId(moduleHashId) : null;
+        }
+
+        private static bool CanRefundToInventory(
+            BuildableData buildData,
+            PlayerInventory inventory,
+            out ushort refundItemCount)
+        {
+            refundItemCount = 0;
+            List<InventoryCost> buildCost = buildData != null ? buildData.buildCost : null;
+            if (buildCost == null || buildCost.Count == 0)
+                return true;
+
+            if (inventory == null || inventory.Grid == null)
+                return false;
+
+            int costCount = buildCost.Count;
+            Span<int> refundItemHashIds = stackalloc int[costCount];
+            Span<int> refundQuantities = stackalloc int[costCount];
+            int groupCount = BuildRefundGroups(buildCost, refundItemHashIds, refundQuantities, out int totalRefund);
+            if (groupCount < 0)
+                return false;
+
+            if (groupCount > 0 && !inventory.CanAcceptItemQuantityBatch(refundItemHashIds, refundQuantities, groupCount))
+                return false;
+
+            refundItemCount = (ushort)totalRefund;
+            return true;
+        }
+
+        private static bool ApplyInventoryRefund(
+            in DeconstructRequestSignal request,
+            BuildableData buildData,
+            PlayerInventory inventory,
+            out ushort refundItemCount)
+        {
+            refundItemCount = 0;
+            List<InventoryCost> buildCost = buildData != null ? buildData.buildCost : null;
+            if (buildCost == null || buildCost.Count == 0)
+                return true;
+
+            if (inventory == null || inventory.Grid == null)
+                return false;
+
+            int costCount = buildCost.Count;
+            Span<int> refundItemHashIds = stackalloc int[costCount];
+            Span<int> refundQuantities = stackalloc int[costCount];
+            int groupCount = BuildRefundGroups(buildCost, refundItemHashIds, refundQuantities, out int totalRefund);
+            if (groupCount < 0)
+                return false;
+
+            for (int i = 0; i < groupCount; i++)
+            {
+                int itemHashId = refundItemHashIds[i];
+                int refundAmount = refundQuantities[i];
+                if (!inventory.TryAddItem(itemHashId, refundAmount))
+                    return false;
+
+                ushort publishedQuantity = (ushort)Mathf.Clamp(refundAmount, 0, ushort.MaxValue);
+                GlobalSignals.Publish(new ItemAcquiredSignal
+                {
+                    PositionAup = request.TargetAup,
+                    ItemHash = unchecked((uint)itemHashId),
+                    OreHash = 0u,
+                    Quantity = publishedQuantity,
+                    SourceKind = 4,
+                    Flags = 0,
+                    Frame = (uint)Mathf.Max(0, Time.frameCount)
+                });
+
+            }
+
+            refundItemCount = (ushort)totalRefund;
+            return true;
+        }
+
+        private static int BuildRefundGroups(
+            List<InventoryCost> buildCost,
+            Span<int> itemHashIds,
+            Span<int> quantities,
+            out int totalRefund)
+        {
+            totalRefund = 0;
+            int groupCount = 0;
+            int costCount = buildCost != null ? buildCost.Count : 0;
+            if (itemHashIds.Length < costCount || quantities.Length < costCount)
+                return -1;
+
+            itemHashIds.Slice(0, costCount).Clear();
+            quantities.Slice(0, costCount).Clear();
+
+            for (int i = 0; i < costCount; i++)
+            {
+                InventoryCost cost = buildCost[i];
+                int itemHashId = ResolveRefundCostItemHash(cost);
+                if (itemHashId == 0)
+                    continue;
+
+                int refundAmount = Mathf.Max(0, cost.amount) >> 1;
+                if (refundAmount <= 0)
+                    continue;
+
+                int groupIndex = FindRefundGroupIndex(itemHashIds, groupCount, itemHashId);
+                if (groupIndex < 0)
+                {
+                    groupIndex = groupCount++;
+                    itemHashIds[groupIndex] = itemHashId;
+                }
+
+                quantities[groupIndex] = Mathf.Min(ushort.MaxValue, quantities[groupIndex] + refundAmount);
+                totalRefund = Mathf.Min(ushort.MaxValue, totalRefund + refundAmount);
+            }
+
+            return groupCount;
+        }
+
+        private static int ResolveRefundCostItemHash(InventoryCost cost)
+        {
+            if (cost == null || cost.item == null)
+                return 0;
+
+            return Hecton.Localization.LocHash.Compute(cost.item.PersistentId);
+        }
+
+        private static int FindRefundGroupIndex(Span<int> itemHashIds, int groupCount, int itemHashId)
+        {
+            for (int i = 0; i < groupCount; i++)
+            {
+                if (itemHashIds[i] == itemHashId)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void EnsureDeconstructionNativeBuffers(int requestedCapacity)
+        {
+            int capacity = Mathf.Max(1, requestedCapacity);
+            if (!_deconstructionDfsStack.IsCreated)
+            {
+                _deconstructionDfsStack = new NativeList<long>(capacity, Allocator.Persistent); // COLD ALLOC: NativeList<long>[module capacity] - rollback DFS stack - owner: ConstructionManager
+                NativeMemorySentinel.RegisterNativeList(_deconstructionDfsStack, NativeMemoryOwner, nameof(_deconstructionDfsStack), NativeMemoryLifetime);
+            }
+            else if (_deconstructionDfsStack.Capacity < capacity)
+            {
+                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_deconstructionDfsStack));
+                _deconstructionDfsStack.Capacity = capacity;
+                NativeMemorySentinel.RegisterNativeList(_deconstructionDfsStack, NativeMemoryOwner, nameof(_deconstructionDfsStack), NativeMemoryLifetime);
+            }
+
+            if (!_deconstructionDfsVisited.IsCreated)
+            {
+                _deconstructionDfsVisited = new NativeParallelHashSet<long>(capacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashSet<long>[module capacity] - rollback DFS visited set - owner: ConstructionManager
+                NativeMemorySentinel.RegisterNativeParallelHashSet(
+                    _deconstructionDfsVisited,
+                    NativeMemoryOwner,
+                    nameof(_deconstructionDfsVisited),
+                    NativeMemoryLifetime);
+            }
+            else if (_deconstructionDfsVisited.Capacity < capacity)
+            {
+                _deconstructionDfsVisited.Capacity = capacity;
+                NativeMemorySentinel.RefreshNativeParallelHashSet(_deconstructionDfsVisited, NativeMemoryOwner, nameof(_deconstructionDfsVisited));
+            }
+
+            if (!_deconstructionDfsResult.IsCreated)
+            {
+                _deconstructionDfsResult = new NativeArray<int>(DeconstructionDfsResultLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[4] - rollback DFS result lane - owner: ConstructionManager
+                NativeMemorySentinel.RegisterNativeArray(_deconstructionDfsResult, NativeMemoryOwner, nameof(_deconstructionDfsResult), NativeMemoryLifetime);
+            }
+
+            if (!_deconstructionBlackBox.IsCreated)
+            {
+                _deconstructionBlackBox = new NativeArray<HabitatDeconstructionTelemetryEntry>(
+                    DeconstructionBlackBoxCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HabitatDeconstructionTelemetryEntry>[300] - deconstruction black box - owner: ConstructionManager
+                NativeMemorySentinel.RegisterNativeArray(_deconstructionBlackBox, NativeMemoryOwner, nameof(_deconstructionBlackBox), NativeMemoryLifetime);
+            }
+        }
+
+        private void DisposeDeconstructionNativeBuffers()
+        {
+            if (_deconstructionDfsStack.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_deconstructionDfsStack));
+                _deconstructionDfsStack.Dispose();
+                _deconstructionDfsStack = default;
+            }
+
+            if (_deconstructionDfsVisited.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashSet(NativeMemoryOwner, nameof(_deconstructionDfsVisited));
+                _deconstructionDfsVisited.Dispose();
+                _deconstructionDfsVisited = default;
+            }
+
+            if (_deconstructionDfsResult.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_deconstructionDfsResult);
+                _deconstructionDfsResult.Dispose();
+                _deconstructionDfsResult = default;
+            }
+
+            if (_deconstructionBlackBox.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_deconstructionBlackBox);
+                _deconstructionBlackBox.Dispose();
+                _deconstructionBlackBox = default;
+            }
+
+            _deconstructionBlackBoxCursor = 0;
+        }
+
+        private int ReadDfsVisitedCount()
+        {
+            return _deconstructionDfsResult.IsCreated && _deconstructionDfsResult.Length > 1
+                ? _deconstructionDfsResult[1]
+                : 0;
+        }
+
+        private int ReadDfsExpectedCount()
+        {
+            return _deconstructionDfsResult.IsCreated && _deconstructionDfsResult.Length > 2
+                ? _deconstructionDfsResult[2]
+                : 0;
+        }
+
+        private void WriteDeconstructionBlackBoxSample(
+            in DeconstructRequestSignal request,
+            byte result,
+            byte reason,
+            int visitedCount,
+            int expectedCount)
+        {
+            if (!_deconstructionBlackBox.IsCreated || _deconstructionBlackBox.Length == 0)
+                return;
+
+            int index = _deconstructionBlackBoxCursor;
+            if (index < 0 || index >= _deconstructionBlackBox.Length)
+                index = 0;
+
+            _deconstructionBlackBox[index] = new HabitatDeconstructionTelemetryEntry
+            {
+                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                TargetEntityId = request.TargetEntityId,
+                RequesterEntityId = request.RequesterEntityId,
+                DistanceMeters = Mathf.Max(0f, request.MaxDistance),
+                DfsVisitedCount = (ushort)Mathf.Clamp(visitedCount, 0, ushort.MaxValue),
+                DfsExpectedCount = (ushort)Mathf.Clamp(expectedCount, 0, ushort.MaxValue),
+                Result = result,
+                Reason = reason,
+                Flags = request.Flags,
+                Reserved = 0
+            };
+
+            _deconstructionBlackBoxCursor = index + 1;
+            if (_deconstructionBlackBoxCursor >= _deconstructionBlackBox.Length)
+                _deconstructionBlackBoxCursor = 0;
+        }
+
+        private void DumpDeconstructionBlackBox()
+        {
+            if (!_deconstructionBlackBox.IsCreated)
+                return;
+
+            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DeconstructionDumpRelativePath));
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(DeconstructionBlackBoxCapacity);
+                writer.Write(_deconstructionBlackBoxCursor);
+                for (int i = 0; i < _deconstructionBlackBox.Length; i++)
+                {
+                    HabitatDeconstructionTelemetryEntry entry = _deconstructionBlackBox[i];
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.TargetEntityId);
+                    writer.Write(entry.RequesterEntityId);
+                    writer.Write(entry.DistanceMeters);
+                    writer.Write(entry.DfsVisitedCount);
+                    writer.Write(entry.DfsExpectedCount);
+                    writer.Write(entry.Result);
+                    writer.Write(entry.Reason);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.Reserved);
+                }
+            }
         }
 
         private int ResolveRegisteredModuleIndex(GameObject module)
@@ -1167,6 +1824,15 @@ namespace Hecton8.Construction
             _logisticsServiceRegistered = ReferenceEquals(GlobalRegistry.Logistics, this);
         }
 
+        private void TryRegisterHabitatDeconstructionService()
+        {
+            if (_habitatDeconstructionServiceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHabitatDeconstructionSystem(this);
+            _habitatDeconstructionServiceRegistered = ReferenceEquals(GlobalRegistry.HabitatDeconstruction, this);
+        }
+
         private void TryRegisterTick()
         {
             if (_tickRegistered || !Application.isPlaying)
@@ -1313,6 +1979,15 @@ namespace Hecton8.Construction
 
             GlobalRegistry.UnregisterLogisticsService(this);
             _logisticsServiceRegistered = false;
+        }
+
+        private void TryUnregisterHabitatDeconstructionService()
+        {
+            if (!_habitatDeconstructionServiceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterHabitatDeconstructionSystem(this);
+            _habitatDeconstructionServiceRegistered = false;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)

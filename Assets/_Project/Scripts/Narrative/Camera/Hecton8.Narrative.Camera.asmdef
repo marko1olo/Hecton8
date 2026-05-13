@@ -1,0 +1,17 @@
+{
+    "name": "Hecton8.Narrative.Camera",
+    "rootNamespace": "Hecton8.Narrative.Camera",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

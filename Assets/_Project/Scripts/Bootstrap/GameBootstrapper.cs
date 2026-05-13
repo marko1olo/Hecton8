@@ -9,9 +9,15 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.AI;
 using Hecton8.Atmosphere;
 using Hecton8.Audio;
+using Hecton8.Audio.Propagation;
+using Hecton8.Biolum;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
+using Hecton8.Core.Scheduling;
 using Hecton8.Dev;
+using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Input;
@@ -154,11 +160,16 @@ namespace Hecton8.Bootstrap
             new RegistryBucket<IGameBootstrapperEventListener>(PendingEventCapacity);
         // COLD ALLOC: Dictionary<uint,string>[8] - hashed bootstrap failure reasons for cold-path diagnostics resolution - owner: GameBootstrapper
         private static readonly Dictionary<uint, string> _failureReasonsByHash = new Dictionary<uint, string>(8);
+        private static GlobalDataVault _globalDataVault;
+        private static BurstTokenBucketJobAdmissionService _jobAdmissionService;
+        private static JobAdmissionTelemetryBridge _jobAdmissionTelemetryBridge;
         private static NativeQueue<GameBootstrapperEventPayload> _pendingEvents;
         private static NativeQueue<GameBootstrapperEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
+        private static bool _h8MemoryFatalLogHooked;
+        private static bool _h8MemoryFatalDumpWritten;
 #if UNITY_EDITOR
         private static string _pendingDirtySceneReloadPath;
         private static readonly List<GameObject> _dontDestroyRootScratch = new List<GameObject>(32); // COLD ALLOC: List<GameObject>[32] - editor-only DDOL residue scan scratch - owner: GameBootstrapper
@@ -326,6 +337,7 @@ namespace Hecton8.Bootstrap
         private bool _sceneActivationStarted;
         private ulong _sceneActivationSceneHandle = ulong.MaxValue;
         private bool _isLoadingSave;
+        private bool _slowTickableRegistered;
         private double _nextServiceHeartbeatPollTime;
         private WorldProceduralScatterDirector _worldProceduralScatterDirector;
         private int _backgroundDomainHandshakeState;
@@ -428,6 +440,30 @@ namespace Hecton8.Bootstrap
             return BootstrapState.TryGetCurrentPlayerTransform(out playerTransform);
         }
 
+        public static bool RegisterBiolumDirector(HectonBiolumManager director)
+        {
+            if (!Application.isPlaying || director == null)
+                return false;
+
+            EnsureRuntimeInstance();
+            PersistRuntimeService(director);
+
+            HectonBiolumManager registered = GlobalRegistry.BiolumManager;
+            if (registered != null && !ReferenceEquals(registered, director))
+                return false;
+
+            GlobalRegistry.RegisterBiolumManagerRuntime(director);
+            return ReferenceEquals(GlobalRegistry.BiolumManager, director);
+        }
+
+        public static void UnregisterBiolumDirector(HectonBiolumManager director)
+        {
+            if (director == null)
+                return;
+
+            GlobalRegistry.UnregisterBiolumManagerRuntime(director);
+        }
+
         public static void Register(IGameBootstrapperEventListener listener)
         {
             if (listener == null)
@@ -517,6 +553,14 @@ namespace Hecton8.Bootstrap
             _biosErrorMessageBuilder.Length = 0;
             _fatalOverlayMessageBuilder.Length = 0;
             BootstrapState.Reset();
+            RemoveH8MemoryFatalDumpHook();
+            if (_globalDataVault != null)
+            {
+                GlobalRegistry.UnregisterDataVault(_globalDataVault);
+                _globalDataVault.Dispose();
+                _globalDataVault = null;
+            }
+            H8Memory.Shutdown();
             if (_sceneGuardRegistered)
             {
                 SceneManager.sceneLoaded -= HandleSceneLoadedGuard;
@@ -800,13 +844,16 @@ namespace Hecton8.Bootstrap
         private void OnEnable()
         {
             _nextServiceHeartbeatPollTime = 0d;
-            if (Application.isPlaying)
-                GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
+            TryRegisterBootstrapSlowTickable();
         }
 
         private void OnDisable()
         {
+            if (!_slowTickableRegistered)
+                return;
+
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+            _slowTickableRegistered = false;
         }
 
         private void Start()
@@ -886,9 +933,18 @@ namespace Hecton8.Bootstrap
             }
         }
 
+        private void TryRegisterBootstrapSlowTickable()
+        {
+            if (!Application.isPlaying || _slowTickableRegistered || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _slowTickableRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
+        }
+
         private static void DisposeSessionNativeStateForShutdown()
         {
             ShutdownSystemDispatcherForBootstrapTeardown();
+            ShutdownJobAdmissionServiceForBootstrapTeardown();
             Hecton8.Modding.ModLoader.ResetStaticState();
             Hecton8.Modding.ModRegistryEvents.ResetStaticState();
             BootstrapEvents.ResetStaticState();
@@ -926,6 +982,20 @@ namespace Hecton8.Bootstrap
             }
 
             SystemDispatcher.ClearAllLanes();
+        }
+
+        private static void ShutdownJobAdmissionServiceForBootstrapTeardown()
+        {
+            IJobAdmissionService service = GlobalRegistry.JobAdmission;
+            if (service != null)
+            {
+                JobAdmissionSchedulerBridge.ClearService(service);
+                GlobalRegistry.UnregisterJobAdmissionRuntime(service);
+                service.Dispose();
+            }
+
+            _jobAdmissionService = null;
+            _jobAdmissionTelemetryBridge = null;
         }
 
         /// <summary>
@@ -1183,6 +1253,7 @@ namespace Hecton8.Bootstrap
                 _preWarmAssetsReady = false;
                 InitializeBootstrapAllocators();
                 InitializeBootstrapEventBuses();
+                BinaryLayoutManifest.VerifyColdBoot();
                 InitializeBootstrapMmfStorage();
                 uint appVersionHash = global::Hecton8.Data.H8DataHash.ComputeFnv1A32(Application.version.AsSpan());
                 if (!InitializeBootstrapDataMonolith(appVersionHash))
@@ -1233,13 +1304,77 @@ namespace Hecton8.Bootstrap
 
         private static void InitializeBootstrapAllocators()
         {
+            H8Memory.Initialize();
+            InstallH8MemoryFatalDumpHook();
+            EnsureGlobalDataVaultRegistered();
             NativeArenaAllocator.Initialize();
+        }
+
+        private static void InstallH8MemoryFatalDumpHook()
+        {
+            Application.logMessageReceived -= HandleH8MemoryFatalLog;
+            Application.logMessageReceived += HandleH8MemoryFatalLog;
+            _h8MemoryFatalLogHooked = true;
+            _h8MemoryFatalDumpWritten = false;
+        }
+
+        private static void RemoveH8MemoryFatalDumpHook()
+        {
+            if (!_h8MemoryFatalLogHooked)
+                return;
+
+            Application.logMessageReceived -= HandleH8MemoryFatalLog;
+            _h8MemoryFatalLogHooked = false;
+            _h8MemoryFatalDumpWritten = false;
+        }
+
+        private static void HandleH8MemoryFatalLog(string condition, string stackTrace, LogType type)
+        {
+            if (_h8MemoryFatalDumpWritten)
+                return;
+
+            if (type != LogType.Exception &&
+                type != LogType.Assert &&
+                (type != LogType.Error || !IsFatalMemoryDumpCandidate(condition)))
+            {
+                return;
+            }
+
+            _h8MemoryFatalDumpWritten = true;
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            if (string.IsNullOrEmpty(projectRoot))
+                return;
+
+            string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
+            Directory.CreateDirectory(logDirectory);
+            string path = Path.Combine(logDirectory, "Dump_CORE_DATA_VAULT_WARDEN.txt");
+            H8Memory.DumpAllocationTableText(path);
+        }
+
+        private static bool IsFatalMemoryDumpCandidate(string condition)
+        {
+            if (string.IsNullOrEmpty(condition))
+                return false;
+
+            return condition.IndexOf("fatal", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                condition.IndexOf("crash", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                condition.IndexOf("nan", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static void EnsureGlobalDataVaultRegistered()
+        {
+            if (_globalDataVault == null)
+                _globalDataVault = GlobalDataVault.Create();
+
+            if (!ReferenceEquals(GlobalRegistry.DataVault, _globalDataVault))
+                GlobalRegistry.RegisterDataVault(_globalDataVault);
         }
 
         private static void InitializeBootstrapEventBuses()
         {
             GlobalTelemetryBus.Initialize();
             GlobalSignals.InitializeAllQueues();
+            EnsureJobAdmissionServiceRegistered();
         }
 
         private static void InitializeBootstrapMmfStorage()
@@ -1510,7 +1645,9 @@ namespace Hecton8.Bootstrap
                 return false;
             }
 
-            InputManager inputManager = ResolveBootstrapInputManager(gameObject.scene);
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            if (inputManager == null)
+                inputManager = ResolveBootstrapInputManager(gameObject.scene);
             if (inputManager == null)
             {
                 GameObject inputRoot = new GameObject("[InputManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned native input owner - owner: GameBootstrapper
@@ -1559,6 +1696,8 @@ namespace Hecton8.Bootstrap
 
             ContextualPhysicalIkRuntime contextualIkRuntime = ContextualPhysicalIkRuntime.EnsureRuntimeInstance();
             PersistRuntimeService(contextualIkRuntime);
+            VRSomaticRuntimeBootstrap vrSomaticRuntime = VRSomaticRuntimeBootstrap.EnsureRegisteredByBootstrap();
+            PersistRuntimeService(vrSomaticRuntime);
             if (!await InitializeBootstrapLayerNodesAsync(BootstrapPhase.Player, ct))
                 return false;
 
@@ -1712,6 +1851,15 @@ namespace Hecton8.Bootstrap
         private static async Awaitable<bool> PreWarmTierAddressableTextureGroupAsync(CancellationToken ct)
         {
             string label = ResolveTierAddressableTextureLabel();
+#if UNITY_EDITOR
+            if (!HasEditorAddressablesRuntimeSettingsFile())
+            {
+                RuntimeDiagnosticsTrace.EnsureSession("bootstrap_blackbox");
+                RuntimeDiagnosticsTrace.WriteEvent("bootstrap.addressables.tier_prewarm.skipped_missing_runtime_settings", label);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+                return true;
+            }
+#endif
             AsyncOperationHandle handle = Addressables.DownloadDependenciesAsync(label, false);
             while (!handle.IsDone)
             {
@@ -1729,6 +1877,16 @@ namespace Hecton8.Bootstrap
             Addressables.Release(handle);
             return succeeded;
         }
+
+#if UNITY_EDITOR
+        private static bool HasEditorAddressablesRuntimeSettingsFile()
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string settingsPath = Path.Combine(projectRoot, "Library", "com.unity.addressables", "aa", "Windows", "settings.json");
+            return File.Exists(settingsPath);
+        }
+
+#endif
 
         private static string ResolveTierAddressableTextureLabel()
         {
@@ -2236,7 +2394,14 @@ namespace Hecton8.Bootstrap
 
                     PersistRuntimeService(environmentContextService);
                     environmentContextService.InitializeService();
-                    return GlobalRegistry.Environment != null;
+                    HectonSeismicTideDirector seismicTideDirector = HectonSeismicTideDirector.EnsureRuntimeInstance();
+                    if (seismicTideDirector != null)
+                    {
+                        PersistRuntimeService(seismicTideDirector);
+                        seismicTideDirector.InitializeService();
+                    }
+
+                    return GlobalRegistry.Environment != null && GlobalRegistry.SeismicDirector != null;
                 }
 
                 case BootstrapDependencyNode.OceanKinematicsRuntimeService:
@@ -2323,6 +2488,8 @@ namespace Hecton8.Bootstrap
 
         private static SystemDispatcher EnsureSystemDispatcherRegistered()
         {
+            EnsureJobAdmissionServiceRegistered();
+
             SystemDispatcher dispatcher = GlobalRegistry.Dispatcher;
             if (dispatcher == null)
                 dispatcher = SystemDispatcher.ActiveRuntimeInstance;
@@ -2336,11 +2503,33 @@ namespace Hecton8.Bootstrap
             PersistRuntimeService(dispatcher);
 
             dispatcher.InitializeService();
+            GlobalRegistry.BootstrapperRuntime?.TryRegisterBootstrapSlowTickable();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             EnsureRuntimeWatchdogRegistered();
             EnsureGCMonitorRegistered();
 #endif
             return dispatcher;
+        }
+
+        private static IJobAdmissionService EnsureJobAdmissionServiceRegistered()
+        {
+            IJobAdmissionService registered = GlobalRegistry.JobAdmission;
+            if (registered != null)
+            {
+                JobAdmissionSchedulerBridge.SetService(registered);
+                return registered;
+            }
+
+            if (_jobAdmissionTelemetryBridge == null)
+                _jobAdmissionTelemetryBridge = new JobAdmissionTelemetryBridge(); // COLD ALLOC: JobAdmissionTelemetryBridge[1] - scheduler telemetry bridge - owner: GameBootstrapper
+
+            if (_jobAdmissionService == null)
+                _jobAdmissionService = new BurstTokenBucketJobAdmissionService(); // COLD ALLOC: BurstTokenBucketJobAdmissionService[1] - bootstrap-owned job admission gate - owner: GameBootstrapper
+
+            _jobAdmissionService.Initialize(_jobAdmissionTelemetryBridge);
+            GlobalRegistry.RegisterJobAdmissionRuntime(_jobAdmissionService);
+            JobAdmissionSchedulerBridge.SetService(_jobAdmissionService);
+            return _jobAdmissionService;
         }
 
         internal static void PersistRuntimeService(Component component)
@@ -3025,10 +3214,14 @@ namespace Hecton8.Bootstrap
 
         private static void DisableGarbageCollectorAfterCoreReady()
         {
+#if UNITY_EDITOR
+            return;
+#else
             if (UnityEngine.Scripting.GarbageCollector.GCMode == UnityEngine.Scripting.GarbageCollector.Mode.Disabled)
                 return;
 
             UnityEngine.Scripting.GarbageCollector.GCMode = UnityEngine.Scripting.GarbageCollector.Mode.Disabled;
+#endif
         }
 
         private static int ResolveTargetFrameRate(in HectonHardwareProfile hardwareProfile)
@@ -3336,7 +3529,7 @@ namespace Hecton8.Bootstrap
             if (_isBootstrapComplete)
             {
                 EnsureExtendedRegistryCoverageForActiveScene();
-                if (!IsBootstrapScene(scene))
+                if (RequiresGameplaySceneActivation(scene))
                     RequestSceneActivation();
 
                 BootstrapBiosErrorOverlay.Hide();
@@ -4322,6 +4515,7 @@ namespace Hecton8.Bootstrap
             TryEnsureWorldGenRegistryCoverage();
             TryEnsureEncounterDirectorRegistryCoverage();
             TryEnsureQuestRegistryCoverage();
+            TryEnsureProceduralSwayRegistryCoverage();
         }
 
         private static void TryEnsureThermodynamicsRegistryCoverage()
@@ -4372,6 +4566,16 @@ namespace Hecton8.Bootstrap
             QuestManager questManager = QuestManager.ActiveRuntimeInstance;
             if (questManager != null)
                 GlobalRegistry.RegisterQuestRuntime(questManager);
+        }
+
+        private static void TryEnsureProceduralSwayRegistryCoverage()
+        {
+            if (GlobalRegistry.ProceduralSwayDirector != null)
+                return;
+
+            FloraInteractionManager manager = FloraInteractionManager.ActiveRuntimeInstance;
+            if (manager != null)
+                GlobalRegistry.RegisterProceduralSwayDirector(manager);
         }
 
         private static void EnsureBootstrapAudioListener(Scene bootstrapScene)
@@ -4562,6 +4766,21 @@ namespace Hecton8.Bootstrap
                    string.Equals(scene.name, BootstrapSceneName, System.StringComparison.Ordinal);
         }
 
+        private static bool IsMainMenuScene(Scene scene)
+        {
+            return scene.IsValid() &&
+                   scene.isLoaded &&
+                   string.Equals(scene.name, MainMenuSceneName, System.StringComparison.Ordinal);
+        }
+
+        private static bool RequiresGameplaySceneActivation(Scene scene)
+        {
+            return scene.IsValid() &&
+                   scene.isLoaded &&
+                   !IsBootstrapScene(scene) &&
+                   !IsMainMenuScene(scene);
+        }
+
     }
 
     /// <summary>
@@ -4593,6 +4812,12 @@ namespace Hecton8.Bootstrap
 
         /// <inheritdoc />
         public bool QueueAudioEvent(in CoreAudioEvent audioEvent)
+        {
+            return false;
+        }
+
+        /// <inheritdoc />
+        public bool QueueSoundEmissionSignal(in SoundEmissionSignal signal)
         {
             return false;
         }

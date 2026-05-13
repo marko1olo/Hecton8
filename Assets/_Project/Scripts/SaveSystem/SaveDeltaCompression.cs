@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Memory.Layout;
 using Hecton8.Gameplay;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -7,6 +8,23 @@ using Unity.Mathematics;
 
 namespace Hecton8.SaveSystem
 {
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 5)]
+    internal readonly struct SaveVoxelDeltaRun5
+    {
+        public readonly ushort StartIndex;
+        public readonly byte SdfValue;
+        public readonly ushort RunLength;
+
+        public SaveVoxelDeltaRun5(ushort startIndex, byte sdfValue, ushort runLength)
+        {
+            StartIndex = startIndex;
+            SdfValue = sdfValue;
+            RunLength = runLength;
+        }
+    }
+
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
     internal readonly struct SaveVoxelDeltaRun8
     {
@@ -28,6 +46,7 @@ namespace Hecton8.SaveSystem
         }
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 4)]
     internal readonly struct PackedEntityState32
     {
@@ -39,6 +58,7 @@ namespace Hecton8.SaveSystem
         }
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
     internal readonly struct PackedSuitUpgradeState64
     {
@@ -50,6 +70,7 @@ namespace Hecton8.SaveSystem
         }
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 6)]
     internal readonly struct QuantizedLocalHalf3
     {
@@ -73,6 +94,7 @@ namespace Hecton8.SaveSystem
         }
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 18)]
     internal readonly struct QuantizedAupSectorHalf3
     {
@@ -90,6 +112,7 @@ namespace Hecton8.SaveSystem
         }
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     internal struct StrictSaveFileHeader64
     {
@@ -105,6 +128,7 @@ namespace Hecton8.SaveSystem
         public uint Reserved2;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     internal struct SaveChunkHeader32
     {

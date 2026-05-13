@@ -199,6 +199,9 @@ namespace Hecton8.Gameplay
         /// <summary>Uppercase cached payload name for UI/reporting.</summary>
         public string CurrentTargetNameUpper => _payloadNameUpper;
 
+        /// <summary>Runtime winch target length. External input can reel this value in or out.</summary>
+        public float TargetLength { get; private set; }
+
         internal Transform CachedTransform => _cachedTransform != null ? _cachedTransform : transform;
         internal Transform ActiveTowAnchorTransform => _overrideTowAnchor != null ? _overrideTowAnchor : (towAnchor != null ? towAnchor : CachedTransform);
         internal Vector3 PlayerRight => ActiveTowAnchorTransform.right;
@@ -245,18 +248,20 @@ namespace Hecton8.Gameplay
             if (_tetherManager == null)
                 return false;
 
-            if (_activeTether != null)
-                ReleaseTow(false);
-
-            _overrideTowAnchor = null;
-            _overrideTowBody = null;
-            _activeTether = _tetherManager.AttachTowCable(this, _playerMotor, _playerRigidbody, payloadBody, payloadCollider, initialDistance);
-            if (_activeTether == null)
+            if (!TetherSignals.PublishFire(
+                    _tetherManager,
+                    this,
+                    _playerMotor,
+                    _playerRigidbody,
+                    payloadBody,
+                    payloadCollider,
+                    initialDistance))
+            {
                 return false;
+            }
 
-            CachePayloadIdentity(payloadBody);
-            UpdateDiagnostics();
-            return true;
+            _tetherManager.DrainTetherFiredSignals();
+            return _activeTether != null && ReferenceEquals(_activeTether.PayloadBody, payloadBody);
         }
 
         internal bool CanTowMass(float mass)
@@ -322,6 +327,19 @@ namespace Hecton8.Gameplay
             UpdateDiagnostics();
         }
 
+        internal bool CompleteSignalAttach(TetherInstance instance, Rigidbody payloadBody)
+        {
+            if (instance == null || payloadBody == null)
+                return false;
+
+            _overrideTowAnchor = null;
+            _overrideTowBody = null;
+            _activeTether = instance;
+            CachePayloadIdentity(payloadBody);
+            UpdateDiagnostics();
+            return true;
+        }
+
         internal Vector3 ResolveTowAnchorPosition()
         {
             return ActiveTowAnchorTransform.position;
@@ -341,10 +359,21 @@ namespace Hecton8.Gameplay
         internal float ResolveTowOverDampingMultiplier() => 1.2f;
         internal float ResolveTowRestLength(float initialDistance)
         {
-            return math.clamp(
+            TargetLength = math.clamp(
                 math.max(1.25f, initialDistance - initialCableSlack),
                 1.25f,
                 maxAttachDistance);
+            return TargetLength;
+        }
+
+        public void SetTargetLength(float targetLength)
+        {
+            TargetLength = math.clamp(targetLength, 1.25f, maxAttachDistance);
+        }
+
+        public void AdjustTargetLength(float deltaMeters)
+        {
+            SetTargetLength(TargetLength + deltaMeters);
         }
 
         internal float ResolveMaxTowBreakDistance() => math.max(1.25f, maxTowBreakDistance);

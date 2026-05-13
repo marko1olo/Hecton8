@@ -13,6 +13,44 @@ namespace Hecton8.Modding
     }
 
     /// <summary>
+    /// Public signal projection kinds exposed to managed mods through the native-to-managed bridge.
+    /// </summary>
+    public enum ModEventKind : ushort
+    {
+        None = 0,
+        CombatDamage = 1,
+        WeatherChanged = 2
+    }
+
+    /// <summary>
+    /// Condensed, blittable public event metadata copied from first-party SignalBus snapshots.
+    /// Coordinates are already relative to the current player runtime position.
+    /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
+    public struct ModEventDto
+    {
+        public const uint CombatDamageEventHash = 0x43444D47u; // CDMG
+        public const uint WeatherChangedEventHash = 0x57454154u; // WEAT
+        public const ushort LowTierSampleFlag = 1 << 8;
+
+        [System.Runtime.InteropServices.FieldOffset(0)] public uint EventHash;
+        [System.Runtime.InteropServices.FieldOffset(4)] public uint SubjectHash;
+        [System.Runtime.InteropServices.FieldOffset(8)] public uint ContextHash;
+        [System.Runtime.InteropServices.FieldOffset(12)] public uint SourceHash;
+        [System.Runtime.InteropServices.FieldOffset(16)] public uint Frame;
+        [System.Runtime.InteropServices.FieldOffset(20)] public float3 RelativePosition;
+        [System.Runtime.InteropServices.FieldOffset(32)] public float3 Direction;
+        [System.Runtime.InteropServices.FieldOffset(44)] public float Scalar0;
+        [System.Runtime.InteropServices.FieldOffset(48)] public float Scalar1;
+        [System.Runtime.InteropServices.FieldOffset(52)] public ushort Kind;
+        [System.Runtime.InteropServices.FieldOffset(54)] public ushort Flags;
+        [System.Runtime.InteropServices.FieldOffset(56)] public byte QualityTier;
+        [System.Runtime.InteropServices.FieldOffset(57)] public byte Reserved0;
+        [System.Runtime.InteropServices.FieldOffset(58)] public ushort Sequence;
+        [System.Runtime.InteropServices.FieldOffset(60)] public uint Reserved1;
+    }
+
+    /// <summary>
     /// Read-only player spawn snapshot for mod event hooks.
     /// No mutable engine arrays or Unity object references are exposed.
     /// </summary>

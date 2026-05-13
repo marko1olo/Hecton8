@@ -603,8 +603,17 @@ namespace Hecton8.World
         private const uint FoodChainTelemetryFlagKillJobCompleted = 1u << 2;
         private const uint FoodChainTelemetryFlagKillDrained = 1u << 3;
         private const uint FoodChainTelemetryFlagWhaleFall = 1u << 4;
+        private const uint FoodChainTelemetryFlagBoidsScattered = 1u << 5;
         private const uint FoodChainTelemetryFlagNonFinite = 1u << 31;
         private const uint FoodChainTelemetryAnomalyNonFinite = 0xEFC00001u;
+        private const int PredatorAupBufferCapacity = 16;
+        private const int PredatorAupLowTierThreatLoopCap = 4;
+        private const int SwarmAcousticSignalConsumeLimit = 4;
+        private const int SwarmMovementSignalConsumeLimit = 8;
+        private const float SwarmAcousticShockDurationSeconds = 1f / 60f;
+        private const float SwarmMovementPanicDurationSeconds = 0.08f;
+        private const float SwarmDispersedSignalCooldownSeconds = 0.08f;
+        private const float SwarmDispersedMinimumIntensity = 0.25f;
         private const int LatchStatsLatchedCountIndex = 0;
         private const int LatchStatsLatchedSumXIndex = 1;
         private const int LatchStatsLatchedSumYIndex = 2;
@@ -713,6 +722,7 @@ namespace Hecton8.World
         private static readonly int _CameraAvoidRadiusId = Shader.PropertyToID("_CameraAvoidRadius");
         private static readonly int _CameraAvoidWeightId = Shader.PropertyToID("_CameraAvoidWeight");
         private static readonly int _MassiveThreatsId = Shader.PropertyToID("_MassiveThreats");
+        private static readonly int _PredatorAUPBufferId = Shader.PropertyToID("_PredatorAUPBuffer");
         private static readonly int _MassiveThreatCountId = Shader.PropertyToID("_MassiveThreatCount");
         private static readonly int _MassiveThreatWeightId = Shader.PropertyToID("_MassiveThreatWeight");
         private static readonly int _VatEnabledId = Shader.PropertyToID("_VatEnabled");
@@ -1431,6 +1441,10 @@ namespace Hecton8.World
         private float _debugSonarScatter01;
 
         [SerializeField]
+        [Tooltip("Active predator/player AUP threat loop count uploaded to the compute shader.")]
+        private int _debugPredatorAupThreatCount;
+
+        [SerializeField]
         [Tooltip("CPU-side consumed GPU boid count emitted by predator bite jobs this session.")]
         private int _debugConsumedBoidCount;
 
@@ -1611,6 +1625,8 @@ namespace Hecton8.World
         private float _acousticPanicStrength01;
         private float _acousticPanicExpireTime = float.NegativeInfinity;
         private uint _acousticPanicSeed;
+        private float _lastSwarmDispersedSignalTime = float.NegativeInfinity;
+        private uint _swarmDispersedSequence;
         private int _threatGridResolution;
         private Vector3 _threatGridCenterWS = Vector3.zero;
         private float _threatGridCellSizeWS = 1f;
@@ -1730,6 +1746,7 @@ namespace Hecton8.World
             _debugLeviathanHotspotWS = Vector3.zero;
             _debugFragmentation01 = 0f;
             _debugSonarScatter01 = 0f;
+            _debugPredatorAupThreatCount = 0;
             _parasiteLatchReadbackTimer = 0f;
             _parasiteLatchReadbackPending = false;
             _reportedParasiteCenterOfMassLS = Vector3.zero;
@@ -1760,6 +1777,8 @@ namespace Hecton8.World
             _acousticPanicStrength01 = 0f;
             _acousticPanicOriginWS = Vector3.zero;
             _acousticPanicSeed = 0u;
+            _lastSwarmDispersedSignalTime = float.NegativeInfinity;
+            _swarmDispersedSequence = 0u;
             ResetThreatVoxelSnapshot();
             _lastDeepLeviathanMode = false;
             TryUnregister();
@@ -1818,6 +1837,8 @@ namespace Hecton8.World
                 _debugHibernation01 = 1f;
                 return;
             }
+
+            ConsumeSwarmThreatSignals(dt);
 
             if (!_threatVoxelDataValid && _mapMagicVegetationBridge != null)
                 RefreshThreatVoxelPayload();
@@ -3846,6 +3867,17 @@ namespace Hecton8.World
             _fallbackAbyssalFlowTexture.Apply(false, true);
         }
 
+        private static int ResolvePredatorAupThreatLoopCap(int predatorAupCount, SimulationLodTier simulationLodTier)
+        {
+            int safeCount = math.clamp(predatorAupCount, 0, PredatorAupBufferCapacity);
+            if (safeCount <= 0)
+                return 0;
+
+            return simulationLodTier == SimulationLodTier.Full
+                ? safeCount
+                : math.min(safeCount, PredatorAupLowTierThreatLoopCap);
+        }
+
         private bool BindSimulationUniforms(
             float simulationDt,
             Vector3 driftOffset,
@@ -3947,6 +3979,18 @@ namespace Hecton8.World
                     submarineWakeHalfLength = math.lerp(SubmarineWakeBaseHalfLengthMeters, SubmarineWakeMaxHalfLengthMeters, wakeHalfLength01);
                 }
             }
+
+            GraphicsBuffer predatorAupBuffer = null;
+            int predatorAupCount = 0;
+            IEncounterDirectorService encounterDirector = GlobalRegistry.EncounterDirector;
+            if (encounterDirector != null &&
+                encounterDirector.IsInitialized &&
+                encounterDirector.TryGetPredatorAupGpuBuffer(out GraphicsBuffer publishedPredatorAupBuffer, out int publishedPredatorAupCount))
+            {
+                predatorAupBuffer = publishedPredatorAupBuffer;
+                predatorAupCount = math.clamp(publishedPredatorAupCount, 0, PredatorAupBufferCapacity);
+            }
+            int predatorAupThreatLoopCap = ResolvePredatorAupThreatLoopCap(predatorAupCount, simulationLodTier);
 
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
             UpdateFragmentationState(playerPosition, playerVelocity, playerForward, playerSpeed, absoluteSimulationTime);
@@ -4118,8 +4162,16 @@ namespace Hecton8.World
                 acousticPanicStrength01,
                 acousticPanicTimeRemaining,
                 0f);
-            frameConstants.AbyssalFlowWeatherCurrent = new float4(abyssalFlowWeatherCurrent.x, abyssalFlowWeatherCurrent.y, abyssalFlowWeatherCurrent.z, 0f);
-            frameConstants.PlayerDirection = new float4(playerDirection.x, playerDirection.y, playerDirection.z, 0f);
+            frameConstants.AbyssalFlowWeatherCurrent = new float4(
+                abyssalFlowWeatherCurrent.x,
+                abyssalFlowWeatherCurrent.y,
+                abyssalFlowWeatherCurrent.z,
+                predatorAupThreatLoopCap);
+            frameConstants.PlayerDirection = new float4(
+                playerDirection.x,
+                playerDirection.y,
+                playerDirection.z,
+                predatorAupCount);
 
             try
             {
@@ -4130,6 +4182,8 @@ namespace Hecton8.World
 
                 boidCompute.SetBuffer(_kernelIndex, _BoidsBufferReadId, readBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _BoidsBufferWriteId, writeBuffer);
+                if (predatorAupBuffer != null && predatorAupThreatLoopCap > 0)
+                    boidCompute.SetBuffer(_kernelIndex, _PredatorAUPBufferId, predatorAupBuffer);
 
                 SetMainKernelTextureIfChanged(_DensityTexId, densityTexture, ref _boundComputeDensityTexture);
                 SetMainKernelTextureIfChanged(_CutMaskTexId, activeCutMaskTexture, ref _boundComputeCutMaskTexture);
@@ -4155,6 +4209,7 @@ namespace Hecton8.World
             _debugMassiveThreatCount = _activeMassiveThreatCount;
             _debugFragmentation01 = fragmentation01;
             _debugSonarScatter01 = sonarScatterStrength01;
+            _debugPredatorAupThreatCount = predatorAupThreatLoopCap;
             return true;
         }
 
@@ -4460,7 +4515,7 @@ namespace Hecton8.World
                 InnerRadius = math.max(0.5f, boidBodyRadius * 1.5f),
                 PanicRadius = math.max(3f, panicRadiusWS),
                 Strength = math.saturate(strength01),
-                EndTime = absoluteSimulationTime + math.max(0.15f, durationSeconds),
+                EndTime = absoluteSimulationTime + math.max(SwarmAcousticShockDurationSeconds, durationSeconds),
                 DirectionWS = resolvedDirection,
                 ThreatFlags = 0u
             };
@@ -5035,6 +5090,89 @@ namespace Hecton8.World
                 _acousticPanicExpireTime,
                 absoluteSimulationTime + math.max(0.1f, durationSeconds));
             _acousticPanicSeed = seed != 0u ? seed : 0x9E3779B9u;
+        }
+
+        private void ConsumeSwarmThreatSignals(float simulationDt)
+        {
+            ConsumeMovementAcousticSignals();
+            ConsumeAcousticPingSignals(simulationDt);
+        }
+
+        private void ConsumeMovementAcousticSignals()
+        {
+            ReadOnlySpan<MovementAcousticSignal> movementSignals = SignalBus<MovementAcousticSignal>.GetFrameSnapshot();
+            int signalCount = math.min(movementSignals.Length, SwarmMovementSignalConsumeLimit);
+            for (int i = 0; i < signalCount; i++)
+            {
+                MovementAcousticSignal signal = movementSignals[i];
+                float volume01 = math.saturate(signal.Volume);
+                if (volume01 <= 0.01f)
+                    continue;
+
+                float3 runtimePosition = signal.PositionAup.ToRuntimeFloat3();
+                if (!math.all(math.isfinite(runtimePosition)))
+                    continue;
+
+                float speed = math.sqrt(math.max(0f, signal.VelocitySq));
+                float radius = math.clamp(10f + speed * 1.5f, 10f, 42f);
+                RegisterAcousticPanicBurst(
+                    ToVector3(runtimePosition),
+                    radius,
+                    SwarmMovementPanicDurationSeconds,
+                    volume01,
+                    signal.SourceId);
+            }
+        }
+
+        private void ConsumeAcousticPingSignals(float simulationDt)
+        {
+            ReadOnlySpan<AcousticPingSignal> pingSignals = SignalBus<AcousticPingSignal>.GetFrameSnapshot();
+            int signalCount = math.min(pingSignals.Length, SwarmAcousticSignalConsumeLimit);
+            float shockDuration = math.max(SwarmAcousticShockDurationSeconds, simulationDt);
+            for (int i = 0; i < signalCount; i++)
+            {
+                AcousticPingSignal signal = pingSignals[i];
+                float intensity01 = math.saturate(signal.Intensity01);
+                if (intensity01 <= 0.001f)
+                    continue;
+
+                float3 runtimePosition = signal.PositionAup.ToRuntimeFloat3();
+                if (!math.all(math.isfinite(runtimePosition)))
+                    continue;
+
+                Vector3 originWS = ToVector3(runtimePosition);
+                float radius = math.clamp(math.isfinite(signal.RadiusMeters) ? signal.RadiusMeters : 0f, 12f, 120f);
+                RegisterPredatorFearBurst(originWS, Vector3.forward, radius, shockDuration, intensity01);
+                RegisterAcousticPanicBurst(originWS, radius, shockDuration, intensity01, signal.SourceId);
+                TryPublishSwarmDispersedSignal(originWS, radius, intensity01, signal.SourceId);
+            }
+        }
+
+        private void TryPublishSwarmDispersedSignal(Vector3 originWS, float radiusWS, float intensity01, uint sourceId)
+        {
+            float absoluteSimulationTime = GetAbsoluteSimulationTime();
+            if (intensity01 < SwarmDispersedMinimumIntensity ||
+                absoluteSimulationTime < _lastSwarmDispersedSignalTime + SwarmDispersedSignalCooldownSeconds)
+            {
+                return;
+            }
+
+            _lastSwarmDispersedSignalTime = absoluteSimulationTime;
+            _swarmDispersedSequence++;
+            uint resolvedSourceId = sourceId != 0u ? sourceId : _swarmDispersedSequence;
+            SwarmDispersedSignal signal = new SwarmDispersedSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(originWS),
+                RadiusMeters = math.max(1f, radiusWS),
+                Intensity01 = math.saturate(intensity01),
+                SourceId = resolvedSourceId,
+                EstimatedBoidCount = (ushort)math.clamp(_activeBoidCount, 0, (int)ushort.MaxValue),
+                Flags = 1,
+                QualityTier = (byte)_lastSimulationLodTier
+            };
+
+            GlobalSignals.Publish(in signal);
+            RecordFoodChainTelemetry(FoodChainTelemetryFlagBoidsScattered, originWS, resolvedSourceId, 0u);
         }
 
         private float ResolveHeadlightPanic01()

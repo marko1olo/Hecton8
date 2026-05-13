@@ -36,8 +36,8 @@ Current native bindings expose baseline compress/decompress only. Dictionary API
 [BROKEN] `Graphics.SetDescriptorSet` is not a valid project/managed Unity API from current evidence.
 Use SRP Batcher, GPU Resident Drawer, GraphicsBuffer, Texture2DArray, and RenderGraph resource declaration instead.
 
-[BROKEN] Live `PROJECT_ATLAS.md` was not found at repo root.
-Archived references exist, but they are not authoritative live atlas evidence.
+[UPDATED] Live `PROJECT_ATLAS.md` now exists at repo root, with detailed static asmdef graph mirrored in `Docs/PROJECT_ATLAS.md`.
+Status remains PENDING VERIFICATION until Unity import and compile graph are green.
 
 [PENDING] Terrain Streaming Virtual Texturing is not proven active.
 Current static evidence points to MicroSplat/Texture2DArray terrain paths.
@@ -105,3 +105,14 @@ Required benchmark shape:
 No runtime profiler, Unity Console, PlayMode, GCMonitor, RenderGraph Viewer, Frame Debugger, or player build evidence was produced in this session.
 
 Final status is PENDING VERIFICATION.
+
+---
+
+## Engineering Data
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| Hot path | 0 B GC, no unbounded main-thread work | Profiler/GCMonitor/static scan |
+| MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
+| Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
+| Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |

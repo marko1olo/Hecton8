@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.UI
@@ -5,7 +6,7 @@ namespace Hecton8.UI
     /// <summary>
     /// Audio integration for PauseMenuController.
     /// Plays panel open/close sounds and button clicks.
-    /// Supports unscaled time (works when Time.timeScale = 0).
+    /// Supports dispatcher-paused simulation.
     /// Zero-GC: static calls to UIAudioFeedback, no allocations.
     /// </summary>
     [DisallowMultipleComponent]
@@ -27,7 +28,7 @@ namespace Hecton8.UI
         private bool playButtonSounds = true;
 
         [Header("=== PAUSE MENU SPECIFIC ===")]
-        [SerializeField, Tooltip("Play audio even when Time.timeScale = 0")]
+        [SerializeField, Tooltip("Play audio even when simulation is paused.")]
         private bool playWhenPaused = true;
 
         // ══════════════════════════════════════════════════════════
@@ -36,14 +37,14 @@ namespace Hecton8.UI
 
         /// <summary>
         /// Play pause menu open sound.
-        /// Call when pause menu opens (Time.timeScale = 0).
+        /// Call when pause menu opens.
         /// </summary>
         public void OnPauseMenuOpened()
         {
             if (!enableAudio || !playPanelSounds)
                 return;
 
-            if (!playWhenPaused && Time.timeScale == 0f)
+            if (!playWhenPaused && IsSimulationPaused())
                 return;
 
             UIAudioFeedback.PlayPanelOpen();
@@ -51,14 +52,14 @@ namespace Hecton8.UI
 
         /// <summary>
         /// Play pause menu close sound.
-        /// Call when pause menu closes (Time.timeScale restored).
+        /// Call when pause menu closes.
         /// </summary>
         public void OnPauseMenuClosed()
         {
             if (!enableAudio || !playPanelSounds)
                 return;
 
-            if (!playWhenPaused && Time.timeScale == 0f)
+            if (!playWhenPaused && IsSimulationPaused())
                 return;
 
             UIAudioFeedback.PlayPanelClose();
@@ -73,7 +74,7 @@ namespace Hecton8.UI
             if (!enableAudio || !playButtonSounds)
                 return;
 
-            if (!playWhenPaused && Time.timeScale == 0f)
+            if (!playWhenPaused && IsSimulationPaused())
                 return;
 
             UIAudioFeedback.PlayClickPrimary();
@@ -88,7 +89,7 @@ namespace Hecton8.UI
             if (!enableAudio || !playButtonSounds)
                 return;
 
-            if (!playWhenPaused && Time.timeScale == 0f)
+            if (!playWhenPaused && IsSimulationPaused())
                 return;
 
             UIAudioFeedback.PlayClickSecondary();
@@ -103,10 +104,16 @@ namespace Hecton8.UI
             if (!enableAudio || !playButtonSounds)
                 return;
 
-            if (!playWhenPaused && Time.timeScale == 0f)
+            if (!playWhenPaused && IsSimulationPaused())
                 return;
 
             UIAudioFeedback.PlayClickDestructive();
+        }
+
+        private static bool IsSimulationPaused()
+        {
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            return dispatcher != null ? dispatcher.SimulationPaused : GlobalSignals.SimulationPaused;
         }
     }
 }

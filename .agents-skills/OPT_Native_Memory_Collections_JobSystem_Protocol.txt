@@ -53,6 +53,35 @@ any other work proceeds.
 | Memory Profiler Snapshot | Unity Memory Profiler | Weekly review, P1 on leak |
 | Code Review | Human reviewer with this document open | Mandatory sign-off |
 
+### 1.3 NativeMemorySentinel Registration Law
+
+[RULE] Every `Allocator.Persistent`, `Allocator.TempJob`, `UnsafeUtility.Malloc`, `UnsafeUtility.MallocTracked`, unmanaged arena allocation, `NativeArray`, `NativeList`, `NativeHashMap`, `NativeParallelHashMap`, `NativeQueue`, `UnsafeList`, and unmanaged staging allocation must register with `NativeMemorySentinel` at the allocation site.
+[RULE] Registration happens in the same method that owns allocation creation, before the allocation is exposed to any job, registry, event bus, or renderer path.
+[RULE] Unregistration happens in the same owner lifecycle that schedules disposal/release. `Dispose(JobHandle)` paths unregister only after ownership has been retired and the handle has been recorded in the disposal ledger.
+[RULE] Raw `UnsafeUtility.Malloc` must record pointer, byte size, alignment, allocator, owner, label, lifetime, and active producer `JobHandle`.
+[RULE] A native allocation owner must expose a cold-path audit method returning registered bytes, active allocation count, and largest allocation label.
+
+[FORBID] Raw `UnsafeUtility.Malloc` without Sentinel registration.
+[FORBID] Unlabeled native allocation. Labels use owner class + field name.
+[FORBID] Registering after a job has already been scheduled against the pointer.
+[FORBID] Freeing a pointer before Sentinel unregistration.
+[FORBID] Registering `Allocator.Temp` beyond one method scope.
+
+## Engineering Data
+
+| Allocation Type | Required Sentinel Fields | Release Rule | Failure Class |
+|---|---|---|---|
+| NativeArray/NativeList | owner, field, capacity bytes, allocator, lifetime | unregister then `Dispose(JobHandle)` or after completed cold dispose | leak / use-after-free |
+| NativeQueue/EventBus | owner, queue label, capacity bytes, lifetime | unregister on bus shutdown after queue drain | event leak |
+| UnsafeUtility.Malloc | pointer, bytes, alignment, allocator, owner, label, producer handle | unregister before `UnsafeUtility.Free` | invisible native leak |
+| Arena sub-allocation | arena owner, page index, offset, size, lifetime | reset/retire page with generation token | stale pointer |
+| Graphics upload staging | buffer owner, bytes, page id, dirty flag state | unlock/release in render teardown | PCIe/VRAM pressure |
+
+Acceptance:
+- NativeMemorySentinel active allocation count returns to baseline after scene unload.
+- Persistent registered bytes are flat over a 10 minute idle soak.
+- Leak report includes owner, label, bytes, and lifetime for every remaining allocation.
+
 ---
 
 ## SECTION 2 — DATA ARCHITECTURE

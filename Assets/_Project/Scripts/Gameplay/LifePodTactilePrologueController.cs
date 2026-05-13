@@ -550,9 +550,12 @@ namespace Hecton8.Gameplay
                         _resolvedVrVisorVibrationRecoverySpeed);
                 }
             }
-            else if (GlobalRegistry.CameraJuice != null)
+            else
             {
-                GlobalRegistry.CameraJuice.TriggerSubmarineImpactShake(severity01 * _resolvedPcImpactShakeScale);
+                CameraJuiceSignals.PublishImpact(
+                    severity01 * _resolvedPcImpactShakeScale,
+                    transform.position,
+                    -transform.forward);
             }
 
             ToolHapticsRuntime.EnqueueSinusoidalCommand(

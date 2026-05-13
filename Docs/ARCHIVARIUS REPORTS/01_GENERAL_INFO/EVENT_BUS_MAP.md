@@ -73,7 +73,7 @@ Those first-party buses remain `NativeQueue<TPayload>` lanes flushed by `SystemD
 The present workspace contains two event-mapping documents:
 
 1. This file in `01_GENERAL_INFO`
-2. `EVENT_FLOW_MAP.md` in `02_ACTUAL_REPORTS`
+2. `../02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md` in `02_ACTUAL_REPORTS`
 
 The detailed routing document is the better source for raw mappings.
 This file should remain a short orientation page, not a second large truth table.
@@ -89,7 +89,7 @@ Primary first-party event files currently tied to this topology:
 - `Assets/_Project/Scripts/Quest/QuestEvents.cs`
 - `Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs`
 - `Assets/_Project/Scripts/UI/NotificationEvents.cs`
-- `Assets/_Project/Scripts/SceneBootstrap.cs`
+- `Assets/_Project/Scripts/Core/SceneRuntimeService.cs`
 - `Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs`
 - `Assets/_Project/Scripts/ObjectPoolDiagnostics.cs`
 - `Assets/_Project/Scripts/Core/SystemDispatcher.cs`

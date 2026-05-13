@@ -43,7 +43,7 @@ namespace Hecton.Localization
     /// Runtime owner for string localization tables and language switching.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class LocalizationManager : MonoBehaviour
+    public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization
     {
         // COLD ALLOC: Regex[1] â€” flat JSON key/value extraction for localization tables â€” owner: LocalizationManager
         private static readonly Regex FlatJsonEntryRegex = new Regex(
@@ -113,8 +113,6 @@ namespace Hecton.Localization
         private const string HangulCorruptionAlphabet = "심해압력산소전력균열경보파손격리영역장치";
         private const string DevanagariCorruptionAlphabet = "अआइईउऊकखगघचछजझटठडढतथदधनपफबभमयरलवशसह";
 
-        public static LocalizationManager Instance => GlobalRegistry.Localization;
-
         [Header("=== Config ===")]
         [SerializeField] private GameLanguage defaultLanguage = GameLanguage.English;
 
@@ -155,6 +153,9 @@ namespace Hecton.Localization
         /// Active language for runtime lookups.
         /// </summary>
         public GameLanguage CurrentLanguage { get; private set; } = GameLanguage.English;
+
+        /// <inheritdoc />
+        public ushort ActiveLanguageId => (ushort)CurrentLanguage;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -239,6 +240,34 @@ namespace Hecton.Localization
         public bool TryGetRawBuffer(int keyHash, out char[] buffer, out int length)
         {
             return LocRegistry.TryGetRawBuffer(keyHash, out buffer, out length);
+        }
+
+        /// <inheritdoc />
+        public bool TryGetLocalizedSpan(uint hash, out ReadOnlySpan<byte> utf8Bytes)
+        {
+            return LocRegistry.TryGetLocalizedSpan(hash, out utf8Bytes);
+        }
+
+        /// <inheritdoc />
+        public bool TryGetLocalizedBuffer(uint hash, out char[] buffer, out int length)
+        {
+            return LocRegistry.TryGetVisualBufferFromUtf8(unchecked((int)hash), out buffer, out length);
+        }
+
+        /// <inheritdoc />
+        public bool TryWriteLocalizedInt(uint templateHash, int value, Span<char> destination, out int length)
+        {
+            return LocNumericBuffer.TryWrite(
+                LocRegistry.ResolveRaw(unchecked((int)templateHash)),
+                destination,
+                LocNumericArg.Int(value),
+                out length);
+        }
+
+        /// <inheritdoc />
+        public uint ResolvePluralHash(uint singularHash, uint pluralHash, int value)
+        {
+            return value == 1 ? singularHash : pluralHash;
         }
 
         /// <summary>
@@ -789,7 +818,7 @@ namespace Hecton.Localization
             if (match == null || !match.Success)
                 return string.Empty;
 
-            LocalizationManager manager = Instance;
+            LocalizationManager manager = GlobalRegistry.Localization;
             if (manager == null)
                 return string.Empty;
 
@@ -801,7 +830,7 @@ namespace Hecton.Localization
             if (match == null || !match.Success)
                 return string.Empty;
 
-            LocalizationManager manager = Instance;
+            LocalizationManager manager = GlobalRegistry.Localization;
             if (manager == null)
                 return match.Value;
 

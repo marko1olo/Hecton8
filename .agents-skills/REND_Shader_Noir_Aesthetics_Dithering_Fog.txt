@@ -417,3 +417,14 @@ FORBID: EV jump > 0.5 per frame — rate-limit gate §7.4 mandatory
 FORBID: Caustic UV in view-space — world-space only, prevents camera-swim
 FORBID: Blue noise mipmaps or aniso — point-sample REPEAT only
 FORBID: RGBA16F for main color target — use R11G11B10_UFLOAT
+
+---
+
+## Engineering Data
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| Hot path | 0 B GC, no unbounded main-thread work | Profiler/GCMonitor/static scan |
+| MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
+| Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
+| Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |

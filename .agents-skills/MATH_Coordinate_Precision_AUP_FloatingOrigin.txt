@@ -96,6 +96,39 @@ distSq = dot(playerWorldPos, playerWorldPos)
 if distSq > SHIFT_THRESHOLD_SQ:  // (5000m)^2
     trigger_shift()
 
+### [MATH] 300-Frame Snap-Fence
+
+[RULE] Every origin shift creates a 300-frame snap-fence entry in the Black Box telemetry ring.
+[RULE] For 300 frames after a shift, systems must tag telemetry with `_ShiftFrameID`, shift vector, pre/post camera AUP, and high-level position hashes for physics/render/navigation.
+[RULE] Shift-sensitive systems must reject stale cached world positions if their cached shift id does not match the current `_ShiftFrameID`.
+[RULE] During the snap-fence window, visual interpolation may hide the snap; gameplay authority may not interpolate across pre/post-shift coordinates.
+[RULE] At frame 300, the fence resolves only after drift probes report finite positions and max camera-relative error is below the tier threshold.
+
+[FORBID] Clearing `SHIFT_PENDING` without writing a telemetry fence entry.
+[FORBID] Reusing cached `Transform.position` across a shift.
+[FORBID] Path, physics, render, or save code accepting world-space data with stale `_ShiftFrameID`.
+[FORBID] Calling the post-shift state verified without 300-frame telemetry evidence.
+
+## Engineering Data
+
+| Tier | Drift Probe Cadence | Max Camera-Relative Error | Fence Requirement |
+|---|---:|---:|---|
+| Low/MX350 | every 30 frames | 2 cm | hash only + key positions |
+| Middle | every 15 frames | 1 cm | hash + AUP sample |
+| High | every 10 frames | 5 mm | hash + AUP + render matrix sample |
+| Ultra | every frame | 2 mm | full 300-frame debug ring |
+
+Snap-fence telemetry fields:
+- `ShiftFrameID`
+- `FrameIndex`
+- `ShiftVector`
+- `CameraAupBefore`
+- `CameraAupAfter`
+- `PhysicsPositionHash`
+- `RenderMatrixHash`
+- `NavigationPathHash`
+- `NonFiniteFlags`
+
 ### [MATH] Atomic World Shift Protocol
 
 Step-by-step (Single Frame):

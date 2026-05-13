@@ -114,3 +114,10 @@ Solution: Used dependency-first Unity Roslyn/Bee response-file compilation for s
 Rejected Alternatives: Restarting or killing Unity without an explicit request, or reporting a clean MCP console from unavailable tools, was rejected.
 Scalability potential: Runtime unaffected. Verification remains source-level until MCP reconnects.
 Hardware Impact: 0 us runtime. Prevents wasted churn chasing stale Editor.log entries.
+
+## Continuation Decision 17 - Live MCP Bootstrap Console Repairs
+Problem: With MCP restored, Play Mode reached runtime and exposed real boot blockers: early tick registration before `SystemDispatcher`, duplicate `InputManager` ownership, recursive player-HUD context resolution, editor-only physics-scene benchmark exceptions, and Editor GC mode exceptions.
+Solution: Delayed registration until dispatcher existence is factual, reused the existing native input manager, made HUD notification discovery use its active runtime pointer, bypassed the physics benchmark in Editor Play Mode, skipped GC disable in Editor, and reset stale native sentinel records during editor subsystem reload.
+Rejected Alternatives: Log suppression, weakening `GlobalRegistry` dependency-cycle detection, scene YAML surgery, or changing player-build hardware/GC policy were rejected. The fixes are cold boot/editor guard changes only.
+Scalability potential: Low/Middle/High/Ultra player builds keep the production bootstrap policy. Editor Play Mode stops failing before surface/HUD verification, enabling actual visual tuning instead of BIOS timeout churn.
+Hardware Impact: 0 us steady frame. Bootstrap-only branch checks; no render pass, no per-frame allocation, no hot-path polling.

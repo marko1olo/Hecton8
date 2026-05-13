@@ -408,7 +408,7 @@ namespace Hecton8.Core
         public void Tick(float deltaTime)
         {
             BlackBoxHeartbeatThread.Ping();
-            if (Time.timeScale == 0f)
+            if (GlobalSignals.SimulationPaused)
                 return;
 
             int frame = Time.frameCount;

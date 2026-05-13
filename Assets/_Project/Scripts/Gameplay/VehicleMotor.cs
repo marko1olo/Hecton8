@@ -6,7 +6,9 @@ using Unity.Profiling;
 using UnityEngine;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Physics;
+using Hecton8.Physics.CCD;
 using Hecton8.World;
 
 namespace Hecton8.Gameplay
@@ -83,11 +85,13 @@ namespace Hecton8.Gameplay
         private const float KelpPushbackMinSpeedMetersPerSecond = 0.5f;
         private const float KelpDragScale = 1.35f;
         private const float KelpMaxDragCoefficient = 2.8f;
+        private const byte SparkDebrisKind = 1;
 
         private static readonly VehicleMotor[] _registeredMotors = new VehicleMotor[MaxRegisteredMotors];
         private static readonly ProfilerMarker _scheduleProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _consumeProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Consume");
         private static readonly ProfilerMarker _driveProfilerMarker = new ProfilerMarker("H8.VehicleMotor.Drive");
+        private static readonly uint _kinematicCcdSourceHash = unchecked((uint)Hecton.Localization.LocHash.Compute("KINEMATIC_CCD_VEHICLE"));
 
         [Header("-- Cinematic Hull Feel -------------")]
         [Tooltip("Legacy scalar folded into cinematic velocity bleed. Kept for serialized preset compatibility.")]
@@ -714,6 +718,9 @@ namespace Hecton8.Gameplay
                 return false;
 
             Vector3 displacement = _linearVelocity * fixedDeltaTime;
+            if (!KinematicCcdMath.ShouldSchedule(new float3(_linearVelocity.x, _linearVelocity.y, _linearVelocity.z)))
+                return false;
+
             float displacementSqr = displacement.sqrMagnitude;
             if (!float.IsFinite(displacementSqr) || displacementSqr <= MinVectorMagnitudeSq)
                 return false;
@@ -809,19 +816,56 @@ namespace Hecton8.Gameplay
 
                 wasBlocked = true;
                 blockingHit = _scheduledSweepResults[nearestIndex];
-                float safeDistance = math.max(0f, blockingHit.distance - _scheduledSweepState.SkinWidth);
-                resolvedPosition = _scheduledSweepState.StartPosition + (_scheduledSweepState.Direction * safeDistance);
-                MovePosition(resolvedPosition);
-                CacheGroundContact(blockingHit.normal);
-                _lastBlockingImpactSpeedMetersPerSecond = math.max(0f, -Vector3.Dot(_linearVelocity, blockingHit.normal));
-                _lastBlockingImpactPoint = blockingHit.point;
-                _lastBlockingImpactNormal = blockingHit.normal.sqrMagnitude > MinVectorMagnitudeSq
-                    ? ResolveSafeNormal(blockingHit.normal, Vector3.up)
-                    : Vector3.up;
-                Vector3 projectedVelocity = ProjectOnUnitPlane(_linearVelocity, _lastBlockingImpactNormal);
-                if (IsSlopeTooSteep(_lastBlockingImpactNormal))
-                    projectedVelocity = ProjectOnUnitPlane(projectedVelocity, Vector3.up);
+                Vector3 safeNormal = ResolveSafeNormal(blockingHit.normal, Vector3.up);
+                bool lowTierStop = KinematicCcdMath.IsLowTier(GlobalRegistry.ScalabilityTierProfileByte);
+                bool cornerHalt = !lowTierStop &&
+                                  HasScheduledSweepCornerHit(nearestIndex, safeNormal, blockingHit.distance);
+                float safeDistance = KinematicCcdMath.ResolveRollbackDistance(
+                    blockingHit.distance,
+                    _scheduledSweepState.Distance,
+                    _scheduledSweepState.SkinWidth);
+                Vector3 resolvedDisplacement = _scheduledSweepState.Direction * safeDistance;
+                Vector3 projectedDisplacement = ProjectOnUnitPlane(
+                    _scheduledSweepState.Direction * _scheduledSweepState.Distance,
+                    safeNormal);
+                if (!lowTierStop && !cornerHalt)
+                {
+                    float remainingDistance = math.max(0f, _scheduledSweepState.Distance - safeDistance);
+                    float projectedDisplacementSq = projectedDisplacement.sqrMagnitude;
+                    if (math.isfinite(projectedDisplacementSq) &&
+                        projectedDisplacementSq > MinVectorMagnitudeSq &&
+                        remainingDistance > 0f)
+                    {
+                        resolvedDisplacement += projectedDisplacement *
+                            (remainingDistance * math.rsqrt(projectedDisplacementSq));
+                    }
+                }
 
+                resolvedPosition = _scheduledSweepState.StartPosition + resolvedDisplacement;
+                MovePosition(resolvedPosition);
+                CacheGroundContact(safeNormal);
+                Vector3 previousVelocity = _linearVelocity;
+                Vector3 projectedVelocity = ProjectOnUnitPlane(previousVelocity, safeNormal);
+                if (IsSlopeTooSteep(safeNormal))
+                    projectedVelocity = ProjectOnUnitPlane(projectedVelocity, Vector3.up);
+                if (lowTierStop || cornerHalt)
+                    projectedVelocity = Vector3.zero;
+
+                Vector3 rejectedVelocity = previousVelocity - projectedVelocity;
+                _lastBlockingImpactSpeedMetersPerSecond = math.sqrt(math.max(0f, rejectedVelocity.sqrMagnitude));
+                _lastBlockingImpactPoint = blockingHit.point;
+                _lastBlockingImpactNormal = safeNormal;
+                float lostKineticEnergy = KinematicCcdMath.LostKineticEnergy(
+                    body != null ? body.mass : 1f,
+                    previousVelocity.sqrMagnitude,
+                    projectedVelocity.sqrMagnitude);
+                EmitKinematicCcdConsequences(
+                    in blockingHit,
+                    safeNormal,
+                    _lastBlockingImpactSpeedMetersPerSecond,
+                    lostKineticEnergy,
+                    lowTierStop,
+                    cornerHalt);
                 _linearVelocity = projectedVelocity;
                 _linearVelocity = HectonPlayerMotor.SafeVelocity(_linearVelocity);
                 if (body != null)
@@ -1695,6 +1739,110 @@ namespace Hecton8.Gameplay
         private static int GetHitColliderInstanceId(in RaycastHit hit)
         {
             return unchecked((int)EntityId.ToULong(hit.colliderEntityId));
+        }
+
+        private bool HasScheduledSweepCornerHit(int nearestIndex, Vector3 primaryNormal, float nearestDistance)
+        {
+            float distanceWindow = math.max(_scheduledSweepState.SkinWidth + 0.05f, 0.1f);
+            for (int i = 0; i < ScheduledSweepMaxHits; i++)
+            {
+                if (i == nearestIndex)
+                    continue;
+
+                RaycastHit hit = _scheduledSweepResults[i];
+                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
+                    continue;
+
+                if (!math.isfinite(hit.distance) || hit.distance < 0f)
+                    continue;
+
+                if (math.abs(hit.distance - nearestDistance) > distanceWindow)
+                    continue;
+
+                if (KinematicCcdMath.IsCornerNormal((float3)primaryNormal, (float3)hit.normal))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void EmitKinematicCcdConsequences(
+            in RaycastHit hit,
+            Vector3 safeNormal,
+            float blockedSpeed,
+            float lostKineticEnergy,
+            bool lowTierStop,
+            bool cornerHalt)
+        {
+            if (blockedSpeed <= 0.0001f)
+                return;
+
+            Vector3 point = HectonPlayerMotor.SafeVelocity(hit.point, _body != null ? _body.position : Vector3.zero);
+            AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(point);
+            ulong bodyId = _body != null ? EntityId.ToULong(_body.GetEntityId()) : 0UL;
+            uint targetHash = unchecked((uint)GetHitColliderInstanceId(in hit));
+            byte flags = 0;
+            if (cornerHalt)
+                flags |= HighSpeedImpactSignal.FlagCornerHalt;
+            if (lowTierStop)
+                flags |= HighSpeedImpactSignal.FlagLowTierStop;
+
+            HighSpeedImpactSignal highSpeedImpact = default;
+            highSpeedImpact.PointAup = pointAup;
+            highSpeedImpact.Normal = new float3(safeNormal.x, safeNormal.y, safeNormal.z);
+            highSpeedImpact.LostKineticEnergy = lostKineticEnergy;
+            highSpeedImpact.ImpactSpeed = blockedSpeed;
+            highSpeedImpact.SourceHash = _kinematicCcdSourceHash;
+            highSpeedImpact.TargetHash = targetHash;
+            highSpeedImpact.Frame = unchecked((uint)Time.frameCount);
+            highSpeedImpact.SourceKind = HighSpeedImpactSignal.SourceVehicle;
+            highSpeedImpact.Flags = flags;
+            GlobalSignals.Publish(in highSpeedImpact);
+
+            ImpactSignal impact = default;
+            impact.PointAup = pointAup;
+            impact.Velocity = blockedSpeed;
+            impact.Intensity = math.saturate(blockedSpeed * 0.06f + lostKineticEnergy * 0.000025f);
+            impact.PrimaryBodyId = unchecked((uint)bodyId);
+            impact.WeightClass = 2;
+            impact.Flags = flags;
+            GlobalSignals.Publish(in impact);
+            CameraJuiceSignals.PublishImpact(in impact, new float3(safeNormal.x, safeNormal.y, safeNormal.z));
+
+            DebrisSpawnSignal debris = default;
+            debris.PositionAup = pointAup;
+            debris.SourceEntityId = unchecked((uint)bodyId);
+            debris.Intensity01 = impact.Intensity;
+            debris.DebrisKind = SparkDebrisKind;
+            debris.Flags = flags;
+            GlobalSignals.Publish(in debris);
+
+            HapticRequest haptic = default;
+            haptic.Intensity01 = math.saturate(lostKineticEnergy * 0.00008f);
+            haptic.DurationSeconds = math.lerp(0.05f, 0.2f, haptic.Intensity01);
+            haptic.Frequency01 = math.saturate(blockedSpeed * 0.04f);
+            haptic.SourceHash = _kinematicCcdSourceHash;
+            haptic.Frame = unchecked((uint)Time.frameCount);
+            haptic.Channel = HapticRequest.ChannelCollision;
+            haptic.Flags = flags;
+            GlobalSignals.Publish(in haptic);
+
+            if (lostKineticEnergy >= KinematicCcdMath.MassiveLostKineticEnergyJoules)
+            {
+                Hecton8.Core.Signals.DamageSignal damage = default;
+                damage.Magnitude = math.min(500f, lostKineticEnergy * 0.005f);
+                damage.LocalPoint = new float3(point.x, point.y, point.z);
+                damage.DamageType = (uint)DamageTypeMask.Impact;
+                damage.SubjectHash = targetHash;
+                damage.SourceId = bodyId > ushort.MaxValue ? ushort.MaxValue : (ushort)bodyId;
+                damage.TargetId = targetHash;
+                damage.Channel = 0;
+                damage.IntegrityDelta = 1;
+                GlobalSignals.Publish(in damage);
+            }
+
+            GlobalPhysicsStateManager.ReportKinematicCcdIntervention();
         }
 
         private void EnsureScheduledSweepState()

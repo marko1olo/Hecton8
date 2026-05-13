@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace Hecton8.Core
 {
@@ -79,6 +80,67 @@ namespace Hecton8.Core
             float lengthSq = math.lengthsq(blended);
             float4 normalized = blended * math.rsqrt(math.max(lengthSq, MinimumQuaternionLengthSq));
             return new quaternion(math.select(new float4(0f, 0f, 0f, 1f), normalized, lengthSq > MinimumQuaternionLengthSq));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Quaternion FastNlerp(Quaternion current, Vector3 targetDirection, float blend01, Vector3 up)
+        {
+            Vector3 safeDirection = ResolveSafeDirection(targetDirection, current * Vector3.forward);
+            Vector3 safeUp = up.sqrMagnitude > MinimumQuaternionLengthSq ? up : Vector3.up;
+            Quaternion target = Quaternion.LookRotation(safeDirection, safeUp);
+            return FastNlerp(current, target, blend01);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Quaternion FastNlerp(Quaternion from, Quaternion to, float t)
+        {
+            float clampedT = math.saturate(t);
+            if (clampedT <= 0f)
+                return NormalizeQuaternionOrIdentity(from);
+
+            float dot = (from.x * to.x) + (from.y * to.y) + (from.z * to.z) + (from.w * to.w);
+            float sign = dot < 0f ? -1f : 1f;
+            Quaternion blended = new Quaternion(
+                from.x + ((to.x * sign) - from.x) * clampedT,
+                from.y + ((to.y * sign) - from.y) * clampedT,
+                from.z + ((to.z * sign) - from.z) * clampedT,
+                from.w + ((to.w * sign) - from.w) * clampedT);
+            return NormalizeQuaternionOrIdentity(blended);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
+        {
+            float3 value = new float3(direction.x, direction.y, direction.z);
+            float lengthSq = math.lengthsq(value);
+            if (!math.isfinite(lengthSq) || lengthSq <= MinimumQuaternionLengthSq)
+            {
+                float3 fallbackValue = new float3(fallback.x, fallback.y, fallback.z);
+                float fallbackSq = math.lengthsq(fallbackValue);
+                if (!math.isfinite(fallbackSq) || fallbackSq <= MinimumQuaternionLengthSq)
+                    return Vector3.forward;
+
+                float fallbackInv = math.rsqrt(fallbackSq);
+                return new Vector3(fallbackValue.x * fallbackInv, fallbackValue.y * fallbackInv, fallbackValue.z * fallbackInv);
+            }
+
+            float inv = math.rsqrt(lengthSq);
+            return new Vector3(value.x * inv, value.y * inv, value.z * inv);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Quaternion NormalizeQuaternionOrIdentity(Quaternion value)
+        {
+            float lengthSq =
+                (value.x * value.x) +
+                (value.y * value.y) +
+                (value.z * value.z) +
+                (value.w * value.w);
+            if (!math.isfinite(lengthSq) || lengthSq <= MinimumQuaternionLengthSq)
+                return Quaternion.identity;
+
+            float inv = math.rsqrt(lengthSq);
+            return new Quaternion(value.x * inv, value.y * inv, value.z * inv, value.w * inv);
         }
     }
 }

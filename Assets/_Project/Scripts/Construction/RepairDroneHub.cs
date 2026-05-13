@@ -5,6 +5,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -44,6 +45,9 @@ namespace Hecton8.Construction
 
         [Tooltip("Optional launch socket. Falls back to this transform when omitted.")]
         [SerializeField] private Transform launchPoint;
+
+        [Tooltip("Optional airlock event target opened when a headless drone reaches final docking approach.")]
+        [SerializeField] private BaseAirlock dockingAirlock;
 
         [Tooltip("Maximum number of simultaneous drone sorties this hub can sustain.")]
         [SerializeField, Range(1, 4)] private int maxConcurrentDrones = 1;
@@ -108,6 +112,7 @@ namespace Hecton8.Construction
         private readonly StorageCrate[] _supplyCrateLookupCrates = new StorageCrate[SupplyCrateLookupCacheCapacity];
 
         private Transform _cachedTransform;
+        private BaseAirlock _cachedDockingAirlock;
         private PowerNode _powerNode;
         private int[] _activeDroneIds;
         private int[] _activeTargetIds;
@@ -133,6 +138,9 @@ namespace Hecton8.Construction
         internal int TotalLaunchCount => _launchCountTotal;
         internal Vector3 DockPosition => ResolvedDockSocketPosition;
         internal Quaternion DockRotation => ResolvedDockSocketRotation;
+        internal AbsoluteUniversePosition DockAup => AbsoluteUniversePosition.FromRuntimePosition(ResolvedDockSocketPosition);
+        internal Vector3 DockForward => ResolvedDockSocketRotation * Vector3.forward;
+        internal BaseAirlock DockingAirlock => ResolveDockingAirlock();
         internal PowerGrid CurrentGrid => _powerNode != null ? _powerNode.Grid : null;
         internal int ActiveSlotCapacity => _activeDroneIds != null ? _activeDroneIds.Length : Mathf.Max(1, maxConcurrentDrones);
         internal bool HasOperationalPower => _hasPower && _powerNode != null && _powerNode.Grid != null;
@@ -766,6 +774,17 @@ namespace Hecton8.Construction
         private Vector3 ResolvedDockSocketPosition => launchPoint != null ? launchPoint.position : _cachedTransform.position;
 
         private Quaternion ResolvedDockSocketRotation => launchPoint != null ? launchPoint.rotation : _cachedTransform.rotation;
+
+        private BaseAirlock ResolveDockingAirlock()
+        {
+            if (dockingAirlock != null)
+                return dockingAirlock;
+
+            if (_cachedDockingAirlock == null)
+                _cachedDockingAirlock = GetComponentInParent<BaseAirlock>();
+
+            return _cachedDockingAirlock;
+        }
 
         private void RefreshDiagnostics()
         {

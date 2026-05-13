@@ -61,6 +61,8 @@ namespace Hecton8.Gameplay
         private const float EngineOverdriveTurnMultiplier = 1.08f;
         private const float BallastOptimizerTurnMultiplier = 1.12f;
         private const float AbyssalStabilizerTurnMultiplier = 1.05f;
+        private const float MinThermalSpeedMultiplier = 0.1f;
+        private const float MaxThermalSpeedMultiplier = 1f;
         private const int MaxRegisteredSubmarineRoots = 8;
 
         private static readonly int _PressureCompensatorHashId = LocHash.Compute("Comp_PressureCompensator");
@@ -107,6 +109,7 @@ namespace Hecton8.Gameplay
         private bool _registeredFixedTick;
         private bool _registeredRuntimeRoot;
         private bool _profileMassApplied;
+        private float _thermalSpeedMultiplier = 1f;
 
         // COLD ALLOC: NativeArray<float>[4] â€” submarine root hull summary buffer for registry-facing readback without crawling child systems â€” owner: SubmarineCoreDirector
         private NativeArray<float> _hullIntegritySummaryNative;
@@ -135,6 +138,9 @@ namespace Hecton8.Gameplay
 
         /// <inheritdoc />
         public SubmarineStructuralGrid StructuralGrid => structuralGrid;
+
+        /// <inheritdoc />
+        public float ThermalSpeedMultiplier => _thermalSpeedMultiplier;
 
         /// <summary>Published hull summary owned by the submarine root.</summary>
         public NativeArray<float>.ReadOnly HullIntegritySummaryNative => _hullIntegritySummaryNative.AsReadOnly();
@@ -228,6 +234,19 @@ namespace Hecton8.Gameplay
             Vector3 radialOffset = worldPoint - centerOfMass;
             Vector3 pointVelocity = body.linearVelocity + Vector3.Cross(body.angularVelocity, radialOffset);
             return IsFinite(pointVelocity) ? pointVelocity : Vector3.zero;
+        }
+
+        /// <inheritdoc />
+        public void SetThermalSpeedMultiplier(float multiplier)
+        {
+            float safeMultiplier = math.isfinite(multiplier)
+                ? math.clamp(multiplier, MinThermalSpeedMultiplier, MaxThermalSpeedMultiplier)
+                : 1f;
+            if (math.abs(_thermalSpeedMultiplier - safeMultiplier) <= 0.001f)
+                return;
+
+            _thermalSpeedMultiplier = safeMultiplier;
+            RefreshNativeState();
         }
 
         /// <inheritdoc />
@@ -337,6 +356,12 @@ namespace Hecton8.Gameplay
 
             if (structuralGrid == null)
                 TryGetComponent(out structuralGrid);
+
+            if (Application.isPlaying &&
+                !TryGetComponent<SubmarineAutoLevelBallastController>(out _))
+            {
+                gameObject.AddComponent<SubmarineAutoLevelBallastController>();
+            }
         }
 
         private void EnsureUpgradeSlots()
@@ -542,6 +567,7 @@ namespace Hecton8.Gameplay
                 thrust *= BallastOptimizerThrustMultiplier;
             if ((mask & (uint)VehicleUpgradeBits.ReactorBypassCoupler) != 0u)
                 thrust *= ReactorBypassThrustMultiplier;
+            thrust *= _thermalSpeedMultiplier;
             return math.max(0f, thrust);
         }
 

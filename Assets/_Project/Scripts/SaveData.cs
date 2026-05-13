@@ -49,7 +49,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
-        public const int CurrentVersion = 66; // v66: explicit data-archaeology scan-state payload.
+        public const int CurrentVersion = 68; // v68: radiation hazard grid sparse RLE payload.
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -223,6 +223,23 @@ namespace Hecton8.SaveSystem
         /// <summary>Dynamic resolution scaling enabled. v4.8 LOD</summary>
         public bool DynamicResolutionEnabled = true; // Default: Enabled
 
+        /// <summary>Cumulative player radiation dose persisted by RadiationHazardGrid. v68 RADIATION.</summary>
+        public float radiationDose;
+
+        /// <summary>Radiation grid AUP origin persisted as absolute doubles. v68 RADIATION.</summary>
+        public double radiationGridOriginX;
+        public double radiationGridOriginY;
+        public double radiationGridOriginZ;
+
+        /// <summary>Radiation grid cell size in meters. v68 RADIATION.</summary>
+        public float radiationGridCellSizeMeters = 4f;
+
+        /// <summary>Sparse RLE byte count for quantized radiation grid payload. v68 RADIATION.</summary>
+        public int radiationGridRleLength;
+
+        /// <summary>Sparse RLE packets: ushort start, sbyte-equivalent byte value, ushort run. v68 RADIATION.</summary>
+        public byte[] radiationGridRle;
+
         /// <summary>Custom mod payload map persisted inside the official save file. v24 MODDING</summary>
         public Dictionary<string, string> CustomModData = new Dictionary<string, string>();
 
@@ -319,6 +336,13 @@ namespace Hecton8.SaveSystem
                 missionCompletedIds = new List<string>(),
                 LODQualityPreset = 1, // Default: Medium
                 DynamicResolutionEnabled = true, // Default: Enabled
+                radiationDose = 0f,
+                radiationGridOriginX = 0d,
+                radiationGridOriginY = 0d,
+                radiationGridOriginZ = 0d,
+                radiationGridCellSizeMeters = 4f,
+                radiationGridRleLength = 0,
+                radiationGridRle = new byte[RadiationGridRleMaxBytes],
                 CustomModData = new Dictionary<string, string>()
             };
         }
@@ -333,6 +357,9 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Maximum explicit scanner state records. v66 DISCOVERY.</summary>
         public const int MaxDataArchaeologyScanStates = DataArchaeologyRuntime.MaxDiscoveryCount;
+
+        /// <summary>Maximum sparse RLE radiation payload. v68 RADIATION.</summary>
+        public const int RadiationGridRleMaxBytes = 81920;
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -862,6 +889,13 @@ namespace Hecton8.SaveSystem
         public long[] exploredMortonMaskWords;
         public int exploredMortonByteCount;
         public byte[] exploredMortonMaskBytes;
+        public int cartographyCellSizeMeters;
+        public int cartographyMaskAxisBits;
+        public int cartographyMaskOriginOffset;
+        public int discoveredSectorWordCount;
+        public long[] discoveredSectorMaskWords;
+        public int discoveredSectorByteCount;
+        public byte[] discoveredSectorMaskBytes;
 
         public const int MaxExploredChunks = 16384;
         public const int DenseChunkSizeMeters = 16;
@@ -871,6 +905,13 @@ namespace Hecton8.SaveSystem
         public const int MortonMaskBitCount = MortonMaskAxisLength * MortonMaskAxisLength * MortonMaskAxisLength;
         public const int MortonMaskWordCount = MortonMaskBitCount >> 6;
         public const int MortonMaskByteCount = MortonMaskBitCount >> 3;
+        public const int CartographyCellSizeMeters = 50;
+        public const int CartographyMaskAxisBits = 7;
+        public const int CartographyMaskAxisLength = 1 << CartographyMaskAxisBits;
+        public const int CartographyMaskOriginOffset = CartographyMaskAxisLength >> 1;
+        public const int CartographyMaskBitCount = CartographyMaskAxisLength * CartographyMaskAxisLength * CartographyMaskAxisLength;
+        public const int CartographyMaskWordCount = CartographyMaskBitCount >> 6;
+        public const int CartographyMaskByteCount = CartographyMaskBitCount >> 3;
 
         public void EnsureCapacity()
         {
@@ -891,15 +932,38 @@ namespace Hecton8.SaveSystem
                 exploredMortonMaskBytes = expandedBytes;
             }
 
+            if (discoveredSectorMaskWords == null || discoveredSectorMaskWords.Length < CartographyMaskWordCount)
+                discoveredSectorMaskWords = new long[CartographyMaskWordCount];
+
+            if (discoveredSectorMaskBytes == null)
+            {
+                discoveredSectorMaskBytes = new byte[CartographyMaskByteCount];
+            }
+            else if (discoveredSectorMaskBytes.Length < CartographyMaskByteCount)
+            {
+                byte[] expandedBytes = new byte[CartographyMaskByteCount];
+                Array.Copy(discoveredSectorMaskBytes, expandedBytes, discoveredSectorMaskBytes.Length);
+                discoveredSectorMaskBytes = expandedBytes;
+            }
+
             chunkSizeMeters = DenseChunkSizeMeters;
             mortonMaskAxisBits = MortonMaskAxisBits;
             mortonMaskOriginOffset = MortonMaskOriginOffset;
             mortonBuildSalt = SaveBinaryStorage.ExplorationMortonBuildSalt32;
+            cartographyCellSizeMeters = CartographyCellSizeMeters;
+            cartographyMaskAxisBits = CartographyMaskAxisBits;
+            cartographyMaskOriginOffset = CartographyMaskOriginOffset;
             if (exploredMortonWordCount < 0 || exploredMortonWordCount > MortonMaskWordCount)
                 exploredMortonWordCount = 0;
 
             if (exploredMortonByteCount < 0 || exploredMortonByteCount > MortonMaskByteCount)
                 exploredMortonByteCount = 0;
+
+            if (discoveredSectorWordCount < 0 || discoveredSectorWordCount > CartographyMaskWordCount)
+                discoveredSectorWordCount = 0;
+
+            if (discoveredSectorByteCount < 0 || discoveredSectorByteCount > CartographyMaskByteCount)
+                discoveredSectorByteCount = 0;
         }
     }
 

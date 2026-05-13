@@ -62,6 +62,7 @@ using Hecton8.Building;
 using Hecton8.Caves;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Interaction;
@@ -504,6 +505,15 @@ namespace Hecton8.Gameplay
                  "Dolzhen imet HectonItem + BuoyancyObject + Rigidbody.")]
         [SerializeField] private GameObject worldItemPrefab;
 
+        [Tooltip("Optional renderer whose shared material is swapped while this module is targeted for deconstruction.")]
+        [SerializeField] private Renderer deconstructionGhostRenderer;
+
+        [Tooltip("Shared red wireframe/glitch material used for deconstruction targeting. No runtime material clone is created.")]
+        [SerializeField] private Material deconstructionGhostMaterial;
+
+        [Tooltip("Optional preauthored red wireframe/glitch visual toggled while the module is targeted for deconstruction.")]
+        [SerializeField] private GameObject deconstructionGhostVisual;
+
         [Header("Visual References")]
         [Tooltip("Obekt vody vnutri modulya. Aktiven, kogda modul zatoplen.")]
         [SerializeField] private GameObject waterVolume;
@@ -689,6 +699,8 @@ namespace Hecton8.Gameplay
         /// Guard against repeated Deconstruct calls, including future multiplayer overlap.
         /// </summary>
         private bool _isDeconstructing;
+        private bool _deconstructionPreviewActive;
+        private Material _deconstructionPreviewOriginalMaterial;
         // Life Support State
 
         /// <summary>
@@ -1057,6 +1069,7 @@ namespace Hecton8.Gameplay
             _brownoutTransitionTarget01 = 0f;
             _ruptureGroanNoisePhase = 0f;
             _ruptureGroanPreviousNoise = -1f;
+            SetDeconstructionPreview(false);
             SetLightsEnabled(true);
 
             _isDeconstructing = false;
@@ -2223,93 +2236,10 @@ namespace Hecton8.Gameplay
         /// </param>
         public void Deconstruct(PlayerInventory playerInventory)
         {
-            // ── Guard: povtornyy vyzov ──
             if (_isDeconstructing)
                 return;
 
-            _isDeconstructing = true;
-
-            // ── Audio ──
-            PlaySpatialSfx(deconstructClip);
-
-            Vector3 dropPosition = transform.position + Vector3.up * 0.5f;
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
-            InventoryGrid grid = playerInventory != null ? playerInventory.Grid : null;
-            EjectHostedModuleContents(playerInventory, pool, ref dropPosition);
-
-            // ── Poluchenie dannyh o stoimosti ──
-            BuildableData buildData = _moduleMarker != null ? _moduleMarker.Data : null;
-            List<InventoryCost> buildCost = buildData != null ? buildData.buildCost : null;
-
-            if (buildCost == null || buildCost.Count == 0)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(
-                    $"[BaseModule] Deconstruct: '{gameObject.name}' has no buildCost data. " +
-                    "Destroying without resource refund.", this);
-#endif
-            }
-            else
-            {
-                // ── Pozitsiya dlya spavna vypavshih predmetov ──
-                // Nemnogo vyshe tsentra modulya, chtoby predmety ne zastrevali v polu
-                int costCount = buildCost.Count;
-                for (int c = 0; c < costCount; c++)
-                {
-                    InventoryCost cost = buildCost[c];
-                    if (cost == null || cost.item == null)
-                        continue;
-
-                    // ── Raschet vozvrata ──
-                    int refundAmount = Mathf.Max(0, cost.amount) / RefundDivisor;
-                    if (refundAmount <= 0)
-                        continue;
-
-                    for (int i = 0; i < refundAmount; i++)
-                    {
-                        bool addedToInventory = false;
-
-                        // ── Popytka dobavit v inventar ──
-                        int itemHashId = cost.item != null
-                            ? Hecton.Localization.LocHash.Compute(cost.item.PersistentId)
-                            : 0;
-                        if (playerInventory != null &&
-                            grid != null &&
-                            itemHashId != 0 &&
-                            playerInventory.TryAddItem(itemHashId, 1))
-                            addedToInventory = true;
-
-                        // ── Fallback: spavn v mir ──
-                        if (!addedToInventory)
-                        {
-                            SpawnWorldItem(itemHashId, dropPosition, pool, playerInventory);
-
-                            // Smeschaem pozitsiyu dlya sleduyuschego predmeta,
-                            // chtoby oni ne stakalis v odnoy tochke
-                            dropPosition.x += 0.3f;
-                        }
-                    }
-                }
-            }
-
-            // ── Osvobozhdenie dry zone ──
-            ReleaseAllTrackedObjects();
-
-            // ── Unichtozhenie modulya cherez ConstructionManager ──
-            ConstructionManager cm = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
-            if (cm != null)
-            {
-                cm.DestroyModule(gameObject);
-            }
-            else
-            {
-                // Fallback: esli ConstructionManager nedostupen
-                ObjectPoolManager fallbackPool = GlobalRegistry.ObjectPool;
-                if (fallbackPool != null)
-                    fallbackPool.Despawn(gameObject);
-                else
-                    Destroy(gameObject);
-            }
+            EnqueueLegacyDeconstructionRequest();
         }
 
         /// <summary>
@@ -2323,6 +2253,85 @@ namespace Hecton8.Gameplay
             // Buduschee: zapret dekonstruktsii pri zatoplenii,
             // nalichii podklyuchennyh moduley, pitanii i t.d.
             return true;
+        }
+
+        internal bool TryBeginAuthoritativeDeconstruction()
+        {
+            if (_isDeconstructing)
+                return false;
+
+            _isDeconstructing = true;
+            SetDeconstructionPreview(false);
+            PlaySpatialSfx(deconstructClip);
+            return true;
+        }
+
+        internal void CancelAuthoritativeDeconstruction()
+        {
+            _isDeconstructing = false;
+        }
+
+        internal void PrepareForDeconstructionPoolReturn()
+        {
+            SetDeconstructionPreview(false);
+            StopDrain();
+            SetLeakActive(false);
+            SetFloodedVisual(false);
+            waterVolumeM3 = 0f;
+            ReleaseAllTrackedObjects();
+        }
+
+        internal void EjectHostedContentsForDeconstruction(PlayerInventory playerInventory, ObjectPoolManager pool)
+        {
+            Vector3 dropPosition = transform.position + Vector3.up * 0.5f;
+            EjectHostedModuleContents(playerInventory, pool, ref dropPosition);
+        }
+
+        internal void SetDeconstructionPreview(bool enabled)
+        {
+            if (_deconstructionPreviewActive == enabled)
+                return;
+
+            _deconstructionPreviewActive = enabled;
+            if (deconstructionGhostVisual != null && deconstructionGhostVisual.activeSelf != enabled)
+                deconstructionGhostVisual.SetActive(enabled);
+
+            if (deconstructionGhostRenderer == null || deconstructionGhostMaterial == null)
+                return;
+
+            if (enabled)
+            {
+                _deconstructionPreviewOriginalMaterial = deconstructionGhostRenderer.sharedMaterial;
+                deconstructionGhostRenderer.sharedMaterial = deconstructionGhostMaterial;
+            }
+            else if (_deconstructionPreviewOriginalMaterial != null)
+            {
+                deconstructionGhostRenderer.sharedMaterial = _deconstructionPreviewOriginalMaterial;
+                _deconstructionPreviewOriginalMaterial = null;
+            }
+        }
+
+        private void EnqueueLegacyDeconstructionRequest()
+        {
+            IHabitatDeconstructionSystem deconstructionSystem = GlobalRegistry.HabitatDeconstruction;
+            if (deconstructionSystem == null || !deconstructionSystem.IsInitialized)
+                return;
+
+            Vector3 modulePosition = transform.position;
+            DeconstructRequestSignal request = new DeconstructRequestSignal
+            {
+                TargetAup = AbsoluteUniversePosition.FromRuntimePosition(modulePosition),
+                RayOriginAup = AbsoluteUniversePosition.FromRuntimePosition(modulePosition + Vector3.up),
+                TargetEntityId = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId())),
+                RequesterEntityId = 0u,
+                MaxDistance = 0f,
+                RayDirection = new float3(0f, -1f, 0f),
+                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                ToolKind = 0,
+                Flags = 1
+            };
+
+            deconstructionSystem.EnqueueDeconstruction(in request);
         }
 
         internal void DropItemQuantityToInventoryOrWorld(

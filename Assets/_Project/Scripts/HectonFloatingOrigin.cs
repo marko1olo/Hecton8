@@ -852,11 +852,7 @@ namespace Hecton8.Core
 
         private static float ResolveFixedInterpolationAlpha()
         {
-            float fixedDeltaTime = Time.fixedDeltaTime;
-            if (fixedDeltaTime <= 0.000001f)
-                return 0f;
-
-            return math.saturate((Time.time - Time.fixedTime) / fixedDeltaTime);
+            return SystemDispatcher.CurrentFixedInterpolationAlpha;
         }
 
         private static async Awaitable AwaitTransformShiftJobAsync(JobHandle handle, CancellationToken cancellationToken)

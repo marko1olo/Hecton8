@@ -25,6 +25,31 @@
 [FORBID] `AddUnsafePass` unless the pass owner records a profiler capture proving there is no graph-visible equivalent.
 [SAFE] `CommandBufferHelpers.GetNativeCommandBuffer(context.cmd)` is allowed only inside a RenderGraph `SetRenderFunc` with graph-declared resources.
 
+### 1.1 Unity 6000.4 RenderGraph Hardening
+
+[RULE] Compatibility Mode (`Render Graph Disabled`) is forbidden for new URP work.
+[RULE] A new `ScriptableRendererFeature` must enqueue passes whose implementation uses `RecordRenderGraph`, declared texture/resource reads, declared writes, and a named profiler pass.
+[RULE] Blits use RenderGraph `AddBlitPass`, raster passes, or texture handles. `Graphics.Blit` is legacy debt and must not appear in first-party runtime code.
+[RULE] Renderer-list drawing uses RenderGraph `RendererListHandle` and `context.cmd.DrawRendererList`.
+[RULE] Compute work inside rendering uses RenderGraph compute passes with declared buffers/textures. Hidden global UAV writes are forbidden.
+
+[FORBID] Treating `AddUnsafePass` as a migration shortcut.
+[FORBID] `CommandBuffer.SetRenderTarget`, `CommandBuffer.Blit`, or direct native command-buffer work unless logged as a temporary compatibility bridge with RenderGraph Viewer proof.
+[FORBID] Any render feature that requires RenderGraph Compatibility Mode.
+
+## Engineering Data
+
+| Gate | Required Evidence | Blocks Merge |
+|---|---|---|
+| RenderGraph enabled | URP asset capture showing Compatibility Mode disabled | Yes |
+| Pass declaration | Code review confirms all textures/buffers are declared to the graph | Yes |
+| Viewer proof | RenderGraph Viewer or Frame Debugger capture shows named pass and no hidden blit chain | Yes |
+| MX350 cost | Profiler capture shows pass cost <= assigned tier budget or load-shed path exists | Yes |
+
+Sources:
+- https://docs.unity3d.com/6000.0/Documentation/Manual/urp/render-graph.html
+- https://docs.unity3d.com/6000.0/Documentation/Manual/urp/renderer-features/custom-rendering-pass-workflow-in-urp.html
+
 ---
 
 ## §2 — VRAM DISCIPLINE & TEXTURE STRATEGY
@@ -127,6 +152,29 @@
   5. Draw via `context.cmd.DrawRendererList(data.rendererList)`
 
 [RULE] HLOD occlusion is owned by Unity 6 GPU Resident Drawer. Hand-rolled HiZ append pipelines are forbidden.
+
+### 6.1 GPU Resident Drawer Contract
+
+[RULE] GPU Resident Drawer is the default for MeshRenderer-owned static environment props, wreckage shells, non-skinned coral, rocks, panels, pipes, and HLOD shell geometry when Forward+ and compute support are enabled.
+[RULE] GPU occlusion culling requires RenderGraph enabled, GPU Resident Drawer enabled, and active Universal Renderer GPU Occlusion enabled.
+[RULE] Manual BRG or custom compute culling is allowed only for non-GameObject data that cannot be represented by MeshRenderer ownership.
+
+[FORBID] Double-owning the same renderer through both MeshRenderer GPU Resident Drawer and manual BRG.
+[FORBID] Hand-rolled HiZ occlusion for MeshRenderer-owned HLOD/static world props.
+[FORBID] Enabling GPU occlusion on MX350 without measuring whether setup cost is lower than saved rendering cost.
+
+## Engineering Data
+
+| Tier | Drawer Path | Occlusion Path | Required Proof |
+|---|---|---|---|
+| Low/MX350 | GPU Resident Drawer for repeated MeshRenderers only | Off unless occlusion-heavy scene proves win | Frame Debugger + Profiler |
+| Middle | GPU Resident Drawer for static/HLOD shells | GPU occlusion for dense occluded zones | Rendering Stats delta |
+| High | GPU Resident Drawer broad adoption | GPU occlusion enabled by zone | RenderGraph Viewer + Profiler |
+| Ultra | GPU Resident Drawer plus richer near-field visuals | GPU occlusion plus longer HLOD residency | Player capture |
+
+Sources:
+- https://docs.unity3d.com/6000.0/Documentation/Manual/urp/gpu-resident-drawer.html
+- https://docs.unity3d.com/6000.0/Documentation/Manual/urp/gpu-culling.html
 
 [RULE] LOD cross-fade: dither-based, not alpha blend. Fade01 drives per-instance dither threshold offset.
   crossFadeThreshold = BayerMatrix[pixelCoord] + (instance.Fade01 * 2.0 - 1.0)

@@ -26,6 +26,10 @@
 #define HECTON_GLOW_POINT_MAX 16
 #endif
 
+#ifndef HECTON_HULL_DENT_MAX
+#define HECTON_HULL_DENT_MAX 16
+#endif
+
 float4 _HectonFlashlightPositionWS;
 float4 _HectonFlashlightDirectionWS;
 float4 _HectonFlashlightColor;
@@ -103,6 +107,8 @@ float4 _HectonParasiteAnchorParams[HECTON_PARASITE_MAX_ANCHORS];
 float4 _HectonParasiteGlobals;
 float4 _HectonSubmarineCrushCenterRadius;
 float4 _HectonSubmarineCrushDepthParams;
+float4 _HectonHullDents[HECTON_HULL_DENT_MAX]; // xyz=local impact point, w=packed radius/depth
+float4 _HectonHullDentParams;                  // x=active count, y=low-tier bypass, z=scar scalar, w=quality tier
 float4 _HectonHabitatStressCenterRadius; // xyz=center, w=radius
 float4 _HectonHabitatStressParams;       // x=stress, y=max displacement, z=grid scale, w=seed
 float4 _HectonXRFoveatedParams;        // x=active, y=periphery resolve weight, z=reserved, w=refresh Hz
@@ -113,6 +119,7 @@ float4 _TotalUniverseOffset;           // xyz=runtime-to-absolute offset used fo
 float _AupJitterMask;                  // 1 during the AUP shift render frame; rounds camera-relative vertices to millimeters
 float _HectonMathLodMode;              // 0=cheap dominant-axis, 1=exact high
 float _HectonMathLodDistanceSq;        // C# scalability bridge debug/readback value
+float4 _HectonWorldShake;              // xyz=seismic vertex offset, w=intensity
 
 float3 HectonCoreLitDominantAxisOrDefault(float3 value, float3 fallbackValue)
 {
@@ -164,6 +171,73 @@ float3 HectonCoreLitSanitizePositionOS(float3 positionOS)
     return all(isfinite(positionOS)) ? positionOS : float3(0.0, 0.0, 0.0);
 }
 
+void HectonCoreLitUnpackHullDent(float packedRadiusDepth, out float radius, out float depth)
+{
+    float safePacked = max(0.0, packedRadiusDepth);
+    float depthQ = floor(safePacked * rcp(256.0));
+    float radiusQ = safePacked - depthQ * 256.0;
+    radius = max(radiusQ * 0.0625, 0.001);
+    depth = saturate(depthQ * rcp(255.0));
+}
+
+float HectonCoreLitEvaluateHullDentDepthOS(float3 positionOS)
+{
+    float3 safePositionOS = HectonCoreLitSanitizePositionOS(positionOS);
+    float dentDepth = 0.0;
+
+    if (_HectonHullDentParams.y > 0.5)
+        return saturate(_HectonHullDentParams.z) * 0.04;
+
+    int activeCount = min((int)max(_HectonHullDentParams.x, 0.0), HECTON_HULL_DENT_MAX);
+    [unroll]
+    for (int i = 0; i < HECTON_HULL_DENT_MAX; i++)
+    {
+        if (i >= activeCount)
+            continue;
+
+        float4 dent = _HectonHullDents[i];
+        float radius;
+        float depth;
+        HectonCoreLitUnpackHullDent(dent.w, radius, depth);
+        if (depth <= 0.0001)
+            continue;
+
+        float3 delta = safePositionOS - dent.xyz;
+        float distSq = dot(delta, delta);
+        float radiusSq = max(radius * radius, 0.000001);
+        if (distSq >= radiusSq)
+            continue;
+
+        float falloff = saturate(1.0 - distSq * rcp(radiusSq));
+        dentDepth = max(dentDepth, falloff * falloff * depth);
+    }
+
+    return dentDepth;
+}
+
+float3 HectonCoreLitApplyHullDentsOS(float3 positionOS, float3 normalOS, out half dentShadow)
+{
+    float3 safePositionOS = HectonCoreLitSanitizePositionOS(positionOS);
+    float dentDepth = HectonCoreLitEvaluateHullDentDepthOS(safePositionOS);
+    dentShadow = (half)saturate(dentDepth * 4.0 + saturate(_HectonHullDentParams.z) * 0.2);
+
+    if (_HectonHullDentParams.y > 0.5 || dentDepth <= 0.0001)
+        return safePositionOS;
+
+    float3 safeNormalOS = HectonCoreLitSafeNormalize(normalOS);
+    return HectonCoreLitSanitizePositionOS(safePositionOS - safeNormalOS * dentDepth);
+}
+
+void HectonCoreLitApplyHullDentSurfaceCheat(half dentShadow, inout half3 albedo, inout half smoothness)
+{
+    half shadow = saturate(dentShadow);
+    if (shadow <= 0.0001h)
+        return;
+
+    albedo = lerp(albedo, albedo * half3(0.42h, 0.45h, 0.48h), shadow);
+    smoothness = lerp(smoothness, smoothness * 0.58h, shadow);
+}
+
 float3 HectonCoreLitSanitizePositionWS(float3 positionWS)
 {
     float3 sanitized = all(isfinite(positionWS)) ? positionWS : float3(0.0, 0.0, 0.0);
@@ -176,6 +250,20 @@ float3 HectonCoreLitSanitizePositionWS(float3 positionWS)
     }
 
     return sanitized;
+}
+
+float3 HectonCoreLitApplyWorldShake(float3 positionWS)
+{
+    float3 sanitized = HectonCoreLitSanitizePositionWS(positionWS);
+#if defined(_MATH_LOD_LOW)
+    return sanitized;
+#else
+    float intensity = saturate(_HectonWorldShake.w);
+    if (intensity <= 0.0001)
+        return sanitized;
+
+    return HectonCoreLitSanitizePositionWS(sanitized + _HectonWorldShake.xyz);
+#endif
 }
 
 float HectonCoreLitInterleavedGradientNoise(float2 pixel)
@@ -425,7 +513,7 @@ float3 HectonCoreLitApplySubmarineCrushDepth(float3 positionWS, float3 normalWS)
     float depth01 = saturate(currentDepth * rcp(crushDepth));
     float displacementMax = max(_HectonSubmarineCrushDepthParams.z, 0.0);
     if (depth01 <= 0.0001 || displacementMax <= 0.0001)
-        return HectonCoreLitApplyHabitatAnalyticalStress(positionWS, normalWS);
+        return HectonCoreLitApplyWorldShake(HectonCoreLitApplyHabitatAnalyticalStress(positionWS, normalWS));
 
     float radius = max(_HectonSubmarineCrushCenterRadius.w, 0.0);
     float3 radiusDelta = positionWS - _HectonSubmarineCrushCenterRadius.xyz;
@@ -433,13 +521,13 @@ float3 HectonCoreLitApplySubmarineCrushDepth(float3 positionWS, float3 normalWS)
         ? 1.0 - saturate(dot(radiusDelta, radiusDelta) * rcp(max(radius * radius, 0.0001)))
         : 1.0;
     if (radiusMask <= 0.0001)
-        return HectonCoreLitApplyHabitatAnalyticalStress(positionWS, normalWS);
+        return HectonCoreLitApplyWorldShake(HectonCoreLitApplyHabitatAnalyticalStress(positionWS, normalWS));
 
     float buckling = HectonCoreLitSampleSubmarineCrushBuckling(positionWS);
     float ridge = buckling * buckling;
     float buckle = (buckling * 2.0 - 1.0) * 0.68 - ridge * 0.32;
     float displacement = buckle * displacementMax * depth01 * radiusMask;
-    return HectonCoreLitApplyHabitatAnalyticalStress(HectonCoreLitSanitizePositionWS(positionWS + normalWS * displacement), normalWS);
+    return HectonCoreLitApplyWorldShake(HectonCoreLitApplyHabitatAnalyticalStress(HectonCoreLitSanitizePositionWS(positionWS + normalWS * displacement), normalWS));
 }
 
 float HectonCoreLitSedimentRippleHeight(float2 uv)

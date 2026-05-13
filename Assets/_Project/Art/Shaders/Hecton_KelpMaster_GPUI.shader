@@ -49,8 +49,6 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
         _CausticSpeed ("Caustic Speed", Range(0, 4)) = 0.6
         _BiolumStrength ("Biolum Strength", Range(0, 4)) = 0
         _BiolumMaskStrength ("Biolum Mask Strength", Range(0, 2)) = 1
-        _BiolumPulseAmplitude ("Biolum Pulse Amplitude", Range(0, 1)) = 0.22
-        _BiolumPulseFrequency ("Biolum Pulse Frequency", Range(0, 8)) = 0.75
         _BiolumCurrentResponse ("Biolum Current Response", Range(0, 2)) = 0.35
         _SwayAmplitude ("Sway Amplitude", Range(0, 0.5)) = 0.08
         _SwayFrequency ("Sway Frequency", Range(0, 8)) = 1.8
@@ -144,8 +142,6 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 half _CausticSpeed;
                 half _BiolumStrength;
                 half _BiolumMaskStrength;
-                half _BiolumPulseAmplitude;
-                half _BiolumPulseFrequency;
                 half _BiolumCurrentResponse;
                 half _SwayAmplitude;
                 half _SwayFrequency;
@@ -165,6 +161,8 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
             half _HectonOceanBiolumStrength;
             half4 _HectonFloorBiolumColor;
             half _HectonFloorBiolumStrength;
+            float4 _BiolumMasterPhase;
+            float4 _BiolumIntensity;
 
             float4 _HectonPropWashPosition; // xyz: position, w: radius
             half _HectonPropWashForce;
@@ -504,14 +502,16 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 [branch]
                 if (_BiolumStrength > 0.0001h)
                 {
-                    half fieldPhase = _Time.y * _BiolumPulseFrequency + samplePositionWS.x * 0.08h + samplePositionWS.z * 0.05h + input.uv.y * 3.1h;
-                    half pulse = 1.0h + ((half)HectonCoreLitTrianglePulse01(fieldPhase) * 2.0h - 1.0h) * _BiolumPulseAmplitude;
-                    half currentWave = (half)HectonCoreLitTrianglePulse01(_Time.y * (_BiolumPulseFrequency * 0.72h) + samplePositionWS.x * 0.04h - samplePositionWS.z * 0.06h);
+                    half masterPhase = (half)saturate(_BiolumMasterPhase.x);
+                    half fieldPhase = masterPhase + samplePositionWS.x * 0.08h + samplePositionWS.z * 0.05h + input.uv.y * 3.1h;
+                    half pulse = 1.0h + ((half)HectonCoreLitTrianglePulse01(fieldPhase) * 2.0h - 1.0h) * 0.22h;
+                    half currentWave = (half)HectonCoreLitTrianglePulse01(masterPhase * 0.72h + samplePositionWS.x * 0.04h - samplePositionWS.z * 0.06h);
                     half proceduralBiolumMask = (half)HectonCoreLitTrianglePulse01(samplePositionWS.x * 0.043h + samplePositionWS.z * 0.061h + input.uv.y * 1.7h);
                     half biolumMask = saturate((edgeMask * 0.42h + thicknessMask * 0.38h + proceduralBiolumMask * 0.20h) * _BiolumMaskStrength);
                     half biolumField = lerp(1.0h, currentWave, saturate(_BiolumCurrentResponse));
                     half celestialBiolum = max((half)_HectonCelestialBiolumMultiplier, 1.0h);
-                    half authoredBiolumEnergy = _BiolumStrength * celestialBiolum * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask * pulse * biolumField;
+                    half masterBiolum = max((half)_BiolumIntensity.x, 0.0h);
+                    half authoredBiolumEnergy = _BiolumStrength * celestialBiolum * masterBiolum * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask * pulse * biolumField;
                     [branch]
                     if (authoredBiolumEnergy > 0.0001h)
                     {
@@ -602,8 +602,6 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 half _CausticSpeed;
                 half _BiolumStrength;
                 half _BiolumMaskStrength;
-                half _BiolumPulseAmplitude;
-                half _BiolumPulseFrequency;
                 half _BiolumCurrentResponse;
                 half _SwayAmplitude;
                 half _SwayFrequency;
@@ -832,8 +830,6 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 half _CausticSpeed;
                 half _BiolumStrength;
                 half _BiolumMaskStrength;
-                half _BiolumPulseAmplitude;
-                half _BiolumPulseFrequency;
                 half _BiolumCurrentResponse;
                 half _SwayAmplitude;
                 half _SwayFrequency;

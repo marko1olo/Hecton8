@@ -1,0 +1,14 @@
+{
+    "name": "Hecton8.Core.Memory.Layout",
+    "rootNamespace": "Hecton8.Core.Memory.Layout",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -83,7 +83,8 @@ namespace Hecton8.World
         private bool  _registered;
         private bool _runtimeRegistered;
 
-        private static readonly int _ShaderBiolumIntensity  = Shader.PropertyToID("_BiolumIntensity");
+        // _BiolumIntensity is a vector global owned by HectonBiolumManager.
+        private static readonly int _ShaderLegacyBiolumIntensity = Shader.PropertyToID("_HectonLegacyBiolumIntensity");
         private static readonly int _ShaderBiolumPulseTime  = Shader.PropertyToID("_BiolumPulseTime");
 
         public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
@@ -136,7 +137,7 @@ namespace Hecton8.World
             _targetEclipseMultiplier = 1f;
             _currentEclipseMultiplier = 1f;
             ApplyLocalProxyLights();
-            Shader.SetGlobalFloat(_ShaderBiolumIntensity, baseIntensity);
+            Shader.SetGlobalFloat(_ShaderLegacyBiolumIntensity, 0f);
             Shader.SetGlobalFloat(_ShaderBiolumPulseTime, 0f);
         }
 
@@ -228,7 +229,7 @@ namespace Hecton8.World
 
         private void ApplyShader()
         {
-            Shader.SetGlobalFloat(_ShaderBiolumIntensity, _currentIntensity + _atlasPulseBurst + _sonarPulseBurst);
+            Shader.SetGlobalFloat(_ShaderLegacyBiolumIntensity, _currentIntensity + _atlasPulseBurst + _sonarPulseBurst);
         }
 
         private void CacheLocalProxyLightBaselines()

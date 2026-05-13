@@ -102,6 +102,8 @@ namespace Hecton8.World
         private int _migratorySargassumIslandCount;
         private float _lastMigratorySargassumTickTime;
         private float _nextMigratorySargassumKillZoneTime;
+        private float _migratorySargassumTideHeightMeters;
+        private uint _migratorySargassumTideSequence;
 
         [StructLayout(LayoutKind.Sequential)]
         private struct MigratorySargassumSourceState
@@ -240,6 +242,8 @@ namespace Hecton8.World
             _migratorySargassumIslandCount = 0;
             _lastMigratorySargassumTickTime = 0f;
             _nextMigratorySargassumKillZoneTime = 0f;
+            _migratorySargassumTideHeightMeters = 0f;
+            _migratorySargassumTideSequence = 0u;
         }
 
         private JobHandle CancelMigratorySargassumJobForDispose()
@@ -284,6 +288,7 @@ namespace Hecton8.World
 
             using (_migratorySargassumProfilerMarker.Auto())
             {
+                RefreshMigratorySargassumTideSnapshot();
                 EnsureMigratorySargassumLane();
                 RefreshMigratorySargassumIslandsFromDesiredPlacements();
                 ApplyMigratorySargassumKillZones(now);
@@ -698,9 +703,26 @@ namespace Hecton8.World
             return new float3((float)absolute.x, (float)absolute.y, (float)absolute.z);
         }
 
-        private static Vector3 ToRuntimeMigratorySargassumPosition(in AbsoluteUniversePosition position)
+        private void RefreshMigratorySargassumTideSnapshot()
+        {
+            uint sequence = GlobalRegistry.CelestialRuntimeSnapshotSequence;
+            if (sequence == _migratorySargassumTideSequence)
+                return;
+
+            _migratorySargassumTideSequence = sequence;
+            CelestialRuntimeSnapshot celestial = GlobalRegistry.CelestialRuntimeSnapshot;
+            _migratorySargassumTideHeightMeters =
+                (celestial.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u &&
+                math.isfinite(celestial.TideHeightMeters)
+                    ? celestial.TideHeightMeters
+                    : 0f;
+        }
+
+        private Vector3 ToRuntimeMigratorySargassumPosition(in AbsoluteUniversePosition position)
         {
             float3 runtimePosition = position.ToRuntimeFloat3();
+            runtimePosition.y += _migratorySargassumTideHeightMeters;
+
             return new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
         }
     }

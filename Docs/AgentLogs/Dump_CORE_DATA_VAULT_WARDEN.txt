@@ -1,0 +1,12 @@
+H8MEMORY_ALLOCATION_TABLE
+TotalBytes=68160
+ActiveAllocationCount=9
+Index=0 Ptr=2761624686864 Bytes=45056 Owner=30 Allocator=4 Flags=1
+Index=1 Ptr=2736489182560 Bytes=32 Owner=30 Allocator=4 Flags=1
+Index=2 Ptr=2737119541344 Bytes=6144 Owner=32 Allocator=4 Flags=1
+Index=3 Ptr=2737220006736 Bytes=6144 Owner=1 Allocator=4 Flags=6
+Index=4 Ptr=2751312422288 Bytes=512 Owner=32 Allocator=4 Flags=1
+Index=5 Ptr=2751312422880 Bytes=512 Owner=32 Allocator=4 Flags=1
+Index=6 Ptr=2751312423472 Bytes=512 Owner=32 Allocator=4 Flags=1
+Index=7 Ptr=2751238371728 Bytes=2048 Owner=32 Allocator=4 Flags=1
+Index=8 Ptr=2737220013056 Bytes=7200 Owner=32 Allocator=4 Flags=1

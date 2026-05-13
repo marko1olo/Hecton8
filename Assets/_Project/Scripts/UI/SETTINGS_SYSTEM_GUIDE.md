@@ -1,12 +1,21 @@
 # Settings System — Implementation Guide
 
+## CURRENT STATUS OVERRIDE - 2026-05-13 DOC_AUDIT R5
+
+This guide is historical and partially stale. Current source reality:
+
+- `UserOptionsPersistence` owns `Application.persistentDataPath/options.h8cfg` with a fixed `64 KB` payload file wrapper; it is not Easy Save 3 and not PlayerPrefs.
+- Current project quality levels are `Surface (Medium)`, `Abyss (Low)`, and `Orbit (High)` only; there is no current Unity quality level named `Ultra`.
+- URP mapping from project assets: `Surface (Medium)` -> `URP_Medium` / `PC_Renderer`; `Abyss (Low)` -> `URP_Low` / `Mobile_Renderer`; `Orbit (High)` -> `URP_High` / `PC_High_Renderer`.
+- Play Mode, UI field wiring, profiler, GC, and visual settings application remain PENDING VERIFICATION in DOC_AUDIT R5.
+
 ## Overview
 
-Unified settings system for HECTON-8. Manages graphics, audio, and video options with persistence via `UserOptionsPersistence` (PlayerPrefs backend).
+Unified settings system for HECTON-8. Manages graphics, audio, and video options with persistence via `UserOptionsPersistence` (`options.h8cfg` backend).
 
 **Owner**: `SettingsManager` (singleton, DontDestroyOnLoad)  
 **UI**: `SettingsPanel` (pause menu, main menu)  
-**Backend**: `UserOptionsPersistence` (Easy Save 3 wrapper)
+**Backend**: `UserOptionsPersistence` (`options.h8cfg` persistent-data file backend)
 
 ---
 
@@ -29,10 +38,10 @@ Unified settings system for HECTON-8. Manages graphics, audio, and video options
 ## Graphics Settings
 
 ### Quality Presets
-- **Low**: QualityLevel=0, ShadowQuality=Low, ShadowDistance=50m, AA=FXAA, AO=Off, Bloom=Off, MotionBlur=Off, TextureQuality=Low
-- **Medium**: QualityLevel=1, ShadowQuality=Medium, ShadowDistance=100m, AA=SMAA, AO=Off, Bloom=On, MotionBlur=Off, TextureQuality=Medium
-- **High**: QualityLevel=2, ShadowQuality=Medium, ShadowDistance=200m, AA=SMAA, AO=On, Bloom=On, MotionBlur=Off, TextureQuality=High
-- **Ultra**: QualityLevel=2, ShadowQuality=High, ShadowDistance=300m, AA=TAA, AO=On, Bloom=On, MotionBlur=On, TextureQuality=Ultra
+- **Surface (Medium)**: QualityLevel=0, `URP_Medium (PC_RPAsset).asset`, `PC_Renderer`, render scale `1.0`
+- **Abyss (Low)**: QualityLevel=1, `URP_Low (PC_RPAsset).asset`, `Mobile_Renderer`, render scale `0.85`
+- **Orbit (High)**: QualityLevel=2, `URP_High (PC_RPAsset).asset`, `PC_High_Renderer`, render scale `1.0`
+- **Ultra**: no current Unity quality level in `ProjectSettings/QualitySettings.asset`; treat older Ultra wording as design intent only
 
 ### Individual Settings
 - **Field of View**: 60-110° (default 75°)
@@ -93,7 +102,7 @@ Unified settings system for HECTON-8. Manages graphics, audio, and video options
 - `Hecton_GraphicsPreset`
 
 ### Backend
-- **UserOptionsPersistence**: Wrapper around PlayerPrefs
+- **UserOptionsPersistence**: `options.h8cfg` file owner under `Application.persistentDataPath`
 - **Save Timing**: Immediate on every property change
 - **Load Timing**: Awake (SettingsManager)
 
@@ -220,6 +229,8 @@ int shadowQuality = SettingsManager.Instance.ShadowQuality;
 
 **PENDING VERIFICATION**
 
+DOC_AUDIT R5 correction: the historical status bullets below are not fresh verification. No compile, Unity Console, Play Mode, profiler, GCMonitor, or visual settings capture was run in R5; scene/UI wiring and in-game setting effects still require Unity-side proof.
+
 - Code compiles ✅
 - Zero GC compliance ✅
 - Unity scene integration ✅ (SettingsManager in 01_MAIN_MENU, 02_HECTON_WORLD)
@@ -239,12 +250,12 @@ int shadowQuality = SettingsManager.Instance.ShadowQuality;
 
 This guide contains stale claims. Use the corrections below as normative until the body text is re-authored.
 
-Verified now:
+Previously source-checked before R5; not runtime proof:
 - `FieldOfView` is applied to `mainCamera`
 - Bloom and Motion Blur are applied through a scene `Volume` owner referenced by `[SettingsManager]`
 - `01_MAIN_MENU` scene wiring exists in-scene; manual Inspector assignment is not the primary path anymore
 - `SettingsComparisonView` compares persisted graphics presets, not raw `QualityLevel`
 
-Not verified / not fully implemented:
+Still not verified / not fully implemented:
 - `AmbientOcclusion` does not currently drive a runtime renderer-feature owner; the UI flag persists, but visual application is still pending
 - Unity 6000 exposes `ScreenSpaceAmbientOcclusion` as a `ScriptableRendererFeature`, so `VolumeProfile.TryGet(...)` is not the correct owner path for AO in the current stack

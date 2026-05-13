@@ -100,17 +100,20 @@ Shader "Hecton8/UI/PDA Sonar Point Cloud"
                 float insidePing = _AcousticPingSignal.w > 0.5f ? step(localDistance, pingRadius) : 1.0f;
                 float pingBand = 1.0f - saturate(abs(localDistance - pingRadius) * rcp(pingWidth));
                 float pingBoost = 0.55f + pingBand * 0.45f;
+                float sweepX = lerp(-0.52f, 0.52f, frac(_Time.y * 0.18f));
+                float sweepLine = 1.0f - saturate(abs(localCenter.x - sweepX) * 38.0f);
 
-                float height01 = saturate(localCenter.y + 0.5f);
+                float height01 = saturate(localCenter.z * 2.0f + 0.5f);
                 float3 heightColor = lerp(_DeepColor.rgb, _HighColor.rgb, height01);
                 float3 defaultColor = float3(0.18f, 0.95f, 1.0f);
                 float3 sonarColor = lerp(defaultColor, heightColor, saturate(_HeightColorization));
                 sonarColor = predator ? _PredatorColor.rgb : sonarColor;
+                sonarColor = saturate(sonarColor * (1.0f + sweepLine * 0.65f));
 
                 Varyings output;
                 output.positionCS = TransformWorldToHClip(worldPosition);
                 output.screenPos = ComputeScreenPos(output.positionCS);
-                output.color = float4(sonarColor, saturate(intensity * _Opacity * insidePing * pingBoost));
+                output.color = float4(sonarColor, saturate(intensity * _Opacity * insidePing * max(pingBoost, 0.72f + sweepLine * 0.28f)));
                 output.clipAlpha = output.color.a;
                 return output;
             }

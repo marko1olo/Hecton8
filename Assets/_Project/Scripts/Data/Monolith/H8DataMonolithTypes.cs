@@ -468,6 +468,25 @@ namespace Hecton8.Data
     }
 
     /// <summary>
+    /// Cold lookup alias from a static-data authored hash to a LocData UTF-8 slice.
+    /// </summary>
+    public struct H8StaticLocalizationReference
+    {
+        public uint KeyHash;
+        public int Utf8Offset;
+        public int ByteLength;
+    }
+
+    /// <summary>
+    /// Zero-allocation cursor for walking static LocData hash aliases once.
+    /// </summary>
+    public struct H8StaticLocalizationCursor
+    {
+        public int Section;
+        public int RecordIndex;
+    }
+
+    /// <summary>
     /// Static layout audit used by tests, editor bakes, and boot guards.
     /// </summary>
     public static class H8DataLayoutAudit

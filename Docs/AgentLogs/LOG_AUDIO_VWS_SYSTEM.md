@@ -1,2 +1,0 @@
-# AUDIO_VWS_SYSTEM Log
-

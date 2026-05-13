@@ -3,12 +3,22 @@
 // â•‘  Central bioluminescence system (manages all zones globally)                â•‘
 // â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
 using UnityEngine;
+using Hecton8.AI;
+using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
+using Hecton8.Physics;
 using System.Collections.Generic;
 using Hecton8.Visor;
 using Hecton8.World;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.Biolum
@@ -23,19 +33,90 @@ namespace Hecton8.Biolum
     /// - Floor zones (FloorBiolumZone)
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonBiolumManager : MonoBehaviour, ITickable, IUpdatable, ISonarPulseEventListener
+    public sealed class HectonBiolumManager : MonoBehaviour, ITickable, IUpdatable, ISonarPulseEventListener, IOriginShiftListener, IDisposable
     {
         private static readonly int _FloraOceanBiolumColorId = Shader.PropertyToID("_HectonOceanBiolumColor");
         private static readonly int _FloraOceanBiolumStrengthId = Shader.PropertyToID("_HectonOceanBiolumStrength");
         private static readonly int _FloraFloorBiolumColorId = Shader.PropertyToID("_HectonFloorBiolumColor");
         private static readonly int _FloraFloorBiolumStrengthId = Shader.PropertyToID("_HectonFloorBiolumStrength");
         private static readonly int _GlobalBiolumPhaseId = Shader.PropertyToID("_GlobalBiolumPhase");
+        private static readonly int _BiolumMasterPhaseId = Shader.PropertyToID("_BiolumMasterPhase");
+        private static readonly int _BiolumIntensityId = Shader.PropertyToID("_BiolumIntensity");
+        private static readonly int _BiolumTouchRipplesId = Shader.PropertyToID("_BiolumTouchRipples");
+        private static readonly int _BiolumTouchRippleParamsId = Shader.PropertyToID("_BiolumTouchRippleParams");
+
+        private struct TouchRippleState
+        {
+            public float3 RuntimePosition;
+            public float Radius;
+            public float Intensity;
+            public float Age;
+            public float Lifetime;
+            public uint SourceId;
+            public byte Active;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct BiolumTelemetryEntry
+        {
+            public uint Frame;
+            public float3 CameraPosition;
+            public float Intensity;
+            public float Phase;
+            public float PredatorDim;
+            public float DaylightMask;
+            public ushort PredatorHits;
+            public byte ActiveRipples;
+            public byte Flags;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct PredatorBlackoutJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float3> PredatorPositions;
+            public float3 ObserverPosition;
+            public float RadiusSq;
+            [WriteOnly] public NativeArray<float> Scores;
+
+            public void Execute(int index)
+            {
+                float3 predatorPosition = PredatorPositions[index];
+                bool finite = math.all(math.isfinite(predatorPosition)) && math.all(math.isfinite(ObserverPosition));
+                float score = 0f;
+                if (finite && RadiusSq > 0.0001f)
+                {
+                    float3 delta = predatorPosition - ObserverPosition;
+                    score = math.saturate(1f - (math.lengthsq(delta) * math.rcp(RadiusSq)));
+                }
+
+                Scores[index] = score;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct RippleDistanceJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float3> RipplePositions;
+            public float3 ObserverPosition;
+            [WriteOnly] public NativeArray<float> DistanceSq;
+
+            public void Execute(int index)
+            {
+                float3 ripplePosition = RipplePositions[index];
+                if (!math.all(math.isfinite(ripplePosition)) || !math.all(math.isfinite(ObserverPosition)))
+                {
+                    DistanceSq[index] = float.MaxValue;
+                    return;
+                }
+
+                float3 delta = ripplePosition - ObserverPosition;
+                DistanceSq[index] = math.lengthsq(delta);
+            }
+        }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // SINGLETON
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-        public static HectonBiolumManager Instance => GlobalRegistry.BiolumManager;
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // INSPECTOR SETTINGS
@@ -81,6 +162,20 @@ namespace Hecton8.Biolum
         private const float GlobalBiolumPhaseRateHz = 0.58f;
         private const float GlobalBiolumPhasePublishEpsilon = 0.0001f;
         private const float ShaderColorPublishEpsilon = 0.0001f;
+        private const int MaxTouchRipples = 16;
+        private const int MaxPredatorContacts = 16;
+        private const int BiolumTelemetryCapacity = 300;
+        private const float PredatorBlackoutRadiusMeters = 50f;
+        private const float PredatorBlackoutRadiusSq = PredatorBlackoutRadiusMeters * PredatorBlackoutRadiusMeters;
+        private const float PredatorBlackoutMinimumIntensity = 0.1f;
+        private const float PredatorBlackoutFadeInvSeconds = 0.5f;
+        private const float PredatorBlackoutFadeRate = (1f - PredatorBlackoutMinimumIntensity) * PredatorBlackoutFadeInvSeconds;
+        private const float ShallowDaylightCutoffY = -50f;
+        private const int MovementSignalMaxDrainPerTick = 32;
+        private const int BiolumDumpCooldownFrames = 300;
+        private const string BiolumDumpRelativePath = "Docs/AgentLogs/Dump_BIOLUMINESCENCE_DIRECTOR.bin";
+        private const uint ActiveBiolumRipplesHash = 0xB105A11Fu;
+        private const uint BiolumDirectorContextHash = 0xB101D1ECu;
 
         // COLD ALLOC: List<HectonBiolumZone>[32] - active cave-zone registry - owner: HectonBiolumManager
         private readonly List<HectonBiolumZone> _activeCaveZones = new List<HectonBiolumZone>(ActiveZoneListCapacity);
@@ -115,6 +210,55 @@ namespace Hecton8.Biolum
         private float _lastPublishedOceanBiolumStrength = 0f;
         private float _lastPublishedFloorBiolumStrength = 0f;
         private bool _floraShaderGlobalsPublished = false;
+        private float _masterPulse01 = 0.5f;
+        private float _masterIntensity = 1f;
+        private float _daylightMask = 1f;
+        private float _eclipseMask = 0f;
+        private float _flowFrequencyScale = 1f;
+        private float _predatorTargetIntensity = 1f;
+        private float _predatorCurrentIntensity = 1f;
+        private int _activeTouchRippleCount = 0;
+        private int _predatorCandidateCount = 0;
+        private int _lastRippleTelemetryCount = -1;
+        private int _lastRippleTelemetryFrame = -1;
+        private int _telemetryWriteIndex = 0;
+        private int _lastBiolumDumpFrame = -BiolumDumpCooldownFrames;
+        private uint _telemetrySequence = 0u;
+        private Vector4 _lastPublishedMasterPhase = new Vector4(-1f, -1f, -1f, -1f);
+        private Vector4 _lastPublishedBiolumIntensity = new Vector4(-1f, -1f, -1f, -1f);
+
+        // COLD ALLOC: TouchRippleState[16] - fixed touch ripple state pool; no per-frame containers - owner: HectonBiolumManager
+        private readonly TouchRippleState[] _touchRipples = new TouchRippleState[MaxTouchRipples];
+        // COLD ALLOC: Vector4[16] - fixed GPU upload staging for touch ripples - owner: HectonBiolumManager
+        private readonly Vector4[] _touchRippleUpload = new Vector4[MaxTouchRipples];
+        // COLD ALLOC: SpatialQueryHit[16] - fixed predator blackout spatial query buffer - owner: HectonBiolumManager
+        private readonly SpatialQueryHit[] _predatorContacts = new SpatialQueryHit[MaxPredatorContacts];
+        // COLD ALLOC: int[16] - compact ripple job source slot map - owner: HectonBiolumManager
+        private readonly int[] _rippleJobSlotIndices = new int[MaxTouchRipples];
+        // COLD ALLOC: int[16] - nearest-first ripple upload order - owner: HectonBiolumManager
+        private readonly int[] _sortedTouchRippleIndices = new int[MaxTouchRipples];
+        // COLD ALLOC: float[16] - nearest-first ripple distance scores - owner: HectonBiolumManager
+        private readonly float[] _sortedTouchRippleDistanceSq = new float[MaxTouchRipples];
+
+        private GraphicsBuffer _touchRippleBufferA;
+        private GraphicsBuffer _touchRippleBufferB;
+        private GraphicsBuffer _publishedTouchRippleBuffer;
+        private int _lastPublishedTouchRippleCount = -1;
+        private HectonQualityTier _lastPublishedTouchRippleTier = HectonQualityTier.Unknown;
+        private NativeArray<float3> _predatorJobPositions;
+        private NativeArray<float> _predatorJobScores;
+        private JobHandle _predatorJobHandle;
+        private bool _predatorJobScheduled = false;
+        private int _scheduledPredatorCount = 0;
+        private NativeArray<float3> _rippleJobPositions;
+        private NativeArray<float> _rippleJobDistances;
+        private JobHandle _rippleJobHandle;
+        private bool _rippleJobScheduled = false;
+        private int _scheduledRippleCount = 0;
+        private int _sortedTouchRippleCount = 0;
+        private bool _rippleSortReady = false;
+        private NativeArray<BiolumTelemetryEntry> _telemetryRing;
+        private bool _disposed = false;
 
         #if UNITY_EDITOR
         [SerializeField] private bool _debugLogUpdates = false;
@@ -139,6 +283,7 @@ namespace Hecton8.Biolum
                 return;
             }
 
+            EnsureRuntimeResources();
             ResetFloraShaderGlobals();
         }
 
@@ -151,6 +296,8 @@ namespace Hecton8.Biolum
         {
             TryRegisterService();
             TryRegister();
+            HectonFloatingOrigin.RegisterListener(this);
+            EnsureRuntimeResources();
             SpectrumEvents.RegisterSonarPulseListener(this);
         }
 
@@ -158,6 +305,8 @@ namespace Hecton8.Biolum
         {
             TryUnregisterService();
             TryUnregister();
+            HectonFloatingOrigin.UnregisterListener(this);
+            CompleteRuntimeJobs(true);
             SpectrumEvents.UnregisterSonarPulseListener(this);
             _sonarPulseBoost = 0f;
 
@@ -168,10 +317,13 @@ namespace Hecton8.Biolum
         {
             TryUnregisterService();
             TryUnregister();
+            HectonFloatingOrigin.UnregisterListener(this);
+            CompleteRuntimeJobs(true);
             SpectrumEvents.UnregisterSonarPulseListener(this);
             _sonarPulseBoost = 0f;
 
             ResetFloraShaderGlobals();
+            Dispose();
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -307,21 +459,28 @@ namespace Hecton8.Biolum
         /// </summary>
         public void Tick(float deltaTime)
         {
-            PublishGlobalBiolumPhase(deltaTime);
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
+            EnsureRuntimeResources();
+            CompleteRuntimeJobs(false);
+            DrainMovementAcousticSignals();
+            UpdateTouchRipples(safeDeltaTime);
+            UpdatePredatorBlackout(safeDeltaTime);
+            PublishGlobalBiolumPhase(safeDeltaTime);
+            RecordBiolumTelemetry();
 
 #if UNITY_EDITOR
             _debugTickInvocations++;
             _debugLastTickFrame = Time.frameCount;
-            _debugLastTickDelta = deltaTime;
+            _debugLastTickDelta = safeDeltaTime;
             _debugOceanZoneCount = _activeOceanZones.Count;
             _debugFloorZoneCount = _activeFloorZones.Count;
 #endif
             if (_sonarPulseBoost > 0f)
             {
-                _sonarPulseBoost = Mathf.Max(0f, _sonarPulseBoost - (_sonarDecayRate * deltaTime));
+                _sonarPulseBoost = Mathf.Max(0f, _sonarPulseBoost - (_sonarDecayRate * safeDeltaTime));
             }
 
-            _floraGlobalUpdateTimer += deltaTime;
+            _floraGlobalUpdateTimer += safeDeltaTime;
             if (_floraGlobalUpdateTimer < 0.18f)
             {
                 return;
@@ -409,14 +568,601 @@ namespace Hecton8.Biolum
 
         private void PublishGlobalBiolumPhase(float deltaTime)
         {
-            _globalBiolumPhase = math.frac(_globalBiolumPhase + math.max(0f, deltaTime) * GlobalBiolumPhaseRateHz);
-            if (math.abs(_globalBiolumPhase - _lastPublishedGlobalBiolumPhase) <= GlobalBiolumPhasePublishEpsilon)
+            ResolveCelestialBiolumState(out double celestialTime);
+            ResolveAbyssalFlowFrequencyScale();
+
+            float phaseStep = math.max(0f, deltaTime) * GlobalBiolumPhaseRateHz * _flowFrequencyScale;
+            if (celestialTime > 0d)
             {
+                double scaledPhase = celestialTime * GlobalBiolumPhaseRateHz * _flowFrequencyScale;
+                _globalBiolumPhase = (float)(scaledPhase - math.floor(scaledPhase));
+            }
+            else
+            {
+                _globalBiolumPhase = math.frac(_globalBiolumPhase + phaseStep);
+            }
+
+            _masterPulse01 = math.saturate(0.5f + (math.sin(_globalBiolumPhase * math.PI * 2f) * 0.5f));
+            float intensityScale = math.isfinite(_globalIntensityScale) ? math.max(0f, _globalIntensityScale) : 1f;
+            // CelestialRuntime already owns _HectonCelestialBiolumMultiplier; this vector only carries director dimming.
+            _masterIntensity = intensityScale * _daylightMask * _predatorCurrentIntensity;
+            if (!math.isfinite(_masterIntensity))
+            {
+                _masterIntensity = 0f;
+                DumpBiolumTelemetry(3);
+            }
+
+            Vector4 phaseVector = new Vector4(_globalBiolumPhase, _masterPulse01, _flowFrequencyScale, _eclipseMask);
+            Vector4 intensityVector = new Vector4(_masterIntensity, _predatorCurrentIntensity, _daylightMask, _activeTouchRippleCount);
+
+            if (VectorDeltaExceeds(_lastPublishedMasterPhase, phaseVector, GlobalBiolumPhasePublishEpsilon))
+            {
+                Shader.SetGlobalVector(_BiolumMasterPhaseId, phaseVector);
+                Shader.SetGlobalFloat(_GlobalBiolumPhaseId, _globalBiolumPhase);
+                _lastPublishedMasterPhase = phaseVector;
+                _lastPublishedGlobalBiolumPhase = _globalBiolumPhase;
+            }
+
+            if (VectorDeltaExceeds(_lastPublishedBiolumIntensity, intensityVector, GlobalBiolumPhasePublishEpsilon))
+            {
+                Shader.SetGlobalVector(_BiolumIntensityId, intensityVector);
+                _lastPublishedBiolumIntensity = intensityVector;
+            }
+        }
+
+        private void ResolveCelestialBiolumState(out double celestialTime)
+        {
+            CelestialRuntimeSnapshot snapshot = GlobalRegistry.CelestialRuntimeSnapshot;
+            bool valid = (snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u;
+            valid = valid &&
+                !double.IsNaN(snapshot.AbsoluteUniverseTime) &&
+                !double.IsInfinity(snapshot.AbsoluteUniverseTime) &&
+                math.all(math.isfinite(snapshot.SunDirection)) &&
+                math.isfinite(snapshot.EclipseOcclusion01);
+            bool eclipse = valid &&
+                (((snapshot.Flags & (uint)CelestialRuntimeFlags.EclipseActive) != 0u) ||
+                 snapshot.EclipseOcclusion01 > 0.05f);
+            Vector3 cameraPosition = GetCameraPosition();
+            bool daylightShallow = valid && !eclipse && snapshot.SunDirection.y > 0.05f && cameraPosition.y > ShallowDaylightCutoffY;
+
+            _daylightMask = daylightShallow ? 0f : 1f;
+            _eclipseMask = eclipse ? 1f : 0f;
+            celestialTime = valid ? snapshot.AbsoluteUniverseTime : Time.timeAsDouble;
+        }
+
+        private void ResolveAbyssalFlowFrequencyScale()
+        {
+            _flowFrequencyScale = 1f;
+            HectonFluidEngine fluid = GlobalRegistry.Fluid;
+            if (fluid == null)
+                return;
+
+            if (!fluid.TrySampleModAbyssalFlow(GetCameraPosition(), out float3 flowVector))
+                return;
+
+            float flowEnergy = math.lengthsq(flowVector);
+            if (!math.isfinite(flowEnergy))
+                return;
+
+            _flowFrequencyScale = 1f + (math.saturate(flowEnergy * 0.04f) * 0.2f);
+        }
+
+        private void DrainMovementAcousticSignals()
+        {
+            int drained = 0;
+            while (drained < MovementSignalMaxDrainPerTick && GlobalSignals.TryDequeueMovementAcoustic(out MovementAcousticSignal signal))
+            {
+                drained++;
+                AddOrRefreshTouchRipple(in signal);
+            }
+        }
+
+        private void AddOrRefreshTouchRipple(in MovementAcousticSignal signal)
+        {
+            float3 runtimePosition = signal.PositionAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtimePosition)) ||
+                !math.isfinite(signal.Volume) ||
+                !math.isfinite(signal.VelocitySq))
+            {
+                DumpBiolumTelemetry(1);
                 return;
             }
 
-            Shader.SetGlobalFloat(_GlobalBiolumPhaseId, _globalBiolumPhase);
-            _lastPublishedGlobalBiolumPhase = _globalBiolumPhase;
+            float velocity01 = math.saturate(signal.VelocitySq * 0.015f);
+            float volume01 = math.saturate(signal.Volume);
+            float intensity = math.saturate(0.28f + volume01 * 0.42f + velocity01 * 0.3f);
+            if (intensity <= 0.001f)
+                return;
+
+            float radius = math.lerp(4f, 18f, velocity01);
+            float lifetime = math.lerp(0.65f, 2.4f, velocity01);
+            int slot = FindTouchRippleSlot(signal.SourceId);
+            _touchRipples[slot].RuntimePosition = runtimePosition;
+            _touchRipples[slot].Radius = radius;
+            _touchRipples[slot].Intensity = intensity;
+            _touchRipples[slot].Age = 0f;
+            _touchRipples[slot].Lifetime = lifetime;
+            _touchRipples[slot].SourceId = signal.SourceId;
+            _touchRipples[slot].Active = 1;
+            _rippleSortReady = false;
+        }
+
+        private int FindTouchRippleSlot(uint sourceId)
+        {
+            int firstInactive = -1;
+            int weakestIndex = 0;
+            float weakestScore = float.MaxValue;
+
+            for (int i = 0; i < MaxTouchRipples; i++)
+            {
+                ref TouchRippleState ripple = ref _touchRipples[i];
+                if (ripple.Active != 0 && ripple.SourceId == sourceId)
+                    return i;
+
+                if (ripple.Active == 0)
+                {
+                    if (firstInactive < 0)
+                        firstInactive = i;
+                    continue;
+                }
+
+                float remaining = math.max(0f, ripple.Lifetime - ripple.Age);
+                float score = ripple.Intensity * remaining;
+                if (score < weakestScore)
+                {
+                    weakestScore = score;
+                    weakestIndex = i;
+                }
+            }
+
+            return firstInactive >= 0 ? firstInactive : weakestIndex;
+        }
+
+        private void UpdateTouchRipples(float deltaTime)
+        {
+            float safeDeltaTime = math.max(0f, deltaTime);
+            _activeTouchRippleCount = 0;
+            for (int i = 0; i < MaxTouchRipples; i++)
+            {
+                if (_touchRipples[i].Active == 0)
+                    continue;
+
+                _touchRipples[i].Age += safeDeltaTime;
+                if (_touchRipples[i].Age >= _touchRipples[i].Lifetime)
+                {
+                    _touchRipples[i] = default;
+                    continue;
+                }
+
+                _activeTouchRippleCount++;
+            }
+
+            if (_activeTouchRippleCount == 0)
+                _rippleSortReady = false;
+
+            ScheduleRippleDistanceJob(GetCameraPosition());
+            PublishTouchRippleBuffer();
+        }
+
+        private void ScheduleRippleDistanceJob(Vector3 observerPosition)
+        {
+            if (_rippleJobScheduled || !_rippleJobPositions.IsCreated || !_rippleJobDistances.IsCreated)
+                return;
+
+            float3 observer = new float3(observerPosition.x, observerPosition.y, observerPosition.z);
+            if (!math.all(math.isfinite(observer)))
+            {
+                _rippleSortReady = false;
+                DumpBiolumTelemetry(4);
+                return;
+            }
+
+            int count = 0;
+            for (int i = 0; i < MaxTouchRipples; i++)
+            {
+                if (_touchRipples[i].Active == 0)
+                    continue;
+
+                if (!math.all(math.isfinite(_touchRipples[i].RuntimePosition)))
+                {
+                    _touchRipples[i] = default;
+                    DumpBiolumTelemetry(5);
+                    continue;
+                }
+
+                _rippleJobSlotIndices[count] = i;
+                _rippleJobPositions[count++] = _touchRipples[i].RuntimePosition;
+            }
+
+            _scheduledRippleCount = count;
+            if (count <= 0)
+                return;
+
+            _rippleJobHandle = new RippleDistanceJob
+            {
+                RipplePositions = _rippleJobPositions,
+                ObserverPosition = observer,
+                DistanceSq = _rippleJobDistances
+            }.Schedule(count, 4);
+            _rippleJobScheduled = true;
+        }
+
+        private void PublishTouchRippleBuffer()
+        {
+            if (_touchRippleBufferA == null || _touchRippleBufferB == null)
+                return;
+
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            bool lowMathLod = !DistanceMath.IsHighQualityTier(tier);
+            int writeCount = lowMathLod ? 0 : StageTouchRippleUpload();
+
+            if (!lowMathLod && writeCount > 0)
+            {
+                GraphicsBuffer writeBuffer = ResolveTouchRippleWriteBuffer();
+                if (writeBuffer != null)
+                {
+                    GraphicsBufferUploadUtility.UploadArray(writeBuffer, _touchRippleUpload, MaxTouchRipples);
+                    _publishedTouchRippleBuffer = writeBuffer;
+                    Shader.SetGlobalBuffer(_BiolumTouchRipplesId, writeBuffer);
+                }
+            }
+
+            if (writeCount != _lastPublishedTouchRippleCount || tier != _lastPublishedTouchRippleTier)
+            {
+                Shader.SetGlobalVector(_BiolumTouchRippleParamsId, new Vector4(writeCount, 0f, 0f, 0f));
+                _lastPublishedTouchRippleCount = writeCount;
+                _lastPublishedTouchRippleTier = tier;
+            }
+        }
+
+        private int StageTouchRippleUpload()
+        {
+            int count = 0;
+            if (_rippleSortReady && _sortedTouchRippleCount > 0)
+            {
+                for (int order = 0; order < _sortedTouchRippleCount && count < MaxTouchRipples; order++)
+                {
+                    int slot = _sortedTouchRippleIndices[order];
+                    StageTouchRippleSlot(slot, ref count);
+                }
+
+                for (int i = count; i < MaxTouchRipples; i++)
+                    _touchRippleUpload[i] = Vector4.zero;
+
+                return count;
+            }
+
+            for (int i = 0; i < MaxTouchRipples; i++)
+                StageTouchRippleSlot(i, ref count);
+
+            for (int i = count; i < MaxTouchRipples; i++)
+                _touchRippleUpload[i] = Vector4.zero;
+
+            return count;
+        }
+
+        private void StageTouchRippleSlot(int slot, ref int count)
+        {
+            if (slot < 0 || slot >= MaxTouchRipples || count >= MaxTouchRipples)
+                return;
+
+            if (_touchRipples[slot].Active == 0)
+                return;
+
+            float lifetime = math.max(0.0001f, _touchRipples[slot].Lifetime);
+            float life01 = 1f - math.saturate(_touchRipples[slot].Age * math.rcp(lifetime));
+            float radius = _touchRipples[slot].Radius * math.saturate(_touchRipples[slot].Intensity * life01);
+            float3 position = _touchRipples[slot].RuntimePosition;
+            if (!math.isfinite(radius) || radius <= 0.0001f || !math.all(math.isfinite(position)))
+            {
+                _touchRipples[slot] = default;
+                DumpBiolumTelemetry(6);
+                return;
+            }
+
+            _touchRippleUpload[count++] = new Vector4(position.x, position.y, position.z, radius);
+        }
+
+        private void UpdatePredatorBlackout(float deltaTime)
+        {
+            float step = (math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f) * PredatorBlackoutFadeRate;
+            _predatorCurrentIntensity = Mathf.MoveTowards(_predatorCurrentIntensity, _predatorTargetIntensity, step);
+
+            if (_predatorJobScheduled || !_predatorJobPositions.IsCreated || !_predatorJobScores.IsCreated)
+                return;
+
+            Vector3 cameraPosition = GetCameraPosition();
+            int contactCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
+                cameraPosition,
+                PredatorBlackoutRadiusMeters,
+                SpatialTargetKind.Bioform,
+                _predatorContacts);
+            _predatorCandidateCount = 0;
+
+            for (int i = 0; i < contactCount && _predatorCandidateCount < MaxPredatorContacts; i++)
+            {
+                SpatialQueryHit hit = _predatorContacts[i];
+                if (!(hit.Owner is FaunaBrain brain) || brain.IsDead || !brain.IsApexPredatorRuntime)
+                    continue;
+
+                Vector3 predatorPosition = hit.Position;
+                if (!math.all(math.isfinite(new float3(predatorPosition.x, predatorPosition.y, predatorPosition.z))))
+                {
+                    DumpBiolumTelemetry(7);
+                    continue;
+                }
+
+                _predatorJobPositions[_predatorCandidateCount++] = new float3(predatorPosition.x, predatorPosition.y, predatorPosition.z);
+            }
+
+            _scheduledPredatorCount = _predatorCandidateCount;
+            if (_scheduledPredatorCount <= 0)
+            {
+                _predatorTargetIntensity = 1f;
+                return;
+            }
+
+            _predatorJobHandle = new PredatorBlackoutJob
+            {
+                PredatorPositions = _predatorJobPositions,
+                ObserverPosition = new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z),
+                RadiusSq = PredatorBlackoutRadiusSq,
+                Scores = _predatorJobScores
+            }.Schedule(_scheduledPredatorCount, 4);
+            _predatorJobScheduled = true;
+        }
+
+        private void CompleteRuntimeJobs(bool forceComplete)
+        {
+            if (_predatorJobScheduled && TryFinalizeRuntimeJob(ref _predatorJobHandle, forceComplete))
+            {
+                _predatorJobScheduled = false;
+                float maxScore = 0f;
+                for (int i = 0; i < _scheduledPredatorCount; i++)
+                    maxScore = math.max(maxScore, _predatorJobScores[i]);
+
+                _predatorTargetIntensity = math.lerp(1f, PredatorBlackoutMinimumIntensity, math.saturate(maxScore));
+                _scheduledPredatorCount = 0;
+            }
+
+            if (_rippleJobScheduled && TryFinalizeRuntimeJob(ref _rippleJobHandle, forceComplete))
+            {
+                _rippleJobScheduled = false;
+                FinalizeRippleDistanceOrder();
+                _scheduledRippleCount = 0;
+            }
+        }
+
+        private static bool TryFinalizeRuntimeJob(ref JobHandle handle, bool forceComplete)
+        {
+            return forceComplete
+                ? DispatcherJobSwap.TryComplete(ref handle, true)
+                : DispatcherJobSwap.TryFinalizeCompleted(ref handle);
+        }
+
+        private void FinalizeRippleDistanceOrder()
+        {
+            _sortedTouchRippleCount = 0;
+            _rippleSortReady = false;
+            for (int i = 0; i < _scheduledRippleCount && i < MaxTouchRipples; i++)
+            {
+                float distanceSq = _rippleJobDistances[i];
+                int slot = _rippleJobSlotIndices[i];
+                if (slot < 0 || slot >= MaxTouchRipples || _touchRipples[slot].Active == 0 || !math.isfinite(distanceSq))
+                    continue;
+
+                int writeIndex = _sortedTouchRippleCount;
+                _sortedTouchRippleIndices[writeIndex] = slot;
+                _sortedTouchRippleDistanceSq[writeIndex] = distanceSq;
+                _sortedTouchRippleCount++;
+
+                while (writeIndex > 0 && _sortedTouchRippleDistanceSq[writeIndex] < _sortedTouchRippleDistanceSq[writeIndex - 1])
+                {
+                    int swapIndex = _sortedTouchRippleIndices[writeIndex - 1];
+                    _sortedTouchRippleIndices[writeIndex - 1] = _sortedTouchRippleIndices[writeIndex];
+                    _sortedTouchRippleIndices[writeIndex] = swapIndex;
+
+                    float swapDistance = _sortedTouchRippleDistanceSq[writeIndex - 1];
+                    _sortedTouchRippleDistanceSq[writeIndex - 1] = _sortedTouchRippleDistanceSq[writeIndex];
+                    _sortedTouchRippleDistanceSq[writeIndex] = swapDistance;
+                    writeIndex--;
+                }
+            }
+
+            _rippleSortReady = _sortedTouchRippleCount > 0;
+        }
+
+        private void EnsureRuntimeResources()
+        {
+            if (_disposed)
+                _disposed = false;
+
+            if (_touchRippleBufferA == null)
+                _touchRippleBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(MaxTouchRipples);
+
+            if (_touchRippleBufferB == null)
+                _touchRippleBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(MaxTouchRipples);
+
+            if (_publishedTouchRippleBuffer == null && _touchRippleBufferA != null)
+            {
+                GraphicsBufferUploadUtility.UploadArray(_touchRippleBufferA, _touchRippleUpload, MaxTouchRipples);
+                GraphicsBufferUploadUtility.UploadArray(_touchRippleBufferB, _touchRippleUpload, MaxTouchRipples);
+                _publishedTouchRippleBuffer = _touchRippleBufferA;
+                Shader.SetGlobalBuffer(_BiolumTouchRipplesId, _publishedTouchRippleBuffer);
+            }
+
+            if (!_predatorJobPositions.IsCreated)
+                _predatorJobPositions = new NativeArray<float3>(MaxPredatorContacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            if (!_predatorJobScores.IsCreated)
+                _predatorJobScores = new NativeArray<float>(MaxPredatorContacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            if (!_rippleJobPositions.IsCreated)
+                _rippleJobPositions = new NativeArray<float3>(MaxTouchRipples, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            if (!_rippleJobDistances.IsCreated)
+                _rippleJobDistances = new NativeArray<float>(MaxTouchRipples, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            if (!_telemetryRing.IsCreated)
+                _telemetryRing = new NativeArray<BiolumTelemetryEntry>(BiolumTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private void ReleaseRuntimeResources()
+        {
+            ReleaseGraphicsBuffer(ref _touchRippleBufferA);
+            ReleaseGraphicsBuffer(ref _touchRippleBufferB);
+            _publishedTouchRippleBuffer = null;
+
+            DisposeNativeArray(ref _predatorJobPositions);
+            DisposeNativeArray(ref _predatorJobScores);
+            DisposeNativeArray(ref _rippleJobPositions);
+            DisposeNativeArray(ref _rippleJobDistances);
+            DisposeNativeArray(ref _telemetryRing);
+        }
+
+        private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            array.Dispose();
+            array = default;
+        }
+
+        private GraphicsBuffer ResolveTouchRippleWriteBuffer()
+        {
+            if (_publishedTouchRippleBuffer == null)
+                return _touchRippleBufferA != null ? _touchRippleBufferA : _touchRippleBufferB;
+
+            return ReferenceEquals(_publishedTouchRippleBuffer, _touchRippleBufferA)
+                ? _touchRippleBufferB
+                : _touchRippleBufferA;
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            CompleteRuntimeJobs(true);
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float3 shift = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            if (!math.all(math.isfinite(shift)))
+                return;
+
+            for (int i = 0; i < MaxTouchRipples; i++)
+            {
+                if (_touchRipples[i].Active == 0)
+                    continue;
+
+                _touchRipples[i].RuntimePosition -= shift;
+            }
+        }
+
+        private void RecordBiolumTelemetry()
+        {
+            if (!_telemetryRing.IsCreated)
+                return;
+
+            Vector3 cameraPosition = GetCameraPosition();
+            float3 cameraPosition3 = new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+            byte flags = 0;
+            if (_daylightMask <= 0.001f)
+                flags |= 1;
+            if (_predatorCurrentIntensity < 0.999f)
+                flags |= 2;
+            if (_eclipseMask > 0.001f)
+                flags |= 4;
+            if (!math.all(math.isfinite(cameraPosition3)))
+            {
+                flags |= 8;
+                cameraPosition3 = float3.zero;
+                DumpBiolumTelemetry(8);
+            }
+
+            float safeIntensity = math.isfinite(_masterIntensity) ? _masterIntensity : 0f;
+            float safePhase = math.isfinite(_globalBiolumPhase) ? _globalBiolumPhase : 0f;
+            float safePredatorDim = math.isfinite(_predatorCurrentIntensity) ? _predatorCurrentIntensity : 1f;
+            float safeDaylightMask = math.isfinite(_daylightMask) ? _daylightMask : 1f;
+
+            _telemetryRing[_telemetryWriteIndex] = new BiolumTelemetryEntry
+            {
+                Frame = (uint)Time.frameCount,
+                CameraPosition = cameraPosition3,
+                Intensity = safeIntensity,
+                Phase = safePhase,
+                PredatorDim = safePredatorDim,
+                DaylightMask = safeDaylightMask,
+                PredatorHits = (ushort)math.min(_predatorCandidateCount, ushort.MaxValue),
+                ActiveRipples = (byte)math.min(_activeTouchRippleCount, byte.MaxValue),
+                Flags = flags
+            };
+            _telemetryWriteIndex = (_telemetryWriteIndex + 1) % BiolumTelemetryCapacity;
+            _telemetrySequence++;
+
+            if (_activeTouchRippleCount != _lastRippleTelemetryCount || Time.frameCount - _lastRippleTelemetryFrame >= 30)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    ActiveBiolumRipplesHash,
+                    BiolumDirectorContextHash,
+                    _activeTouchRippleCount);
+                _lastRippleTelemetryCount = _activeTouchRippleCount;
+                _lastRippleTelemetryFrame = Time.frameCount;
+            }
+
+            if (!math.isfinite(_masterIntensity) || !math.isfinite(_globalBiolumPhase))
+                DumpBiolumTelemetry(2);
+        }
+
+        private void DumpBiolumTelemetry(byte reasonFlags)
+        {
+            if (!_telemetryRing.IsCreated)
+                return;
+
+            int frame = Time.frameCount;
+            if (frame - _lastBiolumDumpFrame < BiolumDumpCooldownFrames)
+                return;
+
+            _lastBiolumDumpFrame = frame;
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string dumpPath = Path.Combine(projectRoot, BiolumDumpRelativePath);
+            string directory = Path.GetDirectoryName(dumpPath);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(0x42494F4Cu);
+                writer.Write(_telemetrySequence);
+                writer.Write(reasonFlags);
+                writer.Write(BiolumTelemetryCapacity);
+                for (int i = 0; i < BiolumTelemetryCapacity; i++)
+                {
+                    BiolumTelemetryEntry entry = _telemetryRing[i];
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.CameraPosition.x);
+                    writer.Write(entry.CameraPosition.y);
+                    writer.Write(entry.CameraPosition.z);
+                    writer.Write(entry.Intensity);
+                    writer.Write(entry.Phase);
+                    writer.Write(entry.PredatorDim);
+                    writer.Write(entry.DaylightMask);
+                    writer.Write(entry.PredatorHits);
+                    writer.Write(entry.ActiveRipples);
+                    writer.Write(entry.Flags);
+                }
+            }
+        }
+
+        private static bool VectorDeltaExceeds(Vector4 left, Vector4 right, float epsilon)
+        {
+            return math.abs(left.x - right.x) > epsilon ||
+                   math.abs(left.y - right.y) > epsilon ||
+                   math.abs(left.z - right.z) > epsilon ||
+                   math.abs(left.w - right.w) > epsilon;
         }
 
         private static Color FastLerpColor(Color from, Color to, float t)
@@ -440,7 +1186,7 @@ namespace Hecton8.Biolum
 
             _nextCameraResolveTime = currentTime + CameraResolveCooldown;
 
-            if (BootstrapState.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
                 IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
                 Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
@@ -582,6 +1328,21 @@ namespace Hecton8.Biolum
                 Shader.SetGlobalFloat(_GlobalBiolumPhaseId, 0f);
             _globalBiolumPhase = 0f;
             _lastPublishedGlobalBiolumPhase = 0f;
+            _masterPulse01 = 0.5f;
+            _masterIntensity = 0f;
+            _predatorTargetIntensity = 1f;
+            _predatorCurrentIntensity = 1f;
+            _daylightMask = 1f;
+            _eclipseMask = 0f;
+            Vector4 resetPhase = new Vector4(0f, 0.5f, 1f, 0f);
+            Vector4 resetIntensity = Vector4.zero;
+            _lastPublishedMasterPhase = resetPhase;
+            _lastPublishedBiolumIntensity = resetIntensity;
+            Shader.SetGlobalVector(_BiolumMasterPhaseId, resetPhase);
+            Shader.SetGlobalVector(_BiolumIntensityId, resetIntensity);
+            Shader.SetGlobalVector(_BiolumTouchRippleParamsId, Vector4.zero);
+            _lastPublishedTouchRippleCount = 0;
+            _lastPublishedTouchRippleTier = HectonQualityTier.Unknown;
         }
 
         private void PublishFloraShaderGlobals()
@@ -638,7 +1399,9 @@ namespace Hecton8.Biolum
                 return;
             }
 
-            GlobalRegistry.RegisterBiolumManagerRuntime(this);
+            if (!GameBootstrapper.RegisterBiolumDirector(this))
+                return;
+
             _serviceRegistered = ReferenceEquals(GlobalRegistry.BiolumManager, this);
         }
 
@@ -647,12 +1410,15 @@ namespace Hecton8.Biolum
             if (!_serviceRegistered)
                 return;
 
-            GlobalRegistry.UnregisterBiolumManagerRuntime(this);
+            GameBootstrapper.UnregisterBiolumDirector(this);
             _serviceRegistered = false;
         }
 
         private void HandleSonarPulse(float radius)
         {
+            if (!math.isfinite(radius) || !math.isfinite(_sonarReferenceRadius))
+                return;
+
             float normalizedRadius = Mathf.Clamp01(radius / Mathf.Max(1f, _sonarReferenceRadius));
             if (normalizedRadius <= 0f)
             {
@@ -673,6 +1439,19 @@ namespace Hecton8.Biolum
         void ISonarPulseEventListener.OnSonarPulse(float radius)
         {
             HandleSonarPulse(radius);
+        }
+
+        /// <summary>
+        /// Releases persistent native and graphics resources owned by the biolum director.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            CompleteRuntimeJobs(true);
+            ReleaseRuntimeResources();
+            _disposed = true;
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

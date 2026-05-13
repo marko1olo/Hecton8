@@ -66,7 +66,7 @@ Trigger conditions:
 
 Export algorithm:
 
-1. Determine export range: last min(writeIndex, 50) entries from ring
+1. Determine export range: full 300-entry ring, oldest-to-newest from `writeIndex`
 // [FORBID] Managed C# I/O during crash event.
 // Use Native Memory-Mapped Files (MMF) OR CrashReportHandler.SetUserMetadata.
 3. Write 8B magic header: 0x48454354_4F4E3800  ("HECTON8\0")
@@ -77,22 +77,28 @@ Export algorithm:
 8. Write companion .json manifest: timestamp, buildGUID, platform, systemFlags legend
 
 Never use `JsonUtility` for binary section — raw `BinaryWriter` or `UnsafeUtility.MemCpy`.
-Export runs on background thread via `Task.Run`. UI thread posts notification only.
+Export runs on a pre-owned export worker, `Awaitable.BackgroundThreadAsync`, or a persistent log thread. Do not allocate a fresh managed task per fault.
+System-specific dumps use `Docs/AgentLogs/Dump_[OWNER_ID].bin`. Examples: `Dump_PLAYER_KINEMATICS.bin`, `Dump_PIPE_LOGISTICS_ARCHITECT.bin`, `Dump_VOXEL_MESH_PIPELINE.bin`.
+Critical-system Black Boxes may add owner-specific fields, but capacity remains exactly 300 frames unless a larger capacity has explicit MX350 memory proof.
 
 ### 1.3 State Snapshot: NaN / Error Recovery Flow
 
 FLOW: ErrorDetected
 
 ├ [1] NaN Sweep (per FixedUpdate, Physics systems only)
-       foreach component in tracked list:
-           if IsNaN(pos.x | pos.y | pos.z | vel.magnitude):
+       trackedCount = trackedComponents.Count
+       for i = 0; i < trackedCount; i++:
+           component = trackedComponents[i]
+           velSq = dot(vel, vel)
+           if IsNaN(pos.x | pos.y | pos.z | velSq):
                errorFlags |= ERR_NAN_PHYSICS
                Snap pos → lastValidPos[entityID]
                Zero velocity
 
-├ [2] Buffer 50 Preceding States
-       readCursor = (writeIndex - 50 + BUFFER_CAPACITY) % BUFFER_CAPACITY
-       copy 50 entries to safetySnapshot NativeArray (pre-allocated, separate)
+├ [2] Buffer 300 Preceding States
+       readCursor = writeIndex
+       copy BUFFER_CAPACITY entries to safetySnapshot NativeArray (pre-allocated, separate)
+       export order = ring[(writeIndex + offset) % BUFFER_CAPACITY], offset 0..BUFFER_CAPACITY-1
 
 ├ [3] Export Binary Log (§1.2)
 
@@ -438,7 +444,7 @@ if QUERY(DebugFlags, 15):
 Subsystem initialization order (critical — wrong order causes null-ref on early errors):
 
 [1] Allocate NativeArray<DebugLogEntry> (Persistent)          // §1.1
-[2] Allocate safetySnapshot NativeArray<DebugLogEntry> ×50   // §1.3
+[2] Allocate safetySnapshot NativeArray<DebugLogEntry> ×300  // §1.3
 [3] Init GizmoGeometryPool — pre-build meshes                 // §3.1
 [4] Allocate StatusBuffer string[64] + float[64]             // §5.1
 [5] Pre-allocate Overlay Mesh (20,480 verts)                 // §5.2
@@ -481,3 +487,14 @@ If any debug subsystem cost exceeds 10% of frame budget → auto-disable that su
 if debugSubsystemCostMs > (targetFrameMs * 0.10f):
     CLEAR(DebugFlags, offendingBit)
     StatusBuffer.Write("AUTO-DISABLED: {system} exceeded 10% frame budget")
+
+---
+
+## Engineering Data
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| Hot path | 0 B GC, no unbounded main-thread work | Profiler/GCMonitor/static scan |
+| MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
+| Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
+| Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |

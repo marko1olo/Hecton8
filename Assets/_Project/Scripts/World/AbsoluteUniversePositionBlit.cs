@@ -1,8 +1,10 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core.Memory.Layout;
 using Unity.Mathematics;
 
 namespace Hecton8.World
 {
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct AbsoluteUniversePositionBlit
     {

@@ -119,6 +119,9 @@ namespace Hecton8.Core
             if (_registered || !Application.isPlaying)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             _registered = GlobalRegistry.TryRegisterUpdatable(s_tickable, PriorityLayer.Core);
         }
 

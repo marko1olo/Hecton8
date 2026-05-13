@@ -1,0 +1,23 @@
+{
+    "name": "Hecton8.World.Streaming",
+    "rootNamespace": "Hecton8.World",
+    "references": [
+        "Hecton8.World.Contracts",
+        "Hecton8.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.addressables",
+            "expression": "2.7.6",
+            "define": "UNITY_ADDRESSABLES_EXIST"
+        }
+    ],
+    "noEngineReferences": false
+}

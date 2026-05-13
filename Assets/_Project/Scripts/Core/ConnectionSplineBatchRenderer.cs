@@ -81,6 +81,8 @@ namespace Hecton8.Core
         private readonly Dictionary<long, SplineDescriptor> _pipeRegistrations = new Dictionary<long, SplineDescriptor>(DefaultBatchCapacity);
         // COLD ALLOC: HashSet<uint>[100] - ruptured logistics-pipe endpoint flags - owner: ConnectionSplineBatchRenderer
         private readonly HashSet<uint> _rupturedPipeNodes = new HashSet<uint>(DefaultBatchCapacity);
+        // COLD ALLOC: Dictionary<uint,float>[100] - per-node pipe flow scalar for shader panning - owner: ConnectionSplineBatchRenderer
+        private readonly Dictionary<uint, float> _pipeNodeFlow01 = new Dictionary<uint, float>(DefaultBatchCapacity);
         // COLD ALLOC: List<long>[100] - shared dictionary-key scratch for rupture and origin-shift rebases - owner: ConnectionSplineBatchRenderer
         private readonly List<long> _pipeRuptureUpdateScratch = new List<long>(DefaultBatchCapacity);
 
@@ -118,6 +120,13 @@ namespace Hecton8.Core
             IConnectionSplineBatchRendererService renderer = ResolveService();
             if (renderer != null)
                 renderer.SetPipeNodeRuptured(nodeId, ruptured);
+        }
+
+        internal static void SetPipeNodeFlow(uint nodeId, float flow01)
+        {
+            IConnectionSplineBatchRendererService renderer = ResolveService();
+            if (renderer != null)
+                renderer.SetPipeNodeFlow(nodeId, flow01);
         }
 
         public static void SetLogisticsPathHighlightActive(bool active)
@@ -281,6 +290,11 @@ namespace Hecton8.Core
             SetPipeNodeRupturedInternal(nodeId, ruptured);
         }
 
+        void IConnectionSplineBatchRendererService.SetPipeNodeFlow(uint nodeId, float flow01)
+        {
+            SetPipeNodeFlowInternal(nodeId, flow01);
+        }
+
         void IConnectionSplineBatchRendererService.SubmitRelaySpline(
             long linkId,
             SplineDescriptor descriptor,
@@ -336,7 +350,7 @@ namespace Hecton8.Core
             _rupturedPipeNodes.Clear();
             _pipeRuptureUpdateScratch.Clear();
 
-            if (_serviceRegistered)
+            if (_serviceRegistered && ReferenceEquals(GlobalRegistry.ConnectionSplineBatchRenderer, this))
                 GlobalRegistry.UnregisterConnectionSplineBatchRendererRuntime(this);
 
             _serviceRegistered = false;
@@ -429,7 +443,7 @@ namespace Hecton8.Core
             SetBatchColor(_batches[(int)BatchKind.PipesNear], color);
             SetBatchColor(_batches[(int)BatchKind.PipesFar], color);
             SetBatchColor(_batches[(int)BatchKind.PipesLine], color);
-            ApplyPipeRuptureFlags(linkId, ref descriptor);
+            ApplyPipeDynamicFlags(linkId, ref descriptor);
             _pipeRegistrations[linkId] = descriptor;
             ReassignPipeBatch(linkId, in descriptor);
         }
@@ -443,6 +457,30 @@ namespace Hecton8.Core
             if (!changed)
                 return;
 
+            UpdatePipeLinksForNode(nodeId);
+        }
+
+        private void SetPipeNodeFlowInternal(uint nodeId, float flow01)
+        {
+            float sanitizedFlow = math.saturate(flow01);
+            if (sanitizedFlow <= 0.001f)
+            {
+                if (!_pipeNodeFlow01.Remove(nodeId))
+                    return;
+            }
+            else
+            {
+                if (_pipeNodeFlow01.TryGetValue(nodeId, out float previous) && math.abs(previous - sanitizedFlow) <= 0.01f)
+                    return;
+
+                _pipeNodeFlow01[nodeId] = sanitizedFlow;
+            }
+
+            UpdatePipeLinksForNode(nodeId);
+        }
+
+        private void UpdatePipeLinksForNode(uint nodeId)
+        {
             _pipeRuptureUpdateScratch.Clear();
             Dictionary<long, SplineDescriptor>.Enumerator enumerator = _pipeRegistrations.GetEnumerator();
             while (enumerator.MoveNext())
@@ -458,15 +496,16 @@ namespace Hecton8.Core
                 if (!_pipeRegistrations.TryGetValue(linkId, out SplineDescriptor descriptor))
                     continue;
 
-                ApplyPipeRuptureFlags(linkId, ref descriptor);
+                ApplyPipeDynamicFlags(linkId, ref descriptor);
                 _pipeRegistrations[linkId] = descriptor;
                 ReassignPipeBatch(linkId, in descriptor);
             }
         }
 
-        private void ApplyPipeRuptureFlags(long linkId, ref SplineDescriptor descriptor)
+        private void ApplyPipeDynamicFlags(long linkId, ref SplineDescriptor descriptor)
         {
-            descriptor.Flags &= ~PipeRenderFlags.MaskRuptured;
+            descriptor.Flags &= ~(PipeRenderFlags.MaskRuptured | PipeRenderFlags.MaskHasFluidFlow);
+            descriptor.FlowScalar = 0f;
             DecodePipeLinkId(linkId, out uint leftNodeId, out uint rightNodeId);
             if (_rupturedPipeNodes.Contains(leftNodeId) || _rupturedPipeNodes.Contains(rightNodeId))
             {
@@ -478,6 +517,18 @@ namespace Hecton8.Core
             {
                 descriptor.RuptureStartTimeSeconds = 0f;
             }
+
+            float flow01 = math.max(ResolvePipeNodeFlow(leftNodeId), ResolvePipeNodeFlow(rightNodeId));
+            if (flow01 > 0.001f)
+            {
+                descriptor.Flags |= PipeRenderFlags.MaskHasFluidFlow;
+                descriptor.FlowScalar = flow01;
+            }
+        }
+
+        private float ResolvePipeNodeFlow(uint nodeId)
+        {
+            return _pipeNodeFlow01.TryGetValue(nodeId, out float flow01) ? flow01 : 0f;
         }
 
         private static bool PipeLinkContainsNode(long linkId, uint nodeId)
@@ -566,7 +617,7 @@ namespace Hecton8.Core
                     P0Radius = new float4(p0, radius),
                     P1Flags = new float4(p1, (float)descriptor.Flags),
                     P2 = new float4(p2, descriptor.RuptureStartTimeSeconds),
-                    P3 = new float4(p3, IsPowerFlowPipeBatch(batch) ? 1f : 0f)
+                    P3 = new float4(p3, IsPowerFlowPipeBatch(batch) ? 1f : descriptor.FlowScalar)
                 };
 
                 float3 padding = new float3(radius + 0.25f);

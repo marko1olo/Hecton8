@@ -1,6 +1,7 @@
 using System;
 using Hecton8.AtlasSignal;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Audio;
 using Hecton8.AI;
 using Hecton8.Bootstrap;
@@ -42,6 +43,8 @@ namespace Hecton8.Gameplay
         private const int OperationalStringCacheHz = 10;
         private const int PrefixedScannerStringCacheSize = 128;
         private const int ScientificRaycastRequestSalt = 0x5DA70000;
+        private const uint ScannerToolTuningHash = 0x53434E52u; // SCNR
+        private const uint FallbackScannerBlueprintHash = 0x534F5648u; // SOVH
         private const string ItemEntryPrefix = "item.";
         private const string ModuleEntryPrefix = "module.";
         private const string ConstructionCategoryPrefix = "Construction/";
@@ -524,6 +527,9 @@ namespace Hecton8.Gameplay
         private float3 _activeScientificEntityProbePosition;
         private uint _activeScientificEntityHash;
         private float _activeScientificEntityProgress;
+        private uint _lastPublishedTuningArtifactHash;
+        private uint _lastPublishedTuningBlueprintHash;
+        private bool _lastPublishedTuningActive;
         private int _scientificRaycastRequestSequence;
         private int _scientificRaycastPendingRequestId;
         private float _heldPrimaryDeltaTime;
@@ -691,6 +697,7 @@ namespace Hecton8.Gameplay
             base.OnUnequip();
             PulseActive = false;
             ResetScientificFocus();
+            PublishScannerTuningSignal(forceInactive: true);
             InvalidateOperationalStringCache();
         }
 
@@ -810,6 +817,7 @@ namespace Hecton8.Gameplay
         public override void ToolTick(float deltaTime)
         {
             UpdateScientificScanning(deltaTime);
+            PublishScannerTuningSignal(forceInactive: false);
             if (_powerIndicatorRenderer != null && TryGetToolBrownoutFlicker(out _))
                 UpdatePowerIndicator();
 
@@ -819,6 +827,59 @@ namespace Hecton8.Gameplay
             float elapsed = Time.time - PulseStartTime;
             if (elapsed > pulseDuration)
                 PulseActive = false;
+        }
+
+        private void PublishScannerTuningSignal(bool forceInactive)
+        {
+            ResolveScannerTuningHashes(out uint artifactHash, out uint blueprintHash, out float progress01);
+            bool active = !forceInactive &&
+                          IsEquipped &&
+                          BatteryCharge > 0f &&
+                          artifactHash != 0u &&
+                          (_scientificSnapshot.IsActive || _activeScientificFragment != null || _activeScientificEntityHash != 0u);
+
+            if (active == _lastPublishedTuningActive &&
+                artifactHash == _lastPublishedTuningArtifactHash &&
+                blueprintHash == _lastPublishedTuningBlueprintHash)
+            {
+                return;
+            }
+
+            _lastPublishedTuningActive = active;
+            _lastPublishedTuningArtifactHash = artifactHash;
+            _lastPublishedTuningBlueprintHash = blueprintHash;
+            GlobalSignals.Publish(new ScannerToolActiveSignal
+            {
+                ToolHash = ScannerToolTuningHash,
+                ArtifactHash = artifactHash,
+                BlueprintHash = blueprintHash != 0u ? blueprintHash : FallbackScannerBlueprintHash,
+                Frame = unchecked((uint)Time.frameCount),
+                Progress01 = math.saturate(progress01),
+                Battery01 = math.saturate(BatteryCharge),
+                Active = active ? (byte)1 : (byte)0,
+                Stage = 0,
+                Flags = _activeScientificFragment != null ? (byte)1 : (byte)0,
+                QualityTier = (byte)GlobalRegistry.ScalabilityTier
+            });
+        }
+
+        private void ResolveScannerTuningHashes(out uint artifactHash, out uint blueprintHash, out float progress01)
+        {
+            ScannableFragment fragment = _activeScientificFragment;
+            if (fragment == null && _scientificSnapshot.IsActive)
+                fragment = _scientificSnapshot.Fragment;
+
+            if (fragment != null)
+            {
+                artifactHash = fragment.DiscoveryHash;
+                blueprintHash = unchecked((uint)fragment.RewardItemHash);
+                progress01 = fragment.ProgressNormalized;
+                return;
+            }
+
+            artifactHash = _activeScientificEntityHash;
+            blueprintHash = 0u;
+            progress01 = _activeScientificEntityProgress;
         }
 
         public override void OnSpawn()

@@ -67,7 +67,11 @@ namespace Hecton8.Core
         WaterSurfaceY = 15,
         RoomOxygen01 = 16,
         SurvivalStatusMask = 17,
-        Count = 18
+        RoomOxygenPartialKPa = 18,
+        RoomCarbonDioxidePartialKPa = 19,
+        RoomPressureKPa = 20,
+        RoomNarcosis01 = 21,
+        Count = 22
     }
 
     /// <summary>

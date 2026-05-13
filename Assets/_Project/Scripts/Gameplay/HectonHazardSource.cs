@@ -69,12 +69,14 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             HectonHazardManager.Unregister(_instanceID);
+            RadiationHazardGrid.UnregisterSource(_instanceID);
             TryUnregisterFromTickManager();
         }
 
         private void OnDestroy()
         {
             HectonHazardManager.Unregister(_instanceID);
+            RadiationHazardGrid.UnregisterSource(_instanceID);
             TryUnregisterFromTickManager();
         }
 
@@ -100,12 +102,21 @@ namespace Hecton8.Gameplay
 
         private void InternalUpdateRegistry()
         {
+            HazardType resolvedType = ResolveHazardType();
+            if (resolvedType == HazardType.Radiation)
+            {
+                HectonHazardManager.Unregister(_instanceID);
+                RadiationHazardGrid.RegisterSource(_instanceID, _tr.position, _intensity, _radius);
+                return;
+            }
+
+            RadiationHazardGrid.UnregisterSource(_instanceID);
             HectonHazardManager.Register(
                 _instanceID,
                 _tr.position,
                 _intensity,
                 _radius,
-                ResolveHazardType(),
+                resolvedType,
                 ResolveVisorGlitchBias(),
                 _profile);
         }

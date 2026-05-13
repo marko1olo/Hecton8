@@ -6,6 +6,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 using System.Threading;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Memory.Layout;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
@@ -21,6 +22,7 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct AbsoluteUniversePosition
     {
@@ -147,6 +149,7 @@ namespace Hecton8.World
     /// <summary>
     /// 16-byte-aligned AUP transfer payload for network or memcpy lanes that require float4-friendly packing.
     /// </summary>
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct AbsoluteUniversePositionBlit128
     {
@@ -188,6 +191,7 @@ namespace Hecton8.World
         DehydrationQueued = 1 << 5,
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 40)]
     internal struct PoolSlotData
     {
@@ -201,6 +205,7 @@ namespace Hecton8.World
         public ushort LastVisibleFrame;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 16, Size = 64)]
     internal struct EntityDataRecord
     {
@@ -211,6 +216,8 @@ namespace Hecton8.World
         public uint InstanceUid;
     }
 
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Pack = 8, Size = 80)]
     internal struct ResourceNodeTombstoneRecord
     {
         public ulong TombstoneId;
@@ -219,6 +226,7 @@ namespace Hecton8.World
         public int3 ChunkId;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 204)]
     internal struct PersistentWorldItemRecord
     {
@@ -384,6 +392,7 @@ namespace Hecton8.World
         }
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
     internal struct PersistentWorldCompactDeltaRecord
     {
@@ -401,6 +410,7 @@ namespace Hecton8.World
     }
 
     [BurstCompile]
+    [StructLayout(LayoutKind.Sequential, Pack = 16)]
     internal struct TombstoneDecayCollectJob : IJob
     {
         [ReadOnly]

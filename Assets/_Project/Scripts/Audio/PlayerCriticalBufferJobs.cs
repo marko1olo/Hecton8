@@ -409,6 +409,66 @@ namespace Hecton8.Audio
             }
         }
 
+        [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        public struct VwsCooldownDecayJob : IJob
+        {
+            public NativeArray<float> Cooldowns;
+            public float DeltaSeconds;
+
+            public void Execute()
+            {
+                if (!Cooldowns.IsCreated)
+                    return;
+
+                float delta = math.max(0f, DeltaSeconds);
+                for (int i = 1; i < Cooldowns.Length; i++)
+                {
+                    float current = Cooldowns[i];
+                    current = math.isfinite(current) ? current : 0f;
+                    Cooldowns[i] = math.max(0f, current - delta);
+                }
+            }
+        }
+
+        [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        public struct VwsPrioritySortJob : IJob
+        {
+            public NativeArray<byte> Queue;
+            public int QueueCount;
+
+            public void Execute()
+            {
+                if (!Queue.IsCreated)
+                    return;
+
+                int count = math.clamp(QueueCount, 0, Queue.Length);
+                for (int i = 1; i < count; i++)
+                {
+                    byte value = Queue[i];
+                    int j = i - 1;
+                    while (j >= 0 && IsLowerPriority(Queue[j], value))
+                    {
+                        Queue[j + 1] = Queue[j];
+                        j--;
+                    }
+
+                    Queue[j + 1] = value;
+                }
+            }
+
+            private static bool IsLowerPriority(byte existing, byte incoming)
+            {
+                if (existing == 0)
+                    return incoming != 0;
+                if (incoming == 0)
+                    return false;
+
+                return existing > incoming;
+            }
+        }
+
         public static void Clear(NativeArray<float> buffer, int count)
         {
             if (!buffer.IsCreated || count <= 0)

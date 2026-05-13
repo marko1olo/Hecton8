@@ -34,11 +34,20 @@ namespace Hecton8.SaveSystem
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8000)]
-    public sealed class SaveManager : MonoBehaviour, ISaveService, IUpdatable, ISlowTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed class SaveManager : MonoBehaviour, IAsyncPersistenceService, IUpdatable, ISlowTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
     {
-        private const long MainThreadSnapshotBudgetMs = 50L;
+        private const long MainThreadSnapshotBudgetMs = 5L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
         private static readonly long LoadApplyFrameBudgetTicks = HydrationScheduler.FrameBudgetTicks;
+        private const int SaveStagingBufferBytes = 10 * 1024 * 1024;
+        private const int SaveTelemetryCapacity = 300;
+        private const float SafeGcCollectFrameBudgetSeconds = 0.014f;
+        private const long VramAbortThresholdBytes = 1800L * 1024L * 1024L;
+        private const uint AsyncPersistenceSourceHash = 0x41505953u; // APYS
+        private const uint SaveRecoveredMessageHash = 0x53565243u; // SVRC
+        private const uint SaveRecoveredContextHash = 0x42414B52u; // BAKR
+        private const uint SaveDurationTelemetryHash = 0x5356444Du; // SVDM
+        private const uint SaveCompressedSizeTelemetryHash = 0x53564342u; // SVCB
         private const float SafeAupSnapGroundPaddingMeters = 0.28f;
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: LOCALIZED DATA CORRUPTION. TERRAIN RE-INITIALIZED.";
@@ -147,6 +156,8 @@ namespace Hecton8.SaveSystem
 
         private NativeArray<byte> _savePayloadBuffer;
         private NativeArray<byte> _compressedSaveBuffer;
+        private NativeArray<byte> _saveStagingBuffer;
+        private NativeArray<AsyncPersistenceTelemetryEntry> _saveTelemetryRing;
         private ulong _expectedIntegrityPayloadHash64;
         private int _integrityPayloadLength;
         private bool _updatableRegistered;
@@ -157,12 +168,41 @@ namespace Hecton8.SaveSystem
         private int _compressionThrottleReleaseFrame;
         private int _slowTickSequence;
         private long _lastSaveCompressionPipelineTicks;
+        private int _saveTelemetryWriteIndex;
+        private uint _operationSequence;
+        private bool _postSaveVramGcPending;
         private LoadingScreenController _cachedLoadingScreenController;
         private string _integritySlotName;
 
         private sealed class MemoryCorruptionException : Exception
         {
             public MemoryCorruptionException(string message) : base(message) { }
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        private struct AsyncPersistenceTelemetryEntry
+        {
+            public uint Frame;
+            public uint OperationId;
+            public uint SaveDurationMs;
+            public uint CompressedSizeBytes;
+            public uint RawPayloadBytes;
+            public uint Flags;
+            public uint SlotHash;
+            public uint Reserved;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        private struct SaveStagingHeader
+        {
+            public uint OperationId;
+            public uint SlotHash;
+            public uint SaveableCount;
+            public uint PersistentWorldRecordCount;
+            public uint EcosystemRecordCount;
+            public uint QuestWordCount;
+            public uint VoxelDeltaBytes;
+            public uint Frame;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 16)]
@@ -406,6 +446,8 @@ namespace Hecton8.SaveSystem
 
             DisposeNativeArray(ref _savePayloadBuffer);
             DisposeNativeArray(ref _compressedSaveBuffer);
+            DisposeNativeArray(ref _saveStagingBuffer);
+            DisposeNativeArray(ref _saveTelemetryRing);
             DisposeNativeArray(ref _loadCandidateScratch);
             DisposeStaticLoadCandidateScratch();
 
@@ -425,7 +467,7 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            GlobalRegistry.RegisterSaveService(this);
+            GlobalRegistry.RegisterAsyncPersistenceService(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.SaveRuntime, this);
 
             if (isActiveAndEnabled && Application.isPlaying && GlobalRegistry.Dispatcher != null)
@@ -469,6 +511,20 @@ namespace Hecton8.SaveSystem
                 NativeMemorySentinel.RegisterNativeArray(_compressedSaveBuffer, NativeMemoryOwner, nameof(_compressedSaveBuffer), NativeMemoryLifetime);
             }
 
+            if (!_saveStagingBuffer.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<byte>[10485760] - 10MB async persistence snapshot staging arena - owner: SaveManager
+                _saveStagingBuffer = new NativeArray<byte>(SaveStagingBufferBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(_saveStagingBuffer, NativeMemoryOwner, nameof(_saveStagingBuffer), NativeMemoryLifetime);
+            }
+
+            if (!_saveTelemetryRing.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<AsyncPersistenceTelemetryEntry>[300] - save black box duration/size ring - owner: SaveManager
+                _saveTelemetryRing = new NativeArray<AsyncPersistenceTelemetryEntry>(SaveTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_saveTelemetryRing, NativeMemoryOwner, nameof(_saveTelemetryRing), NativeMemoryLifetime);
+            }
+
             if (!_loadCandidateScratch.IsCreated)
             {
                 // COLD ALLOC: NativeArray<SaveLoadCandidate>[9] - unmanaged load fallback descriptors - owner: SaveManager
@@ -502,6 +558,32 @@ namespace Hecton8.SaveSystem
 
         public void Tick(float deltaTime)
         {
+            DrainSaveRequestSignals();
+            DrainPostSaveVramGc();
+        }
+
+        public bool TryRequestSave(byte slotIndex, uint sourceHash, uint operationId = 0u)
+        {
+            if (slotIndex >= SaveEvents.ManualSlotCount)
+                return false;
+
+            if (_isBusy)
+            {
+                PublishSaveStatus(slotIndex, ResolveOperationId(operationId), SaveStatusSignal.Rejected, 0f, 1u);
+                return false;
+            }
+
+            SaveRequestSignal signal = new SaveRequestSignal
+            {
+                SourceHash = sourceHash != 0u ? sourceHash : AsyncPersistenceSourceHash,
+                OperationId = ResolveOperationId(operationId),
+                Frame = unchecked((uint)Time.frameCount),
+                SlotIndex = slotIndex,
+                Flags = SaveRequestSignal.ManualSlotFlag
+            };
+            SignalBus<SaveRequestSignal>.Push(in signal);
+            PublishSaveStatus(slotIndex, signal.OperationId, SaveStatusSignal.Queued, 0f, 0u);
+            return true;
         }
 
         public void SlowTick()
@@ -520,6 +602,300 @@ namespace Hecton8.SaveSystem
                 return;
 
             _compressionThrottleLateFrameArmed = false;
+        }
+
+        private void DrainSaveRequestSignals()
+        {
+            int drained = 0;
+            while (drained < SaveEvents.ManualSlotCount && SignalBus<SaveRequestSignal>.TryReadFrame(out SaveRequestSignal signal))
+            {
+                drained++;
+                byte slotIndex = signal.SlotIndex;
+                uint operationId = ResolveOperationId(signal.OperationId);
+                if (slotIndex >= SaveEvents.ManualSlotCount)
+                {
+                    PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u);
+                    continue;
+                }
+
+                string slotName = SaveEvents.ResolveManualSlotName(slotIndex);
+                if (_isBusy)
+                {
+                    const string reason = "Save already in progress.";
+                    LastOperationError = reason;
+                    SaveEvents.RaiseSaveFailed(slotName, reason);
+                    PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u);
+                    continue;
+                }
+
+                _ = SaveGameAsyncInternal(slotName, slotIndex, operationId);
+            }
+        }
+
+        private void DrainPostSaveVramGc()
+        {
+            if (!_postSaveVramGcPending)
+                return;
+
+            if (SystemDispatcher.CurrentFrameUnscaledDeltaTime > SafeGcCollectFrameBudgetSeconds)
+                return;
+
+            _postSaveVramGcPending = false;
+            GC.Collect(0, GCCollectionMode.Optimized, false);
+        }
+
+        private uint ResolveOperationId(uint requestedOperationId)
+        {
+            if (requestedOperationId != 0u)
+                return requestedOperationId;
+
+            unchecked
+            {
+                _operationSequence++;
+                if (_operationSequence == 0u)
+                    _operationSequence = 1u;
+
+                return _operationSequence;
+            }
+        }
+
+        private static byte ResolveManualSlotIndex(string slotName)
+        {
+            int slotIndex = SaveEvents.ResolveKnownSlotIndex(slotName);
+            return slotIndex >= 0 && slotIndex < SaveEvents.ManualSlotCount ? (byte)slotIndex : byte.MaxValue;
+        }
+
+        private static uint ComputeSlotHash(string slotName)
+        {
+            const uint fnvOffset = 2166136261u;
+            const uint fnvPrime = 16777619u;
+            uint hash = fnvOffset;
+            if (!string.IsNullOrEmpty(slotName))
+            {
+                for (int i = 0; i < slotName.Length; i++)
+                {
+                    hash ^= slotName[i];
+                    hash *= fnvPrime;
+                }
+            }
+
+            return hash == 0u ? 1u : hash;
+        }
+
+        private static uint ResolveSlotHash(byte slotIndex)
+        {
+            return slotIndex < SaveEvents.ManualSlotCount
+                ? ComputeSlotHash(SaveEvents.ResolveManualSlotName(slotIndex))
+                : 0u;
+        }
+
+        private static uint SaturateToUInt(long value)
+        {
+            if (value <= 0L)
+                return 0u;
+
+            return value > uint.MaxValue ? uint.MaxValue : (uint)value;
+        }
+
+        private static void PublishSaveStatus(byte slotIndex, uint operationId, byte state, float progress01, uint flags)
+        {
+            uint slotHash = ResolveSlotHash(slotIndex);
+            float clampedProgress = math.saturate(progress01);
+            byte clampedFlags = (byte)math.min(flags, byte.MaxValue);
+            SaveStatusSignal status = new SaveStatusSignal
+            {
+                SlotHash = slotHash,
+                OperationId = operationId,
+                Progress01 = clampedProgress,
+                Frame = unchecked((uint)Time.frameCount),
+                State = state,
+                Flags = clampedFlags
+            };
+            SignalBus<SaveStatusSignal>.Push(in status);
+
+            SaveLifecycleSignal lifecycle = new SaveLifecycleSignal
+            {
+                SlotHash = slotHash,
+                OperationId = operationId,
+                Progress01 = clampedProgress,
+                Frame = status.Frame,
+                State = state,
+                Flags = clampedFlags
+            };
+            GlobalSignals.Publish(in lifecycle);
+        }
+
+        private static void PublishSaveCompleted(byte slotIndex, uint operationId, long durationMs, long compressedSizeBytes, bool succeeded)
+        {
+            SaveCompletedSignal completed = new SaveCompletedSignal
+            {
+                SlotHash = ResolveSlotHash(slotIndex),
+                OperationId = operationId,
+                DurationMilliseconds = SaturateToUInt(durationMs),
+                CompressedSizeBytes = SaturateToUInt(compressedSizeBytes),
+                Frame = unchecked((uint)Time.frameCount),
+                Result = succeeded ? (byte)1 : (byte)0,
+                Flags = succeeded ? (byte)0 : (byte)1
+            };
+            SignalBus<SaveCompletedSignal>.Push(in completed);
+        }
+
+        private static void RequestSnapshotPause(uint operationId)
+        {
+            SimulationPauseSignal pause = new SimulationPauseSignal
+            {
+                SourceHash = AsyncPersistenceSourceHash,
+                Frame = unchecked((uint)Time.frameCount),
+                Sequence = operationId,
+                Paused = 1,
+                Flags = 0,
+                RestoreScalar = 1f
+            };
+            GlobalSignals.Publish(in pause);
+        }
+
+        private static void ReleaseSnapshotPause(uint operationId)
+        {
+            SimulationPauseSignal resume = new SimulationPauseSignal
+            {
+                SourceHash = AsyncPersistenceSourceHash,
+                Frame = unchecked((uint)Time.frameCount),
+                Sequence = operationId,
+                Paused = 0,
+                Flags = 0,
+                RestoreScalar = 1f
+            };
+            GlobalSignals.Publish(in resume);
+        }
+
+        private void StageSnapshotHeader(
+            uint operationId,
+            string slotName,
+            NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
+            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorStates,
+            NativeArray<uint> packedQuestStateWords,
+            NativeArray<byte> voxelDeltaSnapshot)
+        {
+            if (!_saveStagingBuffer.IsCreated || _saveStagingBuffer.Length < UnsafeUtility.SizeOf<SaveStagingHeader>())
+                return;
+
+            SaveStagingHeader header = new SaveStagingHeader
+            {
+                OperationId = operationId,
+                SlotHash = ComputeSlotHash(slotName),
+                SaveableCount = (uint)math.max(0, _saveableCount),
+                PersistentWorldRecordCount = persistentWorldDeltas.IsCreated ? (uint)math.max(0, persistentWorldDeltas.Length) : 0u,
+                EcosystemRecordCount = ecosystemSectorStates.IsCreated ? (uint)math.max(0, ecosystemSectorStates.Length) : 0u,
+                QuestWordCount = packedQuestStateWords.IsCreated ? (uint)math.max(0, packedQuestStateWords.Length) : 0u,
+                VoxelDeltaBytes = voxelDeltaSnapshot.IsCreated ? (uint)math.max(0, voxelDeltaSnapshot.Length) : 0u,
+                Frame = unchecked((uint)Time.frameCount)
+            };
+
+            void* stagingPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_saveStagingBuffer);
+            UnsafeUtility.MemClear(stagingPtr, UnsafeUtility.SizeOf<SaveStagingHeader>());
+            UnsafeUtility.CopyStructureToPtr(ref header, stagingPtr);
+        }
+
+        private void RecordAsyncPersistenceTelemetry(
+            uint operationId,
+            string slotName,
+            long durationMs,
+            long compressedSizeBytes,
+            int rawPayloadBytes,
+            uint flags)
+        {
+            if (!_saveTelemetryRing.IsCreated)
+                return;
+
+            int index = _saveTelemetryWriteIndex;
+            _saveTelemetryRing[index] = new AsyncPersistenceTelemetryEntry
+            {
+                Frame = unchecked((uint)Time.frameCount),
+                OperationId = operationId,
+                SaveDurationMs = SaturateToUInt(durationMs),
+                CompressedSizeBytes = SaturateToUInt(compressedSizeBytes),
+                RawPayloadBytes = SaturateToUInt(rawPayloadBytes),
+                Flags = flags,
+                SlotHash = ComputeSlotHash(slotName),
+                Reserved = 0u
+            };
+
+            index++;
+            if (index >= SaveTelemetryCapacity)
+                index = 0;
+            _saveTelemetryWriteIndex = index;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(SaveDurationTelemetryHash, ComputeSlotHash(slotName), math.max(1, (int)math.min(durationMs, int.MaxValue)));
+            GlobalTelemetryBus.PublishPerformanceWarning(SaveCompressedSizeTelemetryHash, ComputeSlotHash(slotName), math.max(1, (int)math.min(compressedSizeBytes, int.MaxValue)));
+        }
+
+        private void DumpSaveBlackBox()
+        {
+            if (!_saveTelemetryRing.IsCreated)
+                return;
+
+            try
+            {
+                const string dumpRelativePath = "Docs/AgentLogs/Dump_ASYNC_PERSISTENCE_SURGEON.bin";
+                string dumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", dumpRelativePath));
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(0x48384153u); // H8AS
+                    writer.Write(SaveTelemetryCapacity);
+                    writer.Write(UnsafeUtility.SizeOf<AsyncPersistenceTelemetryEntry>());
+                    for (int i = 0; i < SaveTelemetryCapacity; i++)
+                    {
+                        int index = (_saveTelemetryWriteIndex + i) % SaveTelemetryCapacity;
+                        AsyncPersistenceTelemetryEntry entry = _saveTelemetryRing[index];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.OperationId);
+                        writer.Write(entry.SaveDurationMs);
+                        writer.Write(entry.CompressedSizeBytes);
+                        writer.Write(entry.RawPayloadBytes);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.SlotHash);
+                        writer.Write(entry.Reserved);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                LogWarning($"[SaveManager] Save black box dump failed: {exception.Message}");
+            }
+        }
+
+        private static void PublishSaveRecoveredNotification(string slotName)
+        {
+            HUDNotificationSignal notification = new HUDNotificationSignal
+            {
+                MessageHash = SaveRecoveredMessageHash,
+                ContextHash = ComputeSlotHash(slotName) ^ SaveRecoveredContextHash,
+                SourceId = AsyncPersistenceSourceHash,
+                Frame = unchecked((uint)Time.frameCount),
+                Severity = 1,
+                Flags = 0
+            };
+            GlobalSignals.Publish(in notification);
+        }
+
+        private void RequestVramAbortGcIfNeeded()
+        {
+            long usedVramBytes = 0L;
+            VRAMMonitor monitor = GlobalRegistry.VRAMMonitor;
+            if (monitor != null)
+                usedVramBytes = monitor.TotalVRAMBytes;
+            else
+                usedVramBytes = VRAMBudgetTracker.EstimatedVRAMBytes;
+
+            if (usedVramBytes <= VramAbortThresholdBytes)
+                return;
+
+            _postSaveVramGcPending = true;
         }
 
         private void StageIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
@@ -714,7 +1090,12 @@ namespace Hecton8.SaveSystem
         //  ASYNC SAVE/LOAD
         // ══════════════════════════════════════════════════════════
 
-        public async Awaitable SaveGameAsync(string slotName)
+        public Awaitable SaveGameAsync(string slotName)
+        {
+            return SaveGameAsyncInternal(slotName, ResolveManualSlotIndex(slotName), ResolveOperationId(0u));
+        }
+
+        private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)
         {
             CachePersistentDataPathRoot();
             LastOperationSucceeded = false;
@@ -741,6 +1122,7 @@ namespace Hecton8.SaveSystem
                 LastOperationError = reason;
                 LogWarning($"[SaveManager] Ignored save request for '{slotName}': {reason}");
                 SaveEvents.RaiseSaveFailed(slotName, reason);
+                PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u);
                 return;
             }
 
@@ -750,15 +1132,18 @@ namespace Hecton8.SaveSystem
                 LastOperationError = reason;
                 LogWarning($"[SaveManager] Ignored save request for '{slotName}': {reason}");
                 SaveEvents.RaiseSaveFailed(slotName, reason);
+                PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u);
                 return;
             }
 
             SaveThumbnailSystem.CaptureThumbnail(slotName);
             _isBusy = true;
             SaveEvents.RaiseSaveStarted(slotName);
+            PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.InProgress, 0.05f, 0u);
 
             var totalTimer = Stopwatch.StartNew();
             var snapshotTimer = Stopwatch.StartNew();
+            bool snapshotPauseActive = false;
             double playTime = ResolveCurrentPlayTimeSeconds();
             SaveData data = SaveData.CreateNew(playTime);
             PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
@@ -770,6 +1155,10 @@ namespace Hecton8.SaveSystem
 
             try
             {
+                RequestSnapshotPause(operationId);
+                snapshotPauseActive = true;
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(destroyCancellationToken);
+                snapshotTimer.Restart();
                 SortRegistryIfDirty(SavePriorityComparer);
                 for (int i = 0; i < _saveableCount; i++)
                 {
@@ -831,6 +1220,9 @@ namespace Hecton8.SaveSystem
                 };
 
                 snapshotTimer.Stop();
+                StageSnapshotHeader(operationId, slotName, persistentWorldDeltaSnapshot, ecosystemSectorSnapshot, packedQuestStateSnapshot, voxelDeltaSnapshot);
+                ReleaseSnapshotPause(operationId);
+                snapshotPauseActive = false;
                 WarnIfSnapshotBudgetExceeded(slotName, snapshotTimer.ElapsedMilliseconds);
 
                 string tempPath = GetTempSaveFilePath(slotName);
@@ -860,11 +1252,16 @@ namespace Hecton8.SaveSystem
                     _savePayloadBuffer,
                     _compressedSaveBuffer,
                     out payloadHash64,
-                    out rawPayloadLength);
+                    out rawPayloadLength,
+                    out long compressedSizeBytes);
 
                 long compressionPipelineElapsedTicks = Stopwatch.GetTimestamp() - compressionPipelineStartTicks;
                 await Awaitable.MainThreadAsync();
                 RegisterCompressionPipelineElapsed(compressionPipelineElapsedTicks, in frameData);
+                RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, compressedSizeBytes, rawPayloadLength, 0u);
+                PublishSaveCompleted(slotIndex, operationId, totalTimer.ElapsedMilliseconds, compressedSizeBytes, succeeded: true);
+                PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Completed, 1f, 0u);
+                RequestVramAbortGcIfNeeded();
                 StageIntegrityPayload(_savePayloadBuffer, rawPayloadLength, payloadHash64, slotName);
                 int backupRetention = GetBackupRetentionCount(slotName);
                 SaveSlotIntegrityState savedIntegrity = backupRetention > 0
@@ -880,6 +1277,16 @@ namespace Hecton8.SaveSystem
             catch (Exception ex)
             {
                 await Awaitable.MainThreadAsync();
+                if (snapshotPauseActive)
+                {
+                    ReleaseSnapshotPause(operationId);
+                    snapshotPauseActive = false;
+                }
+
+                RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 1u);
+                PublishSaveCompleted(slotIndex, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: false);
+                PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Failed, 1f, 1u);
+                DumpSaveBlackBox();
                 RecordFailure(slotName, "save", ex.Message);
                 LastOperationError = ex.Message;
                 LogError("[SaveManager] Save failed: " + ex);
@@ -887,6 +1294,9 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
+                if (snapshotPauseActive)
+                    ReleaseSnapshotPause(operationId);
+
                 if (packedQuestStateSnapshot.IsCreated)
                     DisposeNativeArray(ref packedQuestStateSnapshot);
 
@@ -1471,6 +1881,9 @@ namespace Hecton8.SaveSystem
                 SaveSlotInfo postLoadInfo = BuildSaveSlotInfoInternal(slotName);
                 SaveSlotIntegrityState postLoadIntegrity = postLoadInfo != null ? postLoadInfo.IntegrityState : SaveSlotIntegrityState.Empty;
                 RecordSuccessfulLoad(slotName, data.version, postLoadIntegrity, LastLoadUsedBackup, LastLoadBackupGeneration, LastLoadUsedLegacyCompression, LastLoadSelfRepaired);
+                if (LastLoadUsedBackup || LastLoadSelfRepaired)
+                    PublishSaveRecoveredNotification(slotName);
+
                 LastOperationSucceeded = true;
                 string loadCompletionSuffix = criticalBackupPromotedForLoad
                     ? " and promoted .bak to primary."
@@ -1892,10 +2305,12 @@ namespace Hecton8.SaveSystem
             NativeArray<byte> rawBuffer,
             NativeArray<byte> compressedBuffer,
             out ulong payloadHash64,
-            out int rawPayloadLength)
+            out int rawPayloadLength,
+            out long compressedSizeBytes)
         {
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
+            compressedSizeBytes = 0L;
             // Step 1: clear any stale temp artifact from a previous interrupted transaction.
             DeleteFileIfExists(tempPath);
 
@@ -1928,6 +2343,7 @@ namespace Hecton8.SaveSystem
             if (!ModSaveStateStore.TryCommitMmfPayloads(absoluteTempPath, out string modPayloadCommitError))
                 ReportModPayloadCommitFailure(slotName, modPayloadCommitError);
 
+            compressedSizeBytes = File.Exists(absoluteTempPath) ? new FileInfo(absoluteTempPath).Length : 0L;
             CommitTempSaveToPrimary(slotName, tempPath, finalPath);
         }
 
@@ -2730,6 +3146,7 @@ namespace Hecton8.SaveSystem
                         voxelDeltaSnapshot,
                         rawBuffer,
                         compressedBuffer,
+                        out _,
                         out _,
                         out _);
                 }

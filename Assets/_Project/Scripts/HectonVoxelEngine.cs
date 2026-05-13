@@ -17,6 +17,8 @@ using Hecton8.Caves;
 using Hecton8.Bootstrap;
 using Unity.Collections.LowLevel.Unsafe;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Scheduling;
 using Hecton8.Data;
 using Hecton8.Dev;
 using Hecton8.Gameplay;
@@ -2772,6 +2774,7 @@ public class HectonVoxelEngine : MonoBehaviour
     private const int DeferredVoxelColliderUploadDropWarningReleaseThreshold = DeferredVoxelColliderUploadCapacity / 2;
     private const byte DeferredVoxelColliderUploadVolumeFlag = 1 << 0;
     private static readonly long ChunkGenerationFrameBudgetTicks = Stopwatch.Frequency / 500L;
+    private static readonly double _JobAdmissionStopwatchMillisecondsPerTick = 1000.0d / Stopwatch.Frequency;
     private const byte DeferredVoxelBakeDestroyOwner = 1 << 0;
     private const float VoxelLodColliderDisableDistanceMeters = 200f;
     private const float VoxelPressureColliderDisableDistanceMeters = 120f;
@@ -3445,6 +3448,17 @@ public class HectonVoxelEngine : MonoBehaviour
     // ╔═══════════════════════════════════════════════╗
     // ║              LIFECYCLE                        ║
     // ╚═══════════════════════════════════════════════╝
+
+    static bool TryScheduleVoxelPhysicsBake(in VoxelMeshBakeJob job, out JobHandle handle)
+    {
+        return job.TryScheduleAdmitted(JobAdmissionLane.Lane2_Voxel, default, out handle);
+    }
+
+    static void ReportVoxelPhysicsBakeCompletion(long scheduleTimestamp)
+    {
+        float measuredMs = (float)((Stopwatch.GetTimestamp() - scheduleTimestamp) * _JobAdmissionStopwatchMillisecondsPerTick);
+        JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<VoxelMeshBakeJob>(JobAdmissionLane.Lane2_Voxel, measuredMs);
+    }
 
     void OnEnable()
     {
@@ -7804,10 +7818,22 @@ public class HectonVoxelEngine : MonoBehaviour
 
                     try
                     {
-                        JobHandle fallbackBakeHandle = new VoxelMeshBakeJob
+                        VoxelMeshBakeJob fallbackBakeJob = new VoxelMeshBakeJob
                         {
                             MeshId = mesh.GetEntityId()
-                        }.Schedule();
+                        };
+
+                        long fallbackBakeScheduleTimestamp = Stopwatch.GetTimestamp();
+                        if (!TryScheduleVoxelPhysicsBake(in fallbackBakeJob, out JobHandle fallbackBakeHandle))
+                        {
+                            await AwaitableDebtMonitor.NextFrameAsync(ct);
+                            fallbackBakeScheduleTimestamp = Stopwatch.GetTimestamp();
+                            if (!TryScheduleVoxelPhysicsBake(in fallbackBakeJob, out fallbackBakeHandle))
+                            {
+                                deferredFallbackBakeTeardown = true;
+                                return false;
+                            }
+                        }
 
                         if (!await AwaitForPhysicsBakeCompletionOrDeferAsync(
                                 fallbackBakeHandle,
@@ -7824,6 +7850,7 @@ public class HectonVoxelEngine : MonoBehaviour
                             return false;
                         }
 
+                        ReportVoxelPhysicsBakeCompletion(fallbackBakeScheduleTimestamp);
                         ct.ThrowIfCancellationRequested();
                         mcol.enabled = false;
                         deferredFallbackColliderUpload = EnqueueDeferredVoxelColliderUpload(mcol, mesh, fallbackBakeProxy);
@@ -7916,10 +7943,22 @@ public class HectonVoxelEngine : MonoBehaviour
             UploadColliderMesh(chunkMesh, colliderPositions, colliderIndices, vertexCount, indexCount);
             await AwaitableDebtMonitor.NextFrameAsync(ct);
 
-            JobHandle bakeHandle = new VoxelMeshBakeJob
+            VoxelMeshBakeJob bakeJob = new VoxelMeshBakeJob
             {
                 MeshId = chunkMesh.GetEntityId()
-            }.Schedule();
+            };
+
+            long bakeScheduleTimestamp = Stopwatch.GetTimestamp();
+            if (!TryScheduleVoxelPhysicsBake(in bakeJob, out JobHandle bakeHandle))
+            {
+                await AwaitableDebtMonitor.NextFrameAsync(ct);
+                bakeScheduleTimestamp = Stopwatch.GetTimestamp();
+                if (!TryScheduleVoxelPhysicsBake(in bakeJob, out bakeHandle))
+                {
+                    volume.DetachColliderChunkBakeMesh(0);
+                    return false;
+                }
+            }
 
             if (!await AwaitForPhysicsBakeCompletionOrDeferAsync(
                     bakeHandle,
@@ -7935,6 +7974,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 return false;
             }
 
+            ReportVoxelPhysicsBakeCompletion(bakeScheduleTimestamp);
             ct.ThrowIfCancellationRequested();
             if (!volume.PublishColliderChunkMesh(0))
                 return false;
@@ -8321,10 +8361,23 @@ public class HectonVoxelEngine : MonoBehaviour
                 chunkGenerationFrameStart = await YieldIfChunkGenerationBudgetExpiredAsync(chunkGenerationFrameStart, ct);
                 await AwaitableDebtMonitor.NextFrameAsync(ct);
 
-                JobHandle bakeHandle = new VoxelMeshBakeJob
+                VoxelMeshBakeJob bakeJob = new VoxelMeshBakeJob
                 {
                     MeshId = chunkMesh.GetEntityId()
-                }.Schedule();
+                };
+
+                long bakeScheduleTimestamp = Stopwatch.GetTimestamp();
+                if (!TryScheduleVoxelPhysicsBake(in bakeJob, out JobHandle bakeHandle))
+                {
+                    await AwaitableDebtMonitor.NextFrameAsync(ct);
+                    bakeScheduleTimestamp = Stopwatch.GetTimestamp();
+                    if (!TryScheduleVoxelPhysicsBake(in bakeJob, out bakeHandle))
+                    {
+                        volume.DetachColliderChunkBakeMesh(chunkIndex);
+                        deferredBakeTeardown = true;
+                        return false;
+                    }
+                }
 
                 if (!await AwaitForPhysicsBakeCompletionOrDeferAsync(
                         bakeHandle,
@@ -8342,6 +8395,7 @@ public class HectonVoxelEngine : MonoBehaviour
                     return false;
                 }
 
+                ReportVoxelPhysicsBakeCompletion(bakeScheduleTimestamp);
                 ct.ThrowIfCancellationRequested();
                 if (!volume.PublishColliderChunkMesh(chunkIndex))
                     return false;

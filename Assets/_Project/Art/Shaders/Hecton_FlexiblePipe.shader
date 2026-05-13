@@ -140,6 +140,7 @@ Shader "Hecton/FlexiblePipe"
                 uint flags = (uint)round(instanceData.P1Flags.w);
                 float ruptureStartTime = instanceData.P2.w;
                 float flowEligible = instanceData.P3.w;
+                float fluidFlow01 = ((flags & 2u) != 0u) ? flowEligible : 0.0;
 
                 float t = saturate(input.positionOS.y * 0.5 + 0.5);
                 float3 center = EvaluateBezier(p0, p1, p2, p3, t);
@@ -168,7 +169,8 @@ Shader "Hecton/FlexiblePipe"
                 output.rust01 = (half)(ruptured01 > 0.5 && ruptureStartTime > 0.0
                     ? saturate((_Time.y - ruptureStartTime) * (1.0 / 300.0))
                     : 0.0);
-                output.flow01 = (half)(saturate(flowEligible * _HectonLogisticsPathHighlight) * (1.0 - ruptured01));
+                float highlightFlow01 = flowEligible * _HectonLogisticsPathHighlight;
+                output.flow01 = (half)(saturate(max(highlightFlow01, fluidFlow01)) * (1.0 - ruptured01));
                 return output;
             }
 

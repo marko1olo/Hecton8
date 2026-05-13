@@ -480,6 +480,8 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
             max(
                 dot(centerWS - sideAWS, centerWS - sideAWS),
                 dot(centerWS - sideBWS, centerWS - sideBWS))));
+    float wakeCullExpandedRadius = max(instanceHeight, instanceWidth) + 2.0;
+    radiusSq = max(radiusSq, wakeCullExpandedRadius * wakeCullExpandedRadius);
     if (!IsSphereVisibleInFrustumSq(centerWS, max(0.0625, radiusSq)))
         return;
 
@@ -551,6 +553,8 @@ void CullFloraShadowInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
             max(
                 dot(centerWS - sideAWS, centerWS - sideAWS),
                 dot(centerWS - sideBWS, centerWS - sideBWS))));
+    float wakeCullExpandedRadius = max(instanceHeight, instanceWidth) + 2.0;
+    radiusSq = max(radiusSq, wakeCullExpandedRadius * wakeCullExpandedRadius);
     if (!IsSphereVisibleInFrustumSq(centerWS, max(0.0625, radiusSq)))
         return;
 

@@ -1,0 +1,20 @@
+{
+    "name": "Hecton8.Cartography",
+    "rootNamespace": "Hecton8.Cartography",
+    "references": [
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.World.Contracts",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,6 +1,7 @@
 using System.Threading;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Items;
@@ -798,7 +799,23 @@ namespace Hecton8.Scavenging
             Vector3 tangent = ResolveTangent(outwardNormal, seed);
             Vector3 spawnPosition = hitPoint + (outwardNormal * 0.12f) + (tangent * 0.05f);
             Vector3 impulse = (outwardNormal * 0.8f) + (tangent * 0.25f);
-            return registry.TryRegisterDroppedItem(itemData, 1, spawnPosition, impulse);
+            bool registered = registry.TryRegisterDroppedItem(itemData, 1, spawnPosition, impulse);
+            if (registered)
+            {
+                ItemAcquiredSignal signal = new ItemAcquiredSignal
+                {
+                    PositionAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition),
+                    ItemHash = unchecked((uint)itemData.PersistentHashId),
+                    OreHash = unchecked((uint)_persistentTombstoneId ^ (uint)(_persistentTombstoneId >> 32)),
+                    Quantity = 1,
+                    SourceKind = 1,
+                    Flags = 0,
+                    Frame = unchecked((uint)Time.frameCount)
+                };
+                GlobalSignals.Push(in signal);
+            }
+
+            return registered;
         }
 
         private void SpawnImpactDebris(Vector3 hitPoint, Vector3 hitNormal, float toolPower)

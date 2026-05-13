@@ -246,7 +246,9 @@ fn InteriorCapsuleCast(origin_world, dir_world, radius, height, cache):
 ### Penetration Recovery — Bulkhead Pressure (Crushing State)
 
 fn ResolvePenetration(playerPos, overlapColliders, cache):
-    for each col in overlapColliders:
+    overlapCount = overlapColliders.Count
+    for i = 0; i < overlapCount; i++:
+        col = overlapColliders[i]
         Physics.ComputePenetration(
             playerCollider, playerPos, playerRot,
             col, col.transform.position, col.transform.rotation,
@@ -282,9 +284,10 @@ fn UpdateLastSafeLocal(playerWorldPos, cache):
 
 // If platform_delta_position > MAX_SAFE_DELTA_PER_TICK, vessel is teleporting or desyncing.
 MAX_SAFE_DELTA_PER_TICK = 5.0m   // tune per max vessel speed * fixedDt
+MAX_SAFE_DELTA_PER_TICK_SQ = MAX_SAFE_DELTA_PER_TICK * MAX_SAFE_DELTA_PER_TICK
 
 fn ValidatePlatformDelta(cache):
-    if Length(cache.delta_position) > MAX_SAFE_DELTA_PER_TICK:
+    if lengthsq(cache.delta_position) > MAX_SAFE_DELTA_PER_TICK_SQ:
         cache.delta_position = Vector3.zero          // Suppress invalid delta
         cache.delta_rotation = Quaternion.identity   // Suppress invalid rotation
         LogWarning("Platform delta spike — suppressed. Frame desync suspected.")
@@ -298,7 +301,7 @@ fn ValidatePlatformDelta(cache):
 [RULE]: PlatformCache updated ONCE per FixedUpdate. Shared by all systems (KCC, Camera, IK, Audio).
 [RULE]: worldToLocal / localToWorld read from Transform property (Unity-cached). Never recompute.
 [FORBID]: Any system calling platform.PlatformTransform.worldToLocalMatrix more than once per tick.
-          Route all access through singleton PlatformCache ref.
+          Route all access through the shared PlatformCache owner ref.
 
 ### LOD — Physics Precision Tiers
 
@@ -341,7 +344,7 @@ Total PRTS budget        : < 0.45ms / FixedTick
 ## XI. INTEGRATION CHECKLIST — PER SYSTEM
 
 [ ] ITransportPlatform implemented on all vessel Rigidbodies
-[ ] PlatformCache singleton initialized before first FixedUpdate
+[ ] PlatformCache owner initialized before first FixedUpdate
 [ ] Input pipeline routes through worldToLocal §III before any movement solve
 [ ] MovePosition formula uses §V kernel — NOT direct velocity add
 [ ] EVA handoff uses §VI formula — velocity zero FORBIDDEN in exit path
@@ -349,4 +352,43 @@ Total PRTS budget        : < 0.45ms / FixedTick
 [ ] lastSafeLocalPos updated every non-crushing tick §VIII
 [ ] Platform delta spike guard active §VIII
 [ ] LOD tiers assigned and evaluated every 10 ticks §IX
+[ ] Service snapshot cache used for Settings/Fluid/Ocean/Thermal/Sargassum/Resource dependencies; no `GlobalRegistry.*` read in movement tick chains
+[ ] Black Box includes service snapshot validity/version/fallback flags
 [ ] Failure modes F-01 through F-10 have runtime assertions or log guards
+
+---
+
+## XII. PLAYER SERVICE SNAPSHOT POLICY
+
+[RULE]: Player/vehicle kinematics reads stable service dependencies from an owner-local snapshot, not from `GlobalRegistry.*` inside `Tick`, `FixedTick`, or helper chains called by those methods.
+[RULE]: Snapshot refresh occurs only on `OnEnable`, bootstrap injection, service-ready/service-rebound signal, settings dirty signal, or an explicitly budgeted slow cadence.
+[RULE]: Hot-path helpers named `Refresh*`, `Resolve*`, `Prepare*`, `Sample*`, or `Try*` inherit the same ban when they are called from `Tick` or `FixedTick`.
+[RULE]: Environment providers publish compact summaries for player movement: water surface, ocean kinematics, sargassum drag, thermal updraft, resource-field disturbance, VR comfort settings. Movement consumes cached summaries.
+[RULE]: One-shot event lookups are allowed for interaction, footstep audio, localization prompt, telemetry dump, or damage impulse paths only when the lookup is not part of continuous movement cadence.
+[RULE]: Player kinematics Black Box must record snapshot validity flags, provider version counters, fallback-water flag, and last service-rebind frame in the 300-frame ring.
+
+PlayerKinematicsServiceSnapshot {
+    uint providerMask
+    uint settingsVersion
+    uint waterVersion
+    uint oceanVersion
+    uint environmentVersion
+    float cachedWaterSurfaceY
+    float3 cachedOceanVelocity
+    byte fallbackFlags
+}
+
+[FORBID]: `GlobalRegistry.Settings`, `GlobalRegistry.Fluid`, `GlobalRegistry.OceanKinematics`, `GlobalRegistry.SargassumDrag`, `GlobalRegistry.Thermodynamics`, or `GlobalRegistry.ResourceDistribution` from player kinematic `Tick` / `FixedTick` chains.
+[FORBID]: Registry lookup as a live config bus for VR comfort, water surface, or environmental drag.
+[SAFE]: Direct registry read in `Awake`, `OnEnable`, `OnDisable`, explicit interaction, crash dump, or rare equipment event path with cadence rationale.
+
+---
+
+## Engineering Data
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| Hot path | 0 B GC, no unbounded main-thread work | Profiler/GCMonitor/static scan |
+| MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
+| Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
+| Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |

@@ -16,9 +16,9 @@ Purpose: stable index for `Docs/ARCHITECTURE`. These files are long-lived system
 
 ## Current Proof Boundary
 
-Latest local compile-only evidence: `../../CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`.
+2026-05-13 DOC_AUDIT override: `../../Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
 
-Known proven slice: local Core dependency build succeeded with `0 Warning(s)` and `0 Error(s)`.
+The previously cited local compile-only artifact `../../CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` is absent from the current filesystem. Treat the May 11 compile-success claim as dated report text only until the artifact is restored or replaced.
 
 Not proven by this folder: Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality.
 
@@ -41,4 +41,3 @@ Not proven by this folder: Unity import, Unity Console, Play Mode, profiler, GCM
 - No direct ad hoc `Rigidbody.AddForce` ownership outside the designated physics apply path.
 - No Bloom or FSR2/DLSS-class temporal upscaler on MX350/MINIMAL.
 - No runtime readiness claim without fresh Unity/profiler/GC/player-build evidence.
-

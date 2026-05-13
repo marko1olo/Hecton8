@@ -12,6 +12,22 @@ Target: Unity 6000.x, zero-GC runtime
 [RULE] Use `UnityEngine.Awaitable` for Unity-facing async orchestration.
 [RULE] Do not create per-page `Task.Run` jobs for MMF paging.
 [RULE] Long-running background paging must use one persistent worker loop or an explicitly owned background Awaitable transition, with data returned through preallocated native or unmanaged queues.
+[RULE] Any async method touching UnityEngine.Object, Addressables handles, scenes, assets, GameObjects, Components, or UI must return `Awaitable` / `Awaitable<T>` unless an owner records a build-only exception.
+[RULE] Awaitable instances are single-consumer pooled objects. Await once, then discard the awaitable reference.
+
+[FORBID] `async Task` for Unity object orchestration.
+[FORBID] `Task.Run` as a per-request escape hatch for sector load, save page load, texture upload, UI, scene activation, or bootstrap handshakes.
+[FORBID] Awaiting the same `Awaitable` twice or storing an `Awaitable` for fan-out.
+
+## Engineering Data
+
+| Use Case | Approved Primitive | Rejected Primitive | Reason |
+|---|---|---|---|
+| Scene/bootstrap sequencing | `Awaitable` | Coroutine / `Task` | Unity-owned async surface, lower allocation pressure |
+| Main-thread return | `Awaitable.MainThreadAsync()` | Captured `SynchronizationContext` tricks | Explicit thread ownership |
+| Background transition | `Awaitable.BackgroundThreadAsync()` | Per-request `Task.Run` | Avoid transient task storms |
+| MMF paging loop | persistent owned worker | many short tasks | Stable queue, bounded allocations |
+| Fan-out/multi-await result | owned state machine/result slot | reused `Awaitable` | Awaitable pooling forbids repeated await |
 
 ---
 
@@ -68,4 +84,3 @@ These are not compile failures. They are mandate debt until the owners convert t
 [EXPECTED] Awaitable should win Unity orchestration allocation pressure. A single persistent worker should win MMF paging stability. Transient Task storms should be rejected even if mean time looks acceptable.
 
 [STATUS] Benchmark not run in this session. Result remains PENDING VERIFICATION.
-

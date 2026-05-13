@@ -3454,24 +3454,29 @@ namespace Hecton8.Celestial
             if (Mathf.Abs(RenderSettings.fogDensity - readableFogDensity) >= 0.0001f)
                 RenderSettings.fogDensity = readableFogDensity;
 
-            if (RenderSettings.ambientMode != AmbientMode.Trilight)
-                RenderSettings.ambientMode = AmbientMode.Trilight;
+            IGIRelaySystem giRelay = GlobalRegistry.GIRelay;
+            bool giRelayAmbientAuthority = giRelay != null && giRelay.IsAmbientProbeAuthorityActive;
+            if (!giRelayAmbientAuthority)
+            {
+                if (RenderSettings.ambientMode != AmbientMode.Trilight)
+                    RenderSettings.ambientMode = AmbientMode.Trilight;
 
-            Color readableSkyAmbient = ResolveReadableSurfaceAmbientColor(state.AmbientSkyColor, SurfaceReadableSkyAmbientFloor);
-            Color readableEquatorAmbient = ResolveReadableSurfaceAmbientColor(state.AmbientEquatorColor, SurfaceReadableEquatorAmbientFloor);
-            Color readableGroundAmbient = ResolveReadableSurfaceAmbientColor(state.AmbientGroundColor, SurfaceReadableGroundAmbientFloor);
-            if (HasMeaningfulColorShift(readableSkyAmbient, RenderSettings.ambientSkyColor))
-                RenderSettings.ambientSkyColor = readableSkyAmbient;
+                Color readableSkyAmbient = ResolveReadableSurfaceAmbientColor(state.AmbientSkyColor, SurfaceReadableSkyAmbientFloor);
+                Color readableEquatorAmbient = ResolveReadableSurfaceAmbientColor(state.AmbientEquatorColor, SurfaceReadableEquatorAmbientFloor);
+                Color readableGroundAmbient = ResolveReadableSurfaceAmbientColor(state.AmbientGroundColor, SurfaceReadableGroundAmbientFloor);
+                if (HasMeaningfulColorShift(readableSkyAmbient, RenderSettings.ambientSkyColor))
+                    RenderSettings.ambientSkyColor = readableSkyAmbient;
 
-            if (HasMeaningfulColorShift(readableEquatorAmbient, RenderSettings.ambientEquatorColor))
-                RenderSettings.ambientEquatorColor = readableEquatorAmbient;
+                if (HasMeaningfulColorShift(readableEquatorAmbient, RenderSettings.ambientEquatorColor))
+                    RenderSettings.ambientEquatorColor = readableEquatorAmbient;
 
-            if (HasMeaningfulColorShift(readableGroundAmbient, RenderSettings.ambientGroundColor))
-                RenderSettings.ambientGroundColor = readableGroundAmbient;
+                if (HasMeaningfulColorShift(readableGroundAmbient, RenderSettings.ambientGroundColor))
+                    RenderSettings.ambientGroundColor = readableGroundAmbient;
 
-            float readableAmbientIntensity = ResolveReadableSurfaceAmbientIntensity(state.AmbientIntensity);
-            if (Mathf.Abs(RenderSettings.ambientIntensity - readableAmbientIntensity) >= 0.0001f)
-                RenderSettings.ambientIntensity = readableAmbientIntensity;
+                float readableAmbientIntensity = ResolveReadableSurfaceAmbientIntensity(state.AmbientIntensity);
+                if (Mathf.Abs(RenderSettings.ambientIntensity - readableAmbientIntensity) >= 0.0001f)
+                    RenderSettings.ambientIntensity = readableAmbientIntensity;
+            }
 
             Color globalDirectionalColor = state.DirectionalLightColor * ResolveReadableSurfaceSunIntensity(state.SunIntensityMultiplier);
             globalDirectionalColor.a = 1f;
@@ -3503,12 +3508,22 @@ namespace Hecton8.Celestial
             Color eclipseTint = new Color(0.025f, 0.045f, 0.070f, 1f);
             Color atmosphereColor = Color.Lerp(state.FogColor, eclipseTint, eclipse01 * 0.45f);
             atmosphereColor.a = 1f;
-            Shader.SetGlobalColor(_ID_HectonAtmosphereColor, atmosphereColor);
+            IGIRelaySystem giRelay = GlobalRegistry.GIRelay;
+            if (giRelay == null || !giRelay.IsAmbientProbeAuthorityActive)
+                Shader.SetGlobalColor(_ID_HectonAtmosphereColor, atmosphereColor);
+
             PushAmbientProbeForEclipse(in state, eclipse01);
         }
 
         private void PushAmbientProbeForEclipse(in AtmosphericLightingState state, float eclipse01)
         {
+            IGIRelaySystem giRelay = GlobalRegistry.GIRelay;
+            if (giRelay != null && giRelay.IsAmbientProbeAuthorityActive)
+            {
+                _ambientProbeEclipseActive = false;
+                return;
+            }
+
             if (eclipse01 <= 0.001f && !_ambientProbeEclipseActive)
                 return;
 

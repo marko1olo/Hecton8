@@ -5,7 +5,7 @@ Status: ENFORCED REGISTRY / PENDING RUNTIME VERIFICATION
 
 Purpose: stable index for `.agents-skills`. This folder contains technical mandates, not brainstorming notes.
 
-Current inventory: `53` `.txt` mandates plus this `README.md` registry index.
+Current inventory: `75` `.txt` mandates plus this `README.md` registry index.
 
 ## Authority
 
@@ -34,6 +34,15 @@ Minimum examples:
 - No per-proton, per-droplet, per-bubble, per-cable-segment, or per-flora-blade truth by default.
 - Zero GC in hot paths remains non-negotiable.
 - Unity import, Console, Play Mode, profiler, GCMonitor, player-build, memory, frame-time, scene wiring, and visual quality are `PENDING VERIFICATION` unless fresh artifacts prove them.
+
+## Engineering Data
+
+| Fact | Current Value | Enforcement |
+|---|---:|---|
+| Mandate files | 75 | Registry audit must update this value when files are added or removed. |
+| Runtime coroutine tolerance | 0 | `IEnumerator`, `yield return`, and `StartCoroutine` are rejected in gameplay hot paths. |
+| Unity 6000 render path | RenderGraph | New URP renderer features use `RecordRenderGraph`; Compatibility Mode is legacy debt. |
+| Async Unity object path | `UnityEngine.Awaitable` | `Task` is reserved for owned persistent workers or non-Unity background work. |
 
 ## Conflict Resolution
 

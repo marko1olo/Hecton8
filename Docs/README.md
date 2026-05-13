@@ -5,6 +5,29 @@ Status: PENDING VERIFICATION
 
 Purpose: stable documentation entry point. Dated reports are evidence snapshots and counters, not the permanent project brain. If a dated report changes policy, promote the rule into `AGENTS.md`, `.agents-skills`, or one of the stable authority docs below.
 
+## 2026-05-13 DOC_AUDIT X-Ray Override
+
+Read `Reports/2026-05-13_DOC_AUDIT_XRAY.md` before trusting May 11 counters or proof links.
+
+Current static audit facts:
+
+- the cited May 11 build artifacts `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` and `.log` are absent from the current filesystem
+- May 11 compile-success claims are therefore report text only until those artifacts are restored or a new build artifact is captured
+- root text surface is no longer the May 11 shape: current root scan sees `6` `.md`, `3` `.log`, and `3` `.json` files
+- direct `Docs/` root no longer contains `не откр.md`; the stale batch-prompt dump was moved to `DEPRECATED/Root_Stale_Batch_Prompt_Dumps_2026-05-13/`
+- current first-party asmdef count is `24`; previous `13`, `22`, and `23` asmdef atlas claims are stale
+- source-count values are volatile in the active workspace; the R4 static refresh sees `1411` project C# files, `1365` script C# files, `869871` project source lines, `852315` script source lines, `215` interface declaration hits, `51` direct public interfaces in `GlobalRegistryContracts.cs`, and `24` first-party asmdefs
+- R5/R6 package/config scan: Unity pin `6000.4.1f1`; URP `17.4.0`; Addressables `2.7.6`; Input System `1.19.0`; AI Navigation `2.0.11`; normative BuildSettings scenes remain `00_BOOTSTRAP`, `01_MAIN_MENU`, `02_HECTON_WORLD`; forbidden UPM IDs are absent, but physical legacy Astar/Easy Save/Demigiant/DarkTonic folders and live `DOTWEEN`/vendor scripting defines remain contamination; embedded Crest/MicroSplat/ShaderGraph package drift requires Unity import/build proof
+- R7 authority patch: `AGENTS.md` and `.codexrules/AGENTS.md` now match current Low URP mapping (`URP_Low` -> `Mobile_Renderer`, render scale `0.85`) and no longer instruct agents to extend Easy Save 3 usage
+- R8 world/scatter scan: large world files contain real scatter/residency/sampling/vegetation systems and `Assets/_Project/Data/World` has `285` `.asset` files, but production scene wiring and Addressables payload readiness remain unproven by static evidence
+- R9 root/atlas boundary: root authority is still only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`; `BROKEN_PREFABS.md`, root `PROJECT_ATLAS.md`, and root `TERRAIN_AND_BIOME_REALITY_MAP.md` are non-authority snapshot/mirror files; `PROJECT_ATLAS.md` / `Docs/PROJECT_ATLAS.md` are asmdef graph snapshots only
+- R10 active root-anchor cleanup: `BUILD_PLAYTEST_ISSUES.md` and `MASTER_RELEASE_WORK_PLAN.md` no longer present the missing May 11 Core build artifact as current evidence, and `BROKEN_PREFABS.md` now carries its own generated-snapshot proof boundary
+- R11 SpaceEngine research cleanup: `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` now uses the current MapMagic node path and marks its compile/smoke data as historical until the current Unity smoke harness is rerun
+- R12 Omega smoke artifact drift: current `Library/OmegaAutonomySmokeTester.json` reads `FAIL` on `nativeSentinelBalance` (`allocationDelta=2`, `trackedByteDelta=2560`); older saved PASS / OMEGA smoke artifacts remain scoped historical evidence only
+- R13 active documentation manifest boundary: `Docs/Reports/*ACTIVE_DOCUMENTATION_MANIFEST.json` files are dated generated snapshots only; their counts/build states/authority lists are superseded by `Docs/Reports/README.md` and `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`
+
+Evidence class remains STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK. Runtime proof remains absent.
+
 ## Stable Authority Spine
 
 - `../AGENTS.md` - global operating contract.
@@ -21,11 +44,14 @@ Purpose: stable documentation entry point. Dated reports are evidence snapshots 
 - `ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md` - report-vault trust boundary.
 - `DOC_GOVERNANCE.md` - placement rules for active/reference/archive docs.
 - `ROOT_DOCS_REFERENCE.md` - root/doc boundary and relocation map.
+- `PROJECT_STATE_STATIC_XRAY.md` - durable static project-state risk register; not runtime proof.
 
 ## Current Evidence Snapshots
 
-- `Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` - latest documentation/data boundary; records the current May 11 compile-only gate and counters.
-- `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` - current machine-readable active documentation manifest.
+- `Reports/2026-05-13_DOC_AUDIT_XRAY.md` - current documentation reality override; demotes missing May 11 build artifacts, root/doc surface drift, source-count drift, stale `Current compile-only evidence` lines, interface-count drift, Archivarius path drift, asmdef count drift, package/player-settings drift, world/scatter wiring proof gaps, and root mirror/atlas scope confusion.
+- `PROJECT_STATE_STATIC_XRAY.md` - current durable static audit anchor for runtime-spine, large-file, scatter, Addressables, audio-memory, third-party contamination, test-depth, and verification-gap findings.
+- `Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` - historical May 11 documentation/data boundary; superseded by the May 13 X-Ray for current counters and missing-artifact evidence.
+- `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` - latest machine-readable active documentation manifest; numeric counters are historical where the May 13 X-Ray supersedes them.
 - `Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` - latest `.agents-skills` actuality pass for the visual-realistic-fake doctrine; supersedes conflicting simulate-first mandate wording where 2026-05-11 overrides were added.
 - `Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` - previous documentation continuation sync; superseded by the May 11 current-data continuation for compile/counter freshness.
 - `Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json` - previous machine-readable active documentation manifest.
@@ -102,8 +128,9 @@ Purpose: stable documentation entry point. Dated reports are evidence snapshots 
 
 Current-state rule:
 
-- use `Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` as the latest documentation counter/status boundary
-- use `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` as the current machine-readable active documentation manifest
+- use `Reports/2026-05-13_DOC_AUDIT_XRAY.md` as the latest documentation counter/status override
+- use `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` as the latest machine-readable active documentation manifest, but treat its numeric counters as historical where the May 13 X-Ray provides newer static counts
+- use `Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` as historical May 11 documentation/data evidence, not the latest counter/status boundary
 - use `Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` as the latest `.agents-skills` visual-fake doctrine boundary; it is documentation-only and does not certify runtime behavior
 - use `Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` as the previous R186 documentation/build boundary when May 11 docs do not cover the question
 - use `Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md` as the previous main-documentation counter/status boundary after the final inquisition runtime patch and latest May 7 MCP console retry
@@ -129,12 +156,15 @@ Current-state rule:
 
 Current verification boundary:
 
-- current May 11 active manifest reports `Docs/**/*.md` total `449`, active markdown `236`, active non-report docs `166`, direct `Docs/Reports/*.md` `70`, active JSON `15`, root `.md` files `5`, root `.txt`/`.log` files `2`, `Docs` total files `897`, and active markdown header debt `0`
-- current May 11 source-count orientation reports `Assets/_Project/**/*.cs` `1306`, `Assets/_Project/Scripts/**/*.cs` `1262`, project physical lines `770577`, script physical lines `753858`, direct scripts `335`, and `GlobalRegistryContracts.cs` public interfaces `40`; source counts include the current dirty workspace state and are not runtime proof
-- current completed full Core dependency build evidence is `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`; this supersedes R186 as compile-only evidence but is still not Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof
+- current May 13 R4 static scan reports `Docs/**/*.md` total `918`, active markdown `283`, active non-`Docs/Reports` markdown `203`, active direct `Docs/Reports/*.md` `80`, docs JSON `10`, root `.md` files `6`, root `.log` files `3`, root `.json` files `3`, and direct `Docs/*.md` files `11`; active counts now explicitly exclude `Docs/Archive` in addition to deprecated, task, log, `_Archive`, and obsolete surfaces
+- current May 13 R4 source-count orientation reports `Assets/_Project/**/*.cs` `1411`, `Assets/_Project/Scripts/**/*.cs` `1365`, first-party non-test C# files `1401`, project physical lines `869871`, script physical lines `852315`, non-test physical lines `867132`, direct scripts `336`, interface declaration hits `215`, `GlobalRegistryContracts.cs` direct public interfaces `51`, and first-party asmdefs `24`; source counts include the current dirty workspace state and are not runtime proof
+- current May 13 R5 package/config orientation reports `ProjectVersion.txt` `6000.4.1f1`; `Packages/manifest.json` lacks `com.demigiant.dotween`, `com.darktonic.masteraudio`, `com.moodkie.easysave`, and `com.arongranberg.astar`; legacy physical asset folders still exist for Astar (`605` files), Easy Save 3 (`422` files), Demigiant (`357` files, including DOTween/DOTweenPro), and DarkTonic/MasterAudio (`346` runtime files plus separate editor/resources files); first-party `.cs` scan found no active DG.Tweening/ES3/Easy Save/MasterAudio/DarkTonic usage
+- historical May 11 active manifest reported `Docs/**/*.md` total `449`, active markdown `236`, active non-report docs `166`, direct `Docs/Reports/*.md` `70`, active JSON `15`, root `.md` files `5`, root `.txt`/`.log` files `2`, `Docs` total files `897`, and active markdown header debt `0`; those counters are superseded by the May 13 R4 static scan where they conflict
+- historical May 11 source-count orientation reported `Assets/_Project/**/*.cs` `1306`, `Assets/_Project/Scripts/**/*.cs` `1262`, project physical lines `770577`, script physical lines `753858`, direct scripts `335`, and `GlobalRegistryContracts.cs` public interfaces `40`; those counters are superseded by the May 13 R4 static scan where they conflict
+- May 11 report text claimed completed full Core dependency build evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but the May 13 DOC_AUDIT filesystem check did not find that summary or raw log; treat it as stale report text until the artifact is restored or replaced. It is not Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof
 - no fresh Unity MCP, Unity Console, or Play Mode proof was captured in the May 11 documentation continuation; older MCP readbacks are historical only
 - previous May 7 main documentation refresh scan reported `Docs/**/*.md` total `443`, active markdown `230`, active non-report docs `163`, full active markdown header debt `0`, root `.md` files `5`, root `.txt`/`.log` files `0`, `Docs/Reports/*.md` `67`, `Assets/_Project/**/*.cs` `1233`, `Assets/_Project/Scripts/**/*.cs` `1192`, project physical lines last observed `683064`, script physical lines last observed `667771`, and `GlobalRegistryContracts.cs` public interfaces `39`; those counters are superseded by the May 11 evidence boundary
-- previous May 7 build-master Core artifact `CodexArtifacts/2026-05-07_BUILD_MASTER_CORE_BUILD.log` reports `Build FAILED`, `55 Warning(s)`, `2 Error(s)`; its blockers were `HectonVoxelEngine.cs(4143,47)` missing `GlobalRegistry.PlayerRigidbody` and `HectonVoxelEngine.cs(4144,62)` missing `GlobalRegistry.PlayerMovement`; this is superseded by the May 11 completed Core compile-only gate above
+- previous May 7 build-master Core artifact `CodexArtifacts/2026-05-07_BUILD_MASTER_CORE_BUILD.log` reports `Build FAILED`, `55 Warning(s)`, `2 Error(s)`; its blockers were `HectonVoxelEngine.cs(4143,47)` missing `GlobalRegistry.PlayerRigidbody` and `HectonVoxelEngine.cs(4144,62)` missing `GlobalRegistry.PlayerMovement`; the missing May 11 artifact does not currently supersede this with artifact-backed proof
 - latest May 6 Unity MCP editor readback reports active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, console error/warning entries `0`, render textures `37`, render texture bytes `56,320,492`, renderer `PC_Renderer`, and `9` renderer features; this is editor-state proof only, not Play Mode/profiler/player-build proof
 - latest May 7 recursive `Docs` filesystem scan inventories `866` non-meta files; archive/deprecated/extracted research payloads remain evidence/provenance, not active authority
 - latest May 11 official Unity release-page check found Unity `6000.4.6f1` released on `2026-05-05`, newer than the local project pin `6000.4.1f1`; do not treat this as permission to upgrade without the LTS migration protocol
@@ -143,7 +173,8 @@ Current verification boundary:
 - latest May 5 Omega bounded Core build evidence is `CodexArtifacts/dotnet-h8core-omega-autonomy-doc-continuation-build.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, and `0` first-party `Assets/_Project` matches
 - last May 5 Omega warning-bearing baseline is `CodexArtifacts/dotnet-h8core-omega-autonomy-current-build5.log`: `Build succeeded`, `48 Warning(s)`, `0 Error(s)`; warning owners are dependency/vendor surfaces only: Unity URP PackageCache, GPUInstancer, Den.Tools/MapMagic, Crest, WaveHarmonic.Crest, Unity ShaderGraph/Core Editor PackageCache
 - first-party warning check against `CodexArtifacts/dotnet-h8core-omega-autonomy-current-build5.log` also returned `0` `Assets/_Project/Scripts` matches; older artifact logs may contain first-party warnings and must not be treated as current build output without rerunning the matching build
-- latest May 5 Omega smoke evidence is `CodexArtifacts/unity-omega-smoke-2026-05-05-doc-continuation.log` plus `Library/OmegaAutonomySmokeTester.json`, status `PASS`; Unity process exit code was `0`, but the log still contains licensing handshake/access-token errors, UnityConnect `Curl error 42`, MCP shutdown notice, and UTP memory-leak summary at editor shutdown, so this is scoped smoke proof, not project-wide PlayMode/profiler/player-build proof
+- May 5 Omega smoke evidence drift: `CodexArtifacts/unity-omega-smoke-2026-05-05-doc-continuation.log` is absent in the current filesystem, and current `Library/OmegaAutonomySmokeTester.json` reads `FAIL` on `nativeSentinelBalance` (`allocationDelta=2`, `trackedByteDelta=2560`). Older saved PASS/OMEGA artifacts remain scoped historical evidence only, not current Play Mode/profiler/GCMonitor/player-build proof.
+- Active documentation manifest JSON boundary: the May 6, May 7, May 9, and May 11 `Docs/Reports/*ACTIVE_DOCUMENTATION_MANIFEST.json` files are historical generated snapshots. They must not be used as current counts, current authority lists, or current compile/runtime proof.
 - latest May 4 warning-cleanup local Core build `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `0 Warning(s)` and `0 Error(s)`; final post-cleanup Unity console readback after clear/script refresh returned `0` error/warning entries
 - earlier fresh May 4 post-repair local Core build `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` returned `0 Warning(s)` and `0 Error(s)`
 - latest May 4 local Editor, `Hecton8.World.Dots.csproj`, and `Hecton8.PlayModeTests.csproj` builds all returned `0 Warning(s)` and `0 Error(s)`

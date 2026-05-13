@@ -395,7 +395,7 @@ k = ÐºÐ¾ÑÑ„Ñ„Ð¸Ñ†Ð¸ÐµÐ½Ñ‚ Ð´ÐµÐ¼Ð¿Ñ„Ð¸Ñ
 - Ð¡Ñ‚Ð°Ð±Ð¸Ð»ÑŒÐ½Ð°Ñ ÑÑ…Ð¾Ð´Ð¸Ð¼Ð¾ÑÑ‚ÑŒ Ðº Ð½ÑƒÐ»ÑŽ Ð±ÐµÐ· Ð¼Ð¸ÐºÑ€Ð¾-ÐºÐ¾Ð»ÐµÐ±Ð°Ð½Ð¸Ð¹.
 - Ð¡Ð¾Ð²Ð¼ÐµÑÑ‚Ð¸Ð¼ Ñ `FixedTick` Ð¸ Burst-Ð²ÐµÐºÑ‚Ð¾Ñ€Ð¸Ð·Ð°Ñ†Ð¸ÐµÐ¹.
 
-**Ð¡Ð¼. Ñ‚Ð°ÐºÐ¶Ðµ:** `PHYS_Fluid_Incursion_Interior.txt`, `PlayerMovement.cs`, `FaunaBrain.cs`
+**Ð¡Ð¼. Ñ‚Ð°ÐºÐ¶Ðµ:** `PHYS_Fluid_Incursion_Interior.txt`, `HectonPlayerMovement.cs`, `FaunaBrain.cs`
 
 ---
 

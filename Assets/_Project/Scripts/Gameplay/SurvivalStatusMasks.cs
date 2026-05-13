@@ -14,5 +14,6 @@ namespace Hecton8.Gameplay
         public const uint Narcosis = 1u << 4;
         public const uint Toxicity = 1u << 5;
         public const uint CrushWarning = 1u << 6;
+        public const uint RadiationPenalty = 1u << 7;
     }
 }

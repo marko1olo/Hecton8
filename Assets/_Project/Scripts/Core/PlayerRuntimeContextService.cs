@@ -257,6 +257,26 @@ namespace Hecton8.Core
             }
         }
 
+        /// <inheritdoc />
+        public bool TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot)
+        {
+            snapshot = default;
+            SyncPlayerContext();
+            if (!_runtimeContext.IsBound || _playerTransform == null)
+                return false;
+
+            PlayerMovementRuntimeState movementState = _runtimeContext.MovementState;
+            float3 runtimePosition = SafeFiniteVector(movementState.WorldPosition, (float3)_playerTransform.position);
+            Hecton8.World.AbsoluteUniversePosition aup = movementState.PredictedAup;
+            if (!IsFiniteAup(in aup))
+                aup = Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(ToVector3(runtimePosition));
+
+            float3 fallbackForward = SafeDirection((float3)_playerTransform.forward, new float3(0f, 0f, 1f));
+            float3 forward = SafeDirection(movementState.CameraForward, fallbackForward);
+            snapshot = new PlayerRuntimePoseSnapshot(runtimePosition, forward, aup, movementState.Flags);
+            return true;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -705,6 +725,12 @@ namespace Hecton8.Core
                 return fallback * math.rsqrt(fallbackSqr);
 
             return new float3(0f, 0f, 1f);
+        }
+
+        private static bool IsFiniteAup(in Hecton8.World.AbsoluteUniversePosition aup)
+        {
+            double3 absolute = aup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absolute));
         }
 
         private void RefreshDynamicContextReferences()

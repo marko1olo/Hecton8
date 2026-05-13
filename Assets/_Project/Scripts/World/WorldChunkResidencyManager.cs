@@ -3,7 +3,10 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Scheduling;
 using Hecton8.Core.Signals;
 using Hecton8.Data;
 using Hecton8.Gameplay;
@@ -256,7 +259,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4140)] // Streaming must register after dispatcher bootstrap and before world content lanes.
-    public sealed class WorldChunkResidencyManager : MonoBehaviour, ITickable, ISlowTickable, IBaseAirlockEventListener, IDisposable
+    public sealed class WorldChunkResidencyManager : MonoBehaviour, ITickable, ISlowTickable, IBaseAirlockEventListener, IStreamingBackpressureService, IDisposable
     {
         private const int DefaultMaxChunkCount = 512;
         private const int DefaultLoadQueueCapacity = 256;
@@ -281,6 +284,16 @@ namespace Hecton8.World
         private const long PredictiveVramResumeBytes = 1400L * 1024L * 1024L;
         private const float StreamerStressSpeedSqRcp = 0.00111111112f;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_ASSET_STREAMING_PREDICTIVE.bin";
+        private const string BackpressureDumpRelativePath = "Docs/AgentLogs/Dump_STREAMING_IO_BACKPRESSURE.bin";
+        private const double LatencyDebtBaselineMs = 80.0;
+        private const double CriticalHoleThresholdMs = 250.0;
+        private const float StorageDebtEwmaWeight = 0.08f;
+        private const float StorageDebtPublishBlend = 0.18f;
+        private const float StorageDebtPredictionHalveThreshold = 0.25f;
+        private const float StorageDebtTurbulenceThreshold = 0.5f;
+        private const float StorageDebtDataLinkThreshold = 0.6f;
+        private const float StorageDebtDataLinkResetThreshold = 0.45f;
+        private const float StorageDebtProxyFallbackThreshold = 0.6f;
         private const byte LoadRequestFlagPredictive = 1 << 0;
         private const byte LoadRequestFlagTeleport = 1 << 1;
         private const uint TelemetryInvalidAupFlag = 1u << 0;
@@ -303,6 +316,7 @@ namespace Hecton8.World
         private static readonly ProfilerMarker _tickMarker = new ProfilerMarker("H8.World.ChunkResidency.Tick");
         private static readonly ProfilerMarker _loadDispatchMarker = new ProfilerMarker("H8.World.ChunkResidency.LoadDispatch");
         private static readonly ProfilerMarker _releaseMarker = new ProfilerMarker("H8.World.ChunkResidency.Release");
+        private static readonly double _StopwatchMillisecondsPerTick = 1000.0 / Stopwatch.Frequency;
 
         private enum AdditiveSceneLoadState : byte
         {
@@ -410,11 +424,16 @@ namespace Hecton8.World
         private NativeList<long> _chunksToUnload;
         private NativeList<ChunkLoadSortRecord> _chunkLoadSortRecords;
         private NativeArray<ChunkResidencyTelemetryEntry> _telemetryRing;
+        private NativeArray<double> _loadStartTimes;
+        private NativeArray<byte> _loadImmediateRadiusFlags;
         private JobHandle _residencyJobHandle;
+        private long _residencyScheduleTimestamp;
+        private bool _residencySortScheduled;
         private bool _residencyJobScheduled;
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _registeredAirlockEvents;
+        private bool _registeredBackpressureService;
         private bool _disposed;
         private bool _forceResidencyEvaluation;
         private bool _fadeActive;
@@ -437,6 +456,13 @@ namespace Hecton8.World
         private int _pendingAdditiveSceneOperationCount;
         private int _telemetryCursor;
         private int _habitatTransitionPauseFrames;
+        private double _latencyEwmaMs;
+        private double _oldestPendingMs;
+        private double _criticalHoleDebtMs;
+        private float _storageDebt01;
+        private float _smoothedStorageDebt01;
+        private uint _storageDebtSequence;
+        private bool _dataLinkDegradedPublished;
         private uint _debugStateHash = ChunkStateHashSeed;
         private ChunkStreamingScalabilityTier _activeTier = (ChunkStreamingScalabilityTier)255;
         private ChunkStreamingScalabilityTier _resolvedTier = ChunkStreamingScalabilityTier.Low;
@@ -480,6 +506,20 @@ namespace Hecton8.World
         /// True while speculative prediction is disabled by VRAM, habitat, or external docking code.
         /// </summary>
         public bool IsPredictiveStreamingSuspended => PredictiveStreamingPausedNow;
+
+        public float StorageDebt01 => _storageDebt01;
+
+        public float SmoothedStorageDebt01 => _smoothedStorageDebt01;
+
+        public double LatencyEwmaMs => _latencyEwmaMs;
+
+        public double OldestPendingMs => _oldestPendingMs;
+
+        public double CriticalHoleDebtMs => _criticalHoleDebtMs;
+
+        public uint BackpressureSequence => _storageDebtSequence;
+
+        public bool DataLinkDegraded => _smoothedStorageDebt01 > StorageDebtDataLinkThreshold;
 
         /// <summary>
         /// External docking/habitat code can suspend speculative streaming without taking a concrete dependency on this manager.
@@ -588,8 +628,6 @@ namespace Hecton8.World
                 {
                     ProcessDeferredEvictions();
                     ProcessLoadDispatchBudget();
-                    PollAddressableLoads();
-                    PollAddressableCacheClears();
                 }
 
                 TryActivateReadySubScenes();
@@ -610,6 +648,9 @@ namespace Hecton8.World
             if (_residencyJobScheduled)
                 return;
 
+            PollAddressableLoads();
+            PollAddressableCacheClears();
+            EvaluateAndPublishStorageBackpressure();
             ScheduleResidencyJob();
         }
 
@@ -752,6 +793,10 @@ namespace Hecton8.World
             _chunkLoadSortRecords = new NativeList<ChunkLoadSortRecord>(capacity, Allocator.Persistent);
             // COLD ALLOC: NativeArray<ChunkResidencyTelemetryEntry>[300] - black-box circular telemetry - owner: WorldChunkResidencyManager
             _telemetryRing = new NativeArray<ChunkResidencyTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<double>[maxChunkCount] - absolute Addressables load start times keyed by chunk index - owner: WorldChunkResidencyManager
+            _loadStartTimes = new NativeArray<double>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<byte>[maxChunkCount] - immediate-radius load flags for oldest-pending IO debt - owner: WorldChunkResidencyManager
+            _loadImmediateRadiusFlags = new NativeArray<byte>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
             NativeMemorySentinel.RegisterNativeArray(_chunkIds, nameof(WorldChunkResidencyManager), nameof(_chunkIds), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_chunkCenters, nameof(WorldChunkResidencyManager), nameof(_chunkCenters), NativeAllocationLifetime.Session);
@@ -762,6 +807,8 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeList(_chunksToUnload, nameof(WorldChunkResidencyManager), nameof(_chunksToUnload), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeList(_chunkLoadSortRecords, nameof(WorldChunkResidencyManager), nameof(_chunkLoadSortRecords), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_telemetryRing, nameof(WorldChunkResidencyManager), nameof(_telemetryRing), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_loadStartTimes, nameof(WorldChunkResidencyManager), nameof(_loadStartTimes), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_loadImmediateRadiusFlags, nameof(WorldChunkResidencyManager), nameof(_loadImmediateRadiusFlags), NativeAllocationLifetime.Session);
         }
 
         private void BuildChunkTables()
@@ -876,6 +923,12 @@ namespace Hecton8.World
             if (!_registeredSlowTick)
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
 
+            if (!_registeredBackpressureService)
+            {
+                GlobalRegistry.RegisterStreamingBackpressureRuntime(this);
+                _registeredBackpressureService = ReferenceEquals(GlobalRegistry.StreamingBackpressure, this);
+            }
+
             if (!_registeredAirlockEvents)
             {
                 BaseAirlockEvents.Register(this);
@@ -901,6 +954,12 @@ namespace Hecton8.World
             {
                 BaseAirlockEvents.Unregister(this);
                 _registeredAirlockEvents = false;
+            }
+
+            if (_registeredBackpressureService)
+            {
+                GlobalRegistry.UnregisterStreamingBackpressureRuntime(this);
+                _registeredBackpressureService = false;
             }
         }
 
@@ -1100,6 +1159,8 @@ namespace Hecton8.World
             _predictiveVramAborted = ResolvePredictiveVramAbortState();
             bool predictiveEnabled = !predictivePaused && !_predictiveVramAborted;
             float predictionDistanceMeters = predictiveEnabled ? ResolvePredictionDistanceMeters(playerVelocity, tier) : 0f;
+            if (predictionDistanceMeters > 0f && _smoothedStorageDebt01 > StorageDebtPredictionHalveThreshold)
+                predictionDistanceMeters *= 0.5f;
             float tailUnloadRadiusMeters = predictiveEnabled ? ResolveTailUnloadRadiusMeters(predictionDistanceMeters) : unloadRadiusMeters;
             AbsoluteUniversePosition projectedAup = BuildProjectedAup(in playerAup, playerVelocity, predictionDistanceMeters);
 
@@ -1127,7 +1188,17 @@ namespace Hecton8.World
                 PredictiveEnabled = predictiveEnabled ? (byte)1 : (byte)0
             };
 
-            JobHandle scanHandle = job.Schedule(_chunkCount, 32);
+            if (!job.TryScheduleParallelAdmitted(
+                    _chunkCount,
+                    32,
+                    JobAdmissionLane.Lane1_World,
+                    default,
+                    out JobHandle scanHandle))
+            {
+                _forceResidencyEvaluation = true;
+                return;
+            }
+
             ChunkLoadPrioritySortJob sortJob = new ChunkLoadPrioritySortJob
             {
                 ChunksToLoad = _chunksToLoad,
@@ -1137,8 +1208,12 @@ namespace Hecton8.World
                 ProjectedAbsolute = ToAbsoluteDouble3(in projectedAup)
             };
 
-            _residencyJobHandle = sortJob.Schedule(scanHandle);
+            _residencySortScheduled = sortJob.TryScheduleAdmitted(JobAdmissionLane.Lane1_World, scanHandle, out _residencyJobHandle);
+            if (!_residencySortScheduled)
+                _residencyJobHandle = scanHandle;
+
             _residencyJobScheduled = true;
+            _residencyScheduleTimestamp = Stopwatch.GetTimestamp();
             _forceResidencyEvaluation = false;
         }
 
@@ -1148,6 +1223,19 @@ namespace Hecton8.World
                 return;
 
             _residencyJobHandle.Complete();
+            float chainMs = (float)((Stopwatch.GetTimestamp() - _residencyScheduleTimestamp) * _StopwatchMillisecondsPerTick);
+            if (_residencySortScheduled)
+            {
+                float perJobMs = chainMs * 0.5f;
+                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<RadiusBasedStreamingJob>(JobAdmissionLane.Lane1_World, perJobMs);
+                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<ChunkLoadPrioritySortJob>(JobAdmissionLane.Lane1_World, perJobMs);
+            }
+            else
+            {
+                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<RadiusBasedStreamingJob>(JobAdmissionLane.Lane1_World, chainMs);
+            }
+
+            _residencySortScheduled = false;
             _residencyJobScheduled = false;
         }
 
@@ -1157,6 +1245,7 @@ namespace Hecton8.World
                 return;
 
             _residencyJobHandle.Complete();
+            _residencySortScheduled = false;
             _residencyJobScheduled = false;
         }
 
@@ -1345,6 +1434,7 @@ namespace Hecton8.World
 
                 if (!_hasAddressableHandle[index])
                 {
+                    RecordAddressableLoadStart(index, predictive ? (byte)0 : (byte)1);
                     _addressableHandles[index] = Addressables.LoadAssetAsync<GameObject>(definition.addressableAddress);
                     _hasAddressableHandle[index] = true;
                     _addressableLoadPending[index] = true;
@@ -1464,6 +1554,8 @@ namespace Hecton8.World
                 if (!handle.IsDone)
                     continue;
 
+                RecordAddressableLoadCompletion(i);
+
                 if (!_chunkStates.TryGetValue(chunkId, out ChunkState state))
                 {
                     ReleaseChunkHandles(i);
@@ -1512,18 +1604,181 @@ namespace Hecton8.World
 
             _addressableLoadPending[index] = false;
             _pendingAddressableLoadCount = math.max(0, _pendingAddressableLoadCount - 1);
+            ClearAddressableLoadTiming(index);
         }
 #endif
 
+        private void RecordAddressableLoadStart(int index, byte immediateRadius)
+        {
+            if (!_loadStartTimes.IsCreated || !_loadImmediateRadiusFlags.IsCreated ||
+                (uint)index >= (uint)_loadStartTimes.Length ||
+                (uint)index >= (uint)_loadImmediateRadiusFlags.Length)
+            {
+                return;
+            }
+
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            _loadStartTimes[index] = IsFiniteDouble(now) ? now : Time.unscaledTimeAsDouble;
+            _loadImmediateRadiusFlags[index] = immediateRadius;
+        }
+
+        private void RecordAddressableLoadCompletion(int index)
+        {
+            if (!_loadStartTimes.IsCreated || (uint)index >= (uint)_loadStartTimes.Length)
+                return;
+
+            double startTime = _loadStartTimes[index];
+            if (startTime <= 0d || !IsFiniteDouble(startTime))
+                return;
+
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (!IsFiniteDouble(now) || now < startTime)
+            {
+                DumpBackpressureTelemetry(TelemetryAddressablesFaultFlag);
+                ClearAddressableLoadTiming(index);
+                return;
+            }
+
+            double latencyMs = (now - startTime) * 1000.0;
+            if (!IsFiniteDouble(latencyMs))
+            {
+                DumpBackpressureTelemetry(TelemetryAddressablesFaultFlag);
+                ClearAddressableLoadTiming(index);
+                return;
+            }
+
+            _latencyEwmaMs = _latencyEwmaMs <= 0d
+                ? latencyMs
+                : math.lerp(_latencyEwmaMs, latencyMs, StorageDebtEwmaWeight);
+            ClearAddressableLoadTiming(index);
+        }
+
+        private void ClearAddressableLoadTiming(int index)
+        {
+            if (_loadStartTimes.IsCreated && (uint)index < (uint)_loadStartTimes.Length)
+                _loadStartTimes[index] = 0d;
+            if (_loadImmediateRadiusFlags.IsCreated && (uint)index < (uint)_loadImmediateRadiusFlags.Length)
+                _loadImmediateRadiusFlags[index] = 0;
+        }
+
+        private void EvaluateAndPublishStorageBackpressure()
+        {
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (!IsFiniteDouble(now))
+                now = Time.unscaledTimeAsDouble;
+
+            double oldestPendingMs = 0d;
+#if UNITY_ADDRESSABLES_EXIST
+            if (_addressableLoadPending != null && _loadStartTimes.IsCreated && _loadImmediateRadiusFlags.IsCreated)
+            {
+                int count = math.min(_addressableLoadPending.Length, math.min(_loadStartTimes.Length, _loadImmediateRadiusFlags.Length));
+                for (int i = 0; i < count; i++)
+                {
+                    if (!_addressableLoadPending[i] || _loadImmediateRadiusFlags[i] == 0)
+                        continue;
+
+                    double startTime = _loadStartTimes[i];
+                    if (startTime <= 0d || !IsFiniteDouble(startTime) || now < startTime)
+                        continue;
+
+                    double pendingMs = (now - startTime) * 1000.0;
+                    if (pendingMs > oldestPendingMs)
+                        oldestPendingMs = pendingMs;
+                }
+            }
+#endif
+
+            _oldestPendingMs = oldestPendingMs;
+            _criticalHoleDebtMs = math.max(0d, oldestPendingMs - CriticalHoleThresholdMs);
+            double rawDebt = ((_latencyEwmaMs - LatencyDebtBaselineMs) * 0.0023) +
+                             (oldestPendingMs * 0.001) +
+                             (_criticalHoleDebtMs * 0.002);
+            if (!IsFiniteDouble(rawDebt))
+            {
+                DumpBackpressureTelemetry(TelemetryAddressablesFaultFlag);
+                rawDebt = 0d;
+            }
+
+            _storageDebt01 = math.saturate((float)rawDebt);
+            _smoothedStorageDebt01 = math.lerp(_smoothedStorageDebt01, _storageDebt01, StorageDebtPublishBlend);
+            _storageDebtSequence++;
+
+            byte flags = 0;
+            if (_smoothedStorageDebt01 > StorageDebtTurbulenceThreshold)
+                flags |= StorageDebtSignal.HighDebtFlag;
+            if (_smoothedStorageDebt01 > StorageDebtDataLinkThreshold)
+                flags |= StorageDebtSignal.DataLinkDegradedFlag;
+            if (_criticalHoleDebtMs > 0d)
+                flags |= StorageDebtSignal.CriticalHoleFlag;
+            if (_smoothedStorageDebt01 >= StorageDebtProxyFallbackThreshold)
+                flags |= StorageDebtSignal.ProxyFallbackFlag;
+
+            int pendingLoads = 0;
+#if UNITY_ADDRESSABLES_EXIST
+            pendingLoads = _pendingAddressableLoadCount;
+#endif
+            StorageDebtSignal signal = default;
+            signal.Debt01 = _smoothedStorageDebt01;
+            signal.LatencyEwmaMs = (float)math.max(0d, _latencyEwmaMs);
+            signal.OldestPendingMs = (float)math.max(0d, oldestPendingMs);
+            signal.CriticalHoleDebtMs = (float)math.max(0d, _criticalHoleDebtMs);
+            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Sequence = _storageDebtSequence;
+            signal.PendingLoads = (ushort)math.min(ushort.MaxValue, math.max(0, pendingLoads));
+            signal.Flags = flags;
+            GlobalSignals.Publish(in signal);
+            SystemDispatcher.PublishStreamingStorageDebt(_smoothedStorageDebt01);
+            CrashTelemetryBuffer.ReportStreamingBackpressureFrame(_smoothedStorageDebt01, _latencyEwmaMs, oldestPendingMs, pendingLoads);
+
+            if (_smoothedStorageDebt01 > StorageDebtTurbulenceThreshold)
+            {
+                StreamingTurbulenceSignal turbulence = default;
+                turbulence.Intensity01 = math.saturate((_smoothedStorageDebt01 - StorageDebtTurbulenceThreshold) * 2f);
+                turbulence.Debt01 = _smoothedStorageDebt01;
+                turbulence.DurationSeconds = 0.35f;
+                turbulence.Frame = signal.Frame;
+                turbulence.SourceHash = 0x5354494Fu; // "STIO"
+                turbulence.Sequence = _storageDebtSequence;
+                GlobalSignals.Publish(in turbulence);
+            }
+
+            PublishPdaDataLinkState(signal.Frame);
+        }
+
+        private void PublishPdaDataLinkState(uint frame)
+        {
+            if (_smoothedStorageDebt01 > StorageDebtDataLinkThreshold)
+            {
+                if (_dataLinkDegradedPublished)
+                    return;
+
+                HUDNotificationSignal notification = default;
+                notification.MessageHash = 0x444C4B44u; // "DLKD"
+                notification.ContextHash = 0x5354494Fu; // "STIO"
+                notification.Frame = frame;
+                notification.Severity = 1;
+                notification.Flags = StorageDebtSignal.DataLinkDegradedFlag;
+                GlobalSignals.Publish(in notification);
+                _dataLinkDegradedPublished = true;
+                return;
+            }
+
+            if (_smoothedStorageDebt01 < StorageDebtDataLinkResetThreshold)
+                _dataLinkDegradedPublished = false;
+        }
+
         private void PromoteChunkResident(int index, long chunkId, GameObject loadedPrefab)
         {
-            ChunkState state = ChunkState.Resident | ChunkState.Staged | ChunkState.LOD0;
+            bool proxyFallback = _smoothedStorageDebt01 >= StorageDebtProxyFallbackThreshold;
+            ChunkState state = ChunkState.Resident | ChunkState.Staged | (proxyFallback ? ChunkState.LOD1 : ChunkState.LOD0);
             if (chunkDefinitions[index].pinned)
                 state |= ChunkState.Pinned;
 
             SetChunkState(chunkId, state);
-            if (loadedPrefab != null)
+            if (loadedPrefab != null && !proxyFallback)
                 WarmPrefab(loadedPrefab, math.max(1, chunkDefinitions[index].warmupCountPerPrefab));
+            else if (proxyFallback)
+                WarmChunkPrefabDependencies(index);
 
             StartFade();
             if (_activationInProgress == null ||
@@ -2038,6 +2293,7 @@ namespace Hecton8.World
 
                     _addressableHandles[index] = default;
                     _hasAddressableHandle[index] = false;
+                    ClearAddressableLoadTiming(index);
                 }
 
                 if (clearAddressableCache)
@@ -2616,6 +2872,21 @@ namespace Hecton8.World
                 return;
 
             string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
+            DumpTelemetryToPath(path);
+        }
+
+        private void DumpBackpressureTelemetry(uint reasonFlags)
+        {
+            WriteTelemetrySample(0L, reasonFlags);
+            if (!_telemetryRing.IsCreated)
+                return;
+
+            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", BackpressureDumpRelativePath));
+            DumpTelemetryToPath(path);
+        }
+
+        private void DumpTelemetryToPath(string path)
+        {
             string directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
@@ -2699,12 +2970,30 @@ namespace Hecton8.World
                 NativeMemorySentinel.UnregisterNativeArray(_telemetryRing);
                 _telemetryRing.Dispose();
             }
+
+            if (_loadStartTimes.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_loadStartTimes);
+                _loadStartTimes.Dispose();
+            }
+
+            if (_loadImmediateRadiusFlags.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_loadImmediateRadiusFlags);
+                _loadImmediateRadiusFlags.Dispose();
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsFinite(float3 value)
         {
             return math.all(math.isfinite(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFiniteDouble(double value)
+        {
+            return !double.IsNaN(value) && !double.IsInfinity(value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

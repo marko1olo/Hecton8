@@ -1,7 +1,10 @@
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
 using Hecton8.Physics;
+using Hecton8.Physics.CCD;
+using Hecton8.Physics.Determinism;
 using Hecton8.World;
 using System.Runtime.InteropServices;
 using Unity.Collections;
@@ -66,6 +69,8 @@ namespace Hecton8.Gameplay
         private const float HydrodynamicAddedMassAccelerationForceScalar =
             1f / (1f + HydrodynamicAddedMassAccelerationScale);
         private const float WallSlideTelemetryMaxNormalY = 0.75f;
+        private const float HighVelocityWallImpactThresholdMetersPerSecond = 4.0f;
+        private const byte SparkDebrisKind = 1;
         private const float VoxelProxySlideDistanceRetain = 0.92f;
         private const float VoxelProxySlideVelocityRetain = 0.65f;
         private const float VoxelProxyGlideFallbackMetersPerSecond = 0.35f;
@@ -77,6 +82,7 @@ namespace Hecton8.Gameplay
 
         private static readonly ProfilerMarker _scheduledSweepProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _scheduledSweepConsumeProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Consume");
+        private static readonly uint _kinematicCcdSourceHash = unchecked((uint)Hecton.Localization.LocHash.Compute("KINEMATIC_CCD_PLAYER"));
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static readonly uint _sweepScheduleBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HectonPlayerMotor.CapsuleSweep.ScheduleOverBudget"));
         private static readonly uint _sweepConsumeBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HectonPlayerMotor.CapsuleSweep.ConsumeOverBudget"));
@@ -593,7 +599,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(position3)))
                 return;
 
-            _body.MovePosition(position);
+            _body.MovePosition(SnapMillimeter(position));
         }
 
         /// <summary>
@@ -1111,6 +1117,7 @@ namespace Hecton8.Gameplay
             _lastWallSlideShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             _lastWallSlideBodyBindEpoch = _bodyBindEpoch;
             _lastWallSlideIsVoxel = IsVoxelWallHit(in hit);
+            EmitHighVelocityWallImpact(in hit, blockedSpeed);
         }
 
         private void ResetWallSlideContactState()
@@ -1165,7 +1172,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            velocityReduction01 = math.saturate(1f - (projectedMagnitude / math.max(intendedMagnitude, 0.0001f)));
+            velocityReduction01 = math.saturate(1f - (projectedMagnitude * math.rcp(math.max(intendedMagnitude, 0.0001f))));
             slideAngleDegrees = velocityReduction01 * (135f - (45f * velocityReduction01));
         }
 
@@ -1212,6 +1219,11 @@ namespace Hecton8.Gameplay
             return MathGuard.SanitizeFinite(velocity, fallback);
         }
 
+        public static float ResolveStorageBackpressureSpeedMultiplier(float debt01)
+        {
+            return math.max(0.2f, 1f - (math.saturate(debt01) * 0.8f));
+        }
+
         private static float ApproximateSpeedMagnitude(float3 velocity)
         {
             float3 absolute = math.abs(velocity);
@@ -1219,6 +1231,109 @@ namespace Hecton8.Gameplay
             float minComponent = math.cmin(absolute);
             float midComponent = absolute.x + absolute.y + absolute.z - maxComponent - minComponent;
             return maxComponent + (midComponent * 0.375f) + (minComponent * 0.125f);
+        }
+
+        private void EmitHighVelocityWallImpact(in RaycastHit hit, float blockedSpeed)
+        {
+            if (blockedSpeed < HighVelocityWallImpactThresholdMetersPerSecond)
+                return;
+
+            Vector3 point = SafeVelocity(hit.point, _body != null ? _body.position : Vector3.zero);
+            ImpactSignal signal = default;
+            signal.PointAup = AbsoluteUniversePosition.FromRuntimePosition(point);
+            signal.Velocity = blockedSpeed;
+            signal.Intensity = math.saturate(blockedSpeed * 0.08f);
+            signal.PrimaryBodyId = _body != null ? unchecked((uint)EntityId.ToULong(_body.GetEntityId())) : 0u;
+            signal.WeightClass = 1;
+            signal.Flags = 0;
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void EmitKinematicCcdConsequences(
+            in RaycastHit hit,
+            Vector3 safeNormal,
+            float blockedSpeed,
+            float lostKineticEnergy,
+            bool lowTierStop,
+            bool cornerHalt)
+        {
+            if (blockedSpeed <= 0.0001f)
+                return;
+
+            Vector3 point = SafeVelocity(hit.point, _body != null ? _body.position : Vector3.zero);
+            AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(point);
+            ulong bodyId = _body != null ? EntityId.ToULong(_body.GetEntityId()) : 0UL;
+            uint sourceHash = _kinematicCcdSourceHash;
+            uint targetHash = unchecked((uint)GetHitColliderInstanceId(in hit));
+            byte flags = 0;
+            if (cornerHalt)
+                flags |= HighSpeedImpactSignal.FlagCornerHalt;
+            if (lowTierStop)
+                flags |= HighSpeedImpactSignal.FlagLowTierStop;
+
+            HighSpeedImpactSignal highSpeedImpact = default;
+            highSpeedImpact.PointAup = pointAup;
+            highSpeedImpact.Normal = new float3(safeNormal.x, safeNormal.y, safeNormal.z);
+            highSpeedImpact.LostKineticEnergy = lostKineticEnergy;
+            highSpeedImpact.ImpactSpeed = blockedSpeed;
+            highSpeedImpact.SourceHash = sourceHash;
+            highSpeedImpact.TargetHash = targetHash;
+            highSpeedImpact.Frame = unchecked((uint)Time.frameCount);
+            highSpeedImpact.SourceKind = HighSpeedImpactSignal.SourcePlayer;
+            highSpeedImpact.Flags = flags;
+            GlobalSignals.Publish(in highSpeedImpact);
+
+            ImpactSignal impact = default;
+            impact.PointAup = pointAup;
+            impact.Velocity = blockedSpeed;
+            impact.Intensity = math.saturate(blockedSpeed * 0.08f + lostKineticEnergy * 0.00005f);
+            impact.PrimaryBodyId = unchecked((uint)bodyId);
+            impact.WeightClass = 1;
+            impact.Flags = flags;
+            GlobalSignals.Publish(in impact);
+            CameraJuiceSignals.PublishImpact(in impact, new float3(safeNormal.x, safeNormal.y, safeNormal.z));
+
+            DebrisSpawnSignal debris = default;
+            debris.PositionAup = pointAup;
+            debris.SourceEntityId = unchecked((uint)bodyId);
+            debris.Intensity01 = impact.Intensity;
+            debris.DebrisKind = SparkDebrisKind;
+            debris.Flags = flags;
+            GlobalSignals.Publish(in debris);
+
+            HapticRequest haptic = default;
+            haptic.Intensity01 = math.saturate(lostKineticEnergy * 0.0002f);
+            haptic.DurationSeconds = math.lerp(0.035f, 0.16f, haptic.Intensity01);
+            haptic.Frequency01 = math.saturate(blockedSpeed * 0.05f);
+            haptic.SourceHash = sourceHash;
+            haptic.Frame = unchecked((uint)Time.frameCount);
+            haptic.Channel = HapticRequest.ChannelCollision;
+            haptic.Flags = flags;
+            GlobalSignals.Publish(in haptic);
+
+            if (lostKineticEnergy >= KinematicCcdMath.MassiveLostKineticEnergyJoules)
+            {
+                Hecton8.Core.Signals.DamageSignal damage = default;
+                damage.Magnitude = math.min(250f, lostKineticEnergy * 0.01f);
+                damage.LocalPoint = new float3(point.x, point.y, point.z);
+                damage.DamageType = (uint)DamageTypeMask.Impact;
+                damage.SubjectHash = targetHash;
+                damage.SourceId = bodyId > ushort.MaxValue ? ushort.MaxValue : (ushort)bodyId;
+                damage.TargetId = targetHash;
+                damage.Channel = 0;
+                damage.IntegrityDelta = 1;
+                GlobalSignals.Publish(in damage);
+            }
+
+            GlobalPhysicsStateManager.ReportKinematicCcdIntervention();
+        }
+
+        private static Vector3 SnapMillimeter(Vector3 value)
+        {
+            value.x = DeterministicPhysicsMath.SnapMillimeter(value.x);
+            value.y = DeterministicPhysicsMath.SnapMillimeter(value.y);
+            value.z = DeterministicPhysicsMath.SnapMillimeter(value.z);
+            return value;
         }
 
         public static Vector3 SafeNormal(Vector3 value, Vector3 fallback)
@@ -1502,14 +1617,23 @@ namespace Hecton8.Gameplay
             _scheduledSweepWasBlocked = true;
             _scheduledSweepBlockingHit = _nativeState.ScheduledSweepResults[nearestIndex];
             Vector3 safeNormal = SafeNormal(_scheduledSweepBlockingHit.normal, Vector3.up);
-            float safeDistance = math.max(0f, _scheduledSweepBlockingHit.distance - _scheduledSweepState.SkinWidth);
+            bool lowTierStop = KinematicCcdMath.IsLowTier(GlobalRegistry.ScalabilityTierProfileByte);
+            bool cornerHalt = !lowTierStop &&
+                              HasScheduledSweepCornerHit(
+                                  nearestIndex,
+                                  safeNormal,
+                                  _scheduledSweepBlockingHit.distance);
+            float safeDistance = KinematicCcdMath.ResolveRollbackDistance(
+                _scheduledSweepBlockingHit.distance,
+                _scheduledSweepState.Distance,
+                _scheduledSweepState.SkinWidth);
             float penetrationDepth = math.max(0f, _scheduledSweepState.SkinWidth - _scheduledSweepBlockingHit.distance);
             Vector3 intendedDisplacement = _scheduledSweepState.Direction * _scheduledSweepState.Distance;
             float displacementIntoWall = math.dot((float3)intendedDisplacement, (float3)safeNormal);
             Vector3 projectedDisplacement = intendedDisplacement - (safeNormal * displacementIntoWall);
             Vector3 resolvedDisplacement = _scheduledSweepState.Direction * safeDistance;
-            Vector3 proxyTangentSlideDisplacement = Vector3.zero;
-            if (nearestHitIsVoxelProxy)
+            Vector3 tangentSlideDisplacement = Vector3.zero;
+            if (!lowTierStop && !cornerHalt)
             {
                 float remainingDistance = math.max(0f, _scheduledSweepState.Distance - safeDistance);
                 float projectedDisplacementSqr = projectedDisplacement.sqrMagnitude;
@@ -1517,11 +1641,15 @@ namespace Hecton8.Gameplay
                     projectedDisplacementSqr > MinVectorMagnitudeSq &&
                     remainingDistance > 0f)
                 {
-                    proxyTangentSlideDisplacement = projectedDisplacement *
-                        (remainingDistance * VoxelProxySlideDistanceRetain * math.rsqrt(projectedDisplacementSqr));
-                    resolvedDisplacement += proxyTangentSlideDisplacement;
+                    float slideRetain = nearestHitIsVoxelProxy ? VoxelProxySlideDistanceRetain : 1f;
+                    tangentSlideDisplacement = projectedDisplacement *
+                        (remainingDistance * slideRetain * math.rsqrt(projectedDisplacementSqr));
+                    resolvedDisplacement += tangentSlideDisplacement;
                 }
+            }
 
+            if (nearestHitIsVoxelProxy)
+            {
                 _scheduledSweepResolvedPosition = _scheduledSweepState.StartPosition + resolvedDisplacement;
             }
             else
@@ -1533,16 +1661,25 @@ namespace Hecton8.Gameplay
 
             Vector3 previousVelocity = _body != null ? _body.linearVelocity : Vector3.zero;
             Vector3 projectedVelocity = ProjectVelocityOnUnitCollisionPlane(previousVelocity, safeNormal);
+            if (lowTierStop || cornerHalt)
+                projectedVelocity = Vector3.zero;
             Vector3 rejectedVelocity = previousVelocity - projectedVelocity;
             _scheduledSweepBlockedSpeed = ApproximateSpeedMagnitude(new float3(
                 rejectedVelocity.x,
                 rejectedVelocity.y,
                 rejectedVelocity.z));
-            if (nearestHitIsVoxelProxy)
+            if (nearestHitIsVoxelProxy && !lowTierStop && !cornerHalt)
             {
-                projectedVelocity = ResolveVoxelProxySlideVelocity(previousVelocity, safeNormal, proxyTangentSlideDisplacement);
+                projectedVelocity = ResolveVoxelProxySlideVelocity(previousVelocity, safeNormal, tangentSlideDisplacement);
                 _scheduledSweepBlockedSpeed *= 1f - VoxelProxySlideVelocityRetain;
             }
+
+            float previousVelocitySq = previousVelocity.sqrMagnitude;
+            float projectedVelocitySq = projectedVelocity.sqrMagnitude;
+            float lostKineticEnergy = KinematicCcdMath.LostKineticEnergy(
+                _body != null ? _body.mass : 1f,
+                previousVelocitySq,
+                projectedVelocitySq);
 
             if (safeNormal.y < WallSlideTelemetryMaxNormalY)
             {
@@ -1559,6 +1696,13 @@ namespace Hecton8.Gameplay
                     velocityReduction01);
             }
 
+            EmitKinematicCcdConsequences(
+                in _scheduledSweepBlockingHit,
+                safeNormal,
+                _scheduledSweepBlockedSpeed,
+                lostKineticEnergy,
+                lowTierStop,
+                cornerHalt);
             MovePosition(_scheduledSweepResolvedPosition);
             SetLinearVelocity(projectedVelocity);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1745,6 +1889,32 @@ namespace Hecton8.Gameplay
 
             hit = _nativeState.ScheduledSweepResults[nearestIndex];
             return true;
+        }
+
+        private bool HasScheduledSweepCornerHit(int nearestIndex, Vector3 primaryNormal, float nearestDistance)
+        {
+            float distanceWindow = math.max(_scheduledSweepState.SkinWidth + 0.05f, 0.1f);
+            for (int i = 0; i < ScheduledSweepMaxHitsPerCommand; i++)
+            {
+                if (i == nearestIndex)
+                    continue;
+
+                RaycastHit hit = _nativeState.ScheduledSweepResults[i];
+                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
+                    continue;
+
+                if (!math.isfinite(hit.distance) || hit.distance < 0f)
+                    continue;
+
+                if (math.abs(hit.distance - nearestDistance) > distanceWindow)
+                    continue;
+
+                if (KinematicCcdMath.IsCornerNormal((float3)primaryNormal, (float3)hit.normal))
+                    return true;
+            }
+
+            return false;
         }
 
         private void DiscardScheduledSweepResults()

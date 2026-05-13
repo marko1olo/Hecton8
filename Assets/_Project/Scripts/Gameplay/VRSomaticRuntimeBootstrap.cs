@@ -9,17 +9,19 @@ namespace Hecton8.Gameplay
     internal sealed class VRSomaticRuntimeBootstrap : MonoBehaviour, ISlowTickable, IGameBootstrapperEventListener
     {
         private const string RuntimeOwnerName = "[VRSomaticRuntimeBootstrap]";
+        private const string DecoupledRootName = "VR_Somatic_DecoupledRoot";
         private const string PdaSocketName = "VR_SomaticSocket_PDA";
         private const string FlareToolSocketName = "VR_SomaticSocket_FlareTool";
 
         private static VRSomaticRuntimeBootstrap _runtime;
 
         private Transform _boundPlayerTransform;
+        private Transform _vrRootTransform;
         private Transform _pdaSocketTransform;
         private Transform _flareSocketTransform;
+        private bool _createdVrRootTransform;
         private bool _createdPdaSocketTransform;
         private bool _createdFlareSocketTransform;
-        private bool _createdRuntimeObject;
         private bool _registeredSlowTick;
         private bool _registeredBootstrap;
 
@@ -35,20 +37,34 @@ namespace Hecton8.Gameplay
         {
             HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
             HectonXRRuntimeState.XRActiveChanged += HandleXRActiveChanged;
-
-            if (HectonXRRuntimeState.IsXRActive)
-                EnsureRuntimeAndBind();
         }
 
         private static void HandleXRActiveChanged(bool isActive)
         {
+            VRSomaticRuntimeBootstrap runtime = _runtime;
+            if (runtime == null)
+                return;
+
             if (isActive)
             {
-                EnsureRuntimeAndBind();
+                if (!TryResolveAndBindProvider(true))
+                    runtime.TryRegisterSlowTick();
                 return;
             }
 
-            ShutdownRuntime();
+            runtime.ReleaseRuntimeBindings();
+        }
+
+        internal static VRSomaticRuntimeBootstrap EnsureRegisteredByBootstrap()
+        {
+            VRSomaticRuntimeBootstrap runtime = EnsureRuntime();
+            if (runtime == null)
+                return null;
+
+            runtime.TryRegisterBootstrap();
+            if (HectonXRRuntimeState.IsXRActive)
+                EnsureRuntimeAndBind();
+            return runtime;
         }
 
         private static VRSomaticRuntimeBootstrap EnsureRuntime()
@@ -58,7 +74,6 @@ namespace Hecton8.Gameplay
 
             GameObject runtimeObject = new GameObject(RuntimeOwnerName); // COLD ALLOC: GameObject[1] - XR-only somatic provider installer - owner: VRSomaticRuntimeBootstrap
             _runtime = runtimeObject.AddComponent<VRSomaticRuntimeBootstrap>(); // COLD ALLOC: VRSomaticRuntimeBootstrap[1] - XR-only somatic provider installer - owner: VRSomaticRuntimeBootstrap
-            _runtime._createdRuntimeObject = true;
             GameBootstrapper.PersistRuntimeService(_runtime);
             return _runtime;
         }
@@ -73,35 +88,19 @@ namespace Hecton8.Gameplay
                 runtime.TryRegisterSlowTick();
         }
 
-        private static void ShutdownRuntime()
-        {
-            VRSomaticRuntimeBootstrap runtime = _runtime;
-            if (runtime == null)
-                return;
-
-            if (!runtime._createdRuntimeObject)
-            {
-                runtime.ReleaseRuntimeBindings();
-                return;
-            }
-
-            _runtime = null;
-            Destroy(runtime.gameObject);
-        }
-
         private void OnEnable()
         {
             if (!Application.isPlaying)
                 return;
 
             _runtime = this;
+            TryRegisterBootstrap();
             if (!HectonXRRuntimeState.IsXRActive)
             {
-                ReleaseRuntimeBindings();
+                ClearBoundSocketState();
                 return;
             }
 
-            TryRegisterBootstrap();
             if (!TryResolveAndBindProvider(true))
                 TryRegisterSlowTick();
         }
@@ -130,7 +129,7 @@ namespace Hecton8.Gameplay
 
             if (!HectonXRRuntimeState.IsXRActive)
             {
-                ShutdownRuntime();
+                ReleaseRuntimeBindings();
                 return;
             }
 
@@ -223,6 +222,7 @@ namespace Hecton8.Gameplay
                 allowSocketHierarchyLookup,
                 ref runtime._flareSocketTransform,
                 ref runtime._createdFlareSocketTransform);
+            Transform vrRoot = runtime.EnsureDecoupledRootTransform(allowSocketHierarchyLookup);
 
             provider.BindRig(
                 hmdTransform,
@@ -231,6 +231,7 @@ namespace Hecton8.Gameplay
                 flareSocket,
                 null,
                 null);
+            provider.BindDecoupledRoot(vrRoot);
             return true;
         }
 
@@ -272,6 +273,35 @@ namespace Hecton8.Gameplay
             }
 
             return playerTransform;
+        }
+
+        private Transform EnsureDecoupledRootTransform(bool allowHierarchyLookup)
+        {
+            if (_vrRootTransform != null)
+                return _vrRootTransform;
+
+            if (_createdVrRootTransform && _vrRootTransform != null)
+                Destroy(_vrRootTransform.gameObject);
+
+            _vrRootTransform = null;
+            _createdVrRootTransform = false;
+
+            if (allowHierarchyLookup)
+            {
+                GameObject existingRoot = GameObject.Find(DecoupledRootName); // COLD LOOKUP: bootstrap/GameReady only.
+                if (existingRoot != null)
+                {
+                    _vrRootTransform = existingRoot.transform;
+                    GameBootstrapper.PersistRuntimeService(_vrRootTransform);
+                    return _vrRootTransform;
+                }
+            }
+
+            GameObject rootObject = new GameObject(DecoupledRootName); // COLD ALLOC: GameObject[1] - decoupled VR somatic root - owner: VRSomaticRuntimeBootstrap
+            _vrRootTransform = rootObject.transform;
+            _createdVrRootTransform = true;
+            GameBootstrapper.PersistRuntimeService(_vrRootTransform);
+            return _vrRootTransform;
         }
 
         private Transform EnsureSocketTransformCached(
@@ -322,7 +352,6 @@ namespace Hecton8.Gameplay
         private void ReleaseRuntimeBindings()
         {
             TryUnregisterSlowTick();
-            TryUnregisterBootstrap();
             ClearBoundSocketState();
         }
 

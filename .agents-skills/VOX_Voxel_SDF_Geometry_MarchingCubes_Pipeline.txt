@@ -5,7 +5,18 @@
 
 ## §0 — PIPELINE CONTRACT
 
-DensityField(3D NativeArray<half>)
+DensityField(3D NativeArray<float> working buffer; quantized to NativeArray<sbyte> before MC extraction)
+
+### 0.1 2026-05-13 Current Source Boundary
+
+[STATIC_SOURCE] `Assets/_Project/Scripts/HectonVoxelEngine.cs` is currently a Marching Cubes implementation, not a Transvoxel implementation.
+[STATIC_SOURCE] Current working-density buffers are `NativeArray<float>` (`DensityField`, `SmoothDensityField`, `OverhangDensityField`) and the extraction input is `NativeArray<sbyte>` (`QuantizedDensityField`) produced before `VoxelMCCountJob` and `VoxelMCExtractJob`.
+[RULE] Treat older `NativeArray<half>` language in this mandate as a future/persistence compression target, not as current runtime source truth.
+[FORBID] Rewriting the active voxel pipeline to fp16/half or Transvoxel because of mandate prose alone. Migration requires a named owner, profiler/memory proof, visual seam proof, save compatibility plan, and fallback path.
+[REQ] New work on the current engine must preserve the current source contract unless the Integrator authorizes a migration: float SDF compose, sbyte quantized MC extraction, edge-index weld, explicit physics bake staging, and 300-frame Black Box telemetry.
+
+Current-source pipeline reminder:
+DensityField(3D float working buffer) -> QuantizeDensity(NativeArray<sbyte>)
   → SDF_Compose(CSG + smin_exp)
     → MarchingCubes(IJob, burst)
       → EdgeIndexedVertexBuild(lock-free edge arrays)
@@ -24,7 +35,7 @@ Violation of sequence order → pipeline invalidation. No exceptions.
 
 ### 1.1 Storage Layout
 
-NativeArray<half> densityField
+NativeArray<float> densityField (current source working-density buffer)
   Stride: [x + y*W + z*W*H]
   Padding: +1 voxel each axis (border ghost cells for gradient sampling)
   Allocation: Persistent, scratch-slot pooled
@@ -40,9 +51,9 @@ UV3_AbsPos     : float3 = WorldPos  (stored as-is in UV3, decoded in shader)
 
 ### 1.3 Precision Policy
 
-Storage  : half  (density query result)
+Storage  : current source uses float working-density and sbyte quantized extraction; half is persistence/future compression only
 Compute  : float (all SDF math, no half arithmetic in ALU path)
-Write    : (half)clamp(result, -MAX_DIST, +MAX_DIST)
+Write    : clamp(result, -MAX_DIST, +MAX_DIST), then explicit quantization step for MC extraction
 MAX_DIST : VoxelStep * ChunkRes * 0.5f
 
 ---
@@ -334,7 +345,8 @@ BakeDistributed:
 
 Pool: 8 persistent NativeArray scratch slots
 Slot content per slot:
-  densityField     : NativeArray<half>  [(ChunkRes+2)³]
+  densityField     : NativeArray<float> [(ChunkRes+2)³] current source
+  quantizedDensity : NativeArray<sbyte> [(ChunkRes+2)³] current source MC extraction input
   vertexScratch    : NativeArray<Vertex>[ChunkRes³ * 5]   (worst-case MC)
   indexScratch     : NativeArray<ushort> [ChunkRes³ * 15]
   edgeX            : NativeArray<uint>
@@ -417,7 +429,7 @@ Post-vertex:      isnan(any component) → vertex flagged, excluded from index b
 
 ## §12 — INTEGRATION CHECKPOINTS
 
-[CHECK-01] densityField fully written before MC job scheduled  → JobHandle.Complete() fence
+[CHECK-01] densityField fully written and quantized before MC job scheduled  → dependency chain or designated barrier
 [CHECK-02] Ghost border pass completes before normal job reads boundary verts
 [CHECK-03] Edge index arrays reset between chunk builds      → fill with INVALID_INDEX sentinel, no hash map clear path
 [CHECK-04] SkirtMask (Color.b) set BEFORE normal bake (normal job reads weld output)
@@ -425,6 +437,8 @@ Post-vertex:      isnan(any component) → vertex flagged, excluded from index b
 [CHECK-06] PhysicsBake scheduled ONLY after Mesh.ApplyAndDisposeWritableMeshData completes
 [CHECK-07] Scratch slot released ONLY after physics bake job dependency chain resolves
 [CHECK-08] SeamNoise offset applied to densityField write pass, not vertex post-process
+[CHECK-09] Current source Black Box remains wired: 300 `VoxelMeshPipelineTelemetryEntry` samples and dump path `Docs/AgentLogs/Dump_VOXEL_MESH_PIPELINE.bin`.
+[CHECK-10] Any future Transvoxel/fp16 migration must ship behind a feature gate and preserve current Marching Cubes fallback until Unity Console, PlayMode, profiler, and scene seam captures pass.
 
 ---
 
@@ -451,3 +465,14 @@ Shader usage:
   → Fog depth: length(UV3 - _CameraWS)
   → Pressure zones: UV3.y → depth-based pressure darkening
   → Bioluminescence: snoise(UV3 * bioFreq + Time) > threshold
+
+---
+
+## Engineering Data
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| Hot path | 0 B GC, no unbounded main-thread work | Profiler/GCMonitor/static scan |
+| MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
+| Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
+| Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |

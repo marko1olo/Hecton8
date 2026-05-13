@@ -35,6 +35,7 @@ namespace Hecton8.SaveSystem
         private const float BiologicalDecayRatePerSecond = 0.001f;
         private const int NullCollectionCount = -1;
         private const int SuitUpgradeMaskSaveVersion = 65;
+        private const int RadiationGridSaveVersion = 68;
 
         internal static ulong BuildSectorEntitySpatialSortKey(in AbsoluteUniversePosition position, int chunkSizeMeters)
         {
@@ -192,6 +193,7 @@ namespace Hecton8.SaveSystem
                 && WriteStringList(ref writer, data.missionCompletedIds)
                 && writer.WriteInt(data.LODQualityPreset)
                 && writer.WriteBool(data.DynamicResolutionEnabled)
+                && WriteRadiationGrid(ref writer, data)
                 && WriteStringStringDictionary(ref writer, data.CustomModData);
         }
 
@@ -260,6 +262,7 @@ namespace Hecton8.SaveSystem
                 || !ReadStringList(ref reader, out data.missionCompletedIds)
                 || !reader.ReadInt(out data.LODQualityPreset)
                 || !reader.ReadBool(out data.DynamicResolutionEnabled)
+                || !ReadRadiationGrid(ref reader, data.version, data)
                 || !ReadStringStringDictionary(ref reader, out data.CustomModData))
             {
                 return false;
@@ -274,6 +277,53 @@ namespace Hecton8.SaveSystem
         private const int PackedNarrativeLoreSaveVersion = 62;
         private const int DataArchaeologySaveVersion = 64;
         private const int DataArchaeologyScanStateSaveVersion = 66;
+        private const int CartographyFogSaveVersion = 67;
+
+        private static bool WriteRadiationGrid(ref BufferWriter writer, SaveData data)
+        {
+            byte[] payload = data.radiationGridRle ?? Array.Empty<byte>();
+            int safeLength = math.clamp(data.radiationGridRleLength, 0, payload.Length);
+
+            return writer.WriteFloat(data.radiationDose)
+                && writer.WriteDouble(data.radiationGridOriginX)
+                && writer.WriteDouble(data.radiationGridOriginY)
+                && writer.WriteDouble(data.radiationGridOriginZ)
+                && writer.WriteFloat(data.radiationGridCellSizeMeters)
+                && writer.WriteInt(safeLength)
+                && writer.WriteStructArraySlice(payload, safeLength);
+        }
+
+        private static bool ReadRadiationGrid(ref BufferReader reader, int version, SaveData data)
+        {
+            if (version < RadiationGridSaveVersion)
+            {
+                data.radiationDose = 0f;
+                data.radiationGridOriginX = 0d;
+                data.radiationGridOriginY = 0d;
+                data.radiationGridOriginZ = 0d;
+                data.radiationGridCellSizeMeters = 4f;
+                data.radiationGridRleLength = 0;
+                data.radiationGridRle = Array.Empty<byte>();
+                return true;
+            }
+
+            if (!reader.ReadFloat(out data.radiationDose)
+                || !reader.ReadDouble(out data.radiationGridOriginX)
+                || !reader.ReadDouble(out data.radiationGridOriginY)
+                || !reader.ReadDouble(out data.radiationGridOriginZ)
+                || !reader.ReadFloat(out data.radiationGridCellSizeMeters)
+                || !reader.ReadInt(out data.radiationGridRleLength)
+                || !reader.ReadStructArray(out data.radiationGridRle))
+            {
+                return false;
+            }
+
+            int payloadLength = data.radiationGridRle != null ? data.radiationGridRle.Length : 0;
+            data.radiationGridRleLength = math.clamp(data.radiationGridRleLength, 0, payloadLength);
+            data.radiationGridCellSizeMeters = math.max(0.5f, data.radiationGridCellSizeMeters);
+            data.radiationDose = math.max(0f, data.radiationDose);
+            return true;
+        }
 
         private static bool ReadNarrativeAupTriggeredMask(
             ref BufferReader reader,
@@ -1129,12 +1179,33 @@ namespace Hecton8.SaveSystem
                 && writer.WriteInt(value.mortonMaskOriginOffset)
                 && writer.WriteUInt(value.mortonBuildSalt != 0u ? value.mortonBuildSalt : SaveBinaryStorage.ExplorationMortonBuildSalt32)
                 && writer.WriteInt(value.exploredMortonByteCount)
-                && writer.WriteStructArraySlice(value.exploredMortonMaskBytes, value.exploredMortonByteCount);
+                && writer.WriteStructArraySlice(value.exploredMortonMaskBytes, value.exploredMortonByteCount)
+                && writer.WriteInt(value.cartographyCellSizeMeters)
+                && writer.WriteInt(value.cartographyMaskAxisBits)
+                && writer.WriteInt(value.cartographyMaskOriginOffset)
+                && writer.WriteInt(value.discoveredSectorByteCount)
+                && writer.WriteStructArraySlice(value.discoveredSectorMaskBytes, value.discoveredSectorByteCount);
         }
 
         private static bool ReadExplorationMap(ref BufferReader reader, int version, out ExplorationMapDTO value)
         {
             value = default;
+            if (version >= CartographyFogSaveVersion)
+            {
+                return reader.ReadInt(out value.exploredChunkCount)
+                    && reader.ReadInt(out value.chunkSizeMeters)
+                    && reader.ReadInt(out value.mortonMaskAxisBits)
+                    && reader.ReadInt(out value.mortonMaskOriginOffset)
+                    && reader.ReadUInt(out value.mortonBuildSalt)
+                    && reader.ReadInt(out value.exploredMortonByteCount)
+                    && reader.ReadStructArray(out value.exploredMortonMaskBytes)
+                    && reader.ReadInt(out value.cartographyCellSizeMeters)
+                    && reader.ReadInt(out value.cartographyMaskAxisBits)
+                    && reader.ReadInt(out value.cartographyMaskOriginOffset)
+                    && reader.ReadInt(out value.discoveredSectorByteCount)
+                    && reader.ReadStructArray(out value.discoveredSectorMaskBytes);
+            }
+
             if (version >= 56)
             {
                 return reader.ReadInt(out value.exploredChunkCount)

@@ -1,7 +1,11 @@
 # 2026-05-11 Documentation Current Data Continuation
 Date: 2026-05-11
-Status: PENDING FINAL UNITY PROOF (DOCS CONTINUATION CORE BUILD PASSED / UNITY MCP NOT RUN)
+Status: SUPERSEDED BY 2026-05-13 DOC_AUDIT X-RAY / PENDING VERIFICATION
 Scope: current documentation counters, compile-only boundary, active-index correction after the visual-fake mandate audit, and stable-index promotion for `ARCHITECTURE`, `ARCHIVARIUS`, and `.agents-skills`
+
+## 2026-05-13 Supersession Note
+
+`Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` supersedes this report for current counters and missing-artifact evidence. DOC_AUDIT R2 did not find `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` or the matching raw log in the current filesystem. Treat the compile-success line and numeric counters below as historical report text until the artifacts are restored or replaced by a fresh build capture.
 
 Mandates followed:
 

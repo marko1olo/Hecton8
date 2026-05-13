@@ -1,6 +1,12 @@
 ﻿{
     "generatedLocal":  "2026-05-06T18:45:42+04:00",
     "status":  "PENDING VERIFICATION",
+    "docAuditR13Boundary":  {
+                                "date":  "2026-05-13",
+                                "status":  "HISTORICAL SNAPSHOT / SUPERSEDED",
+                                "note":  "Generated manifest preserved for audit trail. Do not use its counts, scope, file list, or per-file statuses as current authority. Current authority is Docs/Reports/README.md plus Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md.",
+                                "runtimeProof":  "ABSENT in this manifest; DOC_AUDIT R13 does not promote Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof from this file."
+                            },
     "scope":  "Active Docs markdown excluding Docs/_Archive, Docs/DEPRECATED, Docs/Reports/DEPRECATED, and Docs/ARCHIVARIUS REPORTS/03_OBSOLETE",
     "activeMarkdownCount":  216,
     "files":  [

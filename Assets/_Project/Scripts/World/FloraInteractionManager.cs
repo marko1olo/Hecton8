@@ -6,6 +6,7 @@ using Hecton8.AI;
 using Hecton8.Celestial;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
@@ -28,7 +29,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-105)]
-    public sealed class FloraInteractionManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener
+    public sealed class FloraInteractionManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IProceduralSwayDirector
     {
         private const int MaxModuleParentResolveDepth = 16;
 
@@ -46,6 +47,20 @@ namespace Hecton8.World
         {
             public Vector4 UvEllipse;
             public Vector4 DirectionStrengthVertical;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        private struct ProceduralWakePoint
+        {
+            public float3 PositionWS;
+            public float3 TargetWS;
+            public float3 VelocityWS;
+            public float Radius;
+            public float Intensity;
+            public float AgeSeconds;
+            public byte SourceKind;
+            public byte Active;
+            public ushort Padding;
         }
 
         private struct ModuleParasiteState
@@ -293,6 +308,8 @@ namespace Hecton8.World
 
         private const int MaxPublishedInteractionPoints = 12;
         private const int MaxExternalInteractionPoints = 4;
+        private const int MaxProceduralWakePoints = 32;
+        private const int MaxWakeSignalsPerFrame = 64;
         private const int MaxQueryColliders = 32;
         private const int MaxModuleQueryHits = 32;
         private const int MaxPredatorThreatQueryHits = 16;
@@ -308,6 +325,19 @@ namespace Hecton8.World
         private const float FlowFieldRecenterThresholdCells = 0.5f;
         private const int WakeTrailStampCommandCapacity = 4;
         private const int WakeTrailThreadGroupSize = 8;
+        private const byte WakeSourcePlayer = 1;
+        private const byte WakeSourceVehicle = 2;
+        private const byte WakeSourceApexPredator = 3;
+        private const float WakeDecayPerSecond = 0.85f;
+        private const float WakeFollowSharpness = 9.5f;
+        private const float WakeMinimumPublishedIntensity = 0.01f;
+        private const float ApexPredatorWakeMinSpeed = 3f;
+        private const float DefaultPlayerWakeRadius = 2.4f;
+        private const float DefaultMaxBendRadius = 2.9f;
+        private const float DefaultSubmarineWakeStrength = 0.82f;
+        private const float DefaultSubmarineWakeMinSpeed = 2.5f;
+        private const float DefaultSubmarineWakeWhipSpeed = 15f;
+        private const float DefaultSubmarineWakeRadius = 3.2f;
         private const int ReactiveFloraKindMask = 1;
         private const float InactiveCascadeSeed = -100000f;
         private const int ToxicSporeHazardSourceId = unchecked((int)0x6B13A7F1);
@@ -385,6 +415,10 @@ namespace Hecton8.World
         private static readonly int _WakeTrailStampCommandsId = Shader.PropertyToID("_HectonWakeTrailStampCommands");
         private static readonly int _WakeTrailStampCountId = Shader.PropertyToID("_HectonWakeTrailStampCount");
         private static readonly int _WakeTrailScrollUvOffsetId = Shader.PropertyToID("_HectonWakeTrailScrollUvOffset");
+        private static readonly int _ProceduralWakeBufferId = Shader.PropertyToID("_HectonFloraWakeBuffer");
+        private static readonly int _ProceduralWakeCountId = Shader.PropertyToID("_HectonFloraWakeCount");
+        private static readonly int _ProceduralWakeParamsId = Shader.PropertyToID("_HectonFloraWakeParams");
+        private static readonly int _ShearFoamAmountId = Shader.PropertyToID("_ShearFoamAmount");
         private static readonly int _ParasiteAnchorDataId = Shader.PropertyToID("_HectonParasiteAnchorData");
         private static readonly int _ParasiteAnchorParamsId = Shader.PropertyToID("_HectonParasiteAnchorParams");
         private static readonly int _ParasiteGlobalsId = Shader.PropertyToID("_HectonParasiteGlobals");
@@ -824,6 +858,8 @@ namespace Hecton8.World
         private Rigidbody _playerRb;
         private HectonPlayerMovement _playerMovement;
         private PlayerToolManager _playerToolManager;
+        private ISubmarineRuntimeContext _submarineRuntimeContext;
+        private Rigidbody _submarineHullRigidbody;
         private Transform _activeScooterTransform;
         private Vector3 _lastPlayerPosition;
         private Vector3 _lastPublishedPlayerVelocity;
@@ -861,6 +897,11 @@ namespace Hecton8.World
         private Vector2 _wakeTrailCenterXZ;
         private Vector2 _pendingWakeTrailScrollUv;
         private NativeArray<WakeTrailStampCommand> _queuedWakeTrailStampCommands;
+        private NativeArray<ProceduralWakePoint> _proceduralWakePoints;
+        private Vector4[] _proceduralWakeShaderBuffer;
+        private int _publishedProceduralWakeCount;
+        private float _publishedShearFoamAmount;
+        private bool _proceduralWakeGlobalsInitialized;
         private float _wakeTrailRuntimeWorldSize;
         private float _wakeTrailEnergy;
         private float _playerSedimentCooldownRemaining;
@@ -959,6 +1000,12 @@ namespace Hecton8.World
         /// <summary>Last published scooter wake anchor position.</summary>
         public Vector3 LastPublishedScooterWakePosition => _lastPublishedScooterWakePosition;
 
+        /// <inheritdoc />
+        public bool IsInitialized => _proceduralWakePoints.IsCreated && _proceduralWakeShaderBuffer != null;
+
+        /// <inheritdoc />
+        public int ActiveWakeCount => _publishedProceduralWakeCount;
+
         /// <summary>Approximate VRAM footprint in bytes for the wake-trail ping-pong textures and interaction buffer.</summary>
         public long GetVRAMEstimation()
         {
@@ -982,11 +1029,11 @@ namespace Hecton8.World
         {
             s_ActiveRuntimeInstance = this;
             _maxInteractionPoints = Mathf.Clamp(_maxInteractionPoints, 1, MaxPublishedInteractionPoints);
-            _wakeTrailWorldSize = Mathf.Max(32f, _wakeTrailWorldSize);
-            _wakeTrailFadeSeconds = Mathf.Max(0.1f, _wakeTrailFadeSeconds);
-            _wakeTrailDiffusion = Mathf.Clamp01(_wakeTrailDiffusion);
-            _wakeTrailWaveStrength = Mathf.Clamp01(_wakeTrailWaveStrength);
-            _wakeTrailWaveDamping = Mathf.Clamp(_wakeTrailWaveDamping, 0.5f, 1f);
+            _wakeTrailWorldSize = ClampFinite(_wakeTrailWorldSize, 128f, 64f, 192f);
+            _wakeTrailFadeSeconds = ClampFinite(_wakeTrailFadeSeconds, 12f, 0.1f, 16f);
+            _wakeTrailDiffusion = ClampFinite(_wakeTrailDiffusion, 0.22f, 0f, 1f);
+            _wakeTrailWaveStrength = ClampFinite(_wakeTrailWaveStrength, 0.36f, 0f, 1f);
+            _wakeTrailWaveDamping = ClampFinite(_wakeTrailWaveDamping, 0.92f, 0.5f, 1f);
             _denseGrassInstanceThreshold = Mathf.Max(1024, _denseGrassInstanceThreshold);
             _sedimentMaxBurstCount = Mathf.Clamp(_sedimentMaxBurstCount, 2, 32);
             _predatorThreatQueryRadius = Mathf.Max(15f, _predatorThreatQueryRadius);
@@ -1051,6 +1098,8 @@ namespace Hecton8.World
             _interactionPoints = new FloraInteractionPointGpuData[_maxInteractionPoints];
             // COLD ALLOC: FloraInteractionPointGpuData[4] - external tool-impact vegetation interaction payloads - owner: FloraInteractionManager
             _externalInteractionPoints = new FloraInteractionPointGpuData[MaxExternalInteractionPoints];
+            // COLD ALLOC: Vector4[32] - fixed global procedural wake shader payload - owner: FloraInteractionManager
+            _proceduralWakeShaderBuffer = new Vector4[MaxProceduralWakePoints];
             // COLD ALLOC: Collider[32] - NonAlloc interaction query results - owner: FloraInteractionManager
             _interactionColliders = new Collider[MaxQueryColliders];
             // COLD ALLOC: Rigidbody[32] - duplicate suppression for interaction query results - owner: FloraInteractionManager
@@ -1064,6 +1113,7 @@ namespace Hecton8.World
             _oceanFlowSamplePositions = new NativeArray<Vector3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Vector3>[1] - caller-owned ocean provider sample results for vegetation flow publishing - owner: FloraInteractionManager
             _oceanFlowSampleResults = new NativeArray<Vector3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _proceduralWakePoints = new NativeArray<ProceduralWakePoint>(MaxProceduralWakePoints, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ProceduralWakePoint>[32] - smoothed flora wake state - owner: FloraInteractionManager
             _reactiveFloraQueryHandles = new NativeList<int>(64, Allocator.Persistent); // COLD ALLOC: NativeList<int>[64] - shared reactive flora spatial-query handle staging - owner: FloraInteractionManager
             _surfaceReactiveFloraHandles = new NativeList<int>(64, Allocator.Persistent); // COLD ALLOC: NativeList<int>[64] - registered surface reactive-flora spatial handles - owner: FloraInteractionManager
             _underwaterReactiveFloraHandles = new NativeList<int>(64, Allocator.Persistent); // COLD ALLOC: NativeList<int>[64] - registered underwater reactive-flora spatial handles - owner: FloraInteractionManager
@@ -1094,8 +1144,11 @@ namespace Hecton8.World
                 Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
 
             HectonFloatingOrigin.RegisterListener(this);
+            GlobalRegistry.RegisterProceduralSwayDirector(this);
+            RefreshCachedSubmarineContext();
             PublishFlowFieldGlobals();
             PublishWakeTrailGlobals();
+            PublishProceduralWakeBuffer(forceUpload: true);
             TryRegister();
             PublishEnvironmentGlobals(_playerTransform != null ? _playerTransform.position : Vector3.zero);
         }
@@ -1106,10 +1159,14 @@ namespace Hecton8.World
                 s_ActiveRuntimeInstance = null;
 
             HectonFloatingOrigin.UnregisterListener(this);
+            GlobalRegistry.UnregisterProceduralSwayDirector(this);
+            _submarineRuntimeContext = null;
+            _submarineHullRigidbody = null;
             TryUnregister();
             ClearToxicSporeHazard();
             ClearDefensiveSporeHazard();
             ClearModuleParasiteState();
+            ClearWakeBuffer();
             ResetInteractionGlobals();
             ClearReactiveFloraSpatialState(forceCompleteJobs: true);
         }
@@ -1120,15 +1177,20 @@ namespace Hecton8.World
                 s_ActiveRuntimeInstance = null;
 
             HectonFloatingOrigin.UnregisterListener(this);
+            GlobalRegistry.UnregisterProceduralSwayDirector(this);
+            _submarineRuntimeContext = null;
+            _submarineHullRigidbody = null;
             TryUnregister();
             ClearToxicSporeHazard();
             ClearDefensiveSporeHazard();
             ClearModuleParasiteState();
+            ClearWakeBuffer();
             ResetInteractionGlobals();
             ClearReactiveFloraSpatialState(forceCompleteJobs: true);
 
             DisposeNativeArray(ref _oceanFlowSamplePositions);
             DisposeNativeArray(ref _oceanFlowSampleResults);
+            DisposeNativeArray(ref _proceduralWakePoints);
 
             DisposeNativeArray(ref _cascadeReactiveTemplateMask);
             DisposeNativeArray(ref _defensiveSporeBurstTemplateMask);
@@ -1162,10 +1224,11 @@ namespace Hecton8.World
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            if (!isActiveAndEnabled || !IsFiniteVector3(shiftOffset) || shiftOffset.sqrMagnitude <= 0.0001f)
                 return;
 
-            ApplyRuntimeOffsetToCachedState(-shiftData.ShiftOffset);
+            ApplyRuntimeOffsetToCachedState(-shiftOffset);
         }
 
         /// <summary>
@@ -1185,6 +1248,9 @@ namespace Hecton8.World
             RefreshFlowFieldGlobals(deltaTime);
             if (runtimePlayerTransform == null)
             {
+                DrainWakeGeneratedSignals();
+                UpdateProceduralWakeBuffer(deltaTime);
+                PublishProceduralWakeBuffer();
                 ClearToxicSporeHazard();
                 ClearDefensiveSporeHazard();
                 ResetInteractionGlobals();
@@ -1226,6 +1292,11 @@ namespace Hecton8.World
             interactionCount = CollectDynamicInteractionPoints(targetPosition, interactionCount);
             interactionCount = AppendExternalInteractions(interactionCount);
             UpdateWakeTrail(targetPosition, playerVelocity, deltaTime);
+            PublishPlayerWakeSignal(targetPosition, playerVelocity, velocityMagnitude);
+            PublishSubmarineWakeSignal();
+            DrainWakeGeneratedSignals();
+            UpdateProceduralWakeBuffer(deltaTime);
+            PublishProceduralWakeBuffer();
             TryEmitSedimentBursts(targetPosition, playerVelocity);
 
             Shader.SetGlobalVector(
@@ -1263,6 +1334,8 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
+            RefreshCachedSubmarineContext();
+
             if (_vegetationBridge == null)
                 _vegetationBridge = ResolveVegetationBridge();
 
@@ -1290,16 +1363,21 @@ namespace Hecton8.World
         /// </summary>
         public void RegisterExternalInteraction(Vector3 positionWS, Vector3 velocityWS, float radius)
         {
-            if (_externalInteractionPoints == null || _externalInteractionCount >= MaxExternalInteractionPoints)
+            if (_externalInteractionPoints == null ||
+                _externalInteractionCount >= MaxExternalInteractionPoints ||
+                !IsFiniteVector3(positionWS) ||
+                !IsFiniteVector3(velocityWS) ||
+                !float.IsFinite(radius))
                 return;
 
+            float safeRadius = Mathf.Max(0.05f, radius);
             _externalInteractionPoints[_externalInteractionCount++] = new FloraInteractionPointGpuData
             {
                 PositionRadius = new Vector4(
                     positionWS.x,
                     positionWS.y,
                     positionWS.z,
-                    Mathf.Max(0.05f, radius)),
+                    safeRadius),
                 VelocitySpeed = new Vector4(
                     velocityWS.x,
                     velocityWS.y,
@@ -1315,7 +1393,10 @@ namespace Hecton8.World
         {
             density01 = 0f;
             bendRadiusMeters = 0f;
-            if (_underwaterReactiveFloraHash == null || !_reactiveFloraQueryHandles.IsCreated)
+            if (_underwaterReactiveFloraHash == null ||
+                !_reactiveFloraQueryHandles.IsCreated ||
+                !IsFiniteVector3(positionWS) ||
+                !float.IsFinite(radiusMeters))
                 return false;
 
             float safeRadius = Mathf.Max(0.5f, radiusMeters);
@@ -1905,8 +1986,7 @@ namespace Hecton8.World
 
         private void PublishSubmarineWashGlobals()
         {
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
-            Rigidbody submarineHull = submarine != null ? submarine.HullRigidbody : null;
+            Rigidbody submarineHull = _submarineHullRigidbody;
             if (submarineHull == null)
             {
                 Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
@@ -1931,7 +2011,12 @@ namespace Hecton8.World
             }
 
             float speed = EstimateLength3D(velocity);
-            if (speed < _wakeTrailSubmarineMinSpeed)
+            float submarineMinSpeed = ClampFinite(
+                _wakeTrailSubmarineMinSpeed,
+                DefaultSubmarineWakeMinSpeed,
+                0.25f,
+                4f);
+            if (speed < submarineMinSpeed)
             {
                 Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
                 Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
@@ -1942,14 +2027,29 @@ namespace Hecton8.World
             }
 
             Vector3 worldCenterOfMass = submarineHull.worldCenterOfMass;
+            if (!IsFiniteVector3(worldCenterOfMass))
+            {
+                Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarinePropwashId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarineWashAupGridId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarineWashAupLocalId, Vector4.zero);
+                return;
+            }
+
             AbsoluteUniversePosition submarineAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenterOfMass);
             float3 safeVelocityDirection = velocityVector * math.rsqrt(math.max(speedSq, 0.000001f));
-            float normalizedPropwashStrength = math.saturate(
-                (speed - _wakeTrailSubmarineMinSpeed) * math.rcp(math.max(_wakeTrailSubmarineRadius, 0.001f)));
-            float radius = Mathf.Clamp(
-                _wakeTrailSubmarineRadius + speed * 0.16f,
+            float submarineRadius = ClampFinite(
                 _wakeTrailSubmarineRadius,
-                _wakeTrailSubmarineRadius * 2.1f);
+                DefaultSubmarineWakeRadius,
+                1f,
+                6f);
+            float normalizedPropwashStrength = math.saturate(
+                (speed - submarineMinSpeed) * math.rcp(math.max(submarineRadius, 0.001f)));
+            float radius = Mathf.Clamp(
+                submarineRadius + speed * 0.16f,
+                submarineRadius,
+                submarineRadius * 2.1f);
             Shader.SetGlobalVector(
                 _SubmarineWashSphereId,
                 new Vector4(
@@ -1985,6 +2085,333 @@ namespace Hecton8.World
                     submarineAup.LocalY,
                     submarineAup.LocalZ,
                     radius));
+        }
+
+        /// <inheritdoc />
+        public void EmitWake(in WakeGeneratedSignal signal)
+        {
+            QueueProceduralWake(in signal);
+        }
+
+        /// <inheritdoc />
+        public void ClearWakeBuffer()
+        {
+            if (_proceduralWakePoints.IsCreated)
+            {
+                for (int i = 0; i < _proceduralWakePoints.Length; i++)
+                    _proceduralWakePoints[i] = default;
+            }
+
+            if (_proceduralWakeShaderBuffer != null)
+            {
+                for (int i = 0; i < _proceduralWakeShaderBuffer.Length; i++)
+                    _proceduralWakeShaderBuffer[i] = Vector4.zero;
+            }
+
+            _publishedProceduralWakeCount = 0;
+            _publishedShearFoamAmount = 0f;
+            PublishProceduralWakeBuffer(forceUpload: true);
+        }
+
+        private void PublishPlayerWakeSignal(Vector3 playerPosition, Vector3 playerVelocity, float velocityMagnitude)
+        {
+            if (!IsFiniteVector3(playerVelocity) || velocityMagnitude <= 0.05f)
+                return;
+
+            AbsoluteUniversePosition playerAup;
+            if (_playerMovement != null)
+            {
+                playerAup = _playerMovement.CurrentAup;
+            }
+            else
+            {
+                if (!IsFiniteVector3(playerPosition))
+                    return;
+
+                playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            }
+
+            PublishWakeGeneratedSignal(playerAup, playerVelocity, WakeSourcePlayer);
+        }
+
+        private void PublishSubmarineWakeSignal()
+        {
+            Rigidbody submarineHull = _submarineHullRigidbody;
+            if (submarineHull == null)
+                return;
+
+            Vector3 velocity = submarineHull.linearVelocity;
+            if (!IsFiniteVector3(velocity))
+                return;
+
+            float speed = EstimateLength3D(velocity);
+            float submarineMinSpeed = ClampFinite(
+                _wakeTrailSubmarineMinSpeed,
+                DefaultSubmarineWakeMinSpeed,
+                0.25f,
+                4f);
+            if (speed < submarineMinSpeed)
+                return;
+
+            Transform hullTransform = submarineHull.transform;
+            Vector3 propellerPosition = submarineHull.worldCenterOfMass;
+            float submarineRadius = ClampFinite(
+                _wakeTrailSubmarineRadius,
+                DefaultSubmarineWakeRadius,
+                1f,
+                6f);
+            if (hullTransform != null)
+                propellerPosition -= hullTransform.forward * Mathf.Max(2f, submarineRadius * 0.55f);
+
+            if (!IsFiniteVector3(propellerPosition))
+                return;
+
+            PublishWakeGeneratedSignal(
+                AbsoluteUniversePosition.FromRuntimePosition(propellerPosition),
+                velocity,
+                WakeSourceVehicle);
+        }
+
+        private void PublishWakeGeneratedSignal(AbsoluteUniversePosition positionAup, Vector3 velocity, byte sourceKind)
+        {
+            if (!IsFiniteVector3(velocity) || !IsFiniteAup(in positionAup))
+                return;
+
+            WakeGeneratedSignal signal = new WakeGeneratedSignal
+            {
+                PositionAup = positionAup,
+                Velocity = new float3(velocity.x, velocity.y, velocity.z),
+                SourceFlags = sourceKind
+            };
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void DrainWakeGeneratedSignals()
+        {
+            int drainBudget = MaxWakeSignalsPerFrame;
+            while (drainBudget-- > 0 && GlobalSignals.TryDequeueWakeGenerated(out WakeGeneratedSignal signal))
+                QueueProceduralWake(in signal);
+        }
+
+        private void QueueProceduralWake(in WakeGeneratedSignal signal)
+        {
+            if (!_proceduralWakePoints.IsCreated)
+                return;
+
+            float3 velocity = signal.Velocity;
+            if (!math.all(math.isfinite(velocity)))
+                return;
+
+            if (!IsFiniteAup(in signal.PositionAup))
+                return;
+
+            float3 position = signal.PositionAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(position)))
+                return;
+
+            byte sourceKind = (byte)(signal.SourceFlags & 0xFFu);
+            if (sourceKind == 0)
+                sourceKind = WakeSourcePlayer;
+
+            Vector3 velocityVector = new Vector3(velocity.x, velocity.y, velocity.z);
+            float speed = EstimateLength3D(velocityVector);
+            float radius = ResolveWakeRadius(sourceKind, speed);
+            float intensity = ResolveWakeIntensity(sourceKind, speed);
+            if (!float.IsFinite(radius) ||
+                !float.IsFinite(intensity) ||
+                intensity <= WakeMinimumPublishedIntensity ||
+                radius <= 0.01f)
+                return;
+
+            int slot = FindProceduralWakeSlot(position, sourceKind, radius);
+            ProceduralWakePoint point = _proceduralWakePoints[slot];
+            if (point.Active == 0 ||
+                math.distancesq(point.PositionWS, position) > math.max(radius * radius * 4f, 16f))
+            {
+                point.PositionWS = position;
+                point.AgeSeconds = 0f;
+            }
+
+            point.TargetWS = position;
+            point.VelocityWS = velocity;
+            point.Radius = math.max(point.Radius, radius);
+            point.Intensity = math.max(point.Intensity, intensity);
+            point.SourceKind = sourceKind;
+            point.Active = 1;
+            _proceduralWakePoints[slot] = point;
+        }
+
+        private int FindProceduralWakeSlot(float3 position, byte sourceKind, float radius)
+        {
+            int firstInactive = -1;
+            int weakestIndex = 0;
+            float weakestIntensity = float.MaxValue;
+            float mergeRadiusSq = math.max(4f, radius * radius * 0.64f);
+
+            for (int i = 0; i < _proceduralWakePoints.Length; i++)
+            {
+                ProceduralWakePoint point = _proceduralWakePoints[i];
+                if (point.Active == 0)
+                {
+                    if (firstInactive < 0)
+                        firstInactive = i;
+                    continue;
+                }
+
+                if (point.SourceKind == sourceKind && math.distancesq(point.TargetWS, position) <= mergeRadiusSq)
+                    return i;
+
+                if (point.Intensity < weakestIntensity)
+                {
+                    weakestIntensity = point.Intensity;
+                    weakestIndex = i;
+                }
+            }
+
+            return firstInactive >= 0 ? firstInactive : weakestIndex;
+        }
+
+        private void UpdateProceduralWakeBuffer(float deltaTime)
+        {
+            if (!_proceduralWakePoints.IsCreated)
+                return;
+
+            float safeDeltaTime = float.IsFinite(deltaTime) ? math.clamp(deltaTime, 0f, 0.1f) : 0f;
+            float follow = math.saturate(safeDeltaTime * WakeFollowSharpness);
+            float decay = safeDeltaTime * WakeDecayPerSecond;
+
+            for (int i = 0; i < _proceduralWakePoints.Length; i++)
+            {
+                ProceduralWakePoint point = _proceduralWakePoints[i];
+                if (point.Active == 0)
+                    continue;
+
+                point.PositionWS = math.lerp(point.PositionWS, point.TargetWS, follow);
+                point.Intensity = math.max(0f, point.Intensity - decay);
+                point.AgeSeconds += safeDeltaTime;
+
+                if (point.Intensity <= WakeMinimumPublishedIntensity ||
+                    !float.IsFinite(point.Radius) ||
+                    !float.IsFinite(point.Intensity) ||
+                    !math.all(math.isfinite(point.PositionWS)) ||
+                    !math.all(math.isfinite(point.TargetWS)))
+                {
+                    point = default;
+                }
+
+                _proceduralWakePoints[i] = point;
+            }
+        }
+
+        private void PublishProceduralWakeBuffer(bool forceUpload = false)
+        {
+            if (_proceduralWakeShaderBuffer == null)
+                return;
+
+            int publishedCount = 0;
+            float maxWakeIntensity = 0f;
+            if (_proceduralWakePoints.IsCreated)
+            {
+                for (int i = 0; i < _proceduralWakePoints.Length && publishedCount < MaxProceduralWakePoints; i++)
+                {
+                    ProceduralWakePoint point = _proceduralWakePoints[i];
+                    if (point.Active == 0 ||
+                        point.Intensity <= WakeMinimumPublishedIntensity ||
+                        !float.IsFinite(point.Radius) ||
+                        !float.IsFinite(point.Intensity) ||
+                        !math.all(math.isfinite(point.PositionWS)))
+                        continue;
+
+                    float packedRadiusIntensity = PackWakeRadiusIntensity(point.Radius, point.Intensity);
+                    _proceduralWakeShaderBuffer[publishedCount] = new Vector4(
+                        point.PositionWS.x,
+                        point.PositionWS.y,
+                        point.PositionWS.z,
+                        packedRadiusIntensity);
+                    maxWakeIntensity = math.max(maxWakeIntensity, point.Intensity);
+                    publishedCount++;
+                }
+            }
+
+            float shearFoamAmount = maxWakeIntensity > 0.8f
+                ? math.saturate((maxWakeIntensity - 0.8f) * 5f)
+                : 0f;
+
+            if (!forceUpload &&
+                _proceduralWakeGlobalsInitialized &&
+                publishedCount == 0 &&
+                _publishedProceduralWakeCount == 0 &&
+                math.abs(_publishedShearFoamAmount - shearFoamAmount) <= 0.0001f)
+            {
+                return;
+            }
+
+            for (int i = publishedCount; i < _proceduralWakeShaderBuffer.Length; i++)
+                _proceduralWakeShaderBuffer[i] = Vector4.zero;
+
+            Shader.SetGlobalVectorArray(_ProceduralWakeBufferId, _proceduralWakeShaderBuffer);
+            Shader.SetGlobalInt(_ProceduralWakeCountId, publishedCount);
+            Shader.SetGlobalVector(_ProceduralWakeParamsId, new Vector4(publishedCount, MaxProceduralWakePoints, maxWakeIntensity, shearFoamAmount));
+            Shader.SetGlobalFloat(_ShearFoamAmountId, shearFoamAmount);
+            _publishedProceduralWakeCount = publishedCount;
+            _publishedShearFoamAmount = shearFoamAmount;
+            _proceduralWakeGlobalsInitialized = true;
+        }
+
+        private float ResolveWakeRadius(byte sourceKind, float speed)
+        {
+            float safeSpeed = float.IsFinite(speed) ? Mathf.Max(0f, speed) : 0f;
+            switch (sourceKind)
+            {
+                case WakeSourceVehicle:
+                {
+                    float submarineRadius = ClampFinite(
+                        _wakeTrailSubmarineRadius,
+                        DefaultSubmarineWakeRadius,
+                        1f,
+                        6f);
+                    return Mathf.Clamp(submarineRadius + safeSpeed * 0.14f, 4f, Mathf.Max(4f, submarineRadius * 2.35f));
+                }
+                case WakeSourceApexPredator:
+                    return Mathf.Clamp(5.5f + safeSpeed * 0.45f, 5.5f, 14f);
+                default:
+                {
+                    float playerRadius = ClampFinite(
+                        _playerBendRadius,
+                        DefaultPlayerWakeRadius,
+                        1.2f,
+                        3f);
+                    float maxRadius = ClampFinite(
+                        _maxBendRadius,
+                        DefaultMaxBendRadius,
+                        playerRadius,
+                        4f);
+                    return Mathf.Clamp(playerRadius + safeSpeed * 0.16f, 1.2f, maxRadius);
+                }
+            }
+        }
+
+        private static float ResolveWakeIntensity(byte sourceKind, float speed)
+        {
+            float safeSpeed = float.IsFinite(speed) ? math.max(0f, speed) : 0f;
+            switch (sourceKind)
+            {
+                case WakeSourceVehicle:
+                    return math.saturate(0.62f + safeSpeed * 0.055f);
+                case WakeSourceApexPredator:
+                    return math.saturate(0.35f + safeSpeed * 0.12f);
+                default:
+                    return math.saturate(safeSpeed * 0.16f);
+            }
+        }
+
+        private static float PackWakeRadiusIntensity(float radius, float intensity)
+        {
+            float safeRadius = float.IsFinite(radius) ? math.clamp(radius, 0f, 1023.9375f) : 0f;
+            float safeIntensity = float.IsFinite(intensity) ? math.saturate(intensity) : 0f;
+            int radiusQuantized = Mathf.Clamp(Mathf.RoundToInt(safeRadius * 16f), 0, 16383);
+            int intensityQuantized = Mathf.Clamp(Mathf.RoundToInt(safeIntensity * 1023f), 0, 1023);
+            return radiusQuantized * 1024f + intensityQuantized;
         }
 
         private void UpdateToxicSporeExposure(Vector3 playerPositionWS, float deltaTime)
@@ -2079,7 +2506,7 @@ namespace Hecton8.World
             float3 direction = playerPositionWS - (float3)hazardPositionWS;
             direction *= math.rsqrt(math.max(0.0001f, math.lengthsq(direction)));
 
-            CombatDamageSignal signal = new CombatDamageSignal
+            Hecton8.Gameplay.CombatDamageSignal signal = new Hecton8.Gameplay.CombatDamageSignal
             {
                 TargetId = targetId,
                 SourceId = ToxicSporeHazardSourceId,
@@ -3524,9 +3951,18 @@ namespace Hecton8.World
                     break;
 
                 Vector3 positionWS = ExtractTranslation(matrices[i]);
+                if (!IsFiniteVector3(positionWS))
+                    continue;
+
+                float3 halfExtents = ResolveReactiveFloraHalfExtents(
+                    metadata[i],
+                    types.IsCreated && i < types.Length ? types[i] : 0);
+                if (!math.all(math.isfinite(halfExtents)))
+                    continue;
+
                 int handle = spatialHash.Register(
                     AbsoluteUniversePosition.FromRuntimePosition(positionWS),
-                    ResolveReactiveFloraHalfExtents(metadata[i], types.IsCreated && i < types.Length ? types[i] : 0),
+                    halfExtents,
                     ReactiveFloraKindMask,
                     0u,
                     i);
@@ -3557,6 +3993,9 @@ namespace Hecton8.World
         {
             if (_reactiveFloraQueryHandles.IsCreated)
                 _reactiveFloraQueryHandles.Clear();
+
+            if (!IsFiniteVector3(playerPositionWS))
+                return;
 
             HectonSpatialHash spatialHash = underwater ? _underwaterReactiveFloraHash : _surfaceReactiveFloraHash;
             if (spatialHash == null || !_reactiveFloraQueryHandles.IsCreated)
@@ -3591,6 +4030,9 @@ namespace Hecton8.World
                     continue;
 
                 Vector3 positionWS = ExtractTranslation(matrices[payloadIndex]);
+                if (!IsFiniteVector3(positionWS))
+                    continue;
+
                 float distanceSq = (positionWS - playerPositionWS).sqrMagnitude;
                 if (distanceSq >= nearestDistanceSq)
                     continue;
@@ -3634,6 +4076,9 @@ namespace Hecton8.World
             }
 
             Vector3 sourcePositionWS = ExtractTranslation(matrices[nearestPayloadIndex]);
+            if (!IsFiniteVector3(sourcePositionWS))
+                return;
+
             spatialHash.CollectSphere(
                 AbsoluteUniversePosition.FromRuntimePosition(sourcePositionWS),
                 _cascadePropagationRadius,
@@ -4151,6 +4596,7 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeList(_underwaterReactiveFloraHandles, NativeMemoryOwner, nameof(_underwaterReactiveFloraHandles), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_surfaceCascadeEvents, NativeMemoryOwner, nameof(_surfaceCascadeEvents), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_underwaterCascadeEvents, NativeMemoryOwner, nameof(_underwaterCascadeEvents), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_proceduralWakePoints, NativeMemoryOwner, nameof(_proceduralWakePoints), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_parasiteNodes, NativeMemoryOwner, nameof(_parasiteNodes), NativeMemoryLifetime);
         }
 
@@ -4239,6 +4685,8 @@ namespace Hecton8.World
                     if (!leviathanThreat)
                         continue;
 
+                    PublishApexPredatorWakeSignal(in hit);
+
                     if (hit.DistanceSqr >= bestDistanceSqr)
                         continue;
 
@@ -4259,6 +4707,36 @@ namespace Hecton8.World
                     _predatorBiolumDimStrength,
                     aggressiveBioformThreat));
             Shader.SetGlobalVector(_FloraPredatorThreatPositionRadiusId, predatorThreatPositionRadius);
+        }
+
+        private void PublishApexPredatorWakeSignal(in SpatialQueryHit hit)
+        {
+            Rigidbody predatorBody = hit.Rigidbody;
+            if (predatorBody == null)
+                return;
+
+            Vector3 velocity = predatorBody.linearVelocity;
+            if (!IsFiniteVector3(velocity))
+                return;
+
+            float speed = EstimateLength3D(velocity);
+            if (speed < ApexPredatorWakeMinSpeed)
+                return;
+
+            AbsoluteUniversePosition predatorAup;
+            if (hit.HasAbsolutePosition)
+            {
+                predatorAup = hit.AbsolutePosition;
+            }
+            else
+            {
+                if (!IsFiniteVector3(hit.Position))
+                    return;
+
+                predatorAup = AbsoluteUniversePosition.FromRuntimePosition(hit.Position);
+            }
+
+            PublishWakeGeneratedSignal(predatorAup, velocity, WakeSourceApexPredator);
         }
 
         private void RefreshFlowFieldGlobals(float deltaTime)
@@ -4448,59 +4926,93 @@ namespace Hecton8.World
             RefreshWakeTrailWorldRect(playerPosition, forceClear: false);
 
             bool wrotePass = false;
-            float fade = Mathf.Max(0f, deltaTime / _wakeTrailFadeSeconds);
+            float safeDeltaTime = float.IsFinite(deltaTime) ? Mathf.Max(0f, deltaTime) : 0f;
+            float fadeSeconds = ClampFinite(_wakeTrailFadeSeconds, 12f, 0.1f, 16f);
+            float fade = safeDeltaTime / fadeSeconds;
             float strongestStamp = 0f;
+            float wakeTrailBaseRadius = ClampFinite(_wakeTrailBaseRadius, 1.35f, 0.5f, 4f);
+            float wakeTrailMinLength = ClampFinite(_wakeTrailMinLength, 2.4f, 1f, 20f);
+            float wakeTrailMaxLength = ClampFinite(_wakeTrailMaxLength, 15f, wakeTrailMinLength, 30f);
+            float wakeTrailVelocityToLength = ClampFinite(_wakeTrailVelocityToLength, 0.28f, 0.05f, 0.75f);
 
             float playerSpeed = EstimateLength3D(playerVelocity);
             if (playerSpeed >= _wakeTrailPlayerMinSpeed)
             {
+                float playerStrength = ClampFinite(_wakeTrailPlayerStrength, 0.28f, 0.1f, 2f);
                 QueueWakeTrailStamp(
                     playerPosition,
                     playerVelocity,
-                    _wakeTrailBaseRadius,
-                    Mathf.Clamp(_wakeTrailMinLength + playerSpeed * _wakeTrailVelocityToLength, _wakeTrailMinLength, _wakeTrailMaxLength),
-                    Mathf.Clamp01(_wakeTrailPlayerStrength));
+                    wakeTrailBaseRadius,
+                    Mathf.Clamp(wakeTrailMinLength + playerSpeed * wakeTrailVelocityToLength, wakeTrailMinLength, wakeTrailMaxLength),
+                    playerStrength);
                 wrotePass = true;
-                strongestStamp = Mathf.Max(strongestStamp, _wakeTrailPlayerStrength);
+                strongestStamp = Mathf.Max(strongestStamp, playerStrength);
             }
 
             float scooterSpeed = EstimateLength3D(_smoothedScooterVelocity);
             if (_hasActiveScooterWake && scooterSpeed >= _wakeTrailScooterMinSpeed)
             {
+                float scooterStrength = ClampFinite(_wakeTrailScooterStrength, 0.95f, 0.25f, 2f);
                 QueueWakeTrailStamp(
                     _lastPublishedScooterWakePosition,
                     _smoothedScooterVelocity,
-                    _wakeTrailBaseRadius * 1.15f,
-                    Mathf.Clamp(_wakeTrailMinLength + scooterSpeed * (_wakeTrailVelocityToLength * 1.7f), _wakeTrailMinLength * 1.25f, _wakeTrailMaxLength),
-                    Mathf.Clamp01(_wakeTrailScooterStrength));
+                    wakeTrailBaseRadius * 1.15f,
+                    Mathf.Clamp(wakeTrailMinLength + scooterSpeed * (wakeTrailVelocityToLength * 1.7f), wakeTrailMinLength * 1.25f, wakeTrailMaxLength),
+                    scooterStrength);
                 wrotePass = true;
-                strongestStamp = Mathf.Max(strongestStamp, _wakeTrailScooterStrength);
+                strongestStamp = Mathf.Max(strongestStamp, scooterStrength);
             }
 
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
-            Rigidbody submarineHull = submarine != null ? submarine.HullRigidbody : null;
+            Rigidbody submarineHull = _submarineHullRigidbody;
             if (submarineHull != null)
             {
                 Vector3 submarineVelocity = submarineHull.linearVelocity;
-                float submarineSpeed = EstimateLength3D(submarineVelocity);
-                if (submarineSpeed >= _wakeTrailSubmarineMinSpeed)
+                if (IsFiniteVector3(submarineVelocity))
                 {
-                    _hasActiveSubmarineWake = true;
-                    _lastPublishedSubmarineWakePosition = submarineHull.worldCenterOfMass;
-                    bool kelpWhipActive = submarineSpeed >= _wakeTrailSubmarineWhipSpeed;
-                    float submarineStrength = kelpWhipActive
-                        ? Mathf.Clamp01(_wakeTrailSubmarineStrength * 1.35f)
-                        : Mathf.Clamp01(_wakeTrailSubmarineStrength);
-                    float lengthScale = kelpWhipActive ? 2.35f : 1.55f;
-                    float radiusScale = kelpWhipActive ? 1.55f : 1f;
-                    QueueWakeTrailStamp(
-                        _lastPublishedSubmarineWakePosition,
-                        submarineVelocity,
-                        _wakeTrailSubmarineRadius * radiusScale,
-                        Mathf.Clamp(_wakeTrailMinLength + submarineSpeed * (_wakeTrailVelocityToLength * lengthScale), _wakeTrailMinLength * 1.5f, _wakeTrailMaxLength * 1.6f),
-                        submarineStrength);
-                    wrotePass = true;
-                    strongestStamp = Mathf.Max(strongestStamp, submarineStrength);
+                    float submarineSpeed = EstimateLength3D(submarineVelocity);
+                    float submarineMinSpeed = ClampFinite(
+                        _wakeTrailSubmarineMinSpeed,
+                        DefaultSubmarineWakeMinSpeed,
+                        0.25f,
+                        4f);
+                    if (submarineSpeed >= submarineMinSpeed)
+                    {
+                        Vector3 submarinePosition = submarineHull.worldCenterOfMass;
+                        if (IsFiniteVector3(submarinePosition))
+                        {
+                            _hasActiveSubmarineWake = true;
+                            _lastPublishedSubmarineWakePosition = submarinePosition;
+                            float submarineWhipSpeed = ClampFinite(
+                                _wakeTrailSubmarineWhipSpeed,
+                                DefaultSubmarineWakeWhipSpeed,
+                                8f,
+                                24f);
+                            bool kelpWhipActive = submarineSpeed >= submarineWhipSpeed;
+                            float submarineBaseStrength = ClampFinite(
+                                _wakeTrailSubmarineStrength,
+                                DefaultSubmarineWakeStrength,
+                                0.25f,
+                                2f);
+                            float submarineStrength = kelpWhipActive
+                                ? Mathf.Clamp01(submarineBaseStrength * 1.35f)
+                                : Mathf.Clamp01(submarineBaseStrength);
+                            float lengthScale = kelpWhipActive ? 2.35f : 1.55f;
+                            float radiusScale = kelpWhipActive ? 1.55f : 1f;
+                            float submarineRadius = ClampFinite(
+                                _wakeTrailSubmarineRadius,
+                                DefaultSubmarineWakeRadius,
+                                1f,
+                                6f);
+                            QueueWakeTrailStamp(
+                                _lastPublishedSubmarineWakePosition,
+                                submarineVelocity,
+                                submarineRadius * radiusScale,
+                                Mathf.Clamp(wakeTrailMinLength + submarineSpeed * (wakeTrailVelocityToLength * lengthScale), wakeTrailMinLength * 1.5f, wakeTrailMaxLength * 1.6f),
+                                submarineStrength);
+                            wrotePass = true;
+                            strongestStamp = Mathf.Max(strongestStamp, submarineStrength);
+                        }
+                    }
                 }
             }
 
@@ -4516,11 +5028,23 @@ namespace Hecton8.World
             if (_wakeTrailRead == null || _wakeTrailWrite == null)
                 return;
 
-            float desiredWorldSize = Mathf.Max(64f, _wakeTrailWorldSize);
+            if (!IsFiniteVector3(anchorPosition))
+                return;
+
+            float desiredWorldSize = ClampFinite(_wakeTrailWorldSize, 128f, 64f, 192f);
             float snapStride = ResolveWakeTrailSnapStride(desiredWorldSize);
             Vector2 desiredCenterXZ = QuantizeWakeTrailCenter(new Vector2(anchorPosition.x, anchorPosition.z), snapStride);
 
-            bool mustClear = forceClear || _wakeTrailRuntimeWorldSize <= 0f || Mathf.Abs(desiredWorldSize - _wakeTrailRuntimeWorldSize) > 0.001f;
+            bool wakeTrailRectInvalid =
+                !float.IsFinite(_wakeTrailRuntimeWorldSize) ||
+                !IsFiniteVector4(_wakeTrailWorldRect) ||
+                _wakeTrailWorldRect.z <= 0f ||
+                _wakeTrailWorldRect.w <= 0f;
+            bool mustClear =
+                forceClear ||
+                wakeTrailRectInvalid ||
+                _wakeTrailRuntimeWorldSize <= 0f ||
+                Mathf.Abs(desiredWorldSize - _wakeTrailRuntimeWorldSize) > 0.001f;
             Vector2 centerDelta = desiredCenterXZ - _wakeTrailCenterXZ;
             if (!mustClear && centerDelta.sqrMagnitude <= 0.000001f)
                 return;
@@ -4551,9 +5075,21 @@ namespace Hecton8.World
             float lengthWS,
             float strength)
         {
-            if (!_queuedWakeTrailStampCommands.IsCreated || _queuedWakeTrailStampCount >= WakeTrailStampCommandCapacity)
+            if (!_queuedWakeTrailStampCommands.IsCreated ||
+                _queuedWakeTrailStampCount >= WakeTrailStampCommandCapacity ||
+                !IsFiniteVector3(positionWS) ||
+                !IsFiniteVector3(directionWS) ||
+                !IsFiniteVector4(_wakeTrailWorldRect) ||
+                _wakeTrailWorldRect.z <= 0f ||
+                _wakeTrailWorldRect.w <= 0f ||
+                !float.IsFinite(radiusWS) ||
+                !float.IsFinite(lengthWS) ||
+                !float.IsFinite(strength))
                 return;
 
+            float safeRadiusWS = Mathf.Max(0.001f, radiusWS);
+            float safeLengthWS = Mathf.Max(0.001f, lengthWS);
+            float safeStrength = Mathf.Clamp01(strength);
             Vector2 uvCenter = new Vector2(
                 (positionWS.x - _wakeTrailWorldRect.x) * _wakeTrailWorldRect.z,
                 (positionWS.z - _wakeTrailWorldRect.y) * _wakeTrailWorldRect.w);
@@ -4564,13 +5100,13 @@ namespace Hecton8.World
                 : 0f;
             directionXZ = NormalizeVector2Fast(directionXZ, Vector2.up);
 
-            float uvRadius = radiusWS * _wakeTrailWorldRect.z;
-            float uvLength = lengthWS * _wakeTrailWorldRect.z;
+            float uvRadius = safeRadiusWS * _wakeTrailWorldRect.z;
+            float uvLength = safeLengthWS * _wakeTrailWorldRect.z;
 
             _queuedWakeTrailStampCommands[_queuedWakeTrailStampCount] = new WakeTrailStampCommand
             {
                 UvEllipse = new Vector4(uvCenter.x, uvCenter.y, uvRadius, uvLength),
-                DirectionStrengthVertical = new Vector4(directionXZ.x, directionXZ.y, Mathf.Clamp01(strength), verticalImpulse)
+                DirectionStrengthVertical = new Vector4(directionXZ.x, directionXZ.y, safeStrength, verticalImpulse)
             };
             _queuedWakeTrailStampCount++;
         }
@@ -4736,6 +5272,9 @@ namespace Hecton8.World
 
         private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)
         {
+            if (!IsFiniteVector3(runtimeOffset))
+                return;
+
             _smoothPosition += runtimeOffset;
             if (_hasLastPlayerPosition)
                 _lastPlayerPosition += runtimeOffset;
@@ -4782,6 +5321,23 @@ namespace Hecton8.World
                 _wakeTrailWorldRect.x += runtimeOffset.x;
                 _wakeTrailWorldRect.y += runtimeOffset.z;
                 PublishWakeTrailGlobals();
+            }
+
+            if (_proceduralWakePoints.IsCreated)
+            {
+                float3 offset = new float3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z);
+                for (int i = 0; i < _proceduralWakePoints.Length; i++)
+                {
+                    ProceduralWakePoint point = _proceduralWakePoints[i];
+                    if (point.Active == 0)
+                        continue;
+
+                    point.PositionWS += offset;
+                    point.TargetWS += offset;
+                    _proceduralWakePoints[i] = point;
+                }
+
+                PublishProceduralWakeBuffer();
             }
 
             if (_publishedParasiteAnchorCount > 0)
@@ -4867,6 +5423,14 @@ namespace Hecton8.World
             PublishWakeTrailGlobals();
         }
 
+        private void RefreshCachedSubmarineContext()
+        {
+            _submarineRuntimeContext = GlobalRegistry.Submarine;
+            _submarineHullRigidbody = _submarineRuntimeContext != null
+                ? _submarineRuntimeContext.HullRigidbody
+                : null;
+        }
+
         private void ReleaseFlowFieldBuffer()
         {
             if (_flowFieldBuffer == null)
@@ -4944,6 +5508,44 @@ namespace Hecton8.World
             float minAxis = Mathf.Min(ax, Mathf.Min(ay, az));
             float midAxis = ax + ay + az - maxAxis - minAxis;
             return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
+        }
+
+        private static float ClampFinite(float value, float fallback, float min, float max)
+        {
+            float sanitized = float.IsFinite(value) ? value : fallback;
+            float safeMin = float.IsFinite(min) ? min : 0f;
+            float safeMax = float.IsFinite(max) ? max : safeMin;
+            if (!float.IsFinite(sanitized))
+                sanitized = safeMin;
+
+            if (safeMax < safeMin)
+            {
+                float swap = safeMin;
+                safeMin = safeMax;
+                safeMax = swap;
+            }
+
+            return Mathf.Clamp(sanitized, safeMin, safeMax);
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition value)
+        {
+            return float.IsFinite(value.LocalX) &&
+                   float.IsFinite(value.LocalY) &&
+                   float.IsFinite(value.LocalZ);
+        }
+
+        private static bool IsFiniteVector4(Vector4 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z) &&
+                   float.IsFinite(value.w);
         }
 
         private static Vector3 NormalizeVector3Fast(Vector3 vector, Vector3 fallback)

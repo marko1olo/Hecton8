@@ -157,7 +157,7 @@ namespace Hecton8.UI
         private HectonMusicDirector _resolvedMusicDirector;
         private SoundscapeSystem _resolvedSoundscapeSystem;
         private HectonUnderwaterVisuals _resolvedUnderwaterVisuals;
-        private CameraJuiceSystem _resolvedCameraJuiceSystem;
+        private ICameraJuiceSystem _resolvedCameraJuiceSystem;
         private string _lastTitleValue = string.Empty;
         private string _lastSceneValue = string.Empty;
         private string _lastBootstrapValue = string.Empty;
@@ -546,7 +546,7 @@ namespace Hecton8.UI
             HectonMusicDirector music = _resolvedMusicDirector;
             SoundscapeSystem soundscape = _resolvedSoundscapeSystem;
             HectonUnderwaterVisuals underwaterVisuals = _resolvedUnderwaterVisuals;
-            CameraJuiceSystem cameraJuice = _resolvedCameraJuiceSystem;
+            ICameraJuiceSystem cameraJuice = _resolvedCameraJuiceSystem;
             Scene activeScene = SceneManager.GetActiveScene();
 
             string titleLabel = enableStressTest ? "LIVE / FORCED PRESSURE" : "LIVE / PASSIVE";

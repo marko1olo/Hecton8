@@ -521,3 +521,14 @@ SAVE_MAGIC          = 0xH8C0_BABE  // file header validation
 [FORBID-008] Sorting on main thread without Burst job.
 [FORBID-009] UID resolution via linear scan — always use NativeParallelHashMap.
 [FORBID-010] Destroying world item GameObjects — pool and disable only.
+
+---
+
+## Engineering Data
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| Hot path | 0 B GC, no unbounded main-thread work | Profiler/GCMonitor/static scan |
+| MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
+| Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
+| Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |

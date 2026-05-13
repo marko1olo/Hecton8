@@ -29,6 +29,8 @@ namespace Hecton8.Visor
         private const int HistogramBinCount = 64;
         private const float ExposureStateDefaultMultiplier = 1f;
         private const float ThermalHazeMotionCullSpeedMetersPerSecondSq = 225f;
+        private const float SurfaceNoirSuppressionDepth = 0.08f;
+        private const float UnderwaterNoirFullDepth = 0.24f;
         private static readonly Color DefaultNoirLiftFloor = new Color(0.01f, 0.012f, 0.016f, 1f);
         private static readonly Color ShaftClearColor = new Color(0.0012f, 0.0018f, 0.0024f, 0f);
 
@@ -314,6 +316,10 @@ namespace Hecton8.Visor
                 if (IsUnsupportedCameraType(cameraData.cameraType))
                     return;
 
+                float underwaterNoirBlend = ResolveUnderwaterNoirBlend();
+                if (underwaterNoirBlend <= 0.0001f)
+                    return;
+
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
                 TextureHandle depthTexture = resourceData.cameraDepthTexture;
                 if (!sourceTexture.IsValid() || !depthTexture.IsValid())
@@ -447,7 +453,10 @@ namespace Hecton8.Visor
                     }
                 }
 
-                MaterialParameterState materialParameters = MaterialParameterState.Resolve(_settings, exposureAvailable);
+                MaterialParameterState materialParameters = MaterialParameterState.Resolve(
+                    _settings,
+                    exposureAvailable,
+                    underwaterNoirBlend);
                 ApplyContactShadowGlobalsIfChanged(in materialParameters);
                 UpdateMaterialParameters(_raymarchMaterial, ref _raymarchMaterialCache, in materialParameters, 0f);
                 UpdateMaterialParameters(_blurHorizontalMaterial, ref _blurHorizontalMaterialCache, in materialParameters, 1f);
@@ -807,6 +816,25 @@ namespace Hecton8.Visor
                 return math.lengthsq(velocity) > ThermalHazeMotionCullSpeedMetersPerSecondSq ? 0f : intensity;
             }
 
+            private static float ResolveUnderwaterNoirBlend()
+            {
+                var underwaterVisuals = GlobalRegistry.UnderwaterVisuals;
+                if (underwaterVisuals != null && underwaterVisuals.IsUnderwater)
+                    return 1f;
+
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+                if (playerMovement == null)
+                    return 0f;
+
+                if (playerMovement.IsPlayerSubmerged)
+                    return 1f;
+
+                return math.saturate(
+                    (playerMovement.CurrentDepth - SurfaceNoirSuppressionDepth) /
+                    math.max(0.0001f, UnderwaterNoirFullDepth - SurfaceNoirSuppressionDepth));
+            }
+
             private static float3 ResolvePlayerVelocity()
             {
                 IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
@@ -886,23 +914,27 @@ namespace Hecton8.Visor
                 internal float ThermalHazeScale;
                 internal float HasExposureState;
 
-                internal static MaterialParameterState Resolve(FeatureSettings settings, bool exposureAvailable)
+                internal static MaterialParameterState Resolve(
+                    FeatureSettings settings,
+                    bool exposureAvailable,
+                    float underwaterNoirBlend)
                 {
                     MaterialParameterState state;
+                    float underwaterBlend = math.saturate(underwaterNoirBlend);
                     state.RenderScale = math.clamp(settings.renderScale, 0.25f, 1f);
                     state.MaxRayDistance = math.max(1f, settings.maxRayDistance);
                     state.ScatteringAnisotropy = math.clamp(settings.scatteringAnisotropy, 0f, 0.95f);
-                    state.Density = math.max(0f, settings.density);
+                    state.Density = math.max(0f, settings.density) * underwaterBlend;
                     state.IgnJitter = math.saturate(settings.ignJitter);
                     state.BilateralDepthSigma = math.max(0.01f, settings.bilateralDepthSigma);
-                    state.ShaftIntensity = math.max(0f, settings.shaftIntensity);
+                    state.ShaftIntensity = math.max(0f, settings.shaftIntensity) * underwaterBlend;
                     state.BiolumPatternScale = math.max(0.001f, settings.biolumPatternScale);
-                    state.BiolumProjectionStrength = math.max(0f, settings.biolumProjectionStrength);
-                    state.SiltStrength = math.max(0f, settings.siltStrength);
+                    state.BiolumProjectionStrength = math.max(0f, settings.biolumProjectionStrength) * underwaterBlend;
+                    state.SiltStrength = math.max(0f, settings.siltStrength) * underwaterBlend;
                     state.SiltNoiseScale = math.max(0.001f, settings.siltNoiseScale);
                     state.SiltFloorBoost = math.max(0f, settings.siltFloorBoost);
                     state.SiltDriftSpeed = math.max(0f, settings.siltDriftSpeed);
-                    state.ContactShadowStrength = math.saturate(settings.contactShadowStrength);
+                    state.ContactShadowStrength = math.saturate(settings.contactShadowStrength) * underwaterBlend;
                     state.ContactShadowSteps = math.clamp(settings.contactShadowSteps, 4, 8);
                     state.ContactShadowBias = math.max(0.001f, settings.contactShadowBias);
                     state.ContactShadowMaxDistance = math.max(0.1f, settings.contactShadowMaxDistance);
@@ -912,15 +944,15 @@ namespace Hecton8.Visor
                     state.FlashlightShadowBias = math.max(0.001f, settings.flashlightShadowBias);
                     state.FlashlightShadowFloor = math.clamp(settings.flashlightShadowFloor, 0.02f, 0.25f);
                     state.NoirPower = math.max(0.5f, settings.noirPower);
-                    state.NoirFogDensity = math.max(0.0001f, settings.noirFogDensity);
+                    state.NoirFogDensity = math.max(0.0001f, settings.noirFogDensity) * underwaterBlend;
                     state.NoirLiftColor = ResolveNoirLiftColor(settings.noirLiftColor);
-                    state.LensGhostIntensity = math.max(0f, settings.lensGhostIntensity);
+                    state.LensGhostIntensity = math.max(0f, settings.lensGhostIntensity) * underwaterBlend;
                     state.LensGhostScale = math.max(0.001f, settings.lensGhostScale);
                     state.LensChromaticAberration = math.max(0f, settings.lensChromaticAberration);
                     state.LensEdgeWeight = math.max(0f, settings.lensEdgeWeight);
                     state.LensDirtIntensity = math.saturate(settings.lensDirtIntensity);
-                    state.CondensationIntensity = math.saturate(settings.condensationIntensity);
-                    state.ThermalHazeIntensity = ResolveThermalHazeIntensity(settings.thermalHazeIntensity);
+                    state.CondensationIntensity = math.saturate(settings.condensationIntensity) * underwaterBlend;
+                    state.ThermalHazeIntensity = ResolveThermalHazeIntensity(settings.thermalHazeIntensity) * underwaterBlend;
                     state.ThermalHazeScale = math.max(0.001f, settings.thermalHazeScale);
                     state.HasExposureState = exposureAvailable ? 1f : 0f;
                     return state;

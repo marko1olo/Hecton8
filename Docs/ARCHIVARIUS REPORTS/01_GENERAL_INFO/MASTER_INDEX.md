@@ -1,4 +1,4 @@
-﻿# HECTON-8 ARCHIVARIUS MASTER INDEX
+# HECTON-8 ARCHIVARIUS MASTER INDEX
 Date: 2026-05-11
 Status: PENDING VERIFICATION
 
@@ -78,8 +78,8 @@ Read the paired surgery log or audit note before treating a `.patch` file as imp
 | File | Role |
 |---|---|
 | `README.md` | Report-vault trust boundary; confirms this folder is evidence, not authority |
-| `EVENT_FLOW_MAP.md` | Source-backed event topology for current first-party code |
-| `INTERFACE_HEALTH_DASHBOARD.md` | Interface health summary corrected against live code |
+| `../02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md` | Source-backed event topology for current first-party code |
+| `../02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md` | Interface health summary corrected against live code |
 | `SINGLETON_FIX_PRIORITY.md` | Singleton remediation roadmap |
 | `SINGLETON_VIOLATIONS.md` | Singleton violation inventory |
 | `GOD_OBJECT_AUDIT.md` | Large-owner decomposition audit |

@@ -568,11 +568,6 @@ namespace Hecton8.Atmosphere
 
         #region ══════════ Singleton ══════════
 
-        public static HectonAtmosphereManager Instance
-        {
-            get { return GlobalRegistry.Atmosphere; }
-        }
-
         #endregion
 
         #region ══════════ Events ══════════

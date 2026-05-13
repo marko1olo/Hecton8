@@ -25,9 +25,15 @@ This folder is useful because it maps the project. It is not stronger than `AGEN
 
 ## Current Proof Boundary
 
-Latest May 11 documentation continuation reports:
+2026-05-13 DOC_AUDIT override:
 
-- active documentation manifest updated
-- local Core dependency build succeeded with `0 Warning(s)` and `0 Error(s)`
+- read `../../Reports/2026-05-13_DOC_AUDIT_XRAY.md` before trusting May 11 counters or build-artifact paths
+- the cited May 11 `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.*` files are absent from the current filesystem
+- current first-party asmdef count is `24`, not the older `13`, `22`, or `23` atlas values
+- latest R2 static counters are `1411` project C# files, `1365` script C# files, `866558` project source lines, `849012` script source lines, and `215` interface declaration hits
+
+Latest May 13 documentation audit reports:
+
+- May 11 active documentation manifest remains the latest machine-readable manifest, but its counters are historical where May 13 R2 conflicts
+- May 11 report text claimed a local Core dependency build succeeded with `0 Warning(s)` and `0 Error(s)`, but the May 13 DOC_AUDIT filesystem check did not find the cited summary or raw log artifact
 - no fresh Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, scene-wiring, or visual-quality proof captured
-

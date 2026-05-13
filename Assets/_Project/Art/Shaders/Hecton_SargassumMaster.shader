@@ -28,8 +28,6 @@ Shader "Hecton8/Flora/SargassumMaster"
         _WoundCurlStrength ("Wound Curl Strength", Range(0, 1)) = 0.18
         _BiolumStrength ("Biolum Strength", Range(0, 4)) = 0.75
         _BiolumMaskStrength ("Biolum Mask Strength", Range(0, 2)) = 1.15
-        _BiolumPulseAmplitude ("Biolum Pulse Amplitude", Range(0, 1)) = 0.18
-        _BiolumPulseFrequency ("Biolum Pulse Frequency", Range(0, 8)) = 0.92
         _BiolumNightResponse ("Biolum Night Response", Range(0, 2)) = 1.0
         _NoirSignalFlickerStrength ("Noir Signal Flicker Strength", Range(0, 0.35)) = 0.08
         _NoirSignalFlickerScale ("Noir Signal Flicker Scale", Range(0.01, 4)) = 0.42
@@ -101,8 +99,6 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half _WoundCurlStrength;
                 half _BiolumStrength;
                 half _BiolumMaskStrength;
-                half _BiolumPulseAmplitude;
-                half _BiolumPulseFrequency;
                 half _BiolumNightResponse;
                 half _NoirSignalFlickerStrength;
                 half _NoirSignalFlickerScale;
@@ -117,6 +113,8 @@ Shader "Hecton8/Flora/SargassumMaster"
             half _HectonPropWashForce;
             half4 _HectonOceanBiolumColor;
             half _HectonOceanBiolumStrength;
+            float4 _BiolumMasterPhase;
+            float4 _BiolumIntensity;
             float _HectonTimeOfDay01;
             float _HectonNightFactor;
             float _SargassumBiolumPhaseMultiplier;
@@ -363,14 +361,15 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half rim = SargassumFastPower01(1.0h - saturate(dot(normalWS, viewDirWS)), _RimPower) * _RimStrength;
                 half sss = SargassumFastPower01(saturate(dot(-lightDir, viewDirWS)), _SSSPower) * _SSSStrength * sssMask;
                 half bubbleGlow = isBubble * (_BubbleGlow + backLight * 0.55h);
-                half biolumPhase = (_Time.y * _SargassumBiolumPhaseMultiplier) + input.positionWS.x * 0.085h + input.positionWS.z * 0.061h + input.uv.y * 4.2h + input.color.b * 3.7h;
-                half biolumPulse = 1.0h + SargassumTriangleSigned(biolumPhase) * _BiolumPulseAmplitude;
+                half biolumPhase = (half)(_BiolumMasterPhase.x * 6.28318 * max(_SargassumBiolumPhaseMultiplier, 0.001)) + input.positionWS.x * 0.085h + input.positionWS.z * 0.061h + input.uv.y * 4.2h + input.color.b * 3.7h;
+                half biolumPulse = 1.0h + SargassumTriangleSigned(biolumPhase) * 0.18h;
                 half timeBand = 0.75h + 0.25h * SargassumTriangleSigned(_HectonTimeOfDay01 * 6.28318h + input.color.b * 2.4h);
                 half bubbleBiolumMask = saturate(isBubble * (0.68h + sssMask * 0.24h + bubbleGlow * 0.18h) * _BiolumMaskStrength);
                 half nightFactor = saturate(_HectonNightFactor * _BiolumNightResponse);
                 half oceanBiolumInfluence = saturate(_HectonOceanBiolumStrength);
                 half3 biolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanBiolumInfluence * 0.65h);
-                half3 biolum = biolumColor * (_BiolumStrength * (1.0h + oceanBiolumInfluence * 0.7h) * bubbleBiolumMask * biolumPulse * timeBand * nightFactor);
+                half masterBiolum = max((half)_BiolumIntensity.x, 0.0h);
+                half3 biolum = biolumColor * (_BiolumStrength * masterBiolum * (1.0h + oceanBiolumInfluence * 0.7h) * bubbleBiolumMask * biolumPulse * timeBand * nightFactor);
                 half signalPhase = dot(input.positionWS.xz, half2(_NoirSignalFlickerScale, _NoirSignalFlickerScale * 1.37h)) + _Time.y * 2.1h + input.color.b * 3.3h;
                 half signalWave = 1.0h - abs(frac(signalPhase * 0.15915494h) * 2.0h - 1.0h);
                 half signalFlicker = smoothstep(0.18h, 0.92h, signalWave) * saturate(_NoirSignalFlickerStrength);
@@ -442,8 +441,6 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half _WoundCurlStrength;
                 half _BiolumStrength;
                 half _BiolumMaskStrength;
-                half _BiolumPulseAmplitude;
-                half _BiolumPulseFrequency;
                 half _BiolumNightResponse;
                 half _NoirSignalFlickerStrength;
                 half _NoirSignalFlickerScale;

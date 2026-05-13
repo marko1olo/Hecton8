@@ -39,5 +39,6 @@ This folder contains dated audits, patch artifacts, static scans, and investigat
 
 ## Proof Boundary
 
-Latest May 11 evidence is compile-only for the Core dependency build. It does not certify Unity import, Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, or visual quality.
+2026-05-13 DOC_AUDIT override: `../../Reports/2026-05-13_DOC_AUDIT_XRAY.md` found the May 11 `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.*` files absent from the current filesystem. Treat May 11 compile-success references as dated report text only until restored or replaced.
 
+May 11 compile-success evidence is not current artifact-backed proof in this workspace because the cited summary/raw log are absent. It does not certify Unity import, Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, or visual quality.

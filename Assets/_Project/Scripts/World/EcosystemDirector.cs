@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
@@ -25,6 +27,17 @@ namespace Hecton8.World
         public uint PackedAdaptation;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 16)]
+    internal struct EcosystemBiomassSaveRun
+    {
+        public int2 StartMacroCell;
+        public sbyte PreyBiomassQ;
+        public sbyte PredatorBiomassQ;
+        public sbyte CarryingCapacityQ;
+        public byte RunLength;
+        public uint Reserved;
+    }
+
     /// <summary>
     /// Cold-path sector ecosystem table. Population is a deterministic cinematic roll per 1 km sector.
     /// </summary>
@@ -39,6 +52,8 @@ namespace Hecton8.World
         private const float DefaultFloraGrazingSearchRadiusMeters = 2.75f;
         private const float SectorEdgeLengthMeters = 1000f;
         private const float InvSectorEdgeLengthMeters = 1f / SectorEdgeLengthMeters;
+        private const float BiomassMacroCellSizeMeters = 50f;
+        private const float InvBiomassMacroCellSizeMeters = 1f / BiomassMacroCellSizeMeters;
         private const float InvStableSectorRandomMask = 1f / 16777215f;
         private const float InvFoodHeatmapByteMax = 1f / 255f;
         private const float OxygenDieOffThreshold01 = 0.35f;
@@ -49,6 +64,19 @@ namespace Hecton8.World
         private const int DefaultGrazerPopulationPerSector = 10;
         private const int DefaultLeviathanPopulationPerSector = 1;
         private const int MinimumSectorCapacity = 16;
+        private const int MinimumBiomassCellCapacity = 64;
+        private const int BiomassImpactQueueCapacity = 128;
+        private const int BiomassBlackBoxCapacity = 300;
+        private const byte BiomassImpactKindDeath = 1;
+        private const byte BiomassImpactKindFishing = 2;
+        private const byte BiomassImpactKindPredation = 3;
+        private const byte BiomassImpactKindApexKill = 4;
+        private const byte BiomassCellFlagSectorClearedPublished = 1 << 0;
+        private const uint BiomassSaveRecordMarker = 0x80000000u;
+        private const uint BiomassSaveRunLengthMask = 0x000000FFu;
+        private const uint BiomassSavePreyShift = 8;
+        private const uint BiomassSavePredatorShift = 16;
+        private const uint BiomassSaveCapacityShift = 24;
         private const float DefaultHostilityPeakHoldSeconds = 18f;
         private const float LogicalLodFullSimDistanceMeters = 50f;
         private const float LogicalLodDataOnlyDistanceMeters = 150f;
@@ -78,6 +106,7 @@ namespace Hecton8.World
         private const int HibernationPopulationSyncsPerColdSolve = 8;
         private const int ApexTerritoryOverlapCandidateCapacity = 16;
         private const int ApexTerritoryOverlapHitCapacity = 64;
+        private const int ApexThreatProbeHitCapacity = 16;
         private const int MigrationTieNoNeighborBucket = 4;
         private const float ApexTerritoryOverlapQueryRadiusMeters = 1400f;
         private const float ApexTerritoryOverlapRetreatThreshold01 = 0.30f;
@@ -88,15 +117,25 @@ namespace Hecton8.World
         private const float FloraPredatorStealthDimStrength = 0.82f;
         private const string NativeMemoryOwner = nameof(EcosystemDirector);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const ulong BiomassTelemetryDumpMagic = 0x0038424D53434548UL;
+        private const string BiomassTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ECOLOGICAL_BIOMASS_ENGINE.bin";
         private static readonly string[] ThermalSpawnTokens = { "lava", "thermal", "brine", "heat", "volcanic", "smoker" };
         private static readonly string[] SharkSpawnTokens = { "shark", "hunter", "stalker" };
         private static readonly string[] ScavengerSpawnTokens = { "scavenger", "crab", "eel", "carrion", "cleaner" };
         private static readonly uint _FloraPredatorAupSaturationWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.FloraPredatorAupSaturation"));
+        private static readonly uint _BiomassTelemetryHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.GlobalBiomassSum"));
+        private static readonly uint _EcologicalCollapseWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Ecological Collapse"));
+        private static readonly uint _SectorClearedEventHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.SectorCleared"));
+        private static readonly uint _ItemCuredFishNameHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ITEM_CURED_FISH_NAME"));
+        private static readonly uint _ItemRawFishNameHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ITEM_RAW_FISH_NAME"));
+        private static readonly uint _ItemCookedFishNameHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ITEM_COOKED_FISH_NAME"));
         private static readonly uint _EcosystemDirectorContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute(nameof(EcosystemDirector)));
         // COLD ALLOC: SpatialQueryHit[64] - non-alloc predator diet validation scratch for spawn gating - owner: EcosystemDirector
         private static readonly SpatialQueryHit[] _predatorSpawnValidationHits = new SpatialQueryHit[PredatorSpawnValidationHitCapacity];
         // COLD ALLOC: SpatialQueryHit[64] - non-alloc Apex territory candidate query scratch - owner: EcosystemDirector
         private static readonly SpatialQueryHit[] _apexTerritoryOverlapHits = new SpatialQueryHit[ApexTerritoryOverlapHitCapacity];
+        // COLD ALLOC: SpatialQueryHit[16] - non-alloc player physiology Apex threat probe scratch - owner: EcosystemDirector
+        private static readonly SpatialQueryHit[] _apexThreatProbeHits = new SpatialQueryHit[ApexThreatProbeHitCapacity];
         // COLD ALLOC: SpatialQueryHit[64] - non-alloc flora predator AUP upload query scratch - owner: EcosystemDirector
         private static readonly SpatialQueryHit[] _floraPredatorAupHits = new SpatialQueryHit[FloraPredatorAupHitCapacity];
         private static readonly int _PredatorAUPBufferId = Shader.PropertyToID("_PredatorAUPBuffer");
@@ -107,6 +146,7 @@ namespace Hecton8.World
         private static readonly int _GlobalOceanPanicColorId = Shader.PropertyToID("_GlobalOceanPanicColor");
         private static readonly int _BiolumFlashBangAUPId = Shader.PropertyToID("_BiolumFlashBangAUP");
         private static readonly int _BiolumFlashBangParamsId = Shader.PropertyToID("_BiolumFlashBangParams");
+        private static readonly int _BiomassOvergrowthId = Shader.PropertyToID("_HectonBiomassOvergrowth");
 
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
         private struct SectorPopulationState
@@ -142,6 +182,29 @@ namespace Hecton8.World
                 Hunger.IsCreated &&
                 SectorCoord.IsCreated &&
                 SectorID.IsCreated;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 16)]
+        private struct BiomassImpactEvent
+        {
+            public int2 MacroCellCoord;
+            public float Amount;
+            public byte Kind;
+            public byte Padding0;
+            public ushort Padding1;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        private struct BiomassTelemetryEntry
+        {
+            public uint FrameIndex;
+            public uint StateHash;
+            public int ActiveCellCount;
+            public int Flags;
+            public float GlobalBiomassSum;
+            public float PreyBiomassSum;
+            public float PredatorBiomassSum;
+            public float FloraOvergrowth01;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
@@ -376,6 +439,86 @@ namespace Hecton8.World
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct BiomassLotkaVolterraJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float> PreyFront;
+            [ReadOnly] public NativeArray<float> PredatorFront;
+            [ReadOnly] public NativeArray<float> CarryingCapacity;
+            [ReadOnly] public NativeArray<int2> MacroCellCoords;
+            [ReadOnly] public NativeHashMap<long, int> CellIndexByKey;
+            public NativeArray<float> PreyBack;
+            public NativeArray<float> PredatorBack;
+            public NativeArray<float> BiomassSumScratch;
+            public float DeltaSeconds;
+            public float BirthRate;
+            public float PredRate;
+            public float FeedRate;
+            public float DeathRate;
+            public float DiffusionRate;
+            public int EnableDiffusion;
+
+            public void Execute(int index)
+            {
+                float capacity = math.saturate(CarryingCapacity[index]);
+                float prey = math.clamp(PreyFront[index], 0f, capacity);
+                float predator = math.clamp(PredatorFront[index], 0f, capacity);
+                float dt = math.max(0f, DeltaSeconds);
+
+                float dPrey = prey * (BirthRate - (PredRate * predator));
+                float dPred = predator * ((FeedRate * prey) - DeathRate);
+                float nextPrey = math.clamp(prey + (dPrey * dt), 0f, capacity);
+                float nextPredator = math.clamp(predator + (dPred * dt), 0f, capacity);
+
+                if (EnableDiffusion != 0 && DiffusionRate > 0f)
+                {
+                    int2 coord = MacroCellCoords[index];
+                    float neighborPrey = 0f;
+                    float neighborPredator = 0f;
+                    int neighborCount = 0;
+                    AccumulateNeighbor(coord + new int2(1, 0), ref neighborPrey, ref neighborPredator, ref neighborCount);
+                    AccumulateNeighbor(coord + new int2(-1, 0), ref neighborPrey, ref neighborPredator, ref neighborCount);
+                    AccumulateNeighbor(coord + new int2(0, 1), ref neighborPrey, ref neighborPredator, ref neighborCount);
+                    AccumulateNeighbor(coord + new int2(0, -1), ref neighborPrey, ref neighborPredator, ref neighborCount);
+                    if (neighborCount > 0)
+                    {
+                        float invCount = math.rcp(neighborCount);
+                        float diffusion01 = math.saturate(DiffusionRate);
+                        nextPrey = math.clamp(math.lerp(nextPrey, neighborPrey * invCount, diffusion01), 0f, capacity);
+                        nextPredator = math.clamp(math.lerp(nextPredator, neighborPredator * invCount, diffusion01), 0f, capacity);
+                    }
+                }
+
+                if (!math.isfinite(nextPrey))
+                    nextPrey = 0f;
+                if (!math.isfinite(nextPredator))
+                    nextPredator = 0f;
+
+                PreyBack[index] = nextPrey;
+                PredatorBack[index] = nextPredator;
+                BiomassSumScratch[index] = nextPrey + nextPredator;
+            }
+
+            private void AccumulateNeighbor(
+                int2 coord,
+                ref float prey,
+                ref float predator,
+                ref int count)
+            {
+                if (!CellIndexByKey.TryGetValue(PackBiomassCellKey(coord), out int neighborIndex) ||
+                    neighborIndex < 0 ||
+                    neighborIndex >= PreyFront.Length)
+                {
+                    return;
+                }
+
+                float capacity = math.saturate(CarryingCapacity[neighborIndex]);
+                prey += math.clamp(PreyFront[neighborIndex], 0f, capacity);
+                predator += math.clamp(PredatorFront[neighborIndex], 0f, capacity);
+                count++;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HeadlessThresholdMigrationJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<SectorPopulationState> States;
@@ -495,6 +638,25 @@ namespace Hecton8.World
         [SerializeField] private int generationMutationBitMask = 0x2D5A;
         [SerializeField, Min(1)] private int preyPopulationCapacity = DefaultGrazerPopulationPerSector * 2;
 
+        [Header("Biomass Macro Grid")]
+        [Tooltip("Maximum number of 50 m biomass macro-cells tracked around active ecology pressure.")]
+        [SerializeField, Min(MinimumBiomassCellCapacity)] private int maxTrackedBiomassCells = 512;
+        [Tooltip("Initial normalized prey biomass when a macro-cell is first touched.")]
+        [SerializeField, Range(0f, 1f)] private float defaultPreyBiomass01 = 0.65f;
+        [Tooltip("Initial normalized predator biomass when a macro-cell is first touched.")]
+        [SerializeField, Range(0f, 1f)] private float defaultPredatorBiomass01 = 0.35f;
+        [Tooltip("Cold-tick neighbor diffusion rate. Disabled automatically on low scalability tier.")]
+        [SerializeField, Range(0f, 1f)] private float biomassDiffusionRate = 0.06f;
+        [Tooltip("Normalized biomass removed by one generic entity death when trophic class is unknown.")]
+        [SerializeField, Range(0f, 1f)] private float entityDeathBiomassPenalty01 = 0.08f;
+        [Tooltip("Normalized prey biomass removed by one fish acquisition event.")]
+        [SerializeField, Range(0f, 1f)] private float fishAcquisitionPreyPenalty01 = 1f;
+        [SerializeField] private float _debugGlobalBiomassSum;
+        [SerializeField] private float _debugPreyBiomassSum;
+        [SerializeField] private float _debugPredatorBiomassSum;
+        [SerializeField] private float _debugFloraOvergrowth01;
+        [SerializeField] private int _debugBiomassCellCount;
+
         [Header("Threshold Migration")]
         [SerializeField, Range(0f, 1f)] private float migrationFoodThreshold01 = 0.38f;
         [SerializeField, Min(0)] private int migrationPredatorTolerance = 1;
@@ -574,6 +736,18 @@ namespace Hecton8.World
         private NativeArray<int> _preyBackCounts;
         private NativeArray<int> _predatorFrontCounts;
         private NativeArray<int> _predatorBackCounts;
+        private NativeArray<float> _preyBiomassFront;
+        private NativeArray<float> _preyBiomassBack;
+        private NativeArray<float> _predatorBiomassFront;
+        private NativeArray<float> _predatorBiomassBack;
+        private NativeArray<float> _biomassCarryingCapacity;
+        private NativeArray<float> _biomassSumScratch;
+        private NativeArray<int2> _biomassMacroCellCoords;
+        private NativeArray<byte> _biomassCellFlags;
+        private NativeArray<BiomassImpactEvent> _pendingBiomassImpacts;
+        private NativeArray<BiomassTelemetryEntry> _biomassBlackBox;
+        private NativeList<EcosystemBiomassSaveRun> _saveSnapshotBiomassRuns;
+        private NativeHashMap<long, int> _biomassIndexByKey;
         private HeadlessEntitySoA _headlessEntities;
         private NativeArray<byte> _sectorFoodHeatmapR8;
         private NativeHashMap<long, int> _sectorIndexByKey;
@@ -595,6 +769,11 @@ namespace Hecton8.World
         private byte _apexSpawnGateCachedBlocked;
         private float _coldTickAccumulator;
         private int _activeSectorCount;
+        private int _activeBiomassCellCount;
+        private int _pendingBiomassImpactCount;
+        private int _lastBiomassSignalDrainFrame;
+        private int _lastScannerWarningFrame;
+        private int _biomassBlackBoxCursor;
         private int _scheduledApexTerritoryOverlapCount;
         private bool _registeredService;
         private bool _registeredSlowTickable;
@@ -633,6 +812,12 @@ namespace Hecton8.World
             _preyBackCounts.IsCreated &&
             _predatorFrontCounts.IsCreated &&
             _predatorBackCounts.IsCreated &&
+            _preyBiomassFront.IsCreated &&
+            _preyBiomassBack.IsCreated &&
+            _predatorBiomassFront.IsCreated &&
+            _predatorBiomassBack.IsCreated &&
+            _biomassCarryingCapacity.IsCreated &&
+            _biomassIndexByKey.IsCreated &&
             _headlessEntities.IsCreated &&
             _apexSpawnGateCommands.IsCreated &&
             _apexSpawnGateHits.IsCreated &&
@@ -770,6 +955,7 @@ namespace Hecton8.World
                     selectionMultiplier *= sharkEclipseSelectionBoost;
 
                 selectionMultiplier *= ResolvePlayerStressSpawnWeight(archetype, playerStress01);
+                selectionMultiplier *= ResolveBiomassSpawnSelectionWeight(archetype, worldPosition);
                 selectionMultiplier *= ResolveSpawnCreditSelectionWeight(archetype);
                 return selectionMultiplier > 0f;
             }
@@ -794,6 +980,7 @@ namespace Hecton8.World
                     selectionMultiplier *= 1f + ((math.max(CorpseSpawnSelectionScale, WhaleFallScavengerSpawnMultiplier) - 1f) * corpseInfluence01);
             }
 
+            selectionMultiplier *= ResolveBiomassSpawnSelectionWeight(archetype, worldPosition);
             selectionMultiplier *= ResolveSpawnCreditSelectionWeight(archetype);
             return selectionMultiplier > 0f;
         }
@@ -841,6 +1028,24 @@ namespace Hecton8.World
                 return 1f;
 
             return _spawnCreditBudget + 0.0001f >= cost ? 1f : 0f;
+        }
+
+        private float ResolveBiomassSpawnSelectionWeight(CreatureArchetypeData archetype, Vector3 worldPosition)
+        {
+            if (archetype == null ||
+                !TryGetBiomassAvailability(worldPosition, out float preyBiomass01, out float predatorBiomass01, out _))
+            {
+                return 1f;
+            }
+
+            if (IsApexRole(archetype))
+                return predatorBiomass01 < 0.1f ? 0.5f : math.max(0.05f, predatorBiomass01);
+
+            if (IsPredatorOrApex(archetype))
+                return math.max(0.05f, predatorBiomass01);
+
+            float preyWeight = math.max(0.05f, preyBiomass01);
+            return preyBiomass01 > 0.9f ? preyWeight * 2f : preyWeight;
         }
 
         private float ResolveSpawnCreditCost(CreatureArchetypeData archetype, bool isLargeThreat, bool isPredator)
@@ -1464,6 +1669,8 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             CompleteScheduledSimulation(forceComplete: false);
+            DrainBiomassSignalSnapshots();
+            PublishScannerEcologyWarningIfNeeded();
             CompleteScheduledApexTerritoryOverlap(forceComplete: false);
             CompleteApexSpawnGate(forceComplete: false);
             FaunaSpatialHashRegistry.RunDeferredCleanupFrame();
@@ -1495,6 +1702,35 @@ namespace Hecton8.World
             sample.SpeedMultiplier = state.SpeedMultiplier;
             sample.CamouflageIndex = state.CamouflageIndex;
             sample.ApexInSector = IsApexInSectorState(in state);
+            if (TryGetBiomassAvailability(worldPosition, out float preyBiomass01, out float predatorBiomass01, out _))
+            {
+                sample.PreyBiomass01 = preyBiomass01;
+                sample.PredatorBiomass01 = predatorBiomass01;
+                sample.FloraOvergrowth01 = ResolveFloraOvergrowth01(preyBiomass01);
+            }
+            return true;
+        }
+
+        public bool TryGetBiomassAvailability(
+            Vector3 worldPosition,
+            out float preyBiomass01,
+            out float predatorBiomass01,
+            out float carryingCapacity01)
+        {
+            preyBiomass01 = 0f;
+            predatorBiomass01 = 0f;
+            carryingCapacity01 = 0f;
+            if (!IsInitialized || HasPendingSimulationJob())
+                return false;
+
+            int slotIndex = ResolveOrCreateBiomassCellSlot(QuantizeBiomassMacroCell(worldPosition), seedWithBaseline: true);
+            if (slotIndex < 0)
+                return false;
+
+            float capacity = math.max(0.0001f, _biomassCarryingCapacity[slotIndex]);
+            preyBiomass01 = math.saturate(_preyBiomassFront[slotIndex] * math.rcp(capacity));
+            predatorBiomass01 = math.saturate(_predatorBiomassFront[slotIndex] * math.rcp(capacity));
+            carryingCapacity01 = math.saturate(capacity);
             return true;
         }
 
@@ -1514,6 +1750,47 @@ namespace Hecton8.World
             return IsApexInSectorState(in state);
         }
 
+        public bool TryGetApexPredatorThreat(Vector3 worldPosition, float radiusMeters, out float proximity01)
+        {
+            proximity01 = 0f;
+            if (!IsInitialized ||
+                radiusMeters <= 0f ||
+                !math.isfinite(radiusMeters) ||
+                !math.all(math.isfinite(new float3(worldPosition.x, worldPosition.y, worldPosition.z))))
+            {
+                return false;
+            }
+
+            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
+                worldPosition,
+                radiusMeters,
+                SpatialTargetKind.Bioform,
+                _apexThreatProbeHits);
+            if (hitCount <= 0)
+                return false;
+
+            float radiusSq = math.max(0.0001f, radiusMeters * radiusMeters);
+            float bestDistanceSq = radiusSq;
+            bool found = false;
+            int count = math.min(hitCount, ApexThreatProbeHitCapacity);
+            for (int i = 0; i < count; i++)
+            {
+                SpatialQueryHit hit = _apexThreatProbeHits[i];
+                FaunaBrain brain = hit.Owner as FaunaBrain;
+                if (brain == null || brain.IsDead || !brain.IsApexPredatorRuntime)
+                    continue;
+
+                bestDistanceSq = math.min(bestDistanceSq, math.max(0f, hit.DistanceSqr));
+                found = true;
+            }
+
+            if (!found)
+                return false;
+
+            proximity01 = math.saturate(1f - bestDistanceSq * math.rcp(radiusSq));
+            return true;
+        }
+
         /// <summary>
         /// Registers visible prey consumption for strain only. Sector population is fixed by the cinematic table.
         /// </summary>
@@ -1523,6 +1800,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.EnvironmentalStrain?.AccumulatePredationStrain(worldPosition, preyConsumed);
+            QueueOrApplyBiomassImpact(worldPosition, BiomassImpactKindPredation, preyConsumed * math.rcp(math.max(1f, maxPreyPopulation)));
             if (HasPendingSimulationJob())
                 return;
 
@@ -1590,6 +1868,7 @@ namespace Hecton8.World
 
             float appliedDelta = math.max(hostilityPerApexKill, hostilityDelta);
             SetBiomeHostility(_biomeHostility01 + appliedDelta);
+            QueueOrApplyBiomassImpact(worldPosition, BiomassImpactKindApexKill, 1f);
             ApplyApexKillPopulationShock(worldPosition);
             ApplyDirectorHostilityPressure();
         }
@@ -1657,6 +1936,12 @@ namespace Hecton8.World
             if (generationMutationBitMask == 0)
                 generationMutationBitMask = 0x2D5A;
             preyPopulationCapacity = math.max(1, preyPopulationCapacity);
+            maxTrackedBiomassCells = math.max(MinimumBiomassCellCapacity, maxTrackedBiomassCells);
+            defaultPreyBiomass01 = math.clamp(defaultPreyBiomass01, 0f, 1f);
+            defaultPredatorBiomass01 = math.clamp(defaultPredatorBiomass01, 0f, 1f);
+            biomassDiffusionRate = math.clamp(biomassDiffusionRate, 0f, 1f);
+            entityDeathBiomassPenalty01 = math.clamp(entityDeathBiomassPenalty01, 0f, 1f);
+            fishAcquisitionPreyPenalty01 = math.clamp(fishAcquisitionPreyPenalty01, 0f, 1f);
             migrationFoodThreshold01 = math.clamp(migrationFoodThreshold01, 0f, 1f);
             migrationPredatorTolerance = math.max(0, migrationPredatorTolerance);
             spawnCreditBudgetMax = math.max(0f, spawnCreditBudgetMax);
@@ -1911,6 +2196,28 @@ namespace Hecton8.World
             _predatorFrontCounts = new NativeArray<int>(maxTrackedSectors, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<int>[maxTrackedSectors] - Lotka-Volterra predator output back buffer - owner: EcosystemDirector
             _predatorBackCounts = new NativeArray<int>(maxTrackedSectors, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[maxTrackedBiomassCells] - 50 m prey biomass front buffer - owner: EcosystemDirector
+            _preyBiomassFront = new NativeArray<float>(maxTrackedBiomassCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[maxTrackedBiomassCells] - 50 m prey biomass back buffer - owner: EcosystemDirector
+            _preyBiomassBack = new NativeArray<float>(maxTrackedBiomassCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[maxTrackedBiomassCells] - 50 m predator biomass front buffer - owner: EcosystemDirector
+            _predatorBiomassFront = new NativeArray<float>(maxTrackedBiomassCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[maxTrackedBiomassCells] - 50 m predator biomass back buffer - owner: EcosystemDirector
+            _predatorBiomassBack = new NativeArray<float>(maxTrackedBiomassCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[maxTrackedBiomassCells] - per-biome biomass carrying capacity - owner: EcosystemDirector
+            _biomassCarryingCapacity = new NativeArray<float>(maxTrackedBiomassCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[maxTrackedBiomassCells] - per-cell biomass sum scratch for main-thread reduction - owner: EcosystemDirector
+            _biomassSumScratch = new NativeArray<float>(maxTrackedBiomassCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<int2>[maxTrackedBiomassCells] - 50 m macro-cell coordinates - owner: EcosystemDirector
+            _biomassMacroCellCoords = new NativeArray<int2>(maxTrackedBiomassCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<byte>[maxTrackedBiomassCells] - biomass event latch flags - owner: EcosystemDirector
+            _biomassCellFlags = new NativeArray<byte>(maxTrackedBiomassCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<BiomassImpactEvent>[128] - deferred biomass impacts while Burst owns front buffers - owner: EcosystemDirector
+            _pendingBiomassImpacts = new NativeArray<BiomassImpactEvent>(BiomassImpactQueueCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<BiomassTelemetryEntry>[300] - ecology blackbox circular buffer - owner: EcosystemDirector
+            _biomassBlackBox = new NativeArray<BiomassTelemetryEntry>(BiomassBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeHashMap<long,int>[maxTrackedBiomassCells] - packed 50 m macro-cell key to slot lookup - owner: EcosystemDirector
+            _biomassIndexByKey = new NativeHashMap<long, int>(maxTrackedBiomassCells, Allocator.Persistent);
             _headlessEntities = new HeadlessEntitySoA
             {
                 Positions = new NativeArray<float3>(maxTrackedSectors, Allocator.Persistent, NativeArrayOptions.ClearMemory), // COLD ALLOC: headless SOA positions - owner: EcosystemDirector
@@ -1932,7 +2239,9 @@ namespace Hecton8.World
             // COLD ALLOC: NativeArray<float4>[32] - global flora predator AUP upload staging buffer - owner: EcosystemDirector
             _floraPredatorAupUpload = new NativeArray<float4>(FloraPredatorAupBufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeList<EcosystemSectorSaveRecord>[maxTrackedSectors] - packed ecosystem persistence snapshot staging buffer - owner: EcosystemDirector
-            _saveSnapshotSectors = new NativeList<EcosystemSectorSaveRecord>(maxTrackedSectors, Allocator.Persistent);
+            _saveSnapshotSectors = new NativeList<EcosystemSectorSaveRecord>(maxTrackedSectors + maxTrackedBiomassCells, Allocator.Persistent);
+            // COLD ALLOC: NativeList<EcosystemBiomassSaveRun>[maxTrackedBiomassCells] - quantized RLE biomass save bridge - owner: EcosystemDirector
+            _saveSnapshotBiomassRuns = new NativeList<EcosystemBiomassSaveRun>(maxTrackedBiomassCells, Allocator.Persistent);
             RegisterNativeMemorySentinelAllocations();
             // COLD ALLOC: FaunaBrain[16] - managed Apex brain lookup paired with Burst overlap result indices - owner: EcosystemDirector
             _apexTerritoryBrains = new FaunaBrain[ApexTerritoryOverlapCandidateCapacity];
@@ -1941,8 +2250,14 @@ namespace Hecton8.World
             PublishFloraPredatorAupGlobals(0);
             Shader.SetGlobalColor(_GlobalOceanPanicColorId, new Color(1f, 0.05f, 0.035f, 1f));
             Shader.SetGlobalFloat(_ApexInSectorId, 0f);
+            Shader.SetGlobalFloat(_BiomassOvergrowthId, 0f);
             PublishGlobalOceanPanic(0f);
             _activeSectorCount = 0;
+            _activeBiomassCellCount = 0;
+            _pendingBiomassImpactCount = 0;
+            _lastBiomassSignalDrainFrame = -1;
+            _lastScannerWarningFrame = -1024;
+            _biomassBlackBoxCursor = 0;
             _scheduledApexTerritoryOverlapCount = 0;
             _coldTickAccumulator = 0f;
             _scheduledSolveHandle = default;
@@ -1963,6 +2278,11 @@ namespace Hecton8.World
             _debugSpawnCreditBudget = _spawnCreditBudget;
             _debugPlayerStress01 = 0f;
             _debugHeadlessSectorCount = 0;
+            _debugBiomassCellCount = 0;
+            _debugGlobalBiomassSum = 0f;
+            _debugPreyBiomassSum = 0f;
+            _debugPredatorBiomassSum = 0f;
+            _debugFloraOvergrowth01 = 0f;
             _eclipsePredatorMigrationTimer = 0f;
             _eclipsePredatorMigrationIntensity01 = 0f;
             _eclipsePredatorMigrationAccumulator = 0f;
@@ -1993,6 +2313,28 @@ namespace Hecton8.World
                 _predatorFrontCounts.Dispose(disposeDependency);
             if (_predatorBackCounts.IsCreated)
                 _predatorBackCounts.Dispose(disposeDependency);
+            if (_preyBiomassFront.IsCreated)
+                _preyBiomassFront.Dispose(disposeDependency);
+            if (_preyBiomassBack.IsCreated)
+                _preyBiomassBack.Dispose(disposeDependency);
+            if (_predatorBiomassFront.IsCreated)
+                _predatorBiomassFront.Dispose(disposeDependency);
+            if (_predatorBiomassBack.IsCreated)
+                _predatorBiomassBack.Dispose(disposeDependency);
+            if (_biomassCarryingCapacity.IsCreated)
+                _biomassCarryingCapacity.Dispose(disposeDependency);
+            if (_biomassSumScratch.IsCreated)
+                _biomassSumScratch.Dispose(disposeDependency);
+            if (_biomassMacroCellCoords.IsCreated)
+                _biomassMacroCellCoords.Dispose(disposeDependency);
+            if (_biomassCellFlags.IsCreated)
+                _biomassCellFlags.Dispose(disposeDependency);
+            if (_pendingBiomassImpacts.IsCreated)
+                _pendingBiomassImpacts.Dispose(disposeDependency);
+            if (_biomassBlackBox.IsCreated)
+                _biomassBlackBox.Dispose(disposeDependency);
+            if (_biomassIndexByKey.IsCreated)
+                _biomassIndexByKey.Dispose(disposeDependency);
             if (_headlessEntities.Positions.IsCreated)
                 _headlessEntities.Positions.Dispose(disposeDependency);
             if (_headlessEntities.SpeciesID.IsCreated)
@@ -2017,8 +2359,11 @@ namespace Hecton8.World
                 _floraPredatorAupUpload.Dispose(disposeDependency);
             if (_saveSnapshotSectors.IsCreated)
                 _saveSnapshotSectors.Dispose(disposeDependency);
+            if (_saveSnapshotBiomassRuns.IsCreated)
+                _saveSnapshotBiomassRuns.Dispose(disposeDependency);
             ReleaseBuffer(ref _floraPredatorAupBuffer);
             Shader.SetGlobalInt(_PredatorAUPCountId, 0);
+            Shader.SetGlobalFloat(_BiomassOvergrowthId, 0f);
             _lastPublishedFloraPredatorAupCount = 0;
             _floraPredatorAupGlobalsDirty = true;
             PublishApexPresenceFake(false);
@@ -2029,6 +2374,17 @@ namespace Hecton8.World
             _preyBackCounts = default;
             _predatorFrontCounts = default;
             _predatorBackCounts = default;
+            _preyBiomassFront = default;
+            _preyBiomassBack = default;
+            _predatorBiomassFront = default;
+            _predatorBiomassBack = default;
+            _biomassCarryingCapacity = default;
+            _biomassSumScratch = default;
+            _biomassMacroCellCoords = default;
+            _biomassCellFlags = default;
+            _pendingBiomassImpacts = default;
+            _biomassBlackBox = default;
+            _biomassIndexByKey = default;
             _headlessEntities = default;
             _sectorFoodHeatmapR8 = default;
             _sectorFoodHeatmapSize = default;
@@ -2039,8 +2395,14 @@ namespace Hecton8.World
             _apexSpawnGateHits = default;
             _floraPredatorAupUpload = default;
             _saveSnapshotSectors = default;
+            _saveSnapshotBiomassRuns = default;
             _apexTerritoryBrains = null;
             _activeSectorCount = 0;
+            _activeBiomassCellCount = 0;
+            _pendingBiomassImpactCount = 0;
+            _lastBiomassSignalDrainFrame = -1;
+            _lastScannerWarningFrame = -1024;
+            _biomassBlackBoxCursor = 0;
             _scheduledApexTerritoryOverlapCount = 0;
             _coldTickAccumulator = 0f;
             _scheduledSolveHandle = default;
@@ -2060,6 +2422,11 @@ namespace Hecton8.World
             _debugSpawnCreditBudget = 0f;
             _debugPlayerStress01 = 0f;
             _debugHeadlessSectorCount = 0;
+            _debugBiomassCellCount = 0;
+            _debugGlobalBiomassSum = 0f;
+            _debugPreyBiomassSum = 0f;
+            _debugPredatorBiomassSum = 0f;
+            _debugFloraOvergrowth01 = 0f;
             _hostilityTier = 0;
             _floraPredatorAupSaturationTelemetryIssued = false;
         }
@@ -2072,6 +2439,17 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeArray(_preyBackCounts, NativeMemoryOwner, nameof(_preyBackCounts), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_predatorFrontCounts, NativeMemoryOwner, nameof(_predatorFrontCounts), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_predatorBackCounts, NativeMemoryOwner, nameof(_predatorBackCounts), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_preyBiomassFront, NativeMemoryOwner, nameof(_preyBiomassFront), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_preyBiomassBack, NativeMemoryOwner, nameof(_preyBiomassBack), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_predatorBiomassFront, NativeMemoryOwner, nameof(_predatorBiomassFront), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_predatorBiomassBack, NativeMemoryOwner, nameof(_predatorBiomassBack), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_biomassCarryingCapacity, NativeMemoryOwner, nameof(_biomassCarryingCapacity), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_biomassSumScratch, NativeMemoryOwner, nameof(_biomassSumScratch), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_biomassMacroCellCoords, NativeMemoryOwner, nameof(_biomassMacroCellCoords), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_biomassCellFlags, NativeMemoryOwner, nameof(_biomassCellFlags), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_pendingBiomassImpacts, NativeMemoryOwner, nameof(_pendingBiomassImpacts), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_biomassBlackBox, NativeMemoryOwner, nameof(_biomassBlackBox), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_biomassIndexByKey, NativeMemoryOwner, nameof(_biomassIndexByKey), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_headlessEntities.Positions, NativeMemoryOwner, nameof(_headlessEntities.Positions), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_headlessEntities.SpeciesID, NativeMemoryOwner, nameof(_headlessEntities.SpeciesID), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_headlessEntities.Hunger, NativeMemoryOwner, nameof(_headlessEntities.Hunger), NativeMemoryLifetime);
@@ -2084,6 +2462,7 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeArray(_apexSpawnGateHits, NativeMemoryOwner, nameof(_apexSpawnGateHits), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_floraPredatorAupUpload, NativeMemoryOwner, nameof(_floraPredatorAupUpload), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeList(_saveSnapshotSectors, NativeMemoryOwner, nameof(_saveSnapshotSectors), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_saveSnapshotBiomassRuns, NativeMemoryOwner, nameof(_saveSnapshotBiomassRuns), NativeMemoryLifetime);
         }
 
         private void UnregisterNativeMemorySentinelAllocations()
@@ -2094,6 +2473,17 @@ namespace Hecton8.World
             NativeMemorySentinel.UnregisterNativeArray(_preyBackCounts);
             NativeMemorySentinel.UnregisterNativeArray(_predatorFrontCounts);
             NativeMemorySentinel.UnregisterNativeArray(_predatorBackCounts);
+            NativeMemorySentinel.UnregisterNativeArray(_preyBiomassFront);
+            NativeMemorySentinel.UnregisterNativeArray(_preyBiomassBack);
+            NativeMemorySentinel.UnregisterNativeArray(_predatorBiomassFront);
+            NativeMemorySentinel.UnregisterNativeArray(_predatorBiomassBack);
+            NativeMemorySentinel.UnregisterNativeArray(_biomassCarryingCapacity);
+            NativeMemorySentinel.UnregisterNativeArray(_biomassSumScratch);
+            NativeMemorySentinel.UnregisterNativeArray(_biomassMacroCellCoords);
+            NativeMemorySentinel.UnregisterNativeArray(_biomassCellFlags);
+            NativeMemorySentinel.UnregisterNativeArray(_pendingBiomassImpacts);
+            NativeMemorySentinel.UnregisterNativeArray(_biomassBlackBox);
+            NativeMemorySentinel.UnregisterNativeHashMap(NativeMemoryOwner, nameof(_biomassIndexByKey));
             NativeMemorySentinel.UnregisterNativeArray(_headlessEntities.Positions);
             NativeMemorySentinel.UnregisterNativeArray(_headlessEntities.SpeciesID);
             NativeMemorySentinel.UnregisterNativeArray(_headlessEntities.Hunger);
@@ -2106,6 +2496,7 @@ namespace Hecton8.World
             NativeMemorySentinel.UnregisterNativeArray(_apexSpawnGateHits);
             NativeMemorySentinel.UnregisterNativeArray(_floraPredatorAupUpload);
             NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_saveSnapshotSectors));
+            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_saveSnapshotBiomassRuns));
         }
 
         private void TryRegisterService()
@@ -2177,6 +2568,12 @@ namespace Hecton8.World
                 return;
 
             ResolveOrCreateSectorSlot(QuantizeSector(in playerAup), seedWithBaseline: true);
+            int2 macroCell = QuantizeBiomassMacroCell(in playerAup);
+            ResolveOrCreateBiomassCellSlot(macroCell, seedWithBaseline: true);
+            ResolveOrCreateBiomassCellSlot(macroCell + new int2(1, 0), seedWithBaseline: false);
+            ResolveOrCreateBiomassCellSlot(macroCell + new int2(-1, 0), seedWithBaseline: false);
+            ResolveOrCreateBiomassCellSlot(macroCell + new int2(0, 1), seedWithBaseline: false);
+            ResolveOrCreateBiomassCellSlot(macroCell + new int2(0, -1), seedWithBaseline: false);
         }
 
         private void EnsureMigrationNeighborSectorsRegistered()
@@ -2341,6 +2738,28 @@ namespace Hecton8.World
                 MigrationPredatorTolerance = migrationPredatorTolerance
             };
             _scheduledSolveHandle = migrationJob.Schedule(_activeSectorCount, sectorBatchSize, _scheduledSolveHandle);
+            if (_activeBiomassCellCount > 0)
+            {
+                var biomassJob = new BiomassLotkaVolterraJob
+                {
+                    PreyFront = _preyBiomassFront,
+                    PredatorFront = _predatorBiomassFront,
+                    CarryingCapacity = _biomassCarryingCapacity,
+                    MacroCellCoords = _biomassMacroCellCoords,
+                    CellIndexByKey = _biomassIndexByKey,
+                    PreyBack = _preyBiomassBack,
+                    PredatorBack = _predatorBiomassBack,
+                    BiomassSumScratch = _biomassSumScratch,
+                    DeltaSeconds = coldTickIntervalSeconds,
+                    BirthRate = preyBirthRatePerSecond,
+                    PredRate = predationRatePerSecond,
+                    FeedRate = predatorGrowthRatePerSecond,
+                    DeathRate = predatorDeathRatePerSecond,
+                    DiffusionRate = biomassDiffusionRate,
+                    EnableDiffusion = ResolveBiomassDiffusionEnabled() ? 1 : 0
+                };
+                _scheduledSolveHandle = biomassJob.Schedule(_activeBiomassCellCount, ResolveBiomassJobBatchSize(_activeBiomassCellCount), _scheduledSolveHandle);
+            }
             _solveScheduled = true;
         }
 
@@ -2371,10 +2790,22 @@ namespace Hecton8.World
             NativeArray<int> predatorSwap = _predatorFrontCounts;
             _predatorFrontCounts = _predatorBackCounts;
             _predatorBackCounts = predatorSwap;
+            if (_activeBiomassCellCount > 0)
+            {
+                NativeArray<float> preyBiomassSwap = _preyBiomassFront;
+                _preyBiomassFront = _preyBiomassBack;
+                _preyBiomassBack = preyBiomassSwap;
+                NativeArray<float> predatorBiomassSwap = _predatorBiomassFront;
+                _predatorBiomassFront = _predatorBiomassBack;
+                _predatorBiomassBack = predatorBiomassSwap;
+            }
             _solveScheduled = false;
+            ApplyPendingBiomassImpacts();
+            PublishBiomassTelemetryAndEvents();
             RefreshStarvationPressure();
             _populationSolvePendingHibernationSync = true;
             _debugHeadlessSectorCount = _activeSectorCount;
+            _debugBiomassCellCount = _activeBiomassCellCount;
         }
 
         private void ScheduleApexTerritoryOverlap(Vector3 queryOrigin)
@@ -2443,6 +2874,17 @@ namespace Hecton8.World
 
             if (count <= 64)
                 return 8;
+
+            return 64;
+        }
+
+        private static int ResolveBiomassJobBatchSize(int count)
+        {
+            if (count <= 32)
+                return 4;
+
+            if (count <= 128)
+                return 16;
 
             return 64;
         }

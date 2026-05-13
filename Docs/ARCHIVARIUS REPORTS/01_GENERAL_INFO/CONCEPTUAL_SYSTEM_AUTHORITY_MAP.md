@@ -1,4 +1,4 @@
-﻿# HECTON-8 Conceptual System Authority Map
+# HECTON-8 Conceptual System Authority Map
 
 Date: 2026-05-11
 Status: PENDING VERIFICATION
@@ -35,7 +35,7 @@ Current presentation doctrine starts at `AGENTS.md`, `.agents-skills/OPT_Cinemat
 | Domain | Current conceptual owner | Current status | Read first |
 |---|---|---|---|
 | Bootstrap / startup | `BootstrapController`, `GameBootstrapper`, `SceneBootstrap` | ACTIVE BUT TRANSITIONAL | `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md`, `BUILD_DEPENDENCY_GRAPH.md` |
-| Service registry | `GlobalRegistry`, `GlobalRegistryContracts` | LOAD-BEARING | `INTERFACE_HEALTH_DASHBOARD.md`, `INTERFACE_CONTRACT_TABLE.md`, `PROJECT_ATLAS.md` |
+| Service registry | `GlobalRegistry`, `GlobalRegistryContracts` | LOAD-BEARING | `../02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md`, `INTERFACE_CONTRACT_TABLE.md`, `PROJECT_ATLAS.md` |
 | Runtime cadence | `SystemDispatcher`, `GameTickManager` | LOAD-BEARING WITH LOCAL BARRIER RISK | `FRAME_TIMELINE.md`, `DOOMSDAY_FLAW_REPORT.md`, `02_SYSTEM_REALITY_MATRIX.md` |
 | Scene loading | `SceneRuntimeService`, bootstrap scene flow | ACTIVE BUT TRANSITIONAL | `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md`, `PROJECT_ATLAS.md` |
 | Object pooling | `ObjectPoolManager`, pool budget data | ACTIVE BUT NOT PROJECT-WIDE PROVEN | `AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`, `06_CRITICAL_ACTION_QUEUE.md` |
@@ -130,7 +130,7 @@ Persistence reality:
 | Work type | Read path |
 |---|---|
 | Any code work | `AGENTS.md` -> relevant `.agents-skills/*` -> this file -> source owner |
-| Bootstrap/service work | `PROJECT_ATLAS.md` -> `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md` -> `INTERFACE_HEALTH_DASHBOARD.md` |
+| Bootstrap/service work | `PROJECT_ATLAS.md` -> `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md` -> `../02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md` |
 | Player/tools work | `PLAYER_GAMEPLAY_CORE_MAP.md` -> `TOOLS_INTERACTION_OPERATIONAL_SYSTEM_MAP.md` -> source |
 | Construction/base work | `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md` -> `HABITAT_LOGISTICS_GRAPH.md` -> source |
 | Survival/hazard work | `SURVIVAL_DAMAGE_HAZARD_SYSTEM_MAP.md` -> survival/hazard source |

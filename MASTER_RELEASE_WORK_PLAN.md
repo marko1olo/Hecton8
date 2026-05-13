@@ -5,12 +5,12 @@ Approved For Use: `2026-04-05`
 Primary Target: `NVIDIA MX350 2 GB VRAM / 12 GB RAM / i5-1135G7`
 Direction: `NASA-Punk + Deep Sea Noir`
 
-## 2026-05-11 Current-State Boundary
+## 2026-05-13 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`, `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`, `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`, `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`, and `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` before using this roadmap as current project truth.
+- Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using this roadmap as current project truth. May 11 reports remain historical where the May 13 DOC_AUDIT override conflicts.
 - This file is a product roadmap and historical working ledger, not a runtime proof document.
 - Where this roadmap says "source of truth", treat that as roadmap/product authority only; current source code, active docs indexes, and fresh verification logs win for implementation.
-- Current May 11 Core compile-only evidence is `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`.
+- 2026-05-13 DOC_AUDIT filesystem check did not find `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` or `.log`. Treat the May 11 compile-success line as stale report text until the artifact is restored or replaced; it is not current build proof.
 - Current visual-realism doctrine is visual fake first; runtime simulation requires gameplay-correctness need plus profiler/GC/memory proof.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame time, memory retention, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 

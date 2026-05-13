@@ -7,10 +7,17 @@
 
 [INVARIANT] Voxel SDF domain: signed distance field, negative=solid, positive=void, zero=surface.
 [INVARIANT] World partitioned into tiles: 32³ voxel chunks, 0.5m voxel pitch → 16m³ tile volume.
-[INVARIANT] All SDF values stored as `half` (fp16). Precision loss acceptable; max SDF magnitude clamped ±8.0f.
+[INVARIANT] Current runtime source uses float working SDF buffers plus sbyte quantized extraction for Marching Cubes. Persistent deltas may use `half` only where save compatibility and error bounds are proven.
 [INVARIANT] Coordinate authority: `AbsoluteAUPition (AUP)` = int3(tileID) * 16 + float3(localOffset).
 [INVARIANT] Single-writer rule per chunk. Never allow concurrent mesh-rebuild + SDF-edit on same chunk.
 [INVARIANT] Physics interaction BLOCKED until `BakeState == PhysicsBakeState.Complete`. No exceptions.
+
+### 0.1 2026-05-13 Current Source Boundary
+
+[STATIC_SOURCE] `HectonVoxelEngine.cs` currently implements the production voxel rebuild path with Marching Cubes jobs (`VoxelMCCountJob`, `VoxelMCExtractJob`) and MCTables.
+[RULE] The older Transvoxel text below is an architecture target, not current source truth.
+[FORBID] Rejecting, deleting, or replacing the active Marching Cubes pipeline solely because older mandate text required a different primary mesher.
+[REQ] Any Transvoxel migration must be staged: source-compatible interface, fallback to current MC path, save-delta compatibility, seam proof, profiler proof on MX350, and visual overkill path for High/Ultra.
 
 ---
 CPU_NOISE = Unity.Mathematics.noise.snoise.
@@ -163,9 +170,10 @@ MarkChunkDirty(chunk, flags):
 
 ### 4.1 Algorithm Selection
 
-Primary  : Transvoxel (Lengyel 2010) — seam-free LOD transitions, no cracks at chunk borders
-Fallback : Surface Nets — faster, lower quality, use only for background/far LOD > LOD2
-FORBID   : Marching Cubes for primary mesh — crack artifacts at chunk seams unacceptable
+Current primary : Marching Cubes edge-indexed pipeline in `HectonVoxelEngine.cs`
+Future target   : Transvoxel-style transition cells only after migration proof
+Fallback        : Surface Nets or impostor/point-cloud representation for background/far LOD > LOD2
+FORBID          : introducing a second primary mesher without an owner, feature gate, fallback, and seam/profiler evidence
 
 ### 4.2 Transvoxel Seam Protocol
 
@@ -190,12 +198,13 @@ Normal(p):
 
 ### 4.4 Rebuild Job Chain (Burst/Jobs)
 
-[Job A] SDF Sampling       → NativeArray<half> sdfGrid[34³]   (32+2 border)
-[Job B] Transvoxel March   → NativeArray<float3> verts, NativeArray<int> tris  (depends A)
-[Job C] Normal Generation  → NativeArray<float3> normals  (depends B)
-[Job D] Tangent Generation → MikkTSpace or fast cross-product approx  (depends C)
-[Job E] Mesh Upload        → Mesh.ApplyAndDisposeWritableMeshData (main thread, minimal cost)
-[Job F] Physics Bake       → Physics.BakeMesh(meshID, convex:false) async  (depends E)
+[Job A] SDF Sampling       → NativeArray<float> sdfGrid[34³] current source working buffer
+[Job B] Quantize           → NativeArray<sbyte> quantizedDensity current source extraction buffer
+[Job C] Marching Cubes     → NativeArray<float3> verts, NativeArray<int> tris  (depends A+B)
+[Job D] Normal Generation  → NativeArray<float3> normals  (depends C)
+[Job E] Tangent Generation → MikkTSpace or fast cross-product approx  (depends D)
+[Job F] Mesh Upload        → Mesh.ApplyAndDisposeWritableMeshData (main thread, minimal cost)
+[Job G] Physics Bake       → Physics.BakeMesh(meshID, convex:false) async  (depends F)
          → on complete: chunk.bakeState = Complete; release interaction block
 
 ### 4.5 MX350 VRAM Budget per Active Chunk
@@ -214,8 +223,8 @@ Streaming     : beyond 256, swap to CPU-side NativeArray; re-upload on demand
 
 ### 5.1 LOD Distance Bands
 
-LOD0 : dist < 32m   → full Transvoxel, full normals, full collision
-LOD1 : 32-80m       → Transvoxel, cached normals, simplified collision (convex hull)
+LOD0 : dist < 32m   → full current MC pipeline, full normals, full collision
+LOD1 : 32-80m       → current MC pipeline, cached normals, simplified collision (convex hull)
 LOD2 : 80-150m      → Surface Nets, no normal recalc, no collision (static trigger only)
 LOD3 : >150m        → Impostor billboard / point cloud representation
                        skip SDF-normal recalc entirely, use last-baked normal atlas
@@ -406,7 +415,7 @@ SampleSeedNoise(worldVoxel: int3) → half:
 [FAIL-05] Infinite bake loop    → watchdog: if bakeTime > 5s, abort job, mark chunk CollisionFailed, log
 [FAIL-06] SDF discontinuity     → clamping in ReadSDF prevents NaN propagation; assert no NaN post-march
 [FAIL-07] Normal flip artifact  → dot(analyticalNormal, meshNormal) < 0 → negate; log mismatch frequency
-[FAIL-08] LOD crack at seam     → Transvoxel transition cells mandatory at all LOD boundaries (§5.2)
+[FAIL-08] LOD crack at seam     → transition strip/skirt mandatory at all LOD boundaries; Transvoxel transition cells are future migration target only
 
 ### 11.2 Debug Visualization Modes (Editor Only)
 
@@ -474,3 +483,14 @@ Total voxel overhead : < 12ms / frame sustained (leaves 21ms for rendering)
 [ ] All NativeContainers disposed in OnDestroy; verified via LeakDetection.Debug mode
 [ ] MortonEncodeSigned unit-tested for collisions across full expected world bounds
 [ ] Tier detection validated on MX350 hardware; MINIMUM tier confirmed 30fps in worst-case cave
+
+---
+
+## Engineering Data
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| Hot path | 0 B GC, no unbounded main-thread work | Profiler/GCMonitor/static scan |
+| MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
+| Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
+| Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |

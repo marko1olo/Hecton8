@@ -388,6 +388,50 @@ public sealed class PlayerController : MonoBehaviour, IUpdatable
 [RULE] Any detected cycle MUST be broken by introducing an `EventBus` message.
 [FORBID] Caching service references in field initializers or constructors.
 
+### RULE-09B - EventBus vs GlobalRegistry State Updates
+
+[RULE] `GlobalRegistry` is for stable service discovery and direct query of owned interfaces.
+[RULE] `EventBus` is for decoupled broadcasts, dirty-state notifications, lifecycle events, and cross-domain state changes.
+[RULE] Simple state updates crossing a domain boundary must use an existing event/signal contract or add a batched NativeQueue-backed signal if the update is broadcast-worthy.
+[RULE] Direct `GlobalRegistry.Get<T>()` polling is allowed only for explicit request/response queries where the caller needs immediate data from the owning service and the call is outside hot broadcast cadence.
+
+[FORBID] `GlobalRegistry.Get<T>()` for simple state updates such as "power changed", "temperature changed", "module entered", "entity damaged", "world rebased", "asset pressure changed", or "UI warning changed".
+[FORBID] Using service lookup as an event transport.
+[FORBID] Per-frame polling of another domain through `GlobalRegistry` when a dirty event can carry the change.
+[FORBID] Creating a new EventID for one private caller. Use direct owner query for private request/response; EventBus is for broadcasts.
+
+## Engineering Data
+
+| Communication Shape | Required Path | Rejected Path |
+|---|---|---|
+| One owner, one immediate query | `GlobalRegistry` typed interface | Event spam |
+| One owner, many listeners | NativeQueue EventBus signal | `GlobalRegistry.Get<T>()` polling |
+| Dirty state changed | batched event with old/new hash or flags | per-frame service lookup |
+| Lifecycle ready/shutdown | EventBus broadcast plus registry slot | hidden Awake dependency |
+| Cross-domain command | owner interface or command queue | direct concrete class reference |
+
+---
+
+### RULE-09C - Hot-Path Service Cache
+
+[RULE] The `GlobalRegistry.*` convenience properties follow the same hot-path law as `GlobalRegistry.Get<T>()`.
+[RULE] Any service read used by `Tick()`, `FixedTick()`, `LateFrameTick()`, Burst jobs, or methods called by those paths must be copied into an owner field during `OnEnable`, bootstrap dependency injection, or a dirty lifecycle signal.
+[RULE] If the service can change while gameplay is live, the owning service must publish a typed ready/changed/shutdown signal; consumers refresh the cached field from that signal, not by polling registry slots every frame.
+[RULE] A hot-path direct registry read is permitted only for an explicitly measured rare event path, such as a footstep, damage impulse, crash dump, or one-shot interaction, and the rationale must name the cadence and fallback.
+
+[FORBID] Calling `GlobalRegistry.Settings`, `GlobalRegistry.Fluid`, `GlobalRegistry.OceanKinematics`, `GlobalRegistry.ResourceDistribution`, or equivalent static service properties from per-frame player, physics, logistics, render, UI, or AI loops just because the property is cheap today.
+[FORBID] Hiding registry reads inside helper methods named `Resolve*`, `Refresh*`, `Prepare*`, or `Try*` when those helpers are called by `Tick()` or `FixedTick()`.
+[FORBID] Using a registry property as a silent live configuration bus. Use cached snapshot fields and dirty signals.
+
+## Engineering Data
+
+| Hot-Path Need | Required Shape | Rejected Shape |
+|---|---|---|
+| Stable service dependency | cached owner field | repeated `GlobalRegistry.*` read |
+| Live settings/config | dirty signal plus cached snapshot | per-frame settings registry poll |
+| Ocean/fluid/player environmental query | cached provider interface with null fallback | registry lookup in movement solver |
+| Rare one-shot event | direct lookup with cadence note | unbounded helper-path lookup |
+
 ---
 
 ## RULE-10 · Forbidden Patterns — Runtime Tick Violations

@@ -496,24 +496,43 @@ namespace Hecton8.Editor
                 return;
 
             string tickBody = ExtractMethodBody(spectrogram, "public void Tick(float deltaTime)");
-            string resolveCarrierFrequencyBody = ExtractMethodBody(spectrogram, "private float ResolveCarrierFrequencyHz(float frequency01)");
-            AssertContains(tickBody, "decoder.SubmitWaveMatch(carrierHz, phase01)", "Spectrogram Tick submits slider waves to decoder", report, ref failureCount);
-            AssertContains(tickBody, "float carrierHz = ResolveCarrierFrequencyHz(frequency01)", "Spectrogram Tick resolves sanitized carrier frequency", report, ref failureCount);
-            AssertContains(tickBody, "ApplyDecoderUnavailableState()", "Spectrogram clears stale visuals when decoder is unavailable", report, ref failureCount);
-            AssertContains(tickBody, "Sanitize01(_frequencySlider.value)", "Spectrogram sanitizes frequency slider value", report, ref failureCount);
-            AssertContains(tickBody, "Sanitize01(_phaseSlider.value)", "Spectrogram sanitizes phase slider value", report, ref failureCount);
-            AssertContains(resolveCarrierFrequencyBody, "math.isfinite(minCarrierFrequencyHz)", "Spectrogram rejects non-finite carrier minimum frequency", report, ref failureCount);
-            AssertContains(resolveCarrierFrequencyBody, "math.isfinite(maxCarrierFrequencyHz)", "Spectrogram rejects non-finite carrier maximum frequency", report, ref failureCount);
-            AssertContains(resolveCarrierFrequencyBody, "return math.lerp(safeMinFrequencyHz, safeMaxFrequencyHz, Sanitize01(frequency01))", "Spectrogram sanitizes normalized frequency before lerp", report, ref failureCount);
-            AssertContains(spectrogram, "private void ApplyDecoderUnavailableState()", "Spectrogram has decoder-unavailable stale-state clear path", report, ref failureCount);
+            string lateFrameBody = ExtractMethodBody(spectrogram, "public void LateFrameTick()");
+            string generateJobBody = ExtractMethodBody(spectrogram, "public void Execute(int index)");
+            string errorJobBody = ExtractMethodBody(spectrogram, "public void Execute()");
+            string commitBody = ExtractMethodBody(spectrogram, "private void CommitWaveResult(float deltaTime)");
+            AssertContains(spectrogram, "NativeArray<float> _targetWave", "Frequency tuning owns target wave NativeArray", report, ref failureCount);
+            AssertContains(spectrogram, "NativeArray<float> _playerWave", "Frequency tuning owns player wave NativeArray", report, ref failureCount);
+            AssertContains(spectrogram, "[BurstCompile(FloatMode = FloatMode.Fast", "Frequency tuning jobs use Burst fast math", report, ref failureCount);
+            AssertContains(spectrogram, "IJobParallelFor", "Frequency tuning wave generation is parallel", report, ref failureCount);
+            AssertContains(generateJobBody, "math.sin(x * TargetFrequency) * TargetAmplitude", "Target sine uses Burst math sine with amplitude", report, ref failureCount);
+            AssertContains(generateJobBody, "math.sin(x * PlayerFrequency) * PlayerAmplitude", "Player sine uses Burst math sine with amplitude", report, ref failureCount);
+            AssertContains(errorJobBody, "error += math.abs(TargetWave[i] - PlayerWave[i])", "Frequency tuning error sums math.abs differences", report, ref failureCount);
+            AssertContains(spectrogram, "GlobalRegistry.Input", "Frequency tuning reads cached player input state", report, ref failureCount);
+            AssertContains(tickBody, "DrainScannerToolSignals()", "Frequency tuning consumes scanner-active signal lane", report, ref failureCount);
+            AssertContains(spectrogram, "TryGetLatestScannerToolActiveSignal", "Frequency tuning has latest scanner-active fallback for late PDA panel activation", report, ref failureCount);
+            AssertContains(commitBody, "LockCurrentStage()", "Frequency tuning locks stages after continuous match", report, ref failureCount);
+            AssertContains(spectrogram, "GlobalSignals.Publish(new BlueprintUnlockedSignal", "Frequency tuning emits blueprint unlock signal", report, ref failureCount);
+            AssertContains(spectrogram, "Graphics.RenderMeshIndirect", "Frequency tuning renders via indirect PDA draw path", report, ref failureCount);
+            AssertContains(spectrogram, "FrequencyTuningWaveGpuSegment", "Frequency tuning uploads continuous tube segments rather than point beads", report, ref failureCount);
+            AssertContains(spectrogram, "_HectonFrequencyTuningSegments", "Frequency tuning binds the segment buffer to the PDA shader", report, ref failureCount);
+            AssertContains(spectrogram, "math.rsqrt", "Frequency tuning segment tangent setup avoids scalar sqrt", report, ref failureCount);
+            AssertContains(spectrogram, "GraphicsBufferUploadUtility.UploadNativeArray", "Frequency tuning uploads wave segments through graphics buffer utility", report, ref failureCount);
+            AssertContains(spectrogram, "ToolHapticsRuntime.EnqueueSinusoidalCommand", "Frequency tuning emits haptic feedback through fixed haptic queue", report, ref failureCount);
+            AssertContains(spectrogram, "PlayerSignalEvents.RaiseInteractionSignal", "Frequency tuning routes audio feedback through player signal lane", report, ref failureCount);
+            AssertContains(spectrogram, "_HectonFrequencyTuningError01", "Frequency tuning pushes visor-post error scalar", report, ref failureCount);
+            AssertContains(spectrogram, "LowPointCount = 32", "Frequency tuning low-tier math LOD uses 32 points", report, ref failureCount);
+            AssertContains(spectrogram, "TelemetryCapacity = 300", "Frequency tuning black box tracks 300 frames", report, ref failureCount);
             AssertContains(spectrogram, "private static float Sanitize01(float value)", "Spectrogram centralizes normalized scalar sanitization", report, ref failureCount);
-            AssertContains(spectrogram, "SetCharArray(buffer, 0, safeLength)", "Spectrogram labels use TMP SetCharArray", report, ref failureCount);
-            AssertContains(spectrogram, "TryFormat(new Span<char>", "Spectrogram numeric formatting uses Span TryFormat", report, ref failureCount);
-            AssertContains(spectrogram, "SetStaticLabel", "Spectrogram static labels route through char-buffer copy", report, ref failureCount);
+            AssertNotContains(spectrogram, "UnityEngine.UI", "Frequency tuning has no uGUI dependency", report, ref failureCount);
+            AssertNotContains(spectrogram, "LineRenderer", "Frequency tuning has no LineRenderer dependency", report, ref failureCount);
+            AssertNotContains(spectrogram, "Mathf.Abs", "Frequency tuning avoids Mathf.Abs in waveform math", report, ref failureCount);
             AssertNotContains(spectrogram, ".text =", "Spectrogram source does not assign TMP text strings", report, ref failureCount);
             AssertNotContains(spectrogram, "SetText(", "Spectrogram source does not call TMP SetText", report, ref failureCount);
+            AssertNotContains(spectrogram, "MinigameManager.Instance", "Frequency tuning does not depend on MinigameManager singleton", report, ref failureCount);
+            AssertNotContains(lateFrameBody, "Time.", "Frequency tuning late frame uses cached dispatcher-frame timing", report, ref failureCount);
+            AssertNotContains(lateFrameBody, ".Run(", "Frequency tuning late-frame job recovery does not run jobs synchronously", report, ref failureCount);
             AssertNotContains(tickBody, ".text =", "Spectrogram Tick does not assign TMP text strings", report, ref failureCount);
-            AssertNotContains(tickBody, "SetText(", "Spectrogram Tick does not call string SetText", report, ref failureCount);
+            AssertNotContains(tickBody, ".Complete(", "Spectrogram Tick does not complete jobs in the update lane", report, ref failureCount);
         }
 
         private static void RunPdaAtlasSignalAudit(string pdaAtlasSignalTab, StringBuilder report, ref int failureCount)

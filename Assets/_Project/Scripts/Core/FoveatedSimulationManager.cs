@@ -1,5 +1,9 @@
 using System;
+using System.IO;
+using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
@@ -33,7 +37,11 @@ namespace Hecton8.Core
         Transform SimulationTransform { get; }
         Transform VisualTransform { get; }
         AudioSource DopplerAudioSource { get; }
+        uint FoveatedEntityHash { get; }
+        ushort FoveatedEntityId { get; }
         void OnFoveatedCadenceResolved(FoveatedTickRate tickRate, float tickIntervalSeconds, float importanceScore, bool insideFrustum);
+        void OnFoveatedTierResolved(FoveatedSimulationTier tier, float distanceMeters, bool tier0Locked);
+        bool TryHandleFoveatedFrozenWrap(Vector3 cameraPosition, Vector3 cameraForward, float distanceMeters);
         int BuildDeferredRaycastCommands(RaycastCommand[] commands);
         void ConsumeDeferredRaycastHit(int commandIndex, in RaycastHit hit);
     }
@@ -54,58 +62,65 @@ namespace Hecton8.Core
     /// throttles opt-in targets, smooths low-frequency visual motion, and keeps
     /// audio/raycast side effects on an allocation-free path.
     /// </summary>
-    internal sealed class FoveatedSimulationManager : IFoveatedDispatcher, IOriginShiftListener
+    internal sealed class FoveatedSimulationManager : IFoveatedDispatcher, IFoveatedSimulationDirector, IOriginShiftListener
     {
         private const double SlowJobCompleteWarningMilliseconds = 100.0;
         private const string SlowJobCompleteWarningMessage = "[SystemDispatcher] JobHandle.Complete slow in foveated simulation swap window.";
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
         private struct ImportanceScoringJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float3> Positions;
+            public NativeArray<float3> EntityAups;
             public NativeArray<float> ImportanceScores;
             public NativeArray<byte> TickRateCodes;
             public NativeArray<byte> InsideFrustumFlags;
+            public NativeArray<byte> EntitySimTiers;
+            public NativeArray<float> DistancesMeters;
             public float3 CameraPosition;
             public float3 CameraForward;
             public float3 CameraUp;
+            public float ActiveDistanceMeters;
+            public float FrozenDistanceMeters;
+            public float FrustumForwardDotThreshold;
 
             public void Execute(int index)
             {
-                float3 toTarget = Positions[index] - CameraPosition;
+                float3 position = Positions[index];
+                EntityAups[index] = position;
+                float3 safeForward = math.normalizesafe(CameraForward, new float3(0f, 0f, 1f));
+                float3 toTarget = position - CameraPosition;
                 float distanceSq = math.lengthsq(toTarget);
                 float safeDistanceSq = math.max(distanceSq, MinimumDirectionLength);
                 float inverseDistance = math.rsqrt(safeDistanceSq);
-                float3 directionToTarget = math.select(CameraForward, toTarget * inverseDistance, distanceSq > MinimumDirectionLength);
+                float3 directionToTarget = math.select(safeForward, toTarget * inverseDistance, distanceSq > MinimumDirectionLength);
                 float distanceMeters = math.select(0.0f, distanceSq * inverseDistance, distanceSq > MinimumDirectionLength);
-                float forwardDot = math.clamp(math.dot(directionToTarget, CameraForward), -1.0f, 1.0f);
-                bool behindCamera = forwardDot <= 0.0f;
-                float frontHemisphereDot = math.saturate(forwardDot);
-                float distanceFactor = 1.0f / (1.0f + (distanceMeters * DistanceDecay));
-                float verticalDot = math.abs(math.dot(directionToTarget, CameraUp));
-                float verticalPenalty = math.select(1.0f, VerticalPenaltyScale, verticalDot > VerticalPenaltyDotThreshold);
-                float importanceScore = math.saturate(distanceFactor * frontHemisphereDot);
-                importanceScore *= verticalPenalty;
-                importanceScore = math.select(importanceScore, MinimumImportanceScore, behindCamera);
+                float forwardDot = math.clamp(math.dot(directionToTarget, safeForward), -1.0f, 1.0f);
+                bool insideFrustum = forwardDot >= FrustumForwardDotThreshold;
+                bool frozen = distanceMeters > FrozenDistanceMeters;
+                bool peripheral = !frozen && (!insideFrustum || distanceMeters >= ActiveDistanceMeters);
+                int tierCode = (int)FoveatedSimulationTier.Active;
+                tierCode = math.select(tierCode, (int)FoveatedSimulationTier.Peripheral, peripheral);
+                tierCode = math.select(tierCode, (int)FoveatedSimulationTier.Frozen, frozen);
 
-                bool rearOneHertz = behindCamera && distanceMeters > RearOneHertzDistanceMeters;
-                bool ecosystemOnlyCull = behindCamera && distanceMeters > EcosystemOnlyCullDistanceMeters;
-                int tickRateCode = (int)FoveatedTickRate.Rear5Hz;
-                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Far10Hz, importanceScore >= LowImportanceThreshold);
-                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Periphery20Hz, importanceScore >= MidImportanceThreshold);
-                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Focus30Hz, importanceScore >= FocusImportanceThreshold);
-                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Center60Hz, importanceScore >= HighImportanceThreshold);
-                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Rear1Hz, rearOneHertz);
-                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.CulledEcosystemOnly, ecosystemOnlyCull);
-                importanceScore = math.select(importanceScore, 0.0f, ecosystemOnlyCull);
+                float distanceFactor = 1.0f / (1.0f + (distanceMeters * DistanceDecay));
+                float importanceScore = math.select(1.0f, math.saturate(distanceFactor), peripheral);
+                importanceScore = math.select(importanceScore, 0.0f, frozen);
+                int tickRateCode = (int)FoveatedTickRate.Center60Hz;
+                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Rear1Hz, peripheral);
+                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.CulledEcosystemOnly, frozen);
 
                 ImportanceScores[index] = importanceScore;
                 TickRateCodes[index] = (byte)tickRateCode;
-                InsideFrustumFlags[index] = behindCamera ? (byte)0 : (byte)1;
+                InsideFrustumFlags[index] = insideFrustum ? (byte)1 : (byte)0;
+                EntitySimTiers[index] = (byte)tierCode;
+                DistancesMeters[index] = distanceMeters;
             }
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
         private struct VisualInterpolationJob : IJobParallelForTransform
         {
             [ReadOnly] public NativeArray<float3> FromPositions;
@@ -121,6 +136,23 @@ namespace Hecton8.Core
                 float smoothAlpha = alpha * alpha * (3.0f - (2.0f * alpha));
                 transform.position = math.lerp(FromPositions[index], ToPositions[index], smoothAlpha);
             }
+        }
+
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        private struct FoveatedSimulationTelemetryEntry
+        {
+            public int Frame;
+            public int TargetCount;
+            public int FrozenEntityCount;
+            public int Tier0Count;
+            public int Tier1Count;
+            public int Tier2Count;
+            public float3 CameraPosition;
+            public float3 CameraForward;
+            public uint Flags;
+            public uint StateHash;
+            public uint Reserved0;
+            public uint Reserved1;
         }
 
         private const int ImportanceScoreBatchSize = 32;
@@ -152,6 +184,17 @@ namespace Hecton8.Core
         private const float MinimumDeferredRaycastImportanceScore = 0.2f;
         private const float RearOneHertzDistanceMeters = 100.0f;
         private const float EcosystemOnlyCullDistanceMeters = 300.0f;
+        private const float DefaultActiveDistanceMeters = 100.0f;
+        private const float DefaultFrozenDistanceMeters = 300.0f;
+        private const float LowActiveDistanceMeters = 50.0f;
+        private const float LowFrozenDistanceMeters = 150.0f;
+        private const float FrozenWrapDistanceMeters = 600.0f;
+        private const float FrozenWrapForwardDistanceMeters = 200.0f;
+        private const float ImportanceEvaluationIntervalSeconds = 0.1f;
+        private const float FrustumForwardDotThreshold = 0.34202015f;
+        private const float Tier0CombatLockSeconds = 10.0f;
+        private const int TelemetryCapacity = 300;
+        private const uint TelemetryMagic = 0x46384C44u;
         private const float SoundSpeedWaterMetersPerSecond = 1480.0f;
         private const float MinimumPitch = 0.5f;
         private const float MaximumPitch = 2.0f;
@@ -163,8 +206,9 @@ namespace Hecton8.Core
         private const float RearVelocitySmoothingSharpness = 5.0f;
         private const float RearOneHertzVelocitySmoothingSharpness = 2.0f;
         private const float CulledEcosystemVelocitySmoothingSharpness = 1.0f;
-        private const long PersistentNativeBudgetBytes = 327680L;
+        private const long PersistentNativeBudgetBytes = 393216L;
         private const string MemoryBudgetOwnerName = "FoveatedSimulationManager";
+        private const string BlackBoxDumpFileName = "Dump_FOVEATED_SIMULATION_DIRECTOR.bin";
 
         // COLD ALLOC: IFoveatedSimulationTarget[512] — dispatcher-owned opt-in simulation targets — owner: FoveatedSimulationManager
         private readonly IFoveatedSimulationTarget[] _targets = new IFoveatedSimulationTarget[MaxTargets];

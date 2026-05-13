@@ -7,10 +7,12 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 
 ## Executive Summary
 
+2026-05-13 DOC_AUDIT R3 override: current static scan of `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs` finds `51` direct public interfaces. The May 11 `41`-interface inventory below is retained as historical named-owner evidence only; coverage ratios and empty-seam labels must be recomputed before use as current proof.
+
 | Metric | Count |
 |---|---:|
-| Direct public interfaces in `GlobalRegistryContracts.cs` | 41 |
-| Interfaces with at least one direct implementor found in the May 1 source scan | stale `30/31`; not valid for the current `41` contract count |
+| Direct public interfaces in `GlobalRegistryContracts.cs` | 51 |
+| Interfaces with at least one direct implementor found in the May 1 source scan | stale `30/31`; not valid for the current `51` contract count |
 | Confirmed empty extension seams in current pass | not recounted |
 | Confirmed shadow/conflict cases in current pass | not recounted |
 | Interfaces with only one narrow direct implementor | not recounted in this pass |
@@ -18,7 +20,7 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 Current interface debt is not proven "ghost contracts".
 Current debt is stale documentation, narrow single-owner surfaces, six source-present contract slots not represented in the May 1 owner inventory, and unresolved runtime verification of actual scene registration order.
 
-May 11 correction: this dashboard's detailed inventory below is not a full fresh `41`-interface coverage audit. It remains useful for named owners, but interface-count/coverage ratios must be recomputed from current source before being used as proof.
+May 13 correction: this dashboard's detailed inventory below is not a full fresh `51`-interface coverage audit. It remains useful for named owners, but interface-count/coverage ratios must be recomputed from current source before being used as proof.
 
 ## 2026-05-07 Contract Count Sync
 
@@ -28,27 +30,30 @@ Fresh source count command:
 (Select-String -LiteralPath 'Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs' -Pattern '^\s*public\s+interface\s+([A-Za-z0-9_]+)' | Measure-Object).Count
 ```
 
-Observed result: `41`.
+Observed result on 2026-05-13 R3: `51`.
 
 Current interface names:
 
 ```text
-ISystem, IUpdatable, ILateFrameTickable, IPostFixedTickable, IRenderable,
-IDamageReceiver, IDebrisDefinition, IInputService, IProfileService,
-IPDALogbookService, IPhysicsService, IAudioService, ISceneService,
-ISaveService, IUIService, IScannerInterferenceUiSink, IVRSomaticProvider,
-IARWaypointService,
-IPlayerRuntimeContext, IPlayerInventoryService, IModularEquipmentService,
-IPlayerSensoryService, IEnvironmentRuntimeContext, IWeatherService,
-IThermodynamicsService, ILogisticsService, IWorldGenService, IWorldSeedProvider,
+ISystem, IBabelLocalization, IUpdatable, ILateFrameTickable,
+ICameraJuiceSystem, IPostFixedTickable, IRenderable, IDamageReceiver,
+IDebrisDefinition, IGIRelaySystem, ISeismicDirector, IInputService,
+IProfileService, IPDALogbookService, IPhysicsService, IAudioService,
+IVocalWarningSystem, ISceneService, ISaveService, IUIService,
+IScannerInterferenceUiSink, IVRSomaticProvider, IARWaypointService,
+ISpatialTriggerSystem, IPlayerRuntimeContext, IPlayerInventoryService,
+IModularEquipmentService, IPlayerSensoryService,
+IEnvironmentRuntimeContext, IWeatherService, IThermodynamicsService,
+ILogisticsService, IHabitatDeconstructionSystem, IFluidPipeGraphService,
+IWorldGenService, IWorldSeedProvider, IProceduralSwayDirector,
 IEncounterDirectorService, IQuestSystem, IFaunaSim, IFluidSim,
-IModalWindowService, IRegistryEventListener, IGlobalRegistryHotSwapListener,
-IGlobalRegistryHotSwapRefListener, ITerrainProvider,
-IHectonOceanKinematicsService, IInteractionSignalService, IDebrisService,
-IEcosystemDirectorService
+IGasDynamicsSolver, IModalWindowService, IRegistryEventListener,
+IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener,
+ITerrainProvider, IHectonOceanKinematicsService,
+IInteractionSignalService, IDebrisService, IEcosystemDirectorService
 ```
 
-Coverage ratios remain `PENDING VERIFICATION` until the implementor scan is rerun against all `41` names and live registry occupancy is proven from Unity runtime evidence.
+Coverage ratios remain `PENDING VERIFICATION` until the implementor scan is rerun against all `51` names and live registry occupancy is proven from Unity runtime evidence.
 
 ## Inventory
 
@@ -90,7 +95,7 @@ Coverage ratios remain `PENDING VERIFICATION` until the implementor scan is reru
 
 | Older claim | Current verified state |
 |---|---|
-| `GlobalRegistryContracts.cs` had `19`, `27`, `31`, `33`, `34`, `36`, `37`, `38`, `39`, or `40` interfaces | False now. Current file has `41` direct public interfaces. |
+| `GlobalRegistryContracts.cs` had `19`, `27`, `31`, `33`, `34`, `36`, `37`, `38`, `39`, `40`, or `41` interfaces | False now. Current file has `51` direct public interfaces. |
 | `IAudioService` had no implementor | False. `SpatialAudioManager` implements `IAudioService` and registers itself. |
 | `IUIService` was fragmented across multiple implementors | False in current source scan. Direct implementor found: `SuitHUDV4CanvasOverlay`. |
 | `IRenderable` had a single owner | False. Current direct implementors include `HectonUnderwaterVisuals`, `HectonSubmarineOS`, and `MissionMarkerSystem`. |
@@ -101,7 +106,7 @@ Coverage ratios remain `PENDING VERIFICATION` until the implementor scan is reru
 ### No Deletion-Safe Ghost Interface In The Current Pass
 
 The previous dashboard is now partially outdated.
-The May 1 direct source scan found at least one implementor for `30/31` interfaces in `GlobalRegistryContracts.cs`; May 11 source count is `41` and coverage has not been fully recounted.
+The May 1 direct source scan found at least one implementor for `30/31` interfaces in `GlobalRegistryContracts.cs`; May 13 R3 source count is `51` and coverage has not been fully recounted.
 
 `IGlobalRegistryHotSwapListener` currently has no direct implementor in the source scan.
 It is not deletion-safe because `GlobalRegistry` exposes listener registration infrastructure around it.

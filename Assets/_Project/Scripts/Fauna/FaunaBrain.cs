@@ -4790,11 +4790,8 @@ namespace Hecton8.AI
                 // 3. JUICE (User REQ: Camera Shake + Physical Force)
                 if (_speciesProfile != null && _speciesProfile.attackShakeProfile != null)
                 {
-                    CameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
-                    if (cameraJuice != null)
-                    {
-                        cameraJuice.TriggerShake(_speciesProfile.attackShakeProfile);
-                    }
+                    float biteShakeSeverity = math.saturate(_speciesProfile.attackShakeProfile.MaxDisplacement * 2.5f);
+                    CameraJuiceSignals.PublishImpact(biteShakeSeverity, impactPoint, impactDir);
                 }
 
                 DispatchPredatorBiteImpulseToPlayer(target, impactPoint, impactDir);
@@ -4838,7 +4835,7 @@ namespace Hecton8.AI
             Vector3 localPoint = playerHealth.transform.InverseTransformPoint(impactPoint);
             float impulseMagnitude = ResolvePredatorBiteImpulseMagnitude();
             uint statusBits = IsApexPredator() ? CombatStatusBits.Stunned : 0u;
-            CombatDamageSignal signal = new CombatDamageSignal
+            Hecton8.Gameplay.CombatDamageSignal signal = new Hecton8.Gameplay.CombatDamageSignal
             {
                 TargetId = targetId,
                 SourceId = IsApexPredator() ? DamageSourceIds.FaunaLeviathanBite : DamageSourceIds.FaunaBite,

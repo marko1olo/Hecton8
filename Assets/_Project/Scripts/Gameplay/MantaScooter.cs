@@ -20,6 +20,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Audio;
     using Hecton8.Bootstrap;
     using Hecton8.Core;
+    using Hecton8.Core.Signals;
     using Hecton8.Input;
     using Hecton8.Inventory;
     using Hecton8.Items;
@@ -47,6 +48,8 @@ namespace Hecton8.Gameplay
         private const float MaxSpotConeRadians = 1.56206965f;
         private const float CosFourthCoefficient = 0.0416666679f;
         private const float HeadlightNoiseCellsPerSecond = 64f;
+        private const float HeadlightSignalMinIntensity = 0.0001f;
+        private const uint HeadlightSignalSourceSalt = 0x4D484C54u;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -1615,7 +1618,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            bool allowHeadlights = _isActive && !_isTransportBroken;
+            bool allowHeadlights = IsTransportActive;
             float stress01 = allowHeadlights ? ResolveHullStressMisfire01() : 0f;
             _headlightGlitchPhase += deltaTime * math.lerp(0.35f, headlightGlitchFrequency, stress01);
 
@@ -1657,6 +1660,7 @@ namespace Hecton8.Gameplay
             Shader.SetGlobalVectorArray(_HeadlightDirectionsWsId, _headlightDirectionsWs);
             Shader.SetGlobalVectorArray(_HeadlightColorsId, _headlightColors);
             Shader.SetGlobalVectorArray(_HeadlightConeDataId, _headlightConeData);
+            PublishHeadlightSignals(activeCount, allowHeadlights);
         }
 
         private void PublishVolumetricSiltGlobals(float deltaTime, bool allowHeadlights)
@@ -1831,6 +1835,90 @@ namespace Hecton8.Gameplay
             Shader.SetGlobalFloat(_ScooterBrakeCloudId, 0f);
             _lastPublishedVolumetricVelocity = Vector3.zero;
             _hasLastPublishedVolumetricVelocity = false;
+            PublishHeadlightClearSignals();
+        }
+
+        private void PublishHeadlightSignals(int activeCount, bool allowHeadlights)
+        {
+            if (_headlightPositionsWs == null ||
+                _headlightDirectionsWs == null ||
+                _headlightColors == null ||
+                _headlightConeData == null)
+            {
+                return;
+            }
+
+            uint sourceId = ResolveHeadlightSignalSourceId();
+            for (int payloadIndex = 0; payloadIndex < MaxHeadlights; payloadIndex++)
+            {
+                bool hasPayload = allowHeadlights && payloadIndex < activeCount;
+                if (!hasPayload)
+                {
+                    PublishHeadlightRemoveSignal(sourceId, payloadIndex, SubmarineLightsChangedSignalFlags.BrownoutSuppressed);
+                    continue;
+                }
+
+                Vector4 position = _headlightPositionsWs[payloadIndex];
+                Vector4 direction = _headlightDirectionsWs[payloadIndex];
+                Vector4 color = _headlightColors[payloadIndex];
+                Vector4 cone = _headlightConeData[payloadIndex];
+                float intensity = math.max(0f, color.w * math.max(1f, cone.y));
+                if (position.w <= 0.1f || intensity <= HeadlightSignalMinIntensity)
+                {
+                    PublishHeadlightRemoveSignal(sourceId, payloadIndex, SubmarineLightsChangedSignalFlags.BrownoutSuppressed);
+                    continue;
+                }
+
+                Vector3 positionWs = new Vector3(position.x, position.y, position.z);
+                float3 forward = NormalizeHeadlightSignalDirection(new float3(direction.x, direction.y, direction.z));
+                GlobalSignals.Publish(new SubmarineLightsChangedSignal
+                {
+                    PositionAup = Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(positionWs),
+                    Forward = forward,
+                    RangeMeters = math.max(0.1f, position.w),
+                    Intensity = intensity,
+                    SourceId = sourceId,
+                    Slot = (ushort)payloadIndex,
+                    Operation = SubmarineLightsChangedSignalOperations.Upsert,
+                    Flags = SubmarineLightsChangedSignalFlags.Powered,
+                    SpotOuterCos = math.clamp(cone.x, -1f, 1f)
+                });
+            }
+        }
+
+        private void PublishHeadlightClearSignals()
+        {
+            uint sourceId = ResolveHeadlightSignalSourceId();
+            for (int payloadIndex = 0; payloadIndex < MaxHeadlights; payloadIndex++)
+            {
+                PublishHeadlightRemoveSignal(sourceId, payloadIndex, SubmarineLightsChangedSignalFlags.BrownoutSuppressed);
+            }
+        }
+
+        private void PublishHeadlightRemoveSignal(uint sourceId, int payloadIndex, byte flags)
+        {
+            GlobalSignals.Publish(new SubmarineLightsChangedSignal
+            {
+                SourceId = sourceId,
+                Slot = (ushort)math.clamp(payloadIndex, 0, MaxHeadlights - 1),
+                Operation = SubmarineLightsChangedSignalOperations.Remove,
+                Flags = flags
+            });
+        }
+
+        private uint ResolveHeadlightSignalSourceId()
+        {
+            uint sourceId = unchecked((uint)GetInstanceID()) ^ HeadlightSignalSourceSalt;
+            return sourceId != 0u ? sourceId : HeadlightSignalSourceSalt;
+        }
+
+        private static float3 NormalizeHeadlightSignalDirection(float3 direction)
+        {
+            float lengthSq = math.lengthsq(direction);
+            if (!float.IsFinite(lengthSq) || lengthSq <= 0.000001f)
+                return new float3(0f, 0f, 1f);
+
+            return direction * math.rsqrt(lengthSq);
         }
 
         private void UpdateHUD()

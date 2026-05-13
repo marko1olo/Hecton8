@@ -210,7 +210,7 @@ namespace Hecton8.UI
                 targetText.enableAutoSizing = true;
                 targetText.fontSizeMin = Mathf.Max(1f, minFontSize * localeScale);
                 targetText.fontSizeMax = Mathf.Max(targetText.fontSizeMin, maxFontSize * localeScale);
-                targetText.overflowMode = overflowMode;
+                targetText.overflowMode = ResolveSafeOverflowMode(targetText, overflowMode);
                 targetText.textWrappingMode = wrappingMode;
                 if (enableRightToLeft)
                     ApplyRuntimeLocalizationLayout(targetText);
@@ -245,6 +245,13 @@ namespace Hecton8.UI
         private void InvalidateConfiguration()
         {
             _configurationDirty = true;
+        }
+
+        private static TextOverflowModes ResolveSafeOverflowMode(TMP_Text text, TextOverflowModes requestedMode)
+        {
+            return requestedMode == TextOverflowModes.Ellipsis
+                ? TextOverflowModes.Truncate
+                : requestedMode;
         }
 
         private void QueueConfigurationApply()

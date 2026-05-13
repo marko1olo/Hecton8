@@ -306,7 +306,9 @@ namespace Hecton8.Core
                 !BootstrapState.IsGameReady &&
                 slowTickDt <= 0f)
             {
-                slowTickDt = Time.unscaledDeltaTime;
+                slowTickDt = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+                if (slowTickDt <= 0f)
+                    slowTickDt = 0.0166667f;
             }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!_loggedFirstUpdateExecution && enableSlowTickProfiling)

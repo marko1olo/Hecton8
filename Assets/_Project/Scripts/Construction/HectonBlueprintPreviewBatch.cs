@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Memory.Layout;
 using Hecton8.World;
 using System.Runtime.InteropServices;
 using Unity.Burst;
@@ -72,6 +73,7 @@ namespace Hecton8.Construction
             }
         }
 
+        [BinaryBlittableSafe]
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
         public struct BlueprintPreviewInstance
         {

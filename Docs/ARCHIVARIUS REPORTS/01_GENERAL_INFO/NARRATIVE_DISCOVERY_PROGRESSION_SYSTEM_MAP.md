@@ -1,4 +1,4 @@
-﻿# HECTON-8 NARRATIVE / DISCOVERY / PROGRESSION SYSTEM MAP
+# HECTON-8 NARRATIVE / DISCOVERY / PROGRESSION SYSTEM MAP
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
@@ -24,7 +24,7 @@ The active docset already had fragments of this domain spread across:
 
 - `GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md`
 - `2026-04-30_SAVE_PARTICIPANT_LEDGER.md`
-- `EVENT_FLOW_MAP.md`
+- `../02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md`
 - PDA- and UI-focused docs
 
 What it still lacked was one dedicated authority page for the whole knowledge/progression spine:
@@ -472,13 +472,13 @@ If the task is narrative/progression-facing:
 
 1. `NARRATIVE_DISCOVERY_PROGRESSION_SYSTEM_MAP.md`
 2. `2026-04-30_SAVE_PARTICIPANT_LEDGER.md`
-3. `EVENT_FLOW_MAP.md`
+3. `../02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md`
 4. `UI_AUDIO_PRESENTATION_SYSTEM_MAP.md`
 
 If the task is Atlas-facing:
 
 1. `NARRATIVE_DISCOVERY_PROGRESSION_SYSTEM_MAP.md`
-2. `EVENT_FLOW_MAP.md`
+2. `../02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md`
 3. `UI_AUDIO_PRESENTATION_SYSTEM_MAP.md`
 
 If the task is PDA-knowledge-facing:

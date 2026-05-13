@@ -1,4 +1,4 @@
-﻿# ORGANIC_ENTROPY_MATH
+# ORGANIC_ENTROPY_MATH
 Date: 2026-05-07
 
 Status: PENDING VERIFICATION
@@ -9,7 +9,7 @@ Verification: PENDING VERIFICATION
 - Current data boundary: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
 - Current manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
 - Current visual-realistic-fake doctrine: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
-- Current compile-only evidence: `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, `CS_WRITES_AFTER_END=0`.
+- May 13 DOC_AUDIT override: the cited May 11 compile artifact is absent from the current filesystem; treat the May 11 compile-success line as stale report text until restored or replaced. Runtime, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 ## Historical 2026-05-04 Boundary

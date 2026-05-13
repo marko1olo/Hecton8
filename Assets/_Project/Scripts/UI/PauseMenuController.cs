@@ -1,6 +1,7 @@
 using System;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Input;
 using Hecton8.Optimization;
 using Hecton8.SaveSystem;
@@ -21,7 +22,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Pause Menu Controller")]
-    public sealed class PauseMenuController : MonoBehaviour, ITickable, IUpdatable, ISaveEventListener, ILocalizationLanguageChangedListener
+    public sealed class PauseMenuController : MonoBehaviour, ITickable, IUnscaledFastTickable, IUpdatable, ISaveEventListener, ILocalizationLanguageChangedListener
     {
         internal static PauseMenuController ActiveRuntimeInstance { get; private set; }
         private const string PauseMenuRootName = "PauseMenu_Root";
@@ -44,6 +45,7 @@ namespace Hecton8.UI
         private static readonly Color ButtonHover = new Color(0.12f, 0.24f, 0.28f, 0.94f);
         private static readonly Color Rule = new Color(0.46f, 0.98f, 0.94f, 0.18f);
         private static readonly Action<AsyncOperation> _onMainMenuCleanupCompleted = HandleMainMenuCleanupCompleted;
+        private const uint PauseMenuSignalSourceHash = 0x50415553u; // PAUS
 
         [Header("References")]
         [SerializeField] private PlayerPDA playerPDA;
@@ -69,7 +71,8 @@ namespace Hecton8.UI
         private bool _cancelRequested;
         private bool _hasSaveStatusText;
         private PauseSection _activeSection;
-        private float _cachedTimeScale = 1f;
+        private float _cachedTimeDilationScalar = 1f;
+        private uint _pauseSignalSequence;
         private InputManager _inputManager;
 
         private RectTransform _root;
@@ -112,6 +115,32 @@ namespace Hecton8.UI
         // CACHED STRINGS (zero-GC)
         // ══════════════════════════════════════════════════════════
 
+        private void PublishPauseState(bool paused, float restoreScalar = 0f)
+        {
+            _pauseSignalSequence++;
+            if (_pauseSignalSequence == 0u)
+                _pauseSignalSequence = 1u;
+
+            SimulationPauseSignal signal = new SimulationPauseSignal
+            {
+                SourceHash = PauseMenuSignalSourceHash,
+                Frame = unchecked((uint)Time.frameCount),
+                Sequence = _pauseSignalSequence,
+                Paused = paused ? (byte)1 : (byte)0,
+                Flags = 0,
+                RestoreScalar = restoreScalar
+            };
+            GlobalSignals.Publish(in signal);
+
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            if (dispatcher != null)
+            {
+                dispatcher.RequestSimulationPause(paused, PauseMenuSignalSourceHash);
+                if (!paused && restoreScalar > 0f)
+                    dispatcher.RequestTimeDilation(restoreScalar, PauseMenuSignalSourceHash);
+            }
+        }
+
         private static readonly string _cachedWriting = "WRITING ";
         private static readonly string _cachedWritten = " WRITTEN.";
         private static readonly string _cachedFailed = " FAILED. ";
@@ -153,8 +182,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUnscaledFastTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -162,7 +190,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterUnscaledFastTickable(this, PriorityLayer.UI);
             _registered = false;
         }
 
@@ -279,6 +307,11 @@ namespace Hecton8.UI
             }
         }
 
+        public void UnscaledFastTick(float unscaledDeltaTime)
+        {
+            Tick(unscaledDeltaTime);
+        }
+
         public void OnSaveEvent(in SaveEventPayload payload)
         {
             switch (payload.Type)
@@ -327,8 +360,11 @@ namespace Hecton8.UI
 
             if (pauseTimeScale)
             {
-                _cachedTimeScale = Time.timeScale;
-                Time.timeScale = 0f;
+                ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+                _cachedTimeDilationScalar = dispatcher != null
+                    ? dispatcher.TimeDilationScalar
+                    : 1f;
+                PublishPauseState(true);
             }
 
             // TASK 33: Ensure correct input mode restoration
@@ -416,7 +452,10 @@ namespace Hecton8.UI
             }
 
             if (pauseTimeScale)
-                Time.timeScale = math.abs(Time.timeScale) <= 0.000001f ? _cachedTimeScale : Time.timeScale;
+            {
+                float restoreScalar = math.max(0.0001f, _cachedTimeDilationScalar);
+                PublishPauseState(false, restoreScalar);
+            }
 
             if (restorePlayerInput && GlobalRegistry.Input.IsInitialized)
                 GlobalRegistry.Input.SwitchToPlayerInput();
@@ -1005,7 +1044,9 @@ namespace Hecton8.UI
             EnsureBuilt();
 
             if (pauseTimeScale)
-                Time.timeScale = 1f;
+            {
+                PublishPauseState(false, 1f);
+            }
 
             _exitToMainMenuInFlight = true;
 
@@ -1064,7 +1105,7 @@ namespace Hecton8.UI
             UnregisterMainMenuCleanup();
 
             if (pauseTimeScale)
-                Time.timeScale = 0f;
+                PublishPauseState(true);
 
             if (_canvasGroup != null)
             {
@@ -1168,7 +1209,9 @@ namespace Hecton8.UI
             // No additional save needed here
 
             if (pauseTimeScale)
-                Time.timeScale = 1f;
+            {
+                PublishPauseState(false, 1f);
+            }
 
 #if UNITY_EDITOR
             Hecton8.Dev.EditorPlayModeDiagnostics.RequestStopPlayMode(

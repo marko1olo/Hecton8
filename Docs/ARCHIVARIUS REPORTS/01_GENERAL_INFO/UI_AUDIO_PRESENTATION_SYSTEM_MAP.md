@@ -1,4 +1,4 @@
-﻿# HECTON-8 UI / AUDIO / PRESENTATION SYSTEM MAP
+# HECTON-8 UI / AUDIO / PRESENTATION SYSTEM MAP
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
@@ -52,9 +52,9 @@ It does not prove:
 
 Use this file together with:
 
-- `INTERFACE_HEALTH_DASHBOARD.md` for service-contract truth
+- `../02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md` for service-contract truth
 - `2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md` for authored prefab anchors
-- `EVENT_FLOW_MAP.md` for queue-backed versus direct bus behavior
+- `../02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md` for queue-backed versus direct bus behavior
 - `AUDIO_ROUTING_AUDIT.md` for older mixer-routing debt claims that still need reread
 
 ## 1. Top-Level Ownership Map
@@ -305,21 +305,21 @@ Current conclusion:
 If the task is UI-facing:
 
 1. `UI_AUDIO_PRESENTATION_SYSTEM_MAP.md`
-2. `INTERFACE_HEALTH_DASHBOARD.md`
+2. `../02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md`
 3. `2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md`
-4. `EVENT_FLOW_MAP.md`
+4. `../02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md`
 
 If the task is audio-facing:
 
 1. `UI_AUDIO_PRESENTATION_SYSTEM_MAP.md`
 2. `AUDIO_ROUTING_AUDIT.md`
-3. `INTERFACE_HEALTH_DASHBOARD.md`
+3. `../02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md`
 
 If the task is visor/PDA-facing:
 
 1. `UI_AUDIO_PRESENTATION_SYSTEM_MAP.md`
 2. `PLAYER_GAMEPLAY_CORE_MAP.md`
-3. `EVENT_FLOW_MAP.md`
+3. `../02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md`
 
 ## Regression Model
 

@@ -1,0 +1,21 @@
+{
+    "name": "Hecton8.QA.Editor",
+    "rootNamespace": "Hecton8.QA.Editor",
+    "references": [
+        "Hecton8.QA",
+        "Hecton8.Core",
+        "Unity.Mathematics",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

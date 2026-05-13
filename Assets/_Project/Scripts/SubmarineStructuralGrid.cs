@@ -29,11 +29,17 @@ namespace Hecton8.Physics
         /// <summary>Number of 64-bit words in the published hull breach mask.</summary>
         int BreachMaskWordCount { get; }
 
+        /// <summary>Current active local-space breach count available for visual repair coupling.</summary>
+        int ActiveBreachCount { get; }
+
         /// <summary>Returns one published 64-bit word from the hull breach mask. Invalid indices return zero.</summary>
         ulong GetHullBreachMaskWord(int wordIndex);
 
         /// <summary>Returns the published breach area in square meters for a compartment. Invalid indices return zero.</summary>
         float GetCompartmentBreachAreaSquareMeters(int compartmentIndex);
+
+        /// <summary>Returns one active local-space breach as xyz position and w severity. Invalid indices return false.</summary>
+        bool TryGetActiveBreach(int index, out Vector4 localPointSeverity);
     }
 
     /// <summary>
@@ -566,6 +572,11 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public int BreachMaskWordCount => _hullBreachMaskFront.IsCreated ? _hullBreachMaskFront.Length : 0;
 
+        /// <inheritdoc />
+        public int ActiveBreachCount => _nativeStateReady && _breaches.IsCreated
+            ? math.min(_activeBreachCount, _breaches.Length)
+            : 0;
+
         internal float FatiguePeakNormalized => _fatiguePeakNormalized;
         internal float RecentImpactSeverityNormalized => _recentImpactSeverityNormalized;
 
@@ -750,7 +761,7 @@ namespace Hecton8.Physics
 
             QueueImpactLocal(localPoint, impactSpeed, integrityDelta);
             QueueHullImpactDecalLocal(localPoint, localNormal, impactSpeed, severity01);
-            TriggerHullImpactCameraShake(severity01);
+            TriggerHullImpactCameraShake(severity01, contact.point, contact.normal);
         }
 
         /// <summary>
@@ -804,7 +815,7 @@ namespace Hecton8.Physics
             float severity = math.saturate(severity01);
             Vector3 normal = ResolveSafeDirection(outwardNormal, cachedTransform.up);
             SpawnHullImpactScratchDecal(worldPoint, normal, impactSpeed, severity);
-            TriggerHullImpactCameraShake(severity);
+            TriggerHullImpactCameraShake(severity, worldPoint, normal);
         }
 
         internal static float DebugResolveHullImpactDentDecalSize(
@@ -880,13 +891,9 @@ namespace Hecton8.Physics
             pool.Despawn(projector, math.max(0.1f, dentDecalLifetimeSeconds));
         }
 
-        private static void TriggerHullImpactCameraShake(float severity01)
+        private static void TriggerHullImpactCameraShake(float severity01, Vector3 worldPoint, Vector3 worldNormal)
         {
-            CameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
-            if (cameraJuice == null)
-                return;
-
-            cameraJuice.TriggerSubmarineImpactShake(severity01);
+            CameraJuiceSignals.PublishImpact(severity01, worldPoint, -worldNormal);
         }
 
         private void EnsureHullImpactSparkParticles()
@@ -1015,6 +1022,21 @@ namespace Hecton8.Physics
             return _compartmentBreachAreasFront.IsCreated && (uint)compartmentIndex < (uint)_compartmentBreachAreasFront.Length
                 ? _compartmentBreachAreasFront[compartmentIndex]
                 : 0f;
+        }
+
+        /// <inheritdoc />
+        public bool TryGetActiveBreach(int index, out Vector4 localPointSeverity)
+        {
+            localPointSeverity = default;
+            if (!_nativeStateReady || !_breaches.IsCreated || (uint)index >= (uint)ActiveBreachCount)
+                return false;
+
+            float4 breach = _breaches[index];
+            if (breach.w <= 0f || !math.all(math.isfinite(breach)))
+                return false;
+
+            localPointSeverity = new Vector4(breach.x, breach.y, breach.z, breach.w);
+            return true;
         }
 
         /// <inheritdoc />
@@ -1366,12 +1388,12 @@ namespace Hecton8.Physics
             Rigidbody hullBody = ResolveHullRigidbody();
             VocalWarningSignal warning = new VocalWarningSignal
             {
-                WarningHash = CriticalBreachWarningHash,
+                WarningHash = VocalWarningHashes.HullBreach,
                 SourceId = hullBody != null ? unchecked((uint)EntityId.ToULong(hullBody.GetEntityId())) : 0u,
                 Severity01 = math.saturate(severity01),
                 CooldownSeconds = CriticalBreachWarningCadenceSeconds,
-                Priority = 3,
-                Flags = 0
+                Priority = (byte)VocalWarningId.HullBreach,
+                Flags = VocalWarningSignalFlags.HabitatIntegrityCompromised
             };
             GlobalSignals.Publish(in warning);
         }

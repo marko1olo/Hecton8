@@ -32,6 +32,13 @@ struct HeadlessDroneState
     float4 Rotation;
     float4 HomeRotation;
     float4 DockStartRotation;
+    float DockingPathLengthMeters;
+    uint DockingRequestId;
+    uint PackedDockingFlags;
+    float3 DockControlP0;
+    float3 DockControlP1;
+    float3 DockControlP2;
+    float3 DockControlP3;
 };
 
 struct DroneRenderInstance

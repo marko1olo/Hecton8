@@ -63,7 +63,6 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using Unity.Mathematics;
-using VLB;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -210,9 +209,7 @@ namespace Hecton8.Environment
         [SerializeField] private HectonMarineSnowRenderer underwaterMarineSnow;
         [Tooltip("Burst-only exhale bubble system parented under the runtime main camera.")]
         [SerializeField] private ParticleSystem underwaterExhaleBubbles;
-        [Tooltip("Optional shallow-water god ray beam parented under the runtime main camera.")]
-        [SerializeField] private VolumetricLightBeamHD shallowSunBeam;
-        [Tooltip("Attached light used only to drive the VLB beam. Keep cullingMask = 0 to avoid lighting the world.")]
+        [Tooltip("Attached light used only as a screen-space shaft source. Keep cullingMask = 0 to avoid lighting the world.")]
         [SerializeField] private Light shallowSunBeamLight;
 
         [Header("Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â SARGASSUM CANOPY Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â")]
@@ -713,6 +710,10 @@ namespace Hecton8.Environment
             Shader.PropertyToID("_HectonFlashlightConeData");
         private static readonly int _HectonFlashlightActiveId =
             Shader.PropertyToID("_HectonFlashlightActive");
+        private static readonly int _HectonWaterSurfaceEmissionId =
+            Shader.PropertyToID("_HectonWaterSurfaceEmission");
+        private static readonly int _HectonUnderwaterSurfaceColorId =
+            Shader.PropertyToID("_HectonUnderwaterSurfaceColor");
         private static readonly Action<AsyncGPUReadbackRequest> s_HudFogLuminanceReadbackCompleted =
             HandleHudFogLuminanceReadbackCompleted;
         private static readonly int _ID_SunSize =
@@ -779,6 +780,7 @@ namespace Hecton8.Environment
         private const float SurfaceSkyDaylightBlueBias = 0.10f;
         private const float CrestSkyDirectionality = 0.78f;
         private const int BiomeFogSourceCapacity = HectonBiomeVisualFamilyUtility.VisualFamilyCount;
+        private const float GIRelaySurfaceEmissionEpsilon = 0.0005f;
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  RUNTIME STATE
@@ -863,6 +865,8 @@ namespace Hecton8.Environment
         private float _surfaceWeatherFogDensity;
         private Color _surfaceWeatherAmbientColor;
         private float _surfaceWeatherSunMultiplier = 1f;
+        private Color _giRelaySurfaceEmissionColor;
+        private bool _giRelaySurfaceEmissionActive;
 
         private bool _registeredRenderable;
         private bool _registeredTick;
@@ -2287,6 +2291,73 @@ namespace Hecton8.Environment
         //  FOG
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
+        public void ApplyGIRelaySurfaceEmission(Color surfaceEmission)
+        {
+            if (!IsFiniteColor(surfaceEmission))
+                return;
+
+            surfaceEmission.a = 1f;
+            Shader.SetGlobalColor(_HectonWaterSurfaceEmissionId, surfaceEmission);
+            Shader.SetGlobalColor(_HectonUnderwaterSurfaceColorId, surfaceEmission);
+
+            bool surfaceEmissionChanged = !_giRelaySurfaceEmissionActive ||
+                HasColorDelta(_giRelaySurfaceEmissionColor, surfaceEmission);
+            if (surfaceEmissionChanged)
+            {
+                _giRelaySurfaceEmissionColor = surfaceEmission;
+                _giRelaySurfaceEmissionActive = true;
+                ApplyCrestMaterial();
+                return;
+            }
+
+            ApplyGIRelaySurfaceEmissionToMaterial(oceanUnderwaterMaterial, surfaceEmission);
+            Material oceanMaterial = ResolveOceanMaterial();
+            if (oceanMaterial != null && !ReferenceEquals(oceanMaterial, oceanUnderwaterMaterial))
+                ApplyGIRelaySurfaceEmissionToMaterial(oceanMaterial, surfaceEmission);
+        }
+
+        private static bool IsGIRelayAmbientAuthorityActive()
+        {
+            IGIRelaySystem giRelay = GlobalRegistry.GIRelay;
+            return giRelay != null && giRelay.IsAmbientProbeAuthorityActive;
+        }
+
+        private static bool IsFiniteColor(Color color)
+        {
+            return math.isfinite(color.r) &&
+                   math.isfinite(color.g) &&
+                   math.isfinite(color.b) &&
+                   math.isfinite(color.a);
+        }
+
+        private static bool HasColorDelta(Color lhs, Color rhs)
+        {
+            float dr = lhs.r - rhs.r;
+            float dg = lhs.g - rhs.g;
+            float db = lhs.b - rhs.b;
+            return (dr * dr) + (dg * dg) + (db * db) > GIRelaySurfaceEmissionEpsilon;
+        }
+
+        private static void ApplyGIRelaySurfaceEmissionToMaterial(Material targetMaterial, Color surfaceEmission)
+        {
+            if (targetMaterial == null)
+                return;
+
+            Color shallow = MaxColorRgb(
+                ReadMaterialColorOrDefault(targetMaterial, _ID_SubSurfaceShallowCol, surfaceEmission),
+                surfaceEmission);
+            Color diffuseGrazing = MaxColorRgb(
+                ReadMaterialColorOrDefault(targetMaterial, _ID_DiffuseGrazing, surfaceEmission),
+                ScaleColorRgb(surfaceEmission, 0.82f));
+            Color subsurface = MaxColorRgb(
+                ReadMaterialColorOrDefault(targetMaterial, _ID_SubSurfaceColour, surfaceEmission),
+                ScaleColorRgb(surfaceEmission, 0.9f));
+
+            SetMaterialColorIfPresent(targetMaterial, _ID_DiffuseGrazing, diffuseGrazing);
+            SetMaterialColorIfPresent(targetMaterial, _ID_SubSurfaceColour, subsurface);
+            SetMaterialColorIfPresent(targetMaterial, _ID_SubSurfaceShallowCol, shallow);
+        }
+
         private Color ResolveSurfaceFogColor()
         {
             if (HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState state))
@@ -2397,6 +2468,9 @@ namespace Hecton8.Environment
         {
             if (RenderSettings.fog)
                 RenderSettings.fogDensity = ResolveReadableSurfaceFogDensity(RenderSettings.fogDensity);
+
+            if (IsGIRelayAmbientAuthorityActive())
+                return;
 
             if (RenderSettings.ambientMode == AmbientMode.Trilight)
             {
@@ -2553,6 +2627,9 @@ namespace Hecton8.Environment
             ambient.g = math.max(effectiveAmbient.g, MIN_AMBIENT.g);
             ambient.b = math.max(effectiveAmbient.b, MIN_AMBIENT.b);
             ambient.a = 1f;
+
+            if (IsGIRelayAmbientAuthorityActive())
+                return;
 
             if (HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState surfaceState) &&
                 surfaceState.IsValid)
@@ -3122,6 +3199,7 @@ namespace Hecton8.Environment
         private void ApplySurfaceDefaults()
         {
             bool hasSurfaceAtmosphereState = HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState surfaceState);
+            bool giRelayAmbientAuthority = IsGIRelayAmbientAuthorityActive();
 
             // Ã¢â€â‚¬Ã¢â€â‚¬ Sun intensity: base for CelestialEngine to multiply Ã¢â€â‚¬Ã¢â€â‚¬
             if (sunLight != null)
@@ -3148,11 +3226,14 @@ namespace Hecton8.Environment
                 RenderSettings.fogMode = FogMode.ExponentialSquared;
                 RenderSettings.fogColor = surfaceState.FogColor;
                 RenderSettings.fogDensity = ResolveReadableSurfaceFogDensity(surfaceState.FogDensity);
-                RenderSettings.ambientMode = AmbientMode.Trilight;
-                RenderSettings.ambientSkyColor = ResolveReadableSurfaceAmbientColor(surfaceState.AmbientSkyColor, SurfaceReadableSkyAmbientFloor);
-                RenderSettings.ambientEquatorColor = ResolveReadableSurfaceAmbientColor(surfaceState.AmbientEquatorColor, SurfaceReadableEquatorAmbientFloor);
-                RenderSettings.ambientGroundColor = ResolveReadableSurfaceAmbientColor(surfaceState.AmbientGroundColor, SurfaceReadableGroundAmbientFloor);
-                RenderSettings.ambientIntensity = ResolveReadableSurfaceAmbientIntensity(surfaceState.AmbientIntensity);
+                if (!giRelayAmbientAuthority)
+                {
+                    RenderSettings.ambientMode = AmbientMode.Trilight;
+                    RenderSettings.ambientSkyColor = ResolveReadableSurfaceAmbientColor(surfaceState.AmbientSkyColor, SurfaceReadableSkyAmbientFloor);
+                    RenderSettings.ambientEquatorColor = ResolveReadableSurfaceAmbientColor(surfaceState.AmbientEquatorColor, SurfaceReadableEquatorAmbientFloor);
+                    RenderSettings.ambientGroundColor = ResolveReadableSurfaceAmbientColor(surfaceState.AmbientGroundColor, SurfaceReadableGroundAmbientFloor);
+                    RenderSettings.ambientIntensity = ResolveReadableSurfaceAmbientIntensity(surfaceState.AmbientIntensity);
+                }
             }
             else if (enableSurfaceFog)
             {
@@ -3160,14 +3241,20 @@ namespace Hecton8.Environment
                 RenderSettings.fogMode    = FogMode.ExponentialSquared;
                 RenderSettings.fogColor   = ResolveSurfaceFogColor();
                 RenderSettings.fogDensity = ResolveReadableSurfaceFogDensity(ResolveSurfaceFogDensity());
-                RenderSettings.ambientMode  = AmbientMode.Flat;
-                RenderSettings.ambientLight = ResolveReadableSurfaceAmbientColor(ResolveSurfaceAmbientColor(), SurfaceReadableSkyAmbientFloor);
+                if (!giRelayAmbientAuthority)
+                {
+                    RenderSettings.ambientMode  = AmbientMode.Flat;
+                    RenderSettings.ambientLight = ResolveReadableSurfaceAmbientColor(ResolveSurfaceAmbientColor(), SurfaceReadableSkyAmbientFloor);
+                }
             }
             else
             {
                 RenderSettings.fog = false;
-                RenderSettings.ambientMode  = AmbientMode.Flat;
-                RenderSettings.ambientLight = ResolveReadableSurfaceAmbientColor(ResolveSurfaceAmbientColor(), SurfaceReadableSkyAmbientFloor);
+                if (!giRelayAmbientAuthority)
+                {
+                    RenderSettings.ambientMode  = AmbientMode.Flat;
+                    RenderSettings.ambientLight = ResolveReadableSurfaceAmbientColor(ResolveSurfaceAmbientColor(), SurfaceReadableSkyAmbientFloor);
+                }
             }
 
             ApplyRuntimeMainCameraClearFlags(CameraClearFlags.Skybox);
@@ -3837,6 +3924,9 @@ namespace Hecton8.Environment
                 subSurfaceSunIntensity,
                 subSurfaceBaseIntensity,
                 subSurfaceSunFalloff);
+
+            if (_giRelaySurfaceEmissionActive)
+                ApplyGIRelaySurfaceEmissionToMaterial(targetMaterial, _giRelaySurfaceEmissionColor);
         }
 
         private static void ApplyCrestUnderwaterGlobals(
@@ -4544,7 +4634,7 @@ namespace Hecton8.Environment
             if (underwaterExhaleBubbles == null)
                 ResolveUnderwaterExhaleBubbles();
 
-            if (shallowSunBeam == null || shallowSunBeamLight == null || _shallowSunBeamTransform == null)
+            if (shallowSunBeamLight == null || _shallowSunBeamTransform == null)
                 ResolveShallowSunBeam();
 
             if (!IsCameraReferenceValid(_spaceCamera))
@@ -4960,8 +5050,7 @@ namespace Hecton8.Environment
 
         private void ResolveShallowSunBeam()
         {
-            if (shallowSunBeam != null &&
-                shallowSunBeamLight != null &&
+            if (shallowSunBeamLight != null &&
                 _shallowSunBeamTransform != null)
             {
                 return;
@@ -4979,8 +5068,6 @@ namespace Hecton8.Environment
 
             _shallowSunBeamTransform = beamTransform;
             _shallowSunBeamBaseLocalPosition = beamTransform.localPosition;
-            if (shallowSunBeam == null)
-                beamTransform.TryGetComponent(out shallowSunBeam);
             if (shallowSunBeamLight == null)
                 beamTransform.TryGetComponent(out shallowSunBeamLight);
         }
@@ -5946,10 +6033,10 @@ namespace Hecton8.Environment
 
         private void UpdateShallowSunBeam(float depth, float lightFactor, bool isUnderwater, Vector3 canopyAnchorWS, float canopyWindow01, float canopyOcclusion01)
         {
-            if (shallowSunBeam == null || shallowSunBeamLight == null || _shallowSunBeamTransform == null)
+            if (shallowSunBeamLight == null || _shallowSunBeamTransform == null)
                 ResolveShallowSunBeam();
 
-            if (shallowSunBeam == null || shallowSunBeamLight == null || _shallowSunBeamTransform == null)
+            if (shallowSunBeamLight == null || _shallowSunBeamTransform == null)
                 return;
 
             float targetIntensity = 0f;

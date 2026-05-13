@@ -83,6 +83,11 @@ namespace Hecton8.Optimization
         /// </summary>
         public static double RunBiosPhysicsBenchmarkMillisecondsPerStep()
         {
+#if UNITY_EDITOR
+            if (Application.isPlaying)
+                return 0.0d;
+#endif
+
             Scene scene = SceneManager.CreateScene(
                 SceneName,
                 new CreateSceneParameters(LocalPhysicsMode.Physics3D));
@@ -157,8 +162,21 @@ namespace Hecton8.Optimization
                 if (floor != null)
                     DestroyBenchmarkObject(floor);
 
-                SceneManager.UnloadSceneAsync(scene);
+                UnloadBenchmarkScene(scene);
             }
+        }
+
+        private static void UnloadBenchmarkScene(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+                return;
+
+#if UNITY_EDITOR
+            UnityEditor.SceneManagement.EditorSceneManager.CloseScene(scene, true);
+#else
+            if (SceneManager.sceneCount > 1)
+                SceneManager.UnloadSceneAsync(scene);
+#endif
         }
 
         /// <summary>

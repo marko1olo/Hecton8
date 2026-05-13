@@ -352,3 +352,14 @@ FORBID_007: Lerp extrapolation beyond EXTRAP_MAX_TICKS — freeze + alarm (§6)
 FORBID_008: Managed alloc inside Burst Job — NativeArray only (§8)
 FORBID_009: raw tick comparison (>) across overflow boundary — use modular delta
 FORBID_010: sending DeltaPacket when StateBitmask == 0 — skip transmission
+
+---
+
+## Engineering Data
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| Hot path | 0 B GC, no unbounded main-thread work | Profiler/GCMonitor/static scan |
+| MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
+| Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
+| Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |

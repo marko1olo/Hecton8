@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Logistics;
 using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.World;
@@ -347,6 +349,7 @@ namespace Hecton8.Gameplay
     public sealed class SubmarineElectrolysisModule : MonoBehaviour, ISlowTickable, IPowerComponent
     {
         private const float SlowTickDeltaTime = 0.5f;
+        private const int InitialElectrolysisCapacity = 8;
 
         [Header("References")]
         [SerializeField] private SubmarineAtmosphereSystem atmosphereSystem;
@@ -376,6 +379,10 @@ namespace Hecton8.Gameplay
         [Tooltip("Direct room-temperature rise applied each SlowTick while electrolysis is active.")]
         [SerializeField, Min(0f)] private float temperatureRisePerSlowTickCelsius = 10f;
 
+        [Header("Pipe Graph")]
+        [SerializeField, Min(0.001f)] private float oxygenPipeCapacityUnits = 25f;
+        [SerializeField, Min(0.1f)] private float oxygenPipeMaxPressureKPa = 120f;
+
         [Header("Consequence")]
         [Tooltip("Threat radius applied to the local ocean threat grid when electrolysis boils hard.")]
         [SerializeField, Min(1f)] private float threatRadiusMeters = 55f;
@@ -397,11 +404,18 @@ namespace Hecton8.Gameplay
         [SerializeField] private float _debugLastOxygenUnits;
         [SerializeField] private float _debugLastThreatStrength;
 
+        // COLD ALLOC: List<SubmarineElectrolysisModule>[8] - active electrolysis registry consumed by FluidPipeGraphRuntime - owner: SubmarineElectrolysisModule
+        private static readonly List<SubmarineElectrolysisModule> s_activeModules = new List<SubmarineElectrolysisModule>(InitialElectrolysisCapacity);
+
         private Transform _cachedTransform;
+        private IFluidPipeGraphService _pipeGraphService;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private bool _hasPower = true;
         private bool _hasWaterSource;
         private bool _isOperating;
         private bool _registered;
+        private int _oxygenPipeNodeIndex = -1;
+        private float _pendingPipeOxygenUnits;
 
         /// <inheritdoc />
         public float PowerRating => _isOperating ? -math.max(0f, powerDrawWatts) : 0f;
@@ -412,6 +426,12 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public bool HasPower => _hasPower;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetModuleStaticState()
+        {
+            s_activeModules.Clear();
+        }
+
         private void Awake()
         {
             CacheReferences();
@@ -419,6 +439,8 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            CacheReferences();
+            RegisterActiveModule();
             TryStartRuntimeLifecycle();
         }
 
@@ -442,11 +464,15 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            DisableOxygenPipeNode(forgetNode: false);
+            UnregisterActiveModule();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
+            DisableOxygenPipeNode(forgetNode: true);
+            UnregisterActiveModule();
             TryUnregister();
         }
 
@@ -457,7 +483,10 @@ namespace Hecton8.Gameplay
                 return;
 
             if (atmosphereSystem == null || powerNode == null)
+            {
+                ResetOxygenPipeDemand();
                 return;
+            }
 
             bool nextWaterSource = ResolveWaterSourceAvailability();
             _hasWaterSource = nextWaterSource;
@@ -472,14 +501,21 @@ namespace Hecton8.Gameplay
             }
 
             if (!_isOperating)
+            {
+                ResetOxygenPipeDemand();
                 return;
+            }
 
             float consumedPowerWatts = FiniteNonNegativeOrZero(powerDrawWatts);
             float oxygenUnits = (consumedPowerWatts * SlowTickDeltaTime * 0.001f) * FiniteNonNegativeOrZero(oxygenUnitsPerKilowattSecond);
             if (!math.isfinite(oxygenUnits) || oxygenUnits <= 0f)
+            {
+                ResetOxygenPipeDemand();
                 return;
+            }
 
-            atmosphereSystem.InjectOxygenUnits(targetRoomIndex, oxygenUnits);
+            if (!TryQueuePipeOxygen(oxygenUnits))
+                atmosphereSystem.InjectOxygenUnits(targetRoomIndex, oxygenUnits);
             atmosphereSystem.InjectRoomTemperatureDeltaCelsius(targetRoomIndex, FiniteNonNegativeOrZero(temperatureRisePerSlowTickCelsius));
 
             Vector3 position = ResolveCinematicPulsePosition();
@@ -518,6 +554,7 @@ namespace Hecton8.Gameplay
 
             _isOperating = false;
             _debugIsOperating = false;
+            ResetOxygenPipeDemand();
             NotifyGridBalanceChanged();
         }
 
@@ -537,6 +574,120 @@ namespace Hecton8.Gameplay
 
             if (fluidDynamics == null && atmosphereSystem != null)
                 fluidDynamics = atmosphereSystem.GetComponent<SubmarineFluidDynamics>();
+
+            if (_pipeGraphService == null)
+                _pipeGraphService = GlobalRegistry.FluidPipeGraph;
+            if (_oceanKinematicsService == null)
+                _oceanKinematicsService = GlobalRegistry.OceanKinematics;
+        }
+
+        internal static int ActiveElectrolysisCount => s_activeModules.Count;
+
+        internal static SubmarineElectrolysisModule GetActiveElectrolysis(int index)
+        {
+            return index >= 0 && index < s_activeModules.Count ? s_activeModules[index] : null;
+        }
+
+        internal bool TryConsumePipeOxygenForGraph(IFluidPipeGraphService graph, out int nodeIndex, out float oxygenUnits)
+        {
+            nodeIndex = -1;
+            oxygenUnits = 0f;
+            if (_pendingPipeOxygenUnits <= 0f || !math.isfinite(_pendingPipeOxygenUnits))
+                return false;
+
+            if (!TryEnsureOxygenPipeNode(graph, out nodeIndex))
+                return false;
+
+            oxygenUnits = _pendingPipeOxygenUnits;
+            _pendingPipeOxygenUnits = 0f;
+            return true;
+        }
+
+        internal void RestorePipeOxygen(float oxygenUnits)
+        {
+            if (!math.isfinite(oxygenUnits) || oxygenUnits <= 0f)
+                return;
+
+            float next = _pendingPipeOxygenUnits + oxygenUnits;
+            _pendingPipeOxygenUnits = math.isfinite(next) ? next : oxygenUnits;
+        }
+
+        private bool TryQueuePipeOxygen(float oxygenUnits)
+        {
+            if (!math.isfinite(oxygenUnits) || oxygenUnits <= 0f)
+                return false;
+
+            IFluidPipeGraphService graph = _pipeGraphService;
+            if (graph == null || !graph.IsInitialized)
+            {
+                FlushPendingPipeOxygenToAtmosphere();
+                return false;
+            }
+
+            if (!TryEnsureOxygenPipeNode(graph, out _))
+            {
+                FlushPendingPipeOxygenToAtmosphere();
+                return false;
+            }
+
+            RestorePipeOxygen(oxygenUnits);
+            return true;
+        }
+
+        private bool TryEnsureOxygenPipeNode(IFluidPipeGraphService graph, out int nodeIndex)
+        {
+            nodeIndex = -1;
+            if (graph == null || !graph.IsInitialized)
+                return false;
+
+            if (!ReferenceEquals(_pipeGraphService, graph))
+            {
+                _pipeGraphService = graph;
+                _oxygenPipeNodeIndex = -1;
+            }
+
+            if (_oxygenPipeNodeIndex >= 0 &&
+                graph.TryReadPipeNode(_oxygenPipeNodeIndex, out _, out _, out byte cachedFlags))
+            {
+                byte requiredFlags = (byte)(FluidPipeFlags.Active | FluidPipeFlags.OxygenSource | FluidPipeFlags.RoomCoupled);
+                if ((cachedFlags & (byte)FluidPipeFlags.Disabled) == 0 &&
+                    (cachedFlags & (byte)FluidPipeFlags.Ruptured) == 0 &&
+                    (cachedFlags & requiredFlags) == requiredFlags)
+                {
+                    nodeIndex = _oxygenPipeNodeIndex;
+                    return true;
+                }
+
+                if ((cachedFlags & (byte)FluidPipeFlags.Ruptured) == 0 &&
+                    graph.TrySetPipeNodeFlags(
+                        _oxygenPipeNodeIndex,
+                        requiredFlags,
+                        (byte)FluidPipeFlags.Disabled))
+                {
+                    nodeIndex = _oxygenPipeNodeIndex;
+                    return true;
+                }
+            }
+
+            AbsoluteUniversePosition nodeAup = AbsoluteUniversePosition.FromRuntimePosition(ResolveCinematicPulsePosition());
+            if (!graph.TryRegisterPipeNode(
+                    ResolvePipeNetworkId(),
+                    targetRoomIndex,
+                    (byte)FluidPipeContentKind.Oxygen,
+                    nodeAup,
+                    math.max(0.001f, oxygenPipeCapacityUnits),
+                    math.max(0.1f, oxygenPipeMaxPressureKPa),
+                    out nodeIndex))
+            {
+                return false;
+            }
+
+            _oxygenPipeNodeIndex = nodeIndex;
+            graph.TrySetPipeNodeFlags(
+                nodeIndex,
+                (byte)(FluidPipeFlags.Active | FluidPipeFlags.OxygenSource | FluidPipeFlags.RoomCoupled),
+                (byte)FluidPipeFlags.Disabled);
+            return true;
         }
 
         private bool ResolveWaterSourceAvailability()
@@ -555,8 +706,7 @@ namespace Hecton8.Gameplay
             if (!allowOceanWaterFallback)
                 return false;
 
-            IHectonOceanKinematicsService oceanService = GlobalRegistry.OceanKinematics;
-            return oceanService != null && oceanService.ActiveProvider != null;
+            return _oceanKinematicsService != null && _oceanKinematicsService.ActiveProvider != null;
         }
 
         private Vector3 ResolveCinematicPulsePosition()
@@ -583,6 +733,118 @@ namespace Hecton8.Gameplay
                 return _cachedTransform.position;
 
             return Vector3.zero;
+        }
+
+        private int ResolvePipeNetworkId()
+        {
+            if (atmosphereSystem != null)
+                return unchecked((int)EntityId.ToULong(atmosphereSystem.GetEntityId()));
+            if (hostModule != null)
+                return unchecked((int)EntityId.ToULong(hostModule.GetEntityId()));
+
+            return unchecked((int)EntityId.ToULong(GetEntityId()));
+        }
+
+        private void RegisterActiveModule()
+        {
+            if (!s_activeModules.Contains(this))
+                s_activeModules.Add(this);
+        }
+
+        internal static void BindPipeGraphToActiveModules(IFluidPipeGraphService graph)
+        {
+            if (graph == null)
+                return;
+
+            for (int i = 0; i < s_activeModules.Count; i++)
+            {
+                SubmarineElectrolysisModule module = s_activeModules[i];
+                if (module != null)
+                    module.BindPipeGraphService(graph);
+            }
+        }
+
+        internal static void ClearPipeGraphFromActiveModules(IFluidPipeGraphService graph)
+        {
+            if (graph == null)
+                return;
+
+            for (int i = 0; i < s_activeModules.Count; i++)
+            {
+                SubmarineElectrolysisModule module = s_activeModules[i];
+                if (module != null)
+                    module.ClearPipeGraphService(graph);
+            }
+        }
+
+        private void UnregisterActiveModule()
+        {
+            for (int i = s_activeModules.Count - 1; i >= 0; i--)
+            {
+                if (ReferenceEquals(s_activeModules[i], this))
+                    s_activeModules.RemoveAt(i);
+            }
+        }
+
+        private void BindPipeGraphService(IFluidPipeGraphService graph)
+        {
+            if (graph == null || ReferenceEquals(_pipeGraphService, graph))
+                return;
+
+            _pipeGraphService = graph;
+            _oxygenPipeNodeIndex = -1;
+        }
+
+        private void ClearPipeGraphService(IFluidPipeGraphService graph)
+        {
+            if (!ReferenceEquals(_pipeGraphService, graph))
+                return;
+
+            FlushPendingPipeOxygenToAtmosphere();
+            _pipeGraphService = null;
+            _oxygenPipeNodeIndex = -1;
+        }
+
+        private void DisableOxygenPipeNode(bool forgetNode)
+        {
+            FlushPendingPipeOxygenToAtmosphere();
+            if (_pipeGraphService != null && _oxygenPipeNodeIndex >= 0)
+            {
+                _pipeGraphService.TrySetPipeSourceRate(_oxygenPipeNodeIndex, 0f);
+                _pipeGraphService.TrySetPipeDemandRate(_oxygenPipeNodeIndex, 0f);
+                _pipeGraphService.TrySetPipeNodeFlags(
+                    _oxygenPipeNodeIndex,
+                    (byte)FluidPipeFlags.Disabled,
+                    (byte)(FluidPipeFlags.OxygenSource | FluidPipeFlags.RoomCoupled));
+            }
+
+            if (forgetNode)
+            {
+                _pipeGraphService = null;
+                _oxygenPipeNodeIndex = -1;
+            }
+        }
+
+        private void ResetOxygenPipeDemand()
+        {
+            if (_pipeGraphService == null || _oxygenPipeNodeIndex < 0)
+                return;
+
+            _pipeGraphService.TrySetPipeDemandRate(_oxygenPipeNodeIndex, 0f);
+        }
+
+        internal void FlushPendingPipeOxygenToAtmosphere()
+        {
+            if (_pendingPipeOxygenUnits <= 0f ||
+                !math.isfinite(_pendingPipeOxygenUnits) ||
+                atmosphereSystem == null)
+            {
+                _pendingPipeOxygenUnits = 0f;
+                return;
+            }
+
+            atmosphereSystem.InjectOxygenUnits(targetRoomIndex, _pendingPipeOxygenUnits);
+            _pendingPipeOxygenUnits = 0f;
         }
 
         private void NotifyGridBalanceChanged()

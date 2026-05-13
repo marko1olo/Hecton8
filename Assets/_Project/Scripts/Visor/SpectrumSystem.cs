@@ -20,6 +20,7 @@
 // ============================================================================
 
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Audio;
@@ -1431,6 +1432,10 @@ namespace Hecton8.Visor
         private const float ShaderScalarPublishEpsilon = 0.0001f;
         private const float ShaderVectorPublishEpsilon = 0.00001f;
         private const uint AupDiscoveryDiscoveredBit = 1u;
+        private const int ActiveSonarGeoPingCapacity = 4;
+        private const int ActiveSonarGeoTelemetryCapacity = 300;
+        private const float ActiveSonarGeoSpeedMetersPerSecond = 1480f;
+        private const float ActiveSonarGeoMaxRangeMeters = 400f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -1605,6 +1610,15 @@ namespace Hecton8.Visor
         private float _lastPublishedPassiveRadarAutoGain = -1f;
         private float _lastPublishedSonarRadius = -1f;
         private float _lastPublishedSonarWaveFront = -1f;
+        private int _activeSonarGeoPingCount;
+        private int _lastConsumedActiveSonarAcousticSequence;
+        private int _activeSonarGeoTelemetryWriteIndex;
+        private int _lastPublishedActiveSonarGeoCount = -1;
+        private int _lastTelemetryPublishedActiveSonarGeoCount = -1;
+        private float _lastPublishedActiveSonarGeoRadius = -1f;
+        private Vector4 _lastPublishedActiveSonarGeoState;
+        private bool _activeSonarGeoGlobalsDirty = true;
+        private NativeArray<ActiveSonarGeoTelemetryEntry> _activeSonarGeoTelemetryRing;
 
         // Cached shader IDs
         private static readonly int _ShaderSpectrumMode =
@@ -1651,6 +1665,24 @@ namespace Hecton8.Visor
             Shader.PropertyToID("_HectonSonarRadarDistortion");
         private static readonly int _ShaderSonarActive =
             Shader.PropertyToID("_SonarActive");
+        private static readonly int _ShaderActiveSonarCenterAup =
+            Shader.PropertyToID("_ActiveSonarCenterAUP");
+        private static readonly int _ShaderActiveSonarRadius =
+            Shader.PropertyToID("_ActiveSonarRadius");
+        private static readonly int _ShaderActiveSonarCentersRadius =
+            Shader.PropertyToID("_ActiveSonarCentersRadius");
+        private static readonly int _ShaderActiveSonarParams =
+            Shader.PropertyToID("_ActiveSonarParams");
+        private static readonly int _ShaderActiveSonarGeoParams =
+            Shader.PropertyToID("_ActiveSonarGeoParams");
+        private static readonly uint _ActiveSonarGeoSystemHash =
+            unchecked((uint)LocHash.Compute("SpectrumSystem.ActiveSonarGeoIllumination"));
+        private static readonly uint _ActiveSonarGeoRingCountHash =
+            unchecked((uint)LocHash.Compute("ActiveSonarGeo.RingCount"));
+        private static readonly uint _ActiveSonarGeoDumpFailureHash =
+            unchecked((uint)LocHash.Compute("ActiveSonarGeo.DumpFailure"));
+        private static readonly uint _ActiveSonarGeoNaNHash =
+            unchecked((uint)LocHash.Compute("ActiveSonarGeo.NonFinite"));
         private static readonly System.Collections.Generic.List<VisorHUDController> s_glitchControllers =
             new System.Collections.Generic.List<VisorHUDController>(4); // COLD ALLOC: List<VisorHUDController>[4] — shared glitch pulse controller buffer — owner: SpectrumSystem
         // COLD ALLOC: float[32] — passive hydrophone radar energy grid — owner: SpectrumSystem
@@ -1667,6 +1699,10 @@ namespace Hecton8.Visor
         private static readonly float[] s_passiveRadarNearestAmplitudes = new float[PassiveRadarSourceBudget];
         // COLD ALLOC: float[8] — nearest emitter distance cache for passive hydrophone scan — owner: SpectrumSystem
         private static readonly double[] s_passiveRadarNearestDistanceSqr = new double[PassiveRadarSourceBudget];
+        // COLD ALLOC: Vector4[4] - active sonar geo shader centers/radii upload cache - owner: SpectrumSystem
+        private readonly Vector4[] _activeSonarGeoCentersRadius = new Vector4[ActiveSonarGeoPingCapacity];
+        // COLD ALLOC: Vector4[4] - active sonar geo shader intensity/start/max-range upload cache - owner: SpectrumSystem
+        private readonly Vector4[] _activeSonarGeoParams = new Vector4[ActiveSonarGeoPingCapacity];
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -1711,6 +1747,7 @@ namespace Hecton8.Visor
             TryRegisterService();
             SubscribeAcousticPingEvents();
             EnsureAupDiscoveryGrid();
+            EnsureActiveSonarGeoTelemetryRing();
 
             if (!_registered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
@@ -1730,6 +1767,7 @@ namespace Hecton8.Visor
                 sonarGridAbyssalColor);
             ApplyAcousticMappingStaticGlobals();
             ApplyShaderMode();
+            PublishActiveSonarGeoGlobals(true);
         }
 
         private void OnDisable()
@@ -1750,6 +1788,7 @@ namespace Hecton8.Visor
             SonarGridOverlay.ClearGlobals();
             ClearSonarSnapshot();
             ClearAcousticMappingGlobals();
+            ClearActiveSonarGeoGlobals();
         }
 
         private void OnDestroy()
@@ -1766,7 +1805,9 @@ namespace Hecton8.Visor
 
             SonarGridOverlay.ClearGlobals();
             ClearAcousticMappingGlobals();
+            ClearActiveSonarGeoGlobals();
             DisposeAupDiscoveryGrid();
+            DisposeActiveSonarGeoTelemetryRing();
         }
 
         private void TryRegisterService()
@@ -1809,6 +1850,7 @@ namespace Hecton8.Visor
             }
 
             float now = Time.time;
+            UpdateActiveSonarGeoIllumination(deltaTime, now);
             UpdateActiveSonarWavefront(deltaTime, now);
             UpdateLidarPersistence(deltaTime);
             UpdateAcousticMappingGlobals(deltaTime, now);
@@ -1931,6 +1973,19 @@ namespace Hecton8.Visor
                 _activeLidarPersistence = math.max(_activeLidarPersistence, pulseIntensity);
                 PublishLidarPersistence(_activeLidarPersistence);
                 SpectrumEvents.RaiseSonarPingSent(pulseIntensity);
+                AcousticPingSignal activeSonarSignal = new AcousticPingSignal
+                {
+                    PositionAup = playerAup,
+                    RadiusMeters = math.min(pulseRadius, ActiveSonarGeoMaxRangeMeters),
+                    Intensity01 = pulseIntensity,
+                    SourceId = _ActiveSonarGeoSystemHash,
+                    Channel = AcousticPingSignal.ChannelActiveSonar,
+                    Flags = AcousticPingSignal.FlagActiveSonar
+                };
+                GlobalSignals.Publish(in activeSonarSignal);
+                SubmitActiveSonarGeoPing(in activeSonarSignal, pulseTime, 0f);
+                if (GlobalSignals.TryGetLatestAcousticPingSignal(out _, out int activeSonarSequence))
+                    _lastConsumedActiveSonarAcousticSequence = activeSonarSequence;
                 PhysicsEventBus.NotifyAcousticPing(new AcousticPingEvent(
                     playerPosition,
                     pulseRadius,
@@ -2086,6 +2141,16 @@ namespace Hecton8.Visor
                 echoStartTime + (echoRadius * math.rcp(speed)) + sonarRevealFadeDuration);
 
             AbsoluteUniversePosition signalAup = signal.ResolveWorldAup();
+            AcousticPingSignal echoGeoSignal = new AcousticPingSignal
+            {
+                PositionAup = signalAup,
+                RadiusMeters = math.min(math.max(1f, signal.DistanceMeters), ActiveSonarGeoMaxRangeMeters),
+                Intensity01 = echoIntensity,
+                SourceId = _ActiveSonarGeoSystemHash,
+                Channel = AcousticPingSignal.ChannelActiveSonar,
+                Flags = AcousticPingSignal.FlagActiveSonar
+            };
+            SubmitActiveSonarGeoPing(in echoGeoSignal, now, signal.EchoDelaySeconds);
             MarkAupDiscoveryCell(in signalAup, signal.ReturnStrength);
         }
 

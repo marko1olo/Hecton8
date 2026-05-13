@@ -5,6 +5,16 @@ Status: PENDING VERIFICATION
 
 Scope: `Docs/SPACE_ENGINE_RESEARCH` and Editor-only validation hook.
 
+## 2026-05-13 DOC_AUDIT R12 Boundary
+
+The `OMEGA_VERIFIED` label in this file is a SpaceEngine research-scope standalone smoke label only. It is not project authority.
+
+Current adjacent Omega artifact drift:
+
+- `Library/OmegaAutonomySmokeTester.json` currently reads `FAIL` with `nativeSentinelBalance.pass=false`, `allocationDelta=2`, `trackedByteDelta=2560`.
+- `Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_UNITY_SMOKE_CODEX_2026-05-05.json` remains an older scoped PASS artifact, not the current Library state.
+- `Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_CODEX_AUDIT_2026-05-05.md` carries the detailed R12 boundary for the Omega smoke path.
+
 ## Mandates Applied
 
 - `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`

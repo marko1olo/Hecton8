@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Interaction;
@@ -5,6 +6,8 @@ using Hecton8.SaveSystem;
 using Hecton8.Construction;
 using Hecton8.Building;
 using Hecton8.Audio;
+using Hecton8.Audio.Propagation;
+using Hecton8.Core.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
@@ -34,6 +37,27 @@ namespace Hecton8.Core
         /// Services with real update lanes should override this with their own counter.
         /// </summary>
         int TickCount => global::System.Environment.TickCount;
+    }
+
+    /// <summary>
+    /// Allocation-free localization contract exposed through GlobalRegistry for Babel UI consumers.
+    /// </summary>
+    public interface IBabelLocalization : ISystem
+    {
+        /// <summary>Active language as a compact stable id.</summary>
+        ushort ActiveLanguageId { get; }
+
+        /// <summary>Resolve UTF-8 bytes for a localization key hash without creating a managed string.</summary>
+        bool TryGetLocalizedSpan(uint hash, out ReadOnlySpan<byte> utf8Bytes);
+
+        /// <summary>Resolve a staged char buffer for TMP SetCharArray without creating a managed string.</summary>
+        bool TryGetLocalizedBuffer(uint hash, out char[] buffer, out int length);
+
+        /// <summary>Inject one integer payload into a localized template using caller-owned storage.</summary>
+        bool TryWriteLocalizedInt(uint templateHash, int value, Span<char> destination, out int length);
+
+        /// <summary>Resolve singular/plural key choice through deterministic integer math.</summary>
+        uint ResolvePluralHash(uint singularHash, uint pluralHash, int value);
     }
 
     /// <summary>
@@ -69,6 +93,78 @@ namespace Hecton8.Core
         /// Executes the owner's end-of-frame swap-window work.
         /// </summary>
         void LateFrameTick();
+    }
+
+    /// <summary>
+    /// Registry-owned bridge between first-party native signal lanes and managed mod callbacks.
+    /// First-party producers must stay on <see cref="GlobalSignals"/> / <see cref="SignalBus{T}"/> lanes.
+    /// </summary>
+    public interface IModdingBridge : ISystem
+    {
+        /// <summary>True after the bridge allocated its native projection queues and registered dispatcher ownership.</summary>
+        bool IsInitialized { get; }
+
+        /// <summary>Installs the bridge service and its native queue bindings.</summary>
+        void Install();
+
+        /// <summary>Stops dispatch and releases native projection state.</summary>
+        void Shutdown();
+
+        /// <summary>Schedules post-simulation projection from typed signal snapshots into mod-facing DTOs.</summary>
+        void ProjectPostSimulation();
+
+        /// <summary>Runs managed mod delegate dispatch from the late-frame swap window.</summary>
+        void DispatchLateFrame();
+    }
+
+    /// <summary>
+    /// Camera presentation feedback service contract exposed through <see cref="GlobalRegistry"/>.
+    /// Shake impulses must enter through signal/listener lanes; this interface is for non-shake control and diagnostics.
+    /// </summary>
+    public interface ICameraJuiceSystem : ISystem
+    {
+        /// <summary>
+        /// Applies the dispatcher-owned pause/PDA depth-of-field isolation weight.
+        /// </summary>
+        /// <param name="weight">Normalized focus isolation weight.</param>
+        void ApplyPauseDepthOfFieldWeight(float weight);
+
+        /// <summary>
+        /// Reclaims gameplay camera FOV from a cinematic transition without a snap.
+        /// </summary>
+        /// <param name="startFov">Starting field of view in degrees.</param>
+        /// <param name="durationSeconds">Blend duration in seconds.</param>
+        void BeginInputReclaimFov(float startFov, float durationSeconds);
+
+        /// <summary>Resolved adaptive shake scale for diagnostics.</summary>
+        float DebugAdaptiveShakeScale { get; }
+
+        /// <summary>Resolved adaptive FOV scale for diagnostics.</summary>
+        float DebugAdaptiveFOVScale { get; }
+
+        /// <summary>Resolved adaptive post-effect scale for diagnostics.</summary>
+        float DebugAdaptivePostFxScale { get; }
+
+        /// <summary>Resolved active shake cap for diagnostics.</summary>
+        int DebugAdaptiveMaxActiveShakes { get; }
+
+        /// <summary>True when adaptive pressure disables interaction depth-of-field.</summary>
+        bool DebugAdaptiveDisableInteractionDoF { get; }
+    }
+
+    /// <summary>
+    /// Registry-published world streaming IO backpressure read model.
+    /// Movement, PDA, and VFX consumers read the dispatcher scalar or this cached service; they do not touch Addressables owners directly.
+    /// </summary>
+    public interface IStreamingBackpressureService : ISystem
+    {
+        float StorageDebt01 { get; }
+        float SmoothedStorageDebt01 { get; }
+        double LatencyEwmaMs { get; }
+        double OldestPendingMs { get; }
+        double CriticalHoleDebtMs { get; }
+        uint BackpressureSequence { get; }
+        bool DataLinkDegraded { get; }
     }
 
     /// <summary>
@@ -469,6 +565,88 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Blittable GI relay state published for watchdogs, diagnostics, and low-cost consumers.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GIRelayRuntimeSnapshot
+    {
+        public double AbsoluteUniverseTime;
+        public float TimeOfDay01;
+        public float DepthMeters;
+        public float Depth01;
+        public float EclipseScalar;
+        public float MoonPhase01;
+        public float FogLod;
+        public float LightningScalar;
+        public int ShadowCascadeLevel;
+        public uint Flags;
+        public uint Sequence;
+    }
+
+    /// <summary>
+    /// Registry-facing lighting relay contract. Runtime lighting owners must register here instead of singleton access.
+    /// </summary>
+    public interface IGIRelaySystem : ISystem
+    {
+        bool IsAmbientProbeAuthorityActive { get; }
+
+        GIRelayRuntimeSnapshot Snapshot { get; }
+
+        int ShadowCascadeLevel { get; }
+
+        float LastAppliedDepthMeters { get; }
+
+        uint LastAppliedSequence { get; }
+
+        bool ValidateSphericalHarmonicsLayout(out int expectedBytes, out int actualBytes);
+    }
+
+    /// <summary>
+    /// Flags published by the deterministic seismic/tide runtime.
+    /// </summary>
+    [System.Flags]
+    public enum SeismicRuntimeFlags : uint
+    {
+        None = 0u,
+        Valid = 1u << 0,
+        LowTierShaderShakeDisabled = 1u << 1,
+        AbyssDepthAttenuation = 1u << 2,
+        CollapseDebrisQueued = 1u << 3,
+        HighTremor = 1u << 4,
+    }
+
+    /// <summary>
+    /// Blittable seismic and harmonic-tide payload for systems that need latest deterministic macro-world state.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SeismicRuntimeSnapshot
+    {
+        public double AbsoluteUniverseTime;
+        public float3 SeismicDirection;
+        public float SeismicIntensity01;
+        public float TideHeightMeters;
+        public float TideHigh01;
+        public float CameraJitter01;
+        public float AudioRumble01;
+        public float ThermalEruptionProbabilityScalar;
+        public uint Flags;
+        public uint Sequence;
+    }
+
+    /// <summary>
+    /// Authoritative deterministic seismic director. Consumers must read snapshots or signals, not concrete managers.
+    /// </summary>
+    public interface ISeismicDirector : ISystem
+    {
+        bool IsInitialized { get; }
+        float SeismicIntensity01 { get; }
+        float3 SeismicDirection { get; }
+        float TideHeightMeters { get; }
+        float TideHigh01 { get; }
+        SeismicRuntimeSnapshot GetRuntimeSnapshot();
+    }
+
+    /// <summary>
     /// Minimal input service contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IInputService : ISystem
@@ -710,6 +888,11 @@ namespace Hecton8.Core
         void PlayAtPoint(AudioClip clip, Vector3 position, float volume, float pitch, AudioMixerGroup mixerGroup);
 
         /// <summary>
+        /// Queues one AUP-authored world-space acoustic emission without converting through float world space first.
+        /// </summary>
+        bool QueueSoundEmissionSignal(in SoundEmissionSignal signal);
+
+        /// <summary>
         /// Queues one world-space audio event for the central NativeQueue-backed audio drain.
         /// </summary>
         /// <param name="audioEvent">Blittable event payload. EventID is one-based into the authored audio event table.</param>
@@ -752,6 +935,99 @@ namespace Hecton8.Core
         /// Stops every active world and UI voice immediately.
         /// </summary>
         void StopAll();
+    }
+
+    /// <summary>
+    /// Canonical byte identifiers for the vocal warning priority queue.
+    /// Lower numeric value is higher priority.
+    /// </summary>
+    public enum VocalWarningId : byte
+    {
+        None = 0,
+        CrushDepth = 1,
+        HullBreach = 2,
+        OxygenLow = 3,
+        Radiation = 4,
+        PowerLow = 5
+    }
+
+    /// <summary>
+    /// Fixed warning-hash table used by signal producers that cannot reference clips.
+    /// </summary>
+    public static class VocalWarningHashes
+    {
+        public const uint CrushDepth = 0x43525348u; // CRSH
+        public const uint HullBreach = 0x48554C4Cu; // HULL
+        public const uint OxygenLow = 0x4F584C4Fu; // OXLO
+        public const uint Radiation = 0x52414449u; // RADI
+        public const uint PowerLow = 0x5057524Cu; // PWRL
+
+        public static byte ToWarningId(uint warningHash)
+        {
+            switch (warningHash)
+            {
+                case CrushDepth: return (byte)VocalWarningId.CrushDepth;
+                case HullBreach: return (byte)VocalWarningId.HullBreach;
+                case OxygenLow: return (byte)VocalWarningId.OxygenLow;
+                case Radiation: return (byte)VocalWarningId.Radiation;
+                case PowerLow: return (byte)VocalWarningId.PowerLow;
+                default: return (byte)VocalWarningId.None;
+            }
+        }
+
+        public static uint FromWarningId(byte warningId)
+        {
+            switch ((VocalWarningId)warningId)
+            {
+                case VocalWarningId.CrushDepth: return CrushDepth;
+                case VocalWarningId.HullBreach: return HullBreach;
+                case VocalWarningId.OxygenLow: return OxygenLow;
+                case VocalWarningId.Radiation: return Radiation;
+                case VocalWarningId.PowerLow: return PowerLow;
+                default: return 0u;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Bit flags attached to VWS signal packets.
+    /// </summary>
+    public static class VocalWarningSignalFlags
+    {
+        public const byte HabitatIntegrityCompromised = 1 << 0;
+    }
+
+    /// <summary>
+    /// Registry-published vocal warning service. Producers should prefer signal lanes;
+    /// this contract exists for bootstrap visibility and non-hot diagnostics.
+    /// </summary>
+    public interface IVocalWarningSystem : ISystem
+    {
+        /// <summary>True when native warning queue, cooldown, and telemetry storage are allocated.</summary>
+        bool IsInitialized { get; }
+
+        /// <summary>Number of queued and staged warning IDs waiting for playback.</summary>
+        int PendingCount { get; }
+
+        /// <summary>Currently playing warning byte ID, or 0 when idle.</summary>
+        byte CurrentWarningId { get; }
+
+        /// <summary>True while the procedural renderer is playing or staging a vocal warning.</summary>
+        bool IsWarningActive { get; }
+
+        /// <summary>
+        /// Attempts to enqueue one warning ID into the fixed-priority VWS path.
+        /// </summary>
+        /// <param name="warningId">Byte ID from <see cref="VocalWarningId"/>.</param>
+        /// <param name="severity01">Normalized warning severity.</param>
+        /// <param name="cooldownSeconds">Per-warning cooldown override; non-positive uses the runtime fallback.</param>
+        /// <param name="flags">Bitmask from <see cref="VocalWarningSignalFlags"/>.</param>
+        /// <param name="sourceId">Optional source entity or event hash.</param>
+        /// <returns>True when the warning was accepted by cooldown and queue admission.</returns>
+        bool TryQueueWarning(byte warningId, float severity01, float cooldownSeconds, byte flags, uint sourceId);
+
+        /// <summary>Clears queued IDs and requests cancellation of the active renderer warning.</summary>
+        void CancelCurrentWarning();
     }
 
     /// <summary>
@@ -820,6 +1096,22 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="slotName">Persistent slot identifier.</param>
         Awaitable LoadGameAsync(string slotName);
+    }
+
+    /// <summary>
+    /// Async persistence command surface. Save requests enter through typed signals or this interface,
+    /// while snapshot, compression, and disk promotion remain owned by the registered persistence service.
+    /// </summary>
+    public interface IAsyncPersistenceService : ISaveService
+    {
+        /// <summary>
+        /// Queues a save request through the typed persistence signal lane.
+        /// </summary>
+        /// <param name="slotIndex">Manual slot index: 0, 1, or 2.</param>
+        /// <param name="sourceHash">Stable caller/system hash for telemetry.</param>
+        /// <param name="operationId">Optional caller-owned operation id; zero lets the service assign one.</param>
+        /// <returns>False when the request is invalid or another save/load operation is active.</returns>
+        bool TryRequestSave(byte slotIndex, uint sourceHash, uint operationId = 0u);
     }
 
     /// <summary>
@@ -967,12 +1259,48 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Immutable hand pose pair for VR hand renderers: controller target versus spring-driven physical hand.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    public readonly struct VRSomaticHandPose
+    {
+        public readonly byte HandIndex;
+        public readonly byte HasTrackingFlag;
+        public readonly byte GhostVisibleFlag;
+        public readonly byte Reserved;
+        public readonly Vector3 TargetRuntimePosition;
+        public readonly Vector3 PhysicalRuntimePosition;
+        public readonly float SeparationMetersSq;
+
+        public VRSomaticHandPose(
+            byte handIndex,
+            bool hasTracking,
+            bool ghostVisible,
+            Vector3 targetRuntimePosition,
+            Vector3 physicalRuntimePosition,
+            float separationMetersSq)
+        {
+            HandIndex = handIndex;
+            HasTrackingFlag = hasTracking ? (byte)1 : (byte)0;
+            GhostVisibleFlag = ghostVisible ? (byte)1 : (byte)0;
+            Reserved = 0;
+            TargetRuntimePosition = targetRuntimePosition;
+            PhysicalRuntimePosition = physicalRuntimePosition;
+            SeparationMetersSq = separationMetersSq;
+        }
+
+        public bool IsTracked => HasTrackingFlag != 0;
+        public bool ShouldRenderGhost => GhostVisibleFlag != 0;
+    }
+
+    /// <summary>
     /// VR-only somatic suit bridge. PC/console callers must depend on this interface and receive the dummy provider.
     /// </summary>
     public interface IVRSomaticProvider
     {
         bool IsActive { get; }
         VRSomaticSnapshot CurrentSnapshot { get; }
+        uint HandGhostMask { get; }
 
         void BindRig(
             Transform hmdTransform,
@@ -982,7 +1310,10 @@ namespace Hecton8.Core
             AudioSource breathingSource,
             AudioLowPassFilter breathingLowPassFilter);
 
+        void BindDecoupledRoot(Transform vrRootTransform);
+
         bool TryGetChestSocket(VRSomaticChestSocketId socketId, out VRSomaticChestSocketPose socketPose);
+        bool TryGetHandPose(byte handIndex, out VRSomaticHandPose handPose);
         bool TryGetNearFieldCollision(out VRSomaticCollisionState collisionState);
     }
 
@@ -1000,6 +1331,7 @@ namespace Hecton8.Core
 
         public bool IsActive => false;
         public VRSomaticSnapshot CurrentSnapshot => VRSomaticSnapshot.Inactive;
+        public uint HandGhostMask => 0u;
 
         public void BindRig(
             Transform hmdTransform,
@@ -1011,9 +1343,19 @@ namespace Hecton8.Core
         {
         }
 
+        public void BindDecoupledRoot(Transform vrRootTransform)
+        {
+        }
+
         public bool TryGetChestSocket(VRSomaticChestSocketId socketId, out VRSomaticChestSocketPose socketPose)
         {
             socketPose = default;
+            return false;
+        }
+
+        public bool TryGetHandPose(byte handIndex, out VRSomaticHandPose handPose)
+        {
+            handPose = default;
             return false;
         }
 
@@ -1049,6 +1391,78 @@ namespace Hecton8.Core
         /// Remove a previously registered external waypoint.
         /// </summary>
         void ClearWaypoint(int id);
+    }
+
+    /// <summary>
+    /// Registry-backed spatial trigger service for authored AUP points of interest.
+    /// Implementations must keep hot checks in native data and publish cross-domain state through signals.
+    /// </summary>
+    public interface ISpatialTriggerSystem : ISystem
+    {
+        /// <summary>
+        /// Number of native POI trigger slots currently registered.
+        /// </summary>
+        int RegisteredPoiCount { get; }
+
+        /// <summary>
+        /// Packed one-shot state for save/RLE consumers.
+        /// </summary>
+        ulong PoiStateMask { get; }
+
+        /// <summary>
+        /// Copies the packed one-shot state without exposing owner storage.
+        /// </summary>
+        /// <param name="stateMask">Current POI trigger bitmask.</param>
+        /// <returns>True when the service has a valid state snapshot.</returns>
+        bool TryGetPoiStateMask(out ulong stateMask);
+    }
+
+    /// <summary>
+    /// Authored flags for AUP narrative POI trigger metadata.
+    /// </summary>
+    [Flags]
+    public enum NarrativeSpatialTriggerFlags : byte
+    {
+        None = 0,
+        HudBreadcrumb = 1 << 0
+    }
+
+    /// <summary>
+    /// Cold-path authoring payload copied from scene POI components into the native spatial registry.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    public struct NarrativeSpatialTriggerAuthoring
+    {
+        public AbsoluteUniversePosition PositionAup;
+        public float RadiusMeters;
+        public float RadiusSq;
+        public uint PoiHash;
+        public uint QuestHash;
+        public uint BiomeHash;
+        public uint SoundscapeHash;
+        public uint LoreHash;
+        public int BitIndex;
+        public NarrativeSpatialTriggerFlags Flags;
+    }
+
+    /// <summary>
+    /// Blittable player pose snapshot for systems that need player AUP and view direction without concrete player-runtime access.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PlayerRuntimePoseSnapshot
+    {
+        public float3 RuntimePosition;
+        public float3 Forward;
+        public AbsoluteUniversePosition Aup;
+        public uint Flags;
+
+        public PlayerRuntimePoseSnapshot(float3 runtimePosition, float3 forward, AbsoluteUniversePosition aup, uint flags)
+        {
+            RuntimePosition = runtimePosition;
+            Forward = forward;
+            Aup = aup;
+            Flags = flags;
+        }
     }
 
     /// <summary>
@@ -1160,6 +1574,11 @@ namespace Hecton8.Core
         /// Active HUD notification sink when one is available.
         /// </summary>
         HUDNotification HudNotification { get; }
+
+        /// <summary>
+        /// Resolves the current player AUP, runtime position, and camera-facing direction without exposing concrete runtime state.
+        /// </summary>
+        bool TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot);
     }
 
     /// <summary>
@@ -1395,6 +1814,18 @@ namespace Hecton8.Core
             out Vector3 originWS,
             out float cellSizeMeters,
             out int version);
+
+        /// <summary>
+        /// Exposes the front-buffer 32x32x32 Celsius grid for read-only consumers.
+        /// </summary>
+        bool TryGetThermalGridReadback(
+            out NativeArray<float> temperatureCelsius,
+            out int width,
+            out int height,
+            out int depth,
+            out Vector3 originWS,
+            out float cellSizeMeters,
+            out int version);
     }
 
     /// <summary>
@@ -1429,6 +1860,59 @@ namespace Hecton8.Core
         /// <param name="destinationModule">Destination base module.</param>
         /// <returns>True when a bypass edge was added.</returns>
         bool TryCreateTemporaryBypass(BaseModule sourceModule, BaseModule destinationModule);
+    }
+
+    /// <summary>
+    /// Authoritative habitat module deconstruction service exposed through <see cref="GlobalRegistry"/>.
+    /// Requests enter through a NativeQueue signal and are validated by the construction graph owner.
+    /// </summary>
+    public interface IHabitatDeconstructionSystem : ISystem
+    {
+        /// <summary>
+        /// True once the runtime owner is registered and can drain deconstruction requests.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Queues one AUP-space deconstruction request for validation and rollback.
+        /// </summary>
+        bool EnqueueDeconstruction(in DeconstructRequestSignal signal);
+
+        /// <summary>
+        /// Toggles the non-authoritative deconstruction preview state for a target entity.
+        /// </summary>
+        bool TrySetDeconstructionPreview(uint targetEntityId, bool enabled);
+    }
+
+    /// <summary>
+    /// Authoritative fluid pipe pressure graph exposed through <see cref="GlobalRegistry"/>.
+    /// Implementations must keep simulation data in SOA native buffers and route rupture visuals through signals.
+    /// </summary>
+    public interface IFluidPipeGraphService
+    {
+        bool IsInitialized { get; }
+        int PipeNodeCount { get; }
+
+        bool TryReadPipeNode(
+            int nodeIndex,
+            out float pressureKPa,
+            out float contents,
+            out byte flags);
+
+        bool TryRegisterPipeNode(
+            int networkId,
+            int roomIndex,
+            byte contentKind,
+            AbsoluteUniversePosition nodeAup,
+            float capacity,
+            float maxPressureKPa,
+            out int nodeIndex);
+
+        bool TryConnectPipeNodes(int sourceNodeIndex, int destinationNodeIndex);
+        bool TryInjectPipeContents(int nodeIndex, float contents);
+        bool TrySetPipeSourceRate(int nodeIndex, float contentsPerSecond);
+        bool TrySetPipeDemandRate(int nodeIndex, float contentsPerSecond);
+        bool TrySetPipeNodeFlags(int nodeIndex, byte setMask, byte clearMask);
     }
 
     /// <summary>
@@ -1477,6 +1961,38 @@ namespace Hecton8.Core
         /// Version identifier for the active procedural world-generation algorithm.
         /// </summary>
         int RuntimeWorldGenerationVersionId { get; }
+    }
+
+    /// <summary>
+    /// Authoritative procedural sway director exposed through <see cref="GlobalRegistry"/> for decoupled VFX wake producers.
+    /// </summary>
+    public interface IProceduralSwayDirector : ISystem
+    {
+        /// <summary>
+        /// True once the runtime owner has allocated fixed wake state and can publish shader globals.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Count of active wake entries published to the current frame shader buffer.
+        /// </summary>
+        int ActiveWakeCount { get; }
+
+        /// <summary>
+        /// Injects one producer-agnostic wake packet.
+        /// </summary>
+        /// <param name="signal">AUP-space emitter position plus runtime velocity and source flags.</param>
+        void EmitWake(in WakeGeneratedSignal signal);
+
+        /// <summary>
+        /// Clears persistent procedural wake state and publishes an empty buffer.
+        /// </summary>
+        void ClearWakeBuffer();
+
+        /// <summary>
+        /// Exposes the latest GPU-culled procedural flora matrix buffer for vertex-sway consumers.
+        /// </summary>
+        bool TryGetCulledFloraVisibleBuffer(out GraphicsBuffer visibleInstancesBuffer, out int visibleInstanceCount);
     }
 
     /// <summary>
@@ -1611,6 +2127,168 @@ namespace Hecton8.Core
         /// <param name="depthMeters">External water depth in meters.</param>
         /// <returns>Ingress velocity in meters per second.</returns>
         float ResolveIngressVelocity(float depthMeters);
+    }
+
+    /// <summary>
+    /// Room gas flags used by the scalar Dalton solver. Room ids are local to their owning habitat/base.
+    /// </summary>
+    [System.Flags]
+    public enum GasDynamicsRoomFlags : ushort
+    {
+        None = 0,
+        InternalFire = 1 << 0,
+        Breached = 1 << 1,
+        ScrubberInstalled = 1 << 2,
+        Occupied = 1 << 3
+    }
+
+    /// <summary>
+    /// Runtime gas solve cadence selected from the boot hardware tier.
+    /// </summary>
+    public enum GasDynamicsMathLod : byte
+    {
+        Low = 0,
+        Mid = 1,
+        High = 2,
+        Ultra = 3
+    }
+
+    /// <summary>
+    /// Blittable room gas snapshot expressed as Dalton partial pressures in kPa.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public readonly struct GasRoomSnapshot
+    {
+        public GasRoomSnapshot(
+            int roomId,
+            float oxygenKPa,
+            float carbonDioxideKPa,
+            float nitrogenKPa,
+            float pressureKPa,
+            float ambientPressureKPa,
+            float toxicity01,
+            float narcosis01,
+            ushort flags)
+        {
+            RoomId = roomId;
+            OxygenKPa = oxygenKPa;
+            CarbonDioxideKPa = carbonDioxideKPa;
+            NitrogenKPa = nitrogenKPa;
+            PressureKPa = pressureKPa;
+            AmbientPressureKPa = ambientPressureKPa;
+            Toxicity01 = toxicity01;
+            Narcosis01 = narcosis01;
+            Flags = flags;
+        }
+
+        public int RoomId { get; }
+        public float OxygenKPa { get; }
+        public float CarbonDioxideKPa { get; }
+        public float NitrogenKPa { get; }
+        public float PressureKPa { get; }
+        public float AmbientPressureKPa { get; }
+        public float Toxicity01 { get; }
+        public float Narcosis01 { get; }
+        public ushort Flags { get; }
+    }
+
+    /// <summary>
+    /// Unmanaged gas-to-physiology signal emitted when CO2 toxicity or nitrogen narcosis crosses a scalar threshold.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public readonly struct ToxicitySignal
+    {
+        public ToxicitySignal(
+            int roomId,
+            float carbonDioxideKPa,
+            float pressureAtm,
+            float toxicity01,
+            float narcosis01,
+            uint frameIndex,
+            ushort flags)
+        {
+            RoomId = roomId;
+            CarbonDioxideKPa = carbonDioxideKPa;
+            PressureAtm = pressureAtm;
+            Toxicity01 = toxicity01;
+            Narcosis01 = narcosis01;
+            FrameIndex = frameIndex;
+            Flags = flags;
+        }
+
+        public int RoomId { get; }
+        public float CarbonDioxideKPa { get; }
+        public float PressureAtm { get; }
+        public float Toxicity01 { get; }
+        public float Narcosis01 { get; }
+        public uint FrameIndex { get; }
+        public ushort Flags { get; }
+    }
+
+    /// <summary>
+    /// Cold-path audit snapshot for the Dalton gas solver's persistent native memory.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public readonly struct GasDynamicsNativeMemoryAudit
+    {
+        public GasDynamicsNativeMemoryAudit(
+            int roomCapacity,
+            int bulkheadCapacity,
+            int localAllocationCount,
+            long localRegisteredBytes,
+            long largestAllocationBytes,
+            uint largestAllocationLabelHash,
+            int sentinelActiveAllocationCount,
+            long sentinelTrackedBytes)
+        {
+            RoomCapacity = roomCapacity;
+            BulkheadCapacity = bulkheadCapacity;
+            LocalAllocationCount = localAllocationCount;
+            LocalRegisteredBytes = localRegisteredBytes;
+            LargestAllocationBytes = largestAllocationBytes;
+            LargestAllocationLabelHash = largestAllocationLabelHash;
+            SentinelActiveAllocationCount = sentinelActiveAllocationCount;
+            SentinelTrackedBytes = sentinelTrackedBytes;
+        }
+
+        public int RoomCapacity { get; }
+        public int BulkheadCapacity { get; }
+        public int LocalAllocationCount { get; }
+        public long LocalRegisteredBytes { get; }
+        public long LargestAllocationBytes { get; }
+        public uint LargestAllocationLabelHash { get; }
+        public int SentinelActiveAllocationCount { get; }
+        public long SentinelTrackedBytes { get; }
+    }
+
+    /// <summary>
+    /// Registry-owned Dalton gas solver. Callers push local room facts; the solver owns native gas arrays and physiology signals.
+    /// </summary>
+    public interface IGasDynamicsSolver : ISystem
+    {
+        bool IsInitialized { get; }
+        int RoomCount { get; }
+        NativeArray<float>.ReadOnly RoomO2 { get; }
+        NativeArray<float>.ReadOnly RoomCO2 { get; }
+        NativeArray<float>.ReadOnly RoomPressure { get; }
+
+        bool TryGetRoomSnapshot(int roomId, out GasRoomSnapshot snapshot);
+        bool TryConfigureRoom(
+            int roomId,
+            float oxygenKPa,
+            float carbonDioxideKPa,
+            float nitrogenKPa,
+            float ambientPressureKPa,
+            ushort flags);
+        bool TrySetBulkhead(int edgeIndex, int roomA, int roomB, bool sealedBulkhead);
+        bool TrySetPlayerRoom(int roomId, float playerStress01, float heartRateBpm);
+        bool TrySetRoomFlags(int roomId, ushort setMask, ushort clearMask);
+        bool TrySetAmbientPressure(int roomId, float ambientPressureKPa);
+        bool TrySetScrubberPowered(int roomId, bool powerActive);
+        bool TrySetRoomTemperatureCelsius(int roomId, float temperatureCelsius);
+        bool TryDequeueToxicitySignal(out ToxicitySignal signal);
+        bool TryGetNativeMemoryAudit(out GasDynamicsNativeMemoryAudit audit);
+        float ResolveEffectiveDepthStress01(int roomId, float depthStress01);
     }
 
     /// <summary>
@@ -1764,6 +2442,7 @@ namespace Hecton8.Core
         void SubmitPipeLink(long linkId, SplineDescriptor descriptor, Color color);
         void RemovePipeLink(long linkId);
         void SetPipeNodeRuptured(uint nodeId, bool ruptured);
+        void SetPipeNodeFlow(uint nodeId, float flow01);
         void SubmitRelaySpline(long linkId, SplineDescriptor descriptor, bool hasPower, Color poweredColor, Color unpoweredColor);
         void RemoveRelayLink(long linkId);
     }
@@ -1952,6 +2631,23 @@ namespace Hecton8.Core
         ModWorldPersistenceRuntime = 136,
         LoadingScreenRuntime = 137,
         ModalWindowRuntime = 138,
+        ProceduralSwayDirectorRuntime = 140,
+        SubmarineState = 141,
+        VocalWarningRuntime = 142,
+        HabitatDeconstructionRuntime = 143,
+        SeismicDirectorRuntime = 144,
+        FluidPipeGraph = 145,
+        GasDynamicsRuntime = 146,
+        SpatialTriggerRuntime = 147,
+        GIRelayRuntime = 148,
+        DataVault = 149,
+        JobAdmissionRuntime = 150,
+        StreamingBackpressureRuntime = 151,
+        FoveatedSimulationDirector = 152,
+        GroundRadarRuntime = 153,
+        InertialNavigationRuntime = 154,
+        ModdingBridgeRuntime = 155,
+        InstanceCullingRuntime = 156,
         Unknown = 255
     }
 
@@ -2195,6 +2891,21 @@ namespace Hecton8.Core
         /// True when the containing sector carries active apex pressure.
         /// </summary>
         public bool ApexInSector;
+
+        /// <summary>
+        /// Normalized prey biomass in the containing 50 m ecology macro-cell.
+        /// </summary>
+        public float PreyBiomass01;
+
+        /// <summary>
+        /// Normalized predator biomass in the containing 50 m ecology macro-cell.
+        /// </summary>
+        public float PredatorBiomass01;
+
+        /// <summary>
+        /// Normalized kelp/flora overgrowth pressure derived from local prey depletion.
+        /// </summary>
+        public float FloraOvergrowth01;
     }
 
     /// <summary>
@@ -2221,9 +2932,19 @@ namespace Hecton8.Core
         bool TryGetSectorPopulation(Vector3 worldPosition, out EcosystemSectorPopulationSample sample);
 
         /// <summary>
+        /// Resolves normalized 50 m biomass availability used by encounter pacing and flora presentation.
+        /// </summary>
+        bool TryGetBiomassAvailability(Vector3 worldPosition, out float preyBiomass01, out float predatorBiomass01, out float carryingCapacity01);
+
+        /// <summary>
         /// Resolves the deterministic apex-presence flag for the sector containing the supplied world position.
         /// </summary>
         bool IsApexInSector(Vector3 worldPosition);
+
+        /// <summary>
+        /// Resolves immediate apex-predator proximity around a runtime-space position without exposing the spatial hash implementation.
+        /// </summary>
+        bool TryGetApexPredatorThreat(Vector3 worldPosition, float radiusMeters, out float proximity01);
 
         /// <summary>
         /// Registers prey consumption inside the containing sector so the next cold-tick solve includes the loss.

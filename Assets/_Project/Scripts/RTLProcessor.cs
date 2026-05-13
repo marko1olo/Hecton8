@@ -3,8 +3,7 @@ using System;
 namespace Hecton.Localization
 {
     /// <summary>
-    /// Zero-allocation RTL logical text bridge for localized labels.
-    /// TextMeshPro owns bidi shaping through TMP_Text.isRightToLeftText.
+    /// Zero-allocation RTL visual-order bridge for localized labels.
     /// </summary>
     public static class RTLProcessor
     {
@@ -14,7 +13,13 @@ namespace Hecton.Localization
 
         public static ReadOnlySpan<char> ToVisualOrder(ReadOnlySpan<char> logical)
         {
-            return logical;
+            if (logical.Length == 0)
+                return ReadOnlySpan<char>.Empty;
+
+            char[] buffer = GetBuffer(logical.Length);
+            logical.CopyTo(buffer.AsSpan(0, logical.Length));
+            TryReverseVisualOrderInPlace(buffer, logical.Length);
+            return buffer.AsSpan(0, logical.Length);
         }
 
         public static bool TryGetVisualBuffer(ReadOnlySpan<char> logical, out char[] buffer, out int length)
@@ -29,6 +34,26 @@ namespace Hecton.Localization
             buffer = GetBuffer(logical.Length);
             logical.CopyTo(buffer.AsSpan(0, logical.Length));
             length = logical.Length;
+            TryReverseVisualOrderInPlace(buffer, length);
+            return true;
+        }
+
+        public static bool TryReverseVisualOrderInPlace(char[] buffer, int length)
+        {
+            if (buffer == null || length <= 1 || length > buffer.Length)
+                return false;
+
+            int left = 0;
+            int right = length - 1;
+            while (left < right)
+            {
+                char temp = buffer[left];
+                buffer[left] = buffer[right];
+                buffer[right] = temp;
+                left++;
+                right--;
+            }
+
             return true;
         }
 

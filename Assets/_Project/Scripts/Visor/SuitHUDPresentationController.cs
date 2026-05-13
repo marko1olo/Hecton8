@@ -15,12 +15,14 @@ namespace NASAPunk.Visor
     // Editor preview must keep the shared HUD RenderTexture current outside Play Mode.
     [ExecuteAlways]
     [AddComponentMenu("Hecton8/HUD/Suit HUD Presentation Controller")]
-    public sealed class SuitHUDPresentationController : MonoBehaviour, ITickable, IUpdatable
+    public sealed class SuitHUDPresentationController : MonoBehaviour, ITickable, IUnscaledFastTickable, IUpdatable
     {
         private const float AutoResolveRetryInterval = 1f;
         private const float DegreesToHalfRadians = 0.00872664626f;
         private const float PrimaryHudTanMinRadians = 0.001f;
         private const float PrimaryHudTanMaxRadians = 1.55334306f;
+        private static readonly int VrComfortVignette01Id = Shader.PropertyToID("_VRComfortVignette01");
+        private static readonly int SomaticComfortVignetteId = Shader.PropertyToID("_VRComfortVignette");
         private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
         private static readonly List<SuitHUDScreenCompositor> s_compositorResolveBuffer = new List<SuitHUDScreenCompositor>(2);
 
@@ -251,6 +253,11 @@ namespace NASAPunk.Visor
             ApplyPresentation(force: _pendingApply, allowProjectionSourceCreation: false);
             _pendingApply = false;
             EvaluateTickRegistration();
+        }
+
+        public void UnscaledFastTick(float unscaledDeltaTime)
+        {
+            Tick(unscaledDeltaTime);
         }
 
         private void AutoResolveReferences(bool force = false)
@@ -551,7 +558,13 @@ namespace NASAPunk.Visor
 
             float height = 2f * distance * ExactPrimaryHudTanPositive(fitCamera.fieldOfView * DegreesToHalfRadians);
             float width = height * fitCamera.aspect;
-            float fill = Mathf.Clamp(diegeticProjectionViewportFill, 0.55f, 0.82f);
+            float comfortVignette01 = Application.isPlaying
+                ? Mathf.Clamp01(Mathf.Max(
+                    Shader.GetGlobalFloat(VrComfortVignette01Id),
+                    Shader.GetGlobalFloat(SomaticComfortVignetteId)))
+                : 0f;
+            float comfortSafeFill = Mathf.Lerp(0.82f, 0.58f, comfortVignette01);
+            float fill = Mathf.Min(Mathf.Clamp(diegeticProjectionViewportFill, 0.55f, 0.82f), comfortSafeFill);
             Vector3 targetScale = new Vector3(width * fill, height * fill, surface.localScale.z);
 
             if ((surface.localScale - targetScale).sqrMagnitude > 0.000001f)
@@ -1075,8 +1088,7 @@ namespace NASAPunk.Visor
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUnscaledFastTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterTick()
@@ -1084,7 +1096,7 @@ namespace NASAPunk.Visor
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterUnscaledFastTickable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 

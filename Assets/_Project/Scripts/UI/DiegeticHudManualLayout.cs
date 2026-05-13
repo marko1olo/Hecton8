@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -20,6 +21,10 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     public sealed class DiegeticHudManualLayout : MonoBehaviour
     {
+        // COLD ALLOC: DiegeticHudManualLayout[128] - registered diegetic HUD layouts for signal-driven rescale - owner: DiegeticHudManualLayout
+        private static readonly DiegeticHudManualLayout[] s_registeredLayouts = new DiegeticHudManualLayout[128];
+        private static int s_registeredCount;
+
         [SerializeField] private Transform[] targets;
         [SerializeField] private DiegeticHudLayoutAxis axis;
         [SerializeField] private bool collectDirectChildrenOnEnable = true;
@@ -36,8 +41,19 @@ namespace Hecton8.UI
         private bool _inputsRegistered;
         private bool _outputsRegistered;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            for (int i = 0; i < s_registeredCount; i++)
+                s_registeredLayouts[i] = null;
+
+            s_registeredCount = 0;
+        }
+
         private void OnEnable()
         {
+            RegisterLayout(this);
+
             if (collectDirectChildrenOnEnable)
                 CollectDirectChildren();
 
@@ -47,6 +63,8 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            UnregisterLayout(this);
+
             if (releaseNativeStateOnDisable)
                 DisposeNativeState();
         }
@@ -105,6 +123,58 @@ namespace Hecton8.UI
             }
 
             return true;
+        }
+
+        public static void FlushGlobalRescaleRequests()
+        {
+            bool rebuild = false;
+            while (GlobalSignals.TryDequeueUIRescaleRequest(out UIRescaleRequestSignal _))
+                rebuild = true;
+
+            if (!rebuild)
+                return;
+
+            for (int i = 0; i < s_registeredCount; i++)
+            {
+                DiegeticHudManualLayout layout = s_registeredLayouts[i];
+                if (layout != null && layout.isActiveAndEnabled)
+                    layout.RebuildLayout();
+            }
+        }
+
+        private static void RegisterLayout(DiegeticHudManualLayout layout)
+        {
+            if (layout == null)
+                return;
+
+            for (int i = 0; i < s_registeredCount; i++)
+            {
+                if (ReferenceEquals(s_registeredLayouts[i], layout))
+                    return;
+            }
+
+            if (s_registeredCount >= s_registeredLayouts.Length)
+                return;
+
+            s_registeredLayouts[s_registeredCount++] = layout;
+        }
+
+        private static void UnregisterLayout(DiegeticHudManualLayout layout)
+        {
+            if (layout == null)
+                return;
+
+            for (int i = 0; i < s_registeredCount; i++)
+            {
+                if (!ReferenceEquals(s_registeredLayouts[i], layout))
+                    continue;
+
+                int last = s_registeredCount - 1;
+                s_registeredLayouts[i] = s_registeredLayouts[last];
+                s_registeredLayouts[last] = null;
+                s_registeredCount = last;
+                return;
+            }
         }
 
         private void CollectDirectChildren()

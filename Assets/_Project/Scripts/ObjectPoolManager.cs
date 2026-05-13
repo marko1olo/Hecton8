@@ -457,6 +457,17 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Returns true when <see cref="Despawn(GameObject)"/> can return this instance to a known pool without falling back to Destroy.
+        /// </summary>
+        public bool CanDespawnWithoutDestroy(GameObject instance)
+        {
+            return instance != null &&
+                   _pools != null &&
+                   instance.TryGetComponent(out PoolItemMarker marker) &&
+                   _pools.ContainsKey(marker.PrefabId);
+        }
+
+        /// <summary>
         /// Returns an instance to its originating pool.
         /// </summary>
         public void Despawn(GameObject instance)

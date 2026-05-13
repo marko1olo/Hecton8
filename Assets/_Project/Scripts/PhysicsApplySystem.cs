@@ -1873,7 +1873,7 @@ namespace Hecton8.Physics
                             continue;
 
                         ForcePacketFlags flags = (ForcePacketFlags)packet.Flags;
-                        if (ShouldDiscardAmbientPacketForEntanglement(body, in packet, flags, fixedDeltaTime))
+                        if (ShouldDiscardAmbientPacket(body, in packet, flags, fixedDeltaTime))
                             continue;
 
                         if ((flags & ForcePacketFlags.WakeBody) != 0 && body.IsSleeping())
@@ -2121,14 +2121,24 @@ namespace Hecton8.Physics
             }
         }
 
-        private static bool ShouldDiscardAmbientPacketForEntanglement(Rigidbody body, in ForcePacket packet, ForcePacketFlags flags, float fixedDeltaTime)
+        private static bool ShouldDiscardAmbientPacket(Rigidbody body, in ForcePacket packet, ForcePacketFlags flags, float fixedDeltaTime)
         {
             if (packet.Priority != ForcePacketPriority.Ambient ||
-                (flags & ForcePacketFlags.HasForce) == 0 ||
                 body == null)
             {
                 return false;
             }
+
+            IPhysicsCullingOverseer physicsCulling = GlobalRegistry.PhysicsCullingOverseer;
+            if ((flags & ForcePacketFlags.WakeBody) == 0 &&
+                physicsCulling != null &&
+                physicsCulling.IsBodyCulled(body))
+            {
+                return true;
+            }
+
+            if ((flags & ForcePacketFlags.HasForce) == 0)
+                return false;
 
             return VehicleMotor.TryResolveForBody(body, out VehicleMotor vehicleMotor) &&
                    vehicleMotor.WouldAmbientForceExtendEntanglement(packet.Force, packet.Mode, math.max(fixedDeltaTime, 0.0001f));

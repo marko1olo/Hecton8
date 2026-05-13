@@ -67,6 +67,7 @@ namespace Hecton8.UI
         private CanvasGroup _chromeCanvasGroup;
         private Image _headerBg;
         private Image _footerBg;
+        private Image _dataLinkDegradedIcon;
         private TextMeshProUGUI _titleText;
         private TextMeshProUGUI _tabText;
         private TextMeshProUGUI _intrusionText;
@@ -75,6 +76,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _rightFooterText;
         private Material _headerMaterial;
         private Material _footerMaterial;
+        private Material _dataLinkIconMaterial;
         private Material _titleMaterial;
         private Material _tabMaterial;
         private Material _intrusionMaterial;
@@ -115,6 +117,8 @@ namespace Hecton8.UI
         private HectonPlayerMovement _playerMovement;
         private bool _lastIntrusionActive;
         private bool _lastMechModeActive;
+        private bool _lastDataLinkDegraded;
+        private int _lastStorageDebtBucket = int.MinValue;
         private int _lastRebootProgressPercent = -1;
         private int _cachedRebootBindingLength;
         private InputDisplayStyle _cachedRebootBindingStyle = (InputDisplayStyle)(-1);
@@ -171,6 +175,7 @@ namespace Hecton8.UI
             PDAEvents.AssertUnregistered(this, nameof(PDAShellChrome));
             DestroyMaterialInstance(ref _headerMaterial);
             DestroyMaterialInstance(ref _footerMaterial);
+            DestroyMaterialInstance(ref _dataLinkIconMaterial);
             DestroyMaterialInstance(ref _titleMaterial);
             DestroyMaterialInstance(ref _tabMaterial);
             DestroyMaterialInstance(ref _intrusionMaterial);
@@ -373,6 +378,7 @@ namespace Hecton8.UI
             {
                 _lastStressCorruptionBucket = int.MinValue;
                 _lastIntrusionActive = false;
+                _lastStorageDebtBucket = int.MinValue;
                 _lastRebootProgressPercent = -1;
                 UnregisterFromTickManager();
                 return;
@@ -384,6 +390,9 @@ namespace Hecton8.UI
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
             bool mechModeActive = _playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
+            float storageDebt01 = SystemDispatcher.StreamingStorageDebt01;
+            bool dataLinkDegraded = storageDebt01 > 0.6f;
+            int storageDebtBucket = (int)math.round(storageDebt01 * 20f);
             int rebootProgressPercent = intrusionActive
                 ? (int)math.round(_intrusionManager.RebootProgressNormalized * 100f)
                 : 0;
@@ -391,12 +400,16 @@ namespace Hecton8.UI
             if (stressBucket == _lastStressCorruptionBucket &&
                 intrusionActive == _lastIntrusionActive &&
                 mechModeActive == _lastMechModeActive &&
+                dataLinkDegraded == _lastDataLinkDegraded &&
+                storageDebtBucket == _lastStorageDebtBucket &&
                 rebootProgressPercent == _lastRebootProgressPercent)
                 return;
 
             _lastStressCorruptionBucket = stressBucket;
             _lastIntrusionActive = intrusionActive;
             _lastMechModeActive = mechModeActive;
+            _lastDataLinkDegraded = dataLinkDegraded;
+            _lastStorageDebtBucket = storageDebtBucket;
             _lastRebootProgressPercent = rebootProgressPercent;
             _lastActiveTab = int.MinValue;
             _lastCargoCells = -1;
@@ -500,6 +513,12 @@ namespace Hecton8.UI
             Anchor(_rightFooterText.rectTransform, new Vector2(0.42f, 0f), new Vector2(1f, 1f), new Vector2(8f, 0f), new Vector2(-14f, 0f));
             _rightFooterText.color = Color.white;
 
+            RectTransform dataLinkIcon = CreateRect(footer, "DataLinkDegradedIcon");
+            Anchor(dataLinkIcon, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-116f, -4f), new Vector2(-108f, 4f));
+            _dataLinkDegradedIcon = EnsureImage(dataLinkIcon.gameObject);
+            _dataLinkDegradedIcon.color = Color.clear;
+            _dataLinkDegradedIcon.raycastTarget = false;
+
             EnsureMaterialInstances();
             ApplyChromeMaterialPalette(Stable, Primary, Dim, AlertText, Dim, DimLow, MechModeText);
 
@@ -593,6 +612,8 @@ namespace Hecton8.UI
             bool pdaOpen = PlayerPDA.IsOpen;
             bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
             bool mechModeActive = _playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
+            float storageDebt01 = SystemDispatcher.StreamingStorageDebt01;
+            bool dataLinkDegraded = storageDebt01 > 0.6f;
             int rebootProgressPercent = intrusionActive
                 ? (int)math.round(_intrusionManager.RebootProgressNormalized * 100f)
                 : 0;
@@ -782,6 +803,7 @@ namespace Hecton8.UI
             Color leftFooterColor = mechModeActive ? MechModeText : Dim;
             Color rightFooterColor = intrusionActive || energy < 0.25f || oxygen < 0.3f ? AlertText : (mechModeActive ? MechModeText : DimLow);
             ApplyChromeMaterialPalette(severity, titleColor, tabColor, AlertText, leftFooterColor, rightFooterColor, MechModeText);
+            ApplyDataLinkDegradedIcon(dataLinkDegraded, storageDebt01);
             if (_chromeCanvasGroup != null)
                 _chromeCanvasGroup.alpha = pdaOpen ? 1f : 0f;
         }
@@ -1323,6 +1345,7 @@ namespace Hecton8.UI
         {
             EnsureGraphicMaterialInstance(_headerBg, ref _headerMaterial);
             EnsureGraphicMaterialInstance(_footerBg, ref _footerMaterial);
+            EnsureGraphicMaterialInstance(_dataLinkDegradedIcon, ref _dataLinkIconMaterial);
             EnsureTextMaterialInstance(_titleText, ref _titleMaterial);
             EnsureTextMaterialInstance(_tabText, ref _tabMaterial);
             EnsureTextMaterialInstance(_intrusionText, ref _intrusionMaterial);
@@ -1348,6 +1371,17 @@ namespace Hecton8.UI
             ApplyTextMaterialColor(_contextTagText, _contextTagMaterial, contextTagColor);
             ApplyTextMaterialColor(_leftFooterText, _leftFooterMaterial, leftFooterColor);
             ApplyTextMaterialColor(_rightFooterText, _rightFooterMaterial, rightFooterColor);
+        }
+
+        private void ApplyDataLinkDegradedIcon(bool degraded, float debt01)
+        {
+            if (_dataLinkDegradedIcon == null)
+                return;
+
+            Color iconColor = degraded
+                ? LerpColor(DimLow, AlertText, math.saturate((debt01 - 0.6f) * 2.5f))
+                : Color.clear;
+            ApplyGraphicMaterialColor(_dataLinkDegradedIcon, _dataLinkIconMaterial, iconColor);
         }
 
         private static void EnsureGraphicMaterialInstance(Graphic graphic, ref Material material)

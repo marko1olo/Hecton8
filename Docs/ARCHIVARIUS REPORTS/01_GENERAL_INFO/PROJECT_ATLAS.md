@@ -1,8 +1,8 @@
 ﻿# PROJECT ATLAS
 
 Version: 1.5.29
-Date: 2026-05-11
-Status: PENDING FINAL UNITY PROOF (DOCS CONTINUATION CORE BUILD PASSED / UNITY MCP NOT RUN)
+Date: 2026-05-13
+Status: PENDING VERIFICATION (DOC_AUDIT R5 STATIC OVERRIDE / UNITY RUNTIME PROOF ABSENT)
 Scope: live orientation map for the current HECTON-8 workspace
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `STRM_Persistent_Object_Registry.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`, `VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`, `PROJECT_LTS_Compatibility_Layer.txt`
 
@@ -10,6 +10,20 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 
 This file is a source-backed workspace atlas.
 It is not a readiness claim and not a profiler report.
+
+## 2026-05-13 DOC_AUDIT X-Ray Override
+
+Read `../../Reports/2026-05-13_DOC_AUDIT_XRAY.md` before trusting older counters below.
+
+Current static corrections:
+
+- first-party asmdefs under `Assets/_Project`: `24`
+- previously unindexed current asmdefs include `Assets/_Project/Scripts/Core/Memory/Hecton8.Core.Memory.asmdef` and `Assets/_Project/Scripts/Physics/Determinism/Hecton8.Physics.Determinism.asmdef`
+- root `PROJECT_ATLAS.md` is a compatibility mirror; `Docs/PROJECT_ATLAS.md` is the current detailed asmdef atlas
+- cited May 11 build artifacts `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` and `.log` are absent from the current filesystem
+- source counts are volatile in the active multi-agent workspace and must be rerun before use
+- latest R4 static source counters: `1411` project C# files, `1365` script C# files, `1401` non-test C# files, `869871` project physical lines, `852315` script physical lines, `867132` non-test physical lines, `215` interface declaration hits, `51` direct public interfaces in `GlobalRegistryContracts.cs`, and `24` first-party asmdefs
+- latest R5 package/config correction: forbidden DOTween/MasterAudio/Easy Save/Astar UPM IDs are absent, but physical legacy Astar/Easy Save/DOTween/MasterAudio asset folders remain in `Assets` and are not proof of approved runtime usage
 
 It answers four narrow questions:
 
@@ -20,28 +34,40 @@ It answers four narrow questions:
 
 ## 2. Workspace Snapshot
 
-2026-05-12 DOC_CHRONOS source snapshot:
+2026-05-13 DOC_AUDIT R4 static source snapshot:
 
 | Surface | Current Value |
 |---|---:|
-| first-party C# files under `Assets/_Project` | 1,383 |
-| first-party C# physical lines under `Assets/_Project` | 824,799 |
-| first-party non-test C# files | 1,373 |
-| first-party non-test C# physical lines | 822,060 |
-| interface declaration hits under `Assets/_Project` | 189 |
+| first-party C# files under `Assets/_Project` | 1,411 |
+| first-party C# physical lines under `Assets/_Project` | 869,871 |
+| first-party non-test C# files | 1,401 |
+| first-party non-test C# physical lines | 867,132 |
+| interface declaration hits under `Assets/_Project` | 215 |
+| direct public interfaces in `GlobalRegistryContracts.cs` | 51 |
 | source/domain ids in `Docs/Actual Domains of Project.txt` | 85 |
-| first-party asmdefs under `Assets/_Project` | 13 |
+| first-party asmdefs under `Assets/_Project` | 24 |
 
 Current first-party asmdefs:
 
 - `Assets/_Project/Input/Hecton8.Input.Generated.asmdef`
+- `Assets/_Project/Scripts/Cartography/Hecton8.Cartography.asmdef`
 - `Assets/_Project/Scripts/Core/BootstrapContracts/Hecton8.Bootstrap.Contracts.asmdef`
+- `Assets/_Project/Scripts/Core/Contracts/Hecton8.Core.Contracts.asmdef`
+- `Assets/_Project/Scripts/Core/Memory/Hecton8.Core.Memory.asmdef`
+- `Assets/_Project/Scripts/Core/Time/Hecton8.Core.Time.asmdef`
 - `Assets/_Project/Scripts/Editor/Hecton8.Editor.asmdef`
 - `Assets/_Project/Scripts/Hecton8.Core.asmdef`
 - `Assets/_Project/Scripts/Input/Hecton8.Input.asmdef`
+- `Assets/_Project/Scripts/Lighting/Hecton8.Lighting.asmdef`
+- `Assets/_Project/Scripts/Logistics/Hecton8.Logistics.asmdef`
 - `Assets/_Project/Scripts/Optimization/Editor/Hecton8.Optimization.Editor.asmdef`
+- `Assets/_Project/Scripts/Physics/Determinism/Hecton8.Physics.Determinism.asmdef`
+- `Assets/_Project/Scripts/Physiology/Hecton8.Physiology.asmdef`
 - `Assets/_Project/Scripts/Plugins/Hecton8.Plugins.asmdef`
+- `Assets/_Project/Scripts/QA/Editor/Hecton8.QA.Editor.asmdef`
+- `Assets/_Project/Scripts/QA/Hecton8.QA.asmdef`
 - `Assets/_Project/Scripts/UI/Editor/Hecton8.UI.Editor.asmdef`
+- `Assets/_Project/Scripts/UI/Localization/Hecton8.UI.Localization.asmdef`
 - `Assets/_Project/Scripts/World/Contracts/Hecton8.World.Contracts.asmdef`
 - `Assets/_Project/Scripts/World/Dots/Hecton8.World.Dots.asmdef`
 - `Assets/_Project/Scripts/World/SpaceEngine098/Hecton8.SpaceEngine098Terrain.asmdef`
@@ -83,15 +109,15 @@ Primary first-party code still lives under:
 - `Assets/_Project/Prefabs`
 - `Assets/_Project/Scenes`
 - `Assets/_Project/Art`
-- `Assets/_Project/UI`
+- UI runtime code is under `Assets/_Project/Scripts/UI`; no direct `Assets/_Project/UI` folder exists in the R4 scan
 
-Observed first-party C# file count under `Assets/_Project`: `1306`
-Observed first-party C# physical line count under `Assets/_Project`: `770577`
-Observed first-party C# file count under `Assets/_Project/Scripts`: `1262`
-Observed first-party C# physical line count under `Assets/_Project/Scripts`: `753858`
+Observed first-party C# file count under `Assets/_Project`: `1411`
+Observed first-party C# physical line count under `Assets/_Project`: `869871`
+Observed first-party C# file count under `Assets/_Project/Scripts`: `1365`
+Observed first-party C# physical line count under `Assets/_Project/Scripts`: `852315`
 Line-count method: PowerShell over `System.IO.StreamReader.ReadLine()` for every matched file.
 
-SOURCE DRIFT DETECTED: previous R186 Atlas scan recorded `1292` / `1248` C# files and `742892` script physical lines; current May 11 documentation continuation snapshot records `1306` / `1262` C# files and `753858` script physical lines.
+SOURCE DRIFT DETECTED: previous R186 Atlas scan recorded `1292` / `1248` C# files and `742892` script physical lines; May 11 documentation continuation recorded `1306` / `1262`; current May 13 DOC_AUDIT R4 records `1411` / `1365` C# files and `852315` script physical lines.
 
 MASSIVE REFACTOR DETECTED: same-day script line-count delta exceeds `500` lines. Treat all earlier May 7 source-count claims as superseded by this timestamped snapshot unless a newer report states otherwise.
 
@@ -100,12 +126,11 @@ It does not imply quality, cohesion, or compile health.
 
 Current build-master compile state:
 
-- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` succeeded in the latest completed attempt.
-- Latest Core dependency build succeeded with `0 Warning(s)` and `0 Error(s)`.
-- Latest build artifact: `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`.
-- The May 11 docs continuation build supersedes R186 as latest local `dotnet` compile evidence with `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`.
-- Unity MCP proof was not run in the May 11 continuation; do not use prior MCP-clean wording as current evidence.
-- Latest current-state report: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+- No current artifact-backed compile proof was captured by DOC_AUDIT R5.
+- The previously cited May 11 build artifact `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` is absent from the current filesystem, as is the matching raw log.
+- Treat the May 11 compile-success line as dated report text until artifacts are restored or a new build artifact is captured.
+- Unity MCP proof was not run in the May 11 continuation or DOC_AUDIT R5; do not use prior MCP-clean wording as current evidence.
+- Latest current-state override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
 - Official Unity release-page check on 2026-05-11 found `6000.4.6f1` released on `2026-05-05`; local project evidence still pins `6000.4.1f1`. This is version drift, not upgrade approval.
 
 ## 4. External / Package Surface
@@ -119,10 +144,11 @@ Third-party and package-heavy surfaces visible in the workspace:
 - GPU Instancer
 - Bakery
 - Volumetric Light Beam
-- legacy package traces such as A* and Easy Save assemblies
+- legacy asset-package contamination: `Assets/AstarPathfindingProject` (`605` files), `Assets/Plugins/Easy Save 3` (`422` files), `Assets/Plugins/Demigiant` (`357` files, including DOTween/DOTweenPro), and `Assets/Plugins/DarkTonic/MasterAudio` (`346` runtime files plus separate editor/resources files)
 
 Presence on disk does not equal approved runtime usage.
 Allowed usage remains constrained by `AGENTS.md`.
+R5 package-lock distinction: the forbidden UPM IDs are absent from `Packages/manifest.json`; the physical `Assets` folders above still remain contamination until stripped, isolated, or quarantined by build guards.
 
 DOTS / Entities package boundary:
 
@@ -215,9 +241,9 @@ Canonical entry files inside this bundle:
 - `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`
 - `WORLD_ENVIRONMENT_SUBMARINE_SYSTEM_MAP.md`
 - `INTERFACE_CONTRACT_TABLE.md`
-- `INTERFACE_HEALTH_DASHBOARD.md`
+- `../02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md`
 - `EVENT_BUS_MAP.md`
-- `EVENT_FLOW_MAP.md`
+- `../02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md`
 - `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md`
 - `2026-04-30_EDITOR_RUNTIME_FORENSICS.md`
 - `2026-04-30_SERVICE_AUTHORITY_DRIFT.md`
@@ -258,7 +284,7 @@ Authority files for this boundary:
 
 These points were revalidated against current source in this pass:
 
-- `GlobalRegistryContracts.cs` now contains `41` direct public interfaces, not the older `19`, `27`, `31`, `33`, `34`, `36`, `37`, `38`, `39`, or `40` snapshots.
+- `GlobalRegistryContracts.cs` now contains `51` direct public interfaces, not the older `19`, `27`, `31`, `33`, `34`, `36`, `37`, `38`, `39`, `40`, or `41` snapshots.
 - `SpatialAudioManager` directly implements `IAudioService` and registers through `GlobalRegistry.RegisterAudioService(this)`.
 - `SuitHUDV4CanvasOverlay` is the direct first-party `IUIService` implementor found in current source scan.
 - current bootstrap authority is split across `BootstrapController`, `GameBootstrapper`, and `SceneBootstrap`; it is not a single-owner startup surface.
@@ -351,11 +377,11 @@ There is a partial migration plus legacy static-bus residue.
 
 These active docs were stale against current code before this pass:
 
-- `INTERFACE_HEALTH_DASHBOARD.md`
+- `../02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md`
 - `INTERFACE_CONTRACT_TABLE.md`
 - `INTERFACE_STRATEGY.md`
 - `DEPENDENCY_GRAPH.md`
-- `EVENT_FLOW_MAP.md`
+- `../02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md`
 - this file itself
 
 ## 8.1 Current Audit Artifacts
@@ -439,7 +465,7 @@ Mandates followed for this update:
 - `VOX_MapMagic_Voxel_Seam_Alignment_Integration`
 - `PROJECT_LTS_Compatibility_Layer`
 
-Current measured source and documentation surface:
+Historical measured source and documentation surface, superseded by the 2026-05-13 DOC_AUDIT R4 snapshot near the top of this file:
 
 - `Assets/_Project`: `1306` C# files, `770577` physical lines.
 - `Assets/_Project/Scripts`: `1262` C# files, `753858` physical lines.
@@ -482,7 +508,7 @@ Current SpaceEngine research authority:
 - runtime terrain kernel assembly folder: `Assets/_Project/Scripts/World/SpaceEngine098/`
 - kernel asmdef: `Assets/_Project/Scripts/World/SpaceEngine098/Hecton8.SpaceEngine098Terrain.asmdef`
 - Burst kernel source: `Assets/_Project/Scripts/World/SpaceEngine098/SpaceEngine098TerrainKernels.cs`
-- MapMagic bridge nodes: `Assets/_Project/Scripts/World/HectonSpaceEngine098MapMagicNodes.cs`
+- MapMagic bridge nodes: `Assets/_Project/Scripts/Plugins/MapMagic/HectonSpaceEngine098MapMagicNodes.cs`
 - dev/editor smoke runners:
   - `Assets/_Project/Scripts/Dev/SpaceEngine098TerrainSmokeTester.cs`
   - `Assets/_Project/Scripts/Editor/SpaceEngine098TerrainSmokeTestRunner.cs`
@@ -493,7 +519,7 @@ Current SpaceEngine research authority:
 Current Planetary Sandbox / terrain shelf authority:
 
 - sandbox shelf Burst jobs: `Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfJobs.cs`
-- sandbox shelf MapMagic node: `Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfMapMagicNode.cs`
+- sandbox shelf MapMagic node: `Assets/_Project/Scripts/Plugins/MapMagic/HectonSandboxAbyssalShelfMapMagicNode.cs`
 - sandbox shelf smoke tester: `Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs`
 - standalone smoke output: `Docs/SPACE_ENGINE_RESEARCH/HectonSandboxAbyssalShelfStandaloneSmoke.json`
 - current sandbox surgery report: `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md`
@@ -502,7 +528,7 @@ Current Planetary Sandbox / terrain shelf authority:
   - `Assets/_Project/Scripts/Editor/PlanetaryCanvasSmokeTestRunner.cs`
   - `Assets/_Project/Scripts/Editor/PlanetaryCanvasMapMagicGraphIntegrator.cs`
 - terrain splatmap Burst job: `Assets/_Project/Scripts/World/WorldProceduralTerrainSplatmapJobs.cs`
-- terrain splatmap MapMagic node: `Assets/_Project/Scripts/World/HectonTerrainSplatmapMapMagicNode.cs`
+- terrain splatmap MapMagic node: `Assets/_Project/Scripts/Plugins/MapMagic/HectonTerrainSplatmapMapMagicNode.cs`
 
 Burst kernel ownership classification:
 
@@ -524,8 +550,8 @@ Mandate sync result for today's additions:
 
 Interface health result from `GlobalRegistryContracts.cs`:
 
-- Current direct public interface count: `41`.
-- Interfaces with at least one source-line implementation/reference scan hit: not fully recounted after the 41st contract slot appeared.
+- Current direct public interface count: `51`.
+- Interfaces with at least one source-line implementation/reference scan hit: not fully recounted after the 51st contract slot appeared.
 - Ghost interfaces by this static scan: `PENDING VERIFICATION`.
 
 Naming sweep result:
@@ -598,7 +624,7 @@ Mandates followed for this update:
 - `PHYS_Physics_Integrity_Determinism_ForceMode`
 - `DBG_Telemetry_Crash_Reporting_PostMortem`
 
-Current measured source/docs surface:
+Historical measured source/docs surface, superseded by the 2026-05-13 DOC_AUDIT R4 snapshot near the top of this file:
 
 - `Assets/_Project`: `1292` C# files, `759122` physical lines.
 - `Assets/_Project/Scripts`: `1248` C# files, `742892` physical lines.
@@ -616,10 +642,11 @@ These counts are orientation data only. They are not readiness metrics and shoul
 
 Current active forensic reports to read before older atlas claims:
 
-1. `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`
+1. `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`
 2. `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`
-3. `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`
-4. `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`
+3. `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`
+4. `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`
+5. `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`
 5. `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`
 6. `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`
 7. `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`

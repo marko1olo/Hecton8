@@ -96,7 +96,7 @@ namespace Hecton8.World
         private static readonly int _ScooterHeadlightConeDataId = Shader.PropertyToID("_HectonScooterHeadlightConeData");
         private static readonly int _FloorBiolumStrengthId = Shader.PropertyToID("_HectonFloorBiolumStrength");
         private static readonly int _OceanBiolumStrengthId = Shader.PropertyToID("_HectonOceanBiolumStrength");
-        private static readonly int _GlobalBiolumIntensityId = Shader.PropertyToID("_BiolumIntensity");
+        private static readonly int _BiolumIntensityVectorId = Shader.PropertyToID("_BiolumIntensity");
         private static readonly int _PeripheralCullDotId = Shader.PropertyToID("_HectonPeripheralCullDot");
         private static readonly int _PeripheralCullDistanceSqId = Shader.PropertyToID("_HectonPeripheralCullDistanceSq");
         private static readonly int _SourceMatricesId = Shader.PropertyToID("_HectonSourceInstanceMatrices");
@@ -1751,7 +1751,7 @@ namespace Hecton8.World
             _cullingCompute.SetVectorArray(_ScooterHeadlightConeDataId, _scooterHeadlightConeData);
             _cullingCompute.SetFloat(_FloorBiolumStrengthId, Shader.GetGlobalFloat(_FloorBiolumStrengthId));
             _cullingCompute.SetFloat(_OceanBiolumStrengthId, Shader.GetGlobalFloat(_OceanBiolumStrengthId));
-            _cullingCompute.SetFloat(_GlobalBiolumIntensityId, Shader.GetGlobalFloat(_GlobalBiolumIntensityId));
+            _cullingCompute.SetFloat(_BiolumIntensityVectorId, ResolveBiolumIntensityScalar());
 
             int dispatchGroups = Mathf.Max(1, (_instanceCount + ThreadsPerGroup - 1) / ThreadsPerGroup);
             DispatchFloraSnapFlagUpdate(activeInstanceDataBuffer, globalFloatingOffset, dispatchGroups);
@@ -1936,6 +1936,13 @@ namespace Hecton8.World
             count += size >= 16384 ? 1 : 0;
             count += size >= 32768 ? 1 : 0;
             return count;
+        }
+
+        private static float ResolveBiolumIntensityScalar()
+        {
+            Vector4 intensity = Shader.GetGlobalVector(_BiolumIntensityVectorId);
+            float scalar = intensity.x;
+            return math.isfinite(scalar) ? math.max(0f, scalar) : 0f;
         }
 
         private void EnsureGpuIndirectResources(int instanceCount, Mesh nearMesh, Mesh farMesh)
@@ -2629,7 +2636,7 @@ namespace Hecton8.World
                 return true;
 
             float globalBiolum = Mathf.Max(
-                Shader.GetGlobalFloat(_GlobalBiolumIntensityId),
+                ResolveBiolumIntensityScalar(),
                 Mathf.Max(
                     Shader.GetGlobalFloat(_FloorBiolumStrengthId),
                     Shader.GetGlobalFloat(_OceanBiolumStrengthId)));
@@ -2770,7 +2777,7 @@ namespace Hecton8.World
                 if (_enableDarknessCulling)
                 {
                     float globalBiolum = Mathf.Max(
-                        Shader.GetGlobalFloat(_GlobalBiolumIntensityId),
+                        ResolveBiolumIntensityScalar(),
                         Mathf.Max(
                             Shader.GetGlobalFloat(_FloorBiolumStrengthId),
                             Shader.GetGlobalFloat(_OceanBiolumStrengthId)));

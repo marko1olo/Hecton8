@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using Hecton8.Core.Memory.Layout;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 
@@ -28,6 +29,9 @@ namespace Hecton8.Core
             int destinationIndex,
             int count) where T : unmanaged
         {
+            if (!IsBinaryBlittableSafe<T>())
+                return RejectUnsafeBinaryBlitType<T>();
+
             if (!source.IsCreated || !destination.IsCreated)
                 return false;
 
@@ -60,6 +64,9 @@ namespace Hecton8.Core
             out int bytesWritten) where T : unmanaged
         {
             bytesWritten = 0;
+            if (!IsBinaryBlittableSafe<T>())
+                return RejectUnsafeBinaryBlitType<T>();
+
             if (!destination.IsCreated)
                 return false;
 
@@ -98,6 +105,9 @@ namespace Hecton8.Core
             out T value) where T : unmanaged
         {
             value = default;
+            if (!IsBinaryBlittableSafe<T>())
+                return RejectUnsafeBinaryBlitType<T>();
+
             if (!source.IsCreated)
                 return false;
 
@@ -169,6 +179,39 @@ namespace Hecton8.Core
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Forces the one-time attribute cache for a binary DTO during cold boot.
+        /// </summary>
+        /// <typeparam name="T">Blittable DTO type.</typeparam>
+        /// <returns>True when the DTO is explicitly marked as binary-blit safe.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool PrewarmBinaryBlittableSafety<T>() where T : unmanaged
+        {
+            return BinaryBlittableTypeCache<T>.IsSafe;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsBinaryBlittableSafe<T>() where T : unmanaged
+        {
+            return BinaryBlittableTypeCache<T>.IsSafe;
+        }
+
+        private static bool RejectUnsafeBinaryBlitType<T>() where T : unmanaged
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            throw new FatalMemoryCorruptionException(
+                "[MemoryInquisitor] Rejected unmanaged blit for a type missing BinaryBlittableSafeAttribute.");
+#else
+            return false;
+#endif
+        }
+
+        private static class BinaryBlittableTypeCache<T> where T : unmanaged
+        {
+            internal static readonly bool IsSafe =
+                typeof(T).IsDefined(typeof(BinaryBlittableSafeAttribute), false);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

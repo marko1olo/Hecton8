@@ -11,7 +11,7 @@
 //   [ADD] Heat buildup — dlitelnoe ispolzovanie → flickering → auto-shutdown
 //   [ADD] Cooldown period — posle overheat nelzya vklyuchit X sekund
 //   [ADD] Flickering effect — sluchaynye provaly intensivnosti pri low battery/heat
-//   [ADD] Volumetric light beam — optsionalnaya integratsiya s VolumetricLightBeam
+//   [ADD] Screen-space shaft diagnostics — feeds the lighting post path
 //   [ADD] Diagnostics — _debugIsOn, _debugBattery, _debugHeat, _debugFlicker
 //   [ADD] Null-safety — graceful degradation, auto-resolve references
 //
@@ -26,7 +26,7 @@
 //   • Heat buildup — nakaplivaetsya pri vklyuchennom fonare, ostyvaet pri vyklyuchennom
 //   • Flickering — triggered by low battery OR high heat
 //   • Overheat shutdown — avtovyklyuchenie + cooldown period
-//   • VolumetricLightBeam — optsionalnaya integratsiya dlya sci-fi beam effect
+//   • Screen-space shafts — handled by Hecton8.Lighting.Shafts
 // ============================================================================
 
 using Hecton8.Audio;
@@ -40,7 +40,6 @@ using Hecton8.Visor;
 using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Mathematics;
-using VLB;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -438,10 +437,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Gromkost zvukov fonarya.")]
         [SerializeField, Range(0f, 1f)] private float audioVolume = 0.5f;
 
-        [Header("— Volumetric Beam —")]
-        [Tooltip("Optional Volumetric Light Beam component for sci-fi beam rendering.")]
-        [SerializeField] private VolumetricLightBeamAbstractBase volumetricBeam;
-
+        [Header("— Screen-Space Shaft Response —")]
         [Header("— Underwater Beam Response —")]
         [Tooltip("Makes the flashlight beam feel denser underwater without touching the spotlight owner.")]
         [SerializeField] private bool enableUnderwaterBeamResponse = true;
@@ -449,21 +445,9 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.25f, 20f)] private float underwaterBeamFullDepth = 8f;
         [Tooltip("Maximum multiplier applied to the beam intensity underwater.")]
         [SerializeField, Range(1f, 3f)] private float underwaterBeamMaxMultiplier = 1.35f;
-        [Tooltip("Maximum beam noise injected underwater.")]
-        [SerializeField, Range(0f, 0.4f)] private float underwaterBeamNoiseMax = 0.16f;
-        [Tooltip("Target side softness underwater. Lower = harder shaft, higher = softer volume.")]
-        [SerializeField, Range(0.5f, 3f)] private float underwaterBeamSideSoftness = 1.2f;
-        [Tooltip("Small underwater jitter to stop the shaft from looking dead.")]
-        [SerializeField, Range(0f, 0.15f)] private float underwaterBeamJitterMax = 0.03f;
-
         [Header("── Storm Interference ─────────────────────────")]
         [Tooltip("Minimum output multiplier applied while electrical storms interfere with the flashlight.")]
         [SerializeField, Range(0.1f, 1f)] private float stormInterferenceMinIntensity = 0.45f;
-        [Tooltip("Extra noise injected into the volumetric beam during severe electrical interference.")]
-        [SerializeField, Range(0f, 0.4f)] private float stormInterferenceBeamNoise = 0.12f;
-        [Tooltip("Extra beam jitter injected during severe electrical interference.")]
-        [SerializeField, Range(0f, 0.2f)] private float stormInterferenceBeamJitter = 0.05f;
-
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
@@ -476,8 +460,8 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool _debugIsFlickering;
         [SerializeField] private bool _debugIsOverheated;
         [SerializeField] private float _debugCooldownRemaining;
-        [SerializeField] private float _debugVolumetricMultiplier;
-        [SerializeField] private float _debugVolumetricDepth;
+        [SerializeField] private float _debugLightShaftMultiplier;
+        [SerializeField] private float _debugLightShaftDepth;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -533,8 +517,6 @@ namespace Hecton8.Gameplay
         private float _externalInterferenceIntensity;
         private float _externalInterferenceHoldTimer;
         private float _externalInterferenceRecoverySpeed;
-
-        // VolumetricLightBeam integration (cached via reflection to avoid hard dependency)
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -643,7 +625,7 @@ namespace Hecton8.Gameplay
 
         public void Tick(float deltaTime)
         {
-            if (_playerMovement == null || flashlightLight == null || volumetricBeam == null)
+            if (_playerMovement == null || flashlightLight == null)
                 ResolveReferences();
 
             // Blokiruem logiku v menyu (hotya InputManager dolzhen otklyuchat Player map, 
@@ -779,7 +761,7 @@ namespace Hecton8.Gameplay
         {
             _beamMode = mode;
             ConfigureFlashlightLight();
-            UpdateVolumetricBeam(_currentIntensity);
+            UpdateLightShaftDiagnostics(_currentIntensity);
             UpdateDiagnostics();
         }
 
@@ -971,8 +953,6 @@ namespace Hecton8.Gameplay
         {
             ResolveMainCameraReference(true);
             ResolveFlashlightLight();
-            ResolveVolumetricBeam();
-
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
                 if (_playerMovement == null)
@@ -1088,19 +1068,6 @@ namespace Hecton8.Gameplay
             flashlightLight.shadows = LightShadows.None;
         }
 
-        private void ResolveVolumetricBeam()
-        {
-            if (volumetricBeam != null || flashlightLight == null)
-                return;
-
-            if (flashlightLight.TryGetComponent(out VolumetricLightBeamHD hdBeam))
-            {
-                volumetricBeam = hdBeam;
-                _vlbHD = hdBeam;
-                _vlbResolved = true;
-            }
-        }
-
         private void ValidateSurvivalSystemBinding()
         {
             if (_externalBatteryTool != null || survivalSystem != null || !enableBatteryDrain)
@@ -1156,7 +1123,7 @@ namespace Hecton8.Gameplay
                 if (flashlightLight != null)
                     flashlightLight.intensity = _currentIntensity;
 
-                UpdateVolumetricBeam(_currentIntensity);
+                UpdateLightShaftDiagnostics(_currentIntensity);
             }
             else if (_currentIntensity != target)
             {
@@ -1167,7 +1134,7 @@ namespace Hecton8.Gameplay
                     flashlightLight.enabled = _isOn;
                 }
 
-                UpdateVolumetricBeam(target);
+                UpdateLightShaftDiagnostics(target);
             }
         }
 
@@ -1294,99 +1261,38 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Keshirovannaya ssylka na tipizirovannyy VolumetricLightBeamHD/SD.
+        /// Editor-only scalar readout for the screen-space light shaft source path.
         /// Rezolvitsya odin raz pri pervom vyzove. Null esli tip ne podderzhivaetsya.
         /// </summary>
-        private VolumetricLightBeamHD _vlbHD;
-        private bool _vlbResolved;
-        private float _cachedBeamIntensityMultiplier = -1f;
-        private float _cachedBeamNoiseIntensity = -1f;
-        private float _cachedBeamSideSoftness = -1f;
-        private float _cachedBeamJitter = -1f;
-
         /// <summary>
         /// Obnovlyaet intensivnost volumetric beam bez refleksii.
         /// 
-        /// VLB uzhe yavlyaetsya pryamoy zavisimostyu (using VLB; + serializovannoe pole).
+        /// Legacy beam ownership moved to the post-process shaft tracker.
         /// Refleksiya cherez PropertyInfo.SetValue vyzyvala boxing float→object
         /// kazhdyy kadr pri transition/flickering. 
         ///
-        /// Pryamoy kast k VolumetricLightBeamHD — zero GC, zero boxing.
-        /// Esli VLB ispolzuet SD versiyu, dobavit analogichnuyu vetku.
+        /// Keeps legacy inspector feedback without touching render components.
+        /// No third-party beam component is touched here.
         /// </summary>
-        private void UpdateVolumetricBeam(float intensity)
+        private void UpdateLightShaftDiagnostics(float intensity)
         {
-            if (volumetricBeam == null)
-                ResolveVolumetricBeam();
+#if UNITY_EDITOR
+            float multiplier = intensity * math.rcp(math.max(0.01f, GetModeIntensity()));
+            float depth = 0f;
 
-            if (volumetricBeam == null)
-                return;
-
-            if (!_vlbResolved)
+            if (enableUnderwaterBeamResponse && _playerMovement != null)
             {
-                _vlbResolved = true;
-                _vlbHD = volumetricBeam as VolumetricLightBeamHD;
-
-                if (_vlbHD == null)
-                {
-                    Debug.LogWarning(
-                        "[PlayerFlashlight] VolumetricLightBeam assigned but is not " +
-                        "VolumetricLightBeamHD. Disabling volumetric integration.", this);
-                    volumetricBeam = null;
-                }
+                depth = math.max(0f, _playerMovement.CurrentDepth);
+                float depthFactor = math.saturate(depth * math.rcp(math.max(0.01f, underwaterBeamFullDepth)));
+                multiplier *= math.lerp(1f, underwaterBeamMaxMultiplier, depthFactor);
             }
 
-            if (_vlbHD != null)
-            {
-                float multiplier = intensity / Mathf.Max(0.01f, GetModeIntensity());
-                float depth = 0f;
-                float noiseIntensity = 0f;
-                float sideSoftness = 1.5f;
-                float jitter = 0f;
+            if (_externalInterferenceIntensity > 0.001f)
+                multiplier *= math.lerp(1f, stormInterferenceMinIntensity, math.saturate(_externalInterferenceIntensity));
 
-                if (enableUnderwaterBeamResponse && _playerMovement != null)
-                {
-                    depth = Mathf.Max(0f, _playerMovement.CurrentDepth);
-                    float depthFactor = Mathf.Clamp01(depth / Mathf.Max(0.01f, underwaterBeamFullDepth));
-                    multiplier *= math.lerp(1f, underwaterBeamMaxMultiplier, depthFactor);
-                    noiseIntensity = underwaterBeamNoiseMax * depthFactor;
-                    sideSoftness = math.lerp(1.5f, underwaterBeamSideSoftness, depthFactor);
-                    jitter = underwaterBeamJitterMax * depthFactor;
-                }
-
-                if (_externalInterferenceIntensity > 0.001f)
-                {
-                    noiseIntensity += stormInterferenceBeamNoise * _externalInterferenceIntensity;
-                    jitter += stormInterferenceBeamJitter * _externalInterferenceIntensity;
-                }
-
-                if (Mathf.Abs(_cachedBeamIntensityMultiplier - multiplier) > 0.01f)
-                {
-                    _vlbHD.intensityMultiplier = multiplier;
-                    _cachedBeamIntensityMultiplier = multiplier;
-                }
-
-                if (Mathf.Abs(_cachedBeamNoiseIntensity - noiseIntensity) > 0.005f)
-                {
-                    _vlbHD.noiseIntensity = noiseIntensity;
-                    _cachedBeamNoiseIntensity = noiseIntensity;
-                }
-
-                if (Mathf.Abs(_cachedBeamSideSoftness - sideSoftness) > 0.01f)
-                {
-                    _vlbHD.sideSoftness = sideSoftness;
-                    _cachedBeamSideSoftness = sideSoftness;
-                }
-
-                if (Mathf.Abs(_cachedBeamJitter - jitter) > 0.005f)
-                {
-                    _vlbHD.jitteringFactor = jitter;
-                    _cachedBeamJitter = jitter;
-                }
-
-                _debugVolumetricMultiplier = multiplier;
-                _debugVolumetricDepth = depth;
-            }
+            _debugLightShaftMultiplier = multiplier;
+            _debugLightShaftDepth = depth;
+#endif
         }
 
         private void UpdateExternalInterference(float deltaTime)

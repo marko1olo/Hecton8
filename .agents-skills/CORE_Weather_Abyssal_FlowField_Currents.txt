@@ -116,6 +116,26 @@ IF bit4(W) == 1:
 
 ## SECTION 3 — CONVECTION & UPDRAFT LOGIC
 
+### 3.0 Thermodynamics / Logistics Boundary
+
+[RULE] Flow fields may consume thermodynamic heat-source summaries, but they do not own thermal authority.
+[RULE] Heat sources are read-only packets: AUP/world position, intensity, radius, lifetime, and source id.
+[RULE] Logistics `THERMAL_COOLANT` availability can damp heat-source intensity only through a thermodynamics-owned summary. Flow does not query Logistics directly.
+[RULE] Visual updrafts, bubbles, shimmer, and turbulence are presentation fakes unless player-critical hazard/damage state is explicitly marked by the thermodynamics owner.
+
+[FORBID] Flow-field jobs reading or writing `LogisticsNode`.
+[FORBID] Flow-field jobs solving resource throughput.
+[FORBID] Logistics solving thermal diffusion or convection visuals.
+
+## Engineering Data
+
+| Input | Owner | Flow Use | Rejection Rule |
+|---|---|---|---|
+| HeatSource intensity | Thermodynamics | scales updraft and bubble VFX | no gameplay heat mutation |
+| Coolant availability | Logistics via Thermodynamics | damped heat-source summary | no direct graph read |
+| Current vector | Weather/Flow | VFX, audio, limited physics hints | no resource transport |
+| Hazard damage | Survival/Damage owner | event trigger only | no hidden damage in VFX flow |
+
 ### 3.1 Heat Source Detection
 
 HeatSource {

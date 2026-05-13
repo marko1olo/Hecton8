@@ -191,6 +191,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half fogFactor : TEXCOORD4;
                 half xrNearClipFade : TEXCOORD5;
                 float2 xrFoveatedVector : TEXCOORD6;
+                half hullDentShadow : TEXCOORD7;
             };
 
             half3 SafeNormalize3(half3 value)
@@ -399,7 +400,8 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
                 HECTON_CORE_LIT_TRANSFER_INSTANCE_ID(input, output);
                 HECTON_CORE_LIT_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-                float3 safePositionOS = HectonCoreLitSanitizePositionOS(input.positionOS.xyz);
+                half hullDentShadow;
+                float3 safePositionOS = HectonCoreLitApplyHullDentsOS(input.positionOS.xyz, input.normalOS, hullDentShadow);
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(safePositionOS);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
                 output.positionCS = positionInputs.positionCS;
@@ -410,6 +412,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
                 output.xrNearClipFade = (half)HectonCoreLitEvaluateXRNearClipFade(output.positionWS);
                 output.xrFoveatedVector = HectonCoreLitBuildStereoFoveationVector(output.positionWS);
+                output.hullDentShadow = hullDentShadow;
                 return output;
             }
 
@@ -495,6 +498,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 }
                 ApplyModuleWaterline(moduleFloodLevel01, moduleSubmerged01, albedo, smoothness);
                 HectonCoreLitApplyEnvironmentalWear(input.positionWS, normalWS, (half)_EnvironmentalWear, (half3)_RustSaltColor.rgb, albedo, metallic, smoothness);
+                HectonCoreLitApplyHullDentSurfaceCheat(input.hullDentShadow, albedo, smoothness);
                 float parasitePulse = 1.0;
                 float thermalGrowthMask = 0.0;
                 float parasiteMask = HectonCoreLitEvaluateParasiteField(input.positionWS, parasitePulse, thermalGrowthMask);

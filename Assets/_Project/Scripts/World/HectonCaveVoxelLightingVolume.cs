@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Unity.Collections;
 using UnityEngine;
 
@@ -12,8 +13,10 @@ namespace Hecton8.World
     public sealed class HectonCaveVoxelLightingVolume : MonoBehaviour, ITickable, IUpdatable
     {
         private const int MaxOverlapHits = 8;
+        private const int LightLevelSignalFrameStride = 6;
         private const string NativeMemoryOwner = nameof(HectonCaveVoxelLightingVolume);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const float InvByteMax = 1f / 255f;
         internal static HectonCaveVoxelLightingVolume ActiveRuntimeInstance { get; private set; }
 
         private static readonly int _CaveVoxelActiveId = Shader.PropertyToID("_HectonCaveVoxelActive");
@@ -94,6 +97,8 @@ namespace Hecton8.World
         private bool _hasValidPublishedVolume;
         private int _resolutionRuntime;
         private int _scanSliceCursor;
+        private int _lastLightLevelSignalFrame = -1;
+        private uint _sourceEntityId;
         private Transform _followTargetRuntime;
         private Transform _excludedRoot;
         private Texture3D _voxelDensityTexture;
@@ -115,6 +120,7 @@ namespace Hecton8.World
         private void Awake()
         {
             ActiveRuntimeInstance = this;
+            _sourceEntityId = unchecked((uint)EntityId.ToULong(GetEntityId()));
             ResolveFollowTarget();
             EnsureResources();
             PublishInactiveGlobals();
@@ -158,6 +164,7 @@ namespace Hecton8.World
             if (_followTargetRuntime == null)
             {
                 PublishInactiveGlobals();
+                PublishPlayerLightLevelSignal();
                 return;
             }
 
@@ -191,6 +198,7 @@ namespace Hecton8.World
             }
 
             PublishGlobals(_hasValidPublishedVolume);
+            PublishPlayerLightLevelSignal();
             _debugHasValidVolume = _hasValidPublishedVolume;
             _debugSliceCursor = _scanSliceCursor;
             _debugPublishedCenterWs = _publishedCenterWs;
@@ -554,6 +562,69 @@ namespace Hecton8.World
                     _publishedHalfExtents.z,
                     _publishedSdfRange));
             Shader.SetGlobalTexture(_CaveVoxelSdfTexId, _voxelDensityTexture);
+        }
+
+        private void PublishPlayerLightLevelSignal()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            int frame = Time.frameCount;
+            if (_lastLightLevelSignalFrame >= 0 && frame - _lastLightLevelSignalFrame < LightLevelSignalFrameStride)
+                return;
+
+            _lastLightLevelSignalFrame = frame;
+            float lightLevel01 = ResolvePlayerLightLevel01();
+            LightLevelSignal signal = new LightLevelSignal
+            {
+                LightLevel01 = lightLevel01,
+                Darkness01 = 1f - lightLevel01,
+                SourceId = _sourceEntityId,
+                Frame = unchecked((uint)frame),
+                SampleKind = LightLevelSignalSampleKinds.CaveVoxelSdf,
+                Flags = _hasValidPublishedVolume ? LightLevelSignalFlags.ValidSample : (byte)0
+            };
+            GlobalSignals.Publish(in signal);
+        }
+
+        private float ResolvePlayerLightLevel01()
+        {
+            if (!_hasValidPublishedVolume ||
+                !_sdfVolume.IsCreated ||
+                _followTargetRuntime == null ||
+                _resolutionRuntime <= 0)
+            {
+                return 1f;
+            }
+
+            Vector3 halfExtents = _publishedHalfExtents;
+            if (halfExtents.x <= 0f || halfExtents.y <= 0f || halfExtents.z <= 0f)
+                return 1f;
+
+            Vector3 local = _publishedWorldToLocal.MultiplyPoint3x4(_followTargetRuntime.position);
+            Vector4 invDoubleHalfExtents = ResolveInvDoubleHalfExtents(halfExtents);
+            float normalizedX = (local.x + halfExtents.x) * invDoubleHalfExtents.x;
+            float normalizedY = (local.y + halfExtents.y) * invDoubleHalfExtents.y;
+            float normalizedZ = (local.z + halfExtents.z) * invDoubleHalfExtents.z;
+            if (normalizedX < 0f || normalizedX > 1f ||
+                normalizedY < 0f || normalizedY > 1f ||
+                normalizedZ < 0f || normalizedZ > 1f)
+            {
+                return 1f;
+            }
+
+            int resolution = _resolutionRuntime;
+            int xIndex = Mathf.Clamp((int)(normalizedX * resolution), 0, resolution - 1);
+            int yIndex = Mathf.Clamp((int)(normalizedY * resolution), 0, resolution - 1);
+            int zIndex = Mathf.Clamp((int)(normalizedZ * resolution), 0, resolution - 1);
+            int voxelIndex = (zIndex * resolution * resolution) + (yIndex * resolution) + xIndex;
+            if (voxelIndex < 0 || voxelIndex >= _sdfVolume.Length)
+                return 1f;
+
+            float sdf01 = Mathf.Clamp01(_sdfVolume[voxelIndex] * InvByteMax);
+            float occlusion01 = 1f - sdf01;
+            float darken01 = Mathf.Clamp01(occlusion01 * aoIntensity);
+            return Mathf.Clamp01(Mathf.Max(aoFloor, 1f - darken01));
         }
 
         private static void PublishInactiveGlobals()

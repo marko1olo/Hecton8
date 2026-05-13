@@ -13,6 +13,9 @@ using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Construction;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
+using Hecton8.Core.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
@@ -53,16 +56,24 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9950)]
-    public sealed class SystemDispatcher : MonoBehaviour, IServiceHeartbeat, IServiceShutdown
+    public sealed class SystemDispatcher : MonoBehaviour, ITickDispatcher, IServiceHeartbeat, IServiceShutdown
     {
         private const int LaneCount = 4;
-        private const float DefaultSlowTickIntervalSeconds = 0.5f;
-        private const int FrostTickIntervalFrames = 300;
+        private const double FastTickIntervalSeconds = 1.0 / 60.0;
+        private const double SlowTickIntervalSeconds = 0.1;
+        private const double ColdTickIntervalSeconds = 1.0;
+        private const double FrostTickIntervalSeconds = 5.0;
+        private const int MaxCadenceSubstepsPerFrame = 4;
+        private const float TimeDilationMinimumScalar = 0f;
+        private const float TimeDilationMaximumScalar = 4f;
+        private const float TimeDilationPausedEpsilon = 0.0001f;
+        private const float BulletTimePostScalarThreshold = 0.98f;
         private const double SlowJobCompleteWarningMilliseconds = 1.0;
         private const double SlowDispatcherPhaseWarningMilliseconds = 100.0;
+        private const float JobAdmissionFrameBudgetMissThresholdSeconds = 1.0f / 60.0f;
         private const int MaxQueuedDispatcherRaycasts = 1024;
         private const int DispatcherRaycastMinCommandsPerJob = 1;
-        private const float FixedStepSeconds = 0.02f;
+        private const double FixedStepSeconds = 0.02;
         private const int MaxFixedSubstepsPerFrame = 3;
         private const int MaxLateFrameEventsPerFrame = 1000;
         private const int MaxPdaEventsPerFrame = 30;
@@ -83,8 +94,10 @@ namespace Hecton8.Core
         private const string HeapLockGuardMessage = "[SystemDispatcher] HEAP LOCK GUARD: managed heap increased during fixed-step dispatch.";
 #endif
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.Dispatcher.Update");
+        private static readonly ProfilerMarker _fastTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.FastTick");
         private static readonly ProfilerMarker _fixedUpdateProfilerMarker = new ProfilerMarker("H8.Dispatcher.FixedUpdate");
         private static readonly ProfilerMarker _slowTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.SlowTick");
+        private static readonly ProfilerMarker _coldTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.ColdTick");
         private static readonly ProfilerMarker _frostTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.FrostTick");
         private static readonly ProfilerMarker _lateFrameProfilerMarker = new ProfilerMarker("H8.Dispatcher.LateFrame");
         private static readonly ProfilerMarker _postFixedProfilerMarker = new ProfilerMarker("H8.Dispatcher.PostFixed");
@@ -126,6 +139,13 @@ namespace Hecton8.Core
             new ProfilerMarker("H8.Dispatcher.Fixed.Player"),
             new ProfilerMarker("H8.Dispatcher.Fixed.UI"),
         };
+        private static readonly ProfilerMarker[] _fastLaneProfilerMarkers =
+        {
+            new ProfilerMarker("H8.Dispatcher.Fast.Core"),
+            new ProfilerMarker("H8.Dispatcher.Fast.Environment"),
+            new ProfilerMarker("H8.Dispatcher.Fast.Player"),
+            new ProfilerMarker("H8.Dispatcher.Fast.UI"),
+        };
         private static readonly ProfilerMarker[] _slowLaneProfilerMarkers =
         {
             new ProfilerMarker("H8.Dispatcher.Slow.Core"),
@@ -133,12 +153,26 @@ namespace Hecton8.Core
             new ProfilerMarker("H8.Dispatcher.Slow.Player"),
             new ProfilerMarker("H8.Dispatcher.Slow.UI"),
         };
+        private static readonly ProfilerMarker[] _coldLaneProfilerMarkers =
+        {
+            new ProfilerMarker("H8.Dispatcher.Cold.Core"),
+            new ProfilerMarker("H8.Dispatcher.Cold.Environment"),
+            new ProfilerMarker("H8.Dispatcher.Cold.Player"),
+            new ProfilerMarker("H8.Dispatcher.Cold.UI"),
+        };
         private static readonly ProfilerMarker[] _frostLaneProfilerMarkers =
         {
             new ProfilerMarker("H8.Dispatcher.Frost.Core"),
             new ProfilerMarker("H8.Dispatcher.Frost.Environment"),
             new ProfilerMarker("H8.Dispatcher.Frost.Player"),
             new ProfilerMarker("H8.Dispatcher.Frost.UI"),
+        };
+        private static readonly ProfilerMarker[] _unscaledFastLaneProfilerMarkers =
+        {
+            new ProfilerMarker("H8.Dispatcher.UnscaledFast.Core"),
+            new ProfilerMarker("H8.Dispatcher.UnscaledFast.Environment"),
+            new ProfilerMarker("H8.Dispatcher.UnscaledFast.Player"),
+            new ProfilerMarker("H8.Dispatcher.UnscaledFast.UI"),
         };
 
         // COLD ALLOC: RegistryBucket<IUpdatable>[4] - fixed dispatcher lanes ordered by bootstrap layer - owner: SystemDispatcher
@@ -148,6 +182,13 @@ namespace Hecton8.Core
             new RegistryBucket<IUpdatable>(256),
             new RegistryBucket<IUpdatable>(128),
             new RegistryBucket<IUpdatable>(64),
+        };
+        private static readonly RegistryBucket<IFastTickable>[] _fastPriorityLanes =
+        {
+            new RegistryBucket<IFastTickable>(128),
+            new RegistryBucket<IFastTickable>(128),
+            new RegistryBucket<IFastTickable>(96),
+            new RegistryBucket<IFastTickable>(32),
         };
         private static readonly RegistryBucket<IFixedTickable>[] _fixedPriorityLanes =
         {
@@ -162,6 +203,13 @@ namespace Hecton8.Core
             new RegistryBucket<ISlowTickable>(128),
             new RegistryBucket<ISlowTickable>(96),
             new RegistryBucket<ISlowTickable>(32),
+        };
+        private static readonly RegistryBucket<IColdTickable>[] _coldPriorityLanes =
+        {
+            new RegistryBucket<IColdTickable>(64),
+            new RegistryBucket<IColdTickable>(64),
+            new RegistryBucket<IColdTickable>(48),
+            new RegistryBucket<IColdTickable>(16),
         };
         private static readonly RegistryBucket<IFrostTickable>[] _frostPriorityLanes =
         {
@@ -183,6 +231,13 @@ namespace Hecton8.Core
             new RegistryBucket<IPostFixedTickable>(128),
             new RegistryBucket<IPostFixedTickable>(96),
             new RegistryBucket<IPostFixedTickable>(32),
+        };
+        private static readonly RegistryBucket<IUnscaledFastTickable>[] _unscaledFastPriorityLanes =
+        {
+            new RegistryBucket<IUnscaledFastTickable>(64),
+            new RegistryBucket<IUnscaledFastTickable>(64),
+            new RegistryBucket<IUnscaledFastTickable>(48),
+            new RegistryBucket<IUnscaledFastTickable>(32),
         };
 
         private static IFoveatedDispatcher _foveatedSimulationManager = new FoveatedSimulationManager();
@@ -208,9 +263,27 @@ namespace Hecton8.Core
         private static readonly ushort[] _baseStressCascadeDroppedCounts = new ushort[BaseStressCascadeCircuitBreakerCapacity];
         // COLD ALLOC: bool[64] - single telemetry gate per IslandID per frame - owner: SystemDispatcher
         private static readonly bool[] _baseStressCascadeTelemetryEmitted = new bool[BaseStressCascadeCircuitBreakerCapacity];
-        private float _slowTickAccumulator;
-        private float _fixedStepAccumulator;
-        private int _frostTickFrameCountdown;
+        private NativeArray<double> _h8Time;
+        private double _fastTickAccumulator;
+        private double _slowTickAccumulator;
+        private double _coldTickAccumulator;
+        private double _frostTickAccumulator;
+        private double _unscaledFastTickAccumulator;
+        private double _fixedStepAccumulator;
+        private IDataVault _dataVault;
+        private float _timeDilationScalar = 1f;
+        private float _prePauseTimeDilationScalar = 1f;
+        private float _coreTickDilationScalar = 1f;
+        private float _coreTickDilationRestoreScalar = 1f;
+        private int _coreTickDilationFramesRemaining;
+        private uint _coreTickDilationReasonHash;
+        private bool _simulationPaused;
+        private uint _timeDilationSequence;
+        private uint _lastPublishedTimeDilationSequence;
+        private uint _aupPreShiftPauseSequence;
+        private int _aupPreShiftPauseFrame = -1;
+        private bool _coreTickDilationRestorePending;
+        private H8TimeSnapshot _timeSnapshot;
         private bool _serviceRegistered;
         private static int _lateFrameEventDispatchBudget;
         private static bool _lateFrameEventBudgetActive;
@@ -228,16 +301,30 @@ namespace Hecton8.Core
         private static int _baseStressCascadeTableOverflowTelemetryFrame = -1;
         private static int _originShiftBootstrapLockCount;
         private static int _originShiftFrameLockFrame = -1;
+        private static int _streamingStorageDebtMilli;
+        private static int _streamingStorageDebtSequence;
 
         internal static float CurrentFrameDeltaTime { get; private set; }
 
         internal static float CurrentFrameUnscaledDeltaTime { get; private set; }
+
+        internal static float CurrentFixedInterpolationAlpha { get; private set; }
 
         internal static SystemDispatcher ActiveRuntimeInstance { get; private set; }
 
         internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
 
         internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == Time.frameCount;
+
+        public float TimeDilationScalar => _timeDilationScalar;
+
+        public bool SimulationPaused => _simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon;
+
+        public double DilatedTimeSeconds => _timeSnapshot.Time;
+
+        public double UnscaledTimeSeconds => _timeSnapshot.UnscaledTime;
+
+        public H8TimeSnapshot TimeSnapshot => _timeSnapshot;
 
         /// <inheritdoc />
         public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
@@ -289,6 +376,25 @@ namespace Hecton8.Core
         /// Total frame count where temporal compression was entered since subsystem reset.
         /// </summary>
         public static int TemporalCompressionFrameCount => _temporalCompressionFrameCount;
+
+        public static float StreamingStorageDebt01 => math.saturate(Volatile.Read(ref _streamingStorageDebtMilli) * 0.001f);
+
+        public static uint StreamingStorageDebtSequence => unchecked((uint)Volatile.Read(ref _streamingStorageDebtSequence));
+
+        public static double CurrentUnscaledTimeSeconds
+        {
+            get
+            {
+                SystemDispatcher dispatcher = ActiveRuntimeInstance;
+                return dispatcher != null ? dispatcher._timeSnapshot.UnscaledTime : Time.unscaledTimeAsDouble;
+            }
+        }
+
+        public static void PublishStreamingStorageDebt(float debt01)
+        {
+            Volatile.Write(ref _streamingStorageDebtMilli, (int)math.round(math.saturate(debt01) * 1000f));
+            Volatile.Write(ref _streamingStorageDebtSequence, unchecked(Volatile.Read(ref _streamingStorageDebtSequence) + 1));
+        }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         internal static bool TryGetLastPostFixedGcAttribution(
@@ -356,6 +462,8 @@ namespace Hecton8.Core
             _droppedEventsCounter = 0;
             _visualStaticGlitchActive = false;
             _visualStaticGlitchUntilTime = 0f;
+            Volatile.Write(ref _streamingStorageDebtMilli, 0);
+            Volatile.Write(ref _streamingStorageDebtSequence, 0);
             Volatile.Write(ref _originShiftBootstrapLockCount, 0);
             Volatile.Write(ref _originShiftFrameLockFrame, -1);
             Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);
@@ -580,6 +688,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Returns the 60 Hz fast-tick registry lane for a fixed priority layer.
+        /// </summary>
+        public static RegistryBucket<IFastTickable> GetFastLane(PriorityLayer layer)
+        {
+            return _fastPriorityLanes[GetLaneIndex(layer)];
+        }
+
+        /// <summary>
         /// Returns the fixed-step registry lane for a fixed priority layer.
         /// </summary>
         /// <param name="layer">Priority lane.</param>
@@ -597,6 +713,14 @@ namespace Hecton8.Core
         public static RegistryBucket<ISlowTickable> GetSlowLane(PriorityLayer layer)
         {
             return _slowPriorityLanes[GetLaneIndex(layer)];
+        }
+
+        /// <summary>
+        /// Returns the 1 Hz cold-tick registry lane for a fixed priority layer.
+        /// </summary>
+        public static RegistryBucket<IColdTickable> GetColdLane(PriorityLayer layer)
+        {
+            return _coldPriorityLanes[GetLaneIndex(layer)];
         }
 
         /// <summary>
@@ -630,6 +754,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Returns the unscaled UI/menu fast-tick registry lane for a fixed priority layer.
+        /// </summary>
+        public static RegistryBucket<IUnscaledFastTickable> GetUnscaledFastLane(PriorityLayer layer)
+        {
+            return _unscaledFastPriorityLanes[GetLaneIndex(layer)];
+        }
+
+        /// <summary>
         /// Registers an update owner into a fixed priority lane.
         /// </summary>
         /// <param name="item">Update owner.</param>
@@ -646,6 +778,17 @@ namespace Hecton8.Core
                 _foveatedSimulationManager.RegisterTarget(foveatedTarget);
 
             return true;
+        }
+
+        /// <summary>
+        /// Registers a 60 Hz fast-tick owner into a fixed priority lane.
+        /// </summary>
+        internal static bool Register(IFastTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return false;
+
+            return GetFastLane(layer).TryRegister(item);
         }
 
         /// <summary>
@@ -672,6 +815,17 @@ namespace Hecton8.Core
                 return false;
 
             return GetSlowLane(layer).TryRegister(item);
+        }
+
+        /// <summary>
+        /// Registers a 1 Hz cold-tick owner into a fixed priority lane.
+        /// </summary>
+        internal static bool Register(IColdTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return false;
+
+            return GetColdLane(layer).TryRegister(item);
         }
 
         /// <summary>
@@ -714,6 +868,17 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers an unscaled fast-tick owner into a fixed priority lane.
+        /// </summary>
+        internal static bool Register(IUnscaledFastTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return false;
+
+            return GetUnscaledFastLane(layer).TryRegister(item);
+        }
+
+        /// <summary>
         /// Unregisters an update owner from a fixed priority lane.
         /// </summary>
         /// <param name="item">Update owner.</param>
@@ -727,6 +892,17 @@ namespace Hecton8.Core
                 _foveatedSimulationManager.UnregisterTarget(foveatedTarget);
 
             GetLane(layer).TryUnregister(item);
+        }
+
+        /// <summary>
+        /// Unregisters a fast-tick owner from a fixed priority lane.
+        /// </summary>
+        internal static void Unregister(IFastTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            GetFastLane(layer).TryUnregister(item);
         }
 
         /// <summary>
@@ -753,6 +929,17 @@ namespace Hecton8.Core
                 return;
 
             GetSlowLane(layer).TryUnregister(item);
+        }
+
+        /// <summary>
+        /// Unregisters a cold-tick owner from a fixed priority lane.
+        /// </summary>
+        internal static void Unregister(IColdTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            GetColdLane(layer).TryUnregister(item);
         }
 
         /// <summary>
@@ -795,6 +982,17 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters an unscaled fast-tick owner from a fixed priority lane.
+        /// </summary>
+        internal static void Unregister(IUnscaledFastTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            GetUnscaledFastLane(layer).TryUnregister(item);
+        }
+
+        /// <summary>
         /// Clears every dispatcher lane.
         /// </summary>
         public static void ClearAllLanes()
@@ -802,11 +1000,14 @@ namespace Hecton8.Core
             for (int i = 0; i < LaneCount; i++)
             {
                 _priorityLanes[i].Clear();
+                _fastPriorityLanes[i].Clear();
                 _fixedPriorityLanes[i].Clear();
                 _slowPriorityLanes[i].Clear();
+                _coldPriorityLanes[i].Clear();
                 _frostPriorityLanes[i].Clear();
                 _lateFramePriorityLanes[i].Clear();
                 _postFixedPriorityLanes[i].Clear();
+                _unscaledFastPriorityLanes[i].Clear();
             }
 
             _foveatedSimulationManager.ResetRuntimeState();
@@ -820,6 +1021,75 @@ namespace Hecton8.Core
         internal static void RequestOriginShiftFrameLock(int frame)
         {
             Volatile.Write(ref _originShiftFrameLockFrame, frame);
+            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+            if (dispatcher != null)
+                dispatcher.RequestAupPreShiftPause(unchecked((uint)frame));
+        }
+
+        public void RequestTimeDilation(float scalar, uint reasonHash = 0u)
+        {
+            ClearCoreTickDilationBurst();
+            SetTimeDilationScalar(scalar, reasonHash, publishImmediate: true);
+        }
+
+        /// <summary>
+        /// Requests an exact frame-count core tick dilation burst.
+        /// </summary>
+        public void RequestCoreTickDilation(float scalar, int frameCount, uint reasonHash = 0u)
+        {
+            if (frameCount <= 0)
+                return;
+
+            if (SimulationPaused)
+                return;
+
+            float safeScalar = math.isfinite(scalar)
+                ? math.clamp(scalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+                : 1f;
+
+            if (_coreTickDilationRestorePending)
+            {
+                _coreTickDilationRestorePending = false;
+            }
+            else if (_coreTickDilationFramesRemaining <= 0)
+            {
+                _coreTickDilationRestoreScalar = _timeDilationScalar;
+            }
+
+            _coreTickDilationScalar = safeScalar;
+            _coreTickDilationFramesRemaining = math.max(_coreTickDilationFramesRemaining, frameCount);
+            _coreTickDilationReasonHash = reasonHash;
+            SetTimeDilationScalar(safeScalar, reasonHash, publishImmediate: true);
+        }
+
+        public void RequestSimulationPause(bool paused, uint reasonHash = 0u)
+        {
+            if (paused)
+            {
+                if (!_simulationPaused)
+                    _prePauseTimeDilationScalar = ResolvePauseRestoreScalar();
+
+                ClearCoreTickDilationBurst();
+                _simulationPaused = true;
+                SetTimeDilationScalar(0f, reasonHash, publishImmediate: true);
+                return;
+            }
+
+            _simulationPaused = false;
+            SetTimeDilationScalar(_prePauseTimeDilationScalar, reasonHash, publishImmediate: true);
+        }
+
+        public void RequestAupPreShiftPause(uint shiftFrameId)
+        {
+            RefreshDataVaultDependency();
+            _dataVault?.LockAllocationsForAupShift(shiftFrameId);
+            _aupPreShiftPauseSequence = shiftFrameId;
+            _aupPreShiftPauseFrame = Time.frameCount;
+        }
+
+        public async Awaitable DelayDilated(float seconds, CancellationToken cancellationToken = default)
+        {
+            await AwaitableExtension.DelayDilated(seconds, cancellationToken);
         }
 
         internal static void ReleaseOriginShiftBootstrapLock()
@@ -836,6 +1106,65 @@ namespace Hecton8.Core
             }
         }
 
+        private void SetTimeDilationScalar(float scalar, uint reasonHash, bool publishImmediate)
+        {
+            float safeScalar = math.isfinite(scalar)
+                ? math.clamp(scalar, TimeDilationMinimumScalar, TimeDilationMaximumScalar)
+                : 1f;
+            if (math.abs(_timeDilationScalar - safeScalar) <= 0.0001f)
+                return;
+
+            _timeDilationScalar = safeScalar;
+            _timeDilationSequence++;
+            if (_timeDilationSequence == 0u)
+                _timeDilationSequence = 1u;
+
+            if (publishImmediate)
+                PublishTimeDilationState(reasonHash);
+        }
+
+        private void PublishTimeDilationState(uint reasonHash)
+        {
+            if (_lastPublishedTimeDilationSequence == _timeDilationSequence)
+                return;
+
+            _lastPublishedTimeDilationSequence = _timeDilationSequence;
+            float scalar = _timeDilationScalar;
+            uint frame = unchecked((uint)Time.frameCount);
+            TimeDilationSignal dilationSignal = new TimeDilationSignal
+            {
+                Scalar = scalar,
+                UnscaledDeltaTime = CurrentFrameUnscaledDeltaTime,
+                Sequence = _timeDilationSequence,
+                Frame = frame,
+                ReasonHash = reasonHash,
+                Flags = (byte)(SimulationPaused ? 1 : 0)
+            };
+            GlobalSignals.Publish(in dilationSignal);
+
+            BulletTimeVisualSignal visualSignal = new BulletTimeVisualSignal
+            {
+                Intensity01 = math.saturate((BulletTimePostScalarThreshold - scalar) / BulletTimePostScalarThreshold),
+                Scalar = scalar,
+                Frame = frame,
+                Sequence = _timeDilationSequence,
+                QualityTier = GlobalRegistry.ScalabilityTierProfileByte,
+                Flags = (byte)(SimulationPaused ? 1 : 0)
+            };
+            GlobalSignals.Publish(in visualSignal);
+        }
+
+        private void DrainSimulationPauseSignals()
+        {
+            while (GlobalSignals.TryDequeueSimulationPause(out SimulationPauseSignal signal))
+            {
+                if (signal.Paused == 0 && math.isfinite(signal.RestoreScalar) && signal.RestoreScalar > 0f)
+                    _prePauseTimeDilationScalar = signal.RestoreScalar;
+
+                RequestSimulationPause(signal.Paused != 0, signal.SourceHash);
+            }
+        }
+
         private void Awake()
         {
             if (ActiveRuntimeInstance == null)
@@ -843,7 +1172,20 @@ namespace Hecton8.Core
 
             _slowTickAccumulator = 0f;
             _fixedStepAccumulator = 0f;
-            _frostTickFrameCountdown = FrostTickIntervalFrames;
+            _fastTickAccumulator = 0f;
+            _coldTickAccumulator = 0f;
+            _frostTickAccumulator = 0f;
+            _unscaledFastTickAccumulator = 0f;
+            _timeDilationScalar = 1f;
+            _prePauseTimeDilationScalar = 1f;
+            _coreTickDilationScalar = 1f;
+            _coreTickDilationRestoreScalar = 1f;
+            _coreTickDilationFramesRemaining = 0;
+            _coreTickDilationReasonHash = 0u;
+            _coreTickDilationRestorePending = false;
+            _simulationPaused = false;
+            _timeSnapshot = default;
+            CurrentFixedInterpolationAlpha = 0f;
         }
 
         private void OnDestroy()
@@ -872,9 +1214,24 @@ namespace Hecton8.Core
 
             _slowTickAccumulator = 0f;
             _fixedStepAccumulator = 0f;
-            _frostTickFrameCountdown = FrostTickIntervalFrames;
+            _fastTickAccumulator = 0f;
+            _coldTickAccumulator = 0f;
+            _frostTickAccumulator = 0f;
+            _unscaledFastTickAccumulator = 0f;
+            _timeDilationScalar = 1f;
+            _prePauseTimeDilationScalar = 1f;
+            _simulationPaused = false;
+            _timeDilationSequence = 0u;
+            _lastPublishedTimeDilationSequence = 0u;
+            _aupPreShiftPauseSequence = 0u;
+            _aupPreShiftPauseFrame = -1;
+            ClearCoreTickDilationBurst();
+            _dataVault = null;
+            DisposeH8TimeArray();
+            _timeSnapshot = default;
             CurrentFrameDeltaTime = 0f;
             CurrentFrameUnscaledDeltaTime = 0f;
+            CurrentFixedInterpolationAlpha = 0f;
             _serviceRegistered = false;
         }
 
@@ -889,9 +1246,102 @@ namespace Hecton8.Core
             ThreadSafeCommandQueue.Initialize();
             UIStateStore.EnsureInitialized();
             BaseAirlockEvents.Prewarm();
+            RefreshDataVaultDependency();
             EnsureDispatcherRaycastBuffers();
+            EnsureH8TimeArray();
             GlobalRegistry.RegisterSystemDispatcher(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Dispatcher, this);
+            PublishTimeDilationState(0u);
+        }
+
+        private void EnsureH8TimeArray()
+        {
+            if (_h8Time.IsCreated)
+                return;
+
+            _h8Time = H8Memory.Allocate<double>((int)H8TimeSlot.Count, SystemID.SystemDispatcher, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<double>[4] - dispatcher-owned H8 time SOA - owner: SystemDispatcher
+            NativeMemorySentinel.RegisterNativeArray(
+                _h8Time,
+                nameof(SystemDispatcher),
+                nameof(_h8Time),
+                NativeAllocationLifetime.Session);
+        }
+
+        private void RefreshDataVaultDependency()
+        {
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            if (dataVault != null)
+                _dataVault = dataVault;
+        }
+
+        private void DisposeH8TimeArray()
+        {
+            if (!_h8Time.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(_h8Time);
+            H8Memory.Release(ref _h8Time);
+        }
+
+        private void UpdateH8TimeState(float dilatedDeltaTime, float unscaledDeltaTime)
+        {
+            EnsureH8TimeArray();
+            double dilatedTime = _h8Time[(int)H8TimeSlot.Time] + dilatedDeltaTime;
+            double unscaledTime = Time.unscaledTimeAsDouble;
+            _h8Time[(int)H8TimeSlot.Time] = dilatedTime;
+            _h8Time[(int)H8TimeSlot.DeltaTime] = dilatedDeltaTime;
+            _h8Time[(int)H8TimeSlot.UnscaledTime] = unscaledTime;
+            _h8Time[(int)H8TimeSlot.UnscaledDeltaTime] = unscaledDeltaTime;
+            _timeSnapshot = new H8TimeSnapshot(dilatedTime, dilatedDeltaTime, unscaledTime, unscaledDeltaTime);
+        }
+
+        private float ResolveFrameTimeDilationScalar()
+        {
+            if (_simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon)
+                return 0f;
+
+            if (_coreTickDilationFramesRemaining <= 0)
+                return _timeDilationScalar;
+
+            float scalar = _coreTickDilationScalar;
+            _coreTickDilationFramesRemaining--;
+            if (_coreTickDilationFramesRemaining == 0)
+            {
+                _coreTickDilationScalar = 1f;
+                _coreTickDilationRestorePending = true;
+            }
+
+            return scalar;
+        }
+
+        private float ResolvePauseRestoreScalar()
+        {
+            float restoreScalar = _coreTickDilationFramesRemaining > 0 || _coreTickDilationRestorePending
+                ? _coreTickDilationRestoreScalar
+                : _timeDilationScalar;
+            return math.isfinite(restoreScalar)
+                ? math.max(TimeDilationPausedEpsilon, restoreScalar)
+                : 1f;
+        }
+
+        private void ClearCoreTickDilationBurst()
+        {
+            _coreTickDilationScalar = 1f;
+            _coreTickDilationRestoreScalar = 1f;
+            _coreTickDilationFramesRemaining = 0;
+            _coreTickDilationReasonHash = 0u;
+            _coreTickDilationRestorePending = false;
+        }
+
+        private void ApplyPendingCoreTickDilationRestore()
+        {
+            if (!_coreTickDilationRestorePending)
+                return;
+
+            _coreTickDilationRestorePending = false;
+            SetTimeDilationScalar(_coreTickDilationRestoreScalar, _coreTickDilationReasonHash, publishImmediate: true);
+            _coreTickDilationRestoreScalar = 1f;
+            _coreTickDilationReasonHash = 0u;
         }
 
         private void Update()
@@ -906,15 +1356,26 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
                 NativeAllocationTrackerRuntimeBridge.NotifyDispatcherHeartbeat();
 #endif
+                ApplyPendingCoreTickDilationRestore();
                 if (BootstrapStatus.TryTriggerSafeHalt())
                     BootstrapBiosErrorOverlay.Show(BootstrapStatus.SafeHaltDisplayMessage);
 
+                long dispatcherTickStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 HectonXRRuntimeState.RefreshFrameState(Time.frameCount);
-                float measuredDeltaTime = HectonXRRuntimeState.IsXRActive ? Time.smoothDeltaTime : Time.deltaTime;
-                float deltaTime = HectonXRRuntimeState.ResolveDispatcherDeltaTime(measuredDeltaTime);
+                float measuredUnscaledDeltaTime = HectonXRRuntimeState.IsXRActive ? Time.smoothDeltaTime : Time.unscaledDeltaTime;
+                float unscaledDeltaTime = HectonXRRuntimeState.ResolveDispatcherDeltaTime(measuredUnscaledDeltaTime);
+                bool previousFrameMissedBudget = CurrentFrameUnscaledDeltaTime > JobAdmissionFrameBudgetMissThresholdSeconds;
+                CurrentFrameUnscaledDeltaTime = unscaledDeltaTime;
+                GlobalSignals.FlushPreSimulation();
+                GlobalRegistry.JobAdmission?.Refill(
+                    GlobalRegistry.ScalabilityTierProfileByte,
+                    unscaledDeltaTime,
+                    previousFrameMissedBudget);
+                DrainSimulationPauseSignals();
+                float deltaTime = unscaledDeltaTime * ResolveFrameTimeDilationScalar();
                 CurrentFrameDeltaTime = deltaTime;
-                CurrentFrameUnscaledDeltaTime = HectonXRRuntimeState.ResolveDispatcherDeltaTime(
-                    HectonXRRuntimeState.IsXRActive ? Time.smoothDeltaTime : Time.unscaledDeltaTime);
+                UpdateH8TimeState(deltaTime, unscaledDeltaTime);
+                PublishTimeDilationState(0u);
                 if (IsOriginShiftBootstrapLocked)
                 {
                     if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
@@ -926,6 +1387,12 @@ namespace Hecton8.Core
 
                 if (IsOriginShiftFrameLockedForCurrentFrame)
                     return;
+
+                if (_aupPreShiftPauseFrame == Time.frameCount)
+                {
+                    RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
+                    return;
+                }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
@@ -970,10 +1437,17 @@ namespace Hecton8.Core
                 CombatDamageRuntime.FrameTick(deltaTime);
                 PredatorCognitionDomain.ScheduleFrameEvaluation(Time.frameCount);
                 _foveatedSimulationManager.ScheduleFrameJobs();
-                RunFixedStepAccumulator(CurrentFrameUnscaledDeltaTime, blockGameplayLanes);
+                RunFastTick(deltaTime, blockGameplayLanes);
+                RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
+                RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
                 RunSlowTick(deltaTime, blockGameplayLanes);
-                RunFrostTick(blockGameplayLanes);
+                RunColdTick(deltaTime, blockGameplayLanes);
+                RunFrostTick(deltaTime, blockGameplayLanes);
                 ScheduleDispatcherRaycasts();
+                double tickOverheadMilliseconds =
+                    (System.Diagnostics.Stopwatch.GetTimestamp() - dispatcherTickStartTimestamp) * 1000.0 /
+                    System.Diagnostics.Stopwatch.Frequency;
+                CrashTelemetryBuffer.ReportTimeDilationState(_timeDilationScalar, tickOverheadMilliseconds);
             }
         }
 
@@ -1005,7 +1479,7 @@ namespace Hecton8.Core
         {
             _pauseDepthOfFieldWeight = ResolvePauseDepthOfFieldWeight(unscaledTime);
 
-            CameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
+            ICameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
             if (cameraJuice != null)
                 cameraJuice.ApplyPauseDepthOfFieldWeight(_pauseDepthOfFieldWeight);
         }
@@ -1020,7 +1494,10 @@ namespace Hecton8.Core
             if (IsOriginShiftBootstrapLocked)
                 return;
             if (IsOriginShiftFrameLockedForCurrentFrame)
+            {
+                _dataVault?.UnlockAllocationsAfterAupShift(_aupPreShiftPauseSequence);
                 return;
+            }
 
             try
             {
@@ -1076,10 +1553,13 @@ namespace Hecton8.Core
             SetActiveLateFrameEventLane(_ModCommandDispatcherQueueHash);
             Hecton8.Modding.ModCommandDispatcher.DrainLateFrame();
             FlushCoreEventsArtery();
-            FlushEnvironmentEventsArtery();
-            FlushPlayerEventsArtery();
-            FlushBaseEventsArtery();
-            FlushAIEventsArtery();
+            if (!SimulationPaused)
+            {
+                FlushEnvironmentEventsArtery();
+                FlushPlayerEventsArtery();
+                FlushBaseEventsArtery();
+                FlushAIEventsArtery();
+            }
             }
             finally
             {
@@ -1094,6 +1574,7 @@ namespace Hecton8.Core
                 }
                 finally
                 {
+                    GlobalSignals.ClearPostSimulationSnapshots();
                     NativeArenaAllocator.Reset();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1477,7 +1958,8 @@ namespace Hecton8.Core
 
         private static void UpdatePauseFreezeFrameDitherState()
         {
-            bool paused = Time.timeScale <= 0.0001f;
+            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+            bool paused = dispatcher != null && dispatcher.SimulationPaused;
             if (_pauseFreezeFrameDitherActive == paused)
                 return;
 
@@ -1630,16 +2112,17 @@ namespace Hecton8.Core
             }
         }
 
-        private void RunFixedStepAccumulator(float unscaledDeltaTime, bool blockGameplayLanes)
+        private void RunFixedStepAccumulator(float dilatedDeltaTime, bool blockGameplayLanes)
         {
-            if (unscaledDeltaTime <= 0f)
+            if (dilatedDeltaTime <= 0f)
             {
                 _temporalCompressionActive = false;
+                RefreshFixedInterpolationAlpha();
                 return;
             }
 
-            float maxAccumulatedTime = FixedStepSeconds * MaxFixedSubstepsPerFrame;
-            float requestedAccumulatedTime = _fixedStepAccumulator + unscaledDeltaTime;
+            double maxAccumulatedTime = FixedStepSeconds * MaxFixedSubstepsPerFrame;
+            double requestedAccumulatedTime = _fixedStepAccumulator + dilatedDeltaTime;
             bool compressionActive = requestedAccumulatedTime > maxAccumulatedTime;
             _temporalCompressionActive = compressionActive;
             if (compressionActive)
@@ -1648,18 +2131,25 @@ namespace Hecton8.Core
                 CrashTelemetryBuffer.ReportTemporalCompression();
             }
 
-            _fixedStepAccumulator = math.min(requestedAccumulatedTime, maxAccumulatedTime);
+            _fixedStepAccumulator = System.Math.Min(requestedAccumulatedTime, maxAccumulatedTime);
 
             int substepCount = 0;
             while (_fixedStepAccumulator >= FixedStepSeconds && substepCount < MaxFixedSubstepsPerFrame)
             {
-                DispatchFixedStep(FixedStepSeconds, blockGameplayLanes);
+                DispatchFixedStep((float)FixedStepSeconds, blockGameplayLanes);
                 _fixedStepAccumulator -= FixedStepSeconds;
                 substepCount++;
             }
 
             if (substepCount >= MaxFixedSubstepsPerFrame && _fixedStepAccumulator >= FixedStepSeconds)
-                _fixedStepAccumulator = 0f;
+                _fixedStepAccumulator = 0d;
+
+            RefreshFixedInterpolationAlpha();
+        }
+
+        private void RefreshFixedInterpolationAlpha()
+        {
+            CurrentFixedInterpolationAlpha = math.saturate((float)(_fixedStepAccumulator / FixedStepSeconds));
         }
 
         private void DispatchFixedStep(float fixedDeltaTime, bool blockGameplayLanes)
@@ -1770,54 +2260,174 @@ namespace Hecton8.Core
 #endif
         }
 
-        private void RunSlowTick(float deltaTime, bool blockGameplayLanes)
+        private void RunFastTick(float deltaTime, bool blockGameplayLanes)
         {
             if (deltaTime <= 0f)
                 return;
 
-            _slowTickAccumulator += deltaTime;
-            if (_slowTickAccumulator < DefaultSlowTickIntervalSeconds)
+            _fastTickAccumulator += deltaTime;
+            int substeps = 0;
+            while (_fastTickAccumulator >= FastTickIntervalSeconds && substeps < MaxCadenceSubstepsPerFrame)
+            {
+                _fastTickAccumulator -= FastTickIntervalSeconds;
+                substeps++;
+
+                using (_fastTickProfilerMarker.Auto())
+                {
+                    for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+                    {
+                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+                            continue;
+
+                        RegistryBucket<IFastTickable> lane = _fastPriorityLanes[laneIndex];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        lane.ValidateNoDestroyedEntriesDebug(nameof(IFastTickable));
+#endif
+                        using (_fastLaneProfilerMarkers[laneIndex].Auto())
+                        {
+                            IFastTickable[] rawArray = lane.RawArray;
+                            int count = lane.Count;
+
+                            for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                                rawArray[itemIndex].FastTick((float)FastTickIntervalSeconds);
+                        }
+                    }
+                }
+            }
+
+            if (substeps == MaxCadenceSubstepsPerFrame && _fastTickAccumulator >= FastTickIntervalSeconds)
+                _fastTickAccumulator = FastTickIntervalSeconds;
+        }
+
+        private void RunUnscaledFastTick(float unscaledDeltaTime, bool blockGameplayLanes)
+        {
+            if (unscaledDeltaTime <= 0f)
                 return;
 
-            _slowTickAccumulator -= DefaultSlowTickIntervalSeconds;
-
-            using (_slowTickProfilerMarker.Auto())
+            _unscaledFastTickAccumulator += unscaledDeltaTime;
+            int substeps = 0;
+            while (_unscaledFastTickAccumulator >= FastTickIntervalSeconds && substeps < MaxCadenceSubstepsPerFrame)
             {
-                HectonXRRuntimeState.SlowTickHeadAupCache();
+                _unscaledFastTickAccumulator -= FastTickIntervalSeconds;
+                substeps++;
 
                 for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                 {
                     if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
                         continue;
 
-                    RegistryBucket<ISlowTickable> lane = _slowPriorityLanes[laneIndex];
+                    RegistryBucket<IUnscaledFastTickable> lane = _unscaledFastPriorityLanes[laneIndex];
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    lane.ValidateNoDestroyedEntriesDebug(nameof(ISlowTickable));
+                    lane.ValidateNoDestroyedEntriesDebug(nameof(IUnscaledFastTickable));
 #endif
-                    using (_slowLaneProfilerMarkers[laneIndex].Auto())
+                    using (_unscaledFastLaneProfilerMarkers[laneIndex].Auto())
                     {
-                        ISlowTickable[] rawArray = lane.RawArray;
+                        IUnscaledFastTickable[] rawArray = lane.RawArray;
                         int count = lane.Count;
 
                         for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
-                            rawArray[itemIndex].SlowTick();
+                            rawArray[itemIndex].UnscaledFastTick((float)FastTickIntervalSeconds);
                     }
                 }
-
-                WorldSpatialHashGrid.SlowTickMaintenance(DefaultSlowTickIntervalSeconds);
-                CombatDamageRuntime.SlowTick(DefaultSlowTickIntervalSeconds);
             }
+
+            if (substeps == MaxCadenceSubstepsPerFrame && _unscaledFastTickAccumulator >= FastTickIntervalSeconds)
+                _unscaledFastTickAccumulator = FastTickIntervalSeconds;
         }
 
-        private void RunFrostTick(bool blockGameplayLanes)
+        private void RunSlowTick(float deltaTime, bool blockGameplayLanes)
         {
-            if (_frostTickFrameCountdown > 1)
-            {
-                _frostTickFrameCountdown--;
+            if (deltaTime <= 0f)
                 return;
+
+            _slowTickAccumulator += deltaTime;
+            int substeps = 0;
+            while (_slowTickAccumulator >= SlowTickIntervalSeconds && substeps < MaxCadenceSubstepsPerFrame)
+            {
+                _slowTickAccumulator -= SlowTickIntervalSeconds;
+                substeps++;
+
+                using (_slowTickProfilerMarker.Auto())
+                {
+                    HectonXRRuntimeState.SlowTickHeadAupCache();
+
+                    for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+                    {
+                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+                            continue;
+
+                        RegistryBucket<ISlowTickable> lane = _slowPriorityLanes[laneIndex];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        lane.ValidateNoDestroyedEntriesDebug(nameof(ISlowTickable));
+#endif
+                        using (_slowLaneProfilerMarkers[laneIndex].Auto())
+                        {
+                            ISlowTickable[] rawArray = lane.RawArray;
+                            int count = lane.Count;
+
+                            for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                                rawArray[itemIndex].SlowTick();
+                        }
+                    }
+
+                    WorldSpatialHashGrid.SlowTickMaintenance((float)SlowTickIntervalSeconds);
+                    CombatDamageRuntime.SlowTick((float)SlowTickIntervalSeconds);
+                }
             }
 
-            _frostTickFrameCountdown = FrostTickIntervalFrames;
+            if (substeps == MaxCadenceSubstepsPerFrame && _slowTickAccumulator >= SlowTickIntervalSeconds)
+                _slowTickAccumulator = SlowTickIntervalSeconds;
+        }
+
+        private void RunColdTick(float deltaTime, bool blockGameplayLanes)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            _coldTickAccumulator += deltaTime;
+            int substeps = 0;
+            while (_coldTickAccumulator >= ColdTickIntervalSeconds && substeps < MaxCadenceSubstepsPerFrame)
+            {
+                _coldTickAccumulator -= ColdTickIntervalSeconds;
+                substeps++;
+
+                using (_coldTickProfilerMarker.Auto())
+                {
+                    for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+                    {
+                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+                            continue;
+
+                        RegistryBucket<IColdTickable> lane = _coldPriorityLanes[laneIndex];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        lane.ValidateNoDestroyedEntriesDebug(nameof(IColdTickable));
+#endif
+                        using (_coldLaneProfilerMarkers[laneIndex].Auto())
+                        {
+                            IColdTickable[] rawArray = lane.RawArray;
+                            int count = lane.Count;
+
+                            for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                                rawArray[itemIndex].ColdTick();
+                        }
+                    }
+                }
+            }
+
+            if (substeps == MaxCadenceSubstepsPerFrame && _coldTickAccumulator >= ColdTickIntervalSeconds)
+                _coldTickAccumulator = ColdTickIntervalSeconds;
+        }
+
+        private void RunFrostTick(float deltaTime, bool blockGameplayLanes)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            _frostTickAccumulator += deltaTime;
+            if (_frostTickAccumulator < FrostTickIntervalSeconds)
+                return;
+
+            _frostTickAccumulator -= FrostTickIntervalSeconds;
 
             using (_frostTickProfilerMarker.Auto())
             {
@@ -1839,6 +2449,8 @@ namespace Hecton8.Core
                             rawArray[itemIndex].FrostTick();
                     }
                 }
+
+                _dataVault?.FrostTickDefrag((float)FrostTickIntervalSeconds);
             }
         }
 
@@ -1868,7 +2480,7 @@ namespace Hecton8.Core
 
             if (!_scheduledDispatcherRaycastHits.IsCreated)
             {
-                _scheduledDispatcherRaycastHits = new NativeArray<RaycastHit>(MaxQueuedDispatcherRaycasts, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1024] - dispatcher-owned deferred raycast hit lane - owner: SystemDispatcher
+                _scheduledDispatcherRaycastHits = H8Memory.Allocate<RaycastHit>(MaxQueuedDispatcherRaycasts, SystemID.SystemDispatcher, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1024] - dispatcher-owned deferred raycast hit lane - owner: SystemDispatcher
                 NativeMemorySentinel.RegisterNativeArray(
                     _scheduledDispatcherRaycastHits,
                     nameof(SystemDispatcher),
@@ -2010,8 +2622,7 @@ namespace Hecton8.Core
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            dependency = array.Dispose(dependency);
-            array = default;
+            dependency = H8Memory.Release(ref array, dependency);
         }
 
         private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
@@ -2203,12 +2814,17 @@ namespace Hecton8.Core
                 RenderSettings.fogColor = FogColor;
                 RenderSettings.fogDensity = FogDensity;
                 AtmosphereDirector.SetSkybox(Skybox);
-                RenderSettings.ambientMode = AmbientMode;
-                RenderSettings.ambientLight = AmbientLight;
-                RenderSettings.ambientSkyColor = AmbientSkyColor;
-                RenderSettings.ambientEquatorColor = AmbientEquatorColor;
-                RenderSettings.ambientGroundColor = AmbientGroundColor;
-                RenderSettings.ambientIntensity = AmbientIntensity;
+                IGIRelaySystem giRelay = GlobalRegistry.GIRelay;
+                bool giRelayAmbientAuthority = giRelay != null && giRelay.IsAmbientProbeAuthorityActive;
+                if (!giRelayAmbientAuthority)
+                {
+                    RenderSettings.ambientMode = AmbientMode;
+                    RenderSettings.ambientLight = AmbientLight;
+                    RenderSettings.ambientSkyColor = AmbientSkyColor;
+                    RenderSettings.ambientEquatorColor = AmbientEquatorColor;
+                    RenderSettings.ambientGroundColor = AmbientGroundColor;
+                    RenderSettings.ambientIntensity = AmbientIntensity;
+                }
                 RenderSettings.reflectionIntensity = ReflectionIntensity;
             }
         }

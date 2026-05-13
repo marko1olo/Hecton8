@@ -2,6 +2,7 @@ using Hecton8.Atmosphere;
 using Hecton8.Audio;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Crafting;
 using Hecton8.Power;
 using Hecton8.UI;
@@ -12,7 +13,6 @@ using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
-using CoreAudioEvent = Hecton8.Core.AudioEvent;
 
 namespace Hecton8.Gameplay
 {
@@ -991,7 +991,12 @@ namespace Hecton8.Gameplay
 
             _hostileDroneAlarmCount = alarmSequence;
             PublishLog(HectonSubmarineOsLogCode.HostileDroneDetected, LogPriorityCritical);
-            QueueVoiceAlarm(multiSystemFailureEventId, HostileDroneCaptionText, 1f);
+            QueueVoiceAlarm(
+                multiSystemFailureEventId,
+                HostileDroneCaptionText,
+                1f,
+                (byte)VocalWarningId.HullBreach,
+                VocalWarningSignalFlags.HabitatIntegrityCompromised);
         }
 
         private void TryRegister()
@@ -1624,6 +1629,8 @@ namespace Hecton8.Gameplay
                         lowPowerWarningEventId,
                         LowPowerCaptionText,
                         0.8f,
+                        (byte)VocalWarningId.PowerLow,
+                        0,
                         ref _nextPowerLowVwsTime,
                         now);
                     break;
@@ -1634,6 +1641,8 @@ namespace Hecton8.Gameplay
                         oxygenLowWarningEventId != 0u ? oxygenLowWarningEventId : lifeSupportCriticalEventId,
                         OxygenLowCaptionText,
                         0.85f,
+                        (byte)VocalWarningId.OxygenLow,
+                        0,
                         ref _nextOxygenLowVwsTime,
                         now);
                     break;
@@ -1644,6 +1653,8 @@ namespace Hecton8.Gameplay
                         lifeSupportCriticalEventId != 0u ? lifeSupportCriticalEventId : oxygenLowWarningEventId,
                         OxygenCriticalCaptionText,
                         1f,
+                        (byte)VocalWarningId.OxygenLow,
+                        0,
                         ref _nextOxygenCriticalVwsTime,
                         now);
                     break;
@@ -1654,6 +1665,8 @@ namespace Hecton8.Gameplay
                         hullBreachWarningEventId != 0u ? hullBreachWarningEventId : multiSystemFailureEventId,
                         HullBreachCaptionText,
                         1f,
+                        (byte)VocalWarningId.HullBreach,
+                        VocalWarningSignalFlags.HabitatIntegrityCompromised,
                         ref _nextHullBreachVwsTime,
                         now);
                     break;
@@ -1664,6 +1677,8 @@ namespace Hecton8.Gameplay
                         hullStressWarningEventId != 0u ? hullStressWarningEventId : multiSystemFailureEventId,
                         PressureHighCaptionText,
                         0.85f,
+                        (byte)VocalWarningId.CrushDepth,
+                        VocalWarningSignalFlags.HabitatIntegrityCompromised,
                         ref _nextPressureHighVwsTime,
                         now);
                     break;
@@ -1674,6 +1689,8 @@ namespace Hecton8.Gameplay
                         abandonShipAlarmEventId != 0u ? abandonShipAlarmEventId : multiSystemFailureEventId,
                         AbandonShipCaptionText,
                         1f,
+                        (byte)VocalWarningId.CrushDepth,
+                        VocalWarningSignalFlags.HabitatIntegrityCompromised,
                         ref _nextFatalPressureVwsTime,
                         now);
                     break;
@@ -1684,6 +1701,8 @@ namespace Hecton8.Gameplay
                         hullStressWarningEventId != 0u ? hullStressWarningEventId : multiSystemFailureEventId,
                         ThermalStressCaptionText,
                         0.75f,
+                        (byte)VocalWarningId.Radiation,
+                        0,
                         ref _nextThermalStressVwsTime,
                         now);
                     break;
@@ -1694,6 +1713,8 @@ namespace Hecton8.Gameplay
                         multiSystemFailureEventId,
                         MultiFailureCaptionText,
                         1f,
+                        (byte)VocalWarningId.HullBreach,
+                        VocalWarningSignalFlags.HabitatIntegrityCompromised,
                         ref _nextMultiFailureVwsTime,
                         now);
                     break;
@@ -1706,6 +1727,8 @@ namespace Hecton8.Gameplay
             uint eventId,
             string captionText,
             float intensity,
+            byte warningId,
+            byte warningFlags,
             ref double nextAllowedTime,
             double now)
         {
@@ -1713,7 +1736,7 @@ namespace Hecton8.Gameplay
             if (!rising && now < nextAllowedTime)
                 return;
 
-            QueueVoiceAlarm(eventId, captionText, intensity);
+            QueueVoiceAlarm(eventId, captionText, intensity, warningId, warningFlags);
             nextAllowedTime = now + VwsRepeatCooldownSeconds;
         }
 
@@ -1727,14 +1750,18 @@ namespace Hecton8.Gameplay
                             ? abandonShipAlarmEventId
                             : (lifeSupportCriticalEventId != 0u ? lifeSupportCriticalEventId : multiSystemFailureEventId),
                         AbandonShipCaptionText,
-                        1f);
+                        1f,
+                        (byte)VocalWarningId.CrushDepth,
+                        VocalWarningSignalFlags.HabitatIntegrityCompromised);
                     break;
 
                 case SubmarineEmergencyLevel.Danger:
                     QueueVoiceAlarm(
                         multiSystemFailureEventId != 0u ? multiSystemFailureEventId : lifeSupportCriticalEventId,
                         EmergencyDangerCaptionText,
-                        1f);
+                        1f,
+                        (byte)VocalWarningId.HullBreach,
+                        VocalWarningSignalFlags.HabitatIntegrityCompromised);
                     break;
             }
         }
@@ -1971,23 +1998,25 @@ namespace Hecton8.Gameplay
             ResetBrownoutVisualMutationCursors();
         }
 
-        private void QueueVoiceAlarm(uint eventId, string captionText, float intensity)
+        private void QueueVoiceAlarm(uint eventId, string captionText, float intensity, byte warningId, byte warningFlags)
         {
-            IAudioService audioService = GlobalRegistry.Audio;
-            if (eventId != 0u && audioService != null && audioService.IsInitialized)
-            {
-                CoreAudioEvent audioEvent = new CoreAudioEvent(
-                    eventId,
-                    transform.position,
-                    warningVolume * math.saturate(intensity),
-                    1f);
-                audioService.QueueAudioEvent(in audioEvent);
-            }
-
-            if (string.IsNullOrEmpty(captionText))
+            byte normalizedWarningId = warningId >= (byte)VocalWarningId.CrushDepth && warningId <= (byte)VocalWarningId.PowerLow
+                ? warningId
+                : (byte)0;
+            if (normalizedWarningId == 0)
                 return;
 
-            AudioCaptionEvents.Raise(new AudioCaptionRequest(captionText, transform.position, 2.4f, math.saturate(intensity)));
+            VocalWarningSignal signal = new VocalWarningSignal
+            {
+                WarningHash = VocalWarningHashes.FromWarningId(normalizedWarningId),
+                SourceId = eventId,
+                Severity01 = math.saturate(intensity * warningVolume),
+                CooldownSeconds = VwsRepeatCooldownSeconds,
+                Priority = normalizedWarningId,
+                Flags = warningFlags
+            };
+            GlobalSignals.Publish(in signal);
+            _ = captionText;
         }
 
         private void PublishCurrentSnapshotIfChanged()

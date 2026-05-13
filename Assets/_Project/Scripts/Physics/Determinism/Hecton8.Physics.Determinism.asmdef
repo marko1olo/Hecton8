@@ -1,0 +1,16 @@
+{
+    "name": "Hecton8.Physics.Determinism",
+    "rootNamespace": "Hecton8.Physics.Determinism",
+    "references": [
+        "Hecton8.Core.Contracts"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

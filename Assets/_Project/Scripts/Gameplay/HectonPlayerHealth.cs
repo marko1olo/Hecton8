@@ -4,6 +4,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Audio;
 using Hecton8.Narrative;
 using Hecton8.SaveSystem;
@@ -176,7 +177,18 @@ namespace Hecton8.Gameplay
         internal void ApplyRadiationExposure(float exposureSeconds)
         {
             _radiationExposureSeconds = Mathf.Max(_radiationExposureSeconds, Mathf.Max(0f, exposureSeconds));
-            float fatigueScale = ResolveRadiationFatigueScale(_radiationExposureSeconds);
+            ApplyRadiationExposureExact(_radiationExposureSeconds);
+        }
+
+        internal void SetRadiationExposure(float exposureSeconds)
+        {
+            _radiationExposureSeconds = Mathf.Max(0f, exposureSeconds);
+            ApplyRadiationExposureExact(_radiationExposureSeconds);
+        }
+
+        private void ApplyRadiationExposureExact(float exposureSeconds)
+        {
+            float fatigueScale = ResolveRadiationFatigueScale(exposureSeconds);
             SetRuntimeMaxHealthScaleInternal(fatigueScale);
             EvaluateMutationThresholds();
             TryIssueRadiationAdvisories();
@@ -501,6 +513,17 @@ namespace Hecton8.Gameplay
 
             _vitalWarningSignalIssued = true;
             PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(1f, 0.85f, 1f, Mathf.Clamp01(HealthPercent), true));
+            VitalWarningSignal signal = new VitalWarningSignal
+            {
+                WarningHash = VocalWarningHashes.OxygenLow,
+                SourceId = 0u,
+                Vital01 = math.saturate(1f - HealthPercent),
+                Severity01 = math.saturate(1f - HealthPercent),
+                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                Priority = (byte)VocalWarningId.OxygenLow,
+                Flags = 0
+            };
+            GlobalSignals.Publish(in signal);
         }
 
         private void RefreshVitalWarningSignalReset()

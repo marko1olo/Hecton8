@@ -1,6 +1,11 @@
+using System.IO;
 using System.Runtime.InteropServices;
+using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Signals;
+using Hecton8.Core.Scheduling;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -58,6 +63,34 @@ namespace Hecton8.AI
         public uint BucketHash;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    internal struct LightSourceData
+    {
+        public AbsoluteUniversePositionBlit128 PositionAup;
+        public float3 Forward;
+        public float RangeMeters;
+        public float RangeSq;
+        public float Intensity;
+        public float SpotOuterCos;
+        public uint SourceId;
+        public uint LastFrame;
+        public ushort Slot;
+        public byte Flags;
+        public byte Reserved;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+    internal struct RetinalTelemetryEntry
+    {
+        public uint Frame;
+        public ushort TotalBlindPredators;
+        public byte ActiveLightCount;
+        public byte Flags;
+        public float MaxExposure;
+        public float3 HottestLightPosition;
+        public uint SourceId;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct CognitionControl
     {
@@ -113,6 +146,8 @@ namespace Hecton8.AI
         public float PlayerLightExposure01;
         public float LightFrenzySpeedMultiplier;
         public float LightReactionFearBoost01;
+        public float3 RetinalLightPosition;
+        public float RetinalExposure01;
         public float HungerWeight;
         public float ThreatWeight;
         public float FearWeight;
@@ -134,6 +169,7 @@ namespace Hecton8.AI
         public int ClaimedBoidIndex;
         public int FlockCount;
         public int LightReactionMode;
+        public int RetinalBlindState;
         public int Flags;
     }
 
@@ -183,6 +219,7 @@ namespace Hecton8.AI
         BaseSiegeDistractor = 1u << 6,
         BaseSiegeLoiterer = 1u << 7,
         EcoHeadless = 1u << 8,
+        RetinalBlind = 1u << 9,
     }
 
     internal enum PredatorPackRole : byte
@@ -206,6 +243,7 @@ namespace Hecton8.AI
         None = 0,
         HasWanderTarget = 1 << 0,
         HasOverrideThreatPosition = 1 << 1,
+        RetinalFlinch = 1 << 2,
     }
 
     [System.Flags]
@@ -229,6 +267,7 @@ namespace Hecton8.AI
         IsAmbusher = 1 << 14,
         HasPackTarget = 1 << 15,
         HighTierSmoothSteering = 1 << 16,
+        RetinalBlind = 1 << 17,
     }
 
     [System.Flags]
@@ -247,6 +286,7 @@ namespace Hecton8.AI
         Active = 1u << 0,
         Hunting = 1u << 1,
         Fleeing = 1u << 2,
+        Blind = 1u << 3,
     }
 
     /// <summary>
@@ -299,6 +339,19 @@ namespace Hecton8.AI
         private const float RearEvaluationIntervalSeconds = 1.0f / 5.0f;
         private const float PredatorUtilityEvaluationIntervalSeconds = 0.5f;
         private const float PredatorUtilityEvaluationStaggerStepSeconds = PredatorUtilityEvaluationIntervalSeconds * 0.03125f;
+        private const int RetinalLightCapacity = 4;
+        private const int RetinalTelemetryCapacity = 300;
+        private const int RetinalLightStaleFrameWindow = 8;
+        private const float RetinalLowTierEvaluationIntervalSeconds = 1f;
+        private const float RetinalDirectDotThreshold = -0.8f;
+        private const float RetinalRecoveryDotThreshold = -0.5f;
+        private const float RetinalBlindThreshold = 1f;
+        private const float RetinalBlindRecoveryThreshold = 0.28f;
+        private const float RetinalExposureRiseScale = 0.72f;
+        private const float RetinalExposureDecayPerSecond = 0.42f;
+        private const float RetinalBlindHoldSeconds = 2.25f;
+        private const uint RetinalBlindPredatorsTelemetryHash = 0x5242544Cu; // RBTL
+        private const uint RetinalTelemetryContextHash = 0x4641554Eu; // FAUN
         private const float PredatorInterceptLeadSeconds = 0.65f;
         private const float PredatorHeadlessDistanceSqr = 1000000f;
         private const float PredatorVisionConeCosineThreshold = 0.28f;
@@ -324,6 +377,7 @@ namespace Hecton8.AI
         private const int MaxSwarmNeighborIterations = Capacity;
         private const int MaxThreatDdaSteps = 4096;
         private const int EvaluationJobBatchSize = 32;
+        private static readonly double _StopwatchMillisecondsPerTick = 1000.0 / Stopwatch.Frequency;
         private const int UnclaimedBoidSlot = -1;
         private const byte SolidThreatVoxel = 255;
         private const byte SignedDistanceSolidThreshold = 128;
@@ -392,6 +446,11 @@ namespace Hecton8.AI
         private static NativeArray<byte> _evaluationDueFlags;
         private static NativeArray<float> _nextEvaluationTimes;
         private static NativeArray<float> _evaluationIntervals;
+        private static NativeArray<float> _retinalExposure;
+        private static NativeArray<byte> _blindnessState;
+        private static NativeArray<byte> _lastPublishedBlindnessState;
+        private static NativeArray<LightSourceData> _retinalLightSources;
+        private static NativeArray<RetinalTelemetryEntry> _retinalTelemetryRing;
         private static NativeParallelHashMap<int, SpeciesCognitionTuning> _speciesTuningById;
         private static NativeArray<byte> _threatVoxelGrid;
         private static int3 _threatVoxelDimensions;
@@ -404,12 +463,18 @@ namespace Hecton8.AI
         private static float _chemicalBreadcrumbFollowStepMeters = 12f;
         private static JobHandle _scheduledSwarmHandle;
         private static JobHandle _scheduledEvaluationHandle;
+        private static long _evaluationScheduleTimestamp;
         private static bool _evaluationScheduled;
         private static int _lastEvaluatedFrame = -1;
         private static int _lastScheduledFrame = -1;
         private static int _lastThreatVoxelBindFrame = -1;
         private static int _lastChemicalGridBindFrame = -1;
         private static int _habitatSiegeTargetCount;
+        private static int _retinalLightCount;
+        private static int _retinalTelemetryCursor;
+        private static int _totalBlindPredators;
+        private static int _lastTelemetryBlindPredatorCount = -1;
+        private static bool _retinalFaultDumped;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetDomain()
@@ -434,6 +499,9 @@ namespace Hecton8.AI
             _chosenStates[i] = 0;
             _nextEvaluationTimes[i] = 0f;
             _evaluationIntervals[i] = CenterEvaluationIntervalSeconds;
+                _retinalExposure[i] = 0f;
+                _blindnessState[i] = 0;
+                _lastPublishedBlindnessState[i] = 0;
                 _predatorPackTargets[i] = float3.zero;
                 _predatorPackWeights[i] = 0f;
                 _predatorPackBaitPositions[i] = float3.zero;
@@ -472,6 +540,9 @@ namespace Hecton8.AI
             _chosenStates[slot] = 0;
             _nextEvaluationTimes[slot] = 0f;
             _evaluationIntervals[slot] = CenterEvaluationIntervalSeconds;
+            _retinalExposure[slot] = 0f;
+            _blindnessState[slot] = 0;
+            _lastPublishedBlindnessState[slot] = 0;
             _predatorPackTargets[slot] = float3.zero;
             _predatorPackWeights[slot] = 0f;
             _predatorPackBaitPositions[slot] = float3.zero;
@@ -549,6 +620,9 @@ namespace Hecton8.AI
             _chosenStates[slot] = 0;
             _nextEvaluationTimes[slot] = 0f;
             _evaluationIntervals[slot] = CenterEvaluationIntervalSeconds;
+            _retinalExposure[slot] = 0f;
+            _blindnessState[slot] = 0;
+            _lastPublishedBlindnessState[slot] = 0;
             _predatorPackTargets[slot] = float3.zero;
             _predatorPackWeights[slot] = 0f;
             _predatorPackBaitPositions[slot] = float3.zero;
@@ -732,6 +806,7 @@ namespace Hecton8.AI
             if (!_activeSlots.IsCreated)
                 return;
 
+            ProcessSubmarineLightSignals(frameId);
             EmitFearPheromones();
             ChemicalInfluenceGrid.BeginAiFrame(frameId);
             RefreshThreatVoxelSnapshot(frameId);
@@ -746,9 +821,14 @@ namespace Hecton8.AI
             if (!DispatcherJobSwap.TryComplete(ref _scheduledEvaluationHandle, false))
                 return;
 
+            float chainMs = (float)((Stopwatch.GetTimestamp() - _evaluationScheduleTimestamp) * _StopwatchMillisecondsPerTick);
+            float perJobMs = chainMs * 0.5f;
+            JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<SwarmAnalysisJob>(JobAdmissionLane.Lane3_AI, perJobMs);
+            JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<PredatorCognitionJob>(JobAdmissionLane.Lane3_AI, perJobMs);
             _scheduledSwarmHandle = default;
             _evaluationScheduled = false;
             _lastEvaluatedFrame = _lastScheduledFrame;
+            UpdateRetinalPostEvaluationTelemetry(_lastEvaluatedFrame);
         }
 
         internal static unsafe void ScheduleFrameEvaluation(int frameId)
@@ -801,7 +881,17 @@ namespace Hecton8.AI
                 SwarmBoundsMin = swarmBoundsMin
             };
 
-            _scheduledSwarmHandle = swarmJob.Schedule(_activeSlots.Length, EvaluationJobBatchSize);
+            if (!swarmJob.TryScheduleParallelAdmitted(
+                    _activeSlots.Length,
+                    EvaluationJobBatchSize,
+                    JobAdmissionLane.Lane3_AI,
+                    default,
+                    out _scheduledSwarmHandle))
+            {
+                _lastScheduledFrame = frameId;
+                return;
+            }
+
             var job = new PredatorCognitionJob
             {
                 ActiveSlots = _activeSlots.AsArray(),
@@ -842,11 +932,25 @@ namespace Hecton8.AI
                 ThreatVoxelUsesSignedDistanceEncoding = _threatVoxelUsesSignedDistanceEncoding ? 1 : 0,
                 ChemicalBreadcrumbs = _chemicalBreadcrumbs,
                 ChemicalBreadcrumbCount = _chemicalBreadcrumbCount,
-                ChemicalBreadcrumbFollowStepMeters = _chemicalBreadcrumbFollowStepMeters
+                ChemicalBreadcrumbFollowStepMeters = _chemicalBreadcrumbFollowStepMeters,
+                RetinalLightSources = _retinalLightSources,
+                RetinalLightCount = _retinalLightCount,
+                RetinalExposure = _retinalExposure,
+                BlindnessState = _blindnessState
             };
 
-            _scheduledEvaluationHandle = job.Schedule(_activeSlots.Length, EvaluationJobBatchSize, _scheduledSwarmHandle);
+            if (!job.TryScheduleParallelAdmitted(
+                    _activeSlots.Length,
+                    EvaluationJobBatchSize,
+                    JobAdmissionLane.Lane3_AI,
+                    _scheduledSwarmHandle,
+                    out _scheduledEvaluationHandle))
+            {
+                _scheduledEvaluationHandle = _scheduledSwarmHandle;
+            }
+
             _evaluationScheduled = true;
+            _evaluationScheduleTimestamp = Stopwatch.GetTimestamp();
             _lastScheduledFrame = frameId;
         }
 
@@ -887,6 +991,11 @@ namespace Hecton8.AI
             DisposeNativeArray(ref _evaluationDueFlags, disposeDependency);
             DisposeNativeArray(ref _nextEvaluationTimes, disposeDependency);
             DisposeNativeArray(ref _evaluationIntervals, disposeDependency);
+            DisposeNativeArray(ref _retinalExposure, disposeDependency);
+            DisposeNativeArray(ref _blindnessState, disposeDependency);
+            DisposeNativeArray(ref _lastPublishedBlindnessState, disposeDependency);
+            DisposeNativeArray(ref _retinalLightSources, disposeDependency);
+            DisposeNativeArray(ref _retinalTelemetryRing, disposeDependency);
             DisposeNativeParallelHashMap(ref _predatorSpeciesTargetPositions, disposeDependency, nameof(_predatorSpeciesTargetPositions));
             DisposeNativeParallelHashMap(ref _speciesTuningById, disposeDependency, nameof(_speciesTuningById));
 
@@ -923,6 +1032,11 @@ namespace Hecton8.AI
             _evaluationDueFlags = default;
             _nextEvaluationTimes = default;
             _evaluationIntervals = default;
+            _retinalExposure = default;
+            _blindnessState = default;
+            _lastPublishedBlindnessState = default;
+            _retinalLightSources = default;
+            _retinalTelemetryRing = default;
             _speciesTuningById = default;
             _threatVoxelGrid = default;
             _threatVoxelDimensions = int3.zero;
@@ -941,6 +1055,11 @@ namespace Hecton8.AI
             _lastThreatVoxelBindFrame = -1;
             _lastChemicalGridBindFrame = -1;
             _habitatSiegeTargetCount = 0;
+            _retinalLightCount = 0;
+            _retinalTelemetryCursor = 0;
+            _totalBlindPredators = 0;
+            _lastTelemetryBlindPredatorCount = -1;
+            _retinalFaultDumped = false;
         }
 
         private static void EnsureInitialized()
@@ -1014,6 +1133,16 @@ namespace Hecton8.AI
             _nextEvaluationTimes = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[Capacity] - resolved cognition cadence intervals per slot - owner: PredatorCognitionDomain
             _evaluationIntervals = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[Capacity] - integrated retinal headlight exposure per predator slot - owner: PredatorCognitionDomain
+            _retinalExposure = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<byte>[Capacity] - binary retinal blindness state per predator slot - owner: PredatorCognitionDomain
+            _blindnessState = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<byte>[Capacity] - last published blindness state mirror for edge-triggered fauna state signals - owner: PredatorCognitionDomain
+            _lastPublishedBlindnessState = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<LightSourceData>[4] - brightest active headlight registry consumed by Burst cognition - owner: PredatorCognitionDomain
+            _retinalLightSources = new NativeArray<LightSourceData>(RetinalLightCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<RetinalTelemetryEntry>[300] - retinal black-box circular buffer - owner: PredatorCognitionDomain
+            _retinalTelemetryRing = new NativeArray<RetinalTelemetryEntry>(RetinalTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeParallelHashMap<int,SpeciesCognitionTuning>[Capacity] - species cognition tuning table keyed by stable species id - owner: PredatorCognitionDomain
             _speciesTuningById = new NativeParallelHashMap<int, SpeciesCognitionTuning>(Capacity, Allocator.Persistent);
             RegisterNativeMemorySentinel();
@@ -1055,6 +1184,11 @@ namespace Hecton8.AI
             NativeMemorySentinel.RegisterNativeArray(_evaluationDueFlags, NativeMemoryOwner, nameof(_evaluationDueFlags), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_nextEvaluationTimes, NativeMemoryOwner, nameof(_nextEvaluationTimes), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_evaluationIntervals, NativeMemoryOwner, nameof(_evaluationIntervals), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_retinalExposure, NativeMemoryOwner, nameof(_retinalExposure), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_blindnessState, NativeMemoryOwner, nameof(_blindnessState), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_lastPublishedBlindnessState, NativeMemoryOwner, nameof(_lastPublishedBlindnessState), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_retinalLightSources, NativeMemoryOwner, nameof(_retinalLightSources), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_retinalTelemetryRing, NativeMemoryOwner, nameof(_retinalTelemetryRing), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeParallelHashMap(_speciesTuningById, NativeMemoryOwner, nameof(_speciesTuningById), NativeMemoryLifetime);
         }
 
@@ -1096,6 +1230,7 @@ namespace Hecton8.AI
         private static bool PrepareEvaluationDueFlags()
         {
             bool hasDueEvaluations = false;
+            bool lowTierRetina = GlobalRegistry.ScalabilityTierProfileByte == 0;
             for (int i = 0; i < _activeSlots.Length; i++)
             {
                 int slot = _activeSlots[i];
@@ -1110,7 +1245,7 @@ namespace Hecton8.AI
                 float currentTime = math.max(0f, input.CurrentTime);
                 bool predatorRole = (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0;
                 float interval = predatorRole
-                    ? PredatorUtilityEvaluationIntervalSeconds
+                    ? math.select(PredatorUtilityEvaluationIntervalSeconds, RetinalLowTierEvaluationIntervalSeconds, lowTierRetina)
                     : ResolveEvaluationInterval(input.ImportanceScore);
                 float previousInterval = math.max(_evaluationIntervals[slot], CenterEvaluationIntervalSeconds);
                 float scheduledTime = _nextEvaluationTimes[slot];
@@ -1129,6 +1264,295 @@ namespace Hecton8.AI
             }
 
             return hasDueEvaluations;
+        }
+
+        private static void ProcessSubmarineLightSignals(int frameId)
+        {
+            if (!_retinalLightSources.IsCreated)
+                return;
+
+            while (GlobalSignals.TryDequeueSubmarineLightsChanged(out SubmarineLightsChangedSignal signal))
+            {
+                if (signal.Operation == SubmarineLightsChangedSignalOperations.ClearSource)
+                {
+                    RemoveRetinalLightSource(signal.SourceId);
+                    continue;
+                }
+
+                bool powered = (signal.Flags & SubmarineLightsChangedSignalFlags.Powered) != 0;
+                if (signal.Operation == SubmarineLightsChangedSignalOperations.Remove ||
+                    !powered ||
+                    signal.RangeMeters <= 0.1f ||
+                    signal.Intensity <= DdaEpsilon)
+                {
+                    RemoveRetinalLightSource(signal.SourceId, signal.Slot);
+                    continue;
+                }
+
+                UpsertRetinalLightSource(in signal, frameId);
+            }
+
+            CullStaleRetinalLights(frameId);
+        }
+
+        private static void UpsertRetinalLightSource(in SubmarineLightsChangedSignal signal, int frameId)
+        {
+            LightSourceData light = BuildRetinalLightSource(in signal, frameId);
+            if (light.Intensity <= DdaEpsilon || light.RangeSq <= DdaEpsilon)
+                return;
+
+            for (int i = 0; i < _retinalLightCount; i++)
+            {
+                LightSourceData existing = _retinalLightSources[i];
+                if (existing.SourceId != light.SourceId || existing.Slot != light.Slot)
+                    continue;
+
+                _retinalLightSources[i] = light;
+                return;
+            }
+
+            if (_retinalLightCount < RetinalLightCapacity)
+            {
+                _retinalLightSources[_retinalLightCount] = light;
+                _retinalLightCount++;
+                return;
+            }
+
+            int weakestIndex = 0;
+            float weakestScore = ComputeLightPriority(_retinalLightSources[0]);
+            for (int i = 1; i < RetinalLightCapacity; i++)
+            {
+                float score = ComputeLightPriority(_retinalLightSources[i]);
+                if (score >= weakestScore)
+                    continue;
+
+                weakestScore = score;
+                weakestIndex = i;
+            }
+
+            if (ComputeLightPriority(light) > weakestScore)
+                _retinalLightSources[weakestIndex] = light;
+        }
+
+        private static LightSourceData BuildRetinalLightSource(in SubmarineLightsChangedSignal signal, int frameId)
+        {
+            float range = math.max(0.1f, signal.RangeMeters);
+            float3 forward = ResolveFiniteDirection(signal.Forward, new float3(0f, 0f, 1f));
+            return new LightSourceData
+            {
+                PositionAup = signal.PositionAup.ToAlignedBlit(),
+                Forward = forward,
+                RangeMeters = range,
+                RangeSq = range * range,
+                Intensity = math.max(0f, signal.Intensity),
+                SpotOuterCos = math.clamp(signal.SpotOuterCos, -1f, 1f),
+                SourceId = signal.SourceId,
+                LastFrame = unchecked((uint)math.max(0, frameId)),
+                Slot = signal.Slot,
+                Flags = signal.Flags
+            };
+        }
+
+        private static float3 ResolveFiniteDirection(float3 direction, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(direction);
+            if (!MathGuard.IsFinite(direction) || lengthSq <= DdaEpsilon)
+                direction = fallback;
+
+            lengthSq = math.lengthsq(direction);
+            if (!MathGuard.IsFinite(direction) || lengthSq <= DdaEpsilon)
+                return new float3(0f, 0f, 1f);
+
+            return direction * math.rsqrt(math.max(lengthSq, DdaEpsilon));
+        }
+
+        private static float ComputeLightPriority(in LightSourceData light)
+        {
+            return math.max(0f, light.Intensity) * math.max(0f, light.RangeSq);
+        }
+
+        private static void RemoveRetinalLightSource(uint sourceId)
+        {
+            for (int i = _retinalLightCount - 1; i >= 0; i--)
+            {
+                if (_retinalLightSources[i].SourceId == sourceId)
+                    RemoveRetinalLightAt(i);
+            }
+        }
+
+        private static void RemoveRetinalLightSource(uint sourceId, ushort slot)
+        {
+            for (int i = 0; i < _retinalLightCount; i++)
+            {
+                LightSourceData light = _retinalLightSources[i];
+                if (light.SourceId != sourceId || light.Slot != slot)
+                    continue;
+
+                RemoveRetinalLightAt(i);
+                return;
+            }
+        }
+
+        private static void CullStaleRetinalLights(int frameId)
+        {
+            uint currentFrame = unchecked((uint)math.max(0, frameId));
+            for (int i = _retinalLightCount - 1; i >= 0; i--)
+            {
+                uint lastFrame = _retinalLightSources[i].LastFrame;
+                if (unchecked(currentFrame - lastFrame) > RetinalLightStaleFrameWindow)
+                    RemoveRetinalLightAt(i);
+            }
+        }
+
+        private static void RemoveRetinalLightAt(int index)
+        {
+            int lastIndex = _retinalLightCount - 1;
+            if (index < 0 || index > lastIndex)
+                return;
+
+            _retinalLightSources[index] = index == lastIndex ? default : _retinalLightSources[lastIndex];
+            _retinalLightSources[lastIndex] = default;
+            _retinalLightCount = lastIndex;
+        }
+
+        private static void UpdateRetinalPostEvaluationTelemetry(int frameId)
+        {
+            if (!_activeSlots.IsCreated || !_blindnessState.IsCreated || !_retinalTelemetryRing.IsCreated)
+                return;
+
+            int totalBlind = 0;
+            float maxExposure = 0f;
+            float3 hottestPosition = float3.zero;
+            uint hottestSource = 0u;
+            bool foundFault = false;
+            for (int i = 0; i < _activeSlots.Length; i++)
+            {
+                int slot = _activeSlots[i];
+                float exposure = _retinalExposure[slot];
+                if (!float.IsFinite(exposure))
+                {
+                    foundFault = true;
+                    exposure = 0f;
+                    _retinalExposure[slot] = 0f;
+                    _blindnessState[slot] = 0;
+                }
+
+                byte blind = _blindnessState[slot];
+                if (blind != 0)
+                    totalBlind++;
+
+                if (exposure > maxExposure)
+                    maxExposure = exposure;
+
+                byte prior = _lastPublishedBlindnessState[slot];
+                if (prior != blind)
+                {
+                    PublishFaunaBlindStateSignal(slot, frameId, blind != 0);
+                    _lastPublishedBlindnessState[slot] = blind;
+                }
+            }
+
+            if (_retinalLightCount > 0)
+            {
+                LightSourceData strongest = _retinalLightSources[0];
+                float strongestScore = ComputeLightPriority(strongest);
+                for (int i = 1; i < _retinalLightCount; i++)
+                {
+                    float score = ComputeLightPriority(_retinalLightSources[i]);
+                    if (score <= strongestScore)
+                        continue;
+
+                    strongest = _retinalLightSources[i];
+                    strongestScore = score;
+                }
+
+                hottestPosition = AUPMath.ToRuntimeFloat3(in strongest.PositionAup, float3.zero);
+                hottestSource = strongest.SourceId;
+            }
+
+            RetinalTelemetryEntry entry = default;
+            entry.Frame = unchecked((uint)math.max(0, frameId));
+            entry.TotalBlindPredators = (ushort)math.min(totalBlind, ushort.MaxValue);
+            entry.ActiveLightCount = (byte)math.min(_retinalLightCount, byte.MaxValue);
+            entry.Flags = (byte)(foundFault ? 1 : 0);
+            entry.MaxExposure = maxExposure;
+            entry.HottestLightPosition = hottestPosition;
+            entry.SourceId = hottestSource;
+            _retinalTelemetryRing[_retinalTelemetryCursor] = entry;
+            _retinalTelemetryCursor = (_retinalTelemetryCursor + 1) % RetinalTelemetryCapacity;
+            _totalBlindPredators = totalBlind;
+
+            if (foundFault)
+                DumpRetinalBlackBoxCold(frameId);
+
+            if (_lastTelemetryBlindPredatorCount != totalBlind || (frameId & 31) == 0)
+            {
+                _lastTelemetryBlindPredatorCount = totalBlind;
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    RetinalBlindPredatorsTelemetryHash,
+                    RetinalTelemetryContextHash,
+                    totalBlind);
+            }
+        }
+
+        private static void PublishFaunaBlindStateSignal(int slot, int frameId, bool blind)
+        {
+            if (!IsValidSlot(slot))
+                return;
+
+            CognitionCore core = _cores[slot];
+            Vector3 position = new Vector3(core.Position.x, core.Position.y, core.Position.z);
+            GlobalSignals.Publish(new FaunaStateChangedSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(position),
+                SpeciesHash = unchecked((uint)core.SpeciesId),
+                StateFlags = core.StateFlags,
+                Frame = unchecked((uint)math.max(0, frameId)),
+                Slot = (ushort)math.clamp(slot, 0, ushort.MaxValue),
+                StateKind = FaunaStateChangedSignalKinds.Blind,
+                Flags = blind ? FaunaStateChangedSignalFlags.StateActive : (byte)0
+            });
+        }
+
+        private static void DumpRetinalBlackBoxCold(int frameId)
+        {
+            if (_retinalFaultDumped || !_retinalTelemetryRing.IsCreated)
+                return;
+
+            _retinalFaultDumped = true;
+            try
+            {
+                DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
+                string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
+                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
+                Directory.CreateDirectory(logDirectory);
+                string dumpPath = Path.Combine(logDirectory, "Dump_FAUNA_RETINAL_ADAPTATION.bin");
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(frameId);
+                    writer.Write(_retinalTelemetryCursor);
+                    writer.Write(_totalBlindPredators);
+                    writer.Write(_retinalLightCount);
+                    for (int i = 0; i < RetinalTelemetryCapacity; i++)
+                    {
+                        RetinalTelemetryEntry entry = _retinalTelemetryRing[i];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.TotalBlindPredators);
+                        writer.Write(entry.ActiveLightCount);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.MaxExposure);
+                        writer.Write(entry.HottestLightPosition.x);
+                        writer.Write(entry.HottestLightPosition.y);
+                        writer.Write(entry.HottestLightPosition.z);
+                        writer.Write(entry.SourceId);
+                    }
+                }
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError("Retinal black-box dump failed: " + exception.Message);
+            }
         }
 
         private static void RefreshThreatVoxelSnapshot(int frameId)
@@ -1848,6 +2272,10 @@ namespace Hecton8.AI
             [ReadOnly] public NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> ChemicalBreadcrumbs;
             public int ChemicalBreadcrumbCount;
             public float ChemicalBreadcrumbFollowStepMeters;
+            [ReadOnly] public NativeArray<LightSourceData> RetinalLightSources;
+            public int RetinalLightCount;
+            [NativeDisableParallelForRestriction] public NativeArray<float> RetinalExposure;
+            [NativeDisableParallelForRestriction] public NativeArray<byte> BlindnessState;
 
             public void Execute(int index)
             {
@@ -1910,7 +2338,22 @@ namespace Hecton8.AI
                 }
 
                 bool isPredator = (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0;
-                if (isPredator && input.DistanceToPlayerSqr > PredatorHeadlessDistanceSqr)
+                RetinalLightResult retinalLight = default;
+                if (isPredator)
+                {
+                    retinalLight = ResolveRetinalExposure(slot, in resolvedInput, fallbackForward);
+                    resolvedInput.RetinalLightPosition = retinalLight.LightPosition;
+                    resolvedInput.RetinalExposure01 = retinalLight.Exposure01;
+                    resolvedInput.RetinalBlindState = retinalLight.BlindState;
+                    resolvedInput.PlayerLightExposure01 = math.max(resolvedInput.PlayerLightExposure01, retinalLight.Exposure01);
+                    resolvedInput.Flags = retinalLight.BlindState != 0
+                        ? resolvedInput.Flags | (int)CognitionInputFlags.RetinalBlind
+                        : resolvedInput.Flags & ~(int)CognitionInputFlags.RetinalBlind;
+                    if (retinalLight.BlindState == 0)
+                        control.Flags &= ~(int)CognitionControlFlags.RetinalFlinch;
+                }
+
+                if (isPredator && input.DistanceToPlayerSqr > PredatorHeadlessDistanceSqr && retinalLight.BlindState == 0)
                 {
                     core.StateFlags = 0u;
                     core.QuantizedDrives = PackDriveChannels(hunger, aggression, fear, threatLevel);
@@ -1954,6 +2397,8 @@ namespace Hecton8.AI
                     : EvaluatePassive(slot, ref control, in resolvedInput, fallbackForward, canFlee, hasPlayerTarget, playerVisible, threatVisible, useHomeTerritory, isFlocking, ref hunger, ref fatigue, ref fear, ref threatLevel);
 
                 core.StateFlags = PackWorldStateFlags((FaunaBrain.AIState)output.LegacyState);
+                if (resolvedInput.RetinalBlindState != 0)
+                    core.StateFlags |= (uint)FaunaWorldStateFlags.Blind;
                 core.QuantizedDrives = PackDriveChannels(hunger, aggression, fear, threatLevel);
                 core.QuantizedFatigue = PackSingleDrive(fatigue);
                 Cores[slot] = core;
@@ -1965,6 +2410,94 @@ namespace Hecton8.AI
             private static byte PackStateCodeToByte(int stateCode)
             {
                 return (byte)math.clamp(stateCode, 0, byte.MaxValue);
+            }
+
+            private struct RetinalLightResult
+            {
+                public float Exposure01;
+                public float3 LightPosition;
+                public byte BlindState;
+            }
+
+            private RetinalLightResult ResolveRetinalExposure(int slot, in CognitionInput input, float3 fallbackForward)
+            {
+                RetinalLightResult result = default;
+                result.LightPosition = input.PlayerPosition;
+                if (!RetinalExposure.IsCreated || !BlindnessState.IsCreated)
+                    return result;
+
+                float exposure = math.saturate(RetinalExposure[slot]);
+                byte blindState = BlindnessState[slot];
+                float dt = math.clamp(math.max(input.DeltaTime, input.MetabolicDeltaTime), CenterEvaluationIntervalSeconds, RetinalLowTierEvaluationIntervalSeconds);
+                if (!RetinalLightSources.IsCreated || RetinalLightCount <= 0)
+                {
+                    exposure = math.max(0f, exposure - RetinalExposureDecayPerSecond * dt);
+                    blindState = exposure <= RetinalBlindRecoveryThreshold ? (byte)0 : blindState;
+                    RetinalExposure[slot] = exposure;
+                    BlindnessState[slot] = blindState;
+                    result.Exposure01 = exposure;
+                    result.BlindState = blindState;
+                    return result;
+                }
+
+                float3 predatorForward = ResolveRsqrtDirection(input.Forward, fallbackForward);
+                float bestStimulus = 0f;
+                float3 bestLightPosition = input.PlayerPosition;
+                bool directGlare = false;
+                bool holdGlare = false;
+                int count = math.min(RetinalLightCount, RetinalLightSources.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    LightSourceData light = RetinalLightSources[i];
+                    if (light.Intensity <= DdaEpsilon || light.RangeSq <= DdaEpsilon)
+                        continue;
+
+                    float3 lightPosition = ResolveRuntimePosition(in light.PositionAup, input.FloatingOriginOffset);
+                    float3 lightToPredator = input.Position - lightPosition;
+                    float distanceSq = math.lengthsq(lightToPredator);
+                    if (distanceSq > light.RangeSq || distanceSq <= DdaEpsilon)
+                        continue;
+
+                    float invDistance = math.rsqrt(math.max(distanceSq, DdaEpsilon));
+                    float3 lightToPredatorDir = lightToPredator * invDistance;
+                    float coneDot = math.dot(light.Forward, lightToPredatorDir);
+                    if (coneDot < light.SpotOuterCos)
+                        continue;
+
+                    float forwardDot = math.dot(predatorForward, lightToPredatorDir);
+                    holdGlare |= forwardDot <= RetinalRecoveryDotThreshold;
+                    if (forwardDot >= RetinalDirectDotThreshold)
+                        continue;
+
+                    float direct01 = math.saturate((RetinalDirectDotThreshold - forwardDot) * 5f);
+                    float distance01 = 1f - math.saturate(distanceSq * math.rcp(math.max(light.RangeSq, 1f)));
+                    float stimulus = math.max(0f, light.Intensity) * distance01 * direct01;
+                    if (stimulus <= bestStimulus)
+                        continue;
+
+                    bestStimulus = stimulus;
+                    bestLightPosition = lightPosition;
+                    directGlare = true;
+                }
+
+                if (directGlare)
+                {
+                    exposure = math.saturate(exposure + bestStimulus * RetinalExposureRiseScale * dt);
+                    result.LightPosition = bestLightPosition;
+                }
+                else if (!holdGlare)
+                {
+                    exposure = math.max(0f, exposure - RetinalExposureDecayPerSecond * dt);
+                }
+
+                blindState = exposure >= RetinalBlindThreshold
+                    ? (byte)1
+                    : exposure <= RetinalBlindRecoveryThreshold ? (byte)0 : blindState;
+                RetinalExposure[slot] = exposure;
+                BlindnessState[slot] = blindState;
+                result.Exposure01 = exposure;
+                result.BlindState = blindState;
+                return result;
             }
 
             private PackedCognitionOutput EvaluatePredator(
@@ -2040,14 +2573,24 @@ namespace Hecton8.AI
                 bool isAmbusher = (input.Flags & (int)CognitionInputFlags.IsAmbusher) != 0;
                 bool hasApexRivalTarget = (input.Flags & (int)CognitionInputFlags.HasApexRivalTarget) != 0;
                 bool hasChemicalTrail = TryResolveChemicalGradient(input.Position, input.CurrentTime, out float attractantSignal, out float fearPheromoneSignal, out float3 scentGradient);
-                bool lightAversionActive = IsLightAversionActive(input);
-                bool lightFrenzyActive = IsLightFrenzyActive(input) && hasPlayerTarget;
+                bool retinalBlindActive = (input.Flags & (int)CognitionInputFlags.RetinalBlind) != 0 || input.RetinalBlindState != 0;
+                bool retinalFrenzyActive = retinalBlindActive && IsLightFrenzyActive(input);
+                bool lightAversionActive = IsLightAversionActive(input) || (retinalBlindActive && !retinalFrenzyActive);
+                bool lightFrenzyActive = (IsLightFrenzyActive(input) || retinalFrenzyActive) && hasPlayerTarget;
+                if (retinalFrenzyActive)
+                    aggression = math.saturate(aggression * 2f);
+
                 if (lightAversionActive)
                 {
-                    control.OverrideThreatPosition = input.PlayerPosition;
-                    control.Flags |= (int)CognitionControlFlags.HasOverrideThreatPosition;
+                    control.OverrideThreatPosition = retinalBlindActive ? input.RetinalLightPosition : input.PlayerPosition;
+                    control.OverrideUntilTime = math.max(control.OverrideUntilTime, input.CurrentTime + RetinalBlindHoldSeconds);
+                    control.Flags |= (int)CognitionControlFlags.HasOverrideThreatPosition | (int)CognitionControlFlags.RetinalFlinch;
                     fear = math.max(fear, input.PlayerLightExposure01 * math.max(input.LightReactionFearBoost01, 0.1f));
                     threatLevel = math.max(threatLevel, input.PlayerLightExposure01);
+                }
+                else
+                {
+                    control.Flags &= ~(int)CognitionControlFlags.RetinalFlinch;
                 }
 
                 bool hasBaseSiegeTarget = TryResolveBaseSiegeTarget(
@@ -2365,6 +2908,8 @@ namespace Hecton8.AI
                 output.SpeedMultiplier = 1f;
                 output.TurnMultiplier = 1f;
                 output.OutputFlags = 0u;
+                if (retinalBlindActive)
+                    output.OutputFlags |= (uint)CognitionOutputFlags.RetinalBlind;
                 bool isHunting = stateMask == PredatorUtilityState.Stalking || stateMask == PredatorUtilityState.Attacking;
                 if (isHunting && !wasHunting)
                     output.OutputFlags |= (uint)CognitionOutputFlags.EmitThreatPulse;
@@ -3204,6 +3749,15 @@ namespace Hecton8.AI
                                        control.OverrideUntilTime > currentTime)
                         ? control.OverrideThreatPosition
                         : targetPosition;
+                    if ((control.Flags & (int)CognitionControlFlags.RetinalFlinch) != 0)
+                    {
+                        float3 awayFromLight = ResolveRsqrtDirection(selfPosition - fleeFrom, -fallbackForward);
+                        float3 up = new float3(0f, 1f, 0f);
+                        float3 lateral = ResolveRsqrtDirection(math.cross(up, awayFromLight), math.cross(new float3(0f, 0f, 1f), awayFromLight));
+                        lateral = math.select(lateral, -lateral, (slot & 1) != 0);
+                        return SanitizeSteeringVector(ApplyVortexSteering(selfPosition, lateral, lateral, false), lateral);
+                    }
+
                     float3 fleeDirection = ResolveDominantAxis(selfPosition - fleeFrom, -fallbackForward);
                     return SanitizeSteeringVector(ApplyVortexSteering(selfPosition, fleeDirection, -fallbackForward, false), -fallbackForward);
                 }

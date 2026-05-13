@@ -8,12 +8,14 @@ This is the working execution plan for getting HECTON-8 to a stable, optimized, 
 
 Current-state boundary:
 
+- 2026-05-13 DOC_AUDIT override: read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before treating May 11 counters or build-artifact paths as current evidence.
+- The May 11 compile artifact paths cited below are absent from the current filesystem. They are not current artifact-backed proof until restored or replaced.
 - This stable plan is the runtime execution authority. Dated reports are evidence/counter snapshots only.
-- Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, current source, and then May 11 evidence reports before using this plan as execution guidance.
+- Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, current source, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older evidence reports before using this plan as execution guidance.
 - This plan is still directionally valid, but it is not a runtime verification report.
-- Latest current compile evidence is `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`.
+- May 11 report text claimed current compile evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but the May 13 DOC_AUDIT filesystem check did not find that summary or raw log. Treat it as stale report text until restored or replaced.
 - Current Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player build, import, scene wiring, visual quality, zero-GC, frame time, and memory retention remain `PENDING VERIFICATION`.
-- Older May 4/May 8/May 9 builds remain historical only where newer May 11 docs do not cover the question.
+- Older May 4/May 8/May 9/May 11 builds remain historical only where newer May 13 docs do not cover the question.
 - DOTS remains optional/prototype-only until source and profiler evidence prove otherwise.
 
 This plan replaces vague "finish DOTS" thinking with a hard sequence:

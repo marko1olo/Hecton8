@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using System.IO;
 using System.Collections.Generic;
 using Hecton8.Gameplay;
 using Unity.Collections;
@@ -25,6 +26,9 @@ namespace Hecton8.Physics
         private static readonly int _TetherSegmentStressScaleId = Shader.PropertyToID("_TetherSegmentStressScale");
         private static readonly int _TetherPointCountId = Shader.PropertyToID("_TetherPointCount");
         private static readonly int _TetherRadiusId = Shader.PropertyToID("_TetherRadius");
+        private const int TetherBlackBoxCapacity = 300;
+        private const string TetherBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_KINEMATIC_TETHER_EXPERT.bin";
+        private const uint TetherBlackBoxMagic = 0x54455448u;
 
         [Header("Tether Rendering")]
         [Tooltip("Optional explicit material for tether line rendering. When omitted the manager creates a runtime material from the built-in tether shader.")]
@@ -58,6 +62,7 @@ namespace Hecton8.Physics
         [Header("Diagnostics")]
 #pragma warning disable CS0414
         [SerializeField] private int _debugActiveTetherCount;
+        [SerializeField] private float _debugPeakTension;
 #pragma warning restore CS0414
 
         // COLD ALLOC: List<TetherInstance>[4] — active tether registry owned by the player-local tether manager — owner: TetherManager
@@ -70,6 +75,17 @@ namespace Hecton8.Physics
         private bool _registeredFixedTick;
         private bool _registeredLateFrameTick;
         private bool _registeredOriginShiftListener;
+        private NativeArray<TetherManagerTelemetryEntry> _telemetryRing;
+        private int _telemetryHead;
+        private bool _telemetryDumped;
+
+        private struct TetherManagerTelemetryEntry
+        {
+            public uint FrameIndex;
+            public int ActiveTethers;
+            public float PeakTension;
+            public uint Flags;
+        }
 
         private void Awake()
         {
@@ -83,6 +99,7 @@ namespace Hecton8.Physics
             }
 
             _renderPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — procedural tether render binding payload — owner: TetherManager
+            EnsureTelemetry();
         }
 
         private void OnEnable()
@@ -182,6 +199,19 @@ namespace Hecton8.Physics
                 _runtimeRenderMaterial = null;
                 _ownsRuntimeMaterial = false;
             }
+
+            if (_telemetryRing.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_telemetryRing);
+                _telemetryRing.Dispose();
+                _telemetryRing = default;
+            }
+        }
+
+        internal void DrainTetherFiredSignals()
+        {
+            while (TetherSignals.TryConsumeFireForManager(this, out TetherSignals.TetherFireRequest request))
+                ExecuteFireRequest(in request);
         }
 
         /// <summary>
@@ -208,6 +238,32 @@ namespace Hecton8.Physics
 
             _debugActiveTetherCount = _activeInstances.Count;
             return instance;
+        }
+
+        private bool ExecuteFireRequest(in TetherSignals.TetherFireRequest request)
+        {
+            if (request.Owner == null ||
+                request.PlayerBody == null ||
+                request.PayloadBody == null ||
+                request.PayloadCollider == null)
+            {
+                return false;
+            }
+
+            if (request.Owner.HasActiveTow)
+                request.Owner.ReleaseTow(false);
+
+            TetherInstance instance = AttachTowCable(
+                request.Owner,
+                request.PlayerMotor,
+                request.PlayerBody,
+                request.PayloadBody,
+                request.PayloadCollider,
+                request.InitialDistance);
+            if (instance == null)
+                return false;
+
+            return request.Owner.CompleteSignalAttach(instance, request.PayloadBody);
         }
 
         /// <summary>
@@ -274,6 +330,7 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public void FixedTick(float fixedDeltaTime)
         {
+            DrainTetherFiredSignals();
             int activeCount = _activeInstances.Count;
             for (int i = activeCount - 1; i >= 0; i--)
             {
@@ -294,6 +351,9 @@ namespace Hecton8.Physics
             }
 
             _debugActiveTetherCount = _activeInstances.Count;
+            float peakTension = ResolvePeakTension();
+            _debugPeakTension = peakTension;
+            WriteBlackBoxSample(_debugActiveTetherCount, peakTension, 0u);
         }
 
         /// <inheritdoc />
@@ -413,6 +473,107 @@ namespace Hecton8.Physics
                 return math.max(1f, towCableProfile.SnapTensionThreshold);
 
             return owner != null ? owner.ResolveSnapTensionThreshold() : 1f;
+        }
+
+        private float ResolvePeakTension()
+        {
+            float peak = 0f;
+            for (int i = 0; i < _activeInstances.Count; i++)
+            {
+                TetherInstance instance = _activeInstances[i];
+                if (instance == null || !instance.IsActive)
+                    continue;
+
+                peak = math.max(peak, instance.CurrentPeakTension);
+            }
+
+            return peak;
+        }
+
+        private void EnsureTelemetry()
+        {
+            if (_telemetryRing.IsCreated)
+                return;
+
+            // COLD ALLOC: NativeArray<TetherManagerTelemetryEntry>[300] - tether blackbox ring - owner: TetherManager
+            _telemetryRing = new NativeArray<TetherManagerTelemetryEntry>(
+                TetherBlackBoxCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _telemetryRing,
+                nameof(TetherManager),
+                nameof(_telemetryRing),
+                NativeAllocationLifetime.Scene);
+            _telemetryHead = 0;
+            _telemetryDumped = false;
+        }
+
+        private void WriteBlackBoxSample(int activeTethers, float peakTension, uint flags)
+        {
+            if (!_telemetryRing.IsCreated)
+                EnsureTelemetry();
+
+            if (!_telemetryRing.IsCreated)
+                return;
+
+            if (!math.isfinite(peakTension))
+            {
+                peakTension = 0f;
+                flags |= 1u;
+            }
+
+            _telemetryRing[_telemetryHead] = new TetherManagerTelemetryEntry
+            {
+                FrameIndex = (uint)Time.frameCount,
+                ActiveTethers = activeTethers,
+                PeakTension = peakTension,
+                Flags = flags
+            };
+            _telemetryHead++;
+            if (_telemetryHead >= _telemetryRing.Length)
+                _telemetryHead = 0;
+
+            if ((flags & 1u) != 0u)
+                DumpBlackBoxOnce();
+        }
+
+        private void DumpBlackBoxOnce()
+        {
+            if (_telemetryDumped || !_telemetryRing.IsCreated)
+                return;
+
+            _telemetryDumped = true;
+            try
+            {
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string dumpPath = Path.Combine(
+                    projectRoot,
+                    TetherBlackBoxDumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(TetherBlackBoxMagic);
+                    writer.Write(_telemetryRing.Length);
+                    writer.Write(_telemetryHead);
+                    for (int i = 0; i < _telemetryRing.Length; i++)
+                    {
+                        TetherManagerTelemetryEntry entry = _telemetryRing[i];
+                        writer.Write(entry.FrameIndex);
+                        writer.Write(entry.ActiveTethers);
+                        writer.Write(entry.PeakTension);
+                        writer.Write(entry.Flags);
+                    }
+                }
+            }
+            catch
+            {
+                // Fault-path dump must not cascade into physics failure.
+            }
         }
     }
 }

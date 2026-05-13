@@ -189,12 +189,14 @@ namespace Hecton8.Gameplay
         private Collider _interactionCollider;
         private Rigidbody _transportBody;
         private VehicleMotor _vehicleMotor;
+        private SubmarineAutoLevelBallastController _submarineAutoLevelController;
         private PlayerTransportFeelContract _transportFeelContract;
         private VehicleUpgradeModule _vehicleUpgradeModule;
         private SubmarineStructuralGrid _submarineStructuralGrid;
         private CapsuleCollider _driveCapsule;
         private bool _vehicleUpgradeModuleResolved;
         private bool _submarineStructuralGridResolved;
+        private bool _submarineAutoLevelControllerResolved;
         private bool _registered;
         private bool _registeredFixedTick;
         private bool _registeredUpdate;
@@ -235,7 +237,7 @@ namespace Hecton8.Gameplay
         private Quaternion _previousPlatformRotation = Quaternion.identity;
         private Vector3 _presentationVelocityLag;
         private float _presentationTransportBoost01;
-        private float _nextMountedImpactFeedbackTime;
+        private float _mountedImpactFeedbackCooldownSeconds;
         private bool _presentationVelocityLagInitialized;
         private float _entanglementStressSignalTimer;
         private float _cavitationEventTimer;
@@ -245,6 +247,8 @@ namespace Hecton8.Gameplay
         private float _microFractureLoad;
         private float _pendingSafeDepthPenaltyMeters;
         private float _permanentSafeDepthPenaltyMeters;
+        private int _transportFallbackInstanceId;
+        private int _vehicleCommandTargetId;
         // COLD ALLOC: List<IDamageSignalReceiver>[4] - bounded mounted transport damage listeners - owner: MountablePlayerTransport
         private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(MaxDamageReceivers);
         // COLD ALLOC: UInt32[4] - tracked kelp or sargassum instance uids holding the propeller lock - owner: MountablePlayerTransport
@@ -296,6 +300,7 @@ namespace Hecton8.Gameplay
             _cachedTransform = transform;
             _interactionCollider = GetComponent<Collider>();
             TryGetComponent(out _transportBody);
+            RefreshVehicleCommandTargetId();
             TryGetComponent(out _vehicleMotor);
             TryGetComponent(out _transportFeelContract);
             TryGetComponent(out _vehicleUpgradeModule);
@@ -311,6 +316,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            RefreshVehicleCommandTargetId();
             TryRegister();
             TryRegisterOriginShiftListener();
             ResolveAnchorCache();
@@ -430,6 +436,7 @@ namespace Hecton8.Gameplay
                 _driveMoveInput = Vector2.zero;
                 _driveVerticalInput = 0f;
                 _transportActive = true;
+                PublishVehicleCommandSignal(Vector2.zero, 0f, 0f);
                 return;
             }
 
@@ -470,6 +477,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
+            PublishVehicleCommandSignal(moveInput, verticalInput, throttleOutput);
             _transportActive = throttleOutput > 0.0001f;
 
             if (debugTransportState)
@@ -870,6 +878,8 @@ namespace Hecton8.Gameplay
 
         private void ApplyMountedVehicleKinematics(float fixedDeltaTime)
         {
+            AdvanceMountedImpactFeedbackCooldown(fixedDeltaTime);
+
             if (_transportBody == null || _vehicleMotor == null || _driveCapsule == null)
             {
                 AlignTransportToRider(fixedDeltaTime);
@@ -889,6 +899,7 @@ namespace Hecton8.Gameplay
             float safeMass = math.max(1f, _transportBody.mass);
             float thrustAcceleration = (preset != null ? math.max(0f, preset.PropulsionForce) : 0f) / safeMass;
             float maxSpeed = math.max(1f, ResolveMountedDriveMaxSpeed(throttleOutput));
+            maxSpeed *= HectonPlayerMotor.ResolveStorageBackpressureSpeedMultiplier(SystemDispatcher.StreamingStorageDebt01);
             ResolveVehicleUpgradeModule();
             if (_vehicleUpgradeModule != null)
                 thrustAcceleration *= math.max(1f, _vehicleUpgradeModule.ThrustAccelerationMultiplier);
@@ -918,6 +929,8 @@ namespace Hecton8.Gameplay
             float forwardInput = math.clamp(_driveMoveInput.y, -1f, 1f) * throttleOutput;
             float yawInput = math.clamp(_driveMoveInput.x, -1f, 1f);
             float pitchInput = math.clamp(_driveVerticalInput, -1f, 1f);
+            if (_submarineAutoLevelController != null && _submarineAutoLevelController.SuppressesKinematicPitch)
+                pitchInput = 0f;
 
             _vehicleMotor.IntegrateDrive(
                 forwardInput,
@@ -1442,8 +1455,15 @@ namespace Hecton8.Gameplay
 
         private void ResolveVehicleDriveReferences()
         {
+            if (_transportBody == null)
+                TryGetComponent(out _transportBody);
+
+            RefreshVehicleCommandTargetId();
+
             if (_vehicleMotor == null)
                 TryGetComponent(out _vehicleMotor);
+
+            ResolveSubmarineAutoLevelController();
 
             _driveCapsule = driveCapsule;
             if (_driveCapsule == null)
@@ -1454,6 +1474,82 @@ namespace Hecton8.Gameplay
                 _vehicleMotor.Bind(_transportBody, _driveCapsule);
                 _vehicleMotor.ConfigureGroundSlopeLimit(mountedGroundSlopeLimitDegrees);
             }
+        }
+
+        private void RefreshVehicleCommandTargetId()
+        {
+            _transportFallbackInstanceId = unchecked((int)EntityId.ToULong(gameObject.GetEntityId()));
+            int targetInstanceId = 0;
+            if (_transportBody != null)
+                targetInstanceId = unchecked((int)EntityId.ToULong(_transportBody.GetEntityId()));
+
+            _vehicleCommandTargetId = targetInstanceId != 0 ? targetInstanceId : _transportFallbackInstanceId;
+        }
+
+        private void ResolveSubmarineAutoLevelController()
+        {
+            if (_submarineAutoLevelControllerResolved)
+                return;
+
+            if (_submarineAutoLevelController != null)
+            {
+                _submarineAutoLevelControllerResolved = true;
+                return;
+            }
+
+            if (!TryGetComponent<SubmarineCoreDirector>(out _))
+                return;
+
+            if (TryGetComponent(out _submarineAutoLevelController))
+            {
+                _submarineAutoLevelControllerResolved = true;
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                _submarineAutoLevelController = gameObject.AddComponent<SubmarineAutoLevelBallastController>();
+                _submarineAutoLevelControllerResolved = _submarineAutoLevelController != null;
+            }
+        }
+
+        private void PublishVehicleCommandSignal(Vector2 moveInput, float verticalInput, float throttleOutput)
+        {
+            if (_submarineAutoLevelController == null)
+                return;
+
+            int targetInstanceId = _vehicleCommandTargetId;
+            if (targetInstanceId == 0)
+                return;
+
+            float pitch = math.clamp(verticalInput, -1f, 1f);
+            float yaw = math.clamp(moveInput.x, -1f, 1f);
+            float throttle = math.clamp(throttleOutput, -1f, 1f);
+            VehicleCommandSignalFlags flags = VehicleCommandSignalFlags.None;
+            if (math.abs(pitch) > 0.001f)
+                flags |= VehicleCommandSignalFlags.ManualPitch;
+            if (math.abs(yaw) > 0.001f)
+                flags |= VehicleCommandSignalFlags.ManualYaw;
+            if (math.abs(throttle) > 0.001f)
+                flags |= VehicleCommandSignalFlags.ManualThrottle;
+
+            float ballastDelta = 0f;
+            if (pitch < -0.05f)
+            {
+                flags |= VehicleCommandSignalFlags.BallastBlow;
+                ballastDelta = pitch * 0.08f;
+            }
+
+            VehicleCommandSignal signal = new VehicleCommandSignal
+            {
+                TargetInstanceId = targetInstanceId,
+                Pitch = pitch,
+                Yaw = yaw,
+                Throttle = throttle,
+                BallastDelta = ballastDelta,
+                Flags = (byte)flags
+            };
+            VehicleCommandSignalBus.Publish(in signal);
         }
 
         private void ResolveSubmarineStructuralGrid()
@@ -1561,15 +1657,25 @@ namespace Hecton8.Gameplay
 
             float impactSpeed = _vehicleMotor.LastBlockingImpactSpeedMetersPerSecond;
             float threshold = preset != null ? math.max(0f, preset.CollisionDamageStartSpeed) : 0f;
-            if (impactSpeed <= threshold || Time.time < _nextMountedImpactFeedbackTime)
+            if (impactSpeed <= threshold || _mountedImpactFeedbackCooldownSeconds > 0f)
                 return;
 
-            _nextMountedImpactFeedbackTime = Time.time + 0.12f;
+            _mountedImpactFeedbackCooldownSeconds = 0.12f;
             Vector3 impactPoint = _vehicleMotor.LastBlockingImpactPoint;
             Vector3 impactNormal = _vehicleMotor.LastBlockingImpactNormal;
             GlobalPhysicsStateManager.QueueKinematicImpact(_transportBody, impactPoint, impactNormal, impactSpeed);
             QueueSubmarineImpactVisualFeedback(impactSpeed, impactPoint, impactNormal);
             ApplyTransportCollisionImpact(impactSpeed, impactPoint, impactNormal);
+        }
+
+        private void AdvanceMountedImpactFeedbackCooldown(float fixedDeltaTime)
+        {
+            if (_mountedImpactFeedbackCooldownSeconds <= 0f)
+                return;
+
+            _mountedImpactFeedbackCooldownSeconds = math.max(
+                0f,
+                _mountedImpactFeedbackCooldownSeconds - math.max(0f, fixedDeltaTime));
         }
 
         private void QueueSubmarineImpactVisualFeedback(float impactSpeed, Vector3 impactPoint, Vector3 impactNormal)
@@ -1596,9 +1702,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            var cameraJuice = GlobalRegistry.CameraJuice;
-            if (cameraJuice != null)
-                cameraJuice.TriggerSubmarineImpactShake(severity01);
+            CameraJuiceSignals.PublishImpact(severity01, impactPoint, -impactNormal);
         }
 
         private static void NotifySubmarineImpactHaptic(float severity01)

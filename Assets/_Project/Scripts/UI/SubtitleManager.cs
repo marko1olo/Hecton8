@@ -1069,8 +1069,10 @@ namespace Hecton8.UI
                 AcousticImpulseFlags.None);
             PhysicsEventBus.NotifyAcousticImpulse(in impulseEvent);
 
-            if (GlobalRegistry.CameraJuice != null)
-                GlobalRegistry.CameraJuice.TriggerSubmarineImpactShake(math.min(AudioLogCueMaximumCameraShake, intensity * 0.12f));
+            CameraJuiceSignals.PublishImpact(
+                math.min(AudioLogCueMaximumCameraShake, intensity * 0.12f),
+                runtimePosition,
+                direction);
         }
 
         private static void ResolveAudioLogCueTransform(out Vector3 runtimePosition, out Vector3 direction)

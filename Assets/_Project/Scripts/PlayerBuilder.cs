@@ -36,6 +36,7 @@ using System.Collections.Generic;
 using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -44,6 +45,7 @@ using Hecton8.Modding;
 using Hecton8.Construction;
 using Hecton8.Physics;
 using Hecton8.UI;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -345,8 +347,11 @@ namespace Hecton8.Building
             if (module == null || !module.CanDeconstruct())
                 return false;
 
-            module.Deconstruct(inventory);
-            NotifyModuleDeconstructed(module);
+            Vector3 modulePosition = module.transform.position;
+            if (!TryRequestModuleDeconstruction(module, modulePosition + Vector3.up, Vector3.down, 0f, 1))
+                return false;
+
+            NotifyModuleDeconstructionQueued(module);
             return true;
         }
 
@@ -1681,20 +1686,20 @@ namespace Hecton8.Building
             Debug.Log("[BuilderDebug] " + message);
         }
 
-        private void NotifyModuleDeconstructed(BaseModule module)
+        private void NotifyModuleDeconstructionQueued(BaseModule module)
         {
             string moduleName = module != null ? module.gameObject.name : "MODULE";
             _builderHudBuffer.Clear();
             AppendText(ref _builderHudBuffer, "BUILDER // ");
             AppendUpperInvariant(ref _builderHudBuffer, moduleName);
-            AppendText(ref _builderHudBuffer, " RECOVERED");
+            AppendText(ref _builderHudBuffer, " RECOVERY QUEUED");
             PublishBuilderInfo();
 
             _builderLogTitleBuffer.Clear();
-            AppendText(ref _builderLogTitleBuffer, "MODULE RECOVERED - ");
+            AppendText(ref _builderLogTitleBuffer, "MODULE RECOVERY QUEUED - ");
             AppendUpperInvariant(ref _builderLogTitleBuffer, moduleName);
             _builderLogSummaryBuffer.Clear();
-            AppendText(ref _builderLogSummaryBuffer, "Construction module was deconstructed and resources were routed back to the expedition economy.");
+            AppendText(ref _builderLogSummaryBuffer, "Construction module recovery request was queued for authoritative habitat rollback validation.");
             FieldOperationLogSystem.RecordOperation(
                 "BUILDER",
                 in _builderLogTitleBuffer,
@@ -2180,7 +2185,20 @@ namespace Hecton8.Building
 
         private void TryDeconstructTargetModule()
         {
-            BaseModule module = GetTargetedModule();
+            if (playerCamera == null)
+            {
+                NotifyBuildBlocked("NO MODULE TARGET");
+                return;
+            }
+
+            Ray ray = playerCamera.ViewportPointToRay(ViewportCenter);
+            if (!TryGetBuildHit(ray, HectonLayerMasks.ConstructionSurfaceLayerMask, out RaycastHit hit))
+            {
+                NotifyBuildBlocked("NO MODULE TARGET");
+                return;
+            }
+
+            BaseModule module = hit.collider != null ? hit.collider.GetComponentInParent<BaseModule>() : null;
             if (module == null)
             {
                 NotifyBuildBlocked("NO MODULE TARGET");
@@ -2193,8 +2211,13 @@ namespace Hecton8.Building
                 return;
             }
 
-            module.Deconstruct(inventory);
-            NotifyModuleDeconstructed(module);
+            if (!TryRequestModuleDeconstruction(module, ray.origin, ray.direction, buildDistance, 1))
+            {
+                NotifyBuildBlocked("DECONSTRUCTION OFFLINE");
+                return;
+            }
+
+            NotifyModuleDeconstructionQueued(module);
         }
 
         private BaseModule GetTargetedModule()
@@ -2207,6 +2230,43 @@ namespace Hecton8.Building
                 return null;
 
             return hit.collider != null ? hit.collider.GetComponentInParent<BaseModule>() : null;
+        }
+
+        private bool TryRequestModuleDeconstruction(
+            BaseModule module,
+            Vector3 rayOrigin,
+            Vector3 rayDirection,
+            float maxDistance,
+            byte toolKind)
+        {
+            if (module == null)
+                return false;
+
+            IHabitatDeconstructionSystem deconstructionSystem = GlobalRegistry.HabitatDeconstruction;
+            if (deconstructionSystem == null || !deconstructionSystem.IsInitialized)
+                return false;
+
+            Vector3 modulePosition = module.transform.position;
+            float directionLengthSq = rayDirection.sqrMagnitude;
+            if (directionLengthSq <= 0.0001f)
+                rayDirection = Vector3.down;
+            else
+                rayDirection *= math.rsqrt(directionLengthSq);
+
+            DeconstructRequestSignal request = new DeconstructRequestSignal
+            {
+                TargetAup = AbsoluteUniversePosition.FromRuntimePosition(modulePosition),
+                RayOriginAup = AbsoluteUniversePosition.FromRuntimePosition(rayOrigin),
+                TargetEntityId = unchecked((uint)EntityId.ToULong(module.gameObject.GetEntityId())),
+                RequesterEntityId = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId())),
+                MaxDistance = Mathf.Max(0f, maxDistance),
+                RayDirection = new float3(rayDirection.x, rayDirection.y, rayDirection.z),
+                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                ToolKind = toolKind,
+                Flags = 0
+            };
+
+            return deconstructionSystem.EnqueueDeconstruction(in request);
         }
 
         private bool TryGetBuildHit(Ray ray, LayerMask mask, out RaycastHit hit)

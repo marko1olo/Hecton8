@@ -88,15 +88,11 @@ namespace Hecton8.UI
         private int _fixedBufferMessageCacheCursor;
         private bool _registeredToTickManager;
         private int _lastStressCorruptionBucket = int.MinValue;
+        private static HUDNotification _activeRuntime;
 
         public static bool TryGetActive(out HUDNotification notification)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.RegisteredPlayer;
-            if (TryUseRegisteredNotification(playerContext != null ? playerContext.HudNotification : null, out notification))
-                return true;
-
-            IPlayerSensoryService sensoryService = GlobalRegistry.RegisteredPlayerSensory;
-            return TryUseRegisteredNotification(sensoryService != null ? sensoryService.HudNotification : null, out notification);
+            return TryUseRegisteredNotification(_activeRuntime, out notification);
         }
 
         private static bool TryUseRegisteredNotification(HUDNotification candidate, out HUDNotification notification)
@@ -123,8 +119,15 @@ namespace Hecton8.UI
         }
 #endif
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _activeRuntime = null;
+        }
+
         private void OnEnable()
         {
+            _activeRuntime = this;
             if (font == null) font = TMP_Settings.defaultFontAsset;
 
             InventoryEvents.Register(this);
@@ -136,6 +139,9 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            if (ReferenceEquals(_activeRuntime, this))
+                _activeRuntime = null;
+
             UnregisterFromTickManager();
             InventoryEvents.Unregister(this);
             NotificationEvents.Unregister(this);

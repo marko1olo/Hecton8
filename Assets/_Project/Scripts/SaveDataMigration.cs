@@ -534,6 +534,20 @@ namespace Hecton8.SaveSystem
                 steps.Add("exploration morton byte mask capacity repaired");
             }
 
+            if (dto.discoveredSectorMaskWords == null || dto.discoveredSectorMaskWords.Length < ExplorationMapDTO.CartographyMaskWordCount)
+            {
+                dto.EnsureCapacity();
+                changed = true;
+                steps.Add("cartography sector bitmask capacity repaired");
+            }
+
+            if (dto.discoveredSectorMaskBytes == null || dto.discoveredSectorMaskBytes.Length < ExplorationMapDTO.CartographyMaskByteCount)
+            {
+                dto.EnsureCapacity();
+                changed = true;
+                steps.Add("cartography sector byte mask capacity repaired");
+            }
+
             int clampedCount = math.clamp(dto.exploredChunkCount, 0, dto.exploredChunkKeys != null ? dto.exploredChunkKeys.Length : 0);
             if (clampedCount != dto.exploredChunkCount)
             {
@@ -559,6 +573,23 @@ namespace Hecton8.SaveSystem
                 steps.Add("exploration morton byte count aligned");
             }
 
+            int clampedSectorWordCount = math.clamp(dto.discoveredSectorWordCount, 0, ExplorationMapDTO.CartographyMaskWordCount);
+            if (clampedSectorWordCount != dto.discoveredSectorWordCount)
+            {
+                dto.discoveredSectorWordCount = clampedSectorWordCount;
+                changed = true;
+                steps.Add("cartography sector word count clamped");
+            }
+
+            int clampedSectorByteCount = math.clamp(dto.discoveredSectorByteCount, 0, ExplorationMapDTO.CartographyMaskByteCount);
+            clampedSectorByteCount = SaveBinaryStorage.AlignExplorationMortonByteCount(clampedSectorByteCount);
+            if (clampedSectorByteCount != dto.discoveredSectorByteCount)
+            {
+                dto.discoveredSectorByteCount = clampedSectorByteCount;
+                changed = true;
+                steps.Add("cartography sector byte count aligned");
+            }
+
             if (dto.chunkSizeMeters != ExplorationMapDTO.DenseChunkSizeMeters ||
                 dto.mortonMaskAxisBits != ExplorationMapDTO.MortonMaskAxisBits ||
                 dto.mortonMaskOriginOffset != ExplorationMapDTO.MortonMaskOriginOffset ||
@@ -570,6 +601,17 @@ namespace Hecton8.SaveSystem
                 dto.mortonBuildSalt = SaveBinaryStorage.ExplorationMortonBuildSalt32;
                 changed = true;
                 steps.Add("exploration morton metadata repaired");
+            }
+
+            if (dto.cartographyCellSizeMeters != ExplorationMapDTO.CartographyCellSizeMeters ||
+                dto.cartographyMaskAxisBits != ExplorationMapDTO.CartographyMaskAxisBits ||
+                dto.cartographyMaskOriginOffset != ExplorationMapDTO.CartographyMaskOriginOffset)
+            {
+                dto.cartographyCellSizeMeters = ExplorationMapDTO.CartographyCellSizeMeters;
+                dto.cartographyMaskAxisBits = ExplorationMapDTO.CartographyMaskAxisBits;
+                dto.cartographyMaskOriginOffset = ExplorationMapDTO.CartographyMaskOriginOffset;
+                changed = true;
+                steps.Add("cartography sector metadata repaired");
             }
 
             return changed;

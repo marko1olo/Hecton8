@@ -203,6 +203,7 @@ namespace Hecton8.Systems.AI
         private const int HeadlessDespawnRequestCapacity = 16;
         private const int BiomeHeatmapResolution = 256;
         private const int PredatorAupBufferCapacity = 16;
+        private const float PlayerPredatorAupRadiusMeters = 70f;
         private const int HeadlessEntityIdBase = 0x68000000;
         private const float PredictiveSpawnLeadMeters = 200f;
         private const float StationaryVelocitySq = 0.25f;
@@ -406,6 +407,7 @@ namespace Hecton8.Systems.AI
             if (_jobScheduled)
             {
                 RecordBlackBox(BuildTelemetryState(in frameContext));
+                PublishPlayerPredatorAupSlot(frameContext.PlayerPosition);
                 _coldTickAccumulator += frameContext.DeltaTime;
                 return;
             }
@@ -423,6 +425,7 @@ namespace Hecton8.Systems.AI
             }
 
             RecordBlackBox(BuildTelemetryState(in frameContext));
+            PublishPlayerPredatorAupSlot(frameContext.PlayerPosition);
 
             _coldTickAccumulator += frameContext.DeltaTime;
             if (_jobScheduled || _coldTickAccumulator < ColdTickIntervalSeconds)
@@ -1266,10 +1269,18 @@ namespace Hecton8.Systems.AI
 
         private void PublishPredatorAupBuffer()
         {
+            float3 playerPosition = _frontState.IsCreated ? _frontState[0].PlayerPosition.xyz : float3.zero;
+            PublishPredatorAupBuffer(playerPosition);
+        }
+
+        private void PublishPredatorAupBuffer(float3 playerPosition)
+        {
             if (!_predatorAupUpload.IsCreated)
                 return;
 
-            int uploadCount = 0;
+            EnsurePredatorAupBuffers();
+            WritePlayerPredatorAupSlot(playerPosition);
+            int uploadCount = 1;
             int length = _headlessEntities.IsCreated ? _headlessEntities.Length : 0;
             for (int i = 0; i < length && uploadCount < PredatorAupBufferCapacity; i++)
             {
@@ -1281,7 +1292,17 @@ namespace Hecton8.Systems.AI
                 }
 
                 float radius = ResolvePredatorAupRadius((EncounterThreatClass)entity.ThreatClass);
-                _predatorAupUpload[uploadCount] = new float4(entity.Position.x, entity.Position.y, entity.Position.z, radius);
+                AbsoluteUniversePosition entityAup = entity.PositionAup.ToAup();
+                float3 position = entityAup.ToRuntimeFloat3();
+                if (!math.all(math.isfinite(position)))
+                    position = entity.Position;
+                else
+                {
+                    entity.Position = position;
+                    _headlessEntities[i] = entity;
+                }
+
+                _predatorAupUpload[uploadCount] = new float4(position.x, position.y, position.z, radius);
                 uploadCount++;
             }
             AppendTrackedPredatorAupEntries(ref uploadCount);
@@ -1309,6 +1330,51 @@ namespace Hecton8.Systems.AI
 
             _lastPublishedPredatorAupCount = uploadCount;
             Shader.SetGlobalInt(_PredatorAUPCountId, uploadCount);
+        }
+
+        private void PublishPlayerPredatorAupSlot(float3 playerPosition)
+        {
+            if (!_predatorAupUpload.IsCreated)
+                return;
+
+            EnsurePredatorAupBuffers();
+            WritePlayerPredatorAupSlot(playerPosition);
+            int uploadCount = math.max(1, math.clamp(_lastPublishedPredatorAupCount, 0, PredatorAupBufferCapacity));
+            GraphicsBuffer writeBuffer = ResolvePredatorAupWriteBuffer();
+            if (writeBuffer != null)
+            {
+                GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _predatorAupUpload, uploadCount);
+                _predatorAupPublishedBuffer = writeBuffer;
+                _predatorAupWriteToA = !_predatorAupWriteToA;
+            }
+
+            if (_predatorAupPublishedBuffer != null)
+            {
+                Shader.SetGlobalBuffer(_PredatorAUPBufferId, _predatorAupPublishedBuffer);
+                if (_predatorAupGlobalsDirty)
+                {
+                    Shader.SetGlobalVector(_PredatorAUPParamsId, new Vector4(120f, 1f, 0f, 0f));
+                    _predatorAupGlobalsDirty = false;
+                }
+            }
+
+            if (_lastPublishedPredatorAupCount == uploadCount)
+                return;
+
+            _lastPublishedPredatorAupCount = uploadCount;
+            Shader.SetGlobalInt(_PredatorAUPCountId, uploadCount);
+        }
+
+        private void WritePlayerPredatorAupSlot(float3 playerPosition)
+        {
+            if (!math.all(math.isfinite(playerPosition)))
+                playerPosition = float3.zero;
+
+            _predatorAupUpload[0] = new float4(
+                playerPosition.x,
+                playerPosition.y,
+                playerPosition.z,
+                PlayerPredatorAupRadiusMeters);
         }
 
         private void AppendTrackedPredatorAupEntries(ref int uploadCount)

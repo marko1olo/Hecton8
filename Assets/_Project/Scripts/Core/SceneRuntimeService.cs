@@ -262,7 +262,7 @@ namespace Hecton8.Core
                 while (Application.isPlaying && ReferenceEquals(GlobalRegistry.SceneRuntime, this) && !_pendingSceneLoadOperation.isDone)
                 {
                     if (useCinematicTransition)
-                        TickMainMenuCinematicTransition(Time.unscaledDeltaTime);
+                        TickMainMenuCinematicTransition(ResolveTransitionUnscaledDeltaTime());
 
                     bool loadReady = _pendingSceneLoadOperation.progress >= 0.9f;
                     bool requiresWorldResidencyGate = RequiresWorldResidencyGate(sceneName);
@@ -537,7 +537,7 @@ namespace Hecton8.Core
             while (Application.isPlaying && elapsed < TransitionDissolveSeconds)
             {
                 double solveStartTime = Time.realtimeSinceStartupAsDouble;
-                elapsed += math.max(0f, Time.unscaledDeltaTime);
+                elapsed += math.max(0f, ResolveTransitionUnscaledDeltaTime());
                 float normalized = TransitionDissolveSeconds > 0f
                     ? math.saturate(elapsed / TransitionDissolveSeconds)
                     : 1f;
@@ -624,8 +624,9 @@ namespace Hecton8.Core
 
         private static void ResetWorldEntryFreezeState()
         {
-            if (Time.timeScale == 0f)
-                Time.timeScale = 1f;
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            if (dispatcher != null && dispatcher.SimulationPaused)
+                dispatcher.RequestSimulationPause(false);
 
             Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);
             Shader.SetGlobalFloat(_GamePausedId, 0f);
@@ -650,7 +651,7 @@ namespace Hecton8.Core
 
         private static void BeginInputReclaimInterpolation()
         {
-            CameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
+            ICameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
             if (cameraJuice != null)
                 cameraJuice.BeginInputReclaimFov(InputReclaimStartFov, InputReclaimDurationSeconds);
         }
@@ -868,6 +869,14 @@ namespace Hecton8.Core
         {
             value = math.saturate(value);
             return value * value * (3f - (2f * value));
+        }
+
+        private static float ResolveTransitionUnscaledDeltaTime()
+        {
+            float deltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            return math.isfinite(deltaTime) && deltaTime > 0f
+                ? deltaTime
+                : 0.0166667f;
         }
 
         private static bool IsFloatingOriginStableForSceneActivation()

@@ -1,7 +1,10 @@
 using System;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using TMPro;
+using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,9 +25,11 @@ namespace Hecton8.UI
         private const string BiosFallbackStatusText = "[BIOS FONT FALLBACK ACTIVE]";
         private const float StatusFadeOutSpeed = 6f;
         private const int FontReadinessTimeoutFrames = 2;
+        private const ushort UIRescaleReasonLocalizedFontSwap = 1;
 
         private static readonly Color StatusTextColor = new Color(0.82f, 0.96f, 0.92f, 0.96f);
         private static readonly Color StatusBackgroundColor = new Color(0.02f, 0.08f, 0.10f, 0.82f);
+        private static readonly uint _fontSwapRescaleHash = unchecked((uint)LocHash.Compute("FontStreamingManager.UIRescale"));
         private static readonly System.Collections.Generic.List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer =
             new System.Collections.Generic.List<SuitHUDV4CanvasOverlay>(2);
 
@@ -36,6 +41,14 @@ namespace Hecton8.UI
         private readonly System.Collections.Generic.List<GameObject> _sceneRootBuffer = new System.Collections.Generic.List<GameObject>(64);
         // COLD ALLOC: List[512] â€” temporary TMP text scan buffer for registry bootstrap â€” owner: FontStreamingManager
         private readonly System.Collections.Generic.List<TMP_Text> _textScanBuffer = new System.Collections.Generic.List<TMP_Text>(512);
+        private NativeArray<uint> _visibleHashPrefetch;
+        private NativeArray<int2> _visibleSlicePrefetch;
+        private JobHandle _visiblePrefetchHandle;
+        private int _visiblePrefetchCount;
+        private bool _visibleHashPrefetchRegistered;
+        private bool _visibleSlicePrefetchRegistered;
+        private bool _visiblePrefetchApplyToQueue;
+        private bool _visiblePrefetchInFlight;
 
         private bool _registered;
         private bool _uiBuilt;
@@ -75,6 +88,7 @@ namespace Hecton8.UI
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             UnregisterFromTickManager();
             ResetSwapState();
+            DisposePrefetchBuffers();
             ReleaseTrackedFontData();
         }
 
@@ -83,6 +97,7 @@ namespace Hecton8.UI
             LocalizationEvents.UnregisterLanguageListener(this);
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             UnregisterFromTickManager();
+            DisposePrefetchBuffers();
             ReleaseTrackedFontData();
         }
 
@@ -91,6 +106,8 @@ namespace Hecton8.UI
         {
             if (!EnsureUiBuilt(allowCreate: false))
                 return;
+
+            TryCompleteVisibleHashPrefetch();
 
             if (_awaitingPrimaryFontReadiness)
                 EvaluatePendingFontReadiness();
@@ -138,6 +155,7 @@ namespace Hecton8.UI
             _fontReadinessStartFrame = Time.frameCount;
             _queueCount = 0;
             _queueIndex = 0;
+            AbandonVisibleHashPrefetchResults();
             _swapScheduler.Clear();
             _lastStatusPercent = int.MinValue;
             UpdateStatusLabel();
@@ -146,9 +164,15 @@ namespace Hecton8.UI
 
         private void CollectSwapQueue(TMP_FontAsset targetFont)
         {
+            AbandonVisibleHashPrefetchResults();
             _swapScheduler.Clear();
             _queueCount = 0;
             int registeredCount = TMP_TextRegistry.Count;
+            bool canPrefetch = !_visiblePrefetchInFlight || TryCompleteVisibleHashPrefetch();
+            if (canPrefetch)
+                EnsurePrefetchCapacity(registeredCount);
+
+            int visibleHashCount = 0;
             for (int i = 0; i < registeredCount; i++)
             {
                 TMP_TextEntry entry = TMP_TextRegistry.GetEntryAt(i);
@@ -158,13 +182,31 @@ namespace Hecton8.UI
 
                 if (!_swapScheduler.Enqueue(entry))
                     break;
+
+                if (canPrefetch &&
+                    _visibleHashPrefetch.IsCreated &&
+                    visibleHashCount < _visibleHashPrefetch.Length)
+                {
+                    _visibleHashPrefetch[visibleHashCount++] = !entry.IsUserInput && entry.HasLocalizationKey
+                        ? unchecked((uint)entry.LocalizationKeyHash)
+                        : 0u;
+                }
             }
 
+            DispatchVisibleHashPrefetch(visibleHashCount);
             _queueCount = _swapScheduler.PendingCount;
         }
 
         private void ProcessSwapBatch()
         {
+            if (_visiblePrefetchInFlight &&
+                !TryCompleteVisibleHashPrefetch() &&
+                _visiblePrefetchApplyToQueue)
+            {
+                ApplyVisibleAlpha(1f);
+                return;
+            }
+
             Material targetMaterial = _targetFont != null ? _targetFont.material : null;
             int processed = _swapScheduler.DrainTick(_targetFont, targetMaterial);
             _queueIndex += processed;
@@ -172,6 +214,7 @@ namespace Hecton8.UI
             UpdateStatusLabel();
             if (!_swapScheduler.HasPending)
             {
+                PublishRescaleRequest();
                 _streaming = false;
                 _queueCount = 0;
                 _queueIndex = 0;
@@ -181,6 +224,144 @@ namespace Hecton8.UI
                     _lastStatusPercent = int.MinValue;
                     UpdateStatusLabel();
                 }
+            }
+        }
+
+        private static void PublishRescaleRequest()
+        {
+            UIRescaleRequestSignal signal = new UIRescaleRequestSignal
+            {
+                SourceHash = _fontSwapRescaleHash,
+                Frame = unchecked((uint)Time.frameCount),
+                Reason = UIRescaleReasonLocalizedFontSwap,
+                Language = (ushort)LocRegistry.ActiveLanguage,
+                Flags = 0u,
+                FontScale = 1f
+            };
+            GlobalSignals.Publish(in signal);
+            DiegeticHudManualLayout.FlushGlobalRescaleRequests();
+        }
+
+        private void EnsurePrefetchCapacity(int requiredCapacity)
+        {
+            if (requiredCapacity <= 0)
+                return;
+
+            if (_visibleHashPrefetch.IsCreated &&
+                _visibleHashPrefetch.Length >= requiredCapacity &&
+                _visibleSlicePrefetch.IsCreated &&
+                _visibleSlicePrefetch.Length >= requiredCapacity)
+            {
+                return;
+            }
+
+            DisposePrefetchBuffers();
+            _visibleHashPrefetch = new NativeArray<uint>(
+                requiredCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<uint>[registered TMP count] - Babel visible hash prefetch input - owner: FontStreamingManager
+            _visibleSlicePrefetch = new NativeArray<int2>(
+                requiredCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int2>[registered TMP count] - Babel visible hash prefetch output - owner: FontStreamingManager
+            NativeMemorySentinel.RegisterNativeArray(
+                _visibleHashPrefetch,
+                nameof(FontStreamingManager),
+                nameof(_visibleHashPrefetch),
+                NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(
+                _visibleSlicePrefetch,
+                nameof(FontStreamingManager),
+                nameof(_visibleSlicePrefetch),
+                NativeAllocationLifetime.Scene);
+            _visibleHashPrefetchRegistered = true;
+            _visibleSlicePrefetchRegistered = true;
+        }
+
+        private void DispatchVisibleHashPrefetch(int visibleHashCount)
+        {
+            if (visibleHashCount <= 0 || _visiblePrefetchInFlight)
+                return;
+
+            if (LocRegistry.TryScheduleVisibleTextOffsetPrefetch(
+                    _visibleHashPrefetch,
+                    _visibleSlicePrefetch,
+                    visibleHashCount,
+                    default,
+                    out JobHandle prefetchHandle))
+            {
+                _visiblePrefetchHandle = prefetchHandle;
+                _visiblePrefetchCount = visibleHashCount;
+                _visiblePrefetchApplyToQueue = true;
+                _visiblePrefetchInFlight = true;
+            }
+        }
+
+        private bool TryCompleteVisibleHashPrefetch()
+        {
+            if (!_visiblePrefetchInFlight)
+                return true;
+
+            if (!_visiblePrefetchHandle.IsCompleted)
+                return false;
+
+            _visiblePrefetchHandle.Complete();
+            LocRegistry.MarkVisibleTextOffsetPrefetchComplete();
+            if (_visiblePrefetchApplyToQueue && _visiblePrefetchCount > 0)
+                _swapScheduler.ApplyPrefetchSlices(_visibleSlicePrefetch, _visiblePrefetchCount);
+
+            _visiblePrefetchHandle = default;
+            _visiblePrefetchCount = 0;
+            _visiblePrefetchApplyToQueue = false;
+            _visiblePrefetchInFlight = false;
+            return true;
+        }
+
+        private void AbandonVisibleHashPrefetchResults()
+        {
+            _visiblePrefetchCount = 0;
+            _visiblePrefetchApplyToQueue = false;
+        }
+
+        private void CompleteVisibleHashPrefetchForTeardown()
+        {
+            if (!_visiblePrefetchInFlight)
+                return;
+
+            _visiblePrefetchHandle.Complete();
+            LocRegistry.MarkVisibleTextOffsetPrefetchComplete();
+            _visiblePrefetchHandle = default;
+            _visiblePrefetchCount = 0;
+            _visiblePrefetchApplyToQueue = false;
+            _visiblePrefetchInFlight = false;
+        }
+
+        private void DisposePrefetchBuffers()
+        {
+            CompleteVisibleHashPrefetchForTeardown();
+
+            if (_visibleHashPrefetch.IsCreated)
+            {
+                if (_visibleHashPrefetchRegistered)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_visibleHashPrefetch);
+                    _visibleHashPrefetchRegistered = false;
+                }
+
+                _visibleHashPrefetch.Dispose();
+                _visibleHashPrefetch = default;
+            }
+
+            if (_visibleSlicePrefetch.IsCreated)
+            {
+                if (_visibleSlicePrefetchRegistered)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_visibleSlicePrefetch);
+                    _visibleSlicePrefetchRegistered = false;
+                }
+
+                _visibleSlicePrefetch.Dispose();
+                _visibleSlicePrefetch = default;
             }
         }
 
@@ -377,6 +558,7 @@ namespace Hecton8.UI
             _queueIndex = 0;
             _fontReadinessStartFrame = -1;
             _lastStatusPercent = int.MinValue;
+            AbandonVisibleHashPrefetchResults();
             _swapScheduler.Clear();
             ApplyVisibleAlpha(0f);
         }

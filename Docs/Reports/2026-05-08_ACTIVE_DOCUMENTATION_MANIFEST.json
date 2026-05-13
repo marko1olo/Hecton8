@@ -2,6 +2,12 @@
     "generatedDate":  "2026-05-09",
     "generatedLocalTime":  "2026-05-09 19:39:00 +04:00",
     "status":  "PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)",
+    "docAuditR13Boundary":  {
+                                "date":  "2026-05-13",
+                                "status":  "HISTORICAL SNAPSHOT / SUPERSEDED",
+                                "note":  "Generated manifest preserved for audit trail. R186 buildState and count fields describe the May 9 sampled filesystem state only. Do not read coveredCurrentSource or coverageNote as current proof after later workspace churn. Current authority is Docs/Reports/README.md plus Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md.",
+                                "runtimeProof":  "ABSENT in this manifest; DOC_AUDIT R13 does not promote Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof from this file."
+                            },
     "currentAuthorityReport":  "Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md",
     "unityMcpConsoleState":  {
                                  "result":  "BLOCKED",

@@ -55,6 +55,8 @@ namespace Hecton8.SaveSystem
         private static int s_readPrefetchWorkerStarted;
         private static readonly object s_fileWriteScratchLock = new object();
         private static readonly byte[] s_fileWriteScratch = new byte[FileWriteScratchBytes];
+        private static readonly byte[] s_fileWriteAsyncScratch = new byte[FileWriteScratchBytes];
+        private static int s_fileWriteAsyncScratchBusy;
         private static readonly object s_fileReadScratchLock = new object();
         private static readonly byte[] s_fileReadScratch = new byte[FileReadScratchBytes];
 
@@ -69,6 +71,18 @@ namespace Hecton8.SaveSystem
             public string AbsolutePath;
             public long WindowOffset;
             public long FileLength;
+        }
+
+        private readonly struct NativeWriteResult
+        {
+            public readonly bool Success;
+            public readonly string Error;
+
+            public NativeWriteResult(bool success, string error)
+            {
+                Success = success;
+                Error = error ?? string.Empty;
+            }
         }
 
         private struct CachedReadWindow
@@ -714,48 +728,113 @@ namespace Hecton8.SaveSystem
             int secondByteCount,
             out string error)
         {
-            error = string.Empty;
+            NativeWriteResult result = WriteAllAsync(
+                absolutePath,
+                (IntPtr)firstBuffer,
+                firstByteCount,
+                (IntPtr)secondBuffer,
+                secondByteCount).GetAwaiter().GetResult();
+            error = result.Error;
+            return result.Success;
+        }
+
+        private static async Awaitable<NativeWriteResult> WriteAllAsync(
+            string absolutePath,
+            IntPtr firstBuffer,
+            int firstByteCount,
+            IntPtr secondBuffer,
+            int secondByteCount)
+        {
             if (string.IsNullOrEmpty(absolutePath))
             {
-                error = "Native write path is empty.";
-                return false;
+                return new NativeWriteResult(false, "Native write path is empty.");
             }
 
             int totalBytes = math.max(firstByteCount, 0) + math.max(secondByteCount, 0);
             if (totalBytes <= 0)
             {
-                error = "Native write requested zero bytes.";
-                return false;
+                return new NativeWriteResult(false, "Native write requested zero bytes.");
             }
 
             FileStream fileStream = null;
             try
             {
                 InvalidateCachedReadWindows(absolutePath);
-                fileStream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.None, FileWriteScratchBytes, FileOptions.SequentialScan);
+                fileStream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.None, FileWriteScratchBytes, FileOptions.Asynchronous | FileOptions.SequentialScan);
                 TryEnableSparseFile(fileStream);
                 fileStream.SetLength(totalBytes);
 
-                if (!TryWritePointerSegment(fileStream, firstBuffer, firstByteCount, out error))
-                    return false;
+                NativeWriteResult firstWrite = await WritePointerSegmentAsync(fileStream, firstBuffer, firstByteCount);
+                if (!firstWrite.Success)
+                    return firstWrite;
 
-                if (!TryWritePointerSegment(fileStream, secondBuffer, secondByteCount, out error))
-                    return false;
+                NativeWriteResult secondWrite = await WritePointerSegmentAsync(fileStream, secondBuffer, secondByteCount);
+                if (!secondWrite.Success)
+                    return secondWrite;
 
-                if (!QueueThrottledFlush(absolutePath, totalBytes, out error))
-                    return false;
+                if (!QueueThrottledFlush(absolutePath, totalBytes, out string flushError))
+                    return new NativeWriteResult(false, flushError);
 
-                return true;
+                return new NativeWriteResult(true, string.Empty);
             }
             catch (Exception ex)
             {
-                error = $"Sequential native write failed for '{absolutePath}': {ex.Message}";
-                return false;
+                return new NativeWriteResult(false, $"Sequential native async write failed for '{absolutePath}': {ex.Message}");
             }
             finally
             {
                 fileStream?.Dispose();
             }
+        }
+
+        private static async Awaitable<NativeWriteResult> WritePointerSegmentAsync(FileStream stream, IntPtr source, int byteCount)
+        {
+            if (stream == null)
+                return new NativeWriteResult(false, "Native write stream is invalid.");
+
+            if (byteCount <= 0)
+                return new NativeWriteResult(true, string.Empty);
+
+            if (source == IntPtr.Zero)
+            {
+                stream.Position += byteCount;
+                return new NativeWriteResult(true, string.Empty);
+            }
+
+            int writtenBytes = 0;
+            while (writtenBytes < byteCount)
+            {
+                int chunkBytes = byteCount - writtenBytes;
+                if (chunkBytes > s_fileWriteAsyncScratch.Length)
+                    chunkBytes = s_fileWriteAsyncScratch.Length;
+
+                AcquireAsyncWriteScratch();
+                try
+                {
+                    Marshal.Copy(IntPtr.Add(source, writtenBytes), s_fileWriteAsyncScratch, 0, chunkBytes);
+                    await stream.WriteAsync(s_fileWriteAsyncScratch, 0, chunkBytes);
+                }
+                finally
+                {
+                    ReleaseAsyncWriteScratch();
+                }
+
+                writtenBytes += chunkBytes;
+            }
+
+            return new NativeWriteResult(true, string.Empty);
+        }
+
+        private static void AcquireAsyncWriteScratch()
+        {
+            SpinWait wait = default;
+            while (Interlocked.CompareExchange(ref s_fileWriteAsyncScratchBusy, 1, 0) != 0)
+                wait.SpinOnce();
+        }
+
+        private static void ReleaseAsyncWriteScratch()
+        {
+            Volatile.Write(ref s_fileWriteAsyncScratchBusy, 0);
         }
 
         internal static bool OverwriteAll(string absolutePath, void* buffer, int byteCount, out string error)
@@ -1871,6 +1950,38 @@ namespace Hecton8.SaveSystem
             /// Reserved expansion bytes required by the current 20-byte mandate.
             /// </summary>
             public uint Reserved;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
+        internal struct ThermalGridRleRun
+        {
+            public ushort StartIndex;
+            public ushort Count;
+            public float TemperatureCelsius;
+        }
+
+        internal static bool TryStageThermalGridRleDelta(
+            NativeArray<ThermalGridRleRun> runs,
+            int runCount,
+            out int byteCount,
+            out uint checksum)
+        {
+            byteCount = 0;
+            checksum = 2166136261u;
+            if (!runs.IsCreated || runCount < 0 || runCount > runs.Length)
+                return false;
+
+            int safeCount = math.min(runCount, runs.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                ThermalGridRleRun run = runs[i];
+                checksum = MixChecksum32(checksum, run.StartIndex);
+                checksum = MixChecksum32(checksum, run.Count);
+                checksum = MixChecksum32(checksum, math.asuint(run.TemperatureCelsius));
+            }
+
+            byteCount = checked(safeCount * UnsafeUtility.SizeOf<ThermalGridRleRun>());
+            return true;
         }
 
         [StructLayout(LayoutKind.Explicit, Pack = 1, Size = PayloadPrefixSizeBytes)]

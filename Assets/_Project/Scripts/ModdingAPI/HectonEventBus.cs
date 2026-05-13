@@ -217,6 +217,30 @@ namespace Hecton8.Modding
         }
 
         /// <summary>
+        /// Subscribes to public first-party SignalBus projections as condensed DTOs.
+        /// This path is the managed mod bridge; first-party systems must consume SignalBus snapshots directly.
+        /// </summary>
+        /// <param name="handler">Projected event callback.</param>
+        /// <param name="subscriberId">Stable mod identifier used for automatic isolation.</param>
+        /// <returns>Subscription token, or null when the handler is invalid.</returns>
+        public static HectonEventSubscription SubscribeProjected(Action<ModEventDto> handler, string subscriberId = null)
+        {
+            if (handler == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[HectonEventBus] Cannot subscribe a null projected event handler.");
+#endif
+                return null;
+            }
+
+            string resolvedSubscriberId = string.IsNullOrWhiteSpace(subscriberId)
+                ? ModExecutionScope.CurrentModId
+                : subscriberId;
+
+            return ModEventProjectionBridge.SubscribeProjected(handler, resolvedSubscriberId);
+        }
+
+        /// <summary>
         /// Publishes a typed event to every active subscriber in subscription order.
         /// Exceptions thrown by individual handlers are logged and suppressed so the remaining chain still executes.
         /// </summary>
@@ -304,6 +328,7 @@ namespace Hecton8.Modding
             }
 
             _nativePayloadChannel.DisableSubscriber(subscriberId);
+            ModEventProjectionBridge.DisableProjectedSubscriber(subscriberId);
         }
 
         private static bool TryEnterDispatch(uint eventHash)

@@ -1,6 +1,7 @@
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
 using UnityEngine;
@@ -91,8 +92,10 @@ namespace Hecton8.Visor
         private float _interactionVolume01 = 1f;
         private float _interactionPitchScale = 1f;
         private float _interactionFrequency01;
+        private float _psychoMetricsStress01;
         private float _traumaPulse01;
         private float _dependencyResolveRetryRemaining;
+        private int _lastPlayerStressSignalSequence;
         private bool _hasInteractionSignal;
         private bool _hasAppliedStressGlobals;
         private float _appliedPlayerStress01;
@@ -125,8 +128,10 @@ namespace Hecton8.Visor
             _interactionVolume01 = 1f;
             _interactionPitchScale = 1f;
             _interactionFrequency01 = 0f;
+            _psychoMetricsStress01 = 0f;
             _traumaPulse01 = 0f;
             _dependencyResolveRetryRemaining = 0f;
+            _lastPlayerStressSignalSequence = 0;
             _hasInteractionSignal = false;
         }
 
@@ -147,10 +152,16 @@ namespace Hecton8.Visor
 
             TryResolveDependencies(deltaTime);
 
+            _traumaPulse01 = SanitizeUnit(_traumaPulse01);
+            _interactionStress01 = SanitizeUnit(_interactionStress01);
+            _interactionFrequency01 = SanitizeUnit(_interactionFrequency01);
+            if (!math.isfinite(_pulsePhase))
+                _pulsePhase = 0f;
+
             if (_traumaPulse01 > 0f)
                 _traumaPulse01 = math.max(0f, _traumaPulse01 - deltaTime * math.max(0.1f, traumaChromaticPulseDecayPerSecond));
 
-            float stress01 = math.max(ResolveStress01(), _traumaPulse01);
+            float stress01 = math.max(SanitizeUnit(ResolveStress01()), _traumaPulse01);
             float audioStress01 = _hasInteractionSignal ? math.max(stress01, _interactionStress01) : stress01;
             float fog01 = ResolveFogging01();
             float frost01 = ResolveFrost01();
@@ -196,6 +207,9 @@ namespace Hecton8.Visor
 
         private static float FastInverseLerp01(float from, float to, float value)
         {
+            if (!math.isfinite(from) || !math.isfinite(to) || !math.isfinite(value))
+                return 0f;
+
             float range = to - from;
             if (math.abs(range) <= 0.00001f)
                 return 0f;
@@ -203,9 +217,14 @@ namespace Hecton8.Visor
             return math.saturate((value - from) / range);
         }
 
+        private static float SanitizeUnit(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
         void IPlayerSignalEventListener.OnTraumaHudSignal(in TraumaHudSignal signal)
         {
-            _traumaPulse01 = math.max(_traumaPulse01, math.saturate(signal.GlitchIntensity));
+            _traumaPulse01 = math.max(SanitizeUnit(_traumaPulse01), SanitizeUnit(signal.GlitchIntensity));
         }
 
         void IPlayerSignalEventListener.OnInteractionSignal(in InteractionSignal signal)
@@ -219,10 +238,10 @@ namespace Hecton8.Visor
 
         private void HandleInteractionSignal(in InteractionSignal signal)
         {
-            _interactionStress01 = math.saturate(signal.Stress01);
-            _interactionVolume01 = math.saturate(signal.Volume01);
-            _interactionPitchScale = math.clamp(signal.PitchScale, 0.1f, 3f);
-            _interactionFrequency01 = math.saturate(signal.Frequency01);
+            _interactionStress01 = SanitizeUnit(signal.Stress01);
+            _interactionVolume01 = SanitizeUnit(signal.Volume01);
+            _interactionPitchScale = math.isfinite(signal.PitchScale) ? math.clamp(signal.PitchScale, 0.1f, 3f) : 1f;
+            _interactionFrequency01 = SanitizeUnit(signal.Frequency01);
             _hasInteractionSignal = true;
         }
 
@@ -290,13 +309,22 @@ namespace Hecton8.Visor
 
         private float ResolveStress01()
         {
-            float oxygenNormalized = _survivalSystem != null ? math.saturate(_survivalSystem.OxygenNormalized) : 1f;
-            float integrityNormalized = _survivalSystem != null ? math.saturate(_survivalSystem.IntegrityNormalized) : 1f;
-            float fatalPressure01 = _playerMovement != null ? math.saturate(_playerMovement.CurrentFatalPressureSequence01) : 0f;
-            float healthStress01 = _playerHealth != null ? math.saturate(_playerHealth.Stress) : 0f;
+            if (GlobalSignals.TryGetLatestPlayerStressSignal(out PlayerStressSignal stressSignal, out int sequence) &&
+                sequence != _lastPlayerStressSignalSequence)
+            {
+                _lastPlayerStressSignalSequence = sequence;
+                _psychoMetricsStress01 = SanitizeUnit(stressSignal.Stress01);
+            }
+
+            float oxygenNormalized = _survivalSystem != null ? SanitizeUnit(_survivalSystem.OxygenNormalized) : 1f;
+            float integrityNormalized = _survivalSystem != null ? SanitizeUnit(_survivalSystem.IntegrityNormalized) : 1f;
+            float fatalPressure01 = _playerMovement != null ? SanitizeUnit(_playerMovement.CurrentFatalPressureSequence01) : 0f;
+            float healthStress01 = _playerHealth != null ? SanitizeUnit(_playerHealth.Stress) : 0f;
             float oxygenStress01 = FastInverseLerp01(oxygenCriticalThreshold, 0.05f, oxygenNormalized);
             float integrityStress01 = FastInverseLerp01(integrityCriticalThreshold, 0.08f, integrityNormalized);
-            float stress01 = math.saturate(math.max(healthStress01, math.max(oxygenStress01, math.max(integrityStress01, fatalPressure01))));
+            float stress01 = math.saturate(math.max(
+                _psychoMetricsStress01,
+                math.max(healthStress01, math.max(oxygenStress01, math.max(integrityStress01, fatalPressure01)))));
 
             ApplyDebugVitalsState(oxygenNormalized, integrityNormalized, fatalPressure01);
             return stress01;
@@ -304,17 +332,20 @@ namespace Hecton8.Visor
 
         private void ApplyStressPulse(float stress01, float beat01, float fog01, float frost01)
         {
-            float pulse = stress01 * (0.35f + beat01 * 0.65f);
-            float playerStress01 = math.saturate(stress01);
-            float hudStressChroma = math.saturate(stress01 + fog01 * 0.18f);
-            float shaderVignette = math.saturate((pulse + frost01 * 0.58f + fog01 * 0.18f) * math.saturate(shaderVignetteMaximum));
-            float shaderFog = math.saturate(fog01 * math.saturate(shaderFogCondensationMaximum));
-            float shaderFrost = math.saturate(frost01 * math.saturate(shaderFrostMaximum));
+            float playerStress01 = SanitizeUnit(stress01);
+            float safeBeat01 = SanitizeUnit(beat01);
+            float safeFog01 = SanitizeUnit(fog01);
+            float safeFrost01 = SanitizeUnit(frost01);
+            float pulse = playerStress01 * (0.35f + safeBeat01 * 0.65f);
+            float hudStressChroma = math.saturate(playerStress01 + safeFog01 * 0.18f);
+            float shaderVignette = math.saturate((pulse + safeFrost01 * 0.58f + safeFog01 * 0.18f) * SanitizeUnit(shaderVignetteMaximum));
+            float shaderFog = math.saturate(safeFog01 * SanitizeUnit(shaderFogCondensationMaximum));
+            float shaderFrost = math.saturate(safeFrost01 * SanitizeUnit(shaderFrostMaximum));
             Vector4 fogFrost;
             fogFrost.x = shaderFog;
             fogFrost.y = shaderFrost;
-            fogFrost.z = fog01;
-            fogFrost.w = frost01;
+            fogFrost.z = safeFog01;
+            fogFrost.w = safeFrost01;
 
             ApplyStressGlobals(playerStress01, hudStressChroma, shaderVignette, fogFrost, force: false);
         }
@@ -416,10 +447,12 @@ namespace Hecton8.Visor
                 return 0f;
             }
 
-            float oxygenFog01 = FastInverseLerp01(oxygenFogThreshold, 0.04f, _survivalSystem.OxygenNormalized);
-            float oxygenGraceFog01 = math.saturate(_survivalSystem.OxygenGraceVisionBlur01);
-            float nitrogenFog01 = math.saturate(_survivalSystem.NitrogenNarcosisVisionBlur01);
-            float temperature = _survivalSystem.EnvironmentTemperature;
+            float oxygenNormalized = SanitizeUnit(_survivalSystem.OxygenNormalized);
+            float oxygenFog01 = FastInverseLerp01(oxygenFogThreshold, 0.04f, oxygenNormalized);
+            float oxygenGraceFog01 = SanitizeUnit(_survivalSystem.OxygenGraceVisionBlur01);
+            float nitrogenFog01 = SanitizeUnit(_survivalSystem.NitrogenNarcosisVisionBlur01);
+            float rawTemperature = _survivalSystem.EnvironmentTemperature;
+            float temperature = math.isfinite(rawTemperature) ? rawTemperature : _lastEnvironmentTemperature;
             float thermalShock01 = 0f;
 
             if (_hasEnvironmentTemperatureSample)
@@ -432,7 +465,7 @@ namespace Hecton8.Visor
 
             _lastEnvironmentTemperature = temperature;
             _hasEnvironmentTemperatureSample = true;
-            float rapidAscentFog01 = _survivalSystem.RapidAscentRisk01 * 0.4f;
+            float rapidAscentFog01 = SanitizeUnit(_survivalSystem.RapidAscentRisk01) * 0.4f;
             float fog01 = math.saturate(math.max(
                 math.max(oxygenFog01, oxygenGraceFog01),
                 math.max(nitrogenFog01, math.max(thermalShock01, rapidAscentFog01))));
@@ -448,8 +481,10 @@ namespace Hecton8.Visor
                 return 0f;
             }
 
-            float temperature01 = FastInverseLerp01(frostStartTemperatureCelsius, frostMaxTemperatureCelsius, _survivalSystem.EnvironmentTemperature);
-            float frost01 = math.saturate(math.max(temperature01, _survivalSystem.ColdStressSeverity01));
+            float rawTemperature = _survivalSystem.EnvironmentTemperature;
+            float temperature = math.isfinite(rawTemperature) ? rawTemperature : frostStartTemperatureCelsius;
+            float temperature01 = FastInverseLerp01(frostStartTemperatureCelsius, frostMaxTemperatureCelsius, temperature);
+            float frost01 = math.saturate(math.max(temperature01, SanitizeUnit(_survivalSystem.ColdStressSeverity01)));
             ApplyDebugFrostState(frost01);
             return frost01;
         }

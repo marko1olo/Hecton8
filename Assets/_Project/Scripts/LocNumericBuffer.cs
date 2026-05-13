@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 
 namespace Hecton.Localization
 {
@@ -50,9 +51,10 @@ namespace Hecton.Localization
                         : _floatValue.TryFormat(destination, out charsWritten, format);
 
                 default:
-                    return format.Length == 0
-                        ? _intValue.TryFormat(destination, out charsWritten)
-                        : _intValue.TryFormat(destination, out charsWritten, format);
+                    int cursor = 0;
+                    bool wrote = ZeroGCFormatter.FastIntToChars(_intValue, destination, format, ref cursor);
+                    charsWritten = cursor;
+                    return wrote;
             }
         }
     }
@@ -367,15 +369,22 @@ namespace Hecton.Localization
             tokenIndex = -1;
             format = default;
 
-            if (template[cursor] != '{' || cursor + 3 >= template.Length || template[cursor + 1] != 'N')
+            if (template[cursor] != '{' || cursor + 2 >= template.Length)
                 return false;
 
-            char digit = template[cursor + 2];
+            int digitIndex = template[cursor + 1] == 'N' ? cursor + 2 : cursor + 1;
+            char digit = template[digitIndex];
             if (digit < '0' || digit > '4')
                 return false;
 
             tokenIndex = digit - '0';
-            int closeIndex = cursor + 3;
+            int closeIndex = digitIndex + 1;
+            if (closeIndex >= template.Length)
+            {
+                tokenIndex = -1;
+                return false;
+            }
+
             if (template[closeIndex] == '}')
             {
                 cursor = closeIndex + 1;

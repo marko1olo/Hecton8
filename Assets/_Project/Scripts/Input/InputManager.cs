@@ -355,6 +355,9 @@ namespace Hecton8.Input
             if (!_initialActivationComplete)
                 return;
 
+            if (_restorePlayerInputOnEnable || _restoreUiInputOnEnable)
+                RebuildRuntimeInputActionsForActivation();
+
             if (_restorePlayerInputOnEnable)
                 SafeEnableActionMap(_playerActionMap);
 
@@ -369,6 +372,8 @@ namespace Hecton8.Input
 
             _restorePlayerInputOnEnable = IsActionMapEnabledForStateCapture(_playerActionMap);
             _restoreUiInputOnEnable = IsActionMapEnabledForStateCapture(_uiActionMap);
+            SafeDisableActionMapForTeardown(_playerActionMap);
+            SafeDisableActionMapForTeardown(_uiActionMap);
             UnsubscribeFromDeviceChanges();
             if (!_serviceShuttingDown)
                 UnregisterService();
@@ -446,6 +451,12 @@ namespace Hecton8.Input
                 SubscribeToUIActions();
 
             _inputMapsInitialized = true;
+        }
+
+        private void RebuildRuntimeInputActionsForActivation()
+        {
+            ResetInputActionCaches(disposeRuntimeAsset: true);
+            InitializeInputActions();
         }
         
         private void CachePlayerActions()

@@ -47,6 +47,9 @@ namespace Hecton8.Audio
             if (!listener.TryGetComponent(out PlayerCriticalProceduralAudioRenderer renderer))
                 renderer = listener.gameObject.AddComponent<PlayerCriticalProceduralAudioRenderer>();
 
+            if (!listener.TryGetComponent(out VocalWarningSystem _))
+                listener.gameObject.AddComponent<VocalWarningSystem>();
+
             renderer.BindToPlayer(playerObject);
 
             PlayerThrusterAudio legacyThrusterAudio = playerContext != null ? playerContext.ThrusterAudio : null;

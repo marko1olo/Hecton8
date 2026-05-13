@@ -24,6 +24,7 @@ using Hecton8.Audio;
 using Hecton8.Environment;
 using Hecton8.Interaction;
 using Hecton8.Physics;
+using Hecton8.Physics.CCD;
 using Hecton8.UI;
 using Hecton8.Input;
 using Hecton8.Meta;
@@ -36,6 +37,7 @@ using NASAPunk.Visor;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Jobs;
 using Unity.Profiling;
@@ -48,6 +50,24 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Rigidbody))]
     public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener
     {
+        [StructLayout(LayoutKind.Sequential)]
+        private struct CinematicFocusTelemetryEntry
+        {
+            public uint Frame;
+            public uint FocusHash;
+            public long PlayerGridX;
+            public long PlayerGridY;
+            public long PlayerGridZ;
+            public long TargetGridX;
+            public long TargetGridY;
+            public long TargetGridZ;
+            public float3 TargetDirection;
+            public float DistanceSq;
+            public float PullWeight;
+            public float SubtitleAlpha01;
+            public byte Flags;
+        }
+
         private const float GroundCheckSkin = 0.02f;
         private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.Tick");
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.FixedTick");
@@ -61,12 +81,20 @@ namespace Hecton8.Gameplay
         private const float HeavyInventoryDragPerMaskBit = 0.08f;
         private const float InventoryLoadDragMultiplierMax = 0.35f;
         private const int LastValidAupRingCapacity = 16;
+        private const int CinematicFocusBlackBoxCapacity = 300;
+        private const int CinematicFocusSignalDrainBudget = 4;
+        private const int CinematicFocusBlackBoxDumpCooldownFrames = 120;
+        private const float CinematicFocusDefaultFadeDistanceSq = 1600f;
+        private const float CinematicFocusAmbientDuckingDb = -1.9382f;
         private const float MovementAcousticMinVelocitySq = 0.0001f;
         private const float MovementAcousticVolumeScale = 0.04f;
         private const float MovementStaminaDrainMultiplier = 0.15f;
         private static readonly uint _playerKinematicsSourceId = unchecked((uint)LocHash.Compute("PLAYER_KINEMATICS"));
         private static readonly uint _playerKinematicsNaNHash = unchecked((uint)LocHash.Compute("PLAYER_KINEMATICS_NAN"));
         private static readonly uint _playerKinematicsNoClipHash = unchecked((uint)LocHash.Compute("PLAYER_KINEMATICS_NOCLIP"));
+        private static readonly uint _cinematicFocusTelemetryHash = unchecked((uint)LocHash.Compute("CINEMATIC_FOCUS_ACTIVE_HASH"));
+        private static readonly uint _cinematicFocusFaultHash = unchecked((uint)LocHash.Compute("CINEMATIC_FOCUS_FAULT"));
+        private static readonly uint _cinematicFocusDumpHash = unchecked((uint)LocHash.Compute("CINEMATIC_FOCUS_DUMP"));
         private static ulong s_heavyInventoryDragMask;
         private static int s_heavyInventoryDragTemplateCount = -1;
         private static uint s_heavyInventoryDragRegistryRevision;
@@ -112,9 +140,14 @@ namespace Hecton8.Gameplay
         private const float LocalGravityRetargetEpsilonSqr = 0.0001f;
         private const string DefaultWaterEntrySplashClipPath = "Assets/_Project/Audio/Movement/dive_splash.wav";
         private const float VrComfortShaderPublishEpsilon = 0.0001f;
+        private const float VrComfortMinimumFrameRateHz = 60f;
+        private const float VrComfortTelemetryStep01 = 0.05f;
+        private const uint VrComfortTelemetryContextHash = 0x56524346u; // VRCF
+        private const uint VrComfortMaxVignetteHash = 0x4D565231u; // MVR1
         private static readonly int VrComfortSignalsId = Shader.PropertyToID("_HectonVrComfortSignals");
         private static readonly int VrComfortSwayId = Shader.PropertyToID("_HectonVrComfortSway");
         private static readonly int VrComfortMotionId = Shader.PropertyToID("_HectonVrComfortMotion");
+        private static readonly int VrComfortVignette01Id = Shader.PropertyToID("_VRComfortVignette01");
         private const int CrestBodySampleCount = 5;
         private const int CrestSampleCenter = 0;
         private const int CrestSampleHead = 1;
@@ -294,8 +327,6 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 1f)] private float wipeoutSuitUpgradeBreakChance = 0.2f;
         [Tooltip("How long a fast breach exit keeps solid-land collision eligible for wipeout logic.")]
         [SerializeField, Range(0.1f, 2f)] private float wipeoutBreachLandingGraceTime = 1.15f;
-        [Tooltip("Speed threshold where wipeout motion receives an explicit pre-sweep before the standard CCD path.")]
-        [SerializeField, Range(0f, 60f)] private float wipeoutSweepSpeedThreshold = 15f;
         [Tooltip("Skin width reserved in front of the wipeout sweep hit so corrective motion stops short of geometry.")]
         [SerializeField, Range(0.005f, 0.25f)] private float wipeoutSweepSkinWidth = 0.04f;
         [Tooltip("Capsule inset used by the wipeout pre-sweep to avoid grazing false positives on the rider's own shell.")]
@@ -968,6 +999,15 @@ namespace Hecton8.Gameplay
         [Header("Ã¢â€â‚¬Ã¢â€â‚¬ FOV Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
         [Tooltip("Base FOV of the camera. FOV compression applies relative to this.")]
         [SerializeField] private float baseFov = 70f;
+        [Header("Narrative Soft Look-At")]
+        [SerializeField] private bool cinematicFocusEnabled = true;
+        [SerializeField, Range(0f, 12f)] private float cinematicFocusPullStrength = 3.5f;
+        [SerializeField, Range(0.1f, 30f)] private float cinematicFocusInputBreakThreshold = 8f;
+        [SerializeField, Range(0.25f, 20f)] private float cinematicFocusYieldRecoverySharpness = 6f;
+        [SerializeField, Range(35f, 120f)] private float cinematicFocusFov = 75f;
+        [SerializeField, Range(0.5f, 20f)] private float cinematicFocusFovSharpness = 4f;
+        [SerializeField, Range(0.25f, 12f)] private float cinematicFocusDefaultDuration = 3.5f;
+        [SerializeField, Range(4f, 120f)] private float cinematicFocusSubtitleFadeDistance = 40f;
         [Tooltip("How much underwater body-yaw responsiveness remains while dragging the heaviest heavy-carry object.")]
         [SerializeField, Range(0.1f, 1f)] private float maxHeavyCarryBodyYawSpringMultiplier = 0.58f;
         [Header("Heavy Tow Response")]
@@ -1185,6 +1225,23 @@ namespace Hecton8.Gameplay
         private CameraJuiceInput _juiceInput;
         private CameraJuiceOutput _juiceOutput;
         private Vector3 _cameraBaseLocalPos;
+        private NativeArray<CinematicFocusTelemetryEntry> _cinematicFocusBlackBox;
+        private AbsoluteUniversePosition _cinematicFocusTargetAup;
+        private int _cinematicFocusBlackBoxCursor;
+        private int _cinematicFocusLastDumpFrame = -CinematicFocusBlackBoxDumpCooldownFrames;
+        private uint _cinematicFocusHash;
+        private uint _cinematicFocusSubtitleHash;
+        private float _cinematicFocusIntensity01;
+        private float _cinematicFocusTimer;
+        private float _cinematicFocusPullSuppression01;
+        private float _cinematicFocusSubtitleFadeDistanceSq = CinematicFocusDefaultFadeDistanceSq;
+        private float _cinematicFocusLastDistanceSq;
+        private float _cinematicFocusLastSubtitleAlpha01;
+        private byte _cinematicFocusFlags;
+        private byte _cinematicFocusBoneTarget;
+        private bool _cinematicFocusActive;
+        private bool _cinematicFocusAudioDucked;
+        private bool _cinematicFocusFovAllowedCached;
         private Vector3 _feedbackVelocity;
         private float _underwaterSomaticPhase;
         private float _underwaterSomaticWeight;
@@ -1218,6 +1275,9 @@ namespace Hecton8.Gameplay
         private Vector4 _lastPublishedVrComfortSignals = Vector4.positiveInfinity;
         private Vector4 _lastPublishedVrComfortSway = Vector4.positiveInfinity;
         private Vector4 _lastPublishedVrComfortMotion = Vector4.positiveInfinity;
+        private float _lastPublishedVrComfortVignette01 = float.PositiveInfinity;
+        private float _maxVrComfortVignetteTelemetry01;
+        private float _lastVrComfortVignetteTelemetry01;
         private float _vrHorizonRollDampedDegrees;
         private bool _vrHorizonRollDampingInitialized;
         private bool _vrComfortGravityScaleInitialized;
@@ -2491,6 +2551,38 @@ namespace Hecton8.Gameplay
             _playerKinematicsNativeState.EnsureCreated();
         }
 
+        private void EnsureCinematicFocusBlackBox()
+        {
+            if (_cinematicFocusBlackBox.IsCreated)
+                return;
+
+            _cinematicFocusBlackBox = new NativeArray<CinematicFocusTelemetryEntry>(
+                CinematicFocusBlackBoxCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CinematicFocusTelemetryEntry>[300] - narrative focus black-box ring - owner: HectonPlayerMovement
+            NativeMemorySentinel.RegisterNativeArray(
+                _cinematicFocusBlackBox,
+                nameof(HectonPlayerMovement),
+                nameof(_cinematicFocusBlackBox),
+                NativeAllocationLifetime.Scene);
+        }
+
+        private void DisposeCinematicFocusBlackBox()
+        {
+            if (!_cinematicFocusBlackBox.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(_cinematicFocusBlackBox);
+            _cinematicFocusBlackBox.Dispose();
+            _cinematicFocusBlackBox = default;
+            _cinematicFocusBlackBoxCursor = 0;
+        }
+
+        private void RefreshCinematicFocusTierGateCold()
+        {
+            _cinematicFocusFovAllowedCached = GlobalRegistry.ScalabilityTierProfileByte != 0;
+        }
+
         private float3 ResolveRawInputIntentVector()
         {
             return new float3(_inputH, _inputVertical, _inputV);
@@ -3612,6 +3704,8 @@ namespace Hecton8.Gameplay
             _playerState.SyncKinematic(_rb.position, HectonPlayerMotor.SafeVelocity(_rb.linearVelocity));
             _playerState.SyncEncumbrance(_runtimeInventoryLoad01, _runtimeInventoryLoadMovementMultiplier);
             EnsurePlayerKinematicsNativeState();
+            EnsureCinematicFocusBlackBox();
+            RefreshCinematicFocusTierGateCold();
             RecordLastValidAup(_playerState.AbsolutePosition);
 
             // Cache camera component for FOV manipulation
@@ -3844,6 +3938,8 @@ namespace Hecton8.Gameplay
             ResolveInputManagerBinding();
             EnsurePlayerRuntimeSubsystems();
             EnsurePlayerKinematicsNativeState();
+            EnsureCinematicFocusBlackBox();
+            RefreshCinematicFocusTierGateCold();
             _playerKinematicsTelemetryDumpedThisFault = false;
             if (_rb != null)
                 RecordLastValidAup(AbsoluteUniversePosition.FromRuntimePosition(_rb.position));
@@ -4041,6 +4137,8 @@ namespace Hecton8.Gameplay
             }
 
             _playerKinematicsNativeState.Dispose();
+            ClearCinematicFocus(true);
+            DisposeCinematicFocusBlackBox();
             _lastValidAupWriteIndex = 0;
             _lastValidAupCount = 0;
         }
@@ -4091,7 +4189,13 @@ namespace Hecton8.Gameplay
 
         private void HandleInventoryLoadChanged()
         {
-            float totalMassKg = _inventoryLoadSource != null ? _inventoryLoadSource.TotalMassKg : 0f;
+            float totalMassKg = 0f;
+            if (_inventoryLoadSource != null)
+            {
+                ref readonly float currentWeightKg = ref _inventoryLoadSource.CurrentWeightKg;
+                totalMassKg = currentWeightKg;
+            }
+
             float carryCapacityKg = ResolveInventoryCarryCapacityKg();
             float cachedLoad01 = _inventoryLoadSource != null ? _inventoryLoadSource.CachedInventoryLoad01 : 0f;
             float cachedMovementMultiplier = _inventoryLoadSource != null ? _inventoryLoadSource.CachedMaxSwimSpeedMultiplier : 1f;
@@ -4218,6 +4322,12 @@ namespace Hecton8.Gameplay
             {
                 _previousRenderInterpolationState.BodyPosition -= shiftOffset;
                 _currentRenderInterpolationState.BodyPosition -= shiftOffset;
+            }
+
+            if (_cinematicFocusActive)
+            {
+                _cinematicFocusLastDistanceSq = 0f;
+                GlobalTelemetryBus.PublishPerformanceWarning(_cinematicFocusTelemetryHash, _cinematicFocusHash, shiftData.Sequence);
             }
 
             _sargassumMovementInfluence?.ApplyOriginShiftOffset(shiftOffset);
@@ -6370,6 +6480,8 @@ namespace Hecton8.Gameplay
                 _currentRenderDeltaTime = math.max(0.0001f, deltaTime);
                 RefreshVrComfortSettingsCache();
                 PrepareRenderTickDependencies();
+                DrainNarrativeFocusSignals();
+                AdvanceCinematicFocus(deltaTime);
                 if (_activeSonarPingCooldownTimer > 0f)
                 {
                     _activeSonarPingCooldownTimer -= deltaTime;
@@ -6678,6 +6790,7 @@ namespace Hecton8.Gameplay
         private void ApplyLookInput(Vector2 lookDelta)
         {
             lookDelta = ResolveRuntimeNarcosisLookDelta(lookDelta);
+            ApplyCinematicFocusInputOverride(lookDelta);
             float squeeze01 = ResolveFatalPressureSqueeze01();
             float lookSensitivityScale = math.lerp(1f, fatalPressureLookSensitivityFloor, squeeze01);
             float scaledLookY = lookDelta.y * mouseSensitivity * lookSensitivityScale;
@@ -6693,6 +6806,124 @@ namespace Hecton8.Gameplay
             ApplyCameraYawDelta(scaledLookX);
             _cameraPitch -= scaledLookY;
             ApplyFatalPressureLookClamp(squeeze01);
+        }
+
+        private void DrainNarrativeFocusSignals()
+        {
+            if (!cinematicFocusEnabled)
+                return;
+
+            int drained = 0;
+            while (drained < CinematicFocusSignalDrainBudget &&
+                   GlobalSignals.TryDequeueNarrativeFocus(out NarrativeFocusSignal signal))
+            {
+                ApplyNarrativeFocusSignal(in signal);
+                drained++;
+            }
+        }
+
+        private void ApplyNarrativeFocusSignal(in NarrativeFocusSignal signal)
+        {
+            if (signal.FocusHash == 0u || !math.isfinite(signal.Intensity01) || signal.Intensity01 <= 0f)
+            {
+                ClearCinematicFocus(true);
+                return;
+            }
+
+            _cinematicFocusTargetAup = signal.TargetAup;
+            _cinematicFocusHash = signal.FocusHash;
+            _cinematicFocusSubtitleHash = signal.SubtitleHash;
+            _cinematicFocusIntensity01 = math.saturate(signal.Intensity01);
+            _cinematicFocusTimer = math.max(0.01f, signal.DurationSeconds > 0f ? signal.DurationSeconds : cinematicFocusDefaultDuration);
+            _cinematicFocusPullSuppression01 = 0f;
+            _cinematicFocusSubtitleFadeDistanceSq = ResolveCinematicSubtitleFadeDistanceSq(signal.SubtitleFadeDistanceSq);
+            _cinematicFocusFlags = signal.Flags;
+            _cinematicFocusBoneTarget = signal.BoneTarget;
+            _cinematicFocusActive = true;
+            RefreshCinematicFocusTierGateCold();
+            PublishCinematicMixerState(_cinematicFocusIntensity01);
+            GlobalTelemetryBus.PublishPerformanceWarning(_cinematicFocusTelemetryHash, _cinematicFocusHash, _cinematicFocusIntensity01);
+        }
+
+        private float ResolveCinematicSubtitleFadeDistanceSq(float signaledDistanceSq)
+        {
+            if (math.isfinite(signaledDistanceSq) && signaledDistanceSq > 0.01f)
+                return signaledDistanceSq;
+
+            float distance = math.max(0.1f, cinematicFocusSubtitleFadeDistance);
+            return distance * distance;
+        }
+
+        private void AdvanceCinematicFocus(float deltaTime)
+        {
+            if (!_cinematicFocusActive)
+                return;
+
+            float safeDelta = math.max(0f, deltaTime);
+            if (_cinematicFocusTimer > 0f)
+            {
+                _cinematicFocusTimer -= safeDelta;
+                if (_cinematicFocusTimer <= 0f)
+                {
+                    ClearCinematicFocus(true);
+                    return;
+                }
+            }
+
+            float recoveryT = ResolveLinearBlendT(math.max(0.01f, cinematicFocusYieldRecoverySharpness), safeDelta);
+            _cinematicFocusPullSuppression01 = math.lerp(_cinematicFocusPullSuppression01, 0f, recoveryT);
+            if (_cinematicFocusPullSuppression01 <= 0.0001f)
+                _cinematicFocusPullSuppression01 = 0f;
+        }
+
+        private void ApplyCinematicFocusInputOverride(Vector2 lookDelta)
+        {
+            if (!_cinematicFocusActive)
+                return;
+
+            float deltaSq = (lookDelta.x * lookDelta.x) + (lookDelta.y * lookDelta.y);
+            float threshold = math.max(0.01f, cinematicFocusInputBreakThreshold);
+            float thresholdSq = threshold * threshold;
+            if (deltaSq >= thresholdSq)
+            {
+                BreakCinematicFocus(deltaSq);
+                return;
+            }
+
+            float yieldStartSq = thresholdSq * 0.25f;
+            if (deltaSq > yieldStartSq)
+                _cinematicFocusPullSuppression01 = math.max(_cinematicFocusPullSuppression01, math.saturate(deltaSq / thresholdSq));
+        }
+
+        private void BreakCinematicFocus(float inputDeltaSq)
+        {
+            if (!_cinematicFocusActive)
+                return;
+
+            FocusBrokenSignal signal = new FocusBrokenSignal
+            {
+                FocusHash = _cinematicFocusHash,
+                PlayerInputDeltaSq = inputDeltaSq,
+                Frame = unchecked((uint)Time.frameCount),
+                Reason = FocusBrokenSignal.ReasonPlayerLookInput,
+                Flags = _cinematicFocusFlags
+            };
+            GlobalSignals.Publish(in signal);
+            GlobalTelemetryBus.PublishPerformanceWarning(_cinematicFocusFaultHash, _cinematicFocusHash, inputDeltaSq);
+            ClearCinematicFocus(true);
+        }
+
+        private void ClearCinematicFocus(bool publishAudioRelease)
+        {
+            if (publishAudioRelease && _cinematicFocusAudioDucked)
+                PublishCinematicMixerState(0f);
+
+            _cinematicFocusActive = false;
+            _cinematicFocusIntensity01 = 0f;
+            _cinematicFocusTimer = 0f;
+            _cinematicFocusPullSuppression01 = 0f;
+            _cinematicFocusFlags = 0;
+            _cinematicFocusBoneTarget = 0;
         }
 
         private void ApplyVrComfortLookInput(
@@ -6988,8 +7219,14 @@ namespace Hecton8.Gameplay
 
         private void UpdateVrComfortSignals(float deltaTime, Vector3 comfortVelocity, float yawDeltaDegrees)
         {
-            bool active = _vrComfortActiveCached;
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0.0001f, deltaTime) : 0.0001f;
+            float invSafeDeltaTime = math.rcp(safeDeltaTime);
+            float frameRateVignette01 = IsVrRuntimeActive()
+                ? ResolveVrComfortFrameRateVignette01(safeDeltaTime)
+                : 0f;
+            bool frameRateSafetyActive = frameRateVignette01 > 0f;
+            bool comfortModeActive = _vrComfortActiveCached;
+            bool active = comfortModeActive || frameRateSafetyActive;
             Vector3 safeComfortVelocity = IsFiniteVector(comfortVelocity) ? comfortVelocity : Vector3.zero;
             float safeYawDeltaDegrees = math.isfinite(yawDeltaDegrees) ? yawDeltaDegrees : 0f;
             float settleT = ResolveLinearBlendT(math.max(0.5f, vrComfortVisualDecaySharpness), safeDeltaTime);
@@ -7017,21 +7254,33 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float yawRate = math.abs(safeYawDeltaDegrees) / safeDeltaTime;
-            float yawRate01 = math.saturate(yawRate / math.max(1f, vrComfortYawRateReference));
+            float yawRate = comfortModeActive ? math.abs(safeYawDeltaDegrees) * invSafeDeltaTime : 0f;
+            float yawRate01 = math.saturate(yawRate * math.rcp(math.max(1f, vrComfortYawRateReference)));
             float speedReference = math.max(0.25f, vrComfortHighSpeedMetersPerSecond);
+            float invSpeedReferenceSq = math.rcp(speedReference * speedReference);
             float velocitySq =
-                safeComfortVelocity.x * safeComfortVelocity.x +
-                safeComfortVelocity.y * safeComfortVelocity.y +
-                safeComfortVelocity.z * safeComfortVelocity.z;
-            float velocitySq01 = math.saturate(velocitySq / (speedReference * speedReference));
-            float thrusterIntent = math.saturate(math.max(math.abs(_inputVertical), ResolveActiveTransportBoost01()));
+                comfortModeActive
+                    ? safeComfortVelocity.x * safeComfortVelocity.x +
+                      safeComfortVelocity.y * safeComfortVelocity.y +
+                      safeComfortVelocity.z * safeComfortVelocity.z
+                    : 0f;
+            float velocitySq01 = math.saturate(velocitySq * invSpeedReferenceSq);
+            float thrusterIntent = comfortModeActive
+                ? math.saturate(math.max(math.abs(_inputVertical), ResolveActiveTransportBoost01()))
+                : 0f;
             float targetBlur = velocitySq01 * thrusterIntent;
-            float targetVignette = _vrComfortVignetteEnabledCached
+            float motionVignette01 = comfortModeActive
                 ? math.max(_vrComfortKickSignal01, math.max(velocitySq01, math.max(yawRate01, targetBlur * 0.85f)))
                 : 0f;
+            float targetVignette = _vrComfortVignetteEnabledCached
+                ? math.max(frameRateVignette01, motionVignette01)
+                : frameRateVignette01;
             float snapFade01 = 0f;
-            if (_vrSnapTurnFadeTimer > 0f)
+            if (!comfortModeActive)
+            {
+                _vrSnapTurnFadeTimer = 0f;
+            }
+            else if (_vrSnapTurnFadeTimer > 0f)
             {
                 float snapFadeSeconds = math.max(0.01f, vrSnapTurnFadeSeconds);
                 snapFade01 = math.saturate(_vrSnapTurnFadeTimer / snapFadeSeconds);
@@ -7081,6 +7330,7 @@ namespace Hecton8.Gameplay
             _lastPublishedVrComfortSignals = Vector4.positiveInfinity;
             _lastPublishedVrComfortSway = Vector4.positiveInfinity;
             _lastPublishedVrComfortMotion = Vector4.positiveInfinity;
+            _lastPublishedVrComfortVignette01 = float.PositiveInfinity;
         }
 
         private void ApplyVrComfortShaderSignals(
@@ -7125,6 +7375,45 @@ namespace Hecton8.Gameplay
                 Shader.SetGlobalVector(VrComfortMotionId, motionSignal);
                 _lastPublishedVrComfortMotion = motionSignal;
             }
+
+            float scalarVignette01 = active ? signals.x : 0f;
+            if (math.abs(scalarVignette01 - _lastPublishedVrComfortVignette01) > VrComfortShaderPublishEpsilon)
+            {
+                Shader.SetGlobalFloat(VrComfortVignette01Id, scalarVignette01);
+                _lastPublishedVrComfortVignette01 = scalarVignette01;
+            }
+
+            PublishVrComfortMaxVignetteTelemetry(scalarVignette01);
+        }
+
+        private void PublishVrComfortMaxVignetteTelemetry(float vignette01)
+        {
+            float sanitized = SanitizeVrComfort01(vignette01);
+            if (sanitized <= _maxVrComfortVignetteTelemetry01)
+                return;
+
+            _maxVrComfortVignetteTelemetry01 = sanitized;
+            if (_maxVrComfortVignetteTelemetry01 - _lastVrComfortVignetteTelemetry01 < VrComfortTelemetryStep01)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                VrComfortMaxVignetteHash,
+                VrComfortTelemetryContextHash,
+                _maxVrComfortVignetteTelemetry01);
+            _lastVrComfortVignetteTelemetry01 = _maxVrComfortVignetteTelemetry01;
+        }
+
+        private static float ResolveVrComfortFrameRateVignette01(float deltaTime)
+        {
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
+                return 0f;
+
+            float targetFrameSeconds = math.rcp(VrComfortMinimumFrameRateHz);
+            float overBudgetSeconds = deltaTime - targetFrameSeconds;
+            if (overBudgetSeconds <= 0f)
+                return 0f;
+
+            return math.saturate(overBudgetSeconds * math.rcp(targetFrameSeconds)) * 0.35f;
         }
 
         private static bool ApproximatelyVrComfortShaderVector(Vector4 left, Vector4 right)
@@ -7190,6 +7479,8 @@ namespace Hecton8.Gameplay
             if (!vrComfortActive && pressureSqueeze01 > 0f)
                 targetFov = math.lerp(targetFov, fatalPressureMinFov, pressureSqueeze01);
 
+            ApplyCinematicFocusCameraBias(ref _cameraWorldRotation, ref targetFov, vrComfortActive, _currentRenderDeltaTime);
+
             HectonCameraState cameraState = new HectonCameraState
             {
                 TargetRotation = _cameraWorldRotation,
@@ -7208,6 +7499,190 @@ namespace Hecton8.Gameplay
 
             _cameraRig.SetAupAnchor(ResolveVrAupAnchor());
             _cameraRig.SetLocomotionState(cameraState);
+        }
+
+        private void ApplyCinematicFocusCameraBias(
+            ref Quaternion targetRotation,
+            ref float targetFov,
+            bool vrComfortActive,
+            float deltaTime)
+        {
+            if (!_cinematicFocusActive || !cinematicFocusEnabled)
+                return;
+
+            if (!TryResolveCinematicFocusDirection(out Vector3 targetDirection, out float distanceSq, out AbsoluteUniversePosition playerAup))
+            {
+                DumpCinematicFocusBlackBox(_cinematicFocusDumpHash);
+                ClearCinematicFocus(true);
+                return;
+            }
+
+            float pullWeight = _cinematicFocusIntensity01 * (1f - math.saturate(_cinematicFocusPullSuppression01));
+            pullWeight = math.saturate(pullWeight);
+            _cinematicFocusLastDistanceSq = distanceSq;
+            _cinematicFocusLastSubtitleAlpha01 = ResolveCinematicSubtitleAlpha01(distanceSq);
+
+            if (!vrComfortActive && pullWeight > 0f)
+            {
+                float blend = math.saturate(math.max(0f, cinematicFocusPullStrength) * math.max(0f, deltaTime) * pullWeight);
+                targetRotation = CinematicMath.FastNlerp(targetRotation, targetDirection, blend, Vector3.up);
+
+                if (IsCinematicFocusFovAllowed())
+                {
+                    float desiredFov = math.min(targetFov, cinematicFocusFov);
+                    float fovT = ResolveLinearBlendT(math.max(0.01f, cinematicFocusFovSharpness) * pullWeight, deltaTime);
+                    targetFov = math.lerp(targetFov, desiredFov, fovT);
+                }
+            }
+
+            WriteCinematicFocusBlackBoxSample(in playerAup, targetDirection, distanceSq, pullWeight);
+        }
+
+        private bool TryResolveCinematicFocusDirection(
+            out Vector3 targetDirection,
+            out float distanceSq,
+            out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = AbsoluteUniversePosition.FromRuntimePosition(_rb != null ? _rb.position : ResolvePlayerAupRuntimePosition());
+            double3 player = playerAup.ToAbsoluteDouble3();
+            double3 target = _cinematicFocusTargetAup.ToAbsoluteDouble3();
+            double3 delta = target - player;
+            double distanceSqDouble = math.lengthsq(delta);
+            if (!double.IsFinite(distanceSqDouble) || distanceSqDouble <= 0.000001d)
+            {
+                targetDirection = Vector3.forward;
+                distanceSq = 0f;
+                return false;
+            }
+
+            double invDistance = math.rsqrt(distanceSqDouble);
+            double3 normalized = delta * invDistance;
+            if (!math.all(math.isfinite(normalized)))
+            {
+                targetDirection = Vector3.forward;
+                distanceSq = 0f;
+                return false;
+            }
+
+            targetDirection = new Vector3((float)normalized.x, (float)normalized.y, (float)normalized.z);
+            distanceSq = distanceSqDouble > float.MaxValue ? float.MaxValue : (float)distanceSqDouble;
+            return true;
+        }
+
+        private bool IsCinematicFocusFovAllowed()
+        {
+            if (!_cinematicFocusFovAllowedCached)
+                return false;
+
+            return (_cinematicFocusFlags & NarrativeFocusSignal.FlagDisableFovNarrowing) == 0;
+        }
+
+        private float ResolveCinematicSubtitleAlpha01(float distanceSq)
+        {
+            float fadeSq = math.max(0.01f, _cinematicFocusSubtitleFadeDistanceSq);
+            return math.saturate(1f - (math.max(0f, distanceSq) / fadeSq));
+        }
+
+        private void WriteCinematicFocusBlackBoxSample(
+            in AbsoluteUniversePosition playerAup,
+            Vector3 targetDirection,
+            float distanceSq,
+            float pullWeight)
+        {
+            if (!_cinematicFocusBlackBox.IsCreated)
+                return;
+
+            _cinematicFocusBlackBox[_cinematicFocusBlackBoxCursor] = new CinematicFocusTelemetryEntry
+            {
+                Frame = unchecked((uint)Time.frameCount),
+                FocusHash = _cinematicFocusHash,
+                PlayerGridX = playerAup.GridX,
+                PlayerGridY = playerAup.GridY,
+                PlayerGridZ = playerAup.GridZ,
+                TargetGridX = _cinematicFocusTargetAup.GridX,
+                TargetGridY = _cinematicFocusTargetAup.GridY,
+                TargetGridZ = _cinematicFocusTargetAup.GridZ,
+                TargetDirection = new float3(targetDirection.x, targetDirection.y, targetDirection.z),
+                DistanceSq = distanceSq,
+                PullWeight = pullWeight,
+                SubtitleAlpha01 = _cinematicFocusLastSubtitleAlpha01,
+                Flags = _cinematicFocusFlags
+            };
+
+            _cinematicFocusBlackBoxCursor++;
+            if (_cinematicFocusBlackBoxCursor >= CinematicFocusBlackBoxCapacity)
+                _cinematicFocusBlackBoxCursor = 0;
+        }
+
+        private void DumpCinematicFocusBlackBox(uint reasonHash)
+        {
+            if (!_cinematicFocusBlackBox.IsCreated)
+                return;
+
+            int frame = Time.frameCount;
+            if (frame - _cinematicFocusLastDumpFrame < CinematicFocusBlackBoxDumpCooldownFrames)
+                return;
+
+            _cinematicFocusLastDumpFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(_cinematicFocusFaultHash, reasonHash, _cinematicFocusHash);
+            try
+            {
+                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+                if (string.IsNullOrEmpty(projectRoot))
+                    return;
+
+                string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
+                Directory.CreateDirectory(directory);
+                string path = Path.Combine(directory, "Dump_CINEMATIC_FRAMER.bin");
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(CinematicFocusBlackBoxCapacity);
+                    writer.Write(_cinematicFocusBlackBoxCursor);
+                    writer.Write(reasonHash);
+                    for (int i = 0; i < CinematicFocusBlackBoxCapacity; i++)
+                    {
+                        CinematicFocusTelemetryEntry entry = _cinematicFocusBlackBox[i];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.FocusHash);
+                        writer.Write(entry.PlayerGridX);
+                        writer.Write(entry.PlayerGridY);
+                        writer.Write(entry.PlayerGridZ);
+                        writer.Write(entry.TargetGridX);
+                        writer.Write(entry.TargetGridY);
+                        writer.Write(entry.TargetGridZ);
+                        writer.Write(entry.TargetDirection.x);
+                        writer.Write(entry.TargetDirection.y);
+                        writer.Write(entry.TargetDirection.z);
+                        writer.Write(entry.DistanceSq);
+                        writer.Write(entry.PullWeight);
+                        writer.Write(entry.SubtitleAlpha01);
+                        writer.Write(entry.Flags);
+                    }
+                }
+            }
+            catch (IOException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[CinematicFocus] Failed to dump blackbox.");
+#endif
+            }
+        }
+
+        private void PublishCinematicMixerState(float intensity01)
+        {
+            float safeIntensity = math.saturate(math.isfinite(intensity01) ? intensity01 : 0f);
+            MixerStateSignal signal = new MixerStateSignal
+            {
+                MixerStateHash = MixerStateSignal.FocusStateHash,
+                SourceHash = _cinematicFocusHash,
+                Intensity01 = safeIntensity,
+                DuckingDb = safeIntensity > 0f ? CinematicFocusAmbientDuckingDb : 0f,
+                Frame = unchecked((uint)Time.frameCount),
+                Flags = _cinematicFocusFlags
+            };
+            GlobalSignals.Publish(in signal);
+            _cinematicFocusAudioDucked = safeIntensity > 0f;
         }
 
         private static Quaternion ResolveVrHorizonLockedTransportBasis(Quaternion platformBasisRotation)
@@ -8580,21 +9055,24 @@ namespace Hecton8.Gameplay
 
         private void TryPlayCrushDepthGroan()
         {
-            if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
-                return;
-
-            if (crushDepthGroanClip == null || _hullStressIntensity < crushDepthGroanThreshold || _hullStressGroanCooldownTimer > 0f)
-                return;
-
-            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
-            if (audioManager == null)
+            if (_hullStressIntensity < crushDepthGroanThreshold || _hullStressGroanCooldownTimer > 0f)
                 return;
 
             float groanT = math.saturate(
                 (_hullStressIntensity - crushDepthGroanThreshold) /
                 math.max(1f - crushDepthGroanThreshold, 0.01f));
-            float volume = math.lerp(0.4f, 0.9f, groanT);
-            audioManager.PlayStatic2D(crushDepthGroanClip, volume, audioManager.InterfaceGroup);
+            CrushWarningSignal signal = new CrushWarningSignal
+            {
+                WarningHash = VocalWarningHashes.CrushDepth,
+                SourceId = 0u,
+                DepthMeters = math.max(0f, _currentDepth),
+                CrushLimitMeters = math.max(crushDepthFullDepth, crushDepthStart),
+                Severity01 = groanT,
+                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                Priority = (byte)VocalWarningId.CrushDepth,
+                Flags = VocalWarningSignalFlags.HabitatIntegrityCompromised
+            };
+            GlobalSignals.Publish(in signal);
             _hullStressGroanCooldownTimer = math.lerp(crushDepthGroanIntervalMax, crushDepthGroanIntervalMin, groanT);
         }
 
@@ -9158,7 +9636,10 @@ namespace Hecton8.Gameplay
                 if (_useFixedFrameSpatialCache)
                     SyncFixedFrameMotorPosition(resolvedPosition);
 
-                if (wasBlocked && blockedSpeed > 0.0001f && !IsVoxelProxyCollision(in resolvedBlockingHit))
+                if (_wipeoutTimer > 0f &&
+                    wasBlocked &&
+                    blockedSpeed > 0.0001f &&
+                    !IsVoxelProxyCollision(in resolvedBlockingHit))
                 {
                     float severity = math.saturate(blockedSpeed / math.max(wipeoutImpactDeltaVelocityMax, 0.01f));
                     if (severity > 0f)
@@ -9173,13 +9654,12 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            if (_wipeoutTimer <= 0f || fixedDeltaTime <= 0f || !math.isfinite(fixedDeltaTime))
+            if (fixedDeltaTime <= 0f || !math.isfinite(fixedDeltaTime))
                 return;
 
             Vector3 velocity = HectonPlayerMotor.SafeVelocity(_rb.linearVelocity);
             float speedSq = velocity.sqrMagnitude;
-            float sweepThresholdSq = wipeoutSweepSpeedThreshold * wipeoutSweepSpeedThreshold;
-            if (speedSq <= sweepThresholdSq)
+            if (!KinematicCcdMath.ShouldSchedule(new float3(velocity.x, velocity.y, velocity.z)))
                 return;
 
             float invSpeed = math.rsqrt(speedSq);
@@ -11613,6 +12093,7 @@ namespace Hecton8.Gameplay
                 maxSpd *= ResolveRuntimeInventoryLoadMovementMultiplier();
                 maxSpd *= ResolveHeavyCarrySpeedMultiplier();
                 maxSpd *= ResolveExternalEnvironmentalSpeedMultiplier();
+                maxSpd *= HectonPlayerMotor.ResolveStorageBackpressureSpeedMultiplier(SystemDispatcher.StreamingStorageDebt01);
                 maxSpd *= _runtimeEmergencyMovementMultiplier;
                 if (exosuitActive)
                     maxSpd *= exosuitWalkSpeedMultiplier;
@@ -11661,6 +12142,7 @@ namespace Hecton8.Gameplay
                 maxSpd *= ResolveHeavyCarrySpeedMultiplier();
                 maxSpd *= ResolveSargassumSpeedMultiplier();
                 maxSpd *= ResolveExternalEnvironmentalSpeedMultiplier();
+                maxSpd *= HectonPlayerMotor.ResolveStorageBackpressureSpeedMultiplier(SystemDispatcher.StreamingStorageDebt01);
                 maxSpd *= _transportCavitationEfficiency;
                 maxSpd *= CurrentAbyssalShearSpeedMultiplier;
                 maxSpd *= ResolveActiveTransportSpeedMultiplier() * ResolveWipeoutTransportControl01();
@@ -11845,6 +12327,13 @@ namespace Hecton8.Gameplay
             if (playerHeight < 0.5f) playerHeight = 0.5f;
             if (baseFov < 30f) baseFov = 30f;
             if (baseFov > 120f) baseFov = 120f;
+            cinematicFocusPullStrength = math.clamp(cinematicFocusPullStrength, 0f, 12f);
+            cinematicFocusInputBreakThreshold = math.clamp(cinematicFocusInputBreakThreshold, 0.1f, 30f);
+            cinematicFocusYieldRecoverySharpness = math.clamp(cinematicFocusYieldRecoverySharpness, 0.25f, 20f);
+            cinematicFocusFov = math.clamp(cinematicFocusFov, 35f, 120f);
+            cinematicFocusFovSharpness = math.clamp(cinematicFocusFovSharpness, 0.5f, 20f);
+            cinematicFocusDefaultDuration = math.clamp(cinematicFocusDefaultDuration, 0.25f, 12f);
+            cinematicFocusSubtitleFadeDistance = math.clamp(cinematicFocusSubtitleFadeDistance, 4f, 120f);
             if (exosuitJumpJetScooterDrainMultiplier < 1f) exosuitJumpJetScooterDrainMultiplier = 1f;
             if (exosuitJumpJetScooterDrainMultiplier > 10f) exosuitJumpJetScooterDrainMultiplier = 10f;
             if (exosuitNegativeBuoyancyScale < 1f) exosuitNegativeBuoyancyScale = 1f;

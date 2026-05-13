@@ -458,6 +458,7 @@ namespace Hecton8.Physics
         [SerializeField] private float _debugFloraDragDensity;
         [SerializeField] private float _debugFloraAddedMassKilograms;
         [SerializeField] private float _debugTotalCargoMassKilograms;
+        [SerializeField] private float _debugBallastWaterMassKilograms;
         [SerializeField] private float _debugDockedExternalMassKilograms;
         [SerializeField] private float _debugDamageControlLeakAddedMassKilograms;
         [SerializeField] private float _debugCargoMassScalar;
@@ -509,6 +510,7 @@ namespace Hecton8.Physics
         private float _exteriorBuoyancyMaxLeverArm = 1f;
         private float _submersionFactor;
         private float _totalCargoMassKilograms;
+        private float _ballastWaterMassKilograms;
         private float _dockedExternalMassKilograms;
         private float _damageControlLeakAddedMassKilograms;
         private float _cargoMassScalar;
@@ -1173,7 +1175,10 @@ namespace Hecton8.Physics
         }
 
         /// <summary>Total cargo mass currently coupled into hull mass and draft.</summary>
-        public float TotalCargoMassKg => _totalCargoMassKilograms;
+        public float TotalCargoMassKg => _totalCargoMassKilograms + _ballastWaterMassKilograms;
+
+        /// <summary>Ballast water mass currently coupled into hull mass and draft.</summary>
+        public float BallastWaterMassKg => _ballastWaterMassKilograms;
 
         /// <summary>Damage-control leak mass currently coupled into hull sinking weight.</summary>
         public float DamageControlLeakAddedMassKg => _damageControlLeakAddedMassKilograms;
@@ -1245,6 +1250,12 @@ namespace Hecton8.Physics
             SetCargoMassScalar(totalCargoMassKg);
         }
 
+        public void SetBallastWaterMassKilograms(float massKg)
+        {
+            _ballastWaterMassKilograms = math.isfinite(massKg) ? math.max(0f, massKg) : 0f;
+            _debugBallastWaterMassKilograms = _ballastWaterMassKilograms;
+        }
+
         public void SetDockedExternalMassKilograms(float massKg)
         {
             _dockedExternalMassKilograms = math.isfinite(massKg) ? math.max(0f, massKg) : 0f;
@@ -1291,12 +1302,12 @@ namespace Hecton8.Physics
 
             VocalWarningSignal warning = new VocalWarningSignal
             {
-                WarningHash = 0x424C5354u,
+                WarningHash = VocalWarningHashes.CrushDepth,
                 SourceId = _rigidbody != null ? unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())) : 0u,
                 Severity01 = 0.85f,
                 CooldownSeconds = 0.6f,
-                Priority = 2,
-                Flags = 0
+                Priority = (byte)VocalWarningId.CrushDepth,
+                Flags = VocalWarningSignalFlags.HabitatIntegrityCompromised
             };
             GlobalSignals.Publish(in warning);
             return true;
@@ -3337,15 +3348,17 @@ namespace Hecton8.Physics
             float damageControlLeakMass = math.max(0f, _damageControlLeakAddedMassKilograms);
             floodMass = math.min(maxFloodMass, floodMass + damageControlLeakMass);
             float cargoMass = math.max(0f, _totalCargoMassKilograms);
+            float ballastWaterMass = math.max(0f, _ballastWaterMassKilograms);
             float dockedExternalMass = math.max(0f, _dockedExternalMassKilograms);
             float maxFloraMass = math.max(0f, floraDragAddedMassAtFullDensityKilograms);
             float maxCargoMass = math.max(0f, maxCargoMassKilograms);
             float targetMass = math.clamp(
-                dryMass + cargoMass + dockedExternalMass + floodMass + _currentFloraAddedMassKilograms,
+                dryMass + cargoMass + ballastWaterMass + dockedExternalMass + floodMass + _currentFloraAddedMassKilograms,
                 dryMass,
-                dryMass + maxCargoMass + dockedExternalMass + maxFloodMass + maxFloraMass);
+                dryMass + maxCargoMass + ballastWaterMass + dockedExternalMass + maxFloodMass + maxFloraMass);
             _debugFloraAddedMassKilograms = _currentFloraAddedMassKilograms;
             _debugTotalCargoMassKilograms = cargoMass;
+            _debugBallastWaterMassKilograms = ballastWaterMass;
             _debugDockedExternalMassKilograms = dockedExternalMass;
             _debugDamageControlLeakAddedMassKilograms = damageControlLeakMass;
             _debugCargoMassScalar = _cargoMassScalar;
@@ -4579,7 +4592,7 @@ namespace Hecton8.Physics
         private float ResolveCargoDraftOffsetMeters()
         {
             float perThousandKg = math.max(0f, cargoDraftMetersPer1000Kg);
-            float massThousands = math.max(0f, _totalCargoMassKilograms) * 0.001f;
+            float massThousands = math.max(0f, _totalCargoMassKilograms + _ballastWaterMassKilograms) * 0.001f;
             float draft = massThousands * perThousandKg;
             float clampedDraft = math.clamp(draft, 0f, math.max(0f, maxCargoDraftOffsetMeters));
             _debugCargoDraftOffsetMeters = math.isfinite(clampedDraft) ? clampedDraft : 0f;
@@ -4759,6 +4772,7 @@ namespace Hecton8.Physics
             _debugFloraDragDensity = _currentFloraDragDensity01;
             _debugFloraAddedMassKilograms = _currentFloraAddedMassKilograms;
             _debugTotalCargoMassKilograms = _totalCargoMassKilograms;
+            _debugBallastWaterMassKilograms = _ballastWaterMassKilograms;
             _debugDockedExternalMassKilograms = _dockedExternalMassKilograms;
             _debugDamageControlLeakAddedMassKilograms = _damageControlLeakAddedMassKilograms;
             _debugCargoMassScalar = _cargoMassScalar;
@@ -5080,7 +5094,7 @@ namespace Hecton8.Physics
                 Velocity = ToFloat3(velocity),
                 AngularVelocity = ToFloat3(angularVelocity),
                 MassKilograms = mass,
-                CargoMassKilograms = _totalCargoMassKilograms,
+                CargoMassKilograms = _totalCargoMassKilograms + _ballastWaterMassKilograms,
                 CargoMassScalar = _cargoMassScalar,
                 SubmersionFactor = _submersionFactor,
                 DepthMeters = math.isfinite(depthMeters) ? math.max(0f, depthMeters) : 0f,

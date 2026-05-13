@@ -5,20 +5,20 @@
 // ============================================================================
 
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Optimization;
+using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -31,24 +31,24 @@ namespace Hecton8.VFX
     /// Integrates with HectonSurvivalSystem, PlayerMovement, InteractionEvents, GameTickManager, SaveManager.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CameraJuiceSystem : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener
+    public sealed class CameraJuiceSystem : MonoBehaviour, ICameraJuiceSystem, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener, IPhysicsImpactEventListener, ICombatDamageEventListener
     {
         // ═══ CACHED REFERENCES ═══
-        [StructLayout(LayoutKind.Sequential)]
-        private struct ShakeJobInput
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        private struct CameraJuiceTelemetryEntry
         {
-            public float NoiseTime;
-            public float NoiseSeed;
-            public float MaxDisplacement;
-            public float Falloff;
-            public float IntensityScale;
-            public float3 AxisWeights;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct ShakeJobResult
-        {
+            public int Frame;
+            public uint Flags;
+            public float Trauma;
+            public float FovKick;
             public float3 Offset;
+            public float3 RotationDegrees;
+            public float RollDegrees;
+            public float DirectionalBiasTimer;
+            public float AdaptiveShakeScale;
+            public float Reserved0;
+            public float Reserved1;
+            public float Reserved2;
         }
 
         private Camera _mainCamera;
@@ -56,6 +56,14 @@ namespace Hecton8.VFX
         private Transform _cameraTransform;
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private Rigidbody _playerRigidbody;
+        private ISubmarineRuntimeContext _submarineRuntimeContext;
+        private Rigidbody _submarineHullRigidbody;
+        private SubmarineStructuralGrid _submarineStructuralGrid;
+        private DynamicResolutionScaler _dynamicResolutionScaler;
+        private VRAMMonitor _vramMonitor;
+        private ITickDispatcher _dispatcher;
         private Vector3 _cameraLocalRestPosition;
         private ParticleSystem _speedLineParticles;
         private ParticleSystemRenderer _speedLineRenderer;
@@ -99,31 +107,60 @@ namespace Hecton8.VFX
 
         // ═══ SHAKE STATE ═══
         private Vector3 _shakeOffset;
-        // COLD ALLOC: List<ActiveShake>[8] — max simultaneous shakes — owner: CameraJuiceSystem
-        private readonly List<ActiveShake> _activeShakes = new List<ActiveShake>(8);
         private const int MAX_ACTIVE_SHAKES = 8;
         private const float MAX_SHAKE_DISPLACEMENT = 0.5f;
         private const float DEFAULT_SHAKE_CLIP_SAFE_DISPLACEMENT = 0.05f;
-        private const float LOW_FREQUENCY_HEAVE_NOISE_SCALE = 0.28f;
-        private const float LOW_FREQUENCY_HEAVE_DISPLACEMENT_SCALE = 0.35f;
-        private const float SUBMARINE_IMPACT_SHAKE_DURATION_SECONDS = 0.5f;
-        private const float SUBMARINE_IMPACT_SHAKE_RECOVERY_SHARPNESS = 24f;
-        private const float SUBMARINE_IMPACT_SHAKE_MAX_DISPLACEMENT = 0.085f;
-        private const float SUBMARINE_IMPACT_SHAKE_KICK_DISPLACEMENT = 0.09f;
-        private const float SUBMARINE_IMPACT_SHAKE_EPSILON_SQ = 0.0000001f;
-        private const float SUBMARINE_IMPACT_SHAKE_NOISE_FREQUENCY = 64f;
+        private const float PROCEDURAL_TRAUMA_DECAY_RATE = 1.65f;
+        private const float PROCEDURAL_SHAKE_FREQUENCY = 18f;
+        private const float PROCEDURAL_LOW_TIER_SAMPLE_INTERVAL = 0.033333334f;
+        private const float PROCEDURAL_TRANSLATION_AMPLITUDE_METERS = 0.07f;
+        private const float PROCEDURAL_ROTATION_AMPLITUDE_DEGREES = 2.4f;
+        private const float PROCEDURAL_ROLL_AMPLITUDE_DEGREES = 5.5f;
+        private const float PROCEDURAL_DIRECTIONAL_BIAS_SECONDS = 0.06f;
+        private const float PROCEDURAL_ROLL_SPRING = 44f;
+        private const float PROCEDURAL_ROLL_DAMPING = 10f;
+        private const float PROCEDURAL_HIT_STOP_THRESHOLD = 0.8f;
+        private const int PROCEDURAL_MAX_IMPACTS_PER_FRAME = 32;
+        private const int CAMERA_JUICE_TELEMETRY_CAPACITY = 300;
+        private const uint CAMERA_JUICE_HIT_STOP_REASON_HASH = 0xC45A1CEu;
+        private const float PROCEDURAL_NOISE_SEED_X = 11.137f;
+        private const float PROCEDURAL_NOISE_SEED_Y = 23.719f;
+        private const float PROCEDURAL_NOISE_SEED_Z = 37.031f;
+        private const float PROCEDURAL_NOISE_SEED_PITCH = 43.661f;
+        private const float PROCEDURAL_NOISE_SEED_YAW = 59.173f;
+        private const float PROCEDURAL_NOISE_SEED_ROLL = 71.411f;
+        private const float SEISMIC_CAMERA_DECAY_RATE = 3.4f;
+        private const float SEISMIC_CAMERA_FREQUENCY = 21f;
+        private const float SEISMIC_TRANSLATION_AMPLITUDE_METERS = 0.035f;
+        private const float SEISMIC_ROTATION_AMPLITUDE_DEGREES = 0.85f;
         private float _shakeNoiseTime;
-        private float _submarineImpactShakeTimer;
-        private float _submarineImpactShakeSeverity;
+        private float _trauma;
+        private float _proceduralShakeTime;
+        private float _proceduralLowTierSampleTimer;
+        private float3 _proceduralLowTierTranslationFrom;
+        private float3 _proceduralLowTierTranslationTo;
+        private float3 _proceduralLowTierRotationFrom;
+        private float3 _proceduralLowTierRotationTo;
+        private bool _proceduralLowTierNoisePrimed;
+        private float3 _proceduralShakeTranslation;
+        private float3 _proceduralShakeRotationDegrees;
+        private float3 _directionalBiasLocal;
+        private float _directionalBiasTimer;
+        private float _proceduralRollDegrees;
+        private float _proceduralRollVelocity;
+        private bool _shakeRotationApplied;
+        private Quaternion _lastShakeLocalRotation = Quaternion.identity;
+        private Quaternion _lastShakeCompositeLocalRotation = Quaternion.identity;
+        private NativeArray<CameraJuiceTelemetryEntry> _cameraJuiceTelemetry;
+        private int _cameraJuiceTelemetryCursor;
+        private bool _cameraJuiceTelemetryDumped;
         private float _submarineImpactShakeSign = 1f;
-        private Vector3 _submarineImpactShakeOffset;
-        private Vector3 _submarineImpactShakeKickOffset;
-        private bool _submarineImpactShakeKickPending;
-        private NativeArray<ShakeJobInput> _shakeJobInputs;
-        private NativeArray<ShakeJobResult> _shakeJobResults;
-        private JobHandle _shakeJobHandle;
-        private bool _shakeJobScheduled;
-        private bool _shakeJobApplyResult;
+        private int _lastSeismicSignalSequence;
+        private float _seismicJitterIntensity;
+        private float _seismicJitterTime;
+        private float3 _seismicDirectionLocal;
+        private float3 _seismicShakeOffset;
+        private float3 _seismicShakeRotationDegrees;
 
         // ═══ FOV STATE ═══
         public enum FOVState { Idle, SprintKick, DamageRecoil }
@@ -333,6 +370,7 @@ namespace Hecton8.VFX
         private float _adaptiveFOVScale = 1f;
         private float _adaptivePostFxScale = 1f;
         private float _adaptiveRenderScale = 1f;
+        private byte _cachedScalabilityTier;
         private int _adaptiveMaxActiveShakes = MAX_ACTIVE_SHAKES;
         private VRAMMonitor.VRAMPressureState _adaptiveVRAMPressureState = VRAMMonitor.VRAMPressureState.Stable;
         private bool _adaptiveDisableInteractionDoF;
@@ -359,7 +397,7 @@ namespace Hecton8.VFX
 
         private void Awake()
         {
-            CameraJuiceSystem registeredRuntime = GlobalRegistry.CameraJuice;
+            ICameraJuiceSystem registeredRuntime = GlobalRegistry.CameraJuice;
             if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
             {
                 LogDuplicateInstanceDetected();
@@ -400,7 +438,7 @@ namespace Hecton8.VFX
 
             TryResolveGameplayDependencies();
             SyncDependencyFlags();
-            AllocateShakeJobBuffersCold();
+            EnsureCameraJuiceTelemetry();
             EnsureCameraSpeedLineParticles();
 
             // Performance mode degradation
@@ -414,6 +452,8 @@ namespace Hecton8.VFX
         private void OnEnable()
         {
             TryRegisterToGlobalRegistry();
+            if (Application.isPlaying)
+                CameraJuiceSignals.EnsurePrewarmed();
 
             if (!_registered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
@@ -425,10 +465,11 @@ namespace Hecton8.VFX
 
             TryResolveGameplayDependencies();
             SyncDependencySubscriptions();
-            AllocateShakeJobBuffersCold();
             EnsureCameraSpeedLineParticles();
 
             InteractionEvents.Register(this);
+            PhysicsEvents.Register(this);
+            CombatDamageRuntime.Register(this);
         }
 
         private void OnDisable()
@@ -440,6 +481,8 @@ namespace Hecton8.VFX
             UnhookDependencyEvents();
 
             InteractionEvents.Unregister(this);
+            PhysicsEvents.Unregister(this);
+            CombatDamageRuntime.Unregister(this);
 
             _fovBlendActive = false;
             _inputReclaimFovActive = false;
@@ -451,13 +494,27 @@ namespace Hecton8.VFX
             _pauseDofOverrideEngaged = false;
             _pauseDofDefaultsCaptured = false;
             _shakeOffset = Vector3.zero;
-            _shakeJobApplyResult = false;
-            ClearSubmarineImpactShakeState();
-            ReleaseShakeJobBuffers();
+            _trauma = 0f;
+            _proceduralShakeTranslation = float3.zero;
+            _proceduralShakeRotationDegrees = float3.zero;
+            _directionalBiasLocal = float3.zero;
+            _directionalBiasTimer = 0f;
+            _proceduralRollDegrees = 0f;
+            _proceduralRollVelocity = 0f;
+            _playerRuntimeContext = null;
+            _playerRigidbody = null;
+            _submarineRuntimeContext = null;
+            _submarineHullRigidbody = null;
+            _submarineStructuralGrid = null;
+            _dynamicResolutionScaler = null;
+            _vramMonitor = null;
+            _dispatcher = null;
+            _cachedScalabilityTier = 0;
             StopCameraSpeedLineParticles();
 
             if (_cameraTransform != null)
             {
+                RemoveLastShakeRotation();
                 _cameraTransform.localPosition = _cameraLocalRestPosition;
             }
 
@@ -466,6 +523,8 @@ namespace Hecton8.VFX
                 _mainCamera.fieldOfView = _baseFOV;
                 _mainCamera.ResetProjectionMatrix();
             }
+
+            ReleaseCameraJuiceTelemetry();
         }
 
         private void TryUnregister()
@@ -485,7 +544,7 @@ namespace Hecton8.VFX
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            CameraJuiceSystem registeredRuntime = GlobalRegistry.CameraJuice;
+            ICameraJuiceSystem registeredRuntime = GlobalRegistry.CameraJuice;
             if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
             {
                 LogDuplicateInstanceDetected();
@@ -528,8 +587,11 @@ namespace Hecton8.VFX
         {
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
+            InteractionEvents.Unregister(this);
+            PhysicsEvents.Unregister(this);
+            CombatDamageRuntime.Unregister(this);
 
-            ReleaseShakeJobBuffers();
+            ReleaseCameraJuiceTelemetry();
 
         }
 
@@ -599,8 +661,9 @@ namespace Hecton8.VFX
 
         public void LateFrameTick()
         {
-            ResolveScheduledShakeJob(false);
             ApplyPostAupShakeOffset();
+            RecordCameraJuiceTelemetry();
+            DecayProceduralTrauma(SystemDispatcher.CurrentFrameDeltaTime);
         }
 
         // ═══ ISLOWTICKABLE ═══
@@ -610,7 +673,7 @@ namespace Hecton8.VFX
         /// </summary>
         public void SlowTick()
         {
-            if ((_survivalSystem == null || _playerMovement == null) && Time.time >= _nextDependencyResolveTime)
+            if (Time.time >= _nextDependencyResolveTime)
             {
                 _nextDependencyResolveTime = Time.time + 2f;
                 TryResolveGameplayDependencies();
@@ -819,7 +882,7 @@ namespace Hecton8.VFX
         /// </summary>
         public void BeginInputReclaimFov(float startFov, float durationSeconds)
         {
-            if (!_fovEnabled || _mainCamera == null)
+            if (!_fovEnabled || _mainCamera == null || HectonXRRuntimeState.IsXRActive)
                 return;
 
             _inputReclaimFovStart = math.clamp(startFov, MIN_FOV, MAX_FOV);
@@ -845,7 +908,6 @@ namespace Hecton8.VFX
 
             if (!_shakeEnabled) return;
 
-            // Validate profile parameters
             float maxDisplacement = profile.MaxDisplacement;
             if (maxDisplacement < 0f || maxDisplacement > 1f)
             {
@@ -857,25 +919,10 @@ namespace Hecton8.VFX
             if (duration <= 0f)
             {
                 LogShakeDurationDefaulted(duration);
-                duration = 0.5f;
             }
 
-            // Check capacity
-            if (_activeShakes.Count >= MAX_ACTIVE_SHAKES)
-            {
-                _activeShakes.RemoveAt(0);
-            }
-
-            // Create new shake
-            ActiveShake shake = new ActiveShake
-            {
-                Profile = profile,
-                Elapsed = 0f,
-                IntensityScale = intensityScale,
-                Offset = Vector3.zero
-            };
-
-            _activeShakes.Add(shake);
+            float severity = math.saturate((maxDisplacement * 2.5f) * math.max(0f, intensityScale));
+            AddProceduralTrauma(severity, float3.zero);
         }
 
         /// <summary>
@@ -891,13 +938,9 @@ namespace Hecton8.VFX
                 return;
 
             _submarineImpactShakeSign = _submarineImpactShakeSign >= 0f ? -1f : 1f;
-            _submarineImpactShakeSeverity = math.max(_submarineImpactShakeSeverity * 0.65f, safeSeverity);
-            _submarineImpactShakeTimer = SUBMARINE_IMPACT_SHAKE_DURATION_SECONDS;
-            _submarineImpactShakeKickOffset = new Vector3(
-                _submarineImpactShakeSign * SUBMARINE_IMPACT_SHAKE_KICK_DISPLACEMENT * safeSeverity,
-                -SUBMARINE_IMPACT_SHAKE_KICK_DISPLACEMENT * 0.55f * safeSeverity,
-                -SUBMARINE_IMPACT_SHAKE_KICK_DISPLACEMENT * 0.25f * safeSeverity);
-            _submarineImpactShakeKickPending = true;
+            AddProceduralTrauma(
+                safeSeverity,
+                new float3(_submarineImpactShakeSign, -0.55f, -0.25f));
         }
 
         /// <summary>
@@ -907,7 +950,8 @@ namespace Hecton8.VFX
         /// <param name="duration">Transition duration in seconds</param>
         public void TriggerFOVKick(float amount, float duration)
         {
-            if (!_fovEnabled) return;
+            if (!_fovEnabled || HectonXRRuntimeState.IsXRActive)
+                return;
 
             _fovBlendStart = _currentFOVOffset;
             _fovBlendTarget = amount;
@@ -986,15 +1030,16 @@ namespace Hecton8.VFX
 
         // ═══ READ-ONLY PROPERTIES ═══
 
-        public int ActiveShakeCount => _activeShakes.Count;
+        public int ActiveShakeCount =>
+            _trauma > 0.001f || _directionalBiasTimer > 0f || math.abs(_proceduralRollDegrees) > 0.001f ? 1 : 0;
         public float CurrentFOVOffset => _currentFOVOffset;
         public FOVState CurrentFOVState => _fovState;
         public bool IsPostProcessingEnabled => _postProcessingEnabled;
-        internal float DebugAdaptiveShakeScale => _adaptiveShakeScale;
-        internal float DebugAdaptiveFOVScale => _adaptiveFOVScale;
-        internal float DebugAdaptivePostFxScale => _adaptivePostFxScale;
-        internal int DebugAdaptiveMaxActiveShakes => _adaptiveMaxActiveShakes;
-        internal bool DebugAdaptiveDisableInteractionDoF => _adaptiveDisableInteractionDoF;
+        public float DebugAdaptiveShakeScale => _adaptiveShakeScale;
+        public float DebugAdaptiveFOVScale => _adaptiveFOVScale;
+        public float DebugAdaptivePostFxScale => _adaptivePostFxScale;
+        public int DebugAdaptiveMaxActiveShakes => _adaptiveMaxActiveShakes;
+        public bool DebugAdaptiveDisableInteractionDoF => _adaptiveDisableInteractionDoF;
 
         // ═══ PRIVATE METHODS ═══
 
@@ -1012,14 +1057,7 @@ namespace Hecton8.VFX
 
         private void HandleIntegrityChanged(float integrity)
         {
-            // Calculate damage amount (assuming integrity is 0-1 normalized)
-            // Trigger FOV recoil proportional to damage
-            float damageAmount = math.max(0f, 1f - integrity);
-            if (damageAmount > 0.1f)
-            {
-                float fovReduction = -5f * damageAmount;
-                TriggerFOVKick(fovReduction, 0.2f);
-            }
+            // Integrity deltas now enter camera trauma through CombatDamageRuntime, not this legacy scalar callback.
         }
 
         private void HandleOxygenCritical(float o2Normalized)
@@ -1047,258 +1085,439 @@ namespace Hecton8.VFX
             HandleHoverChanged(target);
         }
 
+        void IPhysicsImpactEventListener.OnPhysicsImpact(in PhysicsImpactSignal impactSignal)
+        {
+            if (!_shakeEnabled)
+                return;
+
+            float severity = ResolvePhysicsImpactSeverity(in impactSignal);
+            if (severity <= 0f)
+                return;
+
+            AddProceduralTrauma(severity, ResolvePhysicsImpactDirection(in impactSignal));
+        }
+
+        void ICombatDamageEventListener.OnCombatDamageResolved(in CombatDamageResult result)
+        {
+            if (!_shakeEnabled)
+                return;
+
+            float severity = ResolveCombatDamageSeverity(in result);
+            if (severity <= 0f)
+                return;
+
+            AddProceduralTrauma(severity, result.Direction);
+        }
+
         private void UpdateShake(float dt)
         {
-            if (!_shakeEnabled) return;
+            if (!_shakeEnabled)
+                return;
 
             float effectiveShakeScale = _shakeIntensityMultiplier * _adaptiveShakeScale;
             if (effectiveShakeScale <= 0f)
             {
                 _shakeOffset = Vector3.zero;
-                _shakeJobApplyResult = false;
-                ClearSubmarineImpactShakeState();
+                _proceduralShakeTranslation = float3.zero;
+                _proceduralShakeRotationDegrees = float3.zero;
+                _seismicJitterIntensity = 0f;
+                _seismicShakeOffset = float3.zero;
+                _seismicShakeRotationDegrees = float3.zero;
                 return;
             }
 
-            UpdateSubmarineImpactShake(dt, effectiveShakeScale);
+            DrainCameraImpactSignals();
+            UpdateProceduralTraumaShake(dt, effectiveShakeScale);
+            UpdateSeismicCameraJitter(dt, effectiveShakeScale);
             _shakeNoiseTime += math.max(0f, dt);
-
-            int count = _activeShakes.Count;
-            if (count <= 0)
-            {
-                _shakeOffset = _submarineImpactShakeOffset;
-                _shakeJobApplyResult = false;
-                return;
-            }
-
-            if (_shakeJobScheduled || !HasShakeJobBuffers())
-                return;
-
-            int liveCount = 0;
-            for (int i = count - 1; i >= 0; i--)
-            {
-                ActiveShake shake = _activeShakes[i];
-                if (shake.Profile == null)
-                {
-                    _activeShakes.RemoveAt(i);
-                    continue;
-                }
-
-                shake.Elapsed += dt;
-
-                if (shake.Elapsed >= shake.Profile.Duration)
-                {
-                    _activeShakes.RemoveAt(i);
-                    continue;
-                }
-
-                float t = shake.Elapsed / shake.Profile.Duration;
-                _shakeJobInputs[liveCount++] = new ShakeJobInput
-                {
-                    NoiseTime = _shakeNoiseTime * shake.Profile.Frequency,
-                    NoiseSeed = i * 17.31f + 3.17f,
-                    MaxDisplacement = shake.Profile.MaxDisplacement,
-                    Falloff = shake.Profile.FalloffCurve.Evaluate(t),
-                    IntensityScale = shake.IntensityScale,
-                    AxisWeights = new float3(
-                        shake.Profile.AxisWeights.x,
-                        shake.Profile.AxisWeights.y,
-                        shake.Profile.AxisWeights.z)
-                };
-
-                _activeShakes[i] = shake;
-            }
-
-            if (liveCount <= 0)
-            {
-                _shakeOffset = _submarineImpactShakeOffset;
-                _shakeJobApplyResult = false;
-                return;
-            }
-
-            ScheduleShakeJob(
-                liveCount,
-                effectiveShakeScale,
-                math.min(MAX_SHAKE_DISPLACEMENT, math.max(0.005f, _cameraShakeClipSafeDisplacement)));
         }
 
-        private bool HasShakeJobBuffers()
+        private void DrainCameraImpactSignals()
         {
-            return _shakeJobInputs.IsCreated && _shakeJobResults.IsCreated;
-        }
-
-        private void AllocateShakeJobBuffersCold()
-        {
-            if (!_shakeJobInputs.IsCreated)
+            int processed = 0;
+            while (processed < PROCEDURAL_MAX_IMPACTS_PER_FRAME &&
+                   CameraJuiceSignals.TryDequeueImpact(out CameraJuiceImpactSignal signal))
             {
-                _shakeJobInputs = new NativeArray<ShakeJobInput>(
-                    MAX_ACTIVE_SHAKES,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<ShakeJobInput>[8] — Burst camera shake inputs — owner: CameraJuiceSystem
-                NativeMemorySentinel.RegisterNativeArray(
-                    _shakeJobInputs,
-                    nameof(CameraJuiceSystem),
-                    nameof(_shakeJobInputs),
-                    NativeAllocationLifetime.Scene);
+                float severity = math.saturate(math.max(signal.Severity, signal.Impact.Intensity));
+                AddProceduralTrauma(severity, signal.Direction);
+                processed++;
             }
-
-            if (!_shakeJobResults.IsCreated)
-            {
-                _shakeJobResults = new NativeArray<ShakeJobResult>(
-                    1,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ShakeJobResult>[1] — Burst camera shake aggregate output — owner: CameraJuiceSystem
-                NativeMemorySentinel.RegisterNativeArray(
-                    _shakeJobResults,
-                    nameof(CameraJuiceSystem),
-                    nameof(_shakeJobResults),
-                    NativeAllocationLifetime.Scene);
-            }
-
         }
 
-        private void ScheduleShakeJob(int count, float effectiveShakeScale, float maxShakeDisplacement)
+        private void AddProceduralTrauma(float severity01, float3 worldDirection)
         {
-            _shakeJobResults[0] = default;
-            _shakeJobHandle = new ShakeAccumulationJob
-            {
-                Inputs = _shakeJobInputs,
-                Results = _shakeJobResults,
-                Count = count,
-                EffectiveShakeScale = effectiveShakeScale,
-                MaxShakeDisplacement = maxShakeDisplacement
-            }.Schedule();
-            _shakeJobScheduled = true;
-            _shakeJobApplyResult = true;
-            JobHandle.ScheduleBatchedJobs();
-        }
-
-        private void ResolveScheduledShakeJob(bool forceComplete)
-        {
-            if (!_shakeJobScheduled)
+            float severity = math.saturate(severity01);
+            if (severity <= 0f || !math.isfinite(severity))
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _shakeJobHandle, forceComplete))
-                return;
+            _trauma = math.saturate(_trauma + ResolveTraumaAddition(severity));
 
-            _shakeJobScheduled = false;
-            if (!_shakeJobApplyResult || !_shakeJobResults.IsCreated)
+            float3 localDirection = ResolveLocalShakeDirection(worldDirection);
+            if (math.lengthsq(localDirection) > 0.000001f)
             {
-                _shakeJobApplyResult = false;
-                return;
+                _directionalBiasLocal = localDirection * severity;
+                _directionalBiasTimer = PROCEDURAL_DIRECTIONAL_BIAS_SECONDS;
+                _proceduralRollVelocity += -localDirection.x * severity * PROCEDURAL_ROLL_AMPLITUDE_DEGREES;
             }
 
-            ShakeJobResult result = _shakeJobResults[0];
-            _shakeOffset = new Vector3(result.Offset.x, result.Offset.y, result.Offset.z) + _submarineImpactShakeOffset;
-            _shakeJobApplyResult = false;
+            if (severity > PROCEDURAL_HIT_STOP_THRESHOLD)
+                RequestProceduralHitStop();
         }
 
-        private void UpdateSubmarineImpactShake(float dt, float effectiveShakeScale)
+        private void UpdateProceduralTraumaShake(float dt, float effectiveShakeScale)
         {
             float safeDt = math.max(0f, dt);
-            Vector3 targetOffset = Vector3.zero;
+            _proceduralShakeTime += safeDt * PROCEDURAL_SHAKE_FREQUENCY;
 
-            if (_submarineImpactShakeTimer > 0f)
+            float trauma = math.saturate(_trauma);
+            float intensity = trauma * trauma * math.max(0f, effectiveShakeScale);
+            bool xrActive = HectonXRRuntimeState.IsXRActive;
+            if (xrActive)
             {
-                float elapsed = SUBMARINE_IMPACT_SHAKE_DURATION_SECONDS - _submarineImpactShakeTimer;
-                float normalizedTime = math.saturate(elapsed / SUBMARINE_IMPACT_SHAKE_DURATION_SECONDS);
-                float falloff = 1f - normalizedTime;
-                falloff *= falloff;
-
-                float3 sample = ResolveSubmarineImpactNoise(elapsed * SUBMARINE_IMPACT_SHAKE_NOISE_FREQUENCY, _submarineImpactShakeSeverity);
-                sample.x *= _submarineImpactShakeSign;
-                sample.z *= -_submarineImpactShakeSign;
-                float amplitude = SUBMARINE_IMPACT_SHAKE_MAX_DISPLACEMENT *
-                    _submarineImpactShakeSeverity *
-                    math.max(0f, effectiveShakeScale) *
-                    falloff;
-                targetOffset = new Vector3(sample.x, sample.y, sample.z) * amplitude;
-                _submarineImpactShakeTimer = math.max(0f, _submarineImpactShakeTimer - safeDt);
-            }
-
-            if (_submarineImpactShakeKickPending)
-            {
-                _submarineImpactShakeOffset = targetOffset +
-                    (_submarineImpactShakeKickOffset * math.max(0f, effectiveShakeScale));
-                _submarineImpactShakeKickPending = false;
+                _directionalBiasTimer = 0f;
+                _proceduralRollDegrees = 0f;
+                _proceduralRollVelocity = 0f;
+                _proceduralShakeTranslation = float3.zero;
+                _proceduralShakeRotationDegrees = float3.zero;
+                _shakeOffset = Vector3.zero;
                 return;
             }
 
-            float blend = ResolvePadeApproach01(SUBMARINE_IMPACT_SHAKE_RECOVERY_SHARPNESS, safeDt);
-            float3 currentOffset = new float3(
-                _submarineImpactShakeOffset.x,
-                _submarineImpactShakeOffset.y,
-                _submarineImpactShakeOffset.z);
-            float3 targetOffset3 = new float3(targetOffset.x, targetOffset.y, targetOffset.z);
-            float3 blendedOffset = math.lerp(currentOffset, targetOffset3, blend);
-            _submarineImpactShakeOffset = new Vector3(blendedOffset.x, blendedOffset.y, blendedOffset.z);
-            if (_submarineImpactShakeTimer <= 0f &&
-                targetOffset.sqrMagnitude <= SUBMARINE_IMPACT_SHAKE_EPSILON_SQ &&
-                _submarineImpactShakeOffset.sqrMagnitude <= SUBMARINE_IMPACT_SHAKE_EPSILON_SQ)
+            float3 noiseTranslation;
+            float3 noiseRotation;
+            ResolveProceduralNoise(safeDt, out noiseTranslation, out noiseRotation);
+
+            float translationAmplitude = intensity * PROCEDURAL_TRANSLATION_AMPLITUDE_METERS;
+            float rotationAmplitude = intensity * PROCEDURAL_ROTATION_AMPLITUDE_DEGREES;
+
+            float3 translation = noiseTranslation * translationAmplitude;
+            float3 rotation = noiseRotation * rotationAmplitude;
+
+            float biasT = 0f;
+            if (_directionalBiasTimer > 0f)
             {
-                ClearSubmarineImpactShakeState();
+                biasT = math.saturate(_directionalBiasTimer / PROCEDURAL_DIRECTIONAL_BIAS_SECONDS);
+                _directionalBiasTimer = math.max(0f, _directionalBiasTimer - safeDt);
+            }
+
+            if (biasT > 0f)
+                translation += _directionalBiasLocal * (PROCEDURAL_TRANSLATION_AMPLITUDE_METERS * biasT);
+
+            float targetRoll = biasT > 0f
+                ? -_directionalBiasLocal.x * PROCEDURAL_ROLL_AMPLITUDE_DEGREES * intensity
+                : 0f;
+            float rollAcceleration = ((targetRoll - _proceduralRollDegrees) * PROCEDURAL_ROLL_SPRING) -
+                                     (_proceduralRollVelocity * PROCEDURAL_ROLL_DAMPING);
+            _proceduralRollVelocity += rollAcceleration * safeDt;
+            _proceduralRollDegrees += _proceduralRollVelocity * safeDt;
+            rotation.z += _proceduralRollDegrees;
+
+            bool invalidShakeMath = false;
+            if (!math.all(math.isfinite(translation)))
+            {
+                invalidShakeMath = true;
+                translation = float3.zero;
+            }
+            if (!math.all(math.isfinite(rotation)))
+            {
+                invalidShakeMath = true;
+                rotation = float3.zero;
+            }
+            if (!math.isfinite(_proceduralRollDegrees) || !math.isfinite(_proceduralRollVelocity))
+            {
+                invalidShakeMath = true;
+                _proceduralRollDegrees = 0f;
+                _proceduralRollVelocity = 0f;
+            }
+            if (invalidShakeMath)
+                DumpCameraJuiceTelemetry();
+
+            _proceduralShakeTranslation = translation;
+            _proceduralShakeRotationDegrees = rotation;
+            _shakeOffset = new Vector3(translation.x, translation.y, translation.z);
+        }
+
+        private void DecayProceduralTrauma(float dt)
+        {
+            float safeDt = math.max(0f, dt);
+            _trauma = math.max(0f, _trauma - (PROCEDURAL_TRAUMA_DECAY_RATE * safeDt));
+
+            if (_trauma <= 0.0001f &&
+                _directionalBiasTimer <= 0f &&
+                math.abs(_proceduralRollDegrees) <= 0.001f &&
+                math.abs(_proceduralRollVelocity) <= 0.001f)
+            {
+                _trauma = 0f;
+                _proceduralShakeTranslation = float3.zero;
+                _proceduralShakeRotationDegrees = float3.zero;
+                _shakeOffset = Vector3.zero;
             }
         }
 
-        private void ClearSubmarineImpactShakeState()
+        private void ResolveProceduralNoise(float dt, out float3 translation, out float3 rotation)
         {
-            _submarineImpactShakeTimer = 0f;
-            _submarineImpactShakeSeverity = 0f;
-            _submarineImpactShakeOffset = Vector3.zero;
-            _submarineImpactShakeKickOffset = Vector3.zero;
-            _submarineImpactShakeKickPending = false;
-        }
+            bool lowTier =
+                QualitySettings.GetQualityLevel() == 0 ||
+                _cachedScalabilityTier <= (byte)HectonQualityTier.Mx350;
 
-        private static float3 ResolveSubmarineImpactNoise(float noiseTime, float severitySeed)
-        {
-            float seed = severitySeed * 37.13f;
-            float frame = math.floor(noiseTime);
-            float blend = EvaluateSmoothStep01(math.frac(noiseTime));
-            float3 sampleA = ResolveSubmarineImpactHash(frame, seed);
-            float3 sampleB = ResolveSubmarineImpactHash(frame + 1f, seed);
-            return math.lerp(sampleA, sampleB, blend);
-        }
-
-        private static float3 ResolveSubmarineImpactHash(float frame, float seed)
-        {
-            return new float3(
-                HashSignedUnit(frame + seed, seed + 11.17f),
-                HashSignedUnit(seed + 23.71f, frame + seed * 1.19f),
-                HashSignedUnit(frame * 1.41f + seed, seed + 37.03f));
-        }
-
-        private static float HashSignedUnit(float x, float y)
-        {
-            return (math.frac(52.9829189f * math.frac(math.dot(new float2(x, y), new float2(0.06711056f, 0.00583715f)))) * 2f) - 1f;
-        }
-
-        private void ReleaseShakeJobBuffers()
-        {
-            if (_shakeJobInputs.IsCreated)
+            if (!lowTier)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_shakeJobInputs);
-                if (_shakeJobScheduled)
-                    _shakeJobInputs.Dispose(_shakeJobHandle);
-                else
-                    _shakeJobInputs.Dispose();
-
-                _shakeJobInputs = default;
+                EvaluateProceduralNoise(_proceduralShakeTime, out translation, out rotation);
+                return;
             }
 
-            if (_shakeJobResults.IsCreated)
+            if (!_proceduralLowTierNoisePrimed)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_shakeJobResults);
-                if (_shakeJobScheduled)
-                    _shakeJobResults.Dispose(_shakeJobHandle);
-                else
-                    _shakeJobResults.Dispose();
-
-                _shakeJobResults = default;
+                EvaluateProceduralNoise(_proceduralShakeTime, out _proceduralLowTierTranslationTo, out _proceduralLowTierRotationTo);
+                _proceduralLowTierTranslationFrom = _proceduralLowTierTranslationTo;
+                _proceduralLowTierRotationFrom = _proceduralLowTierRotationTo;
+                _proceduralLowTierSampleTimer = 0f;
+                _proceduralLowTierNoisePrimed = true;
             }
 
-            _shakeJobScheduled = false;
-            _shakeJobApplyResult = false;
-            _shakeJobHandle = default;
+            _proceduralLowTierSampleTimer += math.max(0f, dt);
+            if (_proceduralLowTierSampleTimer >= PROCEDURAL_LOW_TIER_SAMPLE_INTERVAL)
+            {
+                _proceduralLowTierSampleTimer -= PROCEDURAL_LOW_TIER_SAMPLE_INTERVAL;
+                _proceduralLowTierTranslationFrom = _proceduralLowTierTranslationTo;
+                _proceduralLowTierRotationFrom = _proceduralLowTierRotationTo;
+                EvaluateProceduralNoise(_proceduralShakeTime, out _proceduralLowTierTranslationTo, out _proceduralLowTierRotationTo);
+            }
+
+            float t = EvaluateSmoothStep01(_proceduralLowTierSampleTimer / PROCEDURAL_LOW_TIER_SAMPLE_INTERVAL);
+            translation = math.lerp(_proceduralLowTierTranslationFrom, _proceduralLowTierTranslationTo, t);
+            rotation = math.lerp(_proceduralLowTierRotationFrom, _proceduralLowTierRotationTo, t);
+        }
+
+        private static void EvaluateProceduralNoise(float time, out float3 translation, out float3 rotation)
+        {
+            translation = new float3(
+                noise.cnoise(new float2(time, PROCEDURAL_NOISE_SEED_X)),
+                noise.cnoise(new float2(time, PROCEDURAL_NOISE_SEED_Y)),
+                noise.cnoise(new float2(time, PROCEDURAL_NOISE_SEED_Z)));
+
+            rotation = new float3(
+                noise.cnoise(new float2(time, PROCEDURAL_NOISE_SEED_PITCH)),
+                noise.cnoise(new float2(time, PROCEDURAL_NOISE_SEED_YAW)),
+                noise.cnoise(new float2(time, PROCEDURAL_NOISE_SEED_ROLL)));
+        }
+
+        private float3 ResolveLocalShakeDirection(float3 worldDirection)
+        {
+            if (!math.all(math.isfinite(worldDirection)))
+                return float3.zero;
+
+            float lengthSq = math.lengthsq(worldDirection);
+            if (lengthSq <= 0.000001f)
+                return float3.zero;
+
+            float3 normalized = worldDirection * math.rsqrt(lengthSq);
+            if (_cameraTransform == null)
+                return normalized;
+
+            Vector3 local = _cameraTransform.InverseTransformDirection(new Vector3(normalized.x, normalized.y, normalized.z));
+            float3 local3 = new float3(local.x, local.y, local.z);
+            float localLengthSq = math.lengthsq(local3);
+            return localLengthSq > 0.000001f ? local3 * math.rsqrt(localLengthSq) : float3.zero;
+        }
+
+        private float3 ResolvePhysicsImpactDirection(in PhysicsImpactSignal impactSignal)
+        {
+            float3 direction = new float3(
+                impactSignal.Normal.x,
+                impactSignal.Normal.y,
+                impactSignal.Normal.z);
+            if (math.lengthsq(direction) > 0.000001f && math.all(math.isfinite(direction)))
+                return direction;
+
+            if (_cameraTransform == null)
+                return float3.zero;
+
+            Vector3 cameraPosition = _cameraTransform.position;
+            Vector3 fromImpact = cameraPosition - impactSignal.Point;
+            return new float3(fromImpact.x, fromImpact.y, fromImpact.z);
+        }
+
+        private static float ResolvePhysicsImpactSeverity(in PhysicsImpactSignal impactSignal)
+        {
+            float intensity = math.isfinite(impactSignal.Intensity) ? math.saturate(impactSignal.Intensity) : 0f;
+            float massVelocity = math.isfinite(impactSignal.MassVelocity) ? math.max(0f, impactSignal.MassVelocity) : 0f;
+            float massVelocity01 = math.saturate(math.log10(1f + (massVelocity * 0.015f)));
+            float weightBonus = impactSignal.WeightClass == PhysicsImpactWeightClass.Heavy
+                ? 0.18f
+                : impactSignal.WeightClass == PhysicsImpactWeightClass.Medium ? 0.08f : 0f;
+            return math.saturate(intensity + (massVelocity01 * 0.35f) + weightBonus);
+        }
+
+        private static float ResolveCombatDamageSeverity(in CombatDamageResult result)
+        {
+            float healthSeverity = 0f;
+            if (math.isfinite(result.AppliedDamage) && math.isfinite(result.MaxHealth) && result.MaxHealth > 0.0001f)
+                healthSeverity = math.saturate(result.AppliedDamage / result.MaxHealth);
+
+            float traumaSeverity = math.saturate(result.TraumaLevel * 0.25f);
+            return math.saturate(math.max(healthSeverity, traumaSeverity));
+        }
+
+        private static float ResolveTraumaAddition(float severity)
+        {
+            float safeSeverity = math.saturate(severity);
+            return math.saturate(0.12f + (safeSeverity * 0.68f));
+        }
+
+        private void RequestProceduralHitStop()
+        {
+            ITickDispatcher dispatcher = _dispatcher;
+            if (dispatcher != null)
+                dispatcher.RequestCoreTickDilation(0.05f, 3, CAMERA_JUICE_HIT_STOP_REASON_HASH);
+        }
+
+        private void UpdateSeismicCameraJitter(float dt, float effectiveShakeScale)
+        {
+            float safeDt = math.max(0f, dt);
+            if (GlobalSignals.TryGetLatestSeismicSignal(out SeismicSignal signal, out int sequence) &&
+                sequence != _lastSeismicSignalSequence)
+            {
+                _lastSeismicSignalSequence = sequence;
+                float signalIntensity = math.saturate(signal.CameraJitter01 * math.max(0f, effectiveShakeScale));
+                if (signalIntensity > _seismicJitterIntensity)
+                    _seismicJitterIntensity = signalIntensity;
+
+                float3 localDirection = ResolveLocalShakeDirection(signal.Direction);
+                if (math.lengthsq(localDirection) > 0.000001f)
+                    _seismicDirectionLocal = localDirection;
+            }
+
+            if (HectonXRRuntimeState.IsXRActive)
+            {
+                _seismicJitterIntensity = 0f;
+                _seismicShakeOffset = float3.zero;
+                _seismicShakeRotationDegrees = float3.zero;
+                return;
+            }
+
+            _seismicJitterIntensity = math.max(0f, _seismicJitterIntensity - SEISMIC_CAMERA_DECAY_RATE * safeDt);
+            _seismicJitterTime += safeDt * SEISMIC_CAMERA_FREQUENCY;
+            if (_seismicJitterIntensity <= 0.0001f)
+            {
+                _seismicJitterIntensity = 0f;
+                _seismicShakeOffset = float3.zero;
+                _seismicShakeRotationDegrees = float3.zero;
+                return;
+            }
+
+            float pulseA = ResolveTrianglePulseSigned(_seismicJitterTime + 0.17f);
+            float pulseB = ResolveTrianglePulseSigned(_seismicJitterTime * 1.37f + 0.53f);
+            float pulseC = ResolveTrianglePulseSigned(_seismicJitterTime * 0.73f + 0.91f);
+            float3 direction = math.lengthsq(_seismicDirectionLocal) > 0.000001f
+                ? _seismicDirectionLocal
+                : new float3(1f, 0f, 0f);
+
+            _seismicShakeOffset = new float3(
+                (direction.x * pulseA + pulseC * 0.21f) * SEISMIC_TRANSLATION_AMPLITUDE_METERS,
+                pulseB * SEISMIC_TRANSLATION_AMPLITUDE_METERS * 0.35f,
+                (direction.z * pulseC + pulseA * 0.13f) * SEISMIC_TRANSLATION_AMPLITUDE_METERS) * _seismicJitterIntensity;
+            _seismicShakeRotationDegrees = new float3(
+                pulseB * SEISMIC_ROTATION_AMPLITUDE_DEGREES * 0.35f,
+                pulseA * SEISMIC_ROTATION_AMPLITUDE_DEGREES,
+                -direction.x * pulseC * SEISMIC_ROTATION_AMPLITUDE_DEGREES * 0.25f) * _seismicJitterIntensity;
+        }
+
+        private void EnsureCameraJuiceTelemetry()
+        {
+            if (_cameraJuiceTelemetry.IsCreated)
+                return;
+
+            _cameraJuiceTelemetry = new NativeArray<CameraJuiceTelemetryEntry>(
+                CAMERA_JUICE_TELEMETRY_CAPACITY,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CameraJuiceTelemetryEntry>[300] - camera juice black-box circular buffer - owner: CameraJuiceSystem
+            NativeMemorySentinel.RegisterNativeArray(
+                _cameraJuiceTelemetry,
+                nameof(CameraJuiceSystem),
+                nameof(_cameraJuiceTelemetry),
+                NativeAllocationLifetime.Scene);
+        }
+
+        private void ReleaseCameraJuiceTelemetry()
+        {
+            if (!_cameraJuiceTelemetry.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(_cameraJuiceTelemetry);
+            _cameraJuiceTelemetry.Dispose();
+            _cameraJuiceTelemetry = default;
+            _cameraJuiceTelemetryCursor = 0;
+        }
+
+        private void RecordCameraJuiceTelemetry()
+        {
+            if (!_cameraJuiceTelemetry.IsCreated)
+                return;
+
+            int index = _cameraJuiceTelemetryCursor % CAMERA_JUICE_TELEMETRY_CAPACITY;
+            _cameraJuiceTelemetry[index] = new CameraJuiceTelemetryEntry
+            {
+                Frame = Time.frameCount,
+                Flags = HectonXRRuntimeState.IsXRActive ? 1u : 0u,
+                Trauma = _trauma,
+                FovKick = 0f,
+                Offset = _proceduralShakeTranslation,
+                RotationDegrees = _proceduralShakeRotationDegrees,
+                RollDegrees = _proceduralRollDegrees,
+                DirectionalBiasTimer = _directionalBiasTimer,
+                AdaptiveShakeScale = _adaptiveShakeScale
+            };
+            _cameraJuiceTelemetryCursor++;
+        }
+
+        private void DumpCameraJuiceTelemetry()
+        {
+            if (_cameraJuiceTelemetryDumped || !_cameraJuiceTelemetry.IsCreated)
+                return;
+
+            _cameraJuiceTelemetryDumped = true;
+            string dumpPath = Path.GetFullPath(Path.Combine(
+                Application.dataPath,
+                "..",
+                "Docs",
+                "AgentLogs",
+                "Dump_CAMERA_JUICE_SYSTEM.bin"));
+
+            try
+            {
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    int count = math.min(_cameraJuiceTelemetryCursor, CAMERA_JUICE_TELEMETRY_CAPACITY);
+                    int start = _cameraJuiceTelemetryCursor - count;
+                    writer.Write(CAMERA_JUICE_TELEMETRY_CAPACITY);
+                    writer.Write(count);
+                    for (int i = 0; i < count; i++)
+                    {
+                        CameraJuiceTelemetryEntry entry = _cameraJuiceTelemetry[(start + i) % CAMERA_JUICE_TELEMETRY_CAPACITY];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.Trauma);
+                        writer.Write(entry.FovKick);
+                        writer.Write(entry.Offset.x);
+                        writer.Write(entry.Offset.y);
+                        writer.Write(entry.Offset.z);
+                        writer.Write(entry.RotationDegrees.x);
+                        writer.Write(entry.RotationDegrees.y);
+                        writer.Write(entry.RotationDegrees.z);
+                        writer.Write(entry.RollDegrees);
+                        writer.Write(entry.DirectionalBiasTimer);
+                        writer.Write(entry.AdaptiveShakeScale);
+                    }
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
         }
 
         private void ApplyPostAupShakeOffset()
@@ -1306,7 +1525,47 @@ namespace Hecton8.VFX
             if (_cameraTransform == null)
                 return;
 
-            _cameraTransform.localPosition = _cameraLocalRestPosition + ResolveClipSafeShakeOffset(_shakeOffset);
+            RemoveLastShakeRotation();
+            if (HectonXRRuntimeState.IsXRActive)
+            {
+                _shakeOffset = Vector3.zero;
+                _proceduralShakeTranslation = float3.zero;
+                _proceduralShakeRotationDegrees = float3.zero;
+                _seismicShakeOffset = float3.zero;
+                _seismicShakeRotationDegrees = float3.zero;
+                return;
+            }
+
+            Vector3 combinedOffset = _shakeOffset + new Vector3(
+                _seismicShakeOffset.x,
+                _seismicShakeOffset.y,
+                _seismicShakeOffset.z);
+            _cameraTransform.localPosition = _cameraLocalRestPosition + ResolveClipSafeShakeOffset(combinedOffset);
+
+            float3 combinedRotationDegrees = _proceduralShakeRotationDegrees + _seismicShakeRotationDegrees;
+            if (math.lengthsq(combinedRotationDegrees) <= 0.000001f)
+                return;
+
+            Quaternion shakeRotation = Quaternion.Euler(
+                combinedRotationDegrees.x,
+                combinedRotationDegrees.y,
+                combinedRotationDegrees.z);
+            _cameraTransform.localRotation = _cameraTransform.localRotation * shakeRotation;
+            _lastShakeLocalRotation = shakeRotation;
+            _lastShakeCompositeLocalRotation = _cameraTransform.localRotation;
+            _shakeRotationApplied = true;
+        }
+
+        private void RemoveLastShakeRotation()
+        {
+            if (!_shakeRotationApplied || _cameraTransform == null)
+                return;
+
+            if (math.abs(Quaternion.Dot(_cameraTransform.localRotation, _lastShakeCompositeLocalRotation)) > 0.9995f)
+                _cameraTransform.localRotation = _cameraTransform.localRotation * Quaternion.Inverse(_lastShakeLocalRotation);
+            _lastShakeLocalRotation = Quaternion.identity;
+            _lastShakeCompositeLocalRotation = Quaternion.identity;
+            _shakeRotationApplied = false;
         }
 
         private Vector3 ResolveClipSafeShakeOffset(Vector3 offset)
@@ -1436,13 +1695,11 @@ namespace Hecton8.VFX
         private float ResolveCurrentCameraSpeed()
         {
             float speed = 0f;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            Rigidbody playerBody = _playerRigidbody;
             if (playerBody != null)
                 speed = math.max(speed, ApproximateVectorMagnitude(playerBody.linearVelocity));
 
-            ISubmarineRuntimeContext submarineContext = GlobalRegistry.Submarine;
-            Rigidbody submarineBody = submarineContext != null ? submarineContext.HullRigidbody : null;
+            Rigidbody submarineBody = _submarineHullRigidbody;
             if (submarineBody != null)
                 speed = math.max(speed, ApproximateVectorMagnitude(submarineBody.linearVelocity));
 
@@ -1469,8 +1726,7 @@ namespace Hecton8.VFX
 
         private bool HasSubmarineVelocityFovSource()
         {
-            ISubmarineRuntimeContext submarineContext = GlobalRegistry.Submarine;
-            Rigidbody submarineBody = submarineContext != null ? submarineContext.HullRigidbody : null;
+            Rigidbody submarineBody = _submarineHullRigidbody;
             if (submarineBody == null)
                 return false;
 
@@ -1490,7 +1746,17 @@ namespace Hecton8.VFX
 
         private void UpdateFOV(float dt)
         {
-            if (!_fovEnabled) return;
+            if (!_fovEnabled)
+                return;
+
+            if (HectonXRRuntimeState.IsXRActive)
+            {
+                _currentFOVOffset = 0f;
+                _fovBlendActive = false;
+                _inputReclaimFovActive = false;
+                _swimmingVelocityFovOffset = 0f;
+                return;
+            }
 
             if (_fovBlendActive)
             {
@@ -1506,7 +1772,8 @@ namespace Hecton8.VFX
             }
 
             // Calculate target FOV
-            float targetFOV = _baseFOV + (_currentFOVOffset * _fovIntensityMultiplier * _adaptiveFOVScale);
+            float targetFOV = _baseFOV +
+                (_currentFOVOffset * _fovIntensityMultiplier * _adaptiveFOVScale);
             float swimmingWarpTarget = 0f;
             bool velocityWarpEligible =
                 (_playerMovement != null && _playerMovement.IsPlayerSubmerged) ||
@@ -1536,6 +1803,13 @@ namespace Hecton8.VFX
             }
 
             ApplyProjectionFov(targetFOV);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveTrianglePulseSigned(float phase)
+        {
+            float wrapped = phase - math.floor(phase);
+            return (1f - math.abs(wrapped * 2f - 1f)) * 2f - 1f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1793,6 +2067,16 @@ namespace Hecton8.VFX
 
         private void TryResolveGameplayDependencies()
         {
+            _cachedScalabilityTier = (byte)GlobalRegistry.ScalabilityTier;
+            _dispatcher = GlobalRegistry.TickDispatcher;
+            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRigidbody = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerRigidbody : null;
+            _submarineRuntimeContext = GlobalRegistry.Submarine;
+            _submarineHullRigidbody = _submarineRuntimeContext != null ? _submarineRuntimeContext.HullRigidbody : null;
+            _submarineStructuralGrid = _submarineRuntimeContext != null ? _submarineRuntimeContext.StructuralGrid : null;
+            _dynamicResolutionScaler = GlobalRegistry.DynamicResolution;
+            _vramMonitor = GlobalRegistry.VRAMMonitor;
+
             Transform playerRoot = null;
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&
                 currentPlayerTransform != null)
@@ -1803,6 +2087,8 @@ namespace Hecton8.VFX
             if (_survivalSystem == null)
             {
                 _survivalSystem = _survivalSystemReference;
+                if (_survivalSystem == null && _playerRuntimeContext != null)
+                    _survivalSystem = _playerRuntimeContext.SurvivalSystem;
 
                 if (_survivalSystem == null && _cameraTransform != null)
                 {
@@ -1818,6 +2104,8 @@ namespace Hecton8.VFX
             if (_playerMovement == null)
             {
                 _playerMovement = _playerMovementReference;
+                if (_playerMovement == null && _playerRuntimeContext != null)
+                    _playerMovement = _playerRuntimeContext.PlayerMovement;
 
                 if (_playerMovement == null && _cameraTransform != null)
                 {
@@ -1928,8 +2216,7 @@ namespace Hecton8.VFX
 
         private float ResolveStructuralFatigueChromaticContribution()
         {
-            ISubmarineRuntimeContext submarineRuntimeContext = GlobalRegistry.Submarine;
-            Hecton8.Physics.SubmarineStructuralGrid structuralGrid = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
+            SubmarineStructuralGrid structuralGrid = _submarineStructuralGrid;
             if (structuralGrid == null || !structuralGrid.isActiveAndEnabled || !structuralGrid.IsReady)
                 return 0f;
 
@@ -1945,7 +2232,7 @@ namespace Hecton8.VFX
             }
 
             float renderScale = 1f;
-            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
+            DynamicResolutionScaler scaler = _dynamicResolutionScaler;
             if (scaler != null && scaler.Enabled)
             {
                 renderScale = math.saturate(scaler.CurrentRenderScale);
@@ -1955,7 +2242,7 @@ namespace Hecton8.VFX
                 (renderScale - _adaptiveBudgetFloorRenderScale) /
                 math.max(0.0001f, 1f - _adaptiveBudgetFloorRenderScale));
 
-            VRAMMonitor vramMonitor = Hecton8.Core.GlobalRegistry.VRAMMonitor;
+            VRAMMonitor vramMonitor = _vramMonitor;
             VRAMMonitor.VRAMPressureState pressureState = vramMonitor != null
                 ? vramMonitor.PressureState
                 : VRAMMonitor.VRAMPressureState.Stable;
@@ -1995,11 +2282,6 @@ namespace Hecton8.VFX
                 QualitySettings.GetQualityLevel() == 0 ||
                 !_depthOfFieldEnabled ||
                 _adaptivePostFxScale <= _adaptiveDoFDisableThreshold;
-
-            while (_activeShakes.Count > _adaptiveMaxActiveShakes)
-            {
-                _activeShakes.RemoveAt(0);
-            }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugAdaptiveRenderScale = renderScale;
@@ -2081,55 +2363,5 @@ namespace Hecton8.VFX
         }
 #endif
 
-        // ═══ NESTED TYPES ═══
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct ShakeAccumulationJob : IJob
-        {
-            [ReadOnly]
-            public NativeArray<ShakeJobInput> Inputs;
-            public NativeArray<ShakeJobResult> Results;
-            public int Count;
-            public float EffectiveShakeScale;
-            public float MaxShakeDisplacement;
-
-            public void Execute()
-            {
-                float3 offset = float3.zero;
-                int count = math.clamp(Count, 0, Inputs.Length);
-                for (int i = 0; i < count; i++)
-                {
-                    ShakeJobInput input = Inputs[i];
-                    float noiseX = noise.snoise(new float2(input.NoiseTime, input.NoiseSeed));
-                    float noiseY = noise.snoise(new float2(input.NoiseSeed, input.NoiseTime));
-                    float noiseZ = noise.snoise(new float2(input.NoiseTime + input.NoiseSeed, input.NoiseTime - input.NoiseSeed));
-                    float heaveNoise = noise.snoise(new float2(
-                        input.NoiseTime * LOW_FREQUENCY_HEAVE_NOISE_SCALE,
-                        input.NoiseSeed + 17.13f));
-                    float scale = input.MaxDisplacement * input.Falloff * input.IntensityScale * EffectiveShakeScale;
-                    offset += new float3(
-                        noiseX * input.AxisWeights.x,
-                        noiseY * input.AxisWeights.y,
-                        noiseZ * input.AxisWeights.z) * scale;
-                    offset.y += heaveNoise * input.AxisWeights.y * scale * LOW_FREQUENCY_HEAVE_DISPLACEMENT_SCALE;
-                }
-
-                float maxShakeDisplacement = math.max(0.0001f, MaxShakeDisplacement);
-                float maxShakeDisplacementSq = maxShakeDisplacement * maxShakeDisplacement;
-                float offsetSq = math.lengthsq(offset);
-                if (offsetSq > maxShakeDisplacementSq)
-                    offset *= math.rcp(math.max(CinematicMath.ApproximateLength(offset), 0.0001f)) * maxShakeDisplacement;
-
-                Results[0] = new ShakeJobResult { Offset = offset };
-            }
-        }
-
-        private struct ActiveShake
-        {
-            public ShakeProfile Profile;
-            public float Elapsed;
-            public float IntensityScale;
-            public Vector3 Offset;
-        }
     }
 }

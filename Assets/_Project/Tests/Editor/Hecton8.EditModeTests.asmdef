@@ -3,6 +3,7 @@
     "rootNamespace":  "Hecton8.Tests.Editor",
     "references":  [
                        "Hecton8.Core",
+                       "Hecton8.Audio.Propagation",
                        "Hecton8.Editor",
                        "Unity.Mathematics",
                        "Unity.Burst",

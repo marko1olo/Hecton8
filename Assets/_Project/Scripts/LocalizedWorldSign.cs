@@ -1,3 +1,4 @@
+using System;
 using Hecton8.Core;
 using TMPro;
 using UnityEngine;
@@ -9,7 +10,7 @@ namespace Hecton.Localization
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Localization/Localized World Sign")]
-    public sealed class LocalizedWorldSign : MonoBehaviour, ILocalizationLanguageChangedListener
+    public sealed class LocalizedWorldSign : MonoBehaviour, ILocalizationLanguageChangedListener, IOriginShiftListener
     {
         [Header("── References ───────────────────────────────────────────────")]
         [Tooltip("Target TMP text owner. Defaults to TMP_Text on the same GameObject.")]
@@ -25,28 +26,49 @@ namespace Hecton.Localization
         [Tooltip("For signage that should stay in all-caps regardless of language.")]
         [SerializeField] private bool forceUppercase = true;
 
-        private string _appliedText;
+        private const int DefaultSignBufferCapacity = 64;
+
+        private Transform _cachedTransform;
+        private Vector3 _absoluteUniversePosition;
+        private char[] _fallbackBuffer;
+        private char[] _signBuffer;
+        private int _tableKeyHash;
+        private int _fallbackLength;
+        private bool _hasAupPosition;
 
         private void Awake()
         {
             ResolveTargetText();
+            CacheLocalizationBuffers();
+            CacheTransformAndAup();
         }
 
         private void OnEnable()
         {
             LocalizationEvents.RegisterLanguageListener(this);
+            HectonFloatingOrigin.RegisterListener(this);
+            CacheLocalizationBuffers();
+            CacheTransformAndAup();
             RefreshLocalizedText();
         }
 
         private void OnDisable()
         {
             LocalizationEvents.UnregisterLanguageListener(this);
+            HectonFloatingOrigin.UnregisterListener(this);
+        }
+
+        private void OnDestroy()
+        {
+            LocalizationEvents.UnregisterLanguageListener(this);
+            HectonFloatingOrigin.UnregisterListener(this);
         }
 
 #if UNITY_EDITOR
         private void OnValidate()
         {
             ResolveTargetText();
+            CacheLocalizationBuffers();
             if (!Application.isPlaying)
                 RefreshLocalizedText();
         }
@@ -66,41 +88,136 @@ namespace Hecton.Localization
             RefreshLocalizedText();
         }
 
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!_hasAupPosition)
+                CacheTransformAndAup();
+
+            if (_cachedTransform != null && _hasAupPosition)
+                _cachedTransform.position = shiftData.ToRuntimePosition(_absoluteUniversePosition);
+
+            if (targetText != null)
+            {
+                targetText.ForceMeshUpdate(ignoreActiveState: true, forceTextReparsing: false);
+                targetText.SetVerticesDirty();
+                targetText.SetLayoutDirty();
+            }
+        }
+
         private void RefreshLocalizedText()
         {
             if (targetText == null)
                 return;
 
-            string resolvedText = ResolveLocalizedText();
-            if (forceUppercase)
-                resolvedText = ZeroGCStringCache.CachedToUpperInvariant(resolvedText);
-
-            if (string.Equals(_appliedText, resolvedText, System.StringComparison.Ordinal))
-                return;
-
-            targetText.text = resolvedText;
-            _appliedText = resolvedText;
-        }
-
-        private string ResolveLocalizedText()
-        {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            if (manager != null && !string.IsNullOrWhiteSpace(tableKey))
+            char[] sourceBuffer = null;
+            int sourceLength = 0;
+            bool found = _tableKeyHash != 0 &&
+                         LocRegistry.TryGetVisualBufferFromUtf8(_tableKeyHash, out sourceBuffer, out sourceLength);
+            if (!found)
             {
-                string fallback = string.IsNullOrWhiteSpace(fallbackText) ? tableKey : fallbackText;
-                return manager.GetExpandedOrFallback(manager.CurrentLanguage, tableKey, fallback);
+                sourceBuffer = EnsureFallbackBuffer();
+                sourceLength = _fallbackLength;
             }
 
-            if (!string.IsNullOrWhiteSpace(fallbackText))
-                return fallbackText;
-
-            return string.IsNullOrWhiteSpace(tableKey) ? string.Empty : tableKey;
+            PrepareDisplayBuffer(sourceBuffer, sourceLength, found, out char[] displayBuffer, out int displayLength);
+            targetText.isRightToLeftText = false;
+            targetText.SetCharArray(displayBuffer, 0, displayLength);
+            targetText.SetVerticesDirty();
+            targetText.SetLayoutDirty();
         }
 
         private void ResolveTargetText()
         {
             if (targetText == null)
                 TryGetComponent(out targetText);
+        }
+
+        private void CacheLocalizationBuffers()
+        {
+            _tableKeyHash = string.IsNullOrWhiteSpace(tableKey) ? 0 : LocHash.Compute(tableKey);
+            ReadOnlySpan<char> fallback;
+            if (!string.IsNullOrWhiteSpace(fallbackText))
+                fallback = fallbackText.AsSpan();
+            else if (!string.IsNullOrWhiteSpace(tableKey))
+                fallback = tableKey.AsSpan();
+            else
+                fallback = ReadOnlySpan<char>.Empty;
+
+            _fallbackBuffer = EnsureBuffer(_fallbackBuffer, fallback.Length);
+            fallback.CopyTo(_fallbackBuffer);
+            _fallbackLength = fallback.Length;
+        }
+
+        private char[] EnsureFallbackBuffer()
+        {
+            if (_fallbackBuffer == null)
+                CacheLocalizationBuffers();
+
+            _fallbackBuffer = EnsureBuffer(_fallbackBuffer, _fallbackLength);
+            return _fallbackBuffer;
+        }
+
+        private void PrepareDisplayBuffer(
+            char[] sourceBuffer,
+            int sourceLength,
+            bool sourceAlreadyBabelVisual,
+            out char[] displayBuffer,
+            out int displayLength)
+        {
+            displayLength = sourceLength < 0 ? 0 : sourceLength;
+            if (sourceBuffer != null && displayLength > sourceBuffer.Length)
+                displayLength = sourceBuffer.Length;
+
+            bool needsCopy = forceUppercase ||
+                             (!sourceAlreadyBabelVisual && LocalizationManager.IsRightToLeftLanguage(LocRegistry.ActiveLanguage));
+            if (!needsCopy)
+            {
+                if (sourceBuffer == null)
+                    _signBuffer = EnsureBuffer(_signBuffer, 1);
+
+                displayBuffer = sourceBuffer ?? _signBuffer;
+                return;
+            }
+
+            _signBuffer = EnsureBuffer(_signBuffer, displayLength);
+            for (int i = 0; i < displayLength; i++)
+            {
+                char current = sourceBuffer != null && i < sourceBuffer.Length ? sourceBuffer[i] : '\0';
+                _signBuffer[i] = forceUppercase ? char.ToUpperInvariant(current) : current;
+            }
+
+            if (!sourceAlreadyBabelVisual && LocalizationManager.IsRightToLeftLanguage(LocRegistry.ActiveLanguage))
+                RTLProcessor.TryReverseVisualOrderInPlace(_signBuffer, displayLength);
+
+            displayBuffer = _signBuffer;
+        }
+
+        private static char[] EnsureBuffer(char[] buffer, int requiredLength)
+        {
+            int required = requiredLength <= 0 ? 1 : requiredLength;
+            if (buffer != null && buffer.Length >= required)
+                return buffer;
+
+            int capacity = DefaultSignBufferCapacity;
+            while (capacity < required)
+                capacity <<= 1;
+
+            return new char[capacity]; // COLD ALLOC: char[capacity] - localized world sign fallback/display buffer - owner: LocalizedWorldSign
+        }
+
+        private void CacheTransformAndAup()
+        {
+            if (_cachedTransform == null)
+                _cachedTransform = transform;
+
+            if (_cachedTransform == null)
+            {
+                _hasAupPosition = false;
+                return;
+            }
+
+            _absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(_cachedTransform.position);
+            _hasAupPosition = true;
         }
     }
 }

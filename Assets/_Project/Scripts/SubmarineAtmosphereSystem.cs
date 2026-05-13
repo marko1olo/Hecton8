@@ -620,7 +620,7 @@ namespace Hecton8.Atmosphere
 
     /// <summary>
     /// Fixed-step pressurized interior simulation for submarines.
-    /// Tracks cheap room atmosphere state across the compartment graph. O2 is a 0..100 tank, not chemistry.
+    /// Tracks room atmosphere state across the compartment graph and converts legacy tank units into Dalton partial-pressure snapshots.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SubmarineFluidDynamics))]

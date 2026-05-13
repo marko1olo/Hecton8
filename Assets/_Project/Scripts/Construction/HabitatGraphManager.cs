@@ -10,6 +10,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Power;
 using Hecton8.World;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -297,6 +298,16 @@ namespace Hecton8.Construction
         internal int FloodedRoomCount => _floodedRoomCount;
         internal float BaseTotalStress => _baseTotalStress;
         internal LogisticsNetworkGraph Graph => _graph;
+
+        internal bool TryGetAcousticNodePosition(int nodeIndex, out float3 position)
+        {
+            position = float3.zero;
+            if (_moduleBuffer == null || (uint)nodeIndex >= (uint)_moduleBuffer.Count)
+                return false;
+
+            position = _moduleBuffer[nodeIndex].Position;
+            return math.all(math.isfinite(position));
+        }
 
         internal static bool TryGetLatestSiegeTargets(out NativeArray<HabitatSiegeTargetSnapshot> targets, out int count)
         {
@@ -721,9 +732,10 @@ namespace Hecton8.Construction
                 safeStress,
                 1f + (safeStress * StructuralGroanPitchRange));
 
-            var cameraJuice = GlobalRegistry.CameraJuice;
-            if (cameraJuice != null)
-                cameraJuice.TriggerSubmarineImpactShake(math.saturate(safeStress * 0.35f));
+            CameraJuiceSignals.PublishImpact(
+                math.saturate(safeStress * 0.35f),
+                worldPosition,
+                Vector3.zero);
         }
 
         private void TryFlagAnalyticalIntegrityLeak(int moduleCount, float stress)
@@ -1570,6 +1582,143 @@ namespace Hecton8.Construction
                    _moduleIndexByNodeId.TryGetValue(nodeId, out nodeIndex) &&
                    nodeIndex >= 0 &&
                    nodeIndex < _nodeCount;
+        }
+
+        internal bool TryValidateDeconstructionRollback(
+            BaseModule targetModule,
+            bool skipIsolationDfs,
+            NativeList<long> dfsStack,
+            NativeParallelHashSet<long> dfsVisited,
+            NativeArray<int> dfsResult,
+            out byte rejectReason)
+        {
+            rejectReason = 0;
+            if (targetModule == null || !TryResolveModuleNodeIndex(targetModule, out int removedNodeIndex))
+            {
+                rejectReason = 1;
+                return false;
+            }
+
+            if (HasDependentWindowCollapse(removedNodeIndex))
+            {
+                rejectReason = 2;
+                return false;
+            }
+
+            if (skipIsolationDfs)
+                return true;
+
+            if (!dfsStack.IsCreated || !dfsVisited.IsCreated || !dfsResult.IsCreated || dfsResult.Length < 3)
+            {
+                rejectReason = 3;
+                return false;
+            }
+
+            int nodeCount = math.min(_nodeCount, math.min(_moduleBuffer.Count, _edgeOffsets.IsCreated ? _edgeOffsets.Length - 1 : 0));
+            if (nodeCount <= 2)
+                return true;
+
+            DeconstructionDfsValidationJob job = new DeconstructionDfsValidationJob
+            {
+                EdgeOffsets = _edgeOffsets,
+                EdgeDestinations = _edgeDestinations,
+                Stack = dfsStack,
+                Visited = dfsVisited,
+                Result = dfsResult,
+                NodeCount = nodeCount,
+                RemovedNodeIndex = removedNodeIndex,
+                EdgeCount = _edgeCount
+            };
+
+            job.Run(); // COLD SYNC JOB: player-triggered deconstruction validation, not a per-frame path.
+            if (dfsResult[0] != 1)
+            {
+                rejectReason = 4;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool HasDependentWindowCollapse(int removedNodeIndex)
+        {
+            if (!_roomConnections.IsCreated || removedNodeIndex < 0)
+                return false;
+
+            NativeParallelMultiHashMapIterator<int> iterator;
+            if (!_roomConnections.TryGetFirstValue(removedNodeIndex, out HabitatFloodConnection connection, out iterator))
+                return false;
+
+            do
+            {
+                int destinationIndex = connection.DestinationIndex;
+                if (!IsValidDeconstructionNode(destinationIndex) || !IsWindowModule(destinationIndex))
+                    continue;
+
+                if (CountLiveRoomConnectionsExcluding(destinationIndex, removedNodeIndex) <= 0)
+                    return true;
+            }
+            while (_roomConnections.TryGetNextValue(out connection, ref iterator));
+
+            return false;
+        }
+
+        private int CountLiveRoomConnectionsExcluding(int nodeIndex, int removedNodeIndex)
+        {
+            NativeParallelMultiHashMapIterator<int> iterator;
+            if (!_roomConnections.TryGetFirstValue(nodeIndex, out HabitatFloodConnection connection, out iterator))
+                return 0;
+
+            int count = 0;
+            do
+            {
+                int destinationIndex = connection.DestinationIndex;
+                if (destinationIndex == removedNodeIndex || !IsValidDeconstructionNode(destinationIndex))
+                    continue;
+
+                count++;
+            }
+            while (_roomConnections.TryGetNextValue(out connection, ref iterator));
+
+            return count;
+        }
+
+        private bool IsWindowModule(int nodeIndex)
+        {
+            if (!IsValidDeconstructionNode(nodeIndex))
+                return false;
+
+            ModuleRecord record = _moduleBuffer[nodeIndex];
+            ModuleMarker marker = record.Marker;
+            if (marker != null)
+            {
+                if (ContainsTopologyToken(marker.PrefabId, "Window") ||
+                    ContainsTopologyToken(marker.PrefabId, "Observation") ||
+                    (marker.Data != null && ContainsTopologyToken(marker.Data.moduleName, "Window")) ||
+                    (marker.Data != null && ContainsTopologyToken(marker.Data.PersistentId, "Window")))
+                {
+                    return true;
+                }
+            }
+
+            BaseModule baseModule = record.BaseModule;
+            BaseModuleTemplate template = baseModule != null ? baseModule.ModuleTemplate : null;
+            return template != null &&
+                   (ContainsTopologyToken(template.PersistentId, "Window") ||
+                    ContainsTopologyToken(template.PersistentId, "Observation"));
+        }
+
+        private bool IsValidDeconstructionNode(int nodeIndex)
+        {
+            return nodeIndex >= 0 &&
+                   nodeIndex < _nodeCount &&
+                   nodeIndex < _moduleBuffer.Count;
+        }
+
+        private static bool ContainsTopologyToken(string value, string token)
+        {
+            return !string.IsNullOrEmpty(value) &&
+                   value.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void QueueFloodMassLoads(float deltaTime)
@@ -3600,6 +3749,89 @@ namespace Hecton8.Construction
                 power <<= 1;
 
             return power > 0 ? power : int.MaxValue;
+        }
+
+        [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = false)]
+        private struct DeconstructionDfsValidationJob : IJob
+        {
+            [ReadOnly] public NativeArray<int> EdgeOffsets;
+            [ReadOnly] public NativeArray<int> EdgeDestinations;
+            public NativeList<long> Stack;
+            public NativeParallelHashSet<long> Visited;
+            public NativeArray<int> Result;
+            public int NodeCount;
+            public int RemovedNodeIndex;
+            public int EdgeCount;
+
+            public void Execute()
+            {
+                Result[0] = 0;
+                Result[1] = 0;
+                Result[2] = math.max(0, NodeCount - 1);
+                Stack.Clear();
+                Visited.Clear();
+
+                if (NodeCount <= 2)
+                {
+                    Result[0] = 1;
+                    Result[1] = math.max(0, NodeCount - 1);
+                    return;
+                }
+
+                int startNode = -1;
+                for (int nodeIndex = 0; nodeIndex < NodeCount; nodeIndex++)
+                {
+                    if (nodeIndex == RemovedNodeIndex)
+                        continue;
+
+                    startNode = nodeIndex;
+                    break;
+                }
+
+                if (startNode < 0)
+                {
+                    Result[0] = 1;
+                    return;
+                }
+
+                long startNodeKey = startNode;
+                Stack.Add(startNodeKey);
+                Visited.Add(startNodeKey);
+
+                while (Stack.Length > 0)
+                {
+                    int lastIndex = Stack.Length - 1;
+                    long currentKey = Stack[lastIndex];
+                    Stack.RemoveAtSwapBack(lastIndex);
+
+                    int currentNode = (int)currentKey;
+                    if (currentNode < 0 || currentNode >= NodeCount || currentNode + 1 >= EdgeOffsets.Length)
+                        continue;
+
+                    int edgeLimit = math.min(EdgeCount, EdgeDestinations.Length);
+                    int edgeStart = math.clamp(EdgeOffsets[currentNode], 0, edgeLimit);
+                    int edgeEnd = math.clamp(EdgeOffsets[currentNode + 1], edgeStart, edgeLimit);
+                    for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                    {
+                        int neighborNode = EdgeDestinations[edgeIndex];
+                        if (neighborNode < 0 || neighborNode >= NodeCount || neighborNode == RemovedNodeIndex)
+                            continue;
+
+                        long neighborKey = neighborNode;
+                        if (Visited.Contains(neighborKey))
+                            continue;
+
+                        Visited.Add(neighborKey);
+                        Stack.Add(neighborKey);
+                    }
+                }
+
+                int visitedCount = Visited.Count();
+                int expectedCount = math.max(0, NodeCount - 1);
+                Result[0] = visitedCount == expectedCount ? 1 : 0;
+                Result[1] = visitedCount;
+                Result[2] = expectedCount;
+            }
         }
 
         private struct ModuleRecord

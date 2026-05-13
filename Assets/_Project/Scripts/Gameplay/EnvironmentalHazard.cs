@@ -100,6 +100,7 @@ namespace Hecton8.Gameplay
         private float _damageTimer;
         private float _currentIntensity;
         private bool _registered;
+        private int _radiationSourceId;
         private int _emissionPropertyId;
 
         // Cached references
@@ -153,6 +154,7 @@ namespace Hecton8.Gameplay
         {
             EnsureLayerCache();
             _cachedTransform = transform;
+            _radiationSourceId = unchecked((int)EntityId.ToULong(GetEntityId()));
             _emissionPropertyId = Shader.PropertyToID(string.IsNullOrEmpty(emissionProperty) ? "_EmissionColor" : emissionProperty);
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: EnvironmentalHazard
 
@@ -169,17 +171,20 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegister();
+            TryRegisterRadiationSource();
             UpdateIndicator();
         }
 
         private void OnDisable()
         {
+            RadiationHazardGrid.UnregisterSource(_radiationSourceId);
             TryUnregister();
             ClearExposureState();
         }
 
         private void OnDestroy()
         {
+            RadiationHazardGrid.UnregisterSource(_radiationSourceId);
             TryUnregister();
             ClearExposureState();
         }
@@ -221,6 +226,9 @@ namespace Hecton8.Gameplay
 
         private void OnTriggerEnter(Collider other)
         {
+            if (hazardType == HazardType.Radiation)
+                return;
+
             if (!useTriggerCollider)
                 return;
 
@@ -240,6 +248,9 @@ namespace Hecton8.Gameplay
 
         private void OnTriggerExit(Collider other)
         {
+            if (hazardType == HazardType.Radiation)
+                return;
+
             if (!useTriggerCollider)
                 return;
 
@@ -271,6 +282,12 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Tick(float deltaTime)
         {
+            if (hazardType == HazardType.Radiation)
+            {
+                TryRegisterRadiationSource();
+                return;
+            }
+
             // If not using trigger, check radius
             if (!useTriggerCollider)
             {
@@ -306,6 +323,9 @@ namespace Hecton8.Gameplay
 
         private void CheckPlayerInRadius()
         {
+            if (hazardType == HazardType.Radiation)
+                return;
+
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 _cachedTransform.position,
                 hazardRadius,
@@ -388,6 +408,9 @@ namespace Hecton8.Gameplay
 
         private void ApplyDamage()
         {
+            if (hazardType == HazardType.Radiation)
+                return;
+
             if (_playerTransform == null || _currentIntensity <= 0f)
                 return;
 
@@ -431,6 +454,15 @@ namespace Hecton8.Gameplay
             hazardIndicator.GetPropertyBlock(_mpb);
             _mpb.SetColor(_emissionPropertyId != 0 ? _emissionPropertyId : _EmissionColorID, indicatorColor);
             hazardIndicator.SetPropertyBlock(_mpb);
+        }
+
+        private void TryRegisterRadiationSource()
+        {
+            if (hazardType != HazardType.Radiation || _cachedTransform == null)
+                return;
+
+            float intensity = Mathf.Max(0f, baseDamagePerSecond) * 10f;
+            RadiationHazardGrid.RegisterSource(_radiationSourceId, _cachedTransform.position, intensity, hazardRadius);
         }
 
         /// <summary>

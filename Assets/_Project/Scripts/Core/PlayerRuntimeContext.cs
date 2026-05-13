@@ -4,6 +4,7 @@ using Hecton8.Building;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
+using Hecton8.Core.Signals;
 using Hecton8.UI;
 using Hecton8.World;
 using NASAPunk.Visor;
@@ -76,6 +77,9 @@ namespace Hecton8.Core
         public float NitrogenNarcosis01;
         public float Toxicity01;
         public float CoreTemperatureCelsius;
+        public float RadiationDose;
+        public float RadiationIntensity01;
+        public float RadiationMaxHealthPenalty01;
         public uint StatusMask;
         public uint Flags;
     }
@@ -99,6 +103,10 @@ namespace Hecton8.Core
     /// </summary>
     public sealed class PlayerRuntimeContext
     {
+        private const float SurvivalDamageEpsilon = 0.0001f;
+        private const uint PlayerTargetHash = 0x504C5952u;
+        private const uint SurvivalSourceHash = 0x53525656u;
+
         public GameObject PlayerObject { get; private set; }
         public Transform PlayerTransform { get; private set; }
         public HectonPlayerMovement PlayerMovement { get; private set; }
@@ -124,6 +132,9 @@ namespace Hecton8.Core
         public PlayerLookState LookState;
         public PlayerSurvivalRuntimeState SurvivalState;
         public PlayerInteractionRuntimeState InteractionState;
+        public float RadiationDose;
+        public float RadiationIntensity01;
+        public float RadiationMaxHealthPenalty01;
 
         public bool IsBound => PlayerObject != null && PlayerTransform != null;
 
@@ -153,6 +164,9 @@ namespace Hecton8.Core
             LookState = default;
             SurvivalState = default;
             InteractionState = default;
+            RadiationDose = 0f;
+            RadiationIntensity01 = 0f;
+            RadiationMaxHealthPenalty01 = 0f;
         }
 
         public void SyncReferences(
@@ -215,12 +229,39 @@ namespace Hecton8.Core
 
         public void PublishSurvivalState(in PlayerSurvivalRuntimeState state)
         {
+            float previousIntegrity = SurvivalState.IntegrityNormalized;
             SurvivalState = state;
+            float integrityDelta = previousIntegrity - SurvivalState.IntegrityNormalized;
+            if (previousIntegrity > 0f && integrityDelta > SurvivalDamageEpsilon)
+                PublishSurvivalDamageSignal(in state, integrityDelta);
         }
 
         public void PublishInteractionState(in PlayerInteractionRuntimeState state)
         {
             InteractionState = state;
+        }
+
+        private void PublishSurvivalDamageSignal(in PlayerSurvivalRuntimeState state, float integrityDelta)
+        {
+            float3 worldPoint = MovementState.WorldPosition;
+            if (!math.all(math.isfinite(worldPoint)))
+                worldPoint = float3.zero;
+
+            Hecton8.Core.Signals.CombatDamageSignal signal = new Hecton8.Core.Signals.CombatDamageSignal
+            {
+                WorldPoint = worldPoint,
+                Direction = float3.zero,
+                Magnitude = math.max(0f, integrityDelta),
+                DamageType = state.StatusMask,
+                TargetHash = PlayerTargetHash,
+                SourceHash = SurvivalSourceHash,
+                Frame = unchecked((uint)Time.frameCount),
+                SourceId = 0,
+                TargetId = 0,
+                Channel = 0,
+                Flags = Hecton8.Core.Signals.CombatDamageSignal.DirectRuntimeFlag
+            };
+            SignalBus<Hecton8.Core.Signals.CombatDamageSignal>.Push(in signal);
         }
     }
 }

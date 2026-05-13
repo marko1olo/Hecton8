@@ -1523,7 +1523,8 @@ namespace Hecton8.Atmosphere
 
         private void PublishWeatherShaderGlobals(float surfaceY, in SurfaceWeatherBindingSnapshot bindings, bool surfaceVfxActive)
         {
-            bool shedScreenSpaceRain = Time.unscaledDeltaTime * 1000f > ScreenSpaceRainFrameTimeShedMs;
+            float frameDeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            bool shedScreenSpaceRain = frameDeltaTime > 0f && frameDeltaTime * 1000f > ScreenSpaceRainFrameTimeShedMs;
             float rainIntensity = surfaceVfxActive && !shedScreenSpaceRain ? math.saturate(bindings.vfxPrecipitation) : 0f;
             float windSpeedMps = math.max(0f, bindings.targetWindSpeed / 3.6f);
             Vector2 windDirection = _currentState.windDirection;
@@ -1705,9 +1706,7 @@ namespace Hecton8.Atmosphere
                 0,
                 acousticEnergy));
 
-            var cameraJuice = GlobalRegistry.CameraJuice;
-            if (cameraJuice != null)
-                cameraJuice.TriggerSubmarineImpactShake(cameraShake01);
+            CameraJuiceSignals.PublishImpact(cameraShake01, shockPosition, Vector3.down);
         }
 
         private bool TrySelectInitialProfile(out RuntimeWeatherProfile profile)

@@ -43,6 +43,9 @@ namespace Hecton8.Visor
             [Tooltip("Blue-noise texture used to dither lens dirt.")]
             public Texture2D blueNoiseTexture = null;
 
+            [Tooltip("Low-tier circular comfort vignette mask. Red channel is peripheral darkness.")]
+            public Texture2D vrComfortMaskTexture = null;
+
             [Tooltip("Injection point for the unified visor post effect.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
 
@@ -101,6 +104,8 @@ namespace Hecton8.Visor
                 float wetLens01,
                 float hullStress01,
                 uint aupShiftFrame,
+                float vrComfortVignette01,
+                Vector4 vrComfortJerkState,
                 bool lowTier)
             {
                 HealthFraction = healthFraction;
@@ -112,6 +117,8 @@ namespace Hecton8.Visor
                 WetLens01 = wetLens01;
                 HullStress01 = hullStress01;
                 AupShiftFrame = aupShiftFrame;
+                VrComfortVignette01 = vrComfortVignette01;
+                VrComfortJerkState = vrComfortJerkState;
                 LowTier = lowTier;
             }
 
@@ -124,6 +131,8 @@ namespace Hecton8.Visor
             public float WetLens01 { get; }
             public float HullStress01 { get; }
             public uint AupShiftFrame { get; }
+            public float VrComfortVignette01 { get; }
+            public Vector4 VrComfortJerkState { get; }
             public bool LowTier { get; }
         }
 
@@ -144,6 +153,7 @@ namespace Hecton8.Visor
             private Texture _lastCrackTexture;
             private Texture _lastLensDirtTexture;
             private Texture _lastBlueNoiseTexture;
+            private Texture _lastVrComfortMaskTexture;
             private Vector4 _lastStrengths0 = Vector4.positiveInfinity;
             private Vector4 _lastStrengths1 = Vector4.positiveInfinity;
             private Vector4 _lastWaveParams = Vector4.positiveInfinity;
@@ -157,6 +167,8 @@ namespace Hecton8.Visor
             private float _lastWetLens01 = float.PositiveInfinity;
             private float _lastHullStress01 = float.PositiveInfinity;
             private float _lastAupShiftFrame = float.PositiveInfinity;
+            private float _lastVrComfortVignette01 = float.PositiveInfinity;
+            private Vector4 _lastVrComfortJerkState = Vector4.positiveInfinity;
             private float _lastLowTier = float.PositiveInfinity;
             private bool _materialDirty = true;
 
@@ -258,6 +270,8 @@ namespace Hecton8.Visor
                 SetMaterialFloatIfChanged(material, ShaderConstants.WetLensId, Sanitize01(runtimeState.WetLens01), ref _lastWetLens01);
                 SetMaterialFloatIfChanged(material, ShaderConstants.HullStressId, Sanitize01(runtimeState.HullStress01), ref _lastHullStress01);
                 SetMaterialFloatIfChanged(material, ShaderConstants.AupShiftFrameId, runtimeState.AupShiftFrame, ref _lastAupShiftFrame);
+                SetMaterialFloatIfChanged(material, ShaderConstants.VrComfortVignette01Id, Sanitize01(runtimeState.VrComfortVignette01), ref _lastVrComfortVignette01);
+                SetMaterialVectorIfChanged(material, ShaderConstants.VrComfortJerkStateId, SanitizeVrComfortJerkState(runtimeState.VrComfortJerkState), ref _lastVrComfortJerkState);
                 SetMaterialFloatIfChanged(material, ShaderConstants.LowTierId, lowTier ? 1f : 0f, ref _lastLowTier);
 
                 Vector4 strengths0 = new Vector4(
@@ -279,7 +293,7 @@ namespace Hecton8.Visor
                     settings.crackTexture != null ? 1f : 0f,
                     settings.lensDirtTexture != null ? 1f : 0f,
                     settings.blueNoiseTexture != null ? 1f : 0f,
-                    0f);
+                    settings.vrComfortMaskTexture != null ? 1f : 0f);
                 SetMaterialVectorIfChanged(material, ShaderConstants.Strengths0Id, strengths0, ref _lastStrengths0);
                 SetMaterialVectorIfChanged(material, ShaderConstants.Strengths1Id, strengths1, ref _lastStrengths1);
                 SetMaterialVectorIfChanged(material, ShaderConstants.WaveParamsId, waveParams, ref _lastWaveParams);
@@ -287,6 +301,7 @@ namespace Hecton8.Visor
                 SetMaterialTextureIfChanged(material, ShaderConstants.CrackTextureId, settings.crackTexture != null ? settings.crackTexture : Texture2D.blackTexture, ref _lastCrackTexture);
                 SetMaterialTextureIfChanged(material, ShaderConstants.LensDirtTextureId, settings.lensDirtTexture != null ? settings.lensDirtTexture : Texture2D.whiteTexture, ref _lastLensDirtTexture);
                 SetMaterialTextureIfChanged(material, ShaderConstants.BlueNoiseTextureId, settings.blueNoiseTexture != null ? settings.blueNoiseTexture : Texture2D.grayTexture, ref _lastBlueNoiseTexture);
+                SetMaterialTextureIfChanged(material, ShaderConstants.VrComfortMaskTextureId, settings.vrComfortMaskTexture != null ? settings.vrComfortMaskTexture : Texture2D.grayTexture, ref _lastVrComfortMaskTexture);
                 _materialDirty = false;
             }
 
@@ -295,6 +310,7 @@ namespace Hecton8.Visor
                 _lastCrackTexture = null;
                 _lastLensDirtTexture = null;
                 _lastBlueNoiseTexture = null;
+                _lastVrComfortMaskTexture = null;
                 _lastStrengths0 = Vector4.positiveInfinity;
                 _lastStrengths1 = Vector4.positiveInfinity;
                 _lastWaveParams = Vector4.positiveInfinity;
@@ -308,6 +324,8 @@ namespace Hecton8.Visor
                 _lastWetLens01 = float.PositiveInfinity;
                 _lastHullStress01 = float.PositiveInfinity;
                 _lastAupShiftFrame = float.PositiveInfinity;
+                _lastVrComfortVignette01 = float.PositiveInfinity;
+                _lastVrComfortJerkState = Vector4.positiveInfinity;
                 _lastLowTier = float.PositiveInfinity;
                 _materialDirty = true;
             }
@@ -357,6 +375,9 @@ namespace Hecton8.Visor
             internal static readonly int WetLensId = Shader.PropertyToID("_HectonUberWetLens01");
             internal static readonly int HullStressId = Shader.PropertyToID("_HectonUberHullStress01");
             internal static readonly int AupShiftFrameId = Shader.PropertyToID("_HectonUberAupShiftFrame");
+            internal static readonly int VrComfortVignette01Id = Shader.PropertyToID("_VRComfortVignette01");
+            internal static readonly int SomaticComfortVignetteId = Shader.PropertyToID("_VRComfortVignette");
+            internal static readonly int VrComfortJerkStateId = Shader.PropertyToID("_HectonVRComfortJerkState");
             internal static readonly int LowTierId = Shader.PropertyToID("_HectonUberLowTier");
             internal static readonly int Strengths0Id = Shader.PropertyToID("_HectonUberStrengths0");
             internal static readonly int Strengths1Id = Shader.PropertyToID("_HectonUberStrengths1");
@@ -365,10 +386,12 @@ namespace Hecton8.Visor
             internal static readonly int CrackTextureId = Shader.PropertyToID("_HectonVisorCrackTex");
             internal static readonly int LensDirtTextureId = Shader.PropertyToID("_HectonLensDirtTex");
             internal static readonly int BlueNoiseTextureId = Shader.PropertyToID("_HectonBlueNoiseTex");
+            internal static readonly int VrComfortMaskTextureId = Shader.PropertyToID("_HectonVRComfortMaskTex");
             internal static readonly int PlayerStressGlobalId = Shader.PropertyToID("_PlayerStress01");
             internal static readonly int HypoxiaSignalGlobalId = Shader.PropertyToID("_HypoxiaSignal");
             internal static readonly int LocalTemperatureGlobalId = Shader.PropertyToID("_LocalTemperature");
             internal static readonly int AmbientPressureGlobalId = Shader.PropertyToID("_AmbientPressure");
+            internal static readonly int FrequencyTuningErrorGlobalId = Shader.PropertyToID("_HectonFrequencyTuningError01");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings(); // COLD ALLOC: FeatureSettings[1] - serialized renderer feature settings - owner: HectonVisorUberPostFeature
@@ -454,7 +477,14 @@ namespace Hecton8.Visor
             float hullStress = playerMovement != null ? Sanitize01(playerMovement.CurrentHullStress01) : 0f;
             float localTemperature = SanitizeFinite(Shader.GetGlobalFloat(ShaderConstants.LocalTemperatureGlobalId), 0f);
             float globalStress = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.PlayerStressGlobalId));
-            float playerStress = math.saturate(math.max(globalStress, math.max(hullStress, 1f - healthFraction)));
+            float frequencyTuningError01 = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.FrequencyTuningErrorGlobalId));
+            float vrComfortVignette01 = math.max(
+                Sanitize01(Shader.GetGlobalFloat(ShaderConstants.VrComfortVignette01Id)),
+                Sanitize01(Shader.GetGlobalFloat(ShaderConstants.SomaticComfortVignetteId)));
+            Vector4 vrComfortJerkState = SanitizeVrComfortJerkState(Shader.GetGlobalVector(ShaderConstants.VrComfortJerkStateId));
+            float bulletTimeVisual01 = lowTier ? 0f : Sanitize01(GlobalSignals.BulletTimeVisualIntensity01);
+            float playerStress = math.saturate(math.max(frequencyTuningError01, math.max(globalStress, math.max(hullStress, 1f - healthFraction))));
+            playerStress = math.max(playerStress, bulletTimeVisual01);
             float hypoxia = math.max(
                 Sanitize01(Shader.GetGlobalFloat(ShaderConstants.HypoxiaSignalGlobalId)),
                 ResolveHypoxiaFromOxygen(oxygen01, settings.hypoxiaSafeOxygen01));
@@ -465,9 +495,13 @@ namespace Hecton8.Visor
                 wetLens > 0.001f ||
                 hullStress > 0.001f ||
                 playerStress > 0.001f ||
+                bulletTimeVisual01 > 0.001f ||
                 hypoxia > 0.001f ||
+                vrComfortVignette01 > 0.001f ||
+                math.max(vrComfortJerkState.x, vrComfortJerkState.y) > 0.001f ||
                 statusMask != 0u ||
                 ambientPressure > 1.001f ||
+                frequencyTuningError01 > 0.001f ||
                 math.abs(localTemperature) > TemperatureActivityThreshold ||
                 settings.lensDirtTexture != null;
             if (!hasActiveSignal)
@@ -483,6 +517,8 @@ namespace Hecton8.Visor
                 wetLens,
                 hullStress,
                 HectonFloatingOrigin.CurrentShiftSequence,
+                vrComfortVignette01,
+                vrComfortJerkState,
                 lowTier);
             return true;
         }
@@ -559,6 +595,15 @@ namespace Hecton8.Visor
         private static float SanitizeFinite(float value, float fallback)
         {
             return math.isfinite(value) ? value : fallback;
+        }
+
+        private static Vector4 SanitizeVrComfortJerkState(Vector4 value)
+        {
+            return new Vector4(
+                Sanitize01(value.x),
+                Sanitize01(value.y),
+                math.isfinite(value.z) ? math.max(0f, value.z) : 0f,
+                Sanitize01(value.w));
         }
     }
 }

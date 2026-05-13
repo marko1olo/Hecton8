@@ -56,13 +56,31 @@ Rules:
   - `format` token allowed only as compile-time literal (`"F1"`, `"F0"`, `"000"`)
   - No manual `% 10`, `/= 10`, reverse loops, or temporary string creation
   - `charsWritten` is authoritative; never scan for null terminator
+  - `ReadOnlySpan<char>` is the only approved runtime formatting/template input
+  - `Span<char>` may wrap a preallocated `char[]`, pooled `FixedCharBuffer`, or arena-backed scratch span
+  - `stackalloc` in gameplay UI paths is capped at 256 bytes and must not cross async/iterator boundaries
 
 ### TMP_SetTextZeroGC
 
 Step 1: Format numeric payload into pooled `Span<char>` via `TryFormat`
-Step 2: `// [FORBID] uGUI mutation for 60Hz readouts.
-// Use UI Toolkit (UIElements) OR directly call TMP's UpdateVertexData() if uGUI is strictly required.`
-Forbidden: `SetText(string)`, `text =`, interpolated strings, manual digit extraction
+Step 2: Push text with `TMP_Text.SetCharArray(char[] sourceText, int start, int length)`.
+Step 3: If visual geometry must be refreshed, call TMP vertex update APIs only after the char array write and only for dirty elements.
+
+[FORBID] `TMP_Text.SetText(string)`.
+[FORBID] `text =`.
+[FORBID] interpolated strings, `string.Format`, `new string(span)`, `string.Create`, enum `.ToString()`, or numeric `.ToString()` in HUD/update paths.
+[FORBID] Capturing `Span<T>` in lambdas, storing it in fields, using it in async methods, or using it in iterator methods.
+[FORBID] uGUI text mutation for 60Hz readouts without nested canvas isolation and profiler proof.
+
+## Engineering Data
+
+| Operation | Approved | Forbidden | Gate |
+|---|---|---|---|
+| Number format | `TryFormat(Span<char>, out written, literalFormat)` | `.ToString()` / interpolation | 0 B GC over 300 frames |
+| Text submit | `TMP_Text.SetCharArray(buffer, 0, len)` | `text =` / `SetText(string)` | Memory Profiler / GC column |
+| Localization token input | `ReadOnlySpan<char>` + baked hash | runtime string path build | static scan |
+| Overflow | clamp + ellipsis in same buffer | allocating fallback string | UI stress test |
+| Debug UI | fixed ring + preallocated chars | `Debug.Log` spam or string concat | dev-build only |
 
 ---
 

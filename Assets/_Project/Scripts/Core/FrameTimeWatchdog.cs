@@ -122,7 +122,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Samples <see cref="Time.unscaledDeltaTime"/> and emits telemetry/load-shed commands.
+        /// Samples dispatcher unscaled delta and emits telemetry/load-shed commands.
         /// </summary>
         public static void Tick()
         {
@@ -131,10 +131,10 @@ namespace Hecton8.Core
             if (!_shaderLodPushed)
                 PushInitialScalabilityFromHardwareTier();
 
-            if (Time.timeScale == 0f)
+            if (GlobalSignals.SimulationPaused)
                 return;
 
-            float deltaTime = Time.unscaledDeltaTime;
+            float deltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             if (deltaTime <= 0f)
             {
                 _consecutiveSpikeFrames = 0;

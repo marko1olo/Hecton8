@@ -2,6 +2,12 @@
     "generatedDate":  "2026-05-07",
     "generatedLocalTime":  "2026-05-07 22:43:36 +04:00",
     "status":  "PENDING VERIFICATION",
+    "docAuditR13Boundary":  {
+                                "date":  "2026-05-13",
+                                "status":  "HISTORICAL SNAPSHOT / SUPERSEDED",
+                                "note":  "Generated manifest preserved for audit trail. Its buildState, counts, sourceCounts, and entries describe the May 7 snapshot only and are not current authority. Current authority is Docs/Reports/README.md plus Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md.",
+                                "runtimeProof":  "ABSENT in this manifest; DOC_AUDIT R13 does not promote Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof from this file."
+                            },
     "unityMcpConsoleState":  {
                                  "result":  "BLOCKED",
                                  "message":  "Unity session not ready for \u0027read_console\u0027 (ping not answered); please retry"

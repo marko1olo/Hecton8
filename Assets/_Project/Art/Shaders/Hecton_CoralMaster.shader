@@ -45,8 +45,6 @@ Shader "Hecton8/Flora/CoralMaster"
         _CausticSpeed ("Caustic Speed", Range(0, 4)) = 0.42
         _BiolumStrength ("Biolum Strength", Range(0, 4)) = 0
         _BiolumMaskStrength ("Biolum Mask Strength", Range(0, 2)) = 1
-        _BiolumPulseAmplitude ("Biolum Pulse Amplitude", Range(0, 1)) = 0.28
-        _BiolumPulseFrequency ("Biolum Pulse Frequency", Range(0, 8)) = 0.58
 
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 0
     }
@@ -71,7 +69,7 @@ Shader "Hecton8/Flora/CoralMaster"
             ZTest LEqual
 
             HLSLPROGRAM
-            #pragma target 3.5
+            #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
@@ -79,6 +77,7 @@ Shader "Hecton8/Flora/CoralMaster"
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ LOD_FADE_CROSSFADE
+            #pragma multi_compile _ _MATH_LOD_LOW
             #pragma shader_feature_local _QUALITY_MX350 _QUALITY_HIGH
             #pragma skip_variants _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
@@ -120,8 +119,6 @@ Shader "Hecton8/Flora/CoralMaster"
                 half _CausticSpeed;
                 half _BiolumStrength;
                 half _BiolumMaskStrength;
-                half _BiolumPulseAmplitude;
-                half _BiolumPulseFrequency;
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
@@ -138,6 +135,10 @@ Shader "Hecton8/Flora/CoralMaster"
             half4 _HectonFloorBiolumColor;
             half _HectonFloorBiolumStrength;
             float _GlobalBiolumPhase;
+            float4 _BiolumMasterPhase; // x phase, y sine01, z flow frequency scale, w eclipse mask
+            float4 _BiolumIntensity; // x master intensity, y predator dim, z daylight mask, w active ripple count
+            StructuredBuffer<float4> _BiolumTouchRipples; // xyz runtime position, w effective radius
+            float4 _BiolumTouchRippleParams; // x active count, yzw reserved
             float _HectonCelestialBiolumMultiplier;
             float4 _HectonFloraLifecycleParams; // x: growth, y: decay, z: bloom scale, w: reserved
             float4 _HectonPlayerRuntimePosition; // xyz: player/KCC position, w: interaction radius
@@ -281,6 +282,30 @@ Shader "Hecton8/Flora/CoralMaster"
                 return saturate(1.0 - distSq * rcp(radiusSq)) * impulse;
             }
 
+            half ResolveBiolumTouchRipple(float3 positionWS)
+            {
+            #if !defined(_MATH_LOD_LOW)
+                int rippleCount = min((int)_BiolumTouchRippleParams.x, 16);
+                half rippleEnergy = 0.0h;
+                [loop]
+                for (int i = 0; i < rippleCount; i++)
+                {
+                    float4 ripple = _BiolumTouchRipples[i];
+                    float radius = max(abs(ripple.w), 0.01);
+                    float3 diff = positionWS - ripple.xyz;
+                    float distSq = dot(diff, diff);
+                    float radiusSq = radius * radius;
+                    float insideMask = step(distSq, radiusSq);
+                    float invSqFlash = insideMask * saturate(radiusSq * rcp(max(distSq + radius * 0.12, 0.0001)));
+                    rippleEnergy = max(rippleEnergy, (half)invSqFlash);
+                }
+
+                return rippleEnergy;
+            #else
+                return 0.0h;
+            #endif
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -399,12 +424,14 @@ Shader "Hecton8/Flora/CoralMaster"
                 [branch]
                 if (_BiolumStrength > 0.0001h)
                 {
-                    float pulsePhase = frac(_Time.y * max((float)_BiolumPulseFrequency, 0.001) + samplePositionWS.x * 0.011 + samplePositionWS.z * 0.008 + input.uv.y * 0.38);
-                    half pulse = 1.0h + (CoralTrianglePulse01(pulsePhase) * 2.0h - 1.0h) * _BiolumPulseAmplitude;
+                    half pulse = 1.0h + (((half)saturate(_BiolumMasterPhase.y) * 2.0h - 1.0h) * 0.28h);
                     half proceduralBiolumMask = (half)CoralTrianglePulse01(frac(samplePositionWS.x * 0.019 + samplePositionWS.z * 0.031 + input.uv.x * 0.47));
                     half biolumMask = saturate((cavity * 0.46h + thickness * 0.32h + proceduralBiolumMask * 0.22h) * _BiolumMaskStrength);
                     half celestialBiolum = max((half)_HectonCelestialBiolumMultiplier, 1.0h);
-                    half authoredBiolumEnergy = _BiolumStrength * celestialBiolum * (1.0h + zoneBiolumStrength * 0.76h) * biolumMask * pulse;
+                    half masterBiolum = max((half)_BiolumIntensity.x, 0.0h);
+                    half touchFlash = ResolveBiolumTouchRipple(samplePositionWS);
+                    half authoredBiolumEnergy = _BiolumStrength * celestialBiolum * masterBiolum * (1.0h + zoneBiolumStrength * 0.76h) * biolumMask * pulse;
+                    authoredBiolumEnergy *= (1.0h + touchFlash * 2.0h);
                     [branch]
                     if (authoredBiolumEnergy > 0.0001h)
                     {

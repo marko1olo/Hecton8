@@ -72,6 +72,17 @@ namespace Hecton8.Modding
                 return HectonEventBus.SubscribeNative(handler, subscriberId);
             }
 
+            /// <summary>
+            /// Subscribes to sampled public native signals projected as player-relative mod DTOs.
+            /// </summary>
+            /// <param name="handler">Projected event callback.</param>
+            /// <param name="subscriberId">Optional stable diagnostic ID.</param>
+            /// <returns>A disposable subscription token.</returns>
+            public static HectonEventSubscription SubscribeProjected(Action<ModEventDto> handler, string subscriberId = null)
+            {
+                return HectonEventBus.SubscribeProjected(handler, subscriberId);
+            }
+
             public static HectonEventSubscription OnPlayerSpawned(
                 HectonUnmanagedEventHandler<ModPlayerSpawnedEvent> handler,
                 string subscriberId = null)

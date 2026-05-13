@@ -1,10 +1,12 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Memory.Layout;
 using Hecton8.World;
 using Unity.Collections.LowLevel.Unsafe;
 
 namespace Hecton8.SaveSystem
 {
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 36)]
     internal struct AbsoluteUniversePositionV7
     {
@@ -22,6 +24,7 @@ namespace Hecton8.SaveSystem
         public float LocalZ;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 60)]
     internal struct PayloadPrefixV7
     {
@@ -41,6 +44,7 @@ namespace Hecton8.SaveSystem
         public ushort GameVersionByteLength;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 72)]
     internal struct PayloadPrefixV8
     {

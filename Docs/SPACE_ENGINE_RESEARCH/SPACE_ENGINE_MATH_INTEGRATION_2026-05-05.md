@@ -3,11 +3,30 @@
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
+## 2026-05-13 DOC_AUDIT R11 Boundary
+
+This file is an active research/integration note, not current runtime proof.
+
+Current static readback:
+
+- `Assets/_Project/Scripts/World/SpaceEngine098/SpaceEngine098TerrainKernels.cs` exists.
+- `Assets/_Project/Scripts/World/SpaceEngine098/Hecton8.SpaceEngine098Terrain.asmdef` exists.
+- `Assets/_Project/Scripts/Plugins/MapMagic/HectonSpaceEngine098MapMagicNodes.cs` exists. The older `Assets/_Project/Scripts/World/HectonSpaceEngine098MapMagicNodes.cs` path is stale.
+- `Assets/_Project/Scripts/Dev/SpaceEngine098TerrainSmokeTester.cs` exists.
+- `Assets/_Project/Scripts/Editor/SpaceEngine098TerrainSmokeTestRunner.cs` exists.
+- `Library/SpaceEngine098TerrainSmokeTester.json` exists with last write time `2026-05-05 22:20:59`, but it uses the old smoke schema and does not contain `ridgedMsX1000`, `craterMsX1000`, `rilleMsX1000`, `metricsMsX1000`, or `nodeBudgetPassed`.
+
+Proof boundary:
+
+- The compile gate below is historical report text. DOC_AUDIT R11 did not run Unity, `dotnet`, Play Mode, profiler, GCMonitor, or the SpaceEngine smoke harness.
+- Runtime smoke status remains `PENDING VERIFICATION` until the current harness is executed in Unity and the updated JSON schema is captured.
+- Plain .NET execution is still not valid proof for Unity `NativeArray<T>` / Burst behavior.
+
 ## Implemented Files
 
 - `Assets/_Project/Scripts/World/SpaceEngine098/SpaceEngine098TerrainKernels.cs`
 - `Assets/_Project/Scripts/World/SpaceEngine098/Hecton8.SpaceEngine098Terrain.asmdef`
-- `Assets/_Project/Scripts/World/HectonSpaceEngine098MapMagicNodes.cs`
+- `Assets/_Project/Scripts/Plugins/MapMagic/HectonSpaceEngine098MapMagicNodes.cs`
 - `Assets/_Project/Scripts/Dev/SpaceEngine098TerrainSmokeTester.cs`
 - `Assets/_Project/Scripts/Editor/SpaceEngine098TerrainSmokeTestRunner.cs`
 
@@ -28,7 +47,7 @@ The node seed resolver mixes the authored node seed, `GlobalRegistry.WorldSeedPr
 
 ## Smoke Result
 
-Prior Unity smoke output in `Library/SpaceEngine098TerrainSmokeTester.json`:
+Prior Unity smoke output in `Library/SpaceEngine098TerrainSmokeTester.json` from the old schema:
 
 ```json
 {"tester":"SpaceEngine098TerrainSmokeTester","status":"PASS","warmupSamples":256,"samples":4096,"elapsedMsX1000":26186,"minHeightX1000":401,"maxHeightX1000":1000,"ridgedDeltaX100000":7079,"craterDeltaX100000":50907,"rilleDeltaX100000":3500,"checksum":222504053,"nativeAllocationDelta":0,"nativeByteDelta":0}
@@ -46,7 +65,7 @@ The updated runtime smoke could not be re-executed through Unity MCP in this ses
 
 ## Static Audit
 
-- Direct `.Complete()` / `JobHandle.Run()` in SpaceEngine files: none.
+- Direct `handle.Complete()` / `JobHandle.Run()` in SpaceEngine files: none in the May 13 static scan. Current code uses `DispatcherJobSwap.TryComplete(... forceComplete: true)` in the MapMagic node cold path and dev smoke harness.
 - `UnityEngine.Random` in SpaceEngine files: none.
 - `.ToString()`, interpolation, `string.Format` in SpaceEngine files: none.
 - `NativeArray` allocations in nodes/smoke tester: registered and disposed via sentinel helpers.
@@ -54,11 +73,11 @@ The updated runtime smoke could not be re-executed through Unity MCP in this ses
 
 ## Unity Verification State
 
-- Source compile gate for `SpaceEngine098TerrainKernels.cs`, `HectonSpaceEngine098MapMagicNodes.cs`, and `SpaceEngine098TerrainSmokeTester.cs`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
+- Historical source compile gate for `SpaceEngine098TerrainKernels.cs`, `HectonSpaceEngine098MapMagicNodes.cs`, and `SpaceEngine098TerrainSmokeTester.cs`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`. This is not current build proof because DOC_AUDIT R11 did not rerun compile.
 - `Hecton8.Core.csproj` compile gate after the `HectonPlayerHealth` blocker fix: `Build succeeded`, `0 Error(s)`. The 49 warnings are existing package warnings from URP/GPUInstancer/Crest/WaveHarmonic and not from the SpaceEngine terrain source gate.
 - Current source HAS `RadiationFatigueCriticalExposureSeconds` in `HectonPlayerHealth` and `VisorHUDController`; old missing-symbol console claims are stale and must not be cited as current build truth.
 - MCP console remains unavailable for final runtime smoke: `Unity session not ready for 'read_console' (ping not answered)`.
 
-Integration status: SPACE-ENGINE MATH INTEGRATED.
-Runtime smoke status: PENDING FINAL MCP CONSOLE PASS.
+Source integration status: static files present and wired by asmdef/source references.
+Runtime smoke status: PENDING CURRENT UNITY PASS.
 

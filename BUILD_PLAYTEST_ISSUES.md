@@ -7,13 +7,13 @@ Ledger Start Date: `2026-04-05`
 
 This file tracks confirmed build and playtest observations.
 
-2026-05-11 current-state boundary:
+2026-05-13 current-state boundary:
 
-- Read `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`, `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`, `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`, and `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` before using this ledger for current project truth.
+- Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using this ledger for current project truth. May 11 reports remain historical where the May 13 DOC_AUDIT override conflicts.
 - This ledger records build/playtest observations and coding follow-ups; it is not a global runtime certification report.
 - Items marked `[c]` are code-closed only until build/user proof confirms them.
 - If this file disagrees with current source, console, profiler, or fresh user evidence, the newer evidence wins.
-- Current May 11 Core compile-only evidence is `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`. This is not player-build, Play Mode, Unity Console, profiler, GCMonitor, scene-wiring, visual-quality, or user-playtest proof.
+- 2026-05-13 DOC_AUDIT filesystem check did not find `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` or `.log`. Treat the May 11 compile-success line as stale report text until the artifact is restored or replaced. It is not current build proof and not player-build, Play Mode, Unity Console, profiler, GCMonitor, scene-wiring, visual-quality, or user-playtest proof.
 - Current visual-realism doctrine is visual fake first; do not log simulation work as accepted without gameplay-correctness need and profiler/GC/memory proof.
 
 Rules:

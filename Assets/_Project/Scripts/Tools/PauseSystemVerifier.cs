@@ -222,14 +222,14 @@ namespace Hecton8.Tools
         {
             ResolvePauseMenu();
 
-            bool timeStopped = Mathf.Approximately(Time.timeScale, 0f);
+            bool simulationPaused = IsSimulationPaused();
             bool cursorVisible = Cursor.visible;
             bool menuVisible = IsPauseMenuVisible();
             bool inputValid = IsPauseInputModeValid();
             bool selectionValid = VerificationRuntimeProbe.HasPauseSelection(_pauseMenu);
 
             LogVerification("Pause entry verification:");
-            LogVerification($"  Time stopped: {(timeStopped ? "PASS" : "FAIL")}");
+            LogVerification($"  Simulation paused: {(simulationPaused ? "PASS" : "FAIL")}");
             LogVerification($"  Cursor visible: {(cursorVisible ? "PASS" : "FAIL")}");
             LogVerification($"  Menu visible: {(menuVisible ? "PASS" : "FAIL")}");
             LogVerification($"  UI input active: {(inputValid ? "PASS" : "FAIL")}");
@@ -240,13 +240,13 @@ namespace Hecton8.Tools
         {
             ResolvePauseMenu();
 
-            bool timeResumed = Time.timeScale > 0f;
+            bool simulationResumed = !IsSimulationPaused();
             bool cursorHidden = !Cursor.visible;
             bool menuHidden = !IsPauseMenuVisible();
             bool inputValid = IsGameplayInputModeValid();
 
             LogVerification("Pause exit verification:");
-            LogVerification($"  Time resumed: {(timeResumed ? "PASS" : "FAIL")}");
+            LogVerification($"  Simulation resumed: {(simulationResumed ? "PASS" : "FAIL")}");
             LogVerification($"  Cursor hidden: {(cursorHidden ? "PASS" : "FAIL")}");
             LogVerification($"  Menu hidden: {(menuHidden ? "PASS" : "FAIL")}");
             LogVerification($"  Gameplay input active: {(inputValid ? "PASS" : "FAIL")}");
@@ -284,7 +284,13 @@ namespace Hecton8.Tools
         private bool IsGamePaused()
         {
             ResolvePauseMenu();
-            return _pauseMenu != null && _pauseMenu.IsOpen && Mathf.Approximately(Time.timeScale, 0f);
+            return _pauseMenu != null && _pauseMenu.IsOpen && IsSimulationPaused();
+        }
+
+        private static bool IsSimulationPaused()
+        {
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            return dispatcher != null ? dispatcher.SimulationPaused : GlobalSignals.SimulationPaused;
         }
 
         private bool IsPauseMenuVisible()

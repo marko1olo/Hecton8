@@ -3,10 +3,22 @@
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: sandbox abyssal shelf terrain smoke path, Omega dev smoke barrier cleanup, SpaceEngine research artifact reporting.
-Requested status label: OMEGA VERIFIED.
-Executable smoke artifact: standalone terrain-domain smoke emitted an `OMEGA_VERIFIED` label.
-Unity Editor batch artifact: `Library/OmegaAutonomySmokeTester.json` emitted `PASS`.
+Requested historical status label: OMEGA VERIFIED.
+Executable smoke artifact: standalone terrain-domain smoke emitted an `OMEGA_VERIFIED` label in the old inline snippet.
+Unity Editor batch artifact: saved `Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_UNITY_SMOKE_CODEX_2026-05-05.json` emitted `PASS`.
 Project authority status: PENDING VERIFICATION until fresh Unity Console, Play Mode, profiler, GCMonitor, and player-build proof exists.
+
+## 2026-05-13 DOC_AUDIT R12 Boundary
+
+Current artifact readback supersedes the unqualified PASS wording above:
+
+- `Library/OmegaAutonomySmokeTester.json` exists with last write time `2026-05-05 17:28:38` and current status `FAIL`.
+- The current Library JSON failure is `nativeSentinelBalance.pass=false`, `allocationDelta=2`, `trackedByteDelta=2560`.
+- `Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_UNITY_SMOKE_CODEX_2026-05-05.json` still exists and reports `PASS`, but it is an older saved artifact with last write time `2026-05-05 05:41:36`.
+- `Docs/SPACE_ENGINE_RESEARCH/HectonSandboxAbyssalShelfStandaloneSmoke.json` exists with last write time `2026-05-07 03:27:35` and current status `MACRO SHELF VERIFIED`, not the older inline `OMEGA_VERIFIED` snippet below.
+- `Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfJobs.cs` has a newer filesystem timestamp than this report (`2026-05-11 06:20:38`), so May 5/May 7 smoke artifacts do not prove the current source snapshot.
+
+Conclusion: treat all PASS / OMEGA labels in this file as historical scoped evidence only. Current Omega smoke state is PENDING VERIFICATION with an observed Library FAIL until the native-sentinel balance is fixed or a newer clean artifact is captured.
 
 ## Surgery Log
 
@@ -66,6 +78,6 @@ Existing SpaceEngine doc-domain smoke artifact:
 ## Status
 
 Static hardening pass: scoped smoke evidence only.
-Standalone executable terrain smoke: artifact label `OMEGA_VERIFIED`; not project verification.
-Unity Editor Omega smoke: artifact result `PASS`; not Play Mode/profiler/GCMonitor proof.
+Standalone executable terrain smoke: historical artifact labels only; not project verification.
+Unity Editor Omega smoke: current `Library/OmegaAutonomySmokeTester.json` readback is `FAIL` on native-sentinel balance; older saved `Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_UNITY_SMOKE_CODEX_2026-05-05.json` remains historical scoped PASS evidence only.
 Project authority status: PENDING VERIFICATION.

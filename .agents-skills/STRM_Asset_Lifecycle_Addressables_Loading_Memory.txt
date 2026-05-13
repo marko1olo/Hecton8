@@ -51,6 +51,29 @@ Every frame END:
 
 ## §2 — PRIORITY QUEUE & LOAD ORDER
 
+### 2.0 Unity Addressables 2.7 Residency / Asset Load Mode
+
+[RULE] Addressables groups must use `AssetLoadMode.RequestedAssetAndDependencies` unless a domain owner proves full packed-asset residency is cheaper for that group.
+[RULE] `AllPackedAssetsAndDependencies` is allowed only for tiny always-hot bundles where resident memory is bounded in the group budget and measured in a Memory Profiler capture.
+[RULE] Residency reports must distinguish loaded handle count, resident memory, committed memory, and graphics memory. A loaded Addressables handle is not proof that all GPU-side memory is resident.
+[RULE] Asset groups must record their load mode in the streaming budget table and in the release ledger.
+
+[FORBID] Enabling `AllPackedAssetsAndDependencies` on biome, texture, audio, terrain, or HLOD groups without a written memory budget.
+[FORBID] Calling a bundle "resident-safe" without Memory Profiler resident/committed evidence from Unity 2023.1+ compatible snapshots or platform-native memory counters.
+[FORBID] Evicting based only on Addressables ref-count. Residency pressure also considers texture mip residency, render target pressure, native buffers, and driver reserve.
+
+## Engineering Data
+
+| Group Type | Required AssetLoadMode | Residency Evidence | MX350 Rule |
+|---|---|---|---|
+| Core fallback assets | RequestedAssetAndDependencies | startup Memory Profiler snapshot | May stay loaded |
+| Biome textures | RequestedAssetAndDependencies | texture memory + requested mip levels | downgrade mips before broad unload |
+| Audio ambient bank | RequestedAssetAndDependencies | resident audio memory | one active bank max under pressure |
+| Tiny always-hot LUTs | AllPackedAssetsAndDependencies allowed | size cap and resident capture | total <= 8 MB |
+| HLOD/proxy groups | RequestedAssetAndDependencies | handle ledger + VRAM ledger | release LOD0 first |
+
+Project evidence: package lock resolves `com.unity.addressables` to 2.7.6. Local package changelog documents `AssetLoadMode` with `Requested Asset And Dependencies` and `All Packed - Assets And Dependencies`.
+
 ### 2.1 Priority Tiers (byte, lower = higher priority)
 
 TIER_0 = 0x00  → Player Suit, HUD assets, Dive Computer UI

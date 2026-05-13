@@ -56,16 +56,22 @@ namespace Hecton8.Core
                 RenderSettings.fogMode = FogMode;
                 RenderSettings.fogColor = FogColor;
                 RenderSettings.fogDensity = FogDensity;
-                RenderSettings.ambientMode = AmbientMode;
-                RenderSettings.ambientLight = AmbientLight;
-                RenderSettings.ambientSkyColor = AmbientSkyColor;
-                RenderSettings.ambientEquatorColor = AmbientEquatorColor;
-                RenderSettings.ambientGroundColor = AmbientGroundColor;
-                RenderSettings.ambientIntensity = AmbientIntensity;
+                IGIRelaySystem giRelay = GlobalRegistry.GIRelay;
+                bool giRelayAmbientAuthority = giRelay != null && giRelay.IsAmbientProbeAuthorityActive;
+                if (!giRelayAmbientAuthority)
+                {
+                    RenderSettings.ambientMode = AmbientMode;
+                    RenderSettings.ambientLight = AmbientLight;
+                    RenderSettings.ambientSkyColor = AmbientSkyColor;
+                    RenderSettings.ambientEquatorColor = AmbientEquatorColor;
+                    RenderSettings.ambientGroundColor = AmbientGroundColor;
+                    RenderSettings.ambientIntensity = AmbientIntensity;
+                }
                 RenderSettings.reflectionIntensity = ReflectionIntensity;
                 AtmosphereDirector.SetSkybox(Skybox);
                 RenderSettings.sun = Sun;
-                DynamicGI.UpdateEnvironment();
+                if (!giRelayAmbientAuthority)
+                    DynamicGI.UpdateEnvironment();
             }
         }
 

@@ -1,8 +1,25 @@
 # DOC_CHRONOS Architecture Truth Sync
 
 Date: 2026-05-12
-Status: VERIFIED MASTER GRADE FOR DOCUMENTATION AUDIT / RUNTIME PENDING
+Status: HISTORICAL STATIC AUDIT / SUPERSEDED COUNTERS / RUNTIME PENDING
 Auditor: DOC_CHRONOS
+
+## 2026-05-13 Supersession
+
+Read `../../Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using numeric counters in this report.
+
+Current static corrections:
+
+| Scan | 2026-05-13 value |
+|---|---:|
+| first-party C# files under `Assets/_Project` | 1,411 |
+| first-party C# physical lines under `Assets/_Project` | 866,103 |
+| first-party non-test C# files | 1,401 |
+| first-party non-test C# physical lines | 863,364 |
+| interface declaration hits | 204 |
+| first-party asmdefs under `Assets/_Project` | 24 |
+
+The original May 12 table below is retained as historical evidence only. It is not current source truth.
 
 ## Scope
 
@@ -18,7 +35,7 @@ Forbidden write scope honored:
 - no edits to other agents' `Docs/AgentLogs`
 - no edits to other agents' `Docs/Tasks`
 
-## Source Recon
+## Original 2026-05-12 Source Recon - Superseded
 
 | Scan | Result |
 |---|---:|
@@ -227,8 +244,8 @@ External mandate pass:
 
 ## Verification Boundary
 
-Documentation audit status is `VERIFIED MASTER GRADE`.
+Documentation audit status is now `PENDING VERIFICATION` because the May 13 DOC_AUDIT pass superseded source counters and found the cited May 11 build artifacts absent from the current filesystem.
 
 Runtime proof remains `PENDING VERIFICATION` until a fresh Unity import, Console readback, Play Mode boot, profiler/GC capture, and build artifact are present.
 
-STATUS: VERIFIED MASTER GRADE
+STATUS: PENDING VERIFICATION

@@ -967,7 +967,7 @@ namespace Hecton8.UI
                 return 0f;
 
             if (_currentFabricator.IsCrafting && ReferenceEquals(_currentFabricator.ActiveRecipe, recipe))
-                return Mathf.Clamp01(_currentFabricator.CraftProgress);
+                return Mathf.Clamp01(_currentFabricator.CraftingProgress01);
 
             return 1f;
         }
