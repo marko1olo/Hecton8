@@ -50,4 +50,37 @@ namespace Hecton8.Core.Contracts
         bool TryGetSnapshot(out HardwareThermalSnapshot snapshot);
         void ForceColdSample();
     }
+
+    /// <summary>
+    /// Last committed dynamic-resolution runtime state, stored without managed payloads.
+    /// </summary>
+    public struct DynamicResolutionRuntimeSnapshot
+    {
+        public float CurrentRenderScale01;
+        public float TargetRenderScale01;
+        public float FrameTimeEwmaMs;
+        public byte PressureLevel;
+        public byte Flags;
+        public uint Frame;
+        public uint Sequence;
+    }
+
+    /// <summary>
+    /// Registry-owned render-scale writer. Graphics policy systems push numeric overrides through this contract.
+    /// </summary>
+    public interface IDynamicResolutionRuntime : IDisposable
+    {
+        float CurrentRenderScale01 { get; }
+        float TargetRenderScale01 { get; }
+        bool IsSystemOverrideActive { get; }
+        bool IsThermalOverrideActive { get; }
+        bool TryGetSnapshot(out DynamicResolutionRuntimeSnapshot snapshot);
+        void ApplySystemOverrideRenderScale(
+            float currentScale01,
+            float targetScale01,
+            float frameTimeEwmaMs,
+            byte pressureLevel,
+            byte flags);
+        void ClearSystemOverrideRenderScale();
+    }
 }

@@ -105,3 +105,19 @@ Solution: Added `_moduleStressBlackBoxDumped` and `DumpModuleStressBlackBoxOnce`
 Rejected Alternatives: Leaving repeated file writes in a fault state. That can compound failure and stall low-end storage.  
 Scalability potential: All tiers get deterministic first-fault evidence without repeated I/O.  
 Hardware Impact: Fault path writes once; normal path is one branch.
+
+## Follow-Up Correction - Shader Capacity And No-Match Safety
+
+Problem: The CPU stress matrix could process more active modules than the renderer ambience buffer exposes, and the shader resolver returned slot 0 when no module radius contained a vertex. That can waste upload bandwidth and leak room-0 stress onto unrelated geometry.
+Solution: Clamped CPU module stress publication to the 64-slot shader ambience capacity and made the HLSL resolver return a sentinel index on no-match, which `HectonHabitatInteriorReadStress01` converts to zero stress.
+Rejected Alternatives: Expanding the ambience buffer or doing a second GPU metadata buffer pass. That is a broader renderer contract change and burns memory/ALU for a case already bounded by the existing ambience system.
+Scalability potential: Low/MX350 avoids false full-screen crease feedback; Mid/High/Ultra keep localized bowing clean even when active module count exceeds the visible shader buffer.
+Hardware Impact: Caps CPU loop/upload work at 64 modules for the render stress path; prevents unnecessary buffer traffic above the shader-visible ceiling and removes incorrect slot-0 deformation.
+
+## Follow-Up Correction - Clear Path And Runtime-Key Fallback
+
+Problem: Active-order changes cleared stress arrays and published a zero shader state even though the same tick immediately uploads replacement data. Modules without graph records also hashed by slot index, so reorder could migrate spike/hysteresis state without detection.
+Solution: Split `ClearModuleStressState` into publish/no-publish paths and used the no-publish path for active-order resets. Added `ResolveModuleStressRuntimeKey` so no-graph modules use stable runtime instance ids for order hashing and direct signal fallback.
+Rejected Alternatives: Always publishing zero before replacement upload, or accepting slot-index fallback. The first burns driver traffic; the second hides real order changes.
+Scalability potential: Low/MX350 avoids unnecessary shader parameter churn; Mid/High/Ultra keep localized stress stable during pooled-module activation/reorder.
+Hardware Impact: Saves one redundant `Shader.SetGlobalVector` on active-order rebuild ticks and prevents false stress migration with one native instance-id read per no-graph module.

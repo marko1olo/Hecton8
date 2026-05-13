@@ -6,6 +6,7 @@ namespace Hecton8.Core.Database
     internal static unsafe class H8MacroDatabaseFileFormat
     {
         internal const string Extension = ".h8db";
+        internal const string CompactionTempFileName = "world_data_compact.tmp";
         internal const int NodeSizeBytes = 4096;
         internal const int HeaderSizeBytes = 4096;
         internal const int NodeMaxKeys = 169;
@@ -28,6 +29,8 @@ namespace Hecton8.Core.Database
         internal const int HeaderAppendOffset = 24;
         internal const int HeaderSectorSizeOffset = 32;
         internal const int HeaderFlagsOffset = 36;
+        internal const int HeaderDeadBytesOffset = 40;
+        internal const int HeaderCompactionGenerationOffset = 48;
 
         internal const int NodeKeyCountOffset = 0;
         internal const int NodeIsLeafOffset = 2;

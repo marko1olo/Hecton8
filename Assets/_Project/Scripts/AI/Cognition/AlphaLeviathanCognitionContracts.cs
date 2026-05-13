@@ -8,7 +8,8 @@ namespace Hecton8.AI.Cognition
         public const byte Hidden = 0;
         public const byte Circling = 1;
         public const byte FalseCharge = 2;
-        public const byte VeerOff = 3;
+        public const byte Strike = 3;
+        public const byte VeerOff = Strike;
     }
 
     public static class AlphaLeviathanTelemetryFlags

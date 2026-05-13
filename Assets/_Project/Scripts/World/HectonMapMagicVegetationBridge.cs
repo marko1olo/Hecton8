@@ -33,6 +33,25 @@ namespace Hecton8.World
             public float Padding;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        private struct AbyssalPathTelemetryEntry
+        {
+            public int Frame;
+            public int RawCount;
+            public int OutputCount;
+            public int PortalLookAhead;
+            public int MaxDdaSamples;
+            public float FunnelMs;
+            public float StartX;
+            public float StartY;
+            public float StartZ;
+            public float EndX;
+            public float EndY;
+            public float EndZ;
+            public uint Flags;
+            public uint Sequence;
+        }
+
         private struct PredatorFearNodeState
         {
             public float3 Position;
@@ -97,11 +116,18 @@ namespace Hecton8.World
         private const int MaxHeapRebalanceIterations = 4096;
         private const int MaxThreatDdaSteps = 4096;
         private const int MaxPathCompactionIterations = 4096;
+        private const int LowTierAbyssalPathPortalLookAhead = 4;
+        private const int MidTierAbyssalPathPortalLookAhead = 8;
+        private const int HighTierAbyssalPathPortalLookAhead = 16;
+        private const int AbyssalPathTelemetryFrameCount = 300;
         private const int DefaultMaxAbyssalNavNodeCapacity = 8192;
         private const int DefaultMaxAbyssalPathWaypointCapacity = 8192;
         private const int DefaultAbyssalNavHashEntriesPerNode = 4;
         private const int FixedThreatSamplingHashCapacity = 65536;
         private const int FixedArtificialStructureHashCapacity = 65536;
+        private const uint AbyssalPathTelemetryContextHash = 0x41504154u;
+        private const uint AbyssalPathOverBudgetHash = 0x46554E4Cu;
+        private const uint AbyssalPathNanFaultHash = 0x4E414E46u;
         private const string NativeMemoryOwner = nameof(HectonMapMagicVegetationBridge);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly int _ShaderVegetationAudioDensityId = Shader.PropertyToID("_HectonVegetationAudioDensity");
@@ -1719,6 +1745,13 @@ namespace Hecton8.World
         private int _underwaterAggregateCopyRecordCount;
         private int _lastAbyssalPathEndNode = -1;
         private Vector3 _lastAbyssalPathTargetPosition;
+        private NativeArray<AbyssalPathTelemetryEntry> _abyssalPathTelemetry;
+        private int _abyssalPathTelemetryCursor;
+        private uint _abyssalPathTelemetrySequence;
+        private long _abyssalPathSmoothingStartTicks;
+        private int _lastAbyssalPathPortalLookAhead;
+        private int _lastAbyssalPathMaxSamples;
+        private bool _abyssalPathTelemetryDumpedForFault;
         private bool _hasLastAbyssalPathTarget;
         private bool _aggregateRebuildScheduled;
         private bool _surfaceAggregateSwapPending;

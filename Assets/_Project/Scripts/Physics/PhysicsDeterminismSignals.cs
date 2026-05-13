@@ -16,23 +16,28 @@ namespace Hecton8.Physics
         private const int StateCorrectionSignalCapacity = 16;
         private const int DesyncDetectedSignalCapacity = 16;
         private const int SyncFenceSignalCapacity = 32;
+        private const int KccVelocitySignalCapacity = 32;
         private const string NativeMemoryOwner = nameof(PhysicsDeterminismSignals);
 
         private static NativeQueue<InputSignal> _inputSignals;
         private static NativeQueue<StateCorrectionSignal> _stateCorrectionSignals;
         private static NativeQueue<DesyncDetectedSignal> _desyncDetectedSignals;
         private static NativeQueue<SyncFenceSignal> _syncFenceSignals;
+        private static NativeQueue<KccVelocitySignal> _kccVelocitySignals;
         private static int _inputSignalCount;
         private static int _stateCorrectionSignalCount;
         private static int _desyncDetectedSignalCount;
         private static int _syncFenceSignalCount;
+        private static int _kccVelocitySignalCount;
         private static bool _initialized;
         private static uint _inputSequence;
         private static uint _inputOverrideSequence;
         private static uint _syncFenceSequence;
+        private static uint _kccVelocitySequence;
         private static InputSignal _latestInputSignal;
         private static InputSignal _latestInputOverrideSignal;
         private static SyncFenceSignal _latestSyncFenceSignal;
+        private static KccVelocitySignal _latestKccVelocitySignal;
         public const byte InputSignalFlagAutomationOverride = 1 << 0;
         public const byte StateCorrectionSignalFlagRuntimePositionValid = 1 << 0;
         public const byte StateCorrectionSignalFlagRotationValid = 1 << 1;
@@ -99,6 +104,32 @@ namespace Hecton8.Physics
             EnqueueBounded(ref _syncFenceSignals, ref _syncFenceSignalCount, SyncFenceSignalCapacity, in sequenced);
         }
 
+        public static void PublishKccVelocity(in AbsoluteUniversePosition bodyAup, float3 velocity, uint frame, uint sourceId, byte flags = 0)
+        {
+            KccVelocitySignal signal = default;
+            signal.BodyAup = bodyAup;
+            signal.Velocity = math.select(velocity, float3.zero, !math.all(math.isfinite(velocity)));
+            signal.PlanarSpeedSq = math.lengthsq(new float2(signal.Velocity.x, signal.Velocity.z));
+            signal.Frame = frame;
+            signal.SourceId = sourceId;
+            signal.Flags = flags;
+            Publish(in signal);
+        }
+
+        public static void Publish(in KccVelocitySignal signal)
+        {
+            EnsureInitialized();
+            KccVelocitySignal sequenced = signal;
+            sequenced.Sequence = NextSequence(ref _kccVelocitySequence);
+            sequenced.Velocity = math.select(sequenced.Velocity, float3.zero, !math.all(math.isfinite(sequenced.Velocity)));
+            sequenced.PlanarSpeedSq = math.select(
+                math.lengthsq(new float2(sequenced.Velocity.x, sequenced.Velocity.z)),
+                0.0f,
+                !math.all(math.isfinite(sequenced.Velocity)));
+            _latestKccVelocitySignal = sequenced;
+            EnqueueBounded(ref _kccVelocitySignals, ref _kccVelocitySignalCount, KccVelocitySignalCapacity, in sequenced);
+        }
+
         public static bool TryDequeueInput(out InputSignal signal) => TryDequeue(ref _inputSignals, ref _inputSignalCount, out signal);
 
         public static bool TryDequeueStateCorrection(out StateCorrectionSignal signal) => TryDequeue(ref _stateCorrectionSignals, ref _stateCorrectionSignalCount, out signal);
@@ -106,6 +137,8 @@ namespace Hecton8.Physics
         public static bool TryDequeueDesyncDetected(out DesyncDetectedSignal signal) => TryDequeue(ref _desyncDetectedSignals, ref _desyncDetectedSignalCount, out signal);
 
         public static bool TryDequeueSyncFence(out SyncFenceSignal signal) => TryDequeue(ref _syncFenceSignals, ref _syncFenceSignalCount, out signal);
+
+        public static bool TryDequeueKccVelocity(out KccVelocitySignal signal) => TryDequeue(ref _kccVelocitySignals, ref _kccVelocitySignalCount, out signal);
 
         public static bool TryGetLatestInput(out InputSignal signal)
         {
@@ -139,6 +172,12 @@ namespace Hecton8.Physics
             return signal.Sequence != 0u;
         }
 
+        public static bool TryGetLatestKccVelocity(out KccVelocitySignal signal)
+        {
+            signal = _latestKccVelocitySignal;
+            return signal.Sequence != 0u;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -161,6 +200,7 @@ namespace Hecton8.Physics
             CreateQueue(ref _stateCorrectionSignals, StateCorrectionSignalCapacity, nameof(_stateCorrectionSignals));
             CreateQueue(ref _desyncDetectedSignals, DesyncDetectedSignalCapacity, nameof(_desyncDetectedSignals));
             CreateQueue(ref _syncFenceSignals, SyncFenceSignalCapacity, nameof(_syncFenceSignals));
+            CreateQueue(ref _kccVelocitySignals, KccVelocitySignalCapacity, nameof(_kccVelocitySignals));
             _initialized = true;
         }
 
@@ -170,16 +210,20 @@ namespace Hecton8.Physics
             DisposeQueue(ref _stateCorrectionSignals, nameof(_stateCorrectionSignals));
             DisposeQueue(ref _desyncDetectedSignals, nameof(_desyncDetectedSignals));
             DisposeQueue(ref _syncFenceSignals, nameof(_syncFenceSignals));
+            DisposeQueue(ref _kccVelocitySignals, nameof(_kccVelocitySignals));
             _latestInputSignal = default;
             _latestInputOverrideSignal = default;
             _latestSyncFenceSignal = default;
+            _latestKccVelocitySignal = default;
             _inputSequence = 0u;
             _inputOverrideSequence = 0u;
             _syncFenceSequence = 0u;
+            _kccVelocitySequence = 0u;
             _inputSignalCount = 0;
             _stateCorrectionSignalCount = 0;
             _desyncDetectedSignalCount = 0;
             _syncFenceSignalCount = 0;
+            _kccVelocitySignalCount = 0;
             _initialized = false;
         }
 
@@ -303,6 +347,24 @@ namespace Hecton8.Physics
         public float3 Velocity;
         public quaternion Rotation;
         public uint StateHash;
+        public uint Frame;
+        public uint SourceId;
+        public uint Sequence;
+        public byte Flags;
+    }
+
+    /// <summary>
+    /// Decoupled player KCC velocity lane consumed by presentation systems such as lower-body IK.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 80)]
+    public struct KccVelocitySignal
+    {
+        public const byte FlagLowTier = 1 << 0;
+        public const byte FlagMovementAuthorityExternal = 1 << 1;
+
+        public AbsoluteUniversePosition BodyAup;
+        public float3 Velocity;
+        public float PlanarSpeedSq;
         public uint Frame;
         public uint SourceId;
         public uint Sequence;

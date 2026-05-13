@@ -7,6 +7,13 @@
 StructuredBuffer<float> _HectonHabitatModuleStressBuffer;
 float4 _HectonHabitatModuleStressParams; // x=count, y=max deformation, z=low-tier crease mode, w=peak stress
 
+uint HectonHabitatInteriorModuleCount()
+{
+    uint stressCount = min((uint)max(_HectonHabitatModuleStressParams.x, 0.0), (uint)HECTON_HABITAT_INTERIOR_MAX_MODULES);
+    uint ambienceCount = min((uint)max(_ModuleWaterLevelCount, 0), (uint)HECTON_HABITAT_INTERIOR_MAX_MODULES);
+    return min(stressCount, ambienceCount);
+}
+
 float3 HectonHabitatInteriorSafeNormalize3(float3 value)
 {
     return value * rsqrt(max(dot(value, value), 0.0001));
@@ -19,11 +26,11 @@ half3 HectonHabitatInteriorSafeNormalizeHalf3(half3 value)
 
 uint HectonHabitatInteriorResolveStressIndex(float3 positionWS)
 {
-    uint count = min((uint)max(_HectonHabitatModuleStressParams.x, 0.0), (uint)HECTON_HABITAT_INTERIOR_MAX_MODULES);
+    uint count = HectonHabitatInteriorModuleCount();
     if (count == 0u)
         return 0u;
 
-    uint bestIndex = 0u;
+    uint bestIndex = count;
     float bestDistanceSq = 1.0e20;
     [loop]
     for (uint i = 0u; i < count; i++)
@@ -44,7 +51,7 @@ uint HectonHabitatInteriorResolveStressIndex(float3 positionWS)
 
 float HectonHabitatInteriorReadStress01(uint stressIndex)
 {
-    uint count = min((uint)max(_HectonHabitatModuleStressParams.x, 0.0), (uint)HECTON_HABITAT_INTERIOR_MAX_MODULES);
+    uint count = HectonHabitatInteriorModuleCount();
     if (stressIndex >= count)
         return 0.0;
 

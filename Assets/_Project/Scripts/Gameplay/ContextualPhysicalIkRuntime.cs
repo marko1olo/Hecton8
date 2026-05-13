@@ -1,4 +1,6 @@
 using Hecton8.Core;
+using Hecton8.Animation.IK;
+using Hecton8.Physics;
 using Hecton8.World;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -52,6 +54,10 @@ namespace Hecton8.Gameplay
         public byte ThrottleTier;
         [FieldOffset(166)]
         public byte ShouldComputeThisFrame;
+        [FieldOffset(167)]
+        public byte LowerBodyFlags;
+        [FieldOffset(168)]
+        public float PelvisYawRadians;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -80,6 +86,7 @@ namespace Hecton8.Gameplay
         public float3 CameraForward;
         public float3 CameraUp;
         public float3 CameraRight;
+        public float3 KccVelocity;
         public float3 LeftToolRecoilOffset;
         public float3 RightToolRecoilOffset;
         public float3 LeftColdShiverOffset;
@@ -125,6 +132,9 @@ namespace Hecton8.Gameplay
         public int UpdateThisFrame;
         public float ViewerDistanceSq;
         public uint UpdateBitfield;
+        public uint FrameIndex;
+        public int EntitySlot;
+        public int IsXrActive;
         public byte ThrottleTier;
     }
 
@@ -137,9 +147,39 @@ namespace Hecton8.Gameplay
         public ushort ActiveEntities;
         public ushort Reserved;
         public float3 FirstRootPosition;
+        public float3 FirstLeftFootTarget;
+        public float3 FirstRightFootTarget;
         public float3 FirstLeftHandTarget;
         public float3 FirstRightHandTarget;
+        public float3 FirstKccVelocity;
         public float2 FirstHandWeights;
+    }
+
+    internal static class ContextualPhysicalIkLowerBodyConstants
+    {
+        public const int FeetPerEntity = 2;
+        public const int LeftFootIndex = 0;
+        public const int RightFootIndex = 1;
+        public const byte FlagGrounded = 1 << 0;
+        public const byte FlagStepping = 1 << 1;
+        public const byte FlagSwimming = 1 << 2;
+        public const byte FlagInvalid = 1 << 7;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    internal struct ContextualPhysicalIkFootData
+    {
+        public float3 TargetPosition;
+        public float3 CurrentPosition;
+        public float3 StepStartPosition;
+        public float3 SurfaceNormal;
+        public float StepProgress01;
+        public float StepThresholdSq;
+        public float StepHeightMeters;
+        public float Blend;
+        public byte Flags;
+        public byte Side;
+        public ushort Reserved;
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -164,8 +204,8 @@ namespace Hecton8.Gameplay
             QueryParameters wallQuery = new QueryParameters(entity.WallLayerMask, false, QueryTriggerInteraction.Ignore, false);
 
             float footPlacementMask = math.select(0.0f, 1.0f, entity.EnableFootPlacement != 0);
-            float leftFootDistance = math.max(0.0f, entity.LeftLegReach * entity.FootProbeDistanceScale) * footPlacementMask;
-            float rightFootDistance = math.max(0.0f, entity.RightLegReach * entity.FootProbeDistanceScale) * footPlacementMask;
+            float leftFootDistance = math.max(ContextualPhysicalIkRuntime.GroundPresenceDistanceMeters, math.max(0.0f, entity.LeftLegReach * entity.FootProbeDistanceScale)) * footPlacementMask;
+            float rightFootDistance = math.max(ContextualPhysicalIkRuntime.GroundPresenceDistanceMeters, math.max(0.0f, entity.RightLegReach * entity.FootProbeDistanceScale)) * footPlacementMask;
             bool leftHandUsesPredictiveLatch = entity.PredictiveLeftHandBlend > 0.0001f;
             bool rightHandUsesPredictiveLatch = entity.PredictiveRightHandBlend > 0.0001f;
             float wallTouchMask = math.select(0.0f, 1.0f, entity.EnableHandBracing != 0 && entity.EnableWallTouch != 0);
@@ -195,15 +235,17 @@ namespace Hecton8.Gameplay
                 math.select(0.0f, 1.0f, entity.EnableToolRetraction != 0 && entity.HasCameraPose != 0);
             float3 leftToolRayOrigin = cameraPosition - (cameraRight * cameraHandLateralOffset) + (cameraUp * cameraHandVerticalOffset);
             float3 rightToolRayOrigin = cameraPosition + (cameraRight * cameraHandLateralOffset) + (cameraUp * cameraHandVerticalOffset);
+            float3 leftFootRayOrigin = ResolveHipFootRayOrigin(in entity, rootRight, -1.0f);
+            float3 rightFootRayOrigin = ResolveHipFootRayOrigin(in entity, rootRight, 1.0f);
 
             Commands[baseCommandIndex + 0] = new RaycastCommand(
-                ContextualPhysicalIkMath.ToUnityVector3(entity.LeftFootProbeOrigin),
+                ContextualPhysicalIkMath.ToUnityVector3(leftFootRayOrigin),
                 Vector3.down,
                 groundQuery,
                 leftFootDistance);
 
             Commands[baseCommandIndex + 1] = new RaycastCommand(
-                ContextualPhysicalIkMath.ToUnityVector3(entity.RightFootProbeOrigin),
+                ContextualPhysicalIkMath.ToUnityVector3(rightFootRayOrigin),
                 Vector3.down,
                 groundQuery,
                 rightFootDistance);
@@ -269,6 +311,18 @@ namespace Hecton8.Gameplay
                 new QueryParameters(HectonLayerMasks.NoLayers, false, QueryTriggerInteraction.Ignore, false),
                 0.0f);
         }
+
+        private static float3 ResolveHipFootRayOrigin(
+            in ContextualPhysicalIkEntityState entity,
+            float3 rootRight,
+            float side)
+        {
+            float3 authoredProbe = side < 0.0f ? entity.LeftFootProbeOrigin : entity.RightFootProbeOrigin;
+            float3 pelvisToProbe = authoredProbe - entity.PelvisPosition;
+            float lateral = math.clamp(math.abs(math.dot(pelvisToProbe, rootRight)), 0.08f, 0.45f);
+            float3 hipOrigin = entity.PelvisPosition + (rootRight * (side * lateral));
+            return math.select(hipOrigin, authoredProbe, !math.all(math.isfinite(hipOrigin)));
+        }
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -281,10 +335,14 @@ namespace Hecton8.Gameplay
         public NativeArray<ContextualPhysicalIkTargetFrame> NextTargets;
         public NativeArray<float3> IkTargets;
         public NativeArray<float> IkWeights;
+        public NativeArray<ContextualPhysicalIkFootData> FootData;
+        public NativeArray<float3> FootTargets;
+        public NativeArray<float3> FootCurrentPos;
 
         public void Execute(int index)
         {
             int baseIkIndex = index * ContextualPhysicalIkRuntime.HandsPerEntity;
+            int baseFootIndex = index * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity;
             ContextualPhysicalIkEntityState entity = Entities[index];
             if (entity.IsActive == 0)
             {
@@ -293,6 +351,7 @@ namespace Hecton8.Gameplay
                 IkTargets[baseIkIndex + ContextualPhysicalIkRuntime.RightHandIndex] = float3.zero;
                 IkWeights[baseIkIndex + ContextualPhysicalIkRuntime.LeftHandIndex] = 0.0f;
                 IkWeights[baseIkIndex + ContextualPhysicalIkRuntime.RightHandIndex] = 0.0f;
+                ClearFootSoa(baseFootIndex);
                 return;
             }
 
@@ -314,43 +373,18 @@ namespace Hecton8.Gameplay
             if (entity.UpdateThisFrame == 0)
             {
                 WriteIkSoa(baseIkIndex, in next);
+                WriteFootSoa(baseFootIndex, in next);
                 NextTargets[index] = next;
                 return;
             }
 
-            if (entity.EnableFootPlacement != 0)
-            {
-                ResolveContactTarget(
-                    ref next.LeftFoot,
-                    in previous.LeftFoot,
-                    in leftFootHit,
-                    entity.LeftFootProbeOrigin,
-                    entity.FootContactOffset,
-                    1.0f,
-                    entity.TargetPositionSharpness,
-                    entity.TargetNormalSharpness,
-                    entity.BlendFadeSharpness,
-                    entity.MaxDeltaHeight,
-                    entity.DeltaTime);
-
-                ResolveContactTarget(
-                    ref next.RightFoot,
-                    in previous.RightFoot,
-                    in rightFootHit,
-                    entity.RightFootProbeOrigin,
-                    entity.FootContactOffset,
-                    1.0f,
-                    entity.TargetPositionSharpness,
-                    entity.TargetNormalSharpness,
-                    entity.BlendFadeSharpness,
-                    entity.MaxDeltaHeight,
-                    entity.DeltaTime);
-            }
-            else
-            {
-                FadeOutTarget(ref next.LeftFoot, in previous.LeftFoot, entity.BlendFadeSharpness, entity.DeltaTime);
-                FadeOutTarget(ref next.RightFoot, in previous.RightFoot, entity.BlendFadeSharpness, entity.DeltaTime);
-            }
+            ResolveLowerBodyPresence(
+                ref next,
+                in previous,
+                in entity,
+                in leftFootHit,
+                in rightFootHit,
+                baseFootIndex);
 
             float tunnelTargetBlend = entity.EnableHandBracing != 0 && entity.EnableWallTouch != 0
                 ? ResolveBraceProxyTunnelBlend(in leftHandHit, in rightHandHit, in entity)
@@ -513,6 +547,385 @@ namespace Hecton8.Gameplay
             IkTargets[baseIkIndex + ContextualPhysicalIkRuntime.RightHandIndex] = frame.RightHand.WorldPosition;
             IkWeights[baseIkIndex + ContextualPhysicalIkRuntime.LeftHandIndex] = math.saturate(frame.LeftHand.Blend);
             IkWeights[baseIkIndex + ContextualPhysicalIkRuntime.RightHandIndex] = math.saturate(frame.RightHand.Blend);
+        }
+
+        private void ClearFootSoa(int baseFootIndex)
+        {
+            int leftIndex = baseFootIndex + ContextualPhysicalIkLowerBodyConstants.LeftFootIndex;
+            int rightIndex = baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex;
+            if (FootTargets.IsCreated && rightIndex < FootTargets.Length)
+            {
+                FootTargets[leftIndex] = float3.zero;
+                FootTargets[rightIndex] = float3.zero;
+            }
+
+            if (FootCurrentPos.IsCreated && rightIndex < FootCurrentPos.Length)
+            {
+                FootCurrentPos[leftIndex] = float3.zero;
+                FootCurrentPos[rightIndex] = float3.zero;
+            }
+
+            if (FootData.IsCreated && rightIndex < FootData.Length)
+            {
+                FootData[leftIndex] = default;
+                FootData[rightIndex] = default;
+            }
+        }
+
+        private void WriteFootSoa(int baseFootIndex, in ContextualPhysicalIkTargetFrame frame)
+        {
+            int leftIndex = baseFootIndex + ContextualPhysicalIkLowerBodyConstants.LeftFootIndex;
+            int rightIndex = baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex;
+            if (FootTargets.IsCreated && rightIndex < FootTargets.Length)
+            {
+                FootTargets[leftIndex] = frame.LeftFoot.WorldPosition;
+                FootTargets[rightIndex] = frame.RightFoot.WorldPosition;
+            }
+
+            if (FootCurrentPos.IsCreated && rightIndex < FootCurrentPos.Length)
+            {
+                FootCurrentPos[leftIndex] = frame.LeftFoot.WorldPosition;
+                FootCurrentPos[rightIndex] = frame.RightFoot.WorldPosition;
+            }
+        }
+
+        private void ResolveLowerBodyPresence(
+            ref ContextualPhysicalIkTargetFrame next,
+            in ContextualPhysicalIkTargetFrame previous,
+            in ContextualPhysicalIkEntityState entity,
+            in RaycastHit leftFootHit,
+            in RaycastHit rightFootHit,
+            int baseFootIndex)
+        {
+            next.PelvisYawRadians = ResolvePelvisYawRadians(in entity);
+            next.LowerBodyFlags = 0;
+
+            if (entity.EnableFootPlacement == 0)
+            {
+                FadeOutTarget(ref next.LeftFoot, in previous.LeftFoot, entity.BlendFadeSharpness, entity.DeltaTime);
+                FadeOutTarget(ref next.RightFoot, in previous.RightFoot, entity.BlendFadeSharpness, entity.DeltaTime);
+                FadeFootLane(baseFootIndex + ContextualPhysicalIkLowerBodyConstants.LeftFootIndex, in next.LeftFoot, entity.BlendFadeSharpness, entity.DeltaTime);
+                FadeFootLane(baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex, in next.RightFoot, entity.BlendFadeSharpness, entity.DeltaTime);
+                WriteFootSoa(baseFootIndex, in next);
+                return;
+            }
+
+            bool leftGrounded = TryBuildGroundFootCandidate(
+                in leftFootHit,
+                entity.LeftFootProbeOrigin,
+                entity.FootContactOffset,
+                entity.MaxDeltaHeight,
+                out float3 leftTarget,
+                out float3 leftNormal,
+                out float leftDeltaHeight);
+            bool rightGrounded = TryBuildGroundFootCandidate(
+                in rightFootHit,
+                entity.RightFootProbeOrigin,
+                entity.FootContactOffset,
+                entity.MaxDeltaHeight,
+                out float3 rightTarget,
+                out float3 rightNormal,
+                out float rightDeltaHeight);
+
+            byte leftFlags = leftGrounded ? ContextualPhysicalIkLowerBodyConstants.FlagGrounded : ContextualPhysicalIkLowerBodyConstants.FlagSwimming;
+            byte rightFlags = rightGrounded ? ContextualPhysicalIkLowerBodyConstants.FlagGrounded : ContextualPhysicalIkLowerBodyConstants.FlagSwimming;
+            float leftBlend = leftGrounded ? 1.0f : ContextualPhysicalIkRuntime.SwimFootBlend;
+            float rightBlend = rightGrounded ? 1.0f : ContextualPhysicalIkRuntime.SwimFootBlend;
+            if (!leftGrounded)
+            {
+                BuildSwimFootCandidate(in entity, -1.0f, out leftTarget, out leftNormal);
+                leftDeltaHeight = 0.0f;
+            }
+
+            if (!rightGrounded)
+            {
+                BuildSwimFootCandidate(in entity, 1.0f, out rightTarget, out rightNormal);
+                rightDeltaHeight = 0.0f;
+            }
+
+            int leftFootIndex = baseFootIndex + ContextualPhysicalIkLowerBodyConstants.LeftFootIndex;
+            int rightFootIndex = baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex;
+            ContextualPhysicalIkFootData leftData = ReadFootData(leftFootIndex);
+            ContextualPhysicalIkFootData rightData = ReadFootData(rightFootIndex);
+            bool leftStepping = IsStepping(in leftData);
+            bool rightStepping = IsStepping(in rightData);
+            bool leftWantsStep = leftGrounded && ShouldTriggerStep(in leftData, in previous.LeftFoot, leftTarget);
+            bool rightWantsStep = rightGrounded && ShouldTriggerStep(in rightData, in previous.RightFoot, rightTarget);
+
+            if (leftStepping)
+                rightWantsStep = false;
+            else if (rightStepping)
+                leftWantsStep = false;
+            else if (leftWantsStep && rightWantsStep)
+            {
+                bool chooseLeft = ((entity.FrameIndex + (uint)math.max(0, entity.EntitySlot)) & 1u) == 0u;
+                rightWantsStep = !chooseLeft;
+                leftWantsStep = chooseLeft;
+            }
+
+            UpdateFootLane(
+                leftFootIndex,
+                ref leftData,
+                leftTarget,
+                leftNormal,
+                leftBlend,
+                leftDeltaHeight,
+                0,
+                leftFlags,
+                leftWantsStep,
+                !leftGrounded,
+                in entity,
+                in previous.LeftFoot,
+                out next.LeftFoot);
+            UpdateFootLane(
+                rightFootIndex,
+                ref rightData,
+                rightTarget,
+                rightNormal,
+                rightBlend,
+                rightDeltaHeight,
+                1,
+                rightFlags,
+                rightWantsStep,
+                !rightGrounded,
+                in entity,
+                in previous.RightFoot,
+                out next.RightFoot);
+
+            next.LowerBodyFlags = (byte)(leftData.Flags | rightData.Flags);
+        }
+
+        private ContextualPhysicalIkFootData ReadFootData(int footIndex)
+        {
+            if (!FootData.IsCreated || footIndex < 0 || footIndex >= FootData.Length)
+                return default;
+
+            return FootData[footIndex];
+        }
+
+        private void FadeFootLane(int footIndex, in ContextualPhysicalIkContactTarget target, float fadeSharpness, float deltaTime)
+        {
+            if (!FootData.IsCreated || footIndex < 0 || footIndex >= FootData.Length)
+                return;
+
+            ContextualPhysicalIkFootData data = FootData[footIndex];
+            data.TargetPosition = target.WorldPosition;
+            data.CurrentPosition = target.WorldPosition;
+            data.StepStartPosition = target.WorldPosition;
+            data.SurfaceNormal = target.WorldNormal;
+            data.StepProgress01 = 1.0f;
+            data.Blend = ContextualPhysicalIkMath.SmoothScalar(data.Blend, 0.0f, fadeSharpness, deltaTime);
+            data.Flags = 0;
+            FootData[footIndex] = data;
+        }
+
+        private void UpdateFootLane(
+            int footIndex,
+            ref ContextualPhysicalIkFootData data,
+            float3 targetPosition,
+            float3 targetNormal,
+            float targetBlend,
+            float deltaHeight,
+            byte side,
+            byte candidateFlags,
+            bool allowStep,
+            bool directSwim,
+            in ContextualPhysicalIkEntityState entity,
+            in ContextualPhysicalIkContactTarget previousTarget,
+            out ContextualPhysicalIkContactTarget resolvedTarget)
+        {
+            float3 safeTarget = math.select(targetPosition, entity.PelvisPosition, !math.all(math.isfinite(targetPosition)));
+            float3 safeNormal = ContextualPhysicalIkMath.SafeNormalize(targetNormal, new float3(0.0f, 1.0f, 0.0f));
+            float3 currentPosition = ResolveFootCurrentPosition(in data, in previousTarget, safeTarget);
+            byte flags = candidateFlags;
+            if (!math.all(math.isfinite(targetPosition)) || !math.all(math.isfinite(currentPosition)))
+            {
+                currentPosition = safeTarget;
+                flags |= ContextualPhysicalIkLowerBodyConstants.FlagInvalid;
+            }
+
+            data.StepThresholdSq = ContextualPhysicalIkRuntime.StepTriggerDistanceMeters * ContextualPhysicalIkRuntime.StepTriggerDistanceMeters;
+            data.StepHeightMeters = ContextualPhysicalIkRuntime.StepHeightMeters;
+            if (directSwim)
+            {
+                data.StepProgress01 = 1.0f;
+                data.StepStartPosition = currentPosition;
+                currentPosition = ContextualPhysicalIkMath.SmoothVector(
+                    currentPosition,
+                    safeTarget,
+                    entity.TargetPositionSharpness,
+                    entity.DeltaTime);
+            }
+            else
+            {
+                bool stepping = IsStepping(in data);
+                if (allowStep && !stepping)
+                {
+                    data.StepStartPosition = currentPosition;
+                    data.StepProgress01 = 0.0f;
+                    stepping = true;
+                }
+
+                if (stepping)
+                {
+                    float safeDuration = math.max(0.0001f, ContextualPhysicalIkRuntime.StepDurationSeconds);
+                    float progress = math.saturate(data.StepProgress01 + (math.max(0.0f, entity.DeltaTime) * math.rcp(safeDuration)));
+                    float lift01 = 1.0f - math.abs((progress * 2.0f) - 1.0f);
+                    currentPosition = math.lerp(data.StepStartPosition, safeTarget, progress);
+                    currentPosition.y += lift01 * data.StepHeightMeters;
+                    data.StepProgress01 = progress;
+                    if (progress < 0.999f)
+                        flags |= ContextualPhysicalIkLowerBodyConstants.FlagStepping;
+                    else
+                    {
+                        currentPosition = safeTarget;
+                        data.StepProgress01 = 1.0f;
+                    }
+                }
+                else
+                {
+                    currentPosition = ContextualPhysicalIkMath.SmoothVector(
+                        currentPosition,
+                        safeTarget,
+                        entity.TargetPositionSharpness,
+                        entity.DeltaTime);
+                    data.StepProgress01 = 1.0f;
+                    data.StepStartPosition = currentPosition;
+                }
+            }
+
+            currentPosition = math.select(currentPosition, safeTarget, !math.all(math.isfinite(currentPosition)));
+            float smoothedBlend = ContextualPhysicalIkMath.SmoothScalar(
+                data.Blend,
+                math.saturate(targetBlend),
+                entity.BlendFadeSharpness,
+                entity.DeltaTime);
+            data.TargetPosition = safeTarget;
+            data.CurrentPosition = currentPosition;
+            data.SurfaceNormal = safeNormal;
+            data.Blend = smoothedBlend;
+            data.Side = side;
+            data.Flags = flags;
+
+            if (FootData.IsCreated && footIndex >= 0 && footIndex < FootData.Length)
+                FootData[footIndex] = data;
+
+            if (FootTargets.IsCreated && footIndex >= 0 && footIndex < FootTargets.Length)
+                FootTargets[footIndex] = safeTarget;
+
+            if (FootCurrentPos.IsCreated && footIndex >= 0 && footIndex < FootCurrentPos.Length)
+                FootCurrentPos[footIndex] = currentPosition;
+
+            resolvedTarget.WorldPosition = currentPosition;
+            resolvedTarget.WorldNormal = safeNormal;
+            resolvedTarget.Blend = smoothedBlend;
+            resolvedTarget.DeltaHeight = math.clamp(deltaHeight, -entity.MaxDeltaHeight, entity.MaxDeltaHeight);
+        }
+
+        private static bool TryBuildGroundFootCandidate(
+            in RaycastHit hit,
+            float3 probeOrigin,
+            float contactOffset,
+            float maxDeltaHeight,
+            out float3 targetPosition,
+            out float3 targetNormal,
+            out float deltaHeight)
+        {
+            targetPosition = probeOrigin;
+            targetNormal = new float3(0.0f, 1.0f, 0.0f);
+            deltaHeight = 0.0f;
+            if (!HasHit(in hit) || hit.distance > ContextualPhysicalIkRuntime.GroundPresenceDistanceMeters)
+                return false;
+
+            targetNormal = ContextualPhysicalIkMath.SafeNormalize(ContextualPhysicalIkMath.ToFloat3(hit.normal), targetNormal);
+            targetPosition = ContextualPhysicalIkMath.ToFloat3(hit.point) + (targetNormal * contactOffset);
+            if (!math.all(math.isfinite(targetPosition)))
+            {
+                targetPosition = probeOrigin;
+                return false;
+            }
+
+            deltaHeight = math.clamp(targetPosition.y - probeOrigin.y, -maxDeltaHeight, maxDeltaHeight);
+            return true;
+        }
+
+        private static void BuildSwimFootCandidate(
+            in ContextualPhysicalIkEntityState entity,
+            float side,
+            out float3 targetPosition,
+            out float3 targetNormal)
+        {
+            float3 rootForward = ContextualPhysicalIkMath.SafeNormalize(
+                math.mul(entity.RootRotation, new float3(0.0f, 0.0f, 1.0f)),
+                new float3(0.0f, 0.0f, 1.0f));
+            float3 rootRight = ContextualPhysicalIkMath.SafeNormalize(
+                math.mul(entity.RootRotation, new float3(1.0f, 0.0f, 0.0f)),
+                new float3(1.0f, 0.0f, 0.0f));
+            float3 rootUp = ContextualPhysicalIkMath.SafeNormalize(
+                math.mul(entity.RootRotation, new float3(0.0f, 1.0f, 0.0f)),
+                new float3(0.0f, 1.0f, 0.0f));
+            float3 swimDirection = ContextualPhysicalIkMath.SafeNormalize(entity.KccVelocity, rootForward);
+            if (math.lengthsq(entity.KccVelocity) <= 0.0025f)
+                swimDirection = rootForward;
+
+            targetNormal = rootUp;
+            targetPosition = entity.PelvisPosition -
+                (swimDirection * ContextualPhysicalIkRuntime.SwimBackDistanceMeters) -
+                (rootUp * ContextualPhysicalIkRuntime.SwimDownDistanceMeters) +
+                (rootRight * (side * ContextualPhysicalIkRuntime.SwimSideOffsetMeters));
+            targetPosition = math.select(targetPosition, entity.PelvisPosition, !math.all(math.isfinite(targetPosition)));
+        }
+
+        private static float ResolvePelvisYawRadians(in ContextualPhysicalIkEntityState entity)
+        {
+            if (entity.HasCameraPose == 0)
+                return 0.0f;
+
+            float3 rootForward = ContextualPhysicalIkMath.SafeNormalize(
+                math.mul(entity.RootRotation, new float3(0.0f, 0.0f, 1.0f)),
+                new float3(0.0f, 0.0f, 1.0f));
+            float3 rootRight = ContextualPhysicalIkMath.SafeNormalize(
+                math.mul(entity.RootRotation, new float3(1.0f, 0.0f, 0.0f)),
+                new float3(1.0f, 0.0f, 0.0f));
+            float3 rootUp = ContextualPhysicalIkMath.SafeNormalize(
+                math.mul(entity.RootRotation, new float3(0.0f, 1.0f, 0.0f)),
+                new float3(0.0f, 1.0f, 0.0f));
+            float3 cameraPlanar = entity.CameraForward - (rootUp * math.dot(entity.CameraForward, rootUp));
+            cameraPlanar = ContextualPhysicalIkMath.SafeNormalize(cameraPlanar, rootForward);
+            float signedRight = math.clamp(math.dot(cameraPlanar, rootRight), -1.0f, 1.0f);
+            return math.clamp(signedRight * ContextualPhysicalIkRuntime.PelvisCameraYawMaxRadians, -ContextualPhysicalIkRuntime.PelvisCameraYawMaxRadians, ContextualPhysicalIkRuntime.PelvisCameraYawMaxRadians);
+        }
+
+        private static bool ShouldTriggerStep(
+            in ContextualPhysicalIkFootData data,
+            in ContextualPhysicalIkContactTarget previousTarget,
+            float3 targetPosition)
+        {
+            float3 currentPosition = ResolveFootCurrentPosition(in data, in previousTarget, targetPosition);
+            if (!math.all(math.isfinite(currentPosition)) || !math.all(math.isfinite(targetPosition)))
+                return false;
+
+            float thresholdSq = ContextualPhysicalIkRuntime.StepTriggerDistanceMeters * ContextualPhysicalIkRuntime.StepTriggerDistanceMeters;
+            return math.lengthsq(currentPosition - targetPosition) > thresholdSq;
+        }
+
+        private static bool IsStepping(in ContextualPhysicalIkFootData data)
+        {
+            return (data.Flags & ContextualPhysicalIkLowerBodyConstants.FlagStepping) != 0 && data.StepProgress01 < 0.999f;
+        }
+
+        private static float3 ResolveFootCurrentPosition(
+            in ContextualPhysicalIkFootData data,
+            in ContextualPhysicalIkContactTarget previousTarget,
+            float3 fallback)
+        {
+            if (data.Blend > 0.0001f && math.all(math.isfinite(data.CurrentPosition)))
+                return data.CurrentPosition;
+
+            if (previousTarget.Blend > 0.0001f && math.all(math.isfinite(previousTarget.WorldPosition)))
+                return previousTarget.WorldPosition;
+
+            return fallback;
         }
 
         private static float2 ResolveSlopeLeanRadians(
@@ -795,9 +1208,18 @@ namespace Hecton8.Gameplay
         private const int TelemetryCapacity = 300;
         private const int MinCommandsPerJob = 32;
         private const float CameraResolveRetryInterval = 1.0f;
+        internal const float GroundPresenceDistanceMeters = 3.0f;
+        internal const float StepTriggerDistanceMeters = 0.22f;
+        internal const float StepHeightMeters = 0.11f;
+        internal const float StepDurationSeconds = 0.22f;
+        internal const float SwimFootBlend = 0.68f;
+        internal const float SwimBackDistanceMeters = 0.42f;
+        internal const float SwimDownDistanceMeters = 0.55f;
+        internal const float SwimSideOffsetMeters = 0.16f;
+        internal const float PelvisCameraYawMaxRadians = 0.18f;
         private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRuntime);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
-        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_PLAYER_TOOL_IK.bin";
+        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ANIM_PROCEDURAL_LEGS_IK.bin";
 
         // COLD ALLOC: ContextualPhysicalIkRig[128] - stable slot owner registry for contextual IK entities - owner: ContextualPhysicalIkRuntime
         private readonly ContextualPhysicalIkRig[] _registeredRigs = new ContextualPhysicalIkRig[MaxEntities];
@@ -813,6 +1235,9 @@ namespace Hecton8.Gameplay
         private NativeArray<ContextualPhysicalIkTargetFrame> _backTargetFrames;
         private NativeArray<float3> _ikTargets;
         private NativeArray<float> _ikWeights;
+        private NativeArray<ContextualPhysicalIkFootData> _footIkData;
+        private NativeArray<float3> _footTargets;
+        private NativeArray<float3> _footCurrentPos;
         private NativeArray<ContextualPhysicalIkTelemetryEntry> _telemetryRing;
 
         private JobHandle _pendingGroundResponseHandle;
@@ -825,6 +1250,8 @@ namespace Hecton8.Gameplay
         private bool _registeredOriginShiftListener;
         private int _freeSlotCount;
         private float _cameraResolveRetryTimer;
+        private float3 _lastKccVelocity;
+        private uint _lastKccVelocityFrame;
         private uint _frameIndex;
         private int _telemetryCursor;
         private bool _telemetryDumped;
@@ -893,6 +1320,9 @@ namespace Hecton8.Gameplay
             RebaseTargetFrames(_frontTargetFrames, offset);
             RebaseTargetFrames(_backTargetFrames, offset);
             RebaseFloat3Lanes(_ikTargets, offset);
+            RebaseFloat3Lanes(_footTargets, offset);
+            RebaseFloat3Lanes(_footCurrentPos, offset);
+            RebaseFootData(offset);
         }
 
         /// <inheritdoc />
@@ -910,7 +1340,8 @@ namespace Hecton8.Gameplay
             if (_groundResponseScheduled)
                 return;
 
-            if (!CaptureEntityStates(deltaTime, frameIndex, viewerPosition, viewerForward, viewerUp, viewerRight, hasViewerPosition))
+            float3 kccVelocity = ConsumeKccVelocitySignal(frameIndex);
+            if (!CaptureEntityStates(deltaTime, frameIndex, viewerPosition, viewerForward, viewerUp, viewerRight, hasViewerPosition, kccVelocity))
                 return;
 
             ScheduleGroundPipeline();
@@ -1035,6 +1466,33 @@ namespace Hecton8.Gameplay
                 NativeMemorySentinel.RegisterNativeArray(_ikWeights, NativeMemoryOwner, nameof(_ikWeights), NativeMemoryLifetime);
             }
 
+            if (!_footIkData.IsCreated)
+            {
+                _footIkData = new NativeArray<ContextualPhysicalIkFootData>(
+                    MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkFootData>[256] - packed lower-body presence foot lanes - owner: ContextualPhysicalIkRuntime
+                NativeMemorySentinel.RegisterNativeArray(_footIkData, NativeMemoryOwner, nameof(_footIkData), NativeMemoryLifetime);
+            }
+
+            if (!_footTargets.IsCreated)
+            {
+                _footTargets = new NativeArray<float3>(
+                    MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[256] - SOA desired foot IK positions - owner: ContextualPhysicalIkRuntime
+                NativeMemorySentinel.RegisterNativeArray(_footTargets, NativeMemoryOwner, nameof(_footTargets), NativeMemoryLifetime);
+            }
+
+            if (!_footCurrentPos.IsCreated)
+            {
+                _footCurrentPos = new NativeArray<float3>(
+                    MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[256] - SOA current stepped foot IK positions - owner: ContextualPhysicalIkRuntime
+                NativeMemorySentinel.RegisterNativeArray(_footCurrentPos, NativeMemoryOwner, nameof(_footCurrentPos), NativeMemoryLifetime);
+            }
+
             if (!_telemetryRing.IsCreated)
             {
                 _telemetryRing = new NativeArray<ContextualPhysicalIkTelemetryEntry>(
@@ -1055,6 +1513,9 @@ namespace Hecton8.Gameplay
             DisposeNativeArray(ref _backTargetFrames, dependency);
             DisposeNativeArray(ref _ikTargets, dependency);
             DisposeNativeArray(ref _ikWeights, dependency);
+            DisposeNativeArray(ref _footIkData, dependency);
+            DisposeNativeArray(ref _footTargets, dependency);
+            DisposeNativeArray(ref _footCurrentPos, dependency);
             DisposeNativeArray(ref _telemetryRing, dependency);
             JobHandle.ScheduleBatchedJobs();
             _groundResponseScheduled = false;
@@ -1212,6 +1673,28 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void RebaseFootData(float3 shiftOffset)
+        {
+            if (!_footIkData.IsCreated)
+                return;
+
+            for (int laneIndex = 0; laneIndex < _footIkData.Length; laneIndex++)
+            {
+                ContextualPhysicalIkFootData data = _footIkData[laneIndex];
+                if (data.Blend <= 0.0001f &&
+                    math.lengthsq(data.CurrentPosition) <= 0.000001f &&
+                    math.lengthsq(data.TargetPosition) <= 0.000001f)
+                {
+                    continue;
+                }
+
+                data.TargetPosition -= shiftOffset;
+                data.CurrentPosition -= shiftOffset;
+                data.StepStartPosition -= shiftOffset;
+                _footIkData[laneIndex] = data;
+            }
+        }
+
         private bool CaptureEntityStates(
             float deltaTime,
             uint frameIndex,
@@ -1219,7 +1702,8 @@ namespace Hecton8.Gameplay
             float3 viewerForward,
             float3 viewerUp,
             float3 viewerRight,
-            bool hasViewerPosition)
+            bool hasViewerPosition,
+            float3 kccVelocity)
         {
             bool hasActiveEntity = false;
             for (int slotIndex = 0; slotIndex < MaxEntities; slotIndex++)
@@ -1239,6 +1723,10 @@ namespace Hecton8.Gameplay
                             hasViewerPosition,
                             ref entityState))
                     {
+                        entityState.KccVelocity = kccVelocity;
+                        entityState.FrameIndex = frameIndex;
+                        entityState.EntitySlot = slotIndex;
+                        entityState.IsXrActive = HectonXRRuntimeState.IsXRActive ? 1 : 0;
                         hasActiveEntity = true;
                     }
                 }
@@ -1247,6 +1735,26 @@ namespace Hecton8.Gameplay
             }
 
             return hasActiveEntity;
+        }
+
+        private float3 ConsumeKccVelocitySignal(uint fallbackFrame)
+        {
+            uint currentFrame = unchecked((uint)Time.frameCount);
+            if (PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal))
+            {
+                uint signalFrame = signal.Frame != 0u ? signal.Frame : currentFrame;
+                uint signalAge = currentFrame >= signalFrame ? currentFrame - signalFrame : 0u;
+                if (signalAge <= 8u && math.all(math.isfinite(signal.Velocity)))
+                {
+                    _lastKccVelocity = signal.Velocity;
+                    _lastKccVelocityFrame = signalFrame != 0u ? signalFrame : fallbackFrame;
+                }
+            }
+
+            uint cachedAge = currentFrame >= _lastKccVelocityFrame ? currentFrame - _lastKccVelocityFrame : 0u;
+            return _lastKccVelocityFrame != 0u && cachedAge <= 8u && math.all(math.isfinite(_lastKccVelocity))
+                ? _lastKccVelocity
+                : float3.zero;
         }
 
         private bool TryResolveViewerPose(
@@ -1322,6 +1830,9 @@ namespace Hecton8.Gameplay
                 NextTargets = _backTargetFrames,
                 IkTargets = _ikTargets,
                 IkWeights = _ikWeights,
+                FootData = _footIkData,
+                FootTargets = _footTargets,
+                FootCurrentPos = _footCurrentPos,
             };
 
             JobHandle responseHandle = responseJob.Schedule(MaxEntities, 32, groundDetectionHandle);
@@ -1359,11 +1870,15 @@ namespace Hecton8.Gameplay
             uint stateHash = 2166136261u;
             ushort activeCount = 0;
             float3 firstRootPosition = float3.zero;
+            float3 firstLeftFootTarget = float3.zero;
+            float3 firstRightFootTarget = float3.zero;
             float3 firstLeftTarget = float3.zero;
             float3 firstRightTarget = float3.zero;
+            float3 firstKccVelocity = float3.zero;
             float2 firstWeights = float2.zero;
             bool capturedFirst = false;
             bool invalid = false;
+            uint lowerBodyFlags = 0u;
 
             for (int slotIndex = 0; slotIndex < MaxEntities; slotIndex++)
             {
@@ -1382,14 +1897,21 @@ namespace Hecton8.Gameplay
 
                 stateHash = MixHash(stateHash, (uint)slotIndex);
                 stateHash = MixHash(stateHash, math.hash(entity.RootPosition));
+                stateHash = MixHash(stateHash, math.hash(frame.LeftFoot.WorldPosition));
+                stateHash = MixHash(stateHash, math.hash(frame.RightFoot.WorldPosition));
                 stateHash = MixHash(stateHash, math.hash(frame.LeftHand.WorldPosition));
                 stateHash = MixHash(stateHash, math.hash(frame.RightHand.WorldPosition));
+                stateHash = MixHash(stateHash, math.hash(entity.KccVelocity));
                 stateHash = MixHash(stateHash, math.hash(weights));
+                lowerBodyFlags |= frame.LowerBodyFlags;
 
                 bool slotInvalid =
                     !math.all(math.isfinite(entity.RootPosition)) ||
+                    !math.all(math.isfinite(frame.LeftFoot.WorldPosition)) ||
+                    !math.all(math.isfinite(frame.RightFoot.WorldPosition)) ||
                     !math.all(math.isfinite(frame.LeftHand.WorldPosition)) ||
                     !math.all(math.isfinite(frame.RightHand.WorldPosition)) ||
+                    !math.all(math.isfinite(entity.KccVelocity)) ||
                     !math.all(math.isfinite(weights));
                 invalid |= slotInvalid;
 
@@ -1397,13 +1919,16 @@ namespace Hecton8.Gameplay
                     continue;
 
                 firstRootPosition = entity.RootPosition;
+                firstLeftFootTarget = frame.LeftFoot.WorldPosition;
+                firstRightFootTarget = frame.RightFoot.WorldPosition;
                 firstLeftTarget = frame.LeftHand.WorldPosition;
                 firstRightTarget = frame.RightHand.WorldPosition;
+                firstKccVelocity = entity.KccVelocity;
                 firstWeights = weights;
                 capturedFirst = true;
             }
 
-            uint flags = reasonFlags | (invalid ? 0x80000000u : 0u);
+            uint flags = reasonFlags | ((lowerBodyFlags & 0xFFu) << 8) | (invalid ? 0x80000000u : 0u);
             _telemetryRing[_telemetryCursor] = new ContextualPhysicalIkTelemetryEntry
             {
                 Frame = unchecked((uint)Time.frameCount),
@@ -1412,8 +1937,11 @@ namespace Hecton8.Gameplay
                 ActiveEntities = activeCount,
                 Reserved = 0,
                 FirstRootPosition = firstRootPosition,
+                FirstLeftFootTarget = firstLeftFootTarget,
+                FirstRightFootTarget = firstRightFootTarget,
                 FirstLeftHandTarget = firstLeftTarget,
                 FirstRightHandTarget = firstRightTarget,
+                FirstKccVelocity = firstKccVelocity,
                 FirstHandWeights = firstWeights
             };
 
@@ -1460,8 +1988,11 @@ namespace Hecton8.Gameplay
             writer.Write(entry.ActiveEntities);
             writer.Write(entry.Reserved);
             WriteFloat3(writer, entry.FirstRootPosition);
+            WriteFloat3(writer, entry.FirstLeftFootTarget);
+            WriteFloat3(writer, entry.FirstRightFootTarget);
             WriteFloat3(writer, entry.FirstLeftHandTarget);
             WriteFloat3(writer, entry.FirstRightHandTarget);
+            WriteFloat3(writer, entry.FirstKccVelocity);
             writer.Write(entry.FirstHandWeights.x);
             writer.Write(entry.FirstHandWeights.y);
         }
@@ -1492,6 +2023,25 @@ namespace Hecton8.Gameplay
             {
                 _ikWeights[baseIkIndex + LeftHandIndex] = 0.0f;
                 _ikWeights[baseIkIndex + RightHandIndex] = 0.0f;
+            }
+
+            int baseFootIndex = slotIndex * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity;
+            if (_footIkData.IsCreated)
+            {
+                _footIkData[baseFootIndex + ContextualPhysicalIkLowerBodyConstants.LeftFootIndex] = default;
+                _footIkData[baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex] = default;
+            }
+
+            if (_footTargets.IsCreated)
+            {
+                _footTargets[baseFootIndex + ContextualPhysicalIkLowerBodyConstants.LeftFootIndex] = float3.zero;
+                _footTargets[baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex] = float3.zero;
+            }
+
+            if (_footCurrentPos.IsCreated)
+            {
+                _footCurrentPos[baseFootIndex + ContextualPhysicalIkLowerBodyConstants.LeftFootIndex] = float3.zero;
+                _footCurrentPos[baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex] = float3.zero;
             }
         }
     }

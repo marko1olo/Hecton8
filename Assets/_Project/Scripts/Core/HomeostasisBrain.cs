@@ -29,6 +29,20 @@ namespace Hecton8.Core.Signals
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    public struct FrameTimeSignal : ISignal
+    {
+        public uint Frame;
+        public float CurrentFrameTimeMs;
+        public float FrameTimeEwmaMs;
+        public float TargetFrameTimeMs;
+        public float JitterSigmaMs;
+        public byte PressureLevel;
+        public byte Flags;
+        public ushort Reserved;
+        public uint Sequence;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct KillSwitchSignal : ISignal
     {
         public uint Frame;
@@ -132,6 +146,7 @@ namespace Hecton8.Core
         private const string BlackBoxDumpFileName = "Dump_AGENT_HOMEOSTASIS_BRAIN.bin";
         private const uint ReasonHash = 0x484F4D45u; // HOME
         private const uint MetricsSignalHash = 0x48484C54u; // HHLT
+        private const uint FrameTimeSignalHash = 0x46544D53u; // FTMS
         private const uint KillSwitchSignalHash = 0x4B534857u; // KSHW
 
         private const ulong Level1Mask =
@@ -176,6 +191,7 @@ namespace Hecton8.Core
         private static bool _usingHardwareSnapshot;
         private static ulong _currentKillSwitchMask;
         private static byte _currentPressureLevel;
+        private static uint _frameTimeSignalSequence;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
         private static AndroidJavaClass _unityPlayerClass;
@@ -266,8 +282,10 @@ namespace Hecton8.Core
             MemoryBudgetTracker.Register(OwnerName, ResolvePersistentBytes(), PersistentNativeBudgetBytes);
 
             SignalBus<SystemHealthSignal>.Configure(16, maxFrameSignals: 64, lowTierFrameSignals: 16, laneHash: MetricsSignalHash);
+            SignalBus<FrameTimeSignal>.Configure(32, maxFrameSignals: 64, lowTierFrameSignals: 16, laneHash: FrameTimeSignalHash);
             SignalBus<KillSwitchSignal>.Configure(8, maxFrameSignals: 32, lowTierFrameSignals: 8, laneHash: KillSwitchSignalHash);
             SignalBus<SystemHealthSignal>.EnsureInitialized();
+            SignalBus<FrameTimeSignal>.EnsureInitialized();
             SignalBus<KillSwitchSignal>.EnsureInitialized();
 
             _computeShi = BurstCompiler.CompileFunctionPointer<ComputeSystemHealthIndexDelegate>(ComputeSystemHealthIndexBurst);
@@ -280,6 +298,7 @@ namespace Hecton8.Core
             _batteryPollCountdown = 0;
             _currentKillSwitchMask = 0UL;
             _currentPressureLevel = 0;
+            _frameTimeSignalSequence = 0u;
             _blackBoxDumped = false;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -331,6 +350,7 @@ namespace Hecton8.Core
             _usingHardwareSnapshot = false;
             _currentKillSwitchMask = 0UL;
             _currentPressureLevel = 0;
+            _frameTimeSignalSequence = 0u;
         }
 
         internal static void PreSimulationTick(float unscaledDeltaTime)
@@ -364,6 +384,7 @@ namespace Hecton8.Core
             }
 
             ushort flags = ApplyPressurePolicy(frame, frameMs, BuildFlags(lowTier));
+            PublishFrameTimeSignal(frame, frameMs, targetFps, flags);
             WriteBlackBox(frame, flags);
         }
 
@@ -782,6 +803,30 @@ namespace Hecton8.Core
                 Flags = flags
             };
             SignalBus<SystemHealthSignal>.Push(in signal);
+        }
+
+        private static void PublishFrameTimeSignal(int frame, float frameMs, float targetFps, ushort flags)
+        {
+            float fpsEwma = _globalHardwareMetrics[(int)HardwareMetricSlot.FpsEwma];
+            float frameTimeEwmaMs = fpsEwma > 0f
+                ? 1000f * math.rcp(math.max(1f, fpsEwma))
+                : frameMs;
+            if (!math.isfinite(frameTimeEwmaMs))
+                frameTimeEwmaMs = frameMs;
+
+            FrameTimeSignal signal = new FrameTimeSignal
+            {
+                Frame = unchecked((uint)frame),
+                CurrentFrameTimeMs = frameMs,
+                FrameTimeEwmaMs = frameTimeEwmaMs,
+                TargetFrameTimeMs = 1000f * math.rcp(math.max(1f, targetFps)),
+                JitterSigmaMs = _globalHardwareMetrics[(int)HardwareMetricSlot.JitterSigma],
+                PressureLevel = _currentPressureLevel,
+                Flags = unchecked((byte)(flags & 0xFF)),
+                Reserved = 0,
+                Sequence = _frameTimeSignalSequence++
+            };
+            SignalBus<FrameTimeSignal>.Push(in signal);
         }
 
         private static void PublishKillSwitchSignal(int frame, ulong previousMask, byte previousLevel, ushort flags)

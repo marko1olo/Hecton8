@@ -1,4 +1,6 @@
+using System;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Systems.AI;
@@ -238,6 +240,7 @@ namespace Hecton8.Audio
         [SerializeField] private string _debugLastSelectionReason = "None";
         [SerializeField] private float _debugAiTension01;
         [SerializeField] private float _debugBiomePressure01;
+        [SerializeField] private float _debugBiomeGradientBlend01;
         [SerializeField] private float _debugZonePressure01;
         [SerializeField] private float _debugDepthZonePressure01;
         [SerializeField] private float _debugRewardUnease01;
@@ -330,6 +333,9 @@ namespace Hecton8.Audio
         private float _predatorProximity01;
         private float _stormPressure01;
         private float _oxygenDanger01;
+        private float _biomeGradientBlend01;
+        private byte _biomeGradientA;
+        private byte _biomeGradientB;
         private float _lastRhythmDb = float.MinValue;
         private float _lastBassDb = float.MinValue;
         private float _lastAtmosphereDb = float.MinValue;
@@ -545,6 +551,7 @@ namespace Hecton8.Audio
         /// </summary>
         public void SlowTick()
         {
+            DrainBiomeGradientSignal();
             RefreshLayerThreatSnapshot();
             ReevaluateContext(false);
         }
@@ -1022,7 +1029,7 @@ namespace Hecton8.Audio
             float depth01 = InverseLerp(20f, 900f, depthMeters);
             float rhythmTarget = math.saturate(_resolvedTension01 * 0.65f + _predatorProximity01 * 0.55f + _stormPressure01 * 0.18f);
             float bassTarget = math.saturate(depth01 * 0.62f + _resolvedTension01 * 0.28f + _oxygenDanger01 * 0.26f + _stormPressure01 * 0.12f);
-            float atmosphereTarget = math.saturate(0.24f + depth01 * 0.58f + _stormPressure01 * 0.16f - (_currentBaseContext ? 0.16f : 0f));
+            float atmosphereTarget = math.saturate(0.24f + depth01 * 0.58f + _stormPressure01 * 0.16f + _biomeGradientBlend01 * 0.22f - (_currentBaseContext ? 0.16f : 0f));
             float dangerTarget = math.saturate(math.max(math.max(_predatorProximity01, _oxygenDanger01), _resolvedTension01 * 0.82f) + _stormPressure01 * 0.18f);
 
             if (_currentBaseContext)
@@ -1044,6 +1051,19 @@ namespace Hecton8.Audio
             _debugLayerDanger01 = _layerDanger01;
 
             ApplyLayerMixerState(false);
+        }
+
+        private void DrainBiomeGradientSignal()
+        {
+            ReadOnlySpan<BiomeGradientSignal> signals = SignalBus<BiomeGradientSignal>.GetFrameSnapshot();
+            if (signals.Length == 0)
+                return;
+
+            BiomeGradientSignal signal = signals[signals.Length - 1];
+            _biomeGradientBlend01 = math.saturate(signal.BlendFactor01);
+            _biomeGradientA = signal.BiomeA;
+            _biomeGradientB = signal.BiomeB;
+            _debugBiomeGradientBlend01 = _biomeGradientBlend01;
         }
 
         private float ResolveLayerDepthMeters()

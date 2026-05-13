@@ -402,7 +402,7 @@ namespace Hecton8.Core
             }
 
             MemoryBudgetTracker.Unregister(BudgetOwner);
-            H8Memory.FreeRaw(_basePtr, Allocator.Persistent);
+            H8Memory.FreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
             _basePtr = null;
             _capacityBytes = 0;
             _arenaCapacityBytes = 0;

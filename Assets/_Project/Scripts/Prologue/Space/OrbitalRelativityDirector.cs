@@ -34,6 +34,9 @@ namespace Hecton8.Prologue.Space
         private const byte MathLodHigh = 2;
         private const byte MathLodUltra = 3;
         private const string DumpFileName = "Dump_ORBITAL_MECHANICS_DIRECTOR.bin";
+        private const float SplashdownFluidImpulseRadiusMeters = 50f;
+        private const float SplashdownFluidImpulseLifetimeSeconds = 5f;
+        private const float SplashdownFluidImpulseStrengthMetersPerSecond = 20f;
 
         private static readonly int _planetDistanceId = Shader.PropertyToID("_H8OrbitalPlanetDistanceMeters");
         private static readonly int _fakeRadiusId = Shader.PropertyToID("_H8OrbitalFakeRadiusMeters");
@@ -638,6 +641,35 @@ namespace Hecton8.Prologue.Space
             signal.Flags = PrologueCompleteSignal.FlagForceWhiteout;
             signal.Phase = PrologueCompleteSignal.PhaseOceanHandoff;
             GlobalSignals.Publish(in signal);
+            PublishSplashdownFluidImpulse();
+        }
+
+        private void PublishSplashdownFluidImpulse()
+        {
+            float3 direction = ResolveSplashdownImpulseDirection();
+            FluidImpulseSignal impulse = default;
+            impulse.PositionAup = _originAup;
+            impulse.Vector = direction * SplashdownFluidImpulseStrengthMetersPerSecond;
+            impulse.Radius = SplashdownFluidImpulseRadiusMeters;
+            impulse.Lifetime = SplashdownFluidImpulseLifetimeSeconds;
+            impulse.Frame = unchecked((uint)Time.frameCount);
+            impulse.SourceHash = SourceHash;
+            impulse.Flags = 2u;
+            GlobalSignals.Publish(in impulse);
+        }
+
+        private float3 ResolveSplashdownImpulseDirection()
+        {
+            double speedSq = math.lengthsq(_universeVelocity);
+            if (speedSq <= 0.00000001d)
+                return new float3(0f, -0.85f, 0.35f);
+
+            double invSpeed = math.rsqrt(speedSq);
+            double3 normal = _universeVelocity * invSpeed;
+            float3 direction = new float3((float)normal.x, (float)normal.y, (float)normal.z);
+            direction.y += 0.25f;
+            float directionSq = math.lengthsq(direction);
+            return directionSq > 0.000001f ? direction * math.rsqrt(directionSq) : new float3(0f, -0.85f, 0.35f);
         }
 
         private void PublishTelemetryAnomaly(uint anomalyHash, byte severity)

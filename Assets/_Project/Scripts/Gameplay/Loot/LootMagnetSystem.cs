@@ -1,0 +1,428 @@
+using System.IO;
+using Hecton8.Core;
+using Hecton8.Core.Memory;
+using Hecton8.Gameplay.Loot.Contracts;
+using Hecton8.Interaction;
+using Hecton8.Inventory;
+using Hecton8.World;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace Hecton8.Gameplay.Loot
+{
+    public sealed class LootMagnetSystem : MonoBehaviour, IFastTickable, ISlowTickable, ILateFrameTickable
+    {
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_PHYS_MAGNETIC_LOOT_ACQUISITION.bin";
+        private const uint TelemetryFaultFlag = 1u;
+
+        [Header("Pull")]
+        [SerializeField] private int maxLootEntities = LootMagnetConstants.DefaultMaxEntities;
+        [SerializeField] private float pullRadiusMeters = LootMagnetConstants.DefaultPullRadiusMeters;
+        [SerializeField] private float pullStrength = LootMagnetConstants.DefaultPullStrength;
+        [SerializeField] private float maxVelocityMetersPerSecond = LootMagnetConstants.DefaultMaxVelocityMetersPerSecond;
+
+        private IDataVault _vault;
+        private IPlayerRuntimeContext _playerContext;
+        private PlayerInventory _inventory;
+        private Transform _playerTransform;
+
+        private NativeArray<AbsoluteUniversePosition> _entityAups;
+        private NativeArray<uint> _entityFlags;
+        private NativeArray<float3> _entityVelocities;
+        private NativeArray<uint> _entityItemHashes;
+        private NativeArray<ushort> _entityQuantities;
+        private NativeArray<LootMagnetTelemetryEntry> _telemetry;
+
+        // COLD ALLOC: PickupItem[capacity] sidecar mirrors vault slots only for legacy visual proxy/inventory commit.
+        private PickupItem[] _pickupRefs;
+        private JobHandle _pullHandle;
+        private bool _pullScheduled;
+        private bool _registeredFastTick;
+        private bool _registeredSlowTick;
+        private bool _registeredLateFrameTick;
+        private bool _dumpedFault;
+        private int _activeCount;
+        private int _scheduledCount;
+        private int _telemetryIndex;
+        private uint _frameCounter;
+        private AbsoluteUniversePosition _lastPlayerAup;
+
+        private int Capacity => math.clamp(maxLootEntities, 1, LootMagnetConstants.DefaultMaxEntities);
+
+        private bool IsLowTier => GlobalRegistry.ScalabilityTierProfileByte == 0;
+
+        private void OnEnable()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            EnsureManagedSidecars();
+            EnsureTelemetry();
+            RefreshDependencies();
+            EnsureVaultBuffers();
+            TryRegisterTicks();
+        }
+
+        private void OnDisable()
+        {
+            ForceCompletePendingJob();
+            TryUnregisterTicks();
+            DisposeTelemetry();
+        }
+
+        public void FastTick(float dt)
+        {
+            if (IsLowTier || _pullScheduled || _activeCount <= 0)
+                return;
+
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                return;
+
+            SchedulePull(math.max(0.0001f, dt), playerAup, lowTierSnap: false);
+        }
+
+        public void SlowTick()
+        {
+            RefreshDependencies();
+            if (_pullScheduled)
+                return;
+
+            if (!EnsureVaultBuffers())
+                return;
+
+            RefreshPickupVaultFromRegistry();
+            if (!IsLowTier || _pullScheduled || _activeCount <= 0)
+                return;
+
+            if (TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                SchedulePull(0.1f, playerAup, lowTierSnap: true);
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_pullScheduled)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: false))
+                return;
+
+            _pullScheduled = false;
+            CommitVaultResultsToManagedProxies();
+            RecordTelemetry();
+        }
+
+        private void TryRegisterTicks()
+        {
+            if (!_registeredFastTick)
+                _registeredFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Player);
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
+
+            if (!_registeredLateFrameTick)
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterTicks()
+        {
+            if (_registeredFastTick)
+            {
+                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Player);
+                _registeredFastTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrameTick = false;
+            }
+        }
+
+        private void RefreshDependencies()
+        {
+            _vault = GlobalRegistry.DataVault;
+            _playerContext = GlobalRegistry.Player;
+            _inventory = _playerContext != null && _playerContext.Inventory != null
+                ? _playerContext.Inventory
+                : GlobalRegistry.PlayerInventoryRuntime;
+            _playerTransform = _playerContext != null ? _playerContext.PlayerTransform : null;
+        }
+
+        private bool EnsureVaultBuffers()
+        {
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            int capacity = Capacity;
+            _entityAups = vault.GetBuffer<AbsoluteUniversePosition>(
+                BufferID.EntityAUPs,
+                capacity,
+                SystemID.GameplayLoot,
+                NativeArrayOptions.ClearMemory);
+            _entityFlags = vault.GetBuffer<uint>(
+                BufferID.EntityFlags,
+                capacity,
+                SystemID.GameplayLoot,
+                NativeArrayOptions.ClearMemory);
+            _entityVelocities = vault.GetBuffer<float3>(
+                BufferID.EntityVelocities,
+                capacity,
+                SystemID.GameplayLoot,
+                NativeArrayOptions.ClearMemory);
+            _entityItemHashes = vault.GetBuffer<uint>(
+                BufferID.EntityItemHashes,
+                capacity,
+                SystemID.GameplayLoot,
+                NativeArrayOptions.ClearMemory);
+            _entityQuantities = vault.GetBuffer<ushort>(
+                BufferID.EntityQuantities,
+                capacity,
+                SystemID.GameplayLoot,
+                NativeArrayOptions.ClearMemory);
+            return _entityAups.IsCreated &&
+                   _entityFlags.IsCreated &&
+                   _entityVelocities.IsCreated &&
+                   _entityItemHashes.IsCreated &&
+                   _entityQuantities.IsCreated;
+        }
+
+        private void EnsureManagedSidecars()
+        {
+            int capacity = Capacity;
+            if (_pickupRefs != null && _pickupRefs.Length == capacity)
+                return;
+
+            _pickupRefs = new PickupItem[capacity];
+        }
+
+        private void EnsureTelemetry()
+        {
+            if (_telemetry.IsCreated)
+                return;
+
+            _telemetry = new NativeArray<LootMagnetTelemetryEntry>(
+                LootMagnetConstants.TelemetryFrameCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+        }
+
+        private void DisposeTelemetry()
+        {
+            if (!_telemetry.IsCreated)
+                return;
+
+            _telemetry.Dispose();
+            _telemetry = default;
+        }
+
+        private void RefreshPickupVaultFromRegistry()
+        {
+            if (_pullScheduled || !_entityAups.IsCreated || _pickupRefs == null)
+                return;
+
+            int capacity = Capacity;
+            int registryCount = PickupItem.WorldStateRegistryCount;
+            int activeCount = 0;
+            for (int registryIndex = 0; registryIndex < registryCount && activeCount < capacity; registryIndex++)
+            {
+                PickupItem pickup = PickupItem.GetWorldStateRegistryAt(registryIndex);
+                if (pickup == null ||
+                    !pickup.isActiveAndEnabled ||
+                    pickup.Quantity <= 0 ||
+                    pickup.ItemHashId == 0)
+                {
+                    continue;
+                }
+
+                Transform pickupTransform = pickup.transform;
+                _pickupRefs[activeCount] = pickup;
+                _entityAups[activeCount] = AbsoluteUniversePosition.FromRuntimePosition(pickupTransform.position);
+                _entityItemHashes[activeCount] = unchecked((uint)pickup.ItemHashId);
+                _entityQuantities[activeCount] = (ushort)math.clamp(pickup.Quantity, 1, ushort.MaxValue);
+                _entityFlags[activeCount] = LootEntityFlags.Active | LootEntityFlags.IsLoot | LootEntityFlags.PullEnabled;
+                activeCount++;
+            }
+
+            for (int index = activeCount; index < _activeCount && index < capacity; index++)
+            {
+                _pickupRefs[index] = null;
+                _entityFlags[index] = 0u;
+                _entityVelocities[index] = float3.zero;
+                _entityItemHashes[index] = 0u;
+                _entityQuantities[index] = 0;
+            }
+
+            _activeCount = activeCount;
+        }
+
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            IPlayerRuntimeContext playerContext = _playerContext;
+            if (playerContext != null &&
+                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                playerAup = snapshot.Aup;
+                _lastPlayerAup = playerAup;
+                return true;
+            }
+
+            playerAup = default;
+            return false;
+        }
+
+        private void SchedulePull(float dt, AbsoluteUniversePosition playerAup, bool lowTierSnap)
+        {
+            int count = math.min(_activeCount, Capacity);
+            if (count <= 0)
+                return;
+
+            _scheduledCount = count;
+            _frameCounter++;
+            float safeRadiusMeters = math.max(LootMagnetConstants.AcquireDistanceMeters, pullRadiusMeters);
+            float safeMaxVelocity = math.max(0.01f, maxVelocityMetersPerSecond);
+            LootMagnetPullJob job = new LootMagnetPullJob
+            {
+                PlayerAup = playerAup,
+                DeltaTimeSeconds = dt,
+                PullRadiusSq = safeRadiusMeters * safeRadiusMeters,
+                PullStrength = math.max(0f, pullStrength),
+                MaxVelocityMetersPerSecond = safeMaxVelocity,
+                Frame = _frameCounter,
+                LowTierSnap = lowTierSnap ? (byte)1 : (byte)0,
+                EntityAups = _entityAups,
+                EntityFlags = _entityFlags,
+                EntityVelocities = _entityVelocities,
+                EntityItemHashes = _entityItemHashes,
+                EntityQuantities = _entityQuantities,
+                ItemAcquiredWriter = GlobalSignals.ItemAcquiredSignalWriter,
+                AcousticPingWriter = GlobalSignals.AcousticPingSignalWriter,
+                WakeGeneratedWriter = GlobalSignals.WakeGeneratedSignalWriter
+            };
+            _pullHandle = job.Schedule(count, 64);
+            _pullScheduled = true;
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private void CommitVaultResultsToManagedProxies()
+        {
+            int count = math.min(_scheduledCount, Capacity);
+            uint acquiredCount = 0u;
+            uint flagsHash = 2166136261u;
+            bool fault = false;
+            for (int index = 0; index < count; index++)
+            {
+                uint flags = _entityFlags[index];
+                flagsHash = (flagsHash ^ flags) * 16777619u;
+                if ((flags & LootEntityFlags.NonFinite) != 0u)
+                    fault = true;
+
+                PickupItem pickup = _pickupRefs[index];
+                if (pickup == null)
+                    continue;
+
+                if ((flags & LootEntityFlags.Acquired) != 0u)
+                {
+                    acquiredCount++;
+                    pickup.TryHandleInventoryPickup(_inventory, _playerTransform);
+                    _pickupRefs[index] = null;
+                    continue;
+                }
+
+                if ((flags & LootEntityFlags.Pulling) == 0u || (flags & LootEntityFlags.Active) == 0u)
+                    continue;
+
+                float3 runtime = _entityAups[index].ToRuntimeFloat3();
+                pickup.transform.position = new Vector3(runtime.x, runtime.y, runtime.z);
+            }
+
+            if (fault && !_dumpedFault)
+            {
+                _dumpedFault = true;
+                DumpTelemetryBuffer();
+            }
+
+            _lastCommittedAcquiredCount = acquiredCount;
+            _lastCommittedFlagsHash = flagsHash;
+            _lastCommittedFlags = fault ? TelemetryFaultFlag : 0u;
+        }
+
+        private uint _lastCommittedAcquiredCount;
+        private uint _lastCommittedFlagsHash;
+        private uint _lastCommittedFlags;
+
+        private void RecordTelemetry()
+        {
+            if (!_telemetry.IsCreated)
+                return;
+
+            int writeIndex = _telemetryIndex;
+            _telemetry[writeIndex] = new LootMagnetTelemetryEntry
+            {
+                PlayerAup = _lastPlayerAup,
+                SampleLootAup = _scheduledCount > 0 && _entityAups.IsCreated ? _entityAups[0] : default,
+                Frame = _frameCounter,
+                ActiveCount = (uint)math.max(0, _activeCount),
+                AcquiredCount = _lastCommittedAcquiredCount,
+                FlagsHash = _lastCommittedFlagsHash,
+                Flags = _lastCommittedFlags
+            };
+
+            _telemetryIndex = (writeIndex + 1) % _telemetry.Length;
+        }
+
+        private void ForceCompletePendingJob()
+        {
+            if (!_pullScheduled)
+                return;
+
+            DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: true);
+            _pullScheduled = false;
+        }
+
+        private void DumpTelemetryBuffer()
+        {
+            if (!_telemetry.IsCreated)
+                return;
+
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string dumpPath = Path.Combine(projectRoot, DumpRelativePath);
+            Directory.CreateDirectory(Path.GetDirectoryName(dumpPath));
+            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(_telemetry.Length);
+                writer.Write(_telemetryIndex);
+                for (int index = 0; index < _telemetry.Length; index++)
+                {
+                    LootMagnetTelemetryEntry entry = _telemetry[index];
+                    WriteAup(writer, entry.PlayerAup);
+                    WriteAup(writer, entry.SampleLootAup);
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.ActiveCount);
+                    writer.Write(entry.AcquiredCount);
+                    writer.Write(entry.FlagsHash);
+                    writer.Write(entry.Flags);
+                }
+            }
+        }
+
+        private static void WriteAup(BinaryWriter writer, AbsoluteUniversePosition aup)
+        {
+            writer.Write(aup.GridX);
+            writer.Write(aup.GridY);
+            writer.Write(aup.GridZ);
+            writer.Write(aup.LocalX);
+            writer.Write(aup.LocalY);
+            writer.Write(aup.LocalZ);
+        }
+    }
+}

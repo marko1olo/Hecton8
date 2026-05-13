@@ -29,6 +29,7 @@ namespace Hecton8.Editor
     {
         private const string SourceRoot = "Assets/_Project/Scripts";
         private const string CoreAsmdefPath = "Assets/_Project/Scripts/Hecton8.Core.asmdef";
+        private const string CoreCsprojPath = "Hecton8.Core.csproj";
         private const string EnforceEnvironmentVariable = "HECTON_COMPLIANCE_ENFORCE";
         private const int MaxReportedViolations = 128;
         private const long DeferredValidationBudgetMilliseconds = 8L;
@@ -125,6 +126,7 @@ namespace Hecton8.Editor
             ValidateGameplayLinqUsage(report);
             ValidateUnsafeMemCpyUsage(report);
             ValidateCoreAsmdefAcl(report);
+            ValidateGeneratedCoreProjectReferences(report);
             ValidateRuntimeThirdPartyBoundaries(report);
             FailIfRequired(report, throwOnFailure, reportToConsole);
         }
@@ -187,6 +189,10 @@ namespace Hecton8.Editor
                     return StepUnsafeMemCpyValidation(run);
                 case DeferredValidationPhase.CoreAsmdef:
                     ValidateCoreAsmdefAcl(run.Report);
+                    run.Phase = DeferredValidationPhase.GeneratedProjectReferences;
+                    return true;
+                case DeferredValidationPhase.GeneratedProjectReferences:
+                    ValidateGeneratedCoreProjectReferences(run.Report);
                     run.Phase = DeferredValidationPhase.ThirdPartyRuntimeBoundary;
                     return true;
                 case DeferredValidationPhase.ThirdPartyRuntimeBoundary:
@@ -564,6 +570,51 @@ namespace Hecton8.Editor
             SessionState.SetInt("HectonComplianceValidator.CoreAsmdefViolations", violationCount);
         }
 
+        private static void ValidateGeneratedCoreProjectReferences(ComplianceReport report)
+        {
+            string asmdefText = ReadAllTextSafe(CoreAsmdefPath);
+            string csprojText = ReadAllTextSafe(CoreCsprojPath);
+            if (asmdefText.Length == 0)
+            {
+                SessionState.SetInt("HectonComplianceValidator.GeneratedProjectReferenceViolations", 0);
+                return;
+            }
+
+            if (csprojText.Length == 0)
+            {
+                report.Add(
+                    "CSPROJ000",
+                    CoreCsprojPath,
+                    0,
+                    "Generated Hecton8.Core.csproj is missing or unreadable. Regenerate Unity project files before treating dotnet build as source evidence.");
+                SessionState.SetInt("HectonComplianceValidator.GeneratedProjectReferenceViolations", 1);
+                return;
+            }
+
+            if (!TryReadAsmdefReferencesBlock(asmdefText, out string referencesBlock))
+            {
+                SessionState.SetInt("HectonComplianceValidator.GeneratedProjectReferenceViolations", 0);
+                return;
+            }
+
+            int violationCount = 0;
+            int searchIndex = 0;
+            while (TryReadNextFirstPartyAsmdefReference(referencesBlock, ref searchIndex, out string reference))
+            {
+                if (IsGeneratedProjectReferencePresent(csprojText, reference))
+                    continue;
+
+                violationCount++;
+                report.Add(
+                    "CSPROJ001",
+                    CoreCsprojPath,
+                    0,
+                    "Generated Hecton8.Core.csproj is missing asmdef reference '" + reference + "'. Regenerate Unity project files before treating dotnet build as source evidence.");
+            }
+
+            SessionState.SetInt("HectonComplianceValidator.GeneratedProjectReferenceViolations", violationCount);
+        }
+
         private static void ValidateRuntimeThirdPartyBoundaries(ComplianceReport report)
         {
             int violationCount = 0;
@@ -881,6 +932,68 @@ namespace Hecton8.Editor
             return false;
         }
 
+        private static bool TryReadNextFirstPartyAsmdefReference(string asmdefText, ref int searchIndex, out string reference)
+        {
+            const string ReferencePrefix = "\"Hecton8.";
+            int start = asmdefText.IndexOf(ReferencePrefix, searchIndex, StringComparison.Ordinal);
+            if (start < 0)
+            {
+                reference = string.Empty;
+                searchIndex = asmdefText.Length;
+                return false;
+            }
+
+            int valueStart = start + 1;
+            int valueEnd = asmdefText.IndexOf('"', valueStart);
+            if (valueEnd < 0)
+            {
+                reference = string.Empty;
+                searchIndex = asmdefText.Length;
+                return false;
+            }
+
+            reference = asmdefText.Substring(valueStart, valueEnd - valueStart);
+            searchIndex = valueEnd + 1;
+            return true;
+        }
+
+        private static bool TryReadAsmdefReferencesBlock(string asmdefText, out string referencesBlock)
+        {
+            const string ReferencesProperty = "\"references\"";
+            int propertyStart = asmdefText.IndexOf(ReferencesProperty, StringComparison.Ordinal);
+            if (propertyStart < 0)
+            {
+                referencesBlock = string.Empty;
+                return false;
+            }
+
+            int arrayStart = asmdefText.IndexOf('[', propertyStart);
+            if (arrayStart < 0)
+            {
+                referencesBlock = string.Empty;
+                return false;
+            }
+
+            int arrayEnd = asmdefText.IndexOf(']', arrayStart);
+            if (arrayEnd < 0 || arrayEnd <= arrayStart)
+            {
+                referencesBlock = string.Empty;
+                return false;
+            }
+
+            referencesBlock = asmdefText.Substring(arrayStart, arrayEnd - arrayStart);
+            return true;
+        }
+
+        private static bool IsGeneratedProjectReferencePresent(string csprojText, string reference)
+        {
+            return csprojText.IndexOf(reference + ".csproj", StringComparison.Ordinal) >= 0 ||
+                   csprojText.IndexOf("Include=\"" + reference + "\"", StringComparison.Ordinal) >= 0 ||
+                   csprojText.IndexOf("Include=\"" + reference + ",", StringComparison.Ordinal) >= 0 ||
+                   csprojText.IndexOf("<HintPath>Library\\ScriptAssemblies\\" + reference + ".dll</HintPath>", StringComparison.Ordinal) >= 0 ||
+                   csprojText.IndexOf("<HintPath>Library/ScriptAssemblies/" + reference + ".dll</HintPath>", StringComparison.Ordinal) >= 0;
+        }
+
         private sealed class ComplianceReport
         {
             private readonly StringBuilder _builder = new StringBuilder(8192);
@@ -936,6 +1049,7 @@ namespace Hecton8.Editor
             GameplayLinq,
             UnsafeMemCpy,
             CoreAsmdef,
+            GeneratedProjectReferences,
             ThirdPartyRuntimeBoundary,
             Complete
         }

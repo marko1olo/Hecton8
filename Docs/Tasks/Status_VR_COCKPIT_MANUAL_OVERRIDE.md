@@ -33,17 +33,29 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 ## Loop 4 - Dependency Compile Audit
 
 - [x] Core build attempt 1: `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` failed on existing cross-assembly missing references and one task error (`ManualOverridePulledSignal` not found from non-included `Core/Signals` file). Fixed task error by moving payload into `GlobalSignals.cs`.
-- [x] Core build attempt 2: repeated filtered build. No `ManualOverride`, `OpenXRManual`, `PhysicalHandReceiverRegistry`, or prologue-signal errors reported. Remaining errors are unrelated missing references: `Hecton8.Environment.Fluids`, `Hecton8.Audio.Virtualization`, `Hecton8.Physics.CCD`, `Hecton8.Core.Scheduling`, etc.
+- [x] Core build attempt 2: repeated filtered build. No `ManualOverride`, `PhysicalHandReceiverRegistry`, or prologue-signal Core errors reported. `Hecton8.UI.VR.csproj` was not generated because Unity MCP lost its editor session, so the new UI assembly still requires Unity compile verification. Remaining Core errors are unrelated missing references: `Hecton8.Environment.Fluids`, `Hecton8.Audio.Virtualization`, `Hecton8.Physics.CCD`, `Hecton8.Core.Scheduling`, etc.
 - [x] Build server shutdown executed after build attempts.
 
 ## Loop 5 - Reverification / Polish Gate
 
-- [ ] Re-read prompt after all tasks.
-- [ ] Confirm no `HingeJoint`.
-- [ ] Run final anti-bloat inquisition.
-- [ ] Append final report to `Docs/AgentLogs/LOG_VR_COCKPIT_MANUAL_OVERRIDE.md`.
+- [x] Re-read prompt after all tasks. DOD: extracted `VR_COCKPIT_MANUAL_OVERRIDE` from `CURRENT_BATCH.md` again after tasks 1-15. Rejected: relying on chat memory. Estimate: cold IO only.
+- [x] Confirm no `HingeJoint`. DOD: `rg` scan over task files returned no `HingeJoint`, no `math.normalize`, no managed `foreach`, no `.ToArray()`, no `FindObject`. Rejected: visual inspection only. Estimate: static scan.
+- [x] Run final anti-bloat inquisition. DOD: replaced remaining hot-path division with `math.rcp` multiplication and `math.normalize` with guarded `math.rsqrt`. Rejected: keeping "honest" math where approximation is adequate. Estimate: 0.15 us saved in fallback/projection paths.
+- [x] Append final report to `Docs/AgentLogs/LOG_VR_COCKPIT_MANUAL_OVERRIDE.md`. DOD: required report file exists with wrong/done/cheats/us details. Rejected: chat-only report.
+
+## Loop 6 - AAA Patience Pass
+
+- [x] Runtime asmdef dependency audit. DOD: added explicit `Unity.Jobs` reference because the lever contains a Burst/IJob projection kernel. Rejected: relying on transitive package references. Estimate: 0 runtime us; compile determinism improvement.
+- [x] Grab affordance fix. DOD: grab acceptance now passes if the hand is within 0.15m of either pivot or handle local position; solver still uses pivot plane. Rejected: pivot-only grab because a real lever handle can be unreachable if the handle length is nonzero. Estimate: +0.2 us only on receiver callback.
+- [x] Latch signal fidelity. DOD: capture latch velocity before zeroing spring velocity and emit the actual handle local position. Rejected: zero-velocity latch telemetry and duplicate pivot/lever positions. Estimate: 0.1 us on one latch frame.
+- [x] Ratchet haptic polish. DOD: first observed ratchet step seeds state without firing, so the first click requires real angular movement. Rejected: bogus 0-degree click on grab. Estimate: no steady cost.
+- [x] Generated rsp compile probe. DOD: invoked Unity-generated `Hecton8.UI.VR.rsp`; errors are stale Core reference symptoms (`ManualOverridePulledSignal` missing, registry still internal in `Hecton8.Core.ref.dll`). Rejected: claiming full compile success while Core ref is stale. Estimate: verification only.
+
+STATUS: PENDING VERIFICATION - global compile dependency wall prevents full Unity/Core compile proof in this session.
 
 ## Compile Attempts
 
 - Unity MCP refresh requested with compile; timed out after 60s and subsequent console reads returned `no_unity_session`.
-- Dotnet Core compile blocked by unrelated project dependency wall after task-local signal error was fixed.
+- Dotnet Core compile blocked by unrelated project dependency wall after task-local signal error was fixed. New `Hecton8.UI.VR` assembly compile remains pending because Unity did not generate the csproj during the lost-session compile refresh.
+- Unity-generated `Hecton8.UI.VR.rsp` compile now fails only because `Hecton8.Core.ref.dll` is stale: it does not yet expose `ManualOverridePulledSignal` or public `PhysicalHandReceiverRegistry`.
+- Latest Core build attempt timed out after two minutes; `dotnet build-server shutdown` executed. Some `dotnet build Hecton8.Core.csproj` processes remain active but command lines indicate separate quiet builds, so they were not killed to avoid interfering with parallel agents.

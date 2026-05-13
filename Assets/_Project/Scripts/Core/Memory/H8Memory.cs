@@ -23,6 +23,7 @@ namespace Hecton8.Core.Memory
         Physics = 64,
         VehiclesPhysics = 65,
         Fluid = 66,
+        GameplayLoot = 67,
         WorldStreaming = 128,
         TerrainSeams = 129,
         SimulationBucketer = 161,
@@ -62,7 +63,14 @@ namespace Hecton8.Core.Memory
         SubmarineBallastTankLocalPositions = 23,
         SubmarineBallastPidOutput = 24,
         SubmarineDynamicFloodMassOutput = 25,
-        SubmarinePidTelemetry = 26
+        SubmarinePidTelemetry = 26,
+        CarveDebris = 27,
+        CarveDebrisVelocity = 28,
+        EntityFlags = 29,
+        EntityVelocities = 30,
+        EntityItemHashes = 31,
+        EntityQuantities = 32,
+        EntityLootMagnetTelemetry = 33
     }
 
     [Flags]
@@ -117,6 +125,33 @@ namespace Hecton8.Core.Memory
         public Allocator Allocator;
         public ushort Flags;
         public ushort Reserved;
+    }
+
+    public sealed class FatalMemoryException : InvalidOperationException
+    {
+        private FatalMemoryException(string message) : base(message)
+        {
+        }
+
+        public static void ThrowUnknownFreeOwner()
+        {
+            throw new FatalMemoryException("H8Memory free owner is unknown.");
+        }
+
+        public static void ThrowWrongFreeOwner()
+        {
+            throw new FatalMemoryException("H8Memory free owner mismatch.");
+        }
+
+        public static void ThrowUntrackedPointer()
+        {
+            throw new FatalMemoryException("H8Memory free pointer is untracked.");
+        }
+
+        public static void ThrowStaleVaultHandle()
+        {
+            throw new FatalMemoryException("GlobalDataVault handle generation mismatch.");
+        }
     }
 
     /// <summary>
@@ -319,7 +354,7 @@ namespace Hecton8.Core.Memory
             if (clearExtendedBytes && newBytes > copyBytes)
                 UnsafeUtility.MemClear((byte*)newPointer + copyBytes, newBytes - copyBytes);
 
-            UnregisterPointer(oldPointer);
+            UnregisterPointer(oldPointer, owner);
             UnsafeUtility.Free(oldPointer, allocator);
             RegisterPointer(newPointer, newBytes, 0, 0, safeAlignment, owner, allocator, H8AllocationFlags.Raw | extraFlags);
 
@@ -331,10 +366,18 @@ namespace Hecton8.Core.Memory
         /// </summary>
         public static void FreeRaw(void* pointer, Allocator allocator)
         {
+            FreeRaw(pointer, allocator, SystemID.Unknown);
+        }
+
+        /// <summary>
+        /// Frees raw native memory only when the caller matches the recorded allocation owner.
+        /// </summary>
+        public static void FreeRaw(void* pointer, Allocator allocator, SystemID requester)
+        {
             if (pointer == null)
                 return;
 
-            UnregisterPointer(pointer);
+            UnregisterPointer(pointer, requester);
             UnsafeUtility.Free(pointer, allocator);
         }
 
@@ -617,8 +660,21 @@ namespace Hecton8.Core.Memory
 
         private static void UnregisterPointer(void* pointer)
         {
+            UnregisterPointer(pointer, SystemID.Unknown, requireOwnerMatch: false);
+        }
+
+        private static void UnregisterPointer(void* pointer, SystemID requester)
+        {
+            UnregisterPointer(pointer, requester, requireOwnerMatch: true);
+        }
+
+        private static void UnregisterPointer(void* pointer, SystemID requester, bool requireOwnerMatch)
+        {
             if (!_initialized || pointer == null)
                 return;
+
+            if (requireOwnerMatch && requester == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownFreeOwner();
 
             long pointerKey = ((IntPtr)pointer).ToInt64();
             for (int i = _recordCount - 1; i >= 0; i--)
@@ -626,9 +682,15 @@ namespace Hecton8.Core.Memory
                 if (_records[i].Pointer.ToInt64() != pointerKey)
                     continue;
 
+                if (requireOwnerMatch && _records[i].Owner != requester)
+                    FatalMemoryException.ThrowWrongFreeOwner();
+
                 RemoveRecordAt(i);
                 return;
             }
+
+            if (requireOwnerMatch)
+                FatalMemoryException.ThrowUntrackedPointer();
         }
 
         private static void RemoveRecordAt(int index)

@@ -52,10 +52,50 @@ Hardware Impact: zero player-frame impact in release; cold editor check only.
 
 Problem: `Hecton8.Core.csproj` fails before task code on missing references from unrelated domains (`Environment.Fluids`, `Audio.Virtualization`, `Physics.CCD`, `Core.Scheduling`, etc.). First attempt also exposed a real task-local placement error for `ManualOverridePulledSignal`.
 
-Solution: fix the task-local signal placement by moving the payload into the compiled `GlobalSignals.cs` signal region. Re-run filtered build to confirm no remaining task-name errors.
+Solution: fix the task-local signal placement by moving the payload into the compiled `GlobalSignals.cs` signal region. Re-run filtered Core build to confirm no remaining Core errors for manual override signal/registry symbols. The isolated `Hecton8.UI.VR` assembly remains Unity-compile pending because MCP lost its editor session before generating the new csproj.
 
 Rejected Alternatives: editing unrelated asmdefs or dependency systems to make the Core project build; that is outside UX_ENGINEER domain and would risk sabotaging parallel agents.
 
 Scalability potential: Manual override stays on a fixed typed lane; unrelated compile debt is isolated for integrator follow-up.
 
-Hardware Impact: no runtime impact. Build verification narrowed from 134 broad errors to no task-local errors in the filtered pass.
+Hardware Impact: no runtime impact. Build verification narrowed from 134 broad errors to no task-local Core errors in the filtered pass.
+
+## OMEGA POLISH CHANGES
+
+Problem: final audit found two honest math paths in the lever hot path: division in non-VR fallback/normalization and unconditional `math.normalize` after projection.
+
+Solution: replaced division with `math.rcp` multiplication and replaced `math.normalize(projected)` with `projected *= math.rsqrt(projectedLengthSq)` after the existing guard. Static scan found no `HingeJoint`, no managed `foreach`, no `.ToArray()`, no `FindObject`, no `GetComponentInParent`, and no remaining `math.normalize` in task files.
+
+Rejected Alternatives: a LUT for the angular solver was rejected because the input vector is continuous and latch correctness matters; `atan2` remains the correct scalar solve. A physical joint remained rejected as non-deterministic bloat.
+
+Scalability potential: Low uses reduced IK smoothing with identical latch math. Middle/High use smoother hand target interpolation. Ultra can layer extra visual/audio feedback from the same angle and ratchet signals without extra solver work.
+
+Hardware Impact: i3/MX350 projection path avoids sqrt/divide; estimated 0.15 us saved on fallback/projection frames and no managed allocation added.
+
+Cinematic Cheats Used: kinematic visual lever instead of physics joint; scalar damped spring instead of force solver; 10-degree haptic ratchet instead of continuous mechanical simulation; local-space blackbox telemetry instead of verbose managed logs.
+
+Final Git Diff: task-local code paths are `Assets/_Project/Scripts/UI/VR/OpenXRManualOverrideLever.cs`, `Assets/_Project/Scripts/UI/VR/Contracts/ManualOverrideLeverContracts.cs`, `Assets/_Project/Scripts/UI/VR/Hecton8.UI.VR.asmdef`, `Assets/_Project/Scripts/Core/GlobalSignals.cs`, `Assets/_Project/Scripts/Core/Signals/PrologueReentrySignals.cs`, and `Assets/_Project/Scripts/Interaction/PhysicalHandReceiverRegistry.cs`. Current visible diff after polish is the reciprocal/rsqrt replacement in `OpenXRManualOverrideLever.cs` plus status/rationale/log updates; broader core/registry additions are present in the working tree snapshot.
+
+## Decision 6 - Handle-first grab without breaking pivot solver
+
+Problem: pivot-only grab detection obeyed the literal task text but creates bad VR ergonomics when the physical handle is offset from the hinge. A player reaches for the handle, not the axle.
+
+Solution: accept a grab when the hand is within 0.15m of either the pivot or the handle position transformed into lever local space. The angular solver still projects the hand around the pivot, so mechanical behavior remains deterministic.
+
+Rejected Alternatives: handle-only grab would drop the prompt's pivot check; pivot-only grab is correct on paper and wrong in a real cockpit.
+
+Scalability potential: Low/Middle/High/Ultra all use the same local-space scalar check. High/Ultra can add handle glow or decals without changing simulation.
+
+Hardware Impact: one extra local-space distance check only during physical receiver callbacks; estimated +0.2 us in candidate frames, no steady-frame cost.
+
+## Decision 7 - Compile probe honesty
+
+Problem: Unity generated `Hecton8.UI.VR.rsp` but not `Hecton8.UI.VR.dll`, so the runtime assembly needed a direct probe.
+
+Solution: invoke the generated response file with Unity's Roslyn compiler. The reported errors are stale Core reference symptoms: `ManualOverridePulledSignal` is absent from `Hecton8.Core.ref.dll` and `PhysicalHandReceiverRegistry` is still internal in that stale ref. No new lever-local syntax errors surfaced before those dependency errors.
+
+Rejected Alternatives: claiming compile success from file inspection; killing active quiet `dotnet build Hecton8.Core.csproj` processes that may belong to other agents.
+
+Scalability potential: once Core compiles, UI.VR should bind to the public registry and signal lane through normal asmdef references.
+
+Hardware Impact: no runtime impact; verification-only action.

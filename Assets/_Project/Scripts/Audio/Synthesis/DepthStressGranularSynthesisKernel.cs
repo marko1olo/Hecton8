@@ -56,6 +56,13 @@ namespace Hecton8.Audio.Synthesis
             return math.isfinite(value) ? value : 0f;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ApproximateExpNegPositive(float value)
+        {
+            float x = math.max(0f, FiniteOrZero(value));
+            return math.rcp(1f + x + 0.48f * x * x);
+        }
+
         public static void TrimVoicesToBudget(NativeArray<DepthStressGranularVoice> voices, int voiceLimit)
         {
             int safeLimit = math.clamp(voiceLimit, 0, voices.Length);
@@ -308,7 +315,7 @@ namespace Hecton8.Audio.Synthesis
                 DepthStressGranularMath.FiniteOrDefault(LowPassCutoffHertz, 22050f),
                 40f,
                 sampleRate * 0.45f);
-            float lowPassAlpha = math.exp(-6.2831855f * lowPassCutoff * sampleRateInv);
+            float lowPassAlpha = DepthStressGranularMath.ApproximateExpNegPositive(6.2831855f * lowPassCutoff * sampleRateInv);
 
             KineticImpactSineOscillatorState state = State[0];
             if (!math.isfinite(state.Phase))

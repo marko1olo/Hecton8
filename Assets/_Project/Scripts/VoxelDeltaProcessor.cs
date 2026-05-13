@@ -56,7 +56,7 @@ namespace Hecton8.Caves
     /// Blittable carve ingress packet. Coordinates are absolute-universe meters.
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    public struct VoxelCarveEvent
+    public struct VoxelCarveEvent : ISignal
     {
         public ulong VolumeInstanceId;
         public float3 AbsoluteHitPoint;
@@ -1069,6 +1069,7 @@ namespace Hecton8.Caves
             queuedEvent.VolumeInstanceId = volumeId;
             _queuedCarveEvents.Enqueue(queuedEvent);
             _queuedCarveEventCount++;
+            SignalBus<VoxelCarveEvent>.Push(in queuedEvent);
             return true;
         }
 

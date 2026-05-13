@@ -181,8 +181,9 @@ namespace Hecton8.Gameplay
 
             Quaternion currentLocalRotation = pelvisHandle.GetLocalRotation(stream);
             quaternion currentLocalRotationQ = ContextualPhysicalIkMath.ToMathematicsQuaternion(currentLocalRotation);
+            quaternion yawRotation = ApproximateAxisRotationNoTrig(new float3(0.0f, 1.0f, 0.0f), frame.PelvisYawRadians);
             quaternion leanRotation = ApproximateSmallEulerXzNoTrig(frame.ComLeanRadians.x, frame.ComLeanRadians.y);
-            quaternion desiredLocalRotation = NormalizeQuaternionNoSqrt(math.mul(currentLocalRotationQ, leanRotation));
+            quaternion desiredLocalRotation = NormalizeQuaternionNoSqrt(math.mul(currentLocalRotationQ, math.mul(yawRotation, leanRotation)));
             quaternion blendedRotation = ApproximateNlerpNoSqrt(currentLocalRotationQ, desiredLocalRotation, PelvisRotationBlend);
             pelvisHandle.SetLocalRotation(stream, ContextualPhysicalIkMath.ToUnityQuaternion(blendedRotation));
             CacheLocalPosition(PelvisHandleIndex, blendedPosition);
@@ -1266,6 +1267,8 @@ namespace Hecton8.Gameplay
 
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
             bool lowTier = IsLowTier(tier);
+            bool xrActive = HectonXRRuntimeState.IsXRActive;
+            bool lowerBodyIkEnabled = enableFootPlacement && (xrActive || !lowTier);
             bool wallTouchEnabled = enableHandBracing && (!disableWallTouchOnLowTier || !lowTier);
 
             RefreshPlayerStress();
@@ -1293,7 +1296,7 @@ namespace Hecton8.Gameplay
                 : 0.0f;
             ResolveThrottleState(frameIndex, _entitySlot, viewerDistanceSq, out int updateThisFrame, out byte throttleTier, out uint updateBitfield);
             entityState.IsActive = 1;
-            entityState.EnableFootPlacement = enableFootPlacement ? 1 : 0;
+            entityState.EnableFootPlacement = lowerBodyIkEnabled ? 1 : 0;
             entityState.EnableHandBracing = enableHandBracing ? 1 : 0;
             entityState.EnableWallTouch = wallTouchEnabled ? 1 : 0;
             entityState.LeftHandEmpty = leftHandEmptyForWallTouch ? 1 : 0;

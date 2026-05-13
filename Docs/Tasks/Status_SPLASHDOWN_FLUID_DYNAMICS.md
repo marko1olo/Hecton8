@@ -20,6 +20,7 @@ Status: PENDING VERIFICATION
 
 - [x] Extracted `<AGENT_PROMPT id="SPLASHDOWN_FLUID_DYNAMICS">` from `Docs/Tasks/CURRENT_BATCH.md` via PowerShell raw file read and regex, opening tag through closing tag. DOD: CLI extraction, not MCP partial read. Rejected: relying on neighboring prompts or archive logs. Estimate: one cold file read.
 - [x] Re-extracted after implementation with regex allowing XML attributes: `<AGENT_PROMPT id="SPLASHDOWN_FLUID_DYNAMICS" ...>`. DOD: three-task anti-amnesia pass. Rejected: archive batch matches. Estimate: 25 us regex scan over hot file cache.
+- [x] Re-extracted during 2026-05-14 follow-up audit. DOD: cover-to-cover XML block confirmed before patching job sequencing. Rejected: trusting previous chat summary. Estimate: hot-cache regex scan, ~25 us.
 
 ## Tasks
 
@@ -48,6 +49,12 @@ Status: PENDING VERIFICATION
 - Loop 4: Local compiler pass over `HectonFluidEngine.cs` found dependency-reference noise only; no syntax errors or `Splashdown` / `FluidImpulse` semantic errors surfaced in the filtered output.
 - Loop 5: Prompt re-read and rg scan verified rsqrt usage, fixed-capacity bubble writes, and no LINQ allocations in the inserted hot-path methods.
 - Loop 6: Omega polish audit removed origin-shift upload invalidation because the impulse buffer stores relative vectors/falloff, not absolute positions.
+- Loop 7: Re-audit found `_gpuSplashdownImpulseBuffer` was allocated with base abyssal buffers even on Low/MX350 or no-splash sessions. Patched lazy allocation in `EnsureSplashdownImpulseGpuBuffer()`. DOD: base GPU flow init no longer pays splashdown VRAM until a non-low splash actually schedules. Rejected: keeping 512 KB resident for a rare cinematic. Estimate: saves 512 KB VRAM plus buffer creation on cold low/base paths.
+- Loop 8: Re-audit found off-volume splashes could schedule a 32^3 job that writes zero useful cells. Patched `IsSplashdownInsideFlowVolume()` guard; off-volume impacts keep the 500-bubble cinematic fake and skip vector-field work. DOD: bounded AABB plus splash radius. Rejected: letting Burst prove emptiness by scanning 32768 cells. Estimate: saves ~250-600 us CPU and one 512 KB upload on invalid/off-volume impact frames.
+- Loop 9: Lazy-buffer review found a base abyssal GPU-buffer reset could release the splash buffer while leaving `_splashdownImpulseUploaded` true. Patched `ReleaseGpuAbyssalFlowBuffers()` to disable the uploaded flag when the buffer is released. DOD: shader params cannot stay active with only the empty fallback bound. Rejected: reallocate splash buffer during every base flow reset. Estimate: avoids both GPU out-of-bounds risk and unnecessary recovery allocation.
+- Loop 10: Re-audit found a second signal arriving while `FluidImpulseJob` is active could reset splash state before the first job uploads. Patched pre-drain completion and made `ScheduleSplashdownImpulseField()` return success/failure. DOD: active vector wake is no longer clobbered by bubble-only or busy fallback telemetry. Rejected: blocking main thread on `JobHandle.Complete()` for every new signal. Estimate: avoids a potential 0.2-0.6 ms stall and preserves the already scheduled pressure wave.
+- Loop 11: Re-audit found Low-tier resolution only stopped new vector jobs, not an already uploaded vector wake if quality dropped mid-decay. Patched `ResolveSplashdownImpulseParams()` to return zero while Low/MX350/low-memory is active. DOD: low path performs bubble/drift presentation only. Rejected: releasing the buffer on quality drop, which would force reallocation if quality recovers. Estimate: prevents 32768 shader buffer reads per flow dispatch on low tier during remaining decay.
+- Loop 12: Re-audit found zero-cell or invalid jobs still uploaded a full 512 KB field. Patched `SplashdownImpulseNoAffectedCellsFlag` and skipped upload when affected count is zero. DOD: no useful vector field means no GPU upload. Rejected: uploading zeros for bookkeeping. Estimate: saves one 512 KB upload on invalid/no-cell impact edge cases.
 
 ## Verification
 
@@ -56,3 +63,10 @@ Status: PENDING VERIFICATION
 - `dotnet build Hecton8.Core.csproj --no-restore`: blocked by pre-existing generated-project reference failures (`Hecton8.Environment.Fluids`, `Hecton8.Core.Scheduling`, audio virtualization, brine samples, tether signals, etc.).
 - Local isolated compile of `Assets/_Project/Scripts/Environment/Fluids/FluidImpulseJob.cs`: PASS.
 - Local compiler syntax-risk pass over `HectonFluidEngine.cs`: no splashdown syntax errors; dependency errors are external to this patch path.
+- 2026-05-14 `git diff --check` on splashdown-touched paths: PASS except Git warning that `HectonFluidEngine.cs` LF will be converted to CRLF next touch.
+- 2026-05-14 `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false`: BLOCKED by 130 pre-existing cross-domain missing-reference errors; observed `HectonFluidEngine.cs` error remains the stale `Hecton8.Environment.Fluids` assembly reference at line 47, not the new splashdown edits.
+- 2026-05-14 isolated Roslyn `FluidImpulseJob.cs` probe: BLOCKED by local Unity Mono Roslyn missing `System.Text.Encoding.CodePages, Version=4.1.1.0`; earlier isolated compile result remains the last valid PASS.
+- 2026-05-14 Unity MCP `read_console`: BLOCKED, `no_unity_session`.
+- 2026-05-14 follow-up `git diff --check`: PASS except Git LF-to-CRLF warnings on touched files.
+- 2026-05-14 follow-up `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false`: TIMED OUT after 120s against the same generated-project missing-reference wall; stale `HectonFluidEngine.cs(47,27)` namespace reference remains the only HectonFluidEngine line surfaced before timeout.
+- 2026-05-14 follow-up Unity MCP `read_console`: BLOCKED by HTTP transport failure to `127.0.0.1:8088/mcp`.

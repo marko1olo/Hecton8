@@ -313,7 +313,20 @@ namespace Hecton8.Core
         /// <returns>Runtime-space position.</returns>
         public static Vector3 ToRuntimePosition(Vector3 absoluteUniversePosition)
         {
-            return absoluteUniversePosition - CurrentTotalOffset;
+            return ToRuntimePosition(
+                new double3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z),
+                CurrentTotalOffsetDouble);
+        }
+
+        /// <summary>
+        /// Converts the supplied absolute-universe position into runtime space
+        /// using the currently committed offset.
+        /// </summary>
+        /// <param name="absoluteUniversePosition">Absolute-universe position.</param>
+        /// <returns>Runtime-space position.</returns>
+        public static Vector3 ToRuntimePosition(double3 absoluteUniversePosition)
+        {
+            return ToRuntimePosition(absoluteUniversePosition, CurrentTotalOffsetDouble);
         }
 
         /// <summary>
@@ -325,7 +338,21 @@ namespace Hecton8.Core
         /// <returns>Runtime-space position.</returns>
         public static Vector3 ToRuntimePosition(Vector3 absoluteUniversePosition, Vector3 committedTotalOffset)
         {
-            return absoluteUniversePosition - committedTotalOffset;
+            return ToRuntimePosition(
+                new double3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z),
+                new double3(committedTotalOffset.x, committedTotalOffset.y, committedTotalOffset.z));
+        }
+
+        /// <summary>
+        /// Converts the supplied absolute-universe position into runtime space
+        /// using an explicit committed total offset.
+        /// </summary>
+        /// <param name="absoluteUniversePosition">Absolute-universe position.</param>
+        /// <param name="committedTotalOffset">Committed absolute-universe offset.</param>
+        /// <returns>Runtime-space position.</returns>
+        public static Vector3 ToRuntimePosition(double3 absoluteUniversePosition, double3 committedTotalOffset)
+        {
+            return ToVector3(absoluteUniversePosition - committedTotalOffset);
         }
 
         internal static void ResyncBody(Rigidbody body, in AbsoluteUniversePosition absolutePosition)
@@ -443,9 +470,17 @@ namespace Hecton8.Core
                 origin = GlobalRegistry.FloatingOrigin;
             }
 
-            Vector3 currentOffset = CurrentTotalOffset;
+            double3 currentOffsetDouble = CurrentTotalOffsetDouble;
+            Vector3 currentOffset = ToVector3(currentOffsetDouble);
             uint currentSequence = CurrentShiftSequence;
-            return new OriginShiftEventData(Vector3.zero, currentOffset, currentOffset, currentSequence, Time.frameCount);
+            return new OriginShiftEventData(
+                Vector3.zero,
+                currentOffset,
+                currentOffset,
+                currentOffsetDouble,
+                currentOffsetDouble,
+                currentSequence,
+                Time.frameCount);
         }
 
         private void Awake()
@@ -702,6 +737,7 @@ namespace Hecton8.Core
 
                 PhysicsApplySystem.CommitTrackedBodiesForOriginShift(shiftOffset);
 
+                double3 previousTotalOffsetDouble = _totalOffsetDouble;
                 Vector3 previousTotalOffset = TotalOffset;
                 _totalOffsetDouble += new double3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
                 TotalOffset = ToVector3(_totalOffsetDouble);
@@ -711,6 +747,8 @@ namespace Hecton8.Core
                     shiftOffset,
                     previousTotalOffset,
                     TotalOffset,
+                    previousTotalOffsetDouble,
+                    _totalOffsetDouble,
                     _shiftSequence,
                     Time.frameCount,
                     fixedInterpolationAlpha);
@@ -763,7 +801,7 @@ namespace Hecton8.Core
 
         private static void PublishAupShiftSignal(in OriginShiftEventData shiftData)
         {
-            int3 sectorDelta = ResolveAupSectorDelta(shiftData.PreviousTotalOffset, shiftData.NewTotalOffset);
+            int3 sectorDelta = ResolveAupSectorDelta(shiftData.PreviousTotalOffsetDouble, shiftData.NewTotalOffsetDouble);
             AupShiftSignal signal = new AupShiftSignal
             {
                 ShiftMeters = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z),
@@ -776,8 +814,8 @@ namespace Hecton8.Core
 
         private void PublishAupPreShiftSignal(Vector3 shiftOffset, uint nextShiftSequence)
         {
-            Vector3 previousOffset = TotalOffset;
-            Vector3 newOffset = previousOffset + shiftOffset;
+            double3 previousOffset = _totalOffsetDouble;
+            double3 newOffset = previousOffset + new double3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
             AupPreShiftSignal signal = new AupPreShiftSignal
             {
                 ShiftMeters = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z),
@@ -788,12 +826,10 @@ namespace Hecton8.Core
             GlobalSignals.Publish(in signal);
         }
 
-        private static int3 ResolveAupSectorDelta(Vector3 previousOffset, Vector3 newOffset)
+        private static int3 ResolveAupSectorDelta(double3 previousOffset, double3 newOffset)
         {
-            AbsoluteUniversePosition previousAup = AbsoluteUniversePosition.FromAbsolutePosition(
-                new double3(previousOffset.x, previousOffset.y, previousOffset.z));
-            AbsoluteUniversePosition newAup = AbsoluteUniversePosition.FromAbsolutePosition(
-                new double3(newOffset.x, newOffset.y, newOffset.z));
+            AbsoluteUniversePosition previousAup = AbsoluteUniversePosition.FromAbsolutePosition(previousOffset);
+            AbsoluteUniversePosition newAup = AbsoluteUniversePosition.FromAbsolutePosition(newOffset);
 
             return new int3(
                 ClampLongToInt(newAup.GridX - previousAup.GridX),
@@ -871,11 +907,14 @@ namespace Hecton8.Core
             if (submarineBehaviour != null && submarineBehaviour.TryGetComponent(out VehicleMotor vehicleMotor))
                 vehicleMotor.ResetHydrodynamicPresentationState();
 
-            Vector3 currentOffset = origin.TotalOffset;
+            double3 currentOffsetDouble = origin._totalOffsetDouble;
+            Vector3 currentOffset = ToVector3(currentOffsetDouble);
             _lastShiftEvent = new OriginShiftEventData(
                 Vector3.zero,
                 currentOffset,
                 currentOffset,
+                currentOffsetDouble,
+                currentOffsetDouble,
                 origin._shiftSequence,
                 Time.frameCount,
                 ResolveFixedInterpolationAlpha(),

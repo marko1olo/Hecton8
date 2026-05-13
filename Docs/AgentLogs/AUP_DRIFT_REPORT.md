@@ -1,7 +1,7 @@
 # AUP Drift Report
 
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
-Status: LOOP 1 COMPLETE - PRECISION PATCHED, COMPILE BLOCKED BY PROJECT REFERENCES
+Status: VERIFIED AUP INTEGRITY - COMPILE/ASMDEF BLOCKED BY DEPENDENCY/ARCHITECTURE
 
 ## Authority
 
@@ -29,6 +29,9 @@ Status: LOOP 1 COMPLETE - PRECISION PATCHED, COMPILE BLOCKED BY PROJECT REFERENC
 - `Assets/_Project/Scripts/CrashTelemetryBuffer.cs`: added `ReportAupMaxDriftError` and ring-buffer write path.
 - `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs`: AUP shift consumption now uses non-destructive SignalBus snapshots and a local applied shift sequence.
 - `Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs`: acoustic AUP distance now subtracts through `AbsoluteUniversePosition.DistanceSq` before final float audio scalar.
+- `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`: default `AbsoluteUniversePosition.ToRuntimeFloat3()` now subtracts `CurrentTotalOffsetDouble` before final runtime float output.
+- `Assets/_Project/Scripts/World/AUPMath.cs`: added a double-offset runtime projection overload and retained the float-offset overload as a compatibility wrapper for existing job payloads.
+- `Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs`: AUP validation buffers/job and far-unload runtime rehydration now use double committed offsets.
 
 ## Verification
 
@@ -36,11 +39,18 @@ Status: LOOP 1 COMPLETE - PRECISION PATCHED, COMPILE BLOCKED BY PROJECT REFERENC
 - Scoped `/ dt` scan over AUP/origin/KCC/acoustic/residency files found no remaining AUP integration division after the reciprocal patch.
 - `GlobalSignals.TryDequeueAupShift` now has no runtime consumers; it remains an available compatibility API only.
 - `dotnet build Hecton8.Core.csproj`: failed with 131 existing missing-reference errors, including `Hecton8.Environment.Fluids`, `Hecton8.Audio.Virtualization`, `Hecton8.Physics.CCD`, and `Hecton8.Core.Scheduling`.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:quiet -clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false`: post-Loop-5 recheck still failed with 140 existing missing-reference/interface errors, including missing `Hecton8.Environment.Fluids`, `Hecton8.Audio.Virtualization`, `Hecton8.Physics.CCD`, `Hecton8.Core.Scheduling`, and unrelated `DynamicResolutionScaler` interface members.
 - `dotnet build Assembly-CSharp.csproj`: timed out after 120s; timed-out build process and MSBuild servers were stopped.
 - Unity MCP script validation: unavailable (`no_unity_session`).
+- Unity MCP post-Loop-5 `validate_script` on `Assets/_Project/Scripts/World/AUPMath.cs`: unavailable (`no_unity_session`).
+- Rsqrt audit: scoped AUP/origin/KCC/acoustic files contain no remaining `math.normalize`, `math.normalizesafe`, `.normalized`, or sqrt normalization in patched authority paths.
+- ASMDEF audit: no `Hecton8.Core.AUP` asmdef exists; current AUP struct is not isolated from UnityEngine because it lives in `PersistentWorldRegistry.cs`.
+- Polish mandate extraction: `POLISH_MANDATE_NOT_FOUND`; anti-bloat polish still executed under standing rules.
+- `git diff --check`: line-ending warnings only, no whitespace errors.
 
 ## Evidence Queue
 
 - Continue scan of AI/Biome proximity callsites for silent `float3` seeds and presentation-only exceptions.
+- Future safe upgrade: convert explicit `AUPMath.ToRuntimeFloat3(..., float3 offset)` job payloads to `double3` only in their owning AI/fauna/vegetation batches.
 - Verify AUP shift consumer coverage across fluid, voxel, world streaming, scatter, foveated simulation, and GPR.
 - Decide whether a future batch may introduce a true `Hecton8.Core.AUP` asmdef; current file placement prevents UnityEngine isolation.

@@ -1407,6 +1407,22 @@ namespace Hecton8.Core
 
         /// <summary>Flushes the pager handle during controlled shutdown or save synchronization.</summary>
         void FlushWorldPager();
+
+        /// <summary>
+        /// Requests one macro database tombstone compaction pass. The service may reject while save/load is busy,
+        /// below threshold, under memory pressure, or already compacting.
+        /// </summary>
+        bool TryRequestMacroDatabaseCompaction(MacroDatabaseTier tier, byte reasonFlags = 0);
+
+        /// <summary>
+        /// Attempts the bounded main-thread finalization step for a completed macro database compaction copy.
+        /// </summary>
+        bool TryCompleteMacroDatabaseCompaction(MacroDatabaseTier tier);
+
+        /// <summary>
+        /// Returns current macro database compaction counters for H-PHI, memory sentinel, and diagnostics.
+        /// </summary>
+        MacroDatabaseCompactionSnapshot GetMacroDatabaseCompactionSnapshot();
     }
 
     /// <summary>

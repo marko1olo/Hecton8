@@ -19,16 +19,16 @@ Selected mandates:
 - [x] Task 3 - Interface drift scan | Justification: `rg` found `IAudioService` but no `ICoreAudio` in first-party source. DOD practice: source-backed negative finding. Alternative rejected: inventing an `ICoreAudio` migration. Microsecond estimate: 0us; no duplicate interface removed.
 - [x] Task 4 - Consolidation | Justification: pinned `Hecton8.Core.Signals.CombatDamageSignal` as the unified cross-domain combat damage lane and kept internal job packet local. DOD practice: additive compatibility, no public signature mutation. Alternative rejected: moving/removing all damage structs in one pass. Microsecond estimate: 1-4us expected in combat ingress, PENDING PROFILER.
 - [x] Task 5 - Lane enforcement | Justification: `CombatDamageRuntime` now consumes `SignalBus<Core.Signals.CombatDamageSignal>.GetFrameSnapshot()` for global damage ingress. Alternative rejected: `GlobalSignals.TryDequeueDamage` destructive consumer. Microsecond estimate: 1-4us expected during bursts, PENDING PROFILER.
-- [x] Task 6 - NaN vaccination | Justification: `SignalBus<T>.Push()` now sanitizes known consolidated damage/impact lanes with `math.isfinite` and numeric telemetry. Alternative rejected: reflection field scan and `ISignal` method mutation. Microsecond estimate: normal path sub-1us per push, PENDING PROFILER.
-- [ ] Task 7 - Producer purge | Justification: producers must use typed signal push lanes only. Alternative rejected: direct static EventBus/UnityEvent. Microsecond estimate: pending.
-- [ ] Task 8 - Consumer purge | Justification: consumers pull frame snapshots, no callback cascades. Alternative rejected: observer lists. Microsecond estimate: pending.
-- [ ] Task 9 - Delegate eradication | Justification: hot simulation loop cannot rely on Action/delegate. Alternative rejected: delegate caching where a typed signal lane is required. Microsecond estimate: pending.
-- [ ] Task 10 - Contract pinning | Justification: GlobalRegistry accesses in hot loops must be cached outside update lanes. Alternative rejected: convenience property polling. Microsecond estimate: pending.
-- [ ] Task 11 - Batched compile | Justification: compile after lane batches to isolate failures. Alternative rejected: end-only compile. Microsecond estimate: pending.
-- [ ] Task 12 - Triple-strike fix | Justification: call-site repairs allowed after signature break. Alternative rejected: stopping on first error. Microsecond estimate: pending.
-- [ ] Task 13 - Zero-GC verification | Justification: static scan plus build only, runtime GC remains PENDING without profiler. Alternative rejected: claiming measured 0 GC from text. Microsecond estimate: pending.
-- [ ] Task 14 - Blackbox dump | Justification: synaptic density gain must be logged to rationale with telemetry impact. Alternative rejected: chat-only report. Microsecond estimate: pending.
-- [ ] Task 15 - Omega polish | Justification: only after all tasks checked/blocked; signal structs padded and string poison scan. Alternative rejected: reading polish before core complete. Microsecond estimate: pending.
+- [x] Task 6 - NaN vaccination | Justification: `SignalBus<T>.Push()` and selected legacy mirror publishes now sanitize known consolidated damage/impact/fluid/time/pause/bullet-time/weather lanes with `math.isfinite`, numeric telemetry, and a per-generic guard-kind cache so hot pushes avoid repeated `typeof(T)` chains. Alternative rejected: reflection field scan and `ISignal` method mutation. Microsecond estimate: normal path sub-1us per guarded push, PENDING PROFILER.
+- [x] Task 7 - Producer purge | Justification: damage and impact producers now push or mirror into typed `SignalBus<T>` lanes; project-wide purge is BLOCKED BY DOMAIN BLAST RADIUS because 18 legacy `HectonEventBus.Publish` producers remain outside this agent's safe edit slice. Alternative rejected: blind mutation of weather/economy/progression domains. Microsecond estimate: 1-4us saved per damage burst, impact audio avoids destructive queue drain; PENDING PROFILER.
+- [x] Task 8 - Consumer purge | Justification: combat damage and soundscape impact consumers now pull `SignalBus<T>.GetFrameSnapshot()` spans. Alternative rejected: destructive `GlobalSignals.TryDequeueDamage/TryDequeueImpact` drains. Microsecond estimate: 1-4us saved in burst frames, PENDING PROFILER.
+- [x] Task 9 - Delegate eradication | Justification: touched hot signal paths contain no `Action<T>`, `delegate`, `UnityEvent`, or `EventBus.Publish`; global eradication remains BLOCKED BY DOMAIN BLAST RADIUS because static scan still finds 59 Action/delegate files and 30 UnityEvent files. Alternative rejected: deleting UI/input/cold async delegate surfaces without owner review. Microsecond estimate: 0us claimed outside touched paths.
+- [x] Task 10 - Contract pinning | Justification: `SoundscapeSystem.DrainSignals()` and `CombatDamageRuntime.ResolveRuntimeMathLod()` no longer poll `GlobalRegistry` in their hot/cadenced logic; values are cached via enable-time/service-event/cold refresh paths. Alternative rejected: per-signal registry property resolution. Microsecond estimate: sub-1us per slow tick/schedule pass, PENDING PROFILER.
+- [x] Task 11 - Batched compile | Justification: `dotnet build Hecton8.Core.csproj -v:minimal` executed after signal batch, after omega padding, after guard-cache polish, and after legacy scalar-source sanitization. Latest full build fails with 129 dependency errors outside the touched signal files. Alternative rejected: claiming green from partial static source review. Microsecond estimate: 0us; verification-only.
+- [x] Task 12 - Triple-strike fix | Justification: no filtered build error referenced `GlobalSignals.cs`, `CombatDamageRuntime.cs`, or `SoundscapeSystem.cs` after the latest pass; compile wall is missing neighbor domains/types (`Fluids`, `Audio.Virtualization`, `MacroSwarm`, `BrineLayerSample`, `SoundEmissionSignal`, etc.). Alternative rejected: fixing unrelated dependency architecture from this signal-standardizer slice. Microsecond estimate: 0us.
+- [x] Task 13 - Zero-GC verification | Justification: static scan found no signal DTO `new` construction and no string payload fields inside touched signal logic; remaining `new` hits in `GlobalSignals.cs` are cold static arrays/adapters or native collection allocation. Runtime GC remains PENDING without Unity profiler/GCMonitor. Alternative rejected: fake 0B/frame claim. Microsecond estimate: not measured.
+- [x] Task 14 - Blackbox dump | Justification: Signal NaN vaccination publishes numeric telemetry via `GlobalTelemetryBus.PublishMathGuardInvalidNumber`; synaptic-density gain and failure mode are logged in rationale. Alternative rejected: chat-only blackbox statement. Microsecond estimate: invalid-number crash investigation saved, not runtime-profiler measured.
+- [x] Task 15 - Omega polish | Justification: `HighSpeedImpactSignal` padded from 88 to 96 bytes and static scan found no `StructLayout(Size=...)` value in `GlobalSignals.cs` that is not a 16-byte multiple. String poison scan found only SignalBus cold labels/method parameters, no signal payload strings. Alternative rejected: parsing neighboring `<POLISH_MANDATE>` tags from `CURRENT_BATCH.md` because this agent ID is absent. Microsecond estimate: cache-stride alignment gain PENDING PROFILER.
 
 ## Iteration Log
 
@@ -41,3 +41,35 @@ Selected mandates:
 - Read protocol map, duplicate damage packets, audio interface scan, and GlobalSignals source.
 - Edited `Assets/_Project/Scripts/Core/GlobalSignals.cs` and `Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs`.
 - Compile attempt: `dotnet build Hecton8.Core.csproj` failed with 131 dependency errors outside touched files. Status remains PENDING VERIFICATION.
+
+### Loop 2 - Tasks 7-8
+- Re-extracted assignment boundary from `Docs/Tasks/CURRENT_BATCH.md` via `Select-String`; the agent ID is still absent.
+- Mirrored `ImpactSignal` into `SignalBus<ImpactSignal>` and rewired `SoundscapeSystem` to read frame snapshots.
+- Confirmed `TryDequeueDamage` and `TryDequeueImpact` remain only as compatibility APIs in `GlobalSignals.cs`, not as consumers in touched systems.
+
+### Loop 3 - Tasks 9-12
+- Removed hot/cadenced `GlobalRegistry` polling from soundscape impact drain and combat runtime LOD resolution.
+- Re-ran `dotnet build Hecton8.Core.csproj -v:minimal`; build remains red with 131 missing-neighbor dependency errors, none from this agent's edited signal files.
+
+### Loop 4 - Tasks 13-15
+- Static scan: no `new` or `string` in `SignalPayloadFiniteGuards`; SignalBus string usage is cold label plumbing, not signal payload content.
+- Padded `HighSpeedImpactSignal` to 96 bytes.
+- Static scan found no non-16-byte `StructLayout(Size=...)` values in `GlobalSignals.cs`.
+
+### Loop 5 - Self-review
+- Re-read touched code and docs before final report.
+- Remaining legacy event/delegate results are documented as domain-wide backlog, not hidden.
+
+### Loop 6 - Guard-cache polish
+- Re-read domain boundary and touched signal code after user requested continued improvement.
+- Removed hot bridge DTO object-initializer `new ...Signal` text from `GlobalSignals.Publish` mirror paths; value packets are now `default` plus explicit field assignment.
+- Added finite guards for `SystemPauseSignal` and `WeatherChangedSignal`; existing `FluidImpulseSignal` guard path remains intact.
+- Replaced per-push `typeof(T)` finite-guard routing with a per-generic guard-kind cache.
+- Static scans: no non-16-byte explicit `StructLayout(Size=...)` values in `GlobalSignals.cs`; no signal payload strings; no signal DTO constructor `new` hits.
+- Build evidence: `dotnet build Hecton8.Core.csproj -v:minimal` still fails with neighbor dependency errors. Filtered build scan found no `GlobalSignals.cs`, `CombatDamageRuntime.cs`, or `SoundscapeSystem.cs` errors.
+
+### Loop 7 - Legacy scalar source vaccination
+- Sanitized `TimeDilationSignal`, `SimulationPauseSignal`, `BulletTimeVisualSignal`, and `WeatherStrengthSignal` before their legacy compatibility queues receive packets.
+- Mirrored `SystemPauseSignal` and `WeatherChangedSignal` now use the sanitized source packet.
+- Static scans: no signal DTO constructor `new` text for guarded bridge packets; `SignalPayloadFiniteGuards` contains no `new` or `string`.
+- Latest full build: `dotnet build Hecton8.Core.csproj -v:minimal` fails with 129 errors / 47 warnings from neighbor missing types and assemblies.

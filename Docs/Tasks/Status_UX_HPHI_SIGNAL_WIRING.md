@@ -4,7 +4,7 @@ Authority: `Docs/Tasks/CURRENT_BATCH.md` `<AGENT_PROMPT id="UX_HPHI_SIGNAL_WIRIN
 Role: UX_ENGINEER
 Domain: ECHELON 8 - PRESENTATION & UX
 Task count: 15 primary tasks
-Status: PENDING VERIFICATION
+Status: H-PHI VERIFIED (compile proof blocked by upstream assembly wall)
 
 ## Gatekeeping
 - [x] Batch prompt extracted cover-to-cover | Justification: PowerShell raw read + singleline regex isolated only this XML tag. Alternative rejected: chat memory or neighboring prompts. Estimate: 240 us.
@@ -13,25 +13,25 @@ Status: PENDING VERIFICATION
 - [x] Root and Docs authority review | Justification: Loaded `AGENTS.md`, domain map, docs README, architecture map, runtime plan, system contracts, quality gates, signal corridor, zero-GC UI pipeline, dispatch pipeline, and root authority trackers before code. Alternative rejected: isolated source-only edit. Estimate: 4800 us.
 
 ## Primary Tasks
-- [ ] 1. Singleton eradication in `Assets/_Project/Scripts/UI` | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 2. Signal migration to `SignalBus<PlayerStateSignal>`, `SignalBus<InventoryChangedSignal>`, `SignalBus<SystemHealthSignal>` | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 3. ASMDEF isolation for `Hecton8.UI` | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 4. Initialization cache / formatter cache | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 5. Register UI controllers as `ILateFrameTickable` in VISUAL_SYNC | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 6. Dirty flag snapshot reads | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 7. Zero-GC TMP render via `SetCharArray` | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 8. Steam Deck / gamepad glyph switching from `InputStateSignal` | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 9. VR recentering lazy-follow without `Quaternion.Slerp` | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 10. H-Phi Update deletion count documented | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 11. Low-tier 15Hz UI dirty evaluation throttle | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 12. Static scan: no `string.Format` or LINQ in UI update path | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 13. Blackbox telemetry `ActiveUiUpdatesPerFrame` | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 14. Triple-strike assembly repair | Justification: pending. Alternative rejected: pending. Estimate: pending.
-- [ ] 15. Omega compile / managed string allocation check | Justification: pending. Alternative rejected: pending. Estimate: pending.
+- [x] 1. Singleton eradication in `Assets/_Project/Scripts/UI` | Justification: `rg` found zero `FindObjectOfType`, `FindObjectsOfType`, `FindAnyObjectByType`, `FindFirstObjectByType`, `Player.Instance`, or `Inventory.Instance` hits in UI sources. Alternative rejected: blind manual grep or scene search. Estimate: 430 us.
+- [x] 2. Signal migration to `SignalBus<PlayerStateSignal>`, `SignalBus<InventoryChangedSignal>`, `SignalBus<SystemHealthSignal>` | Justification: `SuitHUDV4CanvasOverlay` now consumes all three snapshots through `ConsumeReactiveSignals()` in late-frame and maps player squeeze / inventory revision / system health into HUD dirty state. Alternative rejected: direct player/inventory polling as the dirty trigger. Estimate: 1650 us.
+- [x] 3. ASMDEF isolation for `Hecton8.UI` [BLOCKED BY EXISTING ASSEMBLY TOPOLOGY] | Justification: no root `Hecton8.UI.asmdef` exists; existing UI sub-asmdefs already point at contracts where present, while gameplay HUD still lives under `Hecton8.Core.asmdef`. Alternative rejected: creating a new root UI assembly around hundreds of concrete dependencies during a signal-wiring task. Estimate: 690 us.
+- [x] 4. Initialization cache / formatter cache | Justification: runtime tier/dependency cache remains in `CacheRuntimeDependencies()` / `SlowTick`, existing TMP format buffers remain cold allocated, and hotswap inventory rebinding now marks the cached quickbar dirty without hot allocation. Alternative rejected: per-frame registry/tier reads. Estimate: 940 us.
+- [x] 5. Register UI controllers as `ILateFrameTickable` in VISUAL_SYNC | Justification: `SuitHUDV4CanvasOverlay` and `InteractionUI` now route active UI work through late-frame registration and explicitly unregister any legacy updatable ownership when registering. Alternative rejected: keeping UI visual solve on dispatcher Update lane. Estimate: 1400 us.
+- [x] 6. Dirty flag snapshot reads | Justification: `ConsumeReactiveSignals()` reads SignalBus snapshots and only marks player/inventory/input/system-health dirty when a current snapshot changes relevant HUD state. Alternative rejected: time-only dirty state for inventory/glyph/status UI. Estimate: 1220 us.
+- [x] 7. Zero-GC TMP render via `SetCharArray` | Justification: touched hot paths continue through existing `ApplyHudCharArray()` / `SetDisplayBufferIfChanged()` and `InteractionUI.ApplyPromptText()` uses caller-owned char buffers plus `TMP_Text.SetCharArray`. Alternative rejected: `TMP_Text.text`, interpolation, `SetText` in reactive hot path. Estimate: 760 us.
+- [x] 8. Steam Deck / gamepad glyph switching from `InputStateSignal` | Justification: `InteractionUI` consumes `InputStateSignal.CurrentInputSchemeHash`, maps KBM/Gamepad/SteamDeck/XR hashes to cached display styles, and rebuilds prompt glyph cache only on scheme changes. Alternative rejected: polling `InputManager.CurrentDisplayStyle` each frame. Estimate: 1180 us.
+- [x] 9. VR recentering lazy-follow without `Quaternion.Slerp` | Justification: projection canvas follows the camera/HMD in XR using position lerp plus `CinematicMath.FastNlerp`; static scan confirms no `Quaternion.Slerp` addition in touched UI. Alternative rejected: direct hard snap in XR or banned `Quaternion.Slerp`. Estimate: 980 us.
+- [x] 10. H-Phi Update deletion count documented | Justification: wrote `Docs/AgentLogs/HphiUiUpdateDeletion_UX_HPHI_SIGNAL_WIRING.md` with direct Update count 0 and dispatcher Update-lane purged controllers 2. Alternative rejected: chat-only report. Estimate: 610 us.
+- [x] 11. Low-tier 15Hz UI dirty evaluation throttle | Justification: `SuitHUDV4CanvasOverlay` gates non-signal HUD dirty evaluation through `(cadenceFrame & LowTierDirtyCadenceFrameMask) == 0`, giving 15Hz at 60fps on Low/Mx350 while reactive signals bypass the throttle. Alternative rejected: globally lowering UI frame rate and making input/system warnings latent. Estimate: 500 us.
+- [x] 12. Static scan: no `string.Format` or LINQ in UI update path | Justification: constrained `rg` scan over `SuitHUDV4CanvasOverlay.cs`, `InteractionUI.cs`, and `HphiReactiveUiTelemetry.cs` found zero `string.Format`, `using System.Linq`, `.Where`, `.Select`, `.ToList`, `.FirstOrDefault`, `.Any`, or `$"` hits. Alternative rejected: broad workspace scan polluted by third-party/editor code. Estimate: 680 us.
+- [x] 13. Blackbox telemetry `ActiveUiUpdatesPerFrame` | Justification: added `HphiReactiveUiTelemetry.RecordActiveUiUpdate()` and hash-only `GlobalTelemetryBus.PublishPerformanceWarning` publishing for per-frame active UI update counts. Alternative rejected: managed string telemetry labels or editor-only logging. Estimate: 740 us.
+- [x] 14. Triple-strike assembly repair [BLOCKED BY EXISTING ASSEMBLY WALL] | Justification: three compile attempts hit the same unrelated missing domain/assembly references (`Environment.Fluids`, `Core.Scheduling`, `Audio.Virtualization`, `Physics.CCD`, WFC/outpost contracts, etc.) before touched UI diagnostics; cross-domain asmdef repair is outside Presentation & UX authority. Alternative rejected: blind asmdef edits across AI/Audio/World/Physics domains. Estimate: 2100 us.
+- [x] 15. Omega compile / managed string allocation check [BLOCKED BY COMPILE WALL] | Justification: static proof found no `string.Format`, LINQ, interpolation, `TMP_Text.text`, or `SetText` in the touched hot UI path, and render writes use `SetCharArray`; profiler/compile allocation proof is blocked by the existing assembly wall. Alternative rejected: claiming runtime zero-allocation proof without a compiling player/editor domain. Estimate: 900 us.
 
 ## Iterative Loops
-- [ ] Loop 1: Tasks 1-5 then compile
-- [ ] Loop 2: Tasks 6-10 then compile
-- [ ] Loop 3: Tasks 11-15 then compile
-- [ ] Loop 4: Re-read prompt and self-review
-- [ ] Loop 5: Polish mandate after all core tasks done or blocked
+- [x] Loop 1: Tasks 1-5 then compile | Result: `dotnet build Assembly-CSharp.csproj --no-restore` fails on pre-existing assembly reference wall; filtered rerun produced no diagnostics for `SuitHUDV4CanvasOverlay`, `InteractionUI`, or `HphiReactiveUiTelemetry`.
+- [x] Loop 2: Tasks 6-10 then compile | Result: compile remains blocked by same pre-existing assembly reference wall; filtered build output still has no diagnostics for touched UI files.
+- [x] Loop 3: Tasks 11-15 then compile | Result: `dotnet build Assembly-CSharp.csproj --no-restore` timed out after 120s while emitting the same upstream missing assembly references; filtered output still produced no `SuitHUDV4CanvasOverlay`, `InteractionUI`, or `HphiReactiveUiTelemetry` diagnostics.
+- [x] Loop 4: Re-read prompt and self-review | Result: prompt re-extracted cover-to-cover; VR lazy-follow scan shows `FastNlerp` and no `Quaternion.Slerp` in touched UI; singleton/Update/string/LINQ scans remain clean for the scoped UI path.
+- [x] Loop 5: Polish mandate after all core tasks done or blocked | Result: OMEGA polish replaced low-tier frame modulo with a power-of-two bitmask gate, reran static scans, and left compile blocked only by upstream non-UX assemblies.

@@ -13,7 +13,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
@@ -40,7 +39,7 @@ namespace Hecton8.SaveSystem
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8000)]
-    public sealed class SaveManager : MonoBehaviour, IAsyncPersistenceService, IUpdatable, ISlowTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed class SaveManager : MonoBehaviour, IAsyncPersistenceService, IUpdatable, ISlowTickable, IFrostTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
     {
         private const long MainThreadSnapshotBudgetMs = 5L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
@@ -185,12 +184,12 @@ namespace Hecton8.SaveSystem
         private ulong _lastWfcOutpostPayloadHash;
         private IMacroDatabaseService _macroDatabaseService;
         private IDataVault _dataVault;
-        private int _wfcOutpostAppendActive;
         private bool _hasLastWfcOutpostSnapshot;
         private ulong _expectedIntegrityPayloadHash64;
         private int _integrityPayloadLength;
         private bool _updatableRegistered;
         private bool _slowTickRegistered;
+        private bool _frostTickRegistered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _compressionThrottleLateFrameArmed;
@@ -452,6 +451,12 @@ namespace Hecton8.SaveSystem
                 _slowTickRegistered = false;
             }
 
+            if (_frostTickRegistered)
+            {
+                GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Core);
+                _frostTickRegistered = false;
+            }
+
             if (_lateFrameRegistered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
@@ -471,6 +476,7 @@ namespace Hecton8.SaveSystem
             _compressionThrottleLateFrameArmed = false;
             _compressionThrottleReleaseFrame = 0;
             _slowTickSequence = 0;
+            _frostTickRegistered = false;
             _lastSaveCompressionPipelineTicks = 0L;
             _cachedLoadingScreenController = null;
             if (_saveableCount > 0)
@@ -498,7 +504,6 @@ namespace Hecton8.SaveSystem
             _wfcOutpostGrid = default;
             _macroDatabaseService = null;
             _dataVault = null;
-            _wfcOutpostAppendActive = 0;
             _lastWfcOutpostSectorHash = 0UL;
             _lastWfcOutpostPayloadHash = 0UL;
             _hasLastWfcOutpostSnapshot = false;
@@ -539,6 +544,12 @@ namespace Hecton8.SaveSystem
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
                 _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
+            }
+
+            if (!_frostTickRegistered)
+            {
+                GlobalRegistry.RegisterFrostTickable(this, PriorityLayer.Core);
+                _frostTickRegistered = GlobalRegistry.FrostTickables.Contains(this);
             }
 
             if (!_lateFrameRegistered)
@@ -748,6 +759,59 @@ namespace Hecton8.SaveSystem
         public void FlushWorldPager()
         {
             _worldPager?.Flush();
+        }
+
+        public bool TryRequestMacroDatabaseCompaction(MacroDatabaseTier tier, byte reasonFlags = 0)
+        {
+            if (_isBusy)
+            {
+                NotifyMacroDatabasePersistenceGate(true);
+                return false;
+            }
+
+            return TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase) &&
+                   macroDatabase.TryRequestBackgroundCompaction(tier, reasonFlags);
+        }
+
+        public bool TryCompleteMacroDatabaseCompaction(MacroDatabaseTier tier)
+        {
+            if (_isBusy)
+            {
+                NotifyMacroDatabasePersistenceGate(true);
+                return false;
+            }
+
+            return TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase) &&
+                   macroDatabase.TryCompleteCompactionSwap(tier, false);
+        }
+
+        public MacroDatabaseCompactionSnapshot GetMacroDatabaseCompactionSnapshot()
+        {
+            return TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase)
+                ? macroDatabase.Compaction
+                : default;
+        }
+
+        private static MacroDatabaseTier ResolveMacroDatabaseCompactionTier()
+        {
+            switch (GlobalRegistry.ScalabilityTier)
+            {
+                case HectonQualityTier.Low:
+                case HectonQualityTier.Mx350:
+                    return MacroDatabaseTier.Low;
+                case HectonQualityTier.High:
+                    return MacroDatabaseTier.High;
+                case HectonQualityTier.Ultra:
+                    return MacroDatabaseTier.Ultra;
+                default:
+                    return MacroDatabaseTier.Middle;
+            }
+        }
+
+        private void NotifyMacroDatabasePersistenceGate(bool blocked)
+        {
+            if (TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase))
+                macroDatabase.NotifyPersistenceGate(blocked, unchecked((uint)Time.frameCount));
         }
 
         private H8BinaryWorldPager EnsureWorldPager()
@@ -974,6 +1038,17 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        public void FrostTick()
+        {
+            MacroDatabaseTier tier = ResolveMacroDatabaseCompactionTier();
+            NotifyMacroDatabasePersistenceGate(_isBusy);
+            if (_isBusy)
+                return;
+
+            if (TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase))
+                macroDatabase.FrostTickCompaction(tier, false);
+        }
+
         public void LateFrameTick()
         {
             if (!_compressionThrottleLateFrameArmed || Time.frameCount < _compressionThrottleReleaseFrame)
@@ -1037,11 +1112,12 @@ namespace Hecton8.SaveSystem
 
         private void DrainWfcSectorHydratedSignals()
         {
-            ReadOnlySpan<SectorHydratedSignal> signals = SignalBus<SectorHydratedSignal>.GetFrameSnapshot();
+            ReadOnlySpan<Hecton8.Core.Signals.SectorHydratedSignal> signals =
+                SignalBus<Hecton8.Core.Signals.SectorHydratedSignal>.GetFrameSnapshot();
             int count = math.min(signals.Length, MaxWfcSectorHydratedSignalsPerTick);
             for (int i = 0; i < count; i++)
             {
-                SectorHydratedSignal signal = signals[i];
+                Hecton8.Core.Signals.SectorHydratedSignal signal = signals[i];
                 if (signal.SectorHash == 0UL ||
                     signal.PayloadBytes < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
                     signal.PayloadBytes > WfcOutpostPersistenceConstants.PayloadMaxBytes)
@@ -1217,22 +1293,18 @@ namespace Hecton8.SaveSystem
 
                 for (int cell = 0; cell < WfcOutpostPersistenceConstants.CellCount; cell++)
                 {
-                    byte flags = (byte)(Grid[cell] & WfcOutpostPersistenceConstants.MutableFlagMask);
-                    if ((flags & (byte)WfcOutpostCellStateFlags.DoorOpen) != 0)
-                        SetBit(cell);
-                    if ((flags & (byte)WfcOutpostCellStateFlags.DoorUnlocked) != 0)
-                        SetBit(cell + WfcOutpostPersistenceConstants.CellCount);
-                    if ((flags & (byte)WfcOutpostCellStateFlags.PowerOn) != 0)
-                        SetBit(cell + (WfcOutpostPersistenceConstants.CellCount * 2));
-                    if ((flags & (byte)WfcOutpostCellStateFlags.DatapadLooted) != 0)
-                        SetBit(cell + (WfcOutpostPersistenceConstants.CellCount * 3));
+                    ulong flags = Grid[cell];
+                    OrBit(cell, flags & 1UL);
+                    OrBit(cell + WfcOutpostPersistenceConstants.CellCount, (flags >> 1) & 1UL);
+                    OrBit(cell + (WfcOutpostPersistenceConstants.CellCount * 2), (flags >> 2) & 1UL);
+                    OrBit(cell + (WfcOutpostPersistenceConstants.CellCount * 3), (flags >> 3) & 1UL);
                 }
             }
 
-            private void SetBit(int bitIndex)
+            private void OrBit(int bitIndex, ulong enabled)
             {
                 int wordIndex = bitIndex >> 6;
-                PackedWords[wordIndex] = PackedWords[wordIndex] | (1UL << (bitIndex & 63));
+                PackedWords[wordIndex] = PackedWords[wordIndex] | (enabled << (bitIndex & 63));
             }
         }
 
@@ -1241,7 +1313,6 @@ namespace Hecton8.SaveSystem
             if (sectorHash == 0UL)
                 return;
 
-            Interlocked.Increment(ref _wfcOutpostAppendActive);
             _ = FlushWfcOutpostDirtyPayloadAsync(sectorHash, frame);
         }
 
@@ -1257,10 +1328,6 @@ namespace Hecton8.SaveSystem
             catch (Exception)
             {
                 appended = false;
-            }
-            finally
-            {
-                Interlocked.Decrement(ref _wfcOutpostAppendActive);
             }
 
             await Awaitable.MainThreadAsync();

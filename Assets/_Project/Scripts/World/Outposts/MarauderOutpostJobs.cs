@@ -21,6 +21,7 @@ namespace Hecton8.World.Outposts
         public const int MaxInteractables = 16;
         public const int CounterCount = 8;
         public const int TelemetryFrames = 300;
+        public const float HeightUShortToUnit = 1f / 65535f;
 
         public const byte Empty = 0;
         public const byte Corridor = 1;
@@ -93,7 +94,7 @@ namespace Hecton8.World.Outposts
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 80)]
     internal struct OutpostTelemetryEntry
     {
         public uint Frame;
@@ -395,14 +396,16 @@ namespace Hecton8.World.Outposts
             if (!HeightSamples.IsCreated || HeightResolution <= 1 || TerrainSize.x <= 0.001f || TerrainSize.z <= 0.001f)
                 return fallbackHeight;
 
-            float u = math.saturate((position.x - TerrainPosition.x) / TerrainSize.x);
-            float v = math.saturate((position.z - TerrainPosition.z) / TerrainSize.z);
+            float invTerrainSizeX = math.rcp(TerrainSize.x);
+            float invTerrainSizeZ = math.rcp(TerrainSize.z);
+            float u = math.saturate((position.x - TerrainPosition.x) * invTerrainSizeX);
+            float v = math.saturate((position.z - TerrainPosition.z) * invTerrainSizeZ);
             int maxPixel = HeightResolution - 1;
             int ix = math.clamp((int)math.round(u * maxPixel), 0, maxPixel);
             int iz = math.clamp((int)math.round(v * maxPixel), 0, maxPixel);
             int sampleIndex = iz * HeightResolution + ix;
             ushort sample = HeightSamples[sampleIndex];
-            return TerrainPosition.y + (sample / 65535f) * TerrainSize.y;
+            return TerrainPosition.y + sample * MarauderOutpostConstants.HeightUShortToUnit * TerrainSize.y;
         }
     }
 

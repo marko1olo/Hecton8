@@ -26,8 +26,10 @@
 // ============================================================================
 
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.SaveSystem;
 
 namespace Hecton8.World
@@ -48,12 +50,14 @@ namespace Hecton8.World
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-130)] // Run after CullingManager
-    public sealed class DynamicResolutionScaler : MonoBehaviour, ITickable, ISaveable
+    public sealed class DynamicResolutionScaler : MonoBehaviour, ITickable, ISaveable, IDynamicResolutionRuntime
     {
         private const string StablePressureStateLabel = "Stable";
         private const string RecoveringPressureStateLabel = "Recovering";
         private const string PressuredPressureStateLabel = "Pressured";
         private const string CriticalPressureStateLabel = "Critical";
+        private const float SystemOverrideMinimumRenderScale = 0.5f;
+        private const byte SystemOverrideThermalFlag = 1 << 0;
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -129,6 +133,14 @@ namespace Hecton8.World
         private RenderPressureState _pressureState = RenderPressureState.Stable;
         private bool _platformPressureRenderScaleActive;
         private float _platformPressureMinimumRenderScale = 0.7f;
+        private float _targetRenderScale = 1.0f;
+        private float _systemOverrideFrameTimeEwmaMs = 16.67f;
+        private byte _systemOverridePressureLevel;
+        private byte _systemOverrideFlags;
+        private uint _snapshotSequence;
+        private bool _systemOverrideActive;
+        private bool _thermalOverrideActive;
+        private DynamicResolutionRuntimeSnapshot _snapshot;
 
         private UniversalRenderPipelineAsset _urpAsset;
 
@@ -170,6 +182,14 @@ namespace Hecton8.World
         /// Current render scale (0.5 to 1.0).
         /// </summary>
         public float CurrentRenderScale => _currentRenderScale;
+
+        public float CurrentRenderScale01 => _currentRenderScale;
+
+        public float TargetRenderScale01 => _targetRenderScale;
+
+        public bool IsSystemOverrideActive => _systemOverrideActive;
+
+        public bool IsThermalOverrideActive => _thermalOverrideActive;
 
         /// <summary>
         /// Whether dynamic resolution scaling is enabled.
@@ -233,6 +253,7 @@ namespace Hecton8.World
             _qualityPresetMinimumRenderScale = GetMinimumRenderScaleForPreset(_qualityPreset);
             RefreshMinimumRenderScale();
             _currentRenderScale = Mathf.Clamp(_defaultRenderScale, _minRenderScale, _maxRenderScale);
+            _targetRenderScale = _currentRenderScale;
             _startupGraceRemainingSeconds = Mathf.Max(0f, _startupGraceSeconds);
             _smoothedFrameTimeMs = _targetFrameTime;
             _peakFrameTimeMs = _targetFrameTime;
@@ -267,10 +288,15 @@ namespace Hecton8.World
             // Unregister from the authoritative save service.
             GlobalRegistry.Save?.Unregister(this);
 
+            Dispose();
+
+        }
+
+        public void Dispose()
+        {
             RestoreDefaultRenderScale();
             TryUnregister();
             TryUnregisterService();
-
         }
 
         private void TryRegister()
@@ -371,6 +397,12 @@ namespace Hecton8.World
             if (!_enabled && !_debugRenderScaleOverrideActive)
                 return;
 
+            if (_systemOverrideActive && !_debugRenderScaleOverrideActive)
+            {
+                UpdatePressureDiagnostics();
+                return;
+            }
+
             // Convert dt to milliseconds
             float observedFrameTime = ResolveObservedFrameTime(dt);
             UpdateFrameTrend(observedFrameTime);
@@ -381,6 +413,7 @@ namespace Hecton8.World
                 if (!Mathf.Approximately(_currentRenderScale, overrideScale))
                 {
                     _currentRenderScale = overrideScale;
+                    _targetRenderScale = overrideScale;
                     ApplyRenderScale();
                 }
 
@@ -466,6 +499,7 @@ namespace Hecton8.World
             if (!_enabled && _urpAsset != null)
             {
                 _currentRenderScale = _defaultRenderScale;
+                _targetRenderScale = _currentRenderScale;
                 ApplyRenderScale();
                 _recoveryHoldFramesRemaining = 0;
                 _pressureState = RenderPressureState.Stable;
@@ -487,6 +521,7 @@ namespace Hecton8.World
             if (_currentRenderScale < _minRenderScale)
             {
                 _currentRenderScale = _minRenderScale;
+                _targetRenderScale = _currentRenderScale;
                 ApplyRenderScale();
             }
 
@@ -508,6 +543,12 @@ namespace Hecton8.World
 
             RefreshMinimumRenderScale();
 
+            if (_systemOverrideActive)
+            {
+                UpdatePressureDiagnostics();
+                return;
+            }
+
             if (_urpAsset == null)
             {
                 UpdatePressureDiagnostics();
@@ -520,6 +561,7 @@ namespace Hecton8.World
                 if (_currentRenderScale > pressuredTarget + 0.0001f)
                 {
                     _currentRenderScale = pressuredTarget;
+                    _targetRenderScale = pressuredTarget;
                     ApplyRenderScale();
                 }
 
@@ -531,10 +573,70 @@ namespace Hecton8.World
             if (wasActive && _currentRenderScale < _minRenderScale)
             {
                 _currentRenderScale = _minRenderScale;
+                _targetRenderScale = _currentRenderScale;
                 ApplyRenderScale();
             }
 
             UpdatePressureDiagnostics();
+        }
+
+        public void ApplySystemOverrideRenderScale(
+            float currentScale01,
+            float targetScale01,
+            float frameTimeEwmaMs,
+            byte pressureLevel,
+            byte flags)
+        {
+            _systemOverrideActive = true;
+            _thermalOverrideActive = pressureLevel >= 2 || (flags & SystemOverrideThermalFlag) != 0;
+            _systemOverridePressureLevel = pressureLevel;
+            _systemOverrideFlags = flags;
+            _systemOverrideFrameTimeEwmaMs = IsFinite(frameTimeEwmaMs) && frameTimeEwmaMs > 0f
+                ? frameTimeEwmaMs
+                : _targetFrameTime;
+
+            _targetRenderScale = Mathf.Clamp(
+                IsFinite(targetScale01) ? targetScale01 : _currentRenderScale,
+                SystemOverrideMinimumRenderScale,
+                _maxRenderScale);
+            float nextScale = Mathf.Clamp(
+                IsFinite(currentScale01) ? currentScale01 : _targetRenderScale,
+                SystemOverrideMinimumRenderScale,
+                _maxRenderScale);
+
+            if (Mathf.Abs(_currentRenderScale - nextScale) > 0.0001f)
+            {
+                _currentRenderScale = nextScale;
+                ApplyRenderScale();
+            }
+            else
+            {
+                UpdateSnapshot();
+            }
+
+            _smoothedFrameTimeMs = _systemOverrideFrameTimeEwmaMs;
+            _peakFrameTimeMs = Mathf.Max(_peakFrameTimeMs, _systemOverrideFrameTimeEwmaMs);
+            _pressureState = _thermalOverrideActive || _systemOverrideFrameTimeEwmaMs > _targetFrameTime
+                ? RenderPressureState.Pressured
+                : RenderPressureState.Stable;
+            UpdatePressureDiagnostics();
+        }
+
+        public void ClearSystemOverrideRenderScale()
+        {
+            _systemOverrideActive = false;
+            _thermalOverrideActive = false;
+            _systemOverridePressureLevel = 0;
+            _systemOverrideFlags = 0;
+            _targetRenderScale = _currentRenderScale;
+            UpdateSnapshot();
+            UpdatePressureDiagnostics();
+        }
+
+        public bool TryGetSnapshot(out DynamicResolutionRuntimeSnapshot snapshot)
+        {
+            snapshot = _snapshot;
+            return true;
         }
 
         internal void SetDebugFrameTimeOverride(float frameTimeMs)
@@ -578,6 +680,7 @@ namespace Hecton8.World
             if (Mathf.Abs(_currentRenderScale - startupScale) > 0.0001f)
             {
                 _currentRenderScale = startupScale;
+                _targetRenderScale = startupScale;
                 ApplyRenderScale();
             }
 
@@ -599,6 +702,27 @@ namespace Hecton8.World
             if (_urpAsset == null) return;
 
             _urpAsset.renderScale = _currentRenderScale;
+            ScalableBufferManager.ResizeBuffers(_currentRenderScale, _currentRenderScale);
+            UpdateSnapshot();
+        }
+
+        private void UpdateSnapshot()
+        {
+            _snapshot = new DynamicResolutionRuntimeSnapshot
+            {
+                CurrentRenderScale01 = _currentRenderScale,
+                TargetRenderScale01 = _targetRenderScale,
+                FrameTimeEwmaMs = _systemOverrideActive ? _systemOverrideFrameTimeEwmaMs : _smoothedFrameTimeMs,
+                PressureLevel = _systemOverrideActive ? _systemOverridePressureLevel : (byte)_pressureState,
+                Flags = _systemOverrideFlags,
+                Frame = unchecked((uint)Time.frameCount),
+                Sequence = _snapshotSequence++
+            };
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private float ResolveObservedFrameTime(float dt)
@@ -628,6 +752,7 @@ namespace Hecton8.World
                 return;
 
             _currentRenderScale = nextScale;
+            _targetRenderScale = nextScale;
             _recoveryHoldFramesRemaining = Mathf.Max(0, _recoveryHoldFrames);
             _peakFrameTimeMs = _smoothedFrameTimeMs;
             ApplyRenderScale();
@@ -643,6 +768,7 @@ namespace Hecton8.World
                 return;
 
             _currentRenderScale = nextScale;
+            _targetRenderScale = nextScale;
             ApplyRenderScale();
         }
 
@@ -722,6 +848,7 @@ namespace Hecton8.World
             if (_urpAsset == null) return;
 
             _urpAsset.renderScale = _defaultRenderScale;
+            ScalableBufferManager.ResizeBuffers(1f, 1f);
         }
     }
 }

@@ -103,6 +103,31 @@ namespace Hecton8.Core.Signals
         [FieldOffset(31)] private byte _pad;
     }
 
+    /// <summary>Player look target state identifiers for diegetic UI consumers.</summary>
+    public static class PlayerLookTargetSignalStates
+    {
+        public const byte Cleared = 0;
+        public const byte Acquired = 1;
+    }
+
+    /// <summary>Player kinematics look-target lane for diegetic prompts. Size: 160 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 160)]
+    public struct PlayerLookTargetSignal : ISignal
+    {
+        [FieldOffset(0)] public AbsoluteUniversePosition TargetAup;
+        [FieldOffset(48)] public float3 RuntimeAnchor;
+        [FieldOffset(60)] public float DistanceMeters;
+        [FieldOffset(64)] public uint TargetHash;
+        [FieldOffset(68)] public uint Frame;
+        [FieldOffset(72)] public uint ColliderHash;
+        [FieldOffset(76)] public float3 SurfaceNormal;
+        [FieldOffset(88)] public uint PromptHash;
+        [FieldOffset(92)] public byte State;
+        [FieldOffset(93)] public byte Flags;
+        [FieldOffset(94)] private ushort _reserved;
+        [FieldOffset(96)] public FixedString64Bytes Prompt;
+    }
+
     internal interface ISignalLane
     {
         uint LaneHash { get; }
@@ -549,36 +574,134 @@ namespace Hecton8.Core.Signals
         private const int ImpactSignalGuardCode = unchecked((int)0x51A10002u);
         private const int HighSpeedImpactSignalGuardCode = unchecked((int)0x51A10003u);
         private const int CombatDamageSignalGuardCode = unchecked((int)0x51A10004u);
+        private const int FluidImpulseSignalGuardCode = unchecked((int)0x51A10005u);
+        private const int SystemPauseSignalGuardCode = unchecked((int)0x51A10006u);
+        private const int WeatherChangedSignalGuardCode = unchecked((int)0x51A10007u);
+        private const int TimeDilationSignalGuardCode = unchecked((int)0x51A10008u);
+        private const int SimulationPauseSignalGuardCode = unchecked((int)0x51A10009u);
+        private const int BulletTimeVisualSignalGuardCode = unchecked((int)0x51A1000Au);
+        private const int WeatherStrengthSignalGuardCode = unchecked((int)0x51A1000Bu);
+        private const int PlayerLookTargetSignalGuardCode = unchecked((int)0x51A1000Cu);
+        private const byte GuardNone = 0;
+        private const byte GuardDamage = 1;
+        private const byte GuardImpact = 2;
+        private const byte GuardHighSpeedImpact = 3;
+        private const byte GuardCombatDamage = 4;
+        private const byte GuardFluidImpulse = 5;
+        private const byte GuardSystemPause = 6;
+        private const byte GuardWeatherChanged = 7;
+        private const byte GuardTimeDilation = 8;
+        private const byte GuardSimulationPause = 9;
+        private const byte GuardBulletTimeVisual = 10;
+        private const byte GuardWeatherStrength = 11;
+        private const byte GuardPlayerLookTarget = 12;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Sanitize<T>(ref T signal)
             where T : unmanaged, ISignal
         {
-            if (typeof(T) == typeof(DamageSignal))
+            switch (SignalPayloadFiniteGuardCache<T>.Kind)
             {
-                ref DamageSignal typed = ref UnsafeUtility.As<T, DamageSignal>(ref signal);
-                return SanitizeDamageSignal(ref typed);
-            }
-
-            if (typeof(T) == typeof(ImpactSignal))
-            {
-                ref ImpactSignal typed = ref UnsafeUtility.As<T, ImpactSignal>(ref signal);
-                return SanitizeImpactSignal(ref typed);
-            }
-
-            if (typeof(T) == typeof(HighSpeedImpactSignal))
-            {
-                ref HighSpeedImpactSignal typed = ref UnsafeUtility.As<T, HighSpeedImpactSignal>(ref signal);
-                return SanitizeHighSpeedImpactSignal(ref typed);
-            }
-
-            if (typeof(T) == typeof(CombatDamageSignal))
-            {
-                ref CombatDamageSignal typed = ref UnsafeUtility.As<T, CombatDamageSignal>(ref signal);
-                return SanitizeCombatDamageSignal(ref typed);
+                case GuardDamage:
+                {
+                    ref DamageSignal typed = ref UnsafeUtility.As<T, DamageSignal>(ref signal);
+                    return SanitizeDamageSignal(ref typed);
+                }
+                case GuardImpact:
+                {
+                    ref ImpactSignal typed = ref UnsafeUtility.As<T, ImpactSignal>(ref signal);
+                    return SanitizeImpactSignal(ref typed);
+                }
+                case GuardHighSpeedImpact:
+                {
+                    ref HighSpeedImpactSignal typed = ref UnsafeUtility.As<T, HighSpeedImpactSignal>(ref signal);
+                    return SanitizeHighSpeedImpactSignal(ref typed);
+                }
+                case GuardCombatDamage:
+                {
+                    ref CombatDamageSignal typed = ref UnsafeUtility.As<T, CombatDamageSignal>(ref signal);
+                    return SanitizeCombatDamageSignal(ref typed);
+                }
+                case GuardFluidImpulse:
+                {
+                    ref FluidImpulseSignal typed = ref UnsafeUtility.As<T, FluidImpulseSignal>(ref signal);
+                    return SanitizeFluidImpulseSignal(ref typed);
+                }
+                case GuardSystemPause:
+                {
+                    ref SystemPauseSignal typed = ref UnsafeUtility.As<T, SystemPauseSignal>(ref signal);
+                    return SanitizeSystemPauseSignal(ref typed);
+                }
+                case GuardWeatherChanged:
+                {
+                    ref WeatherChangedSignal typed = ref UnsafeUtility.As<T, WeatherChangedSignal>(ref signal);
+                    return SanitizeWeatherChangedSignal(ref typed);
+                }
+                case GuardTimeDilation:
+                {
+                    ref TimeDilationSignal typed = ref UnsafeUtility.As<T, TimeDilationSignal>(ref signal);
+                    return SanitizeTimeDilationSignal(ref typed);
+                }
+                case GuardSimulationPause:
+                {
+                    ref SimulationPauseSignal typed = ref UnsafeUtility.As<T, SimulationPauseSignal>(ref signal);
+                    return SanitizeSimulationPauseSignal(ref typed);
+                }
+                case GuardBulletTimeVisual:
+                {
+                    ref BulletTimeVisualSignal typed = ref UnsafeUtility.As<T, BulletTimeVisualSignal>(ref signal);
+                    return SanitizeBulletTimeVisualSignal(ref typed);
+                }
+                case GuardWeatherStrength:
+                {
+                    ref WeatherStrengthSignal typed = ref UnsafeUtility.As<T, WeatherStrengthSignal>(ref signal);
+                    return SanitizeWeatherStrengthSignal(ref typed);
+                }
+                case GuardPlayerLookTarget:
+                {
+                    ref PlayerLookTargetSignal typed = ref UnsafeUtility.As<T, PlayerLookTargetSignal>(ref signal);
+                    return SanitizePlayerLookTargetSignal(ref typed);
+                }
             }
 
             return 0;
+        }
+
+        private static byte ResolveGuardKind<T>()
+            where T : unmanaged, ISignal
+        {
+            if (typeof(T) == typeof(DamageSignal))
+                return GuardDamage;
+            if (typeof(T) == typeof(ImpactSignal))
+                return GuardImpact;
+            if (typeof(T) == typeof(HighSpeedImpactSignal))
+                return GuardHighSpeedImpact;
+            if (typeof(T) == typeof(CombatDamageSignal))
+                return GuardCombatDamage;
+            if (typeof(T) == typeof(FluidImpulseSignal))
+                return GuardFluidImpulse;
+            if (typeof(T) == typeof(SystemPauseSignal))
+                return GuardSystemPause;
+            if (typeof(T) == typeof(WeatherChangedSignal))
+                return GuardWeatherChanged;
+            if (typeof(T) == typeof(TimeDilationSignal))
+                return GuardTimeDilation;
+            if (typeof(T) == typeof(SimulationPauseSignal))
+                return GuardSimulationPause;
+            if (typeof(T) == typeof(BulletTimeVisualSignal))
+                return GuardBulletTimeVisual;
+            if (typeof(T) == typeof(WeatherStrengthSignal))
+                return GuardWeatherStrength;
+            if (typeof(T) == typeof(PlayerLookTargetSignal))
+                return GuardPlayerLookTarget;
+
+            return GuardNone;
+        }
+
+        private static class SignalPayloadFiniteGuardCache<T>
+            where T : unmanaged, ISignal
+        {
+            internal static readonly byte Kind = ResolveGuardKind<T>();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -620,6 +743,153 @@ namespace Hecton8.Core.Signals
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeFluidImpulseSignal(ref FluidImpulseSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? FluidImpulseSignalGuardCode : 0;
+            if (!math.all(math.isfinite(signal.Vector)))
+            {
+                signal.Vector = float3.zero;
+                guardCode = FluidImpulseSignalGuardCode;
+            }
+
+            if (!math.isfinite(signal.Radius) || signal.Radius < 0f)
+            {
+                signal.Radius = 0f;
+                guardCode = FluidImpulseSignalGuardCode;
+            }
+
+            if (!math.isfinite(signal.Lifetime) || signal.Lifetime < 0f)
+            {
+                signal.Lifetime = 0f;
+                guardCode = FluidImpulseSignalGuardCode;
+            }
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeSystemPauseSignal(ref SystemPauseSignal signal)
+        {
+            if (math.isfinite(signal.RestoreScalar))
+                return 0;
+
+            signal.RestoreScalar = 0f;
+            return SystemPauseSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeWeatherChangedSignal(ref WeatherChangedSignal signal)
+        {
+            int guardCode = 0;
+            if (!math.isfinite(signal.Strength01))
+            {
+                signal.Strength01 = 0f;
+                guardCode = WeatherChangedSignalGuardCode;
+            }
+
+            if (!math.isfinite(signal.FlowFieldScale))
+            {
+                signal.FlowFieldScale = 0f;
+                guardCode = WeatherChangedSignalGuardCode;
+            }
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeTimeDilationSignal(ref TimeDilationSignal signal)
+        {
+            int guardCode = 0;
+            if (!math.isfinite(signal.Scalar) || signal.Scalar < 0f)
+            {
+                signal.Scalar = 0f;
+                guardCode = TimeDilationSignalGuardCode;
+            }
+
+            if (!math.isfinite(signal.UnscaledDeltaTime) || signal.UnscaledDeltaTime < 0f)
+            {
+                signal.UnscaledDeltaTime = 0f;
+                guardCode = TimeDilationSignalGuardCode;
+            }
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeSimulationPauseSignal(ref SimulationPauseSignal signal)
+        {
+            if (math.isfinite(signal.RestoreScalar))
+                return 0;
+
+            signal.RestoreScalar = 0f;
+            return SimulationPauseSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeBulletTimeVisualSignal(ref BulletTimeVisualSignal signal)
+        {
+            int guardCode = 0;
+            if (!math.isfinite(signal.Intensity01))
+            {
+                signal.Intensity01 = 0f;
+                guardCode = BulletTimeVisualSignalGuardCode;
+            }
+
+            if (!math.isfinite(signal.Scalar) || signal.Scalar < 0f)
+            {
+                signal.Scalar = 0f;
+                guardCode = BulletTimeVisualSignalGuardCode;
+            }
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeWeatherStrengthSignal(ref WeatherStrengthSignal signal)
+        {
+            int guardCode = 0;
+            if (!math.isfinite(signal.Strength01))
+            {
+                signal.Strength01 = 0f;
+                guardCode = WeatherStrengthSignalGuardCode;
+            }
+
+            if (!math.isfinite(signal.FlowFieldScale))
+            {
+                signal.FlowFieldScale = 0f;
+                guardCode = WeatherStrengthSignalGuardCode;
+            }
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizePlayerLookTargetSignal(ref PlayerLookTargetSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.TargetAup) ? PlayerLookTargetSignalGuardCode : 0;
+            if (!math.all(math.isfinite(signal.RuntimeAnchor)))
+            {
+                signal.RuntimeAnchor = float3.zero;
+                signal.State = PlayerLookTargetSignalStates.Cleared;
+                guardCode = PlayerLookTargetSignalGuardCode;
+            }
+
+            if (!math.all(math.isfinite(signal.SurfaceNormal)))
+            {
+                signal.SurfaceNormal = new float3(0f, 1f, 0f);
+                guardCode = PlayerLookTargetSignalGuardCode;
+            }
+
+            if (!math.isfinite(signal.DistanceMeters) || signal.DistanceMeters < 0f)
+            {
+                signal.DistanceMeters = 0f;
+                guardCode = PlayerLookTargetSignalGuardCode;
+            }
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SanitizeHighSpeedImpactSignal(ref HighSpeedImpactSignal signal)
         {
             int guardCode = SanitizeAup(ref signal.PointAup) ? HighSpeedImpactSignalGuardCode : 0;
@@ -638,6 +908,12 @@ namespace Hecton8.Core.Signals
             if (!math.isfinite(signal.ImpactSpeed) || signal.ImpactSpeed < 0f)
             {
                 signal.ImpactSpeed = 0f;
+                guardCode = HighSpeedImpactSignalGuardCode;
+            }
+
+            if (!math.isfinite(signal.EffectiveMass) || signal.EffectiveMass < 0f)
+            {
+                signal.EffectiveMass = 0f;
                 guardCode = HighSpeedImpactSignalGuardCode;
             }
 
@@ -711,6 +987,7 @@ namespace Hecton8.Core
         private const int EntityDeathSignalCapacity = 64;
         private const int InputStateSignalCapacity = 64;
         private const int PlayerInputSignalCapacity = 64;
+        private const int PlayerLookTargetSignalCapacity = 64;
         private const int SolarFlareSignalCapacity = 16;
         private const int RebaseSignalCapacity = 64;
         private const int ControlSignalCapacity = 256;
@@ -783,6 +1060,7 @@ namespace Hecton8.Core
         private const int PlayerStressSignalCapacity = 64;
         private const int TraumaSignalCapacity = 16;
         private const int WakeGeneratedSignalCapacity = 128;
+        private const int FluidImpulseSignalCapacity = 32;
         private const int ProgressionEventSignalCapacity = 128;
         private const int GlobalWorldStateSignalCapacity = 64;
         private const int BiomeChangedSignalCapacity = 64;
@@ -1359,11 +1637,12 @@ namespace Hecton8.Core
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             ValidateSignalPayload<DamageSignal>(32);
             ValidateSignalPayload<ImpactSignal>(64);
-            ValidateSignalSize<HighSpeedImpactSignal>(88);
+            ValidateSignalSize<HighSpeedImpactSignal>(96);
             ValidateSignalSize<HapticRequest>(32);
             ValidateSignalSize<PlayerStateSignal>(64);
             ValidateSignalPayload<AupPreShiftSignal>(32);
             ValidateSignalPayload<AupShiftSignal>(32);
+            ValidateSignalSize<PlayerLookTargetSignal>(160);
             ValidateSignalSize<BrownoutSignal>(32);
             ValidateSignalSize<DebrisSpawnSignal>(64);
             ValidateSignalSize<DeflectSignal>(32);
@@ -1587,21 +1866,22 @@ namespace Hecton8.Core
             _latestDamageSignal = sanitizedSignal;
             AdvanceSignalSequence(ref _latestDamageSignalSequence);
             _damageSignals.Enqueue(sanitizedSignal);
-            SignalBus<CombatDamageSignal>.Push(new CombatDamageSignal
-            {
-                WorldPoint = sanitizedSignal.LocalPoint,
-                Direction = float3.zero,
-                Magnitude = sanitizedSignal.Magnitude,
-                DamageType = sanitizedSignal.DamageType,
-                TargetHash = sanitizedSignal.SubjectHash,
-                SourceHash = sanitizedSignal.SourceId,
-                Frame = unchecked((uint)Time.frameCount),
-                SourceId = sanitizedSignal.SourceId,
-                TargetId = sanitizedSignal.TargetId > (uint)ushort.MaxValue ? ushort.MaxValue : (ushort)sanitizedSignal.TargetId,
-                Channel = sanitizedSignal.Channel,
-                Flags = CombatDamageSignal.LegacyMirrorFlag,
-                IntegrityDelta = sanitizedSignal.IntegrityDelta
-            });
+            CombatDamageSignal combatSignal = default;
+            combatSignal.WorldPoint = sanitizedSignal.LocalPoint;
+            combatSignal.Direction = float3.zero;
+            combatSignal.Magnitude = sanitizedSignal.Magnitude;
+            combatSignal.DamageType = sanitizedSignal.DamageType;
+            combatSignal.TargetHash = sanitizedSignal.SubjectHash;
+            combatSignal.SourceHash = sanitizedSignal.SourceId;
+            combatSignal.Frame = unchecked((uint)Time.frameCount);
+            combatSignal.SourceId = sanitizedSignal.SourceId;
+            combatSignal.TargetId = sanitizedSignal.TargetId > (uint)ushort.MaxValue
+                ? ushort.MaxValue
+                : (ushort)sanitizedSignal.TargetId;
+            combatSignal.Channel = sanitizedSignal.Channel;
+            combatSignal.Flags = CombatDamageSignal.LegacyMirrorFlag;
+            combatSignal.IntegrityDelta = sanitizedSignal.IntegrityDelta;
+            SignalBus<CombatDamageSignal>.Push(in combatSignal);
         }
 
         /// <summary>Queues one packet-native damage signal without legacy DamageSignal mirroring.</summary>
@@ -2188,51 +2468,69 @@ namespace Hecton8.Core
         public static void Publish(in TimeDilationSignal signal)
         {
             EnsureInitialized();
-            Volatile.Write(ref _timeDilationScalarMilli, (int)math.round(math.max(0f, signal.Scalar) * 1000f));
-            Volatile.Write(ref _timeDilationSequence, unchecked((int)signal.Sequence));
-            _timeDilationSignals.Enqueue(signal);
+            TimeDilationSignal sanitizedSignal = signal;
+            int guardCode = SignalPayloadFiniteGuards.Sanitize(ref sanitizedSignal);
+            if (guardCode != 0)
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
+
+            Volatile.Write(ref _timeDilationScalarMilli, (int)math.round(math.max(0f, sanitizedSignal.Scalar) * 1000f));
+            Volatile.Write(ref _timeDilationSequence, unchecked((int)sanitizedSignal.Sequence));
+            _timeDilationSignals.Enqueue(sanitizedSignal);
         }
 
         /// <summary>Queues one pause/unpause packet from the main thread.</summary>
         public static void Publish(in SimulationPauseSignal signal)
         {
             EnsureInitialized();
-            Volatile.Write(ref _simulationPaused, signal.Paused != 0 ? 1 : 0);
-            _simulationPauseSignals.Enqueue(signal);
-            SignalBus<SystemPauseSignal>.Push(new SystemPauseSignal
-            {
-                SourceHash = signal.SourceHash,
-                Frame = signal.Frame,
-                Sequence = signal.Sequence,
-                Paused = signal.Paused,
-                Flags = signal.Flags,
-                RestoreScalar = signal.RestoreScalar
-            });
+            SimulationPauseSignal sanitizedSignal = signal;
+            int guardCode = SignalPayloadFiniteGuards.Sanitize(ref sanitizedSignal);
+            if (guardCode != 0)
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
+
+            Volatile.Write(ref _simulationPaused, sanitizedSignal.Paused != 0 ? 1 : 0);
+            _simulationPauseSignals.Enqueue(sanitizedSignal);
+            SystemPauseSignal pauseSignal = default;
+            pauseSignal.SourceHash = sanitizedSignal.SourceHash;
+            pauseSignal.Frame = sanitizedSignal.Frame;
+            pauseSignal.Sequence = sanitizedSignal.Sequence;
+            pauseSignal.Paused = sanitizedSignal.Paused;
+            pauseSignal.Flags = sanitizedSignal.Flags;
+            pauseSignal.RestoreScalar = sanitizedSignal.RestoreScalar;
+            SignalBus<SystemPauseSignal>.Push(in pauseSignal);
         }
 
         /// <summary>Queues one bullet-time post-process fake packet from the main thread.</summary>
         public static void Publish(in BulletTimeVisualSignal signal)
         {
             EnsureInitialized();
-            Volatile.Write(ref _bulletTimeVisualMilli, (int)math.round(math.saturate(signal.Intensity01) * 1000f));
-            _bulletTimeVisualSignals.Enqueue(signal);
+            BulletTimeVisualSignal sanitizedSignal = signal;
+            int guardCode = SignalPayloadFiniteGuards.Sanitize(ref sanitizedSignal);
+            if (guardCode != 0)
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
+
+            Volatile.Write(ref _bulletTimeVisualMilli, (int)math.round(math.saturate(sanitizedSignal.Intensity01) * 1000f));
+            _bulletTimeVisualSignals.Enqueue(sanitizedSignal);
         }
 
         /// <summary>Queues one weather strength packet from the main thread.</summary>
         public static void Publish(in WeatherStrengthSignal signal)
         {
             EnsureInitialized();
-            _weatherStrengthSignals.Enqueue(signal);
-            SignalBus<WeatherChangedSignal>.Push(new WeatherChangedSignal
-            {
-                Strength01 = signal.Strength01,
-                FlowFieldScale = signal.FlowFieldScale,
-                PreviousWeatherHash = 0u,
-                WeatherHash = signal.WeatherHash,
-                Frame = signal.Frame,
-                QualityTier = GlobalRegistry.ScalabilityTierProfileByte,
-                Flags = signal.Flags
-            });
+            WeatherStrengthSignal sanitizedSignal = signal;
+            int guardCode = SignalPayloadFiniteGuards.Sanitize(ref sanitizedSignal);
+            if (guardCode != 0)
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
+
+            _weatherStrengthSignals.Enqueue(sanitizedSignal);
+            WeatherChangedSignal weatherSignal = default;
+            weatherSignal.Strength01 = sanitizedSignal.Strength01;
+            weatherSignal.FlowFieldScale = sanitizedSignal.FlowFieldScale;
+            weatherSignal.PreviousWeatherHash = 0u;
+            weatherSignal.WeatherHash = sanitizedSignal.WeatherHash;
+            weatherSignal.Frame = sanitizedSignal.Frame;
+            weatherSignal.QualityTier = GlobalRegistry.ScalabilityTierProfileByte;
+            weatherSignal.Flags = sanitizedSignal.Flags;
+            SignalBus<WeatherChangedSignal>.Push(in weatherSignal);
         }
 
         /// <summary>Queues one item decay packet from the main thread.</summary>
@@ -2326,6 +2624,13 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             _wakeGeneratedSignals.Enqueue(signal);
+        }
+
+        /// <summary>Queues one bounded visual-fluid impulse for GPU advection consumers.</summary>
+        public static void Publish(in FluidImpulseSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<FluidImpulseSignal>.Push(in signal);
         }
 
         /// <summary>Queues one narrative progression packet from the main thread.</summary>
@@ -2574,7 +2879,9 @@ namespace Hecton8.Core
                 if (!math.all(math.isfinite(shiftMeters)))
                     continue;
 
-                SignalBus<CombatDamageSignal>.TransformSnapshot(new CombatDamageSignalAupShiftTransformer(shiftMeters));
+                CombatDamageSignalAupShiftTransformer transformer = default;
+                transformer.SetShift(shiftMeters);
+                SignalBus<CombatDamageSignal>.TransformSnapshot(transformer);
             }
         }
 
@@ -2662,6 +2969,8 @@ namespace Hecton8.Core
             SignalBus<InputStateSignal>.EnsureInitialized();
             SignalBus<PlayerInputSignal>.Configure(PlayerInputSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerInputSignal)));
             SignalBus<PlayerInputSignal>.EnsureInitialized();
+            SignalBus<PlayerLookTargetSignal>.Configure(PlayerLookTargetSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerLookTargetSignal)));
+            SignalBus<PlayerLookTargetSignal>.EnsureInitialized();
             SignalBus<CombatDamageSignal>.Configure(DamageSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CombatDamageSignal)));
             SignalBus<CombatDamageSignal>.EnsureInitialized();
             SignalBus<HullDeformedSignal>.Configure(HullDeformedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(HullDeformedSignal)));
@@ -2716,6 +3025,8 @@ namespace Hecton8.Core
             SignalBus<ManualOverridePulledSignal>.EnsureInitialized();
             SignalBus<SwarmDispersedSignal>.Configure(SwarmDispersedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SwarmDispersedSignal)));
             SignalBus<SwarmDispersedSignal>.EnsureInitialized();
+            SignalBus<FluidImpulseSignal>.Configure(FluidImpulseSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(FluidImpulseSignal)));
+            SignalBus<FluidImpulseSignal>.EnsureInitialized();
             SignalBus<SectorHydratedSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(SectorHydratedSignal)));
             SignalBus<SectorHydratedSignal>.EnsureInitialized();
             SignalBus<WfcOutpostStateChangedSignal>.Configure(128, laneHash: ComputeStableSignalLaneHash(nameof(WfcOutpostStateChangedSignal)));
@@ -2970,8 +3281,8 @@ namespace Hecton8.Core.Signals
         [FieldOffset(63)] public byte Flags;
     }
 
-    /// <summary>Kinematic CCD impact packet with exact AUP hit point and slide normal. Size: 88 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 88)]
+    /// <summary>Kinematic CCD impact packet with exact AUP hit point and slide normal. Size: 96 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     public struct HighSpeedImpactSignal : ISignal
     {
         public const byte SourcePlayer = 1;
@@ -2979,6 +3290,9 @@ namespace Hecton8.Core.Signals
         public const byte SourceLeviathan = 3;
         public const byte FlagCornerHalt = 1 << 0;
         public const byte FlagLowTierStop = 1 << 1;
+        public const byte MaterialOrganic = 0;
+        public const byte MaterialMetal = 1;
+        public const byte MaterialGlass = 2;
 
         [FieldOffset(0)] public AbsoluteUniversePosition PointAup;
         [FieldOffset(48)] public float3 Normal;
@@ -2989,6 +3303,20 @@ namespace Hecton8.Core.Signals
         [FieldOffset(76)] public uint Frame;
         [FieldOffset(80)] public byte SourceKind;
         [FieldOffset(81)] public byte Flags;
+        [FieldOffset(82)] public byte PrimaryMaterialId;
+        [FieldOffset(83)] public byte SecondaryMaterialId;
+        [FieldOffset(84)] public float EffectiveMass;
+        [FieldOffset(88)] public uint MaterialHash;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ComposeMaterialHash(uint targetHash, byte primaryMaterialId, byte secondaryMaterialId)
+        {
+            uint hash = 2166136261u;
+            hash = (hash ^ targetHash) * 16777619u;
+            hash = (hash ^ primaryMaterialId) * 16777619u;
+            hash = (hash ^ secondaryMaterialId) * 16777619u;
+            return hash != 0u ? hash : 1u;
+        }
     }
 
     /// <summary>Haptic request packet sourced from high-energy physical impacts. Size: 32 bytes.</summary>
@@ -3030,7 +3358,7 @@ namespace Hecton8.Core.Signals
     }
 
     /// <summary>Player delayed-action progress lane for UI and feedback consumers. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
     public struct PlayerActionProgressSignal : ISignal
     {
         public const byte ActionKindGeneric = 0;
@@ -3049,7 +3377,7 @@ namespace Hecton8.Core.Signals
     }
 
     /// <summary>Player delayed-action completion lane. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
     public struct PlayerActionCompletedSignal : ISignal
     {
         public const byte FlagHasItem = 1 << 0;
@@ -3065,7 +3393,7 @@ namespace Hecton8.Core.Signals
     }
 
     /// <summary>Player delayed-action cancellation lane. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
     public struct PlayerActionCancelledSignal : ISignal
     {
         public const byte ReasonGeneric = 0;
@@ -3237,6 +3565,19 @@ namespace Hecton8.Core.Signals
         [FieldOffset(60)] public uint SourceFlags;
     }
 
+    /// <summary>Producer-agnostic visual-fluid impulse. Size: 80 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    public struct FluidImpulseSignal : ISignal
+    {
+        [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(48)] public float3 Vector;
+        [FieldOffset(60)] public float Radius;
+        [FieldOffset(64)] public float Lifetime;
+        [FieldOffset(68)] public uint Frame;
+        [FieldOffset(72)] public uint SourceHash;
+        [FieldOffset(76)] public uint Flags;
+    }
+
     /// <summary>Narrative POI-to-progression broadcast. Size: 64 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ProgressionEventSignal : ISignal
@@ -3279,6 +3620,29 @@ namespace Hecton8.Core.Signals
         [FieldOffset(52)] public uint CurrentBiomeHash;
         [FieldOffset(56)] public uint PoiHash;
         [FieldOffset(60)] public uint Frame;
+    }
+
+    /// <summary>Mathematical SDF biome boundary blend broadcast. Size: 80 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    public struct BiomeGradientSignal : ISignal
+    {
+        public const byte FlagLowTierKernel = 1 << 0;
+        public const byte FlagExactCellCenter = 1 << 1;
+        public const byte FlagMissingMap = 1 << 2;
+        public const byte FlagInvalidInput = 1 << 3;
+        public const byte FlagHasSecondaryBiome = 1 << 4;
+
+        [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(48)] public uint BiomeAHash;
+        [FieldOffset(52)] public uint BiomeBHash;
+        [FieldOffset(56)] public float BlendFactor01;
+        [FieldOffset(60)] public float BoundaryDistanceMeters;
+        [FieldOffset(64)] public float CellSizeMeters;
+        [FieldOffset(68)] public uint Frame;
+        [FieldOffset(72)] public byte BiomeA;
+        [FieldOffset(73)] public byte BiomeB;
+        [FieldOffset(74)] public byte SampleDiameter;
+        [FieldOffset(75)] public byte Flags;
     }
 
     /// <summary>Soft narrative camera focus target. Size: 80 bytes.</summary>
@@ -3686,10 +4050,12 @@ namespace Hecton8.Core.Signals
         public const byte ChannelFabricScrape = ChannelGloveScrape;
         public const byte ChannelMetalStress = 4;
         public const byte ChannelLeviathanRoar = 5;
+        public const byte ChannelLootZip = 6;
         public const byte FlagActiveSonar = 1;
         public const byte FlagGloveScrape = 1 << 1;
         public const byte FlagFabricScrape = FlagGloveScrape;
         public const byte FlagLeviathanRoar = 1 << 2;
+        public const byte FlagLootZip = 1 << 3;
 
         [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
         [FieldOffset(48)] public float RadiusMeters;
@@ -4146,7 +4512,7 @@ namespace Hecton8.Core.Signals
     }
 
     /// <summary>PDA exchange dirty-state signal for barter UI and relay consumers. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
     public struct PdaExchangeStateChangedSignal : ISignal
     {
         public const byte ReasonExecuted = 1;
@@ -4165,7 +4531,7 @@ namespace Hecton8.Core.Signals
     }
 
     /// <summary>Vehicle upgrade bitmask mutation signal. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
     public struct VehicleUpgradesChangedSignal : ISignal
     {
         public const byte ReasonPenalty = 1;
@@ -4650,9 +5016,9 @@ namespace Hecton8.Core.Signals
     /// <summary>Applies a committed AUP shift to runtime-space combat signal coordinates.</summary>
     public struct CombatDamageSignalAupShiftTransformer : ISignalSnapshotTransformer<CombatDamageSignal>
     {
-        private readonly float3 _shiftMeters;
+        private float3 _shiftMeters;
 
-        public CombatDamageSignalAupShiftTransformer(float3 shiftMeters)
+        public void SetShift(float3 shiftMeters)
         {
             _shiftMeters = shiftMeters;
         }

@@ -69,7 +69,6 @@ namespace Hecton8.UI.VR
         private Vector3 _resolvedLocalAxis = Vector3.right;
         private Vector3 _referenceLocalVector = Vector3.forward;
         private Vector3 _lastHandWorldPosition;
-        private Vector3 _lastHandForward = Vector3.forward;
         private PhysicalHandSide _lastHandSide;
         private UniversalInputStateSignal _lastInputSignal;
         private IInputService _inputService;
@@ -181,12 +180,12 @@ namespace Hecton8.UI.VR
                 return false;
 
             float3 localHand = WorldToLocal(handPosition);
-            float3 delta = localHand - _leverPivots[0];
-            if (math.lengthsq(delta) > _grabRadiusSq)
+            float pivotDistanceSq = math.lengthsq(localHand - _leverPivots[0]);
+            float handleDistanceSq = math.lengthsq(localHand - ResolveHandleLocalPosition());
+            if (math.min(pivotDistanceSq, handleDistanceSq) > _grabRadiusSq)
                 return false;
 
             _lastHandWorldPosition = handPosition;
-            _lastHandForward = IsFiniteVector(handForward) ? handForward : Vector3.forward;
             _lastHandSide = fallbackHandSide;
             _lastHandFrame = Time.frameCount;
             return true;
@@ -276,6 +275,12 @@ namespace Hecton8.UI.VR
             if (step == _lastRatchetStep || step < 0)
                 return;
 
+            if (_lastRatchetStep < 0)
+            {
+                _lastRatchetStep = step;
+                return;
+            }
+
             if (!_grabbed && _nonVrHold01 <= 0f)
                 return;
 
@@ -296,23 +301,24 @@ namespace Hecton8.UI.VR
             if (_latched || currentAngle < latchAngleDegrees)
                 return;
 
+            float latchVelocityDegreesPerSecond = _leverVelocities[0];
             _latched = true;
             _grabbed = false;
             _leverAngles[0] = maxAngleDegrees;
             _leverTargets[0] = maxAngleDegrees;
             _leverVelocities[0] = 0f;
             ApplyLeverVisual(maxAngleDegrees);
-            PublishManualOverrideSignal();
+            PublishManualOverrideSignal(latchVelocityDegreesPerSecond);
             PublishLatchHaptic();
 
             if (emitPrologueComplete)
                 PublishPrologueCompleteSignal();
         }
 
-        private void PublishManualOverrideSignal()
+        private void PublishManualOverrideSignal(float latchVelocityDegreesPerSecond)
         {
             ManualOverridePulledSignal signal = default;
-            signal.LeverLocalPosition = _leverPivots[0];
+            signal.LeverLocalPosition = ResolveHandleLocalPosition();
             signal.PivotLocalPosition = _leverPivots[0];
             signal.AngleDegrees = _leverAngles[0];
             signal.GripStrength01 = (_lastInputSignal.ActionsBitmask & GripActionMask) != 0u ? 1f : 0f;
@@ -320,12 +326,21 @@ namespace Hecton8.UI.VR
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.Sequence = ++_signalSequence;
             signal.HandSide = _latchedHandSide;
-            signal.VelocityDegreesPerSecond = _leverVelocities[0];
+            signal.VelocityDegreesPerSecond = latchVelocityDegreesPerSecond;
             signal.Flags = ManualOverridePulledSignal.FlagLatched;
             signal.Flags |= XRSettings.enabled && XRSettings.isDeviceActive
                 ? ManualOverridePulledSignal.FlagVrGrip
                 : ManualOverridePulledSignal.FlagNonVrFallback;
             GlobalSignals.Publish(in signal);
+        }
+
+        private float3 ResolveHandleLocalPosition()
+        {
+            if (handleAnchor == null || _cachedTransform == null)
+                return _leverPivots[0];
+
+            Vector3 local = _cachedTransform.InverseTransformPoint(handleAnchor.position);
+            return new float3(local.x, local.y, local.z);
         }
 
         private void PublishPrologueCompleteSignal()

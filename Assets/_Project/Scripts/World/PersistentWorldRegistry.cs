@@ -111,10 +111,10 @@ namespace Hecton8.World
 
         public float3 ToRuntimeFloat3()
         {
-            Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 committedOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             return AUPMath.ToRuntimeFloat3(
                 in this,
-                new float3(committedOffset.x, committedOffset.y, committedOffset.z));
+                committedOffset);
         }
 
         /// <summary>

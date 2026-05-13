@@ -1,8 +1,12 @@
 #pragma kernel AdvectFluidParticles
+#pragma kernel AdvectCarveDebris
+#pragma kernel ClearCarveDebrisIndirectArgs
+#pragma kernel CullCarveDebrisForRender
 
 #define HECTON_FLUID_ADVECTION_THREADS 64
 #define HECTON_BUBBLE_POPPED_FLAG 256u
 #define HECTON_DEBRIS_RESTING_FLAG 512u
+#define HECTON_DYNAMIC_WAKE_CAPACITY 8
 
 struct Silt
 {
@@ -34,8 +38,16 @@ StructuredBuffer<Bubble> _BubbleRead;
 RWStructuredBuffer<Bubble> _BubbleWrite;
 StructuredBuffer<Debris> _DebrisRead;
 RWStructuredBuffer<Debris> _DebrisWrite;
+StructuredBuffer<float4> _CarveDebrisRead;
+RWStructuredBuffer<float4> _CarveDebrisWrite;
+StructuredBuffer<float4> _CarveDebrisVelocityRead;
+RWStructuredBuffer<float4> _CarveDebrisVelocityWrite;
+RWStructuredBuffer<uint> _CarveDebrisVisibleIndices;
+RWByteAddressBuffer _CarveDebrisIndirectArgs;
 
 StructuredBuffer<float4> _AbyssalFlowFieldResult;
+StructuredBuffer<float4> _DynamicWakes;       // xyz=AUP/runtime position, w=intensity
+StructuredBuffer<float4> _DynamicWakeVectors; // xyz=push axis, w=radius
 Texture3D<float4> _AbyssalFlowFieldTexture;
 SamplerState sampler_AbyssalFlowFieldTexture;
 
@@ -46,6 +58,13 @@ float4 _FluidAdvectionCounts;        // x=silt, y=bubbles, z=debris, w=max dispa
 float4 _FluidAdvectionParams;        // x=dt, y=low tier, z=flow active, w=sdf active
 float4 _FluidAdvectionBuoyancy;      // x=silt, y=bubble, z=debris, w=drag
 float4 _FluidAdvectionAupShiftDelta; // xyz=runtime rebase delta applied before integration
+float4 _CarveDebrisCounts;           // x=capacity, y=cpu-active mirror, z=max visible, w=frame
+float4 _CarveDebrisParams;           // x=dt, y=low tier, z=sdf active, w=flow drag
+float4 _CarveDebrisForces;           // xyz=gravity, w=life decay per second
+float4 _CarveDebrisAupShiftDelta;    // xyz=runtime rebase delta applied before integration
+float4 _CarveDebrisCameraParams;     // xyz=camera, w=max render distance squared
+float4 _CarveDebrisDrawArgsParams;   // x=index count, y=start index, z=base vertex, w=max instances
+float4 _DynamicWakeParams;           // x=slot limit, y=low tier, z=active count, w=unused
 float4 _AbyssalGridResolution;       // xyz=grid resolution, w=flattened count
 float4 _AbyssalFlowCenter;           // xyz=center
 float4 _AbyssalFlowSpacing;          // xyz=spacing
@@ -58,6 +77,12 @@ float4 _FluidAdvectionSdfParams;     // x=active, y=solid threshold, z=unused, w
 float3 Sanitize(float3 value)
 {
     return all(isfinite(value)) ? value : float3(0.0, 0.0, 0.0);
+}
+
+float3 SafeNormalize(float3 value, float3 fallback)
+{
+    float lengthSq = dot(value, value);
+    return lengthSq > 0.000001 ? value * rsqrt(lengthSq) : fallback;
 }
 
 float3 SampleAbyssalFlow(float3 positionWS)
@@ -84,6 +109,41 @@ float3 SampleAbyssalFlow(float3 positionWS)
         return float3(0.0, 0.0, 0.0);
 
     return Sanitize(_AbyssalFlowFieldResult[flatIndex].xyz);
+}
+
+float3 ApplyDynamicWakes(float3 positionWS, float3 flow)
+{
+    int slotLimit = min((int)max(0.0, _DynamicWakeParams.x), HECTON_DYNAMIC_WAKE_CAPACITY);
+    [unroll]
+    for (int i = 0; i < HECTON_DYNAMIC_WAKE_CAPACITY; i++)
+    {
+        if (i >= slotLimit)
+            continue;
+
+        float4 wake = _DynamicWakes[i];
+        float4 vectorRadius = _DynamicWakeVectors[i];
+        float intensity = max(0.0, wake.w);
+        float radius = max(0.0, vectorRadius.w);
+        if (intensity <= 0.0001 || radius <= 0.0001)
+            continue;
+
+        float3 delta = positionWS - wake.xyz;
+        float distSq = dot(delta, delta);
+        float radiusSq = radius * radius;
+        if (distSq >= radiusSq)
+            continue;
+
+        float3 pushAxis = SafeNormalize(vectorRadius.xyz, float3(0.0, 0.0, 1.0));
+        float3 radial = SafeNormalize(delta, pushAxis);
+        float falloff = saturate(1.0 - (distSq * rcp(max(radiusSq, 0.0001))));
+        falloff *= falloff;
+        float directionalGate = saturate(dot(radial, pushAxis) * 0.5 + 0.5);
+        float3 vortex = cross(pushAxis, radial) * (intensity * falloff * 0.45);
+        float3 push = pushAxis * (intensity * falloff * (0.55 + directionalGate * 0.45));
+        flow += push + vortex;
+    }
+
+    return Sanitize(flow);
 }
 
 bool IsSolidVoxel(float3 positionWS)
@@ -125,6 +185,7 @@ void AdvectFluidParticles(uint3 id : SV_DispatchThreadID)
         Silt particle = _SiltRead[index];
         float3 previousPosition = particle.PositionWS + shiftDelta;
         float3 flow = SampleAbyssalFlow(previousPosition);
+        flow = ApplyDynamicWakes(previousPosition, flow);
         float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.x);
         float3 nextPosition = previousPosition + velocity * dt;
 
@@ -147,6 +208,7 @@ void AdvectFluidParticles(uint3 id : SV_DispatchThreadID)
         Bubble particle = _BubbleRead[index];
         float3 previousPosition = particle.PositionWS + shiftDelta;
         float3 flow = _FluidAdvectionParams.y > 0.5 ? float3(0.0, 0.0, 0.0) : SampleAbyssalFlow(previousPosition);
+        flow = ApplyDynamicWakes(previousPosition, flow);
         float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.y);
         float3 nextPosition = previousPosition + velocity * dt;
 
@@ -172,6 +234,7 @@ void AdvectFluidParticles(uint3 id : SV_DispatchThreadID)
         Debris particle = _DebrisRead[index];
         float3 previousPosition = particle.PositionWS + shiftDelta;
         float3 flow = _FluidAdvectionParams.y > 0.5 ? float3(0.0, 0.0, 0.0) : SampleAbyssalFlow(previousPosition);
+        flow = ApplyDynamicWakes(previousPosition, flow);
         float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.z);
         float3 nextPosition = previousPosition + velocity * dt;
 
@@ -189,4 +252,92 @@ void AdvectFluidParticles(uint3 id : SV_DispatchThreadID)
 
         _DebrisWrite[index] = particle;
     }
+}
+
+[numthreads(1, 1, 1)]
+void ClearCarveDebrisIndirectArgs(uint3 id : SV_DispatchThreadID)
+{
+    uint indexCount = (uint)max(0.0, _CarveDebrisDrawArgsParams.x);
+    uint startIndex = (uint)max(0.0, _CarveDebrisDrawArgsParams.y);
+    uint baseVertex = (uint)max(0.0, _CarveDebrisDrawArgsParams.z);
+    _CarveDebrisIndirectArgs.Store(0, indexCount);
+    _CarveDebrisIndirectArgs.Store(4, 0u);
+    _CarveDebrisIndirectArgs.Store(8, startIndex);
+    _CarveDebrisIndirectArgs.Store(12, baseVertex);
+    _CarveDebrisIndirectArgs.Store(16, 0u);
+}
+
+[numthreads(HECTON_FLUID_ADVECTION_THREADS, 1, 1)]
+void AdvectCarveDebris(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    uint capacity = (uint)max(0.0, _CarveDebrisCounts.x);
+    if (index >= capacity)
+        return;
+
+    float4 particle = _CarveDebrisRead[index];
+    float4 velocityPacked = _CarveDebrisVelocityRead[index];
+    if (particle.w <= 0.0)
+    {
+        _CarveDebrisWrite[index] = particle;
+        _CarveDebrisVelocityWrite[index] = velocityPacked;
+        return;
+    }
+
+    float dt = min(max(_CarveDebrisParams.x, 0.0), 0.0666667);
+    float3 previousPosition = particle.xyz + _CarveDebrisAupShiftDelta.xyz;
+    float3 velocity = Sanitize(velocityPacked.xyz);
+    float3 flow = _CarveDebrisParams.y > 0.5 ? float3(0.0, 0.0, 0.0) : SampleAbyssalFlow(previousPosition);
+    flow = ApplyDynamicWakes(previousPosition, flow);
+    float flowBlend = saturate(max(0.0, _CarveDebrisParams.w) * dt);
+    velocity = Sanitize(lerp(velocity, flow, flowBlend) + _CarveDebrisForces.xyz * dt);
+    float3 nextPosition = previousPosition + velocity * dt;
+    float lifeDecay = max(0.0, _CarveDebrisForces.w) * dt;
+
+    if (_CarveDebrisParams.y <= 0.5 && _CarveDebrisParams.z > 0.5 && IsSolidVoxel(nextPosition))
+    {
+        particle.xyz = previousPosition;
+        particle.w = max(0.0, particle.w - lifeDecay * 6.0);
+        velocity = float3(0.0, 0.0, 0.0);
+    }
+    else
+    {
+        particle.xyz = Sanitize(nextPosition);
+        particle.w = max(0.0, particle.w - lifeDecay);
+    }
+
+    if (!all(isfinite(particle)) || !all(isfinite(velocity)))
+    {
+        particle = float4(0.0, 0.0, 0.0, 0.0);
+        velocity = float3(0.0, 0.0, 0.0);
+    }
+
+    _CarveDebrisWrite[index] = particle;
+    _CarveDebrisVelocityWrite[index] = float4(velocity, 0.0);
+}
+
+[numthreads(HECTON_FLUID_ADVECTION_THREADS, 1, 1)]
+void CullCarveDebrisForRender(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    uint capacity = (uint)max(0.0, _CarveDebrisCounts.x);
+    if (index >= capacity)
+        return;
+
+    float4 particle = _CarveDebrisRead[index];
+    if (particle.w <= 0.0 || !all(isfinite(particle)))
+        return;
+
+    float maxDistanceSq = _CarveDebrisCameraParams.w;
+    if (maxDistanceSq > 0.0)
+    {
+        float3 delta = particle.xyz - _CarveDebrisCameraParams.xyz;
+        if (dot(delta, delta) > maxDistanceSq)
+            return;
+    }
+
+    uint visibleSlot;
+    _CarveDebrisIndirectArgs.InterlockedAdd(4, 1u, visibleSlot);
+    if (visibleSlot < (uint)max(0.0, _CarveDebrisCounts.z))
+        _CarveDebrisVisibleIndices[visibleSlot] = index;
 }

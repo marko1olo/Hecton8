@@ -41,6 +41,24 @@ namespace Hecton8.Core.Contracts
         Ultra = 3
     }
 
+    public enum MacroDatabaseCompactionState : byte
+    {
+        Idle = 0,
+        Copying = 1,
+        ReadyToSwap = 2,
+        Swapping = 3,
+        Paused = 4,
+        Faulted = 5
+    }
+
+    public static class MacroDatabaseCompactionFlags
+    {
+        public const byte MemoryPressurePaused = 1 << 0;
+        public const byte PersistenceGate = 1 << 1;
+        public const byte TempReady = 1 << 2;
+        public const byte LastSwapExceededBudget = 1 << 3;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct MacroDatabaseConfig
     {
@@ -105,8 +123,12 @@ namespace Hecton8.Core.Contracts
     public struct MacroDatabaseStats
     {
         public long FileBytes;
+        public long DeadBytes;
+        public long CompactionTempBytes;
         public long RootNodeOffset;
         public long CacheBytes;
+        public int PendingDirtyPayloads;
+        public int LastCompactionStallMicroseconds;
         public int CacheEntries;
         public int PageFaults;
         public int HydratedSectors;
@@ -115,7 +137,24 @@ namespace Hecton8.Core.Contracts
         public uint FrameIndex;
         public byte IsOpen;
         public byte Tier;
-        public ushort Reserved;
+        public byte CompactionState;
+        public byte CompactionFlags;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MacroDatabaseCompactionSnapshot
+    {
+        public long FileBytes;
+        public long DeadBytes;
+        public long ThresholdBytes;
+        public long TempBytes;
+        public int PendingDirtyPayloads;
+        public int LastSwapMicroseconds;
+        public uint FrameIndex;
+        public byte State;
+        public byte Flags;
+        public byte Tier;
+        public byte Reserved;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -136,13 +175,16 @@ namespace Hecton8.Core.Contracts
         public ulong PlayerSectorHash;
         public long RootNodeOffset;
         public long CacheBytes;
+        public long DeadBytes;
         public int CacheEntries;
         public int PageFaults;
         public int PageFaultsTotal;
         public int HydratedSectors;
         public int EvictedSectors;
+        public int LastCompactionStallMicroseconds;
         public uint FrameIndex;
         public byte Tier;
+        public byte CompactionState;
         public byte Flags;
         public ushort Reserved;
     }
@@ -179,6 +221,7 @@ namespace Hecton8.Core.Contracts
     {
         bool IsOpen { get; }
         MacroDatabaseStats Stats { get; }
+        MacroDatabaseCompactionSnapshot Compaction { get; }
 
         bool Initialize(
             string path,
@@ -196,6 +239,11 @@ namespace Hecton8.Core.Contracts
         int EvictDistant(in MacroDatabaseAup playerAup, MacroDatabaseTier tier, NativeArray<ulong> evictionScratch);
         bool TryAppendDirtyPayload(ulong sectorHash);
         bool TryRepackOffline(string destinationPath);
+        bool FrostTickCompaction(MacroDatabaseTier tier, bool persistenceBusy);
+        bool TryRequestBackgroundCompaction(MacroDatabaseTier tier, byte reasonFlags = 0);
+        bool TryCompleteCompactionSwap(MacroDatabaseTier tier, bool persistenceBusy);
+        void NotifyPersistenceGate(bool blocked, uint frame);
+        void NotifyCriticalMemoryPressure(long reservedMemoryBytes, long physicalMemoryBytes, float usageRatio, uint frame, byte severity);
         void DumpBlackBox(string path);
         void Shutdown();
     }

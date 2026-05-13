@@ -2,7 +2,7 @@
 
 Domain: Core Memory/DataVault
 Prompt task count: 13
-Status: PENDING VERIFICATION
+Status: PENDING - VAULT LOCK VERIFIED, COMPILE TARGET BLOCKED
 
 ## Mandates Loaded
 - OPT_Zero_GC_Policy_AllocFree_Mandate.txt
@@ -13,20 +13,27 @@ Status: PENDING VERIFICATION
 - DBG_Telemetry_Crash_Reporting_PostMortem.txt
 
 ## Assignment Checklist
-- [ ] Task 1: SINGLETON ERADICATION N/A | Justification pending | Alternative rejected pending | Estimate pending
-- [ ] Task 2: SIGNAL MIGRATION N/A | Justification pending | Alternative rejected pending | Estimate pending
-- [ ] Task 3: ASMDEF ISOLATION | Justification pending | Alternative rejected pending | Estimate pending
-- [ ] Task 4: DTO INQUISITION | Justification pending | Alternative rejected pending | Estimate pending
-- [ ] Task 5: ALIGNMENT ENFORCEMENT | Justification pending | Alternative rejected pending | Estimate pending
-- [ ] Task 6: ALIAS GENERATIONS | Justification pending | Alternative rejected pending | Estimate pending
-- [ ] Task 7: LEAK DETECTION | Justification pending | Alternative rejected pending | Estimate pending
-- [ ] Task 8: COMPACTION LOCK | Justification pending | Alternative rejected pending | Estimate pending
-- [ ] Task 9: AUP SHIFT SAFETY N/A | Justification pending | Alternative rejected pending | Estimate pending
-- [ ] Task 10: MATH LOD N/A | Justification pending | Alternative rejected pending | Estimate pending
-- [ ] Task 11: ZERO-GC | Justification pending | Alternative rejected pending | Estimate pending
-- [ ] Task 12: BLACKBOX DUMP | Justification pending | Alternative rejected pending | Estimate pending
-- [ ] Task 13: OMEGA COMPILE CHECK | Justification pending | Alternative rejected pending | Estimate pending
+- [x] Task 1: SINGLETON ERADICATION N/A | DOD: prompt explicitly N/A, no singleton created | Rejected: inventing registry dependency outside task | Estimate: 0 us hot path
+- [x] Task 2: SIGNAL MIGRATION N/A | DOD: prompt explicitly N/A, no signal coupling added | Rejected: GlobalSignals import into Memory leaf | Estimate: 0 us hot path
+- [x] Task 3: ASMDEF ISOLATION | DOD: rg verified Core.Memory has no GlobalSignals import and asmdef references remain Contracts/Unity only | Rejected: referencing Core signal bridge from Memory | Estimate: 0 us hot path
+- [x] Task 4: DTO INQUISITION | DOD: SaveData.cs inspected; requested DTO names were missing and are now explicit ABI structs | Rejected: hiding state in PlayerStatsDTO/ModuleDTO managed structs | Estimate: 0 us frame, save-only mirror refresh
+- [x] Task 5: ALIGNMENT ENFORCEMENT | DOD: PlayerKinematicStateDTO=48B, InventoryShadowDTO=32B, HabitatFloodStateDTO=32B with Pack=1 and BinaryLayoutManifest assertions | Rejected: runtime reflection-only layout trust | Estimate: 0 us frame, <4 us cold boot manifest
+- [x] Task 6: ALIAS GENERATIONS | DOD: VaultBufferHandle<T> exposes GenerationID and ResolveBuffer throws FatalMemoryException on stale ptr/generation/length/stride | Rejected: silent stale handle refresh | Estimate: 0 us valid hot path, exception only on fault
+- [x] Task 7: LEAK DETECTION | DOD: H8Memory.FreeRaw owner overload checks SystemID and throws FatalMemoryException on unknown/wrong/untracked owner | Rejected: unregister-by-pointer without ownership check | Estimate: O(active allocations) on free only, 0 us frame for no free
+- [x] Task 8: COMPACTION LOCK | DOD: FrostTickDefrag records gap telemetry only; rg found no UnsafeUtility.MemMove/compaction slice/memmove job in GlobalDataVault | Rejected: 1 ms live relocation slice | Estimate: saves worst-case 1000 us slice and removes pointer-corruption risk
+- [x] Task 9: AUP SHIFT SAFETY N/A | DOD: prompt explicitly N/A; existing allocation lock/unlock unchanged | Rejected: touching AUP systems outside domain | Estimate: 0 us
+- [x] Task 10: MATH LOD N/A | DOD: prompt explicitly N/A; no simulation LOD added to memory leaf | Rejected: fake optimization outside memory contract | Estimate: 0 us
+- [x] Task 11: ZERO-GC | DOD: DataVault hot paths use structs/branches only; save writer emits first-hour flood DTOs directly without allocating arrays | Rejected: save-time temporary arrays for flood mirrors | Estimate: 0 B GC hot path
+- [x] Task 12: BLACKBOX DUMP | DOD: MemoryDefragTelemetryEntry now records VaultGenerationID into the 300-frame circular buffer | Rejected: separate managed telemetry event | Estimate: +4 bytes/frame native telemetry, 0 B GC
+- [x] Task 13: OMEGA COMPILE CHECK [BLOCKED BY MISSING BUILD TARGET] | DOD: exact command executed | Rejected: fabricating a green build or creating a fake .rsp project | Estimate: dotnet failed in 1 s with MSB1009
 
 ## Loop Notes
 - Loop 0: Prompt extracted via PowerShell raw regex from Docs/Tasks/CURRENT_BATCH.md.
 - Hygiene: status and rationale files were missing, not stale.
+- Loop 1: Tasks 1-5 executed. dotnet build Hecton8.Core.csproj failed on unrelated missing namespaces/types in audio/fluid/AI/world systems before any edited-file diagnostics surfaced.
+- Prompt re-read after Task 3 via PowerShell raw regex from Docs/Tasks/CURRENT_BATCH.md.
+- Loop 2: Tasks 6-10 executed. Static rg checks passed for Core.Memory leaf imports, stale handle throw path, owner-checked FreeRaw call sites, and no live MemMove/compaction code in GlobalDataVault.
+- Prompt re-read after Task 6 via PowerShell raw regex from Docs/Tasks/CURRENT_BATCH.md.
+- Loop 3: Tasks 11-13 executed. Exact dotnet build Hecton8.Core.Memory.rsp failed because the requested build target is absent; broader Hecton8.Core.csproj build remains blocked by unrelated missing audio/fluid/AI/world symbols and produced no edited-file diagnostics in filtered output.
+- Prompt re-read after Tasks 9 and 12 via PowerShell raw regex from Docs/Tasks/CURRENT_BATCH.md.
+- Loop 4: OMEGA_POLISH read after all tasks checked/blocked. Scoped anti-bloat scan found no added managed foreach, string interpolation, string.Format, sqrt, or normalize in touched scope; existing cold SaveData timestamp ToString predates this pass. Hecton8.Core.csproj build rerun after final polish still reports no edited-file diagnostics before global dependency wall.

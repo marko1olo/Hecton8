@@ -87,3 +87,57 @@ Solution: Static audit confirms scanner/UI span writes use stackalloc or fixed c
 Rejected Alternatives: Marking Task 15 complete without compiler evidence; replacing span path with strings to appease unverifiable build state.
 Scalability potential: Once build infrastructure is restored, this path should validate without changing runtime design.
 Hardware Impact: No runtime impact from the blocked proof itself.
+
+## OMEGA POLISH CHANGES
+
+Problem: Occlusion command setup still used honest vector magnitude plus divide after the scanner had already selected a single lore candidate.
+Solution: Replaced `Vector3.magnitude` and direction division with `math.lengthsq`, `math.rsqrt`, and multiplication in `QueueScientificOcclusionRaycast`.
+Rejected Alternatives: Keeping sqrt/division because there is only one ray; adding more occlusion rays for certainty.
+Scalability potential: Low/MX350 keeps the one-ray lie as cheap as possible. Middle/High/Ultra can spend the saved budget on scanner RT glyph density, not target authority.
+Hardware Impact: Estimated gain is one sqrt and one vector divide removed per candidate occlusion request; exact microseconds PENDING VERIFICATION.
+
+Problem: Polish mandate required proof that the scanner path did not drift back into managed UI/string churn.
+Solution: Ran static audits for `foreach`, `.ToString()`, `.text =`, `Physics.Raycast`, `ScannerManager`, and `void Update(` over scanner UI/target files. Scanner RT path remains `Span<char>` plus TMP `SetCharArray`.
+Rejected Alternatives: Treating the current implementation as done without re-reading the prompt; moving title formatting into managed strings.
+Scalability potential: Low writes numeric percentage only. Middle writes scrambled title. High/Ultra can increase decode animation density without changing allocation behavior.
+Hardware Impact: Expected managed allocation remains zero in the active scanner RT write path; exact microseconds PENDING VERIFICATION.
+
+Problem: Some scanner-domain edits touch core signal and memory IDs outside presentation files.
+Solution: Kept cross-domain surface limited to stable contract points: `BufferID.LoreEntityAUPs`, `BufferID.LoreEntityHashes`, and fixed-size signal-lane publication. Scanner does not call campaign services directly.
+Rejected Alternatives: Direct MetaCampaign singleton dependency; private scanner manager singleton; moving large implementation files across asmdefs during parallel agent work.
+Scalability potential: Signal/DataVault contracts let later systems consume scanner events or SOA buffers without coupling back into the UI/tool code.
+Hardware Impact: Completion-only signal pushes have no steady-frame scanner cost.
+
+Problem: Build verification still cannot prove scanner syntax in isolation because the generated project fails earlier on unrelated missing contracts.
+Solution: Re-ran `dotnet build Hecton8.Core.csproj`; it still fails at global missing references (`Hecton8.Environment.Fluids`, audio virtualization/propagation, CCD, persistence, macro database, and other contracts) before a scanner-specific proof can be isolated.
+Rejected Alternatives: Marking VERIFIED MASTER GRADE without compiler evidence; reverting scanner work for unrelated dependency failures.
+Scalability potential: None; this is project integration state.
+Hardware Impact: No runtime impact.
+
+Final Git Diff: `git diff --stat` includes scanner files plus unrelated dirty core signal/memory files from other agents. Scanner-owned hunks are `ScannerTool.cs`, `ScannableTarget.cs`, and `ToolDiegeticDisplayController.cs`; unrelated `GlobalSignals.cs` / `H8Memory.cs` deltas are not claimed as scanner work.
+
+## LOOP 5 HARDENING
+
+Problem: Diegetic scanner RT title rendering still resolved the lore title by scanning the registry every progress repaint.
+Solution: Added a fixed `char[96]` scanner-title cache in `ToolDiegeticDisplayController`, keyed by artifact hash. Repaints now copy the cached title into the TMP staging buffer before scrambling.
+Rejected Alternatives: Keeping the full hash lookup per repaint; caching managed strings; moving UI lookup into a singleton manager.
+Scalability potential: Low tier still skips title lookup entirely. Middle/High/Ultra get stable title decrypt visuals with less CPU overhead as progress buckets change.
+Hardware Impact: Estimated i3/MX350 gain is removal of repeated 1024-entry title scans during one focused scan; exact microseconds PENDING VERIFICATION.
+
+Problem: `ScannableTarget.TryGetLoreEntityBuffers()` rewrote lore AUP/hash SOA every call, even if two consumers requested it in the same frame.
+Solution: Added a same-frame debounce in `SyncLoreEntityVaultAups()` while keeping edit-mode and first-frame writes intact.
+Rejected Alternatives: Removing sync entirely, which would break moving lore targets; adding a new scheduler dependency; widening DataVault ownership outside the UX task.
+Scalability potential: Low/Middle/High/Ultra all avoid redundant same-frame SOA rewrites. High/Ultra can still support multiple scanner displays without duplicating registry sync work.
+Hardware Impact: Estimated low-end gain is one avoided 1024-target transform/AUP rewrite for each extra same-frame scanner consumer; exact microseconds PENDING VERIFICATION.
+
+Problem: Previous diff report risked blending unrelated core edits into this scanner task.
+Solution: Reconciled actual `git diff` with source contents and separated scanner-owned hunks from dirty workspace changes in core memory/signal files.
+Rejected Alternatives: Claiming all current dirty files; reverting unrelated edits without authority.
+Scalability potential: None; this is integration hygiene.
+Hardware Impact: No runtime impact.
+
+Problem: Unity MCP script validation is currently unavailable.
+Solution: Attempted `validate_script`; transport failed against `127.0.0.1:8088/mcp`. Re-ran `dotnet build Hecton8.Core.csproj`; it still fails on global missing contracts, latest observed count 128 errors, and no scanner/UI/target syntax errors surfaced before the dependency wall.
+Rejected Alternatives: Reporting Unity-verified status without a live editor session.
+Scalability potential: None; blocked infrastructure.
+Hardware Impact: No runtime impact.

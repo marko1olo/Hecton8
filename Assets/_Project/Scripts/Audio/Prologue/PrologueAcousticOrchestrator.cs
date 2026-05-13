@@ -14,6 +14,8 @@ namespace Hecton8.Audio.Prologue
     {
         private const uint SourceHash = 0xAC0571C5u;
         private const float MinimumLowPassCutoffHertz = 80f;
+        private const float CutoffPublishEpsilonHertz = 1f;
+        private const float GainPublishEpsilon = 0.0005f;
 
         [Header("Filter")]
         [SerializeField] private float vacuumLowPassCutoffHertz = 400f;
@@ -42,12 +44,22 @@ namespace Hecton8.Audio.Prologue
         private ushort _lastAtmosphericSequence;
         private ushort _lastCompleteSequence;
         private byte _stage = AudioTransitionState.StageSpace;
+        private byte _lastPublishedStage;
+        private byte _lastPublishedFlags;
         private float _velocityMetersPerSecond;
         private float _heat01;
         private float _currentLowPassCutoffHertz = 400f;
+        private float _lastPublishedLowPassCutoffHertz = -1f;
+        private float _lastPublishedLfeGain = -1f;
+        private float _lastPublishedGranularStress = -1f;
+        private float _lastPublishedSplashdownGain = -1f;
+        private float _lastPublishedPortalBlend = -1f;
         private float _sweepElapsedSeconds;
         private bool _sweepActive;
         private bool _splashdownPending;
+        private bool _prologueArmed;
+        private bool _hasCompleteSequence;
+        private bool _forcePublishTransition;
         private uint _tickCount;
 
         /// <inheritdoc />
@@ -57,10 +69,20 @@ namespace Hecton8.Audio.Prologue
         {
             CacheAudioService(GlobalRegistry.Audio);
             RefreshQualityTier(true);
-            _currentLowPassCutoffHertz = ClampCutoff(vacuumLowPassCutoffHertz);
+            _currentLowPassCutoffHertz = ClampCutoff(oceanLowPassCutoffHertz);
             _stage = AudioTransitionState.StageSpace;
             _sweepActive = false;
             _splashdownPending = false;
+            _prologueArmed = false;
+            _hasCompleteSequence = false;
+            _forcePublishTransition = false;
+            _lastPublishedStage = 0;
+            _lastPublishedFlags = 0;
+            _lastPublishedLowPassCutoffHertz = -1f;
+            _lastPublishedLfeGain = -1f;
+            _lastPublishedGranularStress = -1f;
+            _lastPublishedSplashdownGain = -1f;
+            _lastPublishedPortalBlend = -1f;
 
             if (!_lateFrameRegistered)
             {
@@ -139,9 +161,17 @@ namespace Hecton8.Audio.Prologue
                 if (!math.isfinite(signal.UniverseVelocityMetersPerSecond) || !math.isfinite(signal.Heat01))
                     continue;
 
+                bool newSequence = !_prologueArmed || signal.Sequence != _lastAtmosphericSequence;
+                _prologueArmed = true;
                 _lastAtmosphericSequence = signal.Sequence;
                 _velocityMetersPerSecond = math.max(0f, signal.UniverseVelocityMetersPerSecond);
                 _heat01 = ResolveHeat01(in signal);
+
+                if (_stage == AudioTransitionState.StageOceanHandoff)
+                    continue;
+
+                if (newSequence)
+                    _forcePublishTransition = true;
 
                 if (signal.Phase >= AtmosphericReentrySignal.PhaseWhiteout ||
                     (signal.Flags & AtmosphericReentrySignal.FlagWhiteoutRequested) != 0)
@@ -176,16 +206,21 @@ namespace Hecton8.Audio.Prologue
                 if (!math.isfinite(signal.WhiteoutHoldSeconds))
                     continue;
 
-                if (signal.Sequence != _lastCompleteSequence)
+                bool newCompleteSequence = !_hasCompleteSequence || signal.Sequence != _lastCompleteSequence;
+                _prologueArmed = true;
+                _hasCompleteSequence = true;
+
+                if (newCompleteSequence)
                 {
                     _lastCompleteSequence = signal.Sequence;
                     _splashdownPending = true;
+                    _sweepElapsedSeconds = 0f;
+                    _sweepActive = true;
+                    _currentLowPassCutoffHertz = ClampCutoff(vacuumLowPassCutoffHertz);
+                    _forcePublishTransition = true;
                 }
 
                 _stage = AudioTransitionState.StageOceanHandoff;
-                _sweepElapsedSeconds = 0f;
-                _sweepActive = true;
-                _currentLowPassCutoffHertz = ClampCutoff(vacuumLowPassCutoffHertz);
             }
         }
 
@@ -196,15 +231,21 @@ namespace Hecton8.Audio.Prologue
 
             float duration = math.max(0.001f, oceanFilterSweepSeconds);
             _sweepElapsedSeconds = math.min(duration, _sweepElapsedSeconds + math.max(0f, deltaSeconds));
-            float t = math.saturate(_sweepElapsedSeconds / duration);
+            float t = math.saturate(_sweepElapsedSeconds * math.rcp(duration));
             t = t * t * (3f - 2f * t);
             _currentLowPassCutoffHertz = math.lerp(ClampCutoff(vacuumLowPassCutoffHertz), ClampCutoff(oceanLowPassCutoffHertz), t);
             if (_sweepElapsedSeconds >= duration)
+            {
                 _sweepActive = false;
+                _forcePublishTransition = true;
+            }
         }
 
         private void PublishAudioTransition(int frame)
         {
+            if (!_prologueArmed)
+                return;
+
             IAudioService audioService = _audioService;
             if (audioService == null || !audioService.IsInitialized)
                 return;
@@ -225,15 +266,23 @@ namespace Hecton8.Audio.Prologue
             if (plasmaStage && _lowTier)
                 flags |= AudioTransitionState.FlagLowTierProxy;
 
+            float lowPassCutoffHertz = ClampCutoff(_currentLowPassCutoffHertz);
+            float lfeGain = ResolveLfeGain(velocity01, plasmaStage, portalStage);
+            float granularStress = granularEnabled ? math.saturate(velocity01 * plasmaGranularStressGain) : 0f;
+            float splashdownGain01 = _splashdownPending ? math.saturate(splashdownGain) : 0f;
+            float portalBlend01 = portalStage ? ResolvePortalBlend01() : 0f;
+            if (!ShouldPublishTransition(lowPassCutoffHertz, lfeGain, granularStress, splashdownGain01, portalBlend01, flags))
+                return;
+
             var state = new AudioTransitionState
             {
                 UniverseVelocityMetersPerSecond = _velocityMetersPerSecond,
                 Heat01 = heat01,
-                LowPassCutoffHz = ClampCutoff(_currentLowPassCutoffHertz),
-                LfeGain01 = ResolveLfeGain(velocity01, plasmaStage, portalStage),
-                GranularStress01 = granularEnabled ? math.saturate(velocity01 * plasmaGranularStressGain) : 0f,
-                SplashdownGain01 = _splashdownPending ? math.saturate(splashdownGain) : 0f,
-                PortalBlend01 = portalStage ? ResolvePortalBlend01() : 0f,
+                LowPassCutoffHz = lowPassCutoffHertz,
+                LfeGain01 = lfeGain,
+                GranularStress01 = granularStress,
+                SplashdownGain01 = splashdownGain01,
+                PortalBlend01 = portalBlend01,
                 Frame = unchecked((uint)frame),
                 Sequence = ++_transitionSequence,
                 SourceHash = SourceHash,
@@ -243,7 +292,17 @@ namespace Hecton8.Audio.Prologue
                 AbsoluteTimeSeconds = Time.unscaledTimeAsDouble
             };
 
-            audioService.QueuePrologueAudioTransition(in state);
+            if (!audioService.QueuePrologueAudioTransition(in state))
+                return;
+
+            _lastPublishedStage = _stage;
+            _lastPublishedFlags = flags;
+            _lastPublishedLowPassCutoffHertz = lowPassCutoffHertz;
+            _lastPublishedLfeGain = lfeGain;
+            _lastPublishedGranularStress = granularStress;
+            _lastPublishedSplashdownGain = splashdownGain01;
+            _lastPublishedPortalBlend = portalBlend01;
+            _forcePublishTransition = false;
             _splashdownPending = false;
         }
 
@@ -279,7 +338,7 @@ namespace Hecton8.Audio.Prologue
         private float ResolveVelocity01(float velocityMetersPerSecond)
         {
             float velocityScale = math.max(1f, plasmaFullStressVelocityMetersPerSecond);
-            return math.saturate(math.max(0f, velocityMetersPerSecond) / velocityScale);
+            return math.saturate(math.max(0f, velocityMetersPerSecond) * math.rcp(velocityScale));
         }
 
         private float ResolveLfeGain(float velocity01, bool plasmaStage, bool portalStage)
@@ -301,7 +360,26 @@ namespace Hecton8.Audio.Prologue
                 return 1f;
 
             float duration = math.max(0.001f, oceanFilterSweepSeconds);
-            return math.saturate(_sweepElapsedSeconds / duration);
+            return math.saturate(_sweepElapsedSeconds * math.rcp(duration));
+        }
+
+        private bool ShouldPublishTransition(
+            float lowPassCutoffHertz,
+            float lfeGain,
+            float granularStress,
+            float splashdownGain01,
+            float portalBlend01,
+            byte flags)
+        {
+            return _forcePublishTransition ||
+                   _splashdownPending ||
+                   _stage != _lastPublishedStage ||
+                   flags != _lastPublishedFlags ||
+                   math.abs(lowPassCutoffHertz - _lastPublishedLowPassCutoffHertz) > CutoffPublishEpsilonHertz ||
+                   math.abs(lfeGain - _lastPublishedLfeGain) > GainPublishEpsilon ||
+                   math.abs(granularStress - _lastPublishedGranularStress) > GainPublishEpsilon ||
+                   math.abs(splashdownGain01 - _lastPublishedSplashdownGain) > GainPublishEpsilon ||
+                   math.abs(portalBlend01 - _lastPublishedPortalBlend) > GainPublishEpsilon;
         }
 
         private float ClampCutoff(float cutoffHertz)

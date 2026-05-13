@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
@@ -30,6 +31,13 @@ namespace Hecton8.AI
         private const int HighIkCadenceFrameInterval = 2;
         private const int LowIkCadenceFrameInterval = 6;
         private const int AdaptiveIkFrameOffsetMask = 7;
+        private const uint TailWakeSourceHash = 0x4C455649u; // LEVI
+        private const float TailWakeCooldownSeconds = 0.35f;
+        private const float TailWakeDirectionDotThreshold = 0.58f;
+        private const float TailWakeMinimumSpeedSq = 9f;
+        private const float TailWakeRadiusMeters = 24f;
+        private const float TailWakeLifetimeSeconds = 2.2f;
+        private const float TailWakeMaxVectorMetersPerSecond = 18f;
         private const uint AdaptiveIkLowTierMask =
             (1u << (int)HectonQualityTier.Unknown) |
             (1u << (int)HectonQualityTier.Low) |
@@ -323,7 +331,9 @@ namespace Hecton8.AI
         private float3 _strikeTargetWorldPosition;
         private float3 _strikeRecoveryTargetWorldPosition;
         private float3 _smoothedTravelDirection;
+        private float3 _previousTailWakeDirection;
         private float _phaseTime;
+        private float _tailWakeCooldownRemaining;
         private float _headLookBlend;
         private float _strikeBlend;
         private float _strikeTelegraphBlend;
@@ -343,6 +353,7 @@ namespace Hecton8.AI
         private Transform _strikeTarget;
         private bool _headLookTargetActive;
         private bool _wasStrikeActiveLastTick;
+        private bool _tailWakeDirectionInitialized;
         private Transform _cachedPlayerTransform;
         private int _playerTransformCacheFrame = -1;
         private int _adaptiveIkFrameOffset;
@@ -606,6 +617,7 @@ namespace Hecton8.AI
             IntegrateControlPointSpring(_headPoint - _smoothedTravelDirection * safeSpacing, springStiffness, springDamping, deltaTime, ref _midPointB, ref _midPointBVelocity);
             IntegrateControlPointSpring(_midPointB - _smoothedTravelDirection * safeSpacing, springStiffness, springDamping, deltaTime, ref _midPointA, ref _midPointAVelocity);
             IntegrateControlPointSpring(_midPointA - _smoothedTravelDirection * safeSpacing, springStiffness, springDamping, deltaTime, ref _tailPoint, ref _tailVelocity);
+            TryPublishTailWakeImpulse(deltaTime);
 
             _strikeTargetWorldPosition = math.lerp(_strikeTargetWorldPosition, resolvedStrikeTargetPosition, strikeBlendAlpha);
             _headLookTargetWorldPosition = math.lerp(_headLookTargetWorldPosition, resolvedHeadLookTarget, headLookBlendAlpha);
@@ -649,6 +661,47 @@ namespace Hecton8.AI
 
             _pendingSpineHandle = job.Schedule(_normalizedBoneT.Length, 8);
             _jobScheduled = true;
+        }
+
+        private void TryPublishTailWakeImpulse(float deltaTime)
+        {
+            _tailWakeCooldownRemaining = math.max(0f, _tailWakeCooldownRemaining - math.max(0f, deltaTime));
+            if (_faunaBrain == null ||
+                _faunaBrain.SpeciesProfile == null ||
+                !_faunaBrain.SpeciesProfile.isLeviathan)
+            {
+                _tailWakeDirectionInitialized = false;
+                return;
+            }
+
+            float speedSq = math.lengthsq(_tailVelocity);
+            if (speedSq < TailWakeMinimumSpeedSq)
+                return;
+
+            float3 direction = ContextualPhysicalIkMath.SafeNormalize(_tailVelocity, -_smoothedTravelDirection);
+            if (!_tailWakeDirectionInitialized)
+            {
+                _previousTailWakeDirection = direction;
+                _tailWakeDirectionInitialized = true;
+                return;
+            }
+
+            float directionDot = math.dot(_previousTailWakeDirection, direction);
+            _previousTailWakeDirection = direction;
+            if (directionDot > TailWakeDirectionDotThreshold || _tailWakeCooldownRemaining > 0f)
+                return;
+
+            float strength = math.min(speedSq * math.rsqrt(math.max(speedSq, 0.000001f)), TailWakeMaxVectorMetersPerSecond);
+            FluidImpulseSignal signal = default;
+            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(_tailPoint);
+            signal.Vector = direction * strength;
+            signal.Radius = TailWakeRadiusMeters;
+            signal.Lifetime = TailWakeLifetimeSeconds;
+            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.SourceHash = TailWakeSourceHash;
+            signal.Flags = 1u;
+            GlobalSignals.Publish(in signal);
+            _tailWakeCooldownRemaining = TailWakeCooldownSeconds;
         }
 
         public void LateFrameTick()
@@ -1106,6 +1159,9 @@ namespace Hecton8.AI
             _strikeRecoveryDistanceNormalized = 0f;
             _headLookTargetActive = false;
             _wasStrikeActiveLastTick = false;
+            _previousTailWakeDirection = _smoothedTravelDirection;
+            _tailWakeCooldownRemaining = 0f;
+            _tailWakeDirectionInitialized = false;
             if (_jawOpenRadians.IsCreated)
                 _jawOpenRadians[0] = 0f;
 

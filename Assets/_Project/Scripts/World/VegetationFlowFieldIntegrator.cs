@@ -2749,6 +2749,7 @@ namespace Hecton8.World
             public float3 ThreatVoxelCellSize;
             public float SampleSpacing;
             public int MaxSamplesPerSegment;
+            public int MaxPortalLookAhead;
             public float KelpWeight;
             public float SargassumWeight;
             public float DensityObstacleThreshold;
@@ -2961,6 +2962,7 @@ namespace Hecton8.World
 
                 int sourceLength = OutputPath.Length;
                 int lastIndex = sourceLength - 1;
+                int maxPortalLookAhead = math.max(1, MaxPortalLookAhead);
                 int anchorIndex = 0;
                 int writeIndex = 0;
 
@@ -2973,7 +2975,8 @@ namespace Hecton8.World
                     writeIndex++;
 
                     int farthestVisibleIndex = anchorIndex + 1;
-                    for (int candidateIndex = farthestVisibleIndex + 1; candidateIndex <= lastIndex; candidateIndex++)
+                    int candidateLimit = math.min(lastIndex, anchorIndex + maxPortalLookAhead);
+                    for (int candidateIndex = farthestVisibleIndex + 1; candidateIndex <= candidateLimit; candidateIndex++)
                     {
                         if (!HasVoxelLineOfSight(ToFloat3(anchorPoint), ToFloat3(OutputPath[candidateIndex])))
                             break;
@@ -3023,7 +3026,9 @@ namespace Hecton8.World
                 tMax = math.select(new float3(1000000f, 1000000f, 1000000f), tMax, activeAxisMask);
                 tDelta = math.select(new float3(1000000f, 1000000f, 1000000f), tDelta, activeAxisMask);
 
-                int maxSteps = math.min(activeVoxelDimensions.x + activeVoxelDimensions.y + activeVoxelDimensions.z + 1, MaxThreatDdaSteps);
+                int sampleStepCap = math.clamp(MaxSamplesPerSegment, 1, MaxThreatDdaSteps);
+                int gridStepCap = math.min(activeVoxelDimensions.x + activeVoxelDimensions.y + activeVoxelDimensions.z + 1, MaxThreatDdaSteps);
+                int maxSteps = math.min(gridStepCap, sampleStepCap);
                 for (int stepIndex = 0; stepIndex < maxSteps; stepIndex++)
                 {
                     if (SampleVoxel(currentVoxel) >= SolidThreatVoxel)
@@ -3039,7 +3044,7 @@ namespace Hecton8.World
                         return true;
                 }
 
-                return true;
+                return false;
             }
 
             private bool TryWorldToVoxel(float3 worldPosition, out int3 voxel)

@@ -211,6 +211,7 @@ namespace Hecton8.AI
             if (_tailWhipSecondsRemaining > 0f)
                 _tailWhipSecondsRemaining = math.max(0f, _tailWhipSecondsRemaining - safeDeltaTime);
 
+            uint runtimeFlags = ResolveRuntimeFlags();
             LeviathanTerrainIkJob job = new LeviathanTerrainIkJob
             {
                 SegmentPositions = _segmentPositions,
@@ -242,9 +243,7 @@ namespace Hecton8.AI
                 RequestedSegmentCount = _activeSegmentCount,
                 ConstraintIterations = _resolvedConstraintIterations,
                 FrameIndex = _frameIndex,
-                EnableSdfHugging = _enableSdfHugging ? (byte)1 : (byte)0,
-                EnableTerrainFallback = _enableMapMagicFallback ? (byte)1 : (byte)0,
-                LowTier = IsLowTier(GlobalRegistry.ScalabilityTier) ? (byte)1 : (byte)0
+                RuntimeFlags = runtimeFlags
             };
 
             _pendingHandle = job.Schedule();
@@ -865,6 +864,18 @@ namespace Hecton8.AI
             Vector3 velocity = _body.linearVelocity;
             float velocitySq = velocity.sqrMagnitude;
             return velocitySq > MinVectorMagnitudeSq ? velocitySq * math.rsqrt(velocitySq) : 0f;
+        }
+
+        private uint ResolveRuntimeFlags()
+        {
+            uint flags = 0u;
+            if (_enableSdfHugging)
+                flags |= LeviathanTerrainIkConstants.RuntimeFlagSdfHugging;
+            if (_enableMapMagicFallback)
+                flags |= LeviathanTerrainIkConstants.RuntimeFlagTerrainFallback;
+            if (IsLowTier(GlobalRegistry.ScalabilityTier))
+                flags |= LeviathanTerrainIkConstants.RuntimeFlagLowTier;
+            return flags;
         }
 
         private static bool IsLowTier(HectonQualityTier tier)

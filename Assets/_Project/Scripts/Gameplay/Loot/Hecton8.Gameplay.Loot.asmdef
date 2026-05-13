@@ -1,0 +1,21 @@
+{
+    "name": "Hecton8.Gameplay.Loot",
+    "rootNamespace": "Hecton8.Gameplay.Loot",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Gameplay.Loot.Contracts",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

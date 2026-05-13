@@ -18,6 +18,9 @@ namespace Hecton8.Animation.IK
         public const uint TelemetryFlagTailWhip = 1u << 3;
         public const uint TelemetryFlagLowTier = 1u << 4;
         public const uint TelemetryFlagInvalid = 1u << 31;
+        public const uint RuntimeFlagSdfHugging = 1u << 0;
+        public const uint RuntimeFlagTerrainFallback = 1u << 1;
+        public const uint RuntimeFlagLowTier = 1u << 2;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 96)]
@@ -71,9 +74,7 @@ namespace Hecton8.Animation.IK
         public int RequestedSegmentCount;
         public int ConstraintIterations;
         public int FrameIndex;
-        public byte EnableSdfHugging;
-        public byte EnableTerrainFallback;
-        public byte LowTier;
+        public uint RuntimeFlags;
 
         public void Execute()
         {
@@ -88,7 +89,8 @@ namespace Hecton8.Animation.IK
             }
 
             int maxUsableSegments = math.min(LeviathanTerrainIkConstants.MaxSegments, math.min(SegmentPositions.Length, LeviathanBones.Length));
-            int requested = LowTier != 0
+            bool lowTier = (RuntimeFlags & LeviathanTerrainIkConstants.RuntimeFlagLowTier) != 0u;
+            int requested = lowTier
                 ? LeviathanTerrainIkConstants.LowTierSegments
                 : RequestedSegmentCount;
             int activeCount = math.clamp(requested, 2, maxUsableSegments);
@@ -103,7 +105,7 @@ namespace Hecton8.Animation.IK
             float3 intended = SanitizeFinite(IntendedVelocity, float3.zero);
             float maxTerrainPush = 0f;
             uint telemetryFlags = LeviathanTerrainIkConstants.TelemetryFlagActive;
-            if (LowTier != 0)
+            if (lowTier)
                 telemetryFlags |= LeviathanTerrainIkConstants.TelemetryFlagLowTier;
 
             MoveHead(dt, segmentLength, intended, ownerForward);
@@ -119,13 +121,13 @@ namespace Hecton8.Animation.IK
                 PullDistanceConstraints(activeCount, segmentLength, ownerForward);
             }
 
-            bool canUseSdf = LowTier == 0 &&
-                             EnableSdfHugging != 0 &&
+            bool canUseSdf = !lowTier &&
+                             (RuntimeFlags & LeviathanTerrainIkConstants.RuntimeFlagSdfHugging) != 0u &&
                              VoxelSdfTexture3D.IsCreated &&
                              TryResolveSdfVoxelCount(VoxelSdfDimensions, out int expectedSdfLength) &&
                              VoxelSdfTexture3D.Length >= expectedSdfLength &&
                              VoxelSdfRange > 0.0001f;
-            bool canUseHeight = EnableTerrainFallback != 0 &&
+            bool canUseHeight = (RuntimeFlags & LeviathanTerrainIkConstants.RuntimeFlagTerrainFallback) != 0u &&
                                 TerrainHeightSamples.IsCreated &&
                                 TerrainResolution > 1 &&
                                 TerrainHeightSamples.Length >= TerrainResolution * TerrainResolution &&
@@ -278,7 +280,7 @@ namespace Hecton8.Animation.IK
             }
 
             float3 safeCell = math.max(VoxelSdfCellSize, new float3(0.0001f));
-            float3 sample = (worldPosition - VoxelSdfOrigin) / safeCell;
+            float3 sample = (worldPosition - VoxelSdfOrigin) * math.rcp(safeCell);
             if (sample.x < 0f || sample.y < 0f || sample.z < 0f ||
                 sample.x > VoxelSdfDimensions.x - 1f ||
                 sample.y > VoxelSdfDimensions.y - 1f ||

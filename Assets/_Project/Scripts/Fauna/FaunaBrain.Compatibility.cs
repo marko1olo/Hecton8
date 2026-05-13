@@ -619,6 +619,11 @@ namespace Hecton8.AI
             }
 
             float3 fallbackForward = (float3)context.SelfForward;
+            Vector3 floatingOriginOffsetVector = Hecton8.Core.HectonFloatingOrigin.CurrentTotalOffset;
+            float3 floatingOriginOffset = new float3(
+                floatingOriginOffsetVector.x,
+                floatingOriginOffsetVector.y,
+                floatingOriginOffsetVector.z);
             float acousticPingStrength01 = 0f;
             float acousticTransmission01 = 0f;
             bool hasNoisePlayerTarget = false;
@@ -654,7 +659,9 @@ namespace Hecton8.AI
                 {
                     float radius = math.max(0.1f, acousticSignal.RadiusMeters);
                     float radiusSq = radius * radius;
-                    float3 signalPosition3 = acousticSignal.PositionAup.ToRuntimeFloat3();
+                    float3 signalPosition3 = AUPMath.ToRuntimeFloat3(
+                        in acousticSignal.PositionAup,
+                        floatingOriginOffset);
                     float3 delta = signalPosition3 - (float3)context.SelfPosition;
                     float distanceSq = math.lengthsq(delta);
                     if (distanceSq <= radiusSq)
@@ -682,7 +689,6 @@ namespace Hecton8.AI
 
             Vector3 resolvedPlayerPosition = context.HasPlayerTarget ? context.PlayerPosition : noisePlayerPosition;
             bool hasAnyPlayerTarget = context.HasPlayerTarget || hasNoisePlayerTarget;
-            Vector3 floatingOriginOffset = Hecton8.Core.HectonFloatingOrigin.CurrentTotalOffset;
             AbsoluteUniversePositionBlit128 playerTargetAup = default;
             if (hasAnyPlayerTarget)
             {

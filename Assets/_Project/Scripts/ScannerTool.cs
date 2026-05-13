@@ -486,7 +486,8 @@ namespace Hecton8.Gameplay
                     if (hash == 0u)
                         continue;
 
-                    float3 cameraRelative = AbsoluteUniversePosition.ToCameraRelativeFloat3(in LoreEntityAUPs[i], in CameraAup);
+                    AbsoluteUniversePosition loreEntityAup = LoreEntityAUPs[i];
+                    float3 cameraRelative = AbsoluteUniversePosition.ToCameraRelativeFloat3(in loreEntityAup, in CameraAup);
                     float distanceSq = math.lengthsq(cameraRelative);
                     if (distanceSq <= 0.000001f || distanceSq >= RangeSq)
                         continue;
@@ -522,7 +523,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(1f, 18f)] private float focusedScanConeAngleDegrees = 5.5f;
         [SerializeField, Range(0.05f, 0.5f)] private float focusedScanResampleInterval = 0.12f;
         [SerializeField, Range(0.01f, 0.5f)] private float focusedScanSurfaceInset = 0.12f;
-        [SerializeField] private LayerMask focusedScanOcclusionMask = Physics.DefaultRaycastLayers;
+        [SerializeField] private LayerMask focusedScanOcclusionMask = UnityEngine.Physics.DefaultRaycastLayers;
         [SerializeField, Range(0f, 1f)] private float sedimentDensityThreshold01 = 0.34f;
         [SerializeField, Range(0f, 1f)] private float basaltDensityThreshold01 = 0.66f;
 
@@ -2541,14 +2542,17 @@ namespace Hecton8.Gameplay
             if (_scientificRaycastPending || target == null || entityHash == 0u)
                 return;
 
-            Vector3 targetVector = new Vector3(targetPosition.x, targetPosition.y, targetPosition.z) - origin;
-            float distance = targetVector.magnitude;
-            if (distance <= 0.01f)
+            float3 targetDelta = targetPosition - (float3)origin;
+            float distanceSq = math.lengthsq(targetDelta);
+            if (distanceSq <= 0.0001f)
                 return;
 
+            float invDistance = math.rsqrt(distanceSq);
+            float distance = distanceSq * invDistance;
+            float3 direction = targetDelta * invDistance;
             RaycastCommand command = default;
             command.from = origin;
-            command.direction = targetVector / distance;
+            command.direction = new Vector3(direction.x, direction.y, direction.z);
             command.distance = distance + math.max(0.02f, focusedScanSurfaceInset);
             command.queryParameters = new QueryParameters
             {

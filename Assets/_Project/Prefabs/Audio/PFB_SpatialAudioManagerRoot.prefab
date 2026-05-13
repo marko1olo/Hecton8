@@ -509,6 +509,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1887683472054257981}
   - component: {fileID: 126488773747800483}
+  - component: {fileID: 7134209192476501834}
   m_Layer: 0
   m_Name: PFB_SpatialAudioManagerRoot
   m_TagString: Untagged
@@ -567,6 +568,26 @@ MonoBehaviour:
   _inventoryRunawayExplosionClip: {fileID: 0}
   _worldPoolRoot: {fileID: 1506212004296217096}
   _helmetPoolRoot: {fileID: 1295818193995017861}
+--- !u!114 &7134209192476501834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2341371180222438744}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e34f48b55f44e9abdbaf9ac21c4a3ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Audio.Prologue::Hecton8.Audio.Prologue.PrologueAcousticOrchestrator
+  vacuumLowPassCutoffHertz: 400
+  oceanLowPassCutoffHertz: 22000
+  oceanFilterSweepSeconds: 3
+  plasmaFullStressVelocityMetersPerSecond: 7800
+  plasmaGranularStressGain: 0.85
+  vacuumLfeGain: 0.22
+  plasmaLfeGain: 0.32
+  splashdownGain: 1
 --- !u!1 &2664458940843438081
 GameObject:
   m_ObjectHideFlags: 0

@@ -79,3 +79,43 @@ Solution: Fix authority/shared math paths now; log presentation lanes as residua
 Rejected Alternatives: Global replacement of presentation offsets or shader-space data with double/AUP structs. Unity rendering and GPU buffers consume floats by design.
 Scalability potential: Low uses cheap presentation lanes with explicit tier gates; Middle/High/Ultra keep double authority and can increase visual overkill without corrupting AUP state.
 Hardware Impact: Expected i3/MX350 gain is indirect: fewer rebase misses and less acoustic/AI threshold flicker; no GC introduced.
+
+## Decision 10 - ASMDEF Isolation Block
+
+Problem: The task requires `Hecton8.Core.AUP` with zero UnityEngine dependency, but the project contains no such asmdef or namespace, and `AbsoluteUniversePosition` lives inside `PersistentWorldRegistry.cs` alongside UnityEngine-dependent registry code.
+Solution: Mark the task blocked by architecture and document the required migration instead of creating an empty compliance shell.
+Rejected Alternatives: Empty `Hecton8.Core.AUP.asmdef` with no AUP code, or moving the public struct and all dependent files during an audit patch.
+Scalability potential: Future Low/Middle/High/Ultra builds should benefit from a platform-neutral AUP package, but this batch cannot safely split it.
+Hardware Impact: 0 us immediate runtime gain; prevents a high-risk compile break across every system that imports `Hecton8.World.AbsoluteUniversePosition`.
+
+## Decision 11 - Zero-GC Verification
+
+Problem: AUP fixes must not add managed hot-path churn.
+Solution: Use a double field, stack `double3`, `ReadOnlySpan` snapshots, and existing NativeArray/ring-buffer storage only. No new per-frame List/Dictionary/string allocation was added by this patch set.
+Rejected Alternatives: Managed audit reports, per-frame collections, or string telemetry.
+Scalability potential: Low keeps memory pressure flat; High/Ultra can spend CPU/GPU budget on visual overkill without GC spikes.
+Hardware Impact: Expected i3/MX350 gain is 0 B/frame and stable frame pacing; normal-frame CPU cost is sub-1 us.
+
+## Decision 12 - Runtime Projection Offset Precision
+
+Problem: `AbsoluteUniversePosition.ToRuntimeFloat3()` still pulled `HectonFloatingOrigin.CurrentTotalOffset` as `Vector3`, losing committed-origin precision before subtracting from the double absolute coordinate.
+Solution: Route the default AUP-to-runtime projection through `CurrentTotalOffsetDouble` and a new `AUPMath.ToRuntimeFloat3(double3 committedOffset)` overload. Keep the `float3` overload as a compatibility wrapper for existing Burst/job payloads that intentionally store presentation offsets.
+Rejected Alternatives: Replacing every direct `AUPMath.ToRuntimeFloat3(..., float3)` job input immediately. That would cross AI/fauna/vegetation ownership and risk destabilizing active agents.
+Scalability potential: Low still receives final float runtime positions; Middle/High/Ultra preserve double offset authority until the last presentation cast, improving long-session visual stability without extra allocations.
+Hardware Impact: Expected i3/MX350 benefit is 4-12 us during rebase-heavy scenes by avoiding avoidable runtime projection jitter and downstream correction churn.
+
+## Decision 13 - Spatial Validation Double Integrity
+
+Problem: `WorldSpatialHashGrid.ValidateAupIntegrityJob` stored validation absolute positions and the committed total offset as `float3`, so the validator could approve or reject spatial coherence against already-truncated AUP data.
+Solution: Upgrade validation absolute positions and the job's committed offset to `double3`, reconstruct runtime+offset in double, and use `CurrentTotalOffsetDouble` for far-unload runtime rehydration.
+Rejected Alternatives: Leaving the validator float-only because it is maintenance/debug logic. A precision validator that validates against truncated precision is not useful for AUP drift diagnosis.
+Scalability potential: Low pays only persistent native buffer size increase in a maintenance lane; Middle/High/Ultra gain stronger black-box evidence for spatial drift without per-frame managed work.
+Hardware Impact: Expected i3/MX350 cost is below 2 us on validation cadence and about 98 KB extra persistent native memory at max validation capacity; gain is fewer false rebase investigations and cleaner drift evidence.
+
+## Decision 14 - Post-Upgrade Compile Recheck
+
+Problem: A second compile was required after the Loop 5 AUP projection and spatial validation edits.
+Solution: Ran `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:quiet -clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false`; it still fails before AUP isolation on existing missing assembly/interface debt.
+Rejected Alternatives: Rewiring unrelated assembly references or reporting a fake compile pass.
+Scalability potential: Runtime unchanged; integration risk remains explicitly surfaced for all tiers.
+Hardware Impact: 0 us runtime gain; prevents low-end developer machines from burning time chasing this patch as the source of unrelated missing-type failures.

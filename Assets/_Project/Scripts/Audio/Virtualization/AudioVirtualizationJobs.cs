@@ -184,8 +184,10 @@ namespace Hecton8.Audio.Virtualization
 
         private static void PushRange(ref FixedList512Bytes<int> stack, int left, int right)
         {
-            stack.Add(left);
-            stack.Add(right);
+            int leftValue = left;
+            int rightValue = right;
+            stack.Add(leftValue);
+            stack.Add(rightValue);
         }
 
         private static void InsertionSortRange(ref NativeList<VirtualVoice> voices, int left, int right)

@@ -73,3 +73,51 @@ Scalability potential: Low tier unchanged. Middle/High/Ultra preserve the visibl
 Hardware Impact: Avoids a repeat 32768-cell Burst job and 512 KB upload on shift; estimated 250-600 us saved on i3/MX350 if a shift lands during the decay window.
 Cinematic Cheats used: bubble-only Low tier, inverse-square vector lie instead of fluid solve, shader scalar dampening instead of CPU decay, deterministic golden-angle bubble ring.
 Final Git Diff: See local diff for `Assets/_Project/Scripts/HectonFluidEngine.cs`, `Assets/_Project/Scripts/Environment/Fluids/FluidImpulseJob.cs`, `Assets/_Project/Art/Shaders/AbyssalFlowField.compute`, and this agent's status/log files. Full diff includes unrelated pre-existing edits in `HectonFluidEngine.cs`; do not attribute those to this patch.
+
+## LAZY SPLASH BUFFER DECISION
+
+Problem: `_gpuSplashdownImpulseBuffer` was allocated during base abyssal GPU-buffer setup, so Low/MX350/no-splash sessions paid memory for a cinematic-only vector override.
+Solution: Remove splash buffer allocation from `EnsureGpuAbyssalFlowBuffers()` and allocate it only in `EnsureSplashdownImpulseGpuBuffer()` when a non-low splash schedules the field job.
+Rejected Alternatives: Always keep the 32768-cell buffer resident for convenience, or allocate a full zero buffer for shader binding. The existing empty abyssal buffer is sufficient while params are inactive.
+Scalability potential: Low and toaster profiles stay bubble-only with no splash vector VRAM. Middle/High/Ultra allocate the buffer only when the cinematic splash is active, then retain it for reuse.
+Hardware Impact: Saves 32768 * 16 bytes, about 512 KB of GPU buffer memory, on no-splash and low-tier paths. Cold allocation shifts to the actual high-tier splash event where the vector field buys visible pressure-wave quality.
+
+## OFF-VOLUME IMPULSE CULL DECISION
+
+Problem: A capsule handoff outside the active 100m abyssal flow volume could still schedule the 32^3 impulse job, clear/write the staging array, and upload a useless zero field.
+Solution: Add `IsSplashdownInsideFlowVolume()` using the flow half-extent plus the 30m splash radius. Off-volume impacts keep the 500-bubble ring and publish a flag, but skip the vector-field job.
+Rejected Alternatives: Let the Burst job discover zero affected cells after scanning all cells, or enlarge the flow volume globally. Scanning wastes the impact frame; enlarging the volume taxes every frame for one cinematic edge case.
+Scalability potential: Low unchanged. Middle/High/Ultra still get the full kinetic field when the splash intersects the active field; outside it, the cinematic fake protects frame time.
+Hardware Impact: Estimated 250-600 us CPU and one 512 KB upload avoided on off-volume impacts, with no visual loss because the active flow texture cannot represent that impulse anyway.
+
+## LAZY BUFFER SAFETY DECISION
+
+Problem: After lazy allocation, `ReleaseGpuAbyssalFlowBuffers()` could release the splash buffer while `_splashdownImpulseUploaded` remained true, leaving active shader params with only the empty fallback bound.
+Solution: Set `_splashdownImpulseUploaded = false` whenever the splash GPU buffer is released through base abyssal buffer teardown.
+Rejected Alternatives: Reallocate the splash buffer during every base flow reset or trust shader early-outs to mask a stale param state. Reallocation reintroduces the memory bug; stale params risk invalid GPU reads.
+Scalability potential: Low stays allocation-free. Middle/High/Ultra can recover on the next real splash schedule instead of carrying stale state.
+Hardware Impact: Avoids unnecessary recovery allocation and prevents a possible GPU out-of-bounds read path when the fallback buffer is one element and params are stale.
+
+## JOB SEQUENCING DECISION
+
+Problem: A second splash signal could arrive before the previous `FluidImpulseJob` completed, resetting `_splashdownImpulseFlags`, duration, and count before the first job uploaded.
+Solution: Complete any ready splash job before draining new signals, make `ScheduleSplashdownImpulseField()` return success/failure, and publish a busy flag instead of overwriting active vector-wake state.
+Rejected Alternatives: Force-complete the active job on every new signal, or let the new signal clobber state. Force-complete can stall the main thread; clobbering state corrupts the cinematic pressure wave.
+Scalability potential: Low/off-volume remains bubble-only. Middle/High/Ultra preserve one scheduled vector field without blocking; later richer multi-splash blending would need a separate queue, not this single-shot cinematic path.
+Hardware Impact: Avoids a possible 0.2-0.6 ms main-thread stall on i3/MX350 and prevents a wasted 512 KB upload tied to stale metadata.
+
+## LOW TIER ACTIVE PARAM DECISION
+
+Problem: Low/MX350 bypass stopped new vector-field jobs, but an already uploaded high-tier wake could still be sampled after a quality drop.
+Solution: Gate `ResolveSplashdownImpulseParams()` with `IsLowFluidMathTier()`, returning inactive shader params while low-memory or MX350 mode is active.
+Rejected Alternatives: Release the splash GPU buffer immediately on tier drop, or keep sampling it until natural decay. Releasing causes churn if quality recovers; sampling violates the low-tier bypass contract.
+Scalability potential: Low gets bubble/drift presentation only. Middle/High/Ultra retain the buffer and can resume the remaining wake if quality recovers before decay ends.
+Hardware Impact: Prevents 32768 splash-buffer reads per abyssal flow dispatch while low tier is active during a decay window.
+
+## ZERO CELL UPLOAD DECISION
+
+Problem: A zero-cell or invalid splash job still uploaded the full 512 KB vector field even though shader params would be inactive.
+Solution: Add `SplashdownImpulseNoAffectedCellsFlag`, skip the upload when affected count is zero, clear active splash timing, and only dump if the job also reported invalid math.
+Rejected Alternatives: Upload zeros to sanitize stale GPU memory. The active param gate already prevents reads; zero upload spends bandwidth without visible output.
+Scalability potential: All tiers avoid wasted bandwidth on edge cases. High/Ultra still upload normally when at least one cell is affected.
+Hardware Impact: Saves one 512 KB upload and one GPU synchronization point on no-cell/invalid edge cases.

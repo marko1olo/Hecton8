@@ -296,7 +296,6 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteSaveData(SaveData data, ref BufferWriter writer)
         {
-            data.RefreshFirstHourDtoMirrors();
             return writer.WriteInt(data.version)
                 && writer.WriteString(data.timestamp)
                 && writer.WriteDouble(data.totalPlayTime)
@@ -448,21 +447,47 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteFirstHourLockedDtos(ref BufferWriter writer, SaveData data)
         {
+            PlayerKinematicStateDTO playerState = data != null
+                ? PlayerKinematicStateDTO.FromPlayerStats(in data.playerStats)
+                : default;
+            InventoryShadowDTO inventoryShadow = data != null
+                ? InventoryShadowDTO.FromInventory(
+                    in data.inventory,
+                    data.inventoryShadowPayloadLength,
+                    data.inventoryShadowPayloadHash,
+                    data.hasInventoryShadowPayload)
+                : default;
             int floodCount = 0;
+            ConstructionDTO construction = data != null ? data.construction : default;
             if (data != null)
             {
                 floodCount = Math.Clamp(
-                    data.construction.habitatFloodStateCount,
+                    construction.moduleCount,
                     0,
                     Math.Min(
                         ConstructionDTO.MaxModules,
-                        data.construction.habitatFloodStates != null ? data.construction.habitatFloodStates.Length : 0));
+                        construction.modules != null ? construction.modules.Length : 0));
             }
 
-            return writer.WriteStruct(data != null ? data.playerKinematicState : default)
-                && writer.WriteStruct(data != null ? data.inventoryShadow : default)
-                && writer.WriteInt(floodCount)
-                && writer.WriteStructArraySlice(data != null ? data.construction.habitatFloodStates : null, floodCount);
+            if (!writer.WriteStruct(playerState) ||
+                !writer.WriteStruct(inventoryShadow) ||
+                !writer.WriteInt(floodCount))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < floodCount; i++)
+            {
+                int moduleHashId = 0;
+                if (construction.moduleBlitRecords != null && i < construction.moduleBlitRecords.Length)
+                    moduleHashId = construction.moduleBlitRecords[i].moduleHashId;
+
+                HabitatFloodStateDTO floodState = HabitatFloodStateDTO.FromModule(in construction.modules[i], moduleHashId);
+                if (!writer.WriteStruct(floodState))
+                    return false;
+            }
+
+            return true;
         }
 
         private static bool ReadFirstHourLockedDtos(ref BufferReader reader, int saveDataVersion, SaveData data)
@@ -478,20 +503,31 @@ namespace Hecton8.SaveSystem
 
             if (!reader.ReadStruct(out data.playerKinematicState) ||
                 !reader.ReadStruct(out data.inventoryShadow) ||
-                !reader.ReadInt(out data.construction.habitatFloodStateCount) ||
-                !reader.ReadStructArray(out data.construction.habitatFloodStates))
+                !reader.ReadInt(out int floodStateCount))
             {
                 return false;
             }
 
+            if (floodStateCount < 0 || floodStateCount > ConstructionDTO.MaxModules)
+            {
+                reader.SetError("Habitat flood state count exceeds the supported range.");
+                return false;
+            }
+
+            if (data.construction.habitatFloodStates == null ||
+                data.construction.habitatFloodStates.Length < ConstructionDTO.MaxModules)
+            {
+                data.construction.habitatFloodStates = new HabitatFloodStateDTO[ConstructionDTO.MaxModules];
+            }
+
+            for (int i = 0; i < floodStateCount; i++)
+            {
+                if (!reader.ReadStruct(out data.construction.habitatFloodStates[i]))
+                    return false;
+            }
+
             data.playerKinematicState.ApplyTo(ref data.playerStats);
-            int arrayLength = data.construction.habitatFloodStates != null
-                ? data.construction.habitatFloodStates.Length
-                : 0;
-            data.construction.habitatFloodStateCount = Math.Clamp(
-                data.construction.habitatFloodStateCount,
-                0,
-                Math.Min(ConstructionDTO.MaxModules, arrayLength));
+            data.construction.habitatFloodStateCount = floodStateCount;
             return true;
         }
 

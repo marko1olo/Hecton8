@@ -1341,6 +1341,11 @@ namespace Hecton8.Core
         public static DynamicResolutionScaler DynamicResolution => _dynamicResolutionRuntime;
 
         /// <summary>
+        /// Contract-facing dynamic-resolution runtime owner.
+        /// </summary>
+        public static IDynamicResolutionRuntime DynamicResolutionRuntime => _dynamicResolutionRuntime;
+
+        /// <summary>
         /// Registered impostor runtime owner.
         /// </summary>
         public static ImpostorSystem Impostors => _impostorRuntime;
@@ -7022,6 +7027,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(QuestManager)) return GlobalRegistryServiceSlot.QuestRuntime;
             if (serviceType == typeof(CullingManager)) return GlobalRegistryServiceSlot.CullingRuntime;
             if (serviceType == typeof(LODSystemManager)) return GlobalRegistryServiceSlot.LODSystemRuntime;
+            if (serviceType == typeof(IDynamicResolutionRuntime)) return GlobalRegistryServiceSlot.DynamicResolutionRuntime;
             if (serviceType == typeof(DynamicResolutionScaler)) return GlobalRegistryServiceSlot.DynamicResolutionRuntime;
             if (serviceType == typeof(ImpostorSystem)) return GlobalRegistryServiceSlot.ImpostorRuntime;
             if (serviceType == typeof(DepthZoneDirector)) return GlobalRegistryServiceSlot.DepthZoneRuntime;

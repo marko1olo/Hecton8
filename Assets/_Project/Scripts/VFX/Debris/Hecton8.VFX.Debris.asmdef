@@ -1,0 +1,22 @@
+{
+    "name": "Hecton8.VFX.Debris",
+    "rootNamespace": "Hecton8.VFX.Debris",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

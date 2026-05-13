@@ -60,7 +60,7 @@ rg -l "<pattern>" Assets/_Project/Scripts --glob "*.cs"
 | `Hecton8.Core.Signals.CombatDamageSignal` | `Core/GlobalSignals.cs` | Typed 64-byte lane packet. Chosen as the unified bus-facing combat damage DTO for cross-domain signaling. |
 | `Hecton8.Gameplay.DamageSignal` | `Gameplay/HabitatIntegrityManager.cs` | Local receiver callback packet. Requires later wrapper/receiver migration; not removed in this pass to avoid public signature break. |
 | `Hecton8.Gameplay.CombatDamageSignal` | `Gameplay/Combat/CombatDamageRuntime.cs` | Internal job packet. Kept as private runtime shape because it is SoA/job-optimized and not a cross-domain signal. |
-| `ImpactSignal` | `Core/GlobalSignals.cs` plus impact producers | Still partially legacy-drained by `World/SoundscapeSystem.cs`. Needs typed snapshot migration in next loop. |
+| `ImpactSignal` | `Core/GlobalSignals.cs` plus impact producers | Sanitized legacy publishes now mirror into `SignalBus<ImpactSignal>`; `World/SoundscapeSystem.cs` consumes typed snapshots. Legacy queue kept as compatibility API only. |
 
 ## Interface Drift Findings
 
@@ -73,8 +73,38 @@ rg -l "<pattern>" Assets/_Project/Scripts --glob "*.cs"
   - `ImpactSignal`
   - `HighSpeedImpactSignal`
   - `CombatDamageSignal`
+- Extended finite-value vaccination to additional typed bridge lanes:
+  - `FluidImpulseSignal`
+  - `SystemPauseSignal`
+  - `WeatherChangedSignal`
+- Added source-publish finite vaccination before legacy queue enqueue for:
+  - `TimeDilationSignal`
+  - `SimulationPauseSignal`
+  - `BulletTimeVisualSignal`
+  - `WeatherStrengthSignal`
+- Replaced per-push guard type discovery with a per-generic guard-kind cache (`SignalPayloadFiniteGuardCache<T>.Kind`), so lane type resolution is cold and hot pushes use a byte switch.
 - Added main-thread publish sanitization before legacy `DamageSignal` and `ImpactSignal` queues receive packets.
 - Rewired `Gameplay/Combat/CombatDamageRuntime.cs` to consume `SignalBus<Hecton8.Core.Signals.CombatDamageSignal>.GetFrameSnapshot()` instead of destructively draining `GlobalSignals.TryDequeueDamage`.
+- Rewired `World/SoundscapeSystem.cs` to consume `SignalBus<ImpactSignal>.GetFrameSnapshot()` instead of destructively draining `GlobalSignals.TryDequeueImpact`.
+- Cached soundscape audio/scalability dependencies outside impact-drain logic via GlobalRegistry hot-swap events and `ScalabilityEvents`.
+- Cached combat runtime math/scalability policy outside `ResolveRuntimeMathLod()`.
+- Padded `HighSpeedImpactSignal` from 88 to 96 bytes; static scan found no remaining non-16-byte `StructLayout(Size=...)` values in `GlobalSignals.cs`.
+- Replaced bridge `new ...Signal` object-initializer text with `default` plus explicit field assignment in signal mirror paths.
+
+## Remaining Legacy Evidence
+
+The mandatory scan still returns first-party legacy communication:
+- 18 `HectonEventBus.Publish` producers remain across weather, construction/logistics, economy, inventory, progression, and mod-facing code.
+- 59 files still contain `Action<T>`, `event Action`, or delegate patterns.
+- 30 files still contain `UnityEvent`/`UnityAction`.
+
+Status: BLOCKED BY DOMAIN BLAST RADIUS for global eradication. This pass only standardizes the confirmed damage/impact hot lanes.
+
+## Static Zero-GC / String Poison Scan
+
+- `SignalPayloadFiniteGuards` contains no `new` and no `string`.
+- `GlobalSignals.cs` string hits are SignalBus cold labels or method parameters (`OwnerLabel`, `ResolveQueueLabel`, `ComputeStableSignalLaneHash`, native sentinel labels), not signal DTO payload fields.
+- `new` hits in `GlobalSignals.cs` are cold static arrays/adapters or native collection allocation; hot bridge signal DTO construction was removed from mirror paths. Runtime GC proof remains unavailable without Unity Profiler/GCMonitor.
 
 ## Compile Evidence
 
@@ -84,6 +114,6 @@ Command:
 dotnet build Hecton8.Core.csproj
 ```
 
-Result: failed with 131 errors. Current visible errors are missing external/neighbor assemblies and types (`Hecton8.Environment.Fluids`, `Hecton8.Audio.Virtualization`, `MacroSwarm`, `BrineLayerSample`, `SoundEmissionSignal`, etc.). No emitted error referenced `GlobalSignals.cs` or `Gameplay/Combat/CombatDamageRuntime.cs`.
+Result: failed with 129 errors / 47 warnings on the latest attempt. Current visible errors are missing external/neighbor assemblies and types (`Hecton8.Environment.Fluids`, `Hecton8.Audio.Virtualization`, `MacroSwarm`, `BrineLayerSample`, `SoundEmissionSignal`, `AcousticAup`, `VirtualVoice*`, etc.). A filtered build scan for `GlobalSignals.cs`, `CombatDamageRuntime.cs`, and `SoundscapeSystem.cs` returned no matches.
 
 Evidence class: CLI_COMPILE for failure state only. Runtime GC and Unity Console remain PENDING VERIFICATION.

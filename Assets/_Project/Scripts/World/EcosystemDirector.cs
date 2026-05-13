@@ -156,6 +156,9 @@ namespace Hecton8.World
         private const float WhaleFallAcousticImpulseEnergyJoules = 28000f;
         private const float WhaleFallAcousticImpulseVolume01 = 0.42f;
         private const float WhaleFallAcousticImpulsePitchScale = 0.52f;
+        private const float BiomeGradientAmbientSpawnGain = 0.18f;
+        private const float BiomeGradientPredatorSpawnGain = 0.08f;
+        private const float BiomeGradientCapacityGain = 0.04f;
         private const int PredatorSpawnValidationHitCapacity = 64;
         private const int ApexSpawnGateCommandCount = 1;
         private const int ApexSpawnGateMaxHits = 1;
@@ -902,6 +905,9 @@ namespace Hecton8.World
         private bool _apexTerritoryOverlapScheduled;
         private bool _populationSolvePendingHibernationSync;
         private float _biomeHostility01;
+        private float _biomeGradientBlend01;
+        private byte _biomeGradientA;
+        private byte _biomeGradientB;
         private float _starvationAggressionPressure01;
         private float _playerStress01;
         private float _spawnCreditBudget;
@@ -1088,6 +1094,7 @@ namespace Hecton8.World
                 selectionMultiplier *= ResolvePlayerStressSpawnWeight(archetype, playerStress01);
                 selectionMultiplier *= ResolveBiomassSpawnSelectionWeight(archetype, worldPosition);
                 selectionMultiplier *= ResolveSpawnCreditSelectionWeight(archetype);
+                selectionMultiplier *= ResolveBiomeGradientSpawnWeight(archetype);
                 return selectionMultiplier > 0f;
             }
 
@@ -1113,6 +1120,7 @@ namespace Hecton8.World
 
             selectionMultiplier *= ResolveBiomassSpawnSelectionWeight(archetype, worldPosition);
             selectionMultiplier *= ResolveSpawnCreditSelectionWeight(archetype);
+            selectionMultiplier *= ResolveBiomeGradientSpawnWeight(archetype);
             return selectionMultiplier > 0f;
         }
 
@@ -1146,9 +1154,10 @@ namespace Hecton8.World
             _playerStress01 = stress01;
             _debugPlayerStress01 = stress01;
             float recoveryScale = 1.15f - (0.6f * stress01);
+            float biomeGradientScale = 1f + (_biomeGradientBlend01 * BiomeGradientAmbientSpawnGain);
             _spawnCreditBudget = math.min(
                 spawnCreditBudgetMax,
-                _spawnCreditBudget + (spawnCreditRecoverPerSecond * math.max(0f, deltaSeconds) * recoveryScale));
+                _spawnCreditBudget + (spawnCreditRecoverPerSecond * math.max(0f, deltaSeconds) * recoveryScale * biomeGradientScale));
             _debugSpawnCreditBudget = _spawnCreditBudget;
         }
 
@@ -1177,6 +1186,17 @@ namespace Hecton8.World
 
             float preyWeight = math.max(0.05f, preyBiomass01);
             return preyBiomass01 > 0.9f ? preyWeight * 2f : preyWeight;
+        }
+
+        private float ResolveBiomeGradientSpawnWeight(CreatureArchetypeData archetype)
+        {
+            float blend01 = math.saturate(_biomeGradientBlend01);
+            if (blend01 <= 0.001f)
+                return 1f;
+
+            return IsPredatorOrApex(archetype)
+                ? 1f + (blend01 * BiomeGradientPredatorSpawnGain)
+                : 1f + (blend01 * BiomeGradientAmbientSpawnGain);
         }
 
         private float ResolveSpawnCreditCost(CreatureArchetypeData archetype, bool isLargeThreat, bool isPredator)
@@ -1820,6 +1840,7 @@ namespace Hecton8.World
                 return;
 
             RefreshMacroSwarmScalabilityCache();
+            DrainBiomeGradientSignal();
             DecayBiomeHostility();
             UpdateSpawnCreditBudget(DefaultSlowTickIntervalSeconds);
             SyncPendingHibernatedFaunaPopulationRecords();
@@ -1883,6 +1904,18 @@ namespace Hecton8.World
                 0,
                 AcousticImpulseFlags.Leviathan);
             PhysicsEventBus.NotifyAcousticImpulse(in impulseEvent);
+        }
+
+        private void DrainBiomeGradientSignal()
+        {
+            ReadOnlySpan<BiomeGradientSignal> signals = SignalBus<BiomeGradientSignal>.GetFrameSnapshot();
+            if (signals.Length == 0)
+                return;
+
+            BiomeGradientSignal signal = signals[signals.Length - 1];
+            _biomeGradientBlend01 = math.saturate(signal.BlendFactor01);
+            _biomeGradientA = signal.BiomeA;
+            _biomeGradientB = signal.BiomeB;
         }
 
         public void LateFrameTick()
@@ -4685,7 +4718,8 @@ namespace Hecton8.World
             int biomeId = ResolveBiomeIdForSector(sectorCoord);
             float food01 = ResolveRuntimeSectorFoodDensity01(sectorCoord, biomeId, 0f, 0f);
             float biomeCapacityBias = (math.select(0f, 0.08f, biomeId == 1)) - (math.select(0f, 0.05f, biomeId == 2));
-            return math.clamp(food01 + biomeCapacityBias, 0.1f, 1f);
+            float gradientCapacityBias = math.saturate(_biomeGradientBlend01) * BiomeGradientCapacityGain;
+            return math.clamp(food01 + biomeCapacityBias + gradientCapacityBias, 0.1f, 1f);
         }
 
         private static int FloorDiv(int value, int divisor)

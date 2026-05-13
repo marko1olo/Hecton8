@@ -823,6 +823,14 @@ namespace Hecton8.Gameplay
             RebindColdIfMissing();
             if (MovementOwnsKinematicAuthority())
             {
+                byte externalFlags = KccVelocitySignal.FlagMovementAuthorityExternal;
+                if (IsLowTier(GlobalRegistry.ScalabilityTier))
+                    externalFlags |= KccVelocitySignal.FlagLowTier;
+
+                PublishKccVelocitySignal(
+                    SnapMillimeter(ToFloat3(_body.position)),
+                    SnapMillimeter(ToFloat3(_body.linearVelocity)),
+                    externalFlags);
                 TickInertiaRoll(fixedDeltaTime);
                 return;
             }
@@ -909,6 +917,10 @@ namespace Hecton8.Gameplay
             Vector3 resolvedVelocity = ToVector3(resolvedVelocity3);
             int faultFlags = _faultFlags[0];
             StageStateWrite(resolvedPosition3, resolvedVelocity3, _body.rotation, (uint)faultFlags);
+            PublishKccVelocitySignal(
+                resolvedPosition3,
+                resolvedVelocity3,
+                lowTier != 0 ? KccVelocitySignal.FlagLowTier : (byte)0);
             if (faultFlags == 0)
                 _dumpWrittenForFault = false;
 
@@ -1577,6 +1589,22 @@ namespace Hecton8.Gameplay
             signal.SurfaceMode = (byte)(_movement != null && _movement.IsPlayerSubmerged ? 1 : 0);
             signal.Flags = 0;
             GlobalSignals.Publish(in signal);
+        }
+
+        private void PublishKccVelocitySignal(float3 position, float3 velocity, byte flags)
+        {
+            if (!math.all(math.isfinite(position)) || !math.all(math.isfinite(velocity)))
+                return;
+
+            float3 snappedPosition = SnapMillimeter(position);
+            float3 snappedVelocity = SnapMillimeter(velocity);
+            AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(snappedPosition));
+            PhysicsDeterminismSignals.PublishKccVelocity(
+                in bodyAup,
+                snappedVelocity,
+                unchecked((uint)Time.frameCount),
+                _sourceId,
+                flags);
         }
 
         private void ConsumeEnvironmentIkSignals()

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -46,6 +47,7 @@ namespace Hecton8.Lighting
         private static readonly int _HectonUnderwaterSurfaceColorId = Shader.PropertyToID("_HectonUnderwaterSurfaceColor");
         private static readonly int _HectonGIProbeTintId = Shader.PropertyToID("_HectonGIProbeTint");
         private static readonly int _HectonGIRelayStateId = Shader.PropertyToID("_HectonGIRelayState");
+        private static readonly int _HectonBiomeGradientStateId = Shader.PropertyToID("_HectonBiomeGradientState");
         private static readonly int _WaterVolumeId = Shader.PropertyToID("_WaterVolume");
         private static readonly int _WaterVolumeDepthPaletteId = Shader.PropertyToID("_WaterVolumeDepthPalette");
 
@@ -80,12 +82,14 @@ namespace Hecton8.Lighting
         private HectonUnderwaterVisuals _lastSurfaceEmissionTarget;
         private Cubemap _lastWaterVolumeCubemap;
         private Vector4 _lastRelayState;
+        private Vector4 _lastBiomeGradientState;
         private float _lastFogLod;
         private float _lastFaunaEmissive;
         private bool _lastAtmosphereColorValid;
         private bool _lastSurfaceEmissionColorValid;
         private bool _lastDepthPaletteColorValid;
         private bool _lastRelayStateValid;
+        private bool _lastBiomeGradientStateValid;
         private bool _lastFogLodValid;
         private bool _lastFaunaEmissiveValid;
         private bool _hasPendingSHJob;
@@ -168,7 +172,8 @@ namespace Hecton8.Lighting
                 CompleteAndPushPendingSHJob();
             }
 
-            GIRelayRuntimeSnapshot nextSnapshot = ResolveRuntimeSnapshot();
+            BiomeGradientSignal biomeGradient = ResolveLatestBiomeGradientSignal();
+            GIRelayRuntimeSnapshot nextSnapshot = ResolveRuntimeSnapshot(in biomeGradient);
             if (!IsSnapshotFinite(in nextSnapshot))
             {
                 RecordTelemetry(in nextSnapshot, GIRelayTelemetryFlags.NonFinite);
@@ -179,9 +184,9 @@ namespace Hecton8.Lighting
 
             _snapshot = nextSnapshot;
             ApplyShadowCascadeState(nextSnapshot.DepthMeters);
-            ApplyShaderRelayState(in nextSnapshot);
+            ApplyShaderRelayState(in nextSnapshot, in biomeGradient);
             BindGlobalWaterVolumeCubemap();
-            ScheduleSHJob(in nextSnapshot);
+            ScheduleSHJob(in nextSnapshot, in biomeGradient);
             RecordTelemetry(in nextSnapshot, GIRelayTelemetryFlags.Scheduled);
         }
 
@@ -264,6 +269,7 @@ namespace Hecton8.Lighting
             _lastSurfaceEmissionColorValid = false;
             _lastDepthPaletteColorValid = false;
             _lastRelayStateValid = false;
+            _lastBiomeGradientStateValid = false;
             _lastFogLodValid = false;
             _lastFaunaEmissiveValid = false;
             _lastSurfaceEmissionTarget = null;
@@ -351,7 +357,7 @@ namespace Hecton8.Lighting
             target[offset + SHChannelCoefficientCount * 2 + 6] = l0Color.z * directionalStrength * -0.35f;
         }
 
-        private GIRelayRuntimeSnapshot ResolveRuntimeSnapshot()
+        private GIRelayRuntimeSnapshot ResolveRuntimeSnapshot(in BiomeGradientSignal biomeGradient)
         {
             CelestialRuntimeSnapshot celestial = GlobalRegistry.CelestialRuntimeSnapshot;
             float depthMeters = ResolveDepthMetersAbsolute();
@@ -359,7 +365,7 @@ namespace Hecton8.Lighting
             float timeOfDay01 = ResolveTimeOfDay01(celestial.AbsoluteUniverseTime);
             float moonPhase01 = math.saturate(math.max(celestial.Moon0Phase01, celestial.Moon1Phase01));
             float eclipse01 = math.saturate(celestial.EclipseOcclusion01);
-            float fogLod = ResolveFogLod(depth01, eclipse01);
+            float fogLod = ResolveFogLod(depth01, eclipse01, biomeGradient.BlendFactor01);
             uint flags = (uint)GIRelayTelemetryFlags.Valid;
             if (IsLowTier())
                 flags |= (uint)GIRelayTelemetryFlags.LowTierSnap;
@@ -420,9 +426,9 @@ namespace Hecton8.Lighting
             return 0f;
         }
 
-        private static float ResolveFogLod(float depth01, float eclipse01)
+        private static float ResolveFogLod(float depth01, float eclipse01, float biomeBlend01)
         {
-            return math.saturate((depth01 * 0.78f) + (eclipse01 * 0.22f));
+            return math.saturate((depth01 * 0.72f) + (eclipse01 * 0.22f) + math.saturate(biomeBlend01) * 0.06f);
         }
 
         private static bool IsSnapshotFinite(in GIRelayRuntimeSnapshot snapshot)
@@ -445,7 +451,7 @@ namespace Hecton8.Lighting
                    GlobalRegistry.H8_LOW_MEMORY_PROFILE;
         }
 
-        private void ScheduleSHJob(in GIRelayRuntimeSnapshot snapshot)
+        private void ScheduleSHJob(in GIRelayRuntimeSnapshot snapshot, in BiomeGradientSignal biomeGradient)
         {
             GIRelaySHLerpJob job = new GIRelaySHLerpJob
             {
@@ -457,6 +463,7 @@ namespace Hecton8.Lighting
                 Depth01 = snapshot.Depth01,
                 Eclipse01 = snapshot.EclipseScalar,
                 MoonPhase01 = snapshot.MoonPhase01,
+                BiomeBlend01 = math.saturate(biomeGradient.BlendFactor01),
                 DepthPaletteStrength = math.saturate(depthPaletteStrength),
                 Flags = IsLowTier() ? SHJobLowTierSnapMask : 0u
             };
@@ -556,7 +563,7 @@ namespace Hecton8.Lighting
                 QualitySettings.shadowCascades = target;
         }
 
-        private void ApplyShaderRelayState(in GIRelayRuntimeSnapshot snapshot)
+        private void ApplyShaderRelayState(in GIRelayRuntimeSnapshot snapshot, in BiomeGradientSignal biomeGradient)
         {
             Color atmosphereColor = ResolveAtmosphereColor(snapshot.Depth01, snapshot.EclipseScalar);
             if (!_lastAtmosphereColorValid || HasColorShift(atmosphereColor, _lastAtmosphereColor))
@@ -628,6 +635,24 @@ namespace Hecton8.Lighting
                 _lastRelayState = relayState;
                 _lastRelayStateValid = true;
             }
+
+            Vector4 biomeGradientState = new Vector4(
+                biomeGradient.BiomeA,
+                biomeGradient.BiomeB,
+                math.saturate(biomeGradient.BlendFactor01),
+                math.max(0f, biomeGradient.BoundaryDistanceMeters));
+            Vector4 biomeDelta = biomeGradientState - _lastBiomeGradientState;
+            float biomeDeltaSq =
+                (biomeDelta.x * biomeDelta.x) +
+                (biomeDelta.y * biomeDelta.y) +
+                (biomeDelta.z * biomeDelta.z) +
+                (biomeDelta.w * biomeDelta.w);
+            if (!_lastBiomeGradientStateValid || biomeDeltaSq > ShaderColorEpsilon)
+            {
+                Shader.SetGlobalVector(_HectonBiomeGradientStateId, biomeGradientState);
+                _lastBiomeGradientState = biomeGradientState;
+                _lastBiomeGradientStateValid = true;
+            }
         }
 
         private void BindGlobalWaterVolumeCubemap()
@@ -690,6 +715,12 @@ namespace Hecton8.Lighting
             float dg = lhs.g - rhs.g;
             float db = lhs.b - rhs.b;
             return (dr * dr) + (dg * dg) + (db * db) > ShaderColorEpsilon;
+        }
+
+        private static BiomeGradientSignal ResolveLatestBiomeGradientSignal()
+        {
+            ReadOnlySpan<BiomeGradientSignal> signals = SignalBus<BiomeGradientSignal>.GetFrameSnapshot();
+            return signals.Length > 0 ? signals[signals.Length - 1] : default;
         }
 
         private void RecordTelemetry(in GIRelayRuntimeSnapshot snapshot, GIRelayTelemetryFlags eventFlags)
@@ -812,13 +843,14 @@ namespace Hecton8.Lighting
             public float Depth01;
             public float Eclipse01;
             public float MoonPhase01;
+            public float BiomeBlend01;
             public float DepthPaletteStrength;
             public uint Flags;
 
             public void Execute()
             {
                 float daylight01 = ResolveDaylight(TimeOfDay01, Eclipse01);
-                float3 depthTint = ResolveDepthTint(Depth01, DepthPaletteStrength, MoonPhase01);
+                float3 depthTint = ResolveDepthTint(Depth01, DepthPaletteStrength, MoonPhase01, BiomeBlend01);
                 if ((Flags & SHJobLowTierSnapMask) != 0u)
                 {
                     int state = ResolveDiscreteState(TimeOfDay01, daylight01);
@@ -852,12 +884,13 @@ namespace Hecton8.Lighting
                 return 3;
             }
 
-            private static float3 ResolveDepthTint(float depth01, float strength, float moonPhase01)
+            private static float3 ResolveDepthTint(float depth01, float strength, float moonPhase01, float biomeBlend01)
             {
                 float3 shallow = new float3(0.34f, 0.94f, 1f);
                 float3 deep = new float3(0.006f, 0.008f, 0.014f);
                 float3 palette = math.lerp(shallow, deep, math.saturate(depth01));
                 palette += new float3(0.015f, 0.025f, 0.04f) * math.saturate(moonPhase01) * (1f - math.saturate(depth01));
+                palette = math.lerp(palette, new float3(0.08f, 0.20f, 0.16f), math.saturate(biomeBlend01) * 0.18f);
                 return math.lerp(new float3(1f, 1f, 1f), palette, math.saturate(strength));
             }
 

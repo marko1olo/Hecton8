@@ -687,8 +687,8 @@ namespace Hecton8.SaveSystem
         {
             InventoryShadowDTO dto = default;
             dto.cellCount = Math.Clamp(inventory.cellCount, 0, InventoryDTO.MaxCells);
-            dto.payloadLength = shadowPayloadLength > 0 ? shadowPayloadLength : 0;
-            dto.payloadHash = shadowPayloadHash;
+            dto.payloadLength = hasShadowPayload && shadowPayloadLength > 0 ? shadowPayloadLength : 0;
+            dto.payloadHash = dto.payloadLength > 0 ? shadowPayloadHash : 0u;
             dto.gridColumns = inventory.gridColumns;
             dto.gridRows = inventory.gridRows;
             dto.totalWeight = inventory.totalWeight;
@@ -882,7 +882,9 @@ namespace Hecton8.SaveSystem
 
         public void RefreshHabitatFloodStateMirrors()
         {
-            EnsureCapacity();
+            if (habitatFloodStates == null || habitatFloodStates.Length < MaxModules)
+                habitatFloodStates = new HabitatFloodStateDTO[MaxModules];
+
             int safeCount = Math.Clamp(
                 moduleCount,
                 0,

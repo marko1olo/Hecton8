@@ -1,7 +1,7 @@
 ﻿# Reports
 
 Date: 2026-05-13
-Status: PENDING VERIFICATION (DOC_AUDIT R29 UNITY BATCH COMPILE + R30/R31/R32/R33/R36/R37/R38 PERSISTENCE STATIC HARDENING + R34 PLAYER HOT-PATH CACHE + R35 HLOD PDA UPLOAD GATE / FULL CORE R38 BLOCKED BY ACTIVE CHURN / RUNTIME PROOF ABSENT)
+Status: PENDING VERIFICATION (DOC_AUDIT R29 UNITY BATCH COMPILE + R30/R31/R32/R33/R36/R37/R38 PERSISTENCE STATIC HARDENING + R39 GENERATED-PROJECT ASMDEF TRIPWIRE + R34 PLAYER HOT-PATH CACHE + R35 HLOD PDA UPLOAD GATE / FULL CORE R39 BLOCKED BY GENERATED PROJECT REFERENCE DRIFT / RUNTIME PROOF ABSENT)
 
 Purpose: canonical drop zone for reports, audits, counters, and validation writeups.
 
@@ -37,7 +37,9 @@ DOC_AUDIT R36 re-applies the async pager truth boundary after concurrent churn: 
 
 DOC_AUDIT R37 rechecks that boundary after more concurrent churn: `H8BinaryWorldPager` again uses a joinable named `Thread`/`RunWorkerLoop()` instead of `async void`/`Awaitable.BackgroundThreadAsync`; `Hecton8.Core.Memory` and `Hecton8.Core` local Unity Bee/Roslyn temp-output probes both return exit code `0`. Unity MCP Console is unavailable, so this is not live Unity import or runtime proof.
 
-DOC_AUDIT R38 hardens the same persistence boundary but demotes the old R37 full-Core success as stale under current churn: `H8BinaryWorldPager` now decrements dequeued write/read pending counters in `finally` on unexpected command faults and fails closed with black-box dump; current `SaveManager` now implements WFC outpost state MacroDB bitmask persist/restore through DataVault `WfcOutpostGrid`, `PackWfcOutpostMutableStateJob`, `SaveBinaryPayloadCodec`, and `IMacroDatabaseService`. Local probes for current `Hecton8.Core.Contracts`, `Hecton8.Core.Memory`, and temporary audio-virtualization refs exit `0`, but full `Hecton8.Core` is blocked by unrelated active errors in audio/scanner/fluid/UI files. No runtime proof is claimed.
+DOC_AUDIT R38 hardens the same persistence boundary but demotes the old R37 full-Core success as stale under current churn: `H8BinaryWorldPager` now decrements dequeued write/read pending counters in `finally` on unexpected command faults and fails closed with black-box dump; current `SaveManager` now implements WFC outpost state MacroDB bitmask persist/restore through DataVault `WfcOutpostGrid`, `PackWfcOutpostMutableStateJob`, `SaveBinaryPayloadCodec`, and `IMacroDatabaseService`. Local probes for current `Hecton8.Core.Contracts`, `Hecton8.Core.Memory`, temporary audio-virtualization refs, world contracts, AI cognition, and animation IK exit `0`, but full `Hecton8.Core` is blocked by unrelated active errors in audio/scanner/submarine-buffer/arena/fluid/UI/fauna files. No runtime proof is claimed.
+
+DOC_AUDIT R39 adds a generated-project/asmdef drift boundary. Current `Assets/_Project/Scripts/Hecton8.Core.asmdef` references `23` first-party assemblies that are absent from the current generated `Hecton8.Core.csproj`, so fresh external `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` fails on missing namespaces/types before it can be used as code-level proof. `HectonComplianceValidator` now reports this as `CSPROJ001`. Do not patch this class of failure with fake stubs; regenerate Unity project files or repair asmdef project generation first.
 
 ## Naming
 

@@ -184,6 +184,7 @@ namespace Hecton8.Audio
         private const int MaxVirtualVoiceCapacity = 8192;
         private const int MaxVirtualPhysicalVoices = 16;
         private const int LowTierVirtualPhysicalVoices = 8;
+        private const int VirtualVoiceTierHysteresisSlowTicks = 25;
         private const int VirtualVoiceBlackBoxFrameCount = 300;
         private const float VirtualVoiceStealFadeSeconds = 0.01f;
         private const string VirtualVoiceDumpRelativePath = "Docs/AgentLogs/Dump_ACOUSTIC_OCCLUSION_CULLING.bin";
@@ -557,9 +558,12 @@ namespace Hecton8.Audio
         private int _virtualVoiceBlackBoxCursor;
         private int _virtualVoiceDroppedCount;
         private int _virtualPhysicalVoiceLimit = MaxVirtualPhysicalVoices;
+        private int _virtualVoiceTierPendingSlowTicks;
         private bool _virtualVoiceSortScheduled;
         private bool _hasVirtualListenerAup;
         private bool _virtualVoiceBlackBoxDumped;
+        private bool _virtualVoiceLowTierTarget;
+        private bool _virtualVoiceLowTierApplied;
         private uint[] _virtualChannelStableKeys;
         private int[] _virtualChannelSourceIndices;
         private VirtualVoiceSelection[] _virtualChannelPendingSelections;
@@ -730,7 +734,7 @@ namespace Hecton8.Audio
         public int StolenVoiceCount => _lastVirtualVoiceStatistics.StolenVoices;
 
         /// <inheritdoc />
-        public int DroppedVoiceCount => _virtualVoiceDroppedCount;
+        public int DroppedVoiceCount => math.max(0, _lastVirtualVoiceStatistics.DroppedVoices) + _virtualVoiceDroppedCount;
 
         /// <summary>
         /// Current eclipse-driven pitch shift applied to ambient bed/drone world sources.
@@ -795,6 +799,8 @@ namespace Hecton8.Audio
             EnsureRuntimeResourcesInitialized();
             TrySubscribeAudioEvents();
             TryRegisterOriginShiftListener();
+            RefreshVirtualPhysicalVoiceLimit(true);
+            RefreshFoveatedDirector();
 
             if (_isInitialized)
             {
@@ -802,7 +808,6 @@ namespace Hecton8.Audio
                 TryRegisterFastTickable();
                 TryRegisterSlowTickable();
                 TryRegisterLateFrameTickable();
-                RefreshFoveatedDirector();
                 return;
             }
 
@@ -812,7 +817,6 @@ namespace Hecton8.Audio
             TryRegisterFastTickable();
             TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
-            RefreshFoveatedDirector();
             _isInitialized = true;
         }
 
@@ -979,8 +983,6 @@ namespace Hecton8.Audio
         public void FastTick(float deltaTime)
         {
             CompleteVirtualVoiceSort();
-            RefreshVirtualPhysicalVoiceLimit();
-            RefreshFoveatedDirector();
 
             if (!_virtualVoiceWriteQueue.IsCreated ||
                 !_virtualVoiceSortQueue.IsCreated ||
@@ -1034,6 +1036,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void SlowTick()
         {
+            RefreshVirtualPhysicalVoiceLimit(false);
+            RefreshFoveatedDirector();
+
             if (!TryResolveListenerFrame(
                     out Transform listener,
                     out Vector3 listenerRuntimePosition,
@@ -1438,11 +1443,11 @@ namespace Hecton8.Audio
                 ? ResolveAudioLodTier(in audibleAup, in listenerAup)
                 : AudioLodTier.Tier0Full;
             if (lodTier == AudioLodTier.Tier2Culled)
-                return;
+                return -1;
 
             int index = AcquireSourceIndex();
             if (index < 0)
-                return;
+                return -1;
 
             AudioSource source = _pool[index];
             ResetWorldSourceState(index, true);
@@ -1497,7 +1502,7 @@ namespace Hecton8.Audio
             CacheActiveWorldRuntimePosition(index, audiblePosition, currentFrame);
             CacheActiveWorldAup(index, in audibleAup, currentFrame);
             MarkWorldSourceActive(index);
-            return;
+            return index;
         }
 
         public bool QueueAudioEvent(in CoreAudioEvent audioEvent)
@@ -1757,6 +1762,9 @@ namespace Hecton8.Audio
         /// <inheritdoc />
         public void SetLowTierVirtualization(bool lowTier)
         {
+            _virtualVoiceLowTierTarget = lowTier;
+            _virtualVoiceLowTierApplied = lowTier;
+            _virtualVoiceTierPendingSlowTicks = 0;
             _virtualPhysicalVoiceLimit = lowTier ? LowTierVirtualPhysicalVoices : MaxVirtualPhysicalVoices;
         }
 
@@ -1766,6 +1774,8 @@ namespace Hecton8.Audio
             CompleteVirtualVoiceSort();
             RebaseVirtualVoiceList(ref _virtualVoiceWriteQueue, gridDeltaX, gridDeltaY, gridDeltaZ);
             RebaseVirtualVoiceList(ref _virtualVoiceSortQueue, gridDeltaX, gridDeltaY, gridDeltaZ);
+            RebaseVirtualVoiceSelections(gridDeltaX, gridDeltaY, gridDeltaZ);
+            RebaseVirtualChannelPendingSelections(gridDeltaX, gridDeltaY, gridDeltaZ);
             if (_hasVirtualListenerAup)
             {
                 _virtualListenerAup.GridX += gridDeltaX;
@@ -1816,6 +1826,8 @@ namespace Hecton8.Audio
                     continue;
 
                 int channel = FindVirtualChannelByStableKey(selection.StableKey, safeLimit);
+                if (channel < 0)
+                    channel = FindVirtualPendingChannelByStableKey(selection.StableKey, safeLimit);
                 if (channel < 0)
                     channel = FindFreeVirtualChannel(safeLimit);
                 if (channel < 0)
@@ -2152,6 +2164,29 @@ namespace Hecton8.Audio
             return -1;
         }
 
+        private int FindVirtualPendingChannelByStableKey(uint stableKey, int limit)
+        {
+            if (stableKey == 0u ||
+                _virtualChannelPendingSelections == null ||
+                _virtualChannelPendingFlags == null)
+            {
+                return -1;
+            }
+
+            int safeLimit = math.min(limit, _virtualChannelPendingSelections.Length);
+            safeLimit = math.min(safeLimit, _virtualChannelPendingFlags.Length);
+            for (int channel = 0; channel < safeLimit; channel++)
+            {
+                if (_virtualChannelPendingFlags[channel] != 0 &&
+                    _virtualChannelPendingSelections[channel].StableKey == stableKey)
+                {
+                    return channel;
+                }
+            }
+
+            return -1;
+        }
+
         private int FindFreeVirtualChannel(int limit)
         {
             if (_virtualChannelStableKeys == null)
@@ -2291,15 +2326,52 @@ namespace Hecton8.Audio
             }
         }
 
+        private void RebaseVirtualVoiceSelections(long gridDeltaX, long gridDeltaY, long gridDeltaZ)
+        {
+            if (!_virtualVoiceSelections.IsCreated)
+                return;
+
+            for (int i = 0; i < _virtualVoiceSelections.Length; i++)
+            {
+                VirtualVoiceSelection selection = _virtualVoiceSelections[i];
+                if (selection.StableKey == 0u)
+                    continue;
+
+                selection.SourceAup.GridX += gridDeltaX;
+                selection.SourceAup.GridY += gridDeltaY;
+                selection.SourceAup.GridZ += gridDeltaZ;
+                _virtualVoiceSelections[i] = selection;
+            }
+        }
+
+        private void RebaseVirtualChannelPendingSelections(long gridDeltaX, long gridDeltaY, long gridDeltaZ)
+        {
+            if (_virtualChannelPendingSelections == null)
+                return;
+
+            for (int channel = 0; channel < _virtualChannelPendingSelections.Length; channel++)
+            {
+                if (_virtualChannelPendingFlags != null &&
+                    channel < _virtualChannelPendingFlags.Length &&
+                    _virtualChannelPendingFlags[channel] == 0)
+                {
+                    continue;
+                }
+
+                VirtualVoiceSelection selection = _virtualChannelPendingSelections[channel];
+                if (selection.StableKey == 0u)
+                    continue;
+
+                selection.SourceAup.GridX += gridDeltaX;
+                selection.SourceAup.GridY += gridDeltaY;
+                selection.SourceAup.GridZ += gridDeltaZ;
+                _virtualChannelPendingSelections[channel] = selection;
+            }
+        }
+
         private byte ResolveVirtualVoiceFoveatedTier(Vector3 runtimePosition)
         {
             IFoveatedSimulationDirector director = _foveatedSimulationDirector;
-            if (director == null)
-            {
-                director = GlobalRegistry.FoveatedSimulationDirector;
-                _foveatedSimulationDirector = director;
-            }
-
             return director != null
                 ? (byte)director.ResolveTierForPosition(runtimePosition)
                 : (byte)FoveatedSimulationTier.Active;
@@ -2325,13 +2397,40 @@ namespace Hecton8.Audio
                 _foveatedSimulationDirector = director;
         }
 
-        private void RefreshVirtualPhysicalVoiceLimit()
+        private void RefreshVirtualPhysicalVoiceLimit(bool immediate)
         {
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
             bool lowTier = GlobalRegistry.H8_LOW_MEMORY_PROFILE ||
                 tier == HectonQualityTier.Low ||
                 tier == HectonQualityTier.Mx350;
-            SetLowTierVirtualization(lowTier);
+            ApplyVirtualPhysicalVoiceLimitTarget(lowTier, immediate);
+        }
+
+        private void ApplyVirtualPhysicalVoiceLimitTarget(bool lowTier, bool immediate)
+        {
+            if (immediate)
+            {
+                SetLowTierVirtualization(lowTier);
+                return;
+            }
+
+            if (lowTier == _virtualVoiceLowTierApplied)
+            {
+                _virtualVoiceLowTierTarget = lowTier;
+                _virtualVoiceTierPendingSlowTicks = 0;
+                return;
+            }
+
+            if (lowTier != _virtualVoiceLowTierTarget)
+            {
+                _virtualVoiceLowTierTarget = lowTier;
+                _virtualVoiceTierPendingSlowTicks = 0;
+                return;
+            }
+
+            _virtualVoiceTierPendingSlowTicks++;
+            if (_virtualVoiceTierPendingSlowTicks >= VirtualVoiceTierHysteresisSlowTicks)
+                SetLowTierVirtualization(lowTier);
         }
 
         private void PushVirtualVoiceTelemetry(in VirtualVoiceStatistics statistics)
@@ -2507,11 +2606,11 @@ namespace Hecton8.Audio
                 ? ResolveAudioLodTier(in audibleAup, in listenerAup)
                 : AudioLodTier.Tier0Full;
             if (lodTier == AudioLodTier.Tier2Culled)
-                return -1;
+                return;
 
             int index = AcquireSourceIndex();
             if (index < 0)
-                return -1;
+                return;
 
             AudioSource source = _pool[index];
             ResetWorldSourceState(index, true);
@@ -2528,7 +2627,7 @@ namespace Hecton8.Audio
             source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
             CacheWorldSourceBusFlags(index, source.outputAudioMixerGroup);
             float clampedDopplerRatio = math.clamp(
-                dopplerRatio,
+                1f,
                 VirtualVoiceUtility.MinimumDopplerRatio,
                 VirtualVoiceUtility.MaximumDopplerRatio);
             if (_smoothedDopplerRatios != null && index < _smoothedDopplerRatios.Length)
@@ -2571,7 +2670,7 @@ namespace Hecton8.Audio
             CacheActiveWorldRuntimePosition(index, audiblePosition, currentFrame);
             CacheActiveWorldAup(index, in audibleAup, currentFrame);
             MarkWorldSourceActive(index);
-            return index;
+            return;
         }
 
         /// <summary>

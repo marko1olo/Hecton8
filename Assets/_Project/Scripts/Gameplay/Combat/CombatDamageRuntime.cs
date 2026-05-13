@@ -331,6 +331,8 @@ namespace Hecton8.Gameplay
         private static bool _telemetryDumpedThisSession;
         private static byte _mathLod = (byte)CombatMathLod.Low;
         private static byte _requestedMathLod = (byte)CombatMathLod.High;
+        private static MathPrecisionLevel _cachedMathPrecision = MathPrecisionLevel.Low;
+        private static HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
 
         public static bool IsInitialized => _damageSignals.IsCreated;
         public static int PendingSignalCount => _queuedSignalCount;
@@ -338,6 +340,7 @@ namespace Hecton8.Gameplay
         public static void SetCombatMathLod(CombatMathLod lod)
         {
             _requestedMathLod = (byte)lod;
+            RefreshRuntimePolicy();
         }
 
         public static uint PackSignalMeta(
@@ -952,6 +955,8 @@ namespace Hecton8.Gameplay
             _queuedSignalCount = 0;
             _mathLod = (byte)CombatMathLod.Low;
             _requestedMathLod = (byte)CombatMathLod.High;
+            _cachedMathPrecision = MathPrecisionLevel.Low;
+            _cachedScalabilityTier = HectonQualityTier.Unknown;
             _telemetryDumpedThisSession = false;
             _listeners.Clear();
         }
@@ -1003,6 +1008,7 @@ namespace Hecton8.Gameplay
             _receiverTransforms = new Transform[MaxTargets]; // COLD ALLOC: Transform[2048] - world/local conversion mirror for combat receivers - owner: CombatDamageRuntime
             _targetBodies = new Rigidbody[MaxTargets]; // COLD ALLOC: Rigidbody[2048] - cached pushback bodies for combat receivers - owner: CombatDamageRuntime
             InitializeDamageArmorLut();
+            RefreshRuntimePolicy();
         }
 
         private static NativeArray<T> AllocateArray<T>(int length, string label)
@@ -1678,15 +1684,21 @@ namespace Hecton8.Gameplay
         private static byte ResolveRuntimeMathLod()
         {
             if (_requestedMathLod == (byte)CombatMathLod.Low ||
-                GlobalRegistry.MathPrecision != MathPrecisionLevel.High)
+                _cachedMathPrecision != MathPrecisionLevel.High)
             {
                 return (byte)CombatMathLod.Low;
             }
 
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier tier = _cachedScalabilityTier;
             return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra
                 ? (byte)CombatMathLod.High
                 : (byte)CombatMathLod.Low;
+        }
+
+        private static void RefreshRuntimePolicy()
+        {
+            _cachedMathPrecision = GlobalRegistry.MathPrecision;
+            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
         }
 
         [BurstCompile]

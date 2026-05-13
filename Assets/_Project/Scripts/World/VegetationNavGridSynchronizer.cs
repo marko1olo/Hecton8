@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
@@ -211,6 +214,11 @@ namespace Hecton8.World
                     out navPassabilityCellSize);
             }
 
+            int smoothingPortalLookAhead = ResolveAbyssalPathPortalLookAhead(GlobalRegistry.ScalabilityTier);
+            EnsureAbyssalPathTelemetry();
+            _lastAbyssalPathPortalLookAhead = smoothingPortalLookAhead;
+            _lastAbyssalPathMaxSamples = abyssalPathSmoothingMaxSamples;
+            _abyssalPathSmoothingStartTicks = Stopwatch.GetTimestamp();
             var smoothingJob = new StringPullPathJob
             {
                 InputPath = _nativeMemory.AbyssalPathRawResultNative.AsDeferredJobArray(),
@@ -234,6 +242,7 @@ namespace Hecton8.World
                 ThreatVoxelCellSize = new float3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize),
                 SampleSpacing = abyssalPathSmoothingSampleSpacing,
                 MaxSamplesPerSegment = abyssalPathSmoothingMaxSamples,
+                MaxPortalLookAhead = smoothingPortalLookAhead,
                 KelpWeight = abyssalPathSmoothingKelpWeight,
                 SargassumWeight = abyssalPathSmoothingSargassumWeight,
                 DensityObstacleThreshold = abyssalPathSmoothingObstacleThreshold,
@@ -247,6 +256,20 @@ namespace Hecton8.World
             _hasLastAbyssalPathTarget = canReuseLastAbyssalTarget && !scheduledMacroVoxelRoute;
             handle = _abyssalPathHandle;
             return true;
+        }
+
+        private static int ResolveAbyssalPathPortalLookAhead(HectonQualityTier tier)
+        {
+            switch (tier)
+            {
+                case HectonQualityTier.High:
+                case HectonQualityTier.Ultra:
+                    return HighTierAbyssalPathPortalLookAhead;
+                case HectonQualityTier.Mid:
+                    return MidTierAbyssalPathPortalLookAhead;
+                default:
+                    return LowTierAbyssalPathPortalLookAhead;
+            }
         }
 
         /// <summary>
@@ -993,9 +1016,14 @@ namespace Hecton8.World
                 return;
 
             _abyssalPathScheduled = false;
+            float funnelMs = ResolveAbyssalPathElapsedMs();
+            int rawPathCount = _nativeMemory.AbyssalPathRawResultNative.IsCreated ? _nativeMemory.AbyssalPathRawResultNative.Length : 0;
             _abyssalPathCount = _nativeMemory.AbyssalPathResultNative.IsCreated ? _nativeMemory.AbyssalPathResultNative.Length : 0;
             if (_abyssalPathCount <= 0)
+            {
+                RecordAbyssalPathTelemetry(funnelMs, rawPathCount, 0);
                 return;
+            }
 
             EnsureVector3Capacity(ref _abyssalPathSnapshot, _abyssalPathCount);
             EnsureVector3NativeCapacity(ref _nativeMemory.AbyssalPathSnapshotNative, _abyssalPathCount);
@@ -1004,6 +1032,152 @@ namespace Hecton8.World
                 Vector3 waypoint = _nativeMemory.AbyssalPathResultNative[i];
                 _abyssalPathSnapshot[i] = waypoint;
                 _nativeMemory.AbyssalPathSnapshotNative[i] = waypoint;
+            }
+
+            RecordAbyssalPathTelemetry(funnelMs, rawPathCount, _abyssalPathCount);
+        }
+
+        private void EnsureAbyssalPathTelemetry()
+        {
+            if (_abyssalPathTelemetry.IsCreated)
+                return;
+
+            _abyssalPathTelemetry = new NativeArray<AbyssalPathTelemetryEntry>(
+                AbyssalPathTelemetryFrameCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            RegisterTrackedNativeArray(_abyssalPathTelemetry, nameof(_abyssalPathTelemetry));
+            _abyssalPathTelemetryCursor = 0;
+            _abyssalPathTelemetrySequence = 0;
+            _abyssalPathTelemetryDumpedForFault = false;
+        }
+
+        private float ResolveAbyssalPathElapsedMs()
+        {
+            long startTicks = _abyssalPathSmoothingStartTicks;
+            if (startTicks <= 0)
+                return 0f;
+
+            long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
+            _abyssalPathSmoothingStartTicks = 0;
+            if (elapsedTicks <= 0)
+                return 0f;
+
+            return (float)(elapsedTicks * 1000.0 / Stopwatch.Frequency);
+        }
+
+        private void RecordAbyssalPathTelemetry(float funnelMs, int rawCount, int outputCount)
+        {
+            EnsureAbyssalPathTelemetry();
+            bool finite = true;
+            Vector3 start = default;
+            Vector3 end = default;
+            if (_nativeMemory.AbyssalPathResultNative.IsCreated && outputCount > 0)
+            {
+                start = _nativeMemory.AbyssalPathResultNative[0];
+                end = _nativeMemory.AbyssalPathResultNative[outputCount - 1];
+                for (int i = 0; i < outputCount; i++)
+                    finite &= IsFinite(_nativeMemory.AbyssalPathResultNative[i]);
+            }
+            else if (_nativeMemory.AbyssalPathRawResultNative.IsCreated && rawCount > 0)
+            {
+                start = _nativeMemory.AbyssalPathRawResultNative[0];
+                end = _nativeMemory.AbyssalPathRawResultNative[rawCount - 1];
+                finite = IsFinite(start) && IsFinite(end);
+            }
+
+            uint flags = 0u;
+            if (_lastAbyssalPathPortalLookAhead <= LowTierAbyssalPathPortalLookAhead)
+                flags |= 1u;
+            if (outputCount <= 0)
+                flags |= 2u;
+            if (!finite)
+                flags |= 4u;
+
+            _abyssalPathTelemetry[_abyssalPathTelemetryCursor] = new AbyssalPathTelemetryEntry
+            {
+                Frame = Time.frameCount,
+                RawCount = rawCount,
+                OutputCount = outputCount,
+                PortalLookAhead = _lastAbyssalPathPortalLookAhead,
+                MaxDdaSamples = _lastAbyssalPathMaxSamples,
+                FunnelMs = funnelMs,
+                StartX = start.x,
+                StartY = start.y,
+                StartZ = start.z,
+                EndX = end.x,
+                EndY = end.y,
+                EndZ = end.z,
+                Flags = flags,
+                Sequence = _abyssalPathTelemetrySequence
+            };
+
+            _abyssalPathTelemetryCursor++;
+            if (_abyssalPathTelemetryCursor >= AbyssalPathTelemetryFrameCount)
+                _abyssalPathTelemetryCursor = 0;
+            _abyssalPathTelemetrySequence++;
+
+            if (funnelMs > 0.1f)
+                GlobalTelemetryBus.PublishPerformanceWarning(AbyssalPathOverBudgetHash, AbyssalPathTelemetryContextHash, funnelMs);
+
+            if (!finite)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(AbyssalPathNanFaultHash, AbyssalPathTelemetryContextHash, flags);
+                DumpAbyssalPathTelemetry(AbyssalPathNanFaultHash);
+            }
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x) &&
+                   !float.IsNaN(value.y) &&
+                   !float.IsNaN(value.z) &&
+                   !float.IsInfinity(value.x) &&
+                   !float.IsInfinity(value.y) &&
+                   !float.IsInfinity(value.z);
+        }
+
+        private void DumpAbyssalPathTelemetry(uint reasonHash)
+        {
+            if (_abyssalPathTelemetryDumpedForFault || !_abyssalPathTelemetry.IsCreated)
+                return;
+
+            _abyssalPathTelemetryDumpedForFault = true;
+            try
+            {
+                string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs"));
+                Directory.CreateDirectory(directory);
+                string dumpPath = Path.Combine(directory, "Dump_AI_FUNNEL_NAV_POLISH.bin");
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(reasonHash);
+                    writer.Write(AbyssalPathTelemetryFrameCount);
+                    writer.Write(_abyssalPathTelemetryCursor);
+                    writer.Write(_abyssalPathTelemetrySequence);
+                    for (int i = 0; i < AbyssalPathTelemetryFrameCount; i++)
+                    {
+                        AbyssalPathTelemetryEntry entry = _abyssalPathTelemetry[i];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.RawCount);
+                        writer.Write(entry.OutputCount);
+                        writer.Write(entry.PortalLookAhead);
+                        writer.Write(entry.MaxDdaSamples);
+                        writer.Write(entry.FunnelMs);
+                        writer.Write(entry.StartX);
+                        writer.Write(entry.StartY);
+                        writer.Write(entry.StartZ);
+                        writer.Write(entry.EndX);
+                        writer.Write(entry.EndY);
+                        writer.Write(entry.EndZ);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.Sequence);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(AbyssalPathNanFaultHash, AbyssalPathTelemetryContextHash, exception.HResult);
             }
         }
 
@@ -1018,12 +1192,19 @@ namespace Hecton8.World
             DisposeNativeArray(ref _nativeMemory.AbyssalPathHeapNodesNative, disposeHandle);
             DisposeNativeArray(ref _nativeMemory.AbyssalPathHeapPositionsNative, disposeHandle);
             DisposeNativeArray(ref _nativeMemory.PredatorFearNodesSnapshotNative, disposeHandle);
+            DisposeNativeArray(ref _abyssalPathTelemetry);
             DisposeNativeList(ref _nativeMemory.AbyssalPathRawResultNative, disposeHandle, nameof(_nativeMemory.AbyssalPathRawResultNative));
             DisposeNativeList(ref _nativeMemory.AbyssalPathResultNative, disposeHandle, nameof(_nativeMemory.AbyssalPathResultNative));
             _abyssalPathHandle = default;
             _abyssalPathScheduled = false;
             _abyssalPathCount = 0;
             _lastAbyssalPathEndNode = -1;
+            _abyssalPathTelemetryCursor = 0;
+            _abyssalPathTelemetrySequence = 0;
+            _abyssalPathSmoothingStartTicks = 0;
+            _lastAbyssalPathPortalLookAhead = 0;
+            _lastAbyssalPathMaxSamples = 0;
+            _abyssalPathTelemetryDumpedForFault = false;
             _hasLastAbyssalPathTarget = false;
         }
 

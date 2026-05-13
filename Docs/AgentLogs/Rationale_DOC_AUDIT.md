@@ -2,7 +2,7 @@
 
 Agent: DOC_AUDIT
 Domain: Documentation / Project Reality Audit / Editor Validation Tripwires
-Current continuation: R38
+Current continuation: R39
 Date: 2026-05-13
 
 Previous rationale history is archived under `Docs/Archive/Batch005/AgentLogs/Rationale_DOC_AUDIT.md`.
@@ -33,12 +33,24 @@ Hardware Impact: Normal frame cost is 0 unless a WFC persistence caller invokes 
 
 ## Decision 040 - Full Core Compile Result Must Be Demoted Under Active Churn
 
-Problem: R37 local Bee/Roslyn `Hecton8.Core` probe returned `0`, but the current workspace changed underneath it. R38 rebuilt current contract/audio dependency refs and progressed past the persistence wall, then hit unrelated active errors in `SpatialAudioManager.cs`, `ScannerTool.cs`, `ScannableTarget.cs`, `HectonFluidEngine.cs`, and `UI/ActionProgressHUD.cs`.
+Problem: R37 local Bee/Roslyn `Hecton8.Core` probe returned `0`, but the current workspace changed underneath it. R38 rebuilt current contract/audio/world/AI/animation dependency refs and progressed past the persistence wall, then hit unrelated active errors in `SpatialAudioManager.cs`, `ScannerTool.cs`, `SubmarineAutoLevelBallastController.cs`, `HectonArenaAllocator.cs`, `HectonFluidEngine.cs`, `UI/SuitHUDV4CanvasOverlay.cs`, `UI/InteractionUI.cs`, and `FaunaBrain.cs`.
 
-Solution: stable docs now say R37 full-Core success is stale for the current worktree. R38 claims only the probes that actually passed (`Hecton8.Core.Contracts`, `Hecton8.Core.Memory`, temporary audio virtualization refs) and records full `Hecton8.Core` as blocked by unrelated active churn.
+Solution: stable docs now say R37 full-Core success is stale for the current worktree. R38 claims only the probes that actually passed (`Hecton8.Core.Contracts`, `Hecton8.Core.Memory`, temporary audio virtualization, world contracts, AI cognition, and animation IK refs) and records full `Hecton8.Core` as blocked by unrelated active churn.
 
 Rejected Alternatives: filtering out problem files was rejected as proof because those files are referenced by other Core files. Claiming the old R37 compile as current was rejected because it ignores active filesystem evidence. Chasing audio/fluid/UI repairs from DOC_AUDIT was rejected as cross-domain expansion after the persistence contract wall was closed.
 
 Scalability potential: Accurate compile boundaries reduce integration time and prevent teams from spending performance work on a build state that no longer exists.
 
 Hardware Impact: Documentation/probe correction only. Runtime cost: 0.000 ms.
+
+## Decision 041 - Generated Project Drift Needs A Tripwire, Not Stubs
+
+Problem: A fresh `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` fails before the previous R38 line-level blockers: the generated project surface is missing references for first-party assemblies that already exist in `Assets/_Project/Scripts/Hecton8.Core.asmdef`. The live diff is `23` missing generated references: `Hecton8.AI.Cognition`, `Hecton8.AI.Ecology.Migration`, `Hecton8.Animation.IK`, `Hecton8.Audio.Echolocation`, `Hecton8.Audio.Propagation`, `Hecton8.Audio.Virtualization`, `Hecton8.Audio.Virtualization.Contracts`, `Hecton8.Core.Bucketing`, `Hecton8.Core.Database`, `Hecton8.Core.Persistence.Paging`, `Hecton8.Core.Scheduling`, `Hecton8.Environment.Fluids`, `Hecton8.Environment.Fluids.Contracts`, `Hecton8.Inventory.Algorithms`, `Hecton8.Inventory.Corrosion`, `Hecton8.Inventory.Corrosion.Contracts`, `Hecton8.Physics.CCD`, `Hecton8.Physics.Tethers.Contracts`, `Hecton8.SpaceEngine098Terrain`, `Hecton8.UI.Diegetic.Contracts`, `Hecton8.Vehicles.Physics.Contracts`, `Hecton8.World.GPR`, and `Hecton8.World.Terrain`. Treating those as missing code would cause fake wrappers and duplicate contracts.
+
+Solution: add an editor-only `CSPROJ001` validation path in `HectonComplianceValidator`. It reads the durable `Hecton8.Core.asmdef` reference list, checks the current generated `Hecton8.Core.csproj`, and reports missing generated references with explicit wording that Unity project files must be regenerated before external `dotnet build` output is used as source evidence.
+
+Rejected Alternatives: editing `Hecton8.Core.csproj` directly was rejected because Unity-generated project files are not durable authority. Adding placeholder namespaces/types was rejected because the source assemblies already exist and the failure is project-model drift, not absent implementation. Claiming the current `dotnet build` error list as gameplay code breakage was rejected because the first failure class is generated reference omission.
+
+Scalability potential: Low/Middle/High/Ultra runtime tiers are unchanged. The scalability gain is process-level: agents stop spending CPU/architecture work on duplicate stubs and instead restore the correct Unity asmdef/project boundary before profiling or runtime validation.
+
+Hardware Impact: Editor-only validation. Estimated low-end i3/MX350 frame impact: 0.000 ms. Build/CI impact is bounded string scanning of one asmdef and one generated csproj.

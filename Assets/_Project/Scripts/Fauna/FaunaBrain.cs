@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Audio;
+using Hecton8.Atmosphere;
 using Hecton8.Caves;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -103,7 +104,7 @@ namespace Hecton8.AI
         private struct CorpseSinkKinematicInput
         {
             public AbsoluteUniversePositionBlit128 PositionAup;
-            public float3 FloatingOriginOffset;
+            public double3 FloatingOriginOffset;
             public float FloorY;
             public float DeltaTime;
             public float SinkSpeedMetersPerSecond;
@@ -144,10 +145,7 @@ namespace Hecton8.AI
                     position.y = math.max(targetY, position.y - input.SinkSpeedMetersPerSecond * math.max(0f, input.DeltaTime));
                 }
 
-                double3 absolute = new double3(
-                    position.x + input.FloatingOriginOffset.x,
-                    position.y + input.FloatingOriginOffset.y,
-                    position.z + input.FloatingOriginOffset.z);
+                double3 absolute = new double3(position.x, position.y, position.z) + input.FloatingOriginOffset;
                 AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.FromAbsolutePosition(absolute);
                 Output[0] = new CorpseSinkKinematicOutput
                 {
@@ -320,6 +318,12 @@ namespace Hecton8.AI
         private const float PredatorPredictionFastLeadSeconds = 0.35f;
         private const float AcousticPingLeviathanScatterRadiusMeters = 90f;
         private const float AcousticPingLeviathanScatterDurationSeconds = 0.85f;
+        private const float AlphaLeviathanFalseChargeStress01 = 1f;
+        private const float AlphaLeviathanFalseChargeOxygenDrainScale = 2.5f;
+        private const float AlphaLeviathanFalseChargeAggressionScale = 2f;
+        private const byte PlayerStressCauseApexPredator = 2;
+        private const byte PlayerStressFlagApexPredator = 1 << 1;
+        private const byte PlayerStressFlagAcoustic = 1 << 3;
         private const uint PredatorSquadStateHuntingBit = 1u << 0;
         private const uint PredatorSquadStateFleeingBit = 1u << 1;
         private const uint PredatorSquadStateFlankingBit = 1u << 2;
@@ -2620,10 +2624,7 @@ namespace Hecton8.AI
                 return;
 
             int clampedCount = math.clamp(_voxelRouteWaypointCount, 0, MaxVoxelRouteWaypointCount);
-            float3 committedOriginOffset = new float3(
-                shiftData.NewTotalOffset.x,
-                shiftData.NewTotalOffset.y,
-                shiftData.NewTotalOffset.z);
+            double3 committedOriginOffset = shiftData.NewTotalOffsetDouble;
             for (int waypointIndex = 0; waypointIndex < clampedCount; waypointIndex++)
             {
                 AbsoluteUniversePosition waypoint = _voxelRouteWaypointAups[waypointIndex];
@@ -2641,10 +2642,7 @@ namespace Hecton8.AI
             if (!_hasForcedMigrationTarget)
                 return;
 
-            float3 committedOriginOffset = new float3(
-                shiftData.NewTotalOffset.x,
-                shiftData.NewTotalOffset.y,
-                shiftData.NewTotalOffset.z);
+            double3 committedOriginOffset = shiftData.NewTotalOffsetDouble;
             float3 runtimeTarget = AUPMath.ToRuntimeFloat3(in _forcedMigrationTargetAup, committedOriginOffset);
             _forcedMigrationTarget = new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
         }
@@ -2654,10 +2652,7 @@ namespace Hecton8.AI
             if (!_hasHibernationStarvationHuntTarget)
                 return;
 
-            float3 committedOriginOffset = new float3(
-                shiftData.NewTotalOffset.x,
-                shiftData.NewTotalOffset.y,
-                shiftData.NewTotalOffset.z);
+            double3 committedOriginOffset = shiftData.NewTotalOffsetDouble;
             float3 runtimeTarget = AUPMath.ToRuntimeFloat3(in _hibernationStarvationHuntTargetAup, committedOriginOffset);
             _hibernationStarvationHuntTarget = new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
         }
@@ -2667,10 +2662,7 @@ namespace Hecton8.AI
             if (!_hasDirectorHuntTarget)
                 return;
 
-            float3 committedOriginOffset = new float3(
-                shiftData.NewTotalOffset.x,
-                shiftData.NewTotalOffset.y,
-                shiftData.NewTotalOffset.z);
+            double3 committedOriginOffset = shiftData.NewTotalOffsetDouble;
             float3 runtimeTarget = AUPMath.ToRuntimeFloat3(in _directorHuntTargetAup, committedOriginOffset);
             _directorHuntTargetPosition = new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
         }
@@ -3317,6 +3309,19 @@ namespace Hecton8.AI
             return false;
         }
 
+        private static byte ResolveHighSpeedImpactTargetMaterialId(in RaycastHit hit, byte fallbackMaterialId)
+        {
+            Collider hitCollider = hit.collider;
+            if (hitCollider == null)
+                return fallbackMaterialId;
+
+            if (hitCollider.TryGetComponent(out IPhysicsImpactMaterialProvider directProvider))
+                return directProvider.ImpactAudioMaterialId;
+
+            IPhysicsImpactMaterialProvider parentProvider = hitCollider.GetComponentInParent<IPhysicsImpactMaterialProvider>();
+            return parentProvider != null ? parentProvider.ImpactAudioMaterialId : fallbackMaterialId;
+        }
+
         private void EmitPredatorLungeCcdImpact(
             in RaycastHit hit,
             Vector3 safeNormal,
@@ -3341,6 +3346,8 @@ namespace Hecton8.AI
                 flags |= HighSpeedImpactSignal.FlagLowTierStop;
 
             AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(point);
+            byte targetMaterialId = ResolveHighSpeedImpactTargetMaterialId(in hit, HighSpeedImpactSignal.MaterialMetal);
+            byte sourceMaterialId = HighSpeedImpactSignal.MaterialOrganic;
             HighSpeedImpactSignal signal = default;
             signal.PointAup = pointAup;
             signal.Normal = new float3(safeNormal.x, safeNormal.y, safeNormal.z);
@@ -3351,6 +3358,10 @@ namespace Hecton8.AI
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.SourceKind = HighSpeedImpactSignal.SourceLeviathan;
             signal.Flags = flags;
+            signal.PrimaryMaterialId = targetMaterialId;
+            signal.SecondaryMaterialId = sourceMaterialId;
+            signal.EffectiveMass = _rb != null ? math.max(0f, _rb.mass) : 0f;
+            signal.MaterialHash = HighSpeedImpactSignal.ComposeMaterialHash(signal.TargetHash, targetMaterialId, sourceMaterialId);
             GlobalSignals.Publish(in signal);
 
             ImpactSignal impact = default;
@@ -4495,6 +4506,21 @@ namespace Hecton8.AI
             roarSignal.Channel = AcousticPingSignal.ChannelLeviathanRoar;
             roarSignal.Flags = AcousticPingSignal.FlagLeviathanRoar;
             GlobalSignals.Publish(in roarSignal);
+            PublishAlphaLeviathanStressSpike();
+        }
+
+        private static void PublishAlphaLeviathanStressSpike()
+        {
+            PlayerStressSignal stressSignal = new PlayerStressSignal
+            {
+                Stress01 = AlphaLeviathanFalseChargeStress01,
+                OxygenDrainScale = AlphaLeviathanFalseChargeOxygenDrainScale,
+                AggressionScale = AlphaLeviathanFalseChargeAggressionScale,
+                Frame = unchecked((uint)Time.frameCount),
+                Cause = PlayerStressCauseApexPredator,
+                Flags = PlayerStressFlagApexPredator | PlayerStressFlagAcoustic
+            };
+            GlobalSignals.Publish(in stressSignal);
         }
 
         private void PublishLeviathanScatterPulse(Vector3 position, Vector3 direction, float radiusMeters, float durationSeconds)
@@ -5706,7 +5732,7 @@ namespace Hecton8.AI
             if (!_corpseSinkInputNative.IsCreated || !_corpseSinkOutputNative.IsCreated)
                 return;
 
-            float3 committedOriginOffset = ToCommittedOriginOffset();
+            double3 committedOriginOffset = ToCommittedOriginOffset();
             float3 position = AUPMath.ToRuntimeFloat3(in _corpseSinkAup, committedOriginOffset);
             if (!_corpseFloorLatched)
             {
@@ -5857,10 +5883,9 @@ namespace Hecton8.AI
             _corpseSinkLateFrameRegistered = false;
         }
 
-        private static float3 ToCommittedOriginOffset()
+        private static double3 ToCommittedOriginOffset()
         {
-            Vector3 offset = HectonFloatingOrigin.CurrentTotalOffset;
-            return new float3(offset.x, offset.y, offset.z);
+            return HectonFloatingOrigin.CurrentTotalOffsetDouble;
         }
 
         private bool IsWhaleFallCorpseRuntime()

@@ -35,9 +35,27 @@ Mandates read:
 - [x] Task 14 - Zero-GC stringless Burst spatial loop | DOD: target loop is Burst `IJob` over NativeArray SOA; UI uses fixed char arrays, `Span<char>`, stackalloc, and TMP `SetCharArray` | Rejected: `StringBuilder`, `.text`, managed lists, per-frame allocation | Estimate: 6500 us
 - [ ] Task 15 - Omega compile check: Span<char> no boxing | BLOCKED BY DEPENDENCY: static audit found no boxing path in scanner/UI span writes, but compiler proof is blocked by unrelated project refs and Unity session loss | Estimate: blocked
 
+## Loop 4 - Omega Polish / Anti-Bloat Inquisition
+
+- [x] Re-read prompt after core tasks | DOD: raw PowerShell regex extraction of `<AGENT_PROMPT id="DIEGETIC_LORE_SCANNER">` from CURRENT_BATCH.md after tasks were complete/blocked | Rejected: relying on compressed chat memory | Estimate: 1400 us
+- [x] Read OMEGA_POLISH after core tasks | DOD: raw PowerShell regex extraction of `<POLISH_MANDATE>` only after tasks 1-14 were complete and task 15 dependency-blocked | Rejected: pre-reading polish before core completion | Estimate: 900 us
+- [x] Audit 1 - Dear Lie target math | DOD: kept highest-dot nearest-crosshair fake, range-squared rejection, and one candidate slot; no pixel-perfect projection added | Rejected: honest screen-pixel/collider fan | Estimate: 1700 us
+- [x] Audit 2 - Occlusion command math | DOD: replaced occlusion `Vector3.magnitude` plus divide with `math.rsqrt` and multiply | Rejected: keeping sqrt/division in allowed occlusion ray setup | Estimate: 600 us
+- [x] Audit 3 - Zero-GC UI strings | DOD: `rg` found no `.text =`, no `foreach`, no `.ToString()` in scanner RT path; scanner RT writes use `Span<char>` and TMP `SetCharArray` | Rejected: managed TMP strings | Estimate: 1900 us
+- [x] Audit 4 - Dispatcher phase / Update ban | DOD: `rg` found no `void Update(` in scanner tool, diegetic display, or target registry; scanner uses FastTick/LateFrame/UI dispatcher | Rejected: MonoBehaviour update loop | Estimate: 1200 us
+- [x] Audit 5 - Decoupled completion path | DOD: completion publishes fixed-size signals (`LoreFragmentScannedSignal`, `ProgressionEventSignal`) instead of direct campaign singleton calls | Rejected: UI-side unlock and direct MetaCampaign dependency | Estimate: 1600 us
+
+## Loop 5 - Patient Hardening Pass
+
+- [x] Re-read authority and prompt | DOD: reread AGENTS.md head, domain map, Unity MCP skill, and prompt via raw extraction | Rejected: continuing from stale final report only | Estimate: 6200 us
+- [x] Diff ownership audit | DOD: compared actual source and current diff; scanner features exist, while unrelated dirty core signal/memory edits are not claimed as scanner work | Rejected: folding other agents' GlobalSignals/H8Memory deltas into this report | Estimate: 2600 us
+- [x] Scanner RT title cache | DOD: added fixed `char[96]` scanner-title cache in `ToolDiegeticDisplayController` so progress repaint does not rescan the lore registry every time | Rejected: per-repaint 1024-entry managed title lookup | Estimate: 1400 us
+- [x] Lore SOA sync debounce | DOD: added same-frame debounce in `ScannableTarget.SyncLoreEntityVaultAups()` so multiple scanner reads in one frame do not rewrite all lore AUP/hash slots twice | Rejected: blind full SOA rewrite on every same-frame consumer | Estimate: 900 us
+- [x] Static scanner-path checks | DOD: `git diff --check` passed; no scanner `Update`, `.text =`, `foreach`, `.ToString()`, or direct `Physics.Raycast` hits in edited scanner/UI/target files | Rejected: relying on visual inspection only | Estimate: 2200 us
+
 ## Verification
 
-- [ ] Compile/source validation - BLOCKED BY DEPENDENCY: generated `Hecton8.Core.csproj` fails on stale missing assemblies unrelated to scanner; Unity refresh timed out and console session is unavailable
-- [ ] Console check - BLOCKED BY UNITY SESSION: MCP reports `no_unity_session` after refresh timeout
-- [ ] Re-read prompt after core tasks
-- [ ] Omega polish mandate after all tasks done or blocked
+- [ ] Compile/source validation - BLOCKED BY DEPENDENCY: `dotnet build Hecton8.Core.csproj` still fails with global missing-contract errors unrelated to scanner; latest count 128 errors, no scanner/UI/target syntax errors surfaced before dependency wall
+- [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
+- [x] Re-read prompt after core tasks
+- [x] Omega polish mandate after all tasks done or blocked

@@ -9,26 +9,27 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 ## Hygiene
 
 - [x] Prompt extracted from CURRENT_BATCH.md with CLI regex over full file | DOD: strict prompt isolation | Alternatives Rejected: MCP/basic reader because truncation risk | Estimate: 400 us
+- [x] Prompt re-extracted with attribute-aware CLI regex | DOD: captured `<AGENT_PROMPT id="LEVIATHAN_KINEMATICS_SOLVER" role="MOTION_ENGINEER" ...>` cover-to-cover | Alternatives Rejected: strict id-only tag because batch uses attributes | Estimate: 80 us
 - [x] Status file was absent before creation | DOD: fresh batch state | Alternatives Rejected: reuse old logs because batch hygiene forbids stale memory | Estimate: 40 us
 - [x] Relevant mandates selected before code | DOD: registry-first compliance | Alternatives Rejected: coding from prompt only because Burst/native rules are stricter than task text | Estimate: 120 us
 
 ## Task Checklist
 
-- [ ] Task 1: Extend FaunaKinematicsRuntime, no singleton work
-- [ ] Task 2: Consume Leviathan intended velocity vector
-- [ ] Task 3: Add/align Hecton8.Animation.IK asmdef dependency to Contracts
-- [ ] Task 4: Dead code hunt for Animator/SkinnedMeshRenderer on Alpha Leviathan path
-- [ ] Task 5: Define SOA NativeArray<float4x4> LeviathanBones
-- [ ] Task 6: Burst Verlet spine constraint solver using math.rsqrt
-- [ ] Task 7: SDF terrain hugging for lower five segments
-- [ ] Task 8: MapMagic 2D height fallback through vault interface
-- [ ] Task 9: Upload LeviathanBones to GraphicsBuffer
-- [ ] Task 10: Hook existing compute/GPU skinning path where available
-- [ ] Task 11: Strike tail whip impulse with one-second terrain bypass
-- [ ] Task 12: AUP shift safety for all segments
-- [ ] Task 13: Math LOD: Low tier eight segments and SDF disabled
-- [ ] Task 14: Zero-GC hot path audit
-- [ ] Task 15: Omega compile check: verify math.rsqrt constraints
+- [x] Task 1: Extend FaunaKinematicsRuntime, no singleton work | DOD: `FaunaKinematicsRuntime` is the presentation owner bound by `FaunaBrain` | Alternative Rejected: new singleton service | Estimate: 8 us hot scheduling overhead
+- [x] Task 2: Consume Leviathan intended velocity vector | DOD: `UpdateLeviathanKinematicsMotionIntent` forwards steering/body velocity and head target | Alternative Rejected: pulling cognition from globals | Estimate: 2 us
+- [x] Task 3: Add/align Hecton8.Animation.IK asmdef dependency to Contracts | DOD: `Hecton8.Animation.IK.asmdef` references `Hecton8.Core.Contracts`; `Hecton8.Core.asmdef` references IK | Alternative Rejected: dumping Burst job into monolithic core | Estimate: 0 us runtime
+- [x] Task 4: Dead code hunt for Animator/SkinnedMeshRenderer on Alpha Leviathan path | DOD: Alpha presentation owner now uses `FaunaKinematicsRuntime`; static grep found no Animator/SkinnedMeshRenderer use in IK runtime or Alpha proxy prefab | Alternative Rejected: transform-chain `ProceduralLeviathanSpineIK` path | Estimate: saves 150-600 us versus CPU skinning path, unmeasured
+- [x] Task 5: Define SOA NativeArray<float4x4> LeviathanBones | DOD: persistent `_leviathanBones` native array at 20 matrices | Alternative Rejected: managed `Matrix4x4[]` | Estimate: 0 B GC, 1.28 KB native matrix lane
+- [x] Task 6: Burst Verlet spine constraint solver using math.rsqrt | DOD: `LeviathanTerrainIkJob` integrates followers and pulls sequential distance constraints with `math.rsqrt` | Alternative Rejected: `math.sqrt`/`Vector3.Distance` | Estimate: 12-35 us by tier
+- [x] Task 7: SDF terrain hugging for lower five segments | DOD: lower five segments sample `VoxelSdfTexture3D`, calculate gradient, and push out of positive density | Alternative Rejected: Unity Physics casts | Estimate: 20-60 us high tier only
+- [x] Task 8: MapMagic 2D height fallback through vault interface | DOD: `MapMagicBridge.QuantizedHeightmapPayload` plus `BufferID.TerrainSeamHeightmap` fallback prevent seabed clipping when SDF is absent | Alternative Rejected: `Terrain.SampleHeight` managed calls | Estimate: 4-12 us
+- [x] Task 9: Upload LeviathanBones to GraphicsBuffer | DOD: double-buffered `GraphicsBuffer` upload through `GraphicsBufferUploadUtility.UploadNativeArray` | Alternative Rejected: per-frame managed arrays | Estimate: 3-10 us upload overhead
+- [x] Task 10: Hook existing compute/GPU skinning path where available | DOD: material/global shader buffers `_H8LeviathanBones`, `_H8LeviathanBoneCount`, `_H8LeviathanIkTier`, `_H8LeviathanTailWhip01` are published for existing GPU deformation code | Alternative Rejected: CPU mesh deformation | Estimate: saves 150-600 us versus CPU skinning, unmeasured
+- [x] Task 11: Strike tail whip impulse with one-second terrain bypass | DOD: strike starts `_tailWhipSecondsRemaining`, applies tail-half wave impulse, bypasses terrain constraints during active timer | Alternative Rejected: physical joints/impulses | Estimate: under 4 us
+- [x] Task 12: AUP shift safety for all segments | DOD: `OnOriginShift` rebases segment positions, previous positions, matrices, and target positions | Alternative Rejected: reseeding spine after shift | Estimate: 5-15 us per shift only
+- [x] Task 13: Math LOD: Low tier eight segments and SDF disabled | DOD: `HectonQualityTier.Unknown/Low/Mx350` clamps active segments to 8 and disables SDF terrain hugging | Alternative Rejected: balanced middle path | Estimate: saves 20-60 us versus high tier
+- [x] Task 14: Zero-GC hot path audit | DOD: static grep found no hot-path managed collection creation, Mono `Update`, `Debug.Log`, `Camera.main`, `renderer.material`, or `GlobalRegistry.Get` in IK runtime/job files | Alternative Rejected: deferred audit | Estimate: 0 B intended hot path
+- [x] Task 15: Omega compile check: verify math.rsqrt constraints [BLOCKED BY DEPENDENCY] | DOD: `math.rsqrt` verified in all distance constraints; isolated `Hecton8.Animation.IK` csc pass exits 0; full project compile blocked by unrelated assemblies/open Unity instances | Alternative Rejected: fake green build report | Estimate: compile wall cost external
 
 ## Iteration Log
 
@@ -36,3 +37,37 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 
 - Read batch prompt and mandates. No code written yet.
 - Compile status: PENDING.
+
+### Loop 1: Tasks 1-5
+
+- Implemented/verified runtime boundary, signal migration, asmdef isolation, Animator/SMR path purge, and native matrix SOA.
+- Compile status: PENDING. No Unity full-project green state exists.
+
+### Loop 2: Tasks 6-8
+
+- Implemented/verified Burst Verlet constraints, SDF pushout, and MapMagic/DataVault fallback.
+- Static check: `math.rsqrt` present in head clamp, distance constraints, length helpers, and normalization.
+
+### Loop 3: Tasks 9-11
+
+- Implemented/verified graphics buffer upload, shader/compute skinning buffer contract, and strike tail wave with terrain bypass.
+- Static check: no managed matrix array upload path was introduced.
+
+### Loop 4: Tasks 12-14
+
+- Implemented/verified AUP rebase, low-tier eight-segment SDF-off gate, and zero-GC hot-path grep.
+- Static check: IK runtime/job files do not define Mono `Update`, `LateUpdate`, or `FixedUpdate`.
+
+### Loop 5: Task 15 Compile Wall
+
+- Isolated evidence: Unity saved Roslyn response files for `Hecton8.Animation.IK` were executed after Omega polish and exited 0; `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Animation.IK.dll` timestamp updated.
+- Full project evidence: BLOCKED. `dotnet build Hecton8.Core.csproj --no-restore` timed out under unrelated assembly failures; open Unity project logs show unrelated errors in `HectonUnderwaterVisuals`, `PlayerKinematicsRuntime`, `GlobalDataVault`, and missing contract files.
+- Strike protocol: no IK chunk reverted because the observed wall is outside this task's files.
+
+### Loop 6: Omega Polish
+
+- Read all active `<POLISH_MANDATE id="OMEGA_POLISH">` blocks after core tasks were checked/blocked.
+- Applied bitmask runtime flags to the Burst job and replaced SDF sample division with `math.rcp` multiply.
+- Static polish grep: no `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, `.ToString()`, Unity Physics casts, Animator/SMR dependency, managed Update loop, or Debug.Log in the IK runtime/job files.
+- Scoped compile: polished `Hecton8.Animation.IK` csc pass exited 0.
+- Final status remains PENDING VERIFICATION because full project compile is blocked outside this task.

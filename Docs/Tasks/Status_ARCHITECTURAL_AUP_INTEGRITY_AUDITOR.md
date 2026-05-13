@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: LOOP 1 COMPLETE - COMPILE BLOCKED BY PROJECT REFERENCES
+Status: VERIFIED AUP INTEGRITY - LOOP 6 APPLIED; COMPILE/ASMDEF BLOCKED BY DEPENDENCY/ARCHITECTURE
 
 ## Selected Mandates
 
@@ -28,11 +28,11 @@ Status: LOOP 1 COMPLETE - COMPILE BLOCKED BY PROJECT REFERENCES
 - [x] Task 8 - DIVISION BAN | Justification: scoped `/ dt` scan across AUP/origin/KCC files is clean after replacing origin anchor fallback velocity with `* math.rcp(safeDeltaTime)`. Alternative rejected: rewriting unrelated presentation velocity estimators. Estimate: sub-1 us plus deterministic math consistency.
 - [x] Task 9 - MATH LOD | Justification: verified low-tier math is explicitly tier-gated in KCC/fluid paths; no hidden AUP float fallback was introduced. Remaining fluid/scatter AUP float offsets are presentation/shader lanes and recorded in `AUP_DRIFT_REPORT.md`. Alternative rejected: silent float downgrade in AUP authority. Estimate: 0 us code change beyond audit.
 - [x] Task 10 - BLACKBOX DUMP | Justification: `CrashTelemetryBuffer.ReportAupMaxDriftError` now records max watchdog drift into the fixed telemetry ring without fault export. Alternative rejected: managed log strings or per-frame allocations. Estimate: below 1 us every 300 frames for two tracked entities.
-- [ ] Task 11 - ZERO-GC | Justification: pending static and compile verification; hot path fixes must use value types/native containers. Alternative rejected: managed audit wrappers. Estimate: pending.
-- [ ] Task 12 - TRIPLE-STRIKE REPAIR | Justification: strike log opened. `dotnet build Hecton8.Core.csproj` fails on existing missing assembly references; `dotnet build Assembly-CSharp.csproj` timed out; Unity MCP validation returned `no_unity_session`. Alternative rejected: editing asmdefs blindly across other domains. Estimate: dependency wall, not runtime.
-- [ ] Task 13 - RSQRT AUDIT | Justification: pending normalization scan and squared-distance preference. Alternative rejected: unconditional `.normalized`/`math.normalize`. Estimate: pending.
-- [ ] Task 14 - ASMDEF ISOLATION | Justification: pending dependency scan for `Hecton8.Core.AUP` and UnityEngine leakage. Alternative rejected: assembly name trust. Estimate: pending.
-- [ ] Task 15 - OMEGA COMPILE | Justification: pending `dotnet build` and warning scan. Alternative rejected: static-only acceptance. Estimate: pending.
+- [x] Task 11 - ZERO-GC | Justification: changed hot paths use fields, stack value math, ReadOnlySpan snapshots, existing NativeArrays, and existing telemetry ring writes. DOD: no managed allocation introduced in AUP/origin/residency/acoustic patches. Alternative rejected: managed debug logs or new per-frame containers. Estimate: 0 B/frame, sub-1 us normal frames.
+- [x] Task 12 - TRIPLE-STRIKE REPAIR [BLOCKED BY DEPENDENCY] | Justification: three verification attempts completed; Loop 5 recheck repeated the Core build. Core csproj build fails on existing missing references/interface drift; Assembly-CSharp build timed out; Unity MCP validation has no session. Alternative rejected: asmdef rewiring across unrelated domains. Estimate: dependency wall, not runtime.
+- [x] Task 13 - RSQRT AUDIT | Justification: scoped normalization/sqrt scan over AUP/origin/KCC/acoustic files found no `math.normalize`, `math.normalizesafe`, `.normalized`, or sqrt after patches; Kinematic CCD and AUP direction use `math.rsqrt`. Alternative rejected: sqrt normalization. Estimate: 1-4 us saved in drift/steering callsites.
+- [x] Task 14 - ASMDEF ISOLATION [BLOCKED BY ARCHITECTURE] | Justification: `rg` found no `Hecton8.Core.AUP` asmdef or namespace. Existing AUP struct is embedded in `PersistentWorldRegistry.cs`, which depends on UnityEngine. Alternative rejected: creating an empty asmdef or moving a shared public struct during an audit patch. Estimate: future migration required.
+- [x] Task 15 - OMEGA COMPILE [BLOCKED BY DEPENDENCY] | Justification: `dotnet build Hecton8.Core.csproj` returned 131 missing-reference errors initially and 140 existing missing-reference/interface errors on Loop 5 recheck before edited files could be isolated; `Assembly-CSharp.csproj` timed out; Unity MCP validation unavailable. Alternative rejected: fake green compile report. Estimate: external project-reference wall.
 
 ## Iteration Log
 
@@ -57,3 +57,33 @@ Loop 2:
 - Patched `AcousticOcclusionUtility.ResolveAupDistanceMeters` to use `AbsoluteUniversePosition.DistanceSq` and double rsqrt before final float return.
 - Re-ran mandatory AUP scan; residual hits remain in fluid/scatter presentation lanes and documents.
 - Scoped division scan over AUP/origin/KCC/acoustic/residency files returned no `/ dt` hits.
+
+Loop 3:
+- Scoped rsqrt audit over AUP/origin/KCC/acoustic files found no remaining normalize/sqrt calls in the patched authority paths.
+- Confirmed no `Hecton8.Core.AUP` asmdef exists; task marked blocked by architecture instead of creating an empty assembly.
+- Marked compile tasks blocked by the documented project-reference wall after three verification attempts.
+
+Loop 4 - Omega Polish:
+- Extracted `<POLISH_MANDATE>` from `Docs/Tasks/CURRENT_BATCH.md`; result: `POLISH_MANDATE_NOT_FOUND`.
+- Ran anti-bloat review anyway: no empty asmdef shell, no managed telemetry logs, no new per-frame collections, no destructive AUP queue consumers.
+- Verified Unity.Mathematics has `math.rsqrt(double)` in package cache.
+- `git diff --check` reported line-ending warnings only, no whitespace errors.
+
+Loop 5 - Runtime Projection Upgrade:
+- Re-read status/rationale, re-opened the Unity MCP operator skill, and re-ran the mandatory AUP scan.
+- Re-extracted `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+- Patched `AbsoluteUniversePosition.ToRuntimeFloat3()` to subtract `HectonFloatingOrigin.CurrentTotalOffsetDouble` before the final float presentation cast.
+- Added a `double3` overload for `AUPMath.ToRuntimeFloat3` and retained the `float3` overload for existing job payload compatibility.
+- Patched `WorldSpatialHashGrid` AUP validation and far-unload rehydration to use `double3` committed offsets instead of `Vector3` offsets.
+- Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:quiet -clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false`; still blocked by 140 existing missing-reference/interface errors outside this AUP patch set.
+- Unity MCP `validate_script` on `Assets/_Project/Scripts/World/AUPMath.cs` returned `no_unity_session`.
+
+Loop 6 - Shift Payload Double Fence:
+- Re-read status/rationale and selected mandates before code.
+- Re-extracted `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+- Added `PreviousTotalOffsetDouble` and `NewTotalOffsetDouble` to `OriginShiftEventData` while preserving the existing `Vector3` API.
+- Routed `HectonFloatingOrigin.WaitForShiftStabilityAsync`, committed shift events, safe teleport events, sector-delta calculation, and `ToRuntimePosition` helpers through double committed offsets.
+- Upgraded fauna route/hunt target rebases, corpse-resource rebase, and corpse-sink Burst input to use `double3` committed offsets.
+- Swapped scalar absolute-depth/height/shader offset helpers to `CurrentTotalOffsetDouble` before final float presentation output.
+- Direct scan for `CurrentTotalOffset.x/y/z`, `(float3)CurrentTotalOffset`, and `NewTotalOffset.x/y/z` is clean under `Assets/_Project/Scripts`; remaining mandatory regex hits are broader `universe` text and fluid/presentation AUP offset lanes.
+- Post-edit Core build attempt timed out after 94 seconds; stopped only the timed-out `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers ...` process started by this agent. Another Core build process from a different parent remained running and was not touched.

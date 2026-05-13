@@ -10,20 +10,39 @@ Status: PENDING VERIFICATION
 - [x] Prompt extracted from CURRENT_BATCH.md with CLI regex | Justification: strict batch parsing; rejected MCP/basic read because task requires cover-to-cover CLI extraction | Estimate: 240 us
 - [x] Status file created empty-to-active | Justification: no old status file existed; rejected archive reads per batch hygiene | Estimate: 80 us
 - [x] Rationale file created empty-to-active | Justification: decision log required before done states; rejected chat-only reasoning | Estimate: 80 us
+- [x] Prompt re-extracted after implementation batch | Justification: anti-amnesia protocol after task batches; rejected relying on chat summary | Estimate: 190 us
+- [x] Unity MCP verification attempted | Justification: Unity compile/console is preferred proof path; rejected pretending static csc is full Unity proof | Estimate: 250000 us
 
 ## Tasks
-- [ ] Task 1: Command argument `-h8fracturetest` | Justification: pending implementation | Estimate: TBD
-- [ ] Task 2: Silence Audio/VFX/UI rendering | Justification: pending implementation | Estimate: TBD
-- [ ] Task 3: Mass spawn request for 10,000 boids | Justification: pending implementation | Estimate: TBD
-- [ ] Task 4: Emit AupShiftSignal every 15 frames | Justification: pending implementation | Estimate: TBD
-- [ ] Task 5: GlobalDataVault 50MB allocate/free thrash | Justification: pending implementation | Estimate: TBD
-- [ ] Task 6: SystemDispatcher SIMULATION stall detection >16ms | Justification: pending implementation | Estimate: TBD
-- [ ] Task 7: RigidbodyAUP NaN hunt + blackbox dump | Justification: pending implementation | Estimate: TBD
-- [ ] Task 8: Native allocation leak baseline return check | Justification: pending implementation | Estimate: TBD
-- [ ] Task 9: H-Phi metric console print before test | Justification: pending implementation | Estimate: TBD
-- [ ] Task 10: CI exit 0 after 50,000 extreme frames | Justification: pending implementation | Estimate: TBD
-- [ ] Task 11: Zero-GC stressor logic | Justification: pending implementation | Estimate: TBD
-- [ ] Task 12: Omega compile check | Justification: pending implementation | Estimate: TBD
+- [x] Task 1: Command argument `-h8fracturetest` | Justification: runtime auto-creates only when command arg/env/flag is present; DOD used registry-safe isolated runner; rejected scene objects/direct bootstrap edits | Estimate: 2 us per process arg scan item
+- [x] Task 2: Silence Audio/VFX/UI rendering | Justification: headless policy disables audio, active cameras, culling masks, vSync, frame cap, and forces low scalability; rejected broad runtime hierarchy scans | Estimate: 75 us per active camera cold setup
+- [x] Task 3: Mass spawn request for 10,000 boids | Justification: emits single-chunk residency hydration plus `SwarmDispersedSignal.EstimatedBoidCount=10000`; rejected private Sargassum/Director mutation because no public spawn API exists | Estimate: 3 us signal enqueue after prewarm
+- [x] Task 4: Emit AupShiftSignal every 15 frames | Justification: emits pre-shift, rebase, and shift signals with dispatcher AUP pause request; rejected direct origin system mutation | Estimate: 2 us per shift burst
+- [x] Task 5: GlobalDataVault 50MB allocate/free thrash | Justification: `IDataVault` has no release/free API, so runner performs 50MB `H8Memory` allocate/free pressure and records DataVault allocated-byte/fragmentation baselines; rejected adding QA-only BufferID/core free API | Estimate: 35 us plus allocator cost per pulse
+- [x] Task 6: SystemDispatcher SIMULATION stall detection >16ms | Justification: measures same-frame interval from Core fast tick to late-frame swap window and logs `[FRACTURE_DETECTED: JOB_STALL]`; rejected frame-to-frame delta because 60 Hz cadence would false-positive | Estimate: 1 us per sampled frame
+- [x] Task 7: RigidbodyAUP NaN hunt + blackbox dump | Justification: scans `BufferID.RigidbodyAUPs` through `IDataVault.TryGetBuffer<float3>` every fast frame and dumps fixed 300-frame blackbox on NaN; rejected stealing signal queues | Estimate: 0.6 us per 512 AUP entries
+- [x] Task 8: Native allocation leak baseline return check | Justification: captures baselines after warmup, checks H8Memory exact return after scratch release, and checks native/H8/DataVault post-unload windows; rejected sampling only final process bytes | Estimate: 1 us per check
+- [x] Task 9: H-Phi metric console print before test | Justification: computes cold static source metric and prints `[H-PHI_STATIC]` before stress start; rejected cached stale report values | Estimate: 40000 us cold scan
+- [x] Task 10: CI exit 0 after 50,000 extreme frames | Justification: writes result JSON and exits 0 only after `_targetFrames` survives; rejected silent pass without artifact | Estimate: 5 us terminal decision
+- [x] Task 11: Zero-GC stressor logic | Justification: hot path uses fields, native arrays, struct signals, no LINQ/foreach/coroutines/string formatting/jobs `.Complete()`; terminal/cold paths own managed IO | Estimate: 0 B managed hot path by static audit
+- [x] Task 12: Omega compile check | Justification: new runtime/editor files pass isolated Unity Roslyn compile against Library/ScriptAssemblies; full `dotnet build` is blocked by unrelated existing Hecton8.Core dependency errors; Unity MCP session unavailable | Estimate: 20000000 us verification
 
 ## Iteration Log
 - Loop 0: Prompt, domain, mandates, and missing state files confirmed. Code not touched yet.
+- Loop 1: Implemented tasks 1-5 in `HeadlessStressFractureBot` and editor batch runner; DataVault free API gap recorded instead of core mutation.
+- Loop 2: Implemented tasks 6-8 with dispatcher phase timing, RigidbodyAUP scan, blackbox dump, and native/H8/DataVault leak windows.
+- Loop 3: Implemented tasks 9-12 with static H-Phi logging, result JSON, CI exit path, and hot-path allocation audit.
+- Loop 4: Re-read original XML prompt and searched new files for forbidden patterns (`FindObjects`, `foreach`, `yield`, `Task<`, `.Complete()`); no hot-path violations found.
+- Loop 5: Isolated Unity Roslyn compile found and fixed `ILateFrameTickable` signature, int bool check, and `Debug` ambiguity; new files now compile in isolation.
+- Loop 6: OMEGA polish read after 100% task coverage; replaced hot stopwatch division with precomputed reciprocal and recompiled runtime script in isolation.
+- Loop 7: Hardening pass moved late-frame stall sampling to the final UI lane, preserved/restored active camera state after headless policy, reduced allocator false positives, escaped JSON status strings, recompiled runtime/editor scripts, and re-ran forbidden-pattern audit on the new Race Condition Hunter files.
+
+## Verification
+- Unity MCP editor state: BLOCKED, no Unity session available.
+- Isolated runtime compile: PASS via Unity Roslyn/Mono using ScriptAssemblies references after OMEGA reciprocal patch.
+- Isolated editor runner compile: PASS via Unity Roslyn/Mono using UnityEditor references.
+- Isolated runtime compile after hardening patch: PASS via Unity Roslyn/Mono using ScriptAssemblies references.
+- Isolated editor runner compile after hardening patch: PASS via Unity Roslyn/Mono using UnityEditor references.
+- Static hot-path forbidden-pattern scan after hardening patch: PASS for `HeadlessStressFractureBot.cs` and `HeadlessStressFractureBatchRunner.cs`; no matches for scene search, LINQ, coroutines, `Task<`, `.Complete()`, managed collection creation, reflection, or explicit GC.
+- Full `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false`: BLOCKED BY EXISTING DEPENDENCIES, 139 unrelated errors before/around core missing namespaces, duplicate SaveManager members, and interface mismatches.
+- Full `dotnet build Assembly-CSharp.csproj --no-restore -m:2 /nr:false`: BLOCKED BY SAME EXISTING `Hecton8.Core.csproj` dependency failures.

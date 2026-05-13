@@ -139,6 +139,8 @@ namespace Hecton8.Construction
         private const float AnalyticalShaderStressEpsilon = 0.0025f;
         private const float AnalyticalShaderRadiusPaddingMeters = 2f;
         private const float AnalyticalShaderDisplacementMaxMeters = 0.055f;
+        private const float ModuleStressMidDisplacementMaxMeters = 0.036f;
+        private const float ModuleStressUltraDisplacementMaxMeters = 0.075f;
         private const float AnalyticalShaderGridScale = 0.085f;
         private const float ModuleStressUploadEpsilon = 0.0015f;
         private const float ModuleStressDepthWeight = 0.58f;
@@ -148,6 +150,7 @@ namespace Hecton8.Construction
         private const float ModuleStressImpactSpikeStrength = 1f;
         private const float ModuleStressFastDeltaGroanThresholdPerSecond = 0.9f;
         private const float ModuleStressCompromisedThreshold01 = 0.985f;
+        private const int ModuleStressShaderCapacity = 64;
         private const float AnalyticalLowTierFeedbackThreshold01 = 0.42f;
         private const float AnalyticalLowTierFeedbackCooldownSeconds = 3.5f;
         private const float AnalyticalEmergencyRemainingIntegrityThreshold01 = 0.2f;
@@ -281,6 +284,7 @@ namespace Hecton8.Construction
         private bool _floodBlackBoxDumped;
         private bool _moduleStressBlackBoxDumped;
         private bool _lastUploadedModuleStressLowTier;
+        private HectonQualityTier _lastUploadedModuleStressTier = HectonQualityTier.Unknown;
         private int _lastUploadedModuleStressCount = -1;
         private int _lastProcessedModuleStressSignalFrame = -1;
         private GraphicsBuffer _moduleStressBuffer;
@@ -814,7 +818,9 @@ namespace Hecton8.Construction
                 return;
             }
 
-            int moduleCount = math.min(BaseModule.ActiveModuleCount, _moduleStressScalars.Length);
+            int moduleCount = math.min(
+                math.min(BaseModule.ActiveModuleCount, _moduleStressScalars.Length),
+                ModuleStressShaderCapacity);
             if (moduleCount <= 0)
             {
                 ClearModuleStressState();
@@ -826,7 +832,7 @@ namespace Hecton8.Construction
             bool orderChanged = activeOrderHash != _moduleStressOrderHash;
             if (orderChanged)
             {
-                ClearModuleStressState();
+                ClearModuleStressState(false);
                 _moduleStressOrderHash = activeOrderHash;
             }
 
@@ -834,10 +840,12 @@ namespace Hecton8.Construction
 
             float safeDeltaTime = math.max(0.0001f, deltaTime);
             float peakStress01 = 0f;
-            bool lowTier = IsModuleStressLowTier(GlobalRegistry.ScalabilityTier);
+            HectonQualityTier moduleStressTier = GlobalRegistry.ScalabilityTier;
+            bool lowTier = IsModuleStressLowTier(moduleStressTier);
             bool changed = orderChanged ||
                            stressCount != _lastUploadedModuleStressCount ||
-                           lowTier != _lastUploadedModuleStressLowTier;
+                           lowTier != _lastUploadedModuleStressLowTier ||
+                           moduleStressTier != _lastUploadedModuleStressTier;
             float3 loudestPosition = float3.zero;
             float loudestDeltaPerSecond = 0f;
             float loudestStress01 = 0f;
@@ -907,15 +915,24 @@ namespace Hecton8.Construction
             }
 
             if (changed)
-                UploadModuleStressMatrix(stressCount, peakStress01, lowTier);
+                UploadModuleStressMatrix(stressCount, peakStress01, moduleStressTier);
         }
 
         private void ClearModuleStressState()
         {
+            ClearModuleStressState(true);
+        }
+
+        private void ClearModuleStressState(bool publishShaderClear)
+        {
+            bool shouldPublishClear = _lastUploadedModuleStressCount != 0 ||
+                                      _lastUploadedPeakModuleStress01 > ModuleStressUploadEpsilon ||
+                                      _lastUploadedModuleStressLowTier;
             _peakModuleStress01 = 0f;
-            _lastUploadedPeakModuleStress01 = -1f;
-            _lastUploadedModuleStressCount = -1;
+            _lastUploadedPeakModuleStress01 = 0f;
+            _lastUploadedModuleStressCount = 0;
             _lastUploadedModuleStressLowTier = false;
+            _lastUploadedModuleStressTier = HectonQualityTier.Unknown;
             _moduleStressOrderHash = 0u;
             if (_moduleStressScalars.IsCreated)
             {
@@ -945,7 +962,8 @@ namespace Hecton8.Construction
                     _moduleCompromisedFlags[i] = 0;
             }
 
-            PublishModuleStressShader(0, 0f, false);
+            if (publishShaderClear && shouldPublishClear)
+                PublishModuleStressShader(0, 0f, HectonQualityTier.Unknown);
         }
 
         private static float ResolveActiveModuleDepthMeters(BaseModule baseModule, float3 runtimePosition)
@@ -999,7 +1017,7 @@ namespace Hecton8.Construction
             {
                 BaseModule baseModule = BaseModule.GetActiveModuleAt(i);
                 bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, out _, out ModuleRecord module);
-                uint moduleHash = ResolveModuleStressHash(baseModule, module, hasGraphRecord);
+                uint moduleHash = ResolveModuleStressRuntimeKey(baseModule, module, hasGraphRecord);
                 if (moduleHash == 0u)
                     moduleHash = (uint)(i + 1);
 
@@ -1115,6 +1133,12 @@ namespace Hecton8.Construction
                     return true;
                 }
 
+                if (targetHash != 0u && moduleHash == 0u && ResolveModuleStressRuntimeKey(baseModule, module, hasGraphRecord) == targetHash)
+                {
+                    moduleIndex = nodeIndex;
+                    return true;
+                }
+
                 if (targetId != 0 && hasGraphRecord && (ushort)(module.NodeId & 0xFFFFu) == targetId)
                 {
                     moduleIndex = nodeIndex;
@@ -1155,6 +1179,16 @@ namespace Hecton8.Construction
                 return module.NodeId;
 
             return 0u;
+        }
+
+        private static uint ResolveModuleStressRuntimeKey(BaseModule baseModule, ModuleRecord module, bool hasGraphRecord)
+        {
+            uint stableHash = ResolveModuleStressHash(baseModule, module, hasGraphRecord);
+            if (stableHash != 0u || baseModule == null)
+                return stableHash;
+
+            int instanceId = baseModule.GetInstanceID();
+            return instanceId != 0 ? unchecked((uint)instanceId) : 0u;
         }
 
         private void InjectModuleStressSpike(int moduleIndex, float magnitude)
@@ -1203,7 +1237,7 @@ namespace Hecton8.Construction
             GlobalSignals.Publish(in signal);
         }
 
-        private void UploadModuleStressMatrix(int moduleCount, float peakStress01, bool lowTier)
+        private void UploadModuleStressMatrix(int moduleCount, float peakStress01, HectonQualityTier tier)
         {
             EnsureModuleStressBuffer(moduleCount);
             if (_moduleStressBuffer != null && moduleCount > 0)
@@ -1212,16 +1246,19 @@ namespace Hecton8.Construction
                 Shader.SetGlobalBuffer(HabitatModuleStressBufferId, _moduleStressBuffer);
             }
 
-            PublishModuleStressShader(moduleCount, peakStress01, lowTier);
+            bool lowTier = IsModuleStressLowTier(tier);
+            PublishModuleStressShader(moduleCount, peakStress01, tier);
             _lastUploadedModuleStressCount = moduleCount;
             _lastUploadedPeakModuleStress01 = peakStress01;
             _lastUploadedModuleStressLowTier = lowTier;
+            _lastUploadedModuleStressTier = tier;
             _moduleStressSequence++;
         }
 
-        private void PublishModuleStressShader(int moduleCount, float peakStress01, bool lowTier)
+        private void PublishModuleStressShader(int moduleCount, float peakStress01, HectonQualityTier tier)
         {
-            float displacementMaxMeters = lowTier ? 0f : AnalyticalShaderDisplacementMaxMeters;
+            bool lowTier = IsModuleStressLowTier(tier);
+            float displacementMaxMeters = ResolveModuleStressDisplacementMaxMeters(tier);
             Shader.SetGlobalVector(
                 HabitatModuleStressParamsId,
                 new Vector4(
@@ -1248,6 +1285,21 @@ namespace Hecton8.Construction
             return tier == HectonQualityTier.Low ||
                    tier == HectonQualityTier.Mx350 ||
                    tier == HectonQualityTier.Unknown;
+        }
+
+        private static float ResolveModuleStressDisplacementMaxMeters(HectonQualityTier tier)
+        {
+            switch (tier)
+            {
+                case HectonQualityTier.Mid:
+                    return ModuleStressMidDisplacementMaxMeters;
+                case HectonQualityTier.High:
+                    return AnalyticalShaderDisplacementMaxMeters;
+                case HectonQualityTier.Ultra:
+                    return ModuleStressUltraDisplacementMaxMeters;
+                default:
+                    return 0f;
+            }
         }
 
         private void TryPublishLowTierAnalyticalStressFeedback(float3 center, float stress01)

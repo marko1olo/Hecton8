@@ -151,7 +151,7 @@ namespace Hecton8.UI
         private const string WorldGeometrySortingLayer = "WorldGeometry";
         private const int MaxThreatChevronCount = 4;
         private const int HudInternalLayerIndex = 17;
-        private const int LowTierDirtyCadenceFrameModulo = 4;
+        private const int LowTierDirtyCadenceFrameMask = 3;
         private const float ThreatChevronPlaneBiasMeters = 0.0004f;
         private const float VrLazyFollowPositionSharpness = 18f;
         private const float VrLazyFollowRotationSharpness = 22f;
@@ -1418,7 +1418,7 @@ namespace Hecton8.UI
             bool reactiveDirty = ConsumeReactiveSignals();
             bool lowTierGateOpen = !_lowTierDirtyThrottleActive ||
                 reactiveDirty ||
-                cadenceFrame % LowTierDirtyCadenceFrameModulo == 0;
+                (cadenceFrame & LowTierDirtyCadenceFrameMask) == 0;
             bool refreshMediumCadence = reactiveDirty ||
                 (lowTierGateOpen && cadenceFrame % MediumCadenceFrameModulo == 0);
             bool refreshSlowCadence = reactiveDirty ||

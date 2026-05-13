@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Signals;
 using Hecton8.Tools;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -34,7 +33,6 @@ namespace Hecton8.Core.Hardware
         private const byte ThermalStatusEmergency = 5;
         private const int RecoverySamplesToClear = 2;
         private const float ThermalFreezeDistanceMeters = 100f;
-        private const float ThermalRenderScale = 0.7f;
         private const uint SourceHash = 0x54484452u;
         private const uint ThermalContextHash = 0x54484552u;
         private const uint BatteryContextHash = 0x42415454u;
@@ -389,10 +387,6 @@ namespace Hecton8.Core.Hardware
                 if (foveated != null)
                     foveated.SetThermalFreezeDistanceOverride(throttling, ThermalFreezeDistanceMeters);
 
-                DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
-                if (scaler != null)
-                    scaler.SetPlatformPressureRenderScale(throttling, ThermalRenderScale, ThermalRenderScale);
-
                 _throttlingPolicyApplied = throttling;
             }
 
@@ -443,10 +437,6 @@ namespace Hecton8.Core.Hardware
             IFoveatedSimulationDirector foveated = GlobalRegistry.FoveatedSimulationDirector;
             if (foveated != null)
                 foveated.SetThermalFreezeDistanceOverride(false, ThermalFreezeDistanceMeters);
-
-            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
-            if (scaler != null)
-                scaler.SetPlatformPressureRenderScale(false, 1f, 1f);
 
             SystemDispatcher dispatcher = GlobalRegistry.Dispatcher;
             if (dispatcher != null)

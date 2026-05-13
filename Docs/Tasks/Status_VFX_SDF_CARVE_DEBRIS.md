@@ -18,22 +18,25 @@ Status: PENDING VERIFICATION
 
 ## Core Tasks
 
-- [ ] 1. Singleton eradication: N/A. DOD pending: verify no singleton introduced. Rejected alternative pending. Estimate pending.
-- [ ] 2. Signal migration: consume `VoxelCarveEvent(AUP, Radius)`. DOD pending. Rejected alternative pending. Estimate pending.
-- [ ] 3. ASMDEF isolation: `Hecton8.VFX.Debris` references Contracts. DOD pending. Rejected alternative pending. Estimate pending.
-- [ ] 4. Debris buffer S.O.A.: `StructuredBuffer<float4> CarveDebris` position/lifetime, max 4096. DOD pending. Rejected alternative pending. Estimate pending.
-- [ ] 5. C# injection job: dead-slot scan and 64-particle injection per carve. DOD pending. Rejected alternative pending. Estimate pending.
-- [ ] 6. Random jitter: stable `Unity.Mathematics.Random` seed from frame + AUP. DOD pending. Rejected alternative pending. Estimate pending.
-- [ ] 7. GPU advection: bind to `Hecton_FluidAdvection.compute`; gravity + AbyssalFlowField drag. DOD pending. Rejected alternative pending. Estimate pending.
-- [ ] 8. SDF collision: sample `VoxelSdfTexture3D`, collide/decay; Low tier skip. DOD pending. Rejected alternative pending. Estimate pending.
-- [ ] 9. BRG/indirect render: `Graphics.RenderMeshIndirect`, low-poly rock mesh, `Hecton_CoreLit`. DOD pending. Rejected alternative pending. Estimate pending.
-- [ ] 10. AUP shift safety: subtract `AupShiftSignal` before compute dispatch. DOD pending. Rejected alternative pending. Estimate pending.
-- [ ] 11. H-PHI sovereignty: request debris buffer from `GlobalDataVault`. DOD pending. Rejected alternative pending. Estimate pending.
-- [ ] 12. Math LOD: Low tier = 16 particles/carve and skip SDF collision. DOD pending. Rejected alternative pending. Estimate pending.
-- [ ] 13. Zero-GC: persistent buffers; no per-frame allocations. DOD pending. Rejected alternative pending. Estimate pending.
-- [ ] 14. Blackbox dump: push `ActiveCarveDebrisCount` to telemetry. DOD pending. Rejected alternative pending. Estimate pending.
-- [ ] 15. Omega compile check: verify indirect args buffer logic. DOD pending. Rejected alternative pending. Estimate pending.
+- [x] 1. Singleton eradication: N/A. DOD: no singleton added; runtime registers through `GlobalRegistry.TryRegisterUpdatable`. Rejected alternative: static active renderer owner. Estimate: 0 us steady-state dependency cost.
+- [x] 2. Signal migration: `VoxelCarveEvent` now implements `ISignal` and is pushed through `SignalBus<VoxelCarveEvent>` after queue validation. Rejected alternative: consuming legacy `DebrisSpawnSignal` only, because prompt requires carve-radius ingress. Estimate: 4-8 us per carve push.
+- [x] 3. ASMDEF isolation: added `Hecton8.VFX.Debris` with `Hecton8.Core.Contracts` reference plus Core/Core.Memory for registry, signals, and DataVault. Rejected alternative: dumping the renderer into root Core assembly. Estimate: 0 us runtime.
+- [x] 4. Debris buffer S.O.A.: compute file now has `StructuredBuffer<float4>`/`RWStructuredBuffer<float4>` position-lifetime and velocity lanes, capacity fixed at 4096. Rejected alternative: AoS debris struct with flags. Estimate: 16-byte coalesced reads, ~10-20 us saved per full dispatch on MX350 versus AoS.
+- [x] 5. C# injection job: Burst `CarveDebrisInjectJob` scans `w <= 0` slots and injects 64 high-tier / 16 low-tier particles. Rejected alternative: managed list of free slots, because it creates sync complexity and mutation churn. Estimate: 15-35 us per 4096-slot burst scan on i3.
+- [x] 6. Random jitter: `CarveDebrisInjectJob` uses `Unity.Mathematics.Random` seeded from frame + volume id + absolute carve hit + radius. Rejected alternative: `UnityEngine.Random`, non-deterministic and managed. Estimate: <3 us per 64 samples.
+- [x] 7. GPU advection: `AdvectCarveDebris` in `Hecton_FluidAdvection.compute` applies gravity, flow drag, and dynamic wake flow path. Rejected alternative: CPU integration. Estimate: 20-45 us for 4096 slots on MX350.
+- [x] 8. SDF collision: compute samples `VoxelSdfTexture3D` via existing SDF uniforms; on density hit velocity zeroes and life decays 6x. Low tier bypasses SDF. Rejected alternative: physics colliders/raycast. Estimate: Low saves one 3D texture sample per live particle.
+- [x] 9. BRG/indirect render: `Graphics.RenderMeshIndirect` renders persistent octahedron rock mesh with `Hecton_CarveDebrisIndirect.shader` including `Hecton_CoreLit.hlsl`. Rejected alternative: GameObject mesh instances. Estimate: 150-400 us saved on burst frames versus transform-spawned chips.
+- [x] 10. AUP shift safety: renderer drains `SignalBus<AupShiftSignal>`, accumulates negative shift, and applies it inside compute before integration. Rejected alternative: CPU full-buffer rebase upload. Estimate: saves 4096 CPU writes after origin shifts.
+- [x] 11. H-PHI sovereignty: renderer requests `BufferID.CarveDebris` and `BufferID.CarveDebrisVelocity` from `GlobalRegistry.DataVault`. Rejected alternative: private native ownership. Estimate: 0 us steady-state after cold resolve.
+- [x] 12. Math LOD: Low tier/MX350 injects 16 particles and passes SDF inactive to compute. Rejected alternative: same 64-particle/SDF path on every device. Estimate: saves 48 random writes per carve plus one SDF sample per live particle.
+- [x] 13. Zero-GC: persistent NativeArrays/GraphicsBuffers; no `GetData`/`SetData`; only cold fallback mesh/material and crash dump allocate. Rejected alternative: managed emitter/list. Estimate: 0 B/frame hot path.
+- [x] 14. Blackbox dump: 300-entry `NativeArray<CarveDebrisTelemetryEntry>` records `ActiveCarveDebrisCount`; invalid state dumps `Dump_VFX_SDF_CARVE_DEBRIS.bin`. Rejected alternative: log-only diagnostics. Estimate: 1 ring write per frame.
+- [x] 15. [BLOCKED BY TOOLING] Omega compile check: indirect args logic statically verified: clear kernel writes 5 indexed args, cull kernel atomically increments instance count, render uses `Graphics.RenderMeshIndirect`. Unity compile blocked: MCP server unavailable and project lock prevents safe batch compile. Rejected alternative: CPU `GetData` counter verification. Estimate: GPU-only visible count avoids readback stalls.
 
 ## Loop Log
 
 - Loop 0: Prompt extracted, status missing, rationale missing. Fresh files created. Code not touched yet.
+- Loop 1: Tasks 1-5 implemented. Prompt re-read from `CURRENT_BATCH.md` lines 997-1036 before continuing.
+- Loop 2: Tasks 6-10 implemented. Unity MCP compile check attempted; editor session unavailable, static pass continuing.
+- Loop 3: Tasks 11-15 implemented/blocked for Unity compile tooling. Static checks found no `GetData`/`SetData` in the hot lane.

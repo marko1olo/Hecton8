@@ -160,16 +160,17 @@ namespace Hecton8.World
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ValidateAupIntegrityJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float3> AbsolutePositions;
+            [ReadOnly] public NativeArray<double3> AbsolutePositions;
             [ReadOnly] public NativeArray<float3> RuntimePositions;
-            public float3 CurrentTotalOffset;
+            public double3 CurrentTotalOffset;
             [WriteOnly] public NativeArray<byte> InvalidMask;
 
             public void Execute(int index)
             {
-                float3 reconstructedAbsolute = RuntimePositions[index] + CurrentTotalOffset;
-                float3 delta = reconstructedAbsolute - AbsolutePositions[index];
-                InvalidMask[index] = math.lengthsq(delta) <= 0.01f ? (byte)0 : (byte)1;
+                float3 runtime = RuntimePositions[index];
+                double3 reconstructedAbsolute = new double3(runtime.x, runtime.y, runtime.z) + CurrentTotalOffset;
+                double3 delta = reconstructedAbsolute - AbsolutePositions[index];
+                InvalidMask[index] = math.lengthsq(delta) <= 0.01d ? (byte)0 : (byte)1;
             }
         }
 
@@ -232,7 +233,7 @@ namespace Hecton8.World
 
         private static HectonSpatialHash _nativeHash;
         private static NativeList<int> _queryHandles;
-        private static NativeArray<float3> _validationAbsolutePositions;
+        private static NativeArray<double3> _validationAbsolutePositions;
         private static NativeArray<float3> _validationRuntimePositions;
         private static NativeArray<byte> _validationInvalidMask;
         private static JobHandle _validationHandle;
@@ -1365,6 +1366,11 @@ namespace Hecton8.World
             return math.all(math.isfinite(value));
         }
 
+        private static bool IsFiniteDouble3(double3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
         private static bool IsFiniteDouble(double value)
         {
             return !double.IsNaN(value) && !double.IsInfinity(value);
@@ -1441,8 +1447,8 @@ namespace Hecton8.World
                 if (!IsFiniteRuntimePosition(runtimePosition))
                     continue;
 
-                Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
-                if (!IsFiniteRuntimePosition(absolutePosition))
+                double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+                if (!IsFiniteDouble3(absolutePosition))
                     continue;
 
                 _validationRuntimePositions[writeIndex] = runtimePosition;
@@ -1463,7 +1469,7 @@ namespace Hecton8.World
                 {
                     AbsolutePositions = _validationAbsolutePositions,
                     RuntimePositions = _validationRuntimePositions,
-                    CurrentTotalOffset = HectonFloatingOrigin.CurrentTotalOffset,
+                    CurrentTotalOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble,
                     InvalidMask = _validationInvalidMask
                 }.Schedule(writeIndex, 64);
                 _validationScheduled = true;
@@ -1544,7 +1550,7 @@ namespace Hecton8.World
                 writeIndex++;
             }
 
-            Vector3 currentTotalOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 currentTotalOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             for (int i = 0; i < writeIndex; i++)
             {
                 int handle = _farUnloadHandles[i];
@@ -1661,7 +1667,7 @@ namespace Hecton8.World
                 return;
 
             DisposeValidationBuffers();
-            _validationAbsolutePositions = new NativeArray<float3>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _validationAbsolutePositions = new NativeArray<double3>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _validationRuntimePositions = new NativeArray<float3>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _validationInvalidMask = new NativeArray<byte>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(

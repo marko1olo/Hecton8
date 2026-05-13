@@ -7,3 +7,65 @@ Solution: Treat `HectonMapMagicVegetationBridge.StringPullPathJob` as the live f
 Rejected Alternatives: Editing `Assets/AstarPathfindingProject/Modifiers/FunnelModifier.cs` was rejected because it is third-party vendor code, managed `List<Vector3>` code, and AGENTS forbids custom drift in complex third-party assets without explicit cleanup authority. Creating a brand-new AI navigation subsystem was rejected because no direct dependency may be invented during parallel batch work.
 Scalability potential: Low uses existing capped path buffers and no extra allocations. Middle keeps Burst auto-vectorized scalar math. High can spend saved CPU on wider route lookahead or richer fauna steering after profiling. Ultra can raise visual navigation readability without changing gameplay authority.
 Hardware Impact: Expected i3/MX350 gain is from replacing division/normalization-form math in the funnel-like job with `math.rcp`/`math.rsqrt` and avoiding vendor managed funnel paths; measured proof absent.
+
+Problem: Full Vector3 purge would require changing `VegetationMemoryPool` path buffers and every route consumer.
+Solution: Keep the public native buffer contract intact, convert boundary values to `float3` inside `StringPullPathJob`, and optimize the internal funnel math only.
+Rejected Alternatives: Replacing `NativeArray<Vector3>`/`NativeList<Vector3>` with `float3` globally was rejected because it would cut across world, vegetation, and route snapshot consumers during active compile churn.
+Scalability potential: Low/Middle keep compatibility and gain cheaper math in the hot job. High/Ultra can later move the whole path contract to `float3` once the owning systems are compiled and profiled together.
+Hardware Impact: Avoids a risky cross-domain migration on i3/MX350 while still removing hot normalization/division cost from the executed string-pull path.
+
+Problem: The prompt requested rsqrt and Pack=1, but the local implementation used loose portal endpoints and normalization-like math.
+Solution: Added a 32-byte `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)] NavPortal`, clamped zero-width portals, and normalized with `math.rsqrt` through a finite fallback helper.
+Rejected Alternatives: Default struct packing and `math.normalize` were rejected because they hide layout and generate avoidable sqrt/divide paths.
+Scalability potential: Low uses the same 32-byte portal value without allocations. Middle/High/Ultra can batch or cache portals later without a layout rewrite.
+Hardware Impact: Expected low-end gain is fewer scalar divides/sqrt paths and better packed stack/local portal layout; exact microseconds require Burst profiler data.
+
+Problem: 2D funnel simplification would be cheaper but wrong for underwater 6DOF corridors.
+Solution: Kept 3D winding through a scalar triple product and expanded the dot/cross expression into scalar arithmetic.
+Rejected Alternatives: Flattening to XZ and using 2D cross was rejected because vertical swim routes and voxel clearance can invert portal winding.
+Scalability potential: Low keeps deterministic 3D string pulling. High/Ultra can spend saved cost on wider lookahead if a tier service is exposed.
+Hardware Impact: Reduces helper-call overhead without corrupting 3D path authority on low-end silicon.
+
+Problem: The job had raw division candidates in obstacle weighting, threat grid indexing, DDA reciprocals, and voxel local coordinates.
+Solution: Replaced hot divisions with `math.rcp` precomputes and multiplication inside the job.
+Rejected Alternatives: Leaving C# `/` and trusting Burst to optimize every case was rejected because the mandate requires explicit division purge.
+Scalability potential: Low benefits immediately from reciprocal reuse. High/Ultra can reuse the same reciprocal pattern if path sampling density increases.
+Hardware Impact: Expected gain on i3/MX350 comes from removing repeated divide latency in DDA and grid sampling; exact microseconds remain pending profiler verification.
+
+Problem: Data sovereignty, hardware-tier LOD, and blackbox dumping are not safely injectable into this Burst job from the current file.
+Solution: Marked those items blocked with dependency notes instead of inventing globals or managed telemetry from inside Burst.
+Rejected Alternatives: Polling a singleton tier service, writing files from a Burst path job, or moving source data into GlobalDataVault without an owner were rejected as architecture damage.
+Scalability potential: Low remains stable. Middle/High/Ultra need a navigation contract owner to expose tiered lookahead and telemetry buffers without breaking Burst.
+Hardware Impact: Avoids managed calls, synchronization, and file IO on low-end hardware; preserves future telemetry hook points for the owner.
+
+Problem: Math LOD was initially blocked because the Burst job had no safe hardware-tier service.
+Solution: Resolve `GlobalRegistry.ScalabilityTier` in the managed scheduler and pass a primitive `MaxPortalLookAhead` into `StringPullPathJob`. Low/Unknown/MX350 use 4 portals, Mid uses 8, High/Ultra use 16.
+Rejected Alternatives: Polling `GlobalRegistry` from inside Burst or creating a new AI navigation singleton was rejected. A fixed universal cap was rejected because it wastes high-tier visual navigation budget.
+Scalability potential: Low stays cheap and conservative. Middle keeps modest smoothing. High/Ultra spend saved cycles on longer line-of-sight compaction for cleaner fauna routes.
+Hardware Impact: MX350/i3 avoids all-corridor compaction scans; high-end machines get visibly smoother route simplification without changing path authority.
+
+Problem: LOS compaction could scan too far and previously returned visible when the DDA step budget exhausted.
+Solution: `MaxSamplesPerSegment` now caps DDA work, and exhausted checks fail closed by returning false.
+Rejected Alternatives: Leaving exhausted DDA as visible was rejected because it can over-smooth through unverified voxels. Raising the global DDA cap was rejected because it buys CPU spikes, not immersion.
+Scalability potential: Low keeps more raw waypoints instead of risking geometry violation. High/Ultra can raise the inspector sample cap to buy smoother lines through sparse spaces.
+Hardware Impact: Low-end silicon gets bounded DDA traversal per segment and avoids pathological long voxel walks.
+
+Problem: Black Box telemetry could not be written from inside Burst, but the owner can safely record completed path states.
+Solution: Added a 300-entry persistent `NativeArray<AbyssalPathTelemetryEntry>` on `HectonMapMagicVegetationBridge`, schedule/complete timing via `Stopwatch.GetTimestamp`, over-budget telemetry through `GlobalTelemetryBus`, and `Dump_AI_FUNNEL_NAV_POLISH.bin` on NaN.
+Rejected Alternatives: `Stopwatch` and file IO inside the Burst job were rejected. Managed per-frame lists were rejected. Chat-only failure notes were rejected.
+Scalability potential: Low records compact fixed telemetry. High/Ultra get the same diagnostic coverage while spending the variable budget on smoothing, not logging.
+Hardware Impact: Runtime hot path adds fixed native writes at completion only; no managed allocation during normal path solves after the initial persistent ring allocation.
+
+Problem: Compile verification is blocked by global dependency errors outside the funnel domain.
+Solution: Ran a bounded `dotnet build` and Unity MCP script validation; recorded the compile wall and tool session failure without claiming success.
+Rejected Alternatives: Fixing Core/Audio/AI/Physics contracts from this task was rejected because the Integrator owns assembly surgery.
+Scalability potential: The funnel patch remains narrow and reviewable when the global build is repaired.
+Hardware Impact: No runtime hardware claim can be finalized until Burst compilation/profiling runs in Unity.
+
+## OMEGA POLISH CHANGES
+
+Problem: Final anti-bloat pass required checking for honest math, divisions, managed strings, and allocation paths after task completion/blocking.
+Solution: Static scan confirmed no `math.normalize`, `math.length(`, `math.distance(`, or raw `/` remained in the edited `StringPullPathJob` region. No managed strings, `foreach`, or native container allocation were introduced inside the Burst job.
+Rejected Alternatives: Adding a LUT was rejected because the portal is built from dynamic obstacle/threat/voxel geometry and the current rsqrt/rcp path is cheaper than maintaining cache state in this context.
+Scalability potential: Low/Middle run the same deterministic cheap path. High/Ultra can later increase visual navigation polish through a tier-owned lookahead budget.
+Hardware Impact: Exact microseconds saved are pending Unity/Burst profiler verification; the new owner-side telemetry will collect real funnel completion timing at runtime.

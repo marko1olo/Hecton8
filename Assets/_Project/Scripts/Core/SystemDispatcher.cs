@@ -2160,6 +2160,13 @@ namespace Hecton8.Core
                 Flags = 1
             };
             GlobalSignals.Publish(in pressureSignal);
+            IMacroDatabaseService macroDatabase = GlobalRegistry.MacroDatabase;
+            macroDatabase?.NotifyCriticalMemoryPressure(
+                memoryPressureEvent.ReservedMemoryBytes,
+                memoryPressureEvent.PhysicalMemoryBytes,
+                pressureSignal.UsageRatio,
+                pressureSignal.Frame,
+                pressureSignal.Severity);
             Interlocked.Exchange(ref _criticalMemoryPressureDefragRequested, 1);
             CrashTelemetryBuffer.ReportCriticalMemoryPressure(
                 memoryPressureEvent.ReservedMemoryBytes,

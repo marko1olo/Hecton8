@@ -78,7 +78,7 @@ namespace Hecton8.World
         /// Converts an Absolute Universe Position into runtime presentation space after committed origin offset.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static float3 ToRuntimeFloat3(in AbsoluteUniversePosition position, float3 committedOffset)
+        internal static float3 ToRuntimeFloat3(in AbsoluteUniversePosition position, double3 committedOffset)
         {
             double3 absolute = ToAbsoluteDouble3(in position);
             float3 result = new float3(
@@ -89,6 +89,14 @@ namespace Hecton8.World
                 ReportInvalidFloatResult();
 
             return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float3 ToRuntimeFloat3(in AbsoluteUniversePosition position, float3 committedOffset)
+        {
+            return ToRuntimeFloat3(
+                in position,
+                new double3(committedOffset.x, committedOffset.y, committedOffset.z));
         }
 
         /// <summary>
