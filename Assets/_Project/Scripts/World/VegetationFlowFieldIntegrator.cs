@@ -2710,6 +2710,15 @@ namespace Hecton8.World
             }
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+        private struct NavPortal
+        {
+            public float3 Left;
+            public float3 Right;
+            public float WidthSq;
+            public float Reserved;
+        }
+
         [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct StringPullPathJob : IJob
@@ -2774,7 +2783,9 @@ namespace Hecton8.World
 
                 for (int portalIndex = 1; portalIndex < pathCount; portalIndex++)
                 {
-                    BuildPortal(portalIndex, out float3 portalLeft, out float3 portalRight, out float3 portalAxis);
+                    NavPortal portal = BuildPortal(portalIndex, out float3 portalAxis);
+                    float3 portalLeft = portal.Left;
+                    float3 portalRight = portal.Right;
                     float3 windingAxis = ResolveWindingAxis(apex, left, right, portalLeft, portalRight, portalAxis, fallbackAxis);
                     bool swapPortalWinding = ScalarTripleProduct(windingAxis, portalLeft - apex, portalRight - apex) < 0f;
                     float3 originalPortalLeft = portalLeft;
@@ -2844,32 +2855,29 @@ namespace Hecton8.World
                 CompactPathByVoxelLineOfSight();
             }
 
-            private void BuildPortal(int index, out float3 leftPortal, out float3 rightPortal, out float3 portalAxis)
+            private NavPortal BuildPortal(int index, out float3 portalAxis)
             {
                 Vector3 centerValue = InputPath[index];
                 float3 center = ToFloat3(centerValue);
                 if (index <= 0 || index >= InputPath.Length - 1)
                 {
-                    leftPortal = center;
-                    rightPortal = center;
                     portalAxis = ResolvePortalAxis(index);
-                    return;
+                    return BuildNavPortal(center, center);
                 }
 
                 float3 previous = ToFloat3(InputPath[index - 1]);
                 float3 next = ToFloat3(InputPath[index + 1]);
-                float3 prevDirection = DominantAxisOrDefault(center - previous, new float3(0f, 0f, 1f));
-                float3 nextDirection = DominantAxisOrDefault(next - center, prevDirection);
-                portalAxis = DominantAxisOrDefault(prevDirection + nextDirection, nextDirection);
-                float3 cornerNormal = DominantAxisOrDefault(math.cross(prevDirection, nextDirection), ResolvePerpendicular(portalAxis));
-                float3 side = DominantAxisOrDefault(math.cross(cornerNormal, portalAxis), ResolvePerpendicular(portalAxis));
+                float3 prevDirection = NormalizeRsqrtOrFallback(center - previous, new float3(0f, 0f, 1f));
+                float3 nextDirection = NormalizeRsqrtOrFallback(next - center, prevDirection);
+                portalAxis = NormalizeRsqrtOrFallback(prevDirection + nextDirection, nextDirection);
+                float3 cornerNormal = NormalizeRsqrtOrFallback(math.cross(prevDirection, nextDirection), ResolvePerpendicular(portalAxis));
+                float3 side = NormalizeRsqrtOrFallback(math.cross(cornerNormal, portalAxis), ResolvePerpendicular(portalAxis));
                 float obstacle = SampleObstacle(centerValue);
-                float obstacleT = math.saturate(obstacle / math.max(0.01f, DensityObstacleThreshold));
+                float obstacleT = math.saturate(obstacle * math.rcp(math.max(0.01f, DensityObstacleThreshold)));
                 float maxHalfWidth = math.max(0.9f, SampleSpacing * 1.6f);
                 float minHalfWidth = math.max(0.35f, SampleSpacing * 0.55f);
                 float halfWidth = math.lerp(maxHalfWidth, minHalfWidth, obstacleT);
-                leftPortal = center + (side * halfWidth);
-                rightPortal = center - (side * halfWidth);
+                return BuildNavPortal(center + (side * halfWidth), center - (side * halfWidth));
             }
 
             private float SampleObstacle(Vector3 positionValue)
@@ -2938,8 +2946,9 @@ namespace Hecton8.World
                 if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
                     return -1;
 
-                int cellX = math.clamp((int)math.floor(localX / ThreatGridCellSize), 0, ThreatGridResolution - 1);
-                int cellZ = math.clamp((int)math.floor(localZ / ThreatGridCellSize), 0, ThreatGridResolution - 1);
+                float inverseCellSize = math.rcp(math.max(ThreatGridCellSize, DdaEpsilon));
+                int cellX = math.clamp((int)math.floor(localX * inverseCellSize), 0, ThreatGridResolution - 1);
+                int cellZ = math.clamp((int)math.floor(localZ * inverseCellSize), 0, ThreatGridResolution - 1);
                 return (cellZ * ThreatGridResolution) + cellX;
             }
 
@@ -3001,14 +3010,14 @@ namespace Hecton8.World
                 float3 activeVoxelOrigin = GetActiveVoxelOrigin();
                 float3 activeVoxelCellSize = GetActiveVoxelCellSize();
                 int3 activeVoxelDimensions = GetActiveVoxelDimensions();
-                float3 rayDirection = DominantAxisOrDefault(delta, new float3(1f, 0f, 0f));
+                float3 rayDirection = NormalizeRsqrtOrFallback(delta, new float3(1f, 0f, 0f));
                 bool3 positiveMask = rayDirection >= 0f;
                 bool3 activeAxisMask = math.abs(rayDirection) > DdaEpsilon;
                 int3 step = math.select(new int3(-1, -1, -1), new int3(1, 1, 1), positiveMask);
                 float3 cellMin = activeVoxelOrigin + (new float3(currentVoxel.x, currentVoxel.y, currentVoxel.z) * activeVoxelCellSize);
                 float3 voxelBoundary = cellMin + math.select(float3.zero, activeVoxelCellSize, positiveMask);
                 float3 safeAbsDirection = math.max(math.abs(rayDirection), new float3(DdaEpsilon, DdaEpsilon, DdaEpsilon));
-                float3 rayDirectionInverse = 1f / safeAbsDirection;
+                float3 rayDirectionInverse = math.rcp(safeAbsDirection);
                 float3 tMax = math.abs((voxelBoundary - start) * rayDirectionInverse);
                 float3 tDelta = activeVoxelCellSize * rayDirectionInverse;
                 tMax = math.select(new float3(1000000f, 1000000f, 1000000f), tMax, activeAxisMask);
@@ -3044,10 +3053,13 @@ namespace Hecton8.World
                     return false;
                 }
 
+                float inverseCellSizeX = math.rcp(math.max(activeVoxelCellSize.x, DdaEpsilon));
+                float inverseCellSizeY = math.rcp(math.max(activeVoxelCellSize.y, DdaEpsilon));
+                float inverseCellSizeZ = math.rcp(math.max(activeVoxelCellSize.z, DdaEpsilon));
                 int3 candidate = new int3(
-                    (int)math.floor(local.x / math.max(activeVoxelCellSize.x, DdaEpsilon)),
-                    (int)math.floor(local.y / math.max(activeVoxelCellSize.y, DdaEpsilon)),
-                    (int)math.floor(local.z / math.max(activeVoxelCellSize.z, DdaEpsilon)));
+                    (int)math.floor(local.x * inverseCellSizeX),
+                    (int)math.floor(local.y * inverseCellSizeY),
+                    (int)math.floor(local.z * inverseCellSizeZ));
                 if (!IsVoxelInside(candidate))
                 {
                     voxel = int3.zero;
@@ -3134,7 +3146,7 @@ namespace Hecton8.World
                 int nextIndex = math.min(InputPath.Length - 1, clampedIndex + 1);
                 float3 previous = ToFloat3(InputPath[previousIndex]);
                 float3 next = ToFloat3(InputPath[nextIndex]);
-                return DominantAxisOrDefault(next - previous, new float3(0f, 0f, 1f));
+                return NormalizeRsqrtOrFallback(next - previous, new float3(0f, 0f, 1f));
             }
 
             private static float3 ToFloat3(Vector3 value)
@@ -3147,7 +3159,7 @@ namespace Hecton8.World
                 float3 reference = math.abs(axis.y) < 0.9f
                     ? new float3(0f, 1f, 0f)
                     : new float3(1f, 0f, 0f);
-                return DominantAxisOrDefault(math.cross(reference, axis), new float3(0f, 0f, 1f));
+                return NormalizeRsqrtOrFallback(math.cross(reference, axis), new float3(0f, 0f, 1f));
             }
 
             private static float3 ResolveWindingAxis(
@@ -3159,20 +3171,45 @@ namespace Hecton8.World
                 float3 portalAxis,
                 float3 fallbackAxis)
             {
-                float3 portalCenterDirection = DominantAxisOrDefault(((portalLeft + portalRight) * 0.5f) - apex, portalAxis);
+                float3 portalCenterDirection = ((portalLeft + portalRight) * 0.5f) - apex;
                 if (math.lengthsq(portalCenterDirection) > FunnelEpsilon)
-                    return portalCenterDirection;
+                    return NormalizeRsqrtOrFallback(portalCenterDirection, portalAxis);
 
-                float3 wedgeCenterDirection = DominantAxisOrDefault(((left + right) * 0.5f) - apex, portalAxis);
+                float3 wedgeCenterDirection = ((left + right) * 0.5f) - apex;
                 if (math.lengthsq(wedgeCenterDirection) > FunnelEpsilon)
-                    return wedgeCenterDirection;
+                    return NormalizeRsqrtOrFallback(wedgeCenterDirection, portalAxis);
 
-                return DominantAxisOrDefault(portalAxis, DominantAxisOrDefault(fallbackAxis, new float3(0f, 0f, 1f)));
+                return NormalizeRsqrtOrFallback(portalAxis, NormalizeRsqrtOrFallback(fallbackAxis, new float3(0f, 0f, 1f)));
             }
 
             private static float ScalarTripleProduct(float3 axis, float3 b, float3 c)
             {
-                return math.dot(axis, math.cross(b, c));
+                return (axis.x * ((b.y * c.z) - (b.z * c.y))) +
+                       (axis.y * ((b.z * c.x) - (b.x * c.z))) +
+                       (axis.z * ((b.x * c.y) - (b.y * c.x)));
+            }
+
+            private static NavPortal BuildNavPortal(float3 left, float3 right)
+            {
+                left = math.select(float3.zero, left, math.isfinite(left));
+                right = math.select(left, right, math.isfinite(right));
+                float widthSq = math.lengthsq(right - left);
+                return new NavPortal
+                {
+                    Left = left,
+                    Right = right,
+                    WidthSq = math.max(widthSq, FunnelEpsilon),
+                    Reserved = 0f
+                };
+            }
+
+            private static float3 NormalizeRsqrtOrFallback(float3 value, float3 fallback)
+            {
+                float lengthSq = math.lengthsq(value);
+                bool useFallback = lengthSq <= FunnelEpsilon || !math.all(math.isfinite(value));
+                float safeLengthSq = math.max(lengthSq, FunnelEpsilon);
+                float3 normalized = value * math.rsqrt(safeLengthSq);
+                return math.select(normalized, fallback, useFallback);
             }
 
             private static bool IsDegenerateRay(float3 apex, float3 point)

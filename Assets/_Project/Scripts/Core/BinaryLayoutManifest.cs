@@ -108,6 +108,24 @@ namespace Hecton8.Core
             AssertOffset<StrictSaveFileHeader64>(nameof(StrictSaveFileHeader64.AupX), 20);
             AssertOffset<StrictSaveFileHeader64>(nameof(StrictSaveFileHeader64.Checksum), 44);
 
+            AssertSize<PlayerKinematicStateDTO>(48);
+            AssertOffset<PlayerKinematicStateDTO>(nameof(PlayerKinematicStateDTO.posX), 0);
+            AssertOffset<PlayerKinematicStateDTO>(nameof(PlayerKinematicStateDTO.rotX), 12);
+            AssertOffset<PlayerKinematicStateDTO>(nameof(PlayerKinematicStateDTO.velX), 28);
+            AssertOffset<PlayerKinematicStateDTO>(nameof(PlayerKinematicStateDTO.flags), 40);
+
+            AssertSize<InventoryShadowDTO>(32);
+            AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.cellCount), 0);
+            AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.payloadHash), 8);
+            AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.totalWeight), 20);
+            AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.flags), 24);
+
+            AssertSize<HabitatFloodStateDTO>(32);
+            AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.moduleHashId), 0);
+            AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.airReserveNormalized), 12);
+            AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.floodedReefFloodSeconds), 20);
+            AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.flags), 24);
+
             AssertSize<SaveChunkHeader32>(32);
             AssertOffset<SaveChunkHeader32>(nameof(SaveChunkHeader32.ChunkKey), 0);
             AssertOffset<SaveChunkHeader32>(nameof(SaveChunkHeader32.PayloadLength), 12);

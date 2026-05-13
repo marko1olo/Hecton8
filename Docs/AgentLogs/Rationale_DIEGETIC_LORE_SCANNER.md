@@ -16,6 +16,26 @@ Rejected Alternatives: Reusing stale logs or chat-only tracking.
 Scalability potential: File-backed state survives context compression and supports iterative loops.
 Hardware Impact: No runtime impact.
 
+## Loop 2 - Tasks 6-10
+
+Problem: Scanner needed target forgiveness without pixel-accurate ray work.
+Solution: Used the highest forward dot product under 15m as the candidate. This is the intended lie: near-crosshair selection, not exact collider picking.
+Rejected Alternatives: screen-space projection plus collider tests; multi-ray cone cast; broad managed raycast fan.
+Scalability potential: Low tier keeps the same cheap candidate. High/Ultra can spend saved budget on richer RT glyph noise while preserving identical target authority.
+Hardware Impact: Expected low-end gain is one Burst linear scan over native arrays plus at most one occlusion command, replacing continuous ray work.
+
+Problem: Scanner decryption UI had to write to the physical tool screen without heap strings.
+Solution: The tool RT controller now consumes `ScannerToolActiveSignal`, resolves the lore title by hash, writes into fixed `char[]` staging buffers with `Span<char>`, and scrambles unrevealed characters. Low tier writes percentage only.
+Rejected Alternatives: TMP `.text`, managed formatted strings, per-frame `StringBuilder`, and UI `Update()`.
+Scalability potential: MX350 gets percentage-only. Mid gets title scramble. High/Ultra can use higher refresh/noise density on the same buffer path.
+Hardware Impact: Expected low-end gain is zero managed allocation during active scanner display; exact microseconds PENDING VERIFICATION.
+
+Problem: Lore completion must unlock systems and update campaign without coupling scanner to narrative implementation.
+Solution: Completion path publishes `LoreFragmentScannedSignal` and an existing `ProgressionEventSignal` for MetaCampaignService. DataArchaeology remains the commit authority.
+Rejected Alternatives: direct MetaCampaignService method call; UI-side unlock; managed UnityEvent chain.
+Scalability potential: Additional lore consumers can subscribe to signal lanes without touching scanner code.
+Hardware Impact: Completion-only signal traffic; no frame cost during scanning.
+
 ## Loop 1 - Tasks 1-5
 
 Problem: Focused scanner path fired a raycast before resolving whether a lore target was even near the reticle.

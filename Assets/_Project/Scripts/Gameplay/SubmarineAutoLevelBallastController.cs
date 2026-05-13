@@ -1669,7 +1669,14 @@ namespace Hecton8.Gameplay
             }
 
             _vaultNativeStateMask &= ~vaultFlag;
-            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeArray<T> array = H8Memory.Allocate<T>(
+                length,
+                SystemID.VehiclesPhysics,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            if (!array.IsCreated)
+                return default;
+
             NativeMemorySentinel.RegisterNativeArray(
                 array,
                 nameof(SubmarineAutoLevelBallastController),
@@ -1692,8 +1699,7 @@ namespace Hecton8.Gameplay
             }
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            H8Memory.Release(ref array);
         }
 
         private static uint BuildTelemetryHash(
